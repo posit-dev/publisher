@@ -5,12 +5,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
-
-import {
-  switchToSubframe,
-  waitForInputFields,
-  runShellScript,
-} from "../helpers.ts";
+import * as helper from "../helpers.ts";
 
 const connectServer = process.env.CONNECT_SERVER;
 const apiKey = process.env.CONNECT_API_KEY;
@@ -36,7 +31,7 @@ describe("VS Code Extension UI Test", () => {
   });
 
   it("can click add deployment button", async () => {
-    await switchToSubframe();
+    await helper.switchToSubframe();
     // initialize project via button
     const selectButton = (await $('[data-automation="select-deployment"]')).$(
       ".quick-pick-label",
@@ -65,32 +60,30 @@ describe("VS Code Extension UI Test", () => {
     await browser.keys("\uE007");
 
     // wait until the server responds
-    await waitForInputFields("The API key to be used");
+    await helper.waitForInputFields("The API key to be used");
 
     //set api key
     await input.setValue(apiKey);
     await browser.keys("\uE007");
 
     // wait for server validation
-    await waitForInputFields("Enter a Unique Nickname");
+    await helper.waitForInputFields("Enter a Unique Nickname");
 
     // set server name
     await input.setValue("my connect server");
     await browser.keys("\uE007");
   });
 
-  it("check config", async () => {
-    const workbench = await browser.getWorkbench();
-    await expect(
-      await workbench.getEditorView().getOpenEditorTitles(),
-    ).toContain("configuration-1.toml");
+  it("can check config", async () => {
+    const realFilename = await helper.getConfigTitle(/^my fastapi app-.*$/);
+
     const filePath = path.resolve(
       __dirname,
-      "../../../sample-content/fastapi-simple/.posit/publish/configuration-1.toml",
+      "../../../sample-content/fastapi-simple/.posit/publish/" + realFilename,
     );
     const fileContent = fs.readFileSync(filePath, "utf8");
     await expect(fileContent).toContain(
-      "type = 'python-fastapi'\nentrypoint = 'simple.py'\nvalidate = true\nfiles = [\n  'simple.py',\n  'requirements.txt'\n]\ntitle = 'my fastapi app'",
+      "type = 'python-fastapi'\nentrypoint = 'simple.py'\nvalidate = true\nfiles = [\n  '/simple.py',\n  '/requirements.txt'\n]\ntitle = 'my fastapi app'",
     );
   });
 
@@ -131,7 +124,7 @@ describe("VS Code Extension UI Test", () => {
       it("remove credentials", async () => {
         let scriptPath: string;
         scriptPath = "cd ../scripts && bash cleanup.bash";
-        await runShellScript(scriptPath);
+        await helper.runShellScript(scriptPath);
       });
     });
   });

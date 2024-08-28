@@ -324,7 +324,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       const api = await useApi();
       const apiRequest = api.files.updateFileList(
         activeConfig.configurationName,
-        uri,
+        `/${uri}`,
         action,
         activeConfig.projectDir,
       );
@@ -1388,7 +1388,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     );
   }
 
-  public async handleFileInitiatedDeployment(uri: Uri) {
+  public async handleFileInitiatedDeploymentSelection(uri: Uri) {
     // Guide the user to create a new Deployment with that file as the entrypoint
     // if one doesn’t exist
     // Select the Deployment with an active configuration for that entrypoint if there
@@ -1399,7 +1399,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const entrypointDir = relativeDir(uri);
     // If the file is outside the workspace, it cannot be an entrypoint
     if (entrypointDir === undefined) {
-      return false;
+      return undefined;
     }
     const entrypointFile = uriUtils.basename(uri);
 
@@ -1428,7 +1428,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         });
       } catch (error: unknown) {
         const summary = getSummaryStringFromError(
-          "handleFileInitiatedDeployment, contentRecords.getAll",
+          "handleFileInitiatedDeploymentSelection, contentRecords.getAll",
           error,
         );
         window.showInformationMessage(
@@ -1454,7 +1454,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         });
       } catch (error: unknown) {
         const summary = getSummaryStringFromError(
-          "handleFileInitiatedDeployment, configurations.getAll",
+          "handleFileInitiatedDeploymentSelection, configurations.getAll",
           error,
         );
         window.showErrorMessage(
@@ -1468,7 +1468,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const apisComplete = Promise.all([getContentRecords, getConfigurations]);
 
     showProgress(
-      "Initializing::handleFileInitiatedDeployment",
+      "Initializing::handleFileInitiatedDeploymentSelection",
       apisComplete,
       Views.HomeView,
     );
@@ -1498,11 +1498,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         entrypointDir,
         entrypointFile,
       );
-      // we do not publish this, as we expect the user needs
-      // to validate and update config settings.
       return selected;
     }
-    // only one deployment, just publish it
+    // only one deployment, just select it
     if (compatibleContentRecords.length === 1) {
       const contentRecord = compatibleContentRecords[0];
       const deploymentSelector: DeploymentSelector = {
@@ -1527,7 +1525,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
             contentRecord.serverUrl,
           );
           if (!credentialName) {
-            return;
+            return undefined;
           }
         } finally {
           // enable our home view, we are done with our sequence
@@ -1543,8 +1541,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         configurationName: contentRecord.configurationName,
         credentialName,
       };
-      // publish!
-      return this.initiatePublish(target);
+      return target;
     }
     // if there are multiple compatible deployments, then make sure one of these isn't
     // already selected. If it is, do nothing, otherwise pick between the compatible ones.
@@ -1560,11 +1557,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         compatibleContentRecords,
         entrypointDir,
       );
-      if (selected) {
-        // publish!
-        return this.initiatePublish(selected);
-      }
-      return false;
+      return selected;
     }
     // compatible content record already active. Publish
     const credential =
@@ -1576,7 +1569,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         currentContentRecord.serverUrl,
       );
       if (!credentialName) {
-        return;
+        return undefined;
       }
     }
     const target: PublishProcessParams = {
@@ -1586,7 +1579,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       credentialName,
       configurationName: currentContentRecord.configurationName,
     };
-    return this.initiatePublish(target);
+    return target;
   }
 
   /**
@@ -1673,7 +1666,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           if (config) {
             return await commands.executeCommand(
               "vscode.open",
-              Uri.parse(config.configurationPath),
+              Uri.file(config.configurationPath),
             );
           }
           console.error(
