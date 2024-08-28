@@ -5,12 +5,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
-
-import {
-  switchToSubframe,
-  waitForInputFields,
-  runShellScript,
-} from "../helpers.ts";
+import * as helper from "../helpers.ts";
 
 const connectServer = process.env.CONNECT_SERVER;
 const apiKey = process.env.CONNECT_API_KEY;
@@ -36,7 +31,7 @@ describe("VS Code Extension UI Test", () => {
   });
 
   it("can click add deployment button", async () => {
-    await switchToSubframe();
+    await helper.switchToSubframe();
     // initialize project via button
     const selectButton = (await $('[data-automation="select-deployment"]')).$(
       ".quick-pick-label",
@@ -65,14 +60,14 @@ describe("VS Code Extension UI Test", () => {
     await browser.keys("\uE007");
 
     // wait until the server responds
-    await waitForInputFields("The API key to be used");
+    await helper.waitForInputFields("The API key to be used");
 
     //set api key
     await input.setValue(apiKey);
     await browser.keys("\uE007");
 
     // wait for server validation
-    await waitForInputFields("Enter a Unique Nickname");
+    await helper.waitForInputFields("Enter a Unique Nickname");
 
     // set server name
     await input.setValue("my connect server");
@@ -80,14 +75,7 @@ describe("VS Code Extension UI Test", () => {
   });
 
   it("can check config", async () => {
-    const workbench = await browser.getWorkbench();
-    const openEditorTitles = await workbench
-      .getEditorView()
-      .getOpenEditorTitles();
-    const fileNamePattern = /^my fastapi app-.*$/;
-    const realFilename = openEditorTitles.find((title) =>
-      fileNamePattern.test(title),
-    );
+    const realFilename = await helper.getConfigTitle(/^my fastapi app-.*$/);
 
     const filePath = path.resolve(
       __dirname,
@@ -136,7 +124,7 @@ describe("VS Code Extension UI Test", () => {
       it("remove credentials", async () => {
         let scriptPath: string;
         scriptPath = "cd ../scripts && bash cleanup.bash";
-        await runShellScript(scriptPath);
+        await helper.runShellScript(scriptPath);
       });
     });
   });
