@@ -69,7 +69,7 @@ import { RPackage, RVersionConfig } from "src/api/types/packages";
 import { calculateTitle } from "src/utils/titles";
 import { ConfigWatcherManager, WatcherManager } from "src/watchers";
 import { Commands, Contexts, DebounceDelaysMS, Views } from "src/constants";
-import { showProgress } from "src/utils/progress";
+import { showProgress, showProgressPassthrough } from "src/utils/progress";
 import { newCredential } from "src/multiStepInputs/newCredential";
 import { PublisherState } from "src/state";
 import { throttleWithLastPending } from "src/utils/throttle";
@@ -502,17 +502,17 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           packageFile = pythonSection.packageFile;
           packageMgr = pythonSection.packageManager;
 
-          const apiRequest = api.packages.getPythonPackages(
-            activeConfiguration.configurationName,
-            activeConfiguration.projectDir,
-          );
-          showProgress(
+          const response = await showProgressPassthrough(
             "Refreshing Python Packages",
-            apiRequest,
             Views.HomeView,
+            async () => {
+              return await api.packages.getPythonPackages(
+                activeConfiguration.configurationName,
+                activeConfiguration.projectDir,
+              );
+            },
           );
 
-          const response = await apiRequest;
           packages = response.data.requirements;
         } catch (error: unknown) {
           if (isAxiosError(error) && error.response?.status === 404) {
@@ -570,13 +570,16 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           packageFile = rSection.packageFile;
           packageMgr = rSection.packageManager;
 
-          const apiRequest = api.packages.getRPackages(
-            activeConfiguration.configurationName,
-            activeConfiguration.projectDir,
+          const response = await showProgressPassthrough(
+            "Refreshing R Packages",
+            Views.HomeView,
+            async () =>
+              await api.packages.getRPackages(
+                activeConfiguration.configurationName,
+                activeConfiguration.projectDir,
+              ),
           );
-          showProgress("Refreshing R Packages", apiRequest, Views.HomeView);
 
-          const response = await apiRequest;
           packages = [];
           Object.keys(response.data.packages).forEach((key: string) =>
             packages.push(response.data.packages[key]),
