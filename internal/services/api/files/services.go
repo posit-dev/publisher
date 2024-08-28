@@ -46,6 +46,10 @@ func (s filesService) GetFile(p util.AbsolutePath, matchList matcher.MatchList) 
 	err = walker.Walk(p, func(path util.AbsolutePath, info fs.FileInfo, err error) error {
 		if err != nil {
 			if errors.Is(err, os.ErrNotExist) {
+				// File was deleted since readdir() was called
+				return nil
+			} else if errors.Is(err, os.ErrPermission) {
+				s.log.Warn("permission error; skipping", "path", path)
 				return nil
 			} else {
 				return err

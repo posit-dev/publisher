@@ -3,6 +3,7 @@ package files
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"os"
 	"testing"
 
 	"github.com/posit-dev/publisher/internal/bundles/matcher"
@@ -48,6 +49,32 @@ func (s *ServicesSuite) TestCreateFilesService() {
 
 func (s *ServicesSuite) TestGetFile() {
 	base := s.cwd
+	service := CreateFilesService(base, s.log)
+	s.NotNil(service)
+	matchList, err := matcher.NewMatchList(base, nil)
+	s.NoError(err)
+
+	file, err := service.GetFile(base, matchList)
+	s.NoError(err)
+	s.NotNil(file)
+}
+
+func (s *ServicesSuite) TestGetFilePermissionErr() {
+	afs := utiltest.NewMockFs()
+	base := s.cwd.WithFs(afs)
+
+	// We can't traverse this directory because of permissions
+	afs.On("Open", base.String()).Return(nil, os.ErrPermission)
+
+	// We can stat it though; fake with fileInfo from the real directory
+	fileInfo, err := s.cwd.Stat()
+	s.NoError(err)
+	afs.On("Stat", base.String()).Return(fileInfo, nil)
+	afs.On("Stat", base.Join("bin", "python").String()).Return(fileInfo, os.ErrNotExist)
+	afs.On("Stat", base.Join("bin", "python3").String()).Return(fileInfo, os.ErrNotExist)
+	afs.On("Stat", base.Join("Scripts", "python.exe").String()).Return(fileInfo, os.ErrNotExist)
+	afs.On("Stat", base.Join("Scripts", "python3.exe").String()).Return(fileInfo, os.ErrNotExist)
+
 	service := CreateFilesService(base, s.log)
 	s.NotNil(service)
 	matchList, err := matcher.NewMatchList(base, nil)
