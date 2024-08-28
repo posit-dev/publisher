@@ -79,18 +79,23 @@ describe("VS Code Extension UI Test", () => {
     await browser.keys("\uE007");
   });
 
-  it("check config", async () => {
+  it("can check config", async () => {
     const workbench = await browser.getWorkbench();
-    await expect(
-      await workbench.getEditorView().getOpenEditorTitles(),
-    ).toContain("configuration-1.toml");
+    const openEditorTitles = await workbench
+      .getEditorView()
+      .getOpenEditorTitles();
+    const fileNamePattern = /^my fastapi app-.*$/;
+    const realFilename = openEditorTitles.find((title) =>
+      fileNamePattern.test(title),
+    );
+
     const filePath = path.resolve(
       __dirname,
-      "../../../sample-content/fastapi-simple/.posit/publish/configuration-1.toml",
+      "../../../sample-content/fastapi-simple/.posit/publish/" + realFilename,
     );
     const fileContent = fs.readFileSync(filePath, "utf8");
     await expect(fileContent).toContain(
-      "type = 'python-fastapi'\nentrypoint = 'simple.py'\nvalidate = true\nfiles = [\n  'simple.py',\n  'requirements.txt'\n]\ntitle = 'my fastapi app'",
+      "type = 'python-fastapi'\nentrypoint = 'simple.py'\nvalidate = true\nfiles = [\n  '/simple.py',\n  '/requirements.txt'\n]\ntitle = 'my fastapi app'",
     );
   });
 
