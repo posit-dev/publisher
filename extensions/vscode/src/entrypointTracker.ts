@@ -14,7 +14,10 @@ import { Utils as uriUtils } from "vscode-uri";
 
 import { useApi } from "src/api";
 import { Contexts } from "src/constants";
-import { getPythonInterpreterPath } from "src/utils/config";
+import {
+  getPythonInterpreterPath,
+  getRInterpreterPath,
+} from "src/utils/vscode";
 import { isActiveDocument, relativeDir } from "src/utils/files";
 import { hasKnownContentType } from "src/utils/inspect";
 import { getSummaryStringFromError } from "src/utils/errors";
@@ -43,8 +46,9 @@ async function isDocumentEntrypoint(
   try {
     const api = await useApi();
     const python = await getPythonInterpreterPath();
+    const r = await getRInterpreterPath();
 
-    const response = await api.configurations.inspect(dir, python, {
+    const response = await api.configurations.inspect(dir, python, r, {
       entrypoint: uriUtils.basename(document.uri),
     });
 

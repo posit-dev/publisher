@@ -19,6 +19,7 @@ import (
 
 type postInspectRequestBody struct {
 	Python string `json:"python"`
+	R      string `json:"r"`
 }
 
 type postInspectResponseBody struct {
@@ -73,6 +74,8 @@ func PostInspectHandlerFunc(base util.AbsolutePath, log logging.Logger) http.Han
 			return
 		}
 		pythonPath := util.NewPath(b.Python, nil)
+		rPath := util.NewPath(b.R, nil)
+
 		response := []postInspectResponseBody{}
 
 		if req.URL.Query().Get("recursive") == "true" {
@@ -102,7 +105,7 @@ func PostInspectHandlerFunc(base util.AbsolutePath, log logging.Logger) http.Han
 				}
 				entrypoint := req.URL.Query().Get("entrypoint")
 				entrypointPath := util.NewRelativePath(entrypoint, base.Fs())
-				configs, err := initialize.GetPossibleConfigs(path, pythonPath, util.Path{}, entrypointPath, log)
+				configs, err := initialize.GetPossibleConfigs(path, pythonPath, rPath, entrypointPath, log)
 				if err != nil {
 					return err
 				}
