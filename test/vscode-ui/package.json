@@ -15,7 +15,7 @@
     "wdio-wait-for": "^3.0.11"
   },
   "scripts": {
-    "wdio": "wdio run ./wdio.conf.ts"
+    "wdio": "wdio run ./wdio.conf.ts --suite nested"
   },
   "dependencies": {
     "@wdio/globals": "^8.35.1",
