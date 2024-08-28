@@ -2,7 +2,7 @@
 
 import { ProgressLocation, window } from "vscode";
 
-export async function showProgressPassthrough<T>(
+export async function showProgress<T>(
   title: string,
   viewId: string,
   until: () => Promise<T>,

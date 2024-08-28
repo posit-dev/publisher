@@ -37,7 +37,7 @@ import {
   filterInspectionResultsToType,
   filterConfigurationsToValidAndType,
 } from "src/utils/filters";
-import { showProgressPassthrough } from "src/utils/progress";
+import { showProgress } from "src/utils/progress";
 import { isRelativePathRoot } from "src/utils/files";
 import { newConfigFileNameFromTitle } from "src/utils/names";
 
@@ -386,7 +386,7 @@ export async function selectNewOrExistingConfig(
   // ***************************************************************
 
   try {
-    await showProgressPassthrough(
+    await showProgress(
       "Initializing::collectInputs",
       viewId,
       async () =>

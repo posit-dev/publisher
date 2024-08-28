@@ -40,7 +40,7 @@ import {
 import { formatURL, normalizeURL } from "src/utils/url";
 import { checkSyntaxApiKey } from "src/utils/apiKeys";
 import { DeploymentObjects } from "src/types/shared";
-import { showProgressPassthrough } from "src/utils/progress";
+import { showProgress } from "src/utils/progress";
 import { vscodeOpenFiles } from "src/utils/files";
 
 type stepInfo = {
@@ -821,7 +821,7 @@ export async function newDeployment(
       ? state.data.entryPointPath.label
       : state.data.entryPointPath;
 
-    const inspectionQuickPicks = await showProgressPassthrough(
+    const inspectionQuickPicks = await showProgress(
       "Scanning::newDeployment",
       viewId,
       async () => await getConfigurationInspectionQuickPicks(entryPointPath),
@@ -1192,7 +1192,7 @@ export async function newDeployment(
   // collect the info.
   // ***************************************************************
   try {
-    await showProgressPassthrough(
+    await showProgress(
       "Initializing::newDeployment",
       viewId,
       async () =>

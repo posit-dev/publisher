@@ -69,7 +69,7 @@ import { RPackage, RVersionConfig } from "src/api/types/packages";
 import { calculateTitle } from "src/utils/titles";
 import { ConfigWatcherManager, WatcherManager } from "src/watchers";
 import { Commands, Contexts, DebounceDelaysMS, Views } from "src/constants";
-import { showProgressPassthrough } from "src/utils/progress";
+import { showProgress } from "src/utils/progress";
 import { newCredential } from "src/multiStepInputs/newCredential";
 import { PublisherState } from "src/state";
 import { throttleWithLastPending } from "src/utils/throttle";
@@ -321,19 +321,15 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
     try {
-      await showProgressPassthrough(
-        "Updating File List",
-        Views.HomeView,
-        async () => {
-          const api = await useApi();
-          await api.files.updateFileList(
-            activeConfig.configurationName,
-            `/${uri}`,
-            action,
-            activeConfig.projectDir,
-          );
-        },
-      );
+      await showProgress("Updating File List", Views.HomeView, async () => {
+        const api = await useApi();
+        await api.files.updateFileList(
+          activeConfig.configurationName,
+          `/${uri}`,
+          action,
+          activeConfig.projectDir,
+        );
+      });
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
         "homeView::updateFileList",
@@ -369,7 +365,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
   private async refreshContentRecordData() {
     try {
-      await showProgressPassthrough(
+      await showProgress(
         "Refreshing Deployments",
         Views.HomeView,
         async () => await this.state.refreshContentRecords(),
@@ -386,7 +382,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
   private async refreshConfigurationData() {
     try {
-      await showProgressPassthrough(
+      await showProgress(
         "Refreshing Configurations",
         Views.HomeView,
         async () => await this.state.refreshConfigurations(),
@@ -408,7 +404,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
   private async refreshCredentialData() {
     try {
-      await showProgressPassthrough(
+      await showProgress(
         "Refreshing Credentials",
         Views.HomeView,
         async () => await this.state.refreshCredentials(),
@@ -511,7 +507,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           packageFile = pythonSection.packageFile;
           packageMgr = pythonSection.packageManager;
 
-          const response = await showProgressPassthrough(
+          const response = await showProgress(
             "Refreshing Python Packages",
             Views.HomeView,
             async () => {
@@ -579,7 +575,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           packageFile = rSection.packageFile;
           packageMgr = rSection.packageManager;
 
-          const response = await showProgressPassthrough(
+          const response = await showProgress(
             "Refreshing R Packages",
             Views.HomeView,
             async () =>
@@ -680,7 +676,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
 
     try {
-      const response = await showProgressPassthrough(
+      const response = await showProgress(
         "Refreshing Python Requirements File",
         Views.HomeView,
         async () => {
@@ -747,7 +743,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
 
     try {
-      await showProgressPassthrough(
+      await showProgress(
         "Creating R Requirements File",
         Views.HomeView,
         async () => {
@@ -804,18 +800,14 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         await this.state.getSelectedConfiguration(),
       );
       if (config) {
-        await showProgressPassthrough(
-          "Updating Config",
-          Views.HomeView,
-          async () => {
-            const api = await useApi();
-            await api.contentRecords.patch(
-              targetContentRecord.deploymentName,
-              config.configurationName,
-              targetContentRecord.projectDir,
-            );
-          },
-        );
+        await showProgress("Updating Config", Views.HomeView, async () => {
+          const api = await useApi();
+          await api.contentRecords.patch(
+            targetContentRecord.deploymentName,
+            config.configurationName,
+            targetContentRecord.projectDir,
+          );
+        });
 
         // now select the new, updated or existing deployment
         const deploymentSelector: DeploymentSelector = {
@@ -1302,19 +1294,15 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     includeSavedState?: boolean,
   ) => {
     try {
-      await showProgressPassthrough(
-        "Refreshing Data",
-        Views.HomeView,
-        async () => {
-          const apis: Promise<void>[] = [this.refreshCredentialData()];
-          if (forceAll) {
-            // we have been told to refresh everything
-            apis.push(this.refreshContentRecordData());
-            apis.push(this.refreshConfigurationData());
-          }
-          return await Promise.all(apis);
-        },
-      );
+      await showProgress("Refreshing Data", Views.HomeView, async () => {
+        const apis: Promise<void>[] = [this.refreshCredentialData()];
+        if (forceAll) {
+          // we have been told to refresh everything
+          apis.push(this.refreshContentRecordData());
+          apis.push(this.refreshConfigurationData());
+        }
+        return await Promise.all(apis);
+      });
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
         "refreshAll::Promise.all",
@@ -1372,7 +1360,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const activeConfig = await this.state.getSelectedConfiguration();
     if (activeConfig) {
       try {
-        const response = await showProgressPassthrough(
+        const response = await showProgress(
           "Refreshing Files",
           Views.HomeView,
           async () => {
@@ -1492,7 +1480,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     });
 
     try {
-      await showProgressPassthrough(
+      await showProgress(
         "Initializing::handleFileInitiatedDeployment",
         Views.HomeView,
         async () => {

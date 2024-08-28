@@ -16,7 +16,7 @@ import {
 } from "src/utils/errors";
 import { formatURL, normalizeURL } from "src/utils/url";
 import { checkSyntaxApiKey } from "src/utils/apiKeys";
-import { showProgressPassthrough } from "src/utils/progress";
+import { showProgress } from "src/utils/progress";
 
 const createNewCredentialLabel = "Create a New Credential";
 
@@ -288,14 +288,10 @@ export async function newCredential(
   // collect the info.
   // ***************************************************************
   try {
-    await showProgressPassthrough(
-      "Initializing::newCredential",
-      viewId,
-      async () => {
-        const response = await api.credentials.list();
-        credentials = response.data;
-      },
-    );
+    await showProgress("Initializing::newCredential", viewId, async () => {
+      const response = await api.credentials.list();
+      credentials = response.data;
+    });
   } catch (error: unknown) {
     const summary = getSummaryStringFromError(
       "newCredentials, credentials.list",
