@@ -1,4 +1,4 @@
-# VSCode Extension
+# VS Code Extension
 
 ## Tutorial
 
@@ -16,7 +16,7 @@ The Home view shows information about the selected deployment destination.
 
 To create your first deployment, click the Add Deployment button.
 
-![](https://cdn.posit.co/publisher/assets/img/no-deployments.png)
+![](https://cdn.posit.co/publisher/assets/img/new-home-view.png)
 
 This will take you through the process of creating a new deployment,
 which includes a credential, configuration, and content record.
@@ -60,7 +60,7 @@ You are all set to Deploy!
 Click the `Deploy Your Project` button in the Home view to start the deployment
 process. :tada:
 
-![](https://cdn.posit.co/publisher/assets/img/deploy-your-project2.png)
+![](https://cdn.posit.co/publisher/assets/img/deploy-your-project-3.png)
 
 During deployment, the extension will show a progress window with the status of the deployment.
 Once the deployment completes, the result will be displayed in the Home view.
@@ -86,27 +86,23 @@ or updating a production deployment that is shared with your users.
 
 Clicking the `Deployment` dropdown lets you choose which deployment to target.
 
-![](https://cdn.posit.co/publisher/assets/img/deploy-your-project2.png)
+![](https://cdn.posit.co/publisher/assets/img/deploy-your-project-3.png)
 
 Then choose from the displayed list.
 
-![](https://cdn.posit.co/publisher/assets/img/select-deployment.png)
+![](https://cdn.posit.co/publisher/assets/img/select-deployment-2.png)
 
 ### Project Files
 
-This view shows the files in your project directory,
-divided into two lists:
+This view shows the files in your workspace:
 
-- Included Files show the files that will be included in your deployment and
-  sent to the server as part of the uploaded content. You can exclude a file by
-  clicking the icon to the right of the filename.
-- Excluded Files shows the files in your project that will not be included in
-  the deployment. The tooltip on an excluded file will indicate the reason it
-  was excluded. Some files are excluded by the publisher and cannot be added.
-  Files that you have excluded will have an icon to the right of
-  the filename that you can click to include the file in the deployment.
+- Included files show as checked and will be included in your deployment. They
+  are sent to the server as part of the uploaded content.
+- Excluded files show as unchecked and will not be included in your deployment.
+  The tooltip on an excluded file will indicate the reason it is excluded. Some
+  files are excluded by the publisher and cannot be added.
 
-![](https://cdn.posit.co/publisher/assets/img/project-files-view.png)
+![](https://cdn.posit.co/publisher/assets/img/project-files-tree-view.png)
 
 The files included in your project are controlled by the `files` list in
 the deployment configuration file. The buttons in the UI update that list.
