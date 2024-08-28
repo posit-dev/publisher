@@ -69,7 +69,7 @@ import { RPackage, RVersionConfig } from "src/api/types/packages";
 import { calculateTitle } from "src/utils/titles";
 import { ConfigWatcherManager, WatcherManager } from "src/watchers";
 import { Commands, Contexts, DebounceDelaysMS, Views } from "src/constants";
-import { showProgress, showProgressPassthrough } from "src/utils/progress";
+import { showProgressPassthrough } from "src/utils/progress";
 import { newCredential } from "src/multiStepInputs/newCredential";
 import { PublisherState } from "src/state";
 import { throttleWithLastPending } from "src/utils/throttle";
@@ -321,16 +321,19 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
     try {
-      const api = await useApi();
-      const apiRequest = api.files.updateFileList(
-        activeConfig.configurationName,
-        `/${uri}`,
-        action,
-        activeConfig.projectDir,
+      await showProgressPassthrough(
+        "Updating File List",
+        Views.HomeView,
+        async () => {
+          const api = await useApi();
+          await api.files.updateFileList(
+            activeConfig.configurationName,
+            `/${uri}`,
+            action,
+            activeConfig.projectDir,
+          );
+        },
       );
-      showProgress("Updating File List", apiRequest, Views.HomeView);
-
-      await apiRequest;
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
         "homeView::updateFileList",
@@ -366,9 +369,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
   private async refreshContentRecordData() {
     try {
-      const refresh = this.state.refreshContentRecords();
-      showProgress("Refreshing Deployments", refresh, Views.HomeView);
-      await refresh;
+      await showProgressPassthrough(
+        "Refreshing Deployments",
+        Views.HomeView,
+        async () => await this.state.refreshContentRecords(),
+      );
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
         "refreshContentRecordData::contentRecords.getAll",
@@ -381,9 +386,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
   private async refreshConfigurationData() {
     try {
-      const refresh = this.state.refreshConfigurations();
-      showProgress("Refreshing Configurations", refresh, Views.HomeView);
-      await refresh;
+      await showProgressPassthrough(
+        "Refreshing Configurations",
+        Views.HomeView,
+        async () => await this.state.refreshConfigurations(),
+      );
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
         "Internal Error: refreshConfigurationData::configurations.getAll",
@@ -401,9 +408,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
   private async refreshCredentialData() {
     try {
-      const refresh = this.state.refreshCredentials();
-      showProgress("Refreshing Credentials", refresh, Views.HomeView);
-      await refresh;
+      await showProgressPassthrough(
+        "Refreshing Credentials",
+        Views.HomeView,
+        async () => await this.state.refreshCredentials(),
+      );
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
         "Internal Error: refreshCredentialData::credentials.list",
@@ -671,25 +680,26 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
 
     try {
-      const api = await useApi();
-      const python = await getPythonInterpreterPath();
-      const apiRequest = api.packages.createPythonRequirementsFile(
-        activeConfiguration.projectDir,
-        python,
-        relPathPackageFile,
-      );
-      showProgress(
+      const response = await showProgressPassthrough(
         "Refreshing Python Requirements File",
-        apiRequest,
         Views.HomeView,
+        async () => {
+          const api = await useApi();
+          const python = await getPythonInterpreterPath();
+          return await api.packages.createPythonRequirementsFile(
+            activeConfiguration.projectDir,
+            python,
+            relPathPackageFile,
+          );
+        },
       );
 
-      const response = (await apiRequest).data;
+      const data = response.data;
       await commands.executeCommand("vscode.open", fileUri);
 
-      if (response.incomplete.length > 0) {
-        const importList = response.incomplete.join(", ");
-        const msg = `Could not find installed packages for some imports using ${response.python}. Install the required packages, or select a different interpreter, and try scanning again. Imports: ${importList}`;
+      if (data.incomplete.length > 0) {
+        const importList = data.incomplete.join(", ");
+        const msg = `Could not find installed packages for some imports using ${data.python}. Install the required packages, or select a different interpreter, and try scanning again. Imports: ${importList}`;
         window.showWarningMessage(msg);
       }
     } catch (error: unknown) {
@@ -737,14 +747,17 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
 
     try {
-      const api = await useApi();
-      const apiRequest = api.packages.createRRequirementsFile(
-        activeConfiguration.projectDir,
-        relPathPackageFile,
+      await showProgressPassthrough(
+        "Creating R Requirements File",
+        Views.HomeView,
+        async () => {
+          const api = await useApi();
+          return await api.packages.createRRequirementsFile(
+            activeConfiguration.projectDir,
+            relPathPackageFile,
+          );
+        },
       );
-      showProgress("Creating R Requirements File", apiRequest, Views.HomeView);
-
-      await apiRequest;
       await commands.executeCommand("vscode.open", fileUri);
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
@@ -791,15 +804,18 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         await this.state.getSelectedConfiguration(),
       );
       if (config) {
-        const api = await useApi();
-        const apiRequest = api.contentRecords.patch(
-          targetContentRecord.deploymentName,
-          config.configurationName,
-          targetContentRecord.projectDir,
+        await showProgressPassthrough(
+          "Updating Config",
+          Views.HomeView,
+          async () => {
+            const api = await useApi();
+            await api.contentRecords.patch(
+              targetContentRecord.deploymentName,
+              config.configurationName,
+              targetContentRecord.projectDir,
+            );
+          },
         );
-        showProgress("Updating Config", apiRequest, Views.HomeView);
-
-        await apiRequest;
 
         // now select the new, updated or existing deployment
         const deploymentSelector: DeploymentSelector = {
@@ -1286,15 +1302,19 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     includeSavedState?: boolean,
   ) => {
     try {
-      const apis: Promise<void>[] = [this.refreshCredentialData()];
-      if (forceAll) {
-        // we have been told to refresh everything
-        apis.push(this.refreshContentRecordData());
-        apis.push(this.refreshConfigurationData());
-      }
-      const allApis = Promise.all(apis);
-      showProgress("Refreshing Data", allApis, Views.HomeView);
-      await allApis;
+      await showProgressPassthrough(
+        "Refreshing Data",
+        Views.HomeView,
+        async () => {
+          const apis: Promise<void>[] = [this.refreshCredentialData()];
+          if (forceAll) {
+            // we have been told to refresh everything
+            apis.push(this.refreshContentRecordData());
+            apis.push(this.refreshConfigurationData());
+          }
+          return await Promise.all(apis);
+        },
+      );
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
         "refreshAll::Promise.all",
@@ -1349,17 +1369,20 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   };
 
   public sendRefreshedFilesLists = async () => {
-    const api = await useApi();
     const activeConfig = await this.state.getSelectedConfiguration();
     if (activeConfig) {
       try {
-        const apiRequest = api.files.getByConfiguration(
-          activeConfig.configurationName,
-          activeConfig.projectDir,
+        const response = await showProgressPassthrough(
+          "Refreshing Files",
+          Views.HomeView,
+          async () => {
+            const api = await useApi();
+            return await api.files.getByConfiguration(
+              activeConfig.configurationName,
+              activeConfig.projectDir,
+            );
+          },
         );
-        showProgress("ReFreshing Files", apiRequest, Views.HomeView);
-
-        const response = await apiRequest;
 
         this.webviewConduit.sendMsg({
           kind: HostToWebviewMessageType.REFRESH_FILES,
@@ -1468,16 +1491,14 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       resolve();
     });
 
-    const apisComplete = Promise.all([getContentRecords, getConfigurations]);
-
-    showProgress(
-      "Initializing::handleFileInitiatedDeploymentSelection",
-      apisComplete,
-      Views.HomeView,
-    );
-
     try {
-      await apisComplete;
+      await showProgressPassthrough(
+        "Initializing::handleFileInitiatedDeployment",
+        Views.HomeView,
+        async () => {
+          return await Promise.all([getContentRecords, getConfigurations]);
+        },
+      );
     } catch {
       // errors have already been displayed by the underlying promises..
       return undefined;
