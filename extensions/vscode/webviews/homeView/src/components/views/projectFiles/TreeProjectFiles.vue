@@ -24,7 +24,7 @@
       #postDecor
       v-if="
         file.isFile &&
-        file.reason?.source !== FileMatchSource.BUILT_IN &&
+        isFileIncluded(file) &&
         !home.flatFiles.lastDeployedFiles.has(file.rel)
       "
     >
