@@ -41,3 +41,15 @@ export function runShellScript(scriptPath: string) {
     });
   });
 }
+
+export async function getConfigTitle(configName: RegExp) {
+  const workbench = await browser.getWorkbench();
+  const openEditorTitles = await workbench
+    .getEditorView()
+    .getOpenEditorTitles();
+  const fileNamePattern = configName;
+  const realFilename = openEditorTitles.find((title) =>
+    fileNamePattern.test(title),
+  );
+  return realFilename;
+}
