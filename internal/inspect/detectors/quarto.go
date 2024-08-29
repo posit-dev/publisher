@@ -288,7 +288,7 @@ func (d *QuartoDetector) InferType(base util.AbsolutePath, entrypoint util.Relat
 			} else {
 				relPath = inputFile
 			}
-			cfg.Files = append(cfg.Files, relPath)
+			cfg.Files = append(cfg.Files, fmt.Sprint("/", relPath))
 		}
 		extraFiles := []string{"_quarto.yml", "_metadata.yaml"}
 		for _, filename := range extraFiles {
@@ -298,7 +298,7 @@ func (d *QuartoDetector) InferType(base util.AbsolutePath, entrypoint util.Relat
 				return nil, err
 			}
 			if exists {
-				cfg.Files = append(cfg.Files, filename)
+				cfg.Files = append(cfg.Files, fmt.Sprint("/", filename))
 			}
 		}
 		configs = append(configs, cfg)
