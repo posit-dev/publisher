@@ -16,7 +16,7 @@
     @check="includeFile(file)"
     @uncheck="excludeFile(file)"
   >
-    <template v-if="file.files.length" #default="{ indentLevel }">
+    <template v-if="file.isDir" #default="{ indentLevel }">
       <TreeProjectFiles :files="file.files" :indentLevel="indentLevel" />
     </template>
 
