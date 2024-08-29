@@ -101,7 +101,7 @@ func (f *File) CalculateInclusions() {
 	}
 }
 
-func (f *File) insert(root util.AbsolutePath, path util.AbsolutePath, matchList matcher.MatchList) (*File, error) {
+func (f *File) insert(root util.AbsolutePath, path util.AbsolutePath, match *matcher.Pattern) (*File, error) {
 
 	// if the path is the same as the file's absolute path
 	if f.Abs == path.String() {
@@ -122,8 +122,6 @@ func (f *File) insert(root util.AbsolutePath, path util.AbsolutePath, matchList 
 		}
 
 		// otherwise, create it
-		match := matchList.Match(path)
-
 		child, err := CreateFile(root, path, match)
 		if err != nil || child == nil {
 			return nil, err
@@ -135,11 +133,11 @@ func (f *File) insert(root util.AbsolutePath, path util.AbsolutePath, matchList 
 	}
 
 	// otherwise, create the parent file
-	parent, err := f.insert(root, pathdir, matchList)
+	parent, err := f.insert(root, pathdir, match)
 	if err != nil || parent == nil {
 		return nil, err
 	}
 
 	// then insert this into the parent
-	return parent.insert(root, path, matchList)
+	return parent.insert(root, path, match)
 }

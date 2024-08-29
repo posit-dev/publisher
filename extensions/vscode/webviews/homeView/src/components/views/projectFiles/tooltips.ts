@@ -13,6 +13,8 @@ export function excludedFileTooltip(file: ContentRecordFile) {
   if (file.reason) {
     if (file.reason.source === FileMatchSource.BUILT_IN) {
       tooltip += `\nThis is a built-in exclusion for the pattern: '${file.reason.pattern}' and cannot be overridden.`;
+    } else if (file.reason.source === FileMatchSource.PERMISSIONS_ERROR) {
+      tooltip += "\nYou don't have permission to access this directory.";
     } else {
       tooltip += `\nThe configuration file ${file.reason?.fileName} is excluding it with the pattern '${file.reason?.pattern}'`;
     }

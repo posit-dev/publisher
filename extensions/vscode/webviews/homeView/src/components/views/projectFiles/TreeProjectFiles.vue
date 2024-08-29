@@ -4,7 +4,10 @@
     :key="file.id"
     :title="file.base"
     :checked="isFileIncluded(file)"
-    :disabled="file.reason?.source === 'built-in'"
+    :disabled="
+      file.reason?.source === 'built-in' ||
+      file.reason?.source === 'permissions'
+    "
     :list-style="isFileIncluded(file) ? 'default' : 'deemphasized'"
     :tooltip="
       isFileIncluded(file)
