@@ -23,15 +23,27 @@
       <TreeProjectFiles :files="file.files" :indentLevel="indentLevel" />
     </template>
 
-    <template
-      #postDecor
-      v-if="
-        file.isFile &&
-        isFileIncluded(file) &&
-        !home.flatFiles.lastDeployedFiles.has(file.rel)
-      "
-    >
-      <PostDecor class="text-git-added">A</PostDecor>
+    <template #postDecor>
+      <PostDecor
+        v-if="
+          file.isFile &&
+          isFileIncluded(file) &&
+          !home.flatFiles.lastDeployedFiles.has(file.rel)
+        "
+        class="text-git-added"
+      >
+        A
+      </PostDecor>
+      <PostDecor
+        v-if="
+          file.isFile &&
+          !isFileIncluded(file) &&
+          home.flatFiles.lastDeployedFiles.has(file.rel)
+        "
+        class="text-git-deleted"
+      >
+        R
+      </PostDecor>
     </template>
   </TreeItemCheckbox>
 </template>
