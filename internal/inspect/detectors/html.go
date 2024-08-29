@@ -3,6 +3,8 @@ package detectors
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"fmt"
+
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/util"
 )
@@ -49,7 +51,7 @@ func (d *StaticHTMLDetector) InferType(base util.AbsolutePath, entrypoint util.R
 		cfg.Type = config.ContentTypeHTML
 		cfg.Entrypoint = relEntrypoint.String()
 		cfg.Files = []string{
-			relEntrypoint.String(),
+			fmt.Sprint("/", relEntrypoint.String()),
 		}
 		extraDirs := []string{"_site", relEntrypoint.WithoutExt().String() + "_files"}
 		for _, filename := range extraDirs {
@@ -59,7 +61,7 @@ func (d *StaticHTMLDetector) InferType(base util.AbsolutePath, entrypoint util.R
 				return nil, err
 			}
 			if exists {
-				cfg.Files = append(cfg.Files, filename)
+				cfg.Files = append(cfg.Files, fmt.Sprint("/", filename))
 			}
 		}
 		configs = append(configs, cfg)

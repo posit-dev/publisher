@@ -175,7 +175,7 @@ func (s *InitializeSuite) TestGetPossibleConfigs() {
 
 	s.Equal(config.ContentTypeHTML, configs[1].Type)
 	s.Equal("index.html", configs[1].Entrypoint)
-	s.Equal([]string{"index.html"}, configs[1].Files)
+	s.Equal([]string{"/index.html"}, configs[1].Files)
 	s.Nil(configs[1].Python)
 }
 
