@@ -4,7 +4,10 @@
     :key="file.id"
     :title="file.base"
     :checked="isFileIncluded(file)"
-    :disabled="file.reason?.source === 'built-in'"
+    :disabled="
+      file.reason?.source === 'built-in' ||
+      file.reason?.source === 'permissions'
+    "
     :list-style="isFileIncluded(file) ? 'default' : 'deemphasized'"
     :tooltip="
       isFileIncluded(file)
@@ -16,7 +19,7 @@
     @check="includeFile(file)"
     @uncheck="excludeFile(file)"
   >
-    <template v-if="file.files.length" #default="{ indentLevel }">
+    <template v-if="file.isDir" #default="{ indentLevel }">
       <TreeProjectFiles :files="file.files" :indentLevel="indentLevel" />
     </template>
 

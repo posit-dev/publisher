@@ -4,6 +4,7 @@ package matcher
 
 import (
 	"io/fs"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -105,6 +106,34 @@ func (s *WalkerSuite) TestWalk() {
 		dirPath.Join("included", "includeme").String(),
 		dirPath.Join("renv").String(),
 	}, seen)
+}
+
+func (s *WalkerSuite) TestWalkPermissionErr() {
+	afs := utiltest.NewMockFs()
+	baseDir := s.cwd.WithFs(afs)
+
+	// We can't traverse this directory because of permissions
+	afs.On("Open", baseDir.String()).Return(nil, os.ErrPermission)
+
+	// We can stat it though; fake with fileInfo from the real directory
+	fileInfo, err := s.cwd.Stat()
+	s.NoError(err)
+	afs.On("Stat", baseDir.String()).Return(fileInfo, nil)
+
+	w, err := NewMatchingWalker([]string{"*"}, s.cwd, logging.New())
+	s.NoError(err)
+	s.NotNil(w)
+
+	seen := []string{}
+	err = w.Walk(baseDir, func(path util.AbsolutePath, info fs.FileInfo, err error) error {
+		s.NoError(err)
+		relPath, err := path.Rel(s.cwd)
+		s.NoError(err)
+		seen = append(seen, relPath.String())
+		return nil
+	})
+	s.NoError(err)
+	s.Equal([]string{"."}, seen)
 }
 
 func (s *WalkerSuite) TestWalkSubdirectory() {

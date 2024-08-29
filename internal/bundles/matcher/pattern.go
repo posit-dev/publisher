@@ -11,6 +11,7 @@ import (
 type MatchSource string
 
 const MatchSourceFile MatchSource = "file"
+const MatchSourcePermissionsError MatchSource = "permissions"
 const MatchSourceBuiltIn MatchSource = "built-in"
 
 type Pattern struct {
