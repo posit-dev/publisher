@@ -521,6 +521,7 @@
     "async-mutex": "^0.5.0",
     "axios": "^1.7.4",
     "debounce": "^2.1.0",
+    "entities": "^5.0.0",
     "eventsource": "^2.0.2",
     "filenamify": "^6.0.0",
     "get-port": "5.1.1",
