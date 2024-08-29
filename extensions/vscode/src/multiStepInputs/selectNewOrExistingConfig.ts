@@ -32,7 +32,6 @@ import {
   isQuickPickItem,
   isQuickPickItemWithIndex,
 } from "src/multiStepInputs/multiStepHelper";
-import { untitledConfigurationName } from "src/utils/names";
 import { calculateTitle } from "src/utils/titles";
 import {
   filterInspectionResultsToType,
@@ -40,6 +39,7 @@ import {
 } from "src/utils/filters";
 import { showProgress } from "src/utils/progress";
 import { isRelativePathRoot } from "src/utils/files";
+import { newConfigFileNameFromTitle } from "src/utils/names";
 
 export async function selectNewOrExistingConfig(
   activeDeployment: ContentRecord | PreContentRecord,
@@ -216,15 +216,6 @@ export async function selectNewOrExistingConfig(
     },
   );
 
-  // wait for all of them to complete
-  const apisComplete = Promise.all([
-    getConfigurations,
-    getConfigurationInspections,
-  ]);
-
-  // Start the progress indicator and have it stop when the API calls are complete
-  showProgress("Initializing::selectNewOrExistingConfig", apisComplete, viewId);
-
   // ***************************************************************
   // Order of all steps
   // NOTE: This multi-stepper is used for multiple commands
@@ -387,14 +378,20 @@ export async function selectNewOrExistingConfig(
   }
 
   // ***************************************************************
-  // Wait for the api promise to complete
+  // Wait for the api promise to complete while showing progress
   // Kick off the input collection
   // and await until it completes.
   // This is a promise which returns the state data used to
   // collect the info.
   // ***************************************************************
+
   try {
-    await apisComplete;
+    await showProgress(
+      "Initializing::selectNewOrExistingConfig",
+      viewId,
+      async () =>
+        await Promise.all([getConfigurations, getConfigurationInspections]),
+    );
   } catch {
     // errors have already been displayed by the underlying promises..
     return;
@@ -436,8 +433,14 @@ export async function selectNewOrExistingConfig(
         );
         return;
       }
-      const configName = await untitledConfigurationName(
-        selectedInspectionResult.projectDir,
+
+      const existingNames = (
+        await api.configurations.getAll(selectedInspectionResult.projectDir)
+      ).data.map((config) => config.configurationName);
+
+      const configName = newConfigFileNameFromTitle(
+        state.data.title,
+        existingNames,
       );
       selectedInspectionResult.configuration.title = state.data.title;
       const createResponse = await api.configurations.createOrUpdate(

@@ -321,16 +321,15 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
     try {
-      const api = await useApi();
-      const apiRequest = api.files.updateFileList(
-        activeConfig.configurationName,
-        uri,
-        action,
-        activeConfig.projectDir,
-      );
-      showProgress("Updating File List", apiRequest, Views.HomeView);
-
-      await apiRequest;
+      await showProgress("Updating File List", Views.HomeView, async () => {
+        const api = await useApi();
+        await api.files.updateFileList(
+          activeConfig.configurationName,
+          `/${uri}`,
+          action,
+          activeConfig.projectDir,
+        );
+      });
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
         "homeView::updateFileList",
@@ -366,9 +365,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
   private async refreshContentRecordData() {
     try {
-      const refresh = this.state.refreshContentRecords();
-      showProgress("Refreshing Deployments", refresh, Views.HomeView);
-      await refresh;
+      await showProgress(
+        "Refreshing Deployments",
+        Views.HomeView,
+        async () => await this.state.refreshContentRecords(),
+      );
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
         "refreshContentRecordData::contentRecords.getAll",
@@ -381,9 +382,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
   private async refreshConfigurationData() {
     try {
-      const refresh = this.state.refreshConfigurations();
-      showProgress("Refreshing Configurations", refresh, Views.HomeView);
-      await refresh;
+      await showProgress(
+        "Refreshing Configurations",
+        Views.HomeView,
+        async () => await this.state.refreshConfigurations(),
+      );
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
         "Internal Error: refreshConfigurationData::configurations.getAll",
@@ -401,9 +404,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
   private async refreshCredentialData() {
     try {
-      const refresh = this.state.refreshCredentials();
-      showProgress("Refreshing Credentials", refresh, Views.HomeView);
-      await refresh;
+      await showProgress(
+        "Refreshing Credentials",
+        Views.HomeView,
+        async () => await this.state.refreshCredentials(),
+      );
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
         "Internal Error: refreshCredentialData::credentials.list",
@@ -502,17 +507,17 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           packageFile = pythonSection.packageFile;
           packageMgr = pythonSection.packageManager;
 
-          const apiRequest = api.packages.getPythonPackages(
-            activeConfiguration.configurationName,
-            activeConfiguration.projectDir,
-          );
-          showProgress(
+          const response = await showProgress(
             "Refreshing Python Packages",
-            apiRequest,
             Views.HomeView,
+            async () => {
+              return await api.packages.getPythonPackages(
+                activeConfiguration.configurationName,
+                activeConfiguration.projectDir,
+              );
+            },
           );
 
-          const response = await apiRequest;
           packages = response.data.requirements;
         } catch (error: unknown) {
           if (isAxiosError(error) && error.response?.status === 404) {
@@ -570,13 +575,16 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           packageFile = rSection.packageFile;
           packageMgr = rSection.packageManager;
 
-          const apiRequest = api.packages.getRPackages(
-            activeConfiguration.configurationName,
-            activeConfiguration.projectDir,
+          const response = await showProgress(
+            "Refreshing R Packages",
+            Views.HomeView,
+            async () =>
+              await api.packages.getRPackages(
+                activeConfiguration.configurationName,
+                activeConfiguration.projectDir,
+              ),
           );
-          showProgress("Refreshing R Packages", apiRequest, Views.HomeView);
 
-          const response = await apiRequest;
           packages = [];
           Object.keys(response.data.packages).forEach((key: string) =>
             packages.push(response.data.packages[key]),
@@ -668,25 +676,26 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
 
     try {
-      const api = await useApi();
-      const python = await getPythonInterpreterPath();
-      const apiRequest = api.packages.createPythonRequirementsFile(
-        activeConfiguration.projectDir,
-        python,
-        relPathPackageFile,
-      );
-      showProgress(
+      const response = await showProgress(
         "Refreshing Python Requirements File",
-        apiRequest,
         Views.HomeView,
+        async () => {
+          const api = await useApi();
+          const python = await getPythonInterpreterPath();
+          return await api.packages.createPythonRequirementsFile(
+            activeConfiguration.projectDir,
+            python,
+            relPathPackageFile,
+          );
+        },
       );
 
-      const response = (await apiRequest).data;
+      const data = response.data;
       await commands.executeCommand("vscode.open", fileUri);
 
-      if (response.incomplete.length > 0) {
-        const importList = response.incomplete.join(", ");
-        const msg = `Could not find installed packages for some imports using ${response.python}. Install the required packages, or select a different interpreter, and try scanning again. Imports: ${importList}`;
+      if (data.incomplete.length > 0) {
+        const importList = data.incomplete.join(", ");
+        const msg = `Could not find installed packages for some imports using ${data.python}. Install the required packages, or select a different interpreter, and try scanning again. Imports: ${importList}`;
         window.showWarningMessage(msg);
       }
     } catch (error: unknown) {
@@ -734,14 +743,17 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
 
     try {
-      const api = await useApi();
-      const apiRequest = api.packages.createRRequirementsFile(
-        activeConfiguration.projectDir,
-        relPathPackageFile,
+      await showProgress(
+        "Creating R Requirements File",
+        Views.HomeView,
+        async () => {
+          const api = await useApi();
+          return await api.packages.createRRequirementsFile(
+            activeConfiguration.projectDir,
+            relPathPackageFile,
+          );
+        },
       );
-      showProgress("Creating R Requirements File", apiRequest, Views.HomeView);
-
-      await apiRequest;
       await commands.executeCommand("vscode.open", fileUri);
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
@@ -788,15 +800,14 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         await this.state.getSelectedConfiguration(),
       );
       if (config) {
-        const api = await useApi();
-        const apiRequest = api.contentRecords.patch(
-          targetContentRecord.deploymentName,
-          config.configurationName,
-          targetContentRecord.projectDir,
-        );
-        showProgress("Updating Config", apiRequest, Views.HomeView);
-
-        await apiRequest;
+        await showProgress("Updating Config", Views.HomeView, async () => {
+          const api = await useApi();
+          await api.contentRecords.patch(
+            targetContentRecord.deploymentName,
+            config.configurationName,
+            targetContentRecord.projectDir,
+          );
+        });
 
         // now select the new, updated or existing deployment
         const deploymentSelector: DeploymentSelector = {
@@ -1283,15 +1294,15 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     includeSavedState?: boolean,
   ) => {
     try {
-      const apis: Promise<void>[] = [this.refreshCredentialData()];
-      if (forceAll) {
-        // we have been told to refresh everything
-        apis.push(this.refreshContentRecordData());
-        apis.push(this.refreshConfigurationData());
-      }
-      const allApis = Promise.all(apis);
-      showProgress("Refreshing Data", allApis, Views.HomeView);
-      await allApis;
+      await showProgress("Refreshing Data", Views.HomeView, async () => {
+        const apis: Promise<void>[] = [this.refreshCredentialData()];
+        if (forceAll) {
+          // we have been told to refresh everything
+          apis.push(this.refreshContentRecordData());
+          apis.push(this.refreshConfigurationData());
+        }
+        return await Promise.all(apis);
+      });
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
         "refreshAll::Promise.all",
@@ -1346,17 +1357,20 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   };
 
   public sendRefreshedFilesLists = async () => {
-    const api = await useApi();
     const activeConfig = await this.state.getSelectedConfiguration();
     if (activeConfig) {
       try {
-        const apiRequest = api.files.getByConfiguration(
-          activeConfig.configurationName,
-          activeConfig.projectDir,
+        const response = await showProgress(
+          "Refreshing Files",
+          Views.HomeView,
+          async () => {
+            const api = await useApi();
+            return await api.files.getByConfiguration(
+              activeConfig.configurationName,
+              activeConfig.projectDir,
+            );
+          },
         );
-        showProgress("ReFreshing Files", apiRequest, Views.HomeView);
-
-        const response = await apiRequest;
 
         this.webviewConduit.sendMsg({
           kind: HostToWebviewMessageType.REFRESH_FILES,
@@ -1388,7 +1402,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     );
   }
 
-  public async handleFileInitiatedDeployment(uri: Uri) {
+  public async handleFileInitiatedDeploymentSelection(uri: Uri) {
     // Guide the user to create a new Deployment with that file as the entrypoint
     // if one doesn’t exist
     // Select the Deployment with an active configuration for that entrypoint if there
@@ -1399,7 +1413,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const entrypointDir = relativeDir(uri);
     // If the file is outside the workspace, it cannot be an entrypoint
     if (entrypointDir === undefined) {
-      return false;
+      return undefined;
     }
     const entrypointFile = uriUtils.basename(uri);
 
@@ -1428,7 +1442,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         });
       } catch (error: unknown) {
         const summary = getSummaryStringFromError(
-          "handleFileInitiatedDeployment, contentRecords.getAll",
+          "handleFileInitiatedDeploymentSelection, contentRecords.getAll",
           error,
         );
         window.showInformationMessage(
@@ -1454,7 +1468,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         });
       } catch (error: unknown) {
         const summary = getSummaryStringFromError(
-          "handleFileInitiatedDeployment, configurations.getAll",
+          "handleFileInitiatedDeploymentSelection, configurations.getAll",
           error,
         );
         window.showErrorMessage(
@@ -1465,16 +1479,14 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       resolve();
     });
 
-    const apisComplete = Promise.all([getContentRecords, getConfigurations]);
-
-    showProgress(
-      "Initializing::handleFileInitiatedDeployment",
-      apisComplete,
-      Views.HomeView,
-    );
-
     try {
-      await apisComplete;
+      await showProgress(
+        "Initializing::handleFileInitiatedDeployment",
+        Views.HomeView,
+        async () => {
+          return await Promise.all([getContentRecords, getConfigurations]);
+        },
+      );
     } catch {
       // errors have already been displayed by the underlying promises..
       return undefined;
@@ -1498,11 +1510,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         entrypointDir,
         entrypointFile,
       );
-      // we do not publish this, as we expect the user needs
-      // to validate and update config settings.
       return selected;
     }
-    // only one deployment, just publish it
+    // only one deployment, just select it
     if (compatibleContentRecords.length === 1) {
       const contentRecord = compatibleContentRecords[0];
       const deploymentSelector: DeploymentSelector = {
@@ -1527,7 +1537,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
             contentRecord.serverUrl,
           );
           if (!credentialName) {
-            return;
+            return undefined;
           }
         } finally {
           // enable our home view, we are done with our sequence
@@ -1543,8 +1553,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         configurationName: contentRecord.configurationName,
         credentialName,
       };
-      // publish!
-      return this.initiatePublish(target);
+      return target;
     }
     // if there are multiple compatible deployments, then make sure one of these isn't
     // already selected. If it is, do nothing, otherwise pick between the compatible ones.
@@ -1560,11 +1569,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         compatibleContentRecords,
         entrypointDir,
       );
-      if (selected) {
-        // publish!
-        return this.initiatePublish(selected);
-      }
-      return false;
+      return selected;
     }
     // compatible content record already active. Publish
     const credential =
@@ -1576,7 +1581,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         currentContentRecord.serverUrl,
       );
       if (!credentialName) {
-        return;
+        return undefined;
       }
     }
     const target: PublishProcessParams = {
@@ -1586,7 +1591,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       credentialName,
       configurationName: currentContentRecord.configurationName,
     };
-    return this.initiatePublish(target);
+    return target;
   }
 
   /**
@@ -1673,7 +1678,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           if (config) {
             return await commands.executeCommand(
               "vscode.open",
-              Uri.parse(config.configurationPath),
+              Uri.file(config.configurationPath),
             );
           }
           console.error(

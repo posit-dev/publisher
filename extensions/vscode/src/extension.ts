@@ -85,7 +85,7 @@ export async function activate(context: ExtensionContext) {
     new DocumentTracker(),
     commands.registerCommand(Commands.DeployWithEntrypoint, (uri: Uri) => {
       commands.executeCommand(Commands.HomeView.Focus);
-      homeViewProvider.handleFileInitiatedDeployment(uri);
+      homeViewProvider.handleFileInitiatedDeploymentSelection(uri);
     }),
   );
 }

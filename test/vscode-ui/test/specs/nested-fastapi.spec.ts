@@ -13,6 +13,8 @@ const apiKey = process.env.CONNECT_API_KEY;
 
 const sep = path.sep;
 
+const title = "my fastapi app";
+
 describe("Nested Fast API Deployment", () => {
   let workbench: any;
   let input: any;
@@ -32,6 +34,7 @@ describe("Nested Fast API Deployment", () => {
   });
 
   it("can add deployment", async () => {
+    await helper.switchToSubframe();
     await helper.switchToSubframe();
     // initialize project via button
     const selectButton = (await $('[data-automation="select-deployment"]')).$(
@@ -137,12 +140,14 @@ describe("Nested Fast API Deployment", () => {
 
     // wait until the server responds
     await helper.waitForInputFields("The API key to be used");
+    await helper.waitForInputFields("The API key to be used");
 
     //set api key
     await input.setValue(apiKey);
     await browser.keys("\uE007");
 
     // wait for server validation
+    await helper.waitForInputFields("Enter a Unique Nickname");
     await helper.waitForInputFields("Enter a Unique Nickname");
 
     // set server name

@@ -30,27 +30,6 @@ export async function newCredential(
   const api = await useApi();
   let credentials: Credential[] = [];
 
-  const getCredentials = new Promise<void>(async (resolve, reject) => {
-    try {
-      const response = await api.credentials.list();
-      if (response.data) {
-        credentials = response.data;
-      }
-    } catch (error: unknown) {
-      const summary = getSummaryStringFromError(
-        "newCredentials, credentials.list",
-        error,
-      );
-      window.showInformationMessage(
-        `Unable to query existing credentials. ${summary}`,
-      );
-      return reject();
-    }
-    return resolve();
-  });
-
-  showProgress("Initializing::newCredential", getCredentials, viewId);
-
   // ***************************************************************
   // Order of all steps
   // ***************************************************************
@@ -302,19 +281,27 @@ export async function newCredential(
   }
 
   // ***************************************************************
-  // Wait for the api promise to complete
+  // Wait for the api promise to complete while showing progress
   // Kick off the input collection
   // and await until it completes.
   // This is a promise which returns the state data used to
   // collect the info.
   // ***************************************************************
-
   try {
-    await getCredentials;
-  } catch {
-    // errors have already been displayed by the underlying promises..
-    return;
+    await showProgress("Initializing::newCredential", viewId, async () => {
+      const response = await api.credentials.list();
+      credentials = response.data;
+    });
+  } catch (error: unknown) {
+    const summary = getSummaryStringFromError(
+      "newCredentials, credentials.list",
+      error,
+    );
+    window.showInformationMessage(
+      `Unable to query existing credentials. ${summary}`,
+    );
   }
+
   const state = await collectInputs();
 
   // make sure user has not hit escape or moved away from the window
