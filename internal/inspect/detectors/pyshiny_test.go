@@ -3,6 +3,7 @@ package detectors
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/posit-dev/publisher/internal/config"
@@ -41,7 +42,7 @@ func (s *PyShinySuite) TestInferType() {
 		Type:       config.ContentTypePythonShiny,
 		Entrypoint: filename,
 		Validate:   true,
-		Files:      []string{filename},
+		Files:      []string{fmt.Sprintf("/%s", filename)},
 		Python:     &config.Python{},
 	}, configs[0])
 }
@@ -66,7 +67,7 @@ func (s *PyShinySuite) TestInferTypeShinyExpress() {
 		Type:       config.ContentTypePythonShiny,
 		Entrypoint: "shiny.express.app:app_2e_py",
 		Validate:   true,
-		Files:      []string{filename},
+		Files:      []string{fmt.Sprintf("/%s", filename)},
 		Python:     &config.Python{},
 	}, configs[0])
 }
@@ -95,7 +96,7 @@ func (s *PyShinySuite) TestInferTypeWithEntrypoint() {
 		Type:       config.ContentTypePythonShiny,
 		Entrypoint: filename,
 		Validate:   true,
-		Files:      []string{filename},
+		Files:      []string{fmt.Sprintf("/%s", filename)},
 		Python:     &config.Python{},
 	}, configs[0])
 }
@@ -123,7 +124,7 @@ func (s *PyShinySuite) TestInferTypeWithExtraFile() {
 		Type:       config.ContentTypePythonShiny,
 		Entrypoint: filename,
 		Validate:   true,
-		Files:      []string{filename},
+		Files:      []string{fmt.Sprintf("/%s", filename)},
 		Python:     &config.Python{},
 	}, configs[0])
 }

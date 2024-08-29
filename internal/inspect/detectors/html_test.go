@@ -3,6 +3,7 @@ package detectors
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/posit-dev/publisher/internal/config"
@@ -46,14 +47,14 @@ func (s *StaticHTMLDetectorSuite) TestInferType() {
 		Type:       config.ContentTypeHTML,
 		Entrypoint: filename,
 		Validate:   true,
-		Files:      []string{filename},
+		Files:      []string{fmt.Sprintf("/%s", filename)},
 	}, configs[0])
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeHTML,
 		Entrypoint: otherFilename,
 		Validate:   true,
-		Files:      []string{otherFilename},
+		Files:      []string{fmt.Sprintf("/%s", otherFilename)},
 	}, configs[1])
 }
 
@@ -83,6 +84,6 @@ func (s *StaticHTMLDetectorSuite) TestInferTypeWithEntrypoint() {
 		Type:       config.ContentTypeHTML,
 		Entrypoint: otherFilename,
 		Validate:   true,
-		Files:      []string{otherFilename},
+		Files:      []string{fmt.Sprintf("/%s", otherFilename)},
 	}, configs[0])
 }
