@@ -36,9 +36,11 @@
         class="deployment-details-container"
       >
         <div class="deployment-details-row">
-          <span class="deployment-details-label">{{
-            home.selectedConfiguration.configuration.entrypoint
-          }}</span>
+          <span
+            class="deployment-details-label"
+            data-automation="entrypoint-label"
+            >{{ home.selectedConfiguration.configuration.entrypoint }}</span
+          >
           <span class="deployment-details-info"> (selected as entrypoint)</span>
         </div>
       </div>

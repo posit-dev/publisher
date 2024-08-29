@@ -12,9 +12,7 @@ const connectServer = process.env.CONNECT_SERVER;
 const apiKey = process.env.CONNECT_API_KEY;
 
 const sep = path.sep;
-
 const title = "my fastapi app";
-
 describe("Nested Fast API Deployment", () => {
   let workbench: any;
   let input: any;
@@ -34,7 +32,6 @@ describe("Nested Fast API Deployment", () => {
   });
 
   it("can add deployment", async () => {
-    await helper.switchToSubframe();
     await helper.switchToSubframe();
     // initialize project via button
     const selectButton = (await $('[data-automation="select-deployment"]')).$(
@@ -131,7 +128,7 @@ describe("Nested Fast API Deployment", () => {
     // await input.waitForExist({ timeout: 30000 });
 
     // set title
-    await input.setValue("my fastapi app");
+    await input.setValue(title);
     await browser.keys("\uE007");
 
     // set server url
@@ -166,6 +163,67 @@ describe("Nested Fast API Deployment", () => {
     await expect(fileContent).toContain(
       "type = 'python-fastapi'\nentrypoint = 'simple.py'\nvalidate = true\nfiles = [\n  '/simple.py',\n  '/requirements.txt'\n]\ntitle = 'my fastapi app'",
     );
+    // close editor
+    await workbench.getEditorView().closeEditor(realFilename);
+  });
+
+  it("can click +", async () => {
+    await helper.switchToSubframe();
+    // initialize project via button
+    const addDeployment = await $("aria/Add Deployment");
+    // await expect(addDeployment).toHaveText("Select...");
+    await addDeployment.click();
+
+    // switch out of iframe
+    await browser.switchToFrame(null);
+
+    // verify Create New Deployment message displays and select it
+    const createMessage = await browser.$(".quick-input-title");
+    await expect(createMessage).toHaveText("Create a New Deployment");
+    await createMessage.click();
+
+    // verify each entrypoint is found and listed
+    const quickpick = await browser.$(".quick-input-list");
+    await quickpick.waitForExist({ timeout: 30000 });
+    await browser.keys("\uE00C");
+  });
+
+  it("can click edit", async () => {
+    await helper.switchToSubframe();
+    // initialize project via button
+    const editConfig = await $("aria/Edit Configuration");
+    await editConfig.click();
+    await browser.switchToFrame(null);
+    const realFilename = await helper.getConfigTitle(/^my fastapi app-.*$/);
+    expect(await workbench.getEditorView().getOpenEditorTitles()).toContain(
+      realFilename,
+    );
+    // close editor
+    await workbench.getEditorView().closeEditor(realFilename);
+  });
+
+  it("can click more deloyment actions", async () => {
+    await helper.switchToSubframe();
+    const deploymentActions = await $("aria/Deployment actions");
+    await deploymentActions.click();
+    // cannot access the menu here in wdio
+    // exit menu
+    await browser.keys("\uE00C");
+  });
+
+  it("can confirm Deployment Title", async () => {
+    const deployment = await $(".quick-pick-label");
+    await expect(deployment).toHaveText(title);
+  });
+
+  it("can confirm Deployment Credentails", async () => {
+    const deployment = await $(".quick-pick-detail");
+    await expect(deployment).toHaveText("my connect server");
+  });
+
+  it("can confirm Deployment Details", async () => {
+    const deploymentName = await $('[data-automation="entrypoint-label"]');
+    await expect(deploymentName).toHaveText("simple.py");
   });
 
   // cleanup

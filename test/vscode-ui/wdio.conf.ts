@@ -47,7 +47,7 @@ export const config: Options.Testrunner = {
   suites: {
     nested: [
       "./test/specs/nested-fastapi.spec.ts",
-      "./test/specs/nested-webview.spec.ts",
+      // "./test/specs/nested-webview.spec.ts",
     ],
   },
   //
