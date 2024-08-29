@@ -1,11 +1,15 @@
 This page walks you through installation options for Posit Publisher.
 
-## Installation for VSCode
+## Installation for VS Code
 
-The VSCode extension package includes everything you need to get started within
-VSCode.
+[Install via the Visual Studio Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Posit.publisher)
 
-Download and install the VSCode extension.
+or searching "Posit Publisher" in the VS Code Extensions view and clicking
+Install.
+
+### Manual Installation
+
+Download and install the VS Code extension.
 
 - For Arm MacOS: [publisher-1.1.6-darwin-arm64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.1.6/publisher-1.1.6-darwin-arm64.vsix)
 - For Intel MacOS: [publisher-1.1.6-darwin-amd64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.1.6/publisher-1.1.6-darwin-amd64.vsix)
@@ -17,7 +21,7 @@ To learn how to install a `.vsix` file, see the [Install from a
 VSIX](https://code.visualstudio.com/docs/editor/extension-marketplace#_install-from-a-vsix)
 guide from Visual Studio Code.
 
-## Quick install and updates
+### Quick install and updates
 
 We have updates scripts for macOS and linux to download and install the latest version of the publisher:
 
