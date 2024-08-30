@@ -4,6 +4,7 @@
     :key="file.id"
     :title="file.base"
     :checked="isFileIncluded(file)"
+    :indeterminate="isFileIndeterminate(file)"
     :disabled="
       file.reason?.source === 'built-in' ||
       file.reason?.source === 'permissions'
@@ -60,7 +61,7 @@ import { useHostConduitService } from "src/HostConduitService";
 import PostDecor from "src/components/tree/PostDecor.vue";
 import { ActionButton } from "src/components/ActionToolbar.vue";
 
-import { ContentRecordFile, FileMatchSource } from "../../../../../../src/api";
+import { ContentRecordFile } from "../../../../../../src/api";
 import { WebviewToHostMessageType } from "../../../../../../src/types/messages/webviewToHostMessages";
 
 interface Props {
@@ -114,5 +115,21 @@ const fileActions = (file: ContentRecordFile): ActionButton[] => {
   }
 
   return actions;
+};
+
+const isFileIndeterminate = (file: ContentRecordFile) => {
+  if (!file.isDir) {
+    return false;
+  }
+
+  if (isFileIncluded(file)) {
+    return file.allIncluded ? false : true;
+  }
+
+  if (file.allExcluded) {
+    return false;
+  }
+
+  return true;
 };
 </script>
