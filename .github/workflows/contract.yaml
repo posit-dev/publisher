@@ -103,12 +103,16 @@ jobs:
           sparse-checkout: bundles
           sparse-checkout-cone-mode: false
           token: ${{ secrets.CONNECT_PAT }}
+      - uses: actions/cache/restore@v4
+        id: cache
+        with:
+          path: ./extensions/vscode/.vscode-test/vscode-*
 
       - run: chmod -R +x ./bin
       - run: echo "${FUZZBUCKET_SSH_KEY}" > test/fuzzbucket-ssh-key && chmod 600 test/fuzzbucket-ssh-key
 
       # vscode ui tests
-      - run: just package
+      # - run: just package
       - run: just vscode configure
       - run: just vscode-ui install
 

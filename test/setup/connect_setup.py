@@ -70,7 +70,7 @@ def connect_ready(box_name, max_attempts, interval):
                     logging.info("Installing Connect on " + connect_box)
                     # kill any apt locks before installing Connect
                     try:
-                        subprocess.check_output("fuzzbucket-client ssh " + box_name + " " + ssh_options + " sudo lsof -t /var/lib/apt/lists/lock | xargs kill", shell=True, text=True)
+                        subprocess.check_output("fuzzbucket-client ssh -q " + box_name + " " + ssh_options + " sudo lsof -t /var/lib/apt/lists/lock | xargs kill", shell=True, text=True)
                     except subprocess.CalledProcessError as e:
                         logging.warning(f"Command failed: {e}")
                     subprocess.check_output(install_connect, shell=True, text=True)
