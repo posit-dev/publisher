@@ -107,6 +107,7 @@ jobs:
         id: cache
         with:
           path: ./extensions/vscode/.vscode-test/vscode-*
+          key: ${{ matrix.runner }}-vscode-${{ env.VSCODE_VERSION }}-${{ steps.get-date.outputs.date }}
 
       - run: chmod -R +x ./bin
       - run: echo "${FUZZBUCKET_SSH_KEY}" > test/fuzzbucket-ssh-key && chmod 600 test/fuzzbucket-ssh-key
