@@ -228,38 +228,38 @@ describe("Nested Fast API Deployment", () => {
 
   // cleanup
   after(async () => {
-    // const parentDir = path.resolve(
-    //   __dirname,
-    //   "../../../sample-content/fastapi-simple",
-    // );
-    // const positDir = path.join(parentDir, ".posit");
-    // // Log the contents of the parent directory
-    // console.log(fs.readdirSync(parentDir));
-    // // Check if the directory exists before trying to delete it
-    // if (fs.existsSync(positDir)) {
-    //   // Get the files in the directory
-    //   const files = fs.readdirSync(positDir);
-    //   // Delete each file in the directory
-    //   for (const file of files) {
-    //     const filePath = path.join(positDir, file);
-    //     if (fs.lstatSync(filePath).isDirectory()) {
-    //       fs.rmdirSync(filePath, { recursive: true }); // Delete directory recursively
-    //     } else {
-    //       fs.unlinkSync(filePath); // Delete file
-    //     }
-    //   }
-    //   // Delete the directory
-    //   fs.rmdirSync(positDir);
-    // } else {
-    //   console.log("Directory does not exist");
-    // }
+    const parentDir = path.resolve(
+      __dirname,
+      "../../../sample-content/fastapi-simple",
+    );
+    const positDir = path.join(parentDir, ".posit");
+    // Log the contents of the parent directory
+    console.log(fs.readdirSync(parentDir));
+    // Check if the directory exists before trying to delete it
+    if (fs.existsSync(positDir)) {
+      // Get the files in the directory
+      const files = fs.readdirSync(positDir);
+      // Delete each file in the directory
+      for (const file of files) {
+        const filePath = path.join(positDir, file);
+        if (fs.lstatSync(filePath).isDirectory()) {
+          fs.rmdirSync(filePath, { recursive: true }); // Delete directory recursively
+        } else {
+          fs.unlinkSync(filePath); // Delete file
+        }
+      }
+      // Delete the directory
+      fs.rmdirSync(positDir);
+    } else {
+      console.log("Directory does not exist");
+    }
     // Use shell script to delete credentials
-    // describe("Cleanup creds", () => {
-    //   it("remove credentials", async () => {
-    //     let scriptPath: string;
-    //     scriptPath = "cd ../scripts && bash cleanup.bash";
-    //     await runShellScript(scriptPath);
-    //   });
-    // });
+    describe("Cleanup creds", () => {
+      it("remove credentials", async () => {
+        let scriptPath: string;
+        scriptPath = "cd ../scripts && bash cleanup.bash";
+        await helper.runShellScript(scriptPath);
+      });
+    });
   });
 });
