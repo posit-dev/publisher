@@ -20,6 +20,8 @@ export type ContentRecordFile = {
   size: number;
   fileCount: number;
   abs: string;
+  allIncluded: boolean;
+  allExcluded: boolean;
 };
 
 export enum FileMatchSource {
