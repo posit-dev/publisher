@@ -29,6 +29,7 @@
       <vscode-checkbox
         :checked="checked"
         :disabled="disabled"
+        :indeterminate="indeterminate"
         class="tree-item-checkbox"
         @click="checked ? $emit('uncheck') : $emit('check')"
       >
@@ -61,6 +62,7 @@ const expanded = defineModel("expanded", { required: false, default: false });
 interface Props {
   title: string;
   checked: boolean;
+  indeterminate?: boolean;
   disabled?: boolean;
   listStyle?: TreeItemStyle;
   description?: string;
