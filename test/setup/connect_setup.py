@@ -68,6 +68,11 @@ def connect_ready(box_name, max_attempts, interval):
                     update_config="fuzzbucket-client ssh " + box_name + " " + ssh_options + " sudo sed -i 's/CONNECT_IP/" + connect_box + "/g' /etc/rstudio-connect/rstudio-connect.gcfg"
                     restart_connect = "fuzzbucket-client ssh " + box_name + " " + ssh_options + " sudo systemctl restart rstudio-connect"
                     logging.info("Installing Connect on " + connect_box)
+                    # kill any apt locks before installing Connect
+                    try:
+                        subprocess.check_output("fuzzbucket-client ssh " + box_name + " " + ssh_options + " sudo lsof -t /var/lib/apt/lists/lock | xargs kill", shell=True, text=True)
+                    except subprocess.CalledProcessError as e:
+                        logging.warning(f"Command failed: {e}")
                     subprocess.check_output(install_connect, shell=True, text=True)
                     subprocess.check_output(update_config, shell=True, text=True)
                     subprocess.check_output(restart_connect, shell=True, text=True)
@@ -81,13 +86,7 @@ def connect_ready(box_name, max_attempts, interval):
 
 api_key=get_api_key('admin')
 connect_version=get_connect_version()
-install_connect = """
-while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 || fuser /var/lib/dpkg/lock >/dev/null 2>&1; do
-    echo "Waiting for package manager lock to be released...";
-    sleep 5;
-done;
-fuzzbucket-client ssh {box_name} {ssh_options} sudo -E UNATTENDED=1 bash installer-ci.sh -d {connect_version}
-""".format(box_name=box_name, ssh_options=ssh_options, connect_version=connect_version)
+install_connect = "fuzzbucket-client ssh " + box_name + " " + ssh_options + " sudo -E UNATTENDED=1 bash installer-ci.sh -d " + connect_version
 
 response = connect_ready(box_name, 20, 5)
 
