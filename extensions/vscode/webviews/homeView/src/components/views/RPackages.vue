@@ -1,5 +1,9 @@
 <template>
-  <TreeSection title="R Packages" :actions="rPackageActions">
+  <TreeSection
+    title="R Packages"
+    data-automation="r-packages"
+    :actions="rPackageActions"
+  >
     <WelcomeView v-if="showWelcomeView">
       <template v-if="showScanWelcomeView">
         <p>

@@ -121,7 +121,10 @@
         </div>
       </div>
       <div v-else>
-        <div class="deployment-summary-container">
+        <div
+          class="deployment-summary-container"
+          data-automation="deploy-status"
+        >
           <h4 class="deployment-summary">
             {{ lastStatusDescription }}
           </h4>

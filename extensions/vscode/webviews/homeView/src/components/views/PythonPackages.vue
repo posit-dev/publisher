@@ -1,5 +1,9 @@
 <template>
-  <TreeSection title="Python Packages" :actions="pythonPackageActions">
+  <TreeSection
+    title="Python Packages"
+    data-automation="python-packages"
+    :actions="pythonPackageActions"
+  >
     <WelcomeView v-if="showWelcomeView">
       <template v-if="showScanWelcomeView">
         <p>

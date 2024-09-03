@@ -1,5 +1,9 @@
 <template>
-  <TreeSection title="Credentials" :actions="sectionActions">
+  <TreeSection
+    title="Credentials"
+    data-automation="credentials"
+    :actions="sectionActions"
+  >
     <WelcomeView v-if="home.sortedCredentials.length === 0">
       <p>No credentials have been added yet.</p>
     </WelcomeView>

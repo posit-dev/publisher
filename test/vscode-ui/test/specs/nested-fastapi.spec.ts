@@ -185,6 +185,7 @@ describe("Nested Fast API Deployment", () => {
     // verify each entrypoint is found and listed
     const quickpick = await browser.$(".quick-input-list");
     await quickpick.waitForExist({ timeout: 30000 });
+    // esc
     await browser.keys("\uE00C");
   });
 
@@ -226,6 +227,40 @@ describe("Nested Fast API Deployment", () => {
     await expect(deploymentName).toHaveText("simple.py");
   });
 
+  it("can confirm Deployment Status", async () => {
+    // const deploymentStatus = await $('.deployment-summary');
+    const deploymentStatus = await $('[data-automation="deploy-status"]');
+    await expect(deploymentStatus).toHaveText("Not Yet Deployed");
+  });
+
+  it("can verify Project Files", async () => {
+    // const deploymentStatus = await $('.deployment-summary');
+    const deploymentStatus = await $('[data-automation="deploy-status"]');
+    await expect(deploymentStatus).toHaveText("Not Yet Deployed");
+    const reqFile = await $("aria/requirements.txt");
+    await expect(reqFile).toExist();
+    const simpleFile = await $("aria/simple.py");
+    await expect(simpleFile).toExist();
+    const reqFileDecorator = await $(
+      '[data-automation="requirements.txt-decorator"]',
+    );
+    await expect(reqFileDecorator).toHaveText("A");
+    const simpleFileDecorator = await $(
+      '[data-automation="simple.py-decorator"]',
+    );
+    await expect(simpleFileDecorator).toHaveText("A");
+  });
+
+  it("can verify Python Packages", async () => {
+    const pythonPackages = await $('[data-automation="python-packages"]');
+    await pythonPackages.click();
+    const reqfastapi = await $('[data-automation="req-fastapi"]');
+    await expect(reqfastapi).toHaveText("fastapi");
+  });
+
+  // it("can verify R Project Files", async () => {
+
+  // });
   // cleanup
   after(async () => {
     const parentDir = path.resolve(

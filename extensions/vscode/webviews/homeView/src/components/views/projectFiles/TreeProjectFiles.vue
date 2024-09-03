@@ -28,7 +28,11 @@
         !home.flatFiles.lastDeployedFiles.has(file.rel)
       "
     >
-      <PostDecor class="text-git-added">A</PostDecor>
+      <PostDecor
+        class="text-git-added"
+        :data-automation="`${file.id}-decorator`"
+        >A</PostDecor
+      >
     </template>
   </TreeItemCheckbox>
 </template>

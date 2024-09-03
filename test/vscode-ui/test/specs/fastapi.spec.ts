@@ -30,7 +30,7 @@ describe("VS Code Extension UI Test", () => {
     await extension.click();
   });
 
-  it("can click add deployment button", async () => {
+  it("can click select button", async () => {
     await helper.switchToSubframe();
     // initialize project via button
     const selectButton = (await $('[data-automation="select-deployment"]')).$(
