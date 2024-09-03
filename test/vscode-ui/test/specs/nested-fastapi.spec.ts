@@ -258,9 +258,36 @@ describe("Nested Fast API Deployment", () => {
     await expect(reqfastapi).toHaveText("fastapi");
   });
 
-  // it("can verify R Project Files", async () => {
+  it("can edit python packages file", async () => {
+    const editPackages = await $("aria/Edit Package Requirements File");
+    await editPackages.click();
+    // exit iFrame to focus on editor
+    await browser.switchToFrame(null);
+    expect(await workbench.getEditorView().getOpenEditorTitles()).toContain(
+      "requirements.txt",
+    );
+  });
 
-  // });
+  it("can verify R Packages", async () => {
+    await helper.switchToSubframe();
+    const pythonPackages = await $('[data-automation="r-packages"]');
+    await pythonPackages.click();
+    const notConfigured = await $('[data-automation="r-not-configured"]');
+    await expect(notConfigured).toHaveText(
+      "This project is not configured to use R. To configure R, add an [r] section to your configuration file.",
+    );
+  });
+
+  it("can list creds", async () => {
+    const creds = await $('[data-automation="credentials"]');
+    await creds.click();
+    const credentialList = await $(
+      '[data-automation="my connect server-list"]',
+    );
+    await expect(credentialList).toHaveText(
+      "my connect server" + process.env.CONNECT_SERVER,
+    );
+  });
   // cleanup
   after(async () => {
     const parentDir = path.resolve(

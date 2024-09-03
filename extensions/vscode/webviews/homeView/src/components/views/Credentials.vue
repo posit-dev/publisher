@@ -12,6 +12,7 @@
       v-for="credential in home.sortedCredentials"
       :title="credential.name"
       :description="credential.url"
+      :data-automation="`${credential.name}-list`"
       :codicon="
         credential.guid === CredentialGUIs.EnvironmentGUID
           ? 'codicon-bracket'
