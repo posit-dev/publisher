@@ -254,7 +254,7 @@ describe("Nested Fast API Deployment", () => {
   it("can verify Python Packages", async () => {
     const pythonPackages = await $('[data-automation="python-packages"]');
     await pythonPackages.click();
-    const reqfastapi = await $('[data-automation="req-fastapi"]');
+    const reqfastapi = await $('[data-automation="req"]');
     await expect(reqfastapi).toHaveText("fastapi");
   });
 
