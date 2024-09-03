@@ -55,6 +55,8 @@ func PostDeploymentHandlerFunc(
 			return
 		}
 		newState, err := stateFactory(projectDir, b.AccountName, b.ConfigName, name, "", accountList)
+		log.Debug("New account derived state created", "account", b.AccountName, "config", b.ConfigName)
+
 		if err != nil {
 			if errors.Is(err, accounts.ErrAccountNotFound) {
 				NotFound(w, log, err)
@@ -78,6 +80,7 @@ func PostDeploymentHandlerFunc(
 
 		newState.LocalID = localID
 		publisher, err := publisherFactory(newState, emitter, log)
+		log.Debug("New publisher derived from state", "account", b.AccountName, "config", b.ConfigName)
 		if err != nil {
 			InternalError(w, req, log, err)
 			return

@@ -282,6 +282,8 @@ func (p *defaultPublisher) publishWithClient(
 	log logging.Logger) error {
 
 	manifest := bundles.NewManifestFromConfig(p.Config)
+	log.Debug("Built manifest from config", "config", p.ConfigName)
+
 	if p.Config.R != nil {
 		rPackages, err := p.getRPackages(log)
 		if err != nil {
