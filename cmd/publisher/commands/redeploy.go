@@ -55,5 +55,5 @@ func (cmd *RedeployCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContex
 	if err != nil {
 		return err
 	}
-	return publisher.PublishDirectory(ctx.Logger)
+	return publisher.PublishDirectory()
 }

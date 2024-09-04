@@ -69,5 +69,5 @@ func (cmd *DeployCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext)
 	if err != nil {
 		return err
 	}
-	return publisher.PublishDirectory(ctx.Logger)
+	return publisher.PublishDirectory()
 }

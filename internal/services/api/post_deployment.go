@@ -78,6 +78,7 @@ func PostDeploymentHandlerFunc(
 		w.WriteHeader(http.StatusAccepted)
 		json.NewEncoder(w).Encode(response)
 
+		log := log.WithArgs("local_id", localID)
 		newState.LocalID = localID
 		publisher, err := publisherFactory(newState, emitter, log)
 		log.Debug("New publisher derived from state", "account", b.AccountName, "config", b.ConfigName)
@@ -87,8 +88,7 @@ func PostDeploymentHandlerFunc(
 		}
 
 		go func() {
-			log := log.WithArgs("local_id", localID)
-			err = publisher.PublishDirectory(log)
+			err = publisher.PublishDirectory()
 			if err != nil {
 				log.Error("Deployment failed", "error", err.Error())
 				return
