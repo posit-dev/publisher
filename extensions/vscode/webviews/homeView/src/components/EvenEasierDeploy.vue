@@ -102,7 +102,9 @@
           <div class="progress-container">
             <vscode-progress-ring class="progress-ring" />
             <div class="progress-desc">
-              <div>Deployment in Progress...</div>
+              <div data-automation="deployment-progress">
+                Deployment in Progress...
+              </div>
               <p class="progress-log-anchor">
                 <a
                   class="webview-link"

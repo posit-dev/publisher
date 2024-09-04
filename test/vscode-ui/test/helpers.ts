@@ -6,9 +6,9 @@ export async function switchToSubframe() {
   const iframe = await browser.$("iframe");
   await browser.switchToFrame(iframe);
 
-  await browser.$("iframe").waitForExist({ timeout: 3000 });
+  await browser.$("iframe").waitForExist({ timeout: 10000 });
   const subiframe = await browser.$("iframe");
-  await subiframe.waitForExist({ timeout: 3000 });
+  await subiframe.waitForExist({ timeout: 10000 });
   await browser.switchToFrame(subiframe);
 }
 

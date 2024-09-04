@@ -1,5 +1,6 @@
 <template>
   <vscode-button
+    :data-automation="`deploy-button`"
     :disabled="!haveResources || isConfigInError || home.publishInProgress"
     @click="deploy"
   >

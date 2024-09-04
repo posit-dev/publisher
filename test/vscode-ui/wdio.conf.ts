@@ -3,7 +3,7 @@ import { fileURLToPath } from "url";
 import { dirname } from "path";
 import * as fs from "fs";
 import * as path from "path";
-import { runShellScript } from "./test/helpers.ts";
+import * as helper from "./test/helpers.ts";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -37,22 +37,20 @@ export const config: Options.Testrunner = {
   // The path of the spec files will be resolved relative from the directory of
   // of the config file unless it's absolute.
   //
-  // specs: ["./test/specs/**/*.ts"],
-  specs: [process.env.SPEC_PATH || "./test/specs/nested-*.spec.ts"],
+  // specs: ["./test/specs/**/*.spec.ts"],
+  // specs: [process.env.SPEC_PATH || "./test/specs/nested-*.spec.ts"],
   // Patterns to exclude.
   exclude: [
     // 'path/to/excluded/files'
   ],
 
-  // suites: {
-  //   nested: [
-  //     "./test/specs/nested-fastapi.spec.ts",
-  //     // "./test/specs/nested-webview.spec.ts",
-  //   ],
-  //   root: [
-  //     "./test/specs/fastapi.spec.ts",
-  //   ]
-  // },
+  suites: {
+    nested: [
+      "./test/specs/nested-fastapi-configuration.spec.ts",
+      "./test/specs/nested-fastapi-deployment.spec.ts",
+    ],
+    root: ["./test/specs/fastapi.spec.ts"],
+  },
   //
   // ============
   // Capabilities
@@ -172,7 +170,7 @@ export const config: Options.Testrunner = {
     ui: "bdd",
     timeout: 60000,
   },
-
+  // wdio.conf.js
   //
   // =====
   // Hooks
@@ -243,7 +241,15 @@ export const config: Options.Testrunner = {
   /**
    * Function to be executed before a test (in Mocha/Jasmine) starts.
    */
-  // beforeTest: function (test, context) {
+  // beforeTest: function () {
+  //   it("open extension", async () => {
+  //     browser.$("aria/Posit Publisher").waitForExist({ timeout: 30000 });
+
+  //     // open posit extension
+  //     const extension = await browser.$("aria/Posit Publisher");
+  //     await expect(extension).toExist();
+  //     await extension.click();
+  //   });
   // },
   /**
    * Hook that gets executed _before_ a hook within the suite starts (e.g. runs before calling
@@ -307,7 +313,7 @@ export const config: Options.Testrunner = {
 
   //   let scriptPath: string;
   //   scriptPath = "cd ../scripts && bash cleanup.bash";
-  //   runShellScript(scriptPath);
+  //   helper.runShellScript(scriptPath);
   // },
   /**
    * Runs after a WebdriverIO command gets executed
@@ -326,6 +332,35 @@ export const config: Options.Testrunner = {
    * @param {Array.<String>} specs List of spec file paths that ran
    */
   // after: function (result, capabilities, specs) {
+  //   const parentDir = path.resolve(
+  //         __dirname,
+  //         "../sample-content/fastapi-simple",
+  //       );
+  //       const positDir = path.join(parentDir, ".posit");
+
+  //       // Log the contents of the parent directory
+  //       console.log(fs.readdirSync(parentDir));
+
+  //       // Check if the directory exists before trying to delete it
+  //       if (fs.existsSync(positDir)) {
+  //         // Get the files in the directory
+  //         const files = fs.readdirSync(positDir);
+
+  //         // Delete each file in the directory
+  //         for (const file of files) {
+  //           const filePath = path.join(positDir, file);
+  //           if (fs.lstatSync(filePath).isDirectory()) {
+  //             fs.rmdirSync(filePath, { recursive: true }); // Delete directory recursively
+  //           } else {
+  //             fs.unlinkSync(filePath); // Delete file
+  //           }
+  //         }
+
+  //         // Delete the directory
+  //         fs.rmdirSync(positDir);
+  //       } else {
+  //         console.log("Directory does not exist");
+  //       }
   // },
   /**
    * Gets executed right after terminating the webdriver session.
@@ -343,8 +378,43 @@ export const config: Options.Testrunner = {
    * @param {Array.<Object>} capabilities list of capabilities details
    * @param {<Object>} results object containing test results
    */
-  // onComplete: function(exitCode, config, capabilities, results) {
-  // },
+  onComplete: function (exitCode, config, capabilities, results) {
+    const parentDir = path.resolve(
+      __dirname,
+      "../sample-content/fastapi-simple",
+    );
+    const positDir = path.join(parentDir, ".posit");
+
+    // Log the contents of the parent directory
+    console.log(fs.readdirSync(parentDir));
+
+    // Check if the directory exists before trying to delete it
+    if (fs.existsSync(positDir)) {
+      // Get the files in the directory
+      const files = fs.readdirSync(positDir);
+
+      // Delete each file in the directory
+      for (const file of files) {
+        const filePath = path.join(positDir, file);
+        if (fs.lstatSync(filePath).isDirectory()) {
+          fs.rmdirSync(filePath, { recursive: true }); // Delete directory recursively
+        } else {
+          fs.unlinkSync(filePath); // Delete file
+        }
+      }
+
+      // Delete the directory
+      fs.rmdirSync(positDir);
+    } else {
+      console.log("Directory does not exist");
+    }
+
+    // remove creds
+    let scriptPath: string;
+    scriptPath = "cd ../scripts && bash cleanup.bash";
+    helper.runShellScript(scriptPath);
+  },
+
   /**
    * Gets executed when a refresh happens.
    * @param {string} oldSessionId session ID of the old session
