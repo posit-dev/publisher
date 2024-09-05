@@ -35,6 +35,7 @@ type preDeploymentDTO struct {
 	ConfigName string              `json:"configurationName,omitempty"`
 	ConfigPath string              `json:"configurationPath,omitempty"`
 	Error      *types.AgentError   `json:"deploymentError,omitempty"`
+	ID         types.ContentID     `json:"id,omitempty"`
 }
 
 type fullDeploymentDTO struct {

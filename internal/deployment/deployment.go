@@ -27,9 +27,9 @@ type Deployment struct {
 	CreatedAt     string              `toml:"created_at" json:"createdAt"`
 	Type          config.ContentType  `toml:"type" json:"type"`
 	ConfigName    string              `toml:"configuration_name" json:"configurationName"`
+	ID            types.ContentID     `toml:"id,omitempty" json:"id"`
 
 	// Full deployment fields
-	ID            types.ContentID   `toml:"id,omitempty" json:"id"`
 	DeployedAt    string            `toml:"deployed_at,omitempty" json:"deployedAt"`
 	BundleID      types.BundleID    `toml:"bundle_id,omitempty" json:"bundleId"`
 	BundleURL     string            `toml:"bundle_url,omitempty" json:"bundleUrl"`
