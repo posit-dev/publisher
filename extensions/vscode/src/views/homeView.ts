@@ -39,7 +39,10 @@ import {
 import { useBus } from "src/bus";
 import { EventStream } from "src/events";
 import { getPythonInterpreterPath } from "../utils/config";
-import { getSummaryStringFromError } from "src/utils/errors";
+import {
+  isAxiosJsonErrorRes,
+  getSummaryStringFromError,
+} from "src/utils/errors";
 import { getNonce } from "src/utils/getNonce";
 import { getUri } from "src/utils/getUri";
 import { deployProject } from "src/views/deployProgress";
@@ -1379,10 +1382,15 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           },
         });
       } catch (error: unknown) {
-        const summary = getSummaryStringFromError(
-          "sendRefreshedFilesLists, files.getByConfiguration",
-          error,
-        );
+        let summary = "";
+        if (isAxiosJsonErrorRes(error)) {
+          summary = error.response.data.message;
+        } else {
+          summary = getSummaryStringFromError(
+            "sendRefreshedFilesLists, files.getByConfiguration",
+            error,
+          );
+        }
         window.showErrorMessage(`Failed to refresh files. ${summary}`);
         return;
       }

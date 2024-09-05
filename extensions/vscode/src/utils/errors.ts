@@ -1,9 +1,28 @@
 // Copyright (C) 2023 by Posit Software, PBC.
 
-import axios from "axios";
+import axios, { AxiosError, AxiosResponse } from "axios";
 
 export type ErrorMessage = string[];
 export type ErrorMessages = ErrorMessage[];
+
+export type JsonErrorResponse = AxiosError & {
+  response: AxiosResponse & {
+    data: {
+      code: number;
+      message: string;
+      error: string;
+    };
+  };
+};
+
+export const isAxiosJsonErrorRes = (
+  error: unknown,
+): error is JsonErrorResponse => {
+  if (axios.isAxiosError(error)) {
+    return error.response?.data && typeof error.response.data === "object";
+  }
+  return false;
+};
 
 export const getStatusFromError = (error: unknown): number | undefined => {
   if (axios.isAxiosError(error)) {
