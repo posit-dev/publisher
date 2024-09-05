@@ -5,6 +5,7 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/fs"
 	"net/http"
 
@@ -13,8 +14,18 @@ import (
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/services/api/files"
+	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 )
+
+const unknownConfigFieldPresent = "Unknown field present in configuration file"
+
+type cfgFromFile func(path util.AbsolutePath) (*config.Config, error)
+type cfgGetConfigPath func(base util.AbsolutePath, configName string) util.AbsolutePath
+
+// TODO: It would be better to have the config package methods as a provider pattern instead of plain functions
+var configFromFile cfgFromFile = config.FromFile
+var configGetConfigPath cfgGetConfigPath = config.GetConfigPath
 
 func GetConfigFilesHandlerFunc(base util.AbsolutePath, filesService files.FilesService, log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
@@ -24,10 +35,13 @@ func GetConfigFilesHandlerFunc(base util.AbsolutePath, filesService files.FilesS
 			// Response already returned by ProjectDirFromRequest
 			return
 		}
-		configPath := config.GetConfigPath(projectDir, name)
-		cfg, err := config.FromFile(configPath)
+		configPath := configGetConfigPath(projectDir, name)
+		cfg, err := configFromFile(configPath)
 		if err != nil {
-			if errors.Is(err, fs.ErrNotExist) {
+			if aerr, ok := err.(*types.AgentError); ok && aerr.Code == util.UnknownTOMLKeyCode {
+				message := fmt.Sprintf("%s: %s", unknownConfigFieldPresent, aerr.Error())
+				BadRequestJson(w, req, log, err, message)
+			} else if errors.Is(err, fs.ErrNotExist) {
 				http.NotFound(w, req)
 			} else {
 				InternalError(w, req, log, err)

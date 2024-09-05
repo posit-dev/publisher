@@ -56,8 +56,8 @@ func decodeErrFromTOMLErr(e *toml.DecodeError, path AbsolutePath) *DecodeError {
 	}
 }
 
-const invalidTOMLCode types.ErrorCode = "invalidTOML"
-const unknownTOMLKeyCode types.ErrorCode = "unknownTOMLKey"
+const InvalidTOMLCode types.ErrorCode = "invalidTOML"
+const UnknownTOMLKeyCode types.ErrorCode = "unknownTOMLKey"
 
 func ReadTOMLFile(path AbsolutePath, dest any) error {
 	f, err := path.Open()
@@ -70,13 +70,13 @@ func ReadTOMLFile(path AbsolutePath, dest any) error {
 		decodeErr, ok := err.(*toml.DecodeError)
 		if ok {
 			e := decodeErrFromTOMLErr(decodeErr, path)
-			return types.NewAgentError(invalidTOMLCode, e, nil)
+			return types.NewAgentError(InvalidTOMLCode, e, nil)
 		}
 		strictErr, ok := err.(*toml.StrictMissingError)
 		if ok {
 			e := decodeErrFromTOMLErr(&strictErr.Errors[0], path)
 			e.Problem = "unknown key"
-			return types.NewAgentError(unknownTOMLKeyCode, e, nil)
+			return types.NewAgentError(UnknownTOMLKeyCode, e, nil)
 		}
 		return err
 	}

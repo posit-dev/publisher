@@ -14,6 +14,7 @@ import (
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/services/api/files"
+	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
 	"github.com/spf13/afero"
@@ -28,6 +29,11 @@ type GetConfigFilesHandlerFuncSuite struct {
 
 func TestGetConfigFilesHandlerFuncSuite(t *testing.T) {
 	suite.Run(t, new(GetConfigFilesHandlerFuncSuite))
+}
+
+type fkConfig struct {
+	config.Config
+	ForcedUnknownField string `toml:"forced_unknown_field" json:"forced_unknown_field"`
 }
 
 func (s *GetConfigFilesHandlerFuncSuite) SetupSuite() {
@@ -132,6 +138,47 @@ func (s *GetConfigFilesHandlerFuncSuite) TestHandlerFuncConfigNotFound() {
 	h(rec, req)
 
 	s.Equal(http.StatusNotFound, rec.Result().StatusCode)
+}
+
+func (s *GetConfigFilesHandlerFuncSuite) TestHandlerFuncConfigUnknownFields() {
+	// Mocking implementation config.FromFile
+	configFromFile = func(path util.AbsolutePath) (*config.Config, error) {
+		return nil, &types.AgentError{
+			Code: util.UnknownTOMLKeyCode,
+			Err:  errors.New("unknown field error"),
+		}
+	}
+
+	defer func() {
+		// Be sure to revert config from file implementation
+		configFromFile = config.FromFile
+	}()
+
+	afs := afero.NewMemMapFs()
+	base, err := util.Getwd(afs)
+	s.NoError(err)
+
+	cfg := config.New()
+	cfg.Type = config.ContentTypeHTML
+	err = cfg.WriteFile(config.GetConfigPath(base, "myConfig"))
+	s.NoError(err)
+
+	filesService := new(MockFilesService)
+
+	h := GetConfigFilesHandlerFunc(base, filesService, s.log)
+
+	rec := httptest.NewRecorder()
+
+	req, err := http.NewRequest("GET", "", nil)
+	s.NoError(err)
+	req = mux.SetURLVars(req, map[string]string{"name": "myConfig"})
+
+	h(rec, req)
+
+	bodyRes := rec.Body.String()
+	s.NoError(err)
+	s.Equal(http.StatusBadRequest, rec.Result().StatusCode)
+	s.Contains(bodyRes, "Unknown field present in configuration file:")
 }
 
 func (s *GetConfigFilesHandlerFuncSuite) TestHandlerFuncInvalidConfigFiles() {

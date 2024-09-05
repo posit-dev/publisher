@@ -3,6 +3,7 @@ package api
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"html"
@@ -11,6 +12,20 @@ import (
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
 )
+
+type jsonResponseError struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+	Error   string `json:"error"`
+}
+
+func NewJsonResponseError(code int, message string, err error) jsonResponseError {
+	return jsonResponseError{
+		Code:    code,
+		Message: message,
+		Error:   err.Error(),
+	}
+}
 
 func InternalError(w http.ResponseWriter, req *http.Request, log logging.Logger, err error) {
 	status := http.StatusInternalServerError
@@ -35,6 +50,15 @@ func BadRequest(w http.ResponseWriter, req *http.Request, log logging.Logger, er
 	w.WriteHeader(status)
 	fmt.Fprintf(w, "%s: %s\n", text, err.Error())
 	log.Error(text, "method", req.Method, "url", req.URL.String(), "error", err)
+}
+
+func BadRequestJson(w http.ResponseWriter, req *http.Request, log logging.Logger, err error, message string) {
+	status := http.StatusBadRequest
+	resJson := NewJsonResponseError(status, message, err)
+	w.Header().Set("content-type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(resJson)
+	log.Error(message, "method", req.Method, "url", req.URL.String(), "error", err)
 }
 
 func NotFound(w http.ResponseWriter, log logging.Logger, err error) {
