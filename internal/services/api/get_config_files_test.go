@@ -31,11 +31,6 @@ func TestGetConfigFilesHandlerFuncSuite(t *testing.T) {
 	suite.Run(t, new(GetConfigFilesHandlerFuncSuite))
 }
 
-type fkConfig struct {
-	config.Config
-	ForcedUnknownField string `toml:"forced_unknown_field" json:"forced_unknown_field"`
-}
-
 func (s *GetConfigFilesHandlerFuncSuite) SetupSuite() {
 	s.log = logging.New()
 }
