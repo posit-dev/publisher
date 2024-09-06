@@ -77,7 +77,14 @@ case "${test_case}" in
     "common")
         cli_tests
     ;;
-    "vscode-ui")
+    "vscode-root")
+        export WORKSPACE_PATH="../sample-content/fastapi-simple"
         setup_connect
         vscode_ui_tests
+    ;;
+    "vscode-nested")
+        export WORKSPACE_PATH="../sample-content/"
+        setup_connect
+        vscode_ui_tests
+    ;;
 esac

@@ -112,16 +112,10 @@ jobs:
       - run: just vscode configure
       - run: just vscode-ui install
 
-      - name: Run tests
-        run: just vscode-ui test
+      - name: Run root tests
+        run: just vscode-ui test vscode-root
         shell: bash
-        env:
-          SPEC_PATH: ./test/specs/fastapi.spec.ts
-          WORKSPACE_PATH: ../sample-content/fastapi-simple
 
       - name: Run nested tests
-        run: just vscode-ui test
+        run: just vscode-ui test vscode-nested
         shell: bash
-        env:
-          SPEC_PATH: ./test/specs/nested-fastapi.spec.ts
-          WORKSPACE_PATH: ../sample-content/
