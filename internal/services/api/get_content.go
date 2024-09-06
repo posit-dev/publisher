@@ -7,6 +7,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/clients/connect"
 	"github.com/posit-dev/publisher/internal/logging"
@@ -26,17 +27,10 @@ func GetContentHandlerFunc(
 	accountList accounts.AccountList,
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		dec := json.NewDecoder(req.Body)
-		dec.DisallowUnknownFields()
-		var b getContentRequestBody
-		err := dec.Decode(&b)
-		if err != nil {
-			BadRequest(w, req, log, err)
-			return
-		}
-		log.Info("GET content was passed in", "AccountName", b.AccountName)
+		accountName := mux.Vars(req)["name"]
+		log.Info("GET content was passed in", "AccountName", accountName)
 
-		acct, err := accountList.GetAccountByName(b.AccountName)
+		acct, err := accountList.GetAccountByName(accountName)
 		if err != nil {
 			if errors.Is(err, accounts.ErrAccountNotFound) {
 				NotFound(w, log, err)
