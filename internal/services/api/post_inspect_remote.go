@@ -14,10 +14,6 @@ import (
 	"github.com/posit-dev/publisher/internal/util"
 )
 
-type postInspectRemoteRequestBody struct {
-	AccountName string `json:"account"`
-}
-
 type postInspectRemoteResponseBody struct {
 	// Configuration *config.Config `json:"configuration"`
 	ProjectDir string          `json:"projectDir"`
