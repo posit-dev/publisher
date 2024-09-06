@@ -13,10 +13,6 @@ import (
 	"github.com/posit-dev/publisher/internal/logging"
 )
 
-type getContentRequestBody struct {
-	AccountName string `json:"account"`
-}
-
 type getContentResponseBody struct {
 	// Configuration *config.Config `json:"configuration"`
 	ContentItems []*connect.ConnectContentSummary
