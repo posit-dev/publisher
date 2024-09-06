@@ -82,8 +82,8 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	r.Handle(ToPath("inspect"), PostInspectHandlerFunc(base, log)).
 		Methods(http.MethodPost)
 
-	// POST /api/inspect/remote/$GUID
-	r.Handle(ToPath("inspect", "remote", "{guid}"), PostInspectRemoteHandlerFunc(base, log, lister)).
+	// POST /api/inspect/remote/$accountName/$guid
+	r.Handle(ToPath("inspect", "remote", "{name}", "{guid}"), PostInspectRemoteHandlerFunc(base, log, lister)).
 		Methods(http.MethodPost)
 
 	// GET /api/credentials
