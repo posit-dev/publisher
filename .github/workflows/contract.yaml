@@ -106,16 +106,10 @@ jobs:
           sparse-checkout-cone-mode: false
           token: ${{ secrets.CONNECT_PAT }}
 
-      - name: Source profile
-        # source profile before running tests to force right python version into vscode shell
-        run: source ~/.bash_profile
-        if: matrix.runs-on == 'macos-latest'
-
       - run: chmod -R +x ./bin
       - run: echo "${FUZZBUCKET_SSH_KEY}" > test/fuzzbucket-ssh-key && chmod 600 test/fuzzbucket-ssh-key
 
       # vscode ui tests
-      - run: which python
       - run: just package
       - run: just vscode configure
       - run: just vscode-ui install
@@ -124,7 +118,7 @@ jobs:
         run: just vscode-ui test vscode-root
 
       - name: Run nested tests
-        run: just vscode-ui test vscode-nested
+        run: PYTHON_PATH=${{ steps.python.outputs.python-path }} just vscode-ui test vscode-nested
 
       - name: Save screenshots
         uses: actions/upload-artifact@v4
