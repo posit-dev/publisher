@@ -114,11 +114,9 @@ jobs:
 
       - name: Run root tests
         run: just vscode-ui test vscode-root
-        shell: bash
 
       - name: Run nested tests
         run: just vscode-ui test vscode-nested
-        shell: bash
 
       - name: Save screenshots
         uses: actions/upload-artifact@v4
