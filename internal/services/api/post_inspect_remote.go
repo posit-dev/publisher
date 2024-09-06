@@ -31,23 +31,18 @@ func PostInspectRemoteHandlerFunc(
 	accountList accounts.AccountList,
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		guid := mux.Vars(req)["guid"]
+		vars := mux.Vars(req)
+		guid := vars["guid"]
+		accountName := vars["name"]
+
 		_, relProjectDir, err := ProjectDirFromRequest(base, w, req, log)
 		if err != nil {
 			// Response already returned by ProjectDirFromRequest
 			return
 		}
-		dec := json.NewDecoder(req.Body)
-		dec.DisallowUnknownFields()
-		var b postInspectRemoteRequestBody
-		err = dec.Decode(&b)
-		if err != nil {
-			BadRequest(w, req, log, err)
-			return
-		}
-		log.Info("POST inspect/remote was passed in", "ID", guid, "AccountName", b.AccountName)
+		log.Info("POST inspect/remote was passed in", "ID", guid, "AccountName", accountName)
 
-		acct, err := accountList.GetAccountByName(b.AccountName)
+		acct, err := accountList.GetAccountByName(accountName)
 		if err != nil {
 			if errors.Is(err, accounts.ErrAccountNotFound) {
 				NotFound(w, log, err)
@@ -58,10 +53,8 @@ func PostInspectRemoteHandlerFunc(
 			}
 		}
 
-		response := postInspectRemoteResponseBody{}
-
 		// send what we know now.
-		response = postInspectRemoteResponseBody{
+		response := postInspectRemoteResponseBody{
 			ProjectDir: relProjectDir.String(),
 			ServerURL:  acct.URL,
 			ID:         types.ContentID(guid),

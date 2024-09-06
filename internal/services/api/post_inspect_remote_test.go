@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"strings"
 	"testing"
 
 	"github.com/gorilla/mux"
@@ -54,15 +53,13 @@ func (s *PostInspectRemoteSuite) TestPostInspectRemote() {
 	s.NoError(err)
 
 	rec := httptest.NewRecorder()
-	body := strings.NewReader(`{
-		"account": "myAccount"
-	}`)
+	account := "myAccount"
 	guid := "abc"
-	path, err := url.JoinPath("/api/inspect/remote/", guid)
+	path, err := url.JoinPath("/api/inspect/remote", account, guid)
 	s.NoError(err)
-	req, err := http.NewRequest("POST", path, body)
+	req, err := http.NewRequest("POST", path, nil)
 	s.NoError(err)
-	req = mux.SetURLVars(req, map[string]string{"guid": guid})
+	req = mux.SetURLVars(req, map[string]string{"name": account, "guid": guid})
 	h(rec, req)
 
 	s.Equal(http.StatusOK, rec.Result().StatusCode)
