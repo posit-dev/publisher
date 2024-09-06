@@ -130,6 +130,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: failure()
         with:
+          name: ${{ matrix.runs-on }}-screenshots
           path: test/vscode-ui/errorShots
           if-no-files-found: ignore
           retention-days: 1
