@@ -1,7 +1,7 @@
 import { browser, $ } from "@wdio/globals";
 
 // import * as fs from "fs";
-// import * as path from "path";
+import * as path from "path";
 // import { fileURLToPath } from "url";
 // import { dirname } from "path";
 import * as helper from "../helpers.ts";
@@ -11,7 +11,7 @@ import * as helper from "../helpers.ts";
 // const connectServer = process.env.CONNECT_SERVER;
 // const apiKey = process.env.CONNECT_API_KEY;
 
-// const sep = path.sep;
+const sep = path.sep;
 const title = "my fastapi app";
 describe("Nested Fast API Deployment", () => {
   let workbench: any;
@@ -65,7 +65,7 @@ describe("Nested Fast API Deployment", () => {
     await browser.switchToFrame(null);
 
     const myConfig = browser.$(
-      "aria/my fastapi app, fastapi-simple/ • my connect server, Existing",
+      `aria/my fastapi app, fastapi-simple${sep} • my connect server, Existing`,
     );
     await expect(myConfig).toExist();
     myConfig.click();
