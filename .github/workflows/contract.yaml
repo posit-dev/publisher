@@ -104,14 +104,6 @@ jobs:
           sparse-checkout-cone-mode: false
           token: ${{ secrets.CONNECT_PAT }}
 
-      - name: Save screenshots
-        uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          path: test/vscode-ui/errorShots
-          if-no-files-found: ignore
-          retention-days: 1
-
       - run: chmod -R +x ./bin
       - run: echo "${FUZZBUCKET_SSH_KEY}" > test/fuzzbucket-ssh-key && chmod 600 test/fuzzbucket-ssh-key
 
@@ -127,3 +119,11 @@ jobs:
       - name: Run nested tests
         run: just vscode-ui test vscode-nested
         shell: bash
+
+      - name: Save screenshots
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          path: test/vscode-ui/errorShots
+          if-no-files-found: ignore
+          retention-days: 1
