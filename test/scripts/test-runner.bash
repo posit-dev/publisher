@@ -79,11 +79,13 @@ case "${test_case}" in
     ;;
     "vscode-root")
         export WORKSPACE_PATH="../sample-content/fastapi-simple"
+        export PYTHON_VERSION=$(python --version | awk '{print $2}')
         setup_connect
         vscode_ui_tests
     ;;
     "vscode-nested")
         export WORKSPACE_PATH="../sample-content/"
+        export PYTHON_VERSION=$(python --version | awk '{print $2}')
         setup_connect
         vscode_ui_tests
     ;;
