@@ -179,6 +179,15 @@ type connectGetContentDTO struct {
 	// Owner        *ownerOutputDTO   `json:"owner,omitempty"`
 }
 
+func (c *ConnectClient) GetContent(log logging.Logger) (*[]connectGetContentDTO, error) {
+	contentDTOs := &[]connectGetContentDTO{}
+	err := c.client.Get("/__api__/v1/content", contentDTOs, log)
+	if err != nil {
+		return nil, err
+	}
+	return contentDTOs, nil
+}
+
 func (c *ConnectClient) CreateDeployment(body *ConnectContent, log logging.Logger) (types.ContentID, error) {
 	content := connectGetContentDTO{}
 	err := c.client.Post("/__api__/v1/content", body, &content, log)

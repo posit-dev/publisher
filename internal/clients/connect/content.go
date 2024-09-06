@@ -3,7 +3,12 @@ package connect
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"time"
+
+	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/events"
+	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/types"
 )
 
@@ -32,6 +37,20 @@ type ConnectContent struct {
 	DefaultImageName               string            `json:"default_image_name,omitempty"`
 	DefaultREnvironmentManagement  *bool             `json:"default_r_environment_management,omitempty"`
 	DefaultPyEnvironmentManagement *bool             `json:"default_py_environment_management,omitempty"`
+}
+
+type ConnectContentSummary struct {
+	GUID            types.ContentID    `json:"guid"`
+	Name            types.ContentName  `json:"name"`
+	Title           string             `json:"title,omitempty"`
+	Created         types.Time         `json:"created_time"`
+	LastDeployed    types.Time         `json:"last_deployed_time"`
+	BundleId        types.NullInt64Str `json:"bundle_id"`
+	AppMode         AppMode            `json:"app_mode"`
+	ContentCategory string             `json:"content_category"`
+	DashboardURL    string             `json:"dashboard_url"`
+	Role            string             `json:"app_role"`
+	OwnerGUID       types.GUID         `json:"owner_guid"`
 }
 
 func copy[T any](src *T) *T {
@@ -82,4 +101,49 @@ func ConnectContentFromConfig(cfg *config.Config) *ConnectContent {
 		}
 	}
 	return c
+}
+
+func ConnectContentSummaryFromServer(account *accounts.Account, log logging.Logger) ([]*ConnectContentSummary, error) {
+	client, err := NewConnectClient(account, 30*time.Second, events.NewNullEmitter(), log)
+	if err != nil {
+		return nil, err
+	}
+	contentItems, err := client.GetContent(log)
+	if err != nil {
+		return nil, err
+	}
+	count := 0
+	for _, content := range *contentItems {
+		if content.Role == "owner" || content.Role == "editor" {
+			count += 1
+		}
+	}
+	summary := make([]*ConnectContentSummary, count)
+	nextIndex := 0
+	for _, content := range *contentItems {
+		if content.Role == "owner" || content.Role == "editor" {
+			s := &ConnectContentSummary{
+				GUID:            content.GUID,
+				Name:            content.Name,
+				Created:         content.Created,
+				LastDeployed:    content.LastDeployed,
+				AppMode:         content.AppMode,
+				ContentCategory: content.ContentCategory,
+				DashboardURL:    content.DashboardURL,
+				Role:            content.Role,
+				OwnerGUID:       content.OwnerGUID,
+			}
+			title, set := content.Title.Get()
+			if set {
+				s.Title = title
+			}
+			valid := content.BundleId.Valid()
+			if valid {
+				s.BundleId = content.BundleId
+			}
+			summary[nextIndex] = s
+			nextIndex += 1
+		}
+	}
+	return summary, nil
 }

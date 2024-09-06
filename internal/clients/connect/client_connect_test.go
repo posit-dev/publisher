@@ -568,3 +568,86 @@ func (s *ConnectClientSuite) TestTestAuthenticationNotPublisher() {
 	s.NotNil(err)
 	s.ErrorContains(err, "user account bob with role 'viewer' does not have permission to publish content")
 }
+
+func (s *ConnectClientSuite) TestGetContent() {
+	httpClient := &http_client.MockHTTPClient{}
+	created, err := time.Parse(time.RFC3339, "2024-09-05T22:18:02Z")
+	if err != nil {
+		s.Fail("Unable to parse Created Time")
+	}
+	deployed, err := time.Parse(time.RFC3339, "2024-09-05T22:18:02Z")
+	if err != nil {
+		s.Fail("Unable to parse Deployed Time")
+	}
+	httpClient.On("Get", "/__api__/v1/content", mock.Anything, mock.Anything).Return(nil).RunFn = func(args mock.Arguments) {
+		contentList := args.Get(1).(*[]connectGetContentDTO)
+
+		*contentList = append(*contentList, connectGetContentDTO{
+			GUID:             "adffa505-08c7-450f-88d0-f42957f56eff",
+			Name:             "",
+			Title:            types.NewOptional[string]("fastapi-simple-publisher"),
+			Description:      "",
+			AccessType:       "acl",
+			Created:          created,
+			LastDeployed:     deployed,
+			BundleId:         types.NewOptional[types.Int64Str]("6"),
+			AppMode:          "python-fastapi",
+			ContentCategory:  "",
+			Parameterized:    false,
+			ClusterName:      types.NewOptional[string]("Local"),
+			ImageName:        types.NewOptional[string]("image_name"),
+			RVersion:         types.Optional[string]{},
+			PyVersion:        types.NewOptional[string]("3.11.3"),
+			QuartoVersion:    types.Optional[string]{},
+			RunAs:            types.Optional[string]{},
+			RunAsCurrentUser: false,
+			OwnerGUID:        types.GUID("b4314c75-2c97-4c02-a729-68a46f1c5aa7"),
+			ContentURL:       "https://connect.localtest.me:443/rsc/dev-password/content/adffa505-08c7-450f-88d0-f42957f56eff/",
+			DashboardURL:     "https://connect.localtest.me:443/rsc/dev-password/connect/#/apps/adffa505-08c7-450f-88d0-f42957f56eff",
+			Role:             "owner",
+			Id:               "6",
+		})
+		created, err := time.Parse(time.RFC3339, "2024-08-30T16:20:54Z")
+		if err != nil {
+			s.Fail("Unable to parse Created Time")
+		}
+		deployed, err := time.Parse(time.RFC3339, "2024-08-30T16:20:54Z")
+		if err != nil {
+			s.Fail("Unable to parse Deployed Time")
+		}
+		*contentList = append(*contentList, connectGetContentDTO{
+			GUID:             "ba82ccac-2ac5-4656-b2f7-7df05ee5b366",
+			Name:             "fastapi-simple",
+			Title:            types.NewOptional[string]("fastapi-simple"),
+			Description:      "",
+			AccessType:       "acl",
+			Created:          created,
+			LastDeployed:     deployed,
+			BundleId:         types.NewOptional[types.Int64Str]("3"),
+			AppMode:          "python-fastapi",
+			ContentCategory:  "",
+			Parameterized:    false,
+			ClusterName:      types.NewOptional[string]("Local"),
+			ImageName:        types.NewOptional[string]("image_name"),
+			RVersion:         types.Optional[string]{},
+			PyVersion:        types.NewOptional[string]("3.11.3"),
+			QuartoVersion:    types.Optional[string]{},
+			RunAs:            types.Optional[string]{},
+			RunAsCurrentUser: false,
+			OwnerGUID:        types.GUID("0addad6f-25bc-46ec-b38d-afb08dc3415e"),
+			ContentURL:       "https://connect.localtest.me:443/rsc/dev-password/content/adffa505-08c7-450f-88d0-f42957f56eff/",
+			DashboardURL:     "https://connect.localtest.me:443/rsc/dev-password/connect/#/apps/ba82ccac-2ac5-4656-b2f7-7df05ee5b366",
+			Role:             "viewer",
+			Id:               "3",
+		})
+	}
+
+	client := &ConnectClient{
+		client:  httpClient,
+		account: &accounts.Account{},
+	}
+	contentList, err := client.GetContent(logging.New())
+	s.NotNil(contentList)
+	s.Nil(err)
+	s.Equal(len(*contentList), 2)
+}

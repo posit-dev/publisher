@@ -58,10 +58,8 @@ func PostInspectRemoteHandlerFunc(
 			}
 		}
 
-		response := postInspectRemoteResponseBody{}
-
 		// send what we know now.
-		response = postInspectRemoteResponseBody{
+		response := postInspectRemoteResponseBody{
 			ProjectDir: relProjectDir.String(),
 			ServerURL:  acct.URL,
 			ID:         types.ContentID(guid),
