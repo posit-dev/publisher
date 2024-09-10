@@ -11,6 +11,11 @@
           class="twisty-container codicon"
           :class="expanded ? 'codicon-chevron-down' : 'codicon-chevron-right'"
         />
+        <span
+          v-if="codicon"
+          class="tree-section-icon codicon"
+          :class="codicon"
+        />
         <h3 class="title">{{ title }}</h3>
         <span v-if="$slots.description" class="description">
           <slot name="description" />
@@ -37,6 +42,7 @@ const expanded = defineModel("expanded", { required: false, default: false });
 defineProps<{
   title: string;
   description?: string;
+  codicon?: string;
   actions?: ActionButton[];
 }>();
 
@@ -99,6 +105,11 @@ const toggleExpanded = () => {
       margin: 0 2px;
       font-size: 16px;
       color: var(--vscode-icon-foreground);
+    }
+
+    .tree-section-icon {
+      font-size: 13px;
+      margin-right: 4px;
     }
 
     .title {
