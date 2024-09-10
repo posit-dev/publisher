@@ -5,19 +5,18 @@ import axios, { AxiosError, AxiosResponse } from "axios";
 export type ErrorMessage = string[];
 export type ErrorMessages = ErrorMessage[];
 
-export type JsonErrorResponse = AxiosError & {
-  response: AxiosResponse & {
-    data: {
-      code: number;
-      message: string;
-      error: string;
-    };
-  };
+export type ErrorResData = {
+  code: string;
+  status: number;
+  msg: string;
+  error: string;
 };
 
-export const isAxiosJsonErrorRes = (
-  error: unknown,
-): error is JsonErrorResponse => {
+export type JsonErrorResponse = AxiosError & {
+  response: AxiosResponse<ErrorResData>;
+};
+
+export const isJsonErrorRes = (error: unknown): error is JsonErrorResponse => {
   if (axios.isAxiosError(error)) {
     return error.response?.data && typeof error.response.data === "object";
   }
@@ -68,8 +67,15 @@ export const getAPIURLFromError = (error: unknown) => {
   return undefined;
 };
 
+// When the error is a known JSON agent error it returns it's message.
+// Otherwise, a tracing message is returned to help diagnose.
 export const getSummaryStringFromError = (location: string, error: unknown) => {
   let msg = `An error has occurred at ${location}`;
+
+  if (isJsonErrorRes(error)) {
+    return error.response.data.msg;
+  }
+
   const summary = getSummaryFromError(error);
   if (summary) {
     if (summary.status) {

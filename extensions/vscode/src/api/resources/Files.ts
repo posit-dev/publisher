@@ -22,7 +22,7 @@ export class Files {
 
   // Returns:
   // 200 - success
-  // 400 - configuration contains unknown fields
+  // 400 - configuration is invalid
   // 404 - configuration does not exist
   // 422 - configuration files list contains invalid patterns
   // 500 - internal server error

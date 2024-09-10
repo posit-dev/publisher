@@ -3,12 +3,37 @@ package types
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"fmt"
+	"net/http"
+
 	"github.com/mitchellh/mapstructure"
 )
 
 type ErrorCode string
 type ErrorData map[string]any
 type Operation string
+
+const (
+	ErrorResourceNotFound   ErrorCode = "resourceNotFound"
+	ErrorInvalidTOML        ErrorCode = "invalidTOML"
+	ErrorUnknownTOMLKey     ErrorCode = "unknownTOMLKey"
+	ErrorInvalidConfigFiles ErrorCode = "invalidConfigFiles"
+	ErrorUnknownException   ErrorCode = "unknown"
+)
+
+var defaultUnknownErrMsg = "An unknown error occurred"
+
+var errorMessageCatalog = map[ErrorCode]struct {
+	Code    int
+	Message string
+}{
+	ErrorResourceNotFound:   {http.StatusNotFound, "Requested resource not found"},
+	ErrorInvalidTOML:        {http.StatusBadRequest, "Configuration file is not in a valid TOML format"},
+	ErrorUnknownTOMLKey:     {http.StatusBadRequest, "Unknown field present in configuration file"},
+	ErrorInvalidConfigFiles: {http.StatusUnprocessableEntity, "Invalid pattern in configuration files"},
+
+	ErrorUnknownException: {http.StatusInternalServerError, defaultUnknownErrMsg},
+}
 
 type EventableError interface {
 	error
@@ -20,13 +45,12 @@ type EventableError interface {
 
 type AgentError struct {
 	Code    ErrorCode `json:"code" toml:"code"`
+	Status  int       `json:"status" toml:"status"`
 	Err     error     `json:"-" toml:"-"`
 	Message string    `json:"msg" toml:"message"`
 	Op      Operation `json:"operation" toml:"operation"`
 	Data    ErrorData `json:"data" toml:"data,omitempty"`
 }
-
-const UnknownErrorCode ErrorCode = "unknown"
 
 func AsAgentError(e error) *AgentError {
 	if e == nil {
@@ -36,14 +60,24 @@ func AsAgentError(e error) *AgentError {
 	if ok {
 		return agentErr
 	}
-	return NewAgentError(UnknownErrorCode, e, nil)
+	return NewAgentError(ErrorUnknownException, e, nil)
 }
 
 func NewAgentError(code ErrorCode, err error, details any) *AgentError {
 	data := make(ErrorData)
 	msg := ""
+	httpStatus := 0
+	if errorEntry, ok := errorMessageCatalog[code]; ok {
+		msg = errorEntry.Message
+		httpStatus = errorEntry.Code
+	}
+
 	if err != nil {
-		msg = err.Error()
+		if msg != "" {
+			msg = fmt.Sprintf("%s: %s", msg, err.Error())
+		} else {
+			msg = err.Error()
+		}
 	}
 	if details != nil {
 		detailMap := make(ErrorData)
@@ -55,6 +89,7 @@ func NewAgentError(code ErrorCode, err error, details any) *AgentError {
 	return &AgentError{
 		Message: msg,
 		Code:    code,
+		Status:  httpStatus,
 		Err:     err,
 		Data:    data,
 	}
@@ -86,7 +121,7 @@ func (e *AgentError) Error() string {
 func OperationError(op Operation, err error) EventableError {
 	e, ok := err.(EventableError)
 	if !ok {
-		e = NewAgentError(UnknownErrorCode, err, nil)
+		e = NewAgentError(ErrorUnknownException, err, nil)
 	}
 	e.SetOperation(op)
 	return e

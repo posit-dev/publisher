@@ -138,7 +138,7 @@ func (s *GetDeploymentSuite) TestGetPreDeployment() {
 	dec.DisallowUnknownFields()
 	s.NoError(dec.Decode(&res))
 	s.NotNil(res.Error)
-	s.Equal("test error", res.Error.Message)
+	s.Equal("An unknown error occurred: test error", res.Error.Message)
 	s.Equal(deploymentStateNew, res.State)
 	s.Equal("myTargetName", res.Name)
 	s.Equal(".", res.ProjectDir)

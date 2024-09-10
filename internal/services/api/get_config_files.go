@@ -3,9 +3,7 @@ package api
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"encoding/json"
 	"errors"
-	"fmt"
 	"io/fs"
 	"net/http"
 
@@ -17,8 +15,6 @@ import (
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 )
-
-const unknownConfigFieldPresent = "Unknown field present in configuration file"
 
 type cfgFromFile func(path util.AbsolutePath) (*config.Config, error)
 type cfgGetConfigPath func(base util.AbsolutePath, configName string) util.AbsolutePath
@@ -38,35 +34,37 @@ func GetConfigFilesHandlerFunc(base util.AbsolutePath, filesService files.FilesS
 		configPath := configGetConfigPath(projectDir, name)
 		cfg, err := configFromFile(configPath)
 		if err != nil {
-			if aerr, ok := err.(*types.AgentError); ok && aerr.Code == util.UnknownTOMLKeyCode {
-				message := fmt.Sprintf("%s: %s", unknownConfigFieldPresent, aerr.Error())
-				BadRequestJson(w, req, log, err, message)
-			} else if errors.Is(err, fs.ErrNotExist) {
-				http.NotFound(w, req)
+			if aerr, ok := err.(*types.AgentError); ok {
+				AgentErrorJsonResult(w, req, log, *aerr)
+				return
+			}
+
+			if errors.Is(err, fs.ErrNotExist) {
+				aerr := types.NewAgentError(types.ErrorResourceNotFound, err, nil)
+				AgentErrorJsonResult(w, req, log, *aerr)
 			} else {
-				InternalError(w, req, log, err)
+				UnknownErrorJsonResult(w, req, log, err)
 			}
 			return
 		}
 		matchList, err := matcher.NewMatchList(projectDir, matcher.StandardExclusions)
 		if err != nil {
-			InternalError(w, req, log, err)
+			UnknownErrorJsonResult(w, req, log, err)
 			return
 		}
 		err = matchList.AddFromFile(projectDir, configPath, cfg.Files)
 		if err != nil {
-			w.WriteHeader(http.StatusUnprocessableEntity)
-			w.Write([]byte("invalid pattern in configuration 'files'"))
+			aerr := types.NewAgentError(types.ErrorInvalidConfigFiles, err, nil)
+			AgentErrorJsonResult(w, req, log, *aerr)
 			return
 		}
 
 		file, err := filesService.GetFile(projectDir, matchList)
 		if err != nil {
-			InternalError(w, req, log, err)
+			UnknownErrorJsonResult(w, req, log, err)
 			return
 		}
 
-		w.Header().Set("content-type", "application/json")
-		json.NewEncoder(w).Encode(file)
+		JsonResult(w, file)
 	}
 }

@@ -139,8 +139,10 @@ func (s *GetConfigFilesHandlerFuncSuite) TestHandlerFuncConfigUnknownFields() {
 	// Mocking implementation config.FromFile
 	configFromFile = func(path util.AbsolutePath) (*config.Config, error) {
 		return nil, &types.AgentError{
-			Code: util.UnknownTOMLKeyCode,
-			Err:  errors.New("unknown field error"),
+			Message: "Unknown field present in configuration file",
+			Code:    types.ErrorUnknownTOMLKey,
+			Status:  http.StatusBadRequest,
+			Err:     errors.New("unknown field error"),
 		}
 	}
 
@@ -173,7 +175,7 @@ func (s *GetConfigFilesHandlerFuncSuite) TestHandlerFuncConfigUnknownFields() {
 	bodyRes := rec.Body.String()
 	s.NoError(err)
 	s.Equal(http.StatusBadRequest, rec.Result().StatusCode)
-	s.Contains(bodyRes, "Unknown field present in configuration file:")
+	s.Contains(bodyRes, "Unknown field present in configuration file")
 }
 
 func (s *GetConfigFilesHandlerFuncSuite) TestHandlerFuncInvalidConfigFiles() {

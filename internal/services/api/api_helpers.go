@@ -10,22 +10,9 @@ import (
 	"net/http"
 
 	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 )
-
-type jsonResponseError struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
-	Error   string `json:"error"`
-}
-
-func NewJsonResponseError(code int, message string, err error) jsonResponseError {
-	return jsonResponseError{
-		Code:    code,
-		Message: message,
-		Error:   err.Error(),
-	}
-}
 
 func InternalError(w http.ResponseWriter, req *http.Request, log logging.Logger, err error) {
 	status := http.StatusInternalServerError
@@ -52,19 +39,27 @@ func BadRequest(w http.ResponseWriter, req *http.Request, log logging.Logger, er
 	log.Error(text, "method", req.Method, "url", req.URL.String(), "error", err)
 }
 
-func BadRequestJson(w http.ResponseWriter, req *http.Request, log logging.Logger, err error, message string) {
-	status := http.StatusBadRequest
-	resJson := NewJsonResponseError(status, message, err)
-	w.Header().Set("content-type", "application/json")
-	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(resJson)
-	log.Error(message, "method", req.Method, "url", req.URL.String(), "error", err)
-}
-
 func NotFound(w http.ResponseWriter, log logging.Logger, err error) {
 	msg := err.Error()
 	log.Error(msg)
 	http.Error(w, msg, http.StatusNotFound)
+}
+
+func AgentErrorJsonResult(w http.ResponseWriter, req *http.Request, log logging.Logger, agentError types.AgentError) {
+	w.Header().Set("content-type", "application/json")
+	w.WriteHeader(agentError.Status)
+	json.NewEncoder(w).Encode(agentError)
+	log.Error(agentError.Message, "method", req.Method, "url", req.URL.String(), "error", agentError.Err)
+}
+
+func UnknownErrorJsonResult(w http.ResponseWriter, req *http.Request, log logging.Logger, err error) {
+	aerr := types.NewAgentError(types.ErrorUnknownException, err, nil)
+	AgentErrorJsonResult(w, req, log, *aerr)
+}
+
+func JsonResult(w http.ResponseWriter, result any) {
+	w.Header().Set("content-type", "application/json")
+	json.NewEncoder(w).Encode(result)
 }
 
 var errProjectDirNotFound = errors.New("project directory not found")

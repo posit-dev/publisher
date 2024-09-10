@@ -4,6 +4,7 @@ package types
 
 import (
 	"errors"
+	"net/http"
 	"testing"
 
 	"github.com/posit-dev/publisher/internal/util/utiltest"
@@ -55,4 +56,28 @@ func (s *ErrorSuite) TestAsAgentError() {
 
 	agentErr := OperationError(Operation("testOp"), err)
 	s.Equal(agentErr, AsAgentError(agentErr))
+}
+
+func (s *ErrorSuite) TestNewAgentError() {
+	originalError := errors.New("shattered glass!")
+	aerr := NewAgentError(ErrorInvalidTOML, originalError, nil)
+	s.Equal(aerr, &AgentError{
+		Message: "Configuration file is not in a valid TOML format: shattered glass!",
+		Code:    ErrorInvalidTOML,
+		Status:  http.StatusBadRequest,
+		Err:     originalError,
+		Data:    make(ErrorData),
+	})
+}
+
+func (s *ErrorSuite) TestNewAgentError_WithoutErr() {
+	// Without an error (only error code), simpler message
+	aerr := NewAgentError(ErrorInvalidTOML, nil, nil)
+	s.Equal(aerr, &AgentError{
+		Message: "Configuration file is not in a valid TOML format",
+		Code:    ErrorInvalidTOML,
+		Status:  http.StatusBadRequest,
+		Err:     nil,
+		Data:    make(ErrorData),
+	})
 }

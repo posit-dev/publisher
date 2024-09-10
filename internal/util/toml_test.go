@@ -40,7 +40,7 @@ func (s *TOMLSuite) TestReadTOMLFileBad() {
 	err := ReadTOMLFile(path, &content)
 	agentErr, ok := err.(*types.AgentError)
 	s.True(ok)
-	s.Equal(InvalidTOMLCode, agentErr.Code)
+	s.Equal(types.ErrorInvalidTOML, agentErr.Code)
 }
 
 func (s *TOMLSuite) TestReadTOMLFileBadKey() {
@@ -52,5 +52,5 @@ func (s *TOMLSuite) TestReadTOMLFileBadKey() {
 	err := ReadTOMLFile(path, &content)
 	agentErr, ok := err.(*types.AgentError)
 	s.True(ok)
-	s.Equal(UnknownTOMLKeyCode, agentErr.Code)
+	s.Equal(types.ErrorUnknownTOMLKey, agentErr.Code)
 }
