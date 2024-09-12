@@ -33,10 +33,7 @@ import {
   getMessageFromError,
   getSummaryStringFromError,
 } from "src/utils/errors";
-import {
-  newConfigFileNameFromTitle,
-  untitledContentRecordName,
-} from "src/utils/names";
+import { newDeploymentName, newConfigFileNameFromTitle } from "src/utils/names";
 import { formatURL, normalizeURL } from "src/utils/url";
 import { checkSyntaxApiKey } from "src/utils/apiKeys";
 import { DeploymentObjects } from "src/types/shared";
@@ -1340,7 +1337,7 @@ export async function newDeployment(
     if (!existingNames) {
       existingNames = [];
     }
-    const contentRecordName = untitledContentRecordName(existingNames);
+    const contentRecordName = newDeploymentName(existingNames);
     const response = await api.contentRecords.createNew(
       selectedInspectionResult.projectDir,
       finalCredentialName,
