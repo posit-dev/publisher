@@ -23,6 +23,7 @@ type State struct {
 	Config      *config.Config
 	Target      *deployment.Deployment
 	LocalID     LocalDeploymentID
+	Secrets     map[string]string
 }
 
 func loadConfig(path util.AbsolutePath, configName string) (*config.Config, error) {
@@ -95,7 +96,7 @@ func Empty() *State {
 
 var ErrServerURLMismatch = errors.New("the account provided is for a different server; it must match the server for this deployment")
 
-func New(path util.AbsolutePath, accountName, configName, targetName string, saveName string, accountList accounts.AccountList) (*State, error) {
+func New(path util.AbsolutePath, accountName, configName, targetName string, saveName string, accountList accounts.AccountList, secrets map[string]string) (*State, error) {
 	var target *deployment.Deployment
 	var account *accounts.Account
 	var cfg *config.Config
@@ -143,6 +144,7 @@ func New(path util.AbsolutePath, accountName, configName, targetName string, sav
 			return nil, err
 		}
 	}
+
 	return &State{
 		Dir:         path,
 		AccountName: accountName,
@@ -152,6 +154,7 @@ func New(path util.AbsolutePath, accountName, configName, targetName string, sav
 		Account:     account,
 		Config:      cfg,
 		Target:      target,
+		Secrets:     secrets,
 	}, nil
 }
 

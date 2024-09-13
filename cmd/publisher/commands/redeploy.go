@@ -41,7 +41,7 @@ func (cmd *RedeployCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContex
 	if err != nil {
 		return fmt.Errorf("invalid deployment name '%s': %w", cmd.TargetName, err)
 	}
-	stateStore, err := state.New(absPath, "", cmd.ConfigName, cmd.TargetName, "", ctx.Accounts)
+	stateStore, err := state.New(absPath, "", cmd.ConfigName, cmd.TargetName, "", ctx.Accounts, nil)
 	if err != nil {
 		return err
 	}
