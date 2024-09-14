@@ -274,6 +274,15 @@ func (s *StateSuite) makeConfiguration(name string) *config.Config {
 	return cfg
 }
 
+func (s *StateSuite) makeConfigurationWithSecrets(name string, secrets []string) *config.Config {
+	path := config.GetConfigPath(s.cwd, name)
+	cfg := s.makeConfiguration(name)
+	cfg.Secrets = secrets
+	err := cfg.WriteFile(path)
+	s.NoError(err)
+	return cfg
+}
+
 func (s *StateSuite) TestNew() {
 	accts := &accounts.MockAccountList{}
 	acct := accounts.Account{}
@@ -405,7 +414,7 @@ func (s *StateSuite) TestNewWithSecrets() {
 	accts := &accounts.MockAccountList{}
 	acct := accounts.Account{}
 	accts.On("GetAllAccounts").Return([]accounts.Account{acct}, nil)
-	s.makeConfiguration("default")
+	s.makeConfigurationWithSecrets("default", []string{"API_KEY", "DB_PASSWORD"})
 
 	secrets := map[string]string{
 		"API_KEY":     "secret123",
@@ -416,6 +425,22 @@ func (s *StateSuite) TestNewWithSecrets() {
 	s.NoError(err)
 	s.NotNil(state)
 	s.Equal(secrets, state.Secrets)
+}
+
+func (s *StateSuite) TestNewWithInvalidSecret() {
+	accts := &accounts.MockAccountList{}
+	acct := accounts.Account{}
+	accts.On("GetAllAccounts").Return([]accounts.Account{acct}, nil)
+	s.makeConfiguration("default")
+
+	secrets := map[string]string{
+		"INVALID_SECRET": "secret123",
+	}
+
+	state, err := New(s.cwd, "", "", "", "", accts, secrets)
+	s.NotNil(err)
+	s.ErrorContains(err, "secret 'INVALID_SECRET' is not in the configuration")
+	s.Nil(state)
 }
 
 func (s *StateSuite) TestGetDefaultAccountNone() {

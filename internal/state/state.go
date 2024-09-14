@@ -145,6 +145,13 @@ func New(path util.AbsolutePath, accountName, configName, targetName string, sav
 		}
 	}
 
+	// Check that the secrets passed are in the config
+	for secret := range secrets {
+		if !cfg.HasSecret(secret) {
+			return nil, fmt.Errorf("secret '%s' is not in the configuration", secret)
+		}
+	}
+
 	return &State{
 		Dir:         path,
 		AccountName: accountName,

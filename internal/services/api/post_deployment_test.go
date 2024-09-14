@@ -130,6 +130,8 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFuncStateErr()
 	handler := PostDeploymentHandlerFunc(s.cwd, log, nil, events.NewNullEmitter())
 	handler(rec, req)
 	s.Equal(http.StatusBadRequest, rec.Result().StatusCode)
+	body, _ := io.ReadAll(rec.Body)
+	s.Contains(string(body), "test error from state factory")
 }
 
 func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFuncWrongServer() {
