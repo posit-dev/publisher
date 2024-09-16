@@ -115,6 +115,17 @@ This mode can be reproduced on your local machine by setting `CI=true`.
 
 See [the Contribution Guide for the VSCode Extension](./extensions/vscode/CONTRIBUTING.md).
 
+## Schema Updates
+
+Non-breaking or additive changes to the schema do not require a version bump.
+
+Breaking changes to the schema require a version bump.
+
+As Pull Requests are merged into main, we update (or create in the case of a new
+schema) the file on the CDN (in S3).
+
+Schemas can be found in the `internal/schema/schemas` directory.
+
 ## Release
 
 The Posit Publisher VSCode extension releases follow guidelines from the
