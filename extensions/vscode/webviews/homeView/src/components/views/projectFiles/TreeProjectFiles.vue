@@ -28,7 +28,7 @@
         v-if="
           file.isFile &&
           isFileIncluded(file) &&
-          !home.flatFiles.lastDeployedFiles.has(file.rel)
+          !home.flatFiles.lastDeployedFiles.has(file.id)
         "
         class="text-git-added"
       >
@@ -38,7 +38,7 @@
         v-if="
           file.isFile &&
           !isFileIncluded(file) &&
-          home.flatFiles.lastDeployedFiles.has(file.rel)
+          home.flatFiles.lastDeployedFiles.has(file.id)
         "
         class="text-git-deleted"
       >
