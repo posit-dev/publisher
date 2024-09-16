@@ -46,7 +46,7 @@ func (s *AllSuite) TestInferTypeDirectory() {
 		Type:       config.ContentTypeHTML,
 		Entrypoint: "index.html",
 		Validate:   true,
-		Files:      []string{"index.html"},
+		Files:      []string{"/index.html"},
 	}, configs[0])
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
@@ -113,7 +113,7 @@ func (s *AllSuite) TestInferAll() {
 			Type:       config.ContentTypeHTML,
 			Entrypoint: "myfile.html",
 			Validate:   true,
-			Files:      []string{"myfile.html"},
+			Files:      []string{"/myfile.html"},
 			Python:     nil,
 		},
 	}, t)

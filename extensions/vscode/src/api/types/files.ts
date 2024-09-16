@@ -25,6 +25,7 @@ export type ContentRecordFile = {
 export enum FileMatchSource {
   FILE = "file",
   BUILT_IN = "built-in",
+  PERMISSIONS_ERROR = "permissions",
 }
 
 export type FileMatch = {

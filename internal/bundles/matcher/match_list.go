@@ -1,9 +1,6 @@
 package matcher
 
 import (
-	"os"
-	"path/filepath"
-
 	"github.com/posit-dev/publisher/internal/util"
 )
 
@@ -12,7 +9,6 @@ import (
 type MatchList interface {
 	AddFromFile(base util.AbsolutePath, filePath util.AbsolutePath, patterns []string) error
 	Match(path util.AbsolutePath) *Pattern
-	Walk(root util.AbsolutePath, fn util.AbsoluteWalkFunc) error
 }
 
 type defaultMatchList struct {
@@ -55,23 +51,4 @@ func (l *defaultMatchList) Match(filePath util.AbsolutePath) *Pattern {
 		}
 	}
 	return match
-}
-
-func (l *defaultMatchList) Walk(root util.AbsolutePath, fn util.AbsoluteWalkFunc) error {
-	return root.Walk(
-		func(path util.AbsolutePath, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
-			if path != root {
-				m := l.Match(path)
-				if m == nil || m.Exclude {
-					if info.IsDir() {
-						return filepath.SkipDir
-					}
-					return nil
-				}
-			}
-			return fn(path, info, err)
-		})
 }

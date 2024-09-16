@@ -3,7 +3,9 @@ package matcher
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"errors"
 	"io/fs"
+	"os"
 	"path/filepath"
 
 	"github.com/posit-dev/publisher/internal/logging"
@@ -78,6 +80,10 @@ func (i *matchingWalker) Walk(base util.AbsolutePath, fn util.AbsoluteWalkFunc) 
 					return nil
 				}
 			}
+		}
+		if errors.Is(err, os.ErrPermission) {
+			i.log.Warn("permission error; skipping", "path", path)
+			return nil
 		}
 		return fn(path, info, err)
 	})

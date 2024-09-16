@@ -4,7 +4,10 @@
     :key="file.id"
     :title="file.base"
     :checked="isFileIncluded(file)"
-    :disabled="file.reason?.source === 'built-in'"
+    :disabled="
+      file.reason?.source === 'built-in' ||
+      file.reason?.source === 'permissions'
+    "
     :list-style="isFileIncluded(file) ? 'default' : 'deemphasized'"
     :tooltip="
       isFileIncluded(file)
@@ -16,23 +19,31 @@
     @check="includeFile(file)"
     @uncheck="excludeFile(file)"
   >
-    <template v-if="file.files.length" #default="{ indentLevel }">
+    <template v-if="file.isDir" #default="{ indentLevel }">
       <TreeProjectFiles :files="file.files" :indentLevel="indentLevel" />
     </template>
 
-    <template
-      #postDecor
-      v-if="
-        file.isFile &&
-        file.reason?.source !== FileMatchSource.BUILT_IN &&
-        !home.flatFiles.lastDeployedFiles.has(file.rel)
-      "
-    >
+    <template #postDecor>
       <PostDecor
+        v-if="
+          file.isFile &&
+          isFileIncluded(file) &&
+          !home.flatFiles.lastDeployedFiles.has(file.id)
+        "
         class="text-git-added"
-        :data-automation="`${file.id}-decorator`"
-        >A</PostDecor
       >
+        A
+      </PostDecor>
+      <PostDecor
+        v-if="
+          file.isFile &&
+          !isFileIncluded(file) &&
+          home.flatFiles.lastDeployedFiles.has(file.id)
+        "
+        class="text-git-deleted"
+      >
+        R
+      </PostDecor>
     </template>
   </TreeItemCheckbox>
 </template>

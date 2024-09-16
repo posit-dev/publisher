@@ -5,6 +5,52 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.6]
+
+### Added
+
+- Added a warning message if a package is not installed locally when scanning
+  for package requirements (#2113)
+- Added a link to edit the configuration file in relevant error messages when we
+  fail to deploy (#2047)
+- Added attributes to the Files API responses if all nested files are included
+  or excluded based on the configuration (#2147)
+
+### Changed
+
+- Changed Project Files to a tree view making it easier to manage included and
+  excluded files and directories (#1210)
+- When including and excluding files in the extension Project Files view the
+  file path is now included in the configuration files list to avoid including
+  similarly named files in subdirectories (#2159)
+- The files attribute in configuration files is now printed in a multiline
+  format for better readability (#2158)
+- The publish button in the editor view for entrypoints no longer automatically
+  re-deploys. It will continue to assist in selection of deployments (#2180)
+- Moved the "Create a New Deployment" option in Deployment selection menus to
+  the top of the list for easier discovery (#2110)
+- Changed the naming of generated configuration files to be more unique. They
+  are now based on the entered content title and include a short unique hash to
+  avoid collisions in source control (#2135)
+
+### Fixed
+
+- When creating a Shiny Express deployment the entrypoint is now included in the
+  generated configuration file (#2137)
+- Reduced the number of workspace file scanning operations done when a large
+  number of files are deleted in the workspace to improve performance (#2107)
+- Expensive file scanning operations are now debounced and throttled
+  to improve performance and avoid duplicate scans (#1970)
+- Improved catching of errors in the extension by ensuring that all errors are
+  caught and logged (#1912)
+- Fixed an issue where errors would occur if a directory in the workspace was
+  prevented from being read (#2210)
+
+### Removed
+
+- Removed the flat file view for Project Files in favor of the tree view
+  (#1210, #2160)
+
 ## [1.1.5]
 
 ### Added
