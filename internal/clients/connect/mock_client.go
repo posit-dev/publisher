@@ -37,13 +37,13 @@ func (m *MockClient) TestAuthentication(log logging.Logger) (*User, error) {
 	}
 }
 
-func (m *MockClient) GetContent(log logging.Logger) (*[]connectGetContentDTO, error) {
+func (m *MockClient) GetContent(contentID types.ContentID, log logging.Logger) (*ConnectGetContentDTO, error) {
 	args := m.Called(log)
-	contentSummaryItems := args.Get(0)
-	if contentSummaryItems == nil {
+	contentItem := args.Get(0)
+	if contentItem == nil {
 		return nil, args.Error(1)
 	} else {
-		return contentSummaryItems.(*[]connectGetContentDTO), args.Error(1)
+		return args.Get(0).(*ConnectGetContentDTO), args.Error(1)
 	}
 }
 
@@ -85,4 +85,9 @@ func (m *MockClient) ValidateDeployment(id types.ContentID, log logging.Logger) 
 func (m *MockClient) CheckCapabilities(base util.AbsolutePath, cfg *config.Config, log logging.Logger) error {
 	args := m.Called(base, cfg, log)
 	return args.Error(0)
+}
+
+func (m *MockClient) DownloadBundle(contentID types.ContentID, bundleID types.Int64Str, log logging.Logger) (string, error) {
+	args := m.Called(contentID, bundleID, log)
+	return "", args.Error(0)
 }

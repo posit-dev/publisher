@@ -30,5 +30,6 @@ type APIClient interface {
 	WaitForTask(taskID types.TaskID, log logging.Logger) error
 	ValidateDeployment(types.ContentID, logging.Logger) error
 	CheckCapabilities(util.AbsolutePath, *config.Config, logging.Logger) error
-	GetContent(log logging.Logger) (*[]connectGetContentDTO, error)
+	GetContent(contentID types.ContentID, log logging.Logger) (*ConnectGetContentDTO, error)
+	DownloadBundle(contentID types.ContentID, bundleID types.Int64Str, log logging.Logger) (string, error)
 }

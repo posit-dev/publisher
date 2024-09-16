@@ -250,7 +250,7 @@ func makeMemoryRequestLimit(req, limit int64) *config.Config {
 	}
 }
 
-func makeGPURequest(amd, nvidia int64) *config.Config {
+func makeGPURequest(amd, nvidia int32) *config.Config {
 	return &config.Config{
 		Connect: &config.Connect{
 			Kubernetes: &config.ConnectKubernetes{

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/posit-dev/publisher/internal/accounts"
+	"github.com/posit-dev/publisher/internal/clients/connect/app_modes"
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/logging"
@@ -31,8 +32,8 @@ type ConnectContent struct {
 	MemoryLimit                    *int64            `json:"memory_limit,omitempty"`
 	CPURequest                     *float64          `json:"cpu_request,omitempty"`
 	CPULimit                       *float64          `json:"cpu_limit,omitempty"`
-	AMDGPULimit                    *int64            `json:"amd_gpu_limit,omitempty"`
-	NvidiaGPULimit                 *int64            `json:"nvidia_gpu_limit,omitempty"`
+	AMDGPULimit                    *int32            `json:"amd_gpu_limit,omitempty"`
+	NvidiaGPULimit                 *int32            `json:"nvidia_gpu_limit,omitempty"`
 	ServiceAccountName             string            `json:"service_account_name,omitempty"`
 	DefaultImageName               string            `json:"default_image_name,omitempty"`
 	DefaultREnvironmentManagement  *bool             `json:"default_r_environment_management,omitempty"`
@@ -45,8 +46,8 @@ type ConnectContentSummary struct {
 	Title           string             `json:"title,omitempty"`
 	Created         types.Time         `json:"created_time"`
 	LastDeployed    types.Time         `json:"last_deployed_time"`
-	BundleId        types.NullInt64Str `json:"bundle_id"`
-	AppMode         AppMode            `json:"app_mode"`
+	BundleId        types.NullInt64Str `json:"bundle_id"` // was types.NullInt64Str
+	AppMode         app_modes.AppMode  `json:"app_mode"`
 	ContentCategory string             `json:"content_category"`
 	DashboardURL    string             `json:"dashboard_url"`
 	Role            string             `json:"app_role"`
@@ -103,47 +104,19 @@ func ConnectContentFromConfig(cfg *config.Config) *ConnectContent {
 	return c
 }
 
-func ConnectContentSummaryFromServer(account *accounts.Account, log logging.Logger) ([]*ConnectContentSummary, error) {
+// Get content DTO and manifest from server for guid
+func ConnectContentBundleFromServer(account *accounts.Account, id types.ContentID, log logging.Logger) (tarFilePath string, err error) {
 	client, err := NewConnectClient(account, 30*time.Second, events.NewNullEmitter(), log)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	contentItems, err := client.GetContent(log)
+	contentItem, err := client.GetContent(id, log)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	count := 0
-	for _, content := range *contentItems {
-		if content.Role == "owner" || content.Role == "editor" {
-			count += 1
-		}
+	bundleId, valid := contentItem.BundleId.Get()
+	if valid {
+		return client.DownloadBundle(id, bundleId, log)
 	}
-	summary := make([]*ConnectContentSummary, count)
-	nextIndex := 0
-	for _, content := range *contentItems {
-		if content.Role == "owner" || content.Role == "editor" {
-			s := &ConnectContentSummary{
-				GUID:            content.GUID,
-				Name:            content.Name,
-				Created:         content.Created,
-				LastDeployed:    content.LastDeployed,
-				AppMode:         content.AppMode,
-				ContentCategory: content.ContentCategory,
-				DashboardURL:    content.DashboardURL,
-				Role:            content.Role,
-				OwnerGUID:       content.OwnerGUID,
-			}
-			title, set := content.Title.Get()
-			if set {
-				s.Title = title
-			}
-			valid := content.BundleId.Valid()
-			if valid {
-				s.BundleId = content.BundleId
-			}
-			summary[nextIndex] = s
-			nextIndex += 1
-		}
-	}
-	return summary, nil
+	return "", err
 }

@@ -35,6 +35,7 @@ type HTTPClient interface {
 	Put(path string, body any, into any, log logging.Logger) error
 	Patch(path string, body any, into any, log logging.Logger) error
 	Delete(path string, log logging.Logger) error
+	DownloadTempFile(method string, path string, file *os.File, log logging.Logger) error
 }
 
 type defaultHTTPClient struct {
@@ -92,6 +93,71 @@ func (c *defaultHTTPClient) do(method string, path string, body io.Reader, bodyT
 	case http.StatusNoContent:
 		return nil, nil
 	default:
+		// If this was a Connect API error, there should be
+		// helpful error information in the json body.
+		var errDetails map[string]any
+
+		body, err := io.ReadAll(resp.Body)
+		if err == nil {
+			_ = json.Unmarshal(body, &errDetails)
+		}
+		errCode := events.ServerErrorCode
+		switch resp.StatusCode {
+		case http.StatusUnauthorized:
+			errCode = events.AuthenticationFailedCode
+		case http.StatusForbidden:
+			errCode = events.PermissionsCode
+		}
+		httpErr := NewHTTPError(apiURL, method, resp.StatusCode)
+		if errDetails == nil {
+			err = types.NewAgentError(
+				errCode,
+				httpErr,
+				httpErr) // the error object contains its own details
+		} else {
+			err = types.NewAgentError(
+				errCode,
+				httpErr,
+				errDetails)
+		}
+		return nil, err
+	}
+}
+
+func (c *defaultHTTPClient) doDownload(method string, path string, body io.Reader, log logging.Logger) (io.Reader, error) {
+	apiURL := util.URLJoin(c.baseURL, path)
+	log.Info("Downloading file from", "apiURL", apiURL)
+	req, err := http.NewRequest(method, apiURL, body)
+	if err != nil {
+		log.Error("Failure downloading file from", "apiURL", apiURL, "err", err)
+		return nil, err
+	}
+	resp, err := c.client.Do(req)
+	if err != nil {
+		if e, ok := err.(net.Error); ok {
+			if e.Timeout() {
+				return nil, types.NewAgentError(events.OperationTimedOutCode, err, nil)
+			}
+			log.Error("net.Error encountered", "e", e)
+		}
+		return nil, types.NewAgentError(events.ConnectionFailedCode, err, nil)
+	}
+
+	switch resp.StatusCode {
+	case http.StatusOK, http.StatusCreated, http.StatusAccepted:
+		log.Info("Download process file from", "apiURL", apiURL)
+		return resp.Body, nil
+		// _, err = io.Copy(file, resp.Body)
+		// if err != nil {
+		// 	return err
+		// }
+		// return nil
+	case http.StatusNoContent:
+		log.Info("")
+		resp.Body.Close()
+		return nil, nil
+	default:
+		defer resp.Body.Close()
 		// If this was a Connect API error, there should be
 		// helpful error information in the json body.
 		var errDetails map[string]any
@@ -185,6 +251,15 @@ func (c *defaultHTTPClient) Patch(path string, body any, into any, log logging.L
 
 func (c *defaultHTTPClient) Delete(path string, log logging.Logger) error {
 	return c.doJSON("DELETE", path, nil, nil, log)
+}
+
+func (c *defaultHTTPClient) DownloadTempFile(method string, path string, file *os.File, log logging.Logger) error {
+	body, err := c.doDownload("GET", path, nil, log)
+	if err != nil {
+		return err
+	}
+	_, err = io.Copy(file, body)
+	return err
 }
 
 func loadCACertificates(path string, log logging.Logger) (*x509.CertPool, error) {

@@ -95,9 +95,9 @@ type SchedulerSettings struct {
 	MemoryLimit       int64   `json:"memory_limit"`
 	MaxMemoryLimit    int64   `json:"max_memory_limit"`
 	AMDGPULimit       int64   `json:"amd_gpu_limit"`
-	MaxAMDGPULimit    int64   `json:"max_amd_gpu_limit"`
-	NvidiaGPULimit    int64   `json:"nvidia_gpu_limit"`
-	MaxNvidiaGPULimit int64   `json:"max_nvidia_gpu_limit"`
+	MaxAMDGPULimit    int32   `json:"max_amd_gpu_limit"`
+	NvidiaGPULimit    int32   `json:"nvidia_gpu_limit"`
+	MaxNvidiaGPULimit int32   `json:"max_nvidia_gpu_limit"`
 }
 
 type AuthenticationSettings struct {

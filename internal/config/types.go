@@ -86,6 +86,7 @@ type Config struct {
 	Comments      []string    `toml:"-" json:"comments"`
 	Schema        string      `toml:"$schema" json:"$schema"`
 	Type          ContentType `toml:"type" json:"type"`
+	Category      string      `toml:"category" json:"category"`
 	Entrypoint    string      `toml:"entrypoint" json:"entrypoint,omitempty"`
 	Validate      bool        `toml:"validate" json:"validate"`
 	HasParameters bool        `toml:"has_parameters,omitempty" json:"hasParameters"`
@@ -179,13 +180,15 @@ type ConnectRuntime struct {
 }
 
 type ConnectKubernetes struct {
+	ClusterName                    string   `toml:"cluster_name,omitempty" json:"clusterName,omitempty"`
 	MemoryRequest                  *int64   `toml:"memory_request,omitempty" json:"memoryRequest,omitempty"`
 	MemoryLimit                    *int64   `toml:"memory_limit,omitempty" json:"memoryLimit,omitempty"`
 	CPURequest                     *float64 `toml:"cpu_request,omitempty" json:"cpuRequest,omitempty"`
 	CPULimit                       *float64 `toml:"cpu_limit,omitempty" json:"cpuLimit,omitempty"`
-	AMDGPULimit                    *int64   `toml:"amd_gpu_limit,omitempty" json:"amdGpuLimit,omitempty"`
-	NvidiaGPULimit                 *int64   `toml:"nvidia_gpu_limit,omitempty" json:"nvidiaGpuLimit,omitempty"`
+	AMDGPULimit                    *int32   `toml:"amd_gpu_limit,omitempty" json:"amdGpuLimit,omitempty"`
+	NvidiaGPULimit                 *int32   `toml:"nvidia_gpu_limit,omitempty" json:"nvidiaGpuLimit,omitempty"`
 	ServiceAccountName             string   `toml:"service_account_name,omitempty" json:"serviceAccountName,omitempty"`
+	ImageName                      string   `toml:"image_name,omitempty" json:"imageName,omitempty"`
 	DefaultImageName               string   `toml:"default_image_name,omitempty" json:"defaultImageName,omitempty"`
 	DefaultREnvironmentManagement  *bool    `toml:"default_r_environment_management,omitempty" json:"defaultREnvironmentManagement"`
 	DefaultPyEnvironmentManagement *bool    `toml:"default_py_environment_management,omitempty" json:"defaultPyEnvironmentManagement"`

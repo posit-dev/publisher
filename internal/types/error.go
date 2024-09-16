@@ -27,6 +27,7 @@ type AgentError struct {
 }
 
 const UnknownErrorCode ErrorCode = "unknown"
+const PermissionErrorCode ErrorCode = "permissionError"
 
 func AsAgentError(e error) *AgentError {
 	if e == nil {

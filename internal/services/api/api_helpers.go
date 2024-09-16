@@ -8,7 +8,9 @@ import (
 	"html"
 	"net/http"
 
+	"github.com/posit-dev/publisher/internal/clients/http_client"
 	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 )
 
@@ -30,11 +32,39 @@ func MethodNotAllowed(w http.ResponseWriter, req *http.Request, log logging.Logg
 }
 
 func BadRequest(w http.ResponseWriter, req *http.Request, log logging.Logger, err error) {
+	agentErr := types.AsAgentError(err)
+	if agentErr == nil {
+		status := http.StatusBadRequest
+		httpErr, ok := err.(*http_client.HTTPError)
+		if ok {
+			status = httpErr.Status
+		}
+		text := http.StatusText(status)
+		w.WriteHeader(status)
+		fmt.Fprintf(w, "%s: %s\n", text, err.Error())
+		log.Error(text, "method", req.Method, "url", req.URL.String(), "error", err)
+		return
+	}
 	status := http.StatusBadRequest
-	text := http.StatusText(status)
+	op := "Unknown"
+	httpErr, ok := agentErr.Err.(*http_client.HTTPError)
+	if ok {
+		status = httpErr.Status
+		op = httpErr.Method
+	}
 	w.WriteHeader(status)
-	fmt.Fprintf(w, "%s: %s\n", text, err.Error())
-	log.Error(text, "method", req.Method, "url", req.URL.String(), "error", err)
+	text := fmt.Sprintf("error %.0f: %s (URL: %s %s status:%d)", agentErr.Data["code"], agentErr.Data["error"], op, req.URL.String(), status)
+	w.Write([]byte(text))
+	log.Error(text)
+
+	// Code    ErrorCode `json:"code" toml:"code"`
+	// Err     error     `json:"-" toml:"-"`
+	// Message string    `json:"msg" toml:"message"`
+	// Op      Operation `json:"operation" toml:"operation"`
+	// Data    ErrorData `json:"data" toml:"data,omitempty"`
+	// errCode,
+	// 			httpErr,
+	// 			errDetails
 }
 
 func NotFound(w http.ResponseWriter, log logging.Logger, err error) {

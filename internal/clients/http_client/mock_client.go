@@ -4,6 +4,7 @@ package http_client
 
 import (
 	"io"
+	"os"
 
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/stretchr/testify/mock"
@@ -55,5 +56,10 @@ func (m *MockHTTPClient) Patch(path string, body any, into any, log logging.Logg
 
 func (m *MockHTTPClient) Delete(path string, log logging.Logger) error {
 	args := m.Called(path, log)
+	return args.Error(0)
+}
+
+func (m *MockHTTPClient) DownloadTempFile(method string, path string, file *os.File, log logging.Logger) error {
+	args := m.Called(path, file.Name(), log)
 	return args.Error(0)
 }

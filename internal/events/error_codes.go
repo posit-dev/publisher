@@ -15,6 +15,7 @@ const (
 	ServerErrorCode           ErrorCode = "serverErr"                // HTTP 5xx code from publishing server
 	VanityURLNotAvailableCode ErrorCode = "vanityURLNotAvailableErr" // Vanity URL already in use
 	DeploymentNotFoundCode    ErrorCode = "deploymentNotFoundErr"    // Could not find deployment to update
+	EmptyBundleDownloaded     ErrorCode = "emptyBundleDownloaded"    // No file contents returned from download bundle API
 
 	// Server failed to deploy the bundle.
 	// This will eventually need to become more specific

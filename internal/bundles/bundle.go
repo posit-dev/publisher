@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"os"
 	"path/filepath"
 
 	"github.com/posit-dev/publisher/internal/bundles/matcher"
@@ -264,4 +265,36 @@ func (b *bundle) addManifest() error {
 		return err
 	}
 	return b.addFile(ManifestFilename, manifestJSON)
+}
+
+func ExtractManifest(tarFilePath string) (*Manifest, error) {
+	file, err := os.Open(tarFilePath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	gzRead, err := gzip.NewReader(file)
+	if err != nil {
+		return nil, err
+	}
+
+	tarRead := tar.NewReader(gzRead)
+	for {
+		f, err := tarRead.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		if f.Typeflag != tar.TypeReg {
+			continue
+		}
+		if f.Name != ManifestFilename {
+			continue
+		}
+		return ReadManifest(tarRead)
+	}
+	return nil, fmt.Errorf("The bundle file (%s) does not contain a manifest.json file.", tarFilePath)
 }

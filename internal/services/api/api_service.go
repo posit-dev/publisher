@@ -170,10 +170,6 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	r.Handle(ToPath("packages", "r", "scan"), NewPostPackagesRScanHandler(base, log)).
 		Methods(http.MethodPost)
 
-	// GET /api/content/$accountName
-	r.Handle(ToPath("content", "{name}"), GetContentHandlerFunc(log, lister)).
-		Methods(http.MethodGet)
-
 	c := cors.AllowAll().Handler(r)
 	return c.ServeHTTP
 }

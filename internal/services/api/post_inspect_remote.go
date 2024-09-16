@@ -6,9 +6,14 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/posit-dev/publisher/internal/accounts"
+	"github.com/posit-dev/publisher/internal/bundles"
+	"github.com/posit-dev/publisher/internal/clients/connect"
+	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
@@ -16,9 +21,12 @@ import (
 
 type postInspectRemoteResponseBody struct {
 	// Configuration *config.Config `json:"configuration"`
-	ProjectDir string          `json:"projectDir"`
-	ServerURL  string          `json:"serverUrl"`
-	ID         types.ContentID `json:"id,omitempty"`
+	ProjectDir string                        `json:"projectDir"`
+	ServerURL  string                        `json:"serverUrl"`
+	ID         types.ContentID               `json:"id"`
+	ContentDTO *connect.ConnectGetContentDTO `json:"contentDTO"`
+	Config     *config.Config                `json:"config"`
+	Manifest   *bundles.Manifest             `json:"manifest"`
 }
 
 func PostInspectRemoteHandlerFunc(
@@ -49,11 +57,37 @@ func PostInspectRemoteHandlerFunc(
 			}
 		}
 
+		apiClient, err := connect.NewConnectClient(acct, 30*time.Second, nil, log)
+		if err != nil {
+			agentErr := types.AsAgentError(err)
+			if agentErr.Code == events.PermissionsCode {
+				BadRequest(w, req, log, agentErr)
+			} else {
+				InternalError(w, req, log, err)
+				return
+			}
+		}
+
+		f := connect.NewConnectConfigFactory(apiClient, types.ContentID(guid), log)
+		contentDTO, config, manifest, err := f.FromRemoteManifest()
+		if err != nil {
+			agentErr := types.AsAgentError(err)
+			if agentErr.Code == events.PermissionsCode {
+				BadRequest(w, req, log, agentErr)
+			} else {
+				InternalError(w, req, log, err)
+				return
+			}
+		}
+
 		// send what we know now.
 		response := postInspectRemoteResponseBody{
 			ProjectDir: relProjectDir.String(),
 			ServerURL:  acct.URL,
 			ID:         types.ContentID(guid),
+			ContentDTO: contentDTO,
+			Config:     config,
+			Manifest:   manifest,
 		}
 
 		w.Header().Set("content-type", "application/json")

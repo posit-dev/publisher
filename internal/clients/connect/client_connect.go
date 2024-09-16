@@ -9,11 +9,13 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"os"
 	"regexp"
 	"strings"
 	"time"
 
 	"github.com/posit-dev/publisher/internal/accounts"
+	"github.com/posit-dev/publisher/internal/clients/connect/app_modes"
 	"github.com/posit-dev/publisher/internal/clients/http_client"
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/events"
@@ -143,53 +145,69 @@ func (c *ConnectClient) TestAuthentication(log logging.Logger) (*User, error) {
 	return connectUser.toUser(), nil
 }
 
-type connectGetContentDTO struct {
-	GUID               types.ContentID    `json:"guid"`
-	Name               types.ContentName  `json:"name"`
-	Title              types.NullString   `json:"title"`
-	Description        string             `json:"description"`
-	AccessType         string             `json:"access_type"`
-	ConnectionTimeout  types.NullInt32    `json:"connection_timeout"`
-	ReadTimeout        types.NullInt32    `json:"read_timeout"`
-	InitTimeout        types.NullInt32    `json:"init_timeout"`
-	IdleTimeout        types.NullInt32    `json:"idle_timeout"`
-	MaxProcesses       types.NullInt32    `json:"max_processes"`
-	MinProcesses       types.NullInt32    `json:"min_processes"`
-	MaxConnsPerProcess types.NullInt32    `json:"max_conns_per_process"`
-	LoadFactor         types.NullFloat64  `json:"load_factor"`
-	Created            types.Time         `json:"created_time"`
-	LastDeployed       types.Time         `json:"last_deployed_time"`
-	BundleId           types.NullInt64Str `json:"bundle_id"`
-	AppMode            AppMode            `json:"app_mode"`
-	ContentCategory    string             `json:"content_category"`
-	Parameterized      bool               `json:"parameterized"`
-	ClusterName        types.NullString   `json:"cluster_name"`
-	ImageName          types.NullString   `json:"image_name"`
-	RVersion           types.NullString   `json:"r_version"`
-	PyVersion          types.NullString   `json:"py_version"`
-	QuartoVersion      types.NullString   `json:"quarto_version"`
-	RunAs              types.NullString   `json:"run_as"`
-	RunAsCurrentUser   bool               `json:"run_as_current_user"`
-	OwnerGUID          types.GUID         `json:"owner_guid"`
-	ContentURL         string             `json:"content_url"`
-	DashboardURL       string             `json:"dashboard_url"`
-	Role               string             `json:"app_role"`
-	Id                 types.Int64Str     `json:"id"`
+type ConnectGetContentDTO struct {
+	GUID                           types.ContentID    `json:"guid"`
+	Name                           types.ContentName  `json:"name"`
+	Title                          types.NullString   `json:"title"`
+	Description                    string             `json:"description"`
+	AccessType                     string             `json:"access_type"`
+	Locked                         types.NullBool     `json:"locked"`
+	LockedMessage                  types.NullString   `json:"locked_message"`
+	ConnectionTimeout              types.NullInt32    `json:"connection_timeout"`
+	ReadTimeout                    types.NullInt32    `json:"read_timeout"`
+	InitTimeout                    types.NullInt32    `json:"init_timeout"`
+	IdleTimeout                    types.NullInt32    `json:"idle_timeout"`
+	MaxProcesses                   types.NullInt32    `json:"max_processes"`
+	MinProcesses                   types.NullInt32    `json:"min_processes"`
+	MaxConnsPerProcess             types.NullInt32    `json:"max_conns_per_process"`
+	LoadFactor                     types.NullFloat64  `json:"load_factor"`
+	CpuRequest                     types.NullFloat64  `json:"cpu_request"`
+	CpuLimit                       types.NullFloat64  `json:"cpu_limit"`
+	MemoryRequest                  types.NullInt64    `json:"memory_request"`
+	MemoryLimit                    types.NullInt64    `json:"memory_limit"`
+	AmdGpuLimit                    types.NullInt32    `json:"amd_gpu_limit"`
+	NvidiaGpuLimit                 types.NullInt32    `json:"nvidia_gpu_limit"`
+	Created                        types.Time         `json:"created_time"`
+	LastDeployed                   types.Time         `json:"last_deployed_time"`
+	BundleId                       types.NullInt64Str `json:"bundle_id"`
+	AppMode                        app_modes.AppMode  `json:"app_mode"`
+	ContentCategory                string             `json:"content_category"`
+	Parameterized                  bool               `json:"parameterized"`
+	ClusterName                    types.NullString   `json:"cluster_name"`
+	ImageName                      types.NullString   `json:"image_name"`
+	DefaultImageName               types.NullString   `json:"default_image_name"`
+	DefaultREnvironmentManagement  types.NullBool     `json:"default_r_environment_management"`
+	DefaultPyEnvironmentManagement types.NullBool     `json:"default_py_environment_management"`
+	ServiceAccountName             types.NullString   `json:"service_account_name"`
+	RVersion                       types.NullString   `json:"r_version"`
+	REnvironmentManagement         types.NullBool     `json:"r_environment_management"`
+	PyVersion                      types.NullString   `json:"py_version"`
+	PyEnvironmentManagement        types.NullBool     `json:"py_environment_management"`
+	QuartoVersion                  types.NullString   `json:"quarto_version"`
+	RunAs                          types.NullString   `json:"run_as"`
+	RunAsCurrentUser               bool               `json:"run_as_current_user"`
+	OwnerGUID                      types.GUID         `json:"owner_guid"`
+	ContentURL                     string             `json:"content_url"`
+	DashboardURL                   string             `json:"dashboard_url"`
+	Role                           string             `json:"app_role"`
+	VanityUrl                      types.NullString   `json:"vanity_url"`
+	Id                             types.Int64Str     `json:"id"`
 	// Tags         []tagOutputDTO    `json:"tags,omitempty"`
 	// Owner        *ownerOutputDTO   `json:"owner,omitempty"`
 }
 
-func (c *ConnectClient) GetContent(log logging.Logger) (*[]connectGetContentDTO, error) {
-	contentDTOs := &[]connectGetContentDTO{}
-	err := c.client.Get("/__api__/v1/content", contentDTOs, log)
+func (c *ConnectClient) GetContent(contentID types.ContentID, log logging.Logger) (*ConnectGetContentDTO, error) {
+	contentDTO := &ConnectGetContentDTO{}
+	url := fmt.Sprintf("/__api__/v1/content/%s", contentID)
+	err := c.client.Get(url, contentDTO, log)
 	if err != nil {
 		return nil, err
 	}
-	return contentDTOs, nil
+	return contentDTO, nil
 }
 
 func (c *ConnectClient) CreateDeployment(body *ConnectContent, log logging.Logger) (types.ContentID, error) {
-	content := connectGetContentDTO{}
+	content := ConnectGetContentDTO{}
 	err := c.client.Post("/__api__/v1/content", body, &content, log)
 	if err != nil {
 		return "", err
@@ -240,6 +258,27 @@ type connectGetBundleDTO struct {
 	Active        bool              `json:"active"`
 	Size          int64             `json:"size"`
 	Metadata      bundleMetadataDTO `json:"metadata"`
+}
+
+func (c *ConnectClient) DownloadBundle(contentID types.ContentID, bundleID types.Int64Str, log logging.Logger) (string, error) {
+	// Create the file - caller will assume responsibility for file
+	file, err := os.CreateTemp("", fmt.Sprintf("Bundle_%s_%s_*.tar.gz", contentID, bundleID))
+	if err != nil {
+		return "", err
+	}
+	log.Info("DownloadBundle created file:", "name", file.Name())
+	defer func() {
+		file.Close()
+		// os.Remove(file.Name())
+	}()
+	url := fmt.Sprintf("/__api__/v1/content/%s/bundles/%s/download", contentID, bundleID)
+	err = c.client.DownloadTempFile("GET", url, file, log)
+	if err != nil {
+		return "", err
+	}
+
+	log.Info("Bundle is now populated! %s", file.Name())
+	return file.Name(), nil
 }
 
 func (c *ConnectClient) UploadBundle(contentID types.ContentID, body io.Reader, log logging.Logger) (types.BundleID, error) {

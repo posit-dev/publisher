@@ -19,7 +19,18 @@ func New() *Config {
 		Schema:   schema.ConfigSchemaURL,
 		Type:     ContentTypeUnknown,
 		Validate: true,
-		Files:    []string{},
+		Python:   &Python{},
+		R:        &R{},
+		Quarto: &Quarto{
+			Engines: []string{},
+		},
+		Access: &Access{},
+		Connect: &Connect{
+			Access:     &ConnectAccess{},
+			Runtime:    &ConnectRuntime{},
+			Kubernetes: &ConnectKubernetes{},
+		},
+		Files: []string{},
 	}
 }
 
