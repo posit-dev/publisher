@@ -2,8 +2,6 @@ module github.com/posit-dev/publisher
 
 go 1.23.1
 
-toolchain go1.23.1
-
 require (
 	github.com/PuerkitoBio/purell v1.2.1
 	github.com/alecthomas/kong v0.9.0
@@ -20,13 +18,10 @@ require (
 	golang.org/x/net v0.25.0
 )
 
-require golang.org/x/crypto v0.26.0 // indirect
-
 require (
 	github.com/alessio/shellescape v1.4.2 // indirect
 	github.com/danieljoos/wincred v1.2.1 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
-	google.golang.org/protobuf v1.34.2 // indirect  DON'T REMOVE, this is here to force a more recent version
 )
 
 require (
