@@ -1,8 +1,20 @@
 name: Nightly
 on:
   workflow_call:
+  workflow_dispatch:
+    inputs:
+      job:
+        description: "Select the job to run"
+        required: true
+        default: "all"
+        type: choice
+        options:
+          - all
+          - bats-tests
+          - vscode-ui-tests
 jobs:
   bats-tests:
+    if: ${{ github.event_name == 'schedule' || github.event.inputs.job == 'all' || github.event.inputs.job == 'bats-tests' }}
     env:
       FUZZBUCKET_SSH_KEY: ${{ secrets.FUZZBUCKET_SSH_KEY }}
       FUZZBUCKET_URL: ${{ secrets.FUZZBUCKET_URL }}
@@ -63,6 +75,7 @@ jobs:
       - run: just bats test deploy
 
   vscode-ui-tests:
+    if: ${{ github.event_name == 'schedule' || github.event.inputs.job == 'all' || github.event.inputs.job == 'vscode-ui-tests' }}
     env:
       FUZZBUCKET_SSH_KEY: ${{ secrets.FUZZBUCKET_SSH_KEY }}
       FUZZBUCKET_URL: ${{ secrets.FUZZBUCKET_URL }}
