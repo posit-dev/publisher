@@ -1,11 +1,7 @@
 <template>
   <TreeSection title="Secrets" :actions="sectionActions">
     <template v-if="home.secrets.size">
-      <Secret
-        v-for="[name, value] in home.secrets"
-        :name="name"
-        :value="value"
-      />
+      <Secret v-for="[name] in home.secrets" :name="name" :key="name" />
     </template>
     <WelcomeView v-else>
       <p>No secrets have been added to the configuration.</p>

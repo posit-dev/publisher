@@ -10,7 +10,7 @@
   <TreeItem
     v-else
     :title="name"
-    :description="value ? '••••••' : undefined"
+    :description="secretValue ? '••••••' : undefined"
     :actions="actions"
     codicon="codicon-lock-small"
     :tooltip="tooltip"
@@ -28,19 +28,23 @@ import { ActionButton } from "src/components/ActionToolbar.vue";
 
 interface Props {
   name: string;
-  value?: string;
 }
 
 const props = defineProps<Props>();
 
 const input = ref<HTMLInputElement | null>(null);
 const showInput = ref(false);
-const inputValue = ref(props.value);
+const inputValue = ref<string>();
 
 const home = useHomeStore();
 
+const secretValue = computed(() => home.secrets.get(props.name));
+
 const inputSecret = () => {
+  // Update inputValue in case the secret value has changed or been cleared
+  inputValue.value = secretValue.value;
   showInput.value = true;
+  // Wait for next tick to ensure the input is rendered
   nextTick(() => input.value?.select());
 };
 
@@ -50,7 +54,7 @@ const updateSecret = () => {
 };
 
 const tooltip = computed(() => {
-  if (props.value) {
+  if (secretValue.value) {
     return "On the next deploy the new value will be set for the deployment.";
   }
 
@@ -60,7 +64,7 @@ const tooltip = computed(() => {
 const actions = computed<ActionButton[]>(() => {
   const result = [];
 
-  if (props.value) {
+  if (secretValue.value) {
     result.push({
       label: "Clear Value",
       codicon: "codicon-x",
