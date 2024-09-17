@@ -10,6 +10,7 @@ import {
   Configuration,
   ContentRecordFile,
   ConfigurationError,
+  isConfigurationError,
 } from "../../../../src/api";
 import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
 import { RPackage } from "../../../../src/api/types/packages";
@@ -26,6 +27,8 @@ export const useHomeStore = defineStore("home", () => {
   const sortedCredentials = computed(() => {
     return credentials.value.sort((a, b) => a.name.localeCompare(b.name));
   });
+
+  const secrets = ref(new Map<string, string | undefined>());
 
   const showDisabledOverlay = ref(false);
 
@@ -55,6 +58,32 @@ export const useHomeStore = defineStore("home", () => {
       }
       return result;
     },
+  );
+
+  watch(
+    [selectedContentRecord, selectedConfiguration],
+    ([contentRecord, config], [prevContentRecord, prevConfig]) => {
+      const result = new Map<string, string | undefined>();
+
+      if (config === undefined || isConfigurationError(config)) {
+        return result;
+      }
+
+      const isSameContentRecord = Boolean(
+        contentRecord?.saveName === prevContentRecord?.saveName,
+      );
+
+      config.configuration.secrets?.forEach((secret) => {
+        if (isSameContentRecord && secrets.value?.has(secret)) {
+          result.set(secret, secrets.value.get(secret));
+        } else {
+          result.set(secret, undefined);
+        }
+      });
+
+      secrets.value = result;
+    },
+    { immediate: true },
   );
 
   // Always use the content record as the source of truth for the
@@ -194,6 +223,7 @@ export const useHomeStore = defineStore("home", () => {
     configurationsInError,
     credentials,
     sortedCredentials,
+    secrets,
     selectedContentRecord,
     selectedConfiguration,
     serverCredential,
