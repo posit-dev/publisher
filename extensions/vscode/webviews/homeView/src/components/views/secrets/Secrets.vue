@@ -27,7 +27,7 @@ const home = useHomeStore();
 const sectionActions = computed<ActionButton[]>(() => [
   {
     label: "Clear Values for all Secrets",
-    codicon: "codicon-x",
+    codicon: "codicon-clear-all",
     fn: () => {
       home.secrets.forEach((_, key) => {
         home.secrets.set(key, undefined);
