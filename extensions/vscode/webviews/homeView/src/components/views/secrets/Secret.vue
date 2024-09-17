@@ -41,7 +41,7 @@ const home = useHomeStore();
 
 const inputSecret = () => {
   showInput.value = true;
-  nextTick(() => input.value?.focus());
+  nextTick(() => input.value?.select());
 };
 
 const updateSecret = () => {
