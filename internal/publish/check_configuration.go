@@ -17,9 +17,9 @@ type checkConfigurationSuccessData struct{}
 
 var errTypeChanged = errors.New("configuration type cannot be changed once deployed; create a new destination to use a different type")
 
-func (p *defaultPublisher) checkConfiguration(client connect.APIClient, log logging.Logger) error {
+func (p *defaultPublisher) checkConfiguration(client connect.APIClient) error {
 	op := events.PublishCheckCapabilitiesOp
-	log = log.WithArgs(logging.LogKeyOp, op)
+	log := p.log.WithArgs(logging.LogKeyOp, op)
 
 	p.emitter.Emit(events.New(op, events.StartPhase, events.NoError, checkConfigurationStartData{}))
 	log.Info("Checking configuration against server capabilities")
@@ -31,10 +31,12 @@ func (p *defaultPublisher) checkConfiguration(client connect.APIClient, log logg
 	log.Info("Publishing with credentials", "username", user.Username, "email", user.Email)
 
 	if p.Target != nil {
+		log.Debug("Target found while checking configuration")
 		previousType := p.Target.Type
 		currentType := p.Config.Type
 
 		if previousType != "" && previousType != config.ContentTypeUnknown && currentType != previousType {
+			log.Debug("Content type mismatch between previous and new target", "previous_type", previousType, "current_type", currentType)
 			return types.OperationError(op, errTypeChanged)
 		}
 	}
