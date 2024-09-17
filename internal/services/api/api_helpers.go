@@ -10,7 +10,6 @@ import (
 	"net/http"
 
 	"github.com/posit-dev/publisher/internal/logging"
-	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 )
 
@@ -43,18 +42,6 @@ func NotFound(w http.ResponseWriter, log logging.Logger, err error) {
 	msg := err.Error()
 	log.Error(msg)
 	http.Error(w, msg, http.StatusNotFound)
-}
-
-func AgentErrorJsonResult(w http.ResponseWriter, req *http.Request, log logging.Logger, agentError types.AgentError) {
-	w.Header().Set("content-type", "application/json")
-	w.WriteHeader(agentError.Status)
-	json.NewEncoder(w).Encode(agentError)
-	log.Error(agentError.Message, "method", req.Method, "url", req.URL.String(), "error", agentError.Err)
-}
-
-func UnknownErrorJsonResult(w http.ResponseWriter, req *http.Request, log logging.Logger, err error) {
-	aerr := types.NewAgentError(types.ErrorUnknownException, err, nil)
-	AgentErrorJsonResult(w, req, log, *aerr)
 }
 
 func JsonResult(w http.ResponseWriter, result any) {

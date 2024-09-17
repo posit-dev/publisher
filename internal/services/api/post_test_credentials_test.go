@@ -124,5 +124,5 @@ func (s *PostTestCredentialsHandlerSuite) TestPostTestCredentialsHandlerFuncBadA
 	s.NoError(err)
 	s.Nil(response.User)
 	s.NotNil(response.Error)
-	s.Equal("An unknown error occurred: test error from TestAuthentication", response.Error.Message)
+	s.Equal("test error from TestAuthentication", response.Error.Message)
 }

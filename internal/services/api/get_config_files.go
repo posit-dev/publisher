@@ -35,33 +35,41 @@ func GetConfigFilesHandlerFunc(base util.AbsolutePath, filesService files.FilesS
 		cfg, err := configFromFile(configPath)
 		if err != nil {
 			if aerr, ok := err.(*types.AgentError); ok {
-				AgentErrorJsonResult(w, req, log, *aerr)
-				return
+				if aerr.Code == types.ErrorUnknownTOMLKey {
+					apiErr := APIErrorUnknownTOMLKeyFromAgentError(*aerr)
+					apiErr.JSONResponse(w)
+					return
+				}
+
+				if aerr.Code == types.ErrorInvalidTOML {
+					apiErr := APIErrorInvalidTOMLFileFromAgentError(*aerr)
+					apiErr.JSONResponse(w)
+					return
+				}
 			}
 
 			if errors.Is(err, fs.ErrNotExist) {
-				aerr := types.NewAgentError(types.ErrorResourceNotFound, err, nil)
-				AgentErrorJsonResult(w, req, log, *aerr)
+				http.NotFound(w, req)
 			} else {
-				UnknownErrorJsonResult(w, req, log, err)
+				InternalError(w, req, log, err)
 			}
 			return
 		}
 		matchList, err := matcher.NewMatchList(projectDir, matcher.StandardExclusions)
 		if err != nil {
-			UnknownErrorJsonResult(w, req, log, err)
+			InternalError(w, req, log, err)
 			return
 		}
 		err = matchList.AddFromFile(projectDir, configPath, cfg.Files)
 		if err != nil {
-			aerr := types.NewAgentError(types.ErrorInvalidConfigFiles, err, nil)
-			AgentErrorJsonResult(w, req, log, *aerr)
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			w.Write([]byte("invalid pattern in configuration 'files'"))
 			return
 		}
 
 		file, err := filesService.GetFile(projectDir, matchList)
 		if err != nil {
-			UnknownErrorJsonResult(w, req, log, err)
+			InternalError(w, req, log, err)
 			return
 		}
 

@@ -67,13 +67,13 @@ func ReadTOMLFile(path AbsolutePath, dest any) error {
 		decodeErr, ok := err.(*toml.DecodeError)
 		if ok {
 			e := decodeErrFromTOMLErr(decodeErr, path)
-			return types.NewAgentError(types.ErrorInvalidTOML, e, nil)
+			return types.NewAgentError(types.ErrorInvalidTOML, e, e)
 		}
 		strictErr, ok := err.(*toml.StrictMissingError)
 		if ok {
 			e := decodeErrFromTOMLErr(&strictErr.Errors[0], path)
 			e.Problem = "unknown key"
-			return types.NewAgentError(types.ErrorUnknownTOMLKey, e, nil)
+			return types.NewAgentError(types.ErrorUnknownTOMLKey, e, e)
 		}
 		return err
 	}
