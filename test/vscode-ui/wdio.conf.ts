@@ -241,15 +241,7 @@ export const config: Options.Testrunner = {
   /**
    * Function to be executed before a test (in Mocha/Jasmine) starts.
    */
-  // beforeTest: function () {
-  //   it("open extension", async () => {
-  //     browser.$("aria/Posit Publisher").waitForExist({ timeout: 30000 });
 
-  //     // open posit extension
-  //     const extension = await browser.$("aria/Posit Publisher");
-  //     await expect(extension).toExist();
-  //     await extension.click();
-  //   });
   // },
   /**
    * Hook that gets executed _before_ a hook within the suite starts (e.g. runs before calling
@@ -275,7 +267,6 @@ export const config: Options.Testrunner = {
    */
   // afterTest: function(test, context, { error, result, duration, passed, retries }) {
   // },
-
   /**
    * Hook that gets executed after the suite has ended
    * @param {object} suite suite details
@@ -298,36 +289,6 @@ export const config: Options.Testrunner = {
    * @param {Array.<Object>} capabilities list of capabilities details
    * @param {Array.<String>} specs List of spec file paths that ran
    */
-  // after: function (result, capabilities, specs) {
-  //   const parentDir = path.resolve(
-  //         __dirname,
-  //         "../sample-content/fastapi-simple",
-  //       );
-  //       const positDir = path.join(parentDir, ".posit");
-
-  //       // Log the contents of the parent directory
-  //       console.log(fs.readdirSync(parentDir));
-
-  //       // Check if the directory exists before trying to delete it
-  //       if (fs.existsSync(positDir)) {
-  //         // Get the files in the directory
-  //         const files = fs.readdirSync(positDir);
-
-  //         // Delete each file in the directory
-  //         for (const file of files) {
-  //           const filePath = path.join(positDir, file);
-  //           if (fs.lstatSync(filePath).isDirectory()) {
-  //             fs.rmdirSync(filePath, { recursive: true }); // Delete directory recursively
-  //           } else {
-  //             fs.unlinkSync(filePath); // Delete file
-  //           }
-  //         }
-
-  //         // Delete the directory
-  //         fs.rmdirSync(positDir);
-  //       } else {
-  //         console.log("Directory does not exist");
-  //       }
   // },
   /**
    * Gets executed right after terminating the webdriver session.

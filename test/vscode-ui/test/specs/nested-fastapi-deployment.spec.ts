@@ -1,25 +1,14 @@
 import { browser, $ } from "@wdio/globals";
-
-// import * as fs from "fs";
 import * as path from "path";
-// import { fileURLToPath } from "url";
-// import { dirname } from "path";
 import * as helper from "../helpers.ts";
-
-// const __filename = fileURLToPath(import.meta.url);
-// const __dirname = dirname(__filename);
-// const connectServer = process.env.CONNECT_SERVER;
-// const apiKey = process.env.CONNECT_API_KEY;
 
 const sep = path.sep;
 const title = "my fastapi app";
 describe("Nested Fast API Deployment", () => {
   let workbench: any;
-  // let input: any;
 
   before(async () => {
     workbench = await browser.getWorkbench();
-    // input = await $(".input");
   });
 
   it("open extension", async () => {
@@ -63,7 +52,6 @@ describe("Nested Fast API Deployment", () => {
 
     // switch out of iframe
     await browser.switchToFrame(null);
-
     const myConfig = browser.$(
       `aria/my fastapi app, fastapi-simple${sep} • my connect server, Existing`,
     );
