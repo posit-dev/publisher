@@ -1,27 +1,10 @@
 // Copyright (C) 2023 by Posit Software, PBC.
 
-import axios, { AxiosError, AxiosResponse } from "axios";
+import axios from "axios";
+import { isAxiosErrorWithJson, resolveAgentJsonErrorMsg } from "./errorTypes";
 
 export type ErrorMessage = string[];
 export type ErrorMessages = ErrorMessage[];
-
-export type ErrorResData = {
-  code: string;
-  status: number;
-  msg: string;
-  error: string;
-};
-
-export type JsonErrorResponse = AxiosError & {
-  response: AxiosResponse<ErrorResData>;
-};
-
-export const isJsonErrorRes = (error: unknown): error is JsonErrorResponse => {
-  if (axios.isAxiosError(error)) {
-    return error.response?.data && typeof error.response.data === "object";
-  }
-  return false;
-};
 
 export const getStatusFromError = (error: unknown): number | undefined => {
   if (axios.isAxiosError(error)) {
@@ -72,8 +55,8 @@ export const getAPIURLFromError = (error: unknown) => {
 export const getSummaryStringFromError = (location: string, error: unknown) => {
   let msg = `An error has occurred at ${location}`;
 
-  if (isJsonErrorRes(error)) {
-    return error.response.data.msg;
+  if (isAxiosErrorWithJson(error)) {
+    return resolveAgentJsonErrorMsg(error);
   }
 
   const summary = getSummaryFromError(error);
