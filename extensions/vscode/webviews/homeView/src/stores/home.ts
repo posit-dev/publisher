@@ -215,6 +215,16 @@ export const useHomeStore = defineStore("home", () => {
     rVersion.value = version;
   };
 
+  const clearSecretValues = () => {
+    const cleared = new Map();
+
+    secrets.value.forEach((_, key) => {
+      cleared.set(key, undefined);
+    });
+
+    secrets.value = cleared;
+  };
+
   return {
     showDisabledOverlay,
     publishInProgress,
@@ -244,5 +254,6 @@ export const useHomeStore = defineStore("home", () => {
     updateParentViewSelectionState,
     updatePythonPackages,
     updateRPackages,
+    clearSecretValues,
   };
 });
