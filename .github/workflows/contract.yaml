@@ -112,7 +112,7 @@ jobs:
       - run: echo "${FUZZBUCKET_SSH_KEY}" > test/fuzzbucket-ssh-key && chmod 600 test/fuzzbucket-ssh-key
 
       # vscode ui tests
-      # - run: just package
+      - run: just package
       - run: just vscode configure
       - run: just vscode-ui install
 
@@ -130,8 +130,8 @@ jobs:
           SPEC_PATH: ./test/specs/nested-fastapi.spec.ts
           WORKSPACE_PATH: ../sample-content/
 
-      - name: Setup tmate session
-        if: ${{ failure() }}
-        uses: mxschmitt/action-tmate@v3
-        with:
-          limit-access-to-actor: true
+      # - name: Setup tmate session
+      #   if: ${{ failure() }}
+      #   uses: mxschmitt/action-tmate@v3
+      #   with:
+      #     limit-access-to-actor: true

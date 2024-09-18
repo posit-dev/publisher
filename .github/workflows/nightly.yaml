@@ -13,23 +13,19 @@ jobs:
     secrets: inherit
     uses: ./.github/workflows/contract-deps.yaml
   nightly:
-    needs: [build, contract-deps, package]
+    needs: [build, contract-deps]
     secrets: inherit
     uses: ./.github/workflows/contract.yaml
   cleanup:
     needs: nightly
     secrets: inherit
     uses: ./.github/workflows/cleanup.yaml
-  package:
-    needs: build
-    uses: ./.github/workflows/package.yaml
   archive:
     needs: build
     uses: ./.github/workflows/archive.yaml
   upload:
     needs:
       - archive
-      - package
     uses: ./.github/workflows/upload.yaml
     with:
       nightly: true
