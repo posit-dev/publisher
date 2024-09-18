@@ -1003,6 +1003,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         }
         return null;
       },
+      ignoreFocusOut: true,
     });
     if (result === undefined) {
       return;
