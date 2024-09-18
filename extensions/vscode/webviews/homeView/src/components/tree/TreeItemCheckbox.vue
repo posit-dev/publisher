@@ -160,7 +160,6 @@ const toggleExpanded = () => {
       }
 
       .tree-item-description {
-        line-height: 22px;
         font-size: 0.9em;
         margin-left: 0.5em;
         opacity: 0.7;
