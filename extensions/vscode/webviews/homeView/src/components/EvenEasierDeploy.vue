@@ -130,14 +130,13 @@
           />
         </div>
         <div v-if="isPreContentRecordWithoutID">
-          Deploying will create a new Content item on the Connect Server. Click
+          Is this already deployed to a Connect server? You can
           <a class="webview-link" role="button" @click="onAssociateDeployment"
-            >here</a
-          >
-          to associate it with an existing Content item on the server.
+            >update that previous deployment</a
+          >.
         </div>
         <div v-if="isPreContentRecordWithID">
-          Deploying will update an existing Content item on the Connect Server.
+          Existing content will be updated when deployed.
         </div>
         <div
           v-if="!isPreContentRecord(home.selectedContentRecord)"
@@ -160,8 +159,7 @@
         <div
           v-if="
             !isPreContentRecordWithoutID &&
-            home.selectedContentRecord.dashboardUrl !== undefined &&
-            home.selectedContentRecord.dashboardUrl !== ''
+            home.selectedContentRecord.dashboardUrl
           "
           class="last-deployment-details"
         >

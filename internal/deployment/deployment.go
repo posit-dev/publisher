@@ -104,14 +104,9 @@ func FromFile(path util.AbsolutePath) (*Deployment, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	// Migration
-	if d.DashboardURL == "" && d.ID != "" {
-		d.DashboardURL = util.GetDashboardURL(d.ServerURL, d.ID)
-	}
-	if d.DirectURL == "" && d.ID != "" {
-		d.DirectURL = util.GetDirectURL(d.ServerURL, d.ID)
-	}
-	if d.LogsURL == "" && d.DashboardURL != "" {
+	if d.LogsURL == "" && d.ID != "" {
 		d.LogsURL = util.GetLogsURL(d.ServerURL, d.ID)
 	}
 	return d, nil

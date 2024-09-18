@@ -107,15 +107,17 @@ export class ContentRecords {
   patch(
     deploymentName: string,
     dir: string,
-    configName?: string,
-    guid?: string,
+    data: {
+      configName?: string;
+      guid?: string;
+    },
   ) {
     const encodedName = encodeURIComponent(deploymentName);
     return this.client.patch<ContentRecord>(
       `deployments/${encodedName}`,
       {
-        configurationName: configName,
-        id: guid,
+        configurationName: data.configName,
+        id: data.guid,
       },
       {
         params: {
