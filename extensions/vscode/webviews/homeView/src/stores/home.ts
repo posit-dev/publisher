@@ -10,8 +10,8 @@ import {
   Configuration,
   ContentRecordFile,
   ConfigurationError,
-  isConfigurationError,
 } from "../../../../src/api";
+import { isConfigurationError } from "../../../../src/api/types/configurations";
 import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
 import { RPackage } from "../../../../src/api/types/packages";
 import { DeploymentSelector } from "../../../../src/types/shared";
