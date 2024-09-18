@@ -30,7 +30,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./test/
-          push: true
+          push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
