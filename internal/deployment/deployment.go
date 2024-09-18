@@ -27,15 +27,15 @@ type Deployment struct {
 	CreatedAt     string              `toml:"created_at" json:"createdAt"`
 	Type          config.ContentType  `toml:"type" json:"type"`
 	ConfigName    string              `toml:"configuration_name" json:"configurationName"`
+	ID            types.ContentID     `toml:"id,omitempty" json:"id"`
+	DashboardURL  string              `toml:"dashboard_url,omitempty" json:"dashboardUrl"`
+	DirectURL     string              `toml:"direct_url,omitempty" json:"directUrl"`
+	LogsURL       string              `toml:"logs_url,omitempty" json:"logsUrl"`
 
 	// Full deployment fields
-	ID            types.ContentID   `toml:"id,omitempty" json:"id"`
 	DeployedAt    string            `toml:"deployed_at,omitempty" json:"deployedAt"`
 	BundleID      types.BundleID    `toml:"bundle_id,omitempty" json:"bundleId"`
 	BundleURL     string            `toml:"bundle_url,omitempty" json:"bundleUrl"`
-	DashboardURL  string            `toml:"dashboard_url,omitempty" json:"dashboardUrl"`
-	DirectURL     string            `toml:"direct_url,omitempty" json:"directUrl"`
-	LogsURL       string            `toml:"logs_url,omitempty" json:"logsUrl"`
 	Error         *types.AgentError `toml:"deployment_error,omitempty" json:"deploymentError"`
 	Files         []string          `toml:"files,multiline,omitempty" json:"files"`
 	Requirements  []string          `toml:"requirements,multiline,omitempty" json:"requirements"`
@@ -104,9 +104,15 @@ func FromFile(path util.AbsolutePath) (*Deployment, error) {
 	if err != nil {
 		return nil, err
 	}
+	// Migration
+	if d.DashboardURL == "" && d.ID != "" {
+		d.DashboardURL = util.GetDashboardURL(d.ServerURL, d.ID)
+	}
+	if d.DirectURL == "" && d.ID != "" {
+		d.DirectURL = util.GetDirectURL(d.ServerURL, d.ID)
+	}
 	if d.LogsURL == "" && d.DashboardURL != "" {
-		// Migration
-		d.LogsURL = util.URLJoin(d.DashboardURL, "logs")
+		d.LogsURL = util.GetLogsURL(d.ServerURL, d.ID)
 	}
 	return d, nil
 }

@@ -27,14 +27,18 @@ type deploymentLocation struct {
 
 type preDeploymentDTO struct {
 	deploymentLocation
-	Schema     string              `json:"schema"`
-	ServerType accounts.ServerType `json:"serverType"`
-	ServerURL  string              `json:"serverUrl"`
-	SaveName   string              `json:"saveName"`
-	CreatedAt  string              `json:"createdAt"`
-	ConfigName string              `json:"configurationName,omitempty"`
-	ConfigPath string              `json:"configurationPath,omitempty"`
-	Error      *types.AgentError   `json:"deploymentError,omitempty"`
+	Schema       string              `json:"$schema"`
+	ServerType   accounts.ServerType `json:"serverType"`
+	ServerURL    string              `json:"serverUrl"`
+	SaveName     string              `json:"saveName"`
+	CreatedAt    string              `json:"createdAt"`
+	ConfigName   string              `json:"configurationName,omitempty"`
+	ConfigPath   string              `json:"configurationPath,omitempty"`
+	Error        *types.AgentError   `json:"deploymentError,omitempty"`
+	ID           types.ContentID     `toml:"id,omitempty" json:"id"`
+	DashboardURL string              `toml:"dashboard_url,omitempty" json:"dashboardUrl"`
+	DirectURL    string              `toml:"direct_url,omitempty" json:"directUrl"`
+	LogsURL      string              `toml:"logs_url,omitempty" json:"logsUrl"`
 }
 
 type fullDeploymentDTO struct {
@@ -70,7 +74,7 @@ func deploymentAsDTO(d *deployment.Deployment, err error, projectDir util.Absolu
 			},
 			Error: types.AsAgentError(err),
 		}
-	} else if d.ID != "" {
+	} else if d.DeployedAt != "" {
 		if d.ConfigName != "" {
 			configPath = getConfigPath(projectDir, d.ConfigName).String()
 		}
@@ -96,14 +100,18 @@ func deploymentAsDTO(d *deployment.Deployment, err error, projectDir util.Absolu
 				Path:       path.String(),
 				ProjectDir: relProjectDir.String(),
 			},
-			Schema:     d.Schema,
-			ServerType: d.ServerType,
-			ServerURL:  d.ServerURL,
-			SaveName:   saveName, // TODO: remove this duplicate (remove frontend references first)
-			CreatedAt:  d.CreatedAt,
-			ConfigName: d.ConfigName,
-			ConfigPath: configPath,
-			Error:      d.Error,
+			Schema:       d.Schema,
+			ServerType:   d.ServerType,
+			ServerURL:    d.ServerURL,
+			SaveName:     saveName, // TODO: remove this duplicate (remove frontend references first)
+			CreatedAt:    d.CreatedAt,
+			ConfigName:   d.ConfigName,
+			ConfigPath:   configPath,
+			Error:        d.Error,
+			ID:           d.ID,
+			DashboardURL: d.DashboardURL,
+			DirectURL:    d.DirectURL,
+			LogsURL:      d.LogsURL,
 		}
 	}
 }
