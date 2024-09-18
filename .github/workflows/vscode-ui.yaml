@@ -9,6 +9,8 @@ jobs:
       DOCKER_CONNECT: true
       CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
       CI: true
+      QUARTO_VERSION: 1.4.549
+      PYTHON_VERSION: 3.12
     strategy:
       fail-fast: false
       matrix:
@@ -20,12 +22,24 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/actions/setup
       - uses: extractions/setup-just@v2
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ./test/
+          push: true
+          tags: "rstudio/rstudio-connect-preview:dev-jammy-daily"
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            QUARTO_VERSION=${{ env.QUARTO_VERSION }}
+            PYTHON_VERSION=${{ env.PYTHON_VERSION }}
       - uses: actions/setup-python@v5
         with:
-          python-version: 3.12
+          python-version: ${{ env.PYTHON_VERSION }}
       - uses: quarto-dev/quarto-actions/setup@v2
         with:
-          version: 1.4.549
+          version: ${{ env.QUARTO_VERSION }}
       - uses: actions/download-artifact@v4
         with:
           name: bin
@@ -45,15 +59,6 @@ jobs:
         with:
           name: dist
           path: dist/**/*
-
-      - name: Build and push
-        uses: docker/build-push-action@v6
-        with:
-          context: ./test/
-          push: true
-          tags: "rstudio/rstudio-connect-preview:dev-jammy-daily"
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
       - name: Save screenshots
         uses: actions/upload-artifact@v4
