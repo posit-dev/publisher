@@ -17,11 +17,10 @@ type deployBundleSuccessData struct {
 func (p *defaultPublisher) deployBundle(
 	client connect.APIClient,
 	contentID types.ContentID,
-	bundleID types.BundleID,
-	log logging.Logger) (types.TaskID, error) {
+	bundleID types.BundleID) (types.TaskID, error) {
 
 	op := events.PublishDeployBundleOp
-	log = log.WithArgs(logging.LogKeyOp, op)
+	log := p.log.WithArgs(logging.LogKeyOp, op)
 
 	p.emitter.Emit(events.New(op, events.StartPhase, events.NoError, deployBundleStartData{}))
 	log.Info("Activating Deployment")

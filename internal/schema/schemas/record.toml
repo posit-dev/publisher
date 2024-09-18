@@ -22,6 +22,7 @@ files = [
     "*.qmd",
     "requirements.txt",
 ]
+secrets = ["API_KEY", "DATABASE_PASSWORD"]
 title = "Regional Quarterly Sales Report"
 description = "This is the quarterly sales report, broken down by region."
 

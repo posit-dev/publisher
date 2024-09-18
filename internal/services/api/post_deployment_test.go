@@ -50,8 +50,8 @@ type mockPublisher struct {
 	mock.Mock
 }
 
-func (m *mockPublisher) PublishDirectory(log logging.Logger) error {
-	args := m.Called(log)
+func (m *mockPublisher) PublishDirectory() error {
+	args := m.Called()
 	return args.Error(0)
 }
 

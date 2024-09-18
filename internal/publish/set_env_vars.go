@@ -14,8 +14,7 @@ type setEnvVarsSuccessData struct{}
 
 func (p *defaultPublisher) setEnvVars(
 	client connect.APIClient,
-	contentID types.ContentID,
-	log logging.Logger) error {
+	contentID types.ContentID) error {
 
 	env := p.Config.Environment
 	if len(env) == 0 {
@@ -23,7 +22,7 @@ func (p *defaultPublisher) setEnvVars(
 	}
 
 	op := events.PublishSetEnvVarsOp
-	log = log.WithArgs(logging.LogKeyOp, op)
+	log := p.log.WithArgs(logging.LogKeyOp, op)
 
 	p.emitter.Emit(events.New(op, events.StartPhase, events.NoError, setEnvVarsStartData{}))
 	log.Info("Setting environment variables")

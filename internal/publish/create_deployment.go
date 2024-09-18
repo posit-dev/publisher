@@ -18,9 +18,9 @@ type createDeploymentSuccessData struct {
 	SaveName  string          `mapstructure:"saveName"`
 }
 
-func (p *defaultPublisher) createDeployment(client connect.APIClient, log logging.Logger) (types.ContentID, error) {
+func (p *defaultPublisher) createDeployment(client connect.APIClient) (types.ContentID, error) {
 	op := events.PublishCreateNewDeploymentOp
-	log = log.WithArgs(logging.LogKeyOp, op)
+	log := p.log.WithArgs(logging.LogKeyOp, op)
 
 	p.emitter.Emit(events.New(op, events.StartPhase, events.NoError, createDeploymentStartData{
 		SaveName: p.SaveName,
