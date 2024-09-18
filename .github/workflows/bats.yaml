@@ -37,12 +37,15 @@ jobs:
         with:
           version: ${{ env.QUARTO_VERSION }}
       - uses: extractions/setup-just@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
           context: ./test/
           push: true
-          tags: "rstudio/rstudio-connect-preview:dev-jammy-daily"
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |

@@ -31,7 +31,6 @@ jobs:
         with:
           context: ./test/
           push: true
-          tags: "rstudio/rstudio-connect-preview:dev-jammy-daily"
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
