@@ -18,5 +18,5 @@
       "src/*": ["./src/*"]
     }
   },
-  "exclude": ["node_modules", "webviews", "**/**.test.ts"]
+  "exclude": ["node_modules", "webviews", "**/**.test.ts", "vitest.config.ts"]
 }

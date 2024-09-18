@@ -494,7 +494,8 @@
     "build-font": "fantasticon",
     "lint": "eslint src --ext ts --max-warnings 0",
     "compile": "tsc -p ./",
-    "test": "npm run compile && node ./out/test/runTest.js"
+    "test": "npm run compile && node ./out/test/runTest.js",
+    "test-unit": "vitest run"
   },
   "devDependencies": {
     "@twbs/fantasticon": "^3.0.0",
