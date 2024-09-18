@@ -66,7 +66,8 @@ export const useHomeStore = defineStore("home", () => {
       const result = new Map<string, string | undefined>();
 
       if (config === undefined || isConfigurationError(config)) {
-        return result;
+        secrets.value = result;
+        return;
       }
 
       const isSameContentRecord = Boolean(
