@@ -17,8 +17,9 @@ import (
 )
 
 type PostDeploymentRequestBody struct {
-	AccountName string `json:"account"`
-	ConfigName  string `json:"config"`
+	AccountName string            `json:"account"`
+	ConfigName  string            `json:"config"`
+	Secrets     map[string]string `json:"secrets,omitempty"`
 }
 
 type PostDeploymentsReponse struct {
@@ -54,9 +55,8 @@ func PostDeploymentHandlerFunc(
 			InternalError(w, req, log, err)
 			return
 		}
-		newState, err := stateFactory(projectDir, b.AccountName, b.ConfigName, name, "", accountList)
+		newState, err := stateFactory(projectDir, b.AccountName, b.ConfigName, name, "", accountList, b.Secrets)
 		log.Debug("New account derived state created", "account", b.AccountName, "config", b.ConfigName)
-
 		if err != nil {
 			if errors.Is(err, accounts.ErrAccountNotFound) {
 				NotFound(w, log, err)
