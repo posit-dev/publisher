@@ -1,8 +1,6 @@
 module github.com/posit-dev/publisher
 
-go 1.23
-
-toolchain go1.23.0
+go 1.23.1
 
 require (
 	github.com/PuerkitoBio/purell v1.2.1
