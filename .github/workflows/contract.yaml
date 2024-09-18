@@ -96,6 +96,10 @@ jobs:
         with:
           name: bin
           path: bin
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
       - uses: actions/checkout@v4
         with:
           repository: rstudio/connect-content
