@@ -104,12 +104,18 @@ export class ContentRecords {
   // 204 - no content
   // 404 - contentRecord or config file not found
   // 500 - internal server error
-  patch(deploymentName: string, configName: string, dir: string) {
+  patch(
+    deploymentName: string,
+    dir: string,
+    configName?: string,
+    guid?: string,
+  ) {
     const encodedName = encodeURIComponent(deploymentName);
     return this.client.patch<ContentRecord>(
       `deployments/${encodedName}`,
       {
         configurationName: configName,
+        id: guid,
       },
       {
         params: {

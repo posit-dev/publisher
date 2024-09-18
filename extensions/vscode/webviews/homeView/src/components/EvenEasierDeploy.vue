@@ -129,6 +129,16 @@
             :context-menu="contextMenuVSCodeContext"
           />
         </div>
+        <div v-if="isPreContentRecordWithoutID">
+          Deploying will create a new Content item on the Connect Server. Click
+          <a class="webview-link" role="button" @click="onAssociateDeployment"
+            >here</a
+          >
+          to associate it with an existing Content item on the server.
+        </div>
+        <div v-if="isPreContentRecordWithID">
+          Deploying will update an existing Content item on the Connect Server.
+        </div>
         <div
           v-if="!isPreContentRecord(home.selectedContentRecord)"
           class="last-deployment-time"
@@ -148,7 +158,11 @@
           />
         </div>
         <div
-          v-if="!isPreContentRecord(home.selectedContentRecord)"
+          v-if="
+            !isPreContentRecordWithoutID &&
+            home.selectedContentRecord.dashboardUrl !== undefined &&
+            home.selectedContentRecord.dashboardUrl !== ''
+          "
           class="last-deployment-details"
         >
           <vscode-button
@@ -344,9 +358,25 @@ const lastStatusDescription = computed(() => {
     return "Last Deployment Failed";
   }
   if (isPreContentRecord(home.selectedContentRecord)) {
-    return "Not Yet Deployed";
+    return isPreContentRecordWithID.value
+      ? "Not Yet Updated"
+      : "Not Yet Deployed";
   }
   return "Last Deployment Successful";
+});
+
+const isPreContentRecordWithID = computed(() => {
+  return (
+    isPreContentRecord(home.selectedContentRecord) &&
+    Boolean(home.selectedContentRecord.id)
+  );
+});
+
+const isPreContentRecordWithoutID = computed(() => {
+  return (
+    isPreContentRecord(home.selectedContentRecord) &&
+    !isPreContentRecordWithID.value
+  );
 });
 
 const toolTipText = computed(() => {
@@ -386,6 +416,12 @@ const navigateToUrl = (url: string) => {
 const newCredential = () => {
   hostConduit.sendMsg({
     kind: WebviewToHostMessageType.NEW_CREDENTIAL_FOR_DEPLOYMENT,
+  });
+};
+
+const onAssociateDeployment = () => {
+  hostConduit.sendMsg({
+    kind: WebviewToHostMessageType.SHOW_ASSOCIATE_GUID,
   });
 };
 </script>

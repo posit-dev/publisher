@@ -6,6 +6,7 @@ import debounce from "debounce";
 import {
   Disposable,
   ExtensionContext,
+  InputBoxValidationSeverity,
   QuickPickItem,
   QuickPickItemKind,
   ThemeIcon,
@@ -73,6 +74,7 @@ import { showProgress } from "src/utils/progress";
 import { newCredential } from "src/multiStepInputs/newCredential";
 import { PublisherState } from "src/state";
 import { throttleWithLastPending } from "src/utils/throttle";
+import { extractGUID } from "src/utils/guid";
 
 enum HomeViewInitialized {
   initialized = "initialized",
@@ -225,6 +227,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         return this.showNewCredential();
       case WebviewToHostMessageType.VIEW_PUBLISHING_LOG:
         return this.showPublishingLog();
+      case WebviewToHostMessageType.SHOW_ASSOCIATE_GUID:
+        return this.showAssociateGUID();
       default:
         window.showErrorMessage(
           `Internal Error: onConduitMessage unhandled msg: ${JSON.stringify(msg)}`,
@@ -804,8 +808,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           const api = await useApi();
           await api.contentRecords.patch(
             targetContentRecord.deploymentName,
-            config.configurationName,
             targetContentRecord.projectDir,
+            config.configurationName,
+            undefined,
           );
         });
 
@@ -977,6 +982,52 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
   private showPublishingLog() {
     return commands.executeCommand(Commands.Logs.Focus);
+  }
+
+  private async showAssociateGUID() {
+    let urlOrGuid = "";
+    const result = await window.showInputBox({
+      title: "Enter the URL of the Existing Content Item on the Server.",
+      prompt:
+        "You can supply either the content's dashboard URL or the solo URL.",
+      value: urlOrGuid,
+      placeHolder:
+        "For example: https://connect.company.co/connect/#/apps/adffa505-08c7-450f-88d0-f42957f56eff",
+      validateInput: (text) => {
+        const guid = extractGUID(text);
+        if (guid === null) {
+          return Promise.resolve({
+            message: `Unexpected format for a Posit Connect Content URL. Confirm URL value loads content from server and contains a content GUID.`,
+            severity: InputBoxValidationSeverity.Error,
+          });
+        }
+        return null;
+      },
+    });
+    if (result === undefined) {
+      return;
+    }
+    const guidArray = extractGUID(result);
+    if (guidArray === null) {
+      return;
+    }
+    const guid = guidArray[0];
+
+    // patch the current deployment with the guid
+    const targetContentRecord = await this.state.getSelectedContentRecord();
+    if (targetContentRecord === undefined) {
+      console.error("homeView::showAssociateGUID: No target deployment.");
+      return undefined;
+    }
+    await showProgress("Updating Content Record", Views.HomeView, async () => {
+      const api = await useApi();
+      await api.contentRecords.patch(
+        targetContentRecord.deploymentName,
+        targetContentRecord.projectDir,
+        undefined,
+        guid,
+      );
+    });
   }
 
   private async showDeploymentQuickPick(
