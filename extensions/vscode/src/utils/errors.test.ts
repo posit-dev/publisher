@@ -1,15 +1,8 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { vi, describe, expect, test } from "vitest";
+import { describe, expect, test } from "vitest";
 import { AxiosError, AxiosHeaders } from "axios";
-import * as errtypes from "./errorTypes";
 import { getSummaryStringFromError } from "./errors";
-
-const spyIsAxiosErrorWithJson = vi.spyOn(errtypes, "isAxiosErrorWithJson");
-const spyResolveAgentJsonErrorMsg = vi.spyOn(
-  errtypes,
-  "resolveAgentJsonErrorMsg",
-);
 
 const mkAxiosJsonErr = (data: Record<PropertyKey, any>) => {
   return new AxiosError(undefined, undefined, undefined, undefined, {
