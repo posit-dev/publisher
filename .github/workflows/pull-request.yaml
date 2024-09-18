@@ -20,16 +20,12 @@ jobs:
   # Build
   build:
     uses: ./.github/workflows/build.yaml
-  package:
-    needs: build
-    uses: ./.github/workflows/package.yaml
   archive:
     needs: build
     uses: ./.github/workflows/archive.yaml
   upload:
     needs:
       - archive
-      - package
     uses: ./.github/workflows/upload.yaml
     secrets: inherit
 
@@ -40,7 +36,7 @@ jobs:
     uses: ./.github/workflows/bats.yaml
 
   # disable the vscode-ui tests for now
-  # vscode-ui:
-  #   needs: build
-  #   secrets: inherit
-  #   uses: ./.github/workflows/vscode-ui.yaml
+  vscode-ui:
+    needs: build
+    secrets: inherit
+    uses: ./.github/workflows/vscode-ui.yaml
