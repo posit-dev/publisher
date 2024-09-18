@@ -57,6 +57,7 @@ var errProjectDirNotFound = errors.New("project directory not found")
 // Other errors return a 500.
 func ProjectDirFromRequest(base util.AbsolutePath, w http.ResponseWriter, req *http.Request, log logging.Logger) (util.AbsolutePath, util.RelativePath, error) {
 	dir := req.URL.Query().Get("dir")
+	log.Debug("Picking directory from request", "directory", dir)
 	projectDir, err := base.SafeJoin(dir)
 	if err != nil {
 		BadRequest(w, req, log, err)

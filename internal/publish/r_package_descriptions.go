@@ -12,9 +12,9 @@ import (
 type getRPackageDescriptionsStartData struct{}
 type getRPackageDescriptionsSuccessData struct{}
 
-func (p *defaultPublisher) getRPackages(log logging.Logger) (bundles.PackageMap, error) {
+func (p *defaultPublisher) getRPackages() (bundles.PackageMap, error) {
 	op := events.PublishGetRPackageDescriptionsOp
-	log = log.WithArgs(logging.LogKeyOp, op)
+	log := p.log.WithArgs(logging.LogKeyOp, op)
 
 	p.emitter.Emit(events.New(op, events.StartPhase, events.NoError, getRPackageDescriptionsStartData{}))
 	log.Info("Collecting R package descriptions")
@@ -25,6 +25,7 @@ func (p *defaultPublisher) getRPackages(log logging.Logger) (bundles.PackageMap,
 	}
 	lockfilePath := p.Dir.Join(lockfileString)
 
+	log.Debug("Collecting manifest R packages", "lockfile", lockfilePath)
 	rPackages, err := p.rPackageMapper.GetManifestPackages(p.Dir, lockfilePath, log)
 	if err != nil {
 		return nil, err

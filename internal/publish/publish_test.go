@@ -291,6 +291,7 @@ func (s *PublishSuite) publishWithClient(
 
 	publisher := &defaultPublisher{
 		State:   stateStore,
+		log:     s.log,
 		emitter: emitter,
 	}
 
@@ -302,14 +303,14 @@ func (s *PublishSuite) publishWithClient(
 	}
 	publisher.rPackageMapper = rPackageMapper
 
-	err := publisher.publishWithClient(account, client, s.log)
+	err := publisher.publishWithClient(account, client)
 	if expectedErr == nil {
 		s.NoError(err)
 	} else {
 		s.NotNil(err)
 		s.Equal(expectedErr.Error(), err.Error())
 
-		publisher.emitErrorEvents(err, s.log)
+		publisher.emitErrorEvents(err)
 	}
 	if target != nil {
 		// Creation date is not updated on deployment
@@ -362,10 +363,11 @@ func (s *PublishSuite) TestEmitErrorEventsNoTarget() {
 	emitter := events.NewCapturingEmitter()
 	publisher := &defaultPublisher{
 		State:   &state.State{},
+		log:     log,
 		emitter: emitter,
 	}
 
-	publisher.emitErrorEvents(expectedErr, log)
+	publisher.emitErrorEvents(expectedErr)
 
 	// We should emit a phase failure event and a publishing failure event.
 	s.Len(emitter.Events, 2)
@@ -397,10 +399,11 @@ func (s *PublishSuite) TestEmitErrorEventsWithTarget() {
 				ID: targetID,
 			},
 		},
+		log:     log,
 		emitter: emitter,
 	}
 
-	publisher.emitErrorEvents(expectedErr, log)
+	publisher.emitErrorEvents(expectedErr)
 
 	// We should emit a phase failure event and a publishing failure event.
 	s.Len(emitter.Events, 2)

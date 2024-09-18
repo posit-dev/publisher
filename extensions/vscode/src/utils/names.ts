@@ -5,24 +5,14 @@ import { InputBoxValidationSeverity } from "vscode";
 import { isValidFilename } from "src/utils/files";
 import filenamify from "filenamify";
 
-export function untitledContentRecordName(
-  existingContentRecordNames: string[],
-): string {
-  if (existingContentRecordNames.length === 0) {
-    return "deployment-1";
-  }
-
-  let id = 0;
-  let defaultName = "";
+export function newDeploymentName(existingNames: string[] = []): string {
+  // Generate unique name endings until we find a unique one
+  let result;
   do {
-    id += 1;
-    const trialName = `deployment-${id}`;
+    result = `deployment-${randomNameEnding(4)}`;
+  } while (!uniqueContentRecordName(result, existingNames));
 
-    if (uniqueContentRecordName(trialName, existingContentRecordNames)) {
-      defaultName = trialName;
-    }
-  } while (!defaultName);
-  return defaultName;
+  return result;
 }
 
 export function uniqueContentRecordName(

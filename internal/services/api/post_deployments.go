@@ -65,12 +65,14 @@ func PostDeploymentsHandlerFunc(
 			return
 		}
 		if exists {
+			log.Debug("Conflict found, deployment already exists", "path", path)
 			w.WriteHeader(http.StatusConflict)
 			return
 		}
 
 		if b.ConfigName != "" {
 			// Config must exist
+			log.Debug("Config name found in request", "config_name", b.ConfigName)
 			configPath := config.GetConfigPath(projectDir, b.ConfigName)
 			exists, err = configPath.Exists()
 			if err != nil {
@@ -89,6 +91,7 @@ func PostDeploymentsHandlerFunc(
 		d.ServerType = acct.ServerType
 		d.ConfigName = b.ConfigName
 
+		log.Debug("Writing deployment file", "path", path.String())
 		err = d.WriteFile(path)
 		if err != nil {
 			InternalError(w, req, log, err)
