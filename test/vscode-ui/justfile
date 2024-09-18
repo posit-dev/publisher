@@ -67,4 +67,5 @@ test:
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
+
     ../scripts/test-runner.bash vscode-ui
