@@ -1,5 +1,9 @@
 <template>
-  <TreeSection title="Secrets" :actions="sectionActions">
+  <TreeSection
+    title="Secrets"
+    :actions="sectionActions"
+    :count="home.secretsWithValueCount"
+  >
     <template v-if="home.secrets.size">
       <Secret v-for="[name] in home.secrets" :name="name" :key="name" />
     </template>

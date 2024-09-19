@@ -226,6 +226,11 @@ export const useHomeStore = defineStore("home", () => {
     secrets.value = cleared;
   };
 
+  const secretsWithValueCount = computed(() => {
+    return Array.from(secrets.value.values()).filter((v) => v !== undefined)
+      .length;
+  });
+
   return {
     showDisabledOverlay,
     publishInProgress,
@@ -256,5 +261,6 @@ export const useHomeStore = defineStore("home", () => {
     updatePythonPackages,
     updateRPackages,
     clearSecretValues,
+    secretsWithValueCount,
   };
 });
