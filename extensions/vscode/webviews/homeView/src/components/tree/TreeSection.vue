@@ -27,6 +27,9 @@
       <div v-if="actions" class="actions">
         <ActionToolbar :title="title" :actions="actions" />
       </div>
+      <div v-if="count" class="count">
+        <CountBadge :count="count" />
+      </div>
     </div>
     <div v-show="expanded" class="pane-body">
       <slot />
@@ -36,6 +39,7 @@
 
 <script setup lang="ts">
 import ActionToolbar, { ActionButton } from "src/components/ActionToolbar.vue";
+import CountBadge from "src/components/CountBadge.vue";
 
 const expanded = defineModel("expanded", { required: false, default: false });
 
@@ -44,6 +48,7 @@ defineProps<{
   description?: string;
   codicon?: string;
   actions?: ActionButton[];
+  count?: number;
 }>();
 
 const toggleExpanded = () => {
@@ -140,6 +145,12 @@ const toggleExpanded = () => {
 
   & :deep(.action-item) {
     margin-right: 4px;
+  }
+
+  .count {
+    display: flex;
+    margin-left: 2px;
+    padding-right: 12px;
   }
 }
 
