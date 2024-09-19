@@ -121,6 +121,9 @@ func (s *StateSuite) createTargetFile(name string, bad bool) {
 		server_url = 'https://connect.example.com'
 		server_type = "connect"
 		id = '1234567890ABCDEF'
+		dashboard_url = 'https://connect.example.com/connect/#/apps/1234567890ABCDEF'
+		direct_url = 'https://connect.example.com/content/1234567890ABCDEF/'
+		logs_url = 'https://connect.example.com/connect/#/apps/1234567890ABCDEF/logs'
 		type = 'python-dash'
 		configuration_name = "myConfig"
 		files = [
