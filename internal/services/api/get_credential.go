@@ -14,7 +14,7 @@ import (
 func GetCredentialHandlerFunc(log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		guid := mux.Vars(req)["guid"]
-		cs := credentials.CredentialsService{}
+		cs := credentials.NewCredentialsService(log)
 		cred, err := cs.Get(guid)
 		if err != nil {
 			switch e := err.(type) {
