@@ -35,9 +35,7 @@
         :class="codicon"
       />
       <div class="tree-item-label-container">
-        <span class="tree-item-title" :data-automation="`req`">{{
-          title
-        }}</span>
+        <span class="tree-item-title" data-automation="req">{{ title }}</span>
         <span v-if="description" class="tree-item-description">
           {{ description }}
         </span>

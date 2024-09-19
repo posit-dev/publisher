@@ -170,7 +170,6 @@ export const config: Options.Testrunner = {
     ui: "bdd",
     timeout: 60000,
   },
-  // wdio.conf.js
   //
   // =====
   // Hooks
