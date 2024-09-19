@@ -1,22 +1,24 @@
 <template>
-  <SidebarInput
-    v-if="showInput"
-    ref="input"
-    v-model="inputValue"
-    label="Type secret value"
-    @submit="updateSecret"
-    @cancel="showInput = false"
-  />
   <TreeItem
-    v-else
     :title="name"
-    :description="secretValue ? '••••••' : undefined"
     :actions="actions"
     codicon="codicon-lock-small"
     :tooltip="tooltip"
     align-icon-with-twisty
-    @click="inputSecret"
-  />
+  >
+    <template #description>
+      <SidebarInput
+        v-if="isEditing"
+        ref="input"
+        v-model="inputValue"
+        class="w-full"
+        label="Type secret value"
+        @submit="updateSecret"
+        @cancel="isEditing = false"
+      />
+      <template v-else-if="secretValue">••••••</template>
+    </template>
+  </TreeItem>
 </template>
 
 <script setup lang="ts">
@@ -34,7 +36,7 @@ interface Props {
 const props = defineProps<Props>();
 
 const input = ref<InstanceType<typeof SidebarInput> | null>(null);
-const showInput = ref(false);
+const isEditing = ref(false);
 const inputValue = ref<string>();
 
 const home = useHomeStore();
@@ -44,14 +46,14 @@ const secretValue = computed(() => home.secrets.get(props.name));
 const inputSecret = () => {
   // Update inputValue in case the secret value has changed or been cleared
   inputValue.value = secretValue.value;
-  showInput.value = true;
+  isEditing.value = true;
   // Wait for next tick to ensure the input is rendered
   nextTick(() => input.value?.select());
 };
 
 const updateSecret = () => {
   home.secrets.set(props.name, inputValue.value);
-  showInput.value = false;
+  isEditing.value = false;
 };
 
 const tooltip = computed(() => {
@@ -63,7 +65,18 @@ const tooltip = computed(() => {
 });
 
 const actions = computed<ActionButton[]>(() => {
-  const result = [];
+  // Show no actions while the value is being edited
+  if (isEditing.value) {
+    return [];
+  }
+
+  const result = [
+    {
+      label: "Edit Value",
+      codicon: "codicon-pencil",
+      fn: inputSecret,
+    },
+  ];
 
   if (secretValue.value) {
     result.push({
