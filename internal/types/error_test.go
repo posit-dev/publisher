@@ -56,3 +56,14 @@ func (s *ErrorSuite) TestAsAgentError() {
 	agentErr := OperationError(Operation("testOp"), err)
 	s.Equal(agentErr, AsAgentError(agentErr))
 }
+
+func (s *ErrorSuite) TestNewAgentError() {
+	originalError := errors.New("shattered glass!")
+	aerr := NewAgentError(ErrorInvalidTOML, originalError, nil)
+	s.Equal(aerr, &AgentError{
+		Message: "shattered glass!",
+		Code:    ErrorInvalidTOML,
+		Err:     originalError,
+		Data:    make(ErrorData),
+	})
+}
