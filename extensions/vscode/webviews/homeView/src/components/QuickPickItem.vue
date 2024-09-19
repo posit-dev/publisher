@@ -11,7 +11,7 @@
         </span>
       </div>
     </div>
-    <div class="quick-pick-row">
+    <div v-for="detail in details" class="quick-pick-row">
       <span class="quick-pick-detail">{{ detail }}</span>
     </div>
   </div>
@@ -21,7 +21,7 @@
 defineProps<{
   label: string;
   description?: string;
-  detail: string;
+  details: string[];
   codicon?: string;
 }>();
 </script>

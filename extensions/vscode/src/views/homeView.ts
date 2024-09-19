@@ -1068,14 +1068,20 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         }
 
         let details = [];
-        if (!isRelativePathRoot(contentRecord.projectDir)) {
-          details.push(`${contentRecord.projectDir}${path.sep}`);
-        }
         if (credential?.name) {
           details.push(credential.name);
         } else {
           details.push(`Missing Credential for ${contentRecord.serverUrl}`);
           problem = true;
+        }
+        if (
+          !isRelativePathRoot(contentRecord.projectDir) &&
+          config &&
+          !isConfigurationError(config)
+        ) {
+          details.push(
+            `${contentRecord.projectDir}${path.sep}${config.configuration.entrypoint}`,
+          );
         }
         const detail = details.join(" • ");
 
