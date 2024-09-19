@@ -10,15 +10,17 @@ import (
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 )
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
 type PostDeploymentsRequestBody struct {
-	AccountName string `json:"account"`
-	ConfigName  string `json:"config"`
-	SaveName    string `json:"saveName"`
+	AccountName string          `json:"account"`
+	ConfigName  string          `json:"config"`
+	SaveName    string          `json:"saveName"`
+	ID          types.ContentID `json:"id"`
 }
 
 func PostDeploymentsHandlerFunc(
@@ -90,6 +92,13 @@ func PostDeploymentsHandlerFunc(
 		d.ServerURL = acct.URL
 		d.ServerType = acct.ServerType
 		d.ConfigName = b.ConfigName
+
+		if b.ID != "" {
+			d.ID = b.ID
+			d.DashboardURL = util.GetDashboardURL(acct.URL, b.ID)
+			d.DirectURL = util.GetDirectURL(acct.URL, b.ID)
+			d.LogsURL = util.GetLogsURL(acct.URL, b.ID)
+		}
 
 		log.Debug("Writing deployment file", "path", path.String())
 		err = d.WriteFile(path)

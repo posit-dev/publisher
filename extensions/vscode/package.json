@@ -194,7 +194,7 @@
       },
       {
         "command": "posit.publisher.deployWithEntrypoint",
-        "title": "Deploy with this Entrypoint",
+        "title": "Deploy with Posit Publisher",
         "icon": "$(posit-publisher-publish)",
         "category": "Posit Publisher"
       }
@@ -494,7 +494,8 @@
     "build-font": "fantasticon",
     "lint": "eslint src --ext ts --max-warnings 0",
     "compile": "tsc -p ./",
-    "test": "npm run compile && node ./out/test/runTest.js"
+    "test": "npm run compile && node ./out/test/runTest.js",
+    "test-unit": "vitest run"
   },
   "devDependencies": {
     "@twbs/fantasticon": "^3.0.0",
@@ -513,7 +514,8 @@
     "eslint-config-prettier": "^9.1.0",
     "glob": "^10.3.3",
     "mocha": "^10.2.0",
-    "typescript": "^5.2.2"
+    "typescript": "^5.2.2",
+    "vitest": "^2.1.1"
   },
   "dependencies": {
     "@hypersphere/omnibus": "0.1.6",
