@@ -213,7 +213,7 @@ run *args:
 
     npm run {{ args }}
 
-# Executes npm test
+# Executes npm test and npm run test-unit
 test:
     #!/usr/bin/env bash
     set -eou pipefail
@@ -224,6 +224,8 @@ test:
     else
         npm test
     fi
+
+    npm run test-unit
 
 
 uninstall editor="code":

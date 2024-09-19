@@ -132,7 +132,7 @@ func (p *defaultPublisher) isDeployed() bool {
 func (p *defaultPublisher) emitErrorEvents(err error) {
 	agentErr, ok := err.(*types.AgentError)
 	if !ok {
-		agentErr = types.NewAgentError(types.UnknownErrorCode, err, nil)
+		agentErr = types.NewAgentError(types.ErrorUnknown, err, nil)
 	}
 	dashboardURL := ""
 	directURL := ""
