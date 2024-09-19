@@ -73,7 +73,7 @@ func (p *defaultPublisher) createAndUploadBundle(
 	// Update deployment record with new information
 	p.Target.Files = manifest.GetFilenames()
 	p.Target.BundleID = bundleID
-	p.Target.BundleURL = getBundleURL(p.Account.URL, contentID, bundleID)
+	p.Target.BundleURL = util.GetBundleURL(p.Account.URL, contentID, bundleID)
 
 	if p.Config.Python != nil {
 		filename := p.Config.Python.PackageFile

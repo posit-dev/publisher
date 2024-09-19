@@ -56,6 +56,10 @@ func createSampleDeployment(root util.AbsolutePath, name string) (*deployment.De
 		PackageManager: "pip",
 	}
 	d.Configuration = cfg
+	d.DeployedAt = "2024-09-17T16:57:51-07:00"
+	d.DashboardURL = "/connect/#/apps/12345678"
+	d.DirectURL = "/content/12345678/"
+	d.LogsURL = "/connect/#/apps/12345678/logs"
 	return d, d.WriteFile(path)
 }
 

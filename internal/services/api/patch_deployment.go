@@ -9,13 +9,15 @@ import (
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 )
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
 type PatchDeploymentRequestBody struct {
-	ConfigName string `json:"configurationName"`
+	ConfigName string          `json:"configurationName"`
+	ID         types.ContentID `json:"id"`
 }
 
 func PatchDeploymentHandlerFunc(
@@ -50,19 +52,6 @@ func PatchDeploymentHandlerFunc(
 			return
 		}
 
-		// Config must exist
-		configPath := config.GetConfigPath(projectDir, b.ConfigName)
-		exists, err = configPath.Exists()
-		if err != nil {
-			InternalError(w, req, log, err)
-			return
-		}
-		if !exists {
-			w.WriteHeader(http.StatusUnprocessableEntity)
-			w.Write([]byte(fmt.Sprintf("configuration %s not found", b.ConfigName)))
-			return
-		}
-
 		d, err := deployment.FromFile(path)
 		if err != nil {
 			w.WriteHeader(http.StatusUnprocessableEntity)
@@ -70,7 +59,32 @@ func PatchDeploymentHandlerFunc(
 			return
 		}
 
-		d.ConfigName = b.ConfigName
+		if b.ConfigName != "" {
+
+			// Config must exist
+			configPath := config.GetConfigPath(projectDir, b.ConfigName)
+			exists, err = configPath.Exists()
+			if err != nil {
+				InternalError(w, req, log, err)
+				return
+			}
+			if !exists {
+				w.WriteHeader(http.StatusUnprocessableEntity)
+				w.Write([]byte(fmt.Sprintf("configuration %s not found", b.ConfigName)))
+				return
+			}
+
+			d.ConfigName = b.ConfigName
+		}
+		if b.ID != "" {
+			// no validation for GUID at this time.
+			d.ID = b.ID
+
+			// Update the URLs since we have the GUID
+			d.DashboardURL = util.GetDashboardURL(d.ServerURL, b.ID)
+			d.LogsURL = util.GetLogsURL(d.ServerURL, b.ID)
+			d.DirectURL = util.GetDirectURL(d.ServerURL, b.ID)
+		}
 
 		err = d.WriteFile(path)
 		if err != nil {
