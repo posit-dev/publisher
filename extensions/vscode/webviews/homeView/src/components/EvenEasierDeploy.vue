@@ -36,9 +36,11 @@
         class="deployment-details-container"
       >
         <div class="deployment-details-row">
-          <span class="deployment-details-label">{{
-            home.selectedConfiguration.configuration.entrypoint
-          }}</span>
+          <span
+            class="deployment-details-label"
+            data-automation="entrypoint-label"
+            >{{ home.selectedConfiguration.configuration.entrypoint }}</span
+          >
           <span class="deployment-details-info"> (selected as entrypoint)</span>
         </div>
       </div>
@@ -100,7 +102,9 @@
           <div class="progress-container">
             <vscode-progress-ring class="progress-ring" />
             <div class="progress-desc">
-              <div>Deployment in Progress...</div>
+              <div data-automation="deployment-progress">
+                Deployment in Progress...
+              </div>
               <p class="progress-log-anchor">
                 <a
                   class="webview-link"
@@ -119,7 +123,10 @@
         </div>
       </div>
       <div v-else>
-        <div class="deployment-summary-container">
+        <div
+          class="deployment-summary-container"
+          data-automation="deploy-status"
+        >
           <h4 class="deployment-summary">
             {{ lastStatusDescription }}
           </h4>

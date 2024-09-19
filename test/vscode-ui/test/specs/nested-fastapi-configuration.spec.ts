@@ -1,6 +1,5 @@
 import { browser, $ } from "@wdio/globals";
 
-import * as os from "os";
 import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
@@ -13,10 +12,8 @@ const connectServer = process.env.CONNECT_SERVER;
 const apiKey = process.env.CONNECT_API_KEY;
 
 const sep = path.sep;
-
 const title = "my fastapi app";
-
-describe("Nested Fast API Deployment", () => {
+describe("Nested Fast API Configuration", () => {
   let workbench: any;
   let input: any;
 
@@ -131,7 +128,7 @@ describe("Nested Fast API Deployment", () => {
     // await input.waitForExist({ timeout: 30000 });
 
     // set title
-    await input.setValue("my fastapi app");
+    await input.setValue(title);
     await browser.keys("\uE007");
 
     // set server url
@@ -161,50 +158,11 @@ describe("Nested Fast API Deployment", () => {
       "../../../sample-content/fastapi-simple/.posit/publish/" + realFilename,
     );
     const fileContent = fs.readFileSync(filePath, "utf8");
+    const pythonVersion = process.env.PYTHON_VERSION;
     await expect(fileContent).toContain(
-      "type = 'python-fastapi'\nentrypoint = 'simple.py'\nvalidate = true\nfiles = [\n  '/simple.py',\n  '/requirements.txt'\n]\ntitle = 'my fastapi app'",
+      `type = 'python-fastapi'\nentrypoint = 'simple.py'\nvalidate = true\nfiles = [\n  '/simple.py',\n  '/requirements.txt'\n]\ntitle = 'my fastapi app'\n\n[python]\nversion = '${pythonVersion}'\npackage_file = 'requirements.txt'\npackage_manager = 'pip'`,
     );
-  });
-
-  // cleanup
-  after(async () => {
-    const parentDir = path.resolve(
-      __dirname,
-      "../../../sample-content/fastapi-simple",
-    );
-    const positDir = path.join(parentDir, ".posit");
-
-    // Log the contents of the parent directory
-    console.log(fs.readdirSync(parentDir));
-
-    // Check if the directory exists before trying to delete it
-    if (fs.existsSync(positDir)) {
-      // Get the files in the directory
-      const files = fs.readdirSync(positDir);
-
-      // Delete each file in the directory
-      for (const file of files) {
-        const filePath = path.join(positDir, file);
-        if (fs.lstatSync(filePath).isDirectory()) {
-          fs.rmdirSync(filePath, { recursive: true }); // Delete directory recursively
-        } else {
-          fs.unlinkSync(filePath); // Delete file
-        }
-      }
-
-      // Delete the directory
-      fs.rmdirSync(positDir);
-    } else {
-      console.log("Directory does not exist");
-    }
-
-    // Use shell script to delete credentials
-    describe("Cleanup creds", () => {
-      it("remove credentials", async () => {
-        let scriptPath: string;
-        scriptPath = "cd ../scripts && bash cleanup.bash";
-        await helper.runShellScript(scriptPath);
-      });
-    });
+    // close editor
+    await workbench.getEditorView().closeEditor(realFilename);
   });
 });
