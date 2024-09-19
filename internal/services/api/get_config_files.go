@@ -73,6 +73,6 @@ func GetConfigFilesHandlerFunc(base util.AbsolutePath, filesService files.FilesS
 			return
 		}
 
-		JsonResult(w, file)
+		JsonResult(w, http.StatusOK, file)
 	}
 }

@@ -44,8 +44,9 @@ func NotFound(w http.ResponseWriter, log logging.Logger, err error) {
 	http.Error(w, msg, http.StatusNotFound)
 }
 
-func JsonResult(w http.ResponseWriter, result any) {
+func JsonResult(w http.ResponseWriter, status int, result any) {
 	w.Header().Set("content-type", "application/json")
+	w.WriteHeader(status)
 	json.NewEncoder(w).Encode(result)
 }
 

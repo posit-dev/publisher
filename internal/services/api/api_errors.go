@@ -3,7 +3,6 @@ package api
 // Copyright (C) 2024 by Posit Software, PBC.
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/posit-dev/publisher/internal/types"
@@ -38,9 +37,7 @@ func APIErrorUnknownTOMLKeyFromAgentError(aerr types.AgentError) APIErrorUnknown
 }
 
 func (apierr *APIErrorUnknownTOMLKeyDetails) JSONResponse(w http.ResponseWriter) {
-	w.Header().Set("content-type", "application/json")
-	w.WriteHeader(http.StatusBadRequest)
-	json.NewEncoder(w).Encode(apierr)
+	JsonResult(w, http.StatusBadRequest, apierr)
 }
 
 type InvalidTOMLFileDetails struct {
@@ -66,7 +63,5 @@ func APIErrorInvalidTOMLFileFromAgentError(aerr types.AgentError) APIErrorInvali
 }
 
 func (apierr *APIErrorInvalidTOMLFileDetails) JSONResponse(w http.ResponseWriter) {
-	w.Header().Set("content-type", "application/json")
-	w.WriteHeader(http.StatusBadRequest)
-	json.NewEncoder(w).Encode(apierr)
+	JsonResult(w, http.StatusBadRequest, apierr)
 }
