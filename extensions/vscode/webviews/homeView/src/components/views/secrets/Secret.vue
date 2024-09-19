@@ -1,13 +1,12 @@
 <template>
-  <form v-if="showInput" @submit.prevent="updateSecret">
-    <input
-      ref="input"
-      class="secret-input"
-      v-model="inputValue"
-      aria-label="Type secret value. Press Enter to confirm or Escape to cancel."
-      @keydown.escape="showInput = false"
-    />
-  </form>
+  <SidebarInput
+    v-if="showInput"
+    ref="input"
+    v-model="inputValue"
+    label="Type secret value"
+    @submit="updateSecret"
+    @cancel="showInput = false"
+  />
   <TreeItem
     v-else
     :title="name"
@@ -24,6 +23,7 @@
 import { computed, ref, nextTick } from "vue";
 
 import TreeItem from "src/components/tree/TreeItem.vue";
+import SidebarInput from "src/components/SidebarInput.vue";
 import { useHomeStore } from "src/stores/home";
 import { ActionButton } from "src/components/ActionToolbar.vue";
 
@@ -33,7 +33,7 @@ interface Props {
 
 const props = defineProps<Props>();
 
-const input = ref<HTMLInputElement | null>(null);
+const input = ref<InstanceType<typeof SidebarInput> | null>(null);
 const showInput = ref(false);
 const inputValue = ref<string>();
 
@@ -78,17 +78,3 @@ const actions = computed<ActionButton[]>(() => {
   return result;
 });
 </script>
-
-<style lang="scss" scoped>
-.secret-input {
-  background-color: var(--vscode-input-background);
-  border: 1px solid var(--vscode-input-border, transparent);
-  color: var(--vscode-input-foreground);
-  line-height: 20px;
-  padding: 0;
-  outline-color: var(--vscode-focusBorder);
-  outline-offset: -1px;
-  outline-style: solid;
-  outline-width: 1px;
-}
-</style>
