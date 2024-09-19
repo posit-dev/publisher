@@ -132,11 +132,13 @@
         <div v-if="isPreContentRecordWithoutID">
           Is this already deployed to a Connect server? You can
           <a class="webview-link" role="button" @click="onAssociateDeployment"
-            >update that previous deployment</a
-          >.
+            >update</a
+          >
+          that previous deployment.
         </div>
         <div v-if="isPreContentRecordWithID">
-          Existing content will be updated when deployed.
+          <a class="webview-link" role="button" @click="viewContent"> This </a>
+          deployment will be updated when deployed.
         </div>
         <div
           v-if="!isPreContentRecord(home.selectedContentRecord)"
@@ -165,7 +167,7 @@
         >
           <vscode-button
             appearance="secondary"
-            @click="navigateToUrl(home.selectedContentRecord.dashboardUrl)"
+            @click="viewContent"
             class="w-full"
           >
             View Content
@@ -421,6 +423,12 @@ const onAssociateDeployment = () => {
   hostConduit.sendMsg({
     kind: WebviewToHostMessageType.SHOW_ASSOCIATE_GUID,
   });
+};
+
+const viewContent = () => {
+  if (home.selectedContentRecord?.dashboardUrl) {
+    navigateToUrl(home.selectedContentRecord.dashboardUrl);
+  }
 };
 </script>
 
