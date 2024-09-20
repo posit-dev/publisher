@@ -23,25 +23,12 @@ jobs:
       - uses: ./.github/actions/setup
       - uses: extractions/setup-just@v2
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build and push
-        uses: docker/build-push-action@v6
-        with:
-          context: ./test/
-          push: false
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          build-args: |
-            QUARTO_VERSION=${{ env.QUARTO_VERSION }}
-            PYTHON_VERSION=${{ env.PYTHON_VERSION }}
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - uses: quarto-dev/quarto-actions/setup@v2
-        with:
-          version: ${{ env.QUARTO_VERSION }}
+      # - uses: quarto-dev/quarto-actions/setup@v2
+      #   with:
+      #     version: ${{ env.QUARTO_VERSION }}
       - uses: actions/download-artifact@v4
         with:
           name: bin
