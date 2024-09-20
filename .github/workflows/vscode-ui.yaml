@@ -10,7 +10,7 @@ jobs:
       CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
       CI: true
       QUARTO_VERSION: 1.4.549
-      PYTHON_VERSION: 3.12
+      PYTHON_VERSION: 3.12.4
     strategy:
       fail-fast: false
       matrix:
