@@ -26,6 +26,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+      # disabling quarto until we need it
       # - uses: quarto-dev/quarto-actions/setup@v2
       #   with:
       #     version: ${{ env.QUARTO_VERSION }}
