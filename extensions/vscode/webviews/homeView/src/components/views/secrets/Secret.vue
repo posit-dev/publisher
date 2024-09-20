@@ -3,7 +3,7 @@
     :title="name"
     :actions="actions"
     codicon="codicon-lock-small"
-    :list-style="secretValue ? 'default' : 'deemphasized'"
+    :list-style="secretValue || isEditing ? 'default' : 'deemphasized'"
     :tooltip="tooltip"
     align-icon-with-twisty
   >
