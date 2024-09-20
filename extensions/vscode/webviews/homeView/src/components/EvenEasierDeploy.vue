@@ -20,6 +20,7 @@
           :label="deploymentTitle"
           :details="deploymentSubTitles"
           :title="toolTipText"
+          :data-automation="`entrypoint-label`"
         />
         <div
           class="select-indicator codicon codicon-chevron-down"
