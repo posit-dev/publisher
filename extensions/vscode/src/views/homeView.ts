@@ -1074,14 +1074,14 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           details.push(`Missing Credential for ${contentRecord.serverUrl}`);
           problem = true;
         }
-        if (
-          !isRelativePathRoot(contentRecord.projectDir) &&
-          config &&
-          !isConfigurationError(config)
-        ) {
-          details.push(
-            `${contentRecord.projectDir}${path.sep}${config.configuration.entrypoint}`,
-          );
+        if (!isRelativePathRoot(contentRecord.projectDir)) {
+          if (config && !isConfigurationError(config)) {
+            details.push(
+              `${contentRecord.projectDir}${path.sep}${config.configuration.entrypoint}`,
+            );
+          } else {
+            details.push(`${contentRecord.projectDir}${path.sep}`);
+          }
         }
         const detail = details.join(" • ");
 

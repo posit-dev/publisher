@@ -332,19 +332,15 @@ const entrypointSubTitle = computed(() => {
   ) {
     const contentRecord = home.selectedContentRecord;
     const config = home.selectedConfiguration;
-    if (
-      contentRecord &&
-      config.configuration.entrypoint &&
-      !isConfigurationError(config)
-    ) {
-      return path.join(
-        contentRecord.projectDir,
-        config.configuration.entrypoint,
-      );
-      // return `${contentRecord.projectDir}/${config.configuration.entrypoint}`;
+    if (contentRecord) {
+      if (isConfigInError.value) {
+        return `${contentRecord.projectDir}${path.sep}`;
+      } else {
+        return `${contentRecord.projectDir}${path.sep}${config.configuration.entrypoint}`;
+      }
     }
   }
-  return "Entrypoint not determined";
+  return "ProjectDir and Entrypoint not determined";
 });
 
 const isCredentialMissing = computed((): boolean => {
@@ -534,32 +530,5 @@ const newCredential = () => {
 .progress-log-anchor {
   margin-top: 5px;
   margin-bottom: 0px;
-}
-
-.deployment-details-container {
-  margin-bottom: 0.5rem;
-
-  .deployment-details-row {
-    display: flex;
-    align-items: center;
-
-    .deployment-details-label {
-      font-size: 0.9em;
-      line-height: normal;
-      opacity: 1;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: pre;
-    }
-
-    .deployment-details-info {
-      font-size: 0.8em;
-      line-height: normal;
-      opacity: 0.7;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: pre;
-    }
-  }
 }
 </style>
