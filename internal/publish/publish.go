@@ -83,26 +83,10 @@ func NewFromState(s *state.State, emitter events.Emitter, log logging.Logger) (P
 	}, nil
 }
 
-func getDashboardURL(accountURL string, contentID types.ContentID) string {
-	return fmt.Sprintf("%s/connect/#/apps/%s", accountURL, contentID)
-}
-
-func getLogsURL(accountURL string, contentID types.ContentID) string {
-	return getDashboardURL(accountURL, contentID) + "/logs"
-}
-
-func getDirectURL(accountURL string, contentID types.ContentID) string {
-	return fmt.Sprintf("%s/content/%s/", accountURL, contentID)
-}
-
-func getBundleURL(accountURL string, contentID types.ContentID, bundleID types.BundleID) string {
-	return fmt.Sprintf("%s/__api__/v1/content/%s/bundles/%s/download", accountURL, contentID, bundleID)
-}
-
 func logAppInfo(w io.Writer, accountURL string, contentID types.ContentID, log logging.Logger, publishingErr error) {
-	dashboardURL := getDashboardURL(accountURL, contentID)
-	logsURL := getLogsURL(accountURL, contentID)
-	directURL := getDirectURL(accountURL, contentID)
+	dashboardURL := util.GetDashboardURL(accountURL, contentID)
+	logsURL := util.GetLogsURL(accountURL, contentID)
+	directURL := util.GetDirectURL(accountURL, contentID)
 	if publishingErr != nil {
 		if contentID == "" {
 			// Publishing failed before a content ID was known
@@ -132,7 +116,7 @@ func (p *defaultPublisher) isDeployed() bool {
 func (p *defaultPublisher) emitErrorEvents(err error) {
 	agentErr, ok := err.(*types.AgentError)
 	if !ok {
-		agentErr = types.NewAgentError(types.UnknownErrorCode, err, nil)
+		agentErr = types.NewAgentError(types.ErrorUnknown, err, nil)
 	}
 	dashboardURL := ""
 	directURL := ""
@@ -153,9 +137,9 @@ func (p *defaultPublisher) emitErrorEvents(err error) {
 		}
 		if p.isDeployed() {
 			// Provide URL in the event, if we got far enough in the deployment.
-			dashboardURL = getDashboardURL(p.Account.URL, p.Target.ID)
-			logsURL = getLogsURL(p.Account.URL, p.Target.ID)
-			directURL = getDirectURL(p.Account.URL, p.Target.ID)
+			dashboardURL = util.GetDashboardURL(p.Account.URL, p.Target.ID)
+			logsURL = util.GetLogsURL(p.Account.URL, p.Target.ID)
+			directURL = util.GetDirectURL(p.Account.URL, p.Target.ID)
 
 			mapstructure.Decode(publishDeployedFailureData{
 				DashboardURL: dashboardURL,
@@ -204,9 +188,9 @@ func (p *defaultPublisher) PublishDirectory() error {
 		p.emitErrorEvents(err)
 	} else {
 		p.emitter.Emit(events.New(events.PublishOp, events.SuccessPhase, events.NoError, publishSuccessData{
-			DashboardURL: getDashboardURL(p.Account.URL, p.Target.ID),
-			LogsURL:      getLogsURL(p.Account.URL, p.Target.ID),
-			DirectURL:    getDirectURL(p.Account.URL, p.Target.ID),
+			DashboardURL: util.GetDashboardURL(p.Account.URL, p.Target.ID),
+			LogsURL:      util.GetLogsURL(p.Account.URL, p.Target.ID),
+			DirectURL:    util.GetDirectURL(p.Account.URL, p.Target.ID),
 			ServerURL:    p.Account.URL,
 			ContentID:    p.Target.ID,
 		}))
@@ -271,9 +255,9 @@ func (p *defaultPublisher) createDeploymentRecord(
 		Requirements:  nil,
 		Configuration: &cfg,
 		BundleID:      "",
-		DashboardURL:  getDashboardURL(p.Account.URL, contentID),
-		DirectURL:     getDirectURL(p.Account.URL, contentID),
-		LogsURL:       getLogsURL(p.Account.URL, contentID),
+		DashboardURL:  util.GetDashboardURL(p.Account.URL, contentID),
+		DirectURL:     util.GetDirectURL(p.Account.URL, contentID),
+		LogsURL:       util.GetLogsURL(p.Account.URL, contentID),
 		Error:         nil,
 	}
 

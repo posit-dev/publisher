@@ -1,5 +1,9 @@
 <template>
-  <TreeSection title="R Packages" :actions="rPackageActions">
+  <TreeSection
+    title="R Packages"
+    data-automation="r-packages"
+    :actions="rPackageActions"
+  >
     <WelcomeView v-if="showWelcomeView">
       <template v-if="showScanWelcomeView">
         <p>
@@ -15,7 +19,7 @@
         </vscode-button>
       </template>
       <template v-if="isNotRProject">
-        <p>
+        <p data-automation="r-not-configured">
           This project is not configured to use R. To configure R, add an [r]
           section to your configuration file.
         </p>

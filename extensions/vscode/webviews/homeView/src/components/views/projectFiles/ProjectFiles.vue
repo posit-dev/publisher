@@ -1,5 +1,6 @@
 <template>
   <TreeSection
+    data-automation="project-files"
     title="Project Files"
     :actions="[
       {

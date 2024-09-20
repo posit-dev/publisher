@@ -73,6 +73,7 @@ import { showProgress } from "src/utils/progress";
 import { newCredential } from "src/multiStepInputs/newCredential";
 import { PublisherState } from "src/state";
 import { throttleWithLastPending } from "src/utils/throttle";
+import { showAssociateGUID } from "src/actions/showAssociateGUID";
 
 enum HomeViewInitialized {
   initialized = "initialized",
@@ -225,6 +226,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         return this.showNewCredential();
       case WebviewToHostMessageType.VIEW_PUBLISHING_LOG:
         return this.showPublishingLog();
+      case WebviewToHostMessageType.SHOW_ASSOCIATE_GUID:
+        return showAssociateGUID(this.state);
       default:
         window.showErrorMessage(
           `Internal Error: onConduitMessage unhandled msg: ${JSON.stringify(msg)}`,
@@ -804,8 +807,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           const api = await useApi();
           await api.contentRecords.patch(
             targetContentRecord.deploymentName,
-            config.configurationName,
             targetContentRecord.projectDir,
+            {
+              configName: config.configurationName,
+            },
           );
         });
 

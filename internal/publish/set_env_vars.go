@@ -3,6 +3,8 @@ package publish
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"maps"
+
 	"github.com/posit-dev/publisher/internal/clients/connect"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/logging"
@@ -17,7 +19,8 @@ func (p *defaultPublisher) setEnvVars(
 	contentID types.ContentID) error {
 
 	env := p.Config.Environment
-	if len(env) == 0 {
+	secrets := p.Secrets
+	if len(env) == 0 && len(secrets) == 0 {
 		return nil
 	}
 
@@ -30,7 +33,17 @@ func (p *defaultPublisher) setEnvVars(
 	for name, value := range env {
 		log.Info("Setting environment variable", "name", name, "value", value)
 	}
-	err := client.SetEnvVars(contentID, env, log)
+
+	for name := range secrets {
+		log.Info("Setting secret as environment variable", "name", name)
+	}
+
+	// Combine env and secrets into one environment for Connect
+	combinedEnv := make(map[string]string)
+	maps.Copy(combinedEnv, env)
+	maps.Copy(combinedEnv, secrets)
+
+	err := client.SetEnvVars(contentID, combinedEnv, log)
 	if err != nil {
 		return types.OperationError(op, err)
 	}

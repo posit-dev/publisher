@@ -227,6 +227,10 @@ func (s *GetDeploymentsSuite) makeSubdirDeployment(name string, subdir string) (
 	cfg.Type = config.ContentTypeHTML
 	cfg.Entrypoint = subdir + ".html"
 	d.Configuration = cfg
+	d.DeployedAt = "2024-09-17T16:57:51-07:00"
+	d.DashboardURL = "/connect/#/apps/abc123"
+	d.DirectURL = "/content/abc123/"
+	d.LogsURL = "/connect/#/apps/abc123/logs"
 	return d, d.WriteFile(path)
 }
 

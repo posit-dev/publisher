@@ -104,6 +104,15 @@ type Config struct {
 	Connect       *Connect    `toml:"connect,omitempty" json:"connect,omitempty"`
 }
 
+func (c *Config) HasSecret(secret string) bool {
+	for _, s := range c.Secrets {
+		if s == secret {
+			return true
+		}
+	}
+	return false
+}
+
 type Environment = map[string]string
 
 type Python struct {

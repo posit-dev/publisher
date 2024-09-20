@@ -35,7 +35,7 @@
         :class="codicon"
       />
       <div class="tree-item-label-container">
-        <span class="tree-item-title">{{ title }}</span>
+        <span class="tree-item-title" data-automation="req">{{ title }}</span>
         <span v-if="description" class="tree-item-description">
           {{ description }}
         </span>
@@ -162,7 +162,6 @@ const toggleExpanded = () => {
       }
 
       .tree-item-description {
-        line-height: 22px;
         font-size: 0.9em;
         margin-left: 0.5em;
         opacity: 0.7;

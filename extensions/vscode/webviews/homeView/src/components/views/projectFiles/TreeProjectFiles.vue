@@ -31,6 +31,7 @@
           !home.flatFiles.lastDeployedFiles.has(file.id)
         "
         class="text-git-added"
+        :data-automation="`${file.id}-decorator`"
       >
         A
       </PostDecor>

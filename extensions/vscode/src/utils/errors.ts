@@ -1,6 +1,7 @@
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import axios from "axios";
+import { isAxiosErrorWithJson, resolveAgentJsonErrorMsg } from "./errorTypes";
 
 export type ErrorMessage = string[];
 export type ErrorMessages = ErrorMessage[];
@@ -49,8 +50,15 @@ export const getAPIURLFromError = (error: unknown) => {
   return undefined;
 };
 
+// When the error is a known JSON agent error it returns it's message.
+// Otherwise, a tracing message is returned to help diagnose.
 export const getSummaryStringFromError = (location: string, error: unknown) => {
   let msg = `An error has occurred at ${location}`;
+
+  if (isAxiosErrorWithJson(error)) {
+    return resolveAgentJsonErrorMsg(error);
+  }
+
   const summary = getSummaryFromError(error);
   if (summary) {
     if (summary.status) {

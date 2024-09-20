@@ -16,6 +16,7 @@ import (
 	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
 	"github.com/spf13/afero"
@@ -84,6 +85,58 @@ func (s *PostDeploymentsSuite) TestPostDeployments() {
 	s.Equal(accounts.ServerTypeConnect, res.ServerType)
 	s.Equal(acct.URL, res.ServerURL)
 	s.Equal(deploymentStateNew, res.State)
+}
+
+func (s *PostDeploymentsSuite) TestPostDeploymentsWithID() {
+	lister := &accounts.MockAccountList{}
+	acct := &accounts.Account{
+		Name:       "myAccount",
+		URL:        "https://connect.example.com",
+		ServerType: accounts.ServerTypeConnect,
+	}
+	lister.On("GetAccountByName", "myAccount").Return(acct, nil)
+
+	h := PostDeploymentsHandlerFunc(s.cwd, logging.New(), lister)
+
+	cfg := config.New()
+	err := cfg.WriteFile(config.GetConfigPath(s.cwd, "myConfig"))
+	s.NoError(err)
+
+	rec := httptest.NewRecorder()
+	body := strings.NewReader(`{
+		"account": "myAccount",
+		"config": "myConfig",
+		"saveName": "newDeployment",
+		"id": "abc"
+	}`)
+	req, err := http.NewRequest("POST", "/api/deployments", body)
+	s.NoError(err)
+	h(rec, req)
+
+	s.Equal(http.StatusOK, rec.Result().StatusCode)
+	s.Equal("application/json", rec.Header().Get("content-type"))
+
+	res := fullDeploymentDTO{}
+	dec := json.NewDecoder(rec.Body)
+	dec.DisallowUnknownFields()
+	s.NoError(dec.Decode(&res))
+
+	actualPath, err := util.NewPath(res.Path, s.cwd.Fs()).Rel(s.cwd)
+	s.NoError(err)
+	s.Equal(filepath.Join(".posit", "publish", "deployments", "newDeployment.toml"), actualPath.String())
+
+	s.Equal("newDeployment", res.Name)
+	s.Equal("newDeployment", res.SaveName)
+	s.Equal(".", res.ProjectDir)
+	s.Equal("myConfig", res.ConfigName)
+	s.Equal("myConfig.toml", filepath.Base(res.ConfigPath))
+	s.Equal(accounts.ServerTypeConnect, res.ServerType)
+	s.Equal(acct.URL, res.ServerURL)
+	s.Equal(deploymentStateNew, res.State)
+	s.Equal(types.ContentID("abc"), res.ID)
+	s.Equal("https://connect.example.com/connect/#/apps/abc", res.DashboardURL)
+	s.Equal("https://connect.example.com/content/abc/", res.DirectURL)
+	s.Equal("https://connect.example.com/connect/#/apps/abc/logs", res.LogsURL)
 }
 
 func (s *PostDeploymentsSuite) TestPostDeploymentsNoConfig() {

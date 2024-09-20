@@ -36,9 +36,11 @@
         class="deployment-details-container"
       >
         <div class="deployment-details-row">
-          <span class="deployment-details-label">{{
-            home.selectedConfiguration.configuration.entrypoint
-          }}</span>
+          <span
+            class="deployment-details-label"
+            data-automation="entrypoint-label"
+            >{{ home.selectedConfiguration.configuration.entrypoint }}</span
+          >
           <span class="deployment-details-info"> (selected as entrypoint)</span>
         </div>
       </div>
@@ -100,7 +102,9 @@
           <div class="progress-container">
             <vscode-progress-ring class="progress-ring" />
             <div class="progress-desc">
-              <div>Deployment in Progress...</div>
+              <div data-automation="deployment-progress">
+                Deployment in Progress...
+              </div>
               <p class="progress-log-anchor">
                 <a
                   class="webview-link"
@@ -119,7 +123,10 @@
         </div>
       </div>
       <div v-else>
-        <div class="deployment-summary-container">
+        <div
+          class="deployment-summary-container"
+          data-automation="deploy-status"
+        >
           <h4 class="deployment-summary">
             {{ lastStatusDescription }}
           </h4>
@@ -128,6 +135,18 @@
             :actions="[]"
             :context-menu="contextMenuVSCodeContext"
           />
+        </div>
+        <div v-if="isPreContentRecordWithoutID">
+          Is this already deployed to a Connect server? You can
+          <a class="webview-link" role="button" @click="onAssociateDeployment"
+            >update that previous deployment</a
+          >.
+        </div>
+        <div v-if="isPreContentRecordWithID">
+          <a class="webview-link" role="button" @click="viewContent"
+            >This deployment</a
+          >
+          will be updated when deployed.
         </div>
         <div
           v-if="!isPreContentRecord(home.selectedContentRecord)"
@@ -153,7 +172,7 @@
         >
           <vscode-button
             appearance="secondary"
-            @click="navigateToUrl(home.selectedContentRecord.dashboardUrl)"
+            @click="viewContent"
             class="w-full"
           >
             View Content
@@ -344,9 +363,25 @@ const lastStatusDescription = computed(() => {
     return "Last Deployment Failed";
   }
   if (isPreContentRecord(home.selectedContentRecord)) {
-    return "Not Yet Deployed";
+    return isPreContentRecordWithID.value
+      ? "Not Yet Updated"
+      : "Not Yet Deployed";
   }
   return "Last Deployment Successful";
+});
+
+const isPreContentRecordWithID = computed(() => {
+  return (
+    isPreContentRecord(home.selectedContentRecord) &&
+    Boolean(home.selectedContentRecord.id)
+  );
+});
+
+const isPreContentRecordWithoutID = computed(() => {
+  return (
+    isPreContentRecord(home.selectedContentRecord) &&
+    !isPreContentRecordWithID.value
+  );
 });
 
 const toolTipText = computed(() => {
@@ -387,6 +422,18 @@ const newCredential = () => {
   hostConduit.sendMsg({
     kind: WebviewToHostMessageType.NEW_CREDENTIAL_FOR_DEPLOYMENT,
   });
+};
+
+const onAssociateDeployment = () => {
+  hostConduit.sendMsg({
+    kind: WebviewToHostMessageType.SHOW_ASSOCIATE_GUID,
+  });
+};
+
+const viewContent = () => {
+  if (home.selectedContentRecord?.dashboardUrl) {
+    navigateToUrl(home.selectedContentRecord.dashboardUrl);
+  }
 };
 </script>
 
