@@ -17,6 +17,7 @@ import { DeploymentSelector } from "../../../../src/types/shared";
 import { splitFilesOnInclusion } from "src/utils/files";
 
 export const useHomeStore = defineStore("home", () => {
+  const platformFileSeparator = ref<string>("/");
   const publishInProgress = ref(false);
 
   const contentRecords = ref<(ContentRecord | PreContentRecord)[]>([]);
@@ -187,6 +188,7 @@ export const useHomeStore = defineStore("home", () => {
   };
 
   return {
+    platformFileSeparator,
     showDisabledOverlay,
     publishInProgress,
     contentRecords,

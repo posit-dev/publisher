@@ -271,6 +271,15 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   }
 
   private async onInitializingMsg() {
+    // inform webview of the platform specific path separator
+    // (path package is a node library, wrapper for browser doesn't seem to work in webview correctly)
+    this.webviewConduit.sendMsg({
+      kind: HostToWebviewMessageType.SET_PATH_SEPARATOR,
+      content: {
+        separator: path.sep,
+      },
+    });
+
     // send back the data needed. Optimize request for initialization...
     await this.refreshAll(false, true);
     this.setInitializationContext(HomeViewInitialized.initialized);

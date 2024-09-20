@@ -334,9 +334,9 @@ const entrypointSubTitle = computed(() => {
     const config = home.selectedConfiguration;
     if (contentRecord) {
       if (isConfigInError.value) {
-        return `${contentRecord.projectDir}${path.sep}`;
+        return `${contentRecord.projectDir}${home.platformFileSeparator}`;
       } else {
-        return `${contentRecord.projectDir}${path.sep}${config.configuration.entrypoint}`;
+        return `${contentRecord.projectDir}${home.platformFileSeparator}${config.configuration.entrypoint}`;
       }
     }
   }
