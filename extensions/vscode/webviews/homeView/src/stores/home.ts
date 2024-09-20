@@ -11,6 +11,7 @@ import {
   ContentRecordFile,
   ConfigurationError,
 } from "../../../../src/api";
+import { isConfigurationError } from "../../../../src/api/types/configurations";
 import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
 import { RPackage } from "../../../../src/api/types/packages";
 import { DeploymentSelector } from "../../../../src/types/shared";
@@ -26,6 +27,8 @@ export const useHomeStore = defineStore("home", () => {
   const sortedCredentials = computed(() => {
     return credentials.value.sort((a, b) => a.name.localeCompare(b.name));
   });
+
+  const secrets = ref(new Map<string, string | undefined>());
 
   const showDisabledOverlay = ref(false);
 
@@ -55,6 +58,33 @@ export const useHomeStore = defineStore("home", () => {
       }
       return result;
     },
+  );
+
+  watch(
+    [selectedContentRecord, selectedConfiguration],
+    ([contentRecord, config], [prevContentRecord, prevConfig]) => {
+      const result = new Map<string, string | undefined>();
+
+      if (config === undefined || isConfigurationError(config)) {
+        secrets.value = result;
+        return;
+      }
+
+      const isSameContentRecord = Boolean(
+        contentRecord?.saveName === prevContentRecord?.saveName,
+      );
+
+      config.configuration.secrets?.forEach((secret) => {
+        if (isSameContentRecord && secrets.value?.has(secret)) {
+          result.set(secret, secrets.value.get(secret));
+        } else {
+          result.set(secret, undefined);
+        }
+      });
+
+      secrets.value = result;
+    },
+    { immediate: true },
   );
 
   // Always use the content record as the source of truth for the
@@ -186,6 +216,21 @@ export const useHomeStore = defineStore("home", () => {
     rVersion.value = version;
   };
 
+  const clearSecretValues = () => {
+    const cleared = new Map();
+
+    secrets.value.forEach((_, key) => {
+      cleared.set(key, undefined);
+    });
+
+    secrets.value = cleared;
+  };
+
+  const secretsWithValueCount = computed(() => {
+    return Array.from(secrets.value.values()).filter((v) => v !== undefined)
+      .length;
+  });
+
   return {
     showDisabledOverlay,
     publishInProgress,
@@ -194,6 +239,7 @@ export const useHomeStore = defineStore("home", () => {
     configurationsInError,
     credentials,
     sortedCredentials,
+    secrets,
     selectedContentRecord,
     selectedConfiguration,
     serverCredential,
@@ -214,5 +260,7 @@ export const useHomeStore = defineStore("home", () => {
     updateParentViewSelectionState,
     updatePythonPackages,
     updateRPackages,
+    clearSecretValues,
+    secretsWithValueCount,
   };
 });

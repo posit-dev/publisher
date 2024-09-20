@@ -96,6 +96,7 @@ export type DeployMsg = AnyWebviewToHostMessage<
     credentialName: string;
     configurationName: string;
     projectDir: string;
+    secrets?: Record<string, string>;
   }
 >;
 

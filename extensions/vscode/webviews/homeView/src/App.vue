@@ -6,6 +6,7 @@
       <EvenEasierDeploy class="easy-deploy-container" />
       <template v-if="home.selectedConfiguration">
         <ProjectFiles v-model:expanded="projectFilesExpanded" />
+        <Secrets />
         <PythonPackages />
         <RPackages />
         <Credentials />
@@ -21,6 +22,7 @@ import { ref } from "vue";
 import OverlayableView from "src/components/OverlayableView.vue";
 import EvenEasierDeploy from "src/components/EvenEasierDeploy.vue";
 import ProjectFiles from "src/components/views/projectFiles/ProjectFiles.vue";
+import Secrets from "src/components/views/secrets/Secrets.vue";
 import PythonPackages from "src/components/views/PythonPackages.vue";
 import RPackages from "src/components/views/RPackages.vue";
 import Credentials from "src/components/views/Credentials.vue";
