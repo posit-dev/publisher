@@ -81,7 +81,7 @@ const actions = computed<ActionButton[]>(() => {
   if (secretValue.value) {
     result.push({
       label: "Clear Value",
-      codicon: "codicon-x",
+      codicon: "codicon-remove",
       fn: () => {
         home.secrets.set(props.name, undefined);
       },
