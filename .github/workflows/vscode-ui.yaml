@@ -4,7 +4,7 @@ on:
 env:
   VSCODE_VERSION: stable
 jobs:
-  native:
+  ui-tests:
     env:
       DOCKER_CONNECT: true
       CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
