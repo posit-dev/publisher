@@ -334,11 +334,14 @@ const entrypointSubTitle = computed(() => {
     const contentRecord = home.selectedContentRecord;
     const config = home.selectedConfiguration;
     if (contentRecord) {
-      if (isConfigInError.value) {
-        return `${contentRecord.projectDir}${home.platformFileSeparator}`;
-      } else {
-        return `${contentRecord.projectDir}${home.platformFileSeparator}${config.configuration.entrypoint}`;
+      let subTitle = "";
+      if (contentRecord.projectDir !== ".") {
+        subTitle = `${contentRecord.projectDir}${home.platformFileSeparator}`;
       }
+      if (!isConfigInError.value) {
+        subTitle += config.configuration.entrypoint;
+      }
+      return subTitle;
     }
   }
   return "ProjectDir and Entrypoint not determined";
