@@ -1083,7 +1083,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           details.push(`Missing Credential for ${contentRecord.serverUrl}`);
           problem = true;
         }
-        if (!isRelativePathRoot(contentRecord.projectDir)) {
+
+        if (isRelativePathRoot(contentRecord.projectDir)) {
+          if (config && !isConfigurationError(config)) {
+            details.push(config.configuration.entrypoint);
+          }
+        } else {
           if (config && !isConfigurationError(config)) {
             details.push(
               `${contentRecord.projectDir}${path.sep}${config.configuration.entrypoint}`,
