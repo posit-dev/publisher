@@ -162,9 +162,7 @@
 </template>
 
 <script setup lang="ts">
-import path from "path";
-
-import { computed, ref } from "vue";
+import { computed } from "vue";
 import {
   Configuration,
   isPreContentRecord,
