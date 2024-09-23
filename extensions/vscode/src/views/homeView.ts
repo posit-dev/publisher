@@ -248,6 +248,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     credentialName: string,
     configurationName: string,
     projectDir: string,
+    secrets?: Record<string, string>,
   ) {
     try {
       const api = await useApi();
@@ -256,6 +257,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         credentialName,
         configurationName,
         projectDir,
+        secrets,
       );
       deployProject(response.data.localId, this.stream);
     } catch (error: unknown) {
@@ -270,6 +272,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       msg.content.credentialName,
       msg.content.configurationName,
       msg.content.projectDir,
+      msg.content.secrets,
     );
   }
 
@@ -1397,15 +1400,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   public debounceSendRefreshedFilesLists = debounce(async () => {
     return await this.sendRefreshedFilesLists();
   }, DebounceDelaysMS.file);
-
-  public initiatePublish(target: PublishProcessParams) {
-    this.initiateDeployment(
-      target.deploymentName,
-      target.credentialName,
-      target.configurationName,
-      target.projectDir,
-    );
-  }
 
   public async handleFileInitiatedDeploymentSelection(uri: Uri) {
     // Guide the user to create a new Deployment with that file as the entrypoint
