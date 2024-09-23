@@ -31,16 +31,6 @@ jobs:
     needs: nightly
     secrets: inherit
     uses: ./.github/workflows/cleanup.yaml
-  archive:
-    needs: build
-    uses: ./.github/workflows/archive.yaml
-  upload:
-    needs:
-      - archive
-    uses: ./.github/workflows/upload.yaml
-    with:
-      nightly: true
-    secrets: inherit
 
   # Extensions
   vscode:
