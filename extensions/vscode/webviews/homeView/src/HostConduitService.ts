@@ -159,6 +159,7 @@ const onPublishStartMsg = () => {
 };
 const onPublishFinishSuccessMsg = () => {
   const home = useHomeStore();
+  home.clearSecretValues();
   home.publishInProgress = false;
   home.lastContentRecordResult = `Last Deployment was Successful`;
   home.lastContentRecordMsg = "";

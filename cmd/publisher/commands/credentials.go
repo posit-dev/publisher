@@ -8,6 +8,7 @@ import (
 
 	"github.com/posit-dev/publisher/internal/cli_types"
 	"github.com/posit-dev/publisher/internal/credentials"
+	"github.com/posit-dev/publisher/internal/logging"
 )
 
 type CredentialsCommand struct {
@@ -24,7 +25,7 @@ type CreateCredentialCommand struct {
 }
 
 func (cmd *CreateCredentialCommand) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
-	cs := credentials.CredentialsService{}
+	cs := credentials.NewCredentialsService(logging.NewDiscardLogger())
 	cred, err := cs.Set(cmd.Name, cmd.URL, cmd.ApiKey)
 	if err != nil {
 		return err
@@ -44,7 +45,7 @@ type DeleteCredentialCommand struct {
 }
 
 func (cmd *DeleteCredentialCommand) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
-	cs := credentials.CredentialsService{}
+	cs := credentials.NewCredentialsService(logging.NewDiscardLogger())
 	err := cs.Delete(cmd.GUID)
 	if err != nil {
 		return err
@@ -59,7 +60,7 @@ type GetCredentialCommand struct {
 }
 
 func (cmd *GetCredentialCommand) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
-	cs := credentials.CredentialsService{}
+	cs := credentials.NewCredentialsService(logging.NewDiscardLogger())
 	cred, err := cs.Get(cmd.GUID)
 	if err != nil {
 		return err
@@ -78,7 +79,7 @@ type ListCredentialsCommand struct {
 }
 
 func (cmd *ListCredentialsCommand) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
-	cs := credentials.CredentialsService{}
+	cs := credentials.NewCredentialsService(logging.NewDiscardLogger())
 	creds, err := cs.List()
 	if err != nil {
 		return err

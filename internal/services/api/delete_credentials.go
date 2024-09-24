@@ -13,7 +13,7 @@ import (
 func DeleteCredentialHandlerFunc(log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		guid := mux.Vars(req)["guid"]
-		cs := credentials.CredentialsService{}
+		cs := credentials.NewCredentialsService(log)
 		err := cs.Delete(guid)
 		if err != nil {
 			switch e := err.(type) {
