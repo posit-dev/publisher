@@ -56,7 +56,11 @@ jobs:
       # - run: just package
       - run: just vscode configure
       - run: just vscode-ui install
-      - run: just vscode-ui test
+      - run: just vscode-ui build-connect
+      - run: just vscode-ui test vscode-nested
+        env:
+          SPEC_PATH: ./test/specs/nested-fastapi.spec.ts
+          WORKSPACE_PATH: ../sample-content/
 
       - name: Save screenshots
         uses: actions/upload-artifact@v4
