@@ -101,6 +101,10 @@ func (c *fileCredentialsService) Set(name, url, ak string) (*Credential, error) 
 	}
 
 	creds, err := c.load()
+	if err != nil {
+		return nil, err
+	}
+
 	normalizedUrl, err := util.NormalizeServerURL(url)
 	if err != nil {
 		return nil, err
