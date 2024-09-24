@@ -24,6 +24,19 @@ export type ConfigurationInspectionResult = {
   projectDir: string;
 };
 
+export const areInspectionResultsSimilarEnough = (
+  inspect1: ConfigurationInspectionResult,
+  inspect2: ConfigurationInspectionResult,
+) => {
+  // Not comparing ALL attributes, just enough to maintain uniqueness and
+  // confidence that this is a "similar" inspection result
+  return (
+    inspect1.projectDir === inspect2.projectDir &&
+    inspect1.configuration.entrypoint === inspect2.configuration.entrypoint &&
+    inspect1.configuration.type === inspect2.configuration.type
+  );
+};
+
 export function isConfigurationError(
   cfg: Configuration | ConfigurationError,
 ): cfg is ConfigurationError {
@@ -48,6 +61,24 @@ export enum ContentType {
   RMD = "rmd",
   UNKNOWN = "unknown",
 }
+
+export const allValidContentTypes: ContentType[] = [
+  ContentType.HTML,
+  ContentType.JUPYTER_NOTEBOOK,
+  ContentType.JUPYTER_VOILA,
+  ContentType.PYTHON_BOKEH,
+  ContentType.PYTHON_DASH,
+  ContentType.PYTHON_FASTAPI,
+  ContentType.PYTHON_FLASK,
+  ContentType.PYTHON_SHINY,
+  ContentType.PYTHON_STREAMLIT,
+  ContentType.QUARTO_SHINY,
+  ContentType.QUARTO,
+  ContentType.R_PLUMBER,
+  ContentType.R_SHINY,
+  ContentType.RMD_SHINY,
+  ContentType.RMD,
+];
 
 export const contentTypeStrings = {
   [ContentType.HTML]: "serve pre-rendered HTML",
