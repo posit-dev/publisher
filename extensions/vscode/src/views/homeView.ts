@@ -44,12 +44,7 @@ import { getNonce } from "src/utils/getNonce";
 import { getUri } from "src/utils/getUri";
 import { deployProject } from "src/views/deployProgress";
 import { WebviewConduit } from "src/utils/webviewConduit";
-import {
-  fileExists,
-  relativeDir,
-  isRelativePathRoot,
-  relativePath,
-} from "src/utils/files";
+import { fileExists, relativeDir, isRelativePathRoot } from "src/utils/files";
 import { Utils as uriUtils } from "vscode-uri";
 import { newDeployment } from "src/multiStepInputs/newDeployment";
 import type {
@@ -1425,7 +1420,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return undefined;
     }
     const entrypointFile = uriUtils.basename(uri);
-    const entrypointRelPath = relativePath(uri);
 
     const api = await useApi();
 
