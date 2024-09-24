@@ -46,388 +46,6 @@ import { showProgress } from "src/utils/progress";
 import { relativeDir, relativePath, vscodeOpenFiles } from "src/utils/files";
 import { ENTRYPOINT_FILE_EXTENSIONS } from "src/constants";
 
-// type stepInfo = {
-//   step: number;
-//   totalSteps: number;
-// };
-
-// type possibleSteps = {
-//   noCredentials: {
-//     singleEntryPoint: stepInfo;
-//     multipleEntryPoints: {
-//       singleContentType: stepInfo;
-//       multipleContentTypes: stepInfo;
-//     };
-//   };
-//   newCredentials: {
-//     singleEntryPoint: stepInfo;
-//     multipleEntryPoints: {
-//       singleContentType: stepInfo;
-//       multipleContentTypes: stepInfo;
-//     };
-//   };
-//   existingCredentials: {
-//     singleEntryPoint: stepInfo;
-//     multipleEntryPoints: {
-//       singleContentType: stepInfo;
-//       multipleContentTypes: stepInfo;
-//     };
-//   };
-// };
-
-// const steps: Record<string, possibleSteps | undefined> = {
-//   inputEntryPointFileSelection: {
-//     noCredentials: {
-//       singleEntryPoint: {
-//         step: 0, // not yet shown
-//         totalSteps: 4,
-//       },
-//       multipleEntryPoints: {
-//         singleContentType: {
-//           step: 1,
-//           totalSteps: 5,
-//         },
-//         multipleContentTypes: {
-//           step: 1,
-//           totalSteps: 6,
-//         },
-//       },
-//     },
-//     newCredentials: {
-//       singleEntryPoint: {
-//         step: 0, // not yet shown
-//         totalSteps: 5,
-//       },
-//       multipleEntryPoints: {
-//         singleContentType: {
-//           step: 1,
-//           totalSteps: 6,
-//         },
-//         multipleContentTypes: {
-//           step: 1,
-//           totalSteps: 7,
-//         },
-//       },
-//     },
-//     existingCredentials: {
-//       singleEntryPoint: {
-//         step: 0, // not yet shown
-//         totalSteps: 2,
-//       },
-//       multipleEntryPoints: {
-//         singleContentType: {
-//           step: 1,
-//           totalSteps: 3,
-//         },
-//         multipleContentTypes: {
-//           step: 1,
-//           totalSteps: 4,
-//         },
-//       },
-//     },
-//   },
-//   inputEntryPointContentTypeSelection: {
-//     noCredentials: {
-//       singleEntryPoint: {
-//         step: 0, // still 0
-//         totalSteps: 4,
-//       },
-//       multipleEntryPoints: {
-//         singleContentType: {
-//           step: 1, // not shown
-//           totalSteps: 5,
-//         },
-//         multipleContentTypes: {
-//           step: 2,
-//           totalSteps: 6,
-//         },
-//       },
-//     },
-//     newCredentials: {
-//       singleEntryPoint: {
-//         step: 0, // still 0
-//         totalSteps: 5,
-//       },
-//       multipleEntryPoints: {
-//         singleContentType: {
-//           step: 1, // not shown
-//           totalSteps: 6,
-//         },
-//         multipleContentTypes: {
-//           step: 2,
-//           totalSteps: 7,
-//         },
-//       },
-//     },
-//     existingCredentials: {
-//       singleEntryPoint: {
-//         step: 0, // still 0
-//         totalSteps: 2,
-//       },
-//       multipleEntryPoints: {
-//         singleContentType: {
-//           step: 1, // not shown
-//           totalSteps: 3,
-//         },
-//         multipleContentTypes: {
-//           step: 2,
-//           totalSteps: 4,
-//         },
-//       },
-//     },
-//   },
-//   inputTitle: {
-//     noCredentials: {
-//       singleEntryPoint: {
-//         step: 1,
-//         totalSteps: 4,
-//       },
-//       multipleEntryPoints: {
-//         singleContentType: {
-//           step: 2,
-//           totalSteps: 5,
-//         },
-//         multipleContentTypes: {
-//           step: 3,
-//           totalSteps: 6,
-//         },
-//       },
-//     },
-//     newCredentials: {
-//       singleEntryPoint: {
-//         step: 1,
-//         totalSteps: 5,
-//       },
-//       multipleEntryPoints: {
-//         singleContentType: {
-//           step: 2,
-//           totalSteps: 6,
-//         },
-//         multipleContentTypes: {
-//           step: 3,
-//           totalSteps: 7,
-//         },
-//       },
-//     },
-//     existingCredentials: {
-//       singleEntryPoint: {
-//         step: 1,
-//         totalSteps: 2,
-//       },
-//       multipleEntryPoints: {
-//         singleContentType: {
-//           step: 2,
-//           totalSteps: 3,
-//         },
-//         multipleContentTypes: {
-//           step: 3,
-//           totalSteps: 4,
-//         },
-//       },
-//     },
-//   },
-//   pickCredentials: {
-//     noCredentials: {
-//       singleEntryPoint: {
-//         step: 1, // not shown
-//         totalSteps: 4,
-//       },
-//       multipleEntryPoints: {
-//         singleContentType: {
-//           step: 2, // not shown
-//           totalSteps: 5,
-//         },
-//         multipleContentTypes: {
-//           step: 3, // not shown
-//           totalSteps: 6,
-//         },
-//       },
-//     },
-//     newCredentials: {
-//       singleEntryPoint: {
-//         step: 2,
-//         totalSteps: 5,
-//       },
-//       multipleEntryPoints: {
-//         singleContentType: {
-//           step: 3,
-//           totalSteps: 6,
-//         },
-//         multipleContentTypes: {
-//           step: 4,
-//           totalSteps: 7,
-//         },
-//       },
-//     },
-//     existingCredentials: {
-//       singleEntryPoint: {
-//         step: 2,
-//         totalSteps: 2,
-//       },
-//       multipleEntryPoints: {
-//         singleContentType: {
-//           step: 3,
-//           totalSteps: 3,
-//         },
-//         multipleContentTypes: {
-//           step: 4,
-//           totalSteps: 4,
-//         },
-//       },
-//     },
-//   },
-//   inputServerUrl: {
-//     noCredentials: {
-//       singleEntryPoint: {
-//         step: 2,
-//         totalSteps: 4,
-//       },
-//       multipleEntryPoints: {
-//         singleContentType: {
-//           step: 3,
-//           totalSteps: 5,
-//         },
-//         multipleContentTypes: {
-//           step: 4,
-//           totalSteps: 6,
-//         },
-//       },
-//     },
-//     newCredentials: {
-//       singleEntryPoint: {
-//         step: 3,
-//         totalSteps: 5,
-//       },
-//       multipleEntryPoints: {
-//         singleContentType: {
-//           step: 4,
-//           totalSteps: 6,
-//         },
-//         multipleContentTypes: {
-//           step: 5,
-//           totalSteps: 7,
-//         },
-//       },
-//     },
-//     existingCredentials: {
-//       singleEntryPoint: {
-//         step: 2, // not shown
-//         totalSteps: 2,
-//       },
-//       multipleEntryPoints: {
-//         singleContentType: {
-//           step: 3, // not shown
-//           totalSteps: 3,
-//         },
-//         multipleContentTypes: {
-//           step: 4, // not shown
-//           totalSteps: 4,
-//         },
-//       },
-//     },
-//   },
-//   inputAPIKey: {
-//     noCredentials: {
-//       singleEntryPoint: {
-//         step: 3,
-//         totalSteps: 4,
-//       },
-//       multipleEntryPoints: {
-//         singleContentType: {
-//           step: 4,
-//           totalSteps: 5,
-//         },
-//         multipleContentTypes: {
-//           step: 5,
-//           totalSteps: 6,
-//         },
-//       },
-//     },
-//     newCredentials: {
-//       singleEntryPoint: {
-//         step: 4,
-//         totalSteps: 5,
-//       },
-//       multipleEntryPoints: {
-//         singleContentType: {
-//           step: 5,
-//           totalSteps: 6,
-//         },
-//         multipleContentTypes: {
-//           step: 6,
-//           totalSteps: 7,
-//         },
-//       },
-//     },
-//     existingCredentials: {
-//       singleEntryPoint: {
-//         step: 2, // not shown
-//         totalSteps: 2,
-//       },
-//       multipleEntryPoints: {
-//         singleContentType: {
-//           step: 3, // not shown
-//           totalSteps: 3,
-//         },
-//         multipleContentTypes: {
-//           step: 4, // not shown
-//           totalSteps: 4,
-//         },
-//       },
-//     },
-//   },
-//   inputCredentialName: {
-//     noCredentials: {
-//       singleEntryPoint: {
-//         step: 4,
-//         totalSteps: 4,
-//       },
-//       multipleEntryPoints: {
-//         singleContentType: {
-//           step: 5,
-//           totalSteps: 5,
-//         },
-//         multipleContentTypes: {
-//           step: 6,
-//           totalSteps: 6,
-//         },
-//       },
-//     },
-//     newCredentials: {
-//       singleEntryPoint: {
-//         step: 5,
-//         totalSteps: 5,
-//       },
-//       multipleEntryPoints: {
-//         singleContentType: {
-//           step: 6,
-//           totalSteps: 6,
-//         },
-//         multipleContentTypes: {
-//           step: 7,
-//           totalSteps: 7,
-//         },
-//       },
-//     },
-//     existingCredentials: {
-//       singleEntryPoint: {
-//         step: 2, // not shown
-//         totalSteps: 2,
-//       },
-//       multipleEntryPoints: {
-//         singleContentType: {
-//           step: 3, // not shown
-//           totalSteps: 3,
-//         },
-//         multipleContentTypes: {
-//           step: 4, // not shown
-//           totalSteps: 4,
-//         },
-//       },
-//     },
-//   },
-// };
-
 export async function newDeployment(
   viewId: string,
   projectDir = ".",
@@ -475,13 +93,6 @@ export async function newDeployment(
     newCredentials: {},
   };
 
-  // let selectedEntrypoint: SelectedEntrypoint = {};
-  // let newtitle: string | undefined = undefined;
-  // let existingCredentialName: string | undefined = undefined;
-  // let newCredentialURL: string | undefined = undefined;
-  // let newCredentialName: string | undefined = undefined;
-  // let newCredentialAPIKey: string | undefined = undefined;
-
   const newCredentialForced = (state?: MultiStepState): boolean => {
     if (!state) {
       return false;
@@ -501,55 +112,6 @@ export async function newDeployment(
   const newCredentialByAnyMeans = (state?: MultiStepState): boolean => {
     return newCredentialForced(state) || newCredentialSelected(state);
   };
-
-  // const hasMultiplePossibleEntryPointFiles = () => {
-  //   return inspectionResults.length > 1;
-  // };
-
-  // const hasMultipleContentTypesForSelectedEntryPoint = () => {
-  //   return inspectionResults.length > 1;
-  // };
-
-  // const getStepInfo = (
-  //   stepId: string,
-  //   multiStepState: MultiStepState,
-  // ): stepInfo | undefined => {
-  //   const step = steps[stepId];
-  //   if (!step) {
-  //     // if we have not covered the step, then don't number it.
-  //     return {
-  //       step: 0,
-  //       totalSteps: 0,
-  //     };
-  //   }
-  //   if (newCredentialForced(multiStepState)) {
-  //     if (hasMultiplePossibleEntryPointFiles()) {
-  //       if (hasMultipleContentTypesForSelectedEntryPoint()) {
-  //         return step.noCredentials.multipleEntryPoints.multipleContentTypes;
-  //       }
-  //       return step.noCredentials.multipleEntryPoints.singleContentType;
-  //     }
-  //     return step.noCredentials.singleEntryPoint;
-  //   }
-  //   if (newCredentialSelected(multiStepState)) {
-  //     if (hasMultiplePossibleEntryPointFiles()) {
-  //       if (hasMultipleContentTypesForSelectedEntryPoint()) {
-  //         return step.newCredentials.multipleEntryPoints.multipleContentTypes;
-  //       }
-  //       return step.newCredentials.multipleEntryPoints.singleContentType;
-  //     }
-  //     return step.newCredentials.singleEntryPoint;
-  //   }
-  //   // else it has to be existing credential selected
-  //   if (hasMultiplePossibleEntryPointFiles()) {
-  //     if (hasMultipleContentTypesForSelectedEntryPoint()) {
-  //       return step.existingCredentials.multipleEntryPoints
-  //         .multipleContentTypes;
-  //     }
-  //     return step.existingCredentials.multipleEntryPoints.singleContentType;
-  //   }
-  //   return step.existingCredentials.singleEntryPoint;
-  // };
 
   const getConfigurationInspectionQuickPicks = (
     relEntryPoint: EntryPointPath,
@@ -739,6 +301,7 @@ export async function newDeployment(
 
   // Select the entrypoint, if there is more than one
   // Select the content type, if there is more than one
+  // Select the content type for anything selected which has a content type of UNKNOWN
   // Prompt for Title
   // If no credentials, then skip to create new credential
   // If some credentials, select either use of existing or creation of a new one
@@ -776,8 +339,7 @@ export async function newDeployment(
   }
 
   // ***************************************************************
-  // Step #1 - maybe?:
-  // Select the entrypoint to be used w/ the contentRecord
+  // Step: Select the entrypoint to be used w/ the contentRecord
   // ***************************************************************
   async function inputEntryPointFileSelection(
     input: MultiStepInput,
@@ -790,14 +352,6 @@ export async function newDeployment(
 
     // show only if we were not passed in a file
     if (entryPointFile === undefined) {
-      // const step = getStepInfo("inputEntryPointFileSelection", state);
-      // if (!step) {
-      //   window.showErrorMessage(
-      //     "Internal Error: newDeployment::inputEntryPointFileSelection step info not found.",
-      //   );
-      //   return;
-      // }
-
       if (newDeploymentData.entrypoint.filePath) {
         entryPointListItems.forEach((item) => {
           item.picked = item.label === newDeploymentData.entrypoint.filePath;
@@ -806,8 +360,8 @@ export async function newDeployment(
 
       const pick = await input.showQuickPick({
         title: state.title,
-        step: 0, // step.step,
-        totalSteps: 0, // step.totalSteps,
+        step: 0,
+        totalSteps: 0,
         placeholder:
           "Select entrypoint file. This is your main file for your project. (Use this field to filter selections.)",
         items: entryPointListItems,
@@ -872,8 +426,7 @@ export async function newDeployment(
   }
 
   // ***************************************************************
-  // Step #2 - maybe?:
-  // Select the content inspection result should use
+  // Step: Select the content inspection result should use
   // ***************************************************************
   async function inputEntryPointInspectionResultSelection(
     input: MultiStepInput,
@@ -894,14 +447,6 @@ export async function newDeployment(
 
     // skip if we only have one choice.
     if (inspectionQuickPicks.length > 1) {
-      // const step = getStepInfo("inputEntryPointContentTypeSelection", state);
-      // if (!step) {
-      //   window.showErrorMessage(
-      //     "Internal Error: newDeployment::inputEntryPointContentTypeSelection step info not found.",
-      //   );
-      //   return undefined;
-      // }
-
       if (newDeploymentData.entrypoint.inspectionResult) {
         inspectionQuickPicks.forEach((pick) => {
           if (
@@ -918,9 +463,9 @@ export async function newDeployment(
 
       const pick = await input.showQuickPick({
         title: state.title,
-        step: 0, // step.step,
-        totalSteps: 0, // step.totalSteps,
-        placeholder: `Select the content type for your entrypoint file (${entryPointFile}).`,
+        step: 0,
+        totalSteps: 0,
+        placeholder: `Select the content type for your entrypoint file (${newDeploymentData.entrypoint.filePath}).`,
         items: inspectionQuickPicks,
         buttons: [],
         shouldResume: () => Promise.resolve(false),
@@ -942,8 +487,7 @@ export async function newDeployment(
   }
 
   // ***************************************************************
-  // Step #?
-  // Input the Content Type, if needed
+  // Step: Input the Content Type, if inspection returns UNKNOWN content type
   // ***************************************************************
   async function inputContentType(
     input: MultiStepInput,
@@ -967,19 +511,11 @@ export async function newDeployment(
         });
       });
 
-      // const step = getStepInfo("inputContentType", state);
-      // if (!step) {
-      //   window.showErrorMessage(
-      //     "Internal Error: newDeployment::inputContentType step info not found.",
-      //   );
-      //   return;
-      // }
-
       const pick = await input.showQuickPick({
         title: state.title,
-        step: 0, // state.step,
-        totalSteps: 0, // state.totalSteps,
-        placeholder: `Select the content type for your entrypoint file (${entryPointFile}).`,
+        step: 0,
+        totalSteps: 0,
+        placeholder: `Select the content type for your entrypoint file (${newDeploymentData.entrypoint.filePath}).`,
         items: quickPicks,
         buttons: [],
         shouldResume: () => Promise.resolve(false),
@@ -1005,21 +541,13 @@ export async function newDeployment(
   }
 
   // ***************************************************************
-  // Step #2 - maybe
-  // Input the Title
+  // Step: Input the Title
   // ***************************************************************
   async function inputTitle(input: MultiStepInput, state: MultiStepState) {
     // in case we have backed up from the subsequent check, we need to reset
     // the selection that it will update. This will allow steps to be the minimum number
     // as long as we don't know for certain it will take more steps.
 
-    // const step = getStepInfo("inputTitle", state);
-    // if (!step) {
-    //   window.showErrorMessage(
-    //     "Internal Error: newDeployment::inputTitle step info not found.",
-    //   );
-    //   return;
-    // }
     let initialValue = "";
     if (newDeploymentData.entrypoint.inspectionResult) {
       const detail =
@@ -1031,8 +559,8 @@ export async function newDeployment(
 
     const title = await input.showInputBox({
       title: state.title,
-      step: 0, // step.step,
-      totalSteps: 0, // step.totalSteps,
+      step: 0,
+      totalSteps: 0,
       value: newDeploymentData.title ? newDeploymentData.title : initialValue,
       prompt: "Enter a title for your content or application.",
       validate: (value) => {
@@ -1053,18 +581,10 @@ export async function newDeployment(
   }
 
   // ***************************************************************
-  // Step #3 - maybe
-  // Select the credentials to be used
+  // Step #3: Select the credentials to be used
   // ***************************************************************
   async function pickCredentials(input: MultiStepInput, state: MultiStepState) {
     if (!newCredentialForced(state)) {
-      // const step = getStepInfo("pickCredentials", state);
-      // if (!step) {
-      //   window.showErrorMessage(
-      //     "Internal Error: newDeployment::pickCredentials step info not found.",
-      //   );
-      //   return;
-      // }
       if (newDeploymentData.existingCredentialName) {
         credentialListItems.forEach((credential) => {
           credential.picked =
@@ -1073,8 +593,8 @@ export async function newDeployment(
       }
       const pick = await input.showQuickPick({
         title: state.title,
-        step: 0, // step.step,
-        totalSteps: 0, // step.totalSteps,
+        step: 0,
+        totalSteps: 0,
         placeholder:
           "Select the credential you want to use to deploy. (Use this field to filter selections.)",
         items: credentialListItems,
@@ -1090,8 +610,7 @@ export async function newDeployment(
   }
 
   // ***************************************************************
-  // Step #4 - maybe?:
-  // Get the server url
+  // Step: New Credentials - Get the server url
   // ***************************************************************
   async function inputServerUrl(input: MultiStepInput, state: MultiStepState) {
     if (newCredentialByAnyMeans(state)) {
@@ -1099,18 +618,10 @@ export async function newDeployment(
         ? newDeploymentData.newCredentials.url
         : "";
 
-      // const step = getStepInfo("inputServerUrl", state);
-      // if (!step) {
-      //   window.showErrorMessage(
-      //     "Internal Error: newDeployment::inputServerUrl step info not found.",
-      //   );
-      //   return;
-      // }
-
       const url = await input.showInputBox({
         title: state.title,
-        step: 0, // step.step,
-        totalSteps: 0, // step.totalSteps,
+        step: 0,
+        totalSteps: 0,
         value: currentURL,
         prompt: "Enter the Public URL of the Posit Connect Server",
         placeholder: "example: https://servername.com:3939",
@@ -1184,8 +695,7 @@ export async function newDeployment(
   }
 
   // ***************************************************************
-  // Step #5 - maybe?:
-  // Enter the API Key
+  // Step: New Credentials - Enter the API Key
   // ***************************************************************
   async function inputAPIKey(input: MultiStepInput, state: MultiStepState) {
     if (newCredentialByAnyMeans(state)) {
@@ -1193,18 +703,10 @@ export async function newDeployment(
         ? newDeploymentData.newCredentials.apiKey
         : "";
 
-      // const step = getStepInfo("inputAPIKey", state);
-      // if (!step) {
-      //   window.showErrorMessage(
-      //     "Internal Error: newDeployment::inputAPIKey step info not found.",
-      //   );
-      //   return;
-      // }
-
       const apiKey = await input.showInputBox({
         title: state.title,
-        step: 0, // step.step,
-        totalSteps: 0, // step.totalSteps,
+        step: 0,
+        totalSteps: 0,
         password: true,
         value: currentAPIKey,
         prompt: `The API key to be used to authenticate with Posit Connect.
@@ -1266,8 +768,7 @@ export async function newDeployment(
   }
 
   // ***************************************************************
-  // Step #6 - maybe?:
-  // Name the credential
+  // Step: New Credentials - Name the credential
   // ***************************************************************
   async function inputCredentialName(
     input: MultiStepInput,
@@ -1278,18 +779,10 @@ export async function newDeployment(
         ? newDeploymentData.newCredentials.name
         : "";
 
-      // const step = getStepInfo("inputCredentialName", state);
-      // if (!step) {
-      //   window.showErrorMessage(
-      //     "Internal Error: newDeployment::inputCredentialName step info not found.",
-      //   );
-      //   return;
-      // }
-
       const name = await input.showInputBox({
         title: state.title,
-        step: 0, // step.step,
-        totalSteps: 0, // step.totalSteps,
+        step: 0,
+        totalSteps: 0,
         value: currentName,
         prompt: "Enter a Unique Nickname for your Credential.",
         placeholder: "example: Posit Connect",
