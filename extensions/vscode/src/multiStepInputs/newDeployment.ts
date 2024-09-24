@@ -437,12 +437,16 @@ export async function newDeployment(
     }
     // Have to create a copy of the guarded value, to keep language service happy
     // within anonymous function below
-    const entryPointFile = newDeploymentData.entrypoint.filePath;
+    const entryPointFilePath = path.join(
+      projectDir,
+      newDeploymentData.entrypoint.filePath,
+    );
 
     const inspectionQuickPicks = await showProgress(
       "Scanning::newDeployment",
       viewId,
-      async () => await getConfigurationInspectionQuickPicks(entryPointFile),
+      async () =>
+        await getConfigurationInspectionQuickPicks(entryPointFilePath),
     );
 
     // skip if we only have one choice.

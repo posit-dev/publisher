@@ -44,7 +44,12 @@ import { getNonce } from "src/utils/getNonce";
 import { getUri } from "src/utils/getUri";
 import { deployProject } from "src/views/deployProgress";
 import { WebviewConduit } from "src/utils/webviewConduit";
-import { fileExists, relativeDir, isRelativePathRoot } from "src/utils/files";
+import {
+  fileExists,
+  relativeDir,
+  isRelativePathRoot,
+  relativePath,
+} from "src/utils/files";
 import { Utils as uriUtils } from "vscode-uri";
 import { newDeployment } from "src/multiStepInputs/newDeployment";
 import type {
@@ -990,6 +995,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   private async showDeploymentQuickPick(
     contentRecordsSubset?: AllContentRecordTypes[],
     projectDir?: string,
+    entrypointFile?: string,
   ): Promise<PublishProcessParams | undefined> {
     try {
       // disable our home view, we are initiating a multi-step sequence
@@ -1153,7 +1159,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
       // If user selected create new, then switch over to that flow
       if (deployment?.label === createNewDeploymentLabel) {
-        return this.showNewDeploymentMultiStep(Views.HomeView);
+        return this.showNewDeploymentMultiStep(
+          Views.HomeView,
+          projectDir,
+          entrypointFile,
+        );
       }
 
       let deploymentSelector: DeploymentSelector | undefined;
@@ -1415,6 +1425,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return undefined;
     }
     const entrypointFile = uriUtils.basename(uri);
+    const entrypointRelPath = relativePath(uri);
 
     const api = await useApi();
 
@@ -1567,6 +1578,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       const selected = await this.showDeploymentQuickPick(
         compatibleContentRecords,
         entrypointDir,
+        entrypointFile,
       );
       return selected;
     }
