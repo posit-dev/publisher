@@ -58,7 +58,7 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          name: package-json
+          name: package-lock
           path: extensions/vscode/
 
       - uses: t1m0thyj/unlock-keyring@v1
