@@ -44,22 +44,22 @@ jobs:
           path: bin
       - uses: actions/download-artifact@v4
         with:
-          name: ext-dist
-          path: extensions/vscode/dist
-      - uses: actions/download-artifact@v4
-        with:
-          name: ext-bin
-          path: extensions/vscode/bin
-
-      - uses: actions/download-artifact@v4
-        with:
-          name: node_modules
-          path: extensions/vscode/node_modules
-
-      - uses: actions/download-artifact@v4
-        with:
-          name: package-lock
+          name: extensions
           path: extensions/vscode/
+      # - uses: actions/download-artifact@v4
+      #   with:
+      #     name: ext-bin
+      #     path: extensions/vscode/bin
+
+      # - uses: actions/download-artifact@v4
+      #   with:
+      #     name: node_modules
+      #     path: extensions/vscode/node_modules
+
+      # - uses: actions/download-artifact@v4
+      #   with:
+      #     name: package-lock
+      #     path: extensions/vscode/
 
       - uses: t1m0thyj/unlock-keyring@v1
       - run: chmod -R +x ./bin
