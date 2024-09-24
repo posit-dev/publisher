@@ -32,8 +32,7 @@ jobs:
       #     version: ${{ env.QUARTO_VERSION }}
 
       - uses: t1m0thyj/unlock-keyring@v1
-      - run: chmod -R +x ./bin
-      # - run: just package
+
       - run: just vscode configure
       - run: just vscode-ui install
       - run: just vscode-ui build-connect
