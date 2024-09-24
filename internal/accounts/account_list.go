@@ -31,7 +31,7 @@ var _ AccountList = &defaultAccountList{}
 func NewAccountList(fs afero.Fs, log logging.Logger) *defaultAccountList {
 	return &defaultAccountList{
 		providers: []AccountProvider{
-			NewCredentialsProvider(),
+			NewCredentialsProvider(log),
 		},
 		log: log,
 	}

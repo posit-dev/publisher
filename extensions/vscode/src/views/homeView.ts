@@ -277,6 +277,15 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   }
 
   private async onInitializingMsg() {
+    // inform webview of the platform specific path separator
+    // (path package is a node library, wrapper for browser doesn't seem to work in webview correctly)
+    this.webviewConduit.sendMsg({
+      kind: HostToWebviewMessageType.SET_PATH_SEPARATOR,
+      content: {
+        separator: path.sep,
+      },
+    });
+
     // send back the data needed. Optimize request for initialization...
     await this.refreshAll(false, true);
     this.setInitializationContext(HomeViewInitialized.initialized);
@@ -1076,14 +1085,25 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         }
 
         let details = [];
-        if (!isRelativePathRoot(contentRecord.projectDir)) {
-          details.push(`${contentRecord.projectDir}${path.sep}`);
-        }
         if (credential?.name) {
           details.push(credential.name);
         } else {
           details.push(`Missing Credential for ${contentRecord.serverUrl}`);
           problem = true;
+        }
+
+        if (isRelativePathRoot(contentRecord.projectDir)) {
+          if (config && !isConfigurationError(config)) {
+            details.push(config.configuration.entrypoint);
+          }
+        } else {
+          if (config && !isConfigurationError(config)) {
+            details.push(
+              `${contentRecord.projectDir}${path.sep}${config.configuration.entrypoint}`,
+            );
+          } else {
+            details.push(`${contentRecord.projectDir}${path.sep}`);
+          }
         }
         const detail = details.join(" • ");
 
