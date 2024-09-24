@@ -9,9 +9,9 @@
         <Secrets />
         <PythonPackages />
         <RPackages />
-        <Credentials />
-        <HelpAndFeedback />
       </template>
+      <Credentials />
+      <HelpAndFeedback />
     </OverlayableView>
   </main>
 </template>
