@@ -126,6 +126,10 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	r.Handle(ToPath("configurations", "{name}", "files"), PostConfigFilesHandlerFunc(base, log)).
 		Methods(http.MethodPost)
 
+	// GET /api/configurations/$NAME/secrets
+	r.Handle(ToPath("configurations", "{name}", "secrets"), GetConfigSecretsHandlerFunc(base, log)).
+		Methods(http.MethodGet)
+
 	// GET /api/configurations/$NAME/packages/python
 	r.Handle(ToPath("configurations", "{name}", "packages", "python"), NewGetConfigPythonPackagesHandler(base, log)).
 		Methods(http.MethodGet)
