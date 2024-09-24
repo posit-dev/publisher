@@ -51,6 +51,16 @@ jobs:
           name: ext-bin
           path: extensions/vscode/bin
 
+      - uses: actions/download-artifact@v4
+        with:
+          name: node_modules
+          path: extensions/vscode/node_modules
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: package-json
+          path: extensions/vscode/
+
       - uses: t1m0thyj/unlock-keyring@v1
       - run: chmod -R +x ./bin
       # - run: just package

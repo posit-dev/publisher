@@ -26,9 +26,25 @@ jobs:
         with:
           name: ext-dist
           path: extensions/vscode/dist/*
+          retention-days: 1
 
       - uses: actions/upload-artifact@v4
         id: upload-ext-bin
         with:
           name: ext-bin
           path: extensions/vscode/bin/*
+          retention-days: 1
+
+      - uses: actions/upload-artifact@v4
+        id: upload-node_modules
+        with:
+          name: node_modules
+          path: extensions/vscode/node_modules/*
+          retention-days: 1
+
+      - uses: actions/upload-artifact@v4
+        id: upload-package-lock
+        with:
+          name: package-lock
+          path: extensions/vscode/package-lock.json
+          retention-days: 1
