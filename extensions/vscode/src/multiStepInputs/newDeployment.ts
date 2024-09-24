@@ -851,7 +851,8 @@ export async function newDeployment(
     !newDeploymentData.entrypoint.contentType ||
     !newDeploymentData.entrypoint.inspectionResult ||
     !newDeploymentData.title ||
-    !newDeploymentData.existingCredentialName
+    (!newCredentialByAnyMeans(state) &&
+      !newDeploymentData.existingCredentialName)
   ) {
     console.log("User has aborted flow. Exiting.");
     return undefined;
