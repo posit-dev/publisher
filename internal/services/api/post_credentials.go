@@ -30,7 +30,7 @@ func PostCredentialFuncHandler(log logging.Logger) http.HandlerFunc {
 			return
 		}
 
-		cs := credentials.CredentialsService{}
+		cs := credentials.NewCredentialsService(log)
 		cred, err := cs.Set(body.Name, body.URL, body.ApiKey)
 		if err != nil {
 			if _, ok := err.(*credentials.URLCollisionError); ok {
