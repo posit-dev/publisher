@@ -4,13 +4,13 @@ on:
 env:
   VSCODE_VERSION: stable
 jobs:
-  ui-tests:
+  native:
     env:
+      DOCKER: false
       DOCKER_CONNECT: true
+      # deploy only these content
+      CONTENT: "fastapi-simple quarto-website-py"
       CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
-      CI: true
-      QUARTO_VERSION: 1.4.549
-      PYTHON_VERSION: 3.12.4
     strategy:
       fail-fast: false
       matrix:
@@ -22,34 +22,41 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/actions/setup
       - uses: extractions/setup-just@v2
-
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+      - uses: actions/checkout@v4
+        with:
+          repository: rstudio/connect-content
+          path: "test/content"
+          sparse-checkout: bundles
+          sparse-checkout-cone-mode: false
+          token: ${{ secrets.CONNECT_PAT }}
       - uses: actions/setup-python@v5
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      # disabling quarto until we need it
-      # - uses: quarto-dev/quarto-actions/setup@v2
-      #   with:
-      #     version: ${{ env.QUARTO_VERSION }}
+          python-version: 3.9
+      - uses: quarto-dev/quarto-actions/setup@v2
+        with:
+          version: 1.4.549
       - uses: actions/download-artifact@v4
         with:
           name: bin
           path: bin
+      - uses: actions/download-artifact@v4
+        with:
+          name: ext-dist
+          path: extensions/vscode/dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: ext-bin
+          path: extensions/vscode/bin
+
       - uses: t1m0thyj/unlock-keyring@v1
       - run: chmod -R +x ./bin
-      - run: just package
+      # - run: just package
       - run: just vscode configure
       - run: just vscode-ui install
-      - run: just vscode-ui build-connect
-      - run: just vscode-ui test vscode-nested
-        env:
-          SPEC_PATH: ./test/specs/nested-fastapi.spec.ts
-          WORKSPACE_PATH: ../sample-content/
-
-      - uses: actions/upload-artifact@v4
-        id: upload
-        with:
-          name: dist
-          path: dist/**/*
+      - run: just vscode-ui test
 
       - name: Save screenshots
         uses: actions/upload-artifact@v4

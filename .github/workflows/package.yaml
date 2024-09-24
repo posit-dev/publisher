@@ -20,3 +20,15 @@ jobs:
         with:
           name: dist
           path: dist/**/*
+
+      - uses: actions/upload-artifact@v4
+        id: upload-ext-dist
+        with:
+          name: ext-dist
+          path: extensions/vscode/dist/*
+
+      - uses: actions/upload-artifact@v4
+        id: upload-ext-bin
+        with:
+          name: ext-bin
+          path: extensions/vscode/bin/*
