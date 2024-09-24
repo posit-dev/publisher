@@ -97,7 +97,8 @@ export const contentTypeStrings = {
   [ContentType.RMD_SHINY]:
     "render with rmarkdown/knitr and run embedded Shiny app",
   [ContentType.RMD]: "render with rmarkdown/knitr",
-  [ContentType.UNKNOWN]: "unknown content type; cannot deploy this item",
+  [ContentType.UNKNOWN]:
+    "unknown content type; manual selection needed to deploy",
 };
 
 export type ConfigurationDetails = {
