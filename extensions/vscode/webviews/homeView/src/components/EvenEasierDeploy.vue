@@ -18,31 +18,14 @@
       <div class="deployment-control" v-on="{ click: onSelectDeployment }">
         <QuickPickItem
           :label="deploymentTitle"
-          :detail="deploymentSubTitle"
+          :details="deploymentSubTitles"
           :title="toolTipText"
+          :data-automation="`entrypoint-label`"
         />
         <div
           class="select-indicator codicon codicon-chevron-down"
           aria-hidden="true"
         />
-      </div>
-
-      <div
-        v-if="
-          home.selectedConfiguration &&
-          !isConfigurationError(home.selectedConfiguration) &&
-          home.selectedConfiguration?.configuration?.entrypoint
-        "
-        class="deployment-details-container"
-      >
-        <div class="deployment-details-row">
-          <span
-            class="deployment-details-label"
-            data-automation="entrypoint-label"
-            >{{ home.selectedConfiguration.configuration.entrypoint }}</span
-          >
-          <span class="deployment-details-info"> (selected as entrypoint)</span>
-        </div>
       </div>
 
       <p v-if="isConfigEntryMissing">
@@ -84,7 +67,7 @@
     <div v-else class="deployment-control" v-on="{ click: onSelectDeployment }">
       <QuickPickItem
         label="Select..."
-        detail="(new or existing)"
+        :details="['(new or existing)']"
         data-automation="select-deployment"
       />
       <div
@@ -191,8 +174,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
-
+import { computed } from "vue";
 import {
   Configuration,
   isPreContentRecord,
@@ -338,11 +320,41 @@ const deploymentTitle = computed(() => {
   return result.title;
 });
 
-const deploymentSubTitle = computed(() => {
+const deploymentSubTitles = computed(() => {
+  const subTitles: string[] = [];
+  subTitles.push(credentialSubTitle.value);
+  if (entrypointSubTitle.value) {
+    subTitles.push(entrypointSubTitle.value);
+  }
+  return subTitles;
+});
+
+const credentialSubTitle = computed(() => {
   if (home.serverCredential?.name) {
     return `${home.serverCredential.name}`;
   }
   return `Missing Credential for ${home.selectedContentRecord?.serverUrl}`;
+});
+
+const entrypointSubTitle = computed(() => {
+  if (
+    home.selectedConfiguration &&
+    !isConfigurationError(home.selectedConfiguration)
+  ) {
+    const contentRecord = home.selectedContentRecord;
+    const config = home.selectedConfiguration;
+    if (contentRecord) {
+      let subTitle = "";
+      if (contentRecord.projectDir !== ".") {
+        subTitle = `${contentRecord.projectDir}${home.platformFileSeparator}`;
+      }
+      if (!isConfigInError.value) {
+        subTitle += config.configuration.entrypoint;
+      }
+      return subTitle;
+    }
+  }
+  return "ProjectDir and Entrypoint not determined";
 });
 
 const isCredentialMissing = computed((): boolean => {
@@ -385,11 +397,20 @@ const isPreContentRecordWithoutID = computed(() => {
 });
 
 const toolTipText = computed(() => {
+  let entrypoint = "unknown";
+  if (
+    home.selectedConfiguration &&
+    !isConfigurationError(home.selectedConfiguration) &&
+    home.selectedConfiguration.configuration.entrypoint
+  ) {
+    entrypoint = home.selectedConfiguration.configuration.entrypoint;
+  }
   return `Deployment Details
 - Deployment Record: ${home.selectedContentRecord?.saveName || "<undefined>"}
 - Configuration File: ${home.selectedConfiguration?.configurationName || "<undefined>"}
 - Credential In Use: ${home.serverCredential?.name || "<undefined>"}
 - Project Dir: ${home.selectedContentRecord?.projectDir || "<undefined>"}
+- Entrypoint: ${entrypoint}
 - Server URL: ${home.serverCredential?.url || "<undefined>"}`;
 });
 
@@ -551,32 +572,5 @@ const viewContent = () => {
 .progress-log-anchor {
   margin-top: 5px;
   margin-bottom: 0px;
-}
-
-.deployment-details-container {
-  margin-bottom: 0.5rem;
-
-  .deployment-details-row {
-    display: flex;
-    align-items: center;
-
-    .deployment-details-label {
-      font-size: 0.9em;
-      line-height: normal;
-      opacity: 1;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: pre;
-    }
-
-    .deployment-details-info {
-      font-size: 0.8em;
-      line-height: normal;
-      opacity: 0.7;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: pre;
-    }
-  }
 }
 </style>
