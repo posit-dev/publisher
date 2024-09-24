@@ -209,7 +209,7 @@ export async function newDeployment(
     const filteredOpenFileList: string[] = [];
     rawOpenFileList.forEach((openFilePath) => {
       const parsedPath = path.parse(openFilePath);
-      if (ENTRYPOINT_FILE_EXTENSIONS.includes(parsedPath.ext)) {
+      if (ENTRYPOINT_FILE_EXTENSIONS.includes(parsedPath.ext.toLowerCase())) {
         filteredOpenFileList.push(openFilePath);
       }
     });
