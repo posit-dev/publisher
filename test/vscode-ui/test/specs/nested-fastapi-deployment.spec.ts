@@ -53,7 +53,7 @@ describe("Nested Fast API Deployment", () => {
     // switch out of iframe
     await browser.switchToFrame(null);
     const myConfig = browser.$(
-      `aria/my fastapi app, fastapi-simple${sep} • my connect server, Existing`,
+      `aria/my connect server • fastapi-simple${sep}simple.py`,
     );
     await expect(myConfig).toExist();
     myConfig.click();
@@ -94,7 +94,8 @@ describe("Nested Fast API Deployment", () => {
 
   it("can confirm Deployment Details", async () => {
     const deploymentName = await $('[data-automation="entrypoint-label"]');
-    await expect(deploymentName).toHaveText("simple.py");
+    const deploymentDetails = `my fastapi app\nmy connect server\nfastapi-simple${sep}simple.py`;
+    await expect(deploymentName).toHaveText(deploymentDetails);
   });
 
   it("can confirm Deployment Status", async () => {
