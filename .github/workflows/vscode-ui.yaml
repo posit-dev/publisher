@@ -36,7 +36,7 @@ jobs:
           path: bin
       - uses: t1m0thyj/unlock-keyring@v1
       - run: chmod -R +x ./bin
-      # - run: just package
+      - run: just package
       - run: just vscode configure
       - run: just vscode-ui install
       - run: just vscode-ui build-connect
@@ -44,12 +44,6 @@ jobs:
         env:
           SPEC_PATH: ./test/specs/nested-fastapi.spec.ts
           WORKSPACE_PATH: ../sample-content/
-
-      - uses: actions/upload-artifact@v4
-        id: download
-        with:
-          name: vscode-extension
-          path: extensions/vscode
 
       - name: Save screenshots
         uses: actions/upload-artifact@v4
