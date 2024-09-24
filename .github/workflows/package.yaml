@@ -24,7 +24,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         id: upload-extensions
         with:
-          name: extensions
+          name: vscode-extension
           path: extensions/vscode/**/*
           retention-days: 1
 
