@@ -43,5 +43,6 @@ jobs:
   vscode-ui:
     needs:
       - build
+      - package
     secrets: inherit
     uses: ./.github/workflows/vscode-ui.yaml
