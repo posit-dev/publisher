@@ -2,10 +2,12 @@
   <TreeSection
     title="Python Packages"
     data-automation="python-packages"
+    :header-actions="pythonPackageHeaderActions"
     :actions="pythonPackageActions"
+    :expanded="sectionExpanded"
   >
     <WelcomeView v-if="showWelcomeView">
-      <template v-if="showScanWelcomeView">
+      <template v-if="home.alertPythonMissingRequirements">
         <p>
           To deploy Python content, you need a package file listing any package
           dependencies, but the file does not exist. Click Scan to create one
@@ -15,13 +17,13 @@
           Scan
         </vscode-button>
       </template>
-      <template v-if="isNotPythonProject">
+      <template v-if="home.isNotPythonProject">
         <p>
           This project is not configured to use Python. To configure Python, add
           a [python] section to your configuration file.
         </p>
       </template>
-      <template v-if="emptyRequirements">
+      <template v-if="home.alertPythonEmptyRequirements">
         <p>
           This project currently has no Python package requirements. If this is
           not accurate, click Scan to update based on the files in your project
@@ -49,7 +51,7 @@ import TreeItem from "src/components/tree/TreeItem.vue";
 import TreeSection from "src/components/tree/TreeSection.vue";
 import WelcomeView from "src/components/WelcomeView.vue";
 
-import { computed } from "vue";
+import { computed, ref } from "vue";
 
 import { useHomeStore } from "src/stores/home";
 import { useHostConduitService } from "src/HostConduitService";
@@ -57,6 +59,7 @@ import { WebviewToHostMessageType } from "../../../../../src/types/messages/webv
 import { ActionButton } from "../ActionToolbar.vue";
 
 const home = useHomeStore();
+const sectionExpanded = ref<boolean>(false);
 
 const hostConduit = useHostConduitService();
 
@@ -83,6 +86,23 @@ const onEditRequirementsFile = () => {
     },
   });
 };
+
+const onClickAlert = () => {
+  sectionExpanded.value = true;
+};
+
+const pythonPackageHeaderActions = computed((): ActionButton[] => {
+  if (home.pythonAlert) {
+    return [
+      {
+        label: "Action Required!",
+        codicon: "codicon-alert",
+        fn: onClickAlert,
+      },
+    ];
+  }
+  return [];
+});
 
 const pythonPackageActions = computed((): ActionButton[] => {
   const result: ActionButton[] = [];
@@ -111,26 +131,9 @@ const pythonPackageActions = computed((): ActionButton[] => {
 
 const showWelcomeView = computed(() => {
   return (
-    isNotPythonProject.value ||
-    emptyRequirements.value ||
-    showScanWelcomeView.value
+    home.isNotPythonProject ||
+    home.alertPythonEmptyRequirements ||
+    home.alertPythonMissingRequirements
   );
-});
-
-const isNotPythonProject = computed(() => {
-  return !home.pythonProject;
-});
-
-const emptyRequirements = computed(() => {
-  return (
-    home.pythonProject &&
-    home.pythonPackageFile &&
-    home.pythonPackages &&
-    home.pythonPackages.length === 0
-  );
-});
-
-const showScanWelcomeView = computed(() => {
-  return home.pythonProject && !home.pythonPackageFile;
 });
 </script>

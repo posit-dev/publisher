@@ -232,6 +232,111 @@ export const useHomeStore = defineStore("home", () => {
       .length;
   });
 
+  // Not considered an alert at this time.
+  const isNotPythonProject = computed(() => {
+    return !pythonProject.value;
+  });
+
+  const alertPythonEmptyRequirements = computed(() => {
+    return (
+      pythonProject.value &&
+      pythonPackageFile.value &&
+      pythonPackages.value &&
+      pythonPackages.value.length === 0
+    );
+  });
+
+  const alertPythonMissingRequirements = computed(() => {
+    return pythonProject.value && !pythonPackageFile.value;
+  });
+
+  const pythonAlert = computed(() => {
+    return (
+      alertPythonEmptyRequirements.value || alertPythonMissingRequirements.value
+    );
+  });
+
+  const alertRMissingPackageFile = computed(() => {
+    return rProject.value && !rPackageFile.value;
+  });
+
+  const alertREmptyRequirements = computed(() => {
+    return (
+      rProject.value &&
+      rPackageFile.value &&
+      rPackages.value &&
+      rPackages.value.length === 0
+    );
+  });
+
+  const rAlert = computed(() => {
+    return alertRMissingPackageFile.value || alertREmptyRequirements.value;
+  });
+
+  const alertNoCredentials = computed(() => {
+    return !Boolean(sortedCredentials.value.length);
+  });
+
+  const credentialsAlert = computed(() => {
+    return alertNoCredentials.value;
+  });
+
+  const anyActiveAlerts = computed(() => {
+    return (
+      !configAlert.value &&
+      (credentialsAlert.value || rAlert.value || pythonAlert.value)
+    );
+  });
+
+  const isConfigEntryMissing = computed(() => {
+    return Boolean(
+      selectedContentRecord.value &&
+        !selectedContentRecord.value.configurationName,
+    );
+  });
+
+  const isConfigMissing = computed((): boolean => {
+    return Boolean(
+      selectedContentRecord.value &&
+        !selectedConfiguration.value &&
+        !isConfigInErrorList(selectedContentRecord.value?.configurationName) &&
+        !isConfigEntryMissing.value,
+    );
+  });
+
+  const isConfigInError = computed((): boolean => {
+    return Boolean(
+      selectedConfiguration.value &&
+        isConfigurationError(selectedConfiguration.value),
+    );
+  });
+
+  const isConfigInErrorList = (configName?: string): boolean => {
+    if (!configName) {
+      return false;
+    }
+    return Boolean(
+      configurationsInError.value.find(
+        (config) =>
+          config.configurationName ===
+          selectedContentRecord.value?.configurationName,
+      ),
+    );
+  };
+
+  const isCredentialMissingInConfig = computed((): boolean => {
+    return Boolean(selectedContentRecord.value && !serverCredential.value);
+  });
+
+  const configAlert = computed(() => {
+    return (
+      isConfigEntryMissing.value ||
+      isConfigMissing.value ||
+      isConfigInError.value ||
+      isCredentialMissingInConfig.value
+    );
+  });
+
   return {
     platformFileSeparator,
     showDisabledOverlay,
@@ -254,9 +359,19 @@ export const useHomeStore = defineStore("home", () => {
     pythonPackages,
     pythonPackageFile,
     pythonPackageManager,
+    isNotPythonProject,
+    alertPythonEmptyRequirements,
+    alertPythonMissingRequirements,
+    pythonAlert,
     rProject,
     rPackages,
     rPackageFile,
+    alertRMissingPackageFile,
+    alertREmptyRequirements,
+    rAlert,
+    alertNoCredentials,
+    credentialsAlert,
+    anyActiveAlerts,
     updateSelectedContentRecordBySelector,
     updateSelectedContentRecordByObject,
     updateParentViewSelectionState,
@@ -264,5 +379,11 @@ export const useHomeStore = defineStore("home", () => {
     updateRPackages,
     clearSecretValues,
     secretsWithValueCount,
+    isConfigEntryMissing,
+    isConfigMissing,
+    isConfigInError,
+    isConfigInErrorList,
+    isCredentialMissingInConfig,
+    configAlert,
   };
 });

@@ -27,6 +27,9 @@
       <div v-if="actions" class="actions">
         <ActionToolbar :title="title" :actions="actions" />
       </div>
+      <div v-if="headerActions" class="header-actions">
+        <ActionToolbar :title="title" :actions="headerActions" />
+      </div>
       <div v-if="count" class="count">
         <CountBadge :count="count" />
       </div>
@@ -40,20 +43,27 @@
 <script setup lang="ts">
 import ActionToolbar, { ActionButton } from "src/components/ActionToolbar.vue";
 import CountBadge from "src/components/CountBadge.vue";
+import { watch } from "vue";
 
 const expanded = defineModel("expanded", { required: false, default: false });
 
-defineProps<{
+const props = defineProps<{
   title: string;
   description?: string;
   codicon?: string;
+  headerActions?: ActionButton[];
   actions?: ActionButton[];
   count?: number;
+  expanded?: boolean;
 }>();
 
 const toggleExpanded = () => {
   expanded.value = !expanded.value;
 };
+
+watch([props.expanded], () => {
+  expanded.value = props.expanded;
+});
 </script>
 
 <style lang="scss" scoped>
@@ -62,10 +72,18 @@ const toggleExpanded = () => {
     display: none;
     margin-left: auto;
   }
+  .header-actions {
+    display: initial;
+  }
 
   &.expanded:hover .actions,
   &.expanded:focus-within .actions {
     display: initial;
+  }
+
+  &.expanded .header-actions {
+    display: none;
+    margin-left: auto;
   }
 
   &.expanded:hover

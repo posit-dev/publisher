@@ -2,10 +2,12 @@
   <TreeSection
     title="R Packages"
     data-automation="r-packages"
+    :header-actions="rPackageHeaderActions"
     :actions="rPackageActions"
+    :expanded="sectionExpanded"
   >
     <WelcomeView v-if="showWelcomeView">
-      <template v-if="showScanWelcomeView">
+      <template v-if="home.alertRMissingPackageFile">
         <p>
           To deploy R content, you need a package file listing any package
           dependencies, but the file does not exist or is invalid. Use
@@ -24,7 +26,7 @@
           section to your configuration file.
         </p>
       </template>
-      <template v-if="emptyRequirements">
+      <template v-if="home.alertREmptyRequirements">
         <p>
           This project currently has no R package requirements (file ({{
             home.rPackageFile
@@ -54,7 +56,7 @@ import TreeItem from "src/components/tree/TreeItem.vue";
 import TreeSection from "src/components/tree/TreeSection.vue";
 import WelcomeView from "src/components/WelcomeView.vue";
 
-import { computed } from "vue";
+import { computed, ref } from "vue";
 
 import { useHomeStore } from "src/stores/home";
 import { useHostConduitService } from "src/HostConduitService";
@@ -62,6 +64,7 @@ import { WebviewToHostMessageType } from "../../../../../src/types/messages/webv
 import { ActionButton } from "../ActionToolbar.vue";
 
 const home = useHomeStore();
+const sectionExpanded = ref<boolean>(false);
 
 const hostConduit = useHostConduitService();
 
@@ -88,6 +91,23 @@ const onEditRequirementsFile = () => {
     },
   });
 };
+
+const onClickAlert = () => {
+  sectionExpanded.value = true;
+};
+
+const rPackageHeaderActions = computed((): ActionButton[] => {
+  if (home.rAlert) {
+    return [
+      {
+        label: "Action Required!",
+        codicon: "codicon-alert",
+        fn: onClickAlert,
+      },
+    ];
+  }
+  return [];
+});
 
 const rPackageActions = computed((): ActionButton[] => {
   const result: ActionButton[] = [];
@@ -116,24 +136,14 @@ const rPackageActions = computed((): ActionButton[] => {
 
 const showWelcomeView = computed(() => {
   return (
-    isNotRProject.value || emptyRequirements.value || showScanWelcomeView.value
+    isNotRProject.value ||
+    home.alertREmptyRequirements ||
+    home.alertRMissingPackageFile
   );
 });
 
+// not considered an alert
 const isNotRProject = computed(() => {
   return !home.rProject;
-});
-
-const emptyRequirements = computed(() => {
-  return (
-    home.rProject &&
-    home.rPackageFile &&
-    home.rPackages &&
-    home.rPackages.length === 0
-  );
-});
-
-const showScanWelcomeView = computed(() => {
-  return home.rProject && !home.rPackageFile;
 });
 </script>

@@ -2,10 +2,14 @@
   <TreeSection
     title="Credentials"
     data-automation="credentials"
+    :header-actions="credentialsHeaderActions"
     :actions="sectionActions"
+    :expanded="sectionExpanded"
   >
-    <WelcomeView v-if="home.sortedCredentials.length === 0">
-      <p>No credentials have been added yet.</p>
+    <WelcomeView v-if="showWelcomeView">
+      <template v-if="home.credentialsAlert">
+        <p>No credentials have been added yet.</p>
+      </template>
     </WelcomeView>
     <TreeItem
       v-else
@@ -25,7 +29,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 
 import TreeSection from "src/components/tree/TreeSection.vue";
 import TreeItem from "src/components/tree/TreeItem.vue";
@@ -36,9 +40,29 @@ import { useHostConduitService } from "src/HostConduitService";
 import { Credential } from "../../../../../src/api";
 import { CredentialGUIs } from "../../../../../src/constants";
 import { WebviewToHostMessageType } from "../../../../../src/types/messages/webviewToHostMessages";
+import { ActionButton } from "../ActionToolbar.vue";
 
 const home = useHomeStore();
+const sectionExpanded = ref<boolean>(false);
+
 const { sendMsg } = useHostConduitService();
+
+const onClickAlert = () => {
+  sectionExpanded.value = true;
+};
+
+const credentialsHeaderActions = computed((): ActionButton[] => {
+  if (home.credentialsAlert) {
+    return [
+      {
+        label: "Action Required!",
+        codicon: "codicon-alert",
+        fn: onClickAlert,
+      },
+    ];
+  }
+  return [];
+});
 
 const sectionActions = computed(() => {
   return [
@@ -59,6 +83,10 @@ const sectionActions = computed(() => {
       },
     },
   ];
+});
+
+const showWelcomeView = computed(() => {
+  return home.alertNoCredentials;
 });
 
 const vscodeContext = (credential: Credential) => {
