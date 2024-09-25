@@ -21,11 +21,25 @@ import TreeSection from "src/components/tree/TreeSection.vue";
 import WelcomeView from "src/components/WelcomeView.vue";
 import { useHomeStore } from "src/stores/home";
 import Secret from "src/components/views/secrets/Secret.vue";
+import { useHostConduitService } from "src/HostConduitService";
+
+import { WebviewToHostMessageType } from "../../../../../../src/types/messages/webviewToHostMessages";
 
 const home = useHomeStore();
+const { sendMsg } = useHostConduitService();
 
 const sectionActions = computed<ActionButton[]>(() => {
-  const result: ActionButton[] = [];
+  const result: ActionButton[] = [
+    {
+      label: "Add Secret",
+      codicon: "codicon-add",
+      fn: () => {
+        sendMsg({
+          kind: WebviewToHostMessageType.ADD_SECRET,
+        });
+      },
+    },
+  ];
 
   if (home.secretsWithValueCount > 0) {
     result.push({
