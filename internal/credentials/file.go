@@ -14,6 +14,8 @@ import (
 	"github.com/spf13/afero"
 )
 
+var fsys = afero.NewOsFs()
+
 const ondiskFilename = ".connect-credentials"
 
 type fileCredential struct {
@@ -66,7 +68,6 @@ func (fcs *fileCredentials) RemoveByName(name string) {
 
 type fileCredentialsService struct {
 	mu            sync.Mutex
-	afs           afero.Fs
 	log           logging.Logger
 	credsFilepath util.AbsolutePath
 }
@@ -77,7 +78,7 @@ func NewFileCredentialsService(log logging.Logger) (*fileCredentialsService, err
 	}
 
 	// Set home dir credentials file path
-	homeDir, err := util.UserHomeDir(fservice.afs)
+	homeDir, err := util.UserHomeDir(fsys)
 	if err != nil {
 		return nil, err
 	}

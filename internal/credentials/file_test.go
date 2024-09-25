@@ -10,6 +10,7 @@ import (
 	"github.com/posit-dev/publisher/internal/logging/loggingtest"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
@@ -70,6 +71,26 @@ func (s *FileCredentialsServiceSuite) SetupTest() {
 	s.loggerMock = loggingtest.NewMockLogger()
 	s.fileSetupDeleteTest()
 	s.fileSetupNewCredsTest()
+}
+
+func (s *FileCredentialsServiceSuite) TestNewFileCredentialsService() {
+	// Use an in memory filesystem for this test
+	// avoiding to manipulate users ~/.connect-credentials
+	fsys = afero.NewMemMapFs()
+	defer func() { fsys = afero.NewOsFs() }()
+
+	fcs, err := NewFileCredentialsService(s.loggerMock)
+	s.NoError(err)
+	s.Implements((*CredentialsService)(nil), fcs)
+
+	expectedCredsPath, err := util.UserHomeDir(fsys)
+	s.NoError(err)
+
+	expectedCredsPath = expectedCredsPath.Join(".connect-credentials")
+	s.Equal(fcs, &fileCredentialsService{
+		log:           s.loggerMock,
+		credsFilepath: expectedCredsPath,
+	})
 }
 
 func (s *FileCredentialsServiceSuite) TestSetupService() {
