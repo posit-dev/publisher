@@ -33,6 +33,12 @@ type fileCredentials struct {
 	Credentials map[string]fileCredential `toml:"credentials"`
 }
 
+func newFileCredentials() fileCredentials {
+	return fileCredentials{
+		Credentials: make(map[string]fileCredential),
+	}
+}
+
 func (fcs *fileCredentials) CredentialsList() []Credential {
 	list := []Credential{}
 	for credName, fileCred := range fcs.Credentials {
@@ -221,7 +227,7 @@ func (c *fileCredentialsService) setup() error {
 }
 
 func (c *fileCredentialsService) load() (fileCredentials, error) {
-	var creds fileCredentials
+	creds := newFileCredentials()
 	err := util.ReadTOMLFile(c.credsFilepath, &creds)
 	if err != nil {
 		return creds, NewLoadError(err)

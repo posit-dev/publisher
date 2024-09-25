@@ -162,6 +162,20 @@ func (s *FileCredentialsServiceSuite) TestLoadFile() {
 	})
 }
 
+func (s *FileCredentialsServiceSuite) TestLoad_EmptyFile() {
+	cs := &fileCredentialsService{
+		log:           s.loggerMock,
+		credsFilepath: s.testdata.Join("emptycreds.toml"),
+	}
+
+	creds, err := cs.load()
+	s.NoError(err)
+
+	s.Equal(creds, fileCredentials{
+		Credentials: map[string]fileCredential{},
+	})
+}
+
 func (s *FileCredentialsServiceSuite) TestGet() {
 	cs := &fileCredentialsService{
 		log:           s.loggerMock,
