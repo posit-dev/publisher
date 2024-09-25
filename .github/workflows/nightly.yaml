@@ -22,7 +22,10 @@ jobs:
     secrets: inherit
     uses: ./.github/workflows/contract-deps.yaml
   nightly:
-    needs: [build, contract-deps]
+    needs:
+      - build
+      - contract-deps
+      - package
     secrets: inherit
     uses: ./.github/workflows/contract.yaml
     with:
