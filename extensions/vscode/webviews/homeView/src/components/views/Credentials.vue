@@ -13,11 +13,7 @@
       :title="credential.name"
       :description="credential.url"
       :data-automation="`${credential.name}-list`"
-      :codicon="
-        credential.guid === CredentialGUIs.EnvironmentGUID
-          ? 'codicon-bracket'
-          : 'codicon-key'
-      "
+      codicon="codicon-key"
       align-icon-with-twisty
       :data-vscode-context="vscodeContext(credential)"
     />
@@ -34,7 +30,6 @@ import { useHomeStore } from "src/stores/home";
 import { useHostConduitService } from "src/HostConduitService";
 
 import { Credential } from "../../../../../src/api";
-import { CredentialGUIs } from "../../../../../src/constants";
 import { WebviewToHostMessageType } from "../../../../../src/types/messages/webviewToHostMessages";
 
 const home = useHomeStore();
@@ -62,10 +57,6 @@ const sectionActions = computed(() => {
 });
 
 const vscodeContext = (credential: Credential) => {
-  if (credential.guid === CredentialGUIs.EnvironmentGUID) {
-    return undefined;
-  }
-
   return JSON.stringify({
     credentialGUID: credential.guid,
     credentialName: credential.name,

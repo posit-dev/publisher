@@ -33,10 +33,6 @@ const credentialsContexts = {
   EnvironmentVars: "posit.publisher.credentials.tree.item.environmentVars",
 };
 
-export const CredentialGUIs = {
-  EnvironmentGUID: "00000000-0000-0000-0000-000000000000",
-};
-
 const filesCommands = {
   Refresh: "posit.publisher.files.refresh",
   Exclude: "posit.publisher.files.exclude",
