@@ -6,6 +6,7 @@
     :list-style="secretValue || isEditing ? 'default' : 'deemphasized'"
     :tooltip="tooltip"
     align-icon-with-twisty
+    :data-vscode-context="vscodeContext"
   >
     <template #description>
       <SidebarInput
@@ -90,5 +91,13 @@ const actions = computed<ActionButton[]>(() => {
   }
 
   return result;
+});
+
+const vscodeContext = computed(() => {
+  return JSON.stringify({
+    name: props.name,
+    webviewSection: "secrets-tree-item",
+    preventDefaultContextMenuItems: true,
+  });
 });
 </script>
