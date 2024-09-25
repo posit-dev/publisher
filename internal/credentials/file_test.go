@@ -240,6 +240,18 @@ func (s *FileCredentialsServiceSuite) TestList() {
 	})
 }
 
+func (s *FileCredentialsServiceSuite) TestList_Empty() {
+	cs := &fileCredentialsService{
+		log:           s.loggerMock,
+		credsFilepath: s.testdata.Join("emptycreds.toml"),
+	}
+
+	creds, err := cs.List()
+	s.NoError(err)
+
+	s.Equal(creds, []Credential{})
+}
+
 func (s *FileCredentialsServiceSuite) TestList_CannotLoadErr() {
 	cs := &fileCredentialsService{
 		log:           s.loggerMock,

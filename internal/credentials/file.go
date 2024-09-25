@@ -34,7 +34,7 @@ type fileCredentials struct {
 }
 
 func (fcs *fileCredentials) CredentialsList() []Credential {
-	var list []Credential
+	list := []Credential{}
 	for credName, fileCred := range fcs.Credentials {
 		list = append(list, Credential{
 			Name:   credName,
