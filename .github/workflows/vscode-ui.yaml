@@ -42,18 +42,8 @@ jobs:
       - uses: t1m0thyj/unlock-keyring@v1
       - run: chmod -R +x ./bin
 
-      - name: Extract dist on ubuntu
-        run: |
-          unzip dist/*-linux-amd64.vsix -d dist/ext
-        if: matrix.runs-on == 'ubuntu-latest'
-      - name: Extract dist on windows
-        run: |
-          7z x -y dist/*-windows-amd64.vsix -odist/ext
-        if: matrix.runs-on == 'windows-latest'
-      - name: Extract dist on macos
-        run: |
-          unzip dist/*-darwin-amd64.vsix -d dist/ext
-        if: matrix.runs-on == 'macos-latest'
+      - name: Extract dist
+        run: unzip dist/*-linux-amd64.vsix -d dist/ext
 
       - run: just vscode configure
       - run: just vscode-ui install
