@@ -156,7 +156,7 @@ describe("Nested Fast API Deployment", () => {
       '[data-automation="my connect server-list"]',
     );
     await expect(credentialList).toHaveText(
-      "my connect server" + process.env.CONNECT_SERVER,
+      `my connect server\n` + process.env.CONNECT_SERVER,
     );
   });
 

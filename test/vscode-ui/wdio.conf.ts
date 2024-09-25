@@ -79,7 +79,10 @@ export const config: Options.Testrunner = {
       browserVersion: "stable", // also possible: "insiders" or a specific version e.g. "1.80.0"
       "wdio:vscodeOptions": {
         // points to directory where extension package.json is located
-        extensionPath: path.resolve(__dirname, "../../dist/ext/"),
+        extensionPath:
+          process.env.CI === "true"
+            ? path.resolve(__dirname, "../../dist/ext/")
+            : path.resolve(__dirname, "../../extensions/vscode/"),
         workspacePath: path.resolve(
           __dirname,
           process.env.WORKSPACE_PATH || "../sample-content/",
