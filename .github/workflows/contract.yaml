@@ -120,17 +120,17 @@ jobs:
           sparse-checkout-cone-mode: false
           token: ${{ secrets.CONNECT_PAT }}
 
-      - name: Install deps on ubuntu
+      - name: Extract dist on ubuntu
         run: |
-          unzip dist/*.vsix -d dist/ext
+          unzip dist/*-linux-amd64.vsix -d dist/ext
         if: matrix.runs-on == 'ubuntu-latest'
-      - name: Install deps on windows
+      - name: Extract dist on windows
         run: |
-          7z x -y dist/*.vsix -odist/ext
+          7z x -y dist/*-windows-amd64.vsix -odist/ext
         if: matrix.runs-on == 'windows-latest'
-      - name: Install deps on macos
+      - name: Extract dist on macos
         run: |
-          unzip dist/*.vsix -d dist/ext
+          unzip dist/*-darwin-amd64.vsix -d dist/ext
         if: matrix.runs-on == 'macos-latest'
       - run: chmod -R +x ./bin
       - run: echo "${FUZZBUCKET_SSH_KEY}" > test/fuzzbucket-ssh-key && chmod 600 test/fuzzbucket-ssh-key
