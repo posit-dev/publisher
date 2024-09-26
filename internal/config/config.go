@@ -106,3 +106,24 @@ func (cfg *Config) WriteFile(path util.AbsolutePath) error {
 	defer f.Close()
 	return cfg.Write(f)
 }
+
+func (cfg *Config) AddSecret(secret string) error {
+	// Check if the secret already exists before adding
+	for _, s := range cfg.Secrets {
+		if s == secret {
+			return nil // Secret already exists, no need to add
+		}
+	}
+	cfg.Secrets = append(cfg.Secrets, secret)
+	return nil
+}
+
+func (cfg *Config) RemoveSecret(secret string) error {
+	for i, s := range cfg.Secrets {
+		if s == secret {
+			cfg.Secrets = append(cfg.Secrets[:i], cfg.Secrets[i+1:]...)
+			break
+		}
+	}
+	return nil
+}
