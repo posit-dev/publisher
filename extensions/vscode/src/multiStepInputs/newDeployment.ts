@@ -4,9 +4,8 @@ import path from "path";
 import {
   MultiStepInput,
   MultiStepState,
-  QuickPickItemWithIndex,
   QuickPickItemWithInspectionResult,
-  isQuickPickItemWithIndex,
+  isQuickPickItem,
   isQuickPickItemWithInspectionResult,
 } from "src/multiStepInputs/multiStepHelper";
 
@@ -31,7 +30,6 @@ import {
   EntryPointPath,
   areInspectionResultsSimilarEnough,
   ContentType,
-  allValidContentTypes,
 } from "src/api";
 import { getPythonInterpreterPath } from "src/utils/config";
 import {
@@ -59,7 +57,7 @@ export async function newDeployment(
   let credentials: Credential[] = [];
   let credentialListItems: QuickPickItem[] = [];
 
-  let entryPointListItems: QuickPickItemWithInspectionResult[] = [];
+  let entryPointListItems: QuickPickItem[] = [];
   let inspectionResults: ConfigurationInspectionResult[] = [];
   let contentRecordNames = new Map<string, string[]>();
 
@@ -93,24 +91,18 @@ export async function newDeployment(
     newCredentials: {},
   };
 
-  const newCredentialForced = (state?: MultiStepState): boolean => {
-    if (!state) {
-      return false;
-    }
+  const newCredentialForced = (): boolean => {
     return credentials.length === 0;
   };
 
-  const newCredentialSelected = (state?: MultiStepState): boolean => {
-    if (!state) {
-      return false;
-    }
+  const newCredentialSelected = (): boolean => {
     return Boolean(
       newDeploymentData?.existingCredentialName === createNewCredentialLabel,
     );
   };
 
-  const newCredentialByAnyMeans = (state?: MultiStepState): boolean => {
-    return newCredentialForced(state) || newCredentialSelected(state);
+  const newCredentialByAnyMeans = (): boolean => {
+    return newCredentialForced() || newCredentialSelected();
   };
 
   const getConfigurationInspectionQuickPicks = (
@@ -191,7 +183,7 @@ export async function newDeployment(
     return resolve();
   });
 
-  const getEntrypoints = new Promise<void>(async (resolve, reject) => {
+  const getEntrypoints = new Promise<void>((resolve) => {
     if (entryPointFile) {
       // we were passed in a specific entrypoint file.
       // while we don't need it, we'll still provide the results
@@ -205,13 +197,9 @@ export async function newDeployment(
     }
 
     // build up a list of open files, relative to the opened workspace folder
-    const rawOpenFileList: string[] = vscodeOpenFiles();
-    const filteredOpenFileList: string[] = [];
-    rawOpenFileList.forEach((openFilePath) => {
+    const filteredOpenFileList = vscodeOpenFiles().filter((openFilePath) => {
       const parsedPath = path.parse(openFilePath);
-      if (ENTRYPOINT_FILE_EXTENSIONS.includes(parsedPath.ext.toLowerCase())) {
-        filteredOpenFileList.push(openFilePath);
-      }
+      return ENTRYPOINT_FILE_EXTENSIONS.includes(parsedPath.ext.toLowerCase());
     });
     filteredOpenFileList.sort();
 
@@ -221,44 +209,21 @@ export async function newDeployment(
         label: "Open Files",
         kind: QuickPickItemKind.Separator,
       });
-      const python = await getPythonInterpreterPath();
-      for (const openFile of filteredOpenFileList) {
-        // inspect each file type
-        try {
-          const relEntryPointDir = path.dirname(openFile);
-          const relEntryPointFile = path.basename(openFile);
-
-          const inspectResponse = await api.configurations.inspect(
-            relEntryPointDir,
-            python,
-            {
-              entrypoint: relEntryPointFile,
-            },
-          );
-          inspectionResults = inspectResponse.data;
-          inspectionResults.forEach((result) => {
-            const config = result.configuration;
-            entryPointListItems.push({
-              iconPath: new ThemeIcon("file"),
-              label: openFile,
-              detail: `${config.type.toString()} (${contentTypeStrings[config.type]})`,
-              inspectionResult: result,
-            });
-          });
-        } catch (error: unknown) {
-          // pass up the rejection
-          reject(error);
-        }
-      }
+      filteredOpenFileList.forEach((openFile) => {
+        entryPointListItems.push({
+          iconPath: new ThemeIcon("file"),
+          label: openFile,
+        });
+      });
     }
     entryPointListItems.push({
       label: "Other",
       kind: QuickPickItemKind.Separator,
     });
     entryPointListItems.push({
-      iconPath: new ThemeIcon("file"),
+      iconPath: new ThemeIcon("files"),
       label: browseForEntrypointLabel,
-      detail: "Use the File Open Dialog to select your entrypoint file. ",
+      detail: "Select a file as your entrypoint.",
     });
     return resolve();
   });
@@ -301,7 +266,6 @@ export async function newDeployment(
 
   // Select the entrypoint, if there is more than one
   // Select the content type, if there is more than one
-  // Select the content type for anything selected which has a content type of UNKNOWN
   // Prompt for Title
   // If no credentials, then skip to create new credential
   // If some credentials, select either use of existing or creation of a new one
@@ -345,11 +309,6 @@ export async function newDeployment(
     input: MultiStepInput,
     state: MultiStepState,
   ) {
-    // in case we have backed up from the subsequent check, we need to reset
-    // the array that it will update. This will allow steps to be the minimum number
-    // as long as we don't know it will take another one.
-    inspectionResults = [];
-
     // show only if we were not passed in a file
     if (entryPointFile === undefined) {
       if (newDeploymentData.entrypoint.filePath) {
@@ -358,27 +317,27 @@ export async function newDeployment(
         });
       }
 
-      const pick = await input.showQuickPick({
-        title: state.title,
-        step: 0,
-        totalSteps: 0,
-        placeholder:
-          "Select entrypoint file. This is your main file for your project. (Use this field to filter selections.)",
-        items: entryPointListItems,
-        buttons: [],
-        shouldResume: () => Promise.resolve(false),
-        ignoreFocusOut: true,
-      });
-
       let selectedEntrypointFile: string | undefined = undefined;
-      if (pick.label === browseForEntrypointLabel) {
-        let baseUri = Uri.parse(".");
-        const workspaceFolders = workspace.workspaceFolders;
-        if (workspaceFolders !== undefined) {
-          baseUri = workspaceFolders[0].uri;
-        }
-        selectedEntrypointFile = undefined;
-        do {
+      do {
+        const pick = await input.showQuickPick({
+          title: state.title,
+          step: 0,
+          totalSteps: 0,
+          placeholder:
+            "Select entrypoint file. This is your main file for your project. (Use this field to filter selections.)",
+          items: entryPointListItems,
+          buttons: [],
+          shouldResume: () => Promise.resolve(false),
+          ignoreFocusOut: true,
+        });
+
+        if (pick.label === browseForEntrypointLabel) {
+          let baseUri = Uri.parse(".");
+          const workspaceFolders = workspace.workspaceFolders;
+          if (workspaceFolders !== undefined) {
+            baseUri = workspaceFolders[0].uri;
+          }
+          selectedEntrypointFile = undefined;
           const fileUris = await window.showOpenDialog({
             defaultUri: baseUri,
             openLabel: "Select",
@@ -388,7 +347,7 @@ export async function newDeployment(
           });
           if (!fileUris || !fileUris[0]) {
             // cancelled.
-            return;
+            continue;
           }
           const fileUri = fileUris[0];
 
@@ -396,25 +355,23 @@ export async function newDeployment(
             selectedEntrypointFile = relativePath(fileUri);
           } else {
             window.showErrorMessage(
-              `Entrypoint files must be located within the folder opened by VSCode. 
-							File ${fileUri.fsPath} is not located within the VSCode Workspace: ${baseUri.fsPath}.`,
+              `Entrypoint files must be located within the open workspace. 
+							File ${fileUri.fsPath} is not located within the open workspace: ${baseUri.fsPath}.`,
               {
                 modal: true,
               },
             );
             selectedEntrypointFile = undefined;
           }
-        } while (!selectedEntrypointFile);
-        newDeploymentData.entrypoint.filePath = selectedEntrypointFile;
-        newDeploymentData.entrypoint.inspectionResult = undefined;
-      } else {
-        if (isQuickPickItemWithInspectionResult(pick)) {
-          newDeploymentData.entrypoint.filePath = pick.label;
-          newDeploymentData.entrypoint.inspectionResult = pick.inspectionResult;
         } else {
-          return;
+          if (isQuickPickItem(pick)) {
+            selectedEntrypointFile = pick.label;
+          } else {
+            return;
+          }
         }
-      }
+      } while (!selectedEntrypointFile);
+      newDeploymentData.entrypoint.filePath = selectedEntrypointFile;
       return (input: MultiStepInput) =>
         inputEntryPointInspectionResultSelection(input, state);
     } else {
@@ -481,68 +438,68 @@ export async function newDeployment(
       }
 
       newDeploymentData.entrypoint.inspectionResult = pick.inspectionResult;
-      return (input: MultiStepInput) => inputContentType(input, state);
+      return (input: MultiStepInput) => inputTitle(input, state);
     } else {
       newDeploymentData.entrypoint.inspectionResult =
         inspectionQuickPicks[0].inspectionResult;
       // We're skipping this step, so we must silently just jump to the next step
-      return inputContentType(input, state);
-    }
-  }
-
-  // ***************************************************************
-  // Step: Input the Content Type, if inspection returns UNKNOWN content type
-  // ***************************************************************
-  async function inputContentType(
-    input: MultiStepInput,
-    state: MultiStepState,
-  ) {
-    if (!newDeploymentData.entrypoint.inspectionResult) {
-      return;
-    }
-    if (
-      newDeploymentData.entrypoint.inspectionResult.configuration.type ===
-      ContentType.UNKNOWN
-    ) {
-      // have to prompt user for a content type, since we were unable to determine it.
-      const quickPicks: QuickPickItemWithIndex[] = [];
-      allValidContentTypes.forEach((contentType, index) => {
-        quickPicks.push({
-          label: contentType,
-          detail: contentTypeStrings[contentType],
-          picked: newDeploymentData.entrypoint.contentType === contentType,
-          index,
-        });
-      });
-
-      const pick = await input.showQuickPick({
-        title: state.title,
-        step: 0,
-        totalSteps: 0,
-        placeholder: `Select the content type for your entrypoint file (${newDeploymentData.entrypoint.filePath}).`,
-        items: quickPicks,
-        buttons: [],
-        shouldResume: () => Promise.resolve(false),
-        ignoreFocusOut: true,
-      });
-
-      if (!pick) {
-        return;
-      }
-      if (!isQuickPickItemWithIndex(pick)) {
-        return;
-      }
-      newDeploymentData.entrypoint.contentType =
-        allValidContentTypes[pick.index];
-
-      return (input: MultiStepInput) => inputTitle(input, state);
-    } else {
-      newDeploymentData.entrypoint.contentType =
-        newDeploymentData.entrypoint.inspectionResult.configuration.type;
-      // We're skipping this step, so we must silently just jump to the next step
       return inputTitle(input, state);
     }
   }
+
+  // // ***************************************************************
+  // // Step: Input the Content Type, if inspection returns UNKNOWN content type
+  // // ***************************************************************
+  // async function inputContentType(
+  //   input: MultiStepInput,
+  //   state: MultiStepState,
+  // ) {
+  //   if (!newDeploymentData.entrypoint.inspectionResult) {
+  //     return;
+  //   }
+  //   if (
+  //     newDeploymentData.entrypoint.inspectionResult.configuration.type ===
+  //     ContentType.UNKNOWN
+  //   ) {
+  //     // have to prompt user for a content type, since we were unable to determine it.
+  //     const quickPicks: QuickPickItemWithIndex[] = [];
+  //     allValidContentTypes.forEach((contentType, index) => {
+  //       quickPicks.push({
+  //         label: contentType,
+  //         description: contentTypeStrings[contentType],
+  //         picked: newDeploymentData.entrypoint.contentType === contentType,
+  //         index,
+  //       });
+  //     });
+
+  //     const pick = await input.showQuickPick({
+  //       title: state.title,
+  //       step: 0,
+  //       totalSteps: 0,
+  //       placeholder: `Select the content type for your entrypoint file (${newDeploymentData.entrypoint.filePath}).`,
+  //       items: quickPicks,
+  //       buttons: [],
+  //       shouldResume: () => Promise.resolve(false),
+  //       ignoreFocusOut: true,
+  //     });
+
+  //     if (!pick) {
+  //       return;
+  //     }
+  //     if (!isQuickPickItemWithIndex(pick)) {
+  //       return;
+  //     }
+  //     newDeploymentData.entrypoint.contentType =
+  //       allValidContentTypes[pick.index];
+
+  //     return (input: MultiStepInput) => inputTitle(input, state);
+  //   } else {
+  //     newDeploymentData.entrypoint.contentType =
+  //       newDeploymentData.entrypoint.inspectionResult.configuration.type;
+  //     // We're skipping this step, so we must silently just jump to the next step
+  //     return inputTitle(input, state);
+  //   }
+  // }
 
   // ***************************************************************
   // Step: Input the Title
@@ -585,10 +542,10 @@ export async function newDeployment(
   }
 
   // ***************************************************************
-  // Step #3: Select the credentials to be used
+  // Step: Select the credentials to be used
   // ***************************************************************
   async function pickCredentials(input: MultiStepInput, state: MultiStepState) {
-    if (!newCredentialForced(state)) {
+    if (!newCredentialForced()) {
       if (newDeploymentData.existingCredentialName) {
         credentialListItems.forEach((credential) => {
           credential.picked =
@@ -617,7 +574,7 @@ export async function newDeployment(
   // Step: New Credentials - Get the server url
   // ***************************************************************
   async function inputServerUrl(input: MultiStepInput, state: MultiStepState) {
-    if (newCredentialByAnyMeans(state)) {
+    if (newCredentialByAnyMeans()) {
       const currentURL = newDeploymentData.newCredentials.url
         ? newDeploymentData.newCredentials.url
         : "";
@@ -702,7 +659,7 @@ export async function newDeployment(
   // Step: New Credentials - Enter the API Key
   // ***************************************************************
   async function inputAPIKey(input: MultiStepInput, state: MultiStepState) {
-    if (newCredentialByAnyMeans(state)) {
+    if (newCredentialByAnyMeans()) {
       const currentAPIKey = newDeploymentData.newCredentials.apiKey
         ? newDeploymentData.newCredentials.apiKey
         : "";
@@ -778,7 +735,7 @@ export async function newDeployment(
     input: MultiStepInput,
     state: MultiStepState,
   ) {
-    if (newCredentialByAnyMeans(state)) {
+    if (newCredentialByAnyMeans()) {
       const currentName = newDeploymentData.newCredentials.name
         ? newDeploymentData.newCredentials.name
         : "";
@@ -841,25 +798,23 @@ export async function newDeployment(
     // errors have already been displayed by the underlying promises..
     return undefined;
   }
-  const state = await collectInputs();
+  await collectInputs();
 
   // make sure user has not hit escape or moved away from the window
   // before completing the steps. This also serves as a type guard on
   // our state data vars down to the actual type desired
   if (
     !newDeploymentData.entrypoint.filePath ||
-    !newDeploymentData.entrypoint.contentType ||
     !newDeploymentData.entrypoint.inspectionResult ||
     !newDeploymentData.title ||
-    (!newCredentialByAnyMeans(state) &&
-      !newDeploymentData.existingCredentialName)
+    (!newCredentialByAnyMeans() && !newDeploymentData.existingCredentialName)
   ) {
     console.log("User has aborted flow. Exiting.");
     return undefined;
   }
 
   // Maybe create a new credential?
-  if (newCredentialByAnyMeans(state)) {
+  if (newCredentialByAnyMeans()) {
     // have to type guard here, will protect us against
     // cancellation.
     if (
@@ -909,8 +864,6 @@ export async function newDeployment(
 
   newDeploymentData.entrypoint.inspectionResult.configuration.title =
     newDeploymentData.title;
-  newDeploymentData.entrypoint.inspectionResult.configuration.type =
-    newDeploymentData.entrypoint.contentType;
 
   try {
     const existingNames = (
