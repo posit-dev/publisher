@@ -200,6 +200,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         return await this.debounceRefreshPythonPackages();
       case WebviewToHostMessageType.REFRESH_R_PACKAGES:
         return await this.debounceRefreshRPackages();
+      case WebviewToHostMessageType.ADD_SECRET:
+        return await this.addSecret();
       case WebviewToHostMessageType.VSCODE_OPEN_RELATIVE:
         return await this.onRelativeOpenVSCode(msg);
       case WebviewToHostMessageType.SCAN_PYTHON_PACKAGE_REQUIREMENTS:
@@ -935,6 +937,50 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       });
     }
   }
+
+  private inputSecretName = async () => {
+    return await window.showInputBox({
+      title: "Add a Secret",
+      prompt: "Enter the name of the secret.",
+      ignoreFocusOut: true,
+      validateInput: (value: string) => {
+        if (value.length === 0) {
+          return "Secret names cannot be empty.";
+        }
+        return;
+      },
+    });
+  };
+
+  public addSecret = async () => {
+    const activeConfig = await this.state.getSelectedConfiguration();
+    if (activeConfig === undefined) {
+      console.error("homeView::addSecret: No active configuration.");
+      return;
+    }
+
+    const name = await this.inputSecretName();
+    if (name === undefined) {
+      // Cancelled by the user
+      return;
+    }
+
+    try {
+      await showProgress("Adding Secret", Views.HomeView, async () => {
+        const api = await useApi();
+        await api.secrets.add(
+          activeConfig.configurationName,
+          name,
+          activeConfig.projectDir,
+        );
+      });
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError("addSecret", error);
+      window.showInformationMessage(
+        `Failed to add secret to configuration. ${summary}`,
+      );
+    }
+  };
 
   public removeSecret = async (context: { name: string }) => {
     const activeConfig = await this.state.getSelectedConfiguration();
