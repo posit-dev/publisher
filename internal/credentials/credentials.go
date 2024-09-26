@@ -53,6 +53,16 @@ type Credential struct {
 
 type CredentialV0 = Credential
 
+func (c *Credential) ConflictCheck(compareWith Credential) error {
+	if compareWith.URL == c.URL {
+		return NewURLCollisionError(c.Name, c.URL)
+	}
+	if compareWith.Name == c.Name {
+		return NewNameCollisionError(c.Name, c.URL)
+	}
+	return nil
+}
+
 type CredentialRecord struct {
 	GUID    string          `json:"guid"`
 	Version uint            `json:"version"`
@@ -95,7 +105,7 @@ func NewCredentialsService(log logging.Logger) *credentialsService {
 // FileCredentialRecordFactory creates a Credential based on the presence of the
 // a file containing CONNECT_SERVER and CONNECT_API_KEY.
 
-type fileCredential struct {
+type deprcfileCredential struct {
 	URL string `toml:"url"`
 	Key string `toml:"key"`
 }
@@ -113,7 +123,7 @@ func (cs *credentialsService) FileCredentialRecordFactory() (*CredentialRecord, 
 	if !exists {
 		return nil, nil
 	}
-	var credential fileCredential
+	var credential deprcfileCredential
 	err = util.ReadTOMLFile(filePath, &credential)
 	if err != nil {
 		return nil, err

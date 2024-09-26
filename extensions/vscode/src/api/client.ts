@@ -7,6 +7,7 @@ import { ContentRecords } from "./resources/ContentRecords";
 import { Configurations } from "./resources/Configurations";
 import { Files } from "./resources/Files";
 import { Packages } from "./resources/Packages";
+import { Secrets } from "./resources/Secrets";
 import { EntryPoints } from "./resources/Entrypoints";
 import * as Entities from "entities";
 
@@ -18,6 +19,7 @@ class PublishingClientApi {
   contentRecords: ContentRecords;
   files: Files;
   packages: Packages;
+  secrets: Secrets;
   apiServiceIsUp: Promise<boolean>;
   entrypoints: EntryPoints;
 
@@ -51,6 +53,7 @@ class PublishingClientApi {
     this.contentRecords = new ContentRecords(this.client);
     this.files = new Files(this.client);
     this.packages = new Packages(this.client);
+    this.secrets = new Secrets(this.client);
     this.entrypoints = new EntryPoints(this.client);
   }
 
