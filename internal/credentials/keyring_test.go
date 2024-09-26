@@ -122,6 +122,28 @@ func (s *KeyringCredentialsTestSuite) TestSetCollisions() {
 	s.IsType(&URLCollisionError{}, err)
 }
 
+func (s *KeyringCredentialsTestSuite) TestList() {
+	cs := keyringCredentialsService{
+		log: s.log,
+	}
+
+	creds, err := cs.List()
+	s.NoError(err)
+	s.Equal(creds, []Credential{})
+
+	// Add a couple creds to be assert on the list again
+	nc1, err := cs.Set("example", "https://a.example.com", "12345")
+	s.NoError(err)
+	nc2, err := cs.Set("example2", "https://b.example.com", "12345")
+	s.NoError(err)
+
+	creds, err = cs.List()
+	s.NoError(err)
+	s.Len(creds, 2)
+	s.Contains(creds, *nc1)
+	s.Contains(creds, *nc2)
+}
+
 func (s *KeyringCredentialsTestSuite) TestDelete() {
 	cs := keyringCredentialsService{
 		log: s.log,
