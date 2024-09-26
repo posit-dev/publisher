@@ -50,7 +50,7 @@ import TreeItem from "src/components/tree/TreeItem.vue";
 import TreeSection from "src/components/tree/TreeSection.vue";
 import WelcomeView from "src/components/WelcomeView.vue";
 
-import { computed, ref } from "vue";
+import { computed } from "vue";
 
 import { useHomeStore } from "src/stores/home";
 import { useHostConduitService } from "src/HostConduitService";

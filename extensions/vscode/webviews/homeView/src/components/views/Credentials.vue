@@ -28,7 +28,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed } from "vue";
 
 import TreeSection from "src/components/tree/TreeSection.vue";
 import TreeItem from "src/components/tree/TreeItem.vue";
@@ -39,7 +39,6 @@ import { useHostConduitService } from "src/HostConduitService";
 import { Credential } from "../../../../../src/api";
 import { CredentialGUIs } from "../../../../../src/constants";
 import { WebviewToHostMessageType } from "../../../../../src/types/messages/webviewToHostMessages";
-import { ActionButton } from "../ActionToolbar.vue";
 
 const home = useHomeStore();
 
