@@ -24,15 +24,21 @@ import Secret from "src/components/views/secrets/Secret.vue";
 
 const home = useHomeStore();
 
-const sectionActions = computed<ActionButton[]>(() => [
-  {
-    label: "Clear Values for all Secrets",
-    codicon: "codicon-clear-all",
-    fn: () => {
-      home.secrets.forEach((_, key) => {
-        home.secrets.set(key, undefined);
-      });
-    },
-  },
-]);
+const sectionActions = computed<ActionButton[]>(() => {
+  const result: ActionButton[] = [];
+
+  if (home.secretsWithValueCount > 0) {
+    result.push({
+      label: "Clear Values for all Secrets",
+      codicon: "codicon-clear-all",
+      fn: () => {
+        home.secrets.forEach((_, key) => {
+          home.secrets.set(key, undefined);
+        });
+      },
+    });
+  }
+
+  return result;
+});
 </script>

@@ -22,7 +22,7 @@ export function withSetup<T>(composable: () => T): App {
   return app;
 }
 
-vi.mock(import("src/vscode"), () => {
+vi.mock("src/vscode", () => {
   const postMessage = vi.fn();
 
   const vscodeAPI = vi.fn(() => ({
