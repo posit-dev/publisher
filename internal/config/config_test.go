@@ -156,3 +156,44 @@ func (s *ConfigSuite) TestReadComments() {
 
 	s.Equal([]string{" These are comments.", " They will be preserved."}, cfg.Comments)
 }
+
+func (s *ConfigSuite) TestApplySecretActionAdd() {
+	cfg := New()
+	cfg.Secrets = []string{}
+	err := cfg.AddSecret("secret1")
+	s.NoError(err)
+	s.Equal([]string{"secret1"}, cfg.Secrets)
+}
+
+func (s *ConfigSuite) TestApplySecretActionAddWithExistingSecrets() {
+	cfg := New()
+	cfg.Secrets = []string{"existingSecret1", "existingSecret2"}
+	err := cfg.AddSecret("newSecret")
+	s.NoError(err)
+	s.Equal([]string{"existingSecret1", "existingSecret2", "newSecret"}, cfg.Secrets)
+}
+
+func (s *ConfigSuite) TestApplySecretActionAddNoDuplicates() {
+	cfg := New()
+	cfg.Secrets = []string{"existingSecret1", "existingSecret2"}
+
+	err := cfg.AddSecret("existingSecret1")
+	s.NoError(err)
+	s.Equal([]string{"existingSecret1", "existingSecret2"}, cfg.Secrets)
+}
+
+func (s *ConfigSuite) TestApplySecretActionRemove() {
+	cfg := New()
+	cfg.Secrets = []string{"secret1", "secret2"}
+	err := cfg.RemoveSecret("secret1")
+	s.NoError(err)
+	s.Equal([]string{"secret2"}, cfg.Secrets)
+}
+
+func (s *ConfigSuite) TestApplySecretActionRemoveFromEmptySecrets() {
+	cfg := New()
+	cfg.Secrets = []string{}
+	err := cfg.RemoveSecret("nonexistentSecret")
+	s.NoError(err)
+	s.Equal([]string{}, cfg.Secrets)
+}

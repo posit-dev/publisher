@@ -34,37 +34,12 @@ func (s *ApplySecretActionSuite) TestApplySecretActionAdd() {
 	s.Equal([]string{"secret1"}, cfg.Secrets)
 }
 
-func (s *ApplySecretActionSuite) TestApplySecretActionAddWithExistingSecrets() {
-	cfg := config.New()
-	cfg.Secrets = []string{"existingSecret1", "existingSecret2"}
-	err := applySecretAction(cfg, secretActionAdd, "newSecret")
-	s.NoError(err)
-	s.Equal([]string{"existingSecret1", "existingSecret2", "newSecret"}, cfg.Secrets)
-}
-
-func (s *ApplySecretActionSuite) TestApplySecretActionAddNoDuplicates() {
-	cfg := config.New()
-	cfg.Secrets = []string{"existingSecret1", "existingSecret2"}
-
-	err := applySecretAction(cfg, secretActionAdd, "existingSecret1")
-	s.NoError(err)
-	s.Equal([]string{"existingSecret1", "existingSecret2"}, cfg.Secrets)
-}
-
 func (s *ApplySecretActionSuite) TestApplySecretActionRemove() {
 	cfg := config.New()
 	cfg.Secrets = []string{"secret1", "secret2"}
 	err := applySecretAction(cfg, secretActionRemove, "secret1")
 	s.NoError(err)
 	s.Equal([]string{"secret2"}, cfg.Secrets)
-}
-
-func (s *ApplySecretActionSuite) TestApplySecretActionRemoveFromEmptySecrets() {
-	cfg := config.New()
-	cfg.Secrets = []string{}
-	err := applySecretAction(cfg, secretActionRemove, "nonexistentSecret")
-	s.NoError(err)
-	s.Equal([]string{}, cfg.Secrets)
 }
 
 func (s *ApplySecretActionSuite) TestApplySecretActionUnknownAction() {

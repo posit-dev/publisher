@@ -29,24 +29,12 @@ type postConfigSecretsRequest struct {
 func applySecretAction(cfg *config.Config, action string, secret string) error {
 	switch action {
 	case secretActionAdd:
-		// Check if the secret already exists before adding
-		for _, s := range cfg.Secrets {
-			if s == secret {
-				return nil // Secret already exists, no need to add
-			}
-		}
-		cfg.Secrets = append(cfg.Secrets, secret)
+		return cfg.AddSecret(secret)
 	case secretActionRemove:
-		for i, s := range cfg.Secrets {
-			if s == secret {
-				cfg.Secrets = append(cfg.Secrets[:i], cfg.Secrets[i+1:]...)
-				break
-			}
-		}
+		return cfg.RemoveSecret(secret)
 	default:
 		return fmt.Errorf("unknown action: %s", action)
 	}
-	return nil
 }
 
 func PostConfigSecretsHandlerFunc(base util.AbsolutePath, log logging.Logger) http.HandlerFunc {
