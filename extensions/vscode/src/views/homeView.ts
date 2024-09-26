@@ -936,6 +936,30 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
   }
 
+  public removeSecret = async (context: { name: string }) => {
+    const activeConfig = await this.state.getSelectedConfiguration();
+    if (activeConfig === undefined) {
+      console.error("homeView::removeSecret: No active configuration.");
+      return;
+    }
+
+    try {
+      await showProgress("Removing Secret", Views.HomeView, async () => {
+        const api = await useApi();
+        await api.secrets.remove(
+          activeConfig.configurationName,
+          context.name,
+          activeConfig.projectDir,
+        );
+      });
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError("removeSecret", error);
+      window.showInformationMessage(
+        `Failed to remove secret from configuration. ${summary}`,
+      );
+    }
+  };
+
   private async showNewCredential() {
     return await commands.executeCommand(Commands.HomeView.AddCredential);
   }
@@ -1787,6 +1811,13 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           Uri.parse("https://github.com/posit-dev/publisher/discussions"),
         );
       }),
+    );
+
+    this.context.subscriptions.push(
+      commands.registerCommand(
+        Commands.HomeView.RemoveSecret,
+        this.removeSecret,
+      ),
     );
 
     this.context.subscriptions.push(
