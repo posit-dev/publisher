@@ -2,9 +2,8 @@
   <TreeSection
     title="Python Packages"
     data-automation="python-packages"
-    :header-actions="pythonPackageHeaderActions"
     :actions="pythonPackageActions"
-    :expanded="sectionExpanded"
+    :codicon="home.pythonAlert ? `codicon-alert` : ``"
   >
     <WelcomeView v-if="showWelcomeView">
       <template v-if="home.alertPythonMissingRequirements">
@@ -59,8 +58,6 @@ import { WebviewToHostMessageType } from "../../../../../src/types/messages/webv
 import { ActionButton } from "../ActionToolbar.vue";
 
 const home = useHomeStore();
-const sectionExpanded = ref<boolean>(false);
-
 const hostConduit = useHostConduitService();
 
 const onRefresh = () => {
@@ -86,23 +83,6 @@ const onEditRequirementsFile = () => {
     },
   });
 };
-
-const onClickAlert = () => {
-  sectionExpanded.value = true;
-};
-
-const pythonPackageHeaderActions = computed((): ActionButton[] => {
-  if (home.pythonAlert) {
-    return [
-      {
-        label: "Action Required!",
-        codicon: "codicon-alert",
-        fn: onClickAlert,
-      },
-    ];
-  }
-  return [];
-});
 
 const pythonPackageActions = computed((): ActionButton[] => {
   const result: ActionButton[] = [];

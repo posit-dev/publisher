@@ -2,9 +2,8 @@
   <TreeSection
     title="Credentials"
     data-automation="credentials"
-    :header-actions="credentialsHeaderActions"
     :actions="sectionActions"
-    :expanded="sectionExpanded"
+    :codicon="home.credentialsAlert ? `codicon-alert` : ``"
   >
     <WelcomeView v-if="showWelcomeView">
       <template v-if="home.credentialsAlert">
@@ -43,26 +42,8 @@ import { WebviewToHostMessageType } from "../../../../../src/types/messages/webv
 import { ActionButton } from "../ActionToolbar.vue";
 
 const home = useHomeStore();
-const sectionExpanded = ref<boolean>(false);
 
 const { sendMsg } = useHostConduitService();
-
-const onClickAlert = () => {
-  sectionExpanded.value = true;
-};
-
-const credentialsHeaderActions = computed((): ActionButton[] => {
-  if (home.credentialsAlert) {
-    return [
-      {
-        label: "Action Required!",
-        codicon: "codicon-alert",
-        fn: onClickAlert,
-      },
-    ];
-  }
-  return [];
-});
 
 const sectionActions = computed(() => {
   return [

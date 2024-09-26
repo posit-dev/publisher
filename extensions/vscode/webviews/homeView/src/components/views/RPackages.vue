@@ -2,9 +2,8 @@
   <TreeSection
     title="R Packages"
     data-automation="r-packages"
-    :header-actions="rPackageHeaderActions"
     :actions="rPackageActions"
-    :expanded="sectionExpanded"
+    :codicon="home.rAlert ? `codicon-alert` : ``"
   >
     <WelcomeView v-if="showWelcomeView">
       <template v-if="home.alertRMissingPackageFile">
@@ -91,23 +90,6 @@ const onEditRequirementsFile = () => {
     },
   });
 };
-
-const onClickAlert = () => {
-  sectionExpanded.value = true;
-};
-
-const rPackageHeaderActions = computed((): ActionButton[] => {
-  if (home.rAlert) {
-    return [
-      {
-        label: "Action Required!",
-        codicon: "codicon-alert",
-        fn: onClickAlert,
-      },
-    ];
-  }
-  return [];
-});
 
 const rPackageActions = computed((): ActionButton[] => {
   const result: ActionButton[] = [];

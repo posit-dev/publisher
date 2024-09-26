@@ -11,11 +11,6 @@
           class="twisty-container codicon"
           :class="expanded ? 'codicon-chevron-down' : 'codicon-chevron-right'"
         />
-        <span
-          v-if="codicon"
-          class="tree-section-icon codicon"
-          :class="codicon"
-        />
         <h3 class="title">{{ title }}</h3>
         <span v-if="$slots.description" class="description">
           <slot name="description" />
@@ -24,11 +19,9 @@
           {{ description }}
         </span>
       </div>
+      <div v-if="codicon" class="tree-section-icon codicon" :class="codicon" />
       <div v-if="actions" class="actions">
         <ActionToolbar :title="title" :actions="actions" />
-      </div>
-      <div v-if="headerActions" class="header-actions">
-        <ActionToolbar :title="title" :actions="headerActions" />
       </div>
       <div v-if="count" class="count">
         <CountBadge :count="count" />
@@ -43,27 +36,20 @@
 <script setup lang="ts">
 import ActionToolbar, { ActionButton } from "src/components/ActionToolbar.vue";
 import CountBadge from "src/components/CountBadge.vue";
-import { watch } from "vue";
 
 const expanded = defineModel("expanded", { required: false, default: false });
 
-const props = defineProps<{
+defineProps<{
   title: string;
   description?: string;
   codicon?: string;
-  headerActions?: ActionButton[];
   actions?: ActionButton[];
   count?: number;
-  expanded?: boolean;
 }>();
 
 const toggleExpanded = () => {
   expanded.value = !expanded.value;
 };
-
-watch([props.expanded], () => {
-  expanded.value = props.expanded;
-});
 </script>
 
 <style lang="scss" scoped>
@@ -72,7 +58,10 @@ watch([props.expanded], () => {
     display: none;
     margin-left: auto;
   }
-  .header-actions {
+
+  .tree-section-icon {
+    font-size: 13px;
+    margin-right: 4px;
     display: initial;
   }
 
@@ -81,7 +70,7 @@ watch([props.expanded], () => {
     display: initial;
   }
 
-  &.expanded .header-actions {
+  &.expanded .tree-section-icon {
     display: none;
     margin-left: auto;
   }
@@ -128,11 +117,6 @@ watch([props.expanded], () => {
       margin: 0 2px;
       font-size: 16px;
       color: var(--vscode-icon-foreground);
-    }
-
-    .tree-section-icon {
-      font-size: 13px;
-      margin-right: 4px;
     }
 
     .title {
