@@ -3,9 +3,10 @@
     title="Python Packages"
     data-automation="python-packages"
     :actions="pythonPackageActions"
+    :codicon="home.python.active.isAlertActive ? `codicon-alert` : ``"
   >
     <WelcomeView v-if="showWelcomeView">
-      <template v-if="showScanWelcomeView">
+      <template v-if="home.python.active.isMissingRequirements">
         <p>
           To deploy Python content, you need a package file listing any package
           dependencies, but the file does not exist. Click Scan to create one
@@ -15,13 +16,13 @@
           Scan
         </vscode-button>
       </template>
-      <template v-if="isNotPythonProject">
+      <template v-if="!home.python.active.isInProject">
         <p>
           This project is not configured to use Python. To configure Python, add
           a [python] section to your configuration file.
         </p>
       </template>
-      <template v-if="emptyRequirements">
+      <template v-if="home.python.active.isEmptyRequirements">
         <p>
           This project currently has no Python package requirements. If this is
           not accurate, click Scan to update based on the files in your project
@@ -57,7 +58,6 @@ import { WebviewToHostMessageType } from "../../../../../src/types/messages/webv
 import { ActionButton } from "../ActionToolbar.vue";
 
 const home = useHomeStore();
-
 const hostConduit = useHostConduitService();
 
 const onRefresh = () => {
@@ -111,26 +111,9 @@ const pythonPackageActions = computed((): ActionButton[] => {
 
 const showWelcomeView = computed(() => {
   return (
-    isNotPythonProject.value ||
-    emptyRequirements.value ||
-    showScanWelcomeView.value
+    !home.python.active.isInProject ||
+    home.python.active.isEmptyRequirements ||
+    home.python.active.isMissingRequirements
   );
-});
-
-const isNotPythonProject = computed(() => {
-  return !home.pythonProject;
-});
-
-const emptyRequirements = computed(() => {
-  return (
-    home.pythonProject &&
-    home.pythonPackageFile &&
-    home.pythonPackages &&
-    home.pythonPackages.length === 0
-  );
-});
-
-const showScanWelcomeView = computed(() => {
-  return home.pythonProject && !home.pythonPackageFile;
 });
 </script>

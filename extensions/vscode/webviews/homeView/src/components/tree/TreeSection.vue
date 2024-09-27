@@ -11,18 +11,20 @@
           class="twisty-container codicon"
           :class="expanded ? 'codicon-chevron-down' : 'codicon-chevron-right'"
         />
-        <span
-          v-if="codicon"
-          class="tree-section-icon codicon"
-          :class="codicon"
-        />
-        <h3 class="title">{{ title }}</h3>
-        <span v-if="$slots.description" class="description">
-          <slot name="description" />
-        </span>
-        <span v-else-if="description" class="description">
-          {{ description }}
-        </span>
+        <div style="display: flex; justify-content: space-between">
+          <h3 class="title">{{ title }}</h3>
+          <span v-if="$slots.description" class="description">
+            <slot name="description" />
+          </span>
+          <span v-else-if="description" class="description">
+            {{ description }}
+          </span>
+          <div
+            v-if="codicon && !expanded"
+            class="tree-section-icon codicon"
+            :class="codicon"
+          />
+        </div>
       </div>
       <div v-if="actions" class="actions">
         <ActionToolbar :title="title" :actions="actions" />
@@ -61,6 +63,11 @@ const toggleExpanded = () => {
   .actions {
     display: none;
     margin-left: auto;
+  }
+
+  .tree-section-icon {
+    font-size: 13px;
+    margin-right: 4px;
   }
 
   &.expanded:hover .actions,
@@ -110,11 +117,6 @@ const toggleExpanded = () => {
       margin: 0 2px;
       font-size: 16px;
       color: var(--vscode-icon-foreground);
-    }
-
-    .tree-section-icon {
-      font-size: 13px;
-      margin-right: 4px;
     }
 
     .title {
