@@ -58,7 +58,7 @@ func (s *CredentialsTestSuite) createFileCredentials(cs *credentialsService, err
 	defer f.Close()
 
 	enc := toml.NewEncoder(f)
-	cred := fileCredential{
+	cred := deprcfileCredential{
 		URL: fileCred.URL,
 		Key: fileCred.ApiKey,
 	}

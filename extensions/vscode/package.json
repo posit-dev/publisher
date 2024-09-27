@@ -59,6 +59,12 @@
         "category": "Posit Publisher"
       },
       {
+        "command": "posit.publisher.homeView.removeSecret",
+        "title": "Remove Secret from Configuration",
+        "icon": "$(trash)",
+        "category": "Posit Publisher"
+      },
+      {
         "command": "posit.publisher.files.refresh",
         "title": "Refresh Deployment Files",
         "icon": "$(refresh)",
@@ -248,6 +254,10 @@
           "when": "posit.publish.state == 'initialized'"
         },
         {
+          "command": "posit.publisher.homeView.removeSecret",
+          "when": "false"
+        },
+        {
           "command": "posit.publisher.files.refresh",
           "when": "posit.publish.state == 'initialized'"
         },
@@ -346,6 +356,10 @@
         {
           "command": "posit.publisher.homeView.deleteCredential",
           "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'credentials-tree-item'"
+        },
+        {
+          "command": "posit.publisher.homeView.removeSecret",
+          "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'secrets-tree-item'"
         }
       ]
     },
