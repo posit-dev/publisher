@@ -822,9 +822,7 @@ export async function newDeployment(
       !newDeploymentData.newCredentials.apiKey ||
       !newDeploymentData.newCredentials.name
     ) {
-      window.showErrorMessage(
-        "Internal Error: NewDeployment Unexpected type guard failure @1",
-      );
+      console.log("User has aborted flow. Exiting.");
       return undefined;
     }
     try {
