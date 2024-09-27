@@ -3,10 +3,10 @@
     title="R Packages"
     data-automation="r-packages"
     :actions="rPackageActions"
-    :codicon="home.rAlert ? `codicon-alert` : ``"
+    :codicon="home.r.active.isAlertActive ? `codicon-alert` : ``"
   >
     <WelcomeView v-if="showWelcomeView">
-      <template v-if="home.alertRMissingPackageFile">
+      <template v-if="home.r.active.isMissingPackageFile">
         <p>
           To deploy R content, you need a package file listing any package
           dependencies, but the file does not exist or is invalid. Use
@@ -19,13 +19,13 @@
           Scan
         </vscode-button>
       </template>
-      <template v-if="isNotRProject">
+      <template v-if="!home.r.active.isInProject">
         <p data-automation="r-not-configured">
           This project is not configured to use R. To configure R, add an [r]
           section to your configuration file.
         </p>
       </template>
-      <template v-if="home.alertREmptyRequirements">
+      <template v-if="home.r.active.isEmptyRequirements">
         <p>
           This project currently has no R package requirements (file ({{
             home.rPackageFile
@@ -117,14 +117,9 @@ const rPackageActions = computed((): ActionButton[] => {
 
 const showWelcomeView = computed(() => {
   return (
-    isNotRProject.value ||
-    home.alertREmptyRequirements ||
-    home.alertRMissingPackageFile
+    !home.r.active.isInProject ||
+    home.r.active.isEmptyRequirements ||
+    home.r.active.isMissingPackageFile
   );
-});
-
-// not considered an alert
-const isNotRProject = computed(() => {
-  return !home.rProject;
 });
 </script>

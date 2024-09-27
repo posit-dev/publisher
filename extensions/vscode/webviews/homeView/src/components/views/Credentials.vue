@@ -3,12 +3,10 @@
     title="Credentials"
     data-automation="credentials"
     :actions="sectionActions"
-    :codicon="home.credentialsAlert ? `codicon-alert` : ``"
+    :codicon="home.credential.active.isAlertActive ? `codicon-alert` : ``"
   >
-    <WelcomeView v-if="showWelcomeView">
-      <template v-if="home.credentialsAlert">
-        <p>No credentials have been added yet.</p>
-      </template>
+    <WelcomeView v-if="!home.credential.isAvailable">
+      <p>No credentials have been added yet.</p>
     </WelcomeView>
     <TreeItem
       v-else
@@ -63,10 +61,6 @@ const sectionActions = computed(() => {
       },
     },
   ];
-});
-
-const showWelcomeView = computed(() => {
-  return home.alertNoCredentials;
 });
 
 const vscodeContext = (credential: Credential) => {

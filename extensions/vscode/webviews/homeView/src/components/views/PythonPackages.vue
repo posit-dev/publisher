@@ -3,10 +3,10 @@
     title="Python Packages"
     data-automation="python-packages"
     :actions="pythonPackageActions"
-    :codicon="home.pythonAlert ? `codicon-alert` : ``"
+    :codicon="home.python.active.isAlertActive ? `codicon-alert` : ``"
   >
     <WelcomeView v-if="showWelcomeView">
-      <template v-if="home.alertPythonMissingRequirements">
+      <template v-if="home.python.active.isMissingRequirements">
         <p>
           To deploy Python content, you need a package file listing any package
           dependencies, but the file does not exist. Click Scan to create one
@@ -16,13 +16,13 @@
           Scan
         </vscode-button>
       </template>
-      <template v-if="home.isNotPythonProject">
+      <template v-if="!home.python.active.isInProject">
         <p>
           This project is not configured to use Python. To configure Python, add
           a [python] section to your configuration file.
         </p>
       </template>
-      <template v-if="home.alertPythonEmptyRequirements">
+      <template v-if="home.python.active.isEmptyRequirements">
         <p>
           This project currently has no Python package requirements. If this is
           not accurate, click Scan to update based on the files in your project
@@ -111,9 +111,9 @@ const pythonPackageActions = computed((): ActionButton[] => {
 
 const showWelcomeView = computed(() => {
   return (
-    home.isNotPythonProject ||
-    home.alertPythonEmptyRequirements ||
-    home.alertPythonMissingRequirements
+    !home.python.active.isInProject ||
+    home.python.active.isEmptyRequirements ||
+    home.python.active.isMissingRequirements
   );
 });
 </script>
