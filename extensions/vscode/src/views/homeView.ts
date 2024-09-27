@@ -337,6 +337,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       console.error("homeView::updateFileList: No active configuration.");
       return;
     }
+    if (isConfigurationError(activeConfig)) {
+      console.log(
+        "homeView::updateFileList: Skipping - error in active configuration.",
+      );
+      return;
+    }
     try {
       await showProgress("Updating File List", Views.HomeView, async () => {
         const api = await useApi();
@@ -958,6 +964,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       console.error("homeView::addSecret: No active configuration.");
       return;
     }
+    if (isConfigurationError(activeConfig)) {
+      console.error(
+        "homeView::addSecret: Unable to add secret into a configuration with error.",
+      );
+      return;
+    }
 
     const name = await this.inputSecretName();
     if (name === undefined) {
@@ -986,6 +998,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const activeConfig = await this.state.getSelectedConfiguration();
     if (activeConfig === undefined) {
       console.error("homeView::removeSecret: No active configuration.");
+      return;
+    }
+    if (isConfigurationError(activeConfig)) {
+      console.error(
+        "homeView::removeSecret: Unable to remove secret from a configuration with error.",
+      );
       return;
     }
 
@@ -1456,7 +1474,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
   public sendRefreshedFilesLists = async () => {
     const activeConfig = await this.state.getSelectedConfiguration();
-    if (activeConfig) {
+    if (activeConfig && !isConfigurationError(activeConfig)) {
       try {
         const response = await showProgress(
           "Refreshing Files",
