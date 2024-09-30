@@ -92,6 +92,19 @@ Then choose from the displayed list.
 
 ![](https://cdn.posit.co/publisher/assets/img/select-deployment-2.png)
 
+### Updating Previously Deployed Content
+
+If you have previously deployed content on Connect that you want to update, but
+you don't already have a Deployment and Configuration file setup, you can
+use a prompt in the Home View to allow for this.
+
+![](https://cdn.posit.co/publisher/assets/img/update-previous-deployment.png)
+
+After creating a new deployment in the extension pressing "update that previous
+deployment" will prompt you with the content URL. Once provided your new
+deployment will be setup to update that content URL, rather than creating a new
+deployment entirely.
+
 ### Project Files
 
 This view shows the files in your workspace:
