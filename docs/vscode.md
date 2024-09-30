@@ -193,19 +193,8 @@ For instructions on how to create a Connect API key, see the
 
 #### via dotfile
 
-A Credential can also be set by creating a `.connect-credentials` file in
-your home directory using the following format:
-
-```toml
-# ~/.connect-credentials.toml
-
-url = 'https://your.connect.server'
-key = 'r0TCAS9mCmTICwd2E97uM3KnUDlGWZ3D'
-```
-
-The `url` is the URL of your Posit Connect Server.
-
-The `key` is the API key for the user you would like to publish as.
+If your OS does not have a keychain the extension will manage your credentials
+in a file in your home directory - `.connect-credentials`.
 
 ### Help and Feedback
 
