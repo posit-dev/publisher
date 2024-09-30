@@ -62,10 +62,10 @@ Or install a specific version with:
 > Linux users need to have `inotify-tools` installed for the VSCode filewatcher to work properly.
 > This impacts how the extension presents file-specific data.
 > To install `inotify` on Debian, use the following command:<br />
+>
 > ```
 > apt install inotify-tools
 > ```
-
 
 ## Optional: Install Quarto
 
