@@ -14,6 +14,8 @@ import (
 	"github.com/spf13/afero"
 )
 
+var fsys = afero.NewOsFs()
+
 const ondiskFilename = ".connect-credentials"
 
 type fileCredential struct {
@@ -31,8 +33,14 @@ type fileCredentials struct {
 	Credentials map[string]fileCredential `toml:"credentials"`
 }
 
+func newFileCredentials() fileCredentials {
+	return fileCredentials{
+		Credentials: make(map[string]fileCredential),
+	}
+}
+
 func (fcs *fileCredentials) CredentialsList() []Credential {
-	var list []Credential
+	list := []Credential{}
 	for credName, fileCred := range fcs.Credentials {
 		list = append(list, Credential{
 			Name:   credName,
@@ -66,7 +74,6 @@ func (fcs *fileCredentials) RemoveByName(name string) {
 
 type fileCredentialsService struct {
 	mu            sync.Mutex
-	afs           afero.Fs
 	log           logging.Logger
 	credsFilepath util.AbsolutePath
 }
@@ -77,7 +84,7 @@ func NewFileCredentialsService(log logging.Logger) (*fileCredentialsService, err
 	}
 
 	// Set home dir credentials file path
-	homeDir, err := util.UserHomeDir(fservice.afs)
+	homeDir, err := util.UserHomeDir(fsys)
 	if err != nil {
 		return nil, err
 	}
@@ -220,7 +227,7 @@ func (c *fileCredentialsService) setup() error {
 }
 
 func (c *fileCredentialsService) load() (fileCredentials, error) {
-	var creds fileCredentials
+	creds := newFileCredentials()
 	err := util.ReadTOMLFile(c.credsFilepath, &creds)
 	if err != nil {
 		return creds, NewLoadError(err)

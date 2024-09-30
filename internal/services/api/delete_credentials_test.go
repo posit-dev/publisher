@@ -34,7 +34,9 @@ func (s *DeleteCredentialsSuite) SetupTest() {
 }
 
 func (s *DeleteCredentialsSuite) Test204() {
-	cs := credentials.NewCredentialsService(s.log)
+	cs, err := credentials.NewCredentialsService(s.log)
+	s.NoError(err)
+
 	cred, err := cs.Set("example", "https://example.com", "12345")
 	s.NoError(err)
 
