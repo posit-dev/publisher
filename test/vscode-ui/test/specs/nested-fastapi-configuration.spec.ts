@@ -5,6 +5,7 @@ import * as path from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 import * as helper from "../helpers.ts";
+import { sleep } from "wdio-vscode-service";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -20,6 +21,8 @@ describe("Nested Fast API Configuration", () => {
   before(async () => {
     workbench = await browser.getWorkbench();
     input = await $(".input");
+    // const filePath = path.join(__dirname, "test/sample-content/fastapi-simple/simple.py");
+    // await workbench.openFile(filePath);
   });
 
   it("open extension", async () => {
@@ -37,6 +40,7 @@ describe("Nested Fast API Configuration", () => {
     const selectButton = (await $('[data-automation="select-deployment"]')).$(
       ".quick-pick-label",
     );
+
     await expect(selectButton).toHaveText("Select...");
     await selectButton.click();
 
@@ -48,79 +52,18 @@ describe("Nested Fast API Configuration", () => {
     await expect(createMessage).toHaveText("Create a New Deployment");
     await createMessage.click();
 
-    // verify each entrypoint is found and listed
-    const quickpick = await browser.$(".quick-input-list");
-    await quickpick.waitForExist({ timeout: 30000 });
-  });
+    const openFile = await browser.$(".label-name");
+    await expect(createMessage).toHaveText("Open...");
+    await openFile.click();
 
-  it("can list simplepy entrypoint", async () => {
-    const simplepy = browser.$(`aria/fastapi-simple${sep}simple.py`);
-    await expect(simplepy).toExist();
-  });
+    const fastapiFolder = browser.$(`aria/fastapi-simple`);
+    await fastapiFolder.click();
 
-  it("can list quartoProjNoneMulti entrypoint", async () => {
-    const quartoProjNoneMulti = browser.$(
-      `aria/quarto-proj-none${sep}quarto-proj-none.qmd`,
-    );
-    await expect(quartoProjNoneMulti).toExist();
-  });
-
-  it("can list simplepyMulti entrypoint", async () => {
-    const simplepyMulti = browser.$(`aria/multi-type${sep}simple.py`);
-    await expect(simplepyMulti).toExist();
-  });
-
-  it("can list quartoProjNone entrypoint", async () => {
-    const quartoProjNone = browser.$(
-      `aria/quarto-proj-none${sep}quarto-proj-none.qmd`,
-    );
-    await expect(quartoProjNone).toExist();
-  });
-
-  it("can list quartoProjPy entrypoint", async () => {
-    const quartoProjPy = browser.$(
-      `aria/quarto-proj-py${sep}quarto-proj-py.qmd`,
-    );
-    await expect(quartoProjPy).toExist();
-  });
-
-  it("can list quartoProjR entrypoint", async () => {
-    const quartoProjR = browser.$(`aria/quarto-proj-r${sep}quarto-proj-r.qmd`);
-    await expect(quartoProjR).toExist();
-  });
-
-  it("can list quartoProject entrypoint", async () => {
-    const quartoProject = browser.$(
-      `aria/quarto-project${sep}quarto-project.qmd`,
-    );
-    await expect(quartoProject).toExist();
-  });
-
-  it("can list rmdHtml entrypoint", async () => {
-    const rmdHtml = browser.$(`aria/rmd-static-1${sep}index.htm`);
-    await expect(rmdHtml).toExist();
-  });
-
-  it("can list rmdKnitr entrypoint", async () => {
-    const rmdKnitr = browser.$(`aria/rmd-static-1${sep}static.Rmd`);
-    await expect(rmdKnitr).toExist();
-  });
-
-  it("can list shiny entrypoint", async () => {
-    const shiny = browser.$(`aria/shinyapp${sep}app.R`);
-    await expect(shiny).toExist();
-  });
-
-  it("can list shinyHtml entrypoint", async () => {
-    const shinyHtml = browser.$(`aria/shinyapp${sep}index.htm`);
-    await expect(shinyHtml).toExist();
+    const simplepy = browser.$(`aria/simple.py`);
+    await simplepy.click();
   });
 
   it("can select entrypoint", async () => {
-    const simplepy = browser.$(`aria/fastapi-simple${sep}simple.py`);
-    await expect(simplepy).toExist();
-    await simplepy.click();
-
     const titleMessage = browser.$("#quickInput_message");
     await expect(titleMessage).toHaveText(
       "Enter a title for your content or application. (Press 'Enter' to confirm or 'Escape' to cancel)",

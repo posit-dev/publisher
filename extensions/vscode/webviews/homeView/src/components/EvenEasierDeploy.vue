@@ -28,7 +28,7 @@
         />
       </div>
 
-      <p v-if="isConfigEntryMissing">
+      <p v-if="home.config.active.isEntryMissing">
         No Config Entry in Deployment record -
         {{ home.selectedContentRecord?.saveName }}.
         <a class="webview-link" role="button" @click="selectConfiguration">{{
@@ -36,14 +36,14 @@
         }}</a
         >.
       </p>
-      <p v-if="isConfigMissing">
+      <p v-if="home.config.active.isMissing">
         The last Configuration used for this Deployment was not found.
         <a class="webview-link" role="button" @click="selectConfiguration">{{
           promptForConfigSelection
         }}</a
         >.
       </p>
-      <p v-if="isConfigInError">
+      <p v-if="home.config.active.isError">
         The selected Configuration has an error.
         <a
           class="webview-link"
@@ -55,7 +55,7 @@
         >.
       </p>
 
-      <p v-if="isCredentialMissing">
+      <p v-if="home.config.active.isCredentialMissing">
         A Credential for the Deployment's server URL was not found.
         <a class="webview-link" role="button" @click="newCredential"
           >Create a new Credential</a
@@ -246,19 +246,6 @@ const onViewPublishingLog = () => {
   });
 };
 
-const isConfigInErrorList = (configName?: string): boolean => {
-  if (!configName) {
-    return false;
-  }
-  return Boolean(
-    home.configurationsInError.find(
-      (config) =>
-        config.configurationName ===
-        home.selectedContentRecord?.configurationName,
-    ),
-  );
-};
-
 const filteredConfigs = computed((): Configuration[] => {
   return filterConfigurationsToValidAndType(
     home.configurations,
@@ -283,28 +270,6 @@ const contextMenuVSCodeContext = computed((): string => {
     isPreContentRecord(home.selectedContentRecord)
     ? "homeview-active-contentRecord-more-menu"
     : "homeview-last-contentRecord-more-menu";
-});
-
-const isConfigEntryMissing = computed((): boolean => {
-  return Boolean(
-    home.selectedContentRecord && !home.selectedContentRecord.configurationName,
-  );
-});
-
-const isConfigMissing = computed((): boolean => {
-  return Boolean(
-    home.selectedContentRecord &&
-      !home.selectedConfiguration &&
-      !isConfigInErrorList(home.selectedContentRecord?.configurationName) &&
-      !isConfigEntryMissing.value,
-  );
-});
-
-const isConfigInError = computed((): boolean => {
-  return Boolean(
-    home.selectedConfiguration &&
-      isConfigurationError(home.selectedConfiguration),
-  );
 });
 
 const deploymentTitle = computed(() => {
@@ -348,17 +313,13 @@ const entrypointSubTitle = computed(() => {
       if (contentRecord.projectDir !== ".") {
         subTitle = `${contentRecord.projectDir}${home.platformFileSeparator}`;
       }
-      if (!isConfigInError.value) {
+      if (!home.config.active.isError) {
         subTitle += config.configuration.entrypoint;
       }
       return subTitle;
     }
   }
   return "ProjectDir and Entrypoint not determined";
-});
-
-const isCredentialMissing = computed((): boolean => {
-  return Boolean(home.selectedContentRecord && !home.serverCredential);
 });
 
 const selectConfiguration = () => {
