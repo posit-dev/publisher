@@ -11,11 +11,14 @@ type ErrorData map[string]any
 type Operation string
 
 const (
-	ErrorResourceNotFound   ErrorCode = "resourceNotFound"
-	ErrorInvalidTOML        ErrorCode = "invalidTOML"
-	ErrorUnknownTOMLKey     ErrorCode = "unknownTOMLKey"
-	ErrorInvalidConfigFiles ErrorCode = "invalidConfigFiles"
-	ErrorUnknown            ErrorCode = "unknown"
+	ErrorResourceNotFound            ErrorCode = "resourceNotFound"
+	ErrorInvalidTOML                 ErrorCode = "invalidTOML"
+	ErrorUnknownTOMLKey              ErrorCode = "unknownTOMLKey"
+	ErrorInvalidConfigFiles          ErrorCode = "invalidConfigFiles"
+	ErrorDeploymentTargetNotFound    ErrorCode = "deploymentTargetNotFound"
+	ErrorDeploymentTargetIsForbidden ErrorCode = "deploymentTargetIsForbidden"
+	ErrorDeploymentTargetUnreachable ErrorCode = "deploymentTargetUnreachable"
+	ErrorUnknown                     ErrorCode = "unknown"
 )
 
 type EventableError interface {

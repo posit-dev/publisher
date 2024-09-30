@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"maps"
+	"net/http"
 	"os"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/bundles"
 	"github.com/posit-dev/publisher/internal/clients/connect"
+	"github.com/posit-dev/publisher/internal/clients/http_client"
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/events"
@@ -201,11 +203,11 @@ func (p *defaultPublisher) PublishDirectory() error {
 func (p *defaultPublisher) writeDeploymentRecord() error {
 	if p.SaveName == "" {
 		// Redeployment
-		p.log.Debug("No SaveName found in deployment. Redeploying.", "deployment", p.TargetName)
+		p.log.Debug("No SaveName found while redeploying.", "deployment", p.TargetName)
 		p.SaveName = p.TargetName
 	} else {
 		// Initial deployment
-		p.log.Debug("SaveName found in deployment. First deployment.", "deployment", p.SaveName)
+		p.log.Debug("SaveName found in first deployment.", "deployment", p.SaveName)
 		p.TargetName = p.SaveName
 	}
 
@@ -265,6 +267,28 @@ func (p *defaultPublisher) createDeploymentRecord(
 	return p.writeDeploymentRecord()
 }
 
+// Does the target exist and the user has permissions to it?
+func (p *defaultPublisher) targetPreflightChecks(client connect.APIClient, contentID types.ContentID) error {
+	p.log.Debug("Running deployment preflight checks", "content_id", contentID)
+	content := &connect.ConnectContent{}
+	err := client.ContentDetails(contentID, content, p.log)
+	if err != nil {
+		if aerr, isForbidden := http_client.IsHTTPAgentErrorStatusOf(err, http.StatusForbidden); isForbidden {
+			p.log.Debug("Insufficient permissions. Content deployment cannot proceed", "content_id", contentID)
+			aerr.Code = types.ErrorDeploymentTargetIsForbidden
+			return aerr
+		}
+		if aerr, isNotFound := http_client.IsHTTPAgentErrorStatusOf(err, http.StatusNotFound); isNotFound {
+			p.log.Debug("Content cannot be found. Deployment cannot proceed", "content_id", contentID)
+			aerr.Code = types.ErrorDeploymentTargetNotFound
+			return aerr
+		}
+		p.log.Debug("Deployment target cannot be reached. Halting deployment", "content_id", contentID)
+		return types.NewAgentError(types.ErrorDeploymentTargetUnreachable, err, nil)
+	}
+	return nil
+}
+
 func (p *defaultPublisher) publishWithClient(
 	account *accounts.Account,
 	client connect.APIClient) error {
@@ -293,13 +317,15 @@ func (p *defaultPublisher) publishWithClient(
 	if p.isDeployed() {
 		contentID = p.Target.ID
 		p.log.Info("Updating deployment", "content_id", contentID)
+		err = p.targetPreflightChecks(client, contentID)
 	} else {
 		// Create a new deployment; we will update it with details later.
 		contentID, err = p.createDeployment(client)
-		if err != nil {
-			return err
-		}
 	}
+	if err != nil {
+		return err
+	}
+
 	err = p.createDeploymentRecord(contentID, account)
 	if err != nil {
 		return types.OperationError(events.PublishCreateNewDeploymentOp, err)

@@ -37,6 +37,11 @@ func (m *MockClient) TestAuthentication(log logging.Logger) (*User, error) {
 	}
 }
 
+func (m *MockClient) ContentDetails(id types.ContentID, s *ConnectContent, log logging.Logger) error {
+	args := m.Called(id, s, log)
+	return args.Error(0)
+}
+
 func (m *MockClient) CreateDeployment(s *ConnectContent, log logging.Logger) (types.ContentID, error) {
 	args := m.Called(s, log)
 	return args.Get(0).(types.ContentID), args.Error(1)
