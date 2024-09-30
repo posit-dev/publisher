@@ -10,6 +10,18 @@ export const DEPLOYMENTS_PATTERN = "**/.posit/publish/deployments/*.toml";
 export const DEFAULT_PYTHON_PACKAGE_FILE = "requirements.txt";
 export const DEFAULT_R_PACKAGE_FILE = "renv.lock";
 
+// pulled from /internal/services/api/get_entrypoints.go
+// should all be lowercase!
+export const ENTRYPOINT_FILE_EXTENSIONS = [
+  ".htm",
+  ".html",
+  ".ipynb",
+  ".py",
+  ".qmd",
+  ".r",
+  ".rmd",
+];
+
 const baseCommands = {
   InitProject: "posit.publisher.init-project",
   ShowOutputChannel: "posit.publisher.showOutputChannel",
