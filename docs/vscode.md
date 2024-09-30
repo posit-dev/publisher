@@ -16,7 +16,7 @@ The Home view shows information about the selected deployment destination.
 
 To create your first deployment, click the Add Deployment button.
 
-![](https://cdn.posit.co/publisher/assets/img/new-home-view.png)
+![](https://cdn.posit.co/publisher/assets/img/new-home-view-2.png)
 
 This will take you through the process of creating a new deployment,
 which includes a credential, configuration, and content record.
@@ -60,7 +60,7 @@ You are all set to Deploy!
 Click the `Deploy Your Project` button in the Home view to start the deployment
 process. :tada:
 
-![](https://cdn.posit.co/publisher/assets/img/deploy-your-project-3.png)
+![](https://cdn.posit.co/publisher/assets/img/deploy-your-project-4.png)
 
 During deployment, the extension will show a progress window with the status of the deployment.
 Once the deployment completes, the result will be displayed in the Home view.
@@ -86,7 +86,7 @@ or updating a production deployment that is shared with your users.
 
 Clicking the `Deployment` dropdown lets you choose which deployment to target.
 
-![](https://cdn.posit.co/publisher/assets/img/deploy-your-project-3.png)
+![](https://cdn.posit.co/publisher/assets/img/deploy-your-project-4.png)
 
 Then choose from the displayed list.
 
