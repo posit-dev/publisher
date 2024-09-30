@@ -140,6 +140,11 @@ files = [
 
 You can setup Secrets for your project in the Secrets view.
 
+Secrets are name-value pairs that you want to be available at runtime for
+content on the server. However, unlike environment variables, the value
+associated with a secret is considered “sensitive”, and should not be stored in
+the configuration file itself.
+
 Secret names are defined in the Configuration file using the `secrets` field.
 They can be added by clicking the `+` button in the Secrets view or by directly
 editing the configuration file.
