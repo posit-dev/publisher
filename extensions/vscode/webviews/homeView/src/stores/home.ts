@@ -16,6 +16,7 @@ import { WebviewToHostMessageType } from "../../../../src/types/messages/webview
 import { RPackage } from "../../../../src/api/types/packages";
 import { DeploymentSelector } from "../../../../src/types/shared";
 import { splitFilesOnInclusion } from "src/utils/files";
+import { filterConfigurationsToValidAndType } from "../../../../src/utils/filters";
 
 export const useHomeStore = defineStore("home", () => {
   const platformFileSeparator = ref<string>("/");
@@ -360,6 +361,13 @@ export const useHomeStore = defineStore("home", () => {
           config.active.isMissing.value ||
           config.active.isError.value ||
           config.active.isCredentialMissing.value
+        );
+      }),
+
+      matchingConfigs: computed((): Configuration[] => {
+        return filterConfigurationsToValidAndType(
+          configurations.value,
+          selectedContentRecord.value?.type,
         );
       }),
     },

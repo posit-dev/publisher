@@ -71,6 +71,7 @@ export type ErrInvalidTOMLFile = MkErrorDataType<
     filename: string;
     line: number;
     column: number;
+    problem: string;
   }
 >;
 export const isErrInvalidTOMLFile =

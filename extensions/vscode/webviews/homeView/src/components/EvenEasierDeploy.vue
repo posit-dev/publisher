@@ -28,32 +28,7 @@
         />
       </div>
 
-      <p v-if="home.config.active.isEntryMissing">
-        No Config Entry in Deployment record -
-        {{ home.selectedContentRecord?.saveName }}.
-        <a class="webview-link" role="button" @click="selectConfiguration">{{
-          promptForConfigSelection
-        }}</a
-        >.
-      </p>
-      <p v-if="home.config.active.isMissing">
-        The last Configuration used for this Deployment was not found.
-        <a class="webview-link" role="button" @click="selectConfiguration">{{
-          promptForConfigSelection
-        }}</a
-        >.
-      </p>
-      <p v-if="home.config.active.isError">
-        The selected Configuration has an error.
-        <a
-          class="webview-link"
-          role="button"
-          @click="
-            onEditConfiguration(home.selectedConfiguration!.configurationPath)
-          "
-          >Edit the Configuration</a
-        >.
-      </p>
+      <ConfigError style="margin-bottom: 0.5rem; padding-bottom: 6px" />
 
       <p v-if="home.config.active.isCredentialMissing">
         A Credential for the Deployment's server URL was not found.
@@ -196,6 +171,7 @@ import QuickPickItem from "src/components/QuickPickItem.vue";
 import ActionToolbar from "src/components/ActionToolbar.vue";
 import DeployButton from "src/components/DeployButton.vue";
 import TextStringWithAnchor from "./TextStringWithAnchor.vue";
+import ConfigError from "src/components/configErrors/ConfigErrors.vue";
 
 const home = useHomeStore();
 const hostConduit = useHostConduitService();
@@ -212,8 +188,7 @@ const toolbarActions = computed(() => {
     result.push({
       label: "Edit Configuration",
       codicon: "codicon-edit",
-      fn: () =>
-        onEditConfiguration(home.selectedConfiguration!.configurationPath),
+      fn: () => onEditActiveConfiguration(),
     });
   }
   return result;
@@ -231,11 +206,11 @@ const onAddDeployment = () => {
   });
 };
 
-const onEditConfiguration = (fullPath: string) => {
+const onEditActiveConfiguration = () => {
   hostConduit.sendMsg({
     kind: WebviewToHostMessageType.EDIT_CONFIGURATION,
     content: {
-      configurationPath: fullPath,
+      configurationPath: home.selectedConfiguration!.configurationPath,
     },
   });
 };
@@ -254,15 +229,9 @@ const filteredConfigs = computed((): Configuration[] => {
 });
 
 const contextMenuContext = computed((): string => {
-  return filteredConfigs.value.length > 0
+  return home.config.active.matchingConfigs.length > 0
     ? "even-easier-deploy-more-menu-matching-configs"
     : "even-easier-deploy-more-menu-no-matching-configs";
-});
-
-const promptForConfigSelection = computed((): string => {
-  return filteredConfigs.value.length > 0
-    ? "Select a Configuration"
-    : "Create a Configuration";
 });
 
 const contextMenuVSCodeContext = computed((): string => {
@@ -322,12 +291,6 @@ const entrypointSubTitle = computed(() => {
   return "ProjectDir and Entrypoint not determined";
 });
 
-const selectConfiguration = () => {
-  hostConduit.sendMsg({
-    kind: WebviewToHostMessageType.SHOW_SELECT_CONFIGURATION,
-  });
-};
-
 const lastStatusDescription = computed(() => {
   if (!home.selectedContentRecord) {
     return undefined;
@@ -386,7 +349,7 @@ const onErrorMessageAnchorClick = (splitOptionId: number) => {
     return;
   }
   if (option.actionId === ErrorMessageActionIds.EditConfiguration) {
-    onEditConfiguration(home.selectedConfiguration!.configurationPath);
+    onEditActiveConfiguration();
     return;
   }
 };
