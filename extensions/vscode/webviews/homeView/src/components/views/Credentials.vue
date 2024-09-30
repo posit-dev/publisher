@@ -3,8 +3,9 @@
     title="Credentials"
     data-automation="credentials"
     :actions="sectionActions"
+    :codicon="home.credential.active.isAlertActive ? `codicon-alert` : ``"
   >
-    <WelcomeView v-if="home.sortedCredentials.length === 0">
+    <WelcomeView v-if="!home.credential.isAvailable">
       <p>No credentials have been added yet.</p>
     </WelcomeView>
     <TreeItem
@@ -38,6 +39,7 @@ import { CredentialGUIs } from "../../../../../src/constants";
 import { WebviewToHostMessageType } from "../../../../../src/types/messages/webviewToHostMessages";
 
 const home = useHomeStore();
+
 const { sendMsg } = useHostConduitService();
 
 const sectionActions = computed(() => {
