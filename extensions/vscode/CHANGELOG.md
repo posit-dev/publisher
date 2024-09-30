@@ -6,6 +6,45 @@ file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.7]
+
+### Added
+
+- Secrets are now able to be pushed up during a deploy in the added Secrets
+  view. Secret names can be added to the Configuration, and values supplied
+  individually in the Secrets view. (#2260, #2304, #2305)
+- Newly made Deployments can now be associated with previously deployed content
+  to easily update content on a Connect server. (#2285)
+- Views that require action now show a warning icon when collapsed to assist in
+  discovery (#2245)
+- Credentials are now persisted on OSes without keychains by storing them in the
+  user's home directory under `.connect-credentials`. If using a previous
+  version of the extension with a `.connect-credentials` dotfile remove it when
+  upgrading. (#1831)
+- Files that have previously been deployed that are now deselected for the
+  next deployment show a red `R` icon in the Project Files view (#2299)
+
+### Changed
+
+- When creating a new deployment, open files are listed first with an option to
+  select any file, rather than showing all potential files initially (#2237)
+- The entrypoint file is now more prominent in the UI. It is visible in the
+  Deployment selection and options when selecting (#2248)
+- Changed the editor button tooltip wording for deployable files. It now reads
+  "Deploy with Posit Publisher" (#2209)
+- The Credentials and Help views are now shown even when no Deployment is
+  selected (#2309)
+- Changed the naming of generated deployment files to be more unique, similar to
+  configuration files. They now include a short unique hash to avoid collisions
+  in source control (#1818)
+
+### Fixed
+
+- If editing a configuration file makes the configuration file invalid there are
+  no longer refresh file errors (#2323)
+- Newly included files in subdirectories are now correctly decorated with a
+  green `A` on Windows (#2112)
+
 ## [1.1.6]
 
 ### Added
