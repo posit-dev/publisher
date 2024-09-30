@@ -123,6 +123,32 @@ files = [
 ]
 ```
 
+### Secrets
+
+You can setup Secrets for your project in the Secrets view.
+
+Secret names are defined in the Configuration file using the `secrets` field.
+They can be added by clicking the `+` button in the Secrets view or by directly
+editing the configuration file.
+
+```toml
+secrets = ['API_KEY', '_DB_PASSWORD']
+```
+
+The names indicate what Secrets are required for the deployment. When they are
+sent up to the Connect server they become Environment Variables.
+
+![](https://cdn.posit.co/publisher/assets/img/secrets-view.png)
+
+Secrets are sent to the Connect server only when a value is supplied to avoid
+overwriting any values already set.
+
+To set a Secret click the `Edit Value` button (the pencil icon) for the Secret
+you'd like to set and enter the value. The value is stored in the extension and
+is sent up during your next deploy.
+
+A badge indicates how many Secrets are set to send in your next deploy.
+
 ### Python Packages
 
 This view shows the contents of the requirements file in your
