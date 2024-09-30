@@ -338,7 +338,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
     if (isConfigurationError(activeConfig)) {
-      console.log(
+      console.error(
         "homeView::updateFileList: Skipping - error in active configuration.",
       );
       return;
