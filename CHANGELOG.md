@@ -25,8 +25,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- When creating a new deployment, open files are listed first with an option to
-  select any file, rather than showing all potential files initially (#2237)
+- When creating a new deployment, open entrypoint files are listed with an
+  option to use an open file dialog to select any file. This removes a recursive
+  search for all entrypoints present within the open workspace. (#2337)
 - The entrypoint file is now more prominent in the UI. It is visible in the
   Deployment selection and options when selecting (#2248)
 - Changed the editor button tooltip wording for deployable files. It now reads
