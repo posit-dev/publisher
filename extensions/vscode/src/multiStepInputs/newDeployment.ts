@@ -447,60 +447,6 @@ export async function newDeployment(
     }
   }
 
-  // // ***************************************************************
-  // // Step: Input the Content Type, if inspection returns UNKNOWN content type
-  // // ***************************************************************
-  // async function inputContentType(
-  //   input: MultiStepInput,
-  //   state: MultiStepState,
-  // ) {
-  //   if (!newDeploymentData.entrypoint.inspectionResult) {
-  //     return;
-  //   }
-  //   if (
-  //     newDeploymentData.entrypoint.inspectionResult.configuration.type ===
-  //     ContentType.UNKNOWN
-  //   ) {
-  //     // have to prompt user for a content type, since we were unable to determine it.
-  //     const quickPicks: QuickPickItemWithIndex[] = [];
-  //     allValidContentTypes.forEach((contentType, index) => {
-  //       quickPicks.push({
-  //         label: contentType,
-  //         description: contentTypeStrings[contentType],
-  //         picked: newDeploymentData.entrypoint.contentType === contentType,
-  //         index,
-  //       });
-  //     });
-
-  //     const pick = await input.showQuickPick({
-  //       title: state.title,
-  //       step: 0,
-  //       totalSteps: 0,
-  //       placeholder: `Select the content type for your entrypoint file (${newDeploymentData.entrypoint.filePath}).`,
-  //       items: quickPicks,
-  //       buttons: [],
-  //       shouldResume: () => Promise.resolve(false),
-  //       ignoreFocusOut: true,
-  //     });
-
-  //     if (!pick) {
-  //       return;
-  //     }
-  //     if (!isQuickPickItemWithIndex(pick)) {
-  //       return;
-  //     }
-  //     newDeploymentData.entrypoint.contentType =
-  //       allValidContentTypes[pick.index];
-
-  //     return (input: MultiStepInput) => inputTitle(input, state);
-  //   } else {
-  //     newDeploymentData.entrypoint.contentType =
-  //       newDeploymentData.entrypoint.inspectionResult.configuration.type;
-  //     // We're skipping this step, so we must silently just jump to the next step
-  //     return inputTitle(input, state);
-  //   }
-  // }
-
   // ***************************************************************
   // Step: Input the Title
   // ***************************************************************
