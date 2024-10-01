@@ -1,7 +1,12 @@
 <template>
   <vscode-button
     :data-automation="`deploy-button`"
-    :disabled="!haveResources || isConfigInError || home.publishInProgress"
+    :disabled="
+      !haveResources ||
+      isConfigInError ||
+      home.publishInProgress ||
+      home.duplicatedEnvironmentVariables.length
+    "
     @click="deploy"
   >
     Deploy Your Project
