@@ -28,6 +28,28 @@
         />
       </div>
 
+      <template v-if="home.duplicatedEnvironmentVariables.length">
+        <p>
+          <template v-if="home.duplicatedEnvironmentVariables.length === 1">
+            A duplicate name was
+          </template>
+          <template v-if="home.duplicatedEnvironmentVariables.length > 1">
+            Duplicate names were
+          </template>
+          found in Secrets and Environment.
+          <a
+            class="webview-link"
+            role="button"
+            @click="
+              onEditConfiguration(home.selectedConfiguration!.configurationPath)
+            "
+            >Edit the Configuration</a
+          >.
+        </p>
+        <p>{{ home.duplicatedEnvironmentVariables.join(", ") }}</p>
+        <p></p>
+      </template>
+
       <p v-if="home.config.active.isEntryMissing">
         No Config Entry in Deployment record -
         {{ home.selectedContentRecord?.saveName }}.
