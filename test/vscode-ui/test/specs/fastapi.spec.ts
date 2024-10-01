@@ -46,12 +46,18 @@ describe("VS Code Extension UI Test", () => {
     await expect(createMessage).toHaveText("Create a New Deployment");
     await createMessage.click();
 
-    // confirm title is ready and set title
-    const titleMessage = await browser.$("#quickInput_message");
-    await titleMessage.waitForExist({ timeout: 5000 });
+    const openFile = await browser.$(".label-name");
+    await expect(createMessage).toHaveText("Open...");
+    await openFile.click();
+
+    const simplepy = browser.$(`aria/simple.py`);
+    await simplepy.click();
+
+    const titleMessage = browser.$("#quickInput_message");
     await expect(titleMessage).toHaveText(
       "Enter a title for your content or application. (Press 'Enter' to confirm or 'Escape' to cancel)",
     );
+
     await input.setValue("my fastapi app");
     await browser.keys("\uE007");
     // set server url

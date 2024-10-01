@@ -41,7 +41,8 @@ func (s *AccountListSuite) SetupSuite() {
 func (s *AccountListSuite) TestNewAccountList() {
 	log := logging.New()
 	fs := utiltest.NewMockFs()
-	accountList := NewAccountList(fs, log)
+	accountList, err := NewAccountList(fs, log)
+	s.NoError(err)
 	s.Len(accountList.providers, 1)
 	s.Equal(log, accountList.log)
 }

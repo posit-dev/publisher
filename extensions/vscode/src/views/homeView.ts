@@ -200,6 +200,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         return await this.debounceRefreshPythonPackages();
       case WebviewToHostMessageType.REFRESH_R_PACKAGES:
         return await this.debounceRefreshRPackages();
+      case WebviewToHostMessageType.ADD_SECRET:
+        return await this.addSecret();
       case WebviewToHostMessageType.VSCODE_OPEN_RELATIVE:
         return await this.onRelativeOpenVSCode(msg);
       case WebviewToHostMessageType.SCAN_PYTHON_PACKAGE_REQUIREMENTS:
@@ -333,6 +335,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const activeConfig = await this.state.getSelectedConfiguration();
     if (activeConfig === undefined) {
       console.error("homeView::updateFileList: No active configuration.");
+      return;
+    }
+    if (isConfigurationError(activeConfig)) {
+      console.error(
+        "homeView::updateFileList: Skipping - error in active configuration.",
+      );
       return;
     }
     try {
@@ -936,6 +944,86 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
   }
 
+  private inputSecretName = async () => {
+    return await window.showInputBox({
+      title: "Add a Secret",
+      prompt: "Enter the name of the secret.",
+      ignoreFocusOut: true,
+      validateInput: (value: string) => {
+        if (value.length === 0) {
+          return "Secret names cannot be empty.";
+        }
+        return;
+      },
+    });
+  };
+
+  public addSecret = async () => {
+    const activeConfig = await this.state.getSelectedConfiguration();
+    if (activeConfig === undefined) {
+      console.error("homeView::addSecret: No active configuration.");
+      return;
+    }
+    if (isConfigurationError(activeConfig)) {
+      console.error(
+        "homeView::addSecret: Unable to add secret into a configuration with error.",
+      );
+      return;
+    }
+
+    const name = await this.inputSecretName();
+    if (name === undefined) {
+      // Cancelled by the user
+      return;
+    }
+
+    try {
+      await showProgress("Adding Secret", Views.HomeView, async () => {
+        const api = await useApi();
+        await api.secrets.add(
+          activeConfig.configurationName,
+          name,
+          activeConfig.projectDir,
+        );
+      });
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError("addSecret", error);
+      window.showInformationMessage(
+        `Failed to add secret to configuration. ${summary}`,
+      );
+    }
+  };
+
+  public removeSecret = async (context: { name: string }) => {
+    const activeConfig = await this.state.getSelectedConfiguration();
+    if (activeConfig === undefined) {
+      console.error("homeView::removeSecret: No active configuration.");
+      return;
+    }
+    if (isConfigurationError(activeConfig)) {
+      console.error(
+        "homeView::removeSecret: Unable to remove secret from a configuration with error.",
+      );
+      return;
+    }
+
+    try {
+      await showProgress("Removing Secret", Views.HomeView, async () => {
+        const api = await useApi();
+        await api.secrets.remove(
+          activeConfig.configurationName,
+          context.name,
+          activeConfig.projectDir,
+        );
+      });
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError("removeSecret", error);
+      window.showInformationMessage(
+        `Failed to remove secret from configuration. ${summary}`,
+      );
+    }
+  };
+
   private async showNewCredential() {
     return await commands.executeCommand(Commands.HomeView.AddCredential);
   }
@@ -999,6 +1087,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   private async showDeploymentQuickPick(
     contentRecordsSubset?: AllContentRecordTypes[],
     projectDir?: string,
+    entrypointFile?: string,
   ): Promise<PublishProcessParams | undefined> {
     try {
       // disable our home view, we are initiating a multi-step sequence
@@ -1173,7 +1262,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
       // If user selected create new, then switch over to that flow
       if (deployment?.label === createNewDeploymentLabel) {
-        return this.showNewDeploymentMultiStep(Views.HomeView);
+        return this.showNewDeploymentMultiStep(
+          Views.HomeView,
+          projectDir,
+          entrypointFile,
+        );
       }
 
       let deploymentSelector: DeploymentSelector | undefined;
@@ -1386,7 +1479,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
   public sendRefreshedFilesLists = async () => {
     const activeConfig = await this.state.getSelectedConfiguration();
-    if (activeConfig) {
+    if (activeConfig && !isConfigurationError(activeConfig)) {
       try {
         const response = await showProgress(
           "Refreshing Files",
@@ -1587,6 +1680,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       const selected = await this.showDeploymentQuickPick(
         compatibleContentRecords,
         entrypointDir,
+        entrypointFile,
       );
       return selected;
     }
@@ -1787,6 +1881,13 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           Uri.parse("https://github.com/posit-dev/publisher/discussions"),
         );
       }),
+    );
+
+    this.context.subscriptions.push(
+      commands.registerCommand(
+        Commands.HomeView.RemoveSecret,
+        this.removeSecret,
+      ),
     );
 
     this.context.subscriptions.push(
