@@ -964,7 +964,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           return "Secret names cannot be empty.";
         }
         if (existingKeys.has(value)) {
-          return "There is already an environment variable with this name. Secrets and environment variable cannot share a name.";
+          return "There is already an environment variable with this name. Secrets and environment variable names must be unique.";
         }
         return;
       },

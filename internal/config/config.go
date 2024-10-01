@@ -3,6 +3,7 @@ package config
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -114,6 +115,13 @@ func (cfg *Config) AddSecret(secret string) error {
 			return nil // Secret already exists, no need to add
 		}
 	}
+	// Check if the secret name already exists in the environment
+	for e := range cfg.Environment {
+		if e == secret {
+			return errors.New("secret name already exists in environment")
+		}
+	}
+
 	cfg.Secrets = append(cfg.Secrets, secret)
 	return nil
 }
