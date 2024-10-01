@@ -16,7 +16,7 @@ The Home view shows information about the selected deployment destination.
 
 To create your first deployment, click the Add Deployment button.
 
-![](https://cdn.posit.co/publisher/assets/img/new-home-view.png)
+![](https://cdn.posit.co/publisher/assets/img/new-home-view-2.png)
 
 This will take you through the process of creating a new deployment,
 which includes a credential, configuration, and content record.
@@ -60,7 +60,7 @@ You are all set to Deploy!
 Click the `Deploy Your Project` button in the Home view to start the deployment
 process. :tada:
 
-![](https://cdn.posit.co/publisher/assets/img/deploy-your-project-3.png)
+![](https://cdn.posit.co/publisher/assets/img/deploy-your-project-4.png)
 
 During deployment, the extension will show a progress window with the status of the deployment.
 Once the deployment completes, the result will be displayed in the Home view.
@@ -86,11 +86,24 @@ or updating a production deployment that is shared with your users.
 
 Clicking the `Deployment` dropdown lets you choose which deployment to target.
 
-![](https://cdn.posit.co/publisher/assets/img/deploy-your-project-3.png)
+![](https://cdn.posit.co/publisher/assets/img/deploy-your-project-4.png)
 
 Then choose from the displayed list.
 
 ![](https://cdn.posit.co/publisher/assets/img/select-deployment-2.png)
+
+### Updating Previously Deployed Content
+
+If you have previously deployed content on Connect that you want to update, but
+you don't already have a Deployment and Configuration file setup, you can
+use a prompt in the Home View to allow for this.
+
+![](https://cdn.posit.co/publisher/assets/img/update-previous-deployment.png)
+
+After creating a new deployment in the extension pressing "update that previous
+deployment" will prompt you with the content URL. Once provided your new
+deployment will be setup to update that content URL, rather than creating a new
+deployment entirely.
 
 ### Project Files
 
@@ -122,6 +135,37 @@ files = [
   "data.csv"
 ]
 ```
+
+### Secrets
+
+You can setup Secrets for your project in the Secrets view.
+
+Secrets are name-value pairs that you want to be available at runtime for
+content on the server. However, unlike environment variables, the value
+associated with a secret is considered “sensitive”, and should not be stored in
+the configuration file itself.
+
+Secret names are defined in the Configuration file using the `secrets` field.
+They can be added by clicking the `+` button in the Secrets view or by directly
+editing the configuration file.
+
+```toml
+secrets = ['API_KEY', '_DB_PASSWORD']
+```
+
+The names indicate what Secrets are required for the deployment. When they are
+sent up to the Connect server they become Environment Variables.
+
+![](https://cdn.posit.co/publisher/assets/img/secrets-view.png)
+
+Secrets are sent to the Connect server only when a value is supplied to avoid
+overwriting any values already set.
+
+To set a Secret click the `Edit Value` button (the pencil icon) for the Secret
+you'd like to set and enter the value. The value is stored in the extension and
+is sent up during your next deploy.
+
+A badge indicates how many Secrets are set to send in your next deploy.
 
 ### Python Packages
 
@@ -167,19 +211,8 @@ For instructions on how to create a Connect API key, see the
 
 #### via dotfile
 
-A Credential can also be set by creating a `.connect-credentials` file in
-your home directory using the following format:
-
-```toml
-# ~/.connect-credentials.toml
-
-url = 'https://your.connect.server'
-key = 'r0TCAS9mCmTICwd2E97uM3KnUDlGWZ3D'
-```
-
-The `url` is the URL of your Posit Connect Server.
-
-The `key` is the API key for the user you would like to publish as.
+If your OS does not have a keychain the extension will manage your credentials
+in a file in your home directory - `.connect-credentials`.
 
 ### Help and Feedback
 

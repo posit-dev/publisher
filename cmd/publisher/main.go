@@ -61,9 +61,14 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 	ctx.Logger = events.NewCLILogger(cli.Verbose, os.Stderr)
-	ctx.Accounts = accounts.NewAccountList(ctx.Fs, ctx.Logger)
+	accounts, err := accounts.NewAccountList(ctx.Fs, ctx.Logger)
+	if err != nil {
+		Fatal(err)
+	}
+	ctx.Accounts = accounts
+
 	logVersion(ctx.Logger)
-	err := args.Run(&cli.CommonArgs)
+	err = args.Run(&cli.CommonArgs)
 	if err != nil {
 		Fatal(err)
 	}

@@ -11,10 +11,13 @@ type CredentialsProvider struct {
 	cs credentials.CredentialsService
 }
 
-func NewCredentialsProvider(log logging.Logger) *CredentialsProvider {
-	return &CredentialsProvider{
-		cs: credentials.NewCredentialsService(log),
+func NewCredentialsProvider(log logging.Logger) (*CredentialsProvider, error) {
+	cs, err := credentials.NewCredentialsService(log)
+	if err != nil {
+		return nil, err
 	}
+
+	return &CredentialsProvider{cs}, nil
 }
 
 func (p *CredentialsProvider) Load() ([]Account, error) {

@@ -10,6 +10,7 @@ import (
 	"github.com/posit-dev/publisher/internal/logging/loggingtest"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
@@ -70,6 +71,26 @@ func (s *FileCredentialsServiceSuite) SetupTest() {
 	s.loggerMock = loggingtest.NewMockLogger()
 	s.fileSetupDeleteTest()
 	s.fileSetupNewCredsTest()
+}
+
+func (s *FileCredentialsServiceSuite) TestNewFileCredentialsService() {
+	// Use an in memory filesystem for this test
+	// avoiding to manipulate users ~/.connect-credentials
+	fsys = afero.NewMemMapFs()
+	defer func() { fsys = afero.NewOsFs() }()
+
+	fcs, err := NewFileCredentialsService(s.loggerMock)
+	s.NoError(err)
+	s.Implements((*CredentialsService)(nil), fcs)
+
+	expectedCredsPath, err := util.UserHomeDir(fsys)
+	s.NoError(err)
+
+	expectedCredsPath = expectedCredsPath.Join(".connect-credentials")
+	s.Equal(fcs, &fileCredentialsService{
+		log:           s.loggerMock,
+		credsFilepath: expectedCredsPath,
+	})
 }
 
 func (s *FileCredentialsServiceSuite) TestSetupService() {
@@ -138,6 +159,20 @@ func (s *FileCredentialsServiceSuite) TestLoadFile() {
 				ApiKey:  "abcdeC2aqbh7dg8TO43XPu7r56YDh004",
 			},
 		},
+	})
+}
+
+func (s *FileCredentialsServiceSuite) TestLoad_EmptyFile() {
+	cs := &fileCredentialsService{
+		log:           s.loggerMock,
+		credsFilepath: s.testdata.Join("emptycreds.toml"),
+	}
+
+	creds, err := cs.load()
+	s.NoError(err)
+
+	s.Equal(creds, fileCredentials{
+		Credentials: map[string]fileCredential{},
 	})
 }
 
@@ -217,6 +252,18 @@ func (s *FileCredentialsServiceSuite) TestList() {
 		URL:    "https://c4.connect-server:3939/connect",
 		ApiKey: "abcdeC2aqbh7dg8TO43XPu7r56YDh004",
 	})
+}
+
+func (s *FileCredentialsServiceSuite) TestList_Empty() {
+	cs := &fileCredentialsService{
+		log:           s.loggerMock,
+		credsFilepath: s.testdata.Join("emptycreds.toml"),
+	}
+
+	creds, err := cs.List()
+	s.NoError(err)
+
+	s.Equal(creds, []Credential{})
 }
 
 func (s *FileCredentialsServiceSuite) TestList_CannotLoadErr() {

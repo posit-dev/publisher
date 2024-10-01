@@ -11,11 +11,12 @@ type ErrorData map[string]any
 type Operation string
 
 const (
-	ErrorResourceNotFound   ErrorCode = "resourceNotFound"
-	ErrorInvalidTOML        ErrorCode = "invalidTOML"
-	ErrorUnknownTOMLKey     ErrorCode = "unknownTOMLKey"
-	ErrorInvalidConfigFiles ErrorCode = "invalidConfigFiles"
-	ErrorUnknown            ErrorCode = "unknown"
+	ErrorResourceNotFound             ErrorCode = "resourceNotFound"
+	ErrorInvalidTOML                  ErrorCode = "invalidTOML"
+	ErrorUnknownTOMLKey               ErrorCode = "unknownTOMLKey"
+	ErrorInvalidConfigFiles           ErrorCode = "invalidConfigFiles"
+	ErrorCredentialServiceUnavailable ErrorCode = "credentialsServiceUnavailable"
+	ErrorUnknown                      ErrorCode = "unknown"
 )
 
 type EventableError interface {

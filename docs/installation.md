@@ -11,11 +11,11 @@ Install.
 
 Download and install the VS Code extension.
 
-- For Arm MacOS: [publisher-1.1.6-darwin-arm64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.1.6/publisher-1.1.6-darwin-arm64.vsix)
-- For Intel MacOS: [publisher-1.1.6-darwin-amd64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.1.6/publisher-1.1.6-darwin-amd64.vsix)
-- For Windows: [publisher-1.1.6-windows-amd64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.1.6/publisher-1.1.6-windows-amd64.vsix)
-- For Arm Linux: [publisher-1.1.6-linux-arm64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.1.6/publisher-1.1.6-linux-arm64.vsix)
-- For Intel Linux: [publisher-1.1.6-linux-amd64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.1.6/publisher-1.1.6-linux-amd64.vsix)
+- For Arm MacOS: [publisher-1.1.7-darwin-arm64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.1.7/publisher-1.1.7-darwin-arm64.vsix)
+- For Intel MacOS: [publisher-1.1.7-darwin-amd64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.1.7/publisher-1.1.7-darwin-amd64.vsix)
+- For Windows: [publisher-1.1.7-windows-amd64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.1.7/publisher-1.1.7-windows-amd64.vsix)
+- For Arm Linux: [publisher-1.1.7-linux-arm64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.1.7/publisher-1.1.7-linux-arm64.vsix)
+- For Intel Linux: [publisher-1.1.7-linux-amd64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.1.7/publisher-1.1.7-linux-amd64.vsix)
 
 To learn how to install a `.vsix` file, see the [Install from a
 VSIX](https://code.visualstudio.com/docs/editor/extension-marketplace#_install-from-a-vsix)
@@ -57,6 +57,15 @@ Or install a specific version with:
 ```bash
 ./install-publisher.bash 1.0.beta1
 ```
+
+> [!WARNING]
+> Linux users need to have `inotify-tools` installed for the VSCode filewatcher to work properly.
+> This impacts how the extension presents file-specific data.
+> To install `inotify` on Debian, use the following command:<br />
+>
+> ```
+> apt install inotify-tools
+> ```
 
 ## Optional: Install Quarto
 
