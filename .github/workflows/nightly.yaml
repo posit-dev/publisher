@@ -18,6 +18,8 @@ jobs:
     uses: ./.github/workflows/agent.yaml
   build:
     uses: ./.github/workflows/build.yaml
+  package:
+    uses: ./.github/workflows/package.yaml
   contract-deps:
     secrets: inherit
     uses: ./.github/workflows/contract-deps.yaml
