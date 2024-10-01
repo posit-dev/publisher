@@ -14,12 +14,11 @@ fi
 setup_connect() {
     pip install -r ../setup/requirements.txt
     if [[ "${DOCKER_CONNECT}" = true ]]; then
-        docker compose -f ../docker-compose.yml build
         docker compose -f ../docker-compose.yml up -d
         export CONNECT_SERVER="http://localhost:3939"
         export CONNECT_API_KEY="$(python ../setup/gen_apikey.py 'admin')"
         # wait until Connect is available
-        timeout 100 bash -c \
+        timeout 10 bash -c \
         'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' ${CONNECT_SERVER}/__ping__)" != "200" ]]; \
             do sleep 1; \
             echo "retry"; \
