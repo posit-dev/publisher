@@ -14,12 +14,16 @@ jobs:
   # Build
   build:
     uses: ./.github/workflows/build.yaml
+  package:
+    needs: build
+    uses: ./.github/workflows/package.yaml
   archive:
     needs: build
     uses: ./.github/workflows/archive.yaml
   upload:
     needs:
       - archive
+      - package
     uses: ./.github/workflows/upload.yaml
     secrets: inherit
 
@@ -28,8 +32,3 @@ jobs:
     needs: build
     secrets: inherit
     uses: ./.github/workflows/bats.yaml
-
-  vscode-ui:
-    needs: build
-    secrets: inherit
-    uses: ./.github/workflows/vscode-ui.yaml
