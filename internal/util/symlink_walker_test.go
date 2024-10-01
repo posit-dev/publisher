@@ -127,7 +127,7 @@ func (s *SymlinkWalkerSuite) TestNewBundleFromDirectoryMissingSymlinkTarget() {
 	log := loggingtest.NewMockLogger()
 
 	symlinkPathMatcher := mock.MatchedBy(func(path AbsolutePath) bool {
-		return strings.Contains(path.String(), "/symlink_test/link_target_missing/badlink")
+		return strings.Contains(path.String(), "badlink")
 	})
 
 	log.On("Info", "Following symlink", "path", symlinkPathMatcher).Return()
