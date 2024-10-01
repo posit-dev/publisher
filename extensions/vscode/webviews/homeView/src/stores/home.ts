@@ -31,6 +31,33 @@ export const useHomeStore = defineStore("home", () => {
 
   const secrets = ref(new Map<string, string | undefined>());
 
+  const environment = computed((): Map<string, string> => {
+    const result = new Map<string, string>();
+    const config = selectedConfiguration.value;
+
+    if (config === undefined || isConfigurationError(config)) {
+      return result;
+    }
+
+    Object.entries(config.configuration.environment || {}).forEach(
+      ([name, value]) => {
+        result.set(name, value);
+      },
+    );
+
+    return result;
+  });
+
+  const duplicatedEnvironmentVariables = computed((): string[] => {
+    const result: string[] = [];
+    secrets.value.forEach((_, name) => {
+      if (environment.value.has(name)) {
+        result.push(name);
+      }
+    });
+    return result;
+  });
+
   const showDisabledOverlay = ref(false);
 
   const selectedContentRecord = ref<ContentRecord | PreContentRecord>();
@@ -375,6 +402,8 @@ export const useHomeStore = defineStore("home", () => {
     credentials,
     sortedCredentials,
     secrets,
+    environment,
+    duplicatedEnvironmentVariables,
     selectedContentRecord,
     selectedConfiguration,
     serverCredential,
