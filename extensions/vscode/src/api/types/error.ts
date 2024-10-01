@@ -27,5 +27,7 @@ export const isInvalidTOMLFileCode = (
   if (!agentError) {
     return false;
   }
-  return agentError.code === "invalidTOML";
+  return (
+    agentError.code === "invalidTOML" || agentError.code === "unknownTOMLKey"
+  );
 };

@@ -3,9 +3,14 @@
 <template>
   <div v-if="error" class="error-block">
     Configuration Error!
-    <ul class="bullets">
+    <ul v-if="isDataAvailable" class="bullets">
       <li v-for="key in Object.keys(error.data)">
         {{ key }}: {{ error.data[key] }}
+      </li>
+    </ul>
+    <ul v-else class="bullets">
+      <li>
+        {{ error.msg }}
       </li>
     </ul>
     <a
@@ -17,13 +22,18 @@
   </div>
 </template>
 <script setup lang="ts">
+import { computed } from "vue";
 import { AgentError } from "../../../../../src/api/types/error";
 
 const emit = defineEmits(["edit-active-configuration"]);
 
-defineProps<{
+const props = defineProps<{
   error: AgentError | undefined;
 }>();
+
+const isDataAvailable = computed(() => {
+  return props.error && Object.keys(props.error.data).length > 0;
+});
 </script>
 
 <style lang="scss" scoped>
