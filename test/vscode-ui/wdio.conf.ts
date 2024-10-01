@@ -6,6 +6,8 @@ import * as path from "path";
 import * as helper from "./test/helpers.ts";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+const date = Date.now();
+const dateString = date.toString().replace(/:/g, "-");
 
 export const config: Options.Testrunner = {
   //
@@ -162,7 +164,19 @@ export const config: Options.Testrunner = {
   // Test reporter for stdout.
   // The only one supported by default is 'dot'
   // see also: https://webdriver.io/docs/dot-reporter
-  reporters: ["spec"],
+  reporters: [
+    "dot",
+    [
+      "junit",
+      {
+        outputDir: "./",
+        outputFileFormat: function (options) {
+          // optional
+          return `results/results-${dateString}.xml`;
+        },
+      },
+    ],
+  ],
 
   // Options to be passed to Mocha.
   // See the full list at http://mochajs.org/
@@ -363,8 +377,8 @@ export const config: Options.Testrunner = {
   // }
   afterTest: function (test: any, { passed }: any) {
     if (!passed) {
-      const date = Date.now();
-      const dateString = date.toString().replace(/:/g, "-");
+      // const date = Date.now();
+      // const dateString = date.toString().replace(/:/g, "-");
 
       browser.saveScreenshot(`./errorShots/${dateString}.png`);
     }
