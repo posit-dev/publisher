@@ -4,7 +4,12 @@
   <main>
     <OverlayableView :activateOverlay="home.showDisabledOverlay">
       <EvenEasierDeploy class="easy-deploy-container" />
-      <template v-if="home.selectedConfiguration">
+      <template
+        v-if="
+          home.selectedConfiguration &&
+          !isConfigurationError(home.selectedConfiguration)
+        "
+      >
         <ProjectFiles v-model:expanded="projectFilesExpanded" />
         <Secrets />
         <PythonPackages />
@@ -30,6 +35,7 @@ import HelpAndFeedback from "src/components/views/HelpAndFeedback.vue";
 
 import { useHostConduitService } from "src/HostConduitService";
 import { useHomeStore } from "./stores/home";
+import { isConfigurationError } from "../../../src/api";
 
 useHostConduitService();
 

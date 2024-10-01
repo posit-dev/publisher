@@ -232,6 +232,139 @@ export const useHomeStore = defineStore("home", () => {
       .length;
   });
 
+  const python = {
+    active: {
+      isEmptyRequirements: computed(() => {
+        return (
+          pythonProject.value &&
+          pythonPackageFile.value &&
+          pythonPackages.value &&
+          pythonPackages.value.length === 0
+        );
+      }),
+      isMissingRequirements: computed(() => {
+        return pythonProject.value && !pythonPackageFile.value;
+      }),
+      isAlertActive: computed((): Boolean => {
+        return (
+          python.active.isEmptyRequirements.value ||
+          python.active.isMissingRequirements.value
+        );
+      }),
+      isInProject: computed(() => {
+        return pythonProject;
+      }),
+    },
+  };
+
+  const r = {
+    active: {
+      isMissingPackageFile: computed(() => {
+        return rProject.value && !rPackageFile.value;
+      }),
+
+      isEmptyRequirements: computed(() => {
+        return Boolean(
+          rProject.value &&
+            rPackageFile.value &&
+            rPackages.value &&
+            rPackages.value.length === 0,
+        );
+      }),
+
+      isAlertActive: computed((): boolean => {
+        return (
+          r.active.isMissingPackageFile.value ||
+          r.active.isEmptyRequirements.value
+        );
+      }),
+
+      isInProject: computed(() => {
+        return rProject.value;
+      }),
+    },
+  };
+
+  const credential = {
+    isAvailable: computed(() => {
+      return Boolean(sortedCredentials.value.length);
+    }),
+
+    active: {
+      isMissing: computed(() => {
+        return config.active.isCredentialMissing.value;
+      }),
+
+      isAlertActive: computed((): boolean => {
+        return credential.active.isMissing.value;
+      }),
+    },
+  };
+
+  const anyActiveAlerts = computed(() => {
+    return (
+      !config.active.isAlertActive.value &&
+      (credential.active.isAlertActive.value ||
+        r.active.isAlertActive.value ||
+        python.active.isAlertActive.value)
+    );
+  });
+
+  const config = {
+    active: {
+      isEntryMissing: computed(() => {
+        return Boolean(
+          selectedContentRecord.value &&
+            !selectedContentRecord.value.configurationName,
+        );
+      }),
+
+      isMissing: computed((): boolean => {
+        return Boolean(
+          selectedContentRecord.value &&
+            !selectedConfiguration.value &&
+            !config.active.isInErrorList(
+              selectedContentRecord.value?.configurationName,
+            ) &&
+            !config.active.isEntryMissing.value,
+        );
+      }),
+
+      isError: computed((): boolean => {
+        return Boolean(
+          selectedConfiguration.value &&
+            isConfigurationError(selectedConfiguration.value),
+        );
+      }),
+
+      isInErrorList: (configName?: string): boolean => {
+        if (!configName) {
+          return false;
+        }
+        return Boolean(
+          configurationsInError.value.find(
+            (config) =>
+              config.configurationName ===
+              selectedContentRecord.value?.configurationName,
+          ),
+        );
+      },
+
+      isCredentialMissing: computed((): boolean => {
+        return Boolean(selectedContentRecord.value && !serverCredential.value);
+      }),
+
+      isAlertActive: computed((): boolean => {
+        return (
+          config.active.isEntryMissing.value ||
+          config.active.isMissing.value ||
+          config.active.isError.value ||
+          config.active.isCredentialMissing.value
+        );
+      }),
+    },
+  };
+
   return {
     platformFileSeparator,
     showDisabledOverlay,
@@ -257,6 +390,7 @@ export const useHomeStore = defineStore("home", () => {
     rProject,
     rPackages,
     rPackageFile,
+    anyActiveAlerts,
     updateSelectedContentRecordBySelector,
     updateSelectedContentRecordByObject,
     updateParentViewSelectionState,
@@ -264,5 +398,9 @@ export const useHomeStore = defineStore("home", () => {
     updateRPackages,
     clearSecretValues,
     secretsWithValueCount,
+    python,
+    r,
+    config,
+    credential,
   };
 });

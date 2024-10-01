@@ -1,5 +1,6 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
+import { ConfigurationInspectionResult } from "src/api";
 import {
   QuickPickItem,
   window,
@@ -21,6 +22,9 @@ export function isQuickPickItem(d: QuickPickItem | string): d is QuickPickItem {
 }
 
 export type QuickPickItemWithIndex = QuickPickItem & { index: number };
+export type QuickPickItemWithInspectionResult = QuickPickItem & {
+  inspectionResult?: ConfigurationInspectionResult;
+};
 
 export function isQuickPickItemWithIndex(
   d: QuickPickItem | string,
@@ -28,12 +32,23 @@ export function isQuickPickItemWithIndex(
   return (d as QuickPickItemWithIndex).index !== undefined;
 }
 
+export function isQuickPickItemWithInspectionResult(
+  d: QuickPickItem | string,
+): d is QuickPickItemWithInspectionResult {
+  return (
+    (d as QuickPickItemWithInspectionResult).inspectionResult !== undefined
+  );
+}
+
 export interface MultiStepState {
   title: string;
   step: number;
   lastStep: number;
   totalSteps: number;
-  data: Record<string, QuickPickItem | string | undefined>;
+  data: Record<
+    string,
+    QuickPickItem | QuickPickItemWithInspectionResult | string | undefined
+  >;
   promptStepNumbers: Record<string, number>;
 }
 
