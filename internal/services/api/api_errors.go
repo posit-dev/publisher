@@ -65,3 +65,17 @@ func APIErrorInvalidTOMLFileFromAgentError(aerr types.AgentError) APIErrorInvali
 func (apierr *APIErrorInvalidTOMLFileDetails) JSONResponse(w http.ResponseWriter) {
 	JsonResult(w, http.StatusBadRequest, apierr)
 }
+
+type APIErrorCredentialServiceUnavailable struct {
+	Code types.ErrorCode `json:"code"`
+}
+
+func APIErrorCredentialsUnavailableFromAgentError(aerr types.AgentError) APIErrorCredentialServiceUnavailable {
+	return APIErrorCredentialServiceUnavailable{
+		Code: types.ErrorCredentialServiceUnavailable,
+	}
+}
+
+func (apierr *APIErrorCredentialServiceUnavailable) JSONResponse(w http.ResponseWriter) {
+	JsonResult(w, http.StatusServiceUnavailable, apierr)
+}
