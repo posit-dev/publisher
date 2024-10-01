@@ -22,7 +22,10 @@ jobs:
     secrets: inherit
     uses: ./.github/workflows/contract-deps.yaml
   nightly:
-    needs: [build, contract-deps]
+    needs:
+      - build
+      - contract-deps
+      - package
     secrets: inherit
     uses: ./.github/workflows/contract.yaml
     with:
@@ -31,20 +34,6 @@ jobs:
     needs: nightly
     secrets: inherit
     uses: ./.github/workflows/cleanup.yaml
-  package:
-    needs: build
-    uses: ./.github/workflows/package.yaml
-  archive:
-    needs: build
-    uses: ./.github/workflows/archive.yaml
-  upload:
-    needs:
-      - archive
-      - package
-    uses: ./.github/workflows/upload.yaml
-    with:
-      nightly: true
-    secrets: inherit
 
   # Extensions
   vscode:

@@ -31,7 +31,7 @@ build-connect:
     set -eou pipefail
     {{ _with_debug }}
 
-    docker compose build
+    docker compose -f ../docker-compose.yml build
 
 # Deletes ephemeral project files (i.e., cleans the project).
 clean:
@@ -67,4 +67,5 @@ test *args:
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
+
     ../scripts/test-runner.bash {{ args }}
