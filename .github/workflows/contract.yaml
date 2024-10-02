@@ -70,6 +70,18 @@ jobs:
       - run: just bats test init
       - run: just bats test deploy
 
+      - name: report to testrail
+        run: |
+          pip install trcli
+          trcli -y \
+            -h https://posit.testrail.io \
+            --project "Publishing Client" \
+            --key ${{ secrets.TESTRAIL_API_KEY }} \
+            --username kevin.gartland@posit.co \
+            parse_junit \
+            --title "Nightly CLI Test Run" \
+            -f "./test/bats/results/*.xml"
+
   vscode-ui-tests:
     if: ${{ github.event_name == 'schedule' || github.event.inputs.job == 'all' || github.event.inputs.job == 'vscode-ui-tests' }}
     env:
