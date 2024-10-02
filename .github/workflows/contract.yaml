@@ -142,18 +142,15 @@ jobs:
       - name: Run root tests
         run: just vscode-ui test vscode-root
 
-      - name: Run nested tests
-        run: just vscode-ui test vscode-nested
-
-      - name: Save junit report
+      - name: Save root junit report
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.runs-on }}-junit
+          name: ${{ matrix.runs-on }}-junit-root
           path: test/vscode-ui/results/
           if-no-files-found: ignore
           retention-days: 1
 
-      - name: report to testrail
+      - name: report root results testrail
         shell: bash
         run: |
           pip install trcli
@@ -163,7 +160,31 @@ jobs:
             --key ${{ secrets.TESTRAIL_API_KEY }} \
             --username kevin.gartland@posit.co \
             parse_junit \
-            --title "Nightly VSCode UI Test Run - ${{ matrix.runs-on }}" \
+            --title "Nightly VSCode UI - Root  - ${{ matrix.runs-on }}" \
+            -f "./test/vscode-ui/results/*.xml"
+
+      - name: Run nested tests
+        run: just vscode-ui test vscode-nested
+
+      - name: Save nested junit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.runs-on }}-junit-nested
+          path: test/vscode-ui/results/
+          if-no-files-found: ignore
+          retention-days: 1
+
+      - name: report nested results testrail
+        shell: bash
+        run: |
+          pip install trcli
+          trcli -y \
+            -h https://posit.testrail.io \
+            --project "Publishing Client" \
+            --key ${{ secrets.TESTRAIL_API_KEY }} \
+            --username kevin.gartland@posit.co \
+            parse_junit \
+            --title "Nightly VSCode UI - Nested - ${{ matrix.runs-on }}" \
             -f "./test/vscode-ui/results/*.xml"
 
       - name: Save screenshots
