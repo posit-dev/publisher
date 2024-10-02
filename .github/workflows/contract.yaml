@@ -130,7 +130,7 @@ jobs:
         if: matrix.runs-on == 'windows-latest'
       - name: Extract dist on macos
         run: |
-          unzip dist/*-darwin-amd64.vsix -d dist/ext
+          unzip dist/*-darwin-arm64.vsix -d dist/ext
         if: matrix.runs-on == 'macos-latest'
       - run: chmod -R +x ./bin
       - run: echo "${FUZZBUCKET_SSH_KEY}" > test/setup/fuzzbucket-ssh-key && chmod 600 test/setup/fuzzbucket-ssh-key
