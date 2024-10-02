@@ -40,7 +40,6 @@ func (w *symlinkWalker) visit(fn AbsoluteWalkFunc) AbsoluteWalkFunc {
 		if info.Mode().Type()&os.ModeSymlink != 0 {
 			w.log.Info("Following symlink", "path", path)
 			linkTarget, err := filepath.EvalSymlinks(path.String())
-			targetPath := NewPath(linkTarget, path.Fs())
 			if err != nil {
 				// There's software that creates symbolic links to files which do not exist,
 				// like Emacs which creates symbolic files for unsaved modifications to files.
@@ -49,6 +48,8 @@ func (w *symlinkWalker) visit(fn AbsoluteWalkFunc) AbsoluteWalkFunc {
 				w.log.Debug("Error following symlink, ignoring file", "filepath", path, "error", err.Error())
 				return nil
 			}
+
+			targetPath := NewPath(linkTarget, path.Fs())
 			targetInfo, err := targetPath.Stat()
 			if err != nil {
 				return fmt.Errorf("error getting target info for symlink %s: %w", targetPath, err)
