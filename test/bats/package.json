@@ -1,10 +1,10 @@
 {
   "private": true,
   "scripts": {
-    "deploy": "bats -r -T --formatter junit -o ../results ./contract/deploy.bats",
-    "accounts": "bats -r -T --formatter junit -o ../results ./contract/accounts.bats",
-    "common": "bats -r -T --formatter junit -o ../results ./cli/common.bats",
-    "init": "bats -r -T --formatter junit -o ../results ./cli/init.bats"
+    "deploy": "bats -r -T --report-formatter junit -o ./results ./contract/deploy.bats",
+    "accounts": "bats -r -T --report-formatter junit -o ./results ./contract/accounts.bats",
+    "common": "bats -r -T --report-formatter junit -o ./results ./cli/common.bats",
+    "init": "bats -r -T --report-formatter junit -o ./results ./cli/init.bats"
   },
   "devDependencies": {
     "bats": "^1.10.0",

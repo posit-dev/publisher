@@ -66,10 +66,8 @@ jobs:
       - run: chmod -R +x ./bin
       - run: echo "${FUZZBUCKET_SSH_KEY}" > test/setup/fuzzbucket-ssh-key && chmod 600 test/setup/fuzzbucket-ssh-key
       - run: just bats install
-      - run: just bats test common
-      - run: just bats test init
-      - run: just bats test deploy
 
+      - run: just bats test common
       - name: report to testrail
         run: |
           pip install trcli
@@ -79,7 +77,33 @@ jobs:
             --key ${{ secrets.TESTRAIL_API_KEY }} \
             --username kevin.gartland@posit.co \
             parse_junit \
-            --title "Nightly CLI Test Run" \
+            --title "Nightly CLI Common Test Run - ${{ matrix.runs-on }}" \
+            -f "./test/bats/results/*.xml"
+
+      - run: just bats test init
+      - name: report to testrail
+        run: |
+          pip install trcli
+          trcli -y \
+            -h https://posit.testrail.io \
+            --project "Publishing Client" \
+            --key ${{ secrets.TESTRAIL_API_KEY }} \
+            --username kevin.gartland@posit.co \
+            parse_junit \
+            --title "Nightly CLI Init Test Run - ${{ matrix.runs-on }}" \
+            -f "./test/bats/results/*.xml"
+
+      - run: just bats test deploy
+      - name: report to testrail
+        run: |
+          pip install trcli
+          trcli -y \
+            -h https://posit.testrail.io \
+            --project "Publishing Client" \
+            --key ${{ secrets.TESTRAIL_API_KEY }} \
+            --username kevin.gartland@posit.co \
+            parse_junit \
+            --title "Nightly CLI Deploy Test Run - ${{ matrix.runs-on }}" \
             -f "./test/bats/results/*.xml"
 
   vscode-ui-tests:
@@ -174,7 +198,7 @@ jobs:
             --key ${{ secrets.TESTRAIL_API_KEY }} \
             --username kevin.gartland@posit.co \
             parse_junit \
-            --title "Nightly VSCode UI Test Run" \
+            --title "Nightly VSCode UI Test Run - ${{ matrix.runs-on }}" \
             -f "./test/vscode-ui/results/*.xml"
 
       - name: Save screenshots

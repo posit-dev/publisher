@@ -24,3 +24,7 @@ node_modules
 *.vsix
 .pnpm-store
 .Rproj.user
+
+# Test artifacts
+test/bats/results/*.xml
+test/vscode-ui/results/*.xml
