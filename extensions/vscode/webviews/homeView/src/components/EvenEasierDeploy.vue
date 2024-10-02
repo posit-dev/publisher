@@ -31,12 +31,13 @@
       <template v-if="home.duplicatedEnvironmentVariables.length">
         <p>
           <template v-if="home.duplicatedEnvironmentVariables.length === 1">
-            A duplicate name was
+            A variable was set as both a secret and environment variable. It
+            must only be set as one or the other.
           </template>
           <template v-if="home.duplicatedEnvironmentVariables.length > 1">
-            Duplicate names were
+            Variables were set as both secrets and environment variables. They
+            must only be set as one or the other.
           </template>
-          found in Secrets and Environment.
           <a
             class="webview-link"
             role="button"
