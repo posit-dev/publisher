@@ -160,6 +160,7 @@ jobs:
             -h https://posit.testrail.io \
             --project "Publishing Client" \
             --key ${{ secrets.TESTRAIL_API_KEY }} \
+            --username kevin.gartland@posit.co \
             parse_junit \
             --title "Nightly VSCode UI Test Run" \
             -f "./test/vscode-ui/results/*.xml"
