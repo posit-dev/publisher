@@ -133,7 +133,7 @@ jobs:
           unzip dist/*-darwin-amd64.vsix -d dist/ext
         if: matrix.runs-on == 'macos-latest'
       - run: chmod -R +x ./bin
-      - run: echo "${FUZZBUCKET_SSH_KEY}" > test/fuzzbucket-ssh-key && chmod 600 test/fuzzbucket-ssh-key
+      - run: echo "${FUZZBUCKET_SSH_KEY}" > test/setup/fuzzbucket-ssh-key && chmod 600 test/setup/fuzzbucket-ssh-key
 
       # vscode ui tests
       - run: just vscode configure
