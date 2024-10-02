@@ -1121,7 +1121,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       deploymentQuickPickList.push({
         iconPath: new ThemeIcon("plus"),
         label: createNewDeploymentLabel,
-        detail: "(or pick one of the existing deployments below)", // we're forcing a blank here, just to maintain height of selection
+        detail: includedContentRecords.length
+          ? "(or pick one of the existing deployments below)"
+          : undefined,
         lastMatch: includedContentRecords.length ? false : true,
       });
 
