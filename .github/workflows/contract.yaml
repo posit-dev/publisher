@@ -154,6 +154,7 @@ jobs:
           retention-days: 1
 
       - name: report to testrail
+        shell: bash
         run: |
           pip install trcli
           trcli -y \
