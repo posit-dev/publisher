@@ -36,7 +36,7 @@
         }}</a
         >.
       </p>
-      <p v-if="home.config.active.isMissing" data-automation="missingConfig">
+      <p v-if="home.config.active.isMissing" data-automation="missing-config">
         The last Configuration used for this Deployment was not found.
         <a
           class="webview-link"
@@ -46,7 +46,7 @@
           >{{ promptForConfigSelection }}</a
         >.
       </p>
-      <p v-if="home.config.active.isError">
+      <p v-if="home.config.active.isError" data-automation="edit-config">
         The selected Configuration has an error.
         <a
           class="webview-link"
@@ -54,13 +54,14 @@
           @click="
             onEditConfiguration(home.selectedConfiguration!.configurationPath)
           "
+          data-automation="edit-config-button"
           >Edit the Configuration</a
         >.
       </p>
 
       <p
         v-if="home.config.active.isCredentialMissing"
-        data-automation="missingCreds"
+        data-automation="missing-creds"
       >
         A Credential for the Deployment's server URL was not found.
         <a

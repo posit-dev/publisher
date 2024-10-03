@@ -89,7 +89,7 @@ case "${test_case}" in
         vscode_ui_tests
     ;;
 
-    "vscode-nested-error")
+    "vscode-error")
         export WORKSPACE_PATH="../sample-content/"
         export PYTHON_VERSION=$(python --version | awk '{print $2}')
         setup_connect
