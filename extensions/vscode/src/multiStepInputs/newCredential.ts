@@ -7,7 +7,7 @@ import {
   assignStep,
 } from "./multiStepHelper";
 
-import { InputBoxValidationSeverity, Uri, window } from "vscode";
+import { InputBoxValidationSeverity, window } from "vscode";
 
 import { useApi, Credential } from "src/api";
 import {
