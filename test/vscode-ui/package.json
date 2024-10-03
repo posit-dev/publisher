@@ -17,7 +17,8 @@
   },
   "scripts": {
     "vscode-root": "wdio run ./wdio.conf.ts --suite root",
-    "vscode-nested": "wdio run ./wdio.conf.ts --suite nested"
+    "vscode-nested": "wdio run ./wdio.conf.ts --suite nested",
+    "vscode-nested-error": "wdio run ./wdio.conf.ts --suite error"
   },
   "dependencies": {
     "@wdio/globals": "^8.35.1",
