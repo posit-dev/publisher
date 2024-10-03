@@ -68,7 +68,7 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFunc() {
 		`{
 			"account": "local",
 			"config": "default",
-			"insecure": false,
+			"insecure": false
 		}`))
 
 	publisher := &mockPublisher{}
@@ -171,7 +171,7 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFuncWrongServe
 		`{
 			"account": "newAcct",
 			"config": "default",
-			"insecure": false,
+			"insecure": false
 		}`))
 
 	handler := PostDeploymentHandlerFunc(s.cwd, log, lister, events.NewNullEmitter())
@@ -236,7 +236,7 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentSubdir() {
 		`{
 			"account": "local",
 			"config": "default",
-			"insecure": false,
+			"insecure": false
 		}`))
 
 	publisher := &mockPublisher{}

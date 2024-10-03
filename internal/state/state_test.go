@@ -317,8 +317,10 @@ func (s *StateSuite) TestNewNonDefaultConfig() {
 
 	configName := "staging"
 	cfg := s.makeConfiguration(configName)
+	insecure := true
+	acct.Insecure = insecure
 
-	state, err := New(s.cwd, "", configName, "", "", accts, nil, true)
+	state, err := New(s.cwd, "", configName, "", "", accts, nil, insecure)
 	s.NoError(err)
 	s.NotNil(state)
 	s.Equal("", state.AccountName)
@@ -415,7 +417,7 @@ func (s *StateSuite) TestNewWithTargetAndAccount() {
 	err := d.WriteFile(targetPath)
 	s.NoError(err)
 
-	state, err := New(s.cwd, "acct2", "", "myTargetName", "mySaveName", accts, nil, true)
+	state, err := New(s.cwd, "acct2", "", "myTargetName", "mySaveName", accts, nil, false)
 	s.NoError(err)
 	s.NotNil(state)
 	s.Equal("acct2", state.AccountName)
@@ -424,7 +426,6 @@ func (s *StateSuite) TestNewWithTargetAndAccount() {
 	s.Equal(&acct2, state.Account)
 	s.Equal(cfg, state.Config)
 	s.Equal(d, state.Target)
-	s.Equal(state.Account.Insecure, true)
 }
 
 func (s *StateSuite) TestNewWithSecrets() {
