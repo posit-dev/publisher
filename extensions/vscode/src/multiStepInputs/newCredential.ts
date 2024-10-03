@@ -7,7 +7,7 @@ import {
   assignStep,
 } from "./multiStepHelper";
 
-import { InputBoxValidationSeverity, window } from "vscode";
+import { InputBoxValidationSeverity, Uri, window } from "vscode";
 
 import { useApi, Credential } from "src/api";
 import {
@@ -17,6 +17,7 @@ import {
 import { formatURL, normalizeURL } from "src/utils/url";
 import { checkSyntaxApiKey } from "src/utils/apiKeys";
 import { showProgress } from "src/utils/progress";
+import { openConfigurationCommand } from "src/commands";
 
 const createNewCredentialLabel = "Create a New Credential";
 
@@ -77,7 +78,6 @@ export async function newCredential(
       typeof state.data.url === "string" && state.data.url.length
         ? state.data.url
         : "";
-
     const url = await input.showInputBox({
       title: state.title,
       step: thisStepNumber,
@@ -123,16 +123,26 @@ export async function newCredential(
           });
         }
         try {
-          const testResult = await api.credentials.test(input);
+          const testResult = await api.credentials.test(
+            input,
+            api.getInsecureSetting(),
+          );
           if (testResult.status !== 200) {
             return Promise.resolve({
               message: `Error: Invalid URL (unable to validate connectivity with Server URL - API Call result: ${testResult.status} - ${testResult.statusText}).`,
               severity: InputBoxValidationSeverity.Error,
             });
           }
-          if (testResult.data.error) {
+          const err = testResult.data.error;
+          if (err) {
+            if (err.code === "errorCertificateVerification") {
+              return Promise.resolve({
+                message: `Error: URL Not Accessible - ${err.msg}. If applicable, consider enabling [Insecure TLS](${openConfigurationCommand}).`,
+                severity: InputBoxValidationSeverity.Error,
+              });
+            }
             return Promise.resolve({
-              message: `Error: Invalid URL (${testResult.data.error.msg}).`,
+              message: `Error: Invalid URL (unable to validate connectivity with Server URL - ${getMessageFromError(err)}).`,
               severity: InputBoxValidationSeverity.Error,
             });
           }
@@ -196,7 +206,11 @@ export async function newCredential(
         const serverUrl =
           typeof state.data.url === "string" ? state.data.url : "";
         try {
-          const testResult = await api.credentials.test(serverUrl, input);
+          const testResult = await api.credentials.test(
+            serverUrl,
+            api.getInsecureSetting(),
+            input,
+          );
           if (testResult.status !== 200) {
             return Promise.resolve({
               message: `Error: Invalid API Key (unable to validate API Key - API Call result: ${testResult.status} - ${testResult.statusText}).`,

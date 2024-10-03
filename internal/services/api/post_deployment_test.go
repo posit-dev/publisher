@@ -67,7 +67,8 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFunc() {
 	req.Body = io.NopCloser(strings.NewReader(
 		`{
 			"account": "local",
-			"config": "default"
+			"config": "default",
+			"insecure": false,
 		}`))
 
 	publisher := &mockPublisher{}
@@ -79,7 +80,8 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFunc() {
 		path util.AbsolutePath,
 		accountName, configName, targetName, saveName string,
 		accountList accounts.AccountList,
-		secrets map[string]string) (*state.State, error) {
+		secrets map[string]string,
+		insecure bool) (*state.State, error) {
 
 		s.Equal(s.cwd, path)
 		s.Equal("myTargetName", targetName)
@@ -89,6 +91,7 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFunc() {
 
 		st := state.Empty()
 		st.Account = &accounts.Account{}
+		st.Account.Insecure = insecure
 		st.Target = deployment.New()
 		return st, nil
 	}
@@ -123,7 +126,8 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFuncStateErr()
 		path util.AbsolutePath,
 		accountName, configName, targetName, saveName string,
 		accountList accounts.AccountList,
-		secrets map[string]string) (*state.State, error) {
+		secrets map[string]string,
+		insecure bool) (*state.State, error) {
 		return nil, errors.New("test error from state factory")
 	}
 
@@ -166,7 +170,8 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFuncWrongServe
 	req.Body = io.NopCloser(strings.NewReader(
 		`{
 			"account": "newAcct",
-			"config": "default"
+			"config": "default",
+			"insecure": false,
 		}`))
 
 	handler := PostDeploymentHandlerFunc(s.cwd, log, lister, events.NewNullEmitter())
@@ -182,13 +187,14 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFuncPublishErr
 	s.NoError(err)
 
 	lister := &accounts.MockAccountList{}
-	req.Body = io.NopCloser(strings.NewReader(`{"account": "local", "config": "default"}`))
+	req.Body = io.NopCloser(strings.NewReader(`{"account": "local", "config": "default", "insecure": false}`))
 
 	stateFactory = func(
 		path util.AbsolutePath,
 		accountName, configName, targetName, saveName string,
 		accountList accounts.AccountList,
-		secrets map[string]string) (*state.State, error) {
+		secrets map[string]string,
+		insecure bool) (*state.State, error) {
 
 		st := state.Empty()
 		st.Account = &accounts.Account{}
@@ -229,7 +235,8 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentSubdir() {
 	req.Body = io.NopCloser(strings.NewReader(
 		`{
 			"account": "local",
-			"config": "default"
+			"config": "default",
+			"insecure": false,
 		}`))
 
 	publisher := &mockPublisher{}
@@ -241,7 +248,8 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentSubdir() {
 		path util.AbsolutePath,
 		accountName, configName, targetName, saveName string,
 		accountList accounts.AccountList,
-		secrets map[string]string) (*state.State, error) {
+		secrets map[string]string,
+		insecure bool) (*state.State, error) {
 
 		s.Equal(s.cwd, path)
 		s.Equal("myTargetName", targetName)
@@ -273,6 +281,7 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFuncWithSecret
 		`{
 			"account": "local",
 			"config": "default",
+			"insecure": false,
 			"secrets": {
 				"API_KEY": "secret123",
 				"DB_PASSWORD": "password456"
@@ -289,7 +298,8 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFuncWithSecret
 		path util.AbsolutePath,
 		accountName, configName, targetName, saveName string,
 		accountList accounts.AccountList,
-		secrets map[string]string) (*state.State, error) {
+		secrets map[string]string,
+		insecure bool) (*state.State, error) {
 
 		s.Equal(s.cwd, path)
 		s.Equal("myTargetName", targetName)

@@ -3,12 +3,14 @@ package connect
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strings"
 	"time"
@@ -100,6 +102,12 @@ func isConnectAuthError(err error) bool {
 	return errors.As(err, &serr)
 }
 
+type certificationValidationFailedDetails struct {
+	url  string
+	accountName string
+	certificateError string
+}
+
 func (c *ConnectClient) TestAuthentication(log logging.Logger) (*User, error) {
 	log.Info("Testing authentication", "method", c.account.AuthType.Description(), "url", c.account.URL)
 	var connectUser UserDTO
@@ -111,7 +119,20 @@ func (c *ConnectClient) TestAuthentication(log logging.Logger) (*User, error) {
 		if e, ok := err.(net.Error); ok && e.Timeout() {
 			log.Debug("Request to Connect timed out")
 			return nil, ErrTimedOut
-		} else if isConnectAuthError(err) {
+		}
+		if urlError, ok := err.(*url.Error); ok {
+			if certificateError, ok := urlError.Err.(*tls.CertificateVerificationError); ok {
+				returnErr := fmt.Errorf("unable to verify TLS certificate for server (%s)", certificateError.Err);
+				log.Error(returnErr.Error())
+				details := &certificationValidationFailedDetails {
+					url: c.account.URL,
+					accountName: c.account.Name,
+					certificateError: certificateError.Err.Error(),
+				}
+				return nil, types.NewAgentError(types.ErrorCertificateVerification, returnErr, details)
+			}
+		}
+		if isConnectAuthError(err) {
 			if c.account.ApiKey != "" {
 				// Key was provided and should have worked
 				log.Info("Connect API key authentication check failed", "url", c.account.URL)

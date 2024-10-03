@@ -11,6 +11,8 @@ import { Secrets } from "./resources/Secrets";
 import { EntryPoints } from "./resources/Entrypoints";
 import * as Entities from "entities";
 
+export type GetInsecureSettingFn = () => boolean;
+
 class PublishingClientApi {
   private client;
 
@@ -22,13 +24,28 @@ class PublishingClientApi {
   secrets: Secrets;
   apiServiceIsUp: Promise<boolean>;
   entrypoints: EntryPoints;
+  // In order to allow this object to be used both within the VSCode extension
+  // code as well as the hosted webview, we need to isolate imports which are
+  // not allowed in both. In this case, vscode functionality is needed to
+  // access the extension's configuration setting. So we'll initialize this
+  // object with a callback which can provide the separation, while maintaining
+  // our ability to have this object accessible from both "domains".
+  getInsecureSetting: GetInsecureSettingFn;
 
-  constructor(apiBaseUrl: string, apiServiceIsUp: Promise<boolean>) {
+  constructor(
+    getInsecureSettingFn: GetInsecureSettingFn,
+    apiBaseUrl: string,
+    apiServiceIsUp: Promise<boolean>,
+  ) {
     this.client = axios.create({
       baseURL: apiBaseUrl,
     });
     this.client.interceptors.request.use((request) => {
       request.ts = performance.now();
+      // request.params = {
+      //   ...request.params,
+      //   insecure: this.getInsecureSetting(),
+      // };
       return request;
     });
 
@@ -55,6 +72,7 @@ class PublishingClientApi {
     this.packages = new Packages(this.client);
     this.secrets = new Secrets(this.client);
     this.entrypoints = new EntryPoints(this.client);
+    this.getInsecureSetting = getInsecureSettingFn;
   }
 
   logDuration(response: AxiosResponse<any, any>) {
@@ -77,10 +95,11 @@ let api: PublishingClientApi | undefined = undefined;
 // NOTE: this function must be called ahead of useApi()
 // so that the class is properly instantiated.
 export const initApi = (
+  insecureSettingFn: GetInsecureSettingFn,
   apiServiceIsUp: Promise<boolean>,
   apiBaseUrl: string = "/api",
 ) => {
-  api = new PublishingClientApi(apiBaseUrl, apiServiceIsUp);
+  api = new PublishingClientApi(insecureSettingFn, apiBaseUrl, apiServiceIsUp);
 };
 
 // NOTE: initApi(...) must be called ahead of the first time

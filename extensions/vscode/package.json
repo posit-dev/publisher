@@ -33,6 +33,18 @@
   ],
   "main": "./dist/extension.js",
   "contributes": {
+    "configuration": [
+      {
+        "title": "Posit Publisher",
+        "properties": {
+          "positPublisher.enableInsecureTLS": {
+            "markdownDescription": "Enable/disable skipping TLS certificate validation for connections to servers.\n\nWhen **disabled** (default), TLS connections initiated by Posit Publisher will only be established if the SSL certificate associated with the target server can be validated with the configured certificate authority. \n\nWhen **enabled**, the SSL certificate validation will be skipped. Only **enable** this setting if you are accessing fully trusted servers as it could introduce security vulnerabilities since server identity is not being verified.",
+            "type": "boolean",
+            "default": false
+          }
+        }
+      }
+    ],
     "commands": [
       {
         "command": "posit.publisher.init-project",

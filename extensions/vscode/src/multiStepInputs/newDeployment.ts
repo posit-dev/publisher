@@ -570,7 +570,10 @@ export async function newDeployment(
             });
           }
           try {
-            const testResult = await api.credentials.test(input);
+            const testResult = await api.credentials.test(
+              input,
+              api.getInsecureSetting(),
+            );
             if (testResult.status !== 200) {
               return Promise.resolve({
                 message: `Error: Invalid URL (unable to validate connectivity with Server URL - API Call result: ${testResult.status} - ${testResult.statusText}).`,
@@ -643,7 +646,11 @@ export async function newDeployment(
             ? newDeploymentData.newCredentials.url
             : "";
           try {
-            const testResult = await api.credentials.test(serverUrl, input);
+            const testResult = await api.credentials.test(
+              serverUrl,
+              api.getInsecureSetting(),
+              input,
+            );
             if (testResult.status !== 200) {
               return Promise.resolve({
                 message: `Error: Invalid API Key (unable to validate API Key - API Call result: ${testResult.status} - ${testResult.statusText}).`,

@@ -71,6 +71,7 @@ export class ContentRecords {
     targetName: string,
     accountName: string,
     configName: string,
+    insecure: boolean,
     dir: string,
     secrets?: Record<string, string>,
   ) {
@@ -78,6 +79,7 @@ export class ContentRecords {
       account: accountName,
       config: configName,
       secrets: secrets,
+      insecure: insecure,
     };
     const encodedTarget = encodeURIComponent(targetName);
     return this.client.post<{ localId: string }>(

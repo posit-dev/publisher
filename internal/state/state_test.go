@@ -296,7 +296,7 @@ func (s *StateSuite) TestNew() {
 
 	cfg := s.makeConfiguration("default")
 
-	state, err := New(s.cwd, "", "", "", "", accts, nil)
+	state, err := New(s.cwd, "", "", "", "", accts, nil, false)
 	s.NoError(err)
 	s.NotNil(state)
 	s.Equal(state.AccountName, "")
@@ -305,6 +305,7 @@ func (s *StateSuite) TestNew() {
 	s.Equal(&acct, state.Account)
 	s.Equal(cfg, state.Config)
 	s.Equal(map[string]string(nil), state.Secrets)
+	s.Equal(state.Account.Insecure, false)
 	// Target is never nil. We create a new target if no target ID was provided.
 	s.NotNil(state.Target)
 }
@@ -317,7 +318,7 @@ func (s *StateSuite) TestNewNonDefaultConfig() {
 	configName := "staging"
 	cfg := s.makeConfiguration(configName)
 
-	state, err := New(s.cwd, "", configName, "", "", accts, nil)
+	state, err := New(s.cwd, "", configName, "", "", accts, nil, true)
 	s.NoError(err)
 	s.NotNil(state)
 	s.Equal("", state.AccountName)
@@ -325,6 +326,7 @@ func (s *StateSuite) TestNewNonDefaultConfig() {
 	s.Equal("", state.TargetName)
 	s.Equal(&acct, state.Account)
 	s.Equal(cfg, state.Config)
+	s.Equal(state.Account.Insecure, true)
 	// Target is never nil. We create a new target if no target ID was provided.
 	s.NotNil(state.Target)
 }
@@ -334,7 +336,7 @@ func (s *StateSuite) TestNewConfigErr() {
 	acct := accounts.Account{}
 	accts.On("GetAllAccounts").Return([]accounts.Account{acct}, nil)
 
-	state, err := New(s.cwd, "", "", "", "", accts, nil)
+	state, err := New(s.cwd, "", "", "", "", accts, nil, false)
 	s.NotNil(err)
 	s.ErrorContains(err, "couldn't load configuration")
 	s.Nil(state)
@@ -372,7 +374,7 @@ func (s *StateSuite) TestNewWithTarget() {
 	err := d.WriteFile(targetPath)
 	s.NoError(err)
 
-	state, err := New(s.cwd, "", "", "myTargetName", "", accts, nil)
+	state, err := New(s.cwd, "", "", "myTargetName", "", accts, nil, false)
 	s.NoError(err)
 	s.NotNil(state)
 	s.Equal("acct1", state.AccountName)
@@ -381,6 +383,7 @@ func (s *StateSuite) TestNewWithTarget() {
 	s.Equal(&acct1, state.Account)
 	s.Equal(cfg, state.Config)
 	s.Equal(d, state.Target)
+	s.Equal(state.Account.Insecure, false)
 }
 
 func (s *StateSuite) TestNewWithTargetAndAccount() {
@@ -412,7 +415,7 @@ func (s *StateSuite) TestNewWithTargetAndAccount() {
 	err := d.WriteFile(targetPath)
 	s.NoError(err)
 
-	state, err := New(s.cwd, "acct2", "", "myTargetName", "mySaveName", accts, nil)
+	state, err := New(s.cwd, "acct2", "", "myTargetName", "mySaveName", accts, nil, true)
 	s.NoError(err)
 	s.NotNil(state)
 	s.Equal("acct2", state.AccountName)
@@ -421,6 +424,7 @@ func (s *StateSuite) TestNewWithTargetAndAccount() {
 	s.Equal(&acct2, state.Account)
 	s.Equal(cfg, state.Config)
 	s.Equal(d, state.Target)
+	s.Equal(state.Account.Insecure, true)
 }
 
 func (s *StateSuite) TestNewWithSecrets() {
@@ -434,7 +438,7 @@ func (s *StateSuite) TestNewWithSecrets() {
 		"DB_PASSWORD": "password456",
 	}
 
-	state, err := New(s.cwd, "", "", "", "", accts, secrets)
+	state, err := New(s.cwd, "", "", "", "", accts, secrets, false)
 	s.NoError(err)
 	s.NotNil(state)
 	s.Equal(secrets, state.Secrets)
@@ -450,7 +454,7 @@ func (s *StateSuite) TestNewWithInvalidSecret() {
 		"INVALID_SECRET": "secret123",
 	}
 
-	state, err := New(s.cwd, "", "", "", "", accts, secrets)
+	state, err := New(s.cwd, "", "", "", "", accts, secrets, false)
 	s.NotNil(err)
 	s.ErrorContains(err, "secret 'INVALID_SECRET' is not in the configuration")
 	s.Nil(state)

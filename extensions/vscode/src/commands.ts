@@ -2,7 +2,7 @@
 
 import * as path from "path";
 
-import { ExtensionContext } from "vscode";
+import { ExtensionContext, Uri } from "vscode";
 
 import { HOST } from "src";
 
@@ -19,3 +19,8 @@ export const create = async (
 const getExecutableBinary = (context: ExtensionContext): string => {
   return path.join(context.extensionPath, "bin", "publisher");
 };
+
+const args = ["@ext:posit.publisher"];
+export const openConfigurationCommand = Uri.parse(
+  `command:workbench.action.openSettings?${encodeURIComponent(JSON.stringify(args))}`,
+);

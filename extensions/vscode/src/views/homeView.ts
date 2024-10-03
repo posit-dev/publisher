@@ -258,6 +258,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         deploymentName,
         credentialName,
         configurationName,
+        api.getInsecureSetting(),
         projectDir,
         secrets,
       );

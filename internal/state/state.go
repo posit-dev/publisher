@@ -96,7 +96,7 @@ func Empty() *State {
 
 var ErrServerURLMismatch = errors.New("the account provided is for a different server; it must match the server for this deployment")
 
-func New(path util.AbsolutePath, accountName, configName, targetName string, saveName string, accountList accounts.AccountList, secrets map[string]string) (*State, error) {
+func New(path util.AbsolutePath, accountName, configName, targetName string, saveName string, accountList accounts.AccountList, secrets map[string]string, insecure bool) (*State, error) {
 	var target *deployment.Deployment
 	var account *accounts.Account
 	var cfg *config.Config
@@ -128,6 +128,11 @@ func New(path util.AbsolutePath, accountName, configName, targetName string, sav
 	if err != nil {
 		return nil, err
 	}
+
+	// we don't store insecure credential flag, instead we use a
+	// credential-wide configuration value which is passed in. 
+	// So we add that value before the account gets used
+	account.Insecure = insecure
 
 	if target.ServerURL != "" && target.ServerURL != account.URL {
 		return nil, ErrServerURLMismatch
