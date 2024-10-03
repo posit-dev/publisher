@@ -36,11 +36,14 @@
         }}</a
         >.
       </p>
-      <p v-if="home.config.active.isMissing">
+      <p v-if="home.config.active.isMissing" data-automation="missingConfig">
         The last Configuration used for this Deployment was not found.
-        <a class="webview-link" role="button" @click="selectConfiguration">{{
-          promptForConfigSelection
-        }}</a
+        <a
+          class="webview-link"
+          role="button"
+          @click="selectConfiguration"
+          data-automation="config-button"
+          >{{ promptForConfigSelection }}</a
         >.
       </p>
       <p v-if="home.config.active.isError">
@@ -55,9 +58,16 @@
         >.
       </p>
 
-      <p v-if="home.config.active.isCredentialMissing">
+      <p
+        v-if="home.config.active.isCredentialMissing"
+        data-automation="missingCreds"
+      >
         A Credential for the Deployment's server URL was not found.
-        <a class="webview-link" role="button" @click="newCredential"
+        <a
+          class="webview-link"
+          role="button"
+          @click="newCredential"
+          data-automation="creds-button"
           >Create a new Credential</a
         >.
       </p>

@@ -50,6 +50,7 @@ export const config: Options.Testrunner = {
       "./test/specs/nested-fastapi-deployment.spec.ts",
     ],
     root: ["./test/specs/fastapi.spec.ts"],
+    error: ["./test/specs/nested-fastapi-no-creds-no-config.spec.ts"],
   },
   //
   // ============
@@ -76,7 +77,7 @@ export const config: Options.Testrunner = {
   capabilities: [
     {
       browserName: "vscode",
-      browserVersion: "stable", // also possible: "insiders" or a specific version e.g. "1.80.0"
+      browserVersion: "1.93.0", // also possible: "insiders" or a specific version e.g. "1.80.0"
       "wdio:vscodeOptions": {
         // points to directory where extension package.json is located
         extensionPath:

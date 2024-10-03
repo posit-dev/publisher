@@ -88,4 +88,11 @@ case "${test_case}" in
         setup_connect
         vscode_ui_tests
     ;;
+
+    "vscode-nested-error")
+        export WORKSPACE_PATH="../sample-content/"
+        export PYTHON_VERSION=$(python --version | awk '{print $2}')
+        setup_connect
+        vscode_ui_tests
+    ;;
 esac
