@@ -38,6 +38,11 @@ func (m *MockClient) TestAuthentication(log logging.Logger) (*User, error) {
 }
 
 func (m *MockClient) ContentDetails(id types.ContentID, s *ConnectContent, log logging.Logger) error {
+	// Updates content as locked when needed
+	if id == "myLockedContentID" {
+		s.GUID = "myLockedContentID"
+		s.Locked = true
+	}
 	args := m.Called(id, s, log)
 	return args.Error(0)
 }

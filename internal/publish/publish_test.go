@@ -4,6 +4,7 @@ package publish
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -193,37 +194,58 @@ func (s *PublishSuite) TestPublishWithClientRedeployFailCapabilities() {
 	s.publishWithClient(target, &publishErrsMock{capErr: capErr}, capErr)
 }
 
-func (s *PublishSuite) TestPublishWithClientRedeployNoPermissionsErr() {
+func (s *PublishSuite) TestPublishWithClientRedeployErrors() {
 	target := deployment.New()
 	target.ID = "myContentID"
+
+	// Forbidden
 	checksErr := types.NewAgentError(
-		types.ErrorDeploymentTargetIsForbidden,
+		events.DeploymentFailedCode,
 		http_client.NewHTTPError("", "", http.StatusForbidden),
 		nil,
 	)
 	s.publishWithClient(target, &publishErrsMock{checksErr: checksErr}, checksErr)
-}
+	s.Equal(
+		checksErr.Message,
+		"Cannot deploy content: ID myContentID - You may need to request collaborator permissions or verify the credentials in use",
+	)
 
-func (s *PublishSuite) TestPublishWithClientRedeployContentNotFound() {
-	target := deployment.New()
-	target.ID = "myContentID"
-	checksErr := types.NewAgentError(
-		types.ErrorDeploymentTargetNotFound,
+	// Not Found
+	checksErr = types.NewAgentError(
+		events.DeploymentFailedCode,
 		http_client.NewHTTPError("", "", http.StatusNotFound),
 		nil,
 	)
 	s.publishWithClient(target, &publishErrsMock{checksErr: checksErr}, checksErr)
-}
+	s.Equal(
+		checksErr.Message,
+		"Cannot deploy content: ID myContentID - Content cannot be found",
+	)
 
-func (s *PublishSuite) TestPublishWithClientRedeployCannotReachContentTarget() {
-	target := deployment.New()
-	target.ID = "myContentID"
-	checksErr := types.NewAgentError(
-		types.ErrorDeploymentTargetUnreachable,
-		http_client.NewHTTPError("", "", http.StatusServiceUnavailable),
+	// Unknown err
+	checksErr = types.NewAgentError(
+		events.DeploymentFailedCode,
+		http_client.NewHTTPError("", "", http.StatusBadGateway),
 		nil,
 	)
 	s.publishWithClient(target, &publishErrsMock{checksErr: checksErr}, checksErr)
+	s.Equal(
+		checksErr.Message,
+		"Cannot deploy content: ID myContentID - Unknown error: unexpected response from the server (502)",
+	)
+
+	// Content is locked
+	target.ID = "myLockedContentID"
+	checksErr = types.NewAgentError(
+		events.DeploymentFailedCode,
+		fmt.Errorf("content with ID %s is locked", target.ID),
+		nil,
+	)
+	s.publishWithClient(target, &publishErrsMock{}, checksErr)
+	s.Equal(
+		checksErr.Message,
+		"content with ID myLockedContentID is locked",
+	)
 }
 
 func (s *PublishSuite) TestPublishWithClientRedeployFailUpdate() {
@@ -278,6 +300,7 @@ func (s *PublishSuite) publishWithClient(
 	}
 
 	myContentID := types.ContentID("myContentID")
+	myLockedContentID := types.ContentID("myLockedContentID")
 	myBundleID := types.BundleID("myBundleID")
 	myTaskID := types.TaskID("myTaskID")
 
@@ -288,6 +311,7 @@ func (s *PublishSuite) publishWithClient(
 	client.On("TestAuthentication", mock.Anything).Return(&connect.User{}, errsMock.authErr)
 	client.On("CheckCapabilities", mock.Anything, mock.Anything, mock.Anything).Return(errsMock.capErr)
 	client.On("ContentDetails", myContentID, mock.Anything, mock.Anything).Return(errsMock.checksErr)
+	client.On("ContentDetails", myLockedContentID, mock.Anything, mock.Anything).Return(errsMock.checksErr)
 	client.On("UpdateDeployment", myContentID, mock.Anything, mock.Anything).Return(errsMock.createErr)
 	client.On("SetEnvVars", myContentID, mock.Anything, mock.Anything).Return(errsMock.envVarErr)
 	client.On("UploadBundle", myContentID, mock.Anything, mock.Anything).Return(myBundleID, errsMock.uploadErr)
@@ -380,13 +404,17 @@ func (s *PublishSuite) publishWithClient(
 		record, err := deployment.FromFile(recordPath)
 		s.NoError(err)
 
-		s.Equal(myContentID, record.ID)
+		if target != nil && target.ID == myLockedContentID {
+			s.Equal(myLockedContentID, record.ID)
+		} else {
+			s.Equal(myContentID, record.ID)
+		}
 		s.Equal(project.Version, record.ClientVersion)
 		s.NotEqual("", record.DeployedAt)
 		s.Equal("myConfig", record.ConfigName)
 		s.NotNil(record.Configuration)
 
-		if couldCreateDeployment {
+		if couldCreateDeployment && record.ID == myContentID {
 			logs := s.logBuffer.String()
 			s.Contains(logs, "content_id="+myContentID)
 			s.Equal("https://connect.example.com/connect/#/apps/myContentID", record.DashboardURL)

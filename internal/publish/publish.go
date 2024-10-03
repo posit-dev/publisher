@@ -127,7 +127,7 @@ func (p *defaultPublisher) emitErrorEvents(err error) {
 	var data events.EventData
 
 	mapstructure.Decode(publishFailureData{
-		Message: agentErr.Error(),
+		Message: agentErr.Message,
 	}, &data)
 
 	// Record the error in the deployment record
@@ -267,25 +267,46 @@ func (p *defaultPublisher) createDeploymentRecord(
 	return p.writeDeploymentRecord()
 }
 
+// Handle preflight agent error details
+func (p *defaultPublisher) preflightAgentError(agenterr *types.AgentError, contentID types.ContentID) *types.AgentError {
+	agenterr.Code = events.DeploymentFailedCode
+
+	if aerr, isNotFound := http_client.IsHTTPAgentErrorStatusOf(agenterr, http.StatusNotFound); isNotFound {
+		p.log.Debug("Content cannot be found. Deployment cannot proceed", "content_id", contentID)
+		aerr.Message = fmt.Sprintf("Cannot deploy content: ID %s - Content cannot be found", contentID)
+	} else if aerr, isForbidden := http_client.IsHTTPAgentErrorStatusOf(agenterr, http.StatusForbidden); isForbidden {
+		p.log.Debug("Insufficient permissions. Content deployment cannot proceed", "content_id", contentID)
+		aerr.Message = fmt.Sprintf("Cannot deploy content: ID %s - You may need to request collaborator permissions or verify the credentials in use", contentID)
+	} else {
+		p.log.Debug("Unknown error while deploying", "content_id", contentID)
+		aerr.Message = fmt.Sprintf("Cannot deploy content: ID %s - Unknown error: %s", contentID, agenterr.Error())
+	}
+
+	return agenterr
+}
+
 // Does the target exist and the user has permissions to it?
 func (p *defaultPublisher) targetPreflightChecks(client connect.APIClient, contentID types.ContentID) error {
 	p.log.Debug("Running deployment preflight checks", "content_id", contentID)
 	content := &connect.ConnectContent{}
 	err := client.ContentDetails(contentID, content, p.log)
-	if err != nil {
-		if aerr, isForbidden := http_client.IsHTTPAgentErrorStatusOf(err, http.StatusForbidden); isForbidden {
-			p.log.Debug("Insufficient permissions. Content deployment cannot proceed", "content_id", contentID)
-			aerr.Code = types.ErrorDeploymentTargetIsForbidden
-			return aerr
-		}
-		if aerr, isNotFound := http_client.IsHTTPAgentErrorStatusOf(err, http.StatusNotFound); isNotFound {
-			p.log.Debug("Content cannot be found. Deployment cannot proceed", "content_id", contentID)
-			aerr.Code = types.ErrorDeploymentTargetNotFound
-			return aerr
-		}
-		p.log.Debug("Deployment target cannot be reached. Halting deployment", "content_id", contentID)
-		return types.NewAgentError(types.ErrorDeploymentTargetUnreachable, err, nil)
+
+	// Handle possible errors from pinging to the content item
+	if aerr, isAgentErr := types.IsAgentError(err); isAgentErr {
+		return p.preflightAgentError(aerr, contentID)
 	}
+	if err != nil {
+		p.log.Debug("Deployment target cannot be reached. Halting deployment", "content_id", contentID)
+		return types.NewAgentError(events.DeploymentFailedCode, err, nil)
+	}
+
+	// Verify content is not locked
+	lockedErr := content.LockedError()
+	if lockedErr != nil {
+		p.log.Debug("Content is locked, cannot deploy to it", "content_id", contentID)
+		return types.NewAgentError(events.DeploymentFailedCode, lockedErr, nil)
+	}
+
 	return nil
 }
 

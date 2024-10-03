@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
 	"github.com/stretchr/testify/suite"
@@ -22,7 +23,7 @@ func TestHttpClientSuite(t *testing.T) {
 
 func (s *HttpClientSuite) TestIsHTTPAgentErrorStatusOf() {
 	agentErr := types.NewAgentError(
-		types.ErrorDeploymentTargetNotFound,
+		events.DeploymentFailedCode,
 		NewHTTPError("", "", http.StatusNotFound),
 		nil,
 	)

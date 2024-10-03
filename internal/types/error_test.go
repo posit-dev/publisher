@@ -67,3 +67,20 @@ func (s *ErrorSuite) TestNewAgentError() {
 		Data:    make(ErrorData),
 	})
 }
+
+func (s *ErrorSuite) TestIsAgentError() {
+	originalError := errors.New("shattered glass!")
+	aerr, isIt := IsAgentError(originalError)
+	s.Equal(isIt, false)
+	s.Nil(aerr)
+
+	aTrueAgentError := NewAgentError(ErrorInvalidTOML, originalError, nil)
+	aerr, isIt = IsAgentError(aTrueAgentError)
+	s.Equal(isIt, true)
+	s.Equal(aerr, &AgentError{
+		Message: "shattered glass!",
+		Code:    ErrorInvalidTOML,
+		Err:     originalError,
+		Data:    make(ErrorData),
+	})
+}

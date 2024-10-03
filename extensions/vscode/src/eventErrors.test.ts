@@ -5,91 +5,68 @@ import { EventStreamMessage } from "./api";
 import {
   EventStreamMessageErrorCoded,
   isCodedEventErrorMessage,
-  isEvtErrTargetNotFound,
-  isEvtErrTargetForbidden,
+  isEvtErrDeploymentFailed,
   handleEventCodedError,
 } from "./eventErrors";
 import { ErrorCode } from "./utils/errorTypes";
 
-const mkEventStreamMsg = (
-  data = {},
-  errCode?: ErrorCode,
-): EventStreamMessage => {
-  return {
+function mkEventStreamMsg(data: Record<PropertyKey, any>): EventStreamMessage;
+function mkEventStreamMsg(
+  data: Record<PropertyKey, any>,
+  errCode: ErrorCode,
+): EventStreamMessageErrorCoded;
+function mkEventStreamMsg(data: Record<PropertyKey, any>, errCode?: ErrorCode) {
+  const smsg: EventStreamMessage = {
     type: "publish/failure",
     time: "Tue Oct 01 2024 10:00:00 GMT-0600",
     data,
-    errCode,
     error: "failed to publish",
   };
-};
+  if (errCode) {
+    smsg.errCode = errCode;
+  }
+  return smsg;
+}
 
 describe("Event errors", () => {
   test("isCodedEventErrorMessage", () => {
     // Message without error code
-    let streamMsg = mkEventStreamMsg();
+    let streamMsg = mkEventStreamMsg({});
     let result = isCodedEventErrorMessage(streamMsg);
     expect(result).toBe(false);
 
     // Message with error code
-    streamMsg = mkEventStreamMsg({}, "deploymentTargetNotFound");
+    streamMsg = mkEventStreamMsg({}, "deployFailed");
     result = isCodedEventErrorMessage(streamMsg);
     expect(result).toBe(true);
   });
 
-  test("isEvtErrTargetNotFound", () => {
+  test("isEvtErrDeploymentFailed", () => {
     // Message with another error code
     let streamMsg = mkEventStreamMsg({}, "unknown");
-    let result = isEvtErrTargetNotFound(
-      streamMsg as EventStreamMessageErrorCoded,
-    );
+    let result = isEvtErrDeploymentFailed(streamMsg);
     expect(result).toBe(false);
 
     // Message with error code
-    streamMsg = mkEventStreamMsg({}, "deploymentTargetNotFound");
-    result = isEvtErrTargetNotFound(streamMsg as EventStreamMessageErrorCoded);
-    expect(result).toBe(true);
-  });
-
-  test("isEvtErrTargetForbidden", () => {
-    // Message with another error code
-    let streamMsg = mkEventStreamMsg({}, "unknown");
-    let result = isEvtErrTargetForbidden(
-      streamMsg as EventStreamMessageErrorCoded,
-    );
-    expect(result).toBe(false);
-
-    // Message with error code
-    streamMsg = mkEventStreamMsg({}, "deploymentTargetIsForbidden");
-    result = isEvtErrTargetForbidden(streamMsg as EventStreamMessageErrorCoded);
+    streamMsg = mkEventStreamMsg({}, "deployFailed");
+    result = isEvtErrDeploymentFailed(streamMsg);
     expect(result).toBe(true);
   });
 
   test("handleEventCodedError", () => {
     const msgData = {
       dashboardUrl: "https://here.it.is/content/abcdefg",
+      message: "Deployment failed - structured message from the agent",
       error: "A possum on the fridge",
     };
     let streamMsg = mkEventStreamMsg(msgData, "unknown");
-    let resultMsg = handleEventCodedError(
-      streamMsg as EventStreamMessageErrorCoded,
-    );
+    let resultMsg = handleEventCodedError(streamMsg);
     expect(resultMsg).toBe("Unknown error: A possum on the fridge");
 
-    streamMsg = mkEventStreamMsg(msgData, "deploymentTargetNotFound");
-    resultMsg = handleEventCodedError(
-      streamMsg as EventStreamMessageErrorCoded,
-    );
+    streamMsg = mkEventStreamMsg(msgData, "deployFailed");
+    resultMsg = handleEventCodedError(streamMsg);
     expect(resultMsg).toBe(
-      `Content at https://here.it.is/content/abcdefg could not be found. Please, verify the content "id" is accurate.`,
-    );
-
-    streamMsg = mkEventStreamMsg(msgData, "deploymentTargetIsForbidden");
-    resultMsg = handleEventCodedError(
-      streamMsg as EventStreamMessageErrorCoded,
-    );
-    expect(resultMsg).toBe(
-      "You don't have enough permissions to deploy to https://here.it.is/content/abcdefg. Please, verify the credentials in use.",
+      "Deployment failed - structured message from the agent",
     );
   });
 });

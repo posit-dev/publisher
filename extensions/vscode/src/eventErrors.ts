@@ -17,30 +17,23 @@ export function isCodedEventErrorMessage(
 type deploymentEvtErr = {
   dashboardUrl: string;
   localId: string;
+  message: string;
   error: string;
 };
 
-export const isEvtErrTargetNotFound = (
+export const isEvtErrDeploymentFailed = (
   emsg: EventStreamMessageErrorCoded,
 ): emsg is EventStreamMessageErrorCoded<deploymentEvtErr> => {
-  return emsg.errCode === "deploymentTargetNotFound";
-};
-
-export const isEvtErrTargetForbidden = (
-  emsg: EventStreamMessageErrorCoded,
-): emsg is EventStreamMessageErrorCoded<deploymentEvtErr> => {
-  return emsg.errCode === "deploymentTargetIsForbidden";
+  return emsg.errCode === "deployFailed";
 };
 
 export const handleEventCodedError = (
   emsg: EventStreamMessageErrorCoded,
 ): string => {
-  if (isEvtErrTargetNotFound(emsg)) {
-    return `Content at ${emsg.data.dashboardUrl} could not be found. Please, verify the content "id" is accurate.`;
+  if (isEvtErrDeploymentFailed(emsg)) {
+    return emsg.data.message;
   }
-  if (isEvtErrTargetForbidden(emsg)) {
-    return `You don't have enough permissions to deploy to ${emsg.data.dashboardUrl}. Please, verify the credentials in use.`;
-  }
+
   const unknownErrMsg = emsg.data.error || emsg.data.message;
   return `Unknown error: ${unknownErrMsg}`;
 };
