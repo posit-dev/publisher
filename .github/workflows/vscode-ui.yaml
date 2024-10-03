@@ -52,6 +52,7 @@ jobs:
         env:
           SPEC_PATH: ./test/specs/nested-fastapi.spec.ts
           WORKSPACE_PATH: ../sample-content/
+      - run: just vscode-ui test vscode-nested-error
 
       - name: Save screenshots
         uses: actions/upload-artifact@v4
