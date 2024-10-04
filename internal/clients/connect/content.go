@@ -3,6 +3,8 @@ package connect
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"fmt"
+
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/types"
 )
@@ -10,6 +12,7 @@ import (
 type ConnectContent struct {
 	Name                           types.ContentName `json:"name"`
 	Title                          string            `json:"title,omitempty"`
+	GUID                           string            `json:"guid,omitempty"`
 	Description                    string            `json:"description,omitempty"`
 	AccessType                     string            `json:"access_type,omitempty"`
 	ConnectionTimeout              *int32            `json:"connection_timeout,omitempty"`
@@ -32,6 +35,15 @@ type ConnectContent struct {
 	DefaultImageName               string            `json:"default_image_name,omitempty"`
 	DefaultREnvironmentManagement  *bool             `json:"default_r_environment_management,omitempty"`
 	DefaultPyEnvironmentManagement *bool             `json:"default_py_environment_management,omitempty"`
+	Locked                         bool              `json:"locked,omitempty"`
+}
+
+// Returns and error if content is locked
+func (c *ConnectContent) LockedError() error {
+	if c.Locked {
+		return fmt.Errorf("content with ID %s is locked", c.GUID)
+	}
+	return nil
 }
 
 func copy[T any](src *T) *T {

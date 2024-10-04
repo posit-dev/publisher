@@ -17,13 +17,13 @@ type EventData = types.ErrorData
 var NoData = struct{}{}
 
 type Event struct {
-	Time time.Time
-	Type EventType
-	Data EventData
+	Time    time.Time
+	Type    EventType
+	Data    EventData
+	ErrCode ErrorCode
 
-	op      Operation
-	phase   Phase
-	errCode ErrorCode
+	op    Operation
+	phase Phase
 }
 
 // We use Operation and Phase to construct the event Type.
@@ -72,9 +72,9 @@ func New(op Operation, phase Phase, errCode ErrorCode, data any) *Event {
 		Time:    time.Now(),
 		Type:    EventTypeOf(op, phase),
 		Data:    eventData,
+		ErrCode: errCode,
 		op:      op,
 		phase:   phase,
-		errCode: errCode,
 	}
 }
 
