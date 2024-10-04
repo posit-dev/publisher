@@ -55,10 +55,11 @@ export class Credentials {
   // for valid URL and invalid API key: no user, error in TestResult
   //   indicating that the API key is invalid
   // 404 - Agent not found...
-  test(url: string, apiKey?: string) {
+  test(url: string, insecure: boolean, apiKey?: string) {
     return this.client.post<TestResult>(`test-credentials`, {
       url,
       apiKey,
+      insecure,
     });
   }
 }

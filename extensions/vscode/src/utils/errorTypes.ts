@@ -8,6 +8,7 @@ export type ErrorCode =
   | "invalidTOML"
   | "unknownTOMLKey"
   | "invalidConfigFile"
+  | "errorCertificateVerification"
   | "deployFailed";
 
 export type axiosErrorWithJson<T = { code: ErrorCode; details: unknown }> =

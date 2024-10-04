@@ -33,6 +33,18 @@
   ],
   "main": "./dist/extension.js",
   "contributes": {
+    "configuration": [
+      {
+        "title": "Posit Publisher",
+        "properties": {
+          "positPublisher.verifyCertificates": {
+            "markdownDescription": "Verify TLS certificates for connections. Only **disable** this setting if you experience certificate verification errors and the Posit Connect server is using a self-signed, expired, or otherwise misconfigured certificate.",
+            "type": "boolean",
+            "default": true
+          }
+        }
+      }
+    ],
     "commands": [
       {
         "command": "posit.publisher.init-project",
