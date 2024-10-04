@@ -66,7 +66,19 @@
         }}</a
         >.
       </p>
-      <p v-if="home.config.active.isError">
+      <p v-if="home.config.active.isTOMLError">
+        The selected Configuration has a schema error
+        {{ getActiveConfigTOMLErrorDetails }}.
+        <a
+          class="webview-link"
+          role="button"
+          @click="
+            onEditConfiguration(home.selectedConfiguration!.configurationPath)
+          "
+          >Edit the Configuration</a
+        >.
+      </p>
+      <p v-if="home.config.active.isUnknownError">
         The selected Configuration has an error.
         <a
           class="webview-link"
@@ -219,6 +231,7 @@ import QuickPickItem from "src/components/QuickPickItem.vue";
 import ActionToolbar from "src/components/ActionToolbar.vue";
 import DeployButton from "src/components/DeployButton.vue";
 import TextStringWithAnchor from "./TextStringWithAnchor.vue";
+import { isAgentErrorInvalidTOML } from "../../../../src/api/types/error";
 
 const home = useHomeStore();
 const hostConduit = useHostConduitService();
@@ -336,7 +349,7 @@ const entrypointSubTitle = computed(() => {
       if (contentRecord.projectDir !== ".") {
         subTitle = `${contentRecord.projectDir}${home.platformFileSeparator}`;
       }
-      if (!home.config.active.isError) {
+      if (!home.config.active.isUnknownError) {
         subTitle += config.configuration.entrypoint;
       }
       return subTitle;
@@ -396,6 +409,17 @@ const toolTipText = computed(() => {
 - Project Dir: ${home.selectedContentRecord?.projectDir || "<undefined>"}
 - Entrypoint: ${entrypoint}
 - Server URL: ${home.serverCredential?.url || "<undefined>"}`;
+});
+
+const getActiveConfigTOMLErrorDetails = computed(() => {
+  if (
+    home.selectedConfiguration &&
+    isConfigurationError(home.selectedConfiguration) &&
+    isAgentErrorInvalidTOML(home.selectedConfiguration.error)
+  ) {
+    return `on line ${home.selectedConfiguration.error.data.line}`;
+  }
+  return "";
 });
 
 const onErrorMessageAnchorClick = (splitOptionId: number) => {
