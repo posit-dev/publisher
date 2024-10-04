@@ -3,6 +3,9 @@ import * as path from "path";
 import * as fs from "fs";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
+import Publisher from "../pages/Publisher.ts";
+import Deployment from "../pages/Deployment.ts";
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const connectServer = process.env.CONNECT_SERVER;
@@ -16,15 +19,8 @@ describe("Detect error in config", () => {
   before(async () => {
     workbench = await browser.getWorkbench();
     input = await $(".input");
-  });
-
-  it("open extension", async () => {
-    browser.$("aria/Posit Publisher").waitForExist({ timeout: 30000 });
-
-    // open posit extension
-    const extension = await browser.$("aria/Posit Publisher");
-    await expect(extension).toExist();
-    await extension.click();
+    await Publisher.openExtension();
+    await expect(await browser.$("aria/Posit Publisher")).toExist();
   });
 
   it("Dropdown shows proper error", async () => {
@@ -32,20 +28,13 @@ describe("Detect error in config", () => {
     await helper.createFastAPIDeploymentFile();
     await helper.createErrorFastAPIConfigFile();
 
-    await helper.switchToSubframe();
     // initialize project via button
-    const selectButton = (await $('[data-automation="select-deployment"]')).$(
-      ".quick-pick-label",
-    );
-
-    await expect(selectButton).toHaveText(`Select...`);
-    await selectButton.click();
-
-    // switch out of iframe
-    await browser.switchToFrame(null);
+    await Deployment.clickSelectButton();
   });
 
   it("Dropdown shows error", async () => {
+    // switch out of iframe
+    await browser.switchToFrame(null);
     // verify Missing config loads in dropdown and select it
     const createMessage =
       'div.monaco-list-row[aria-label*="Unknown Title • Error in fastapi-simple-VO48"]';

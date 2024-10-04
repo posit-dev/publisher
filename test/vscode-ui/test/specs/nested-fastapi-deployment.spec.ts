@@ -1,55 +1,31 @@
 import { browser, $ } from "@wdio/globals";
 import * as path from "path";
 import * as helper from "../helpers.ts";
+import Publisher from "../pages/Publisher.ts";
+import Deployment from "../pages/Deployment.ts";
 
 const sep = path.sep;
 const title = "my fastapi app";
 describe("Nested Fast API Deployment", () => {
   let workbench: any;
+  let input: any;
 
   before(async () => {
     workbench = await browser.getWorkbench();
-  });
-
-  it("open extension", async () => {
-    browser.$("aria/Posit Publisher").waitForExist({ timeout: 30000 });
-    // open posit extension
-    const extension = await browser.$("aria/Posit Publisher");
-    await expect(extension).toExist();
-    await extension.click();
+    input = await $(".input");
+    await Publisher.openExtension();
+    await expect(await browser.$("aria/Posit Publisher")).toExist();
   });
 
   it("can click +", async () => {
-    await helper.switchToSubframe();
-    // initialize project via button
-    const addDeployment = await $("aria/Add Deployment");
-    // await expect(addDeployment).toHaveText("Select...");
-    await addDeployment.click();
-
-    // switch out of iframe
-    await browser.switchToFrame(null);
-
-    // verify Create New Deployment message displays and select it
-    const createMessage = await browser.$(".quick-input-title");
-    await expect(createMessage).toHaveText("Create a New Deployment");
-    await createMessage.click();
-
-    // verify each entrypoint is found and listed
-    const quickpick = await browser.$(".quick-input-list");
-    await quickpick.waitForExist({ timeout: 30000 });
+    await Deployment.clickAddDeployment();
+    await Deployment.clickCreateNewDeployment();
     // esc
     await browser.keys("\uE00C");
   });
 
   it("can continue deployment", async () => {
-    await helper.switchToSubframe();
-    // initialize project via button
-    const selectButton = (await $('[data-automation="select-deployment"]')).$(
-      ".quick-pick-label",
-    );
-    await expect(selectButton).toHaveText("Select...");
-    await selectButton.click();
-
+    await Deployment.clickSelectButton();
     // switch out of iframe
     await browser.switchToFrame(null);
     const myConfig = browser.$(
@@ -60,10 +36,8 @@ describe("Nested Fast API Deployment", () => {
   });
 
   it("can edit config", async () => {
-    await helper.switchToSubframe();
-    // initialize project via button
-    const editConfig = await $("aria/Edit Configuration");
-    await editConfig.click();
+    await Deployment.clickEditConfig();
+
     await browser.switchToFrame(null);
     const realFilename = await helper.getConfigTitle(/^my fastapi app-.*$/);
     expect(await workbench.getEditorView().getOpenEditorTitles()).toContain(
@@ -73,11 +47,8 @@ describe("Nested Fast API Deployment", () => {
     await workbench.getEditorView().closeEditor(realFilename);
   });
 
-  it("can click more deloyment actions", async () => {
-    await helper.switchToSubframe();
-    const deploymentActions = await $("aria/Deployment actions");
-    await deploymentActions.click();
-    // cannot access the menu here in wdio
+  it("can access more deloyment actions", async () => {
+    await Deployment.clickMoreDeploymentActions();
     // exit menu
     await browser.keys("\uE00C");
   });
