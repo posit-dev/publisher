@@ -241,3 +241,12 @@ func NewHTTPClientForAccount(account *accounts.Account, timeout time.Duration, l
 		Transport: authTransport,
 	}, nil
 }
+
+func IsHTTPAgentErrorStatusOf(err error, status int) (*types.AgentError, bool) {
+	if aerr, isAgentErr := err.(*types.AgentError); isAgentErr {
+		if httperr, isHttpErr := aerr.Err.(*HTTPError); isHttpErr {
+			return aerr, httperr.Status == status
+		}
+	}
+	return nil, false
+}

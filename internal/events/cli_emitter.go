@@ -91,7 +91,7 @@ func (e *cliEmitter) Emit(event *Event) error {
 		fmt.Fprintln(e.writer, "[OK]", formatEventData(event.Data))
 	case FailurePhase:
 		e.writer.NeedNewline = false
-		fmt.Fprintln(e.writer, "[ERROR]", event.errCode, formatEventData(event.Data))
+		fmt.Fprintln(e.writer, "[ERROR]", event.ErrCode, formatEventData(event.Data))
 	}
 	return nil
 }

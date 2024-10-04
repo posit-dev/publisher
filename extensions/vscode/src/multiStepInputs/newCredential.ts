@@ -261,8 +261,8 @@ export async function newCredential(
       step: thisStepNumber,
       totalSteps: state.totalSteps,
       value: currentName,
-      prompt: "Enter a Unique Nickname for your Credential.",
-      placeholder: "example: Posit Connect",
+      prompt: "Enter a unique nickname for this server.",
+      placeholder: "Posit Connect",
       finalValidation: (input: string) => {
         input = input.trim();
         if (input === "") {

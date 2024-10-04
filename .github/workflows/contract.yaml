@@ -48,6 +48,7 @@ jobs:
           sparse-checkout: bundles
           sparse-checkout-cone-mode: false
           token: ${{ secrets.CONNECT_PAT }}
+
       - name: Install deps on ubuntu
         run: |
           sudo apt-get install libcurl4-openssl-dev libsodium-dev libfontconfig1-dev libfribidi-dev libfontconfig1-dev libpng-dev
@@ -58,11 +59,12 @@ jobs:
           R.exe -e "install.packages('renv', repos='https://packagemanager.posit.co/cran/latest')"
         if: matrix.runs-on == 'windows-latest'
       - name: Install deps on macos
-        run: R -e "install.packages('renv', repos='https://packagemanager.posit.co/cran/latest')"
+        run: |
+          R -e "install.packages('renv', repos='https://packagemanager.posit.co/cran/latest')"
         if: matrix.runs-on == 'macos-latest'
 
       - run: chmod -R +x ./bin
-      - run: echo "${FUZZBUCKET_SSH_KEY}" > test/fuzzbucket-ssh-key && chmod 600 test/fuzzbucket-ssh-key
+      - run: echo "${FUZZBUCKET_SSH_KEY}" > test/setup/fuzzbucket-ssh-key && chmod 600 test/setup/fuzzbucket-ssh-key
       - run: just bats install
       - run: just bats test common
       - run: just bats test init
@@ -105,6 +107,11 @@ jobs:
           name: bin
           path: bin
 
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+
       - uses: actions/checkout@v4
         with:
           repository: rstudio/connect-content
@@ -113,11 +120,22 @@ jobs:
           sparse-checkout-cone-mode: false
           token: ${{ secrets.CONNECT_PAT }}
 
+      - name: Extract dist on ubuntu
+        run: |
+          unzip dist/*-linux-amd64.vsix -d dist/ext
+        if: matrix.runs-on == 'ubuntu-latest'
+      - name: Extract dist on windows
+        run: |
+          7z x -y dist/*-windows-amd64.vsix -odist/ext
+        if: matrix.runs-on == 'windows-latest'
+      - name: Extract dist on macos
+        run: |
+          unzip dist/*-darwin-arm64.vsix -d dist/ext
+        if: matrix.runs-on == 'macos-latest'
       - run: chmod -R +x ./bin
-      - run: echo "${FUZZBUCKET_SSH_KEY}" > test/fuzzbucket-ssh-key && chmod 600 test/fuzzbucket-ssh-key
+      - run: echo "${FUZZBUCKET_SSH_KEY}" > test/setup/fuzzbucket-ssh-key && chmod 600 test/setup/fuzzbucket-ssh-key
 
       # vscode ui tests
-      - run: just package
       - run: just vscode configure
       - run: just vscode-ui install
       - run: python --version

@@ -1,5 +1,7 @@
 // Copyright (C) 2023 by Posit Software, PBC.
 
+import { ErrorCode } from "../../utils/errorTypes";
+
 export enum EventSourceReadyState {
   CONNECTING = 0,
   OPEN = 1,
@@ -298,10 +300,11 @@ export function getLocalId(arg: EventStreamMessage) {
   return arg.data.localId;
 }
 
-export interface EventStreamMessage {
+export interface EventStreamMessage<T = Record<string, string>> {
   type: EventSubscriptionTarget;
   time: string;
-  data: Record<string, string>;
+  data: T;
+  errCode?: ErrorCode;
   error?: string;
 }
 

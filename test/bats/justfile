@@ -24,6 +24,13 @@ default:
     just install
     just test
 
+build-connect:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    docker compose -f ../docker-compose.yml build
+
 # Deletes ephemeral project files (i.e., cleans the project).
 clean:
     #!/usr/bin/env bash
@@ -52,6 +59,7 @@ fuzzbucket-stop:
     set -eou pipefail
     pip install -r ../setup/requirements.txt
     fuzzbucket-client rm connect-publishing-client
+
 
 # Executes commands via `npm`. Equivalent to `npm run`. Provides arbitrary command chaining inside of Docker from project root (i.e., `just bats run test`)
 run *args:

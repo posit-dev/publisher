@@ -22,6 +22,7 @@ type User struct {
 
 type APIClient interface {
 	TestAuthentication(logging.Logger) (*User, error)
+	ContentDetails(contentID types.ContentID, body *ConnectContent, log logging.Logger) error
 	CreateDeployment(*ConnectContent, logging.Logger) (types.ContentID, error)
 	UpdateDeployment(types.ContentID, *ConnectContent, logging.Logger) error
 	SetEnvVars(types.ContentID, config.Environment, logging.Logger) error

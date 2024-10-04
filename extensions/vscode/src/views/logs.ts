@@ -16,6 +16,10 @@ import {
 } from "vscode";
 
 import { EventStream, displayEventStreamMessage } from "src/events";
+import {
+  isCodedEventErrorMessage,
+  handleEventCodedError,
+} from "src/eventErrors";
 
 import {
   EventStreamMessage,
@@ -195,12 +199,16 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
       if (enhancedError && enhancedError.buttonStr) {
         options.push(enhancedError.buttonStr);
       }
-      const selection = await window.showErrorMessage(
-        msg.data.cancelled === "true"
-          ? `Deployment cancelled: ${msg.data.message}`
-          : `Deployment failed: ${msg.data.message}`,
-        ...options,
-      );
+      let errorMessage = "";
+      if (isCodedEventErrorMessage(msg)) {
+        errorMessage = handleEventCodedError(msg);
+      } else {
+        errorMessage =
+          msg.data.cancelled === "true"
+            ? `Deployment cancelled: ${msg.data.message}`
+            : `Deployment failed: ${msg.data.message}`;
+      }
+      const selection = await window.showErrorMessage(errorMessage, ...options);
       if (selection === showLogsOption) {
         await commands.executeCommand(Commands.Logs.Focus);
       } else if (selection === enhancedError?.buttonStr) {
