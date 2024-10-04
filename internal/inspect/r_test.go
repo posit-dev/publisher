@@ -57,6 +57,17 @@ For more information about these matters see
 https://www.gnu.org/licenses/.
 `
 
+const rOutputWithWarnings = `WARNING: ignoring environment value of R_HOME
+R version 4.3.3 (2024-02-29) -- "Angel Food Cake"
+Copyright (C) 2024 The R Foundation for Statistical Computing
+Platform: x86_64-apple-darwin20 (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under the terms of the
+GNU General Public License versions 2 or 3.
+For more information about these matters see
+https://www.gnu.org/licenses/.`
+
 func (s *RSuite) TestGetRVersionFromExecutable() {
 	log := logging.New()
 	rPath := s.cwd.Join("bin", "R")
@@ -71,6 +82,22 @@ func (s *RSuite) TestGetRVersionFromExecutable() {
 	version, err := inspector.getRVersion(rPath.String())
 	s.NoError(err)
 	s.Equal("4.3.0", version)
+}
+
+func (s *RSuite) TestGetRVersionFromExecutableWithWarning() {
+	log := logging.New()
+	rPath := s.cwd.Join("bin", "R")
+	rPath.Dir().MkdirAll(0777)
+	rPath.WriteFile(nil, 0777)
+	i := NewRInspector(s.cwd, rPath.Path, log)
+	inspector := i.(*defaultRInspector)
+
+	executor := executortest.NewMockExecutor()
+	executor.On("RunCommand", rPath.String(), []string{"--version"}, mock.Anything, mock.Anything).Return([]byte(rOutputWithWarnings), nil, nil)
+	inspector.executor = executor
+	version, err := inspector.getRVersion(rPath.String())
+	s.NoError(err)
+	s.Equal("4.3.3", version)
 }
 
 func (s *RSuite) TestGetRVersionFromExecutableWindows() {
@@ -88,6 +115,23 @@ func (s *RSuite) TestGetRVersionFromExecutableWindows() {
 	version, err := inspector.getRVersion(rPath.String())
 	s.NoError(err)
 	s.Equal("4.3.0", version)
+}
+
+func (s *RSuite) TestGetRVersionFromExecutableWindowsWithWarning() {
+	// R on Windows emits version information on stderr
+	log := logging.New()
+	rPath := s.cwd.Join("bin", "R")
+	rPath.Dir().MkdirAll(0777)
+	rPath.WriteFile(nil, 0777)
+	i := NewRInspector(s.cwd, rPath.Path, log)
+	inspector := i.(*defaultRInspector)
+
+	executor := executortest.NewMockExecutor()
+	executor.On("RunCommand", rPath.String(), []string{"--version"}, mock.Anything, mock.Anything).Return(nil, []byte(rOutputWithWarnings), nil)
+	inspector.executor = executor
+	version, err := inspector.getRVersion(rPath.String())
+	s.NoError(err)
+	s.Equal("4.3.3", version)
 }
 
 func (s *RSuite) TestGetRVersionFromExecutableErr() {
