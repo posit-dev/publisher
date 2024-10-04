@@ -3,7 +3,6 @@ package util
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -45,14 +44,15 @@ func (w *symlinkWalker) visit(fn AbsoluteWalkFunc) AbsoluteWalkFunc {
 				// like Emacs which creates symbolic files for unsaved modifications to files.
 				// We'll log the behavior but not return errors to not polute the user with error notifications
 				// when another piece of software is dealing with the same directory.
-				w.log.Debug("Error following symlink, ignoring file", "filepath", path, "error", err.Error())
+				w.log.Warn("Error following symlink, ignoring file", "filepath", path, "error", err.Error())
 				return nil
 			}
 
 			targetPath := NewPath(linkTarget, path.Fs())
 			targetInfo, err := targetPath.Stat()
 			if err != nil {
-				return fmt.Errorf("error getting target info for symlink %s: %w", targetPath, err)
+				w.log.Warn("Error getting info for symlink", "filepath", targetPath, "error", err.Error())
+				return nil
 			}
 			// Visit symlink target info but use the path to the link.
 			err = w.visit(fn)(path, targetInfo, nil)

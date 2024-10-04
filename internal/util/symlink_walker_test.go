@@ -131,7 +131,7 @@ func (s *SymlinkWalkerSuite) TestNewBundleFromDirectoryMissingSymlinkTarget() {
 	})
 
 	log.On("Info", "Following symlink", "path", symlinkPathMatcher).Return()
-	log.On("Debug", "Error following symlink, ignoring file", "filepath", symlinkPathMatcher, "error", mock.Anything).Return()
+	log.On("Warn", "Error following symlink, ignoring file", "filepath", symlinkPathMatcher, "error", mock.Anything).Return()
 
 	underlyingWalker := &FSWalker{}
 	walker := NewSymlinkWalker(underlyingWalker, log)
