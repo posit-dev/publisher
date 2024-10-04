@@ -43,7 +43,8 @@ export const openFileInEditor = async (
     }
   }
 
+  // we'll only indicate a location, if one was passed to us.
   await window.showTextDocument(Uri.file(path), {
-    selection: new Range(start, end),
+    selection: options && options.selection ? new Range(start, end) : undefined,
   });
 };
