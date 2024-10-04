@@ -59,8 +59,8 @@ Or install a specific version with:
 ```
 
 > [!WARNING]
-> Linux users need to have `inotify-tools` installed for the VSCode filewatcher to work properly.
-> This impacts how the extension presents file-specific data.
+>
+> [VSCode uses inotify](https://github.com/microsoft/vscode/wiki/File-Watcher-Issues) on Linux installations. If file changes aren't updating the Publisher extension, ensure you have `inotify` installed.
 > To install `inotify` on Debian, use the following command:<br />
 >
 > ```
