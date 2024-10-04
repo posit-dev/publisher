@@ -21,6 +21,11 @@ const getExecutableBinary = (context: ExtensionContext): string => {
   return path.join(context.extensionPath, "bin", "publisher");
 };
 
+const args = ["@ext:posit.publisher"];
+export const openConfigurationCommand = Uri.parse(
+  `command:workbench.action.openSettings?${encodeURIComponent(JSON.stringify(args))}`,
+);
+
 export const openFileInEditor = async (
   path: string,
   options?: { selection?: EditConfigurationSelection },

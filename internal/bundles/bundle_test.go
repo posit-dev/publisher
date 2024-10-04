@@ -396,6 +396,8 @@ func (s *BundlerSuite) TestNewBundleFromDirectorySymlinks() {
 	}, s.getTarFileNames(dest))
 }
 
+// We log the issues with symbolic links but not return them to not polute the user with error notifications
+// when another piece of software is dealing with the same directory.
 func (s *BundlerSuite) TestNewBundleFromDirectoryMissingSymlinkTarget() {
 	// afero's MemFs doesn't have symlink support, so we
 	// are using a fixture directory under ./testdata.
@@ -407,6 +409,6 @@ func (s *BundlerSuite) TestNewBundleFromDirectoryMissingSymlinkTarget() {
 	bundler, err := NewBundler(dirPath, NewManifest(), nil, log)
 	s.Nil(err)
 	manifest, err := bundler.CreateBundle(dest)
-	s.ErrorIs(err, os.ErrNotExist)
-	s.Nil(manifest)
+	s.NoError(err)
+	s.NotNil(manifest)
 }

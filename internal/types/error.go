@@ -16,6 +16,7 @@ const (
 	ErrorUnknownTOMLKey               ErrorCode = "unknownTOMLKey"
 	ErrorInvalidConfigFiles           ErrorCode = "invalidConfigFiles"
 	ErrorCredentialServiceUnavailable ErrorCode = "credentialsServiceUnavailable"
+	ErrorCertificateVerification      ErrorCode = "errorCertificateVerification"
 	ErrorUnknown                      ErrorCode = "unknown"
 )
 

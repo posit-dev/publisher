@@ -43,6 +43,7 @@ import { DeploymentObjects } from "src/types/shared";
 import { showProgress } from "src/utils/progress";
 import { relativeDir, relativePath, vscodeOpenFiles } from "src/utils/files";
 import { ENTRYPOINT_FILE_EXTENSIONS } from "src/constants";
+import { extensionSettings } from "src/extension";
 
 export async function newDeployment(
   viewId: string,
@@ -570,7 +571,10 @@ export async function newDeployment(
             });
           }
           try {
-            const testResult = await api.credentials.test(input);
+            const testResult = await api.credentials.test(
+              input,
+              !extensionSettings.verifyCertificates(), // insecure = !verifyCertificates
+            );
             if (testResult.status !== 200) {
               return Promise.resolve({
                 message: `Error: Invalid URL (unable to validate connectivity with Server URL - API Call result: ${testResult.status} - ${testResult.statusText}).`,
@@ -643,7 +647,11 @@ export async function newDeployment(
             ? newDeploymentData.newCredentials.url
             : "";
           try {
-            const testResult = await api.credentials.test(serverUrl, input);
+            const testResult = await api.credentials.test(
+              serverUrl,
+              !extensionSettings.verifyCertificates(), // insecure = !verifyCertificates
+              input,
+            );
             if (testResult.status !== 200) {
               return Promise.resolve({
                 message: `Error: Invalid API Key (unable to validate API Key - API Call result: ${testResult.status} - ${testResult.statusText}).`,

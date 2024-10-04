@@ -75,6 +75,7 @@ import { newCredential } from "src/multiStepInputs/newCredential";
 import { PublisherState } from "src/state";
 import { throttleWithLastPending } from "src/utils/throttle";
 import { showAssociateGUID } from "src/actions/showAssociateGUID";
+import { extensionSettings } from "src/extension";
 import { openFileInEditor } from "src/commands";
 
 enum HomeViewInitialized {
@@ -260,6 +261,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         deploymentName,
         credentialName,
         configurationName,
+        !extensionSettings.verifyCertificates(), // insecure = !verifyCertificates
         projectDir,
         secrets,
       );
