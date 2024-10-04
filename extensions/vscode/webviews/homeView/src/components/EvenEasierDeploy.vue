@@ -28,6 +28,29 @@
         />
       </div>
 
+      <template v-if="home.duplicatedEnvironmentVariables.length">
+        <p>
+          <template v-if="home.duplicatedEnvironmentVariables.length === 1">
+            A variable was set as both a secret and environment variable. It
+            must only be set as one or the other.
+          </template>
+          <template v-if="home.duplicatedEnvironmentVariables.length > 1">
+            Variables were set as both secrets and environment variables. They
+            must only be set as one or the other.
+          </template>
+          <a
+            class="webview-link"
+            role="button"
+            @click="
+              onEditConfiguration(home.selectedConfiguration!.configurationPath)
+            "
+            >Edit the Configuration</a
+          >.
+        </p>
+        <p>{{ home.duplicatedEnvironmentVariables.join(", ") }}</p>
+        <p></p>
+      </template>
+
       <p v-if="home.config.active.isEntryMissing">
         No Config Entry in Deployment record -
         {{ home.selectedContentRecord?.saveName }}.
