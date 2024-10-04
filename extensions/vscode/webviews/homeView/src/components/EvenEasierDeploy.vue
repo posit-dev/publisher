@@ -66,7 +66,17 @@
         }}</a
         >.
       </p>
-      <p v-if="home.config.active.isError">
+      <p v-if="home.config.active.isTOMLError">
+        The selected Configuration has a schema error
+        {{ getActiveConfigTOMLErrorDetails }}.
+        <a
+          class="webview-link"
+          role="button"
+          @click="onEditConfigurationWithTOMLError()"
+          >Edit the Configuration</a
+        >.
+      </p>
+      <p v-if="home.config.active.isUnknownError">
         The selected Configuration has an error.
         <a
           class="webview-link"
@@ -207,7 +217,10 @@ import {
   ErrorMessageActionIds,
   ErrorMessageSplitOptions,
 } from "../../../../src/utils/errorEnhancer";
-import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
+import {
+  EditConfigurationSelection,
+  WebviewToHostMessageType,
+} from "../../../../src/types/messages/webviewToHostMessages";
 import { calculateTitle } from "../../../../src/utils/titles";
 import { formatDateString } from "src/utils/date";
 import { filterConfigurationsToValidAndType } from "../../../../src/utils/filters";
@@ -219,6 +232,10 @@ import QuickPickItem from "src/components/QuickPickItem.vue";
 import ActionToolbar from "src/components/ActionToolbar.vue";
 import DeployButton from "src/components/DeployButton.vue";
 import TextStringWithAnchor from "./TextStringWithAnchor.vue";
+import {
+  AgentError,
+  isAgentErrorInvalidTOML,
+} from "../../../../src/api/types/error";
 
 const home = useHomeStore();
 const hostConduit = useHostConduitService();
@@ -254,11 +271,15 @@ const onAddDeployment = () => {
   });
 };
 
-const onEditConfiguration = (fullPath: string) => {
+const onEditConfiguration = (
+  fullPath: string,
+  selection?: EditConfigurationSelection,
+) => {
   hostConduit.sendMsg({
     kind: WebviewToHostMessageType.EDIT_CONFIGURATION,
     content: {
       configurationPath: fullPath,
+      selection,
     },
   });
 };
@@ -336,7 +357,7 @@ const entrypointSubTitle = computed(() => {
       if (contentRecord.projectDir !== ".") {
         subTitle = `${contentRecord.projectDir}${home.platformFileSeparator}`;
       }
-      if (!home.config.active.isError) {
+      if (!home.config.active.isUnknownError) {
         subTitle += config.configuration.entrypoint;
       }
       return subTitle;
@@ -397,6 +418,41 @@ const toolTipText = computed(() => {
 - Entrypoint: ${entrypoint}
 - Server URL: ${home.serverCredential?.url || "<undefined>"}`;
 });
+
+const getActiveConfigError = computed((): AgentError | undefined => {
+  if (
+    home.selectedConfiguration &&
+    isConfigurationError(home.selectedConfiguration) &&
+    isAgentErrorInvalidTOML(home.selectedConfiguration.error)
+  ) {
+    return home.selectedConfiguration.error;
+  }
+  return undefined;
+});
+
+const getActiveConfigTOMLErrorDetails = computed(() => {
+  const agentError = getActiveConfigError.value;
+  if (agentError && isAgentErrorInvalidTOML(agentError)) {
+    return `on line ${agentError.data.line}`;
+  }
+  return "";
+});
+
+const onEditConfigurationWithTOMLError = () => {
+  const agentError = getActiveConfigError.value;
+  if (agentError && isAgentErrorInvalidTOML(agentError)) {
+    onEditConfiguration(home.selectedConfiguration!.configurationPath, {
+      start: {
+        line: agentError.data.line - 1,
+        character: agentError.data.column - 1,
+      },
+    });
+  }
+  console.error(
+    "EvenEasierDeploy::onEditConfigurationWithTOMLError, error is not expected type. Ignoring.",
+  );
+  return;
+};
 
 const onErrorMessageAnchorClick = (splitOptionId: number) => {
   const option = ErrorMessageSplitOptions.find(
