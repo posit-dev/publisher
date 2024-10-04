@@ -182,6 +182,14 @@ func (s *ConfigSuite) TestApplySecretActionAddNoDuplicates() {
 	s.Equal([]string{"existingSecret1", "existingSecret2"}, cfg.Secrets)
 }
 
+func (s *ConfigSuite) TestApplySecretActionAddExitingEnvVar() {
+	cfg := New()
+	cfg.Environment = map[string]string{"existingEnvVar": "value"}
+	cfg.Secrets = []string{}
+	err := cfg.AddSecret("existingEnvVar")
+	s.NotNil(err)
+}
+
 func (s *ConfigSuite) TestApplySecretActionRemove() {
 	cfg := New()
 	cfg.Secrets = []string{"secret1", "secret2"}

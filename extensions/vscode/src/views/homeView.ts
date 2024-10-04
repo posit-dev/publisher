@@ -35,6 +35,7 @@ import {
   isPreContentRecordWithConfig,
   useApi,
   AllContentRecordTypes,
+  EnvironmentConfig,
 } from "src/api";
 import { useBus } from "src/bus";
 import { EventStream } from "src/events";
@@ -944,7 +945,16 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
   }
 
-  private inputSecretName = async () => {
+  private inputSecretName = async (
+    environment: EnvironmentConfig | undefined,
+  ) => {
+    const existingKeys = new Set();
+    if (environment) {
+      for (const secret in environment) {
+        existingKeys.add(secret);
+      }
+    }
+
     return await window.showInputBox({
       title: "Add a Secret",
       prompt: "Enter the name of the secret.",
@@ -952,6 +962,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       validateInput: (value: string) => {
         if (value.length === 0) {
           return "Secret names cannot be empty.";
+        }
+        if (existingKeys.has(value)) {
+          return "There is already an environment variable with this name. Secrets and environment variable names must be unique.";
         }
         return;
       },
@@ -971,7 +984,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
 
-    const name = await this.inputSecretName();
+    const name = await this.inputSecretName(
+      activeConfig.configuration.environment,
+    );
     if (name === undefined) {
       // Cancelled by the user
       return;
