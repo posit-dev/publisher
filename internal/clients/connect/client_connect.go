@@ -103,8 +103,8 @@ func isConnectAuthError(err error) bool {
 }
 
 type certificationValidationFailedDetails struct {
-	url  string
-	accountName string
+	url              string
+	accountName      string
 	certificateError string
 }
 
@@ -122,11 +122,11 @@ func (c *ConnectClient) TestAuthentication(log logging.Logger) (*User, error) {
 		}
 		if urlError, ok := err.(*url.Error); ok {
 			if certificateError, ok := urlError.Err.(*tls.CertificateVerificationError); ok {
-				returnErr := fmt.Errorf("unable to verify TLS certificate for server (%s)", certificateError.Err);
+				returnErr := fmt.Errorf("unable to verify TLS certificate for server (%s)", certificateError.Err)
 				log.Error(returnErr.Error())
-				details := &certificationValidationFailedDetails {
-					url: c.account.URL,
-					accountName: c.account.Name,
+				details := &certificationValidationFailedDetails{
+					url:              c.account.URL,
+					accountName:      c.account.Name,
 					certificateError: certificateError.Err.Error(),
 				}
 				return nil, types.NewAgentError(types.ErrorCertificateVerification, returnErr, details)

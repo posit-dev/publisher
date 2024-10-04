@@ -43,6 +43,7 @@ import { DeploymentObjects } from "src/types/shared";
 import { showProgress } from "src/utils/progress";
 import { relativeDir, relativePath, vscodeOpenFiles } from "src/utils/files";
 import { ENTRYPOINT_FILE_EXTENSIONS } from "src/constants";
+import { extensionSettings } from "src/extension";
 
 export async function newDeployment(
   viewId: string,
@@ -572,7 +573,7 @@ export async function newDeployment(
           try {
             const testResult = await api.credentials.test(
               input,
-              api.getInsecureSetting(),
+              !extensionSettings.verifyCertificates(), // insecure = !verifyCertificates
             );
             if (testResult.status !== 200) {
               return Promise.resolve({
@@ -648,7 +649,7 @@ export async function newDeployment(
           try {
             const testResult = await api.credentials.test(
               serverUrl,
-              api.getInsecureSetting(),
+              !extensionSettings.verifyCertificates(), // insecure = !verifyCertificates
               input,
             );
             if (testResult.status !== 200) {

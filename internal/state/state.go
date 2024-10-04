@@ -130,7 +130,7 @@ func New(path util.AbsolutePath, accountName, configName, targetName string, sav
 	}
 
 	// we don't store insecure credential flag, instead we use a
-	// credential-wide configuration value which is passed in. 
+	// credential-wide configuration value which is passed in.
 	// So we add that value before the account gets used
 	account.Insecure = insecure
 

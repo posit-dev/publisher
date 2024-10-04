@@ -18,6 +18,7 @@ import { formatURL, normalizeURL } from "src/utils/url";
 import { checkSyntaxApiKey } from "src/utils/apiKeys";
 import { showProgress } from "src/utils/progress";
 import { openConfigurationCommand } from "src/commands";
+import { extensionSettings } from "src/extension";
 
 const createNewCredentialLabel = "Create a New Credential";
 
@@ -125,7 +126,7 @@ export async function newCredential(
         try {
           const testResult = await api.credentials.test(
             input,
-            api.getInsecureSetting(),
+            !extensionSettings.verifyCertificates(), // insecure = !verifyCertificates
           );
           if (testResult.status !== 200) {
             return Promise.resolve({
@@ -137,7 +138,7 @@ export async function newCredential(
           if (err) {
             if (err.code === "errorCertificateVerification") {
               return Promise.resolve({
-                message: `Error: URL Not Accessible - ${err.msg}. If applicable, consider enabling [Insecure TLS](${openConfigurationCommand}).`,
+                message: `Error: URL Not Accessible - ${err.msg}. If applicable, consider disabling [Verify TLS Certificates](${openConfigurationCommand}).`,
                 severity: InputBoxValidationSeverity.Error,
               });
             }
@@ -208,7 +209,7 @@ export async function newCredential(
         try {
           const testResult = await api.credentials.test(
             serverUrl,
-            api.getInsecureSetting(),
+            !extensionSettings.verifyCertificates(), // insecure = !verifyCertificates
             input,
           );
           if (testResult.status !== 200) {

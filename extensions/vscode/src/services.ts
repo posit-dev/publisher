@@ -1,6 +1,6 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { ExtensionContext, Disposable, workspace } from "vscode";
+import { ExtensionContext, Disposable } from "vscode";
 
 import { HOST } from "src";
 import { initApi } from "src/api";
@@ -15,7 +15,7 @@ export class Service implements Disposable {
     this.context = context;
     this.agentURL = `http://${HOST}:${port}/api`;
     this.server = new Server(port);
-    initApi(this.getInsecureSettingFn, this.isUp(), this.agentURL);
+    initApi(this.isUp(), this.agentURL);
   }
 
   start = async () => {
@@ -39,16 +39,5 @@ export class Service implements Disposable {
     if (this.server) {
       this.server.outputChannel.show();
     }
-  }
-
-  getInsecureSettingFn(): boolean {
-    // set value from extension configuration - defaults to true
-    const configuration = workspace.getConfiguration("positPublisher");
-    const insecureTLS: boolean | undefined =
-      configuration.get<boolean>("enableInsecureTLS");
-    if (insecureTLS !== undefined) {
-      return insecureTLS;
-    }
-    return false;
   }
 }
