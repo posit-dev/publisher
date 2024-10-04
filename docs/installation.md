@@ -58,7 +58,9 @@ Or install a specific version with:
 ./install-publisher.bash 1.0.beta1
 ```
 
-> [!WARNING] > [VSCode uses inotify](https://github.com/microsoft/vscode/wiki/File-Watcher-Issues) on Linux installations. If file changes aren't propagating in the Publisher extension, ensure you have `inotify` installed.
+> [!WARNING]
+>
+> [VSCode uses inotify](https://github.com/microsoft/vscode/wiki/File-Watcher-Issues) on Linux installations. If file changes aren't propagating in the Publisher extension, ensure you have `inotify` installed.
 > To install `inotify` on Debian, use the following command:<br />
 >
 > ```
