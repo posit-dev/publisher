@@ -26,8 +26,8 @@ export type AgentErrorInvalidTOML = AgentErrorBase & {
   data: {
     problem: string;
     file: string;
-    line: string;
-    column: string;
+    line: number;
+    column: number;
   };
 };
 

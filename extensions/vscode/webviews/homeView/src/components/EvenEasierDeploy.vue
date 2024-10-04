@@ -72,9 +72,7 @@
         <a
           class="webview-link"
           role="button"
-          @click="
-            onEditConfiguration(home.selectedConfiguration!.configurationPath)
-          "
+          @click="onEditConfigurationWithTOMLError()"
           >Edit the Configuration</a
         >.
       </p>
@@ -219,7 +217,10 @@ import {
   ErrorMessageActionIds,
   ErrorMessageSplitOptions,
 } from "../../../../src/utils/errorEnhancer";
-import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
+import {
+  EditConfigurationSelection,
+  WebviewToHostMessageType,
+} from "../../../../src/types/messages/webviewToHostMessages";
 import { calculateTitle } from "../../../../src/utils/titles";
 import { formatDateString } from "src/utils/date";
 import { filterConfigurationsToValidAndType } from "../../../../src/utils/filters";
@@ -231,7 +232,10 @@ import QuickPickItem from "src/components/QuickPickItem.vue";
 import ActionToolbar from "src/components/ActionToolbar.vue";
 import DeployButton from "src/components/DeployButton.vue";
 import TextStringWithAnchor from "./TextStringWithAnchor.vue";
-import { isAgentErrorInvalidTOML } from "../../../../src/api/types/error";
+import {
+  AgentError,
+  isAgentErrorInvalidTOML,
+} from "../../../../src/api/types/error";
 
 const home = useHomeStore();
 const hostConduit = useHostConduitService();
@@ -267,11 +271,15 @@ const onAddDeployment = () => {
   });
 };
 
-const onEditConfiguration = (fullPath: string) => {
+const onEditConfiguration = (
+  fullPath: string,
+  selection?: EditConfigurationSelection,
+) => {
   hostConduit.sendMsg({
     kind: WebviewToHostMessageType.EDIT_CONFIGURATION,
     content: {
       configurationPath: fullPath,
+      selection,
     },
   });
 };
@@ -411,16 +419,40 @@ const toolTipText = computed(() => {
 - Server URL: ${home.serverCredential?.url || "<undefined>"}`;
 });
 
-const getActiveConfigTOMLErrorDetails = computed(() => {
+const getActiveConfigError = computed((): AgentError | undefined => {
   if (
     home.selectedConfiguration &&
     isConfigurationError(home.selectedConfiguration) &&
     isAgentErrorInvalidTOML(home.selectedConfiguration.error)
   ) {
-    return `on line ${home.selectedConfiguration.error.data.line}`;
+    return home.selectedConfiguration.error;
+  }
+  return undefined;
+});
+
+const getActiveConfigTOMLErrorDetails = computed(() => {
+  const agentError = getActiveConfigError.value;
+  if (agentError && isAgentErrorInvalidTOML(agentError)) {
+    return `on line ${agentError.data.line}`;
   }
   return "";
 });
+
+const onEditConfigurationWithTOMLError = () => {
+  const agentError = getActiveConfigError.value;
+  if (agentError && isAgentErrorInvalidTOML(agentError)) {
+    onEditConfiguration(home.selectedConfiguration!.configurationPath, {
+      start: {
+        line: agentError.data.line - 1,
+        character: agentError.data.column - 1,
+      },
+    });
+  }
+  console.error(
+    "EvenEasierDeploy::onEditConfigurationWithTOMLError, error is not expected type. Ignoring.",
+  );
+  return;
+};
 
 const onErrorMessageAnchorClick = (splitOptionId: number) => {
   const option = ErrorMessageSplitOptions.find(

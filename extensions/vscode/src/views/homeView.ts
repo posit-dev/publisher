@@ -75,6 +75,7 @@ import { newCredential } from "src/multiStepInputs/newCredential";
 import { PublisherState } from "src/state";
 import { throttleWithLastPending } from "src/utils/throttle";
 import { showAssociateGUID } from "src/actions/showAssociateGUID";
+import { openFileInEditor } from "src/commands";
 
 enum HomeViewInitialized {
   initialized = "initialized",
@@ -318,10 +319,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   }
 
   private async onEditConfigurationMsg(msg: EditConfigurationMsg) {
-    await commands.executeCommand(
-      "vscode.open",
-      Uri.file(msg.content.configurationPath),
-    );
+    await openFileInEditor(msg.content.configurationPath, {
+      selection: msg.content.selection,
+    });
   }
 
   private async onNavigateMsg(msg: NavigateMsg) {
