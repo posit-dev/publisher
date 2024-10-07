@@ -37,7 +37,9 @@ Description for this content. It may span multiple lines and be up to 4000 chara
 
 #### files
 
-Project-relative paths of the files to be included in the deployment. Wildcards are accepted, using [`.gitignore` syntax](https://git-scm.com/docs/gitignore).
+Project-relative paths of the files to be included in the deployment.
+Uses [`.gitignore` syntax](https://git-scm.com/docs/gitignore) for file include
+patterns, like wildcards.
 
 #### has_parameters
 
