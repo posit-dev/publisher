@@ -41,6 +41,23 @@ Project-relative paths of the files to be included in the deployment.
 Uses [`.gitignore` syntax](https://git-scm.com/docs/gitignore) for file include
 patterns, like wildcards.
 
+Here are some examples given an example project structure:
+
+```
+project-root/
+|
+├── dir/
+│   ├── util.py
+│   └─  helper.py
+│
+└── app.py
+```
+
+- To include all Python files in your project, you can use a wildcard pattern.
+  `*.py` would include all `.py` files in any directory.
+- `/dir/util.py` would include the specific `util.py` file in the `dir`
+  directory under the root of the project to be published.
+
 #### has_parameters
 
 `true` if this is a report that accepts parameters.
