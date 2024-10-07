@@ -57,6 +57,8 @@ project-root/
   `*.py` would include all `.py` files in any directory.
 - `/dir/util.py` would include the specific `util.py` file in the `dir`
   directory under the root of the project to be published.
+- To include the file `app.py` at the root of the project, you can use
+  `/app.py`.
 
 #### has_parameters
 
