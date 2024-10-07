@@ -46,7 +46,14 @@ func (s *RSuite) TestNewRInspector() {
 	s.Equal(log, inspector.log)
 }
 
-const rOutput = `R version 4.3.0 (2023-04-21) -- "Already Tomorrow"
+type OutputTestData struct {
+	output, expectedVersion string
+}
+
+func getOutputTestData() []OutputTestData {
+	data := []OutputTestData{
+		// typical output from command `r --version`
+		{`R version 4.3.0 (2023-04-21) -- "Already Tomorrow"
 Copyright (C) 2023 The R Foundation for Statistical Computing
 Platform: x86_64-apple-darwin20 (64-bit)
 
@@ -55,9 +62,9 @@ You are welcome to redistribute it under the terms of the
 GNU General Public License versions 2 or 3.
 For more information about these matters see
 https://www.gnu.org/licenses/.
-`
-
-const rOutputWithWarnings = `WARNING: ignoring environment value of R_HOME
+`, "4.3.0"},
+		// output when there is a warning
+		{`WARNING: ignoring environment value of R_HOME
 R version 4.3.3 (2024-02-29) -- "Angel Food Cake"
 Copyright (C) 2024 The R Foundation for Statistical Computing
 Platform: x86_64-apple-darwin20 (64-bit)
@@ -66,90 +73,78 @@ R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under the terms of the
 GNU General Public License versions 2 or 3.
 For more information about these matters see
-https://www.gnu.org/licenses/.`
+https://www.gnu.org/licenses/.`, "4.3.3"},
 
-func (s *RSuite) TestGetRVersionFromExecutable() {
-	log := logging.New()
-	rPath := s.cwd.Join("bin", "R")
-	rPath.Dir().MkdirAll(0777)
-	rPath.WriteFile(nil, 0777)
-	i := NewRInspector(s.cwd, rPath.Path, log)
-	inspector := i.(*defaultRInspector)
+		// output when there are multiple warnings
+		// as well as closely matching version strings
+		{`WARNING: ignoring environment value of R_HOME
+WARNING: your mom is calling
+WARNING: time to stand
+Somewhere below is the correct R version 4.3.* that we're looking for
+R version 4.3.3 (2024-02-29) -- "Angel Food Cake"
+Copyright (C) 2024 The R Foundation for Statistical Computing
+Platform: x86_64-apple-darwin20 (64-bit)
 
-	executor := executortest.NewMockExecutor()
-	executor.On("RunCommand", rPath.String(), []string{"--version"}, mock.Anything, mock.Anything).Return([]byte(rOutput), nil, nil)
-	inspector.executor = executor
-	version, err := inspector.getRVersion(rPath.String())
-	s.NoError(err)
-	s.Equal("4.3.0", version)
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under the terms of the
+GNU General Public License versions 2 or 3.
+For more information about these matters see
+https://www.gnu.org/licenses/.`, "4.3.3"},
+
+		// test output where version exists in multiple locations
+		// we want to get it from the first location
+		{`
+R version 4.3.3 (2024-02-29) -- "Angel Food Cake"
+Copyright (C) 2024 The R Foundation for Statistical Computing
+Platform: x86_64-apple-darwin20 (64-bit)
+R version 4.1.1 (2023-12-29) -- "Fantasy Island"
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under the terms of the
+GNU General Public License versions 2 or 3.
+For more information about these matters see
+https://www.gnu.org/licenses/.`, "4.3.3"},
+	}
+	return data
 }
 
-func (s *RSuite) TestGetRVersionFromExecutableWithWarning() {
-	log := logging.New()
-	rPath := s.cwd.Join("bin", "R")
-	rPath.Dir().MkdirAll(0777)
-	rPath.WriteFile(nil, 0777)
-	i := NewRInspector(s.cwd, rPath.Path, log)
-	inspector := i.(*defaultRInspector)
+func (s *RSuite) TestGetRVersionFromExecutable() {
+	for _, tc := range getOutputTestData() {
+		s.SetupTest()
+		log := logging.New()
+		rPath := s.cwd.Join("bin", "R")
+		rPath.Dir().MkdirAll(0777)
+		rPath.WriteFile(nil, 0777)
+		i := NewRInspector(s.cwd, rPath.Path, log)
+		inspector := i.(*defaultRInspector)
 
-	executor := executortest.NewMockExecutor()
-	executor.On("RunCommand", rPath.String(), []string{"--version"}, mock.Anything, mock.Anything).Return([]byte(rOutputWithWarnings), nil, nil)
-	inspector.executor = executor
-	version, err := inspector.getRVersion(rPath.String())
-	s.NoError(err)
-	s.Equal("4.3.3", version)
+		executor := executortest.NewMockExecutor()
+		executor.On("RunCommand", rPath.String(), []string{"--version"}, mock.Anything, mock.Anything).Return([]byte(tc.output), nil, nil)
+		inspector.executor = executor
+		version, err := inspector.getRVersion(rPath.String())
+		s.NoError(err)
+		s.Equal(tc.expectedVersion, version)
+	}
 }
 
 func (s *RSuite) TestGetRVersionFromExecutableWindows() {
-	// R on Windows emits version information on stderr
-	log := logging.New()
-	rPath := s.cwd.Join("bin", "R")
-	rPath.Dir().MkdirAll(0777)
-	rPath.WriteFile(nil, 0777)
-	i := NewRInspector(s.cwd, rPath.Path, log)
-	inspector := i.(*defaultRInspector)
+	for _, tc := range getOutputTestData() {
+		s.SetupTest()
+		// R on Windows emits version information on stderr
+		log := logging.New()
+		rPath := s.cwd.Join("bin", "R")
+		rPath.Dir().MkdirAll(0777)
+		rPath.WriteFile(nil, 0777)
+		i := NewRInspector(s.cwd, rPath.Path, log)
+		inspector := i.(*defaultRInspector)
 
-	executor := executortest.NewMockExecutor()
-	executor.On("RunCommand", rPath.String(), []string{"--version"}, mock.Anything, mock.Anything).Return(nil, []byte(rOutput), nil)
-	inspector.executor = executor
-	version, err := inspector.getRVersion(rPath.String())
-	s.NoError(err)
-	s.Equal("4.3.0", version)
-}
-
-func (s *RSuite) TestGetRVersionFromExecutableWindowsWithWarning() {
-	// R on Windows emits version information on stderr
-	log := logging.New()
-	rPath := s.cwd.Join("bin", "R")
-	rPath.Dir().MkdirAll(0777)
-	rPath.WriteFile(nil, 0777)
-	i := NewRInspector(s.cwd, rPath.Path, log)
-	inspector := i.(*defaultRInspector)
-
-	executor := executortest.NewMockExecutor()
-	executor.On("RunCommand", rPath.String(), []string{"--version"}, mock.Anything, mock.Anything).Return(nil, []byte(rOutputWithWarnings), nil)
-	inspector.executor = executor
-	version, err := inspector.getRVersion(rPath.String())
-	s.NoError(err)
-	s.Equal("4.3.3", version)
-}
-
-func (s *RSuite) TestGetRVersionFromExecutableErr() {
-	rPath := s.cwd.Join("bin", "R")
-	rPath.Dir().MkdirAll(0777)
-	rPath.WriteFile(nil, 0777)
-	log := logging.New()
-	i := NewRInspector(s.cwd, rPath.Path, log)
-	inspector := i.(*defaultRInspector)
-
-	executor := executortest.NewMockExecutor()
-	testError := errors.New("test error from RunCommand")
-	executor.On("RunCommand", rPath.String(), []string{"--version"}, mock.Anything, mock.Anything).Return(nil, nil, testError)
-	inspector.executor = executor
-	version, err := inspector.getRVersion(rPath.String())
-	s.NotNil(err)
-	s.ErrorIs(err, testError)
-	s.Equal("", version)
+		executor := executortest.NewMockExecutor()
+		executor.On("RunCommand", rPath.String(), []string{"--version"}, mock.Anything, mock.Anything).Return(nil, []byte(tc.output), nil)
+		inspector.executor = executor
+		version, err := inspector.getRVersion(rPath.String())
+		s.NoError(err)
+		s.Equal(tc.expectedVersion, version)
+	}
 }
 
 func (s *RSuite) TestGetRVersionFromRealDefaultR() {
@@ -282,20 +277,22 @@ func (s *RSuite) TestGetRVersionFromLockFile() {
 }
 
 func (s *RSuite) TestGetRExecutable() {
-	log := logging.New()
-	executor := executortest.NewMockExecutor()
-	executor.On("RunCommand", "/some/R", []string{"--version"}, mock.Anything, mock.Anything).Return([]byte(rOutput), nil, nil)
-	i := &defaultRInspector{
-		executor: executor,
-		log:      log,
-	}
+	for _, tc := range getOutputTestData() {
+		log := logging.New()
+		executor := executortest.NewMockExecutor()
+		executor.On("RunCommand", "/some/R", []string{"--version"}, mock.Anything, mock.Anything).Return([]byte(tc.output), nil, nil)
+		i := &defaultRInspector{
+			executor: executor,
+			log:      log,
+		}
 
-	pathLooker := util.NewMockPathLooker()
-	pathLooker.On("LookPath", "R").Return("/some/R", nil)
-	i.pathLooker = pathLooker
-	executable, err := i.getRExecutable()
-	s.NoError(err)
-	s.Equal("/some/R", executable)
+		pathLooker := util.NewMockPathLooker()
+		pathLooker.On("LookPath", "R").Return("/some/R", nil)
+		i.pathLooker = pathLooker
+		executable, err := i.getRExecutable()
+		s.NoError(err)
+		s.Equal("/some/R", executable)
+	}
 }
 
 func (s *RSuite) TestGetRExecutableSpecifiedR() {
