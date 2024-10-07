@@ -14,23 +14,37 @@ export function isCodedEventErrorMessage(
   return msg.errCode !== undefined;
 }
 
-type deploymentEvtErr = {
+type baseEvtErr = {
   dashboardUrl: string;
   localId: string;
   message: string;
   error: string;
 };
 
+type lockfileReadingEvtErr = baseEvtErr & {
+  lockfile: string;
+};
+
 export const isEvtErrDeploymentFailed = (
   emsg: EventStreamMessageErrorCoded,
-): emsg is EventStreamMessageErrorCoded<deploymentEvtErr> => {
+): emsg is EventStreamMessageErrorCoded<baseEvtErr> => {
   return emsg.errCode === "deployFailed";
+};
+
+export const isEvtErrRenvLockPackagesReadingFailed = (
+  emsg: EventStreamMessageErrorCoded,
+): emsg is EventStreamMessageErrorCoded<lockfileReadingEvtErr> => {
+  return emsg.errCode === "renvlockPackagesReadingError";
 };
 
 export const handleEventCodedError = (
   emsg: EventStreamMessageErrorCoded,
 ): string => {
   if (isEvtErrDeploymentFailed(emsg)) {
+    return emsg.data.message;
+  }
+
+  if (isEvtErrRenvLockPackagesReadingFailed(emsg)) {
     return emsg.data.message;
   }
 
