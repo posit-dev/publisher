@@ -3,8 +3,6 @@ import * as path from "path";
 import * as fs from "fs";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
-import Publisher from "../pages/Publisher.ts";
-import Deployment from "../pages/Deployment.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -19,7 +17,9 @@ describe("Detect error in config", () => {
   before(async () => {
     workbench = await browser.getWorkbench();
     input = await $(".input");
-    await Publisher.openExtension();
+    const extension = await browser.$("aria/Posit Publisher");
+    await extension.waitForExist({ timeout: 30000 });
+    await extension.click();
     await expect(await browser.$("aria/Posit Publisher")).toExist();
   });
 
@@ -29,7 +29,12 @@ describe("Detect error in config", () => {
     await helper.createErrorFastAPIConfigFile();
 
     // initialize project via button
-    await Deployment.clickSelectButton();
+    await helper.switchToSubframe();
+    const selectButton = (await $('[data-automation="select-deployment"]')).$(
+      ".quick-pick-label",
+    );
+    await expect(selectButton).toHaveText("Select...");
+    await selectButton.click();
   });
 
   it("Dropdown shows error", async () => {

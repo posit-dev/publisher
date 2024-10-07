@@ -32,19 +32,16 @@ describe("Detect missing config and credentials", () => {
     await helper.createFastAPIDeploymentFile();
 
     await helper.switchToSubframe();
-    // initialize project via button
     const selectButton = (await $('[data-automation="select-deployment"]')).$(
       ".quick-pick-label",
     );
-
-    await expect(selectButton).toHaveText(`Select...`);
+    await expect(selectButton).toHaveText("Select...");
     await selectButton.click();
-
-    // switch out of iframe
-    await browser.switchToFrame(null);
   });
 
   it("Dropdown shows error", async () => {
+    // switch out of iframe
+    await browser.switchToFrame(null);
     // verify Missing config loads in dropdown and select it
     const createMessage =
       'div.monaco-list-row[aria-label*="Unknown Title Due to Missing Config fastapi-simple-VO48"]';

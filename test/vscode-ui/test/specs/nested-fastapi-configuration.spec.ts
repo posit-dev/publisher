@@ -21,6 +21,8 @@ describe("Nested Fast API Configuration", () => {
   before(async () => {
     workbench = await browser.getWorkbench();
     input = await $(".input");
+    // const filePath = path.join(__dirname, "test/sample-content/fastapi-simple/simple.py");
+    // await workbench.openFile(filePath);
   });
 
   it("open extension", async () => {
@@ -84,7 +86,9 @@ describe("Nested Fast API Configuration", () => {
     await browser.keys("\uE007");
 
     // wait for server validation
-    await helper.waitForInputFields("Enter a Unique Nickname");
+    await helper.waitForInputFields(
+      "Enter a Unique Nickname for your Credential. (Press 'Enter' to confirm or 'Escape' to cancel)",
+    );
 
     // set server name
     await input.setValue("my connect server");
