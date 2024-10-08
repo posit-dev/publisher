@@ -25,8 +25,7 @@ or from the [Open VSX Registry](https://open-vsx.org/extension/posit/publisher).
 
 ### Code-first deployment
 
-Configure your project and then deploy your content to Posit Connect with a
-click.
+Configure your content and then deploy to Posit Connect with a click.
 
 [Configuration files](https://github.com/posit-dev/publisher/blob/main/docs/configuration.md)
 allow setting up how you want your content to look and run on Connect - from
@@ -34,20 +33,22 @@ choosing a title and description to
 [Runtime process settings](https://docs.posit.co/connect/user/content-settings/#content-runtime).
 
 Keep your content stable with language and tool versions set in your
-configurations- all automatically detected based on your local environment.
+configurations — all automatically detected based on your local environment.
 
-Everything is saved under `.posit/` in your project directory for easy
-re-deployment and collaboration.
+Everything is saved in the `.posit/` directory for easy re-deployment and
+collaboration.
 
 ### Seamless collaboration
 
-Share your deployments and configurations with your team by committing the
-`.posit/` directory to your version control system, allowing Collaborators to
-easily pick up where you left off.
+Allow Collaborators to easily pick up where you left off by committing the
+`.posit/` directory to your version control system. Your team can deploy using
+the same deployments and configurations.
 
 ### Track all deployments for a project
 
-Separate staging and production deployments easily per project.
+Easily track all deployments for a project with Posit Publisher.
+
+For example, create separate deployments for staging and production.
 
 ### Deployment logs
 
