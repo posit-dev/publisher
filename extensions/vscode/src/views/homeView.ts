@@ -372,13 +372,31 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     });
   }
 
-  private onPublishSuccess() {
+  private async onPublishSuccess() {
+    // refresh the content record and wait until we get response
+    // before we notify the webView that publishing is finished.
+    await this.state.refreshContentRecords();
+    this.updateWebViewViewContentRecords();
+    useBus().trigger(
+      "activeContentRecordChanged",
+      await this.state.getSelectedContentRecord(),
+    );
+
     this.webviewConduit.sendMsg({
       kind: HostToWebviewMessageType.PUBLISH_FINISH_SUCCESS,
     });
   }
 
-  private onPublishFailure(msg: EventStreamMessage) {
+  private async onPublishFailure(msg: EventStreamMessage) {
+    // refresh the content record and wait until we get response
+    // before we notify the webView that publishing is finished.
+    await this.state.refreshContentRecords();
+    this.updateWebViewViewContentRecords();
+    useBus().trigger(
+      "activeContentRecordChanged",
+      await this.state.getSelectedContentRecord(),
+    );
+
     this.webviewConduit.sendMsg({
       kind: HostToWebviewMessageType.PUBLISH_FINISH_FAILURE,
       content: {
