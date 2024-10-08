@@ -45,6 +45,9 @@ jobs:
       - name: Extract dist
         run: unzip dist/*-linux-amd64.vsix -d dist/ext
 
+      - name: setup-chromedriver
+        uses: nanasess/setup-chromedriver@v2.2.2
+
       - run: just vscode configure
       - run: just vscode-ui install
       - run: just vscode-ui build-connect
