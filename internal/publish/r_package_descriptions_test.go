@@ -131,7 +131,7 @@ func (s *RPackageDescSuite) TestGetRPackages_ScanPackagesError() {
 	publisher := s.makePublisher()
 	_, err := publisher.getRPackages()
 	s.NotNil(err)
-	s.Contains(err.(*types.AgentError).Message, "Could not scan R packages from renv lockfile:")
+	s.Contains(err.(*types.AgentError).Message, "Could not scan R packages from lockfile:")
 	s.Contains(err.(*types.AgentError).Message, "custom.lock")
 	s.log.AssertExpectations(s.T())
 }
