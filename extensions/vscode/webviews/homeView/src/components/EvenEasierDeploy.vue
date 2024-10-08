@@ -176,7 +176,7 @@
         >
           <span class="codicon codicon-error error-icon"></span>
           <TextStringWithAnchor
-            :message="home.selectedContentRecord?.deploymentError?.msg"
+            :message="deploymentAgentErrorMsg"
             :splitOptions="ErrorMessageSplitOptions"
             class="error-message"
             @click="onErrorMessageAnchorClick"
@@ -234,6 +234,7 @@ import DeployButton from "src/components/DeployButton.vue";
 import TextStringWithAnchor from "./TextStringWithAnchor.vue";
 import {
   AgentError,
+  getAgentErrorMsg,
   isAgentErrorInvalidTOML,
 } from "../../../../src/api/types/error";
 
@@ -436,6 +437,14 @@ const getActiveConfigTOMLErrorDetails = computed(() => {
     return `on line ${agentError.data.line}`;
   }
   return "";
+});
+
+const deploymentAgentErrorMsg = computed(() => {
+  const agentError = home.selectedContentRecord?.deploymentError;
+  if (!agentError) {
+    return "";
+  }
+  return getAgentErrorMsg(agentError);
 });
 
 const onEditConfigurationWithTOMLError = () => {
