@@ -1,8 +1,15 @@
 # Posit Publisher - Deploy to Posit Connect
 
 [Posit Publisher](https://github.com/posit-dev/publisher) is a code-first tool
-for deploying to
-[Posit Connect](https://posit.co/products/enterprise/connect/).
+with a push-button user interface for deploying the things you build in R and
+Python to [Posit Connect](https://posit.co/products/enterprise/connect/).
+
+Supported content includes:
+
+- Python content: APIs, applications, and notebooks
+- Quarto content: `.qmd` and `.Rmd` files. Support for embedded Shiny apps
+- R content: Shiny apps, RMarkdown, Plumber APIs, and Rmd with embedded
+  Shiny apps
 
 ## Installation
 
