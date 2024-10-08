@@ -145,6 +145,7 @@ func (s *InitializeSuite) TestInitIfNeededWhenNotNeeded() {
 		PackageManager: "pip",
 	}
 	cfg.WriteFile(configPath)
+	cfg.FillDefaults()
 
 	PythonInspectorFactory = func(util.AbsolutePath, util.Path, logging.Logger) inspect.PythonInspector {
 		return &inspect.MockPythonInspector{}
