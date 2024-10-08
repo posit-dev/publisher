@@ -52,7 +52,9 @@ func (s *GetConfigurationuite) makeConfiguration(name string) *config.Config {
 	}
 	err := cfg.WriteFile(path)
 	s.NoError(err)
-	return cfg
+	r, err := config.FromFile(path)
+	s.NoError(err)
+	return r
 }
 
 func (s *GetConfigurationuite) TestGetConfiguration() {
