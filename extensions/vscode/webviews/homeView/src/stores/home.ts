@@ -132,9 +132,6 @@ export const useHomeStore = defineStore("home", () => {
     });
   });
 
-  const lastContentRecordResult = ref<string>();
-  const lastContentRecordMsg = ref<string>();
-
   const files = ref<ContentRecordFile>();
 
   const flatFiles = computed(() => {
@@ -424,8 +421,6 @@ export const useHomeStore = defineStore("home", () => {
     files,
     flatFiles,
     initializingRequestComplete,
-    lastContentRecordResult,
-    lastContentRecordMsg,
     pythonProject,
     pythonPackages,
     pythonPackageFile,

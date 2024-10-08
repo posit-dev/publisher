@@ -168,14 +168,10 @@ const onPublishFinishSuccessMsg = () => {
   const home = useHomeStore();
   home.clearSecretValues();
   home.publishInProgress = false;
-  home.lastContentRecordResult = `Last Deployment was Successful`;
-  home.lastContentRecordMsg = "";
 };
 const onPublishFinishFailureMsg = (msg: PublishFinishFailureMsg) => {
   const home = useHomeStore();
   home.publishInProgress = false;
-  home.lastContentRecordResult = `Last Deployment Failed`;
-  home.lastContentRecordMsg = msg.content.data.message;
 };
 const onUpdateContentRecordSelectionMsg = (
   msg: UpdateContentRecordSelectionMsg,
