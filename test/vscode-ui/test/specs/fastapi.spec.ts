@@ -72,9 +72,7 @@ describe("VS Code Extension UI Test", () => {
     await browser.keys("\uE007");
 
     // wait for server validation
-    await helper.waitForInputFields(
-      "Enter a Unique Nickname for your Credential. (Press 'Enter' to confirm or 'Escape' to cancel)",
-    );
+    await helper.waitForInputFields("Enter a unique nickname for this server");
 
     // set server name
     await input.setValue("my connect server");

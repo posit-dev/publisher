@@ -16,6 +16,7 @@ const (
 	ErrorUnknownTOMLKey               ErrorCode = "unknownTOMLKey"
 	ErrorInvalidConfigFiles           ErrorCode = "invalidConfigFiles"
 	ErrorCredentialServiceUnavailable ErrorCode = "credentialsServiceUnavailable"
+	ErrorCertificateVerification      ErrorCode = "errorCertificateVerification"
 	ErrorUnknown                      ErrorCode = "unknown"
 )
 
@@ -98,4 +99,14 @@ func OperationError(op Operation, err error) EventableError {
 	}
 	e.SetOperation(op)
 	return e
+}
+
+// Evaluate if a given error is an AgentError
+// returning the error as AgentError type when it is
+// and a bool flag of the comparison result.
+func IsAgentError(err error) (*AgentError, bool) {
+	if aerr, ok := err.(*AgentError); ok {
+		return aerr, ok
+	}
+	return nil, false
 }

@@ -16,6 +16,10 @@ import { WebviewToHostMessageType } from "../../../../src/types/messages/webview
 import { RPackage } from "../../../../src/api/types/packages";
 import { DeploymentSelector } from "../../../../src/types/shared";
 import { splitFilesOnInclusion } from "src/utils/files";
+import {
+  isAgentErrorInvalidTOML,
+  isAgentErrorTypeUnknown,
+} from "../../../../src/api/types/error";
 
 export const useHomeStore = defineStore("home", () => {
   const platformFileSeparator = ref<string>("/");
@@ -30,6 +34,33 @@ export const useHomeStore = defineStore("home", () => {
   });
 
   const secrets = ref(new Map<string, string | undefined>());
+
+  const environment = computed((): Map<string, string> => {
+    const result = new Map<string, string>();
+    const config = selectedConfiguration.value;
+
+    if (config === undefined || isConfigurationError(config)) {
+      return result;
+    }
+
+    Object.entries(config.configuration.environment || {}).forEach(
+      ([name, value]) => {
+        result.set(name, value);
+      },
+    );
+
+    return result;
+  });
+
+  const duplicatedEnvironmentVariables = computed((): string[] => {
+    const result: string[] = [];
+    secrets.value.forEach((_, name) => {
+      if (environment.value.has(name)) {
+        result.push(name);
+      }
+    });
+    return result;
+  });
 
   const showDisabledOverlay = ref(false);
 
@@ -330,10 +361,19 @@ export const useHomeStore = defineStore("home", () => {
         );
       }),
 
-      isError: computed((): boolean => {
+      isTOMLError: computed((): boolean => {
         return Boolean(
           selectedConfiguration.value &&
-            isConfigurationError(selectedConfiguration.value),
+            isConfigurationError(selectedConfiguration.value) &&
+            isAgentErrorInvalidTOML(selectedConfiguration.value.error),
+        );
+      }),
+
+      isUnknownError: computed((): boolean => {
+        return Boolean(
+          selectedConfiguration.value &&
+            isConfigurationError(selectedConfiguration.value) &&
+            isAgentErrorTypeUnknown(selectedConfiguration.value.error),
         );
       }),
 
@@ -358,7 +398,8 @@ export const useHomeStore = defineStore("home", () => {
         return (
           config.active.isEntryMissing.value ||
           config.active.isMissing.value ||
-          config.active.isError.value ||
+          config.active.isTOMLError.value ||
+          config.active.isUnknownError.value ||
           config.active.isCredentialMissing.value
         );
       }),
@@ -375,6 +416,8 @@ export const useHomeStore = defineStore("home", () => {
     credentials,
     sortedCredentials,
     secrets,
+    environment,
+    duplicatedEnvironmentVariables,
     selectedContentRecord,
     selectedConfiguration,
     serverCredential,

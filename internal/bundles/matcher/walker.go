@@ -85,6 +85,10 @@ func (i *matchingWalker) Walk(base util.AbsolutePath, fn util.AbsoluteWalkFunc) 
 			i.log.Warn("permission error; skipping", "path", path)
 			return nil
 		}
+		if err != nil {
+			i.log.Warn("Unknown error while accessing file", "path", path, "error", err.Error())
+			return nil
+		}
 		return fn(path, info, err)
 	})
 }

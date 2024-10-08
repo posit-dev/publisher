@@ -35,6 +35,7 @@ import {
   isPreContentRecordWithConfig,
   useApi,
   AllContentRecordTypes,
+  EnvironmentConfig,
 } from "src/api";
 import { useBus } from "src/bus";
 import { EventStream } from "src/events";
@@ -74,6 +75,8 @@ import { newCredential } from "src/multiStepInputs/newCredential";
 import { PublisherState } from "src/state";
 import { throttleWithLastPending } from "src/utils/throttle";
 import { showAssociateGUID } from "src/actions/showAssociateGUID";
+import { extensionSettings } from "src/extension";
+import { openFileInEditor } from "src/commands";
 
 enum HomeViewInitialized {
   initialized = "initialized",
@@ -258,6 +261,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         deploymentName,
         credentialName,
         configurationName,
+        !extensionSettings.verifyCertificates(), // insecure = !verifyCertificates
         projectDir,
         secrets,
       );
@@ -317,10 +321,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   }
 
   private async onEditConfigurationMsg(msg: EditConfigurationMsg) {
-    await commands.executeCommand(
-      "vscode.open",
-      Uri.file(msg.content.configurationPath),
-    );
+    await openFileInEditor(msg.content.configurationPath, {
+      selection: msg.content.selection,
+    });
   }
 
   private async onNavigateMsg(msg: NavigateMsg) {
@@ -944,7 +947,16 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
   }
 
-  private inputSecretName = async () => {
+  private inputSecretName = async (
+    environment: EnvironmentConfig | undefined,
+  ) => {
+    const existingKeys = new Set();
+    if (environment) {
+      for (const secret in environment) {
+        existingKeys.add(secret);
+      }
+    }
+
     return await window.showInputBox({
       title: "Add a Secret",
       prompt: "Enter the name of the secret.",
@@ -952,6 +964,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       validateInput: (value: string) => {
         if (value.length === 0) {
           return "Secret names cannot be empty.";
+        }
+        if (existingKeys.has(value)) {
+          return "There is already an environment variable with this name. Secrets and environment variable names must be unique.";
         }
         return;
       },
@@ -971,7 +986,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
 
-    const name = await this.inputSecretName();
+    const name = await this.inputSecretName(
+      activeConfig.configuration.environment,
+    );
     if (name === undefined) {
       // Cancelled by the user
       return;
@@ -1121,7 +1138,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       deploymentQuickPickList.push({
         iconPath: new ThemeIcon("plus"),
         label: createNewDeploymentLabel,
-        detail: "(or pick one of the existing deployments below)", // we're forcing a blank here, just to maintain height of selection
+        detail: includedContentRecords.length
+          ? "(or pick one of the existing deployments below)"
+          : undefined,
         lastMatch: includedContentRecords.length ? false : true,
       });
 

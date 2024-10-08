@@ -106,10 +106,23 @@ export type DeployMsg = AnyWebviewToHostMessage<
 export type InitializingMsg =
   AnyWebviewToHostMessage<WebviewToHostMessageType.INITIALIZING>;
 
+export type EditConfigurationSelection = {
+  // numbers below are base-zero
+  start: {
+    line: number;
+    character: number;
+  };
+  end?: {
+    line: number;
+    character: number;
+  };
+};
+
 export type EditConfigurationMsg = AnyWebviewToHostMessage<
   WebviewToHostMessageType.EDIT_CONFIGURATION,
   {
     configurationPath: string;
+    selection?: EditConfigurationSelection;
   }
 >;
 

@@ -2,12 +2,14 @@
 
 import { AxiosError, AxiosResponse, isAxiosError } from "axios";
 
-type ErrorCode =
+export type ErrorCode =
   | "unknown"
   | "resourceNotFound"
   | "invalidTOML"
   | "unknownTOMLKey"
-  | "invalidConfigFile";
+  | "invalidConfigFile"
+  | "errorCertificateVerification"
+  | "deployFailed";
 
 export type axiosErrorWithJson<T = { code: ErrorCode; details: unknown }> =
   AxiosError & {

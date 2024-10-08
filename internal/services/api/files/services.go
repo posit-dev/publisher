@@ -52,7 +52,8 @@ func (s filesService) GetFile(p util.AbsolutePath, matchList matcher.MatchList) 
 				s.log.Warn("permission error; skipping", "path", path)
 				return nil
 			} else {
-				return err
+				s.log.Warn("Unknown error while accesing file", "path", path)
+				return nil
 			}
 		}
 		match := matchList.Match(path)

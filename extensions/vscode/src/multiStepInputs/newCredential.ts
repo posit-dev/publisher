@@ -17,6 +17,8 @@ import {
 import { formatURL, normalizeURL } from "src/utils/url";
 import { checkSyntaxApiKey } from "src/utils/apiKeys";
 import { showProgress } from "src/utils/progress";
+import { openConfigurationCommand } from "src/commands";
+import { extensionSettings } from "src/extension";
 
 const createNewCredentialLabel = "Create a New Credential";
 
@@ -77,7 +79,6 @@ export async function newCredential(
       typeof state.data.url === "string" && state.data.url.length
         ? state.data.url
         : "";
-
     const url = await input.showInputBox({
       title: state.title,
       step: thisStepNumber,
@@ -123,16 +124,26 @@ export async function newCredential(
           });
         }
         try {
-          const testResult = await api.credentials.test(input);
+          const testResult = await api.credentials.test(
+            input,
+            !extensionSettings.verifyCertificates(), // insecure = !verifyCertificates
+          );
           if (testResult.status !== 200) {
             return Promise.resolve({
               message: `Error: Invalid URL (unable to validate connectivity with Server URL - API Call result: ${testResult.status} - ${testResult.statusText}).`,
               severity: InputBoxValidationSeverity.Error,
             });
           }
-          if (testResult.data.error) {
+          const err = testResult.data.error;
+          if (err) {
+            if (err.code === "errorCertificateVerification") {
+              return Promise.resolve({
+                message: `Error: URL Not Accessible - ${err.msg}. If applicable, consider disabling [Verify TLS Certificates](${openConfigurationCommand}).`,
+                severity: InputBoxValidationSeverity.Error,
+              });
+            }
             return Promise.resolve({
-              message: `Error: Invalid URL (${testResult.data.error.msg}).`,
+              message: `Error: Invalid URL (unable to validate connectivity with Server URL - ${getMessageFromError(err)}).`,
               severity: InputBoxValidationSeverity.Error,
             });
           }
@@ -196,7 +207,11 @@ export async function newCredential(
         const serverUrl =
           typeof state.data.url === "string" ? state.data.url : "";
         try {
-          const testResult = await api.credentials.test(serverUrl, input);
+          const testResult = await api.credentials.test(
+            serverUrl,
+            !extensionSettings.verifyCertificates(), // insecure = !verifyCertificates
+            input,
+          );
           if (testResult.status !== 200) {
             return Promise.resolve({
               message: `Error: Invalid API Key (unable to validate API Key - API Call result: ${testResult.status} - ${testResult.statusText}).`,
@@ -246,8 +261,8 @@ export async function newCredential(
       step: thisStepNumber,
       totalSteps: state.totalSteps,
       value: currentName,
-      prompt: "Enter a Unique Nickname for your Credential.",
-      placeholder: "example: Posit Connect",
+      prompt: "Enter a unique nickname for this server.",
+      placeholder: "Posit Connect",
       finalValidation: (input: string) => {
         input = input.trim();
         if (input === "") {
