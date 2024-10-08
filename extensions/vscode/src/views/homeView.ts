@@ -680,11 +680,14 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
 
-    const relPathPackageFile =
-      activeConfiguration.configuration.python?.packageFile;
-    if (relPathPackageFile === undefined) {
+    // Project is not configured for Python so cannot scan
+    // Scan button is not visible when this is the case
+    if (!activeConfiguration.configuration.python) {
       return;
     }
+
+    const relPathPackageFile =
+      activeConfiguration.configuration.python.packageFile;
 
     const fileUri = Uri.joinPath(
       this.root.uri,
@@ -747,11 +750,13 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
 
-    const relPathPackageFile =
-      activeConfiguration?.configuration.r?.packageFile;
-    if (relPathPackageFile === undefined) {
+    // Project is not configured for R so cannot scan
+    // Scan button is not visible when this is the case
+    if (!activeConfiguration.configuration.r) {
       return;
     }
+
+    const relPathPackageFile = activeConfiguration.configuration.r.packageFile;
 
     const fileUri = Uri.joinPath(
       this.root.uri,

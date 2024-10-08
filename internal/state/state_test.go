@@ -277,7 +277,9 @@ func (s *StateSuite) makeConfiguration(name string) *config.Config {
 	}
 	err := cfg.WriteFile(path)
 	s.NoError(err)
-	return cfg
+	r, err := config.FromFile(path)
+	s.NoError(err)
+	return r
 }
 
 func (s *StateSuite) makeConfigurationWithSecrets(name string, secrets []string) *config.Config {
@@ -424,6 +426,7 @@ func (s *StateSuite) TestNewWithTargetAndAccount() {
 	s.Equal("savedConfigName", state.ConfigName)
 	s.Equal("myTargetName", state.TargetName)
 	s.Equal(&acct2, state.Account)
+
 	s.Equal(cfg, state.Config)
 	s.Equal(d, state.Target)
 }
