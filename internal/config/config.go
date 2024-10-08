@@ -109,7 +109,7 @@ func (cfg *Config) WriteFile(path util.AbsolutePath) error {
 	return cfg.Write(f)
 }
 
-func (cfg *Config) FillDefaults() error {
+func (cfg *Config) FillDefaults() {
 	if cfg.R != nil {
 		if cfg.R.PackageFile == "" {
 			cfg.R.PackageFile = "renv.lock"
@@ -127,8 +127,6 @@ func (cfg *Config) FillDefaults() error {
 			cfg.Python.PackageManager = "pip"
 		}
 	}
-
-	return nil
 }
 
 func (cfg *Config) AddSecret(secret string) error {
