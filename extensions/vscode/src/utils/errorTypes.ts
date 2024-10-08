@@ -9,7 +9,8 @@ export type ErrorCode =
   | "unknownTOMLKey"
   | "invalidConfigFile"
   | "errorCertificateVerification"
-  | "deployFailed";
+  | "deployFailed"
+  | "renvlockPackagesReadingError";
 
 export type axiosErrorWithJson<T = { code: ErrorCode; details: unknown }> =
   AxiosError & {
