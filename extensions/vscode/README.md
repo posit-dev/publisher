@@ -6,8 +6,8 @@ for deploying to
 
 ## Installation
 
-Install Posit Publisher by using the Install button above, or using the
-Extensions side bar in [Positron](https://github.com/posit-dev/positron) or
+Install Posit Publisher by using the **Install** button above, or using the
+**Extensions** side bar in [Positron](https://github.com/posit-dev/positron) or
 [VS Code](https://code.visualstudio.com/) and searching for `posit.publisher`.
 
 Posit Publisher is available from the
@@ -16,7 +16,7 @@ or from the [Open VSX Registry](https://open-vsx.org/extension/posit/publisher).
 
 ## Features
 
-### Code-First Deployment
+### Code-first deployment
 
 Configure your project and then deploy your content to Posit Connect with a
 click.
@@ -32,17 +32,17 @@ configurations- all automatically detected based on your local environment.
 Everything is saved under `.posit/` in your project directory for easy
 re-deployment and collaboration.
 
-### Seamless Collaboration
+### Seamless collaboration
 
 Share your deployments and configurations with your team by committing the
 `.posit/` directory to your version control system, allowing Collaborators to
 easily pick up where you left off.
 
-### Track all Deployments for a Project
+### Track all deployments for a project
 
 Separate staging and production deployments easily per project.
 
-### Deployment Logs
+### Deployment logs
 
 Logs are organized to easily identify what went wrong.
 
@@ -51,7 +51,7 @@ Logs are organized to easily identify what went wrong.
   alt="Deploying Logs with organized steps in the Posit Publisher Logs view"
 />
 
-## Help and Feedback
+## Help and feedback
 
 Documentation can be found in the
 [open source repository](https://github.com/posit-dev/publisher/blob/main/docs/index.md).
