@@ -49,6 +49,16 @@ Easily track all deployments for a project with Posit Publisher.
 
 For example, create separate deployments for staging and production.
 
+### Associate already deployed content
+
+Posit Publisher isn't only for deploying something new. To start managing your
+previously-deployed content in VS Code or Positron, associate your deployment
+using just the content's URL.
+
+See the
+[Updating Previously Deployed Content](https://github.com/posit-dev/publisher/blob/main/docs/vscode.md#updating-previously-deployed-content)
+documentation for more information.
+
 ### Deployment logs
 
 Logs are organized to easily identify what went wrong.
