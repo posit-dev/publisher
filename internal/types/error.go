@@ -18,6 +18,8 @@ const (
 	ErrorCredentialServiceUnavailable ErrorCode = "credentialsServiceUnavailable"
 	ErrorCertificateVerification      ErrorCode = "errorCertificateVerification"
 	ErrorRenvLockPackagesReading      ErrorCode = "renvlockPackagesReadingError"
+	ErrorRequirementsFileReading      ErrorCode = "requirementsFileReadingError"
+	ErrorDeployedContentNotRunning    ErrorCode = "deployedContentNotRunning"
 	ErrorUnknown                      ErrorCode = "unknown"
 )
 

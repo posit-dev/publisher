@@ -11,11 +11,14 @@ import (
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/posit-dev/publisher/internal/accounts"
+	"github.com/posit-dev/publisher/internal/clients/connect/server_settings"
 	"github.com/posit-dev/publisher/internal/clients/http_client"
+	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/logging/loggingtest"
 	"github.com/posit-dev/publisher/internal/types"
+	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -360,7 +363,7 @@ func (s *ConnectClientSuite) TestValidateDeploymentAppFailure() {
 	}
 	contentID := types.ContentID("myContentID")
 	err := client.ValidateDeployment(contentID, logging.New())
-	s.ErrorContains(err, "couldn't access the deployed content")
+	s.ErrorContains(err, "deployed content does not seem to be running. See the logs in Connect for details")
 }
 
 func (s *ConnectClientSuite) TestValidateDeploymentHTTPNonAppErr() {
@@ -589,4 +592,107 @@ func (s *ConnectClientSuite) TestContentDetails() {
 	err = client.ContentDetails("cf3d3afe-2076-4812-825a-28237252030b", content, lgr)
 	s.ErrorIs(err, expectedErr)
 	httpClient.AssertExpectations(s.T())
+}
+
+func (s *ConnectClientSuite) TestCheckCapabilities() {
+	lgr := logging.New()
+	httpClient := &http_client.MockHTTPClient{}
+	httpClient.On("Get", "/__api__/v1/user", mock.Anything, lgr).Return(nil)
+	httpClient.On("Get", "/__api__/server_settings", mock.Anything, lgr).Return(nil)
+	httpClient.On("Get", "/__api__/server_settings/applications", mock.Anything, lgr).Return(nil)
+	httpClient.On("Get", "/__api__/server_settings/scheduler/python-dash", mock.Anything, lgr).Return(nil)
+	httpClient.On("Get", "/__api__/v1/server_settings/r", mock.Anything, lgr).Return(nil)
+	httpClient.On("Get", "/__api__/v1/server_settings/quarto", mock.Anything, lgr).Return(nil)
+
+	// Be sure to mock available python versions
+	httpClient.On("Get", "/__api__/v1/server_settings/python", mock.AnythingOfType("*server_settings.PyInfo"), lgr).Run(func(args mock.Arguments) {
+		pySettings := args.Get(1).(*server_settings.PyInfo)
+		pySettings.Installations = []server_settings.PyInstallation{{Version: "3.4.5"}}
+	}).Return(nil)
+
+	cfg := config.New()
+	cfg.Type = "python-dash"
+	cfg.Entrypoint = "app.py"
+	cfg.Python = &config.Python{
+		Version:        "3.4.5",
+		PackageManager: "pip",
+	}
+
+	var cwd util.AbsolutePath
+	bundleTestPath := cwd.Join("testdata", "python-bundle")
+
+	client := &ConnectClient{
+		client: httpClient,
+	}
+
+	err := client.CheckCapabilities(bundleTestPath, cfg, lgr)
+	s.NoError(err)
+	httpClient.AssertExpectations(s.T())
+}
+
+func (s *ConnectClientSuite) TestCheckCapabilities_missingPythonVer() {
+	lgr := logging.New()
+	httpClient := &http_client.MockHTTPClient{}
+	httpClient.On("Get", "/__api__/v1/user", mock.Anything, lgr).Return(nil)
+	httpClient.On("Get", "/__api__/server_settings", mock.Anything, lgr).Return(nil)
+	httpClient.On("Get", "/__api__/server_settings/applications", mock.Anything, lgr).Return(nil)
+	httpClient.On("Get", "/__api__/server_settings/scheduler/python-dash", mock.Anything, lgr).Return(nil)
+	httpClient.On("Get", "/__api__/v1/server_settings/r", mock.Anything, lgr).Return(nil)
+	httpClient.On("Get", "/__api__/v1/server_settings/quarto", mock.Anything, lgr).Return(nil)
+
+	// Mock versions, not including 3.4.5
+	httpClient.On("Get", "/__api__/v1/server_settings/python", mock.AnythingOfType("*server_settings.PyInfo"), lgr).Run(func(args mock.Arguments) {
+		pySettings := args.Get(1).(*server_settings.PyInfo)
+		pySettings.Installations = []server_settings.PyInstallation{{Version: "3.3.0"}}
+	}).Return(nil)
+
+	cfg := config.New()
+	cfg.Type = "python-dash"
+	cfg.Entrypoint = "app.py"
+	cfg.Python = &config.Python{
+		Version:        "3.4.5", // Not included in server settings
+		PackageManager: "pip",
+	}
+
+	var cwd util.AbsolutePath
+	bundleTestPath := cwd.Join("testdata", "python-bundle")
+
+	client := &ConnectClient{
+		client: httpClient,
+	}
+
+	err := client.CheckCapabilities(bundleTestPath, cfg, lgr)
+	s.NotNil(err)
+	s.Contains(err.Error(), "Python 3.4 is not available on the server.")
+	httpClient.AssertExpectations(s.T())
+}
+
+func (s *ConnectClientSuite) TestCheckCapabilities_missingRequirementsFile() {
+	lgr := logging.New()
+	httpClient := &http_client.MockHTTPClient{}
+
+	cfg := config.New()
+	cfg.Type = "python-dash"
+	cfg.Entrypoint = "app.py"
+	cfg.Python = &config.Python{
+		Version:        "3.4.5",
+		PackageManager: "pip",
+		PackageFile:    "requirements.txt",
+	}
+
+	var cwd util.AbsolutePath
+	bundleTestPath := cwd.Join("testdata", "missing-reqs")
+
+	client := &ConnectClient{
+		client: httpClient,
+	}
+
+	err := client.CheckCapabilities(bundleTestPath, cfg, lgr)
+	s.NotNil(err)
+	s.Contains(err.Error(), "Missing package file requirements.txt. The file must exist and be included in the deployment.")
+
+	aerr, yes := types.IsAgentError(err)
+	s.Equal(yes, true)
+	s.Equal(aerr.Code, types.ErrorRequirementsFileReading)
+	s.Contains(aerr.Message, "Missing package file requirements.txt. The file must exist and be included in the deployment.")
 }
