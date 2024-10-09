@@ -43,12 +43,6 @@ you.
 Everything is saved in the `.posit/` directory for easy reproducibility and
 collaboration.
 
-### Seamless collaboration
-
-Allow Collaborators to easily pick up where you left off by committing the
-`.posit/` directory to your version control system. Your team can deploy using
-the same deployments and configurations.
-
 ### Track all deployments for a project
 
 Easily track all deployments for a project with Posit Publisher.
