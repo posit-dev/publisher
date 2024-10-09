@@ -43,11 +43,11 @@ you.
 Everything is saved in the `.posit/` directory for easy reproducibility and
 collaboration.
 
-### Track all deployments for a project
+### Track all content for a project
 
-Easily track all deployments for a project with Posit Publisher.
-
-For example, create separate deployments for staging and production.
+If your project requires multiple pieces of content, Posit Publisher can manage
+them all inside VS Code or Positron. For example, deploy an API and an
+application to utilize it.
 
 ### Associate already deployed content
 
