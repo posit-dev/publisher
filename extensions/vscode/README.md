@@ -1,19 +1,19 @@
 # Posit Publisher - Deploy to Posit Connect
 
 [Posit Publisher](https://github.com/posit-dev/publisher) is a code-first tool
-with a push-button user interface for deploying the things you build in R and
-Python to [Posit Connect](https://posit.co/products/enterprise/connect/).
+with a push-button user interface for deploying the things you build in Python
+and R to [Posit Connect](https://posit.co/products/enterprise/connect/).
 
-Supported content includes:
+Supported frameworks or content type include:
 
 - Python content: APIs, applications, and notebooks
-- Quarto content: `.qmd` and `.Rmd` files. Support for embedded Shiny apps
 - R content: Shiny apps, RMarkdown, Plumber APIs, and Rmd with embedded
   Shiny apps
+- Quarto content: `.qmd` and `.Rmd` files. Support for embedded Shiny apps
 
 ## Installation
 
-Install Posit Publisher by using the **Install** button above, or using the
+Install Posit Publisher using the **Install** button above, or using the
 **Extensions** side bar in [Positron](https://github.com/posit-dev/positron) or
 [VS Code](https://code.visualstudio.com/) and searching for `posit.publisher`.
 
@@ -25,17 +25,22 @@ or from the [Open VSX Registry](https://open-vsx.org/extension/posit/publisher).
 
 ### Code-first deployment
 
-Configure your content and then deploy to Posit Connect with a click.
+Configure your content and then deploy to Posit Connect with ease.
 
 [Configuration files](https://github.com/posit-dev/publisher/blob/main/docs/configuration.md)
-allow setting up how you want your content to look and run on Connect - from
+allow setting up how you want your content to look and run on Connect — from
 choosing a title and description to
 [Runtime process settings](https://docs.posit.co/connect/user/content-settings/#content-runtime).
 
 Keep your content stable with language and tool versions set in your
 configurations — all automatically detected based on your local environment.
 
-Everything is saved in the `.posit/` directory for easy re-deployment and
+Keep your content stable with language and tool versions set in your
+configurations — all automatically detected based on your local environment.
+And you also have the control to pin them to the exact version that works for
+you.
+
+Everything is saved in the `.posit/` directory for easy reproducibility and
 collaboration.
 
 ### Seamless collaboration
