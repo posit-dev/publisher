@@ -76,6 +76,7 @@
           class="webview-link"
           role="button"
           @click="onEditConfigurationWithTOMLError()"
+          data-automation="edit-config-button"
           >Edit the Configuration</a
         >.
       </p>
@@ -87,7 +88,6 @@
           @click="
             onEditConfiguration(home.selectedConfiguration!.configurationPath)
           "
-          data-automation="edit-config-button"
           >Edit the Configuration</a
         >.
       </p>

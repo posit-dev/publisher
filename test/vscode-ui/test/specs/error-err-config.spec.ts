@@ -58,7 +58,7 @@ describe("Detect error in config", () => {
   it("Configuration Details shows error message", async () => {
     const configError = await $('[data-automation="edit-config"]');
     const configErrorMessage =
-      "The selected Configuration has an error. Edit the Configuration.";
+      "The selected Configuration has a schema error on line 20. Edit the Configuration.";
     await expect(configError).toHaveText(configErrorMessage);
   });
 
