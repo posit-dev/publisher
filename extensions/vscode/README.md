@@ -59,6 +59,14 @@ See the
 [Updating Previously Deployed Content](https://github.com/posit-dev/publisher/blob/main/docs/vscode.md#updating-previously-deployed-content)
 documentation for more information.
 
+### Multiple deployments and configurations
+
+Does your content need to be deployed to multiple destinations with different
+settings? For example, to a staging environment and production.
+
+Posit Publisher supports managing multiple deployments and configurations,
+simplifying the process of deploying to different environments.
+
 ### Deployment logs
 
 Logs are organized to easily identify what went wrong.
