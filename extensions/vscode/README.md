@@ -23,9 +23,17 @@ or from the [Open VSX Registry](https://open-vsx.org/extension/posit/publisher).
 
 ## Features
 
+### Start in VS Code or Positron and end with content on Posit Connect
+
+Posit Publisher extends VS Code and Positron so you can stay in your development
+environment to configure and deploy your content. Select the file you want
+to deploy, and Posit Publisher will get you started with a configuration.
+
+Once you are ready, deploy your content to Posit Connect.
+
 ### Code-first deployment
 
-Configure your content and then deploy to Posit Connect with ease.
+Configure your content with ease.
 
 [Configuration files](https://github.com/posit-dev/publisher/blob/main/docs/configuration.md)
 allow setting up how you want your content to look and run on Connect — from
