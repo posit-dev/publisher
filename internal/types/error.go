@@ -17,6 +17,7 @@ const (
 	ErrorInvalidConfigFiles           ErrorCode = "invalidConfigFiles"
 	ErrorCredentialServiceUnavailable ErrorCode = "credentialsServiceUnavailable"
 	ErrorCertificateVerification      ErrorCode = "errorCertificateVerification"
+	ErrorRenvLockPackagesReading      ErrorCode = "renvlockPackagesReadingError"
 	ErrorUnknown                      ErrorCode = "unknown"
 )
 

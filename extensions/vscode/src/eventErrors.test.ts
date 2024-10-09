@@ -6,6 +6,7 @@ import {
   EventStreamMessageErrorCoded,
   isCodedEventErrorMessage,
   isEvtErrDeploymentFailed,
+  isEvtErrRenvLockPackagesReadingFailed,
   handleEventCodedError,
 } from "./eventErrors";
 import { ErrorCode } from "./utils/errorTypes";
@@ -53,6 +54,18 @@ describe("Event errors", () => {
     expect(result).toBe(true);
   });
 
+  test("isEvtErrRenvLockPackagesReadingFailed", () => {
+    // Message with another error code
+    let streamMsg = mkEventStreamMsg({}, "unknown");
+    let result = isEvtErrRenvLockPackagesReadingFailed(streamMsg);
+    expect(result).toBe(false);
+
+    // Message with error code
+    streamMsg = mkEventStreamMsg({}, "renvlockPackagesReadingError");
+    result = isEvtErrRenvLockPackagesReadingFailed(streamMsg);
+    expect(result).toBe(true);
+  });
+
   test("handleEventCodedError", () => {
     const msgData = {
       dashboardUrl: "https://here.it.is/content/abcdefg",
@@ -68,5 +81,10 @@ describe("Event errors", () => {
     expect(resultMsg).toBe(
       "Deployment failed - structured message from the agent",
     );
+
+    msgData.message = "Could not scan R packages from renv lockfile";
+    streamMsg = mkEventStreamMsg(msgData, "renvlockPackagesReadingError");
+    resultMsg = handleEventCodedError(streamMsg);
+    expect(resultMsg).toBe("Could not scan R packages from renv lockfile");
   });
 });
