@@ -10,6 +10,7 @@ import (
 )
 
 type ConnectContent struct {
+	AppMode                        AppMode           `json:"app_mode,omitempty"`
 	Name                           types.ContentName `json:"name"`
 	Title                          string            `json:"title,omitempty"`
 	GUID                           string            `json:"guid,omitempty"`

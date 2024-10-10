@@ -46,7 +46,7 @@ func checkRequirementsFile(base util.AbsolutePath, requirementsFilename string) 
 
 func (c *ConnectClient) CheckCapabilities(base util.AbsolutePath, cfg *config.Config, contentID *types.ContentID, log logging.Logger) error {
 	if contentID != nil && *contentID != "" {
-		err := c.ValidateDeploymentTarget(*contentID, log)
+		err := c.ValidateDeploymentTarget(*contentID, cfg, log)
 		if err != nil {
 			return err
 		}
