@@ -192,15 +192,19 @@ func (i *defaultRInspector) getRVersion(rExecutable string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	line := strings.SplitN(string(append(output, stderr...)), "\n", 2)[0]
-	m := rVersionRE.FindStringSubmatch(line)
-	if len(m) < 2 {
-		return "", fmt.Errorf("couldn't parse R version from output: %s", line)
+	lines := strings.SplitN(string(append(output, stderr...)), "\n", -1)
+	for _, l := range lines {
+		i.log.Info("Parsing line for R version", "l", l)
+		m := rVersionRE.FindStringSubmatch(l)
+		if len(m) < 2 {
+			continue
+		}
+		version := m[1]
+		i.log.Info("Detected R version", "version", version)
+		rVersionCache[rExecutable] = version
+		return version, nil
 	}
-	version := m[1]
-	i.log.Info("Detected R version", "version", version)
-	rVersionCache[rExecutable] = version
-	return version, nil
+	return "", fmt.Errorf("couldn't parse R version from command output (%s --version)", rExecutable)
 }
 
 var renvLockRE = regexp.MustCompile(`^\[1\] "(.*)"`)
