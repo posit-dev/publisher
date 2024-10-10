@@ -7,6 +7,8 @@ import {
   isCodedEventErrorMessage,
   isEvtErrDeploymentFailed,
   isEvtErrRenvLockPackagesReadingFailed,
+  isEvtErrRequirementsReadingFailed,
+  isEvtErrDeployedContentNotRunning,
   handleEventCodedError,
 } from "./eventErrors";
 import { ErrorCode } from "./utils/errorTypes";
@@ -66,6 +68,30 @@ describe("Event errors", () => {
     expect(result).toBe(true);
   });
 
+  test("isEvtErrRequirementsReadingFailed", () => {
+    // Message with another error code
+    let streamMsg = mkEventStreamMsg({}, "unknown");
+    let result = isEvtErrRequirementsReadingFailed(streamMsg);
+    expect(result).toBe(false);
+
+    // Message with error code
+    streamMsg = mkEventStreamMsg({}, "requirementsFileReadingError");
+    result = isEvtErrRequirementsReadingFailed(streamMsg);
+    expect(result).toBe(true);
+  });
+
+  test("isEvtErrDeployedContentNotRunning", () => {
+    // Message with another error code
+    let streamMsg = mkEventStreamMsg({}, "unknown");
+    let result = isEvtErrDeployedContentNotRunning(streamMsg);
+    expect(result).toBe(false);
+
+    // Message with error code
+    streamMsg = mkEventStreamMsg({}, "deployedContentNotRunning");
+    result = isEvtErrDeployedContentNotRunning(streamMsg);
+    expect(result).toBe(true);
+  });
+
   test("handleEventCodedError", () => {
     const msgData = {
       dashboardUrl: "https://here.it.is/content/abcdefg",
@@ -86,5 +112,15 @@ describe("Event errors", () => {
     streamMsg = mkEventStreamMsg(msgData, "renvlockPackagesReadingError");
     resultMsg = handleEventCodedError(streamMsg);
     expect(resultMsg).toBe("Could not scan R packages from renv lockfile");
+
+    msgData.message = "requirements.txt is missing";
+    streamMsg = mkEventStreamMsg(msgData, "requirementsFileReadingError");
+    resultMsg = handleEventCodedError(streamMsg);
+    expect(resultMsg).toBe("requirements.txt is missing");
+
+    msgData.message = "deployed content not running";
+    streamMsg = mkEventStreamMsg(msgData, "deployedContentNotRunning");
+    resultMsg = handleEventCodedError(streamMsg);
+    expect(resultMsg).toBe("deployed content not running");
   });
 });

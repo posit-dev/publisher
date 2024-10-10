@@ -26,11 +26,14 @@ type allSettings struct {
 }
 
 const requirementsFileMissing = `
-can't find the package file (%s) in the project directory.
-Create the file, listing the packages your project depends on.
-Or scan your project dependencies using scan button in
-the Python Packages section of the UI and review the
-generated file`
+Missing package file %s. The file must exist and be included in the deployment.
+Create the file listing your project dependencies.
+Or do an automatic scan with the help of the Python Packages section
+of the Publisher extension and review the generated file`
+
+type requirementsErrDetails struct {
+	RequirementsFile string `json:"requirements_file"`
+}
 
 func checkRequirementsFile(base util.AbsolutePath, requirementsFilename string) error {
 	packageFile := base.Join(requirementsFilename)
@@ -39,7 +42,8 @@ func checkRequirementsFile(base util.AbsolutePath, requirementsFilename string) 
 		return err
 	}
 	if !exists {
-		return fmt.Errorf(requirementsFileMissing, requirementsFilename)
+		missingErr := fmt.Errorf(requirementsFileMissing, requirementsFilename)
+		return types.NewAgentError(types.ErrorRequirementsFileReading, missingErr, requirementsErrDetails{RequirementsFile: packageFile.String()})
 	}
 	return nil
 }
