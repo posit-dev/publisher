@@ -775,7 +775,7 @@ func (s *ConnectClientSuite) TestValidateDeploymentTargetAppModeNotModifiableCod
 	}
 	expectedErr := types.NewAgentError(
 		events.DeploymentFailedCode,
-		errors.New("You cannot change the type of content once deployed. The server identifies this deployment as 'R Shiny application' but your configuration indicates you are trying to update with 'Dash application'. Try creating a new deployment rather than updating an existing one"),
+		errors.New("Content was previously deployed as 'R Shiny application' but your configuration is set to 'Dash application'. A new deployment must be needed."),
 		nil)
 	err := client.ValidateDeploymentTarget("e8922765-4880-43cd-abc0-d59fe59b8b4b", s.cfg, lgr)
 	aerr, ok := types.IsAgentError(err)
