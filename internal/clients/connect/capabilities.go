@@ -44,7 +44,13 @@ func checkRequirementsFile(base util.AbsolutePath, requirementsFilename string) 
 	return nil
 }
 
-func (c *ConnectClient) CheckCapabilities(base util.AbsolutePath, cfg *config.Config, log logging.Logger) error {
+func (c *ConnectClient) CheckCapabilities(base util.AbsolutePath, cfg *config.Config, contentID *types.ContentID, log logging.Logger) error {
+	if contentID != nil && *contentID != "" {
+		err := c.ValidateDeploymentTarget(*contentID, log)
+		if err != nil {
+			return err
+		}
+	}
 	if cfg.Python != nil {
 		err := checkRequirementsFile(base, cfg.Python.PackageFile)
 		if err != nil {

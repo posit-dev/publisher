@@ -5,6 +5,7 @@ package connect
 import (
 	"errors"
 	"io/fs"
+	"net/http"
 	"strings"
 	"testing"
 	"time"
@@ -589,4 +590,132 @@ func (s *ConnectClientSuite) TestContentDetails() {
 	err = client.ContentDetails("cf3d3afe-2076-4812-825a-28237252030b", content, lgr)
 	s.ErrorIs(err, expectedErr)
 	httpClient.AssertExpectations(s.T())
+}
+
+func (s *ConnectClientSuite) TestValidateDeploymentTargetForbiddenFailure() {
+	lgr := logging.New()
+	content := &ConnectContent{}
+	httpClient := &http_client.MockHTTPClient{}
+
+	// Forbidden
+	returnErr := types.NewAgentError(
+		events.ServerErrorCode,
+		http_client.NewHTTPError("", "", http.StatusForbidden),
+		nil,
+	)
+	httpClient.On("Get", "/__api__/v1/content/e8922765-4880-43cd-abc0-d59fe59b8b4b", content, lgr).Return(returnErr)
+
+	client := &ConnectClient{
+		client: httpClient,
+	}
+	expectedErr := types.NewAgentError(
+		events.DeploymentFailedCode,
+		errors.New("Cannot deploy content: ID e8922765-4880-43cd-abc0-d59fe59b8b4b - You may need to request collaborator permissions or verify the credentials in use"),
+		nil)
+	err := client.ValidateDeploymentTarget("e8922765-4880-43cd-abc0-d59fe59b8b4b", lgr)
+	aerr, ok := types.IsAgentError(err)
+	s.Equal(ok, true)
+	s.Equal(
+		expectedErr.Message,
+		aerr.Message,
+	)
+}
+
+func (s *ConnectClientSuite) TestValidateDeploymentTargetNotFoundFailure() {
+	lgr := logging.New()
+	content := &ConnectContent{}
+	httpClient := &http_client.MockHTTPClient{}
+
+	// Not Found
+	returnErr := types.NewAgentError(
+		events.ServerErrorCode,
+		http_client.NewHTTPError("", "", http.StatusNotFound),
+		nil,
+	)
+
+	httpClient.On("Get", "/__api__/v1/content/e8922765-4880-43cd-abc0-d59fe59b8b4b", content, lgr).Return(returnErr)
+
+	client := &ConnectClient{
+		client: httpClient,
+	}
+	expectedErr := types.NewAgentError(
+		events.DeploymentFailedCode,
+		errors.New("Cannot deploy content: ID e8922765-4880-43cd-abc0-d59fe59b8b4b - Content cannot be found"),
+		nil)
+	err := client.ValidateDeploymentTarget("e8922765-4880-43cd-abc0-d59fe59b8b4b", lgr)
+	aerr, ok := types.IsAgentError(err)
+	s.Equal(ok, true)
+	s.Equal(
+		expectedErr.Message,
+		aerr.Message,
+	)
+}
+
+func (s *ConnectClientSuite) TestValidateDeploymentTargetUnknownFailure() {
+	lgr := logging.New()
+	content := &ConnectContent{}
+	httpClient := &http_client.MockHTTPClient{}
+
+	// Not Found
+	returnErr := types.NewAgentError(
+		events.ServerErrorCode,
+		http_client.NewHTTPError("", "", http.StatusBadGateway),
+		nil,
+	)
+
+	httpClient.On("Get", "/__api__/v1/content/e8922765-4880-43cd-abc0-d59fe59b8b4b", content, lgr).Return(returnErr)
+
+	client := &ConnectClient{
+		client: httpClient,
+	}
+	expectedErr := types.NewAgentError(
+		events.DeploymentFailedCode,
+		errors.New("Cannot deploy content: ID e8922765-4880-43cd-abc0-d59fe59b8b4b - Unknown error: unexpected response from the server (502)"),
+		nil)
+	err := client.ValidateDeploymentTarget("e8922765-4880-43cd-abc0-d59fe59b8b4b", lgr)
+	aerr, ok := types.IsAgentError(err)
+	s.Equal(ok, true)
+	s.Equal(
+		expectedErr.Message,
+		aerr.Message,
+	)
+}
+
+func (s *ConnectClientSuite) TestValidateDeploymentTargetLockedFailure() {
+	lgr := logging.New()
+	content := &ConnectContent{}
+	queryResult := &ConnectContent{
+		Name:               "",
+		Title:              "",
+		GUID:               "",
+		Description:        "",
+		AccessType:         "",
+		ServiceAccountName: "",
+		DefaultImageName:   "",
+		Locked:             true,
+	}
+	httpClient := &http_client.MockHTTPClient{}
+
+	httpClient.On("Get", "/__api__/v1/content/e8922765-4880-43cd-abc0-d59fe59b8b4b", content, lgr).Return(nil, queryResult).Run(func(args mock.Arguments) {
+		// this will update the ConnectContent structure
+		// with the value that we passed in as the second
+		// return argument
+		arg := args.Get(1).(*ConnectContent)
+		*arg = *queryResult
+	})
+
+	client := &ConnectClient{
+		client: httpClient,
+	}
+	expectedErr := types.NewAgentError(
+		events.DeploymentFailedCode,
+		errors.New("Content is locked, cannot deploy to it (content ID = e8922765-4880-43cd-abc0-d59fe59b8b4b)"),
+		nil)
+	err := client.ValidateDeploymentTarget("e8922765-4880-43cd-abc0-d59fe59b8b4b", lgr)
+	aerr, ok := types.IsAgentError(err)
+	s.Equal(ok, true)
+	s.Equal(
+		expectedErr.Message,
+		aerr.Message,
+	)
 }

@@ -4,9 +4,7 @@ package publish
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"log/slog"
-	"net/http"
 	"strings"
 	"testing"
 	"time"
@@ -14,7 +12,6 @@ import (
 	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/bundles"
 	"github.com/posit-dev/publisher/internal/clients/connect"
-	"github.com/posit-dev/publisher/internal/clients/http_client"
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/events"
@@ -198,54 +195,21 @@ func (s *PublishSuite) TestPublishWithClientRedeployErrors() {
 	target := deployment.New()
 	target.ID = "myContentID"
 
+	// Fail the preflight existing content checks. Further testing of these will
+	// occur in the connect_client package
+
 	// Forbidden
 	checksErr := types.NewAgentError(
 		events.DeploymentFailedCode,
-		http_client.NewHTTPError("", "", http.StatusForbidden),
+		errors.New("failed"),
 		nil,
 	)
-	s.publishWithClient(target, &publishErrsMock{checksErr: checksErr}, checksErr)
+	s.publishWithClient(target, &publishErrsMock{capErr: checksErr}, checksErr)
 	s.Equal(
 		checksErr.Message,
-		"Cannot deploy content: ID myContentID - You may need to request collaborator permissions or verify the credentials in use",
+		"failed",
 	)
 
-	// Not Found
-	checksErr = types.NewAgentError(
-		events.DeploymentFailedCode,
-		http_client.NewHTTPError("", "", http.StatusNotFound),
-		nil,
-	)
-	s.publishWithClient(target, &publishErrsMock{checksErr: checksErr}, checksErr)
-	s.Equal(
-		checksErr.Message,
-		"Cannot deploy content: ID myContentID - Content cannot be found",
-	)
-
-	// Unknown err
-	checksErr = types.NewAgentError(
-		events.DeploymentFailedCode,
-		http_client.NewHTTPError("", "", http.StatusBadGateway),
-		nil,
-	)
-	s.publishWithClient(target, &publishErrsMock{checksErr: checksErr}, checksErr)
-	s.Equal(
-		checksErr.Message,
-		"Cannot deploy content: ID myContentID - Unknown error: unexpected response from the server (502)",
-	)
-
-	// Content is locked
-	target.ID = "myLockedContentID"
-	checksErr = types.NewAgentError(
-		events.DeploymentFailedCode,
-		fmt.Errorf("content with ID %s is locked", target.ID),
-		nil,
-	)
-	s.publishWithClient(target, &publishErrsMock{}, checksErr)
-	s.Equal(
-		checksErr.Message,
-		"content with ID myLockedContentID is locked",
-	)
 }
 
 func (s *PublishSuite) TestPublishWithClientRedeployFailUpdate() {
@@ -309,7 +273,7 @@ func (s *PublishSuite) publishWithClient(
 		client.On("CreateDeployment", mock.Anything, mock.Anything).Return(myContentID, errsMock.createErr)
 	}
 	client.On("TestAuthentication", mock.Anything).Return(&connect.User{}, errsMock.authErr)
-	client.On("CheckCapabilities", mock.Anything, mock.Anything, mock.Anything).Return(errsMock.capErr)
+	client.On("CheckCapabilities", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(errsMock.capErr)
 	client.On("ContentDetails", myContentID, mock.Anything, mock.Anything).Return(errsMock.checksErr)
 	client.On("ContentDetails", myLockedContentID, mock.Anything, mock.Anything).Return(errsMock.checksErr)
 	client.On("UpdateDeployment", myContentID, mock.Anything, mock.Anything).Return(errsMock.createErr)
