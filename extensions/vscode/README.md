@@ -55,7 +55,7 @@ collaboration.
 
 If your project requires multiple pieces of content, Posit Publisher can manage
 them all inside VS Code or Positron. For example, deploy an API and an
-application to utilize it.
+application that utilizes it.
 
 ### Associate already deployed content
 
