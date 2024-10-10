@@ -24,6 +24,7 @@ type DeployCmd struct {
 	SaveName    string            `name:"name" short:"n" help:"Save deployment with this name (in .posit/deployments/)"`
 	Account     *accounts.Account `kong:"-"`
 	Config      *config.Config    `kong:"-"`
+	// NOTE: Currently hardcoded to insecure = false. No CLI param added for now.
 }
 
 func (cmd *DeployCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
@@ -56,7 +57,7 @@ func (cmd *DeployCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext)
 	if err != nil {
 		return err
 	}
-	stateStore, err := state.New(absPath, cmd.AccountName, cmd.ConfigName, "", cmd.SaveName, ctx.Accounts)
+	stateStore, err := state.New(absPath, cmd.AccountName, cmd.ConfigName, "", cmd.SaveName, ctx.Accounts, nil, false)
 	if err != nil {
 		return err
 	}
@@ -69,5 +70,5 @@ func (cmd *DeployCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext)
 	if err != nil {
 		return err
 	}
-	return publisher.PublishDirectory(ctx.Logger)
+	return publisher.PublishDirectory()
 }

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"maps"
+	"net/http"
 	"os"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/bundles"
 	"github.com/posit-dev/publisher/internal/clients/connect"
+	"github.com/posit-dev/publisher/internal/clients/http_client"
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/events"
@@ -26,11 +28,12 @@ import (
 )
 
 type Publisher interface {
-	PublishDirectory(logging.Logger) error
+	PublishDirectory() error
 }
 
 type defaultPublisher struct {
 	*state.State
+	log            logging.Logger
 	emitter        events.Emitter
 	rPackageMapper renv.PackageMapper
 }
@@ -76,31 +79,16 @@ func NewFromState(s *state.State, emitter events.Emitter, log logging.Logger) (P
 	}
 	return &defaultPublisher{
 		State:          s,
+		log:            log,
 		emitter:        emitter,
 		rPackageMapper: renv.NewPackageMapper(s.Dir, util.Path{}),
 	}, nil
 }
 
-func getDashboardURL(accountURL string, contentID types.ContentID) string {
-	return fmt.Sprintf("%s/connect/#/apps/%s", accountURL, contentID)
-}
-
-func getLogsURL(accountURL string, contentID types.ContentID) string {
-	return getDashboardURL(accountURL, contentID) + "/logs"
-}
-
-func getDirectURL(accountURL string, contentID types.ContentID) string {
-	return fmt.Sprintf("%s/content/%s/", accountURL, contentID)
-}
-
-func getBundleURL(accountURL string, contentID types.ContentID, bundleID types.BundleID) string {
-	return fmt.Sprintf("%s/__api__/v1/content/%s/bundles/%s/download", accountURL, contentID, bundleID)
-}
-
 func logAppInfo(w io.Writer, accountURL string, contentID types.ContentID, log logging.Logger, publishingErr error) {
-	dashboardURL := getDashboardURL(accountURL, contentID)
-	logsURL := getLogsURL(accountURL, contentID)
-	directURL := getDirectURL(accountURL, contentID)
+	dashboardURL := util.GetDashboardURL(accountURL, contentID)
+	logsURL := util.GetLogsURL(accountURL, contentID)
+	directURL := util.GetDirectURL(accountURL, contentID)
 	if publishingErr != nil {
 		if contentID == "" {
 			// Publishing failed before a content ID was known
@@ -127,10 +115,10 @@ func (p *defaultPublisher) isDeployed() bool {
 	return p.Target != nil && p.Target.ID != ""
 }
 
-func (p *defaultPublisher) emitErrorEvents(err error, log logging.Logger) {
+func (p *defaultPublisher) emitErrorEvents(err error) {
 	agentErr, ok := err.(*types.AgentError)
 	if !ok {
-		agentErr = types.NewAgentError(types.UnknownErrorCode, err, nil)
+		agentErr = types.NewAgentError(types.ErrorUnknown, err, nil)
 	}
 	dashboardURL := ""
 	directURL := ""
@@ -139,7 +127,7 @@ func (p *defaultPublisher) emitErrorEvents(err error, log logging.Logger) {
 	var data events.EventData
 
 	mapstructure.Decode(publishFailureData{
-		Message: agentErr.Error(),
+		Message: agentErr.Message,
 	}, &data)
 
 	// Record the error in the deployment record
@@ -147,13 +135,13 @@ func (p *defaultPublisher) emitErrorEvents(err error, log logging.Logger) {
 		p.Target.Error = agentErr
 		writeErr := p.writeDeploymentRecord()
 		if writeErr != nil {
-			log.Warn("failed to write updated deployment record", "name", p.TargetName, "err", writeErr)
+			p.log.Warn("failed to write updated deployment record", "name", p.TargetName, "err", writeErr)
 		}
 		if p.isDeployed() {
 			// Provide URL in the event, if we got far enough in the deployment.
-			dashboardURL = getDashboardURL(p.Account.URL, p.Target.ID)
-			logsURL = getLogsURL(p.Account.URL, p.Target.ID)
-			directURL = getDirectURL(p.Account.URL, p.Target.ID)
+			dashboardURL = util.GetDashboardURL(p.Account.URL, p.Target.ID)
+			logsURL = util.GetLogsURL(p.Account.URL, p.Target.ID)
+			directURL = util.GetDirectURL(p.Account.URL, p.Target.ID)
 
 			mapstructure.Decode(publishDeployedFailureData{
 				DashboardURL: dashboardURL,
@@ -180,31 +168,31 @@ func (p *defaultPublisher) emitErrorEvents(err error, log logging.Logger) {
 		data))
 }
 
-func (p *defaultPublisher) PublishDirectory(log logging.Logger) error {
-	log.Info("Publishing from directory", logging.LogKeyOp, events.AgentOp, "path", p.Dir)
+func (p *defaultPublisher) PublishDirectory() error {
+	p.log.Info("Publishing from directory", logging.LogKeyOp, events.AgentOp, "path", p.Dir)
 	p.emitter.Emit(events.New(events.PublishOp, events.StartPhase, events.NoError, publishStartData{
 		Server: p.Account.URL,
 		Title:  p.Config.Title,
 	}))
-	log.Info("Starting deployment to server", "server", p.Account.URL)
+	p.log.Info("Starting deployment to server", "server", p.Account.URL)
 
 	// TODO: factory method to create client based on server type
 	// TODO: timeout option
-	client, err := connect.NewConnectClient(p.Account, 2*time.Minute, p.emitter, log)
+	client, err := connect.NewConnectClient(p.Account, 2*time.Minute, p.emitter, p.log)
 	if err != nil {
 		return err
 	}
-	err = p.publishWithClient(p.Account, client, log)
+	err = p.publishWithClient(p.Account, client)
 	if p.isDeployed() {
-		logAppInfo(os.Stderr, p.Account.URL, p.Target.ID, log, err)
+		logAppInfo(os.Stderr, p.Account.URL, p.Target.ID, p.log, err)
 	}
 	if err != nil {
-		p.emitErrorEvents(err, log)
+		p.emitErrorEvents(err)
 	} else {
 		p.emitter.Emit(events.New(events.PublishOp, events.SuccessPhase, events.NoError, publishSuccessData{
-			DashboardURL: getDashboardURL(p.Account.URL, p.Target.ID),
-			LogsURL:      getLogsURL(p.Account.URL, p.Target.ID),
-			DirectURL:    getDirectURL(p.Account.URL, p.Target.ID),
+			DashboardURL: util.GetDashboardURL(p.Account.URL, p.Target.ID),
+			LogsURL:      util.GetLogsURL(p.Account.URL, p.Target.ID),
+			DirectURL:    util.GetDirectURL(p.Account.URL, p.Target.ID),
 			ServerURL:    p.Account.URL,
 			ContentID:    p.Target.ID,
 		}))
@@ -215,9 +203,11 @@ func (p *defaultPublisher) PublishDirectory(log logging.Logger) error {
 func (p *defaultPublisher) writeDeploymentRecord() error {
 	if p.SaveName == "" {
 		// Redeployment
+		p.log.Debug("No SaveName found while redeploying.", "deployment", p.TargetName)
 		p.SaveName = p.TargetName
 	} else {
 		// Initial deployment
+		p.log.Debug("SaveName found in first deployment.", "deployment", p.SaveName)
 		p.TargetName = p.SaveName
 	}
 
@@ -227,6 +217,7 @@ func (p *defaultPublisher) writeDeploymentRecord() error {
 	p.Target.Configuration = p.Config
 
 	recordPath := deployment.GetDeploymentPath(p.Dir, p.SaveName)
+	p.log.Debug("Writing deployment record", "path", recordPath)
 	return p.Target.WriteFile(recordPath)
 }
 
@@ -266,9 +257,9 @@ func (p *defaultPublisher) createDeploymentRecord(
 		Requirements:  nil,
 		Configuration: &cfg,
 		BundleID:      "",
-		DashboardURL:  getDashboardURL(p.Account.URL, contentID),
-		DirectURL:     getDirectURL(p.Account.URL, contentID),
-		LogsURL:       getLogsURL(p.Account.URL, contentID),
+		DashboardURL:  util.GetDashboardURL(p.Account.URL, contentID),
+		DirectURL:     util.GetDirectURL(p.Account.URL, contentID),
+		LogsURL:       util.GetLogsURL(p.Account.URL, contentID),
 		Error:         nil,
 	}
 
@@ -276,25 +267,69 @@ func (p *defaultPublisher) createDeploymentRecord(
 	return p.writeDeploymentRecord()
 }
 
+// Handle preflight agent error details
+func (p *defaultPublisher) preflightAgentError(agenterr *types.AgentError, contentID types.ContentID) *types.AgentError {
+	agenterr.Code = events.DeploymentFailedCode
+
+	if aerr, isNotFound := http_client.IsHTTPAgentErrorStatusOf(agenterr, http.StatusNotFound); isNotFound {
+		p.log.Debug("Content cannot be found. Deployment cannot proceed", "content_id", contentID)
+		aerr.Message = fmt.Sprintf("Cannot deploy content: ID %s - Content cannot be found", contentID)
+	} else if aerr, isForbidden := http_client.IsHTTPAgentErrorStatusOf(agenterr, http.StatusForbidden); isForbidden {
+		p.log.Debug("Insufficient permissions. Content deployment cannot proceed", "content_id", contentID)
+		aerr.Message = fmt.Sprintf("Cannot deploy content: ID %s - You may need to request collaborator permissions or verify the credentials in use", contentID)
+	} else {
+		p.log.Debug("Unknown error while deploying", "content_id", contentID)
+		aerr.Message = fmt.Sprintf("Cannot deploy content: ID %s - Unknown error: %s", contentID, agenterr.Error())
+	}
+
+	return agenterr
+}
+
+// Does the target exist and the user has permissions to it?
+func (p *defaultPublisher) targetPreflightChecks(client connect.APIClient, contentID types.ContentID) error {
+	p.log.Debug("Running deployment preflight checks", "content_id", contentID)
+	content := &connect.ConnectContent{}
+	err := client.ContentDetails(contentID, content, p.log)
+
+	// Handle possible errors from pinging to the content item
+	if aerr, isAgentErr := types.IsAgentError(err); isAgentErr {
+		return p.preflightAgentError(aerr, contentID)
+	}
+	if err != nil {
+		p.log.Debug("Deployment target cannot be reached. Halting deployment", "content_id", contentID)
+		return types.NewAgentError(events.DeploymentFailedCode, err, nil)
+	}
+
+	// Verify content is not locked
+	lockedErr := content.LockedError()
+	if lockedErr != nil {
+		p.log.Debug("Content is locked, cannot deploy to it", "content_id", contentID)
+		return types.NewAgentError(events.DeploymentFailedCode, lockedErr, nil)
+	}
+
+	return nil
+}
+
 func (p *defaultPublisher) publishWithClient(
 	account *accounts.Account,
-	client connect.APIClient,
-	log logging.Logger) error {
+	client connect.APIClient) error {
 
 	manifest := bundles.NewManifestFromConfig(p.Config)
+	p.log.Debug("Built manifest from config", "config", p.ConfigName)
+
 	if p.Config.R != nil {
-		rPackages, err := p.getRPackages(log)
+		rPackages, err := p.getRPackages()
 		if err != nil {
 			return err
 		}
 		manifest.Packages = rPackages
 	}
-	bundler, err := bundles.NewBundler(p.Dir, manifest, p.Config.Files, log)
+	bundler, err := bundles.NewBundler(p.Dir, manifest, p.Config.Files, p.log)
 	if err != nil {
 		return err
 	}
 
-	err = p.checkConfiguration(client, log)
+	err = p.checkConfiguration(client)
 	if err != nil {
 		return err
 	}
@@ -302,47 +337,49 @@ func (p *defaultPublisher) publishWithClient(
 	var contentID types.ContentID
 	if p.isDeployed() {
 		contentID = p.Target.ID
-		log.Info("Updating deployment", "content_id", contentID)
+		p.log.Info("Updating deployment", "content_id", contentID)
+		err = p.targetPreflightChecks(client, contentID)
 	} else {
 		// Create a new deployment; we will update it with details later.
-		contentID, err = p.createDeployment(client, log)
-		if err != nil {
-			return err
-		}
+		contentID, err = p.createDeployment(client)
 	}
+	if err != nil {
+		return err
+	}
+
 	err = p.createDeploymentRecord(contentID, account)
 	if err != nil {
 		return types.OperationError(events.PublishCreateNewDeploymentOp, err)
 	}
 
-	bundleID, err := p.createAndUploadBundle(client, bundler, contentID, log)
+	bundleID, err := p.createAndUploadBundle(client, bundler, contentID)
 	if err != nil {
 		return err
 	}
 
-	err = p.updateContent(client, contentID, log)
+	err = p.updateContent(client, contentID)
 	if err != nil {
 		return err
 	}
 
-	err = p.setEnvVars(client, contentID, log)
+	err = p.setEnvVars(client, contentID)
 	if err != nil {
 		return err
 	}
 
-	taskID, err := p.deployBundle(client, contentID, bundleID, log)
+	taskID, err := p.deployBundle(client, contentID, bundleID)
 	if err != nil {
 		return err
 	}
 
-	taskLogger := log.WithArgs("source", "server.log")
+	taskLogger := p.log.WithArgs("source", "server.log")
 	err = client.WaitForTask(taskID, taskLogger)
 	if err != nil {
 		return err
 	}
 
 	if p.Config.Validate {
-		err = p.validateContent(client, contentID, log)
+		err = p.validateContent(client, contentID)
 		if err != nil {
 			return err
 		}

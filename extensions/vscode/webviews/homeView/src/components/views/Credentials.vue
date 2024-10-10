@@ -1,6 +1,11 @@
 <template>
-  <TreeSection title="Credentials" :actions="sectionActions">
-    <WelcomeView v-if="home.sortedCredentials.length === 0">
+  <TreeSection
+    title="Credentials"
+    data-automation="credentials"
+    :actions="sectionActions"
+    :codicon="home.credential.active.isAlertActive ? `codicon-alert` : ``"
+  >
+    <WelcomeView v-if="!home.credential.isAvailable">
       <p>No credentials have been added yet.</p>
     </WelcomeView>
     <TreeItem
@@ -8,11 +13,8 @@
       v-for="credential in home.sortedCredentials"
       :title="credential.name"
       :description="credential.url"
-      :codicon="
-        credential.guid === CredentialGUIs.EnvironmentGUID
-          ? 'codicon-bracket'
-          : 'codicon-key'
-      "
+      :data-automation="`${credential.name}-list`"
+      codicon="codicon-key"
       align-icon-with-twisty
       :data-vscode-context="vscodeContext(credential)"
     />
@@ -29,10 +31,10 @@ import { useHomeStore } from "src/stores/home";
 import { useHostConduitService } from "src/HostConduitService";
 
 import { Credential } from "../../../../../src/api";
-import { CredentialGUIs } from "../../../../../src/constants";
 import { WebviewToHostMessageType } from "../../../../../src/types/messages/webviewToHostMessages";
 
 const home = useHomeStore();
+
 const { sendMsg } = useHostConduitService();
 
 const sectionActions = computed(() => {
@@ -57,10 +59,6 @@ const sectionActions = computed(() => {
 });
 
 const vscodeContext = (credential: Credential) => {
-  if (credential.guid === CredentialGUIs.EnvironmentGUID) {
-    return undefined;
-  }
-
   return JSON.stringify({
     credentialGUID: credential.guid,
     credentialName: credential.name,

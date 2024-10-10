@@ -57,6 +57,7 @@ func (i *defaultRInspector) InspectR() (*config.R, error) {
 	lockfilePath := i.base.Join(DefaultRenvLockfile)
 	exists, err := lockfilePath.Exists()
 	if err != nil {
+		i.log.Debug("Error while looking up renv lock file", "renv_lock", lockfilePath)
 		return nil, err
 	}
 
@@ -65,15 +66,21 @@ func (i *defaultRInspector) InspectR() (*config.R, error) {
 
 	if !exists {
 		// Maybe R can give us the lockfile path (e.g. from an renv profile)
+		i.log.Debug("Attempting to get renv lock file via R executable")
 		rExecutable, getRExecutableErr = i.getRExecutable()
 		if getRExecutableErr == nil {
 			lockfilePath, err = i.getRenvLockfile(rExecutable)
 			if err != nil {
+				i.log.Debug("Error attempting to get renv lockfile path via R executable", "r_executable", rExecutable, "error", err.Error())
 				return nil, err
 			}
 			exists, err = lockfilePath.Exists()
 			if err != nil {
+				i.log.Debug("Error asserting renv lockfile exists", "renv_lock", lockfilePath, "error", err.Error())
 				return nil, err
+			}
+			if exists {
+				i.log.Debug("renv lockfile found via R executable", "r_executable", rExecutable, "renv_lock", lockfilePath)
 			}
 		} // else stay with the default lockfile path
 	}
@@ -84,20 +91,29 @@ func (i *defaultRInspector) InspectR() (*config.R, error) {
 		// Get R version from the lockfile
 		rVersion, err = i.getRVersionFromLockfile(lockfilePath)
 		if err != nil {
-			return nil, err
+			i.log.Debug("Error getting R version from existing renv lockfile. Attempting to get R version from executable", "renv_lock", lockfilePath, "error", err.Error())
+			rExecutable, getRExecutableErr = i.getRExecutable()
 		}
-	} else {
+	}
+
+	// renv.lock exists but could not be read
+	// thus, R version is still empty
+	renvFallback := exists && rVersion == ""
+	if !exists || renvFallback {
 		// Now R is required, err if it couldn't be found.
 		if getRExecutableErr != nil {
+			i.log.Debug("R is required and could not be found", "error", getRExecutableErr)
 			return nil, getRExecutableErr
 		}
 		rVersion, err = i.getRVersion(rExecutable)
 		if err != nil {
+			i.log.Debug("Error while looking up for R version from executable", "r_executable", rExecutable, "error", err.Error())
 			return nil, err
 		}
 	}
 	lockfileRelPath, err := lockfilePath.Rel(i.base)
 	if err != nil {
+		i.log.Debug("Error getting relative path for renv lockfile", "basepath", i.base.String(), "error", err.Error())
 		return nil, err
 	}
 	return &config.R{
@@ -176,15 +192,19 @@ func (i *defaultRInspector) getRVersion(rExecutable string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	line := strings.SplitN(string(append(output, stderr...)), "\n", 2)[0]
-	m := rVersionRE.FindStringSubmatch(line)
-	if len(m) < 2 {
-		return "", fmt.Errorf("couldn't parse R version from output: %s", line)
+	lines := strings.SplitN(string(append(output, stderr...)), "\n", -1)
+	for _, l := range lines {
+		i.log.Info("Parsing line for R version", "l", l)
+		m := rVersionRE.FindStringSubmatch(l)
+		if len(m) < 2 {
+			continue
+		}
+		version := m[1]
+		i.log.Info("Detected R version", "version", version)
+		rVersionCache[rExecutable] = version
+		return version, nil
 	}
-	version := m[1]
-	i.log.Info("Detected R version", "version", version)
-	rVersionCache[rExecutable] = version
-	return version, nil
+	return "", fmt.Errorf("couldn't parse R version from command output (%s --version)", rExecutable)
 }
 
 var renvLockRE = regexp.MustCompile(`^\[1\] "(.*)"`)

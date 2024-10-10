@@ -10,15 +10,17 @@ import (
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 )
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
 type PostDeploymentsRequestBody struct {
-	AccountName string `json:"account"`
-	ConfigName  string `json:"config"`
-	SaveName    string `json:"saveName"`
+	AccountName string          `json:"account"`
+	ConfigName  string          `json:"config"`
+	SaveName    string          `json:"saveName"`
+	ID          types.ContentID `json:"id"`
 }
 
 func PostDeploymentsHandlerFunc(
@@ -65,12 +67,14 @@ func PostDeploymentsHandlerFunc(
 			return
 		}
 		if exists {
+			log.Debug("Conflict found, deployment already exists", "path", path)
 			w.WriteHeader(http.StatusConflict)
 			return
 		}
 
 		if b.ConfigName != "" {
 			// Config must exist
+			log.Debug("Config name found in request", "config_name", b.ConfigName)
 			configPath := config.GetConfigPath(projectDir, b.ConfigName)
 			exists, err = configPath.Exists()
 			if err != nil {
@@ -89,6 +93,14 @@ func PostDeploymentsHandlerFunc(
 		d.ServerType = acct.ServerType
 		d.ConfigName = b.ConfigName
 
+		if b.ID != "" {
+			d.ID = b.ID
+			d.DashboardURL = util.GetDashboardURL(acct.URL, b.ID)
+			d.DirectURL = util.GetDirectURL(acct.URL, b.ID)
+			d.LogsURL = util.GetLogsURL(acct.URL, b.ID)
+		}
+
+		log.Debug("Writing deployment file", "path", path.String())
 		err = d.WriteFile(path)
 		if err != nil {
 			InternalError(w, req, log, err)

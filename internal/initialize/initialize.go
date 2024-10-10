@@ -133,16 +133,23 @@ func normalizeConfig(
 	// The inspector may populate the file list.
 	// If it doesn't, default to just the entrypoint file.
 	if len(cfg.Files) == 0 {
+		log.Debug("Inspector did not populate files list, defaulting to single file entrypoint", "entrypoint", cfg.Entrypoint)
 		cfg.Files = []string{fmt.Sprint("/", cfg.Entrypoint)}
+	} else {
+		log.Debug("Inspector populate files list", "total_files", len(cfg.Files))
 	}
+
 	needPython, err := requiresPython(cfg, base)
 	if err != nil {
+		log.Debug("Error while determining Python as a requirement", "error", err.Error())
 		return err
 	}
 	if needPython {
+		log.Debug("Determined that Python is required")
 		inspector := PythonInspectorFactory(base, python, log)
 		pyConfig, err := inspector.InspectPython()
 		if err != nil {
+			log.Debug("Error while inspecting to generate a Python based configuration", "error", err.Error())
 			return err
 		}
 		cfg.Python = pyConfig
@@ -150,12 +157,14 @@ func normalizeConfig(
 	}
 	needR, err := requiresR(cfg, base, rExecutable)
 	if err != nil {
+		log.Debug("Error while determining R as a requirement", "error", err.Error())
 		return err
 	}
 	if needR {
 		inspector := RInspectorFactory(base, rExecutable, log)
 		rConfig, err := inspector.InspectR()
 		if err != nil {
+			log.Debug("Error while inspecting to generate an R based configuration", "error", err.Error())
 			return err
 		}
 		cfg.R = rConfig

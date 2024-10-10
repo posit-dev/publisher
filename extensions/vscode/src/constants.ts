@@ -10,6 +10,18 @@ export const DEPLOYMENTS_PATTERN = "**/.posit/publish/deployments/*.toml";
 export const DEFAULT_PYTHON_PACKAGE_FILE = "requirements.txt";
 export const DEFAULT_R_PACKAGE_FILE = "renv.lock";
 
+// pulled from /internal/services/api/get_entrypoints.go
+// should all be lowercase!
+export const ENTRYPOINT_FILE_EXTENSIONS = [
+  ".htm",
+  ".html",
+  ".ipynb",
+  ".py",
+  ".qmd",
+  ".r",
+  ".rmd",
+];
+
 const baseCommands = {
   InitProject: "posit.publisher.init-project",
   ShowOutputChannel: "posit.publisher.showOutputChannel",
@@ -31,10 +43,6 @@ const logsCommands = {
 const credentialsContexts = {
   Keychain: "posit.publisher.credentials.tree.item.keychain",
   EnvironmentVars: "posit.publisher.credentials.tree.item.environmentVars",
-};
-
-export const CredentialGUIs = {
-  EnvironmentGUID: "00000000-0000-0000-0000-000000000000",
 };
 
 const filesCommands = {
@@ -73,6 +81,7 @@ const homeViewCommands = {
   AddCredential: "posit.publisher.homeView.addCredential",
   DeleteCredential: "posit.publisher.homeView.deleteCredential",
   RefreshCredentials: "posit.publisher.homeView.refreshCredentials",
+  RemoveSecret: "posit.publisher.homeView.removeSecret",
   EditCurrentConfiguration: "posit.publisher.homeView.edit.Configuration",
   // Added automatically by VSCode with view registration
   Focus: "posit.publisher.homeView.focus",

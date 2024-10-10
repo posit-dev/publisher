@@ -71,11 +71,15 @@ export class ContentRecords {
     targetName: string,
     accountName: string,
     configName: string,
+    insecure: boolean,
     dir: string,
+    secrets?: Record<string, string>,
   ) {
     const data = {
       account: accountName,
       config: configName,
+      secrets: secrets,
+      insecure: insecure,
     };
     const encodedTarget = encodeURIComponent(targetName);
     return this.client.post<{ localId: string }>(
@@ -104,12 +108,20 @@ export class ContentRecords {
   // 204 - no content
   // 404 - contentRecord or config file not found
   // 500 - internal server error
-  patch(deploymentName: string, configName: string, dir: string) {
+  patch(
+    deploymentName: string,
+    dir: string,
+    data: {
+      configName?: string;
+      guid?: string;
+    },
+  ) {
     const encodedName = encodeURIComponent(deploymentName);
     return this.client.patch<ContentRecord>(
       `deployments/${encodedName}`,
       {
-        configurationName: configName,
+        configurationName: data.configName,
+        id: data.guid,
       },
       {
         params: {

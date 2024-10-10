@@ -1,6 +1,7 @@
 <template>
   <vscode-button
-    :disabled="!haveResources || isConfigInError || home.publishInProgress"
+    :data-automation="`deploy-button`"
+    :disabled="!haveResources || home.publishInProgress"
     @click="deploy"
   >
     Deploy Your Project
@@ -10,7 +11,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
 
-import { isConfigurationError } from "../../../../src/api";
 import { useHomeStore } from "src/stores/home";
 import { useHostConduitService } from "src/HostConduitService";
 
@@ -26,13 +26,6 @@ const haveResources = computed(
     Boolean(home.serverCredential),
 );
 
-const isConfigInError = computed(() => {
-  return Boolean(
-    home.selectedConfiguration &&
-      isConfigurationError(home.selectedConfiguration),
-  );
-});
-
 const deploy = () => {
   if (
     !home.selectedContentRecord ||
@@ -45,6 +38,14 @@ const deploy = () => {
     return;
   }
 
+  // Only send up secrets that have values
+  const secrets: Record<string, string> = {};
+  home.secrets.forEach((value, name) => {
+    if (value) {
+      secrets[name] = value;
+    }
+  });
+
   hostConduit.sendMsg({
     kind: WebviewToHostMessageType.DEPLOY,
     content: {
@@ -52,6 +53,7 @@ const deploy = () => {
       configurationName: home.selectedConfiguration.configurationName,
       credentialName: home.serverCredential.name,
       projectDir: home.selectedContentRecord.projectDir,
+      secrets: secrets,
     },
   });
 };

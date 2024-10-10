@@ -18,8 +18,9 @@
       <div class="deployment-control" v-on="{ click: onSelectDeployment }">
         <QuickPickItem
           :label="deploymentTitle"
-          :detail="deploymentSubTitle"
+          :details="deploymentSubTitles"
           :title="toolTipText"
+          :data-automation="`entrypoint-label`"
         />
         <div
           class="select-indicator codicon codicon-chevron-down"
@@ -27,23 +28,30 @@
         />
       </div>
 
-      <div
-        v-if="
-          home.selectedConfiguration &&
-          !isConfigurationError(home.selectedConfiguration) &&
-          home.selectedConfiguration?.configuration?.entrypoint
-        "
-        class="deployment-details-container"
-      >
-        <div class="deployment-details-row">
-          <span class="deployment-details-label">{{
-            home.selectedConfiguration.configuration.entrypoint
-          }}</span>
-          <span class="deployment-details-info"> (selected as entrypoint)</span>
-        </div>
-      </div>
+      <template v-if="home.duplicatedEnvironmentVariables.length">
+        <p>
+          <template v-if="home.duplicatedEnvironmentVariables.length === 1">
+            A variable was set as both a secret and environment variable. It
+            must only be set as one or the other.
+          </template>
+          <template v-if="home.duplicatedEnvironmentVariables.length > 1">
+            Variables were set as both secrets and environment variables. They
+            must only be set as one or the other.
+          </template>
+          <a
+            class="webview-link"
+            role="button"
+            @click="
+              onEditConfiguration(home.selectedConfiguration!.configurationPath)
+            "
+            >Edit the Configuration</a
+          >.
+        </p>
+        <p>{{ home.duplicatedEnvironmentVariables.join(", ") }}</p>
+        <p></p>
+      </template>
 
-      <p v-if="isConfigEntryMissing">
+      <p v-if="home.config.active.isEntryMissing">
         No Config Entry in Deployment record -
         {{ home.selectedContentRecord?.saveName }}.
         <a class="webview-link" role="button" @click="selectConfiguration">{{
@@ -51,14 +59,24 @@
         }}</a
         >.
       </p>
-      <p v-if="isConfigMissing">
+      <p v-if="home.config.active.isMissing">
         The last Configuration used for this Deployment was not found.
         <a class="webview-link" role="button" @click="selectConfiguration">{{
           promptForConfigSelection
         }}</a
         >.
       </p>
-      <p v-if="isConfigInError">
+      <p v-if="home.config.active.isTOMLError">
+        The selected Configuration has a schema error
+        {{ getActiveConfigTOMLErrorDetails }}.
+        <a
+          class="webview-link"
+          role="button"
+          @click="onEditConfigurationWithTOMLError()"
+          >Edit the Configuration</a
+        >.
+      </p>
+      <p v-if="home.config.active.isUnknownError">
         The selected Configuration has an error.
         <a
           class="webview-link"
@@ -70,7 +88,7 @@
         >.
       </p>
 
-      <p v-if="isCredentialMissing">
+      <p v-if="home.config.active.isCredentialMissing">
         A Credential for the Deployment's server URL was not found.
         <a class="webview-link" role="button" @click="newCredential"
           >Create a new Credential</a
@@ -82,7 +100,7 @@
     <div v-else class="deployment-control" v-on="{ click: onSelectDeployment }">
       <QuickPickItem
         label="Select..."
-        detail="(new or existing)"
+        :details="['(new or existing)']"
         data-automation="select-deployment"
       />
       <div
@@ -100,7 +118,9 @@
           <div class="progress-container">
             <vscode-progress-ring class="progress-ring" />
             <div class="progress-desc">
-              <div>Deployment in Progress...</div>
+              <div data-automation="deployment-progress">
+                Deployment in Progress...
+              </div>
               <p class="progress-log-anchor">
                 <a
                   class="webview-link"
@@ -119,7 +139,10 @@
         </div>
       </div>
       <div v-else>
-        <div class="deployment-summary-container">
+        <div
+          class="deployment-summary-container"
+          data-automation="deploy-status"
+        >
           <h4 class="deployment-summary">
             {{ lastStatusDescription }}
           </h4>
@@ -128,6 +151,18 @@
             :actions="[]"
             :context-menu="contextMenuVSCodeContext"
           />
+        </div>
+        <div v-if="isPreContentRecordWithoutID">
+          Is this already deployed to a Connect server? You can
+          <a class="webview-link" role="button" @click="onAssociateDeployment"
+            >update that previous deployment</a
+          >.
+        </div>
+        <div v-if="isPreContentRecordWithID">
+          <a class="webview-link" role="button" @click="viewContent"
+            >This deployment</a
+          >
+          will be updated when deployed.
         </div>
         <div
           v-if="!isPreContentRecord(home.selectedContentRecord)"
@@ -153,7 +188,7 @@
         >
           <vscode-button
             appearance="secondary"
-            @click="navigateToUrl(home.selectedContentRecord.dashboardUrl)"
+            @click="viewContent"
             class="w-full"
           >
             View Content
@@ -172,8 +207,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
-
+import { computed } from "vue";
 import {
   Configuration,
   isPreContentRecord,
@@ -183,7 +217,10 @@ import {
   ErrorMessageActionIds,
   ErrorMessageSplitOptions,
 } from "../../../../src/utils/errorEnhancer";
-import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
+import {
+  EditConfigurationSelection,
+  WebviewToHostMessageType,
+} from "../../../../src/types/messages/webviewToHostMessages";
 import { calculateTitle } from "../../../../src/utils/titles";
 import { formatDateString } from "src/utils/date";
 import { filterConfigurationsToValidAndType } from "../../../../src/utils/filters";
@@ -195,6 +232,10 @@ import QuickPickItem from "src/components/QuickPickItem.vue";
 import ActionToolbar from "src/components/ActionToolbar.vue";
 import DeployButton from "src/components/DeployButton.vue";
 import TextStringWithAnchor from "./TextStringWithAnchor.vue";
+import {
+  AgentError,
+  isAgentErrorInvalidTOML,
+} from "../../../../src/api/types/error";
 
 const home = useHomeStore();
 const hostConduit = useHostConduitService();
@@ -230,11 +271,15 @@ const onAddDeployment = () => {
   });
 };
 
-const onEditConfiguration = (fullPath: string) => {
+const onEditConfiguration = (
+  fullPath: string,
+  selection?: EditConfigurationSelection,
+) => {
   hostConduit.sendMsg({
     kind: WebviewToHostMessageType.EDIT_CONFIGURATION,
     content: {
       configurationPath: fullPath,
+      selection,
     },
   });
 };
@@ -243,19 +288,6 @@ const onViewPublishingLog = () => {
   hostConduit.sendMsg({
     kind: WebviewToHostMessageType.VIEW_PUBLISHING_LOG,
   });
-};
-
-const isConfigInErrorList = (configName?: string): boolean => {
-  if (!configName) {
-    return false;
-  }
-  return Boolean(
-    home.configurationsInError.find(
-      (config) =>
-        config.configurationName ===
-        home.selectedContentRecord?.configurationName,
-    ),
-  );
 };
 
 const filteredConfigs = computed((): Configuration[] => {
@@ -284,28 +316,6 @@ const contextMenuVSCodeContext = computed((): string => {
     : "homeview-last-contentRecord-more-menu";
 });
 
-const isConfigEntryMissing = computed((): boolean => {
-  return Boolean(
-    home.selectedContentRecord && !home.selectedContentRecord.configurationName,
-  );
-});
-
-const isConfigMissing = computed((): boolean => {
-  return Boolean(
-    home.selectedContentRecord &&
-      !home.selectedConfiguration &&
-      !isConfigInErrorList(home.selectedContentRecord?.configurationName) &&
-      !isConfigEntryMissing.value,
-  );
-});
-
-const isConfigInError = computed((): boolean => {
-  return Boolean(
-    home.selectedConfiguration &&
-      isConfigurationError(home.selectedConfiguration),
-  );
-});
-
 const deploymentTitle = computed(() => {
   if (!home.selectedContentRecord) {
     // no title if there is no selected contentRecord
@@ -319,15 +329,41 @@ const deploymentTitle = computed(() => {
   return result.title;
 });
 
-const deploymentSubTitle = computed(() => {
+const deploymentSubTitles = computed(() => {
+  const subTitles: string[] = [];
+  subTitles.push(credentialSubTitle.value);
+  if (entrypointSubTitle.value) {
+    subTitles.push(entrypointSubTitle.value);
+  }
+  return subTitles;
+});
+
+const credentialSubTitle = computed(() => {
   if (home.serverCredential?.name) {
     return `${home.serverCredential.name}`;
   }
   return `Missing Credential for ${home.selectedContentRecord?.serverUrl}`;
 });
 
-const isCredentialMissing = computed((): boolean => {
-  return Boolean(home.selectedContentRecord && !home.serverCredential);
+const entrypointSubTitle = computed(() => {
+  if (
+    home.selectedConfiguration &&
+    !isConfigurationError(home.selectedConfiguration)
+  ) {
+    const contentRecord = home.selectedContentRecord;
+    const config = home.selectedConfiguration;
+    if (contentRecord) {
+      let subTitle = "";
+      if (contentRecord.projectDir !== ".") {
+        subTitle = `${contentRecord.projectDir}${home.platformFileSeparator}`;
+      }
+      if (!home.config.active.isUnknownError) {
+        subTitle += config.configuration.entrypoint;
+      }
+      return subTitle;
+    }
+  }
+  return "ProjectDir and Entrypoint not determined";
 });
 
 const selectConfiguration = () => {
@@ -344,19 +380,79 @@ const lastStatusDescription = computed(() => {
     return "Last Deployment Failed";
   }
   if (isPreContentRecord(home.selectedContentRecord)) {
-    return "Not Yet Deployed";
+    return isPreContentRecordWithID.value
+      ? "Not Yet Updated"
+      : "Not Yet Deployed";
   }
   return "Last Deployment Successful";
 });
 
+const isPreContentRecordWithID = computed(() => {
+  return (
+    isPreContentRecord(home.selectedContentRecord) &&
+    Boolean(home.selectedContentRecord.id)
+  );
+});
+
+const isPreContentRecordWithoutID = computed(() => {
+  return (
+    isPreContentRecord(home.selectedContentRecord) &&
+    !isPreContentRecordWithID.value
+  );
+});
+
 const toolTipText = computed(() => {
+  let entrypoint = "unknown";
+  if (
+    home.selectedConfiguration &&
+    !isConfigurationError(home.selectedConfiguration) &&
+    home.selectedConfiguration.configuration.entrypoint
+  ) {
+    entrypoint = home.selectedConfiguration.configuration.entrypoint;
+  }
   return `Deployment Details
 - Deployment Record: ${home.selectedContentRecord?.saveName || "<undefined>"}
 - Configuration File: ${home.selectedConfiguration?.configurationName || "<undefined>"}
 - Credential In Use: ${home.serverCredential?.name || "<undefined>"}
 - Project Dir: ${home.selectedContentRecord?.projectDir || "<undefined>"}
+- Entrypoint: ${entrypoint}
 - Server URL: ${home.serverCredential?.url || "<undefined>"}`;
 });
+
+const getActiveConfigError = computed((): AgentError | undefined => {
+  if (
+    home.selectedConfiguration &&
+    isConfigurationError(home.selectedConfiguration) &&
+    isAgentErrorInvalidTOML(home.selectedConfiguration.error)
+  ) {
+    return home.selectedConfiguration.error;
+  }
+  return undefined;
+});
+
+const getActiveConfigTOMLErrorDetails = computed(() => {
+  const agentError = getActiveConfigError.value;
+  if (agentError && isAgentErrorInvalidTOML(agentError)) {
+    return `on line ${agentError.data.line}`;
+  }
+  return "";
+});
+
+const onEditConfigurationWithTOMLError = () => {
+  const agentError = getActiveConfigError.value;
+  if (agentError && isAgentErrorInvalidTOML(agentError)) {
+    onEditConfiguration(home.selectedConfiguration!.configurationPath, {
+      start: {
+        line: agentError.data.line - 1,
+        character: agentError.data.column - 1,
+      },
+    });
+  }
+  console.error(
+    "EvenEasierDeploy::onEditConfigurationWithTOMLError, error is not expected type. Ignoring.",
+  );
+  return;
+};
 
 const onErrorMessageAnchorClick = (splitOptionId: number) => {
   const option = ErrorMessageSplitOptions.find(
@@ -387,6 +483,18 @@ const newCredential = () => {
   hostConduit.sendMsg({
     kind: WebviewToHostMessageType.NEW_CREDENTIAL_FOR_DEPLOYMENT,
   });
+};
+
+const onAssociateDeployment = () => {
+  hostConduit.sendMsg({
+    kind: WebviewToHostMessageType.SHOW_ASSOCIATE_GUID,
+  });
+};
+
+const viewContent = () => {
+  if (home.selectedContentRecord?.dashboardUrl) {
+    navigateToUrl(home.selectedContentRecord.dashboardUrl);
+  }
 };
 </script>
 
@@ -504,32 +612,5 @@ const newCredential = () => {
 .progress-log-anchor {
   margin-top: 5px;
   margin-bottom: 0px;
-}
-
-.deployment-details-container {
-  margin-bottom: 0.5rem;
-
-  .deployment-details-row {
-    display: flex;
-    align-items: center;
-
-    .deployment-details-label {
-      font-size: 0.9em;
-      line-height: normal;
-      opacity: 1;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: pre;
-    }
-
-    .deployment-details-info {
-      font-size: 0.8em;
-      line-height: normal;
-      opacity: 0.7;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: pre;
-    }
-  }
 }
 </style>

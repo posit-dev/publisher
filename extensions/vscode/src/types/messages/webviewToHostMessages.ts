@@ -16,6 +16,7 @@ export enum WebviewToHostMessageType {
   REQUEST_FILES_LISTS = "requestFilesLists",
   REQUEST_CREDENTIALS = "requestCredentials",
   VSCODE_OPEN_RELATIVE = "VSCodeOpenRelativeMsg",
+  ADD_SECRET = "addSecret",
   REFRESH_PYTHON_PACKAGES = "RefreshPythonPackagesMsg",
   SCAN_PYTHON_PACKAGE_REQUIREMENTS = "ScanPythonPackageRequirementsMsg",
   REFRESH_R_PACKAGES = "RefreshRPackagesMsg",
@@ -25,6 +26,7 @@ export enum WebviewToHostMessageType {
   NEW_CREDENTIAL_FOR_DEPLOYMENT = "newCredentialForDeployment",
   NEW_CREDENTIAL = "newCredential",
   VIEW_PUBLISHING_LOG = "viewPublishingLog",
+  SHOW_ASSOCIATE_GUID = "ShowAssociateGUID",
 }
 
 export type AnyWebviewToHostMessage<
@@ -49,6 +51,7 @@ export type WebviewToHostMessage =
   | ExcludeFileMsg
   | RequestFilesListsMsg
   | RequestCredentialsMsg
+  | AddSecretMsg
   | RefreshPythonPackagesMsg
   | VSCodeOpenRelativeMsg
   | ScanPythonPackageRequirementsMsg
@@ -58,7 +61,8 @@ export type WebviewToHostMessage =
   | NewDeploymentMsg
   | NewCredentialForDeploymentMsg
   | NewCredentialMsg
-  | ViewPublishingLog;
+  | ViewPublishingLog
+  | ShowAssociateGUIDMsg;
 
 export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
   return (
@@ -73,6 +77,7 @@ export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
     msg.kind === WebviewToHostMessageType.EXCLUDE_FILE ||
     msg.kind === WebviewToHostMessageType.REQUEST_FILES_LISTS ||
     msg.kind === WebviewToHostMessageType.REQUEST_CREDENTIALS ||
+    msg.kind === WebviewToHostMessageType.ADD_SECRET ||
     msg.kind === WebviewToHostMessageType.REFRESH_PYTHON_PACKAGES ||
     msg.kind === WebviewToHostMessageType.VSCODE_OPEN_RELATIVE ||
     msg.kind === WebviewToHostMessageType.SCAN_PYTHON_PACKAGE_REQUIREMENTS ||
@@ -82,7 +87,8 @@ export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
     msg.kind === WebviewToHostMessageType.NEW_DEPLOYMENT ||
     msg.kind === WebviewToHostMessageType.NEW_CREDENTIAL_FOR_DEPLOYMENT ||
     msg.kind === WebviewToHostMessageType.NEW_CREDENTIAL ||
-    msg.kind === WebviewToHostMessageType.VIEW_PUBLISHING_LOG
+    msg.kind === WebviewToHostMessageType.VIEW_PUBLISHING_LOG ||
+    msg.kind === WebviewToHostMessageType.SHOW_ASSOCIATE_GUID
   );
 }
 
@@ -93,16 +99,30 @@ export type DeployMsg = AnyWebviewToHostMessage<
     credentialName: string;
     configurationName: string;
     projectDir: string;
+    secrets?: Record<string, string>;
   }
 >;
 
 export type InitializingMsg =
   AnyWebviewToHostMessage<WebviewToHostMessageType.INITIALIZING>;
 
+export type EditConfigurationSelection = {
+  // numbers below are base-zero
+  start: {
+    line: number;
+    character: number;
+  };
+  end?: {
+    line: number;
+    character: number;
+  };
+};
+
 export type EditConfigurationMsg = AnyWebviewToHostMessage<
   WebviewToHostMessageType.EDIT_CONFIGURATION,
   {
     configurationPath: string;
+    selection?: EditConfigurationSelection;
   }
 >;
 
@@ -150,6 +170,9 @@ export type RequestFilesListsMsg =
 export type RequestCredentialsMsg =
   AnyWebviewToHostMessage<WebviewToHostMessageType.REQUEST_CREDENTIALS>;
 
+export type AddSecretMsg =
+  AnyWebviewToHostMessage<WebviewToHostMessageType.ADD_SECRET>;
+
 export type RefreshPythonPackagesMsg =
   AnyWebviewToHostMessage<WebviewToHostMessageType.REFRESH_PYTHON_PACKAGES>;
 
@@ -183,3 +206,6 @@ export type NewCredentialMsg =
 
 export type ViewPublishingLog =
   AnyWebviewToHostMessage<WebviewToHostMessageType.VIEW_PUBLISHING_LOG>;
+
+export type ShowAssociateGUIDMsg =
+  AnyWebviewToHostMessage<WebviewToHostMessageType.SHOW_ASSOCIATE_GUID>;

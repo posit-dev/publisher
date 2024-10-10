@@ -28,13 +28,16 @@ type defaultAccountList struct {
 
 var _ AccountList = &defaultAccountList{}
 
-func NewAccountList(fs afero.Fs, log logging.Logger) *defaultAccountList {
-	return &defaultAccountList{
-		providers: []AccountProvider{
-			NewCredentialsProvider(),
-		},
-		log: log,
+func NewAccountList(fs afero.Fs, log logging.Logger) (*defaultAccountList, error) {
+	cprovider, err := NewCredentialsProvider(log)
+	if err != nil {
+		return nil, err
 	}
+
+	return &defaultAccountList{
+		providers: []AccountProvider{cprovider},
+		log:       log,
+	}, nil
 }
 
 func (l *defaultAccountList) GetAllAccounts() (accounts []Account, err error) {

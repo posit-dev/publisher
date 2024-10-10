@@ -3,6 +3,7 @@ package api
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"html"
@@ -43,6 +44,12 @@ func NotFound(w http.ResponseWriter, log logging.Logger, err error) {
 	http.Error(w, msg, http.StatusNotFound)
 }
 
+func JsonResult(w http.ResponseWriter, status int, result any) {
+	w.Header().Set("content-type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(result)
+}
+
 var errProjectDirNotFound = errors.New("project directory not found")
 
 // ProjectDirFromRequest returns the project directory from the request query parameter "dir".
@@ -51,6 +58,7 @@ var errProjectDirNotFound = errors.New("project directory not found")
 // Other errors return a 500.
 func ProjectDirFromRequest(base util.AbsolutePath, w http.ResponseWriter, req *http.Request, log logging.Logger) (util.AbsolutePath, util.RelativePath, error) {
 	dir := req.URL.Query().Get("dir")
+	log.Debug("Picking directory from request", "directory", dir)
 	projectDir, err := base.SafeJoin(dir)
 	if err != nil {
 		BadRequest(w, req, log, err)

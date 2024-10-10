@@ -5,13 +5,14 @@ package util
 import (
 	"errors"
 	"io/fs"
-	"os"
 	"path/filepath"
 	"runtime"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/logging/loggingtest"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/mock"
@@ -116,17 +117,27 @@ func (s *SymlinkWalkerSuite) TestNewBundleFromDirectorySymlinks() {
 	}, fileList)
 }
 
+// We log the issues with symbolic links but not return them to not polute the user with error notifications
+// when another piece of software is dealing with the same directory.
 func (s *SymlinkWalkerSuite) TestNewBundleFromDirectoryMissingSymlinkTarget() {
 	// afero's MemFs doesn't have symlink support, so we
 	// are using a fixture directory under ./testdata.
 	realFS := afero.NewOsFs()
 	dirPath := NewAbsolutePath(s.cwd.String(), realFS).Join("testdata", "symlink_test", "link_target_missing")
-	log := logging.New()
+	log := loggingtest.NewMockLogger()
+
+	symlinkPathMatcher := mock.MatchedBy(func(path AbsolutePath) bool {
+		return strings.Contains(path.String(), "badlink")
+	})
+
+	log.On("Info", "Following symlink", "path", symlinkPathMatcher).Return()
+	log.On("Warn", "Error following symlink, ignoring file", "filepath", symlinkPathMatcher, "error", mock.Anything).Return()
 
 	underlyingWalker := &FSWalker{}
 	walker := NewSymlinkWalker(underlyingWalker, log)
 	err := walker.Walk(dirPath, func(path AbsolutePath, info fs.FileInfo, err error) error {
 		return nil
 	})
-	s.ErrorIs(err, os.ErrNotExist)
+	s.NoError(err)
+	log.AssertExpectations(s.T())
 }

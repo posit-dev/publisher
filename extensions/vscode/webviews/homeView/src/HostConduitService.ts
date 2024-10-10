@@ -13,6 +13,7 @@ import {
   UpdatePythonPackages,
   UpdateRPackages,
   RefreshFilesMsg,
+  SetPathSeparatorMsg,
 } from "../../../src/types/messages/hostToWebviewMessages";
 import {
   WebviewToHostMessage,
@@ -83,9 +84,15 @@ const onMessageFromHost = (msg: HostToWebviewMessage): void => {
       return onShowDisableOverlayMsg();
     case HostToWebviewMessageType.HIDE_DISABLE_OVERLAY:
       return onHideDisableOverlayMsg();
+    case HostToWebviewMessageType.SET_PATH_SEPARATOR:
+      return onSetPathSeparatorMsg(msg);
     default:
       console.warn(`unexpected command: ${JSON.stringify(msg)}`);
   }
+};
+
+const onSetPathSeparatorMsg = (msg: SetPathSeparatorMsg) => {
+  useHomeStore().platformFileSeparator = msg.content.separator;
 };
 
 const onInitializingRequestCompleteMsg = () => {
@@ -159,6 +166,7 @@ const onPublishStartMsg = () => {
 };
 const onPublishFinishSuccessMsg = () => {
   const home = useHomeStore();
+  home.clearSecretValues();
   home.publishInProgress = false;
   home.lastContentRecordResult = `Last Deployment was Successful`;
   home.lastContentRecordMsg = "";

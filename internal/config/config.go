@@ -3,6 +3,7 @@ package config
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -68,6 +69,7 @@ func FromFile(path util.AbsolutePath) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	cfg.FillDefaults()
 	cfg.Comments, err = readLeadingComments(path)
 	if err != nil {
 		return nil, err
@@ -105,4 +107,52 @@ func (cfg *Config) WriteFile(path util.AbsolutePath) error {
 	}
 	defer f.Close()
 	return cfg.Write(f)
+}
+
+func (cfg *Config) FillDefaults() {
+	if cfg.R != nil {
+		if cfg.R.PackageFile == "" {
+			cfg.R.PackageFile = "renv.lock"
+		}
+		if cfg.R.PackageManager == "" {
+			cfg.R.PackageManager = "renv"
+		}
+	}
+
+	if cfg.Python != nil {
+		if cfg.Python.PackageFile == "" {
+			cfg.Python.PackageFile = "requirements.txt"
+		}
+		if cfg.Python.PackageManager == "" {
+			cfg.Python.PackageManager = "pip"
+		}
+	}
+}
+
+func (cfg *Config) AddSecret(secret string) error {
+	// Check if the secret already exists before adding
+	for _, s := range cfg.Secrets {
+		if s == secret {
+			return nil // Secret already exists, no need to add
+		}
+	}
+	// Check if the secret name already exists in the environment
+	for e := range cfg.Environment {
+		if e == secret {
+			return errors.New("secret name already exists in environment")
+		}
+	}
+
+	cfg.Secrets = append(cfg.Secrets, secret)
+	return nil
+}
+
+func (cfg *Config) RemoveSecret(secret string) error {
+	for i, s := range cfg.Secrets {
+		if s == secret {
+			cfg.Secrets = append(cfg.Secrets[:i], cfg.Secrets[i+1:]...)
+			break
+		}
+	}
+	return nil
 }

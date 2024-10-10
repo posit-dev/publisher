@@ -3,14 +3,18 @@ package matcher
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"errors"
 	"io/fs"
+	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/logging/loggingtest"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
 	"github.com/spf13/afero"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -105,6 +109,58 @@ func (s *WalkerSuite) TestWalk() {
 		dirPath.Join("included", "includeme").String(),
 		dirPath.Join("renv").String(),
 	}, seen)
+}
+
+func (s *WalkerSuite) TestWalkPermissionErr() {
+	afs := utiltest.NewMockFs()
+	baseDir := s.cwd.WithFs(afs)
+
+	// We can't traverse this directory because of permissions
+	afs.On("Open", baseDir.String()).Return(nil, os.ErrPermission)
+
+	// We can stat it though; fake with fileInfo from the real directory
+	fileInfo, err := s.cwd.Stat()
+	s.NoError(err)
+	afs.On("Stat", baseDir.String()).Return(fileInfo, nil)
+
+	w, err := NewMatchingWalker([]string{"*"}, s.cwd, logging.New())
+	s.NoError(err)
+	s.NotNil(w)
+
+	seen := []string{}
+	err = w.Walk(baseDir, func(path util.AbsolutePath, info fs.FileInfo, err error) error {
+		s.NoError(err)
+		relPath, err := path.Rel(s.cwd)
+		s.NoError(err)
+		seen = append(seen, relPath.String())
+		return nil
+	})
+	s.NoError(err)
+	s.Equal([]string{"."}, seen)
+}
+
+func (s *WalkerSuite) TestWalkErr_Logged() {
+	// Errors while walking through files are logged but won't halt the current process
+	afs := utiltest.NewMockFs()
+	baseDir := s.cwd.WithFs(afs)
+
+	fileInfo, err := s.cwd.Stat()
+	s.NoError(err)
+	afs.On("Stat", baseDir.String()).Return(fileInfo, errors.New("batteries not included"))
+
+	log := loggingtest.NewMockLogger()
+	log.On("Warn", "Unknown error while accessing file", "path", mock.Anything, "error", mock.Anything).Return()
+
+	w, err := NewMatchingWalker([]string{"*"}, s.cwd, log)
+	s.NoError(err)
+	s.NotNil(w)
+
+	err = w.Walk(baseDir, func(path util.AbsolutePath, info fs.FileInfo, err error) error {
+		s.NoError(err)
+		return nil
+	})
+	s.NoError(err)
+	log.AssertExpectations(s.T())
 }
 
 func (s *WalkerSuite) TestWalkSubdirectory() {

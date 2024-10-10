@@ -2,14 +2,22 @@
 
 package accounts
 
-import "github.com/posit-dev/publisher/internal/credentials"
+import (
+	"github.com/posit-dev/publisher/internal/credentials"
+	"github.com/posit-dev/publisher/internal/logging"
+)
 
 type CredentialsProvider struct {
 	cs credentials.CredentialsService
 }
 
-func NewCredentialsProvider() *CredentialsProvider {
-	return &CredentialsProvider{cs: credentials.CredentialsService{}}
+func NewCredentialsProvider(log logging.Logger) (*CredentialsProvider, error) {
+	cs, err := credentials.NewCredentialsService(log)
+	if err != nil {
+		return nil, err
+	}
+
+	return &CredentialsProvider{cs}, nil
 }
 
 func (p *CredentialsProvider) Load() ([]Account, error) {

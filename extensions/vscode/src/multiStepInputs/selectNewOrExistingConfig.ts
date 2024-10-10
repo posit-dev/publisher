@@ -126,7 +126,9 @@ export async function selectNewOrExistingConfig(
       configFileListItems.push({
         iconPath: new ThemeIcon("plus"),
         label: createNewConfigurationLabel,
-        detail: "(or pick one of the existing deployments below)",
+        detail: configurations.length
+          ? "(or pick one of the existing configurations below)"
+          : undefined,
         picked: configurations.length ? false : true,
       });
 

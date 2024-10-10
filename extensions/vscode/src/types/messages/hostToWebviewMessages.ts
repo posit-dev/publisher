@@ -27,6 +27,7 @@ export enum HostToWebviewMessageType {
   UPDATE_R_PACKAGES = "updateRPackages",
   SHOW_DISABLE_OVERLAY = "showDisableOverlay",
   HIDE_DISABLE_OVERLAY = "hideDisableOverlay",
+  SET_PATH_SEPARATOR = "setPathSeparator",
 }
 
 export type AnyHostToWebviewMessage<
@@ -53,7 +54,8 @@ export type HostToWebviewMessage =
   | UpdatePythonPackages
   | UpdateRPackages
   | ShowDisableOverlayMsg
-  | HideDisableOverlayMsg;
+  | HideDisableOverlayMsg
+  | SetPathSeparatorMsg;
 
 export function isHostToWebviewMessage(msg: any): msg is HostToWebviewMessage {
   return (
@@ -70,7 +72,8 @@ export function isHostToWebviewMessage(msg: any): msg is HostToWebviewMessage {
     msg.kind === HostToWebviewMessageType.UPDATE_PYTHON_PACKAGES ||
     msg.kind === HostToWebviewMessageType.UPDATE_R_PACKAGES ||
     msg.kind === HostToWebviewMessageType.SHOW_DISABLE_OVERLAY ||
-    msg.kind === HostToWebviewMessageType.HIDE_DISABLE_OVERLAY
+    msg.kind === HostToWebviewMessageType.HIDE_DISABLE_OVERLAY ||
+    msg.kind === HostToWebviewMessageType.SET_PATH_SEPARATOR
   );
 }
 
@@ -152,3 +155,10 @@ export type ShowDisableOverlayMsg =
 
 export type HideDisableOverlayMsg =
   AnyHostToWebviewMessage<HostToWebviewMessageType.HIDE_DISABLE_OVERLAY>;
+
+export type SetPathSeparatorMsg = AnyHostToWebviewMessage<
+  HostToWebviewMessageType.SET_PATH_SEPARATOR,
+  {
+    separator: string;
+  }
+>;

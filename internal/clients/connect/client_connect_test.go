@@ -568,3 +568,25 @@ func (s *ConnectClientSuite) TestTestAuthenticationNotPublisher() {
 	s.NotNil(err)
 	s.ErrorContains(err, "user account bob with role 'viewer' does not have permission to publish content")
 }
+
+func (s *ConnectClientSuite) TestContentDetails() {
+	lgr := logging.New()
+	content := &ConnectContent{}
+	httpClient := &http_client.MockHTTPClient{}
+	httpClient.On("Get", "/__api__/v1/content/e8922765-4880-43cd-abc0-d59fe59b8b4b", content, lgr).Return(nil)
+
+	client := &ConnectClient{
+		client: httpClient,
+	}
+
+	err := client.ContentDetails("e8922765-4880-43cd-abc0-d59fe59b8b4b", content, lgr)
+	s.NoError(err)
+	httpClient.AssertExpectations(s.T())
+
+	expectedErr := errors.New("unreachable")
+	httpClient.On("Get", "/__api__/v1/content/cf3d3afe-2076-4812-825a-28237252030b", content, lgr).Return(expectedErr)
+
+	err = client.ContentDetails("cf3d3afe-2076-4812-825a-28237252030b", content, lgr)
+	s.ErrorIs(err, expectedErr)
+	httpClient.AssertExpectations(s.T())
+}

@@ -46,19 +46,44 @@ func (s filesService) GetFile(p util.AbsolutePath, matchList matcher.MatchList) 
 	err = walker.Walk(p, func(path util.AbsolutePath, info fs.FileInfo, err error) error {
 		if err != nil {
 			if errors.Is(err, os.ErrNotExist) {
+				// File was deleted since readdir() was called
+				return nil
+			} else if errors.Is(err, os.ErrPermission) {
+				s.log.Warn("permission error; skipping", "path", path)
 				return nil
 			} else {
-				return err
+				s.log.Warn("Unknown error while accesing file", "path", path)
+				return nil
 			}
 		}
+		match := matchList.Match(path)
+
 		if info.IsDir() {
 			// Ignore Python environment directories. We check for these
 			// separately because they aren't expressible as gitignore patterns.
 			if util.IsPythonEnvironmentDir(path) || util.IsRenvLibraryDir(path) {
 				return filepath.SkipDir
 			}
+
+			// For directories, detect permissions issues earlier so we can
+			// attach an exclusion to the generated node.
+			_, err = path.ReadDirNames()
+			if errors.Is(err, os.ErrPermission) {
+				s.log.Warn("permission error; skipping", "path", path)
+
+				// Return an exclusion reason indicating why this can't be included.
+				match = &matcher.Pattern{
+					Source:  matcher.MatchSourcePermissionsError,
+					Exclude: true,
+				}
+				_, err = file.insert(p, path, match)
+				if err != nil {
+					return err
+				}
+				return filepath.SkipDir
+			}
 		}
-		_, err = file.insert(p, path, matchList)
+		_, err = file.insert(p, path, match)
 		return err
 	})
 

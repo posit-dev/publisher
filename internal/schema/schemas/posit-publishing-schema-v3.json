@@ -167,6 +167,14 @@
         }
       ]
     },
+    "secrets": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Names of secrets required by the application. Injected as environment variables.",
+      "examples": ["API_KEY", "DATABASE_PASSWORD"]
+    },
     "connect": {
       "type": "object",
       "additionalProperties": false,

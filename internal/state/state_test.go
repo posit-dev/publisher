@@ -121,6 +121,9 @@ func (s *StateSuite) createTargetFile(name string, bad bool) {
 		server_url = 'https://connect.example.com'
 		server_type = "connect"
 		id = '1234567890ABCDEF'
+		dashboard_url = 'https://connect.example.com/connect/#/apps/1234567890ABCDEF'
+		direct_url = 'https://connect.example.com/content/1234567890ABCDEF/'
+		logs_url = 'https://connect.example.com/connect/#/apps/1234567890ABCDEF/logs'
 		type = 'python-dash'
 		configuration_name = "myConfig"
 		files = [
@@ -175,7 +178,10 @@ func (s *StateSuite) TestLoadTarget() {
 			"app.py",
 			"requirements.txt",
 		},
-		ID: "1234567890ABCDEF",
+		ID:           "1234567890ABCDEF",
+		DashboardURL: "https://connect.example.com/connect/#/apps/1234567890ABCDEF",
+		DirectURL:    "https://connect.example.com/content/1234567890ABCDEF/",
+		LogsURL:      "https://connect.example.com/connect/#/apps/1234567890ABCDEF/logs",
 		Configuration: &config.Config{
 			Schema:      "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json",
 			Type:        "python-dash",
@@ -271,6 +277,17 @@ func (s *StateSuite) makeConfiguration(name string) *config.Config {
 	}
 	err := cfg.WriteFile(path)
 	s.NoError(err)
+	r, err := config.FromFile(path)
+	s.NoError(err)
+	return r
+}
+
+func (s *StateSuite) makeConfigurationWithSecrets(name string, secrets []string) *config.Config {
+	path := config.GetConfigPath(s.cwd, name)
+	cfg := s.makeConfiguration(name)
+	cfg.Secrets = secrets
+	err := cfg.WriteFile(path)
+	s.NoError(err)
 	return cfg
 }
 
@@ -281,7 +298,7 @@ func (s *StateSuite) TestNew() {
 
 	cfg := s.makeConfiguration("default")
 
-	state, err := New(s.cwd, "", "", "", "", accts)
+	state, err := New(s.cwd, "", "", "", "", accts, nil, false)
 	s.NoError(err)
 	s.NotNil(state)
 	s.Equal(state.AccountName, "")
@@ -289,6 +306,8 @@ func (s *StateSuite) TestNew() {
 	s.Equal(state.TargetName, "")
 	s.Equal(&acct, state.Account)
 	s.Equal(cfg, state.Config)
+	s.Equal(map[string]string(nil), state.Secrets)
+	s.Equal(state.Account.Insecure, false)
 	// Target is never nil. We create a new target if no target ID was provided.
 	s.NotNil(state.Target)
 }
@@ -300,8 +319,10 @@ func (s *StateSuite) TestNewNonDefaultConfig() {
 
 	configName := "staging"
 	cfg := s.makeConfiguration(configName)
+	insecure := true
+	acct.Insecure = insecure
 
-	state, err := New(s.cwd, "", configName, "", "", accts)
+	state, err := New(s.cwd, "", configName, "", "", accts, nil, insecure)
 	s.NoError(err)
 	s.NotNil(state)
 	s.Equal("", state.AccountName)
@@ -309,6 +330,7 @@ func (s *StateSuite) TestNewNonDefaultConfig() {
 	s.Equal("", state.TargetName)
 	s.Equal(&acct, state.Account)
 	s.Equal(cfg, state.Config)
+	s.Equal(state.Account.Insecure, true)
 	// Target is never nil. We create a new target if no target ID was provided.
 	s.NotNil(state.Target)
 }
@@ -318,7 +340,7 @@ func (s *StateSuite) TestNewConfigErr() {
 	acct := accounts.Account{}
 	accts.On("GetAllAccounts").Return([]accounts.Account{acct}, nil)
 
-	state, err := New(s.cwd, "", "", "", "", accts)
+	state, err := New(s.cwd, "", "", "", "", accts, nil, false)
 	s.NotNil(err)
 	s.ErrorContains(err, "couldn't load configuration")
 	s.Nil(state)
@@ -345,6 +367,10 @@ func (s *StateSuite) TestNewWithTarget() {
 	targetPath := deployment.GetDeploymentPath(s.cwd, "myTargetName")
 	d := deployment.New()
 	d.ID = "myTargetName"
+
+	d.DashboardURL = "https://connect.example.com/connect/#/apps/1234567890ABCDEF"
+	d.DirectURL = "https://connect.example.com/content/1234567890ABCDEF/"
+	d.LogsURL = "https://connect.example.com/connect/#/apps/1234567890ABCDEF/logs"
 	d.Type = cfg.Type
 	d.ConfigName = "savedConfigName"
 	d.ServerURL = "https://saved.server.example.com"
@@ -352,7 +378,7 @@ func (s *StateSuite) TestNewWithTarget() {
 	err := d.WriteFile(targetPath)
 	s.NoError(err)
 
-	state, err := New(s.cwd, "", "", "myTargetName", "", accts)
+	state, err := New(s.cwd, "", "", "myTargetName", "", accts, nil, false)
 	s.NoError(err)
 	s.NotNil(state)
 	s.Equal("acct1", state.AccountName)
@@ -361,6 +387,7 @@ func (s *StateSuite) TestNewWithTarget() {
 	s.Equal(&acct1, state.Account)
 	s.Equal(cfg, state.Config)
 	s.Equal(d, state.Target)
+	s.Equal(state.Account.Insecure, false)
 }
 
 func (s *StateSuite) TestNewWithTargetAndAccount() {
@@ -383,21 +410,58 @@ func (s *StateSuite) TestNewWithTargetAndAccount() {
 	targetPath := deployment.GetDeploymentPath(s.cwd, "myTargetName")
 	d := deployment.New()
 	d.ID = "myTargetName"
+	d.DashboardURL = "https://connect.example.com/connect/#/apps/1234567890ABCDEF"
+	d.DirectURL = "https://connect.example.com/content/1234567890ABCDEF/"
+	d.LogsURL = "https://connect.example.com/connect/#/apps/1234567890ABCDEF/logs"
 	d.ConfigName = "savedConfigName"
 	d.ServerURL = "https://saved.server.example.com"
 	d.Configuration = cfg
 	err := d.WriteFile(targetPath)
 	s.NoError(err)
 
-	state, err := New(s.cwd, "acct2", "", "myTargetName", "mySaveName", accts)
+	state, err := New(s.cwd, "acct2", "", "myTargetName", "mySaveName", accts, nil, false)
 	s.NoError(err)
 	s.NotNil(state)
 	s.Equal("acct2", state.AccountName)
 	s.Equal("savedConfigName", state.ConfigName)
 	s.Equal("myTargetName", state.TargetName)
 	s.Equal(&acct2, state.Account)
+
 	s.Equal(cfg, state.Config)
 	s.Equal(d, state.Target)
+}
+
+func (s *StateSuite) TestNewWithSecrets() {
+	accts := &accounts.MockAccountList{}
+	acct := accounts.Account{}
+	accts.On("GetAllAccounts").Return([]accounts.Account{acct}, nil)
+	s.makeConfigurationWithSecrets("default", []string{"API_KEY", "DB_PASSWORD"})
+
+	secrets := map[string]string{
+		"API_KEY":     "secret123",
+		"DB_PASSWORD": "password456",
+	}
+
+	state, err := New(s.cwd, "", "", "", "", accts, secrets, false)
+	s.NoError(err)
+	s.NotNil(state)
+	s.Equal(secrets, state.Secrets)
+}
+
+func (s *StateSuite) TestNewWithInvalidSecret() {
+	accts := &accounts.MockAccountList{}
+	acct := accounts.Account{}
+	accts.On("GetAllAccounts").Return([]accounts.Account{acct}, nil)
+	s.makeConfiguration("default")
+
+	secrets := map[string]string{
+		"INVALID_SECRET": "secret123",
+	}
+
+	state, err := New(s.cwd, "", "", "", "", accts, secrets, false)
+	s.NotNil(err)
+	s.ErrorContains(err, "secret 'INVALID_SECRET' is not in the configuration")
+	s.Nil(state)
 }
 
 func (s *StateSuite) TestGetDefaultAccountNone() {

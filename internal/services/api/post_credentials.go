@@ -8,6 +8,7 @@ import (
 
 	"github.com/posit-dev/publisher/internal/credentials"
 	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/types"
 )
 
 type PostCredentialsRequest struct {
@@ -30,7 +31,19 @@ func PostCredentialFuncHandler(log logging.Logger) http.HandlerFunc {
 			return
 		}
 
-		cs := credentials.CredentialsService{}
+		cs, err := credentials.NewCredentialsService(log)
+		if err != nil {
+			if aerr, ok := err.(*types.AgentError); ok {
+				if aerr.Code == types.ErrorCredentialServiceUnavailable {
+					apiErr := APIErrorCredentialsUnavailableFromAgentError(*aerr)
+					apiErr.JSONResponse(w)
+					return
+				}
+			}
+			InternalError(w, req, log, err)
+			return
+		}
+
 		cred, err := cs.Set(body.Name, body.URL, body.ApiKey)
 		if err != nil {
 			if _, ok := err.(*credentials.URLCollisionError); ok {
@@ -41,8 +54,6 @@ func PostCredentialFuncHandler(log logging.Logger) http.HandlerFunc {
 			return
 		}
 
-		w.WriteHeader(http.StatusCreated)
-		w.Header().Set("content-type", "application/json")
-		json.NewEncoder(w).Encode(cred)
+		JsonResult(w, http.StatusCreated, cred)
 	}
 }

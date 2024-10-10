@@ -17,8 +17,10 @@ import (
 )
 
 type PostDeploymentRequestBody struct {
-	AccountName string `json:"account"`
-	ConfigName  string `json:"config"`
+	AccountName string            `json:"account"`
+	ConfigName  string            `json:"config"`
+	Secrets     map[string]string `json:"secrets,omitempty"`
+	Insecure    bool              `json:"insecure"`
 }
 
 type PostDeploymentsReponse struct {
@@ -54,7 +56,8 @@ func PostDeploymentHandlerFunc(
 			InternalError(w, req, log, err)
 			return
 		}
-		newState, err := stateFactory(projectDir, b.AccountName, b.ConfigName, name, "", accountList)
+		newState, err := stateFactory(projectDir, b.AccountName, b.ConfigName, name, "", accountList, b.Secrets, b.Insecure)
+		log.Debug("New account derived state created", "account", b.AccountName, "config", b.ConfigName)
 		if err != nil {
 			if errors.Is(err, accounts.ErrAccountNotFound) {
 				NotFound(w, log, err)
@@ -76,16 +79,17 @@ func PostDeploymentHandlerFunc(
 		w.WriteHeader(http.StatusAccepted)
 		json.NewEncoder(w).Encode(response)
 
+		log := log.WithArgs("local_id", localID)
 		newState.LocalID = localID
 		publisher, err := publisherFactory(newState, emitter, log)
+		log.Debug("New publisher derived from state", "account", b.AccountName, "config", b.ConfigName)
 		if err != nil {
 			InternalError(w, req, log, err)
 			return
 		}
 
 		go func() {
-			log := log.WithArgs("local_id", localID)
-			err = publisher.PublishDirectory(log)
+			err = publisher.PublishDirectory()
 			if err != nil {
 				log.Error("Deployment failed", "error", err.Error())
 				return

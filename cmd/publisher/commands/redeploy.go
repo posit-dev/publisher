@@ -23,6 +23,7 @@ type RedeployCmd struct {
 	ConfigName string                 `name:"config" short:"c" help:"Configuration name (in .posit/publish/)"`
 	Config     *config.Config         `kong:"-"`
 	Target     *deployment.Deployment `kong:"-"`
+	// NOTE: Currently hardcoded to insecure = false. No CLI param added for now.
 }
 
 func (cmd *RedeployCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
@@ -41,7 +42,7 @@ func (cmd *RedeployCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContex
 	if err != nil {
 		return fmt.Errorf("invalid deployment name '%s': %w", cmd.TargetName, err)
 	}
-	stateStore, err := state.New(absPath, "", cmd.ConfigName, cmd.TargetName, "", ctx.Accounts)
+	stateStore, err := state.New(absPath, "", cmd.ConfigName, cmd.TargetName, "", ctx.Accounts, nil, false)
 	if err != nil {
 		return err
 	}
@@ -55,5 +56,5 @@ func (cmd *RedeployCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContex
 	if err != nil {
 		return err
 	}
-	return publisher.PublishDirectory(ctx.Logger)
+	return publisher.PublishDirectory()
 }

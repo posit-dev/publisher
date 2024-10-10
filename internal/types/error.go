@@ -10,6 +10,17 @@ type ErrorCode string
 type ErrorData map[string]any
 type Operation string
 
+const (
+	ErrorResourceNotFound             ErrorCode = "resourceNotFound"
+	ErrorInvalidTOML                  ErrorCode = "invalidTOML"
+	ErrorUnknownTOMLKey               ErrorCode = "unknownTOMLKey"
+	ErrorInvalidConfigFiles           ErrorCode = "invalidConfigFiles"
+	ErrorCredentialServiceUnavailable ErrorCode = "credentialsServiceUnavailable"
+	ErrorCertificateVerification      ErrorCode = "errorCertificateVerification"
+	ErrorRenvLockPackagesReading      ErrorCode = "renvlockPackagesReadingError"
+	ErrorUnknown                      ErrorCode = "unknown"
+)
+
 type EventableError interface {
 	error
 	SetOperation(op Operation) // Caller who receives an error calls SetOperation to attach context
@@ -26,8 +37,6 @@ type AgentError struct {
 	Data    ErrorData `json:"data" toml:"data,omitempty"`
 }
 
-const UnknownErrorCode ErrorCode = "unknown"
-
 func AsAgentError(e error) *AgentError {
 	if e == nil {
 		return nil
@@ -36,12 +45,13 @@ func AsAgentError(e error) *AgentError {
 	if ok {
 		return agentErr
 	}
-	return NewAgentError(UnknownErrorCode, e, nil)
+	return NewAgentError(ErrorUnknown, e, nil)
 }
 
 func NewAgentError(code ErrorCode, err error, details any) *AgentError {
 	data := make(ErrorData)
 	msg := ""
+
 	if err != nil {
 		msg = err.Error()
 	}
@@ -86,8 +96,18 @@ func (e *AgentError) Error() string {
 func OperationError(op Operation, err error) EventableError {
 	e, ok := err.(EventableError)
 	if !ok {
-		e = NewAgentError(UnknownErrorCode, err, nil)
+		e = NewAgentError(ErrorUnknown, err, nil)
 	}
 	e.SetOperation(op)
 	return e
+}
+
+// Evaluate if a given error is an AgentError
+// returning the error as AgentError type when it is
+// and a bool flag of the comparison result.
+func IsAgentError(err error) (*AgentError, bool) {
+	if aerr, ok := err.(*AgentError); ok {
+		return aerr, ok
+	}
+	return nil, false
 }

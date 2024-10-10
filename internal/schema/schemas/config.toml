@@ -11,6 +11,7 @@ files = [
     "*.qmd",
     "requirements.txt",
 ]
+secrets = ["API_KEY", "DATABASE_PASSWORD"]
 
 [python]
 version = "3.11.3"

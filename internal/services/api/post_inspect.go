@@ -75,12 +75,17 @@ func PostInspectHandlerFunc(base util.AbsolutePath, log logging.Logger) http.Han
 		pythonPath := util.NewPath(b.Python, nil)
 		response := []postInspectResponseBody{}
 
+		log.Debug("Python path to be used for inspection", "path", pythonPath)
+
 		if req.URL.Query().Get("recursive") == "true" {
+			log.Debug("Recursive inspection intent found")
 			walker, err := matcher.NewMatchingWalker([]string{"*"}, projectDir, log)
 			if err != nil {
 				InternalError(w, req, log, err)
 				return
 			}
+
+			log.Debug("Starting walk through directory", "directory", projectDir)
 			err = walker.Walk(projectDir, func(path util.AbsolutePath, info fs.FileInfo, err error) error {
 				if err != nil {
 					if errors.Is(err, os.ErrNotExist) {
@@ -106,10 +111,17 @@ func PostInspectHandlerFunc(base util.AbsolutePath, log logging.Logger) http.Han
 				if err != nil {
 					return err
 				}
+
+				log.Debug("Possible configurations found for entrypoint", "path", entrypointPath.String(), "configs_len", len(configs))
+
 				for _, cfg := range configs {
 					if cfg.Type == config.ContentTypeUnknown {
+						log.Debug("Unknown configuration found, skipping", "entrypoint", cfg.Entrypoint)
 						continue
 					}
+
+					log.Debug("Including configuration result with response", "entrypoint", cfg.Entrypoint)
+
 					response = append(response, postInspectResponseBody{
 						ProjectDir:    relProjectDir.String(),
 						Configuration: cfg,
@@ -132,8 +144,12 @@ func PostInspectHandlerFunc(base util.AbsolutePath, log logging.Logger) http.Han
 				InternalError(w, req, log, err)
 				return
 			}
+
+			log.Debug("Possible configurations found for entrypoint", "path", entrypointPath.String(), "configs_len", len(configs))
+
 			response = make([]postInspectResponseBody, 0, len(configs))
 			for _, cfg := range configs {
+				log.Debug("Including configuration result with response", "entrypoint", cfg.Entrypoint)
 				response = append(response, postInspectResponseBody{
 					ProjectDir:    relProjectDir.String(),
 					Configuration: cfg,

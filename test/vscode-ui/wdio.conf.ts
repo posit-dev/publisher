@@ -1,8 +1,9 @@
 import type { Options } from "@wdio/types";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
+import * as fs from "fs";
 import * as path from "path";
-
+import * as helper from "./test/helpers.ts";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -36,12 +37,20 @@ export const config: Options.Testrunner = {
   // The path of the spec files will be resolved relative from the directory of
   // of the config file unless it's absolute.
   //
-  // specs: ["./test/specs/**/*.ts"],
-  specs: [process.env.SPEC_PATH || "./test/specs/nested-fastapi.spec.ts"],
+  // specs: ["./test/specs/**/*.spec.ts"],
+  // specs: [process.env.SPEC_PATH || "./test/specs/nested-*.spec.ts"],
   // Patterns to exclude.
   exclude: [
     // 'path/to/excluded/files'
   ],
+
+  suites: {
+    nested: [
+      "./test/specs/nested-fastapi-configuration.spec.ts",
+      "./test/specs/nested-fastapi-deployment.spec.ts",
+    ],
+    root: ["./test/specs/fastapi.spec.ts"],
+  },
   //
   // ============
   // Capabilities
@@ -70,7 +79,10 @@ export const config: Options.Testrunner = {
       browserVersion: "stable", // also possible: "insiders" or a specific version e.g. "1.80.0"
       "wdio:vscodeOptions": {
         // points to directory where extension package.json is located
-        extensionPath: path.resolve(__dirname, "../../extensions/vscode/"),
+        extensionPath:
+          process.env.CI === "true"
+            ? path.resolve(__dirname, "../../dist/ext/")
+            : path.resolve(__dirname, "../../extensions/vscode/"),
         workspacePath: path.resolve(
           __dirname,
           process.env.WORKSPACE_PATH || "../sample-content/",
@@ -161,7 +173,6 @@ export const config: Options.Testrunner = {
     ui: "bdd",
     timeout: 60000,
   },
-
   //
   // =====
   // Hooks
@@ -232,7 +243,7 @@ export const config: Options.Testrunner = {
   /**
    * Function to be executed before a test (in Mocha/Jasmine) starts.
    */
-  // beforeTest: function (test, context) {
+
   // },
   /**
    * Hook that gets executed _before_ a hook within the suite starts (e.g. runs before calling
@@ -258,7 +269,6 @@ export const config: Options.Testrunner = {
    */
   // afterTest: function(test, context, { error, result, duration, passed, retries }) {
   // },
-
   /**
    * Hook that gets executed after the suite has ended
    * @param {object} suite suite details
@@ -281,7 +291,6 @@ export const config: Options.Testrunner = {
    * @param {Array.<Object>} capabilities list of capabilities details
    * @param {Array.<String>} specs List of spec file paths that ran
    */
-  // after: function (result, capabilities, specs) {
   // },
   /**
    * Gets executed right after terminating the webdriver session.
@@ -299,8 +308,43 @@ export const config: Options.Testrunner = {
    * @param {Array.<Object>} capabilities list of capabilities details
    * @param {<Object>} results object containing test results
    */
-  // onComplete: function(exitCode, config, capabilities, results) {
-  // },
+  onComplete: function (exitCode, config, capabilities, results) {
+    const parentDir = path.resolve(
+      __dirname,
+      "../sample-content/fastapi-simple",
+    );
+    const positDir = path.join(parentDir, ".posit");
+
+    // Log the contents of the parent directory
+    console.log(fs.readdirSync(parentDir));
+
+    // Check if the directory exists before trying to delete it
+    if (fs.existsSync(positDir)) {
+      // Get the files in the directory
+      const files = fs.readdirSync(positDir);
+
+      // Delete each file in the directory
+      for (const file of files) {
+        const filePath = path.join(positDir, file);
+        if (fs.lstatSync(filePath).isDirectory()) {
+          fs.rmdirSync(filePath, { recursive: true }); // Delete directory recursively
+        } else {
+          fs.unlinkSync(filePath); // Delete file
+        }
+      }
+
+      // Delete the directory
+      fs.rmdirSync(positDir);
+    } else {
+      console.log("Directory does not exist");
+    }
+
+    // remove creds
+    let scriptPath: string;
+    scriptPath = "cd ../scripts && bash cleanup.bash";
+    helper.runShellScript(scriptPath);
+  },
+
   /**
    * Gets executed when a refresh happens.
    * @param {string} oldSessionId session ID of the old session

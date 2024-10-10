@@ -8,7 +8,7 @@ jobs:
       # deploy only these content
       CONTENT: "fastapi-simple quarto-website-py"
       CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
-      PYTHON_VERSION: 3.12.1
+      PYTHON_VERSION: 3.12
       QUARTO_VERSION: 1.4.549
     strategy:
       fail-fast: false
@@ -37,6 +37,7 @@ jobs:
         with:
           version: ${{ env.QUARTO_VERSION }}
       - uses: extractions/setup-just@v2
+
       - uses: actions/download-artifact@v4
         with:
           name: bin
@@ -45,5 +46,6 @@ jobs:
       - run: chmod -R +x ./bin
       - run: just bats install
       - run: just bats test common
+      - run: just bats build-connect
       - run: just bats test init
       - run: just bats test deploy

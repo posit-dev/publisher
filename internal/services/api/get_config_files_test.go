@@ -14,6 +14,7 @@ import (
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/services/api/files"
+	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
 	"github.com/spf13/afero"
@@ -132,6 +133,101 @@ func (s *GetConfigFilesHandlerFuncSuite) TestHandlerFuncConfigNotFound() {
 	h(rec, req)
 
 	s.Equal(http.StatusNotFound, rec.Result().StatusCode)
+}
+
+func (s *GetConfigFilesHandlerFuncSuite) TestHandlerFuncConfigUnknownFields() {
+	// Mocking implementation config.FromFile
+	configFromFile = func(path util.AbsolutePath) (*config.Config, error) {
+		return nil, &types.AgentError{
+			Message: "Unknown field present in configuration file",
+			Code:    types.ErrorUnknownTOMLKey,
+			Err:     errors.New("unknown field error"),
+			Data: types.ErrorData{
+				"file":   "/project-a/configuration-avcd.toml",
+				"line":   3,
+				"column": 1,
+				"key":    "shortcut",
+			},
+		}
+	}
+
+	defer func() {
+		// Be sure to revert config from file implementation
+		configFromFile = config.FromFile
+	}()
+
+	afs := afero.NewMemMapFs()
+	base, err := util.Getwd(afs)
+	s.NoError(err)
+
+	cfg := config.New()
+	cfg.Type = config.ContentTypeHTML
+	err = cfg.WriteFile(config.GetConfigPath(base, "myConfig"))
+	s.NoError(err)
+
+	filesService := new(MockFilesService)
+
+	h := GetConfigFilesHandlerFunc(base, filesService, s.log)
+
+	rec := httptest.NewRecorder()
+
+	req, err := http.NewRequest("GET", "", nil)
+	s.NoError(err)
+	req = mux.SetURLVars(req, map[string]string{"name": "myConfig"})
+
+	h(rec, req)
+
+	bodyRes := rec.Body.String()
+	s.NoError(err)
+	s.Equal(http.StatusBadRequest, rec.Result().StatusCode)
+	s.Contains(bodyRes, `{"code":"unknownTOMLKey","details":{"filename":"/project-a/configuration-avcd.toml","line":3,"column":1,"key":"shortcut"}}`)
+}
+
+func (s *GetConfigFilesHandlerFuncSuite) TestHandlerFuncInvalidTOML() {
+	// Mocking implementation config.FromFile
+	configFromFile = func(path util.AbsolutePath) (*config.Config, error) {
+		return nil, &types.AgentError{
+			Message: "Bad Syntax",
+			Code:    types.ErrorInvalidTOML,
+			Err:     errors.New("unknown field error"),
+			Data: types.ErrorData{
+				"file":   "/project-a/configuration-avcd.toml",
+				"line":   3,
+				"column": 1,
+			},
+		}
+	}
+
+	defer func() {
+		// Be sure to revert config from file implementation
+		configFromFile = config.FromFile
+	}()
+
+	afs := afero.NewMemMapFs()
+	base, err := util.Getwd(afs)
+	s.NoError(err)
+
+	cfg := config.New()
+	cfg.Type = config.ContentTypeHTML
+	err = cfg.WriteFile(config.GetConfigPath(base, "myConfig"))
+	s.NoError(err)
+
+	filesService := new(MockFilesService)
+
+	h := GetConfigFilesHandlerFunc(base, filesService, s.log)
+
+	rec := httptest.NewRecorder()
+
+	req, err := http.NewRequest("GET", "", nil)
+	s.NoError(err)
+	req = mux.SetURLVars(req, map[string]string{"name": "myConfig"})
+
+	h(rec, req)
+
+	bodyRes := rec.Body.String()
+	s.NoError(err)
+	s.Equal(http.StatusBadRequest, rec.Result().StatusCode)
+	s.Contains(bodyRes, `{"code":"invalidTOML","details":{"filename":"/project-a/configuration-avcd.toml","line":3,"column":1}}`)
 }
 
 func (s *GetConfigFilesHandlerFuncSuite) TestHandlerFuncInvalidConfigFiles() {

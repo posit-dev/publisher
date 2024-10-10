@@ -21,9 +21,4 @@ func (m *MockMatchList) Match(path util.AbsolutePath) *Pattern {
 	return args.Get(0).(*Pattern)
 }
 
-func (m *MockMatchList) Walk(root util.AbsolutePath, fn util.AbsoluteWalkFunc) error {
-	args := m.Called(root, fn)
-	return args.Error(0)
-}
-
 var _ MatchList = &MockMatchList{}
