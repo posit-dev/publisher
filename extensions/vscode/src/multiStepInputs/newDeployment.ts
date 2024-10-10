@@ -30,6 +30,7 @@ import {
   EntryPointPath,
   areInspectionResultsSimilarEnough,
   ContentType,
+  FileAction,
 } from "src/api";
 import { getPythonInterpreterPath } from "src/utils/config";
 import {
@@ -833,6 +834,12 @@ export async function newDeployment(
       newDeploymentData.entrypoint.inspectionResult.configuration,
       newDeploymentData.entrypoint.inspectionResult.projectDir,
     );
+    await api.files.updateFileList(
+      configName,
+      `/${createResponse.data.configurationRelPath}`,
+      FileAction.INCLUDE,
+      newDeploymentData.entrypoint.inspectionResult.projectDir,
+    );
     const fileUri = Uri.file(createResponse.data.configurationPath);
     newConfig = createResponse.data;
     await commands.executeCommand("vscode.open", fileUri);
@@ -859,6 +866,19 @@ export async function newDeployment(
       newOrSelectedCredential?.name,
       configName,
       contentRecordName,
+    );
+    const contentRecordPath = relativePath(
+      Uri.file(response.data.deploymentPath),
+    );
+    if (contentRecordPath === undefined) {
+      window.showErrorMessage("Failed to create pre-deployment record.");
+      return;
+    }
+    await api.files.updateFileList(
+      configName,
+      `/${contentRecordPath}`,
+      FileAction.INCLUDE,
+      newDeploymentData.entrypoint.inspectionResult.projectDir,
     );
     newContentRecord = response.data;
   } catch (error: unknown) {
