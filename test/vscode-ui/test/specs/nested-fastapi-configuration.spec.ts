@@ -102,9 +102,24 @@ describe("Nested Fast API Configuration", () => {
     );
     const fileContent = fs.readFileSync(filePath, "utf8");
     const pythonVersion = process.env.PYTHON_VERSION;
-    await expect(fileContent).toContain(
-      `type = 'python-fastapi'\nentrypoint = 'simple.py'\nvalidate = true\nfiles = [\n  '/simple.py',\n  '/requirements.txt'\n]\ntitle = 'my fastapi app'\n\n[python]\nversion = '${pythonVersion}'\npackage_file = 'requirements.txt'\npackage_manager = 'pip'`,
+    const expectedPattern = new RegExp(
+      `type = 'python-fastapi'\\n` +
+        `entrypoint = 'simple.py'\\n` +
+        `validate = true\\nfiles = \\[\\n` +
+        `  '/simple.py',\\n` +
+        `  '/requirements.txt',\\n` +
+        `  '/fastapi-simple/.posit/publish/${realFilename}',\\n` +
+        `  '/fastapi-simple/.posit/publish/deployments/deployment-.*.toml'\\n` +
+        `\\]\\n` +
+        `title = 'my fastapi app'\\n\\n` +
+        `\\[python\\]\\n` +
+        `version = '${pythonVersion}'\\n` +
+        `package_file = 'requirements.txt'\\n` +
+        `package_manager = 'pip'`,
     );
+
+    expect(fileContent).toMatch(expectedPattern);
+
     // close editor
     await workbench.getEditorView().closeEditor(realFilename);
   });
