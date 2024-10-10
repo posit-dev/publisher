@@ -530,10 +530,10 @@ func (c *ConnectClient) ValidateDeploymentTarget(contentID types.ContentID, cfg 
 
 	// Verify content type has not changed
 	log.Info("Verifying content type is the same")
-	existingAppMode := content.AppMode
-	configAppMode := AppModeFromType(cfg.Type)
-	if configAppMode != existingAppMode {
-		msg := fmt.Sprintf("Content was previously deployed as '%s' but your configuration is set to '%s'. A new deployment must be needed.", existingAppMode.Description(), configAppMode.Description())
+	existingType := ContentTypeFromAppMode(content.AppMode)
+	configType := cfg.Type
+	if existingType != configType {
+		msg := fmt.Sprintf("Content was previously deployed as '%s' but your configuration is set to '%s'.", existingType, configType)
 		return types.NewAgentError(events.AppModeNotModifiableCode, errors.New(msg), nil)
 	}
 
