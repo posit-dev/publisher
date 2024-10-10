@@ -3,8 +3,6 @@ package publish
 // Copyright (C) 2024 by Posit Software, PBC.
 
 import (
-	"errors"
-
 	"github.com/posit-dev/publisher/internal/clients/connect"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/logging"
@@ -13,8 +11,6 @@ import (
 
 type checkConfigurationStartData struct{}
 type checkConfigurationSuccessData struct{}
-
-var errTypeChanged = errors.New("configuration type cannot be changed once deployed; create a new destination to use a different type")
 
 func (p *defaultPublisher) preFlightChecks(client connect.APIClient) error {
 	op := events.PublishCheckCapabilitiesOp
