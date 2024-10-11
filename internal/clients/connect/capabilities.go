@@ -51,8 +51,10 @@ func checkRequirementsFile(base util.AbsolutePath, cfg *config.Config) error {
 	}
 
 	if !exists || !requirementsIsIncluded {
-		missingErr := fmt.Errorf(requirementsFileMissing, cfg.Python.PackageFile)
-		return types.NewAgentError(types.ErrorRequirementsFileReading, missingErr, requirementsErrDetails{RequirementsFile: packageFile.String()})
+		missingErr := fmt.Errorf("missing dependency file %s", cfg.Python.PackageFile)
+		aerr := types.NewAgentError(types.ErrorRequirementsFileReading, missingErr, requirementsErrDetails{RequirementsFile: packageFile.String()})
+		aerr.Message = fmt.Sprintf(requirementsFileMissing, cfg.Python.PackageFile)
+		return aerr
 	}
 	return nil
 }
