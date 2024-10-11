@@ -668,7 +668,7 @@ func (s *ConnectClientSuite) TestValidateDeploymentTargetNotFoundFailure() {
 	}
 	expectedErr := types.NewAgentError(
 		events.DeploymentFailedCode,
-		errors.New("Cannot deploy content: ID e8922765-4880-43cd-abc0-d59fe59b8b4b - Content cannot be found"),
+		errors.New("cannot deploy content: ID e8922765-4880-43cd-abc0-d59fe59b8b4b - Content cannot be found"),
 		nil)
 	err := client.ValidateDeploymentTarget("e8922765-4880-43cd-abc0-d59fe59b8b4b", s.cfg, lgr)
 	aerr, ok := types.IsAgentError(err)

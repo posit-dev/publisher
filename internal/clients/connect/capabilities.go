@@ -25,7 +25,7 @@ type allSettings struct {
 	quarto      server_settings.QuartoInfo
 }
 
-const requirementsFileMissing = `Missing dependency file %s. This file must be included in the deployment.`
+const requirementsFileMissing = `missing dependency file %s. This file must be included in the deployment`
 
 type requirementsErrDetails struct {
 	RequirementsFile string `json:"requirements_file"`
@@ -51,9 +51,8 @@ func checkRequirementsFile(base util.AbsolutePath, cfg *config.Config) error {
 	}
 
 	if !exists || !requirementsIsIncluded {
-		missingErr := fmt.Errorf("missing dependency file %s", cfg.Python.PackageFile)
+		missingErr := fmt.Errorf(requirementsFileMissing, cfg.Python.PackageFile)
 		aerr := types.NewAgentError(types.ErrorRequirementsFileReading, missingErr, requirementsErrDetails{RequirementsFile: packageFile.String()})
-		aerr.Message = fmt.Sprintf(requirementsFileMissing, cfg.Python.PackageFile)
 		return aerr
 	}
 	return nil

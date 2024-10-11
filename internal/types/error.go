@@ -3,6 +3,9 @@ package types
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"slices"
+	"strings"
+
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -39,6 +42,19 @@ type AgentError struct {
 	Data    ErrorData `json:"data" toml:"data,omitempty"`
 }
 
+// Normalize punctuation on messages derived from errors
+func normalizeAgentErrorMsg(errMsg string) string {
+	spChars := []string{"?", "!", ")", "."}
+	msg := strings.ToUpper(errMsg[:1]) + errMsg[1:]
+
+	msgLastChar := msg[len(msg)-1:]
+	if slices.Contains(spChars, msgLastChar) {
+		return msg
+	}
+
+	return msg + "."
+}
+
 func AsAgentError(e error) *AgentError {
 	if e == nil {
 		return nil
@@ -55,7 +71,7 @@ func NewAgentError(code ErrorCode, err error, details any) *AgentError {
 	msg := ""
 
 	if err != nil {
-		msg = err.Error()
+		msg = normalizeAgentErrorMsg(err.Error())
 	}
 	if details != nil {
 		detailMap := make(ErrorData)
