@@ -139,10 +139,7 @@ python_content_types=(
         run ${EXE} deploy ${FULL_PATH}
         assert_failure
         assert_output --partial "\
-Missing package file requirements.txt. The file must exist and be included in the deployment.
-Create the file listing your project dependencies.
-Or do an automatic scan with the help of the Python Packages section
-of the Publisher extension and review the generated file"
+Missing dependency file requirements.txt. This file must be included in the deployment."
     else
         skip
     fi
