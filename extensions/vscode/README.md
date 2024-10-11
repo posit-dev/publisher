@@ -31,6 +31,8 @@ to deploy, and Posit Publisher will get you started with a configuration.
 
 Once you are ready, deploy your content to Posit Connect.
 
+![Deploying content to Posit Connect using the Posit Publisher extension in VS Code](https://cdn.posit.co/publisher/assets/img/vscode-to-connect.gif)
+
 ### Code-first deployment
 
 Configure your content with ease.
