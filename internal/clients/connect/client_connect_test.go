@@ -13,9 +13,11 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/clients/http_client"
+	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/logging/loggingtest"
+	"github.com/posit-dev/publisher/internal/schema"
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
 	"github.com/stretchr/testify/mock"
@@ -24,10 +26,34 @@ import (
 
 type ConnectClientSuite struct {
 	utiltest.Suite
+	cfg *config.Config
 }
 
 func TestConnectClientSuite(t *testing.T) {
-	suite.Run(t, new(ConnectClientSuite))
+	s := new(ConnectClientSuite)
+	s.cfg = &config.Config{
+		Schema:        schema.ConfigSchemaURL,
+		Type:          "python-dash",
+		Entrypoint:    "app:myapp",
+		Title:         "Super Title",
+		Description:   "minimal description",
+		HasParameters: true,
+		Python: &config.Python{
+			Version:        "3.4.5",
+			PackageFile:    "requirements.in",
+			PackageManager: "pip",
+		},
+		R: &config.R{
+			Version:        "4.5.6",
+			PackageFile:    "renv.lock",
+			PackageManager: "renv",
+		},
+		Quarto: &config.Quarto{
+			Version: "1.2.3",
+			Engines: []string{"jupyter"},
+		},
+	}
+	suite.Run(t, s)
 }
 
 func (s *ConnectClientSuite) TestNewConnectClient() {
@@ -612,7 +638,7 @@ func (s *ConnectClientSuite) TestValidateDeploymentTargetForbiddenFailure() {
 		events.DeploymentFailedCode,
 		errors.New("Cannot deploy content: ID e8922765-4880-43cd-abc0-d59fe59b8b4b - You may need to request collaborator permissions or verify the credentials in use"),
 		nil)
-	err := client.ValidateDeploymentTarget("e8922765-4880-43cd-abc0-d59fe59b8b4b", lgr)
+	err := client.ValidateDeploymentTarget("e8922765-4880-43cd-abc0-d59fe59b8b4b", s.cfg, lgr)
 	aerr, ok := types.IsAgentError(err)
 	s.Equal(ok, true)
 	s.Equal(
@@ -642,7 +668,7 @@ func (s *ConnectClientSuite) TestValidateDeploymentTargetNotFoundFailure() {
 		events.DeploymentFailedCode,
 		errors.New("Cannot deploy content: ID e8922765-4880-43cd-abc0-d59fe59b8b4b - Content cannot be found"),
 		nil)
-	err := client.ValidateDeploymentTarget("e8922765-4880-43cd-abc0-d59fe59b8b4b", lgr)
+	err := client.ValidateDeploymentTarget("e8922765-4880-43cd-abc0-d59fe59b8b4b", s.cfg, lgr)
 	aerr, ok := types.IsAgentError(err)
 	s.Equal(ok, true)
 	s.Equal(
@@ -672,7 +698,7 @@ func (s *ConnectClientSuite) TestValidateDeploymentTargetUnknownFailure() {
 		events.DeploymentFailedCode,
 		errors.New("Cannot deploy content: ID e8922765-4880-43cd-abc0-d59fe59b8b4b - Unknown error: unexpected response from the server (502)"),
 		nil)
-	err := client.ValidateDeploymentTarget("e8922765-4880-43cd-abc0-d59fe59b8b4b", lgr)
+	err := client.ValidateDeploymentTarget("e8922765-4880-43cd-abc0-d59fe59b8b4b", s.cfg, lgr)
 	aerr, ok := types.IsAgentError(err)
 	s.Equal(ok, true)
 	s.Equal(
@@ -711,7 +737,47 @@ func (s *ConnectClientSuite) TestValidateDeploymentTargetLockedFailure() {
 		events.DeploymentFailedCode,
 		errors.New("Content is locked, cannot deploy to it (content ID = e8922765-4880-43cd-abc0-d59fe59b8b4b)"),
 		nil)
-	err := client.ValidateDeploymentTarget("e8922765-4880-43cd-abc0-d59fe59b8b4b", lgr)
+	err := client.ValidateDeploymentTarget("e8922765-4880-43cd-abc0-d59fe59b8b4b", s.cfg, lgr)
+	aerr, ok := types.IsAgentError(err)
+	s.Equal(ok, true)
+	s.Equal(
+		expectedErr.Message,
+		aerr.Message,
+	)
+}
+
+func (s *ConnectClientSuite) TestValidateDeploymentTargetAppModeNotModifiableCodeFailure() {
+	lgr := logging.New()
+	content := &ConnectContent{}
+	queryResult := &ConnectContent{
+		AppMode:            "shiny",
+		Name:               "",
+		Title:              "",
+		GUID:               "",
+		Description:        "",
+		AccessType:         "",
+		ServiceAccountName: "",
+		DefaultImageName:   "",
+		Locked:             false,
+	}
+	httpClient := &http_client.MockHTTPClient{}
+
+	httpClient.On("Get", "/__api__/v1/content/e8922765-4880-43cd-abc0-d59fe59b8b4b", content, lgr).Return(nil, queryResult).Run(func(args mock.Arguments) {
+		// this will update the ConnectContent structure
+		// with the value that we passed in as the second
+		// return argument
+		arg := args.Get(1).(*ConnectContent)
+		*arg = *queryResult
+	})
+
+	client := &ConnectClient{
+		client: httpClient,
+	}
+	expectedErr := types.NewAgentError(
+		events.DeploymentFailedCode,
+		errors.New("Content was previously deployed as 'r-shiny' but your configuration is set to 'python-dash'."),
+		nil)
+	err := client.ValidateDeploymentTarget("e8922765-4880-43cd-abc0-d59fe59b8b4b", s.cfg, lgr)
 	aerr, ok := types.IsAgentError(err)
 	s.Equal(ok, true)
 	s.Equal(

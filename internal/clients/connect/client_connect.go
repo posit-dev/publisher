@@ -501,7 +501,7 @@ func (c *ConnectClient) preflightAgentError(agenterr *types.AgentError, contentI
 	return agenterr
 }
 
-func (c *ConnectClient) ValidateDeploymentTarget(contentID types.ContentID, log logging.Logger) error {
+func (c *ConnectClient) ValidateDeploymentTarget(contentID types.ContentID, cfg *config.Config, log logging.Logger) error {
 	log.Info("Verifying existing content", "content_id", contentID)
 
 	content := &ConnectContent{}
@@ -519,12 +519,22 @@ func (c *ConnectClient) ValidateDeploymentTarget(contentID types.ContentID, log 
 	}
 
 	// Verify content is not locked
+	log.Info("Verifying content is not locked")
 	lockedErr := content.LockedError()
 	if lockedErr != nil {
 		msg := fmt.Sprintf("Content is locked, cannot deploy to it (content ID = %s)", contentID)
 		return types.NewAgentError(events.DeploymentFailedCode,
 			errors.New(msg),
 			nil)
+	}
+
+	// Verify content type has not changed
+	log.Info("Verifying content type is the same")
+	existingType := ContentTypeFromAppMode(content.AppMode)
+	configType := cfg.Type
+	if existingType != configType {
+		msg := fmt.Sprintf("Content was previously deployed as '%s' but your configuration is set to '%s'.", existingType, configType)
+		return types.NewAgentError(events.AppModeNotModifiableCode, errors.New(msg), nil)
 	}
 
 	return nil
