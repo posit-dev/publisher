@@ -152,7 +152,6 @@ func (s *RPackageDescSuite) TestGetRPackages_PackageFileNotFound() {
 	publisher := s.makePublisher()
 	_, err := publisher.getRPackages()
 	s.NotNil(err)
-	s.Contains(err.(*types.AgentError).Message, "Missing R lockfile custom.lock")
-	s.Contains(err.(*types.AgentError).Message, "custom.lock")
+	s.Contains(err.(*types.AgentError).Message, "Missing dependency lockfile custom.lock")
 	s.log.AssertExpectations(s.T())
 }

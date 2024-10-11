@@ -21,11 +21,7 @@ type lockfileErrDetails struct {
 	Lockfile string
 }
 
-const lockfileMissing = `Missing R lockfile %s. 
-The file must exist and be included in the deployment.
-Create the file listing your project dependencies.
-Or do an automatic scan with the help of the R Packages section
-of the Publisher extension and review the generated file`
+const lockfileMissing = `Missing dependency lockfile %s. This file must be included in the deployment.`
 
 func (p *defaultPublisher) getRPackages() (bundles.PackageMap, error) {
 	op := events.PublishGetRPackageDescriptionsOp

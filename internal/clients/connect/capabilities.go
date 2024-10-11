@@ -25,24 +25,33 @@ type allSettings struct {
 	quarto      server_settings.QuartoInfo
 }
 
-const requirementsFileMissing = `
-Missing package file %s. The file must exist and be included in the deployment.
-Create the file listing your project dependencies.
-Or do an automatic scan with the help of the Python Packages section
-of the Publisher extension and review the generated file`
+const requirementsFileMissing = `Missing dependency file %s. This file must be included in the deployment.`
 
 type requirementsErrDetails struct {
 	RequirementsFile string `json:"requirements_file"`
 }
 
-func checkRequirementsFile(base util.AbsolutePath, requirementsFilename string) error {
-	packageFile := base.Join(requirementsFilename)
+func checkRequirementsFile(base util.AbsolutePath, cfg *config.Config) error {
+	packageFile := base.Join(cfg.Python.PackageFile)
 	exists, err := packageFile.Exists()
 	if err != nil {
 		return err
 	}
-	if !exists {
-		missingErr := fmt.Errorf(requirementsFileMissing, requirementsFilename)
+
+	// Confirm the package file (requirements.txt)
+	// is included in the configuration files list.
+	requirementsIsIncluded := false
+	for _, file := range cfg.Files {
+		// File paths like /requirements.txt, /some/path/requirements.txt
+		// should count as including the package file.
+		if strings.HasSuffix(file, cfg.Python.PackageFile) {
+			requirementsIsIncluded = true
+			break
+		}
+	}
+
+	if !exists || !requirementsIsIncluded {
+		missingErr := fmt.Errorf(requirementsFileMissing, cfg.Python.PackageFile)
 		return types.NewAgentError(types.ErrorRequirementsFileReading, missingErr, requirementsErrDetails{RequirementsFile: packageFile.String()})
 	}
 	return nil
@@ -50,7 +59,7 @@ func checkRequirementsFile(base util.AbsolutePath, requirementsFilename string) 
 
 func (c *ConnectClient) CheckCapabilities(base util.AbsolutePath, cfg *config.Config, log logging.Logger) error {
 	if cfg.Python != nil {
-		err := checkRequirementsFile(base, cfg.Python.PackageFile)
+		err := checkRequirementsFile(base, cfg)
 		if err != nil {
 			return err
 		}

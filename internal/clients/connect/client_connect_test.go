@@ -613,8 +613,10 @@ func (s *ConnectClientSuite) TestCheckCapabilities() {
 	cfg := config.New()
 	cfg.Type = "python-dash"
 	cfg.Entrypoint = "app.py"
+	cfg.Files = []string{"/app.py", "/requirements.txt"}
 	cfg.Python = &config.Python{
 		Version:        "3.4.5",
+		PackageFile:    "requirements.txt",
 		PackageManager: "pip",
 	}
 
@@ -649,8 +651,10 @@ func (s *ConnectClientSuite) TestCheckCapabilities_missingPythonVer() {
 	cfg := config.New()
 	cfg.Type = "python-dash"
 	cfg.Entrypoint = "app.py"
+	cfg.Files = []string{"/app.py", "/requirements.txt"}
 	cfg.Python = &config.Python{
 		Version:        "3.4.5", // Not included in server settings
+		PackageFile:    "requirements.txt",
 		PackageManager: "pip",
 	}
 
@@ -667,13 +671,14 @@ func (s *ConnectClientSuite) TestCheckCapabilities_missingPythonVer() {
 	httpClient.AssertExpectations(s.T())
 }
 
-func (s *ConnectClientSuite) TestCheckCapabilities_missingRequirementsFile() {
+func (s *ConnectClientSuite) TestCheckCapabilities_requirementsFileDoesNotExist() {
 	lgr := logging.New()
 	httpClient := &http_client.MockHTTPClient{}
 
 	cfg := config.New()
 	cfg.Type = "python-dash"
 	cfg.Entrypoint = "app.py"
+	cfg.Files = []string{"/app.py", "/requirements.txt"}
 	cfg.Python = &config.Python{
 		Version:        "3.4.5",
 		PackageManager: "pip",
@@ -689,10 +694,42 @@ func (s *ConnectClientSuite) TestCheckCapabilities_missingRequirementsFile() {
 
 	err := client.CheckCapabilities(bundleTestPath, cfg, lgr)
 	s.NotNil(err)
-	s.Contains(err.Error(), "Missing package file requirements.txt. The file must exist and be included in the deployment.")
+	s.Contains(err.Error(), "Missing dependency file requirements.txt. This file must be included in the deployment.")
 
 	aerr, yes := types.IsAgentError(err)
 	s.Equal(yes, true)
 	s.Equal(aerr.Code, types.ErrorRequirementsFileReading)
-	s.Contains(aerr.Message, "Missing package file requirements.txt. The file must exist and be included in the deployment.")
+	s.Contains(aerr.Message, "Missing dependency file requirements.txt. This file must be included in the deployment.")
+}
+
+func (s *ConnectClientSuite) TestCheckCapabilities_requirementsFileNotInConfig() {
+	lgr := logging.New()
+	httpClient := &http_client.MockHTTPClient{}
+
+	cfg := config.New()
+	cfg.Type = "python-dash"
+	cfg.Entrypoint = "app.py"
+	cfg.Files = []string{"/app.py"} // requirements file not included in config files list
+	cfg.Python = &config.Python{
+		Version:        "3.4.5",
+		PackageManager: "pip",
+		PackageFile:    "requirements.txt",
+	}
+
+	var cwd util.AbsolutePath
+	// This bundle path does have requirements.txt file butis not included in configuration
+	bundleTestPath := cwd.Join("testdata", "python-bundle")
+
+	client := &ConnectClient{
+		client: httpClient,
+	}
+
+	err := client.CheckCapabilities(bundleTestPath, cfg, lgr)
+	s.NotNil(err)
+	s.Contains(err.Error(), "Missing dependency file requirements.txt. This file must be included in the deployment.")
+
+	aerr, yes := types.IsAgentError(err)
+	s.Equal(yes, true)
+	s.Equal(aerr.Code, types.ErrorRequirementsFileReading)
+	s.Contains(aerr.Message, "Missing dependency file requirements.txt. This file must be included in the deployment.")
 }
