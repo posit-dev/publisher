@@ -2,8 +2,16 @@
   <TreeItem
     :title="name"
     :actions="actions"
-    codicon="codicon-lock-small"
-    :list-style="secretValue || isEditing ? 'default' : 'deemphasized'"
+    :codicon="
+      needsValue
+        ? 'codicon-warning'
+        : secretValue
+          ? 'codicon-cloud-upload'
+          : 'codicon-check'
+    "
+    :list-style="
+      needsValue || secretValue || isEditing ? 'default' : 'deemphasized'
+    "
     :tooltip="tooltip"
     align-icon-with-twisty
     :data-vscode-context="vscodeContext"
@@ -18,7 +26,7 @@
         @submit="updateSecret"
         @cancel="isEditing = false"
       />
-      <template v-else-if="secretValue">••••••</template>
+      <template v-else-if="!needsValue">••••••</template>
     </template>
   </TreeItem>
 </template>
@@ -44,6 +52,10 @@ const inputValue = ref<string>();
 const home = useHomeStore();
 
 const secretValue = computed(() => home.secrets.get(props.name));
+
+const needsValue = computed(
+  () => !secretValue.value && !home.serverSecrets.includes(props.name),
+);
 
 const inputSecret = () => {
   // Update inputValue in case the secret value has changed or been cleared
