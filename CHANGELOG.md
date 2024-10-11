@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   configuration files (#2359)
 - Selecting a configuration file with errors no longer disables the deploy
   button. Instead, errors are displayed during the deployment process to better
-  indicate what needs to be addressed (#2345)
+  indicate what needs to be addressed (#2345, #2374)
 - Added a line number to the configuration file error message to better indicate
   where the schema validation error is occuring (#2330)
 - Added a more informative error when the Content ID is not found on the
@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a helpful warning when the selected configuration file has overlapping
   secrets and environment variable names to avoid unexpected behavior (#2326)
 - Added helpful errors when attempting to deploy with a missing package file, or
-  a package file with no content (#2327)
+  a package file with no content (#2177, #2327)
 - Added a helpful error when attempting to deploy to locked content (#2375)
 - Added a fast failure when attempting to deploy to a piece of content on
   Connect with a different content type (#2301)
@@ -35,6 +35,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   clear that a value is being set (#2379)
 - Changed the prompt for setting a name for a Connect server and the related
   credential to be more clear (#2265)
+- Changed the "couldn't access the deployed content" error to be more clear
+  and link to the content's logs directly (#2206)
+- Changed URL validation when adding a Connect server credential to allow for
+  URLs with paths (#2001)
 
 ### Fixed
 
