@@ -29,13 +29,13 @@ func GetConfigSecretsHandlerFunc(base util.AbsolutePath, log logging.Logger) htt
 		if err != nil {
 			if aerr, ok := err.(*types.AgentError); ok {
 				if aerr.Code == types.ErrorUnknownTOMLKey {
-					apiErr := APIErrorUnknownTOMLKeyFromAgentError(*aerr)
+					apiErr := types.APIErrorUnknownTOMLKeyFromAgentError(*aerr)
 					apiErr.JSONResponse(w)
 					return
 				}
 
 				if aerr.Code == types.ErrorInvalidTOML {
-					apiErr := APIErrorInvalidTOMLFileFromAgentError(*aerr)
+					apiErr := types.APIErrorInvalidTOMLFileFromAgentError(*aerr)
 					apiErr.JSONResponse(w)
 					return
 				}

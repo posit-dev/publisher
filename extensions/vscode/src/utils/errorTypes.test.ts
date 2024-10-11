@@ -117,9 +117,7 @@ describe("ErrInvalidTOMLFile", () => {
     const msg = errInvalidTOMLMessage(
       err as axiosErrorWithJson<ErrInvalidTOMLFile>,
     );
-    expect(msg).toBe(
-      "Invalid TOML file /directory/configuration-lkdg.toml:5:5",
-    );
+    expect(msg).toBe("The Configuration has a schema error on line 5");
   });
 });
 
@@ -156,9 +154,7 @@ describe("ErrUnknownTOMLKey", () => {
     const msg = errUnknownTOMLKeyMessage(
       err as axiosErrorWithJson<ErrUnknownTOMLKey>,
     );
-    expect(msg).toBe(
-      `Unknown field present in configuration file /directory/configuration-lkdg.toml:7:1 - unknown key "shortcut_key"`,
-    );
+    expect(msg).toBe(`The Configuration has a schema error on line 7`);
   });
 });
 
@@ -211,9 +207,7 @@ describe("resolveAgentJsonErrorMsg", () => {
       }) as axiosErrorWithJson,
     );
 
-    expect(msg).toBe(
-      "Invalid TOML file /directory/configuration-lkdg.toml:5:5",
-    );
+    expect(msg).toBe("The Configuration has a schema error on line 5");
 
     msg = resolveAgentJsonErrorMsg(
       mkAxiosJsonErr({
@@ -227,8 +221,6 @@ describe("resolveAgentJsonErrorMsg", () => {
       }) as axiosErrorWithJson,
     );
 
-    expect(msg).toBe(
-      `Unknown field present in configuration file /directory/configuration-lkdg.toml:7:1 - unknown key "shortcut_key"`,
-    );
+    expect(msg).toBe(`The Configuration has a schema error on line 7`);
   });
 });

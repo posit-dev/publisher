@@ -1,12 +1,17 @@
-package api
+package types
 
 // Copyright (C) 2024 by Posit Software, PBC.
 
 import (
+	"encoding/json"
 	"net/http"
-
-	"github.com/posit-dev/publisher/internal/types"
 )
+
+func jsonResult(w http.ResponseWriter, status int, result any) {
+	w.Header().Set("content-type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(result)
+}
 
 type APIError interface {
 	JSONResponse(http.ResponseWriter)
@@ -20,13 +25,13 @@ type UnknownTOMLKeyDetails struct {
 }
 
 type APIErrorUnknownTOMLKeyDetails struct {
-	Code    types.ErrorCode       `json:"code"`
+	Code    ErrorCode             `json:"code"`
 	Details UnknownTOMLKeyDetails `json:"details"`
 }
 
-func APIErrorUnknownTOMLKeyFromAgentError(aerr types.AgentError) APIErrorUnknownTOMLKeyDetails {
+func APIErrorUnknownTOMLKeyFromAgentError(aerr AgentError) APIErrorUnknownTOMLKeyDetails {
 	return APIErrorUnknownTOMLKeyDetails{
-		Code: types.ErrorUnknownTOMLKey,
+		Code: ErrorUnknownTOMLKey,
 		Details: UnknownTOMLKeyDetails{
 			Filename: aerr.Data["file"].(string),
 			Key:      aerr.Data["key"].(string),
@@ -37,7 +42,7 @@ func APIErrorUnknownTOMLKeyFromAgentError(aerr types.AgentError) APIErrorUnknown
 }
 
 func (apierr *APIErrorUnknownTOMLKeyDetails) JSONResponse(w http.ResponseWriter) {
-	JsonResult(w, http.StatusBadRequest, apierr)
+	jsonResult(w, http.StatusBadRequest, apierr)
 }
 
 type InvalidTOMLFileDetails struct {
@@ -47,13 +52,17 @@ type InvalidTOMLFileDetails struct {
 }
 
 type APIErrorInvalidTOMLFileDetails struct {
-	Code    types.ErrorCode        `json:"code"`
+	Code    ErrorCode              `json:"code"`
 	Details InvalidTOMLFileDetails `json:"details"`
 }
 
-func APIErrorInvalidTOMLFileFromAgentError(aerr types.AgentError) APIErrorInvalidTOMLFileDetails {
+func (apierr *APIErrorInvalidTOMLFileDetails) JSONResponse(w http.ResponseWriter) {
+	jsonResult(w, http.StatusBadRequest, apierr)
+}
+
+func APIErrorInvalidTOMLFileFromAgentError(aerr AgentError) APIErrorInvalidTOMLFileDetails {
 	return APIErrorInvalidTOMLFileDetails{
-		Code: types.ErrorInvalidTOML,
+		Code: ErrorInvalidTOML,
 		Details: InvalidTOMLFileDetails{
 			Filename: aerr.Data["file"].(string),
 			Line:     aerr.Data["line"].(int),
@@ -62,20 +71,16 @@ func APIErrorInvalidTOMLFileFromAgentError(aerr types.AgentError) APIErrorInvali
 	}
 }
 
-func (apierr *APIErrorInvalidTOMLFileDetails) JSONResponse(w http.ResponseWriter) {
-	JsonResult(w, http.StatusBadRequest, apierr)
-}
-
 type APIErrorCredentialServiceUnavailable struct {
-	Code types.ErrorCode `json:"code"`
-}
-
-func APIErrorCredentialsUnavailableFromAgentError(aerr types.AgentError) APIErrorCredentialServiceUnavailable {
-	return APIErrorCredentialServiceUnavailable{
-		Code: types.ErrorCredentialServiceUnavailable,
-	}
+	Code ErrorCode `json:"code"`
 }
 
 func (apierr *APIErrorCredentialServiceUnavailable) JSONResponse(w http.ResponseWriter) {
-	JsonResult(w, http.StatusServiceUnavailable, apierr)
+	jsonResult(w, http.StatusServiceUnavailable, apierr)
+}
+
+func APIErrorCredentialsUnavailableFromAgentError(aerr AgentError) APIErrorCredentialServiceUnavailable {
+	return APIErrorCredentialServiceUnavailable{
+		Code: ErrorCredentialServiceUnavailable,
+	}
 }

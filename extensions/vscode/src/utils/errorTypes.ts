@@ -81,8 +81,7 @@ export const isErrInvalidTOMLFile =
 export const errInvalidTOMLMessage = (
   err: axiosErrorWithJson<ErrInvalidTOMLFile>,
 ) => {
-  const { filename, line, column } = err.response.data.details;
-  return `Invalid TOML file ${filename}:${line}:${column}`;
+  return `The Configuration has a schema error on line ${err.response.data.details.line}`;
 };
 
 // Unknown key within a TOML file
@@ -100,8 +99,7 @@ export const isErrUnknownTOMLKey =
 export const errUnknownTOMLKeyMessage = (
   err: axiosErrorWithJson<ErrUnknownTOMLKey>,
 ) => {
-  const { filename, line, column, key } = err.response.data.details;
-  return `Unknown field present in configuration file ${filename}:${line}:${column} - unknown key "${key}"`;
+  return `The Configuration has a schema error on line ${err.response.data.details.line}`;
 };
 
 // Invalid configuration file(s)

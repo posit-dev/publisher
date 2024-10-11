@@ -13,6 +13,7 @@ import (
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/publish"
 	"github.com/posit-dev/publisher/internal/state"
+	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 )
 
@@ -61,14 +62,27 @@ func PostDeploymentHandlerFunc(
 		if err != nil {
 			if errors.Is(err, accounts.ErrAccountNotFound) {
 				NotFound(w, log, err)
-			} else if errors.Is(err, state.ErrServerURLMismatch) {
+				return
+			}
+			if errors.Is(err, state.ErrServerURLMismatch) {
 				// Redeployments must go to the same server
 				w.WriteHeader(http.StatusConflict)
 				w.Write([]byte(err.Error()))
 				return
-			} else {
-				BadRequest(w, req, log, err)
 			}
+			if aerr, ok := types.IsAgentError(err); ok {
+				if aerr.Code == types.ErrorUnknownTOMLKey {
+					apiErr := types.APIErrorUnknownTOMLKeyFromAgentError(*aerr)
+					apiErr.JSONResponse(w)
+					return
+				}
+				if aerr.Code == types.ErrorInvalidTOML {
+					apiErr := types.APIErrorInvalidTOMLFileFromAgentError(*aerr)
+					apiErr.JSONResponse(w)
+					return
+				}
+			}
+			BadRequest(w, req, log, err)
 			return
 		}
 

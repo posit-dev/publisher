@@ -268,7 +268,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       deployProject(response.data.localId, this.stream);
     } catch (error: unknown) {
       const summary = getSummaryStringFromError("homeView, deploy", error);
-      window.showInformationMessage(`Failed to deploy . ${summary}`);
+      window.showErrorMessage(`Failed to deploy . ${summary}`);
     }
   }
 
