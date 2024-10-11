@@ -25,28 +25,48 @@ type allSettings struct {
 	quarto      server_settings.QuartoInfo
 }
 
-const requirementsFileMissing = `
-can't find the package file (%s) in the project directory.
-Create the file, listing the packages your project depends on.
-Or scan your project dependencies using scan button in
-the Python Packages section of the UI and review the
-generated file`
+const requirementsFileMissing = `missing dependency file %s. This file must be included in the deployment`
 
-func checkRequirementsFile(base util.AbsolutePath, requirementsFilename string) error {
-	packageFile := base.Join(requirementsFilename)
+type requirementsErrDetails struct {
+	RequirementsFile string `json:"requirements_file"`
+}
+
+func checkRequirementsFile(base util.AbsolutePath, cfg *config.Config) error {
+	packageFile := base.Join(cfg.Python.PackageFile)
 	exists, err := packageFile.Exists()
 	if err != nil {
 		return err
 	}
-	if !exists {
-		return fmt.Errorf(requirementsFileMissing, requirementsFilename)
+
+	// Confirm the package file (requirements.txt)
+	// is included in the configuration files list.
+	requirementsIsIncluded := false
+	for _, file := range cfg.Files {
+		// File paths like /requirements.txt, /some/path/requirements.txt
+		// should count as including the package file.
+		if strings.HasSuffix(file, cfg.Python.PackageFile) {
+			requirementsIsIncluded = true
+			break
+		}
+	}
+
+	if !exists || !requirementsIsIncluded {
+		missingErr := fmt.Errorf(requirementsFileMissing, cfg.Python.PackageFile)
+		aerr := types.NewAgentError(types.ErrorRequirementsFileReading, missingErr, requirementsErrDetails{RequirementsFile: packageFile.String()})
+		return aerr
 	}
 	return nil
 }
 
-func (c *ConnectClient) CheckCapabilities(base util.AbsolutePath, cfg *config.Config, log logging.Logger) error {
+func (c *ConnectClient) CheckCapabilities(base util.AbsolutePath, cfg *config.Config, contentID *types.ContentID, log logging.Logger) error {
+	if contentID != nil && *contentID != "" {
+		err := c.ValidateDeploymentTarget(*contentID, cfg, log)
+		if err != nil {
+			return err
+		}
+	}
 	if cfg.Python != nil {
-		err := checkRequirementsFile(base, cfg.Python.PackageFile)
+		err := checkRequirementsFile(base, cfg)
 		if err != nil {
 			return err
 		}
