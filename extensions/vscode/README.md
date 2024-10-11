@@ -79,11 +79,6 @@ simplifying the process of deploying to different environments.
 
 Logs are organized to easily identify what went wrong.
 
-<img
-  src="https://camo.githubusercontent.com/a74aa7b8bc2d2a67508b51764757b4692dea2bb451a8f5f8e876d00e4125a09e/68747470733a2f2f63646e2e706f7369742e636f2f7075626c69736865722f6173736574732f696d672f6465706c6f796d656e742d6c6f67732d76696577322e706e67"
-  alt="Deploying Logs with organized steps in the Posit Publisher Logs view"
-/>
-
 ## Help and feedback
 
 Documentation can be found in the
