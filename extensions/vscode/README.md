@@ -79,6 +79,8 @@ simplifying the process of deploying to different environments.
 
 Logs are organized to easily identify what went wrong.
 
+![Deploying logs with organized steps in the Posit Publisher Logs view](https://cdn.posit.co/publisher/assets/img/deployment-logs.gif)
+
 ## Help and feedback
 
 Documentation can be found in the
