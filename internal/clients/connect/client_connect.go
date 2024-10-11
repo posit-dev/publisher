@@ -492,9 +492,9 @@ func (c *ConnectClient) preflightAgentError(agenterr *types.AgentError, contentI
 	agenterr.Code = events.DeploymentFailedCode
 
 	if _, isNotFound := http_client.IsHTTPAgentErrorStatusOf(agenterr, http.StatusNotFound); isNotFound {
-		agenterr.Message = fmt.Sprintf("Cannot deploy content: ID %s - Content cannot be found", contentID)
+		agenterr.Message = fmt.Sprintf("Cannot deploy content: ID %s - Content cannot be found.", contentID)
 	} else if _, isForbidden := http_client.IsHTTPAgentErrorStatusOf(agenterr, http.StatusForbidden); isForbidden {
-		agenterr.Message = fmt.Sprintf("Cannot deploy content: ID %s - You may need to request collaborator permissions or verify the credentials in use", contentID)
+		agenterr.Message = fmt.Sprintf("Cannot deploy content: ID %s - You may need to request collaborator permissions or verify the credentials in use.", contentID)
 	} else {
 		agenterr.Message = fmt.Sprintf("Cannot deploy content: ID %s - Unknown error: %s", contentID, agenterr.Error())
 	}

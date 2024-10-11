@@ -61,7 +61,7 @@ func (s *ErrorSuite) TestNewAgentError() {
 	originalError := errors.New("shattered glass!")
 	aerr := NewAgentError(ErrorInvalidTOML, originalError, nil)
 	s.Equal(aerr, &AgentError{
-		Message: "shattered glass!",
+		Message: "Shattered glass!",
 		Code:    ErrorInvalidTOML,
 		Err:     originalError,
 		Data:    make(ErrorData),
@@ -78,8 +78,50 @@ func (s *ErrorSuite) TestIsAgentError() {
 	aerr, isIt = IsAgentError(aTrueAgentError)
 	s.Equal(isIt, true)
 	s.Equal(aerr, &AgentError{
-		Message: "shattered glass!",
+		Message: "Shattered glass!",
 		Code:    ErrorInvalidTOML,
+		Err:     originalError,
+		Data:    make(ErrorData),
+	})
+}
+
+func (s *ErrorSuite) TestNewAgentError_MessagePunctuation() {
+	// Sentence case and period ending
+	originalError := errors.New("oh sorry, my mistake")
+	aerr := NewAgentError(ErrorResourceNotFound, originalError, nil)
+	s.Equal(aerr, &AgentError{
+		Message: "Oh sorry, my mistake.",
+		Code:    ErrorResourceNotFound,
+		Err:     originalError,
+		Data:    make(ErrorData),
+	})
+
+	// No need for period ending when shouting "!"
+	originalError = errors.New("i can't believe is October already!")
+	aerr = NewAgentError(ErrorResourceNotFound, originalError, nil)
+	s.Equal(aerr, &AgentError{
+		Message: "I can't believe is October already!",
+		Code:    ErrorResourceNotFound,
+		Err:     originalError,
+		Data:    make(ErrorData),
+	})
+
+	// No need for period ending when asking "?"
+	originalError = errors.New("can you believe 2024 is almos over?")
+	aerr = NewAgentError(ErrorResourceNotFound, originalError, nil)
+	s.Equal(aerr, &AgentError{
+		Message: "Can you believe 2024 is almos over?",
+		Code:    ErrorResourceNotFound,
+		Err:     originalError,
+		Data:    make(ErrorData),
+	})
+
+	// No need for period ending when ending parentheses ")"
+	originalError = errors.New("wrong credentials (is this one of those bad typing days?)")
+	aerr = NewAgentError(ErrorResourceNotFound, originalError, nil)
+	s.Equal(aerr, &AgentError{
+		Message: "Wrong credentials (is this one of those bad typing days?)",
+		Code:    ErrorResourceNotFound,
 		Err:     originalError,
 		Data:    make(ErrorData),
 	})

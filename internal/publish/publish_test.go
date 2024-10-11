@@ -207,7 +207,7 @@ func (s *PublishSuite) TestPublishWithClientRedeployErrors() {
 	s.publishWithClient(target, &publishErrsMock{capErr: checksErr}, checksErr)
 	s.Equal(
 		checksErr.Message,
-		"failed",
+		"Failed.",
 	)
 
 }
@@ -418,7 +418,7 @@ func (s *PublishSuite) TestEmitErrorEventsNoTarget() {
 	s.Len(emitter.Events, 2)
 	for _, event := range emitter.Events {
 		s.True(strings.HasSuffix(event.Type, "/failure"))
-		s.Equal(expectedErr.Error(), event.Data["message"])
+		s.Equal("Test error.", event.Data["message"])
 	}
 	s.Equal("publish/failure", emitter.Events[1].Type)
 }
@@ -454,7 +454,7 @@ func (s *PublishSuite) TestEmitErrorEventsWithTarget() {
 	s.Len(emitter.Events, 2)
 	for _, event := range emitter.Events {
 		s.True(strings.HasSuffix(event.Type, "/failure"))
-		s.Equal(expectedErr.Error(), event.Data["message"])
+		s.Equal("Test error.", event.Data["message"])
 		s.Equal(util.GetDashboardURL("connect.example.com", targetID), event.Data["dashboardUrl"])
 		s.Equal(util.GetDirectURL("connect.example.com", targetID), event.Data["url"])
 		s.Equal(util.GetLogsURL("connect.example.com", targetID), event.Data["logsUrl"])
