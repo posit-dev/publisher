@@ -10,7 +10,9 @@ export type ErrorCode =
   | "invalidConfigFile"
   | "errorCertificateVerification"
   | "deployFailed"
-  | "renvlockPackagesReadingError";
+  | "renvlockPackagesReadingError"
+  | "requirementsFileReadingError"
+  | "deployedContentNotRunning";
 
 export type axiosErrorWithJson<T = { code: ErrorCode; details: unknown }> =
   AxiosError & {

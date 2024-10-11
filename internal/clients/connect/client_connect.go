@@ -462,7 +462,7 @@ func (c *ConnectClient) WaitForTask(taskID types.TaskID, log logging.Logger) err
 	}
 }
 
-var errValidationFailed = errors.New("couldn't access the deployed content; see the logs in Connect for details")
+var errValidationFailed = errors.New("deployed content does not seem to be running. See the logs in Connect for details")
 
 func (c *ConnectClient) ValidateDeployment(contentID types.ContentID, log logging.Logger) error {
 	url := fmt.Sprintf("/content/%s/", contentID)
@@ -475,7 +475,7 @@ func (c *ConnectClient) ValidateDeployment(contentID types.ContentID, log loggin
 		if ok {
 			if httpErr.Status >= 500 {
 				// Validation failed - the content is not up and running
-				return errValidationFailed
+				return types.NewAgentError(types.ErrorDeployedContentNotRunning, errValidationFailed, nil)
 			} else {
 				// Other HTTP codes are acceptable, for example
 				// if the content doesn't implement GET /,
@@ -492,9 +492,9 @@ func (c *ConnectClient) preflightAgentError(agenterr *types.AgentError, contentI
 	agenterr.Code = events.DeploymentFailedCode
 
 	if _, isNotFound := http_client.IsHTTPAgentErrorStatusOf(agenterr, http.StatusNotFound); isNotFound {
-		agenterr.Message = fmt.Sprintf("Cannot deploy content: ID %s - Content cannot be found", contentID)
+		agenterr.Message = fmt.Sprintf("Cannot deploy content: ID %s - Content cannot be found.", contentID)
 	} else if _, isForbidden := http_client.IsHTTPAgentErrorStatusOf(agenterr, http.StatusForbidden); isForbidden {
-		agenterr.Message = fmt.Sprintf("Cannot deploy content: ID %s - You may need to request collaborator permissions or verify the credentials in use", contentID)
+		agenterr.Message = fmt.Sprintf("Cannot deploy content: ID %s - You may need to request collaborator permissions or verify the credentials in use.", contentID)
 	} else {
 		agenterr.Message = fmt.Sprintf("Cannot deploy content: ID %s - Unknown error: %s", contentID, agenterr.Error())
 	}
@@ -530,10 +530,10 @@ func (c *ConnectClient) ValidateDeploymentTarget(contentID types.ContentID, cfg 
 
 	// Verify content type has not changed
 	log.Info("Verifying content type is the same")
-	existingAppMode := content.AppMode
-	configAppMode := AppModeFromType(cfg.Type)
-	if configAppMode != existingAppMode {
-		msg := fmt.Sprintf("Content was previously deployed as '%s' but your configuration is set to '%s'. A new deployment must be needed.", existingAppMode.Description(), configAppMode.Description())
+	existingType := ContentTypeFromAppMode(content.AppMode)
+	configType := cfg.Type
+	if existingType != configType {
+		msg := fmt.Sprintf("Content was previously deployed as '%s' but your configuration is set to '%s'.", existingType, configType)
 		return types.NewAgentError(events.AppModeNotModifiableCode, errors.New(msg), nil)
 	}
 

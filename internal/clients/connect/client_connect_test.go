@@ -12,6 +12,7 @@ import (
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/posit-dev/publisher/internal/accounts"
+	"github.com/posit-dev/publisher/internal/clients/connect/server_settings"
 	"github.com/posit-dev/publisher/internal/clients/http_client"
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/events"
@@ -19,6 +20,7 @@ import (
 	"github.com/posit-dev/publisher/internal/logging/loggingtest"
 	"github.com/posit-dev/publisher/internal/schema"
 	"github.com/posit-dev/publisher/internal/types"
+	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -387,7 +389,7 @@ func (s *ConnectClientSuite) TestValidateDeploymentAppFailure() {
 	}
 	contentID := types.ContentID("myContentID")
 	err := client.ValidateDeployment(contentID, logging.New())
-	s.ErrorContains(err, "couldn't access the deployed content")
+	s.ErrorContains(err, "deployed content does not seem to be running. See the logs in Connect for details")
 }
 
 func (s *ConnectClientSuite) TestValidateDeploymentHTTPNonAppErr() {
@@ -666,7 +668,7 @@ func (s *ConnectClientSuite) TestValidateDeploymentTargetNotFoundFailure() {
 	}
 	expectedErr := types.NewAgentError(
 		events.DeploymentFailedCode,
-		errors.New("Cannot deploy content: ID e8922765-4880-43cd-abc0-d59fe59b8b4b - Content cannot be found"),
+		errors.New("cannot deploy content: ID e8922765-4880-43cd-abc0-d59fe59b8b4b - Content cannot be found"),
 		nil)
 	err := client.ValidateDeploymentTarget("e8922765-4880-43cd-abc0-d59fe59b8b4b", s.cfg, lgr)
 	aerr, ok := types.IsAgentError(err)
@@ -775,7 +777,7 @@ func (s *ConnectClientSuite) TestValidateDeploymentTargetAppModeNotModifiableCod
 	}
 	expectedErr := types.NewAgentError(
 		events.DeploymentFailedCode,
-		errors.New("Content was previously deployed as 'R Shiny application' but your configuration is set to 'Dash application'. A new deployment must be needed."),
+		errors.New("Content was previously deployed as 'r-shiny' but your configuration is set to 'python-dash'."),
 		nil)
 	err := client.ValidateDeploymentTarget("e8922765-4880-43cd-abc0-d59fe59b8b4b", s.cfg, lgr)
 	aerr, ok := types.IsAgentError(err)
@@ -784,4 +786,138 @@ func (s *ConnectClientSuite) TestValidateDeploymentTargetAppModeNotModifiableCod
 		expectedErr.Message,
 		aerr.Message,
 	)
+}
+
+func (s *ConnectClientSuite) TestCheckCapabilities() {
+	lgr := logging.New()
+	httpClient := &http_client.MockHTTPClient{}
+	httpClient.On("Get", "/__api__/v1/user", mock.Anything, lgr).Return(nil)
+	httpClient.On("Get", "/__api__/server_settings", mock.Anything, lgr).Return(nil)
+	httpClient.On("Get", "/__api__/server_settings/applications", mock.Anything, lgr).Return(nil)
+	httpClient.On("Get", "/__api__/server_settings/scheduler/python-dash", mock.Anything, lgr).Return(nil)
+	httpClient.On("Get", "/__api__/v1/server_settings/r", mock.Anything, lgr).Return(nil)
+	httpClient.On("Get", "/__api__/v1/server_settings/quarto", mock.Anything, lgr).Return(nil)
+
+	// Be sure to mock available python versions
+	httpClient.On("Get", "/__api__/v1/server_settings/python", mock.AnythingOfType("*server_settings.PyInfo"), lgr).Run(func(args mock.Arguments) {
+		pySettings := args.Get(1).(*server_settings.PyInfo)
+		pySettings.Installations = []server_settings.PyInstallation{{Version: "3.4.5"}}
+	}).Return(nil)
+
+	cfg := config.New()
+	cfg.Type = "python-dash"
+	cfg.Entrypoint = "app.py"
+	cfg.Files = []string{"/app.py", "/requirements.txt"}
+	cfg.Python = &config.Python{
+		Version:        "3.4.5",
+		PackageFile:    "requirements.txt",
+		PackageManager: "pip",
+	}
+
+	var cwd util.AbsolutePath
+	bundleTestPath := cwd.Join("testdata", "python-bundle")
+
+	client := &ConnectClient{
+		client: httpClient,
+	}
+
+	err := client.CheckCapabilities(bundleTestPath, cfg, nil, lgr)
+	s.NoError(err)
+	httpClient.AssertExpectations(s.T())
+}
+
+func (s *ConnectClientSuite) TestCheckCapabilities_missingPythonVer() {
+	lgr := logging.New()
+	httpClient := &http_client.MockHTTPClient{}
+	httpClient.On("Get", "/__api__/v1/user", mock.Anything, lgr).Return(nil)
+	httpClient.On("Get", "/__api__/server_settings", mock.Anything, lgr).Return(nil)
+	httpClient.On("Get", "/__api__/server_settings/applications", mock.Anything, lgr).Return(nil)
+	httpClient.On("Get", "/__api__/server_settings/scheduler/python-dash", mock.Anything, lgr).Return(nil)
+	httpClient.On("Get", "/__api__/v1/server_settings/r", mock.Anything, lgr).Return(nil)
+	httpClient.On("Get", "/__api__/v1/server_settings/quarto", mock.Anything, lgr).Return(nil)
+
+	// Mock versions, not including 3.4.5
+	httpClient.On("Get", "/__api__/v1/server_settings/python", mock.AnythingOfType("*server_settings.PyInfo"), lgr).Run(func(args mock.Arguments) {
+		pySettings := args.Get(1).(*server_settings.PyInfo)
+		pySettings.Installations = []server_settings.PyInstallation{{Version: "3.3.0"}}
+	}).Return(nil)
+
+	cfg := config.New()
+	cfg.Type = "python-dash"
+	cfg.Entrypoint = "app.py"
+	cfg.Files = []string{"/app.py", "/requirements.txt"}
+	cfg.Python = &config.Python{
+		Version:        "3.4.5", // Not included in server settings
+		PackageFile:    "requirements.txt",
+		PackageManager: "pip",
+	}
+
+	var cwd util.AbsolutePath
+	bundleTestPath := cwd.Join("testdata", "python-bundle")
+
+	client := &ConnectClient{
+		client: httpClient,
+	}
+
+	err := client.CheckCapabilities(bundleTestPath, cfg, nil, lgr)
+	s.NotNil(err)
+	s.Contains(err.Error(), "Python 3.4 is not available on the server.")
+	httpClient.AssertExpectations(s.T())
+}
+
+func (s *ConnectClientSuite) TestCheckCapabilities_requirementsFileDoesNotExist() {
+	lgr := logging.New()
+	httpClient := &http_client.MockHTTPClient{}
+
+	cfg := config.New()
+	cfg.Type = "python-dash"
+	cfg.Entrypoint = "app.py"
+	cfg.Files = []string{"/app.py", "/requirements.txt"}
+	cfg.Python = &config.Python{
+		Version:        "3.4.5",
+		PackageManager: "pip",
+		PackageFile:    "requirements.txt",
+	}
+
+	var cwd util.AbsolutePath
+	bundleTestPath := cwd.Join("testdata", "missing-reqs")
+
+	client := &ConnectClient{
+		client: httpClient,
+	}
+
+	err := client.CheckCapabilities(bundleTestPath, cfg, nil, lgr)
+	aerr, yes := types.IsAgentError(err)
+	s.Equal(yes, true)
+	s.Equal(aerr.Code, types.ErrorRequirementsFileReading)
+	s.Contains(aerr.Message, "Missing dependency file requirements.txt. This file must be included in the deployment.")
+}
+
+func (s *ConnectClientSuite) TestCheckCapabilities_requirementsFileNotInConfig() {
+	lgr := logging.New()
+	httpClient := &http_client.MockHTTPClient{}
+
+	cfg := config.New()
+	cfg.Type = "python-dash"
+	cfg.Entrypoint = "app.py"
+	cfg.Files = []string{"/app.py"} // requirements file not included in config files list
+	cfg.Python = &config.Python{
+		Version:        "3.4.5",
+		PackageManager: "pip",
+		PackageFile:    "requirements.txt",
+	}
+
+	var cwd util.AbsolutePath
+	// This bundle path does have requirements.txt file butis not included in configuration
+	bundleTestPath := cwd.Join("testdata", "python-bundle")
+
+	client := &ConnectClient{
+		client: httpClient,
+	}
+
+	err := client.CheckCapabilities(bundleTestPath, cfg, nil, lgr)
+	aerr, yes := types.IsAgentError(err)
+	s.Equal(yes, true)
+	s.Equal(aerr.Code, types.ErrorRequirementsFileReading)
+	s.Contains(aerr.Message, "Missing dependency file requirements.txt. This file must be included in the deployment.")
 }

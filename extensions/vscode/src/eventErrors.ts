@@ -25,6 +25,10 @@ type lockfileReadingEvtErr = baseEvtErr & {
   lockfile: string;
 };
 
+type requirementsReadingEvtErr = baseEvtErr & {
+  requirementsFile: string;
+};
+
 export const isEvtErrDeploymentFailed = (
   emsg: EventStreamMessageErrorCoded,
 ): emsg is EventStreamMessageErrorCoded<baseEvtErr> => {
@@ -37,17 +41,35 @@ export const isEvtErrRenvLockPackagesReadingFailed = (
   return emsg.errCode === "renvlockPackagesReadingError";
 };
 
+export const isEvtErrRequirementsReadingFailed = (
+  emsg: EventStreamMessageErrorCoded,
+): emsg is EventStreamMessageErrorCoded<requirementsReadingEvtErr> => {
+  return emsg.errCode === "requirementsFileReadingError";
+};
+
+export const isEvtErrDeployedContentNotRunning = (
+  emsg: EventStreamMessageErrorCoded,
+): emsg is EventStreamMessageErrorCoded<baseEvtErr> => {
+  return emsg.errCode === "deployedContentNotRunning";
+};
+
+export const useEvtErrKnownMessage = (
+  emsg: EventStreamMessageErrorCoded,
+): boolean => {
+  return (
+    isEvtErrDeploymentFailed(emsg) ||
+    isEvtErrRenvLockPackagesReadingFailed(emsg) ||
+    isEvtErrRequirementsReadingFailed(emsg) ||
+    isEvtErrDeployedContentNotRunning(emsg)
+  );
+};
+
 export const handleEventCodedError = (
   emsg: EventStreamMessageErrorCoded,
 ): string => {
-  if (isEvtErrDeploymentFailed(emsg)) {
+  if (useEvtErrKnownMessage(emsg)) {
     return emsg.data.message;
   }
 
-  if (isEvtErrRenvLockPackagesReadingFailed(emsg)) {
-    return emsg.data.message;
-  }
-
-  const unknownErrMsg = emsg.data.error || emsg.data.message;
-  return `${unknownErrMsg}`;
+  return emsg.data.error || emsg.data.message;
 };
