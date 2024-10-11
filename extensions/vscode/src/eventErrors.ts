@@ -71,6 +71,5 @@ export const handleEventCodedError = (
     return emsg.data.message;
   }
 
-  const unknownErrMsg = emsg.data.error || emsg.data.message;
-  return `Unknown error: ${unknownErrMsg}`;
+  return emsg.data.error || emsg.data.message;
 };

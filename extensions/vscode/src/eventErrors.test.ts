@@ -100,7 +100,7 @@ describe("Event errors", () => {
     };
     let streamMsg = mkEventStreamMsg(msgData, "unknown");
     let resultMsg = handleEventCodedError(streamMsg);
-    expect(resultMsg).toBe("Unknown error: A possum on the fridge");
+    expect(resultMsg).toBe("A possum on the fridge");
 
     streamMsg = mkEventStreamMsg(msgData, "deployFailed");
     resultMsg = handleEventCodedError(streamMsg);
