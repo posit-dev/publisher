@@ -16,6 +16,12 @@ import {
   errUnknownTOMLKeyMessage,
   isErrInvalidConfigFile,
   resolveAgentJsonErrorMsg,
+  ErrTomlUnknownError,
+  isErrTomlUnknownError,
+  errTomlUnknownErrorMessage,
+  ErrTOMLValidationError,
+  isErrTOMLValidationError,
+  errTOMLValidationErrorMessage,
 } from "./errorTypes";
 
 const mkAxiosJsonErr = (data: Record<PropertyKey, any>) => {
@@ -155,6 +161,115 @@ describe("ErrUnknownTOMLKey", () => {
       err as axiosErrorWithJson<ErrUnknownTOMLKey>,
     );
     expect(msg).toBe(`The Configuration has a schema error on line 7`);
+  });
+});
+
+describe("ErrTOMLValidationError", () => {
+  test("isErrUnknownTOMLKey", () => {
+    let result = isErrUnknownTOMLKey(
+      mkAxiosJsonErr({
+        code: "unknownTOMLKey",
+      }),
+    );
+
+    expect(result).toBe(true);
+
+    result = isErrUnknownTOMLKey(
+      mkAxiosJsonErr({
+        code: "bricks_raining",
+      }),
+    );
+
+    expect(result).toBe(false);
+  });
+
+  test("errUnknownTOMLKeyMessage", () => {
+    const err = mkAxiosJsonErr({
+      code: "unknownTOMLKey",
+      details: {
+        filename: "/directory/configuration-lkdg.toml",
+        line: 7,
+        column: 1,
+        key: "shortcut_key",
+      },
+    });
+
+    const msg = errUnknownTOMLKeyMessage(
+      err as axiosErrorWithJson<ErrUnknownTOMLKey>,
+    );
+    expect(msg).toBe(`The Configuration has a schema error on line 7`);
+  });
+});
+
+describe("ErrTomlUnknownError", () => {
+  test("isErrTomlUnknownError", () => {
+    let result = isErrTomlUnknownError(
+      mkAxiosJsonErr({
+        code: "tomlUnknownError",
+      }),
+    );
+
+    expect(result).toBe(true);
+
+    result = isErrTomlUnknownError(
+      mkAxiosJsonErr({
+        code: "bricks_raining",
+      }),
+    );
+
+    expect(result).toBe(false);
+  });
+
+  test("errTomlUnknownErrorMessage", () => {
+    const err = mkAxiosJsonErr({
+      code: "tomlUnknownError",
+      details: {
+        filename: "config.toml",
+        problem: "problems...",
+      },
+    });
+
+    const msg = errTomlUnknownErrorMessage(
+      err as axiosErrorWithJson<ErrTomlUnknownError>,
+    );
+    expect(msg).toBe(`The Configuration has a schema error`);
+  });
+});
+
+describe("ErrTOMLValidationError", () => {
+  test("isErrTOMLValidationError", () => {
+    let result = isErrTOMLValidationError(
+      mkAxiosJsonErr({
+        code: "tomlValidationError",
+      }),
+    );
+
+    expect(result).toBe(true);
+
+    result = isErrTOMLValidationError(
+      mkAxiosJsonErr({
+        code: "bricks_raining",
+      }),
+    );
+
+    expect(result).toBe(false);
+  });
+
+  test("errTOMLValidationErrorMessage", () => {
+    const err = mkAxiosJsonErr({
+      code: "tomlValidationError",
+      details: {
+        filename: "/directory/configuration-lkdg.toml",
+        line: 7,
+        column: 1,
+        key: "shortcut_key",
+      },
+    });
+
+    const msg = errTOMLValidationErrorMessage(
+      err as axiosErrorWithJson<ErrTOMLValidationError>,
+    );
+    expect(msg).toBe(`The Configuration has a schema error`);
   });
 });
 

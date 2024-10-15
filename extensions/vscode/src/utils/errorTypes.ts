@@ -12,7 +12,9 @@ export type ErrorCode =
   | "deployFailed"
   | "renvlockPackagesReadingError"
   | "requirementsFileReadingError"
-  | "deployedContentNotRunning";
+  | "deployedContentNotRunning"
+  | "tomlValidationError"
+  | "tomlUnknownError";
 
 export type axiosErrorWithJson<T = { code: ErrorCode; details: unknown }> =
   AxiosError & {
@@ -70,6 +72,25 @@ export const isErrResourceNotFound =
   mkErrorTypeGuard<ErrResourceNotFound>("resourceNotFound");
 
 // Invalid TOML file(s)
+export type ErrTOMLValidationError = MkErrorDataType<
+  "tomlValidationError",
+  {
+    filename: string;
+    message: string;
+    key: string;
+    problem: string;
+    schemaReference: string;
+  }
+>;
+export const isErrTOMLValidationError =
+  mkErrorTypeGuard<ErrTOMLValidationError>("tomlValidationError");
+export const errTOMLValidationErrorMessage = (
+  _: axiosErrorWithJson<ErrTOMLValidationError>,
+) => {
+  return `The Configuration has a schema error`;
+};
+
+// Invalid TOML file(s)
 export type ErrInvalidTOMLFile = MkErrorDataType<
   "invalidTOML",
   {
@@ -104,6 +125,22 @@ export const errUnknownTOMLKeyMessage = (
   return `The Configuration has a schema error on line ${err.response.data.details.line}`;
 };
 
+// Unknown error within a TOML file
+export type ErrTomlUnknownError = MkErrorDataType<
+  "tomlUnknownError",
+  {
+    filename: string;
+    problem: string;
+  }
+>;
+export const isErrTomlUnknownError =
+  mkErrorTypeGuard<ErrTomlUnknownError>("tomlUnknownError");
+export const errTomlUnknownErrorMessage = (
+  _: axiosErrorWithJson<ErrTomlUnknownError>,
+) => {
+  return `The Configuration has a schema error`;
+};
+
 // Invalid configuration file(s)
 export type ErrInvalidConfigFiles = MkErrorDataType<
   "invalidConfigFile",
@@ -123,5 +160,12 @@ export function resolveAgentJsonErrorMsg(err: axiosErrorWithJson) {
     return errInvalidTOMLMessage(err);
   }
 
+  if (isErrTOMLValidationError(err)) {
+    return errTOMLValidationErrorMessage(err);
+  }
+
+  if (isErrTomlUnknownError(err)) {
+    return errTomlUnknownErrorMessage(err);
+  }
   return errUnknownMessage(err as axiosErrorWithJson<ErrUnknown>);
 }

@@ -77,6 +77,7 @@ import { throttleWithLastPending } from "src/utils/throttle";
 import { showAssociateGUID } from "src/actions/showAssociateGUID";
 import { extensionSettings } from "src/extension";
 import { openFileInEditor } from "src/commands";
+import { showImmediateDeploymentFailureMessage } from "./publishFailures";
 
 enum HomeViewInitialized {
   initialized = "initialized",
@@ -267,8 +268,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       );
       deployProject(response.data.localId, this.stream);
     } catch (error: unknown) {
-      const summary = getSummaryStringFromError("homeView, deploy", error);
-      window.showErrorMessage(`Failed to deploy. ${summary}`);
+      // Most failures will occur on the event stream. These are the ones which
+      // are immediately rejected as part of the API request to initiate deployment.
+      showImmediateDeploymentFailureMessage(error);
     }
   }
 
