@@ -147,6 +147,9 @@ jobs:
           just vscode-ui test vscode-root
           just vscode-ui test vscode-nested
 
+      - name: Run nested error scenarios
+        run: just vscode-ui test vscode-error
+
       - name: Save screenshots
         uses: actions/upload-artifact@v4
         if: failure()

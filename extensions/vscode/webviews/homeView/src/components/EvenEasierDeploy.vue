@@ -59,20 +59,24 @@
         }}</a
         >.
       </p>
-      <p v-if="home.config.active.isMissing">
+      <p v-if="home.config.active.isMissing" data-automation="missing-config">
         The last Configuration used for this Deployment was not found.
-        <a class="webview-link" role="button" @click="selectConfiguration">{{
-          promptForConfigSelection
-        }}</a
+        <a
+          class="webview-link"
+          role="button"
+          @click="selectConfiguration"
+          data-automation="config-button"
+          >{{ promptForConfigSelection }}</a
         >.
       </p>
-      <p v-if="home.config.active.isTOMLError">
+      <p v-if="home.config.active.isTOMLError" data-automation="edit-config">
         The selected Configuration has a schema error
         {{ getActiveConfigTOMLErrorDetails }}.
         <a
           class="webview-link"
           role="button"
           @click="onEditConfigurationWithTOMLError()"
+          data-automation="edit-config-button"
           >Edit the Configuration</a
         >.
       </p>
@@ -88,9 +92,16 @@
         >.
       </p>
 
-      <p v-if="home.config.active.isCredentialMissing">
+      <p
+        v-if="home.config.active.isCredentialMissing"
+        data-automation="missing-creds"
+      >
         A Credential for the Deployment's server URL was not found.
-        <a class="webview-link" role="button" @click="newCredential"
+        <a
+          class="webview-link"
+          role="button"
+          @click="newCredential"
+          data-automation="creds-button"
           >Create a new Credential</a
         >.
       </p>
