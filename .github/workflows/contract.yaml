@@ -63,7 +63,7 @@ jobs:
           R -e "install.packages('renv', repos='https://packagemanager.posit.co/cran/latest')"
         if: matrix.runs-on == 'macos-latest'
       - name: Run Bats Tests
-      - run: |
+        run: |
           chmod -R +x ./bin
           echo "${FUZZBUCKET_SSH_KEY}" > ./fuzzbucket-ssh-key && chmod 600 ./fuzzbucket-ssh-key 
           just bats install
@@ -139,7 +139,7 @@ jobs:
         if: matrix.runs-on == 'macos-latest'
 
       - name: Run VSCode UI Tests
-      - run: |
+        run: |
           chmod -R +x ./bin
           echo "${FUZZBUCKET_SSH_KEY}" > ./fuzzbucket-ssh-key && chmod 600 ./fuzzbucket-ssh-key
           just vscode configure
