@@ -24,6 +24,8 @@ const (
 	ErrorRequirementsFileReading      ErrorCode = "requirementsFileReadingError"
 	ErrorDeployedContentNotRunning    ErrorCode = "deployedContentNotRunning"
 	ErrorUnknown                      ErrorCode = "unknown"
+	ErrorTomlValidationError          ErrorCode = "tomlValidationError"
+	ErrorTomlUnknownError             ErrorCode = "tomlUnknownError"
 )
 
 type EventableError interface {

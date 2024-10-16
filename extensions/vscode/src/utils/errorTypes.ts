@@ -12,7 +12,9 @@ export type ErrorCode =
   | "deployFailed"
   | "renvlockPackagesReadingError"
   | "requirementsFileReadingError"
-  | "deployedContentNotRunning";
+  | "deployedContentNotRunning"
+  | "tomlValidationError"
+  | "tomlUnknownError";
 
 export type axiosErrorWithJson<T = { code: ErrorCode; details: unknown }> =
   AxiosError & {
@@ -70,6 +72,25 @@ export const isErrResourceNotFound =
   mkErrorTypeGuard<ErrResourceNotFound>("resourceNotFound");
 
 // Invalid TOML file(s)
+export type ErrTOMLValidationError = MkErrorDataType<
+  "tomlValidationError",
+  {
+    filename: string;
+    message: string;
+    key: string;
+    problem: string;
+    schemaReference: string;
+  }
+>;
+export const isErrTOMLValidationError =
+  mkErrorTypeGuard<ErrTOMLValidationError>("tomlValidationError");
+export const errTOMLValidationErrorMessage = (
+  _: axiosErrorWithJson<ErrTOMLValidationError>,
+) => {
+  return `The Configuration has a schema error`;
+};
+
+// Invalid TOML file(s)
 export type ErrInvalidTOMLFile = MkErrorDataType<
   "invalidTOML",
   {
@@ -83,8 +104,7 @@ export const isErrInvalidTOMLFile =
 export const errInvalidTOMLMessage = (
   err: axiosErrorWithJson<ErrInvalidTOMLFile>,
 ) => {
-  const { filename, line, column } = err.response.data.details;
-  return `Invalid TOML file ${filename}:${line}:${column}`;
+  return `The Configuration has a schema error on line ${err.response.data.details.line}`;
 };
 
 // Unknown key within a TOML file
@@ -102,8 +122,23 @@ export const isErrUnknownTOMLKey =
 export const errUnknownTOMLKeyMessage = (
   err: axiosErrorWithJson<ErrUnknownTOMLKey>,
 ) => {
-  const { filename, line, column, key } = err.response.data.details;
-  return `Unknown field present in configuration file ${filename}:${line}:${column} - unknown key "${key}"`;
+  return `The Configuration has a schema error on line ${err.response.data.details.line}`;
+};
+
+// Unknown error within a TOML file
+export type ErrTomlUnknownError = MkErrorDataType<
+  "tomlUnknownError",
+  {
+    filename: string;
+    problem: string;
+  }
+>;
+export const isErrTomlUnknownError =
+  mkErrorTypeGuard<ErrTomlUnknownError>("tomlUnknownError");
+export const errTomlUnknownErrorMessage = (
+  _: axiosErrorWithJson<ErrTomlUnknownError>,
+) => {
+  return `The Configuration has a schema error`;
 };
 
 // Invalid configuration file(s)
@@ -125,5 +160,12 @@ export function resolveAgentJsonErrorMsg(err: axiosErrorWithJson) {
     return errInvalidTOMLMessage(err);
   }
 
+  if (isErrTOMLValidationError(err)) {
+    return errTOMLValidationErrorMessage(err);
+  }
+
+  if (isErrTomlUnknownError(err)) {
+    return errTomlUnknownErrorMessage(err);
+  }
   return errUnknownMessage(err as axiosErrorWithJson<ErrUnknown>);
 }

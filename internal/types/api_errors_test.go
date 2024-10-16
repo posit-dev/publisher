@@ -1,4 +1,4 @@
-package api
+package types
 
 // Copyright (C) 2024 by Posit Software, PBC.
 
@@ -8,7 +8,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
 	"github.com/stretchr/testify/suite"
 )
@@ -22,11 +21,11 @@ func TestApiErrorsSuite(t *testing.T) {
 }
 
 func (s *ApiErrorsSuite) TestAPIErrorUnknownTOMLKeyFromAgentError() {
-	agentErr := types.AgentError{
+	agentErr := AgentError{
 		Message: "Unknown field present in configuration file",
-		Code:    types.ErrorUnknownTOMLKey,
+		Code:    ErrorUnknownTOMLKey,
 		Err:     errors.New("unknown field error"),
-		Data: types.ErrorData{
+		Data: ErrorData{
 			"file":   "/project-a/configuration-avcd.toml",
 			"line":   3,
 			"column": 1,
@@ -37,7 +36,7 @@ func (s *ApiErrorsSuite) TestAPIErrorUnknownTOMLKeyFromAgentError() {
 	rec := httptest.NewRecorder()
 
 	apiError := APIErrorUnknownTOMLKeyFromAgentError(agentErr)
-	s.Equal(apiError.Code, types.ErrorUnknownTOMLKey)
+	s.Equal(apiError.Code, ErrorUnknownTOMLKey)
 
 	apiError.JSONResponse(rec)
 
@@ -47,11 +46,11 @@ func (s *ApiErrorsSuite) TestAPIErrorUnknownTOMLKeyFromAgentError() {
 }
 
 func (s *ApiErrorsSuite) TestAPIErrorInvalidTOMLFileFromAgentError() {
-	agentErr := types.AgentError{
+	agentErr := AgentError{
 		Message: "Bad syntax",
-		Code:    types.ErrorInvalidTOML,
+		Code:    ErrorInvalidTOML,
 		Err:     errors.New("unknown field error"),
-		Data: types.ErrorData{
+		Data: ErrorData{
 			"file":   "/project-a/configuration-avcd.toml",
 			"line":   3,
 			"column": 1,
@@ -61,7 +60,7 @@ func (s *ApiErrorsSuite) TestAPIErrorInvalidTOMLFileFromAgentError() {
 	rec := httptest.NewRecorder()
 
 	apiError := APIErrorInvalidTOMLFileFromAgentError(agentErr)
-	s.Equal(apiError.Code, types.ErrorInvalidTOML)
+	s.Equal(apiError.Code, ErrorInvalidTOML)
 
 	apiError.JSONResponse(rec)
 
