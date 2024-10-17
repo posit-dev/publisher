@@ -63,6 +63,86 @@ func (s *PostTestCredentialsHandlerSuite) TestPostTestCredentialsHandlerFunc() {
 	err = json.Unmarshal(rec.Body.Bytes(), &response)
 	s.NoError(err)
 	s.Equal(user, response.User)
+	s.Equal("https://connect.example.com", response.URL)
+	s.Nil(response.Error)
+}
+
+func (s *PostTestCredentialsHandlerSuite) TestPostTestCredentialsHandlerFuncWithConnectCopiedURL() {
+	log := logging.New()
+
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest("POST", "/api/test-credentials", nil)
+	s.NoError(err)
+
+	req.Body = io.NopCloser(strings.NewReader(
+		`{
+			"url": "https://connect.localtest.me/rsc/dev-password/connect/#/apps/2c27e373-5924-46bc-aad3-b5354c8caab6/access",
+			"apiKey": "0123456789abcdef0123456789abcdef"
+		}`))
+
+	client := connect.NewMockClient()
+	user := &connect.User{
+		Email: "user@example.com",
+	}
+	// we start with the URL above, but the first one which get's analyzed is without the fragment
+	// fail the first request... https://connect.localtest.me/rsc/dev-password/connect
+	client.On("TestAuthentication", mock.Anything).Return(nil, errors.New("nope1")).Once()
+	// succeed on the second request... https://connect.localtest.me/rsc/dev-password
+	client.On("TestAuthentication", mock.Anything).Return(user, nil)
+
+	clientFactory = func(account *accounts.Account, timeout time.Duration, emitter events.Emitter, log logging.Logger) (connect.APIClient, error) {
+		return client, nil
+	}
+	handler := PostTestCredentialsHandlerFunc(log)
+	handler(rec, req)
+
+	s.Equal(http.StatusOK, rec.Result().StatusCode)
+
+	var response PostTestCredentialsResponseBody
+	err = json.Unmarshal(rec.Body.Bytes(), &response)
+	s.NoError(err)
+	s.Equal(user, response.User)
+	s.Equal("https://connect.localtest.me/rsc/dev-password", response.URL)
+	s.Nil(response.Error)
+}
+
+func (s *PostTestCredentialsHandlerSuite) TestPostTestCredentialsHandlerFuncWithExtraPaths() {
+	log := logging.New()
+
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest("POST", "/api/test-credentials", nil)
+	s.NoError(err)
+
+	req.Body = io.NopCloser(strings.NewReader(
+		`{
+			"url": "https://connect.example.com/pass/fail/fail?abc=123",
+			"apiKey": "0123456789abcdef0123456789abcdef"
+		}`))
+
+	client := connect.NewMockClient()
+	user := &connect.User{
+		Email: "user@example.com",
+	}
+	// fail the first request... https://connect.example.com/pass/fail/fail
+	client.On("TestAuthentication", mock.Anything).Return(nil, errors.New("nope1")).Once()
+	// fail the second request... https://connect.example.com/pass/fail
+	client.On("TestAuthentication", mock.Anything).Return(nil, errors.New("nope2")).Once()
+	// succeed the third request... https://connect.example.com/pass
+	client.On("TestAuthentication", mock.Anything).Return(user, nil)
+
+	clientFactory = func(account *accounts.Account, timeout time.Duration, emitter events.Emitter, log logging.Logger) (connect.APIClient, error) {
+		return client, nil
+	}
+	handler := PostTestCredentialsHandlerFunc(log)
+	handler(rec, req)
+
+	s.Equal(http.StatusOK, rec.Result().StatusCode)
+
+	var response PostTestCredentialsResponseBody
+	err = json.Unmarshal(rec.Body.Bytes(), &response)
+	s.NoError(err)
+	s.Equal(user, response.User)
+	s.Equal("https://connect.example.com/pass", response.URL)
 	s.Nil(response.Error)
 }
 

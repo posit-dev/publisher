@@ -49,11 +49,11 @@ describe("getSummaryStringFromError", () => {
     });
   });
 
-  describe("unknown or unregistered errors", () => {
-    test("returns a summary of available data", () => {
-      let summary = getSummaryStringFromError(
+  describe("Axios errors", () => {
+    test("Axios Error #1", () => {
+      const summary = getSummaryStringFromError(
         "callerMethodHere",
-        new AxiosError(undefined, undefined, undefined, undefined, {
+        new AxiosError("Bad Error", undefined, undefined, undefined, {
           status: 400,
           statusText: "Bad Request",
           headers: new AxiosHeaders(),
@@ -61,12 +61,10 @@ describe("getSummaryStringFromError", () => {
           data: undefined,
         }),
       );
-
-      expect(summary).toBe(
-        "An error has occurred at callerMethodHere, Status=400, StatusText=Bad Request",
-      );
-
-      summary = getSummaryStringFromError(
+      expect(summary).toBe("Bad Error");
+    });
+    test("Axios Error #2", () => {
+      const summary = getSummaryStringFromError(
         "callerMethodHere",
         new AxiosError(
           "Bricks are falling",
@@ -82,10 +80,38 @@ describe("getSummaryStringFromError", () => {
           },
         ),
       );
-
+      expect(summary).toBe("Bricks are falling");
+    });
+    test("Axios Error #3", () => {
+      const readOnlyError = new AxiosError(
+        "Request failed with status code 500",
+        "ERR_BAD_RESPONSE",
+        undefined,
+        undefined,
+        {
+          status: 500,
+          statusText: "Bad Request",
+          headers: new AxiosHeaders(),
+          config: { headers: new AxiosHeaders(), baseURL: "localhost:9874" },
+          data: "open /Users/billsager/dev/publishing-client/test/sample-content/shinyapp/.posit/publish/shinyapp-file-check-DUQ4.toml: operation not permitted",
+        },
+      );
+      const summary = getSummaryStringFromError(
+        "callerMethodHere",
+        readOnlyError,
+      );
       expect(summary).toBe(
-        "An error has occurred at callerMethodHere, Status=400, StatusText=Bad Request, Code=CODE_WHOOPS, Msg=Bricks are falling",
+        "open /Users/billsager/dev/publishing-client/test/sample-content/shinyapp/.posit/publish/shinyapp-file-check-DUQ4.toml: operation not permitted",
       );
     });
+  });
+});
+describe("Unknown errors", () => {
+  test("Non-error Object", () => {
+    const summary = getSummaryStringFromError("callerMethodHere", {
+      problem: "oops",
+      data: "stuff",
+    });
+    expect(summary).toBe("Unknown Error");
   });
 });

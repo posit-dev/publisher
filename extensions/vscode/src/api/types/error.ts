@@ -8,7 +8,22 @@ type AgentErrorBase = {
   operation: string;
 };
 
+export const isAgentError = (e: any): e is AgentError => {
+  const keys = Object.keys(e);
+  if (keys.length) {
+    if (
+      keys.includes("code") &&
+      keys.includes("msg") &&
+      keys.includes("operation")
+    ) {
+      return true;
+    }
+  }
+  return false;
+};
+
 export type AgentError =
+  | AgentErrorBase
   | AgentErrorTypeUnknown
   | AgentErrorInvalidTOML
   | AgentErrorContentNotRunning;
@@ -19,13 +34,25 @@ export type AgentErrorTypeUnknown = AgentErrorBase & {
   };
 };
 
+export const isAgentErrorBase = (e: any): e is AgentErrorBase => {
+  if (isAgentError(e)) {
+    const keys = Object.keys(e);
+    if (keys.length) {
+      if (keys.includes("data")) {
+        return true;
+      }
+    }
+  }
+  return false;
+};
+
 // This represents the Agent Errors we haven't been able to
 // narrow down to a specific type.
-export const isAgentErrorTypeUnknown = (
-  e: AgentError,
-): e is AgentErrorTypeUnknown => {
+export const isAgentErrorTypeUnknown = (e: any): e is AgentErrorTypeUnknown => {
   return (
-    !isAgentErrorInvalidTOML(e) && !isAgentErrorDeployedContentNotRunning(e)
+    isAgentErrorBase(e) &&
+    !isAgentErrorInvalidTOML(e) &&
+    !isAgentErrorDeployedContentNotRunning(e)
   );
 };
 
@@ -38,16 +65,17 @@ export type AgentErrorInvalidTOML = AgentErrorBase & {
   };
 };
 
-export const isAgentErrorInvalidTOML = (
-  e: AgentError,
-): e is AgentErrorInvalidTOML => {
-  return e.code === "invalidTOML" || e.code === "unknownTOMLKey";
+export const isAgentErrorInvalidTOML = (e: any): e is AgentErrorInvalidTOML => {
+  return (
+    isAgentErrorBase(e) &&
+    (e.code === "invalidTOML" || e.code === "unknownTOMLKey")
+  );
 };
 
 export type AgentErrorContentNotRunning = AgentErrorBase;
 
 export const isAgentErrorDeployedContentNotRunning = (
-  e: AgentError,
+  e: any,
 ): e is AgentErrorContentNotRunning => {
-  return e.code === "deployedContentNotRunning";
+  return isAgentErrorBase(e) && e.code === "deployedContentNotRunning";
 };

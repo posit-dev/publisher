@@ -117,7 +117,7 @@ describe("Detect missing config and credentials", () => {
 
     const titleMessage = await browser.$("#quickInput_message");
     await expect(titleMessage).toHaveText(
-      "Enter the Public URL of the Posit Connect Server (Press 'Enter' to confirm or 'Escape' to cancel)",
+      "Please provide the Posit Connect server's URL (Press 'Enter' to confirm or 'Escape' to cancel)",
     );
 
     // set server url

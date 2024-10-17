@@ -537,8 +537,8 @@ export async function newDeployment(
         step: 0,
         totalSteps: 0,
         value: currentURL,
-        prompt: "Enter the Public URL of the Posit Connect Server",
-        placeholder: "example: https://servername.com:3939",
+        prompt: "Please provide the Posit Connect server's URL",
+        placeholder: "Server URL",
         validate: (input: string) => {
           if (input.includes(" ")) {
             return Promise.resolve({
@@ -565,11 +565,11 @@ export async function newDeployment(
               severity: InputBoxValidationSeverity.Error,
             });
           }
-          const existingCredential = credentials.find(
-            (credential) =>
-              normalizeURL(input).toLowerCase() ===
-              normalizeURL(credential.url).toLowerCase(),
-          );
+          const existingCredential = credentials.find((credential) => {
+            const existing = normalizeURL(credential.url).toLowerCase();
+            const newURL = normalizeURL(input).toLowerCase();
+            return newURL.includes(existing);
+          });
           if (existingCredential) {
             return Promise.resolve({
               message: `Error: Invalid URL (this server URL is already assigned to your credential "${existingCredential.name}". Only one credential per unique URL is allowed).`,
@@ -619,6 +619,7 @@ export async function newDeployment(
       const currentAPIKey = newDeploymentData.newCredentials.apiKey
         ? newDeploymentData.newCredentials.apiKey
         : "";
+      let validatedURL = "";
 
       const apiKey = await input.showInputBox({
         title: state.title,
@@ -670,6 +671,11 @@ export async function newDeployment(
                 severity: InputBoxValidationSeverity.Error,
               });
             }
+            // we have success, but credentials.test may have returned a different
+            // url for us to use.
+            if (testResult.data.url) {
+              validatedURL = testResult.data.url;
+            }
           } catch (e) {
             return Promise.resolve({
               message: `Error: Invalid API Key (${getMessageFromError(e)})`,
@@ -683,6 +689,7 @@ export async function newDeployment(
       });
 
       newDeploymentData.newCredentials.apiKey = apiKey;
+      newDeploymentData.newCredentials.url = validatedURL;
       return (input: MultiStepInput) => inputCredentialName(input, state);
     }
     return inputCredentialName(input, state);
