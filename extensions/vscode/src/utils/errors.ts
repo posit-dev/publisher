@@ -34,14 +34,18 @@ export const getCodeStringFromError = (error: unknown): string | undefined => {
 };
 
 export const getMessageFromError = (error: unknown): string => {
-  if (axios.isAxiosError(error)) {
-    return error.response?.data || error.message;
-  }
-  if (isAgentError(error)) {
-    return error.msg;
-  }
-  if (error instanceof Error) {
-    return error.message;
+  try {
+    if (axios.isAxiosError(error)) {
+      return error.response?.data || error.message;
+    }
+    if (isAgentError(error)) {
+      return error.msg;
+    }
+    if (error instanceof Error) {
+      return error.message;
+    }
+  } catch {
+    // errors suppressed
   }
   return String(error);
 };
@@ -57,8 +61,9 @@ export const getAPIURLFromError = (error: unknown) => {
   return undefined;
 };
 
-// When the error is a known JSON agent error it returns it's message.
-// Otherwise, a tracing message is returned to help diagnose.
+// This method builds a diagnostic message which is output to the
+// VSCode console (output/window) to help diagnose, but then returns the
+// base error string from the error.
 export const getSummaryStringFromError = (location: string, error: unknown) => {
   let msg = `An error has occurred at ${location}`;
 
@@ -97,7 +102,8 @@ export const getSummaryStringFromError = (location: string, error: unknown) => {
   } else {
     msg += `, Error=${error}`;
   }
-  return msg;
+  console.error(msg);
+  return getMessageFromError(error);
 };
 
 export const getSummaryFromError = (error: unknown) => {
