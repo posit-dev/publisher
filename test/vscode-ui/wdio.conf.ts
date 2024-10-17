@@ -50,6 +50,7 @@ export const config: Options.Testrunner = {
       "./test/specs/nested-fastapi-deployment.spec.ts",
     ],
     root: ["./test/specs/fastapi.spec.ts"],
+    error: ["./test/specs/error-*.spec.ts"],
   },
   //
   // ============
@@ -133,7 +134,7 @@ export const config: Options.Testrunner = {
   //
   // Default timeout in milliseconds for request
   // if browser driver or grid doesn't send response
-  connectionRetryTimeout: 120000,
+  connectionRetryTimeout: 12000,
   //
   // Default request retries count
   connectionRetryCount: 3,

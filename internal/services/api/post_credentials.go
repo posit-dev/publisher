@@ -35,7 +35,7 @@ func PostCredentialFuncHandler(log logging.Logger) http.HandlerFunc {
 		if err != nil {
 			if aerr, ok := err.(*types.AgentError); ok {
 				if aerr.Code == types.ErrorCredentialServiceUnavailable {
-					apiErr := APIErrorCredentialsUnavailableFromAgentError(*aerr)
+					apiErr := types.APIErrorCredentialsUnavailableFromAgentError(*aerr)
 					apiErr.JSONResponse(w)
 					return
 				}

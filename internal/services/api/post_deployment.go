@@ -9,10 +9,12 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/posit-dev/publisher/internal/accounts"
+	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/publish"
 	"github.com/posit-dev/publisher/internal/state"
+	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 )
 
@@ -57,20 +59,51 @@ func PostDeploymentHandlerFunc(
 			return
 		}
 		newState, err := stateFactory(projectDir, b.AccountName, b.ConfigName, name, "", accountList, b.Secrets, b.Insecure)
-		log.Debug("New account derived state created", "account", b.AccountName, "config", b.ConfigName)
 		if err != nil {
 			if errors.Is(err, accounts.ErrAccountNotFound) {
+				log.Error("Deployment initialization failure - account not found", "error", err.Error())
 				NotFound(w, log, err)
-			} else if errors.Is(err, state.ErrServerURLMismatch) {
+				return
+			}
+			if errors.Is(err, state.ErrServerURLMismatch) {
+				log.Error("Deployment initialization failure - Server URL Mismatch", "error", err.Error())
 				// Redeployments must go to the same server
 				w.WriteHeader(http.StatusConflict)
 				w.Write([]byte(err.Error()))
 				return
-			} else {
-				BadRequest(w, req, log, err)
 			}
+			if aerr, ok := types.IsAgentError(err); ok {
+				if aerr.Code == types.ErrorUnknownTOMLKey {
+					apiErr := types.APIErrorUnknownTOMLKeyFromAgentError(*aerr)
+					log.Error("Deployment initialization failure", "apiErr", apiErr.Error())
+					apiErr.JSONResponse(w)
+					return
+				}
+				if aerr.Code == types.ErrorInvalidTOML {
+					apiErr := types.APIErrorInvalidTOMLFileFromAgentError(*aerr)
+					log.Error("Deployment initialization failure", "apiErr", apiErr.Error())
+					apiErr.JSONResponse(w)
+					return
+				}
+				if aerr.Code == types.ErrorTomlValidationError {
+					configPath := config.GetConfigPath(projectDir, b.ConfigName)
+					apiErr := types.APIErrorTomlValidationFromAgentError(*aerr, configPath.String())
+					log.Error("Deployment initialization failure", "apiErr", apiErr.Error())
+					apiErr.JSONResponse(w)
+					return
+				}
+				if aerr.Code == types.ErrorTomlUnknownError {
+					configPath := config.GetConfigPath(projectDir, b.ConfigName)
+					apiErr := types.APIErrorTomlUnknownErrorFromAgentError(*aerr, configPath.String())
+					log.Error("Deployment initialization failure", "apiErr", apiErr.Error())
+					apiErr.JSONResponse(w)
+					return
+				}
+			}
+			BadRequest(w, req, log, err)
 			return
 		}
+		log.Debug("New account derived state created", "account", b.AccountName, "config", b.ConfigName)
 
 		response := PostDeploymentsReponse{
 			LocalID: localID,
