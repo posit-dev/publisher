@@ -66,7 +66,7 @@ describe("Nested Fast API Configuration", () => {
   it("can select entrypoint", async () => {
     const titleMessage = browser.$("#quickInput_message");
     await expect(titleMessage).toHaveText(
-      "Please provide the Posit Connect server's URL (Press 'Enter' to confirm or 'Escape' to cancel)",
+      "Enter a title for your content or application. (Press 'Enter' to confirm or 'Escape' to cancel)",
     );
     // await input.waitForExist({ timeout: 30000 });
 
