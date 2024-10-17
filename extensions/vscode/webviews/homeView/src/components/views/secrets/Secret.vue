@@ -75,7 +75,7 @@ const actions = computed<ActionButton[]>(() => {
   const result = [
     {
       label: "Edit Value",
-      codicon: "codicon-pencil",
+      codicon: "codicon-symbol-string",
       fn: inputSecret,
     },
   ];

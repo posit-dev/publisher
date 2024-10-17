@@ -59,20 +59,24 @@
         }}</a
         >.
       </p>
-      <p v-if="home.config.active.isMissing">
+      <p v-if="home.config.active.isMissing" data-automation="missing-config">
         The last Configuration used for this Deployment was not found.
-        <a class="webview-link" role="button" @click="selectConfiguration">{{
-          promptForConfigSelection
-        }}</a
+        <a
+          class="webview-link"
+          role="button"
+          @click="selectConfiguration"
+          data-automation="config-button"
+          >{{ promptForConfigSelection }}</a
         >.
       </p>
-      <p v-if="home.config.active.isTOMLError">
+      <p v-if="home.config.active.isTOMLError" data-automation="edit-config">
         The selected Configuration has a schema error
         {{ getActiveConfigTOMLErrorDetails }}.
         <a
           class="webview-link"
           role="button"
           @click="onEditConfigurationWithTOMLError()"
+          data-automation="edit-config-button"
           >Edit the Configuration</a
         >.
       </p>
@@ -88,9 +92,16 @@
         >.
       </p>
 
-      <p v-if="home.config.active.isCredentialMissing">
+      <p
+        v-if="home.config.active.isCredentialMissing"
+        data-automation="missing-creds"
+      >
         A Credential for the Deployment's server URL was not found.
-        <a class="webview-link" role="button" @click="newCredential"
+        <a
+          class="webview-link"
+          role="button"
+          @click="newCredential"
+          data-automation="creds-button"
           >Create a new Credential</a
         >.
       </p>
@@ -174,7 +185,7 @@
           v-if="home.selectedContentRecord.deploymentError"
           class="last-deployment-details last-deployment-error"
         >
-          <span class="codicon codicon-error error-icon"></span>
+          <span class="codicon codicon-alert"></span>
           <TextStringWithAnchor
             :message="home.selectedContentRecord?.deploymentError?.msg"
             :splitOptions="ErrorMessageSplitOptions"
@@ -191,7 +202,7 @@
             @click="viewContent"
             class="w-full"
           >
-            View Content
+            {{ deployedContentButtonLabel }}
           </vscode-button>
         </div>
       </div>
@@ -235,6 +246,7 @@ import TextStringWithAnchor from "./TextStringWithAnchor.vue";
 import {
   AgentError,
   isAgentErrorInvalidTOML,
+  isAgentErrorDeployedContentNotRunning,
 } from "../../../../src/api/types/error";
 
 const home = useHomeStore();
@@ -438,6 +450,20 @@ const getActiveConfigTOMLErrorDetails = computed(() => {
   return "";
 });
 
+const isDeployedContentOnError = computed((): boolean => {
+  const deploymentError = home.selectedContentRecord?.deploymentError;
+  return Boolean(
+    deploymentError && isAgentErrorDeployedContentNotRunning(deploymentError),
+  );
+});
+
+const deployedContentButtonLabel = computed((): string => {
+  if (isDeployedContentOnError.value) {
+    return "View Deployment Logs";
+  }
+  return "View Content";
+});
+
 const onEditConfigurationWithTOMLError = () => {
   const agentError = getActiveConfigError.value;
   if (agentError && isAgentErrorInvalidTOML(agentError)) {
@@ -492,8 +518,14 @@ const onAssociateDeployment = () => {
 };
 
 const viewContent = () => {
-  if (home.selectedContentRecord?.dashboardUrl) {
-    navigateToUrl(home.selectedContentRecord.dashboardUrl);
+  const record = home.selectedContentRecord;
+  if (!record) {
+    return;
+  }
+  if (isDeployedContentOnError.value && !isPreContentRecord(record)) {
+    navigateToUrl(record.logsUrl);
+  } else if (record.dashboardUrl) {
+    navigateToUrl(record.dashboardUrl);
   }
 };
 </script>

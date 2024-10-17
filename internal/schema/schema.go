@@ -72,7 +72,7 @@ func (v *Validator[T]) ValidateContent(data any) error {
 		if ok {
 			// Return all causes in the Data field of a single error.
 			e := toTomlValidationError(validationErr)
-			return types.NewAgentError(tomlValidationErrorCode, e, nil)
+			return types.NewAgentError(tomlValidationErrorCode, e, e)
 		} else {
 			return err
 		}

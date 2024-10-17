@@ -145,9 +145,8 @@ func New(path util.AbsolutePath, accountName, configName, targetName string, sav
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
 			return nil, fmt.Errorf("couldn't load configuration '%s' from '%s'; run 'publish init' to create an initial configuration file", configName, path)
-		} else {
-			return nil, err
 		}
+		return nil, err
 	}
 
 	// Check that the secrets passed are in the config

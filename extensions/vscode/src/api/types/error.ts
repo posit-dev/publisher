@@ -1,12 +1,17 @@
 // Copyright (C) 2023 by Posit Software, PBC.
 
+import { ErrorCode } from "../../utils/errorTypes";
+
 type AgentErrorBase = {
-  code: string;
+  code: ErrorCode;
   msg: string;
   operation: string;
 };
 
-export type AgentError = AgentErrorTypeUnknown | AgentErrorInvalidTOML;
+export type AgentError =
+  | AgentErrorTypeUnknown
+  | AgentErrorInvalidTOML
+  | AgentErrorContentNotRunning;
 
 export type AgentErrorTypeUnknown = AgentErrorBase & {
   data: {
@@ -19,7 +24,9 @@ export type AgentErrorTypeUnknown = AgentErrorBase & {
 export const isAgentErrorTypeUnknown = (
   e: AgentError,
 ): e is AgentErrorTypeUnknown => {
-  return !isAgentErrorInvalidTOML(e);
+  return (
+    !isAgentErrorInvalidTOML(e) && !isAgentErrorDeployedContentNotRunning(e)
+  );
 };
 
 export type AgentErrorInvalidTOML = AgentErrorBase & {
@@ -35,4 +42,12 @@ export const isAgentErrorInvalidTOML = (
   e: AgentError,
 ): e is AgentErrorInvalidTOML => {
   return e.code === "invalidTOML" || e.code === "unknownTOMLKey";
+};
+
+export type AgentErrorContentNotRunning = AgentErrorBase;
+
+export const isAgentErrorDeployedContentNotRunning = (
+  e: AgentError,
+): e is AgentErrorContentNotRunning => {
+  return e.code === "deployedContentNotRunning";
 };

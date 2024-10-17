@@ -30,9 +30,7 @@ describe("getSummaryStringFromError", () => {
         }),
       );
 
-      expect(summary).toBe(
-        "Invalid TOML file /directory/configuration-lkdg.toml:5:5",
-      );
+      expect(summary).toBe("The Configuration has a schema error on line 5");
 
       summary = getSummaryStringFromError(
         "callerMethodHere",
@@ -47,9 +45,7 @@ describe("getSummaryStringFromError", () => {
         }),
       );
 
-      expect(summary).toBe(
-        `Unknown field present in configuration file /directory/configuration-lkdg.toml:7:1 - unknown key "shortcut_key"`,
-      );
+      expect(summary).toBe(`The Configuration has a schema error on line 7`);
     });
   });
 

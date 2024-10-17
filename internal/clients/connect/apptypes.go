@@ -270,3 +270,29 @@ func AppModeFromType(t config.ContentType) AppMode {
 	}
 	return mode
 }
+
+var contentTypeConnectMap = map[AppMode]config.ContentType{
+	StaticMode:          config.ContentTypeHTML,
+	StaticJupyterMode:   config.ContentTypeJupyterNotebook,
+	JupyterVoilaMode:    config.ContentTypeJupyterVoila,
+	PythonBokehMode:     config.ContentTypePythonBokeh,
+	PythonDashMode:      config.ContentTypePythonDash,
+	PythonFastAPIMode:   config.ContentTypePythonFastAPI,
+	PythonAPIMode:       config.ContentTypePythonFlask,
+	PythonShinyMode:     config.ContentTypePythonShiny,
+	PythonStreamlitMode: config.ContentTypePythonStreamlit,
+	ShinyQuartoMode:     config.ContentTypeQuartoShiny,
+	StaticQuartoMode:    config.ContentTypeQuarto,
+	PlumberAPIMode:      config.ContentTypeRPlumber,
+	ShinyMode:           config.ContentTypeRShiny,
+	ShinyRmdMode:        config.ContentTypeRMarkdownShiny,
+	StaticRmdMode:       config.ContentTypeRMarkdown,
+}
+
+func ContentTypeFromAppMode(a AppMode) config.ContentType {
+	contentType, ok := contentTypeConnectMap[a]
+	if !ok {
+		contentType = config.ContentTypeUnknown
+	}
+	return contentType
+}
