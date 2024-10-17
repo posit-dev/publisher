@@ -81,14 +81,29 @@ describe("VS Code Extension UI Test", () => {
 
   it("can check config", async () => {
     const realFilename = await helper.getConfigTitle(/^my fastapi app-.*$/);
+    const pythonVersion = process.env.PYTHON_VERSION;
 
     const filePath = path.resolve(
       __dirname,
       "../../../sample-content/fastapi-simple/.posit/publish/" + realFilename,
     );
     const fileContent = fs.readFileSync(filePath, "utf8");
-    await expect(fileContent).toContain(
-      "type = 'python-fastapi'\nentrypoint = 'simple.py'\nvalidate = true\nfiles = [\n  '/simple.py',\n  '/requirements.txt'\n]\ntitle = 'my fastapi app'",
+    const expectedPattern = new RegExp(
+      `type = 'python-fastapi'\\n` +
+        `entrypoint = 'simple.py'\\n` +
+        `validate = true\\nfiles = \\[\\n` +
+        `  '/simple.py',\\n` +
+        `  '/requirements.txt',\\n` +
+        `  '/.posit/publish/${realFilename}',\\n` +
+        `  '/.posit/publish/deployments/deployment-.*.toml'\\n` +
+        `\\]\\n` +
+        `title = 'my fastapi app'\\n\\n` +
+        `\\[python\\]\\n` +
+        `version = '${pythonVersion}'\\n` +
+        `package_file = 'requirements.txt'\\n` +
+        `package_manager = 'pip'`,
     );
+
+    expect(fileContent).toMatch(expectedPattern);
   });
 });
