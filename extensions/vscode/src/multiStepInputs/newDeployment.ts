@@ -531,8 +531,8 @@ export async function newDeployment(
         step: 0,
         totalSteps: 0,
         value: currentURL,
-        prompt: "Enter the Public URL of the Posit Connect Server",
-        placeholder: "example: https://servername.com:3939",
+        prompt: "Please provide the Posit Connect server's URL",
+        placeholder: "Server URL",
         validate: (input: string) => {
           if (input.includes(" ")) {
             return Promise.resolve({

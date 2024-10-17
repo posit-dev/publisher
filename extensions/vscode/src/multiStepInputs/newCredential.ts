@@ -84,8 +84,8 @@ export async function newCredential(
       step: thisStepNumber,
       totalSteps: state.totalSteps,
       value: currentURL,
-      prompt: "Enter the Public URL of the Posit Connect Server",
-      placeholder: "https://servername.com:3939",
+      prompt: "Please provide the Posit Connect server's URL",
+      placeholder: "Server URL",
       validate: (input: string) => {
         if (input.includes(" ")) {
           return Promise.resolve({
