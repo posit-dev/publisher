@@ -294,3 +294,22 @@ export function vscodeOpenFiles(): string[] {
   });
   return openFileList;
 }
+
+export function getRelPathForConfig(configFullPath: string): string {
+  let result = ``;
+  result += `${path.sep}.posit`;
+  result += `${path.sep}publish`;
+  result += `${path.sep}${path.basename(configFullPath)}`;
+  return result;
+}
+
+export function getRelPathForContentRecord(
+  contentRecordFullPath: string,
+): string {
+  let result = ``;
+  result += `${path.sep}.posit`;
+  result += `${path.sep}publish`;
+  result += `${path.sep}deployments`;
+  result += `${path.sep}${path.basename(contentRecordFullPath)}`;
+  return result;
+}

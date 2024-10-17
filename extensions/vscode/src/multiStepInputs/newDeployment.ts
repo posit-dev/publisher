@@ -42,7 +42,13 @@ import { formatURL, normalizeURL } from "src/utils/url";
 import { checkSyntaxApiKey } from "src/utils/apiKeys";
 import { DeploymentObjects } from "src/types/shared";
 import { showProgress } from "src/utils/progress";
-import { relativeDir, relativePath, vscodeOpenFiles } from "src/utils/files";
+import {
+  getRelPathForConfig,
+  getRelPathForContentRecord,
+  relativeDir,
+  relativePath,
+  vscodeOpenFiles,
+} from "src/utils/files";
 import { ENTRYPOINT_FILE_EXTENSIONS } from "src/constants";
 import { extensionSettings } from "src/extension";
 
@@ -836,7 +842,7 @@ export async function newDeployment(
     );
     await api.files.updateFileList(
       configName,
-      `/${createResponse.data.configurationRelPath}`,
+      getRelPathForConfig(createResponse.data.configurationPath),
       FileAction.INCLUDE,
       newDeploymentData.entrypoint.inspectionResult.projectDir,
     );
@@ -876,7 +882,7 @@ export async function newDeployment(
     }
     await api.files.updateFileList(
       configName,
-      `/${contentRecordPath}`,
+      getRelPathForContentRecord(contentRecordPath),
       FileAction.INCLUDE,
       newDeploymentData.entrypoint.inspectionResult.projectDir,
     );
