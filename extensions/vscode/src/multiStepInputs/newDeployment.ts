@@ -613,6 +613,7 @@ export async function newDeployment(
       const currentAPIKey = newDeploymentData.newCredentials.apiKey
         ? newDeploymentData.newCredentials.apiKey
         : "";
+      let validatedURL = "";
 
       const apiKey = await input.showInputBox({
         title: state.title,
@@ -664,6 +665,11 @@ export async function newDeployment(
                 severity: InputBoxValidationSeverity.Error,
               });
             }
+            // we have success, but credentials.test may have returned a different
+            // url for us to use.
+            if (testResult.data.url) {
+              validatedURL = testResult.data.url;
+            }
           } catch (e) {
             return Promise.resolve({
               message: `Error: Invalid API Key (${getMessageFromError(e)})`,
@@ -677,6 +683,7 @@ export async function newDeployment(
       });
 
       newDeploymentData.newCredentials.apiKey = apiKey;
+      newDeploymentData.newCredentials.url = validatedURL;
       return (input: MultiStepInput) => inputCredentialName(input, state);
     }
     return inputCredentialName(input, state);

@@ -2,6 +2,7 @@
 
 import axios from "axios";
 import { isAxiosErrorWithJson, resolveAgentJsonErrorMsg } from "./errorTypes";
+import { isAgentError } from "src/api/types/error";
 
 export type ErrorMessage = string[];
 export type ErrorMessages = ErrorMessage[];
@@ -26,12 +27,18 @@ export const getCodeStringFromError = (error: unknown): string | undefined => {
   if (axios.isAxiosError(error)) {
     return error.code;
   }
+  if (isAgentError(error)) {
+    return error.code;
+  }
   return undefined;
 };
 
 export const getMessageFromError = (error: unknown): string => {
   if (axios.isAxiosError(error)) {
     return error.response?.data || error.message;
+  }
+  if (isAgentError(error)) {
+    return error.msg;
   }
   if (error instanceof Error) {
     return error.message;
@@ -57,6 +64,17 @@ export const getSummaryStringFromError = (location: string, error: unknown) => {
 
   if (isAxiosErrorWithJson(error)) {
     return resolveAgentJsonErrorMsg(error);
+  }
+
+  if (isAgentError(error)) {
+    msg = error.msg;
+    if (error.code) {
+      msg += `, Code=${error.code}`;
+    }
+    if (error.operation) {
+      msg += `, Operation=${error.operation}`;
+    }
+    return msg;
   }
 
   const summary = getSummaryFromError(error);
