@@ -108,8 +108,8 @@ describe("Nested Fast API Configuration", () => {
         `validate = true\\nfiles = \\[\\n` +
         `  '/simple.py',\\n` +
         `  '/requirements.txt',\\n` +
-        `  '/fastapi-simple/.posit/publish/${realFilename}',\\n` +
-        `  '/fastapi-simple/.posit/publish/deployments/deployment-.*.toml'\\n` +
+        `  '/.posit/publish/${realFilename}',\\n` +
+        `  '/.posit/publish/deployments/deployment-.*.toml'\\n` +
         `\\]\\n` +
         `title = 'my fastapi app'\\n\\n` +
         `\\[python\\]\\n` +
