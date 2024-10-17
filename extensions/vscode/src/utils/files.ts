@@ -295,21 +295,23 @@ export function vscodeOpenFiles(): string[] {
   return openFileList;
 }
 
+// Always uses forward slashes no matter what platform
 export function getRelPathForConfig(configFullPath: string): string {
   let result = ``;
-  result += `${path.sep}.posit`;
-  result += `${path.sep}publish`;
-  result += `${path.sep}${path.basename(configFullPath)}`;
+  result += `/.posit`;
+  result += `/publish`;
+  result += `/${path.basename(configFullPath)}`;
   return result;
 }
 
+// Always uses forward slashes no matter what platform
 export function getRelPathForContentRecord(
   contentRecordFullPath: string,
 ): string {
   let result = ``;
-  result += `${path.sep}.posit`;
-  result += `${path.sep}publish`;
-  result += `${path.sep}deployments`;
-  result += `${path.sep}${path.basename(contentRecordFullPath)}`;
+  result += `/.posit`;
+  result += `/publish`;
+  result += `/deployments`;
+  result += `/${path.basename(contentRecordFullPath)}`;
   return result;
 }
