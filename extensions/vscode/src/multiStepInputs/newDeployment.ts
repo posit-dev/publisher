@@ -356,8 +356,7 @@ export async function newDeployment(
             selectedEntrypointFile = relativePath(fileUri);
           } else {
             window.showErrorMessage(
-              `Entrypoint files must be located within the open workspace. 
-							File ${fileUri.fsPath} is not located within the open workspace: ${baseUri.fsPath}.`,
+              `Entrypoint files must be located within the open workspace.`,
               {
                 modal: true,
               },
