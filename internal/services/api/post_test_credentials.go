@@ -47,11 +47,13 @@ func PostTestCredentialsHandlerFunc(log logging.Logger) http.HandlerFunc {
 			return
 		}
 
-		// walk the possible URL list backwards (it has the full path first)
 		var urlToBeTested string
 		var lastTestError error
 		var user *connect.User
 
+		// walk the possible URL list backwards
+		// This prioritizes the full URL with all path segments over
+		// the URL with all path segments removed.
 		for i := len(possibleURLs) - 1; i >= 0; i-- {
 			urlToBeTested = possibleURLs[i]
 

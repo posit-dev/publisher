@@ -112,11 +112,11 @@ export async function newCredential(
             severity: InputBoxValidationSeverity.Error,
           });
         }
-        const existingCredential = credentials.find(
-          (credential) =>
-            normalizeURL(input).toLowerCase() ===
-            normalizeURL(credential.url).toLowerCase(),
-        );
+        const existingCredential = credentials.find((credential) => {
+          const existing = normalizeURL(credential.url).toLowerCase();
+          const newURL = normalizeURL(input).toLowerCase();
+          return newURL.includes(existing);
+        });
         if (existingCredential) {
           return Promise.resolve({
             message: `Error: Invalid URL (this server URL is already assigned to your credential "${existingCredential.name}". Only one credential per unique URL is allowed).`,
