@@ -35,6 +35,9 @@ export const getCodeStringFromError = (error: unknown): string | undefined => {
 
 export const getMessageFromError = (error: unknown): string => {
   try {
+    if (isAxiosErrorWithJson(error)) {
+      return resolveAgentJsonErrorMsg(error);
+    }
     if (axios.isAxiosError(error)) {
       return error.response?.data || error.message;
     }
@@ -47,7 +50,7 @@ export const getMessageFromError = (error: unknown): string => {
   } catch {
     // errors suppressed
   }
-  return String(error);
+  return "";
 };
 
 export const getAPIURLFromError = (error: unknown) => {
@@ -65,45 +68,45 @@ export const getAPIURLFromError = (error: unknown) => {
 // VSCode console (output/window) to help diagnose, but then returns the
 // base error string from the error.
 export const getSummaryStringFromError = (location: string, error: unknown) => {
-  let msg = `An error has occurred at ${location}`;
-
-  if (isAxiosErrorWithJson(error)) {
-    return resolveAgentJsonErrorMsg(error);
+  let logMsg = `Posit Publisher: An error has occurred at ${location}`;
+  let msg = getMessageFromError(error);
+  if (msg === "") {
+    msg = "Unknown Error";
+    logMsg += `: ${msg}, ${JSON.stringify(error)}`;
+  } else {
+    logMsg += `: ${msg}`;
   }
-
   if (isAgentError(error)) {
-    msg = error.msg;
     if (error.code) {
-      msg += `, Code=${error.code}`;
+      logMsg += `, Code=${error.code}`;
     }
     if (error.operation) {
-      msg += `, Operation=${error.operation}`;
+      logMsg += `, Operation=${error.operation}`;
     }
-    return msg;
+  } else if (!isAxiosErrorWithJson(error)) {
+    const summary = getSummaryFromError(error);
+    if (summary) {
+      if (summary.status) {
+        logMsg += `, Status=${summary.status}`;
+      }
+      if (summary.statusText) {
+        logMsg += `, StatusText=${summary.statusText}`;
+      }
+      if (summary.code) {
+        logMsg += `, Code=${summary.code}`;
+      }
+      if (summary.msg) {
+        logMsg += `, Msg=${summary.msg}`;
+      }
+      if (summary.baseURL || summary.method || summary.url) {
+        logMsg += `, URL=${summary.baseURL}/${summary.method}/${summary.url}`;
+      }
+    } else {
+      logMsg += `, Error=${error}`;
+    }
   }
-
-  const summary = getSummaryFromError(error);
-  if (summary) {
-    if (summary.status) {
-      msg += `, Status=${summary.status}`;
-    }
-    if (summary.statusText) {
-      msg += `, StatusText=${summary.statusText}`;
-    }
-    if (summary.code) {
-      msg += `, Code=${summary.code}`;
-    }
-    if (summary.msg) {
-      msg += `, Msg=${summary.msg}`;
-    }
-    if (summary.baseURL || summary.method || summary.url) {
-      msg += `, URL=${summary.baseURL}/${summary.method}/${summary.url}`;
-    }
-  } else {
-    msg += `, Error=${error}`;
-  }
-  console.error(msg);
-  return getMessageFromError(error);
+  console.error(logMsg);
+  return msg;
 };
 
 export const getSummaryFromError = (error: unknown) => {
