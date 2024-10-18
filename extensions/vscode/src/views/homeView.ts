@@ -1884,11 +1884,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         this.refreshRPackages,
         this,
       ),
-      commands.registerCommand(
-        Commands.RPackages.Scan,
-        this.onScanForRPackageRequirements,
-        this,
-      ),
     );
 
     this.context.subscriptions.push(
