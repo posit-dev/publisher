@@ -45,6 +45,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   API endpoint based on the URL provided by the user (often incorrect) (#2001)
 - Changed unexpected errors to be briefer, with additional details being sent
   to the VSCode's Output/Window pane
+- Removed the Scan button from the R Packages view and updated the message to
+  include a link to the `renv` documentation when the R package file is missing,
+  invalid or empty (#2403)
 
 ### Fixed
 
