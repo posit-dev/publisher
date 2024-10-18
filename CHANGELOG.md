@@ -5,6 +5,61 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0]
+
+### Added
+
+- Improved documentation around the file inclusion, git ignore pattern used in
+  configuration files (#2359)
+- Selecting a configuration file with errors no longer disables the deploy
+  button. Instead, errors are displayed during the deployment process to better
+  indicate what needs to be addressed (#2345, #2374)
+- Added a line number to the configuration file error message to better indicate
+  where the schema validation error is occurring (#2330)
+- Added a more informative error when the Content ID is not found on the
+  Connect server when updating an existing deployment (#2287)
+- Added more logging to the extension output to help diagnose issues (#2153)
+- Added an option to disable certificate verification when communicating with a
+  Connect server (#2202)
+- Added a helpful warning when the selected configuration file has overlapping
+  secrets and environment variable names to avoid unexpected behavior (#2326)
+- Added helpful errors when attempting to deploy with a missing package file, or
+  a package file with no content (#2177, #2327)
+- Added a helpful error when attempting to deploy to locked content (#2375)
+- Added a fast failure when attempting to deploy to an existing target on
+  Connect with a different content type (#2301)
+- Added automatic inclusion of deployment's configuration and content record
+  files (#2370)
+
+### Changed
+
+- Changed the icon for setting Secret values in the Secrets view to be more
+  clear that a value is being set (#2379)
+- Changed the prompt for setting a name for a Connect server and the related
+  credential to be more clear (#2265)
+- Changed the "couldn't access the deployed content" error to be more clear
+  and link to the content's logs directly (#2206)
+- Changed URL validation when adding a Connect server credential to allow for
+  URLs with paths (#2001)
+- Changed URL validation to automatically discover the proper Connect server
+  API endpoint based on the URL provided by the user (often incorrect) (#2001)
+- Changed unexpected errors to be briefer, with additional details being sent
+  to the VSCode's Output/Window pane
+- Removed the Scan button from the R Packages view and updated the message to
+  include a link to the `renv` documentation when the R package file is missing,
+  invalid or empty (#2403)
+
+### Fixed
+
+- Fixed an issue where the R version was going undetected when `R_HOME` is set
+  (#2343)
+- Fixed the deployment selection prompting users to select "one of
+  the existing deployments below" when no deployments were listed (#2241)
+- Fixed an issue where after scanning for R packages or Python packages the
+  file would not correctly open in the editor (#2328)
+- Fixed an issue with file watching that would show an error when hitting a
+  symlink pointing to a missing file (#2267)
+
 ## [1.1.7]
 
 ### Added
