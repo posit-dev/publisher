@@ -46,12 +46,8 @@ project needs.
 
 For R projects, you need an `renv.lock` file that captures the R package dependencies
 for your project. You also need an active `renv` library with those packages installed
-so the extension can gather details about them.
-
-If you don't have an `renv.lock` file, you can open the R Packages view and click the
-`Scan` button to generate one using `renv::snapshot()`.
-
-![](https://cdn.posit.co/publisher/assets/img/r-packages-scan.png)
+so the extension can gather details about them. See the
+[renv documentation](https://rstudio.github.io/renv/articles/renv.html) for more details.
 
 ### Ready to Deploy
 

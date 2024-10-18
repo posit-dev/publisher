@@ -60,7 +60,6 @@ const pythonPackagesCommands = {
 const rPackagesCommands = {
   Edit: "posit.publisher.rPackages.edit",
   Refresh: "posit.publisher.rPackages.refresh",
-  Scan: "posit.publisher.rPackages.scan",
 } as const;
 
 const homeViewCommands = {
