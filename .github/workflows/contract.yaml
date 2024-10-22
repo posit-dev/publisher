@@ -141,7 +141,7 @@ jobs:
       - name: Run VSCode UI Tests
         run: |
           chmod -R +x ./bin
-          echo "${FUZZBUCKET_SSH_KEY}" > ./fuzzbucket-ssh-key && chmod 600 ./fuzzbucket-ssh-key
+          CONNECT_SERVER=$(fuzzbucket-client -j list | jq -r '.boxes[] | select(.name | contains("connect-publishing-client")) | .public_ip')
           just vscode configure
           just vscode-ui install
           just vscode-ui test vscode-root
