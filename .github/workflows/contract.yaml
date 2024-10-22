@@ -35,7 +35,7 @@ jobs:
       FUZZBUCKET_URL: ${{ secrets.FUZZBUCKET_URL }}
       FUZZBUCKET_CREDENTIALS: ${{ secrets.FUZZBUCKET_CREDENTIALS }}
       CI: true
-      CONNECT_SERVER: ${{ env.CONNECT_SERVER }}
+      CONNECT_SERVER: ${{ needs.get-connect-ip.outputs.connect_ip }}
     strategy:
       fail-fast: false
       matrix:
@@ -100,7 +100,7 @@ jobs:
       FUZZBUCKET_URL: ${{ secrets.FUZZBUCKET_URL }}
       FUZZBUCKET_CREDENTIALS: ${{ secrets.FUZZBUCKET_CREDENTIALS }}
       CI: true
-      CONNECT_SERVER: ${{ env.CONNECT_SERVER }}
+      CONNECT_SERVER: ${{ needs.get-connect-ip.outputs.connect_ip }}
 
     strategy:
       fail-fast: false
