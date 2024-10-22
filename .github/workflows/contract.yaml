@@ -65,7 +65,7 @@ jobs:
       - name: Run Bats Tests
         run: |
           chmod -R +x ./bin
-          CONNECT_SERVER=$(fuzzbucket-client -j list | jq -r '.boxes[] | select(.name | contains("connect-publishing-client")) | .public_ip')
+          export CONNECT_SERVER=$(fuzzbucket-client -j list | jq -r '.boxes[] | select(.name | contains("connect-publishing-client")) | .public_ip')
           just bats install
           just bats test common
           just bats test init
@@ -141,7 +141,7 @@ jobs:
       - name: Run VSCode UI Tests
         run: |
           chmod -R +x ./bin
-          CONNECT_SERVER=$(fuzzbucket-client -j list | jq -r '.boxes[] | select(.name | contains("connect-publishing-client")) | .public_ip')
+          export CONNECT_SERVER=$(fuzzbucket-client -j list | jq -r '.boxes[] | select(.name | contains("connect-publishing-client")) | .public_ip')
           just vscode configure
           just vscode-ui install
           just vscode-ui test vscode-root
