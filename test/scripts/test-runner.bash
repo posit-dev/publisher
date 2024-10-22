@@ -24,11 +24,11 @@ setup_connect() {
             echo "retry"; \
         done'
     else
-        if [[ -n "${CONNECT_SERVER}" ]]; then
+        if [[ -z "${CONNECT_SERVER}" ]]; then
             export CONNECT_SERVER="$(python ../setup/connect_setup.py)"
         fi
-        export CONNECT_API_KEY="$(python ../setup/gen_apikey.py 'admin')"
     fi
+    export CONNECT_API_KEY="$(python ../setup/gen_apikey.py 'admin')"
 }
 
 # use this if you need content
