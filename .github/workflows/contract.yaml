@@ -9,11 +9,23 @@ on:
 jobs:
   get-connnect-ip:
     runs-on: ubuntu-latest
+    outputs:
+      connect_ip: ${{ steps.set-ip.outputs.connect_ip }}
     steps:
-      - name: get-connect-ip
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.x"
+
+      - name: Set IP Address
+        id: set-ip
         run: |
           CONNECT_SERVER=$(python test/setup/get_ip.py)
           echo "CONNECT_SERVER=$CONNECT_SERVER" >> $GITHUB_ENV
+          echo "::set-output name=connect_ip::$CONNECT_SERVER"
 
   bats-tests:
     needs: get-connnect-ip
