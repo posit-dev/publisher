@@ -96,6 +96,7 @@ type Config struct {
 	Tags          []string    `toml:"tags,omitempty" json:"tags,omitempty"`
 	Python        *Python     `toml:"python,omitempty" json:"python,omitempty"`
 	R             *R          `toml:"r,omitempty" json:"r,omitempty"`
+	Jupyter       *Jupyter    `toml:"jupyter,omitempty" json:"jupyter,omitempty"`
 	Quarto        *Quarto     `toml:"quarto,omitempty" json:"quarto,omitempty"`
 	Environment   Environment `toml:"environment,omitempty" json:"environment,omitempty"`
 	Secrets       []string    `toml:"secrets,omitempty" json:"secrets,omitempty"`
@@ -125,6 +126,11 @@ type R struct {
 	Version        string `toml:"version" json:"version"`
 	PackageFile    string `toml:"package_file,omitempty" json:"packageFile"`
 	PackageManager string `toml:"package_manager,omitempty" json:"packageManager"`
+}
+
+type Jupyter struct {
+	HideAllInput    bool `toml:"hide_all_input,omitempty" json:"hideAllInput"`
+	HideTaggedInput bool `toml:"hide_tagged_input,omitempty" json:"hideTaggedInput"`
 }
 
 type Quarto struct {
