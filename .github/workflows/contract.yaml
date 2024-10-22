@@ -53,7 +53,7 @@ jobs:
         run: |
           sudo apt-get install libcurl4-openssl-dev libsodium-dev libfontconfig1-dev libfribidi-dev libfontconfig1-dev libpng-dev
           R -e "install.packages('renv', repos='https://packagemanager.posit.co/cran/latest')"
-        if: matrix.runs-on != 'windows-latest'
+        if: matrix.runs-on == 'ubuntu-latest'
       - name: Install deps on windows
         run: |
           R.exe -e "install.packages('renv', repos='https://packagemanager.posit.co/cran/latest')"
