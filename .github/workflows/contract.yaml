@@ -65,7 +65,7 @@ jobs:
       - name: Run Bats Tests
         run: |
           chmod -R +x ./bin
-          echo "${FUZZBUCKET_SSH_KEY}" > ./fuzzbucket-ssh-key && chmod 600 ./fuzzbucket-ssh-key 
+          CONNECT_SERVER=$(fuzzbucket-client -j list | jq -r '.boxes[] | select(.name | contains("connect-publishing-client")) | .public_ip')
           just bats install
           just bats test common
           just bats test init
