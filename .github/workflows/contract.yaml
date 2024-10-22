@@ -23,6 +23,7 @@ jobs:
       - name: Set IP Address
         id: set-ip
         run: |
+          pip install -r test/setup/requirements.txt
           CONNECT_SERVER=$(python test/setup/get_ip.py)
           echo "CONNECT_SERVER=$CONNECT_SERVER" >> $GITHUB_ENV
           echo "::set-output name=connect_ip::$CONNECT_SERVER"
