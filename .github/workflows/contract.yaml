@@ -9,9 +9,10 @@ on:
 jobs:
   get-connnect-ip:
     steps:
-      run: |
-        CONNECT_SERVER=$(python test/setup/get_ip.py)
-        echo "CONNECT_SERVER=$CONNECT_SERVER" >> $GITHUB_ENV
+      - name: get connect ip
+        run: |
+          CONNECT_SERVER=$(python test/setup/get_ip.py)
+          echo "CONNECT_SERVER=$CONNECT_SERVER" >> $GITHUB_ENV
 
   bats-tests:
     needs: get-connnect-ip
