@@ -10,7 +10,7 @@ jobs:
   get-connnect-ip:
     runs-on: ubuntu-latest
     steps:
-      - name: get connect ip
+      - name: get-connect-ip
         run: |
           CONNECT_SERVER=$(python test/setup/get_ip.py)
           echo "CONNECT_SERVER=$CONNECT_SERVER" >> $GITHUB_ENV
