@@ -146,6 +146,24 @@ package_file = "renv.lock"
 package_manager = "renv"
 ```
 
+## Jupyter settings
+
+### hide_all_input
+
+Hide all input cells when rendering output.
+
+### hide_tagged_input
+
+Hide input code cells with the 'hide_input' tag when rendering output.
+
+Example:
+
+```toml
+[jupyter]
+hide_all_input = false
+hide_tagged_input = false
+```
+
 ## Quarto settings
 
 #### engines

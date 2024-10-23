@@ -161,3 +161,43 @@ func (s *ManifestSuite) TestNewManifestFromConfig() {
 		Files:    map[string]ManifestFile{},
 	}, m)
 }
+
+func (s *ManifestSuite) TestNewManifestFromConfigWithJupyterOptions() {
+	cfg := &config.Config{
+		Schema:        schema.ConfigSchemaURL,
+		Type:          "jupyter-notebook",
+		Entrypoint:    "notebook.ipynb",
+		Title:         "Some Notebook",
+		HasParameters: true,
+		Python: &config.Python{
+			Version:        "3.4.5",
+			PackageFile:    "requirements.in",
+			PackageManager: "pip",
+		},
+		Jupyter: &config.Jupyter{
+			HideAllInput: true,
+		},
+	}
+	m := NewManifestFromConfig(cfg)
+	s.Equal(&Manifest{
+		Version: 1,
+		Metadata: Metadata{
+			AppMode:       "jupyter-static",
+			Entrypoint:    "notebook.ipynb",
+			HasParameters: true,
+		},
+		Python: &Python{
+			Version: "3.4.5",
+			PackageManager: PythonPackageManager{
+				Name:        "pip",
+				PackageFile: "requirements.in",
+			},
+		},
+		Jupyter: &Jupyter{
+			HideAllInput:    true,
+			HideTaggedInput: false,
+		},
+		Packages: map[string]Package{},
+		Files:    map[string]ManifestFile{},
+	}, m)
+}
