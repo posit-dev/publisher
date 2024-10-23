@@ -5,7 +5,6 @@ import requests
 import time
 import logging
 import os
-import sys
 
 # use the perftest fuzzbucket instance since it already has all the deps
 alias = "ubuntu22-publishing-client-2024.10"
@@ -33,7 +32,7 @@ def get_current_connect_version(connect_ip, api_key):
     response = requests.get(
         'http://' + connect_ip + ':3939/__api__/server_settings',
         headers={'Authorization': 'Key ' + api_key},
-        )   
+        )
     current_connect = response.json()['version']
     return current_connect
 

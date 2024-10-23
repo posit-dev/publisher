@@ -54,6 +54,8 @@ jobs:
       - name: python
         uses: actions/setup-python@v5
         with:
+          # use python 3.12 for bats
+          # there are some requirements that are not yet compatible with python 3.13
           python-version: 3.12
       - name: R
         uses: r-lib/actions/setup-r@v2
