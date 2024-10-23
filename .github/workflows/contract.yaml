@@ -7,7 +7,7 @@ on:
         type: string
 
 jobs:
-  get-connnect-ip:
+  get-connect-ip:
     env:
       FUZZBUCKET_SSH_KEY: ${{ secrets.FUZZBUCKET_SSH_KEY }}
       FUZZBUCKET_URL: ${{ secrets.FUZZBUCKET_URL }}
@@ -29,11 +29,10 @@ jobs:
         run: |
           pip install -r test/setup/requirements.txt
           CONNECT_SERVER=$(python test/setup/get_ip.py)
-          echo "CONNECT_SERVER=$CONNECT_SERVER" >> $GITHUB_ENV
-          echo "::set-output name=connect_ip::$CONNECT_SERVER"
+          echo "CONNECT_SERVER=$CONNECT_SERVER" >> $GITHUB_OUTPUT
 
   bats-tests:
-    needs: get-connnect-ip
+    needs: get-connect-ip
     if: ${{ github.event_name == 'schedule' || github.event.inputs.job == 'all' || github.event.inputs.job == 'bats-tests' }}
     env:
       FUZZBUCKET_SSH_KEY: ${{ secrets.FUZZBUCKET_SSH_KEY }}
@@ -100,7 +99,7 @@ jobs:
           just bats test deploy
 
   vscode-ui-tests:
-    needs: get-connnect-ip
+    needs: get-connect-ip
     if: ${{ github.event_name == 'schedule' || github.event.inputs.job == 'all' || github.event.inputs.job == 'vscode-ui-tests' }}
     env:
       FUZZBUCKET_SSH_KEY: ${{ secrets.FUZZBUCKET_SSH_KEY }}
