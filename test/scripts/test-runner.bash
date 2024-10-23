@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -eo pipefail
 
 test_case=$1
 
@@ -24,7 +24,9 @@ setup_connect() {
             echo "retry"; \
         done'
     else
-        export CONNECT_SERVER="$(python ../setup/connect_setup.py)"
+        if [ -z ${CONNECT_SERVER} ]; then
+            export CONNECT_SERVER="$(python ../setup/connect_setup.py)"
+        fi
         export CONNECT_API_KEY="$(python ../setup/gen_apikey.py 'admin')"
     fi
 }

@@ -7,7 +7,7 @@ import logging
 import os
 
 # use the perftest fuzzbucket instance since it already has all the deps
-alias = "ubuntu22-publishing-client-2024.0916"
+alias = "ubuntu22-publishing-client-2024.10"
 box_name = "connect-publishing-client"
 list_command = "fuzzbucket-client -j list"
 create_command = "fuzzbucket-client create -c -S 20 -t m5.2xlarge " + alias + " -n " + box_name
@@ -67,7 +67,6 @@ def connect_ready(box_name, max_attempts, interval):
                 if connect_version != get_current_connect_version(get_ip(box_name), api_key):
                     update_config="fuzzbucket-client ssh " + box_name + " " + ssh_options + " sudo sed -i 's/CONNECT_IP/" + connect_box + "/g' /etc/rstudio-connect/rstudio-connect.gcfg"
                     restart_connect = "fuzzbucket-client ssh " + box_name + " " + ssh_options + " sudo systemctl restart rstudio-connect"
-                    logging.info("Installing Connect on " + connect_box)
                     # run kill script on box
                     subprocess.check_output(check_lock, shell=True, text=True)
                     subprocess.check_output(install_connect, shell=True, text=True)
