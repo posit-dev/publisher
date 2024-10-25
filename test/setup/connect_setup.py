@@ -85,7 +85,7 @@ connect_version=get_connect_version()
 check_lock = "fuzzbucket-client ssh " + box_name + " " + ssh_options + " sudo ./check_lock.sh"
 install_connect = "fuzzbucket-client ssh " + box_name + " " + ssh_options + " sudo -E UNATTENDED=1 bash installer-ci.sh -d " + connect_version
 
-response = connect_ready(box_name, 20, 5)
+response = connect_ready(box_name, 30, 10)
 
 if response:
     print("http://" + get_ip(box_name) + ":3939")
