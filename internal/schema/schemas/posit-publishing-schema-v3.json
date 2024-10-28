@@ -133,6 +133,21 @@
         }
       }
     },
+    "jupyter": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Additional rendering options for Jupyter Notebooks.",
+      "properties": {
+        "hide_all_input": {
+          "type": "boolean",
+          "description": "Hide all input cells when rendering output."
+        },
+        "hide_tagged_input": {
+          "type": "boolean",
+          "description": "Hide input code cells with the 'hide_input' tag when rendering output."
+        }
+      }
+    },
     "quarto": {
       "type": "object",
       "additionalProperties": false,

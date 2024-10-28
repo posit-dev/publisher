@@ -159,7 +159,6 @@ func NewManifestFromConfig(cfg *config.Config) *Manifest {
 			AppMode:    contentType,
 			Entrypoint: cfg.Entrypoint,
 		},
-		Jupyter:     nil,
 		Environment: nil,
 		Packages:    make(PackageMap),
 		Files:       make(ManifestFileMap),
@@ -174,6 +173,12 @@ func NewManifestFromConfig(cfg *config.Config) *Manifest {
 				Name:        cfg.Python.PackageManager,
 				PackageFile: cfg.Python.PackageFile,
 			},
+		}
+	}
+	if cfg.Jupyter != nil {
+		m.Jupyter = &Jupyter{
+			HideAllInput:    cfg.Jupyter.HideAllInput,
+			HideTaggedInput: cfg.Jupyter.HideTaggedInput,
 		}
 	}
 	if cfg.Quarto != nil {
