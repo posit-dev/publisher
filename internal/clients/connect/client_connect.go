@@ -219,6 +219,16 @@ func (c *ConnectClient) UpdateDeployment(contentID types.ContentID, body *Connec
 	return c.client.Patch(url, body, nil, log)
 }
 
+func (c *ConnectClient) GetEnvVars(contentId types.ContentID, log logging.Logger) (*types.Environment, error) {
+	var env *types.Environment
+	url := fmt.Sprintf("/__api__/v1/content/%s/environment", contentId)
+	err := c.client.Get(url, &env, log)
+	if err != nil {
+		return nil, err
+	}
+	return env, nil
+}
+
 type connectEnvVar struct {
 	Name  string `json:"name"`
 	Value string `json:"value"`
