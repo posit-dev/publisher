@@ -53,9 +53,9 @@ const home = useHomeStore();
 
 const secretValue = computed(() => home.secrets.get(props.name));
 
-const needsValue = computed(
-  () => !secretValue.value && !home.serverSecrets.includes(props.name),
-);
+const onServer = computed(() => home.serverSecrets.has(props.name));
+
+const needsValue = computed(() => !secretValue.value && !onServer.value);
 
 const inputSecret = () => {
   // Update inputValue in case the secret value has changed or been cleared
