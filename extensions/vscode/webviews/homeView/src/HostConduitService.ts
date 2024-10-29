@@ -14,6 +14,7 @@ import {
   UpdateRPackages,
   RefreshFilesMsg,
   SetPathSeparatorMsg,
+  UpdateServerEnvironmentMsg,
 } from "../../../src/types/messages/hostToWebviewMessages";
 import {
   WebviewToHostMessage,
@@ -86,6 +87,8 @@ const onMessageFromHost = (msg: HostToWebviewMessage): void => {
       return onHideDisableOverlayMsg();
     case HostToWebviewMessageType.SET_PATH_SEPARATOR:
       return onSetPathSeparatorMsg(msg);
+    case HostToWebviewMessageType.UPDATE_SERVER_ENVIRONMENT:
+      return onUpdateServerEnvironmentMsg(msg);
     default:
       console.warn(`unexpected command: ${JSON.stringify(msg)}`);
   }
@@ -216,4 +219,9 @@ const onUpdateRPackages = (msg: UpdateRPackages) => {
     msg.content.manager,
     msg.content.rVersion,
   );
+};
+
+const onUpdateServerEnvironmentMsg = (msg: UpdateServerEnvironmentMsg) => {
+  const home = useHomeStore();
+  home.serverSecrets = new Set(msg.content.environment);
 };
