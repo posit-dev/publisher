@@ -68,7 +68,11 @@ import { DeploymentQuickPick } from "src/types/quickPicks";
 import { selectNewOrExistingConfig } from "src/multiStepInputs/selectNewOrExistingConfig";
 import { RPackage, RVersionConfig } from "src/api/types/packages";
 import { calculateTitle } from "src/utils/titles";
-import { ConfigWatcherManager, WatcherManager } from "src/watchers";
+import {
+  ConfigWatcherManager,
+  ContentRecordWatcherManager,
+  WatcherManager,
+} from "src/watchers";
 import { Commands, Contexts, DebounceDelaysMS, Views } from "src/constants";
 import { showProgress } from "src/utils/progress";
 import { newCredential } from "src/multiStepInputs/newCredential";
@@ -102,6 +106,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     this.initCompleteResolver = resolve;
   });
 
+  private contentRecordWatchers: ContentRecordWatcherManager | undefined;
   private configWatchers: ConfigWatcherManager | undefined;
 
   constructor(
@@ -134,6 +139,19 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       useBus().trigger(
         "activeContentRecordChanged",
         await this.state.getSelectedContentRecord(),
+      );
+    });
+
+    useBus().on("activeContentRecordChanged", (contentRecord) => {
+      this.contentRecordWatchers?.dispose();
+
+      this.contentRecordWatchers = new ContentRecordWatcherManager(
+        contentRecord,
+      );
+
+      this.contentRecordWatchers.contentRecord?.onDidChange(
+        this.getContentRecordEnvironment,
+        this,
       );
     });
 
@@ -1531,6 +1549,38 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           error,
         );
         window.showErrorMessage(`Failed to refresh files. ${summary}`);
+        return;
+      }
+    }
+  };
+
+  public getContentRecordEnvironment = async () => {
+    const deployment = await this.state.getSelectedContentRecord();
+    if (deployment && !isContentRecordError(deployment)) {
+      // We have a valid deployment to call
+      try {
+        const response = await showProgress(
+          "Getting Deployment Environment",
+          Views.HomeView,
+          async () => {
+            const api = await useApi();
+            return await api.contentRecords.getEnv(
+              deployment.deploymentName,
+              deployment.projectDir,
+            );
+          },
+        );
+
+        this.webviewConduit.sendMsg({
+          kind: HostToWebviewMessageType.UPDATE_SERVER_ENVIRONMENT,
+          content: {
+            environment: response.data,
+          },
+        });
+      } catch (error: unknown) {
+        window.showErrorMessage(
+          `Failed to get deployment environment. ${getSummaryStringFromError("getContentRecordEnvironment", error)}`,
+        );
         return;
       }
     }
