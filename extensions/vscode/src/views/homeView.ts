@@ -159,6 +159,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       "activeConfigChanged",
       (cfg: Configuration | ConfigurationError | undefined) => {
         this.sendRefreshedFilesLists();
+        this.getContentRecordEnvironment();
         this.refreshPythonPackages();
         this.refreshRPackages();
 
@@ -168,10 +169,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         }
         this.configWatchers = new ConfigWatcherManager(cfg);
 
-        this.configWatchers.configFile?.onDidChange(
-          this.debounceSendRefreshedFilesLists,
-          this,
-        );
+        this.configWatchers.configFile?.onDidChange(() => {
+          this.debounceSendRefreshedFilesLists();
+          this.getContentRecordEnvironment();
+        }, this);
 
         this.configWatchers.pythonPackageFile?.onDidCreate(
           this.debounceRefreshPythonPackages,
