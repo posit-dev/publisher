@@ -150,7 +150,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       );
 
       this.contentRecordWatchers.contentRecord?.onDidChange(
-        this.getContentRecordEnvironment,
+        this.updateServerEnvironment,
         this,
       );
     });
@@ -159,7 +159,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       "activeConfigChanged",
       (cfg: Configuration | ConfigurationError | undefined) => {
         this.sendRefreshedFilesLists();
-        this.getContentRecordEnvironment();
+        this.updateServerEnvironment();
         this.refreshPythonPackages();
         this.refreshRPackages();
 
@@ -171,7 +171,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
         this.configWatchers.configFile?.onDidChange(() => {
           this.debounceSendRefreshedFilesLists();
-          this.getContentRecordEnvironment();
+          this.updateServerEnvironment();
         }, this);
 
         this.configWatchers.pythonPackageFile?.onDidCreate(
@@ -1555,7 +1555,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
   };
 
-  public getContentRecordEnvironment = async () => {
+  public updateServerEnvironment = async () => {
     const deployment = await this.state.getSelectedContentRecord();
     if (deployment && !isContentRecordError(deployment)) {
       // We have a valid deployment to call
