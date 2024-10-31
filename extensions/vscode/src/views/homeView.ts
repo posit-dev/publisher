@@ -1579,10 +1579,13 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           },
         });
       } catch (error: unknown) {
-        window.showErrorMessage(
-          `Failed to get deployment environment. ${getSummaryStringFromError("getContentRecordEnvironment", error)}`,
-        );
-        return;
+        // No matter the error we clear the environment
+        this.webviewConduit.sendMsg({
+          kind: HostToWebviewMessageType.UPDATE_SERVER_ENVIRONMENT,
+          content: {
+            environment: [],
+          },
+        });
       }
     }
   };
