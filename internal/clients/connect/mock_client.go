@@ -57,6 +57,16 @@ func (m *MockClient) UpdateDeployment(id types.ContentID, s *ConnectContent, log
 	return args.Error(0)
 }
 
+func (m *MockClient) GetEnvVars(id types.ContentID, log logging.Logger) (*types.Environment, error) {
+	args := m.Called(id, log)
+	env := args.Get(0)
+	if env == nil {
+		return nil, args.Error(1)
+	} else {
+		return env.(*types.Environment), args.Error(1)
+	}
+}
+
 func (m *MockClient) SetEnvVars(id types.ContentID, env config.Environment, log logging.Logger) error {
 	args := m.Called(id, env, log)
 	return args.Error(0)

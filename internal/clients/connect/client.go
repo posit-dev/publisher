@@ -25,6 +25,7 @@ type APIClient interface {
 	ContentDetails(contentID types.ContentID, body *ConnectContent, log logging.Logger) error
 	CreateDeployment(*ConnectContent, logging.Logger) (types.ContentID, error)
 	UpdateDeployment(types.ContentID, *ConnectContent, logging.Logger) error
+	GetEnvVars(types.ContentID, logging.Logger) (*types.Environment, error)
 	SetEnvVars(types.ContentID, config.Environment, logging.Logger) error
 	UploadBundle(types.ContentID, io.Reader, logging.Logger) (types.BundleID, error)
 	DeployBundle(types.ContentID, types.BundleID, logging.Logger) (types.TaskID, error)
