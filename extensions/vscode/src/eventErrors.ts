@@ -29,6 +29,13 @@ type requirementsReadingEvtErr = baseEvtErr & {
   requirementsFile: string;
 };
 
+type renvPackageEvtErr = baseEvtErr & {
+  lockfile: string;
+  package: string;
+  lockfileVersion: string;
+  libraryVersion: string;
+};
+
 export const isEvtErrDeploymentFailed = (
   emsg: EventStreamMessageErrorCoded,
 ): emsg is EventStreamMessageErrorCoded<baseEvtErr> => {
@@ -39,6 +46,18 @@ export const isEvtErrRenvLockPackagesReadingFailed = (
   emsg: EventStreamMessageErrorCoded,
 ): emsg is EventStreamMessageErrorCoded<lockfileReadingEvtErr> => {
   return emsg.errCode === "renvlockPackagesReadingError";
+};
+
+export const isEvtErrRenvPackageVersionMismatch = (
+  emsg: EventStreamMessageErrorCoded,
+): emsg is EventStreamMessageErrorCoded<renvPackageEvtErr> => {
+  return emsg.errCode === "renvPackageVersionMismatch";
+};
+
+export const isEvtErrRenvPackageSourceMissing = (
+  emsg: EventStreamMessageErrorCoded,
+): emsg is EventStreamMessageErrorCoded<renvPackageEvtErr> => {
+  return emsg.errCode === "renvPackageSourceMissing";
 };
 
 export const isEvtErrRequirementsReadingFailed = (
@@ -59,6 +78,8 @@ export const useEvtErrKnownMessage = (
   return (
     isEvtErrDeploymentFailed(emsg) ||
     isEvtErrRenvLockPackagesReadingFailed(emsg) ||
+    isEvtErrRenvPackageVersionMismatch(emsg) ||
+    isEvtErrRenvPackageSourceMissing(emsg) ||
     isEvtErrRequirementsReadingFailed(emsg) ||
     isEvtErrDeployedContentNotRunning(emsg)
   );
