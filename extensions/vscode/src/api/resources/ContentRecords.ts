@@ -6,6 +6,7 @@ import {
   PreContentRecord,
   AllContentRecordTypes,
   ContentRecord,
+  Environment,
 } from "../types/contentRecords";
 
 export class ContentRecords {
@@ -123,6 +124,18 @@ export class ContentRecords {
         configurationName: data.configName,
         id: data.guid,
       },
+      {
+        params: {
+          dir,
+        },
+      },
+    );
+  }
+
+  getEnv(deploymentName: string, dir: string) {
+    const encodedName = encodeURIComponent(deploymentName);
+    return this.client.get<Environment>(
+      `deployments/${encodedName}/environment`,
       {
         params: {
           dir,
