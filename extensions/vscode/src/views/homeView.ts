@@ -68,7 +68,11 @@ import { DeploymentQuickPick } from "src/types/quickPicks";
 import { selectNewOrExistingConfig } from "src/multiStepInputs/selectNewOrExistingConfig";
 import { RPackage, RVersionConfig } from "src/api/types/packages";
 import { calculateTitle } from "src/utils/titles";
-import { ConfigWatcherManager, WatcherManager } from "src/watchers";
+import {
+  ConfigWatcherManager,
+  ContentRecordWatcherManager,
+  WatcherManager,
+} from "src/watchers";
 import { Commands, Contexts, DebounceDelaysMS, Views } from "src/constants";
 import { showProgress } from "src/utils/progress";
 import { newCredential } from "src/multiStepInputs/newCredential";
@@ -102,6 +106,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     this.initCompleteResolver = resolve;
   });
 
+  private contentRecordWatchers: ContentRecordWatcherManager | undefined;
   private configWatchers: ConfigWatcherManager | undefined;
 
   constructor(
@@ -137,10 +142,24 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       );
     });
 
+    useBus().on("activeContentRecordChanged", (contentRecord) => {
+      this.contentRecordWatchers?.dispose();
+
+      this.contentRecordWatchers = new ContentRecordWatcherManager(
+        contentRecord,
+      );
+
+      this.contentRecordWatchers.contentRecord?.onDidChange(
+        this.updateServerEnvironment,
+        this,
+      );
+    });
+
     useBus().on(
       "activeConfigChanged",
       (cfg: Configuration | ConfigurationError | undefined) => {
         this.sendRefreshedFilesLists();
+        this.updateServerEnvironment();
         this.refreshPythonPackages();
         this.refreshRPackages();
 
@@ -150,10 +169,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         }
         this.configWatchers = new ConfigWatcherManager(cfg);
 
-        this.configWatchers.configFile?.onDidChange(
-          this.debounceSendRefreshedFilesLists,
-          this,
-        );
+        this.configWatchers.configFile?.onDidChange(() => {
+          this.debounceSendRefreshedFilesLists();
+          this.updateServerEnvironment();
+        }, this);
 
         this.configWatchers.pythonPackageFile?.onDidCreate(
           this.debounceRefreshPythonPackages,
@@ -1532,6 +1551,41 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         );
         window.showErrorMessage(`Failed to refresh files. ${summary}`);
         return;
+      }
+    }
+  };
+
+  public updateServerEnvironment = async () => {
+    const deployment = await this.state.getSelectedContentRecord();
+    if (deployment && !isContentRecordError(deployment)) {
+      // We have a valid deployment to call
+      try {
+        const response = await showProgress(
+          "Getting Deployment Environment",
+          Views.HomeView,
+          async () => {
+            const api = await useApi();
+            return await api.contentRecords.getEnv(
+              deployment.deploymentName,
+              deployment.projectDir,
+            );
+          },
+        );
+
+        this.webviewConduit.sendMsg({
+          kind: HostToWebviewMessageType.UPDATE_SERVER_ENVIRONMENT,
+          content: {
+            environment: response.data,
+          },
+        });
+      } catch (error: unknown) {
+        // No matter the error we clear the environment
+        this.webviewConduit.sendMsg({
+          kind: HostToWebviewMessageType.UPDATE_SERVER_ENVIRONMENT,
+          content: {
+            environment: [],
+          },
+        });
       }
     }
   };

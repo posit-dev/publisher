@@ -33,6 +33,7 @@ export const useHomeStore = defineStore("home", () => {
     return credentials.value.sort((a, b) => a.name.localeCompare(b.name));
   });
 
+  const serverSecrets = ref<Set<string>>(new Set());
   const secrets = ref(new Map<string, string | undefined>());
 
   const environment = computed((): Map<string, string> => {
@@ -415,6 +416,7 @@ export const useHomeStore = defineStore("home", () => {
     configurationsInError,
     credentials,
     sortedCredentials,
+    serverSecrets,
     secrets,
     environment,
     duplicatedEnvironmentVariables,
