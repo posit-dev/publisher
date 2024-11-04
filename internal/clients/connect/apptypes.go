@@ -24,6 +24,7 @@ const (
 	PythonStreamlitMode AppMode = "python-streamlit"
 	PythonBokehMode     AppMode = "python-bokeh"
 	PythonFastAPIMode   AppMode = "python-fastapi"
+	PythonGradioMode    AppMode = "python-gradio"
 	ShinyQuartoMode     AppMode = "quarto-shiny"
 	StaticQuartoMode    AppMode = "quarto-static"
 	PythonShinyMode     AppMode = "python-shiny"
@@ -61,6 +62,8 @@ func AppModeFromString(s string) (AppMode, error) {
 		return PythonBokehMode, nil
 	case "python-fastapi", "fastapi", "asgi":
 		return PythonFastAPIMode, nil
+	case "python-gradio", "gradio":
+		return PythonGradioMode, nil
 	case "python-shiny", "pyshiny":
 		return PythonShinyMode, nil
 	case "quarto-shiny":
@@ -88,7 +91,7 @@ func (mode *AppMode) UnmarshalText(text []byte) error {
 // IsWorkerApp returns true for any content that is serviced by worker
 // processes. This includes Shiny applications, interactive R Markdown
 // documents, Plumber/Python (flask/fastapi) APIs, and Python apps
-// (Dash, Streamlit, Bokeh, PyShiny, Voila).
+// (Dash, Streamlit, Bokeh, PyShiny, Voila, Gradio).
 func (mode AppMode) IsWorkerApp() bool {
 	return (mode.IsShinyApp() ||
 		mode.IsPythonApp() ||
@@ -113,7 +116,7 @@ func (mode AppMode) IsPythonAPI() bool {
 // IsPythonApp returns true for Python applications (Dash, Streamlit, Bokeh, Voila)
 func (mode AppMode) IsPythonApp() bool {
 	switch mode {
-	case PythonDashMode, PythonStreamlitMode, PythonShinyMode, PythonBokehMode, JupyterVoilaMode:
+	case PythonDashMode, PythonStreamlitMode, PythonGradioMode, PythonShinyMode, PythonBokehMode, JupyterVoilaMode:
 		return true
 	}
 	return false
@@ -138,6 +141,11 @@ func (t AppMode) IsStreamlitApp() bool {
 // IsBokehApp returns true for Python Bokeh applications
 func (t AppMode) IsBokehApp() bool {
 	return t == PythonBokehMode
+}
+
+// IsGradioApp returns true for Python Gradio applications
+func (t AppMode) IsGradioApp() bool {
+	return t == PythonGradioMode
 }
 
 // IsFastAPIApp returns true for Python FastAPI applications
@@ -190,7 +198,7 @@ func (t AppMode) IsRContent() bool {
 // content type.
 func (t AppMode) IsPythonContent() bool {
 	switch t {
-	case StaticJupyterMode, PythonAPIMode, PythonDashMode, PythonStreamlitMode, PythonBokehMode, PythonFastAPIMode, PythonShinyMode, JupyterVoilaMode:
+	case StaticJupyterMode, PythonAPIMode, PythonDashMode, PythonStreamlitMode, PythonBokehMode, PythonFastAPIMode, PythonGradioMode, PythonShinyMode, JupyterVoilaMode:
 		return true
 	}
 	return false
@@ -232,6 +240,8 @@ func (t AppMode) Description() string {
 		return "Bokeh application"
 	case PythonFastAPIMode:
 		return "FastAPI application"
+	case PythonGradioMode:
+		return "Gradio application"
 	case PythonShinyMode:
 		return "Python Shiny application"
 	case ShinyQuartoMode:
@@ -255,6 +265,7 @@ var connectContentTypeMap = map[config.ContentType]AppMode{
 	config.ContentTypePythonFlask:      PythonAPIMode,
 	config.ContentTypePythonShiny:      PythonShinyMode,
 	config.ContentTypePythonStreamlit:  PythonStreamlitMode,
+	config.ContentTypePythonGradio:     PythonGradioMode,
 	config.ContentTypeQuartoShiny:      ShinyQuartoMode,
 	config.ContentTypeQuartoDeprecated: StaticQuartoMode,
 	config.ContentTypeQuarto:           StaticQuartoMode,
@@ -280,6 +291,7 @@ var contentTypeConnectMap = map[AppMode]config.ContentType{
 	PythonDashMode:      config.ContentTypePythonDash,
 	PythonFastAPIMode:   config.ContentTypePythonFastAPI,
 	PythonAPIMode:       config.ContentTypePythonFlask,
+	PythonGradioMode:    config.ContentTypePythonGradio,
 	PythonShinyMode:     config.ContentTypePythonShiny,
 	PythonStreamlitMode: config.ContentTypePythonStreamlit,
 	ShinyQuartoMode:     config.ContentTypeQuartoShiny,
