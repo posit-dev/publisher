@@ -3,9 +3,11 @@ package inspect
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
+	"os/exec"
 	"regexp"
 	"slices"
 	"strings"
@@ -14,6 +16,7 @@ import (
 	"github.com/posit-dev/publisher/internal/executor"
 	"github.com/posit-dev/publisher/internal/inspect/dependencies/pydeps"
 	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 )
 
@@ -107,9 +110,10 @@ func (i *defaultPythonInspector) getPythonExecutable() (string, error) {
 			if exists {
 				return i.pythonPath.String(), nil
 			}
-			return "", fmt.Errorf(
+			noExecErr := fmt.Errorf(
 				"cannot find the specified Python executable %s: %w",
 				i.pythonPath, fs.ErrNotExist)
+			return "", types.NewAgentError(types.ErrorPythonExecNotFound, noExecErr, nil)
 		} else {
 			// Only the interpreter name was specified; look for it on PATH.
 			executableNames = append([]string{rawPath}, executableNames...)
@@ -133,6 +137,11 @@ func (i *defaultPythonInspector) getPythonExecutable() (string, error) {
 			}
 		}
 	}
+
+	if errors.Is(err, exec.ErrNotFound) {
+		return "", types.NewAgentError(types.ErrorPythonExecNotFound, err, nil)
+	}
+
 	return "", err
 }
 

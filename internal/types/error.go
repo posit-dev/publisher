@@ -26,6 +26,7 @@ const (
 	ErrorUnknown                      ErrorCode = "unknown"
 	ErrorTomlValidationError          ErrorCode = "tomlValidationError"
 	ErrorTomlUnknownError             ErrorCode = "tomlUnknownError"
+	ErrorPythonExecNotFound           ErrorCode = "pythonExecNotFound"
 )
 
 type EventableError interface {
@@ -128,6 +129,16 @@ func OperationError(op Operation, err error) EventableError {
 func IsAgentError(err error) (*AgentError, bool) {
 	if aerr, ok := err.(*AgentError); ok {
 		return aerr, ok
+	}
+	return nil, false
+}
+
+// Evaluate if a given error is an AgentError of a specific code
+// returning the error as AgentError type when it is
+// and a bool flag of the comparison result.
+func IsAgentErrorOf(err error, code ErrorCode) (*AgentError, bool) {
+	if err, isAgentErr := err.(*AgentError); isAgentErr {
+		return err, err.Code == code
 	}
 	return nil, false
 }

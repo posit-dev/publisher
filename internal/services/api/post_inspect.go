@@ -14,6 +14,7 @@ import (
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/initialize"
 	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 )
 
@@ -130,6 +131,12 @@ func PostInspectHandlerFunc(base util.AbsolutePath, log logging.Logger) http.Han
 				return nil
 			})
 			if err != nil {
+				if aerr, ok := types.IsAgentErrorOf(err, types.ErrorPythonExecNotFound); ok {
+					apiErr := types.APIErrorPythonExecNotFoundFromAgentError(*aerr)
+					log.Error("Python executable not found", "error", err.Error())
+					apiErr.JSONResponse(w)
+					return
+				}
 				InternalError(w, req, log, err)
 				return
 			}
@@ -141,6 +148,12 @@ func PostInspectHandlerFunc(base util.AbsolutePath, log logging.Logger) http.Han
 			}
 			configs, err := initialize.GetPossibleConfigs(projectDir, pythonPath, util.Path{}, entrypointPath, log)
 			if err != nil {
+				if aerr, ok := types.IsAgentErrorOf(err, types.ErrorPythonExecNotFound); ok {
+					apiErr := types.APIErrorPythonExecNotFoundFromAgentError(*aerr)
+					log.Error("Python executable not found", "error", err.Error())
+					apiErr.JSONResponse(w)
+					return
+				}
 				InternalError(w, req, log, err)
 				return
 			}

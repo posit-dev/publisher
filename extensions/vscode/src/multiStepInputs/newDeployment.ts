@@ -37,6 +37,7 @@ import {
   getMessageFromError,
   getSummaryStringFromError,
 } from "src/utils/errors";
+import { isAxiosErrorWithJson } from "src/utils/errorTypes";
 import { newDeploymentName, newConfigFileNameFromTitle } from "src/utils/names";
 import { formatURL, normalizeURL } from "src/utils/url";
 import { checkSyntaxApiKey } from "src/utils/apiKeys";
@@ -146,6 +147,9 @@ export async function newDeployment(
             }
           });
         } catch (error: unknown) {
+          if (isAxiosErrorWithJson(error)) {
+            return reject(error);
+          }
           const summary = getSummaryStringFromError(
             "newDeployment, configurations.inspect",
             error,

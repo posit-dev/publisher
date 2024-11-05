@@ -161,3 +161,17 @@ func APIErrorCredentialsUnavailableFromAgentError(aerr AgentError) APIErrorCrede
 		Code: ErrorCredentialServiceUnavailable,
 	}
 }
+
+type APIErrorPythonExecNotFound struct {
+	Code ErrorCode `json:"code"`
+}
+
+func APIErrorPythonExecNotFoundFromAgentError(aerr AgentError) APIErrorPythonExecNotFound {
+	return APIErrorPythonExecNotFound{
+		Code: ErrorPythonExecNotFound,
+	}
+}
+
+func (apierr *APIErrorPythonExecNotFound) JSONResponse(w http.ResponseWriter) {
+	jsonResult(w, http.StatusUnprocessableEntity, apierr)
+}

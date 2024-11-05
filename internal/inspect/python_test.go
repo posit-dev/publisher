@@ -5,11 +5,13 @@ package inspect
 import (
 	"errors"
 	"os"
+	"os/exec"
 	"testing"
 
 	"github.com/posit-dev/publisher/internal/executor/executortest"
 	"github.com/posit-dev/publisher/internal/inspect/dependencies/pydeps"
 	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
 	"github.com/spf13/afero"
@@ -189,4 +191,41 @@ func (s *PythonSuite) TestReadRequirementsFile() {
 		"numpy==1.26.1",
 		"pandas",
 	}, reqs)
+}
+
+func (s *PythonSuite) TestInspectPython_SpecifiedPathNotFound() {
+	log := logging.New()
+	pathLooker := util.NewMockPathLooker()
+	pythonPath := util.NewPath("/usr/bin/python", nil)
+	i := NewPythonInspector(s.cwd, pythonPath, log)
+	inspector := i.(*defaultPythonInspector)
+	inspector.pathLooker = pathLooker
+
+	_, err := inspector.InspectPython()
+	s.NotNil(err)
+
+	aerr, isAerr := types.IsAgentErrorOf(err, types.ErrorPythonExecNotFound)
+	s.Equal(isAerr, true)
+	s.Equal(aerr.Message, "Cannot find the specified Python executable /usr/bin/python: file does not exist.")
+}
+
+func (s *PythonSuite) TestInspectPython_NotFoundInPATH() {
+	log := logging.New()
+	pathLooker := util.NewMockPathLooker()
+	pythonPath := util.NewPath("/usr/bin/python", nil)
+	i := NewPythonInspector(s.cwd, pythonPath, log)
+	inspector := i.(*defaultPythonInspector)
+	inspector.pathLooker = pathLooker
+	inspector.pythonPath = util.NewPath("", afero.NewMemMapFs())
+
+	// Won't find any exec names
+	pathLooker.On("LookPath", "python3").Return("", exec.ErrNotFound)
+	pathLooker.On("LookPath", "python").Return("", exec.ErrNotFound)
+	_, err := inspector.InspectPython()
+	s.NotNil(err)
+
+	aerr, isAerr := types.IsAgentErrorOf(err, types.ErrorPythonExecNotFound)
+	s.Equal(isAerr, true)
+	s.Equal(aerr.Message, "Executable file not found in $PATH.")
+	pathLooker.AssertExpectations(s.T())
 }

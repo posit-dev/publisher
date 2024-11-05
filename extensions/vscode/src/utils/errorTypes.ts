@@ -14,7 +14,8 @@ export type ErrorCode =
   | "requirementsFileReadingError"
   | "deployedContentNotRunning"
   | "tomlValidationError"
-  | "tomlUnknownError";
+  | "tomlUnknownError"
+  | "pythonExecNotFound";
 
 export type axiosErrorWithJson<T = { code: ErrorCode; details: unknown }> =
   AxiosError & {
@@ -141,6 +142,16 @@ export const errTomlUnknownErrorMessage = (
   return `The Configuration has a schema error`;
 };
 
+// Python executable not found
+export type ErrPythonExecNotFoundError = MkErrorDataType<"pythonExecNotFound">;
+export const isErrPythonExecNotFoundError =
+  mkErrorTypeGuard<ErrPythonExecNotFoundError>("pythonExecNotFound");
+export const errPythonExecNotFoundErrorMessage = (
+  _: axiosErrorWithJson<ErrPythonExecNotFoundError>,
+) => {
+  return "Could not find a Python executable in the system to inspect deployment requirements.";
+};
+
 // Invalid configuration file(s)
 export type ErrInvalidConfigFiles = MkErrorDataType<
   "invalidConfigFile",
@@ -167,5 +178,10 @@ export function resolveAgentJsonErrorMsg(err: axiosErrorWithJson) {
   if (isErrTomlUnknownError(err)) {
     return errTomlUnknownErrorMessage(err);
   }
+
+  if (isErrPythonExecNotFoundError(err)) {
+    return errPythonExecNotFoundErrorMessage(err);
+  }
+
   return errUnknownMessage(err as axiosErrorWithJson<ErrUnknown>);
 }
