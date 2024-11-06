@@ -196,7 +196,10 @@ func (s *PythonSuite) TestReadRequirementsFile() {
 func (s *PythonSuite) TestInspectPython_SpecifiedPathNotFound() {
 	log := logging.New()
 	pathLooker := util.NewMockPathLooker()
-	pythonPath := util.NewPath("/usr/bin/python", nil)
+
+	// Using .Join() to create the path for cross-platform compatibility tests
+	pythonPath := util.NewPath("", nil)
+	pythonPath = pythonPath.Join("usr", "bin", "pythontonotbefound")
 	i := NewPythonInspector(s.cwd, pythonPath, log)
 	inspector := i.(*defaultPythonInspector)
 	inspector.pathLooker = pathLooker
@@ -206,13 +209,13 @@ func (s *PythonSuite) TestInspectPython_SpecifiedPathNotFound() {
 
 	aerr, isAerr := types.IsAgentErrorOf(err, types.ErrorPythonExecNotFound)
 	s.Equal(isAerr, true)
-	s.Equal(aerr.Message, "Cannot find the specified Python executable /usr/bin/python: file does not exist.")
+	s.Contains(aerr.Message, "Cannot find the specified Python executable")
 }
 
 func (s *PythonSuite) TestInspectPython_NotFoundInPATH() {
 	log := logging.New()
 	pathLooker := util.NewMockPathLooker()
-	pythonPath := util.NewPath("/usr/bin/python", nil)
+	pythonPath := util.NewPath("", nil)
 	i := NewPythonInspector(s.cwd, pythonPath, log)
 	inspector := i.(*defaultPythonInspector)
 	inspector.pathLooker = pathLooker
@@ -226,6 +229,6 @@ func (s *PythonSuite) TestInspectPython_NotFoundInPATH() {
 
 	aerr, isAerr := types.IsAgentErrorOf(err, types.ErrorPythonExecNotFound)
 	s.Equal(isAerr, true)
-	s.Equal(aerr.Message, "Executable file not found in $PATH.")
+	s.Contains(aerr.Message, "Executable file not found")
 	pathLooker.AssertExpectations(s.T())
 }
