@@ -2,8 +2,16 @@
   <TreeItem
     :title="name"
     :actions="actions"
-    codicon="codicon-lock-small"
-    :list-style="secretValue || isEditing ? 'default' : 'deemphasized'"
+    :codicon="
+      needsValue
+        ? 'codicon-warning'
+        : secretValue
+          ? 'codicon-cloud-upload'
+          : 'codicon-check'
+    "
+    :list-style="
+      needsValue || secretValue || isEditing ? 'default' : 'deemphasized'
+    "
     :tooltip="tooltip"
     align-icon-with-twisty
     :data-vscode-context="vscodeContext"
@@ -18,7 +26,7 @@
         @submit="updateSecret"
         @cancel="isEditing = false"
       />
-      <template v-else-if="secretValue">••••••</template>
+      <template v-else-if="!needsValue">••••••</template>
     </template>
   </TreeItem>
 </template>
@@ -45,6 +53,10 @@ const home = useHomeStore();
 
 const secretValue = computed(() => home.secrets.get(props.name));
 
+const onServer = computed(() => home.serverSecrets.has(props.name));
+
+const needsValue = computed(() => !secretValue.value && !onServer.value);
+
 const inputSecret = () => {
   // Update inputValue in case the secret value has changed or been cleared
   inputValue.value = secretValue.value;
@@ -59,11 +71,19 @@ const updateSecret = () => {
 };
 
 const tooltip = computed(() => {
-  if (secretValue.value) {
-    return "On the next deploy the new value will be set for the deployment.";
+  if (onServer.value) {
+    if (secretValue.value) {
+      return "On the next deploy the secret will be overwritten with the new value.";
+    } else {
+      return "The value is set on the server. Set a new value to overwrite it on the next deploy.";
+    }
+  } else {
+    if (secretValue.value) {
+      return "On the next deploy the secret will be set.";
+    } else {
+      return "The secret will not be created on the next deploy without a value. Set a value to set it.";
+    }
   }
-
-  return "No value has been set. The value will not change on the next deploy.";
 });
 
 const actions = computed<ActionButton[]>(() => {
