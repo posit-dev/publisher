@@ -68,3 +68,23 @@ func (s *ApiErrorsSuite) TestAPIErrorInvalidTOMLFileFromAgentError() {
 	s.Equal(http.StatusBadRequest, rec.Result().StatusCode)
 	s.Contains(bodyRes, `{"code":"invalidTOML","details":{"filename":"/project-a/configuration-avcd.toml","line":3,"column":1}}`)
 }
+
+func (s *ApiErrorsSuite) TestAPIErrorPythonExecNotFoundFromAgentError() {
+	agentErr := AgentError{
+		Message: "Bad syntax",
+		Code:    ErrorPythonExecNotFound,
+		Err:     errors.New("unknown field error"),
+		Data:    ErrorData{},
+	}
+
+	rec := httptest.NewRecorder()
+
+	apiError := APIErrorPythonExecNotFoundFromAgentError(agentErr)
+	s.Equal(apiError.Code, ErrorPythonExecNotFound)
+
+	apiError.JSONResponse(rec)
+
+	bodyRes := rec.Body.String()
+	s.Equal(http.StatusUnprocessableEntity, rec.Result().StatusCode)
+	s.Contains(bodyRes, `{"code":"pythonExecNotFound"}`)
+}

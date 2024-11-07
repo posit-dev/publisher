@@ -2,6 +2,10 @@
 
 import { ConfigurationInspectionResult } from "src/api";
 import {
+  isAxiosErrorWithJson,
+  resolveAgentJsonErrorMsg,
+} from "src/utils/errorTypes";
+import {
   QuickPickItem,
   window,
   Disposable,
@@ -125,9 +129,11 @@ export class MultiStepInput {
         } else if (err === InputFlowAction.cancel) {
           step = undefined;
         } else {
-          window.showErrorMessage(
-            `Internal Error: MultiStepInput::stepThrough, err = ${JSON.stringify(err)}.`,
-          );
+          let errMsg = `Internal Error: MultiStepInput::stepThrough, err = ${JSON.stringify(err)}.`;
+          if (isAxiosErrorWithJson(err)) {
+            errMsg = resolveAgentJsonErrorMsg(err);
+          }
+          window.showErrorMessage(errMsg);
           step = undefined;
         }
       }

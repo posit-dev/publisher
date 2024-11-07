@@ -5,6 +5,7 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/posit-dev/publisher/internal/inspect"
 	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
 	"github.com/spf13/afero"
@@ -181,4 +183,28 @@ func (s *PostPackagesPythonScanSuite) TestServeHTTPSubdir() {
 	h.ServeHTTP(rec, req)
 
 	s.Equal(http.StatusOK, rec.Result().StatusCode)
+}
+
+func (s *PostPackagesPythonScanSuite) TestServeHTTPNoPythonErr() {
+	rec := httptest.NewRecorder()
+	body := strings.NewReader(`{"saveName":""}`)
+	req, err := http.NewRequest("POST", "/api/packages/python/scan", body)
+	s.NoError(err)
+
+	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
+	err = base.MkdirAll(0777)
+	s.NoError(err)
+	log := logging.New()
+	h := NewPostPackagesPythonScanHandler(base, log)
+
+	testError := types.NewAgentError(types.ErrorPythonExecNotFound, errors.New("no python"), nil)
+	i := inspect.NewMockPythonInspector()
+	i.On("ScanRequirements", mock.Anything).Return(nil, nil, "", testError)
+	inspectorFactory = func(util.AbsolutePath, util.Path, logging.Logger) inspect.PythonInspector { return i }
+
+	h.ServeHTTP(rec, req)
+	resp, err := io.ReadAll(rec.Result().Body)
+	s.NoError(err)
+	s.Contains(string(resp), "{\"code\":\"pythonExecNotFound\"}")
+	s.Equal(http.StatusUnprocessableEntity, rec.Result().StatusCode)
 }

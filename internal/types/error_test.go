@@ -126,3 +126,30 @@ func (s *ErrorSuite) TestNewAgentError_MessagePunctuation() {
 		Data:    make(ErrorData),
 	})
 }
+
+func (s *ErrorSuite) TestIsAgentErrorOf() {
+	originalError := errors.New("shattered glass!")
+	aerr, isIt := IsAgentErrorOf(originalError, ErrorInvalidConfigFiles)
+	s.Equal(isIt, false)
+	s.Nil(aerr)
+
+	aTrueAgentError := NewAgentError(ErrorInvalidTOML, originalError, nil)
+	aerr, isIt = IsAgentErrorOf(aTrueAgentError, ErrorInvalidConfigFiles)
+	s.Equal(isIt, false)
+	s.Equal(aerr, &AgentError{
+		Message: "Shattered glass!",
+		Code:    ErrorInvalidTOML,
+		Err:     originalError,
+		Data:    make(ErrorData),
+	})
+
+	aTrueAgentError = NewAgentError(ErrorInvalidConfigFiles, originalError, nil)
+	aerr, isIt = IsAgentErrorOf(aTrueAgentError, ErrorInvalidConfigFiles)
+	s.Equal(isIt, true)
+	s.Equal(aerr, &AgentError{
+		Message: "Shattered glass!",
+		Code:    ErrorInvalidConfigFiles,
+		Err:     originalError,
+		Data:    make(ErrorData),
+	})
+}

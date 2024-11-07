@@ -22,6 +22,7 @@ import {
   ErrTOMLValidationError,
   isErrTOMLValidationError,
   errTOMLValidationErrorMessage,
+  isErrPythonExecNotFoundError,
 } from "./errorTypes";
 
 const mkAxiosJsonErr = (data: Record<PropertyKey, any>) => {
@@ -293,6 +294,26 @@ describe("ErrInvalidConfigFiles", () => {
   });
 });
 
+describe("ErrPythonExecNotFoundError", () => {
+  test("isErrPythonExecNotFoundError", () => {
+    let result = isErrPythonExecNotFoundError(
+      mkAxiosJsonErr({
+        code: "pythonExecNotFound",
+      }),
+    );
+
+    expect(result).toBe(true);
+
+    result = isErrPythonExecNotFoundError(
+      mkAxiosJsonErr({
+        code: "bricks_raining",
+      }),
+    );
+
+    expect(result).toBe(false);
+  });
+});
+
 describe("resolveAgentJsonErrorMsg", () => {
   test("returns proper message based on the provided error", () => {
     let msg = resolveAgentJsonErrorMsg(
@@ -337,5 +358,13 @@ describe("resolveAgentJsonErrorMsg", () => {
     );
 
     expect(msg).toBe(`The Configuration has a schema error on line 7`);
+
+    msg = resolveAgentJsonErrorMsg(
+      mkAxiosJsonErr({
+        code: "pythonExecNotFound",
+      }) as axiosErrorWithJson,
+    );
+
+    expect(msg).toBe("Could not find a Python executable.");
   });
 });
