@@ -149,7 +149,7 @@ export const isErrPythonExecNotFoundError =
 export const errPythonExecNotFoundErrorMessage = (
   _: axiosErrorWithJson<ErrPythonExecNotFoundError>,
 ) => {
-  return "Could not find a Python executable in the system to inspect deployment requirements.";
+  return "Could not find a Python executable.";
 };
 
 // Invalid configuration file(s)

@@ -365,8 +365,6 @@ describe("resolveAgentJsonErrorMsg", () => {
       }) as axiosErrorWithJson,
     );
 
-    expect(msg).toBe(
-      "Could not find a Python executable in the system to inspect deployment requirements.",
-    );
+    expect(msg).toBe("Could not find a Python executable.");
   });
 });
