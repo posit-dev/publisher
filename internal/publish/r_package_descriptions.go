@@ -39,8 +39,12 @@ func (p *defaultPublisher) getRPackages() (bundles.PackageMap, error) {
 	log.Debug("Collecting manifest R packages", "lockfile", lockfilePath)
 	rPackages, err := p.rPackageMapper.GetManifestPackages(p.Dir, lockfilePath, log)
 	if err != nil {
+		// If error is an already well detailed agent error, pass it along
+		if aerr, isAgentErr := types.IsAgentError(err); isAgentErr {
+			return nil, aerr
+		}
 		agentErr := types.NewAgentError(types.ErrorRenvLockPackagesReading, err, lockfileErrDetails{Lockfile: lockfilePath.String()})
-		agentErr.Message = fmt.Sprintf("Could not scan R packages from lockfile: %s", lockfileString)
+		agentErr.Message = fmt.Sprintf("Could not scan R packages from lockfile: %s, %s", lockfileString, err.Error())
 		if errors.Is(err, os.ErrNotExist) {
 			agentErr.Message = fmt.Sprintf(lockfileMissing, lockfileString)
 		}

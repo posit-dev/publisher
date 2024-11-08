@@ -12,6 +12,7 @@ import (
 
 	"github.com/posit-dev/publisher/internal/bundles"
 	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/dcf"
 )
@@ -155,8 +156,24 @@ func readPackageDescription(name PackageName, libPaths []util.AbsolutePath) (dcf
 	return nil, fmt.Errorf("%s: %w", name, errPackageNotFound)
 }
 
-var errLockfileLibraryMismatch = errors.New("package versions in library and lockfile are out of sync; use renv::restore() or renv::snapshot() to synchronize")
-var errMissingPackageSource = errors.New("can't re-install packages installed from source; all packages must be installed from a reproducible location such as a repository")
+var lockfileLibraryMismatchMsg = "package %s: versions in lockfile '%s' and library '%s' are out of sync. Use renv::restore() or renv::snapshot() to synchronize"
+var errMissingPackageSourceMsg = "cannot re-install packages installed from source; all packages must be installed from a reproducible location such as a repository. Package %s, Version %s"
+
+type renvReadErrDetails struct {
+	Lockfile        string
+	Package         PackageName
+	LockfileVersion string
+	LibraryVersion  string
+}
+
+func mkRenvReadErrDetails(lockfile string, pkg PackageName, lockVersion, libVersion string) renvReadErrDetails {
+	return renvReadErrDetails{
+		Lockfile:        lockfile,
+		Package:         pkg,
+		LockfileVersion: lockVersion,
+		LibraryVersion:  libVersion,
+	}
+}
 
 func (m *defaultPackageMapper) GetManifestPackages(
 	base util.AbsolutePath,
@@ -206,12 +223,20 @@ func (m *defaultPackageMapper) GetManifestPackages(
 		if err != nil {
 			return nil, err
 		}
+		renvErrDetails := mkRenvReadErrDetails(lockfilePath.String(), pkg.Package, pkg.Version, description["Version"])
 		if description["Version"] != pkg.Version {
-			return nil, fmt.Errorf("package %s: lockfile version '%s', library version '%s': %w",
-				pkg.Package, pkg.Version, description["Version"], errLockfileLibraryMismatch)
+			agentErr := types.NewAgentError(
+				types.ErrorRenvPackageVersionMismatch,
+				fmt.Errorf(lockfileLibraryMismatchMsg, pkg.Package, pkg.Version, description["Version"]),
+				renvErrDetails)
+			return nil, agentErr
 		}
 		if manifestPkg.Source == "" {
-			return nil, fmt.Errorf("package %s, version %s: %w", pkg.Package, pkg.Version, errMissingPackageSource)
+			agentErr := types.NewAgentError(
+				types.ErrorRenvPackageSourceMissing,
+				fmt.Errorf(errMissingPackageSourceMsg, pkg.Package, pkg.Version),
+				renvErrDetails)
+			return nil, agentErr
 		}
 		manifestPkg.Description = description
 		manifestPackages[string(pkg.Package)] = *manifestPkg

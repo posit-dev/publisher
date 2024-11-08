@@ -20,6 +20,8 @@ const (
 	ErrorInvalidConfigFiles           ErrorCode = "invalidConfigFiles"
 	ErrorCredentialServiceUnavailable ErrorCode = "credentialsServiceUnavailable"
 	ErrorCertificateVerification      ErrorCode = "errorCertificateVerification"
+	ErrorRenvPackageVersionMismatch   ErrorCode = "renvPackageVersionMismatch"
+	ErrorRenvPackageSourceMissing     ErrorCode = "renvPackageSourceMissing"
 	ErrorRenvLockPackagesReading      ErrorCode = "renvlockPackagesReadingError"
 	ErrorRequirementsFileReading      ErrorCode = "requirementsFileReadingError"
 	ErrorDeployedContentNotRunning    ErrorCode = "deployedContentNotRunning"

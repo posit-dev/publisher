@@ -7,6 +7,8 @@ import {
   isCodedEventErrorMessage,
   isEvtErrDeploymentFailed,
   isEvtErrRenvLockPackagesReadingFailed,
+  isEvtErrRenvPackageVersionMismatch,
+  isEvtErrRenvPackageSourceMissing,
   isEvtErrRequirementsReadingFailed,
   isEvtErrDeployedContentNotRunning,
   handleEventCodedError,
@@ -92,6 +94,30 @@ describe("Event errors", () => {
     expect(result).toBe(true);
   });
 
+  test("isEvtErrRenvPackageVersionMismatch", () => {
+    // Message with another error code
+    let streamMsg = mkEventStreamMsg({}, "unknown");
+    let result = isEvtErrRenvPackageVersionMismatch(streamMsg);
+    expect(result).toBe(false);
+
+    // Message with error code
+    streamMsg = mkEventStreamMsg({}, "renvPackageVersionMismatch");
+    result = isEvtErrRenvPackageVersionMismatch(streamMsg);
+    expect(result).toBe(true);
+  });
+
+  test("isEvtErrRenvPackageSourceMissing", () => {
+    // Message with another error code
+    let streamMsg = mkEventStreamMsg({}, "unknown");
+    let result = isEvtErrRenvPackageSourceMissing(streamMsg);
+    expect(result).toBe(false);
+
+    // Message with error code
+    streamMsg = mkEventStreamMsg({}, "renvPackageSourceMissing");
+    result = isEvtErrRenvPackageSourceMissing(streamMsg);
+    expect(result).toBe(true);
+  });
+
   test("handleEventCodedError", () => {
     const msgData = {
       dashboardUrl: "https://here.it.is/content/abcdefg",
@@ -112,6 +138,16 @@ describe("Event errors", () => {
     streamMsg = mkEventStreamMsg(msgData, "renvlockPackagesReadingError");
     resultMsg = handleEventCodedError(streamMsg);
     expect(resultMsg).toBe("Could not scan R packages from renv lockfile");
+
+    msgData.message = "Package version is bad";
+    streamMsg = mkEventStreamMsg(msgData, "renvPackageVersionMismatch");
+    resultMsg = handleEventCodedError(streamMsg);
+    expect(resultMsg).toBe("Package version is bad");
+
+    msgData.message = "Package is not reproducible";
+    streamMsg = mkEventStreamMsg(msgData, "renvPackageSourceMissing");
+    resultMsg = handleEventCodedError(streamMsg);
+    expect(resultMsg).toBe("Package is not reproducible");
 
     msgData.message = "requirements.txt is missing";
     streamMsg = mkEventStreamMsg(msgData, "requirementsFileReadingError");

@@ -132,8 +132,30 @@ func (s *RPackageDescSuite) TestGetRPackages_ScanPackagesError() {
 	publisher := s.makePublisher()
 	_, err := publisher.getRPackages()
 	s.NotNil(err)
-	s.Contains(err.(*types.AgentError).Message, "Could not scan R packages from lockfile:")
-	s.Contains(err.(*types.AgentError).Message, "custom.lock")
+	s.Equal(err.(*types.AgentError).Message, "Could not scan R packages from lockfile: custom.lock, chair is required to reach the top shelf")
+	s.log.AssertExpectations(s.T())
+}
+
+func (s *RPackageDescSuite) TestGetRPackages_ScanPackagesKnownAgentError() {
+	expectedLockfilePath := s.dirPath.Join("custom.lock")
+	expectedPkgsAgentErr := types.NewAgentError(
+		types.ErrorRenvPackageVersionMismatch,
+		errors.New("bad package version, this is a known failure"),
+		nil)
+
+	// With a package file
+	s.stateStore.Config = &config.Config{
+		R: &config.R{
+			PackageFile: "custom.lock",
+		},
+	}
+
+	s.packageMapper.On("GetManifestPackages", s.dirPath, expectedLockfilePath).Return(bundles.PackageMap{}, expectedPkgsAgentErr)
+
+	publisher := s.makePublisher()
+	_, err := publisher.getRPackages()
+	s.NotNil(err)
+	s.Equal(err.(*types.AgentError).Message, "Bad package version, this is a known failure.")
 	s.log.AssertExpectations(s.T())
 }
 
