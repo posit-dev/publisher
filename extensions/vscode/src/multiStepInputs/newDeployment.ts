@@ -830,6 +830,7 @@ export async function newDeployment(
 
   // Create the Config File
   let configName: string | undefined;
+  let configCreateResponse: Configuration | undefined;
 
   newDeploymentData.entrypoint.inspectionResult.configuration.title =
     newDeploymentData.title;
@@ -845,19 +846,15 @@ export async function newDeployment(
       newDeploymentData.title,
       existingNames,
     );
-    const createResponse = await api.configurations.createOrUpdate(
-      configName,
-      newDeploymentData.entrypoint.inspectionResult.configuration,
-      newDeploymentData.entrypoint.inspectionResult.projectDir,
-    );
-    await api.files.updateFileList(
-      configName,
-      getRelPathForConfig(createResponse.data.configurationPath),
-      FileAction.INCLUDE,
-      newDeploymentData.entrypoint.inspectionResult.projectDir,
-    );
-    const fileUri = Uri.file(createResponse.data.configurationPath);
-    newConfig = createResponse.data;
+    configCreateResponse = (
+      await api.configurations.createOrUpdate(
+        configName,
+        newDeploymentData.entrypoint.inspectionResult.configuration,
+        newDeploymentData.entrypoint.inspectionResult.projectDir,
+      )
+    ).data;
+    const fileUri = Uri.file(configCreateResponse.configurationPath);
+    newConfig = configCreateResponse;
     await commands.executeCommand("vscode.open", fileUri);
   } catch (error: unknown) {
     const summary = getSummaryStringFromError(
@@ -866,6 +863,19 @@ export async function newDeployment(
     );
     window.showErrorMessage(`Failed to create config file. ${summary}`);
     return undefined;
+  }
+
+  try {
+    // Attempt to add the Config file to the files for deployment
+    // If the configuration is invalid, for example 'unknown', this will fail
+    await api.files.updateFileList(
+      configName,
+      getRelPathForConfig(configCreateResponse.configurationPath),
+      FileAction.INCLUDE,
+      newDeploymentData.entrypoint.inspectionResult.projectDir,
+    );
+  } catch (error: unknown) {
+    // continue on, as this is not a critical failure
   }
 
   // Create the PreContentRecord File
@@ -883,19 +893,6 @@ export async function newDeployment(
       configName,
       contentRecordName,
     );
-    const contentRecordPath = relativePath(
-      Uri.file(response.data.deploymentPath),
-    );
-    if (contentRecordPath === undefined) {
-      window.showErrorMessage("Failed to create pre-deployment record.");
-      return;
-    }
-    await api.files.updateFileList(
-      configName,
-      getRelPathForContentRecord(contentRecordPath),
-      FileAction.INCLUDE,
-      newDeploymentData.entrypoint.inspectionResult.projectDir,
-    );
     newContentRecord = response.data;
   } catch (error: unknown) {
     const summary = getSummaryStringFromError(
@@ -907,6 +904,26 @@ export async function newDeployment(
     );
     return undefined;
   }
+
+  try {
+    const contentRecordPath = relativePath(
+      Uri.file(newContentRecord.deploymentPath),
+    );
+    if (contentRecordPath === undefined) {
+      throw new Error(
+        "Unable to determine the relative path for the content record.",
+      );
+    }
+    await api.files.updateFileList(
+      configName,
+      getRelPathForContentRecord(contentRecordPath),
+      FileAction.INCLUDE,
+      newDeploymentData.entrypoint.inspectionResult.projectDir,
+    );
+  } catch (error: unknown) {
+    // continue on, as this is not a critical failure
+  }
+
   if (!newOrSelectedCredential) {
     window.showErrorMessage(
       "Internal Error: NewDeployment Unexpected type guard failure @5",
