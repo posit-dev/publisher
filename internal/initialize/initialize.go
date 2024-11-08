@@ -125,6 +125,17 @@ func normalizeConfig(
 	entrypoint util.RelativePath,
 	log logging.Logger,
 ) error {
+	// Usually an entrypoint will be inferred.
+	// If not, use the specified entrypoint, or
+	// fall back to unknown.
+	if cfg.Entrypoint == "" {
+		cfg.Entrypoint = entrypoint.String()
+
+		if cfg.Entrypoint == "" {
+			cfg.Entrypoint = "unknown"
+		}
+	}
+
 	log.Info("Possible deployment type", "Entrypoint", cfg.Entrypoint, "Type", cfg.Type)
 	if cfg.Title == "" {
 		// Default title is the name of the project directory.
@@ -172,16 +183,6 @@ func normalizeConfig(
 	}
 	cfg.Comments = strings.Split(initialComment, "\n")
 
-	// Usually an entrypoint will be inferred.
-	// If not, use the specified entrypoint, or
-	// fall back to unknown.
-	if cfg.Entrypoint == "" {
-		cfg.Entrypoint = entrypoint.String()
-
-		if cfg.Entrypoint == "" {
-			cfg.Entrypoint = "unknown"
-		}
-	}
 	return nil
 }
 
