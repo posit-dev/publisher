@@ -14,7 +14,7 @@ logs_url = 'https://connect.example.com/connect/#/apps/de2e7bdb-b085-401e-a65c-4
 
 [configuration]
 "$schema" = "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json"
-type = "quarto"
+type = "quarto-static"
 entrypoint = "report.qmd"
 validate = true
 files = [

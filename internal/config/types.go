@@ -15,7 +15,7 @@ const (
 	ContentTypePythonShiny     ContentType = "python-shiny"
 	ContentTypePythonStreamlit ContentType = "python-streamlit"
 	ContentTypeQuartoShiny     ContentType = "quarto-shiny"
-	ContentTypeQuarto          ContentType = "quarto"
+	ContentTypeQuarto          ContentType = "quarto-static"
 	ContentTypeRPlumber        ContentType = "r-plumber"
 	ContentTypeRShiny          ContentType = "r-shiny"
 	ContentTypeRMarkdownShiny  ContentType = "rmd-shiny"

@@ -76,7 +76,7 @@ Example:
 
 ```toml
 "$schema" = "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json"
-type = "quarto"
+type = "quarto-static"
 entrypoint = "report.qmd"
 title = "Regional Quarterly Sales Report"
 description = "This is the quarterly sales report, broken down by region."

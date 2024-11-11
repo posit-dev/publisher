@@ -53,7 +53,7 @@
         "python-shiny",
         "python-streamlit",
         "quarto-shiny",
-        "quarto",
+        "quarto-static",
         "r-plumber",
         "r-shiny",
         "rmd-shiny",
