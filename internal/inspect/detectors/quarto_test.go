@@ -343,3 +343,45 @@ func (s *QuartoDetectorSuite) TestInferTypeRevalJSQuartoShiny() {
 		R: &config.R{},
 	}, configs[0])
 }
+
+func (s *QuartoDetectorSuite) TestInferTypeQuartoScriptPy() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip("This test does not run on Windows")
+	}
+	configs := s.runInferType("quarto-script-py")
+	s.Len(configs, 1)
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypeQuarto,
+		Entrypoint: "script.py",
+		Title:      "Penguin data transformations",
+		Validate:   true,
+		Files:      []string{"/script.py", "/_quarto.yml"},
+		Python:     &config.Python{},
+		Quarto: &config.Quarto{
+			Version: "1.5.54",
+			Engines: []string{"jupyter"},
+		},
+	}, configs[0])
+}
+
+func (s *QuartoDetectorSuite) TestInferTypeQuartoScriptR() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip("This test does not run on Windows")
+	}
+	configs := s.runInferType("quarto-script-r")
+	s.Len(configs, 1)
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypeQuarto,
+		Entrypoint: "script.R",
+		Title:      "Penguin data transformations",
+		Validate:   true,
+		Files:      []string{"/script.R", "/_quarto.yml"},
+		Quarto: &config.Quarto{
+			Version: "1.5.54",
+			Engines: []string{"knitr"},
+		},
+		R: &config.R{},
+	}, configs[0])
+}
