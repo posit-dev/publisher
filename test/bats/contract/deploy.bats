@@ -75,11 +75,11 @@ runtime.max_conns_per_process = 5
 runtime.load_factor = 0.8
 " >> ${FULL_PATH}/.posit/publish/${CONTENT}.toml
 
-sed -i"" -e "s/type = '[^']*'/type = '${CONTENT_TYPE}'/g" "${FULL_PATH}/.posit/publish/${CONTENT}.toml"
+sed -i"" -e "s/type = '[^']*'/type = '${APP_MODE}'/g" "${FULL_PATH}/.posit/publish/${CONTENT}.toml"
 }
 
 quarto_content_types=(
-    "quarto" "quarto-static"
+    "quarto-static"
 )
 
 python_content_types=(
@@ -126,7 +126,7 @@ python_content_types=(
 @test "check for toml file" {
     if [[ ${CONTENT} != "parameterized_report" ]]; then 
         run cat ${FULL_PATH}/.posit/publish/deployments/ci_deploy.toml
-            assert_output --partial "type = '${CONTENT_TYPE}'"
+            assert_output --partial "type = '${APP_MODE}'"
             assert_output --partial "entrypoint = '${ENTRYPOINT}'"
             assert_output --partial "title = '${TITLE}'"
     fi

@@ -20,7 +20,7 @@ python_content_types=(
 )
 
 quarto_content_types=(
-    "quarto" "quarto-shiny"
+    "quarto-static" "quarto-shiny"
 )
 
 @test "init creates expected file for ${CONTENT}" {
@@ -35,7 +35,7 @@ quarto_content_types=(
         # the default.toml should have the expected fields
         run cat ${CONTENT_PATH}/${CONTENT}/.posit/publish/default.toml
         assert_success
-        assert_line "type = '${CONTENT_TYPE}'"
+        assert_line "type = '${APP_MODE}'"
         assert_line "entrypoint = '${ENTRYPOINT}'"
         assert_line "validate = true"
         assert_line "title = '${TITLE}'"
