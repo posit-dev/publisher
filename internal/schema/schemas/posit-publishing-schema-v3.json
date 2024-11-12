@@ -44,7 +44,7 @@
         "rmd-shiny",
         "rmd"
       ],
-      "examples": ["quarto"]
+      "examples": ["quarto-static"]
     },
     "entrypoint": {
       "type": "string",
@@ -375,7 +375,7 @@
       "if": {
         "properties": {
           "type": {
-            "enum": ["quarto-shiny", "quarto"]
+            "enum": ["quarto-shiny", "quarto-static"]
           }
         },
         "required": ["type"]

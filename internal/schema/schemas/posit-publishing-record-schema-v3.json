@@ -60,7 +60,7 @@
         "rmd",
         "unknown"
       ],
-      "examples": ["quarto"]
+      "examples": ["quarto-static"]
     },
     "created_at": {
       "type": "string",

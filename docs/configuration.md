@@ -16,7 +16,7 @@ Indicates the type of content being deployed. Valid values are:
 - `python-shiny`
 - `python-streamlit`
 - `quarto-shiny`
-- `quarto`
+- `quarto-static`
 - `r-plumber`
 - `r-shiny`
 - `rmd-shiny`
