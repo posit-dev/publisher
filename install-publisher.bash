@@ -148,7 +148,7 @@ esac
 
 # version override, swap out latest with the latest and greatest
 if [[ $VERSION_TYPE == "release" && $VERSION == "latest" ]]; then
-  VERSION="1.2.1"
+  VERSION="1.4.0"
 fi
 
 # Variables
