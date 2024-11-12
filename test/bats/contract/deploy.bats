@@ -79,7 +79,7 @@ sed -i"" -e "s/type = '[^']*'/type = '${APP_MODE}'/g" "${FULL_PATH}/.posit/publi
 }
 
 quarto_content_types=(
-    "quarto-static"
+    "quarto" "quarto-static"
 )
 
 python_content_types=(

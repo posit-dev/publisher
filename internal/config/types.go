@@ -5,22 +5,23 @@ package config
 type ContentType string
 
 const (
-	ContentTypeHTML            ContentType = "html"
-	ContentTypeJupyterNotebook ContentType = "jupyter-notebook"
-	ContentTypeJupyterVoila    ContentType = "jupyter-voila"
-	ContentTypePythonBokeh     ContentType = "python-bokeh"
-	ContentTypePythonDash      ContentType = "python-dash"
-	ContentTypePythonFastAPI   ContentType = "python-fastapi"
-	ContentTypePythonFlask     ContentType = "python-flask"
-	ContentTypePythonShiny     ContentType = "python-shiny"
-	ContentTypePythonStreamlit ContentType = "python-streamlit"
-	ContentTypeQuartoShiny     ContentType = "quarto-shiny"
-	ContentTypeQuarto          ContentType = "quarto-static"
-	ContentTypeRPlumber        ContentType = "r-plumber"
-	ContentTypeRShiny          ContentType = "r-shiny"
-	ContentTypeRMarkdownShiny  ContentType = "rmd-shiny"
-	ContentTypeRMarkdown       ContentType = "rmd"
-	ContentTypeUnknown         ContentType = "unknown"
+	ContentTypeHTML             ContentType = "html"
+	ContentTypeJupyterNotebook  ContentType = "jupyter-notebook"
+	ContentTypeJupyterVoila     ContentType = "jupyter-voila"
+	ContentTypePythonBokeh      ContentType = "python-bokeh"
+	ContentTypePythonDash       ContentType = "python-dash"
+	ContentTypePythonFastAPI    ContentType = "python-fastapi"
+	ContentTypePythonFlask      ContentType = "python-flask"
+	ContentTypePythonShiny      ContentType = "python-shiny"
+	ContentTypePythonStreamlit  ContentType = "python-streamlit"
+	ContentTypeQuartoShiny      ContentType = "quarto-shiny"
+	ContentTypeQuartoDeprecated ContentType = "quarto"
+	ContentTypeQuarto           ContentType = "quarto-static"
+	ContentTypeRPlumber         ContentType = "r-plumber"
+	ContentTypeRShiny           ContentType = "r-shiny"
+	ContentTypeRMarkdownShiny   ContentType = "rmd-shiny"
+	ContentTypeRMarkdown        ContentType = "rmd"
+	ContentTypeUnknown          ContentType = "unknown"
 )
 
 func AllValidContentTypeNames() []string {
@@ -35,6 +36,7 @@ func AllValidContentTypeNames() []string {
 		string(ContentTypePythonShiny),
 		string(ContentTypePythonStreamlit),
 		string(ContentTypeQuartoShiny),
+		string(ContentTypeQuartoDeprecated),
 		string(ContentTypeQuarto),
 		string(ContentTypeRPlumber),
 		string(ContentTypeRShiny),
