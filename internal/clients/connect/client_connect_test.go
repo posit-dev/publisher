@@ -788,6 +788,37 @@ func (s *ConnectClientSuite) TestValidateDeploymentTargetAppModeNotModifiableCod
 	)
 }
 
+func (s *ConnectClientSuite) TestValidateDeploymentTargetAllowsAppModeToChangeFromUnknown() {
+	lgr := logging.New()
+	content := &ConnectContent{}
+	queryResult := &ConnectContent{
+		AppMode:            "",
+		Name:               "",
+		Title:              "",
+		GUID:               "",
+		Description:        "",
+		AccessType:         "",
+		ServiceAccountName: "",
+		DefaultImageName:   "",
+		Locked:             false,
+	}
+	httpClient := &http_client.MockHTTPClient{}
+
+	httpClient.On("Get", "/__api__/v1/content/e8922765-4880-43cd-abc0-d59fe59b8b4b", content, lgr).Return(nil, queryResult).Run(func(args mock.Arguments) {
+		// this will update the ConnectContent structure
+		// with the value that we passed in as the second
+		// return argument
+		arg := args.Get(1).(*ConnectContent)
+		*arg = *queryResult
+	})
+
+	client := &ConnectClient{
+		client: httpClient,
+	}
+	err := client.ValidateDeploymentTarget("e8922765-4880-43cd-abc0-d59fe59b8b4b", s.cfg, lgr)
+	s.NoError(err)
+}
+
 func (s *ConnectClientSuite) TestCheckCapabilities() {
 	lgr := logging.New()
 	httpClient := &http_client.MockHTTPClient{}
