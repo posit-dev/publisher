@@ -875,7 +875,10 @@ export async function newDeployment(
       newDeploymentData.entrypoint.inspectionResult.projectDir,
     );
   } catch (error: unknown) {
-    // continue on, as this is not a critical failure
+    // continue on as it is not necessary to include .posit files for deployment
+    console.debug(
+      `Failed to add the configuration file '${configName}' to \`files\`.`,
+    );
   }
 
   // Create the PreContentRecord File
@@ -921,7 +924,10 @@ export async function newDeployment(
       newDeploymentData.entrypoint.inspectionResult.projectDir,
     );
   } catch (error: unknown) {
-    // continue on, as this is not a critical failure
+    // continue on as it is not necessary to include .posit files for deployment
+    console.debug(
+      `Failed to add the content record file '${newContentRecord.deploymentName}' to \`files\`.`,
+    );
   }
 
   if (!newOrSelectedCredential) {
