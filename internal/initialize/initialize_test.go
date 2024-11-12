@@ -205,3 +205,17 @@ func (s *InitializeSuite) TestGetPossibleConfigsWithMissingEntrypoint() {
 	s.Equal("nonexistent.py", configs[0].Entrypoint)
 	s.Nil(configs[0].Python)
 }
+
+func (s *InitializeSuite) TestNormalizeConfigHandlesUnknownConfigs() {
+	log := logging.New()
+
+	cfg := config.New()
+	cfg.Type = config.ContentTypeUnknown
+
+	ep := util.NewRelativePath("notreal.py", s.cwd.Fs())
+	normalizeConfig(cfg, s.cwd, util.Path{}, util.Path{}, ep, log)
+
+	// Entrypoint is set from the relative path passed to normalizeConfig
+	s.Equal("notreal.py", cfg.Entrypoint)
+	s.Contains(cfg.Files, "/notreal.py")
+}
