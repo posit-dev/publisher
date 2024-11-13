@@ -55,6 +55,7 @@ export enum ContentType {
   PYTHON_STREAMLIT = "python-streamlit",
   QUARTO_SHINY = "quarto-shiny",
   QUARTO = "quarto",
+  QUARTO_STATIC = "quarto-static",
   R_PLUMBER = "r-plumber",
   R_SHINY = "r-shiny",
   RMD_SHINY = "rmd-shiny",
@@ -74,6 +75,7 @@ export const allValidContentTypes: ContentType[] = [
   ContentType.PYTHON_STREAMLIT,
   ContentType.QUARTO_SHINY,
   ContentType.QUARTO,
+  ContentType.QUARTO_STATIC,
   ContentType.R_PLUMBER,
   ContentType.R_SHINY,
   ContentType.RMD_SHINY,
@@ -92,6 +94,7 @@ export const contentTypeStrings = {
   [ContentType.PYTHON_STREAMLIT]: "run with Streamlit",
   [ContentType.QUARTO_SHINY]: "render with Quarto and run embedded Shiny app",
   [ContentType.QUARTO]: "render with Quarto",
+  [ContentType.QUARTO_STATIC]: "render with Quarto",
   [ContentType.R_PLUMBER]: "run with Plumber",
   [ContentType.R_SHINY]: "run with R Shiny",
   [ContentType.RMD_SHINY]:

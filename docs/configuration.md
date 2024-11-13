@@ -16,7 +16,8 @@ Indicates the type of content being deployed. Valid values are:
 - `python-shiny`
 - `python-streamlit`
 - `quarto-shiny`
-- `quarto`
+- `quarto-static`
+- `quarto` (Deprecated use `quarto-static` instead)
 - `r-plumber`
 - `r-shiny`
 - `rmd-shiny`
@@ -76,7 +77,7 @@ Example:
 
 ```toml
 "$schema" = "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json"
-type = "quarto"
+type = "quarto-static"
 entrypoint = "report.qmd"
 title = "Regional Quarterly Sales Report"
 description = "This is the quarterly sales report, broken down by region."
