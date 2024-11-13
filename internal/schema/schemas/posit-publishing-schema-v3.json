@@ -26,7 +26,7 @@
     },
     "type": {
       "type": "string",
-      "description": "Indicates the type of content being deployed. Valid values are: html, jupyter-notebook, jupyter-voila, python-bokeh, python-dash, python-fastapi, python-flask, python-shiny, python-streamlit, quarto-shiny, quarto, r-plumber, r-shiny, rmd-shiny, rmd",
+      "description": "Indicates the type of content being deployed. Valid values are: html, jupyter-notebook, jupyter-voila, python-bokeh, python-dash, python-fastapi, python-flask, python-shiny, python-streamlit, quarto-shiny, quarto-static, r-plumber, r-shiny, rmd-shiny, rmd",
       "enum": [
         "html",
         "jupyter-notebook",
@@ -38,13 +38,14 @@
         "python-shiny",
         "python-streamlit",
         "quarto-shiny",
+        "quarto",
         "quarto-static",
         "r-plumber",
         "r-shiny",
         "rmd-shiny",
         "rmd"
       ],
-      "examples": ["quarto"]
+      "examples": ["quarto-static"]
     },
     "entrypoint": {
       "type": "string",
@@ -375,7 +376,7 @@
       "if": {
         "properties": {
           "type": {
-            "enum": ["quarto-shiny", "quarto"]
+            "enum": ["quarto-shiny", "quarto", "quarto-static"]
           }
         },
         "required": ["type"]

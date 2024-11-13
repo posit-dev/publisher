@@ -20,7 +20,7 @@ python_content_types=(
 )
 
 quarto_content_types=(
-    "quarto-static" "quarto-shiny"
+    "quarto" "quarto-static" "quarto-shiny"
 )
 
 @test "init creates expected file for ${CONTENT}" {

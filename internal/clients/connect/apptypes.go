@@ -246,21 +246,22 @@ func (t AppMode) Description() string {
 }
 
 var connectContentTypeMap = map[config.ContentType]AppMode{
-	config.ContentTypeHTML:            StaticMode,
-	config.ContentTypeJupyterNotebook: StaticJupyterMode,
-	config.ContentTypeJupyterVoila:    JupyterVoilaMode,
-	config.ContentTypePythonBokeh:     PythonBokehMode,
-	config.ContentTypePythonDash:      PythonDashMode,
-	config.ContentTypePythonFastAPI:   PythonFastAPIMode,
-	config.ContentTypePythonFlask:     PythonAPIMode,
-	config.ContentTypePythonShiny:     PythonShinyMode,
-	config.ContentTypePythonStreamlit: PythonStreamlitMode,
-	config.ContentTypeQuartoShiny:     ShinyQuartoMode,
-	config.ContentTypeQuarto:          StaticQuartoMode,
-	config.ContentTypeRPlumber:        PlumberAPIMode,
-	config.ContentTypeRShiny:          ShinyMode,
-	config.ContentTypeRMarkdownShiny:  ShinyRmdMode,
-	config.ContentTypeRMarkdown:       StaticRmdMode,
+	config.ContentTypeHTML:             StaticMode,
+	config.ContentTypeJupyterNotebook:  StaticJupyterMode,
+	config.ContentTypeJupyterVoila:     JupyterVoilaMode,
+	config.ContentTypePythonBokeh:      PythonBokehMode,
+	config.ContentTypePythonDash:       PythonDashMode,
+	config.ContentTypePythonFastAPI:    PythonFastAPIMode,
+	config.ContentTypePythonFlask:      PythonAPIMode,
+	config.ContentTypePythonShiny:      PythonShinyMode,
+	config.ContentTypePythonStreamlit:  PythonStreamlitMode,
+	config.ContentTypeQuartoShiny:      ShinyQuartoMode,
+	config.ContentTypeQuartoDeprecated: StaticQuartoMode,
+	config.ContentTypeQuarto:           StaticQuartoMode,
+	config.ContentTypeRPlumber:         PlumberAPIMode,
+	config.ContentTypeRShiny:           ShinyMode,
+	config.ContentTypeRMarkdownShiny:   ShinyRmdMode,
+	config.ContentTypeRMarkdown:        StaticRmdMode,
 }
 
 func AppModeFromType(t config.ContentType) AppMode {
