@@ -43,7 +43,8 @@
         "r-plumber",
         "r-shiny",
         "rmd-shiny",
-        "rmd"
+        "rmd",
+        "unknown"
       ],
       "examples": ["quarto-static"]
     },

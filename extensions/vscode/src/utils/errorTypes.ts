@@ -10,6 +10,8 @@ export type ErrorCode =
   | "invalidConfigFile"
   | "errorCertificateVerification"
   | "deployFailed"
+  | "renvPackageVersionMismatch"
+  | "renvPackageSourceMissing"
   | "renvlockPackagesReadingError"
   | "requirementsFileReadingError"
   | "deployedContentNotRunning"
