@@ -187,3 +187,18 @@ This command will trigger the [Release GitHub Action](https://github.com/rstudio
 Once complete the action has completed, the release will be available on the
 [Releases page](https://github.com/rstudio/publishing-client/releases), and
 published to the VSCode Marketplace.
+
+## Updating Dependencies
+
+After a release has gone out we take the opportunity to update dependencies.
+
+Dependencies can be adjusted at any time; the process of updating after a
+release keeps us proactive.
+
+This includes our JavaScript packages, Go version/packages, and tooling
+dependencies.
+
+Any significantly difficult dependency updates should have an issue created to
+track the work and can be triaged alongside our other issues.
+
+Updates to dependencies should be done in a separate PR.
