@@ -8,7 +8,13 @@
       file.reason?.source === 'built-in' ||
       file.reason?.source === 'permissions'
     "
-    :list-style="isFileIncluded(file) ? 'default' : 'deemphasized'"
+    :list-style="
+      isEntrypoint(file)
+        ? 'emphasized'
+        : isFileIncluded(file)
+          ? 'default'
+          : 'deemphasized'
+    "
     :tooltip="
       isFileIncluded(file)
         ? includedFileTooltip(file)
@@ -61,7 +67,10 @@ import { useHostConduitService } from "src/HostConduitService";
 import PostDecor from "src/components/tree/PostDecor.vue";
 import { ActionButton } from "src/components/ActionToolbar.vue";
 
-import { ContentRecordFile, FileMatchSource } from "../../../../../../src/api";
+import {
+  ContentRecordFile,
+  isConfigurationError,
+} from "../../../../../../src/api";
 import { WebviewToHostMessageType } from "../../../../../../src/types/messages/webviewToHostMessages";
 
 interface Props {
@@ -75,6 +84,14 @@ const props = withDefaults(defineProps<Props>(), {
 
 const home = useHomeStore();
 const { sendMsg } = useHostConduitService();
+
+const isEntrypoint = (file: ContentRecordFile): boolean => {
+  const config = home.selectedConfiguration;
+  if (config != undefined && !isConfigurationError(config)) {
+    return file.id === config.configuration.entrypoint;
+  }
+  return false;
+};
 
 const isFileIncluded = (file: ContentRecordFile) => {
   return Boolean(file.reason?.exclude === false);

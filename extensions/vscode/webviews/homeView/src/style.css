@@ -34,6 +34,10 @@ body {
   color: var(--vscode-icon-foreground);
 }
 
+.text-list-emphasized {
+  color: var(--vscode-list-activeSelectionForeground);
+}
+
 .text-list-deemphasized {
   color: var(--vscode-list-deemphasizedForeground);
 }
