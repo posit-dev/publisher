@@ -37,7 +37,6 @@ import {
   AllContentRecordTypes,
   EnvironmentConfig,
 } from "src/api";
-import { useBus } from "src/bus";
 import { EventStream } from "src/events";
 import { getPythonInterpreterPath } from "../utils/config";
 import { getSummaryStringFromError } from "src/utils/errors";
@@ -122,85 +121,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
     this.extensionUri = this.context.extensionUri;
     this.webviewConduit = new WebviewConduit();
-
-    // if someone needs a refresh of any active params,
-    // we are here to service that request!
-    useBus().on("refreshCredentials", async () => {
-      await this.refreshCredentialData();
-      this.updateWebViewViewCredentials();
-    });
-    useBus().on("requestActiveConfig", async () => {
-      useBus().trigger(
-        "activeConfigChanged",
-        await this.state.getSelectedConfiguration(),
-      );
-    });
-    useBus().on("requestActiveContentRecord", async () => {
-      useBus().trigger(
-        "activeContentRecordChanged",
-        await this.state.getSelectedContentRecord(),
-      );
-    });
-
-    useBus().on("activeContentRecordChanged", (contentRecord) => {
-      this.contentRecordWatchers?.dispose();
-
-      this.contentRecordWatchers = new ContentRecordWatcherManager(
-        contentRecord,
-      );
-
-      this.contentRecordWatchers.contentRecord?.onDidChange(
-        this.updateServerEnvironment,
-        this,
-      );
-    });
-
-    useBus().on(
-      "activeConfigChanged",
-      (cfg: Configuration | ConfigurationError | undefined) => {
-        this.sendRefreshedFilesLists();
-        this.updateServerEnvironment();
-        this.refreshPythonPackages();
-        this.refreshRPackages();
-
-        this.configWatchers?.dispose();
-        if (cfg && isConfigurationError(cfg)) {
-          return;
-        }
-        this.configWatchers = new ConfigWatcherManager(cfg);
-
-        this.configWatchers.configFile?.onDidChange(() => {
-          this.debounceSendRefreshedFilesLists();
-          this.updateServerEnvironment();
-        }, this);
-
-        this.configWatchers.pythonPackageFile?.onDidCreate(
-          this.debounceRefreshPythonPackages,
-          this,
-        );
-        this.configWatchers.pythonPackageFile?.onDidChange(
-          this.debounceRefreshPythonPackages,
-          this,
-        );
-        this.configWatchers.pythonPackageFile?.onDidDelete(
-          this.debounceRefreshPythonPackages,
-          this,
-        );
-
-        this.configWatchers.rPackageFile?.onDidCreate(
-          this.debounceRefreshRPackages,
-          this,
-        );
-        this.configWatchers.rPackageFile?.onDidChange(
-          this.debounceRefreshRPackages,
-          this,
-        );
-        this.configWatchers.rPackageFile?.onDidDelete(
-          this.debounceRefreshRPackages,
-          this,
-        );
-      },
-    );
   }
   /**
    * Dispatch messages passed from the webview to the handling code
@@ -236,7 +156,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       case WebviewToHostMessageType.REQUEST_FILES_LISTS:
         return this.debounceSendRefreshedFilesLists();
       case WebviewToHostMessageType.REQUEST_CREDENTIALS:
-        return await this.onRequestCredentials();
+        return await this.refreshCredentials();
       case WebviewToHostMessageType.INCLUDE_FILE:
         return this.updateFileList(msg.content.path, FileAction.INCLUDE);
       case WebviewToHostMessageType.EXCLUDE_FILE:
@@ -410,60 +330,67 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     });
   }
 
-  private async refreshContentRecordData() {
-    try {
-      await showProgress(
-        "Refreshing Deployments",
-        Views.HomeView,
-        async () => await this.state.refreshContentRecords(),
-      );
-    } catch (error: unknown) {
-      const summary = getSummaryStringFromError(
-        "refreshContentRecordData::contentRecords.getAll",
-        error,
-      );
-      window.showErrorMessage(summary);
-      return;
-    }
-  }
-
-  private async refreshConfigurationData() {
-    try {
-      await showProgress(
-        "Refreshing Configurations",
-        Views.HomeView,
-        async () => await this.state.refreshConfigurations(),
-      );
-    } catch (error: unknown) {
-      const summary = getSummaryStringFromError(
-        "Internal Error: refreshConfigurationData::configurations.getAll",
-        error,
-      );
-      window.showErrorMessage(summary);
-      return;
-    }
-  }
-
-  private async onRequestCredentials() {
-    await this.refreshCredentialData();
+  private async refreshCredentials() {
+    await this.state.refreshCredentials();
     return this.updateWebViewViewCredentials();
   }
 
-  private async refreshCredentialData() {
-    try {
-      await showProgress(
-        "Refreshing Credentials",
-        Views.HomeView,
-        async () => await this.state.refreshCredentials(),
-      );
-    } catch (error: unknown) {
-      const summary = getSummaryStringFromError(
-        "Internal Error: refreshCredentialData::credentials.list",
-        error,
-      );
-      window.showErrorMessage(summary);
+  private async refreshActiveConfig() {
+    const cfg = await this.state.getSelectedConfiguration();
+
+    this.sendRefreshedFilesLists();
+    this.updateServerEnvironment();
+    this.refreshPythonPackages();
+    this.refreshRPackages();
+
+    this.configWatchers?.dispose();
+    if (cfg && isConfigurationError(cfg)) {
       return;
     }
+    this.configWatchers = new ConfigWatcherManager(cfg);
+
+    this.configWatchers.configFile?.onDidChange(() => {
+      this.debounceSendRefreshedFilesLists();
+      this.updateServerEnvironment();
+    }, this);
+
+    this.configWatchers.pythonPackageFile?.onDidCreate(
+      this.debounceRefreshPythonPackages,
+      this,
+    );
+    this.configWatchers.pythonPackageFile?.onDidChange(
+      this.debounceRefreshPythonPackages,
+      this,
+    );
+    this.configWatchers.pythonPackageFile?.onDidDelete(
+      this.debounceRefreshPythonPackages,
+      this,
+    );
+
+    this.configWatchers.rPackageFile?.onDidCreate(
+      this.debounceRefreshRPackages,
+      this,
+    );
+    this.configWatchers.rPackageFile?.onDidChange(
+      this.debounceRefreshRPackages,
+      this,
+    );
+    this.configWatchers.rPackageFile?.onDidDelete(
+      this.debounceRefreshRPackages,
+      this,
+    );
+  }
+
+  private async refreshActiveContentRecord() {
+    const contentRecord = await this.state.getSelectedContentRecord();
+    this.contentRecordWatchers?.dispose();
+
+    this.contentRecordWatchers = new ContentRecordWatcherManager(contentRecord);
+
+    this.contentRecordWatchers.contentRecord?.onDidChange(
+      this.updateServerEnvironment,
+      this,
+    );
   }
 
   private updateWebViewViewContentRecords(
@@ -521,14 +448,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         version: "v1",
       });
     }
-    useBus().trigger(
-      "activeContentRecordChanged",
-      await this.state.getSelectedContentRecord(),
-    );
-    useBus().trigger(
-      "activeConfigChanged",
-      await this.state.getSelectedConfiguration(),
-    );
+    this.refreshActiveContentRecord();
+    this.refreshActiveConfig();
   }
 
   public debounceRefreshPythonPackages = debounce(
@@ -954,7 +875,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         this.propagateDeploymentSelection(deploymentSelector);
         // Credentials aren't auto-refreshed, so we have to trigger it ourselves.
         if (refreshCredentials) {
-          useBus().trigger("refreshCredentials", undefined);
+          this.refreshCredentials();
         }
         return {
           deploymentName: deploymentObjects.contentRecord.deploymentName,
@@ -1093,7 +1014,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   public addCredential = async (startingServerUrl?: string) => {
     const credential = await newCredential(Views.HomeView, startingServerUrl);
     if (credential) {
-      useBus().trigger("refreshCredentials", undefined);
+      this.refreshCredentials();
     }
   };
 
@@ -1120,7 +1041,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       const summary = getSummaryStringFromError("credential::delete", error);
       window.showInformationMessage(summary);
     }
-    useBus().trigger("refreshCredentials", undefined);
+    this.refreshCredentials();
   };
 
   private showPublishingLog() {
@@ -1461,11 +1382,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   ) => {
     try {
       await showProgress("Refreshing Data", Views.HomeView, async () => {
-        const apis: Promise<void>[] = [this.refreshCredentialData()];
+        const apis: Promise<void>[] = [this.state.refreshCredentials()];
         if (forceAll) {
           // we have been told to refresh everything
-          apis.push(this.refreshContentRecordData());
-          apis.push(this.refreshConfigurationData());
+          apis.push(this.state.refreshContentRecords());
+          apis.push(this.state.refreshConfigurations());
         }
         return await Promise.all(apis);
       });
@@ -1477,8 +1398,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       window.showInformationMessage(summary);
       return;
     }
-    const selectedContentRecord = await this.state.getSelectedContentRecord();
-    const selectedConfig = await this.state.getSelectedConfiguration();
 
     const selectionState = includeSavedState
       ? this.state.getSelection()
@@ -1487,8 +1406,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     this.updateWebViewViewConfigurations();
     this.updateWebViewViewContentRecords(selectionState || null);
     if (includeSavedState && selectionState) {
-      useBus().trigger("activeContentRecordChanged", selectedContentRecord);
-      useBus().trigger("activeConfigChanged", selectedConfig);
+      this.refreshActiveContentRecord();
+      this.refreshActiveConfig();
     }
   };
 
@@ -1497,12 +1416,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     return throttleWithLastPending(
       this.refreshContentRecordsMutex,
       async () => {
-        await this.refreshContentRecordData();
+        await this.state.refreshContentRecords();
         this.updateWebViewViewContentRecords();
-        useBus().trigger(
-          "activeContentRecordChanged",
-          await this.state.getSelectedContentRecord(),
-        );
+        this.refreshActiveContentRecord();
       },
     );
   };
@@ -1512,12 +1428,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     return throttleWithLastPending(
       this.refreshConfigurationsMutex,
       async () => {
-        await this.refreshConfigurationData();
+        await this.state.refreshConfigurations();
         this.updateWebViewViewConfigurations();
-        useBus().trigger(
-          "activeConfigChanged",
-          await this.state.getSelectedConfiguration(),
-        );
+        this.refreshActiveConfig();
       },
     );
   };
@@ -1967,7 +1880,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
     this.context.subscriptions.push(
       commands.registerCommand(Commands.HomeView.RefreshCredentials, () =>
-        useBus().trigger("refreshCredentials", undefined),
+        this.refreshCredentials(),
       ),
       commands.registerCommand(
         Commands.HomeView.AddCredential,

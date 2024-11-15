@@ -14,9 +14,13 @@ import {
   useApi,
 } from "src/api";
 import { normalizeURL } from "src/utils/url";
+import { showProgress } from "src/utils/progress";
+import {
+  getStatusFromError,
+  getSummaryStringFromError,
+} from "src/utils/errors";
 import { DeploymentSelector, SelectionState } from "src/types/shared";
-import { LocalState } from "./constants";
-import { getStatusFromError, getSummaryStringFromError } from "./utils/errors";
+import { LocalState, Views } from "./constants";
 
 function findContentRecord<
   T extends ContentRecord | PreContentRecord | PreContentRecordWithConfig,
@@ -191,14 +195,27 @@ export class PublisherState implements Disposable {
   }
 
   async refreshContentRecords() {
-    const api = await useApi();
-    const response = await api.contentRecords.getAll(".", { recursive: true });
+    try {
+      await showProgress("Refreshing Deployments", Views.HomeView, async () => {
+        const api = await useApi();
+        const response = await api.contentRecords.getAll(".", {
+          recursive: true,
+        });
 
-    // Currently we filter out any Content Records in error
-    this.contentRecords = response.data.filter(
-      (r): r is ContentRecord | PreContentRecord | PreContentRecordWithConfig =>
-        !isContentRecordError(r),
-    );
+        // Currently we filter out any Content Records in error
+        this.contentRecords = response.data.filter(
+          (
+            r,
+          ): r is
+            | ContentRecord
+            | PreContentRecord
+            | PreContentRecordWithConfig => !isContentRecordError(r),
+        );
+      });
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError("refreshContentRecords", error);
+      window.showErrorMessage(summary);
+    }
   }
 
   findContentRecord(name: string, projectDir: string) {
@@ -210,10 +227,22 @@ export class PublisherState implements Disposable {
   }
 
   async refreshConfigurations() {
-    const api = await useApi();
-    const response = await api.configurations.getAll(".", { recursive: true });
-
-    this.configurations = response.data;
+    try {
+      await showProgress(
+        "Refreshing Configurations",
+        Views.HomeView,
+        async () => {
+          const api = await useApi();
+          const response = await api.configurations.getAll(".", {
+            recursive: true,
+          });
+          this.configurations = response.data;
+        },
+      );
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError("refreshConfigurations", error);
+      window.showErrorMessage(summary);
+    }
   }
 
   get validConfigs(): Configuration[] {
@@ -239,10 +268,16 @@ export class PublisherState implements Disposable {
   }
 
   async refreshCredentials() {
-    const api = await useApi();
-    const response = await api.credentials.list();
-
-    this.credentials = response.data;
+    try {
+      await showProgress("Refreshing Credentials", Views.HomeView, async () => {
+        const api = await useApi();
+        const response = await api.credentials.list();
+        this.credentials = response.data;
+      });
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError("refreshCredentials", error);
+      window.showErrorMessage(summary);
+    }
   }
 
   findCredential(name: string) {
