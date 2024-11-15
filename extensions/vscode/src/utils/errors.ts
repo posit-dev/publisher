@@ -142,14 +142,7 @@ export const scrubErrorData = (data: Record<string, unknown> | undefined) => {
   }
   // remove what we don't want to display
   // in this unknown list of attributes
-  const {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-shadow
-    file,
-    method,
-    status,
-    url,
-    ...remainingData
-  } = data;
+  const { file, method, status, url, ...remainingData } = data;
 
   if (Object.keys(remainingData).length === 0) {
     return undefined;

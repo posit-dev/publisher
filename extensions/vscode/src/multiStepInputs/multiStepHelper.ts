@@ -184,6 +184,7 @@ export class MultiStepInput {
             if (item === QuickInputButtons.Back) {
               reject(InputFlowAction.back);
             } else {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               resolve(<any>item);
             }
           }),
@@ -260,6 +261,7 @@ export class MultiStepInput {
             if (item === QuickInputButtons.Back) {
               reject(InputFlowAction.back);
             } else {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               resolve(<any>item);
             }
           }),

@@ -12,7 +12,9 @@ export function deployProject(localID: string, stream: EventStream) {
       cancellable: true,
     },
     (progress, token) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let resolveCB: (reason?: any) => void;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let rejectCB: (reason?: any) => void;
       const registrations: UnregisterCallback[] = [];
       const promise = new Promise<void>((resolve, reject) => {
@@ -420,7 +422,7 @@ export function deployProject(localID: string, stream: EventStream) {
             });
             resolveCB("Success!");
 
-            let visitOption = "View";
+            const visitOption = "View";
             const selection = await window.showInformationMessage(
               "Deployment was successful",
               visitOption,

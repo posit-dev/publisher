@@ -15,7 +15,9 @@ export async function getPythonInterpreterPath(): Promise<string | undefined> {
       "python.interpreterPath",
       { workspaceFolder: workspaceFolder },
     );
-  } catch {}
+  } catch {
+    // Ignore
+  }
   if (configuredPython === undefined) {
     return undefined;
   }
@@ -30,7 +32,7 @@ export async function getPythonInterpreterPath(): Promise<string | undefined> {
       "Scripts/python.exe",
       "Scripts/python3.exe",
     ];
-    for (let name of names) {
+    for (const name of names) {
       const candidate = Uri.joinPath(pythonUri, name);
       if (await fileExists(candidate)) {
         python = candidate.fsPath;
