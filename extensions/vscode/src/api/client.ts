@@ -57,7 +57,7 @@ class PublishingClientApi {
     this.entrypoints = new EntryPoints(this.client);
   }
 
-  logDuration(response: AxiosResponse<any, any>) {
+  logDuration(response: AxiosResponse<unknown, unknown>) {
     const timestamp = response.config.ts;
     if (timestamp) {
       const request = response.request;

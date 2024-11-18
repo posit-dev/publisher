@@ -622,10 +622,6 @@ export function isPublishCreateDeploymentStart(
 
 export interface PublishCreateDeploymentLog extends EventStreamMessage {
   type: "publish/createDeployment/log";
-  data: {
-    // structured data not guaranteed, use selective or generic queries
-    // from data map
-  };
 }
 export type OnPublishCreateDeploymentLogCallback = (
   msg: PublishCreateDeploymentLog,
@@ -683,10 +679,6 @@ export function isPublishUploadBundleStart(
 
 export interface PublishUploadBundleLog extends EventStreamMessage {
   type: "publish/uploadBundle/log";
-  data: {
-    // structured data not guaranteed, use selective or generic queries
-    // from data map
-  };
 }
 export type OnPublishUploadBundleLogCallback = (
   msg: PublishUploadBundleLog,
@@ -745,10 +737,6 @@ export function isPublishDeployBundleStart(
 
 export interface PublishDeployBundleLog extends EventStreamMessage {
   type: "publish/deployBundle/log";
-  data: {
-    // structured data not guaranteed, use selective or generic queries
-    // from data map
-  };
 }
 export type OnPublishDeployBundleLogCallback = (
   msg: PublishDeployBundleLog,

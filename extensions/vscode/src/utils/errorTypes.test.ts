@@ -25,6 +25,7 @@ import {
   isErrPythonExecNotFoundError,
 } from "./errorTypes";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const mkAxiosJsonErr = (data: Record<PropertyKey, any>) => {
   return new AxiosError(undefined, undefined, undefined, undefined, {
     status: 0,

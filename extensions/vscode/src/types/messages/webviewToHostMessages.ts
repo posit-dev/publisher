@@ -64,6 +64,7 @@ export type WebviewToHostMessage =
   | ViewPublishingLog
   | ShowAssociateGUIDMsg;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
   return (
     msg.kind === WebviewToHostMessageType.DEPLOY ||
