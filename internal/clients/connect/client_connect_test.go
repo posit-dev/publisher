@@ -5,17 +5,22 @@ package connect
 import (
 	"errors"
 	"io/fs"
+	"net/http"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/posit-dev/publisher/internal/accounts"
+	"github.com/posit-dev/publisher/internal/clients/connect/server_settings"
 	"github.com/posit-dev/publisher/internal/clients/http_client"
+	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/logging/loggingtest"
+	"github.com/posit-dev/publisher/internal/schema"
 	"github.com/posit-dev/publisher/internal/types"
+	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -23,10 +28,34 @@ import (
 
 type ConnectClientSuite struct {
 	utiltest.Suite
+	cfg *config.Config
 }
 
 func TestConnectClientSuite(t *testing.T) {
-	suite.Run(t, new(ConnectClientSuite))
+	s := new(ConnectClientSuite)
+	s.cfg = &config.Config{
+		Schema:        schema.ConfigSchemaURL,
+		Type:          "python-dash",
+		Entrypoint:    "app:myapp",
+		Title:         "Super Title",
+		Description:   "minimal description",
+		HasParameters: true,
+		Python: &config.Python{
+			Version:        "3.4.5",
+			PackageFile:    "requirements.in",
+			PackageManager: "pip",
+		},
+		R: &config.R{
+			Version:        "4.5.6",
+			PackageFile:    "renv.lock",
+			PackageManager: "renv",
+		},
+		Quarto: &config.Quarto{
+			Version: "1.2.3",
+			Engines: []string{"jupyter"},
+		},
+	}
+	suite.Run(t, s)
 }
 
 func (s *ConnectClientSuite) TestNewConnectClient() {
@@ -360,7 +389,7 @@ func (s *ConnectClientSuite) TestValidateDeploymentAppFailure() {
 	}
 	contentID := types.ContentID("myContentID")
 	err := client.ValidateDeployment(contentID, logging.New())
-	s.ErrorContains(err, "couldn't access the deployed content")
+	s.ErrorContains(err, "deployed content does not seem to be running. See the logs in Connect for details")
 }
 
 func (s *ConnectClientSuite) TestValidateDeploymentHTTPNonAppErr() {
@@ -567,4 +596,359 @@ func (s *ConnectClientSuite) TestTestAuthenticationNotPublisher() {
 	s.Nil(user)
 	s.NotNil(err)
 	s.ErrorContains(err, "user account bob with role 'viewer' does not have permission to publish content")
+}
+
+func (s *ConnectClientSuite) TestContentDetails() {
+	lgr := logging.New()
+	content := &ConnectContent{}
+	httpClient := &http_client.MockHTTPClient{}
+	httpClient.On("Get", "/__api__/v1/content/e8922765-4880-43cd-abc0-d59fe59b8b4b", content, lgr).Return(nil)
+
+	client := &ConnectClient{
+		client: httpClient,
+	}
+
+	err := client.ContentDetails("e8922765-4880-43cd-abc0-d59fe59b8b4b", content, lgr)
+	s.NoError(err)
+	httpClient.AssertExpectations(s.T())
+
+	expectedErr := errors.New("unreachable")
+	httpClient.On("Get", "/__api__/v1/content/cf3d3afe-2076-4812-825a-28237252030b", content, lgr).Return(expectedErr)
+
+	err = client.ContentDetails("cf3d3afe-2076-4812-825a-28237252030b", content, lgr)
+	s.ErrorIs(err, expectedErr)
+	httpClient.AssertExpectations(s.T())
+}
+
+func (s *ConnectClientSuite) TestValidateDeploymentTargetForbiddenFailure() {
+	lgr := logging.New()
+	content := &ConnectContent{}
+	httpClient := &http_client.MockHTTPClient{}
+
+	// Forbidden
+	returnErr := types.NewAgentError(
+		events.ServerErrorCode,
+		http_client.NewHTTPError("", "", http.StatusForbidden),
+		nil,
+	)
+	httpClient.On("Get", "/__api__/v1/content/e8922765-4880-43cd-abc0-d59fe59b8b4b", content, lgr).Return(returnErr)
+
+	client := &ConnectClient{
+		client: httpClient,
+	}
+	expectedErr := types.NewAgentError(
+		events.DeploymentFailedCode,
+		errors.New("Cannot deploy content: ID e8922765-4880-43cd-abc0-d59fe59b8b4b - You may need to request collaborator permissions or verify the credentials in use"),
+		nil)
+	err := client.ValidateDeploymentTarget("e8922765-4880-43cd-abc0-d59fe59b8b4b", s.cfg, lgr)
+	aerr, ok := types.IsAgentError(err)
+	s.Equal(ok, true)
+	s.Equal(
+		expectedErr.Message,
+		aerr.Message,
+	)
+}
+
+func (s *ConnectClientSuite) TestValidateDeploymentTargetNotFoundFailure() {
+	lgr := logging.New()
+	content := &ConnectContent{}
+	httpClient := &http_client.MockHTTPClient{}
+
+	// Not Found
+	returnErr := types.NewAgentError(
+		events.ServerErrorCode,
+		http_client.NewHTTPError("", "", http.StatusNotFound),
+		nil,
+	)
+
+	httpClient.On("Get", "/__api__/v1/content/e8922765-4880-43cd-abc0-d59fe59b8b4b", content, lgr).Return(returnErr)
+
+	client := &ConnectClient{
+		client: httpClient,
+	}
+	expectedErr := types.NewAgentError(
+		events.DeploymentFailedCode,
+		errors.New("cannot deploy content: ID e8922765-4880-43cd-abc0-d59fe59b8b4b - Content cannot be found"),
+		nil)
+	err := client.ValidateDeploymentTarget("e8922765-4880-43cd-abc0-d59fe59b8b4b", s.cfg, lgr)
+	aerr, ok := types.IsAgentError(err)
+	s.Equal(ok, true)
+	s.Equal(
+		expectedErr.Message,
+		aerr.Message,
+	)
+}
+
+func (s *ConnectClientSuite) TestValidateDeploymentTargetUnknownFailure() {
+	lgr := logging.New()
+	content := &ConnectContent{}
+	httpClient := &http_client.MockHTTPClient{}
+
+	// Not Found
+	returnErr := types.NewAgentError(
+		events.ServerErrorCode,
+		http_client.NewHTTPError("", "", http.StatusBadGateway),
+		nil,
+	)
+
+	httpClient.On("Get", "/__api__/v1/content/e8922765-4880-43cd-abc0-d59fe59b8b4b", content, lgr).Return(returnErr)
+
+	client := &ConnectClient{
+		client: httpClient,
+	}
+	expectedErr := types.NewAgentError(
+		events.DeploymentFailedCode,
+		errors.New("Cannot deploy content: ID e8922765-4880-43cd-abc0-d59fe59b8b4b - Unknown error: unexpected response from the server (502)"),
+		nil)
+	err := client.ValidateDeploymentTarget("e8922765-4880-43cd-abc0-d59fe59b8b4b", s.cfg, lgr)
+	aerr, ok := types.IsAgentError(err)
+	s.Equal(ok, true)
+	s.Equal(
+		expectedErr.Message,
+		aerr.Message,
+	)
+}
+
+func (s *ConnectClientSuite) TestValidateDeploymentTargetLockedFailure() {
+	lgr := logging.New()
+	content := &ConnectContent{}
+	queryResult := &ConnectContent{
+		Name:               "",
+		Title:              "",
+		GUID:               "",
+		Description:        "",
+		AccessType:         "",
+		ServiceAccountName: "",
+		DefaultImageName:   "",
+		Locked:             true,
+	}
+	httpClient := &http_client.MockHTTPClient{}
+
+	httpClient.On("Get", "/__api__/v1/content/e8922765-4880-43cd-abc0-d59fe59b8b4b", content, lgr).Return(nil, queryResult).Run(func(args mock.Arguments) {
+		// this will update the ConnectContent structure
+		// with the value that we passed in as the second
+		// return argument
+		arg := args.Get(1).(*ConnectContent)
+		*arg = *queryResult
+	})
+
+	client := &ConnectClient{
+		client: httpClient,
+	}
+	expectedErr := types.NewAgentError(
+		events.DeploymentFailedCode,
+		errors.New("Content is locked, cannot deploy to it (content ID = e8922765-4880-43cd-abc0-d59fe59b8b4b)"),
+		nil)
+	err := client.ValidateDeploymentTarget("e8922765-4880-43cd-abc0-d59fe59b8b4b", s.cfg, lgr)
+	aerr, ok := types.IsAgentError(err)
+	s.Equal(ok, true)
+	s.Equal(
+		expectedErr.Message,
+		aerr.Message,
+	)
+}
+
+func (s *ConnectClientSuite) TestValidateDeploymentTargetAppModeNotModifiableCodeFailure() {
+	lgr := logging.New()
+	content := &ConnectContent{}
+	queryResult := &ConnectContent{
+		AppMode:            "shiny",
+		Name:               "",
+		Title:              "",
+		GUID:               "",
+		Description:        "",
+		AccessType:         "",
+		ServiceAccountName: "",
+		DefaultImageName:   "",
+		Locked:             false,
+	}
+	httpClient := &http_client.MockHTTPClient{}
+
+	httpClient.On("Get", "/__api__/v1/content/e8922765-4880-43cd-abc0-d59fe59b8b4b", content, lgr).Return(nil, queryResult).Run(func(args mock.Arguments) {
+		// this will update the ConnectContent structure
+		// with the value that we passed in as the second
+		// return argument
+		arg := args.Get(1).(*ConnectContent)
+		*arg = *queryResult
+	})
+
+	client := &ConnectClient{
+		client: httpClient,
+	}
+	expectedErr := types.NewAgentError(
+		events.DeploymentFailedCode,
+		errors.New("Content was previously deployed as 'r-shiny' but your configuration is set to 'python-dash'."),
+		nil)
+	err := client.ValidateDeploymentTarget("e8922765-4880-43cd-abc0-d59fe59b8b4b", s.cfg, lgr)
+	aerr, ok := types.IsAgentError(err)
+	s.Equal(ok, true)
+	s.Equal(
+		expectedErr.Message,
+		aerr.Message,
+	)
+}
+
+func (s *ConnectClientSuite) TestValidateDeploymentTargetAllowsAppModeToChangeFromUnknown() {
+	lgr := logging.New()
+	content := &ConnectContent{}
+	queryResult := &ConnectContent{
+		AppMode:            "",
+		Name:               "",
+		Title:              "",
+		GUID:               "",
+		Description:        "",
+		AccessType:         "",
+		ServiceAccountName: "",
+		DefaultImageName:   "",
+		Locked:             false,
+	}
+	httpClient := &http_client.MockHTTPClient{}
+
+	httpClient.On("Get", "/__api__/v1/content/e8922765-4880-43cd-abc0-d59fe59b8b4b", content, lgr).Return(nil, queryResult).Run(func(args mock.Arguments) {
+		// this will update the ConnectContent structure
+		// with the value that we passed in as the second
+		// return argument
+		arg := args.Get(1).(*ConnectContent)
+		*arg = *queryResult
+	})
+
+	client := &ConnectClient{
+		client: httpClient,
+	}
+	err := client.ValidateDeploymentTarget("e8922765-4880-43cd-abc0-d59fe59b8b4b", s.cfg, lgr)
+	s.NoError(err)
+}
+
+func (s *ConnectClientSuite) TestCheckCapabilities() {
+	lgr := logging.New()
+	httpClient := &http_client.MockHTTPClient{}
+	httpClient.On("Get", "/__api__/v1/user", mock.Anything, lgr).Return(nil)
+	httpClient.On("Get", "/__api__/server_settings", mock.Anything, lgr).Return(nil)
+	httpClient.On("Get", "/__api__/server_settings/applications", mock.Anything, lgr).Return(nil)
+	httpClient.On("Get", "/__api__/server_settings/scheduler/python-dash", mock.Anything, lgr).Return(nil)
+	httpClient.On("Get", "/__api__/v1/server_settings/r", mock.Anything, lgr).Return(nil)
+	httpClient.On("Get", "/__api__/v1/server_settings/quarto", mock.Anything, lgr).Return(nil)
+
+	// Be sure to mock available python versions
+	httpClient.On("Get", "/__api__/v1/server_settings/python", mock.AnythingOfType("*server_settings.PyInfo"), lgr).Run(func(args mock.Arguments) {
+		pySettings := args.Get(1).(*server_settings.PyInfo)
+		pySettings.Installations = []server_settings.PyInstallation{{Version: "3.4.5"}}
+	}).Return(nil)
+
+	cfg := config.New()
+	cfg.Type = "python-dash"
+	cfg.Entrypoint = "app.py"
+	cfg.Files = []string{"/app.py", "/requirements.txt"}
+	cfg.Python = &config.Python{
+		Version:        "3.4.5",
+		PackageFile:    "requirements.txt",
+		PackageManager: "pip",
+	}
+
+	var cwd util.AbsolutePath
+	bundleTestPath := cwd.Join("testdata", "python-bundle")
+
+	client := &ConnectClient{
+		client: httpClient,
+	}
+
+	err := client.CheckCapabilities(bundleTestPath, cfg, nil, lgr)
+	s.NoError(err)
+	httpClient.AssertExpectations(s.T())
+}
+
+func (s *ConnectClientSuite) TestCheckCapabilities_missingPythonVer() {
+	lgr := logging.New()
+	httpClient := &http_client.MockHTTPClient{}
+	httpClient.On("Get", "/__api__/v1/user", mock.Anything, lgr).Return(nil)
+	httpClient.On("Get", "/__api__/server_settings", mock.Anything, lgr).Return(nil)
+	httpClient.On("Get", "/__api__/server_settings/applications", mock.Anything, lgr).Return(nil)
+	httpClient.On("Get", "/__api__/server_settings/scheduler/python-dash", mock.Anything, lgr).Return(nil)
+	httpClient.On("Get", "/__api__/v1/server_settings/r", mock.Anything, lgr).Return(nil)
+	httpClient.On("Get", "/__api__/v1/server_settings/quarto", mock.Anything, lgr).Return(nil)
+
+	// Mock versions, not including 3.4.5
+	httpClient.On("Get", "/__api__/v1/server_settings/python", mock.AnythingOfType("*server_settings.PyInfo"), lgr).Run(func(args mock.Arguments) {
+		pySettings := args.Get(1).(*server_settings.PyInfo)
+		pySettings.Installations = []server_settings.PyInstallation{{Version: "3.3.0"}}
+	}).Return(nil)
+
+	cfg := config.New()
+	cfg.Type = "python-dash"
+	cfg.Entrypoint = "app.py"
+	cfg.Files = []string{"/app.py", "/requirements.txt"}
+	cfg.Python = &config.Python{
+		Version:        "3.4.5", // Not included in server settings
+		PackageFile:    "requirements.txt",
+		PackageManager: "pip",
+	}
+
+	var cwd util.AbsolutePath
+	bundleTestPath := cwd.Join("testdata", "python-bundle")
+
+	client := &ConnectClient{
+		client: httpClient,
+	}
+
+	err := client.CheckCapabilities(bundleTestPath, cfg, nil, lgr)
+	s.NotNil(err)
+	s.Contains(err.Error(), "Python 3.4 is not available on the server.")
+	httpClient.AssertExpectations(s.T())
+}
+
+func (s *ConnectClientSuite) TestCheckCapabilities_requirementsFileDoesNotExist() {
+	lgr := logging.New()
+	httpClient := &http_client.MockHTTPClient{}
+
+	cfg := config.New()
+	cfg.Type = "python-dash"
+	cfg.Entrypoint = "app.py"
+	cfg.Files = []string{"/app.py", "/requirements.txt"}
+	cfg.Python = &config.Python{
+		Version:        "3.4.5",
+		PackageManager: "pip",
+		PackageFile:    "requirements.txt",
+	}
+
+	var cwd util.AbsolutePath
+	bundleTestPath := cwd.Join("testdata", "missing-reqs")
+
+	client := &ConnectClient{
+		client: httpClient,
+	}
+
+	err := client.CheckCapabilities(bundleTestPath, cfg, nil, lgr)
+	aerr, yes := types.IsAgentError(err)
+	s.Equal(yes, true)
+	s.Equal(aerr.Code, types.ErrorRequirementsFileReading)
+	s.Contains(aerr.Message, "Missing dependency file requirements.txt. This file must be included in the deployment.")
+}
+
+func (s *ConnectClientSuite) TestCheckCapabilities_requirementsFileNotInConfig() {
+	lgr := logging.New()
+	httpClient := &http_client.MockHTTPClient{}
+
+	cfg := config.New()
+	cfg.Type = "python-dash"
+	cfg.Entrypoint = "app.py"
+	cfg.Files = []string{"/app.py"} // requirements file not included in config files list
+	cfg.Python = &config.Python{
+		Version:        "3.4.5",
+		PackageManager: "pip",
+		PackageFile:    "requirements.txt",
+	}
+
+	var cwd util.AbsolutePath
+	// This bundle path does have requirements.txt file butis not included in configuration
+	bundleTestPath := cwd.Join("testdata", "python-bundle")
+
+	client := &ConnectClient{
+		client: httpClient,
+	}
+
+	err := client.CheckCapabilities(bundleTestPath, cfg, nil, lgr)
+	aerr, yes := types.IsAgentError(err)
+	s.Equal(yes, true)
+	s.Equal(aerr.Code, types.ErrorRequirementsFileReading)
+	s.Contains(aerr.Message, "Missing dependency file requirements.txt. This file must be included in the deployment.")
 }

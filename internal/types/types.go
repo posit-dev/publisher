@@ -10,6 +10,7 @@ type Time = time.Time
 
 type ContentName string
 type ContentID string
+type Environment []string
 type BundleID string
 type TaskID string
 type UserID string

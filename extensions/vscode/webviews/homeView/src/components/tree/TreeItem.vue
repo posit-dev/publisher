@@ -4,6 +4,7 @@
     :class="{
       'align-icon-with-twisty': alignIconWithTwisty,
       collapsible: $slots.default,
+      'text-list-emphasized': listStyle === 'emphasized',
       'text-foreground': listStyle === 'default',
       'text-list-deemphasized': listStyle === 'deemphasized',
     }"
@@ -35,8 +36,11 @@
         :class="codicon"
       />
       <div class="tree-item-label-container">
-        <span class="tree-item-title">{{ title }}</span>
-        <span v-if="description" class="tree-item-description">
+        <span class="tree-item-title" data-automation="req">{{ title }}</span>
+        <span v-if="$slots.description" class="tree-item-description">
+          <slot name="description" />
+        </span>
+        <span v-else-if="description" class="tree-item-description">
           {{ description }}
         </span>
       </div>
@@ -57,7 +61,7 @@
 <script setup lang="ts">
 import ActionToolbar, { ActionButton } from "src/components/ActionToolbar.vue";
 
-export type TreeItemStyle = "default" | "deemphasized";
+export type TreeItemStyle = "emphasized" | "default" | "deemphasized";
 
 const expanded = defineModel("expanded", { required: false, default: false });
 
@@ -79,6 +83,7 @@ withDefaults(defineProps<Props>(), {
 
 defineSlots<{
   default(props: { indentLevel: number }): any;
+  description(): any;
   postDecor(): any;
 }>();
 
@@ -151,6 +156,7 @@ const toggleExpanded = () => {
 
     .tree-item-label-container {
       flex: 1;
+      display: flex;
       min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -159,14 +165,24 @@ const toggleExpanded = () => {
         line-height: 22px;
         color: inherit;
         white-space: pre;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .tree-item-description {
         line-height: 22px;
         font-size: 0.9em;
         margin-left: 0.5em;
-        opacity: 0.7;
+        flex-shrink: 100000;
         white-space: pre;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+
+        &:not(:has(input)) {
+          opacity: 0.7;
+        }
       }
     }
 

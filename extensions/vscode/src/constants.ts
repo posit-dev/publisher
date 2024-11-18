@@ -10,6 +10,18 @@ export const DEPLOYMENTS_PATTERN = "**/.posit/publish/deployments/*.toml";
 export const DEFAULT_PYTHON_PACKAGE_FILE = "requirements.txt";
 export const DEFAULT_R_PACKAGE_FILE = "renv.lock";
 
+// pulled from /internal/services/api/get_entrypoints.go
+// should all be lowercase!
+export const ENTRYPOINT_FILE_EXTENSIONS = [
+  ".htm",
+  ".html",
+  ".ipynb",
+  ".py",
+  ".qmd",
+  ".r",
+  ".rmd",
+];
+
 const baseCommands = {
   InitProject: "posit.publisher.init-project",
   ShowOutputChannel: "posit.publisher.showOutputChannel",
@@ -33,10 +45,6 @@ const credentialsContexts = {
   EnvironmentVars: "posit.publisher.credentials.tree.item.environmentVars",
 };
 
-export const CredentialGUIs = {
-  EnvironmentGUID: "00000000-0000-0000-0000-000000000000",
-};
-
 const filesCommands = {
   Refresh: "posit.publisher.files.refresh",
   Exclude: "posit.publisher.files.exclude",
@@ -52,7 +60,6 @@ const pythonPackagesCommands = {
 const rPackagesCommands = {
   Edit: "posit.publisher.rPackages.edit",
   Refresh: "posit.publisher.rPackages.refresh",
-  Scan: "posit.publisher.rPackages.scan",
 } as const;
 
 const homeViewCommands = {
@@ -73,6 +80,8 @@ const homeViewCommands = {
   AddCredential: "posit.publisher.homeView.addCredential",
   DeleteCredential: "posit.publisher.homeView.deleteCredential",
   RefreshCredentials: "posit.publisher.homeView.refreshCredentials",
+  RemoveSecret: "posit.publisher.homeView.removeSecret",
+  EditCurrentConfiguration: "posit.publisher.homeView.edit.Configuration",
   // Added automatically by VSCode with view registration
   Focus: "posit.publisher.homeView.focus",
 } as const;
@@ -103,7 +112,6 @@ export const Contexts = {
 export const enum Views {
   Project = "posit.publisher.project",
   HomeView = "posit.publisher.homeView",
-  ContentRecords = "posit.publisher.contentRecords",
   Logs = "posit.publisher.logs",
 }
 

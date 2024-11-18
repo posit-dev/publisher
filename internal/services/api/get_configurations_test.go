@@ -51,7 +51,9 @@ func (s *GetConfigurationsSuite) makeConfiguration(name string) *config.Config {
 	}
 	err := cfg.WriteFile(path)
 	s.NoError(err)
-	return cfg
+	r, err := config.FromFile(path)
+	s.NoError(err)
+	return r
 }
 
 func (s *GetConfigurationsSuite) TestGetConfigurations() {
@@ -214,7 +216,9 @@ func (s *GetConfigurationsSuite) makeSubdirConfiguration(name string, subdir str
 	}
 	err = cfg.WriteFile(path)
 	s.NoError(err)
-	return cfg
+	r, err := config.FromFile(path)
+	s.NoError(err)
+	return r
 }
 
 func (s *GetConfigurationsSuite) TestGetConfigurationsRecursive() {

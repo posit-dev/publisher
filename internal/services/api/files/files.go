@@ -19,7 +19,6 @@ type File struct {
 	Reason           *matcher.Pattern `json:"reason"`           // object describing the reason the file was included/excluded, or null if no pattern matched it
 	Files            []*File          `json:"files"`            // an array of objects of the same type for each file within the directory.
 	IsDir            bool             `json:"isDir"`            // true if the file is a directory
-	IsEntrypoint     bool             `json:"isEntrypoint"`     // true if the file is an entrypoint
 	IsRegular        bool             `json:"isFile"`           // true if the file is a regular file
 	ModifiedDatetime string           `json:"modifiedDatetime"` // the last modified datetime
 	Rel              string           `json:"rel"`              // the relative path to the project root, which is used as the identifier
@@ -27,6 +26,8 @@ type File struct {
 	Size             int64            `json:"size"`             // nullable; length in bytes for regular files; system-dependent
 	FileCount        int64            `json:"fileCount"`        // total number of files in the subtree rooted at this node
 	Abs              string           `json:"abs"`              // the absolute path
+	AllIncluded      bool             `json:"allIncluded"`      // Are all nodes under this one included?
+	AllExcluded      bool             `json:"allExcluded"`      // Are all nodes under this one excluded?
 }
 
 func CreateFile(root util.AbsolutePath, path util.AbsolutePath, match *matcher.Pattern) (*File, error) {
@@ -82,7 +83,24 @@ func (f *File) CalculateDirectorySizes() {
 	f.Size = size
 }
 
-func (f *File) insert(root util.AbsolutePath, path util.AbsolutePath, matchList matcher.MatchList) (*File, error) {
+func (f *File) CalculateInclusions() {
+	if !f.IsDir {
+		included := (f.Reason != nil) && !f.Reason.Exclude
+		f.AllIncluded = included
+		f.AllExcluded = !included
+		return
+	}
+	f.AllIncluded = true
+	f.AllExcluded = true
+
+	for _, child := range f.Files {
+		child.CalculateInclusions()
+		f.AllIncluded = f.AllIncluded && child.AllIncluded
+		f.AllExcluded = f.AllExcluded && child.AllExcluded
+	}
+}
+
+func (f *File) insert(root util.AbsolutePath, path util.AbsolutePath, match *matcher.Pattern) (*File, error) {
 
 	// if the path is the same as the file's absolute path
 	if f.Abs == path.String() {
@@ -103,8 +121,6 @@ func (f *File) insert(root util.AbsolutePath, path util.AbsolutePath, matchList 
 		}
 
 		// otherwise, create it
-		match := matchList.Match(path)
-
 		child, err := CreateFile(root, path, match)
 		if err != nil || child == nil {
 			return nil, err
@@ -116,11 +132,11 @@ func (f *File) insert(root util.AbsolutePath, path util.AbsolutePath, matchList 
 	}
 
 	// otherwise, create the parent file
-	parent, err := f.insert(root, pathdir, matchList)
+	parent, err := f.insert(root, pathdir, match)
 	if err != nil || parent == nil {
 		return nil, err
 	}
 
 	// then insert this into the parent
-	return parent.insert(root, path, matchList)
+	return parent.insert(root, path, match)
 }

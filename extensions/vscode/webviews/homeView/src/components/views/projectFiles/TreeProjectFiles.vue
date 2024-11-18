@@ -4,8 +4,17 @@
     :key="file.id"
     :title="file.base"
     :checked="isFileIncluded(file)"
-    :disabled="file.reason?.source === 'built-in'"
-    :list-style="isFileIncluded(file) ? 'default' : 'deemphasized'"
+    :disabled="
+      file.reason?.source === 'built-in' ||
+      file.reason?.source === 'permissions'
+    "
+    :list-style="
+      isEntrypoint(file)
+        ? 'emphasized'
+        : isFileIncluded(file)
+          ? 'default'
+          : 'deemphasized'
+    "
     :tooltip="
       isFileIncluded(file)
         ? includedFileTooltip(file)
@@ -16,19 +25,32 @@
     @check="includeFile(file)"
     @uncheck="excludeFile(file)"
   >
-    <template v-if="file.files.length" #default="{ indentLevel }">
+    <template v-if="file.isDir" #default="{ indentLevel }">
       <TreeProjectFiles :files="file.files" :indentLevel="indentLevel" />
     </template>
 
-    <template
-      #postDecor
-      v-if="
-        file.isFile &&
-        file.reason?.source !== FileMatchSource.BUILT_IN &&
-        !home.flatFiles.lastDeployedFiles.has(file.rel)
-      "
-    >
-      <PostDecor class="text-git-added">A</PostDecor>
+    <template #postDecor>
+      <PostDecor
+        v-if="
+          file.isFile &&
+          isFileIncluded(file) &&
+          !home.flatFiles.lastDeployedFiles.has(file.id)
+        "
+        class="text-git-added"
+        :data-automation="`${file.id}-decorator`"
+      >
+        A
+      </PostDecor>
+      <PostDecor
+        v-if="
+          file.isFile &&
+          !isFileIncluded(file) &&
+          home.flatFiles.lastDeployedFiles.has(file.id)
+        "
+        class="text-git-deleted"
+      >
+        R
+      </PostDecor>
     </template>
   </TreeItemCheckbox>
 </template>
@@ -45,7 +67,10 @@ import { useHostConduitService } from "src/HostConduitService";
 import PostDecor from "src/components/tree/PostDecor.vue";
 import { ActionButton } from "src/components/ActionToolbar.vue";
 
-import { ContentRecordFile, FileMatchSource } from "../../../../../../src/api";
+import {
+  ContentRecordFile,
+  isConfigurationError,
+} from "../../../../../../src/api";
 import { WebviewToHostMessageType } from "../../../../../../src/types/messages/webviewToHostMessages";
 
 interface Props {
@@ -59,6 +84,14 @@ const props = withDefaults(defineProps<Props>(), {
 
 const home = useHomeStore();
 const { sendMsg } = useHostConduitService();
+
+const isEntrypoint = (file: ContentRecordFile): boolean => {
+  const config = home.selectedConfiguration;
+  if (config != undefined && !isConfigurationError(config)) {
+    return file.id === config.configuration.entrypoint;
+  }
+  return false;
+};
 
 const isFileIncluded = (file: ContentRecordFile) => {
   return Boolean(file.reason?.exclude === false);

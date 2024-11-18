@@ -40,7 +40,7 @@ jobs:
           path: dist
       - id: get-prerelease
         run: echo "prerelease=$(just pre-release)" >> "$GITHUB_OUTPUT"
-      - uses: softprops/action-gh-release@v1
+      - uses: softprops/action-gh-release@v2
         with:
           draft: false
           prerelease: ${{ steps.get-prerelease.outputs.prerelease == 'true' }}

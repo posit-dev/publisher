@@ -8,11 +8,24 @@ import (
 
 	"github.com/posit-dev/publisher/internal/credentials"
 	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/types"
 )
 
 func GetCredentialsHandlerFunc(log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		cs := credentials.CredentialsService{}
+		cs, err := credentials.NewCredentialsService(log)
+		if err != nil {
+			if aerr, ok := err.(*types.AgentError); ok {
+				if aerr.Code == types.ErrorCredentialServiceUnavailable {
+					apiErr := types.APIErrorCredentialsUnavailableFromAgentError(*aerr)
+					apiErr.JSONResponse(w)
+					return
+				}
+			}
+			InternalError(w, req, log, err)
+			return
+		}
+
 		creds, err := cs.List()
 		if err != nil {
 			InternalError(w, req, log, err)

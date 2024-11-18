@@ -1,6 +1,6 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { ExtensionContext, Uri, commands } from "vscode";
+import { ExtensionContext, Uri, commands, workspace } from "vscode";
 
 import * as ports from "src/ports";
 import { Service } from "src/services";
@@ -85,7 +85,7 @@ export async function activate(context: ExtensionContext) {
     new DocumentTracker(),
     commands.registerCommand(Commands.DeployWithEntrypoint, (uri: Uri) => {
       commands.executeCommand(Commands.HomeView.Focus);
-      homeViewProvider.handleFileInitiatedDeployment(uri);
+      homeViewProvider.handleFileInitiatedDeploymentSelection(uri);
     }),
   );
 }
@@ -97,3 +97,13 @@ export async function deactivate() {
     await service.stop();
   }
 }
+
+export const extensionSettings = {
+  verifyCertificates(): boolean {
+    // set value from extension configuration - defaults to true
+    const configuration = workspace.getConfiguration("positPublisher");
+    const value: boolean | undefined =
+      configuration.get<boolean>("verifyCertificates");
+    return value !== undefined ? value : true;
+  },
+};

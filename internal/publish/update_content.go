@@ -24,11 +24,10 @@ type DeploymentNotFoundErrorDetails struct {
 
 func (p *defaultPublisher) updateContent(
 	client connect.APIClient,
-	contentID types.ContentID,
-	log logging.Logger) error {
+	contentID types.ContentID) error {
 
 	op := events.PublishUpdateDeploymentOp
-	log = log.WithArgs(logging.LogKeyOp, op)
+	log := p.log.WithArgs(logging.LogKeyOp, op)
 
 	p.emitter.Emit(events.New(op, events.StartPhase, events.NoError, updateContentStartData{
 		ContentID: contentID,

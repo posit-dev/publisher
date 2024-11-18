@@ -59,7 +59,7 @@ init_with_fields() {
     perl -i -pe '$_ .= qq(description =  "'"${CONTENT}"' description"\n) if /title/' ${FULL_PATH}/.posit/publish/${CONTENT}.toml
 
     if [[ ${ADDITIONAL_FILES} ]]; then
-        perl -i -pe "s/(files = \[.*)\]/\1, '${ADDITIONAL_FILES}']/" ${FULL_PATH}/.posit/publish/${CONTENT}.toml
+        perl -i -0777 -pe "s/(files = \[.*?)(\s*\])/\1, '${ADDITIONAL_FILES}'\2/s" ${FULL_PATH}/.posit/publish/${CONTENT}.toml
     fi
 
     # add Connect runtime fields for interactive content
@@ -75,7 +75,7 @@ runtime.max_conns_per_process = 5
 runtime.load_factor = 0.8
 " >> ${FULL_PATH}/.posit/publish/${CONTENT}.toml
 
-sed -i"" -e "s/type = '[^']*'/type = '${CONTENT_TYPE}'/g" "${FULL_PATH}/.posit/publish/${CONTENT}.toml"
+sed -i"" -e "s/type = '[^']*'/type = '${APP_MODE}'/g" "${FULL_PATH}/.posit/publish/${CONTENT}.toml"
 }
 
 quarto_content_types=(
@@ -126,7 +126,7 @@ python_content_types=(
 @test "check for toml file" {
     if [[ ${CONTENT} != "parameterized_report" ]]; then 
         run cat ${FULL_PATH}/.posit/publish/deployments/ci_deploy.toml
-            assert_output --partial "type = '${CONTENT_TYPE}'"
+            assert_output --partial "type = '${APP_MODE}'"
             assert_output --partial "entrypoint = '${ENTRYPOINT}'"
             assert_output --partial "title = '${TITLE}'"
     fi
@@ -139,11 +139,7 @@ python_content_types=(
         run ${EXE} deploy ${FULL_PATH}
         assert_failure
         assert_output --partial "\
-can't find the package file (requirements.txt) in the project directory.
-Create the file, listing the packages your project depends on.
-Or scan your project dependencies using scan button in
-the Python Packages section of the UI and review the
-generated file."
+Missing dependency file requirements.txt. This file must be included in the deployment."
     else
         skip
     fi

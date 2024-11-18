@@ -13,6 +13,8 @@ import {
   UpdatePythonPackages,
   UpdateRPackages,
   RefreshFilesMsg,
+  SetPathSeparatorMsg,
+  UpdateServerEnvironmentMsg,
 } from "../../../src/types/messages/hostToWebviewMessages";
 import {
   WebviewToHostMessage,
@@ -38,9 +40,10 @@ export function useHostConduitService() {
 
   const sendMsg = (msg: WebviewToHostMessage) => {
     if (!hostConduit) {
-      throw new Error(
-        "HostCondiutService::sendMsg attemped ahead of call to useHostConduitService",
+      console.error(
+        `HostCondiutService::sendMsg attempted ahead of call to useHostConduitService. Message Dropped: ${JSON.stringify(msg)}`,
       );
+      return;
     }
     console.debug(`HostConduitService - Sending Msg: ${JSON.stringify(msg)}`);
     return hostConduit.sendMsg(msg);
@@ -82,9 +85,17 @@ const onMessageFromHost = (msg: HostToWebviewMessage): void => {
       return onShowDisableOverlayMsg();
     case HostToWebviewMessageType.HIDE_DISABLE_OVERLAY:
       return onHideDisableOverlayMsg();
+    case HostToWebviewMessageType.SET_PATH_SEPARATOR:
+      return onSetPathSeparatorMsg(msg);
+    case HostToWebviewMessageType.UPDATE_SERVER_ENVIRONMENT:
+      return onUpdateServerEnvironmentMsg(msg);
     default:
       console.warn(`unexpected command: ${JSON.stringify(msg)}`);
   }
+};
+
+const onSetPathSeparatorMsg = (msg: SetPathSeparatorMsg) => {
+  useHomeStore().platformFileSeparator = msg.content.separator;
 };
 
 const onInitializingRequestCompleteMsg = () => {
@@ -158,6 +169,7 @@ const onPublishStartMsg = () => {
 };
 const onPublishFinishSuccessMsg = () => {
   const home = useHomeStore();
+  home.clearSecretValues();
   home.publishInProgress = false;
   home.lastContentRecordResult = `Last Deployment was Successful`;
   home.lastContentRecordMsg = "";
@@ -207,4 +219,9 @@ const onUpdateRPackages = (msg: UpdateRPackages) => {
     msg.content.manager,
     msg.content.rVersion,
   );
+};
+
+const onUpdateServerEnvironmentMsg = (msg: UpdateServerEnvironmentMsg) => {
+  const home = useHomeStore();
+  home.serverSecrets = new Set(msg.content.environment);
 };

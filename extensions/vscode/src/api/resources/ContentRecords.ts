@@ -6,6 +6,7 @@ import {
   PreContentRecord,
   AllContentRecordTypes,
   ContentRecord,
+  Environment,
 } from "../types/contentRecords";
 
 export class ContentRecords {
@@ -71,12 +72,16 @@ export class ContentRecords {
     targetName: string,
     accountName: string,
     configName: string,
+    insecure: boolean,
     dir: string,
+    secrets?: Record<string, string>,
     r?: string,
   ) {
     const data = {
       account: accountName,
       config: configName,
+      secrets: secrets,
+      insecure: insecure,
       r: r,
     };
     const encodedTarget = encodeURIComponent(targetName);
@@ -106,13 +111,33 @@ export class ContentRecords {
   // 204 - no content
   // 404 - contentRecord or config file not found
   // 500 - internal server error
-  patch(deploymentName: string, configName: string, dir: string) {
+  patch(
+    deploymentName: string,
+    dir: string,
+    data: {
+      configName?: string;
+      guid?: string;
+    },
+  ) {
     const encodedName = encodeURIComponent(deploymentName);
     return this.client.patch<ContentRecord>(
       `deployments/${encodedName}`,
       {
-        configurationName: configName,
+        configurationName: data.configName,
+        id: data.guid,
       },
+      {
+        params: {
+          dir,
+        },
+      },
+    );
+  }
+
+  getEnv(deploymentName: string, dir: string) {
+    const encodedName = encodeURIComponent(deploymentName);
+    return this.client.get<Environment>(
+      `deployments/${encodedName}/environment`,
       {
         params: {
           dir,

@@ -1,5 +1,7 @@
 // Copyright (C) 2023 by Posit Software, PBC.
 
+import { ErrorCode } from "../../utils/errorTypes";
+
 export enum EventSourceReadyState {
   CONNECTING = 0,
   OPEN = 1,
@@ -298,10 +300,11 @@ export function getLocalId(arg: EventStreamMessage) {
   return arg.data.localId;
 }
 
-export interface EventStreamMessage {
+export interface EventStreamMessage<T = Record<string, string>> {
   type: EventSubscriptionTarget;
   time: string;
-  data: Record<string, string>;
+  data: T;
+  errCode?: ErrorCode;
   error?: string;
 }
 
@@ -619,10 +622,6 @@ export function isPublishCreateDeploymentStart(
 
 export interface PublishCreateDeploymentLog extends EventStreamMessage {
   type: "publish/createDeployment/log";
-  data: {
-    // structured data not guaranteed, use selective or generic queries
-    // from data map
-  };
 }
 export type OnPublishCreateDeploymentLogCallback = (
   msg: PublishCreateDeploymentLog,
@@ -680,10 +679,6 @@ export function isPublishUploadBundleStart(
 
 export interface PublishUploadBundleLog extends EventStreamMessage {
   type: "publish/uploadBundle/log";
-  data: {
-    // structured data not guaranteed, use selective or generic queries
-    // from data map
-  };
 }
 export type OnPublishUploadBundleLogCallback = (
   msg: PublishUploadBundleLog,
@@ -742,10 +737,6 @@ export function isPublishDeployBundleStart(
 
 export interface PublishDeployBundleLog extends EventStreamMessage {
   type: "publish/deployBundle/log";
-  data: {
-    // structured data not guaranteed, use selective or generic queries
-    // from data map
-  };
 }
 export type OnPublishDeployBundleLogCallback = (
   msg: PublishDeployBundleLog,

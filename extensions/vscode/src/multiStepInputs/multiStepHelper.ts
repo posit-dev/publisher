@@ -1,5 +1,10 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
+import { ConfigurationInspectionResult } from "src/api";
+import {
+  isAxiosErrorWithJson,
+  resolveAgentJsonErrorMsg,
+} from "src/utils/errorTypes";
 import {
   QuickPickItem,
   window,
@@ -21,6 +26,9 @@ export function isQuickPickItem(d: QuickPickItem | string): d is QuickPickItem {
 }
 
 export type QuickPickItemWithIndex = QuickPickItem & { index: number };
+export type QuickPickItemWithInspectionResult = QuickPickItem & {
+  inspectionResult?: ConfigurationInspectionResult;
+};
 
 export function isQuickPickItemWithIndex(
   d: QuickPickItem | string,
@@ -28,12 +36,23 @@ export function isQuickPickItemWithIndex(
   return (d as QuickPickItemWithIndex).index !== undefined;
 }
 
+export function isQuickPickItemWithInspectionResult(
+  d: QuickPickItem | string,
+): d is QuickPickItemWithInspectionResult {
+  return (
+    (d as QuickPickItemWithInspectionResult).inspectionResult !== undefined
+  );
+}
+
 export interface MultiStepState {
   title: string;
   step: number;
   lastStep: number;
   totalSteps: number;
-  data: Record<string, QuickPickItem | string | undefined>;
+  data: Record<
+    string,
+    QuickPickItem | QuickPickItemWithInspectionResult | string | undefined
+  >;
   promptStepNumbers: Record<string, number>;
 }
 
@@ -110,9 +129,11 @@ export class MultiStepInput {
         } else if (err === InputFlowAction.cancel) {
           step = undefined;
         } else {
-          window.showErrorMessage(
-            `Internal Error: MultiStepInput::stepThrough, err = ${JSON.stringify(err)}.`,
-          );
+          let errMsg = `Internal Error: MultiStepInput::stepThrough, err = ${JSON.stringify(err)}.`;
+          if (isAxiosErrorWithJson(err)) {
+            errMsg = resolveAgentJsonErrorMsg(err);
+          }
+          window.showErrorMessage(errMsg);
           step = undefined;
         }
       }
@@ -163,6 +184,7 @@ export class MultiStepInput {
             if (item === QuickInputButtons.Back) {
               reject(InputFlowAction.back);
             } else {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               resolve(<any>item);
             }
           }),
@@ -239,6 +261,7 @@ export class MultiStepInput {
             if (item === QuickInputButtons.Back) {
               reject(InputFlowAction.back);
             } else {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               resolve(<any>item);
             }
           }),

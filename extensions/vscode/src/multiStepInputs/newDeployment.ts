@@ -4,9 +4,9 @@ import path from "path";
 import {
   MultiStepInput,
   MultiStepState,
-  QuickPickItemWithIndex,
+  QuickPickItemWithInspectionResult,
   isQuickPickItem,
-  isQuickPickItemWithIndex,
+  isQuickPickItemWithInspectionResult,
 } from "src/multiStepInputs/multiStepHelper";
 
 import {
@@ -17,6 +17,7 @@ import {
   Uri,
   commands,
   window,
+  workspace,
 } from "vscode";
 
 import {
@@ -27,6 +28,9 @@ import {
   contentTypeStrings,
   ConfigurationInspectionResult,
   EntryPointPath,
+  areInspectionResultsSimilarEnough,
+  ContentType,
+  FileAction,
 } from "src/api";
 import {
   getPythonInterpreterPath,
@@ -36,397 +40,21 @@ import {
   getMessageFromError,
   getSummaryStringFromError,
 } from "src/utils/errors";
-import {
-  untitledConfigurationName,
-  untitledContentRecordName,
-} from "src/utils/names";
+import { isAxiosErrorWithJson } from "src/utils/errorTypes";
+import { newDeploymentName, newConfigFileNameFromTitle } from "src/utils/names";
 import { formatURL, normalizeURL } from "src/utils/url";
 import { checkSyntaxApiKey } from "src/utils/apiKeys";
 import { DeploymentObjects } from "src/types/shared";
 import { showProgress } from "src/utils/progress";
-import { vscodeOpenFiles } from "src/utils/files";
-
-type stepInfo = {
-  step: number;
-  totalSteps: number;
-};
-
-type possibleSteps = {
-  noCredentials: {
-    singleEntryPoint: stepInfo;
-    multipleEntryPoints: {
-      singleContentType: stepInfo;
-      multipleContentTypes: stepInfo;
-    };
-  };
-  newCredentials: {
-    singleEntryPoint: stepInfo;
-    multipleEntryPoints: {
-      singleContentType: stepInfo;
-      multipleContentTypes: stepInfo;
-    };
-  };
-  existingCredentials: {
-    singleEntryPoint: stepInfo;
-    multipleEntryPoints: {
-      singleContentType: stepInfo;
-      multipleContentTypes: stepInfo;
-    };
-  };
-};
-
-const steps: Record<string, possibleSteps | undefined> = {
-  inputEntryPointFileSelection: {
-    noCredentials: {
-      singleEntryPoint: {
-        step: 0, // not yet shown
-        totalSteps: 4,
-      },
-      multipleEntryPoints: {
-        singleContentType: {
-          step: 1,
-          totalSteps: 5,
-        },
-        multipleContentTypes: {
-          step: 1,
-          totalSteps: 6,
-        },
-      },
-    },
-    newCredentials: {
-      singleEntryPoint: {
-        step: 0, // not yet shown
-        totalSteps: 5,
-      },
-      multipleEntryPoints: {
-        singleContentType: {
-          step: 1,
-          totalSteps: 6,
-        },
-        multipleContentTypes: {
-          step: 1,
-          totalSteps: 7,
-        },
-      },
-    },
-    existingCredentials: {
-      singleEntryPoint: {
-        step: 0, // not yet shown
-        totalSteps: 2,
-      },
-      multipleEntryPoints: {
-        singleContentType: {
-          step: 1,
-          totalSteps: 3,
-        },
-        multipleContentTypes: {
-          step: 1,
-          totalSteps: 4,
-        },
-      },
-    },
-  },
-  inputEntryPointContentTypeSelection: {
-    noCredentials: {
-      singleEntryPoint: {
-        step: 0, // still 0
-        totalSteps: 4,
-      },
-      multipleEntryPoints: {
-        singleContentType: {
-          step: 1, // not shown
-          totalSteps: 5,
-        },
-        multipleContentTypes: {
-          step: 2,
-          totalSteps: 6,
-        },
-      },
-    },
-    newCredentials: {
-      singleEntryPoint: {
-        step: 0, // still 0
-        totalSteps: 5,
-      },
-      multipleEntryPoints: {
-        singleContentType: {
-          step: 1, // not shown
-          totalSteps: 6,
-        },
-        multipleContentTypes: {
-          step: 2,
-          totalSteps: 7,
-        },
-      },
-    },
-    existingCredentials: {
-      singleEntryPoint: {
-        step: 0, // still 0
-        totalSteps: 2,
-      },
-      multipleEntryPoints: {
-        singleContentType: {
-          step: 1, // not shown
-          totalSteps: 3,
-        },
-        multipleContentTypes: {
-          step: 2,
-          totalSteps: 4,
-        },
-      },
-    },
-  },
-  inputTitle: {
-    noCredentials: {
-      singleEntryPoint: {
-        step: 1,
-        totalSteps: 4,
-      },
-      multipleEntryPoints: {
-        singleContentType: {
-          step: 2,
-          totalSteps: 5,
-        },
-        multipleContentTypes: {
-          step: 3,
-          totalSteps: 6,
-        },
-      },
-    },
-    newCredentials: {
-      singleEntryPoint: {
-        step: 1,
-        totalSteps: 5,
-      },
-      multipleEntryPoints: {
-        singleContentType: {
-          step: 2,
-          totalSteps: 6,
-        },
-        multipleContentTypes: {
-          step: 3,
-          totalSteps: 7,
-        },
-      },
-    },
-    existingCredentials: {
-      singleEntryPoint: {
-        step: 1,
-        totalSteps: 2,
-      },
-      multipleEntryPoints: {
-        singleContentType: {
-          step: 2,
-          totalSteps: 3,
-        },
-        multipleContentTypes: {
-          step: 3,
-          totalSteps: 4,
-        },
-      },
-    },
-  },
-  pickCredentials: {
-    noCredentials: {
-      singleEntryPoint: {
-        step: 1, // not shown
-        totalSteps: 4,
-      },
-      multipleEntryPoints: {
-        singleContentType: {
-          step: 2, // not shown
-          totalSteps: 5,
-        },
-        multipleContentTypes: {
-          step: 3, // not shown
-          totalSteps: 6,
-        },
-      },
-    },
-    newCredentials: {
-      singleEntryPoint: {
-        step: 2,
-        totalSteps: 5,
-      },
-      multipleEntryPoints: {
-        singleContentType: {
-          step: 3,
-          totalSteps: 6,
-        },
-        multipleContentTypes: {
-          step: 4,
-          totalSteps: 7,
-        },
-      },
-    },
-    existingCredentials: {
-      singleEntryPoint: {
-        step: 2,
-        totalSteps: 2,
-      },
-      multipleEntryPoints: {
-        singleContentType: {
-          step: 3,
-          totalSteps: 3,
-        },
-        multipleContentTypes: {
-          step: 4,
-          totalSteps: 4,
-        },
-      },
-    },
-  },
-  inputServerUrl: {
-    noCredentials: {
-      singleEntryPoint: {
-        step: 2,
-        totalSteps: 4,
-      },
-      multipleEntryPoints: {
-        singleContentType: {
-          step: 3,
-          totalSteps: 5,
-        },
-        multipleContentTypes: {
-          step: 4,
-          totalSteps: 6,
-        },
-      },
-    },
-    newCredentials: {
-      singleEntryPoint: {
-        step: 3,
-        totalSteps: 5,
-      },
-      multipleEntryPoints: {
-        singleContentType: {
-          step: 4,
-          totalSteps: 6,
-        },
-        multipleContentTypes: {
-          step: 5,
-          totalSteps: 7,
-        },
-      },
-    },
-    existingCredentials: {
-      singleEntryPoint: {
-        step: 2, // not shown
-        totalSteps: 2,
-      },
-      multipleEntryPoints: {
-        singleContentType: {
-          step: 3, // not shown
-          totalSteps: 3,
-        },
-        multipleContentTypes: {
-          step: 4, // not shown
-          totalSteps: 4,
-        },
-      },
-    },
-  },
-  inputAPIKey: {
-    noCredentials: {
-      singleEntryPoint: {
-        step: 3,
-        totalSteps: 4,
-      },
-      multipleEntryPoints: {
-        singleContentType: {
-          step: 4,
-          totalSteps: 5,
-        },
-        multipleContentTypes: {
-          step: 5,
-          totalSteps: 6,
-        },
-      },
-    },
-    newCredentials: {
-      singleEntryPoint: {
-        step: 4,
-        totalSteps: 5,
-      },
-      multipleEntryPoints: {
-        singleContentType: {
-          step: 5,
-          totalSteps: 6,
-        },
-        multipleContentTypes: {
-          step: 6,
-          totalSteps: 7,
-        },
-      },
-    },
-    existingCredentials: {
-      singleEntryPoint: {
-        step: 2, // not shown
-        totalSteps: 2,
-      },
-      multipleEntryPoints: {
-        singleContentType: {
-          step: 3, // not shown
-          totalSteps: 3,
-        },
-        multipleContentTypes: {
-          step: 4, // not shown
-          totalSteps: 4,
-        },
-      },
-    },
-  },
-  inputCredentialName: {
-    noCredentials: {
-      singleEntryPoint: {
-        step: 4,
-        totalSteps: 4,
-      },
-      multipleEntryPoints: {
-        singleContentType: {
-          step: 5,
-          totalSteps: 5,
-        },
-        multipleContentTypes: {
-          step: 6,
-          totalSteps: 6,
-        },
-      },
-    },
-    newCredentials: {
-      singleEntryPoint: {
-        step: 5,
-        totalSteps: 5,
-      },
-      multipleEntryPoints: {
-        singleContentType: {
-          step: 6,
-          totalSteps: 6,
-        },
-        multipleContentTypes: {
-          step: 7,
-          totalSteps: 7,
-        },
-      },
-    },
-    existingCredentials: {
-      singleEntryPoint: {
-        step: 2, // not shown
-        totalSteps: 2,
-      },
-      multipleEntryPoints: {
-        singleContentType: {
-          step: 3, // not shown
-          totalSteps: 3,
-        },
-        multipleContentTypes: {
-          step: 4, // not shown
-          totalSteps: 4,
-        },
-      },
-    },
-  },
-};
+import {
+  getRelPathForConfig,
+  getRelPathForContentRecord,
+  relativeDir,
+  relativePath,
+  vscodeOpenFiles,
+} from "src/utils/files";
+import { ENTRYPOINT_FILE_EXTENSIONS } from "src/constants";
+import { extensionSettings } from "src/extension";
 
 export async function newDeployment(
   viewId: string,
@@ -441,141 +69,108 @@ export async function newDeployment(
   let credentials: Credential[] = [];
   let credentialListItems: QuickPickItem[] = [];
 
-  let discoveredEntryPoints: string[] = [];
-  let entryPointListItems: QuickPickItem[] = [];
+  const entryPointListItems: QuickPickItem[] = [];
   let inspectionResults: ConfigurationInspectionResult[] = [];
-  let contentRecordNames = new Map<string, string[]>();
+  const contentRecordNames = new Map<string, string[]>();
 
   let newConfig: Configuration | undefined;
   let newOrSelectedCredential: Credential | undefined;
   let newContentRecord: PreContentRecord | undefined;
 
   const createNewCredentialLabel = "Create a New Credential";
+  const browseForEntrypointLabel = "Open...";
 
-  const newCredentialForced = (state?: MultiStepState): boolean => {
-    if (!state) {
-      return false;
-    }
+  // Collected Data
+  type SelectedEntrypoint = {
+    filePath?: string;
+    inspectionResult?: ConfigurationInspectionResult;
+    contentType?: ContentType;
+  };
+  type NewCredentialAttrs = {
+    url?: string;
+    name?: string;
+    apiKey?: string;
+  };
+  type NewDeploymentData = {
+    entrypoint: SelectedEntrypoint;
+    title?: string;
+    existingCredentialName?: string;
+    newCredentials: NewCredentialAttrs;
+  };
+
+  const newDeploymentData: NewDeploymentData = {
+    entrypoint: {},
+    newCredentials: {},
+  };
+
+  const newCredentialForced = (): boolean => {
     return credentials.length === 0;
   };
 
-  const newCredentialSelected = (state?: MultiStepState): boolean => {
-    if (!state) {
-      return false;
-    }
+  const newCredentialSelected = (): boolean => {
     return Boolean(
-      state.data.credentialName &&
-        isQuickPickItem(state.data.credentialName) &&
-        state.data.credentialName.label === createNewCredentialLabel,
+      newDeploymentData?.existingCredentialName === createNewCredentialLabel,
     );
   };
 
-  const newCredentialByAnyMeans = (state?: MultiStepState): boolean => {
-    return newCredentialForced(state) || newCredentialSelected(state);
+  const newCredentialByAnyMeans = (): boolean => {
+    return newCredentialForced() || newCredentialSelected();
   };
 
-  const hasMultiplePossibleEntryPointFiles = () => {
-    return inspectionResults.length > 1;
-  };
-
-  const hasMultipleContentTypesForSelectedEntryPoint = () => {
-    return inspectionResults.length > 1;
-  };
-
-  const getStepInfo = (
-    stepId: string,
-    multiStepState: MultiStepState,
-  ): stepInfo | undefined => {
-    const step = steps[stepId];
-    if (!step) {
-      // if we have not covered the step, then don't number it.
-      return {
-        step: 0,
-        totalSteps: 0,
-      };
-    }
-    if (newCredentialForced(multiStepState)) {
-      if (hasMultiplePossibleEntryPointFiles()) {
-        if (hasMultipleContentTypesForSelectedEntryPoint()) {
-          return step.noCredentials.multipleEntryPoints.multipleContentTypes;
-        }
-        return step.noCredentials.multipleEntryPoints.singleContentType;
-      }
-      return step.noCredentials.singleEntryPoint;
-    }
-    if (newCredentialSelected(multiStepState)) {
-      if (hasMultiplePossibleEntryPointFiles()) {
-        if (hasMultipleContentTypesForSelectedEntryPoint()) {
-          return step.newCredentials.multipleEntryPoints.multipleContentTypes;
-        }
-        return step.newCredentials.multipleEntryPoints.singleContentType;
-      }
-      return step.newCredentials.singleEntryPoint;
-    }
-    // else it has to be existing credential selected
-    if (hasMultiplePossibleEntryPointFiles()) {
-      if (hasMultipleContentTypesForSelectedEntryPoint()) {
-        return step.existingCredentials.multipleEntryPoints
-          .multipleContentTypes;
-      }
-      return step.existingCredentials.multipleEntryPoints.singleContentType;
-    }
-    return step.existingCredentials.singleEntryPoint;
-  };
-
-  const getConfigurationInspectionQuickPicks = (
+  const getConfigurationInspectionQuickPicks = async (
     relEntryPoint: EntryPointPath,
-  ) => {
-    return new Promise<QuickPickItemWithIndex[]>(async (resolve, reject) => {
-      const inspectionListItems: QuickPickItemWithIndex[] = [];
+  ): Promise<QuickPickItemWithInspectionResult[]> => {
+    const inspectionListItems: QuickPickItemWithInspectionResult[] = [];
 
-      try {
-        const python = await getPythonInterpreterPath();
-        const r = await getRInterpreterPath();
-        const relEntryPointDir = path.dirname(relEntryPoint);
-        const relEntryPointFile = path.basename(relEntryPoint);
+    try {
+      const python = await getPythonInterpreterPath();
+      const r = await getRInterpreterPath();
+      const relEntryPointDir = path.dirname(relEntryPoint);
+      const relEntryPointFile = path.basename(relEntryPoint);
 
-        const inspectResponse = await api.configurations.inspect(
-          relEntryPointDir,
-          python,
-          r,
-          {
-            entrypoint: relEntryPointFile,
-          },
-        );
+      const inspectResponse = await api.configurations.inspect(
+        relEntryPointDir,
+        python,
+        r,
+        {
+          entrypoint: relEntryPointFile,
+        },
+      );
 
-        inspectionResults = inspectResponse.data;
-        inspectionResults.forEach((result, i) => {
-          const config = result.configuration;
-          if (config.entrypoint) {
-            inspectionListItems.push({
-              iconPath: new ThemeIcon("gear"),
-              label: config.type.toString(),
-              description: `(${contentTypeStrings[config.type]})`,
-              index: i,
-            });
-          }
-        });
-      } catch (error: unknown) {
-        const summary = getSummaryStringFromError(
-          "newDeployment, configurations.inspect",
-          error,
-        );
-        window.showErrorMessage(
-          `Unable to continue with project inspection failure for ${entryPointFile}. ${summary}`,
-        );
-        return reject();
+      inspectionResults = inspectResponse.data;
+      inspectionResults.forEach((result) => {
+        const config = result.configuration;
+        if (config.entrypoint) {
+          inspectionListItems.push({
+            iconPath: new ThemeIcon("gear"),
+            label: config.type.toString(),
+            description: `(${contentTypeStrings[config.type]})`,
+            inspectionResult: result,
+          });
+        }
+      });
+    } catch (error: unknown) {
+      if (isAxiosErrorWithJson(error)) {
+        throw error;
       }
-      if (!inspectionListItems.length) {
-        const msg = `Unable to continue with no project entrypoints found during inspection for ${entryPointFile}.`;
-        window.showErrorMessage(msg);
-        return reject();
-      }
-      return resolve(inspectionListItems);
-    });
+      const summary = getSummaryStringFromError(
+        "newDeployment, configurations.inspect",
+        error,
+      );
+      window.showErrorMessage(
+        `Unable to continue with project inspection failure for ${entryPointFile}. ${summary}`,
+      );
+      throw error;
+    }
+    if (!inspectionListItems.length) {
+      const msg = `Unable to continue with no project entrypoints found during inspection for ${entryPointFile}.`;
+      window.showErrorMessage(msg);
+      throw new Error(msg);
+    }
+    return inspectionListItems;
   };
 
-  const getCredentials = new Promise<void>(async (resolve, reject) => {
+  const getCredentials = async (): Promise<void> => {
     try {
       const response = await api.credentials.list();
       credentials = response.data;
@@ -596,92 +191,56 @@ export async function newDeployment(
       window.showErrorMessage(
         `Unable to continue with a failed API response. ${summary}`,
       );
-      return reject();
+      throw error;
     }
-    return resolve();
-  });
+  };
 
-  const getEntrypoints = new Promise<void>(async (resolve, reject) => {
-    try {
-      if (entryPointFile) {
-        // we were passed in a specific entrypoint file.
-        // while we don't need it, we'll still provide the results
-        // in the same way.
-        const entryPointPath = path.join(projectDir, entryPointFile);
+  const getEntrypoints = () => {
+    if (entryPointFile) {
+      // we were passed in a specific entrypoint file.
+      // while we don't need it, we'll still provide the results
+      // in the same way.
+      const entryPointPath = path.join(projectDir, entryPointFile);
+      entryPointListItems.push({
+        iconPath: new ThemeIcon("file"),
+        label: entryPointPath,
+      });
+      return;
+    }
+
+    // build up a list of open files, relative to the opened workspace folder
+    const filteredOpenFileList = vscodeOpenFiles().filter((openFilePath) => {
+      const parsedPath = path.parse(openFilePath);
+      return ENTRYPOINT_FILE_EXTENSIONS.includes(parsedPath.ext.toLowerCase());
+    });
+    filteredOpenFileList.sort();
+
+    // build the entrypointList
+    if (filteredOpenFileList.length) {
+      entryPointListItems.push({
+        label: "Open Files",
+        kind: QuickPickItemKind.Separator,
+      });
+      filteredOpenFileList.forEach((openFile) => {
         entryPointListItems.push({
           iconPath: new ThemeIcon("file"),
-          label: entryPointPath,
+          label: openFile,
         });
-        discoveredEntryPoints.push(entryPointPath);
-        return resolve();
-      }
-      const entrypointFilesOpened: string[] = [];
-      const entrypointFilesUnopened: string[] = [];
-
-      // rely upon the backend to tell us what are valid entrypoints
-      const entryPointsResponse = await api.entrypoints.get(projectDir);
-      discoveredEntryPoints = entryPointsResponse.data;
-
-      // build up a list of open files, relative to the opened workspace folder
-      const openFileList: string[] = vscodeOpenFiles();
-
-      // loop through and now separate possible entrypoints into open or not
-      discoveredEntryPoints.forEach((entrypointFile) => {
-        if (
-          openFileList.find(
-            (f) => f.toLowerCase() === entrypointFile.toLowerCase(),
-          )
-        ) {
-          entrypointFilesOpened.push(entrypointFile);
-        } else {
-          entrypointFilesUnopened.push(entrypointFile);
-        }
       });
-
-      // build the entrypointList
-      if (entrypointFilesOpened.length) {
-        entryPointListItems.push({
-          label: "Open Files",
-          kind: QuickPickItemKind.Separator,
-        });
-        entrypointFilesOpened.forEach((entryPointFile) => {
-          entryPointListItems.push({
-            iconPath: new ThemeIcon("file"),
-            label: entryPointFile,
-          });
-        });
-      }
-      if (entrypointFilesUnopened.length) {
-        entryPointListItems.push({
-          label: "Discovered Entrypoints",
-          kind: QuickPickItemKind.Separator,
-        });
-        entrypointFilesUnopened.forEach((entryPointFile) => {
-          entryPointListItems.push({
-            iconPath: new ThemeIcon("file"),
-            label: entryPointFile,
-          });
-        });
-      }
-    } catch (error: unknown) {
-      const summary = getSummaryStringFromError(
-        "newDeployment, entrypoints.get",
-        error,
-      );
-      window.showErrorMessage(
-        `Unable to continue with project entrypoint detection failure. ${summary}`,
-      );
-      return reject();
     }
-    if (!discoveredEntryPoints.length) {
-      const msg = `Unable to continue with no project entrypoints found.`;
-      window.showErrorMessage(msg);
-      return reject();
-    }
-    return resolve();
-  });
+    entryPointListItems.push({
+      label: "Other",
+      kind: QuickPickItemKind.Separator,
+    });
+    entryPointListItems.push({
+      iconPath: new ThemeIcon("files"),
+      label: browseForEntrypointLabel,
+      detail: "Select a file as your entrypoint.",
+    });
+    return;
+  };
 
-  const getContentRecords = new Promise<void>(async (resolve, reject) => {
+  const getContentRecords = async () => {
     try {
       const response = await api.contentRecords.getAll(
         projectDir ? projectDir : ".",
@@ -707,19 +266,9 @@ export async function newDeployment(
       window.showInformationMessage(
         `Unable to continue due to deployment error. ${summary}`,
       );
-      return reject();
+      throw error;
     }
-    return resolve();
-  });
-
-  const apisComplete = Promise.all([
-    getCredentials,
-    getEntrypoints,
-    getContentRecords,
-  ]);
-
-  // Start the progress indicator and have it stop when the API calls are complete
-  showProgress("Initializing::newDeployment", apisComplete, viewId);
+  };
 
   // ***************************************************************
   // Order of all steps
@@ -753,17 +302,7 @@ export async function newDeployment(
       step: 0,
       lastStep: 0,
       totalSteps: 0,
-      data: {
-        // each attribute is initialized to undefined
-        // to be returned when it has not been cancelled to assist type guards
-        entryPointPath: undefined, // eventual type is QuickPickItem
-        entryPoint: undefined, // eventual type is QuickPickItemWithIndex
-        title: undefined, // eventual type is string
-        credentialName: undefined, // eventual type is either a string or QuickPickItem
-        url: undefined, // eventual type is string
-        name: undefined, // eventual type is string
-        apiKey: undefined, // eventual type is string
-      },
+      data: {},
       promptStepNumbers: {},
     };
 
@@ -775,131 +314,161 @@ export async function newDeployment(
   }
 
   // ***************************************************************
-  // Step #1 - maybe?:
-  // Select the entrypoint to be used w/ the contentRecord
+  // Step: Select the entrypoint to be used w/ the contentRecord
   // ***************************************************************
   async function inputEntryPointFileSelection(
     input: MultiStepInput,
     state: MultiStepState,
   ) {
-    // in case we have backed up from the subsequent check, we need to reset
-    // the array that it will update. This will allow steps to be the minimum number
-    // as long as we don't know it will take another one.
-    inspectionResults = [];
-
-    // show only if we have more than one potential entrypoint discovered
-    if (discoveredEntryPoints.length > 1) {
-      const step = getStepInfo("inputEntryPointFileSelection", state);
-      if (!step) {
-        window.showErrorMessage(
-          "Internal Error: newDeployment::inputEntryPointFileSelection step info not found.",
-        );
-        return;
+    // show only if we were not passed in a file
+    if (entryPointFile === undefined) {
+      if (newDeploymentData.entrypoint.filePath) {
+        entryPointListItems.forEach((item) => {
+          item.picked = item.label === newDeploymentData.entrypoint.filePath;
+        });
       }
 
-      const pick = await input.showQuickPick({
-        title: state.title,
-        step: step.step,
-        totalSteps: step.totalSteps,
-        placeholder:
-          "Select entrypoint file. This is your main file for your project. (Use this field to filter selections.)",
-        items: entryPointListItems,
-        buttons: [],
-        shouldResume: () => Promise.resolve(false),
-        ignoreFocusOut: true,
-      });
-      state.data.entryPointPath = pick.label;
+      let selectedEntrypointFile: string | undefined = undefined;
+      do {
+        const pick = await input.showQuickPick({
+          title: state.title,
+          step: 0,
+          totalSteps: 0,
+          placeholder:
+            "Select entrypoint file. This is your main file for your project. (Use this field to filter selections.)",
+          items: entryPointListItems,
+          buttons: [],
+          shouldResume: () => Promise.resolve(false),
+          ignoreFocusOut: true,
+        });
+
+        if (pick.label === browseForEntrypointLabel) {
+          let baseUri = Uri.parse(".");
+          const workspaceFolders = workspace.workspaceFolders;
+          if (workspaceFolders !== undefined) {
+            baseUri = workspaceFolders[0].uri;
+          }
+          selectedEntrypointFile = undefined;
+          const fileUris = await window.showOpenDialog({
+            defaultUri: baseUri,
+            openLabel: "Select",
+            canSelectFolders: false,
+            canSelectMany: false,
+            title: "Select Entrypoint File (main file for your project)",
+          });
+          if (!fileUris || !fileUris[0]) {
+            // cancelled.
+            continue;
+          }
+          const fileUri = fileUris[0];
+
+          if (relativeDir(fileUri)) {
+            selectedEntrypointFile = relativePath(fileUri);
+          } else {
+            window.showErrorMessage(
+              `Entrypoint files must be located within the open workspace.`,
+              {
+                modal: true,
+              },
+            );
+            selectedEntrypointFile = undefined;
+          }
+        } else {
+          if (isQuickPickItem(pick)) {
+            selectedEntrypointFile = pick.label;
+          } else {
+            return;
+          }
+        }
+      } while (!selectedEntrypointFile);
+      newDeploymentData.entrypoint.filePath = selectedEntrypointFile;
       return (input: MultiStepInput) =>
-        inputEntryPointContentTypeSelection(input, state);
+        inputEntryPointInspectionResultSelection(input, state);
     } else {
-      state.data.entryPointPath = discoveredEntryPoints[0];
+      // We were passed in a specific file, so set and continue to inspection
+      newDeploymentData.entrypoint.filePath = entryPointFile;
       // We're skipping this step, so we must silently just jump to the next step
-      return inputEntryPointContentTypeSelection(input, state);
+      return inputEntryPointInspectionResultSelection(input, state);
     }
   }
 
   // ***************************************************************
-  // Step #2 - maybe?:
-  // Select the content type of the entrypoint
+  // Step: Select the content inspection result should use
   // ***************************************************************
-  async function inputEntryPointContentTypeSelection(
+  async function inputEntryPointInspectionResultSelection(
     input: MultiStepInput,
     state: MultiStepState,
   ) {
-    if (!state.data.entryPointPath) {
+    if (!newDeploymentData.entrypoint.filePath) {
       return;
     }
-
-    // always relative
-    const entryPointPath = isQuickPickItem(state.data.entryPointPath)
-      ? state.data.entryPointPath.label
-      : state.data.entryPointPath;
-
-    const inspectionQuickPicksPromise =
-      getConfigurationInspectionQuickPicks(entryPointPath);
-
-    showProgress(
-      "Scanning::newDeployment",
-      inspectionQuickPicksPromise,
-      viewId,
+    // Have to create a copy of the guarded value, to keep language service happy
+    // within anonymous function below
+    const entryPointFilePath = path.join(
+      projectDir,
+      newDeploymentData.entrypoint.filePath,
     );
 
-    const inspectionQuickPicks = await inspectionQuickPicksPromise;
+    const inspectionQuickPicks = await showProgress(
+      "Scanning::newDeployment",
+      viewId,
+      async () =>
+        await getConfigurationInspectionQuickPicks(entryPointFilePath),
+    );
 
     // skip if we only have one choice.
     if (inspectionQuickPicks.length > 1) {
-      const step = getStepInfo("inputEntryPointContentTypeSelection", state);
-      if (!step) {
-        window.showErrorMessage(
-          "Internal Error: newDeployment::inputEntryPointContentTypeSelection step info not found.",
-        );
-        return;
+      if (newDeploymentData.entrypoint.inspectionResult) {
+        inspectionQuickPicks.forEach((pick) => {
+          if (
+            pick.inspectionResult &&
+            newDeploymentData.entrypoint.inspectionResult
+          ) {
+            pick.picked = areInspectionResultsSimilarEnough(
+              pick.inspectionResult,
+              newDeploymentData.entrypoint.inspectionResult,
+            );
+          }
+        });
       }
 
       const pick = await input.showQuickPick({
         title: state.title,
-        step: step.step,
-        totalSteps: step.totalSteps,
-        placeholder: `Select the content type for your entrypoint file (${entryPointPath}).`,
+        step: 0,
+        totalSteps: 0,
+        placeholder: `Select the content type for your entrypoint file (${newDeploymentData.entrypoint.filePath}).`,
         items: inspectionQuickPicks,
         buttons: [],
         shouldResume: () => Promise.resolve(false),
         ignoreFocusOut: true,
       });
 
-      state.data.entryPoint = pick;
+      if (!pick || !isQuickPickItemWithInspectionResult(pick)) {
+        return;
+      }
+
+      newDeploymentData.entrypoint.inspectionResult = pick.inspectionResult;
       return (input: MultiStepInput) => inputTitle(input, state);
     } else {
-      state.data.entryPoint = inspectionQuickPicks[0];
+      newDeploymentData.entrypoint.inspectionResult =
+        inspectionQuickPicks[0].inspectionResult;
       // We're skipping this step, so we must silently just jump to the next step
       return inputTitle(input, state);
     }
   }
 
   // ***************************************************************
-  // Step #2 - maybe
-  // Input the Title
+  // Step: Input the Title
   // ***************************************************************
   async function inputTitle(input: MultiStepInput, state: MultiStepState) {
     // in case we have backed up from the subsequent check, we need to reset
     // the selection that it will update. This will allow steps to be the minimum number
     // as long as we don't know for certain it will take more steps.
-    state.data.credentialName = undefined;
 
-    const step = getStepInfo("inputTitle", state);
-    if (!step) {
-      window.showErrorMessage(
-        "Internal Error: newDeployment::inputTitle step info not found.",
-      );
-      return;
-    }
     let initialValue = "";
-    if (
-      state.data.entryPoint &&
-      isQuickPickItemWithIndex(state.data.entryPoint)
-    ) {
+    if (newDeploymentData.entrypoint.inspectionResult) {
       const detail =
-        inspectionResults[state.data.entryPoint.index].configuration.title;
+        newDeploymentData.entrypoint.inspectionResult.configuration.title;
       if (detail) {
         initialValue = detail;
       }
@@ -907,10 +476,9 @@ export async function newDeployment(
 
     const title = await input.showInputBox({
       title: state.title,
-      step: step.step,
-      totalSteps: step.totalSteps,
-      value:
-        typeof state.data.title === "string" ? state.data.title : initialValue,
+      step: 0,
+      totalSteps: 0,
+      value: newDeploymentData.title ? newDeploymentData.title : initialValue,
       prompt: "Enter a title for your content or application.",
       validate: (value) => {
         if (value.length < 3) {
@@ -925,39 +493,33 @@ export async function newDeployment(
       ignoreFocusOut: true,
     });
 
-    state.data.title = title;
+    newDeploymentData.title = title;
     return (input: MultiStepInput) => pickCredentials(input, state);
   }
 
   // ***************************************************************
-  // Step #3 - maybe
-  // Select the credentials to be used
+  // Step: Select the credentials to be used
   // ***************************************************************
   async function pickCredentials(input: MultiStepInput, state: MultiStepState) {
-    if (!newCredentialForced(state)) {
-      const step = getStepInfo("pickCredentials", state);
-      if (!step) {
-        window.showErrorMessage(
-          "Internal Error: newDeployment::pickCredentials step info not found.",
-        );
-        return;
+    if (!newCredentialForced()) {
+      if (newDeploymentData.existingCredentialName) {
+        credentialListItems.forEach((credential) => {
+          credential.picked =
+            credential.label === newDeploymentData.existingCredentialName;
+        });
       }
       const pick = await input.showQuickPick({
         title: state.title,
-        step: step.step,
-        totalSteps: step.totalSteps,
+        step: 0,
+        totalSteps: 0,
         placeholder:
           "Select the credential you want to use to deploy. (Use this field to filter selections.)",
         items: credentialListItems,
-        activeItem:
-          typeof state.data.credentialName !== "string"
-            ? state.data.credentialName
-            : undefined,
         buttons: [],
         shouldResume: () => Promise.resolve(false),
         ignoreFocusOut: true,
       });
-      state.data.credentialName = pick;
+      newDeploymentData.existingCredentialName = pick.label;
 
       return (input: MultiStepInput) => inputServerUrl(input, state);
     }
@@ -965,31 +527,21 @@ export async function newDeployment(
   }
 
   // ***************************************************************
-  // Step #4 - maybe?:
-  // Get the server url
+  // Step: New Credentials - Get the server url
   // ***************************************************************
   async function inputServerUrl(input: MultiStepInput, state: MultiStepState) {
-    if (newCredentialByAnyMeans(state)) {
-      const currentURL =
-        typeof state.data.url === "string" && state.data.url.length
-          ? state.data.url
-          : "";
-
-      const step = getStepInfo("inputServerUrl", state);
-      if (!step) {
-        window.showErrorMessage(
-          "Internal Error: newDeployment::inputServerUrl step info not found.",
-        );
-        return;
-      }
+    if (newCredentialByAnyMeans()) {
+      const currentURL = newDeploymentData.newCredentials.url
+        ? newDeploymentData.newCredentials.url
+        : "";
 
       const url = await input.showInputBox({
         title: state.title,
-        step: step.step,
-        totalSteps: step.totalSteps,
+        step: 0,
+        totalSteps: 0,
         value: currentURL,
-        prompt: "Enter the Public URL of the Posit Connect Server",
-        placeholder: "example: https://servername.com:3939",
+        prompt: "Please provide the Posit Connect server's URL",
+        placeholder: "Server URL",
         validate: (input: string) => {
           if (input.includes(" ")) {
             return Promise.resolve({
@@ -1016,11 +568,11 @@ export async function newDeployment(
               severity: InputBoxValidationSeverity.Error,
             });
           }
-          const existingCredential = credentials.find(
-            (credential) =>
-              normalizeURL(input).toLowerCase() ===
-              normalizeURL(credential.url).toLowerCase(),
-          );
+          const existingCredential = credentials.find((credential) => {
+            const existing = normalizeURL(credential.url).toLowerCase();
+            const newURL = normalizeURL(input).toLowerCase();
+            return newURL.includes(existing);
+          });
           if (existingCredential) {
             return Promise.resolve({
               message: `Error: Invalid URL (this server URL is already assigned to your credential "${existingCredential.name}". Only one credential per unique URL is allowed).`,
@@ -1028,7 +580,10 @@ export async function newDeployment(
             });
           }
           try {
-            const testResult = await api.credentials.test(input);
+            const testResult = await api.credentials.test(
+              input,
+              !extensionSettings.verifyCertificates(), // insecure = !verifyCertificates
+            );
             if (testResult.status !== 200) {
               return Promise.resolve({
                 message: `Error: Invalid URL (unable to validate connectivity with Server URL - API Call result: ${testResult.status} - ${testResult.statusText}).`,
@@ -1053,40 +608,31 @@ export async function newDeployment(
         ignoreFocusOut: true,
       });
 
-      state.data.url = formatURL(url.trim());
+      newDeploymentData.newCredentials.url = formatURL(url.trim());
       return (input: MultiStepInput) => inputAPIKey(input, state);
     }
     return inputAPIKey(input, state);
   }
 
   // ***************************************************************
-  // Step #5 - maybe?:
-  // Enter the API Key
+  // Step: New Credentials - Enter the API Key
   // ***************************************************************
   async function inputAPIKey(input: MultiStepInput, state: MultiStepState) {
-    if (newCredentialByAnyMeans(state)) {
-      const currentAPIKey =
-        typeof state.data.apiKey === "string" && state.data.apiKey.length
-          ? state.data.apiKey
-          : "";
-
-      const step = getStepInfo("inputAPIKey", state);
-      if (!step) {
-        window.showErrorMessage(
-          "Internal Error: newDeployment::inputAPIKey step info not found.",
-        );
-        return;
-      }
+    if (newCredentialByAnyMeans()) {
+      const currentAPIKey = newDeploymentData.newCredentials.apiKey
+        ? newDeploymentData.newCredentials.apiKey
+        : "";
+      let validatedURL = "";
 
       const apiKey = await input.showInputBox({
         title: state.title,
-        step: step.step,
-        totalSteps: step.totalSteps,
+        step: 0,
+        totalSteps: 0,
         password: true,
         value: currentAPIKey,
         prompt: `The API key to be used to authenticate with Posit Connect.
-        See the [User Guide](https://docs.posit.co/connect/user/api-keys/index.html#api-keys-creating)
-        for further information.`,
+			See the [User Guide](https://docs.posit.co/connect/user/api-keys/index.html#api-keys-creating)
+			for further information.`,
         validate: (input: string) => {
           if (input.includes(" ")) {
             return Promise.resolve({
@@ -1107,10 +653,15 @@ export async function newDeployment(
           }
           // url should always be defined by the time we get to this step
           // but we have to type guard it for the API
-          const serverUrl =
-            typeof state.data.url === "string" ? state.data.url : "";
+          const serverUrl = newDeploymentData.newCredentials.url
+            ? newDeploymentData.newCredentials.url
+            : "";
           try {
-            const testResult = await api.credentials.test(serverUrl, input);
+            const testResult = await api.credentials.test(
+              serverUrl,
+              !extensionSettings.verifyCertificates(), // insecure = !verifyCertificates
+              input,
+            );
             if (testResult.status !== 200) {
               return Promise.resolve({
                 message: `Error: Invalid API Key (unable to validate API Key - API Call result: ${testResult.status} - ${testResult.statusText}).`,
@@ -1122,6 +673,11 @@ export async function newDeployment(
                 message: `Error: Invalid API Key (${testResult.data.error.msg}).`,
                 severity: InputBoxValidationSeverity.Error,
               });
+            }
+            // we have success, but credentials.test may have returned a different
+            // url for us to use.
+            if (testResult.data.url) {
+              validatedURL = testResult.data.url;
             }
           } catch (e) {
             return Promise.resolve({
@@ -1135,41 +691,32 @@ export async function newDeployment(
         ignoreFocusOut: true,
       });
 
-      state.data.apiKey = apiKey;
+      newDeploymentData.newCredentials.apiKey = apiKey;
+      newDeploymentData.newCredentials.url = validatedURL;
       return (input: MultiStepInput) => inputCredentialName(input, state);
     }
     return inputCredentialName(input, state);
   }
 
   // ***************************************************************
-  // Step #6 - maybe?:
-  // Name the credential
+  // Step: New Credentials - Name the credential
   // ***************************************************************
   async function inputCredentialName(
     input: MultiStepInput,
     state: MultiStepState,
   ) {
-    if (newCredentialByAnyMeans(state)) {
-      const currentName =
-        typeof state.data.name === "string" && state.data.name.length
-          ? state.data.name
-          : "";
-
-      const step = getStepInfo("inputCredentialName", state);
-      if (!step) {
-        window.showErrorMessage(
-          "Internal Error: newDeployment::inputCredentialName step info not found.",
-        );
-        return;
-      }
+    if (newCredentialByAnyMeans()) {
+      const currentName = newDeploymentData.newCredentials.name
+        ? newDeploymentData.newCredentials.name
+        : "";
 
       const name = await input.showInputBox({
         title: state.title,
-        step: step.step,
-        totalSteps: step.totalSteps,
+        step: 0,
+        totalSteps: 0,
         value: currentName,
-        prompt: "Enter a Unique Nickname for your Credential.",
-        placeholder: "example: Posit Connect",
+        prompt: "Enter a unique nickname for this server.",
+        placeholder: "Posit Connect",
         finalValidation: (input: string) => {
           input = input.trim();
           if (input === "") {
@@ -1198,7 +745,7 @@ export async function newDeployment(
         ignoreFocusOut: true,
       });
 
-      state.data.name = name.trim();
+      newDeploymentData.newCredentials.name = name.trim();
     }
     // last step
   }
@@ -1211,100 +758,106 @@ export async function newDeployment(
   // collect the info.
   // ***************************************************************
   try {
-    await apisComplete;
+    await showProgress(
+      "Initializing::newDeployment",
+      viewId,
+      async () =>
+        await Promise.all([
+          getCredentials(),
+          getEntrypoints(),
+          getContentRecords(),
+        ]),
+    );
   } catch {
     // errors have already been displayed by the underlying promises..
-    return;
+    return undefined;
   }
-  const state = await collectInputs();
+  await collectInputs();
 
   // make sure user has not hit escape or moved away from the window
   // before completing the steps. This also serves as a type guard on
   // our state data vars down to the actual type desired
   if (
-    (!newCredentialForced(state) && state.data.credentialName === undefined) ||
-    // credentialName can be either type
-    state.data.entryPoint === undefined ||
-    !isQuickPickItemWithIndex(state.data.entryPoint) ||
-    state.data.title === undefined ||
-    typeof state.data.title !== "string"
+    !newDeploymentData.entrypoint.filePath ||
+    !newDeploymentData.entrypoint.inspectionResult ||
+    !newDeploymentData.title ||
+    (!newCredentialByAnyMeans() && !newDeploymentData.existingCredentialName)
   ) {
     console.log("User has aborted flow. Exiting.");
-    return;
+    return undefined;
   }
 
   // Maybe create a new credential?
-  if (newCredentialByAnyMeans(state)) {
+  if (newCredentialByAnyMeans()) {
     // have to type guard here, will protect us against
     // cancellation.
     if (
-      state.data.url === undefined ||
-      isQuickPickItem(state.data.url) ||
-      state.data.name === undefined ||
-      isQuickPickItem(state.data.name) ||
-      state.data.apiKey === undefined ||
-      isQuickPickItem(state.data.apiKey)
+      !newDeploymentData.newCredentials.url ||
+      !newDeploymentData.newCredentials.apiKey ||
+      !newDeploymentData.newCredentials.name
     ) {
-      window.showErrorMessage(
-        "Internal Error: NewDeployment Unexpected type guard failure @1",
-      );
-      return;
+      console.log("User has aborted flow. Exiting.");
+      return undefined;
     }
     try {
       // NEED an credential to be returned from this API
       // and assigned to newOrExistingCredential
       const response = await api.credentials.create(
-        state.data.name,
-        state.data.url,
-        state.data.apiKey,
+        newDeploymentData.newCredentials.name,
+        newDeploymentData.newCredentials.url,
+        newDeploymentData.newCredentials.apiKey,
       );
       newOrSelectedCredential = response.data;
     } catch (error: unknown) {
       const summary = getSummaryStringFromError("credentials::add", error);
       window.showInformationMessage(summary);
     }
-  } else if (state.data.credentialName) {
-    // If not creating, then we need to retrieve the one we're using.
-    let targetName: string | undefined = undefined;
-    if (isQuickPickItem(state.data.credentialName)) {
-      targetName = state.data.credentialName.label;
-    }
-    if (targetName) {
-      newOrSelectedCredential = credentials.find(
-        (credential) => credential.name === targetName,
+  } else if (newDeploymentData.existingCredentialName) {
+    newOrSelectedCredential = credentials.find(
+      (credential) =>
+        credential.name === newDeploymentData.existingCredentialName,
+    );
+    if (!newOrSelectedCredential) {
+      window.showErrorMessage(
+        `Internal Error: NewDeployment Unable to find credential: ${newDeploymentData.existingCredentialName}`,
       );
+      return undefined;
     }
   } else {
     // we are not creating a credential but also do not have a required existing value
     window.showErrorMessage(
       "Internal Error: NewDeployment Unexpected type guard failure @2",
     );
-    return;
+    return undefined;
   }
 
   // Create the Config File
   let configName: string | undefined;
-  const selectedInspectionResult =
-    inspectionResults[state.data.entryPoint.index];
-  if (!selectedInspectionResult) {
-    window.showErrorMessage(
-      `Unable to proceed creating configuration. Error retrieving config for ${state.data.entryPoint.label}, index = ${state.data.entryPoint.index}`,
-    );
-    return;
-  }
-  selectedInspectionResult.configuration.title = state.data.title;
+  let configCreateResponse: Configuration | undefined;
+
+  newDeploymentData.entrypoint.inspectionResult.configuration.title =
+    newDeploymentData.title;
 
   try {
-    configName = await untitledConfigurationName(
-      selectedInspectionResult.projectDir,
+    const existingNames = (
+      await api.configurations.getAll(
+        newDeploymentData.entrypoint.inspectionResult.projectDir,
+      )
+    ).data.map((config) => config.configurationName);
+
+    configName = newConfigFileNameFromTitle(
+      newDeploymentData.title,
+      existingNames,
     );
-    const createResponse = await api.configurations.createOrUpdate(
-      configName,
-      selectedInspectionResult.configuration,
-      selectedInspectionResult.projectDir,
-    );
-    const fileUri = Uri.file(createResponse.data.configurationPath);
-    newConfig = createResponse.data;
+    configCreateResponse = (
+      await api.configurations.createOrUpdate(
+        configName,
+        newDeploymentData.entrypoint.inspectionResult.configuration,
+        newDeploymentData.entrypoint.inspectionResult.projectDir,
+      )
+    ).data;
+    const fileUri = Uri.file(configCreateResponse.configurationPath);
+    newConfig = configCreateResponse;
     await commands.executeCommand("vscode.open", fileUri);
   } catch (error: unknown) {
     const summary = getSummaryStringFromError(
@@ -1312,50 +865,37 @@ export async function newDeployment(
       error,
     );
     window.showErrorMessage(`Failed to create config file. ${summary}`);
-    return;
+    return undefined;
   }
 
-  let finalCredentialName = <string | undefined>undefined;
-  if (
-    newCredentialForced(state) &&
-    state.data.name &&
-    !isQuickPickItem(state.data.name)
-  ) {
-    finalCredentialName = state.data.name;
-  } else if (!state.data.credentialName) {
-    window.showErrorMessage(
-      "Internal Error: NewDeployment Unexpected type guard failure @3",
+  try {
+    // Attempt to add the Config file to the files for deployment
+    // If the configuration is invalid, for example 'unknown', this will fail
+    await api.files.updateFileList(
+      configName,
+      getRelPathForConfig(configCreateResponse.configurationPath),
+      FileAction.INCLUDE,
+      newDeploymentData.entrypoint.inspectionResult.projectDir,
     );
-    return;
-  } else if (
-    newCredentialSelected(state) &&
-    state.data.name &&
-    !isQuickPickItem(state.data.name)
-  ) {
-    finalCredentialName = state.data.name;
-  } else if (isQuickPickItem(state.data.credentialName)) {
-    finalCredentialName = state.data.credentialName.label;
-  }
-  if (!finalCredentialName) {
-    // should have assigned it by now. Logic error!
-    window.showErrorMessage(
-      "Internal Error: NewDeployment Unexpected type guard failure @4",
+  } catch (_error: unknown) {
+    // continue on as it is not necessary to include .posit files for deployment
+    console.debug(
+      `Failed to add the configuration file '${configName}' to \`files\`.`,
     );
-    return;
   }
 
   // Create the PreContentRecord File
   try {
     let existingNames = contentRecordNames.get(
-      selectedInspectionResult.projectDir,
+      newDeploymentData.entrypoint.inspectionResult.projectDir,
     );
     if (!existingNames) {
       existingNames = [];
     }
-    const contentRecordName = untitledContentRecordName(existingNames);
+    const contentRecordName = newDeploymentName(existingNames);
     const response = await api.contentRecords.createNew(
-      selectedInspectionResult.projectDir,
-      finalCredentialName,
+      newDeploymentData.entrypoint.inspectionResult.projectDir,
+      newOrSelectedCredential?.name,
       configName,
       contentRecordName,
     );
@@ -1368,13 +908,36 @@ export async function newDeployment(
     window.showErrorMessage(
       `Failed to create pre-deployment record. ${summary}`,
     );
-    return;
+    return undefined;
   }
+
+  try {
+    const contentRecordPath = relativePath(
+      Uri.file(newContentRecord.deploymentPath),
+    );
+    if (contentRecordPath === undefined) {
+      throw new Error(
+        "Unable to determine the relative path for the content record.",
+      );
+    }
+    await api.files.updateFileList(
+      configName,
+      getRelPathForContentRecord(contentRecordPath),
+      FileAction.INCLUDE,
+      newDeploymentData.entrypoint.inspectionResult.projectDir,
+    );
+  } catch (_error: unknown) {
+    // continue on as it is not necessary to include .posit files for deployment
+    console.debug(
+      `Failed to add the content record file '${newContentRecord.deploymentName}' to \`files\`.`,
+    );
+  }
+
   if (!newOrSelectedCredential) {
     window.showErrorMessage(
       "Internal Error: NewDeployment Unexpected type guard failure @5",
     );
-    return;
+    return undefined;
   }
   return {
     contentRecord: newContentRecord,

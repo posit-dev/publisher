@@ -85,6 +85,42 @@ func (s *ConfigSuite) TestFromExampleFile() {
 	s.Equal(true, *valuePtr)
 }
 
+func (s *ConfigSuite) TestFromFileFillsDefaultsForPython() {
+	configFile := GetConfigPath(s.cwd, "defaults")
+	cfg := New()
+	cfg.Type = "python-streamlit"
+	cfg.Entrypoint = "app.py"
+	cfg.Python = &Python{
+		Version: "3.4.5",
+	}
+	err := cfg.WriteFile(configFile)
+	s.NoError(err)
+
+	cfgFromFile, err := FromFile(configFile)
+	s.NoError(err)
+	s.NotNil(cfgFromFile)
+	s.Equal(cfgFromFile.Python.PackageFile, "requirements.txt")
+	s.Equal(cfgFromFile.Python.PackageManager, "pip")
+}
+
+func (s *ConfigSuite) TestFromFileFillsDefaultsForR() {
+	configFile := GetConfigPath(s.cwd, "defaults")
+	cfg := New()
+	cfg.Type = "r-shiny"
+	cfg.Entrypoint = "app.R"
+	cfg.R = &R{
+		Version: "4.4.1",
+	}
+	err := cfg.WriteFile(configFile)
+	s.NoError(err)
+
+	cfgFromFile, err := FromFile(configFile)
+	s.NoError(err)
+	s.NotNil(cfgFromFile)
+	s.Equal(cfgFromFile.R.PackageFile, "renv.lock")
+	s.Equal(cfgFromFile.R.PackageManager, "renv")
+}
+
 func (s *ConfigSuite) TestFromFileErr() {
 	cfg, err := FromFile(s.cwd.Join("nonexistent.toml"))
 	s.ErrorIs(err, fs.ErrNotExist)
@@ -155,4 +191,96 @@ func (s *ConfigSuite) TestReadComments() {
 	s.NoError(err)
 
 	s.Equal([]string{" These are comments.", " They will be preserved."}, cfg.Comments)
+}
+
+func (s *ConfigSuite) TestFillDefaultsDoesNotAddROrPythonSection() {
+	cfg := New()
+	cfg.FillDefaults()
+	s.Nil(cfg.R)
+	s.Nil(cfg.Python)
+}
+
+func (s *ConfigSuite) TestFillDefaultsAddsPackageFileAndPackageManager() {
+	cfg := New()
+	cfg.R = &R{Version: "4.4.1"}
+	cfg.Python = &Python{Version: "3.12.7"}
+	cfg.FillDefaults()
+
+	s.NotNil(cfg.R)
+	s.NotNil(cfg.Python)
+
+	s.Equal(cfg.R.Version, "4.4.1")
+	s.Equal(cfg.R.PackageFile, "renv.lock")
+	s.Equal(cfg.R.PackageManager, "renv")
+
+	s.Equal(cfg.Python.Version, "3.12.7")
+	s.Equal(cfg.Python.PackageFile, "requirements.txt")
+	s.Equal(cfg.Python.PackageManager, "pip")
+}
+
+func (s *ConfigSuite) TestFillDefaultsDoesNotOverwrite() {
+	cfg := New()
+	cfg.R = &R{Version: "4.4.1", PackageFile: "custom.lock", PackageManager: "custom"}
+	cfg.Python = &Python{Version: "3.12.7", PackageFile: "custom.txt", PackageManager: "custom"}
+	cfg.FillDefaults()
+
+	s.NotNil(cfg.R)
+	s.NotNil(cfg.Python)
+
+	s.Equal(cfg.R.Version, "4.4.1")
+	s.Equal(cfg.R.PackageFile, "custom.lock")
+	s.Equal(cfg.R.PackageManager, "custom")
+
+	s.Equal(cfg.Python.Version, "3.12.7")
+	s.Equal(cfg.Python.PackageFile, "custom.txt")
+	s.Equal(cfg.Python.PackageManager, "custom")
+}
+
+func (s *ConfigSuite) TestApplySecretActionAdd() {
+	cfg := New()
+	cfg.Secrets = []string{}
+	err := cfg.AddSecret("secret1")
+	s.NoError(err)
+	s.Equal([]string{"secret1"}, cfg.Secrets)
+}
+
+func (s *ConfigSuite) TestApplySecretActionAddWithExistingSecrets() {
+	cfg := New()
+	cfg.Secrets = []string{"existingSecret1", "existingSecret2"}
+	err := cfg.AddSecret("newSecret")
+	s.NoError(err)
+	s.Equal([]string{"existingSecret1", "existingSecret2", "newSecret"}, cfg.Secrets)
+}
+
+func (s *ConfigSuite) TestApplySecretActionAddNoDuplicates() {
+	cfg := New()
+	cfg.Secrets = []string{"existingSecret1", "existingSecret2"}
+
+	err := cfg.AddSecret("existingSecret1")
+	s.NoError(err)
+	s.Equal([]string{"existingSecret1", "existingSecret2"}, cfg.Secrets)
+}
+
+func (s *ConfigSuite) TestApplySecretActionAddExitingEnvVar() {
+	cfg := New()
+	cfg.Environment = map[string]string{"existingEnvVar": "value"}
+	cfg.Secrets = []string{}
+	err := cfg.AddSecret("existingEnvVar")
+	s.NotNil(err)
+}
+
+func (s *ConfigSuite) TestApplySecretActionRemove() {
+	cfg := New()
+	cfg.Secrets = []string{"secret1", "secret2"}
+	err := cfg.RemoveSecret("secret1")
+	s.NoError(err)
+	s.Equal([]string{"secret2"}, cfg.Secrets)
+}
+
+func (s *ConfigSuite) TestApplySecretActionRemoveFromEmptySecrets() {
+	cfg := New()
+	cfg.Secrets = []string{}
+	err := cfg.RemoveSecret("nonexistentSecret")
+	s.NoError(err)
+	s.Equal([]string{}, cfg.Secrets)
 }

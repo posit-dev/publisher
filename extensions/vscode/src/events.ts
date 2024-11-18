@@ -1,7 +1,5 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-/* eslint-disable @typescript-eslint/naming-convention */
-
 import { Disposable } from "vscode";
 
 import EventSource from "eventsource";
@@ -289,6 +287,7 @@ export class EventStream extends Readable implements Disposable {
  * @param object - The object to convert.
  * @returns The object with camel case keys.
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const convertKeysToCamelCase = (object: any): any => {
   if (typeof object !== "object" || object === null) {
     return object;
@@ -299,9 +298,10 @@ const convertKeysToCamelCase = (object: any): any => {
     return object.map((item) => convertKeysToCamelCase(item));
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const newObject: any = {};
   for (const key in object) {
-    if (object.hasOwnProperty(key)) {
+    if (Object.prototype.hasOwnProperty.call(object, key)) {
       // Convert the key to camel case
       const newKey = key.charAt(0).toLowerCase() + key.slice(1);
       // Recursively convert keys for nested objects

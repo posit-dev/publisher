@@ -8,6 +8,10 @@ body {
   padding: 0;
 }
 
+::selection {
+  background-color: rgba(195, 183, 184, 0.15);
+}
+
 .webview-link {
   pointer-events: auto;
   opacity: 1;
@@ -28,6 +32,10 @@ body {
 
 .text-icon {
   color: var(--vscode-icon-foreground);
+}
+
+.text-list-emphasized {
+  color: var(--vscode-list-activeSelectionForeground);
 }
 
 .text-list-deemphasized {

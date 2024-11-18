@@ -5,22 +5,23 @@ package config
 type ContentType string
 
 const (
-	ContentTypeHTML            ContentType = "html"
-	ContentTypeJupyterNotebook ContentType = "jupyter-notebook"
-	ContentTypeJupyterVoila    ContentType = "jupyter-voila"
-	ContentTypePythonBokeh     ContentType = "python-bokeh"
-	ContentTypePythonDash      ContentType = "python-dash"
-	ContentTypePythonFastAPI   ContentType = "python-fastapi"
-	ContentTypePythonFlask     ContentType = "python-flask"
-	ContentTypePythonShiny     ContentType = "python-shiny"
-	ContentTypePythonStreamlit ContentType = "python-streamlit"
-	ContentTypeQuartoShiny     ContentType = "quarto-shiny"
-	ContentTypeQuarto          ContentType = "quarto"
-	ContentTypeRPlumber        ContentType = "r-plumber"
-	ContentTypeRShiny          ContentType = "r-shiny"
-	ContentTypeRMarkdownShiny  ContentType = "rmd-shiny"
-	ContentTypeRMarkdown       ContentType = "rmd"
-	ContentTypeUnknown         ContentType = "unknown"
+	ContentTypeHTML             ContentType = "html"
+	ContentTypeJupyterNotebook  ContentType = "jupyter-notebook"
+	ContentTypeJupyterVoila     ContentType = "jupyter-voila"
+	ContentTypePythonBokeh      ContentType = "python-bokeh"
+	ContentTypePythonDash       ContentType = "python-dash"
+	ContentTypePythonFastAPI    ContentType = "python-fastapi"
+	ContentTypePythonFlask      ContentType = "python-flask"
+	ContentTypePythonShiny      ContentType = "python-shiny"
+	ContentTypePythonStreamlit  ContentType = "python-streamlit"
+	ContentTypeQuartoShiny      ContentType = "quarto-shiny"
+	ContentTypeQuartoDeprecated ContentType = "quarto"
+	ContentTypeQuarto           ContentType = "quarto-static"
+	ContentTypeRPlumber         ContentType = "r-plumber"
+	ContentTypeRShiny           ContentType = "r-shiny"
+	ContentTypeRMarkdownShiny   ContentType = "rmd-shiny"
+	ContentTypeRMarkdown        ContentType = "rmd"
+	ContentTypeUnknown          ContentType = "unknown"
 )
 
 func AllValidContentTypeNames() []string {
@@ -35,6 +36,7 @@ func AllValidContentTypeNames() []string {
 		string(ContentTypePythonShiny),
 		string(ContentTypePythonStreamlit),
 		string(ContentTypeQuartoShiny),
+		string(ContentTypeQuartoDeprecated),
 		string(ContentTypeQuarto),
 		string(ContentTypeRPlumber),
 		string(ContentTypeRShiny),
@@ -89,13 +91,14 @@ type Config struct {
 	Entrypoint    string      `toml:"entrypoint" json:"entrypoint,omitempty"`
 	Validate      bool        `toml:"validate" json:"validate"`
 	HasParameters bool        `toml:"has_parameters,omitempty" json:"hasParameters"`
-	Files         []string    `toml:"files" json:"files"`
+	Files         []string    `toml:"files,multiline" json:"files"`
 	Title         string      `toml:"title,omitempty" json:"title,omitempty"`
 	Description   string      `toml:"description,multiline,omitempty" json:"description,omitempty"`
 	ThumbnailFile string      `toml:"thumbnail,omitempty" json:"thumbnail,omitempty"`
 	Tags          []string    `toml:"tags,omitempty" json:"tags,omitempty"`
 	Python        *Python     `toml:"python,omitempty" json:"python,omitempty"`
 	R             *R          `toml:"r,omitempty" json:"r,omitempty"`
+	Jupyter       *Jupyter    `toml:"jupyter,omitempty" json:"jupyter,omitempty"`
 	Quarto        *Quarto     `toml:"quarto,omitempty" json:"quarto,omitempty"`
 	Environment   Environment `toml:"environment,omitempty" json:"environment,omitempty"`
 	Secrets       []string    `toml:"secrets,omitempty" json:"secrets,omitempty"`
@@ -104,18 +107,32 @@ type Config struct {
 	Connect       *Connect    `toml:"connect,omitempty" json:"connect,omitempty"`
 }
 
+func (c *Config) HasSecret(secret string) bool {
+	for _, s := range c.Secrets {
+		if s == secret {
+			return true
+		}
+	}
+	return false
+}
+
 type Environment = map[string]string
 
 type Python struct {
 	Version        string `toml:"version" json:"version"`
-	PackageFile    string `toml:"package_file" json:"packageFile"`
-	PackageManager string `toml:"package_manager" json:"packageManager"`
+	PackageFile    string `toml:"package_file,omitempty" json:"packageFile"`
+	PackageManager string `toml:"package_manager,omitempty" json:"packageManager"`
 }
 
 type R struct {
 	Version        string `toml:"version" json:"version"`
-	PackageFile    string `toml:"package_file" json:"packageFile"`
-	PackageManager string `toml:"package_manager" json:"packageManager"`
+	PackageFile    string `toml:"package_file,omitempty" json:"packageFile"`
+	PackageManager string `toml:"package_manager,omitempty" json:"packageManager"`
+}
+
+type Jupyter struct {
+	HideAllInput    bool `toml:"hide_all_input,omitempty" json:"hideAllInput"`
+	HideTaggedInput bool `toml:"hide_tagged_input,omitempty" json:"hideTaggedInput"`
 }
 
 type Quarto struct {

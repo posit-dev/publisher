@@ -10,18 +10,18 @@ export function substituteVariables(s: string, recursive: boolean = false) {
   // Including it here because the NPM package is way
   // out of date and triggers npm audit messages.
 
-  let workspaces = workspace.workspaceFolders || [];
-  let workspaceFolder = workspace.workspaceFolders?.length
+  const workspaces = workspace.workspaceFolders || [];
+  const workspaceFolder = workspace.workspaceFolders?.length
     ? workspace.workspaceFolders[0]
     : null;
-  let activeFile = window.activeTextEditor?.document;
-  let absoluteFilePath = activeFile?.uri.fsPath || "";
+  const activeFile = window.activeTextEditor?.document;
+  const absoluteFilePath = activeFile?.uri.fsPath || "";
   s = s.replace(/\${workspaceFolder}/g, workspaceFolder?.uri.fsPath || "");
   s = s.replace(/\${workspaceFolderBasename}/g, workspaceFolder?.name || "");
   s = s.replace(/\${file}/g, absoluteFilePath);
   let activeWorkspace = workspaceFolder;
   let relativeFilePath = absoluteFilePath;
-  for (let workspace of workspaces) {
+  for (const workspace of workspaces) {
     if (
       absoluteFilePath.replace(workspace.uri.fsPath, "") !== absoluteFilePath
     ) {
@@ -32,7 +32,7 @@ export function substituteVariables(s: string, recursive: boolean = false) {
       break;
     }
   }
-  let parsedPath = path.parse(absoluteFilePath);
+  const parsedPath = path.parse(absoluteFilePath);
   s = s.replace(/\${fileWorkspaceFolder}/g, activeWorkspace?.uri.fsPath || "");
   s = s.replace(/\${relativeFile}/g, relativeFilePath);
   s = s.replace(

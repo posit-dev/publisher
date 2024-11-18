@@ -12,7 +12,6 @@ export type ContentRecordFile = {
   reason: FileMatch | null; // pattern that matched a file, null if no match
   files: ContentRecordFile[];
   isDir: boolean;
-  isEntrypoint: boolean;
   isFile: boolean;
   modifiedDatetime: string;
   rel: string;
@@ -25,6 +24,7 @@ export type ContentRecordFile = {
 export enum FileMatchSource {
   FILE = "file",
   BUILT_IN = "built-in",
+  PERMISSIONS_ERROR = "permissions",
 }
 
 export type FileMatch = {

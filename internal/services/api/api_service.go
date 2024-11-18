@@ -126,6 +126,14 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	r.Handle(ToPath("configurations", "{name}", "files"), PostConfigFilesHandlerFunc(base, log)).
 		Methods(http.MethodPost)
 
+	// GET /api/configurations/$NAME/secrets
+	r.Handle(ToPath("configurations", "{name}", "secrets"), GetConfigSecretsHandlerFunc(base, log)).
+		Methods(http.MethodGet)
+
+	// POST /api/configurations/$NAME/secrets
+	r.Handle(ToPath("configurations", "{name}", "secrets"), PostConfigSecretsHandlerFunc(base, log)).
+		Methods(http.MethodPost)
+
 	// GET /api/configurations/$NAME/packages/python
 	r.Handle(ToPath("configurations", "{name}", "packages", "python"), NewGetConfigPythonPackagesHandler(base, log)).
 		Methods(http.MethodGet)
@@ -157,6 +165,10 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	// DELETE /api/deployments/$NAME
 	r.Handle(ToPath("deployments", "{name}"), DeleteDeploymentHandlerFunc(base, log)).
 		Methods(http.MethodDelete)
+
+	// GET /api/deployments/$NAME/environment
+	r.Handle(ToPath("deployments", "{name}", "environment"), GetDeploymentEnvironmentHandlerFunc(base, log, lister)).
+		Methods(http.MethodGet)
 
 	// POST /api/packages/python/scan
 	r.Handle(ToPath("packages", "python", "scan"), NewPostPackagesPythonScanHandler(base, log)).

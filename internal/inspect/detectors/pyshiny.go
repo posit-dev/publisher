@@ -85,6 +85,8 @@ func (d *pyShinyDetector) InferType(base util.AbsolutePath, entrypoint util.Rela
 		} else {
 			cfg.Entrypoint = relEntrypoint.String()
 		}
+		cfg.Files = append(cfg.Files, fmt.Sprint("/", relEntrypoint.String()))
+
 		cfg.Type = config.ContentTypePythonShiny
 		// indicate that Python inspection is needed
 		cfg.Python = &config.Python{}

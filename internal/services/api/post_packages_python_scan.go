@@ -10,6 +10,7 @@ import (
 
 	"github.com/posit-dev/publisher/internal/inspect"
 	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 )
 
@@ -64,6 +65,13 @@ func (h *PostPackagesPythonScanHandler) ServeHTTP(w http.ResponseWriter, req *ht
 	}
 	reqs, incomplete, effectivePython, err := inspector.ScanRequirements(projectDir)
 	if err != nil {
+		if aerr, ok := types.IsAgentErrorOf(err, types.ErrorPythonExecNotFound); ok {
+			apiErr := types.APIErrorPythonExecNotFoundFromAgentError(*aerr)
+			h.log.Error("Python executable not found", "error", err.Error())
+			apiErr.JSONResponse(w)
+			return
+		}
+
 		InternalError(w, req, h.log, err)
 		return
 	}

@@ -1,6 +1,5 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-/* eslint-disable @typescript-eslint/naming-convention */
 import path from "path";
 import Mocha from "mocha";
 import { Glob } from "glob";

@@ -145,6 +145,7 @@ func (s *InitializeSuite) TestInitIfNeededWhenNotNeeded() {
 		PackageManager: "pip",
 	}
 	cfg.WriteFile(configPath)
+	cfg.FillDefaults()
 
 	PythonInspectorFactory = func(util.AbsolutePath, util.Path, logging.Logger) inspect.PythonInspector {
 		return &inspect.MockPythonInspector{}
@@ -170,12 +171,12 @@ func (s *InitializeSuite) TestGetPossibleConfigs() {
 	s.Len(configs, 2)
 	s.Equal(config.ContentTypePythonFlask, configs[0].Type)
 	s.Equal("app.py", configs[0].Entrypoint)
-	s.Equal([]string{"app.py", "requirements.txt"}, configs[0].Files)
+	s.Equal([]string{"/app.py", "/requirements.txt"}, configs[0].Files)
 	s.Equal(expectedPyConfig, configs[0].Python)
 
 	s.Equal(config.ContentTypeHTML, configs[1].Type)
 	s.Equal("index.html", configs[1].Entrypoint)
-	s.Equal([]string{"index.html"}, configs[1].Files)
+	s.Equal([]string{"/index.html"}, configs[1].Files)
 	s.Nil(configs[1].Python)
 }
 
@@ -203,4 +204,18 @@ func (s *InitializeSuite) TestGetPossibleConfigsWithMissingEntrypoint() {
 	s.Equal(config.ContentTypeUnknown, configs[0].Type)
 	s.Equal("nonexistent.py", configs[0].Entrypoint)
 	s.Nil(configs[0].Python)
+}
+
+func (s *InitializeSuite) TestNormalizeConfigHandlesUnknownConfigs() {
+	log := logging.New()
+
+	cfg := config.New()
+	cfg.Type = config.ContentTypeUnknown
+
+	ep := util.NewRelativePath("notreal.py", s.cwd.Fs())
+	normalizeConfig(cfg, s.cwd, util.Path{}, util.Path{}, ep, log)
+
+	// Entrypoint is set from the relative path passed to normalizeConfig
+	s.Equal("notreal.py", cfg.Entrypoint)
+	s.Contains(cfg.Files, "/notreal.py")
 }

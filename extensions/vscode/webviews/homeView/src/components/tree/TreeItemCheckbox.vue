@@ -4,6 +4,7 @@
     :class="{
       'align-icon-with-twisty': alignIconWithTwisty,
       collapsible: $slots.default,
+      'text-list-emphasized': listStyle === 'emphasized',
       'text-foreground': listStyle === 'default',
       'text-list-deemphasized': listStyle === 'deemphasized',
     }"
@@ -54,7 +55,7 @@
 <script setup lang="ts">
 import ActionToolbar, { ActionButton } from "src/components/ActionToolbar.vue";
 
-export type TreeItemStyle = "default" | "deemphasized";
+export type TreeItemStyle = "emphasized" | "default" | "deemphasized";
 
 const expanded = defineModel("expanded", { required: false, default: false });
 
@@ -160,7 +161,6 @@ const toggleExpanded = () => {
       }
 
       .tree-item-description {
-        line-height: 22px;
         font-size: 0.9em;
         margin-left: 0.5em;
         opacity: 0.7;

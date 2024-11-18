@@ -3,12 +3,33 @@ package types
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"slices"
+	"strings"
+
 	"github.com/mitchellh/mapstructure"
 )
 
 type ErrorCode string
 type ErrorData map[string]any
 type Operation string
+
+const (
+	ErrorResourceNotFound             ErrorCode = "resourceNotFound"
+	ErrorInvalidTOML                  ErrorCode = "invalidTOML"
+	ErrorUnknownTOMLKey               ErrorCode = "unknownTOMLKey"
+	ErrorInvalidConfigFiles           ErrorCode = "invalidConfigFiles"
+	ErrorCredentialServiceUnavailable ErrorCode = "credentialsServiceUnavailable"
+	ErrorCertificateVerification      ErrorCode = "errorCertificateVerification"
+	ErrorRenvPackageVersionMismatch   ErrorCode = "renvPackageVersionMismatch"
+	ErrorRenvPackageSourceMissing     ErrorCode = "renvPackageSourceMissing"
+	ErrorRenvLockPackagesReading      ErrorCode = "renvlockPackagesReadingError"
+	ErrorRequirementsFileReading      ErrorCode = "requirementsFileReadingError"
+	ErrorDeployedContentNotRunning    ErrorCode = "deployedContentNotRunning"
+	ErrorUnknown                      ErrorCode = "unknown"
+	ErrorTomlValidationError          ErrorCode = "tomlValidationError"
+	ErrorTomlUnknownError             ErrorCode = "tomlUnknownError"
+	ErrorPythonExecNotFound           ErrorCode = "pythonExecNotFound"
+)
 
 type EventableError interface {
 	error
@@ -26,7 +47,18 @@ type AgentError struct {
 	Data    ErrorData `json:"data" toml:"data,omitempty"`
 }
 
-const UnknownErrorCode ErrorCode = "unknown"
+// Normalize punctuation on messages derived from errors
+func normalizeAgentErrorMsg(errMsg string) string {
+	spChars := []string{"?", "!", ")", "."}
+	msg := strings.ToUpper(errMsg[:1]) + errMsg[1:]
+
+	msgLastChar := msg[len(msg)-1:]
+	if slices.Contains(spChars, msgLastChar) {
+		return msg
+	}
+
+	return msg + "."
+}
 
 func AsAgentError(e error) *AgentError {
 	if e == nil {
@@ -36,14 +68,15 @@ func AsAgentError(e error) *AgentError {
 	if ok {
 		return agentErr
 	}
-	return NewAgentError(UnknownErrorCode, e, nil)
+	return NewAgentError(ErrorUnknown, e, nil)
 }
 
 func NewAgentError(code ErrorCode, err error, details any) *AgentError {
 	data := make(ErrorData)
 	msg := ""
+
 	if err != nil {
-		msg = err.Error()
+		msg = normalizeAgentErrorMsg(err.Error())
 	}
 	if details != nil {
 		detailMap := make(ErrorData)
@@ -86,8 +119,28 @@ func (e *AgentError) Error() string {
 func OperationError(op Operation, err error) EventableError {
 	e, ok := err.(EventableError)
 	if !ok {
-		e = NewAgentError(UnknownErrorCode, err, nil)
+		e = NewAgentError(ErrorUnknown, err, nil)
 	}
 	e.SetOperation(op)
 	return e
+}
+
+// Evaluate if a given error is an AgentError
+// returning the error as AgentError type when it is
+// and a bool flag of the comparison result.
+func IsAgentError(err error) (*AgentError, bool) {
+	if aerr, ok := err.(*AgentError); ok {
+		return aerr, ok
+	}
+	return nil, false
+}
+
+// Evaluate if a given error is an AgentError of a specific code
+// returning the error as AgentError type when it is
+// and a bool flag of the comparison result.
+func IsAgentErrorOf(err error, code ErrorCode) (*AgentError, bool) {
+	if err, isAgentErr := err.(*AgentError); isAgentErr {
+		return err, err.Code == code
+	}
+	return nil, false
 }

@@ -11,12 +11,18 @@ import {
   ContentRecordFile,
   ConfigurationError,
 } from "../../../../src/api";
+import { isConfigurationError } from "../../../../src/api/types/configurations";
 import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
 import { RPackage } from "../../../../src/api/types/packages";
 import { DeploymentSelector } from "../../../../src/types/shared";
 import { splitFilesOnInclusion } from "src/utils/files";
+import {
+  isAgentErrorInvalidTOML,
+  isAgentErrorTypeUnknown,
+} from "../../../../src/api/types/error";
 
 export const useHomeStore = defineStore("home", () => {
+  const platformFileSeparator = ref<string>("/");
   const publishInProgress = ref(false);
 
   const contentRecords = ref<(ContentRecord | PreContentRecord)[]>([]);
@@ -25,6 +31,36 @@ export const useHomeStore = defineStore("home", () => {
   const credentials = ref<Credential[]>([]);
   const sortedCredentials = computed(() => {
     return credentials.value.sort((a, b) => a.name.localeCompare(b.name));
+  });
+
+  const serverSecrets = ref<Set<string>>(new Set());
+  const secrets = ref(new Map<string, string | undefined>());
+
+  const environment = computed((): Map<string, string> => {
+    const result = new Map<string, string>();
+    const config = selectedConfiguration.value;
+
+    if (config === undefined || isConfigurationError(config)) {
+      return result;
+    }
+
+    Object.entries(config.configuration.environment || {}).forEach(
+      ([name, value]) => {
+        result.set(name, value);
+      },
+    );
+
+    return result;
+  });
+
+  const duplicatedEnvironmentVariables = computed((): string[] => {
+    const result: string[] = [];
+    secrets.value.forEach((_, name) => {
+      if (environment.value.has(name)) {
+        result.push(name);
+      }
+    });
+    return result;
   });
 
   const showDisabledOverlay = ref(false);
@@ -55,6 +91,33 @@ export const useHomeStore = defineStore("home", () => {
       }
       return result;
     },
+  );
+
+  watch(
+    [selectedContentRecord, selectedConfiguration],
+    ([contentRecord, config], [prevContentRecord, prevConfig]) => {
+      const result = new Map<string, string | undefined>();
+
+      if (config === undefined || isConfigurationError(config)) {
+        secrets.value = result;
+        return;
+      }
+
+      const isSameContentRecord = Boolean(
+        contentRecord?.saveName === prevContentRecord?.saveName,
+      );
+
+      config.configuration.secrets?.forEach((secret) => {
+        if (isSameContentRecord && secrets.value?.has(secret)) {
+          result.set(secret, secrets.value.get(secret));
+        } else {
+          result.set(secret, undefined);
+        }
+      });
+
+      secrets.value = result;
+    },
+    { immediate: true },
   );
 
   // Always use the content record as the source of truth for the
@@ -186,7 +249,166 @@ export const useHomeStore = defineStore("home", () => {
     rVersion.value = version;
   };
 
+  const clearSecretValues = () => {
+    const cleared = new Map();
+
+    secrets.value.forEach((_, key) => {
+      cleared.set(key, undefined);
+    });
+
+    secrets.value = cleared;
+  };
+
+  const secretsWithValueCount = computed(() => {
+    return Array.from(secrets.value.values()).filter((v) => v !== undefined)
+      .length;
+  });
+
+  const python = {
+    active: {
+      isEmptyRequirements: computed(() => {
+        return (
+          pythonProject.value &&
+          pythonPackageFile.value &&
+          pythonPackages.value &&
+          pythonPackages.value.length === 0
+        );
+      }),
+      isMissingRequirements: computed(() => {
+        return pythonProject.value && !pythonPackageFile.value;
+      }),
+      isAlertActive: computed((): Boolean => {
+        return (
+          python.active.isEmptyRequirements.value ||
+          python.active.isMissingRequirements.value
+        );
+      }),
+      isInProject: computed(() => {
+        return pythonProject;
+      }),
+    },
+  };
+
+  const r = {
+    active: {
+      isMissingPackageFile: computed(() => {
+        return rProject.value && !rPackageFile.value;
+      }),
+
+      isEmptyRequirements: computed(() => {
+        return Boolean(
+          rProject.value &&
+            rPackageFile.value &&
+            rPackages.value &&
+            rPackages.value.length === 0,
+        );
+      }),
+
+      isAlertActive: computed((): boolean => {
+        return (
+          r.active.isMissingPackageFile.value ||
+          r.active.isEmptyRequirements.value
+        );
+      }),
+
+      isInProject: computed(() => {
+        return rProject.value;
+      }),
+    },
+  };
+
+  const credential = {
+    isAvailable: computed(() => {
+      return Boolean(sortedCredentials.value.length);
+    }),
+
+    active: {
+      isMissing: computed(() => {
+        return config.active.isCredentialMissing.value;
+      }),
+
+      isAlertActive: computed((): boolean => {
+        return credential.active.isMissing.value;
+      }),
+    },
+  };
+
+  const anyActiveAlerts = computed(() => {
+    return (
+      !config.active.isAlertActive.value &&
+      (credential.active.isAlertActive.value ||
+        r.active.isAlertActive.value ||
+        python.active.isAlertActive.value)
+    );
+  });
+
+  const config = {
+    active: {
+      isEntryMissing: computed(() => {
+        return Boolean(
+          selectedContentRecord.value &&
+            !selectedContentRecord.value.configurationName,
+        );
+      }),
+
+      isMissing: computed((): boolean => {
+        return Boolean(
+          selectedContentRecord.value &&
+            !selectedConfiguration.value &&
+            !config.active.isInErrorList(
+              selectedContentRecord.value?.configurationName,
+            ) &&
+            !config.active.isEntryMissing.value,
+        );
+      }),
+
+      isTOMLError: computed((): boolean => {
+        return Boolean(
+          selectedConfiguration.value &&
+            isConfigurationError(selectedConfiguration.value) &&
+            isAgentErrorInvalidTOML(selectedConfiguration.value.error),
+        );
+      }),
+
+      isUnknownError: computed((): boolean => {
+        return Boolean(
+          selectedConfiguration.value &&
+            isConfigurationError(selectedConfiguration.value) &&
+            isAgentErrorTypeUnknown(selectedConfiguration.value.error),
+        );
+      }),
+
+      isInErrorList: (configName?: string): boolean => {
+        if (!configName) {
+          return false;
+        }
+        return Boolean(
+          configurationsInError.value.find(
+            (config) =>
+              config.configurationName ===
+              selectedContentRecord.value?.configurationName,
+          ),
+        );
+      },
+
+      isCredentialMissing: computed((): boolean => {
+        return Boolean(selectedContentRecord.value && !serverCredential.value);
+      }),
+
+      isAlertActive: computed((): boolean => {
+        return (
+          config.active.isEntryMissing.value ||
+          config.active.isMissing.value ||
+          config.active.isTOMLError.value ||
+          config.active.isUnknownError.value ||
+          config.active.isCredentialMissing.value
+        );
+      }),
+    },
+  };
+
   return {
+    platformFileSeparator,
     showDisabledOverlay,
     publishInProgress,
     contentRecords,
@@ -194,6 +416,10 @@ export const useHomeStore = defineStore("home", () => {
     configurationsInError,
     credentials,
     sortedCredentials,
+    serverSecrets,
+    secrets,
+    environment,
+    duplicatedEnvironmentVariables,
     selectedContentRecord,
     selectedConfiguration,
     serverCredential,
@@ -209,10 +435,17 @@ export const useHomeStore = defineStore("home", () => {
     rProject,
     rPackages,
     rPackageFile,
+    anyActiveAlerts,
     updateSelectedContentRecordBySelector,
     updateSelectedContentRecordByObject,
     updateParentViewSelectionState,
     updatePythonPackages,
     updateRPackages,
+    clearSecretValues,
+    secretsWithValueCount,
+    python,
+    r,
+    config,
+    credential,
   };
 });

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -eo pipefail
 
 test_case=$1
 
@@ -14,18 +14,19 @@ fi
 setup_connect() {
     pip install -r ../setup/requirements.txt
     if [[ "${DOCKER_CONNECT}" = true ]]; then
-        docker compose -f ../docker-compose.yml build
         docker compose -f ../docker-compose.yml up -d
         export CONNECT_SERVER="http://localhost:3939"
         export CONNECT_API_KEY="$(python ../setup/gen_apikey.py 'admin')"
         # wait until Connect is available
-        timeout 100 bash -c \
+        timeout 10 bash -c \
         'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' ${CONNECT_SERVER}/__ping__)" != "200" ]]; \
             do sleep 1; \
             echo "retry"; \
         done'
     else
-        export CONNECT_SERVER="$(python ../setup/connect_setup.py)"
+        if [ -z ${CONNECT_SERVER} ]; then
+            export CONNECT_SERVER="$(python ../setup/connect_setup.py)"
+        fi
         export CONNECT_API_KEY="$(python ../setup/gen_apikey.py 'admin')"
     fi
 }
@@ -77,7 +78,23 @@ case "${test_case}" in
     "common")
         cli_tests
     ;;
-    "vscode-ui")
+    "vscode-root")
+        export WORKSPACE_PATH="../sample-content/fastapi-simple"
+        export PYTHON_VERSION=$(python --version | awk '{print $2}')
         setup_connect
         vscode_ui_tests
+    ;;
+    "vscode-nested")
+        export WORKSPACE_PATH="../sample-content/"
+        export PYTHON_VERSION=$(python --version | awk '{print $2}')
+        setup_connect
+        vscode_ui_tests
+    ;;
+
+    "vscode-error")
+        export WORKSPACE_PATH="../sample-content/"
+        export PYTHON_VERSION=$(python --version | awk '{print $2}')
+        setup_connect
+        vscode_ui_tests
+    ;;
 esac

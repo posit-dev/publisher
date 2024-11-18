@@ -7,6 +7,7 @@ import { Extension, extensions } from "vscode";
 
 suite("Extension Test Suite", () => {
   test("extension is registered", () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const extension: Extension<any> =
       extensions.getExtension("posit.publisher")!;
     assert.ok(extension !== undefined);

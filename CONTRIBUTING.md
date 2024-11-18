@@ -115,6 +115,17 @@ This mode can be reproduced on your local machine by setting `CI=true`.
 
 See [the Contribution Guide for the VSCode Extension](./extensions/vscode/CONTRIBUTING.md).
 
+## Schema Updates
+
+Non-breaking or additive changes to the schema do not require a version bump.
+
+Breaking changes to the schema require a version bump.
+
+As Pull Requests are merged into main, we update (or create in the case of a new
+schema) the file on the CDN (in S3).
+
+Schemas can be found in the `internal/schema/schemas` directory.
+
 ## Release
 
 The Posit Publisher VSCode extension releases follow guidelines from the
@@ -176,3 +187,18 @@ This command will trigger the [Release GitHub Action](https://github.com/rstudio
 Once complete the action has completed, the release will be available on the
 [Releases page](https://github.com/rstudio/publishing-client/releases), and
 published to the VSCode Marketplace.
+
+## Updating Dependencies
+
+After a release has gone out we take the opportunity to update dependencies.
+
+Dependencies can be adjusted at any time; the process of updating after a
+release keeps us proactive.
+
+This includes our JavaScript packages, Go version/packages, and tooling
+dependencies.
+
+Any significantly difficult dependency updates should have an issue created to
+track the work and can be triaged alongside our other issues.
+
+Updates to dependencies should be done in a separate PR.

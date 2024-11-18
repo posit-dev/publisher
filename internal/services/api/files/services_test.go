@@ -3,6 +3,7 @@ package files
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"os"
 	"testing"
 
 	"github.com/posit-dev/publisher/internal/bundles/matcher"
@@ -58,13 +59,44 @@ func (s *ServicesSuite) TestGetFile() {
 	s.NotNil(file)
 }
 
+func (s *ServicesSuite) TestGetFilePermissionErr() {
+	afs := utiltest.NewMockFs()
+	base := s.cwd.WithFs(afs)
+
+	// We can't traverse this directory because of permissions
+	afs.On("Open", base.String()).Return(nil, os.ErrPermission)
+
+	// We can stat it though; fake with fileInfo from the real directory
+	fileInfo, err := s.cwd.Stat()
+	s.NoError(err)
+	afs.On("Stat", base.String()).Return(fileInfo, nil)
+	afs.On("Stat", base.Join("bin", "python").String()).Return(fileInfo, os.ErrNotExist)
+	afs.On("Stat", base.Join("bin", "python3").String()).Return(fileInfo, os.ErrNotExist)
+	afs.On("Stat", base.Join("Scripts", "python.exe").String()).Return(fileInfo, os.ErrNotExist)
+	afs.On("Stat", base.Join("Scripts", "python3.exe").String()).Return(fileInfo, os.ErrNotExist)
+
+	service := CreateFilesService(base, s.log)
+	s.NotNil(service)
+	matchList, err := matcher.NewMatchList(base, nil)
+	s.NoError(err)
+
+	file, err := service.GetFile(base, matchList)
+	s.NoError(err)
+	s.NotNil(file)
+}
+
 func (s *ServicesSuite) TestGetFileUsingSampleContent() {
 	afs := afero.NewOsFs()
 	base := s.cwd.Join("..", "..", "..", "..", "test", "sample-content", "fastapi-simple").WithFs(afs)
 
 	service := CreateFilesService(base, s.log)
 	s.NotNil(service)
-	matchList, err := matcher.NewMatchList(base, nil)
+
+	patterns := []string{
+		"*.py",
+		"requirements.txt",
+	}
+	matchList, err := matcher.NewMatchList(base, patterns)
 	s.NoError(err)
 
 	file, err := service.GetFile(base, matchList)
@@ -78,8 +110,9 @@ func (s *ServicesSuite) TestGetFileUsingSampleContent() {
 	s.Equal(Directory, file.FileType)
 	s.True(file.IsDir)
 	s.False(file.IsRegular)
-	s.False(file.IsEntrypoint)
 	s.NotNil(file.Files)
+	s.False(file.AllExcluded)
+	s.False(file.AllIncluded)
 }
 
 func (s *ServicesSuite) TestGetFileUsingSampleContentWithTrailingSlash() {
@@ -103,7 +136,11 @@ func (s *ServicesSuite) TestGetFileUsingSampleContentFromParentDir() {
 
 	service := CreateFilesService(base, s.log)
 	s.NotNil(service)
-	matchList, err := matcher.NewMatchList(toList, nil)
+	patterns := []string{
+		"*.py",
+		"requirements.txt",
+	}
+	matchList, err := matcher.NewMatchList(base, patterns)
 	s.NoError(err)
 
 	file, err := service.GetFile(toList, matchList)
@@ -117,8 +154,67 @@ func (s *ServicesSuite) TestGetFileUsingSampleContentFromParentDir() {
 	s.Equal(Directory, file.FileType)
 	s.True(file.IsDir)
 	s.False(file.IsRegular)
-	s.False(file.IsEntrypoint)
 	s.NotNil(file.Files)
+	s.False(file.AllExcluded)
+	s.False(file.AllIncluded)
+}
+
+func (s *ServicesSuite) TestGetFileUsingSampleContentAllIncluded() {
+	afs := afero.NewOsFs()
+	base := s.cwd.Join("..", "..", "..", "..", "test", "sample-content", "fastapi-simple").WithFs(afs)
+
+	service := CreateFilesService(base, s.log)
+	s.NotNil(service)
+
+	patterns := []string{
+		"*",
+	}
+	matchList, err := matcher.NewMatchList(base, patterns)
+	s.NoError(err)
+
+	file, err := service.GetFile(base, matchList)
+	s.NoError(err)
+	s.NotNil(file)
+
+	s.Equal(".", file.Id)
+	s.Equal(".", file.Rel)
+	s.Equal(".", file.RelDir)
+	s.Equal("fastapi-simple", file.Base)
+	s.Equal(Directory, file.FileType)
+	s.True(file.IsDir)
+	s.False(file.IsRegular)
+	s.NotNil(file.Files)
+	s.False(file.AllExcluded)
+	s.True(file.AllIncluded)
+}
+
+func (s *ServicesSuite) TestGetFileUsingSampleContentAllExcluded() {
+	afs := afero.NewOsFs()
+	base := s.cwd.Join("..", "..", "..", "..", "test", "sample-content", "fastapi-simple").WithFs(afs)
+
+	service := CreateFilesService(base, s.log)
+	s.NotNil(service)
+
+	patterns := []string{
+		"!*",
+	}
+	matchList, err := matcher.NewMatchList(base, patterns)
+	s.NoError(err)
+
+	file, err := service.GetFile(base, matchList)
+	s.NoError(err)
+	s.NotNil(file)
+
+	s.Equal(".", file.Id)
+	s.Equal(".", file.Rel)
+	s.Equal(".", file.RelDir)
+	s.Equal("fastapi-simple", file.Base)
+	s.Equal(Directory, file.FileType)
+	s.True(file.IsDir)
+	s.False(file.IsRegular)
+	s.NotNil(file.Files)
+	s.True(file.AllExcluded)
+	s.False(file.AllIncluded)
 }
 
 func (s *ServicesSuite) TestGetFileSizeAndCount() {

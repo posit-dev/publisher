@@ -125,44 +125,6 @@ func normalizeConfig(
 	entrypoint util.RelativePath,
 	log logging.Logger,
 ) error {
-	log.Info("Possible deployment type", "Entrypoint", cfg.Entrypoint, "Type", cfg.Type)
-	if cfg.Title == "" {
-		// Default title is the name of the project directory.
-		cfg.Title = base.Base()
-	}
-	// The inspector may populate the file list.
-	// If it doesn't, default to just the entrypoint file.
-	if len(cfg.Files) == 0 {
-		cfg.Files = []string{cfg.Entrypoint}
-	}
-	needPython, err := requiresPython(cfg, base)
-	if err != nil {
-		return err
-	}
-	if needPython {
-		inspector := PythonInspectorFactory(base, python, log)
-		pyConfig, err := inspector.InspectPython()
-		if err != nil {
-			return err
-		}
-		cfg.Python = pyConfig
-		cfg.Files = append(cfg.Files, cfg.Python.PackageFile)
-	}
-	needR, err := requiresR(cfg, base, rExecutable)
-	if err != nil {
-		return err
-	}
-	if needR {
-		inspector := RInspectorFactory(base, rExecutable, log)
-		rConfig, err := inspector.InspectR()
-		if err != nil {
-			return err
-		}
-		cfg.R = rConfig
-		cfg.Files = append(cfg.Files, cfg.R.PackageFile)
-	}
-	cfg.Comments = strings.Split(initialComment, "\n")
-
 	// Usually an entrypoint will be inferred.
 	// If not, use the specified entrypoint, or
 	// fall back to unknown.
@@ -173,6 +135,54 @@ func normalizeConfig(
 			cfg.Entrypoint = "unknown"
 		}
 	}
+
+	log.Info("Possible deployment type", "Entrypoint", cfg.Entrypoint, "Type", cfg.Type)
+	if cfg.Title == "" {
+		// Default title is the name of the project directory.
+		cfg.Title = base.Base()
+	}
+	// The inspector may populate the file list.
+	// If it doesn't, default to just the entrypoint file.
+	if len(cfg.Files) == 0 {
+		log.Debug("Inspector did not populate files list, defaulting to single file entrypoint", "entrypoint", cfg.Entrypoint)
+		cfg.Files = []string{fmt.Sprint("/", cfg.Entrypoint)}
+	} else {
+		log.Debug("Inspector populate files list", "total_files", len(cfg.Files))
+	}
+
+	needPython, err := requiresPython(cfg, base)
+	if err != nil {
+		log.Debug("Error while determining Python as a requirement", "error", err.Error())
+		return err
+	}
+	if needPython {
+		log.Debug("Determined that Python is required")
+		inspector := PythonInspectorFactory(base, python, log)
+		pyConfig, err := inspector.InspectPython()
+		if err != nil {
+			log.Debug("Error while inspecting to generate a Python based configuration", "error", err.Error())
+			return err
+		}
+		cfg.Python = pyConfig
+		cfg.Files = append(cfg.Files, fmt.Sprint("/", cfg.Python.PackageFile))
+	}
+	needR, err := requiresR(cfg, base, rExecutable)
+	if err != nil {
+		log.Debug("Error while determining R as a requirement", "error", err.Error())
+		return err
+	}
+	if needR {
+		inspector := RInspectorFactory(base, rExecutable, log)
+		rConfig, err := inspector.InspectR()
+		if err != nil {
+			log.Debug("Error while inspecting to generate an R based configuration", "error", err.Error())
+			return err
+		}
+		cfg.R = rConfig
+		cfg.Files = append(cfg.Files, fmt.Sprint("/", cfg.R.PackageFile))
+	}
+	cfg.Comments = strings.Split(initialComment, "\n")
+
 	return nil
 }
 

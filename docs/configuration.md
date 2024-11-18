@@ -16,7 +16,8 @@ Indicates the type of content being deployed. Valid values are:
 - `python-shiny`
 - `python-streamlit`
 - `quarto-shiny`
-- `quarto`
+- `quarto-static`
+- `quarto` (Deprecated use `quarto-static` instead)
 - `r-plumber`
 - `r-shiny`
 - `rmd-shiny`
@@ -37,7 +38,28 @@ Description for this content. It may span multiple lines and be up to 4000 chara
 
 #### files
 
-Project-relative paths of the files to be included in the deployment. Wildcards are accepted, using [`.gitignore` syntax](https://git-scm.com/docs/gitignore).
+Project-relative paths of the files to be included in the deployment.
+Uses [`.gitignore` syntax](https://git-scm.com/docs/gitignore) for file include
+patterns, like wildcards.
+
+Here are some examples given an example project structure:
+
+```
+project-root/
+|
+├── dir/
+│   ├── util.py
+│   └─  helper.py
+│
+└── app.py
+```
+
+- To include all Python files in your project, you can use a wildcard pattern.
+  `*.py` would include all `.py` files in any directory.
+- `/dir/util.py` would include the specific `util.py` file in the `dir`
+  directory under the root of the project to be published.
+- To include the file `app.py` at the root of the project, you can use
+  `/app.py`.
 
 #### has_parameters
 
@@ -55,7 +77,7 @@ Example:
 
 ```toml
 "$schema" = "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json"
-type = "quarto"
+type = "quarto-static"
 entrypoint = "report.qmd"
 title = "Regional Quarterly Sales Report"
 description = "This is the quarterly sales report, broken down by region."
@@ -123,6 +145,24 @@ Example:
 version = "4.3.1"
 package_file = "renv.lock"
 package_manager = "renv"
+```
+
+## Jupyter settings
+
+### hide_all_input
+
+Hide all input cells when rendering output.
+
+### hide_tagged_input
+
+Hide input code cells with the 'hide_input' tag when rendering output.
+
+Example:
+
+```toml
+[jupyter]
+hide_all_input = false
+hide_tagged_input = false
 ```
 
 ## Quarto settings

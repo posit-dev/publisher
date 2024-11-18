@@ -8,7 +8,7 @@ import {
   Uri,
 } from "vscode";
 
-import { Configuration } from "src/api";
+import { Configuration, ContentRecordLocation } from "src/api";
 import {
   PUBLISH_DEPLOYMENTS_FOLDER,
   POSIT_FOLDER,
@@ -18,6 +18,7 @@ import {
   DEFAULT_PYTHON_PACKAGE_FILE,
   DEFAULT_R_PACKAGE_FILE,
 } from "src/constants";
+import { relativePath } from "./utils/files";
 
 /**
  * Manages persistent file system watchers for the extension.
@@ -79,6 +80,31 @@ export class WatcherManager implements Disposable {
     this.contentRecordsDir?.dispose();
     this.contentRecords?.dispose();
     this.allFiles?.dispose();
+  }
+}
+
+/**
+ *  Manages file watchers for a specific Content Record
+ */
+export class ContentRecordWatcherManager implements Disposable {
+  contentRecord: FileSystemWatcher | undefined;
+
+  constructor(location?: ContentRecordLocation) {
+    const root = workspace.workspaceFolders?.[0];
+    if (root === undefined || location === undefined) {
+      return;
+    }
+
+    const relPath = relativePath(Uri.file(location.deploymentPath));
+    if (relPath) {
+      this.contentRecord = workspace.createFileSystemWatcher(
+        new RelativePattern(root, relPath),
+      );
+    }
+  }
+
+  dispose() {
+    this.contentRecord?.dispose();
   }
 }
 

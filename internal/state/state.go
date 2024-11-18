@@ -23,6 +23,7 @@ type State struct {
 	Config      *config.Config
 	Target      *deployment.Deployment
 	LocalID     LocalDeploymentID
+	Secrets     map[string]string
 }
 
 func loadConfig(path util.AbsolutePath, configName string) (*config.Config, error) {
@@ -95,7 +96,7 @@ func Empty() *State {
 
 var ErrServerURLMismatch = errors.New("the account provided is for a different server; it must match the server for this deployment")
 
-func New(path util.AbsolutePath, accountName, configName, targetName string, saveName string, accountList accounts.AccountList) (*State, error) {
+func New(path util.AbsolutePath, accountName, configName, targetName string, saveName string, accountList accounts.AccountList, secrets map[string]string, insecure bool) (*State, error) {
 	var target *deployment.Deployment
 	var account *accounts.Account
 	var cfg *config.Config
@@ -128,6 +129,11 @@ func New(path util.AbsolutePath, accountName, configName, targetName string, sav
 		return nil, err
 	}
 
+	// we don't store insecure credential flag, instead we use a
+	// credential-wide configuration value which is passed in.
+	// So we add that value before the account gets used
+	account.Insecure = insecure
+
 	if target.ServerURL != "" && target.ServerURL != account.URL {
 		return nil, ErrServerURLMismatch
 	}
@@ -139,10 +145,17 @@ func New(path util.AbsolutePath, accountName, configName, targetName string, sav
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
 			return nil, fmt.Errorf("couldn't load configuration '%s' from '%s'; run 'publish init' to create an initial configuration file", configName, path)
-		} else {
-			return nil, err
+		}
+		return nil, err
+	}
+
+	// Check that the secrets passed are in the config
+	for secret := range secrets {
+		if !cfg.HasSecret(secret) {
+			return nil, fmt.Errorf("secret '%s' is not in the configuration", secret)
 		}
 	}
+
 	return &State{
 		Dir:         path,
 		AccountName: accountName,
@@ -152,6 +165,7 @@ func New(path util.AbsolutePath, accountName, configName, targetName string, sav
 		Account:     account,
 		Config:      cfg,
 		Target:      target,
+		Secrets:     secrets,
 	}, nil
 }
 

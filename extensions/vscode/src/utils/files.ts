@@ -19,7 +19,7 @@ export async function fileExists(fileUri: Uri): Promise<boolean> {
   try {
     await workspace.fs.stat(fileUri);
     return true;
-  } catch (e: unknown) {
+  } catch (_e: unknown) {
     return false;
   }
 }
@@ -28,7 +28,7 @@ export async function isDir(fileUri: Uri): Promise<boolean> {
   try {
     const info = await workspace.fs.stat(fileUri);
     return (info.type & FileType.Directory) !== 0;
-  } catch (e: unknown) {
+  } catch (_e: unknown) {
     return false;
   }
 }
@@ -49,7 +49,7 @@ export function isValidFilename(filename: string): boolean {
     return false;
   }
   const forbidden = "/:*?\"<>|'\\";
-  for (let c of filename) {
+  for (const c of filename) {
     if (forbidden.includes(c)) {
       return false;
     }
@@ -79,7 +79,7 @@ export async function openNewOrExistingFileInPreview(
   appendedContents?: string,
 ) {
   let fileExist = true;
-  const existingUri = Uri.parse(filePath);
+  const existingUri = Uri.file(filePath);
   const newUri = Uri.file(filePath).with({ scheme: "untitled" });
 
   try {
@@ -123,7 +123,7 @@ export async function updateNewOrExistingFile(
   openEditor = false,
 ) {
   let fileExist = true;
-  const uri = Uri.parse(filePath);
+  const uri = Uri.file(filePath);
 
   try {
     await workspace.fs.stat(uri);
@@ -175,8 +175,8 @@ export function pathSort(paths: string[], sep: string): string[] {
 }
 
 export function pathSorter(a: string[], b: string[]): number {
-  var l = Math.max(a.length, b.length);
-  for (var i = 0; i < l; i += 1) {
+  const l = Math.max(a.length, b.length);
+  for (let i = 0; i < l; i += 1) {
     if (!(i in a)) {
       return -1;
     }
@@ -263,7 +263,7 @@ export function relativePath(uri: Uri): string | undefined {
     return undefined;
   }
   const base = uriUtils.basename(uri);
-  const relativeFilePath = uriUtils.joinPath(Uri.parse(relativeDirPath), base);
+  const relativeFilePath = uriUtils.joinPath(Uri.file(relativeDirPath), base);
   let result = relativeFilePath.path;
   if (result.startsWith(path.sep)) {
     result = result.replace(path.sep, "");
@@ -293,4 +293,25 @@ export function vscodeOpenFiles(): string[] {
     });
   });
   return openFileList;
+}
+
+// Always uses forward slashes no matter what platform
+export function getRelPathForConfig(configFullPath: string): string {
+  let result = ``;
+  result += `/.posit`;
+  result += `/publish`;
+  result += `/${path.basename(configFullPath)}`;
+  return result;
+}
+
+// Always uses forward slashes no matter what platform
+export function getRelPathForContentRecord(
+  contentRecordFullPath: string,
+): string {
+  let result = ``;
+  result += `/.posit`;
+  result += `/publish`;
+  result += `/deployments`;
+  result += `/${path.basename(contentRecordFullPath)}`;
+  return result;
 }

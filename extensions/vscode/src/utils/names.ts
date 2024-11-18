@@ -2,57 +2,17 @@
 
 import { InputBoxValidationSeverity } from "vscode";
 
-import { useApi } from "src/api";
 import { isValidFilename } from "src/utils/files";
+import filenamify from "filenamify";
 
-export async function untitledConfigurationName(
-  projectDir: string,
-): Promise<string> {
-  const api = await useApi();
-  const existingConfigurations = (await api.configurations.getAll(projectDir))
-    .data;
-
-  if (existingConfigurations.length === 0) {
-    return "configuration-1";
-  }
-
-  let id = 0;
-  let defaultName = "";
+export function newDeploymentName(existingNames: string[] = []): string {
+  // Generate unique name endings until we find a unique one
+  let result;
   do {
-    id += 1;
-    const trialName = `configuration-${id}`;
+    result = `deployment-${randomNameEnding(4)}`;
+  } while (!uniqueContentRecordName(result, existingNames));
 
-    if (
-      !existingConfigurations.find((config) => {
-        return (
-          config.configurationName.toLowerCase() === trialName.toLowerCase()
-        );
-      })
-    ) {
-      defaultName = trialName;
-    }
-  } while (!defaultName);
-  return defaultName;
-}
-
-export function untitledContentRecordName(
-  existingContentRecordNames: string[],
-): string {
-  if (existingContentRecordNames.length === 0) {
-    return "deployment-1";
-  }
-
-  let id = 0;
-  let defaultName = "";
-  do {
-    id += 1;
-    const trialName = `deployment-${id}`;
-
-    if (uniqueContentRecordName(trialName, existingContentRecordNames)) {
-      defaultName = trialName;
-    }
-  } while (!defaultName);
-  return defaultName;
+  return result;
 }
 
 export function uniqueContentRecordName(
@@ -81,4 +41,46 @@ export function contentRecordNameValidator(
     }
     return undefined;
   };
+}
+
+/**
+ * Creates a semi-unique configuration name from a content title.
+ *
+ * @param title The title of the content to create a filename from
+ * @param existingNames [[]] An array of existing configuration names to ensure
+ *   uniqueness
+ * @returns A filename that is safe to use in the filesystem with a unique 4
+ * character ending to avoid Git conflicts.
+ */
+export function newConfigFileNameFromTitle(
+  title: string,
+  existingNames: string[] = [],
+): string {
+  const filename = filenamify(title, {
+    replacement: "-",
+    maxLength: 30,
+  });
+
+  // Generate unique name endings until we find a unique one
+  let result;
+  do {
+    const uniqueEnding = randomNameEnding(4);
+    result = `${filename}-${uniqueEnding}`;
+  } while (existingNames.includes(result));
+
+  return result;
+}
+
+/**
+ * Generates a random, uppercase, base 32 string of the given length.
+ *
+ * @param length [4] The length of the resulting string
+ * @returns A random base 32 string of the given length
+ */
+export function randomNameEnding(length: number = 4): string {
+  return Array.from({ length: length }, () =>
+    Math.floor(Math.random() * 32)
+      .toString(32)
+      .toUpperCase(),
+  ).join("");
 }

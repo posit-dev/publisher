@@ -16,6 +16,10 @@ import {
 } from "vscode";
 
 import { EventStream, displayEventStreamMessage } from "src/events";
+import {
+  isCodedEventErrorMessage,
+  handleEventCodedError,
+} from "src/eventErrors";
 
 import {
   EventStreamMessage,
@@ -25,6 +29,10 @@ import {
   restoreMsgToStatusSuffix,
 } from "src/api";
 import { Commands, Views } from "src/constants";
+import {
+  ErrorMessageActionIds,
+  findErrorMessageSplitOption,
+} from "src/utils/errorEnhancer";
 
 enum LogStageStatus {
   notStarted,
@@ -185,15 +193,32 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
         }
       });
 
-      let showLogsOption = "View Log";
-      const selection = await window.showErrorMessage(
-        msg.data.cancelled === "true"
-          ? `Deployment cancelled: ${msg.data.message}`
-          : `Deployment failed: ${msg.data.message}`,
-        showLogsOption,
-      );
+      const showLogsOption = "View Log";
+      const options = [showLogsOption];
+      const enhancedError = findErrorMessageSplitOption(msg.data.message);
+      if (enhancedError && enhancedError.buttonStr) {
+        options.push(enhancedError.buttonStr);
+      }
+      let errorMessage = "";
+      if (isCodedEventErrorMessage(msg)) {
+        errorMessage = handleEventCodedError(msg);
+      } else {
+        errorMessage =
+          msg.data.cancelled === "true"
+            ? `Deployment cancelled: ${msg.data.message}`
+            : `Deployment failed: ${msg.data.message}`;
+      }
+      const selection = await window.showErrorMessage(errorMessage, ...options);
       if (selection === showLogsOption) {
         await commands.executeCommand(Commands.Logs.Focus);
+      } else if (selection === enhancedError?.buttonStr) {
+        if (
+          enhancedError?.actionId === ErrorMessageActionIds.EditConfiguration
+        ) {
+          await commands.executeCommand(
+            Commands.HomeView.EditCurrentConfiguration,
+          );
+        }
       }
       this.refresh();
     });

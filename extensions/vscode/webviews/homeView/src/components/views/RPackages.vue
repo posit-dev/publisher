@@ -1,34 +1,26 @@
 <template>
-  <TreeSection title="R Packages" :actions="rPackageActions">
+  <TreeSection
+    title="R Packages"
+    data-automation="r-packages"
+    :actions="rPackageActions"
+    :codicon="home.r.active.isAlertActive ? `codicon-alert` : ``"
+  >
     <WelcomeView v-if="showWelcomeView">
-      <template v-if="showScanWelcomeView">
+      <template v-if="missingOrInvalidPackageFile">
         <p>
           To deploy R content, you need a package file listing any package
-          dependencies, but the file does not exist or is invalid. Use
-          'renv::snapshot()' at an R console to create one or edit the current
-          configuration file ({{
-            home.selectedContentRecord?.configurationName
-          }}) to point to an existing valid file.
+          dependencies, but the file ({{ rPackageFile }}) is missing, empty or
+          invalid.
+          <a class="webview-link" role="button" @click="onViewRenvDoc">
+            See the renv documentation for more details.</a
+          >
         </p>
-        <vscode-button @click="onScanForPackageRequirements()">
-          Scan
-        </vscode-button>
       </template>
-      <template v-if="isNotRProject">
-        <p>
+      <template v-if="!home.r.active.isInProject">
+        <p data-automation="r-not-configured">
           This project is not configured to use R. To configure R, add an [r]
           section to your configuration file.
         </p>
-      </template>
-      <template v-if="emptyRequirements">
-        <p>
-          This project currently has no R package requirements (file ({{
-            home.rPackageFile
-          }}) is either missing, empty or invalid).
-        </p>
-        <vscode-button @click="onScanForPackageRequirements()">
-          Scan
-        </vscode-button>
       </template>
     </WelcomeView>
     <template v-else>
@@ -56,6 +48,7 @@ import { useHomeStore } from "src/stores/home";
 import { useHostConduitService } from "src/HostConduitService";
 import { WebviewToHostMessageType } from "../../../../../src/types/messages/webviewToHostMessages";
 import { ActionButton } from "../ActionToolbar.vue";
+import { isConfigurationError } from "../../../../../src/api";
 
 const home = useHomeStore();
 
@@ -67,12 +60,6 @@ const onRefresh = () => {
   });
 };
 
-const onScanForPackageRequirements = () => {
-  hostConduit.sendMsg({
-    kind: WebviewToHostMessageType.SCAN_R_PACKAGE_REQUIREMENTS,
-  });
-};
-
 const onEditRequirementsFile = () => {
   if (!home.rPackageFile) {
     return;
@@ -81,6 +68,15 @@ const onEditRequirementsFile = () => {
     kind: WebviewToHostMessageType.VSCODE_OPEN_RELATIVE,
     content: {
       relativePath: home.rPackageFile,
+    },
+  });
+};
+
+const onViewRenvDoc = () => {
+  hostConduit.sendMsg({
+    kind: WebviewToHostMessageType.NAVIGATE,
+    content: {
+      uriPath: "https://rstudio.github.io/renv/articles/renv.html",
     },
   });
 };
@@ -100,36 +96,31 @@ const rPackageActions = computed((): ActionButton[] => {
     codicon: "codicon-refresh",
     fn: onRefresh,
   });
-  if (Boolean(home.rPackageFile)) {
-    result.push({
-      label: "Scan For Package Requirements",
-      codicon: "codicon-eye",
-      fn: onScanForPackageRequirements,
-    });
-  }
   return result;
 });
 
 const showWelcomeView = computed(() => {
   return (
-    isNotRProject.value || emptyRequirements.value || showScanWelcomeView.value
+    !home.r.active.isInProject ||
+    home.r.active.isEmptyRequirements ||
+    home.r.active.isMissingPackageFile
   );
 });
 
-const isNotRProject = computed(() => {
-  return !home.rProject;
+const rPackageFile = computed(() => {
+  if (
+    home.selectedConfiguration &&
+    !isConfigurationError(home.selectedConfiguration)
+  ) {
+    return (
+      home.selectedConfiguration.configuration.r?.packageFile || "renv.lock"
+    );
+  }
 });
 
-const emptyRequirements = computed(() => {
+const missingOrInvalidPackageFile = computed(() => {
   return (
-    home.rProject &&
-    home.rPackageFile &&
-    home.rPackages &&
-    home.rPackages.length === 0
+    home.r.active.isMissingPackageFile || home.r.active.isEmptyRequirements
   );
-});
-
-const showScanWelcomeView = computed(() => {
-  return home.rProject && !home.rPackageFile;
 });
 </script>

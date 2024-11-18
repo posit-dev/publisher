@@ -3,12 +3,14 @@ package connect
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strings"
 	"time"
@@ -100,6 +102,12 @@ func isConnectAuthError(err error) bool {
 	return errors.As(err, &serr)
 }
 
+type certificationValidationFailedDetails struct {
+	url              string
+	accountName      string
+	certificateError string
+}
+
 func (c *ConnectClient) TestAuthentication(log logging.Logger) (*User, error) {
 	log.Info("Testing authentication", "method", c.account.AuthType.Description(), "url", c.account.URL)
 	var connectUser UserDTO
@@ -111,7 +119,20 @@ func (c *ConnectClient) TestAuthentication(log logging.Logger) (*User, error) {
 		if e, ok := err.(net.Error); ok && e.Timeout() {
 			log.Debug("Request to Connect timed out")
 			return nil, ErrTimedOut
-		} else if isConnectAuthError(err) {
+		}
+		if urlError, ok := err.(*url.Error); ok {
+			if certificateError, ok := urlError.Err.(*tls.CertificateVerificationError); ok {
+				returnErr := fmt.Errorf("unable to verify TLS certificate for server (%s)", certificateError.Err)
+				log.Error(returnErr.Error())
+				details := &certificationValidationFailedDetails{
+					url:              c.account.URL,
+					accountName:      c.account.Name,
+					certificateError: certificateError.Err.Error(),
+				}
+				return nil, types.NewAgentError(types.ErrorCertificateVerification, returnErr, details)
+			}
+		}
+		if isConnectAuthError(err) {
 			if c.account.ApiKey != "" {
 				// Key was provided and should have worked
 				log.Info("Connect API key authentication check failed", "url", c.account.URL)
@@ -179,6 +200,11 @@ type connectGetContentDTO struct {
 	// Owner        *ownerOutputDTO   `json:"owner,omitempty"`
 }
 
+func (c *ConnectClient) ContentDetails(contentID types.ContentID, body *ConnectContent, log logging.Logger) error {
+	url := fmt.Sprintf("/__api__/v1/content/%s", contentID)
+	return c.client.Get(url, body, log)
+}
+
 func (c *ConnectClient) CreateDeployment(body *ConnectContent, log logging.Logger) (types.ContentID, error) {
 	content := connectGetContentDTO{}
 	err := c.client.Post("/__api__/v1/content", body, &content, log)
@@ -191,6 +217,16 @@ func (c *ConnectClient) CreateDeployment(body *ConnectContent, log logging.Logge
 func (c *ConnectClient) UpdateDeployment(contentID types.ContentID, body *ConnectContent, log logging.Logger) error {
 	url := fmt.Sprintf("/__api__/v1/content/%s", contentID)
 	return c.client.Patch(url, body, nil, log)
+}
+
+func (c *ConnectClient) GetEnvVars(contentId types.ContentID, log logging.Logger) (*types.Environment, error) {
+	var env *types.Environment
+	url := fmt.Sprintf("/__api__/v1/content/%s/environment", contentId)
+	err := c.client.Get(url, &env, log)
+	if err != nil {
+		return nil, err
+	}
+	return env, nil
 }
 
 type connectEnvVar struct {
@@ -436,7 +472,7 @@ func (c *ConnectClient) WaitForTask(taskID types.TaskID, log logging.Logger) err
 	}
 }
 
-var errValidationFailed = errors.New("couldn't access the deployed content; see the logs in Connect for details")
+var errValidationFailed = errors.New("deployed content does not seem to be running. See the logs in Connect for details")
 
 func (c *ConnectClient) ValidateDeployment(contentID types.ContentID, log logging.Logger) error {
 	url := fmt.Sprintf("/content/%s/", contentID)
@@ -449,7 +485,7 @@ func (c *ConnectClient) ValidateDeployment(contentID types.ContentID, log loggin
 		if ok {
 			if httpErr.Status >= 500 {
 				// Validation failed - the content is not up and running
-				return errValidationFailed
+				return types.NewAgentError(types.ErrorDeployedContentNotRunning, errValidationFailed, nil)
 			} else {
 				// Other HTTP codes are acceptable, for example
 				// if the content doesn't implement GET /,
@@ -459,4 +495,56 @@ func (c *ConnectClient) ValidateDeployment(contentID types.ContentID, log loggin
 		}
 	}
 	return err
+}
+
+// Handle preflight agent error details
+func (c *ConnectClient) preflightAgentError(agenterr *types.AgentError, contentID types.ContentID) *types.AgentError {
+	agenterr.Code = events.DeploymentFailedCode
+
+	if _, isNotFound := http_client.IsHTTPAgentErrorStatusOf(agenterr, http.StatusNotFound); isNotFound {
+		agenterr.Message = fmt.Sprintf("Cannot deploy content: ID %s - Content cannot be found.", contentID)
+	} else if _, isForbidden := http_client.IsHTTPAgentErrorStatusOf(agenterr, http.StatusForbidden); isForbidden {
+		agenterr.Message = fmt.Sprintf("Cannot deploy content: ID %s - You may need to request collaborator permissions or verify the credentials in use.", contentID)
+	} else {
+		agenterr.Message = fmt.Sprintf("Cannot deploy content: ID %s - Unknown error: %s", contentID, agenterr.Error())
+	}
+	return agenterr
+}
+
+func (c *ConnectClient) ValidateDeploymentTarget(contentID types.ContentID, cfg *config.Config, log logging.Logger) error {
+	log.Info("Verifying existing content", "content_id", contentID)
+
+	content := &ConnectContent{}
+	err := c.ContentDetails(contentID, content, log)
+
+	// Handle possible errors from pinging to the content item
+	if aerr, isAgentErr := types.IsAgentError(err); isAgentErr {
+		return c.preflightAgentError(aerr, contentID)
+	}
+	if err != nil {
+		msg := fmt.Sprintf("Deployment target cannot be reached. Halting deployment. (Content ID = %s)", contentID)
+		return types.NewAgentError(events.DeploymentFailedCode,
+			errors.New(msg),
+			nil)
+	}
+
+	// Verify content is not locked
+	log.Info("Verifying content is not locked")
+	lockedErr := content.LockedError()
+	if lockedErr != nil {
+		msg := fmt.Sprintf("Content is locked, cannot deploy to it (content ID = %s)", contentID)
+		return types.NewAgentError(events.DeploymentFailedCode,
+			errors.New(msg),
+			nil)
+	}
+
+	// Verify content type has not changed
+	log.Info("Verifying app mode is the same")
+	configAppType := AppModeFromType(cfg.Type)
+	if content.AppMode != configAppType && content.AppMode != UnknownMode {
+		msg := fmt.Sprintf("Content was previously deployed as '%s' but your configuration is set to '%s'.", ContentTypeFromAppMode(content.AppMode), cfg.Type)
+		return types.NewAgentError(events.AppModeNotModifiableCode, errors.New(msg), nil)
+	}
+
+	return nil
 }

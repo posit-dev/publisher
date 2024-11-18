@@ -8,6 +8,7 @@ import (
 
 	"github.com/posit-dev/publisher/internal/bundles"
 	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
 	"github.com/spf13/afero"
@@ -185,8 +186,12 @@ func (s *ManifestPackagesSuite) TestVersionMismatch() {
 
 	manifestPackages, err := mapper.GetManifestPackages(base, lockfilePath, logging.New())
 	s.NotNil(err)
-	s.ErrorIs(err, errLockfileLibraryMismatch)
 	s.Nil(manifestPackages)
+
+	aerr, isAgentErr := types.IsAgentError(err)
+	s.Equal(isAgentErr, true)
+	s.Equal(aerr.Code, types.ErrorRenvPackageVersionMismatch)
+	s.Equal(aerr.Message, "Package mypkg: versions in lockfile '1.2.3' and library '4.5.6' are out of sync. Use renv::restore() or renv::snapshot() to synchronize.")
 }
 
 func (s *ManifestPackagesSuite) TestDevVersion() {
@@ -209,8 +214,12 @@ func (s *ManifestPackagesSuite) TestDevVersion() {
 
 	manifestPackages, err := mapper.GetManifestPackages(base, lockfilePath, logging.New())
 	s.NotNil(err)
-	s.ErrorIs(err, errMissingPackageSource)
 	s.Nil(manifestPackages)
+
+	aerr, isAgentErr := types.IsAgentError(err)
+	s.Equal(isAgentErr, true)
+	s.Equal(aerr.Code, types.ErrorRenvPackageSourceMissing)
+	s.Equal(aerr.Message, "Cannot re-install packages installed from source; all packages must be installed from a reproducible location such as a repository. Package mypkg, Version 1.2.3.")
 }
 
 func (s *ManifestPackagesSuite) TestMissingDescriptionFile() {

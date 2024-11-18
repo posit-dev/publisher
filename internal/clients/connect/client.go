@@ -22,12 +22,14 @@ type User struct {
 
 type APIClient interface {
 	TestAuthentication(logging.Logger) (*User, error)
+	ContentDetails(contentID types.ContentID, body *ConnectContent, log logging.Logger) error
 	CreateDeployment(*ConnectContent, logging.Logger) (types.ContentID, error)
 	UpdateDeployment(types.ContentID, *ConnectContent, logging.Logger) error
+	GetEnvVars(types.ContentID, logging.Logger) (*types.Environment, error)
 	SetEnvVars(types.ContentID, config.Environment, logging.Logger) error
 	UploadBundle(types.ContentID, io.Reader, logging.Logger) (types.BundleID, error)
 	DeployBundle(types.ContentID, types.BundleID, logging.Logger) (types.TaskID, error)
 	WaitForTask(taskID types.TaskID, log logging.Logger) error
 	ValidateDeployment(types.ContentID, logging.Logger) error
-	CheckCapabilities(util.AbsolutePath, *config.Config, logging.Logger) error
+	CheckCapabilities(util.AbsolutePath, *config.Config, *types.ContentID, logging.Logger) error
 }

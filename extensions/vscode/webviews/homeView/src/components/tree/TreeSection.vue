@@ -18,9 +18,17 @@
         <span v-else-if="description" class="description">
           {{ description }}
         </span>
+        <div
+          v-if="codicon && !expanded"
+          class="tree-section-icon codicon"
+          :class="codicon"
+        />
       </div>
       <div v-if="actions" class="actions">
         <ActionToolbar :title="title" :actions="actions" />
+      </div>
+      <div v-if="count" class="count">
+        <CountBadge :count="count" />
       </div>
     </div>
     <div v-show="expanded" class="pane-body">
@@ -31,13 +39,16 @@
 
 <script setup lang="ts">
 import ActionToolbar, { ActionButton } from "src/components/ActionToolbar.vue";
+import CountBadge from "src/components/CountBadge.vue";
 
 const expanded = defineModel("expanded", { required: false, default: false });
 
 defineProps<{
   title: string;
   description?: string;
+  codicon?: string;
   actions?: ActionButton[];
+  count?: number;
 }>();
 
 const toggleExpanded = () => {
@@ -49,6 +60,12 @@ const toggleExpanded = () => {
 .pane {
   .actions {
     display: none;
+    margin-left: auto;
+  }
+
+  .tree-section-icon {
+    font-size: 13px;
+    margin-right: 4px;
     margin-left: auto;
   }
 
@@ -129,6 +146,12 @@ const toggleExpanded = () => {
 
   & :deep(.action-item) {
     margin-right: 4px;
+  }
+
+  .count {
+    display: flex;
+    margin-left: 2px;
+    padding-right: 12px;
   }
 }
 

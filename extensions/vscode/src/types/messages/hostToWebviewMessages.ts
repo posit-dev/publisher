@@ -27,6 +27,8 @@ export enum HostToWebviewMessageType {
   UPDATE_R_PACKAGES = "updateRPackages",
   SHOW_DISABLE_OVERLAY = "showDisableOverlay",
   HIDE_DISABLE_OVERLAY = "hideDisableOverlay",
+  SET_PATH_SEPARATOR = "setPathSeparator",
+  UPDATE_SERVER_ENVIRONMENT = "updateServerEnvironment",
 }
 
 export type AnyHostToWebviewMessage<
@@ -53,8 +55,11 @@ export type HostToWebviewMessage =
   | UpdatePythonPackages
   | UpdateRPackages
   | ShowDisableOverlayMsg
-  | HideDisableOverlayMsg;
+  | HideDisableOverlayMsg
+  | SetPathSeparatorMsg
+  | UpdateServerEnvironmentMsg;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function isHostToWebviewMessage(msg: any): msg is HostToWebviewMessage {
   return (
     msg.kind === HostToWebviewMessageType.INITIALIZING_REQUEST_COMPLETE ||
@@ -70,7 +75,9 @@ export function isHostToWebviewMessage(msg: any): msg is HostToWebviewMessage {
     msg.kind === HostToWebviewMessageType.UPDATE_PYTHON_PACKAGES ||
     msg.kind === HostToWebviewMessageType.UPDATE_R_PACKAGES ||
     msg.kind === HostToWebviewMessageType.SHOW_DISABLE_OVERLAY ||
-    msg.kind === HostToWebviewMessageType.HIDE_DISABLE_OVERLAY
+    msg.kind === HostToWebviewMessageType.HIDE_DISABLE_OVERLAY ||
+    msg.kind === HostToWebviewMessageType.SET_PATH_SEPARATOR ||
+    msg.kind === HostToWebviewMessageType.UPDATE_SERVER_ENVIRONMENT
   );
 }
 
@@ -152,3 +159,17 @@ export type ShowDisableOverlayMsg =
 
 export type HideDisableOverlayMsg =
   AnyHostToWebviewMessage<HostToWebviewMessageType.HIDE_DISABLE_OVERLAY>;
+
+export type SetPathSeparatorMsg = AnyHostToWebviewMessage<
+  HostToWebviewMessageType.SET_PATH_SEPARATOR,
+  {
+    separator: string;
+  }
+>;
+
+export type UpdateServerEnvironmentMsg = AnyHostToWebviewMessage<
+  HostToWebviewMessageType.UPDATE_SERVER_ENVIRONMENT,
+  {
+    environment: string[];
+  }
+>;

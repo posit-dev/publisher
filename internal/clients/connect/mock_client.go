@@ -37,6 +37,16 @@ func (m *MockClient) TestAuthentication(log logging.Logger) (*User, error) {
 	}
 }
 
+func (m *MockClient) ContentDetails(id types.ContentID, s *ConnectContent, log logging.Logger) error {
+	// Updates content as locked when needed
+	if id == "myLockedContentID" {
+		s.GUID = "myLockedContentID"
+		s.Locked = true
+	}
+	args := m.Called(id, s, log)
+	return args.Error(0)
+}
+
 func (m *MockClient) CreateDeployment(s *ConnectContent, log logging.Logger) (types.ContentID, error) {
 	args := m.Called(s, log)
 	return args.Get(0).(types.ContentID), args.Error(1)
@@ -45,6 +55,16 @@ func (m *MockClient) CreateDeployment(s *ConnectContent, log logging.Logger) (ty
 func (m *MockClient) UpdateDeployment(id types.ContentID, s *ConnectContent, log logging.Logger) error {
 	args := m.Called(id, s, log)
 	return args.Error(0)
+}
+
+func (m *MockClient) GetEnvVars(id types.ContentID, log logging.Logger) (*types.Environment, error) {
+	args := m.Called(id, log)
+	env := args.Get(0)
+	if env == nil {
+		return nil, args.Error(1)
+	} else {
+		return env.(*types.Environment), args.Error(1)
+	}
 }
 
 func (m *MockClient) SetEnvVars(id types.ContentID, env config.Environment, log logging.Logger) error {
@@ -72,7 +92,12 @@ func (m *MockClient) ValidateDeployment(id types.ContentID, log logging.Logger) 
 	return args.Error(0)
 }
 
-func (m *MockClient) CheckCapabilities(base util.AbsolutePath, cfg *config.Config, log logging.Logger) error {
-	args := m.Called(base, cfg, log)
+func (m *MockClient) CheckCapabilities(base util.AbsolutePath, cfg *config.Config, contentID *types.ContentID, log logging.Logger) error {
+	args := m.Called(base, cfg, contentID, log)
+	return args.Error(0)
+}
+
+func (m *MockClient) ValidateDeploymentTarget(contentID types.ContentID, log logging.Logger) error {
+	args := m.Called(contentID, log)
 	return args.Error(0)
 }

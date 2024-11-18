@@ -1,4 +1,4 @@
-# VSCode Extension
+# VS Code Extension
 
 ## Tutorial
 
@@ -16,7 +16,7 @@ The Home view shows information about the selected deployment destination.
 
 To create your first deployment, click the Add Deployment button.
 
-![](https://cdn.posit.co/publisher/assets/img/no-deployments.png)
+![](https://cdn.posit.co/publisher/assets/img/new-home-view-2.png)
 
 This will take you through the process of creating a new deployment,
 which includes a credential, configuration, and content record.
@@ -46,12 +46,8 @@ project needs.
 
 For R projects, you need an `renv.lock` file that captures the R package dependencies
 for your project. You also need an active `renv` library with those packages installed
-so the extension can gather details about them.
-
-If you don't have an `renv.lock` file, you can open the R Packages view and click the
-`Scan` button to generate one using `renv::snapshot()`.
-
-![](https://cdn.posit.co/publisher/assets/img/r-packages-scan.png)
+so the extension can gather details about them. See the
+[renv documentation](https://rstudio.github.io/renv/articles/renv.html) for more details.
 
 ### Ready to Deploy
 
@@ -60,7 +56,7 @@ You are all set to Deploy!
 Click the `Deploy Your Project` button in the Home view to start the deployment
 process. :tada:
 
-![](https://cdn.posit.co/publisher/assets/img/deploy-your-project2.png)
+![](https://cdn.posit.co/publisher/assets/img/deploy-your-project-4.png)
 
 During deployment, the extension will show a progress window with the status of the deployment.
 Once the deployment completes, the result will be displayed in the Home view.
@@ -86,27 +82,36 @@ or updating a production deployment that is shared with your users.
 
 Clicking the `Deployment` dropdown lets you choose which deployment to target.
 
-![](https://cdn.posit.co/publisher/assets/img/deploy-your-project2.png)
+![](https://cdn.posit.co/publisher/assets/img/deploy-your-project-4.png)
 
 Then choose from the displayed list.
 
-![](https://cdn.posit.co/publisher/assets/img/select-deployment.png)
+![](https://cdn.posit.co/publisher/assets/img/select-deployment-2.png)
+
+### Updating Previously Deployed Content
+
+If you have previously deployed content on Connect that you want to update, but
+you don't already have a Deployment and Configuration file setup, you can
+use a prompt in the Home View to allow for this.
+
+![](https://cdn.posit.co/publisher/assets/img/update-previous-deployment.png)
+
+After creating a new deployment in the extension pressing "update that previous
+deployment" will prompt you with the content URL. Once provided your new
+deployment will be setup to update that content URL, rather than creating a new
+deployment entirely.
 
 ### Project Files
 
-This view shows the files in your project directory,
-divided into two lists:
+This view shows the files in your workspace:
 
-- Included Files show the files that will be included in your deployment and
-  sent to the server as part of the uploaded content. You can exclude a file by
-  clicking the icon to the right of the filename.
-- Excluded Files shows the files in your project that will not be included in
-  the deployment. The tooltip on an excluded file will indicate the reason it
-  was excluded. Some files are excluded by the publisher and cannot be added.
-  Files that you have excluded will have an icon to the right of
-  the filename that you can click to include the file in the deployment.
+- Included files show as checked and will be included in your deployment. They
+  are sent to the server as part of the uploaded content.
+- Excluded files show as unchecked and will not be included in your deployment.
+  The tooltip on an excluded file will indicate the reason it is excluded. Some
+  files are excluded by the publisher and cannot be added.
 
-![](https://cdn.posit.co/publisher/assets/img/project-files-view.png)
+![](https://cdn.posit.co/publisher/assets/img/project-files-tree-view.png)
 
 The files included in your project are controlled by the `files` list in
 the deployment configuration file. The buttons in the UI update that list.
@@ -126,6 +131,37 @@ files = [
   "data.csv"
 ]
 ```
+
+### Secrets
+
+You can setup Secrets for your project in the Secrets view.
+
+Secrets are name-value pairs that you want to be available at runtime for
+content on the server. However, unlike environment variables, the value
+associated with a secret is considered “sensitive”, and should not be stored in
+the configuration file itself.
+
+Secret names are defined in the Configuration file using the `secrets` field.
+They can be added by clicking the `+` button in the Secrets view or by directly
+editing the configuration file.
+
+```toml
+secrets = ['API_KEY', '_DB_PASSWORD']
+```
+
+The names indicate what Secrets are required for the deployment. When they are
+sent up to the Connect server they become Environment Variables.
+
+![](https://cdn.posit.co/publisher/assets/img/secrets-view.png)
+
+Secrets are sent to the Connect server only when a value is supplied to avoid
+overwriting any values already set.
+
+To set a Secret click the `Edit Value` button (the pencil icon) for the Secret
+you'd like to set and enter the value. The value is stored in the extension and
+is sent up during your next deploy.
+
+A badge indicates how many Secrets are set to send in your next deploy.
 
 ### Python Packages
 
@@ -171,19 +207,8 @@ For instructions on how to create a Connect API key, see the
 
 #### via dotfile
 
-A Credential can also be set by creating a `.connect-credentials` file in
-your home directory using the following format:
-
-```toml
-# ~/.connect-credentials.toml
-
-url = 'https://your.connect.server'
-key = 'r0TCAS9mCmTICwd2E97uM3KnUDlGWZ3D'
-```
-
-The `url` is the URL of your Posit Connect Server.
-
-The `key` is the API key for the user you would like to publish as.
+If your OS does not have a keychain the extension will manage your credentials
+in a file in your home directory - `.connect-credentials`.
 
 ### Help and Feedback
 
