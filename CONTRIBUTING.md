@@ -18,6 +18,7 @@
     - [Build Tools](#build-tools)
     - [Environment Variables](#environment-variables)
       - [Behavior in GitHub Actions](#behavior-in-github-actions)
+    - [Debugging in VS Code](#debugging-in-vs-code)
     - [Extension Development](#extension-development)
   - [Release](#release)
     - [Instructions](#instructions)
@@ -110,6 +111,20 @@ This mode can be reproduced on your local machine by setting `CI=true`.
 | Variable | Default |
 | -------- | ------- |
 | MODE     | prod    |
+
+### Debugging in VS Code
+
+A `launch.json` can be found at the root in the `.vscode` directory for
+debugging the Go API code.
+
+The "Launch API" configuration will start the API at port 9001.
+To change the directory that the API is started in, update the `cwd` property
+to the directory you want the API to be launched at.
+
+When debugging alongside the
+[VS Code Extension](./extensions/vscode/CONTRIBUTING.md#debugging) the `cwd`
+will frequently be the workspace folder of the extension host development
+window.
 
 ### Extension Development
 
