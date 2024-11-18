@@ -8,7 +8,7 @@ import { Views } from "src/constants";
 import { useApi } from "src/api";
 
 export async function showAssociateGUID(state: PublisherState) {
-  let urlOrGuid = "";
+  const urlOrGuid = "";
   const result = await window.showInputBox({
     title: "Enter the URL of the Existing Content Item on the Server",
     prompt: "Please provide the content's URL from Connect",

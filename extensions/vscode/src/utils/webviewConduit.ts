@@ -16,6 +16,7 @@ export class WebviewConduit {
 
   constructor() {}
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private onRawMsgCB = (e: any) => {
     const obj = JSON.parse(e);
     // console.debug(

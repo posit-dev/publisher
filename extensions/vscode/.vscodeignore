@@ -30,5 +30,6 @@ webviews/homeView/node_modules/**
 **/.gitignore
 **/justfile
 **/.eslintrc.json
+**/eslint.config.mjs
 **/tsconfig*.json
 **/vite.config.ts

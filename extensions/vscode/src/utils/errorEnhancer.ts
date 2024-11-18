@@ -5,6 +5,7 @@ export enum ErrorMessageActionIds {
 }
 
 export function isErrorMessageActionId(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   searchValue: any,
 ): searchValue is ErrorMessageActionIds {
   return Object.values(ErrorMessageActionIds).includes(searchValue);

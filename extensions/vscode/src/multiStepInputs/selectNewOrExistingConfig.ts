@@ -54,7 +54,7 @@ export async function selectNewOrExistingConfig(
 
   let configFileListItems: QuickPickItem[] = [];
   let configurations: Configuration[] = [];
-  let entryPointListItems: QuickPickItemWithIndex[] = [];
+  const entryPointListItems: QuickPickItemWithIndex[] = [];
   let inspectionResults: ConfigurationInspectionResult[] = [];
 
   const createNewConfigurationLabel = "Create a New Configuration";
@@ -97,13 +97,13 @@ export async function selectNewOrExistingConfig(
     }
   }
 
-  const getConfigurations = new Promise<void>(async (resolve, reject) => {
+  const getConfigurations = async () => {
     try {
       // get all configurations
       const response = await api.configurations.getAll(
         activeDeployment.projectDir,
       );
-      let rawConfigs = response.data;
+      const rawConfigs = response.data;
       // remove the errors
       configurations = configurations.filter(
         (cfg): cfg is Configuration => !isConfigurationError(cfg),
@@ -139,7 +139,7 @@ export async function selectNewOrExistingConfig(
           kind: QuickPickItemKind.Separator,
         });
       }
-      let existingConfigFileListItems: QuickPickItem[] = [];
+      const existingConfigFileListItems: QuickPickItem[] = [];
       configurations.forEach((config) => {
         const { title, problem } = calculateTitle(activeDeployment, config);
         if (problem) {
@@ -152,8 +152,8 @@ export async function selectNewOrExistingConfig(
         });
       });
       existingConfigFileListItems.sort((a: QuickPickItem, b: QuickPickItem) => {
-        var x = a.label.toLowerCase();
-        var y = b.label.toLowerCase();
+        const x = a.label.toLowerCase();
+        const y = b.label.toLowerCase();
         return x < y ? -1 : x > y ? 1 : 0;
       });
       // add to end of our list items
@@ -168,55 +168,51 @@ export async function selectNewOrExistingConfig(
       window.showInformationMessage(
         `Unable to continue with API Error: ${summary}`,
       );
-      return reject();
+      throw error;
     }
-    resolve();
-  });
+  };
 
-  const getConfigurationInspections = new Promise<void>(
-    async (resolve, reject) => {
-      try {
-        const python = await getPythonInterpreterPath();
-        const inspectResponse = await api.configurations.inspect(
-          activeDeployment.projectDir,
-          python,
-        );
-        inspectionResults = filterInspectionResultsToType(
-          inspectResponse.data,
-          effectiveContentTypeFilter,
-        );
-        inspectionResults.forEach((result, i) => {
-          const config = result.configuration;
-          if (config.entrypoint) {
-            entryPointListItems.push({
-              iconPath: new ThemeIcon("file"),
-              label: config.entrypoint,
-              description: `(${contentTypeStrings[config.type]})`,
-              detail: isRelativePathRoot(result.projectDir)
-                ? undefined
-                : `${result.projectDir}${path.sep}`,
-              index: i,
-            });
-          }
-        });
-      } catch (error: unknown) {
-        const summary = getSummaryStringFromError(
-          "selectNewOrExistingConfig, configurations.inspect",
-          error,
-        );
-        window.showErrorMessage(
-          `Unable to continue with project inspection failure. ${summary}`,
-        );
-        return reject();
-      }
-      if (!entryPointListItems.length) {
-        const msg = `Unable to continue with no project entrypoints found during inspection`;
-        window.showErrorMessage(msg);
-        return reject();
-      }
-      return resolve();
-    },
-  );
+  const getConfigurationInspections = async () => {
+    try {
+      const python = await getPythonInterpreterPath();
+      const inspectResponse = await api.configurations.inspect(
+        activeDeployment.projectDir,
+        python,
+      );
+      inspectionResults = filterInspectionResultsToType(
+        inspectResponse.data,
+        effectiveContentTypeFilter,
+      );
+      inspectionResults.forEach((result, i) => {
+        const config = result.configuration;
+        if (config.entrypoint) {
+          entryPointListItems.push({
+            iconPath: new ThemeIcon("file"),
+            label: config.entrypoint,
+            description: `(${contentTypeStrings[config.type]})`,
+            detail: isRelativePathRoot(result.projectDir)
+              ? undefined
+              : `${result.projectDir}${path.sep}`,
+            index: i,
+          });
+        }
+      });
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError(
+        "selectNewOrExistingConfig, configurations.inspect",
+        error,
+      );
+      window.showErrorMessage(
+        `Unable to continue with project inspection failure. ${summary}`,
+      );
+      throw error;
+    }
+    if (!entryPointListItems.length) {
+      const msg = `Unable to continue with no project entrypoints found during inspection`;
+      window.showErrorMessage(msg);
+      throw new Error(msg);
+    }
+  };
 
   // ***************************************************************
   // Order of all steps
@@ -392,7 +388,7 @@ export async function selectNewOrExistingConfig(
       "Initializing::selectNewOrExistingConfig",
       viewId,
       async () =>
-        await Promise.all([getConfigurations, getConfigurationInspections]),
+        await Promise.all([getConfigurations(), getConfigurationInspections()]),
     );
   } catch {
     // errors have already been displayed by the underlying promises..

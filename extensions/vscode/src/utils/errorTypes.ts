@@ -53,7 +53,7 @@ export type ErrUnknown = MkErrorDataType<
   "unknown",
   {
     error: string;
-    data: Record<PropertyKey, any>;
+    data: Record<PropertyKey, unknown>;
   }
 >;
 export const isErrUnknown = mkErrorTypeGuard<ErrUnknown>("unknown");

@@ -66,9 +66,9 @@ export async function newDeployment(
   let credentials: Credential[] = [];
   let credentialListItems: QuickPickItem[] = [];
 
-  let entryPointListItems: QuickPickItem[] = [];
+  const entryPointListItems: QuickPickItem[] = [];
   let inspectionResults: ConfigurationInspectionResult[] = [];
-  let contentRecordNames = new Map<string, string[]>();
+  const contentRecordNames = new Map<string, string[]>();
 
   let newConfig: Configuration | undefined;
   let newOrSelectedCredential: Credential | undefined;
@@ -95,7 +95,7 @@ export async function newDeployment(
     newCredentials: NewCredentialAttrs;
   };
 
-  let newDeploymentData: NewDeploymentData = {
+  const newDeploymentData: NewDeploymentData = {
     entrypoint: {},
     newCredentials: {},
   };
@@ -114,62 +114,58 @@ export async function newDeployment(
     return newCredentialForced() || newCredentialSelected();
   };
 
-  const getConfigurationInspectionQuickPicks = (
+  const getConfigurationInspectionQuickPicks = async (
     relEntryPoint: EntryPointPath,
-  ) => {
-    return new Promise<QuickPickItemWithInspectionResult[]>(
-      async (resolve, reject) => {
-        const inspectionListItems: QuickPickItemWithInspectionResult[] = [];
+  ): Promise<QuickPickItemWithInspectionResult[]> => {
+    const inspectionListItems: QuickPickItemWithInspectionResult[] = [];
 
-        try {
-          const python = await getPythonInterpreterPath();
-          const relEntryPointDir = path.dirname(relEntryPoint);
-          const relEntryPointFile = path.basename(relEntryPoint);
+    try {
+      const python = await getPythonInterpreterPath();
+      const relEntryPointDir = path.dirname(relEntryPoint);
+      const relEntryPointFile = path.basename(relEntryPoint);
 
-          const inspectResponse = await api.configurations.inspect(
-            relEntryPointDir,
-            python,
-            {
-              entrypoint: relEntryPointFile,
-            },
-          );
+      const inspectResponse = await api.configurations.inspect(
+        relEntryPointDir,
+        python,
+        {
+          entrypoint: relEntryPointFile,
+        },
+      );
 
-          inspectionResults = inspectResponse.data;
-          inspectionResults.forEach((result) => {
-            const config = result.configuration;
-            if (config.entrypoint) {
-              inspectionListItems.push({
-                iconPath: new ThemeIcon("gear"),
-                label: config.type.toString(),
-                description: `(${contentTypeStrings[config.type]})`,
-                inspectionResult: result,
-              });
-            }
+      inspectionResults = inspectResponse.data;
+      inspectionResults.forEach((result) => {
+        const config = result.configuration;
+        if (config.entrypoint) {
+          inspectionListItems.push({
+            iconPath: new ThemeIcon("gear"),
+            label: config.type.toString(),
+            description: `(${contentTypeStrings[config.type]})`,
+            inspectionResult: result,
           });
-        } catch (error: unknown) {
-          if (isAxiosErrorWithJson(error)) {
-            return reject(error);
-          }
-          const summary = getSummaryStringFromError(
-            "newDeployment, configurations.inspect",
-            error,
-          );
-          window.showErrorMessage(
-            `Unable to continue with project inspection failure for ${entryPointFile}. ${summary}`,
-          );
-          return reject();
         }
-        if (!inspectionListItems.length) {
-          const msg = `Unable to continue with no project entrypoints found during inspection for ${entryPointFile}.`;
-          window.showErrorMessage(msg);
-          return reject();
-        }
-        return resolve(inspectionListItems);
-      },
-    );
+      });
+    } catch (error: unknown) {
+      if (isAxiosErrorWithJson(error)) {
+        throw error;
+      }
+      const summary = getSummaryStringFromError(
+        "newDeployment, configurations.inspect",
+        error,
+      );
+      window.showErrorMessage(
+        `Unable to continue with project inspection failure for ${entryPointFile}. ${summary}`,
+      );
+      throw error;
+    }
+    if (!inspectionListItems.length) {
+      const msg = `Unable to continue with no project entrypoints found during inspection for ${entryPointFile}.`;
+      window.showErrorMessage(msg);
+      throw new Error(msg);
+    }
+    return inspectionListItems;
   };
 
-  const getCredentials = new Promise<void>(async (resolve, reject) => {
+  const getCredentials = async (): Promise<void> => {
     try {
       const response = await api.credentials.list();
       credentials = response.data;
@@ -190,12 +186,11 @@ export async function newDeployment(
       window.showErrorMessage(
         `Unable to continue with a failed API response. ${summary}`,
       );
-      return reject(summary);
+      throw error;
     }
-    return resolve();
-  });
+  };
 
-  const getEntrypoints = new Promise<void>((resolve) => {
+  const getEntrypoints = () => {
     if (entryPointFile) {
       // we were passed in a specific entrypoint file.
       // while we don't need it, we'll still provide the results
@@ -205,7 +200,7 @@ export async function newDeployment(
         iconPath: new ThemeIcon("file"),
         label: entryPointPath,
       });
-      return resolve();
+      return;
     }
 
     // build up a list of open files, relative to the opened workspace folder
@@ -237,10 +232,10 @@ export async function newDeployment(
       label: browseForEntrypointLabel,
       detail: "Select a file as your entrypoint.",
     });
-    return resolve();
-  });
+    return;
+  };
 
-  const getContentRecords = new Promise<void>(async (resolve, reject) => {
+  const getContentRecords = async () => {
     try {
       const response = await api.contentRecords.getAll(
         projectDir ? projectDir : ".",
@@ -266,10 +261,9 @@ export async function newDeployment(
       window.showInformationMessage(
         `Unable to continue due to deployment error. ${summary}`,
       );
-      return reject();
+      throw error;
     }
-    return resolve();
-  });
+  };
 
   // ***************************************************************
   // Order of all steps
@@ -763,7 +757,11 @@ export async function newDeployment(
       "Initializing::newDeployment",
       viewId,
       async () =>
-        await Promise.all([getCredentials, getEntrypoints, getContentRecords]),
+        await Promise.all([
+          getCredentials(),
+          getEntrypoints(),
+          getContentRecords(),
+        ]),
     );
   } catch {
     // errors have already been displayed by the underlying promises..
@@ -874,7 +872,7 @@ export async function newDeployment(
       FileAction.INCLUDE,
       newDeploymentData.entrypoint.inspectionResult.projectDir,
     );
-  } catch (error: unknown) {
+  } catch (_error: unknown) {
     // continue on as it is not necessary to include .posit files for deployment
     console.debug(
       `Failed to add the configuration file '${configName}' to \`files\`.`,
@@ -923,7 +921,7 @@ export async function newDeployment(
       FileAction.INCLUDE,
       newDeploymentData.entrypoint.inspectionResult.projectDir,
     );
-  } catch (error: unknown) {
+  } catch (_error: unknown) {
     // continue on as it is not necessary to include .posit files for deployment
     console.debug(
       `Failed to add the content record file '${newContentRecord.deploymentName}' to \`files\`.`,
