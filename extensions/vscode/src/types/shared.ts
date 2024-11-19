@@ -18,11 +18,11 @@ export type PublishProcessParams = DeploymentSelector & {
   configurationName: string;
 };
 
-export type SelectionState =
-  | (DeploymentSelector & {
-      version: "v1";
-    })
-  | null;
+export type DeploymentSelectorState = DeploymentSelector & {
+  version: "v1";
+};
+
+export type SelectionState = DeploymentSelectorState | null;
 
 export type DeploymentObjects = {
   contentRecord: ContentRecord | PreContentRecord;

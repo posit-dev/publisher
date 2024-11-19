@@ -1,6 +1,6 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { Disposable, ExtensionContext, window } from "vscode";
+import { Disposable, Memento, window } from "vscode";
 
 import {
   Configuration,
@@ -64,8 +64,16 @@ function findCredentialForContentRecord(
   );
 }
 
+/**
+ * Local extension context interface containing only what is used by PublisherState
+ */
+interface extensionContext {
+  // A memento object that stores state in the context
+  readonly workspaceState: Memento;
+}
+
 export class PublisherState implements Disposable {
-  private readonly context: ExtensionContext;
+  private readonly context: extensionContext;
 
   contentRecords: Array<
     ContentRecord | PreContentRecord | PreContentRecordWithConfig
@@ -73,7 +81,7 @@ export class PublisherState implements Disposable {
   configurations: Array<Configuration | ConfigurationError> = [];
   credentials: Credential[] = [];
 
-  constructor(context: ExtensionContext) {
+  constructor(context: extensionContext) {
     this.context = context;
   }
 
