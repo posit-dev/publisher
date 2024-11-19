@@ -19,9 +19,9 @@ import { vi } from "vitest";
  * expect(mockWs.get).toHaveBeenCalledWith("something");
  */
 export class mockWorkspaceState {
-  private state: Record<PropertyKey, any>;
+  private state: Record<PropertyKey, string>;
 
-  constructor(state: Record<PropertyKey, any>) {
+  constructor(state: Record<PropertyKey, string>) {
     this.state = state;
   }
 
@@ -37,7 +37,7 @@ export class mockWorkspaceState {
     return defaultValue || undefined;
   });
 
-  readonly update = vi.fn((key: string, value: any): Thenable<void> => {
+  readonly update = vi.fn((key: string, value: string): Thenable<void> => {
     this.state[key] = value;
     return Promise.resolve();
   });
@@ -72,7 +72,7 @@ export class mockExtensionContext {
  * expect(mockWorkspace.update).toHaveBeenCalledWith("something");
  */
 export const mkExtensionContextStateMock = (
-  initState: Record<PropertyKey, any>,
+  initState: Record<PropertyKey, string>,
 ) => {
   const mockWorkspace = new mockWorkspaceState(initState);
   const mockContext = new mockExtensionContext(mockWorkspace);
