@@ -17,7 +17,12 @@ export async function getPythonInterpreterPath(): Promise<string | undefined> {
       "python.interpreterPath",
       { workspaceFolder: workspaceFolder },
     );
-  } catch {}
+  } catch (error: unknown) {
+    console.error(
+      "getPythonInterpreterPath was unable to execute command. Error = ",
+      error,
+    );
+  }
   if (configuredPython === undefined) {
     return undefined;
   }
@@ -32,7 +37,7 @@ export async function getPythonInterpreterPath(): Promise<string | undefined> {
       "Scripts/python.exe",
       "Scripts/python3.exe",
     ];
-    for (let name of names) {
+    for (const name of names) {
       const candidate = Uri.joinPath(pythonUri, name);
       if (await fileExists(candidate)) {
         python = candidate.fsPath;
@@ -75,7 +80,7 @@ export async function getRInterpreterPath(): Promise<string | undefined> {
       try {
         runtime = await api.runtime.getPreferredRuntime("r");
         break;
-      } catch (error: any) {
+      } catch (error: unknown) {
         // Delay and retry
         console.error(
           "getPreferredRuntime returned an error; retrying. ",
