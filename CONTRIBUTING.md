@@ -18,6 +18,7 @@
     - [Build Tools](#build-tools)
     - [Environment Variables](#environment-variables)
       - [Behavior in GitHub Actions](#behavior-in-github-actions)
+    - [Debugging in VS Code](#debugging-in-vs-code)
     - [Extension Development](#extension-development)
   - [Release](#release)
     - [Instructions](#instructions)
@@ -111,6 +112,20 @@ This mode can be reproduced on your local machine by setting `CI=true`.
 | -------- | ------- |
 | MODE     | prod    |
 
+### Debugging in VS Code
+
+A `launch.json` can be found at the root in the `.vscode` directory for
+debugging the Go API code.
+
+The "Launch API" configuration will start the API at port 9001.
+To change the directory that the API is started in, update the `cwd` property
+to the directory you want the API to be launched at.
+
+When debugging alongside the
+[VS Code Extension](./extensions/vscode/CONTRIBUTING.md#debugging) the `cwd`
+will frequently be the workspace folder of the extension host development
+window.
+
 ### Extension Development
 
 See [the Contribution Guide for the VSCode Extension](./extensions/vscode/CONTRIBUTING.md).
@@ -187,3 +202,18 @@ This command will trigger the [Release GitHub Action](https://github.com/rstudio
 Once complete the action has completed, the release will be available on the
 [Releases page](https://github.com/rstudio/publishing-client/releases), and
 published to the VSCode Marketplace.
+
+## Updating Dependencies
+
+After a release has gone out we take the opportunity to update dependencies.
+
+Dependencies can be adjusted at any time; the process of updating after a
+release keeps us proactive.
+
+This includes our JavaScript packages, Go version/packages, and tooling
+dependencies.
+
+Any significantly difficult dependency updates should have an issue created to
+track the work and can be triaged alongside our other issues.
+
+Updates to dependencies should be done in a separate PR.

@@ -25,6 +25,11 @@
 <!-- Describe how you solved this problem and any trade-offs you encountered. -->
 <!-- Link any additional documentation associated with this change here -->
 
+## User Impact
+
+<!-- Describe how this change will affect users. -->
+<!-- Specifically changes to the flow and trade-offs we are making. -->
+
 ## Automated Tests
 
 <!-- Describe the automated tests associated with this change. -->

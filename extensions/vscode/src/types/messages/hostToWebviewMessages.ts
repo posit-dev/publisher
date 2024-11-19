@@ -59,6 +59,7 @@ export type HostToWebviewMessage =
   | SetPathSeparatorMsg
   | UpdateServerEnvironmentMsg;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function isHostToWebviewMessage(msg: any): msg is HostToWebviewMessage {
   return (
     msg.kind === HostToWebviewMessageType.INITIALIZING_REQUEST_COMPLETE ||

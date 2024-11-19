@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import { ErrorCode } from "../../utils/errorTypes";

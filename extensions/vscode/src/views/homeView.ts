@@ -1124,7 +1124,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           }
         }
 
-        let credential =
+        const credential =
           this.state.findCredentialForContentRecord(contentRecord);
 
         const result = calculateTitle(contentRecord, config);
@@ -1139,7 +1139,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           problem = true;
         }
 
-        let details = [];
+        const details = [];
         if (credential?.name) {
           details.push(credential.name);
         } else {
@@ -1162,7 +1162,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         }
         const detail = details.join(" • ");
 
-        let lastMatch =
+        const lastMatch =
           lastContentRecordName === contentRecord.saveName &&
           lastContentRecordProjectDir === contentRecord.projectDir &&
           lastConfigName === configName;
@@ -1183,8 +1183,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       });
       existingDeploymentQuickPickList.sort(
         (a: QuickPickItem, b: QuickPickItem) => {
-          var x = a.label.toLowerCase();
-          var y = b.label.toLowerCase();
+          const x = a.label.toLowerCase();
+          const y = b.label.toLowerCase();
           return x < y ? -1 : x > y ? 1 : 0;
         },
       );
@@ -1491,7 +1491,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
             environment: response.data,
           },
         });
-      } catch (error: unknown) {
+      } catch (_error: unknown) {
         // No matter the error we clear the environment
         this.webviewConduit.sendMsg({
           kind: HostToWebviewMessageType.UPDATE_SERVER_ENVIRONMENT,
@@ -1534,8 +1534,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     // get the configs which are filtered for the entrypoint in that projectDir
     // determine a list of deployments that use those filtered configs
 
-    let contentRecordList: (ContentRecord | PreContentRecord)[] = [];
-    const getContentRecords = new Promise<void>(async (resolve, reject) => {
+    const contentRecordList: (ContentRecord | PreContentRecord)[] = [];
+    const getContentRecords = async () => {
       try {
         const response = await api.contentRecords.getAll(entrypointDir, {
           recursive: false,
@@ -1553,19 +1553,18 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         window.showInformationMessage(
           `Unable to continue due to deployment error. ${summary}`,
         );
-        return reject();
+        throw error;
       }
-      return resolve();
-    });
+    };
 
-    let configMap = new Map<string, Configuration>();
-    const getConfigurations = new Promise<void>(async (resolve, reject) => {
+    const configMap = new Map<string, Configuration>();
+    const getConfigurations = async () => {
       try {
         const response = await api.configurations.getAll(entrypointDir, {
           entrypoint: entrypointFile,
           recursive: false,
         });
-        let rawConfigs = response.data;
+        const rawConfigs = response.data;
         rawConfigs.forEach((cfg) => {
           if (!isConfigurationError(cfg)) {
             configMap.set(cfg.configurationName, cfg);
@@ -1579,17 +1578,16 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         window.showErrorMessage(
           `Unable to continue with API Error: ${summary}`,
         );
-        return reject();
+        throw error;
       }
-      resolve();
-    });
+    };
 
     try {
       await showProgress(
         "Initializing::handleFileInitiatedDeployment",
         Views.HomeView,
         async () => {
-          return await Promise.all([getContentRecords, getConfigurations]);
+          return await Promise.all([getContentRecords(), getConfigurations()]);
         },
       );
     } catch {

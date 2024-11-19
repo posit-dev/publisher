@@ -104,7 +104,7 @@ export class ContentRecordWatcherManager implements Disposable {
   }
 
   dispose() {
-    this.contentRecord?.dispose;
+    this.contentRecord?.dispose();
   }
 }
 

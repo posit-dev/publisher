@@ -19,7 +19,7 @@ export async function fileExists(fileUri: Uri): Promise<boolean> {
   try {
     await workspace.fs.stat(fileUri);
     return true;
-  } catch (e: unknown) {
+  } catch (_e: unknown) {
     return false;
   }
 }
@@ -28,7 +28,7 @@ export async function isDir(fileUri: Uri): Promise<boolean> {
   try {
     const info = await workspace.fs.stat(fileUri);
     return (info.type & FileType.Directory) !== 0;
-  } catch (e: unknown) {
+  } catch (_e: unknown) {
     return false;
   }
 }
@@ -49,7 +49,7 @@ export function isValidFilename(filename: string): boolean {
     return false;
   }
   const forbidden = "/:*?\"<>|'\\";
-  for (let c of filename) {
+  for (const c of filename) {
     if (forbidden.includes(c)) {
       return false;
     }
@@ -175,8 +175,8 @@ export function pathSort(paths: string[], sep: string): string[] {
 }
 
 export function pathSorter(a: string[], b: string[]): number {
-  var l = Math.max(a.length, b.length);
-  for (var i = 0; i < l; i += 1) {
+  const l = Math.max(a.length, b.length);
+  for (let i = 0; i < l; i += 1) {
     if (!(i in a)) {
       return -1;
     }

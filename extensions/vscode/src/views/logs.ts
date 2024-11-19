@@ -193,9 +193,9 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
         }
       });
 
-      let showLogsOption = "View Log";
-      let options = [showLogsOption];
-      let enhancedError = findErrorMessageSplitOption(msg.data.message);
+      const showLogsOption = "View Log";
+      const options = [showLogsOption];
+      const enhancedError = findErrorMessageSplitOption(msg.data.message);
       if (enhancedError && enhancedError.buttonStr) {
         options.push(enhancedError.buttonStr);
       }

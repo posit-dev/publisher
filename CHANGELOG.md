@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0]
+
+### Changed
+
+- Changed the behavior when the configuration has `type = 'unknown'`. Now
+  several actions can be performed such as including/excluding files via
+  the sidebar and re-deploying to Posit Connect if the content type was deployed
+  with the unknown type. (#2419)
+- Changed the `quarto` type to `quarto-static` to match Posit Connect. The
+  type `quarto` has been deprecated, and it is recommended to use
+  `quarto-static`. (#1208)
+
+### Added
+
+- Added support for deploying Quarto script files (#1208)
+- Improved the Secrets view in the sidebar to show when the secret is already
+  set for the content on Posit Connect, when a value is going to be set on
+  deploy, and when a value needs to be set (#2365)
+- Added the ability to hide all input cells or hide input cells with the
+  `hide_input` metadata tag in Jupyter notebooks using a new section in
+  configuration files (#2399)
+
+### Fixed
+
+- Fixed an issue with new deployments with the unknown type (due to inspection)
+  causing errors and not creating all necessary files (#2419)
+- Fixed unknown inspection occassionally not including the selected entrypoint
+  in the generated configuration's files list (#2419)
+- Fixed a behavior causing `renv.lock` related errors to show in the Posit
+  Publisher output channel and a vague "Could not scan..." message being
+  shown. Now the specific errors are displayed for easier resolution. (#2408)
+- Replaced an unhelpful error with a much more informative message when
+  attempting to inspect a Python file and a Python executable can not be found
+  to do the inspection (#2385)
+
 ## [1.2.1]
 
 ### Changed

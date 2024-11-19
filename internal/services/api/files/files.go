@@ -19,7 +19,6 @@ type File struct {
 	Reason           *matcher.Pattern `json:"reason"`           // object describing the reason the file was included/excluded, or null if no pattern matched it
 	Files            []*File          `json:"files"`            // an array of objects of the same type for each file within the directory.
 	IsDir            bool             `json:"isDir"`            // true if the file is a directory
-	IsEntrypoint     bool             `json:"isEntrypoint"`     // true if the file is an entrypoint
 	IsRegular        bool             `json:"isFile"`           // true if the file is a regular file
 	ModifiedDatetime string           `json:"modifiedDatetime"` // the last modified datetime
 	Rel              string           `json:"rel"`              // the relative path to the project root, which is used as the identifier

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // Copyright (C) 2024 by Posit Software, PBC.
 
 import { describe, expect, test } from "vitest";
