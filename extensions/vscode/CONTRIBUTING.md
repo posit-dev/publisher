@@ -56,6 +56,12 @@ Either invocation will launch a new window named `Extension Host Development` wi
 
 When testing, utilize the sample projects in `../../test/sample-content`. Open these projects as a workspace within the `Extension Host Development` window.
 
+#### Connecting to API Debug Session
+
+To connect to the API debug session change the `Service` class in
+`extensions/vscode/src/services.ts` to a hardcoded `port = 9001;` and remove
+the code inside of the `start` and `stop` methods.
+
 ### Re-building the Webview(s)
 
 The built-in debugger watches for extension changes, but not changes for our
