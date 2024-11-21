@@ -15,7 +15,7 @@ import { isConfigurationError } from "../../../../src/api/types/configurations";
 import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
 import { RPackage } from "../../../../src/api/types/packages";
 import { DeploymentSelector } from "../../../../src/types/shared";
-import { splitFilesOnInclusion } from "src/utils/files";
+import { flattenFiles, splitFilesOnInclusion } from "src/utils/files";
 import {
   isAgentErrorInvalidTOML,
   isAgentErrorTypeUnknown,
@@ -137,6 +137,8 @@ export const useHomeStore = defineStore("home", () => {
   const lastContentRecordMsg = ref<string>();
 
   const files = ref<ContentRecordFile>();
+
+  const ultraFlatFiles = computed(() => flattenFiles(files.value?.files || []));
 
   const flatFiles = computed(() => {
     const response: {
@@ -424,6 +426,7 @@ export const useHomeStore = defineStore("home", () => {
     selectedConfiguration,
     serverCredential,
     files,
+    ultraFlatFiles,
     flatFiles,
     initializingRequestComplete,
     lastContentRecordResult,

@@ -35,3 +35,28 @@ export function canFileBeIncluded(file: ContentRecordFile): boolean {
 export function canFileBeExcluded(file: ContentRecordFile): boolean {
   return Boolean(!file.reason?.exclude);
 }
+
+export type FlatFile = Omit<ContentRecordFile, "files"> & {
+  indent: number;
+  parent?: string;
+};
+
+export function flattenFiles(
+  files: ContentRecordFile[],
+  map = new Map<string, FlatFile>(),
+  indent = 0,
+  parentFile?: string,
+): Map<string, FlatFile> {
+  files.forEach((file) => {
+    const { files, ...rest } = file;
+    const flatFile = {
+      ...rest,
+      indent: indent,
+      parent: parentFile,
+    };
+    map.set(file.id, flatFile);
+    flattenFiles(file.files, map, indent + 1, file.id);
+  });
+
+  return map;
+}
