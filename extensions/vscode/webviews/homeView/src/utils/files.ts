@@ -43,10 +43,10 @@ export type FlatFile = Omit<ContentRecordFile, "files"> & {
 
 export function flattenFiles(
   files: ContentRecordFile[],
-  map = new Map<string, FlatFile>(),
+  arr = new Array<FlatFile>(),
   indent = 0,
   parentFile?: string,
-): Map<string, FlatFile> {
+): FlatFile[] {
   files.forEach((file) => {
     const { files, ...rest } = file;
     const flatFile = {
@@ -54,9 +54,9 @@ export function flattenFiles(
       indent: indent,
       parent: parentFile,
     };
-    map.set(file.id, flatFile);
-    flattenFiles(file.files, map, indent + 1, file.id);
+    arr.push(flatFile);
+    flattenFiles(file.files, arr, indent + 1, file.id);
   });
 
-  return map;
+  return arr;
 }
