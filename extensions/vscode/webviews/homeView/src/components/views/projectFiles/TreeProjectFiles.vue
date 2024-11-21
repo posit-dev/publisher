@@ -1,7 +1,7 @@
 <template>
   <TreeItemCheckbox
-    v-for="file in props.files"
-    :key="file.id"
+    v-for="[id, file] in props.files"
+    :key="id"
     :title="file.base"
     :checked="isFileIncluded(file)"
     :disabled="
@@ -20,14 +20,14 @@
         ? includedFileTooltip(file)
         : excludedFileTooltip(file)
     "
-    :indentLevel="indentLevel"
+    :indentLevel="file.indent"
     :actions="fileActions(file)"
-    @check="includeFile(file)"
-    @uncheck="excludeFile(file)"
+    @check="includeFile(id)"
+    @uncheck="excludeFile(id)"
   >
-    <template v-if="file.isDir" #default="{ indentLevel }">
+    <!-- <template v-if="file.isDir" #default="{ indentLevel }">
       <TreeProjectFiles :files="file.files" :indentLevel="indentLevel" />
-    </template>
+    </template> -->
 
     <template #postDecor>
       <PostDecor
@@ -66,6 +66,7 @@ import { useHomeStore } from "src/stores/home";
 import { useHostConduitService } from "src/HostConduitService";
 import PostDecor from "src/components/tree/PostDecor.vue";
 import { ActionButton } from "src/components/ActionToolbar.vue";
+import { FlatFile } from "src/utils/files";
 
 import {
   ContentRecordFile,
@@ -74,7 +75,7 @@ import {
 import { WebviewToHostMessageType } from "../../../../../../src/types/messages/webviewToHostMessages";
 
 interface Props {
-  files: ContentRecordFile[];
+  files: Map<string, FlatFile>;
   indentLevel?: number;
 }
 
@@ -85,7 +86,7 @@ const props = withDefaults(defineProps<Props>(), {
 const home = useHomeStore();
 const { sendMsg } = useHostConduitService();
 
-const isEntrypoint = (file: ContentRecordFile): boolean => {
+const isEntrypoint = (file: Pick<ContentRecordFile, "id">): boolean => {
   const config = home.selectedConfiguration;
   if (config != undefined && !isConfigurationError(config)) {
     return file.id === config.configuration.entrypoint;
@@ -93,32 +94,34 @@ const isEntrypoint = (file: ContentRecordFile): boolean => {
   return false;
 };
 
-const isFileIncluded = (file: ContentRecordFile) => {
+const isFileIncluded = (file: Pick<ContentRecordFile, "reason">) => {
   return Boolean(file.reason?.exclude === false);
 };
 
-const includeFile = (file: ContentRecordFile) => {
+const includeFile = (id: string) => {
   sendMsg({
     kind: WebviewToHostMessageType.INCLUDE_FILE,
-    content: { path: file.id },
+    content: { path: id },
   });
 };
 
-const excludeFile = (file: ContentRecordFile) => {
+const excludeFile = (id: string) => {
   sendMsg({
     kind: WebviewToHostMessageType.EXCLUDE_FILE,
-    content: { path: file.id },
+    content: { path: id },
   });
 };
 
-const openFile = (file: ContentRecordFile) => {
+const openFile = (id: string) => {
   sendMsg({
     kind: WebviewToHostMessageType.VSCODE_OPEN_RELATIVE,
-    content: { relativePath: file.id },
+    content: { relativePath: id },
   });
 };
 
-const fileActions = (file: ContentRecordFile): ActionButton[] => {
+const fileActions = (
+  file: Pick<ContentRecordFile, "id" | "isFile">,
+): ActionButton[] => {
   let actions: ActionButton[] = [];
 
   if (file.isFile) {
@@ -126,7 +129,7 @@ const fileActions = (file: ContentRecordFile): ActionButton[] => {
       label: "Open file",
       codicon: "codicon-link-external",
       fn: () => {
-        openFile(file);
+        openFile(file.id);
       },
     });
   }
