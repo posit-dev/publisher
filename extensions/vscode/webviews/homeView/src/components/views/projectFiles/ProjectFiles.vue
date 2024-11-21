@@ -12,7 +12,7 @@
     ]"
   >
     <template v-if="home.files">
-      <TreeProjectFiles :files="home.files.files" />
+      <TreeProjectFiles :files="home.ultraFlatFiles" />
     </template>
     <p v-else>No files found</p>
   </TreeSection>
