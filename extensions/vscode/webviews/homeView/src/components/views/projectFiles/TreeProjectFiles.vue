@@ -1,58 +1,59 @@
 <template>
-  <TreeItemCheckbox
-    v-for="[id, file] in props.files"
-    :key="id"
-    :title="file.base"
-    :checked="isFileIncluded(file)"
-    :disabled="
-      file.reason?.source === 'built-in' ||
-      file.reason?.source === 'permissions'
-    "
-    :list-style="
-      isEntrypoint(file)
-        ? 'emphasized'
-        : isFileIncluded(file)
-          ? 'default'
-          : 'deemphasized'
-    "
-    :tooltip="
-      isFileIncluded(file)
-        ? includedFileTooltip(file)
-        : excludedFileTooltip(file)
-    "
-    :indentLevel="file.indent"
-    :actions="fileActions(file)"
-    @check="includeFile(id)"
-    @uncheck="excludeFile(id)"
+  <RecycleScroller
+    class="scroller"
+    :items="files"
+    :item-size="22"
+    v-slot="{ item }"
   >
-    <!-- <template v-if="file.isDir" #default="{ indentLevel }">
-      <TreeProjectFiles :files="file.files" :indentLevel="indentLevel" />
-    </template> -->
-
-    <template #postDecor>
-      <PostDecor
-        v-if="
-          file.isFile &&
-          isFileIncluded(file) &&
-          !home.flatFiles.lastDeployedFiles.has(file.id)
-        "
-        class="text-git-added"
-        :data-automation="`${file.id}-decorator`"
-      >
-        A
-      </PostDecor>
-      <PostDecor
-        v-if="
-          file.isFile &&
-          !isFileIncluded(file) &&
-          home.flatFiles.lastDeployedFiles.has(file.id)
-        "
-        class="text-git-deleted"
-      >
-        R
-      </PostDecor>
-    </template>
-  </TreeItemCheckbox>
+    <TreeItemCheckbox
+      :title="item.base"
+      :checked="isFileIncluded(item)"
+      :disabled="
+        item.reason?.source === 'built-in' ||
+        item.reason?.source === 'permissions'
+      "
+      :list-style="
+        isEntrypoint(item)
+          ? 'emphasized'
+          : isFileIncluded(item)
+            ? 'default'
+            : 'deemphasized'
+      "
+      :tooltip="
+        isFileIncluded(item)
+          ? includedFileTooltip(item)
+          : excludedFileTooltip(item)
+      "
+      :indentLevel="item.indent + 1"
+      :actions="fileActions(item)"
+      @check="includeFile(item.id)"
+      @uncheck="excludeFile(item.id)"
+    >
+      <template #postDecor>
+        <PostDecor
+          v-if="
+            item.isFile &&
+            isFileIncluded(item) &&
+            !home.flatFiles.lastDeployedFiles.has(item.id)
+          "
+          class="text-git-added"
+          :data-automation="`${item.id}-decorator`"
+        >
+          A
+        </PostDecor>
+        <PostDecor
+          v-if="
+            item.isFile &&
+            !isFileIncluded(item) &&
+            home.flatFiles.lastDeployedFiles.has(item.id)
+          "
+          class="text-git-deleted"
+        >
+          R
+        </PostDecor>
+      </template>
+    </TreeItemCheckbox>
+  </RecycleScroller>
 </template>
 
 <script setup lang="ts">
@@ -61,7 +62,6 @@ import {
   includedFileTooltip,
   excludedFileTooltip,
 } from "src/components/views/projectFiles/tooltips";
-import TreeProjectFiles from "src/components/views/projectFiles/TreeProjectFiles.vue";
 import { useHomeStore } from "src/stores/home";
 import { useHostConduitService } from "src/HostConduitService";
 import PostDecor from "src/components/tree/PostDecor.vue";
@@ -75,13 +75,10 @@ import {
 import { WebviewToHostMessageType } from "../../../../../../src/types/messages/webviewToHostMessages";
 
 interface Props {
-  files: Map<string, FlatFile>;
-  indentLevel?: number;
+  files: FlatFile[];
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  indentLevel: 1,
-});
+defineProps<Props>();
 
 const home = useHomeStore();
 const { sendMsg } = useHostConduitService();
@@ -137,3 +134,9 @@ const fileActions = (
   return actions;
 };
 </script>
+
+<style lang="scss" scoped>
+.scroller {
+  max-height: 500px;
+}
+</style>
