@@ -17,7 +17,7 @@ export class HostConduit {
     private readonly vsCodeApi: WebviewApi<unknown>,
   ) {}
 
-  private rawMsgCB = (e: any) => {
+  private rawMsgCB = (e: MessageEvent) => {
     if (this.externalMsgCB) {
       const obj = JSON.parse(e.data);
       if (isHostToWebviewMessage(obj)) {

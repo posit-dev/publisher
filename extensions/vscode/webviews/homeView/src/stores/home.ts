@@ -95,7 +95,7 @@ export const useHomeStore = defineStore("home", () => {
 
   watch(
     [selectedContentRecord, selectedConfiguration],
-    ([contentRecord, config], [prevContentRecord, prevConfig]) => {
+    ([contentRecord, config], [prevContentRecord]) => {
       const result = new Map<string, string | undefined>();
 
       if (config === undefined || isConfigurationError(config)) {
@@ -277,7 +277,7 @@ export const useHomeStore = defineStore("home", () => {
       isMissingRequirements: computed(() => {
         return pythonProject.value && !pythonPackageFile.value;
       }),
-      isAlertActive: computed((): Boolean => {
+      isAlertActive: computed((): boolean => {
         return (
           python.active.isEmptyRequirements.value ||
           python.active.isMissingRequirements.value
