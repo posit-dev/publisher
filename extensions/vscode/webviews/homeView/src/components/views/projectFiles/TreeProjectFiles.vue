@@ -34,7 +34,7 @@
           v-if="
             item.isFile &&
             isFileIncluded(item) &&
-            !home.flatFiles.lastDeployedFiles.has(item.id)
+            !fileStore.lastDeployedFiles.has(item.id)
           "
           class="text-git-added"
           :data-automation="`${item.id}-decorator`"
@@ -45,7 +45,7 @@
           v-if="
             item.isFile &&
             !isFileIncluded(item) &&
-            home.flatFiles.lastDeployedFiles.has(item.id)
+            fileStore.lastDeployedFiles.has(item.id)
           "
           class="text-git-deleted"
         >
@@ -63,6 +63,7 @@ import {
   excludedFileTooltip,
 } from "src/components/views/projectFiles/tooltips";
 import { useHomeStore } from "src/stores/home";
+import { useFileStore } from "src/stores/file";
 import { useHostConduitService } from "src/HostConduitService";
 import PostDecor from "src/components/tree/PostDecor.vue";
 import { ActionButton } from "src/components/ActionToolbar.vue";
@@ -81,6 +82,7 @@ interface Props {
 defineProps<Props>();
 
 const home = useHomeStore();
+const fileStore = useFileStore();
 const { sendMsg } = useHostConduitService();
 
 const isEntrypoint = (file: Pick<ContentRecordFile, "id">): boolean => {
