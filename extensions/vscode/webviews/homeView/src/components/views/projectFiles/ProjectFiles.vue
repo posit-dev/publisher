@@ -10,8 +10,15 @@
       },
     ]"
   >
-    <template v-if="fileStore.flatFiles">
-      <TreeProjectFiles :files="fileStore.flatFiles" />
+    <template v-if="fileStore.flatFiles.length">
+      <RecycleScroller
+        class="scroller"
+        :items="fileStore.flatFiles"
+        :item-size="22"
+        v-slot="{ item }"
+      >
+        <ProjectFile :file="item" />
+      </RecycleScroller>
     </template>
     <p v-else>No files found</p>
   </TreeSection>
@@ -19,8 +26,14 @@
 
 <script setup lang="ts">
 import TreeSection from "src/components/tree/TreeSection.vue";
-import TreeProjectFiles from "src/components/views/projectFiles/TreeProjectFiles.vue";
 import { useFileStore } from "src/stores/file";
+import ProjectFile from "src/components/views/projectFiles/ProjectFile.vue";
 
 const fileStore = useFileStore();
 </script>
+
+<style lang="scss" scoped>
+.scroller {
+  max-height: 500px;
+}
+</style>
