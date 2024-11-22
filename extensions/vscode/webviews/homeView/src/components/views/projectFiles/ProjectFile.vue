@@ -37,6 +37,11 @@ import {
 } from "src/components/views/projectFiles/tooltips";
 import { isConfigurationError } from "../../../../../../src/api";
 
+/**
+ * This component is used for list virtualization. It must be reactive to the
+ * item prop being updated without being re-created.
+ * See: https://github.com/Akryum/vue-virtual-scroller/blob/master/packages/vue-virtual-scroller/README.md#important-notes
+ */
 interface Props {
   file: FlatFile;
 }
