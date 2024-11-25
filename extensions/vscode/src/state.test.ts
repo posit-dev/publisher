@@ -1,6 +1,6 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { afterEach, describe, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { window } from "vscode";
 import { AxiosError, AxiosHeaders } from "axios";
 import { DeploymentSelectorState } from "src/types/shared";
@@ -109,7 +109,8 @@ describe("PublisherState", () => {
       expect(currentSelection).toEqual(undefined);
       expect(mockClient.contentRecords.get).not.toHaveBeenCalled();
 
-      // setup fake response from api client, note path must be the same between selection state and content record
+      // setup fake response from api client,
+      // path must be the same between selection state and content record
       const firstGetResponseData: PreContentRecord =
         preContentRecordFactory.build({
           deploymentPath: initialState.deploymentPath,
@@ -162,62 +163,73 @@ describe("PublisherState", () => {
       ]);
     });
 
-    test("error responses from API", async () => {
-      const initialState: DeploymentSelectorState =
-        selectionStateFactory.build();
+    describe("error responses from API", () => {
+      let publisherState: PublisherState;
+      let initialState: DeploymentSelectorState;
 
-      const { mockContext } = mkExtensionContextStateMock({});
-      const publisherState = new PublisherState(mockContext);
+      beforeEach(() => {
+        initialState = selectionStateFactory.build();
 
-      // setup fake 404 error from api client
-      const axiosErr = new AxiosError();
-      axiosErr.response = {
-        data: "",
-        status: 404,
-        statusText: "404",
-        headers: {},
-        config: { headers: new AxiosHeaders() },
-      };
-      mockClient.contentRecords.get.mockRejectedValue(axiosErr);
+        const { mockContext } = mkExtensionContextStateMock({});
+        publisherState = new PublisherState(mockContext);
 
-      // set an initial state so it tries to pull from API
-      await publisherState.updateSelection(initialState);
+        // set an initial state so it tries to pull from API
+        return publisherState.updateSelection(initialState);
+      });
 
-      let currentSelection = await publisherState.getSelectedContentRecord();
-      expect(mockClient.contentRecords.get).toHaveBeenCalledTimes(1);
-      expect(mockClient.contentRecords.get).toHaveBeenCalledWith(
-        initialState.deploymentName,
-        initialState.projectDir,
-      );
+      test("404", async () => {
+        // setup fake 404 error from api client
+        const axiosErr = new AxiosError();
+        axiosErr.response = {
+          data: "",
+          status: 404,
+          statusText: "404",
+          headers: {},
+          config: { headers: new AxiosHeaders() },
+        };
+        mockClient.contentRecords.get.mockRejectedValue(axiosErr);
 
-      // 404 errors are just ignored
-      expect(currentSelection).toEqual(undefined);
-      expect(publisherState.contentRecords).toEqual([]);
-      expect(window.showInformationMessage).not.toHaveBeenCalled();
+        const currentSelection =
+          await publisherState.getSelectedContentRecord();
+        expect(mockClient.contentRecords.get).toHaveBeenCalledTimes(1);
+        expect(mockClient.contentRecords.get).toHaveBeenCalledWith(
+          initialState.deploymentName,
+          initialState.projectDir,
+        );
 
-      // NOT 404 errors are shown
-      axiosErr.response = {
-        data: "custom test error",
-        status: 401,
-        statusText: "401",
-        headers: {},
-        config: { headers: new AxiosHeaders() },
-      };
-      mockClient.contentRecords.get.mockRejectedValue(axiosErr);
+        // 404 errors are just ignored
+        expect(currentSelection).toEqual(undefined);
+        expect(publisherState.contentRecords).toEqual([]);
+        expect(window.showInformationMessage).not.toHaveBeenCalled();
+      });
 
-      currentSelection = await publisherState.getSelectedContentRecord();
-      expect(mockClient.contentRecords.get).toHaveBeenCalledTimes(2);
-      expect(mockClient.contentRecords.get).toHaveBeenCalledWith(
-        initialState.deploymentName,
-        initialState.projectDir,
-      );
+      test("Other than 404", async () => {
+        // NOT 404 errors are shown
+        const axiosErr = new AxiosError();
+        axiosErr.response = {
+          data: "custom test error",
+          status: 401,
+          statusText: "401",
+          headers: {},
+          config: { headers: new AxiosHeaders() },
+        };
+        mockClient.contentRecords.get.mockRejectedValue(axiosErr);
 
-      // This error is propagated up now
-      expect(currentSelection).toEqual(undefined);
-      expect(publisherState.contentRecords).toEqual([]);
-      expect(window.showInformationMessage).toHaveBeenCalledWith(
-        "Unable to retrieve deployment record: custom test error",
-      );
+        const currentSelection =
+          await publisherState.getSelectedContentRecord();
+        expect(mockClient.contentRecords.get).toHaveBeenCalledTimes(1);
+        expect(mockClient.contentRecords.get).toHaveBeenCalledWith(
+          initialState.deploymentName,
+          initialState.projectDir,
+        );
+
+        // This error is propagated up now
+        expect(currentSelection).toEqual(undefined);
+        expect(publisherState.contentRecords).toEqual([]);
+        expect(window.showInformationMessage).toHaveBeenCalledWith(
+          "Unable to retrieve deployment record: custom test error",
+        );
+      });
     });
   });
 
@@ -240,7 +252,8 @@ describe("PublisherState", () => {
       });
       publisherState.contentRecords.push(contentRecord);
 
-      // setup fake config API response, note config name and project dir must be the same between content record and config
+      // setup fake config API response,
+      // config name and project dir must be the same between content record and config
       const config = configurationFactory.build({
         configurationName: contentRecord.configurationName,
         projectDir: contentRecord.projectDir,
@@ -297,68 +310,78 @@ describe("PublisherState", () => {
       expect(publisherState.configurations).toEqual([config, secondConfig]);
     });
 
-    test("error responses from API", async () => {
-      const contentRecordState: DeploymentSelectorState =
-        selectionStateFactory.build();
+    describe("error responses from API", () => {
+      let publisherState: PublisherState;
+      let contentRecordState: DeploymentSelectorState;
+      let contentRecord: PreContentRecord;
 
-      const { mockContext } = mkExtensionContextStateMock({});
-      const publisherState = new PublisherState(mockContext);
+      beforeEach(() => {
+        contentRecordState = selectionStateFactory.build();
 
-      // setup existing content record in cache
-      const contentRecord = preContentRecordFactory.build({
-        deploymentPath: contentRecordState.deploymentPath,
+        const { mockContext } = mkExtensionContextStateMock({});
+        publisherState = new PublisherState(mockContext);
+
+        // setup existing content record in cache
+        contentRecord = preContentRecordFactory.build({
+          deploymentPath: contentRecordState.deploymentPath,
+        });
+        publisherState.contentRecords.push(contentRecord);
+
+        // set an initial state so it tries to pull from API
+        return publisherState.updateSelection(contentRecordState);
       });
-      publisherState.contentRecords.push(contentRecord);
 
-      // setup fake 404 error from api client
-      const axiosErr = new AxiosError();
-      axiosErr.response = {
-        data: "",
-        status: 404,
-        statusText: "404",
-        headers: {},
-        config: { headers: new AxiosHeaders() },
-      };
-      mockClient.configurations.get.mockRejectedValue(axiosErr);
+      test("404", async () => {
+        // setup fake 404 error from api client
+        const axiosErr = new AxiosError();
+        axiosErr.response = {
+          data: "",
+          status: 404,
+          statusText: "404",
+          headers: {},
+          config: { headers: new AxiosHeaders() },
+        };
+        mockClient.configurations.get.mockRejectedValue(axiosErr);
 
-      // set an initial state so it tries to pull from API
-      await publisherState.updateSelection(contentRecordState);
+        const currentConfig = await publisherState.getSelectedConfiguration();
+        expect(mockClient.configurations.get).toHaveBeenCalledTimes(1);
+        expect(mockClient.configurations.get).toHaveBeenCalledWith(
+          contentRecord.configurationName,
+          contentRecord.projectDir,
+        );
 
-      let currentConfig = await publisherState.getSelectedConfiguration();
-      expect(mockClient.configurations.get).toHaveBeenCalledTimes(1);
-      expect(mockClient.configurations.get).toHaveBeenCalledWith(
-        contentRecord.configurationName,
-        contentRecord.projectDir,
-      );
+        // 404 errors are just ignored
+        expect(currentConfig).toEqual(undefined);
+        expect(publisherState.configurations).toEqual([]);
+        expect(window.showInformationMessage).not.toHaveBeenCalled();
+      });
 
-      // 404 errors are just ignored
-      expect(currentConfig).toEqual(undefined);
-      expect(publisherState.configurations).toEqual([]);
-      expect(window.showInformationMessage).not.toHaveBeenCalled();
+      test("Other than 404", async () => {
+        // NOT 404 errors are shown
+        const axiosErr = new AxiosError();
+        axiosErr.response = {
+          data: "custom test error",
+          status: 401,
+          statusText: "401",
+          headers: {},
+          config: { headers: new AxiosHeaders() },
+        };
+        mockClient.configurations.get.mockRejectedValue(axiosErr);
 
-      // NOT 404 errors are shown
-      axiosErr.response = {
-        data: "custom test error",
-        status: 401,
-        statusText: "401",
-        headers: {},
-        config: { headers: new AxiosHeaders() },
-      };
-      mockClient.contentRecords.get.mockRejectedValue(axiosErr);
+        const currentConfig = await publisherState.getSelectedConfiguration();
+        expect(mockClient.configurations.get).toHaveBeenCalledTimes(1);
+        expect(mockClient.configurations.get).toHaveBeenCalledWith(
+          contentRecord.configurationName,
+          contentRecord.projectDir,
+        );
 
-      currentConfig = await publisherState.getSelectedConfiguration();
-      expect(mockClient.configurations.get).toHaveBeenCalledTimes(2);
-      expect(mockClient.configurations.get).toHaveBeenCalledWith(
-        contentRecord.configurationName,
-        contentRecord.projectDir,
-      );
-
-      // This error is propagated up now
-      expect(currentConfig).toEqual(undefined);
-      expect(publisherState.configurations).toEqual([]);
-      expect(window.showInformationMessage).toHaveBeenCalledWith(
-        "Unable to retrieve deployment configuration: custom test error",
-      );
+        // This error is propagated up now
+        expect(currentConfig).toEqual(undefined);
+        expect(publisherState.configurations).toEqual([]);
+        expect(window.showInformationMessage).toHaveBeenCalledWith(
+          "Unable to retrieve deployment configuration: custom test error",
+        );
+      });
     });
   });
 
