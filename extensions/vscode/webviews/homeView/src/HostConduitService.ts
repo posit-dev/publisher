@@ -119,7 +119,7 @@ const onRefreshContentRecordDataMsg = (msg: RefreshContentRecordDataMsg) => {
   const home = useHomeStore();
   home.contentRecords = msg.content.contentRecords;
 
-  let selector = msg.content.deploymentSelected;
+  const selector = msg.content.deploymentSelected;
   if (selector === null) {
     home.selectedContentRecord = undefined;
     return;

@@ -512,7 +512,7 @@
     "esbuild": "npm run esbuild-base -- --sourcemap",
     "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
     "build-font": "fantasticon",
-    "lint": "eslint src --max-warnings 0",
+    "lint": "eslint src --max-warnings 0 && eslint webviews/homeView/src --max-warnings 0",
     "compile": "tsc -p ./",
     "test": "npm run compile && node ./out/test/runTest.js",
     "test-unit": "vitest run"
