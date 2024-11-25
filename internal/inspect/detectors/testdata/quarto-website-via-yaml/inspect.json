@@ -1,0 +1,53 @@
+{
+  "quarto": {
+    "version": "1.4.553"
+  },
+  "dir": "$DIR/quarto-website-via-yaml",
+  "engines": ["markdown", "jupyter"],
+  "config": {
+    "project": {
+      "type": "website",
+      "pre-render": ["prepare.py"],
+      "post-render": ["finally.py"],
+      "lib-dir": "site_libs",
+      "output-dir": "_site"
+    },
+    "website": {
+      "title": "Content Dashboard",
+      "navbar": {
+        "left": [
+          {
+            "text": "Featured",
+            "href": "index.qmd"
+          },
+          {
+            "text": "All",
+            "href": "all.qmd"
+          },
+          {
+            "text": "About",
+            "href": "about.qmd"
+          }
+        ]
+      }
+    },
+    "format": {
+      "html": "default"
+    },
+    "theme": {
+      "light": "flatly",
+      "dark": "darkly"
+    },
+    "language": {}
+  },
+  "files": {
+    "input": [
+      "$DIR/quarto-website-via-yaml/all.qmd",
+      "$DIR/quarto-website-via-yaml/index.qmd",
+      "$DIR/quarto-website-via-yaml/about.qmd"
+    ],
+    "resources": [],
+    "config": ["$DIR/quarto-website-via-yaml/_quarto.yml"],
+    "configResources": []
+  }
+}
