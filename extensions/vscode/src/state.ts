@@ -1,6 +1,6 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { Disposable, ExtensionContext, window } from "vscode";
+import { Disposable, Memento, window } from "vscode";
 
 import {
   Configuration,
@@ -14,9 +14,13 @@ import {
   useApi,
 } from "src/api";
 import { normalizeURL } from "src/utils/url";
+import { showProgress } from "src/utils/progress";
+import {
+  getStatusFromError,
+  getSummaryStringFromError,
+} from "src/utils/errors";
 import { DeploymentSelector, SelectionState } from "src/types/shared";
-import { LocalState } from "./constants";
-import { getStatusFromError, getSummaryStringFromError } from "./utils/errors";
+import { LocalState, Views } from "./constants";
 
 function findContentRecord<
   T extends ContentRecord | PreContentRecord | PreContentRecordWithConfig,
@@ -60,8 +64,16 @@ function findCredentialForContentRecord(
   );
 }
 
+/**
+ * Local extension context interface containing only what is used by PublisherState
+ */
+interface extensionContext {
+  // A memento object that stores state in the context
+  readonly workspaceState: Memento;
+}
+
 export class PublisherState implements Disposable {
-  private readonly context: ExtensionContext;
+  private readonly context: extensionContext;
 
   contentRecords: Array<
     ContentRecord | PreContentRecord | PreContentRecordWithConfig
@@ -69,7 +81,7 @@ export class PublisherState implements Disposable {
   configurations: Array<Configuration | ConfigurationError> = [];
   credentials: Credential[] = [];
 
-  constructor(context: ExtensionContext) {
+  constructor(context: extensionContext) {
     this.context = context;
   }
 
@@ -191,14 +203,27 @@ export class PublisherState implements Disposable {
   }
 
   async refreshContentRecords() {
-    const api = await useApi();
-    const response = await api.contentRecords.getAll(".", { recursive: true });
+    try {
+      await showProgress("Refreshing Deployments", Views.HomeView, async () => {
+        const api = await useApi();
+        const response = await api.contentRecords.getAll(".", {
+          recursive: true,
+        });
 
-    // Currently we filter out any Content Records in error
-    this.contentRecords = response.data.filter(
-      (r): r is ContentRecord | PreContentRecord | PreContentRecordWithConfig =>
-        !isContentRecordError(r),
-    );
+        // Currently we filter out any Content Records in error
+        this.contentRecords = response.data.filter(
+          (
+            r,
+          ): r is
+            | ContentRecord
+            | PreContentRecord
+            | PreContentRecordWithConfig => !isContentRecordError(r),
+        );
+      });
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError("refreshContentRecords", error);
+      window.showErrorMessage(summary);
+    }
   }
 
   findContentRecord(name: string, projectDir: string) {
@@ -210,10 +235,22 @@ export class PublisherState implements Disposable {
   }
 
   async refreshConfigurations() {
-    const api = await useApi();
-    const response = await api.configurations.getAll(".", { recursive: true });
-
-    this.configurations = response.data;
+    try {
+      await showProgress(
+        "Refreshing Configurations",
+        Views.HomeView,
+        async () => {
+          const api = await useApi();
+          const response = await api.configurations.getAll(".", {
+            recursive: true,
+          });
+          this.configurations = response.data;
+        },
+      );
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError("refreshConfigurations", error);
+      window.showErrorMessage(summary);
+    }
   }
 
   get validConfigs(): Configuration[] {
@@ -239,10 +276,16 @@ export class PublisherState implements Disposable {
   }
 
   async refreshCredentials() {
-    const api = await useApi();
-    const response = await api.credentials.list();
-
-    this.credentials = response.data;
+    try {
+      await showProgress("Refreshing Credentials", Views.HomeView, async () => {
+        const api = await useApi();
+        const response = await api.credentials.list();
+        this.credentials = response.data;
+      });
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError("refreshCredentials", error);
+      window.showErrorMessage(summary);
+    }
   }
 
   findCredential(name: string) {
