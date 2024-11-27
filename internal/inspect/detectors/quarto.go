@@ -16,6 +16,18 @@ import (
 	"github.com/posit-dev/publisher/internal/util"
 )
 
+// These are files that behave in a special way for Quarto
+// and are not included within project inspection output,
+// if exists must be included in deployment files.
+var specialYmlFiles = []string{
+	"_quarto.yml",
+	"_quarto.yaml",
+	"_metadata.yml",
+	"_metadata.yaml",
+	"_brand.yml",
+	"_brand.yaml",
+}
+
 type QuartoDetector struct {
 	inferenceHelper
 	executor executor.Executor
@@ -62,7 +74,8 @@ type quartoInspectOutput struct {
 	} `json:"project"`
 	Engines []string `json:"engines"`
 	Files   struct {
-		Input []string `json:"input"`
+		Input           []string `json:"input"`
+		ConfigResources []string `json:"configResources"`
 	} `json:"files"`
 	// For single quarto docs without _quarto.yml
 	Formats struct {
@@ -82,7 +95,11 @@ type quartoInspectOutput struct {
 
 	// For single quarto docs without _quarto.yml,
 	// there is no project section in the output.
-	FileInformation map[string]any `json:"fileInformation"`
+	FileInformation map[string]struct {
+		Metadata struct {
+			ResourceFiles []string `json:"resource_files"`
+		} `json:"metadata"`
+	} `json:"fileInformation"`
 
 	// For directory inspect (commonly due to _quarto.yml picked up as entrypoint)
 	Config quartoProjectConfig `json:"config"`
@@ -117,6 +134,48 @@ func getInputFiles(inspectOutput *quartoInspectOutput) []string {
 		return filenames
 	}
 	return []string{}
+}
+
+func getConfigResources(inspectOutput *quartoInspectOutput) []string {
+	if inspectOutput.Files.ConfigResources != nil {
+		return inspectOutput.Files.ConfigResources
+	}
+	return []string{}
+}
+
+func uniqueFileResources(target []string, resourceFiles []string) []string {
+	resourcesFound := []string{}
+	for _, fileResource := range resourceFiles {
+		// Prevent duplicated files
+		if slices.Contains(target, fileResource) {
+			continue
+		}
+
+		// Prevent special YML files here (those are handled later)
+		if slices.Contains(specialYmlFiles, fileResource) {
+			continue
+		}
+
+		resourcesFound = append(resourcesFound, fileResource)
+	}
+	return resourcesFound
+}
+
+func getFileInfoResources(inspectOutput *quartoInspectOutput) []string {
+	if inspectOutput.FileInformation == nil {
+		return []string{}
+	}
+
+	filesResources := []string{}
+	for _, fileInfo := range inspectOutput.FileInformation {
+		if fileInfo.Metadata.ResourceFiles != nil {
+			filesResources = append(
+				filesResources,
+				uniqueFileResources(filesResources, fileInfo.Metadata.ResourceFiles)...)
+		}
+	}
+
+	return filesResources
 }
 
 func getPrePostRenderFiles(inspectOutput *quartoInspectOutput) []string {
@@ -303,8 +362,9 @@ func (d *QuartoDetector) configFromFileInspect(base util.AbsolutePath, entrypoin
 
 	// Include the entrypoint, its associated files and pre-post render scripts
 	filesToInclude := getInputFiles(inspectOutput)
-	prepostscripts := getPrePostRenderFiles(inspectOutput)
-	filesToInclude = append(filesToInclude, prepostscripts...)
+	filesToInclude = append(filesToInclude, getConfigResources(inspectOutput)...)
+	filesToInclude = append(filesToInclude, getFileInfoResources(inspectOutput)...)
+	filesToInclude = append(filesToInclude, getPrePostRenderFiles(inspectOutput)...)
 	for _, inputFile := range filesToInclude {
 		var relPath string
 		if filepath.IsAbs(inputFile) {
@@ -318,8 +378,7 @@ func (d *QuartoDetector) configFromFileInspect(base util.AbsolutePath, entrypoin
 		cfg.Files = append(cfg.Files, fmt.Sprint("/", relPath))
 	}
 
-	extraFiles := []string{"_quarto.yml", "_quarto.yaml", "_metadata.yml", "_metadata.yaml"}
-	for _, filename := range extraFiles {
+	for _, filename := range specialYmlFiles {
 		path := base.Join(filename)
 		exists, err := path.Exists()
 		if err != nil {

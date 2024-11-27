@@ -291,7 +291,17 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoWebsite_viaQuartoYml() {
 		Entrypoint: "_quarto.yml",
 		Title:      "Content Dashboard",
 		Validate:   true,
-		Files:      []string{"/all.qmd", "/index.qmd", "/about.qmd", "/prepare.py", "/finally.py", "/_quarto.yml"},
+		Files: []string{
+			"/all.qmd",
+			"/index.qmd",
+			"/about.qmd",
+			"/bibliography.bib",
+			"/palmer-penguins.csv",
+			"/prepare.py",
+			"/finally.py",
+			"/_quarto.yml",
+			"/_brand.yml",
+		},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
 			Engines: []string{"jupyter", "markdown"},
