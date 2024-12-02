@@ -3,7 +3,7 @@
     class="tree-item"
     :class="{
       'align-icon-with-twisty': alignIconWithTwisty,
-      collapsible: $slots.default,
+      collapsible: isExpandable,
       'text-list-emphasized': listStyle === 'emphasized',
       'text-foreground': listStyle === 'default',
       'text-list-deemphasized': listStyle === 'deemphasized',
@@ -16,15 +16,15 @@
       <div
         class="twisty-container text-icon"
         :class="[
-          { codicon: $slots.default },
-          $slots.default
+          { codicon: isExpandable },
+          expandable || $slots.default
             ? expanded
               ? 'codicon-chevron-down'
               : 'codicon-chevron-right'
             : undefined,
         ]"
         v-on="{
-          click: $slots.default ? toggleExpanded : undefined,
+          click: isExpandable ? toggleExpanded : undefined,
         }"
       />
       <vscode-checkbox
@@ -46,13 +46,15 @@
       </div>
     </div>
 
-    <div v-show="$slots.default && expanded" class="tree-item-children">
+    <div v-show="isExpandable && expanded" class="tree-item-children">
       <slot :indent-level="indentLevel + 1" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
+
 import ActionToolbar, { ActionButton } from "src/components/ActionToolbar.vue";
 
 export type TreeItemStyle = "emphasized" | "default" | "deemphasized";
@@ -69,23 +71,30 @@ interface Props {
   alignIconWithTwisty?: boolean;
   actions?: ActionButton[];
   indentLevel?: number;
+  expandable?: boolean;
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   listStyle: "default",
   indentLevel: 1,
+  expandable: false,
 });
 
-defineSlots<{
+const slots = defineSlots<{
   default(props: { indentLevel: number }): any;
   postDecor(): any;
 }>();
 
-defineEmits(["check", "uncheck"]);
+const emits = defineEmits(["check", "uncheck", "expand", "collapse"]);
 
 const toggleExpanded = () => {
   expanded.value = !expanded.value;
+  emits(expanded.value ? "expand" : "collapse");
 };
+
+const isExpandable = computed((): Boolean => {
+  return Boolean(slots.default || props.expandable);
+});
 </script>
 
 <style lang="scss" scoped>
