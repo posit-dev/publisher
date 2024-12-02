@@ -13,6 +13,16 @@ export type FlatFile = Omit<ContentRecordFile, "files"> & {
   parent?: string;
 };
 
+/**
+ * Flattens a ContentRecordFile[] into a FlatFile[] array
+ *
+ * @param files The ContentRecordFile[] to flatten
+ * @param expandedDirs The Set of expanded directories
+ * @param arr The array to push the flattened files to
+ * @param indent The current indent level
+ * @param parentFile The parent file of the directory being flattened
+ * @returns
+ */
 export function flattenFiles(
   files: ContentRecordFile[],
   expandedDirs: Set<string>,
