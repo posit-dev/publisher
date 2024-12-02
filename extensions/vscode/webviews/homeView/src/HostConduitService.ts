@@ -198,6 +198,12 @@ const onSaveSelectionMsg = () => {
 
 const onRefreshFilesMsg = (msg: RefreshFilesMsg) => {
   const fileStore = useFileStore();
+
+  // If the root file has changed, reset the expanded directories
+  if (msg.content.files.abs !== fileStore.files?.abs) {
+    fileStore.expandedDirs = new Set();
+  }
+
   fileStore.files = msg.content.files;
 };
 
