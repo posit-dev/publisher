@@ -15,6 +15,7 @@ export type FlatFile = Omit<ContentRecordFile, "files"> & {
 
 export function flattenFiles(
   files: ContentRecordFile[],
+  expandedDirs: Set<string>,
   arr = new Array<FlatFile>(),
   indent = 0,
   parentFile?: string,
@@ -27,7 +28,9 @@ export function flattenFiles(
       parent: parentFile,
     };
     arr.push(flatFile);
-    flattenFiles(file.files, arr, indent + 1, file.id);
+    if (file.files.length > 0 && expandedDirs.has(file.id)) {
+      flattenFiles(file.files, expandedDirs, arr, indent + 1, file.id);
+    }
   });
 
   return arr;

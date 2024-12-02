@@ -5,10 +5,13 @@
     :disabled="isDisabled"
     :list-style="listStyle"
     :indent-level="file.indent + 1"
+    :expandable="file.isDir"
     :tooltip="tooltip"
     :actions="actions"
     @check="fileStore.includeFile(file)"
     @uncheck="fileStore.excludeFile(file)"
+    @expand="fileStore.expandDir(file)"
+    @collapse="fileStore.collapseDir(file)"
   >
     <template #postDecor>
       <PostDecor

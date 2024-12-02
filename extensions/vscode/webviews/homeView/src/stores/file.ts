@@ -14,7 +14,11 @@ export const useFileStore = defineStore("file", () => {
 
   const files = ref<ContentRecordFile>();
 
-  const flatFiles = computed(() => flattenFiles(files.value?.files || []));
+  const expandedDirs = ref<Set<string>>(new Set());
+
+  const flatFiles = computed(() =>
+    flattenFiles(files.value?.files || [], expandedDirs.value),
+  );
 
   const lastDeployedFiles = computed((): Set<string> => {
     if (home.selectedContentRecord?.state !== "new") {
@@ -48,13 +52,24 @@ export const useFileStore = defineStore("file", () => {
     });
   }
 
+  function expandDir({ id }: Pick<ContentRecordFile, "id">) {
+    expandedDirs.value.add(id);
+  }
+
+  function collapseDir({ id }: Pick<ContentRecordFile, "id">) {
+    expandedDirs.value.delete(id);
+  }
+
   return {
     files,
+    expandedDirs,
     lastDeployedFiles,
     flatFiles,
     refreshFiles,
     includeFile,
     excludeFile,
     openFile,
+    expandDir,
+    collapseDir,
   };
 });
