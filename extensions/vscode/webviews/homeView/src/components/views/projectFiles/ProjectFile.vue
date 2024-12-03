@@ -8,6 +8,7 @@
     :expandable="file.isDir"
     :tooltip="tooltip"
     :actions="actions"
+    :virtualized="true"
     @check="fileStore.includeFile(file)"
     @uncheck="fileStore.excludeFile(file)"
     @expand="fileStore.expandDir(file)"

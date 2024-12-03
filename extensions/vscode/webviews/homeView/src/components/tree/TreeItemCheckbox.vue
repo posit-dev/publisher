@@ -9,7 +9,11 @@
       'text-list-deemphasized': listStyle === 'deemphasized',
     }"
   >
-    <div class="tree-item-container" :title="tooltip">
+    <div
+      class="tree-item-container"
+      :class="virtualized ? 'class-hover' : undefined"
+      :title="tooltip"
+    >
       <div class="indent">
         <div v-for="_ in indentLevel - 1" class="indent-guide"></div>
       </div>
@@ -72,12 +76,14 @@ interface Props {
   actions?: ActionButton[];
   indentLevel?: number;
   expandable?: boolean;
+  virtualized?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   listStyle: "default",
   indentLevel: 1,
   expandable: false,
+  virtualized: false,
 });
 
 const slots = defineSlots<{
@@ -183,7 +189,8 @@ const isExpandable = computed((): Boolean => {
       flex-grow: 100;
     }
 
-    &:hover {
+    .hover &.class-hover,
+    &:not(.class-hover):hover {
       color: var(--vscode-list-hoverForeground, var(--vscode-foreground));
       background-color: var(--vscode-list-hoverBackground);
 
@@ -200,7 +207,8 @@ const isExpandable = computed((): Boolean => {
       }
     }
 
-    &:hover .actions,
+    .hover &.class-hover .actions,
+    &:not(.class-hover):hover .actions,
     &:focus-within .actions {
       display: initial;
     }
