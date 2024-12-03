@@ -60,6 +60,11 @@ type quartoProjectConfig struct {
 	} `json:"website"`
 }
 
+type quartoFilesData struct {
+	Input           []string `json:"input"`
+	ConfigResources []string `json:"configResources"`
+}
+
 type quartoInspectOutput struct {
 	// Only the fields we use are included; the rest
 	// are discarded by the JSON decoder.
@@ -68,15 +73,10 @@ type quartoInspectOutput struct {
 	} `json:"quarto"`
 	Project struct {
 		Config quartoProjectConfig `json:"config"`
-		Files  struct {
-			Input []string `json:"input"`
-		} `json:"files"`
+		Files  quartoFilesData     `json:"files"`
 	} `json:"project"`
-	Engines []string `json:"engines"`
-	Files   struct {
-		Input           []string `json:"input"`
-		ConfigResources []string `json:"configResources"`
-	} `json:"files"`
+	Engines []string        `json:"engines"`
+	Files   quartoFilesData `json:"files"`
 	// For single quarto docs without _quarto.yml
 	Formats struct {
 		HTML struct {
@@ -137,6 +137,11 @@ func getInputFiles(inspectOutput *quartoInspectOutput) []string {
 }
 
 func getConfigResources(inspectOutput *quartoInspectOutput) []string {
+	// When inspection is done on a specific file (e.g: picking index.qmd as entrypoint)
+	if inspectOutput.Project.Files.ConfigResources != nil {
+		return inspectOutput.Project.Files.ConfigResources
+	}
+	// When inspection is done on directory (picking _quarto.yml as entrypoint)
 	if inspectOutput.Files.ConfigResources != nil {
 		return inspectOutput.Files.ConfigResources
 	}

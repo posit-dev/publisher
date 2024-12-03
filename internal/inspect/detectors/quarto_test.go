@@ -242,7 +242,12 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoWebsite() {
 		Entrypoint: "index.qmd",
 		Title:      "quarto-website-none",
 		Validate:   true,
-		Files:      []string{"/index.qmd", "/about.qmd", "/_quarto.yml"},
+		Files: []string{
+			"/index.qmd",
+			"/about.qmd",
+			"/styles.css",
+			"/_quarto.yml",
+		},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
 			Engines: []string{"markdown"},
