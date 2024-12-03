@@ -3,7 +3,7 @@
     class="tree-item"
     :class="{
       'align-icon-with-twisty': alignIconWithTwisty,
-      collapsible: $slots.default,
+      collapsible: isExpandable,
       'text-list-emphasized': listStyle === 'emphasized',
       'text-foreground': listStyle === 'default',
       'text-list-deemphasized': listStyle === 'deemphasized',
@@ -11,9 +11,10 @@
   >
     <div
       class="tree-item-container"
+      :class="virtualized ? 'class-hover' : undefined"
       :title="tooltip"
       v-on="{
-        click: $slots.default ? toggleExpanded : undefined,
+        click: isExpandable ? toggleExpanded : undefined,
       }"
     >
       <div class="indent">
@@ -22,8 +23,8 @@
       <div
         class="twisty-container text-icon"
         :class="[
-          { codicon: $slots.default },
-          $slots.default
+          { codicon: isExpandable },
+          expandable || $slots.default
             ? expanded
               ? 'codicon-chevron-down'
               : 'codicon-chevron-right'
@@ -52,13 +53,15 @@
       </div>
     </div>
 
-    <div v-show="$slots.default && expanded" class="tree-item-children">
+    <div v-show="isExpandable && expanded" class="tree-item-children">
       <slot :indent-level="indentLevel + 1" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
+
 import ActionToolbar, { ActionButton } from "src/components/ActionToolbar.vue";
 
 export type TreeItemStyle = "emphasized" | "default" | "deemphasized";
@@ -74,22 +77,33 @@ interface Props {
   codicon?: string;
   actions?: ActionButton[];
   indentLevel?: number;
+  expandable?: boolean;
+  virtualized?: boolean;
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   listStyle: "default",
   indentLevel: 1,
+  expandable: false,
+  virtualized: false,
 });
 
-defineSlots<{
+const slots = defineSlots<{
   default(props: { indentLevel: number }): any;
   description(): any;
   postDecor(): any;
 }>();
 
+const emits = defineEmits(["expand", "collapse"]);
+
 const toggleExpanded = () => {
   expanded.value = !expanded.value;
+  emits(expanded.value ? "expand" : "collapse");
 };
+
+const isExpandable = computed((): Boolean => {
+  return Boolean(slots.default || props.expandable);
+});
 </script>
 
 <style lang="scss" scoped>
@@ -192,7 +206,8 @@ const toggleExpanded = () => {
       flex-grow: 100;
     }
 
-    &:hover {
+    .hover &.class-hover,
+    &:not(.class-hover):hover {
       color: var(--vscode-list-hoverForeground, var(--vscode-foreground));
       background-color: var(--vscode-list-hoverBackground);
 
@@ -209,7 +224,8 @@ const toggleExpanded = () => {
       }
     }
 
-    &:hover .actions,
+    .hover &.class-hover .actions,
+    &:not(.class-hover):hover .actions,
     &:focus-within .actions {
       display: initial;
     }
