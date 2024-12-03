@@ -1,6 +1,8 @@
 # Workaround for https://github.com/microsoft/vscode-vsce/issues/580
 ../..
 
+.*
+.*/
 .vscode/**
 .vscode-test/**
 src/**
