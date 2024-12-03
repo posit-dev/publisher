@@ -3,9 +3,6 @@ on: [workflow_call]
 jobs:
   lint:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: extensions/vscode/webviews/homeView
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -14,4 +11,4 @@ jobs:
           cache: "npm"
           cache-dependency-path: "**/package-lock.json"
       - run: npm install
-      - run: npm test
+      - run: npm test --prefix extensions/vscode/webviews/homeView

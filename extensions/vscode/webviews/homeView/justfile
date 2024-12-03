@@ -17,16 +17,3 @@ clean:
     {{ _with_debug }}
 
     rm -rf node_modules
-    
-
-# Install dependencies
-deps:
-    #!/usr/bin/env bash
-    set -eou pipefail
-    {{ _with_debug }}
-
-    if [ {{ _ci }} = "true" ]; then
-        npm ci --no-audit --no-fund | sed 's/^/debug: /'
-    else
-        npm install --no-audit --no-fund | sed 's/^/debug: /'
-    fi
