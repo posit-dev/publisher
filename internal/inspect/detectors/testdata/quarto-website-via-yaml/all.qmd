@@ -1,0 +1,11 @@
+---
+title: All Content
+listing:
+  contents: all.yaml
+  type: table
+  fields:
+    - date
+    - title
+    - author
+  max-items: 200
+---

@@ -13,11 +13,13 @@ import (
 )
 
 type ContentTypeDetector struct {
+	log       logging.Logger
 	detectors []ContentTypeInferer
 }
 
 func NewContentTypeDetector(log logging.Logger) *ContentTypeDetector {
 	return &ContentTypeDetector{
+		log: log,
 		detectors: []ContentTypeInferer{
 			// The order here is important, since the first
 			// ContentTypeInferer to return a non-nil
@@ -27,7 +29,7 @@ func NewContentTypeDetector(log logging.Logger) *ContentTypeDetector {
 			NewPlumberDetector(),
 			NewRMarkdownDetector(log),
 			NewNotebookDetector(),
-			NewQuartoDetector(),
+			NewQuartoDetector(log),
 			NewRShinyDetector(),
 			NewPyShinyDetector(),
 			NewFastAPIDetector(),
@@ -104,5 +106,3 @@ func (t *ContentTypeDetector) InferType(base util.AbsolutePath, entrypoint util.
 	slices.SortFunc(allConfigs, compareConfigs)
 	return allConfigs, nil
 }
-
-var _ ContentTypeInferer = &ContentTypeDetector{}

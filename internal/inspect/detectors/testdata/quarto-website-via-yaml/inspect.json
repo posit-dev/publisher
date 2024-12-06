@@ -1,0 +1,101 @@
+{
+  "quarto": {
+    "version": "1.4.553"
+  },
+  "dir": "$DIR/quarto-website-via-yaml",
+  "engines": ["markdown", "jupyter"],
+  "config": {
+    "project": {
+      "type": "website",
+      "pre-render": ["prepare.py"],
+      "post-render": ["finally.py"],
+      "lib-dir": "site_libs",
+      "output-dir": "_site"
+    },
+    "website": {
+      "title": "Content Dashboard",
+      "navbar": {
+        "left": [
+          {
+            "text": "Featured",
+            "href": "index.qmd"
+          },
+          {
+            "text": "All",
+            "href": "all.qmd"
+          },
+          {
+            "text": "About",
+            "href": "about.qmd"
+          }
+        ]
+      }
+    },
+    "format": {
+      "html": "default"
+    },
+    "theme": {
+      "light": "flatly",
+      "dark": "darkly"
+    },
+    "language": {}
+  },
+  "files": {
+    "input": [
+      "$DIR/quarto-website-via-yaml/all.qmd",
+      "$DIR/quarto-website-via-yaml/index.qmd",
+      "$DIR/quarto-website-via-yaml/about.qmd"
+    ],
+    "resources": [],
+    "config": ["$DIR/quarto-website-via-yaml/_quarto.yml"],
+    "configResources": ["bibliography.bib"]
+  },
+  "fileInformation": {
+    "$DIR/quarto-website-via-yaml/all.qmd": {
+      "includeMap": [],
+      "codeCells": [],
+      "metadata": {
+        "title": "All Content",
+        "listing": {
+          "contents": "all.yaml",
+          "type": "table",
+          "fields": ["date", "title", "author"],
+          "max-items": 200
+        }
+      }
+    },
+    "$DIR/quarto-website-via-yaml/index.qmd": {
+      "includeMap": [],
+      "codeCells": [],
+      "metadata": {
+        "title": "Featured Content",
+        "resource_files": ["_quarto.yml", "palmer-penguins.csv"],
+        "listing": {
+          "contents": "featured.yaml",
+          "type": "grid",
+          "categories": true,
+          "fields": ["image", "date", "title", "author", "categories"]
+        }
+      }
+    },
+    "$DIR/quarto-website-via-yaml/about.qmd": {
+      "includeMap": [],
+      "codeCells": [
+        {
+          "start": 9,
+          "end": 20,
+          "file": "$DIR/quarto-website-via-yaml/about.qmd",
+          "source": "\nimport yaml\nwith open(\"featured.yaml\", \"r\") as f:\n    featured = len(yaml.safe_load(f))\nwith open(\"all.yaml\", \"r\") as f:\n    listing = len(yaml.safe_load(f))\n\nprint(f\"This dashboard presents {featured} featured content items with {listing} total items.\")\n",
+          "language": "python",
+          "metadata": {
+            "echo": false,
+            "output": "asis"
+          }
+        }
+      ],
+      "metadata": {
+        "title": "About"
+      }
+    }
+  }
+}

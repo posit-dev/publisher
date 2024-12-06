@@ -1,0 +1,13 @@
+---
+title: Featured Content
+listing:
+  contents: featured.yaml
+  type: grid
+  categories: true
+  fields:
+    - image
+    - date
+    - title
+    - author
+    - categories
+---
