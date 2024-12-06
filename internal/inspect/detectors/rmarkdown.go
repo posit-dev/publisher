@@ -34,9 +34,6 @@ func NewRMarkdownDetector(log logging.Logger) *RMarkdownDetector {
 // (this pattern allows it to be followed by optional whitespace)
 var rmdMetaRE = regexp.MustCompile(`(?s)^---\s*\n(.*\n)---\s*\n`)
 
-// Known files that can be considered to identify projects as sites
-var knownSiteYml = []string{"_site.yml", "_site.yaml", "_bookdown.yml", "_bookdown.yaml"}
-
 func prepSiteFilesAndDirs(base util.AbsolutePath, files []string) ([]string, error) {
 	// Logic to ignore files highly based on existing logic at rsconnect
 	// It is nice to keep these files out from the generated configuration
