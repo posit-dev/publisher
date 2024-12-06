@@ -8,6 +8,8 @@ import (
 	"strings"
 )
 
+var KnownSiteYmlConfigFiles = []string{"_site.yml", "_site.yaml", "_bookdown.yml", "_bookdown.yaml"}
+
 func Chdir(dir string) (string, error) {
 	oldWd, err := os.Getwd()
 	if err != nil {

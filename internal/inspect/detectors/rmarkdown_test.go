@@ -4,9 +4,11 @@ package detectors
 
 import (
 	"fmt"
+	"runtime"
 	"testing"
 
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/executor/executortest"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/schema"
 	"github.com/posit-dev/publisher/internal/util"
@@ -323,5 +325,95 @@ func (s *RMarkdownSuite) TestInferTypeWithEntrypoint() {
 		Validate:   true,
 		Files:      []string{},
 		R:          &config.R{},
+	}, configs[0])
+}
+
+func (s *RMarkdownSuite) TestInferTypeRmdSite() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip("This test does not run on Windows")
+	}
+
+	realCwd, err := util.Getwd(nil)
+	s.NoError(err)
+
+	base := realCwd.Join("testdata", "rmd-site")
+
+	detector := NewRMarkdownDetector(logging.New())
+	executor := executortest.NewMockExecutor()
+	detector.executor = executor
+
+	configs, err := detector.InferType(base, util.NewRelativePath("index.Rmd", nil))
+	s.Nil(err)
+
+	s.Len(configs, 1)
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypeRMarkdown,
+		Entrypoint: "index.Rmd",
+		Title:      "Testing RMD Site",
+		Validate:   true,
+		Files: []string{
+			"/_site.yml",
+			"/another.Rmd",
+			"/article.Rmd",
+			"/images",
+			"/index.Rmd",
+			"/meta.yaml",
+			"/renv.lock",
+			"/sub-dir",
+			"/test",
+		},
+		R: &config.R{},
+	}, configs[0])
+}
+
+func (s *RMarkdownSuite) TestInferTypeRmdSite_Bookdown() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip("This test does not run on Windows")
+	}
+
+	realCwd, err := util.Getwd(nil)
+	s.NoError(err)
+
+	base := realCwd.Join("testdata", "bookdown-proj")
+
+	detector := NewRMarkdownDetector(logging.New())
+	executor := executortest.NewMockExecutor()
+	detector.executor = executor
+
+	configs, err := detector.InferType(base, util.NewRelativePath("index.Rmd", nil))
+	s.Nil(err)
+
+	s.Len(configs, 1)
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypeRMarkdown,
+		Entrypoint: "index.Rmd",
+		Title:      "A Minimal Book Example",
+		Validate:   true,
+		Files: []string{
+			"/01-intro.Rmd",
+			"/02-literature.Rmd",
+			"/03-method.Rmd",
+			"/04-application.Rmd",
+			"/05-summary.Rmd",
+			"/06-references.Rmd",
+			"/DESCRIPTION",
+			"/LICENSE",
+			"/README.md",
+			"/_bookdown.yml",
+			"/_build.sh",
+			"/_deploy.sh",
+			"/_output.yml",
+			"/_publish.R",
+			"/book.bib",
+			"/index.Rmd",
+			"/now.json",
+			"/preamble.tex",
+			"/renv.lock",
+			"/style.css",
+			"/toc.css",
+		},
+		R: &config.R{},
 	}, configs[0])
 }
