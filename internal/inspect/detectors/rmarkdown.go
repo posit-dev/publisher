@@ -42,7 +42,19 @@ func prepSiteFilesAndDirs(base util.AbsolutePath, files []string) ([]string, err
 	// It is nice to keep these files out from the generated configuration
 	// https://github.com/rstudio/rsconnect/blob/a7c93ba015dca20a1c1fba393475b0b1538d1573/R/bundleFiles.R#L172
 	filteredResult := []string{}
-	patterns := append(files, matcher.StandardExclusions...)
+
+	// StandardExclusions is also used when querying the configuration defined files.
+	// Then it returns hard stops and disables such files from the project tree.
+	// In this particular case, it also requires some extra exclusions,
+	// since this list is used while generating the configuration,
+	// it is desired to keep out these files at the beginning from the original generated configuration.
+	exclusionsExt := append(matcher.StandardExclusions,
+		"!.gitignore",
+		"!.github/",
+		"!renv/",
+	)
+
+	patterns := append(files, exclusionsExt...)
 	matchList, err := matcher.NewMatchList(base, patterns)
 	if err != nil {
 		return filteredResult, err
@@ -51,11 +63,6 @@ func prepSiteFilesAndDirs(base util.AbsolutePath, files []string) ([]string, err
 	for _, filename := range files {
 		// Ignore temporary files
 		if strings.HasPrefix(filename, "~") || strings.Contains(filename, "~$") {
-			continue
-		}
-
-		// Prevent renv/ dir from being included
-		if filename == "renv" {
 			continue
 		}
 
