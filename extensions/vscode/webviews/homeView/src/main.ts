@@ -1,6 +1,7 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
 import { createApp } from "vue";
+import { RecycleScroller } from "vue-virtual-scroller";
 import { createPinia } from "pinia";
 import {
   provideVSCodeDesignSystem,
@@ -13,6 +14,8 @@ import {
 } from "@vscode/webview-ui-toolkit";
 
 import App from "src/App.vue";
+
+import "vue-virtual-scroller/dist/vue-virtual-scroller.css";
 
 import "src/style.css";
 
@@ -30,4 +33,8 @@ provideVSCodeDesignSystem().register(
 
 const pinia = createPinia();
 
-createApp(App).use(pinia).mount("#app");
+const app = createApp(App);
+app.use(pinia);
+app.component("RecycleScroller", RecycleScroller);
+
+app.mount("#app");

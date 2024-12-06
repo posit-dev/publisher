@@ -8,14 +8,12 @@ import {
   ContentRecord,
   PreContentRecord,
   Configuration,
-  ContentRecordFile,
   ConfigurationError,
 } from "../../../../src/api";
 import { isConfigurationError } from "../../../../src/api/types/configurations";
 import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
 import { RPackage } from "../../../../src/api/types/packages";
 import { DeploymentSelector } from "../../../../src/types/shared";
-import { splitFilesOnInclusion } from "src/utils/files";
 import {
   isAgentErrorInvalidTOML,
   isAgentErrorTypeUnknown,
@@ -135,25 +133,6 @@ export const useHomeStore = defineStore("home", () => {
 
   const lastContentRecordResult = ref<string>();
   const lastContentRecordMsg = ref<string>();
-
-  const files = ref<ContentRecordFile>();
-
-  const flatFiles = computed(() => {
-    const response: {
-      includedFiles: ContentRecordFile[];
-      excludedFiles: ContentRecordFile[];
-      lastDeployedFiles: Set<string>;
-    } = { includedFiles: [], excludedFiles: [], lastDeployedFiles: new Set() };
-    if (files.value) {
-      splitFilesOnInclusion(files.value, response);
-    }
-
-    if (selectedContentRecord.value?.state !== "new") {
-      response.lastDeployedFiles = new Set(selectedContentRecord.value?.files);
-    }
-
-    return response;
-  });
 
   const pythonProject = ref<boolean>(false);
   const pythonPackages = ref<string[]>();
@@ -423,8 +402,6 @@ export const useHomeStore = defineStore("home", () => {
     selectedContentRecord,
     selectedConfiguration,
     serverCredential,
-    files,
-    flatFiles,
     initializingRequestComplete,
     lastContentRecordResult,
     lastContentRecordMsg,
