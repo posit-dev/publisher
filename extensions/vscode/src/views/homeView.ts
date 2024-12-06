@@ -38,7 +38,7 @@ import {
   EnvironmentConfig,
 } from "src/api";
 import { EventStream } from "src/events";
-import { getPythonInterpreterPath } from "../utils/config";
+import { getPythonInterpreterPath, getRInterpreterPath } from "../utils/vscode";
 import { getSummaryStringFromError } from "src/utils/errors";
 import { getNonce } from "src/utils/getNonce";
 import { getUri } from "src/utils/getUri";
@@ -197,6 +197,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   ) {
     try {
       const api = await useApi();
+      const r = await getRInterpreterPath();
+
       const response = await api.contentRecords.publish(
         deploymentName,
         credentialName,
@@ -204,6 +206,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         !extensionSettings.verifyCertificates(), // insecure = !verifyCertificates
         projectDir,
         secrets,
+        r,
       );
       deployProject(response.data.localId, this.stream);
     } catch (error: unknown) {
@@ -721,9 +724,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         Views.HomeView,
         async () => {
           const api = await useApi();
+          const r = await getRInterpreterPath();
+
           return await api.packages.createRRequirementsFile(
             activeConfiguration.projectDir,
             relPathPackageFile,
+            r,
           );
         },
       );

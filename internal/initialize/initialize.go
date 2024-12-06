@@ -59,7 +59,7 @@ func inspectProject(base util.AbsolutePath, python util.Path, rExecutable util.P
 		}
 		cfg.Python = pyConfig
 	}
-	needR, err := requiresR(cfg, base, rExecutable)
+	needR, err := requiresR(cfg, base)
 	if err != nil {
 		return nil, err
 	}
@@ -92,12 +92,7 @@ func requiresPython(cfg *config.Config, base util.AbsolutePath) (bool, error) {
 	return exists, nil
 }
 
-func requiresR(cfg *config.Config, base util.AbsolutePath, rExecutable util.Path) (bool, error) {
-	if rExecutable.String() != "" {
-		// If user provided R on the command line,
-		// then configure R for the project.
-		return true, nil
-	}
+func requiresR(cfg *config.Config, base util.AbsolutePath) (bool, error) {
 	if cfg.R != nil {
 		// InferType returned an R configuration for us to fill in.
 		return true, nil
@@ -166,7 +161,7 @@ func normalizeConfig(
 		cfg.Python = pyConfig
 		cfg.Files = append(cfg.Files, fmt.Sprint("/", cfg.Python.PackageFile))
 	}
-	needR, err := requiresR(cfg, base, rExecutable)
+	needR, err := requiresR(cfg, base)
 	if err != nil {
 		log.Debug("Error while determining R as a requirement", "error", err.Error())
 		return err

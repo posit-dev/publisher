@@ -40,7 +40,7 @@ func (s *PostPackagesRScanSuite) TestNewPostPackagesRScanHandler() {
 
 func (s *PostPackagesRScanSuite) TestServeHTTP() {
 	rec := httptest.NewRecorder()
-	body := strings.NewReader(`{"saveName":""}`)
+	body := strings.NewReader(`{"saveName":"", "r": "/opt/R/bin/R"}`)
 	req, err := http.NewRequest("POST", "/api/packages/r/scan", body)
 	s.NoError(err)
 
@@ -52,7 +52,10 @@ func (s *PostPackagesRScanSuite) TestServeHTTP() {
 	log := logging.New()
 	h := NewPostPackagesRScanHandler(base, log)
 
-	rInspectorFactory = func(util.AbsolutePath, util.Path, logging.Logger) inspect.RInspector {
+	rInspectorFactory = func(baseDir util.AbsolutePath, rExec util.Path, log logging.Logger) inspect.RInspector {
+		s.Equal(base, baseDir)
+		s.Equal(util.NewPath("/opt/R/bin/R", nil), rExec)
+
 		i := inspect.NewMockRInspector()
 		i.On("CreateLockfile", destPath).Return(nil)
 		return i

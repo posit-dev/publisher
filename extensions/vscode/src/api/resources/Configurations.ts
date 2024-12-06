@@ -81,12 +81,14 @@ export class Configurations {
   inspect(
     dir: string,
     python?: string,
+    r?: string,
     params?: { entrypoint?: string; recursive?: boolean },
   ) {
     return this.client.post<ConfigurationInspectionResult[]>(
       "/inspect",
       {
         python,
+        r,
       },
       {
         params: {

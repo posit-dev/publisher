@@ -4,13 +4,13 @@ package inspect
 
 import (
 	"errors"
-	"io/fs"
 	"os/exec"
 	"runtime"
 	"testing"
 
 	"github.com/posit-dev/publisher/internal/executor/executortest"
 	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
 	"github.com/spf13/afero"
@@ -319,9 +319,12 @@ func (s *RSuite) TestGetRExecutableSpecifiedRNotFound() {
 
 	i := NewRInspector(s.cwd, util.NewPath("/some/R", nil), log)
 	inspector := i.(*defaultRInspector)
-
 	executable, err := inspector.getRExecutable()
-	s.ErrorIs(err, fs.ErrNotExist)
+
+	aerr, yes := types.IsAgentError(err)
+	s.Equal(yes, true)
+	s.Equal(aerr.Code, types.ErrorRExecNotFound)
+	s.Contains(aerr.Message, "Cannot find the specified R executable /some/R: file does not exist.")
 	s.Equal("", executable)
 }
 

@@ -75,12 +75,14 @@ export class ContentRecords {
     insecure: boolean,
     dir: string,
     secrets?: Record<string, string>,
+    r?: string,
   ) {
     const data = {
       account: accountName,
       config: configName,
       secrets: secrets,
       insecure: insecure,
+      r: r,
     };
     const encodedTarget = encodeURIComponent(targetName);
     return this.client.post<{ localId: string }>(

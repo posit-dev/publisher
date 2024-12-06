@@ -23,7 +23,10 @@ import {
   isConfigurationError,
   useApi,
 } from "src/api";
-import { getPythonInterpreterPath } from "src/utils/config";
+import {
+  getPythonInterpreterPath,
+  getRInterpreterPath,
+} from "src/utils/vscode";
 import { getSummaryStringFromError } from "src/utils/errors";
 import {
   MultiStepInput,
@@ -175,9 +178,12 @@ export async function selectNewOrExistingConfig(
   const getConfigurationInspections = async () => {
     try {
       const python = await getPythonInterpreterPath();
+      const r = await getRInterpreterPath();
+
       const inspectResponse = await api.configurations.inspect(
         activeDeployment.projectDir,
         python,
+        r,
       );
       inspectionResults = filterInspectionResultsToType(
         inspectResponse.data,

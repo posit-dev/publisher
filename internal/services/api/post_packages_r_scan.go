@@ -15,6 +15,7 @@ import (
 )
 
 type PostPackagesRScanRequest struct {
+	R        string `json:"r"`
 	SaveName string `json:"saveName"`
 }
 
@@ -58,7 +59,8 @@ func (h *PostPackagesRScanHandler) ServeHTTP(w http.ResponseWriter, req *http.Re
 		return
 	}
 	lockfileAbsPath := projectDir.Join(path.String())
-	inspector := rInspectorFactory(projectDir, util.Path{}, h.log)
+	rPath := util.NewPath(b.R, nil)
+	inspector := rInspectorFactory(projectDir, rPath, h.log)
 	err = inspector.CreateLockfile(lockfileAbsPath)
 	if err != nil {
 		InternalError(w, req, h.log, err)
