@@ -26,6 +26,9 @@ var StandardExclusions = []string{
 	"!.DS_Store",
 	"!.Rhistory",
 	"!.quarto/",
+	"!packrat/",
+	"!*.Rproj",
+	"!.rscignore",
 	// Less precise than rsconnect, which checks for a
 	// matching Rmd filename in the same directory.
 	"!*_cache/",
