@@ -132,14 +132,31 @@ See [the Contribution Guide for the VSCode Extension](./extensions/vscode/CONTRI
 
 ## Schema Updates
 
-Non-breaking or additive changes to the schema do not require a version bump.
+Schemas can be found in the `internal/schema/schemas` directory.
 
-Breaking changes to the schema require a version bump.
+Non-breaking or additive changes to the schema do not require a version bump. Breaking changes to the schema require a version bump.
+
+To update the schema:
+
+- Update the jsonschema file (`posit-publishing-schema-v3.json` or `posit-publishing-record-schema-v3.json` for the Configuration or Deployment schemas, respectively)
+- Update the corresponding example file (`config.toml` or `record.toml`).
+- If you're using VSCode with the Even Better TOML extension, you can use the in-editor validation by putting the full local path to your updated schema in the `$schema` field in your TOML files.
+- Verify that the unit tests pass. They load the example files and validate them against the schemas.
+- The `draft` folder contains schemas that are a superset of the main schemas, and have ideas for the other settings we have considered adding. Usually we have added any new fields to those schemas and example files as well.
 
 As Pull Requests are merged into main, we update (or create in the case of a new
-schema) the file on the CDN (in S3).
+schema) the file on the CDN (in S3). Currently, this is a manual process:
 
-Schemas can be found in the `internal/schema/schemas` directory.
+- Log into the AWS console (https://rstudio.awsapps.com/start/#/)
+- Select `Posit Connect Production`, then `Power User`.
+- Select `View all services`, then `S3`.
+- Open the `Posit Publisher` bucket, then the `publisher` folder.
+- Click `Upload`, then `Add Folder`.
+- Select your local `schemas` folder (`internal/schema/schemas`).
+- Click the `Upload` button to complete the upload.
+- Verify availability of the updated schema(s) on the CDN. There may be a delay due to caching.
+  - https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json
+  - https://cdn.posit.co/publisher/schemas/posit-publishing-record-schema-v3.json
 
 ## Release
 
