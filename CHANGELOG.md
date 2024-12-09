@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0]
+
+### Added
+
+- Added emphasis to the entrypoint file for the selected deployment in the
+  Project Files view (#2239)
+- When running the extension in Positron the selected R interpreter is now used
+  rather than using the R interpreter from the PATH (#1968)
+- Added improved inspection for RMarkdown sites. When a `_site.yml` or
+  `_bookdown.yml` file present the content category is correctly set to `site`.
+  (#1643)
+- Added improved inspection and initial configurations for Quarto Websites when
+  a `_quarto.yml` is present. Pre and post scripts are now automatically
+  included in the initial configuration. (#2266)
+
+### Fixed
+
+- Fixed the extension sidebar freezing when a deployment with a large number of
+  files is selected (#2204)
+
 ## [1.4.0]
 
 ### Changed
