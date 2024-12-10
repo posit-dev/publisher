@@ -338,8 +338,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     return this.updateWebViewViewCredentials();
   }
 
-  private async refreshActiveConfig() {
-    const cfg = await this.state.getSelectedConfiguration();
+  private async refreshActiveConfig(cfg?: Configuration | ConfigurationError) {
+    if (!cfg) {
+      cfg = await this.state.getSelectedConfiguration();
+    }
 
     this.sendRefreshedFilesLists();
     this.updateServerEnvironment();
@@ -384,8 +386,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     );
   }
 
-  private async refreshActiveContentRecord() {
-    const contentRecord = await this.state.getSelectedContentRecord();
+  private async refreshActiveContentRecord(
+    contentRecord?: ContentRecord | PreContentRecord,
+  ) {
+    if (!contentRecord) {
+      contentRecord = await this.state.getSelectedContentRecord();
+    }
     this.contentRecordWatchers?.dispose();
 
     this.contentRecordWatchers = new ContentRecordWatcherManager(contentRecord);
@@ -1405,6 +1411,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
 
+    const selectedContentRecord = await this.state.getSelectedContentRecord();
+    const selectedConfig = await this.state.getSelectedConfiguration();
     const selectionState = includeSavedState
       ? this.state.getSelection()
       : undefined;
@@ -1412,8 +1420,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     this.updateWebViewViewConfigurations();
     this.updateWebViewViewContentRecords(selectionState || null);
     if (includeSavedState && selectionState) {
-      this.refreshActiveContentRecord();
-      this.refreshActiveConfig();
+      this.refreshActiveContentRecord(selectedContentRecord);
+      this.refreshActiveConfig(selectedConfig);
     }
   };
 
