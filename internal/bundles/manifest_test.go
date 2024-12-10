@@ -54,6 +54,25 @@ func (s *ManifestSuite) TestAddFile() {
 		"subdir/test.Rmd": ManifestFile{Checksum: "030405"},
 	})
 }
+
+func (s *ManifestSuite) TestAddFile_UpdatesSiteCategory() {
+	for _, siteConfigYml := range util.KnownSiteYmlConfigFiles {
+		manifest := NewManifest()
+		manifest.AddFile("test.Rmd", []byte{0x00, 0x01, 0x02})
+		s.Equal(manifest.Files, ManifestFileMap{
+			"test.Rmd": ManifestFile{Checksum: "000102"},
+		})
+		s.Equal(manifest.Metadata.ContentCategory, "")
+
+		manifest.AddFile(siteConfigYml, []byte{0x03, 0x04, 0x05})
+		s.Equal(manifest.Files, ManifestFileMap{
+			"test.Rmd":    ManifestFile{Checksum: "000102"},
+			siteConfigYml: ManifestFile{Checksum: "030405"},
+		})
+		s.Equal(manifest.Metadata.ContentCategory, "site")
+	}
+}
+
 func (s *ManifestSuite) TestReadManifest() {
 	manifestJson := `{"version": 1, "platform": "4.1.0"}`
 	reader := strings.NewReader(manifestJson)
