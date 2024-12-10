@@ -14,8 +14,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Project Files view (#2239)
 - When running the extension in Positron the selected R interpreter is now used
   rather than always using the R interpreter from the PATH (#1968)
-- Added the `python-gradio` content type as an option for the configuration
-  (#2418)
 - Added improved inspection for RMarkdown sites. When there is a `_site.yml`
   or `_bookdown.yml` file present the initial configuration includes other
   RMarkdown files in the project, and correctly sets the content category to
