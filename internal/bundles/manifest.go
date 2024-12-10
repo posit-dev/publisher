@@ -206,7 +206,7 @@ func (manifest *Manifest) AddFile(path string, fileMD5 []byte) {
 
 	// Update manifest content category if a file being added is a site configuration
 	for _, ymlFile := range util.KnownSiteYmlConfigFiles {
-		if strings.HasSuffix(path, ymlFile) {
+		if strings.ToLower(path) == ymlFile {
 			manifest.Metadata.ContentCategory = "site"
 			break
 		}
