@@ -1,0 +1,21 @@
+project:
+  type: website
+  pre-render: prepare.py
+
+website:
+  title: Content Dashboard
+  navbar:
+    left:
+      - text: "Featured"
+        href: "index.qmd"
+      - text: "All"
+        href: "all.qmd"
+      - text: "About"
+        href: "about.qmd"
+
+format:
+  html: default
+
+theme:
+  light: flatly
+  dark: darkly

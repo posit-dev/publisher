@@ -14,8 +14,6 @@ import (
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/logging"
-	"github.com/posit-dev/publisher/internal/publish"
-	"github.com/posit-dev/publisher/internal/state"
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
@@ -33,9 +31,6 @@ func TestPatchDeploymentHandlerFuncSuite(t *testing.T) {
 }
 
 func (s *PatchDeploymentHandlerFuncSuite) SetupTest() {
-	stateFactory = state.New
-	publisherFactory = publish.NewFromState
-
 	afs := afero.NewMemMapFs()
 	cwd, err := util.Getwd(afs)
 	s.Nil(err)

@@ -5,8 +5,10 @@ package inspect
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/fs"
+	"os"
 	"os/exec"
 	"regexp"
 	"strings"
@@ -14,6 +16,7 @@ import (
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/executor"
 	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 )
 
@@ -163,21 +166,30 @@ func (i *defaultRInspector) getRExecutable() (string, error) {
 		if exists {
 			return i.rExecutable.String(), nil
 		}
-		return "", fmt.Errorf(
+		noExecErr := fmt.Errorf(
 			"cannot find the specified R executable %s: %w",
 			i.rExecutable, fs.ErrNotExist)
-	} else {
-		// Use whatever is on PATH
-		path, err := i.pathLooker.LookPath("R")
-		if err == nil {
-			// Ensure the R is actually runnable.
-			err = i.validateRExecutable(path)
-		}
-		if err != nil {
-			return "", err
-		}
-		return path, nil
+		return "", types.NewAgentError(types.ErrorRExecNotFound, noExecErr, nil)
 	}
+	// Find the executable on PATH
+	var path string
+	var err error
+
+	i.log.Info("Looking for R on PATH", "PATH", os.Getenv("PATH"))
+	path, err = i.pathLooker.LookPath("R")
+	if err == nil {
+		// Ensure the R is actually runnable.
+		err = i.validateRExecutable(path)
+		if err == nil {
+			return path, nil
+		}
+	}
+
+	if errors.Is(err, exec.ErrNotFound) {
+		return "", types.NewAgentError(types.ErrorRExecNotFound, err, nil)
+	}
+
+	return "", err
 }
 
 var rVersionRE = regexp.MustCompile(`^R version (\d+\.\d+\.\d+)`)

@@ -32,7 +32,10 @@ import {
   ContentType,
   FileAction,
 } from "src/api";
-import { getPythonInterpreterPath } from "src/utils/config";
+import {
+  getPythonInterpreterPath,
+  getRInterpreterPath,
+} from "src/utils/vscode";
 import {
   getMessageFromError,
   getSummaryStringFromError,
@@ -121,12 +124,14 @@ export async function newDeployment(
 
     try {
       const python = await getPythonInterpreterPath();
+      const r = await getRInterpreterPath();
       const relEntryPointDir = path.dirname(relEntryPoint);
       const relEntryPointFile = path.basename(relEntryPoint);
 
       const inspectResponse = await api.configurations.inspect(
         relEntryPointDir,
         python,
+        r,
         {
           entrypoint: relEntryPointFile,
         },

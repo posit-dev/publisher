@@ -20,7 +20,8 @@ import {
   WebviewToHostMessage,
   WebviewToHostMessageType,
 } from "../../../src/types/messages/webviewToHostMessages";
-import { useHomeStore } from "./stores/home";
+import { useFileStore } from "src/stores/file";
+import { useHomeStore } from "src/stores/home";
 import { vscodeAPI } from "src/vscode";
 
 let hostConduit: HostConduit | undefined = undefined;
@@ -196,8 +197,14 @@ const onSaveSelectionMsg = () => {
 };
 
 const onRefreshFilesMsg = (msg: RefreshFilesMsg) => {
-  const home = useHomeStore();
-  home.files = msg.content.files;
+  const fileStore = useFileStore();
+
+  // If the root file has changed, reset the expanded directories
+  if (msg.content.files.abs !== fileStore.files?.abs) {
+    fileStore.expandedDirs = new Set();
+  }
+
+  fileStore.files = msg.content.files;
 };
 
 const onUpdatePythonPackages = (msg: UpdatePythonPackages) => {

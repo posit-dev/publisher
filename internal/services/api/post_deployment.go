@@ -23,6 +23,7 @@ type PostDeploymentRequestBody struct {
 	ConfigName  string            `json:"config"`
 	Secrets     map[string]string `json:"secrets,omitempty"`
 	Insecure    bool              `json:"insecure"`
+	R           string            `json:"r"`
 }
 
 type PostDeploymentsReponse struct {
@@ -114,7 +115,8 @@ func PostDeploymentHandlerFunc(
 
 		log := log.WithArgs("local_id", localID)
 		newState.LocalID = localID
-		publisher, err := publisherFactory(newState, emitter, log)
+		rExecutable := util.NewPath(b.R, nil)
+		publisher, err := publisherFactory(newState, rExecutable, emitter, log)
 		log.Debug("New publisher derived from state", "account", b.AccountName, "config", b.ConfigName)
 		if err != nil {
 			InternalError(w, req, log, err)

@@ -1,0 +1,21 @@
+---
+title: About
+---
+
+This [Quarto Website](https://quarto.org/docs/websites/) shows how the [Posit
+Connect Server API](https://docs.posit.co/connect/api/) can combine with
+[Quarto Listings](https://quarto.org/docs/websites/website-listings.html) to
+create dashboards that highlight your content.
+
+```{python}
+#| echo: false
+#| output: asis
+
+import yaml
+with open("featured.yaml", "r") as f:
+    featured = len(yaml.safe_load(f))
+with open("all.yaml", "r") as f:
+    listing = len(yaml.safe_load(f))
+
+print(f"This dashboard presents {featured} featured content items with {listing} total items.")
+```

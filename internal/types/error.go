@@ -29,6 +29,7 @@ const (
 	ErrorTomlValidationError          ErrorCode = "tomlValidationError"
 	ErrorTomlUnknownError             ErrorCode = "tomlUnknownError"
 	ErrorPythonExecNotFound           ErrorCode = "pythonExecNotFound"
+	ErrorRExecNotFound                ErrorCode = "rExecNotFound"
 )
 
 type EventableError interface {

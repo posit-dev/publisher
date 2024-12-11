@@ -12,6 +12,7 @@ import (
 
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/executor/executortest"
+	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/schema"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
@@ -33,7 +34,7 @@ func (s *QuartoDetectorSuite) runInferType(testName string) []*config.Config {
 
 	base := realCwd.Join("testdata", testName)
 
-	detector := NewQuartoDetector()
+	detector := NewQuartoDetector(logging.New())
 	executor := executortest.NewMockExecutor()
 	detector.executor = executor
 
@@ -241,12 +242,77 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoWebsite() {
 		Entrypoint: "index.qmd",
 		Title:      "quarto-website-none",
 		Validate:   true,
-		Files:      []string{"/index.qmd", "/about.qmd", "/_quarto.yml"},
+		Files: []string{
+			"/index.qmd",
+			"/about.qmd",
+			"/styles.css",
+			"/_quarto.yml",
+		},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
 			Engines: []string{"markdown"},
 		},
 	}, configs[1])
+}
+
+func (s *QuartoDetectorSuite) TestInferTypeQuartoWebsite_viaQuartoYml() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip("This test does not run on Windows")
+	}
+	// configs := s.runInferType("quarto-website-none")
+	realCwd, err := util.Getwd(nil)
+	s.NoError(err)
+
+	base := realCwd.Join("testdata", "quarto-website-via-yaml")
+
+	detector := NewQuartoDetector(logging.New())
+	executor := executortest.NewMockExecutor()
+	detector.executor = executor
+
+	dirOutputPath := base.Join("inspect.json")
+	exists, err := dirOutputPath.Exists()
+	s.NoError(err)
+	s.True(exists)
+
+	// Replace the $DIR placeholder in the file with
+	// the correct path (json-escaped)
+	placeholder := []byte("$DIR")
+	baseDir, err := json.Marshal(base.Dir().String())
+	s.NoError(err)
+	baseDir = baseDir[1 : len(baseDir)-1]
+
+	dirOutput, err := dirOutputPath.ReadFile()
+	s.NoError(err)
+	dirOutput = bytes.ReplaceAll(dirOutput, placeholder, baseDir)
+	executor.On("RunCommand", "quarto", []string{"inspect", base.String()}, mock.Anything, mock.Anything).Return(dirOutput, nil, nil)
+
+	configs, err := detector.InferType(base, util.NewRelativePath("_quarto.yml", nil))
+	s.Nil(err)
+
+	s.Len(configs, 1)
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypeQuarto,
+		Entrypoint: "_quarto.yml",
+		Title:      "Content Dashboard",
+		Validate:   true,
+		Files: []string{
+			"/all.qmd",
+			"/index.qmd",
+			"/about.qmd",
+			"/bibliography.bib",
+			"/palmer-penguins.csv",
+			"/prepare.py",
+			"/finally.py",
+			"/_quarto.yml",
+			"/_brand.yml",
+		},
+		Quarto: &config.Quarto{
+			Version: "1.4.553",
+			Engines: []string{"jupyter", "markdown"},
+		},
+		Python: &config.Python{},
+	}, configs[0])
 }
 
 func (s *QuartoDetectorSuite) TestInferTypeRMarkdownDoc() {

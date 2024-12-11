@@ -38,7 +38,7 @@ import {
   EnvironmentConfig,
 } from "src/api";
 import { EventStream } from "src/events";
-import { getPythonInterpreterPath } from "../utils/config";
+import { getPythonInterpreterPath, getRInterpreterPath } from "../utils/vscode";
 import { getSummaryStringFromError } from "src/utils/errors";
 import { getNonce } from "src/utils/getNonce";
 import { getUri } from "src/utils/getUri";
@@ -197,6 +197,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   ) {
     try {
       const api = await useApi();
+      const r = await getRInterpreterPath();
+
       const response = await api.contentRecords.publish(
         deploymentName,
         credentialName,
@@ -204,6 +206,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         !extensionSettings.verifyCertificates(), // insecure = !verifyCertificates
         projectDir,
         secrets,
+        r,
       );
       deployProject(response.data.localId, this.stream);
     } catch (error: unknown) {
@@ -335,8 +338,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     return this.updateWebViewViewCredentials();
   }
 
-  private async refreshActiveConfig() {
-    const cfg = await this.state.getSelectedConfiguration();
+  private async refreshActiveConfig(cfg?: Configuration | ConfigurationError) {
+    if (!cfg) {
+      cfg = await this.state.getSelectedConfiguration();
+    }
 
     this.sendRefreshedFilesLists();
     this.updateServerEnvironment();
@@ -381,8 +386,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     );
   }
 
-  private async refreshActiveContentRecord() {
-    const contentRecord = await this.state.getSelectedContentRecord();
+  private async refreshActiveContentRecord(
+    contentRecord?: ContentRecord | PreContentRecord,
+  ) {
+    if (!contentRecord) {
+      contentRecord = await this.state.getSelectedContentRecord();
+    }
     this.contentRecordWatchers?.dispose();
 
     this.contentRecordWatchers = new ContentRecordWatcherManager(contentRecord);
@@ -721,9 +730,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         Views.HomeView,
         async () => {
           const api = await useApi();
+          const r = await getRInterpreterPath();
+
           return await api.packages.createRRequirementsFile(
             activeConfiguration.projectDir,
             relPathPackageFile,
+            r,
           );
         },
       );
@@ -1399,6 +1411,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
 
+    const selectedContentRecord = await this.state.getSelectedContentRecord();
+    const selectedConfig = await this.state.getSelectedConfiguration();
     const selectionState = includeSavedState
       ? this.state.getSelection()
       : undefined;
@@ -1406,8 +1420,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     this.updateWebViewViewConfigurations();
     this.updateWebViewViewContentRecords(selectionState || null);
     if (includeSavedState && selectionState) {
-      this.refreshActiveContentRecord();
-      this.refreshActiveConfig();
+      this.refreshActiveContentRecord(selectedContentRecord);
+      this.refreshActiveConfig(selectedConfig);
     }
   };
 

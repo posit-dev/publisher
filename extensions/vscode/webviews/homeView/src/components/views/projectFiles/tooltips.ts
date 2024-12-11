@@ -1,6 +1,8 @@
 import { ContentRecordFile, FileMatchSource } from "../../../../../../src/api";
 
-export function includedFileTooltip(file: ContentRecordFile) {
+export function includedFileTooltip(
+  file: Pick<ContentRecordFile, "rel" | "reason">,
+) {
   let tooltip = `${file.rel} will be included in the next deployment.`;
   if (file.reason) {
     tooltip += `\nThe configuration file ${file.reason?.fileName} is including it with the pattern '${file.reason?.pattern}'`;
@@ -8,7 +10,9 @@ export function includedFileTooltip(file: ContentRecordFile) {
   return tooltip;
 }
 
-export function excludedFileTooltip(file: ContentRecordFile) {
+export function excludedFileTooltip(
+  file: Pick<ContentRecordFile, "rel" | "reason">,
+) {
   let tooltip = `${file.rel} will be excluded in the next deployment.`;
   if (file.reason) {
     if (file.reason.source === FileMatchSource.BUILT_IN) {
