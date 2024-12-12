@@ -4,6 +4,7 @@
     :checked="isIncluded"
     :disabled="isDisabled"
     :list-style="listStyle"
+    :disable-opacity="isEntrypoint"
     :indent-level="file.indent + 1"
     :expandable="file.isDir"
     :tooltip="tooltip"
@@ -57,7 +58,11 @@ const fileStore = useFileStore();
 
 const isDisabled = computed((): boolean => {
   const source = props.file.reason?.source;
-  return source === "built-in" || source === "permissions";
+  return (
+    (isEntrypoint.value && isIncluded.value) ||
+    source === "built-in" ||
+    source === "permissions"
+  );
 });
 
 const isIncluded = computed((): boolean => {
