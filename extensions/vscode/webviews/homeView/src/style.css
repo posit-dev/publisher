@@ -22,6 +22,10 @@ body {
   width: 100%;
 }
 
+.text-sm {
+  font-size: 11px;
+}
+
 .text-foreground {
   color: var(--vscode-foreground);
 }
@@ -40,6 +44,10 @@ body {
 
 .text-list-deemphasized {
   color: var(--vscode-list-deemphasizedForeground);
+}
+
+.text-sidebar-section-header {
+  color: var(--vscode-sideBarSectionHeader-foreground);
 }
 
 .text-error {
