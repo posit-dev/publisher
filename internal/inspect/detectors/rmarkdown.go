@@ -3,7 +3,9 @@ package detectors
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/posit-dev/publisher/internal/config"
@@ -80,7 +82,123 @@ func isShinyRmd(metadata *RMarkdownMetadata) bool {
 	return false
 }
 
+func (d *RMarkdownDetector) isSite(base util.AbsolutePath) (bool, string) {
+	for _, ymlFile := range util.KnownSiteYmlConfigFiles {
+		exists, err := base.Join(ymlFile).Exists()
+		if err == nil && exists {
+			d.log.Debug("Site configuration file is present, project being considered as static site", "file", ymlFile)
+			return true, ymlFile
+		}
+	}
+	return false, ""
+}
+
+func (d *RMarkdownDetector) lookForSiteMetadata(base util.AbsolutePath) (*RMarkdownMetadata, string) {
+	// Attempt to get site metadata looking up in common files
+	possibleIndexFiles := []string{"index.Rmd", "index.rmd", "app.Rmd", "app.rmd"}
+	for _, file := range possibleIndexFiles {
+		fileAbsPath := base.Join(file)
+		exists, err := fileAbsPath.Exists()
+		if err != nil || !exists {
+			continue
+		}
+		metadata, err := d.getRmdFileMetadata(fileAbsPath)
+		if err != nil {
+			continue
+		}
+		if metadata != nil {
+			return metadata, file
+		}
+	}
+	return nil, ""
+}
+
+func (d *RMarkdownDetector) configFromFileInspect(base util.AbsolutePath, entrypointPath util.AbsolutePath) (*config.Config, error) {
+	relEntrypoint, err := entrypointPath.Rel(base)
+	if err != nil {
+		return nil, err
+	}
+
+	metadata, err := d.getRmdFileMetadata(entrypointPath)
+	if err != nil {
+		d.log.Warn("Failed to read RMarkdown metadata", "path", entrypointPath, "error", err)
+		return nil, err
+	}
+
+	cfg := config.New()
+	cfg.Entrypoint = relEntrypoint.String()
+
+	if isShinyRmd(metadata) {
+		cfg.Type = config.ContentTypeRMarkdownShiny
+	} else {
+		cfg.Type = config.ContentTypeRMarkdown
+	}
+
+	if isSite, siteConfigFile := d.isSite(base); isSite {
+		var siteMetadata *RMarkdownMetadata
+		var indexFile string
+		cfg.Files = []string{fmt.Sprint("/", siteConfigFile)}
+
+		if metadata == nil {
+			siteMetadata, indexFile = d.lookForSiteMetadata(base)
+			metadata = siteMetadata
+		}
+
+		if indexFile != "" {
+			cfg.Files = append(cfg.Files, fmt.Sprint("/", indexFile))
+		}
+
+		entrypointBase := fmt.Sprint("/", entrypointPath.Base())
+		if !slices.Contains(cfg.Files, entrypointBase) {
+			cfg.Files = append(cfg.Files, entrypointBase)
+		}
+	}
+
+	if metadata != nil {
+		title := metadata.Title
+		if title != "" {
+			cfg.Title = title
+		}
+
+		if metadata.Params != nil {
+			cfg.HasParameters = true
+		}
+	}
+	needsR, needsPython, err := pydeps.DetectMarkdownLanguages(base)
+	if err != nil {
+		return nil, err
+	}
+	if needsR {
+		// Indicate that R inspection is needed.
+		d.log.Info("RMarkdown: detected R code; configuration will include R")
+		cfg.R = &config.R{}
+	}
+	if needsPython {
+		// Indicate that Python inspection is needed.
+		d.log.Info("RMarkdown: detected Python code; configuration will include Python")
+		cfg.Python = &config.Python{}
+	}
+	return cfg, nil
+}
+
 func (d *RMarkdownDetector) InferType(base util.AbsolutePath, entrypoint util.RelativePath) ([]*config.Config, error) {
+	entrypointIsSiteConfig := slices.Contains(util.KnownSiteYmlConfigFiles, strings.ToLower(entrypoint.String()))
+
+	// When the choosen entrypoint is a site configuration yml
+	// generate a single configuration as a site project.
+	if entrypointIsSiteConfig {
+		d.log.Debug("A site configuration file was picked as entrypoint", "entrypoint", entrypoint.String())
+
+		cfg, err := d.configFromFileInspect(base, base.Join(entrypoint.String()))
+		if err != nil {
+			return nil, err
+		}
+
+		if cfg != nil {
+			return []*config.Config{cfg}, nil
+		}
+	}
+
 	if entrypoint.String() != "" {
 		// Optimization: skip inspection if there's a specified entrypoint
 		// and it's not one of ours.
@@ -88,6 +206,7 @@ func (d *RMarkdownDetector) InferType(base util.AbsolutePath, entrypoint util.Re
 			return nil, nil
 		}
 	}
+
 	var configs []*config.Config
 	entrypointPaths, err := base.Glob("*.Rmd")
 	if err != nil {
@@ -102,43 +221,9 @@ func (d *RMarkdownDetector) InferType(base util.AbsolutePath, entrypoint util.Re
 			// Only inspect the specified file
 			continue
 		}
-		metadata, err := d.getRmdFileMetadata(entrypointPath)
-		if err != nil {
-			d.log.Warn("Failed to read RMarkdown metadata", "path", entrypointPath, "error", err)
-			continue
-		}
-		cfg := config.New()
-		cfg.Entrypoint = relEntrypoint.String()
-
-		if isShinyRmd(metadata) {
-			cfg.Type = config.ContentTypeRMarkdownShiny
-		} else {
-			cfg.Type = config.ContentTypeRMarkdown
-		}
-
-		if metadata != nil {
-			title := metadata.Title
-			if title != "" {
-				cfg.Title = title
-			}
-
-			if metadata.Params != nil {
-				cfg.HasParameters = true
-			}
-		}
-		needsR, needsPython, err := pydeps.DetectMarkdownLanguages(base)
+		cfg, err := d.configFromFileInspect(base, entrypointPath)
 		if err != nil {
 			return nil, err
-		}
-		if needsR {
-			// Indicate that R inspection is needed.
-			d.log.Info("RMarkdown: detected R code; configuration will include R")
-			cfg.R = &config.R{}
-		}
-		if needsPython {
-			// Indicate that Python inspection is needed.
-			d.log.Info("RMarkdown: detected Python code; configuration will include Python")
-			cfg.Python = &config.Python{}
 		}
 		configs = append(configs, cfg)
 	}

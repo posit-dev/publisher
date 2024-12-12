@@ -4,9 +4,11 @@ package detectors
 
 import (
 	"fmt"
+	"runtime"
 	"testing"
 
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/executor/executortest"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/schema"
 	"github.com/posit-dev/publisher/internal/util"
@@ -323,5 +325,164 @@ func (s *RMarkdownSuite) TestInferTypeWithEntrypoint() {
 		Validate:   true,
 		Files:      []string{},
 		R:          &config.R{},
+	}, configs[0])
+}
+
+func (s *RMarkdownSuite) TestInferTypeRmdSite() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip("This test does not run on Windows")
+	}
+
+	realCwd, err := util.Getwd(nil)
+	s.NoError(err)
+
+	base := realCwd.Join("testdata", "rmd-site")
+
+	detector := NewRMarkdownDetector(logging.New())
+	executor := executortest.NewMockExecutor()
+	detector.executor = executor
+
+	configs, err := detector.InferType(base, util.NewRelativePath("index.Rmd", nil))
+	s.Nil(err)
+
+	s.Len(configs, 1)
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypeRMarkdown,
+		Entrypoint: "index.Rmd",
+		Title:      "Testing RMD Site",
+		Validate:   true,
+		Files: []string{
+			"/_site.yml",
+			"/index.Rmd",
+		},
+		R: &config.R{},
+	}, configs[0])
+}
+
+func (s *RMarkdownSuite) TestInferTypeRmdSite_FromSiteYml() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip("This test does not run on Windows")
+	}
+
+	realCwd, err := util.Getwd(nil)
+	s.NoError(err)
+
+	base := realCwd.Join("testdata", "rmd-site")
+
+	detector := NewRMarkdownDetector(logging.New())
+	executor := executortest.NewMockExecutor()
+	detector.executor = executor
+
+	configs, err := detector.InferType(base, util.NewRelativePath("_site.yml", nil))
+	s.Nil(err)
+
+	s.Len(configs, 1)
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypeRMarkdown,
+		Entrypoint: "_site.yml",
+		Title:      "Testing RMD Site",
+		Validate:   true,
+		Files: []string{
+			"/_site.yml",
+			"/index.Rmd",
+		},
+		R: &config.R{},
+	}, configs[0])
+}
+
+func (s *RMarkdownSuite) TestInferTypeRmdSite_FromSiteYml_NoMeta() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip("This test does not run on Windows")
+	}
+
+	realCwd, err := util.Getwd(nil)
+	s.NoError(err)
+
+	base := realCwd.Join("testdata", "rmd-site-no-meta")
+
+	detector := NewRMarkdownDetector(logging.New())
+	executor := executortest.NewMockExecutor()
+	detector.executor = executor
+
+	configs, err := detector.InferType(base, util.NewRelativePath("_site.yml", nil))
+	s.Nil(err)
+
+	s.Len(configs, 1)
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypeRMarkdown,
+		Entrypoint: "_site.yml",
+		Title:      "",
+		Validate:   true,
+		Files: []string{
+			"/_site.yml",
+		},
+		R: &config.R{},
+	}, configs[0])
+}
+
+func (s *RMarkdownSuite) TestInferTypeRmdSite_Bookdown() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip("This test does not run on Windows")
+	}
+
+	realCwd, err := util.Getwd(nil)
+	s.NoError(err)
+
+	base := realCwd.Join("testdata", "bookdown-proj")
+
+	detector := NewRMarkdownDetector(logging.New())
+	executor := executortest.NewMockExecutor()
+	detector.executor = executor
+
+	configs, err := detector.InferType(base, util.NewRelativePath("index.Rmd", nil))
+	s.Nil(err)
+
+	s.Len(configs, 1)
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypeRMarkdown,
+		Entrypoint: "index.Rmd",
+		Title:      "A Minimal Book Example",
+		Validate:   true,
+		Files: []string{
+			"/_bookdown.yml",
+			"/index.Rmd",
+		},
+		R: &config.R{},
+	}, configs[0])
+}
+
+func (s *RMarkdownSuite) TestInferTypeRmdSite_FromBookdownYml() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip("This test does not run on Windows")
+	}
+
+	realCwd, err := util.Getwd(nil)
+	s.NoError(err)
+
+	base := realCwd.Join("testdata", "bookdown-proj")
+
+	detector := NewRMarkdownDetector(logging.New())
+	executor := executortest.NewMockExecutor()
+	detector.executor = executor
+
+	configs, err := detector.InferType(base, util.NewRelativePath("_bookdown.yml", nil))
+	s.Nil(err)
+
+	s.Len(configs, 1)
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypeRMarkdown,
+		Entrypoint: "_bookdown.yml",
+		Title:      "A Minimal Book Example",
+		Validate:   true,
+		Files: []string{
+			"/_bookdown.yml",
+			"/index.Rmd",
+		},
+		R: &config.R{},
 	}, configs[0])
 }
