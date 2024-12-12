@@ -38,6 +38,15 @@ defineProps<{
     display: flex;
     align-items: center;
 
+    &:not(:only-child) {
+      .quick-pick-label-container {
+        .quick-pick-label {
+          font-weight: 600;
+          padding-bottom: 4px;
+        }
+      }
+    }
+
     .quick-pick-icon {
       vertical-align: text-bottom;
       padding-right: 6px;
