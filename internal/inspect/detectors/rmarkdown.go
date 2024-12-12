@@ -135,11 +135,16 @@ func (d *RMarkdownDetector) configFromFileInspect(base util.AbsolutePath, entryp
 	}
 
 	if isSite, siteConfigFile := d.isSite(base); isSite {
+		var siteMetadata *RMarkdownMetadata
+		var indexFile string
 		cfg.Files = []string{fmt.Sprint("/", siteConfigFile)}
 
 		if metadata == nil {
-			siteMetadata, indexFile := d.lookForSiteMetadata(base)
+			siteMetadata, indexFile = d.lookForSiteMetadata(base)
 			metadata = siteMetadata
+		}
+
+		if indexFile != "" {
 			cfg.Files = append(cfg.Files, fmt.Sprint("/", indexFile))
 		}
 

@@ -392,6 +392,37 @@ func (s *RMarkdownSuite) TestInferTypeRmdSite_FromSiteYml() {
 	}, configs[0])
 }
 
+func (s *RMarkdownSuite) TestInferTypeRmdSite_FromSiteYml_NoMeta() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip("This test does not run on Windows")
+	}
+
+	realCwd, err := util.Getwd(nil)
+	s.NoError(err)
+
+	base := realCwd.Join("testdata", "rmd-site-no-meta")
+
+	detector := NewRMarkdownDetector(logging.New())
+	executor := executortest.NewMockExecutor()
+	detector.executor = executor
+
+	configs, err := detector.InferType(base, util.NewRelativePath("_site.yml", nil))
+	s.Nil(err)
+
+	s.Len(configs, 1)
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypeRMarkdown,
+		Entrypoint: "_site.yml",
+		Title:      "",
+		Validate:   true,
+		Files: []string{
+			"/_site.yml",
+		},
+		R: &config.R{},
+	}, configs[0])
+}
+
 func (s *RMarkdownSuite) TestInferTypeRmdSite_Bookdown() {
 	if runtime.GOOS == "windows" {
 		s.T().Skip("This test does not run on Windows")
