@@ -23,7 +23,7 @@
           :data-automation="`entrypoint-label`"
         />
         <div
-          class="select-indicator codicon codicon-chevron-down"
+          class="select-indicator codicon codicon-chevron-right"
           aria-hidden="true"
         />
       </div>
