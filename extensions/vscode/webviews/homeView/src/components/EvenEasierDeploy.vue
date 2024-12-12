@@ -3,7 +3,7 @@
 <template>
   <div v-if="home.initializingRequestComplete">
     <div class="label">
-      <span>Deployment:</span>
+      <span class="text-sm text-sidebar-section-header">DEPLOYMENT</span>
 
       <ActionToolbar
         title="Deployment"
