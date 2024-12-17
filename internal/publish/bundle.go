@@ -11,6 +11,7 @@ import (
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/inspect"
 	"github.com/posit-dev/publisher/internal/inspect/dependencies/renv"
+	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
@@ -94,7 +95,7 @@ func (p *defaultPublisher) createAndUploadBundle(
 	if p.Config.R != nil {
 		filename := p.Config.R.PackageFile
 		if filename == "" {
-			filename = inspect.DefaultRenvLockfile
+			filename = interpreters.DefaultRenvLockfile
 		}
 		p.log.Debug("R configuration present", "filename", filename)
 		lockfile, err := renv.ReadLockfile(p.Dir.Join(filename))

@@ -9,7 +9,7 @@ import (
 
 	"github.com/posit-dev/publisher/internal/bundles"
 	"github.com/posit-dev/publisher/internal/events"
-	"github.com/posit-dev/publisher/internal/inspect"
+	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/types"
 )
@@ -32,7 +32,7 @@ func (p *defaultPublisher) getRPackages() (bundles.PackageMap, error) {
 
 	lockfileString := p.Config.R.PackageFile
 	if lockfileString == "" {
-		lockfileString = inspect.DefaultRenvLockfile
+		lockfileString = interpreters.DefaultRenvLockfile
 	}
 	lockfilePath := p.Dir.Join(lockfileString)
 

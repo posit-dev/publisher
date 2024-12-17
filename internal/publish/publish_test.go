@@ -115,6 +115,7 @@ func (s *PublishSuite) SetupTest() {
 
 func (s *PublishSuite) TestNewFromState() {
 	stateStore := state.Empty()
+	stateStore.Dir = s.cwd
 	publisher, err := NewFromState(stateStore, util.Path{}, events.NewNullEmitter(), logging.New())
 	s.NoError(err)
 	s.Equal(stateStore, publisher.(*defaultPublisher).State)

@@ -10,11 +10,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/posit-dev/publisher/internal/inspect"
+	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
 	"github.com/spf13/afero"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -27,7 +28,6 @@ func TestPostPackagesRScanSuite(t *testing.T) {
 }
 
 func (s *PostPackagesRScanSuite) SetupTest() {
-	rInspectorFactory = inspect.NewRInspector
 }
 
 func (s *PostPackagesRScanSuite) TestNewPostPackagesRScanHandler() {
@@ -44,20 +44,22 @@ func (s *PostPackagesRScanSuite) TestServeHTTP() {
 	req, err := http.NewRequest("POST", "/api/packages/r/scan", body)
 	s.NoError(err)
 
-	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
+	fs := afero.NewMemMapFs()
+	base := util.NewAbsolutePath("/project", fs)
 	err = base.MkdirAll(0777)
 	s.NoError(err)
-	destPath := base.Join("renv.lock")
+
+	lockFilePath := base.Join("renv.lock")
 
 	log := logging.New()
 	h := NewPostPackagesRScanHandler(base, log)
 
-	rInspectorFactory = func(baseDir util.AbsolutePath, rExec util.Path, log logging.Logger) inspect.RInspector {
+	interpreters.NewRInterpreter = func(baseDir util.AbsolutePath, rExec util.Path, log logging.Logger) interpreters.RInterpreter {
 		s.Equal(base, baseDir)
 		s.Equal(util.NewPath("/opt/R/bin/R", nil), rExec)
-
-		i := inspect.NewMockRInspector()
-		i.On("CreateLockfile", destPath).Return(nil)
+		i := interpreters.NewMockRInterpreter()
+		i.On("Init").Return(nil)
+		i.On("CreateLockfile", lockFilePath).Return(nil)
 		return i
 	}
 
@@ -74,14 +76,13 @@ func (s *PostPackagesRScanSuite) TestServeHTTPEmptyBody() {
 	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
 	err = base.MkdirAll(0777)
 	s.NoError(err)
-	destPath := base.Join("renv.lock")
 
 	log := logging.New()
 	h := NewPostPackagesRScanHandler(base, log)
 
-	rInspectorFactory = func(util.AbsolutePath, util.Path, logging.Logger) inspect.RInspector {
-		i := inspect.NewMockRInspector()
-		i.On("CreateLockfile", destPath).Return(nil)
+	interpreters.NewRInterpreter = func(baseDir util.AbsolutePath, rExec util.Path, log logging.Logger) interpreters.RInterpreter {
+		i := interpreters.NewMockRInterpreter()
+		i.On("CreateLockfile", mock.Anything).Return(nil)
 		return i
 	}
 
@@ -95,19 +96,21 @@ func (s *PostPackagesRScanSuite) TestServeHTTPWithSaveName() {
 	req, err := http.NewRequest("POST", "/api/packages/r/scan", body)
 	s.NoError(err)
 
-	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
+	fs := afero.NewMemMapFs()
+	base := util.NewAbsolutePath("/project", fs)
 	err = base.MkdirAll(0777)
 	s.NoError(err)
 	destPath := base.Join("my_renv.lock")
 
 	log := logging.New()
-	h := NewPostPackagesRScanHandler(base, log)
 
-	rInspectorFactory = func(util.AbsolutePath, util.Path, logging.Logger) inspect.RInspector {
-		i := inspect.NewMockRInspector()
-		i.On("CreateLockfile", destPath).Return(nil)
+	interpreters.NewRInterpreter = func(baseDir util.AbsolutePath, rExec util.Path, log logging.Logger) interpreters.RInterpreter {
+		i := interpreters.NewMockRInterpreter()
+		i.On("CreateLockfile", util.NewAbsolutePath(destPath.String(), fs)).Return(nil)
 		return i
 	}
+
+	h := NewPostPackagesRScanHandler(base, log)
 
 	h.ServeHTTP(rec, req)
 	s.Equal(http.StatusNoContent, rec.Result().StatusCode)
@@ -119,7 +122,8 @@ func (s *PostPackagesRScanSuite) TestServeHTTPWithSaveNameInSubdir() {
 	req, err := http.NewRequest("POST", "/api/packages/r/scan", body)
 	s.NoError(err)
 
-	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
+	fs := afero.NewMemMapFs()
+	base := util.NewAbsolutePath("/project", fs)
 	err = base.MkdirAll(0777)
 	s.NoError(err)
 	destPath := base.Join(".renv", "profiles", "staging", "renv.lock")
@@ -127,8 +131,8 @@ func (s *PostPackagesRScanSuite) TestServeHTTPWithSaveNameInSubdir() {
 	log := logging.New()
 	h := NewPostPackagesRScanHandler(base, log)
 
-	rInspectorFactory = func(util.AbsolutePath, util.Path, logging.Logger) inspect.RInspector {
-		i := inspect.NewMockRInspector()
+	interpreters.NewRInterpreter = func(baseDir util.AbsolutePath, rExec util.Path, log logging.Logger) interpreters.RInterpreter {
+		i := interpreters.NewMockRInterpreter()
 		i.On("CreateLockfile", destPath).Return(nil)
 		return i
 	}
@@ -151,8 +155,9 @@ func (s *PostPackagesRScanSuite) TestServeHTTPErr() {
 	h := NewPostPackagesRScanHandler(base, log)
 
 	testError := errors.New("test error from ScanRequirements")
-	rInspectorFactory = func(util.AbsolutePath, util.Path, logging.Logger) inspect.RInspector {
-		i := inspect.NewMockRInspector()
+	interpreters.NewRInterpreter = func(baseDir util.AbsolutePath, rExec util.Path, log logging.Logger) interpreters.RInterpreter {
+		i := interpreters.NewMockRInterpreter()
+		i.On("Init").Return(nil)
 		i.On("CreateLockfile", destPath).Return(testError)
 		return i
 	}
@@ -166,24 +171,25 @@ func (s *PostPackagesRScanSuite) TestServeHTTPSubdir() {
 	body := strings.NewReader(`{"saveName":""}`)
 
 	// Scanning a subdirectory two levels down
-	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
+	fs := afero.NewMemMapFs()
+	base := util.NewAbsolutePath("/project", fs)
 	projectDir := base.Join("subproject", "subdir")
 	err := projectDir.MkdirAll(0777)
 	s.NoError(err)
 	relProjectDir, err := projectDir.Rel(base)
 	s.NoError(err)
+	destPath := projectDir.Join("renv.lock")
 
 	dirParam := url.QueryEscape(relProjectDir.String())
 	req, err := http.NewRequest("POST", "/api/packages/r/scan?dir="+dirParam, body)
 	s.NoError(err)
 
-	destPath := projectDir.Join("renv.lock")
-
 	h := NewPostPackagesRScanHandler(base, logging.New())
 
-	rInspectorFactory = func(base util.AbsolutePath, r util.Path, log logging.Logger) inspect.RInspector {
-		s.Equal(projectDir, base)
-		i := inspect.NewMockRInspector()
+	interpreters.NewRInterpreter = func(baseDir util.AbsolutePath, rExec util.Path, log logging.Logger) interpreters.RInterpreter {
+		s.Equal(projectDir, baseDir)
+		i := interpreters.NewMockRInterpreter()
+		i.On("Init").Return(nil)
 		i.On("CreateLockfile", destPath).Return(nil)
 		return i
 	}
