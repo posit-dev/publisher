@@ -1,0 +1,6 @@
+CONTENT_TYPE=quarto
+APP_MODE=quarto-static
+ENTRYPOINT=index.Rmd
+TITLE="rmd-site"
+RENV_REQUIRED=yes
+QUARTO_ENGINE=knitr

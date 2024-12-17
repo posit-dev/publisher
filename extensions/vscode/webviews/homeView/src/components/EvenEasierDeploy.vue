@@ -3,7 +3,7 @@
 <template>
   <div v-if="home.initializingRequestComplete">
     <div class="label">
-      <span>Deployment:</span>
+      <span class="text-sm text-sidebar-section-header">DEPLOYMENT</span>
 
       <ActionToolbar
         title="Deployment"
@@ -23,7 +23,7 @@
           :data-automation="`entrypoint-label`"
         />
         <div
-          class="select-indicator codicon codicon-chevron-down"
+          class="select-indicator codicon codicon-chevron-right"
           aria-hidden="true"
         />
       </div>

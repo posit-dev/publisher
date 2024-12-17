@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"sort"
+	"strings"
 
 	"github.com/posit-dev/publisher/internal/clients/connect"
 	"github.com/posit-dev/publisher/internal/config"
@@ -201,6 +202,14 @@ func NewManifestFromConfig(cfg *config.Config) *Manifest {
 func (manifest *Manifest) AddFile(path string, fileMD5 []byte) {
 	manifest.Files[path] = ManifestFile{
 		Checksum: hex.EncodeToString(fileMD5),
+	}
+
+	// Update manifest content category if a file being added is a site configuration
+	for _, ymlFile := range util.KnownSiteYmlConfigFiles {
+		if strings.ToLower(path) == ymlFile {
+			manifest.Metadata.ContentCategory = "site"
+			break
+		}
 	}
 }
 
