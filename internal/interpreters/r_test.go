@@ -90,8 +90,8 @@ https://www.gnu.org/licenses/.
 `,
 			"4.3.0",
 			// success output from renv.lock
-			`[1] "/Users/billsager/dev/publishing-client-another/test/sample-content/shinyapp/renv.lock"`,
-			"../../test/sample-content/shinyapp/renv.lock",
+			`[1] "/test/sample-content/shinyapp/renv.lock"`,
+			"/test/sample-content/shinyapp/renv.lock",
 		},
 		// output when there is a warning
 		{`WARNING: ignoring environment value of R_HOME
@@ -106,8 +106,8 @@ For more information about these matters see
 https://www.gnu.org/licenses/.`,
 			"4.3.3",
 			// success output from renv.lock
-			`[1] "/Users/billsager/dev/publishing-client-another/test/sample-content/shinyapp/renv.lock"`,
-			"../../test/sample-content/shinyapp/renv.lock",
+			`[1] "/test/sample-content/shinyapp/renv.lock"`,
+			"/test/sample-content/shinyapp/renv.lock",
 		},
 
 		// output when there are multiple warnings
@@ -127,8 +127,8 @@ For more information about these matters see
 https://www.gnu.org/licenses/.`,
 			"4.3.3",
 			// success output from renv.lock
-			`[1] "/Users/billsager/dev/publishing-client-another/test/sample-content/shinyapp/renv.lock"`,
-			"../../test/sample-content/shinyapp/renv.lock",
+			`[1] "/test/sample-content/shinyapp/renv.lock"`,
+			"/test/sample-content/shinyapp/renv.lock",
 		},
 
 		// test output where version exists in multiple locations
@@ -146,8 +146,8 @@ For more information about these matters see
 https://www.gnu.org/licenses/.`,
 			"4.3.3",
 			// success output from renv.lock
-			`[1] "/Users/billsager/dev/publishing-client-another/test/sample-content/shinyapp/renv.lock"`,
-			"../../test/sample-content/shinyapp/renv.lock",
+			`[1] "/test/sample-content/shinyapp/renv.lock"`,
+			"/test/sample-content/shinyapp/renv.lock",
 		},
 		// typical output from command `r --version`
 		{`R version 4.3.0 (2023-04-21) -- "Already Tomorrow"
