@@ -170,6 +170,10 @@ https://www.gnu.org/licenses/.`,
 }
 
 func (s *RSuite) TestGetRVersionFromExecutable() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip("This test does not run on Windows")
+	}
+
 	for _, tc := range getOutputTestData() {
 		s.SetupTest()
 		log := logging.New()
@@ -205,6 +209,9 @@ func (s *RSuite) TestGetRVersionFromExecutable() {
 }
 
 func (s *RSuite) TestGetRVersionFromExecutableWindows() {
+	if runtime.GOOS != "windows" {
+		s.T().Skip("This test only runs on Windows")
+	}
 	// R on Windows emits version information on stderr
 	for _, tc := range getOutputTestData() {
 		s.SetupTest()
@@ -233,7 +240,10 @@ func (s *RSuite) TestGetRVersionFromExecutableWindows() {
 
 		lockFile, _, err := rInterpreter.GetLockFilePath()
 		s.NoError(err)
-		s.Equal(tc.expectedLockfilePath, lockFile.String())
+		absLockFile := util.NewAbsolutePath(lockFile.String(), s.fs)
+		absExpectedLockFile := util.NewAbsolutePath(tc.expectedLockfilePath, s.fs)
+
+		s.Equal(absExpectedLockFile.String(), absLockFile.String())
 	}
 }
 
