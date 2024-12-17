@@ -10,7 +10,6 @@ import (
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/inspect"
 	"github.com/posit-dev/publisher/internal/inspect/detectors"
-	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
 )
@@ -99,25 +98,6 @@ func requiresPython(cfg *config.Config, base util.AbsolutePath) (bool, error) {
 		return false, err
 	}
 	return exists, nil
-}
-
-func requiresR(cfg *config.Config, rInterpreter interpreters.RInterpreter) (bool, error) {
-	if cfg.R != nil {
-		// InferType returned an R configuration for us to fill in.
-		return true, nil
-	}
-	if cfg.Type != config.ContentTypeHTML && !cfg.Type.IsPythonContent() {
-		// Presence of renv.lock implies R is needed,
-		// unless we're deploying pre-rendered Rmd or Quarto
-		// (where there will usually be a source file and
-		// associated lockfile in the directory)
-		_, exists, err := rInterpreter.GetLockFilePath()
-		if err != nil {
-			return false, err
-		}
-		return exists, nil
-	}
-	return false, nil
 }
 
 func normalizeConfig(

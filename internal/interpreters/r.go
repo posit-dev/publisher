@@ -20,9 +20,9 @@ import (
 
 const DefaultRenvLockfile = "renv.lock"
 
-var NotYetInitialized = types.NewAgentError(types.ErrorRExecNotFound, errors.New("Not yet initialized"), nil)
-var MissingRError = types.NewAgentError(types.ErrorRExecNotFound, errors.New("Unable to detect any R interpreters"), nil)
-var InvalidR = types.NewAgentError(types.ErrorRExecNotFound, errors.New("R executable is invalid"), nil)
+var NotYetInitialized = types.NewAgentError(types.ErrorRExecNotFound, errors.New("not yet initialized"), nil)
+var MissingRError = types.NewAgentError(types.ErrorRExecNotFound, errors.New("unable to detect any R interpreters"), nil)
+var InvalidR = types.NewAgentError(types.ErrorRExecNotFound, errors.New("r executable is invalid"), nil)
 
 type RInterpreter interface {
 	Init() error
