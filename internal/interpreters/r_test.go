@@ -196,10 +196,11 @@ func (s *RSuite) TestGetRVersionFromExecutable() {
 		s.Equal(tc.expectedVersion, version)
 
 		lockFile, _, err := rInterpreter.GetLockFilePath()
-		absLockFile := util.NewAbsolutePath(lockFile.String(), s.fs)
 		s.NoError(err)
+		absLockFile := util.NewAbsolutePath(lockFile.String(), s.fs)
+		absExpectedLockFile := util.NewAbsolutePath(tc.expectedLockfilePath, s.fs)
 
-		s.Equal(tc.expectedLockfilePath, absLockFile.String())
+		s.Equal(absExpectedLockFile.String(), absLockFile.String())
 	}
 }
 
