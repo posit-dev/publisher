@@ -5,10 +5,12 @@ package inspect
 import (
 	"testing"
 
+	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
 	"github.com/spf13/afero"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -27,6 +29,14 @@ func (s *RSuite) SetupTest() {
 	s.cwd = cwd
 	err = cwd.MkdirAll(0700)
 	s.NoError(err)
+
+	interpreters.NewRInterpreter = func(baseDir util.AbsolutePath, rExec util.Path, log logging.Logger) interpreters.RInterpreter {
+		i := interpreters.NewMockRInterpreter()
+		i.On("Init").Return(nil)
+		i.On("RequiresR", mock.Anything).Return(false, nil)
+		i.On("GetLockFilePath").Return(util.RelativePath{}, false, nil)
+		return i
+	}
 }
 
 func (s *RSuite) TestNewRInspector() {

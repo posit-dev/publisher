@@ -60,19 +60,19 @@ func (m *MockRInterpreter) GetLockFilePath() (util.RelativePath, bool, error) {
 	arg0 := args.Get(0)
 	arg1 := args.Get(1)
 	if arg0 == nil {
-		return util.RelativePath{}, false, args.Error(1)
+		return util.RelativePath{}, false, args.Error(2)
 	} else {
 		var iPath interface{} = arg0
-		path, ok := iPath.(string)
+		path, ok := iPath.(util.RelativePath)
 		if !ok {
-			path = ""
+			path = util.RelativePath{}
 		}
 		var iExists interface{} = arg1
 		exists, ok := iExists.(bool)
 		if !ok {
 			exists = false
 		}
-		return util.NewRelativePath(path, nil), exists, args.Error(1)
+		return util.NewRelativePath(path.String(), nil), exists, args.Error(2)
 	}
 }
 

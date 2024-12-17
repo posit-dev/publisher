@@ -21,6 +21,7 @@ import (
 type RSuite struct {
 	utiltest.Suite
 	cwd util.AbsolutePath
+	fs  afero.Fs
 }
 
 func TestRSuite(t *testing.T) {
@@ -28,7 +29,8 @@ func TestRSuite(t *testing.T) {
 }
 
 func (s *RSuite) SetupTest() {
-	cwd, err := util.Getwd(afero.NewMemMapFs())
+	s.fs = afero.NewMemMapFs()
+	cwd, err := util.Getwd(s.fs)
 	s.NoError(err)
 	s.cwd = cwd
 	err = cwd.MkdirAll(0700)
@@ -37,7 +39,7 @@ func (s *RSuite) SetupTest() {
 
 func (s *RSuite) TestNewRInterpreter() {
 	log := logging.New()
-	rPath := util.NewPath("/usr/bin/R", nil)
+	rPath := util.NewPath("/usr/bin/R", s.fs)
 	i := NewRInterpreter(s.cwd, rPath, log)
 	interpreter := i.(*defaultRInterpreter)
 	s.Equal(rPath, interpreter.preferredPath)
@@ -174,6 +176,7 @@ func (s *RSuite) TestGetRVersionFromExecutable() {
 		rPath := s.cwd.Join("bin", "R")
 		rPath.Dir().MkdirAll(0777)
 		rPath.WriteFile(nil, 0777)
+
 		rInterpreter := NewRInterpreter(s.cwd, rPath.Path, log)
 		executor := executortest.NewMockExecutor()
 		executor.On("RunCommand", mock.Anything, []string{"--version"}, mock.Anything, mock.Anything).Return([]byte(tc.versionOutput), nil, nil)
@@ -238,14 +241,14 @@ type RExecutableValidTestData struct {
 	expectedIsRExecutableValidResult bool
 }
 
-func getRExecutableValidTestData() []RExecutableValidTestData {
+func getRExecutableValidTestData(fs afero.Fs) []RExecutableValidTestData {
 	data := []RExecutableValidTestData{
 		{initialized: false, rExecutable: util.AbsolutePath{}, version: "", expectedIsRExecutableValidResult: false},
-		{initialized: false, rExecutable: util.NewAbsolutePath("abc", nil), version: "", expectedIsRExecutableValidResult: false},
+		{initialized: false, rExecutable: util.NewAbsolutePath("abc", fs), version: "", expectedIsRExecutableValidResult: false},
 		{initialized: false, rExecutable: util.AbsolutePath{}, version: "1.2.3", expectedIsRExecutableValidResult: false},
-		{initialized: true, rExecutable: util.NewAbsolutePath("abc", nil), version: "", expectedIsRExecutableValidResult: false},
+		{initialized: true, rExecutable: util.NewAbsolutePath("abc", fs), version: "", expectedIsRExecutableValidResult: false},
 		{initialized: true, rExecutable: util.AbsolutePath{}, version: "1.2.3", expectedIsRExecutableValidResult: false},
-		{initialized: true, rExecutable: util.NewAbsolutePath("abc", nil), version: "1.2.3", expectedIsRExecutableValidResult: true},
+		{initialized: true, rExecutable: util.NewAbsolutePath("abc", fs), version: "1.2.3", expectedIsRExecutableValidResult: true},
 	}
 	return data
 }
@@ -261,7 +264,7 @@ func (s *RSuite) TestIsRExecutableValid() {
 
 	interpreter.initialized = true
 	interpreter.rExecutable = util.AbsolutePath{}
-	for _, tc := range getRExecutableValidTestData() {
+	for _, tc := range getRExecutableValidTestData(s.fs) {
 		interpreter.initialized = tc.initialized
 		interpreter.rExecutable = tc.rExecutable
 		interpreter.version = tc.version
@@ -373,7 +376,7 @@ func (s *RSuite) TestResolveRExecutableWhenPathContainsRButNotValid() {
 
 	err := interpreter.resolveRExecutable()
 	s.Error(err)
-	s.Equal("Unable to detect any R interpreters", err.Error())
+	s.Equal("unable to detect any R interpreters", err.Error())
 }
 
 // Validate that we find the lock file that R specifies
