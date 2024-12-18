@@ -53,25 +53,25 @@ describe("VS Code Extension UI Test", () => {
     const simplepy = browser.$(`aria/simple.py`);
     await simplepy.click();
 
-    const elem = await $("#quickInput_message");
-    await browser.waitUntil(
-      async function () {
-        return (
-          (await elem.getText()) ===
-          "Enter a title for your content or application. (Press 'Enter' to confirm or 'Escape' to cancel)"
-        );
-      },
-      {
-        timeout: 60000,
-        timeoutMsg:
-          "expected Title prompt to be visible after 60 seconds of inspection processing",
-      },
-    );
-
-    // const titleMessage = browser.$("#quickInput_message");
-    // await expect(titleMessage).toHaveText(
-    //   "Enter a title for your content or application. (Press 'Enter' to confirm or 'Escape' to cancel)",
+    // const elem = await $("#quickInput_message");
+    // await browser.waitUntil(
+    //   async function () {
+    //     return (
+    //       (await elem.getText()) ===
+    //       "Enter a title for your content or application. (Press 'Enter' to confirm or 'Escape' to cancel)"
+    //     );
+    //   },
+    //   {
+    //     timeout: 60000,
+    //     timeoutMsg:
+    //       "expected Title prompt to be visible after 60 seconds of inspection processing",
+    //   },
     // );
+
+    const titleMessage = browser.$("#quickInput_message");
+    await expect(titleMessage).toHaveText(
+      "Enter a title for your content or application. (Press 'Enter' to confirm or 'Escape' to cancel)",
+    );
 
     await input.setValue("my fastapi app");
     await browser.keys("\uE007");
