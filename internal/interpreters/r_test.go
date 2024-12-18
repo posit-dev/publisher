@@ -438,7 +438,7 @@ func (s *RSuite) TestResolveRenvLockFileWithRSpecifyingDefaultNameAndDoesNotExis
 
 	err := interpreter.resolveRenvLockFile("does_not_matter")
 	s.NoError(err)
-	s.Equal("internal/interpreters/renv.lock", interpreter.lockfileRelPath.String())
+	s.Equal("renv.lock", interpreter.lockfileRelPath.String())
 	s.Equal(false, interpreter.lockfileExists)
 }
 
@@ -461,6 +461,9 @@ func (s *RSuite) TestResolveRenvLockFileWithRSpecialNameAndExists() {
 	executor.On("RunCommand", mock.Anything, []string{"-s", "-e", "renv::paths$lockfile()"}, mock.Anything, mock.Anything).Return([]byte(outputLine), nil, nil)
 	interpreter.executor = executor
 	interpreter.fs = s.cwd.Fs()
+	interpreter.initialized = true
+	interpreter.rExecutable = util.NewAbsolutePath("does_not_matter/R", interpreter.fs)
+	interpreter.version = "does_not_matter"
 
 	err := interpreter.resolveRenvLockFile("does_not_matter")
 	s.NoError(err)
