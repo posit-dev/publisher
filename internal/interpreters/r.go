@@ -37,15 +37,16 @@ type defaultRInterpreter struct {
 	executor   executor.Executor
 	pathLooker util.PathLooker
 
-	base            util.AbsolutePath
-	preferredPath   util.Path
-	rExecutable     util.AbsolutePath
-	version         string
-	lockfileRelPath util.RelativePath
-	lockfileExists  bool
-	log             logging.Logger
-	initialized     bool
-	fs              afero.Fs
+	base                util.AbsolutePath
+	preferredPath       util.Path
+	rExecutable         util.AbsolutePath
+	version             string
+	lockfileRelPath     util.RelativePath
+	lockfileExists      bool
+	lockfileInitialized bool
+	log                 logging.Logger
+	initialized         bool
+	fs                  afero.Fs
 }
 
 var _ RInterpreter = &defaultRInterpreter{}
@@ -59,15 +60,16 @@ func RInterpreterFactory(base util.AbsolutePath,
 		executor:   executor.NewExecutor(),
 		pathLooker: util.NewPathLooker(),
 
-		base:            base,
-		preferredPath:   rExecutableParam,
-		rExecutable:     util.AbsolutePath{},
-		version:         "",
-		lockfileRelPath: util.RelativePath{},
-		lockfileExists:  false,
-		log:             log,
-		initialized:     false,
-		fs:              nil,
+		base:                base,
+		preferredPath:       rExecutableParam,
+		rExecutable:         util.AbsolutePath{},
+		version:             "",
+		lockfileRelPath:     util.RelativePath{},
+		lockfileExists:      false,
+		lockfileInitialized: false,
+		log:                 log,
+		initialized:         false,
+		fs:                  nil,
 	}
 }
 
@@ -76,6 +78,10 @@ func RInterpreterFactory(base util.AbsolutePath,
 //     towards the perferredPath, but otherwise, first one on path. If the
 //     executable is not a valid R interpreter, then will not be set.
 //  2. Seeds the version of the rExecutable being used, if set.
+//
+// We lazy load the lock file information, since it requires a call into
+// renv, which can be slow to be started (package initialization or something).
+// When this occurs, we'll do the following steps.
 //  3. Seeds the renv lock file for the rExecutable being used or if not found
 //     then the path to the default lock file
 //  4. Seeds the existance of the lock file at the lockfileRelPath
@@ -89,12 +95,6 @@ func (i *defaultRInterpreter) Init() error {
 
 	// This will set the rExecutable and version for us
 	err := i.resolveRExecutable()
-	if err != nil {
-		return err
-	}
-
-	// This will set lockfileRelPath and lockfileExists for us
-	err = i.resolveRenvLockFile(i.rExecutable.String())
 	if err != nil {
 		return err
 	}
@@ -126,10 +126,15 @@ func (i *defaultRInterpreter) GetLockFilePath() (relativePath util.RelativePath,
 	if !i.initialized {
 		return util.RelativePath{}, false, NotYetInitialized
 	}
-	if i.initialized {
-		return i.lockfileRelPath, i.lockfileExists, nil
+	if !i.lockfileInitialized {
+		// This will set lockfileRelPath and lockfileExists for us
+		err = i.resolveRenvLockFile(i.rExecutable.String())
+		if err != nil {
+			return util.RelativePath{}, false, err
+		}
+		i.lockfileInitialized = true
 	}
-	return util.RelativePath{}, false, NotYetInitialized
+	return i.lockfileRelPath, i.lockfileExists, nil
 }
 
 func (i *defaultRInterpreter) IsRExecutableValid() bool {
