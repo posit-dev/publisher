@@ -94,8 +94,14 @@ func (i *defaultRInterpreter) Init() error {
 	i.initialized = true
 
 	// This will set the rExecutable and version for us
+	// Only fatal, unexpected errors will be returned.
+	// We will handle MissingRError internally, as this is a valid environment
 	err := i.resolveRExecutable()
 	if err != nil {
+		if _, ok := types.IsAgentErrorOf(err, types.ErrorRExecNotFound); ok {
+			// suppress the error, this is valid.
+			return nil
+		}
 		return err
 	}
 
@@ -128,6 +134,7 @@ func (i *defaultRInterpreter) GetLockFilePath() (relativePath util.RelativePath,
 	}
 	if !i.lockfileInitialized {
 		// This will set lockfileRelPath and lockfileExists for us
+		// and does not require an R Executable to be available (but it is better if it is)
 		err = i.resolveRenvLockFile(i.rExecutable.String())
 		if err != nil {
 			return util.RelativePath{}, false, err
@@ -151,6 +158,8 @@ func (i *defaultRInterpreter) IsRExecutableValid() bool {
 // the defaultRInterpreter struct
 func (i *defaultRInterpreter) resolveRExecutable() error {
 	var rExecutable = util.AbsolutePath{}
+
+	// return MissingRError
 
 	// Passed in path to executable
 	if i.preferredPath.String() != "" {
@@ -198,26 +207,32 @@ func (i *defaultRInterpreter) resolveRExecutable() error {
 		}
 	}
 
-	// If we still don't have one, then we ca
+	// If we still don't have one, then it will need
+	// to be handled, but is a totally valid environment without R
 	if rExecutable.Path.String() == "" {
+		i.log.Debug("R executable not found, proceeding without working R environment.")
 		return MissingRError
 	}
 
-	// Need to validate the executable, so let's ask it for the version
-	i.log.Debug("Validating path to R executable found", "path", rExecutable)
-	// Ensure the R is actually runnable.
-	version, err := i.ValidateRExecutable(rExecutable.String())
-	if err == nil {
-		i.log.Debug("Successful validation for R executable", "rExecutable", rExecutable)
-	} else {
-		i.log.Debug("R executable from PATH is invalid.", "rExecutable", rExecutable, "error", err)
-		return err
-	}
+	// temp
+	i.log.Debug("R executable not found, proceeding without working R environment.")
+	return MissingRError
 
-	// all is good!
-	i.rExecutable = util.NewAbsolutePath(rExecutable.String(), i.fs)
-	i.version = version
-	return nil
+	// // Need to validate the executable, so let's ask it for the version
+	// i.log.Debug("Validating path to R executable found", "path", rExecutable)
+	// // Ensure the R is actually runnable.
+	// version, err := i.ValidateRExecutable(rExecutable.String())
+	// if err == nil {
+	// 	i.log.Debug("Successful validation for R executable", "rExecutable", rExecutable)
+	// } else {
+	// 	i.log.Debug("R executable from PATH is invalid.", "rExecutable", rExecutable, "error", err)
+	// 	return err
+	// }
+
+	// // all is good!
+	// i.rExecutable = util.NewAbsolutePath(rExecutable.String(), i.fs)
+	// i.version = version
+	// return nil
 }
 
 // We assume if we can get a version from the rExecutable passed in, that it
@@ -269,16 +284,21 @@ func (i *defaultRInterpreter) getRVersionFromRExecutable(rExecutable string) (st
 //
 // Return path, existence and any error if encountered.
 func (i *defaultRInterpreter) resolveRenvLockFile(rExecutable string) error {
-	lockfilePath, err := i.getRenvLockfilePathFromRExecutable(rExecutable)
-	if err == nil {
-		i.log.Debug("renv lockfile found via R executable", "renv_lock", lockfilePath)
-	} else {
-		// we'll handle the error by looking elsewhere
+	var lockfilePath util.AbsolutePath
 
-		i.log.Debug("Unable to get renv lockfile path via R executable", "error", err.Error())
-		// we'll default if we can't get it from R executable
+	if i.IsRExecutableValid() {
+		lockfilePath, err := i.getRenvLockfilePathFromRExecutable(rExecutable)
+		if err == nil {
+			i.log.Debug("renv lockfile found via R executable", "renv_lock", lockfilePath)
+		} else {
+			// we'll handle the error by looking elsewhere
+			i.log.Debug("Unable to get renv lockfile path via R executable", "error", err.Error())
+		}
+	}
+	// if we still don't have a path, we'll default if we can't get it from R executable
+	if lockfilePath.Path.String() == "" {
 		lockfilePath = i.base.Join(DefaultRenvLockfile)
-		i.log.Debug("using default renv lockfile", "lockfilePath", lockfilePath)
+		i.log.Debug("looking for default renv lockfile", "lockfilePath", lockfilePath)
 	}
 
 	lockfileRelPath, err := lockfilePath.Rel(i.base)

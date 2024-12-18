@@ -7,6 +7,7 @@ import (
 	"github.com/posit-dev/publisher/internal/executor"
 	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 )
 
@@ -28,6 +29,8 @@ var _ RInspector = &defaultRInspector{}
 func NewRInspector(base util.AbsolutePath, rExecutable util.Path, log logging.Logger) (RInspector, error) {
 
 	rInterpreter := interpreters.NewRInterpreter(base, rExecutable, log)
+	// No error returned if there is no R interpreter found.
+	// That can be expected when retrieving the RExecutable
 	err := rInterpreter.Init()
 
 	return &defaultRInspector{
@@ -44,12 +47,24 @@ func NewRInspector(base util.AbsolutePath, rExecutable util.Path, log logging.Lo
 func (i *defaultRInspector) InspectR() (*config.R, error) {
 	_, err := i.rInterpreter.GetRExecutable()
 	if err != nil {
-		i.log.Debug("Error retrieving R Executable", "error", err)
+		if _, ok := types.IsAgentErrorOf(err, types.ErrorRExecNotFound); ok {
+			// we have no R on the system. That's ok.
+			i.log.Debug("Inspecting with no accessible R Executable.")
+		} else {
+			i.log.Debug("Error retrieving R Executable", "error", err)
+		}
 	}
 	version, err := i.rInterpreter.GetRVersion()
 	if err != nil {
-		i.log.Debug("Error retrieving R Version", "error", err)
+		if _, ok := types.IsAgentErrorOf(err, types.ErrorRExecNotFound); ok {
+			// we have no R on the system. That's ok.
+			i.log.Debug("No R Version, since we have no accessible R Executable.")
+		} else {
+			i.log.Debug("Error retrieving R Version", "error", err)
+		}
 	}
+	// GetLockFilePath will handle if there is no RVersion available. It defaults to `renv.lock`
+	// and checks for the presence of it.
 	packageFile, _, err := i.rInterpreter.GetLockFilePath()
 	if err != nil {
 		i.log.Debug("Error retrieving R package lock file", "error", err)

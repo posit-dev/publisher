@@ -152,6 +152,7 @@ func normalizeConfig(
 
 	rInspector, err := RInspectorFactory(base, rExecutable, log)
 	if err != nil {
+		log.Debug("Error while creating the RInspector", "error", err.Error())
 		return err
 	}
 	needR, err := rInspector.RequiresR(cfg)
