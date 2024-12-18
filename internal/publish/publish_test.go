@@ -16,6 +16,7 @@ import (
 	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/inspect/dependencies/renv"
+	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/logging/loggingtest"
 	"github.com/posit-dev/publisher/internal/project"
@@ -110,6 +111,14 @@ func (s *PublishSuite) SetupTest() {
 	cwd.Join("app.py").WriteFile([]byte("import flask\n"), 0600)
 	cwd.Join("requirements.txt").WriteFile([]byte("flask\n"), 0600)
 	cwd.Join("renv.lock").WriteFile([]byte(renvLockContent), 0600)
+
+	interpreters.NewRInterpreter = func(baseDir util.AbsolutePath, rExec util.Path, log logging.Logger) interpreters.RInterpreter {
+		i := interpreters.NewMockRInterpreter()
+		i.On("Init").Return(nil)
+		i.On("RequiresR", mock.Anything).Return(false, nil)
+		i.On("GetLockFilePath").Return(util.RelativePath{}, false, nil)
+		return i
+	}
 
 }
 

@@ -360,7 +360,7 @@ func (s *RSuite) TestResolveRExecutableWhenPassedInPathExistsButNotValid() {
 
 	err := interpreter.resolveRExecutable()
 	s.Error(err)
-	s.Equal("couldn't parse R version from command output (/Users/billsager/dev/publishing-client-another/internal/interpreters/some/R --version)", err.Error())
+	s.Equal(true, strings.Contains(err.Error(), "couldn't parse R version from command output"))
 	s.Equal(false, interpreter.IsRExecutableValid())
 }
 
