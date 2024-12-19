@@ -59,17 +59,25 @@ func inspectProject(base util.AbsolutePath, python util.Path, rExecutable util.P
 		}
 		cfg.Python = pyConfig
 	}
-	needR, err := requiresR(cfg, base)
+
+	rInspector, err := RInspectorFactory(base, rExecutable, log)
 	if err != nil {
 		return nil, err
 	}
+
+	needR, err := rInspector.RequiresR(cfg)
+	if err != nil {
+		log.Debug("Error while determining R as a requirement", "error", err.Error())
+		return nil, err
+	}
 	if needR {
-		inspector := RInspectorFactory(base, rExecutable, log)
-		rConfig, err := inspector.InspectR()
+		rConfig, err := rInspector.InspectR()
 		if err != nil {
+			log.Debug("Error while inspecting to generate an R based configuration", "error", err.Error())
 			return nil, err
 		}
 		cfg.R = rConfig
+		cfg.Files = append(cfg.Files, fmt.Sprint("/", cfg.R.PackageFile))
 	}
 	cfg.Comments = strings.Split(initialComment, "\n")
 
@@ -90,26 +98,6 @@ func requiresPython(cfg *config.Config, base util.AbsolutePath) (bool, error) {
 		return false, err
 	}
 	return exists, nil
-}
-
-func requiresR(cfg *config.Config, base util.AbsolutePath) (bool, error) {
-	if cfg.R != nil {
-		// InferType returned an R configuration for us to fill in.
-		return true, nil
-	}
-	if cfg.Type != config.ContentTypeHTML && !cfg.Type.IsPythonContent() {
-		// Presence of renv.lock implies R is needed,
-		// unless we're deploying pre-rendered Rmd or Quarto
-		// (where there will usually be a source file and
-		// associated lockfile in the directory)
-		lockfilePath := base.Join(inspect.DefaultRenvLockfile)
-		exists, err := lockfilePath.Exists()
-		if err != nil {
-			return false, err
-		}
-		return exists, nil
-	}
-	return false, nil
 }
 
 func normalizeConfig(
@@ -161,14 +149,19 @@ func normalizeConfig(
 		cfg.Python = pyConfig
 		cfg.Files = append(cfg.Files, fmt.Sprint("/", cfg.Python.PackageFile))
 	}
-	needR, err := requiresR(cfg, base)
+
+	rInspector, err := RInspectorFactory(base, rExecutable, log)
+	if err != nil {
+		log.Debug("Error while creating the RInspector", "error", err.Error())
+		return err
+	}
+	needR, err := rInspector.RequiresR(cfg)
 	if err != nil {
 		log.Debug("Error while determining R as a requirement", "error", err.Error())
 		return err
 	}
 	if needR {
-		inspector := RInspectorFactory(base, rExecutable, log)
-		rConfig, err := inspector.InspectR()
+		rConfig, err := rInspector.InspectR()
 		if err != nil {
 			log.Debug("Error while inspecting to generate an R based configuration", "error", err.Error())
 			return err

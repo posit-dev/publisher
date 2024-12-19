@@ -75,12 +75,15 @@ func NewFromState(s *state.State, rExecutable util.Path, emitter events.Emitter,
 		}
 		emitter = events.NewDataEmitter(dataMap, emitter)
 	}
+
+	packageManager, err := renv.NewPackageMapper(s.Dir, rExecutable, log)
+
 	return &defaultPublisher{
 		State:          s,
 		log:            log,
 		emitter:        emitter,
-		rPackageMapper: renv.NewPackageMapper(s.Dir, rExecutable),
-	}, nil
+		rPackageMapper: packageManager,
+	}, err
 }
 
 func logAppInfo(w io.Writer, accountURL string, contentID types.ContentID, log logging.Logger, publishingErr error) {

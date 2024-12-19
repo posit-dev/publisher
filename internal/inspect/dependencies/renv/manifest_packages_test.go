@@ -19,6 +19,7 @@ import (
 type ManifestPackagesSuite struct {
 	utiltest.Suite
 	testdata util.AbsolutePath
+	log      logging.Logger
 }
 
 func TestManifestPackagesSuite(t *testing.T) {
@@ -29,6 +30,7 @@ func (s *ManifestPackagesSuite) SetupTest() {
 	cwd, err := util.Getwd(nil)
 	s.NoError(err)
 	s.testdata = cwd.Join("testdata")
+	s.log = logging.New()
 }
 
 type mockPackageLister struct {
@@ -71,7 +73,9 @@ func (s *ManifestPackagesSuite) TestCRAN() {
 	libPath := base.Join("renv_library")
 	otherlibPath := util.NewAbsolutePath("/nonexistent", afero.NewMemMapFs())
 
-	mapper := NewPackageMapper(base, util.Path{})
+	mapper, err := NewPackageMapper(base, util.Path{}, s.log)
+	s.NoError(err)
+
 	lister := &mockPackageLister{}
 	lister.On("GetLibPaths", mock.Anything).Return([]util.AbsolutePath{otherlibPath, libPath}, nil)
 	lister.On("GetBioconductorRepos", mock.Anything, mock.Anything).Return(nil, nil)
@@ -108,7 +112,9 @@ func (s *ManifestPackagesSuite) TestBioconductor() {
 	libPath := base.Join("renv_library")
 	otherlibPath := util.NewAbsolutePath("/nonexistent", afero.NewMemMapFs())
 
-	mapper := NewPackageMapper(base, util.Path{})
+	mapper, err := NewPackageMapper(base, util.Path{}, s.log)
+	s.NoError(err)
+
 	lister := &mockPackageLister{}
 	lockfileRepos := []Repository{
 		{Name: "CRAN", URL: "https://cran.rstudio.com"},
@@ -171,7 +177,9 @@ func (s *ManifestPackagesSuite) TestVersionMismatch() {
 	lockfilePath := base.Join("renv.lock")
 	libPath := base.Join("renv_library")
 
-	mapper := NewPackageMapper(base, util.Path{})
+	mapper, err := NewPackageMapper(base, util.Path{}, s.log)
+	s.NoError(err)
+
 	lister := &mockPackageLister{}
 	lister.On("GetLibPaths", mock.Anything).Return([]util.AbsolutePath{libPath}, nil)
 	lister.On("GetBioconductorRepos", mock.Anything, mock.Anything).Return(nil, nil)
@@ -199,7 +207,9 @@ func (s *ManifestPackagesSuite) TestDevVersion() {
 	lockfilePath := base.Join("renv.lock")
 	libPath := base.Join("renv_library")
 
-	mapper := NewPackageMapper(base, util.Path{})
+	mapper, err := NewPackageMapper(base, util.Path{}, s.log)
+	s.NoError(err)
+
 	lister := &mockPackageLister{}
 	lister.On("GetLibPaths", mock.Anything).Return([]util.AbsolutePath{libPath}, nil)
 	lister.On("GetBioconductorRepos", mock.Anything, mock.Anything).Return(nil, nil)
@@ -226,7 +236,9 @@ func (s *ManifestPackagesSuite) TestMissingDescriptionFile() {
 	base := s.testdata.Join("cran_project")
 	lockfilePath := base.Join("renv.lock")
 
-	mapper := NewPackageMapper(base, util.Path{})
+	mapper, err := NewPackageMapper(base, util.Path{}, s.log)
+	s.NoError(err)
+
 	lister := &mockPackageLister{}
 	lister.On("GetLibPaths", mock.Anything).Return([]util.AbsolutePath{}, nil)
 	lister.On("GetBioconductorRepos", mock.Anything, mock.Anything).Return(nil, nil)

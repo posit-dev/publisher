@@ -10,8 +10,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/posit-dev/publisher/internal/config"
-	"github.com/posit-dev/publisher/internal/inspect"
 	"github.com/posit-dev/publisher/internal/inspect/dependencies/renv"
+	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
 )
@@ -55,7 +55,7 @@ func (h *getConfigRPackagesHandler) ServeHTTP(w http.ResponseWriter, req *http.R
 	}
 	packageFilename := cfg.R.PackageFile
 	if packageFilename == "" {
-		packageFilename = inspect.DefaultRenvLockfile
+		packageFilename = interpreters.DefaultRenvLockfile
 	}
 
 	path := projectDir.Join(packageFilename)
