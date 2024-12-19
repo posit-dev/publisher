@@ -608,5 +608,3 @@ func (s *RSuite) TestCreateLockfileWithEmptyPath() {
 	err := i.CreateLockfile(util.AbsolutePath{})
 	s.NoError(err)
 }
-
-// Confirm that we don't resolve lock file on init
