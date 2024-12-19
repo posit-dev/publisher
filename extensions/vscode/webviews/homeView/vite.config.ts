@@ -37,5 +37,15 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
+    coverage: {
+      enabled: true,
+      thresholds: {
+        functions: 27.77,
+        lines: 16.06,
+        branches: 37.97,
+        statements: 16.06,
+        autoUpdate: true,
+      },
+    },
   },
 });
