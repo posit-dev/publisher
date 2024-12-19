@@ -3,8 +3,6 @@ package interpreters
 // Copyright (C) 2024 by Posit Software, PBC.
 
 import (
-	"errors"
-
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/stretchr/testify/mock"
 )
@@ -35,7 +33,7 @@ func (m *MockRInterpreter) GetRExecutable() (util.AbsolutePath, error) {
 		if path, ok := i.(string); ok {
 			return util.NewAbsolutePath(path, nil), args.Error(1)
 		} else {
-			return util.AbsolutePath{}, errors.New("invalid string argument")
+			return util.AbsolutePath{}, args.Error(1)
 		}
 	}
 }
@@ -50,7 +48,7 @@ func (m *MockRInterpreter) GetRVersion() (string, error) {
 		if version, ok := i.(string); ok {
 			return version, args.Error(1)
 		} else {
-			return "", errors.New("invalid string argument")
+			return "", args.Error(1)
 		}
 	}
 }
@@ -72,7 +70,7 @@ func (m *MockRInterpreter) GetLockFilePath() (util.RelativePath, bool, error) {
 		if !ok {
 			exists = false
 		}
-		return util.NewRelativePath(path.String(), nil), exists, args.Error(2)
+		return path, exists, args.Error(2)
 	}
 }
 

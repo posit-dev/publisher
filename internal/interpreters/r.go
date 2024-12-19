@@ -364,10 +364,14 @@ func (i *defaultRInterpreter) CreateLockfile(lockfilePath util.AbsolutePath) err
 	if err != nil {
 		return err
 	}
-
-	escaped := strings.ReplaceAll(lockfilePath.String(), `\`, `\\`)
-	code := fmt.Sprintf(`renv::snapshot(lockfile="%s")`, escaped)
-	args := []string{"-s", "-e", code}
+	var cmd string
+	if lockfilePath.String() == "" {
+		cmd = "renv::snapshot()"
+	} else {
+		escaped := strings.ReplaceAll(lockfilePath.String(), `\`, `\\`)
+		cmd = fmt.Sprintf(`renv::snapshot(lockfile="%s")`, escaped)
+	}
+	args := []string{"-s", "-e", cmd}
 	stdout, stderr, err := i.executor.RunCommand(rExecutable.String(), args, i.base, i.log)
 	i.log.Debug("renv::snapshot()", "out", string(stdout), "err", string(stderr))
 	return err

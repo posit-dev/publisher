@@ -3,14 +3,16 @@ package inspect
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"errors"
 	"testing"
 
+	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
 	"github.com/spf13/afero"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -29,19 +31,19 @@ func (s *RSuite) SetupTest() {
 	s.cwd = cwd
 	err = cwd.MkdirAll(0700)
 	s.NoError(err)
-
-	interpreters.NewRInterpreter = func(baseDir util.AbsolutePath, rExec util.Path, log logging.Logger) interpreters.RInterpreter {
-		i := interpreters.NewMockRInterpreter()
-		i.On("Init").Return(nil)
-		i.On("RequiresR", mock.Anything).Return(false, nil)
-		i.On("GetLockFilePath").Return(util.RelativePath{}, false, nil)
-		return i
-	}
 }
 
 func (s *RSuite) TestNewRInspector() {
 	log := logging.New()
 	rPath := util.NewPath("/usr/bin/R", nil)
+
+	interpreters.NewRInterpreter = func(baseDir util.AbsolutePath, rExec util.Path, log logging.Logger) interpreters.RInterpreter {
+		i := interpreters.NewMockRInterpreter()
+		i.On("Init").Return(nil)
+		// i.On("RequiresR", mock.Anything).Return(false, nil)
+		// i.On("GetLockFilePath").Return(util.RelativePath{}, false, nil)
+		return i
+	}
 
 	i, err := NewRInspector(s.cwd, rPath, log)
 	s.NoError(err)
@@ -49,4 +51,127 @@ func (s *RSuite) TestNewRInspector() {
 	inspector := i.(*defaultRInspector)
 	s.Equal(s.cwd, inspector.base)
 	s.Equal(log, inspector.log)
+}
+
+func (s *RSuite) TestInspectWithRFound() {
+	var relPath util.RelativePath
+
+	interpreters.NewRInterpreter = func(baseDir util.AbsolutePath, rExec util.Path, log logging.Logger) interpreters.RInterpreter {
+		i := interpreters.NewMockRInterpreter()
+		i.On("Init").Return(nil)
+		i.On("GetRExecutable").Return(util.NewAbsolutePath("R", baseDir.Fs()), nil)
+		i.On("GetRVersion").Return("1.2.3", nil)
+		relPath = util.NewRelativePath(baseDir.Join("renv.lock").String(), baseDir.Fs())
+		i.On("GetLockFilePath").Return(relPath, true, nil)
+		return i
+	}
+	log := logging.New()
+	i, err := NewRInspector(s.cwd, util.Path{}, log)
+	s.NoError(err)
+
+	inspect, err := i.InspectR()
+	s.NoError(err)
+	s.Equal("renv", inspect.PackageManager)
+	s.Equal("1.2.3", inspect.Version)
+	s.Equal(relPath.String(), inspect.PackageFile)
+}
+
+func (s *RSuite) TestInspectWithNoRFound() {
+	interpreters.NewRInterpreter = func(baseDir util.AbsolutePath, rExec util.Path, log logging.Logger) interpreters.RInterpreter {
+		i := interpreters.NewMockRInterpreter()
+		rExecNotFoundError := types.NewAgentError(types.ErrorRExecNotFound, errors.New("info"), nil)
+		i.On("Init").Return(nil)
+		i.On("GetRExecutable").Return(util.AbsolutePath{}, nil)
+		i.On("GetRVersion").Return("", rExecNotFoundError)
+		// i.On("RequiresR", mock.Anything).Return(false, nil)
+		relPath := util.NewRelativePath(baseDir.Join("renv_2222.lock").String(), baseDir.Fs())
+		i.On("GetLockFilePath").Return(relPath, false, nil)
+		return i
+	}
+	log := logging.New()
+	i, err := NewRInspector(s.cwd, util.Path{}, log)
+	s.NoError(err)
+
+	inspect, err := i.InspectR()
+	s.NoError(err)
+	s.Equal("renv", inspect.PackageManager)
+	s.Equal("", inspect.Version)
+	s.Equal(s.cwd.Join("renv_2222.lock").String(), inspect.PackageFile)
+}
+
+func (s *RSuite) TestRequiresRWithEmptyCfgAndLockfileExists() {
+	interpreters.NewRInterpreter = func(baseDir util.AbsolutePath, rExec util.Path, log logging.Logger) interpreters.RInterpreter {
+		i := interpreters.NewMockRInterpreter()
+		relPath := util.NewRelativePath(s.cwd.Join("renv.lock").String(), s.cwd.Fs())
+		i.On("GetLockFilePath").Return(relPath, true, nil)
+		return i
+	}
+
+	log := logging.New()
+	i, err := NewRInspector(s.cwd, util.Path{}, log)
+	s.NoError(err)
+
+	cfg := &config.Config{}
+
+	require, err := i.RequiresR(cfg)
+	s.NoError(err)
+	s.Equal(true, require)
+}
+
+func (s *RSuite) TestRequiresRWithEmptyCfgAndLockfileDoesNotExists() {
+	interpreters.NewRInterpreter = func(baseDir util.AbsolutePath, rExec util.Path, log logging.Logger) interpreters.RInterpreter {
+		i := interpreters.NewMockRInterpreter()
+		relPath := util.NewRelativePath(s.cwd.Join("renv.lock").String(), s.cwd.Fs())
+		i.On("GetLockFilePath").Return(relPath, false, nil)
+		return i
+	}
+
+	log := logging.New()
+	i, err := NewRInspector(s.cwd, util.Path{}, log)
+	s.NoError(err)
+
+	cfg := &config.Config{}
+
+	require, err := i.RequiresR(cfg)
+	s.NoError(err)
+	s.Equal(false, require)
+}
+
+func (s *RSuite) TestRequiresRWithRCfg() {
+	log := logging.New()
+	i, err := NewRInspector(s.cwd, util.Path{}, log)
+	s.NoError(err)
+
+	cfg := &config.Config{
+		R: &config.R{},
+	}
+	require, err := i.RequiresR(cfg)
+	s.NoError(err)
+	s.Equal(true, require)
+}
+
+func (s *RSuite) TestRequiresRNoRButWithTypeAsPython() {
+	log := logging.New()
+	i, err := NewRInspector(s.cwd, util.Path{}, log)
+	s.NoError(err)
+
+	cfg := &config.Config{
+		Type: config.ContentTypePythonFastAPI,
+	}
+	require, err := i.RequiresR(cfg)
+	s.NoError(err)
+	s.Equal(false, require)
+}
+
+func (s *RSuite) TestRequiresRNoRButWithTypeEqualContentTypeHTML() {
+	log := logging.New()
+	i, err := NewRInspector(s.cwd, util.Path{}, log)
+	s.NoError(err)
+
+	cfg := &config.Config{
+		Type: config.ContentTypeHTML,
+	}
+	require, err := i.RequiresR(cfg)
+	s.NoError(err)
+	s.Equal(false, require)
 }

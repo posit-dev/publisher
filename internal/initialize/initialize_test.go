@@ -17,6 +17,8 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+// TODO = initialize not currently testing R project
+
 type InitializeSuite struct {
 	utiltest.Suite
 	cwd util.AbsolutePath
@@ -59,7 +61,7 @@ func (s *InitializeSuite) TestInitEmpty() {
 	s.Equal("My App", cfg.Title)
 }
 
-func (s *InitializeSuite) createAppPy() {
+func (s *InitializeSuite) createAppPy() util.AbsolutePath {
 	appPath := s.cwd.Join("app.py")
 	err := appPath.WriteFile([]byte(`
 		from flask import Flask
@@ -67,6 +69,55 @@ func (s *InitializeSuite) createAppPy() {
 		app.run()
 	`), 0666)
 	s.NoError(err)
+	return appPath
+}
+
+func (s *InitializeSuite) createAppR() util.AbsolutePath {
+	appPath := s.cwd.Join("app.R")
+	err := appPath.WriteFile([]byte(`
+library(shiny)
+
+# Define UI for application that draws a histogram
+ui <- fluidPage(
+  
+  # Application title
+  titlePanel("Old Faithful Geyser Data"),
+  
+  # Sidebar with a slider input for number of bins 
+  sidebarLayout(
+    sidebarPanel(
+      sliderInput("bins",
+                  "Number of bins:",
+                  min = 1,
+                  max = 50,
+                  value = 30)
+    ),
+    
+    # Show a plot of the generated distribution
+    mainPanel(
+      plotOutput("distPlot")
+    )
+  )
+)
+
+# Define server logic required to draw a histogram
+server <- function(input, output) {
+  
+  output$distPlot <- renderPlot({
+    # generate bins based on input$bins from ui.R
+    x    <- faithful[, 2]
+    bins <- seq(min(x), max(x), length.out = input$bins + 1)
+    
+    # draw the histogram with the specified number of bins
+    hist(x, breaks = bins, col = 'darkgray', border = 'white')
+  })
+}
+
+# Run the application 
+shinyApp(ui = ui, server = server)
+	`), 0666)
+	s.NoError(err)
+	return appPath
 }
 
 func (s *InitializeSuite) createHTML() {
@@ -98,10 +149,26 @@ func makeMockPythonInspector(util.AbsolutePath, util.Path, logging.Logger) inspe
 	return pyInspector
 }
 
+var expectedRConfig = &config.R{
+	Version:        "1.2.3",
+	PackageManager: "renv",
+	PackageFile:    "renv.lock",
+}
+
+func setupMockRInspector(requiredRReturnValue bool, requiredRError error) func(util.AbsolutePath, util.Path, logging.Logger) (inspect.RInspector, error) {
+	return func(util.AbsolutePath, util.Path, logging.Logger) (inspect.RInspector, error) {
+		rInspector := inspect.NewMockRInspector()
+		rInspector.On("InspectR").Return(expectedRConfig, nil)
+		rInspector.On("RequiresR").Return(requiredRReturnValue, requiredRError)
+		return rInspector, nil
+	}
+}
+
 func (s *InitializeSuite) TestInitInferredType() {
 	log := logging.New()
 	s.createAppPy()
 	PythonInspectorFactory = makeMockPythonInspector
+	RInspectorFactory = setupMockRInspector(false, nil)
 	configName := ""
 	cfg, err := Init(s.cwd, configName, util.Path{}, util.Path{}, log)
 	s.NoError(err)
@@ -118,6 +185,7 @@ func (s *InitializeSuite) TestInitRequirementsFile() {
 	s.createHTML()
 	s.createRequirementsFile()
 	PythonInspectorFactory = makeMockPythonInspector
+	RInspectorFactory = setupMockRInspector(false, nil)
 	configName := ""
 	cfg, err := Init(s.cwd, configName, util.Path{}, util.Path{}, log)
 	s.NoError(err)
@@ -133,6 +201,7 @@ func (s *InitializeSuite) TestInitIfNeededWhenNeeded() {
 	log := logging.New()
 	s.createAppPy()
 	PythonInspectorFactory = makeMockPythonInspector
+	RInspectorFactory = setupMockRInspector(false, nil)
 	configName := ""
 	err := InitIfNeeded(s.cwd, configName, log)
 	s.NoError(err)
@@ -160,6 +229,9 @@ func (s *InitializeSuite) TestInitIfNeededWhenNotNeeded() {
 	PythonInspectorFactory = func(util.AbsolutePath, util.Path, logging.Logger) inspect.PythonInspector {
 		return &inspect.MockPythonInspector{}
 	}
+	RInspectorFactory = func(util.AbsolutePath, util.Path, logging.Logger) (inspect.RInspector, error) {
+		return &inspect.MockRInspector{}, nil
+	}
 	err := InitIfNeeded(s.cwd, configName, log)
 	s.NoError(err)
 	newConfig, err := config.FromFile(configPath)
@@ -169,25 +241,39 @@ func (s *InitializeSuite) TestInitIfNeededWhenNotNeeded() {
 
 func (s *InitializeSuite) TestGetPossibleConfigs() {
 	log := logging.New()
-	s.createAppPy()
+	appPy := s.createAppPy()
+	exist, err := appPy.Exists()
+	s.NoError(err)
+	s.Equal(true, exist)
+	appR := s.createAppR()
+	exist, err = appR.Exists()
+	s.NoError(err)
+	s.Equal(true, exist)
 
-	err := s.cwd.Join("index.html").WriteFile([]byte(`<html></html>`), 0666)
+	err = s.cwd.Join("index.html").WriteFile([]byte(`<html></html>`), 0666)
 	s.NoError(err)
 
 	PythonInspectorFactory = makeMockPythonInspector
+	RInspectorFactory = setupMockRInspector(true, nil)
+
 	configs, err := GetPossibleConfigs(s.cwd, util.Path{}, util.Path{}, util.RelativePath{}, log)
 	s.NoError(err)
 
-	s.Len(configs, 2)
-	s.Equal(config.ContentTypePythonFlask, configs[0].Type)
-	s.Equal("app.py", configs[0].Entrypoint)
-	s.Equal([]string{"/app.py", "/requirements.txt"}, configs[0].Files)
-	s.Equal(expectedPyConfig, configs[0].Python)
+	s.Len(configs, 3)
+	s.Equal(config.ContentTypeRShiny, configs[0].Type)
+	s.Equal("app.R", configs[0].Entrypoint)
+	s.Equal([]string{"/app.R", "/renv.lock"}, configs[0].Files)
+	s.Equal(expectedRConfig, configs[0].R)
 
-	s.Equal(config.ContentTypeHTML, configs[1].Type)
-	s.Equal("index.html", configs[1].Entrypoint)
-	s.Equal([]string{"/index.html"}, configs[1].Files)
-	s.Nil(configs[1].Python)
+	s.Equal(config.ContentTypePythonFlask, configs[1].Type)
+	s.Equal("app.py", configs[1].Entrypoint)
+	s.Equal([]string{"/app.py", "/requirements.txt", "/renv.lock"}, configs[1].Files)
+	s.Equal(expectedPyConfig, configs[1].Python)
+
+	s.Equal(config.ContentTypeHTML, configs[2].Type)
+	s.Equal("index.html", configs[2].Entrypoint)
+	s.Equal([]string{"/index.html", "/renv.lock"}, configs[2].Files)
+	s.Nil(configs[2].Python)
 }
 
 func (s *InitializeSuite) TestGetPossibleConfigsEmpty() {

@@ -3,6 +3,7 @@ package interpreters
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"errors"
 	"fmt"
 	"runtime"
 	"strings"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/posit-dev/publisher/internal/executor/executortest"
 	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
 	"github.com/spf13/afero"
@@ -66,6 +68,48 @@ func (s *RSuite) TestNewRInterpreter() {
 
 	err = interpreter.CreateLockfile(util.NewAbsolutePath("abc/renv.lock", nil))
 	s.ErrorIs(err, NotYetInitialized)
+}
+
+func (s *RSuite) TestInit() {
+	log := logging.New()
+
+	rPath := s.cwd.Join("bin", "R")
+	rPath.Dir().MkdirAll(0777)
+	rPath.WriteFile([]byte(nil), 0777)
+
+	i := NewRInterpreter(s.cwd, rPath.Path, log)
+	interpreter := i.(*defaultRInterpreter)
+	executor := executortest.NewMockExecutor()
+	executor.On("RunCommand", mock.Anything, []string{"--version"}, mock.Anything, mock.Anything).Return([]byte("R version 4.3.0 (2023-04-21)"), nil, nil)
+	executor.On("RunCommand", mock.Anything, []string{"-s", "-e", "renv::paths$lockfile()"}, mock.Anything, mock.Anything).Return([]byte(`[1] "/test/sample-content/shinyapp/renv.lock"`), nil, nil).Once()
+	interpreter.executor = executor
+	interpreter.initialized = true
+	interpreter.fs = s.cwd.Fs()
+
+	err := i.Init()
+	s.NoError(err)
+
+	s.Equal(rPath.String(), interpreter.rExecutable.String())
+	s.Equal("4.3.0", interpreter.version)
+	s.Equal("", interpreter.lockfileRelPath.String())
+	s.Equal(false, interpreter.lockfileExists)
+	s.Equal(true, interpreter.initialized)
+
+	// Now we lazy load the lock file path
+	lockFilePath, exists, err := interpreter.GetLockFilePath()
+	absLockFile := util.NewAbsolutePath(lockFilePath.String(), s.fs)
+	absExpectedLockFile := util.NewAbsolutePath("/test/sample-content/shinyapp/renv.lock", s.fs)
+	s.Equal(absExpectedLockFile.String(), absLockFile.String())
+	s.Equal(false, exists)
+	s.NoError(err)
+
+	// Make sure calling doesn't re-invoke discovery. We test this by having the R renv:: command
+	// only return once. If it is called more than that, the test code will panic.
+	lockFilePath, exists, err = interpreter.GetLockFilePath()
+	absLockFile = util.NewAbsolutePath(lockFilePath.String(), s.fs)
+	s.Equal(absExpectedLockFile.String(), absLockFile.String())
+	s.Equal(false, exists)
+	s.NoError(err)
 }
 
 type OutputTestData struct {
@@ -285,6 +329,22 @@ func (s *RSuite) TestIsRExecutableValid() {
 	}
 }
 
+func (s *RSuite) TestResolveRExecutableWhenNotFoundOrInvalid() {
+	log := logging.New()
+
+	i := NewRInterpreter(s.cwd, util.Path{}, log)
+	interpreter := i.(*defaultRInterpreter)
+	executor := executortest.NewMockExecutor()
+	executor.On("RunCommand", mock.Anything, []string{"--version"}, mock.Anything, mock.Anything).Return([]byte("R version 4.3.0 (2023-04-21)"), nil, nil)
+	executor.On("ValidateRExecutable").Return("", errors.New("an error"))
+	interpreter.executor = executor
+	interpreter.initialized = true
+	interpreter.fs = s.cwd.Fs()
+
+	err := interpreter.resolveRExecutable()
+	s.Error(err)
+}
+
 // Validate when we pass in a path that exists and is valid, we get it back
 func (s *RSuite) TestResolveRExecutableWhenPassedInPathExistsAndIsValid() {
 	log := logging.New()
@@ -367,11 +427,11 @@ func (s *RSuite) TestResolveRExecutableWhenPassedInPathExistsButNotValid() {
 // Validate when we do not pass in a value and
 // have R on the path that exists but is not valid
 func (s *RSuite) TestResolveRExecutableWhenPathContainsRButNotValid() {
-	log := logging.New()
-
 	if runtime.GOOS == "windows" {
 		s.T().Skip("This test does not run on Windows")
 	}
+
+	log := logging.New()
 	pathLooker := util.NewMockPathLooker()
 	pathLooker.On("LookPath", "R").Return("/some/R", nil)
 	rPath := s.cwd.Join("some", "R")
@@ -390,6 +450,39 @@ func (s *RSuite) TestResolveRExecutableWhenPathContainsRButNotValid() {
 	err := interpreter.resolveRExecutable()
 	s.Error(err)
 	s.Equal("unable to detect any R interpreters", err.Error())
+}
+
+// Validate if unable to run R executable, get an error in
+func (s *RSuite) TestGetRVersionFromRExecutableWithInvalidR() {
+
+	log := logging.New()
+	i := NewRInterpreter(s.cwd, util.Path{}, log)
+	interpreter := i.(*defaultRInterpreter)
+	interpreter.initialized = true
+	executor := executortest.NewMockExecutor()
+	executor.On("RunCommand", mock.Anything, []string{"--version"}, mock.Anything, mock.Anything).Return([]byte(""), nil, errors.New("problem"))
+	interpreter.executor = executor
+	interpreter.fs = s.cwd.Fs()
+
+	_, err := interpreter.getRVersionFromRExecutable("does-not-matter")
+	s.Error(err)
+
+	err = interpreter.resolveRenvLockFile("does-not-matter")
+	s.NoError(err)
+}
+
+func (s *RSuite) TestResolveRenvLockFileWithInvalidR() {
+	log := logging.New()
+	i := NewRInterpreter(s.cwd, util.Path{}, log)
+	interpreter := i.(*defaultRInterpreter)
+	interpreter.initialized = true
+	executor := executortest.NewMockExecutor()
+	executor.On("RunCommand", mock.Anything, []string{"--version"}, mock.Anything, mock.Anything).Return([]byte(""), nil, errors.New("problem"))
+	interpreter.executor = executor
+	interpreter.fs = s.cwd.Fs()
+
+	err := interpreter.resolveRenvLockFile("does-not-matter")
+	s.NoError(err)
 }
 
 // Validate that we find the lock file that R specifies
@@ -470,3 +563,50 @@ func (s *RSuite) TestResolveRenvLockFileWithRSpecialNameAndExists() {
 	s.Equal("renv-project222.lock", interpreter.lockfileRelPath.String())
 	s.Equal(true, interpreter.lockfileExists)
 }
+
+func (s *RSuite) TestCreateLockfileWithInvalidR() {
+	log := logging.New()
+	i := NewRInterpreter(s.cwd, util.Path{}, log)
+	interpreter := i.(*defaultRInterpreter)
+	interpreter.initialized = true
+	interpreter.fs = s.cwd.Fs()
+
+	err := interpreter.CreateLockfile(util.NewAbsolutePath("abc/xxy/renv.lock", s.cwd.Fs()))
+	s.Error(err)
+	_, ok := types.IsAgentErrorOf(err, types.ErrorRExecNotFound)
+	s.Equal(true, ok)
+}
+
+func (s *RSuite) TestCreateLockfileWithNonEmptyPath() {
+	log := logging.New()
+	i := NewRInterpreter(s.cwd, util.Path{}, log)
+	interpreter := i.(*defaultRInterpreter)
+	interpreter.initialized = true
+	interpreter.rExecutable = util.NewAbsolutePath("/usr/bin/R", s.cwd.Fs())
+	interpreter.version = "1.2.3"
+	executor := executortest.NewMockExecutor()
+	executor.On("RunCommand", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return([]byte("success"), nil, nil)
+	interpreter.executor = executor
+	interpreter.fs = s.cwd.Fs()
+
+	err := i.CreateLockfile(util.NewAbsolutePath("abc/xxy/renv.lock", s.cwd.Fs()))
+	s.NoError(err)
+}
+
+func (s *RSuite) TestCreateLockfileWithEmptyPath() {
+	log := logging.New()
+	i := NewRInterpreter(s.cwd, util.Path{}, log)
+	interpreter := i.(*defaultRInterpreter)
+	interpreter.initialized = true
+	interpreter.rExecutable = util.NewAbsolutePath("/usr/bin/R", s.cwd.Fs())
+	interpreter.version = "1.2.3"
+	executor := executortest.NewMockExecutor()
+	executor.On("RunCommand", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return([]byte("success"), nil, nil)
+	interpreter.executor = executor
+	interpreter.fs = s.cwd.Fs()
+
+	err := i.CreateLockfile(util.AbsolutePath{})
+	s.NoError(err)
+}
+
+// Confirm that we don't resolve lock file on init
