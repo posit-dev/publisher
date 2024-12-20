@@ -110,14 +110,6 @@ func (s *PublishSuite) SetupTest() {
 	cwd.Join("app.py").WriteFile([]byte("import flask\n"), 0600)
 	cwd.Join("requirements.txt").WriteFile([]byte("flask\n"), 0600)
 	cwd.Join("renv.lock").WriteFile([]byte(renvLockContent), 0600)
-
-	// setupMockRInterpreter := func() (interpreters.RInterpreter, error) {
-	// 	i := interpreters.NewMockRInterpreter()
-	// 	i.On("Init").Return(nil)
-	// 	i.On("RequiresR", mock.Anything).Return(false, nil)
-	// 	i.On("GetLockFilePath").Return(util.RelativePath{}, false, nil)
-	// 	return i, nil
-	// }
 }
 
 func (s *PublishSuite) TestNewFromState() {
