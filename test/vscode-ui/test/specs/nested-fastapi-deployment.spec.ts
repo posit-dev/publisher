@@ -57,6 +57,9 @@ describe("Nested Fast API Deployment", () => {
     );
     await expect(myConfig).toExist();
     myConfig.click();
+
+    // wait for the click to be done.
+    await expect(myConfig).not.toExist();
   });
 
   it("can edit config", async () => {
