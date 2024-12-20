@@ -21,6 +21,11 @@ func GetCredentialsHandlerFunc(log logging.Logger) http.HandlerFunc {
 					apiErr.JSONResponse(w)
 					return
 				}
+				if aerr.Code == types.ErrorCredentialCorruptedReset {
+					apiErr := types.APIErrorCredentialCorruptedResetFromAgentError(*aerr)
+					apiErr.JSONResponse(w)
+					return
+				}
 			}
 			InternalError(w, req, log, err)
 			return

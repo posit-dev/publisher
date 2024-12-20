@@ -5,6 +5,7 @@ package accounts
 import (
 	"github.com/posit-dev/publisher/internal/credentials"
 	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/types"
 )
 
 type CredentialsProvider struct {
@@ -14,7 +15,11 @@ type CredentialsProvider struct {
 func NewCredentialsProvider(log logging.Logger) (*CredentialsProvider, error) {
 	cs, err := credentials.NewCredentialsService(log)
 	if err != nil {
-		return nil, err
+		// Ignore errors from credentials reset at this point
+		_, isCredsReset := types.IsAgentErrorOf(err, types.ErrorCredentialCorruptedReset)
+		if !isCredsReset {
+			return nil, err
+		}
 	}
 
 	return &CredentialsProvider{cs}, nil
