@@ -48,8 +48,6 @@ func (s *RSuite) TestNewRInspector() {
 	) (interpreters.RInterpreter, error) {
 		i := interpreters.NewMockRInterpreter()
 		i.On("Init").Return(nil)
-		// i.On("RequiresR", mock.Anything).Return(false, nil)
-		// i.On("GetLockFilePath").Return(util.RelativePath{}, false, nil)
 		return i, nil
 	}
 
@@ -105,7 +103,6 @@ func (s *RSuite) TestInspectWithNoRFound() {
 		i.On("Init").Return(nil)
 		i.On("GetRExecutable").Return(util.AbsolutePath{}, nil)
 		i.On("GetRVersion").Return("", rExecNotFoundError)
-		// i.On("RequiresR", mock.Anything).Return(false, nil)
 		relPath := util.NewRelativePath(s.cwd.Join("renv_2222.lock").String(), s.cwd.Fs())
 		i.On("GetLockFilePath").Return(relPath, false, nil)
 		return i, nil

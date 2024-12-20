@@ -218,7 +218,6 @@ func (s *RSuite) TestGetRVersionFromExecutable() {
 		interpreter.existsFunc = func(util.Path) (bool, error) {
 			return true, nil
 		}
-		// interpreter.version = "fake"
 
 		rExecutable, err := rInterpreter.GetRExecutable()
 		s.NoError(err)
