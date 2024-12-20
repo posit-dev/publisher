@@ -26,12 +26,20 @@ type defaultRInspector struct {
 
 var _ RInspector = &defaultRInspector{}
 
-func NewRInspector(base util.AbsolutePath, rExecutable util.Path, log logging.Logger) (RInspector, error) {
+type RInspectorFactory func(base util.AbsolutePath, rExecutable util.Path, log logging.Logger, rInterpreterFactory interpreters.RInterpreterFactory, cmdExecutorOverride executor.Executor) (RInspector, error)
 
-	rInterpreter := interpreters.NewRInterpreter(base, rExecutable, log)
-	// No error returned if there is no R interpreter found.
-	// That can be expected when retrieving the RExecutable
-	err := rInterpreter.Init()
+func NewRInspector(base util.AbsolutePath, rExecutable util.Path, log logging.Logger, rInterpreterFactoryOverride interpreters.RInterpreterFactory, cmdExecutorOverride executor.Executor) (RInspector, error) {
+
+	var rInterpreter interpreters.RInterpreter
+	var err error
+
+	if rInterpreterFactoryOverride != nil {
+		rInterpreter, err = rInterpreterFactoryOverride(base, rExecutable, log, cmdExecutorOverride, nil, nil)
+	} else {
+		// No error returned if there is no R interpreter found.
+		// That can be expected when retrieving the RExecutable
+		rInterpreter, err = interpreters.NewRInterpreter(base, rExecutable, log, nil, nil, nil)
+	}
 
 	return &defaultRInspector{
 		base:         base,

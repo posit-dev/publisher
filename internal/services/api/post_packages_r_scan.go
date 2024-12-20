@@ -20,14 +20,16 @@ type PostPackagesRScanRequest struct {
 }
 
 type PostPackagesRScanHandler struct {
-	base util.AbsolutePath
-	log  logging.Logger
+	base                util.AbsolutePath
+	log                 logging.Logger
+	rInterpreterFactory interpreters.RInterpreterFactory
 }
 
-func NewPostPackagesRScanHandler(base util.AbsolutePath, log logging.Logger) *PostPackagesRScanHandler {
+func NewPostPackagesRScanHandler(base util.AbsolutePath, log logging.Logger, rInterpreterFactory interpreters.RInterpreterFactory) *PostPackagesRScanHandler {
 	return &PostPackagesRScanHandler{
-		base: base,
-		log:  log,
+		base:                base,
+		log:                 log,
+		rInterpreterFactory: rInterpreterFactory,
 	}
 }
 
@@ -59,8 +61,7 @@ func (h *PostPackagesRScanHandler) ServeHTTP(w http.ResponseWriter, req *http.Re
 	lockfileAbsPath := projectDir.Join(path.String())
 	rPath := util.NewPath(b.R, nil)
 
-	rInterpreter := interpreters.NewRInterpreter(projectDir, rPath, h.log)
-	err = rInterpreter.Init()
+	rInterpreter, err := h.rInterpreterFactory(projectDir, rPath, h.log, nil, nil, nil)
 	if err != nil {
 		InternalError(w, req, h.log, err)
 		return

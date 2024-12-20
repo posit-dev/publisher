@@ -175,7 +175,7 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 		Methods(http.MethodPost)
 
 	// POST /api/packages/r/scan
-	r.Handle(ToPath("packages", "r", "scan"), NewPostPackagesRScanHandler(base, log)).
+	r.Handle(ToPath("packages", "r", "scan"), NewPostPackagesRScanHandler(base, log, nil)).
 		Methods(http.MethodPost)
 
 	c := cors.AllowAll().Handler(r)

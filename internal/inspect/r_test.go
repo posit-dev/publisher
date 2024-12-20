@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/executor"
 	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/types"
@@ -37,15 +38,22 @@ func (s *RSuite) TestNewRInspector() {
 	log := logging.New()
 	rPath := util.NewPath("/usr/bin/R", nil)
 
-	interpreters.NewRInterpreter = func(baseDir util.AbsolutePath, rExec util.Path, log logging.Logger) interpreters.RInterpreter {
+	setupMockRInterpreter := func(
+		base util.AbsolutePath,
+		rExecutableParam util.Path,
+		log logging.Logger,
+		cmdExecutorOverride executor.Executor,
+		pathLookerOverride util.PathLooker,
+		existsFuncOverride interpreters.ExistsFunc,
+	) (interpreters.RInterpreter, error) {
 		i := interpreters.NewMockRInterpreter()
 		i.On("Init").Return(nil)
 		// i.On("RequiresR", mock.Anything).Return(false, nil)
 		// i.On("GetLockFilePath").Return(util.RelativePath{}, false, nil)
-		return i
+		return i, nil
 	}
 
-	i, err := NewRInspector(s.cwd, rPath, log)
+	i, err := NewRInspector(s.cwd, rPath, log, setupMockRInterpreter, nil)
 	s.NoError(err)
 
 	inspector := i.(*defaultRInspector)
@@ -56,17 +64,24 @@ func (s *RSuite) TestNewRInspector() {
 func (s *RSuite) TestInspectWithRFound() {
 	var relPath util.RelativePath
 
-	interpreters.NewRInterpreter = func(baseDir util.AbsolutePath, rExec util.Path, log logging.Logger) interpreters.RInterpreter {
+	setupMockRInterpreter := func(
+		base util.AbsolutePath,
+		rExecutableParam util.Path,
+		log logging.Logger,
+		cmdExecutorOverride executor.Executor,
+		pathLookerOverride util.PathLooker,
+		existsFuncOverride interpreters.ExistsFunc,
+	) (interpreters.RInterpreter, error) {
 		i := interpreters.NewMockRInterpreter()
 		i.On("Init").Return(nil)
-		i.On("GetRExecutable").Return(util.NewAbsolutePath("R", baseDir.Fs()), nil)
+		i.On("GetRExecutable").Return(util.NewAbsolutePath("R", s.cwd.Fs()), nil)
 		i.On("GetRVersion").Return("1.2.3", nil)
-		relPath = util.NewRelativePath(baseDir.Join("renv.lock").String(), baseDir.Fs())
+		relPath = util.NewRelativePath(s.cwd.Join("renv.lock").String(), s.cwd.Fs())
 		i.On("GetLockFilePath").Return(relPath, true, nil)
-		return i
+		return i, nil
 	}
 	log := logging.New()
-	i, err := NewRInspector(s.cwd, util.Path{}, log)
+	i, err := NewRInspector(s.cwd, util.Path{}, log, setupMockRInterpreter, nil)
 	s.NoError(err)
 
 	inspect, err := i.InspectR()
@@ -77,19 +92,26 @@ func (s *RSuite) TestInspectWithRFound() {
 }
 
 func (s *RSuite) TestInspectWithNoRFound() {
-	interpreters.NewRInterpreter = func(baseDir util.AbsolutePath, rExec util.Path, log logging.Logger) interpreters.RInterpreter {
+	setupMockRInterpreter := func(
+		base util.AbsolutePath,
+		rExecutableParam util.Path,
+		log logging.Logger,
+		cmdExecutorOverride executor.Executor,
+		pathLookerOverride util.PathLooker,
+		existsFuncOverride interpreters.ExistsFunc,
+	) (interpreters.RInterpreter, error) {
 		i := interpreters.NewMockRInterpreter()
 		rExecNotFoundError := types.NewAgentError(types.ErrorRExecNotFound, errors.New("info"), nil)
 		i.On("Init").Return(nil)
 		i.On("GetRExecutable").Return(util.AbsolutePath{}, nil)
 		i.On("GetRVersion").Return("", rExecNotFoundError)
 		// i.On("RequiresR", mock.Anything).Return(false, nil)
-		relPath := util.NewRelativePath(baseDir.Join("renv_2222.lock").String(), baseDir.Fs())
+		relPath := util.NewRelativePath(s.cwd.Join("renv_2222.lock").String(), s.cwd.Fs())
 		i.On("GetLockFilePath").Return(relPath, false, nil)
-		return i
+		return i, nil
 	}
 	log := logging.New()
-	i, err := NewRInspector(s.cwd, util.Path{}, log)
+	i, err := NewRInspector(s.cwd, util.Path{}, log, setupMockRInterpreter, nil)
 	s.NoError(err)
 
 	inspect, err := i.InspectR()
@@ -100,15 +122,22 @@ func (s *RSuite) TestInspectWithNoRFound() {
 }
 
 func (s *RSuite) TestRequiresRWithEmptyCfgAndLockfileExists() {
-	interpreters.NewRInterpreter = func(baseDir util.AbsolutePath, rExec util.Path, log logging.Logger) interpreters.RInterpreter {
+	setupMockRInterpreter := func(
+		base util.AbsolutePath,
+		rExecutableParam util.Path,
+		log logging.Logger,
+		cmdExecutorOverride executor.Executor,
+		pathLookerOverride util.PathLooker,
+		existsFuncOverride interpreters.ExistsFunc,
+	) (interpreters.RInterpreter, error) {
 		i := interpreters.NewMockRInterpreter()
 		relPath := util.NewRelativePath(s.cwd.Join("renv.lock").String(), s.cwd.Fs())
 		i.On("GetLockFilePath").Return(relPath, true, nil)
-		return i
+		return i, nil
 	}
 
 	log := logging.New()
-	i, err := NewRInspector(s.cwd, util.Path{}, log)
+	i, err := NewRInspector(s.cwd, util.Path{}, log, setupMockRInterpreter, nil)
 	s.NoError(err)
 
 	cfg := &config.Config{}
@@ -119,15 +148,22 @@ func (s *RSuite) TestRequiresRWithEmptyCfgAndLockfileExists() {
 }
 
 func (s *RSuite) TestRequiresRWithEmptyCfgAndLockfileDoesNotExists() {
-	interpreters.NewRInterpreter = func(baseDir util.AbsolutePath, rExec util.Path, log logging.Logger) interpreters.RInterpreter {
+	setupMockRInterpreter := func(
+		base util.AbsolutePath,
+		rExecutableParam util.Path,
+		log logging.Logger,
+		cmdExecutorOverride executor.Executor,
+		pathLookerOverride util.PathLooker,
+		existsFuncOverride interpreters.ExistsFunc,
+	) (interpreters.RInterpreter, error) {
 		i := interpreters.NewMockRInterpreter()
 		relPath := util.NewRelativePath(s.cwd.Join("renv.lock").String(), s.cwd.Fs())
 		i.On("GetLockFilePath").Return(relPath, false, nil)
-		return i
+		return i, nil
 	}
 
 	log := logging.New()
-	i, err := NewRInspector(s.cwd, util.Path{}, log)
+	i, err := NewRInspector(s.cwd, util.Path{}, log, setupMockRInterpreter, nil)
 	s.NoError(err)
 
 	cfg := &config.Config{}
@@ -139,7 +175,7 @@ func (s *RSuite) TestRequiresRWithEmptyCfgAndLockfileDoesNotExists() {
 
 func (s *RSuite) TestRequiresRWithRCfg() {
 	log := logging.New()
-	i, err := NewRInspector(s.cwd, util.Path{}, log)
+	i, err := NewRInspector(s.cwd, util.Path{}, log, nil, nil)
 	s.NoError(err)
 
 	cfg := &config.Config{
@@ -152,7 +188,7 @@ func (s *RSuite) TestRequiresRWithRCfg() {
 
 func (s *RSuite) TestRequiresRNoRButWithTypeAsPython() {
 	log := logging.New()
-	i, err := NewRInspector(s.cwd, util.Path{}, log)
+	i, err := NewRInspector(s.cwd, util.Path{}, log, nil, nil)
 	s.NoError(err)
 
 	cfg := &config.Config{
@@ -165,7 +201,7 @@ func (s *RSuite) TestRequiresRNoRButWithTypeAsPython() {
 
 func (s *RSuite) TestRequiresRNoRButWithTypeEqualContentTypeHTML() {
 	log := logging.New()
-	i, err := NewRInspector(s.cwd, util.Path{}, log)
+	i, err := NewRInspector(s.cwd, util.Path{}, log, nil, nil)
 	s.NoError(err)
 
 	cfg := &config.Config{

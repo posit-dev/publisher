@@ -27,7 +27,7 @@ type defaultPackageMapper struct {
 
 func NewPackageMapper(base util.AbsolutePath, rExecutable util.Path, log logging.Logger) (*defaultPackageMapper, error) {
 
-	lister, err := NewAvailablePackageLister(base, rExecutable, log)
+	lister, err := NewAvailablePackageLister(base, rExecutable, log, nil, nil)
 
 	return &defaultPackageMapper{
 		lister: lister,

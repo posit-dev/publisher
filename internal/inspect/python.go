@@ -42,6 +42,8 @@ const PythonRequirementsFilename = "requirements.txt"
 
 var pythonVersionCache = make(map[string]string)
 
+type PythonInspectorFactory func(base util.AbsolutePath, pythonPath util.Path, log logging.Logger) PythonInspector
+
 func NewPythonInspector(base util.AbsolutePath, pythonPath util.Path, log logging.Logger) PythonInspector {
 	return &defaultPythonInspector{
 		executor:   executor.NewExecutor(),

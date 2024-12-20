@@ -42,7 +42,11 @@ func (s *RSuite) SetupTest() {
 func (s *RSuite) TestNewRInterpreter() {
 	log := logging.New()
 	rPath := util.NewPath("/usr/bin/R", s.fs)
-	i := NewRInterpreter(s.cwd, rPath, log)
+
+	pathLooker := util.NewMockPathLooker()
+	pathLooker.On("LookPath", "R").Return("", nil)
+
+	i, _ := NewRInterpreter(s.cwd, rPath, log, nil, pathLooker, nil)
 	interpreter := i.(*defaultRInterpreter)
 	s.Equal(rPath, interpreter.preferredPath)
 	s.Equal(log, interpreter.log)
@@ -50,24 +54,6 @@ func (s *RSuite) TestNewRInterpreter() {
 	s.Equal("", interpreter.version)
 	s.Equal("", interpreter.lockfileRelPath.String())
 	s.Equal(false, interpreter.lockfileExists)
-	s.Equal(false, interpreter.initialized)
-
-	// New should return some failures for interface calls
-	path, err := interpreter.GetRExecutable()
-	s.Equal("", path.String())
-	s.ErrorIs(err, NotYetInitialized)
-
-	version, err := interpreter.GetRVersion()
-	s.Equal("", version)
-	s.ErrorIs(err, NotYetInitialized)
-
-	lockFilePath, exists, err := interpreter.GetLockFilePath()
-	s.Equal("", lockFilePath.String())
-	s.Equal(false, exists)
-	s.ErrorIs(err, NotYetInitialized)
-
-	err = interpreter.CreateLockfile(util.NewAbsolutePath("abc/renv.lock", nil))
-	s.ErrorIs(err, NotYetInitialized)
 }
 
 func (s *RSuite) TestInit() {
@@ -77,23 +63,19 @@ func (s *RSuite) TestInit() {
 	rPath.Dir().MkdirAll(0777)
 	rPath.WriteFile([]byte(nil), 0777)
 
-	i := NewRInterpreter(s.cwd, rPath.Path, log)
-	interpreter := i.(*defaultRInterpreter)
 	executor := executortest.NewMockExecutor()
 	executor.On("RunCommand", mock.Anything, []string{"--version"}, mock.Anything, mock.Anything).Return([]byte("R version 4.3.0 (2023-04-21)"), nil, nil)
 	executor.On("RunCommand", mock.Anything, []string{"-s", "-e", "renv::paths$lockfile()"}, mock.Anything, mock.Anything).Return([]byte(`[1] "/test/sample-content/shinyapp/renv.lock"`), nil, nil).Once()
-	interpreter.executor = executor
-	interpreter.initialized = true
-	interpreter.fs = s.cwd.Fs()
 
-	err := i.Init()
+	i, err := NewRInterpreter(s.cwd, rPath.Path, log, executor, nil, nil)
 	s.NoError(err)
+	interpreter := i.(*defaultRInterpreter)
+	interpreter.fs = s.cwd.Fs()
 
 	s.Equal(rPath.String(), interpreter.rExecutable.String())
 	s.Equal("4.3.0", interpreter.version)
 	s.Equal("", interpreter.lockfileRelPath.String())
 	s.Equal(false, interpreter.lockfileExists)
-	s.Equal(true, interpreter.initialized)
 
 	// Now we lazy load the lock file path
 	lockFilePath, exists, err := interpreter.GetLockFilePath()
@@ -225,15 +207,18 @@ func (s *RSuite) TestGetRVersionFromExecutable() {
 		rPath.Dir().MkdirAll(0777)
 		rPath.WriteFile(nil, 0777)
 
-		rInterpreter := NewRInterpreter(s.cwd, rPath.Path, log)
 		executor := executortest.NewMockExecutor()
 		executor.On("RunCommand", mock.Anything, []string{"--version"}, mock.Anything, mock.Anything).Return([]byte(tc.versionOutput), nil, nil)
 		executor.On("RunCommand", mock.Anything, []string{"-s", "-e", "renv::paths$lockfile()"}, mock.Anything, mock.Anything).Return([]byte(tc.pathsLockfileOutput), nil, nil)
 
-		interpreter := rInterpreter.(*defaultRInterpreter)
-		interpreter.executor = executor
-		err := rInterpreter.Init()
+		rInterpreter, err := NewRInterpreter(s.cwd, rPath.Path, log, executor, nil, nil)
 		s.NoError(err)
+
+		interpreter := rInterpreter.(*defaultRInterpreter)
+		interpreter.existsFunc = func(util.Path) (bool, error) {
+			return true, nil
+		}
+		// interpreter.version = "fake"
 
 		rExecutable, err := rInterpreter.GetRExecutable()
 		s.NoError(err)
@@ -263,16 +248,16 @@ func (s *RSuite) TestGetRVersionFromExecutableWindows() {
 		rPath := s.cwd.Join("bin", "R")
 		rPath.Dir().MkdirAll(0777)
 		rPath.WriteFile(nil, 0777)
-		rInterpreter := NewRInterpreter(s.cwd, rPath.Path, log)
+
 		executor := executortest.NewMockExecutor()
 		executor.On("RunCommand", mock.Anything, []string{"--version"}, mock.Anything, mock.Anything).Return(nil, []byte(tc.versionOutput), nil)
 		executor.On("RunCommand", mock.Anything, []string{"-s", "-e", "renv::paths$lockfile()"}, mock.Anything, mock.Anything).Return(nil, []byte(tc.pathsLockfileOutput), nil)
 
-		interpreter := rInterpreter.(*defaultRInterpreter)
-		interpreter.executor = executor
-		interpreter.fs = s.cwd.Fs()
-		err := rInterpreter.Init()
+		rInterpreter, err := NewRInterpreter(s.cwd, rPath.Path, log, executor, nil, nil)
 		s.NoError(err)
+
+		interpreter := rInterpreter.(*defaultRInterpreter)
+		interpreter.fs = s.cwd.Fs()
 
 		rExecutable, err := rInterpreter.GetRExecutable()
 		s.NoError(err)
@@ -315,14 +300,19 @@ func getRExecutableValidTestData(fs afero.Fs) []RExecutableValidTestData {
 // Make sure the combos don't allow a valid RExecutable to be wrongly reported
 func (s *RSuite) TestIsRExecutableValid() {
 	log := logging.New()
-	i := NewRInterpreter(s.cwd, util.Path{}, log)
+
+	// need to add path looker.. should we just allow a callback prior to init?
+	pathLooker := util.NewMockPathLooker()
+	pathLooker.On("LookPath", "R").Return("", nil)
+
+	// interpreter.pathLooker = pathLooker
+
+	i, _ := NewRInterpreter(s.cwd, util.Path{}, log, nil, pathLooker, nil)
 	interpreter := i.(*defaultRInterpreter)
 	s.Equal(false, interpreter.IsRExecutableValid())
 
-	interpreter.initialized = true
 	interpreter.rExecutable = util.AbsolutePath{}
 	for _, tc := range getRExecutableValidTestData(s.fs) {
-		interpreter.initialized = tc.initialized
 		interpreter.rExecutable = tc.rExecutable
 		interpreter.version = tc.version
 		s.Equal(tc.expectedIsRExecutableValidResult, interpreter.IsRExecutableValid())
@@ -332,13 +322,12 @@ func (s *RSuite) TestIsRExecutableValid() {
 func (s *RSuite) TestResolveRExecutableWhenNotFoundOrInvalid() {
 	log := logging.New()
 
-	i := NewRInterpreter(s.cwd, util.Path{}, log)
-	interpreter := i.(*defaultRInterpreter)
 	executor := executortest.NewMockExecutor()
 	executor.On("RunCommand", mock.Anything, []string{"--version"}, mock.Anything, mock.Anything).Return([]byte("R version 4.3.0 (2023-04-21)"), nil, nil)
 	executor.On("ValidateRExecutable").Return("", errors.New("an error"))
-	interpreter.executor = executor
-	interpreter.initialized = true
+
+	i, _ := NewRInterpreter(s.cwd, util.Path{}, log, executor, nil, nil)
+	interpreter := i.(*defaultRInterpreter)
 	interpreter.fs = s.cwd.Fs()
 
 	err := interpreter.resolveRExecutable()
@@ -353,12 +342,11 @@ func (s *RSuite) TestResolveRExecutableWhenPassedInPathExistsAndIsValid() {
 	rPath.Dir().MkdirAll(0777)
 	rPath.WriteFile([]byte(nil), 0777)
 
-	i := NewRInterpreter(s.cwd, rPath.Path, log)
-	interpreter := i.(*defaultRInterpreter)
 	executor := executortest.NewMockExecutor()
 	executor.On("RunCommand", mock.Anything, []string{"--version"}, mock.Anything, mock.Anything).Return([]byte("R version 4.3.0 (2023-04-21)"), nil, nil)
-	interpreter.executor = executor
-	interpreter.initialized = true
+
+	i, _ := NewRInterpreter(s.cwd, rPath.Path, log, executor, nil, nil)
+	interpreter := i.(*defaultRInterpreter)
 	interpreter.fs = s.cwd.Fs()
 
 	err := interpreter.resolveRExecutable()
@@ -379,13 +367,11 @@ func (s *RSuite) TestResolveRExecutableWhenPassedInPathDoesNotExistButPathValid(
 	pathLooker := util.NewMockPathLooker()
 	pathLooker.On("LookPath", "R").Return(rPath.String(), nil)
 
-	i := NewRInterpreter(s.cwd, util.NewPath("/bin/R2", s.cwd.Fs()), log)
-	interpreter := i.(*defaultRInterpreter)
 	executor := executortest.NewMockExecutor()
 	executor.On("RunCommand", mock.Anything, []string{"--version"}, mock.Anything, mock.Anything).Return([]byte("R version 4.3.0 (2023-04-21)"), nil, nil)
 
-	interpreter.executor = executor
-	interpreter.initialized = true
+	i, _ := NewRInterpreter(s.cwd, util.NewPath("/bin/R2", s.cwd.Fs()), log, executor, nil, nil)
+	interpreter := i.(*defaultRInterpreter)
 	interpreter.pathLooker = pathLooker
 	interpreter.fs = s.cwd.Fs()
 
@@ -408,13 +394,12 @@ func (s *RSuite) TestResolveRExecutableWhenPassedInPathExistsButNotValid() {
 	rPath.Dir().MkdirAll(0777)
 	rPath.WriteFile(nil, 0777)
 
-	i := NewRInterpreter(s.cwd, util.NewPath(rPath.String(), s.cwd.Fs()), log)
-	interpreter := i.(*defaultRInterpreter)
 	executor := executortest.NewMockExecutor()
 	executor.On("RunCommand", mock.Anything, []string{"--version"}, mock.Anything, mock.Anything).Return([]byte("bad command"), nil, nil)
 
-	interpreter.executor = executor
-	interpreter.initialized = true
+	i, _ := NewRInterpreter(s.cwd, util.NewPath(rPath.String(), s.cwd.Fs()), log, executor, nil, nil)
+	interpreter := i.(*defaultRInterpreter)
+
 	interpreter.pathLooker = pathLooker
 	interpreter.fs = s.cwd.Fs()
 
@@ -438,13 +423,13 @@ func (s *RSuite) TestResolveRExecutableWhenPathContainsRButNotValid() {
 	rPath.Dir().MkdirAll(0777)
 	rPath.WriteFile([]byte(nil), 0777)
 
-	i := NewRInterpreter(s.cwd, util.Path{}, log)
-	interpreter := i.(*defaultRInterpreter)
-	interpreter.pathLooker = pathLooker
-	interpreter.initialized = true
 	executor := executortest.NewMockExecutor()
 	executor.On("RunCommand", mock.Anything, []string{"--version"}, mock.Anything, mock.Anything).Return([]byte("Invalid stuff"), nil, nil)
-	interpreter.executor = executor
+
+	i, _ := NewRInterpreter(s.cwd, util.Path{}, log, executor, nil, nil)
+	interpreter := i.(*defaultRInterpreter)
+	interpreter.pathLooker = pathLooker
+
 	interpreter.fs = s.cwd.Fs()
 
 	err := interpreter.resolveRExecutable()
@@ -456,12 +441,12 @@ func (s *RSuite) TestResolveRExecutableWhenPathContainsRButNotValid() {
 func (s *RSuite) TestGetRVersionFromRExecutableWithInvalidR() {
 
 	log := logging.New()
-	i := NewRInterpreter(s.cwd, util.Path{}, log)
-	interpreter := i.(*defaultRInterpreter)
-	interpreter.initialized = true
+
 	executor := executortest.NewMockExecutor()
 	executor.On("RunCommand", mock.Anything, []string{"--version"}, mock.Anything, mock.Anything).Return([]byte(""), nil, errors.New("problem"))
-	interpreter.executor = executor
+
+	i, _ := NewRInterpreter(s.cwd, util.Path{}, log, executor, nil, nil)
+	interpreter := i.(*defaultRInterpreter)
 	interpreter.fs = s.cwd.Fs()
 
 	_, err := interpreter.getRVersionFromRExecutable("does-not-matter")
@@ -473,12 +458,12 @@ func (s *RSuite) TestGetRVersionFromRExecutableWithInvalidR() {
 
 func (s *RSuite) TestResolveRenvLockFileWithInvalidR() {
 	log := logging.New()
-	i := NewRInterpreter(s.cwd, util.Path{}, log)
-	interpreter := i.(*defaultRInterpreter)
-	interpreter.initialized = true
+
 	executor := executortest.NewMockExecutor()
 	executor.On("RunCommand", mock.Anything, []string{"--version"}, mock.Anything, mock.Anything).Return([]byte(""), nil, errors.New("problem"))
-	interpreter.executor = executor
+
+	i, _ := NewRInterpreter(s.cwd, util.Path{}, log, executor, nil, nil)
+	interpreter := i.(*defaultRInterpreter)
 	interpreter.fs = s.cwd.Fs()
 
 	err := interpreter.resolveRenvLockFile("does-not-matter")
@@ -497,14 +482,14 @@ func (s *RSuite) TestResolveRenvLockFileWithRSpecifyingDefaultNameAndExists() {
 	rPath.Dir().MkdirAll(0777)
 	rPath.WriteFile(nil, 0777)
 
-	i := NewRInterpreter(s.cwd, util.Path{}, log)
-	interpreter := i.(*defaultRInterpreter)
-	interpreter.initialized = true
-	interpreter.fs = s.cwd.Fs()
 	executor := executortest.NewMockExecutor()
 	outputLine := fmt.Sprintf(`[1] "%s"`, rPath.String())
 	executor.On("RunCommand", mock.Anything, []string{"-s", "-e", "renv::paths$lockfile()"}, mock.Anything, mock.Anything).Return([]byte(outputLine), nil, nil)
-	interpreter.executor = executor
+	executor.On("RunCommand", mock.Anything, []string{"--version"}, mock.Anything, mock.Anything).Return([]byte(""), nil, errors.New("problem"))
+
+	i, _ := NewRInterpreter(s.cwd, util.Path{}, log, executor, nil, nil)
+	interpreter := i.(*defaultRInterpreter)
+	interpreter.fs = s.cwd.Fs()
 
 	err := interpreter.resolveRenvLockFile("does_not_matter")
 	s.NoError(err)
@@ -521,12 +506,12 @@ func (s *RSuite) TestResolveRenvLockFileWithRSpecifyingDefaultNameAndDoesNotExis
 		s.T().Skip("This test does not run on Windows")
 	}
 
-	i := NewRInterpreter(s.cwd, util.Path{}, log)
-	interpreter := i.(*defaultRInterpreter)
-	interpreter.initialized = true
 	executor := executortest.NewMockExecutor()
 	executor.On("RunCommand", mock.Anything, []string{"-s", "-e", "renv::paths$lockfile()"}, mock.Anything, mock.Anything).Return([]byte(`[1] "internal/interpreters/renv.lock"`), nil, nil)
-	interpreter.executor = executor
+	executor.On("RunCommand", mock.Anything, []string{"--version"}, mock.Anything, mock.Anything).Return([]byte(""), nil, errors.New("problem"))
+
+	i, _ := NewRInterpreter(s.cwd, util.Path{}, log, executor, nil, nil)
+	interpreter := i.(*defaultRInterpreter)
 	interpreter.fs = s.cwd.Fs()
 
 	err := interpreter.resolveRenvLockFile("does_not_matter")
@@ -547,14 +532,15 @@ func (s *RSuite) TestResolveRenvLockFileWithRSpecialNameAndExists() {
 	rPath.Dir().MkdirAll(0777)
 	rPath.WriteFile([]byte(nil), 0777)
 
-	i := NewRInterpreter(s.cwd, util.Path{}, log)
-	interpreter := i.(*defaultRInterpreter)
 	executor := executortest.NewMockExecutor()
 	outputLine := fmt.Sprintf(`[1] "%s"`, rPath.String())
 	executor.On("RunCommand", mock.Anything, []string{"-s", "-e", "renv::paths$lockfile()"}, mock.Anything, mock.Anything).Return([]byte(outputLine), nil, nil)
-	interpreter.executor = executor
+	executor.On("RunCommand", mock.Anything, []string{"--version"}, mock.Anything, mock.Anything).Return([]byte(""), nil, errors.New("problem"))
+
+	i, _ := NewRInterpreter(s.cwd, util.Path{}, log, executor, nil, nil)
+	interpreter := i.(*defaultRInterpreter)
+
 	interpreter.fs = s.cwd.Fs()
-	interpreter.initialized = true
 	interpreter.rExecutable = util.NewAbsolutePath("does_not_matter/R", interpreter.fs)
 	interpreter.version = "does_not_matter"
 
@@ -566,10 +552,10 @@ func (s *RSuite) TestResolveRenvLockFileWithRSpecialNameAndExists() {
 
 func (s *RSuite) TestCreateLockfileWithInvalidR() {
 	log := logging.New()
-	i := NewRInterpreter(s.cwd, util.Path{}, log)
+	i, _ := NewRInterpreter(s.cwd, util.Path{}, log, nil, nil, nil)
 	interpreter := i.(*defaultRInterpreter)
-	interpreter.initialized = true
 	interpreter.fs = s.cwd.Fs()
+	interpreter.rExecutable = util.AbsolutePath{}
 
 	err := interpreter.CreateLockfile(util.NewAbsolutePath("abc/xxy/renv.lock", s.cwd.Fs()))
 	s.Error(err)
@@ -579,14 +565,15 @@ func (s *RSuite) TestCreateLockfileWithInvalidR() {
 
 func (s *RSuite) TestCreateLockfileWithNonEmptyPath() {
 	log := logging.New()
-	i := NewRInterpreter(s.cwd, util.Path{}, log)
-	interpreter := i.(*defaultRInterpreter)
-	interpreter.initialized = true
-	interpreter.rExecutable = util.NewAbsolutePath("/usr/bin/R", s.cwd.Fs())
-	interpreter.version = "1.2.3"
+
 	executor := executortest.NewMockExecutor()
 	executor.On("RunCommand", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return([]byte("success"), nil, nil)
-	interpreter.executor = executor
+	executor.On("RunCommand", mock.Anything, []string{"--version"}, mock.Anything, mock.Anything).Return([]byte(""), nil, errors.New("problem"))
+
+	i, _ := NewRInterpreter(s.cwd, util.Path{}, log, executor, nil, nil)
+	interpreter := i.(*defaultRInterpreter)
+	interpreter.rExecutable = util.NewAbsolutePath("/usr/bin/R", s.cwd.Fs())
+	interpreter.version = "1.2.3"
 	interpreter.fs = s.cwd.Fs()
 
 	err := i.CreateLockfile(util.NewAbsolutePath("abc/xxy/renv.lock", s.cwd.Fs()))
@@ -595,14 +582,15 @@ func (s *RSuite) TestCreateLockfileWithNonEmptyPath() {
 
 func (s *RSuite) TestCreateLockfileWithEmptyPath() {
 	log := logging.New()
-	i := NewRInterpreter(s.cwd, util.Path{}, log)
-	interpreter := i.(*defaultRInterpreter)
-	interpreter.initialized = true
-	interpreter.rExecutable = util.NewAbsolutePath("/usr/bin/R", s.cwd.Fs())
-	interpreter.version = "1.2.3"
+
 	executor := executortest.NewMockExecutor()
 	executor.On("RunCommand", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return([]byte("success"), nil, nil)
-	interpreter.executor = executor
+	executor.On("RunCommand", mock.Anything, []string{"--version"}, mock.Anything, mock.Anything).Return([]byte(""), nil, errors.New("problem"))
+
+	i, _ := NewRInterpreter(s.cwd, util.Path{}, log, executor, nil, nil)
+	interpreter := i.(*defaultRInterpreter)
+	interpreter.rExecutable = util.NewAbsolutePath("/usr/bin/R", s.cwd.Fs())
+	interpreter.version = "1.2.3"
 	interpreter.fs = s.cwd.Fs()
 
 	err := i.CreateLockfile(util.AbsolutePath{})

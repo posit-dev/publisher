@@ -20,13 +20,16 @@ import (
 
 const DefaultRenvLockfile = "renv.lock"
 
-var NotYetInitialized = types.NewAgentError(types.ErrorRExecNotFound, errors.New("not yet initialized"), nil)
 var MissingRError = types.NewAgentError(types.ErrorRExecNotFound, errors.New("unable to detect any R interpreters"), nil)
-var InvalidR = types.NewAgentError(types.ErrorRExecNotFound, errors.New("r executable is invalid"), nil)
+
+func newInvalidRError(desc string, err error) *types.AgentError {
+	errorDesc := fmt.Sprintf("r executable is invalid: %s. Error: %s", desc, err)
+	return types.NewAgentError(types.ErrorRExecNotFound, errors.New(errorDesc), nil)
+}
+
+type ExistsFunc func(p util.Path) (bool, error)
 
 type RInterpreter interface {
-	Init() error
-
 	GetRExecutable() (util.AbsolutePath, error)
 	GetRVersion() (string, error)
 	GetLockFilePath() (util.RelativePath, bool, error)
@@ -34,8 +37,9 @@ type RInterpreter interface {
 }
 
 type defaultRInterpreter struct {
-	executor   executor.Executor
-	pathLooker util.PathLooker
+	cmdExecutor executor.Executor
+	pathLooker  util.PathLooker
+	existsFunc  ExistsFunc
 
 	base                util.AbsolutePath
 	preferredPath       util.Path
@@ -45,20 +49,32 @@ type defaultRInterpreter struct {
 	lockfileExists      bool
 	lockfileInitialized bool
 	log                 logging.Logger
-	initialized         bool
 	fs                  afero.Fs
 }
 
+type RInterpreterFactory func(
+	base util.AbsolutePath,
+	rExecutableParam util.Path,
+	log logging.Logger,
+	cmdExecutorOverride executor.Executor,
+	pathLookerOverride util.PathLooker,
+	existsFuncOverride ExistsFunc,
+) (RInterpreter, error)
+
 var _ RInterpreter = &defaultRInterpreter{}
 
-var NewRInterpreter = RInterpreterFactory
-
-func RInterpreterFactory(base util.AbsolutePath,
-	rExecutableParam util.Path, log logging.Logger) RInterpreter {
-
-	return &defaultRInterpreter{
-		executor:   executor.NewExecutor(),
-		pathLooker: util.NewPathLooker(),
+func NewRInterpreter(
+	base util.AbsolutePath,
+	rExecutableParam util.Path,
+	log logging.Logger,
+	cmdExecutorOverride executor.Executor,
+	pathLookerOverride util.PathLooker,
+	existsFuncOverride ExistsFunc,
+) (RInterpreter, error) {
+	interpreter := &defaultRInterpreter{
+		cmdExecutor: nil,
+		pathLooker:  nil,
+		existsFunc:  nil,
 
 		base:                base,
 		preferredPath:       rExecutableParam,
@@ -68,9 +84,31 @@ func RInterpreterFactory(base util.AbsolutePath,
 		lockfileExists:      false,
 		lockfileInitialized: false,
 		log:                 log,
-		initialized:         false,
 		fs:                  nil,
 	}
+	if cmdExecutorOverride != nil {
+		interpreter.cmdExecutor = cmdExecutorOverride
+	} else {
+		interpreter.cmdExecutor = executor.NewExecutor()
+	}
+	if pathLookerOverride != nil {
+		interpreter.pathLooker = pathLookerOverride
+	} else {
+		interpreter.pathLooker = util.NewPathLooker()
+	}
+	if existsFuncOverride != nil {
+		interpreter.existsFunc = existsFuncOverride
+	} else {
+		interpreter.existsFunc = func(p util.Path) (bool, error) {
+			return p.Exists()
+		}
+	}
+
+	err := interpreter.init()
+	if err != nil {
+		return nil, err
+	}
+	return interpreter, nil
 }
 
 // Initializes the attributes within the defaultRInterpreter structure
@@ -88,11 +126,7 @@ func RInterpreterFactory(base util.AbsolutePath,
 //
 // Errors are taken care of internally and determine the setting or non-setting
 // of the attributes.
-func (i *defaultRInterpreter) Init() error {
-	// entire flow doesn't need to occur to be initialized. Just want to be sure
-	// some of it was attempted to run
-	i.initialized = true
-
+func (i *defaultRInterpreter) init() error {
 	// This will set the rExecutable and version for us
 	// Only fatal, unexpected errors will be returned.
 	// We will handle MissingRError internally, as this is a valid environment
@@ -109,19 +143,13 @@ func (i *defaultRInterpreter) Init() error {
 }
 
 func (i *defaultRInterpreter) GetRExecutable() (util.AbsolutePath, error) {
-	if !i.initialized {
-		return util.AbsolutePath{}, NotYetInitialized
-	}
 	if i.IsRExecutableValid() {
 		return i.rExecutable, nil
 	}
-	return util.AbsolutePath{}, MissingRError
+	return i.rExecutable, MissingRError
 }
 
 func (i *defaultRInterpreter) GetRVersion() (string, error) {
-	if !i.initialized {
-		return "", NotYetInitialized
-	}
 	if i.IsRExecutableValid() {
 		return i.version, nil
 	}
@@ -129,9 +157,6 @@ func (i *defaultRInterpreter) GetRVersion() (string, error) {
 }
 
 func (i *defaultRInterpreter) GetLockFilePath() (relativePath util.RelativePath, exists bool, err error) {
-	if !i.initialized {
-		return util.RelativePath{}, false, NotYetInitialized
-	}
 	if !i.lockfileInitialized {
 		// This will set lockfileRelPath and lockfileExists for us
 		// and does not require an R Executable to be available (but it is better if it is)
@@ -145,7 +170,7 @@ func (i *defaultRInterpreter) GetLockFilePath() (relativePath util.RelativePath,
 }
 
 func (i *defaultRInterpreter) IsRExecutableValid() bool {
-	return i.initialized && i.rExecutable.Path.String() != "" && i.version != ""
+	return i.rExecutable.Path.String() != "" && i.version != ""
 }
 
 // Determine which R Executable to use by:
@@ -162,7 +187,7 @@ func (i *defaultRInterpreter) resolveRExecutable() error {
 	// Passed in path to executable
 	if i.preferredPath.String() != "" {
 		// User-provided R executable
-		exists, err := i.preferredPath.Exists()
+		exists, err := i.existsFunc(i.preferredPath)
 		if err != nil {
 			i.log.Warn("Unable to check existence of preferred R interpreter. Proceeding with discovery.", "preferredPath", i.preferredPath, "error", err)
 		} else {
@@ -186,7 +211,7 @@ func (i *defaultRInterpreter) resolveRExecutable() error {
 			i.log.Debug("Found R executable from PATH", "path", path)
 			tempRPath := util.NewPath(path, i.fs)
 			// make sure it exists
-			exists, err := tempRPath.Exists()
+			exists, err := i.existsFunc(tempRPath)
 			if err != nil {
 				i.log.Warn("Unable to check existence of R interpreter on PATH. Proceeding with discovery.", "path", path, "error", err)
 			} else {
@@ -232,13 +257,12 @@ func (i *defaultRInterpreter) resolveRExecutable() error {
 // We assume if we can get a version from the rExecutable passed in, that it
 // is really an R Executable.
 func (i *defaultRInterpreter) ValidateRExecutable(rExecutable string) (string, error) {
-	if !i.initialized {
-		return "", NotYetInitialized
-	}
 	version, err := i.getRVersionFromRExecutable(rExecutable)
 	if err != nil {
-		i.log.Debug("could not run R executable", "rExecutable", rExecutable, "error", err)
-		return "", err
+		desc := fmt.Sprintf("could not run R executable. rExecutable: %s", rExecutable)
+		i.log.Error(desc, "error", err)
+		aerr := newInvalidRError(desc, err)
+		return "", aerr
 	}
 	return version, nil
 }
@@ -252,7 +276,7 @@ func (i *defaultRInterpreter) getRVersionFromRExecutable(rExecutable string) (st
 
 	i.log.Info("Getting R version", "r", rExecutable)
 	args := []string{"--version"}
-	output, stderr, err := i.executor.RunCommand(rExecutable, args, util.AbsolutePath{}, i.log)
+	output, stderr, err := i.cmdExecutor.RunCommand(rExecutable, args, util.AbsolutePath{}, i.log)
 	if err != nil {
 		return "", err
 	}
@@ -302,7 +326,7 @@ func (i *defaultRInterpreter) resolveRenvLockFile(rExecutable string) error {
 		return err
 	}
 
-	lockfileExists, err := lockfilePath.Exists()
+	lockfileExists, err := i.existsFunc(lockfilePath.Path)
 	if err != nil {
 		i.log.Debug("Error while confirming existence of renv lock file", "renv_lock", lockfilePath, "error", err.Error())
 		return err
@@ -322,7 +346,7 @@ func (i *defaultRInterpreter) getRenvLockfilePathFromRExecutable(rExecutable str
 
 	i.log.Info("Getting renv lockfile path from R executable", "r", rExecutable)
 	args := []string{"-s", "-e", "renv::paths$lockfile()"}
-	output, stderr, err := i.executor.RunCommand(rExecutable, args, i.base, i.log)
+	output, stderr, err := i.cmdExecutor.RunCommand(rExecutable, args, i.base, i.log)
 	if err != nil {
 		if _, ok := err.(*exec.ExitError); ok {
 			i.log.Warn("Couldn't detect lockfile path from R executable (renv::paths$lockfile()); is renv installed?")
@@ -350,10 +374,6 @@ func (i *defaultRInterpreter) getRenvLockfilePathFromRExecutable(rExecutable str
 // CreateLockfile creates a lockfile at the specified path
 // by invoking R to run `renv::snapshot()`.
 func (i *defaultRInterpreter) CreateLockfile(lockfilePath util.AbsolutePath) error {
-	if !i.initialized {
-		return NotYetInitialized
-	}
-
 	rExecutable, err := i.GetRExecutable()
 	if err != nil {
 		return err
@@ -372,7 +392,7 @@ func (i *defaultRInterpreter) CreateLockfile(lockfilePath util.AbsolutePath) err
 		cmd = fmt.Sprintf(`renv::snapshot(lockfile="%s")`, escaped)
 	}
 	args := []string{"-s", "-e", cmd}
-	stdout, stderr, err := i.executor.RunCommand(rExecutable.String(), args, i.base, i.log)
+	stdout, stderr, err := i.cmdExecutor.RunCommand(rExecutable.String(), args, i.base, i.log)
 	i.log.Debug("renv::snapshot()", "out", string(stdout), "err", string(stderr))
 	return err
 }

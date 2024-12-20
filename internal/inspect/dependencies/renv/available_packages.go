@@ -30,10 +30,16 @@ type defaultAvailablePackagesLister struct {
 	rExecutor    executor.Executor
 }
 
-func NewAvailablePackageLister(base util.AbsolutePath, rExecutable util.Path, log logging.Logger) (*defaultAvailablePackagesLister, error) {
+func NewAvailablePackageLister(base util.AbsolutePath, rExecutable util.Path, log logging.Logger, rInterpreterFactoryOverride interpreters.RInterpreterFactory, cmdExecutorOverride executor.Executor) (*defaultAvailablePackagesLister, error) {
 
-	rInterpreter := interpreters.NewRInterpreter(base, rExecutable, log)
-	err := rInterpreter.Init()
+	var rInterpreter interpreters.RInterpreter
+	var err error
+
+	if rInterpreterFactoryOverride != nil {
+		rInterpreter, err = rInterpreterFactoryOverride(base, rExecutable, log, cmdExecutorOverride, nil, nil)
+	} else {
+		rInterpreter, err = interpreters.NewRInterpreter(base, rExecutable, log, nil, nil, nil)
+	}
 
 	return &defaultAvailablePackagesLister{
 		base:         base,
