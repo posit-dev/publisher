@@ -177,7 +177,7 @@ func (s *AvailablePackagesSuite) TestGetLibPathsWindows() {
 	s.NoError(err)
 
 	executor := executortest.NewMockExecutor()
-	executor.On("RunCommand", rExecutablePath, []string{"-s", "-e", "cat(.libPaths(), sep=\"\\n\")"}, s.base, mock.Anything).Return([]byte(windowsLibPathsOutput), []byte{}, nil)
+	executor.On("RunCommand", rExecutablePath.String(), []string{"-s", "-e", "cat(.libPaths(), sep=\"\\n\")"}, s.base, mock.Anything).Return([]byte(windowsLibPathsOutput), []byte{}, nil)
 	lister.rExecutor = executor
 
 	repos, err := lister.GetLibPaths(logging.New())
