@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	"github.com/posit-dev/publisher/internal/logging/loggingtest"
+	"github.com/posit-dev/publisher/internal/types"
+	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/suite"
@@ -123,4 +125,67 @@ func (s *CredentialsServiceTestSuite) TestNewCredentialsService_KeyringErrFallba
 	credservice, err := NewCredentialsService(s.log)
 	s.NoError(err)
 	s.Implements((*CredentialsService)(nil), credservice)
+}
+
+func (s *CredentialsServiceTestSuite) TestNewCredentialsService_KeyringResetsOnCorruptedCred() {
+	keyring.MockInit()
+
+	corruptedData := `{"":{"guid":"18cd5640-bee5-4b2a-992a-a2725ab6103d","version":0,"data":"unrecognizbledata"}}`
+	keyring.Set(ServiceName, "credentials", corruptedData)
+
+	keyringCorruptedSave, err := keyring.Get(ServiceName, "credentials")
+	s.NoError(err)
+	s.Equal(keyringCorruptedSave, corruptedData)
+
+	s.log.On("Warn", "Corrupted credentials data found. A reset was applied to stored data to be able to proceed").Return()
+
+	credservice, err := NewCredentialsService(s.log)
+	s.NotNil(err)
+	s.Implements((*CredentialsService)(nil), credservice)
+
+	// Confirm agent error of corrupted credential bubbles up to warn the user
+	_, isCorruptedErr := types.IsAgentErrorOf(err, types.ErrorCredentialCorruptedReset)
+	s.True(isCorruptedErr)
+
+	keyringUpdatedData, err := keyring.Get(ServiceName, "credentials")
+	s.NoError(err)
+	s.Equal(keyringUpdatedData, "{}")
+}
+
+func (s *CredentialsServiceTestSuite) TestNewCredentialsService_FallbackFileResetsOnCorruptedCred() {
+	// Use an in memory filesystem for this test
+	// avoiding to manipulate users ~/.connect-credentials
+	fsys = afero.NewMemMapFs()
+	defer func() { fsys = afero.NewOsFs() }()
+	dirPath, err := util.UserHomeDir(fsys)
+	s.NoError(err)
+
+	dirPath = dirPath.Join(".connect-credentials")
+	corruptedContents := []byte("unrecognizable_key = this is bad")
+	err = afero.WriteFile(fsys, dirPath.String(), corruptedContents, 0644)
+	s.NoError(err)
+
+	keyringErr := errors.New("this is a teapot, unsupported system")
+	keyring.MockInitWithError(keyringErr)
+
+	// Verify the corrupted contents are in
+	credsData, err := afero.ReadFile(fsys, dirPath.String())
+	s.NoError(err)
+	s.Equal(credsData, corruptedContents)
+
+	s.log.On("Debug", "System keyring service is not available", "error", "failed to load credentials: this is a teapot, unsupported system").Return()
+	s.log.On("Debug", "Fallback to file managed credentials service due to unavailable system keyring").Return()
+	s.log.On("Warn", "Corrupted credentials data found. A reset was applied to stored data to be able to proceed").Return()
+
+	credservice, err := NewCredentialsService(s.log)
+	s.NotNil(err)
+	s.Implements((*CredentialsService)(nil), credservice)
+
+	// Confirm agent error of corrupted credential bubbles up to warn the user
+	_, isCorruptedErr := types.IsAgentErrorOf(err, types.ErrorCredentialCorruptedReset)
+	s.True(isCorruptedErr)
+
+	credsData, err = afero.ReadFile(fsys, dirPath.String())
+	s.NoError(err)
+	s.Equal(credsData, []byte("[credentials]\n"))
 }

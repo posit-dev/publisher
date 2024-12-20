@@ -93,7 +93,7 @@ func NewFileCredentialsService(log logging.Logger) (*fileCredentialsService, err
 	// Verify file can be modified, will create if not exists
 	err = fservice.setup()
 	if err != nil {
-		return nil, err
+		return fservice, err
 	}
 
 	return fservice, nil
@@ -205,6 +205,11 @@ func (c *fileCredentialsService) Delete(guid string) error {
 	}
 
 	return nil
+}
+
+func (c *fileCredentialsService) Reset() error {
+	newData := newFileCredentials()
+	return c.saveFile(newData)
 }
 
 func (c *fileCredentialsService) setup() error {

@@ -31,6 +31,7 @@ package credentials
 
 import (
 	"encoding/json"
+	"errors"
 
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/types"
@@ -86,21 +87,58 @@ type CredentialsService interface {
 	Get(guid string) (*Credential, error)
 	List() ([]Credential, error)
 	Set(name string, url string, ak string) (*Credential, error)
+	Reset() error
 }
 
 // The main credentials service constructor that determines if the system's keyring is available to be used,
 // if not, returns a file based credentials service.
+// Additionally, tries to load the current credentials to handle resetting in case of data corruption.
 func NewCredentialsService(log logging.Logger) (CredentialsService, error) {
 	krService := NewKeyringCredentialsService(log)
 	if krService.IsSupported() {
-		return krService, nil
+		err := enforceKeyringIntegrity(krService, log)
+		return krService, err
 	}
 
 	log.Debug("Fallback to file managed credentials service due to unavailable system keyring")
 	fcService, err := NewFileCredentialsService(log)
 	if err != nil {
-		return nil, types.NewAgentError(types.ErrorCredentialServiceUnavailable, err, nil)
+		return fcService, enforceFilecredsIntegrity(fcService, err, log)
+	}
+	return fcService, nil
+}
+
+func enforceKeyringIntegrity(ks *keyringCredentialsService, log logging.Logger) error {
+	// Catch any error that could require attention early
+	_, err := ks.List()
+	if err == nil {
+		return nil
 	}
 
-	return fcService, nil
+	// If error from trying to fetch credentials list is not well known
+	// credentials handling is unavailable
+	if !errors.Is(err, &CorruptedError{}) && !errors.Is(err, &LoadError{}) {
+		return types.NewAgentError(types.ErrorCredentialServiceUnavailable, err, nil)
+	}
+
+	log.Warn("Corrupted credentials data found. A reset was applied to stored data to be able to proceed")
+	err = ks.Reset()
+	if err != nil {
+		return types.NewAgentError(types.ErrorCredentialServiceUnavailable, err, nil)
+	}
+
+	return types.NewAgentError(types.ErrorCredentialCorruptedReset, err, nil)
+}
+
+func enforceFilecredsIntegrity(fc *fileCredentialsService, err error, log logging.Logger) error {
+	if errors.Is(err, &LoadError{}) {
+		log.Warn("Corrupted credentials data found. A reset was applied to stored data to be able to proceed")
+		err = fc.Reset()
+		if err != nil {
+			return types.NewAgentError(types.ErrorCredentialServiceUnavailable, err, nil)
+		}
+		return types.NewAgentError(types.ErrorCredentialCorruptedReset, err, nil)
+	}
+
+	return types.NewAgentError(types.ErrorCredentialServiceUnavailable, err, nil)
 }
