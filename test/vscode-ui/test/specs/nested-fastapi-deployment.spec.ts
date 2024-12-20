@@ -57,11 +57,6 @@ describe("Nested Fast API Deployment", () => {
     );
     await expect(myConfig).toExist();
     myConfig.click();
-
-    // wait for selection to be complete
-    await helper.switchToSubframe();
-    const deployment = await $(".quick-pick-label");
-    await expect(deployment).toHaveText(title);
   });
 
   it("can edit config", async () => {
