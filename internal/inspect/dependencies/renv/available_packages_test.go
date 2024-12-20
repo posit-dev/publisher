@@ -157,10 +157,24 @@ func (s *AvailablePackagesSuite) TestGetLibPathsWindows() {
 	if runtime.GOOS != "windows" {
 		s.T().Skip()
 	}
-	lister, err := NewAvailablePackageLister(s.base, util.Path{}, s.log, nil, nil)
-	s.NoError(err)
 
+	setupMockRInterpreter := func(
+		base util.AbsolutePath,
+		rExecutableParam util.Path,
+		log logging.Logger,
+		cmdExecutorOverride executor.Executor,
+		pathLookerOverride util.PathLooker,
+		existsFuncOverride interpreters.ExistsFunc,
+	) (interpreters.RInterpreter, error) {
+		i := interpreters.NewMockRInterpreter()
+		i.On("Init").Return(nil)
+		i.On("GetRExecutable").Return("R", nil)
+		return i, nil
+	}
 	rExecutablePath := util.NewAbsolutePath("R", nil)
+
+	lister, err := NewAvailablePackageLister(s.base, util.NewPath("R", nil), s.log, setupMockRInterpreter, nil)
+	s.NoError(err)
 
 	executor := executortest.NewMockExecutor()
 	executor.On("RunCommand", rExecutablePath, []string{"-s", "-e", "cat(.libPaths(), sep=\"\\n\")"}, s.base, mock.Anything).Return([]byte(windowsLibPathsOutput), []byte{}, nil)
