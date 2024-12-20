@@ -140,6 +140,7 @@ func (s *AvailablePackagesSuite) TestGetLibPaths() {
 
 	executor := executortest.NewMockExecutor()
 	executor.On("RunCommand", rExecutablePath.String(), mock.Anything, s.base, mock.Anything).Return([]byte(libPathsOutput), []byte{}, nil)
+	executor.On("RunCommand", mock.Anything, []string{"-s", "-e", "renv::paths$lockfile()"}, mock.Anything, mock.Anything).Return([]byte(`[1] "/test/sample-content/shinyapp/renv.lock"`), nil, nil).Once()
 	lister.rExecutor = executor
 
 	repos, err := lister.GetLibPaths(logging.New())
@@ -164,6 +165,7 @@ func (s *AvailablePackagesSuite) TestGetLibPathsWindows() {
 
 	executor := executortest.NewMockExecutor()
 	executor.On("RunCommand", rExecutablePath.String(), mock.Anything, s.base, mock.Anything).Return([]byte(windowsLibPathsOutput), []byte{}, nil)
+	executor.On("RunCommand", mock.Anything, []string{"-s", "-e", "renv::paths$lockfile()"}, mock.Anything, mock.Anything).Return([]byte(`[1] "\\test\\sample-content\\shinyapp\\renv.lock"`), nil, nil).Once()
 	lister.rExecutor = executor
 
 	repos, err := lister.GetLibPaths(logging.New())
