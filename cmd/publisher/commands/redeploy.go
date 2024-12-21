@@ -33,7 +33,8 @@ func (cmd *RedeployCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContex
 	}
 	ctx.Logger = events.NewCLILogger(args.Verbose, os.Stderr)
 
-	err = initialize.InitIfNeeded(absPath, cmd.ConfigName, ctx.Logger)
+	i := initialize.NewDefaultInitialize()
+	err = i.InitIfNeeded(absPath, cmd.ConfigName, ctx.Logger)
 	if err != nil {
 		return err
 	}

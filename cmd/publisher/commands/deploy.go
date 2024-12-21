@@ -53,7 +53,8 @@ func (cmd *DeployCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext)
 			return err
 		}
 	}
-	err = initialize.InitIfNeeded(absPath, cmd.ConfigName, ctx.Logger)
+	i := initialize.NewDefaultInitialize()
+	err = i.InitIfNeeded(absPath, cmd.ConfigName, ctx.Logger)
 	if err != nil {
 		return err
 	}

@@ -17,6 +17,8 @@ type ContentTypeDetector struct {
 	detectors []ContentTypeInferer
 }
 
+type ContentTypeDetectorFactory func(log logging.Logger) *ContentTypeDetector
+
 func NewContentTypeDetector(log logging.Logger) *ContentTypeDetector {
 	return &ContentTypeDetector{
 		log: log,

@@ -25,10 +25,13 @@ type defaultPackageMapper struct {
 	lister AvailablePackagesLister
 }
 
-func NewPackageMapper(base util.AbsolutePath, rExecutable util.Path) *defaultPackageMapper {
+func NewPackageMapper(base util.AbsolutePath, rExecutable util.Path, log logging.Logger) (*defaultPackageMapper, error) {
+
+	lister, err := NewAvailablePackageLister(base, rExecutable, log, nil, nil)
+
 	return &defaultPackageMapper{
-		lister: NewAvailablePackageLister(base, rExecutable),
-	}
+		lister: lister,
+	}, err
 }
 
 func findAvailableVersion(pkgName PackageName, availablePackages []AvailablePackage) string {

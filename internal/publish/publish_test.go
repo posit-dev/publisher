@@ -110,11 +110,11 @@ func (s *PublishSuite) SetupTest() {
 	cwd.Join("app.py").WriteFile([]byte("import flask\n"), 0600)
 	cwd.Join("requirements.txt").WriteFile([]byte("flask\n"), 0600)
 	cwd.Join("renv.lock").WriteFile([]byte(renvLockContent), 0600)
-
 }
 
 func (s *PublishSuite) TestNewFromState() {
 	stateStore := state.Empty()
+	stateStore.Dir = s.cwd
 	publisher, err := NewFromState(stateStore, util.Path{}, events.NewNullEmitter(), logging.New())
 	s.NoError(err)
 	s.Equal(stateStore, publisher.(*defaultPublisher).State)

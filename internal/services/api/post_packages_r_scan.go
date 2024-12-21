@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"path/filepath"
 
-	"github.com/posit-dev/publisher/internal/inspect"
+	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
 )
@@ -20,18 +20,18 @@ type PostPackagesRScanRequest struct {
 }
 
 type PostPackagesRScanHandler struct {
-	base util.AbsolutePath
-	log  logging.Logger
+	base                util.AbsolutePath
+	log                 logging.Logger
+	rInterpreterFactory interpreters.RInterpreterFactory
 }
 
-func NewPostPackagesRScanHandler(base util.AbsolutePath, log logging.Logger) *PostPackagesRScanHandler {
+func NewPostPackagesRScanHandler(base util.AbsolutePath, log logging.Logger, rInterpreterFactory interpreters.RInterpreterFactory) *PostPackagesRScanHandler {
 	return &PostPackagesRScanHandler{
-		base: base,
-		log:  log,
+		base:                base,
+		log:                 log,
+		rInterpreterFactory: rInterpreterFactory,
 	}
 }
-
-var rInspectorFactory = inspect.NewRInspector
 
 func (h *PostPackagesRScanHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	projectDir, _, err := ProjectDirFromRequest(h.base, w, req, h.log)
@@ -48,7 +48,7 @@ func (h *PostPackagesRScanHandler) ServeHTTP(w http.ResponseWriter, req *http.Re
 		return
 	}
 	if b.SaveName == "" {
-		b.SaveName = inspect.DefaultRenvLockfile
+		b.SaveName = interpreters.DefaultRenvLockfile
 	}
 	// Can't call ValidateFilename on b.SaveName because
 	// it may contain slashes.
@@ -60,8 +60,13 @@ func (h *PostPackagesRScanHandler) ServeHTTP(w http.ResponseWriter, req *http.Re
 	}
 	lockfileAbsPath := projectDir.Join(path.String())
 	rPath := util.NewPath(b.R, nil)
-	inspector := rInspectorFactory(projectDir, rPath, h.log)
-	err = inspector.CreateLockfile(lockfileAbsPath)
+
+	rInterpreter, err := h.rInterpreterFactory(projectDir, rPath, h.log, nil, nil, nil)
+	if err != nil {
+		InternalError(w, req, h.log, err)
+		return
+	}
+	err = rInterpreter.CreateLockfile(lockfileAbsPath)
 	if err != nil {
 		InternalError(w, req, h.log, err)
 		return

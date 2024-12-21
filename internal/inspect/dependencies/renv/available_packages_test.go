@@ -6,7 +6,9 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/posit-dev/publisher/internal/executor"
 	"github.com/posit-dev/publisher/internal/executor/executortest"
+	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
@@ -18,6 +20,7 @@ import (
 type AvailablePackagesSuite struct {
 	utiltest.Suite
 	base util.AbsolutePath
+	log  logging.Logger
 }
 
 func TestAvailablePackagesSuite(t *testing.T) {
@@ -30,12 +33,31 @@ func (s *AvailablePackagesSuite) SetupTest() {
 	err = cwd.MkdirAll(0777)
 	s.NoError(err)
 	s.base = cwd
+	s.log = logging.New()
 }
 
 func (s *AvailablePackagesSuite) TestListAvailablePackages() {
-	lister := NewAvailablePackageLister(s.base, util.Path{})
+	setupMockRInterpreter := func(
+		base util.AbsolutePath,
+		rExecutableParam util.Path,
+		log logging.Logger,
+		cmdExecutorOverride executor.Executor,
+		pathLookerOverride util.PathLooker,
+		existsFuncOverride interpreters.ExistsFunc,
+	) (interpreters.RInterpreter, error) {
+		i := interpreters.NewMockRInterpreter()
+		i.On("Init").Return(nil)
+		i.On("GetRExecutable").Return("R", nil)
+		return i, nil
+	}
+
+	lister, err := NewAvailablePackageLister(s.base, util.Path{}, s.log, setupMockRInterpreter, nil)
+	s.NoError(err)
+
+	rExecutablePath := util.NewAbsolutePath("R", nil)
+
 	executor := executortest.NewMockExecutor()
-	executor.On("RunCommand", "R", mock.Anything, s.base, mock.Anything).Return([]byte(
+	executor.On("RunCommand", rExecutablePath.String(), mock.Anything, s.base, mock.Anything).Return([]byte(
 		"pkg1 1.0 https://cran.rstudio.com/src/contrib \npkg2 2.0 https://cran.rstudio.com/src/contrib \n"), []byte{}, nil)
 	lister.rExecutor = executor
 
@@ -57,9 +79,25 @@ BioCbooks https://bioconductor.org/packages/3.18/books
 `
 
 func (s *AvailablePackagesSuite) TestGetBioconductorRepos() {
-	lister := NewAvailablePackageLister(s.base, util.Path{})
+	setupMockRInterpreter := func(
+		base util.AbsolutePath,
+		rExecutableParam util.Path,
+		log logging.Logger,
+		cmdExecutorOverride executor.Executor,
+		pathLookerOverride util.PathLooker,
+		existsFuncOverride interpreters.ExistsFunc,
+	) (interpreters.RInterpreter, error) {
+		i := interpreters.NewMockRInterpreter()
+		i.On("Init").Return(nil)
+		i.On("GetRExecutable").Return("R", nil)
+		return i, nil
+	}
+
+	lister, _ := NewAvailablePackageLister(s.base, util.Path{}, s.log, setupMockRInterpreter, nil)
+	rExecutablePath := util.NewAbsolutePath("R", nil)
+
 	executor := executortest.NewMockExecutor()
-	executor.On("RunCommand", "R", mock.Anything, s.base, mock.Anything).Return([]byte(biocReposOutput), []byte{}, nil)
+	executor.On("RunCommand", rExecutablePath.String(), mock.Anything, s.base, mock.Anything).Return([]byte(biocReposOutput), []byte{}, nil)
 	lister.rExecutor = executor
 
 	repos, err := lister.GetBioconductorRepos(s.base, logging.New())
@@ -81,9 +119,27 @@ func (s *AvailablePackagesSuite) TestGetLibPaths() {
 	if runtime.GOOS == "windows" {
 		s.T().Skip()
 	}
-	lister := NewAvailablePackageLister(s.base, util.Path{})
+
+	setupMockRInterpreter := func(
+		base util.AbsolutePath,
+		rExecutableParam util.Path,
+		log logging.Logger,
+		cmdExecutorOverride executor.Executor,
+		pathLookerOverride util.PathLooker,
+		existsFuncOverride interpreters.ExistsFunc,
+	) (interpreters.RInterpreter, error) {
+		i := interpreters.NewMockRInterpreter()
+		i.On("Init").Return(nil)
+		i.On("GetRExecutable").Return("R", nil)
+		return i, nil
+	}
+	rExecutablePath := util.NewAbsolutePath("R", nil)
+
+	lister, err := NewAvailablePackageLister(s.base, util.NewPath("R", nil), s.log, setupMockRInterpreter, nil)
+	s.NoError(err)
+
 	executor := executortest.NewMockExecutor()
-	executor.On("RunCommand", "R", mock.Anything, s.base, mock.Anything).Return([]byte(libPathsOutput), []byte{}, nil)
+	executor.On("RunCommand", rExecutablePath.String(), mock.Anything, s.base, mock.Anything).Return([]byte(libPathsOutput), []byte{}, nil)
 	lister.rExecutor = executor
 
 	repos, err := lister.GetLibPaths(logging.New())
@@ -101,9 +157,27 @@ func (s *AvailablePackagesSuite) TestGetLibPathsWindows() {
 	if runtime.GOOS != "windows" {
 		s.T().Skip()
 	}
-	lister := NewAvailablePackageLister(s.base, util.Path{})
+
+	setupMockRInterpreter := func(
+		base util.AbsolutePath,
+		rExecutableParam util.Path,
+		log logging.Logger,
+		cmdExecutorOverride executor.Executor,
+		pathLookerOverride util.PathLooker,
+		existsFuncOverride interpreters.ExistsFunc,
+	) (interpreters.RInterpreter, error) {
+		i := interpreters.NewMockRInterpreter()
+		i.On("Init").Return(nil)
+		i.On("GetRExecutable").Return("R", nil)
+		return i, nil
+	}
+	rExecutablePath := util.NewAbsolutePath("R", nil)
+
+	lister, err := NewAvailablePackageLister(s.base, util.NewPath("R", nil), s.log, setupMockRInterpreter, nil)
+	s.NoError(err)
+
 	executor := executortest.NewMockExecutor()
-	executor.On("RunCommand", "R", mock.Anything, s.base, mock.Anything).Return([]byte(windowsLibPathsOutput), []byte{}, nil)
+	executor.On("RunCommand", rExecutablePath.String(), []string{"-s", "-e", "cat(.libPaths(), sep=\"\\n\")"}, s.base, mock.Anything).Return([]byte(windowsLibPathsOutput), []byte{}, nil)
 	lister.rExecutor = executor
 
 	repos, err := lister.GetLibPaths(logging.New())

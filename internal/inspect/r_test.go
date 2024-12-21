@@ -4,17 +4,16 @@ package inspect
 
 import (
 	"errors"
-	"os/exec"
-	"runtime"
 	"testing"
 
-	"github.com/posit-dev/publisher/internal/executor/executortest"
+	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/executor"
+	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
 	"github.com/spf13/afero"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -33,318 +32,179 @@ func (s *RSuite) SetupTest() {
 	s.cwd = cwd
 	err = cwd.MkdirAll(0700)
 	s.NoError(err)
-
-	rVersionCache = make(map[string]string)
 }
 
 func (s *RSuite) TestNewRInspector() {
 	log := logging.New()
 	rPath := util.NewPath("/usr/bin/R", nil)
-	i := NewRInspector(s.cwd, rPath, log)
+
+	setupMockRInterpreter := func(
+		base util.AbsolutePath,
+		rExecutableParam util.Path,
+		log logging.Logger,
+		cmdExecutorOverride executor.Executor,
+		pathLookerOverride util.PathLooker,
+		existsFuncOverride interpreters.ExistsFunc,
+	) (interpreters.RInterpreter, error) {
+		i := interpreters.NewMockRInterpreter()
+		i.On("Init").Return(nil)
+		return i, nil
+	}
+
+	i, err := NewRInspector(s.cwd, rPath, log, setupMockRInterpreter, nil)
+	s.NoError(err)
+
 	inspector := i.(*defaultRInspector)
-	s.Equal(rPath, inspector.rExecutable)
+	s.Equal(s.cwd, inspector.base)
 	s.Equal(log, inspector.log)
 }
 
-type OutputTestData struct {
-	output, expectedVersion string
-}
+func (s *RSuite) TestInspectWithRFound() {
+	var relPath util.RelativePath
 
-func getOutputTestData() []OutputTestData {
-	data := []OutputTestData{
-		// typical output from command `r --version`
-		{`R version 4.3.0 (2023-04-21) -- "Already Tomorrow"
-Copyright (C) 2023 The R Foundation for Statistical Computing
-Platform: x86_64-apple-darwin20 (64-bit)
-
-R is free software and comes with ABSOLUTELY NO WARRANTY.
-You are welcome to redistribute it under the terms of the
-GNU General Public License versions 2 or 3.
-For more information about these matters see
-https://www.gnu.org/licenses/.
-`, "4.3.0"},
-		// output when there is a warning
-		{`WARNING: ignoring environment value of R_HOME
-R version 4.3.3 (2024-02-29) -- "Angel Food Cake"
-Copyright (C) 2024 The R Foundation for Statistical Computing
-Platform: x86_64-apple-darwin20 (64-bit)
-
-R is free software and comes with ABSOLUTELY NO WARRANTY.
-You are welcome to redistribute it under the terms of the
-GNU General Public License versions 2 or 3.
-For more information about these matters see
-https://www.gnu.org/licenses/.`, "4.3.3"},
-
-		// output when there are multiple warnings
-		// as well as closely matching version strings
-		{`WARNING: ignoring environment value of R_HOME
-WARNING: your mom is calling
-WARNING: time to stand
-Somewhere below is the correct R version 4.3.* that we're looking for
-R version 4.3.3 (2024-02-29) -- "Angel Food Cake"
-Copyright (C) 2024 The R Foundation for Statistical Computing
-Platform: x86_64-apple-darwin20 (64-bit)
-
-R is free software and comes with ABSOLUTELY NO WARRANTY.
-You are welcome to redistribute it under the terms of the
-GNU General Public License versions 2 or 3.
-For more information about these matters see
-https://www.gnu.org/licenses/.`, "4.3.3"},
-
-		// test output where version exists in multiple locations
-		// we want to get it from the first location
-		{`
-R version 4.3.3 (2024-02-29) -- "Angel Food Cake"
-Copyright (C) 2024 The R Foundation for Statistical Computing
-Platform: x86_64-apple-darwin20 (64-bit)
-R version 4.1.1 (2023-12-29) -- "Fantasy Island"
-
-R is free software and comes with ABSOLUTELY NO WARRANTY.
-You are welcome to redistribute it under the terms of the
-GNU General Public License versions 2 or 3.
-For more information about these matters see
-https://www.gnu.org/licenses/.`, "4.3.3"},
-	}
-	return data
-}
-
-func (s *RSuite) TestGetRVersionFromExecutable() {
-	for _, tc := range getOutputTestData() {
-		s.SetupTest()
-		log := logging.New()
-		rPath := s.cwd.Join("bin", "R")
-		rPath.Dir().MkdirAll(0777)
-		rPath.WriteFile(nil, 0777)
-		i := NewRInspector(s.cwd, rPath.Path, log)
-		inspector := i.(*defaultRInspector)
-
-		executor := executortest.NewMockExecutor()
-		executor.On("RunCommand", rPath.String(), []string{"--version"}, mock.Anything, mock.Anything).Return([]byte(tc.output), nil, nil)
-		inspector.executor = executor
-		version, err := inspector.getRVersion(rPath.String())
-		s.NoError(err)
-		s.Equal(tc.expectedVersion, version)
-	}
-}
-
-func (s *RSuite) TestGetRVersionFromExecutableWindows() {
-	for _, tc := range getOutputTestData() {
-		s.SetupTest()
-		// R on Windows emits version information on stderr
-		log := logging.New()
-		rPath := s.cwd.Join("bin", "R")
-		rPath.Dir().MkdirAll(0777)
-		rPath.WriteFile(nil, 0777)
-		i := NewRInspector(s.cwd, rPath.Path, log)
-		inspector := i.(*defaultRInspector)
-
-		executor := executortest.NewMockExecutor()
-		executor.On("RunCommand", rPath.String(), []string{"--version"}, mock.Anything, mock.Anything).Return(nil, []byte(tc.output), nil)
-		inspector.executor = executor
-		version, err := inspector.getRVersion(rPath.String())
-		s.NoError(err)
-		s.Equal(tc.expectedVersion, version)
-	}
-}
-
-func (s *RSuite) TestGetRVersionFromRealDefaultR() {
-	// This test can only run if R or R is on the PATH.
-	rPath, err := exec.LookPath("R")
-	if err != nil {
-		s.T().Skip("This test requires R to be available on PATH")
+	setupMockRInterpreter := func(
+		base util.AbsolutePath,
+		rExecutableParam util.Path,
+		log logging.Logger,
+		cmdExecutorOverride executor.Executor,
+		pathLookerOverride util.PathLooker,
+		existsFuncOverride interpreters.ExistsFunc,
+	) (interpreters.RInterpreter, error) {
+		i := interpreters.NewMockRInterpreter()
+		i.On("Init").Return(nil)
+		i.On("GetRExecutable").Return(util.NewAbsolutePath("R", s.cwd.Fs()), nil)
+		i.On("GetRVersion").Return("1.2.3", nil)
+		relPath = util.NewRelativePath(s.cwd.Join("renv.lock").String(), s.cwd.Fs())
+		i.On("GetLockFilePath").Return(relPath, true, nil)
+		return i, nil
 	}
 	log := logging.New()
-	i := NewRInspector(s.cwd, util.Path{}, log)
-	inspector := i.(*defaultRInspector)
-	_, err = inspector.getRVersion(rPath)
+	i, err := NewRInspector(s.cwd, util.Path{}, log, setupMockRInterpreter, nil)
 	s.NoError(err)
+
+	inspect, err := i.InspectR()
+	s.NoError(err)
+	s.Equal("renv", inspect.PackageManager)
+	s.Equal("1.2.3", inspect.Version)
+	s.Equal(relPath.String(), inspect.PackageFile)
 }
 
-func (s *RSuite) TestGetRenvLockfileFromDir() {
-	log := logging.New()
-	i := NewRInspector(s.cwd, util.Path{}, log)
-	inspector := i.(*defaultRInspector)
-
-	expectedPath := s.cwd.Join(DefaultRenvLockfile)
-	err := expectedPath.WriteFile(nil, 0666)
-	s.NoError(err)
-
-	// Executor should not be called
-	executor := executortest.NewMockExecutor()
-	inspector.executor = executor
-
-	lockfilePath, err := inspector.getRenvLockfile("")
-	s.NoError(err)
-	s.Equal(expectedPath, lockfilePath)
-}
-
-func (s *RSuite) TestGetRenvLockfileFromR() {
-	log := logging.New()
-	rPath := s.cwd.Join("bin", "R")
-	rPath.Dir().MkdirAll(0777)
-	rPath.WriteFile(nil, 0777)
-	i := NewRInspector(s.cwd, rPath.Path, log)
-	inspector := i.(*defaultRInspector)
-
-	const getRenvLockOutput = "[1] \"/project/renv.lock\"\n"
-	executor := executortest.NewMockExecutor()
-	executor.On("RunCommand", rPath.String(), mock.Anything, mock.Anything, mock.Anything).Return([]byte(getRenvLockOutput), nil, nil)
-	inspector.executor = executor
-	lockfilePath, err := inspector.getRenvLockfile(rPath.String())
-	s.NoError(err)
-	expected := util.NewAbsolutePath("/project/renv.lock", nil).String()
-	s.Equal(expected, lockfilePath.String())
-}
-
-const getRenvLockMismatchedOutput = `ℹ Using R 4.3.0 (lockfile was generated with R 3.6.3)
-[1] "/project/renv.lock"
-`
-
-func (s *RSuite) TestGetRenvLockfileMismatchedVersion() {
-	log := logging.New()
-	rPath := s.cwd.Join("bin", "R")
-	rPath.Dir().MkdirAll(0777)
-	rPath.WriteFile(nil, 0777)
-	i := NewRInspector(s.cwd, rPath.Path, log)
-	inspector := i.(*defaultRInspector)
-
-	executor := executortest.NewMockExecutor()
-	executor.On("RunCommand", rPath.String(), mock.Anything, mock.Anything, mock.Anything).Return([]byte(getRenvLockMismatchedOutput), nil, nil)
-	inspector.executor = executor
-	lockfilePath, err := inspector.getRenvLockfile(rPath.String())
-	s.NoError(err)
-	expected := util.NewAbsolutePath("/project/renv.lock", nil).String()
-	s.Equal(expected, lockfilePath.String())
-}
-
-func (s *RSuite) TestGetRenvLockfileRExitCode() {
-	if runtime.GOOS == "windows" {
-		s.T().Skip("This test does not run on Windows")
+func (s *RSuite) TestInspectWithNoRFound() {
+	setupMockRInterpreter := func(
+		base util.AbsolutePath,
+		rExecutableParam util.Path,
+		log logging.Logger,
+		cmdExecutorOverride executor.Executor,
+		pathLookerOverride util.PathLooker,
+		existsFuncOverride interpreters.ExistsFunc,
+	) (interpreters.RInterpreter, error) {
+		i := interpreters.NewMockRInterpreter()
+		rExecNotFoundError := types.NewAgentError(types.ErrorRExecNotFound, errors.New("info"), nil)
+		i.On("Init").Return(nil)
+		i.On("GetRExecutable").Return(util.AbsolutePath{}, nil)
+		i.On("GetRVersion").Return("", rExecNotFoundError)
+		relPath := util.NewRelativePath(s.cwd.Join("renv_2222.lock").String(), s.cwd.Fs())
+		i.On("GetLockFilePath").Return(relPath, false, nil)
+		return i, nil
 	}
 	log := logging.New()
-	rPath := util.NewPath("/usr/bin/false", nil)
-	i := NewRInspector(s.cwd, rPath, log)
-	inspector := i.(*defaultRInspector)
-
-	// if the R call fails, we get back a default lockfile path
-	lockfilePath, err := inspector.getRenvLockfile(rPath.String())
-	s.NoError(err)
-	s.Equal(s.cwd.Join("renv.lock").String(), lockfilePath.String())
-}
-
-func (s *RSuite) TestGetRenvLockfileRError() {
-	log := logging.New()
-	rPath := s.cwd.Join("bin", "R")
-	rPath.Dir().MkdirAll(0777)
-	rPath.WriteFile(nil, 0777)
-	i := NewRInspector(s.cwd, rPath.Path, log)
-	inspector := i.(*defaultRInspector)
-
-	testError := errors.New("test error from RunCommand")
-	executor := executortest.NewMockExecutor()
-	executor.On("RunCommand", rPath.String(), mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, testError)
-	inspector.executor = executor
-	lockfilePath, err := inspector.getRenvLockfile(rPath.String())
-	s.ErrorIs(err, testError)
-	s.Equal("", lockfilePath.String())
-}
-
-const lockFileContent = `{
-	"R": {
-	  "Version": "4.3.1",
-	  "Repositories": [
-		{
-		  "Name": "CRAN",
-		  "URL": "https://cloud.r-project.org"
-		}
-	  ]
-	},
-	"Packages": {}
-}`
-
-func (s *RSuite) TestGetRVersionFromLockFile() {
-	log := logging.New()
-	i := NewRInspector(s.cwd, util.Path{}, log)
-	inspector := i.(*defaultRInspector)
-
-	lockfilePath := s.cwd.Join("renv.lock")
-	err := lockfilePath.WriteFile([]byte(lockFileContent), 0666)
+	i, err := NewRInspector(s.cwd, util.Path{}, log, setupMockRInterpreter, nil)
 	s.NoError(err)
 
-	version, err := inspector.getRVersionFromLockfile(lockfilePath)
+	inspect, err := i.InspectR()
 	s.NoError(err)
-	s.Equal("4.3.1", version)
+	s.Equal("renv", inspect.PackageManager)
+	s.Equal("", inspect.Version)
+	s.Equal(s.cwd.Join("renv_2222.lock").String(), inspect.PackageFile)
 }
 
-func (s *RSuite) TestGetRExecutable() {
-	for _, tc := range getOutputTestData() {
-		log := logging.New()
-		executor := executortest.NewMockExecutor()
-		executor.On("RunCommand", "/some/R", []string{"--version"}, mock.Anything, mock.Anything).Return([]byte(tc.output), nil, nil)
-		i := &defaultRInspector{
-			executor: executor,
-			log:      log,
-		}
-
-		pathLooker := util.NewMockPathLooker()
-		pathLooker.On("LookPath", "R").Return("/some/R", nil)
-		i.pathLooker = pathLooker
-		executable, err := i.getRExecutable()
-		s.NoError(err)
-		s.Equal("/some/R", executable)
-	}
-}
-
-func (s *RSuite) TestGetRExecutableSpecifiedR() {
-	log := logging.New()
-	rPath := s.cwd.Join("bin", "R")
-	rPath.Dir().MkdirAll(0777)
-	rPath.WriteFile(nil, 0777)
-
-	executor := executortest.NewMockExecutor()
-	executor.On("RunCommand", "/some/R", []string{"--version"}, mock.Anything, mock.Anything).Return(nil, nil, nil)
-	i := &defaultRInspector{
-		rExecutable: rPath.Path,
-		executor:    executor,
-		log:         log,
+func (s *RSuite) TestRequiresRWithEmptyCfgAndLockfileExists() {
+	setupMockRInterpreter := func(
+		base util.AbsolutePath,
+		rExecutableParam util.Path,
+		log logging.Logger,
+		cmdExecutorOverride executor.Executor,
+		pathLookerOverride util.PathLooker,
+		existsFuncOverride interpreters.ExistsFunc,
+	) (interpreters.RInterpreter, error) {
+		i := interpreters.NewMockRInterpreter()
+		relPath := util.NewRelativePath(s.cwd.Join("renv.lock").String(), s.cwd.Fs())
+		i.On("GetLockFilePath").Return(relPath, true, nil)
+		return i, nil
 	}
 
-	executable, err := i.getRExecutable()
+	log := logging.New()
+	i, err := NewRInspector(s.cwd, util.Path{}, log, setupMockRInterpreter, nil)
 	s.NoError(err)
-	s.Equal(rPath.String(), executable)
+
+	cfg := &config.Config{}
+
+	require, err := i.RequiresR(cfg)
+	s.NoError(err)
+	s.Equal(true, require)
 }
 
-func (s *RSuite) TestGetRExecutableSpecifiedRNotFound() {
-	log := logging.New()
-
-	i := NewRInspector(s.cwd, util.NewPath("/some/R", nil), log)
-	inspector := i.(*defaultRInspector)
-	executable, err := inspector.getRExecutable()
-
-	aerr, yes := types.IsAgentError(err)
-	s.Equal(yes, true)
-	s.Equal(aerr.Code, types.ErrorRExecNotFound)
-	s.Contains(aerr.Message, "Cannot find the specified R executable /some/R: file does not exist.")
-	s.Equal("", executable)
-}
-
-func (s *RSuite) TestGetRExecutableNotRunnable() {
-	log := logging.New()
-
-	testError := errors.New("test error from RunCommand")
-	executor := executortest.NewMockExecutor()
-	executor.On("RunCommand", "/some/R", []string{"--version"}, mock.Anything, mock.Anything).Return(nil, nil, testError)
-	i := &defaultRInspector{
-		executor: executor,
-		log:      log,
+func (s *RSuite) TestRequiresRWithEmptyCfgAndLockfileDoesNotExists() {
+	setupMockRInterpreter := func(
+		base util.AbsolutePath,
+		rExecutableParam util.Path,
+		log logging.Logger,
+		cmdExecutorOverride executor.Executor,
+		pathLookerOverride util.PathLooker,
+		existsFuncOverride interpreters.ExistsFunc,
+	) (interpreters.RInterpreter, error) {
+		i := interpreters.NewMockRInterpreter()
+		relPath := util.NewRelativePath(s.cwd.Join("renv.lock").String(), s.cwd.Fs())
+		i.On("GetLockFilePath").Return(relPath, false, nil)
+		return i, nil
 	}
 
-	pathLooker := util.NewMockPathLooker()
-	pathLooker.On("LookPath", "R").Return("/some/R", nil)
-	i.pathLooker = pathLooker
+	log := logging.New()
+	i, err := NewRInspector(s.cwd, util.Path{}, log, setupMockRInterpreter, nil)
+	s.NoError(err)
 
-	executable, err := i.getRExecutable()
-	s.NotNil(err)
-	s.ErrorIs(err, testError)
-	s.Equal("", executable)
+	cfg := &config.Config{}
+
+	require, err := i.RequiresR(cfg)
+	s.NoError(err)
+	s.Equal(false, require)
+}
+
+func (s *RSuite) TestRequiresRWithRCfg() {
+	log := logging.New()
+	i, err := NewRInspector(s.cwd, util.Path{}, log, nil, nil)
+	s.NoError(err)
+
+	cfg := &config.Config{
+		R: &config.R{},
+	}
+	require, err := i.RequiresR(cfg)
+	s.NoError(err)
+	s.Equal(true, require)
+}
+
+func (s *RSuite) TestRequiresRNoRButWithTypeAsPython() {
+	log := logging.New()
+	i, err := NewRInspector(s.cwd, util.Path{}, log, nil, nil)
+	s.NoError(err)
+
+	cfg := &config.Config{
+		Type: config.ContentTypePythonFastAPI,
+	}
+	require, err := i.RequiresR(cfg)
+	s.NoError(err)
+	s.Equal(false, require)
+}
+
+func (s *RSuite) TestRequiresRNoRButWithTypeEqualContentTypeHTML() {
+	log := logging.New()
+	i, err := NewRInspector(s.cwd, util.Path{}, log, nil, nil)
+	s.NoError(err)
+
+	cfg := &config.Config{
+		Type: config.ContentTypeHTML,
+	}
+	require, err := i.RequiresR(cfg)
+	s.NoError(err)
+	s.Equal(false, require)
 }

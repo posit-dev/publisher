@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/posit-dev/publisher/internal/executor"
+	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
 )
@@ -24,20 +25,27 @@ type AvailablePackagesLister interface {
 }
 
 type defaultAvailablePackagesLister struct {
-	base        util.AbsolutePath
-	rExecutable util.Path
-	rExecutor   executor.Executor
+	base         util.AbsolutePath
+	rInterpreter interpreters.RInterpreter
+	rExecutor    executor.Executor
 }
 
-func NewAvailablePackageLister(base util.AbsolutePath, rExecutable util.Path) *defaultAvailablePackagesLister {
-	if rExecutable.String() == "" {
-		rExecutable = util.NewPath("R", nil)
+func NewAvailablePackageLister(base util.AbsolutePath, rExecutable util.Path, log logging.Logger, rInterpreterFactoryOverride interpreters.RInterpreterFactory, cmdExecutorOverride executor.Executor) (*defaultAvailablePackagesLister, error) {
+
+	var rInterpreter interpreters.RInterpreter
+	var err error
+
+	if rInterpreterFactoryOverride != nil {
+		rInterpreter, err = rInterpreterFactoryOverride(base, rExecutable, log, cmdExecutorOverride, nil, nil)
+	} else {
+		rInterpreter, err = interpreters.NewRInterpreter(base, rExecutable, log, nil, nil, nil)
 	}
+
 	return &defaultAvailablePackagesLister{
-		base:        base,
-		rExecutable: rExecutable,
-		rExecutor:   executor.NewExecutor(),
-	}
+		base:         base,
+		rInterpreter: rInterpreter,
+		rExecutor:    executor.NewExecutor(),
+	}, err
 }
 
 func repoUrlsAsStrings(repos []Repository) string {
@@ -70,8 +78,13 @@ func (l *defaultAvailablePackagesLister) ListAvailablePackages(repos []Repositor
 	repoNames := repoNamesAsStrings(repos)
 	packageListCode := fmt.Sprintf(packageListCodeTemplate, repoUrls, repoNames)
 
+	rExecutable, err := l.rInterpreter.GetRExecutable()
+	if err != nil {
+		return nil, err
+	}
+
 	out, _, err := l.rExecutor.RunCommand(
-		l.rExecutable.String(),
+		rExecutable.String(),
 		[]string{
 			"-s",
 			"-e",
@@ -109,8 +122,13 @@ func (l *defaultAvailablePackagesLister) GetBioconductorRepos(base util.Absolute
 	escapedBase := strings.ReplaceAll(l.base.String(), `\`, `\\`)
 	biocRepoListCode := fmt.Sprintf(bioconductorReposCodeTemplate, escapedBase)
 
+	rExecutable, err := l.rInterpreter.GetRExecutable()
+	if err != nil {
+		return nil, err
+	}
+
 	out, _, err := l.rExecutor.RunCommand(
-		l.rExecutable.String(),
+		rExecutable.String(),
 		[]string{
 			"-s",
 			"-e",
@@ -144,9 +162,15 @@ func (l *defaultAvailablePackagesLister) GetBioconductorRepos(base util.Absolute
 }
 
 func (l *defaultAvailablePackagesLister) GetLibPaths(log logging.Logger) ([]util.AbsolutePath, error) {
+
+	rExecutable, err := l.rInterpreter.GetRExecutable()
+	if err != nil {
+		return nil, err
+	}
+
 	const getLibPathsCode = `cat(.libPaths(), sep="\n")`
 	out, _, err := l.rExecutor.RunCommand(
-		l.rExecutable.String(),
+		rExecutable.String(),
 		[]string{
 			"-s",
 			"-e",

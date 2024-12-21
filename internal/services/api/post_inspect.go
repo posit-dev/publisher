@@ -112,7 +112,9 @@ func PostInspectHandlerFunc(base util.AbsolutePath, log logging.Logger) http.Han
 				}
 				entrypoint := req.URL.Query().Get("entrypoint")
 				entrypointPath := util.NewRelativePath(entrypoint, base.Fs())
-				configs, err := initialize.GetPossibleConfigs(path, pythonPath, rPath, entrypointPath, log)
+
+				i := initialize.NewDefaultInitialize()
+				configs, err := i.GetPossibleConfigs(path, pythonPath, rPath, entrypointPath, log)
 				if err != nil {
 					return err
 				}
@@ -150,7 +152,9 @@ func PostInspectHandlerFunc(base util.AbsolutePath, log logging.Logger) http.Han
 				// Response already returned by getEntrypointPath
 				return
 			}
-			configs, err := initialize.GetPossibleConfigs(projectDir, pythonPath, rPath, entrypointPath, log)
+
+			i := initialize.NewDefaultInitialize()
+			configs, err := i.GetPossibleConfigs(projectDir, pythonPath, rPath, entrypointPath, log)
 			if err != nil {
 				if aerr, ok := types.IsAgentErrorOf(err, types.ErrorPythonExecNotFound); ok {
 					apiErr := types.APIErrorPythonExecNotFoundFromAgentError(*aerr)
