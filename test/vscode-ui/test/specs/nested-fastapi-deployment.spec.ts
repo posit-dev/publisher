@@ -56,7 +56,7 @@ describe("Nested Fast API Deployment", () => {
       `aria/my connect server • fastapi-simple${sep}simple.py`,
     );
     await expect(myConfig).toExist();
-    myConfig.click();
+    await myConfig.click();
   });
 
   it("can edit config", async () => {
