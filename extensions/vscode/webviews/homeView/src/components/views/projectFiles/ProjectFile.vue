@@ -99,7 +99,7 @@ const listStyle = computed((): "emphasized" | "default" | "deemphasized" => {
 
 const tooltip = computed((): string => {
   return isIncluded.value
-    ? includedFileTooltip(props.file)
+    ? includedFileTooltip(props.file, isEntrypoint.value)
     : excludedFileTooltip(props.file);
 });
 
