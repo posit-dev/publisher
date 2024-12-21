@@ -1,4 +1,7 @@
-import { ContentRecordFile, FileMatchSource } from "../../../../../../src/api";
+import {
+  ContentRecordFile,
+  FileMatchSource,
+} from "../../../../../../src/api/types/files";
 
 export function includedFileTooltip(
   file: Pick<ContentRecordFile, "rel" | "reason">,
