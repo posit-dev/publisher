@@ -19,6 +19,10 @@ import {
   getStatusFromError,
   getSummaryStringFromError,
 } from "src/utils/errors";
+import {
+  isErrCredentialsReset,
+  errCredentialsResetMessage,
+} from "src/utils/errorTypes";
 import { DeploymentSelector, SelectionState } from "src/types/shared";
 import { LocalState, Views } from "./constants";
 
@@ -283,6 +287,11 @@ export class PublisherState implements Disposable {
         this.credentials = response.data;
       });
     } catch (error: unknown) {
+      if (isErrCredentialsReset(error)) {
+        const warnMsg = errCredentialsResetMessage();
+        window.showWarningMessage(warnMsg);
+        return;
+      }
       const summary = getSummaryStringFromError("refreshCredentials", error);
       window.showErrorMessage(summary);
     }

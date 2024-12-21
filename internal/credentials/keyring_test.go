@@ -162,3 +162,31 @@ func (s *KeyringCredentialsTestSuite) TestDelete() {
 	s.Error(err)
 	s.log.AssertExpectations(s.T())
 }
+
+func (s *KeyringCredentialsTestSuite) TestReset() {
+	cs := keyringCredentialsService{
+		log: s.log,
+	}
+
+	creds, err := cs.List()
+	s.NoError(err)
+	s.Equal(creds, []Credential{})
+
+	// Add a couple creds to be assert on the list again
+	_, err = cs.Set("example", "https://a.example.com", "12345")
+	s.NoError(err)
+	_, err = cs.Set("example2", "https://b.example.com", "12345")
+	s.NoError(err)
+
+	creds, err = cs.List()
+	s.NoError(err)
+	s.Len(creds, 2)
+
+	err = cs.Reset()
+	s.NoError(err)
+
+	// Creds wiped out
+	creds, err = cs.List()
+	s.NoError(err)
+	s.Len(creds, 0)
+}

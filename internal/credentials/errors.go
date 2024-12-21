@@ -16,6 +16,11 @@ func (e *CorruptedError) Error() string {
 	return fmt.Sprintf("credential '%s' is corrupted", e.GUID)
 }
 
+func (e *CorruptedError) Is(target error) bool {
+	_, isCorrupterErr := target.(*CorruptedError)
+	return isCorrupterErr
+}
+
 type LoadError struct {
 	Err error
 }
@@ -26,6 +31,11 @@ func NewLoadError(err error) *LoadError {
 
 func (e *LoadError) Error() string {
 	return fmt.Sprintf("failed to load credentials: %v", e.Err)
+}
+
+func (e *LoadError) Is(target error) bool {
+	_, isLoadErr := target.(*LoadError)
+	return isLoadErr
 }
 
 type NotFoundError struct {

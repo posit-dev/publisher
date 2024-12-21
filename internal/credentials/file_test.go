@@ -523,3 +523,31 @@ func (s *FileCredentialsServiceSuite) TestSet_ConflictErr() {
 		})
 	}
 }
+
+func (s *FileCredentialsServiceSuite) TestReset() {
+	cs := &fileCredentialsService{
+		log:           s.loggerMock,
+		credsFilepath: s.testdata.Join("to-reset.toml"),
+	}
+
+	_, err := cs.load()
+	s.NoError(err)
+
+	_, err = cs.Set("newcred", "https://b2.connect-server:3939/connect", "abcdeC2aqbh7dg8TO43XPu7r56YDh002")
+	s.NoError(err)
+
+	_, err = cs.Set("newcredtwo", "https://b5.connect-server:3939/connect", "abcdeC2aqbh7dg8TO43XPu7r56YDh007")
+	s.NoError(err)
+
+	list, err := cs.List()
+	s.NoError(err)
+	s.Len(list, 2)
+
+	err = cs.Reset()
+	s.NoError(err)
+
+	// Creds wiped out
+	list, err = cs.List()
+	s.NoError(err)
+	s.Len(list, 0)
+}

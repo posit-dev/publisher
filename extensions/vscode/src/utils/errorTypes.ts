@@ -17,7 +17,8 @@ export type ErrorCode =
   | "deployedContentNotRunning"
   | "tomlValidationError"
   | "tomlUnknownError"
-  | "pythonExecNotFound";
+  | "pythonExecNotFound"
+  | "credentialCorruptedReset";
 
 export type axiosErrorWithJson<T = { code: ErrorCode; details: unknown }> =
   AxiosError & {
@@ -162,6 +163,15 @@ export type ErrInvalidConfigFiles = MkErrorDataType<
 export const isErrInvalidConfigFile =
   mkErrorTypeGuard<ErrInvalidConfigFiles>("invalidConfigFile");
 
+// Invalid configuration file(s)
+export type ErrCredentialsReset = MkErrorDataType<"credentialCorruptedReset">;
+export const isErrCredentialsReset = mkErrorTypeGuard<ErrInvalidConfigFiles>(
+  "credentialCorruptedReset",
+);
+export const errCredentialsResetMessage = () => {
+  return "Stored credentials for Posit Publisher found in an unrecognizable state. A reset was required in order to proceed.";
+};
+
 // Tries to match an Axios error that comes with an identifiable Json structured data
 // defaulting to be ErrUnknown message when
 export function resolveAgentJsonErrorMsg(err: axiosErrorWithJson) {
@@ -181,6 +191,12 @@ export function resolveAgentJsonErrorMsg(err: axiosErrorWithJson) {
     return errTomlUnknownErrorMessage(err);
   }
 
+  if (isErrPythonExecNotFoundError(err)) {
+    return errPythonExecNotFoundErrorMessage(err);
+  }
+
+  // Ignore errors coming from credentials being reset,
+  // a warning is shown when PublisherState is updated.
   if (isErrPythonExecNotFoundError(err)) {
     return errPythonExecNotFoundErrorMessage(err);
   }

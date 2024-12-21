@@ -162,6 +162,20 @@ func APIErrorCredentialsUnavailableFromAgentError(aerr AgentError) APIErrorCrede
 	}
 }
 
+type APIErrorCredentialCorruptedReset struct {
+	Code ErrorCode `json:"code"`
+}
+
+func (apierr *APIErrorCredentialCorruptedReset) JSONResponse(w http.ResponseWriter) {
+	jsonResult(w, http.StatusConflict, apierr)
+}
+
+func APIErrorCredentialCorruptedResetFromAgentError(aerr AgentError) APIErrorCredentialCorruptedReset {
+	return APIErrorCredentialCorruptedReset{
+		Code: ErrorCredentialCorruptedReset,
+	}
+}
+
 type APIErrorPythonExecNotFound struct {
 	Code ErrorCode `json:"code"`
 }
