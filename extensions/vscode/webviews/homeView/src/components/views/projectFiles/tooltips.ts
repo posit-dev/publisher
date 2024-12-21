@@ -1,11 +1,18 @@
-import { ContentRecordFile, FileMatchSource } from "../../../../../../src/api";
+import {
+  ContentRecordFile,
+  FileMatchSource,
+} from "../../../../../../src/api/types/files";
 
 export function includedFileTooltip(
   file: Pick<ContentRecordFile, "rel" | "reason">,
+  isEntrypoint: boolean = false,
 ) {
   let tooltip = `${file.rel} will be included in the next deployment.`;
   if (file.reason) {
     tooltip += `\nThe configuration file ${file.reason?.fileName} is including it with the pattern '${file.reason?.pattern}'`;
+  }
+  if (isEntrypoint) {
+    tooltip += `\n${file.rel} is the entrypoint. Entrypoints must be included in the configuration 'files' list.`;
   }
   return tooltip;
 }
