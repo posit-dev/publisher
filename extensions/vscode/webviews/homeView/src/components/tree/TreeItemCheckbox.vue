@@ -35,6 +35,7 @@
         :checked="checked"
         :disabled="disabled"
         class="tree-item-checkbox"
+        :class="{ 'opacity-100': disableOpacity }"
         @click="checked ? $emit('uncheck') : $emit('check')"
       >
         <span class="tree-item-title">{{ title }}</span>
@@ -77,6 +78,7 @@ interface Props {
   indentLevel?: number;
   expandable?: boolean;
   virtualized?: boolean;
+  disableOpacity?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -84,6 +86,7 @@ const props = withDefaults(defineProps<Props>(), {
   indentLevel: 1,
   expandable: false,
   virtualized: false,
+  disableOpacity: false,
 });
 
 const slots = defineSlots<{

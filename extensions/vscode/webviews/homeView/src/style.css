@@ -85,3 +85,7 @@ body {
 .text-git-conflicting {
   color: var(--vscode-gitDecoration-conflictingResourceForeground);
 }
+
+.opacity-100 {
+  opacity: 1;
+}
