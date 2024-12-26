@@ -162,17 +162,17 @@ func APIErrorCredentialsUnavailableFromAgentError(aerr AgentError) APIErrorCrede
 	}
 }
 
-type APIErrorCredentialCorruptedReset struct {
+type APIErrorCredentialsCorrupted struct {
 	Code ErrorCode `json:"code"`
 }
 
-func (apierr *APIErrorCredentialCorruptedReset) JSONResponse(w http.ResponseWriter) {
+func (apierr *APIErrorCredentialsCorrupted) JSONResponse(w http.ResponseWriter) {
 	jsonResult(w, http.StatusConflict, apierr)
 }
 
-func APIErrorCredentialCorruptedResetFromAgentError(aerr AgentError) APIErrorCredentialCorruptedReset {
-	return APIErrorCredentialCorruptedReset{
-		Code: ErrorCredentialCorruptedReset,
+func APIErrorCredentialsCorruptedFromAgentError(aerr AgentError) APIErrorCredentialsCorrupted {
+	return APIErrorCredentialsCorrupted{
+		Code: ErrorCredentialsCorrupted,
 	}
 }
 

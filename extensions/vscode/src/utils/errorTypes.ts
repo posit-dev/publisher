@@ -18,7 +18,7 @@ export type ErrorCode =
   | "tomlValidationError"
   | "tomlUnknownError"
   | "pythonExecNotFound"
-  | "credentialCorruptedReset";
+  | "credentialsCorrupted";
 
 export type axiosErrorWithJson<T = { code: ErrorCode; details: unknown }> =
   AxiosError & {
@@ -164,12 +164,11 @@ export const isErrInvalidConfigFile =
   mkErrorTypeGuard<ErrInvalidConfigFiles>("invalidConfigFile");
 
 // Invalid configuration file(s)
-export type ErrCredentialsReset = MkErrorDataType<"credentialCorruptedReset">;
-export const isErrCredentialsReset = mkErrorTypeGuard<ErrInvalidConfigFiles>(
-  "credentialCorruptedReset",
-);
-export const errCredentialsResetMessage = () => {
-  return "Stored credentials for Posit Publisher found in an unrecognizable state. A reset was required in order to proceed.";
+export type ErrCredentialsCorrupted = MkErrorDataType<"credentialsCorrupted">;
+export const isErrCredentialsCorrupted =
+  mkErrorTypeGuard<ErrCredentialsCorrupted>("credentialsCorrupted");
+export const errCredentialsCorruptedMessage = () => {
+  return "Unrecognizable credentials for Posit Publisher were found and removed. Credentials may need to be recreated.";
 };
 
 // Tries to match an Axios error that comes with an identifiable Json structured data

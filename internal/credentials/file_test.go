@@ -543,6 +543,9 @@ func (s *FileCredentialsServiceSuite) TestReset() {
 	s.NoError(err)
 	s.Len(list, 2)
 
+	// Expected Log Warn
+	s.loggerMock.On("Warn", "Corrupted credentials data found. A reset was applied to stored data to be able to proceed.", "credentials_service", "file").Return()
+
 	err = cs.Reset()
 	s.NoError(err)
 

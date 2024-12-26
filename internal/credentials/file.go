@@ -208,6 +208,7 @@ func (c *fileCredentialsService) Delete(guid string) error {
 }
 
 func (c *fileCredentialsService) Reset() error {
+	c.log.Warn("Corrupted credentials data found. A reset was applied to stored data to be able to proceed.", "credentials_service", "file")
 	newData := newFileCredentials()
 	return c.saveFile(newData)
 }

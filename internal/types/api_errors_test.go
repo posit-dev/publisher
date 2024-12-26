@@ -92,19 +92,19 @@ func (s *ApiErrorsSuite) TestAPIErrorPythonExecNotFoundFromAgentError() {
 func (s *ApiErrorsSuite) TestAPIErrorCredentialCorruptedResetFromAgentError() {
 	agentErr := AgentError{
 		Message: "",
-		Code:    ErrorCredentialCorruptedReset,
+		Code:    ErrorCredentialsCorrupted,
 		Err:     errors.New("unknown field error"),
 		Data:    ErrorData{},
 	}
 
 	rec := httptest.NewRecorder()
 
-	apiError := APIErrorCredentialCorruptedResetFromAgentError(agentErr)
-	s.Equal(apiError.Code, ErrorCredentialCorruptedReset)
+	apiError := APIErrorCredentialsCorruptedFromAgentError(agentErr)
+	s.Equal(apiError.Code, ErrorCredentialsCorrupted)
 
 	apiError.JSONResponse(rec)
 
 	bodyRes := rec.Body.String()
 	s.Equal(http.StatusConflict, rec.Result().StatusCode)
-	s.Contains(bodyRes, `{"code":"credentialCorruptedReset"}`)
+	s.Contains(bodyRes, `{"code":"credentialsCorrupted"}`)
 }

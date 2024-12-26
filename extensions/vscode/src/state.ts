@@ -20,8 +20,8 @@ import {
   getSummaryStringFromError,
 } from "src/utils/errors";
 import {
-  isErrCredentialsReset,
-  errCredentialsResetMessage,
+  isErrCredentialsCorrupted,
+  errCredentialsCorruptedMessage,
 } from "src/utils/errorTypes";
 import { DeploymentSelector, SelectionState } from "src/types/shared";
 import { LocalState, Views } from "./constants";
@@ -287,12 +287,26 @@ export class PublisherState implements Disposable {
         this.credentials = response.data;
       });
     } catch (error: unknown) {
-      if (isErrCredentialsReset(error)) {
-        const warnMsg = errCredentialsResetMessage();
-        window.showWarningMessage(warnMsg);
+      if (isErrCredentialsCorrupted(error)) {
+        this.resetCredentials();
         return;
       }
       const summary = getSummaryStringFromError("refreshCredentials", error);
+      window.showErrorMessage(summary);
+    }
+  }
+
+  // Calls to reset all credentials data stored.
+  // Meant to be a last resort when we get loading data or corrupted data errors.
+  async resetCredentials() {
+    const warnMsg = errCredentialsCorruptedMessage();
+    try {
+      const api = await useApi();
+      await api.credentials.reset();
+      this.credentials = [];
+      window.showWarningMessage(warnMsg);
+    } catch (err: unknown) {
+      const summary = getSummaryStringFromError("resetCredentials", err);
       window.showErrorMessage(summary);
     }
   }

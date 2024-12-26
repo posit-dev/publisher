@@ -4,6 +4,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/posit-dev/publisher/internal/credentials"
@@ -11,29 +12,28 @@ import (
 	"github.com/posit-dev/publisher/internal/types"
 )
 
-func GetCredentialsHandlerFunc(log logging.Logger) http.HandlerFunc {
+func handleCredServiceError(w http.ResponseWriter, err error) {
+	agentErr := types.AsAgentError(err)
+	if errors.Is(err, &credentials.LoadError{}) || errors.Is(err, &credentials.CorruptedError{}) {
+		apiErr := types.APIErrorCredentialsCorruptedFromAgentError(*agentErr)
+		apiErr.JSONResponse(w)
+		return
+	}
+	apiErr := types.APIErrorCredentialsUnavailableFromAgentError(*agentErr)
+	apiErr.JSONResponse(w)
+}
+
+func GetCredentialsHandlerFunc(log logging.Logger, credserviceFactory credentials.CredServiceFactory) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		cs, err := credentials.NewCredentialsService(log)
+		cs, err := credserviceFactory(log)
 		if err != nil {
-			if aerr, ok := err.(*types.AgentError); ok {
-				if aerr.Code == types.ErrorCredentialServiceUnavailable {
-					apiErr := types.APIErrorCredentialsUnavailableFromAgentError(*aerr)
-					apiErr.JSONResponse(w)
-					return
-				}
-				if aerr.Code == types.ErrorCredentialCorruptedReset {
-					apiErr := types.APIErrorCredentialCorruptedResetFromAgentError(*aerr)
-					apiErr.JSONResponse(w)
-					return
-				}
-			}
-			InternalError(w, req, log, err)
+			handleCredServiceError(w, err)
 			return
 		}
 
 		creds, err := cs.List()
 		if err != nil {
-			InternalError(w, req, log, err)
+			handleCredServiceError(w, err)
 			return
 		}
 		w.Header().Set("content-type", "application/json")
