@@ -299,11 +299,11 @@ export class PublisherState implements Disposable {
   // Calls to reset all credentials data stored.
   // Meant to be a last resort when we get loading data or corrupted data errors.
   async resetCredentials() {
-    const warnMsg = errCredentialsCorruptedMessage();
     try {
       const api = await useApi();
-      await api.credentials.reset();
+      const response = await api.credentials.reset();
       this.credentials = [];
+      const warnMsg = errCredentialsCorruptedMessage(response.data.backupFile);
       window.showWarningMessage(warnMsg);
     } catch (err: unknown) {
       const summary = getSummaryStringFromError("resetCredentials", err);

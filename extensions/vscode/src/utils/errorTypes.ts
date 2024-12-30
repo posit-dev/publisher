@@ -167,8 +167,13 @@ export const isErrInvalidConfigFile =
 export type ErrCredentialsCorrupted = MkErrorDataType<"credentialsCorrupted">;
 export const isErrCredentialsCorrupted =
   mkErrorTypeGuard<ErrCredentialsCorrupted>("credentialsCorrupted");
-export const errCredentialsCorruptedMessage = () => {
-  return "Unrecognizable credentials for Posit Publisher were found and removed. Credentials may need to be recreated.";
+export const errCredentialsCorruptedMessage = (backupFile: string) => {
+  let msg =
+    "Unrecognizable credentials for Posit Publisher were found and removed. Credentials may need to be recreated.";
+  if (backupFile) {
+    msg += ` Previous credentials data backed up at ${backupFile}`;
+  }
+  return msg;
 };
 
 // Tries to match an Axios error that comes with an identifiable Json structured data

@@ -477,7 +477,9 @@ describe("PublisherState", () => {
 
   describe("resetCredentials", () => {
     test("calls to reset credentials and shows a warning", async () => {
-      mockClient.credentials.reset.mockResolvedValue({});
+      mockClient.credentials.reset.mockResolvedValue({
+        data: { backupFile: "backup-file" },
+      });
 
       const { mockContext } = mkExtensionContextStateMock({});
       const publisherState = new PublisherState(mockContext);
@@ -489,7 +491,7 @@ describe("PublisherState", () => {
 
       // Warning message is called
       expect(window.showWarningMessage).toHaveBeenCalledWith(
-        "Unrecognizable credentials for Posit Publisher were found and removed. Credentials may need to be recreated.",
+        "Unrecognizable credentials for Posit Publisher were found and removed. Credentials may need to be recreated. Previous credentials data backed up at backup-file",
       );
     });
 
