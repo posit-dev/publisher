@@ -185,7 +185,7 @@ func (s *KeyringCredentialsTestSuite) TestReset() {
 	// Expected Log Warn
 	s.log.On("Warn", "Corrupted credentials data found. The stored data was reset.", "credentials_service", "keyring").Return()
 
-	err = cs.Reset()
+	_, err = cs.Reset()
 	s.NoError(err)
 
 	// Creds wiped out

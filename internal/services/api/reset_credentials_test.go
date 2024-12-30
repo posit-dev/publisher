@@ -39,14 +39,14 @@ func (s *ResetCredsSuite) TestResetOk() {
 	req, err := http.NewRequest("DELETE", path, nil)
 	s.NoError(err)
 
-	s.credservice.On("Reset").Return(".backup-file", nil)
+	s.credservice.On("Reset").Return("backup-file", nil)
 
 	rec := httptest.NewRecorder()
 	h := ResetCredentialsHandlerFunc(s.log, s.credsFactory)
 	h(rec, req)
 
 	s.Equal(http.StatusOK, rec.Result().StatusCode)
-	s.Contains(rec.Body.String(), `{"backup_file":".backup-file"}`)
+	s.Contains(rec.Body.String(), `{"backupFile":"backup-file"}`)
 }
 
 func (s *ResetCredsSuite) TestReset_EvenWithLoadError() {

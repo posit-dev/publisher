@@ -555,8 +555,9 @@ func (s *FileCredentialsServiceSuite) TestReset() {
 	s.loggerMock.On("Warn", "Corrupted credentials data found. The stored data was reset.", "credentials_service", "file").Return()
 	s.loggerMock.On("Warn", "Previous credentials file backed up.", "credentials_backup", expectedCredsBackupPath.String()).Return()
 
-	err = cs.Reset()
+	backupPath, err := cs.Reset()
 	s.NoError(err)
+	s.Equal(backupPath, expectedCredsBackupPath.String())
 
 	// Creds wiped out
 	list, err = cs.List()
