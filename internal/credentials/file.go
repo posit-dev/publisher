@@ -4,8 +4,10 @@ package credentials
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/pelletier/go-toml/v2"
@@ -207,10 +209,48 @@ func (c *fileCredentialsService) Delete(guid string) error {
 	return nil
 }
 
-func (c *fileCredentialsService) Reset() error {
-	c.log.Warn("Corrupted credentials data found. A reset was applied to stored data to be able to proceed.", "credentials_service", "file")
+// Resets the credentials file
+// it is a last resort in case the data turns out to be irrecognizable
+// Returns the backup path of the original credentials file
+func (c *fileCredentialsService) Reset() (string, error) {
+	copyFilename, err := c.backupFile()
+	if err != nil {
+		return "", err
+	}
+	c.log.Warn("Corrupted credentials data found. The stored data was reset.", "credentials_service", "file")
+	c.log.Warn("Previous credentials file backed up.", "credentials_backup", copyFilename)
 	newData := newFileCredentials()
-	return c.saveFile(newData)
+	return copyFilename, c.saveFile(newData)
+}
+
+func (c *fileCredentialsService) backupFile() (string, error) {
+	backupTimestamp := time.Now().Format(time.DateOnly)
+	credsCopyPath := c.credsFilepath.Dir().Join(fmt.Sprintf("%s-%s", ondiskFilename, backupTimestamp))
+
+	_, err := credsCopyPath.Stat()
+	if os.IsNotExist(err) {
+		file, err := credsCopyPath.Create()
+		if err != nil {
+			return "", err
+		}
+		file.Close()
+	}
+
+	credsCopyFile, err := credsCopyPath.OpenFile(os.O_TRUNC|os.O_RDWR, 0644)
+	if err != nil {
+		return "", err
+	}
+	defer credsCopyFile.Close()
+
+	credsFile, err := c.credsFilepath.Open()
+	if err != nil {
+		return "", err
+	}
+	defer credsFile.Close()
+
+	_, err = io.Copy(credsCopyFile, credsFile)
+
+	return credsCopyPath.String(), err
 }
 
 func (c *fileCredentialsService) setup() error {

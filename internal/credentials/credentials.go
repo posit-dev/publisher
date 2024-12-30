@@ -87,7 +87,7 @@ type CredentialsService interface {
 	Get(guid string) (*Credential, error)
 	List() ([]Credential, error)
 	Set(name string, url string, ak string) (*Credential, error)
-	Reset() error
+	Reset() (string, error)
 }
 
 // The main credentials service constructor that determines if the system's keyring is available to be used,

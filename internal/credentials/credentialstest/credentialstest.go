@@ -36,7 +36,7 @@ func (m *CredentialsServiceMock) Set(name string, url string, ak string) (*crede
 	return args.Get(0).(*credentials.Credential), args.Error(1)
 }
 
-func (m *CredentialsServiceMock) Reset() error {
+func (m *CredentialsServiceMock) Reset() (string, error) {
 	args := m.Called()
-	return args.Error(0)
+	return args.Get(0).(string), args.Error(1)
 }

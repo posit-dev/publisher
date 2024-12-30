@@ -3,9 +3,11 @@
 package credentials
 
 import (
+	"fmt"
 	"os"
 	"runtime"
 	"testing"
+	"time"
 
 	"github.com/posit-dev/publisher/internal/logging/loggingtest"
 	"github.com/posit-dev/publisher/internal/util"
@@ -530,13 +532,19 @@ func (s *FileCredentialsServiceSuite) TestReset() {
 		credsFilepath: s.testdata.Join("to-reset.toml"),
 	}
 
-	_, err := cs.load()
+	expectedCredsBackupPath := s.testdata.Join(fmt.Sprintf(".connect-credentials-%s", time.Now().Format(time.DateOnly)))
+
+	// Creds backup shouldn't exist and should be cleared after each test
+	_, err := expectedCredsBackupPath.Stat()
+	s.ErrorIs(err, os.ErrNotExist)
+
+	_, err = cs.load()
 	s.NoError(err)
 
-	_, err = cs.Set("newcred", "https://b2.connect-server:3939/connect", "abcdeC2aqbh7dg8TO43XPu7r56YDh002")
+	credOne, err := cs.Set("newcred", "https://b2.connect-server:3939/connect", "abcdeC2aqbh7dg8TO43XPu7r56YDh002")
 	s.NoError(err)
 
-	_, err = cs.Set("newcredtwo", "https://b5.connect-server:3939/connect", "abcdeC2aqbh7dg8TO43XPu7r56YDh007")
+	credTwo, err := cs.Set("newcredtwo", "https://b5.connect-server:3939/connect", "abcdeC2aqbh7dg8TO43XPu7r56YDh007")
 	s.NoError(err)
 
 	list, err := cs.List()
@@ -544,7 +552,8 @@ func (s *FileCredentialsServiceSuite) TestReset() {
 	s.Len(list, 2)
 
 	// Expected Log Warn
-	s.loggerMock.On("Warn", "Corrupted credentials data found. A reset was applied to stored data to be able to proceed.", "credentials_service", "file").Return()
+	s.loggerMock.On("Warn", "Corrupted credentials data found. The stored data was reset.", "credentials_service", "file").Return()
+	s.loggerMock.On("Warn", "Previous credentials file backed up.", "credentials_backup", expectedCredsBackupPath.String()).Return()
 
 	err = cs.Reset()
 	s.NoError(err)
@@ -553,4 +562,29 @@ func (s *FileCredentialsServiceSuite) TestReset() {
 	list, err = cs.List()
 	s.NoError(err)
 	s.Len(list, 0)
+
+	// Creds backup exists
+	_, err = expectedCredsBackupPath.Stat()
+	s.NoError(err)
+
+	// Backup content is properly written
+	backupContents, err := expectedCredsBackupPath.ReadFile()
+	s.NoError(err)
+
+	s.Equal(fmt.Sprintf(`[credentials]
+[credentials.newcred]
+guid = '%s'
+version = 0
+url = 'https://b2.connect-server:3939/connect'
+api_key = 'abcdeC2aqbh7dg8TO43XPu7r56YDh002'
+
+[credentials.newcredtwo]
+guid = '%s'
+version = 0
+url = 'https://b5.connect-server:3939/connect'
+api_key = 'abcdeC2aqbh7dg8TO43XPu7r56YDh007'
+`, credOne.GUID, credTwo.GUID), string(backupContents))
+
+	err = os.Remove(expectedCredsBackupPath.String())
+	s.NoError(err)
 }

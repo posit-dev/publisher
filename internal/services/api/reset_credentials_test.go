@@ -39,13 +39,14 @@ func (s *ResetCredsSuite) TestResetOk() {
 	req, err := http.NewRequest("DELETE", path, nil)
 	s.NoError(err)
 
-	s.credservice.On("Reset").Return(nil)
+	s.credservice.On("Reset").Return(".backup-file", nil)
 
 	rec := httptest.NewRecorder()
 	h := ResetCredentialsHandlerFunc(s.log, s.credsFactory)
 	h(rec, req)
 
-	s.Equal(http.StatusNoContent, rec.Result().StatusCode)
+	s.Equal(http.StatusOK, rec.Result().StatusCode)
+	s.Contains(rec.Body.String(), `{"backup_file":".backup-file"}`)
 }
 
 func (s *ResetCredsSuite) TestReset_EvenWithLoadError() {
@@ -59,13 +60,13 @@ func (s *ResetCredsSuite) TestReset_EvenWithLoadError() {
 		return s.credservice, credentials.NewLoadError(errors.New("load errsss"))
 	}
 
-	s.credservice.On("Reset").Return(nil)
+	s.credservice.On("Reset").Return("", nil)
 
 	rec := httptest.NewRecorder()
 	h := ResetCredentialsHandlerFunc(s.log, s.credsFactory)
 	h(rec, req)
 
-	s.Equal(http.StatusNoContent, rec.Result().StatusCode)
+	s.Equal(http.StatusOK, rec.Result().StatusCode)
 }
 
 func (s *ResetCredsSuite) TestReset_EvenWithCorruptedError() {
@@ -79,13 +80,13 @@ func (s *ResetCredsSuite) TestReset_EvenWithCorruptedError() {
 		return s.credservice, credentials.NewCorruptedError("qwerty")
 	}
 
-	s.credservice.On("Reset").Return(nil)
+	s.credservice.On("Reset").Return("", nil)
 
 	rec := httptest.NewRecorder()
 	h := ResetCredentialsHandlerFunc(s.log, s.credsFactory)
 	h(rec, req)
 
-	s.Equal(http.StatusNoContent, rec.Result().StatusCode)
+	s.Equal(http.StatusOK, rec.Result().StatusCode)
 }
 
 func (s *ResetCredsSuite) TestReset_UnknownError() {
@@ -114,7 +115,7 @@ func (s *ResetCredsSuite) TestReset_ErrorWhileResetting() {
 	s.NoError(err)
 
 	// Errors derived from resetting the data reach the surface.
-	s.credservice.On("Reset").Return(errors.New("this is terrible"))
+	s.credservice.On("Reset").Return("", errors.New("this is terrible"))
 
 	rec := httptest.NewRecorder()
 	h := ResetCredentialsHandlerFunc(s.log, s.credsFactory)
