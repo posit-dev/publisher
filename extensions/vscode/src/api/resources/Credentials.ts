@@ -50,7 +50,7 @@ export class Credentials {
   // 204 - success (no response)
   // 503 - credentials service unavailable
   reset() {
-    return this.client.delete(`credentials`);
+    return this.client.delete<{ backupFile: string }>(`credentials`);
   }
 
   // Returns:
