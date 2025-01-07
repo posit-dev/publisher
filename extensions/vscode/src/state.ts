@@ -302,9 +302,11 @@ export class PublisherState implements Disposable {
     try {
       const api = await useApi();
       const response = await api.credentials.reset();
-      this.credentials = [];
       const warnMsg = errCredentialsCorruptedMessage(response.data.backupFile);
       window.showWarningMessage(warnMsg);
+
+      const listResponse = await api.credentials.list();
+      this.credentials = listResponse.data;
     } catch (err: unknown) {
       const summary = getSummaryStringFromError("resetCredentials", err);
       window.showErrorMessage(summary);

@@ -199,11 +199,5 @@ export function resolveAgentJsonErrorMsg(err: axiosErrorWithJson) {
     return errPythonExecNotFoundErrorMessage(err);
   }
 
-  // Ignore errors coming from credentials being reset,
-  // a warning is shown when PublisherState is updated.
-  if (isErrPythonExecNotFoundError(err)) {
-    return errPythonExecNotFoundErrorMessage(err);
-  }
-
   return errUnknownMessage(err as axiosErrorWithJson<ErrUnknown>);
 }
