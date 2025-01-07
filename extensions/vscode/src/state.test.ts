@@ -477,8 +477,9 @@ describe("PublisherState", () => {
 
   describe("resetCredentials", () => {
     test("calls to reset credentials and shows a warning", async () => {
-      mockClient.credentials.reset.mockResolvedValue({
-        data: { backupFile: "backup-file" },
+      mockClient.credentials.reset.mockImplementation(() => {
+        mockClient.credentials.list.mockResolvedValue({ data: [] });
+        return { data: { backupFile: "backup-file" } };
       });
 
       const { mockContext } = mkExtensionContextStateMock({});
