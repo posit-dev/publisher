@@ -95,8 +95,6 @@ export class EventStream extends Readable implements Disposable {
   private messages: EventStreamMessage[] = [];
   // Map to store event callbacks
   private callbacks: Map<string, EventStreamRegistration[]> = new Map();
-  // Cancelled Event Streams - Suppressed when received
-  private cancelledLocalIDs: string[] = [];
 
   /**
    * Creates a new instance of the EventStream class.
@@ -163,22 +161,7 @@ export class EventStream extends Readable implements Disposable {
     this.processMessage(message);
   }
 
-  /**
-   * Provide a way to suppress the processing of incoming stream messages
-   * with a specific data.localId value
-   * @param localId: string
-   * @returns undefined
-   */
-  public suppressMessages(localId: string) {
-    this.cancelledLocalIDs.push(localId);
-  }
-
   private processMessage(msg: EventStreamMessage) {
-    const localId = msg.data.localId;
-    if (localId && this.cancelledLocalIDs.includes(localId)) {
-      // suppress and ignore
-      return;
-    }
     // Trace message
     // console.debug(
     //   `eventSource trace: ${event.type}: ${JSON.stringify(event)}`,

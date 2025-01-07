@@ -4,49 +4,27 @@ import { ProgressLocation, Uri, env, window } from "vscode";
 import { EventStreamMessage, eventMsgToString } from "src/api";
 import { EventStream, UnregisterCallback } from "src/events";
 
-export function deployProject(localID: string, stream: EventStream) {
+export function deployProject(streamID: string, stream: EventStream) {
   window.withProgress(
     {
       location: ProgressLocation.Notification,
       title: `Deploying your project`,
-      cancellable: true,
+      cancellable: false,
     },
-    (progress, token) => {
+    (progress) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let resolveCB: (reason?: any) => void;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let rejectCB: (reason?: any) => void;
       const registrations: UnregisterCallback[] = [];
-      const promise = new Promise<void>((resolve, reject) => {
-        resolveCB = resolve;
-        rejectCB = reject;
-      });
-      let streamID = localID;
 
       const unregisterAll = () => {
         registrations.forEach((cb) => cb.unregister());
       };
 
-      token.onCancellationRequested(() => {
-        streamID = "NEVER_A_VALID_STREAM";
-        unregisterAll();
-        // inject a psuedo end of publishing event
-        stream.injectMessage({
-          type: "publish/failure",
-          time: Date.now().toString(),
-          data: {
-            dashboardUrl: "",
-            url: "",
-            // and other non-defined attributes
-            localId: localID,
-            cancelled: "true",
-            message:
-              "Deployment has been dismissed (but will continue to be processed on the Connect Server). Deployment status will be reset to the prior known state.",
-          },
-          error: "Deployment has been dismissed.",
-        });
-        stream.suppressMessages(localID);
-        resolveCB();
+      const promise = new Promise<void>((resolve, reject) => {
+        resolveCB = resolve;
+        rejectCB = reject;
       });
 
       registrations.push(
