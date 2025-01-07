@@ -127,6 +127,15 @@ func (ks *keyringCredentialsService) Set(name string, url string, ak string) (*C
 	return &cred, nil
 }
 
+// Resets the CredentialTable from keyring
+// it is a last resort in case the keyring data turns out to be irrecognizable
+// There is no backup for keyring data due to encryption, always returns empty string
+func (ks *keyringCredentialsService) Reset() (string, error) {
+	ks.log.Warn("Corrupted credentials data found. The stored data was reset.", "credentials_service", "keyring")
+	newTable := make(map[string]CredentialRecord)
+	return "", ks.save(newTable)
+}
+
 func (ks *keyringCredentialsService) checkForConflicts(
 	table *map[string]CredentialRecord,
 	c *Credential) error {
@@ -159,7 +168,7 @@ func (ks *keyringCredentialsService) save(table CredentialTable) error {
 	return nil
 }
 
-// Loads the CredentialTable from keyRing
+// Loads the CredentialTable from keyring
 func (ks *keyringCredentialsService) load() (CredentialTable, error) {
 	data, err := keyring.Get(ServiceName, "credentials")
 	if err != nil {

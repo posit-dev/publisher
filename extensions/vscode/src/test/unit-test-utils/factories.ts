@@ -8,6 +8,7 @@ import {
   ContentRecordState,
 } from "src/api/types/contentRecords";
 import { ContentType, Configuration } from "src/api/types/configurations";
+import { Credential } from "src/api/types/credentials";
 import { DeploymentSelectorState } from "src/types/shared";
 
 export const selectionStateFactory = Factory.define<DeploymentSelectorState>(
@@ -85,3 +86,10 @@ export const contentRecordFactory = Factory.define<ContentRecord>(
     configurationRelPath: `report/path/configuration-${sequence}`,
   }),
 );
+
+export const credentialFactory = Factory.define<Credential>(({ sequence }) => ({
+  guid: `44a468b8-09c7-4c6d-a7a3-8cf164ddbaf${sequence}`,
+  name: `Credential ${sequence}`,
+  url: `https://connect.${sequence}.site.com/connect`,
+  apiKey: `qwerty-${sequence}`,
+}));
