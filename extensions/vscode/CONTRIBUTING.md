@@ -53,26 +53,29 @@ Utilize VSCode's built-in debugger to troubleshoot and diagnose issues.
 Switch to the debugger extension view within VSCode and select one of the two
 debug configurations (specified within `extensions/vscode/.vscode/launch.json`):
 
-- `Debug with internal agent`
-- `Debug with external agent on 9001`
+- `Debug with internal API agent`
+- `Debug with external API agent on 9001`
 
-The first target (`Debug with internal agent`) is very helpful when you are simply wanting to debug
+The first target (`Debug with internal API agent`) is very helpful when you are simply wanting to debug
 functionality within the extension. It's configuration will cause the extension under test to
 automatically launch the agent (unlike the second option).
 
-The second target (`Debug with external agent on 9001`) is helpful for when you want to debug
+The second target (`Debug with external API agent on 9001`) is helpful for when you want to debug
 both the extension UX and the agent at the same time. To do this, you will need to:
 
 1. First launch a debug session from a VSCode window which has opened the repo's base directory
-   (see [Agent Debugging](./../../CONTRIBUTING.md#debugging-in-vs-code))
-2. Then launch another debug session (using the `Debug with external agent on 9001` configuration)
+   (see [API Debugging](./../../CONTRIBUTING.md#debugging-in-vs-code))
+2. Then launch another debug session (using the `Debug with external API agent on 9001` configuration)
    from a separate VSCode window which has opened the `extensions/vscode` folder.
 
-Notes when using `Debug with external agent on 9001`:
+Notes when using `Debug with external API agent on 9001`:
 
 - Both the agent's and extension's `launch.json` files are setup using the same working
-  subdirectory. If you change it in one, you will need to change it in the other. (This mimics
-  the production runtime functionality where they both are initialized with the same working subdirectory.)
+  subdirectory of `test/sample-content`. If you change it in one, you will need to change it in the other.
+  (This mimics the production runtime functionality where they both are initialized with the same working
+  subdirectory.) This location must also be different than the root of the repository (which the VSCode
+  window for agent development must open) and the extension location `extensions/vscode` (which the VSCode
+  window for UX development must open).
 - If you stop the debugging of the agent, you'll need to relaunch debugging of the extension after
   the agent is back up.
 

@@ -6,7 +6,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Debug with external agent on 9001",
+      "name": "Debug with external API agent on 9001",
       "type": "extensionHost",
       "request": "launch",
       "args": ["--extensionDevelopmentPath=${workspaceFolder}"],
@@ -16,7 +16,7 @@
       "cwd": "${workspaceFolder}/../../test/sample-content"
     },
     {
-      "name": "Debug with internal agent",
+      "name": "Debug with internal API agent",
       "type": "extensionHost",
       "request": "launch",
       "args": ["--extensionDevelopmentPath=${workspaceFolder}"],
