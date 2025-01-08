@@ -22,6 +22,8 @@ import {
 import {
   isErrCredentialsCorrupted,
   errCredentialsCorruptedMessage,
+  isErrCannotBackupCredentialsFile,
+  errCannotBackupCredentialsFileMessage,
 } from "src/utils/errorTypes";
 import { DeploymentSelector, SelectionState } from "src/types/shared";
 import { LocalState, Views } from "./constants";
@@ -308,6 +310,10 @@ export class PublisherState implements Disposable {
       const listResponse = await api.credentials.list();
       this.credentials = listResponse.data;
     } catch (err: unknown) {
+      if (isErrCannotBackupCredentialsFile(err)) {
+        window.showErrorMessage(errCannotBackupCredentialsFileMessage(err));
+        return;
+      }
       const summary = getSummaryStringFromError("resetCredentials", err);
       window.showErrorMessage(summary);
     }

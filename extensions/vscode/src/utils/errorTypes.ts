@@ -18,6 +18,7 @@ export type ErrorCode =
   | "tomlValidationError"
   | "tomlUnknownError"
   | "pythonExecNotFound"
+  | "credentialsCannotBackupFile"
   | "credentialsCorrupted";
 
 export type axiosErrorWithJson<T = { code: ErrorCode; details: unknown }> =
@@ -174,6 +175,21 @@ export const errCredentialsCorruptedMessage = (backupFile: string) => {
     msg += ` Previous credentials data backed up at ${backupFile}`;
   }
   return msg;
+};
+
+// Unable to backup credentials file
+export type ErrCannotBackupCredentialsFile = MkErrorDataType<
+  "credentialsCannotBackupFile",
+  { filename: string; message: string }
+>;
+export const isErrCannotBackupCredentialsFile =
+  mkErrorTypeGuard<ErrCannotBackupCredentialsFile>(
+    "credentialsCannotBackupFile",
+  );
+export const errCannotBackupCredentialsFileMessage = (
+  err: axiosErrorWithJson<ErrCannotBackupCredentialsFile>,
+) => {
+  return err.response.data.details.message;
 };
 
 // Tries to match an Axios error that comes with an identifiable Json structured data
