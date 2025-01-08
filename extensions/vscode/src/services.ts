@@ -1,6 +1,6 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { ExtensionContext, Disposable } from "vscode";
+import { ExtensionContext, Disposable, ExtensionMode } from "vscode";
 
 import { HOST } from "src";
 import { initApi } from "src/api";
@@ -15,6 +15,7 @@ export class Service implements Disposable {
   constructor(context: ExtensionContext, port: number) {
     this.context = context;
     this.useExternalAgent =
+      context.extensionMode === ExtensionMode.Development &&
       process.env.POSIT_PUBLISHER_USE_EXTERNAL_AGENT === "TRUE";
     console.log(
       "Starting Context in extension mode: %s, with useExternalAgent set to %s",
