@@ -1,6 +1,12 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { ExtensionContext, Uri, commands, workspace } from "vscode";
+import {
+  ExtensionContext,
+  ExtensionMode,
+  Uri,
+  commands,
+  workspace,
+} from "vscode";
 
 import * as ports from "src/ports";
 import { Service } from "src/services";
@@ -43,11 +49,24 @@ export async function activate(context: ExtensionContext) {
   setStateContext(PositPublishState.uninitialized);
   setInitializationInProgressContext(InitializationInProgress.false);
 
-  const port = await ports.acquire();
+  const useExternalAgent =
+    context.extensionMode === ExtensionMode.Development &&
+    process.env.POSIT_PUBLISHER_USE_EXTERNAL_AGENT === "TRUE";
+  console.log(
+    "Starting Context in extension mode: %s, with useExternalAgent set to %s",
+    context.extensionMode,
+    useExternalAgent,
+  );
+
+  let port = await ports.acquire();
+  if (useExternalAgent) {
+    port = 9001;
+  }
+
   const stream = new EventStream(port);
   context.subscriptions.push(stream);
 
-  service = new Service(context, port);
+  service = new Service(context, port, useExternalAgent);
   service.start();
 
   const watchers = new WatcherManager();
