@@ -10,16 +10,30 @@ export class Service implements Disposable {
   private context: ExtensionContext;
   private server: Server;
   private agentURL: string;
+  private useExternalAgent: boolean;
 
   constructor(context: ExtensionContext, port: number) {
     this.context = context;
+    this.useExternalAgent =
+      process.env.POSIT_PUBLISHER_USE_EXTERNAL_AGENT === "TRUE";
+    console.log(
+      "Starting Context in extension mode: %s, with useExternalAgent set to %s",
+      this.context.extensionMode,
+      this.useExternalAgent,
+    );
+
+    if (this.useExternalAgent) {
+      port = 9001;
+    }
     this.agentURL = `http://${HOST}:${port}/api`;
     this.server = new Server(port);
     initApi(this.isUp(), this.agentURL);
   }
 
   start = async () => {
-    await this.server.start(this.context);
+    if (!this.useExternalAgent) {
+      await this.server.start(this.context);
+    }
   };
 
   isUp = () => {
@@ -27,8 +41,10 @@ export class Service implements Disposable {
   };
 
   stop = async () => {
-    await this.server.stop();
-    this.server.dispose();
+    if (!this.useExternalAgent) {
+      await this.server.stop();
+      this.server.dispose();
+    }
   };
 
   dispose() {
