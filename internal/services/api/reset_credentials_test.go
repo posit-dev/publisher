@@ -101,8 +101,8 @@ func (s *ResetCredsSuite) TestReset_BackupFileError() {
 	h(rec, req)
 
 	bodyRes := rec.Body.String()
-	s.Equal(http.StatusInternalServerError, rec.Result().StatusCode)
-	s.Contains(bodyRes, `{"code":"credentialsCannotBackupFile","details":{"filename":"~/.connect-creds","message":"failed to backup credentials to ~/.connect-creds: do not have write permissions"}}`)
+	s.Equal(http.StatusBadRequest, rec.Result().StatusCode)
+	s.Contains(bodyRes, `{"code":"credentialsCannotBackupFile","details":{"filename":"~/.connect-creds","message":"Failed to backup credentials to ~/.connect-creds: do not have write permissions"}}`)
 }
 
 func (s *ResetCredsSuite) TestReset_UnknownError() {

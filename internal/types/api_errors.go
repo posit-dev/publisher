@@ -187,7 +187,7 @@ type APIErrorCredentialsBackupFileError struct {
 }
 
 func (apierr *APIErrorCredentialsBackupFileError) JSONResponse(w http.ResponseWriter) {
-	jsonResult(w, http.StatusInternalServerError, apierr)
+	jsonResult(w, http.StatusBadRequest, apierr)
 }
 
 func APIErrorCredentialsBackupFileFromAgentError(aerr AgentError) APIErrorCredentialsBackupFileError {
