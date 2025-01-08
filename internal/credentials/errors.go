@@ -107,7 +107,7 @@ func (e *IncompleteCredentialError) Error() string {
 func NewBackupFileAgentError(filename string, err error) *types.AgentError {
 	details := types.ErrorCredentialsCannotBackupFileDetails{
 		Filename: filename,
-		Message:  fmt.Sprintf("failed to backup credentials to %s: %v", filename, err.Error()),
+		Message:  fmt.Sprintf("Failed to backup credentials to %s: %v", filename, err.Error()),
 	}
 	return types.NewAgentError(types.ErrorCredentialsCannotBackupFile, err, details)
 }
