@@ -231,20 +231,20 @@ func (c *fileCredentialsService) backupFile() (string, error) {
 	if os.IsNotExist(err) {
 		file, err := credsCopyPath.Create()
 		if err != nil {
-			return "", err
+			return "", NewBackupFileAgentError(credsCopyPath.String(), err)
 		}
 		file.Close()
 	}
 
 	credsCopyFile, err := credsCopyPath.OpenFile(os.O_TRUNC|os.O_RDWR, 0644)
 	if err != nil {
-		return "", err
+		return "", NewBackupFileAgentError(credsCopyPath.String(), err)
 	}
 	defer credsCopyFile.Close()
 
 	credsFile, err := c.credsFilepath.Open()
 	if err != nil {
-		return "", err
+		return "", NewBackupFileAgentError(credsCopyPath.String(), err)
 	}
 	defer credsFile.Close()
 
