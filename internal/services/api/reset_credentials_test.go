@@ -89,6 +89,22 @@ func (s *ResetCredsSuite) TestReset_EvenWithCorruptedError() {
 	s.Equal(http.StatusOK, rec.Result().StatusCode)
 }
 
+func (s *ResetCredsSuite) TestReset_BackupFileError() {
+	path := "http://example.com/api/credentials"
+	req, err := http.NewRequest("DELETE", path, nil)
+	s.NoError(err)
+
+	s.credservice.On("Reset").Return("", credentials.NewBackupFileAgentError("~/.connect-creds", errors.New("do not have write permissions")))
+
+	rec := httptest.NewRecorder()
+	h := ResetCredentialsHandlerFunc(s.log, s.credsFactory)
+	h(rec, req)
+
+	bodyRes := rec.Body.String()
+	s.Equal(http.StatusInternalServerError, rec.Result().StatusCode)
+	s.Contains(bodyRes, `{"code":"credentialsCannotBackupFile","details":{"filename":"~/.connect-creds","message":"failed to backup credentials to ~/.connect-creds: do not have write permissions"}}`)
+}
+
 func (s *ResetCredsSuite) TestReset_UnknownError() {
 	path := "http://example.com/api/credentials"
 	req, err := http.NewRequest("DELETE", path, nil)
