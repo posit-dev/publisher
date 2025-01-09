@@ -50,7 +50,8 @@ func (s *DeploymentSuite) createDeploymentFile(name string) *Deployment {
 		Version:        "3.4.5",
 		PackageManager: "pip",
 	}
-	_, err := d.WriteFile(path, "", false, s.log)
+	d.LocalID = "abc"
+	_, err := d.WriteFile(path, d.LocalID, false, s.log)
 	s.NoError(err)
 	return d
 }
@@ -137,6 +138,152 @@ func (s *DeploymentSuite) TestWriteFile() {
 	for _, line := range lines {
 		for _, field := range unexpected {
 			s.False(strings.HasPrefix(line, field), "Unexpected prefix \"%s\" in line: \"%s\"", field, line)
+		}
+	}
+}
+
+func (s *DeploymentSuite) TestWriteFileOptions() {
+
+	type testOptions struct {
+		existingLocalID string
+		updateLocalID   string
+		existingAborted string
+		override        bool
+		expectedSuccess bool
+	}
+
+	tests := [...]testOptions{
+		{
+			existingLocalID: "123",
+			updateLocalID:   "123",
+			existingAborted: "",
+			override:        false,
+			expectedSuccess: true,
+		},
+		{
+			existingLocalID: "123",
+			updateLocalID:   "123",
+			existingAborted: "2025-01-08T17:10:22-08:00",
+			override:        false,
+			expectedSuccess: false,
+		},
+		{
+			existingLocalID: "123",
+			updateLocalID:   "123",
+			existingAborted: "",
+			override:        true,
+			expectedSuccess: true,
+		},
+		{
+			existingLocalID: "123",
+			updateLocalID:   "123",
+			existingAborted: "2025-01-08T17:10:22-08:00",
+			override:        true,
+			expectedSuccess: true,
+		},
+		{
+			existingLocalID: "",
+			updateLocalID:   "123",
+			existingAborted: "",
+			override:        false,
+			expectedSuccess: true,
+		},
+		{
+			existingLocalID: "",
+			updateLocalID:   "123",
+			existingAborted: "2025-01-08T17:10:22-08:00",
+			override:        false,
+			expectedSuccess: false,
+		},
+		{
+			existingLocalID: "",
+			updateLocalID:   "123",
+			existingAborted: "",
+			override:        true,
+			expectedSuccess: true,
+		},
+		{
+			existingLocalID: "",
+			updateLocalID:   "123",
+			existingAborted: "2025-01-08T17:10:22-08:00",
+			override:        true,
+			expectedSuccess: true,
+		},
+		{
+			existingLocalID: "123",
+			updateLocalID:   "456",
+			existingAborted: "",
+			override:        false,
+			expectedSuccess: false,
+		},
+		{
+			existingLocalID: "123",
+			updateLocalID:   "456",
+			existingAborted: "2025-01-08T17:10:22-08:00",
+			override:        false,
+			expectedSuccess: false,
+		},
+		{
+			existingLocalID: "123",
+			updateLocalID:   "456",
+			existingAborted: "",
+			override:        true,
+			expectedSuccess: true,
+		},
+		{
+			existingLocalID: "123",
+			updateLocalID:   "456",
+			existingAborted: "2025-01-08T17:10:22-08:00",
+			override:        true,
+			expectedSuccess: true,
+		},
+	}
+
+	for ndx, test := range tests {
+		i := ndx + 1
+		j := 1
+		s.SetupTest()
+
+		// create original file
+		deploymentFile := GetDeploymentPath(s.cwd, "myTargetName")
+		d := New()
+		d.ConfigName = "original" // Tests use this field to detect changes in file on disk
+		d.LocalID = test.existingLocalID
+		d.AbortedAt = test.existingAborted
+		returnedD, err := d.WriteFile(deploymentFile, test.existingLocalID, false, s.log)
+		s.NoError(err)
+		s.Equal("original", returnedD.ConfigName, "Failed iteration %d of test (location 1)", i)
+		j++
+
+		// confirm it was written
+		origD, err := FromFile(deploymentFile)
+		s.NoError(err)
+		s.Equal(test.existingLocalID, origD.LocalID, "Failed iteration %d of test (location 2)", i)
+		j++
+		s.Equal("original", origD.ConfigName, "Failed iteration %d of test (location 3)", i)
+		j++
+
+		// try and update it
+		origD.ConfigName = "updated"
+		returnedD, err = origD.WriteFile(deploymentFile, test.updateLocalID, test.override, s.log)
+		s.NoError(err)
+		if test.expectedSuccess {
+			s.Equal("updated", returnedD.ConfigName, "Failed iteration %d of test (location 4)", i)
+			j++
+		} else {
+			s.NotEqual("updated", returnedD.ConfigName, "Failed iteration %d of test (location 5)", i)
+			j++
+		}
+
+		// determine test success based on test array
+		updatedD, err := FromFile(deploymentFile)
+		s.NoError(err)
+		if test.expectedSuccess {
+			s.Equal("updated", updatedD.ConfigName, "Failed iteration %d of test (location 6)", i)
+			j++
+		} else {
+			s.NotEqual("updated", updatedD.ConfigName, "Failed iteration %d of test (location 7)", i)
+			j++
 		}
 	}
 }
