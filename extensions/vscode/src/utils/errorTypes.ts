@@ -189,7 +189,7 @@ export const isErrCannotBackupCredentialsFile =
 export const errCannotBackupCredentialsFileMessage = (
   err: axiosErrorWithJson<ErrCannotBackupCredentialsFile>,
 ) => {
-  return err.response.data.details.message;
+  return `Unrecognizable credentials for Posit Publisher were found. ${err.response.data.details.message}`;
 };
 
 // Tries to match an Axios error that comes with an identifiable Json structured data
