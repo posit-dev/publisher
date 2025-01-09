@@ -6,6 +6,32 @@ file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0]
+
+### Added
+
+- The selected R interpreter in Positron is preferred over an R interpreter on
+  PATH when inspecting an entrypoint. When a deployment is created the selected
+  R version is used in the generated configuration where applicable. (#2500)
+
+### Fixed
+
+- When utilizing file-based credential storage and the file is using an older
+  format, or has been corrupted, the file is backed up and the user is prompted
+  to re-enter their credentials. (#2491)
+- If corrupted credentials are detected inside of keychain storage the store
+  will be reset and the user will be prompted to re-enter their credentials.
+  (#2492)
+
+### Changed
+
+- The entrypoint can no longer be un-checked in the Project Files view to avoid
+  unintended removal from the `files` attribute in the configuration. (#2487)
+- The sidebar design has changed slightly to emphasize the deployment selection.
+  (#2480, #2481)
+- The deployment selection field in the sidebar now uses a right chevron to
+  indicate dropdown will appear as a VS Code Quick Pick. (#2482)
+
 ## [1.6.0]
 
 ### Added
