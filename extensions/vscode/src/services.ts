@@ -10,16 +10,25 @@ export class Service implements Disposable {
   private context: ExtensionContext;
   private server: Server;
   private agentURL: string;
+  private useExternalAgent: boolean;
 
-  constructor(context: ExtensionContext, port: number) {
+  constructor(
+    context: ExtensionContext,
+    port: number,
+    useExternalAgent: boolean,
+  ) {
     this.context = context;
+    this.useExternalAgent = useExternalAgent;
+
     this.agentURL = `http://${HOST}:${port}/api`;
     this.server = new Server(port);
     initApi(this.isUp(), this.agentURL);
   }
 
   start = async () => {
-    await this.server.start(this.context);
+    if (!this.useExternalAgent) {
+      await this.server.start(this.context);
+    }
   };
 
   isUp = () => {
@@ -27,8 +36,10 @@ export class Service implements Disposable {
   };
 
   stop = async () => {
-    await this.server.stop();
-    this.server.dispose();
+    if (!this.useExternalAgent) {
+      await this.server.stop();
+      this.server.dispose();
+    }
   };
 
   dispose() {

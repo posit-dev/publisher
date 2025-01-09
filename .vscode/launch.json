@@ -11,7 +11,7 @@
       "mode": "auto",
       "program": "${workspaceFolder}/cmd/publisher/main.go",
       "args": ["ui", "--listen=localhost:9001", "-vv"],
-      "cwd": "${workspaceFolder}"
+      "cwd": "${workspaceFolder}/test/sample-content"
     }
   ]
 }
