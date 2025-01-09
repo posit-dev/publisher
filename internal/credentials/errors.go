@@ -2,7 +2,11 @@
 
 package credentials
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/posit-dev/publisher/internal/types"
+)
 
 type CorruptedError struct {
 	GUID string
@@ -98,4 +102,12 @@ func NewIncompleteCredentialError() *IncompleteCredentialError {
 
 func (e *IncompleteCredentialError) Error() string {
 	return "New credentials require non-empty Name, URL and Api Key fields"
+}
+
+func NewBackupFileAgentError(filename string, err error) *types.AgentError {
+	details := types.ErrorCredentialsCannotBackupFileDetails{
+		Filename: filename,
+		Message:  fmt.Sprintf("Failed to backup credentials to %s: %v", filename, err.Error()),
+	}
+	return types.NewAgentError(types.ErrorCredentialsCannotBackupFile, err, details)
 }

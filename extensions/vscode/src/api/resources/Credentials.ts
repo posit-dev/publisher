@@ -48,6 +48,7 @@ export class Credentials {
 
   // Returns:
   // 204 - success (no response)
+  // 500 - internal server error cannot backup file
   // 503 - credentials service unavailable
   reset() {
     return this.client.delete<{ backupFile: string }>(`credentials`);
