@@ -58,9 +58,9 @@ export async function activate(context: ExtensionContext) {
     useExternalAgent,
   );
 
-  let port = await ports.acquire();
-  if (useExternalAgent) {
-    port = 9001;
+  let port = 9001;
+  if (!useExternalAgent) {
+    port = await ports.acquire();
   }
 
   const stream = new EventStream(port);

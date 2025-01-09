@@ -6,23 +6,23 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Debug with external API agent on 9001",
-      "type": "extensionHost",
-      "request": "launch",
-      "args": ["--extensionDevelopmentPath=${workspaceFolder}"],
-      "outFiles": ["${workspaceFolder}/dist/**/*.js"],
-      "preLaunchTask": "${defaultBuildTask}",
-      "env": { "POSIT_PUBLISHER_USE_EXTERNAL_AGENT": "TRUE" },
-      "cwd": "${workspaceFolder}/../../test/sample-content"
-    },
-    {
-      "name": "Debug with internal API agent",
+      "name": "Run Extension",
       "type": "extensionHost",
       "request": "launch",
       "args": ["--extensionDevelopmentPath=${workspaceFolder}"],
       "outFiles": ["${workspaceFolder}/dist/**/*.js"],
       "preLaunchTask": "${defaultBuildTask}",
       "env": { "POSIT_PUBLISHER_USE_EXTERNAL_AGENT": "FALSE" },
+      "cwd": "${workspaceFolder}/../../test/sample-content"
+    },
+    {
+      "name": "Run Extension using external API agent on 9001",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": ["--extensionDevelopmentPath=${workspaceFolder}"],
+      "outFiles": ["${workspaceFolder}/dist/**/*.js"],
+      "preLaunchTask": "${defaultBuildTask}",
+      "env": { "POSIT_PUBLISHER_USE_EXTERNAL_AGENT": "TRUE" },
       "cwd": "${workspaceFolder}/../../test/sample-content"
     },
     {
