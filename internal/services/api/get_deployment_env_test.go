@@ -54,7 +54,7 @@ func (s *GetDeploymentEnvSuite) TestGetDeploymentEnv() {
 	d := deployment.New()
 	d.ID = "123"
 	d.ServerURL = "https://connect.example.com"
-	d.WriteFile(path)
+	_, err := d.WriteFile(path, "", false, s.log)
 
 	lister := &accounts.MockAccountList{}
 	acct := &accounts.Account{
@@ -120,7 +120,7 @@ func (s *GetDeploymentEnvSuite) TestGetDeploymentEnvFileError() {
 func (s *GetDeploymentEnvSuite) TestGetDeploymentEnvDeploymentNotDeployed() {
 	path := deployment.GetDeploymentPath(s.cwd, "dep")
 	d := deployment.New()
-	d.WriteFile(path)
+	_, err := d.WriteFile(path, "", false, s.log)
 
 	h := GetDeploymentEnvironmentHandlerFunc(s.cwd, s.log, &accounts.MockAccountList{})
 
@@ -140,7 +140,7 @@ func (s *GetDeploymentEnvSuite) TestGetDeploymentEnvNoCredential() {
 	d := deployment.New()
 	d.ID = "123"
 	d.ServerURL = "https://connect.example.com"
-	d.WriteFile(path)
+	_, err := d.WriteFile(path, "", false, s.log)
 
 	lister := &accounts.MockAccountList{}
 	lister.On("GetAccountByServerURL", "https://connect.example.com").Return(nil, errors.New("no such account"))
@@ -163,7 +163,7 @@ func (s *GetDeploymentEnvSuite) TestGetDeploymentEnvPassesStatusFromServer() {
 	d := deployment.New()
 	d.ID = "123"
 	d.ServerURL = "https://connect.example.com"
-	d.WriteFile(path)
+	_, err := d.WriteFile(path, "", false, s.log)
 
 	lister := &accounts.MockAccountList{}
 	acct := &accounts.Account{

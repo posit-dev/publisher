@@ -10,6 +10,7 @@ import (
 
 	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/schema"
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
@@ -21,6 +22,7 @@ import (
 type DeploymentSuite struct {
 	utiltest.Suite
 	cwd util.AbsolutePath
+	log logging.Logger
 }
 
 func TestDeploymentSuite(t *testing.T) {
@@ -33,6 +35,7 @@ func (s *DeploymentSuite) SetupTest() {
 	s.Nil(err)
 	s.cwd = cwd
 	s.cwd.MkdirAll(0700)
+	s.log = logging.New()
 }
 
 func (s *DeploymentSuite) createDeploymentFile(name string) *Deployment {
@@ -47,7 +50,7 @@ func (s *DeploymentSuite) createDeploymentFile(name string) *Deployment {
 		Version:        "3.4.5",
 		PackageManager: "pip",
 	}
-	err := d.WriteFile(path)
+	_, err := d.WriteFile(path, "", false, s.log)
 	s.NoError(err)
 	return d
 }
@@ -109,25 +112,33 @@ func (s *DeploymentSuite) TestFromFileErr() {
 func (s *DeploymentSuite) TestWriteFile() {
 	deploymentFile := GetDeploymentPath(s.cwd, "myTargetName")
 	d := New()
-	err := d.WriteFile(deploymentFile)
+	_, err := d.WriteFile(deploymentFile, "", false, s.log)
 	s.NoError(err)
 
 	content, err := deploymentFile.ReadFile()
 	s.NoError(err)
 	stringContent := string(content)
-	firstLine := strings.Split(stringContent, "\n")[0]
+	lines := strings.Split(stringContent, "\n")
+	firstLine := lines[0]
 	s.Equal(autogenHeader, firstLine+"\n")
 
 	// This is a pre-deployment, so should not contain certain fields.
-	s.NotContains(stringContent, "id")
-	s.NotContains(stringContent, "deployed_at")
-	s.NotContains(stringContent, "bundle_id")
-	s.NotContains(stringContent, "bundle_url")
-	s.NotContains(stringContent, "dashboard_url")
-	s.NotContains(stringContent, "direct_url")
-	s.NotContains(stringContent, "deployment_error")
-	s.NotContains(stringContent, "files")
-	s.NotContains(stringContent, "[configuration")
+	unexpected := [...]string{
+		"id",
+		"deployed_at",
+		"bundle_id",
+		"bundle_url",
+		"dashboard_url",
+		"direct_url",
+		"deployment_error",
+		"files",
+		"[configuration",
+	}
+	for _, line := range lines {
+		for _, field := range unexpected {
+			s.False(strings.HasPrefix(line, field), "Unexpected prefix \"%s\" in line: \"%s\"", field, line)
+		}
+	}
 }
 
 func (s *DeploymentSuite) TestWriteFileErr() {
@@ -135,7 +146,7 @@ func (s *DeploymentSuite) TestWriteFileErr() {
 	readonlyFs := afero.NewReadOnlyFs(deploymentFile.Fs())
 	readonlyFile := deploymentFile.WithFs(readonlyFs)
 	deployment := New()
-	err := deployment.WriteFile(readonlyFile)
+	_, err := deployment.WriteFile(readonlyFile, "", false, s.log)
 	s.NotNil(err)
 }
 

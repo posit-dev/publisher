@@ -134,7 +134,7 @@ func (p *defaultPublisher) emitErrorEvents(err error) {
 	// Record the error in the deployment record
 	if p.Target != nil {
 		p.Target.Error = agentErr
-		writeErr := p.writeDeploymentRecord()
+		_, writeErr := p.writeDeploymentRecord(false)
 		if writeErr != nil {
 			p.log.Warn("failed to write updated deployment record", "name", p.TargetName, "err", writeErr)
 		}
@@ -170,7 +170,7 @@ func (p *defaultPublisher) emitErrorEvents(err error) {
 }
 
 func (p *defaultPublisher) PublishDirectory() error {
-	p.log.Info("Publishing from directory", logging.LogKeyOp, events.AgentOp, "path", p.Dir)
+	p.log.Info("Publishing from directory", logging.LogKeyOp, events.AgentOp, "path", p.Dir, "localID", p.State.LocalID)
 	p.emitter.Emit(events.New(events.PublishOp, events.StartPhase, events.NoError, publishStartData{
 		Server: p.Account.URL,
 		Title:  p.Config.Title,
@@ -201,7 +201,7 @@ func (p *defaultPublisher) PublishDirectory() error {
 	return err
 }
 
-func (p *defaultPublisher) writeDeploymentRecord() error {
+func (p *defaultPublisher) writeDeploymentRecord(forceUpdate bool) (*deployment.Deployment, error) {
 	if p.SaveName == "" {
 		// Redeployment
 		p.log.Debug("No SaveName found while redeploying.", "deployment", p.TargetName)
@@ -218,8 +218,30 @@ func (p *defaultPublisher) writeDeploymentRecord() error {
 	p.Target.Configuration = p.Config
 
 	recordPath := deployment.GetDeploymentPath(p.Dir, p.SaveName)
-	p.log.Debug("Writing deployment record", "path", recordPath)
-	return p.Target.WriteFile(recordPath)
+
+	return p.Target.WriteFile(recordPath, string(p.State.LocalID), forceUpdate, p.log)
+}
+
+func CancelDeployment(
+	deploymentPath util.AbsolutePath,
+	localID state.LocalDeploymentID,
+	log logging.Logger,
+) (*deployment.Deployment, error) {
+	// This function only marks the deployment record as being cancelled.
+	// It does not cancel the anonymous function which is publishing to the server
+	// This is because the server API does not support cancellation at this time.
+
+	target, err := deployment.FromFile(deploymentPath)
+	if err != nil {
+		return nil, err
+	}
+
+	// mark the deployment as aborted
+	target.AbortedAt = time.Now().Format(time.RFC3339)
+
+	// Possibly update the deployment file
+	d, err := target.WriteFile(deploymentPath, target.LocalID, false, log)
+	return d, err
 }
 
 func (p *defaultPublisher) createDeploymentRecord(
@@ -252,6 +274,8 @@ func (p *defaultPublisher) createDeploymentRecord(
 		ClientVersion: project.Version,
 		Type:          contentType,
 		CreatedAt:     created,
+		LocalID:       string(p.State.LocalID),
+		AbortedAt:     "",
 		ID:            contentID,
 		ConfigName:    p.ConfigName,
 		Files:         nil,
@@ -265,12 +289,36 @@ func (p *defaultPublisher) createDeploymentRecord(
 	}
 
 	// Save current deployment information for this target
-	return p.writeDeploymentRecord()
+	// Note: Using forced option when writing to cause our new
+	// localID to be recorded into the deployment record file, which
+	// then keeps old threads from updating the file for previous
+	// publishing attempts
+	_, err := p.writeDeploymentRecord(true)
+	return err
 }
 
 func (p *defaultPublisher) publishWithClient(
 	account *accounts.Account,
 	client connect.APIClient) error {
+
+	var err error
+	var contentID types.ContentID
+
+	if p.isDeployed() {
+		contentID = p.Target.ID
+		p.log.Info("Updating deployment", "content_id", contentID)
+	} else {
+		// Create a new deployment; we will update it with details later.
+		contentID, err = p.createDeployment(client)
+	}
+	if err != nil {
+		return err
+	}
+
+	err = p.createDeploymentRecord(contentID, account)
+	if err != nil {
+		return types.OperationError(events.PublishCreateNewDeploymentOp, err)
+	}
 
 	manifest := bundles.NewManifestFromConfig(p.Config)
 	p.log.Debug("Built manifest from config", "config", p.ConfigName)
@@ -290,23 +338,6 @@ func (p *defaultPublisher) publishWithClient(
 	err = p.preFlightChecks(client)
 	if err != nil {
 		return err
-	}
-
-	var contentID types.ContentID
-	if p.isDeployed() {
-		contentID = p.Target.ID
-		p.log.Info("Updating deployment", "content_id", contentID)
-	} else {
-		// Create a new deployment; we will update it with details later.
-		contentID, err = p.createDeployment(client)
-	}
-	if err != nil {
-		return err
-	}
-
-	err = p.createDeploymentRecord(contentID, account)
-	if err != nil {
-		return types.OperationError(events.PublishCreateNewDeploymentOp, err)
 	}
 
 	bundleID, err := p.createAndUploadBundle(client, bundler, contentID)

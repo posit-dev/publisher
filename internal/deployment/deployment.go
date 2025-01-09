@@ -3,20 +3,26 @@ package deployment
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/pelletier/go-toml/v2"
 	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/inspect/dependencies/renv"
+	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/project"
 	"github.com/posit-dev/publisher/internal/schema"
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 )
+
+var DeploymentRecordMutex sync.Mutex
 
 type Deployment struct {
 	// Predeployment and full deployment fields
@@ -25,6 +31,8 @@ type Deployment struct {
 	ServerURL     string              `toml:"server_url" json:"serverUrl"`
 	ClientVersion string              `toml:"client_version" json:"-"`
 	CreatedAt     string              `toml:"created_at" json:"createdAt"`
+	LocalID       string              `toml:"local_id" json:"localId"`
+	AbortedAt     string              `toml:"aborted_at" json:"abortedAt"`
 	Type          config.ContentType  `toml:"type" json:"type"`
 	ConfigName    string              `toml:"configuration_name" json:"configurationName"`
 	ID            types.ContentID     `toml:"id,omitempty" json:"id"`
@@ -135,19 +143,60 @@ func (d *Deployment) Write(w io.Writer) error {
 	return enc.Encode(d)
 }
 
-func (d *Deployment) WriteFile(path util.AbsolutePath) error {
+func (d *Deployment) WriteFile(
+	path util.AbsolutePath,
+	localId string,
+	forceUpdate bool,
+	log logging.Logger,
+) (*Deployment, error) {
+	log.Debug("Attempting to update deployment record", "path", path, "localId", localId, "forceUpdate", forceUpdate)
+
+	// We single task our updates to the all deployment records in
+	// order to handle parallel access control
+	DeploymentRecordMutex.Lock()
+	defer DeploymentRecordMutex.Unlock()
+
+	// Allow bypass of ownership control checks. This allows a thread
+	// to establish ownership of a deployment record, as is done at beginning
+	// of each publishing run.
+	if !forceUpdate {
+		// we will only update the deployment record, if the local id
+		// matches (which confirms the ownership of the record vs. another deployment thread)
+		existingDeployment, err := FromFile(path)
+		if err != nil {
+			// If the deployment file doesn't exist, that's ok
+			if !errors.Is(err, fs.ErrNotExist) {
+				// we have an invalid deployment file.
+				// we'll have to fail in error.
+				return nil, err
+			}
+		}
+		if existingDeployment != nil {
+			if existingDeployment.LocalID != "" && existingDeployment.LocalID != string(localId) {
+				log.Debug("Skipping deployment record update since existing record is being updated by another thread.")
+				return existingDeployment, nil
+			}
+			if existingDeployment.AbortedAt != "" {
+				log.Debug("Skipping deployment record update since deployment has been cancelled")
+				return existingDeployment, nil
+			}
+		}
+	}
+	log.Debug("Updating deployment record", "path", path)
+
 	err := path.Dir().MkdirAll(0777)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	f, err := path.Create()
 	if err != nil {
-		return err
+		return nil, err
 	}
+
 	defer f.Close()
 	err = d.Write(f)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return d, nil
 }

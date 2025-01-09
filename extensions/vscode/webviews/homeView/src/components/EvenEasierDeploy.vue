@@ -176,10 +176,16 @@
           will be updated when deployed.
         </div>
         <div
-          v-if="!isPreContentRecord(home.selectedContentRecord)"
+          v-if="
+            !isPreContentRecord(home.selectedContentRecord) &&
+            !isAbortedContentRecord
+          "
           class="last-deployment-time"
         >
           {{ formatDateString(home.selectedContentRecord.deployedAt) }}
+        </div>
+        <div v-if="isAbortedContentRecord" class="last-deployment-time">
+          {{ formatDateString(home.selectedContentRecord.abortedAt) }}
         </div>
         <div
           v-if="home.selectedContentRecord.deploymentError"
@@ -194,7 +200,10 @@
           />
         </div>
         <div
-          v-if="!isPreContentRecord(home.selectedContentRecord)"
+          v-if="
+            !isPreContentRecord(home.selectedContentRecord) &&
+            !isAbortedContentRecord
+          "
           class="last-deployment-details"
         >
           <vscode-button
@@ -396,21 +405,30 @@ const lastStatusDescription = computed(() => {
       ? "Not Yet Updated"
       : "Not Yet Deployed";
   }
+  if (isAbortedContentRecord.value) {
+    return "Last Deployment Cancelled";
+  }
   return "Last Deployment Successful";
 });
 
 const isPreContentRecordWithID = computed(() => {
   return (
     isPreContentRecord(home.selectedContentRecord) &&
-    Boolean(home.selectedContentRecord.id)
+    Boolean(home.selectedContentRecord.id) &&
+    !isAbortedContentRecord.value
   );
 });
 
 const isPreContentRecordWithoutID = computed(() => {
   return (
     isPreContentRecord(home.selectedContentRecord) &&
-    !isPreContentRecordWithID.value
+    !isPreContentRecordWithID.value &&
+    !isAbortedContentRecord.value
   );
+});
+
+const isAbortedContentRecord = computed(() => {
+  return Boolean(home.selectedContentRecord?.abortedAt);
 });
 
 const toolTipText = computed(() => {
@@ -599,6 +617,10 @@ const viewContent = () => {
 }
 
 .last-deployment-time {
+  margin-bottom: 20px;
+}
+
+.aborted-time {
   margin-bottom: 20px;
 }
 

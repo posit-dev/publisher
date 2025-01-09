@@ -44,6 +44,8 @@ type ContentRecordRecord = {
   serverUrl: string;
   saveName: string;
   createdAt: string;
+  localId: string;
+  abortedAt: string;
   configurationName: string;
   type: ContentType;
   deploymentError: AgentError | null;

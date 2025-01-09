@@ -208,7 +208,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         secrets,
         r,
       );
-      deployProject(response.data.localId, this.stream);
+      deployProject(
+        deploymentName,
+        projectDir,
+        response.data.localId,
+        this.stream,
+      );
     } catch (error: unknown) {
       // Most failures will occur on the event stream. These are the ones which
       // are immediately rejected as part of the API request to initiate deployment.

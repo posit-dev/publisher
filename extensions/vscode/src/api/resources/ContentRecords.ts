@@ -145,4 +145,21 @@ export class ContentRecords {
       },
     );
   }
+
+  // Returns:
+  // 200 - success
+  // 404 - not found
+  // 500 - internal server error
+  cancelDeployment(deploymentName: string, dir: string, localId: string) {
+    const encodedName = encodeURIComponent(deploymentName);
+    return this.client.post<ContentRecord>(
+      `deployments/${encodedName}/cancel/${localId}`,
+      {},
+      {
+        params: {
+          dir,
+        },
+      },
+    );
+  }
 }

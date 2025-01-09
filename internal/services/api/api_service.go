@@ -165,8 +165,12 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	r.Handle(ToPath("deployments", "{name}"), GetDeploymentHandlerFunc(base, log)).
 		Methods(http.MethodGet)
 
-	// POST /api/deployments/$NAME intiates a deployment
+	// POST /api/deployments/$NAME initiates a deployment
 	r.Handle(ToPath("deployments", "{name}"), PostDeploymentHandlerFunc(base, log, lister, emitter)).
+		Methods(http.MethodPost)
+
+	// POST /api/deployments/$NAME/cancel/$LOCALID cancels a deployment
+	r.Handle(ToPath("deployments", "{name}", "cancel", "{localid}"), PostCancelDeploymentHandlerFunc(base, log)).
 		Methods(http.MethodPost)
 
 	// DELETE /api/deployments/$NAME
