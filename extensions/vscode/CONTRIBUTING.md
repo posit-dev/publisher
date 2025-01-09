@@ -53,22 +53,22 @@ Utilize VSCode's built-in debugger to troubleshoot and diagnose issues.
 Switch to the debugger extension view within VSCode and select one of the two
 debug configurations (specified within `extensions/vscode/.vscode/launch.json`):
 
-- `Debug with internal API agent`
-- `Debug with external API agent on 9001`
+- `Run Extension`
+- `Run Extension using external API agent on 9001`
 
-The first target (`Debug with internal API agent`) is very helpful when you are simply wanting to debug
+The first target (`Run Extension`) is very helpful when you are simply wanting to debug
 functionality within the extension. It's configuration will cause the extension under test to
 automatically launch the agent (unlike the second option).
 
-The second target (`Debug with external API agent on 9001`) is helpful for when you want to debug
+The second target (`Run Extension using external API agent on 9001`) is helpful for when you want to debug
 both the extension UX and the agent at the same time. To do this, you will need to:
 
 1. First launch a debug session from a VSCode window which has opened the repo's base directory
    (see [API Debugging](./../../CONTRIBUTING.md#debugging-in-vs-code))
-2. Then launch another debug session (using the `Debug with external API agent on 9001` configuration)
+2. Then launch another debug session (using the `Run Extension using external API agent on 9001` configuration)
    from a separate VSCode window which has opened the `extensions/vscode` folder.
 
-Notes when using `Debug with external API agent on 9001`:
+Notes when using `Run Extension using external API agent on 9001`:
 
 - Both the agent's and extension's `launch.json` files are setup using the same working
   subdirectory of `test/sample-content`. If you change it in one, you will need to change it in the other.

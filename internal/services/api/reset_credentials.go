@@ -23,6 +23,12 @@ func unavailableCredsRes(w http.ResponseWriter, err error) {
 	apiErr.JSONResponse(w)
 }
 
+func cannotBackupFileRes(w http.ResponseWriter, err error) {
+	agentErr := types.AsAgentError(err)
+	apiErr := types.APIErrorCredentialsBackupFileFromAgentError(*agentErr)
+	apiErr.JSONResponse(w)
+}
+
 func ResetCredentialsHandlerFunc(log logging.Logger, credserviceFactory credentials.CredServiceFactory) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		result := struct {
@@ -37,6 +43,11 @@ func ResetCredentialsHandlerFunc(log logging.Logger, credserviceFactory credenti
 
 		backupFile, err := cs.Reset()
 		if err != nil {
+			var agentErr *types.AgentError
+			if errors.As(err, &agentErr) && agentErr.Code == types.ErrorCredentialsCannotBackupFile {
+				cannotBackupFileRes(w, err)
+				return
+			}
 			unavailableCredsRes(w, err)
 			return
 		}
