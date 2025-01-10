@@ -224,10 +224,10 @@ func (p *defaultPublisher) writeDeploymentRecord(forceUpdate bool) (*deployment.
 
 func CancelDeployment(
 	deploymentPath util.AbsolutePath,
-	localID state.LocalDeploymentID,
+	localID string,
 	log logging.Logger,
 ) (*deployment.Deployment, error) {
-	// This function only marks the deployment record as being cancelled.
+	// This function only marks the deployment record as being canceled.
 	// It does not cancel the anonymous function which is publishing to the server
 	// This is because the server API does not support cancellation at this time.
 
@@ -240,7 +240,7 @@ func CancelDeployment(
 	target.AbortedAt = time.Now().Format(time.RFC3339)
 
 	// Possibly update the deployment file
-	d, err := target.WriteFile(deploymentPath, target.LocalID, false, log)
+	d, err := target.WriteFile(deploymentPath, localID, false, log)
 	return d, err
 }
 

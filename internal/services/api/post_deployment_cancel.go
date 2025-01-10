@@ -12,11 +12,10 @@ import (
 	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/publish"
-	"github.com/posit-dev/publisher/internal/state"
 	"github.com/posit-dev/publisher/internal/util"
 )
 
-func PostCancelDeploymentHandlerFunc(base util.AbsolutePath, log logging.Logger) http.HandlerFunc {
+func PostDeploymentCancelHandlerFunc(base util.AbsolutePath, log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		name := mux.Vars(req)["name"]
 		localId := mux.Vars(req)["localid"]
@@ -26,7 +25,7 @@ func PostCancelDeploymentHandlerFunc(base util.AbsolutePath, log logging.Logger)
 			return
 		}
 		path := deployment.GetDeploymentPath(projectDir, name)
-		latest, err := publish.CancelDeployment(path, state.LocalDeploymentID(localId), log)
+		latest, err := publish.CancelDeployment(path, localId, log)
 		if err != nil {
 			if errors.Is(err, fs.ErrNotExist) {
 				http.NotFound(w, req)

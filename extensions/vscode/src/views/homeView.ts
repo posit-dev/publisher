@@ -954,7 +954,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       activeConfig.configuration.environment,
     );
     if (name === undefined) {
-      // Cancelled by the user
+      // Canceled by the user
       return;
     }
 

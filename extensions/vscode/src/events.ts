@@ -76,6 +76,9 @@ export function displayEventStreamMessage(msg: EventStreamMessage): string {
     if (msg.data.dashboardUrl) {
       return `Deployment failed, click to view Connect logs: ${msg.data.dashboardUrl}`;
     }
+    if (msg.data.canceled === "true") {
+      return "Deployment canceled";
+    }
     return "Deployment failed";
   }
   if (msg.error !== undefined) {
@@ -95,8 +98,8 @@ export class EventStream extends Readable implements Disposable {
   private messages: EventStreamMessage[] = [];
   // Map to store event callbacks
   private callbacks: Map<string, EventStreamRegistration[]> = new Map();
-  // Cancelled Event Streams - Suppressed when received
-  private cancelledLocalIDs: string[] = [];
+  // Canceled Event Streams - Suppressed when received
+  private canceledLocalIDs: string[] = [];
 
   /**
    * Creates a new instance of the EventStream class.
@@ -170,12 +173,12 @@ export class EventStream extends Readable implements Disposable {
    * @returns undefined
    */
   public suppressMessages(localId: string) {
-    this.cancelledLocalIDs.push(localId);
+    this.canceledLocalIDs.push(localId);
   }
 
   private processMessage(msg: EventStreamMessage) {
     const localId = msg.data.localId;
-    if (localId && this.cancelledLocalIDs.includes(localId)) {
+    if (localId && this.canceledLocalIDs.includes(localId)) {
       // suppress and ignore
       return;
     }

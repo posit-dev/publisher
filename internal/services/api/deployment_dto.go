@@ -32,6 +32,8 @@ type preDeploymentDTO struct {
 	ServerURL    string              `json:"serverUrl"`
 	SaveName     string              `json:"saveName"`
 	CreatedAt    string              `json:"createdAt"`
+	LocalID      string              `toml:"local_id,omitempty" json:"localId"`
+	AbortedAt    string              `toml:"aborted_at,omitempty" json:"abortedAt"`
 	ConfigName   string              `json:"configurationName,omitempty"`
 	ConfigPath   string              `json:"configurationPath,omitempty"`
 	Error        *types.AgentError   `json:"deploymentError,omitempty"`
@@ -46,6 +48,8 @@ type fullDeploymentDTO struct {
 	deployment.Deployment
 	ConfigPath string `json:"configurationPath"`
 	SaveName   string `json:"saveName"`
+	LocalID    string `toml:"local_id,omitempty" json:"localId"`
+	AbortedAt  string `toml:"aborted_at,omitempty" json:"abortedAt"`
 }
 
 type deploymentErrorDTO struct {
@@ -88,6 +92,8 @@ func deploymentAsDTO(d *deployment.Deployment, err error, projectDir util.Absolu
 			Deployment: *d,
 			ConfigPath: configPath,
 			SaveName:   saveName, // TODO: remove this duplicate (remove frontend references first)
+			AbortedAt:  d.AbortedAt,
+			LocalID:    d.LocalID,
 		}
 	} else {
 		if d.ConfigName != "" {
@@ -105,6 +111,8 @@ func deploymentAsDTO(d *deployment.Deployment, err error, projectDir util.Absolu
 			ServerURL:    d.ServerURL,
 			SaveName:     saveName, // TODO: remove this duplicate (remove frontend references first)
 			CreatedAt:    d.CreatedAt,
+			AbortedAt:    d.AbortedAt,
+			LocalID:      d.LocalID,
 			ConfigName:   d.ConfigName,
 			ConfigPath:   configPath,
 			Error:        d.Error,

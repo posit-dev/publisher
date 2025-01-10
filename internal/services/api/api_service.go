@@ -170,7 +170,7 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 		Methods(http.MethodPost)
 
 	// POST /api/deployments/$NAME/cancel/$LOCALID cancels a deployment
-	r.Handle(ToPath("deployments", "{name}", "cancel", "{localid}"), PostCancelDeploymentHandlerFunc(base, log)).
+	r.Handle(ToPath("deployments", "{name}", "cancel", "{localid}"), PostDeploymentCancelHandlerFunc(base, log)).
 		Methods(http.MethodPost)
 
 	// DELETE /api/deployments/$NAME
