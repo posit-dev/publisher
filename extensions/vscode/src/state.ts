@@ -167,6 +167,25 @@ export class PublisherState implements Disposable {
     }
   }
 
+  updateContentRecord(
+    newValue: ContentRecord | PreContentRecord | PreContentRecordWithConfig,
+  ) {
+    const existingContentRecord = this.findContentRecord(
+      newValue.saveName,
+      newValue.projectDir,
+    );
+    if (existingContentRecord) {
+      const crIndex = this.contentRecords.findIndex(
+        (contentRecord) => contentRecord.id === existingContentRecord?.id,
+      );
+      if (crIndex !== -1) {
+        this.contentRecords[crIndex] = newValue;
+      } else {
+        this.contentRecords.push(newValue);
+      }
+    }
+  }
+
   async getSelectedConfiguration() {
     const contentRecord = await this.getSelectedContentRecord();
     if (!contentRecord) {
