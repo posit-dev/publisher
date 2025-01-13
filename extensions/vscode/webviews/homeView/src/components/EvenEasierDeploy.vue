@@ -191,7 +191,7 @@
           <TextStringWithAnchor
             :message="home.selectedContentRecord?.deploymentError?.msg"
             :splitOptions="ErrorMessageSplitOptions"
-            class="error-message"
+            class="error-message text-description"
             @click="onErrorMessageAnchorClick"
           />
         </div>
