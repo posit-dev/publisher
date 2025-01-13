@@ -185,7 +185,9 @@
           v-if="home.selectedContentRecord.deploymentError"
           class="last-deployment-details last-deployment-error"
         >
-          <span class="codicon codicon-alert"></span>
+          <div class="alert-border border-warning text-warning">
+            <span class="codicon codicon-alert" />
+          </div>
           <TextStringWithAnchor
             :message="home.selectedContentRecord?.deploymentError?.msg"
             :splitOptions="ErrorMessageSplitOptions"
@@ -607,11 +609,17 @@ const viewContent = () => {
 }
 
 .last-deployment-error {
-  border: solid 2px;
-  border-color: gray;
-  padding: 5px;
   display: flex;
-  align-items: center;
+  align-items: stretch;
+
+  .alert-border {
+    display: flex;
+    align-items: center;
+    border-right-width: 1px;
+    border-right-style: solid;
+    padding-right: 5px;
+    margin-right: 5px;
+  }
 }
 
 .error-icon {
@@ -621,7 +629,6 @@ const viewContent = () => {
 .error-message {
   min-width: 0;
   word-wrap: break-word;
-  margin-left: 5px;
 }
 
 .progress-container {
