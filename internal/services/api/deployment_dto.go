@@ -48,8 +48,6 @@ type fullDeploymentDTO struct {
 	deployment.Deployment
 	ConfigPath string `json:"configurationPath"`
 	SaveName   string `json:"saveName"`
-	LocalID    string `toml:"local_id,omitempty" json:"localId"`
-	AbortedAt  string `toml:"aborted_at,omitempty" json:"abortedAt"`
 }
 
 type deploymentErrorDTO struct {
@@ -92,8 +90,6 @@ func deploymentAsDTO(d *deployment.Deployment, err error, projectDir util.Absolu
 			Deployment: *d,
 			ConfigPath: configPath,
 			SaveName:   saveName, // TODO: remove this duplicate (remove frontend references first)
-			AbortedAt:  d.AbortedAt,
-			LocalID:    d.LocalID,
 		}
 	} else {
 		if d.ConfigName != "" {

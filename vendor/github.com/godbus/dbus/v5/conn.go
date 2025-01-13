@@ -340,7 +340,7 @@ func (conn *Conn) Close() error {
 }
 
 // Context returns the context associated with the connection.  The
-// context will be canceled when the connection is closed.
+// context will be cancelled when the connection is closed.
 func (conn *Conn) Context() context.Context {
 	return conn.ctx
 }
@@ -552,7 +552,7 @@ func (conn *Conn) send(ctx context.Context, msg *Message, ch chan *Call) *Call {
 		call.ctxCanceler = canceler
 		conn.calls.track(msg.serial, call)
 		if ctx.Err() != nil {
-			// short path: don't even send the message if context already canceled
+			// short path: don't even send the message if context already cancelled
 			conn.calls.handleSendError(msg, ctx.Err())
 			return call
 		}
