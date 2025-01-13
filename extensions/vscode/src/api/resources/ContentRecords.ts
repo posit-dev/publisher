@@ -152,8 +152,9 @@ export class ContentRecords {
   // 500 - internal server error
   cancelDeployment(deploymentName: string, dir: string, localId: string) {
     const encodedName = encodeURIComponent(deploymentName);
+    const encodedLocalId = encodeURIComponent(localId);
     return this.client.post<ContentRecord>(
-      `deployments/${encodedName}/cancel/${localId}`,
+      `deployments/${encodedName}/cancel/${encodedLocalId}`,
       {},
       {
         params: {

@@ -163,56 +163,52 @@
             :context-menu="contextMenuVSCodeContext"
           />
         </div>
-        <div v-if="isPreContentRecordWithoutID">
-          Is this already deployed to a Connect server? You can
-          <a class="webview-link" role="button" @click="onAssociateDeployment"
-            >update that previous deployment</a
-          >.
-        </div>
-        <div v-if="isPreContentRecordWithID">
-          <a class="webview-link" role="button" @click="viewContent"
-            >This deployment</a
-          >
-          will be updated when deployed.
-        </div>
-        <div
-          v-if="
-            !isPreContentRecord(home.selectedContentRecord) &&
-            !isAbortedContentRecord
-          "
-          class="last-deployment-time"
-        >
-          {{ formatDateString(home.selectedContentRecord.deployedAt) }}
-        </div>
-        <div v-if="isAbortedContentRecord" class="last-deployment-time">
+        <div v-if="isAbortedContentRecord" class="aborted-time">
           {{ formatDateString(home.selectedContentRecord.abortedAt) }}
         </div>
-        <div
-          v-if="home.selectedContentRecord.deploymentError"
-          class="last-deployment-details last-deployment-error"
-        >
-          <span class="codicon codicon-alert"></span>
-          <TextStringWithAnchor
-            :message="home.selectedContentRecord?.deploymentError?.msg"
-            :splitOptions="ErrorMessageSplitOptions"
-            class="error-message"
-            @click="onErrorMessageAnchorClick"
-          />
-        </div>
-        <div
-          v-if="
-            !isPreContentRecord(home.selectedContentRecord) &&
-            !isAbortedContentRecord
-          "
-          class="last-deployment-details"
-        >
-          <vscode-button
-            appearance="secondary"
-            @click="viewContent"
-            class="w-full"
+        <div v-else>
+          <div v-if="isPreContentRecordWithoutID">
+            Is this already deployed to a Connect server? You can
+            <a class="webview-link" role="button" @click="onAssociateDeployment"
+              >update that previous deployment</a
+            >.
+          </div>
+          <div v-if="isPreContentRecordWithID">
+            <a class="webview-link" role="button" @click="viewContent"
+              >This deployment</a
+            >
+            will be updated when deployed.
+          </div>
+          <div
+            v-if="!isPreContentRecord(home.selectedContentRecord)"
+            class="last-deployment-time"
           >
-            {{ deployedContentButtonLabel }}
-          </vscode-button>
+            {{ formatDateString(home.selectedContentRecord.deployedAt) }}
+          </div>
+          <div
+            v-if="home.selectedContentRecord.deploymentError"
+            class="last-deployment-details last-deployment-error"
+          >
+            <span class="codicon codicon-alert"></span>
+            <TextStringWithAnchor
+              :message="home.selectedContentRecord?.deploymentError?.msg"
+              :splitOptions="ErrorMessageSplitOptions"
+              class="error-message"
+              @click="onErrorMessageAnchorClick"
+            />
+          </div>
+          <div
+            v-if="!isPreContentRecord(home.selectedContentRecord)"
+            class="last-deployment-details"
+          >
+            <vscode-button
+              appearance="secondary"
+              @click="viewContent"
+              class="w-full"
+            >
+              {{ deployedContentButtonLabel }}
+            </vscode-button>
+          </div>
         </div>
       </div>
     </template>
@@ -414,16 +410,14 @@ const lastStatusDescription = computed(() => {
 const isPreContentRecordWithID = computed(() => {
   return (
     isPreContentRecord(home.selectedContentRecord) &&
-    Boolean(home.selectedContentRecord.id) &&
-    !isAbortedContentRecord.value
+    Boolean(home.selectedContentRecord.id)
   );
 });
 
 const isPreContentRecordWithoutID = computed(() => {
   return (
     isPreContentRecord(home.selectedContentRecord) &&
-    !isPreContentRecordWithID.value &&
-    !isAbortedContentRecord.value
+    !isPreContentRecordWithID.value
   );
 });
 
