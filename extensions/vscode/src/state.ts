@@ -176,7 +176,9 @@ export class PublisherState implements Disposable {
     );
     if (existingContentRecord) {
       const crIndex = this.contentRecords.findIndex(
-        (contentRecord) => contentRecord.id === existingContentRecord?.id,
+        (contentRecord) =>
+          contentRecord.deploymentPath ===
+          existingContentRecord?.deploymentPath,
       );
       if (crIndex !== -1) {
         this.contentRecords[crIndex] = newValue;
