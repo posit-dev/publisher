@@ -190,7 +190,7 @@ export class EventStream extends Readable implements Disposable {
     // Trace message
     // Uncomment the following code if you want to dump every message to the
     // console as it is received.
-    console.debug(`eventSource trace: ${msg.type}: ${JSON.stringify(msg)}`);
+    // console.debug(`eventSource trace: ${msg.type}: ${JSON.stringify(msg)}`);
 
     // Add the message to the messages array
     this.messages.push(msg);
