@@ -18,7 +18,7 @@
       <div class="deployment-control" v-on="{ click: onSelectDeployment }">
         <QuickPickItem
           :label="deploymentTitle"
-          :details="deploymentSubTitles"
+          :details="deploymentDetails"
           :title="toolTipText"
           :data-automation="`entrypoint-label`"
         />
@@ -241,7 +241,7 @@ import { filterConfigurationsToValidAndType } from "../../../../src/utils/filter
 import { useHostConduitService } from "src/HostConduitService";
 import { useHomeStore } from "src/stores/home";
 
-import QuickPickItem from "src/components/QuickPickItem.vue";
+import QuickPickItem, { IconDetail } from "src/components/QuickPickItem.vue";
 import ActionToolbar from "src/components/ActionToolbar.vue";
 import DeployButton from "src/components/DeployButton.vue";
 import TextStringWithAnchor from "./TextStringWithAnchor.vue";
@@ -343,13 +343,13 @@ const deploymentTitle = computed(() => {
   return result.title;
 });
 
-const deploymentSubTitles = computed(() => {
-  const subTitles: string[] = [];
-  subTitles.push(credentialSubTitle.value);
+const deploymentDetails = computed(() => {
+  const details: IconDetail[] = [];
+  details.push({ icon: "codicon-server", text: credentialSubTitle.value });
   if (entrypointSubTitle.value) {
-    subTitles.push(entrypointSubTitle.value);
+    details.push({ icon: "codicon-file", text: entrypointSubTitle.value });
   }
-  return subTitles;
+  return details;
 });
 
 const credentialSubTitle = computed(() => {

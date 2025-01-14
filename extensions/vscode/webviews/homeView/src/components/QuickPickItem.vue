@@ -12,16 +12,25 @@
       </div>
     </div>
     <div v-for="detail in details" class="quick-pick-row">
-      <span class="quick-pick-detail">{{ detail }}</span>
+      <div v-if="isIconDetail(detail)" class="quick-pick-detail">
+        <div class="quick-pick-icon codicon" :class="detail.icon" />
+        <span>{{ detail.text }}</span>
+      </div>
+      <span v-else class="quick-pick-detail">{{ detail }}</span>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+export type IconDetail = { icon: string; text: string };
+
+const isIconDetail = (detail: string | IconDetail): detail is IconDetail =>
+  typeof detail === "object" && "icon" in detail && "text" in detail;
+
 defineProps<{
   label: string;
   description?: string;
-  details: string[];
+  details: Array<string | IconDetail>;
   codicon?: string;
 }>();
 </script>
@@ -42,7 +51,7 @@ defineProps<{
       .quick-pick-label-container {
         .quick-pick-label {
           font-weight: 600;
-          padding-bottom: 4px;
+          margin-bottom: 4px;
         }
       }
     }
@@ -85,6 +94,14 @@ defineProps<{
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: pre;
+
+      &:not(:last-child) {
+        margin-bottom: 2px;
+      }
+
+      .quick-pick-icon {
+        font-size: var(--vscode-font-size);
+      }
     }
   }
 }
