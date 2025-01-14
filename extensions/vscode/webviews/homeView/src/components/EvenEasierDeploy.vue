@@ -197,18 +197,18 @@
               @click="onErrorMessageAnchorClick"
             />
           </div>
-          <div
-            v-if="!isPreContentRecord(home.selectedContentRecord)"
-            class="last-deployment-details"
+        </div>
+        <div
+          v-if="!isPreContentRecord(home.selectedContentRecord)"
+          class="last-deployment-details"
+        >
+          <vscode-button
+            appearance="secondary"
+            @click="viewContent"
+            class="w-full"
           >
-            <vscode-button
-              appearance="secondary"
-              @click="viewContent"
-              class="w-full"
-            >
-              {{ deployedContentButtonLabel }}
-            </vscode-button>
-          </div>
+            {{ deployedContentButtonLabel }}
+          </vscode-button>
         </div>
       </div>
     </template>
