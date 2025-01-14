@@ -81,9 +81,7 @@ export function deployProject(
             "deployProject, token.onCancellationRequested",
             error,
           );
-          window.showInformationMessage(
-            `Unable to abort deployment: ${summary}`,
-          );
+          window.showErrorMessage(`Unable to abort deployment: ${summary}`);
         }
         resolveCB();
       });

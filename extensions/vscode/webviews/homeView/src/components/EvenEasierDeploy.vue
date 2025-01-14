@@ -163,47 +163,45 @@
             :context-menu="contextMenuVSCodeContext"
           />
         </div>
-        <div v-if="isPreContentRecordWithoutID">
-          Is this already deployed to a Connect server? You can
-          <a class="webview-link" role="button" @click="onAssociateDeployment"
-            >update that previous deployment</a
-          >.
-        </div>
-        <div v-if="isPreContentRecordWithID">
-          <a class="webview-link" role="button" @click="viewContent"
-            >This deployment</a
-          >
-          will be updated when deployed.
-        </div>
-        <div
-          v-if="
-            !isPreContentRecord(home.selectedContentRecord) &&
-            !isAbortedContentRecord
-          "
-          class="last-deployment-time"
-        >
-          {{ formatDateString(home.selectedContentRecord.deployedAt) }}
-        </div>
-        <div v-if="isAbortedContentRecord" class="last-deployment-time">
+        <div v-if="isAbortedContentRecord" class="date-time">
           {{ formatDateString(home.selectedContentRecord.abortedAt) }}
         </div>
-        <div
-          v-if="home.selectedContentRecord.deploymentError"
-          class="last-deployment-details last-deployment-error"
-        >
-          <span class="codicon codicon-alert"></span>
-          <TextStringWithAnchor
-            :message="home.selectedContentRecord?.deploymentError?.msg"
-            :splitOptions="ErrorMessageSplitOptions"
-            class="error-message"
-            @click="onErrorMessageAnchorClick"
-          />
+        <div v-else>
+          <div v-if="isPreContentRecordWithoutID">
+            Is this already deployed to a Connect server? You can
+            <a class="webview-link" role="button" @click="onAssociateDeployment"
+              >update that previous deployment</a
+            >.
+          </div>
+          <div v-if="isPreContentRecordWithID">
+            <a class="webview-link" role="button" @click="viewContent"
+              >This deployment</a
+            >
+            will be updated when deployed.
+          </div>
+          <div
+            v-if="!isPreContentRecord(home.selectedContentRecord)"
+            class="date-time"
+          >
+            {{ formatDateString(home.selectedContentRecord.deployedAt) }}
+          </div>
+          <div
+            v-if="home.selectedContentRecord.deploymentError"
+            class="last-deployment-details last-deployment-error"
+          >
+            <div class="alert-border border-warning text-warning">
+              <span class="codicon codicon-alert" />
+            </div>
+            <TextStringWithAnchor
+              :message="home.selectedContentRecord?.deploymentError?.msg"
+              :splitOptions="ErrorMessageSplitOptions"
+              class="error-message text-description"
+              @click="onErrorMessageAnchorClick"
+            />
+          </div>
         </div>
         <div
-          v-if="
-            !isPreContentRecord(home.selectedContentRecord) &&
-            !isAbortedContentRecord
-          "
+          v-if="!isPreContentRecord(home.selectedContentRecord)"
           class="last-deployment-details"
         >
           <vscode-button
@@ -414,16 +412,14 @@ const lastStatusDescription = computed(() => {
 const isPreContentRecordWithID = computed(() => {
   return (
     isPreContentRecord(home.selectedContentRecord) &&
-    Boolean(home.selectedContentRecord.id) &&
-    !isAbortedContentRecord.value
+    Boolean(home.selectedContentRecord.id)
   );
 });
 
 const isPreContentRecordWithoutID = computed(() => {
   return (
     isPreContentRecord(home.selectedContentRecord) &&
-    !isPreContentRecordWithID.value &&
-    !isAbortedContentRecord.value
+    !isPreContentRecordWithID.value
   );
 });
 
@@ -616,11 +612,7 @@ const viewContent = () => {
   margin-bottom: 5px;
 }
 
-.last-deployment-time {
-  margin-bottom: 20px;
-}
-
-.aborted-time {
+.date-time {
   margin-bottom: 20px;
 }
 
@@ -629,11 +621,17 @@ const viewContent = () => {
 }
 
 .last-deployment-error {
-  border: solid 2px;
-  border-color: gray;
-  padding: 5px;
   display: flex;
-  align-items: center;
+  align-items: stretch;
+
+  .alert-border {
+    display: flex;
+    align-items: center;
+    border-right-width: 1px;
+    border-right-style: solid;
+    padding-right: 5px;
+    margin-right: 7px;
+  }
 }
 
 .error-icon {
@@ -643,7 +641,6 @@ const viewContent = () => {
 .error-message {
   min-width: 0;
   word-wrap: break-word;
-  margin-left: 5px;
 }
 
 .progress-container {
