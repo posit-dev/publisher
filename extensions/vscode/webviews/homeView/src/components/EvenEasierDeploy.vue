@@ -163,10 +163,12 @@
             :context-menu="contextMenuVSCodeContext"
           />
         </div>
-        <div v-if="isAbortedContentRecord" class="date-time">
-          {{ formatDateString(home.selectedContentRecord.abortedAt) }}
-        </div>
-        <div v-else>
+        <template v-if="isAbortedContentRecord">
+          <div class="date-time">
+            {{ formatDateString(home.selectedContentRecord.abortedAt) }}
+          </div>
+        </template>
+        <template v-else>
           <div v-if="isPreContentRecordWithoutID">
             Is this already deployed to a Connect server? You can
             <a class="webview-link" role="button" @click="onAssociateDeployment"
@@ -199,7 +201,7 @@
               @click="onErrorMessageAnchorClick"
             />
           </div>
-        </div>
+        </template>
         <div
           v-if="!isPreContentRecord(home.selectedContentRecord)"
           class="last-deployment-details"
