@@ -177,15 +177,21 @@ export class EventStream extends Readable implements Disposable {
   }
 
   private processMessage(msg: EventStreamMessage) {
-    const localId = msg.data.localId;
+    // Some log messages passed on from Connect include
+    // the localId using snake_case, rather than pascalCase.
+    // To filter correctly, we need to check for both.
+
+    const localId = msg.data.localId || msg.data.local_id;
     if (localId && this.canceledLocalIDs.includes(localId)) {
       // suppress and ignore
       return;
     }
+
     // Trace message
-    // console.debug(
-    //   `eventSource trace: ${event.type}: ${JSON.stringify(event)}`,
-    // );
+    // Uncomment the following code if you want to dump every message to the
+    // console as it is received.
+    // console.debug(`eventSource trace: ${msg.type}: ${JSON.stringify(msg)}`);
+
     // Add the message to the messages array
     this.messages.push(msg);
     // Emit a 'message' event with the message as the payload

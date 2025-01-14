@@ -36,6 +36,7 @@ import {
   useApi,
   AllContentRecordTypes,
   EnvironmentConfig,
+  PreContentRecordWithConfig,
 } from "src/api";
 import { EventStream } from "src/events";
 import { getPythonInterpreterPath, getRInterpreterPath } from "../utils/vscode";
@@ -213,6 +214,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         projectDir,
         response.data.localId,
         this.stream,
+        this.updateActiveContentRecordLocally.bind(this),
       );
     } catch (error: unknown) {
       // Most failures will occur on the event stream. These are the ones which
@@ -313,6 +315,19 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       window.showErrorMessage(`Failed to update config file. ${summary}`);
       return;
     }
+  }
+
+  private updateActiveContentRecordLocally(
+    activeContentRecord:
+      | ContentRecord
+      | PreContentRecord
+      | PreContentRecordWithConfig,
+  ) {
+    // update our local state, so we don't wait on file refreshes
+    this.state.updateContentRecord(activeContentRecord);
+
+    // refresh the webview
+    this.updateWebViewViewContentRecords();
   }
 
   private onPublishStart() {

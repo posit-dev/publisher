@@ -1,15 +1,27 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
 import { ProgressLocation, Uri, env, window } from "vscode";
-import { EventStreamMessage, eventMsgToString, useApi } from "src/api";
+import {
+  EventStreamMessage,
+  eventMsgToString,
+  useApi,
+  ContentRecord,
+  PreContentRecord,
+  PreContentRecordWithConfig,
+} from "src/api";
 import { EventStream, UnregisterCallback } from "src/events";
 import { getSummaryStringFromError } from "src/utils/errors";
+
+type UpdateActiveContentRecordCB = (
+  contentRecord: ContentRecord | PreContentRecord | PreContentRecordWithConfig,
+) => void;
 
 export function deployProject(
   deploymentName: string,
   dir: string,
   localID: string,
   stream: EventStream,
+  updateActiveContentRecordCB: UpdateActiveContentRecordCB,
 ) {
   window.withProgress(
     {
@@ -38,11 +50,15 @@ export function deployProject(
         streamID = "NEVER_A_VALID_STREAM";
         unregisterAll();
         try {
-          await api.contentRecords.cancelDeployment(
+          const response = await api.contentRecords.cancelDeployment(
             deploymentName,
             dir,
             localID,
           );
+
+          // update the UX locally
+          updateActiveContentRecordCB(response.data);
+
           // we must have been successful...
           // inject a psuedo end of publishing event
           stream.injectMessage({
