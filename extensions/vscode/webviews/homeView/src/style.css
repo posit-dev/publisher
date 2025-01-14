@@ -50,8 +50,20 @@ body {
   color: var(--vscode-sideBarSectionHeader-foreground);
 }
 
+.text-warning {
+  color: var(--vscode-list-warningForeground);
+}
+
+.border-warning {
+  border-color: var(--vscode-list-warningForeground);
+}
+
 .text-error {
   color: var(--vscode-list-errorForeground);
+}
+
+.border-error {
+  border-color: var(--vscode-list-errorForeground);
 }
 
 .text-git-added {
