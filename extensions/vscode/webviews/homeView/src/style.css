@@ -30,6 +30,10 @@ body {
   color: var(--vscode-foreground);
 }
 
+.text-description {
+  color: var(--vscode-descriptionForeground);
+}
+
 .text-placeholder {
   color: var(--vscode-input-placeholderForeground);
 }
