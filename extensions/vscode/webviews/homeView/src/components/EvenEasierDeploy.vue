@@ -163,7 +163,7 @@
             :context-menu="contextMenuVSCodeContext"
           />
         </div>
-        <div v-if="isAbortedContentRecord" class="aborted-time">
+        <div v-if="isAbortedContentRecord" class="date-time">
           {{ formatDateString(home.selectedContentRecord.abortedAt) }}
         </div>
         <div v-else>
@@ -181,7 +181,7 @@
           </div>
           <div
             v-if="!isPreContentRecord(home.selectedContentRecord)"
-            class="last-deployment-time"
+            class="date-time"
           >
             {{ formatDateString(home.selectedContentRecord.deployedAt) }}
           </div>
@@ -610,11 +610,7 @@ const viewContent = () => {
   margin-bottom: 5px;
 }
 
-.last-deployment-time {
-  margin-bottom: 20px;
-}
-
-.aborted-time {
+.date-time {
   margin-bottom: 20px;
 }
 
