@@ -80,6 +80,19 @@
           >Edit the Configuration</a
         >.
       </p>
+
+      <p v-if="home.config.active.isUnknownType">
+        The selected Configuration has an unknown type.
+        <a
+          class="webview-link"
+          role="button"
+          @click="
+            onEditConfiguration(home.selectedConfiguration!.configurationPath)
+          "
+          >Edit the Configuration</a
+        >.
+      </p>
+
       <p v-if="home.config.active.isUnknownError">
         The selected Configuration has an error.
         <a
