@@ -618,7 +618,7 @@ const viewContent = () => {
     border-right-width: 1px;
     border-right-style: solid;
     padding-right: 5px;
-    margin-right: 5px;
+    margin-right: 7px;
   }
 }
 
