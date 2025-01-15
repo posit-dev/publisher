@@ -40,11 +40,12 @@ export default defineConfig({
     coverage: {
       enabled: true,
       thresholds: {
-        functions: 30.13,
-        lines: 17.46,
-        branches: 44.82,
-        statements: 17.46,
-        autoUpdate: true,
+        functions: 30,
+        lines: 17,
+        branches: 44,
+        statements: 17,
+        // avoid auto-updating thresholds to avoid off by 0.01 differences
+        autoUpdate: false,
       },
     },
   },
