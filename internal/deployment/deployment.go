@@ -177,7 +177,7 @@ func (d *Deployment) WriteFile(
 				return existingDeployment, nil
 			}
 			if existingDeployment.AbortedAt != "" {
-				log.Debug("Skipping deployment record update since deployment has been cancelled")
+				log.Debug("Skipping deployment record update since deployment has been canceled")
 				return existingDeployment, nil
 			}
 		}

@@ -41,6 +41,7 @@ enum LogStageStatus {
   inProgress,
   completed,
   failed,
+  canceled,
 }
 
 type LogStage = {
@@ -182,14 +183,17 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
     });
 
     this.stream.register("publish/failure", async (msg: EventStreamMessage) => {
-      this.publishingStage.status = LogStageStatus.failed;
+      const failedOrCanceledStatus = msg.data.canceled
+        ? LogStageStatus.canceled
+        : LogStageStatus.failed;
+      this.publishingStage.status = failedOrCanceledStatus;
       this.publishingStage.events.push(msg);
 
       this.stages.forEach((stage) => {
         if (stage.status === LogStageStatus.notStarted) {
           stage.status = LogStageStatus.neverStarted;
         } else if (stage.status === LogStageStatus.inProgress) {
-          stage.status = LogStageStatus.failed;
+          stage.status = failedOrCanceledStatus;
         }
       });
 
@@ -204,8 +208,8 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
         errorMessage = handleEventCodedError(msg);
       } else {
         errorMessage =
-          msg.data.cancelled === "true"
-            ? `Deployment cancelled: ${msg.data.message}`
+          msg.data.canceled === "true"
+            ? `Deployment canceled: ${msg.data.message}`
             : `Deployment failed: ${msg.data.message}`;
       }
       const selection = await window.showErrorMessage(errorMessage, ...options);
@@ -259,7 +263,11 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
         (msg: EventStreamMessage) => {
           const stage = this.stages.get(stageName);
           if (stage) {
-            stage.status = LogStageStatus.failed;
+            if (msg.data.canceled === "true") {
+              stage.status = LogStageStatus.canceled;
+            } else {
+              stage.status = LogStageStatus.failed;
+            }
             stage.events.push(msg);
           }
           this.refresh();
@@ -411,6 +419,11 @@ export class LogsTreeStageItem extends TreeItem {
       case LogStageStatus.failed:
         this.label = this.stage.inactiveLabel;
         this.iconPath = new ThemeIcon("error");
+        this.collapsibleState = TreeItemCollapsibleState.Expanded;
+        break;
+      case LogStageStatus.canceled:
+        this.label = this.stage.inactiveLabel;
+        this.iconPath = new ThemeIcon("circle-slash");
         this.collapsibleState = TreeItemCollapsibleState.Expanded;
         break;
     }

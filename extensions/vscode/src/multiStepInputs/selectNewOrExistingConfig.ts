@@ -245,7 +245,7 @@ export async function selectNewOrExistingConfig(
       totalSteps: -1,
       data: {
         // each attribute is initialized to undefined
-        // to be returned when it has not been cancelled to assist type guards
+        // to be returned when it has not been canceled to assist type guards
         // Note: We can't initialize existingConfigurationName to a specific initial
         // config, as we then wouldn't be able to detect if the user hit ESC to exit
         // the selection. :-(

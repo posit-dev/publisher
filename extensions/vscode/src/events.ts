@@ -76,6 +76,9 @@ export function displayEventStreamMessage(msg: EventStreamMessage): string {
     if (msg.data.dashboardUrl) {
       return `Deployment failed, click to view Connect logs: ${msg.data.dashboardUrl}`;
     }
+    if (msg.data.canceled === "true") {
+      return "Deployment canceled";
+    }
     return "Deployment failed";
   }
   if (msg.error !== undefined) {
@@ -95,8 +98,8 @@ export class EventStream extends Readable implements Disposable {
   private messages: EventStreamMessage[] = [];
   // Map to store event callbacks
   private callbacks: Map<string, EventStreamRegistration[]> = new Map();
-  // Cancelled Event Streams - Suppressed when received
-  private cancelledLocalIDs: string[] = [];
+  // Canceled Event Streams - Suppressed when received
+  private canceledLocalIDs: string[] = [];
 
   /**
    * Creates a new instance of the EventStream class.
@@ -170,19 +173,25 @@ export class EventStream extends Readable implements Disposable {
    * @returns undefined
    */
   public suppressMessages(localId: string) {
-    this.cancelledLocalIDs.push(localId);
+    this.canceledLocalIDs.push(localId);
   }
 
   private processMessage(msg: EventStreamMessage) {
-    const localId = msg.data.localId;
-    if (localId && this.cancelledLocalIDs.includes(localId)) {
+    // Some log messages passed on from Connect include
+    // the localId using snake_case, rather than pascalCase.
+    // To filter correctly, we need to check for both.
+
+    const localId = msg.data.localId || msg.data.local_id;
+    if (localId && this.canceledLocalIDs.includes(localId)) {
       // suppress and ignore
       return;
     }
+
     // Trace message
-    // console.debug(
-    //   `eventSource trace: ${event.type}: ${JSON.stringify(event)}`,
-    // );
+    // Uncomment the following code if you want to dump every message to the
+    // console as it is received.
+    // console.debug(`eventSource trace: ${msg.type}: ${JSON.stringify(msg)}`);
+
     // Add the message to the messages array
     this.messages.push(msg);
     // Emit a 'message' event with the message as the payload
