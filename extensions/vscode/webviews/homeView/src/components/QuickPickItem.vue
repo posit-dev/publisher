@@ -56,6 +56,12 @@ defineProps<{
       }
     }
 
+    &:not(:last-child) {
+      .quick-pick-detail {
+        margin-bottom: 2px;
+      }
+    }
+
     .quick-pick-icon {
       vertical-align: text-bottom;
       padding-right: 6px;
@@ -94,10 +100,6 @@ defineProps<{
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: pre;
-
-      &:not(:last-child) {
-        margin-bottom: 2px;
-      }
 
       .quick-pick-icon {
         font-size: var(--vscode-font-size);
