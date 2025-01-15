@@ -201,7 +201,7 @@ func (p *defaultPublisher) PublishDirectory() error {
 	return err
 }
 
-func (p *defaultPublisher) writeDeploymentRecord(forceUpdate bool) (*deployment.Deployment, error) {
+func (p *defaultPublisher) writeDeploymentRecord(setOwnership bool) (*deployment.Deployment, error) {
 	if p.SaveName == "" {
 		// Redeployment
 		p.log.Debug("No SaveName found while redeploying.", "deployment", p.TargetName)
@@ -219,7 +219,7 @@ func (p *defaultPublisher) writeDeploymentRecord(forceUpdate bool) (*deployment.
 
 	recordPath := deployment.GetDeploymentPath(p.Dir, p.SaveName)
 
-	return p.Target.WriteFile(recordPath, string(p.State.LocalID), forceUpdate, p.log)
+	return p.Target.WriteFile(recordPath, string(p.State.LocalID), setOwnership, p.log)
 }
 
 func CancelDeployment(
@@ -274,7 +274,6 @@ func (p *defaultPublisher) createDeploymentRecord(
 		ClientVersion: project.Version,
 		Type:          contentType,
 		CreatedAt:     created,
-		LocalID:       string(p.State.LocalID),
 		AbortedAt:     "",
 		ID:            contentID,
 		ConfigName:    p.ConfigName,

@@ -32,7 +32,6 @@ type preDeploymentDTO struct {
 	ServerURL    string              `json:"serverUrl"`
 	SaveName     string              `json:"saveName"`
 	CreatedAt    string              `json:"createdAt"`
-	LocalID      string              `toml:"local_id,omitempty" json:"localId"`
 	AbortedAt    string              `toml:"aborted_at,omitempty" json:"abortedAt"`
 	ConfigName   string              `json:"configurationName,omitempty"`
 	ConfigPath   string              `json:"configurationPath,omitempty"`
@@ -108,7 +107,6 @@ func deploymentAsDTO(d *deployment.Deployment, err error, projectDir util.Absolu
 			SaveName:     saveName, // TODO: remove this duplicate (remove frontend references first)
 			CreatedAt:    d.CreatedAt,
 			AbortedAt:    d.AbortedAt,
-			LocalID:      d.LocalID,
 			ConfigName:   d.ConfigName,
 			ConfigPath:   configPath,
 			Error:        d.Error,

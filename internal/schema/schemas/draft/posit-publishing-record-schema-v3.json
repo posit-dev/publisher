@@ -69,10 +69,6 @@
       "description": "Date and time the deployment was created.",
       "examples": ["2024-01-19T09:33:33.131481-05:00"]
     },
-    "local_id": {
-      "type": "string",
-      "description": "ID of active/latest deployment sequence."
-    },
     "aborted_at": {
       "type": "string",
       "format": "date-time",
