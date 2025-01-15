@@ -145,69 +145,69 @@ func (s *DeploymentSuite) TestWriteFile() {
 func (s *DeploymentSuite) TestWriteFileOptions() {
 
 	type testOptions struct {
-		existingLocalID string
-		updateLocalID   string
-		existingAborted string
-		override        bool
-		expectedSuccess bool
+		existingLocalID   string
+		updateLocalID     string
+		existingDismissed string
+		override          bool
+		expectedSuccess   bool
 	}
 
 	tests := [...]testOptions{
 		{
-			existingLocalID: "123",
-			updateLocalID:   "123",
-			existingAborted: "",
-			override:        false,
-			expectedSuccess: true,
+			existingLocalID:   "123",
+			updateLocalID:     "123",
+			existingDismissed: "",
+			override:          false,
+			expectedSuccess:   true,
 		},
 		{
-			existingLocalID: "123",
-			updateLocalID:   "123",
-			existingAborted: "2025-01-08T17:10:22-08:00",
-			override:        false,
-			expectedSuccess: false,
+			existingLocalID:   "123",
+			updateLocalID:     "123",
+			existingDismissed: "2025-01-08T17:10:22-08:00",
+			override:          false,
+			expectedSuccess:   false,
 		},
 		{
-			existingLocalID: "123",
-			updateLocalID:   "123",
-			existingAborted: "",
-			override:        true,
-			expectedSuccess: true,
+			existingLocalID:   "123",
+			updateLocalID:     "123",
+			existingDismissed: "",
+			override:          true,
+			expectedSuccess:   true,
 		},
 		{
-			existingLocalID: "123",
-			updateLocalID:   "123",
-			existingAborted: "2025-01-08T17:10:22-08:00",
-			override:        true,
-			expectedSuccess: true,
+			existingLocalID:   "123",
+			updateLocalID:     "123",
+			existingDismissed: "2025-01-08T17:10:22-08:00",
+			override:          true,
+			expectedSuccess:   true,
 		},
 		{
-			existingLocalID: "123",
-			updateLocalID:   "456",
-			existingAborted: "",
-			override:        false,
-			expectedSuccess: false,
+			existingLocalID:   "123",
+			updateLocalID:     "456",
+			existingDismissed: "",
+			override:          false,
+			expectedSuccess:   false,
 		},
 		{
-			existingLocalID: "123",
-			updateLocalID:   "456",
-			existingAborted: "2025-01-08T17:10:22-08:00",
-			override:        false,
-			expectedSuccess: false,
+			existingLocalID:   "123",
+			updateLocalID:     "456",
+			existingDismissed: "2025-01-08T17:10:22-08:00",
+			override:          false,
+			expectedSuccess:   false,
 		},
 		{
-			existingLocalID: "123",
-			updateLocalID:   "456",
-			existingAborted: "",
-			override:        true,
-			expectedSuccess: true,
+			existingLocalID:   "123",
+			updateLocalID:     "456",
+			existingDismissed: "",
+			override:          true,
+			expectedSuccess:   true,
 		},
 		{
-			existingLocalID: "123",
-			updateLocalID:   "456",
-			existingAborted: "2025-01-08T17:10:22-08:00",
-			override:        true,
-			expectedSuccess: true,
+			existingLocalID:   "123",
+			updateLocalID:     "456",
+			existingDismissed: "2025-01-08T17:10:22-08:00",
+			override:          true,
+			expectedSuccess:   true,
 		},
 	}
 
@@ -220,7 +220,7 @@ func (s *DeploymentSuite) TestWriteFileOptions() {
 		d := New()
 		d.ConfigName = "original" // Tests use this field to detect changes in file on disk
 		ActiveDeploymentRegistry.Set(deploymentFile.String(), test.existingLocalID)
-		d.AbortedAt = test.existingAborted
+		d.DismissedAt = test.existingDismissed
 		returnedD, err := d.WriteFile(deploymentFile, test.existingLocalID, false, s.log)
 		s.NoError(err)
 		s.Equal("original", returnedD.ConfigName, "Failed iteration %d of test (location 1)", i)

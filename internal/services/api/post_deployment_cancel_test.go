@@ -68,7 +68,7 @@ func (s *PostDeploymentCancelTestSuite) Test200WithLocalIDMatch() {
 	dec.DisallowUnknownFields()
 	s.NoError(dec.Decode(&res))
 
-	s.NotEmpty(res.AbortedAt)
+	s.NotEmpty(res.DismissedAt)
 }
 
 func (s *PostDeploymentCancelTestSuite) Test200WithoutLocalIDMatch() {
@@ -99,7 +99,7 @@ func (s *PostDeploymentCancelTestSuite) Test200WithoutLocalIDMatch() {
 	s.NoError(dec.Decode(&res))
 
 	// request was successful but not applied
-	s.Empty(res.AbortedAt)
+	s.Empty(res.DismissedAt)
 }
 
 func (s *PostDeploymentCancelTestSuite) Test404() {

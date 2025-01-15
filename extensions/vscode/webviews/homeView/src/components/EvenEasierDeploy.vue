@@ -163,9 +163,9 @@
             :context-menu="contextMenuVSCodeContext"
           />
         </div>
-        <template v-if="isAbortedContentRecord">
+        <template v-if="isDismissedContentRecord">
           <div class="date-time">
-            {{ formatDateString(home.selectedContentRecord.abortedAt) }}
+            {{ formatDateString(home.selectedContentRecord.dismissedAt) }}
           </div>
         </template>
         <template v-else>
@@ -405,7 +405,7 @@ const lastStatusDescription = computed(() => {
       ? "Not Yet Updated"
       : "Not Yet Deployed";
   }
-  if (isAbortedContentRecord.value) {
+  if (isDismissedContentRecord.value) {
     return "Last Deployment Canceled";
   }
   return "Last Deployment Successful";
@@ -425,8 +425,8 @@ const isPreContentRecordWithoutID = computed(() => {
   );
 });
 
-const isAbortedContentRecord = computed(() => {
-  return Boolean(home.selectedContentRecord?.abortedAt);
+const isDismissedContentRecord = computed(() => {
+  return Boolean(home.selectedContentRecord?.dismissedAt);
 });
 
 const toolTipText = computed(() => {

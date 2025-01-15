@@ -31,7 +31,7 @@ type Deployment struct {
 	ServerURL     string              `toml:"server_url" json:"serverUrl"`
 	ClientVersion string              `toml:"client_version" json:"-"`
 	CreatedAt     string              `toml:"created_at" json:"createdAt"`
-	AbortedAt     string              `toml:"aborted_at" json:"abortedAt"`
+	DismissedAt   string              `toml:"dismissed_at" json:"dismissedAt"`
 	Type          config.ContentType  `toml:"type" json:"type"`
 	ConfigName    string              `toml:"configuration_name" json:"configurationName"`
 	ID            types.ContentID     `toml:"id,omitempty" json:"id"`
@@ -172,7 +172,7 @@ func (d *Deployment) WriteFile(
 				log.Debug("Skipping deployment record update since existing record is being updated by another thread.")
 				return existingDeployment, nil
 			}
-			if existingDeployment.AbortedAt != "" {
+			if existingDeployment.DismissedAt != "" {
 				log.Debug("Skipping deployment record update since deployment has been canceled")
 				return existingDeployment, nil
 			}

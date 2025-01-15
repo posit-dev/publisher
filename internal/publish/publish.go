@@ -236,8 +236,8 @@ func CancelDeployment(
 		return nil, err
 	}
 
-	// mark the deployment as aborted
-	target.AbortedAt = time.Now().Format(time.RFC3339)
+	// mark the deployment as dismissed
+	target.DismissedAt = time.Now().Format(time.RFC3339)
 
 	// Possibly update the deployment file
 	d, err := target.WriteFile(deploymentPath, localID, false, log)
@@ -274,7 +274,7 @@ func (p *defaultPublisher) createDeploymentRecord(
 		ClientVersion: project.Version,
 		Type:          contentType,
 		CreatedAt:     created,
-		AbortedAt:     "",
+		DismissedAt:   "",
 		ID:            contentID,
 		ConfigName:    p.ConfigName,
 		Files:         nil,

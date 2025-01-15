@@ -69,10 +69,10 @@
       "description": "Date and time the deployment was created.",
       "examples": ["2024-01-19T09:33:33.131481-05:00"]
     },
-    "aborted_at": {
+    "dismissed_at": {
       "type": "string",
       "format": "date-time",
-      "description": "Date and time that the current deployment flow was aborted. Is empty if flow was not aborted.",
+      "description": "Date and time that the current deployment flow was dismissed. Is empty if flow was not dismissed.",
       "examples": ["2024-01-19T09:33:33.131481-05:00"]
     },
     "deployed_at": {
