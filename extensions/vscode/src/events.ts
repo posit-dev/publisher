@@ -77,7 +77,7 @@ export function displayEventStreamMessage(msg: EventStreamMessage): string {
       return `Deployment failed, click to view Connect logs: ${msg.data.dashboardUrl}`;
     }
     if (msg.data.canceled === "true") {
-      return "Deployment canceled";
+      return "Deployment dismissed";
     }
     return "Deployment failed";
   }

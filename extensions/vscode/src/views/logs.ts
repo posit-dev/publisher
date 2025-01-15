@@ -209,10 +209,18 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
       } else {
         errorMessage =
           msg.data.canceled === "true"
-            ? `Deployment canceled: ${msg.data.message}`
+            ? msg.data.message
             : `Deployment failed: ${msg.data.message}`;
       }
-      const selection = await window.showErrorMessage(errorMessage, ...options);
+      let selection: string | undefined;
+      if (msg.data.canceled === "true") {
+        selection = await window.showInformationMessage(
+          errorMessage,
+          ...options,
+        );
+      } else {
+        selection = await window.showErrorMessage(errorMessage, ...options);
+      }
       if (selection === showLogsOption) {
         await commands.executeCommand(Commands.Logs.Focus);
       } else if (selection === enhancedError?.buttonStr) {
