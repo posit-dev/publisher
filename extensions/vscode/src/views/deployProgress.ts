@@ -71,7 +71,7 @@ export function deployProject(
               localId: localID,
               canceled: "true",
               message:
-                "Deployment has been dismissed (but will continue to be processed on the Connect Server).",
+                "Deployment has been dismissed, but will continue to be processed on the Connect Server.",
             },
             error: "Deployment has been dismissed.",
           });
@@ -81,7 +81,7 @@ export function deployProject(
             "deployProject, token.onCancellationRequested",
             error,
           );
-          window.showErrorMessage(`Unable to abort deployment: ${summary}`);
+          window.showErrorMessage(`Unable to dismiss deployment: ${summary}`);
         }
         resolveCB();
       });

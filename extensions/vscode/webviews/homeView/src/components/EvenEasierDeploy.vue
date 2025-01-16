@@ -406,7 +406,7 @@ const lastStatusDescription = computed(() => {
       : "Not Yet Deployed";
   }
   if (isDismissedContentRecord.value) {
-    return "Last Deployment Canceled";
+    return "Last Deployment Dismissed";
   }
   return "Last Deployment Successful";
 });
