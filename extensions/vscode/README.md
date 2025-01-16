@@ -71,12 +71,8 @@ documentation for more information.
 
 ### Seemless collaboration
 
-Collaborate easily with your team by sharing your configurations and
-deployments. Others can pick up where you left off and
-
-Allow collaborators to easily pick up where you left off by using the `.posit`
-files. Your team can deploy using the same deployments and configurations you
-set up.
+Collaborate with your team using shared configurations and deployments. Easily
+pick up where others left off with deployed content.
 
 See the [Collaboration Workflow](https://github.com/posit-dev/publisher/blob/main/docs/collaboration.md)
 documentation for more information.
