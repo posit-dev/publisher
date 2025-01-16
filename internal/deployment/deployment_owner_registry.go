@@ -16,7 +16,9 @@ func (o *DeploymentOwnerRegistry) Set(deploymentPath string, localId string) {
 	o.Lock()
 	defer o.Unlock()
 
-	o.m[deploymentPath] = localId
+	if localId != "" {
+		o.m[deploymentPath] = localId
+	}
 }
 
 func (o *DeploymentOwnerRegistry) Check(deploymentPath string, localId string) bool {
@@ -25,6 +27,16 @@ func (o *DeploymentOwnerRegistry) Check(deploymentPath string, localId string) b
 
 	owner := o.m[deploymentPath]
 	return owner == localId
+}
+
+func (o *DeploymentOwnerRegistry) Clear(deploymentPath string, localId string) {
+	o.Lock()
+	defer o.Unlock()
+
+	owner := o.m[deploymentPath]
+	if owner == localId {
+		delete(o.m, deploymentPath)
+	}
 }
 
 func (o *DeploymentOwnerRegistry) Reset() {

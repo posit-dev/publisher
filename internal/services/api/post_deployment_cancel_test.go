@@ -45,8 +45,10 @@ func (s *PostDeploymentCancelTestSuite) Test200WithLocalIDMatch() {
 	localId := "abc"
 
 	d := deployment.New()
+	path := deployment.GetDeploymentPath(s.cwd, deploymentName)
+	deployment.ActiveDeploymentRegistry.Set(path.String(), localId)
 
-	_, err := d.WriteFile(deployment.GetDeploymentPath(s.cwd, deploymentName), "abc", true, s.log)
+	_, err := d.WriteFile(path, "abc", s.log)
 	s.NoError(err)
 
 	h := PostDeploymentCancelHandlerFunc(s.cwd, s.log)
@@ -75,8 +77,10 @@ func (s *PostDeploymentCancelTestSuite) Test200WithoutLocalIDMatch() {
 	deploymentName := "newDeployment"
 
 	d := deployment.New()
+	path := deployment.GetDeploymentPath(s.cwd, deploymentName)
+	deployment.ActiveDeploymentRegistry.Set(path.String(), "abc")
 
-	_, err := d.WriteFile(deployment.GetDeploymentPath(s.cwd, deploymentName), "abc", true, s.log)
+	_, err := d.WriteFile(path, "abc", s.log)
 	s.NoError(err)
 
 	h := PostDeploymentCancelHandlerFunc(s.cwd, s.log)

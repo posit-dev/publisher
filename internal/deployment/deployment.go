@@ -142,19 +142,20 @@ func (d *Deployment) Write(w io.Writer) error {
 	return enc.Encode(d)
 }
 
+// When being called from methods active during a deployment, they will be running within a
+// go function with a state which includes a localID. By supplying it when calling this method,
+// they protect the deployment file from being updated by any methods active but not current.
+//
+// NOTE: deployment threads currently run to completion, so when a user "dismisses" a deployment
+// the go functions continue to want to update the record (even though they might be "old" news)
 func (d *Deployment) WriteFile(
 	path util.AbsolutePath,
-	localId string,
-	setOwnership bool,
+	localIdIfDeploying string,
 	log logging.Logger,
 ) (*Deployment, error) {
-	log.Debug("Attempting to update deployment record", "path", path, "localId", localId, "setOwnership", setOwnership)
+	log.Debug("Attempting to update deployment record", "path", path, "localIdIfDeploying", localIdIfDeploying)
 
-	if setOwnership {
-		// Establish ownership of a deployment record, as is done at beginning
-		// of each publishing run.
-		ActiveDeploymentRegistry.Set(path.String(), localId)
-	} else {
+	if localIdIfDeploying != "" {
 		// we will only update the deployment record, if the local id passed in
 		// owns the record (as determined by the ActiveDeploymentRegistry)
 		// matches (which confirms the ownership of the record vs. another deployment thread)
@@ -168,7 +169,7 @@ func (d *Deployment) WriteFile(
 			}
 		}
 		if existingDeployment != nil {
-			if !ActiveDeploymentRegistry.Check(path.String(), localId) {
+			if !ActiveDeploymentRegistry.Check(path.String(), localIdIfDeploying) {
 				log.Debug("Skipping deployment record update since existing record is being updated by another thread.")
 				return existingDeployment, nil
 			}
@@ -177,7 +178,13 @@ func (d *Deployment) WriteFile(
 				return existingDeployment, nil
 			}
 		}
+	} else {
+		// Protect against overlaps of deployment thread updates and user initiated updates
+		// (which pass in no value for localIdIfDeploying
+		ActiveDeploymentRegistry.Lock()
+		defer ActiveDeploymentRegistry.Unlock()
 	}
+
 	log.Debug("Updating deployment record", "path", path)
 
 	err := path.Dir().MkdirAll(0777)

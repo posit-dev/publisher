@@ -134,7 +134,7 @@ func (p *defaultPublisher) emitErrorEvents(err error) {
 	// Record the error in the deployment record
 	if p.Target != nil {
 		p.Target.Error = agentErr
-		_, writeErr := p.writeDeploymentRecord(false)
+		_, writeErr := p.writeDeploymentRecord()
 		if writeErr != nil {
 			p.log.Warn("failed to write updated deployment record", "name", p.TargetName, "err", writeErr)
 		}
@@ -201,7 +201,7 @@ func (p *defaultPublisher) PublishDirectory() error {
 	return err
 }
 
-func (p *defaultPublisher) writeDeploymentRecord(setOwnership bool) (*deployment.Deployment, error) {
+func (p *defaultPublisher) writeDeploymentRecord() (*deployment.Deployment, error) {
 	if p.SaveName == "" {
 		// Redeployment
 		p.log.Debug("No SaveName found while redeploying.", "deployment", p.TargetName)
@@ -219,7 +219,7 @@ func (p *defaultPublisher) writeDeploymentRecord(setOwnership bool) (*deployment
 
 	recordPath := deployment.GetDeploymentPath(p.Dir, p.SaveName)
 
-	return p.Target.WriteFile(recordPath, string(p.State.LocalID), setOwnership, p.log)
+	return p.Target.WriteFile(recordPath, string(p.State.LocalID), p.log)
 }
 
 func CancelDeployment(
@@ -240,7 +240,7 @@ func CancelDeployment(
 	target.DismissedAt = time.Now().Format(time.RFC3339)
 
 	// Possibly update the deployment file
-	d, err := target.WriteFile(deploymentPath, localID, false, log)
+	d, err := target.WriteFile(deploymentPath, localID, log)
 	return d, err
 }
 
@@ -292,7 +292,7 @@ func (p *defaultPublisher) createDeploymentRecord(
 	// localID to be recorded into the deployment record file, which
 	// then keeps old threads from updating the file for previous
 	// publishing attempts
-	_, err := p.writeDeploymentRecord(true)
+	_, err := p.writeDeploymentRecord()
 	return err
 }
 
