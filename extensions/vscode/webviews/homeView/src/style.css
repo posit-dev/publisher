@@ -22,6 +22,14 @@ body {
   width: 100%;
 }
 
+.flex-grow-0 {
+  flex-grow: 0;
+}
+
+.flex-grow {
+  flex-grow: 1;
+}
+
 .text-sm {
   font-size: 11px;
 }

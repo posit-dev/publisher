@@ -18,7 +18,7 @@
       <div class="deployment-control" v-on="{ click: onSelectDeployment }">
         <QuickPickItem
           :label="deploymentTitle"
-          :details="deploymentSubTitles"
+          :details="deploymentDetails"
           :title="toolTipText"
           :data-automation="`entrypoint-label`"
         />
@@ -124,29 +124,34 @@
     >
       <vscode-divider class="home-view-divider" />
 
-      <div v-if="home.publishInProgress">
-        <div class="deployment-in-progress-container">
-          <div class="progress-container">
-            <vscode-progress-ring class="progress-ring" />
-            <div class="progress-desc">
-              <div data-automation="deployment-progress">
-                Deployment in Progress...
-              </div>
-              <p class="progress-log-anchor">
-                <a
-                  class="webview-link"
-                  role="button"
-                  @click="onViewPublishingLog"
-                  >View Log</a
+      <div
+        v-if="home.publishInProgress"
+        class="deployment-in-progress-container"
+      >
+        <vscode-progress-ring class="progress-ring" />
+        <div class="flex-grow">
+          <div class="deployment-summary-container">
+            <div class="progress-container">
+              <div class="progress-desc">
+                <h4
+                  data-automation="deployment-progress"
+                  class="deployment-summary-title"
                 >
-              </p>
+                  Deployment in Progress...
+                </h4>
+              </div>
             </div>
+            <ActionToolbar
+              title="Logs"
+              :actions="[]"
+              :context-menu="contextMenuVSCodeContext"
+            />
           </div>
-          <ActionToolbar
-            title="Logs"
-            :actions="[]"
-            :context-menu="contextMenuVSCodeContext"
-          />
+          <p class="progress-log-anchor">
+            <a class="webview-link" role="button" @click="onViewPublishingLog">
+              View Log
+            </a>
+          </p>
         </div>
       </div>
       <div v-else>
@@ -154,7 +159,7 @@
           class="deployment-summary-container"
           data-automation="deploy-status"
         >
-          <h4 class="deployment-summary">
+          <h4 class="deployment-summary-title">
             {{ lastStatusDescription }}
           </h4>
           <ActionToolbar
@@ -248,7 +253,7 @@ import { filterConfigurationsToValidAndType } from "../../../../src/utils/filter
 import { useHostConduitService } from "src/HostConduitService";
 import { useHomeStore } from "src/stores/home";
 
-import QuickPickItem from "src/components/QuickPickItem.vue";
+import QuickPickItem, { IconDetail } from "src/components/QuickPickItem.vue";
 import ActionToolbar from "src/components/ActionToolbar.vue";
 import DeployButton from "src/components/DeployButton.vue";
 import TextStringWithAnchor from "./TextStringWithAnchor.vue";
@@ -350,13 +355,13 @@ const deploymentTitle = computed(() => {
   return result.title;
 });
 
-const deploymentSubTitles = computed(() => {
-  const subTitles: string[] = [];
-  subTitles.push(credentialSubTitle.value);
+const deploymentDetails = computed(() => {
+  const details: IconDetail[] = [];
+  details.push({ icon: "codicon-server", text: credentialSubTitle.value });
   if (entrypointSubTitle.value) {
-    subTitles.push(entrypointSubTitle.value);
+    details.push({ icon: "codicon-file", text: entrypointSubTitle.value });
   }
-  return subTitles;
+  return details;
 });
 
 const credentialSubTitle = computed(() => {
@@ -557,13 +562,10 @@ const viewContent = () => {
 
 .deployment-in-progress-container {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
 }
 
 .deployment-summary-container {
   display: flex;
-  align-items: center;
   justify-content: space-between;
   align-items: baseline;
 }
@@ -610,7 +612,8 @@ const viewContent = () => {
   margin-top: 1.33em;
 }
 
-.deployment-summary {
+.deployment-summary-title {
+  margin-block-start: 1.33em;
   margin-bottom: 5px;
 }
 
@@ -649,10 +652,11 @@ const viewContent = () => {
   display: flex;
   flex-direction: row;
   align-items: center;
-  margin-top: 10px;
 }
 
 .progress-ring {
+  flex-grow: 0;
+  margin-top: 1.33em;
   margin-right: 10px;
 }
 
@@ -663,7 +667,7 @@ const viewContent = () => {
 }
 
 .progress-log-anchor {
-  margin-top: 5px;
-  margin-bottom: 0px;
+  margin-top: 0;
+  margin-bottom: 0;
 }
 </style>
