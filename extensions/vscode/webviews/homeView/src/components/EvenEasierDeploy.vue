@@ -168,38 +168,45 @@
             :context-menu="contextMenuVSCodeContext"
           />
         </div>
-        <div v-if="isPreContentRecordWithoutID">
-          Is this already deployed to a Connect server? You can
-          <a class="webview-link" role="button" @click="onAssociateDeployment"
-            >update that previous deployment</a
-          >.
-        </div>
-        <div v-if="isPreContentRecordWithID">
-          <a class="webview-link" role="button" @click="viewContent"
-            >This deployment</a
-          >
-          will be updated when deployed.
-        </div>
-        <div
-          v-if="!isPreContentRecord(home.selectedContentRecord)"
-          class="last-deployment-time"
-        >
-          {{ formatDateString(home.selectedContentRecord.deployedAt) }}
-        </div>
-        <div
-          v-if="home.selectedContentRecord.deploymentError"
-          class="last-deployment-details last-deployment-error"
-        >
-          <div class="alert-border border-warning text-warning">
-            <span class="codicon codicon-alert" />
+        <template v-if="isAbortedContentRecord">
+          <div class="date-time">
+            {{ formatDateString(home.selectedContentRecord.abortedAt) }}
           </div>
-          <TextStringWithAnchor
-            :message="home.selectedContentRecord?.deploymentError?.msg"
-            :splitOptions="ErrorMessageSplitOptions"
-            class="error-message text-description"
-            @click="onErrorMessageAnchorClick"
-          />
-        </div>
+        </template>
+        <template v-else>
+          <div v-if="isPreContentRecordWithoutID">
+            Is this already deployed to a Connect server? You can
+            <a class="webview-link" role="button" @click="onAssociateDeployment"
+              >update that previous deployment</a
+            >.
+          </div>
+          <div v-if="isPreContentRecordWithID">
+            <a class="webview-link" role="button" @click="viewContent"
+              >This deployment</a
+            >
+            will be updated when deployed.
+          </div>
+          <div
+            v-if="!isPreContentRecord(home.selectedContentRecord)"
+            class="date-time"
+          >
+            {{ formatDateString(home.selectedContentRecord.deployedAt) }}
+          </div>
+          <div
+            v-if="home.selectedContentRecord.deploymentError"
+            class="last-deployment-details last-deployment-error"
+          >
+            <div class="alert-border border-warning text-warning">
+              <span class="codicon codicon-alert" />
+            </div>
+            <TextStringWithAnchor
+              :message="home.selectedContentRecord?.deploymentError?.msg"
+              :splitOptions="ErrorMessageSplitOptions"
+              class="error-message text-description"
+              @click="onErrorMessageAnchorClick"
+            />
+          </div>
+        </template>
         <div
           v-if="!isPreContentRecord(home.selectedContentRecord)"
           class="last-deployment-details"
@@ -403,6 +410,9 @@ const lastStatusDescription = computed(() => {
       ? "Not Yet Updated"
       : "Not Yet Deployed";
   }
+  if (isAbortedContentRecord.value) {
+    return "Last Deployment Dismissed";
+  }
   return "Last Deployment Successful";
 });
 
@@ -418,6 +428,10 @@ const isPreContentRecordWithoutID = computed(() => {
     isPreContentRecord(home.selectedContentRecord) &&
     !isPreContentRecordWithID.value
   );
+});
+
+const isAbortedContentRecord = computed(() => {
+  return Boolean(home.selectedContentRecord?.abortedAt);
 });
 
 const toolTipText = computed(() => {
@@ -603,7 +617,7 @@ const viewContent = () => {
   margin-bottom: 5px;
 }
 
-.last-deployment-time {
+.date-time {
   margin-bottom: 20px;
 }
 

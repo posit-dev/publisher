@@ -70,6 +70,16 @@
       "description": "Date and time the deployment was created.",
       "examples": ["2024-01-19T09:33:33.131481-05:00"]
     },
+    "local_id": {
+      "type": "string",
+      "description": "ID of active/latest deployment sequence."
+    },
+    "aborted_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date and time that the current deployment flow was aborted. Is empty if flow was not aborted.",
+      "examples": ["2024-01-19T09:33:33.131481-05:00"]
+    },
     "deployed_at": {
       "type": "string",
       "format": "date-time",

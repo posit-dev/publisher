@@ -178,7 +178,8 @@ func createAlternateDeployment(root util.AbsolutePath, name string) (*deployment
 	cfg.Type = config.ContentTypeHTML
 	cfg.Entrypoint = "index.html"
 	d.Configuration = cfg
-	return d, d.WriteFile(path)
+	_, err := d.WriteFile(path, "", false, logging.New())
+	return d, err
 }
 
 func (s *GetDeploymentsSuite) TestGetDeploymentsByEntrypoint() {
@@ -231,7 +232,8 @@ func (s *GetDeploymentsSuite) makeSubdirDeployment(name string, subdir string) (
 	d.DashboardURL = "/connect/#/apps/abc123"
 	d.DirectURL = "/content/abc123/"
 	d.LogsURL = "/connect/#/apps/abc123/logs"
-	return d, d.WriteFile(path)
+	_, err = d.WriteFile(path, "", false, s.log)
+	return d, err
 }
 
 func (s *GetDeploymentsSuite) TestGetDeploymentsRecursive() {

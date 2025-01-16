@@ -357,7 +357,7 @@ export async function newDeployment(
             title: "Select Entrypoint File (main file for your project)",
           });
           if (!fileUris || !fileUris[0]) {
-            // cancelled.
+            // canceled.
             continue;
           }
           const fileUri = fileUris[0];
