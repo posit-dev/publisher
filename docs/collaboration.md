@@ -37,8 +37,8 @@ piece of content.
 
 ## Collaborator access
 
-The original creator of a piece of content on Posit Connect needs to give others
-collaborator access to update the content.
+The content author must grant others collaborator access to update the content
+on Posit Connect.
 
 See the [Posit Connect User Guide - Access list settings](https://docs.posit.co/connect/user/content-settings/#set-collaborators)
 documentation for more information on giving users access to update a piece of
