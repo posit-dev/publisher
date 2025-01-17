@@ -88,8 +88,8 @@ how to download them.
 While collaborating on a piece of content, stay updated with the latest changes
 others have made.
 
-To do so, either pull down the latest changes from the repository or download
-the content bundle from the latest Source Version on Posit Conect.
+To do so, either pull down the latest changes from your source control system or
+download the content bundle from the latest Source Version on Posit Conect.
 
 Doing so ensures that you have the most up-to-date content, but also
 configuration settings and deployment details.
