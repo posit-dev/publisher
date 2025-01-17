@@ -7,7 +7,7 @@ publish content to Posit Connect using
 workflow guide explains how to collaborate with others on a deployed piece of
 content.
 
-## Deployment and Configuration files
+## Configuration and Deployment files
 
 Posit Publisher creates and utilizes two files for deploying content. Both are
 inside of the `.posit/publish` directory in the same directory as
@@ -46,13 +46,13 @@ content.
 
 ## Source control setup
 
-Deployment and Configuration files found in `./posit/publish` are intended
+Configuration and Deployment files found in `./posit/publish` are intended
 to be committed into source repositories.
 
 Once tracked in source control, anyone with access can easily collaborate on the
 same piece of content.
 
-After a deploy be sure to commit any changes to the Deployment and Configuration
+After a deploy be sure to commit any changes to the Configuration and Deployment
 files. Keeping them in sync with the content on Posit Connect will ensure that
 collaborators have the most up-to-date details to continue where others left
 off.
