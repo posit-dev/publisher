@@ -82,7 +82,8 @@
       </p>
 
       <p v-if="home.config.active.isUnknownType">
-        The selected Configuration has an unknown type.
+        Please set the framework you are using, for example
+        <code>type = 'python-shiny'</code>.
         <a
           class="webview-link"
           role="button"
