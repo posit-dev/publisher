@@ -158,7 +158,7 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFuncWrongServe
 
 	d := deployment.New()
 	d.ServerURL = originalAcct.URL
-	_, err = d.WriteFile(deployment.GetDeploymentPath(s.cwd, deploymentName), "", false, s.log)
+	_, err = d.WriteFile(deployment.GetDeploymentPath(s.cwd, deploymentName), "", s.log)
 	s.NoError(err)
 
 	cfg := config.New()

@@ -86,7 +86,9 @@ func PatchDeploymentHandlerFunc(
 			d.DirectURL = util.GetDirectURL(d.ServerURL, b.ID)
 		}
 
-		latest, err := d.WriteFile(path, "", true, log)
+		// Not operating within a deployment thread, so we'll use an empty string
+		// for the localIdIfDeploying
+		latest, err := d.WriteFile(path, "", log)
 		if err != nil {
 			InternalError(w, req, log, err)
 			return

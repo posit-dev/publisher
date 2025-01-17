@@ -101,7 +101,7 @@ func PostDeploymentsHandlerFunc(
 		}
 
 		log.Debug("Writing deployment file", "path", path.String())
-		latest, err := d.WriteFile(path, "", true, log)
+		latest, err := d.WriteFile(path, "", log)
 		if err != nil {
 			InternalError(w, req, log, err)
 			return

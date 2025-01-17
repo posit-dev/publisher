@@ -60,7 +60,7 @@ func createSampleDeployment(root util.AbsolutePath, name string) (*deployment.De
 	d.DashboardURL = "/connect/#/apps/12345678"
 	d.DirectURL = "/content/12345678/"
 	d.LogsURL = "/connect/#/apps/12345678/logs"
-	_, err := d.WriteFile(path, "", false, logging.New())
+	_, err := d.WriteFile(path, "", logging.New())
 	return d, err
 }
 

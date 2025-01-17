@@ -305,12 +305,14 @@ func (s *PublishSuite) publishWithClient(
 	if target != nil {
 		targetName = "targetToLoad"
 		recordName = targetName
+		saveName = targetName // need to do this to mimic behavior within publish.NewFromState
 
 		// Make CreatedAt earlier so it will differ from DeployedAt.
 		target.CreatedAt = time.Now().Add(-time.Hour).Format(time.RFC3339)
 	} else {
 		saveName = "saveAsThis"
-		recordName = saveName
+		targetName = saveName
+		recordName = saveName // need to do this to mimic behavior within publish.NewFromState
 	}
 	stateStore := &state.State{
 		Dir: s.cwd,

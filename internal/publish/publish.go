@@ -78,6 +78,17 @@ func NewFromState(s *state.State, rExecutable util.Path, emitter events.Emitter,
 
 	packageManager, err := renv.NewPackageMapper(s.Dir, rExecutable, log)
 
+	// Handle difference where we have no SaveName when redeploying, since it is
+	// only sent in the first deployment. In the end, both should equate to same
+	// value, it is important to handle assignment in a specific priority
+	if s.SaveName == "" {
+		// Redeployment
+		s.SaveName = s.TargetName
+	} else {
+		// Initial deployment
+		s.TargetName = s.SaveName
+	}
+
 	return &defaultPublisher{
 		State:          s,
 		log:            log,
@@ -202,24 +213,17 @@ func (p *defaultPublisher) PublishDirectory() error {
 }
 
 func (p *defaultPublisher) writeDeploymentRecord(forceUpdate bool) (*deployment.Deployment, error) {
-	if p.SaveName == "" {
-		// Redeployment
-		p.log.Debug("No SaveName found while redeploying.", "deployment", p.TargetName)
-		p.SaveName = p.TargetName
-	} else {
-		// Initial deployment
-		p.log.Debug("SaveName found in first deployment.", "deployment", p.SaveName)
-		p.TargetName = p.SaveName
-	}
-
 	now := time.Now().Format(time.RFC3339)
 	p.Target.DeployedAt = now
 	p.Target.ConfigName = p.ConfigName
 	p.Target.Configuration = p.Config
 
 	recordPath := deployment.GetDeploymentPath(p.Dir, p.SaveName)
-
-	return p.Target.WriteFile(recordPath, string(p.State.LocalID), forceUpdate, p.log)
+	localID := string(p.State.LocalID)
+	if forceUpdate {
+		localID = ""
+	}
+	return p.Target.WriteFile(recordPath, localID, p.log)
 }
 
 func CancelDeployment(
@@ -236,11 +240,11 @@ func CancelDeployment(
 		return nil, err
 	}
 
-	// mark the deployment as aborted
-	target.AbortedAt = time.Now().Format(time.RFC3339)
+	// mark the deployment as dismissed
+	target.DismissedAt = time.Now().Format(time.RFC3339)
 
 	// Possibly update the deployment file
-	d, err := target.WriteFile(deploymentPath, localID, false, log)
+	d, err := target.WriteFile(deploymentPath, localID, log)
 	return d, err
 }
 
@@ -274,8 +278,7 @@ func (p *defaultPublisher) createDeploymentRecord(
 		ClientVersion: project.Version,
 		Type:          contentType,
 		CreatedAt:     created,
-		LocalID:       string(p.State.LocalID),
-		AbortedAt:     "",
+		DismissedAt:   "",
 		ID:            contentID,
 		ConfigName:    p.ConfigName,
 		Files:         nil,
@@ -289,10 +292,8 @@ func (p *defaultPublisher) createDeploymentRecord(
 	}
 
 	// Save current deployment information for this target
-	// Note: Using forced option when writing to cause our new
-	// localID to be recorded into the deployment record file, which
-	// then keeps old threads from updating the file for previous
-	// publishing attempts
+	// Note: Using forced option to reset the deployment file to
+	// an initial deployment state.
 	_, err := p.writeDeploymentRecord(true)
 	return err
 }

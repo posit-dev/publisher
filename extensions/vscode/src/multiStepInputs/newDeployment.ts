@@ -783,7 +783,7 @@ export async function newDeployment(
     !newDeploymentData.title ||
     (!newCredentialByAnyMeans() && !newDeploymentData.existingCredentialName)
   ) {
-    console.log("User has aborted flow. Exiting.");
+    console.log("User has dismissed flow. Exiting.");
     return undefined;
   }
 
@@ -796,7 +796,7 @@ export async function newDeployment(
       !newDeploymentData.newCredentials.apiKey ||
       !newDeploymentData.newCredentials.name
     ) {
-      console.log("User has aborted flow. Exiting.");
+      console.log("User has dismissed flow. Exiting.");
       return undefined;
     }
     try {
