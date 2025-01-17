@@ -73,7 +73,7 @@
     "dismissed_at": {
       "type": "string",
       "format": "date-time",
-      "description": "Date and time that the current deployment flow was dismissed. Is empty if flow was not dismissed.",
+      "description": "Date and time that the deployment process was dismissed. Will be empty if the deployment process was not dismissed.",
       "examples": ["2024-01-19T09:33:33.131481-05:00"]
     },
     "deployed_at": {

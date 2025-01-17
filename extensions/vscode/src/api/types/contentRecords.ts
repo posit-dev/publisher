@@ -44,7 +44,6 @@ type ContentRecordRecord = {
   serverUrl: string;
   saveName: string;
   createdAt: string;
-  localId: string;
   dismissedAt: string;
   configurationName: string;
   type: ContentType;
