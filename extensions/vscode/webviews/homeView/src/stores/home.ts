@@ -349,6 +349,14 @@ export const useHomeStore = defineStore("home", () => {
         );
       }),
 
+      isUnknownType: computed((): boolean => {
+        return Boolean(
+          selectedConfiguration.value &&
+            !isConfigurationError(selectedConfiguration.value) &&
+            selectedConfiguration.value.configuration.type === "unknown",
+        );
+      }),
+
       isUnknownError: computed((): boolean => {
         return Boolean(
           selectedConfiguration.value &&
