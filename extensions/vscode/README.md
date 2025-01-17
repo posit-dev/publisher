@@ -69,7 +69,7 @@ See the
 [Updating Previously Deployed Content](https://github.com/posit-dev/publisher/blob/main/docs/vscode.md#updating-previously-deployed-content)
 documentation for more information.
 
-### Seemless collaboration
+### Seamless collaboration
 
 Collaborate with your team using shared configurations and deployments. Easily
 pick up where others left off with deployed content.
