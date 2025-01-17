@@ -129,8 +129,9 @@ func PostDeploymentHandlerFunc(
 			// take ownership of this deployment when we start, release when we are done.
 			// release will first check to make sure we still have ownership before releasing
 			// someone else's ownership
-			deployment.ActiveDeploymentRegistry.Set(newState.SaveName, string(newState.LocalID))
-			defer deployment.ActiveDeploymentRegistry.Clear(newState.SaveName, string(newState.LocalID))
+			recordPath := deployment.GetDeploymentPath(projectDir, newState.SaveName)
+			deployment.ActiveDeploymentRegistry.Set(recordPath.String(), string(newState.LocalID))
+			defer deployment.ActiveDeploymentRegistry.Clear(recordPath.String(), string(newState.LocalID))
 
 			err = publisher.PublishDirectory()
 			if err != nil {
