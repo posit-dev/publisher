@@ -44,7 +44,7 @@ See the [Posit Connect User Guide - Access list settings](https://docs.posit.co/
 documentation for more information on giving users access to update a piece of
 content.
 
-## Source control setup
+## With source control
 
 Configuration and Deployment files found in `./posit/publish` are intended
 to be committed into source repositories.
@@ -57,7 +57,7 @@ files. Keeping them in sync with the content on Posit Connect will ensure that
 collaborators have the most up-to-date details to continue where others left
 off.
 
-## Content bundle setup
+## Without source control
 
 If you and your collaborators aren't using source control, a content bundle
 containing the source code and data for a piece of content can be downloaded
