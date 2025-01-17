@@ -3,7 +3,7 @@
 [Posit Publisher](https://github.com/posit-dev/publisher)—the extension to
 publish content to Posit Connect using
 [Visual Studio Code](https://code.visualstudio.com/) or
-[Positron](https://positron.posit.co/)—enables seemless collaboration. This
+[Positron](https://positron.posit.co/)—enables seamless collaboration. This
 workflow guide explains how to collaborate with others on a deployed piece of
 content.
 
