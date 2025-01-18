@@ -48,6 +48,12 @@ func NewDashDetector() *PythonAppDetector {
 	})
 }
 
+func NewGradioDetector() *PythonAppDetector {
+	return NewPythonAppDetector(config.ContentTypePythonGradio, []string{
+		"gradio",
+	})
+}
+
 func NewStreamlitDetector() *PythonAppDetector {
 	return NewPythonAppDetector(config.ContentTypePythonStreamlit, []string{
 		"streamlit",
