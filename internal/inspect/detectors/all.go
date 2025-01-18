@@ -37,6 +37,7 @@ func NewContentTypeDetector(log logging.Logger) *ContentTypeDetector {
 			NewFastAPIDetector(),
 			NewFlaskDetector(),
 			NewDashDetector(),
+			NewGradioDetector(),
 			NewStreamlitDetector(),
 			NewBokehDetector(),
 			NewStaticHTMLDetector(),

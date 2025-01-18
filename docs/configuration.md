@@ -12,7 +12,8 @@ Indicates the type of content being deployed. Valid values are:
 - `python-bokeh`
 - `python-dash`
 - `python-fastapi`
-- `pyhon-flask`
+- `python-flask`
+- `python-gradio`
 - `python-shiny`
 - `python-streamlit`
 - `quarto-shiny`
