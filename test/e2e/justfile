@@ -22,14 +22,24 @@ dev:
     #!/usr/bin/env bash
     set -euo pipefail
 
-    cat <<EOF > e2e-test.connect-credentials
-    # File updated and managed by e2e tests. Refrain from updating it manually.
+    function cleanup() {
+        just clear-credentials
+    }
+    trap cleanup EXIT
 
-    EOF
-
+    just clear-credentials
     just install
     just build "connect-publisher-e2e"
     just build "code-server"
     just start "connect-publisher-e2e"
     just start "code-server"
     npm run cypress:open
+
+clear-credentials:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    cat <<EOF > e2e-test.connect-credentials
+    # File updated and managed by e2e tests. Refrain from updating it manually.
+
+    EOF
