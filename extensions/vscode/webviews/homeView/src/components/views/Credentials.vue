@@ -1,7 +1,7 @@
 <template>
   <TreeSection
     title="Credentials"
-    data-automation="credentials"
+    data-automation="publisher-credentials-section"
     :actions="sectionActions"
     :codicon="home.credential.active.isAlertActive ? `codicon-alert` : ``"
   >
