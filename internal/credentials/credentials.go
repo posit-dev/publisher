@@ -33,7 +33,6 @@ import (
 	"encoding/json"
 
 	"github.com/posit-dev/publisher/internal/logging"
-	"github.com/posit-dev/publisher/internal/types"
 )
 
 const ServiceName = "Posit Publisher Safe Storage"
@@ -81,11 +80,14 @@ func (cr *CredentialRecord) ToCredential() (*Credential, error) {
 	}
 }
 
+type CredServiceFactory = func(log logging.Logger) (CredentialsService, error)
+
 type CredentialsService interface {
 	Delete(guid string) error
 	Get(guid string) (*Credential, error)
 	List() ([]Credential, error)
 	Set(name string, url string, ak string) (*Credential, error)
+	Reset() (string, error)
 }
 
 // The main credentials service constructor that determines if the system's keyring is available to be used,
@@ -99,7 +101,7 @@ func NewCredentialsService(log logging.Logger) (CredentialsService, error) {
 	log.Debug("Fallback to file managed credentials service due to unavailable system keyring")
 	fcService, err := NewFileCredentialsService(log)
 	if err != nil {
-		return nil, types.NewAgentError(types.ErrorCredentialServiceUnavailable, err, nil)
+		return fcService, err
 	}
 
 	return fcService, nil

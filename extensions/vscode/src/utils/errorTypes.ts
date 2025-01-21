@@ -17,7 +17,9 @@ export type ErrorCode =
   | "deployedContentNotRunning"
   | "tomlValidationError"
   | "tomlUnknownError"
-  | "pythonExecNotFound";
+  | "pythonExecNotFound"
+  | "credentialsCannotBackupFile"
+  | "credentialsCorrupted";
 
 export type axiosErrorWithJson<T = { code: ErrorCode; details: unknown }> =
   AxiosError & {
@@ -161,6 +163,34 @@ export type ErrInvalidConfigFiles = MkErrorDataType<
 >;
 export const isErrInvalidConfigFile =
   mkErrorTypeGuard<ErrInvalidConfigFiles>("invalidConfigFile");
+
+// Invalid configuration file(s)
+export type ErrCredentialsCorrupted = MkErrorDataType<"credentialsCorrupted">;
+export const isErrCredentialsCorrupted =
+  mkErrorTypeGuard<ErrCredentialsCorrupted>("credentialsCorrupted");
+export const errCredentialsCorruptedMessage = (backupFile: string) => {
+  let msg =
+    "Unrecognizable credentials for Posit Publisher were found and removed. Credentials may need to be recreated.";
+  if (backupFile) {
+    msg += ` Previous credentials data backed up at ${backupFile}`;
+  }
+  return msg;
+};
+
+// Unable to backup credentials file
+export type ErrCannotBackupCredentialsFile = MkErrorDataType<
+  "credentialsCannotBackupFile",
+  { filename: string; message: string }
+>;
+export const isErrCannotBackupCredentialsFile =
+  mkErrorTypeGuard<ErrCannotBackupCredentialsFile>(
+    "credentialsCannotBackupFile",
+  );
+export const errCannotBackupCredentialsFileMessage = (
+  err: axiosErrorWithJson<ErrCannotBackupCredentialsFile>,
+) => {
+  return `Unrecognizable credentials for Posit Publisher were found. ${err.response.data.details.message}`;
+};
 
 // Tries to match an Axios error that comes with an identifiable Json structured data
 // defaulting to be ErrUnknown message when

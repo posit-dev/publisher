@@ -47,6 +47,14 @@ export class Credentials {
   }
 
   // Returns:
+  // 204 - success (no response)
+  // 500 - internal server error cannot backup file
+  // 503 - credentials service unavailable
+  reset() {
+    return this.client.delete<{ backupFile: string }>(`credentials`);
+  }
+
+  // Returns:
   // 200 - with possible results in TestResult object
   // for URL only: no user or error in TestResult
   // for URL and valid API key: user and error === null

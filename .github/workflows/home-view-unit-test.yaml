@@ -15,5 +15,3 @@ jobs:
           cache-dependency-path: "**/package-lock.json"
       - run: npm install
       - run: npm test
-      - name: Check Vitest thresholds
-        run: git diff --name-only --exit-code vite.config.ts

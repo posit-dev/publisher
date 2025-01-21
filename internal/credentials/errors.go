@@ -2,7 +2,11 @@
 
 package credentials
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/posit-dev/publisher/internal/types"
+)
 
 type CorruptedError struct {
 	GUID string
@@ -16,6 +20,11 @@ func (e *CorruptedError) Error() string {
 	return fmt.Sprintf("credential '%s' is corrupted", e.GUID)
 }
 
+func (e *CorruptedError) Is(target error) bool {
+	_, isCorrupterErr := target.(*CorruptedError)
+	return isCorrupterErr
+}
+
 type LoadError struct {
 	Err error
 }
@@ -26,6 +35,11 @@ func NewLoadError(err error) *LoadError {
 
 func (e *LoadError) Error() string {
 	return fmt.Sprintf("failed to load credentials: %v", e.Err)
+}
+
+func (e *LoadError) Is(target error) bool {
+	_, isLoadErr := target.(*LoadError)
+	return isLoadErr
 }
 
 type NotFoundError struct {
@@ -88,4 +102,12 @@ func NewIncompleteCredentialError() *IncompleteCredentialError {
 
 func (e *IncompleteCredentialError) Error() string {
 	return "New credentials require non-empty Name, URL and Api Key fields"
+}
+
+func NewBackupFileAgentError(filename string, err error) *types.AgentError {
+	details := types.ErrorCredentialsCannotBackupFileDetails{
+		Filename: filename,
+		Message:  fmt.Sprintf("Failed to backup credentials to %s: %v", filename, err.Error()),
+	}
+	return types.NewAgentError(types.ErrorCredentialsCannotBackupFile, err, details)
 }

@@ -162,6 +162,44 @@ func APIErrorCredentialsUnavailableFromAgentError(aerr AgentError) APIErrorCrede
 	}
 }
 
+type APIErrorCredentialsCorrupted struct {
+	Code ErrorCode `json:"code"`
+}
+
+func (apierr *APIErrorCredentialsCorrupted) JSONResponse(w http.ResponseWriter) {
+	jsonResult(w, http.StatusConflict, apierr)
+}
+
+func APIErrorCredentialsCorruptedFromAgentError(aerr AgentError) APIErrorCredentialsCorrupted {
+	return APIErrorCredentialsCorrupted{
+		Code: ErrorCredentialsCorrupted,
+	}
+}
+
+type ErrorCredentialsCannotBackupFileDetails struct {
+	Filename string `json:"filename"`
+	Message  string `json:"message"`
+}
+
+type APIErrorCredentialsBackupFileError struct {
+	Code    ErrorCode                               `json:"code"`
+	Details ErrorCredentialsCannotBackupFileDetails `json:"details"`
+}
+
+func (apierr *APIErrorCredentialsBackupFileError) JSONResponse(w http.ResponseWriter) {
+	jsonResult(w, http.StatusBadRequest, apierr)
+}
+
+func APIErrorCredentialsBackupFileFromAgentError(aerr AgentError) APIErrorCredentialsBackupFileError {
+	return APIErrorCredentialsBackupFileError{
+		Code: ErrorCredentialsCannotBackupFile,
+		Details: ErrorCredentialsCannotBackupFileDetails{
+			Filename: aerr.Data["Filename"].(string),
+			Message:  aerr.Data["Message"].(string),
+		},
+	}
+}
+
 type APIErrorPythonExecNotFound struct {
 	Code ErrorCode `json:"code"`
 }

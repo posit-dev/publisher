@@ -19,6 +19,8 @@ const (
 	ErrorUnknownTOMLKey               ErrorCode = "unknownTOMLKey"
 	ErrorInvalidConfigFiles           ErrorCode = "invalidConfigFiles"
 	ErrorCredentialServiceUnavailable ErrorCode = "credentialsServiceUnavailable"
+	ErrorCredentialsCorrupted         ErrorCode = "credentialsCorrupted"
+	ErrorCredentialsCannotBackupFile  ErrorCode = "credentialsCannotBackupFile"
 	ErrorCertificateVerification      ErrorCode = "errorCertificateVerification"
 	ErrorRenvPackageVersionMismatch   ErrorCode = "renvPackageVersionMismatch"
 	ErrorRenvPackageSourceMissing     ErrorCode = "renvPackageSourceMissing"
