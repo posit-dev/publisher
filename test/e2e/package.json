@@ -1,0 +1,27 @@
+{
+  "name": "publisher-e2e",
+  "version": "0.1.0",
+  "description": "End-to-end Cypress test suite for Posit Publisher",
+  "scripts": {
+    "cypress": "cypress run",
+    "cypress:open": "cypress open --e2e",
+    "lint": "eslint . --fix --ext .js,.ts --ignore-path .gitignore",
+    "format": "prettier --write ."
+  },
+  "license": "UNLICENSED",
+  "private": true,
+  "devDependencies": {
+    "@testing-library/cypress": "^10.0.1",
+    "cypress": "^13.16.0",
+    "cypress-iframe": "^1.0.1",
+    "cypress-real-events": "^1.13.0",
+    "cypress-wait-until": "^3.0.1",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-cypress": "^2.15.1",
+    "eslint-plugin-mocha": "^10.1.0",
+    "lint-staged": "^15.2.7",
+    "prettier": "^3.2.5",
+    "wait-on": "^7.0.1"
+  }
+}

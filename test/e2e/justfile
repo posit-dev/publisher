@@ -1,0 +1,35 @@
+
+# Build and run all tests against in development
+default: dev
+
+# Install Cypress dependencies using npm
+install:
+    npm install
+
+# Build the specified docker image using docker compose
+build service:
+    docker compose build "{{service}}"
+
+start service:
+    docker compose up -d "{{service}}"
+
+# Stop all services using docker compose
+stop:
+    docker compose down --volumes --remove-orphans
+
+# Install local dependencies, start Connect in development mode, and open Cypress UI locally (not from a container)
+dev:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    cat <<EOF > e2e-test.connect-credentials
+    # File updated and managed by e2e tests. Refrain from updating it manually.
+
+    EOF
+
+    just install
+    just build "connect-publisher-e2e"
+    just build "code-server"
+    just start "connect-publisher-e2e"
+    just start "code-server"
+    npm run cypress:open
