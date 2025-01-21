@@ -145,7 +145,7 @@ func (p *defaultPublisher) emitErrorEvents(err error) {
 	// Record the error in the deployment record
 	if p.Target != nil {
 		p.Target.Error = agentErr
-		_, writeErr := p.writeDeploymentRecord(false)
+		_, writeErr := p.writeDeploymentRecord()
 		if writeErr != nil {
 			p.log.Warn("failed to write updated deployment record", "name", p.TargetName, "err", writeErr)
 		}
@@ -212,7 +212,7 @@ func (p *defaultPublisher) PublishDirectory() error {
 	return err
 }
 
-func (p *defaultPublisher) writeDeploymentRecord(forceUpdate bool) (*deployment.Deployment, error) {
+func (p *defaultPublisher) writeDeploymentRecord() (*deployment.Deployment, error) {
 	now := time.Now().Format(time.RFC3339)
 	p.Target.DeployedAt = now
 	p.Target.ConfigName = p.ConfigName
@@ -220,9 +220,6 @@ func (p *defaultPublisher) writeDeploymentRecord(forceUpdate bool) (*deployment.
 
 	recordPath := deployment.GetDeploymentPath(p.Dir, p.SaveName)
 	localID := string(p.State.LocalID)
-	if forceUpdate {
-		localID = ""
-	}
 	return p.Target.WriteFile(recordPath, localID, p.log)
 }
 
@@ -243,14 +240,19 @@ func CancelDeployment(
 	// mark the deployment as dismissed
 	target.DismissedAt = time.Now().Format(time.RFC3339)
 
-	// Possibly update the deployment file
-	d, err := target.WriteFile(deploymentPath, localID, log)
+	// take over ownership of deployment file
+	newLocalID := "CANCELLED"
+	deployment.ActiveDeploymentRegistry.Set(deploymentPath.String(), newLocalID)
+
+	// Update the deployment file (should be guaranteed now that we just set ownership
+	// with a fake local ID that only we know).
+	d, err := target.WriteFile(deploymentPath, newLocalID, log)
 	return d, err
 }
 
 func (p *defaultPublisher) createDeploymentRecord(
 	contentID types.ContentID,
-	account *accounts.Account) error {
+	account *accounts.Account) {
 
 	// Initial deployment record doesn't know the files or
 	// bundleID. These will be added after the
@@ -291,11 +293,6 @@ func (p *defaultPublisher) createDeploymentRecord(
 		Error:         nil,
 	}
 
-	// Save current deployment information for this target
-	// Note: Using forced option to reset the deployment file to
-	// an initial deployment state.
-	_, err := p.writeDeploymentRecord(true)
-	return err
 }
 
 func (p *defaultPublisher) publishWithClient(
@@ -316,10 +313,7 @@ func (p *defaultPublisher) publishWithClient(
 		return err
 	}
 
-	err = p.createDeploymentRecord(contentID, account)
-	if err != nil {
-		return types.OperationError(events.PublishCreateNewDeploymentOp, err)
-	}
+	p.createDeploymentRecord(contentID, account)
 
 	manifest := bundles.NewManifestFromConfig(p.Config)
 	p.log.Debug("Built manifest from config", "config", p.ConfigName)

@@ -153,6 +153,11 @@ func (d *Deployment) WriteFile(
 	localIdIfDeploying string,
 	log logging.Logger,
 ) (*Deployment, error) {
+
+	// Single threaded through here, to control simultaneous thread updates
+	DeploymentRecordMutex.Lock()
+	defer DeploymentRecordMutex.Unlock()
+
 	log.Debug("Attempting to update deployment record", "path", path, "localIdIfDeploying", localIdIfDeploying)
 
 	if localIdIfDeploying != "" {
@@ -173,16 +178,7 @@ func (d *Deployment) WriteFile(
 				log.Debug("Skipping deployment record update since existing record is being updated by another thread.")
 				return existingDeployment, nil
 			}
-			if existingDeployment.DismissedAt != "" {
-				log.Debug("Skipping deployment record update since deployment has been canceled")
-				return existingDeployment, nil
-			}
 		}
-	} else {
-		// Protect against overlaps of deployment thread updates and user initiated updates
-		// (which pass in no value for localIdIfDeploying
-		ActiveDeploymentRegistry.Lock()
-		defer ActiveDeploymentRegistry.Unlock()
 	}
 
 	log.Debug("Updating deployment record", "path", path)
