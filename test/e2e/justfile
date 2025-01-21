@@ -27,6 +27,8 @@ dev:
     }
     trap cleanup EXIT
 
+    USE_PLATFORM="linux/amd64" just ../../build
+    USE_PLATFORM="linux/amd64" just ../../package
     just clear-credentials
     just install
     just build "connect-publisher-e2e"
