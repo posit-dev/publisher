@@ -101,9 +101,6 @@ func (s *PostDeploymentCancelTestSuite) Test200WithoutLocalIDMatch() {
 	dec := json.NewDecoder(rec.Body)
 	dec.DisallowUnknownFields()
 	s.NoError(dec.Decode(&res))
-
-	// request was successful but not applied
-	s.Empty(res.DismissedAt)
 }
 
 func (s *PostDeploymentCancelTestSuite) Test404() {

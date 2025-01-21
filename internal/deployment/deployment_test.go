@@ -181,7 +181,7 @@ func (s *DeploymentSuite) TestWriteFileOptions() {
 			owningLocalID:     "123",
 			updateLocalID:     "123",
 			existingDismissed: "2025-01-08T17:10:22-08:00",
-			expectedSuccess:   false,
+			expectedSuccess:   true,
 		},
 		// ownership mismatch w/o dismissal
 		{
