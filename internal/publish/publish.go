@@ -78,6 +78,17 @@ func NewFromState(s *state.State, rExecutable util.Path, emitter events.Emitter,
 
 	packageManager, err := renv.NewPackageMapper(s.Dir, rExecutable, log)
 
+	// Handle difference where we have no SaveName when redeploying, since it is
+	// only sent in the first deployment. In the end, both should equate to same
+	// value, it is important to handle assignment in a specific priority
+	if s.SaveName == "" {
+		// Redeployment
+		s.SaveName = s.TargetName
+	} else {
+		// Initial deployment
+		s.TargetName = s.SaveName
+	}
+
 	return &defaultPublisher{
 		State:          s,
 		log:            log,
@@ -134,7 +145,7 @@ func (p *defaultPublisher) emitErrorEvents(err error) {
 	// Record the error in the deployment record
 	if p.Target != nil {
 		p.Target.Error = agentErr
-		_, writeErr := p.writeDeploymentRecord(false)
+		_, writeErr := p.writeDeploymentRecord()
 		if writeErr != nil {
 			p.log.Warn("failed to write updated deployment record", "name", p.TargetName, "err", writeErr)
 		}
@@ -201,25 +212,15 @@ func (p *defaultPublisher) PublishDirectory() error {
 	return err
 }
 
-func (p *defaultPublisher) writeDeploymentRecord(forceUpdate bool) (*deployment.Deployment, error) {
-	if p.SaveName == "" {
-		// Redeployment
-		p.log.Debug("No SaveName found while redeploying.", "deployment", p.TargetName)
-		p.SaveName = p.TargetName
-	} else {
-		// Initial deployment
-		p.log.Debug("SaveName found in first deployment.", "deployment", p.SaveName)
-		p.TargetName = p.SaveName
-	}
-
+func (p *defaultPublisher) writeDeploymentRecord() (*deployment.Deployment, error) {
 	now := time.Now().Format(time.RFC3339)
 	p.Target.DeployedAt = now
 	p.Target.ConfigName = p.ConfigName
 	p.Target.Configuration = p.Config
 
 	recordPath := deployment.GetDeploymentPath(p.Dir, p.SaveName)
-
-	return p.Target.WriteFile(recordPath, string(p.State.LocalID), forceUpdate, p.log)
+	localID := string(p.State.LocalID)
+	return p.Target.WriteFile(recordPath, localID, p.log)
 }
 
 func CancelDeployment(
@@ -236,17 +237,24 @@ func CancelDeployment(
 		return nil, err
 	}
 
-	// mark the deployment as aborted
-	target.AbortedAt = time.Now().Format(time.RFC3339)
+	// mark the deployment as dismissed
+	target.DismissedAt = time.Now().Format(time.RFC3339)
+	// clear the error as well
+	target.Error = nil
 
-	// Possibly update the deployment file
-	d, err := target.WriteFile(deploymentPath, localID, false, log)
+	// take over ownership of deployment file
+	newLocalID := "CANCELLED"
+	deployment.ActiveDeploymentRegistry.Set(deploymentPath.String(), newLocalID)
+
+	// Update the deployment file (should be guaranteed now that we just set ownership
+	// with a fake local ID that only we know).
+	d, err := target.WriteFile(deploymentPath, newLocalID, log)
 	return d, err
 }
 
 func (p *defaultPublisher) createDeploymentRecord(
 	contentID types.ContentID,
-	account *accounts.Account) error {
+	account *accounts.Account) {
 
 	// Initial deployment record doesn't know the files or
 	// bundleID. These will be added after the
@@ -274,8 +282,7 @@ func (p *defaultPublisher) createDeploymentRecord(
 		ClientVersion: project.Version,
 		Type:          contentType,
 		CreatedAt:     created,
-		LocalID:       string(p.State.LocalID),
-		AbortedAt:     "",
+		DismissedAt:   "",
 		ID:            contentID,
 		ConfigName:    p.ConfigName,
 		Files:         nil,
@@ -288,13 +295,6 @@ func (p *defaultPublisher) createDeploymentRecord(
 		Error:         nil,
 	}
 
-	// Save current deployment information for this target
-	// Note: Using forced option when writing to cause our new
-	// localID to be recorded into the deployment record file, which
-	// then keeps old threads from updating the file for previous
-	// publishing attempts
-	_, err := p.writeDeploymentRecord(true)
-	return err
 }
 
 func (p *defaultPublisher) publishWithClient(
@@ -315,10 +315,7 @@ func (p *defaultPublisher) publishWithClient(
 		return err
 	}
 
-	err = p.createDeploymentRecord(contentID, account)
-	if err != nil {
-		return types.OperationError(events.PublishCreateNewDeploymentOp, err)
-	}
+	p.createDeploymentRecord(contentID, account)
 
 	manifest := bundles.NewManifestFromConfig(p.Config)
 	p.log.Debug("Built manifest from config", "config", p.ConfigName)

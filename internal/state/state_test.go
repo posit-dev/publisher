@@ -378,7 +378,7 @@ func (s *StateSuite) TestNewWithTarget() {
 	d.ConfigName = "savedConfigName"
 	d.ServerURL = "https://saved.server.example.com"
 	d.Configuration = cfg
-	_, err := d.WriteFile(targetPath, "", false, s.log)
+	_, err := d.WriteFile(targetPath, "", s.log)
 	s.NoError(err)
 
 	state, err := New(s.cwd, "", "", "myTargetName", "", accts, nil, false)
@@ -419,7 +419,7 @@ func (s *StateSuite) TestNewWithTargetAndAccount() {
 	d.ConfigName = "savedConfigName"
 	d.ServerURL = "https://saved.server.example.com"
 	d.Configuration = cfg
-	_, err := d.WriteFile(targetPath, "", false, s.log)
+	_, err := d.WriteFile(targetPath, "", s.log)
 	s.NoError(err)
 
 	state, err := New(s.cwd, "acct2", "", "myTargetName", "mySaveName", accts, nil, false)

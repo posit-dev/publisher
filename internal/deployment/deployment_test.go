@@ -36,6 +36,7 @@ func (s *DeploymentSuite) SetupTest() {
 	s.cwd = cwd
 	s.cwd.MkdirAll(0700)
 	s.log = logging.New()
+	ActiveDeploymentRegistry.Reset()
 }
 
 func (s *DeploymentSuite) createDeploymentFile(name string) *Deployment {
@@ -50,8 +51,7 @@ func (s *DeploymentSuite) createDeploymentFile(name string) *Deployment {
 		Version:        "3.4.5",
 		PackageManager: "pip",
 	}
-	d.LocalID = "abc"
-	_, err := d.WriteFile(path, d.LocalID, false, s.log)
+	_, err := d.WriteFile(path, "abc", s.log)
 	s.NoError(err)
 	return d
 }
@@ -113,7 +113,7 @@ func (s *DeploymentSuite) TestFromFileErr() {
 func (s *DeploymentSuite) TestWriteFile() {
 	deploymentFile := GetDeploymentPath(s.cwd, "myTargetName")
 	d := New()
-	_, err := d.WriteFile(deploymentFile, "", false, s.log)
+	_, err := d.WriteFile(deploymentFile, "", s.log)
 	s.NoError(err)
 
 	content, err := deploymentFile.ReadFile()
@@ -145,145 +145,96 @@ func (s *DeploymentSuite) TestWriteFile() {
 func (s *DeploymentSuite) TestWriteFileOptions() {
 
 	type testOptions struct {
-		existingLocalID string
-		updateLocalID   string
-		existingAborted string
-		override        bool
-		expectedSuccess bool
+		owningLocalID     string
+		updateLocalID     string
+		existingDismissed string
+		expectedSuccess   bool
 	}
 
+	// Need to rethink...
 	tests := [...]testOptions{
+		// Non deployment thread test cases
+		// ownership take-over w/o dismissal
 		{
-			existingLocalID: "123",
-			updateLocalID:   "123",
-			existingAborted: "",
-			override:        false,
-			expectedSuccess: true,
+			owningLocalID:     "123",
+			updateLocalID:     "",
+			existingDismissed: "",
+			expectedSuccess:   true,
 		},
+		// ownership take-over w/ dismissal
 		{
-			existingLocalID: "123",
-			updateLocalID:   "123",
-			existingAborted: "2025-01-08T17:10:22-08:00",
-			override:        false,
-			expectedSuccess: false,
+			owningLocalID:     "123",
+			updateLocalID:     "",
+			existingDismissed: "2025-01-08T17:10:22-08:00",
+			expectedSuccess:   true,
 		},
+		// deployment in progress take-over tests
+		// ownership match w/ no dismissal
 		{
-			existingLocalID: "123",
-			updateLocalID:   "123",
-			existingAborted: "",
-			override:        true,
-			expectedSuccess: true,
+			owningLocalID:     "123",
+			updateLocalID:     "123",
+			existingDismissed: "",
+			expectedSuccess:   true,
 		},
+		// ownership match w/ dismissal
 		{
-			existingLocalID: "123",
-			updateLocalID:   "123",
-			existingAborted: "2025-01-08T17:10:22-08:00",
-			override:        true,
-			expectedSuccess: true,
+			owningLocalID:     "123",
+			updateLocalID:     "123",
+			existingDismissed: "2025-01-08T17:10:22-08:00",
+			expectedSuccess:   true,
 		},
+		// ownership mismatch w/o dismissal
 		{
-			existingLocalID: "",
-			updateLocalID:   "123",
-			existingAborted: "",
-			override:        false,
-			expectedSuccess: true,
+			owningLocalID:     "123",
+			updateLocalID:     "456",
+			existingDismissed: "",
+			expectedSuccess:   false,
 		},
+		// ownership mismatch w/ dismissal
 		{
-			existingLocalID: "",
-			updateLocalID:   "123",
-			existingAborted: "2025-01-08T17:10:22-08:00",
-			override:        false,
-			expectedSuccess: false,
-		},
-		{
-			existingLocalID: "",
-			updateLocalID:   "123",
-			existingAborted: "",
-			override:        true,
-			expectedSuccess: true,
-		},
-		{
-			existingLocalID: "",
-			updateLocalID:   "123",
-			existingAborted: "2025-01-08T17:10:22-08:00",
-			override:        true,
-			expectedSuccess: true,
-		},
-		{
-			existingLocalID: "123",
-			updateLocalID:   "456",
-			existingAborted: "",
-			override:        false,
-			expectedSuccess: false,
-		},
-		{
-			existingLocalID: "123",
-			updateLocalID:   "456",
-			existingAborted: "2025-01-08T17:10:22-08:00",
-			override:        false,
-			expectedSuccess: false,
-		},
-		{
-			existingLocalID: "123",
-			updateLocalID:   "456",
-			existingAborted: "",
-			override:        true,
-			expectedSuccess: true,
-		},
-		{
-			existingLocalID: "123",
-			updateLocalID:   "456",
-			existingAborted: "2025-01-08T17:10:22-08:00",
-			override:        true,
-			expectedSuccess: true,
+			owningLocalID:     "123",
+			updateLocalID:     "456",
+			existingDismissed: "2025-01-08T17:10:22-08:00",
+			expectedSuccess:   false,
 		},
 	}
 
 	for ndx, test := range tests {
 		i := ndx + 1
-		j := 1
 		s.SetupTest()
 
 		// create original file
 		deploymentFile := GetDeploymentPath(s.cwd, "myTargetName")
 		d := New()
 		d.ConfigName = "original" // Tests use this field to detect changes in file on disk
-		d.LocalID = test.existingLocalID
-		d.AbortedAt = test.existingAborted
-		returnedD, err := d.WriteFile(deploymentFile, test.existingLocalID, false, s.log)
+		ActiveDeploymentRegistry.Set(deploymentFile.String(), test.owningLocalID)
+		d.DismissedAt = test.existingDismissed
+		returnedD, err := d.WriteFile(deploymentFile, test.owningLocalID, s.log)
 		s.NoError(err)
 		s.Equal("original", returnedD.ConfigName, "Failed iteration %d of test (location 1)", i)
-		j++
 
 		// confirm it was written
 		origD, err := FromFile(deploymentFile)
 		s.NoError(err)
-		s.Equal(test.existingLocalID, origD.LocalID, "Failed iteration %d of test (location 2)", i)
-		j++
-		s.Equal("original", origD.ConfigName, "Failed iteration %d of test (location 3)", i)
-		j++
+		s.Equal("original", origD.ConfigName, "Failed iteration %d of test (location 2)", i)
 
 		// try and update it
 		origD.ConfigName = "updated"
-		returnedD, err = origD.WriteFile(deploymentFile, test.updateLocalID, test.override, s.log)
+		returnedD, err = origD.WriteFile(deploymentFile, test.updateLocalID, s.log)
 		s.NoError(err)
 		if test.expectedSuccess {
-			s.Equal("updated", returnedD.ConfigName, "Failed iteration %d of test (location 4)", i)
-			j++
+			s.Equal("updated", returnedD.ConfigName, "Failed iteration %d of test (location 3)", i)
 		} else {
-			s.NotEqual("updated", returnedD.ConfigName, "Failed iteration %d of test (location 5)", i)
-			j++
+			s.NotEqual("updated", returnedD.ConfigName, "Failed iteration %d of test (location 4)", i)
 		}
 
 		// determine test success based on test array
 		updatedD, err := FromFile(deploymentFile)
 		s.NoError(err)
 		if test.expectedSuccess {
-			s.Equal("updated", updatedD.ConfigName, "Failed iteration %d of test (location 6)", i)
-			j++
+			s.Equal("updated", updatedD.ConfigName, "Failed iteration %d of test (location 5)", i)
 		} else {
-			s.NotEqual("updated", updatedD.ConfigName, "Failed iteration %d of test (location 7)", i)
-			j++
+			s.NotEqual("updated", updatedD.ConfigName, "Failed iteration %d of test (location 6)", i)
 		}
 	}
 }
@@ -293,7 +244,7 @@ func (s *DeploymentSuite) TestWriteFileErr() {
 	readonlyFs := afero.NewReadOnlyFs(deploymentFile.Fs())
 	readonlyFile := deploymentFile.WithFs(readonlyFs)
 	deployment := New()
-	_, err := deployment.WriteFile(readonlyFile, "", false, s.log)
+	_, err := deployment.WriteFile(readonlyFile, "", s.log)
 	s.NotNil(err)
 }
 

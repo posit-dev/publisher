@@ -45,9 +45,10 @@ func (s *PostDeploymentCancelTestSuite) Test200WithLocalIDMatch() {
 	localId := "abc"
 
 	d := deployment.New()
-	d.LocalID = localId
+	path := deployment.GetDeploymentPath(s.cwd, deploymentName)
+	deployment.ActiveDeploymentRegistry.Set(path.String(), localId)
 
-	_, err := d.WriteFile(deployment.GetDeploymentPath(s.cwd, deploymentName), "abc", true, s.log)
+	_, err := d.WriteFile(path, "abc", s.log)
 	s.NoError(err)
 
 	h := PostDeploymentCancelHandlerFunc(s.cwd, s.log)
@@ -69,16 +70,17 @@ func (s *PostDeploymentCancelTestSuite) Test200WithLocalIDMatch() {
 	dec.DisallowUnknownFields()
 	s.NoError(dec.Decode(&res))
 
-	s.NotEmpty(res.AbortedAt)
+	s.NotEmpty(res.DismissedAt)
 }
 
 func (s *PostDeploymentCancelTestSuite) Test200WithoutLocalIDMatch() {
 	deploymentName := "newDeployment"
 
 	d := deployment.New()
-	d.LocalID = "abc"
+	path := deployment.GetDeploymentPath(s.cwd, deploymentName)
+	deployment.ActiveDeploymentRegistry.Set(path.String(), "abc")
 
-	_, err := d.WriteFile(deployment.GetDeploymentPath(s.cwd, deploymentName), "abc", true, s.log)
+	_, err := d.WriteFile(path, "abc", s.log)
 	s.NoError(err)
 
 	h := PostDeploymentCancelHandlerFunc(s.cwd, s.log)
@@ -99,9 +101,6 @@ func (s *PostDeploymentCancelTestSuite) Test200WithoutLocalIDMatch() {
 	dec := json.NewDecoder(rec.Body)
 	dec.DisallowUnknownFields()
 	s.NoError(dec.Decode(&res))
-
-	// request was successful but not applied
-	s.Empty(res.AbortedAt)
 }
 
 func (s *PostDeploymentCancelTestSuite) Test404() {
