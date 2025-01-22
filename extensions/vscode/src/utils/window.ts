@@ -1,3 +1,5 @@
+// Copyright (C) 2025 by Posit Software, PBC.
+
 import { window } from "vscode";
 
 export function showErrorMessageWithTroubleshoot(
