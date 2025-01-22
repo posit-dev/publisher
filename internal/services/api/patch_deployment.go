@@ -86,12 +86,14 @@ func PatchDeploymentHandlerFunc(
 			d.DirectURL = util.GetDirectURL(d.ServerURL, b.ID)
 		}
 
-		err = d.WriteFile(path)
+		// Not operating within a deployment thread, so we'll use an empty string
+		// for the localIdIfDeploying
+		latest, err := d.WriteFile(path, "", log)
 		if err != nil {
 			InternalError(w, req, log, err)
 			return
 		}
-		response := deploymentAsDTO(d, err, projectDir, relProjectDir, path)
+		response := deploymentAsDTO(latest, err, projectDir, relProjectDir, path)
 		w.Header().Set("content-type", "application/json")
 		json.NewEncoder(w).Encode(response)
 	}

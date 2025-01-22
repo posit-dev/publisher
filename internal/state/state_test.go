@@ -11,6 +11,7 @@ import (
 	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/deployment"
+	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
 	"github.com/spf13/afero"
@@ -22,6 +23,7 @@ type StateSuite struct {
 
 	fs  afero.Fs
 	cwd util.AbsolutePath
+	log logging.Logger
 }
 
 func (s *StateSuite) SetupTest() {
@@ -30,6 +32,7 @@ func (s *StateSuite) SetupTest() {
 	s.Nil(err)
 	s.cwd = cwd
 	s.cwd.MkdirAll(0700)
+	s.log = logging.New()
 }
 
 func TestStateSuite(t *testing.T) {
@@ -375,7 +378,7 @@ func (s *StateSuite) TestNewWithTarget() {
 	d.ConfigName = "savedConfigName"
 	d.ServerURL = "https://saved.server.example.com"
 	d.Configuration = cfg
-	err := d.WriteFile(targetPath)
+	_, err := d.WriteFile(targetPath, "", s.log)
 	s.NoError(err)
 
 	state, err := New(s.cwd, "", "", "myTargetName", "", accts, nil, false)
@@ -416,7 +419,7 @@ func (s *StateSuite) TestNewWithTargetAndAccount() {
 	d.ConfigName = "savedConfigName"
 	d.ServerURL = "https://saved.server.example.com"
 	d.Configuration = cfg
-	err := d.WriteFile(targetPath)
+	_, err := d.WriteFile(targetPath, "", s.log)
 	s.NoError(err)
 
 	state, err := New(s.cwd, "acct2", "", "myTargetName", "mySaveName", accts, nil, false)

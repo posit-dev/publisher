@@ -69,6 +69,12 @@
       "description": "Date and time the deployment was created.",
       "examples": ["2024-01-19T09:33:33.131481-05:00"]
     },
+    "dismissed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date and time that the deployment process was dismissed. Will be empty if the deployment process was not dismissed.",
+      "examples": ["2024-01-19T09:33:33.131481-05:00"]
+    },
     "deployed_at": {
       "type": "string",
       "format": "date-time",
