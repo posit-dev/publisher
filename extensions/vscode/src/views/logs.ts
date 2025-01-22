@@ -33,6 +33,7 @@ import {
   ErrorMessageActionIds,
   findErrorMessageSplitOption,
 } from "src/utils/errorEnhancer";
+import { showErrorMessageWithTroubleshoot } from "src/utils/window";
 
 enum LogStageStatus {
   notStarted,
@@ -219,7 +220,10 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
           ...options,
         );
       } else {
-        selection = await window.showErrorMessage(errorMessage, ...options);
+        selection = await showErrorMessageWithTroubleshoot(
+          errorMessage,
+          ...options,
+        );
       }
       if (selection === showLogsOption) {
         await commands.executeCommand(Commands.Logs.Focus);
