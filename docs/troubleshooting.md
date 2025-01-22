@@ -2,7 +2,7 @@
 
 This document contains some common issues and solutions for Posit Publisher.
 
-### The Configuration has a schema error
+## The Configuration has a schema error
 
 If deploying results in the following error:
 
@@ -19,7 +19,7 @@ Carefully check your Configuration file for any errors, and refer to the
 [Configuration File reference documentation](https://github.com/posit-dev/publisher/blob/main/docs/configuration.md)
 for more details on the fields and values that are expected.
 
-### Unrecognized app mode
+## Unrecognized app mode
 
 If when deploying you see the following error:
 
@@ -27,7 +27,7 @@ If when deploying you see the following error:
 
 there are few things to check.
 
-#### Using `type = 'unknown'`
+### Using `type = 'unknown'`
 
 If your Configuration file contains `type = 'unknown'`, either from the
 generated Configuration being unable to identify the type of your content, or
@@ -40,7 +40,7 @@ Configuration.
 To fix this you will need to find and set the `type` in your Configuration file.
 Supported types can be found in the [Configuration File Reference documentation](https://github.com/posit-dev/publisher/blob/main/docs/configuration.md#type).
 
-#### Using a `type` that is not supported by your server
+### Using a `type` that is not supported by your server
 
 Another possibility is Posit Connect, on the server you are deploying to, is
 older than the version that introduced support for the `type` set in your
