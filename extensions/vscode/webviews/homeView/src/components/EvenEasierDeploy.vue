@@ -402,6 +402,9 @@ const lastStatusDescription = computed(() => {
   if (!home.selectedContentRecord) {
     return undefined;
   }
+  if (isDismissedContentRecord.value) {
+    return "Last Deployment Dismissed";
+  }
   if (home.selectedContentRecord.deploymentError) {
     return "Last Deployment Failed";
   }
@@ -409,9 +412,6 @@ const lastStatusDescription = computed(() => {
     return isPreContentRecordWithID.value
       ? "Not Yet Updated"
       : "Not Yet Deployed";
-  }
-  if (isDismissedContentRecord.value) {
-    return "Last Deployment Dismissed";
   }
   return "Last Deployment Successful";
 });

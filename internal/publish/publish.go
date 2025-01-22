@@ -239,6 +239,8 @@ func CancelDeployment(
 
 	// mark the deployment as dismissed
 	target.DismissedAt = time.Now().Format(time.RFC3339)
+	// clear the error as well
+	target.Error = nil
 
 	// take over ownership of deployment file
 	newLocalID := "CANCELLED"
