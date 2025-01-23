@@ -89,9 +89,9 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const slots = defineSlots<{
-  default(props: { indentLevel: number }): any;
-  description(): any;
-  postDecor(): any;
+  default?(props: { indentLevel: number }): any;
+  description?(): any;
+  postDecor?(): any;
 }>();
 
 const emits = defineEmits(["expand", "collapse"]);
