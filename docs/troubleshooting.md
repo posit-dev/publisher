@@ -25,9 +25,9 @@ If when deploying you see the following error:
 
 > Cannot process manifest: Unrecognized app mode
 
-there are few things to check.
+check if your Configuration for the following:
 
-### Using `type = 'unknown'`
+### `type = 'unknown'`
 
 If your Configuration file contains `type = 'unknown'`, either from the
 generated Configuration being unable to identify the type of your content, or
@@ -40,15 +40,16 @@ Configuration.
 To fix this you will need to find and set the `type` in your Configuration file.
 Supported types can be found in the [Configuration File Reference documentation](https://github.com/posit-dev/publisher/blob/main/docs/configuration.md#type).
 
-### Using a `type` that is not supported by your server
+### Unsupported types
 
-Another possibility is Posit Connect, on the server you are deploying to, is
-older than the version that introduced support for the `type` set in your
-configuration file.
+If the Posit Connect server you are deploying to is older than the version that
+introduced support for the `type` set in your configuration file, you will see
+the "Cannot process manifest: Unrecognized app mode" error.
 
-For example, in [Posit Connect 2024.12.0](https://docs.posit.co/connect/news/#posit-connect-2024.12.0-new)
-Gradio app support was introduced. When deploying a Gradio app to a server
-running an older version of Posit Connect than 2024.12.0, it will error.
+For example, [Posit Connect 2024.12.0](https://docs.posit.co/connect/news/#posit-connect-2024.12.0-new)
+introduced support for Gradio apps. Attempting to deploy a Gradio app to a
+server running a version of Posit Connect older than 2024.12.0 will result in
+this error.
 
 ## Still having trouble?
 
