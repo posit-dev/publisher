@@ -25,7 +25,7 @@ If when deploying you see the following error:
 
 > Cannot process manifest: Unrecognized app mode
 
-check if your Configuration for the following:
+check your Configuration for the following:
 
 ### `type = 'unknown'`
 
@@ -40,7 +40,7 @@ Configuration.
 To fix this you will need to find and set the `type` in your Configuration file.
 Supported types can be found in the [Configuration File Reference documentation](https://github.com/posit-dev/publisher/blob/main/docs/configuration.md#type).
 
-### Unsupported types
+### Unsupported `type`
 
 If the Posit Connect server you are deploying to is older than the version that
 introduced support for the `type` set in your configuration file, you will see
