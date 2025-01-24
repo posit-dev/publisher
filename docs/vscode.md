@@ -208,7 +208,7 @@ For instructions on how to create a Connect API key, see the
 #### First time deploying
 
 If a deployment is pointed to a server that you have not deployed to before,
-you may need to setup a credential.
+you may need to set up a credential.
 
 Posit Publisher makes this easy by prompting you to **Create a new Credential**
 when the selected deployment requires a credential you don't have.
