@@ -1,0 +1,61 @@
+# Defines an image that installs connect-manager and a Connect DEB
+# The Connect host to be used as the publishing target.
+
+ARG IMAGE_OS=rstudio/connect:ubuntu22
+FROM ubuntu:22.04 AS e2e-publisher-connect
+
+ARG CONNECT_MANAGER_VERSION=0.5.1
+
+# Install prerequisites
+RUN apt-get update && apt-get install -y \
+  curl \
+  xz-utils
+
+WORKDIR /opt/connect-manager
+
+RUN curl -fsSL "https://cdn.rstudio.com/connect/connect-manager/${CONNECT_MANAGER_VERSION}/connect-manager-${CONNECT_MANAGER_VERSION}.tar.xz" | tar --strip-components=1 -xvJf -
+
+RUN tar \
+    --strip-components=1 \
+    --exclude=PKG-INFO \
+    --exclude=README.md \
+    --exclude='*.egg-info' \
+    --exclude='setup.*' \
+    -xzvf connect-manager-*.tar.gz
+
+RUN rm -f \
+    connect-manager-client-*.tar.gz \
+    connect_manager_client-*.whl
+
+FROM ${IMAGE_OS}
+
+# Install connect-manager
+COPY --from=e2e-publisher-connect /opt/connect-manager /opt/connect-manager
+
+# Pull Connect .deb
+RUN curl -O https://cdn.posit.co/connect/2024.12/rstudio-connect_2024.12.0~ubuntu22_amd64.deb
+
+RUN apt-get update \
+  && apt-get install -y ./rstudio-connect_2024.12.0~ubuntu22_amd64.deb \
+  && rm -rf rstudio-connect_2024.12.0~ubuntu22_amd64.deb \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
+# Copy Connect config
+COPY test/e2e/config/connect.gcfg /etc/rstudio-connect/rstudio-connect.gcfg
+
+# Copy Bootstrap Key
+COPY test/e2e/bootstrap-secret.key /etc/rstudio-connect/bootstrap-secret.key
+
+ENV CONNECT_LICENSE ${CONNECT_LICENSE}
+
+CMD [ "/opt/connect-manager/connect-manager", \
+  "--start-connect", \
+  "--connect-binary", "/opt/rstudio-connect/bin/connect", \
+  "--connect-user", "rstudio-connect", \
+  "--license-manager-binary", "/opt/rstudio-connect/bin/license-manager", \
+  "--connect-log", "/var/log/rstudio/rstudio-connect/rstudio-connect.log", \
+  "--manager-log", "/var/log/rstudio/rstudio-connect/connect-manager.log", \
+  "--connect-config-prefix", "/etc/rstudio-connect", \
+  "--connect-config", "rstudio-connect.gcfg", \
+  "--manager-port", "4723" ]
