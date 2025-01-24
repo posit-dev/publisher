@@ -74,8 +74,8 @@ documentation for more information.
 Collaborate with your team using shared configurations and deployments. Easily
 pick up where others left off with deployed content.
 
-See the [Collaboration Workflow](https://github.com/posit-dev/publisher/blob/main/docs/collaboration.md)
-documentation for more information.
+See [Collaborative Publishing with Posit Publisher](https://github.com/posit-dev/publisher/blob/main/docs/collaboration.md)
+for more information.
 
 ### Multiple deployments and configurations
 

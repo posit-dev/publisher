@@ -205,6 +205,16 @@ To remove a credential, right-click on it and select `Delete`.
 For instructions on how to create a Connect API key, see the
 [Connect documentation](https://docs.posit.co/connect/user/api-keys/index.html#api-keys-creating).
 
+#### First time deploying
+
+If a deployment is pointed to a server that you have not deployed to before,
+you may need to setup a credential.
+
+Posit Publisher makes this easy by prompting you to **Create a new Credential**
+when the selected deployment requires a credential you don't have.
+
+TODO: SCREEN SHOT
+
 #### via dotfile
 
 If your OS does not have a keychain the extension will manage your credentials
