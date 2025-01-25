@@ -10,6 +10,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/publish"
@@ -116,6 +117,7 @@ func PostDeploymentHandlerFunc(
 
 		log := log.WithArgs("local_id", localID)
 		newState.LocalID = localID
+
 		rExecutable := util.NewPath(b.R, nil)
 		pythonExecutable := util.NewPath(b.Python, nil)
 		publisher, err := publisherFactory(newState, rExecutable, pythonExecutable, emitter, log)
@@ -126,6 +128,13 @@ func PostDeploymentHandlerFunc(
 		}
 
 		go func() {
+			// take ownership of this deployment when we start, release when we are done.
+			// release will first check to make sure we still have ownership before releasing
+			// someone else's ownership
+			recordPath := deployment.GetDeploymentPath(projectDir, newState.SaveName)
+			deployment.ActiveDeploymentRegistry.Set(recordPath.String(), string(newState.LocalID))
+			defer deployment.ActiveDeploymentRegistry.Clear(recordPath.String(), string(newState.LocalID))
+
 			err = publisher.PublishDirectory()
 			if err != nil {
 				log.Error("Deployment failed", "error", err.Error())

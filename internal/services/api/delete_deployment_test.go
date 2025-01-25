@@ -60,7 +60,8 @@ func createSampleDeployment(root util.AbsolutePath, name string) (*deployment.De
 	d.DashboardURL = "/connect/#/apps/12345678"
 	d.DirectURL = "/content/12345678/"
 	d.LogsURL = "/connect/#/apps/12345678/logs"
-	return d, d.WriteFile(path)
+	_, err := d.WriteFile(path, "", logging.New())
+	return d, err
 }
 
 func (s *DeleteDeploymentSuite) fileExists(path util.AbsolutePath) {

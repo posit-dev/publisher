@@ -1,10 +1,28 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
 import { ProgressLocation, Uri, env, window } from "vscode";
-import { EventStreamMessage, eventMsgToString } from "src/api";
+import {
+  EventStreamMessage,
+  eventMsgToString,
+  useApi,
+  ContentRecord,
+  PreContentRecord,
+  PreContentRecordWithConfig,
+} from "src/api";
 import { EventStream, UnregisterCallback } from "src/events";
+import { getSummaryStringFromError } from "src/utils/errors";
 
-export function deployProject(localID: string, stream: EventStream) {
+type UpdateActiveContentRecordCB = (
+  contentRecord: ContentRecord | PreContentRecord | PreContentRecordWithConfig,
+) => void;
+
+export function deployProject(
+  deploymentName: string,
+  dir: string,
+  localID: string,
+  stream: EventStream,
+  updateActiveContentRecordCB: UpdateActiveContentRecordCB,
+) {
   window.withProgress(
     {
       location: ProgressLocation.Notification,
@@ -27,25 +45,44 @@ export function deployProject(localID: string, stream: EventStream) {
         registrations.forEach((cb) => cb.unregister());
       };
 
-      token.onCancellationRequested(() => {
+      token.onCancellationRequested(async () => {
+        const api = await useApi();
         streamID = "NEVER_A_VALID_STREAM";
         unregisterAll();
-        // inject a psuedo end of publishing event
-        stream.injectMessage({
-          type: "publish/failure",
-          time: Date.now().toString(),
-          data: {
-            dashboardUrl: "",
-            url: "",
-            // and other non-defined attributes
-            localId: localID,
-            cancelled: "true",
-            message:
-              "Deployment has been dismissed (but will continue to be processed on the Connect Server). Deployment status will be reset to the prior known state.",
-          },
-          error: "Deployment has been dismissed.",
-        });
-        stream.suppressMessages(localID);
+        try {
+          const response = await api.contentRecords.cancelDeployment(
+            deploymentName,
+            dir,
+            localID,
+          );
+
+          // update the UX locally
+          updateActiveContentRecordCB(response.data);
+
+          // we must have been successful...
+          // inject a psuedo end of publishing event
+          stream.injectMessage({
+            type: "publish/failure",
+            time: Date.now().toString(),
+            data: {
+              dashboardUrl: "",
+              url: "",
+              // and other non-defined attributes
+              localId: localID,
+              canceled: "true",
+              message:
+                "Deployment has been dismissed, but will continue to be processed on the Connect Server.",
+            },
+            error: "Deployment has been dismissed.",
+          });
+          stream.suppressMessages(localID);
+        } catch (error: unknown) {
+          const summary = getSummaryStringFromError(
+            "deployProject, token.onCancellationRequested",
+            error,
+          );
+          window.showErrorMessage(`Unable to dismiss deployment: ${summary}`);
+        }
         resolveCB();
       });
 

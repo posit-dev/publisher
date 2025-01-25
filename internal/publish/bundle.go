@@ -105,7 +105,7 @@ func (p *defaultPublisher) createAndUploadBundle(
 		p.Target.Renv = lockfile
 	}
 
-	err = p.writeDeploymentRecord()
+	_, err = p.writeDeploymentRecord()
 	if err != nil {
 		return "", err
 	}

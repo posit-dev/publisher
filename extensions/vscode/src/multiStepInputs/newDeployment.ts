@@ -357,7 +357,7 @@ export async function newDeployment(
             title: "Select Entrypoint File (main file for your project)",
           });
           if (!fileUris || !fileUris[0]) {
-            // cancelled.
+            // canceled.
             continue;
           }
           const fileUri = fileUris[0];
@@ -783,7 +783,7 @@ export async function newDeployment(
     !newDeploymentData.title ||
     (!newCredentialByAnyMeans() && !newDeploymentData.existingCredentialName)
   ) {
-    console.log("User has aborted flow. Exiting.");
+    console.log("User has dismissed flow. Exiting.");
     return undefined;
   }
 
@@ -796,7 +796,7 @@ export async function newDeployment(
       !newDeploymentData.newCredentials.apiKey ||
       !newDeploymentData.newCredentials.name
     ) {
-      console.log("User has aborted flow. Exiting.");
+      console.log("User has dismissed flow. Exiting.");
       return undefined;
     }
     try {

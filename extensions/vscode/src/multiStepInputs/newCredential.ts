@@ -54,7 +54,7 @@ export async function newCredential(
       totalSteps: -1,
       data: {
         // each attribute is initialized to undefined
-        // to be returned when it has not been cancelled
+        // to be returned when it has not been canceled
         url: startingServerUrl, // eventual type is string
         apiKey: <string | undefined>undefined, // eventual type is string
         name: <string | undefined>undefined, // eventual type is string
