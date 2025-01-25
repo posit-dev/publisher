@@ -11,7 +11,6 @@ import (
 
 type MockPythonInspector struct {
 	mock.Mock
-	pythonInterpreter interpreters.PythonInterpreter
 }
 
 func NewMockPythonInspector() *MockPythonInspector {

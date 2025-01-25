@@ -62,6 +62,9 @@ func GetRequirementsFilePath(base util.AbsolutePath) (util.RelativePath, bool, e
 	filePath := "requirements.txt"
 	requirementsFile := base.Join(filePath)
 	exists, err := requirementsFile.Exists()
+	if err != nil {
+		return util.RelativePath{}, exists, err
+	}
 	rel, err := requirementsFile.Rel(base)
 	return rel, exists, err
 }

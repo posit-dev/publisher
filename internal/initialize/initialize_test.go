@@ -189,19 +189,6 @@ var expectedPyConfig = &config.Python{
 	PackageFile:    "requirements.txt",
 }
 
-func makeMockPythonInspector(
-	util.AbsolutePath,
-	util.Path,
-	logging.Logger,
-	interpreters.PythonInterpreterFactory,
-	executor.Executor,
-) (inspect.PythonInspector, error) {
-	pyInspector := inspect.NewMockPythonInspector()
-	pyInspector.On("InspectPython").Return(expectedPyConfig, nil)
-	pyInspector.On("RequiresPython", mock.Anything).Return(false, nil)
-	return pyInspector, nil
-}
-
 var expectedRConfig = &config.R{
 	Version:        "1.2.3",
 	PackageManager: "renv",
