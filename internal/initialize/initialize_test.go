@@ -33,8 +33,17 @@ func setupMockRInspector(requiredRReturnValue bool, requiredRError error) inspec
 	return func(base util.AbsolutePath, rExecutable util.Path, log logging.Logger, rInterpreterFactoryOverride interpreters.RInterpreterFactory, cmdExecutorOverride executor.Executor) (inspect.RInspector, error) {
 		rInspector := inspect.NewMockRInspector()
 		rInspector.On("InspectR").Return(expectedRConfig, nil)
-		rInspector.On("RequiresR").Return(requiredRReturnValue, requiredRError)
+		rInspector.On("RequiresR", mock.Anything).Return(requiredRReturnValue, requiredRError)
 		return rInspector, nil
+	}
+}
+
+func setupMockPythonInspector(requiredPythonReturnValue bool, requiredPythonError error) inspect.PythonInspectorFactory {
+	return func(base util.AbsolutePath, pythonExecutable util.Path, log logging.Logger, pythonInterpreterFactoryOverride interpreters.PythonInterpreterFactory, cmdExecutorOverride executor.Executor) (inspect.PythonInspector, error) {
+		pythonInspector := inspect.NewMockPythonInspector()
+		pythonInspector.On("InspectPython").Return(expectedPyConfig, nil)
+		pythonInspector.On("RequiresPython", mock.Anything).Return(requiredPythonReturnValue, requiredPythonError)
+		return pythonInspector, nil
 	}
 }
 
@@ -44,12 +53,28 @@ func setupNewRInterpreterMock(
 	log logging.Logger,
 	cmdExecutorOverride executor.Executor,
 	pathLookerOverride util.PathLooker,
-	existsFuncOverride interpreters.ExistsFunc,
+	existsFuncOverride util.ExistsFunc,
 ) (interpreters.RInterpreter, error) {
 	i := interpreters.NewMockRInterpreter()
 	i.On("Init").Return(nil)
 	i.On("RequiresR", mock.Anything).Return(false, nil)
 	i.On("GetLockFilePath").Return(util.RelativePath{}, false, nil)
+	return i, nil
+}
+
+func setupNewPythonInterpreterMock(
+	base util.AbsolutePath,
+	rExecutableParam util.Path,
+	log logging.Logger,
+	cmdExecutorOverride executor.Executor,
+	pathLookerOverride util.PathLooker,
+	existsFuncOverride util.ExistsFunc,
+) (interpreters.PythonInterpreter, error) {
+	i := interpreters.NewMockPythonInterpreter()
+	i.On("IsPythonExecutableValid").Return(true)
+	i.On("GetPythonExecutable").Return(util.RelativePath{}, nil)
+	i.On("GetPythonVersion", mock.Anything).Return("", nil)
+
 	return i, nil
 }
 
@@ -71,6 +96,7 @@ func (s *InitializeSuite) TestInitEmpty() {
 	i := NewInitialize(
 		detectors.NewContentTypeDetector,
 		inspect.NewPythonInspector,
+		setupNewPythonInterpreterMock,
 		inspect.NewRInspector,
 		setupNewRInterpreterMock,
 	)
@@ -163,10 +189,17 @@ var expectedPyConfig = &config.Python{
 	PackageFile:    "requirements.txt",
 }
 
-func makeMockPythonInspector(util.AbsolutePath, util.Path, logging.Logger) inspect.PythonInspector {
+func makeMockPythonInspector(
+	util.AbsolutePath,
+	util.Path,
+	logging.Logger,
+	interpreters.PythonInterpreterFactory,
+	executor.Executor,
+) (inspect.PythonInspector, error) {
 	pyInspector := inspect.NewMockPythonInspector()
 	pyInspector.On("InspectPython").Return(expectedPyConfig, nil)
-	return pyInspector
+	pyInspector.On("RequiresPython", mock.Anything).Return(false, nil)
+	return pyInspector, nil
 }
 
 var expectedRConfig = &config.R{
@@ -181,7 +214,8 @@ func (s *InitializeSuite) TestInitInferredType() {
 
 	i := NewInitialize(
 		detectors.NewContentTypeDetector,
-		makeMockPythonInspector,
+		setupMockPythonInspector(true, nil),
+		setupNewPythonInterpreterMock,
 		setupMockRInspector(false, nil),
 		setupNewRInterpreterMock,
 	)
@@ -204,7 +238,8 @@ func (s *InitializeSuite) TestInitRequirementsFile() {
 
 	i := NewInitialize(
 		detectors.NewContentTypeDetector,
-		makeMockPythonInspector,
+		setupMockPythonInspector(true, nil),
+		setupNewPythonInterpreterMock,
 		setupMockRInspector(false, nil),
 		setupNewRInterpreterMock,
 	)
@@ -226,7 +261,8 @@ func (s *InitializeSuite) TestInitIfNeededWhenNeeded() {
 
 	i := NewInitialize(
 		detectors.NewContentTypeDetector,
-		makeMockPythonInspector,
+		setupMockPythonInspector(true, nil),
+		setupNewPythonInterpreterMock,
 		setupMockRInspector(false, nil),
 		setupNewRInterpreterMock,
 	)
@@ -255,16 +291,29 @@ func (s *InitializeSuite) TestInitIfNeededWhenNotNeeded() {
 	cfg.WriteFile(configPath)
 	cfg.FillDefaults()
 
-	pythonInspectorFactory := func(util.AbsolutePath, util.Path, logging.Logger) inspect.PythonInspector {
-		return &inspect.MockPythonInspector{}
+	pythonInspectorFactory := func(
+		util.AbsolutePath,
+		util.Path,
+		logging.Logger,
+		interpreters.PythonInterpreterFactory,
+		executor.Executor,
+	) (inspect.PythonInspector, error) {
+		return &inspect.MockPythonInspector{}, nil
 	}
-	rInspectorFactory := func(util.AbsolutePath, util.Path, logging.Logger, interpreters.RInterpreterFactory, executor.Executor) (inspect.RInspector, error) {
+	rInspectorFactory := func(
+		util.AbsolutePath,
+		util.Path,
+		logging.Logger,
+		interpreters.RInterpreterFactory,
+		executor.Executor,
+	) (inspect.RInspector, error) {
 		return &inspect.MockRInspector{}, nil
 	}
 
 	i := NewInitialize(
 		detectors.NewContentTypeDetector,
 		pythonInspectorFactory,
+		setupNewPythonInterpreterMock,
 		rInspectorFactory,
 		setupNewRInterpreterMock,
 	)
@@ -276,23 +325,30 @@ func (s *InitializeSuite) TestInitIfNeededWhenNotNeeded() {
 	s.Equal(cfg, newConfig)
 }
 
-func (s *InitializeSuite) TestGetPossibleConfigs() {
-	log := logging.New()
-	appPy := s.createAppPy()
-	exist, err := appPy.Exists()
-	s.NoError(err)
-	s.Equal(true, exist)
-	appR := s.createAppR()
-	exist, err = appR.Exists()
-	s.NoError(err)
-	s.Equal(true, exist)
+func setupMockPythonInspectorForMultipleConfigs() inspect.PythonInspectorFactory {
+	return func(base util.AbsolutePath, pythonExecutable util.Path, log logging.Logger, pythonInterpreterFactoryOverride interpreters.PythonInterpreterFactory, cmdExecutorOverride executor.Executor) (inspect.PythonInspector, error) {
+		pythonInspector := inspect.NewMockPythonInspector()
+		pythonInspector.On("InspectPython").Return(nil, nil).Once()
+		pythonInspector.On("InspectPython").Return(expectedPyConfig, nil).Once()
+		pythonInspector.On("InspectPython").Return(nil, nil).Once()
+		pythonInspector.On("RequiresPython", mock.Anything).Return(false, nil).Once()
+		pythonInspector.On("RequiresPython", mock.Anything).Return(true, nil).Once()
+		pythonInspector.On("RequiresPython", mock.Anything).Return(false, nil).Once()
+		return pythonInspector, nil
+	}
+}
 
-	err = s.cwd.Join("index.html").WriteFile([]byte(`<html></html>`), 0666)
+func (s *InitializeSuite) TestGetPossibleRConfig() {
+	log := logging.New()
+	appR := s.createAppR()
+	exist, err := appR.Exists()
 	s.NoError(err)
+	s.Equal(true, exist)
 
 	i := NewInitialize(
 		detectors.NewContentTypeDetector,
-		makeMockPythonInspector,
+		setupMockPythonInspector(false, nil),
+		setupNewPythonInterpreterMock,
 		setupMockRInspector(true, nil),
 		setupNewRInterpreterMock,
 	)
@@ -300,21 +356,59 @@ func (s *InitializeSuite) TestGetPossibleConfigs() {
 	configs, err := i.GetPossibleConfigs(s.cwd, util.Path{}, util.Path{}, util.RelativePath{}, log)
 	s.NoError(err)
 
-	s.Len(configs, 3)
+	s.Len(configs, 1)
 	s.Equal(config.ContentTypeRShiny, configs[0].Type)
 	s.Equal("app.R", configs[0].Entrypoint)
 	s.Equal([]string{"/app.R", "/renv.lock"}, configs[0].Files)
 	s.Equal(expectedRConfig, configs[0].R)
+}
 
-	s.Equal(config.ContentTypePythonFlask, configs[1].Type)
-	s.Equal("app.py", configs[1].Entrypoint)
-	s.Equal([]string{"/app.py", "/requirements.txt", "/renv.lock"}, configs[1].Files)
-	s.Equal(expectedPyConfig, configs[1].Python)
+func (s *InitializeSuite) TestGetPossiblePythonConfig() {
+	log := logging.New()
+	appPy := s.createAppPy()
+	exist, err := appPy.Exists()
+	s.NoError(err)
+	s.Equal(true, exist)
 
-	s.Equal(config.ContentTypeHTML, configs[2].Type)
-	s.Equal("index.html", configs[2].Entrypoint)
-	s.Equal([]string{"/index.html", "/renv.lock"}, configs[2].Files)
-	s.Nil(configs[2].Python)
+	i := NewInitialize(
+		detectors.NewContentTypeDetector,
+		setupMockPythonInspector(true, nil),
+		setupNewPythonInterpreterMock,
+		setupMockRInspector(false, nil),
+		setupNewRInterpreterMock,
+	)
+
+	configs, err := i.GetPossibleConfigs(s.cwd, util.Path{}, util.Path{}, util.RelativePath{}, log)
+	s.NoError(err)
+
+	s.Len(configs, 1)
+	s.Equal(config.ContentTypePythonFlask, configs[0].Type)
+	s.Equal("app.py", configs[0].Entrypoint)
+	s.Equal([]string{"/app.py", "/requirements.txt"}, configs[0].Files)
+	s.Equal(expectedPyConfig, configs[0].Python)
+}
+
+func (s *InitializeSuite) TestGetPossibleHTMLConfig() {
+	log := logging.New()
+	err := s.cwd.Join("index.html").WriteFile([]byte(`<html></html>`), 0666)
+	s.NoError(err)
+
+	i := NewInitialize(
+		detectors.NewContentTypeDetector,
+		setupMockPythonInspector(false, nil),
+		setupNewPythonInterpreterMock,
+		setupMockRInspector(false, nil),
+		setupNewRInterpreterMock,
+	)
+
+	configs, err := i.GetPossibleConfigs(s.cwd, util.Path{}, util.Path{}, util.RelativePath{}, log)
+	s.NoError(err)
+
+	s.Len(configs, 1)
+	s.Equal(config.ContentTypeHTML, configs[0].Type)
+	s.Equal("index.html", configs[0].Entrypoint)
+	s.Equal([]string{"/index.html"}, configs[0].Files)
+	s.Nil(configs[0].Python)
 }
 
 func (s *InitializeSuite) TestGetPossibleConfigsEmpty() {
@@ -322,7 +416,8 @@ func (s *InitializeSuite) TestGetPossibleConfigsEmpty() {
 
 	i := NewInitialize(
 		detectors.NewContentTypeDetector,
-		inspect.NewPythonInspector,
+		setupMockPythonInspector(false, nil),
+		setupNewPythonInterpreterMock,
 		inspect.NewRInspector,
 		setupNewRInterpreterMock,
 	)
@@ -342,7 +437,8 @@ func (s *InitializeSuite) TestGetPossibleConfigsWithMissingEntrypoint() {
 
 	i := NewInitialize(
 		detectors.NewContentTypeDetector,
-		inspect.NewPythonInspector,
+		setupMockPythonInspector(false, nil),
+		setupNewPythonInterpreterMock,
 		inspect.NewRInspector,
 		setupNewRInterpreterMock,
 	)
@@ -365,7 +461,8 @@ func (s *InitializeSuite) TestNormalizeConfigHandlesUnknownConfigs() {
 
 	i := NewInitialize(
 		detectors.NewContentTypeDetector,
-		inspect.NewPythonInspector,
+		setupMockPythonInspector(false, nil),
+		setupNewPythonInterpreterMock,
 		inspect.NewRInspector,
 		setupNewRInterpreterMock,
 	)
