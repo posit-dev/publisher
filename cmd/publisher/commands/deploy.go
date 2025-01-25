@@ -69,7 +69,8 @@ func (cmd *DeployCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext)
 		stateStore.SaveName)
 
 	rExecutable := util.Path{}
-	publisher, err := publish.NewFromState(stateStore, rExecutable, events.NewCliEmitter(os.Stderr, ctx.Logger), ctx.Logger)
+	pythonExecutable := util.Path{}
+	publisher, err := publish.NewFromState(stateStore, rExecutable, pythonExecutable, events.NewCliEmitter(os.Stderr, ctx.Logger), ctx.Logger)
 	if err != nil {
 		return err
 	}

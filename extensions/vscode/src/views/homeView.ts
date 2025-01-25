@@ -198,6 +198,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     try {
       const api = await useApi();
       const r = await getRInterpreterPath();
+      const python = await getPythonInterpreterPath();
 
       const response = await api.contentRecords.publish(
         deploymentName,
@@ -207,6 +208,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         projectDir,
         secrets,
         r,
+        python,
       );
       deployProject(response.data.localId, this.stream);
     } catch (error: unknown) {
