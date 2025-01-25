@@ -325,19 +325,6 @@ func (s *InitializeSuite) TestInitIfNeededWhenNotNeeded() {
 	s.Equal(cfg, newConfig)
 }
 
-func setupMockPythonInspectorForMultipleConfigs() inspect.PythonInspectorFactory {
-	return func(base util.AbsolutePath, pythonExecutable util.Path, log logging.Logger, pythonInterpreterFactoryOverride interpreters.PythonInterpreterFactory, cmdExecutorOverride executor.Executor) (inspect.PythonInspector, error) {
-		pythonInspector := inspect.NewMockPythonInspector()
-		pythonInspector.On("InspectPython").Return(nil, nil).Once()
-		pythonInspector.On("InspectPython").Return(expectedPyConfig, nil).Once()
-		pythonInspector.On("InspectPython").Return(nil, nil).Once()
-		pythonInspector.On("RequiresPython", mock.Anything).Return(false, nil).Once()
-		pythonInspector.On("RequiresPython", mock.Anything).Return(true, nil).Once()
-		pythonInspector.On("RequiresPython", mock.Anything).Return(false, nil).Once()
-		return pythonInspector, nil
-	}
-}
-
 func (s *InitializeSuite) TestGetPossibleRConfig() {
 	log := logging.New()
 	appR := s.createAppR()
@@ -429,6 +416,36 @@ func (s *InitializeSuite) TestGetPossibleConfigsEmpty() {
 	s.Equal(config.ContentTypeUnknown, configs[0].Type)
 	s.Equal("unknown", configs[0].Entrypoint)
 	s.Nil(configs[0].Python)
+}
+
+func (s *InitializeSuite) TestGetPossibleMultipleConfigs() {
+	log := logging.New()
+
+	appR := s.createAppR()
+	exist, err := appR.Exists()
+	s.NoError(err)
+	s.Equal(true, exist)
+
+	appPy := s.createAppPy()
+	exist, err = appPy.Exists()
+	s.NoError(err)
+	s.Equal(true, exist)
+
+	err = s.cwd.Join("index.html").WriteFile([]byte(`<html></html>`), 0666)
+	s.NoError(err)
+
+	i := NewInitialize(
+		detectors.NewContentTypeDetector,
+		setupMockPythonInspector(true, nil),
+		setupNewPythonInterpreterMock,
+		setupMockRInspector(true, nil),
+		setupNewRInterpreterMock,
+	)
+
+	configs, err := i.GetPossibleConfigs(s.cwd, util.Path{}, util.Path{}, util.RelativePath{}, log)
+	s.NoError(err)
+
+	s.Len(configs, 3)
 }
 
 func (s *InitializeSuite) TestGetPossibleConfigsWithMissingEntrypoint() {
