@@ -9,6 +9,8 @@ import (
 	"net/http"
 
 	"github.com/posit-dev/publisher/internal/inspect"
+	"github.com/posit-dev/publisher/internal/inspect/dependencies/pydeps"
+	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
@@ -54,10 +56,14 @@ func (h *PostPackagesPythonScanHandler) ServeHTTP(w http.ResponseWriter, req *ht
 		return
 	}
 	if b.SaveName == "" {
-		b.SaveName = inspect.PythonRequirementsFilename
+		b.SaveName = interpreters.PythonRequirementsFilename
 	}
 	python := util.NewPath(b.Python, nil)
-	inspector := inspectorFactory(projectDir, python, h.log)
+	inspector, err := inspectorFactory(projectDir, python, h.log, nil, nil)
+	if err != nil {
+		InternalError(w, req, h.log, err)
+		return
+	}
 	err = util.ValidateFilename(b.SaveName)
 	if err != nil {
 		BadRequest(w, req, h.log, err)
@@ -75,8 +81,14 @@ func (h *PostPackagesPythonScanHandler) ServeHTTP(w http.ResponseWriter, req *ht
 		InternalError(w, req, h.log, err)
 		return
 	}
+	pythonInterpreter := inspector.GetPythonInterpreter()
+	pythonPath, err := pythonInterpreter.GetPythonExecutable()
+	if err != nil {
+		InternalError(w, req, h.log, err)
+		return
+	}
 	dest := projectDir.Join(b.SaveName)
-	err = inspector.WriteRequirementsFile(dest, reqs)
+	err = pydeps.WriteRequirementsFile(dest, reqs, pythonPath)
 	if err != nil {
 		InternalError(w, req, h.log, err)
 		return
