@@ -4,7 +4,7 @@
     :checked="isIncluded"
     :disabled="isDisabled"
     :list-style="listStyle"
-    :disable-opacity="isEntrypoint"
+    :disable-opacity="isEntrypoint || isPackageFile"
     :indent-level="file.indent + 1"
     :expandable="file.isDir"
     :tooltip="tooltip"
@@ -60,6 +60,7 @@ const isDisabled = computed((): boolean => {
   const source = props.file.reason?.source;
   return (
     (isEntrypoint.value && isIncluded.value) ||
+    (isPackageFile.value && isIncluded.value) ||
     source === "built-in" ||
     source === "permissions"
   );
@@ -89,6 +90,26 @@ const isEntrypoint = computed((): boolean => {
   return false;
 });
 
+const isPackageFile = computed((): boolean => {
+  return isPythonPackageFile.value || isRPackageFile.value;
+});
+
+const isPythonPackageFile = computed((): boolean => {
+  const config = home.selectedConfiguration;
+  if (config != undefined && !isConfigurationError(config)) {
+    return props.file.id === config.configuration.python?.packageFile;
+  }
+  return false;
+});
+
+const isRPackageFile = computed((): boolean => {
+  const config = home.selectedConfiguration;
+  if (config != undefined && !isConfigurationError(config)) {
+    return props.file.id === config.configuration.r?.packageFile;
+  }
+  return false;
+});
+
 const listStyle = computed((): "emphasized" | "default" | "deemphasized" => {
   return isEntrypoint.value
     ? "emphasized"
@@ -99,7 +120,10 @@ const listStyle = computed((): "emphasized" | "default" | "deemphasized" => {
 
 const tooltip = computed((): string => {
   return isIncluded.value
-    ? includedFileTooltip(props.file, isEntrypoint.value)
+    ? includedFileTooltip(props.file, {
+        isEntrypoint: isEntrypoint.value,
+        isPackageFile: isPackageFile.value,
+      })
     : excludedFileTooltip(props.file);
 });
 
