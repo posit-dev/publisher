@@ -40,7 +40,7 @@ func (cmd *CreateRequirementsCommand) Run(args *cli_types.CommonArgs, ctx *cli_t
 	if err != nil {
 		return err
 	}
-	err = pydeps.WriteRequirementsFile(reqPath, reqs, util.NewAbsolutePath("bogus", nil))
+	err = pydeps.WriteRequirementsFile(reqPath, reqs, util.NewAbsolutePath("bogus python executable", nil))
 	if err != nil {
 		return err
 	}
