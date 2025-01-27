@@ -6,11 +6,13 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"os"
 	"slices"
 	"strconv"
 	"strings"
 
 	"github.com/posit-dev/publisher/internal/bundles"
+	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
@@ -21,16 +23,23 @@ type PackageMapper interface {
 	GetManifestPackages(base util.AbsolutePath, lockfilePath util.AbsolutePath, log logging.Logger) (bundles.PackageMap, error)
 }
 
+type rInterpreterFactory = func() (interpreters.RInterpreter, error)
+
 type defaultPackageMapper struct {
-	lister AvailablePackagesLister
+	rInterpreterFactory rInterpreterFactory
+	rExecutable         util.Path
+	lister              AvailablePackagesLister
 }
 
 func NewPackageMapper(base util.AbsolutePath, rExecutable util.Path, log logging.Logger) (*defaultPackageMapper, error) {
-
 	lister, err := NewAvailablePackageLister(base, rExecutable, log, nil, nil)
 
 	return &defaultPackageMapper{
-		lister: lister,
+		rInterpreterFactory: func() (interpreters.RInterpreter, error) {
+			return interpreters.NewRInterpreter(base, rExecutable, log, nil, nil, nil)
+		},
+		rExecutable: rExecutable,
+		lister:      lister,
 	}, err
 }
 
@@ -185,6 +194,9 @@ func (m *defaultPackageMapper) GetManifestPackages(
 
 	lockfile, err := ReadLockfile(lockfilePath)
 	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, m.renvEnvironmentCheck(base, log)
+		}
 		return nil, err
 	}
 
@@ -245,4 +257,19 @@ func (m *defaultPackageMapper) GetManifestPackages(
 		manifestPackages[string(pkg.Package)] = *manifestPkg
 	}
 	return manifestPackages, nil
+}
+
+func (m *defaultPackageMapper) renvEnvironmentCheck(
+	base util.AbsolutePath,
+	log logging.Logger,
+) *types.AgentError {
+	rInterpreter, err := m.rInterpreterFactory()
+	if err != nil {
+		log.Error("R interpreter failed to be instantiated while verifying renv environment", "error", err.Error())
+		verifyErr := types.NewAgentError(types.ErrorUnknown, err, nil)
+		verifyErr.Message = "Unable to determine if renv is installed"
+		return verifyErr
+	}
+
+	return rInterpreter.RenvEnvironmentErrorCheck()
 }
