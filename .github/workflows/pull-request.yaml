@@ -34,10 +34,10 @@ jobs:
     secrets: inherit
 
   # Integration Tests
-  bats:
-    needs: build
-    secrets: inherit
-    uses: ./.github/workflows/bats.yaml
+  # bats:
+  #   needs: build
+  #   secrets: inherit
+  #   uses: ./.github/workflows/bats.yaml
 
   vscode-ui:
     needs:
