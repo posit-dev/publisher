@@ -5,6 +5,7 @@ package interpreters
 import (
 	"errors"
 	"os"
+	"runtime"
 	"testing"
 
 	"github.com/posit-dev/publisher/internal/executor/executortest"
@@ -119,14 +120,22 @@ func (s *PythonSuite) TestGetPythonExecutableFallbackPython() {
 	i, err := NewPythonInterpreter(s.cwd, util.NewPath("", s.fs), log, executor, pathLooker, MockExistsTrue)
 	s.NoError(err)
 	defaultPython := i.(*defaultPythonInterpreter)
-	s.Equal("/some/python", defaultPython.pythonExecutable.String())
+	if runtime.GOOS == "windows" {
+		s.Equal("D:\\some\\python", defaultPython.pythonExecutable.String())
+	} else {
+		s.Equal("/some/python", defaultPython.pythonExecutable.String())
+	}
 
 	p, err := i.GetPythonExecutable()
 	s.Nil(err)
-	s.Equal(p.String(), "/some/python")
+	if runtime.GOOS == "windows" {
+		s.Equal("D:\\some\\python", p.String())
+	} else {
+		s.Equal("/some/python", p.String())
+	}
 	v, err := i.GetPythonVersion()
 	s.Nil(err)
-	s.Equal(v, "3.10.4")
+	s.Equal("3.10.4", v)
 }
 
 func (s *PythonSuite) TestGetPythonExecutableNoRunnablePython() {
