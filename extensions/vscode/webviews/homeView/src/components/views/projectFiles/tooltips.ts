@@ -5,7 +5,10 @@ import {
 
 export function includedFileTooltip(
   file: Pick<ContentRecordFile, "rel" | "reason">,
-  isEntrypoint: boolean = false,
+  {
+    isEntrypoint = false,
+    isPackageFile = false,
+  }: { isEntrypoint?: boolean; isPackageFile?: boolean } = {},
 ) {
   let tooltip = `${file.rel} will be included in the next deployment.`;
   if (file.reason) {
@@ -13,6 +16,9 @@ export function includedFileTooltip(
   }
   if (isEntrypoint) {
     tooltip += `\n${file.rel} is the entrypoint. Entrypoints must be included in the configuration 'files' list.`;
+  }
+  if (isPackageFile) {
+    tooltip += `\n${file.rel} is a package file. Package files must be included in the configuration 'files' list.`;
   }
   return tooltip;
 }
