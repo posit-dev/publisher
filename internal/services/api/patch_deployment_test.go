@@ -24,6 +24,7 @@ import (
 type PatchDeploymentHandlerFuncSuite struct {
 	utiltest.Suite
 	cwd util.AbsolutePath
+	log logging.Logger
 }
 
 func TestPatchDeploymentHandlerFuncSuite(t *testing.T) {
@@ -36,6 +37,7 @@ func (s *PatchDeploymentHandlerFuncSuite) SetupTest() {
 	s.Nil(err)
 	s.cwd = cwd
 	s.cwd.MkdirAll(0700)
+	s.log = logging.New()
 }
 
 func (s *PatchDeploymentHandlerFuncSuite) TestPatchDeploymentHandlerFuncWithConfig() {
@@ -48,7 +50,7 @@ func (s *PatchDeploymentHandlerFuncSuite) TestPatchDeploymentHandlerFuncWithConf
 
 	path := deployment.GetDeploymentPath(s.cwd, "myTargetName")
 	d := deployment.New()
-	err = d.WriteFile(path)
+	_, err = d.WriteFile(path, "", s.log)
 	s.NoError(err)
 
 	cfg := config.New()
@@ -77,7 +79,7 @@ func (s *PatchDeploymentHandlerFuncSuite) TestPatchDeploymentHandlerFuncWithID()
 
 	path := deployment.GetDeploymentPath(s.cwd, "myTargetName")
 	d := deployment.New()
-	err = d.WriteFile(path)
+	_, err = d.WriteFile(path, "", s.log)
 	s.NoError(err)
 
 	cfg := config.New()
@@ -138,7 +140,8 @@ func (s *PatchDeploymentHandlerFuncSuite) TestPatchDeploymentHandlerConfigNotFou
 	req = mux.SetURLVars(req, map[string]string{"name": "myTargetName"})
 
 	d := deployment.New()
-	err = d.WriteFile(deployment.GetDeploymentPath(s.cwd, "myTargetName"))
+
+	_, err = d.WriteFile(deployment.GetDeploymentPath(s.cwd, "myTargetName"), "", s.log)
 	s.NoError(err)
 
 	req.Body = io.NopCloser(strings.NewReader(`{"configurationName": "myConfig"}`))
@@ -187,7 +190,7 @@ func (s *PatchDeploymentHandlerFuncSuite) TestPatchDeploymentSubdir() {
 
 	path := deployment.GetDeploymentPath(s.cwd, "myTargetName")
 	d := deployment.New()
-	err = d.WriteFile(path)
+	_, err = d.WriteFile(path, "", s.log)
 	s.NoError(err)
 
 	cfg := config.New()

@@ -30,9 +30,17 @@ describe("includedFileTooltip", () => {
 
   it("should return correct tooltip for entrypoint file", () => {
     const file = { rel: "src/index.ts", reason: null };
-    const tooltip = includedFileTooltip(file, true);
+    const tooltip = includedFileTooltip(file, { isEntrypoint: true });
     expect(tooltip).toBe(
       `src/index.ts will be included in the next deployment.\nsrc/index.ts is the entrypoint. Entrypoints must be included in the configuration 'files' list.`,
+    );
+  });
+
+  it("should return correct tooltip for package file", () => {
+    const file = { rel: "src/requirements.txt", reason: null };
+    const tooltip = includedFileTooltip(file, { isPackageFile: true });
+    expect(tooltip).toBe(
+      `src/requirements.txt will be included in the next deployment.\nsrc/requirements.txt is a package file. Package files must be included in the configuration 'files' list.`,
     );
   });
 });

@@ -55,6 +55,10 @@ See the [VS Code Extension](vscode.md) page.
 
 See the [Configuration Reference](configuration.md) page.
 
+## Troubleshooting
+
+See the [Troubleshooting](troubleshooting.md) page.
+
 ## Acknowledgements
 
 See the [Licenses](licenses.md) page.

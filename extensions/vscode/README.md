@@ -69,6 +69,14 @@ See the
 [Updating Previously Deployed Content](https://github.com/posit-dev/publisher/blob/main/docs/vscode.md#updating-previously-deployed-content)
 documentation for more information.
 
+### Seamless collaboration
+
+Collaborate with your team using shared configurations and deployments. Easily
+pick up where others left off with deployed content.
+
+See [Collaborative Publishing with Posit Publisher](https://github.com/posit-dev/publisher/blob/main/docs/collaboration.md)
+for more information.
+
 ### Multiple deployments and configurations
 
 Does your content need to be deployed to multiple destinations with different

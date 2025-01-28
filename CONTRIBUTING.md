@@ -158,6 +158,19 @@ schema) the file on the CDN (in S3). Currently, this is a manual process:
   - https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json
   - https://cdn.posit.co/publisher/schemas/posit-publishing-record-schema-v3.json
 
+#### Force Even Better TOML to update
+
+The [Even Better TOML extension](https://marketplace.visualstudio.com/items?itemName=tamasfe.even-better-toml)
+caches schemas. To force it to update remove the cached schemas from the
+extension's cache directory.
+
+On macOS this can be done with the following command, replacing `$USERNAME` with
+your username:
+
+```
+rm /Users/$USERNAME/Library/Application\ Support/Code/User/globalStorage/tamasfe.even-better-toml/*
+```
+
 ## Release
 
 The Posit Publisher VSCode extension releases follow guidelines from the

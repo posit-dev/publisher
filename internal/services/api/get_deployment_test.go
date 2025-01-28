@@ -119,7 +119,7 @@ func (s *GetDeploymentSuite) TestGetPreDeployment() {
 	d.ServerType = accounts.ServerTypeConnect
 	testError := errors.New("test error")
 	d.Error = types.AsAgentError(testError)
-	err := d.WriteFile(path)
+	_, err := d.WriteFile(path, "", s.log)
 	s.NoError(err)
 
 	h := GetDeploymentHandlerFunc(s.cwd, s.log)

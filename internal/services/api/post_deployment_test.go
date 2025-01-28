@@ -29,6 +29,7 @@ import (
 type PostDeploymentHandlerFuncSuite struct {
 	utiltest.Suite
 	cwd util.AbsolutePath
+	log logging.Logger
 }
 
 func TestPostDeploymentHandlerFuncSuite(t *testing.T) {
@@ -44,6 +45,7 @@ func (s *PostDeploymentHandlerFuncSuite) SetupTest() {
 	s.Nil(err)
 	s.cwd = cwd
 	s.cwd.MkdirAll(0700)
+	s.log = logging.New()
 }
 
 type mockPublisher struct {
@@ -156,7 +158,7 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFuncWrongServe
 
 	d := deployment.New()
 	d.ServerURL = originalAcct.URL
-	err = d.WriteFile(deployment.GetDeploymentPath(s.cwd, deploymentName))
+	_, err = d.WriteFile(deployment.GetDeploymentPath(s.cwd, deploymentName), "", s.log)
 	s.NoError(err)
 
 	cfg := config.New()

@@ -350,6 +350,7 @@
               "python-dash",
               "python-fastapi",
               "python-flask",
+              "python-gradio",
               "python-shiny",
               "python-streamlit"
             ]

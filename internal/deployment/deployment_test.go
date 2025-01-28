@@ -10,6 +10,7 @@ import (
 
 	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/schema"
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
@@ -21,6 +22,7 @@ import (
 type DeploymentSuite struct {
 	utiltest.Suite
 	cwd util.AbsolutePath
+	log logging.Logger
 }
 
 func TestDeploymentSuite(t *testing.T) {
@@ -33,6 +35,8 @@ func (s *DeploymentSuite) SetupTest() {
 	s.Nil(err)
 	s.cwd = cwd
 	s.cwd.MkdirAll(0700)
+	s.log = logging.New()
+	ActiveDeploymentRegistry.Reset()
 }
 
 func (s *DeploymentSuite) createDeploymentFile(name string) *Deployment {
@@ -47,7 +51,7 @@ func (s *DeploymentSuite) createDeploymentFile(name string) *Deployment {
 		Version:        "3.4.5",
 		PackageManager: "pip",
 	}
-	err := d.WriteFile(path)
+	_, err := d.WriteFile(path, "abc", s.log)
 	s.NoError(err)
 	return d
 }
@@ -109,25 +113,130 @@ func (s *DeploymentSuite) TestFromFileErr() {
 func (s *DeploymentSuite) TestWriteFile() {
 	deploymentFile := GetDeploymentPath(s.cwd, "myTargetName")
 	d := New()
-	err := d.WriteFile(deploymentFile)
+	_, err := d.WriteFile(deploymentFile, "", s.log)
 	s.NoError(err)
 
 	content, err := deploymentFile.ReadFile()
 	s.NoError(err)
 	stringContent := string(content)
-	firstLine := strings.Split(stringContent, "\n")[0]
+	lines := strings.Split(stringContent, "\n")
+	firstLine := lines[0]
 	s.Equal(autogenHeader, firstLine+"\n")
 
 	// This is a pre-deployment, so should not contain certain fields.
-	s.NotContains(stringContent, "id")
-	s.NotContains(stringContent, "deployed_at")
-	s.NotContains(stringContent, "bundle_id")
-	s.NotContains(stringContent, "bundle_url")
-	s.NotContains(stringContent, "dashboard_url")
-	s.NotContains(stringContent, "direct_url")
-	s.NotContains(stringContent, "deployment_error")
-	s.NotContains(stringContent, "files")
-	s.NotContains(stringContent, "[configuration")
+	unexpected := [...]string{
+		"id",
+		"deployed_at",
+		"bundle_id",
+		"bundle_url",
+		"dashboard_url",
+		"direct_url",
+		"deployment_error",
+		"files",
+		"[configuration",
+	}
+	for _, line := range lines {
+		for _, field := range unexpected {
+			s.False(strings.HasPrefix(line, field), "Unexpected prefix \"%s\" in line: \"%s\"", field, line)
+		}
+	}
+}
+
+func (s *DeploymentSuite) TestWriteFileOptions() {
+
+	type testOptions struct {
+		owningLocalID     string
+		updateLocalID     string
+		existingDismissed string
+		expectedSuccess   bool
+	}
+
+	// Need to rethink...
+	tests := [...]testOptions{
+		// Non deployment thread test cases
+		// ownership take-over w/o dismissal
+		{
+			owningLocalID:     "123",
+			updateLocalID:     "",
+			existingDismissed: "",
+			expectedSuccess:   true,
+		},
+		// ownership take-over w/ dismissal
+		{
+			owningLocalID:     "123",
+			updateLocalID:     "",
+			existingDismissed: "2025-01-08T17:10:22-08:00",
+			expectedSuccess:   true,
+		},
+		// deployment in progress take-over tests
+		// ownership match w/ no dismissal
+		{
+			owningLocalID:     "123",
+			updateLocalID:     "123",
+			existingDismissed: "",
+			expectedSuccess:   true,
+		},
+		// ownership match w/ dismissal
+		{
+			owningLocalID:     "123",
+			updateLocalID:     "123",
+			existingDismissed: "2025-01-08T17:10:22-08:00",
+			expectedSuccess:   true,
+		},
+		// ownership mismatch w/o dismissal
+		{
+			owningLocalID:     "123",
+			updateLocalID:     "456",
+			existingDismissed: "",
+			expectedSuccess:   false,
+		},
+		// ownership mismatch w/ dismissal
+		{
+			owningLocalID:     "123",
+			updateLocalID:     "456",
+			existingDismissed: "2025-01-08T17:10:22-08:00",
+			expectedSuccess:   false,
+		},
+	}
+
+	for ndx, test := range tests {
+		i := ndx + 1
+		s.SetupTest()
+
+		// create original file
+		deploymentFile := GetDeploymentPath(s.cwd, "myTargetName")
+		d := New()
+		d.ConfigName = "original" // Tests use this field to detect changes in file on disk
+		ActiveDeploymentRegistry.Set(deploymentFile.String(), test.owningLocalID)
+		d.DismissedAt = test.existingDismissed
+		returnedD, err := d.WriteFile(deploymentFile, test.owningLocalID, s.log)
+		s.NoError(err)
+		s.Equal("original", returnedD.ConfigName, "Failed iteration %d of test (location 1)", i)
+
+		// confirm it was written
+		origD, err := FromFile(deploymentFile)
+		s.NoError(err)
+		s.Equal("original", origD.ConfigName, "Failed iteration %d of test (location 2)", i)
+
+		// try and update it
+		origD.ConfigName = "updated"
+		returnedD, err = origD.WriteFile(deploymentFile, test.updateLocalID, s.log)
+		s.NoError(err)
+		if test.expectedSuccess {
+			s.Equal("updated", returnedD.ConfigName, "Failed iteration %d of test (location 3)", i)
+		} else {
+			s.NotEqual("updated", returnedD.ConfigName, "Failed iteration %d of test (location 4)", i)
+		}
+
+		// determine test success based on test array
+		updatedD, err := FromFile(deploymentFile)
+		s.NoError(err)
+		if test.expectedSuccess {
+			s.Equal("updated", updatedD.ConfigName, "Failed iteration %d of test (location 5)", i)
+		} else {
+			s.NotEqual("updated", updatedD.ConfigName, "Failed iteration %d of test (location 6)", i)
+		}
+	}
 }
 
 func (s *DeploymentSuite) TestWriteFileErr() {
@@ -135,7 +244,7 @@ func (s *DeploymentSuite) TestWriteFileErr() {
 	readonlyFs := afero.NewReadOnlyFs(deploymentFile.Fs())
 	readonlyFile := deploymentFile.WithFs(readonlyFs)
 	deployment := New()
-	err := deployment.WriteFile(readonlyFile)
+	_, err := deployment.WriteFile(readonlyFile, "", s.log)
 	s.NotNil(err)
 }
 
