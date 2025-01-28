@@ -58,12 +58,12 @@ the project on Posit Connect.
 The [`renv` package](https://rstudio.github.io/renv/articles/renv.html) can
 create that record as a `lockfile` (commonly named `renv.lock`).
 
-Projects that already include a `lockfile` do not require `renv` be setup.
-
 If an R project doesn't have a `lockfile` on deploy, Posit Publisher prompts to
 provide a solution to generate the expected `lockfile`.
 
 ![](https://cdn.posit.co/publisher/assets/img/publisher-renv-setup-notification.png)
+
+Projects that already include a `lockfile` do not require `renv` be setup.
 
 When uncommon errors occur that Posit Publisher cannot solve for you, it
 prompts to evaluate the status of `renv` using
