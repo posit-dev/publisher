@@ -1,5 +1,3 @@
-alias c := clean
-alias i := install
 alias t := test
 
 export CONTENT := env_var_or_default("CONTENT", "all")
