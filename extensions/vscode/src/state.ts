@@ -27,6 +27,7 @@ import {
 } from "src/utils/errorTypes";
 import { DeploymentSelector, SelectionState } from "src/types/shared";
 import { LocalState, Views } from "./constants";
+import { getPythonInterpreterPath, getRInterpreterPath } from "./utils/vscode";
 
 function findContentRecord<
   T extends ContentRecord | PreContentRecord | PreContentRecordWithConfig,
@@ -202,9 +203,14 @@ export class PublisherState implements Disposable {
     // if not found, then retrieve it and add it to our cache.
     try {
       const api = await useApi();
+      const python = await getPythonInterpreterPath();
+      const r = await getRInterpreterPath();
+
       const response = await api.configurations.get(
         contentRecord.configurationName,
         contentRecord.projectDir,
+        r,
+        python,
       );
       const cfg = response.data;
       // its not foolproof, but it may help
@@ -267,7 +273,9 @@ export class PublisherState implements Disposable {
         Views.HomeView,
         async () => {
           const api = await useApi();
-          const response = await api.configurations.getAll(".", {
+          const python = await getPythonInterpreterPath();
+          const r = await getRInterpreterPath();
+          const response = await api.configurations.getAll(".", r, python, {
             recursive: true,
           });
           this.configurations = response.data;

@@ -23,13 +23,18 @@ func GetConfigurationHandlerFunc(base util.AbsolutePath, log logging.Logger) htt
 			// Response already returned by ProjectDirFromRequest
 			return
 		}
+		rInterpreter, pythonInterpreter, err := InterpretersFromRequest(base, w, req, log)
+		if err != nil {
+			// Response already returned by ProjectDirFromRequest
+			return
+		}
 		path := config.GetConfigPath(projectDir, name)
 		relPath, err := path.Rel(projectDir)
 		if err != nil {
 			InternalError(w, req, log, err)
 			return
 		}
-		cfg, err := config.FromFile(path)
+		cfg, err := config.FromFile(path, rInterpreter, pythonInterpreter)
 		if err != nil && errors.Is(err, fs.ErrNotExist) {
 			http.NotFound(w, req)
 			return

@@ -19,21 +19,21 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type GetConfigurationuite struct {
+type GetConfigurationSuite struct {
 	utiltest.Suite
 	log logging.Logger
 	cwd util.AbsolutePath
 }
 
 func TestGetConfigurationuite(t *testing.T) {
-	suite.Run(t, new(GetConfigurationuite))
+	suite.Run(t, new(GetConfigurationSuite))
 }
 
-func (s *GetConfigurationuite) SetupSuite() {
+func (s *GetConfigurationSuite) SetupSuite() {
 	s.log = logging.New()
 }
 
-func (s *GetConfigurationuite) SetupTest() {
+func (s *GetConfigurationSuite) SetupTest() {
 	fs := afero.NewMemMapFs()
 	cwd, err := util.Getwd(fs)
 	s.Nil(err)
@@ -41,7 +41,7 @@ func (s *GetConfigurationuite) SetupTest() {
 	s.cwd.MkdirAll(0700)
 }
 
-func (s *GetConfigurationuite) makeConfiguration(name string) *config.Config {
+func (s *GetConfigurationSuite) makeConfiguration(name string) *config.Config {
 	path := config.GetConfigPath(s.cwd, name)
 	cfg := config.New()
 	cfg.Type = config.ContentTypePythonDash
@@ -49,15 +49,16 @@ func (s *GetConfigurationuite) makeConfiguration(name string) *config.Config {
 	cfg.Python = &config.Python{
 		Version:        "3.4.5",
 		PackageManager: "pip",
+		PackageFile:    "requirements.txt",
 	}
 	err := cfg.WriteFile(path)
 	s.NoError(err)
-	r, err := config.FromFile(path)
+	r, err := config.FromFile(path, nil, nil)
 	s.NoError(err)
 	return r
 }
 
-func (s *GetConfigurationuite) TestGetConfiguration() {
+func (s *GetConfigurationSuite) TestGetConfiguration() {
 	cfg := s.makeConfiguration("myConfig")
 
 	h := GetConfigurationHandlerFunc(s.cwd, s.log)
@@ -87,7 +88,7 @@ func (s *GetConfigurationuite) TestGetConfiguration() {
 	s.Equal(cfg, res.Configuration)
 }
 
-func (s *GetConfigurationuite) TestGetConfigurationError() {
+func (s *GetConfigurationSuite) TestGetConfigurationError() {
 	path2 := config.GetConfigPath(s.cwd, "myConfig")
 	err := path2.WriteFile([]byte(`foo = 1`), 0666)
 	s.NoError(err)
@@ -120,7 +121,7 @@ func (s *GetConfigurationuite) TestGetConfigurationError() {
 	s.Equal(nilConfiguration, res.Configuration)
 }
 
-func (s *GetConfigurationuite) TestGetConfigurationNotFound() {
+func (s *GetConfigurationSuite) TestGetConfigurationNotFound() {
 	h := GetConfigurationHandlerFunc(s.cwd, s.log)
 
 	rec := httptest.NewRecorder()
@@ -133,7 +134,7 @@ func (s *GetConfigurationuite) TestGetConfigurationNotFound() {
 	s.Equal(http.StatusNotFound, rec.Result().StatusCode)
 }
 
-func (s *GetConfigurationuite) TestGetConfigurationFromSubdir() {
+func (s *GetConfigurationSuite) TestGetConfigurationFromSubdir() {
 	cfg := s.makeConfiguration("myConfig")
 
 	// Getting configurations from a subdirectory two levels down
@@ -171,7 +172,7 @@ func (s *GetConfigurationuite) TestGetConfigurationFromSubdir() {
 	s.Equal(cfg, res.Configuration)
 }
 
-func (s *GetConfigurationuite) TestGetConfigurationBadDir() {
+func (s *GetConfigurationSuite) TestGetConfigurationBadDir() {
 	// It's a Bad Request to try to get a config from a directory outside the project
 	_ = s.makeConfiguration("myConfig")
 

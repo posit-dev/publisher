@@ -65,6 +65,8 @@ export async function newDeployment(
   // API Calls and results
   // ***************************************************************
   const api = await useApi();
+  const python = await getPythonInterpreterPath();
+  const r = await getRInterpreterPath();
 
   let credentials: Credential[] = [];
   let credentialListItems: QuickPickItem[] = [];
@@ -130,8 +132,8 @@ export async function newDeployment(
 
       const inspectResponse = await api.configurations.inspect(
         relEntryPointDir,
-        python,
         r,
+        python,
         {
           entrypoint: relEntryPointFile,
         },
@@ -842,6 +844,8 @@ export async function newDeployment(
     const existingNames = (
       await api.configurations.getAll(
         newDeploymentData.entrypoint.inspectionResult.projectDir,
+        r,
+        python,
       )
     ).data.map((config) => config.configurationName);
 

@@ -10,13 +10,14 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/posit-dev/publisher/internal/bundles/matcher"
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/services/api/files"
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 )
 
-type cfgFromFile func(path util.AbsolutePath) (*config.Config, error)
+type cfgFromFile func(path util.AbsolutePath, activeRInterpreter *interpreters.RInterpreter, activePythonInterpreter *interpreters.PythonInterpreter) (*config.Config, error)
 type cfgGetConfigPath func(base util.AbsolutePath, configName string) util.AbsolutePath
 
 // TODO: It would be better to have the config package methods as a provider pattern instead of plain functions
@@ -31,8 +32,13 @@ func GetConfigFilesHandlerFunc(base util.AbsolutePath, filesService files.FilesS
 			// Response already returned by ProjectDirFromRequest
 			return
 		}
+		rInterpreter, pythonInterpreter, err := InterpretersFromRequest(base, w, req, log)
+		if err != nil {
+			// Response already returned by ProjectDirFromRequest
+			return
+		}
 		configPath := configGetConfigPath(projectDir, name)
-		cfg, err := configFromFile(configPath)
+		cfg, err := configFromFile(configPath, rInterpreter, pythonInterpreter)
 		if err != nil {
 			if aerr, ok := err.(*types.AgentError); ok {
 				if aerr.Code == types.ErrorUnknownTOMLKey {

@@ -39,7 +39,7 @@ func (s *PostPackagesPythonScanSuite) SetupTest() {
 func (s *PostPackagesPythonScanSuite) TestNewPostRequirementsHandler() {
 	base := util.NewAbsolutePath("/project", nil)
 	log := logging.New()
-	h := NewPostPackagesPythonScanHandler(base, log)
+	h := NewPostPackagesPythonScanHandler(base, log, nil)
 	s.Equal(base, h.base)
 	s.Equal(log, h.log)
 }
@@ -56,11 +56,13 @@ func (s *PostPackagesPythonScanSuite) TestServeHTTP() {
 	destPath := base.Join("requirements.txt")
 
 	log := logging.New()
-	h := NewPostPackagesPythonScanHandler(base, log)
 
 	mockPythonInterpreter := interpreters.NewMockPythonInterpreter()
 	mockPythonInterpreter.On("Init").Return(nil)
 	mockPythonInterpreter.On("GetPythonExecutable").Return(util.NewAbsolutePath("/test/python", nil), nil)
+	var p interpreters.PythonInterpreter = mockPythonInterpreter
+
+	h := NewPostPackagesPythonScanHandler(base, log, &p)
 
 	i := inspect.NewMockPythonInspector()
 	pkgs := []string{
@@ -75,9 +77,8 @@ func (s *PostPackagesPythonScanSuite) TestServeHTTP() {
 	i.On("GetPythonInterpreter").Return(mockPythonInterpreter)
 	inspectorFactory = func(
 		util.AbsolutePath,
-		util.Path,
+		*interpreters.PythonInterpreter,
 		logging.Logger,
-		interpreters.PythonInterpreterFactory,
 		executor.Executor,
 	) (inspect.PythonInspector, error) {
 		return i, nil
@@ -108,11 +109,13 @@ func (s *PostPackagesPythonScanSuite) TestServeHTTPEmptyBody() {
 	destPath := base.Join("requirements.txt")
 
 	log := logging.New()
-	h := NewPostPackagesPythonScanHandler(base, log)
 
 	mockPythonInterpreter := interpreters.NewMockPythonInterpreter()
 	mockPythonInterpreter.On("Init").Return(nil)
 	mockPythonInterpreter.On("GetPythonExecutable").Return(util.NewAbsolutePath("/test/python", nil), nil)
+	var p interpreters.PythonInterpreter = mockPythonInterpreter
+
+	h := NewPostPackagesPythonScanHandler(base, log, &p)
 
 	i := inspect.NewMockPythonInspector()
 	i.On("ScanRequirements", mock.Anything).Return(nil, nil, "", nil)
@@ -120,9 +123,8 @@ func (s *PostPackagesPythonScanSuite) TestServeHTTPEmptyBody() {
 	i.On("GetPythonInterpreter").Return(mockPythonInterpreter)
 	inspectorFactory = func(
 		util.AbsolutePath,
-		util.Path,
+		*interpreters.PythonInterpreter,
 		logging.Logger,
-		interpreters.PythonInterpreterFactory,
 		executor.Executor,
 	) (inspect.PythonInspector, error) {
 		return i, nil
@@ -145,11 +147,13 @@ func (s *PostPackagesPythonScanSuite) TestServeHTTPWithSaveName() {
 	destPath := base.Join("my_requirements.txt")
 
 	log := logging.New()
-	h := NewPostPackagesPythonScanHandler(base, log)
 
 	mockPythonInterpreter := interpreters.NewMockPythonInterpreter()
 	mockPythonInterpreter.On("Init").Return(nil)
 	mockPythonInterpreter.On("GetPythonExecutable").Return(util.NewAbsolutePath("/test/python", nil), nil)
+	var p interpreters.PythonInterpreter = mockPythonInterpreter
+
+	h := NewPostPackagesPythonScanHandler(base, log, &p)
 
 	i := inspect.NewMockPythonInspector()
 	i.On("ScanRequirements", mock.Anything).Return(nil, nil, "", nil)
@@ -157,9 +161,8 @@ func (s *PostPackagesPythonScanSuite) TestServeHTTPWithSaveName() {
 	i.On("GetPythonInterpreter").Return(mockPythonInterpreter)
 	inspectorFactory = func(
 		util.AbsolutePath,
-		util.Path,
+		*interpreters.PythonInterpreter,
 		logging.Logger,
-		interpreters.PythonInterpreterFactory,
 		executor.Executor,
 	) (inspect.PythonInspector, error) {
 		return i, nil
@@ -179,11 +182,13 @@ func (s *PostPackagesPythonScanSuite) TestServeHTTPErr() {
 	err = base.MkdirAll(0777)
 	s.NoError(err)
 	log := logging.New()
-	h := NewPostPackagesPythonScanHandler(base, log)
 
 	mockPythonInterpreter := interpreters.NewMockPythonInterpreter()
 	mockPythonInterpreter.On("Init").Return(nil)
 	mockPythonInterpreter.On("GetPythonExecutable").Return(util.NewAbsolutePath("/test/python", nil), nil)
+	var p interpreters.PythonInterpreter = mockPythonInterpreter
+
+	h := NewPostPackagesPythonScanHandler(base, log, &p)
 
 	testError := errors.New("test error from ScanRequirements")
 	i := inspect.NewMockPythonInspector()
@@ -191,9 +196,8 @@ func (s *PostPackagesPythonScanSuite) TestServeHTTPErr() {
 	i.On("GetPythonInterpreter").Return(mockPythonInterpreter)
 	inspectorFactory = func(
 		util.AbsolutePath,
-		util.Path,
+		*interpreters.PythonInterpreter,
 		logging.Logger,
-		interpreters.PythonInterpreterFactory,
 		executor.Executor,
 	) (inspect.PythonInspector, error) {
 		return i, nil
@@ -221,11 +225,13 @@ func (s *PostPackagesPythonScanSuite) TestServeHTTPSubdir() {
 	destPath := projectDir.Join("requirements.txt")
 
 	log := logging.New()
-	h := NewPostPackagesPythonScanHandler(base, log)
 
 	mockPythonInterpreter := interpreters.NewMockPythonInterpreter()
 	mockPythonInterpreter.On("Init").Return(nil)
 	mockPythonInterpreter.On("GetPythonExecutable").Return(util.NewAbsolutePath("/test/python", nil), nil)
+	var p interpreters.PythonInterpreter = mockPythonInterpreter
+
+	h := NewPostPackagesPythonScanHandler(base, log, &p)
 
 	i := inspect.NewMockPythonInspector()
 	i.On("ScanRequirements", mock.Anything).Return(nil, nil, "", nil)
@@ -233,9 +239,8 @@ func (s *PostPackagesPythonScanSuite) TestServeHTTPSubdir() {
 	i.On("GetPythonInterpreter").Return(mockPythonInterpreter)
 	inspectorFactory = func(
 		util.AbsolutePath,
-		util.Path,
+		*interpreters.PythonInterpreter,
 		logging.Logger,
-		interpreters.PythonInterpreterFactory,
 		executor.Executor,
 	) (inspect.PythonInspector, error) {
 		return i, nil
@@ -256,11 +261,13 @@ func (s *PostPackagesPythonScanSuite) TestServeHTTPNoPythonErr() {
 	err = base.MkdirAll(0777)
 	s.NoError(err)
 	log := logging.New()
-	h := NewPostPackagesPythonScanHandler(base, log)
 
 	mockPythonInterpreter := interpreters.NewMockPythonInterpreter()
 	mockPythonInterpreter.On("Init").Return(nil)
 	mockPythonInterpreter.On("GetPythonExecutable").Return(util.NewAbsolutePath("/test/python", nil), nil)
+	var p interpreters.PythonInterpreter = mockPythonInterpreter
+
+	h := NewPostPackagesPythonScanHandler(base, log, &p)
 
 	testError := types.NewAgentError(types.ErrorPythonExecNotFound, errors.New("no python"), nil)
 	i := inspect.NewMockPythonInspector()
@@ -268,9 +275,8 @@ func (s *PostPackagesPythonScanSuite) TestServeHTTPNoPythonErr() {
 	i.On("GetPythonInterpreter").Return(mockPythonInterpreter)
 	inspectorFactory = func(
 		util.AbsolutePath,
-		util.Path,
+		*interpreters.PythonInterpreter,
 		logging.Logger,
-		interpreters.PythonInterpreterFactory,
 		executor.Executor,
 	) (inspect.PythonInspector, error) {
 		return i, nil

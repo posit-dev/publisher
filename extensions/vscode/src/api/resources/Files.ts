@@ -4,6 +4,7 @@ import { AxiosInstance } from "axios";
 
 import { ContentRecordFile, FileAction } from "../types/files";
 import { Configuration } from "../types/configurations";
+import { PythonExecutable, RExecutable } from "../../types/shared";
 
 export class Files {
   private client: AxiosInstance;
@@ -26,11 +27,22 @@ export class Files {
   // 404 - configuration does not exist
   // 422 - configuration files list contains invalid patterns
   // 500 - internal server error
-  getByConfiguration(configName: string, dir: string) {
+  getByConfiguration(
+    configName: string,
+    dir: string,
+    r: RExecutable,
+    python: PythonExecutable,
+  ) {
     const encodedName = encodeURIComponent(configName);
     return this.client.get<ContentRecordFile>(
       `/configurations/${encodedName}/files`,
-      { params: { dir } },
+      {
+        params: {
+          dir,
+          python: python.pythonPath,
+          r: r.rPath,
+        },
+      },
     );
   }
 

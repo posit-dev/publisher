@@ -16,6 +16,7 @@ import (
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/events"
+	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/publish"
 	"github.com/posit-dev/publisher/internal/state"
@@ -83,7 +84,10 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFunc() {
 		accountName, configName, targetName, saveName string,
 		accountList accounts.AccountList,
 		secrets map[string]string,
-		insecure bool) (*state.State, error) {
+		insecure bool,
+		r *interpreters.RInterpreter,
+		python *interpreters.PythonInterpreter,
+	) (*state.State, error) {
 
 		s.Equal(s.cwd, path)
 		s.Equal("myTargetName", targetName)
@@ -129,7 +133,10 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFuncStateErr()
 		accountName, configName, targetName, saveName string,
 		accountList accounts.AccountList,
 		secrets map[string]string,
-		insecure bool) (*state.State, error) {
+		insecure bool,
+		r *interpreters.RInterpreter,
+		python *interpreters.PythonInterpreter,
+	) (*state.State, error) {
 		return nil, errors.New("test error from state factory")
 	}
 
@@ -196,7 +203,10 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFuncPublishErr
 		accountName, configName, targetName, saveName string,
 		accountList accounts.AccountList,
 		secrets map[string]string,
-		insecure bool) (*state.State, error) {
+		insecure bool,
+		r *interpreters.RInterpreter,
+		python *interpreters.PythonInterpreter,
+	) (*state.State, error) {
 
 		st := state.Empty()
 		st.Account = &accounts.Account{}
@@ -251,7 +261,10 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentSubdir() {
 		accountName, configName, targetName, saveName string,
 		accountList accounts.AccountList,
 		secrets map[string]string,
-		insecure bool) (*state.State, error) {
+		insecure bool,
+		r *interpreters.RInterpreter,
+		python *interpreters.PythonInterpreter,
+	) (*state.State, error) {
 
 		s.Equal(s.cwd, path)
 		s.Equal("myTargetName", targetName)
@@ -301,7 +314,10 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFuncWithSecret
 		accountName, configName, targetName, saveName string,
 		accountList accounts.AccountList,
 		secrets map[string]string,
-		insecure bool) (*state.State, error) {
+		insecure bool,
+		r *interpreters.RInterpreter,
+		python *interpreters.PythonInterpreter,
+	) (*state.State, error) {
 
 		s.Equal(s.cwd, path)
 		s.Equal("myTargetName", targetName)

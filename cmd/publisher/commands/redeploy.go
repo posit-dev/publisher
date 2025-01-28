@@ -33,8 +33,8 @@ func (cmd *RedeployCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContex
 	}
 	ctx.Logger = events.NewCLILogger(args.Verbose, os.Stderr)
 
-	i := initialize.NewDefaultInitialize()
-	err = i.InitIfNeeded(absPath, cmd.ConfigName, ctx.Logger)
+	i := initialize.NewDefaultInitialize(nil, nil)
+	err = i.InitIfNeeded(absPath, cmd.ConfigName, ctx.Logger, false)
 	if err != nil {
 		return err
 	}
@@ -43,7 +43,7 @@ func (cmd *RedeployCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContex
 	if err != nil {
 		return fmt.Errorf("invalid deployment name '%s': %w", cmd.TargetName, err)
 	}
-	stateStore, err := state.New(absPath, "", cmd.ConfigName, cmd.TargetName, "", ctx.Accounts, nil, false)
+	stateStore, err := state.New(absPath, "", cmd.ConfigName, cmd.TargetName, "", ctx.Accounts, nil, false, nil, nil)
 	if err != nil {
 		return err
 	}

@@ -30,29 +30,20 @@ type defaultPythonInspector struct {
 
 var _ PythonInspector = &defaultPythonInspector{}
 
-type PythonInspectorFactory func(base util.AbsolutePath, pythonPath util.Path, log logging.Logger, pythonInterpreterFactoryOverride interpreters.PythonInterpreterFactory, cmdExecutorOverride executor.Executor) (PythonInspector, error)
+type PythonInspectorFactory func(base util.AbsolutePath, python *interpreters.PythonInterpreter, log logging.Logger, cmdExecutorOverride executor.Executor) (PythonInspector, error)
 
-func NewPythonInspector(base util.AbsolutePath, pythonExecutable util.Path, log logging.Logger, pythonInterpreterFactoryOverride interpreters.PythonInterpreterFactory, cmdExecutorOverride executor.Executor) (PythonInspector, error) {
-
-	var pythonInterpreter interpreters.PythonInterpreter
-	var err error
-
-	if pythonInterpreterFactoryOverride != nil {
-		pythonInterpreter, err = pythonInterpreterFactoryOverride(base, pythonExecutable, log, cmdExecutorOverride, nil, nil)
-	} else {
-		// No error returned if there is no R interpreter found.
-		// That can be expected when retrieving the RExecutable
-		pythonInterpreter, err = interpreters.NewPythonInterpreter(base, pythonExecutable, log, nil, nil, nil)
+func NewPythonInspector(base util.AbsolutePath, pythonInterpreter *interpreters.PythonInterpreter, log logging.Logger, cmdExecutorOverride executor.Executor) (PythonInspector, error) {
+	if pythonInterpreter == nil {
+		return nil, interpreters.MissingPythonError
 	}
-
 	return &defaultPythonInspector{
 		executor:          executor.NewExecutor(),
 		pathLooker:        util.NewPathLooker(),
 		scanner:           pydeps.NewDependencyScanner(log),
 		base:              base,
-		pythonInterpreter: pythonInterpreter,
+		pythonInterpreter: *pythonInterpreter,
 		log:               log,
-	}, err
+	}, nil
 }
 
 func (i *defaultPythonInspector) GetPythonInterpreter() interpreters.PythonInterpreter {

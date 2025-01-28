@@ -26,28 +26,21 @@ type defaultRInspector struct {
 
 var _ RInspector = &defaultRInspector{}
 
-type RInspectorFactory func(base util.AbsolutePath, rExecutable util.Path, log logging.Logger, rInterpreterFactory interpreters.RInterpreterFactory, cmdExecutorOverride executor.Executor) (RInspector, error)
+type RInspectorFactory func(base util.AbsolutePath, r *interpreters.RInterpreter, log logging.Logger, cmdExecutorOverride executor.Executor) (RInspector, error)
 
-func NewRInspector(base util.AbsolutePath, rExecutable util.Path, log logging.Logger, rInterpreterFactoryOverride interpreters.RInterpreterFactory, cmdExecutorOverride executor.Executor) (RInspector, error) {
+func NewRInspector(base util.AbsolutePath, r *interpreters.RInterpreter, log logging.Logger, cmdExecutorOverride executor.Executor) (RInspector, error) {
 
-	var rInterpreter interpreters.RInterpreter
-	var err error
-
-	if rInterpreterFactoryOverride != nil {
-		rInterpreter, err = rInterpreterFactoryOverride(base, rExecutable, log, cmdExecutorOverride, nil, nil)
-	} else {
-		// No error returned if there is no R interpreter found.
-		// That can be expected when retrieving the RExecutable
-		rInterpreter, err = interpreters.NewRInterpreter(base, rExecutable, log, nil, nil, nil)
+	if r == nil {
+		return nil, interpreters.MissingRError
 	}
 
 	return &defaultRInspector{
 		base:         base,
 		executor:     executor.NewExecutor(),
 		pathLooker:   util.NewPathLooker(),
-		rInterpreter: rInterpreter,
+		rInterpreter: *r,
 		log:          log,
-	}, err
+	}, nil
 }
 
 // InspectR inspects the specified project directory,

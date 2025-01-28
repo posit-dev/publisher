@@ -30,7 +30,7 @@ func TestInitializeSuite(t *testing.T) {
 }
 
 func setupMockRInspector(requiredRReturnValue bool, requiredRError error) inspect.RInspectorFactory {
-	return func(base util.AbsolutePath, rExecutable util.Path, log logging.Logger, rInterpreterFactoryOverride interpreters.RInterpreterFactory, cmdExecutorOverride executor.Executor) (inspect.RInspector, error) {
+	return func(base util.AbsolutePath, r *interpreters.RInterpreter, log logging.Logger, cmdExecutorOverride executor.Executor) (inspect.RInspector, error) {
 		rInspector := inspect.NewMockRInspector()
 		rInspector.On("InspectR").Return(expectedRConfig, nil)
 		rInspector.On("RequiresR", mock.Anything).Return(requiredRReturnValue, requiredRError)
@@ -39,7 +39,7 @@ func setupMockRInspector(requiredRReturnValue bool, requiredRError error) inspec
 }
 
 func setupMockPythonInspector(requiredPythonReturnValue bool, requiredPythonError error) inspect.PythonInspectorFactory {
-	return func(base util.AbsolutePath, pythonExecutable util.Path, log logging.Logger, pythonInterpreterFactoryOverride interpreters.PythonInterpreterFactory, cmdExecutorOverride executor.Executor) (inspect.PythonInspector, error) {
+	return func(base util.AbsolutePath, python *interpreters.PythonInterpreter, log logging.Logger, cmdExecutorOverride executor.Executor) (inspect.PythonInspector, error) {
 		pythonInspector := inspect.NewMockPythonInspector()
 		pythonInspector.On("InspectPython").Return(expectedPyConfig, nil)
 		pythonInspector.On("RequiresPython", mock.Anything).Return(requiredPythonReturnValue, requiredPythonError)
@@ -47,35 +47,24 @@ func setupMockPythonInspector(requiredPythonReturnValue bool, requiredPythonErro
 	}
 }
 
-func setupNewRInterpreterMock(
-	base util.AbsolutePath,
-	rExecutableParam util.Path,
-	log logging.Logger,
-	cmdExecutorOverride executor.Executor,
-	pathLookerOverride util.PathLooker,
-	existsFuncOverride util.ExistsFunc,
-) (interpreters.RInterpreter, error) {
+func setupNewRInterpreterMock() interpreters.RInterpreter {
 	i := interpreters.NewMockRInterpreter()
-	i.On("Init").Return(nil)
-	i.On("RequiresR", mock.Anything).Return(false, nil)
-	i.On("GetLockFilePath").Return(util.RelativePath{}, false, nil)
-	return i, nil
+	i.On("IsRExecutableValid").Return(true)
+	i.On("GetRExecutable").Return(util.NewAbsolutePath("/bin/r", nil), nil)
+	i.On("GetRVersion").Return("3.3.3", nil)
+	i.On("GetPackageManager").Return("renv")
+	i.On("GetLockFilePath").Return(util.NewRelativePath("renv.lock", nil), false, nil)
+	return i
 }
 
-func setupNewPythonInterpreterMock(
-	base util.AbsolutePath,
-	rExecutableParam util.Path,
-	log logging.Logger,
-	cmdExecutorOverride executor.Executor,
-	pathLookerOverride util.PathLooker,
-	existsFuncOverride util.ExistsFunc,
-) (interpreters.PythonInterpreter, error) {
+func setupNewPythonInterpreterMock() interpreters.PythonInterpreter {
 	i := interpreters.NewMockPythonInterpreter()
 	i.On("IsPythonExecutableValid").Return(true)
-	i.On("GetPythonExecutable").Return(util.RelativePath{}, nil)
-	i.On("GetPythonVersion", mock.Anything).Return("", nil)
-
-	return i, nil
+	i.On("GetPythonExecutable").Return(util.NewAbsolutePath("/bin/python", nil), nil)
+	i.On("GetPythonVersion").Return("4.3.1", nil)
+	i.On("GetPythonPackageFile").Return("requirements.txt")
+	i.On("GetPythonPackageManager").Return("pip")
+	return i
 }
 
 func (s *InitializeSuite) SetupTest() {
@@ -93,15 +82,18 @@ func (s *InitializeSuite) TestInitEmpty() {
 	err := path.Mkdir(0777)
 	s.NoError(err)
 
+	python := setupNewPythonInterpreterMock()
+	r := setupNewRInterpreterMock()
+
 	i := NewInitialize(
 		detectors.NewContentTypeDetector,
 		inspect.NewPythonInspector,
-		setupNewPythonInterpreterMock,
+		&python,
 		inspect.NewRInspector,
-		setupNewRInterpreterMock,
+		&r,
 	)
 
-	cfg, err := i.Init(path, "", util.Path{}, util.Path{}, log)
+	cfg, err := i.Init(path, "", log, true)
 	s.Nil(err)
 	s.Equal(config.ContentTypeUnknown, cfg.Type)
 	s.Equal("My App", cfg.Title)
@@ -199,19 +191,22 @@ func (s *InitializeSuite) TestInitInferredType() {
 	log := logging.New()
 	s.createAppPy()
 
+	python := setupNewPythonInterpreterMock()
+	r := setupNewRInterpreterMock()
+
 	i := NewInitialize(
 		detectors.NewContentTypeDetector,
 		setupMockPythonInspector(true, nil),
-		setupNewPythonInterpreterMock,
+		&python,
 		setupMockRInspector(false, nil),
-		setupNewRInterpreterMock,
+		&r,
 	)
 
 	configName := ""
-	cfg, err := i.Init(s.cwd, configName, util.Path{}, util.Path{}, log)
+	cfg, err := i.Init(s.cwd, configName, log, true)
 	s.NoError(err)
 	configPath := config.GetConfigPath(s.cwd, configName)
-	cfg2, err := config.FromFile(configPath)
+	cfg2, err := config.FromFile(configPath, &r, &python)
 	s.NoError(err)
 	s.Equal(config.ContentTypePythonFlask, cfg.Type)
 	s.Equal(expectedPyConfig, cfg.Python)
@@ -223,19 +218,22 @@ func (s *InitializeSuite) TestInitRequirementsFile() {
 	s.createHTML()
 	s.createRequirementsFile()
 
+	python := setupNewPythonInterpreterMock()
+	r := setupNewRInterpreterMock()
+
 	i := NewInitialize(
 		detectors.NewContentTypeDetector,
 		setupMockPythonInspector(true, nil),
-		setupNewPythonInterpreterMock,
+		&python,
 		setupMockRInspector(false, nil),
-		setupNewRInterpreterMock,
+		&r,
 	)
 
 	configName := ""
-	cfg, err := i.Init(s.cwd, configName, util.Path{}, util.Path{}, log)
+	cfg, err := i.Init(s.cwd, configName, log, true)
 	s.NoError(err)
 	configPath := config.GetConfigPath(s.cwd, configName)
-	cfg2, err := config.FromFile(configPath)
+	cfg2, err := config.FromFile(configPath, &r, &python)
 	s.NoError(err)
 	s.Equal(cfg.Type, config.ContentTypeHTML)
 	s.Equal("3.4.5", cfg.Python.Version)
@@ -246,19 +244,22 @@ func (s *InitializeSuite) TestInitIfNeededWhenNeeded() {
 	log := logging.New()
 	s.createAppPy()
 
+	python := setupNewPythonInterpreterMock()
+	r := setupNewRInterpreterMock()
+
 	i := NewInitialize(
 		detectors.NewContentTypeDetector,
 		setupMockPythonInspector(true, nil),
-		setupNewPythonInterpreterMock,
+		&python,
 		setupMockRInspector(false, nil),
-		setupNewRInterpreterMock,
+		&r,
 	)
 
 	configName := ""
-	err := i.InitIfNeeded(s.cwd, configName, log)
+	err := i.InitIfNeeded(s.cwd, configName, log, true)
 	s.NoError(err)
 	configPath := config.GetConfigPath(s.cwd, configName)
-	cfg, err := config.FromFile(configPath)
+	cfg, err := config.FromFile(configPath, &r, &python)
 	s.NoError(err)
 	s.Equal(cfg.Type, config.ContentTypePythonFlask)
 	s.Equal("3.4.5", cfg.Python.Version)
@@ -280,34 +281,35 @@ func (s *InitializeSuite) TestInitIfNeededWhenNotNeeded() {
 
 	pythonInspectorFactory := func(
 		util.AbsolutePath,
-		util.Path,
+		*interpreters.PythonInterpreter,
 		logging.Logger,
-		interpreters.PythonInterpreterFactory,
 		executor.Executor,
 	) (inspect.PythonInspector, error) {
 		return &inspect.MockPythonInspector{}, nil
 	}
 	rInspectorFactory := func(
 		util.AbsolutePath,
-		util.Path,
+		*interpreters.RInterpreter,
 		logging.Logger,
-		interpreters.RInterpreterFactory,
 		executor.Executor,
 	) (inspect.RInspector, error) {
 		return &inspect.MockRInspector{}, nil
 	}
 
+	python := setupNewPythonInterpreterMock()
+	r := setupNewRInterpreterMock()
+
 	i := NewInitialize(
 		detectors.NewContentTypeDetector,
 		pythonInspectorFactory,
-		setupNewPythonInterpreterMock,
+		&python,
 		rInspectorFactory,
-		setupNewRInterpreterMock,
+		&r,
 	)
 
-	err := i.InitIfNeeded(s.cwd, configName, log)
+	err := i.InitIfNeeded(s.cwd, configName, log, true)
 	s.NoError(err)
-	newConfig, err := config.FromFile(configPath)
+	newConfig, err := config.FromFile(configPath, &r, &python)
 	s.NoError(err)
 	s.Equal(cfg, newConfig)
 }
@@ -319,15 +321,18 @@ func (s *InitializeSuite) TestGetPossibleRConfig() {
 	s.NoError(err)
 	s.Equal(true, exist)
 
+	python := setupNewPythonInterpreterMock()
+	r := setupNewRInterpreterMock()
+
 	i := NewInitialize(
 		detectors.NewContentTypeDetector,
 		setupMockPythonInspector(false, nil),
-		setupNewPythonInterpreterMock,
+		&python,
 		setupMockRInspector(true, nil),
-		setupNewRInterpreterMock,
+		&r,
 	)
 
-	configs, err := i.GetPossibleConfigs(s.cwd, util.Path{}, util.Path{}, util.RelativePath{}, log)
+	configs, err := i.GetPossibleConfigs(s.cwd, util.RelativePath{}, log, true)
 	s.NoError(err)
 
 	s.Len(configs, 1)
@@ -344,15 +349,18 @@ func (s *InitializeSuite) TestGetPossiblePythonConfig() {
 	s.NoError(err)
 	s.Equal(true, exist)
 
+	python := setupNewPythonInterpreterMock()
+	r := setupNewRInterpreterMock()
+
 	i := NewInitialize(
 		detectors.NewContentTypeDetector,
 		setupMockPythonInspector(true, nil),
-		setupNewPythonInterpreterMock,
+		&python,
 		setupMockRInspector(false, nil),
-		setupNewRInterpreterMock,
+		&r,
 	)
 
-	configs, err := i.GetPossibleConfigs(s.cwd, util.Path{}, util.Path{}, util.RelativePath{}, log)
+	configs, err := i.GetPossibleConfigs(s.cwd, util.RelativePath{}, log, true)
 	s.NoError(err)
 
 	s.Len(configs, 1)
@@ -367,15 +375,18 @@ func (s *InitializeSuite) TestGetPossibleHTMLConfig() {
 	err := s.cwd.Join("index.html").WriteFile([]byte(`<html></html>`), 0666)
 	s.NoError(err)
 
+	python := setupNewPythonInterpreterMock()
+	r := setupNewRInterpreterMock()
+
 	i := NewInitialize(
 		detectors.NewContentTypeDetector,
 		setupMockPythonInspector(false, nil),
-		setupNewPythonInterpreterMock,
+		&python,
 		setupMockRInspector(false, nil),
-		setupNewRInterpreterMock,
+		&r,
 	)
 
-	configs, err := i.GetPossibleConfigs(s.cwd, util.Path{}, util.Path{}, util.RelativePath{}, log)
+	configs, err := i.GetPossibleConfigs(s.cwd, util.RelativePath{}, log, true)
 	s.NoError(err)
 
 	s.Len(configs, 1)
@@ -388,15 +399,18 @@ func (s *InitializeSuite) TestGetPossibleHTMLConfig() {
 func (s *InitializeSuite) TestGetPossibleConfigsEmpty() {
 	log := logging.New()
 
+	python := setupNewPythonInterpreterMock()
+	r := setupNewRInterpreterMock()
+
 	i := NewInitialize(
 		detectors.NewContentTypeDetector,
 		setupMockPythonInspector(false, nil),
-		setupNewPythonInterpreterMock,
+		&python,
 		inspect.NewRInspector,
-		setupNewRInterpreterMock,
+		&r,
 	)
 
-	configs, err := i.GetPossibleConfigs(s.cwd, util.Path{}, util.Path{}, util.RelativePath{}, log)
+	configs, err := i.GetPossibleConfigs(s.cwd, util.RelativePath{}, log, true)
 	s.NoError(err)
 
 	s.Len(configs, 1)
@@ -421,15 +435,18 @@ func (s *InitializeSuite) TestGetPossibleMultipleConfigs() {
 	err = s.cwd.Join("index.html").WriteFile([]byte(`<html></html>`), 0666)
 	s.NoError(err)
 
+	python := setupNewPythonInterpreterMock()
+	r := setupNewRInterpreterMock()
+
 	i := NewInitialize(
 		detectors.NewContentTypeDetector,
 		setupMockPythonInspector(true, nil),
-		setupNewPythonInterpreterMock,
+		&python,
 		setupMockRInspector(true, nil),
-		setupNewRInterpreterMock,
+		&r,
 	)
 
-	configs, err := i.GetPossibleConfigs(s.cwd, util.Path{}, util.Path{}, util.RelativePath{}, log)
+	configs, err := i.GetPossibleConfigs(s.cwd, util.RelativePath{}, log, true)
 	s.NoError(err)
 
 	s.Len(configs, 3)
@@ -439,16 +456,19 @@ func (s *InitializeSuite) TestGetPossibleConfigsWithMissingEntrypoint() {
 	log := logging.New()
 	s.createAppPy()
 
+	python := setupNewPythonInterpreterMock()
+	r := setupNewRInterpreterMock()
+
 	i := NewInitialize(
 		detectors.NewContentTypeDetector,
 		setupMockPythonInspector(false, nil),
-		setupNewPythonInterpreterMock,
+		&python,
 		inspect.NewRInspector,
-		setupNewRInterpreterMock,
+		&r,
 	)
 
 	entrypoint := util.NewRelativePath("nonexistent.py", s.cwd.Fs())
-	configs, err := i.GetPossibleConfigs(s.cwd, util.Path{}, util.Path{}, entrypoint, log)
+	configs, err := i.GetPossibleConfigs(s.cwd, entrypoint, log, true)
 	s.NoError(err)
 
 	s.Len(configs, 1)
@@ -463,16 +483,19 @@ func (s *InitializeSuite) TestNormalizeConfigHandlesUnknownConfigs() {
 	cfg := config.New()
 	cfg.Type = config.ContentTypeUnknown
 
+	python := setupNewPythonInterpreterMock()
+	r := setupNewRInterpreterMock()
+
 	i := NewInitialize(
 		detectors.NewContentTypeDetector,
 		setupMockPythonInspector(false, nil),
-		setupNewPythonInterpreterMock,
+		&python,
 		inspect.NewRInspector,
-		setupNewRInterpreterMock,
+		&r,
 	)
 
 	ep := util.NewRelativePath("notreal.py", s.cwd.Fs())
-	i.normalizeConfig(cfg, s.cwd, util.Path{}, util.Path{}, ep, log)
+	i.normalizeConfig(cfg, s.cwd, ep, log, true)
 
 	// Entrypoint is set from the relative path passed to normalizeConfig
 	s.Equal("notreal.py", cfg.Entrypoint)

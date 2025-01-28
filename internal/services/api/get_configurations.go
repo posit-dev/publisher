@@ -13,6 +13,7 @@ import (
 
 	"github.com/posit-dev/publisher/internal/bundles/matcher"
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
@@ -31,7 +32,13 @@ type configDTO struct {
 	Error         *types.AgentError `json:"error,omitempty"`
 }
 
-func readConfigFiles(projectDir util.AbsolutePath, relProjectDir util.RelativePath, entrypoint string) ([]configDTO, error) {
+func readConfigFiles(
+	projectDir util.AbsolutePath,
+	relProjectDir util.RelativePath,
+	entrypoint string,
+	rInterpreter *interpreters.RInterpreter,
+	pythonInterpreter *interpreters.PythonInterpreter,
+) ([]configDTO, error) {
 	paths, err := config.ListConfigFiles(projectDir)
 	if err != nil {
 		return nil, err
@@ -44,7 +51,7 @@ func readConfigFiles(projectDir util.AbsolutePath, relProjectDir util.RelativePa
 			return nil, err
 		}
 
-		cfg, err := config.FromFile(path)
+		cfg, err := config.FromFile(path, rInterpreter, pythonInterpreter)
 
 		if entrypoint != "" {
 			// Filter out non-matching entrypoints
@@ -86,6 +93,11 @@ func GetConfigurationsHandlerFunc(base util.AbsolutePath, log logging.Logger) ht
 			// Response already returned by ProjectDirFromRequest
 			return
 		}
+		rInterpreter, pythonInterpreter, err := InterpretersFromRequest(base, w, req, log)
+		if err != nil {
+			// Response already returned by ProjectDirFromRequest
+			return
+		}
 		entrypoint := req.URL.Query().Get("entrypoint")
 
 		response := make([]configDTO, 0)
@@ -114,7 +126,7 @@ func GetConfigurationsHandlerFunc(base util.AbsolutePath, log logging.Logger) ht
 					if err != nil {
 						return err
 					}
-					files, err := readConfigFiles(parent, relParent, entrypoint)
+					files, err := readConfigFiles(parent, relParent, entrypoint, rInterpreter, pythonInterpreter)
 					if err != nil {
 						return err
 					}
@@ -129,7 +141,7 @@ func GetConfigurationsHandlerFunc(base util.AbsolutePath, log logging.Logger) ht
 				return
 			}
 		} else {
-			response, err = readConfigFiles(projectDir, relProjectDir, entrypoint)
+			response, err = readConfigFiles(projectDir, relProjectDir, entrypoint, rInterpreter, pythonInterpreter)
 		}
 		if err != nil {
 			InternalError(w, req, log, err)

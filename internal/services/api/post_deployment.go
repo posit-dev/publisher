@@ -48,6 +48,11 @@ func PostDeploymentHandlerFunc(
 			// Response already returned by ProjectDirFromRequest
 			return
 		}
+		rInterpreter, pythonInterpreter, err := InterpretersFromRequest(base, w, req, log)
+		if err != nil {
+			// Response already returned by ProjectDirFromRequest
+			return
+		}
 		dec := json.NewDecoder(req.Body)
 		dec.DisallowUnknownFields()
 		var b PostDeploymentRequestBody
@@ -61,7 +66,18 @@ func PostDeploymentHandlerFunc(
 			InternalError(w, req, log, err)
 			return
 		}
-		newState, err := stateFactory(projectDir, b.AccountName, b.ConfigName, name, "", accountList, b.Secrets, b.Insecure)
+		newState, err := stateFactory(
+			projectDir,
+			b.AccountName,
+			b.ConfigName,
+			name,
+			"",
+			accountList,
+			b.Secrets,
+			b.Insecure,
+			rInterpreter,
+			pythonInterpreter,
+		)
 		if err != nil {
 			if errors.Is(err, accounts.ErrAccountNotFound) {
 				log.Error("Deployment initialization failure - account not found", "error", err.Error())

@@ -21,7 +21,7 @@ func (cmd *ShowRequirementsCommand) Run(args *cli_types.CommonArgs, ctx *cli_typ
 	if err != nil {
 		return err
 	}
-	inspector, _ := inspect.NewPythonInspector(absPath, cmd.Python, ctx.Logger, nil, nil)
+	inspector, _ := inspect.NewPythonInspector(absPath, nil, ctx.Logger, nil)
 	reqs, incomplete, pythonExecutable, err := inspector.ScanRequirements(absPath)
 	if err != nil {
 		return err

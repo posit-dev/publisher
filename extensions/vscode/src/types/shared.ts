@@ -29,3 +29,21 @@ export type DeploymentObjects = {
   configuration: Configuration;
   credential: Credential;
 };
+
+export type RExecutable = {
+  rPath: string;
+};
+export function NewRExecutable(rPath: string): RExecutable {
+  return {
+    rPath,
+  };
+}
+
+export type PythonExecutable = {
+  pythonPath: string;
+};
+export function NewPythonExecutable(pythonPath: string): PythonExecutable {
+  return {
+    pythonPath,
+  };
+}
