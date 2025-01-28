@@ -195,7 +195,7 @@ func (m *defaultPackageMapper) GetManifestPackages(
 	lockfile, err := ReadLockfile(lockfilePath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return nil, m.renvEnvironmentCheck(base, log)
+			return nil, m.renvEnvironmentCheck(log)
 		}
 		return nil, err
 	}
@@ -260,7 +260,6 @@ func (m *defaultPackageMapper) GetManifestPackages(
 }
 
 func (m *defaultPackageMapper) renvEnvironmentCheck(
-	base util.AbsolutePath,
 	log logging.Logger,
 ) *types.AgentError {
 	rInterpreter, err := m.rInterpreterFactory()

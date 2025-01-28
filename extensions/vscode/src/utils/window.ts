@@ -21,13 +21,9 @@ export function showInformationMsg(msg: string, ...items: string[]) {
 
 type taskFunc = <T>(p: Progress<T>, t: CancellationToken) => Promise<void>;
 const progressCallbackHandlerFactory =
-  (
-    task: taskFunc,
-    cancellable: boolean = false,
-    onCancel?: () => void,
-  ): taskFunc =>
+  (task: taskFunc, onCancel?: () => void): taskFunc =>
   (progress, token) => {
-    if (cancellable && onCancel) {
+    if (onCancel) {
       token.onCancellationRequested(() => {
         onCancel();
       });
@@ -38,16 +34,15 @@ const progressCallbackHandlerFactory =
 export function taskWithProgressMsg(
   msg: string,
   task: taskFunc,
-  cancellable: boolean = false,
   onCancel?: () => void,
 ) {
   return window.withProgress(
     {
       location: ProgressLocation.Notification,
       title: msg,
-      cancellable,
+      cancellable: onCancel !== undefined,
     },
-    progressCallbackHandlerFactory(task, cancellable, onCancel),
+    progressCallbackHandlerFactory(task, onCancel),
   );
 }
 

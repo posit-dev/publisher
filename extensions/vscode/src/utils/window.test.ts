@@ -17,6 +17,10 @@ const terminalMock = {
   },
 };
 
+const cancelTokenMock = {
+  onCancellationRequested: vi.fn(),
+};
+
 vi.mock("vscode", () => {
   // mock Disposable
   const disposableMock = vi.fn();
@@ -28,7 +32,7 @@ vi.mock("vscode", () => {
     showWarningMessage: vi.fn(),
     showInformationMessage: vi.fn(),
     withProgress: vi.fn().mockImplementation((_, progressCallback) => {
-      progressCallback();
+      progressCallback(_, cancelTokenMock);
     }),
     createTerminal: vi.fn().mockImplementation(() => {
       terminalMock.sendText = vi.fn();
@@ -92,21 +96,44 @@ describe("Consumers of vscode window", () => {
     );
   });
 
-  test("taskWithProgressMsg", () => {
-    const taskMock = vi.fn();
-    taskWithProgressMsg(
-      "Running a task with a progress notification",
-      taskMock,
-    );
-    expect(window.withProgress).toHaveBeenCalledWith(
-      {
-        location: 15,
-        title: "Running a task with a progress notification",
-        cancellable: false,
-      },
-      expect.any(Function),
-    );
-    expect(taskMock).toHaveBeenCalled();
+  describe("taskWithProgressMsg", () => {
+    test("not cancellable", () => {
+      const taskMock = vi.fn();
+      taskWithProgressMsg(
+        "Running a task with a progress notification",
+        taskMock,
+      );
+      expect(window.withProgress).toHaveBeenCalledWith(
+        {
+          location: 15,
+          title: "Running a task with a progress notification",
+          cancellable: false,
+        },
+        expect.any(Function),
+      );
+      expect(taskMock).toHaveBeenCalled();
+      expect(cancelTokenMock.onCancellationRequested).not.toHaveBeenCalled();
+    });
+
+    test("cancellable", () => {
+      const taskMock = vi.fn();
+      taskWithProgressMsg(
+        "Running a task with a progress notification",
+        taskMock,
+        () => {},
+      );
+      expect(window.withProgress).toHaveBeenCalledWith(
+        {
+          location: 15,
+          title: "Running a task with a progress notification",
+          cancellable: true,
+        },
+        expect.any(Function),
+      );
+      // Cancel listener is registered
+      expect(taskMock).toHaveBeenCalled();
+      expect(cancelTokenMock.onCancellationRequested).toHaveBeenCalled();
+    });
   });
 
   describe("runTerminalCommand", () => {
