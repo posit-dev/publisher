@@ -43,7 +43,7 @@ func (s *AvailablePackagesSuite) TestListAvailablePackages() {
 		log logging.Logger,
 		cmdExecutorOverride executor.Executor,
 		pathLookerOverride util.PathLooker,
-		existsFuncOverride interpreters.ExistsFunc,
+		existsFuncOverride util.ExistsFunc,
 	) (interpreters.RInterpreter, error) {
 		i := interpreters.NewMockRInterpreter()
 		i.On("Init").Return(nil)
@@ -85,7 +85,7 @@ func (s *AvailablePackagesSuite) TestGetBioconductorRepos() {
 		log logging.Logger,
 		cmdExecutorOverride executor.Executor,
 		pathLookerOverride util.PathLooker,
-		existsFuncOverride interpreters.ExistsFunc,
+		existsFuncOverride util.ExistsFunc,
 	) (interpreters.RInterpreter, error) {
 		i := interpreters.NewMockRInterpreter()
 		i.On("Init").Return(nil)
@@ -126,7 +126,7 @@ func (s *AvailablePackagesSuite) TestGetLibPaths() {
 		log logging.Logger,
 		cmdExecutorOverride executor.Executor,
 		pathLookerOverride util.PathLooker,
-		existsFuncOverride interpreters.ExistsFunc,
+		existsFuncOverride util.ExistsFunc,
 	) (interpreters.RInterpreter, error) {
 		i := interpreters.NewMockRInterpreter()
 		i.On("Init").Return(nil)
@@ -164,7 +164,7 @@ func (s *AvailablePackagesSuite) TestGetLibPathsWindows() {
 		log logging.Logger,
 		cmdExecutorOverride executor.Executor,
 		pathLookerOverride util.PathLooker,
-		existsFuncOverride interpreters.ExistsFunc,
+		existsFuncOverride util.ExistsFunc,
 	) (interpreters.RInterpreter, error) {
 		i := interpreters.NewMockRInterpreter()
 		i.On("Init").Return(nil)

@@ -60,7 +60,7 @@ func (s *PostPackagesRScanSuite) TestServeHTTP() {
 		log logging.Logger,
 		cmdExecutorOverride executor.Executor,
 		pathLookerOverride util.PathLooker,
-		existsFuncOverride interpreters.ExistsFunc,
+		existsFuncOverride util.ExistsFunc,
 	) (interpreters.RInterpreter, error) {
 		i := interpreters.NewMockRInterpreter()
 		i.On("Init").Return(nil)
@@ -92,7 +92,7 @@ func (s *PostPackagesRScanSuite) TestServeHTTPEmptyBody() {
 		log logging.Logger,
 		cmdExecutorOverride executor.Executor,
 		pathLookerOverride util.PathLooker,
-		existsFuncOverride interpreters.ExistsFunc,
+		existsFuncOverride util.ExistsFunc,
 	) (interpreters.RInterpreter, error) {
 		i := interpreters.NewMockRInterpreter()
 		i.On("CreateLockfile", mock.Anything).Return(nil)
@@ -125,7 +125,7 @@ func (s *PostPackagesRScanSuite) TestServeHTTPWithSaveName() {
 		log logging.Logger,
 		cmdExecutorOverride executor.Executor,
 		pathLookerOverride util.PathLooker,
-		existsFuncOverride interpreters.ExistsFunc,
+		existsFuncOverride util.ExistsFunc,
 	) (interpreters.RInterpreter, error) {
 		i := interpreters.NewMockRInterpreter()
 		i.On("CreateLockfile", util.NewAbsolutePath(destPath.String(), fs)).Return(nil)
@@ -158,7 +158,7 @@ func (s *PostPackagesRScanSuite) TestServeHTTPWithSaveNameInSubdir() {
 		log logging.Logger,
 		cmdExecutorOverride executor.Executor,
 		pathLookerOverride util.PathLooker,
-		existsFuncOverride interpreters.ExistsFunc,
+		existsFuncOverride util.ExistsFunc,
 	) (interpreters.RInterpreter, error) {
 		i := interpreters.NewMockRInterpreter()
 		i.On("CreateLockfile", destPath).Return(nil)
@@ -190,7 +190,7 @@ func (s *PostPackagesRScanSuite) TestServeHTTPErr() {
 		log logging.Logger,
 		cmdExecutorOverride executor.Executor,
 		pathLookerOverride util.PathLooker,
-		existsFuncOverride interpreters.ExistsFunc,
+		existsFuncOverride util.ExistsFunc,
 	) (interpreters.RInterpreter, error) {
 		i := interpreters.NewMockRInterpreter()
 		i.On("Init").Return(nil)
@@ -228,7 +228,7 @@ func (s *PostPackagesRScanSuite) TestServeHTTPSubdir() {
 		log logging.Logger,
 		cmdExecutorOverride executor.Executor,
 		pathLookerOverride util.PathLooker,
-		existsFuncOverride interpreters.ExistsFunc,
+		existsFuncOverride util.ExistsFunc,
 	) (interpreters.RInterpreter, error) {
 		i := interpreters.NewMockRInterpreter()
 		i.On("Init").Return(nil)

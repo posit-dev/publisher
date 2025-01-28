@@ -27,8 +27,6 @@ func newInvalidRError(desc string, err error) *types.AgentError {
 	return types.NewAgentError(types.ErrorRExecNotFound, errors.New(errorDesc), nil)
 }
 
-type ExistsFunc func(p util.Path) (bool, error)
-
 type RenvAction = string
 
 const (
@@ -55,7 +53,7 @@ type RInterpreter interface {
 type defaultRInterpreter struct {
 	cmdExecutor executor.Executor
 	pathLooker  util.PathLooker
-	existsFunc  ExistsFunc
+	existsFunc  util.ExistsFunc
 
 	base                util.AbsolutePath
 	preferredPath       util.Path
@@ -74,7 +72,7 @@ type RInterpreterFactory func(
 	log logging.Logger,
 	cmdExecutorOverride executor.Executor,
 	pathLookerOverride util.PathLooker,
-	existsFuncOverride ExistsFunc,
+	existsFuncOverride util.ExistsFunc,
 ) (RInterpreter, error)
 
 var _ RInterpreter = &defaultRInterpreter{}
@@ -85,7 +83,7 @@ func NewRInterpreter(
 	log logging.Logger,
 	cmdExecutorOverride executor.Executor,
 	pathLookerOverride util.PathLooker,
-	existsFuncOverride ExistsFunc,
+	existsFuncOverride util.ExistsFunc,
 ) (RInterpreter, error) {
 	interpreter := &defaultRInterpreter{
 		cmdExecutor: nil,
@@ -129,7 +127,7 @@ func NewRInterpreter(
 
 // Initializes the attributes within the defaultRInterpreter structure
 //  1. Resolves the path to the rExecutable to be used, with a preference
-//     towards the perferredPath, but otherwise, first one on path. If the
+//     towards the preferredPath, but otherwise, first one on path. If the
 //     executable is not a valid R interpreter, then will not be set.
 //  2. Seeds the version of the rExecutable being used, if set.
 //
