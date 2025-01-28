@@ -25,6 +25,8 @@ const (
 	ErrorRenvPackageVersionMismatch   ErrorCode = "renvPackageVersionMismatch"
 	ErrorRenvPackageSourceMissing     ErrorCode = "renvPackageSourceMissing"
 	ErrorRenvLockPackagesReading      ErrorCode = "renvlockPackagesReadingError"
+	ErrorRenvPackageNotInstalled      ErrorCode = "renvPackageNotInstalledError"
+	ErrorRenvActionRequired           ErrorCode = "renvActionRequiredError"
 	ErrorRequirementsFileReading      ErrorCode = "requirementsFileReadingError"
 	ErrorDeployedContentNotRunning    ErrorCode = "deployedContentNotRunning"
 	ErrorUnknown                      ErrorCode = "unknown"
@@ -53,7 +55,8 @@ type AgentError struct {
 // Normalize punctuation on messages derived from errors
 func normalizeAgentErrorMsg(errMsg string) string {
 	spChars := []string{"?", "!", ")", "."}
-	msg := strings.ToUpper(errMsg[:1]) + errMsg[1:]
+	msg := strings.TrimSpace(errMsg)
+	msg = strings.ToUpper(msg[:1]) + msg[1:]
 
 	msgLastChar := msg[len(msg)-1:]
 	if slices.Contains(spChars, msgLastChar) {
