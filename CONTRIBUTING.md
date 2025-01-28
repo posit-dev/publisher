@@ -76,14 +76,6 @@ just cover
 
 Once complete, a coverage report will open in your default browser.
 
-### Integration Tests
-
-The [Bats](https://bats-core.readthedocs.io/en/stable/) framework is used to perform integration tests. For this project we use Bats to assert integrations with native machines via the Bash shell.
-
-```
-just bats
-```
-
 ## Development
 
 ### Build Tools

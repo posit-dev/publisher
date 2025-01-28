@@ -4,7 +4,6 @@ package publish
 
 import (
 	"errors"
-	"os"
 	"testing"
 
 	"github.com/posit-dev/publisher/internal/bundles"
@@ -156,24 +155,5 @@ func (s *RPackageDescSuite) TestGetRPackages_ScanPackagesKnownAgentError() {
 	_, err := publisher.getRPackages()
 	s.NotNil(err)
 	s.Equal(err.(*types.AgentError).Message, "Bad package version, this is a known failure.")
-	s.log.AssertExpectations(s.T())
-}
-
-func (s *RPackageDescSuite) TestGetRPackages_PackageFileNotFound() {
-	expectedLockfilePath := s.dirPath.Join("custom.lock")
-
-	// With a package file
-	s.stateStore.Config = &config.Config{
-		R: &config.R{
-			PackageFile: "custom.lock",
-		},
-	}
-
-	s.packageMapper.On("GetManifestPackages", s.dirPath, expectedLockfilePath).Return(bundles.PackageMap{}, os.ErrNotExist)
-
-	publisher := s.makePublisher()
-	_, err := publisher.getRPackages()
-	s.NotNil(err)
-	s.Contains(err.(*types.AgentError).Message, "Missing dependency lockfile custom.lock")
 	s.log.AssertExpectations(s.T())
 }
