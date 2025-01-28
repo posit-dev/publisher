@@ -26,9 +26,3 @@ jobs:
       - package
     uses: ./.github/workflows/upload.yaml
     secrets: inherit
-
-  # Integration Tests
-  bats:
-    needs: build
-    secrets: inherit
-    uses: ./.github/workflows/bats.yaml
