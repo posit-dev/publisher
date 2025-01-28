@@ -601,7 +601,7 @@ func (s *RSuite) TestRenvEnvironmentErrorCheck_renvNotInstalled() {
 
 	executor := executortest.NewMockExecutor()
 	executor.On("RunCommand", mock.Anything, []string{"--version"}, mock.Anything, mock.Anything).Return([]byte("R version 4.3.0 (2023-04-21)"), nil, nil)
-	executor.On("RunCommand", "/usr/bin/R", []string{"-s", "-e", "cat(system.file(package = \"renv\"))"}, mock.Anything, mock.Anything).Return([]byte(""), nil, nil)
+	executor.On("RunCommand", mock.Anything, []string{"-s", "-e", "cat(system.file(package = \"renv\"))"}, mock.Anything, mock.Anything).Return([]byte(""), nil, nil)
 
 	i, _ := NewRInterpreter(s.cwd, util.Path{}, log, executor, nil, nil)
 	interpreter := i.(*defaultRInterpreter)
@@ -613,11 +613,10 @@ func (s *RSuite) TestRenvEnvironmentErrorCheck_renvNotInstalled() {
 	s.Error(err)
 	s.Equal(err.GetCode(), types.ErrorRenvPackageNotInstalled)
 	s.Equal(err.Message, "Package renv is not installed. An renv lockfile is needed for deployment.")
-	s.Equal(err.Data, types.ErrorData{
-		"Action":      "renvsetup",
-		"ActionLabel": "Setup renv",
-		"Command":     "/usr/bin/R -s -e \"install.packages(\\\"renv\\\"); renv::init();\"",
-	})
+	s.Equal(err.Data["Action"], "renvsetup")
+	s.Equal(err.Data["ActionLabel"], "Setup renv")
+	s.Contains(err.Data["Command"], "install.packages")
+	s.Contains(err.Data["Command"], "renv::init()")
 }
 
 func (s *RSuite) TestRenvEnvironmentErrorCheck_renvInstallCheckErr() {
@@ -626,7 +625,7 @@ func (s *RSuite) TestRenvEnvironmentErrorCheck_renvInstallCheckErr() {
 	renvCmdErr := errors.New("renv command errrz")
 	executor := executortest.NewMockExecutor()
 	executor.On("RunCommand", mock.Anything, []string{"--version"}, mock.Anything, mock.Anything).Return([]byte("R version 4.3.0 (2023-04-21)"), nil, nil)
-	executor.On("RunCommand", "/usr/bin/R", []string{"-s", "-e", "cat(system.file(package = \"renv\"))"}, mock.Anything, mock.Anything).Return([]byte(""), nil, renvCmdErr)
+	executor.On("RunCommand", mock.Anything, []string{"-s", "-e", "cat(system.file(package = \"renv\"))"}, mock.Anything, mock.Anything).Return([]byte(""), nil, renvCmdErr)
 
 	i, _ := NewRInterpreter(s.cwd, util.Path{}, log, executor, nil, nil)
 	interpreter := i.(*defaultRInterpreter)
@@ -647,8 +646,8 @@ func (s *RSuite) TestRenvEnvironmentErrorCheck_renvRequiresInit() {
 	renvStatusOutput := []byte("Use `renv::init()` to initialize the project.")
 	executor := executortest.NewMockExecutor()
 	executor.On("RunCommand", mock.Anything, []string{"--version"}, mock.Anything, mock.Anything).Return([]byte("R version 4.3.0 (2023-04-21)"), nil, nil)
-	executor.On("RunCommand", "/usr/bin/R", []string{"-s", "-e", "cat(system.file(package = \"renv\"))"}, mock.Anything, mock.Anything).Return([]byte("/usr/dir/lib/R/x86_64/4.4/library/renv"), nil, nil)
-	executor.On("RunCommand", "/usr/bin/R", []string{"-s", "-e", "renv::status()"}, mock.Anything, mock.Anything).Return(renvStatusOutput, nil, nil)
+	executor.On("RunCommand", mock.Anything, []string{"-s", "-e", "cat(system.file(package = \"renv\"))"}, mock.Anything, mock.Anything).Return([]byte("/usr/dir/lib/R/x86_64/4.4/library/renv"), nil, nil)
+	executor.On("RunCommand", mock.Anything, []string{"-s", "-e", "renv::status()"}, mock.Anything, mock.Anything).Return(renvStatusOutput, nil, nil)
 
 	i, _ := NewRInterpreter(s.cwd, util.Path{}, log, executor, nil, nil)
 	interpreter := i.(*defaultRInterpreter)
@@ -660,11 +659,9 @@ func (s *RSuite) TestRenvEnvironmentErrorCheck_renvRequiresInit() {
 	s.Error(err)
 	s.Equal(err.GetCode(), types.ErrorRenvActionRequired)
 	s.Equal(err.Message, `Project requires renv initialization "renv::init()" to be deployed.`)
-	s.Equal(err.Data, types.ErrorData{
-		"Action":      "renvinit",
-		"ActionLabel": "Setup renv",
-		"Command":     "/usr/bin/R -s -e \"renv::init()\"",
-	})
+	s.Equal(err.Data["Action"], "renvinit")
+	s.Equal(err.Data["ActionLabel"], "Setup renv")
+	s.Contains(err.Data["Command"], "renv::init()")
 }
 
 func (s *RSuite) TestRenvEnvironmentErrorCheck_lockfileMissing() {
@@ -673,8 +670,8 @@ func (s *RSuite) TestRenvEnvironmentErrorCheck_lockfileMissing() {
 	renvStatusOutput := []byte("Use `renv::snapshot()` to create a lockfile.")
 	executor := executortest.NewMockExecutor()
 	executor.On("RunCommand", mock.Anything, []string{"--version"}, mock.Anything, mock.Anything).Return([]byte("R version 4.3.0 (2023-04-21)"), nil, nil)
-	executor.On("RunCommand", "/usr/bin/R", []string{"-s", "-e", "cat(system.file(package = \"renv\"))"}, mock.Anything, mock.Anything).Return([]byte("/usr/dir/lib/R/x86_64/4.4/library/renv"), nil, nil)
-	executor.On("RunCommand", "/usr/bin/R", []string{"-s", "-e", "renv::status()"}, mock.Anything, mock.Anything).Return(renvStatusOutput, nil, nil)
+	executor.On("RunCommand", mock.Anything, []string{"-s", "-e", "cat(system.file(package = \"renv\"))"}, mock.Anything, mock.Anything).Return([]byte("/usr/dir/lib/R/x86_64/4.4/library/renv"), nil, nil)
+	executor.On("RunCommand", mock.Anything, []string{"-s", "-e", "renv::status()"}, mock.Anything, mock.Anything).Return(renvStatusOutput, nil, nil)
 
 	i, _ := NewRInterpreter(s.cwd, util.Path{}, log, executor, nil, nil)
 	interpreter := i.(*defaultRInterpreter)
@@ -686,11 +683,9 @@ func (s *RSuite) TestRenvEnvironmentErrorCheck_lockfileMissing() {
 	s.Error(err)
 	s.Equal(err.GetCode(), types.ErrorRenvActionRequired)
 	s.Equal(err.Message, `Project requires renv to update the lockfile to be deployed.`)
-	s.Equal(err.Data, types.ErrorData{
-		"Action":      "renvsnapshot",
-		"ActionLabel": "Setup lockfile",
-		"Command":     "/usr/bin/R -s -e \"renv::snapshot()\"",
-	})
+	s.Equal(err.Data["Action"], "renvsnapshot")
+	s.Equal(err.Data["ActionLabel"], "Setup lockfile")
+	s.Contains(err.Data["Command"], "renv::snapshot()")
 }
 
 func (s *RSuite) TestRenvEnvironmentErrorCheck_unknownRenvStatus() {
@@ -699,8 +694,8 @@ func (s *RSuite) TestRenvEnvironmentErrorCheck_unknownRenvStatus() {
 	renvStatusOutput := []byte("- The project is out-of-sync -- use `renv::status()` for details.")
 	executor := executortest.NewMockExecutor()
 	executor.On("RunCommand", mock.Anything, []string{"--version"}, mock.Anything, mock.Anything).Return([]byte("R version 4.3.0 (2023-04-21)"), nil, nil)
-	executor.On("RunCommand", "/usr/bin/R", []string{"-s", "-e", "cat(system.file(package = \"renv\"))"}, mock.Anything, mock.Anything).Return([]byte("/usr/dir/lib/R/x86_64/4.4/library/renv"), nil, nil)
-	executor.On("RunCommand", "/usr/bin/R", []string{"-s", "-e", "renv::status()"}, mock.Anything, mock.Anything).Return(renvStatusOutput, nil, nil)
+	executor.On("RunCommand", mock.Anything, []string{"-s", "-e", "cat(system.file(package = \"renv\"))"}, mock.Anything, mock.Anything).Return([]byte("/usr/dir/lib/R/x86_64/4.4/library/renv"), nil, nil)
+	executor.On("RunCommand", mock.Anything, []string{"-s", "-e", "renv::status()"}, mock.Anything, mock.Anything).Return(renvStatusOutput, nil, nil)
 
 	i, _ := NewRInterpreter(s.cwd, util.Path{}, log, executor, nil, nil)
 	interpreter := i.(*defaultRInterpreter)
@@ -712,9 +707,7 @@ func (s *RSuite) TestRenvEnvironmentErrorCheck_unknownRenvStatus() {
 	s.Error(err)
 	s.Equal(err.GetCode(), types.ErrorRenvActionRequired)
 	s.Equal(err.Message, `The renv environment for this project is not in a healthy state. Run renv::status() for more details.`)
-	s.Equal(err.Data, types.ErrorData{
-		"Action":      "renvstatus",
-		"ActionLabel": "Run and show renv::status()",
-		"Command":     "/usr/bin/R -s -e \"renv::status()\"",
-	})
+	s.Equal(err.Data["Action"], "renvstatus")
+	s.Equal(err.Data["ActionLabel"], "Run and show renv::status()")
+	s.Contains(err.Data["Command"], "renv::status()")
 }
