@@ -62,8 +62,8 @@ Clarifying things a bit, `renv` is not a requirement, the `lockfile` is.
 It is possible to collaborate in projects that already have a `lockfile`
 and not having `renv` available in your system.
 
-If there is not a `lockfile`, the Posit Publisher extension will attempt to scan the current state of the project
-and provide you with a solution to generate the expected `lockfile`.
+If an R project doesn't have a `lockfile` on deploy, Posit Publisher prompts to
+provide a solution to generate the expected `lockfile`.
 
 ![](https://cdn.posit.co/publisher/assets/img/publisher-renv-setup-notification.png)
 
