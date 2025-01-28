@@ -67,10 +67,9 @@ and provide you with a solution to generate the expected `lockfile`.
 
 ![](https://cdn.posit.co/publisher/assets/img/publisher-renv-setup-notification.png)
 
-Solutions provided by the Posit Publisher extension to fix an `renv` environment are limited
-to the most common scenarios, any other issue around `renv` and a `lockfile` generation will require
-additional attention by you. For those cases the Posit Publisher extension will suggest
-to evaluate the situation getting the status of the environment with `renv::status()`.
+When uncommon errors occur that Posit Publisher cannot solve for you, it
+prompts to evaluate the status of `renv` using
+[`renv::status()`](https://rstudio.github.io/renv/reference/status.html).
 
 ## Still having trouble?
 
