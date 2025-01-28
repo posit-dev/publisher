@@ -50,7 +50,7 @@ For example, in [Posit Connect 2024.12.0](https://docs.posit.co/connect/news/#po
 Gradio app support was introduced. When deploying a Gradio app to a server
 running an older version of Posit Connect than 2024.12.0, it will error.
 
-### `renv` errors on deployment
+## `renv` errors on deployment
 
 When deploying `R` projects, it is essential that Posit Publisher has
 access to a record of the dependencies used by your project to reproduce
