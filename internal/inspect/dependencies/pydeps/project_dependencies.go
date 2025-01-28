@@ -58,7 +58,8 @@ func (s *defaultDependencyScanner) ScanDependencies(base util.AbsolutePath, pyth
 	return specs, nil
 }
 
-func GetRequirementsFilePath(base util.AbsolutePath) (util.RelativePath, bool, error) {
+// This function is used to check for the existance of the default Python package file (requirements.txt)
+func DoesDefaultRequirementsExist(base util.AbsolutePath) (util.RelativePath, bool, error) {
 	filePath := "requirements.txt"
 	requirementsFile := base.Join(filePath)
 	exists, err := requirementsFile.Exists()

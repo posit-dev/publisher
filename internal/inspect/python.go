@@ -87,7 +87,7 @@ func (i *defaultPythonInspector) InspectPython() (*config.Python, error) {
 		return nil, err
 	}
 
-	reqFile, exists, err := pydeps.GetRequirementsFilePath(i.base)
+	reqFile, exists, err := pydeps.DoesDefaultRequirementsExist(i.base)
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +139,7 @@ func (i *defaultPythonInspector) RequiresPython(cfg *config.Config) (bool, error
 	// Presence of requirements.txt implies Python is needed.
 	// This is the preferred approach since it is unambiguous and
 	// doesn't rely on environment inspection.
-	_, exists, err := pydeps.GetRequirementsFilePath(i.base)
+	_, exists, err := pydeps.DoesDefaultRequirementsExist(i.base)
 	if err != nil {
 		return false, err
 	}

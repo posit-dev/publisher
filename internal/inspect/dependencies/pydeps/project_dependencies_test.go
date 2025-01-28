@@ -38,19 +38,19 @@ func (s *ProjectDependenciesSuite) TestNewProjectImportScanner() {
 	s.Equal(log, scanner.log)
 }
 
-func (s *ProjectDependenciesSuite) TestGetRequirementsFilePath() {
+func (s *ProjectDependenciesSuite) TestDoesDefaultRequirementsExist() {
 	// Test requirements.txt exists
 	filePath := s.cwd.Join("requirements.txt")
 	filePath.WriteFile([]byte("# leading comment\nnumpy==1.26.1\n  \npandas\n    # indented comment\n"), 0777)
 
-	rel, exists, err := GetRequirementsFilePath(s.cwd)
+	rel, exists, err := DoesDefaultRequirementsExist(s.cwd)
 	s.NoError(err)
 	s.Equal(true, exists)
 	s.Equal("requirements.txt", rel.String())
 
 	// Test requirements.txt doesn't exist
 	bogus := s.cwd.Join("bogus")
-	rel, exists, err = GetRequirementsFilePath(bogus)
+	rel, exists, err = DoesDefaultRequirementsExist(bogus)
 	s.NoError(err)
 	s.Equal(false, exists)
 	s.Equal("requirements.txt", rel.String())
