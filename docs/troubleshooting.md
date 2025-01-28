@@ -58,9 +58,7 @@ This record is expected to be found as a `lockfile` (commonly named as `renv.loc
 since the [`renv` package](https://rstudio.github.io/renv/articles/renv.html)
 is a great choice to create reproducible environments.
 
-Clarifying things a bit, `renv` is not a requirement, the `lockfile` is.
-It is possible to collaborate in projects that already have a `lockfile`
-and not having `renv` available in your system.
+Projects that already include a `lockfile` do not require `renv` be setup.
 
 If an R project doesn't have a `lockfile` on deploy, Posit Publisher prompts to
 provide a solution to generate the expected `lockfile`.
