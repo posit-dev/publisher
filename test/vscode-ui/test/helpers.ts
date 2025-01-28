@@ -23,7 +23,9 @@ export async function waitForInputFields(inputText: string) {
   await browser.waitUntil(
     async () => {
       const element = await browser.$("#quickInput_message");
+      console.warn("quickInput_message html: ", element.getHTML());
       const text = await element.getText();
+      console.warn("quickInput_message text: ", text);
       return text.includes(inputText);
     },
     {
