@@ -16,12 +16,13 @@ import (
 )
 
 var MissingPythonError = types.NewAgentError(types.ErrorPythonExecNotFound, errors.New("unable to detect any Python interpreters"), nil)
-var pythonVersionCache = make(map[string]string)
 
 type PythonInterpreter interface {
 	IsPythonExecutableValid() bool
 	GetPythonExecutable() (util.AbsolutePath, error)
 	GetPythonVersion() (string, error)
+	GetPythonPackageFile() string
+	GetPythonPackageManager() string
 }
 
 type defaultPythonInterpreter struct {
@@ -198,9 +199,6 @@ func (i *defaultPythonInterpreter) validatePythonExecutable(pythonExecutable str
 }
 
 func (i *defaultPythonInterpreter) getPythonVersion(pythonExecutable string) (string, error) {
-	if version, ok := pythonVersionCache[pythonExecutable]; ok {
-		return version, nil
-	}
 	i.log.Info("Getting Python version", "python", pythonExecutable)
 	args := []string{
 		`-E`, // ignore python-specific environment variables
@@ -214,11 +212,6 @@ func (i *defaultPythonInterpreter) getPythonVersion(pythonExecutable string) (st
 	version := strings.TrimSpace(string(output))
 	i.log.Info("Detected Python", "version", version)
 
-	// Cache interpreter version result, unless it's a pyenv shim
-	// (where the real Python interpreter may vary from run to run)
-	if !strings.Contains(pythonExecutable, "shims") {
-		pythonVersionCache[pythonExecutable] = version
-	}
 	return version, nil
 }
 
@@ -238,4 +231,11 @@ func (i *defaultPythonInterpreter) GetPythonVersion() (string, error) {
 
 func (i *defaultPythonInterpreter) IsPythonExecutableValid() bool {
 	return i.pythonExecutable.String() != "" && i.version != ""
+}
+
+func (i *defaultPythonInterpreter) GetPythonPackageFile() string {
+	return "requirements.txt"
+}
+func (i *defaultPythonInterpreter) GetPythonPackageManager() string {
+	return "pip"
 }
