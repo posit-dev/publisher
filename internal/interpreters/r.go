@@ -27,6 +27,21 @@ func newInvalidRError(desc string, err error) *types.AgentError {
 	return types.NewAgentError(types.ErrorRExecNotFound, errors.New(errorDesc), nil)
 }
 
+type RenvAction = string
+
+const (
+	RenvSetup    RenvAction = "renvsetup"
+	RenvInit     RenvAction = "renvinit"
+	RenvSnapshot RenvAction = "renvsnapshot"
+	RenvStatus   RenvAction = "renvstatus"
+)
+
+type renvCommandObj struct {
+	Action      RenvAction `json:"action"`
+	ActionLabel string     `json:"actionLabel"`
+	Command     string     `json:"command"`
+}
+
 type RInterpreter interface {
 	IsRExecutableValid() bool
 	GetRExecutable() (util.AbsolutePath, error)
@@ -34,6 +49,7 @@ type RInterpreter interface {
 	GetLockFilePath() (util.RelativePath, bool, error)
 	GetPackageManager() string
 	CreateLockfile(util.AbsolutePath) error
+	RenvEnvironmentErrorCheck() *types.AgentError
 }
 
 type defaultRInterpreter struct {
@@ -171,6 +187,111 @@ func (i *defaultRInterpreter) GetLockFilePath() (relativePath util.RelativePath,
 
 func (i *defaultRInterpreter) IsRExecutableValid() bool {
 	return i.rExecutable.Path.String() != "" && i.version != ""
+}
+
+func (i *defaultRInterpreter) RenvEnvironmentErrorCheck() *types.AgentError {
+	rExec, err := i.GetRExecutable()
+	if err != nil {
+		i.log.Error("Could not get an R executable while determining if renv is installed", "error", err.Error())
+		return i.cannotVerifyRenvErr(err)
+	}
+
+	aerr := i.isRenvInstalled(rExec.String())
+	if aerr != nil {
+		return aerr
+	}
+
+	renvStatusOutput, aerr := i.renvStatus(rExec.String())
+	if aerr != nil {
+		return aerr
+	}
+
+	return i.prepRenvActionCommand(rExec.String(), renvStatusOutput)
+}
+
+func (i *defaultRInterpreter) isRenvInstalled(rexecPath string) *types.AgentError {
+	args := []string{"-s", "-e", "cat(system.file(package = \"renv\"))"}
+	output, _, err := i.cmdExecutor.RunCommand(rexecPath, args, i.base, i.log)
+	if err != nil {
+		i.log.Error("Unable to determine if renv is installed", "error", err.Error())
+		return types.NewAgentError(
+			types.ErrorUnknown,
+			errors.Join(
+				errors.New("unable to determine if renv is installed"),
+				err,
+			),
+			nil)
+	}
+
+	// If renv package is not installed, prep and send the terminal command that'll help the user
+	renvLibFile := string(output)
+	if renvLibFile == "" {
+		return types.NewAgentError(
+			types.ErrorRenvPackageNotInstalled,
+			errors.New("package renv is not installed. An renv lockfile is needed for deployment"),
+			renvCommandObj{
+				Action:      RenvSetup,
+				ActionLabel: "Setup renv",
+				Command:     fmt.Sprintf(`%s -s -e "install.packages(\"renv\"); renv::init();"`, rexecPath),
+			})
+	}
+
+	return nil
+}
+
+func (i *defaultRInterpreter) renvStatus(rexecPath string) (string, *types.AgentError) {
+	args := []string{"-s", "-e", "renv::status()"}
+	output, _, err := i.cmdExecutor.RunCommand(rexecPath, args, i.base, i.log)
+	if err != nil {
+		i.log.Error("Error attempting to run renv::status()", "error", err.Error())
+		return "", types.NewAgentError(
+			types.ErrorUnknown,
+			errors.Join(
+				errors.New("error attempting to run renv::status()"),
+				err,
+			),
+			nil)
+	}
+
+	return string(output), nil
+}
+
+func (i *defaultRInterpreter) prepRenvActionCommand(rexecPath string, renvStatus string) *types.AgentError {
+	// The default command suggested is renv::status()
+	renvDescError := errors.New("the renv environment for this project is not in a healthy state. Run renv::status() for more details")
+	commandObj := renvCommandObj{
+		Action:      RenvStatus,
+		ActionLabel: "Run and show renv::status()",
+		Command:     fmt.Sprintf(`%s -s -e "renv::status()"`, rexecPath),
+	}
+
+	if strings.Contains(renvStatus, "renv::init()") {
+		// Renv suggests to init() the project
+		renvDescError = errors.New(`project requires renv initialization "renv::init()" to be deployed`)
+		commandObj.Action = RenvInit
+		commandObj.ActionLabel = "Setup renv"
+		commandObj.Command = fmt.Sprintf(`%s -s -e "renv::init()"`, rexecPath)
+	} else if strings.Contains(renvStatus, "renv::snapshot()") {
+		// Renv suggests to snapshot(), only the lockfile is missing
+		renvDescError = errors.New(`project requires renv to update the lockfile to be deployed`)
+		commandObj.Action = RenvSnapshot
+		commandObj.ActionLabel = "Setup lockfile"
+		commandObj.Command = fmt.Sprintf(`%s -s -e "renv::snapshot()"`, rexecPath)
+	}
+
+	return types.NewAgentError(
+		types.ErrorRenvActionRequired,
+		renvDescError,
+		commandObj)
+}
+
+func (i *defaultRInterpreter) cannotVerifyRenvErr(err error) *types.AgentError {
+	if aerr, isAgentErr := types.IsAgentError(err); isAgentErr {
+		return aerr
+	}
+	verifyErr := types.NewAgentError(types.ErrorUnknown, err, nil)
+	verifyErr.Message = "Unable to determine if renv is installed"
+	return verifyErr
 }
 
 // Determine which R Executable to use by:
