@@ -47,8 +47,6 @@ func (s *PythonSuite) SetupTest() {
 	s.cwd = cwd
 	err = cwd.MkdirAll(0700)
 	s.NoError(err)
-
-	pythonVersionCache = make(map[string]string)
 }
 
 func (s *PythonSuite) TestGetPythonVersionFromExecutable() {

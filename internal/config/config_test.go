@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/schema"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
@@ -22,6 +23,26 @@ type ConfigSuite struct {
 
 func TestConfigSuite(t *testing.T) {
 	suite.Run(t, new(ConfigSuite))
+}
+
+func setupNewPythonInterpreterMock() interpreters.PythonInterpreter {
+	i := interpreters.NewMockPythonInterpreter()
+	i.On("IsPythonExecutableValid").Return(true)
+	i.On("GetPythonExecutable").Return(util.NewAbsolutePath("/bin/python", nil), nil)
+	i.On("GetPythonVersion").Return("4.3.1", nil)
+	i.On("GetPythonPackageFile").Return("requirements.txt")
+	i.On("GetPythonPackageManager").Return("pip")
+	return i
+}
+
+func setupNewRInterpreterMock() interpreters.RInterpreter {
+	i := interpreters.NewMockRInterpreter()
+	i.On("IsRExecutableValid").Return(true)
+	i.On("GetRExecutable").Return(util.NewAbsolutePath("/bin/r", nil), nil)
+	i.On("GetRVersion").Return("3.3.3", nil)
+	i.On("GetPackageManager").Return("renv")
+	i.On("GetLockFilePath").Return(util.NewRelativePath("renv.lock", nil), false, nil)
+	return i
 }
 
 func (s *ConfigSuite) SetupTest() {
@@ -66,7 +87,7 @@ func (s *ConfigSuite) TestGetConfigPathEmpty() {
 func (s *ConfigSuite) TestFromFile() {
 	s.createConfigFile("myConfig")
 	path := GetConfigPath(s.cwd, "myConfig")
-	cfg, err := FromFile(path)
+	cfg, err := FromFile(path, nil, nil)
 	s.NoError(err)
 	s.NotNil(cfg)
 	s.Equal(ContentTypePythonDash, cfg.Type)
@@ -76,7 +97,7 @@ func (s *ConfigSuite) TestFromExampleFile() {
 	realDir, err := util.Getwd(nil)
 	s.NoError(err)
 	path := realDir.Join("..", "schema", "schemas", "config.toml")
-	cfg, err := FromFile(path)
+	cfg, err := FromFile(path, nil, nil)
 	s.NoError(err)
 	s.NotNil(cfg)
 
@@ -96,7 +117,9 @@ func (s *ConfigSuite) TestFromFileFillsDefaultsForPython() {
 	err := cfg.WriteFile(configFile)
 	s.NoError(err)
 
-	cfgFromFile, err := FromFile(configFile)
+	python := setupNewPythonInterpreterMock()
+
+	cfgFromFile, err := FromFile(configFile, nil, &python)
 	s.NoError(err)
 	s.NotNil(cfgFromFile)
 	s.Equal(cfgFromFile.Python.PackageFile, "requirements.txt")
@@ -111,10 +134,12 @@ func (s *ConfigSuite) TestFromFileFillsDefaultsForR() {
 	cfg.R = &R{
 		Version: "4.4.1",
 	}
+	r := setupNewRInterpreterMock()
+
 	err := cfg.WriteFile(configFile)
 	s.NoError(err)
 
-	cfgFromFile, err := FromFile(configFile)
+	cfgFromFile, err := FromFile(configFile, &r, nil)
 	s.NoError(err)
 	s.NotNil(cfgFromFile)
 	s.Equal(cfgFromFile.R.PackageFile, "renv.lock")
@@ -122,7 +147,7 @@ func (s *ConfigSuite) TestFromFileFillsDefaultsForR() {
 }
 
 func (s *ConfigSuite) TestFromFileErr() {
-	cfg, err := FromFile(s.cwd.Join("nonexistent.toml"))
+	cfg, err := FromFile(s.cwd.Join("nonexistent.toml"), nil, nil)
 	s.ErrorIs(err, fs.ErrNotExist)
 	s.Nil(cfg)
 }
@@ -143,7 +168,7 @@ func (s *ConfigSuite) TestWriteFileEmptyEntrypoint() {
 	s.NoError(err)
 
 	// Ensure it validates
-	_, err = FromFile(configFile)
+	_, err = FromFile(configFile, nil, nil)
 	s.NoError(err)
 
 	contents, err := configFile.ReadFile()
@@ -187,7 +212,7 @@ func (s *ConfigSuite) TestReadComments() {
 	err := configFile.WriteFile([]byte(commentedConfig), 0666)
 	s.NoError(err)
 
-	cfg, err := FromFile(configFile)
+	cfg, err := FromFile(configFile, nil, nil)
 	s.NoError(err)
 
 	s.Equal([]string{" These are comments.", " They will be preserved."}, cfg.Comments)

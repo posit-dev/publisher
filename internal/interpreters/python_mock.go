@@ -67,3 +67,31 @@ func (m *MockPythonInterpreter) GetPythonVersion() (string, error) {
 		}
 	}
 }
+
+func (m *MockPythonInterpreter) GetPythonPackageFile() string {
+	args := m.Called()
+	arg0 := args.Get(0)
+	if arg0 == nil {
+		return ""
+	} else {
+		var i interface{} = arg0
+		if version, ok := i.(string); ok {
+			return version
+		}
+	}
+	return ""
+}
+
+func (m *MockPythonInterpreter) GetPythonPackageManager() string {
+	args := m.Called()
+	arg0 := args.Get(0)
+	if arg0 == nil {
+		return ""
+	} else {
+		var i interface{} = arg0
+		if version, ok := i.(string); ok {
+			return version
+		}
+	}
+	return ""
+}
