@@ -6,6 +6,7 @@ import {
   PythonPackagesResponse,
   ScanPythonPackagesResponse,
 } from "../types/packages";
+import { PythonExecutable, RExecutable } from "../../types/shared";
 
 export class Packages {
   private client: AxiosInstance;
@@ -20,11 +21,22 @@ export class Packages {
   // 409 - conflict (Python is not configured)
   // 422 - package file is invalid
   // 500 - internal server error
-  getPythonPackages(configName: string, dir: string) {
+  getPythonPackages(
+    configName: string,
+    dir: string,
+    r: RExecutable,
+    python: PythonExecutable,
+  ) {
     const encodedName = encodeURIComponent(configName);
     return this.client.get<PythonPackagesResponse>(
       `/configurations/${encodedName}/packages/python`,
-      { params: { dir } },
+      {
+        params: {
+          dir,
+          python: python.pythonPath,
+          r: r.rPath,
+        },
+      },
     );
   }
 
@@ -34,11 +46,22 @@ export class Packages {
   // 409 - conflict (R is not configured)
   // 422 - package file is invalid
   // 500 - internal server error
-  getRPackages(configName: string, dir: string) {
+  getRPackages(
+    configName: string,
+    dir: string,
+    r: RExecutable,
+    python: PythonExecutable,
+  ) {
     const encodedName = encodeURIComponent(configName);
     return this.client.get<GetRPackagesResponse>(
       `/configurations/${encodedName}/packages/r`,
-      { params: { dir } },
+      {
+        params: {
+          dir,
+          python: python.pythonPath,
+          r: r.rPath,
+        },
+      },
     );
   }
 
@@ -48,13 +71,20 @@ export class Packages {
   // 500 - internal server error
   createPythonRequirementsFile(
     dir: string,
-    python?: string,
+    r: RExecutable,
+    python: PythonExecutable,
     saveName?: string,
   ) {
     return this.client.post<ScanPythonPackagesResponse>(
       "packages/python/scan",
-      { python, saveName },
-      { params: { dir } },
+      { saveName },
+      {
+        params: {
+          dir,
+          python: python.pythonPath,
+          r: r.rPath,
+        },
+      },
     );
   }
 
@@ -62,11 +92,22 @@ export class Packages {
   // 200 - success
   // 400 - bad request
   // 500 - internal server error
-  createRRequirementsFile(dir: string, saveName?: string, r?: string) {
+  createRRequirementsFile(
+    dir: string,
+    r: RExecutable,
+    python: PythonExecutable,
+    saveName?: string,
+  ) {
     return this.client.post<void>(
       "packages/r/scan",
-      { saveName, r },
-      { params: { dir } },
+      { saveName },
+      {
+        params: {
+          dir,
+          python: python.pythonPath,
+          r: r.rPath,
+        },
+      },
     );
   }
 }

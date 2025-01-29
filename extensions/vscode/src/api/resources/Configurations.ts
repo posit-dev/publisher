@@ -9,6 +9,8 @@ import {
   ConfigurationInspectionResult,
 } from "../types/configurations";
 
+import { PythonExecutable, RExecutable } from "../../types/shared";
+
 export class Configurations {
   private client: AxiosInstance;
 
@@ -20,12 +22,21 @@ export class Configurations {
   // 200 - success
   // 404 - not found
   // 500 - internal server error
-  get(configName: string, dir: string) {
+  get(
+    configName: string,
+    dir: string,
+    r: RExecutable,
+    python: PythonExecutable,
+  ) {
     const encodedName = encodeURIComponent(configName);
     return this.client.get<Configuration | ConfigurationError>(
       `/configurations/${encodedName}`,
       {
-        params: { dir },
+        params: {
+          dir,
+          python: python.pythonPath,
+          r: r.rPath,
+        },
       },
     );
   }
@@ -33,12 +44,19 @@ export class Configurations {
   // Returns:
   // 200 - success
   // 500 - internal server error
-  getAll(dir: string, params?: { entrypoint?: string; recursive?: boolean }) {
+  getAll(
+    dir: string,
+    r: RExecutable,
+    python: PythonExecutable,
+    params?: { entrypoint?: string; recursive?: boolean },
+  ) {
     return this.client.get<Array<Configuration | ConfigurationError>>(
       "/configurations",
       {
         params: {
           dir,
+          r: r.rPath,
+          python: python.pythonPath,
           ...params,
         },
       },
@@ -80,19 +98,18 @@ export class Configurations {
   // 500 - internal server error
   inspect(
     dir: string,
-    python?: string,
-    r?: string,
+    r: RExecutable,
+    python: PythonExecutable,
     params?: { entrypoint?: string; recursive?: boolean },
   ) {
     return this.client.post<ConfigurationInspectionResult[]>(
       "/inspect",
-      {
-        python,
-        r,
-      },
+      {},
       {
         params: {
           dir,
+          python: python.pythonPath,
+          r: r.rPath,
           ...params,
         },
       },

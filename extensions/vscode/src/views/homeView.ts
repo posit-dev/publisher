@@ -207,9 +207,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         configurationName,
         !extensionSettings.verifyCertificates(), // insecure = !verifyCertificates
         projectDir,
-        secrets,
         r,
         python,
+        secrets,
       );
       deployProject(
         deploymentName,
@@ -496,6 +496,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     let packageMgr: string | undefined;
 
     const api = await useApi();
+    const python = await getPythonInterpreterPath();
+    const r = await getRInterpreterPath();
 
     if (activeConfiguration && !isConfigurationError(activeConfiguration)) {
       const pythonSection = activeConfiguration.configuration.python;
@@ -513,6 +515,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
               return await api.packages.getPythonPackages(
                 activeConfiguration.configurationName,
                 activeConfiguration.projectDir,
+                r,
+                python,
               );
             },
           );
@@ -564,6 +568,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     let rVersionConfig: RVersionConfig | undefined;
 
     const api = await useApi();
+    const python = await getPythonInterpreterPath();
+    const r = await getRInterpreterPath();
 
     if (activeConfiguration && !isConfigurationError(activeConfiguration)) {
       const rSection = activeConfiguration.configuration.r;
@@ -581,6 +587,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
               await api.packages.getRPackages(
                 activeConfiguration.configurationName,
                 activeConfiguration.projectDir,
+                r,
+                python,
               ),
           );
 
@@ -683,9 +691,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         Views.HomeView,
         async () => {
           const api = await useApi();
+          const r = await getRInterpreterPath();
           const python = await getPythonInterpreterPath();
           return await api.packages.createPythonRequirementsFile(
             activeConfiguration.projectDir,
+            r,
             python,
             relPathPackageFile,
           );
@@ -753,11 +763,13 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         async () => {
           const api = await useApi();
           const r = await getRInterpreterPath();
+          const python = await getPythonInterpreterPath();
 
           return await api.packages.createRRequirementsFile(
             activeConfiguration.projectDir,
-            relPathPackageFile,
             r,
+            python,
+            relPathPackageFile,
           );
         },
       );
@@ -1480,9 +1492,13 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           Views.HomeView,
           async () => {
             const api = await useApi();
+            const python = await getPythonInterpreterPath();
+            const r = await getRInterpreterPath();
             return await api.files.getByConfiguration(
               activeConfig.configurationName,
               activeConfig.projectDir,
+              r,
+              python,
             );
           },
         );
@@ -1559,6 +1575,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const entrypointFile = uriUtils.basename(uri);
 
     const api = await useApi();
+    const python = await getPythonInterpreterPath();
+    const r = await getRInterpreterPath();
 
     await this.refreshAll(true, true);
 
@@ -1596,10 +1614,15 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const configMap = new Map<string, Configuration>();
     const getConfigurations = async () => {
       try {
-        const response = await api.configurations.getAll(entrypointDir, {
-          entrypoint: entrypointFile,
-          recursive: false,
-        });
+        const response = await api.configurations.getAll(
+          entrypointDir,
+          r,
+          python,
+          {
+            entrypoint: entrypointFile,
+            recursive: false,
+          },
+        );
         const rawConfigs = response.data;
         rawConfigs.forEach((cfg) => {
           if (!isConfigurationError(cfg)) {

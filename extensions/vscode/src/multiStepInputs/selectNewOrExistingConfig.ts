@@ -54,6 +54,8 @@ export async function selectNewOrExistingConfig(
   // API Calls and results
   // ***************************************************************
   const api = await useApi();
+  const python = await getPythonInterpreterPath();
+  const r = await getRInterpreterPath();
 
   let configFileListItems: QuickPickItem[] = [];
   let configurations: Configuration[] = [];
@@ -105,6 +107,8 @@ export async function selectNewOrExistingConfig(
       // get all configurations
       const response = await api.configurations.getAll(
         activeDeployment.projectDir,
+        r,
+        python,
       );
       const rawConfigs = response.data;
       // remove the errors
@@ -182,8 +186,8 @@ export async function selectNewOrExistingConfig(
 
       const inspectResponse = await api.configurations.inspect(
         activeDeployment.projectDir,
-        python,
         r,
+        python,
       );
       inspectionResults = filterInspectionResultsToType(
         inspectResponse.data,
@@ -439,7 +443,11 @@ export async function selectNewOrExistingConfig(
       }
 
       const existingNames = (
-        await api.configurations.getAll(selectedInspectionResult.projectDir)
+        await api.configurations.getAll(
+          selectedInspectionResult.projectDir,
+          r,
+          python,
+        )
       ).data.map((config) => config.configurationName);
 
       const configName = newConfigFileNameFromTitle(
