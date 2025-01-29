@@ -93,7 +93,7 @@ func GetConfigurationsHandlerFunc(base util.AbsolutePath, log logging.Logger) ht
 			// Response already returned by ProjectDirFromRequest
 			return
 		}
-		rInterpreter, pythonInterpreter, err := InterpretersFromRequest(base, w, req, log)
+		rInterpreter, pythonInterpreter, err := InterpretersFromRequest(projectDir, w, req, log)
 		if err != nil {
 			// Response already returned by ProjectDirFromRequest
 			return
