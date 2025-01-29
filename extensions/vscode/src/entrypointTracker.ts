@@ -48,7 +48,7 @@ async function isDocumentEntrypoint(
     const python = await getPythonInterpreterPath();
     const r = await getRInterpreterPath();
 
-    const response = await api.configurations.inspect(dir, python, r, {
+    const response = await api.configurations.inspect(dir, r, python, {
       entrypoint: uriUtils.basename(document.uri),
     });
 
