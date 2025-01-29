@@ -35,8 +35,13 @@ func (h *getConfigRPackagesHandler) ServeHTTP(w http.ResponseWriter, req *http.R
 		// Response already returned by ProjectDirFromRequest
 		return
 	}
+	rInterpreter, pythonInterpreter, err := InterpretersFromRequest(h.base, w, req, h.log)
+	if err != nil {
+		// Response already returned by ProjectDirFromRequest
+		return
+	}
 	configPath := config.GetConfigPath(projectDir, name)
-	cfg, err := config.FromFile(configPath)
+	cfg, err := config.FromFile(configPath, rInterpreter, pythonInterpreter)
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
 			NotFound(w, h.log, err)

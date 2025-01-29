@@ -30,14 +30,16 @@ type PostPackagesPythonScanResponse struct {
 var inspectorFactory = inspect.NewPythonInspector
 
 type PostPackagesPythonScanHandler struct {
-	base util.AbsolutePath
-	log  logging.Logger
+	base   util.AbsolutePath
+	log    logging.Logger
+	python *interpreters.PythonInterpreter
 }
 
-func NewPostPackagesPythonScanHandler(base util.AbsolutePath, log logging.Logger) *PostPackagesPythonScanHandler {
+func NewPostPackagesPythonScanHandler(base util.AbsolutePath, log logging.Logger, alternatePythonInterpreter *interpreters.PythonInterpreter) *PostPackagesPythonScanHandler {
 	return &PostPackagesPythonScanHandler{
-		base: base,
-		log:  log,
+		base:   base,
+		log:    log,
+		python: alternatePythonInterpreter,
 	}
 }
 
@@ -46,6 +48,17 @@ func (h *PostPackagesPythonScanHandler) ServeHTTP(w http.ResponseWriter, req *ht
 	if err != nil {
 		// Response already returned by ProjectDirFromRequest
 		return
+	}
+	if h.python == nil {
+		_, pythonInterpreter, err := InterpretersFromRequest(h.base, w, req, h.log)
+		if err != nil {
+			// Response already returned by ProjectDirFromRequest
+			return
+		}
+		h.python = pythonInterpreter
+	}
+	if h.python == nil {
+		InternalError(w, req, h.log, interpreters.MissingPythonError)
 	}
 	dec := json.NewDecoder(req.Body)
 	dec.DisallowUnknownFields()
@@ -58,8 +71,7 @@ func (h *PostPackagesPythonScanHandler) ServeHTTP(w http.ResponseWriter, req *ht
 	if b.SaveName == "" {
 		b.SaveName = interpreters.PythonRequirementsFilename
 	}
-	python := util.NewPath(b.Python, nil)
-	inspector, err := inspectorFactory(projectDir, python, h.log, nil, nil)
+	inspector, err := inspectorFactory(projectDir, h.python, h.log, nil)
 	if err != nil {
 		InternalError(w, req, h.log, err)
 		return
@@ -81,8 +93,7 @@ func (h *PostPackagesPythonScanHandler) ServeHTTP(w http.ResponseWriter, req *ht
 		InternalError(w, req, h.log, err)
 		return
 	}
-	pythonInterpreter := inspector.GetPythonInterpreter()
-	pythonPath, err := pythonInterpreter.GetPythonExecutable()
+	pythonPath, err := (*h.python).GetPythonExecutable()
 	if err != nil {
 		InternalError(w, req, h.log, err)
 		return

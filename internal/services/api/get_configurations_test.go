@@ -48,10 +48,11 @@ func (s *GetConfigurationsSuite) makeConfiguration(name string) *config.Config {
 	cfg.Python = &config.Python{
 		Version:        "3.4.5",
 		PackageManager: "pip",
+		PackageFile:    "requirements.txt",
 	}
 	err := cfg.WriteFile(path)
 	s.NoError(err)
-	r, err := config.FromFile(path)
+	r, err := config.FromFile(path, nil, nil)
 	s.NoError(err)
 	return r
 }
@@ -213,10 +214,11 @@ func (s *GetConfigurationsSuite) makeSubdirConfiguration(name string, subdir str
 	cfg.Python = &config.Python{
 		Version:        "3.4.5",
 		PackageManager: "pip",
+		PackageFile:    "requirements.txt",
 	}
 	err = cfg.WriteFile(path)
 	s.NoError(err)
-	r, err := config.FromFile(path)
+	r, err := config.FromFile(path, nil, nil)
 	s.NoError(err)
 	return r
 }
