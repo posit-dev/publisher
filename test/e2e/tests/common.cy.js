@@ -1,3 +1,5 @@
+// Copyright (C) 2025 by Posit Software, PBC.
+
 describe("Common", () => {
   it("Publisher extension can be selected and initial state", () => {
     cy.visit("/");

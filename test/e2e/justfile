@@ -17,6 +17,9 @@ start service:
 stop:
     docker compose down --volumes --remove-orphans
 
+lint:
+    npm run lint
+
 # Install local dependencies, start Connect in development mode, and open Cypress UI locally (not from a container)
 dev:
     #!/usr/bin/env bash
