@@ -32,5 +32,7 @@ webviews/homeView/coverage
 **/justfile
 **/.eslintrc.json
 **/eslint.config.mjs
+**/.fantasticonrc.js
 **/tsconfig*.json
 **/vite.config.ts
+**/vitest.config.ts
