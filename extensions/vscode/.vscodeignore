@@ -25,9 +25,9 @@ webviews/homeView/package-lock.json
 webviews/homeView/CONTRIBUTING.md
 webviews/homeView/README.md
 webviews/homeView/node_modules/**
+webviews/homeView/coverage
 
 # Ignore configuration files
-
 **/.gitignore
 **/justfile
 **/.eslintrc.json
