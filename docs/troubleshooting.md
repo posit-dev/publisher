@@ -19,6 +19,21 @@ Carefully check your Configuration file for any errors, and refer to the
 [Configuration File reference documentation](https://github.com/posit-dev/publisher/blob/main/docs/configuration.md)
 for more details on the fields and values that are expected.
 
+## Deployed content does not seem to be running
+
+The Posit Publisher attempts to access the content on the Posit Connect server after
+the deployment process. This error occurs when the publisher's attempt times out or
+encounters an error.
+
+The deployment logs available on Posit Connect will normally provide more insight into
+the details of the runtime failure that occurred.
+
+Often times, the resolution will involve simply updating the dependencies within the
+`requirements.txt` or `renv.lock` file (depending on the type of content), and then
+redeploying. Update your dependencies and make sure your project runs successfully
+locally. Increasing the dependency specification by not only specifying the dependency
+package but also the version to be used will often overcome the issue.
+
 ## Unrecognized app mode
 
 If when deploying you see the following error:
@@ -69,6 +84,37 @@ Projects that already include a `lockfile` do not require `renv` be setup.
 When uncommon errors occur that Posit Publisher cannot solve for you, it
 prompts to evaluate the status of `renv` using
 [`renv::status()`](https://rstudio.github.io/renv/reference/status.html).
+
+## `EOF` error on deployment
+
+When deploying to a Posit Connect server, it is possible to encounter the error:
+`Post "http://<Your Connect Server>/__api__/v1/content": EOF.`. This occurs when
+a request is sent to a Connect server before it is ready to service the request.
+
+Retrying the operation after the Posit Connect server has completed its initialization
+and is available for connections, should resolve the issue. Try establishing a connection
+directly to the Posit Connect dashboard to confirm that the server is available.
+
+## Deployment type mismatches
+
+By default, a new deployment created within the Posit Publisher will create a new
+deployment on the Posit Connect server. Each deployment uses an identifier referred to
+as the Content GUID, which the Posit Publisher records during the first deployment along
+with the content type. When a deployment is redeployed, this identifier is used to update the piece of content
+on the Connect server rather than creating a new deployment.
+
+The Posit Publisher provides the ability to associate a deployment with a different
+server deployment. It is the responsibility of the publisher to make sure that the
+content type of the deployment is the same as the content type of the server deployment.
+
+Mismatches are not identified during the association operation, but instead are identifying
+during the next deployment operation. If mismatched, an error similar to the following will
+be displayed:
+
+`Content was previously deployed as 'jupyter-notebook' but your configuration is set to 'r-shiny’`
+
+Posit Connect does not allow the content type of a deployment to be changed. If you encounter this
+error, your best option is to create and deploy a new deployment.
 
 ## Still having trouble?
 
