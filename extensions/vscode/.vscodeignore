@@ -17,7 +17,6 @@ assets/icons/**
 !node_modules/@vscode/codicons/dist
 
 # Ignore all webview files except the build directories
-
 webviews/homeView/src/**
 webviews/homeView/index.html
 webviews/homeView/package.json
