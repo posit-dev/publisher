@@ -22,6 +22,7 @@ webviews/homeView/src/**
 webviews/homeView/index.html
 webviews/homeView/package.json
 webviews/homeView/package-lock.json
+webviews/homeView/CONTRIBUTING.md
 webviews/homeView/README.md
 webviews/homeView/node_modules/**
 
