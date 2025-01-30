@@ -16,13 +16,13 @@
           Scan
         </vscode-button>
       </template>
-      <template v-if="!home.python.active.isInProject">
+      <template v-else-if="!home.python.active.isInProject">
         <p>
           This project is not configured to use Python. To configure Python, add
           a [python] section to your configuration file.
         </p>
       </template>
-      <template v-if="home.python.active.isEmptyRequirements">
+      <template v-else-if="home.python.active.isEmptyRequirements">
         <p>
           This project currently has no Python package requirements. If this is
           not accurate, click Scan to update based on the files in your project
