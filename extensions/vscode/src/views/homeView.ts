@@ -82,6 +82,10 @@ import { showAssociateGUID } from "src/actions/showAssociateGUID";
 import { extensionSettings } from "src/extension";
 import { openFileInEditor } from "src/commands";
 import { showImmediateDeploymentFailureMessage } from "./publishFailures";
+import {
+  SelectionCredentialMatch,
+  setSelectionHasCredentialMatch,
+} from "../extension";
 
 enum HomeViewInitialized {
   initialized = "initialized",
@@ -174,6 +178,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         return this.showPublishingLog();
       case WebviewToHostMessageType.SHOW_ASSOCIATE_GUID:
         return showAssociateGUID(this.state);
+      case WebviewToHostMessageType.UPDATE_SELECTION_CREDENTIAL_STATE:
+        return this.updateSelectionCredentialState(msg.content.state);
       default:
         window.showErrorMessage(
           `Internal Error: onConduitMessage unhandled msg: ${JSON.stringify(msg)}`,
@@ -187,6 +193,14 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       "vscode.open",
       Uri.parse(msg.content.uri),
     );
+  }
+
+  private async updateSelectionCredentialState(state: string) {
+    const match =
+      state === SelectionCredentialMatch.true
+        ? SelectionCredentialMatch.true
+        : SelectionCredentialMatch.false;
+    return await setSelectionHasCredentialMatch(match);
   }
 
   private async initiateDeployment(

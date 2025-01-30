@@ -332,7 +332,7 @@
         },
         {
           "command": "posit.publisher.homeView.showAssociateDeployment",
-          "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'even-easier-deploy-more-menu-matching-configs'"
+          "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'even-easier-deploy-more-menu-matching-configs' && posit.publish.selection.haveCredentialMatch == 'true'"
         },
         {
           "command": "posit.publisher.homeView.createConfigForDeployment",

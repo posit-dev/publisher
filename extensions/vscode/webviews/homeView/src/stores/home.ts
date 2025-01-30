@@ -179,6 +179,18 @@ export const useHomeStore = defineStore("home", () => {
     selectedContentRecord.value = contentRecord;
   }
 
+  watch([serverCredential], () => updateSelectionCredentialStatus());
+
+  const updateSelectionCredentialStatus = () => {
+    const hostConduit = useHostConduitService();
+    hostConduit.sendMsg({
+      kind: WebviewToHostMessageType.UPDATE_SELECTION_CREDENTIAL_STATE,
+      content: {
+        state: serverCredential !== undefined ? "true" : "false",
+      },
+    });
+  };
+
   watch([selectedConfiguration], () => updateParentViewSelectionState());
 
   const updateParentViewSelectionState = () => {
