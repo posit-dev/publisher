@@ -1783,6 +1783,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         this,
       ),
       commands.registerCommand(
+        Commands.HomeView.ShowAssociateDeployment,
+        () => showAssociateGUID(this.state),
+        this,
+      ),
+      commands.registerCommand(
         Commands.HomeView.CreateConfigForDeployment,
         this.showSelectOrCreateConfigForDeployment,
         this,

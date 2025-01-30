@@ -136,6 +136,11 @@
         "category": "Posit Publisher"
       },
       {
+        "command": "posit.publisher.homeView.showAssociateDeployment",
+        "title": "Associate with a Different Deployment on Connect",
+        "category": "Posit Publisher"
+      },
+      {
         "command": "posit.publisher.homeView.createConfigForDeployment",
         "title": "Create New Configuration For Destination",
         "category": "Posit Publisher"
@@ -323,6 +328,10 @@
       "webview/context": [
         {
           "command": "posit.publisher.homeView.showSelectConfigForDeployment",
+          "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'even-easier-deploy-more-menu-matching-configs'"
+        },
+        {
+          "command": "posit.publisher.homeView.showAssociateDeployment",
           "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'even-easier-deploy-more-menu-matching-configs'"
         },
         {
