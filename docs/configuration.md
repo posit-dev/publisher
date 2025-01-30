@@ -104,19 +104,30 @@ API_URL = "https://example.com/api"
 
 ## Python settings
 
+The existence of the `python` section indicates a dependency on python for the deployment. All attributes are
+optional, so the python section can be as simple as:
+
+```toml
+[python]
+```
+
 #### package_file
 
-File containing package dependencies. The file must exist and be listed under 'files'. The default is 'requirements.txt'.
+File containing package dependencies. This entry is optional and defaults to `requirements.txt`. When provided, the file must exist and be listed within `files`.
 
 #### package_manager
 
-Package manager that will install the dependencies. Supported values are `pip` and `none`. If package-manager is `none`, dependencies will not be installed.
+Package manager that will install the dependencies. This entry is optional and defaults to `pip`. Supported values are `pip` and `none`. If package-manager is `none`, dependencies will not be installed.
 
 #### version
 
-Python version. The server must have a matching Python major/minor version in order to run the content.
+Python version. The server must have a matching Python major/minor version in order to run the content. This entry is
+optional and defaults to the version of the active Python interpreter.
 
-Example:
+By not supplying the python version attribute, the requested python version will "float" to the active version of Python being
+used at the time of deployment. This may or may not be desired. If you need to "lock" it down, then provide the desired target value
+
+#### Example: (with all attributes provided)
 
 ```toml
 [python]
@@ -127,19 +138,30 @@ package_manager = "pip"
 
 ## R settings
 
+The existence of the `r` section indicates a dependency on R for the deployment. All attributes are
+optional, so the r section can be as simple as:
+
+```toml
+[r]
+```
+
 #### package_file
 
-File containing package dependencies. This is usually `renv.lock`. The file must exist and be listed under 'files'.
+File containing package dependencies. This entry is optional and defaults to the package file configured within the active R interpreter's `renv` installation (this is usually `renv.lock`). When provided, the file must exist and be listed within `files`.
 
 #### package_manager
 
-Package manager that will install the dependencies. Supported values are `renv` and `none`. If package-manager is `none`, dependencies will be assumed to be pre-installed on the server.
+Package manager that will install the dependencies. This entry is optional and defaults to `renv`. Supported values are `renv` and `none`. If package-manager is `none`, dependencies will not be installed.
 
 #### version
 
-R version. The server will use the nearest R version to run the content.
+R version. The server will use the nearest R version to run the content. This entry is
+optional and defaults to the version of the active R interpreter.
 
-Example:
+By not supplying the r version attribute, the requested r version will "float" to the active version of R being
+used at the time of deployment. This may or may not be desired. If you need to "lock" it down, then provide the desired target value
+
+#### Example: (with all attributes provided)
 
 ```toml
 [r]
