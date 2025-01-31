@@ -35,13 +35,8 @@ func (cmd *UICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) err
 	// for better error handling and startup performance.
 	svc := api.NewService(
 		"/",
-		// cmd.Interactive,
-		// cmd.OpenBrowserAt,
-		// cmd.Theme,
 		cmd.Listen,
 		true,
-		// cmd.TLSKeyFile,
-		// cmd.TLSCertFile,
 		absPath,
 		ctx.Accounts,
 		log,

@@ -23,13 +23,8 @@ const APIPrefix string = "api"
 
 func NewService(
 	fragment string,
-	// interactive bool,
-	// openBrowserAt string,
-	// theme string,
 	listen string,
 	accessLog bool,
-	// tlsKeyFile string,
-	// tlsCertFile string,
 	dir util.AbsolutePath,
 	lister accounts.AccountList,
 	log logging.Logger,
@@ -42,10 +37,6 @@ func NewService(
 		handler,
 		listen,
 		fragment,
-		// tlsKeyFile,
-		// tlsCertFile,
-		// interactive,
-		// openBrowserAt,
 		accessLog,
 		log,
 	)
