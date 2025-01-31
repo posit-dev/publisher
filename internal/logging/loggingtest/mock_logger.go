@@ -42,3 +42,8 @@ func (m *MockLogger) WithArgs(args ...any) logging.Logger {
 	mockArgs := m.Called(args...)
 	return mockArgs.Get(0).(logging.Logger)
 }
+
+func (m *MockLogger) Debug(msg string, args ...any) {
+	mockArgs := append([]any{msg}, args...)
+	m.Called(mockArgs...)
+}

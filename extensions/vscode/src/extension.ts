@@ -66,7 +66,9 @@ export async function activate(context: ExtensionContext) {
   const stream = new EventStream(port);
   context.subscriptions.push(stream);
 
-  service = new Service(context, port, useExternalAgent);
+  const useKeyChain = extensionSettings.useKeyChainCredentialStorage();
+
+  service = new Service(context, port, useExternalAgent, useKeyChain);
   service.start();
 
   const watchers = new WatcherManager();
@@ -119,10 +121,18 @@ export async function deactivate() {
 
 export const extensionSettings = {
   verifyCertificates(): boolean {
-    // set value from extension configuration - defaults to true
+    // get value from extension configuration - defaults to true
     const configuration = workspace.getConfiguration("positPublisher");
     const value: boolean | undefined =
       configuration.get<boolean>("verifyCertificates");
+    return value !== undefined ? value : true;
+  },
+  useKeyChainCredentialStorage(): boolean {
+    // get value from extension configuration - defaults to true
+    const configuration = workspace.getConfiguration("positPublisher");
+    const value: boolean | undefined = configuration.get<boolean>(
+      "useKeyChainCredentialStorage",
+    );
     return value !== undefined ? value : true;
   },
 };

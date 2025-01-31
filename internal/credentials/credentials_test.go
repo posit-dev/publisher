@@ -103,6 +103,11 @@ func (s *CredentialsServiceTestSuite) TestCredentialRecord_VersionErr() {
 
 func (s *CredentialsServiceTestSuite) TestNewCredentialsService_KeyringOK() {
 	keyring.MockInit()
+
+	// Don't set credentials.UseKeychain to any value, let it default
+
+	s.log.On("Debug", "Using keychain for credential storage.").Return()
+
 	credservice, err := NewCredentialsService(s.log)
 	s.NoError(err)
 	s.Implements((*CredentialsService)(nil), credservice)
@@ -118,7 +123,38 @@ func (s *CredentialsServiceTestSuite) TestNewCredentialsService_KeyringErrFallba
 	keyring.MockInitWithError(keyringErr)
 
 	s.log.On("Debug", "System keyring service is not available", "error", "failed to load credentials: this is a teapot, unsupported system").Return()
-	s.log.On("Debug", "Fallback to file managed credentials service due to unavailable system keyring").Return()
+	s.log.On("Debug", "Fallback to file managed credentials service due to unavailable system keyring.").Return()
+
+	credservice, err := NewCredentialsService(s.log)
+	s.NoError(err)
+	s.Implements((*CredentialsService)(nil), credservice)
+}
+
+func (s *CredentialsServiceTestSuite) TestNewCredentialsService_WithUseKeyringTrue() {
+	keyring.MockInit()
+
+	// set credentials.UseKeychain to true
+	UseKeychain = true
+
+	s.log.On("Debug", "Using keychain for credential storage.").Return()
+
+	credservice, err := NewCredentialsService(s.log)
+	s.NoError(err)
+	s.Implements((*CredentialsService)(nil), credservice)
+}
+
+func (s *CredentialsServiceTestSuite) TestNewCredentialsService_WithUseKeyringFalse() {
+	// Use an in memory filesystem for this test
+	// avoiding to manipulate users ~/.connect-credentials
+	fsys = afero.NewMemMapFs()
+	defer func() { fsys = afero.NewOsFs() }()
+
+	keyring.MockInit()
+
+	s.log.On("Debug", "Configuration has disabled keychain credentials. Using file managed credentials instead.").Return()
+
+	// set credentials.UseKeychain to true
+	UseKeychain = false
 
 	credservice, err := NewCredentialsService(s.log)
 	s.NoError(err)
