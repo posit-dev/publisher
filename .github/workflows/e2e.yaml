@@ -1,8 +1,8 @@
-name: vscode-ui
+name: e2e
 on:
   workflow_call:
 jobs:
-  ui-tests:
+  e2e-tests:
     env:
       CI: true
       CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
