@@ -1,7 +1,7 @@
 services:
   # Starts a container that mounts Connect and other dependencies
   connect-publisher-e2e:
-    container_name: publishe-e2e.connect
+    container_name: publisher-e2e.connect
     build:
       context: ../..
       dockerfile: test/e2e/Dockerfile.connect
