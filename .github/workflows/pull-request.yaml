@@ -35,6 +35,8 @@ jobs:
 
   # E2E Tests
   e2e:
-    needs: build
+    needs:
+      - build
+      - package
     secrets: inherit
     uses: ./.github/workflows/e2e.yaml
