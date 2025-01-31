@@ -6,7 +6,65 @@ import { delay } from "./throttle";
 import { substituteVariables } from "./variables";
 import { LanguageRuntimeMetadata, PositronApi } from "positron";
 
-export async function getPythonInterpreterPath(): Promise<string | undefined> {
+declare global {
+  function acquirePositronApi(): PositronApi;
+}
+
+let positronApi: PositronApi | null | undefined;
+
+function getPositronApi(): PositronApi | null {
+  if (positronApi === undefined) {
+    try {
+      positronApi = acquirePositronApi();
+    } catch {
+      positronApi = null;
+    }
+  }
+  return positronApi;
+}
+
+export async function getPreferredRuntimeFromPositron(
+  languageId: string,
+): Promise<string | undefined> {
+  const api = getPositronApi();
+
+  if (api) {
+    let runtime: LanguageRuntimeMetadata | undefined;
+
+    // Small number of retries, because getPreferredRuntime
+    // has its own internal retry logic.
+    const retries = 3;
+    const retryInterval = 1000;
+
+    for (let i = 0; i < retries + 1; i++) {
+      try {
+        runtime = await api.runtime.getPreferredRuntime(languageId);
+        break;
+      } catch (error: unknown) {
+        // Delay and retry
+        console.error(
+          "getPreferredRuntime for %s returned an error; retrying. %s",
+          languageId,
+          error,
+        );
+        await delay(retryInterval);
+      }
+    }
+
+    if (runtime) {
+      const interpreter = runtime.runtimePath;
+      console.log("Using selected %s interpreter: %s", languageId, interpreter);
+      return interpreter;
+    }
+    console.log(
+      "Positron getPreferredRuntime for %s did not return a value",
+      languageId,
+    );
+  }
+  return undefined;
+}
+
+async function getPythonInterpreterFromVSCode(): Promise<string | undefined> {
   const workspaceFolder = workspace.workspaceFolders?.[0];
   if (workspaceFolder === undefined) {
     return undefined;
@@ -19,7 +77,7 @@ export async function getPythonInterpreterPath(): Promise<string | undefined> {
     );
   } catch (error: unknown) {
     console.error(
-      "getPythonInterpreterPath was unable to execute command. Error = ",
+      "getPythonInterpreterFromPath was unable to execute command. Error = ",
       error,
     );
   }
@@ -44,66 +102,36 @@ export async function getPythonInterpreterPath(): Promise<string | undefined> {
       }
     }
   }
-  console.log("Python interpreter path:", python);
+  console.log("Python interpreter from vscode:", python);
   return python;
 }
 
-declare global {
-  function acquirePositronApi(): PositronApi;
-}
-
-let positronApi: PositronApi | null | undefined;
-
-function getPositronApi(): PositronApi | null {
-  if (positronApi === undefined) {
-    try {
-      positronApi = acquirePositronApi();
-    } catch {
-      positronApi = null;
-    }
+export async function getPythonInterpreterPath(): Promise<string | undefined> {
+  let python: string | undefined;
+  python = await getPreferredRuntimeFromPositron("python");
+  if (python !== undefined) {
+    console.log("Using selected Python interpreter", python);
+    return python;
   }
-  return positronApi;
+  python = await getPythonInterpreterFromVSCode();
+  if (python !== undefined) {
+    console.log("Using Python from VSCode", python);
+    return python;
+  }
+  // We don't know the interpreter path.
+  // The backend will run Python from PATH.
+  console.log("Python interpreter discovery unsuccessful.");
+  return python;
 }
 
 export async function getRInterpreterPath(): Promise<string | undefined> {
-  const api = getPositronApi();
-
-  if (api) {
-    let runtime: LanguageRuntimeMetadata | undefined;
-
-    // Small number of retries, because getPreferredRuntime
-    // has its own internal retry logic.
-    const retries = 3;
-    const retryInterval = 1000;
-
-    for (let i = 0; i < retries + 1; i++) {
-      try {
-        runtime = await api.runtime.getPreferredRuntime("r");
-        break;
-      } catch (error: unknown) {
-        // Delay and retry
-        console.error(
-          "getPreferredRuntime returned an error; retrying. ",
-          error,
-        );
-        await delay(retryInterval);
-      }
-    }
-
-    if (runtime) {
-      const interpreter = runtime.runtimePath;
-      console.log("Using selected R interpreter", interpreter);
-      return interpreter;
-    } else {
-      console.log(
-        "Using default R interpreter because getPreferredRuntime did not return one",
-      );
-    }
+  const r = await getPreferredRuntimeFromPositron("r");
+  if (r !== undefined) {
+    console.log("Using selected R interpreter", r);
+    return r;
   }
   // We don't know the interpreter path.
   // The backend will run R from PATH.
-  console.log(
-    "Using default R interpreter because the Positron API is not available",
-  );
-  return undefined;
+  console.log("R interpreter discovery unsuccessful.");
+  return r;
 }

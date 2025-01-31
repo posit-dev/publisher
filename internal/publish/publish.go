@@ -34,6 +34,8 @@ type defaultPublisher struct {
 	log            logging.Logger
 	emitter        events.Emitter
 	rPackageMapper renv.PackageMapper
+	r              util.Path
+	python         util.Path
 }
 
 type baseEventData struct {
@@ -63,7 +65,7 @@ type publishDeployedFailureData struct {
 	DirectURL    string `mapstructure:"url"`
 }
 
-func NewFromState(s *state.State, rExecutable util.Path, emitter events.Emitter, log logging.Logger) (Publisher, error) {
+func NewFromState(s *state.State, rExecutable util.Path, pythonExecutable util.Path, emitter events.Emitter, log logging.Logger) (Publisher, error) {
 	if s.LocalID != "" {
 		data := baseEventData{
 			LocalID: s.LocalID,
@@ -94,6 +96,8 @@ func NewFromState(s *state.State, rExecutable util.Path, emitter events.Emitter,
 		log:            log,
 		emitter:        emitter,
 		rPackageMapper: packageManager,
+		r:              rExecutable,
+		python:         pythonExecutable,
 	}, err
 }
 

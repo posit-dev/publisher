@@ -51,6 +51,25 @@ introduced support for Gradio apps. Attempting to deploy a Gradio app to a
 server running a version of Posit Connect older than 2024.12.0 will result in
 this error.
 
+## `renv` errors on deployment
+
+When deploying `R` projects, it is essential that Posit Publisher has
+access to a record of the dependencies used by your project to reproduce
+the project on Posit Connect.
+The [`renv` package](https://rstudio.github.io/renv/articles/renv.html) can
+create that record as a `lockfile` (commonly named `renv.lock`).
+
+If an R project doesn't have a `lockfile` on deploy, Posit Publisher prompts to
+provide a solution to generate the expected `lockfile`.
+
+![](https://cdn.posit.co/publisher/assets/img/publisher-renv-setup-notification.png)
+
+Projects that already include a `lockfile` do not require `renv` be setup.
+
+When uncommon errors occur that Posit Publisher cannot solve for you, it
+prompts to evaluate the status of `renv` using
+[`renv::status()`](https://rstudio.github.io/renv/reference/status.html).
+
 ## Still having trouble?
 
 If you're still having trouble with Posit Publisher or have any questions,

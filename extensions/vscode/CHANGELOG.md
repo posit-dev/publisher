@@ -6,6 +6,50 @@ file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.0]
+
+### Added
+
+- Added a new [Troubleshooting document](https://github.com/posit-dev/publisher/blob/main/docs/troubleshooting.md)
+  and a link to it in error notifications that occur during deployment. (#2562)
+- Added a new [Collaboration document](https://github.com/posit-dev/publisher/blob/main/docs/collaboration.md)
+  describing how to collaborate on projects using the Posit Publisher. (#2383)
+- Added support for deploying Gradio content to Posit Connect. (#2476, #2477)
+- Inspection for Gradio entrypoint files was added to correctly determine when
+  it is Gradio content and setting `type = 'python-gradio'` in the generated
+  configuration file. (#2475)
+- When deploying R content without a `lockfile` the extension now prompts the
+  user to install and setup `renv` then creates a `renv.lock` depending on what
+  is needed in their environment. (#2560)
+- The Python interpreter used is now consistent across the extension and
+  uses the selected Python intrepter in Positron or the
+  [VS Code Python extension](https://marketplace.visualstudio.com/items?itemName=ms-python.python)
+  defaulting to the Python on PATH when none is selected. (#2494, #2496)
+- A warning has been added to the sidebar when the selected deployment has a
+  configuration with `type = 'unknown'` suggesting the framework be set. (#2515)
+- Icons have been added to the deployment select dropdown to indicate the
+  deployment's server and entrypoint. (#2483)
+
+### Fixed
+
+- Deployment dismissal has been greatly improved. Deployments are no longer
+  updated as the deploy continues on Posit Connect. They instead will be set to
+  the dismissed state, avoiding changes after dismissal. (#2179, #2498)
+- Fixed an issue where the "View Content" button could appear when a deployment
+  failed prior to any content being created on Posit Connect. (#2373)
+
+### Changed
+
+- The Python and R package files can no longer be un-checked in the Project
+  Files view to avoid unintended removal from the `files` attribute in the
+  configuration. (#2555)
+- The sidebar design was unified to have similar different vertical placement in
+  various deployment states. (#2531)
+- Warnings in the sidebar have a new look to optimize horizontal space, utilize
+  theme colors, and emphasize links. (#2526, #2527)
+- The error when the extension could not validate credentials has been improved
+  to indicate that connectivity to the server could also be a problem. (#2450)
+
 ## [1.8.0]
 
 ### Added

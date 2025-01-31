@@ -224,10 +224,7 @@
             />
           </div>
         </template>
-        <div
-          v-if="!isPreContentRecord(home.selectedContentRecord)"
-          class="last-deployment-details"
-        >
+        <div v-if="showContentButton" class="last-deployment-details">
           <vscode-button
             appearance="secondary"
             @click="viewContent"
@@ -554,6 +551,16 @@ const onAssociateDeployment = () => {
     kind: WebviewToHostMessageType.SHOW_ASSOCIATE_GUID,
   });
 };
+
+const showContentButton = computed(() => {
+  const record = home.selectedContentRecord;
+  if (!record) {
+    return;
+  }
+  return (
+    record?.dashboardUrl || (!isPreContentRecord(record) && record.logsUrl)
+  );
+});
 
 const viewContent = () => {
   const record = home.selectedContentRecord;

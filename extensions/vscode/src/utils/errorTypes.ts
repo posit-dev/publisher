@@ -13,6 +13,8 @@ export type ErrorCode =
   | "renvPackageVersionMismatch"
   | "renvPackageSourceMissing"
   | "renvlockPackagesReadingError"
+  | "renvPackageNotInstalledError"
+  | "renvActionRequiredError"
   | "requirementsFileReadingError"
   | "deployedContentNotRunning"
   | "tomlValidationError"

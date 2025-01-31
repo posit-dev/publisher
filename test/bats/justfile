@@ -1,5 +1,3 @@
-alias c := clean
-alias i := install
 alias t := test
 
 export CONTENT := env_var_or_default("CONTENT", "all")
@@ -21,7 +19,6 @@ default:
     set -eou pipefail
     {{ _with_debug }}
 
-    just install
     just test
 
 build-connect:
@@ -30,23 +27,6 @@ build-connect:
     {{ _with_debug }}
 
     docker compose -f ../docker-compose.yml build
-
-# Deletes ephemeral project files (i.e., cleans the project).
-clean:
-    #!/usr/bin/env bash
-    set -eou pipefail
-    {{ _with_debug }}
-
-    rm -rf node_modules
-
-
-# Install dependencies
-install:
-    #!/usr/bin/env bash
-    set -eou pipefail
-    {{ _with_debug }}
-
-    npm install
 
 fuzzbucket-start:
     #!/usr/bin/env bash

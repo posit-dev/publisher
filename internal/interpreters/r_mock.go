@@ -3,6 +3,7 @@ package interpreters
 // Copyright (C) 2024 by Posit Software, PBC.
 
 import (
+	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/stretchr/testify/mock"
 )
@@ -77,4 +78,9 @@ func (m *MockRInterpreter) GetLockFilePath() (util.RelativePath, bool, error) {
 func (m *MockRInterpreter) CreateLockfile(lockfilePath util.AbsolutePath) error {
 	args := m.Called(lockfilePath)
 	return args.Error(0)
+}
+
+func (m *MockRInterpreter) RenvEnvironmentErrorCheck() *types.AgentError {
+	args := m.Called()
+	return args.Error(0).(*types.AgentError)
 }

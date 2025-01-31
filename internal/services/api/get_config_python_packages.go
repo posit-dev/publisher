@@ -10,15 +10,15 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/posit-dev/publisher/internal/config"
-	"github.com/posit-dev/publisher/internal/inspect"
+	"github.com/posit-dev/publisher/internal/inspect/dependencies/pydeps"
+	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
 )
 
 type getConfigPythonPackagesHandler struct {
-	base      util.AbsolutePath
-	log       logging.Logger
-	inspector inspect.PythonInspector
+	base util.AbsolutePath
+	log  logging.Logger
 }
 
 type pythonPackagesDTO struct {
@@ -27,9 +27,8 @@ type pythonPackagesDTO struct {
 
 func NewGetConfigPythonPackagesHandler(base util.AbsolutePath, log logging.Logger) *getConfigPythonPackagesHandler {
 	return &getConfigPythonPackagesHandler{
-		base:      base,
-		log:       log,
-		inspector: inspect.NewPythonInspector(base, util.Path{}, log),
+		base: base,
+		log:  log,
 	}
 }
 
@@ -59,13 +58,14 @@ func (h *getConfigPythonPackagesHandler) ServeHTTP(w http.ResponseWriter, req *h
 		w.WriteHeader(http.StatusConflict)
 		return
 	}
+
 	requirementsFilename := cfg.Python.PackageFile
 	if requirementsFilename == "" {
-		requirementsFilename = inspect.PythonRequirementsFilename
+		requirementsFilename = interpreters.PythonRequirementsFilename
 	}
 
 	path := projectDir.Join(requirementsFilename)
-	reqs, err := h.inspector.ReadRequirementsFile(path)
+	reqs, err := pydeps.ReadRequirementsFile(path)
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
 			NotFound(w, h.log, err)

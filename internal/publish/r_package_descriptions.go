@@ -3,9 +3,7 @@
 package publish
 
 import (
-	"errors"
 	"fmt"
-	"os"
 
 	"github.com/posit-dev/publisher/internal/bundles"
 	"github.com/posit-dev/publisher/internal/events"
@@ -20,8 +18,6 @@ type getRPackageDescriptionsSuccessData struct{}
 type lockfileErrDetails struct {
 	Lockfile string
 }
-
-const lockfileMissing = `Missing dependency lockfile %s. This file must be included in the deployment.`
 
 func (p *defaultPublisher) getRPackages() (bundles.PackageMap, error) {
 	op := events.PublishGetRPackageDescriptionsOp
@@ -45,9 +41,6 @@ func (p *defaultPublisher) getRPackages() (bundles.PackageMap, error) {
 		}
 		agentErr := types.NewAgentError(types.ErrorRenvLockPackagesReading, err, lockfileErrDetails{Lockfile: lockfilePath.String()})
 		agentErr.Message = fmt.Sprintf("Could not scan R packages from lockfile: %s, %s", lockfileString, err.Error())
-		if errors.Is(err, os.ErrNotExist) {
-			agentErr.Message = fmt.Sprintf(lockfileMissing, lockfileString)
-		}
 		return nil, agentErr
 	}
 	log.Info("Done collecting R package descriptions")

@@ -4,9 +4,11 @@ package renv
 
 import (
 	"encoding/json"
+	"errors"
 	"testing"
 
 	"github.com/posit-dev/publisher/internal/bundles"
+	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
@@ -255,4 +257,29 @@ func (s *ManifestPackagesSuite) TestMissingDescriptionFile() {
 	s.NotNil(err)
 	s.ErrorIs(err, errPackageNotFound)
 	s.Nil(manifestPackages)
+}
+
+func (s *ManifestPackagesSuite) TestMissingLockfile_BubblesUpRenvError() {
+	base := s.testdata.Join("cran_project")
+	lockfilePath := base.Join("does-not-exist.lock")
+
+	mapper, err := NewPackageMapper(base, util.Path{}, s.log)
+	s.NoError(err)
+
+	// Override interpeter factory to use a mock
+	renvAgentErr := types.NewAgentError(
+		types.ErrorRenvPackageNotInstalled,
+		errors.New("package renv is not installed. An renv lockfile is needed for deployment"),
+		nil)
+	rIntprMock := interpreters.NewMockRInterpreter()
+	rIntprMock.On("RenvEnvironmentErrorCheck").Return(renvAgentErr)
+	mapper.rInterpreterFactory = func() (interpreters.RInterpreter, error) {
+		return rIntprMock, nil
+	}
+
+	_, err = mapper.GetManifestPackages(base, lockfilePath, logging.New())
+	s.NotNil(err)
+	aerr, isAgentErr := types.IsAgentError(err)
+	s.Equal(isAgentErr, true)
+	s.Equal(aerr.Code, types.ErrorRenvPackageNotInstalled)
 }

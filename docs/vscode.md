@@ -213,7 +213,7 @@ you may need to set up a credential.
 Posit Publisher makes this easy by prompting you to **Create a new Credential**
 when the selected deployment requires a credential you don't have.
 
-TODO: SCREEN SHOT
+![](https://cdn.posit.co/publisher/assets/img/publisher-missing-credential.png)
 
 #### via dotfile
 

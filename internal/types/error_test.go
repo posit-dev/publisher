@@ -86,8 +86,8 @@ func (s *ErrorSuite) TestIsAgentError() {
 }
 
 func (s *ErrorSuite) TestNewAgentError_MessagePunctuation() {
-	// Sentence case and period ending
-	originalError := errors.New("oh sorry, my mistake")
+	// Sentence case, period ending, space trimming
+	originalError := errors.New("  oh sorry, my mistake  ")
 	aerr := NewAgentError(ErrorResourceNotFound, originalError, nil)
 	s.Equal(aerr, &AgentError{
 		Message: "Oh sorry, my mistake.",

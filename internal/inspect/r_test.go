@@ -44,7 +44,7 @@ func (s *RSuite) TestNewRInspector() {
 		log logging.Logger,
 		cmdExecutorOverride executor.Executor,
 		pathLookerOverride util.PathLooker,
-		existsFuncOverride interpreters.ExistsFunc,
+		existsFuncOverride util.ExistsFunc,
 	) (interpreters.RInterpreter, error) {
 		i := interpreters.NewMockRInterpreter()
 		i.On("Init").Return(nil)
@@ -68,7 +68,7 @@ func (s *RSuite) TestInspectWithRFound() {
 		log logging.Logger,
 		cmdExecutorOverride executor.Executor,
 		pathLookerOverride util.PathLooker,
-		existsFuncOverride interpreters.ExistsFunc,
+		existsFuncOverride util.ExistsFunc,
 	) (interpreters.RInterpreter, error) {
 		i := interpreters.NewMockRInterpreter()
 		i.On("Init").Return(nil)
@@ -96,7 +96,7 @@ func (s *RSuite) TestInspectWithNoRFound() {
 		log logging.Logger,
 		cmdExecutorOverride executor.Executor,
 		pathLookerOverride util.PathLooker,
-		existsFuncOverride interpreters.ExistsFunc,
+		existsFuncOverride util.ExistsFunc,
 	) (interpreters.RInterpreter, error) {
 		i := interpreters.NewMockRInterpreter()
 		rExecNotFoundError := types.NewAgentError(types.ErrorRExecNotFound, errors.New("info"), nil)
@@ -125,7 +125,7 @@ func (s *RSuite) TestRequiresRWithEmptyCfgAndLockfileExists() {
 		log logging.Logger,
 		cmdExecutorOverride executor.Executor,
 		pathLookerOverride util.PathLooker,
-		existsFuncOverride interpreters.ExistsFunc,
+		existsFuncOverride util.ExistsFunc,
 	) (interpreters.RInterpreter, error) {
 		i := interpreters.NewMockRInterpreter()
 		relPath := util.NewRelativePath(s.cwd.Join("renv.lock").String(), s.cwd.Fs())
@@ -151,7 +151,7 @@ func (s *RSuite) TestRequiresRWithEmptyCfgAndLockfileDoesNotExists() {
 		log logging.Logger,
 		cmdExecutorOverride executor.Executor,
 		pathLookerOverride util.PathLooker,
-		existsFuncOverride interpreters.ExistsFunc,
+		existsFuncOverride util.ExistsFunc,
 	) (interpreters.RInterpreter, error) {
 		i := interpreters.NewMockRInterpreter()
 		relPath := util.NewRelativePath(s.cwd.Join("renv.lock").String(), s.cwd.Fs())

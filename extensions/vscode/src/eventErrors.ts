@@ -36,6 +36,18 @@ type renvPackageEvtErr = baseEvtErr & {
   libraryVersion: string;
 };
 
+export type RenvAction =
+  | "renvsetup"
+  | "renvinit"
+  | "renvsnapshot"
+  | "renvstatus";
+
+export type renvSetupEvtErr = baseEvtErr & {
+  command: string;
+  action: RenvAction;
+  actionLabel: string;
+};
+
 export const isEvtErrDeploymentFailed = (
   emsg: EventStreamMessageErrorCoded,
 ): emsg is EventStreamMessageErrorCoded<baseEvtErr> => {
@@ -58,6 +70,15 @@ export const isEvtErrRenvPackageSourceMissing = (
   emsg: EventStreamMessageErrorCoded,
 ): emsg is EventStreamMessageErrorCoded<renvPackageEvtErr> => {
   return emsg.errCode === "renvPackageSourceMissing";
+};
+
+export const isEvtErrRenvEnvironmentSetup = (
+  emsg: EventStreamMessageErrorCoded,
+): emsg is EventStreamMessageErrorCoded<renvSetupEvtErr> => {
+  return (
+    emsg.errCode === "renvPackageNotInstalledError" ||
+    emsg.errCode === "renvActionRequiredError"
+  );
 };
 
 export const isEvtErrRequirementsReadingFailed = (
