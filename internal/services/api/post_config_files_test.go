@@ -67,7 +67,7 @@ func (s *PostConfigFilesSuite) TestPostConfigFiles() {
 	s.Equal(http.StatusOK, rec.Result().StatusCode)
 
 	// The new configuration should have been written.
-	updatedConfig, err := config.FromFile(configPath)
+	updatedConfig, err := config.FromFile(configPath, nil, nil)
 	s.NoError(err)
 	s.Equal([]string{"*", "!app.py"}, updatedConfig.Files)
 
@@ -145,7 +145,7 @@ func (s *PostConfigFilesSuite) TestPostConfigFilesExcludeTwice() {
 	s.Equal(http.StatusOK, rec.Result().StatusCode)
 
 	// The new configuration should have been written.
-	updatedConfig, err := config.FromFile(configPath)
+	updatedConfig, err := config.FromFile(configPath, nil, nil)
 	s.NoError(err)
 	s.Equal([]string{"*", "!app.py"}, updatedConfig.Files)
 
@@ -190,7 +190,7 @@ func (s *PostConfigFilesSuite) TestPostConfigFilesIncludeTwice() {
 	s.Equal(http.StatusOK, rec.Result().StatusCode)
 
 	// The new configuration should have been written.
-	updatedConfig, err := config.FromFile(configPath)
+	updatedConfig, err := config.FromFile(configPath, nil, nil)
 	s.NoError(err)
 	s.Equal([]string{"*", "app.py"}, updatedConfig.Files)
 

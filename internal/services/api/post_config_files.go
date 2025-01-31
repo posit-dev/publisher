@@ -70,7 +70,10 @@ func PostConfigFilesHandlerFunc(base util.AbsolutePath, log logging.Logger) http
 			return
 		}
 		configPath := config.GetConfigPath(projectDir, name)
-		cfg, err := config.FromFile(configPath)
+		// Defaults are specifically NOT to be inserted with this patch operation of the config
+		// Otherwise, we'd write the defaults into the file on disk which would turn them into
+		// user provided values.
+		cfg, err := config.FromFile(configPath, nil, nil)
 		if err != nil && errors.Is(err, fs.ErrNotExist) {
 			http.NotFound(w, req)
 			return

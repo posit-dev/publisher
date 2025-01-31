@@ -66,6 +66,11 @@ func PostInspectHandlerFunc(base util.AbsolutePath, log logging.Logger) http.Han
 			// Response already returned by ProjectDirFromRequest
 			return
 		}
+		rInterpreter, pythonInterpreter, err := InterpretersFromRequest(projectDir, w, req, log)
+		if err != nil {
+			// Response already returned by ProjectDirFromRequest
+			return
+		}
 		dec := json.NewDecoder(req.Body)
 		dec.DisallowUnknownFields()
 		var b postInspectRequestBody
@@ -74,13 +79,7 @@ func PostInspectHandlerFunc(base util.AbsolutePath, log logging.Logger) http.Han
 			BadRequest(w, req, log, err)
 			return
 		}
-		pythonPath := util.NewPath(b.Python, nil)
-		rPath := util.NewPath(b.R, nil)
-
 		response := []postInspectResponseBody{}
-
-		log.Debug("Python path to be used for inspection", "path", pythonPath)
-		log.Debug("R path to be used for inspection", "path", rPath)
 
 		if req.URL.Query().Get("recursive") == "true" {
 			log.Debug("Recursive inspection intent found")
@@ -113,8 +112,8 @@ func PostInspectHandlerFunc(base util.AbsolutePath, log logging.Logger) http.Han
 				entrypoint := req.URL.Query().Get("entrypoint")
 				entrypointPath := util.NewRelativePath(entrypoint, base.Fs())
 
-				i := initialize.NewDefaultInitialize()
-				configs, err := i.GetPossibleConfigs(path, pythonPath, rPath, entrypointPath, log)
+				i := initialize.NewDefaultInitialize(pythonInterpreter, rInterpreter)
+				configs, err := i.GetPossibleConfigs(path, entrypointPath, log, false)
 				if err != nil {
 					return err
 				}
@@ -153,8 +152,8 @@ func PostInspectHandlerFunc(base util.AbsolutePath, log logging.Logger) http.Han
 				return
 			}
 
-			i := initialize.NewDefaultInitialize()
-			configs, err := i.GetPossibleConfigs(projectDir, pythonPath, rPath, entrypointPath, log)
+			i := initialize.NewDefaultInitialize(pythonInterpreter, rInterpreter)
+			configs, err := i.GetPossibleConfigs(projectDir, entrypointPath, log, false)
 			if err != nil {
 				if aerr, ok := types.IsAgentErrorOf(err, types.ErrorPythonExecNotFound); ok {
 					apiErr := types.APIErrorPythonExecNotFoundFromAgentError(*aerr)

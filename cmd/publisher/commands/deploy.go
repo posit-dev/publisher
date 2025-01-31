@@ -53,12 +53,12 @@ func (cmd *DeployCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext)
 			return err
 		}
 	}
-	i := initialize.NewDefaultInitialize()
-	err = i.InitIfNeeded(absPath, cmd.ConfigName, ctx.Logger)
+	i := initialize.NewDefaultInitialize(nil, nil)
+	err = i.InitIfNeeded(absPath, cmd.ConfigName, ctx.Logger, false)
 	if err != nil {
 		return err
 	}
-	stateStore, err := state.New(absPath, cmd.AccountName, cmd.ConfigName, "", cmd.SaveName, ctx.Accounts, nil, false)
+	stateStore, err := state.New(absPath, cmd.AccountName, cmd.ConfigName, "", cmd.SaveName, ctx.Accounts, nil, false, nil, nil)
 	if err != nil {
 		return err
 	}

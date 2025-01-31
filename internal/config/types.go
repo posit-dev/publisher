@@ -123,13 +123,13 @@ func (c *Config) HasSecret(secret string) bool {
 type Environment = map[string]string
 
 type Python struct {
-	Version        string `toml:"version" json:"version"`
+	Version        string `toml:"version,omitempty" json:"version"`
 	PackageFile    string `toml:"package_file,omitempty" json:"packageFile"`
 	PackageManager string `toml:"package_manager,omitempty" json:"packageManager"`
 }
 
 type R struct {
-	Version        string `toml:"version" json:"version"`
+	Version        string `toml:"version,omitempty" json:"version"`
 	PackageFile    string `toml:"package_file,omitempty" json:"packageFile"`
 	PackageManager string `toml:"package_manager,omitempty" json:"packageManager"`
 }

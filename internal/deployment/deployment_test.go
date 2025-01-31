@@ -89,7 +89,7 @@ func (s *DeploymentSuite) TestFromExampleFile() {
 	s.NotNil(d)
 
 	cfgPath := schemaDir.Join("config.toml")
-	cfg, err := config.FromFile(cfgPath)
+	cfg, err := config.FromFile(cfgPath, nil, nil)
 	s.NoError(err)
 
 	// Deployments do not round-trip config comments

@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/pelletier/go-toml/v2"
+	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/schema"
 	"github.com/posit-dev/publisher/internal/util"
 )
@@ -59,7 +60,7 @@ func readLeadingComments(path util.AbsolutePath) ([]string, error) {
 	return comments, nil
 }
 
-func FromFile(path util.AbsolutePath) (*Config, error) {
+func FromFile(path util.AbsolutePath, activeRInterpreter *interpreters.RInterpreter, activePythonInterpreter *interpreters.PythonInterpreter) (*Config, error) {
 	err := ValidateFile(path)
 	if err != nil {
 		return nil, err
@@ -69,11 +70,47 @@ func FromFile(path util.AbsolutePath) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	cfg.FillDefaults()
 	cfg.Comments, err = readLeadingComments(path)
 	if err != nil {
 		return nil, err
 	}
+	// Update R section in config w/ defaults from active R interpreter
+	if cfg.R != nil && activeRInterpreter != nil {
+		if cfg.R.Version == "" {
+			rVersion, err := (*activeRInterpreter).GetRVersion()
+			if err != nil {
+				return nil, err
+			}
+			cfg.R.Version = rVersion
+		}
+		if cfg.R.PackageManager == "" {
+			cfg.R.PackageManager = (*activeRInterpreter).GetPackageManager()
+		}
+		if cfg.R.PackageFile == "" {
+			packageFile, _, err := (*activeRInterpreter).GetLockFilePath()
+			if err == nil {
+				cfg.R.PackageFile = packageFile.String()
+			}
+		}
+	}
+	// Update Python section in config w/ defaults from active Python interpreter
+	if cfg.Python != nil && activePythonInterpreter != nil {
+		if cfg.Python.Version == "" {
+			pythonVersion, err := (*activePythonInterpreter).GetPythonVersion()
+			// Technically, we don't require a python interpreter to deploy already prepared python project.
+			// So having an error is ok...
+			if err == nil {
+				cfg.Python.Version = pythonVersion
+			}
+		}
+		if cfg.Python.PackageManager == "" {
+			cfg.Python.PackageManager = (*activePythonInterpreter).GetPythonPackageManager()
+		}
+		if cfg.Python.PackageFile == "" {
+			cfg.Python.PackageFile = (*activePythonInterpreter).GetPythonPackageFile()
+		}
+	}
+
 	return cfg, nil
 }
 

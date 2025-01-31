@@ -11,19 +11,23 @@ import (
 	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/deployment"
+	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
 	"github.com/spf13/afero"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
 
 type StateSuite struct {
 	utiltest.Suite
 
-	fs  afero.Fs
-	cwd util.AbsolutePath
-	log logging.Logger
+	fs     afero.Fs
+	cwd    util.AbsolutePath
+	log    logging.Logger
+	python interpreters.PythonInterpreter
+	r      interpreters.RInterpreter
 }
 
 func (s *StateSuite) SetupTest() {
@@ -33,10 +37,31 @@ func (s *StateSuite) SetupTest() {
 	s.cwd = cwd
 	s.cwd.MkdirAll(0700)
 	s.log = logging.New()
+
+	s.python = setupNewPythonInterpreterMock()
+	s.r = setupNewRInterpreterMock()
 }
 
 func TestStateSuite(t *testing.T) {
 	suite.Run(t, new(StateSuite))
+}
+
+func setupNewRInterpreterMock() interpreters.RInterpreter {
+	i := interpreters.NewMockRInterpreter()
+	i.On("IsRExecutableValid").Return(true)
+	i.On("GetRExecutable").Return(util.NewAbsolutePath("/bin/r", nil), nil)
+	i.On("GetRVersion").Return("3.3.3", nil)
+	i.On("GetLockFilePath").Return(util.NewAbsolutePath("renv.lock", nil), false, nil)
+	return i
+}
+
+func setupNewPythonInterpreterMock() interpreters.PythonInterpreter {
+	i := interpreters.NewMockPythonInterpreter()
+	i.On("IsPythonExecutableValid").Return(true)
+	i.On("GetPythonExecutable").Return(util.RelativePath{}, nil)
+	i.On("GetPythonVersion", mock.Anything).Return("", nil)
+	i.On("GetPythonPackageFile", mock.Anything).Return("requirements.txt", nil)
+	return i
 }
 
 func (s *StateSuite) TestEmpty() {
@@ -76,7 +101,7 @@ func (s *StateSuite) createConfigFile(name string, bad bool) {
 
 func (s *StateSuite) TestLoadConfig() {
 	s.createConfigFile("myConfig", false)
-	cfg, err := loadConfig(s.cwd, "myConfig")
+	cfg, err := loadConfig(s.cwd, "myConfig", nil, nil)
 	s.NoError(err)
 	min_procs := int32(1)
 
@@ -104,7 +129,7 @@ func (s *StateSuite) TestLoadConfig() {
 }
 
 func (s *StateSuite) TestLoadConfigNonexistent() {
-	cfg, err := loadConfig(s.cwd, "myConfig")
+	cfg, err := loadConfig(s.cwd, "myConfig", nil, nil)
 	s.ErrorContains(err, "can't find configuration")
 	s.ErrorIs(err, fs.ErrNotExist)
 	s.Nil(cfg)
@@ -112,7 +137,7 @@ func (s *StateSuite) TestLoadConfigNonexistent() {
 
 func (s *StateSuite) TestLoadConfigErr() {
 	s.createConfigFile("myConfig", true)
-	cfg, err := loadConfig(s.cwd, "myConfig")
+	cfg, err := loadConfig(s.cwd, "myConfig", nil, nil)
 	s.ErrorContains(err, "unquoted string or incomplete number")
 	s.Nil(cfg)
 }
@@ -277,10 +302,11 @@ func (s *StateSuite) makeConfiguration(name string) *config.Config {
 	cfg.Python = &config.Python{
 		Version:        "3.4.5",
 		PackageManager: "pip",
+		PackageFile:    "requirements.txt",
 	}
 	err := cfg.WriteFile(path)
 	s.NoError(err)
-	r, err := config.FromFile(path)
+	r, err := config.FromFile(path, nil, nil)
 	s.NoError(err)
 	return r
 }
@@ -301,7 +327,7 @@ func (s *StateSuite) TestNew() {
 
 	cfg := s.makeConfiguration("default")
 
-	state, err := New(s.cwd, "", "", "", "", accts, nil, false)
+	state, err := New(s.cwd, "", "", "", "", accts, nil, false, &s.r, &s.python)
 	s.NoError(err)
 	s.NotNil(state)
 	s.Equal(state.AccountName, "")
@@ -325,7 +351,7 @@ func (s *StateSuite) TestNewNonDefaultConfig() {
 	insecure := true
 	acct.Insecure = insecure
 
-	state, err := New(s.cwd, "", configName, "", "", accts, nil, insecure)
+	state, err := New(s.cwd, "", configName, "", "", accts, nil, insecure, &s.r, &s.python)
 	s.NoError(err)
 	s.NotNil(state)
 	s.Equal("", state.AccountName)
@@ -343,7 +369,7 @@ func (s *StateSuite) TestNewConfigErr() {
 	acct := accounts.Account{}
 	accts.On("GetAllAccounts").Return([]accounts.Account{acct}, nil)
 
-	state, err := New(s.cwd, "", "", "", "", accts, nil, false)
+	state, err := New(s.cwd, "", "", "", "", accts, nil, false, &s.r, &s.python)
 	s.NotNil(err)
 	s.ErrorContains(err, "couldn't load configuration")
 	s.Nil(state)
@@ -381,7 +407,7 @@ func (s *StateSuite) TestNewWithTarget() {
 	_, err := d.WriteFile(targetPath, "", s.log)
 	s.NoError(err)
 
-	state, err := New(s.cwd, "", "", "myTargetName", "", accts, nil, false)
+	state, err := New(s.cwd, "", "", "myTargetName", "", accts, nil, false, &s.r, &s.python)
 	s.NoError(err)
 	s.NotNil(state)
 	s.Equal("acct1", state.AccountName)
@@ -422,7 +448,7 @@ func (s *StateSuite) TestNewWithTargetAndAccount() {
 	_, err := d.WriteFile(targetPath, "", s.log)
 	s.NoError(err)
 
-	state, err := New(s.cwd, "acct2", "", "myTargetName", "mySaveName", accts, nil, false)
+	state, err := New(s.cwd, "acct2", "", "myTargetName", "mySaveName", accts, nil, false, &s.r, &s.python)
 	s.NoError(err)
 	s.NotNil(state)
 	s.Equal("acct2", state.AccountName)
@@ -445,7 +471,7 @@ func (s *StateSuite) TestNewWithSecrets() {
 		"DB_PASSWORD": "password456",
 	}
 
-	state, err := New(s.cwd, "", "", "", "", accts, secrets, false)
+	state, err := New(s.cwd, "", "", "", "", accts, secrets, false, &s.r, &s.python)
 	s.NoError(err)
 	s.NotNil(state)
 	s.Equal(secrets, state.Secrets)
@@ -461,7 +487,7 @@ func (s *StateSuite) TestNewWithInvalidSecret() {
 		"INVALID_SECRET": "secret123",
 	}
 
-	state, err := New(s.cwd, "", "", "", "", accts, secrets, false)
+	state, err := New(s.cwd, "", "", "", "", accts, secrets, false, &s.r, &s.python)
 	s.NotNil(err)
 	s.ErrorContains(err, "secret 'INVALID_SECRET' is not in the configuration")
 	s.Nil(state)

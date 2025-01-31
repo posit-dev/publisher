@@ -43,9 +43,11 @@ type renvCommandObj struct {
 }
 
 type RInterpreter interface {
+	IsRExecutableValid() bool
 	GetRExecutable() (util.AbsolutePath, error)
 	GetRVersion() (string, error)
 	GetLockFilePath() (util.RelativePath, bool, error)
+	GetPackageManager() string
 	CreateLockfile(util.AbsolutePath) error
 	RenvEnvironmentErrorCheck() *types.AgentError
 }
@@ -488,6 +490,10 @@ func (i *defaultRInterpreter) getRenvLockfilePathFromRExecutable(rExecutable str
 	}
 	i.log.Warn("couldn't parse renv lockfile path from renv::paths$lockfile", "output", output)
 	return util.AbsolutePath{}, errors.New("couldn't parse renv lockfile path from renv::paths$lockfile")
+}
+
+func (i *defaultRInterpreter) GetPackageManager() string {
+	return "renv"
 }
 
 // CreateLockfile creates a lockfile at the specified path

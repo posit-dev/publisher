@@ -88,7 +88,6 @@
       "type": "object",
       "additionalProperties": false,
       "description": "Python language and dependencies.",
-      "required": ["version"],
       "properties": {
         "version": {
           "type": "string",
@@ -104,9 +103,8 @@
         "package_manager": {
           "type": "string",
           "default": "pip",
-          "enum": ["pip", "none"],
           "description": "Package manager that will install the dependencies. If package-manager is none, dependencies will not be installed.",
-          "examples": ["pip"]
+          "examples": ["pip", "none"]
         }
       }
     },
@@ -114,7 +112,6 @@
       "type": "object",
       "additionalProperties": false,
       "description": "R language and dependencies.",
-      "required": ["version"],
       "properties": {
         "version": {
           "type": "string",
@@ -130,9 +127,8 @@
         "package_manager": {
           "type": "string",
           "default": "renv",
-          "enum": ["renv", "none"],
           "description": "Package manager that will install the dependencies. If package-manager is none, dependencies will be assumed to be pre-installed on the server.",
-          "examples": ["renv"]
+          "examples": ["renv", "none"]
         }
       }
     },

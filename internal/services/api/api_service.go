@@ -182,7 +182,7 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 		Methods(http.MethodGet)
 
 	// POST /api/packages/python/scan
-	r.Handle(ToPath("packages", "python", "scan"), NewPostPackagesPythonScanHandler(base, log)).
+	r.Handle(ToPath("packages", "python", "scan"), NewPostPackagesPythonScanHandler(base, log, nil)).
 		Methods(http.MethodPost)
 
 	// POST /api/packages/r/scan

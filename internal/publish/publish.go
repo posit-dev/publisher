@@ -323,6 +323,12 @@ func (p *defaultPublisher) publishWithClient(
 
 	manifest := bundles.NewManifestFromConfig(p.Config)
 	p.log.Debug("Built manifest from config", "config", p.ConfigName)
+	if p.Config.R != nil {
+		p.log.Info("Using R", "version", p.Config.R.Version, "package_file", p.Config.R.PackageFile, "package_manager", p.Config.R.PackageManager)
+	}
+	if p.Config.Python != nil {
+		p.log.Info("Using Python", "version", p.Config.Python.Version, "package_file", p.Config.Python.PackageFile, "package_manager", p.Config.Python.PackageManager)
+	}
 
 	if p.Config.R != nil {
 		rPackages, err := p.getRPackages()

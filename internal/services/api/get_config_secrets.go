@@ -23,9 +23,14 @@ func GetConfigSecretsHandlerFunc(base util.AbsolutePath, log logging.Logger) htt
 			// Response already returned by ProjectDirFromRequest
 			return
 		}
+		rInterpreter, pythonInterpreter, err := InterpretersFromRequest(projectDir, w, req, log)
+		if err != nil {
+			// Response already returned by ProjectDirFromRequest
+			return
+		}
 
 		configPath := config.GetConfigPath(projectDir, name)
-		cfg, err := configFromFile(configPath)
+		cfg, err := configFromFile(configPath, rInterpreter, pythonInterpreter)
 		if err != nil {
 			if aerr, ok := err.(*types.AgentError); ok {
 				if aerr.Code == types.ErrorUnknownTOMLKey {

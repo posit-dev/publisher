@@ -8,6 +8,7 @@ import {
   ContentRecord,
   Environment,
 } from "../types/contentRecords";
+import { PythonExecutable, RExecutable } from "../../types/shared";
 
 export class ContentRecords {
   private client: AxiosInstance;
@@ -74,17 +75,15 @@ export class ContentRecords {
     configName: string,
     insecure: boolean,
     dir: string,
+    r: RExecutable,
+    python: PythonExecutable,
     secrets?: Record<string, string>,
-    r?: string,
-    python?: string,
   ) {
     const data = {
       account: accountName,
       config: configName,
       secrets: secrets,
       insecure: insecure,
-      r: r,
-      python: python,
     };
     const encodedTarget = encodeURIComponent(targetName);
     return this.client.post<{ localId: string }>(
@@ -93,6 +92,8 @@ export class ContentRecords {
       {
         params: {
           dir,
+          python: python.pythonPath,
+          r: r.rPath,
         },
       },
     );

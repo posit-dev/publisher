@@ -12,6 +12,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/services/api/files"
 	"github.com/posit-dev/publisher/internal/types"
@@ -137,7 +138,7 @@ func (s *GetConfigFilesHandlerFuncSuite) TestHandlerFuncConfigNotFound() {
 
 func (s *GetConfigFilesHandlerFuncSuite) TestHandlerFuncConfigUnknownFields() {
 	// Mocking implementation config.FromFile
-	configFromFile = func(path util.AbsolutePath) (*config.Config, error) {
+	configFromFile = func(path util.AbsolutePath, _ *interpreters.RInterpreter, _ *interpreters.PythonInterpreter) (*config.Config, error) {
 		return nil, &types.AgentError{
 			Message: "Unknown field present in configuration file",
 			Code:    types.ErrorUnknownTOMLKey,
@@ -185,7 +186,7 @@ func (s *GetConfigFilesHandlerFuncSuite) TestHandlerFuncConfigUnknownFields() {
 
 func (s *GetConfigFilesHandlerFuncSuite) TestHandlerFuncInvalidTOML() {
 	// Mocking implementation config.FromFile
-	configFromFile = func(path util.AbsolutePath) (*config.Config, error) {
+	configFromFile = func(path util.AbsolutePath, _ *interpreters.RInterpreter, _ *interpreters.PythonInterpreter) (*config.Config, error) {
 		return nil, &types.AgentError{
 			Message: "Bad Syntax",
 			Code:    types.ErrorInvalidTOML,
