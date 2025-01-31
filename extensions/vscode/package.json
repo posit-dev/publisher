@@ -41,6 +41,11 @@
             "markdownDescription": "Verify TLS certificates for connections. Only **disable** this setting if you experience certificate verification errors and the Posit Connect server is using a self-signed, expired, or otherwise misconfigured certificate.",
             "type": "boolean",
             "default": true
+          },
+          "positPublisher.useKeyChainCredentialStorage": {
+            "markdownDescription": "Enable Key Chain storage when retrieving and storing credentials. On systems which do not support a Key Chain facility, this configuration option is ignored. When the Key Chain facility is not used, a YAML file is used instead. (`~/.connect_credentials`). After changing this value, you must restart the extension to have the setting go into effect.",
+            "type": "boolean",
+            "default": true
           }
         }
       }

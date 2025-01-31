@@ -11,10 +11,20 @@ export const create = async (
   context: ExtensionContext,
   path: string,
   port: number,
+  useKeyChain: boolean,
   subcommand: string = "ui",
 ): Promise<[string, string[]]> => {
   const executable = await getExecutableBinary(context);
-  return [executable, [subcommand, "-vv", `--listen=${HOST}:${port}`, path]];
+  return [
+    executable,
+    [
+      subcommand,
+      "-vv",
+      `--listen=${HOST}:${port}`,
+      `--use-keychain=${useKeyChain}`,
+      path,
+    ],
+  ];
 };
 
 const getExecutableBinary = (context: ExtensionContext): string => {
