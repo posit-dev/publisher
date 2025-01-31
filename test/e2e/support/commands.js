@@ -1,4 +1,5 @@
 import "@testing-library/cypress/add-commands";
+import toml from "toml";
 import "./selectors";
 
 const connectManagerServer = Cypress.env("CONNECT_MANAGER_URL");
@@ -131,6 +132,19 @@ EOF`,
 
 Cypress.Commands.add("clearupDeployments", () => {
   cy.exec(`rm -rf content-workspace/static/.posit`);
+});
+
+Cypress.Commands.add("loadProjectConfig", (projectName) => {
+  const projectConfigPath = `content-workspace/${projectName}/.posit/publish/static-*.toml`;
+  // Do not fail on non-zero exit this time, we can provide a better error
+  return cy
+    .exec(`cat ${projectConfigPath}`, { failOnNonZeroExit: false })
+    .then((result) => {
+      if (result.code === 0 && result.stdout) {
+        return toml.parse(result.stdout);
+      }
+      throw new Error(`Could not load project configuration. ${result.stderr}`);
+    });
 });
 
 // Performs the full set of reset commands we typically use before executing our tests
