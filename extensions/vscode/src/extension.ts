@@ -31,6 +31,13 @@ enum InitializationInProgress {
   false = "false",
 }
 
+const SELECTION_HAS_CREDENTIAL_MATCH_CONTEXT =
+  "posit.publish.selection.haveCredentialMatch";
+export enum SelectionCredentialMatch {
+  true = "true",
+  false = "false",
+}
+
 // Once the extension is activate, hang on to the service so that we can stop it on deactivation.
 let service: Service;
 
@@ -40,6 +47,16 @@ function setStateContext(context: PositPublishState) {
 
 function setInitializationInProgressContext(context: InitializationInProgress) {
   commands.executeCommand("setContext", INITIALIZING_CONTEXT, context);
+}
+
+export function setSelectionHasCredentialMatch(
+  context: SelectionCredentialMatch,
+) {
+  commands.executeCommand(
+    "setContext",
+    SELECTION_HAS_CREDENTIAL_MATCH_CONTEXT,
+    context,
+  );
 }
 
 // This method is called when your extension is activated

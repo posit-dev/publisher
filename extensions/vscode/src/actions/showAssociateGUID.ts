@@ -44,12 +44,17 @@ export async function showAssociateGUID(state: PublisherState) {
   }
   await showProgress("Updating Content Record", Views.HomeView, async () => {
     const api = await useApi();
-    await api.contentRecords.patch(
+    const result = await api.contentRecords.patch(
       targetContentRecord.deploymentName,
       targetContentRecord.projectDir,
       {
         guid,
       },
     );
+    if (result.status === 200) {
+      window.showInformationMessage(
+        `Deployment is now associated with Content GUID ${guid} as requested. An error will be displayed if this deployment cannot update this deployment on the Connect Server.`,
+      );
+    }
   });
 }
