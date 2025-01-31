@@ -20,7 +20,16 @@ stop:
 lint:
     npm run lint
 
-# Install local dependencies, start Connect in development mode, and open Cypress UI locally (not from a container)
+container-images:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    just build "connect-publisher-e2e"
+    just build "code-server"
+    just build "cypress"
+
+# Install local dependencies, start Connect in development mode,
+# and open Cypress UI locally (not from a container)
 dev:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -34,11 +43,27 @@ dev:
     USE_PLATFORM="linux/amd64" just ../../package
     just clear-credentials
     just install
-    just build "connect-publisher-e2e"
-    just build "code-server"
     just start "connect-publisher-e2e"
     just start "code-server"
     npm run cypress:open
+
+# Run Cypress tests using the CLI
+# Meant for CI or automatic runs where a build for linux/amd64 already exists
+cypress-run:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    function cleanup() {
+        just clear-credentials
+    }
+    trap cleanup EXIT
+
+    just clear-credentials
+    just install
+    just start "connect-publisher-e2e"
+    just start "code-server"
+    docker compose run --rm cypress
+    just stop
 
 clear-credentials:
     #!/usr/bin/env bash

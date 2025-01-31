@@ -26,5 +26,7 @@ node_modules
 .pnpm-store
 .Rproj.user
 
-# Possible e2e tests deployment assets
+# Possible e2e tests assets
 test/e2e/content-workspace/**/.posit
+test/e2e/cypress/downloads/
+test/e2e/cypress/screenshots/
