@@ -11,7 +11,8 @@ import (
 )
 
 type UICmd struct {
-	Listen string `help:"Network address to listen on." placeholder:"HOST[:PORT]" default:"localhost:0"`
+	Path   util.Path `help:"Sets the current working directory for the agent." arg:"" default:"."`
+	Listen string    `help:"Network address to listen on." placeholder:"HOST[:PORT]" default:"localhost:0"`
 }
 
 func (cmd *UICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
@@ -25,8 +26,7 @@ func (cmd *UICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) err
 	log := events.NewLoggerWithSSE(args.Verbose, emitter)
 	ctx.Logger.Info("created SSE logger")
 
-	path := util.NewPath(".", nil)
-	absPath, err := path.Abs()
+	absPath, err := cmd.Path.Abs()
 	if err != nil {
 		return err
 	}
