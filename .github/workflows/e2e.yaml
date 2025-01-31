@@ -1,0 +1,29 @@
+name: vscode-ui
+on:
+  workflow_call:
+jobs:
+  ui-tests:
+    env:
+      CI: true
+      CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runs-on: [ubuntu-latest]
+    runs-on: ${{ matrix.runs-on }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup
+      - uses: extractions/setup-just@v2
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+      - name: Extract dist
+        run: unzip dist/*-linux-amd64.vsix -d dist/
+
+      - run: just test/e2e/container-images
+      - run: just test/e2e/cypress-run

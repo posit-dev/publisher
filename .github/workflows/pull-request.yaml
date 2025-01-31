@@ -33,15 +33,8 @@ jobs:
     uses: ./.github/workflows/upload.yaml
     secrets: inherit
 
-  # Integration Tests
-  # bats:
-  #   needs: build
-  #   secrets: inherit
-  #   uses: ./.github/workflows/bats.yaml
-
-  vscode-ui:
-    needs:
-      - build
-      - package
+  # E2E Tests
+  e2e:
+    needs: build
     secrets: inherit
-    uses: ./.github/workflows/vscode-ui.yaml
+    uses: ./.github/workflows/e2e.yaml
