@@ -12,7 +12,7 @@ fi
 
 CI="${CI:-false}"
 
-platforms=("$(go env GOHOSTOS)/$(go env GOHOSTARCH)")
+platforms="${USE_PLATFORM:-$(go env GOHOSTOS)/$(go env GOHOSTARCH)}"
 if [ "$CI" = "true" ]; then
     platforms=(
         "darwin/amd64"
