@@ -1,0 +1,40 @@
+; Posit test/e2e configuration
+
+[Server]
+Address = http://localhost:3939/
+SenderEmail = no-reply@example.com
+EmailProvider = print
+DataDir = /var/lib/rstudio-connect
+AllowConfirmedUsers = true
+JumpStartEnabled = false
+
+[Bootstrap]
+Enabled = true
+SecretKeyFile = /etc/rstudio-connect/bootstrap-secret.key
+
+[SQLite]
+Backup = false
+ForeignKeyConstraints = true
+
+[HTTP]
+Listen = :3939
+NoWarning = true
+
+[Authentication]
+Provider = password
+InsecureDefaultUserAPIKey = true
+APIKeyBcryptCost = 4
+
+[Python]
+Enabled = true
+Executable = /opt/python/3.11.3/bin/python3
+EnvironmentManagement = false
+
+[Metrics]
+Enabled = false
+
+[RPackageRepository "CRAN"]
+URL = "https://packagemanager.posit.co/cran/__linux__/jammy/latest"
+
+[R]
+EnvironmentManagement = false

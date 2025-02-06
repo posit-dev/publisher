@@ -1,0 +1,7 @@
+# Defines an image that installs code-server and the Publisher extension to it
+
+FROM codercom/code-server:39 AS code-server
+
+WORKDIR /home/coder/workspace
+
+ENTRYPOINT ["/home/coder/entrypoint.sh"]
