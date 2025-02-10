@@ -43,7 +43,7 @@
             "default": true
           },
           "positPublisher.useKeyChainCredentialStorage": {
-            "markdownDescription": "Enable Key Chain storage when retrieving and storing credentials. On systems which do not support a Key Chain facility, this configuration option is ignored. When the Key Chain facility is not used, a YAML file is used instead. (`~/.connect_credentials`). After changing this value, you must restart the extension to have the setting go into effect.",
+            "markdownDescription": "Controls whether Posit Publisher will use the system keychain to store credentials. When disabled, or on a system without a keychain, `~/.connect-credentials` is used. After changing this setting, you must restart VS Code for it to go into effect.",
             "type": "boolean",
             "default": true
           }
