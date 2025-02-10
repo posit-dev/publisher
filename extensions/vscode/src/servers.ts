@@ -13,12 +13,14 @@ import * as workspaces from "src/workspaces";
 export class Server implements Disposable {
   readonly port: number;
   readonly outputChannel: OutputChannel;
+  readonly useKeyChain: boolean;
 
   process: ChildProcessWithoutNullStreams | undefined = undefined;
 
-  constructor(port: number) {
+  constructor(port: number, useKeyChain: boolean) {
     this.port = port;
     this.outputChannel = window.createOutputChannel(`Posit Publisher`);
+    this.useKeyChain = useKeyChain;
   }
 
   /**
@@ -38,7 +40,12 @@ export class Server implements Disposable {
       // todo - make this configurable
       const path = workspaces.path();
       // Create command to send to terminal stdin
-      const [command, args] = await commands.create(context, path!, this.port);
+      const [command, args] = await commands.create(
+        context,
+        path!,
+        this.port,
+        this.useKeyChain,
+      );
       // Spawn child process
       this.process = spawn(command, args);
       // Handle error output

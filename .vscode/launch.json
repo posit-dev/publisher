@@ -10,7 +10,7 @@
       "request": "launch",
       "mode": "auto",
       "program": "${workspaceFolder}/cmd/publisher/main.go",
-      "args": ["ui", "--listen=localhost:9001", "-vv"],
+      "args": ["ui", "--listen=localhost:9001", "-vv", "--use-keychain=false"],
       "cwd": "${workspaceFolder}/test/sample-content"
     }
   ]

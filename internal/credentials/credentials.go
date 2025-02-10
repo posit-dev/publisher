@@ -66,6 +66,8 @@ type CredentialRecord struct {
 
 type CredentialTable = map[string]CredentialRecord
 
+var UseKeychain bool = true
+
 // ToCredential converts a CredentialRecord to a Credential based on its version.
 func (cr *CredentialRecord) ToCredential() (*Credential, error) {
 	switch cr.Version {
@@ -93,12 +95,19 @@ type CredentialsService interface {
 // The main credentials service constructor that determines if the system's keyring is available to be used,
 // if not, returns a file based credentials service.
 func NewCredentialsService(log logging.Logger) (CredentialsService, error) {
-	krService := NewKeyringCredentialsService(log)
-	if krService.IsSupported() {
-		return krService, nil
+	var fcService *fileCredentialsService = nil
+
+	if UseKeychain {
+		krService := NewKeyringCredentialsService(log)
+		if krService.IsSupported() {
+			log.Debug("Using keychain for credential storage.")
+			return krService, nil
+		}
+		log.Debug("Fallback to file managed credentials service due to unavailable system keyring.")
+	} else {
+		log.Debug("Configuration has disabled keychain credentials. Using file managed credentials instead.")
 	}
 
-	log.Debug("Fallback to file managed credentials service due to unavailable system keyring")
 	fcService, err := NewFileCredentialsService(log)
 	if err != nil {
 		return fcService, err

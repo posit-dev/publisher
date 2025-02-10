@@ -11,17 +11,20 @@ export class Service implements Disposable {
   private server: Server;
   private agentURL: string;
   private useExternalAgent: boolean;
+  private useKeyChain: boolean;
 
   constructor(
     context: ExtensionContext,
     port: number,
     useExternalAgent: boolean,
+    useKeyChain: boolean,
   ) {
     this.context = context;
     this.useExternalAgent = useExternalAgent;
+    this.useKeyChain = useKeyChain;
 
     this.agentURL = `http://${HOST}:${port}/api`;
-    this.server = new Server(port);
+    this.server = new Server(port, this.useKeyChain);
     initApi(this.isUp(), this.agentURL);
   }
 
