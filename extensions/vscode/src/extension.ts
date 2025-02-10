@@ -32,8 +32,15 @@ enum InitializationInProgress {
 }
 
 const SELECTION_HAS_CREDENTIAL_MATCH_CONTEXT =
-  "posit.publish.selection.haveCredentialMatch";
+  "posit.publish.selection.hasCredentialMatch";
 export enum SelectionCredentialMatch {
+  true = "true",
+  false = "false",
+}
+
+const SELECTION_IS_PRE_CONTENT_RECORD_CONTEXT =
+  "posit.publish.selection.isPreContentRecord";
+export enum SelectionIsPreContentRecord {
   true = "true",
   false = "false",
 }
@@ -55,6 +62,16 @@ export function setSelectionHasCredentialMatch(
   commands.executeCommand(
     "setContext",
     SELECTION_HAS_CREDENTIAL_MATCH_CONTEXT,
+    context,
+  );
+}
+
+export function setSelectionIsPreContentRecord(
+  context: SelectionIsPreContentRecord,
+) {
+  commands.executeCommand(
+    "setContext",
+    SELECTION_IS_PRE_CONTENT_RECORD_CONTEXT,
     context,
   );
 }

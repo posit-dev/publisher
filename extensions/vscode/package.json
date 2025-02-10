@@ -136,7 +136,7 @@
         "category": "Posit Publisher"
       },
       {
-        "command": "posit.publisher.homeView.showAssociateDeployment",
+        "command": "posit.publisher.homeView.associateDeployment",
         "title": "Associate with a Different Deployment on Connect",
         "category": "Posit Publisher"
       },
@@ -331,8 +331,8 @@
           "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'even-easier-deploy-more-menu-matching-configs'"
         },
         {
-          "command": "posit.publisher.homeView.showAssociateDeployment",
-          "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'even-easier-deploy-more-menu-matching-configs' && posit.publish.selection.haveCredentialMatch == 'true'"
+          "command": "posit.publisher.homeView.associateDeployment",
+          "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'even-easier-deploy-more-menu-matching-configs' && posit.publish.selection.hasCredentialMatch == 'true' && posit.publish.selection.isPreContentRecord == 'false'"
         },
         {
           "command": "posit.publisher.homeView.createConfigForDeployment",

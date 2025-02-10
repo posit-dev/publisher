@@ -85,6 +85,8 @@ import { showImmediateDeploymentFailureMessage } from "./publishFailures";
 import {
   SelectionCredentialMatch,
   setSelectionHasCredentialMatch,
+  SelectionIsPreContentRecord,
+  setSelectionIsPreContentRecord,
 } from "../extension";
 
 enum HomeViewInitialized {
@@ -180,6 +182,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         return showAssociateGUID(this.state);
       case WebviewToHostMessageType.UPDATE_SELECTION_CREDENTIAL_STATE:
         return this.updateSelectionCredentialState(msg.content.state);
+      case WebviewToHostMessageType.UPDATE_SELECTION_IS_PRE_CONTENT_RECORD:
+        return this.updateSelectionIsPreContentRecordState(msg.content.state);
       default:
         window.showErrorMessage(
           `Internal Error: onConduitMessage unhandled msg: ${JSON.stringify(msg)}`,
@@ -201,6 +205,14 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         ? SelectionCredentialMatch.true
         : SelectionCredentialMatch.false;
     return await setSelectionHasCredentialMatch(match);
+  }
+
+  private async updateSelectionIsPreContentRecordState(state: string) {
+    const match =
+      state === SelectionIsPreContentRecord.true
+        ? SelectionIsPreContentRecord.true
+        : SelectionIsPreContentRecord.false;
+    return await setSelectionIsPreContentRecord(match);
   }
 
   private async initiateDeployment(
@@ -1797,7 +1809,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         this,
       ),
       commands.registerCommand(
-        Commands.HomeView.ShowAssociateDeployment,
+        Commands.HomeView.AssociateDeployment,
         () => showAssociateGUID(this.state),
         this,
       ),

@@ -9,6 +9,7 @@ import {
   PreContentRecord,
   Configuration,
   ConfigurationError,
+  isPreContentRecord,
 } from "../../../../src/api";
 import { isConfigurationError } from "../../../../src/api/types/configurations";
 import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
@@ -186,7 +187,23 @@ export const useHomeStore = defineStore("home", () => {
     hostConduit.sendMsg({
       kind: WebviewToHostMessageType.UPDATE_SELECTION_CREDENTIAL_STATE,
       content: {
-        state: serverCredential !== undefined ? "true" : "false",
+        state: serverCredential.value !== undefined ? "true" : "false",
+      },
+    });
+  };
+
+  watch([selectedContentRecord], () =>
+    updateSelectionIsPreContentRecordState(),
+  );
+
+  const updateSelectionIsPreContentRecordState = () => {
+    const hostConduit = useHostConduitService();
+    hostConduit.sendMsg({
+      kind: WebviewToHostMessageType.UPDATE_SELECTION_IS_PRE_CONTENT_RECORD,
+      content: {
+        state: isPreContentRecord(selectedContentRecord.value)
+          ? "true"
+          : "false",
       },
     });
   };
