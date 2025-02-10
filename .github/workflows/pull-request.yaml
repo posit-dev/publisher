@@ -32,16 +32,3 @@ jobs:
       - package
     uses: ./.github/workflows/upload.yaml
     secrets: inherit
-
-  # Integration Tests
-  # bats:
-  #   needs: build
-  #   secrets: inherit
-  #   uses: ./.github/workflows/bats.yaml
-
-  # vscode-ui:
-  #   needs:
-  #     - build
-  #     - package
-  #   secrets: inherit
-  #   uses: ./.github/workflows/vscode-ui.yaml
