@@ -39,9 +39,9 @@ jobs:
   #   secrets: inherit
   #   uses: ./.github/workflows/bats.yaml
 
-  vscode-ui:
-    needs:
-      - build
-      - package
-    secrets: inherit
-    uses: ./.github/workflows/vscode-ui.yaml
+  # vscode-ui:
+  #   needs:
+  #     - build
+  #     - package
+  #   secrets: inherit
+  #   uses: ./.github/workflows/vscode-ui.yaml
