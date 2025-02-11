@@ -22,11 +22,6 @@ jobs:
           name: dist
           path: dist
 
-      - uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
-
       - name: Extract dist
         run: unzip dist/*-linux-amd64.vsix -d dist/
 
