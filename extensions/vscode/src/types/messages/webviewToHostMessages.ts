@@ -27,6 +27,8 @@ export enum WebviewToHostMessageType {
   NEW_CREDENTIAL = "newCredential",
   VIEW_PUBLISHING_LOG = "viewPublishingLog",
   SHOW_ASSOCIATE_GUID = "ShowAssociateGUID",
+  UPDATE_SELECTION_CREDENTIAL_STATE = "UpdateSelectionCredentialStateMsg",
+  UPDATE_SELECTION_IS_PRE_CONTENT_RECORD = "UpdateSelectionIsPreContentRecordMsg",
 }
 
 export type AnyWebviewToHostMessage<
@@ -62,7 +64,9 @@ export type WebviewToHostMessage =
   | NewCredentialForDeploymentMsg
   | NewCredentialMsg
   | ViewPublishingLog
-  | ShowAssociateGUIDMsg;
+  | ShowAssociateGUIDMsg
+  | UpdateSelectionCredentialStateMsg
+  | UpdateSelectionIsPreContentRecordMsg;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
@@ -89,7 +93,9 @@ export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
     msg.kind === WebviewToHostMessageType.NEW_CREDENTIAL_FOR_DEPLOYMENT ||
     msg.kind === WebviewToHostMessageType.NEW_CREDENTIAL ||
     msg.kind === WebviewToHostMessageType.VIEW_PUBLISHING_LOG ||
-    msg.kind === WebviewToHostMessageType.SHOW_ASSOCIATE_GUID
+    msg.kind === WebviewToHostMessageType.SHOW_ASSOCIATE_GUID ||
+    msg.kind === WebviewToHostMessageType.UPDATE_SELECTION_CREDENTIAL_STATE ||
+    msg.kind === WebviewToHostMessageType.UPDATE_SELECTION_IS_PRE_CONTENT_RECORD
   );
 }
 
@@ -210,3 +216,17 @@ export type ViewPublishingLog =
 
 export type ShowAssociateGUIDMsg =
   AnyWebviewToHostMessage<WebviewToHostMessageType.SHOW_ASSOCIATE_GUID>;
+
+export type UpdateSelectionCredentialStateMsg = AnyWebviewToHostMessage<
+  WebviewToHostMessageType.UPDATE_SELECTION_CREDENTIAL_STATE,
+  {
+    state: string;
+  }
+>;
+
+export type UpdateSelectionIsPreContentRecordMsg = AnyWebviewToHostMessage<
+  WebviewToHostMessageType.UPDATE_SELECTION_IS_PRE_CONTENT_RECORD,
+  {
+    state: string;
+  }
+>;
