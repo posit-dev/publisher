@@ -1,15 +1,29 @@
 # Defines an image that installs connect-manager and a Connect DEB
 # The Connect host to be used as the publishing target.
 
-ARG IMAGE_OS=rstudio/connect:ubuntu22
 FROM ubuntu:22.04 AS e2e-publisher-connect
 
+ARG DEBIAN_FRONTEND=noninteractive
+ARG R_VERSION=4.3.0
+ARG R_REPOSITORY=https://packagemanager.posit.co/cran/__linux__/jammy/latest
+ARG PYTHON_VERSION=3.11.3
 ARG CONNECT_MANAGER_VERSION=0.5.1
+RUN export TZ=America/New_York
 
 # Install prerequisites
 RUN apt-get update && apt-get install -y \
   curl \
   xz-utils
+
+# Install Python
+ADD https://astral.sh/uv/0.5.29/install.sh /uv-installer.sh
+RUN sh /uv-installer.sh && rm /uv-installer.sh
+ENV PATH="/root/.local/bin/:$PATH"
+RUN UV_PYTHON_INSTALL_DIR=/opt/python uv python install ${PYTHON_VERSION}
+
+# Install R
+RUN curl -O https://cdn.rstudio.com/r/ubuntu-2204/pkgs/r-${R_VERSION}_1_amd64.deb
+RUN apt-get install -y ./r-${R_VERSION}_1_amd64.deb
 
 WORKDIR /opt/connect-manager
 
@@ -27,12 +41,7 @@ RUN rm -f \
     connect-manager-client-*.tar.gz \
     connect_manager_client-*.whl
 
-FROM ${IMAGE_OS}
-
-# Install connect-manager
-COPY --from=e2e-publisher-connect /opt/connect-manager /opt/connect-manager
-
-# Pull Connect .deb
+# Pull and Install Connect .deb
 RUN curl -O https://cdn.posit.co/connect/2024.12/rstudio-connect_2024.12.0~ubuntu22_amd64.deb
 
 RUN apt-get update \

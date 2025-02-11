@@ -27,7 +27,7 @@ APIKeyBcryptCost = 4
 
 [Python]
 Enabled = true
-Executable = /opt/python/3.11.3/bin/python3
+Executable = /opt/python/cpython-3.11.3-linux-x86_64-gnu/bin/python3.11
 EnvironmentManagement = false
 
 [Metrics]
