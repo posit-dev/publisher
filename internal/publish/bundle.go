@@ -9,7 +9,7 @@ import (
 	"github.com/posit-dev/publisher/internal/bundles"
 	"github.com/posit-dev/publisher/internal/clients/connect"
 	"github.com/posit-dev/publisher/internal/events"
-	"github.com/posit-dev/publisher/internal/inspect"
+	"github.com/posit-dev/publisher/internal/inspect/dependencies/pydeps"
 	"github.com/posit-dev/publisher/internal/inspect/dependencies/renv"
 	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
@@ -79,12 +79,11 @@ func (p *defaultPublisher) createAndUploadBundle(
 	if p.Config.Python != nil {
 		filename := p.Config.Python.PackageFile
 		if filename == "" {
-			filename = inspect.PythonRequirementsFilename
+			filename = interpreters.PythonRequirementsFilename
 		}
-		p.log.Debug("Python configuration present", "filename", filename)
+		p.log.Debug("Python configuration present", "PythonRequirementsFile", filename)
 
-		inspector := inspect.NewPythonInspector(p.Dir, util.Path{}, p.log)
-		requirements, err := inspector.ReadRequirementsFile(p.Dir.Join(filename))
+		requirements, err := pydeps.ReadRequirementsFile(p.Dir.Join(filename))
 		p.log.Debug("Python requirements file in use", "requirements", requirements)
 		if err != nil {
 			return "", err

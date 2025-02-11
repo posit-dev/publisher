@@ -34,6 +34,7 @@ import {
   findErrorMessageSplitOption,
 } from "src/utils/errorEnhancer";
 import { showErrorMessageWithTroubleshoot } from "src/utils/window";
+import { DeploymentFailureRenvHandler } from "src/views/deployHandlers";
 
 enum LogStageStatus {
   notStarted,
@@ -184,6 +185,11 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
     });
 
     this.stream.register("publish/failure", async (msg: EventStreamMessage) => {
+      const deploymentFailureRenvHandler = new DeploymentFailureRenvHandler();
+      if (deploymentFailureRenvHandler.shouldHandleEventMsg(msg)) {
+        return deploymentFailureRenvHandler.handle(msg).then(this.refresh);
+      }
+
       const failedOrCanceledStatus = msg.data.canceled
         ? LogStageStatus.canceled
         : LogStageStatus.failed;

@@ -4,6 +4,7 @@ package inspect
 
 import (
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/stretchr/testify/mock"
 )
@@ -26,19 +27,14 @@ func (m *MockPythonInspector) InspectPython() (*config.Python, error) {
 	}
 }
 
-func (m *MockPythonInspector) ReadRequirementsFile(path util.AbsolutePath) ([]string, error) {
-	args := m.Called(path)
+func (m *MockPythonInspector) RequiresPython(cfg *config.Config) (bool, error) {
+	args := m.Called(cfg)
 	reqs := args.Get(0)
 	if reqs == nil {
-		return nil, args.Error(1)
+		return false, args.Error(1)
 	} else {
-		return reqs.([]string), args.Error(1)
+		return reqs.(bool), args.Error(1)
 	}
-}
-
-func (m *MockPythonInspector) WriteRequirementsFile(base util.AbsolutePath, reqs []string) error {
-	args := m.Called(base, reqs)
-	return args.Error(0)
 }
 
 func (m *MockPythonInspector) ScanRequirements(base util.AbsolutePath) ([]string, []string, string, error) {
@@ -56,4 +52,10 @@ func (m *MockPythonInspector) ScanRequirements(base util.AbsolutePath) ([]string
 		incompleteStrings = incomplete.([]string)
 	}
 	return reqsStrings, incompleteStrings, args.String(2), args.Error(3)
+}
+
+func (m *MockPythonInspector) GetPythonInterpreter() interpreters.PythonInterpreter {
+	args := m.Called()
+	reqs := args.Get(0)
+	return reqs.(interpreters.PythonInterpreter)
 }

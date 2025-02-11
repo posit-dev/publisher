@@ -9,6 +9,7 @@ import (
 
 	"github.com/posit-dev/publisher/internal/cli_types"
 	"github.com/posit-dev/publisher/internal/inspect"
+	"github.com/posit-dev/publisher/internal/inspect/dependencies/pydeps"
 	"github.com/posit-dev/publisher/internal/util"
 )
 
@@ -34,12 +35,12 @@ func (cmd *CreateRequirementsCommand) Run(args *cli_types.CommonArgs, ctx *cli_t
 	if exists && !cmd.Force {
 		return errRequirementsFileExists
 	}
-	inspector := inspect.NewPythonInspector(absPath, cmd.Python, ctx.Logger)
+	inspector, _ := inspect.NewPythonInspector(absPath, cmd.Python, ctx.Logger, nil, nil)
 	reqs, incomplete, pythonExecutable, err := inspector.ScanRequirements(absPath)
 	if err != nil {
 		return err
 	}
-	err = inspector.WriteRequirementsFile(reqPath, reqs)
+	err = pydeps.WriteRequirementsFile(reqPath, reqs, util.NewAbsolutePath("bogus python executable", nil))
 	if err != nil {
 		return err
 	}
