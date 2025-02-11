@@ -25,5 +25,5 @@ jobs:
       - name: Extract dist
         run: unzip dist/*-linux-amd64.vsix -d dist/
 
-      - run: just test/e2e/container-images
+      - run: just test/e2e/build-images
       - run: just test/e2e/cypress-run

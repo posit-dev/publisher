@@ -20,7 +20,7 @@ stop:
 lint:
     npm run lint
 
-container-images:
+build-images:
     #!/usr/bin/env bash
     set -euo pipefail
 

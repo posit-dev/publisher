@@ -47,7 +47,7 @@ describe("Credentials Section", () => {
 
     cy.findInPublisherWebview(
       '[data-automation="admin-code-server-list"]',
-    ).then(($credRecord) => {
+    ).should(($credRecord) => {
       expect($credRecord.find(".tree-item-title").text()).to.equal(
         "admin-code-server",
       );
