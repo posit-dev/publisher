@@ -30,3 +30,6 @@ node_modules
 test/e2e/content-workspace/**/.posit
 test/e2e/cypress/downloads/
 test/e2e/cypress/screenshots/
+
+# Possible e2e tests deployment assets
+test/e2e/content-workspace/**/.posit

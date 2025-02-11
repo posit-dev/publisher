@@ -56,7 +56,7 @@ describe("Deployments Section", () => {
       .should("be.visible")
       .click();
 
-    cy.loadProjectConfig("static").then((config) => {
+    cy.loadProjectConfigFile("static").then((config) => {
       expect(config.title).to.equal("static");
       expect(config.type).to.equal("html");
       expect(config.entrypoint).to.equal("index.html");
