@@ -1,4 +1,5 @@
 import "@testing-library/cypress/add-commands";
+import toml from "toml";
 import "./selectors";
 
 const connectManagerServer = Cypress.env("CONNECT_MANAGER_URL");
@@ -131,6 +132,32 @@ EOF`,
 
 Cypress.Commands.add("clearupDeployments", () => {
   cy.exec(`rm -rf content-workspace/static/.posit`);
+});
+
+Cypress.Commands.add("loadProjectConfigFile", (projectName) => {
+  const projectConfigPath = `content-workspace/${projectName}/.posit/publish/static-*.toml`;
+  // Do not fail on non-zero exit this time, we can provide a better error
+  return cy
+    .exec(`cat ${projectConfigPath}`, { failOnNonZeroExit: false })
+    .then((result) => {
+      if (result.code === 0 && result.stdout) {
+        return toml.parse(result.stdout);
+      }
+      throw new Error(`Could not load project configuration. ${result.stderr}`);
+    });
+});
+
+Cypress.Commands.add("loadProjectDeploymentFile", (projectName) => {
+  const projectDeploymentPath = `content-workspace/${projectName}/.posit/publish/deployments/deployment-*.toml`;
+  // Do not fail on non-zero exit this time, we can provide a better error
+  return cy
+    .exec(`cat ${projectDeploymentPath}`, { failOnNonZeroExit: false })
+    .then((result) => {
+      if (result.code === 0 && result.stdout) {
+        return toml.parse(result.stdout);
+      }
+      throw new Error(`Could not load project deployment. ${result.stderr}`);
+    });
 });
 
 // Performs the full set of reset commands we typically use before executing our tests

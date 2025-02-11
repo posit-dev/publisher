@@ -56,6 +56,19 @@ describe("Deployments Section", () => {
       .should("be.visible")
       .click();
 
+    cy.loadProjectConfigFile("static").then((config) => {
+      expect(config.title).to.equal("static");
+      expect(config.type).to.equal("html");
+      expect(config.entrypoint).to.equal("index.html");
+      expect(config.files[0]).to.equal("/index.html");
+      expect(config.files[1]).to.match(
+        /\/.posit\/publish\/static-[A-Z0-9]{4}\.toml/,
+      );
+      expect(config.files[2]).to.match(
+        /\/.posit\/publish\/deployments\/deployment-[A-Z0-9]{4}\.toml/,
+      );
+    });
+
     cy.publisherWebview()
       .findByTestId("deploy-button")
       .should("be.visible")
