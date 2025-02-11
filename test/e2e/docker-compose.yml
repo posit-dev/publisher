@@ -31,3 +31,17 @@ services:
       - ../../dist:/home/coder/vsix
     ports:
       - "8080:8080"
+
+  # Cypress instance, meant to be used only on CI
+  # or to run e2e tests without the Cypress UI
+  cypress:
+    container_name: publisher-e2e.cypress
+    build:
+      context: ../..
+      dockerfile: test/e2e/Dockerfile.cypress
+    environment:
+      - CYPRESS_BASE_URL=http://code-server:8080
+      - CYPRESS_CONNECT_SERVER_URL=http://connect-publisher-e2e:3939
+      - CYPRESS_CONNECT_MANAGER_URL=http://connect-publisher-e2e:4723
+    volumes:
+      - ./:/app/e2e
