@@ -76,6 +76,8 @@ func (s *RSuite) TestInspectWithRFound() {
 		i.On("GetRVersion").Return("1.2.3", nil)
 		relPath = util.NewRelativePath(s.cwd.Join("renv.lock").String(), s.cwd.Fs())
 		i.On("GetLockFilePath").Return(relPath, true, nil)
+		i.On("GetPackageManager").Return("renv")
+
 		return i, nil
 	}
 	log := logging.New()

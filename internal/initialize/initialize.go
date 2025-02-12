@@ -124,8 +124,7 @@ func (i *defaultInitialize) inspectProject(base util.AbsolutePath, pythonExecuta
 			log.Debug("Error while inspecting to generate a python based configuration", "error", err.Error())
 			return nil, err
 		}
-		cfg.Python = pyConfig
-		cfg.Files = append(cfg.Files, fmt.Sprint("/", cfg.Python.PackageFile))
+		cfg.Files = append(cfg.Files, fmt.Sprint("/", pyConfig.PackageFile))
 	}
 
 	rInspector, err := i.rInspectorFactory(base, rExecutable, log, i.rInterpreterFactory, nil)
@@ -146,8 +145,7 @@ func (i *defaultInitialize) inspectProject(base util.AbsolutePath, pythonExecuta
 			log.Debug("Error while inspecting to generate an R based configuration", "error", err.Error())
 			return nil, err
 		}
-		cfg.R = rConfig
-		cfg.Files = append(cfg.Files, fmt.Sprint("/", cfg.R.PackageFile))
+		cfg.Files = append(cfg.Files, fmt.Sprint("/", rConfig.PackageFile))
 	}
 	cfg.Comments = strings.Split(initialComment, "\n")
 
@@ -204,8 +202,7 @@ func (i *defaultInitialize) normalizeConfig(
 			log.Debug("Error while inspecting to generate a python based configuration", "error", err.Error())
 			return err
 		}
-		cfg.Python = pyConfig
-		cfg.Files = append(cfg.Files, fmt.Sprint("/", cfg.Python.PackageFile))
+		cfg.Files = append(cfg.Files, fmt.Sprint("/", pyConfig.PackageFile))
 	}
 
 	rInspector, err := i.rInspectorFactory(base, rExecutable, log, i.rInterpreterFactory, nil)
@@ -224,8 +221,7 @@ func (i *defaultInitialize) normalizeConfig(
 			log.Debug("Error while inspecting to generate an R based configuration", "error", err.Error())
 			return err
 		}
-		cfg.R = rConfig
-		cfg.Files = append(cfg.Files, fmt.Sprint("/", cfg.R.PackageFile))
+		cfg.Files = append(cfg.Files, fmt.Sprint("/", rConfig.PackageFile))
 	}
 	cfg.Comments = strings.Split(initialComment, "\n")
 

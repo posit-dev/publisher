@@ -8,6 +8,7 @@ import {
   ConfigurationError,
   ConfigurationInspectionResult,
 } from "../types/configurations";
+import { PythonExecutable, RExecutable } from "../../types/shared";
 
 export class Configurations {
   private client: AxiosInstance;
@@ -80,19 +81,18 @@ export class Configurations {
   // 500 - internal server error
   inspect(
     dir: string,
-    python?: string,
-    r?: string,
+    python: PythonExecutable | undefined,
+    r: RExecutable | undefined,
     params?: { entrypoint?: string; recursive?: boolean },
   ) {
     return this.client.post<ConfigurationInspectionResult[]>(
       "/inspect",
-      {
-        python,
-        r,
-      },
+      {},
       {
         params: {
           dir,
+          python: python !== undefined ? python.pythonPath : undefined,
+          r: r !== undefined ? r.rPath : "",
           ...params,
         },
       },

@@ -12,6 +12,7 @@ import (
 	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/initialize"
+	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/publish"
 	"github.com/posit-dev/publisher/internal/state"
 	"github.com/posit-dev/publisher/internal/util"
@@ -27,6 +28,7 @@ type RedeployCmd struct {
 }
 
 func (cmd *RedeployCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
+	log := logging.New()
 	absPath, err := cmd.Path.Abs()
 	if err != nil {
 		return err
@@ -43,7 +45,7 @@ func (cmd *RedeployCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContex
 	if err != nil {
 		return fmt.Errorf("invalid deployment name '%s': %w", cmd.TargetName, err)
 	}
-	stateStore, err := state.New(absPath, "", cmd.ConfigName, cmd.TargetName, "", ctx.Accounts, nil, false)
+	stateStore, err := state.New(absPath, "", cmd.ConfigName, cmd.TargetName, "", ctx.Accounts, nil, false, nil, nil, log)
 	if err != nil {
 		return err
 	}

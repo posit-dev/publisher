@@ -16,6 +16,7 @@ import (
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/events"
+	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/publish"
 	"github.com/posit-dev/publisher/internal/state"
@@ -61,7 +62,26 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFunc() {
 	log := logging.New()
 
 	rec := httptest.NewRecorder()
-	req, err := http.NewRequest("POST", "/api/deployments/myTargetName", nil)
+
+	// Base URL
+	baseURL := "/api/deployments/myTargetName"
+
+	// Create a url.URL struct
+	parsedURL, err := url.Parse(baseURL)
+	if err != nil {
+		panic(err)
+	}
+
+	// Create a url.Values to hold query parameters
+	queryParams := url.Values{}
+	queryParams.Add("dir", ".")
+	queryParams.Add("r", "bin/my_r")
+	queryParams.Add("python", "bin/my_python")
+
+	// Encode query parameters and set them to the URL
+	parsedURL.RawQuery = queryParams.Encode()
+
+	req, err := http.NewRequest("POST", parsedURL.String(), nil)
 	s.NoError(err)
 	req = mux.SetURLVars(req, map[string]string{"name": "myTargetName"})
 
@@ -75,7 +95,12 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFunc() {
 
 	publisher := &mockPublisher{}
 	publisher.On("PublishDirectory", mock.Anything).Return(nil)
-	publisherFactory = func(*state.State, util.Path, util.Path, events.Emitter, logging.Logger) (publish.Publisher, error) {
+	publisherFactory = func(
+		state *state.State,
+		rExecutable util.Path,
+		pythonExecutable util.Path,
+		emitter events.Emitter,
+		log logging.Logger) (publish.Publisher, error) {
 		return publisher, nil
 	}
 	stateFactory = func(
@@ -83,13 +108,21 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFunc() {
 		accountName, configName, targetName, saveName string,
 		accountList accounts.AccountList,
 		secrets map[string]string,
-		insecure bool) (*state.State, error) {
+		insecure bool,
+		rInterpreter *interpreters.RInterpreter,
+		pythonInterpreter *interpreters.PythonInterpreter,
+		log logging.Logger,
+	) (*state.State, error) {
 
 		s.Equal(s.cwd, path)
 		s.Equal("myTargetName", targetName)
 		s.Equal("local", accountName)
 		s.Equal("default", configName)
 		s.Equal("", saveName)
+
+		// confirm that the interpreter paths made it through the request.
+		s.Equal("bin/my_r", (*rInterpreter).GetPreferredPath())
+		s.Equal("bin/my_python", (*pythonInterpreter).GetPreferredPath())
 
 		st := state.Empty()
 		st.Account = &accounts.Account{}
@@ -129,7 +162,11 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFuncStateErr()
 		accountName, configName, targetName, saveName string,
 		accountList accounts.AccountList,
 		secrets map[string]string,
-		insecure bool) (*state.State, error) {
+		insecure bool,
+		rInterpreter *interpreters.RInterpreter,
+		pythonInterpreter *interpreters.PythonInterpreter,
+		log logging.Logger,
+	) (*state.State, error) {
 		return nil, errors.New("test error from state factory")
 	}
 
@@ -196,7 +233,11 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFuncPublishErr
 		accountName, configName, targetName, saveName string,
 		accountList accounts.AccountList,
 		secrets map[string]string,
-		insecure bool) (*state.State, error) {
+		insecure bool,
+		rInterpreter *interpreters.RInterpreter,
+		pythonInterpreter *interpreters.PythonInterpreter,
+		log logging.Logger,
+	) (*state.State, error) {
 
 		st := state.Empty()
 		st.Account = &accounts.Account{}
@@ -251,7 +292,11 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentSubdir() {
 		accountName, configName, targetName, saveName string,
 		accountList accounts.AccountList,
 		secrets map[string]string,
-		insecure bool) (*state.State, error) {
+		insecure bool,
+		rInterpreter *interpreters.RInterpreter,
+		pythonInterpreter *interpreters.PythonInterpreter,
+		log logging.Logger,
+	) (*state.State, error) {
 
 		s.Equal(s.cwd, path)
 		s.Equal("myTargetName", targetName)
@@ -301,7 +346,11 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFuncWithSecret
 		accountName, configName, targetName, saveName string,
 		accountList accounts.AccountList,
 		secrets map[string]string,
-		insecure bool) (*state.State, error) {
+		insecure bool,
+		rInterpreter *interpreters.RInterpreter,
+		pythonInterpreter *interpreters.PythonInterpreter,
+		log logging.Logger,
+	) (*state.State, error) {
 
 		s.Equal(s.cwd, path)
 		s.Equal("myTargetName", targetName)

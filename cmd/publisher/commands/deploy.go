@@ -12,6 +12,7 @@ import (
 	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/initialize"
+	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/publish"
 	"github.com/posit-dev/publisher/internal/state"
 	"github.com/posit-dev/publisher/internal/util"
@@ -28,6 +29,7 @@ type DeployCmd struct {
 }
 
 func (cmd *DeployCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
+	log := logging.New()
 	absPath, err := cmd.Path.Abs()
 	if err != nil {
 		return err
@@ -58,7 +60,7 @@ func (cmd *DeployCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext)
 	if err != nil {
 		return err
 	}
-	stateStore, err := state.New(absPath, cmd.AccountName, cmd.ConfigName, "", cmd.SaveName, ctx.Accounts, nil, false)
+	stateStore, err := state.New(absPath, cmd.AccountName, cmd.ConfigName, "", cmd.SaveName, ctx.Accounts, nil, false, nil, nil, log)
 	if err != nil {
 		return err
 	}

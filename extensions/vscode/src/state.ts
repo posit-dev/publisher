@@ -11,6 +11,8 @@ import {
   isContentRecordError,
   PreContentRecord,
   PreContentRecordWithConfig,
+  UpdateAllConfigsWithDefaults,
+  UpdateConfigWithDefaults,
   useApi,
 } from "src/api";
 import { normalizeURL } from "src/utils/url";
@@ -27,6 +29,7 @@ import {
 } from "src/utils/errorTypes";
 import { DeploymentSelector, SelectionState } from "src/types/shared";
 import { LocalState, Views } from "./constants";
+import { getPythonInterpreterPath, getRInterpreterPath } from "./utils/vscode";
 
 function findContentRecord<
   T extends ContentRecord | PreContentRecord | PreContentRecordWithConfig,
@@ -202,11 +205,19 @@ export class PublisherState implements Disposable {
     // if not found, then retrieve it and add it to our cache.
     try {
       const api = await useApi();
+      const python = await getPythonInterpreterPath();
+      const r = await getRInterpreterPath();
+
       const response = await api.configurations.get(
         contentRecord.configurationName,
         contentRecord.projectDir,
       );
-      const cfg = response.data;
+      const defaults = await api.interpreters.get(
+        contentRecord.projectDir,
+        r,
+        python,
+      );
+      const cfg = UpdateConfigWithDefaults(response.data, defaults.data);
       // its not foolproof, but it may help
       if (!this.findConfig(cfg.configurationName, cfg.projectDir)) {
         this.configurations.push(cfg);
@@ -267,10 +278,17 @@ export class PublisherState implements Disposable {
         Views.HomeView,
         async () => {
           const api = await useApi();
+          const python = await getPythonInterpreterPath();
+          const r = await getRInterpreterPath();
+
           const response = await api.configurations.getAll(".", {
             recursive: true,
           });
-          this.configurations = response.data;
+          const defaults = await api.interpreters.get(".", r, python);
+          this.configurations = UpdateAllConfigsWithDefaults(
+            response.data,
+            defaults.data,
+          );
         },
       );
     } catch (error: unknown) {
