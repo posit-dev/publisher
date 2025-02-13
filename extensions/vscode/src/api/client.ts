@@ -6,6 +6,7 @@ import { Credentials } from "./resources/Credentials";
 import { ContentRecords } from "./resources/ContentRecords";
 import { Configurations } from "./resources/Configurations";
 import { Files } from "./resources/Files";
+import { Interpreters } from "./resources/Interpreters";
 import { Packages } from "./resources/Packages";
 import { Secrets } from "./resources/Secrets";
 import { EntryPoints } from "./resources/Entrypoints";
@@ -15,6 +16,7 @@ class PublishingClientApi {
   private client;
 
   configurations: Configurations;
+  interpreters: Interpreters;
   credentials: Credentials;
   contentRecords: ContentRecords;
   files: Files;
@@ -52,6 +54,7 @@ class PublishingClientApi {
     this.credentials = new Credentials(this.client);
     this.contentRecords = new ContentRecords(this.client);
     this.files = new Files(this.client);
+    this.interpreters = new Interpreters(this.client);
     this.packages = new Packages(this.client);
     this.secrets = new Secrets(this.client);
     this.entrypoints = new EntryPoints(this.client);

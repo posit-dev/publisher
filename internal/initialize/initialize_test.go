@@ -183,11 +183,15 @@ func (s *InitializeSuite) createRequirementsFile() {
 	s.NoError(err)
 }
 
+var emptyPyConfig = &config.Python{}
+
 var expectedPyConfig = &config.Python{
 	Version:        "3.4.5",
 	PackageManager: "pip",
 	PackageFile:    "requirements.txt",
 }
+
+var emptyRConfig = &config.R{}
 
 var expectedRConfig = &config.R{
 	Version:        "1.2.3",
@@ -214,7 +218,7 @@ func (s *InitializeSuite) TestInitInferredType() {
 	cfg2, err := config.FromFile(configPath)
 	s.NoError(err)
 	s.Equal(config.ContentTypePythonFlask, cfg.Type)
-	s.Equal(expectedPyConfig, cfg.Python)
+	s.Equal(emptyPyConfig, cfg.Python)
 	s.Equal(cfg, cfg2)
 }
 
@@ -238,7 +242,7 @@ func (s *InitializeSuite) TestInitRequirementsFile() {
 	cfg2, err := config.FromFile(configPath)
 	s.NoError(err)
 	s.Equal(cfg.Type, config.ContentTypeHTML)
-	s.Equal("3.4.5", cfg.Python.Version)
+	s.Equal(true, cfg.Python == nil)
 	s.Equal(cfg, cfg2)
 }
 
@@ -261,7 +265,7 @@ func (s *InitializeSuite) TestInitIfNeededWhenNeeded() {
 	cfg, err := config.FromFile(configPath)
 	s.NoError(err)
 	s.Equal(cfg.Type, config.ContentTypePythonFlask)
-	s.Equal("3.4.5", cfg.Python.Version)
+	s.Equal(emptyPyConfig, cfg.Python)
 }
 
 func (s *InitializeSuite) TestInitIfNeededWhenNotNeeded() {
@@ -276,7 +280,6 @@ func (s *InitializeSuite) TestInitIfNeededWhenNotNeeded() {
 		PackageManager: "pip",
 	}
 	cfg.WriteFile(configPath)
-	cfg.FillDefaults()
 
 	pythonInspectorFactory := func(
 		util.AbsolutePath,
@@ -334,7 +337,7 @@ func (s *InitializeSuite) TestGetPossibleRConfig() {
 	s.Equal(config.ContentTypeRShiny, configs[0].Type)
 	s.Equal("app.R", configs[0].Entrypoint)
 	s.Equal([]string{"/app.R", "/renv.lock"}, configs[0].Files)
-	s.Equal(expectedRConfig, configs[0].R)
+	s.Equal(emptyRConfig, configs[0].R)
 }
 
 func (s *InitializeSuite) TestGetPossiblePythonConfig() {
@@ -359,7 +362,7 @@ func (s *InitializeSuite) TestGetPossiblePythonConfig() {
 	s.Equal(config.ContentTypePythonFlask, configs[0].Type)
 	s.Equal("app.py", configs[0].Entrypoint)
 	s.Equal([]string{"/app.py", "/requirements.txt"}, configs[0].Files)
-	s.Equal(expectedPyConfig, configs[0].Python)
+	s.Equal(emptyPyConfig, configs[0].Python)
 }
 
 func (s *InitializeSuite) TestGetPossibleHTMLConfig() {

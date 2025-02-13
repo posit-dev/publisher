@@ -181,6 +181,10 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	r.Handle(ToPath("deployments", "{name}", "environment"), GetDeploymentEnvironmentHandlerFunc(base, log, lister)).
 		Methods(http.MethodGet)
 
+	// GET /api/interpreters
+	r.Handle(ToPath("interpreters"), GetActiveInterpretersHandlerFunc(base, log)).
+		Methods(http.MethodGet)
+
 	// POST /api/packages/python/scan
 	r.Handle(ToPath("packages", "python", "scan"), NewPostPackagesPythonScanHandler(base, log)).
 		Methods(http.MethodPost)

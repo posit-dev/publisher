@@ -118,6 +118,8 @@ func (s *PythonSuite) TestInspectPython_PythonNotAvailable() {
 		i.On("IsPythonExecutableValid").Return(false)
 		i.On("GetPythonExecutable").Return(util.AbsolutePath{}, interpreters.MissingPythonError)
 		i.On("GetPythonVersion").Return("", interpreters.MissingPythonError)
+		i.On("GetPackageManager").Return("pip")
+		i.On("GetLockFilePath").Return("requirements.txt", true, nil)
 		return i, nil
 	}
 
