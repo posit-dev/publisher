@@ -9,6 +9,7 @@ import {
   PreContentRecord,
   Configuration,
   ConfigurationError,
+  isPreContentRecord,
 } from "../../../../src/api";
 import { isConfigurationError } from "../../../../src/api/types/configurations";
 import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
@@ -178,6 +179,34 @@ export const useHomeStore = defineStore("home", () => {
     contentRecords.value.push(contentRecord);
     selectedContentRecord.value = contentRecord;
   }
+
+  watch([serverCredential], () => updateSelectionCredentialStatus());
+
+  const updateSelectionCredentialStatus = () => {
+    const hostConduit = useHostConduitService();
+    hostConduit.sendMsg({
+      kind: WebviewToHostMessageType.UPDATE_SELECTION_CREDENTIAL_STATE,
+      content: {
+        state: serverCredential.value !== undefined ? "true" : "false",
+      },
+    });
+  };
+
+  watch([selectedContentRecord], () =>
+    updateSelectionIsPreContentRecordState(),
+  );
+
+  const updateSelectionIsPreContentRecordState = () => {
+    const hostConduit = useHostConduitService();
+    hostConduit.sendMsg({
+      kind: WebviewToHostMessageType.UPDATE_SELECTION_IS_PRE_CONTENT_RECORD,
+      content: {
+        state: isPreContentRecord(selectedContentRecord.value)
+          ? "true"
+          : "false",
+      },
+    });
+  };
 
   watch([selectedConfiguration], () => updateParentViewSelectionState());
 
