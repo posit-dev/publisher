@@ -292,7 +292,7 @@ export const useHomeStore = defineStore("home", () => {
         );
       }),
       isInProject: computed(() => {
-        return pythonProject;
+        return pythonProject.value;
       }),
     },
   };

@@ -150,7 +150,7 @@ describe("Nested Fast API Deployment", () => {
   });
 
   it("can list creds", async () => {
-    const creds = await $('[data-automation="credentials"]');
+    const creds = await $('[data-automation="publisher-credentials-section"]');
     await creds.click();
     const credentialList = await $(
       '[data-automation="my connect server-list"]',

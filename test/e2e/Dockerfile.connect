@@ -1,0 +1,70 @@
+# Defines an image that installs connect-manager and a Connect DEB
+# The Connect host to be used as the publishing target.
+
+FROM ubuntu:22.04 AS e2e-publisher-connect
+
+ARG DEBIAN_FRONTEND=noninteractive
+ARG R_VERSION=4.3.0
+ARG R_REPOSITORY=https://packagemanager.posit.co/cran/__linux__/jammy/latest
+ARG PYTHON_VERSION=3.11.3
+ARG CONNECT_MANAGER_VERSION=0.5.1
+RUN export TZ=America/New_York
+
+# Install prerequisites
+RUN apt-get update && apt-get install -y \
+  curl \
+  xz-utils
+
+# Install Python
+ADD https://astral.sh/uv/0.5.29/install.sh /uv-installer.sh
+RUN sh /uv-installer.sh && rm /uv-installer.sh
+ENV PATH="/root/.local/bin/:$PATH"
+RUN UV_PYTHON_INSTALL_DIR=/opt/python uv python install ${PYTHON_VERSION}
+
+# Install R
+RUN curl -O https://cdn.rstudio.com/r/ubuntu-2204/pkgs/r-${R_VERSION}_1_amd64.deb
+RUN apt-get install -y ./r-${R_VERSION}_1_amd64.deb
+
+WORKDIR /opt/connect-manager
+
+RUN curl -fsSL "https://cdn.rstudio.com/connect/connect-manager/${CONNECT_MANAGER_VERSION}/connect-manager-${CONNECT_MANAGER_VERSION}.tar.xz" | tar --strip-components=1 -xvJf -
+
+RUN tar \
+    --strip-components=1 \
+    --exclude=PKG-INFO \
+    --exclude=README.md \
+    --exclude='*.egg-info' \
+    --exclude='setup.*' \
+    -xzvf connect-manager-*.tar.gz
+
+RUN rm -f \
+    connect-manager-client-*.tar.gz \
+    connect_manager_client-*.whl
+
+# Pull and Install Connect .deb
+RUN curl -O https://cdn.posit.co/connect/2024.12/rstudio-connect_2024.12.0~ubuntu22_amd64.deb
+
+RUN apt-get update \
+  && apt-get install -y ./rstudio-connect_2024.12.0~ubuntu22_amd64.deb \
+  && rm -rf rstudio-connect_2024.12.0~ubuntu22_amd64.deb \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
+# Copy Connect config
+COPY test/e2e/config/connect.gcfg /etc/rstudio-connect/rstudio-connect.gcfg
+
+# Copy Bootstrap Key
+COPY test/e2e/bootstrap-secret.key /etc/rstudio-connect/bootstrap-secret.key
+
+ENV CONNECT_LICENSE ${CONNECT_LICENSE}
+
+CMD [ "/opt/connect-manager/connect-manager", \
+  "--start-connect", \
+  "--connect-binary", "/opt/rstudio-connect/bin/connect", \
+  "--connect-user", "rstudio-connect", \
+  "--license-manager-binary", "/opt/rstudio-connect/bin/license-manager", \
+  "--connect-log", "/var/log/rstudio/rstudio-connect/rstudio-connect.log", \
+  "--manager-log", "/var/log/rstudio/rstudio-connect/connect-manager.log", \
+  "--connect-config-prefix", "/etc/rstudio-connect", \
+  "--connect-config", "rstudio-connect.gcfg", \
+  "--manager-port", "4723" ]
