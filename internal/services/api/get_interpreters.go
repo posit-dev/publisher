@@ -19,9 +19,9 @@ var interpretersFromRequest = InterpretersFromRequest
 // the request.
 type getInterpreterResponse struct {
 	Python              *config.Python `json:"python,omitempty"`
-	PreferredPythonPath string         `json:"preferredPythonPath,omitEmpty"`
+	PreferredPythonPath string         `json:"preferredPythonPath,omitempty"`
 	R                   *config.R      `json:"r,omitempty"`
-	PreferredRPath      string         `json:"preferredRPath,omitEmpty"`
+	PreferredRPath      string         `json:"preferredRPath,omitempty"`
 }
 
 // toGetAccountResponse converts an internal Account object
