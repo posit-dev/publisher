@@ -6,6 +6,7 @@ import {
   PythonPackagesResponse,
   ScanPythonPackagesResponse,
 } from "../types/packages";
+import { PythonExecutable, RExecutable } from "../../types/shared";
 
 export class Packages {
   private client: AxiosInstance;
@@ -48,13 +49,20 @@ export class Packages {
   // 500 - internal server error
   createPythonRequirementsFile(
     dir: string,
-    python?: string,
+    python: PythonExecutable | undefined,
     saveName?: string,
   ) {
     return this.client.post<ScanPythonPackagesResponse>(
       "packages/python/scan",
-      { python, saveName },
-      { params: { dir } },
+      {
+        saveName,
+      },
+      {
+        params: {
+          dir,
+          python: python !== undefined ? python.pythonPath : undefined,
+        },
+      },
     );
   }
 
@@ -62,11 +70,22 @@ export class Packages {
   // 200 - success
   // 400 - bad request
   // 500 - internal server error
-  createRRequirementsFile(dir: string, saveName?: string, r?: string) {
+  createRRequirementsFile(
+    dir: string,
+    r: RExecutable | undefined,
+    saveName?: string,
+  ) {
     return this.client.post<void>(
       "packages/r/scan",
-      { saveName, r },
-      { params: { dir } },
+      {
+        saveName,
+      },
+      {
+        params: {
+          dir,
+          r: r !== undefined ? r.rPath : "",
+        },
+      },
     );
   }
 }

@@ -43,9 +43,12 @@ type renvCommandObj struct {
 }
 
 type RInterpreter interface {
+	IsRExecutableValid() bool
 	GetRExecutable() (util.AbsolutePath, error)
 	GetRVersion() (string, error)
 	GetLockFilePath() (util.RelativePath, bool, error)
+	GetPackageManager() string
+	GetPreferredPath() string
 	CreateLockfile(util.AbsolutePath) error
 	RenvEnvironmentErrorCheck() *types.AgentError
 }
@@ -514,4 +517,12 @@ func (i *defaultRInterpreter) CreateLockfile(lockfilePath util.AbsolutePath) err
 	stdout, stderr, err := i.cmdExecutor.RunCommand(rExecutable.String(), args, i.base, i.log)
 	i.log.Debug("renv::snapshot()", "out", string(stdout), "err", string(stderr))
 	return err
+}
+
+func (i *defaultRInterpreter) GetPackageManager() string {
+	return "renv"
+}
+
+func (i *defaultRInterpreter) GetPreferredPath() string {
+	return i.preferredPath.String()
 }

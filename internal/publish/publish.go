@@ -331,6 +331,8 @@ func (p *defaultPublisher) publishWithClient(
 		}
 		manifest.Packages = rPackages
 	}
+	p.log.Debug("Generated manifest:", manifest)
+
 	bundler, err := bundles.NewBundler(p.Dir, manifest, p.Config.Files, p.log)
 	if err != nil {
 		return err
