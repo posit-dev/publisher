@@ -1,13 +1,26 @@
 FROM cypress/browsers:node-18.20.3-chrome-125.0.6422.141-1-ff-126.0.1-edge-125.0.2535.85-1
 
-RUN mkdir /app
-WORKDIR /app
+# Install Python and required system dependencies
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    python3-venv \
+    && rm -rf /var/lib/apt/lists/*
 
-COPY package*.json ./
-RUN npm ci
+# Create and activate virtual environment
+ENV VIRTUAL_ENV=/opt/venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-ENV PATH /app/node_modules/.bin:$PATH
+# Install rsconnect, used for bootstraping first user and API key
+RUN pip install rsconnect-python
 
+# Setup the env for Cypress
 WORKDIR /app/e2e
 
-CMD ["cypress", "run"]
+COPY test/e2e/package*.json ./
+RUN npm ci
+
+ENV PATH /app/e2e/node_modules/.bin:$PATH
+
+CMD ["cypress", "run", "--browser", "chrome"]
