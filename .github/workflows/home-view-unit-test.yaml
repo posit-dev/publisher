@@ -14,5 +14,4 @@ jobs:
           cache: "npm"
           cache-dependency-path: "**/package-lock.json"
       - run: npm install --prefix ../..
-      - run: npm install
       - run: npm test
