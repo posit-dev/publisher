@@ -69,7 +69,7 @@ describe("Create Deployments", () => {
       .then((configFile) => {
         configFile.contents.python.version = "3.11.3";
         return cy.savePublisherFile(
-          `.posit/publish/${configFile.fileName}`,
+          `fastapi-simple/.posit/publish/${configFile.fileName}`,
           configFile.contents,
         );
       })
