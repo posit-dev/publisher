@@ -14,28 +14,27 @@ describe("Create Deployments", () => {
       ".",
       "simple.py",
       "fastapi-base-directory",
-      (configFile) => {
-        expect(configFile.contents.title).to.equal("fastapi-base-directory");
-        expect(configFile.contents.type).to.equal("python-fastapi");
-        expect(configFile.contents.entrypoint).to.equal("simple.py");
-        expect(configFile.contents.files[0]).to.equal("/simple.py");
-        expect(configFile.contents.files[1]).to.equal("/requirements.txt");
-        expect(configFile.contents.files[2]).to.equal(
-          `/.posit/publish/${configFile.fileName}`,
+      (tomlFiles) => {
+        const config = tomlFiles.config.contents;
+        expect(config.title).to.equal("fastapi-base-directory");
+        expect(config.type).to.equal("python-fastapi");
+        expect(config.entrypoint).to.equal("simple.py");
+        expect(config.files[0]).to.equal("/simple.py");
+        expect(config.files[1]).to.equal("/requirements.txt");
+        expect(config.files[2]).to.equal(
+          `/.posit/publish/${tomlFiles.config.name}`,
         );
-        //   /\/.posit\/publish\/fastapi-base-directory-[A-Z0-9]{4}\.toml/,
-        // );
-        expect(configFile.contents.files[3]).to.match(
-          /\/.posit\/publish\/deployments\/deployment-[A-Z0-9]{4}\.toml/,
+        expect(config.files[3]).to.equal(
+          `/.posit/publish/deployments/${tomlFiles.contentRecord.name}`,
         );
-        return configFile;
+        return tomlFiles;
       },
     )
-      .then((configFile) => {
-        configFile.contents.python.version = "3.11.3";
+      .then((tomlFiles) => {
+        tomlFiles.config.contents.python.version = "3.11.3";
         return cy.savePublisherFile(
-          `.posit/publish/${configFile.fileName}`,
-          configFile.contents,
+          tomlFiles.config.path,
+          tomlFiles.config.contents,
         );
       })
       .then(() => {
@@ -49,28 +48,27 @@ describe("Create Deployments", () => {
       "fastapi-simple",
       "fastapi-main.py",
       "fastapi-sub-directory",
-      (configFile) => {
-        expect(configFile.contents.title).to.equal("fastapi-sub-directory");
-        expect(configFile.contents.type).to.equal("python-fastapi");
-        expect(configFile.contents.entrypoint).to.equal("fastapi-main.py");
-        expect(configFile.contents.files[0]).to.equal("/fastapi-main.py");
-        expect(configFile.contents.files[1]).to.equal("/requirements.txt");
-        expect(configFile.contents.files[2]).to.equal(
-          `/.posit/publish/${configFile.fileName}`,
+      (tomlFiles) => {
+        const config = tomlFiles.config.contents;
+        expect(config.title).to.equal("fastapi-sub-directory");
+        expect(config.type).to.equal("python-fastapi");
+        expect(config.entrypoint).to.equal("fastapi-main.py");
+        expect(config.files[0]).to.equal("/fastapi-main.py");
+        expect(config.files[1]).to.equal("/requirements.txt");
+        expect(config.files[2]).to.equal(
+          `/.posit/publish/${tomlFiles.config.name}`,
         );
-        //   /\/.posit\/publish\/fastapi-base-directory-[A-Z0-9]{4}\.toml/,
-        // );
-        expect(configFile.contents.files[3]).to.match(
-          /\/.posit\/publish\/deployments\/deployment-[A-Z0-9]{4}\.toml/,
+        expect(config.files[3]).to.equal(
+          `/.posit/publish/deployments/${tomlFiles.contentRecord.name}`,
         );
-        return configFile;
+        return tomlFiles;
       },
     )
-      .then((configFile) => {
-        configFile.contents.python.version = "3.11.3";
+      .then((tomlFiles) => {
+        tomlFiles.config.contents.python.version = "3.11.3";
         return cy.savePublisherFile(
-          `fastapi-simple/.posit/publish/${configFile.fileName}`,
-          configFile.contents,
+          tomlFiles.config.path,
+          tomlFiles.config.contents,
         );
       })
       .then(() => {

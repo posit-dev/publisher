@@ -1,12 +1,26 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
+// tomlCallback interface = func(
+// {
+//   config: {
+//     name: string,
+//     path: string,
+//     contents: {},
+//   },
+//   contentRecord: {
+//     name: string,
+//     path: string,
+//     contents: {},
+//   }
+// })
+
 Cypress.Commands.add(
   "createDeployment",
   (
     projectDir, // string
     entrypointFile, // string
     title, // string
-    verifyConfigCallback, // func({ fileName: configFileName, contents: contents})
+    verifyTomlCallback, // func({config: { filename: string, contents: {},}, contentRecord: { filename: string, contents: {}})
   ) => {
     // Temporarily ignore uncaught exception due to a vscode worker being cancelled at some point.
     cy.on("uncaught:exception", () => false);
@@ -84,19 +98,34 @@ Cypress.Commands.add(
       .click();
 
     return cy
-      .expandWildcardFile(projectDir, `${title}-*.toml`)
-      .then((configFileName) => {
-        cy.loadProjectConfigFile(projectDir, configFileName).then(
-          (contents) => {
-            return {
-              fileName: configFileName,
-              contents: contents,
-            };
+      .getPublisherTomlFilePaths(projectDir)
+      .then((filePaths) => {
+        let result = {
+          config: {
+            name: filePaths.config.name,
+            path: filePaths.config.path,
+            contents: {},
           },
-        );
+          contentRecord: {
+            name: filePaths.contentRecord.name,
+            path: filePaths.contentRecord.path,
+            contents: {},
+          },
+        };
+        cy.loadTomlFile(filePaths.config.path)
+          .then((config) => {
+            result.config.contents = config;
+          })
+          .loadTomlFile(filePaths.contentRecord.path)
+          .then((contentRecord) => {
+            result.contentRecord.contents = contentRecord;
+          })
+          .then(() => {
+            return result;
+          });
       })
-      .then((configFile) => {
-        return verifyConfigCallback(configFile);
+      .then((tomlFiles) => {
+        return verifyTomlCallback(tomlFiles);
       });
   },
 );
