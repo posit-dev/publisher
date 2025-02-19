@@ -28,7 +28,7 @@ APIKeyBcryptCost = 4
 [Python]
 Enabled = true
 Executable = /opt/python/cpython-3.11.3-linux-x86_64-gnu/bin/python3.11
-EnvironmentManagement = false
+EnvironmentManagement = true
 
 [Metrics]
 Enabled = false
@@ -37,4 +37,6 @@ Enabled = false
 URL = "https://packagemanager.posit.co/cran/__linux__/jammy/latest"
 
 [R]
-EnvironmentManagement = false
+Enabled = true
+ExecutableScanning = true
+EnvironmentManagement = true
