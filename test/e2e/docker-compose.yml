@@ -1,0 +1,33 @@
+services:
+  # Starts a container that mounts Connect and other dependencies
+  connect-publisher-e2e:
+    container_name: publisher-e2e.connect
+    build:
+      context: ../..
+      dockerfile: test/e2e/Dockerfile.connect
+      args:
+        IMAGE_OS: ${IMAGE_OS:-rstudio/connect:ubuntu22}
+    privileged: true
+    environment:
+      - CONNECT_LICENSE
+    ports:
+      - "3232:3232"
+      - "3939:3939"
+      - "4723:4723"
+
+  # A VS Code server accesible through browser
+  code-server:
+    container_name: publisher-e2e.code-server
+    build:
+      context: ../..
+      dockerfile: test/e2e/Dockerfile.vscode
+    environment:
+      - DOCKER_USER=publisher
+      - PASSWORD=password
+    volumes:
+      - ./code-server-entry.sh:/home/coder/entrypoint.sh
+      - ./e2e-test.connect-credentials:/home/coder/.connect-credentials
+      - ./content-workspace:/home/coder/workspace
+      - ../../dist:/home/coder/vsix
+    ports:
+      - "8080:8080"
