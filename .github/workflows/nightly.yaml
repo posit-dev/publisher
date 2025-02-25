@@ -11,7 +11,6 @@ on:
         type: choice
         options:
           - all
-          - vscode-ui-tests
 jobs:
   agent:
     uses: ./.github/workflows/agent.yaml
