@@ -11,13 +11,8 @@ import (
 )
 
 type UICmd struct {
-	Path          util.Path `help:"Path to project directory containing files to publish." arg:"" default:"."`
-	Interactive   bool      `short:"i" help:"Launch a browser to show the UI."`
-	OpenBrowserAt string    `help:"Network address to use when launching the browser." placeholder:"HOST[:PORT]" hidden:""`
-	Theme         string    `help:"UI theme, 'light' or 'dark'." hidden:""`
-	Listen        string    `help:"Network address to listen on." placeholder:"HOST[:PORT]" default:"localhost:0"`
-	TLSKeyFile    string    `help:"Path to TLS private key file for the UI server."`
-	TLSCertFile   string    `help:"Path to TLS certificate chain file for the UI server."`
+	Path   util.Path `help:"Sets the current working directory for the agent." arg:"" default:"."`
+	Listen string    `help:"Network address to listen on." placeholder:"HOST[:PORT]" default:"localhost:0"`
 }
 
 func (cmd *UICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
@@ -40,13 +35,8 @@ func (cmd *UICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) err
 	// for better error handling and startup performance.
 	svc := api.NewService(
 		"/",
-		cmd.Interactive,
-		cmd.OpenBrowserAt,
-		cmd.Theme,
 		cmd.Listen,
 		true,
-		cmd.TLSKeyFile,
-		cmd.TLSCertFile,
 		absPath,
 		ctx.Accounts,
 		log,
