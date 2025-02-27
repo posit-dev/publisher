@@ -6,24 +6,24 @@
   - [Quick Start](#quick-start)
   - [Getting Started](#getting-started)
     - [Prerequisites](#prerequisites)
-      - [Option 1 - Native](#option-1---native)
     - [Installing](#installing)
     - [Execution](#execution)
+    - [Committing Changes to the repo](#committing-changes-to-the-repo)
   - [Testing](#testing)
     - [Unit Tests](#unit-tests)
       - [Coverage Reporting](#coverage-reporting)
-    - [Integration Tests](#integration-tests)
-    - [UI Tests](#ui-tests)
   - [Development](#development)
     - [Build Tools](#build-tools)
     - [Environment Variables](#environment-variables)
       - [Behavior in GitHub Actions](#behavior-in-github-actions)
     - [Debugging in VS Code](#debugging-in-vs-code)
     - [Extension Development](#extension-development)
+  - [Schema Updates](#schema-updates)
+    - [Force Even Better TOML to update](#force-even-better-toml-to-update)
   - [Release](#release)
+    - [Before Releasing](#before-releasing)
     - [Instructions](#instructions)
-    - [Pre-Releases](#pre-releases)
-    - [Release Lifecycle](#release-lifecycle)
+  - [Updating Dependencies](#updating-dependencies)
 
 ## Getting Started
 
@@ -52,6 +52,19 @@ Invoke the following Just command to run the built executable.
 
 ```console
 just run
+```
+
+### Committing Changes to the repo
+
+The repo utilizes git hooks (through `husky`) to implement some standard formatting and linting.
+
+The tools invoked are expected to be installed as packages within the root of the repo, as well as within the subdirectory `test/e2e`.
+
+To commit one or more files, you must have first installed the npm package dependencies within both locations. This can be done from the root of the repo by:
+
+```bash
+npm install
+npm install --prefix="test/e2e"
 ```
 
 ## Testing
@@ -239,3 +252,22 @@ Any significantly difficult dependency updates should have an issue created to
 track the work and can be triaged alongside our other issues.
 
 Updates to dependencies should be done in a separate PR.
+
+### Updating a Go dependency
+
+1. Run `go get <dependency>@<version>` to update the dependency. This will
+   update the `go.mod` file with the new version.
+
+   - `go get` has a `-u` option that will update all child dependencies as well.
+     This is generally not recommended as it can cause unexpected problems. Use
+     it with caution. `go get` will do the right thing on its own without `-u`.
+
+   - It is best to specify the version with the `@<version>` suffix. This may be
+     a semver string, a branch name, or a commit hash.
+
+2. Update any import statements for the new version of the dependency.
+
+3. Run `go mod vendor` to update the `vendor` directory with the new version of
+   the dependency.
+
+4. Make sure all files under vendor are included in the git commit.

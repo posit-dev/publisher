@@ -1,5 +1,8 @@
 <template>
-  <TreeSection title="Help and Feedback">
+  <TreeSection
+    title="Help and Feedback"
+    data-automation="publisher-help-section"
+  >
     <TreeItem
       title="Get Started with Posit Publisher"
       tooltip="Open Getting Started Documentation"
