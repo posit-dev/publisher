@@ -81,8 +81,8 @@ export class Configurations {
   // 500 - internal server error
   inspect(
     dir: string,
-    python: PythonExecutable | undefined,
-    r: RExecutable | undefined,
+    python?: PythonExecutable,
+    r?: RExecutable,
     params?: { entrypoint?: string; recursive?: boolean },
   ) {
     return this.client.post<ConfigurationInspectionResult[]>(
@@ -91,8 +91,8 @@ export class Configurations {
       {
         params: {
           dir,
-          python: python !== undefined ? python.pythonPath : undefined,
-          r: r !== undefined ? r.rPath : "",
+          python: python?.pythonPath,
+          r: r?.rPath,
           ...params,
         },
       },

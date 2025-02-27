@@ -30,20 +30,18 @@ export type DeploymentObjects = {
   credential: Credential;
 };
 
-export type RExecutable = {
-  rPath: string;
-};
-export function NewRExecutable(rPath: string): RExecutable {
-  return {
-    rPath,
-  };
+export class RExecutable {
+  public rPath: string;
+
+  constructor(rPath: string) {
+    this.rPath = rPath;
+  }
 }
 
-export type PythonExecutable = {
-  pythonPath: string;
-};
-export function NewPythonExecutable(pythonPath: string): PythonExecutable {
-  return {
-    pythonPath,
-  };
+export class PythonExecutable {
+  public pythonPath: string;
+
+  constructor(pythonPath: string) {
+    this.pythonPath = pythonPath;
+  }
 }
