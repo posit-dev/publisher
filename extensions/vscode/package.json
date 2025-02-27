@@ -41,6 +41,11 @@
             "markdownDescription": "Verify TLS certificates for connections. Only **disable** this setting if you experience certificate verification errors and the Posit Connect server is using a self-signed, expired, or otherwise misconfigured certificate.",
             "type": "boolean",
             "default": true
+          },
+          "positPublisher.useKeyChainCredentialStorage": {
+            "markdownDescription": "Controls whether Posit Publisher will use the system keychain to store credentials. When disabled, or on a system without a keychain, `~/.connect-credentials` is used. After changing this setting, you must restart VS Code for it to go into effect.",
+            "type": "boolean",
+            "default": true
           }
         }
       }
