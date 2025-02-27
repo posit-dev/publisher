@@ -5,7 +5,6 @@ extensions/vscode/out
 test/sample-content
 
 # webdriver.io service
-test/vscode-ui/.wdio-vscode-service
 extensions/vscode/dist
 extensions/vscode/assets/icons/template/mapping.json
 extensions/vscode/node_modules

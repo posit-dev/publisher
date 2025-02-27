@@ -263,10 +263,3 @@ vscode *args:
     {{ _with_debug }}
 
     just extensions/vscode/{{ args }}
-
-vscode-ui *args:
-    #!/usr/bin/env bash
-    set -eou pipefail
-    {{ _with_debug }}
-
-    just test/vscode-ui/{{ args }}
