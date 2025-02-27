@@ -1,0 +1,12 @@
+---
+title: "quarto-project"
+jupyter: python3
+---
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+```{python}
+1 + 1
+```

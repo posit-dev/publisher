@@ -1,6 +1,9 @@
+// Copyright (C) 2025 by Posit Software, PBC.
+
 import "@testing-library/cypress/add-commands";
-import toml from "toml";
+import { parse, stringify } from "smol-toml";
 import "./selectors";
+import "./sequences";
 
 const connectManagerServer = Cypress.env("CONNECT_MANAGER_URL");
 
@@ -130,33 +133,92 @@ EOF`,
   );
 });
 
-Cypress.Commands.add("clearupDeployments", () => {
-  cy.exec(`rm -rf content-workspace/static/.posit`);
+Cypress.Commands.add("clearupDeployments", (subdir) => {
+  cy.exec(`rm -rf content-workspace/${subdir}/.posit`);
 });
 
-Cypress.Commands.add("loadProjectConfigFile", (projectName) => {
-  const projectConfigPath = `content-workspace/${projectName}/.posit/publish/static-*.toml`;
-  // Do not fail on non-zero exit this time, we can provide a better error
-  return cy
-    .exec(`cat ${projectConfigPath}`, { failOnNonZeroExit: false })
-    .then((result) => {
-      if (result.code === 0 && result.stdout) {
-        return toml.parse(result.stdout);
-      }
-      throw new Error(`Could not load project configuration. ${result.stderr}`);
+// returns
+// config: {
+//   name: string,
+//   path: string,
+// },
+// contentRecord: {
+//   name: string,
+//   path: string,
+// }
+Cypress.Commands.add("getPublisherTomlFilePaths", (projectDir) => {
+  let configTargetDir = `content-workspace/${projectDir}/.posit/publish`;
+  let configFileName = "";
+  let configFilePath = "";
+  let contentRecordTargetDir = `content-workspace/${projectDir}/.posit/publish/deployments`;
+  let contentRecordFileName = "";
+  let contentRecordFilePath = "";
+
+  cy.expandWildcardFile(configTargetDir, "*.toml")
+    .then((configFile) => {
+      configFileName = configFile;
+      configFilePath = `${configTargetDir}/${configFile}`;
+    })
+    .expandWildcardFile(contentRecordTargetDir, "*.toml")
+    .then((contentRecordFile) => {
+      contentRecordFileName = contentRecordFile;
+      contentRecordFilePath = `${contentRecordTargetDir}/${contentRecordFile}`;
+    })
+    .then(() => {
+      return {
+        config: {
+          name: configFileName,
+          path: configFilePath,
+        },
+        contentRecord: {
+          name: contentRecordFileName,
+          path: contentRecordFilePath,
+        },
+      };
     });
 });
 
-Cypress.Commands.add("loadProjectDeploymentFile", (projectName) => {
-  const projectDeploymentPath = `content-workspace/${projectName}/.posit/publish/deployments/deployment-*.toml`;
-  // Do not fail on non-zero exit this time, we can provide a better error
+Cypress.Commands.add("expandWildcardFile", (targetDir, wildCardPath) => {
   return cy
-    .exec(`cat ${projectDeploymentPath}`, { failOnNonZeroExit: false })
+    .exec("pwd")
+    .then((result) => {
+      return cy.log("CWD", result.stdout);
+    })
+    .then(() => {
+      const cmd = `cd ${targetDir} && file=$(echo ${wildCardPath}) && echo $file`;
+      return cy.exec(cmd);
+    })
     .then((result) => {
       if (result.code === 0 && result.stdout) {
-        return toml.parse(result.stdout);
+        return result.stdout;
       }
-      throw new Error(`Could not load project deployment. ${result.stderr}`);
+      throw new Error(`Could not expandWildcardFile. ${result.stderr}`);
+    });
+});
+
+Cypress.Commands.add("savePublisherFile", (filePath, jsonObject) => {
+  return cy
+    .exec("pwd")
+    .then((result) => {
+      return cy
+        .log("savePublisherFile CWD", result.stdout)
+        .log("filePath", filePath);
+    })
+    .then(() => {
+      const tomlString = stringify(jsonObject);
+      return cy.writeFile(filePath, tomlString);
+    });
+});
+
+Cypress.Commands.add("loadTomlFile", (filePath) => {
+  return cy
+    .log("filePath", filePath)
+    .exec(`cat ${filePath}`, { failOnNonZeroExit: false })
+    .then((result) => {
+      if (result.code === 0 && result.stdout) {
+        return parse(result.stdout);
+      }
+      throw new Error(`Could not load project configuration. ${result.stderr}`);
     });
 });
 
