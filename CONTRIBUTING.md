@@ -252,3 +252,22 @@ Any significantly difficult dependency updates should have an issue created to
 track the work and can be triaged alongside our other issues.
 
 Updates to dependencies should be done in a separate PR.
+
+### Updating a Go dependency
+
+1. Run `go get <dependency>@<version>` to update the dependency. This will
+   update the `go.mod` file with the new version.
+
+   - `go get` has a `-u` option that will update all child dependencies as well.
+     This is generally not recommended as it can cause unexpected problems. Use
+     it with caution. `go get` will do the right thing on its own without `-u`.
+
+   - It is best to specify the version with the `@<version>` suffix. This may be
+     a semver string, a branch name, or a commit hash.
+
+2. Update any import statements for the new version of the dependency.
+
+3. Run `go mod vendor` to update the `vendor` directory with the new version of
+   the dependency.
+
+4. Make sure all files under vendor are included in the git commit.
