@@ -124,11 +124,11 @@ func (s *GetInterpretersSuite) TestGetInterpretersWhenPassedIn() {
 		http.ResponseWriter,
 		*http.Request,
 		logging.Logger,
-	) (*interpreters.RInterpreter, *interpreters.PythonInterpreter, error) {
+	) (interpreters.RInterpreter, interpreters.PythonInterpreter, error) {
 		r := s.createMockRInterpreter()
 		python := s.createMockPythonInterpreter()
 
-		return &r, &python, nil
+		return r, python, nil
 	}
 
 	h(rec, req)
@@ -190,11 +190,11 @@ func (s *GetInterpretersSuite) TestGetInterpretersWhenNoneFound() {
 		http.ResponseWriter,
 		*http.Request,
 		logging.Logger,
-	) (*interpreters.RInterpreter, *interpreters.PythonInterpreter, error) {
+	) (interpreters.RInterpreter, interpreters.PythonInterpreter, error) {
 		r := s.createMockRMissingInterpreter()
 		python := s.createMockPythonMissingInterpreter()
 
-		return &r, &python, nil
+		return r, python, nil
 	}
 
 	h(rec, req)

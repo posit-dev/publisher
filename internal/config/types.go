@@ -131,10 +131,10 @@ type Python struct {
 }
 
 func (p *Python) FillDefaults(
-	pythonInterpreter *interpreters.PythonInterpreter,
+	pythonInterpreter interpreters.PythonInterpreter,
 ) {
-	if p != nil && pythonInterpreter != nil && (*pythonInterpreter).IsPythonExecutableValid() {
-		python := *pythonInterpreter
+	if pythonInterpreter.IsPythonExecutableValid() {
+		python := pythonInterpreter
 		if p.Version == "" {
 			pythonVersion, pythonVersionError := python.GetPythonVersion()
 			if pythonVersionError == nil {
@@ -160,10 +160,10 @@ type R struct {
 }
 
 func (r *R) FillDefaults(
-	rInterpreter *interpreters.RInterpreter,
+	rInterpreter interpreters.RInterpreter,
 ) {
-	if r != nil && rInterpreter != nil && (*rInterpreter).IsRExecutableValid() {
-		rLang := *rInterpreter
+	if rInterpreter.IsRExecutableValid() {
+		rLang := rInterpreter
 		if r.Version == "" {
 			rVersion, rVersionError := rLang.GetRVersion()
 			if rVersionError == nil {

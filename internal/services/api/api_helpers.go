@@ -90,8 +90,8 @@ func InterpretersFromRequest(
 	req *http.Request,
 	log logging.Logger,
 ) (
-	*interpreters.RInterpreter,
-	*interpreters.PythonInterpreter,
+	interpreters.RInterpreter,
+	interpreters.PythonInterpreter,
 	error,
 ) {
 	rExecutable := req.URL.Query().Get("r")
@@ -106,5 +106,5 @@ func InterpretersFromRequest(
 		InternalError(w, req, log, err)
 		return nil, nil, err
 	}
-	return &rInterpreter, &pythonInterpreter, nil
+	return rInterpreter, pythonInterpreter, nil
 }

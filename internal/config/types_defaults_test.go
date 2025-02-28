@@ -18,10 +18,10 @@ type ConfigFillDefaultsSuite struct {
 	suite.Suite
 	cwd                      util.AbsolutePath
 	log                      logging.Logger
-	rInterpreter             *interpreters.RInterpreter
-	rMissingInterpreter      *interpreters.RInterpreter
-	pythonInterpreter        *interpreters.PythonInterpreter
-	pythonMissingInterpreter *interpreters.PythonInterpreter
+	rInterpreter             interpreters.RInterpreter
+	rMissingInterpreter      interpreters.RInterpreter
+	pythonInterpreter        interpreters.PythonInterpreter
+	pythonMissingInterpreter interpreters.PythonInterpreter
 }
 
 func (s *ConfigFillDefaultsSuite) createMockRInterpreter() interpreters.RInterpreter {
@@ -79,13 +79,13 @@ func (s *ConfigFillDefaultsSuite) SetupTest() {
 	s.log = logging.New()
 
 	rMock1 := s.createMockRInterpreter()
-	s.rInterpreter = &rMock1
+	s.rInterpreter = rMock1
 	rMock2 := s.createMockRMissingInterpreter()
-	s.rMissingInterpreter = &rMock2
+	s.rMissingInterpreter = rMock2
 	pythonMock1 := s.createMockPythonInterpreter()
-	s.pythonInterpreter = &pythonMock1
+	s.pythonInterpreter = pythonMock1
 	pythonMock2 := s.createMockPythonMissingInterpreter()
-	s.pythonMissingInterpreter = &pythonMock2
+	s.pythonMissingInterpreter = pythonMock2
 }
 
 func TestConfig_FillDefaults(t *testing.T) {

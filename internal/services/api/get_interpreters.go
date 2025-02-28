@@ -26,23 +26,23 @@ type getInterpreterResponse struct {
 
 // toGetAccountResponse converts an internal Account object
 // to the DTO type we return from the API.
-func toGetInterpreterResponse(rInterpreter *interpreters.RInterpreter, pythonInterpreter *interpreters.PythonInterpreter) *getInterpreterResponse {
+func toGetInterpreterResponse(rInterpreter interpreters.RInterpreter, pythonInterpreter interpreters.PythonInterpreter) getInterpreterResponse {
 
 	rConfig := &config.R{}
 	rConfig.FillDefaults(rInterpreter)
 	preferredRPath := ""
 	if rInterpreter != nil {
-		preferredRPath = (*rInterpreter).GetPreferredPath()
+		preferredRPath = (rInterpreter).GetPreferredPath()
 	}
 
 	pythonConfig := &config.Python{}
 	pythonConfig.FillDefaults(pythonInterpreter)
 	preferredPythonPath := ""
 	if pythonInterpreter != nil {
-		preferredPythonPath = (*pythonInterpreter).GetPreferredPath()
+		preferredPythonPath = (pythonInterpreter).GetPreferredPath()
 	}
 
-	return &getInterpreterResponse{
+	return getInterpreterResponse{
 		R:                   rConfig,
 		PreferredRPath:      preferredRPath,
 		Python:              pythonConfig,

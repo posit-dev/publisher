@@ -109,8 +109,8 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFunc() {
 		accountList accounts.AccountList,
 		secrets map[string]string,
 		insecure bool,
-		rInterpreter *interpreters.RInterpreter,
-		pythonInterpreter *interpreters.PythonInterpreter,
+		rInterpreter interpreters.RInterpreter,
+		pythonInterpreter interpreters.PythonInterpreter,
 		log logging.Logger,
 	) (*state.State, error) {
 
@@ -121,8 +121,8 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFunc() {
 		s.Equal("", saveName)
 
 		// confirm that the interpreter paths made it through the request.
-		s.Equal("bin/my_r", (*rInterpreter).GetPreferredPath())
-		s.Equal("bin/my_python", (*pythonInterpreter).GetPreferredPath())
+		s.Equal("bin/my_r", rInterpreter.GetPreferredPath())
+		s.Equal("bin/my_python", pythonInterpreter.GetPreferredPath())
 
 		st := state.Empty()
 		st.Account = &accounts.Account{}
@@ -163,8 +163,8 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFuncStateErr()
 		accountList accounts.AccountList,
 		secrets map[string]string,
 		insecure bool,
-		rInterpreter *interpreters.RInterpreter,
-		pythonInterpreter *interpreters.PythonInterpreter,
+		rInterpreter interpreters.RInterpreter,
+		pythonInterpreter interpreters.PythonInterpreter,
 		log logging.Logger,
 	) (*state.State, error) {
 		return nil, errors.New("test error from state factory")
@@ -234,8 +234,8 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFuncPublishErr
 		accountList accounts.AccountList,
 		secrets map[string]string,
 		insecure bool,
-		rInterpreter *interpreters.RInterpreter,
-		pythonInterpreter *interpreters.PythonInterpreter,
+		rInterpreter interpreters.RInterpreter,
+		pythonInterpreter interpreters.PythonInterpreter,
 		log logging.Logger,
 	) (*state.State, error) {
 
@@ -293,8 +293,8 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentSubdir() {
 		accountList accounts.AccountList,
 		secrets map[string]string,
 		insecure bool,
-		rInterpreter *interpreters.RInterpreter,
-		pythonInterpreter *interpreters.PythonInterpreter,
+		rInterpreter interpreters.RInterpreter,
+		pythonInterpreter interpreters.PythonInterpreter,
 		log logging.Logger,
 	) (*state.State, error) {
 
@@ -347,8 +347,8 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFuncWithSecret
 		accountList accounts.AccountList,
 		secrets map[string]string,
 		insecure bool,
-		rInterpreter *interpreters.RInterpreter,
-		pythonInterpreter *interpreters.PythonInterpreter,
+		rInterpreter interpreters.RInterpreter,
+		pythonInterpreter interpreters.PythonInterpreter,
 		log logging.Logger,
 	) (*state.State, error) {
 

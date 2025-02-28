@@ -107,8 +107,8 @@ func New(
 	accountList accounts.AccountList,
 	secrets map[string]string,
 	insecure bool,
-	rInterpreter *interpreters.RInterpreter,
-	pythonInterpreter *interpreters.PythonInterpreter,
+	rInterpreter interpreters.RInterpreter,
+	pythonInterpreter interpreters.PythonInterpreter,
 	log logging.Logger,
 ) (*State, error) {
 	var target *deployment.Deployment
