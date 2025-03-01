@@ -21,7 +21,10 @@ var pythonVersionCache = make(map[string]string)
 type PythonInterpreter interface {
 	IsPythonExecutableValid() bool
 	GetPythonExecutable() (util.AbsolutePath, error)
+	GetLockFilePath() (util.RelativePath, bool, error)
 	GetPythonVersion() (string, error)
+	GetPackageManager() string
+	GetPreferredPath() string
 }
 
 type defaultPythonInterpreter struct {
@@ -238,4 +241,19 @@ func (i *defaultPythonInterpreter) GetPythonVersion() (string, error) {
 
 func (i *defaultPythonInterpreter) IsPythonExecutableValid() bool {
 	return i.pythonExecutable.String() != "" && i.version != ""
+}
+
+func (i *defaultPythonInterpreter) GetPackageManager() string {
+	return "pip"
+}
+
+func (i *defaultPythonInterpreter) GetPreferredPath() string {
+	return i.preferredPath.String()
+}
+
+func (i *defaultPythonInterpreter) GetLockFilePath() (util.RelativePath, bool, error) {
+	lockFile := "requirements.txt"
+	lockFileAbsPath := i.base.Join(lockFile)
+	exists, err := i.existsFunc(lockFileAbsPath.Path)
+	return util.NewRelativePath(lockFile, i.fs), exists, err
 }
