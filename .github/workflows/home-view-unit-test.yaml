@@ -1,7 +1,7 @@
-name: Lint
+name: Unit-Test
 on: [workflow_call]
 jobs:
-  lint:
+  test:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -13,5 +13,6 @@ jobs:
           node-version: "20"
           cache: "npm"
           cache-dependency-path: "**/package-lock.json"
+      - run: npm install --prefix ../..
       - run: npm install
       - run: npm test
