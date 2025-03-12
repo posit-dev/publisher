@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   configuration with `type = 'unknown'` suggesting the framework be set. (#2515)
 - Icons have been added to the deployment select dropdown to indicate the
   deployment's server and entrypoint. (#2483)
+- Added new config setting positPublisher.defaultConnectServer to pre-populate the Server URL. Also checks `/etc/rstudio/rsession.conf` for `default-rsconnect-server`. (rstudio-pro#7466)
 
 ### Fixed
 
