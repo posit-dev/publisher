@@ -43,6 +43,7 @@ import {
 import { isAxiosErrorWithJson } from "src/utils/errorTypes";
 import { newDeploymentName, newConfigFileNameFromTitle } from "src/utils/names";
 import { formatURL, normalizeURL } from "src/utils/url";
+import { getXDGConfigProperty } from "src/utils/config";
 import { checkSyntaxApiKey } from "src/utils/apiKeys";
 import { DeploymentObjects } from "src/types/shared";
 import { showProgress } from "src/utils/progress";
@@ -531,9 +532,19 @@ export async function newDeployment(
   // ***************************************************************
   async function inputServerUrl(input: MultiStepInput, state: MultiStepState) {
     if (newCredentialByAnyMeans()) {
-      const currentURL = newDeploymentData.newCredentials.url
+      let currentURL = newDeploymentData.newCredentials.url
         ? newDeploymentData.newCredentials.url
         : "";
+
+      if (currentURL === "") {
+        currentURL = extensionSettings.defaultConnectServer();
+      }
+
+      if (currentURL === "") {
+        const configURL: string | null = getXDGConfigProperty("rstudio/rsession.conf", "default-rsconnect-server");
+        if (configURL !== null)
+           currentURL = configURL;
+      }
 
       const url = await input.showInputBox({
         title: state.title,

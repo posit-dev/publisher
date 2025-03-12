@@ -15,6 +15,7 @@ import {
   getSummaryStringFromError,
 } from "src/utils/errors";
 import { formatURL, normalizeURL } from "src/utils/url";
+import { getXDGConfigProperty } from "src/utils/config";
 import { checkSyntaxApiKey } from "src/utils/apiKeys";
 import { showProgress } from "src/utils/progress";
 import { openConfigurationCommand } from "src/commands";
@@ -75,10 +76,17 @@ export async function newCredential(
   // ***************************************************************
   async function inputServerUrl(input: MultiStepInput, state: MultiStepState) {
     const thisStepNumber = assignStep(state, "inputServerUrl");
-    const currentURL =
+    let currentURL =
       typeof state.data.url === "string" && state.data.url.length
         ? state.data.url
         : "";
+
+    if (currentURL === "") {
+       const configURL: string | null = getXDGConfigProperty("rstudio/rsession.conf", "default-rsconnect-server");
+       if (configURL !== null)
+          currentURL = configURL;
+    }
+
     const url = await input.showInputBox({
       title: state.title,
       step: thisStepNumber,

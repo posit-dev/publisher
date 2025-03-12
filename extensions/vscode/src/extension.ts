@@ -169,4 +169,11 @@ export const extensionSettings = {
     );
     return value !== undefined ? value : true;
   },
+  defaultConnectServer(): string {
+    const configuration = workspace.getConfiguration("positPublisher");
+    const value: string | undefined = configuration.get<string>(
+      "defaultConnectServer",
+    );
+    return value !== undefined ? value : "";
+  },
 };
