@@ -5,6 +5,7 @@ import { fileExists, isDir } from "./files";
 import { delay } from "./throttle";
 import { substituteVariables } from "./variables";
 import { LanguageRuntimeMetadata, PositronApi } from "positron";
+import { PythonExecutable, RExecutable } from "src/types/shared";
 
 declare global {
   function acquirePositronApi(): PositronApi;
@@ -106,17 +107,19 @@ async function getPythonInterpreterFromVSCode(): Promise<string | undefined> {
   return python;
 }
 
-export async function getPythonInterpreterPath(): Promise<string | undefined> {
+export async function getPythonInterpreterPath(): Promise<
+  PythonExecutable | undefined
+> {
   let python: string | undefined;
   python = await getPreferredRuntimeFromPositron("python");
   if (python !== undefined) {
     console.log("Using selected Python interpreter", python);
-    return python;
+    return new PythonExecutable(python);
   }
   python = await getPythonInterpreterFromVSCode();
   if (python !== undefined) {
     console.log("Using Python from VSCode", python);
-    return python;
+    return new PythonExecutable(python);
   }
   // We don't know the interpreter path.
   // The backend will run Python from PATH.
@@ -124,11 +127,11 @@ export async function getPythonInterpreterPath(): Promise<string | undefined> {
   return python;
 }
 
-export async function getRInterpreterPath(): Promise<string | undefined> {
+export async function getRInterpreterPath(): Promise<RExecutable | undefined> {
   const r = await getPreferredRuntimeFromPositron("r");
   if (r !== undefined) {
     console.log("Using selected R interpreter", r);
-    return r;
+    return new RExecutable(r);
   }
   // We don't know the interpreter path.
   // The backend will run R from PATH.

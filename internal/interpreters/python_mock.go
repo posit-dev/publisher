@@ -67,3 +67,26 @@ func (m *MockPythonInterpreter) GetPythonVersion() (string, error) {
 		}
 	}
 }
+
+func (m *MockPythonInterpreter) GetPackageManager() string {
+	args := m.Called()
+	arg0 := args.Get(0)
+	return arg0.(string)
+}
+
+// (util.RelativePath, bool, error)
+func (m *MockPythonInterpreter) GetLockFilePath() (util.RelativePath, bool, error) {
+	args := m.Called()
+	arg0 := args.Get(0)
+	arg1 := args.Get(1)
+	if arg0 == nil {
+		return util.NewRelativePath("", nil), false, args.Error(1)
+	}
+	return util.NewRelativePath(arg0.(string), nil), arg1.(bool), args.Error(2)
+}
+
+func (m *MockPythonInterpreter) GetPreferredPath() string {
+	args := m.Called()
+	arg0 := args.Get(0)
+	return arg0.(string)
+}

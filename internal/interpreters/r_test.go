@@ -47,6 +47,9 @@ func (s *RSuite) TestNewRInterpreter() {
 	pathLooker.On("LookPath", "R").Return("", nil)
 
 	i, _ := NewRInterpreter(s.cwd, rPath, log, nil, pathLooker, nil)
+
+	s.Equal(rPath.String(), i.GetPreferredPath())
+
 	interpreter := i.(*defaultRInterpreter)
 	s.Equal(rPath, interpreter.preferredPath)
 	s.Equal(log, interpreter.log)

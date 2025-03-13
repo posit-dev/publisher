@@ -1,5 +1,7 @@
 package config
 
+import "github.com/posit-dev/publisher/internal/interpreters"
+
 // Copyright (C) 2023 by Posit Software, PBC.
 
 type ContentType string
@@ -123,15 +125,61 @@ func (c *Config) HasSecret(secret string) bool {
 type Environment = map[string]string
 
 type Python struct {
-	Version        string `toml:"version" json:"version"`
+	Version        string `toml:"version,omitempty" json:"version"`
 	PackageFile    string `toml:"package_file,omitempty" json:"packageFile"`
 	PackageManager string `toml:"package_manager,omitempty" json:"packageManager"`
 }
 
+func (p *Python) FillDefaults(
+	pythonInterpreter interpreters.PythonInterpreter,
+) {
+	if pythonInterpreter.IsPythonExecutableValid() {
+		python := pythonInterpreter
+		if p.Version == "" {
+			pythonVersion, pythonVersionError := python.GetPythonVersion()
+			if pythonVersionError == nil {
+				p.Version = pythonVersion
+			}
+		}
+		if p.PackageFile == "" {
+			pythonLockFile, _, pythonLockFileError := python.GetLockFilePath()
+			if pythonLockFileError == nil {
+				p.PackageFile = pythonLockFile.String()
+			}
+		}
+		if p.PackageManager == "" {
+			p.PackageManager = python.GetPackageManager()
+		}
+	}
+}
+
 type R struct {
-	Version        string `toml:"version" json:"version"`
+	Version        string `toml:"version,omitempty" json:"version"`
 	PackageFile    string `toml:"package_file,omitempty" json:"packageFile"`
 	PackageManager string `toml:"package_manager,omitempty" json:"packageManager"`
+}
+
+func (r *R) FillDefaults(
+	rInterpreter interpreters.RInterpreter,
+) {
+	if rInterpreter.IsRExecutableValid() {
+		rLang := rInterpreter
+		if r.Version == "" {
+			rVersion, rVersionError := rLang.GetRVersion()
+			if rVersionError == nil {
+				r.Version = rVersion
+			}
+		}
+		if r.PackageFile == "" {
+			rLockFile, _, rLockFileError := rLang.GetLockFilePath()
+			if rLockFileError == nil {
+				r.PackageFile = rLockFile.String()
+			}
+		}
+		if r.PackageManager == "" {
+			r.PackageManager = rLang.GetPackageManager()
+		}
+	}
 }
 
 type Jupyter struct {

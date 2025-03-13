@@ -66,6 +66,8 @@ func (s *PythonSuite) TestGetPythonVersionFromExecutable() {
 
 	i, err := NewPythonInterpreter(s.cwd, pythonPath.Path, log, executor, pathLooker, MockExistsTrue)
 	s.NoError(err)
+	s.Equal(pythonPath.String(), i.GetPreferredPath())
+
 	defaultPython := i.(*defaultPythonInterpreter)
 	s.Equal("3.10.4", defaultPython.version)
 

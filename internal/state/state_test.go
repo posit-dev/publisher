@@ -11,7 +11,9 @@ import (
 	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/deployment"
+	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
 	"github.com/spf13/afero"
@@ -269,15 +271,13 @@ func (s *StateSuite) TestNewLocalID() {
 	s.NotEqual(id, id2)
 }
 
-func (s *StateSuite) makeConfiguration(name string) *config.Config {
+func (s *StateSuite) makeConfiguration(name string, pythonConfig *config.Python, rConfig *config.R) *config.Config {
 	path := config.GetConfigPath(s.cwd, name)
 	cfg := config.New()
-	cfg.Type = config.ContentTypePythonDash
+	cfg.Type = config.ContentTypeUnknown
 	cfg.Entrypoint = "app.py"
-	cfg.Python = &config.Python{
-		Version:        "3.4.5",
-		PackageManager: "pip",
-	}
+	cfg.Python = pythonConfig
+	cfg.R = rConfig
 	err := cfg.WriteFile(path)
 	s.NoError(err)
 	r, err := config.FromFile(path)
@@ -287,7 +287,15 @@ func (s *StateSuite) makeConfiguration(name string) *config.Config {
 
 func (s *StateSuite) makeConfigurationWithSecrets(name string, secrets []string) *config.Config {
 	path := config.GetConfigPath(s.cwd, name)
-	cfg := s.makeConfiguration(name)
+	cfg := s.makeConfiguration(
+		name,
+		&config.Python{
+			Version:        "3.4.5",
+			PackageManager: "pip",
+			PackageFile:    "requirements.txt",
+		},
+		nil,
+	)
 	cfg.Secrets = secrets
 	err := cfg.WriteFile(path)
 	s.NoError(err)
@@ -299,9 +307,19 @@ func (s *StateSuite) TestNew() {
 	acct := accounts.Account{}
 	accts.On("GetAllAccounts").Return([]accounts.Account{acct}, nil)
 
-	cfg := s.makeConfiguration("default")
+	cfg := s.makeConfiguration(
+		"default",
+		&config.Python{
+			Version:        "3.4.5",
+			PackageManager: "pip",
+			PackageFile:    "requirements.txt",
+		},
+		nil,
+	)
+	mockRInterpreter := s.createMockRInterpreter()
+	mockPythonInterpreter := s.createMockPythonInterpreter()
 
-	state, err := New(s.cwd, "", "", "", "", accts, nil, false)
+	state, err := New(s.cwd, "", "", "", "", accts, nil, false, mockRInterpreter, mockPythonInterpreter, s.log)
 	s.NoError(err)
 	s.NotNil(state)
 	s.Equal(state.AccountName, "")
@@ -321,11 +339,22 @@ func (s *StateSuite) TestNewNonDefaultConfig() {
 	accts.On("GetAllAccounts").Return([]accounts.Account{acct}, nil)
 
 	configName := "staging"
-	cfg := s.makeConfiguration(configName)
+	cfg := s.makeConfiguration(
+		configName,
+		&config.Python{
+			Version:        "3.4.5",
+			PackageManager: "pip",
+			PackageFile:    "requirements.txt",
+		},
+		nil,
+	)
 	insecure := true
 	acct.Insecure = insecure
 
-	state, err := New(s.cwd, "", configName, "", "", accts, nil, insecure)
+	mockRInterpreter := s.createMockRInterpreter()
+	mockPythonInterpreter := s.createMockPythonInterpreter()
+
+	state, err := New(s.cwd, "", configName, "", "", accts, nil, insecure, mockRInterpreter, mockPythonInterpreter, s.log)
 	s.NoError(err)
 	s.NotNil(state)
 	s.Equal("", state.AccountName)
@@ -343,7 +372,10 @@ func (s *StateSuite) TestNewConfigErr() {
 	acct := accounts.Account{}
 	accts.On("GetAllAccounts").Return([]accounts.Account{acct}, nil)
 
-	state, err := New(s.cwd, "", "", "", "", accts, nil, false)
+	mockRInterpreter := s.createMockRInterpreter()
+	mockPythonInterpreter := s.createMockPythonInterpreter()
+
+	state, err := New(s.cwd, "", "", "", "", accts, nil, false, mockRInterpreter, mockPythonInterpreter, s.log)
 	s.NotNil(err)
 	s.ErrorContains(err, "couldn't load configuration")
 	s.Nil(state)
@@ -365,7 +397,15 @@ func (s *StateSuite) TestNewWithTarget() {
 	accts.On("GetAccountByServerURL", "https://saved.server.example.com").Return(&acct1, nil)
 	accts.On("GetAccountByServerURL", "https://another.server.example.com").Return(&acct2, nil)
 
-	cfg := s.makeConfiguration("savedConfigName")
+	cfg := s.makeConfiguration(
+		"savedConfigName",
+		&config.Python{
+			Version:        "3.4.5",
+			PackageManager: "pip",
+			PackageFile:    "requirements.txt",
+		},
+		nil,
+	)
 
 	targetPath := deployment.GetDeploymentPath(s.cwd, "myTargetName")
 	d := deployment.New()
@@ -381,7 +421,10 @@ func (s *StateSuite) TestNewWithTarget() {
 	_, err := d.WriteFile(targetPath, "", s.log)
 	s.NoError(err)
 
-	state, err := New(s.cwd, "", "", "myTargetName", "", accts, nil, false)
+	mockRInterpreter := s.createMockRInterpreter()
+	mockPythonInterpreter := s.createMockPythonInterpreter()
+
+	state, err := New(s.cwd, "", "", "myTargetName", "", accts, nil, false, mockRInterpreter, mockPythonInterpreter, s.log)
 	s.NoError(err)
 	s.NotNil(state)
 	s.Equal("acct1", state.AccountName)
@@ -408,7 +451,15 @@ func (s *StateSuite) TestNewWithTargetAndAccount() {
 	accts.On("GetAccountByName", "acct2").Return(&acct2, nil)
 	accts.On("GetAccountByServerURL", "https://saved.server.example.com").Return(&acct1, nil)
 
-	cfg := s.makeConfiguration("savedConfigName")
+	cfg := s.makeConfiguration(
+		"savedConfigName",
+		&config.Python{
+			Version:        "3.4.5",
+			PackageManager: "pip",
+			PackageFile:    "requirements.txt",
+		},
+		nil,
+	)
 
 	targetPath := deployment.GetDeploymentPath(s.cwd, "myTargetName")
 	d := deployment.New()
@@ -422,14 +473,16 @@ func (s *StateSuite) TestNewWithTargetAndAccount() {
 	_, err := d.WriteFile(targetPath, "", s.log)
 	s.NoError(err)
 
-	state, err := New(s.cwd, "acct2", "", "myTargetName", "mySaveName", accts, nil, false)
+	mockRInterpreter := s.createMockRInterpreter()
+	mockPythonInterpreter := s.createMockPythonInterpreter()
+
+	state, err := New(s.cwd, "acct2", "", "myTargetName", "mySaveName", accts, nil, false, mockRInterpreter, mockPythonInterpreter, s.log)
 	s.NoError(err)
 	s.NotNil(state)
 	s.Equal("acct2", state.AccountName)
 	s.Equal("savedConfigName", state.ConfigName)
 	s.Equal("myTargetName", state.TargetName)
 	s.Equal(&acct2, state.Account)
-
 	s.Equal(cfg, state.Config)
 	s.Equal(d, state.Target)
 }
@@ -445,7 +498,10 @@ func (s *StateSuite) TestNewWithSecrets() {
 		"DB_PASSWORD": "password456",
 	}
 
-	state, err := New(s.cwd, "", "", "", "", accts, secrets, false)
+	mockRInterpreter := s.createMockRInterpreter()
+	mockPythonInterpreter := s.createMockPythonInterpreter()
+
+	state, err := New(s.cwd, "", "", "", "", accts, secrets, false, mockRInterpreter, mockPythonInterpreter, s.log)
 	s.NoError(err)
 	s.NotNil(state)
 	s.Equal(secrets, state.Secrets)
@@ -455,16 +511,208 @@ func (s *StateSuite) TestNewWithInvalidSecret() {
 	accts := &accounts.MockAccountList{}
 	acct := accounts.Account{}
 	accts.On("GetAllAccounts").Return([]accounts.Account{acct}, nil)
-	s.makeConfiguration("default")
+	s.makeConfiguration(
+		"default",
+		&config.Python{
+			Version:        "3.4.5",
+			PackageManager: "pip",
+			PackageFile:    "requirements.txt",
+		},
+		nil,
+	)
 
 	secrets := map[string]string{
 		"INVALID_SECRET": "secret123",
 	}
 
-	state, err := New(s.cwd, "", "", "", "", accts, secrets, false)
+	mockRInterpreter := s.createMockRInterpreter()
+	mockPythonInterpreter := s.createMockPythonInterpreter()
+
+	state, err := New(s.cwd, "", "", "", "", accts, secrets, false, mockRInterpreter, mockPythonInterpreter, s.log)
 	s.NotNil(err)
 	s.ErrorContains(err, "secret 'INVALID_SECRET' is not in the configuration")
 	s.Nil(state)
+}
+
+func (s *StateSuite) createMockRInterpreter() interpreters.RInterpreter {
+	iMock := interpreters.NewMockRInterpreter()
+	iMock.On("Init").Return(nil)
+	iMock.On("IsRExecutableValid").Return(true)
+	iMock.On("GetRExecutable").Return(util.NewAbsolutePath("R", s.cwd.Fs()), nil)
+	iMock.On("GetRVersion").Return("1.2.3", nil)
+	relPath := util.NewRelativePath("renv.lock", s.cwd.Fs())
+	iMock.On("GetLockFilePath").Return(relPath, true, nil)
+	iMock.On("GetPackageManager").Return("renv")
+	return iMock
+}
+
+func (s *StateSuite) createMockRMissingInterpreter() interpreters.RInterpreter {
+	iMock := interpreters.NewMockRInterpreter()
+	missingError := types.NewAgentError(types.ErrorRExecNotFound, errors.New("no r"), nil)
+	iMock.On("Init").Return(nil)
+	iMock.On("IsRExecutableValid").Return(false)
+	iMock.On("GetRExecutable").Return(util.NewAbsolutePath("", s.cwd.Fs()), missingError)
+	iMock.On("GetRVersion").Return("", missingError)
+	relPath := util.NewRelativePath("", s.cwd.Fs())
+	iMock.On("GetLockFilePath").Return(relPath, false, missingError)
+	iMock.On("GetPackageManager").Return("renv")
+	return iMock
+}
+
+func (s *StateSuite) createMockPythonInterpreter() interpreters.PythonInterpreter {
+	iMock := interpreters.NewMockPythonInterpreter()
+	iMock.On("IsPythonExecutableValid").Return(true)
+	iMock.On("GetPythonExecutable").Return(util.NewAbsolutePath("/bin/python", s.cwd.Fs()), nil)
+	iMock.On("GetPythonVersion").Return("1.2.3", nil)
+	iMock.On("GetPackageManager").Return("pip")
+	iMock.On("GetLockFilePath").Return("requirements.txt", true, nil)
+	return iMock
+}
+
+func (s *StateSuite) createMockPythonMissingInterpreter() interpreters.PythonInterpreter {
+	iMock := interpreters.NewMockPythonInterpreter()
+	missingError := types.NewAgentError(types.ErrorPythonExecNotFound, errors.New("no python"), nil)
+	iMock.On("IsPythonExecutableValid").Return(false)
+	iMock.On("GetPythonExecutable").Return(util.NewAbsolutePath("", s.cwd.Fs()), missingError)
+	iMock.On("GetPythonVersion").Return("", missingError)
+	iMock.On("GetPackageManager").Return("pip")
+	iMock.On("GetLockFilePath").Return("", false, missingError)
+	return iMock
+}
+
+func (s *StateSuite) TestNewWithInterpreterDefaultFillsNotNeeded() {
+	accts := &accounts.MockAccountList{}
+	acct := accounts.Account{}
+	accts.On("GetAllAccounts").Return([]accounts.Account{acct}, nil)
+
+	configName := "staging"
+	cfg := s.makeConfiguration(
+		configName,
+		&config.Python{
+			Version:        "9.9.9",
+			PackageManager: "my-pip",
+			PackageFile:    "my-file.txt",
+		},
+		&config.R{
+			Version:        "9.9.8",
+			PackageManager: "my-renv",
+			PackageFile:    "my-renv.lock",
+		},
+	)
+	insecure := true
+	acct.Insecure = insecure
+
+	rInterpreter := s.createMockRInterpreter()
+	pythonInterpreter := s.createMockPythonInterpreter()
+
+	state, err := New(s.cwd, "", configName, "", "", accts, nil, insecure, rInterpreter, pythonInterpreter, s.log)
+	s.NoError(err)
+	s.NotNil(state)
+	s.Equal("", state.AccountName)
+	s.Equal(configName, state.ConfigName)
+	s.Equal("", state.TargetName)
+	s.Equal(&acct, state.Account)
+	s.Equal(cfg, state.Config)
+	s.Equal(state.Account.Insecure, true)
+	// Target is never nil. We create a new target if no target ID was provided.
+	s.NotNil(state.Target)
+}
+
+func (s *StateSuite) TestNewWithInterpreterDefaultFillsNeeded() {
+	accts := &accounts.MockAccountList{}
+	acct := accounts.Account{}
+	accts.On("GetAllAccounts").Return([]accounts.Account{acct}, nil)
+
+	configName := "staging"
+	cfg := s.makeConfiguration(
+		configName,
+		&config.Python{},
+		&config.R{},
+	)
+	insecure := true
+	acct.Insecure = insecure
+
+	rInterpreter := s.createMockRInterpreter()
+	pythonInterpreter := s.createMockPythonInterpreter()
+
+	// We expect that the New method will call these, so we'll call it ourselves
+	// on our expected values
+	cfg.R.FillDefaults(rInterpreter)
+	cfg.Python.FillDefaults(pythonInterpreter)
+
+	state, err := New(s.cwd, "", configName, "", "", accts, nil, insecure, rInterpreter, pythonInterpreter, s.log)
+	s.NoError(err)
+	s.NotNil(state)
+	s.Equal("", state.AccountName)
+	s.Equal(configName, state.ConfigName)
+	s.Equal("", state.TargetName)
+	s.Equal(&acct, state.Account)
+	s.Equal(cfg, state.Config)
+	s.Equal(state.Account.Insecure, true)
+	// Target is never nil. We create a new target if no target ID was provided.
+	s.NotNil(state.Target)
+}
+
+func (s *StateSuite) TestNewWithInterpreterDefaultFillsNeededButNoInterpreters() {
+	accts := &accounts.MockAccountList{}
+	acct := accounts.Account{}
+	accts.On("GetAllAccounts").Return([]accounts.Account{acct}, nil)
+
+	configName := "staging"
+	cfg := s.makeConfiguration(
+		configName,
+		&config.Python{},
+		&config.R{},
+	)
+	insecure := true
+	acct.Insecure = insecure
+
+	// By having the interpreters not be valid, calling the Fill Defaults shouldn't modify anything
+	rInterpreter := s.createMockRMissingInterpreter()
+	pythonInterpreter := s.createMockPythonMissingInterpreter()
+
+	state, err := New(s.cwd, "", configName, "", "", accts, nil, insecure, rInterpreter, pythonInterpreter, s.log)
+	s.NoError(err)
+	s.NotNil(state)
+	s.Equal("", state.AccountName)
+	s.Equal(configName, state.ConfigName)
+	s.Equal("", state.TargetName)
+	s.Equal(&acct, state.Account)
+	s.Equal(cfg, state.Config)
+	s.Equal(state.Account.Insecure, true)
+	// Target is never nil. We create a new target if no target ID was provided.
+	s.NotNil(state.Target)
+}
+
+func (s *StateSuite) TestNewWithInterpreterNoInterpreterSections() {
+	accts := &accounts.MockAccountList{}
+	acct := accounts.Account{}
+	accts.On("GetAllAccounts").Return([]accounts.Account{acct}, nil)
+
+	configName := "staging"
+	cfg := s.makeConfiguration(
+		configName,
+		nil,
+		nil,
+	)
+	insecure := true
+	acct.Insecure = insecure
+
+	// With interpreters set to nil, there should be no change to the sections
+	rInterpreter := s.createMockRInterpreter()
+	pythonInterpreter := s.createMockPythonInterpreter()
+
+	state, err := New(s.cwd, "", configName, "", "", accts, nil, insecure, rInterpreter, pythonInterpreter, s.log)
+	s.NoError(err)
+	s.NotNil(state)
+	s.Equal("", state.AccountName)
+	s.Equal(configName, state.ConfigName)
+	s.Equal("", state.TargetName)
+	s.Equal(&acct, state.Account)
+	s.Equal(cfg, state.Config)
+	s.Equal(state.Account.Insecure, true)
+	// Target is never nil. We create a new target if no target ID was provided.
+	s.NotNil(state.Target)
 }
 
 func (s *StateSuite) TestGetDefaultAccountNone() {

@@ -10,6 +10,8 @@ import (
 	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/deployment"
+	"github.com/posit-dev/publisher/internal/interpreters"
+	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
 )
 
@@ -96,7 +98,19 @@ func Empty() *State {
 
 var ErrServerURLMismatch = errors.New("the account provided is for a different server; it must match the server for this deployment")
 
-func New(path util.AbsolutePath, accountName, configName, targetName string, saveName string, accountList accounts.AccountList, secrets map[string]string, insecure bool) (*State, error) {
+func New(
+	path util.AbsolutePath,
+	accountName string,
+	configName string,
+	targetName string,
+	saveName string,
+	accountList accounts.AccountList,
+	secrets map[string]string,
+	insecure bool,
+	rInterpreter interpreters.RInterpreter,
+	pythonInterpreter interpreters.PythonInterpreter,
+	log logging.Logger,
+) (*State, error) {
 	var target *deployment.Deployment
 	var account *accounts.Account
 	var cfg *config.Config
@@ -147,6 +161,18 @@ func New(path util.AbsolutePath, accountName, configName, targetName string, sav
 			return nil, fmt.Errorf("couldn't load configuration '%s' from '%s'; run 'publish init' to create an initial configuration file", configName, path)
 		}
 		return nil, err
+	}
+
+	// Update defaults using values from active interpreters
+	if cfg.R != nil {
+		log.Debug("applying defaults to Config.R section", "before", cfg.R)
+		cfg.R.FillDefaults(rInterpreter)
+		log.Debug("after applying defaults to Config.R section", "after", cfg.R)
+	}
+	if cfg.Python != nil {
+		log.Debug("applying defaults to Config.Python section", "before", cfg.Python)
+		cfg.Python.FillDefaults(pythonInterpreter)
+		log.Debug("after applying defaults to Config.Python section", "after", cfg.Python)
 	}
 
 	// Check that the secrets passed are in the config
