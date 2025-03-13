@@ -26,7 +26,7 @@ export function getXDGConfigProperty(
   console.log(
     "In getXDGConfigProperty with: " + configFilePath + " and: " + propertyName,
   );
-  let filePath = getConfigFile(configFilePath);
+  const filePath = getConfigFile(configFilePath);
   if (!filePath) {
     console.log("No file path with path found");
     return null;
