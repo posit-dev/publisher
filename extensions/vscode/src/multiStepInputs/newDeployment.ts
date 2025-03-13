@@ -541,9 +541,11 @@ export async function newDeployment(
       }
 
       if (currentURL === "") {
-        const configURL: string | null = getXDGConfigProperty("rstudio/rsession.conf", "default-rsconnect-server");
-        if (configURL !== null)
-           currentURL = configURL;
+        const configURL: string | null = getXDGConfigProperty(
+          "rstudio/rsession.conf",
+          "default-rsconnect-server",
+        );
+        if (configURL !== null) currentURL = configURL;
       }
 
       const url = await input.showInputBox({
