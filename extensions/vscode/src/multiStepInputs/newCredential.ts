@@ -75,10 +75,15 @@ export async function newCredential(
   // ***************************************************************
   async function inputServerUrl(input: MultiStepInput, state: MultiStepState) {
     const thisStepNumber = assignStep(state, "inputServerUrl");
-    const currentURL =
+    let currentURL =
       typeof state.data.url === "string" && state.data.url.length
         ? state.data.url
         : "";
+
+    if (currentURL === "") {
+      currentURL = extensionSettings.defaultConnectServer();
+    }
+
     const url = await input.showInputBox({
       title: state.title,
       step: thisStepNumber,

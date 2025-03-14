@@ -17,6 +17,7 @@ import { HomeViewProvider } from "src/views/homeView";
 import { WatcherManager } from "src/watchers";
 import { Commands } from "src/constants";
 import { DocumentTracker } from "./entrypointTracker";
+import { getXDGConfigProperty } from "src/utils/config";
 
 const STATE_CONTEXT = "posit.publish.state";
 
@@ -168,5 +169,20 @@ export const extensionSettings = {
       "useKeyChainCredentialStorage",
     );
     return value !== undefined ? value : true;
+  },
+  defaultConnectServer(): string {
+    const configuration = workspace.getConfiguration("positPublisher");
+    let value: string | undefined = configuration.get<string>(
+      "defaultConnectServer",
+    );
+
+    if (value === undefined || value === "") {
+      const configURL: string | null = getXDGConfigProperty(
+        "rstudio/rsession.conf",
+        "default-rsconnect-server",
+      );
+      if (configURL !== null) value = configURL;
+    }
+    return value !== undefined ? value : "";
   },
 };
