@@ -15,7 +15,6 @@ import {
   getSummaryStringFromError,
 } from "src/utils/errors";
 import { formatURL, normalizeURL } from "src/utils/url";
-import { getXDGConfigProperty } from "src/utils/config";
 import { checkSyntaxApiKey } from "src/utils/apiKeys";
 import { showProgress } from "src/utils/progress";
 import { openConfigurationCommand } from "src/commands";
@@ -82,11 +81,7 @@ export async function newCredential(
         : "";
 
     if (currentURL === "") {
-      const configURL: string | null = getXDGConfigProperty(
-        "rstudio/rsession.conf",
-        "default-rsconnect-server",
-      );
-      if (configURL !== null) currentURL = configURL;
+      currentURL = extensionSettings.defaultConnectServer();
     }
 
     const url = await input.showInputBox({

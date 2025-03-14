@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Added new config setting positPublisher.defaultConnectServer to pre-populate the Server URL. Also checks `/etc/rstudio/rsession.conf` for `default-rsconnect-server`. (rstudio-pro#7466)
+
 ## [1.10.0]
 
 ### Added
@@ -28,7 +34,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   configuration with `type = 'unknown'` suggesting the framework be set. (#2515)
 - Icons have been added to the deployment select dropdown to indicate the
   deployment's server and entrypoint. (#2483)
-- Added new config setting positPublisher.defaultConnectServer to pre-populate the Server URL. Also checks `/etc/rstudio/rsession.conf` for `default-rsconnect-server`. (rstudio-pro#7466)
 
 ### Fixed
 

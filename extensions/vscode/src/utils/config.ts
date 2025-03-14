@@ -1,7 +1,8 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
-import * as fs from "fs";
-import * as path from "path";
+import fs from "fs";
+import path from "path";
+import os from "os";
 
 function getConfigFile(configFilePath: string): string | null {
   const configDirs = process.env.XDG_CONFIG_DIRS
@@ -23,9 +24,8 @@ export function getXDGConfigProperty(
   configFilePath: string,
   propertyName: string,
 ): string | null {
-  console.log(
-    "In getXDGConfigProperty with: " + configFilePath + " and: " + propertyName,
-  );
+  if (os.platform() !== "linux") return null;
+
   const filePath = getConfigFile(configFilePath);
   if (!filePath) {
     console.log("No file path with path found");

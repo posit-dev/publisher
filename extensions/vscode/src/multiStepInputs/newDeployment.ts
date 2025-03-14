@@ -43,7 +43,6 @@ import {
 import { isAxiosErrorWithJson } from "src/utils/errorTypes";
 import { newDeploymentName, newConfigFileNameFromTitle } from "src/utils/names";
 import { formatURL, normalizeURL } from "src/utils/url";
-import { getXDGConfigProperty } from "src/utils/config";
 import { checkSyntaxApiKey } from "src/utils/apiKeys";
 import { DeploymentObjects } from "src/types/shared";
 import { showProgress } from "src/utils/progress";
@@ -538,14 +537,6 @@ export async function newDeployment(
 
       if (currentURL === "") {
         currentURL = extensionSettings.defaultConnectServer();
-      }
-
-      if (currentURL === "") {
-        const configURL: string | null = getXDGConfigProperty(
-          "rstudio/rsession.conf",
-          "default-rsconnect-server",
-        );
-        if (configURL !== null) currentURL = configURL;
       }
 
       const url = await input.showInputBox({
