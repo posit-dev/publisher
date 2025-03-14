@@ -45,7 +45,7 @@ export function getXDGConfigProperty(
     const [name, value] = trimmedLine.split("=", 2);
 
     if (name && name.trim() === propertyName) {
-      return value ? value.trim() : "";
+      return value ? value.trim() : null;
     }
   }
   return null;
