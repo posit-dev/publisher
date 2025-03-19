@@ -69,7 +69,6 @@ func FromFile(path util.AbsolutePath) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	cfg.FillDefaults()
 	cfg.Comments, err = readLeadingComments(path)
 	if err != nil {
 		return nil, err
@@ -107,26 +106,6 @@ func (cfg *Config) WriteFile(path util.AbsolutePath) error {
 	}
 	defer f.Close()
 	return cfg.Write(f)
-}
-
-func (cfg *Config) FillDefaults() {
-	if cfg.R != nil {
-		if cfg.R.PackageFile == "" {
-			cfg.R.PackageFile = "renv.lock"
-		}
-		if cfg.R.PackageManager == "" {
-			cfg.R.PackageManager = "renv"
-		}
-	}
-
-	if cfg.Python != nil {
-		if cfg.Python.PackageFile == "" {
-			cfg.Python.PackageFile = "requirements.txt"
-		}
-		if cfg.Python.PackageManager == "" {
-			cfg.Python.PackageManager = "pip"
-		}
-	}
 }
 
 func (cfg *Config) AddSecret(secret string) error {

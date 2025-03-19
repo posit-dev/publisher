@@ -233,9 +233,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         configurationName,
         !extensionSettings.verifyCertificates(), // insecure = !verifyCertificates
         projectDir,
-        secrets,
         r,
         python,
+        secrets,
       );
       deployProject(
         deploymentName,
@@ -782,8 +782,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
           return await api.packages.createRRequirementsFile(
             activeConfiguration.projectDir,
-            relPathPackageFile,
             r,
+            relPathPackageFile,
           );
         },
       );
