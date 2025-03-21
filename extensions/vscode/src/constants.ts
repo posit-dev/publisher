@@ -66,6 +66,7 @@ const homeViewCommands = {
   Refresh: "posit.publisher.homeView.refresh",
   ShowSelectConfigForDeployment:
     "posit.publisher.homeView.showSelectConfigForDeployment",
+  AssociateDeployment: "posit.publisher.homeView.associateDeployment",
   CreateConfigForDeployment:
     "posit.publisher.homeView.createConfigForDeployment",
   SelectDeployment: "posit.publisher.homeView.selectDeployment",

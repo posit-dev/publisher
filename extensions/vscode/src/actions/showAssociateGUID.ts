@@ -6,6 +6,7 @@ import { PublisherState } from "src/state";
 import { showProgress } from "src/utils/progress";
 import { Views } from "src/constants";
 import { useApi } from "src/api";
+import { getSummaryStringFromError } from "src/utils/errors";
 
 export async function showAssociateGUID(state: PublisherState) {
   const urlOrGuid = "";
@@ -43,13 +44,26 @@ export async function showAssociateGUID(state: PublisherState) {
     return undefined;
   }
   await showProgress("Updating Content Record", Views.HomeView, async () => {
-    const api = await useApi();
-    await api.contentRecords.patch(
-      targetContentRecord.deploymentName,
-      targetContentRecord.projectDir,
-      {
-        guid,
-      },
-    );
+    try {
+      const api = await useApi();
+      await api.contentRecords.patch(
+        targetContentRecord.deploymentName,
+        targetContentRecord.projectDir,
+        {
+          guid,
+        },
+      );
+      window.showInformationMessage(
+        `Your deployment is now locally associated with Content GUID ${guid} as requested.`,
+      );
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError(
+        "showAssociateGUID, contentRecords.patch",
+        error,
+      );
+      window.showErrorMessage(
+        `Unable to associate deployment with Content GUID ${guid}. ${summary}`,
+      );
+    }
   });
 }

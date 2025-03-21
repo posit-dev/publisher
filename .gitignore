@@ -28,3 +28,6 @@ node_modules
 
 # Possible e2e tests deployment assets
 test/e2e/content-workspace/**/.posit
+
+# license files should not be commited to this repository
+*.lic

@@ -141,6 +141,11 @@
         "category": "Posit Publisher"
       },
       {
+        "command": "posit.publisher.homeView.associateDeployment",
+        "title": "Associate with a Different Deployment on Connect",
+        "category": "Posit Publisher"
+      },
+      {
         "command": "posit.publisher.homeView.createConfigForDeployment",
         "title": "Create New Configuration For Destination",
         "category": "Posit Publisher"
@@ -329,6 +334,10 @@
         {
           "command": "posit.publisher.homeView.showSelectConfigForDeployment",
           "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'even-easier-deploy-more-menu-matching-configs'"
+        },
+        {
+          "command": "posit.publisher.homeView.associateDeployment",
+          "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'even-easier-deploy-more-menu-matching-configs' && posit.publish.selection.hasCredentialMatch == 'true' && posit.publish.selection.isPreContentRecord == 'false'"
         },
         {
           "command": "posit.publisher.homeView.createConfigForDeployment",
@@ -533,7 +542,7 @@
     "@types/vscode": "^1.87.0",
     "@types/wait-on": "^5.3.3",
     "@vscode/test-electron": "^2.3.8",
-    "esbuild": "^0.24.2",
+    "esbuild": "^0.25.1",
     "eslint": "^9.15.0",
     "eslint-config-prettier": "^10.0.1",
     "fishery": "^2.2.2",
@@ -547,7 +556,7 @@
   "dependencies": {
     "@vscode/codicons": "^0.0.36",
     "async-mutex": "^0.5.0",
-    "axios": "1.7.4",
+    "axios": "1.8.3",
     "debounce": "^2.1.0",
     "entities": "^6.0.0",
     "eventsource": "^2.0.2",
