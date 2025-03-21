@@ -8,6 +8,7 @@ install:
 
 # Build the specified docker image using docker compose
 build service:
+    docker build -f Dockerfile.base --tag e2ebase .
     docker compose build "{{service}}"
 
 start service:
@@ -50,13 +51,14 @@ e2e:
     just start "code-server"
     npm run cypress:open
 
-# This will force a rebuild all of the images, but you can also just build one of them
+# This will build all of the images, but you can also force a rebuild for one of them
 # using the command `docker compose build --no-cache <service-name>` where <service-name> is 
 # listed in the docker-compose.yml file ( code-server & connect-publisher-e2e)
 # NOTE: `docker compose` will build an image if it is needed and will use the cache, so no real reason to normally do this.`
-re-build-images:
-    just build --no-cache "connect-publisher-e2e"
-    just build --no-cache "code-server"
+build-images:
+    docker build -f Dockerfile.base --tag e2ebase .
+    just build "connect-publisher-e2e"
+    just build "code-server"
 
 build-publisher:
     USE_PLATFORM="linux/amd64" just ../../build
@@ -75,8 +77,8 @@ old-dev:
     USE_PLATFORM="linux/amd64" just ../../package
     just clear-credentials
     just install
-    # just build "connect-publisher-e2e"
-    # just build "code-server"
+    just build "connect-publisher-e2e"
+    just build "code-server"
     just start "connect-publisher-e2e"
     just start "code-server"
     npm run cypress:open
