@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Added new config setting positPublisher.defaultConnectServer to pre-populate the Server URL. Also checks `/etc/rstudio/rsession.conf` for `default-rsconnect-server`. (rstudio-pro#7466)
+- Added a new config setting `positPublisher.defaultConnectServer` to pre-populate the Server URL. Also checks the [default RStudio/Posit Workbench setting](https://docs.posit.co/ide/server-pro/rstudio_pro_sessions/rstudio_connect_server.html) (rstudio-pro#7466)
 
 ## [1.10.0]
 

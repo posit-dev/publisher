@@ -176,6 +176,7 @@ export const extensionSettings = {
       "defaultConnectServer",
     );
 
+    // For RStudio and Posit Workbench users, look here as a final step
     if (value === undefined || value === "") {
       const configURL: string | null = getXDGConfigProperty(
         "rstudio/rsession.conf",
