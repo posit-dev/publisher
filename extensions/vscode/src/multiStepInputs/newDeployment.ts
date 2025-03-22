@@ -531,9 +531,13 @@ export async function newDeployment(
   // ***************************************************************
   async function inputServerUrl(input: MultiStepInput, state: MultiStepState) {
     if (newCredentialByAnyMeans()) {
-      const currentURL = newDeploymentData.newCredentials.url
+      let currentURL = newDeploymentData.newCredentials.url
         ? newDeploymentData.newCredentials.url
         : "";
+
+      if (currentURL === "") {
+        currentURL = extensionSettings.defaultConnectServer();
+      }
 
       const url = await input.showInputBox({
         title: state.title,
