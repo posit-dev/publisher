@@ -48,7 +48,7 @@
             "default": true
           },
           "positPublisher.defaultConnectServer": {
-            "markdownDescription": "Provides the default URL for the Posit Connect server when defining new deployments.",
+            "markdownDescription": "Provides the default URL for the Posit Connect server when defining new credentials.",
             "type": "string",
             "default": ""
           }

@@ -69,6 +69,16 @@ export async function newCredential(
     return state;
   }
 
+  function hasExistingCredential(serverURL: string): boolean {
+    return (
+      credentials.find((credential) => {
+        const existing = normalizeURL(credential.url).toLowerCase();
+        const newURL = normalizeURL(serverURL).toLowerCase();
+        return newURL.includes(existing);
+      }) != null
+    );
+  }
+
   // ***************************************************************
   // Step #1:
   // Get the server url
@@ -80,9 +90,11 @@ export async function newCredential(
         ? state.data.url
         : "";
 
-    if (currentURL === "") {
+    if (currentURL === "")
       currentURL = extensionSettings.defaultConnectServer();
-    }
+
+    // No need showing the user an invalid default
+    if (currentURL !== "" && hasExistingCredential(currentURL)) currentURL = "";
 
     const url = await input.showInputBox({
       title: state.title,
