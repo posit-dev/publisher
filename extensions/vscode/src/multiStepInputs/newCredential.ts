@@ -75,7 +75,7 @@ export async function newCredential(
         const existing = normalizeURL(credential.url).toLowerCase();
         const newURL = normalizeURL(serverURL).toLowerCase();
         return newURL.includes(existing);
-      }) != null
+      }) !== null
     );
   }
 

@@ -532,7 +532,7 @@ export async function newDeployment(
         const existing = normalizeURL(credential.url).toLowerCase();
         const newURL = normalizeURL(serverURL).toLowerCase();
         return newURL.includes(existing);
-      }) != null
+      }) !== null
     );
   }
 
