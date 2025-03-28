@@ -73,7 +73,13 @@ import {
   ContentRecordWatcherManager,
   WatcherManager,
 } from "src/watchers";
-import { Commands, Contexts, DebounceDelaysMS, Views } from "src/constants";
+import {
+  BooleanContextValues,
+  Commands,
+  Contexts,
+  DebounceDelaysMS,
+  Views,
+} from "src/constants";
 import { showProgress } from "src/utils/progress";
 import { newCredential } from "src/multiStepInputs/newCredential";
 import { PublisherState } from "src/state";
@@ -275,6 +281,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     await this.refreshAll(false, true);
     this.setInitializationContext(HomeViewInitialized.initialized);
 
+    // initialize our context to false - user hasn't hit publish yet!
+    this.setUserHasInitiatedDeploymentContext(BooleanContextValues.False);
+
     // On first run, we have no saved state. Trigger a save
     // so we have the state, and can notify dependent views.
     this.requestWebviewSaveSelection();
@@ -296,6 +305,14 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       "setContext",
       Contexts.HomeView.Initialized,
       context,
+    );
+  }
+
+  private setUserHasInitiatedDeploymentContext(value: BooleanContextValues) {
+    commands.executeCommand(
+      "setContext",
+      Contexts.HomeView.UserHasInitiatedDeployment,
+      value,
     );
   }
 
@@ -362,6 +379,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     this.webviewConduit.sendMsg({
       kind: HostToWebviewMessageType.PUBLISH_START,
     });
+    // Set this context and now the Posit Publishing Log view will be visible.
+    this.setUserHasInitiatedDeploymentContext(BooleanContextValues.True);
   }
 
   private onPublishSuccess() {
