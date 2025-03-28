@@ -19,7 +19,9 @@ export class Server implements Disposable {
 
   constructor(port: number, useKeyChain: boolean) {
     this.port = port;
-    this.outputChannel = window.createOutputChannel(`Posit Publisher`);
+    this.outputChannel = window.createOutputChannel(
+      `Posit Publisher Deployment`,
+    );
     this.useKeyChain = useKeyChain;
   }
 
