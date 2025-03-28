@@ -6,6 +6,17 @@ file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+### Fixed
+
+### Changed
+
+- The Publisher Log Panel now stays hidden until the user initiates a deployment operation
+  from within the extension. It remains visible until the VSCode window is restarted. (##2596)
+
 ## [1.10.0]
 
 ### Added
