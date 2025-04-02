@@ -1,6 +1,6 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { Disposable, Memento, window } from "vscode";
+import { Disposable, Event, EventEmitter, Memento, window } from "vscode";
 
 import {
   Configuration,
@@ -11,6 +11,8 @@ import {
   isContentRecordError,
   PreContentRecord,
   PreContentRecordWithConfig,
+  UpdateAllConfigsWithDefaults,
+  UpdateConfigWithDefaults,
   useApi,
 } from "src/api";
 import { normalizeURL } from "src/utils/url";
@@ -27,6 +29,7 @@ import {
 } from "src/utils/errorTypes";
 import { DeploymentSelector, SelectionState } from "src/types/shared";
 import { LocalState, Views } from "./constants";
+import { getPythonInterpreterPath, getRInterpreterPath } from "./utils/vscode";
 
 function findContentRecord<
   T extends ContentRecord | PreContentRecord | PreContentRecordWithConfig,
@@ -78,8 +81,13 @@ interface extensionContext {
   readonly workspaceState: Memento;
 }
 
+export interface CredentialRefreshEvent {
+  readonly oldCredentials: Credential[];
+}
+
 export class PublisherState implements Disposable {
   private readonly context: extensionContext;
+  private credentialRefresh = new EventEmitter<CredentialRefreshEvent>();
 
   contentRecords: Array<
     ContentRecord | PreContentRecord | PreContentRecordWithConfig
@@ -202,11 +210,19 @@ export class PublisherState implements Disposable {
     // if not found, then retrieve it and add it to our cache.
     try {
       const api = await useApi();
+      const python = await getPythonInterpreterPath();
+      const r = await getRInterpreterPath();
+
       const response = await api.configurations.get(
         contentRecord.configurationName,
         contentRecord.projectDir,
       );
-      const cfg = response.data;
+      const defaults = await api.interpreters.get(
+        contentRecord.projectDir,
+        r,
+        python,
+      );
+      const cfg = UpdateConfigWithDefaults(response.data, defaults.data);
       // its not foolproof, but it may help
       if (!this.findConfig(cfg.configurationName, cfg.projectDir)) {
         this.configurations.push(cfg);
@@ -267,10 +283,17 @@ export class PublisherState implements Disposable {
         Views.HomeView,
         async () => {
           const api = await useApi();
+          const python = await getPythonInterpreterPath();
+          const r = await getRInterpreterPath();
+
           const response = await api.configurations.getAll(".", {
             recursive: true,
           });
-          this.configurations = response.data;
+          const defaults = await api.interpreters.get(".", r, python);
+          this.configurations = UpdateAllConfigsWithDefaults(
+            response.data,
+            defaults.data,
+          );
         },
       );
     } catch (error: unknown) {
@@ -301,13 +324,19 @@ export class PublisherState implements Disposable {
     return findConfiguration(name, projectDir, this.configsInError);
   }
 
+  get onDidRefreshCredentials(): Event<CredentialRefreshEvent> {
+    return this.credentialRefresh.event;
+  }
+
   async refreshCredentials() {
+    const oldCredentials = this.credentials;
     try {
       await showProgress("Refreshing Credentials", Views.HomeView, async () => {
         const api = await useApi();
         const response = await api.credentials.list();
         this.credentials = response.data;
       });
+      this.credentialRefresh.fire({ oldCredentials: oldCredentials });
     } catch (error: unknown) {
       if (isErrCredentialsCorrupted(error)) {
         this.resetCredentials();
@@ -321,6 +350,7 @@ export class PublisherState implements Disposable {
   // Calls to reset all credentials data stored.
   // Meant to be a last resort when we get loading data or corrupted data errors.
   async resetCredentials() {
+    const oldCredentials = this.credentials;
     try {
       const api = await useApi();
       const response = await api.credentials.reset();
@@ -329,6 +359,7 @@ export class PublisherState implements Disposable {
 
       const listResponse = await api.credentials.list();
       this.credentials = listResponse.data;
+      this.credentialRefresh.fire({ oldCredentials: oldCredentials });
     } catch (err: unknown) {
       if (isErrCannotBackupCredentialsFile(err)) {
         window.showErrorMessage(errCannotBackupCredentialsFileMessage(err));

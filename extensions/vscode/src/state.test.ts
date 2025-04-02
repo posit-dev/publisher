@@ -30,6 +30,18 @@ class mockApiClient {
     list: vi.fn(),
     reset: vi.fn(),
   };
+
+  readonly interpreters = {
+    get: vi.fn(() => {
+      return {
+        data: {
+          dir: "/usr/proj",
+          r: "/usr/bin/r",
+          python: "/usr/bin/python",
+        },
+      };
+    }),
+  };
 }
 
 const mockClient = new mockApiClient();
@@ -61,9 +73,15 @@ vi.mock("vscode", () => {
     showInformationMessage: vi.fn(),
   };
 
+  const workspaceStateMock = {
+    get: vi.fn(),
+  };
+
   return {
     Disposable: disposableMock,
     window: windowMock,
+    workspace: workspaceStateMock,
+    EventEmitter: vi.fn(),
   };
 });
 
@@ -249,11 +267,12 @@ describe("PublisherState", () => {
       const contentRecordState: DeploymentSelectorState =
         selectionStateFactory.build();
 
-      const { mockContext } = mkExtensionContextStateMock({});
+      const { mockContext, mockWorkspace } = mkExtensionContextStateMock({});
       const publisherState = new PublisherState(mockContext);
 
       // No config get due to no content record set
       let currentConfig = await publisherState.getSelectedConfiguration();
+      expect(mockWorkspace.get).toHaveBeenCalled();
       expect(currentConfig).toEqual(undefined);
       expect(mockClient.configurations.get).not.toHaveBeenCalled();
 

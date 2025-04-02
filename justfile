@@ -99,7 +99,7 @@ build:
 
     env MODE={{ _mode }} ./scripts/build.bash {{ _cmd }}
 
-# Deletes ephemeral project files (i.e., cleans the project).
+# Deletes ephemeral project files (i.e., cleans the project) as well as the go cache
 clean:
     #!/usr/bin/env bash
     set -eou pipefail
@@ -108,6 +108,8 @@ clean:
     rm -rf ./archives
     rm -rf ./bin
     rm -rf ./dist
+
+    go clean -cache -testcache
 
 # Prints shell commands to configure executable on path. Configure your shell via: eval "$(just configure)"
 configure:

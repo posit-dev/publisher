@@ -24,6 +24,21 @@ func (m *MockRInterpreter) Init() error {
 	return nil
 }
 
+func (m *MockRInterpreter) IsRExecutableValid() bool {
+	args := m.Called()
+	arg0 := args.Get(0)
+	if arg0 == nil {
+		return false
+	} else {
+		var i interface{} = arg0
+		if b, ok := i.(bool); ok {
+			return b
+		} else {
+			return false
+		}
+	}
+}
+
 func (m *MockRInterpreter) GetRExecutable() (util.AbsolutePath, error) {
 	args := m.Called()
 	arg0 := args.Get(0)
@@ -83,4 +98,16 @@ func (m *MockRInterpreter) CreateLockfile(lockfilePath util.AbsolutePath) error 
 func (m *MockRInterpreter) RenvEnvironmentErrorCheck() *types.AgentError {
 	args := m.Called()
 	return args.Error(0).(*types.AgentError)
+}
+
+func (m *MockRInterpreter) GetPackageManager() string {
+	args := m.Called()
+	arg0 := args.Get(0)
+	return arg0.(string)
+}
+
+func (m *MockRInterpreter) GetPreferredPath() string {
+	args := m.Called()
+	arg0 := args.Get(0)
+	return arg0.(string)
 }

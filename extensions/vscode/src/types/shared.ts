@@ -29,3 +29,19 @@ export type DeploymentObjects = {
   configuration: Configuration;
   credential: Credential;
 };
+
+export class RExecutable {
+  public rPath: string;
+
+  constructor(rPath: string) {
+    this.rPath = rPath;
+  }
+}
+
+export class PythonExecutable {
+  public pythonPath: string;
+
+  constructor(pythonPath: string) {
+    this.pythonPath = pythonPath;
+  }
+}

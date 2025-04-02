@@ -33,6 +33,12 @@
   ],
   "main": "./dist/extension.js",
   "contributes": {
+    "authentication": [
+      {
+        "id": "posit-connect",
+        "label": "Posit Connect"
+      }
+    ],
     "configuration": [
       {
         "title": "Posit Publisher",
@@ -547,7 +553,7 @@
     "@types/vscode": "^1.87.0",
     "@types/wait-on": "^5.3.3",
     "@vscode/test-electron": "^2.3.8",
-    "esbuild": "^0.24.2",
+    "esbuild": "^0.25.1",
     "eslint": "^9.15.0",
     "eslint-config-prettier": "^10.0.1",
     "fishery": "^2.2.2",
@@ -561,7 +567,7 @@
   "dependencies": {
     "@vscode/codicons": "^0.0.36",
     "async-mutex": "^0.5.0",
-    "axios": "1.7.4",
+    "axios": "1.8.3",
     "debounce": "^2.1.0",
     "entities": "^6.0.0",
     "eventsource": "^2.0.2",

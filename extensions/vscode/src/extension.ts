@@ -18,6 +18,8 @@ import { WatcherManager } from "src/watchers";
 import { Commands } from "src/constants";
 import { DocumentTracker } from "./entrypointTracker";
 import { getXDGConfigProperty } from "src/utils/config";
+import { PublisherState } from "./state";
+import { PublisherAuthProvider } from "./authProvider";
 
 const STATE_CONTEXT = "posit.publish.state";
 
@@ -109,12 +111,14 @@ export async function activate(context: ExtensionContext) {
   const watchers = new WatcherManager();
   context.subscriptions.push(watchers);
 
+  const state = new PublisherState(context);
+
   // First the construction of the data providers
   const projectTreeDataProvider = new ProjectTreeDataProvider(context);
 
   const logsTreeDataProvider = new LogsTreeDataProvider(context, stream);
 
-  const homeViewProvider = new HomeViewProvider(context, stream);
+  const homeViewProvider = new HomeViewProvider(context, stream, state);
   context.subscriptions.push(homeViewProvider);
 
   // Then the registration of the data providers with the VSCode framework
@@ -144,6 +148,8 @@ export async function activate(context: ExtensionContext) {
       homeViewProvider.handleFileInitiatedDeploymentSelection(uri);
     }),
   );
+
+  context.subscriptions.push(new PublisherAuthProvider(state));
 }
 
 // This method is called when your extension is deactivated

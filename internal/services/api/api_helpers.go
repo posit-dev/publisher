@@ -9,6 +9,7 @@ import (
 	"html"
 	"net/http"
 
+	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
 )
@@ -81,4 +82,29 @@ func ProjectDirFromRequest(base util.AbsolutePath, w http.ResponseWriter, req *h
 		return util.AbsolutePath{}, util.RelativePath{}, err
 	}
 	return projectDir, relProjectDir, nil
+}
+
+func InterpretersFromRequest(
+	base util.AbsolutePath,
+	w http.ResponseWriter,
+	req *http.Request,
+	log logging.Logger,
+) (
+	interpreters.RInterpreter,
+	interpreters.PythonInterpreter,
+	error,
+) {
+	rExecutable := req.URL.Query().Get("r")
+	rInterpreter, err := interpreters.NewRInterpreter(base, util.NewPath(rExecutable, nil), log, nil, nil, nil)
+	if err != nil {
+		InternalError(w, req, log, err)
+		return nil, nil, err
+	}
+	pythonExecutable := req.URL.Query().Get("python")
+	pythonInterpreter, err := interpreters.NewPythonInterpreter(base, util.NewPath(pythonExecutable, nil), log, nil, nil, nil)
+	if err != nil {
+		InternalError(w, req, log, err)
+		return nil, nil, err
+	}
+	return rInterpreter, pythonInterpreter, nil
 }
