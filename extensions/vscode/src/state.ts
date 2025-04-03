@@ -73,6 +73,17 @@ function findCredentialForContentRecord(
   );
 }
 
+export function findCredentialByURL(
+  serverURL: string,
+  creds: Credential[],
+): Credential | undefined {
+  return creds.find(
+    (cred) =>
+      normalizeURL(serverURL).toLowerCase() ===
+      normalizeURL(cred.url).toLowerCase(),
+  );
+}
+
 /**
  * Local extension context interface containing only what is used by PublisherState
  */
@@ -381,5 +392,9 @@ export class PublisherState implements Disposable {
       | PreContentRecordWithConfig,
   ) {
     return findCredentialForContentRecord(contentRecord, this.credentials);
+  }
+
+  findCredentialByURL(serverURL: string) {
+    return findCredentialByURL(serverURL, this.credentials);
   }
 }

@@ -19,6 +19,7 @@ import { checkSyntaxApiKey } from "src/utils/apiKeys";
 import { showProgress } from "src/utils/progress";
 import { openConfigurationCommand } from "src/commands";
 import { extensionSettings } from "src/extension";
+import { findCredentialByURL } from "src/state";
 
 const createNewCredentialLabel = "Create a New Credential";
 
@@ -69,16 +70,6 @@ export async function newCredential(
     return state;
   }
 
-  function hasExistingCredential(serverURL: string): boolean {
-    return (
-      credentials.find((credential) => {
-        const existing = normalizeURL(credential.url).toLowerCase();
-        const newURL = normalizeURL(serverURL).toLowerCase();
-        return newURL.includes(existing);
-      }) !== null
-    );
-  }
-
   // ***************************************************************
   // Step #1:
   // Get the server url
@@ -91,10 +82,11 @@ export async function newCredential(
         : "";
 
     if (currentURL === "")
-      currentURL = extensionSettings.defaultConnectServer();
+      currentURL = await extensionSettings.defaultConnectServer();
 
-    // No need showing the user an invalid default
-    if (currentURL !== "" && hasExistingCredential(currentURL)) currentURL = "";
+    // Two credentials for the same URL is not allowed so clear the default if one is found
+    if (currentURL !== "" && findCredentialByURL(currentURL, credentials))
+      currentURL = "";
 
     const url = await input.showInputBox({
       title: state.title,

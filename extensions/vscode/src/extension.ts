@@ -176,7 +176,7 @@ export const extensionSettings = {
     );
     return value !== undefined ? value : true;
   },
-  defaultConnectServer(): string {
+  async defaultConnectServer(): Promise<string> {
     const configuration = workspace.getConfiguration("positPublisher");
     let value: string | undefined = configuration.get<string>(
       "defaultConnectServer",
@@ -184,7 +184,7 @@ export const extensionSettings = {
 
     // For RStudio and Posit Workbench users, look here as a final step
     if (value === undefined || value === "") {
-      const configURL: string | null = getXDGConfigProperty(
+      const configURL: string | null = await getXDGConfigProperty(
         "rstudio/rsession.conf",
         "default-rsconnect-server",
       );

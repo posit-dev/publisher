@@ -55,6 +55,7 @@ import {
 } from "src/utils/files";
 import { ENTRYPOINT_FILE_EXTENSIONS } from "src/constants";
 import { extensionSettings } from "src/extension";
+import { findCredentialByURL } from "src/state";
 
 export async function newDeployment(
   viewId: string,
@@ -526,16 +527,6 @@ export async function newDeployment(
     return inputServerUrl(input, state);
   }
 
-  function hasExistingCredential(serverURL: string): boolean {
-    return (
-      credentials.find((credential) => {
-        const existing = normalizeURL(credential.url).toLowerCase();
-        const newURL = normalizeURL(serverURL).toLowerCase();
-        return newURL.includes(existing);
-      }) !== null
-    );
-  }
-
   // ***************************************************************
   // Step: New Credentials - Get the server url
   // ***************************************************************
@@ -546,11 +537,14 @@ export async function newDeployment(
         : "";
 
       if (currentURL === "") {
-        currentURL = extensionSettings.defaultConnectServer();
+        currentURL = await extensionSettings.defaultConnectServer();
       }
 
-      // No need showing the user an invalid default
-      if (currentURL !== "" && hasExistingCredential(currentURL))
+      // Two credentials for the same URL is not allowed so clear the default if one is found
+      if (
+        currentURL !== "" &&
+        findCredentialByURL(currentURL, credentials) !== undefined
+      )
         currentURL = "";
 
       const url = await input.showInputBox({
