@@ -97,10 +97,18 @@ func (i *defaultPythonInspector) InspectPython() (*config.Python, error) {
 		i.log.Warn("can't find requirements.txt")
 	}
 
+	pyProjectRequires := NewPyProjectPythonRequires(i.base)
+	python_requires, err := pyProjectRequires.GetPythonVersion()
+	if err != nil {
+		i.log.Warn("Error retrieving Python requires", err)
+		python_requires = ""
+	}
+
 	return &config.Python{
 		Version:        version,
 		PackageFile:    reqFile.String(),
 		PackageManager: "pip",
+		PythonRequires: python_requires,
 	}, nil
 }
 

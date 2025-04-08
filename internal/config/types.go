@@ -128,6 +128,7 @@ type Python struct {
 	Version        string `toml:"version,omitempty" json:"version"`
 	PackageFile    string `toml:"package_file,omitempty" json:"packageFile"`
 	PackageManager string `toml:"package_manager,omitempty" json:"packageManager"`
+	PythonRequires string `toml:"python_requires,omitempty" json:"pythonRequires"`
 }
 
 func (p *Python) FillDefaults(

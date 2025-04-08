@@ -125,6 +125,7 @@ func (i *defaultInitialize) inspectProject(base util.AbsolutePath, pythonExecuta
 			return nil, err
 		}
 		cfg.Files = append(cfg.Files, fmt.Sprint("/", pyConfig.PackageFile))
+		cfg.Python.PythonRequires = pyConfig.PythonRequires
 	}
 
 	rInspector, err := i.rInspectorFactory(base, rExecutable, log, i.rInterpreterFactory, nil)
@@ -203,6 +204,7 @@ func (i *defaultInitialize) normalizeConfig(
 			return err
 		}
 		cfg.Files = append(cfg.Files, fmt.Sprint("/", pyConfig.PackageFile))
+		cfg.Python.PythonRequires = pyConfig.PythonRequires
 	}
 
 	rInspector, err := i.rInspectorFactory(base, rExecutable, log, i.rInterpreterFactory, nil)
