@@ -409,7 +409,7 @@
       "panel": [
         {
           "id": "posit-publisher-logs",
-          "title": "Posit Publisher Log",
+          "title": "Publisher",
           "icon": "$(output)"
         }
       ]

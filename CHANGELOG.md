@@ -13,8 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- The Publisher Log Panel now stays hidden until the user initiates a deployment operation
-  from within the extension. It remains visible until the VSCode window is restarted. (##2596)
+- The Publisher Log Panel has now been renamed to "PUBLISHER" and now will stay hidden until the
+  user initiates a deployment operation from within the extension. It remains visible until the
+  VSCode window is restarted. (#2596)
 
 ## [1.10.0]
 
