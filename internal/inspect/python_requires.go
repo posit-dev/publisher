@@ -53,13 +53,13 @@ func (p *PyProjectPythonRequires) readPyProjectToml() (string, error) {
 		return "", err
 	}
 
-	var tomlData map[string]interface{}
+	var tomlData map[string]any
 	if err := toml.Unmarshal(data, &tomlData); err != nil {
 		return "", err
 	}
 
 	// project.requires-python
-	if project, ok := tomlData["project"].(map[string]interface{}); ok {
+	if project, ok := tomlData["project"].(map[string]any); ok {
 		if req, ok := project["requires-python"]; ok {
 			return fmt.Sprintf("%v", req), nil
 		}
