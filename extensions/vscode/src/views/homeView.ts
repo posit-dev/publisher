@@ -103,8 +103,6 @@ enum HomeViewInitialized {
 export class HomeViewProvider implements WebviewViewProvider, Disposable {
   private disposables: Disposable[] = [];
 
-  private state: PublisherState;
-
   private root: WorkspaceFolder | undefined;
   private webviewView?: WebviewView;
   private extensionUri: Uri;
@@ -124,13 +122,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   constructor(
     private readonly context: ExtensionContext,
     private readonly stream: EventStream,
+    private state: PublisherState,
   ) {
     const workspaceFolders = workspace.workspaceFolders;
     if (workspaceFolders !== undefined) {
       this.root = workspaceFolders[0];
     }
-
-    this.state = new PublisherState(this.context);
 
     this.extensionUri = this.context.extensionUri;
     this.webviewConduit = new WebviewConduit();
@@ -288,6 +285,13 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     // so we have the state, and can notify dependent views.
     this.requestWebviewSaveSelection();
 
+    // Listen for credential updates.
+    this.disposables.push(
+      this.state.onDidRefreshCredentials((_e) => {
+        this.updateWebViewViewCredentials();
+      }),
+    );
+
     // Signal the webapp that we believe the initialization refreshes
     // are finished.
     this.webviewConduit.sendMsg({
@@ -402,7 +406,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
   private async refreshCredentials() {
     await this.state.refreshCredentials();
-    return this.updateWebViewViewCredentials();
   }
 
   private async refreshActiveConfig(cfg?: Configuration | ConfigurationError) {

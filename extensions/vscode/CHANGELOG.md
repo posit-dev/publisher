@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Credentials are now exposed via a `posit-connect` authentication provider,
+  which surfaces them in the native Accounts UI. (#2608)
+
 ### Fixed
 
 ### Changed

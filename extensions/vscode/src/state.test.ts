@@ -81,6 +81,7 @@ vi.mock("vscode", () => {
     Disposable: disposableMock,
     window: windowMock,
     workspace: workspaceStateMock,
+    EventEmitter: vi.fn(),
   };
 });
 

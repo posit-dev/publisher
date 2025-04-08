@@ -33,6 +33,12 @@
   ],
   "main": "./dist/extension.js",
   "contributes": {
+    "authentication": [
+      {
+        "id": "posit-connect",
+        "label": "Posit Connect"
+      }
+    ],
     "configuration": [
       {
         "title": "Posit Publisher",

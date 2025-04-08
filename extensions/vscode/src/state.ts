@@ -1,6 +1,6 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { Disposable, Memento, window } from "vscode";
+import { Disposable, Event, EventEmitter, Memento, window } from "vscode";
 
 import {
   Configuration,
@@ -81,8 +81,13 @@ interface extensionContext {
   readonly workspaceState: Memento;
 }
 
+export interface CredentialRefreshEvent {
+  readonly oldCredentials: Credential[];
+}
+
 export class PublisherState implements Disposable {
   private readonly context: extensionContext;
+  private credentialRefresh = new EventEmitter<CredentialRefreshEvent>();
 
   contentRecords: Array<
     ContentRecord | PreContentRecord | PreContentRecordWithConfig
@@ -319,13 +324,19 @@ export class PublisherState implements Disposable {
     return findConfiguration(name, projectDir, this.configsInError);
   }
 
+  get onDidRefreshCredentials(): Event<CredentialRefreshEvent> {
+    return this.credentialRefresh.event;
+  }
+
   async refreshCredentials() {
+    const oldCredentials = this.credentials;
     try {
       await showProgress("Refreshing Credentials", Views.HomeView, async () => {
         const api = await useApi();
         const response = await api.credentials.list();
         this.credentials = response.data;
       });
+      this.credentialRefresh.fire({ oldCredentials: oldCredentials });
     } catch (error: unknown) {
       if (isErrCredentialsCorrupted(error)) {
         this.resetCredentials();
@@ -339,6 +350,7 @@ export class PublisherState implements Disposable {
   // Calls to reset all credentials data stored.
   // Meant to be a last resort when we get loading data or corrupted data errors.
   async resetCredentials() {
+    const oldCredentials = this.credentials;
     try {
       const api = await useApi();
       const response = await api.credentials.reset();
@@ -347,6 +359,7 @@ export class PublisherState implements Disposable {
 
       const listResponse = await api.credentials.list();
       this.credentials = listResponse.data;
+      this.credentialRefresh.fire({ oldCredentials: oldCredentials });
     } catch (err: unknown) {
       if (isErrCannotBackupCredentialsFile(err)) {
         window.showErrorMessage(errCannotBackupCredentialsFileMessage(err));
