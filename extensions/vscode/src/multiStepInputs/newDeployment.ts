@@ -42,7 +42,7 @@ import {
 } from "src/utils/errors";
 import { isAxiosErrorWithJson } from "src/utils/errorTypes";
 import { newDeploymentName, newConfigFileNameFromTitle } from "src/utils/names";
-import { formatURL, normalizeURL } from "src/utils/url";
+import { formatURL } from "src/utils/url";
 import { checkSyntaxApiKey } from "src/utils/apiKeys";
 import { DeploymentObjects } from "src/types/shared";
 import { showProgress } from "src/utils/progress";
@@ -55,7 +55,7 @@ import {
 } from "src/utils/files";
 import { ENTRYPOINT_FILE_EXTENSIONS } from "src/constants";
 import { extensionSettings } from "src/extension";
-import { findCredentialByURL } from "src/state";
+import { findExistingCredentialByURL } from "src/multiStepInputs/common";
 
 export async function newDeployment(
   viewId: string,
@@ -543,9 +543,10 @@ export async function newDeployment(
       // Two credentials for the same URL is not allowed so clear the default if one is found
       if (
         currentURL !== "" &&
-        findCredentialByURL(currentURL, credentials) !== undefined
-      )
+        findExistingCredentialByURL(credentials, currentURL) !== undefined
+      ) {
         currentURL = "";
+      }
 
       const url = await input.showInputBox({
         title: state.title,
@@ -580,11 +581,10 @@ export async function newDeployment(
               severity: InputBoxValidationSeverity.Error,
             });
           }
-          const existingCredential = credentials.find((credential) => {
-            const existing = normalizeURL(credential.url).toLowerCase();
-            const newURL = normalizeURL(input).toLowerCase();
-            return newURL.includes(existing);
-          });
+          const existingCredential = findExistingCredentialByURL(
+            credentials,
+            input,
+          );
           if (existingCredential) {
             return Promise.resolve({
               message: `Error: Invalid URL (this server URL is already assigned to your credential "${existingCredential.name}". Only one credential per unique URL is allowed).`,
