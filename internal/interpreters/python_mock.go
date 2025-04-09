@@ -90,3 +90,9 @@ func (m *MockPythonInterpreter) GetPreferredPath() string {
 	arg0 := args.Get(0)
 	return arg0.(string)
 }
+
+func (m *MockPythonInterpreter) GetPythonRequires() string {
+	args := m.Called()
+	arg0 := args.Get(0)
+	return arg0.(string)
+}
