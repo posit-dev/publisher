@@ -1,4 +1,4 @@
-package inspect
+package interpreters
 
 // Copyright (C) 2025 by Posit Software, PBC.
 

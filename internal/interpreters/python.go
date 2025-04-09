@@ -25,6 +25,7 @@ type PythonInterpreter interface {
 	GetPythonVersion() (string, error)
 	GetPackageManager() string
 	GetPreferredPath() string
+	GetPythonRequires() string
 }
 
 type defaultPythonInterpreter struct {
@@ -256,4 +257,14 @@ func (i *defaultPythonInterpreter) GetLockFilePath() (util.RelativePath, bool, e
 	lockFileAbsPath := i.base.Join(lockFile)
 	exists, err := i.existsFunc(lockFileAbsPath.Path)
 	return util.NewRelativePath(lockFile, i.fs), exists, err
+}
+
+func (i *defaultPythonInterpreter) GetPythonRequires() string {
+	pyProjectRequires := NewPyProjectPythonRequires(i.base)
+	python_requires, err := pyProjectRequires.GetPythonVersion()
+	if err != nil {
+		i.log.Warn("Error retrieving Python requires", err)
+		python_requires = ""
+	}
+	return python_requires
 }

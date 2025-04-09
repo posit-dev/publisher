@@ -97,7 +97,7 @@ func (i *defaultPythonInspector) InspectPython() (*config.Python, error) {
 		i.log.Warn("can't find requirements.txt")
 	}
 
-	pyProjectRequires := NewPyProjectPythonRequires(i.base)
+	pyProjectRequires := interpreters.NewPyProjectPythonRequires(i.base)
 	python_requires, err := pyProjectRequires.GetPythonVersion()
 	if err != nil {
 		i.log.Warn("Error retrieving Python requires", err)

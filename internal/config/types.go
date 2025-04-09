@@ -151,6 +151,9 @@ func (p *Python) FillDefaults(
 		if p.PackageManager == "" {
 			p.PackageManager = python.GetPackageManager()
 		}
+		if p.PythonRequires == "" {
+			p.PythonRequires = python.GetPythonRequires()
+		}
 	}
 }
 
