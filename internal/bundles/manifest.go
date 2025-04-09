@@ -228,7 +228,12 @@ func (manifest *Manifest) AddFile(path string, fileMD5 []byte) {
 }
 
 func (manifest *Manifest) ToJSON() ([]byte, error) {
-	return json.MarshalIndent(manifest, "", "\t")
+	buf := &bytes.Buffer{}
+	enc := json.NewEncoder(buf)
+	enc.SetEscapeHTML(false)
+	enc.SetIndent("", "\t")
+	err := enc.Encode(manifest)
+	return buf.Bytes(), err
 }
 
 func (manifest *Manifest) Clone() (*Manifest, error) {
