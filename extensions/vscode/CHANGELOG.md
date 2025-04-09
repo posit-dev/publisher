@@ -13,6 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Credentials are now exposed via a `posit-connect` authentication provider,
   which surfaces them in the native Accounts UI. (#2608)
 
+### Fixed
+
+### Changed
+
+- The Publisher Log Panel now stays hidden until the user initiates a deployment operation
+  from within the extension. It remains visible until the VSCode window is restarted. (##2596)
+
 ## [1.10.0]
 
 ### Added

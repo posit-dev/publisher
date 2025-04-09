@@ -5,12 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [Unreleased]
 
 ### Added
 
 - Improved the extension's behavior in VS Code workspace restricted mode.
   The extension will activate, but prompt to manage workspace trust so it can initialize.
+
+### Fixed
+
+### Changed
+
+- The Publisher Log Panel has now been renamed to "PUBLISHER" and now will stay hidden until the
+  user initiates a deployment operation from within the extension. It remains visible until the
+  VSCode window is restarted. (#2596)
 
 ## [1.10.0]
 

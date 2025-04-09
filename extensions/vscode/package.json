@@ -409,7 +409,7 @@
       "panel": [
         {
           "id": "posit-publisher-logs",
-          "title": "Posit Publisher Log",
+          "title": "Publisher",
           "icon": "$(output)"
         }
       ]
@@ -449,7 +449,7 @@
           "name": "Log",
           "contextualTitle": "Log",
           "icon": "$(output)",
-          "when": "workbenchState == folder && posit.publish.state == 'initialized' && isWorkspaceTrusted"
+          "when": "workbenchState == folder && posit.publish.state == 'initialized' && posit.publisher.homeView.userHasInitiatedDeploymentOperation == 'true' && isWorkspaceTrusted"
         }
       ]
     },
