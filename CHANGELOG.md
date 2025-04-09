@@ -9,9 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- The Publisher extension will activate, but not initialize when the VSCode operates in Restricted Mode.
-  Initialization will commence when/if the workspace is trusted (which can be done via a button within the
-  publisher's view).
+- Improved the extension's behavior in VS Code workspace restricted mode.
+  The extension will activate, but prompt to manage workspace trust so it can initialize.
 
 ## [1.10.0]
 
