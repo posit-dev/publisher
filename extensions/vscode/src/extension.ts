@@ -151,7 +151,8 @@ async function initializeExtension(context: ExtensionContext) {
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: ExtensionContext) {
-  console.log("Posit Publisher extension activated");
+  const now = new Date();
+  console.log("Posit Publisher extension activated at %s", now.toString());
   // Is our workspace trusted?
   if (workspace.isTrusted) {
     console.log("initializing extension within a trusted workspace");
