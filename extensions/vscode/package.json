@@ -19,8 +19,8 @@
   },
   "capabilities": {
     "untrustedWorkspaces": {
-      "supported": false,
-      "description": "This extension does not support untrusted workspaces because it is not safe to deploy untrusted code."
+      "supported": "limited",
+      "description": "This extension is not functional in Restricted Mode, but will recognize the change from restricted to trusted."
     }
   },
   "categories": [
@@ -232,40 +232,40 @@
         {
           "command": "posit.publisher.deployWithEntrypoint",
           "group": "navigation",
-          "when": "posit.publish.activeFileEntrypoint == true"
+          "when": "posit.publish.activeFileEntrypoint == true && isWorkspaceTrusted"
         }
       ],
       "view/title": [
         {
           "command": "posit.publisher.files.refresh",
-          "when": "view == posit.publisher.files",
+          "when": "view == posit.publisher.files && isWorkspaceTrusted",
           "group": "navigation@2"
         },
         {
           "command": "posit.publisher.pythonPackages.edit",
-          "when": "view == posit.publisher.pythonPackages",
+          "when": "view == posit.publisher.pythonPackages && isWorkspaceTrusted",
           "group": "navigation@1"
         },
         {
           "command": "posit.publisher.pythonPackages.refresh",
-          "when": "view == posit.publisher.pythonPackages",
+          "when": "view == posit.publisher.pythonPackages && isWorkspaceTrusted",
           "group": "navigation@2"
         },
         {
           "command": "posit.publisher.pythonPackages.scan",
-          "when": "view == posit.publisher.pythonPackages",
+          "when": "view == posit.publisher.pythonPackages && isWorkspaceTrusted",
           "group": "navigation@3"
         },
         {
           "command": "posit.publisher.homeView.refresh",
-          "when": "view == posit.publisher.homeView",
+          "when": "view == posit.publisher.homeView && isWorkspaceTrusted",
           "group": "navigation@1"
         }
       ],
       "commandPalette": [
         {
           "command": "posit.publisher.init-project",
-          "when": "workbenchState == folder  && posit.publish.state == 'initialized'"
+          "when": "workbenchState == folder && posit.publish.state == 'initialized' && isWorkspaceTrusted"
         },
         {
           "command": "posit.publisher.homeView.deleteCredential",
@@ -273,7 +273,7 @@
         },
         {
           "command": "posit.publisher.homeView.refreshCredentials",
-          "when": "posit.publish.state == 'initialized'"
+          "when": "posit.publish.state == 'initialized' && isWorkspaceTrusted"
         },
         {
           "command": "posit.publisher.homeView.removeSecret",
@@ -281,7 +281,7 @@
         },
         {
           "command": "posit.publisher.files.refresh",
-          "when": "posit.publish.state == 'initialized'"
+          "when": "posit.publish.state == 'initialized' && isWorkspaceTrusted"
         },
         {
           "command": "posit.publisher.files.include",
@@ -297,43 +297,43 @@
         },
         {
           "command": "posit.publisher.pythonPackages.refresh",
-          "when": "posit.publish.state == 'initialized'"
+          "when": "posit.publish.state == 'initialized' && isWorkspaceTrusted"
         },
         {
           "command": "posit.publisher.pythonPackages.scan",
-          "when": "posit.publish.state == 'initialized'"
+          "when": "posit.publish.state == 'initialized' && isWorkspaceTrusted"
         },
         {
           "command": "posit.publisher.homeView.refresh",
-          "when": "posit.publish.state == 'initialized'"
+          "when": "posit.publish.state == 'initialized' && isWorkspaceTrusted"
         },
         {
           "command": "posit.publisher.homeView.selectDeployment",
-          "when": "posit.publisher.homeView.initialized == 'initialized'"
+          "when": "posit.publisher.homeView.initialized == 'initialized' && isWorkspaceTrusted"
         },
         {
           "command": "posit.publisher.homeView.newDeployment",
-          "when": "posit.publisher.homeView.initialized == 'initialized'"
+          "when": "posit.publisher.homeView.initialized == 'initialized' && isWorkspaceTrusted"
         },
         {
           "command": "posit.publisher.showOutputChannel",
-          "when": "posit.publisher.homeView.initialized == 'initialized'"
+          "when": "posit.publisher.homeView.initialized == 'initialized' && isWorkspaceTrusted"
         },
         {
           "command": "posit.publisher.showPublishingLog",
-          "when": "posit.publisher.homeView.initialized == 'initialized'"
+          "when": "posit.publisher.homeView.initialized == 'initialized' && isWorkspaceTrusted"
         },
         {
           "command": "posit.publisher.homeView.navigateToDeployment.Server",
-          "when": "posit.publisher.homeView.initialized == 'initialized'"
+          "when": "posit.publisher.homeView.initialized == 'initialized' && isWorkspaceTrusted"
         },
         {
           "command": "posit.publisher.homeView.navigateToDeployment.Content",
-          "when": "posit.publisher.homeView.initialized == 'initialized'"
+          "when": "posit.publisher.homeView.initialized == 'initialized' && isWorkspaceTrusted"
         },
         {
           "command": "posit.publisher.homeView.navigateToDeployment.ContentLog",
-          "when": "posit.publisher.homeView.initialized == 'initialized'"
+          "when": "posit.publisher.homeView.initialized == 'initialized' && isWorkspaceTrusted"
         }
       ],
       "webview/context": [
@@ -422,7 +422,7 @@
           "contextualTitle": "Publisher",
           "visibility": "visible",
           "initialSize": 0,
-          "when": "workbenchState == empty || workbenchState == workspace || (workbenchState == folder && posit.publish.state == 'uninitialized')"
+          "when": "(workbenchState == empty || workbenchState == workspace || (workbenchState == folder && posit.publish.state == 'uninitialized')) && isWorkspaceTrusted"
         },
         {
           "id": "posit.publisher.homeView",
@@ -432,7 +432,15 @@
           "icon": "$(symbol-file)",
           "visibility": "visible",
           "initialSize": 1,
-          "when": "workbenchState == folder && posit.publish.state == 'initialized'"
+          "when": "workbenchState == folder && posit.publish.state == 'initialized' && isWorkspaceTrusted"
+        },
+        {
+          "id": "posit.publisher.untrusted",
+          "name": "",
+          "contextualTitle": "Publisher",
+          "visibility": "visible",
+          "initialSize": 0,
+          "when": "!isWorkspaceTrusted"
         }
       ],
       "posit-publisher-logs": [
@@ -441,7 +449,7 @@
           "name": "Log",
           "contextualTitle": "Log",
           "icon": "$(output)",
-          "when": "workbenchState == folder && posit.publish.state == 'initialized' && posit.publisher.homeView.userHasInitiatedDeploymentOperation == 'true'"
+          "when": "workbenchState == folder && posit.publish.state == 'initialized' && posit.publisher.homeView.userHasInitiatedDeploymentOperation == 'true' && isWorkspaceTrusted"
         }
       ]
     },
@@ -449,17 +457,22 @@
       {
         "view": "posit.publisher.project",
         "contents": "In order to deploy using Posit Publisher, you must open a folder.\n[Open Folder](command:vscode.openFolder)",
-        "when": "workbenchState == empty"
+        "when": "workbenchState == empty && isWorkspaceTrusted"
       },
       {
         "view": "posit.publisher.project",
         "contents": "Posit Publisher currently only supports single folder workspaces, open a folder.\n[Open Folder](command:vscode.openFolder)",
-        "when": "workbenchState == workspace"
+        "when": "workbenchState == workspace && isWorkspaceTrusted"
       },
       {
         "view": "posit.publisher.project",
         "contents": "Scanning folder for a Posit project...",
-        "when": "workbenchState == folder && posit.publish.state == 'uninitialized'"
+        "when": "workbenchState == folder && posit.publish.state == 'uninitialized' && isWorkspaceTrusted"
+      },
+      {
+        "view": "posit.publisher.untrusted",
+        "contents": "The Posit Publisher extension is disabled when operating in Restricted Mode.\n\n[Manage Workspaces Trust](command:workbench.trust.manage)",
+        "when": "!isWorkspaceTrusted"
       }
     ],
     "walkthroughs": [
