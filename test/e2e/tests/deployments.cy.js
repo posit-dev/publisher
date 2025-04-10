@@ -24,7 +24,12 @@ describe("Deployments Section", () => {
     }).deployCurrentlySelected();
   });
 
-  // Unable to run this, as the docker image for the code server does not have R installed.
+  // Unable to run this,
+  // as we will need to install the renv package - install.packages("renv")
+  // as well as call renv::restore(), before we can deploy. This will use
+  // the current version of R within our code-server image, so we'll have an
+  // extra bit of work when we want to change that version around to different
+  // ones.
   it.skip("ShinyApp Content Deployment", () => {
     cy.createDeployment("shinyapp", "app.R", "ShinyApp", (tomlFiles) => {
       const config = tomlFiles.config.contents;

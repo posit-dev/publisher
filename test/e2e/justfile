@@ -8,6 +8,7 @@ install:
 
 # Build the specified docker image using docker compose
 build service:
+    docker build -f Dockerfile.base --tag e2ebase .
     docker compose build "{{service}}"
 
 start service:
@@ -20,8 +21,50 @@ stop:
 lint:
     npm run lint
 
-# Install local dependencies, start Connect in development mode, and open Cypress UI locally (not from a container)
-dev:
+clear-credentials:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    cat <<EOF > e2e-test.connect-credentials
+    # File updated and managed by e2e tests. Refrain from updating it manually.
+
+    EOF
+
+dev: 
+    #!/usr/bin/env bash
+    set -euo pipefail
+    just build-publisher
+    just e2e
+
+e2e:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    function cleanup() {
+        just clear-credentials
+    }
+    trap cleanup EXIT
+
+    just clear-credentials
+    just install
+    just start "connect-publisher-e2e"
+    just start "code-server"
+    npm run cypress:open
+
+# This will build all of the images, but you can also force a rebuild for one of them
+# using the command `docker compose build --no-cache <service-name>` where <service-name> is 
+# listed in the docker-compose.yml file ( code-server & connect-publisher-e2e)
+# NOTE: `docker compose` will build an image if it is needed and will use the cache, so no real reason to normally do this.`
+build-images:
+    docker build -f Dockerfile.base --tag e2ebase .
+    just build "connect-publisher-e2e"
+    just build "code-server"
+
+build-publisher:
+    USE_PLATFORM="linux/amd64" just ../../build
+    USE_PLATFORM="linux/amd64" just ../../package
+
+old-dev:
     #!/usr/bin/env bash
     set -euo pipefail
 
@@ -39,12 +82,3 @@ dev:
     just start "connect-publisher-e2e"
     just start "code-server"
     npm run cypress:open
-
-clear-credentials:
-    #!/usr/bin/env bash
-    set -euo pipefail
-
-    cat <<EOF > e2e-test.connect-credentials
-    # File updated and managed by e2e tests. Refrain from updating it manually.
-
-    EOF
