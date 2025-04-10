@@ -116,6 +116,12 @@
           "default": "pip",
           "description": "Package manager that will install the dependencies. If package-manager is none, dependencies are assumed to be pre-installed on the server. The default is 'pip'.",
           "examples": ["pip", "conda", "pipenv", "poetry", "none"]
+        },
+        "requires_python": {
+          "type": "string",
+          "default": "",
+          "description": "Python interpreter version, in PEP 440 format, required to run the content. If not specified it will be detected from the one in use.",
+          "examples": [">3.8", "<3.9", "==3.5"]
         }
       }
     },
