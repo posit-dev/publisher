@@ -74,7 +74,7 @@ func (p *PyProjectPythonRequires) readSetupCfg() (string, error) {
 		return "", errors.New("setup.cfg file does not exist")
 	}
 
-	cfg, err := ini.Load(path)
+	cfg, err := ini.Load(path.String())
 	if err != nil {
 		return "", err
 	}

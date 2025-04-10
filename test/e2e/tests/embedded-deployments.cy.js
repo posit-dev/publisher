@@ -66,7 +66,6 @@ describe("Create Deployments", () => {
     )
       .then((tomlFiles) => {
         tomlFiles.config.contents.python.version = "3.11.3";
-        tomlFiles.config.contents.python.requires_python = ">=3.8";
         return cy.savePublisherFile(
           tomlFiles.config.path,
           tomlFiles.config.contents,
