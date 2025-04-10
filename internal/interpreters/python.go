@@ -261,7 +261,7 @@ func (i *defaultPythonInterpreter) GetLockFilePath() (util.RelativePath, bool, e
 
 func (i *defaultPythonInterpreter) GetPythonRequires() string {
 	pyProjectRequires := NewPyProjectPythonRequires(i.base)
-	python_requires, err := pyProjectRequires.GetPythonVersion()
+	python_requires, err := pyProjectRequires.GetPythonVersionRequirement()
 	if err != nil {
 		i.log.Warn("Error retrieving Python requires", err)
 		python_requires = ""

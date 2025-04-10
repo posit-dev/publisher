@@ -182,10 +182,10 @@ func NewManifestFromConfig(cfg *config.Config) *Manifest {
 		}
 		// If the configuration specifies a specific python version constraint
 		// (e.g. ">=3.8"), declare the environment requires that version.
-		if cfg.Python.PythonRequires != "" {
+		if cfg.Python.RequiresPythonVersion != "" {
 			m.Environment = &Environment{
 				Python: &EnvironmentPython{
-					PythonRequires: cfg.Python.PythonRequires,
+					PythonRequires: cfg.Python.RequiresPythonVersion,
 				},
 			}
 		}

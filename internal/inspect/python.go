@@ -98,17 +98,17 @@ func (i *defaultPythonInspector) InspectPython() (*config.Python, error) {
 	}
 
 	pyProjectRequires := interpreters.NewPyProjectPythonRequires(i.base)
-	python_requires, err := pyProjectRequires.GetPythonVersion()
+	python_requires, err := pyProjectRequires.GetPythonVersionRequirement()
 	if err != nil {
 		i.log.Warn("Error retrieving Python requires", err)
 		python_requires = ""
 	}
 
 	return &config.Python{
-		Version:        version,
-		PackageFile:    reqFile.String(),
-		PackageManager: "pip",
-		PythonRequires: python_requires,
+		Version:               version,
+		PackageFile:           reqFile.String(),
+		PackageManager:        "pip",
+		RequiresPythonVersion: python_requires,
 	}, nil
 }
 

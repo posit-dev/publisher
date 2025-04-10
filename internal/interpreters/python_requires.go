@@ -24,7 +24,7 @@ func NewPyProjectPythonRequires(projectPath util.AbsolutePath) *PyProjectPythonR
 	}
 }
 
-func (p *PyProjectPythonRequires) GetPythonVersion() (string, error) {
+func (p *PyProjectPythonRequires) GetPythonVersionRequirement() (string, error) {
 	if version, err := p.readPythonVersionFile(); err == nil && version != "" {
 		return version, nil
 	}

@@ -144,10 +144,10 @@ func (s *GetInterpretersSuite) TestGetInterpretersWhenPassedIn() {
 	s.NoError(dec.Decode(&res))
 
 	expectedPython := &config.Python{
-		Version:        "1.2.3",
-		PackageFile:    "requirements.txt",
-		PackageManager: "pip",
-		PythonRequires: "",
+		Version:               "1.2.3",
+		PackageFile:           "requirements.txt",
+		PackageManager:        "pip",
+		RequiresPythonVersion: "",
 	}
 	expectedR := &config.R{
 		Version:        "3.4.5",
