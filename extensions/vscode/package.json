@@ -52,6 +52,11 @@
             "markdownDescription": "Controls whether Posit Publisher will use the system keychain to store credentials. When disabled, or on a system without a keychain, `~/.connect-credentials` is used. After changing this setting, you must restart VS Code for it to go into effect.",
             "type": "boolean",
             "default": true
+          },
+          "positPublisher.defaultConnectServer": {
+            "markdownDescription": "Provides the default URL for the Posit Connect server when defining new credentials.",
+            "type": "string",
+            "default": ""
           }
         }
       }
