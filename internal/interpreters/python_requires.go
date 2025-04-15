@@ -24,6 +24,14 @@ func NewPyProjectPythonRequires(projectPath util.AbsolutePath) *PyProjectPythonR
 	}
 }
 
+// Find the python version requested by the project if specified in any of the
+// supported metadata files. The order of precedence is:
+// 1. .python-version
+// 2. pyproject.toml
+// 3. setup.cfg
+//
+// The version specifications are the one defined by PEP 440
+// if no version is found, an error is returned.
 func (p *PyProjectPythonRequires) GetPythonVersionRequirement() (string, error) {
 	if version, err := p.readPythonVersionFile(); err == nil && version != "" {
 		return version, nil
@@ -37,6 +45,8 @@ func (p *PyProjectPythonRequires) GetPythonVersionRequirement() (string, error) 
 	return "", errors.New("no python version requirement found")
 }
 
+// Read a .python-version file and return the version string.
+// the file is a plain text file that contains only the version specification.
 func (p *PyProjectPythonRequires) readPythonVersionFile() (string, error) {
 	path := p.ProjectPath.Join(".python-version")
 	data, err := path.ReadFile()
@@ -46,6 +56,12 @@ func (p *PyProjectPythonRequires) readPythonVersionFile() (string, error) {
 	return strings.TrimSpace(string(data)), nil
 }
 
+// Read a pyproject.toml file and return the version string.
+// The file is a TOML file that contains a [project] section
+// with a requires-python key.
+//
+// [project]
+// requires-python = ">=3.8"
 func (p *PyProjectPythonRequires) readPyProjectToml() (string, error) {
 	path := p.ProjectPath.Join("pyproject.toml")
 	data, err := path.ReadFile()
@@ -68,6 +84,12 @@ func (p *PyProjectPythonRequires) readPyProjectToml() (string, error) {
 	return "", nil
 }
 
+// Read a setup.cfg file and return the version string.
+// The file is an INI file that contains an [options] section
+// with a python_requires key.
+//
+// [options]
+// python_requires = ">=3.8"
 func (p *PyProjectPythonRequires) readSetupCfg() (string, error) {
 	path := p.ProjectPath.Join("setup.cfg")
 	if exists, _ := path.Exists(); !exists {
