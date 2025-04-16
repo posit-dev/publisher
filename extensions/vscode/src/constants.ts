@@ -22,6 +22,11 @@ export const ENTRYPOINT_FILE_EXTENSIONS = [
   ".rmd",
 ];
 
+export enum BooleanContextValues {
+  True = "true",
+  False = "false",
+}
+
 const baseCommands = {
   InitProject: "posit.publisher.init-project",
   ShowOutputChannel: "posit.publisher.showOutputChannel",
@@ -89,6 +94,8 @@ const homeViewCommands = {
 
 const homeViewContexts = {
   Initialized: "posit.publisher.homeView.initialized",
+  UserHasInitiatedDeployment:
+    "posit.publisher.homeView.userHasInitiatedDeploymentOperation",
 };
 
 export const LocalState = {
