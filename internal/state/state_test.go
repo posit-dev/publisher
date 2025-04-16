@@ -565,6 +565,7 @@ func (s *StateSuite) createMockPythonInterpreter() interpreters.PythonInterprete
 	iMock.On("GetPythonExecutable").Return(util.NewAbsolutePath("/bin/python", s.cwd.Fs()), nil)
 	iMock.On("GetPythonVersion").Return("1.2.3", nil)
 	iMock.On("GetPackageManager").Return("pip")
+	iMock.On("GetPythonRequires").Return("")
 	iMock.On("GetLockFilePath").Return("requirements.txt", true, nil)
 	return iMock
 }
@@ -576,6 +577,7 @@ func (s *StateSuite) createMockPythonMissingInterpreter() interpreters.PythonInt
 	iMock.On("GetPythonExecutable").Return(util.NewAbsolutePath("", s.cwd.Fs()), missingError)
 	iMock.On("GetPythonVersion").Return("", missingError)
 	iMock.On("GetPackageManager").Return("pip")
+	iMock.On("GetPythonRequires").Return("")
 	iMock.On("GetLockFilePath").Return("", false, missingError)
 	return iMock
 }
