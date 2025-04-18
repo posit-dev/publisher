@@ -73,7 +73,13 @@ import {
   ContentRecordWatcherManager,
   WatcherManager,
 } from "src/watchers";
-import { Commands, Contexts, DebounceDelaysMS, Views } from "src/constants";
+import {
+  BooleanContextValues,
+  Commands,
+  Contexts,
+  DebounceDelaysMS,
+  Views,
+} from "src/constants";
 import { showProgress } from "src/utils/progress";
 import { newCredential } from "src/multiStepInputs/newCredential";
 import { PublisherState } from "src/state";
@@ -97,8 +103,6 @@ enum HomeViewInitialized {
 export class HomeViewProvider implements WebviewViewProvider, Disposable {
   private disposables: Disposable[] = [];
 
-  private state: PublisherState;
-
   private root: WorkspaceFolder | undefined;
   private webviewView?: WebviewView;
   private extensionUri: Uri;
@@ -118,13 +122,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   constructor(
     private readonly context: ExtensionContext,
     private readonly stream: EventStream,
+    private state: PublisherState,
   ) {
     const workspaceFolders = workspace.workspaceFolders;
     if (workspaceFolders !== undefined) {
       this.root = workspaceFolders[0];
     }
-
-    this.state = new PublisherState(this.context);
 
     this.extensionUri = this.context.extensionUri;
     this.webviewConduit = new WebviewConduit();
@@ -275,9 +278,19 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     await this.refreshAll(false, true);
     this.setInitializationContext(HomeViewInitialized.initialized);
 
+    // initialize our context to false - user hasn't hit publish yet!
+    this.setUserHasInitiatedDeploymentContext(BooleanContextValues.False);
+
     // On first run, we have no saved state. Trigger a save
     // so we have the state, and can notify dependent views.
     this.requestWebviewSaveSelection();
+
+    // Listen for credential updates.
+    this.disposables.push(
+      this.state.onDidRefreshCredentials((_e) => {
+        this.updateWebViewViewCredentials();
+      }),
+    );
 
     // Signal the webapp that we believe the initialization refreshes
     // are finished.
@@ -296,6 +309,14 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       "setContext",
       Contexts.HomeView.Initialized,
       context,
+    );
+  }
+
+  private setUserHasInitiatedDeploymentContext(value: BooleanContextValues) {
+    commands.executeCommand(
+      "setContext",
+      Contexts.HomeView.UserHasInitiatedDeployment,
+      value,
     );
   }
 
@@ -362,6 +383,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     this.webviewConduit.sendMsg({
       kind: HostToWebviewMessageType.PUBLISH_START,
     });
+    // Set this context and now the Posit Publishing Log view will be visible.
+    this.setUserHasInitiatedDeploymentContext(BooleanContextValues.True);
   }
 
   private onPublishSuccess() {
@@ -383,7 +406,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
   private async refreshCredentials() {
     await this.state.refreshCredentials();
-    return this.updateWebViewViewCredentials();
   }
 
   private async refreshActiveConfig(cfg?: Configuration | ConfigurationError) {

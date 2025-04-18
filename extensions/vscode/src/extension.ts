@@ -17,6 +17,9 @@ import { HomeViewProvider } from "src/views/homeView";
 import { WatcherManager } from "src/watchers";
 import { Commands } from "src/constants";
 import { DocumentTracker } from "./entrypointTracker";
+import { getXDGConfigProperty } from "src/utils/config";
+import { PublisherState } from "./state";
+import { PublisherAuthProvider } from "./authProvider";
 
 const STATE_CONTEXT = "posit.publish.state";
 
@@ -76,10 +79,7 @@ export function setSelectionIsPreContentRecord(
   );
 }
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
-export async function activate(context: ExtensionContext) {
-  console.log("Activating Posit Publisher extension");
+async function initializeExtension(context: ExtensionContext) {
   setStateContext(PositPublishState.uninitialized);
   setInitializationInProgressContext(InitializationInProgress.false);
 
@@ -108,12 +108,14 @@ export async function activate(context: ExtensionContext) {
   const watchers = new WatcherManager();
   context.subscriptions.push(watchers);
 
+  const state = new PublisherState(context);
+
   // First the construction of the data providers
   const projectTreeDataProvider = new ProjectTreeDataProvider(context);
 
   const logsTreeDataProvider = new LogsTreeDataProvider(context, stream);
 
-  const homeViewProvider = new HomeViewProvider(context, stream);
+  const homeViewProvider = new HomeViewProvider(context, stream, state);
   context.subscriptions.push(homeViewProvider);
 
   // Then the registration of the data providers with the VSCode framework
@@ -143,6 +145,35 @@ export async function activate(context: ExtensionContext) {
       homeViewProvider.handleFileInitiatedDeploymentSelection(uri);
     }),
   );
+
+  context.subscriptions.push(new PublisherAuthProvider(state));
+}
+
+// This method is called when your extension is activated
+// Your extension is activated the very first time the command is executed
+export function activate(context: ExtensionContext) {
+  const now = new Date();
+  console.log("Posit Publisher extension activated at %s", now.toString());
+  // Is our workspace trusted?
+  if (workspace.isTrusted) {
+    console.log("initializing extension within a trusted workspace");
+    initializeExtension(context);
+    return;
+  }
+  console.log(
+    "activated within a restricted workspace. Initialization is paused until trust is granted.",
+  );
+
+  // We are not trusted yet... so if and when we are, then start the initialization
+  context.subscriptions.push(
+    workspace.onDidGrantWorkspaceTrust(() => {
+      console.log("Trust mode granted by user.");
+      console.log(
+        "Proceeding forward with initializion for extension within a trusted workspace",
+      );
+      initializeExtension(context);
+    }),
+  );
 }
 
 // This method is called when your extension is deactivated
@@ -168,5 +199,21 @@ export const extensionSettings = {
       "useKeyChainCredentialStorage",
     );
     return value !== undefined ? value : true;
+  },
+  async defaultConnectServer(): Promise<string> {
+    const configuration = workspace.getConfiguration("positPublisher");
+    let value: string | undefined = configuration.get<string>(
+      "defaultConnectServer",
+    );
+
+    // For RStudio and Posit Workbench users, look here as a final step
+    if (value === undefined || value === "") {
+      const configURL: string | null = await getXDGConfigProperty(
+        "rstudio/rsession.conf",
+        "default-rsconnect-server",
+      );
+      if (configURL !== null) value = configURL;
+    }
+    return value !== undefined ? value : "";
   },
 };
