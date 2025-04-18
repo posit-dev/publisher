@@ -14,6 +14,7 @@ files = [
   '/.posit/publish/deployments/deployment-P869.toml'
 ]
 title = 'quarto-project'
+invalidParam = 'I am an intentional error'
 
 [python]
 
