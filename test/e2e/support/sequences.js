@@ -55,7 +55,7 @@ Cypress.Commands.add(
       });
 
     // Ux displayed via quick input
-    // This has taken longer than 4 seconds on some laptops, so we're increasting
+    // This has taken longer than 4 seconds on some laptops, so we're increasing
     // the timeout
     cy.get(".quick-input-widget", { timeout: 10000 }).should("be.visible");
 
