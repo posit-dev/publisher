@@ -55,7 +55,9 @@ Cypress.Commands.add(
       });
 
     // Ux displayed via quick input
-    cy.get(".quick-input-widget").should("be.visible");
+    // This has taken longer than 4 seconds on some laptops, so we're increasing
+    // the timeout
+    cy.get(".quick-input-widget", { timeout: 10000 }).should("be.visible");
 
     // confirm we've got the correct sequence
     cy.get(".quick-input-titlebar").should("have.text", "Select Deployment");
