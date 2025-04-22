@@ -53,9 +53,14 @@ type Metadata struct {
 	HasParameters   bool            `json:"has_parameters,omitempty"`   // True if this is content allows parameter customization.
 }
 
+type EnvironmentPython struct {
+	PythonRequires string `json:"requires"` // The Python version to use for the content environment
+}
+
 type Environment struct {
-	Image    string `json:"image"`    // The image to use during content build/execution
-	Prebuilt bool   `json:"prebuilt"` // Determines whether Connect should skip the build phase for this content.
+	Image    string             `json:"image"`            // The image to use during content build/execution
+	Prebuilt bool               `json:"prebuilt"`         // Determines whether Connect should skip the build phase for this content.
+	Python   *EnvironmentPython `json:"python,omitempty"` // If non-null, specifies the Python environment
 }
 
 type Python struct {
@@ -175,6 +180,15 @@ func NewManifestFromConfig(cfg *config.Config) *Manifest {
 				PackageFile: cfg.Python.PackageFile,
 			},
 		}
+		// If the configuration specifies a specific python version constraint
+		// (e.g. ">=3.8"), declare the environment requires that version.
+		if cfg.Python.RequiresPythonVersion != "" {
+			m.Environment = &Environment{
+				Python: &EnvironmentPython{
+					PythonRequires: cfg.Python.RequiresPythonVersion,
+				},
+			}
+		}
 	}
 	if cfg.Jupyter != nil {
 		m.Jupyter = &Jupyter{
@@ -214,7 +228,12 @@ func (manifest *Manifest) AddFile(path string, fileMD5 []byte) {
 }
 
 func (manifest *Manifest) ToJSON() ([]byte, error) {
-	return json.MarshalIndent(manifest, "", "\t")
+	buf := &bytes.Buffer{}
+	enc := json.NewEncoder(buf)
+	enc.SetEscapeHTML(false)
+	enc.SetIndent("", "\t")
+	err := enc.Encode(manifest)
+	return buf.Bytes(), err
 }
 
 func (manifest *Manifest) Clone() (*Manifest, error) {
