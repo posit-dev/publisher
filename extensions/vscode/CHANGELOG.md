@@ -6,19 +6,56 @@ file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.12.0]
 
 ### Added
 
+- Added the ability to update the target GUID for a deployment at any time
+  from the "..." menu. (#2576)
+
+- Added a new extension setting `Use Key Chain Credential Storage`
+  (defaulting to true), allowing the user to prioritize the use
+  of a credential file over the keyring. (#2519)
+
 - Credentials are now exposed via a `posit-connect` authentication provider,
-  which surfaces them in the native Accounts UI. (#2608)
+  which is surfaced within the native Accounts UI. (#2608)
+
+- Added a new extension setting `Default Connect Server` to pre-populate
+  the Server URL when creating a credential if there is not already one
+  configured. When running within Posit Workbench, the extension will use the
+  URL from the [default RStudio/Posit Workbench setting](https://docs.posit.co/ide/server-pro/rstudio_pro_sessions/rstudio_connect_server.html) (rstudio-pro#7466)
+
+- When expanded, the Python Packages view will now display a message describing
+  how to configure the project to use Python if the configuration file does not
+  indicate a dependency on Python. (#2571)
+
+- Added a new field to the Python configuration section ("requires_python"),
+  which can be used to indicate the range of Python interpreter versions
+  required to run the content on the Connect server. If it is not provided,
+  it is populated from the project files ".python-version", "pyproject.toml" and
+  "setup.cfg". This setting is inserted into the manifest during
+  deployment. (#2617)
 
 ### Fixed
 
+- Publisher icon was sometimes missing when workpace folder starts out
+  untrusted in VS Code. The extension now supports running within both untrusted and
+  trusted workspaces, and will prompt to manage workspace trust so it can initialize. (#2611)
+
 ### Changed
 
-- The Publisher Log Panel now stays hidden until the user initiates a deployment operation
-  from within the extension. It remains visible until the VSCode window is restarted. (##2596)
+- R, Python, and Quarto versions are now optional in configuration files and
+  will not be populated when creating a new deployment. If not present at the
+  time of deployment, versions will be discovered and inserted from user's
+  running environment. (#2468, #2470)
+
+- The `posit-publishing-schema-v3` configuration file schema has been updated
+  with the new "Python.requires_python" field as well as the switch from required to
+  optional for the version field within the R, Python and Quarto sections.
+
+- The Publisher Log Panel has now been renamed to "Publisher" and now will
+  stay hidden until the user initiates a deployment operation from within the
+  extension. It remains visible until the VSCode window is restarted. (#2596)
 
 ## [1.10.0]
 
