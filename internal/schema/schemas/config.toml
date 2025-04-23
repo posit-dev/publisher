@@ -17,6 +17,7 @@ secrets = ["API_KEY", "DATABASE_PASSWORD"]
 version = "3.11.3"
 package_file = "requirements.txt"
 package_manager = "pip"
+requires_python = "<3.12"
 
 [r]
 version = "4.3.1"
