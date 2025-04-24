@@ -2,6 +2,12 @@
 
 import { AgentError } from "./error";
 
+export enum AuthType {
+  NONE = "none",
+  API_KEY = "api-key",
+  SNOWFLAKE = "snowflake",
+}
+
 export type Credential = {
   guid: string;
   name: string;
@@ -20,5 +26,6 @@ export type CredentialUser = {
 export type TestResult = {
   user: CredentialUser | null;
   url: string | null;
+  authType: AuthType | null;
   error: AgentError | null;
 };

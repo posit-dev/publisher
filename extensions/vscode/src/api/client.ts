@@ -10,6 +10,7 @@ import { Interpreters } from "./resources/Interpreters";
 import { Packages } from "./resources/Packages";
 import { Secrets } from "./resources/Secrets";
 import { EntryPoints } from "./resources/Entrypoints";
+import { SnowflakeConnections } from "./resources/SnowflakeConnections";
 import * as Entities from "entities";
 
 class PublishingClientApi {
@@ -24,6 +25,7 @@ class PublishingClientApi {
   secrets: Secrets;
   apiServiceIsUp: Promise<boolean>;
   entrypoints: EntryPoints;
+  snowflakeConnections: SnowflakeConnections;
 
   constructor(apiBaseUrl: string, apiServiceIsUp: Promise<boolean>) {
     this.client = axios.create({
@@ -58,6 +60,7 @@ class PublishingClientApi {
     this.packages = new Packages(this.client);
     this.secrets = new Secrets(this.client);
     this.entrypoints = new EntryPoints(this.client);
+    this.snowflakeConnections = new SnowflakeConnections(this.client);
   }
 
   logDuration(response: AxiosResponse<unknown, unknown>) {

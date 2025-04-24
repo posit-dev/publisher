@@ -41,7 +41,6 @@ func (p *envVarProvider) Load() ([]Account, error) {
 		Certificate: os.Getenv("CONNECT_CERT"),
 		ApiKey:      apiKey,
 	}
-	account.AuthType = account.InferAuthType()
 	p.log.Info("Creating account from CONNECT_SERVER", "name", account.Name, "url", serverURL)
 	return []Account{account}, nil
 }

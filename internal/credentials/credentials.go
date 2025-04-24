@@ -37,16 +37,23 @@ import (
 
 const ServiceName = "Posit Publisher Safe Storage"
 
-const CurrentVersion = 0
+const CurrentVersion = 1
 
 type Credential struct {
+	GUID                string `json:"guid"`
+	Name                string `json:"name"`
+	URL                 string `json:"url"`
+	ApiKey              string `json:"apiKey"`
+	SnowflakeConnection string `json:"snowflakeConnection"`
+}
+
+type CredentialV1 = Credential
+type CredentialV0 struct {
 	GUID   string `json:"guid"`
 	Name   string `json:"name"`
 	URL    string `json:"url"`
 	ApiKey string `json:"apiKey"`
 }
-
-type CredentialV0 = Credential
 
 func (c *Credential) ConflictCheck(compareWith Credential) error {
 	if compareWith.URL == c.URL {
@@ -76,6 +83,18 @@ func (cr *CredentialRecord) ToCredential() (*Credential, error) {
 		if err := json.Unmarshal(cr.Data, &cred); err != nil {
 			return nil, NewCorruptedError(cr.GUID)
 		}
+		return &Credential{
+			GUID:                cred.GUID,
+			Name:                cred.Name,
+			URL:                 cred.URL,
+			ApiKey:              cred.ApiKey,
+			SnowflakeConnection: "",
+		}, nil
+	case 1:
+		var cred CredentialV1
+		if err := json.Unmarshal(cr.Data, &cred); err != nil {
+			return nil, NewCorruptedError(cr.GUID)
+		}
 		return &cred, nil
 	default:
 		return nil, NewVersionError(cr.Version)
@@ -88,7 +107,7 @@ type CredentialsService interface {
 	Delete(guid string) error
 	Get(guid string) (*Credential, error)
 	List() ([]Credential, error)
-	Set(name string, url string, ak string) (*Credential, error)
+	Set(name string, url string, ak string, sf string) (*Credential, error)
 	Reset() (string, error)
 }
 

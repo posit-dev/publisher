@@ -5,6 +5,7 @@ go 1.23.3
 require (
 	github.com/PuerkitoBio/purell v1.2.1
 	github.com/alecthomas/kong v0.9.0
+	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
 	github.com/mitchellh/mapstructure v1.5.0
@@ -17,10 +18,7 @@ require (
 	golang.org/x/net v0.39.0
 )
 
-require (
-	golang.org/x/crypto v0.37.0 // indirect
-	gopkg.in/ini.v1 v1.67.0 // indirect
-)
+require gopkg.in/ini.v1 v1.67.0
 
 require (
 	github.com/alessio/shellescape v1.4.2 // indirect

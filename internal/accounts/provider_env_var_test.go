@@ -45,7 +45,6 @@ func (s *AccountEnvVarProviderSuite) TestLoadAll() {
 	s.Nil(err)
 	s.Equal([]Account{{
 		ServerType:  ServerTypeConnect,
-		AuthType:    AuthTypeAPIKey,
 		Source:      AccountSourceEnvironment,
 		Name:        "env",
 		URL:         "https://connect.example.com:1234",
