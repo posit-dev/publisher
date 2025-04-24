@@ -59,17 +59,19 @@ func (s *PostCredentialTestSuite) Test409() {
 	name := "example"
 	url := "http://example.com"
 	ak := "12345"
+	sf := ""
 
 	cs, err := credentials.NewCredentialsService(s.log)
 	s.NoError(err)
 
-	_, err = cs.Set(name, url, ak)
+	_, err = cs.Set(name, url, ak, sf)
 	s.NoError(err)
 
 	cred := PostCredentialsRequest{
-		Name:   "collision",
-		URL:    "http://example.com",
-		ApiKey: "12345",
+		Name:                "collision",
+		URL:                 "http://example.com",
+		ApiKey:              "12345",
+		SnowflakeConnection: "",
 	}
 
 	data, err := json.Marshal(cred)

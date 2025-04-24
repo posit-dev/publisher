@@ -12,10 +12,16 @@ type AuthMethod interface {
 	AddAuthHeaders(req *http.Request) error
 }
 
-func NewClientAuth(acct *accounts.Account) AuthMethod {
-	switch acct.AuthType {
+func NewClientAuth(acct *accounts.Account) (AuthMethod, error) {
+	switch acct.AuthType() {
 	case accounts.AuthTypeAPIKey:
-		return NewApiKeyAuthenticator(acct.ApiKey, "")
+		return NewApiKeyAuthenticator(acct.ApiKey, ""), nil
+	case accounts.AuthTypeSnowflake:
+		auth, err := NewSnowflakeAuthenticator(acct.SnowflakeConnection)
+		if err != nil {
+			return nil, err
+		}
+		return auth, nil
 	case accounts.AuthTypeNone:
 		// This is bogus since we know we can't publish
 		// without authentication. Our workflow needs to do one
@@ -25,7 +31,7 @@ func NewClientAuth(acct *accounts.Account) AuthMethod {
 		// * Prompt the user interactively (via the CLI or UI)
 		//   or walk them through the token flow.
 		// * Err if neither of the above can be done.
-		return NewNullAuthenticator()
+		return NewNullAuthenticator(), nil
 	}
-	return nil
+	return nil, nil
 }
