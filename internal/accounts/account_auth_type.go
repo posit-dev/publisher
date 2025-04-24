@@ -5,13 +5,15 @@ package accounts
 type AccountAuthType string
 
 const (
-	AuthTypeNone   AccountAuthType = "none"    // No saved credentials
-	AuthTypeAPIKey AccountAuthType = "api-key" // Connect API key
+	AuthTypeNone      AccountAuthType = "none"    // No saved credentials
+	AuthTypeAPIKey    AccountAuthType = "api-key" // Connect API key
+	AuthTypeSnowflake AccountAuthType = "snowflake"
 )
 
 var authTypeDescriptions = map[AccountAuthType]string{
-	AuthTypeNone:   "No saved credentials",
-	AuthTypeAPIKey: "Connect API key",
+	AuthTypeNone:      "No saved credentials",
+	AuthTypeAPIKey:    "Connect API key",
+	AuthTypeSnowflake: "Snowflake",
 }
 
 func (auth AccountAuthType) Description() string {

@@ -109,7 +109,7 @@ type certificationValidationFailedDetails struct {
 }
 
 func (c *ConnectClient) TestAuthentication(log logging.Logger) (*User, error) {
-	log.Info("Testing authentication", "method", c.account.AuthType.Description(), "url", c.account.URL)
+	log.Info("Testing authentication", "method", c.account.AuthType().Description(), "url", c.account.URL)
 	var connectUser UserDTO
 	err := c.client.Get("/__api__/v1/user", &connectUser, log)
 	if err != nil {

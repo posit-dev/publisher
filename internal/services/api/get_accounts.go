@@ -31,7 +31,7 @@ func toGetAccountResponse(acct *accounts.Account) *getAccountResponse {
 	return &getAccountResponse{
 		Type:        string(acct.ServerType),
 		Source:      string(acct.Source),
-		AuthType:    string(acct.AuthType),
+		AuthType:    string(acct.AuthType()),
 		Name:        acct.Name,
 		URL:         acct.URL,
 		Insecure:    acct.Insecure,

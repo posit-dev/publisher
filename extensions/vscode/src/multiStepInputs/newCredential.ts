@@ -3,17 +3,20 @@
 import {
   MultiStepInput,
   MultiStepState,
+  QuickPickItemWithIndex,
   isQuickPickItem,
+  isQuickPickItemWithIndex,
   assignStep,
 } from "./multiStepHelper";
 
 import { InputBoxValidationSeverity, window } from "vscode";
 
-import { useApi, Credential } from "src/api";
+import { useApi, Credential, SnowflakeConnection } from "src/api";
 import {
   getMessageFromError,
   getSummaryStringFromError,
 } from "src/utils/errors";
+import { isAxiosErrorWithJson } from "src/utils/errorTypes";
 import { formatURL } from "src/utils/url";
 import { checkSyntaxApiKey } from "src/utils/apiKeys";
 import { showProgress } from "src/utils/progress";
@@ -32,14 +35,45 @@ export async function newCredential(
   // ***************************************************************
   const api = await useApi();
   let credentials: Credential[] = [];
+  let connections: SnowflakeConnection[] = [];
+  let connectionQuickPicks: QuickPickItemWithIndex[];
+
+  const getSnowflakeConnections = async (serverUrl: string) => {
+    try {
+      const connsResponse = await api.snowflakeConnections.list(serverUrl);
+      connections = connsResponse.data;
+      connectionQuickPicks = connections.map((connection, i) => ({
+        label: connection.name,
+        index: i,
+      }));
+    } catch (error: unknown) {
+      if (isAxiosErrorWithJson(error)) {
+        throw error;
+      }
+      const summary = getSummaryStringFromError(
+        "newCredentials, snowflakeConnections.list",
+        error,
+      );
+      window.showErrorMessage(
+        `Unable to query Snowflake connections. ${summary}`,
+      );
+      throw error;
+    }
+
+    if (!connectionQuickPicks.length) {
+      const msg = `No working Snowflake connections found for ${serverUrl}. Please configure a connection in your environment before creating a credential.`;
+      window.showErrorMessage(msg);
+      throw new Error(msg);
+    }
+  };
 
   // ***************************************************************
   // Order of all steps
   // ***************************************************************
 
   // Get the server url
+  // Get the API key OR get the Snowflake connection name
   // Get the credential name
-  // Get the API key
   // result in calling credential API
 
   // ***************************************************************
@@ -92,6 +126,8 @@ export async function newCredential(
     ) {
       currentURL = "";
     }
+
+    let accountType;
 
     const url = await input.showInputBox({
       title: state.title,
@@ -160,6 +196,8 @@ export async function newCredential(
               severity: InputBoxValidationSeverity.Error,
             });
           }
+
+          accountType = testResult.data.accountType;
         } catch (e) {
           return Promise.resolve({
             message: `Error: Invalid URL (unable to validate connectivity with Server URL - ${getMessageFromError(e)}).`,
@@ -174,11 +212,15 @@ export async function newCredential(
 
     state.data.url = formatURL(url.trim());
     state.lastStep = thisStepNumber;
+
+    if (accountType === "snowflake") {
+      return (input: MultiStepInput) => inputSnowflakeConnection(input, state);
+    }
     return (input: MultiStepInput) => inputAPIKey(input, state);
   }
 
   // ***************************************************************
-  // Step #2:
+  // Step #2, option A:
   // Enter the API Key
   // ***************************************************************
   async function inputAPIKey(input: MultiStepInput, state: MultiStepState) {
@@ -257,6 +299,61 @@ export async function newCredential(
 
     state.data.apiKey = apiKey;
     state.data.url = validatedURL;
+    state.lastStep = thisStepNumber;
+    return (input: MultiStepInput) => inputCredentialName(input, state);
+  }
+
+  // ***************************************************************
+  // Step #2, option B:
+  // Enter the Snowflake connection name (TODO: quickpick with valid names)
+  // FIXME: As a temporary hack I am using the apiKey data prop as the connection name, need client and server changes to stop doing this
+  // ***************************************************************
+  async function inputSnowflakeConnection(
+    input: MultiStepInput,
+    state: MultiStepState,
+  ) {
+    const thisStepNumber = assignStep(state, "inputSnowflakeConnection");
+
+    // url should always be defined by the time we get to this step
+    // but we have to type guard it for the API
+    const serverUrl = typeof state.data.url === "string" ? state.data.url : "";
+
+    try {
+      await showProgress(
+        "Reading Snowflake connections",
+        viewId,
+        async () => await getSnowflakeConnections(serverUrl),
+      );
+    } catch {
+      // errors have already been displayed by getSnowflakeConnections
+      return;
+    }
+
+    let connectionIndex = 0;
+
+    // skip if we only have one choice.
+    if (connectionQuickPicks.length > 1) {
+      const pick = await input.showQuickPick({
+        title: state.title,
+        step: 0,
+        totalSteps: 0,
+        placeholder:
+          "Select the Snowflake connection configuration you want to use to authenticate.",
+        items: connectionQuickPicks,
+        buttons: [],
+        shouldResume: () => Promise.resolve(false),
+        ignoreFocusOut: true,
+      });
+
+      if (!pick || !isQuickPickItemWithIndex(pick)) {
+        return;
+      }
+
+      connectionIndex = pick.index;
+    }
+
+    state.data.apiKey = connections[connectionIndex].name; // FIXME: new prop for connection name
+    state.data.url = connections[connectionIndex].serverUrl;
     state.lastStep = thisStepNumber;
     return (input: MultiStepInput) => inputCredentialName(input, state);
   }

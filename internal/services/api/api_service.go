@@ -184,6 +184,10 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	r.Handle(ToPath("packages", "r", "scan"), NewPostPackagesRScanHandler(base, log, nil)).
 		Methods(http.MethodPost)
 
+	// GET /api/snowflake-connections
+	r.Handle(ToPath("snowflake-connections"), GetSnowflakeConnectionsHandlerFunc(log)).
+		Methods(http.MethodGet)
+
 	c := cors.AllowAll().Handler(r)
 	return c.ServeHTTP
 }

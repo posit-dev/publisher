@@ -42,7 +42,6 @@ func (p *CredentialsProvider) Load() ([]Account, error) {
 			ServerType: serverTypeFromURL(cred.URL),
 			Name:       cred.Name,
 			URL:        cred.URL,
-			AuthType:   AuthTypeAPIKey,
 			ApiKey:     cred.ApiKey,
 		}
 		i++
