@@ -38,8 +38,8 @@ export async function newCredential(
   // ***************************************************************
 
   // Get the server url
+  // Get the API key OR get the Snowflake connection name
   // Get the credential name
-  // Get the API key
   // result in calling credential API
 
   // ***************************************************************
@@ -92,6 +92,8 @@ export async function newCredential(
     ) {
       currentURL = "";
     }
+
+    let accountType;
 
     const url = await input.showInputBox({
       title: state.title,
@@ -160,6 +162,8 @@ export async function newCredential(
               severity: InputBoxValidationSeverity.Error,
             });
           }
+
+          accountType = testResult.data.accountType;
         } catch (e) {
           return Promise.resolve({
             message: `Error: Invalid URL (unable to validate connectivity with Server URL - ${getMessageFromError(e)}).`,
@@ -174,11 +178,18 @@ export async function newCredential(
 
     state.data.url = formatURL(url.trim());
     state.lastStep = thisStepNumber;
+
+    // we have already proven above that the input is safe to parse as a URL
+    // TODO: should this check happen on the server?
+    //if (new URL(state.data.url).hostname.endsWith("snowflakecomputing.app")) {
+    if (accountType === "snowflake") {
+      return (input: MultiStepInput) => inputSnowflakeConnection(input, state);
+    }
     return (input: MultiStepInput) => inputAPIKey(input, state);
   }
 
   // ***************************************************************
-  // Step #2:
+  // Step #2, option A:
   // Enter the API Key
   // ***************************************************************
   async function inputAPIKey(input: MultiStepInput, state: MultiStepState) {
@@ -256,6 +267,83 @@ export async function newCredential(
     });
 
     state.data.apiKey = apiKey;
+    state.data.url = validatedURL;
+    state.lastStep = thisStepNumber;
+    return (input: MultiStepInput) => inputCredentialName(input, state);
+  }
+
+  // ***************************************************************
+  // Step #2, option B:
+  // Enter the Snowflake connection name (TODO: quickpick with valid names)
+  // FIXME: As a temporary hack I am using the apiKey data prop as the connection name, need client and server changes to stop doing this
+  // ***************************************************************
+  async function inputSnowflakeConnection(
+    input: MultiStepInput,
+    state: MultiStepState,
+  ) {
+    const thisStepNumber = assignStep(state, "inputSnowflakeConnection");
+    // TODO: don't reuse apiKey like this it's gross, add a new field
+    const currentAPIKey =
+      typeof state.data.apiKey === "string" && state.data.apiKey.length
+        ? state.data.apiKey
+        : "";
+    let validatedURL = "";
+
+    const apiKey = await input.showInputBox({
+      title: state.title,
+      step: thisStepNumber,
+      totalSteps: state.totalSteps,
+      value: currentAPIKey,
+      prompt: `The name of the Snowflake connection to use. This must already be configured in your environment.
+        See the [Snowflake's documentation](https://docs.snowflake.com/en/developer-guide/snowflake-cli/connecting/configure-connections)
+        for further information.`,
+      finalValidation: async (input: string) => {
+        if (input === "") {
+          return Promise.resolve({
+            message: "Error: Invalid Connection (a name is required).",
+            severity: InputBoxValidationSeverity.Error,
+          });
+        }
+        // url should always be defined by the time we get to this step
+        // but we have to type guard it for the API
+        const serverUrl =
+          typeof state.data.url === "string" ? state.data.url : "";
+        try {
+          const testResult = await api.credentials.test(
+            serverUrl,
+            !extensionSettings.verifyCertificates(), // insecure = !verifyCertificates
+            input,
+          );
+          if (testResult.status !== 200) {
+            return Promise.resolve({
+              message: `Error: Invalid Connection (unable to validate Connection - API Call result: ${testResult.status} - ${testResult.statusText}).`,
+              severity: InputBoxValidationSeverity.Error,
+            });
+          }
+          if (testResult.data.error) {
+            return Promise.resolve({
+              message: `Error: Invalid Connection (${testResult.data.error.msg}).`,
+              severity: InputBoxValidationSeverity.Error,
+            });
+          }
+          // we have success, but credentials.test may have returned a different
+          // url for us to use.
+          if (testResult.data.url) {
+            validatedURL = testResult.data.url;
+          }
+        } catch (e) {
+          return Promise.resolve({
+            message: `Error: Invalid Connection (${getMessageFromError(e)})`,
+            severity: InputBoxValidationSeverity.Error,
+          });
+        }
+        return Promise.resolve(undefined);
+      },
+      shouldResume: () => Promise.resolve(false),
+      ignoreFocusOut: true,
+    });
+
+    state.data.apiKey = apiKey; // FIXME: new prop for connection name
     state.data.url = validatedURL;
     state.lastStep = thisStepNumber;
     return (input: MultiStepInput) => inputCredentialName(input, state);
