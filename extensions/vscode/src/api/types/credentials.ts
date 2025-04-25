@@ -21,6 +21,5 @@ export type TestResult = {
   user: CredentialUser | null;
   url: string | null;
   accountType: string | null;
-  snowflakeConnectionNames: string[] | null;
   error: AgentError | null;
 };
