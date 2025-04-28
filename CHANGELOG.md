@@ -7,10 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.12.1]
 
+### Fixed
+
+- Fix missing platform build in OpenVSX due to outage.
+
 ### Changed
 
-- Publishing a patch release of 1.12, without changes. Having problems
-  with publishing to OpenVSX.
+- Updated `record.toml` to correspond with updated schema change in v1.12
 
 ## [1.12.0]
 
