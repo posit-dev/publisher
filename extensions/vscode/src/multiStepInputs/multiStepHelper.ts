@@ -1,6 +1,6 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { ConfigurationInspectionResult } from "src/api";
+import { ConfigurationInspectionResult, SnowflakeConnection } from "src/api";
 import {
   isAxiosErrorWithJson,
   resolveAgentJsonErrorMsg,
@@ -29,6 +29,9 @@ export type QuickPickItemWithIndex = QuickPickItem & { index: number };
 export type QuickPickItemWithInspectionResult = QuickPickItem & {
   inspectionResult?: ConfigurationInspectionResult;
 };
+export type QuickPickItemWithSnowflakeConnection = QuickPickItem & {
+  connection: SnowflakeConnection;
+}
 
 export function isQuickPickItemWithIndex(
   d: QuickPickItem | string,
@@ -42,6 +45,12 @@ export function isQuickPickItemWithInspectionResult(
   return (
     (d as QuickPickItemWithInspectionResult).inspectionResult !== undefined
   );
+}
+
+export function isQuickPickItemWithSnowflakeConnection(
+  d: QuickPickItem | string,
+): d is QuickPickItemWithSnowflakeConnection {
+  return (d as QuickPickItemWithSnowflakeConnection).connection !== undefined;
 }
 
 export interface MultiStepState {

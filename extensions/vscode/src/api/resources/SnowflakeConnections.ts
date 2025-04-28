@@ -10,10 +10,18 @@ export class SnowflakeConnections {
     this.client = client;
   }
 
+  // List all valid Snowflake connection names for a given server URL.
+  // Returned connections include the (possibly shortened) server URL they were
+  // successfully tested against.
+  //
   // Returns:
-  // 200 - accepted
+  // 200 - ok
   // 500 - internal server error
-  list() {
-    return this.client.get<SnowflakeConnection[]>(`snowflake-connections`);
+  list(serverUrl: string) {
+    return this.client.get<SnowflakeConnection[]>(`snowflake-connections`, {
+      params: {
+        serverUrl,
+      },
+    });
   }
 }

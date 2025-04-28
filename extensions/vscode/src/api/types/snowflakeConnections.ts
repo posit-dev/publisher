@@ -1,3 +1,6 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
-export type SnowflakeConnection = string;
+export type SnowflakeConnection = {
+  name: string;
+  serverUrl: string;
+};
