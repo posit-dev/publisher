@@ -31,7 +31,7 @@ export type QuickPickItemWithInspectionResult = QuickPickItem & {
 };
 export type QuickPickItemWithSnowflakeConnection = QuickPickItem & {
   connection: SnowflakeConnection;
-}
+};
 
 export function isQuickPickItemWithIndex(
   d: QuickPickItem | string,

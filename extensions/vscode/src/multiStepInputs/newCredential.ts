@@ -9,11 +9,7 @@ import {
   assignStep,
 } from "./multiStepHelper";
 
-import {
-  InputBoxValidationSeverity,
-  ThemeIcon,
-  window
-} from "vscode";
+import { InputBoxValidationSeverity, window } from "vscode";
 
 import { useApi, Credential } from "src/api";
 import {
@@ -48,7 +44,6 @@ export async function newCredential(
     try {
       const connsResponse = await api.snowflakeConnections.list(serverUrl);
       connectionList = connsResponse.data.map((connection) => ({
-        iconPath: new ThemeIcon("squirrel"),
         label: connection.name,
         connection: connection,
       }));
@@ -72,7 +67,7 @@ export async function newCredential(
       throw new Error(msg);
     }
     return connectionList;
-  }
+  };
 
   // ***************************************************************
   // Order of all steps
@@ -220,9 +215,6 @@ export async function newCredential(
     state.data.url = formatURL(url.trim());
     state.lastStep = thisStepNumber;
 
-    // we have already proven above that the input is safe to parse as a URL
-    // TODO: should this check happen on the server?
-    //if (new URL(state.data.url).hostname.endsWith("snowflakecomputing.app")) {
     if (accountType === "snowflake") {
       return (input: MultiStepInput) => inputSnowflakeConnection(input, state);
     }
@@ -326,14 +318,12 @@ export async function newCredential(
 
     // url should always be defined by the time we get to this step
     // but we have to type guard it for the API
-    const serverUrl =
-      typeof state.data.url === "string" ? state.data.url : "";
+    const serverUrl = typeof state.data.url === "string" ? state.data.url : "";
 
     const connectionQuickPicks = await showProgress(
       "Reading Snowflake connections",
       viewId,
-      async () =>
-        await getSnowflakeConnections(serverUrl),
+      async () => await getSnowflakeConnections(serverUrl),
     );
 
     // skip if we only have one choice.
