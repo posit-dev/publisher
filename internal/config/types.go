@@ -158,9 +158,10 @@ func (p *Python) FillDefaults(
 }
 
 type R struct {
-	Version        string `toml:"version,omitempty" json:"version"`
-	PackageFile    string `toml:"package_file,omitempty" json:"packageFile"`
-	PackageManager string `toml:"package_manager,omitempty" json:"packageManager"`
+	Version          string `toml:"version,omitempty" json:"version"`
+	PackageFile      string `toml:"package_file,omitempty" json:"packageFile"`
+	PackageManager   string `toml:"package_manager,omitempty" json:"packageManager"`
+	RequiresRVersion string `toml:"requires_rversion,omitempty" json:"requiresRVersion"`
 }
 
 func (r *R) FillDefaults(
@@ -182,6 +183,9 @@ func (r *R) FillDefaults(
 		}
 		if r.PackageManager == "" {
 			r.PackageManager = rLang.GetPackageManager()
+		}
+		if r.RequiresRVersion == "" {
+			r.RequiresRVersion = rLang.GetRRequires()
 		}
 	}
 }

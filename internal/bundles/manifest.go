@@ -53,6 +53,10 @@ type Metadata struct {
 	HasParameters   bool            `json:"has_parameters,omitempty"`   // True if this is content allows parameter customization.
 }
 
+type EnvironmentR struct {
+	Requires string `json:"requires"` // The R version to use for the content environment
+}
+
 type EnvironmentPython struct {
 	PythonRequires string `json:"requires"` // The Python version to use for the content environment
 }
@@ -61,6 +65,7 @@ type Environment struct {
 	Image    string             `json:"image"`            // The image to use during content build/execution
 	Prebuilt bool               `json:"prebuilt"`         // Determines whether Connect should skip the build phase for this content.
 	Python   *EnvironmentPython `json:"python,omitempty"` // If non-null, specifies the Python environment
+	R        *EnvironmentR      `json:"r,omitempty"`      // If non-null, specifies the R environment
 }
 
 type Python struct {
@@ -171,6 +176,16 @@ func NewManifestFromConfig(cfg *config.Config) *Manifest {
 	}
 	if cfg.R != nil {
 		m.Platform = cfg.R.Version
+		// If the configuration specifies a specific R version constraint
+		// (e.g. ">=3.8"), declare the environment requires that version.
+		if cfg.R.RequiresRVersion != "" {
+			if m.Environment == nil {
+				m.Environment = &Environment{}
+			}
+			m.Environment.R = &EnvironmentR{
+				Requires: cfg.R.RequiresRVersion,
+			}
+		}
 	}
 	if cfg.Python != nil {
 		m.Python = &Python{
@@ -183,10 +198,11 @@ func NewManifestFromConfig(cfg *config.Config) *Manifest {
 		// If the configuration specifies a specific python version constraint
 		// (e.g. ">=3.8"), declare the environment requires that version.
 		if cfg.Python.RequiresPythonVersion != "" {
-			m.Environment = &Environment{
-				Python: &EnvironmentPython{
-					PythonRequires: cfg.Python.RequiresPythonVersion,
-				},
+			if m.Environment == nil {
+				m.Environment = &Environment{}
+			}
+			m.Environment.Python = &EnvironmentPython{
+				PythonRequires: cfg.Python.RequiresPythonVersion,
 			}
 		}
 	}
