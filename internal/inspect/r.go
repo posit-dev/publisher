@@ -78,10 +78,18 @@ func (i *defaultRInspector) InspectR() (*config.R, error) {
 		i.log.Debug("Error retrieving R package lock file", "error", err)
 	}
 
+	rProjectRequires := interpreters.NewRProjectRRequires(i.base)
+	r_requires, err := rProjectRequires.GetRVersionRequirement()
+	if err != nil {
+		i.log.Warn("Error retrieving required R version", err)
+		r_requires = ""
+	}
+
 	return &config.R{
-		Version:        version,
-		PackageFile:    packageFile.String(),
-		PackageManager: "renv",
+		Version:          version,
+		PackageFile:      packageFile.String(),
+		PackageManager:   "renv",
+		RequiresRVersion: r_requires,
 	}, nil
 }
 
