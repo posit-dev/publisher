@@ -543,6 +543,7 @@ func (s *StateSuite) createMockRInterpreter() interpreters.RInterpreter {
 	relPath := util.NewRelativePath("renv.lock", s.cwd.Fs())
 	iMock.On("GetLockFilePath").Return(relPath, true, nil)
 	iMock.On("GetPackageManager").Return("renv")
+	iMock.On("GetRRequires").Return("")
 	return iMock
 }
 
@@ -556,6 +557,7 @@ func (s *StateSuite) createMockRMissingInterpreter() interpreters.RInterpreter {
 	relPath := util.NewRelativePath("", s.cwd.Fs())
 	iMock.On("GetLockFilePath").Return(relPath, false, missingError)
 	iMock.On("GetPackageManager").Return("renv")
+	iMock.On("GetRRequires").Return("")
 	return iMock
 }
 

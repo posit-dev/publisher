@@ -52,6 +52,7 @@ func (s *GetInterpretersSuite) createMockRInterpreter() interpreters.RInterprete
 	iMock.On("GetLockFilePath").Return(relPath, true, nil)
 	iMock.On("GetPackageManager").Return("renv")
 	iMock.On("GetPreferredPath").Return("bin/my_r")
+	iMock.On("GetRRequires").Return("")
 	return iMock
 }
 

@@ -59,5 +59,5 @@ func (s *PythonRequiresSuite) TestGetPythonRequiresPythonVersion() {
 	pythonRequires, err := pyRequires.GetPythonVersionRequirement()
 	s.NoError(err)
 	s.NotEmpty(pythonRequires)
-	s.Equal(">=3.8, <3.12", pythonRequires)
+	s.Equal(">=3.8,<3.12", pythonRequires)
 }
