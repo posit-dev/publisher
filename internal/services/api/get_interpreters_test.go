@@ -76,7 +76,7 @@ func (s *GetInterpretersSuite) createMockPythonInterpreter() interpreters.Python
 	iMock.On("GetPythonExecutable").Return(util.NewAbsolutePath("/bin/python", s.cwd.Fs()), nil)
 	iMock.On("GetPythonVersion").Return("1.2.3", nil)
 	iMock.On("GetPackageManager").Return("pip")
-	iMock.On("GetPythonRequires").Return("")
+	iMock.On("GetPythonRequires").Return(">=1.1.3")
 	iMock.On("GetLockFilePath").Return("requirements.txt", true, nil)
 	iMock.On("GetPreferredPath").Return("bin/my_python")
 	return iMock
@@ -148,7 +148,7 @@ func (s *GetInterpretersSuite) TestGetInterpretersWhenPassedIn() {
 		Version:               "1.2.3",
 		PackageFile:           "requirements.txt",
 		PackageManager:        "pip",
-		RequiresPythonVersion: "",
+		RequiresPythonVersion: ">=1.1.3",
 	}
 	expectedR := &config.R{
 		Version:          "3.4.5",
