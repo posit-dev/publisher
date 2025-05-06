@@ -52,7 +52,7 @@ func (s *GetInterpretersSuite) createMockRInterpreter() interpreters.RInterprete
 	iMock.On("GetLockFilePath").Return(relPath, true, nil)
 	iMock.On("GetPackageManager").Return("renv")
 	iMock.On("GetPreferredPath").Return("bin/my_r")
-	iMock.On("GetRRequires").Return("")
+	iMock.On("GetRRequires").Return(">=3.1.1")
 	return iMock
 }
 
@@ -151,9 +151,10 @@ func (s *GetInterpretersSuite) TestGetInterpretersWhenPassedIn() {
 		RequiresPythonVersion: "",
 	}
 	expectedR := &config.R{
-		Version:        "3.4.5",
-		PackageFile:    "renv.lock",
-		PackageManager: "renv",
+		Version:          "3.4.5",
+		PackageFile:      "renv.lock",
+		PackageManager:   "renv",
+		RequiresRVersion: ">=3.1.1",
 	}
 
 	s.Equal(expectedPython, res.Python)

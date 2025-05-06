@@ -161,7 +161,7 @@ type R struct {
 	Version          string `toml:"version,omitempty" json:"version"`
 	PackageFile      string `toml:"package_file,omitempty" json:"packageFile"`
 	PackageManager   string `toml:"package_manager,omitempty" json:"packageManager"`
-	RequiresRVersion string `toml:"requires_rversion,omitempty" json:"requiresRVersion"`
+	RequiresRVersion string `toml:"requires_r_version,omitempty" json:"requiresRVersion"`
 }
 
 func (r *R) FillDefaults(
