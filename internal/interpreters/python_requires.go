@@ -141,6 +141,10 @@ func adaptPythonRequires(raw string) (string, error) {
 		return "", fmt.Errorf("pre-release versions are not supported: %s", constraint)
 	}
 
+	if strings.Count(constraint, ".") > 2 {
+		return "", fmt.Errorf("invalid python version: %s", constraint)
+	}
+
 	// If it's already a PEP 440 constraint, return it as is
 	if pep440Operators.MatchString(constraint) {
 		return constraint, nil
@@ -151,9 +155,19 @@ func adaptPythonRequires(raw string) (string, error) {
 		return "", fmt.Errorf("invalid python version: %s", constraint)
 	}
 
+	// If the version doesn't have an operator,
+	// but has a dot, we use equivalence.
+	// e.g. 3.8.* -> ==3.8.*
+	if strings.Contains(constraint, "*") {
+		return "==" + constraint, nil
+	}
+
 	// strip trailing zeros and dots
 	// e.g. 3.8.0 -> 3.8
 	// and prefix with ~=
-	trimmed := strings.TrimRight(constraint, "0.")
+	trimmed := strings.TrimSuffix(constraint, ".0")
+	for strings.HasSuffix(trimmed, ".0") {
+		trimmed = strings.TrimSuffix(trimmed, ".0")
+	}
 	return "~=" + trimmed, nil
 }

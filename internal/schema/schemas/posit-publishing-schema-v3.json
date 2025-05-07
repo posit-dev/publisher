@@ -136,10 +136,10 @@
           "description": "Package manager that will install the dependencies. If package-manager is none, dependencies will be assumed to be pre-installed on the server.",
           "examples": ["renv", "none"]
         },
-        "requires_r_version": {
+        "requires_r": {
           "type": "string",
           "default": "",
-          "description": "R interpreter version, required to run the content in. If not specified it will be detected from the one in use.",
+          "description": "R interpreter version, required to run the content. If not specified it will be detected from the one in use.",
           "examples": [">3.8", "<4.3", ">=3.5.0"]
         }
       }

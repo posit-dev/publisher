@@ -79,17 +79,17 @@ func (i *defaultRInspector) InspectR() (*config.R, error) {
 	}
 
 	rProjectRequires := interpreters.NewRProjectRRequires(i.base)
-	r_requires, err := rProjectRequires.GetRVersionRequirement()
+	rRequires, err := rProjectRequires.GetRVersionRequirement()
 	if err != nil {
 		i.log.Warn("Error retrieving required R version", err)
-		r_requires = ""
+		rRequires = ""
 	}
 
 	return &config.R{
 		Version:          version,
 		PackageFile:      packageFile.String(),
 		PackageManager:   "renv",
-		RequiresRVersion: r_requires,
+		RequiresRVersion: rRequires,
 	}, nil
 }
 

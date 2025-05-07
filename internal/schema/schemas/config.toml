@@ -23,7 +23,7 @@ requires_python = "<3.12"
 version = "4.3.1"
 package_file = "renv.lock"
 package_manager = "renv"
-requires_r_version = ">=4.3.0"
+requires_r = ">=4.3.0"
 
 [quarto]
 version = "1.4"

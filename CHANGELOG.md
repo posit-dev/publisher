@@ -5,13 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.X.X]
+## [Unreleased]
 
 ### Added
 
 - Introduced detection of required R interpreter version based on
   `DESCRIPTION` file and `renv.lock` file. The detected version
-  will fill the `requires_r_version` field in configuration (#2636)
+  will fill the `requires_r` field in configuration (#2636)
 
 ### Fixed
 

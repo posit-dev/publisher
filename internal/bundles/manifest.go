@@ -58,7 +58,7 @@ type EnvironmentR struct {
 }
 
 type EnvironmentPython struct {
-	PythonRequires string `json:"requires"` // The Python version to use for the content environment
+	Requires string `json:"requires"` // The Python version to use for the content environment
 }
 
 type Environment struct {
@@ -202,7 +202,7 @@ func NewManifestFromConfig(cfg *config.Config) *Manifest {
 				m.Environment = &Environment{}
 			}
 			m.Environment.Python = &EnvironmentPython{
-				PythonRequires: cfg.Python.RequiresPythonVersion,
+				Requires: cfg.Python.RequiresPythonVersion,
 			}
 		}
 	}

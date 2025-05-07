@@ -530,10 +530,10 @@ func (i *defaultRInterpreter) GetPreferredPath() string {
 
 func (i *defaultRInterpreter) GetRRequires() string {
 	rProjectRequires := NewRProjectRRequires(i.base)
-	r_requires, err := rProjectRequires.GetRVersionRequirement()
+	rRequires, err := rProjectRequires.GetRVersionRequirement()
 	if err != nil {
 		i.log.Warn("Error retrieving required R version", err)
-		r_requires = ""
+		rRequires = ""
 	}
-	return r_requires
+	return rRequires
 }

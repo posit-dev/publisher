@@ -1,6 +1,7 @@
 package interpreters
 
 import (
+	"os"
 	"testing"
 
 	"github.com/posit-dev/publisher/internal/util"
@@ -60,4 +61,51 @@ func (s *PythonRequiresSuite) TestGetPythonRequiresPythonVersion() {
 	s.NoError(err)
 	s.NotEmpty(pythonRequires)
 	s.Equal(">=3.8,<3.12", pythonRequires)
+}
+
+func (s *PythonRequiresSuite) TestGetPythonRequiresPythonVersionAdapt() {
+	cases := []struct {
+		input    string
+		expected string
+	}{
+		{"3.9.17", "~=3.9.17"},
+		{">=3.7", ">=3.7"},
+		{"3.8, <3.10", "~=3.8,<3.10"},
+		{"==3.11.*", "==3.11.*"},
+		{"3.8.0", "~=3.8"},
+		{"3.11.10", "~=3.11.10"},
+		{"3.11", "~=3.11"},
+		{"3.11.0", "~=3.11"},
+		{"3.0", "~=3"},
+		{"3.0.0", "~=3"},
+		{"3.8.*", "==3.8.*"},
+		{"  3.9.0  ", "~=3.9"},
+		{"~=3.10", "~=3.10"},
+		{"< 4.0", "< 4.0"},
+		{"3.10rc1", ""},
+		{"3.11b2", ""},
+		{"3.8a1", ""},
+		{"cpython-3.8", ""},
+		{"3.9/pypy", ""},
+		{"3.10@foo", ""},
+		{"", ""},
+		{"abc", ""},
+		{"3..8", ""},
+		{"3.8.1.*", ""},
+		{"3.8, 3.8rc1", ""},
+		{"3.8, cpython-3.8", ""},
+		{"3.8, 3.8", "~=3.8,~=3.8"},
+	}
+
+	tmpDirPath, _ := util.NewAbsolutePath(os.TempDir(), s.fs).TempDir("test-python-requires")
+	tmpDir, _ := tmpDirPath.Abs()
+	for _, tcase := range cases {
+		versionFile := tmpDir.Join(".python-version").WithFs(s.fs)
+		versionFile.WriteFile([]byte(tcase.input), 0644)
+
+		p := NewPyProjectPythonRequires(tmpDir)
+
+		pythonRequires, _ := p.readPythonVersionFile()
+		s.Equal(tcase.expected, pythonRequires)
+	}
 }
