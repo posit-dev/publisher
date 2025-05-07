@@ -162,12 +162,9 @@ func adaptPythonRequires(raw string) (string, error) {
 		return "==" + constraint, nil
 	}
 
-	// strip trailing zeros and dots
-	// e.g. 3.8.0 -> 3.8
-	// and prefix with ~=
-	trimmed := strings.TrimSuffix(constraint, ".0")
-	for strings.HasSuffix(trimmed, ".0") {
-		trimmed = strings.TrimSuffix(trimmed, ".0")
+	if strings.Count(constraint, ".") == 1 {
+		// e.g. 3.8, what the user want is 3.8.*
+		constraint = constraint + ".0"
 	}
-	return "~=" + trimmed, nil
+	return "~=" + constraint, nil
 }
