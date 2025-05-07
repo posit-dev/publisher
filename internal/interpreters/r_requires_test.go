@@ -1,6 +1,7 @@
 package interpreters
 
 import (
+	"os"
 	"testing"
 
 	"github.com/posit-dev/publisher/internal/util"
@@ -50,4 +51,31 @@ func (s *RRequiresSuite) TestGetRRequiresRenvLock() {
 	s.NoError(err)
 	s.NotEmpty(pythonRequires)
 	s.Equal("~=4.3.0", pythonRequires)
+}
+
+func (s *RRequiresSuite) TestGetRRequiresDESCRIPTIONDepends() {
+	cases := []struct {
+		input    string
+		expected string
+	}{
+		{"Depends: package1, package2, package3", ""},
+		{"Depends: package1\n package2\n package3", ""},
+		{"Depends: package1\n\tpackage2\n\tpackage3", ""},
+		{"Depends: package1, R (>3.5), package3", ">3.5"},
+		{"Depends: package1\n R (>3.5)\n package3", ">3.5"},
+		{"Depends: package1\n\tR (>7.3)\n\tpackage3", ">7.3"},
+		{"Depends: package1\n tinyR (<3.5)\n package3", ""},
+	}
+
+	tmpDirPath, _ := util.NewAbsolutePath(os.TempDir(), s.fs).TempDir("test-r-requires")
+	tmpDir, _ := tmpDirPath.Abs()
+	for _, tcase := range cases {
+		versionFile := tmpDir.Join("DESCRIPTION").WithFs(s.fs)
+		versionFile.WriteFile([]byte(tcase.input), 0644)
+
+		p := NewRProjectRRequires(tmpDir)
+
+		pythonRequires, _ := p.GetRVersionRequirement()
+		s.Equal(tcase.expected, pythonRequires)
+	}
 }

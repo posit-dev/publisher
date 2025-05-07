@@ -67,7 +67,7 @@ func (p *RProjectRRequires) readDescriptionFile() (string, error) {
 	// Join the dependencies into a single string and look for R.
 	// The regex will match "R (ANYTHING)"
 	all := strings.Join(deps, " ")
-	re := regexp.MustCompile(`R\s*\(([^)]+)\)`)
+	re := regexp.MustCompile(`\bR\s*\(([^)]+)\)`)
 	match := re.FindStringSubmatch(all)
 	if len(match) >= 2 {
 		return match[1], nil
