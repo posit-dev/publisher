@@ -5,6 +5,7 @@ package interpreters
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/posit-dev/publisher/internal/util"
@@ -53,7 +54,23 @@ func (p *PyProjectPythonRequires) readPythonVersionFile() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return strings.TrimSpace(string(data)), nil
+
+	parts := strings.Split(string(data), ",")
+	var adapted []string
+
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+		adaptedPart, err := adaptPythonRequires(part)
+		if err != nil {
+			return "", err
+		}
+		adapted = append(adapted, adaptedPart)
+	}
+
+	return strings.Join(adapted, ","), nil
 }
 
 // Read a pyproject.toml file and return the version string.
@@ -109,4 +126,45 @@ func (p *PyProjectPythonRequires) readSetupCfg() (string, error) {
 	}
 
 	return "", nil
+}
+
+var pep440Operators = regexp.MustCompile(`(==|!=|<=|>=|~=|<|>)`)
+var validVersion = regexp.MustCompile(`^\d+(\.\d+)*(\.\*)?$`)
+
+func adaptPythonRequires(raw string) (string, error) {
+	constraint := strings.TrimSpace(raw)
+
+	if strings.ContainsAny(constraint, "-/@") {
+		return "", fmt.Errorf("python specific implementations are not supported: %s", constraint)
+	}
+	if strings.Contains(constraint, "rc") || strings.Contains(constraint, "b") || strings.Contains(constraint, "a") {
+		return "", fmt.Errorf("pre-release versions are not supported: %s", constraint)
+	}
+
+	if strings.Count(constraint, ".") > 2 {
+		return "", fmt.Errorf("invalid python version: %s", constraint)
+	}
+
+	// If it's already a PEP 440 constraint, return it as is
+	if pep440Operators.MatchString(constraint) {
+		return constraint, nil
+	}
+
+	// Otherwise it should be a version string
+	if !validVersion.MatchString(constraint) {
+		return "", fmt.Errorf("invalid python version: %s", constraint)
+	}
+
+	// If the version doesn't have an operator,
+	// but has a dot, we use equivalence.
+	// e.g. 3.8.* -> ==3.8.*
+	if strings.Contains(constraint, "*") {
+		return "==" + constraint, nil
+	}
+
+	if strings.Count(constraint, ".") == 1 {
+		// e.g. 3.8, what the user want is 3.8.*
+		constraint = constraint + ".0"
+	}
+	return "~=" + constraint, nil
 }

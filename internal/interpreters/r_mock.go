@@ -111,3 +111,9 @@ func (m *MockRInterpreter) GetPreferredPath() string {
 	arg0 := args.Get(0)
 	return arg0.(string)
 }
+
+func (m *MockRInterpreter) GetRRequires() string {
+	args := m.Called()
+	arg0 := args.Get(0)
+	return arg0.(string)
+}

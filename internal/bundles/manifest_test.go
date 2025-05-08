@@ -220,3 +220,42 @@ func (s *ManifestSuite) TestNewManifestFromConfigWithJupyterOptions() {
 		Files:    map[string]ManifestFile{},
 	}, m)
 }
+
+func (s *ManifestSuite) TestNewManifestFromConfigVersionRequirements() {
+	cfg := &config.Config{
+		Python: &config.Python{
+			Version:               "3.4.5",
+			PackageFile:           "requirements.in",
+			PackageManager:        "pip",
+			RequiresPythonVersion: ">=3.4.5",
+		},
+		R: &config.R{
+			Version:          "4.5.6",
+			PackageFile:      "renv.lock",
+			PackageManager:   "renv",
+			RequiresRVersion: ">=4.5.6",
+		},
+	}
+	m := NewManifestFromConfig(cfg)
+	s.Equal(&Manifest{
+		Environment: &Environment{
+			Python: &EnvironmentPython{
+				Requires: ">=3.4.5",
+			},
+			R: &EnvironmentR{
+				Requires: ">=4.5.6",
+			},
+		},
+		Version: 1,
+		Python: &Python{
+			Version: "3.4.5",
+			PackageManager: PythonPackageManager{
+				Name:        "pip",
+				PackageFile: "requirements.in",
+			},
+		},
+		Platform: "4.5.6",
+		Packages: map[string]Package{},
+		Files:    map[string]ManifestFile{},
+	}, m)
+}
