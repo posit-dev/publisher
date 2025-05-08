@@ -51,6 +51,7 @@ type RInterpreter interface {
 	GetPreferredPath() string
 	CreateLockfile(util.AbsolutePath) error
 	RenvEnvironmentErrorCheck() *types.AgentError
+	GetRRequires() string
 }
 
 type defaultRInterpreter struct {
@@ -525,4 +526,14 @@ func (i *defaultRInterpreter) GetPackageManager() string {
 
 func (i *defaultRInterpreter) GetPreferredPath() string {
 	return i.preferredPath.String()
+}
+
+func (i *defaultRInterpreter) GetRRequires() string {
+	rProjectRequires := NewRProjectRRequires(i.base)
+	rRequires, err := rProjectRequires.GetRVersionRequirement()
+	if err != nil {
+		i.log.Warn("Error retrieving required R version", err)
+		rRequires = ""
+	}
+	return rRequires
 }

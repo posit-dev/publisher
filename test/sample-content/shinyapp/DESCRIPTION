@@ -1,0 +1,14 @@
+Package: OldFaithfulApp
+Type: Shiny
+Title: Old Faithful Geyser Histogram
+Version: 0.1.0
+Author: Your Name
+Maintainer: Your Name <your@email.com>
+Description: A simple Shiny web application that displays a histogram 
+    of the Old Faithful Geyser data using user-controlled bins.
+License: MIT
+Encoding: UTF-8
+LazyData: true
+Depends: 
+    R (>= 3.5.0), 
+    shiny
