@@ -17,6 +17,27 @@ jobs:
         with:
           r-version: "latest"
           use-public-rspm: true
+      - name: Update PATH with R directory on windows
+        if: startsWith(runner, 'windows')
+        run: |
+          # Create bin path
+          $rDir = "C:\Program Files\R\R-latest"
+          echo "R bin directory: $binPath"
+
+          # If C:\R exists, move its contents (this requires admin privileges in normal circumstances)
+          if (Test-Path "C:\R") {
+              Move-Item -Path "C:\R" -Destination "$rDir" -Force
+              echo "Files after move in destination directory ($rDir):"
+              Get-ChildItem -Path "$rDir" -Recurse | Select-Object -ExpandProperty FullName
+          } else {
+              echo "C:\R folder not found"
+          }
+
+          # Add the new path to the PATH environment variable (prepending to give it priority)
+          $newPath = "$rDir;" + $env:PATH
+          echo "PATH=$newPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+          echo "Updated PATH to include $rDir"
       - name: Install renv package
         run: |
           Rscript -e 'install.packages("renv")'
