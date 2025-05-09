@@ -17,8 +17,7 @@ func NewClientAuth(acct *accounts.Account) (AuthMethod, error) {
 	case accounts.AuthTypeAPIKey:
 		return NewApiKeyAuthenticator(acct.ApiKey, ""), nil
 	case accounts.AuthTypeSnowflake:
-		// FIXME: separate account field for conn name
-		auth, err := NewSnowflakeAuthenticator(acct.ApiKey)
+		auth, err := NewSnowflakeAuthenticator(acct.SnowflakeConnection)
 		if err != nil {
 			return nil, err
 		}

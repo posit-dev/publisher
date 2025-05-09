@@ -86,8 +86,8 @@ func (u *UserDTO) CanPublish() bool {
 	return u.UserRole == AuthRoleAdmin || u.UserRole == AuthRolePublisher
 }
 
-var errInvalidServerOrCredentials = errors.New("could not validate credentials; check connectivity to the server, the URL, and API key")
-var errInvalidApiKey = errors.New("could not log in with the provided credentials")
+var errInvalidServerOrCredentials = errors.New("could not validate credentials; check connectivity to the server, the URL, and authentication credentials")
+var errInvalidCredentials = errors.New("could not log in with the provided credentials")
 var errInvalidServer = errors.New("could not access the server; check the server URL and try again")
 
 func isConnectAuthError(err error) bool {
@@ -133,10 +133,10 @@ func (c *ConnectClient) TestAuthentication(log logging.Logger) (*User, error) {
 			}
 		}
 		if isConnectAuthError(err) {
-			if c.account.ApiKey != "" {
-				// Key was provided and should have worked
-				log.Info("Connect API key authentication check failed", "url", c.account.URL)
-				return nil, types.NewAgentError(events.AuthenticationFailedCode, errInvalidApiKey, nil)
+			if c.account.HasCredential() {
+				// credential was provided and should have worked
+				log.Info("Connect authentication check failed", "url", c.account.URL, "authType", c.account.AuthType())
+				return nil, types.NewAgentError(events.AuthenticationFailedCode, errInvalidCredentials, nil)
 			} else {
 				// No key provided, an auth error is OK
 				log.Info("Connect server connectivity test passed (no API key provided)", "url", c.account.URL)
@@ -145,7 +145,7 @@ func (c *ConnectClient) TestAuthentication(log logging.Logger) (*User, error) {
 		} else {
 			// This isn't a Connect server, or we were redirected for auth, or ???
 			log.Debug("Server responded with error", "error", err)
-			if c.account.ApiKey != "" {
+			if c.account.HasCredential() {
 				return nil, errInvalidServerOrCredentials
 			} else {
 				return nil, errInvalidServer

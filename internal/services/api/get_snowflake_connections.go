@@ -41,7 +41,7 @@ func GetSnowflakeConnectionsHandlerFunc(log logging.Logger) http.HandlerFunc {
 				ServerType: accounts.ServerTypeConnect,
 				URL:        serverUrl,
 				// Insecure:   b.Insecure,
-				ApiKey: name,
+				SnowflakeConnection: name,
 			}
 
 			timeout := time.Second * 30

@@ -5,8 +5,10 @@ import {
   MultiStepInput,
   MultiStepState,
   QuickPickItemWithInspectionResult,
+  QuickPickItemWithIndex,
   isQuickPickItem,
   isQuickPickItemWithInspectionResult,
+  isQuickPickItemWithIndex,
 } from "src/multiStepInputs/multiStepHelper";
 
 import {
@@ -31,6 +33,8 @@ import {
   areInspectionResultsSimilarEnough,
   ContentType,
   FileAction,
+  AuthType,
+  SnowflakeConnection,
 } from "src/api";
 import {
   getPythonInterpreterPath,
@@ -74,6 +78,10 @@ export async function newDeployment(
   let inspectionResults: ConfigurationInspectionResult[] = [];
   const contentRecordNames = new Map<string, string[]>();
 
+  let authType: AuthType;
+  let connections: SnowflakeConnection[] = [];
+  let connectionQuickPicks: QuickPickItemWithIndex[];
+
   let newConfig: Configuration | undefined;
   let newOrSelectedCredential: Credential | undefined;
   let newContentRecord: PreContentRecord | undefined;
@@ -91,6 +99,7 @@ export async function newDeployment(
     url?: string;
     name?: string;
     apiKey?: string;
+    snowflakeConnection?: string;
   };
   type NewDeploymentData = {
     entrypoint: SelectedEntrypoint;
@@ -268,6 +277,35 @@ export async function newDeployment(
         `Unable to continue due to deployment error. ${summary}`,
       );
       throw error;
+    }
+  };
+
+  const getSnowflakeConnections = async (serverUrl: string) => {
+    try {
+      const connsResponse = await api.snowflakeConnections.list(serverUrl);
+      connections = connsResponse.data;
+      connectionQuickPicks = connections.map((connection, i) => ({
+        label: connection.name,
+        index: i,
+      }));
+    } catch (error: unknown) {
+      if (isAxiosErrorWithJson(error)) {
+        throw error;
+      }
+      const summary = getSummaryStringFromError(
+        "newCredentials, snowflakeConnections.list",
+        error,
+      );
+      window.showErrorMessage(
+        `Unable to query Snowflake connections. ${summary}`,
+      );
+      throw error;
+    }
+
+    if (!connectionQuickPicks.length) {
+      const msg = `No working Snowflake connections found for ${serverUrl}. Please configure a connection in your environment before creating a credential.`;
+      window.showErrorMessage(msg);
+      throw new Error(msg);
     }
   };
 
@@ -608,6 +646,10 @@ export async function newDeployment(
                 severity: InputBoxValidationSeverity.Error,
               });
             }
+
+            if (testResult.data.authType) {
+              authType = testResult.data.authType;
+            }
           } catch (e) {
             return Promise.resolve({
               message: `Error: Invalid URL (unable to validate connectivity with Server URL - ${getMessageFromError(e)}).`,
@@ -630,7 +672,7 @@ export async function newDeployment(
   // Step: New Credentials - Enter the API Key
   // ***************************************************************
   async function inputAPIKey(input: MultiStepInput, state: MultiStepState) {
-    if (newCredentialByAnyMeans()) {
+    if (newCredentialByAnyMeans() && authType !== AuthType.SNOWFLAKE) {
       const currentAPIKey = newDeploymentData.newCredentials.apiKey
         ? newDeploymentData.newCredentials.apiKey
         : "";
@@ -703,8 +745,65 @@ export async function newDeployment(
         ignoreFocusOut: true,
       });
 
+      // only one of api key and snowflake connection should be configured
       newDeploymentData.newCredentials.apiKey = apiKey;
+      newDeploymentData.newCredentials.snowflakeConnection = "";
       newDeploymentData.newCredentials.url = validatedURL;
+      return (input: MultiStepInput) => inputSnowflakeConnection(input, state);
+    }
+    return inputSnowflakeConnection(input, state);
+  }
+
+  // ***************************************************************
+  // Step: New Credentials - Enter the Snowflake connection name
+  // ***************************************************************
+  async function inputSnowflakeConnection(input: MultiStepInput, state: MultiStepState) {
+    if (newCredentialByAnyMeans() && authType === AuthType.SNOWFLAKE) {
+
+      // url should always be defined by the time we get to this step
+      // but we have to type guard it for the API
+      const serverUrl = newDeploymentData.newCredentials.url
+        ? newDeploymentData.newCredentials.url
+        : "";
+
+      try {
+        await showProgress(
+          "Reading Snowflake connections",
+          viewId,
+          async () => await getSnowflakeConnections(serverUrl),
+        );
+      } catch {
+        // errors have already been displayed by getSnowflakeConnections
+        return;
+      }
+
+      let connectionIndex = 0;
+
+      // skip if we only have one choice.
+      if (connectionQuickPicks.length > 1) {
+        const pick = await input.showQuickPick({
+          title: state.title,
+          step: 0,
+          totalSteps: 0,
+          placeholder:
+            "Select the Snowflake connection configuration you want to use to authenticate.",
+          items: connectionQuickPicks,
+          buttons: [],
+          shouldResume: () => Promise.resolve(false),
+          ignoreFocusOut: true,
+        });
+
+        if (!pick || !isQuickPickItemWithIndex(pick)) {
+          return;
+        }
+
+        connectionIndex = pick.index;
+      }
+
+      // only one of api key and snowflake connection should be configured
+      newDeploymentData.newCredentials.apiKey = "";
+      newDeploymentData.newCredentials.snowflakeConnection = connections[connectionIndex].name;
+      newDeploymentData.newCredentials.url = connections[connectionIndex].serverUrl;
       return (input: MultiStepInput) => inputCredentialName(input, state);
     }
     return inputCredentialName(input, state);
@@ -805,7 +904,10 @@ export async function newDeployment(
     // cancellation.
     if (
       !newDeploymentData.newCredentials.url ||
-      !newDeploymentData.newCredentials.apiKey ||
+      newDeploymentData.newCredentials.apiKey === undefined ||
+      newDeploymentData.newCredentials.snowflakeConnection === undefined ||
+      // separate from the type guards, make sure at least one of these is actually non-empty
+      (newDeploymentData.newCredentials.apiKey === "" && newDeploymentData.newCredentials.snowflakeConnection === "") ||
       !newDeploymentData.newCredentials.name
     ) {
       console.log("User has dismissed flow. Exiting.");
@@ -818,6 +920,7 @@ export async function newDeployment(
         newDeploymentData.newCredentials.name,
         newDeploymentData.newCredentials.url,
         newDeploymentData.newCredentials.apiKey,
+        newDeploymentData.newCredentials.snowflakeConnection,
       );
       newOrSelectedCredential = response.data;
     } catch (error: unknown) {

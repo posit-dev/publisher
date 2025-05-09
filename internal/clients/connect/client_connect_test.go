@@ -478,7 +478,7 @@ func (s *ConnectClientSuite) TestTestAuthentication401WithKey() {
 	s.NotNil(err)
 	agentErr, ok := err.(*types.AgentError)
 	s.True(ok)
-	s.ErrorIs(agentErr.Err, errInvalidApiKey)
+	s.ErrorIs(agentErr.Err, errInvalidCredentials)
 	s.Equal(events.AuthenticationFailedCode, agentErr.Code)
 }
 
