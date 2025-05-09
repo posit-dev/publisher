@@ -13,6 +13,13 @@ jobs:
         with:
           fetch-depth: 0
       - uses: extractions/setup-just@v2
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: "latest"
+          use-public-rspm: true
+      - name: Install renv package
+        run: |
+          Rscript -e 'install.packages("renv")'
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
