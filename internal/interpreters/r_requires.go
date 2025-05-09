@@ -95,7 +95,9 @@ func (p *RProjectRRequires) readRenvLockl() (string, error) {
 
 	if rSection, ok := parsed["R"].(map[string]any); ok {
 		if version, ok := rSection["Version"].(string); ok {
-			return "~=" + version, nil
+			// This is the function from python_requires.go
+			// so it's largely tested by TestGetPythonRequiresPythonVersionAdapt
+			return adaptToCompatibleConstraint(version), nil
 		}
 	}
 	return "", nil
