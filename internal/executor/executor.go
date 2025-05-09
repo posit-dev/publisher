@@ -26,6 +26,7 @@ func NewExecutor() *defaultExecutor {
 
 func (e *defaultExecutor) RunCommand(executable string, args []string, cwd util.AbsolutePath, log logging.Logger) ([]byte, []byte, error) {
 	log.Debug("Running command", "cmd", executable, "args", strings.Join(args, " "))
+	log.Info("Running command", "cmd", executable, "args", strings.Join(args, " "))
 	cmd := exec.Command(executable, args...)
 	cmd.Dir = cwd.String()
 	var stdout bytes.Buffer
