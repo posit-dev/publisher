@@ -107,7 +107,6 @@ func (s *RPackageDescFunctionalSuite) TestGetRPackagesFunctional() {
 	if err != nil {
 		s.T().Logf("Could not get R executable: %v", err)
 	}
-	s.True(false)
 
 	mapper, err := renv.NewPackageMapper(s.testProjectDir, util.Path{}, s.log)
 	s.Require().NoError(err)
