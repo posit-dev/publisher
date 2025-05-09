@@ -1,7 +1,10 @@
 package publish
 
+// Copyright (C) 2025 by Posit Software, PBC.
+
 import (
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/posit-dev/publisher/internal/config"
@@ -33,10 +36,15 @@ func TestRPackageDescFunctionalSuite(t *testing.T) {
 
 func (s *RPackageDescFunctionalSuite) SetupTest() {
 	// Set up the test directory
-	tempDir, err := os.MkdirTemp("", "r-packages-test-*")
+	parentDir, err := os.MkdirTemp("", "r-packages-test-*")
 	s.Require().NoError(err)
 
-	s.testProjectDir = util.NewAbsolutePath(tempDir, afero.NewOsFs())
+	// Create a subdirectory with spaces in the name
+	dirWithSpaces := filepath.Join(parentDir, "With Spaces")
+	err = os.MkdirAll(dirWithSpaces, 0755)
+	s.Require().NoError(err)
+
+	s.testProjectDir = util.NewAbsolutePath(dirWithSpaces, afero.NewOsFs())
 
 	// Set up our test state
 	s.stateStore = state.Empty()
@@ -49,7 +57,8 @@ func (s *RPackageDescFunctionalSuite) SetupTest() {
 }
 
 func (s *RPackageDescFunctionalSuite) TearDownTest() {
-	os.RemoveAll(s.testProjectDir.String())
+	parentDir := filepath.Dir(s.testProjectDir.String())
+	os.RemoveAll(parentDir)
 }
 
 func (s *RPackageDescFunctionalSuite) createTestRenvLock() {
