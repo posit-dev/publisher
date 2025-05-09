@@ -162,9 +162,18 @@ func adaptPythonRequires(raw string) (string, error) {
 		return "==" + constraint, nil
 	}
 
-	if strings.Count(constraint, ".") == 1 {
-		// e.g. 3.8, what the user want is 3.8.*
-		constraint = constraint + ".0"
+	return adaptToCompatibleConstraint(constraint), nil
+}
+
+func adaptToCompatibleConstraint(constraint string) string {
+	parts := strings.Split(constraint, ".")
+	switch len(parts) {
+	case 1:
+		// only major specified “3” → ~=3.0 → >=3.0,<4.0
+		return "~=" + fmt.Sprintf("%s.0", parts[0])
+	default:
+		// major and minor specified “3.8” or “3.8.11” → ~=3.8.0 → >=3.8.0,<3.9.0
+		major, minor := parts[0], parts[1]
+		return "~=" + fmt.Sprintf("%s.%s.0", major, minor)
 	}
-	return "~=" + constraint, nil
 }
