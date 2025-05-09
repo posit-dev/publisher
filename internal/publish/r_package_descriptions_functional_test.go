@@ -10,6 +10,7 @@ import (
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/inspect/dependencies/renv"
+	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/state"
 	"github.com/posit-dev/publisher/internal/util"
@@ -96,6 +97,17 @@ func (s *RPackageDescFunctionalSuite) TestGetRPackagesFunctional() {
 			PackageFile: "renv.lock",
 		},
 	}
+
+	rInterpreter, err := interpreters.NewRInterpreter(s.testProjectDir, util.Path{}, s.log, nil, nil, nil)
+	s.Require().NoError(err)
+
+	rExecutable, err := rInterpreter.GetRExecutable()
+	s.T().Logf("R executable path: %s", rExecutable)
+	// Don't require this to succeed as it might not be available in all test environments
+	if err != nil {
+		s.T().Logf("Could not get R executable: %v", err)
+	}
+	s.True(false)
 
 	mapper, err := renv.NewPackageMapper(s.testProjectDir, util.Path{}, s.log)
 	s.Require().NoError(err)
