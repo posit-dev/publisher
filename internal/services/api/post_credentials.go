@@ -12,9 +12,10 @@ import (
 )
 
 type PostCredentialsRequest struct {
-	Name   string `json:"name"`
-	URL    string `json:"url"`
-	ApiKey string `json:"apiKey"`
+	Name                string `json:"name"`
+	URL                 string `json:"url"`
+	ApiKey              string `json:"apiKey"`
+	SnowflakeConnection string `json:"snowflakeConnection"`
 }
 
 type PostCredentialsResponse = credentials.Credential
@@ -44,7 +45,7 @@ func PostCredentialFuncHandler(log logging.Logger) http.HandlerFunc {
 			return
 		}
 
-		cred, err := cs.Set(body.Name, body.URL, body.ApiKey)
+		cred, err := cs.Set(body.Name, body.URL, body.ApiKey, body.SnowflakeConnection)
 		if err != nil {
 			if _, ok := err.(*credentials.URLCollisionError); ok {
 				http.Error(w, http.StatusText(http.StatusConflict), http.StatusConflict)

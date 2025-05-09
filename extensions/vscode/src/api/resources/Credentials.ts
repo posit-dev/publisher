@@ -22,11 +22,12 @@ export class Credentials {
   // 400 - bad request
   // 409 - conflict
   // 500 - internal server error
-  create(name: string, url: string, apiKey: string) {
+  create(name: string, url: string, apiKey: string, snowflakeConnection: string) {
     return this.client.post<Credential>(`credentials`, {
       name,
       url,
       apiKey,
+      snowflakeConnection,
     });
   }
 

@@ -4,7 +4,6 @@ package snowflake
 
 import (
 	"fmt"
-	"runtime"
 
 	"github.com/pelletier/go-toml/v2"
 	"github.com/posit-dev/publisher/internal/util"
@@ -31,50 +30,9 @@ import (
 // requires find config dir
 
 // allow tests to override runtime.GOOS
-var runtimeGOOS = func() string {
-	return runtime.GOOS
-}
-
-// Returns the default config directory for Snowflake connections.
-//
-// https://docs.snowflake.com/en/developer-guide/python-connector/python-connector-connect#connecting-using-the-connections-toml-file
-func findConfigDir() string {
-	// home <- Sys.getenv("SNOWFLAKE_HOME", "~/.snowflake")
-	//  if (dir.exists(home)) {
-	//    return(home)
-	//  }
-	//  if (nzchar(env <- Sys.getenv("XDG_CONFIG_HOME"))) {
-	//    return(file.path(env, "snowflake"))
-	//  }
-	//  # System-specific paths.
-	//  if (is.null(os)) {
-	//    if (.Platform$OS.type == "windows") {
-	//      os <- "win"
-	//    } else if (Sys.info()["sysname"] == "Darwin") {
-	//      os <- "mac"
-	//    } else {
-	//      os <- "unix"
-	//    }
-	//  }
-	//  switch(
-	//    os,
-	//    win = file.path(Sys.getenv("LOCALAPPDATA"), "snowflake"),
-	//    mac = "~/Library/Application Support/snowflake",
-	//    unix = "~/.config/snowflake"
-	//  )
-	switch runtimeGOOS() {
-	case "windows":
-		// feels like we should use os.UserHomeDir() here, but I'm
-		// using what the Snowflake docs say they use
-		return `%USERPROFILE%\AppData\Local\snowflake`
-	case "darwin":
-		return "~/Library/Application Support/snowflake"
-	case "linux":
-		return "~/.config/snowflake"
-
-	}
-	return ""
-}
+// var runtimeGOOS = func() string {
+// 	return runtime.GOOS
+// }
 
 type Connection struct {
 	Account        string
@@ -95,15 +53,21 @@ func GetConnection(name string) (Connection, error) {
 }
 
 func GetConnections() (map[string]Connection, error) {
+	// We don't know in advance what the Connection names will be, so we
+	// must decode into a map rather than a struct.
 	var conns map[string]Connection
 
-	// TODO: consider rstudio/snowflake-lib. Right now `go get` is failing
-	// to import it for some reason.
+	// TODO: consider rstudio/snowflake-lib. But it doesn't have a released version.
 
 	// util.ReadTOMLFile uses strict parsing, but we want to ignore a bunch
 	// of connections.toml fields that we don't care about, so we make our
 	// own decoder here.
-	path := util.NewAbsolutePath("/Users/chris/.snowflake/connections.toml", nil)
+
+	path, err := connectionsPath()
+	if err != nil {
+		return nil, err
+	}
+
 	f, err := path.Open()
 	if err != nil {
 		return nil, err
@@ -117,3 +81,33 @@ func GetConnections() (map[string]Connection, error) {
 
 	return conns, nil
 }
+
+// FIXME:
+func connectionsPath() (util.AbsolutePath, error) {
+	return util.NewAbsolutePath("/Users/chris/.snowflake/connections.toml", nil), nil
+}
+
+// Returns potential config directories for Snowflake connections.
+//
+// https://docs.snowflake.com/en/developer-guide/python-connector/python-connector-connect#connecting-using-the-connections-toml-file
+// func findConfigDirs() []string {
+// 	var dirs []string
+// 	if sfh, set := os.LookupEnv("SNOWFLAKE_HOME"); set && sfh != "" {
+// 		dirs = append(dirs, sfh)
+// 	}
+// 	//  if (nzchar(env <- Sys.getenv("XDG_CONFIG_HOME"))) {
+// 	//    return(file.path(env, "snowflake"))
+// 	//  }
+// 	switch runtimeGOOS() {
+// 	case "windows":
+// 		// feels like we should use os.UserHomeDir() here, but I'm
+// 		// using what the Snowflake docs say they use
+// 		dirs = append(dirs, `%USERPROFILE%\AppData\Local\snowflake`)
+// 	case "darwin":
+// 		dirs = append(dirs, "~/Library/Application Support/snowflake")
+// 	case "linux":
+// 		dirs = append(dirs, "~/.config/snowflake")
+//
+// 	}
+// 	return dirs
+// }

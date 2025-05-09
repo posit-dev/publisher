@@ -88,7 +88,7 @@ func getSignedJWT(privateKey *rsa.PrivateKey, account string, user string, expir
 	// Serialize the public key to DER
 	derPubKey, err := x509.MarshalPKIXPublicKey(&privateKey.PublicKey)
 	if err != nil {
-		return "", fmt.Errorf("Failed to encode public key to DER: %w", err)
+		return "", fmt.Errorf("failed to encode public key to DER: %w", err)
 	}
 
 	// Compute the SHA-256 hash of the DER-encoded public key
@@ -112,7 +112,7 @@ func getSignedJWT(privateKey *rsa.PrivateKey, account string, user string, expir
 	// Sign the token using the RSA private key
 	signedToken, err := token.SignedString(privateKey)
 	if err != nil {
-		return "", fmt.Errorf("Failed to sign token: %w", err)
+		return "", fmt.Errorf("failed to sign token: %w", err)
 	}
 
 	return signedToken, nil
@@ -139,7 +139,7 @@ func getAccessToken(account string, ingressURL string, signedToken string, role 
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return "", fmt.Errorf("Failed to get access token")
+		return "", fmt.Errorf("failed to get access token")
 	}
 
 	accessToken, err := io.ReadAll(resp.Body)

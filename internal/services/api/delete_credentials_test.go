@@ -37,7 +37,7 @@ func (s *DeleteCredentialsSuite) Test204() {
 	cs, err := credentials.NewCredentialsService(s.log)
 	s.NoError(err)
 
-	cred, err := cs.Set("example", "https://example.com", "12345")
+	cred, err := cs.Set("example", "https://example.com", "12345", "")
 	s.NoError(err)
 
 	path, err := url.JoinPath("http://example.com/api/credentials/", cred.GUID)

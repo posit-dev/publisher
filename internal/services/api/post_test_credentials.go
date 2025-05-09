@@ -25,7 +25,7 @@ type PostTestCredentialsResponseBody struct {
 	User *connect.User `json:"user"`
 	URL  string        `json:"url"`
 
-	AccountType accounts.AccountAuthType `json:"accountType"`
+	AuthType accounts.AccountAuthType `json:"authType"`
 
 	Error *types.AgentError `json:"error"`
 }
@@ -78,10 +78,10 @@ func PostTestCredentialsHandlerFunc(log logging.Logger) http.HandlerFunc {
 			if lastTestError == nil {
 				// If we succeeded, pass back what URL succeeded
 				response := &PostTestCredentialsResponseBody{
-					User:        user,
-					Error:       nil,
-					URL:         urlToBeTested,
-					AccountType: acct.AuthType(),
+					User:     user,
+					Error:    nil,
+					URL:      urlToBeTested,
+					AuthType: acct.AuthType(),
 				}
 				w.Header().Set("content-type", "application/json")
 				w.WriteHeader(http.StatusOK)
@@ -92,10 +92,10 @@ func PostTestCredentialsHandlerFunc(log logging.Logger) http.HandlerFunc {
 
 		// failure after all attempts, return last error
 		response := &PostTestCredentialsResponseBody{
-			User:        user,
-			Error:       types.AsAgentError(lastTestError),
-			URL:         b.URL, // pass back original URL
-			AccountType: accounts.AuthTypeNone,
+			User:     user,
+			Error:    types.AsAgentError(lastTestError),
+			URL:      b.URL, // pass back original URL
+			AuthType: accounts.AuthTypeNone,
 		}
 		w.Header().Set("content-type", "application/json")
 		w.WriteHeader(http.StatusOK)
