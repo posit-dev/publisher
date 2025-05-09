@@ -18,7 +18,7 @@ jobs:
           r-version: "latest"
           use-public-rspm: true
       - name: Update PATH with R directory on windows
-        if: startsWith(runner, 'windows')
+        if: ${{ runner.os == 'Windows' }}
         run: |
           # Create bin path
           $rDir = "C:\Program Files\R\R-latest"
