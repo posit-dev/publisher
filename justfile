@@ -239,7 +239,7 @@ test *args=("./..."):
     set -eou pipefail
     {{ _with_debug }}
 
-    go test {{ args }} -covermode set -coverprofile=cover.out
+    go test -v {{ args }} -covermode set -coverprofile=cover.out
 
 # Uploads distributions to object storage. If invoked with `env CI=true` then all architectures supported by the Go toolchain are uploaded.
 upload *args:
