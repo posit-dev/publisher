@@ -9,6 +9,7 @@ import {
 } from "src/api/types/contentRecords";
 import { ContentType, Configuration } from "src/api/types/configurations";
 import { Credential } from "src/api/types/credentials";
+import { InterpreterDefaults } from "src/api/types/interpreters";
 import { DeploymentSelectorState } from "src/types/shared";
 
 export const selectionStateFactory = Factory.define<DeploymentSelectorState>(
@@ -33,6 +34,23 @@ export const configurationFactory = Factory.define<Configuration>(
     configurationName: `configuration-GUD${sequence}`,
     configurationPath: `report/path/configuration-${sequence}`,
     configurationRelPath: `report/path/configuration-${sequence}`,
+  }),
+);
+
+export const interpreterDefaultsFactory = Factory.define<InterpreterDefaults>(
+  () => ({
+    preferredPythonPath: "usr/bin/python3",
+    python: {
+      packageFile: "requirements.txt",
+      packageManager: "pip",
+      version: "3.11.0",
+    },
+    preferredRPath: "usr/bin/R",
+    r: {
+      packageFile: "renv.lock",
+      packageManager: "renv",
+      version: "4.4.0",
+    },
   }),
 );
 

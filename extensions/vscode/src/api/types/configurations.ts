@@ -211,13 +211,14 @@ export function UpdateConfigWithDefaults(
   }
   if (config.configuration.python !== undefined) {
     if (config.configuration.python.version === "") {
-      config.configuration.python.version = defaults.r.version;
+      config.configuration.python.version = defaults.python.version;
     }
     if (config.configuration.python.packageFile === "") {
-      config.configuration.python.packageFile = defaults.r.packageFile;
+      config.configuration.python.packageFile = defaults.python.packageFile;
     }
     if (config.configuration.python.packageManager === "") {
-      config.configuration.python.packageManager = defaults.r.packageManager;
+      config.configuration.python.packageManager =
+        defaults.python.packageManager;
     }
   }
   return config;
