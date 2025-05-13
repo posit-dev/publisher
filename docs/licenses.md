@@ -15190,7 +15190,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ```
 
-### sass-embedded-darwin-arm64/dart-sass/src
+### sass-embedded-darwin-x64/dart-sass/src
 
 ```
 Dart Sass license:
