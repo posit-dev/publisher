@@ -18,7 +18,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Detection of required python interpreter version now will request a compatible
   version when there is `.python-version` file declaring a specific version number
   without any version requirement operator (#2628)
-
 - Fixed an issue where scanning for Python dependencies created an `renv.lock` file.
   Now the dependencies file is properly named `requirements.txt`. (#2639)
 
@@ -38,23 +37,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added the ability to update the target GUID for a deployment at any time
   from the "..." menu. (#2576)
-
 - Added a new extension setting `Use Key Chain Credential Storage`
   (defaulting to true), allowing the user to prioritize the use
   of a credential file over the keyring. (#2519)
-
 - Credentials are now exposed via a `posit-connect` authentication provider,
   which is surfaced within the native Accounts UI. (#2608)
-
 - Added a new extension setting `Default Connect Server` to pre-populate
   the Server URL when creating a credential if there is not already one
   configured. When running within Posit Workbench, the extension will use the
   URL from the [default RStudio/Posit Workbench setting](https://docs.posit.co/ide/server-pro/rstudio_pro_sessions/rstudio_connect_server.html) (rstudio-pro#7466)
-
 - When expanded, the Python Packages view will now display a message describing
   how to configure the project to use Python if the configuration file does not
   indicate a dependency on Python. (#2571)
-
 - Added a new field to the Python configuration section ("requires_python"),
   which can be used to indicate the range of Python interpreter versions
   required to run the content on the Connect server. If it is not provided,
@@ -74,17 +68,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   will not be populated when creating a new deployment. If not present at the
   time of deployment, versions will be discovered and inserted from user's
   running environment. (#2468, #2470)
-
 - The `posit-publishing-schema-v3` configuration file schema has been updated
   with the new "Python.requires_python" field as well as the switch from required to
   optional for the version field within the R, Python and Quarto sections.
-
 - The Publisher Log Panel has now been renamed to "Publisher" and now will
   stay hidden until the user initiates a deployment operation from within the
   extension. It remains visible until the VSCode window is restarted. (#2596)
-
 - End-to-end tests environment refactored (#2508, #2588 & #2589 - Project)
-
 - Legacy CLI code removed (#2521 - Project)
 
 ## [1.10.0]
