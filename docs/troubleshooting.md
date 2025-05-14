@@ -123,8 +123,6 @@ Publisher output may help to track down problems, it is located in the "Output" 
 The Output Panel in VSCode or Positron can be opened with the command palette `> Output: Show Output Channels...`
 selecting the "Posit Publisher Deployment" option.
 
-![](https://cdn.posit.co/publisher/assets/img/publisher-output-indication.png)
-
 When opening an issue it is okay to copy and paste the output as is, you can also provide this output
 by saving it into a file and attaching it to the issue.
 
