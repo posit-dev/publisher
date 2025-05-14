@@ -116,6 +116,19 @@ be displayed:
 Posit Connect does not allow the content type of a deployment to be changed. If you encounter this
 error, your best option is to create and deploy a new deployment.
 
+## Publisher Output
+
+Publisher output may help to track down problems, it is located in the "Output" window under the "Posit Publisher Deployment" option.
+
+The Output Panel in VSCode or Positron can be opened with ⇧+⌘+U in Mac, Ctrl+⇧+U in Windows.
+
+![](https://cdn.posit.co/publisher/assets/img/publisher-output-indication.png)
+
+When opening an issue it is okay to copy and paste the output as is, you can also provide this output
+by saving it into a file and attaching it to the issue.
+
+![](https://cdn.posit.co/publisher/assets/img/save-output.png)
+
 ## Still having trouble?
 
 If you're still having trouble with Posit Publisher or have any questions,
