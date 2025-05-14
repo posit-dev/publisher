@@ -6,5 +6,3 @@ labels: ["enhancement"]
 ---
 
 ## Description
-
-<!-- What is it? Who does it serve? Why do we want to do it? -->

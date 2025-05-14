@@ -120,7 +120,8 @@ error, your best option is to create and deploy a new deployment.
 
 Publisher output may help to track down problems, it is located in the "Output" window under the "Posit Publisher Deployment" option.
 
-The Output Panel in VSCode or Positron can be opened with ⇧+⌘+U in Mac, Ctrl+⇧+U in Windows.
+The Output Panel in VSCode or Positron can be opened with the command palette `> Output: Show Output Channels...`
+selecting the "Posit Publisher Deployment" option.
 
 ![](https://cdn.posit.co/publisher/assets/img/publisher-output-indication.png)
 
