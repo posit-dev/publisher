@@ -30,13 +30,6 @@ type snowflakeAuthenticator struct {
 }
 
 func NewSnowflakeAuthenticator(connectionName string) (AuthMethod, error) {
-	// initial testing of the server URL will not have a named connection
-	// yet and does not need authentication to succeed (i.e. step 1 in the
-	// new credential flow, before an API key or connection name is
-	// entered)
-	if connectionName == "" {
-		return NewNullAuthenticator(), nil
-	}
 	conn, err := snowflake.GetConnection(connectionName)
 	if err != nil {
 		return nil, err

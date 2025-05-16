@@ -1,6 +1,9 @@
 package accounts
 
-import "strings"
+import (
+	"net/url"
+	"strings"
+)
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
@@ -10,12 +13,14 @@ const (
 	ServerTypeConnect     ServerType = "connect"
 	ServerTypeShinyappsIO ServerType = "shinyapps"
 	ServerTypeCloud       ServerType = "cloud"
+	ServerTypeSnowflake   ServerType = "snowflake"
 )
 
 var accountTypeDescriptions = map[ServerType]string{
 	ServerTypeConnect:     "Posit Connect",
 	ServerTypeShinyappsIO: "shinyapps.io",
 	ServerTypeCloud:       "Posit Cloud",
+	ServerTypeSnowflake:   "Snowflake",
 }
 
 func (t ServerType) Description() string {
@@ -25,17 +30,26 @@ func (t ServerType) Description() string {
 	return string(t)
 }
 
-// serverTypeFromURL infers a server type from the server URL.
-// For Posit-deployed servers (shinyapps.io, posit.cloud)
+// ServerTypeFromURL infers a server type from the server URL.
+// For Posit-deployed servers (shinyapps.io, posit.cloud) or Snowflake,
 // it returns the corresponding type. Otherwise,
 // it assumes a Connect server.
-func serverTypeFromURL(url string) ServerType {
-	if strings.HasSuffix(url, ".posit.cloud") {
-		return ServerTypeCloud
-	} else if strings.HasSuffix(url, ".rstudio.cloud") {
-		return ServerTypeCloud
-	} else if strings.HasSuffix(url, ".shinyapps.io") {
-		return ServerTypeShinyappsIO
+//
+// Returns an error if the given URL is invalid.
+func ServerTypeFromURL(urlStr string) (ServerType, error) {
+	u, err := url.Parse(urlStr)
+	if err != nil {
+		return "", err
 	}
-	return ServerTypeConnect
+	host := u.Hostname()
+	if strings.HasSuffix(host, ".posit.cloud") {
+		return ServerTypeCloud, nil
+	} else if strings.HasSuffix(host, ".rstudio.cloud") {
+		return ServerTypeCloud, nil
+	} else if strings.HasSuffix(host, ".shinyapps.io") {
+		return ServerTypeShinyappsIO, nil
+	} else if strings.HasSuffix(host, ".snowflakecomputing.app") {
+		return ServerTypeSnowflake, nil
+	}
+	return ServerTypeConnect, nil
 }

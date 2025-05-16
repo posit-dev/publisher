@@ -32,8 +32,12 @@ func (p *envVarProvider) Load() ([]Account, error) {
 	if apiKey == "" {
 		return nil, nil
 	}
+	serverType, err := ServerTypeFromURL(serverURL)
+	if err != nil {
+		return nil, err
+	}
 	account := Account{
-		ServerType:  serverTypeFromURL(serverURL),
+		ServerType:  serverType,
 		Source:      AccountSourceEnvironment,
 		Name:        "env",
 		URL:         serverURL,

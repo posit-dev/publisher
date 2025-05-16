@@ -1,12 +1,7 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
 import { AgentError } from "./error";
-
-export enum AuthType {
-  NONE = "none",
-  API_KEY = "api-key",
-  SNOWFLAKE = "snowflake",
-}
+import { ServerType } from "./contentRecords";
 
 export type Credential = {
   guid: string;
@@ -26,6 +21,6 @@ export type CredentialUser = {
 export type TestResult = {
   user: CredentialUser | null;
   url: string | null;
-  authType: AuthType | null;
+  serverType: ServerType | null;
   error: AgentError | null;
 };

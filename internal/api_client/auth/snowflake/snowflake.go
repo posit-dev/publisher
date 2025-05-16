@@ -68,8 +68,6 @@ func GetConnections() (map[string]Connection, error) {
 // and returns the path of the first connections.toml file it finds.
 func connectionsPath() (util.AbsolutePath, error) {
 	var path util.AbsolutePath
-	dirs := findConfigDirs()
-	fmt.Println(dirs)
 	for _, dir := range findConfigDirs() {
 		path = dir.Join("connections.toml")
 		if ok, _ := path.Exists(); ok {

@@ -25,7 +25,7 @@ type PostTestCredentialsResponseBody struct {
 	User *connect.User `json:"user"`
 	URL  string        `json:"url"`
 
-	AuthType accounts.AccountAuthType `json:"authType"`
+	ServerType accounts.ServerType `json:"serverType"`
 
 	Error *types.AgentError `json:"error"`
 }
@@ -39,6 +39,13 @@ func PostTestCredentialsHandlerFunc(log logging.Logger) http.HandlerFunc {
 		var b PostTestCredentialsRequestBody
 		err := dec.Decode(&b)
 		if err != nil {
+			BadRequest(w, req, log, err)
+			return
+		}
+
+		serverType, err := accounts.ServerTypeFromURL(b.URL)
+		if err != nil {
+			// unparseable URL
 			BadRequest(w, req, log, err)
 			return
 		}
@@ -61,7 +68,7 @@ func PostTestCredentialsHandlerFunc(log logging.Logger) http.HandlerFunc {
 			urlToBeTested = possibleURLs[i]
 
 			acct := &accounts.Account{
-				ServerType: accounts.ServerTypeConnect,
+				ServerType: serverType,
 				URL:        urlToBeTested,
 				Insecure:   b.Insecure,
 				ApiKey:     b.ApiKey,
@@ -78,10 +85,10 @@ func PostTestCredentialsHandlerFunc(log logging.Logger) http.HandlerFunc {
 			if lastTestError == nil {
 				// If we succeeded, pass back what URL succeeded
 				response := &PostTestCredentialsResponseBody{
-					User:     user,
-					Error:    nil,
-					URL:      urlToBeTested,
-					AuthType: acct.AuthType(),
+					User:       user,
+					Error:      nil,
+					URL:        urlToBeTested,
+					ServerType: serverType,
 				}
 				w.Header().Set("content-type", "application/json")
 				w.WriteHeader(http.StatusOK)
@@ -92,10 +99,10 @@ func PostTestCredentialsHandlerFunc(log logging.Logger) http.HandlerFunc {
 
 		// failure after all attempts, return last error
 		response := &PostTestCredentialsResponseBody{
-			User:     user,
-			Error:    types.AsAgentError(lastTestError),
-			URL:      b.URL, // pass back original URL
-			AuthType: accounts.AuthTypeNone,
+			User:       user,
+			Error:      types.AsAgentError(lastTestError),
+			URL:        b.URL, // pass back original URL
+			ServerType: serverType,
 		}
 		w.Header().Set("content-type", "application/json")
 		w.WriteHeader(http.StatusOK)
