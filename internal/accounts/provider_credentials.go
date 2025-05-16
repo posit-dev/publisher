@@ -37,13 +37,17 @@ func (p *CredentialsProvider) Load() ([]Account, error) {
 	accounts := make([]Account, len(creds))
 	i := 0
 	for _, cred := range creds {
+		serverType, err := ServerTypeFromURL(cred.URL)
+		if err != nil {
+			return nil, err
+		}
 		accounts[i] = Account{
-			Source:     AccountSourceKeychain,
-			ServerType: serverTypeFromURL(cred.URL),
-			Name:       cred.Name,
-			URL:        cred.URL,
-			AuthType:   AuthTypeAPIKey,
-			ApiKey:     cred.ApiKey,
+			Source:              AccountSourceKeychain,
+			ServerType:          serverType,
+			Name:                cred.Name,
+			URL:                 cred.URL,
+			ApiKey:              cred.ApiKey,
+			SnowflakeConnection: cred.SnowflakeConnection,
 		}
 		i++
 	}

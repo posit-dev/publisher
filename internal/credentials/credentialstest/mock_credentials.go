@@ -31,8 +31,8 @@ func (m *CredentialsServiceMock) List() ([]credentials.Credential, error) {
 	return args.Get(0).([]credentials.Credential), args.Error(1)
 }
 
-func (m *CredentialsServiceMock) Set(name string, url string, ak string) (*credentials.Credential, error) {
-	args := m.Called(name, url, ak)
+func (m *CredentialsServiceMock) Set(name string, url string, ak string, sf string) (*credentials.Credential, error) {
+	args := m.Called(name, url, ak, sf)
 	return args.Get(0).(*credentials.Credential), args.Error(1)
 }
 

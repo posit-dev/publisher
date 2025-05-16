@@ -84,7 +84,7 @@ func (ks *keyringCredentialsService) List() ([]Credential, error) {
 
 // Set creates a Credential.
 // A guid is assigned to the Credential using the UUIDv4 specification.
-func (ks *keyringCredentialsService) Set(name string, url string, ak string) (*Credential, error) {
+func (ks *keyringCredentialsService) Set(name string, url string, ak string, sf string) (*Credential, error) {
 	table, err := ks.load()
 	if err != nil {
 		return nil, err
@@ -97,10 +97,11 @@ func (ks *keyringCredentialsService) Set(name string, url string, ak string) (*C
 
 	guid := uuid.New().String()
 	cred := Credential{
-		GUID:   guid,
-		Name:   name,
-		URL:    normalizedUrl,
-		ApiKey: ak,
+		GUID:                guid,
+		Name:                name,
+		URL:                 normalizedUrl,
+		ApiKey:              ak,
+		SnowflakeConnection: sf,
 	}
 
 	err = ks.checkForConflicts(&table, &cred)

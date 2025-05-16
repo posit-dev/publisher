@@ -1,6 +1,7 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
 import { AgentError } from "./error";
+import { ServerType } from "./contentRecords";
 
 export type Credential = {
   guid: string;
@@ -20,5 +21,6 @@ export type CredentialUser = {
 export type TestResult = {
   user: CredentialUser | null;
   url: string | null;
+  serverType: ServerType | null;
   error: AgentError | null;
 };

@@ -17,16 +17,24 @@ func TestAccountSuite(t *testing.T) {
 	suite.Run(t, new(AccountSuite))
 }
 
-func (s *AccountSuite) TestInferAuthTypeNone() {
+func (s *AccountSuite) TestAuthTypeNone() {
 	account := Account{}
-	auth := account.InferAuthType()
+	auth := account.AuthType()
 	s.Equal(AuthTypeNone, auth)
 }
 
-func (s *AccountSuite) TestInferAuthTypeApiKey() {
+func (s *AccountSuite) TestAuthTypeApiKey() {
 	account := Account{
 		ApiKey: "abc",
 	}
-	auth := account.InferAuthType()
+	auth := account.AuthType()
 	s.Equal(AuthTypeAPIKey, auth)
+}
+
+func (s *AccountSuite) TestAuthTypeSnowflake() {
+	account := Account{
+		SnowflakeConnection: "default",
+	}
+	auth := account.AuthType()
+	s.Equal(AuthTypeSnowflake, auth)
 }
