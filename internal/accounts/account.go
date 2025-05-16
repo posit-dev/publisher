@@ -1,7 +1,5 @@
 package accounts
 
-import "strings"
-
 // Copyright (C) 2023 by Posit Software, PBC.
 
 type Account struct {
@@ -19,12 +17,11 @@ type Account struct {
 // AuthType returns the detected AccountAuthType based on the properties of the
 // Account.
 func (acct *Account) AuthType() AccountAuthType {
-	// connect API key cannot be used in snowflake, only snowflake auth
-	if strings.Contains(acct.URL, "snowflakecomputing.app") {
-		return AuthTypeSnowflake
-	}
+	// an account should have either an API key or a Snowflake connection name, never both.
 	if acct.ApiKey != "" {
 		return AuthTypeAPIKey
+	} else if acct.SnowflakeConnection != "" {
+		return AuthTypeSnowflake
 	}
 	return AuthTypeNone
 }

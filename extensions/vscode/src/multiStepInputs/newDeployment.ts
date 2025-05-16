@@ -33,7 +33,7 @@ import {
   areInspectionResultsSimilarEnough,
   ContentType,
   FileAction,
-  AuthType,
+  ServerType,
   SnowflakeConnection,
 } from "src/api";
 import {
@@ -78,7 +78,7 @@ export async function newDeployment(
   let inspectionResults: ConfigurationInspectionResult[] = [];
   const contentRecordNames = new Map<string, string[]>();
 
-  let authType: AuthType;
+  let serverType: ServerType;
   let connections: SnowflakeConnection[] = [];
   let connectionQuickPicks: QuickPickItemWithIndex[];
 
@@ -647,8 +647,8 @@ export async function newDeployment(
               });
             }
 
-            if (testResult.data.authType) {
-              authType = testResult.data.authType;
+            if (testResult.data.serverType) {
+              serverType = testResult.data.serverType;
             }
           } catch (e) {
             return Promise.resolve({
@@ -672,7 +672,7 @@ export async function newDeployment(
   // Step: New Credentials - Enter the API Key
   // ***************************************************************
   async function inputAPIKey(input: MultiStepInput, state: MultiStepState) {
-    if (newCredentialByAnyMeans() && authType !== AuthType.SNOWFLAKE) {
+    if (newCredentialByAnyMeans() && serverType !== ServerType.SNOWFLAKE) {
       const currentAPIKey = newDeploymentData.newCredentials.apiKey
         ? newDeploymentData.newCredentials.apiKey
         : "";
@@ -761,7 +761,7 @@ export async function newDeployment(
     input: MultiStepInput,
     state: MultiStepState,
   ) {
-    if (newCredentialByAnyMeans() && authType === AuthType.SNOWFLAKE) {
+    if (newCredentialByAnyMeans() && serverType === ServerType.SNOWFLAKE) {
       // url should always be defined by the time we get to this step
       // but we have to type guard it for the API
       const serverUrl = newDeploymentData.newCredentials.url

@@ -11,7 +11,7 @@ import {
 
 import { InputBoxValidationSeverity, window } from "vscode";
 
-import { useApi, AuthType, Credential, SnowflakeConnection } from "src/api";
+import { useApi, ServerType, Credential, SnowflakeConnection } from "src/api";
 import {
   getMessageFromError,
   getSummaryStringFromError,
@@ -36,7 +36,7 @@ export async function newCredential(
   const api = await useApi();
   let credentials: Credential[] = [];
 
-  let authType: AuthType;
+  let serverType: ServerType;
   let connections: SnowflakeConnection[] = [];
   let connectionQuickPicks: QuickPickItemWithIndex[];
 
@@ -197,8 +197,8 @@ export async function newCredential(
             });
           }
 
-          if (testResult.data.authType) {
-            authType = testResult.data.authType;
+          if (testResult.data.serverType) {
+            serverType = testResult.data.serverType;
           }
         } catch (e) {
           return Promise.resolve({
@@ -222,7 +222,7 @@ export async function newCredential(
   // Step: Enter the API Key
   // ***************************************************************
   async function inputAPIKey(input: MultiStepInput, state: MultiStepState) {
-    if (authType !== AuthType.SNOWFLAKE) {
+    if (serverType !== ServerType.SNOWFLAKE) {
       const thisStepNumber = assignStep(state, "inputAPIKey");
       const currentAPIKey =
         typeof state.data.apiKey === "string" && state.data.apiKey.length
@@ -313,7 +313,7 @@ export async function newCredential(
     input: MultiStepInput,
     state: MultiStepState,
   ) {
-    if (authType === AuthType.SNOWFLAKE) {
+    if (serverType === ServerType.SNOWFLAKE) {
       const thisStepNumber = assignStep(state, "inputSnowflakeConnection");
 
       // url should always be defined by the time we get to this step

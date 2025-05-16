@@ -26,7 +26,6 @@ func (s *AccountSuite) TestAuthTypeNone() {
 func (s *AccountSuite) TestAuthTypeApiKey() {
 	account := Account{
 		ApiKey: "abc",
-		URL:    "anything.notsnowflake.com",
 	}
 	auth := account.AuthType()
 	s.Equal(AuthTypeAPIKey, auth)
@@ -34,8 +33,7 @@ func (s *AccountSuite) TestAuthTypeApiKey() {
 
 func (s *AccountSuite) TestAuthTypeSnowflake() {
 	account := Account{
-		ApiKey: "abc",
-		URL:    "anything.snowflakecomputing.app",
+		SnowflakeConnection: "default",
 	}
 	auth := account.AuthType()
 	s.Equal(AuthTypeSnowflake, auth)
