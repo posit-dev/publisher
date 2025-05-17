@@ -13,6 +13,28 @@ jobs:
         with:
           fetch-depth: 0
       - uses: extractions/setup-just@v2
+
+      # Install R with rig to ensure we are compatible
+      - name: Install rig with apt
+        if: ${{ runner.os == 'Linux' }}
+        run: |
+          sudo curl -L https://rig.r-pkg.org/deb/rig.gpg -o /etc/apt/trusted.gpg.d/rig.gpg
+          sudo sh -c 'echo "deb http://rig.r-pkg.org/deb rig main" > /etc/apt/sources.list.d/rig.list'
+          sudo apt update
+          sudo apt install -y r-rig
+      - name: Install rig with brew
+        if: ${{ runner.os == 'macOS' }}
+        run: |
+          brew tap r-lib/rig
+          brew install --cask rig
+      - name: Install rig with Choco
+        if: ${{ runner.os == 'Windows' }}
+        run: choco install rig
+
+      - name: Install R with rig
+        run: rig add release
+      - name: Install renv package
+        run: Rscript -e "install.packages('renv')"
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
