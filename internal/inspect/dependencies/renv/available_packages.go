@@ -73,6 +73,7 @@ func repoNamesAsStrings(repos []Repository) string {
 }
 
 func (l *defaultAvailablePackagesLister) ListAvailablePackages(repos []Repository, log logging.Logger) ([]AvailablePackage, error) {
+	// List package repos by writing a temp script, calling it, then cleaning it up
 	const packageListCodeTemplate = `(function() { pkgs <- available.packages( repos = setNames(c(%s), c(%s)), type = "source", filters = c(getOption("rsconnect.available_packages_filters", default = c()), "duplicates"));info <- pkgs[,c("Package", "Version", "Repository")];apply(info, 1, function(x) { cat(x, sep=" ", collapse="\n") } );invisible()})()`
 	repoUrls := repoUrlsAsStrings(repos)
 	repoNames := repoNamesAsStrings(repos)
@@ -83,13 +84,12 @@ func (l *defaultAvailablePackagesLister) ListAvailablePackages(repos []Repositor
 		return nil, err
 	}
 
-	out, _, err := l.rExecutor.RunCommand(
+	out, _, err := l.rExecutor.RunScript(
 		rExecutable.String(),
 		[]string{
 			"-s",
-			"-e",
-			packageListCode,
 		},
+		packageListCode,
 		l.base,
 		log)
 
@@ -118,6 +118,7 @@ func (l *defaultAvailablePackagesLister) ListAvailablePackages(repos []Repositor
 }
 
 func (l *defaultAvailablePackagesLister) GetBioconductorRepos(base util.AbsolutePath, log logging.Logger) ([]Repository, error) {
+	// List bioc repos by writing a temp script, calling it, then cleaning it up
 	const bioconductorReposCodeTemplate = `(function() { if (requireNamespace("BiocManager", quietly = TRUE) || requireNamespace("BiocInstaller", quietly = TRUE)) {repos <- getFromNamespace("renv_bioconductor_repos", "renv")("%s"); repos <- repos[setdiff(names(repos), "CRAN")]; cat(repos, labels=names(repos), fill=1); invisible()}})()`
 	escapedBase := strings.ReplaceAll(l.base.String(), `\`, `\\`)
 	biocRepoListCode := fmt.Sprintf(bioconductorReposCodeTemplate, escapedBase)
@@ -127,13 +128,12 @@ func (l *defaultAvailablePackagesLister) GetBioconductorRepos(base util.Absolute
 		return nil, err
 	}
 
-	out, _, err := l.rExecutor.RunCommand(
+	out, _, err := l.rExecutor.RunScript(
 		rExecutable.String(),
 		[]string{
 			"-s",
-			"-e",
-			biocRepoListCode,
 		},
+		biocRepoListCode,
 		l.base,
 		log)
 
@@ -168,14 +168,14 @@ func (l *defaultAvailablePackagesLister) GetLibPaths(log logging.Logger) ([]util
 		return nil, err
 	}
 
+	// Gather lib paths, by writing a temp script, calling it, then cleaning it up
 	const getLibPathsCode = `cat(.libPaths(), sep="\n")`
-	out, _, err := l.rExecutor.RunCommand(
+	out, _, err := l.rExecutor.RunScript(
 		rExecutable.String(),
 		[]string{
 			"-s",
-			"-e",
-			getLibPathsCode,
 		},
+		getLibPathsCode,
 		l.base,
 		log)
 
