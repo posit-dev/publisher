@@ -57,7 +57,7 @@ func (s *AvailablePackagesSuite) TestListAvailablePackages() {
 	rExecutablePath := util.NewAbsolutePath("R", nil)
 
 	executor := executortest.NewMockExecutor()
-	executor.On("RunCommand", rExecutablePath.String(), mock.Anything, s.base, mock.Anything).Return([]byte(
+	executor.On("RunScript", rExecutablePath.String(), mock.Anything, mock.Anything, s.base, mock.Anything).Return([]byte(
 		"pkg1 1.0 https://cran.rstudio.com/src/contrib \npkg2 2.0 https://cran.rstudio.com/src/contrib \n"), []byte{}, nil)
 	lister.rExecutor = executor
 
@@ -97,7 +97,7 @@ func (s *AvailablePackagesSuite) TestGetBioconductorRepos() {
 	rExecutablePath := util.NewAbsolutePath("R", nil)
 
 	executor := executortest.NewMockExecutor()
-	executor.On("RunCommand", rExecutablePath.String(), mock.Anything, s.base, mock.Anything).Return([]byte(biocReposOutput), []byte{}, nil)
+	executor.On("RunScript", rExecutablePath.String(), mock.Anything, mock.Anything, s.base, mock.Anything).Return([]byte(biocReposOutput), []byte{}, nil)
 	lister.rExecutor = executor
 
 	repos, err := lister.GetBioconductorRepos(s.base, logging.New())
@@ -139,7 +139,7 @@ func (s *AvailablePackagesSuite) TestGetLibPaths() {
 	s.NoError(err)
 
 	executor := executortest.NewMockExecutor()
-	executor.On("RunCommand", rExecutablePath.String(), mock.Anything, s.base, mock.Anything).Return([]byte(libPathsOutput), []byte{}, nil)
+	executor.On("RunScript", rExecutablePath.String(), mock.Anything, mock.Anything, s.base, mock.Anything).Return([]byte(libPathsOutput), []byte{}, nil)
 	lister.rExecutor = executor
 
 	repos, err := lister.GetLibPaths(logging.New())
@@ -177,7 +177,7 @@ func (s *AvailablePackagesSuite) TestGetLibPathsWindows() {
 	s.NoError(err)
 
 	executor := executortest.NewMockExecutor()
-	executor.On("RunCommand", rExecutablePath.String(), []string{"-s", "-e", "cat(.libPaths(), sep=\"\\n\")"}, s.base, mock.Anything).Return([]byte(windowsLibPathsOutput), []byte{}, nil)
+	executor.On("RunScript", rExecutablePath.String(), []string{"-s"}, "cat(.libPaths(), sep=\"\\n\")", s.base, mock.Anything).Return([]byte(windowsLibPathsOutput), []byte{}, nil)
 	lister.rExecutor = executor
 
 	repos, err := lister.GetLibPaths(logging.New())
