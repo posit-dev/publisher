@@ -46,4 +46,7 @@ func (s *AccountTypeSuite) TestAccountTypeFromURL() {
 		s.Nil(err)
 		s.Equal(test.serverType, serverType)
 	}
+
+	_, err := ServerTypeFromURL(":bad")
+	s.NotNil(err)
 }

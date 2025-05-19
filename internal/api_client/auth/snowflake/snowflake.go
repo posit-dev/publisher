@@ -18,26 +18,29 @@ type Connection struct {
 	Account        string
 	User           string
 	PrivateKeyFile string `toml:"private_key_file"`
+
+	// private_key_path is an alternate way to specify the key file...
+	PrivateKeyPath string `toml:"private_key_path"`
 }
 
 // GetConnection tries to find a snowflake connection by name.
-func GetConnection(name string) (Connection, error) {
+func GetConnection(name string) (*Connection, error) {
 	conns, err := GetConnections()
 	if err != nil {
-		return Connection{}, err
+		return &Connection{}, err
 	}
 
 	if conn, ok := conns[name]; ok {
 		return conn, nil
 	}
-	return Connection{}, fmt.Errorf("connection %s not found", name)
+	return &Connection{}, fmt.Errorf("connection %s not found", name)
 }
 
 // GetConnections returns all configured Snowflake connections.
-func GetConnections() (map[string]Connection, error) {
+func GetConnections() (map[string]*Connection, error) {
 	// We don't know in advance what the Connection names will be, so we
 	// must decode into a map rather than a struct.
-	var conns map[string]Connection
+	var conns map[string]*Connection
 
 	// TODO: consider rstudio/snowflake-lib. But it doesn't have a released version.
 
@@ -61,6 +64,13 @@ func GetConnections() (map[string]Connection, error) {
 		return nil, err
 	}
 
+	// handle optional secondary key file field
+	for _, conn := range conns {
+		if conn.PrivateKeyFile == "" && conn.PrivateKeyPath != "" {
+			conn.PrivateKeyFile = conn.PrivateKeyPath
+		}
+	}
+
 	return conns, nil
 }
 
@@ -74,7 +84,6 @@ func connectionsPath() (util.AbsolutePath, error) {
 			return path, nil
 		}
 	}
-	// return first one with a connections file
 	return util.AbsolutePath{}, errors.New("unable to find a connections.toml")
 }
 

@@ -482,6 +482,29 @@ func (s *ConnectClientSuite) TestTestAuthentication401WithKey() {
 	s.Equal(events.AuthenticationFailedCode, agentErr.Code)
 }
 
+func (s *ConnectClientSuite) TestTestAuthentication401WithSnowflake() {
+	httpClient := &http_client.MockHTTPClient{}
+	httpErr := &http_client.HTTPError{
+		Status: 401,
+	}
+	agentError := types.NewAgentError(events.ServerErrorCode, httpErr, nil)
+	httpClient.On("Get", "/__api__/v1/user", mock.Anything, mock.Anything).Return(agentError)
+
+	client := &ConnectClient{
+		client: httpClient,
+		account: &accounts.Account{
+			SnowflakeConnection: "default",
+		},
+	}
+	user, err := client.TestAuthentication(logging.New())
+	s.Nil(user)
+	s.NotNil(err)
+	agentErr, ok := err.(*types.AgentError)
+	s.True(ok)
+	s.ErrorIs(agentErr.Err, errInvalidCredentials)
+	s.Equal(events.AuthenticationFailedCode, agentErr.Code)
+}
+
 func (s *ConnectClientSuite) TestTestAuthentication404() {
 	httpClient := &http_client.MockHTTPClient{}
 	httpErr := &http_client.HTTPError{
@@ -535,6 +558,26 @@ func (s *ConnectClientSuite) TestTestAuthentication404WithKey() {
 		client: httpClient,
 		account: &accounts.Account{
 			ApiKey: "my-api-key",
+		},
+	}
+	user, err := client.TestAuthentication(logging.New())
+	s.Nil(user)
+	s.NotNil(err)
+	s.ErrorIs(err, errInvalidServerOrCredentials)
+}
+
+func (s *ConnectClientSuite) TestTestAuthentication404WithSnowflake() {
+	httpClient := &http_client.MockHTTPClient{}
+	httpErr := &http_client.HTTPError{
+		Status: 404,
+	}
+	agentError := types.NewAgentError(events.ServerErrorCode, httpErr, nil)
+	httpClient.On("Get", "/__api__/v1/user", mock.Anything, mock.Anything).Return(agentError)
+
+	client := &ConnectClient{
+		client: httpClient,
+		account: &accounts.Account{
+			SnowflakeConnection: "default",
 		},
 	}
 	user, err := client.TestAuthentication(logging.New())

@@ -38,3 +38,15 @@ func (s *AccountSuite) TestAuthTypeSnowflake() {
 	auth := account.AuthType()
 	s.Equal(AuthTypeSnowflake, auth)
 }
+
+func (s *AccountSuite) TestHasCredential() {
+	account := Account{
+		ApiKey:              "abc",
+		SnowflakeConnection: "default",
+	}
+	s.True(account.HasCredential())
+	account.ApiKey = ""
+	s.True(account.HasCredential())
+	account.SnowflakeConnection = ""
+	s.False(account.HasCredential())
+}

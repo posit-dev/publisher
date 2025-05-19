@@ -31,13 +31,13 @@ func (s *FileCredentialsServiceSuite) fileSetupDeleteTest() {
 	fileData := []byte(`
 [credentials.tokeep]
 guid = "18cd5640-bee5-4b2a-992a-a2725ab6103d"
-version = 0
+version = 1
 url = "https://a1.connect-server:3939/connect"
 api_key = "abcdeC2aqbh7dg8TO43XPu7r56YDh000"
 
 [credentials.willdelete]
 guid = "79077898-7e26-4909-9eb7-596d1a6d0b6f"
-version = 0
+version = 1
 url = "hTTps://b2.CONNECT-server:3939/connect"
 api_key = "abcdeC2aqbh7dg8TO43XPu7r56YDh002"
 
@@ -145,7 +145,7 @@ func (s *FileCredentialsServiceSuite) TestLoadFile() {
 			},
 			"rick": {
 				GUID:                "79077898-7e26-4909-9eb7-596d1a6d0b6f",
-				Version:             0,
+				Version:             1,
 				URL:                 "https://b2.connect-server:3939/connect",
 				ApiKey:              "abcdeC2aqbh7dg8TO43XPu7r56YDh002",
 				SnowflakeConnection: "",
@@ -159,7 +159,7 @@ func (s *FileCredentialsServiceSuite) TestLoadFile() {
 			},
 			"frank sinatra": {
 				GUID:                "bcdd57dd-6a68-4dcc-9877-d3ab2f512a04",
-				Version:             0,
+				Version:             1,
 				URL:                 "https://c4.connect-server:3939/connect",
 				ApiKey:              "abcdeC2aqbh7dg8TO43XPu7r56YDh004",
 				SnowflakeConnection: "",
@@ -306,13 +306,13 @@ func (s *FileCredentialsServiceSuite) TestDelete() {
 		Credentials: map[string]fileCredential{
 			"tokeep": {
 				GUID:    "18cd5640-bee5-4b2a-992a-a2725ab6103d",
-				Version: 0,
+				Version: 1,
 				URL:     "https://a1.connect-server:3939/connect",
 				ApiKey:  "abcdeC2aqbh7dg8TO43XPu7r56YDh000",
 			},
 			"willdelete": {
 				GUID:    "79077898-7e26-4909-9eb7-596d1a6d0b6f",
-				Version: 0,
+				Version: 1,
 				URL:     "https://b2.connect-server:3939/connect",
 				ApiKey:  "abcdeC2aqbh7dg8TO43XPu7r56YDh002",
 			},
@@ -336,7 +336,7 @@ func (s *FileCredentialsServiceSuite) TestDelete() {
 		Credentials: map[string]fileCredential{
 			"tokeep": {
 				GUID:    "18cd5640-bee5-4b2a-992a-a2725ab6103d",
-				Version: 0,
+				Version: 1,
 				URL:     "https://a1.connect-server:3939/connect",
 				ApiKey:  "abcdeC2aqbh7dg8TO43XPu7r56YDh000",
 			},

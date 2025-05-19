@@ -23,14 +23,11 @@ func NewClientAuth(acct *accounts.Account) (AuthMethod, error) {
 		}
 		return auth, nil
 	case accounts.AuthTypeNone:
-		// This is bogus since we know we can't publish
-		// without authentication. Our workflow needs to do one
-		// of the following:
-		// * Obtain credentials from the saved account list,
-		//   command line, or environment variables.
-		// * Prompt the user interactively (via the CLI or UI)
-		//   or walk them through the token flow.
-		// * Err if neither of the above can be done.
+		// We can't publish without authentication. However, when a
+		// user is adding a new credential, the first thing we do is
+		// test the server URL without any credentials. This test will
+		// use the NullAuthenticator. Subsequent steps add either an
+		// API Key or a Snowflake connection.
 		return NewNullAuthenticator(), nil
 	}
 	return nil, nil
