@@ -29,8 +29,16 @@ type snowflakeAuthenticator struct {
 	privateKey *rsa.PrivateKey
 }
 
+// NewSnowflakeAuthenticator loads the Snowflake connection with the given name
+// from the system Snowflake configuration and returns an authenticator that
+// will add auth headers to requests.
+//
+// Only supports keypair authentication.
+//
+// Errs if the named connection cannot be found, or if the connection does not
+// include a valid private key.
 func NewSnowflakeAuthenticator(connectionName string) (AuthMethod, error) {
-	conn, err := snowflake.GetConnection(connectionName)
+	conn, err := snowflake.NewConnections().Get(connectionName)
 	if err != nil {
 		return nil, err
 	}

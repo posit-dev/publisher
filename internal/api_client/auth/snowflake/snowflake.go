@@ -23,9 +23,23 @@ type Connection struct {
 	PrivateKeyPath string `toml:"private_key_path"`
 }
 
-// GetConnection tries to find a snowflake connection by name.
-func GetConnection(name string) (*Connection, error) {
-	conns, err := GetConnections()
+type Connections interface {
+	Get(name string) (*Connection, error)
+	List() (map[string]*Connection, error)
+}
+
+type defaultConnections struct{}
+
+// enforce interface compliance
+var _ Connections = defaultConnections{}
+
+func NewConnections() defaultConnections {
+	return defaultConnections{}
+}
+
+// Get tries to find a snowflake connection by name.
+func (c defaultConnections) Get(name string) (*Connection, error) {
+	conns, err := c.List()
 	if err != nil {
 		return &Connection{}, err
 	}
@@ -36,8 +50,8 @@ func GetConnection(name string) (*Connection, error) {
 	return &Connection{}, fmt.Errorf("connection %s not found", name)
 }
 
-// GetConnections returns all configured Snowflake connections.
-func GetConnections() (map[string]*Connection, error) {
+// List returns all configured Snowflake connections.
+func (defaultConnections) List() (map[string]*Connection, error) {
 	// We don't know in advance what the Connection names will be, so we
 	// must decode into a map rather than a struct.
 	var conns map[string]*Connection

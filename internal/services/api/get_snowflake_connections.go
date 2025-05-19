@@ -23,7 +23,7 @@ type getSnowflakeConnectionsResponseBody struct {
 // that can successfully authenticate to `serverUrl`.
 //
 // A connection includes a name and a validated server URL.
-func GetSnowflakeConnectionsHandlerFunc(log logging.Logger) http.HandlerFunc {
+func GetSnowflakeConnectionsHandlerFunc(log logging.Logger, connections snowflake.Connections) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		serverUrl := req.URL.Query().Get("serverUrl")
 
@@ -40,7 +40,7 @@ func GetSnowflakeConnectionsHandlerFunc(log logging.Logger) http.HandlerFunc {
 			return
 		}
 
-		conns, err := snowflake.GetConnections()
+		conns, err := connections.List()
 		if err != nil {
 			InternalError(w, req, log, err)
 			return
