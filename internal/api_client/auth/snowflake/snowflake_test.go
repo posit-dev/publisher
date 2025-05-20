@@ -75,6 +75,10 @@ account = "notloaded-acct"
 `)
 
 func (s *SnowflakeSuite) TestList() {
+	// tmp is a convenient root that will reflect the naming conventions of
+	// whatever OS we are running on
+	tmp := os.TempDir()
+
 	home, err := os.UserHomeDir()
 	s.NoError(err)
 
@@ -88,12 +92,12 @@ func (s *SnowflakeSuite) TestList() {
 		"windows default path": {
 			GOOS:       "windows",
 			filepath:   filepath.Join(home, "AppData", "Local", "snowflake"),
-			secondpath: "/irrelevant", // no lower priority option
+			secondpath: filepath.Join(tmp, "irrelevant"), // no lower priority option
 		},
 		"windows xdg_config_home": {
 			GOOS:       "windows",
-			xdghome:    "/xdg",
-			filepath:   filepath.Join("/xdg", "snowflake"),
+			xdghome:    filepath.Join(tmp, "xdg"),
+			filepath:   filepath.Join(tmp, "xdg", "snowflake"),
 			secondpath: filepath.Join(home, "AppData", "Local", "snowflake"),
 		},
 		"windows user homedir": {
@@ -103,27 +107,27 @@ func (s *SnowflakeSuite) TestList() {
 		},
 		"windows snowflake_home": {
 			GOOS:       "windows",
-			sfhome:     "/snowflake",
-			filepath:   "/snowflake",
+			sfhome:     filepath.Join(tmp, "snowflake"),
+			filepath:   filepath.Join(tmp, "snowflake"),
 			secondpath: filepath.Join(home, ".snowflake"),
 		},
 		"windows skips empty env var dirs": {
 			GOOS:       "windows",
-			xdghome:    "/xdg",
-			sfhome:     "/snowflake",
+			xdghome:    filepath.Join(tmp, "xdg"),
+			sfhome:     filepath.Join(tmp, "snowflake"),
 			filepath:   filepath.Join(home, "AppData", "Local", "snowflake"),
-			secondpath: "/irrelevant", // no lower priority option
+			secondpath: filepath.Join(tmp, "irrelevant"), // no lower priority option
 		},
 
 		"darwin default path": {
 			GOOS:       "darwin",
 			filepath:   filepath.Join(home, "Library", "Application Support", "snowflake"),
-			secondpath: "/irrelevant", // no lower priority option
+			secondpath: filepath.Join(tmp, "irrelevant"), // no lower priority option
 		},
 		"darwin xdg_config_home": {
 			GOOS:       "darwin",
-			xdghome:    "/xdg",
-			filepath:   filepath.Join("/xdg", "snowflake"),
+			xdghome:    filepath.Join(tmp, "xdg"),
+			filepath:   filepath.Join(tmp, "xdg", "snowflake"),
 			secondpath: filepath.Join(home, "Library", "Application Support", "snowflake"),
 		},
 		"darwin user homedir": {
@@ -133,27 +137,27 @@ func (s *SnowflakeSuite) TestList() {
 		},
 		"darwin snowflake_home": {
 			GOOS:       "darwin",
-			sfhome:     "/snowflake",
-			filepath:   "/snowflake",
+			sfhome:     filepath.Join(tmp, "snowflake"),
+			filepath:   filepath.Join(tmp, "snowflake"),
 			secondpath: filepath.Join(home, ".snowflake"),
 		},
 		"darwin skips empty env var dirs": {
 			GOOS:       "darwin",
-			xdghome:    "/xdg",
-			sfhome:     "/snowflake",
+			xdghome:    filepath.Join(tmp, "xdg"),
+			sfhome:     filepath.Join(tmp, "snowflake"),
 			filepath:   filepath.Join(home, "Library", "Application Support", "snowflake"),
-			secondpath: "/irrelevant", // no lower priority option
+			secondpath: filepath.Join(tmp, "irrelevant"), // no lower priority option
 		},
 
 		"linux default path": {
 			GOOS:       "linux",
 			filepath:   filepath.Join(home, ".config", "snowflake"),
-			secondpath: "/irrelevant", // no lower priority option
+			secondpath: filepath.Join(tmp, "irrelevant"), // no lower priority option
 		},
 		"linux xdg_config_home": {
 			GOOS:       "linux",
-			xdghome:    "/xdg",
-			filepath:   filepath.Join("/xdg", "snowflake"),
+			xdghome:    filepath.Join(tmp, "xdg"),
+			filepath:   filepath.Join(tmp, "xdg", "snowflake"),
 			secondpath: filepath.Join(home, ".config", "snowflake"),
 		},
 		"linux user homedir": {
@@ -163,16 +167,16 @@ func (s *SnowflakeSuite) TestList() {
 		},
 		"linux snowflake_home": {
 			GOOS:       "linux",
-			sfhome:     "/snowflake",
-			filepath:   "/snowflake",
+			sfhome:     filepath.Join(tmp, "snowflake"),
+			filepath:   filepath.Join(tmp, "snowflake"),
 			secondpath: filepath.Join(home, ".snowflake"),
 		},
 		"linux skips empty env var dirs": {
 			GOOS:       "linux",
-			xdghome:    "/xdg",
-			sfhome:     "/snowflake",
+			xdghome:    filepath.Join(tmp, "xdg"),
+			sfhome:     filepath.Join(tmp, "snowflake"),
 			filepath:   filepath.Join(home, ".config", "snowflake"),
-			secondpath: "/irrelevant", // no lower priority option
+			secondpath: filepath.Join(tmp, "irrelevant"), // no lower priority option
 		},
 	} {
 		runtimeGOOS = test.GOOS
@@ -236,7 +240,8 @@ func (s *SnowflakeSuite) TestListErr() {
 }
 
 func (s *SnowflakeSuite) TestGet() {
-	sfhome := "/snowflake"
+	tmp := os.TempDir()
+	sfhome := filepath.Join(tmp, "snowflake")
 	os.Setenv("SNOWFLAKE_HOME", sfhome)
 	fs := afero.NewMemMapFs()
 	fs.MkdirAll(sfhome, 0755)
