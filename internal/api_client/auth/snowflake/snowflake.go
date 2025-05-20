@@ -10,6 +10,7 @@ import (
 
 	"github.com/pelletier/go-toml/v2"
 	"github.com/posit-dev/publisher/internal/util"
+	"github.com/spf13/afero"
 )
 
 // Connection represents the configuration options we need to do keypair auth
@@ -28,7 +29,11 @@ type Connections interface {
 	List() (map[string]*Connection, error)
 }
 
-type defaultConnections struct{}
+type defaultConnections struct {
+	// default leaves this nil, meaning we will use util.osFs.
+	// Overridden for testing.
+	fs afero.Fs
+}
 
 // enforce interface compliance
 var _ Connections = defaultConnections{}
@@ -51,7 +56,7 @@ func (c defaultConnections) Get(name string) (*Connection, error) {
 }
 
 // List returns all configured Snowflake connections.
-func (defaultConnections) List() (map[string]*Connection, error) {
+func (c defaultConnections) List() (map[string]*Connection, error) {
 	// We don't know in advance what the Connection names will be, so we
 	// must decode into a map rather than a struct.
 	var conns map[string]*Connection
@@ -62,7 +67,7 @@ func (defaultConnections) List() (map[string]*Connection, error) {
 	// of connections.toml fields that we don't care about, so we make our
 	// own decoder here.
 
-	path, err := connectionsPath()
+	path, err := c.connectionsPath()
 	if err != nil {
 		return nil, err
 	}
@@ -90,9 +95,9 @@ func (defaultConnections) List() (map[string]*Connection, error) {
 
 // connectionsPath searches possible snowflake config paths in priority order
 // and returns the path of the first connections.toml file it finds.
-func connectionsPath() (util.AbsolutePath, error) {
+func (c defaultConnections) connectionsPath() (util.AbsolutePath, error) {
 	var path util.AbsolutePath
-	for _, dir := range findConfigDirs() {
+	for _, dir := range c.findConfigDirs() {
 		path = dir.Join("connections.toml")
 		if ok, _ := path.Exists(); ok {
 			return path, nil
@@ -108,44 +113,44 @@ func connectionsPath() (util.AbsolutePath, error) {
 //
 // See
 // https://docs.snowflake.com/en/developer-guide/python-connector/python-connector-connect#connecting-using-the-connections-toml-file
-func findConfigDirs() []util.AbsolutePath {
+func (c defaultConnections) findConfigDirs() []util.AbsolutePath {
 	var dirs []util.AbsolutePath
 
-	if sfh, set := os.LookupEnv("SNOWFLAKE_HOME"); set && sfh != "" {
-		dirs = append(dirs, util.NewAbsolutePath(sfh, nil))
+	if sfh := os.Getenv("SNOWFLAKE_HOME"); sfh != "" {
+		dirs = append(dirs, util.NewAbsolutePath(sfh, c.fs))
 	}
 
 	home, homeerr := os.UserHomeDir()
 	if homeerr == nil {
 		dirs = append(
 			dirs,
-			util.NewAbsolutePath(home, nil).Join(".snowflake"),
+			util.NewAbsolutePath(home, c.fs).Join(".snowflake"),
 		)
 	}
 
-	if xdg, set := os.LookupEnv("XDG_CONFIG_HOME"); set && xdg != "" {
+	if xdg := os.Getenv("XDG_CONFIG_HOME"); xdg != "" {
 		dirs = append(
 			dirs,
-			util.NewAbsolutePath(xdg, nil).Join("snowflake"),
+			util.NewAbsolutePath(xdg, c.fs).Join("snowflake"),
 		)
 	}
 
 	if homeerr == nil {
-		switch runtime.GOOS {
+		switch runtimeGOOS {
 		case "windows":
 			dirs = append(
 				dirs,
-				util.NewAbsolutePath(home, nil).Join(`AppData\Local\snowflake`),
+				util.NewAbsolutePath(home, c.fs).Join("AppData", "Local", "snowflake"),
 			)
 		case "darwin":
 			dirs = append(
 				dirs,
-				util.NewAbsolutePath(home, nil).Join("Library/Application Support/snowflake"),
+				util.NewAbsolutePath(home, c.fs).Join("Library", "Application Support", "snowflake"),
 			)
 		case "linux":
 			dirs = append(
 				dirs,
-				util.NewAbsolutePath(home, nil).Join(".config/snowflake"),
+				util.NewAbsolutePath(home, c.fs).Join(".config", "snowflake"),
 			)
 
 		}
@@ -153,3 +158,6 @@ func findConfigDirs() []util.AbsolutePath {
 
 	return dirs
 }
+
+// overridable by tests
+var runtimeGOOS = runtime.GOOS
