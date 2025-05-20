@@ -338,8 +338,8 @@ export async function newCredential(
       if (connectionQuickPicks.length > 1) {
         const pick = await input.showQuickPick({
           title: state.title,
-          step: 0,
-          totalSteps: 0,
+          step: thisStepNumber,
+          totalSteps: state.totalSteps,
           placeholder:
             "Select the Snowflake connection configuration you want to use to authenticate.",
           items: connectionQuickPicks,
