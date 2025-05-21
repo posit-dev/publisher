@@ -50,6 +50,8 @@ func ServerTypeFromURL(urlStr string) (ServerType, error) {
 		return ServerTypeShinyappsIO, nil
 	} else if strings.HasSuffix(host, ".snowflakecomputing.app") {
 		return ServerTypeSnowflake, nil
+	} else if strings.HasSuffix(host, ".privatelink.snowflake.app") {
+		return ServerTypeSnowflake, nil
 	}
 	return ServerTypeConnect, nil
 }

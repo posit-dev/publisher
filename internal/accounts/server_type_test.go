@@ -41,6 +41,8 @@ func (s *AccountTypeSuite) TestAccountTypeFromURL() {
 		{"https://example.com/connect/#/content", ServerTypeConnect},
 		{"https://example.snowflakecomputing.app", ServerTypeSnowflake},
 		{"https://example.snowflakecomputing.app/connect/#/content", ServerTypeSnowflake},
+		{"https://example.privatelink.snowflake.app", ServerTypeSnowflake},
+		{"https://example.privatelink.snowflake.app/connect/#/content", ServerTypeSnowflake},
 	} {
 		serverType, err := ServerTypeFromURL(test.url)
 		s.Nil(err)
