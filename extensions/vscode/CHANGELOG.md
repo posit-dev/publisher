@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DESCRIPTION` file and `renv.lock` file. The detected version
   will fill the `requires_r` field in configuration (#2636)
 
-- Introduced experimental support for deploying to SPCS. (#2632)
+- Added support for deploying to Connect in Snowflake using key-pair auth. (#2632)
 
 ### Fixed
 
