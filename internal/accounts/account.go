@@ -11,7 +11,7 @@ type Account struct {
 	Certificate         string        `json:"-"`            // Root CA certificate, if server cert is signed by a private CA
 	AccountName         string        `json:"account_name"` // Username, if known
 	ApiKey              string        `json:"-"`            // For Connect servers
-	SnowflakeConnection string        `json:"-"`
+	SnowflakeConnection string        `json:"-"`            // Snowflake connection name used instead of API Key in SPCS
 }
 
 // AuthType returns the detected AccountAuthType based on the properties of the
