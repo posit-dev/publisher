@@ -13,14 +13,26 @@ type AuthMethod interface {
 	AddAuthHeaders(req *http.Request) error
 }
 
-func NewClientAuth(acct *accounts.Account) (AuthMethod, error) {
+type AuthFactory struct {
+	connections snowflake.Connections
+	access      snowflake.Access
+}
+
+func NewAuthFactory() AuthFactory {
+	return AuthFactory{
+		connections: snowflake.NewConnections(),
+		access:      snowflake.NewAccess(),
+	}
+}
+
+func (af AuthFactory) NewClientAuth(acct *accounts.Account) (AuthMethod, error) {
 	switch acct.AuthType() {
 	case accounts.AuthTypeAPIKey:
 		return NewApiKeyAuthenticator(acct.ApiKey, ""), nil
 	case accounts.AuthTypeSnowflake:
 		auth, err := NewSnowflakeAuthenticator(
-			snowflake.NewConnections(),
-			snowflake.NewAccess(),
+			af.connections,
+			af.access,
 			acct.SnowflakeConnection,
 		)
 		if err != nil {

@@ -3,9 +3,11 @@ package auth
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/posit-dev/publisher/internal/accounts"
+	"github.com/posit-dev/publisher/internal/api_client/auth/snowflake"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
 	"github.com/stretchr/testify/suite"
 )
@@ -19,11 +21,12 @@ func TestAuthSuite(t *testing.T) {
 }
 
 func (s *AuthSuite) TestNewClientAuth() {
-	auth, err := NewClientAuth(&accounts.Account{})
+	af := NewAuthFactory()
+	auth, err := af.NewClientAuth(&accounts.Account{})
 	s.NoError(err)
 	s.Equal(&nullAuthenticator{}, auth)
 
-	auth, err = NewClientAuth(&accounts.Account{
+	auth, err = af.NewClientAuth(&accounts.Account{
 		ApiKey: ":key:",
 	})
 	s.NoError(err)
@@ -32,12 +35,14 @@ func (s *AuthSuite) TestNewClientAuth() {
 		headerName: "Authorization",
 	}, auth)
 
-	_, err = NewClientAuth(&accounts.Account{
+	connections := &snowflake.MockConnections{}
+	connections.On("Get", ":snow:").Return(&snowflake.Connection{}, errors.New("test-error"))
+	af.connections = connections
+	_, err = af.NewClientAuth(&accounts.Account{
 		SnowflakeConnection: ":snow:",
 	})
-	s.ErrorContains(err, "connection :snow: not found")
-	// This is enough to prove we tried to build a snowflake authenticator
-	// and passed in the right connection name.
-	// Potential improvement: move DI of snowflake helpers further up the
-	// call chain, use mocks here.
+	s.ErrorContains(err, "test-error")
+	// Proves we called the snowflake auth constructor with the connection
+	// name, without having to set up everything else. See
+	// snowflake_test.go for full constructor tests.
 }

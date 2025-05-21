@@ -234,7 +234,7 @@ func NewHTTPClientForAccount(account *accounts.Account, timeout time.Duration, l
 			RootCAs:            certPool,
 		},
 	}
-	clientAuth, err := auth.NewClientAuth(account)
+	clientAuth, err := auth.NewAuthFactory().NewClientAuth(account)
 	if err != nil {
 		return nil, err
 	}
