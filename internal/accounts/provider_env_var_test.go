@@ -24,7 +24,7 @@ func (s *AccountEnvVarProviderSuite) SetupTest() {
 	s.envVarHelper.Setup("CONNECT_SERVER", "CONNECT_API_KEY", "CONNECT_INSECURE", "CONNECT_CERT")
 }
 
-func (s *AccountEnvVarProviderSuite) TeardownTest() {
+func (s *AccountEnvVarProviderSuite) TearDownTest() {
 	s.envVarHelper.Teardown()
 }
 

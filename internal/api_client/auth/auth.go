@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/posit-dev/publisher/internal/accounts"
+	"github.com/posit-dev/publisher/internal/api_client/auth/snowflake"
 )
 
 type AuthMethod interface {
@@ -17,7 +18,11 @@ func NewClientAuth(acct *accounts.Account) (AuthMethod, error) {
 	case accounts.AuthTypeAPIKey:
 		return NewApiKeyAuthenticator(acct.ApiKey, ""), nil
 	case accounts.AuthTypeSnowflake:
-		auth, err := NewSnowflakeAuthenticator(acct.SnowflakeConnection)
+		auth, err := NewSnowflakeAuthenticator(
+			snowflake.NewConnections(),
+			snowflake.NewAccess(),
+			acct.SnowflakeConnection,
+		)
 		if err != nil {
 			return nil, err
 		}

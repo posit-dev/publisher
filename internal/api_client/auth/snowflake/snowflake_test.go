@@ -15,12 +15,7 @@ import (
 
 type SnowflakeSuite struct {
 	utiltest.Suite
-
-	origSnowflakeHome string
-	snowflakeHomeSet  bool
-
-	origXDG string
-	xdgSet  bool
+	envVarHelper utiltest.EnvVarHelper
 }
 
 func TestSnowflakeSuite(t *testing.T) {
@@ -28,24 +23,13 @@ func TestSnowflakeSuite(t *testing.T) {
 }
 
 func (s *SnowflakeSuite) SetupTest() {
-	s.origSnowflakeHome, s.snowflakeHomeSet = os.LookupEnv("SNOWFLAKE_HOME")
-	s.origXDG, s.xdgSet = os.LookupEnv("XDG_CONFIG_HOME")
+	s.envVarHelper.Setup("SNOWFLAKE_HOME", "XDG_CONFIG_HOME")
 }
 
-func (s *SnowflakeSuite) TeardownTest() {
+func (s *SnowflakeSuite) TearDownTest() {
 	runtimeGOOS = runtime.GOOS
 
-	if s.snowflakeHomeSet {
-		os.Setenv("SNOWFLAKE_HOME", s.origSnowflakeHome)
-	} else {
-		os.Unsetenv("SNOWFLAKE_HOME")
-	}
-
-	if s.xdgSet {
-		os.Setenv("XDG_CONFIG_HOME", s.origXDG)
-	} else {
-		os.Unsetenv("XDG_CONFIG_HOME")
-	}
+	s.envVarHelper.Teardown()
 }
 
 var connectionsToml = []byte(`
