@@ -234,9 +234,17 @@ This command will trigger the [Release GitHub Action](https://github.com/rstudio
 
 **Step 3**
 
-Once complete the action has completed, the release will be available on the
+Once the action has completed, the release will be available on the
 [Releases page](https://github.com/rstudio/publishing-client/releases), and
 published to the VSCode Marketplace.
+
+Confirm that the new version shows up in the [Visual
+Studio](https://marketplace.visualstudio.com/items?itemName=Posit.publisher)
+and [Open VSX](https://open-vsx.org/extension/posit/publisher) registries, and
+that all expected target platforms are supported (Linux x64, Linux ARM64,
+Windows x64, macOS Intel, macOS Apple Silicon).
+
+It may take some time after the action completes for the new version to show up.
 
 ## Updating Dependencies
 
