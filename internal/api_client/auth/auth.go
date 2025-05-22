@@ -6,26 +6,46 @@ import (
 	"net/http"
 
 	"github.com/posit-dev/publisher/internal/accounts"
+	"github.com/posit-dev/publisher/internal/api_client/auth/snowflake"
 )
 
 type AuthMethod interface {
 	AddAuthHeaders(req *http.Request) error
 }
 
-func NewClientAuth(acct *accounts.Account) AuthMethod {
-	switch acct.AuthType {
-	case accounts.AuthTypeAPIKey:
-		return NewApiKeyAuthenticator(acct.ApiKey, "")
-	case accounts.AuthTypeNone:
-		// This is bogus since we know we can't publish
-		// without authentication. Our workflow needs to do one
-		// of the following:
-		// * Obtain credentials from the saved account list,
-		//   command line, or environment variables.
-		// * Prompt the user interactively (via the CLI or UI)
-		//   or walk them through the token flow.
-		// * Err if neither of the above can be done.
-		return NewNullAuthenticator()
+type AuthFactory struct {
+	connections snowflake.Connections
+	access      snowflake.Access
+}
+
+func NewAuthFactory() AuthFactory {
+	return AuthFactory{
+		connections: snowflake.NewConnections(),
+		access:      snowflake.NewAccess(),
 	}
-	return nil
+}
+
+func (af AuthFactory) NewClientAuth(acct *accounts.Account) (AuthMethod, error) {
+	switch acct.AuthType() {
+	case accounts.AuthTypeAPIKey:
+		return NewApiKeyAuthenticator(acct.ApiKey, ""), nil
+	case accounts.AuthTypeSnowflake:
+		auth, err := NewSnowflakeAuthenticator(
+			af.connections,
+			af.access,
+			acct.SnowflakeConnection,
+		)
+		if err != nil {
+			return nil, err
+		}
+		return auth, nil
+	case accounts.AuthTypeNone:
+		// We can't publish without authentication. However, when a
+		// user is adding a new credential, the first thing we do is
+		// test the server URL without any credentials. This test will
+		// use the NullAuthenticator. Subsequent steps add either an
+		// API Key or a Snowflake connection.
+		return NewNullAuthenticator(), nil
+	}
+	return nil, nil
 }

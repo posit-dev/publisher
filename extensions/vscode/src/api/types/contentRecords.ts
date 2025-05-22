@@ -12,6 +12,7 @@ export enum ServerType {
   CONNECT = "connect",
   SHINY_APPS = "shinyapps",
   CLOUD = "cloud",
+  SNOWFLAKE = "snowflake",
 }
 
 export enum ContentRecordState {

@@ -7,6 +7,7 @@ import (
 	"path"
 
 	"github.com/posit-dev/publisher/internal/accounts"
+	"github.com/posit-dev/publisher/internal/api_client/auth/snowflake"
 	"github.com/posit-dev/publisher/internal/credentials"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/logging"
@@ -183,6 +184,10 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	// POST /api/packages/r/scan
 	r.Handle(ToPath("packages", "r", "scan"), NewPostPackagesRScanHandler(base, log, nil)).
 		Methods(http.MethodPost)
+
+	// GET /api/snowflake-connections
+	r.Handle(ToPath("snowflake-connections"), GetSnowflakeConnectionsHandlerFunc(log, snowflake.NewConnections())).
+		Methods(http.MethodGet)
 
 	c := cors.AllowAll().Handler(r)
 	return c.ServeHTTP

@@ -101,7 +101,7 @@ func NewIncompleteCredentialError() *IncompleteCredentialError {
 }
 
 func (e *IncompleteCredentialError) Error() string {
-	return "New credentials require non-empty Name, URL and Api Key fields"
+	return "New credentials require non-empty Name, URL and either Api Key or Snowflake connection fields"
 }
 
 func NewBackupFileAgentError(filename string, err error) *types.AgentError {

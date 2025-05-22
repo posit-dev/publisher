@@ -21,14 +21,15 @@ var fsys = afero.NewOsFs()
 const ondiskFilename = ".connect-credentials"
 
 type fileCredential struct {
-	GUID    string `toml:"guid"`
-	Version uint   `toml:"version"`
-	URL     string `toml:"url"`
-	ApiKey  string `toml:"api_key"`
+	GUID                string `toml:"guid"`
+	Version             uint   `toml:"version"`
+	URL                 string `toml:"url"`
+	ApiKey              string `toml:"api_key"`
+	SnowflakeConnection string `toml:"snowflake_connection"`
 }
 
 func (cr *fileCredential) IsValid() bool {
-	return cr.URL != "" && cr.ApiKey != ""
+	return cr.URL != "" && (cr.ApiKey != "" || cr.SnowflakeConnection != "")
 }
 
 type fileCredentials struct {
@@ -45,10 +46,11 @@ func (fcs *fileCredentials) CredentialsList() []Credential {
 	list := []Credential{}
 	for credName, fileCred := range fcs.Credentials {
 		list = append(list, Credential{
-			Name:   credName,
-			GUID:   fileCred.GUID,
-			URL:    fileCred.URL,
-			ApiKey: fileCred.ApiKey,
+			Name:                credName,
+			GUID:                fileCred.GUID,
+			URL:                 fileCred.URL,
+			ApiKey:              fileCred.ApiKey,
+			SnowflakeConnection: fileCred.SnowflakeConnection,
 		})
 	}
 	return list
@@ -59,10 +61,11 @@ func (fcs *fileCredentials) CredentialByGuid(guid string) (Credential, error) {
 	for credName, fileCred := range fcs.Credentials {
 		if fileCred.GUID == guid {
 			cred = Credential{
-				Name:   credName,
-				GUID:   fileCred.GUID,
-				URL:    fileCred.URL,
-				ApiKey: fileCred.ApiKey,
+				Name:                credName,
+				GUID:                fileCred.GUID,
+				URL:                 fileCred.URL,
+				ApiKey:              fileCred.ApiKey,
+				SnowflakeConnection: fileCred.SnowflakeConnection,
 			}
 			return cred, nil
 		}
@@ -101,11 +104,11 @@ func NewFileCredentialsService(log logging.Logger) (*fileCredentialsService, err
 	return fservice, nil
 }
 
-func (c *fileCredentialsService) Set(name, url, ak string) (*Credential, error) {
+func (c *fileCredentialsService) Set(name, url, ak string, sf string) (*Credential, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	if name == "" || url == "" || ak == "" {
+	if name == "" || url == "" || (ak == "" && sf == "") {
 		return nil, NewIncompleteCredentialError()
 	}
 
@@ -121,10 +124,11 @@ func (c *fileCredentialsService) Set(name, url, ak string) (*Credential, error) 
 
 	guid := uuid.New().String()
 	cred := Credential{
-		GUID:   guid,
-		Name:   name,
-		URL:    normalizedUrl,
-		ApiKey: ak,
+		GUID:                guid,
+		Name:                name,
+		URL:                 normalizedUrl,
+		ApiKey:              ak,
+		SnowflakeConnection: sf,
 	}
 
 	err = c.checkForConflicts(creds, cred)
@@ -134,10 +138,11 @@ func (c *fileCredentialsService) Set(name, url, ak string) (*Credential, error) 
 	}
 
 	creds.Credentials[name] = fileCredential{
-		GUID:    guid,
-		Version: CurrentVersion,
-		URL:     normalizedUrl,
-		ApiKey:  ak,
+		GUID:                guid,
+		Version:             CurrentVersion,
+		URL:                 normalizedUrl,
+		ApiKey:              ak,
+		SnowflakeConnection: sf,
 	}
 
 	err = c.saveFile(creds)

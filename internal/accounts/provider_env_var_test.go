@@ -24,7 +24,7 @@ func (s *AccountEnvVarProviderSuite) SetupTest() {
 	s.envVarHelper.Setup("CONNECT_SERVER", "CONNECT_API_KEY", "CONNECT_INSECURE", "CONNECT_CERT")
 }
 
-func (s *AccountEnvVarProviderSuite) TeardownTest() {
+func (s *AccountEnvVarProviderSuite) TearDownTest() {
 	s.envVarHelper.Teardown()
 }
 
@@ -45,7 +45,6 @@ func (s *AccountEnvVarProviderSuite) TestLoadAll() {
 	s.Nil(err)
 	s.Equal([]Account{{
 		ServerType:  ServerTypeConnect,
-		AuthType:    AuthTypeAPIKey,
 		Source:      AccountSourceEnvironment,
 		Name:        "env",
 		URL:         "https://connect.example.com:1234",

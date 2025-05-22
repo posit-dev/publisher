@@ -31,13 +31,13 @@ func (s *FileCredentialsServiceSuite) fileSetupDeleteTest() {
 	fileData := []byte(`
 [credentials.tokeep]
 guid = "18cd5640-bee5-4b2a-992a-a2725ab6103d"
-version = 0
+version = 1
 url = "https://a1.connect-server:3939/connect"
 api_key = "abcdeC2aqbh7dg8TO43XPu7r56YDh000"
 
 [credentials.willdelete]
 guid = "79077898-7e26-4909-9eb7-596d1a6d0b6f"
-version = 0
+version = 1
 url = "hTTps://b2.CONNECT-server:3939/connect"
 api_key = "abcdeC2aqbh7dg8TO43XPu7r56YDh002"
 
@@ -137,28 +137,39 @@ func (s *FileCredentialsServiceSuite) TestLoadFile() {
 	s.Equal(creds, fileCredentials{
 		Credentials: map[string]fileCredential{
 			"hugo": {
-				GUID:    "18cd5640-bee5-4b2a-992a-a2725ab6103d",
-				Version: 0,
-				URL:     "https://a1.connect-server:3939/connect",
-				ApiKey:  "abcdeC2aqbh7dg8TO43XPu7r56YDh000",
+				GUID:                "18cd5640-bee5-4b2a-992a-a2725ab6103d",
+				Version:             0,
+				URL:                 "https://a1.connect-server:3939/connect",
+				ApiKey:              "abcdeC2aqbh7dg8TO43XPu7r56YDh000",
+				SnowflakeConnection: "",
 			},
 			"rick": {
-				GUID:    "79077898-7e26-4909-9eb7-596d1a6d0b6f",
-				Version: 0,
-				URL:     "https://b2.connect-server:3939/connect",
-				ApiKey:  "abcdeC2aqbh7dg8TO43XPu7r56YDh002",
+				GUID:                "79077898-7e26-4909-9eb7-596d1a6d0b6f",
+				Version:             1,
+				URL:                 "https://b2.connect-server:3939/connect",
+				ApiKey:              "abcdeC2aqbh7dg8TO43XPu7r56YDh002",
+				SnowflakeConnection: "",
 			},
 			"jane": {
-				GUID:    "3bb375e4-6f01-4fd6-942a-ac32a5e4d7cc",
-				Version: 0,
-				URL:     "https://c3.connect-server:3939/connect",
-				ApiKey:  "abcdeC2aqbh7dg8TO43XPu7r56YDh003",
+				GUID:                "3bb375e4-6f01-4fd6-942a-ac32a5e4d7cc",
+				Version:             0,
+				URL:                 "https://c3.connect-server:3939/connect",
+				ApiKey:              "abcdeC2aqbh7dg8TO43XPu7r56YDh003",
+				SnowflakeConnection: "",
 			},
 			"frank sinatra": {
-				GUID:    "bcdd57dd-6a68-4dcc-9877-d3ab2f512a04",
-				Version: 0,
-				URL:     "https://c4.connect-server:3939/connect",
-				ApiKey:  "abcdeC2aqbh7dg8TO43XPu7r56YDh004",
+				GUID:                "bcdd57dd-6a68-4dcc-9877-d3ab2f512a04",
+				Version:             1,
+				URL:                 "https://c4.connect-server:3939/connect",
+				ApiKey:              "abcdeC2aqbh7dg8TO43XPu7r56YDh004",
+				SnowflakeConnection: "",
+			},
+			"jonsnow": {
+				GUID:                "4b080144-bbea-4bf6-9819-4b0ec3546f42",
+				Version:             1,
+				URL:                 "https://example.snowflakecomputing.app/connect",
+				ApiKey:              "",
+				SnowflakeConnection: "snowy",
 			},
 		},
 	})
@@ -295,13 +306,13 @@ func (s *FileCredentialsServiceSuite) TestDelete() {
 		Credentials: map[string]fileCredential{
 			"tokeep": {
 				GUID:    "18cd5640-bee5-4b2a-992a-a2725ab6103d",
-				Version: 0,
+				Version: 1,
 				URL:     "https://a1.connect-server:3939/connect",
 				ApiKey:  "abcdeC2aqbh7dg8TO43XPu7r56YDh000",
 			},
 			"willdelete": {
 				GUID:    "79077898-7e26-4909-9eb7-596d1a6d0b6f",
-				Version: 0,
+				Version: 1,
 				URL:     "https://b2.connect-server:3939/connect",
 				ApiKey:  "abcdeC2aqbh7dg8TO43XPu7r56YDh002",
 			},
@@ -325,7 +336,7 @@ func (s *FileCredentialsServiceSuite) TestDelete() {
 		Credentials: map[string]fileCredential{
 			"tokeep": {
 				GUID:    "18cd5640-bee5-4b2a-992a-a2725ab6103d",
-				Version: 0,
+				Version: 1,
 				URL:     "https://a1.connect-server:3939/connect",
 				ApiKey:  "abcdeC2aqbh7dg8TO43XPu7r56YDh000",
 			},
@@ -387,12 +398,13 @@ func (s *FileCredentialsServiceSuite) TestSet() {
 		},
 	})
 
-	newcred, err := cs.Set("newcred", "https://b2.connect-server:3939/connect", "abcdeC2aqbh7dg8TO43XPu7r56YDh002")
+	newcred, err := cs.Set("newcred", "https://b2.connect-server:3939/connect", "abcdeC2aqbh7dg8TO43XPu7r56YDh002", "")
 	s.NoError(err)
 
 	s.Equal(newcred.Name, "newcred")
 	s.Equal(newcred.URL, "https://b2.connect-server:3939/connect")
 	s.Equal(newcred.ApiKey, "abcdeC2aqbh7dg8TO43XPu7r56YDh002")
+	s.Equal(newcred.SnowflakeConnection, "")
 
 	creds, err = cs.load()
 	s.NoError(err)
@@ -401,26 +413,29 @@ func (s *FileCredentialsServiceSuite) TestSet() {
 	s.Equal(creds, fileCredentials{
 		Credentials: map[string]fileCredential{
 			"preexistent": {
-				GUID:    "18cd5640-bee5-4b2a-992a-a2725ab6103d",
-				Version: 0,
-				URL:     "https://a1.connect-server:3939/connect",
-				ApiKey:  "abcdeC2aqbh7dg8TO43XPu7r56YDh000",
+				GUID:                "18cd5640-bee5-4b2a-992a-a2725ab6103d",
+				Version:             0,
+				URL:                 "https://a1.connect-server:3939/connect",
+				ApiKey:              "abcdeC2aqbh7dg8TO43XPu7r56YDh000",
+				SnowflakeConnection: "",
 			},
 			"newcred": {
-				GUID:    newcred.GUID,
-				Version: 0,
-				URL:     "https://b2.connect-server:3939/connect",
-				ApiKey:  "abcdeC2aqbh7dg8TO43XPu7r56YDh002",
+				GUID:                newcred.GUID,
+				Version:             1,
+				URL:                 "https://b2.connect-server:3939/connect",
+				ApiKey:              "abcdeC2aqbh7dg8TO43XPu7r56YDh002",
+				SnowflakeConnection: "",
 			},
 		},
 	})
 
-	newcred2, err := cs.Set("brand new cred wspaces", "https://b3.connect-server:3939/connect", "abcdeC2aqbh7dg8TO43XPu7r56YDh003")
+	newcred2, err := cs.Set("brand new cred wspaces", "https://b3.connect-server:3939/connect", "abcdeC2aqbh7dg8TO43XPu7r56YDh003", "")
 	s.NoError(err)
 
 	s.Equal(newcred2.Name, "brand new cred wspaces")
 	s.Equal(newcred2.URL, "https://b3.connect-server:3939/connect")
 	s.Equal(newcred2.ApiKey, "abcdeC2aqbh7dg8TO43XPu7r56YDh003")
+	s.Equal(newcred2.SnowflakeConnection, "")
 
 	creds, err = cs.load()
 	s.NoError(err)
@@ -429,22 +444,70 @@ func (s *FileCredentialsServiceSuite) TestSet() {
 	s.Equal(creds, fileCredentials{
 		Credentials: map[string]fileCredential{
 			"preexistent": {
-				GUID:    "18cd5640-bee5-4b2a-992a-a2725ab6103d",
-				Version: 0,
-				URL:     "https://a1.connect-server:3939/connect",
-				ApiKey:  "abcdeC2aqbh7dg8TO43XPu7r56YDh000",
+				GUID:                "18cd5640-bee5-4b2a-992a-a2725ab6103d",
+				Version:             0,
+				URL:                 "https://a1.connect-server:3939/connect",
+				ApiKey:              "abcdeC2aqbh7dg8TO43XPu7r56YDh000",
+				SnowflakeConnection: "",
 			},
 			"newcred": {
-				GUID:    newcred.GUID,
-				Version: 0,
-				URL:     "https://b2.connect-server:3939/connect",
-				ApiKey:  "abcdeC2aqbh7dg8TO43XPu7r56YDh002",
+				GUID:                newcred.GUID,
+				Version:             1,
+				URL:                 "https://b2.connect-server:3939/connect",
+				ApiKey:              "abcdeC2aqbh7dg8TO43XPu7r56YDh002",
+				SnowflakeConnection: "",
 			},
 			"brand new cred wspaces": {
-				GUID:    newcred2.GUID,
-				Version: 0,
-				URL:     "https://b3.connect-server:3939/connect",
-				ApiKey:  "abcdeC2aqbh7dg8TO43XPu7r56YDh003",
+				GUID:                newcred2.GUID,
+				Version:             1,
+				URL:                 "https://b3.connect-server:3939/connect",
+				ApiKey:              "abcdeC2aqbh7dg8TO43XPu7r56YDh003",
+				SnowflakeConnection: "",
+			},
+		},
+	})
+
+	newcred3, err := cs.Set("snowcred", "https://example.snowflakecomputing.app/connect", "", "snowy")
+	s.NoError(err)
+
+	s.Equal(newcred3.Name, "snowcred")
+	s.Equal(newcred3.URL, "https://example.snowflakecomputing.app/connect")
+	s.Equal(newcred3.ApiKey, "")
+	s.Equal(newcred3.SnowflakeConnection, "snowy")
+
+	creds, err = cs.load()
+	s.NoError(err)
+
+	// Data generated on test setup
+	s.Equal(creds, fileCredentials{
+		Credentials: map[string]fileCredential{
+			"preexistent": {
+				GUID:                "18cd5640-bee5-4b2a-992a-a2725ab6103d",
+				Version:             0,
+				URL:                 "https://a1.connect-server:3939/connect",
+				ApiKey:              "abcdeC2aqbh7dg8TO43XPu7r56YDh000",
+				SnowflakeConnection: "",
+			},
+			"newcred": {
+				GUID:                newcred.GUID,
+				Version:             1,
+				URL:                 "https://b2.connect-server:3939/connect",
+				ApiKey:              "abcdeC2aqbh7dg8TO43XPu7r56YDh002",
+				SnowflakeConnection: "",
+			},
+			"brand new cred wspaces": {
+				GUID:                newcred2.GUID,
+				Version:             1,
+				URL:                 "https://b3.connect-server:3939/connect",
+				ApiKey:              "abcdeC2aqbh7dg8TO43XPu7r56YDh003",
+				SnowflakeConnection: "",
+			},
+			"snowcred": {
+				GUID:                newcred3.GUID,
+				Version:             1,
+				URL:                 "https://example.snowflakecomputing.app/connect",
+				ApiKey:              "",
+				SnowflakeConnection: "snowy",
 			},
 		},
 	})
@@ -459,13 +522,13 @@ func (s *FileCredentialsServiceSuite) TestSet_BlankDataErr() {
 	testCases := map[string][3]string{
 		"empty credential": {"", "https://b2.connect-server:3939/connect", "abcdeC2aqbh7dg8TO43XPu7r56YDh002"},
 		"empty URL":        {"newcred", "", "abcdeC2aqbh7dg8TO43XPu7r56YDh002"},
-		"empty key":        {"newcred", "https://b2.connect-server:3939/connect", ""},
+		"empty creds":      {"newcred", "https://b2.connect-server:3939/connect", ""},
 	}
 
 	for _, params := range testCases {
-		_, err := cs.Set(params[0], params[1], params[2])
+		_, err := cs.Set(params[0], params[1], params[2], "")
 		s.Error(err)
-		s.Equal(err.Error(), "New credentials require non-empty Name, URL and Api Key fields")
+		s.Equal(err.Error(), "New credentials require non-empty Name, URL and either Api Key or Snowflake connection fields")
 
 		creds, err := cs.load()
 		s.NoError(err)
@@ -505,7 +568,7 @@ func (s *FileCredentialsServiceSuite) TestSet_ConflictErr() {
 		expectedErrMessage := params[3]
 		s.loggerMock.On("Debug", "Conflicts storing new credential to file", "error", expectedErrMessage, "filename", cs.credsFilepath.String()).Return()
 
-		_, err := cs.Set(params[0], params[1], params[2])
+		_, err := cs.Set(params[0], params[1], params[2], "")
 		s.Error(err)
 		s.loggerMock.AssertExpectations(s.T())
 
@@ -541,10 +604,10 @@ func (s *FileCredentialsServiceSuite) TestReset() {
 	_, err = cs.load()
 	s.NoError(err)
 
-	credOne, err := cs.Set("newcred", "https://b2.connect-server:3939/connect", "abcdeC2aqbh7dg8TO43XPu7r56YDh002")
+	credOne, err := cs.Set("newcred", "https://b2.connect-server:3939/connect", "abcdeC2aqbh7dg8TO43XPu7r56YDh002", "")
 	s.NoError(err)
 
-	credTwo, err := cs.Set("newcredtwo", "https://b5.connect-server:3939/connect", "abcdeC2aqbh7dg8TO43XPu7r56YDh007")
+	credTwo, err := cs.Set("newcredtwo", "https://b5.connect-server:3939/connect", "abcdeC2aqbh7dg8TO43XPu7r56YDh007", "")
 	s.NoError(err)
 
 	list, err := cs.List()
@@ -575,15 +638,17 @@ func (s *FileCredentialsServiceSuite) TestReset() {
 	s.Equal(fmt.Sprintf(`[credentials]
 [credentials.newcred]
 guid = '%s'
-version = 0
+version = 1
 url = 'https://b2.connect-server:3939/connect'
 api_key = 'abcdeC2aqbh7dg8TO43XPu7r56YDh002'
+snowflake_connection = ''
 
 [credentials.newcredtwo]
 guid = '%s'
-version = 0
+version = 1
 url = 'https://b5.connect-server:3939/connect'
 api_key = 'abcdeC2aqbh7dg8TO43XPu7r56YDh007'
+snowflake_connection = ''
 `, credOne.GUID, credTwo.GUID), string(backupContents))
 
 	err = os.Remove(expectedCredsBackupPath.String())
