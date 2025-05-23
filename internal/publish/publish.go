@@ -184,6 +184,8 @@ func (p *defaultPublisher) emitErrorEvents(err error) {
 		data))
 }
 
+var clientFactory = connect.NewConnectClient
+
 func (p *defaultPublisher) PublishDirectory() error {
 	p.log.Info("Publishing from directory", logging.LogKeyOp, events.AgentOp, "path", p.Dir, "localID", p.State.LocalID)
 	p.emitter.Emit(events.New(events.PublishOp, events.StartPhase, events.NoError, publishStartData{
@@ -194,8 +196,9 @@ func (p *defaultPublisher) PublishDirectory() error {
 
 	// TODO: factory method to create client based on server type
 	// TODO: timeout option
-	client, err := connect.NewConnectClient(p.Account, 2*time.Minute, p.emitter, p.log)
+	client, err := clientFactory(p.Account, 2*time.Minute, p.emitter, p.log)
 	if err != nil {
+		p.emitErrorEvents(err)
 		return err
 	}
 	err = p.publishWithClient(p.Account, client)
