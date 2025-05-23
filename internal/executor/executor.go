@@ -4,6 +4,7 @@ package executor
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"os/exec"
 	"strings"
@@ -14,6 +15,7 @@ import (
 
 type Executor interface {
 	RunCommand(executable string, args []string, cwd util.AbsolutePath, log logging.Logger) ([]byte, []byte, error)
+	RunScript(executable string, args []string, script string, cwd util.AbsolutePath, log logging.Logger) ([]byte, []byte, error)
 }
 
 type defaultExecutor struct{}
@@ -39,4 +41,29 @@ func (e *defaultExecutor) RunCommand(executable string, args []string, cwd util.
 		os.Stderr.Write(stderrBuf.Bytes())
 	}
 	return stdout.Bytes(), stderrBuf.Bytes(), err
+}
+
+// RunScript is helpful when running R scripts, they avoid needing to ensure that the contents of the script
+// is fully escaped and quoted.
+func (e *defaultExecutor) RunScript(executable string, args []string, script string, cwd util.AbsolutePath, log logging.Logger) ([]byte, []byte, error) {
+	log.Debug("Running script", "cmd", executable, "args", strings.Join(args, " "), "script", script)
+	// Write script contents to a file, clean it up, and append to args
+	tempFile, err := os.CreateTemp("", "*")
+
+	// defer cleaning up
+	cleanup := func() {
+		tempFile.Close()
+		os.Remove(tempFile.Name())
+	}
+	defer cleanup()
+
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create temporary R script: %w", err)
+	}
+
+	tempFile.WriteString(script)
+	tempFile.Sync()
+
+	args = append(args, "-f", tempFile.Name())
+	return e.RunCommand(executable, args, cwd, log)
 }
