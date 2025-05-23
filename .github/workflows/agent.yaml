@@ -14,7 +14,9 @@ jobs:
           fetch-depth: 0
       - uses: extractions/setup-just@v2
 
-      # Install R with rig to ensure we are compatible
+      # Install R with rig for our funcitonal tests to ensure we are compatible with it.
+      # We aren't used r-lib/actions here becuase rig, especially on windows, installs in
+      # slightly different ways (e.g. using a batch file on windows)
       - name: Install rig with apt
         if: ${{ runner.os == 'Linux' }}
         run: |
@@ -38,4 +40,6 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-      - run: just test
+      # Run tests without `-short` to run functional tests
+      # TODO: https://github.com/posit-dev/publisher/issues/2649
+      - run: just test ./...

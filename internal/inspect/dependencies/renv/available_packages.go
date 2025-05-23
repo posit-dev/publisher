@@ -187,7 +187,8 @@ func (l *defaultAvailablePackagesLister) GetLibPaths(log logging.Logger) ([]util
 	lines := strings.Split(string(out), "\n")
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
-		if line == "" {
+		if line == "" || line[0] == '-' {
+			// e.g. "- The project is out-of-sync -- use `renv::status()` for details."
 			continue
 		}
 		paths = append(paths, util.NewAbsolutePath(line, nil))
