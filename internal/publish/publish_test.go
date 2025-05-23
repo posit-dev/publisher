@@ -112,6 +112,10 @@ func (s *PublishSuite) SetupTest() {
 	cwd.Join("renv.lock").WriteFile([]byte(renvLockContent), 0600)
 }
 
+func (s *PublishSuite) TearDownTest() {
+	clientFactory = connect.NewConnectClient
+}
+
 func (s *PublishSuite) TestNewFromState() {
 	stateStore := state.Empty()
 	stateStore.Dir = s.cwd
@@ -521,4 +525,44 @@ func (s *PublishSuite) TestLogAppInfoErrNoContentID() {
 	testError := errors.New("test error")
 	logAppInfo(buf, accountURL, contentID, nil, testError)
 	s.Equal("", buf.String())
+}
+
+func (s *PublishSuite) TestEmitNewClientError() {
+	expectedErr := errors.New("test error")
+	log := logging.New()
+
+	emitter := events.NewCapturingEmitter()
+	cfg := config.New()
+	cfg.Title = "test title"
+	publisher := &defaultPublisher{
+		State: &state.State{
+			Account: &accounts.Account{
+				URL: "http://connect.example.com",
+			},
+			Config: cfg,
+		},
+		log:     log,
+		emitter: emitter,
+	}
+
+	clientFactory = func(account *accounts.Account, timeout time.Duration, emitter events.Emitter, log logging.Logger) (connect.APIClient, error) {
+		return nil, expectedErr
+	}
+	publisher.PublishDirectory()
+
+	// We should emit a start event, a phase failure event, and a publishing failure event.
+	s.Len(emitter.Events, 3)
+	s.Equal("publish/start", emitter.Events[0].Type)
+	s.Equal(events.EventData{
+		"server": "http://connect.example.com",
+		"title":  "test title",
+	}, emitter.Events[0].Data)
+	s.Equal("/failure", emitter.Events[1].Type)
+	s.Equal(events.EventData{
+		"message": "Test error.",
+	}, emitter.Events[1].Data)
+	s.Equal("publish/failure", emitter.Events[2].Type)
+	s.Equal(events.EventData{
+		"message": "Test error.",
+	}, emitter.Events[2].Data)
 }
