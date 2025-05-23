@@ -233,8 +233,9 @@ run *args:
     pathname=`just executable-path`
     ${pathname} {{ args }}
 
-# Execute unit tests.
-test *args=("./..."):
+# Execute unit tests. -short disables our functional tests
+# To run all of the tests, use `just test ./...`
+test *args=("-short ./..."):
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}

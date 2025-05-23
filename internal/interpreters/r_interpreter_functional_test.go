@@ -28,6 +28,10 @@ type RInterpreterFunctionalSuite struct {
 }
 
 func TestRInterpreterFunctionalSuite(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	suite.Run(t, new(RInterpreterFunctionalSuite))
 }
 
@@ -64,35 +68,13 @@ func (s *RInterpreterFunctionalSuite) SetupTest() {
 	}
 }
 
-// skipIfNoR skips the current test if R executable is not available
-// unless we're running in CI where we should enforce that R tests run
-func (s *RInterpreterFunctionalSuite) skipIfNoR() bool {
-	if os.Getenv("GITHUB_ACTIONS") != "true" && s.rExecutable.String() == "" {
-		s.T().Skip("Skipping test: R executable not found")
-		return true
-	}
-	return false
-}
-
-// skipIfNoRenv skips the current test if either R executable is not available or renv is not installed
-// unless we're running in CI where we should enforce that R tests run
-func (s *RInterpreterFunctionalSuite) skipIfNoRenv() bool {
-	if s.skipIfNoR() {
-		return true
-	}
-	if os.Getenv("GITHUB_ACTIONS") != "true" && !s.renvInstalled {
-		s.T().Skip("Skipping test because renv is not installed")
-		return true
-	}
-	return false
-}
-
 func (s *RInterpreterFunctionalSuite) TearDownTest() {
 	os.RemoveAll(s.testProjectDir.String())
 }
 
 func (s *RInterpreterFunctionalSuite) createTestRenvLock() {
 	// Create a simple but valid renv.lock file
+	// this file does not need to be valid, but must exist
 	lockContent := `{
       "R": {
         "Version": "4.2.3",
@@ -121,10 +103,6 @@ func (s *RInterpreterFunctionalSuite) createTestRenvLock() {
 
 // TestIsRenvInstalled tests the isRenvInstalled function with a real R executable
 func (s *RInterpreterFunctionalSuite) TestIsRenvInstalled() {
-	if s.skipIfNoR() {
-		return
-	}
-
 	// Attempt to detect if renv is installed
 	aerr := s.defaultInterpreter.isRenvInstalled(s.rExecutable.String())
 
@@ -141,10 +119,6 @@ func (s *RInterpreterFunctionalSuite) TestIsRenvInstalled() {
 
 // TestRenvStatus tests the renvStatus function with a real R executable
 func (s *RInterpreterFunctionalSuite) TestRenvStatus() {
-	if s.skipIfNoRenv() {
-		return
-	}
-
 	// Create test project with renv.lock
 	s.createTestRenvLock()
 
@@ -157,10 +131,6 @@ func (s *RInterpreterFunctionalSuite) TestRenvStatus() {
 
 // TestGetRenvLockfilePathFromRExecutable tests the getRenvLockfilePathFromRExecutable function
 func (s *RInterpreterFunctionalSuite) TestGetRenvLockfilePathFromRExecutable() {
-	if s.skipIfNoRenv() {
-		return
-	}
-
 	// Create test project with renv.lock
 	s.createTestRenvLock()
 
@@ -182,10 +152,6 @@ func (s *RInterpreterFunctionalSuite) TestGetRenvLockfilePathFromRExecutable() {
 
 // TestCreateLockfile tests the CreateLockfile function
 func (s *RInterpreterFunctionalSuite) TestCreateLockfile() {
-	if s.skipIfNoRenv() {
-		return
-	}
-
 	// Create a temporary directory for the lockfile
 	lockfileDir := s.testProjectDir.Join("lockfile_test")
 	err := lockfileDir.MkdirAll(0755)

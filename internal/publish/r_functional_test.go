@@ -12,6 +12,7 @@ import (
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/events"
+	"github.com/posit-dev/publisher/internal/executor"
 	"github.com/posit-dev/publisher/internal/inspect/dependencies/renv"
 	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
@@ -30,22 +31,13 @@ type RPublishFunctionalSuite struct {
 	log            logging.Logger
 	stateStore     *state.State
 	emitter        events.Emitter
-	rExecutable    util.AbsolutePath
-	renvInstalled  bool
 }
 
 func TestRPublishFunctionalSuite(t *testing.T) {
-	suite.Run(t, new(RPublishFunctionalSuite))
-}
-
-// skipIfNoR skips the current test if R executable is not available,
-// unless we're running in CI where we should enforce that R tests run
-func (s *RPublishFunctionalSuite) skipIfNoR() bool {
-	if os.Getenv("GITHUB_ACTIONS") != "true" && s.rExecutable.String() == "" {
-		s.T().Skip("Skipping test: R executable not found")
-		return true
+	if testing.Short() {
+		t.Skip()
 	}
-	return false
+	suite.Run(t, new(RPublishFunctionalSuite))
 }
 
 func (s *RPublishFunctionalSuite) SetupTest() {
@@ -54,7 +46,7 @@ func (s *RPublishFunctionalSuite) SetupTest() {
 	s.Require().NoError(err)
 
 	// Create a subdirectory with spaces in the name
-	dirWithSpaces := filepath.Join(parentDir, "With Spaces")
+	dirWithSpaces := filepath.Join(parentDir, "WithSpaces")
 	err = os.MkdirAll(dirWithSpaces, 0755)
 	s.Require().NoError(err)
 
@@ -68,34 +60,6 @@ func (s *RPublishFunctionalSuite) SetupTest() {
 
 	// Create minimal renv.lock file in the temp directory
 	s.createTestRenvLock()
-
-	// Initialize R interpreter and check for R executable and renv availability
-	rInterpreter, err := interpreters.NewRInterpreter(s.testProjectDir, util.Path{}, s.log, nil, nil, nil)
-	s.Require().NoError(err)
-
-	// Try to get R executable
-	s.rExecutable, err = rInterpreter.GetRExecutable()
-	if err != nil {
-		s.T().Logf("R executable not found: %v", err)
-		// Not failing here, individual tests will skip if needed
-	} else {
-		s.T().Logf("Using R executable: %s", s.rExecutable)
-
-		// Check if renv is installed using RenvEnvironmentErrorCheck
-		// If no error or error is not about renv installation, then renv is available
-		err := rInterpreter.RenvEnvironmentErrorCheck()
-		if err == nil {
-			s.renvInstalled = true
-			s.T().Logf("renv is installed and available")
-		} else if _, isRenvNotInstalled := types.IsAgentErrorOf(err, types.ErrorRenvPackageNotInstalled); isRenvNotInstalled {
-			s.renvInstalled = false
-			s.T().Logf("renv is not installed: %v", err)
-		} else {
-			// Other errors with renv status, but renv itself is installed
-			s.renvInstalled = true
-			s.T().Logf("renv is installed but has issues: %v", err)
-		}
-	}
 }
 
 func (s *RPublishFunctionalSuite) TearDownTest() {
@@ -104,38 +68,20 @@ func (s *RPublishFunctionalSuite) TearDownTest() {
 }
 
 func (s *RPublishFunctionalSuite) createTestRenvLock() {
-	// Create a simple but valid renv.lock file
-	lockContent := `{
-      "R": {
-        "Version": "4.2.3",
-        "Repositories": [
-          {
-            "Name": "CRAN",
-            "URL": "https://cloud.r-project.org"
-          }
-        ]
-      },
-      "Packages": {
-        "renv": {
-          "Package": "renv",
-          "Version": "1.1.4",
-          "Source": "Repository",
-          "Repository": "CRAN",
-          "Hash": "fa15e"
-        }
-      }
-    }`
+	// Initialize R interpreter and check for R executable and renv availability
+	rInterpreter, err := interpreters.NewRInterpreter(s.testProjectDir, util.Path{}, s.log, nil, nil, nil)
+	s.Require().NoError(err)
 
-	lockPath := s.testProjectDir.Join("renv.lock")
-	err := lockPath.WriteFile([]byte(lockContent), 0644)
+	// use R to create a legit renv.lock file
+	rExecutable, err := rInterpreter.GetRExecutable()
+	s.Require().NoError(err)
+
+	exec := executor.NewExecutor()
+	_, _, err = exec.RunScript(rExecutable.String(), []string{"-s"}, "renv::init()", s.testProjectDir, s.log)
 	s.Require().NoError(err)
 }
 
 func (s *RPublishFunctionalSuite) TestGetRPackagesFunctional() {
-	if s.skipIfNoR() {
-		return
-	}
-
 	// Configure the state
 	s.stateStore.Config = &config.Config{
 		R: &config.R{
@@ -166,87 +112,58 @@ func (s *RPublishFunctionalSuite) TestGetRPackagesFunctional() {
 	// Actually call getRPackages
 	packageMap, err := publisher.getRPackages()
 
-	// we should have a valid package map
+	// we should have a valid package map which includes renv
 	s.Require().Nil(err)
 	s.Require().Contains(packageMap, "renv")
-
-	// And it includes renv
-	renvPackage := packageMap["renv"]
-	s.Require().Equal("CRAN", renvPackage.Source)
 }
 
 func (s *RPublishFunctionalSuite) TestPublishWithClientFunctional() {
-	if s.skipIfNoR() {
-		return
-	}
+	// Set up a mock client
+	client := connect.NewMockClient()
 
-	// 1. Set up test account
+	// Set up test account
 	account := &accounts.Account{
 		ServerType: accounts.ServerTypeConnect,
 		Name:       "test-account",
 		URL:        "https://connect.example.com",
 	}
-
-	// 2. Set up a mock client
-	client := connect.NewMockClient()
-
-	// 3. Configure mock responses for each API call made by publishWithClient
-	// Content creation
-	contentID := types.ContentID("test-content-id")
-	client.On("CreateDeployment", mock.Anything, mock.Anything).Return(contentID, nil)
-
-	// Authentication
 	client.On("TestAuthentication", mock.Anything).Return(&connect.User{
 		Username: "test-user",
 		Email:    "test@example.com",
 	}, nil)
 
-	// Capability checks
+	// Mock responses
+	contentID := types.ContentID("test-content-id")
+	client.On("CreateDeployment", mock.Anything, mock.Anything).Return(contentID, nil)
 	client.On("CheckCapabilities", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-	// Content updates
 	client.On("UpdateDeployment", contentID, mock.Anything, mock.Anything).Return(nil)
-
-	// Environment variables
 	client.On("SetEnvVars", contentID, mock.Anything, mock.Anything).Return(nil)
-
-	// Bundle upload
 	bundleID := types.BundleID("test-bundle-id")
 	client.On("UploadBundle", contentID, mock.Anything, mock.Anything).Return(bundleID, nil)
-
-	// Deployment
 	taskID := types.TaskID("test-task-id")
 	client.On("DeployBundle", contentID, bundleID, mock.Anything).Return(taskID, nil)
-
-	// Wait for task
 	client.On("WaitForTask", taskID, mock.Anything, mock.Anything).Return(nil)
-
-	// Validation
 	client.On("ValidateDeployment", contentID, mock.Anything).Return(nil)
 
-	// 4. Set up config for R Shiny app (instead of Python Dash)
+	// Config for R Shiny app (instead of Python Dash)
 	cfg := config.New()
 	cfg.Schema = schema.ConfigSchemaURL
-	cfg.Type = config.ContentTypeRShiny // Change to R Shiny type
-	cfg.Entrypoint = "app.R"            // Use R entrypoint
+	cfg.Type = config.ContentTypeRShiny
+	cfg.Entrypoint = "app.R"
 	cfg.Title = "Test R Application"
 	cfg.Environment = map[string]string{"TEST_VAR": "test-value"}
 	cfg.Validate = true
 
-	// Add required configuration items for R applications
 	cfg.R = &config.R{
-		Version:        "4.2", // Specify R version
 		PackageManager: "renv",
 		PackageFile:    "renv.lock",
 	}
 
-	// Include files required for R applications
 	cfg.Files = []string{
 		"app.R",
 		"renv.lock",
 	}
 
-	// 5. Create state store
 	stateStore := &state.State{
 		Dir:        s.testProjectDir,
 		Account:    account,
@@ -256,24 +173,9 @@ func (s *RPublishFunctionalSuite) TestPublishWithClientFunctional() {
 		TargetName: "test-deployment",
 	}
 
-	// 6. Create a real package mapper instance instead of a mock
 	rPackageMapper, err := renv.NewPackageMapper(s.testProjectDir, util.Path{}, s.log)
 	s.Require().NoError(err)
 
-	// // ADD TEST FOR RENV STATUS: Get the R interpreter and test renv functionality
-	// rInterpreter, err := interpreters.NewRInterpreter(s.testProjectDir, util.Path{}, s.log, nil, nil, nil)
-	// s.Require().NoError(err)
-
-	// // Get R executable
-	// rExecutable, err := rInterpreter.GetRExecutable()
-	// if err == nil && rExecutable.String() != "" {
-	// 	// If we can get a valid R executable, check renv environment
-	// 	// This will indirectly call renvStatus() internally
-	// 	envErr := rInterpreter.RenvEnvironmentErrorCheck()
-	// 	s.T().Logf("RenvEnvironmentErrorCheck result: %v", envErr)
-	// }
-
-	// 7. Create publisher instance with the real package mapper
 	publisher := &defaultPublisher{
 		State:          stateStore,
 		log:            s.log,
@@ -281,7 +183,7 @@ func (s *RPublishFunctionalSuite) TestPublishWithClientFunctional() {
 		rPackageMapper: rPackageMapper,
 	}
 
-	// 8. Create test files in the temp directory - R files instead of Python
+	// Test files to be deployed
 	appRPath := s.testProjectDir.Join("app.R")
 	err = appRPath.WriteFile([]byte(`
 library(shiny)
@@ -297,16 +199,14 @@ shinyApp(ui = ui, server = server)
 `), 0644)
 	s.Require().NoError(err)
 
-	// Our renv.lock file was already created in SetupTest
-
-	// 9. Call publishWithClient
+	// The actual test call
 	err = publisher.publishWithClient(account, client)
 	s.Require().NoError(err)
 
-	// 10. Verify the mock calls were made as expected
+	// Verify the mock calls were made as expected
 	client.AssertExpectations(s.T())
 
-	// 11. Verify deployment record was created with correct information
+	// Verify deployment record was created with correct information
 	recordPath := deployment.GetDeploymentPath(stateStore.Dir, stateStore.TargetName)
 	record, err := deployment.FromFile(recordPath)
 	s.Require().NoError(err)

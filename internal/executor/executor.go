@@ -72,8 +72,7 @@ func createTempRScript(content string) (string, func(), error) {
 }
 
 func (e *defaultExecutor) RunScript(executable string, args []string, script string, cwd util.AbsolutePath, log logging.Logger) ([]byte, []byte, error) {
-	log.Debug("Running command", "cmd", executable, "args", strings.Join(args, " "), "script", script)
-
+	log.Debug("Running script", "cmd", executable, "args", strings.Join(args, " "), "script", script)
 	// Write script contents to a file, clean it up, and append to args
 	tempScriptPath, cleanup, scriptErr := createTempRScript(script)
 	if scriptErr != nil {
