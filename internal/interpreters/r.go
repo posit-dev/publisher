@@ -212,8 +212,7 @@ func (i *defaultRInterpreter) RenvEnvironmentErrorCheck() *types.AgentError {
 }
 
 func (i *defaultRInterpreter) isRenvInstalled(rexecPath string) *types.AgentError {
-	args := []string{"-s", "-e", "cat(system.file(package = \"renv\"))"}
-	output, _, err := i.cmdExecutor.RunCommand(rexecPath, args, i.base, i.log)
+	output, _, err := i.cmdExecutor.RunScript(rexecPath, []string{"-s"}, "cat(system.file(package = \"renv\"))", i.base, i.log)
 	if err != nil {
 		i.log.Error("Unable to determine if renv is installed", "error", err.Error())
 		return types.NewAgentError(
@@ -242,8 +241,7 @@ func (i *defaultRInterpreter) isRenvInstalled(rexecPath string) *types.AgentErro
 }
 
 func (i *defaultRInterpreter) renvStatus(rexecPath string) (string, *types.AgentError) {
-	args := []string{"-s", "-e", "renv::status()"}
-	output, _, err := i.cmdExecutor.RunCommand(rexecPath, args, i.base, i.log)
+	output, _, err := i.cmdExecutor.RunScript(rexecPath, []string{"-s"}, "renv::status()", i.base, i.log)
 	if err != nil {
 		i.log.Error("Error attempting to run renv::status()", "error", err.Error())
 		return "", types.NewAgentError(
@@ -468,13 +466,13 @@ func (i *defaultRInterpreter) getRenvLockfilePathFromRExecutable(rExecutable str
 	var renvLockRE = regexp.MustCompile(`^\[1\] "(.*)"`)
 
 	i.log.Info("Getting renv lockfile path from R executable", "r", rExecutable)
-	args := []string{"-s", "-e", "renv::paths$lockfile()"}
-	output, stderr, err := i.cmdExecutor.RunCommand(rExecutable, args, i.base, i.log)
+	cmd := "renv::paths$lockfile()"
+	output, stderr, err := i.cmdExecutor.RunScript(rExecutable, []string{"-s"}, cmd, i.base, i.log)
 	if err != nil {
 		if _, ok := err.(*exec.ExitError); ok {
 			i.log.Warn("Couldn't detect lockfile path from R executable (renv::paths$lockfile()); is renv installed?")
 		} else {
-			i.log.Warn("Error running R executable", "args", args)
+			i.log.Warn("Error running R executable", "script", "renv::paths$lockfile()")
 		}
 		return util.AbsolutePath{}, err
 	}
@@ -514,8 +512,7 @@ func (i *defaultRInterpreter) CreateLockfile(lockfilePath util.AbsolutePath) err
 		escaped := strings.ReplaceAll(lockfilePath.String(), `\`, `\\`)
 		cmd = fmt.Sprintf(`renv::snapshot(lockfile="%s")`, escaped)
 	}
-	args := []string{"-s", "-e", cmd}
-	stdout, stderr, err := i.cmdExecutor.RunCommand(rExecutable.String(), args, i.base, i.log)
+	stdout, stderr, err := i.cmdExecutor.RunScript(rExecutable.String(), []string{"-s"}, cmd, i.base, i.log)
 	i.log.Debug("renv::snapshot()", "out", string(stdout), "err", string(stderr))
 	return err
 }
