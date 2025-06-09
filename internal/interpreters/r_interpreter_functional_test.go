@@ -37,11 +37,11 @@ func TestRInterpreterFunctionalSuite(t *testing.T) {
 
 func (s *RInterpreterFunctionalSuite) SetupTest() {
 	// Set up the test directory
-	parentDir, err := os.MkdirTemp("", "r-interpreter-test-*")
+	fs := afero.NewMemMapFs()
+	parentDir, err := afero.TempDir(fs, "", "r-interpreter-test-*")
 	s.Require().NoError(err)
 
-	s.fs = afero.NewOsFs()
-	s.testProjectDir = util.NewAbsolutePath(parentDir, s.fs)
+	s.testProjectDir = util.NewAbsolutePath(parentDir, fs)
 	s.log = logging.New()
 
 	// Initialize R interpreter once for all tests
