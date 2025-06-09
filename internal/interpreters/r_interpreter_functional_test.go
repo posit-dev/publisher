@@ -20,7 +20,6 @@ type RInterpreterFunctionalSuite struct {
 	suite.Suite
 	testProjectDir     util.AbsolutePath
 	log                logging.Logger
-	fs                 afero.Fs
 	interpreter        RInterpreter
 	rExecutable        util.AbsolutePath
 	defaultInterpreter *defaultRInterpreter
@@ -37,8 +36,9 @@ func TestRInterpreterFunctionalSuite(t *testing.T) {
 
 func (s *RInterpreterFunctionalSuite) SetupTest() {
 	// Set up the test directory
-	fs := afero.NewMemMapFs()
-	parentDir, err := afero.TempDir(fs, "", "r-interpreter-test-*")
+	// We can't use an in memory filesystem here because we will end up chdiring to it
+	fs := afero.NewOsFs()
+	parentDir, err := afero.TempDir(fs, "", "r-interpreter-test")
 	s.Require().NoError(err)
 
 	s.testProjectDir = util.NewAbsolutePath(parentDir, fs)
