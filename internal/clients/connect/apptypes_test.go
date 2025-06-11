@@ -506,7 +506,7 @@ func (s *AppTypesSuite) TestDescription() {
 		Description string
 	}{
 		{UnknownMode, "unknown content type"},
-		{ShinyMode, "R Shiny application"},
+		{ShinyMode, "Shiny for R application"},
 		{ShinyRmdMode, "Shiny R Markdown document"},
 		{StaticRmdMode, "R Markdown document"},
 		{StaticMode, "static content"},
@@ -520,7 +520,7 @@ func (s *AppTypesSuite) TestDescription() {
 		{PythonGradioMode, "Gradio application"},
 		{ShinyQuartoMode, "Shiny Quarto document"},
 		{StaticQuartoMode, "Quarto document"},
-		{PythonShinyMode, "Python Shiny application"},
+		{PythonShinyMode, "Shiny for Python application"},
 		{JupyterVoilaMode, "Voila interactive notebook"},
 		{AppMode("invalid"), "unknown content type"},
 	} {
