@@ -19,6 +19,8 @@ type Connection struct {
 	Account        string
 	User           string
 	PrivateKeyFile string `toml:"private_key_file"`
+	Token          string
+	Authenticator  string
 
 	// private_key_path is an alternate way to specify the key file...
 	PrivateKeyPath string `toml:"private_key_path"`
