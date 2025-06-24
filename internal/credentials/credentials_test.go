@@ -4,6 +4,7 @@ package credentials
 
 import (
 	"errors"
+	"github.com/posit-dev/publisher/internal/server_type"
 	"testing"
 
 	"github.com/posit-dev/publisher/internal/logging/loggingtest"
@@ -68,10 +69,11 @@ func (s *CredentialsServiceTestSuite) TestCredentialRecord() {
 	credResult, err := record.ToCredential()
 	s.NoError(err)
 	s.Equal(credResult, &Credential{
-		GUID:   "18cd5640-bee5-4b2a-992a-a2725ab6103d",
-		Name:   "friedtofu",
-		URL:    "https://a1.connect-server:3939/connect",
-		ApiKey: "abcdeC2aqbh7dg8TO43XPu7r56YDh000",
+		ServerType: server_type.ServerTypeConnect,
+		GUID:       "18cd5640-bee5-4b2a-992a-a2725ab6103d",
+		Name:       "friedtofu",
+		URL:        "https://a1.connect-server:3939/connect",
+		ApiKey:     "abcdeC2aqbh7dg8TO43XPu7r56YDh000",
 	})
 }
 

@@ -21,15 +21,39 @@ var fsys = afero.NewOsFs()
 const ondiskFilename = ".connect-credentials"
 
 type fileCredential struct {
-	GUID                string `toml:"guid"`
-	Version             uint   `toml:"version"`
-	URL                 string `toml:"url"`
-	ApiKey              string `toml:"api_key"`
+	GUID    string `toml:"guid"`
+	Version uint   `toml:"version"`
+	URL     string `toml:"url"`
+
+	// Connect fields
+	ApiKey string `toml:"api_key"`
+
+	// Snowflake fields
 	SnowflakeConnection string `toml:"snowflake_connection"`
+
+	// Connect Cloud fields
+	AccountID    string `toml:"account_id"`
+	AccountName  string `toml:"account_name"`
+	RefreshToken string `toml:"refresh_token"`
+	AccessToken  string `toml:"access_token"`
 }
 
 func (cr *fileCredential) IsValid() bool {
 	return cr.URL != "" && (cr.ApiKey != "" || cr.SnowflakeConnection != "")
+}
+
+func (cr *fileCredential) toCredential(name string) Credential {
+	return Credential{
+		Name:                name,
+		GUID:                cr.GUID,
+		URL:                 cr.URL,
+		ApiKey:              cr.ApiKey,
+		SnowflakeConnection: cr.SnowflakeConnection,
+		AccountID:           cr.AccountID,
+		AccountName:         cr.AccountName,
+		RefreshToken:        cr.RefreshToken,
+		AccessToken:         cr.AccessToken,
+	}
 }
 
 type fileCredentials struct {
@@ -45,29 +69,15 @@ func newFileCredentials() fileCredentials {
 func (fcs *fileCredentials) CredentialsList() []Credential {
 	list := []Credential{}
 	for credName, fileCred := range fcs.Credentials {
-		list = append(list, Credential{
-			Name:                credName,
-			GUID:                fileCred.GUID,
-			URL:                 fileCred.URL,
-			ApiKey:              fileCred.ApiKey,
-			SnowflakeConnection: fileCred.SnowflakeConnection,
-		})
+		list = append(list, fileCred.toCredential(credName))
 	}
 	return list
 }
 
 func (fcs *fileCredentials) CredentialByGuid(guid string) (Credential, error) {
-	var cred Credential
 	for credName, fileCred := range fcs.Credentials {
 		if fileCred.GUID == guid {
-			cred = Credential{
-				Name:                credName,
-				GUID:                fileCred.GUID,
-				URL:                 fileCred.URL,
-				ApiKey:              fileCred.ApiKey,
-				SnowflakeConnection: fileCred.SnowflakeConnection,
-			}
-			return cred, nil
+			return fileCred.toCredential(credName), nil
 		}
 	}
 	return Credential{}, NewNotFoundError(guid)

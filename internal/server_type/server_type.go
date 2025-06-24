@@ -1,4 +1,4 @@
-package accounts
+package server_type
 
 import (
 	"net/url"
@@ -10,10 +10,11 @@ import (
 type ServerType string
 
 const (
-	ServerTypeConnect     ServerType = "connect"
-	ServerTypeShinyappsIO ServerType = "shinyapps"
-	ServerTypeCloud       ServerType = "cloud"
-	ServerTypeSnowflake   ServerType = "snowflake"
+	ServerTypeConnect      ServerType = "connect"
+	ServerTypeShinyappsIO  ServerType = "shinyapps"
+	ServerTypeCloud        ServerType = "cloud"
+	ServerTypeConnectCloud ServerType = "connect_cloud"
+	ServerTypeSnowflake    ServerType = "snowflake"
 )
 
 var accountTypeDescriptions = map[ServerType]string{
@@ -42,7 +43,9 @@ func ServerTypeFromURL(urlStr string) (ServerType, error) {
 		return "", err
 	}
 	host := u.Hostname()
-	if strings.HasSuffix(host, ".posit.cloud") {
+	if strings.HasSuffix(host, ".connect.posit.cloud") {
+		return ServerTypeConnectCloud, nil
+	} else if strings.HasSuffix(host, ".posit.cloud") {
 		return ServerTypeCloud, nil
 	} else if strings.HasSuffix(host, ".rstudio.cloud") {
 		return ServerTypeCloud, nil

@@ -1,4 +1,4 @@
-package accounts
+package server_type
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
@@ -29,6 +29,8 @@ func (s *AccountTypeSuite) TestAccountTypeFromURL() {
 		url        string
 		serverType ServerType
 	}{
+		{"https://api.staging.connect.posit.cloud", ServerTypeConnectCloud},
+		{"https://api.connect.posit.cloud", ServerTypeConnectCloud},
 		{"https://api.shinyapps.io", ServerTypeShinyappsIO},
 		{"https://api.shinyapps.io/connect/#/content", ServerTypeShinyappsIO},
 		{"https://api.staging.shinyapps.io", ServerTypeShinyappsIO},

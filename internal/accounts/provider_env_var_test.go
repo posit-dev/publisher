@@ -3,6 +3,7 @@ package accounts
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"github.com/posit-dev/publisher/internal/server_type"
 	"os"
 	"testing"
 
@@ -44,7 +45,7 @@ func (s *AccountEnvVarProviderSuite) TestLoadAll() {
 	accountList, err := provider.Load()
 	s.Nil(err)
 	s.Equal([]Account{{
-		ServerType:  ServerTypeConnect,
+		ServerType:  server_type.ServerTypeConnect,
 		Source:      AccountSourceEnvironment,
 		Name:        "env",
 		URL:         "https://connect.example.com:1234",

@@ -3,6 +3,7 @@ package publish
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import (
+	"github.com/posit-dev/publisher/internal/server_type"
 	"os"
 	"path/filepath"
 	"testing"
@@ -123,7 +124,7 @@ func (s *RPublishFunctionalSuite) TestPublishWithClientFunctional() {
 
 	// Set up test account
 	account := &accounts.Account{
-		ServerType: accounts.ServerTypeConnect,
+		ServerType: server_type.ServerTypeConnect,
 		Name:       "test-account",
 		URL:        "https://connect.example.com",
 	}
