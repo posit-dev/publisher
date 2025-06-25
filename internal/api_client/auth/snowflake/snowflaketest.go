@@ -3,9 +3,6 @@ package snowflake
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import (
-	"crypto/rsa"
-	"time"
-
 	"github.com/stretchr/testify/mock"
 )
 
@@ -25,17 +22,13 @@ func (m *MockConnections) List() (map[string]*Connection, error) {
 	return args.Get(0).(map[string]*Connection), args.Error(1)
 }
 
-type MockAccess struct {
+type MockTokenProvider struct {
 	mock.Mock
 }
 
-var _ Access = &MockAccess{}
+var _ TokenProvider = &MockTokenProvider{}
 
-func (m *MockAccess) GetSignedJWT(privateKey *rsa.PrivateKey, account string, user string, expiration time.Time) (string, error) {
-	args := m.Called(privateKey, account, user, expiration)
-	return args.String(0), args.Error(1)
-}
-func (m *MockAccess) GetAccessToken(account string, ingressURL string, signedToken string, role string) (string, error) {
-	args := m.Called(account, ingressURL, signedToken, role)
+func (m *MockTokenProvider) GetToken(host string) (string, error) {
+	args := m.Called(host)
 	return args.String(0), args.Error(1)
 }

@@ -3,13 +3,9 @@ package auth
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import (
-	"crypto/rsa"
-	"crypto/x509"
-	"encoding/pem"
 	"fmt"
 	"net/http"
-	"os"
-	"time"
+	"strings"
 
 	"github.com/posit-dev/publisher/internal/api_client/auth/snowflake"
 )
@@ -17,12 +13,10 @@ import (
 const headerName = "Authorization"
 
 type snowflakeAuthenticator struct {
-	account    string
-	user       string
-	privateKey *rsa.PrivateKey
-
-	access snowflake.Access
+	tokenProvider snowflake.TokenProvider
 }
+
+var _ AuthMethod = &snowflakeAuthenticator{}
 
 // NewSnowflakeAuthenticator loads the Snowflake connection with the given name
 // from the system Snowflake configuration and returns an authenticator that
@@ -34,7 +28,6 @@ type snowflakeAuthenticator struct {
 // include a valid private key.
 func NewSnowflakeAuthenticator(
 	connections snowflake.Connections,
-	access snowflake.Access,
 	connectionName string,
 ) (AuthMethod, error) {
 	conn, err := connections.Get(connectionName)
@@ -42,42 +35,36 @@ func NewSnowflakeAuthenticator(
 		return nil, err
 	}
 
-	pemData, err := os.ReadFile(conn.PrivateKeyFile)
-	if err != nil {
-		return nil, fmt.Errorf("error loading private key file: %w", err)
-	}
+	var tokenProvider snowflake.TokenProvider
 
-	block, _ := pem.Decode(pemData)
-	if block == nil || block.Type != "PRIVATE KEY" {
-		return nil, fmt.Errorf("decoding PEM data failed")
-	}
-
-	privKey, err := x509.ParsePKCS8PrivateKey(block.Bytes)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode private key: %w", err)
+	switch strings.ToLower(conn.Authenticator) {
+	case "oauth":
+		tokenProvider = snowflake.NewOAuthTokenProvider(
+			conn.Account,
+			conn.Token,
+		)
+	case "snowflake_jwt":
+		tokenProvider, err = snowflake.NewJWTTokenProvider(
+			conn.Account,
+			conn.User,
+			conn.PrivateKeyFile,
+			"", // no role specified
+		)
+		if err != nil {
+			return nil, err
+		}
+	default:
+		return nil, fmt.Errorf("unsupported authenticator type: %s", conn.Authenticator)
 	}
 
 	return &snowflakeAuthenticator{
-		account:    conn.Account,
-		user:       conn.User,
-		privateKey: privKey.(*rsa.PrivateKey),
-
-		access: access,
+		tokenProvider: tokenProvider,
 	}, nil
 }
 
 func (a *snowflakeAuthenticator) AddAuthHeaders(req *http.Request) error {
-	signedToken, err := a.access.GetSignedJWT(
-		a.privateKey,
-		a.account,
-		a.user,
-		time.Now().Add(60*time.Second),
-	)
-	if err != nil {
-		return err
-	}
 	host := req.URL.Hostname()
-	token, err := a.access.GetAccessToken(a.account, host, signedToken, "")
+	token, err := a.tokenProvider.GetToken(host)
 	if err != nil {
 		return err
 	}

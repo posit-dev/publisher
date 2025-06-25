@@ -6,92 +6,93 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/posit-dev/publisher/internal/api_client/auth/snowflake"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
 
 type SnowflakeAuthSuite struct {
 	utiltest.Suite
+	testdataDir string
 }
 
 func TestSnowflakeAuthSuite(t *testing.T) {
 	suite.Run(t, new(SnowflakeAuthSuite))
 }
 
+func (s *SnowflakeAuthSuite) SetupTest() {
+	var err error
+	s.testdataDir, err = filepath.Abs("snowflake/testdata")
+	s.Require().NoError(err)
+}
+
 func (s *SnowflakeAuthSuite) TestNewSnowflakeAuthenticator() {
-	access := &snowflake.MockAccess{}
 	connections := &snowflake.MockConnections{}
 	connections.On("Get", ":name:").Return(&snowflake.Connection{}, errors.New("connection error")).Once()
 
-	_, err := NewSnowflakeAuthenticator(connections, access, ":name:")
+	_, err := NewSnowflakeAuthenticator(connections, ":name:")
 	s.ErrorContains(err, "connection error")
 
+	// unsupported authenticator type
+	connections.On("Get", ":name:").Return(&snowflake.Connection{
+		Authenticator: "fake",
+	}, nil).Once()
+
+	_, err = NewSnowflakeAuthenticator(connections, ":name:")
+	s.EqualError(err, "unsupported authenticator type: fake")
+
+	// errors from implementation are bubbled up
 	connections.On("Get", ":name:").Return(&snowflake.Connection{
 		PrivateKeyFile: "/no/exist/rsa_key.p8",
+		Authenticator:  "snowflake_jwt",
 	}, nil).Once()
 
-	_, err = NewSnowflakeAuthenticator(connections, access, ":name:")
+	_, err = NewSnowflakeAuthenticator(connections, ":name:")
 	s.ErrorContains(err, "error loading private key file: ")
 
-	wd, err := os.Getwd()
-	s.NoError(err)
-
-	connections.On("Get", ":name:").Return(&snowflake.Connection{
-		PrivateKeyFile: fmt.Sprintf("%s/testdata/rsa_key.pub", wd),
-	}, nil).Once()
-
-	_, err = NewSnowflakeAuthenticator(connections, access, ":name:")
-	s.ErrorContains(err, "decoding PEM data failed")
-
-	connections.On("Get", ":name:").Return(&snowflake.Connection{
-		PrivateKeyFile: fmt.Sprintf("%s/testdata/bad_key.p8", wd),
-	}, nil).Once()
-
-	_, err = NewSnowflakeAuthenticator(connections, access, ":name:")
-	s.ErrorContains(err, "failed to decode private key: ")
-
+	// JWT token provider
 	connections.On("Get", ":name:").Return(&snowflake.Connection{
 		Account:        ":account:",
 		User:           ":user:",
-		PrivateKeyFile: fmt.Sprintf("%s/testdata/rsa_key.p8", wd),
+		PrivateKeyFile: fmt.Sprintf("%s/rsa_key.p8", s.testdataDir),
+		Authenticator:  "snowflake_jwt",
 	}, nil).Once()
 
-	auth, err := NewSnowflakeAuthenticator(connections, access, ":name:")
+	auth, err := NewSnowflakeAuthenticator(connections, ":name:")
 	s.NoError(err)
 	sfauth, ok := auth.(*snowflakeAuthenticator)
 	s.True(ok)
-	s.Equal(":account:", sfauth.account)
-	s.Equal(":user:", sfauth.user)
-	s.NotNil(sfauth.privateKey)
+	s.NotNil(sfauth.tokenProvider)
+	s.IsType(&snowflake.JWTTokenProvider{}, sfauth.tokenProvider)
+
+	// oauth token provider
+	connections.On("Get", ":name:").Return(&snowflake.Connection{
+		Account:       ":account:",
+		Token:         ":token:",
+		Authenticator: "oauth",
+	}, nil).Once()
+
+	auth, err = NewSnowflakeAuthenticator(connections, ":name:")
+	s.NoError(err)
+	sfauth, ok = auth.(*snowflakeAuthenticator)
+	s.True(ok)
+	s.NotNil(sfauth.tokenProvider)
+	s.IsType(&snowflake.OAuthTokenProvider{}, sfauth.tokenProvider)
 }
 
 func (s *SnowflakeAuthSuite) TestAddAuthHeaders() {
-	connections := &snowflake.MockConnections{}
-	wd, err := os.Getwd()
-	s.NoError(err)
-	connections.On("Get", ":name:").Return(&snowflake.Connection{
-		Account:        ":account:",
-		User:           ":user:",
-		PrivateKeyFile: fmt.Sprintf("%s/testdata/rsa_key.p8", wd),
-	}, nil).Once()
+	tokenProvider := &snowflake.MockTokenProvider{}
+	tokenProvider.On("GetToken", "example.snowflakecomputing.app").Return(":atoken:", nil).Once()
 
-	access := &snowflake.MockAccess{}
-	access.On("GetSignedJWT", mock.Anything, ":account:", ":user:", mock.Anything).
-		Return(":jwtoken:", nil).Once()
-	access.On("GetAccessToken", ":account:", "example.snowflakecomputing.app", ":jwtoken:", "").
-		Return(":atoken:", nil).Once()
-
-	auth, err := NewSnowflakeAuthenticator(connections, access, ":name:")
-	s.NoError(err)
+	auth := &snowflakeAuthenticator{
+		tokenProvider: tokenProvider,
+	}
 
 	req, err := http.NewRequest("GET", "https://example.snowflakecomputing.app/connect/#/content", nil)
 	s.NoError(err)
-
 	req.Header.Add("X-Existing", "unchanged")
 
 	err = auth.AddAuthHeaders(req)
