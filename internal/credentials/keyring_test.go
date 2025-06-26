@@ -51,6 +51,21 @@ func (s *KeyringCredentialsTestSuite) TestSet() {
 	s.Equal(cred.URL, "https://example.snowflakecomputing.app")
 	s.Equal(cred.ApiKey, "")
 	s.Equal(cred.SnowflakeConnection, "snow")
+
+	cred, err = cs.Set(CreateCredentialDetails{Name: "cloudy", URL: "https://api.connect.posit.cloud",
+		AccountID:    "0de62804-2b0b-4e11-8a52-a402bda89ff4",
+		AccountName:  "cloudy",
+		RefreshToken: "some_refresh_token",
+		AccessToken:  "some_access_token",
+	})
+	s.NoError(err)
+	s.NotNil(cred.GUID)
+	s.Equal(cred.Name, "cloudy")
+	s.Equal(cred.URL, "https://api.connect.posit.cloud")
+	s.Equal(cred.AccountID, "0de62804-2b0b-4e11-8a52-a402bda89ff4")
+	s.Equal(cred.AccountName, "cloudy")
+	s.Equal(cred.RefreshToken, "some_refresh_token")
+	s.Equal(cred.AccessToken, "some_access_token")
 }
 
 func (s *KeyringCredentialsTestSuite) TestSetURLCollisionError() {

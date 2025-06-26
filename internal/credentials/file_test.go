@@ -526,6 +526,71 @@ func (s *FileCredentialsServiceSuite) TestSet() {
 			},
 		},
 	})
+
+	newcred4, err := cs.Set(CreateCredentialDetails{Name: "cloudy", URL: "https://api.connect.posit.cloud",
+		AccountID:    "0de62804-2b0b-4e11-8a52-a402bda89ff4",
+		AccountName:  "cloudy",
+		RefreshToken: "some_refresh_token",
+		AccessToken:  "some_access_token",
+	})
+	s.NoError(err)
+
+	s.Equal(newcred4.Name, "cloudy")
+	s.Equal(newcred4.URL, "https://api.connect.posit.cloud")
+	s.Equal(newcred4.AccountID, "0de62804-2b0b-4e11-8a52-a402bda89ff4")
+	s.Equal(newcred4.AccountName, "cloudy")
+	s.Equal(newcred4.RefreshToken, "some_refresh_token")
+	s.Equal(newcred4.AccessToken, "some_access_token")
+
+	creds, err = cs.load()
+	s.NoError(err)
+
+	// Data generated on test setup
+	s.Equal(creds, fileCredentials{
+		Credentials: map[string]fileCredential{
+			"preexistent": {
+				GUID:                "18cd5640-bee5-4b2a-992a-a2725ab6103d",
+				Version:             0,
+				URL:                 "https://a1.connect-server:3939/connect",
+				ApiKey:              "abcdeC2aqbh7dg8TO43XPu7r56YDh000",
+				SnowflakeConnection: "",
+			},
+			"newcred": {
+				GUID:                newcred.GUID,
+				Version:             2,
+				ServerType:          server_type.ServerTypeConnect,
+				URL:                 "https://b2.connect-server:3939/connect",
+				ApiKey:              "abcdeC2aqbh7dg8TO43XPu7r56YDh002",
+				SnowflakeConnection: "",
+			},
+			"brand new cred wspaces": {
+				GUID:                newcred2.GUID,
+				Version:             2,
+				ServerType:          server_type.ServerTypeConnect,
+				URL:                 "https://b3.connect-server:3939/connect",
+				ApiKey:              "abcdeC2aqbh7dg8TO43XPu7r56YDh003",
+				SnowflakeConnection: "",
+			},
+			"snowcred": {
+				GUID:                newcred3.GUID,
+				Version:             2,
+				ServerType:          server_type.ServerTypeSnowflake,
+				URL:                 "https://example.snowflakecomputing.app/connect",
+				ApiKey:              "",
+				SnowflakeConnection: "snowy",
+			},
+			"cloudy": {
+				GUID:         newcred4.GUID,
+				Version:      2,
+				ServerType:   server_type.ServerTypeConnectCloud,
+				URL:          "https://api.connect.posit.cloud",
+				AccountID:    newcred4.AccountID,
+				AccountName:  newcred4.AccountName,
+				RefreshToken: newcred4.RefreshToken,
+				AccessToken:  newcred4.AccessToken,
+			},
+		},
+	})
 }
 
 func (s *FileCredentialsServiceSuite) TestSet_BlankDataErr() {
