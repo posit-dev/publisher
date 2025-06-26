@@ -12,10 +12,19 @@ import (
 )
 
 type PostCredentialsRequest struct {
-	Name                string `json:"name"`
-	URL                 string `json:"url"`
-	ApiKey              string `json:"apiKey"`
+	Name string `json:"name"`
+	URL  string `json:"url"`
+	// Connect fields
+	ApiKey string `json:"apiKey"`
+
+	// Snowflake fields
 	SnowflakeConnection string `json:"snowflakeConnection"`
+
+	// Connect Cloud fields
+	AccountID    string `json:"accountId"`
+	AccountName  string `json:"accountName"`
+	RefreshToken string `json:"refreshToken"`
+	AccessToken  string `json:"accessToken"`
 }
 
 type PostCredentialsResponse = credentials.Credential

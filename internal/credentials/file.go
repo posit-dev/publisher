@@ -4,6 +4,7 @@ package credentials
 
 import (
 	"fmt"
+	"github.com/posit-dev/publisher/internal/server_type"
 	"io"
 	"os"
 	"sync"
@@ -42,9 +43,14 @@ func (cr *fileCredential) IsValid() bool {
 	return cr.URL != "" && (cr.ApiKey != "" || cr.SnowflakeConnection != "")
 }
 
-func (cr *fileCredential) toCredential(name string) Credential {
-	return Credential{
+func (cr *fileCredential) toCredential(name string) (*Credential, error) {
+	serverType, err := server_type.ServerTypeFromURL(cr.URL)
+	if err != nil {
+		return nil, err
+	}
+	return &Credential{
 		Name:                name,
+		ServerType:          serverType,
 		GUID:                cr.GUID,
 		URL:                 cr.URL,
 		ApiKey:              cr.ApiKey,
@@ -53,7 +59,7 @@ func (cr *fileCredential) toCredential(name string) Credential {
 		AccountName:         cr.AccountName,
 		RefreshToken:        cr.RefreshToken,
 		AccessToken:         cr.AccessToken,
-	}
+	}, nil
 }
 
 type fileCredentials struct {
@@ -66,21 +72,29 @@ func newFileCredentials() fileCredentials {
 	}
 }
 
-func (fcs *fileCredentials) CredentialsList() []Credential {
+func (fcs *fileCredentials) CredentialsList() ([]Credential, error) {
 	list := []Credential{}
 	for credName, fileCred := range fcs.Credentials {
-		list = append(list, fileCred.toCredential(credName))
+		credential, err := fileCred.toCredential(credName)
+		if err != nil {
+			return nil, err
+		}
+		list = append(list, *credential)
 	}
-	return list
+	return list, nil
 }
 
-func (fcs *fileCredentials) CredentialByGuid(guid string) (Credential, error) {
+func (fcs *fileCredentials) CredentialByGuid(guid string) (*Credential, error) {
 	for credName, fileCred := range fcs.Credentials {
 		if fileCred.GUID == guid {
-			return fileCred.toCredential(credName), nil
+			cred, err := fileCred.toCredential(credName)
+			if err != nil {
+				return nil, err
+			}
+			return cred, nil
 		}
 	}
-	return Credential{}, NewNotFoundError(guid)
+	return nil, NewNotFoundError(guid)
 }
 
 func (fcs *fileCredentials) RemoveByName(name string) {
@@ -180,7 +194,7 @@ func (c *fileCredentialsService) Get(guid string) (*Credential, error) {
 		return nil, err
 	}
 
-	return &credential, nil
+	return credential, nil
 }
 
 func (c *fileCredentialsService) List() ([]Credential, error) {
@@ -193,7 +207,7 @@ func (c *fileCredentialsService) List() ([]Credential, error) {
 		return nil, err
 	}
 
-	return creds.CredentialsList(), nil
+	return creds.CredentialsList()
 }
 
 func (c *fileCredentialsService) Delete(guid string) error {
@@ -331,7 +345,11 @@ func (c *fileCredentialsService) normalizeAll(creds *fileCredentials) error {
 
 func (c *fileCredentialsService) checkForConflicts(creds fileCredentials, newCred Credential) error {
 	// Check if URL or name are already used by another credential
-	for _, cred := range creds.CredentialsList() {
+	credsList, err := creds.CredentialsList()
+	if err != nil {
+		return err
+	}
+	for _, cred := range credsList {
 		err := cred.ConflictCheck(newCred)
 		if err != nil {
 			return err

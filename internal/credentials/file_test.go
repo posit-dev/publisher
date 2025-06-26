@@ -4,6 +4,7 @@ package credentials
 
 import (
 	"fmt"
+	"github.com/posit-dev/publisher/internal/server_type"
 	"os"
 	"runtime"
 	"testing"
@@ -198,10 +199,11 @@ func (s *FileCredentialsServiceSuite) TestGet() {
 	cred, err := cs.Get("79077898-7e26-4909-9eb7-596d1a6d0b6f")
 	s.NoError(err)
 	s.Equal(cred, &Credential{
-		Name:   "rick",
-		GUID:   "79077898-7e26-4909-9eb7-596d1a6d0b6f",
-		URL:    "https://b2.connect-server:3939/connect",
-		ApiKey: "abcdeC2aqbh7dg8TO43XPu7r56YDh002",
+		Name:       "rick",
+		ServerType: server_type.ServerTypeConnect,
+		GUID:       "79077898-7e26-4909-9eb7-596d1a6d0b6f",
+		URL:        "https://b2.connect-server:3939/connect",
+		ApiKey:     "abcdeC2aqbh7dg8TO43XPu7r56YDh002",
 	})
 }
 
@@ -242,28 +244,32 @@ func (s *FileCredentialsServiceSuite) TestList() {
 	s.NoError(err)
 
 	s.Contains(creds, Credential{
-		Name:   "hugo",
-		GUID:   "18cd5640-bee5-4b2a-992a-a2725ab6103d",
-		URL:    "https://a1.connect-server:3939/connect",
-		ApiKey: "abcdeC2aqbh7dg8TO43XPu7r56YDh000",
+		Name:       "hugo",
+		ServerType: server_type.ServerTypeConnect,
+		GUID:       "18cd5640-bee5-4b2a-992a-a2725ab6103d",
+		URL:        "https://a1.connect-server:3939/connect",
+		ApiKey:     "abcdeC2aqbh7dg8TO43XPu7r56YDh000",
 	})
 	s.Contains(creds, Credential{
-		Name:   "rick",
-		GUID:   "79077898-7e26-4909-9eb7-596d1a6d0b6f",
-		URL:    "https://b2.connect-server:3939/connect",
-		ApiKey: "abcdeC2aqbh7dg8TO43XPu7r56YDh002",
+		Name:       "rick",
+		ServerType: server_type.ServerTypeConnect,
+		GUID:       "79077898-7e26-4909-9eb7-596d1a6d0b6f",
+		URL:        "https://b2.connect-server:3939/connect",
+		ApiKey:     "abcdeC2aqbh7dg8TO43XPu7r56YDh002",
 	})
 	s.Contains(creds, Credential{
-		Name:   "jane",
-		GUID:   "3bb375e4-6f01-4fd6-942a-ac32a5e4d7cc",
-		URL:    "https://c3.connect-server:3939/connect",
-		ApiKey: "abcdeC2aqbh7dg8TO43XPu7r56YDh003",
+		Name:       "jane",
+		ServerType: server_type.ServerTypeConnect,
+		GUID:       "3bb375e4-6f01-4fd6-942a-ac32a5e4d7cc",
+		URL:        "https://c3.connect-server:3939/connect",
+		ApiKey:     "abcdeC2aqbh7dg8TO43XPu7r56YDh003",
 	})
 	s.Contains(creds, Credential{
-		Name:   "frank sinatra",
-		GUID:   "bcdd57dd-6a68-4dcc-9877-d3ab2f512a04",
-		URL:    "https://c4.connect-server:3939/connect",
-		ApiKey: "abcdeC2aqbh7dg8TO43XPu7r56YDh004",
+		Name:       "frank sinatra",
+		ServerType: server_type.ServerTypeConnect,
+		GUID:       "bcdd57dd-6a68-4dcc-9877-d3ab2f512a04",
+		URL:        "https://c4.connect-server:3939/connect",
+		ApiKey:     "abcdeC2aqbh7dg8TO43XPu7r56YDh004",
 	})
 }
 
@@ -638,17 +644,25 @@ func (s *FileCredentialsServiceSuite) TestReset() {
 	s.Equal(fmt.Sprintf(`[credentials]
 [credentials.newcred]
 guid = '%s'
-version = 1
+version = 2
 url = 'https://b2.connect-server:3939/connect'
 api_key = 'abcdeC2aqbh7dg8TO43XPu7r56YDh002'
 snowflake_connection = ''
+account_id = ''
+account_name = ''
+refresh_token = ''
+access_token = ''
 
 [credentials.newcredtwo]
 guid = '%s'
-version = 1
+version = 2
 url = 'https://b5.connect-server:3939/connect'
 api_key = 'abcdeC2aqbh7dg8TO43XPu7r56YDh007'
 snowflake_connection = ''
+account_id = ''
+account_name = ''
+refresh_token = ''
+access_token = ''
 `, credOne.GUID, credTwo.GUID), string(backupContents))
 
 	err = os.Remove(expectedCredsBackupPath.String())
