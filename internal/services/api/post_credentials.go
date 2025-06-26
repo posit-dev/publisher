@@ -54,7 +54,16 @@ func PostCredentialFuncHandler(log logging.Logger) http.HandlerFunc {
 			return
 		}
 
-		cred, err := cs.Set(body.Name, body.URL, body.ApiKey, body.SnowflakeConnection)
+		cred, err := cs.Set(credentials.CreateCredentialDetails{
+			Name:                body.Name,
+			URL:                 body.URL,
+			ApiKey:              body.ApiKey,
+			SnowflakeConnection: body.SnowflakeConnection,
+			AccountID:           body.AccountID,
+			AccountName:         body.AccountName,
+			RefreshToken:        body.RefreshToken,
+			AccessToken:         body.AccessToken,
+		})
 		if err != nil {
 			if _, ok := err.(*credentials.URLCollisionError); ok {
 				http.Error(w, http.StatusText(http.StatusConflict), http.StatusConflict)

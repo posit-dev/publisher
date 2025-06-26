@@ -162,3 +162,46 @@ func (s *CredentialsServiceTestSuite) TestNewCredentialsService_WithUseKeyringFa
 	s.NoError(err)
 	s.Implements((*CredentialsService)(nil), credservice)
 }
+
+type CreateCredentialDetailsTestSuite struct {
+	utiltest.Suite
+	//log *loggingtest.MockLogger
+}
+
+func TestCreateCredentialDetailsTestSuite(t *testing.T) {
+	suite.Run(t, new(CreateCredentialDetailsTestSuite))
+}
+
+func (s *CreateCredentialDetailsTestSuite) TestToCredential() {
+	details := CreateCredentialDetails{Name: "newcred", URL: "https://b2.connect-server:3939/connect", ApiKey: "abcdeC2aqbh7dg8TO43XPu7r56YDh002"}
+	cred, err := details.ToCredential()
+	s.NoError(err)
+	s.NotEmpty(cred.GUID)
+	s.Equal(cred.Name, details.Name)
+	s.Equal(cred.URL, details.URL)
+	s.Equal(cred.ApiKey, details.ApiKey)
+	s.Equal(cred.ServerType, server_type.ServerTypeConnect)
+	s.Equal(cred.SnowflakeConnection, "")
+	s.Equal(cred.AccountID, "")
+	s.Equal(cred.AccountName, "")
+	s.Equal(cred.RefreshToken, "")
+	s.Equal(cred.AccessToken, "")
+}
+
+func (s *CreateCredentialDetailsTestSuite) TestToCredential_BlankDataErr() {
+	testCases := map[string]CreateCredentialDetails{
+		"empty credential":             CreateCredentialDetails{URL: "https://b2.connect-server:3939/connect", ApiKey: "abcdeC2aqbh7dg8TO43XPu7r56YDh002"},
+		"empty URL":                    CreateCredentialDetails{Name: "newcred", ApiKey: "abcdeC2aqbh7dg8TO43XPu7r56YDh002"},
+		"empty creds":                  CreateCredentialDetails{Name: "newcred", URL: "https://b2.connect-server:3939/connect"},
+		"partial Connect Cloud cred 1": CreateCredentialDetails{Name: "newcred", URL: "https://b2.connect-server:3939/connect", AccountName: "friedtofu"},
+		"partial Connect Cloud cred 2": CreateCredentialDetails{Name: "newcred", URL: "https://b2.connect-server:3939/connect", AccountID: "1234"},
+		"partial Connect Cloud cred 3": CreateCredentialDetails{Name: "newcred", URL: "https://b2.connect-server:3939/connect", AccessToken: "abcdeC2aqbh7dg8TO43XPu7r56YDh002"},
+		"partial Connect Cloud cred 4": CreateCredentialDetails{Name: "newcred", URL: "https://b2.connect-server:3939/connect", RefreshToken: "abcdeC2aqbh7dg8TO43XPu7r56YDh002"},
+	}
+
+	for _, createCredDetails := range testCases {
+		_, err := createCredDetails.ToCredential()
+		s.Error(err)
+		s.Equal(err.Error(), "New credentials require non-empty Name, URL and either Api Key, Snowflake, or Connect Cloud connection fields")
+	}
+}

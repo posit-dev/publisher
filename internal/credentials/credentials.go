@@ -31,7 +31,9 @@ package credentials
 
 import (
 	"encoding/json"
+	"github.com/google/uuid"
 	"github.com/posit-dev/publisher/internal/server_type"
+	"github.com/posit-dev/publisher/internal/util"
 
 	"github.com/posit-dev/publisher/internal/logging"
 )
@@ -157,13 +159,66 @@ func (cr *CredentialRecord) ToCredential() (*Credential, error) {
 	}
 }
 
+type CreateCredentialDetails struct {
+	Name string
+	URL  string
+
+	// Connect fields
+	ApiKey string `json:"apiKey"`
+
+	// Snowflake fields
+	SnowflakeConnection string `json:"snowflakeConnection"`
+
+	// Connect Cloud fields
+	AccountID    string `json:"accountId"`
+	AccountName  string `json:"accountName"`
+	RefreshToken string `json:"refreshToken"`
+	AccessToken  string `json:"accessToken"`
+}
+
+func (details CreateCredentialDetails) ToCredential() (*Credential, error) {
+	connectPresent := details.ApiKey != ""
+	snowflakePresent := details.SnowflakeConnection != ""
+	connectCloudPresent := details.AccountID != "" && details.AccountName != "" && details.RefreshToken != "" && details.AccessToken != ""
+	someServerTypePresent := connectPresent || snowflakePresent || connectCloudPresent
+
+	if details.Name == "" ||
+		details.URL == "" ||
+		!someServerTypePresent {
+		return nil, NewIncompleteCredentialError()
+	}
+
+	normalizedUrl, err := util.NormalizeServerURL(details.URL)
+	if err != nil {
+		return nil, err
+	}
+
+	serverType, err := server_type.ServerTypeFromURL(details.URL)
+	if err != nil {
+		return nil, err
+	}
+	guid := uuid.New().String()
+	return &Credential{
+		GUID:                guid,
+		Name:                details.Name,
+		ServerType:          serverType,
+		URL:                 normalizedUrl,
+		ApiKey:              details.ApiKey,
+		SnowflakeConnection: details.SnowflakeConnection,
+		AccountID:           details.AccountID,
+		AccountName:         details.AccountName,
+		RefreshToken:        details.RefreshToken,
+		AccessToken:         details.AccessToken,
+	}, nil
+}
+
 type CredServiceFactory = func(log logging.Logger) (CredentialsService, error)
 
 type CredentialsService interface {
 	Delete(guid string) error
 	Get(guid string) (*Credential, error)
 	List() ([]Credential, error)
-	Set(name string, url string, ak string, sf string) (*Credential, error)
+	Set(details CreateCredentialDetails) (*Credential, error)
 	Reset() (string, error)
 }
 

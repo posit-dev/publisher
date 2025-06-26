@@ -404,7 +404,7 @@ func (s *FileCredentialsServiceSuite) TestSet() {
 		},
 	})
 
-	newcred, err := cs.Set("newcred", "https://b2.connect-server:3939/connect", "abcdeC2aqbh7dg8TO43XPu7r56YDh002", "")
+	newcred, err := cs.Set(CreateCredentialDetails{Name: "newcred", URL: "https://b2.connect-server:3939/connect", ApiKey: "abcdeC2aqbh7dg8TO43XPu7r56YDh002", SnowflakeConnection: ""})
 	s.NoError(err)
 
 	s.Equal(newcred.Name, "newcred")
@@ -437,7 +437,7 @@ func (s *FileCredentialsServiceSuite) TestSet() {
 		},
 	})
 
-	newcred2, err := cs.Set("brand new cred wspaces", "https://b3.connect-server:3939/connect", "abcdeC2aqbh7dg8TO43XPu7r56YDh003", "")
+	newcred2, err := cs.Set(CreateCredentialDetails{Name: "brand new cred wspaces", URL: "https://b3.connect-server:3939/connect", ApiKey: "abcdeC2aqbh7dg8TO43XPu7r56YDh003", SnowflakeConnection: ""})
 	s.NoError(err)
 
 	s.Equal(newcred2.Name, "brand new cred wspaces")
@@ -479,7 +479,7 @@ func (s *FileCredentialsServiceSuite) TestSet() {
 		},
 	})
 
-	newcred3, err := cs.Set("snowcred", "https://example.snowflakecomputing.app/connect", "", "snowy")
+	newcred3, err := cs.Set(CreateCredentialDetails{Name: "snowcred", URL: "https://example.snowflakecomputing.app/connect", ApiKey: "", SnowflakeConnection: "snowy"})
 	s.NoError(err)
 
 	s.Equal(newcred3.Name, "snowcred")
@@ -534,16 +534,16 @@ func (s *FileCredentialsServiceSuite) TestSet_BlankDataErr() {
 		credsFilepath: s.testdata.Join("testset.toml"),
 	}
 
-	testCases := map[string][3]string{
-		"empty credential": {"", "https://b2.connect-server:3939/connect", "abcdeC2aqbh7dg8TO43XPu7r56YDh002"},
-		"empty URL":        {"newcred", "", "abcdeC2aqbh7dg8TO43XPu7r56YDh002"},
-		"empty creds":      {"newcred", "https://b2.connect-server:3939/connect", ""},
+	testCases := map[string]CreateCredentialDetails{
+		"empty credential": CreateCredentialDetails{URL: "https://b2.connect-server:3939/connect", ApiKey: "abcdeC2aqbh7dg8TO43XPu7r56YDh002"},
+		"empty URL":        CreateCredentialDetails{Name: "newcred", ApiKey: "abcdeC2aqbh7dg8TO43XPu7r56YDh002"},
+		"empty creds":      CreateCredentialDetails{Name: "newcred", URL: "https://b2.connect-server:3939/connect"},
 	}
 
-	for _, params := range testCases {
-		_, err := cs.Set(params[0], params[1], params[2], "")
+	for _, createCredDetails := range testCases {
+		_, err := cs.Set(createCredDetails)
 		s.Error(err)
-		s.Equal(err.Error(), "New credentials require non-empty Name, URL and either Api Key or Snowflake connection fields")
+		s.Equal(err.Error(), "New credentials require non-empty Name, URL and either Api Key, Snowflake, or Connect Cloud connection fields")
 
 		creds, err := cs.load()
 		s.NoError(err)
@@ -583,7 +583,7 @@ func (s *FileCredentialsServiceSuite) TestSet_ConflictErr() {
 		expectedErrMessage := params[3]
 		s.loggerMock.On("Debug", "Conflicts storing new credential to file", "error", expectedErrMessage, "filename", cs.credsFilepath.String()).Return()
 
-		_, err := cs.Set(params[0], params[1], params[2], "")
+		_, err := cs.Set(CreateCredentialDetails{Name: params[0], URL: params[1], ApiKey: params[2]})
 		s.Error(err)
 		s.loggerMock.AssertExpectations(s.T())
 
@@ -619,10 +619,10 @@ func (s *FileCredentialsServiceSuite) TestReset() {
 	_, err = cs.load()
 	s.NoError(err)
 
-	credOne, err := cs.Set("newcred", "https://b2.connect-server:3939/connect", "abcdeC2aqbh7dg8TO43XPu7r56YDh002", "")
+	credOne, err := cs.Set(CreateCredentialDetails{Name: "newcred", URL: "https://b2.connect-server:3939/connect", ApiKey: "abcdeC2aqbh7dg8TO43XPu7r56YDh002", SnowflakeConnection: ""})
 	s.NoError(err)
 
-	credTwo, err := cs.Set("newcredtwo", "https://b5.connect-server:3939/connect", "abcdeC2aqbh7dg8TO43XPu7r56YDh007", "")
+	credTwo, err := cs.Set(CreateCredentialDetails{Name: "newcredtwo", URL: "https://b5.connect-server:3939/connect", ApiKey: "abcdeC2aqbh7dg8TO43XPu7r56YDh007", SnowflakeConnection: ""})
 	s.NoError(err)
 
 	list, err := cs.List()

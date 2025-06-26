@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/pelletier/go-toml/v2"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
@@ -129,50 +128,27 @@ func NewFileCredentialsService(log logging.Logger) (*fileCredentialsService, err
 	return fservice, nil
 }
 
-func (c *fileCredentialsService) Set(name, url, ak string, sf string) (*Credential, error) {
+func (c *fileCredentialsService) Set(credDetails CreateCredentialDetails) (*Credential, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-
-	if name == "" || url == "" || (ak == "" && sf == "") {
-		return nil, NewIncompleteCredentialError()
-	}
 
 	creds, err := c.load()
 	if err != nil {
 		return nil, err
 	}
 
-	normalizedUrl, err := util.NormalizeServerURL(url)
+	cred, err := credDetails.ToCredential()
 	if err != nil {
 		return nil, err
 	}
 
-	serverType, err := server_type.ServerTypeFromURL(url)
-	if err != nil {
-		return nil, err
-	}
-
-	guid := uuid.New().String()
-	cred := Credential{
-		GUID:                guid,
-		Name:                name,
-		ServerType:          serverType,
-		URL:                 normalizedUrl,
-		ApiKey:              ak,
-		SnowflakeConnection: sf,
-		AccountID:           "",
-		AccountName:         "",
-		RefreshToken:        "",
-		AccessToken:         "",
-	}
-
-	err = c.checkForConflicts(creds, cred)
+	err = c.checkForConflicts(creds, *cred)
 	if err != nil {
 		c.log.Debug("Conflicts storing new credential to file", "error", err.Error(), "filename", c.credsFilepath.String())
 		return nil, err
 	}
 
-	creds.Credentials[name] = fileCredential{
+	creds.Credentials[credDetails.Name] = fileCredential{
 		GUID:                cred.GUID,
 		Version:             CurrentVersion,
 		ServerType:          cred.ServerType,
@@ -191,7 +167,7 @@ func (c *fileCredentialsService) Set(name, url, ak string, sf string) (*Credenti
 		return nil, err
 	}
 
-	return &cred, nil
+	return cred, nil
 }
 
 func (c *fileCredentialsService) Get(guid string) (*Credential, error) {
