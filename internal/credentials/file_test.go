@@ -421,6 +421,7 @@ func (s *FileCredentialsServiceSuite) TestSet() {
 			"preexistent": {
 				GUID:                "18cd5640-bee5-4b2a-992a-a2725ab6103d",
 				Version:             0,
+				ServerType:          "",
 				URL:                 "https://a1.connect-server:3939/connect",
 				ApiKey:              "abcdeC2aqbh7dg8TO43XPu7r56YDh000",
 				SnowflakeConnection: "",
@@ -428,6 +429,7 @@ func (s *FileCredentialsServiceSuite) TestSet() {
 			"newcred": {
 				GUID:                newcred.GUID,
 				Version:             2,
+				ServerType:          server_type.ServerTypeConnect,
 				URL:                 "https://b2.connect-server:3939/connect",
 				ApiKey:              "abcdeC2aqbh7dg8TO43XPu7r56YDh002",
 				SnowflakeConnection: "",
@@ -439,6 +441,7 @@ func (s *FileCredentialsServiceSuite) TestSet() {
 	s.NoError(err)
 
 	s.Equal(newcred2.Name, "brand new cred wspaces")
+	s.Equal(newcred2.ServerType, server_type.ServerTypeConnect)
 	s.Equal(newcred2.URL, "https://b3.connect-server:3939/connect")
 	s.Equal(newcred2.ApiKey, "abcdeC2aqbh7dg8TO43XPu7r56YDh003")
 	s.Equal(newcred2.SnowflakeConnection, "")
@@ -452,6 +455,7 @@ func (s *FileCredentialsServiceSuite) TestSet() {
 			"preexistent": {
 				GUID:                "18cd5640-bee5-4b2a-992a-a2725ab6103d",
 				Version:             0,
+				ServerType:          "",
 				URL:                 "https://a1.connect-server:3939/connect",
 				ApiKey:              "abcdeC2aqbh7dg8TO43XPu7r56YDh000",
 				SnowflakeConnection: "",
@@ -459,6 +463,7 @@ func (s *FileCredentialsServiceSuite) TestSet() {
 			"newcred": {
 				GUID:                newcred.GUID,
 				Version:             2,
+				ServerType:          server_type.ServerTypeConnect,
 				URL:                 "https://b2.connect-server:3939/connect",
 				ApiKey:              "abcdeC2aqbh7dg8TO43XPu7r56YDh002",
 				SnowflakeConnection: "",
@@ -466,6 +471,7 @@ func (s *FileCredentialsServiceSuite) TestSet() {
 			"brand new cred wspaces": {
 				GUID:                newcred2.GUID,
 				Version:             2,
+				ServerType:          server_type.ServerTypeConnect,
 				URL:                 "https://b3.connect-server:3939/connect",
 				ApiKey:              "abcdeC2aqbh7dg8TO43XPu7r56YDh003",
 				SnowflakeConnection: "",
@@ -497,6 +503,7 @@ func (s *FileCredentialsServiceSuite) TestSet() {
 			"newcred": {
 				GUID:                newcred.GUID,
 				Version:             2,
+				ServerType:          server_type.ServerTypeConnect,
 				URL:                 "https://b2.connect-server:3939/connect",
 				ApiKey:              "abcdeC2aqbh7dg8TO43XPu7r56YDh002",
 				SnowflakeConnection: "",
@@ -504,6 +511,7 @@ func (s *FileCredentialsServiceSuite) TestSet() {
 			"brand new cred wspaces": {
 				GUID:                newcred2.GUID,
 				Version:             2,
+				ServerType:          server_type.ServerTypeConnect,
 				URL:                 "https://b3.connect-server:3939/connect",
 				ApiKey:              "abcdeC2aqbh7dg8TO43XPu7r56YDh003",
 				SnowflakeConnection: "",
@@ -511,6 +519,7 @@ func (s *FileCredentialsServiceSuite) TestSet() {
 			"snowcred": {
 				GUID:                newcred3.GUID,
 				Version:             2,
+				ServerType:          server_type.ServerTypeSnowflake,
 				URL:                 "https://example.snowflakecomputing.app/connect",
 				ApiKey:              "",
 				SnowflakeConnection: "snowy",
@@ -645,6 +654,7 @@ func (s *FileCredentialsServiceSuite) TestReset() {
 [credentials.newcred]
 guid = '%s'
 version = 2
+server_type = 'connect'
 url = 'https://b2.connect-server:3939/connect'
 api_key = 'abcdeC2aqbh7dg8TO43XPu7r56YDh002'
 snowflake_connection = ''
@@ -656,6 +666,7 @@ access_token = ''
 [credentials.newcredtwo]
 guid = '%s'
 version = 2
+server_type = 'connect'
 url = 'https://b5.connect-server:3939/connect'
 api_key = 'abcdeC2aqbh7dg8TO43XPu7r56YDh007'
 snowflake_connection = ''

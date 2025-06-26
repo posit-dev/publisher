@@ -22,9 +22,10 @@ var fsys = afero.NewOsFs()
 const ondiskFilename = ".connect-credentials"
 
 type fileCredential struct {
-	GUID    string `toml:"guid"`
-	Version uint   `toml:"version"`
-	URL     string `toml:"url"`
+	GUID       string                 `toml:"guid"`
+	Version    uint                   `toml:"version"`
+	ServerType server_type.ServerType `toml:"server_type"`
+	URL        string                 `toml:"url"`
 
 	// Connect fields
 	ApiKey string `toml:"api_key"`
@@ -146,13 +147,23 @@ func (c *fileCredentialsService) Set(name, url, ak string, sf string) (*Credenti
 		return nil, err
 	}
 
+	serverType, err := server_type.ServerTypeFromURL(url)
+	if err != nil {
+		return nil, err
+	}
+
 	guid := uuid.New().String()
 	cred := Credential{
 		GUID:                guid,
 		Name:                name,
+		ServerType:          serverType,
 		URL:                 normalizedUrl,
 		ApiKey:              ak,
 		SnowflakeConnection: sf,
+		AccountID:           "",
+		AccountName:         "",
+		RefreshToken:        "",
+		AccessToken:         "",
 	}
 
 	err = c.checkForConflicts(creds, cred)
@@ -162,11 +173,16 @@ func (c *fileCredentialsService) Set(name, url, ak string, sf string) (*Credenti
 	}
 
 	creds.Credentials[name] = fileCredential{
-		GUID:                guid,
+		GUID:                cred.GUID,
 		Version:             CurrentVersion,
-		URL:                 normalizedUrl,
-		ApiKey:              ak,
-		SnowflakeConnection: sf,
+		ServerType:          cred.ServerType,
+		URL:                 cred.URL,
+		ApiKey:              cred.ApiKey,
+		SnowflakeConnection: cred.SnowflakeConnection,
+		AccountID:           cred.AccountID,
+		AccountName:         cred.AccountName,
+		RefreshToken:        cred.RefreshToken,
+		AccessToken:         cred.AccessToken,
 	}
 
 	err = c.saveFile(creds)

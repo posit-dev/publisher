@@ -41,9 +41,9 @@ const ServiceName = "Posit Publisher Safe Storage"
 const CurrentVersion = 2
 
 type Credential struct {
-	ServerType server_type.ServerType `json:"serverType"`
 	GUID       string                 `json:"guid"`
 	Name       string                 `json:"name"`
+	ServerType server_type.ServerType `json:"serverType"`
 	URL        string                 `json:"url"`
 
 	// Connect fields
