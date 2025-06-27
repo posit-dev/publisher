@@ -27,16 +27,16 @@ type fileCredential struct {
 	URL        string                 `toml:"url"`
 
 	// Connect fields
-	ApiKey string `toml:"api_key"`
+	ApiKey string `toml:"api_key,omitempty"`
 
 	// Snowflake fields
-	SnowflakeConnection string `toml:"snowflake_connection"`
+	SnowflakeConnection string `toml:"snowflake_connection,omitempty"`
 
 	// Connect Cloud fields
-	AccountID    string `toml:"account_id"`
-	AccountName  string `toml:"account_name"`
-	RefreshToken string `toml:"refresh_token"`
-	AccessToken  string `toml:"access_token"`
+	AccountID    string `toml:"account_id,omitempty"`
+	AccountName  string `toml:"account_name,omitempty"`
+	RefreshToken string `toml:"refresh_token,omitempty"`
+	AccessToken  string `toml:"access_token,omitempty"`
 }
 
 func (cr *fileCredential) IsValid() bool {

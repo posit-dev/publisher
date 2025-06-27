@@ -722,11 +722,6 @@ version = 2
 server_type = 'connect'
 url = 'https://b2.connect-server:3939/connect'
 api_key = 'abcdeC2aqbh7dg8TO43XPu7r56YDh002'
-snowflake_connection = ''
-account_id = ''
-account_name = ''
-refresh_token = ''
-access_token = ''
 
 [credentials.newcredtwo]
 guid = '%s'
@@ -734,11 +729,6 @@ version = 2
 server_type = 'connect'
 url = 'https://b5.connect-server:3939/connect'
 api_key = 'abcdeC2aqbh7dg8TO43XPu7r56YDh007'
-snowflake_connection = ''
-account_id = ''
-account_name = ''
-refresh_token = ''
-access_token = ''
 `, credOne.GUID, credTwo.GUID), string(backupContents))
 
 	err = os.Remove(expectedCredsBackupPath.String())
