@@ -193,7 +193,7 @@ func (details CreateCredentialDetails) ToCredential() (*Credential, error) {
 		return nil, err
 	}
 
-	serverType, err := server_type.ServerTypeFromURL(details.URL)
+	serverType, err := server_type.ServerTypeFromURL(normalizedUrl)
 	if err != nil {
 		return nil, err
 	}
