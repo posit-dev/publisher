@@ -40,7 +40,8 @@ type fileCredential struct {
 }
 
 func (cr *fileCredential) IsValid() bool {
-	return cr.URL != "" && (cr.ApiKey != "" || cr.SnowflakeConnection != "")
+	return cr.URL != "" && (cr.ApiKey != "" || cr.SnowflakeConnection != "" ||
+		(cr.AccountID != "" && cr.AccountName != "" && cr.RefreshToken != "" && cr.AccessToken != ""))
 }
 
 func (cr *fileCredential) toCredential(name string) (*Credential, error) {
