@@ -4,6 +4,7 @@ package api
 
 import (
 	"encoding/json"
+	"github.com/posit-dev/publisher/internal/server_type"
 	"net/http"
 	"time"
 
@@ -27,7 +28,7 @@ func GetSnowflakeConnectionsHandlerFunc(log logging.Logger, connections snowflak
 	return func(w http.ResponseWriter, req *http.Request) {
 		serverUrl := req.URL.Query().Get("serverUrl")
 
-		serverType, err := accounts.ServerTypeFromURL(serverUrl)
+		serverType, err := server_type.ServerTypeFromURL(serverUrl)
 		if err != nil {
 			// unparseable URL
 			BadRequest(w, req, log, err)

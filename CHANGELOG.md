@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed the naming of "Shiny for Python" and "Shiny for R" content types.
   (#2664)
+- Bumped the credential version to 2 to support Posit Connect Cloud credentials. (#2684)
 
 ## [1.16.1]
 

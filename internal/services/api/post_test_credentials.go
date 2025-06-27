@@ -4,6 +4,7 @@ package api
 
 import (
 	"encoding/json"
+	"github.com/posit-dev/publisher/internal/server_type"
 	"net/http"
 	"time"
 
@@ -25,7 +26,7 @@ type PostTestCredentialsResponseBody struct {
 	User *connect.User `json:"user"`
 	URL  string        `json:"url"`
 
-	ServerType accounts.ServerType `json:"serverType"`
+	ServerType server_type.ServerType `json:"serverType"`
 
 	Error *types.AgentError `json:"error"`
 }
@@ -43,7 +44,7 @@ func PostTestCredentialsHandlerFunc(log logging.Logger) http.HandlerFunc {
 			return
 		}
 
-		serverType, err := accounts.ServerTypeFromURL(b.URL)
+		serverType, err := server_type.ServerTypeFromURL(b.URL)
 		if err != nil {
 			// unparseable URL
 			BadRequest(w, req, log, err)

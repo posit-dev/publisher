@@ -3,6 +3,7 @@ package accounts
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"github.com/posit-dev/publisher/internal/server_type"
 	"os"
 
 	"github.com/posit-dev/publisher/internal/logging"
@@ -32,7 +33,7 @@ func (p *envVarProvider) Load() ([]Account, error) {
 	if apiKey == "" {
 		return nil, nil
 	}
-	serverType, err := ServerTypeFromURL(serverURL)
+	serverType, err := server_type.ServerTypeFromURL(serverURL)
 	if err != nil {
 		return nil, err
 	}

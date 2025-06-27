@@ -5,6 +5,7 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"github.com/posit-dev/publisher/internal/server_type"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -30,14 +31,14 @@ func (s *GetAccountsSuite) SetupSuite() {
 
 func (s *GetAccountsSuite) TestGetAccounts() {
 	lister := &accounts.MockAccountList{}
-	lister.On("GetAccountsByServerType", accounts.ServerTypeConnect).Return([]accounts.Account{
+	lister.On("GetAccountsByServerType", server_type.ServerTypeConnect).Return([]accounts.Account{
 		{
 			Name:       "myAccount",
-			ServerType: accounts.ServerTypeConnect,
+			ServerType: server_type.ServerTypeConnect,
 		},
 		{
 			Name:       "otherAccount",
-			ServerType: accounts.ServerTypeConnect,
+			ServerType: server_type.ServerTypeConnect,
 		},
 	}, nil)
 	h := GetAccountsHandlerFunc(lister, s.log)
@@ -57,15 +58,15 @@ func (s *GetAccountsSuite) TestGetAccounts() {
 
 	s.Len(accts, 2)
 	s.Equal("myAccount", accts[0].Name)
-	s.Equal(string(accounts.ServerTypeConnect), accts[0].Type)
+	s.Equal(string(server_type.ServerTypeConnect), accts[0].Type)
 	s.Equal("otherAccount", accts[1].Name)
-	s.Equal(string(accounts.ServerTypeConnect), accts[1].Type)
+	s.Equal(string(server_type.ServerTypeConnect), accts[1].Type)
 }
 
 func (s *GetAccountsSuite) TestGetAccountsError() {
 	lister := &accounts.MockAccountList{}
 	testError := errors.New("test error from GetAccountsByServerType")
-	lister.On("GetAccountsByServerType", accounts.ServerTypeConnect).Return(nil, testError)
+	lister.On("GetAccountsByServerType", server_type.ServerTypeConnect).Return(nil, testError)
 	h := GetAccountsHandlerFunc(lister, s.log)
 
 	rec := httptest.NewRecorder()
@@ -78,7 +79,7 @@ func (s *GetAccountsSuite) TestGetAccountsError() {
 
 func (s *GetAccountsSuite) TestGetAccountsNoAccounts() {
 	lister := &accounts.MockAccountList{}
-	lister.On("GetAccountsByServerType", accounts.ServerTypeConnect).Return(nil, nil)
+	lister.On("GetAccountsByServerType", server_type.ServerTypeConnect).Return(nil, nil)
 	h := GetAccountsHandlerFunc(lister, s.log)
 
 	rec := httptest.NewRecorder()

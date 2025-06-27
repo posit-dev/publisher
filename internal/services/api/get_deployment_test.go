@@ -5,13 +5,13 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"github.com/posit-dev/publisher/internal/server_type"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"testing"
 
 	"github.com/gorilla/mux"
-	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/types"
@@ -116,7 +116,7 @@ func (s *GetDeploymentSuite) TestGetDeploymentNotFound() {
 func (s *GetDeploymentSuite) TestGetPreDeployment() {
 	path := deployment.GetDeploymentPath(s.cwd, "myTargetName")
 	d := deployment.New()
-	d.ServerType = accounts.ServerTypeConnect
+	d.ServerType = server_type.ServerTypeConnect
 	testError := errors.New("test error")
 	d.Error = types.AsAgentError(testError)
 	_, err := d.WriteFile(path, "", s.log)

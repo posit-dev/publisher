@@ -4,7 +4,6 @@ package accounts
 
 import (
 	"errors"
-
 	"github.com/posit-dev/publisher/internal/credentials"
 	"github.com/posit-dev/publisher/internal/logging"
 )
@@ -37,13 +36,9 @@ func (p *CredentialsProvider) Load() ([]Account, error) {
 	accounts := make([]Account, len(creds))
 	i := 0
 	for _, cred := range creds {
-		serverType, err := ServerTypeFromURL(cred.URL)
-		if err != nil {
-			return nil, err
-		}
 		accounts[i] = Account{
 			Source:              AccountSourceKeychain,
-			ServerType:          serverType,
+			ServerType:          cred.ServerType,
 			Name:                cred.Name,
 			URL:                 cred.URL,
 			ApiKey:              cred.ApiKey,

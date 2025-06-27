@@ -3,6 +3,7 @@ package accounts
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"github.com/posit-dev/publisher/internal/server_type"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -45,7 +46,7 @@ func (m *MockAccountList) GetAccountByServerURL(url string) (*Account, error) {
 	}
 }
 
-func (m *MockAccountList) GetAccountsByServerType(serverType ServerType) ([]Account, error) {
+func (m *MockAccountList) GetAccountsByServerType(serverType server_type.ServerType) ([]Account, error) {
 	args := m.Called(serverType)
 	accts := args.Get(0)
 	if accts == nil {
