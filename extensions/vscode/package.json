@@ -57,6 +57,11 @@
             "markdownDescription": "Provides the default URL for the Posit Connect server when defining new credentials.",
             "type": "string",
             "default": ""
+          },
+          "positPublisher.connectCloud": {
+            "markdownDescription": "Controls whether Connect Cloud support changes are available in the plugin",
+            "type": "boolean",
+            "default": false
           }
         }
       }
@@ -400,6 +405,20 @@
         "default": {
           "fontPath": "dist/posit-publisher-icons.woff2",
           "fontCharacter": "\\f101"
+        }
+      },
+      "posit-publisher-posit-logo": {
+        "description": "posit logo icon",
+        "default": {
+          "fontPath": "dist/posit-publisher-icons.woff2",
+          "fontCharacter": "\\f102"
+        }
+      },
+      "posit-publisher-snowflake-logo": {
+        "description": "snowflake logo icon",
+        "default": {
+          "fontPath": "dist/posit-publisher-icons.woff2",
+          "fontCharacter": "\\f103"
         }
       }
     },

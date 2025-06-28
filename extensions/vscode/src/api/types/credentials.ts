@@ -8,6 +8,7 @@ export type Credential = {
   name: string;
   url: string;
   apiKey: string;
+  snowflakeConnection: string;
 };
 
 export type CredentialUser = {

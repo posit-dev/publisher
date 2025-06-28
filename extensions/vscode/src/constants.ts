@@ -128,3 +128,9 @@ export const DebounceDelaysMS = {
   refreshRPackages: 1000,
   refreshPythonPackages: 1000,
 };
+
+export enum Products {
+  ConnectCloud = "Posit Connect Cloud",
+  Connect = "Posit Connect",
+  Snowflake = "Snowflake",
+};
