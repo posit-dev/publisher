@@ -11,17 +11,14 @@ type ServerType string
 
 const (
 	ServerTypeConnect      ServerType = "connect"
-	ServerTypeShinyappsIO  ServerType = "shinyapps"
-	ServerTypeCloud        ServerType = "cloud"
 	ServerTypeConnectCloud ServerType = "connect_cloud"
 	ServerTypeSnowflake    ServerType = "snowflake"
 )
 
 var accountTypeDescriptions = map[ServerType]string{
-	ServerTypeConnect:     "Posit Connect",
-	ServerTypeShinyappsIO: "shinyapps.io",
-	ServerTypeCloud:       "Posit Cloud",
-	ServerTypeSnowflake:   "Snowflake",
+	ServerTypeConnect:      "Posit Connect",
+	ServerTypeConnectCloud: "Posit Connect Cloud",
+	ServerTypeSnowflake:    "Snowflake",
 }
 
 func (t ServerType) Description() string {
@@ -45,12 +42,6 @@ func ServerTypeFromURL(urlStr string) (ServerType, error) {
 	host := u.Hostname()
 	if strings.HasSuffix(host, ".connect.posit.cloud") {
 		return ServerTypeConnectCloud, nil
-	} else if strings.HasSuffix(host, ".posit.cloud") {
-		return ServerTypeCloud, nil
-	} else if strings.HasSuffix(host, ".rstudio.cloud") {
-		return ServerTypeCloud, nil
-	} else if strings.HasSuffix(host, ".shinyapps.io") {
-		return ServerTypeShinyappsIO, nil
 	} else if strings.HasSuffix(host, ".snowflakecomputing.app") {
 		return ServerTypeSnowflake, nil
 	} else if strings.HasSuffix(host, ".privatelink.snowflake.app") {

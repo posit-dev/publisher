@@ -144,7 +144,7 @@ func (s *AccountListSuite) TestGetAccountsByServerType_Empty() {
 		log:       log,
 	}
 
-	res, err := accountList.GetAccountsByServerType(server_type.ServerTypeCloud)
+	res, err := accountList.GetAccountsByServerType(server_type.ServerTypeConnectCloud)
 	s.Nil(err)
 	s.Empty(res)
 }

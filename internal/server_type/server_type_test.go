@@ -19,8 +19,7 @@ func TestAccountTypeSuite(t *testing.T) {
 
 func (s *AccountTypeSuite) TestDescription() {
 	s.Equal("Posit Connect", ServerTypeConnect.Description())
-	s.Equal("shinyapps.io", ServerTypeShinyappsIO.Description())
-	s.Equal("Posit Cloud", ServerTypeCloud.Description())
+	s.Equal("Posit Connect Cloud", ServerTypeConnectCloud.Description())
 	s.Equal("hey", ServerType("hey").Description())
 }
 
@@ -31,14 +30,6 @@ func (s *AccountTypeSuite) TestAccountTypeFromURL() {
 	}{
 		{"https://api.staging.connect.posit.cloud", ServerTypeConnectCloud},
 		{"https://api.connect.posit.cloud", ServerTypeConnectCloud},
-		{"https://api.shinyapps.io", ServerTypeShinyappsIO},
-		{"https://api.shinyapps.io/connect/#/content", ServerTypeShinyappsIO},
-		{"https://api.staging.shinyapps.io", ServerTypeShinyappsIO},
-		{"https://api.staging.shinyapps.io/connect/#/content", ServerTypeShinyappsIO},
-		{"https://api.posit.cloud", ServerTypeCloud},
-		{"https://api.posit.cloud/connect/#/content", ServerTypeCloud},
-		{"https://api.rstudio.cloud", ServerTypeCloud},
-		{"https://api.rstudio.cloud/connect/#/content", ServerTypeCloud},
 		{"https://example.com", ServerTypeConnect},
 		{"https://example.com/connect/#/content", ServerTypeConnect},
 		{"https://example.snowflakecomputing.app", ServerTypeSnowflake},
