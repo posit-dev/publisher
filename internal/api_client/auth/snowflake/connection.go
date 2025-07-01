@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"strings"
 
 	"github.com/pelletier/go-toml/v2"
 	"github.com/posit-dev/publisher/internal/util"
@@ -87,6 +88,44 @@ func (c defaultConnections) parseConnectionsToml(f afero.File) (map[string]*Conn
 	return conns, nil
 }
 
+// envVarName creates the environment variable name for a connection field.
+// Format: SNOWFLAKE_CONNECTIONS_<CONNECTION_NAME>_<FIELD_NAME>
+func envVarName(connectionName, fieldName string) string {
+	return fmt.Sprintf("SNOWFLAKE_CONNECTIONS_%s_%s",
+		strings.ToUpper(connectionName),
+		strings.ToUpper(fieldName))
+}
+
+// applyEnvVarOverrides updates connection fields from environment variables.
+func applyEnvVarOverrides(conns map[string]*Connection) {
+	for name, conn := range conns {
+		// Check for Account override
+		if value, exists := os.LookupEnv(envVarName(name, "Account")); exists {
+			conn.Account = value
+		}
+		// Check for User override
+		if value, exists := os.LookupEnv(envVarName(name, "User")); exists {
+			conn.User = value
+		}
+		// Check for PrivateKeyFile override
+		if value, exists := os.LookupEnv(envVarName(name, "Private_Key_File")); exists {
+			conn.PrivateKeyFile = value
+		}
+		// Check for Token override
+		if value, exists := os.LookupEnv(envVarName(name, "Token")); exists {
+			conn.Token = value
+		}
+		// Check for Authenticator override
+		if value, exists := os.LookupEnv(envVarName(name, "Authenticator")); exists {
+			conn.Authenticator = value
+		}
+		// Check for PrivateKeyPath override
+		if value, exists := os.LookupEnv(envVarName(name, "Private_Key_Path")); exists {
+			conn.PrivateKeyPath = value
+		}
+	}
+}
+
 // List returns all configured Snowflake connections.
 func (c defaultConnections) List() (map[string]*Connection, error) {
 	// TODO: consider rstudio/snowflake-lib. But it doesn't have a released version.
@@ -122,6 +161,9 @@ func (c defaultConnections) List() (map[string]*Connection, error) {
 			conn.PrivateKeyFile = conn.PrivateKeyPath
 		}
 	}
+
+	// Apply environment variable overrides
+	applyEnvVarOverrides(conns)
 
 	return conns, nil
 }

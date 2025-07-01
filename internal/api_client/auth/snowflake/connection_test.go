@@ -23,7 +23,16 @@ func TestConnectionSuite(t *testing.T) {
 }
 
 func (s *ConnectionSuite) SetupTest() {
-	s.envVarHelper.Setup("SNOWFLAKE_HOME", "XDG_CONFIG_HOME")
+	s.envVarHelper.Setup(
+		"SNOWFLAKE_HOME",
+		"XDG_CONFIG_HOME",
+		"SNOWFLAKE_CONNECTIONS_DEFAULT_ACCOUNT",
+		"SNOWFLAKE_CONNECTIONS_DEFAULT_USER",
+		"SNOWFLAKE_CONNECTIONS_OTHER_ACCOUNT",
+		"SNOWFLAKE_CONNECTIONS_WORKBENCH_TOKEN",
+		"SNOWFLAKE_CONNECTIONS_PATH_PRIVATE_KEY_FILE",
+		"SNOWFLAKE_CONNECTIONS_PATH_PRIVATE_KEY_PATH",
+	)
 }
 
 func (s *ConnectionSuite) TearDownTest() {
@@ -420,6 +429,60 @@ func (s *ConnectionSuite) TestListFromOtherConfigToml() {
 		"two": {
 			Account:       "two-acct",
 			Token:         "two-token",
+			Authenticator: "oauth",
+		},
+	}, conns)
+}
+
+func (s *ConnectionSuite) TestEnvVarOverrides() {
+	tmp := os.TempDir()
+	sfhome := filepath.Join(tmp, "snowflake")
+	os.Setenv("SNOWFLAKE_HOME", sfhome)
+	fs := afero.NewMemMapFs()
+	fs.MkdirAll(sfhome, 0755)
+	afero.WriteFile(fs, filepath.Join(sfhome, "connections.toml"), connectionsToml, 0600)
+
+	// Set environment variables to override connection values
+	os.Setenv("SNOWFLAKE_CONNECTIONS_DEFAULT_ACCOUNT", "env-default-acct")
+	os.Setenv("SNOWFLAKE_CONNECTIONS_DEFAULT_USER", "env-default-user")
+	os.Setenv("SNOWFLAKE_CONNECTIONS_OTHER_ACCOUNT", "env-other-acct")
+	os.Setenv("SNOWFLAKE_CONNECTIONS_WORKBENCH_TOKEN", "env-workbench-token")
+	os.Setenv("SNOWFLAKE_CONNECTIONS_PATH_PRIVATE_KEY_FILE", "/tmp/env-file/rsa_key.p8")
+	os.Setenv("SNOWFLAKE_CONNECTIONS_PATH_PRIVATE_KEY_PATH", "/tmp/env-path/rsa_key.p8")
+
+	dc := defaultConnections{
+		fs: fs,
+	}
+
+	conns, err := dc.List()
+	s.NoError(err)
+
+	// Check that environment variable values override the file values
+	s.Equal(map[string]*Connection{
+		"default": {
+			Account:        "env-default-acct",
+			User:           "env-default-user",
+			PrivateKeyFile: "/tmp/default/rsa_key.p8",
+			PrivateKeyPath: "",
+			Authenticator:  "SNOWFLAKE_JWT",
+		},
+		"other": {
+			Account:        "env-other-acct",
+			User:           "other-user",
+			PrivateKeyFile: "/tmp/other/rsa_key.p8",
+			PrivateKeyPath: "",
+			Authenticator:  "SNOWFLAKE_JWT",
+		},
+		"path": {
+			Account:        "path-acct",
+			User:           "path-user",
+			PrivateKeyFile: "/tmp/env-file/rsa_key.p8",
+			PrivateKeyPath: "/tmp/env-path/rsa_key.p8",
+			Authenticator:  "SNOWFLAKE_JWT",
+		},
+		"workbench": {
+			Account:       "workbench-acct",
+			Token:         "env-workbench-token",
 			Authenticator: "oauth",
 		},
 	}, conns)
