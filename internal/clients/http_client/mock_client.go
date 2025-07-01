@@ -3,10 +3,10 @@ package http_client
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"io"
-
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/stretchr/testify/mock"
+	"io"
+	"net/url"
 )
 
 type MockHTTPClient struct {
@@ -40,6 +40,11 @@ func (m *MockHTTPClient) Get(path string, into any, log logging.Logger) error {
 
 func (m *MockHTTPClient) Post(path string, body any, into any, log logging.Logger) error {
 	args := m.Called(path, body, into, log)
+	return args.Error(0)
+}
+
+func (m *MockHTTPClient) PostForm(path string, data url.Values, into any, log logging.Logger) error {
+	args := m.Called(path, data, into, log)
 	return args.Error(0)
 }
 

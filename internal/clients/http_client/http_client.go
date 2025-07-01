@@ -14,7 +14,9 @@ import (
 	"net"
 	"net/http"
 	"net/http/cookiejar"
+	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/posit-dev/publisher/internal/accounts"
@@ -32,6 +34,7 @@ type HTTPClient interface {
 	PostRaw(path string, body io.Reader, bodyType string, log logging.Logger) ([]byte, error)
 	Get(path string, into any, log logging.Logger) error
 	Post(path string, body any, into any, log logging.Logger) error
+	PostForm(path string, data url.Values, into any, log logging.Logger) error
 	Put(path string, body any, into any, log logging.Logger) error
 	Patch(path string, body any, into any, log logging.Logger) error
 	Delete(path string, log logging.Logger) error
@@ -43,7 +46,7 @@ type defaultHTTPClient struct {
 }
 
 func NewDefaultHTTPClient(account *accounts.Account, timeout time.Duration, log logging.Logger) (*defaultHTTPClient, error) {
-	baseClient, err := NewHTTPClientForAccount(account, timeout, log)
+	baseClient, err := newHTTPClientForAccount(account, timeout, log)
 	if err != nil {
 		return nil, err
 	}
@@ -51,6 +54,14 @@ func NewDefaultHTTPClient(account *accounts.Account, timeout time.Duration, log 
 		client:  baseClient,
 		baseURL: account.URL,
 	}, nil
+}
+
+func NewBasicHTTPClient(baseURL string, timeout time.Duration) *defaultHTTPClient {
+	baseClient := newBasicInternalHTTPClient(timeout)
+	return &defaultHTTPClient{
+		client:  baseClient,
+		baseURL: baseURL,
+	}
 }
 
 type HTTPError struct {
@@ -159,6 +170,35 @@ func (c *defaultHTTPClient) doJSON(method string, path string, body any, into an
 	return nil
 }
 
+func (c *defaultHTTPClient) doFormEncoded(method string, path string, body url.Values, into any, log logging.Logger) error {
+	reqBody := io.Reader(nil)
+	if body != nil {
+		reqBody = strings.NewReader(body.Encode())
+	}
+	respBody, err := c.do(method, path, reqBody, "application/x-www-form-urlencoded", log)
+	if log.Enabled(context.Background(), slog.LevelDebug) {
+		const maxBody = 2000
+		trimmedRespBody := respBody
+		if len(trimmedRespBody) > maxBody {
+			trimmedRespBody = trimmedRespBody[:maxBody]
+		}
+		log.Debug("API request", "method", method, "path", path, "body", body.Encode(), "response", string(trimmedRespBody), "error", err)
+	}
+	if err != nil {
+		return err
+	}
+	if respBody == nil {
+		return nil
+	}
+	if into != nil {
+		err = json.Unmarshal(respBody, into)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (c *defaultHTTPClient) GetRaw(path string, log logging.Logger) ([]byte, error) {
 	return c.do("GET", path, nil, "", log)
 }
@@ -173,6 +213,10 @@ func (c *defaultHTTPClient) Get(path string, into any, log logging.Logger) error
 
 func (c *defaultHTTPClient) Post(path string, body any, into any, log logging.Logger) error {
 	return c.doJSON("POST", path, body, into, log)
+}
+
+func (c *defaultHTTPClient) PostForm(path string, body url.Values, into any, log logging.Logger) error {
+	return c.doFormEncoded("POST", path, body, into, log)
 }
 
 func (c *defaultHTTPClient) Put(path string, body any, into any, log logging.Logger) error {
@@ -204,7 +248,7 @@ func loadCACertificates(path string, log logging.Logger) (*x509.CertPool, error)
 	return certPool, nil
 }
 
-func NewHTTPClientForAccount(account *accounts.Account, timeout time.Duration, log logging.Logger) (*http.Client, error) {
+func newHTTPClientForAccount(account *accounts.Account, timeout time.Duration, log logging.Logger) (*http.Client, error) {
 	cookieJar, err := cookiejar.New(&cookiejar.Options{
 		PublicSuffixList: publicsuffix.List,
 	})
@@ -244,6 +288,27 @@ func NewHTTPClientForAccount(account *accounts.Account, timeout time.Duration, l
 		Timeout:   timeout,
 		Transport: authTransport,
 	}, nil
+}
+
+func newBasicInternalHTTPClient(timeout time.Duration) *http.Client {
+	// Based on http.DefaultTransport with customized dialer timeout.
+	dialer := net.Dialer{
+		Timeout:   timeout,
+		KeepAlive: 30 * time.Second,
+	}
+	transport := &http.Transport{
+		Proxy:                 http.ProxyFromEnvironment,
+		DialContext:           dialer.DialContext,
+		ForceAttemptHTTP2:     true,
+		MaxIdleConns:          100,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+	}
+	return &http.Client{
+		Timeout:   timeout,
+		Transport: transport,
+	}
 }
 
 func IsHTTPAgentErrorStatusOf(err error, status int) (*types.AgentError, bool) {

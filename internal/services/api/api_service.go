@@ -189,6 +189,10 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	r.Handle(ToPath("snowflake-connections"), GetSnowflakeConnectionsHandlerFunc(log, snowflake.NewConnections())).
 		Methods(http.MethodGet)
 
+	// POST /api/connect-cloud/device-auth
+	r.Handle(ToPath("connect-cloud", "device-auth"), PostConnectCloudDeviceAuthHandlerFunc(log)).
+		Methods(http.MethodPost)
+
 	c := cors.AllowAll().Handler(r)
 	return c.ServeHTTP
 }

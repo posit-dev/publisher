@@ -30,7 +30,7 @@ type PostTestCredentialsResponseBody struct {
 	Error *types.AgentError `json:"error"`
 }
 
-var clientFactory = connect.NewConnectClient
+var connectClientFactory = connect.NewConnectClient
 
 func PostTestCredentialsHandlerFunc(log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
@@ -75,7 +75,7 @@ func PostTestCredentialsHandlerFunc(log logging.Logger) http.HandlerFunc {
 			}
 
 			timeout := time.Duration(max(b.Timeout, 30) * 1e9)
-			client, err := clientFactory(acct, timeout, nil, log)
+			client, err := connectClientFactory(acct, timeout, nil, log)
 			if err != nil {
 				InternalError(w, req, log, err)
 				return
