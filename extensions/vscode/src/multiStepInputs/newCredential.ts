@@ -338,7 +338,7 @@ export async function newCredential(
         step: thisStepNumber,
         totalSteps: state.totalSteps,
         placeholder:
-          "Select the Snowflake connection configuration you want to use to authenticate.",
+          "Select the Snowflake connection to use for authentication.",
         items: connectionQuickPicks,
         buttons: [],
         shouldResume: () => Promise.resolve(false),

@@ -33,71 +33,63 @@ func (s *JWTTokenProviderSuite) SetupTest() {
 }
 
 func (s *JWTTokenProviderSuite) TestNewJWTTokenProvider() {
-	// Test with non-existent file
-	_, err := NewJWTTokenProvider(
-		"test-account",
-		"test-user",
-		"/no/exist/rsa_key.p8",
-		"",
-	)
-	s.ErrorContains(err, "error loading private key file")
-
-	// Test with invalid PEM file (public key instead of private key)
-	publicKeyPath := filepath.Join(s.testdataDir, "rsa_key.pub")
-	_, err = NewJWTTokenProvider(
-		"test-account",
-		"test-user",
-		publicKeyPath,
-		"",
-	)
-	s.ErrorContains(err, "decoding PEM data failed")
-
-	// Test with malformed private key
-	badKeyPath := filepath.Join(s.testdataDir, "bad_key.p8")
-	_, err = NewJWTTokenProvider(
-		"test-account",
-		"test-user",
-		badKeyPath,
-		"",
-	)
-	s.ErrorContains(err, "failed to decode private key")
-
-	// Test with valid private key
 	validKeyPath := filepath.Join(s.testdataDir, "rsa_key.p8")
-	provider, err := NewJWTTokenProvider(
-		"test-account",
-		"test-user",
-		validKeyPath,
-		"",
-	)
-	s.NoError(err)
-	s.NotNil(provider)
-	s.Equal("test-account", provider.account)
-	s.Equal("test-user", provider.user)
-	s.NotNil(provider.privateKey)
-	s.Equal("", provider.role)
-	s.Equal(
-		"https://test-account.snowflakecomputing.com/oauth/token",
-		provider.tokenEndpoint,
-	)
 
-	// Test with role specified
-	provider, err = NewJWTTokenProvider(
-		"test-account",
-		"test-user",
-		validKeyPath,
-		"test-role",
-	)
-	s.NoError(err)
-	s.NotNil(provider)
-	s.Equal("test-account", provider.account)
-	s.Equal("test-user", provider.user)
-	s.NotNil(provider.privateKey)
-	s.Equal("test-role", provider.role)
-	s.Equal(
-		"https://test-account.snowflakecomputing.com/oauth/token",
-		provider.tokenEndpoint,
-	)
+	for _, tc := range []struct {
+		role string
+	}{
+		{role: ""},
+		{role: "test-role"},
+	} {
+		provider, err := NewJWTTokenProvider(
+			"test-account",
+			"test-user",
+			validKeyPath,
+			tc.role,
+		)
+
+		s.NoError(err)
+		s.NotNil(provider)
+		s.Equal("test-account", provider.account)
+		s.Equal("test-user", provider.user)
+		s.NotNil(provider.privateKey)
+		s.Equal(tc.role, provider.role)
+		s.Equal(
+			"https://test-account.snowflakecomputing.com/oauth/token",
+			provider.tokenEndpoint,
+		)
+	}
+}
+
+func (s *JWTTokenProviderSuite) TestNewJWTTokenProviderErrors() {
+	for _, tc := range []struct {
+		path string
+		err  string
+	}{
+		{
+			path: "/no/exist/rsa_key.p8",
+			err:  "error loading private key file",
+		},
+		{
+			// invalid PEM file (public key instead of private key)
+			path: filepath.Join(s.testdataDir, "rsa_key.pub"),
+			err:  "failed to decode PEM block containing private key",
+		},
+		{
+			// malformed private key
+			path: filepath.Join(s.testdataDir, "bad_key.p8"),
+			err:  "failed to decode private key",
+		},
+	} {
+		_, err := NewJWTTokenProvider(
+			"test-account",
+			"test-user",
+			tc.path,
+			"",
+		)
+		s.ErrorContains(err, tc.err)
+	}
+
 }
 
 func (s *JWTTokenProviderSuite) TestGetToken() {

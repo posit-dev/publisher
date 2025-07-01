@@ -784,7 +784,7 @@ export async function newDeployment(
         step: 0,
         totalSteps: 0,
         placeholder:
-          "Select the Snowflake connection configuration you want to use to authenticate.",
+          "Select the Snowflake connection to use for authentication.",
         items: connectionQuickPicks,
         buttons: [],
         shouldResume: () => Promise.resolve(false),

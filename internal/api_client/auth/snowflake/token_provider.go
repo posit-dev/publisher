@@ -52,9 +52,10 @@ func NewJWTTokenProvider(
 		return nil, fmt.Errorf("error loading private key file: %w", err)
 	}
 
+	// safe to ignore `rest` of input and just look for a valid block
 	block, _ := pem.Decode(pemData)
 	if block == nil || block.Type != "PRIVATE KEY" {
-		return nil, fmt.Errorf("decoding PEM data failed")
+		return nil, fmt.Errorf("failed to decode PEM block containing private key")
 	}
 
 	privKey, err := x509.ParsePKCS8PrivateKey(block.Bytes)
@@ -118,7 +119,7 @@ func (p *JWTTokenProvider) getSignedJWT(expiration time.Time) (string, error) {
 	// Sign the token using the RSA private key
 	signedToken, err := token.SignedString(p.privateKey)
 	if err != nil {
-		return "", fmt.Errorf("failed to sign token: %w", err)
+		return "", fmt.Errorf("failed to sign JSON Web Token (JWT): %w", err)
 	}
 
 	return signedToken, nil
@@ -175,14 +176,26 @@ func NewOAuthTokenProvider(account string, token string) *OAuthTokenProvider {
 	}
 }
 
-// GetToken logs in to snowflake using the OAuth token and retrieves a session
+// GetToken logs in to Snowflake using the OAuth token and retrieves a session
 // token.
+//
+// This mimics the alternative to key pair auth documented at
+// https://docs.snowflake.com/en/developer-guide/snowpark-container-services/working-with-services#ingress-authentication
+// by doing the same login request as the Snowflake Connector for Python and
+// extracting the session token from the response.
+//
+// See
+// https://github.com/snowflakedb/snowflake-connector-python/blob/e43f03e86297eea43a39019e194fe3bef3918363/src/snowflake/connector/auth/_auth.py#L127-L182
+// and
+// https://github.com/snowflakedb/snowflake-connector-python/blob/e43f03e86297eea43a39019e194fe3bef3918363/src/snowflake/connector/auth/oauth.py#L43-L49
 func (p *OAuthTokenProvider) GetToken(host string) (string, error) {
+	// Issue a login-request POST containing our oauth data.
 	reqData := map[string]any{
 		"data": map[string]string{
 			"ACCOUNT_NAME": p.account,
-			// workbench is not providing a user name,
-			// but it seems to not be actually required anyway
+			// The python code we are mimicing specifies a
+			// LOGIN_NAME, but in our case we don't have a user.
+			// It seems to not be required.
 			// "LOGIN_NAME": user,
 			"TOKEN":         p.token,
 			"AUTHENTICATOR": "OAUTH",
@@ -215,6 +228,8 @@ func (p *OAuthTokenProvider) GetToken(host string) (string, error) {
 		return "", fmt.Errorf("error reading login response body: %w", err)
 	}
 
+	// Given a 200 response, look for the token in the response body:
+	// {"data": {..., "token": "[session token]", ...}}
 	type loginData struct {
 		Token string `json:"token"`
 	}
