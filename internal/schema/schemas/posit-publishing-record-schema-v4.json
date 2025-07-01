@@ -1,0 +1,239 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cdn.posit.co/publisher/schemas/posit-publishing-record-schema-v4.json",
+  "type": "object",
+  "additionalProperties": false,
+  "description": "Posit Publishing Record",
+  "required": ["$schema", "server_url"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "format": "url",
+      "description": "URL of the json-schema definition for this file. Must be 'https://cdn.posit.co/publisher/schemas/posit-publishing-record-schema-v4.json'.",
+      "enum": [
+        "https://cdn.posit.co/publisher/schemas/posit-publishing-record-schema-v4.json"
+      ],
+      "examples": [
+        "https://cdn.posit.co/publisher/schemas/posit-publishing-record-schema-v4.json"
+      ]
+    },
+    "server_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "URL of the server where this content was deployed.",
+      "examples": ["https://connect.example.com"]
+    },
+    "server_type": {
+      "type": "string",
+      "description": "Type of server",
+      "enum": ["connect", "snowflake", "connect_cloud"],
+      "examples": ["connect"]
+    },
+    "id": {
+      "type": "string",
+      "description": "Unique ID of this deployment.",
+      "examples": ["de2e7bdb-b085-401e-a65c-443e40009749"]
+    },
+    "client_version": {
+      "type": "string",
+      "description": "Version of the publisher that deployed the content."
+    },
+    "type": {
+      "type": "string",
+      "description": "Indicates the type of content. Valid values are: html, jupyter-notebook, jupyter-voila, python-bokeh, python-dash, python-fastapi, python-flask, python-gradio, python-shiny, python-streamlit, quarto-shiny, quarto-static, r-plumber, r-shiny, rmd-shiny, rmd",
+      "enum": [
+        "",
+        "html",
+        "jupyter-notebook",
+        "jupyter-voila",
+        "python-bokeh",
+        "python-dash",
+        "python-fastapi",
+        "python-flask",
+        "python-gradio",
+        "python-shiny",
+        "python-streamlit",
+        "quarto-shiny",
+        "quarto",
+        "quarto-static",
+        "r-plumber",
+        "r-shiny",
+        "rmd-shiny",
+        "rmd",
+        "unknown"
+      ],
+      "examples": ["quarto-static"]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date and time the deployment was created.",
+      "examples": ["2024-01-19T09:33:33.131481-05:00"]
+    },
+    "dismissed_at": {
+      "description": "Date and time that the deployment process was dismissed. Will be empty if the deployment process was not dismissed.",
+      "examples": ["2024-01-19T09:33:33.131481-05:00"],
+      "anyOf": [
+        {
+          "type": "string",
+          "maxLength": 0
+        },
+        {
+          "type": "string",
+          "format": "date-time"
+        }
+      ]
+    },
+    "deployed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date and time of the last deployment to the server.",
+      "examples": ["2024-01-19T09:33:33.131481-05:00"]
+    },
+    "configuration_name": {
+      "type": "string",
+      "description": "Name of the configuration that was used during deployment.",
+      "examples": ["production"]
+    },
+    "bundle_id": {
+      "type": "string",
+      "description": "ID of the uploaded file bundle.",
+      "examples": ["123"]
+    },
+    "bundle_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "URL to download the bundle for this deployment.",
+      "examples": [
+        "https://connect.example.com/__api__/v1/content/de2e7bdb-b085-401e-a65c-443e40009749/bundles/123/download"
+      ]
+    },
+    "dashboard_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "URL of this deployment in the Connect dashboard.",
+      "examples": [
+        "https://connect.example.com/connect/#/apps/de2e7bdb-b085-401e-a65c-443e40009749/"
+      ]
+    },
+    "direct_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "Direct URL for this deployment. This is the link to use when accessing a deployed API.",
+      "examples": [
+        "https://connect.example.com/content/de2e7bdb-b085-401e-a65c-443e40009749/"
+      ]
+    },
+    "logs_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "URL to the logs for this deployment in the Connect dashboard.",
+      "examples": [
+        "https://connect.example.com/connect/#/apps/de2e7bdb-b085-401e-a65c-443e40009749/logs"
+      ]
+    },
+    "deployment_error": {
+      "type": "object",
+      "description": "Error from the deployment operation. Will be omitted if no error occurred.",
+      "properties": {
+        "message": {
+          "type": "string",
+          "description": "Error message"
+        },
+        "code": {
+          "type": "string",
+          "description": "Error code"
+        },
+        "operation": {
+          "type": "string",
+          "description": "Operation that failed"
+        },
+        "data": {
+          "type": "object",
+          "description": "Additional error-specific data",
+          "additionalProperties": true
+        }
+      }
+    },
+    "configuration": {
+      "$ref": "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v4.json"
+    },
+    "requirements": {
+      "type": "array",
+      "items": {
+        "type": ["string"]
+      },
+      "description": "List of package requirements deployed with the content.",
+      "examples": ["numpy==1.23.4", "click=8.0.0"]
+    },
+    "renv": {
+      "type": "object",
+      "description": "Contents of renv.lock deployed with the content.",
+      "additionalProperties": false,
+      "properties": {
+        "r": {
+          "type": "object",
+          "properties": {
+            "version": {
+              "type": "string",
+              "description": "R version"
+            },
+            "repositories": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Name of the repository"
+                  },
+                  "url": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "URL of the repository"
+                  }
+                }
+              },
+              "description": "List of R repositories"
+            }
+          }
+        },
+        "packages": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "package": {
+                "type": "string",
+                "description": "Name of the R package"
+              },
+              "version": {
+                "type": "string",
+                "description": "Version of the R package"
+              },
+              "source": {
+                "type": "string",
+                "description": "Source of the R package"
+              },
+              "repository": {
+                "type": "string",
+                "description": "Repository where the R package originated"
+              }
+            }
+          },
+          "description": "Detailed list of R packages"
+        }
+      }
+    },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": ["string"]
+      },
+      "description": "Project-relative paths of the files that were included in the deployment.",
+      "examples": ["app.py", "model/weights.csv"]
+    }
+  }
+}

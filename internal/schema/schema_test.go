@@ -2,6 +2,8 @@ package schema
 
 // Copyright (C) 2023 by Posit Software, PBC.
 import (
+	"github.com/santhosh-tekuri/jsonschema/v5"
+	"io"
 	"testing"
 
 	"github.com/posit-dev/publisher/internal/types"
@@ -41,6 +43,23 @@ func (s *SchemaSuite) TestValidateDeployment() {
 	s.NoError(err)
 	path := s.cwd.Join("schemas", "record.toml")
 	err = validator.ValidateTOMLFile(path)
+	s.NoError(err)
+}
+
+func (s *SchemaSuite) TestValidateTest() {
+	jsonschema.Loaders = map[string]func(url string) (io.ReadCloser, error){
+		"https": loadSchema,
+	}
+	schema := jsonschema.MustCompile("https://cdn.posit.co/publisher/schemas/test.json")
+
+	data := map[string]interface{}{
+		"bar": map[string]interface{}{
+			"baz":  "yay",
+			"qux":  "yay",
+			"asdf": true,
+		},
+	}
+	err := schema.Validate(data)
 	s.NoError(err)
 }
 

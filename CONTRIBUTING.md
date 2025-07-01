@@ -143,7 +143,7 @@ Non-breaking or additive changes to the schema do not require a version bump. Br
 
 To update the schema:
 
-- Update the jsonschema file (`posit-publishing-schema-v3.json` or `posit-publishing-record-schema-v3.json` for the Configuration or Deployment schemas, respectively)
+- Update the jsonschema file (`posit-publishing-schema-v4.json` or `posit-publishing-record-schema-v4.json` for the Configuration or Deployment schemas, respectively)
 - Update the corresponding example file (`config.toml` or `record.toml`).
 - If you're using VSCode with the Even Better TOML extension, you can use the in-editor validation by putting the full local path to your updated schema in the `$schema` field in your TOML files.
 - Verify that the unit tests pass. They load the example files and validate them against the schemas.
@@ -160,8 +160,8 @@ schema) the file on the CDN (in S3). Currently, this is a manual process:
 - Select your local `schemas` folder (`internal/schema/schemas`).
 - Click the `Upload` button to complete the upload.
 - Verify availability of the updated schema(s) on the CDN. There may be a delay due to caching.
-  - https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json
-  - https://cdn.posit.co/publisher/schemas/posit-publishing-record-schema-v3.json
+  - https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v4.json
+  - https://cdn.posit.co/publisher/schemas/posit-publishing-record-schema-v4.json
 
 #### Force Even Better TOML to update
 

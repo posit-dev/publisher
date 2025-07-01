@@ -30,6 +30,7 @@ func NewValidator[T any](schemaURL string) (*Validator[T], error) {
 		"https": loadSchema,
 	}
 	schema, err := jsonschema.Compile(schemaURL)
+
 	if err != nil {
 		return nil, err
 	}
