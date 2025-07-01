@@ -35,6 +35,10 @@ func PostConnectCloudDeviceAuthHandlerFunc(log logging.Logger) http.HandlerFunc 
 			Scope:    "vivid",
 		}
 		deviceAuthResult, err := client.CreateDeviceAuth(deviceAuthRequest)
+		if err != nil {
+			InternalError(w, req, log, err)
+			return
+		}
 
 		w.Header().Set("content-type", "application/json")
 		json.NewEncoder(w).Encode(deviceAuthResult)

@@ -50,7 +50,7 @@ func (s *PostConnectCloudDeviceAuthSuite) TestPostConnectCloudDeviceAuth() {
 		Interval:                5,
 	}
 	client.On("CreateDeviceAuth", mock.Anything).Return(&deviceAuthResult, nil)
-	cloudAuthClientFactory = func(baseURL string, log logging.Logger, timeoutSeconds time.Duration) cloud_auth.APIClient {
+	cloudAuthClientFactory = func(baseURL string, log logging.Logger, timeout time.Duration) cloud_auth.APIClient {
 		return client
 	}
 
