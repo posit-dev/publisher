@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed the naming of "Shiny for Python" and "Shiny for R" content types.
   (#2664)
 
+### Added
+
+- Improved support for Posit Connect deployments hosted in Snowpark Container
+  Services. (#2687, #2691)
+
 ## [1.16.1]
 
 ### Fixed

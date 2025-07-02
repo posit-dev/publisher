@@ -23,7 +23,16 @@ func TestConnectionSuite(t *testing.T) {
 }
 
 func (s *ConnectionSuite) SetupTest() {
-	s.envVarHelper.Setup("SNOWFLAKE_HOME", "XDG_CONFIG_HOME")
+	s.envVarHelper.Setup(
+		"SNOWFLAKE_HOME",
+		"XDG_CONFIG_HOME",
+		"SNOWFLAKE_CONNECTIONS_DEFAULT_ACCOUNT",
+		"SNOWFLAKE_CONNECTIONS_DEFAULT_USER",
+		"SNOWFLAKE_CONNECTIONS_OTHER_ACCOUNT",
+		"SNOWFLAKE_CONNECTIONS_WORKBENCH_TOKEN",
+		"SNOWFLAKE_CONNECTIONS_PATH_PRIVATE_KEY_FILE",
+		"SNOWFLAKE_CONNECTIONS_PATH_PRIVATE_KEY_PATH",
+	)
 }
 
 func (s *ConnectionSuite) TearDownTest() {
@@ -55,6 +64,53 @@ private_key_path = "/tmp/path/rsa_key.p8"
 account = "workbench-acct"
 token = "workbench-token"
 authenticator = "oauth"
+`)
+
+// Config.toml with connections using the [connections.name] format
+var configToml = []byte(`
+[connections.default]
+account = "default-config-acct"
+user = "default-config-user"
+authenticator = "SNOWFLAKE_JWT"
+private_key_file = "/tmp/default/rsa_key.p8"
+
+[connections.other]
+account = "other-config-acct"
+user = "other-config-user"
+authenticator = "SNOWFLAKE_JWT"
+private_key_file = "/tmp/other/rsa_key.p8"
+
+[connections.path]
+account = "path-config-acct"
+user = "path-config-user"
+authenticator = "SNOWFLAKE_JWT"
+private_key_path = "/tmp/path/rsa_key.p8"
+
+[connections.workbench]
+account = "workbench-config-acct"
+token = "workbench-config-token"
+authenticator = "oauth"
+
+[some-other-section]
+irrelevant = "value"
+`)
+
+// Config.toml with connections using the [connections][connections.name] format
+var config2Toml = []byte(`
+[connections]
+[connections.one]
+account = "one-acct"
+user = "one-user"
+authenticator = "SNOWFLAKE_JWT"
+private_key_file = "/tmp/default/rsa_key.p8"
+
+[connections.two]
+account = "two-acct"
+token = "two-token"
+authenticator = "oauth"
+
+[some-other-section]
+irrelevant = "value"
 `)
 
 // this file should never be loaded, as the other will be higher in priority
@@ -232,7 +288,7 @@ func (s *ConnectionSuite) TestListErr() {
 	}
 
 	conns, err := dc.List()
-	s.ErrorContains(err, "unable to find a connections.toml")
+	s.ErrorContains(err, "unable to find a connections.toml or config.toml")
 	s.Nil(conns)
 }
 
@@ -300,6 +356,183 @@ func (s *ConnectionSuite) TestGetErr() {
 	}
 
 	conn, err := dc.Get("any")
-	s.ErrorContains(err, "unable to find a connections.toml")
+	s.ErrorContains(err, "unable to find a connections.toml or config.toml")
 	s.Equal(&Connection{}, conn)
+}
+
+func (s *ConnectionSuite) TestListFromConfigToml() {
+	tmp := os.TempDir()
+	sfhome := filepath.Join(tmp, "snowflake")
+	os.Setenv("SNOWFLAKE_HOME", sfhome)
+	fs := afero.NewMemMapFs()
+	fs.MkdirAll(sfhome, 0755)
+	afero.WriteFile(fs, filepath.Join(sfhome, "config.toml"), configToml, 0600)
+
+	dc := defaultConnections{
+		fs: fs,
+	}
+
+	conns, err := dc.List()
+	s.NoError(err)
+	s.Equal(map[string]*Connection{
+		"default": {
+			Account:        "default-config-acct",
+			User:           "default-config-user",
+			PrivateKeyFile: "/tmp/default/rsa_key.p8",
+			PrivateKeyPath: "",
+			Authenticator:  "SNOWFLAKE_JWT",
+		},
+		"other": {
+			Account:        "other-config-acct",
+			User:           "other-config-user",
+			PrivateKeyFile: "/tmp/other/rsa_key.p8",
+			PrivateKeyPath: "",
+			Authenticator:  "SNOWFLAKE_JWT",
+		},
+		"path": {
+			Account:        "path-config-acct",
+			User:           "path-config-user",
+			PrivateKeyFile: "/tmp/path/rsa_key.p8",
+			PrivateKeyPath: "/tmp/path/rsa_key.p8",
+			Authenticator:  "SNOWFLAKE_JWT",
+		},
+		"workbench": {
+			Account:       "workbench-config-acct",
+			Token:         "workbench-config-token",
+			Authenticator: "oauth",
+		},
+	}, conns)
+}
+
+func (s *ConnectionSuite) TestListFromOtherConfigToml() {
+	tmp := os.TempDir()
+	sfhome := filepath.Join(tmp, "snowflake")
+	os.Setenv("SNOWFLAKE_HOME", sfhome)
+	fs := afero.NewMemMapFs()
+	fs.MkdirAll(sfhome, 0755)
+	afero.WriteFile(fs, filepath.Join(sfhome, "config.toml"), config2Toml, 0600)
+
+	dc := defaultConnections{
+		fs: fs,
+	}
+
+	conns, err := dc.List()
+	s.NoError(err)
+	s.Equal(map[string]*Connection{
+		"one": {
+			Account:        "one-acct",
+			User:           "one-user",
+			PrivateKeyFile: "/tmp/default/rsa_key.p8",
+			PrivateKeyPath: "",
+			Authenticator:  "SNOWFLAKE_JWT",
+		},
+		"two": {
+			Account:       "two-acct",
+			Token:         "two-token",
+			Authenticator: "oauth",
+		},
+	}, conns)
+}
+
+func (s *ConnectionSuite) TestEnvVarOverrides() {
+	tmp := os.TempDir()
+	sfhome := filepath.Join(tmp, "snowflake")
+	os.Setenv("SNOWFLAKE_HOME", sfhome)
+	fs := afero.NewMemMapFs()
+	fs.MkdirAll(sfhome, 0755)
+	afero.WriteFile(fs, filepath.Join(sfhome, "connections.toml"), connectionsToml, 0600)
+
+	// Set environment variables to override connection values
+	os.Setenv("SNOWFLAKE_CONNECTIONS_DEFAULT_ACCOUNT", "env-default-acct")
+	os.Setenv("SNOWFLAKE_CONNECTIONS_DEFAULT_USER", "env-default-user")
+	os.Setenv("SNOWFLAKE_CONNECTIONS_OTHER_ACCOUNT", "env-other-acct")
+	os.Setenv("SNOWFLAKE_CONNECTIONS_WORKBENCH_TOKEN", "env-workbench-token")
+	os.Setenv("SNOWFLAKE_CONNECTIONS_PATH_PRIVATE_KEY_FILE", "/tmp/env-file/rsa_key.p8")
+	os.Setenv("SNOWFLAKE_CONNECTIONS_PATH_PRIVATE_KEY_PATH", "/tmp/env-path/rsa_key.p8")
+
+	dc := defaultConnections{
+		fs: fs,
+	}
+
+	conns, err := dc.List()
+	s.NoError(err)
+
+	// Check that environment variable values override the file values
+	s.Equal(map[string]*Connection{
+		"default": {
+			Account:        "env-default-acct",
+			User:           "env-default-user",
+			PrivateKeyFile: "/tmp/default/rsa_key.p8",
+			PrivateKeyPath: "",
+			Authenticator:  "SNOWFLAKE_JWT",
+		},
+		"other": {
+			Account:        "env-other-acct",
+			User:           "other-user",
+			PrivateKeyFile: "/tmp/other/rsa_key.p8",
+			PrivateKeyPath: "",
+			Authenticator:  "SNOWFLAKE_JWT",
+		},
+		"path": {
+			Account:        "path-acct",
+			User:           "path-user",
+			PrivateKeyFile: "/tmp/env-file/rsa_key.p8",
+			PrivateKeyPath: "/tmp/env-path/rsa_key.p8",
+			Authenticator:  "SNOWFLAKE_JWT",
+		},
+		"workbench": {
+			Account:       "workbench-acct",
+			Token:         "env-workbench-token",
+			Authenticator: "oauth",
+		},
+	}, conns)
+}
+
+func (s *ConnectionSuite) TestConnectionsPriorityOrder() {
+	tmp := os.TempDir()
+	sfhome := filepath.Join(tmp, "snowflake")
+	os.Setenv("SNOWFLAKE_HOME", sfhome)
+	fs := afero.NewMemMapFs()
+	fs.MkdirAll(sfhome, 0755)
+
+	// Create both files in the same directory
+	afero.WriteFile(fs, filepath.Join(sfhome, "connections.toml"), connectionsToml, 0600)
+	afero.WriteFile(fs, filepath.Join(sfhome, "config.toml"), configToml, 0600)
+
+	dc := defaultConnections{
+		fs: fs,
+	}
+
+	conns, err := dc.List()
+	s.NoError(err)
+
+	// We should get connections from connections.toml, not config.toml
+	s.Equal(map[string]*Connection{
+		"default": {
+			Account:        "default-acct",
+			User:           "default-user",
+			PrivateKeyFile: "/tmp/default/rsa_key.p8",
+			PrivateKeyPath: "",
+			Authenticator:  "SNOWFLAKE_JWT",
+		},
+		"other": {
+			Account:        "other-acct",
+			User:           "other-user",
+			PrivateKeyFile: "/tmp/other/rsa_key.p8",
+			PrivateKeyPath: "",
+			Authenticator:  "SNOWFLAKE_JWT",
+		},
+		"path": {
+			Account:        "path-acct",
+			User:           "path-user",
+			PrivateKeyFile: "/tmp/path/rsa_key.p8",
+			PrivateKeyPath: "/tmp/path/rsa_key.p8",
+			Authenticator:  "SNOWFLAKE_JWT",
+		},
+		"workbench": {
+			Account:       "workbench-acct",
+			Token:         "workbench-token",
+			Authenticator: "oauth",
+		},
+	}, conns)
 }
