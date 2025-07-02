@@ -12,14 +12,12 @@ import (
 	"time"
 
 	"github.com/posit-dev/publisher/internal/logging"
-	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
 	"github.com/stretchr/testify/suite"
 )
 
 type PostConnectCloudDeviceAuthSuite struct {
 	utiltest.Suite
-	cwd util.AbsolutePath
 	log logging.Logger
 	h   http.HandlerFunc
 }
@@ -33,12 +31,10 @@ func (s *PostConnectCloudDeviceAuthSuite) SetupSuite() {
 }
 
 func (s *PostConnectCloudDeviceAuthSuite) SetupTest() {
-	s.h = PostConfigSecretsHandlerFunc(s.cwd, s.log)
+	s.h = PostConnectCloudDeviceAuthHandlerFunc(s.log)
 }
 
 func (s *PostConnectCloudDeviceAuthSuite) TestPostConnectCloudDeviceAuth() {
-	log := logging.New()
-
 	client := cloud_auth.NewMockClient()
 	deviceAuthResult := cloud_auth.DeviceAuthResponse{
 		DeviceCode:              "the_device_code",
@@ -62,8 +58,7 @@ func (s *PostConnectCloudDeviceAuthSuite) TestPostConnectCloudDeviceAuth() {
 	s.NoError(err)
 	req.Header.Set("Cloud-Auth-Base-Url", "https://api.login.staging.posit.cloud")
 
-	handler := PostConnectCloudDeviceAuthHandlerFunc(log)
-	handler(rec, req)
+	s.h(rec, req)
 
 	result := rec.Result()
 	s.Equal(http.StatusOK, result.StatusCode)

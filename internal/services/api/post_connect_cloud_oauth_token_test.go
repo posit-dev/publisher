@@ -16,14 +16,12 @@ import (
 	"time"
 
 	"github.com/posit-dev/publisher/internal/logging"
-	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
 	"github.com/stretchr/testify/suite"
 )
 
 type PostConnectCloudOAuthTokenSuite struct {
 	utiltest.Suite
-	cwd util.AbsolutePath
 	log logging.Logger
 	h   http.HandlerFunc
 }
@@ -37,12 +35,10 @@ func (s *PostConnectCloudOAuthTokenSuite) SetupSuite() {
 }
 
 func (s *PostConnectCloudOAuthTokenSuite) SetupTest() {
-	s.h = PostConfigSecretsHandlerFunc(s.cwd, s.log)
+	s.h = PostConnectCloudOAuthTokenHandlerFunc(s.log)
 }
 
 func (s *PostConnectCloudOAuthTokenSuite) TestPostConnectCloudOAuthToken() {
-	log := logging.New()
-
 	client := cloud_auth.NewMockClient()
 	deviceAuthResult := cloud_auth.TokenResponse{
 		AccessToken:  "the_access_token",
@@ -66,8 +62,7 @@ func (s *PostConnectCloudOAuthTokenSuite) TestPostConnectCloudOAuthToken() {
 	s.NoError(err)
 	req.Header.Set("Cloud-Auth-Base-Url", "https://api.login.staging.posit.cloud")
 
-	handler := PostConnectCloudOAuthTokenHandlerFunc(log)
-	handler(rec, req)
+	s.h(rec, req)
 
 	result := rec.Result()
 	s.Equal(http.StatusOK, result.StatusCode)
