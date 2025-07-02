@@ -7,7 +7,7 @@ type DeviceAuthRequest struct {
 	Scope    string `json:"scope"`
 }
 
-type DeviceAuthResult struct {
+type DeviceAuthResponse struct {
 	DeviceCode              string `json:"device_code"`
 	UserCode                string `json:"user_code"`
 	VerificationURI         string `json:"verification_uri"`

@@ -33,7 +33,7 @@ func (s *CloudAuthClientSuite) TestNewCloudAuthClient() {
 
 func (s *CloudAuthClientSuite) TestCreateDeviceAuth() {
 	httpClient := &http_client.MockHTTPClient{}
-	expectedResult := &DeviceAuthResult{
+	expectedResult := &DeviceAuthResponse{
 		DeviceCode:              "device_code",
 		UserCode:                "user_code",
 		VerificationURI:         "https://example.com/verify",
@@ -44,7 +44,7 @@ func (s *CloudAuthClientSuite) TestCreateDeviceAuth() {
 
 	httpClient.On("PostForm", "/device_authorization", mock.Anything, mock.Anything, mock.Anything).
 		Return(nil).RunFn = func(args mock.Arguments) {
-		result := args.Get(2).(*DeviceAuthResult)
+		result := args.Get(2).(*DeviceAuthResponse)
 		result.DeviceCode = expectedResult.DeviceCode
 		result.UserCode = expectedResult.UserCode
 		result.VerificationURI = expectedResult.VerificationURI
@@ -62,6 +62,40 @@ func (s *CloudAuthClientSuite) TestCreateDeviceAuth() {
 		log:    logging.New(),
 	}
 	result, err := client.CreateDeviceAuth(request)
+	s.NoError(err)
+	s.Equal(expectedResult, result)
+}
+
+func (s *CloudAuthClientSuite) TestExchangeToken() {
+	httpClient := &http_client.MockHTTPClient{}
+	expectedResult := &TokenResponse{
+		AccessToken:  "access_token",
+		RefreshToken: "refresh_token",
+		ExpiresIn:    3600,
+		TokenType:    "Bearer",
+		Scope:        "vivid",
+	}
+
+	httpClient.On("PostForm", "/oauth/token", mock.Anything, mock.Anything, mock.Anything).
+		Return(nil).RunFn = func(args mock.Arguments) {
+		result := args.Get(2).(*TokenResponse)
+		result.AccessToken = expectedResult.AccessToken
+		result.RefreshToken = expectedResult.RefreshToken
+		result.ExpiresIn = expectedResult.ExpiresIn
+		result.TokenType = expectedResult.TokenType
+		result.Scope = expectedResult.Scope
+	}
+
+	request := TokenRequest{
+		GrantType:  "grant_type",
+		DeviceCode: "device_code",
+		ClientID:   "client_id",
+	}
+	client := &CloudAuthClient{
+		client: httpClient,
+		log:    logging.New(),
+	}
+	result, err := client.ExchangeToken(request)
 	s.NoError(err)
 	s.Equal(expectedResult, result)
 }

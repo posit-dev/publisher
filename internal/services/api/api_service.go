@@ -193,6 +193,10 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	r.Handle(ToPath("connect-cloud", "device-auth"), PostConnectCloudDeviceAuthHandlerFunc(log)).
 		Methods(http.MethodPost)
 
+	// POST /api/connect-cloud/oauth/token
+	r.Handle(ToPath("connect-cloud", "oauth", "token"), PostConnectCloudOAuthTokenHandlerFunc(log)).
+		Methods(http.MethodPost)
+
 	c := cors.AllowAll().Handler(r)
 	return c.ServeHTTP
 }

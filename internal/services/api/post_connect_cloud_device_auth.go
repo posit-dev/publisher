@@ -13,15 +13,24 @@ import (
 
 var cloudAuthClientFactory = cloud_auth.NewCloudAuthClient
 
-type ConnectCloudDeviceAuthRequestBody struct {
+const cloudAuthClientID = "posit_publisher"
+
+type connectCloudDeviceAuthRequestBody struct {
 	BaseURL string `json:"baseURL"`
+}
+
+type connectCloudDeviceAuthResponseBody struct {
+	DeviceCode              string `json:"deviceCode"`
+	UserCode                string `json:"userCode"`
+	VerificationURIComplete string `json:"verificationURIComplete"`
+	Interval                int    `json:"interval"`
 }
 
 func PostConnectCloudDeviceAuthHandlerFunc(log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		dec := json.NewDecoder(req.Body)
 		dec.DisallowUnknownFields()
-		var b ConnectCloudDeviceAuthRequestBody
+		var b connectCloudDeviceAuthRequestBody
 		err := dec.Decode(&b)
 		if err != nil {
 			BadRequest(w, req, log, err)
@@ -31,7 +40,7 @@ func PostConnectCloudDeviceAuthHandlerFunc(log logging.Logger) http.HandlerFunc 
 		client := cloudAuthClientFactory(b.BaseURL, log, 10*time.Second)
 
 		deviceAuthRequest := cloud_auth.DeviceAuthRequest{
-			ClientID: "posit_publisher",
+			ClientID: cloudAuthClientID,
 			Scope:    "vivid",
 		}
 		deviceAuthResult, err := client.CreateDeviceAuth(deviceAuthRequest)
@@ -40,7 +49,13 @@ func PostConnectCloudDeviceAuthHandlerFunc(log logging.Logger) http.HandlerFunc 
 			return
 		}
 
+		responseBody := connectCloudDeviceAuthResponseBody{
+			DeviceCode:              deviceAuthResult.DeviceCode,
+			UserCode:                deviceAuthResult.UserCode,
+			VerificationURIComplete: deviceAuthResult.VerificationURIComplete,
+			Interval:                deviceAuthResult.Interval,
+		}
 		w.Header().Set("content-type", "application/json")
-		json.NewEncoder(w).Encode(deviceAuthResult)
+		json.NewEncoder(w).Encode(responseBody)
 	}
 }

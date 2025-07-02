@@ -27,13 +27,27 @@ func NewCloudAuthClient(
 	}
 }
 
-func (c CloudAuthClient) CreateDeviceAuth(request DeviceAuthRequest) (*DeviceAuthResult, error) {
+func (c CloudAuthClient) CreateDeviceAuth(request DeviceAuthRequest) (*DeviceAuthResponse, error) {
 	body := url.Values{
 		"client_id": {request.ClientID},
 		"scope":     {request.Scope},
 	}
-	into := DeviceAuthResult{}
+	into := DeviceAuthResponse{}
 	err := c.client.PostForm("/device_authorization", body, &into, c.log)
+	if err != nil {
+		return nil, err
+	}
+	return &into, nil
+}
+
+func (c CloudAuthClient) ExchangeToken(request TokenRequest) (*TokenResponse, error) {
+	body := url.Values{
+		"grant_type":  {request.GrantType},
+		"device_code": {request.DeviceCode},
+		"client_id":   {request.ClientID},
+	}
+	into := TokenResponse{}
+	err := c.client.PostForm("/oauth/token", body, &into, c.log)
 	if err != nil {
 		return nil, err
 	}

@@ -41,7 +41,7 @@ func (s *PostConnectCloudDeviceAuthSuite) TestPostConnectCloudDeviceAuth() {
 	log := logging.New()
 
 	client := cloud_auth.NewMockClient()
-	deviceAuthResult := cloud_auth.DeviceAuthResult{
+	deviceAuthResult := cloud_auth.DeviceAuthResponse{
 		DeviceCode:              "the_device_code",
 		UserCode:                "the_user_code",
 		VerificationURI:         "the_verification_uri",
