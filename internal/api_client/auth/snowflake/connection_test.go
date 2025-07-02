@@ -13,20 +13,20 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type SnowflakeSuite struct {
+type ConnectionSuite struct {
 	utiltest.Suite
 	envVarHelper utiltest.EnvVarHelper
 }
 
-func TestSnowflakeSuite(t *testing.T) {
-	suite.Run(t, new(SnowflakeSuite))
+func TestConnectionSuite(t *testing.T) {
+	suite.Run(t, new(ConnectionSuite))
 }
 
-func (s *SnowflakeSuite) SetupTest() {
+func (s *ConnectionSuite) SetupTest() {
 	s.envVarHelper.Setup("SNOWFLAKE_HOME", "XDG_CONFIG_HOME")
 }
 
-func (s *SnowflakeSuite) TearDownTest() {
+func (s *ConnectionSuite) TearDownTest() {
 	runtimeGOOS = runtime.GOOS
 
 	s.envVarHelper.Teardown()
@@ -50,6 +50,11 @@ account = "path-acct"
 user = "path-user"
 authenticator = "SNOWFLAKE_JWT"
 private_key_path = "/tmp/path/rsa_key.p8"
+
+[workbench]
+account = "workbench-acct"
+token = "workbench-token"
+authenticator = "oauth"
 `)
 
 // this file should never be loaded, as the other will be higher in priority
@@ -58,7 +63,7 @@ var otherToml = []byte(`
 account = "notloaded-acct"
 `)
 
-func (s *SnowflakeSuite) TestList() {
+func (s *ConnectionSuite) TestList() {
 	// tmp is a convenient root that will reflect the naming conventions of
 	// whatever OS we are running on
 	tmp := os.TempDir()
@@ -193,24 +198,32 @@ func (s *SnowflakeSuite) TestList() {
 				User:           "default-user",
 				PrivateKeyFile: "/tmp/default/rsa_key.p8",
 				PrivateKeyPath: "",
+				Authenticator:  "SNOWFLAKE_JWT",
 			},
 			"other": {
 				Account:        "other-acct",
 				User:           "other-user",
 				PrivateKeyFile: "/tmp/other/rsa_key.p8",
 				PrivateKeyPath: "",
+				Authenticator:  "SNOWFLAKE_JWT",
 			},
 			"path": {
 				Account:        "path-acct",
 				User:           "path-user",
 				PrivateKeyFile: "/tmp/path/rsa_key.p8",
 				PrivateKeyPath: "/tmp/path/rsa_key.p8",
+				Authenticator:  "SNOWFLAKE_JWT",
+			},
+			"workbench": {
+				Account:       "workbench-acct",
+				Token:         "workbench-token",
+				Authenticator: "oauth",
 			},
 		}, conns, name)
 	}
 }
 
-func (s *SnowflakeSuite) TestListErr() {
+func (s *ConnectionSuite) TestListErr() {
 	// fs containing no connections.toml
 	fs := afero.NewMemMapFs()
 
@@ -223,7 +236,7 @@ func (s *SnowflakeSuite) TestListErr() {
 	s.Nil(conns)
 }
 
-func (s *SnowflakeSuite) TestGet() {
+func (s *ConnectionSuite) TestGet() {
 	tmp := os.TempDir()
 	sfhome := filepath.Join(tmp, "snowflake")
 	os.Setenv("SNOWFLAKE_HOME", sfhome)
@@ -242,6 +255,7 @@ func (s *SnowflakeSuite) TestGet() {
 		User:           "default-user",
 		PrivateKeyFile: "/tmp/default/rsa_key.p8",
 		PrivateKeyPath: "",
+		Authenticator:  "SNOWFLAKE_JWT",
 	}, conn)
 
 	conn, err = dc.Get("other")
@@ -251,6 +265,7 @@ func (s *SnowflakeSuite) TestGet() {
 		User:           "other-user",
 		PrivateKeyFile: "/tmp/other/rsa_key.p8",
 		PrivateKeyPath: "",
+		Authenticator:  "SNOWFLAKE_JWT",
 	}, conn)
 
 	conn, err = dc.Get("path")
@@ -260,6 +275,15 @@ func (s *SnowflakeSuite) TestGet() {
 		User:           "path-user",
 		PrivateKeyFile: "/tmp/path/rsa_key.p8",
 		PrivateKeyPath: "/tmp/path/rsa_key.p8",
+		Authenticator:  "SNOWFLAKE_JWT",
+	}, conn)
+
+	conn, err = dc.Get("workbench")
+	s.NoError(err)
+	s.Equal(&Connection{
+		Account:       "workbench-acct",
+		Token:         "workbench-token",
+		Authenticator: "oauth",
 	}, conn)
 
 	conn, err = dc.Get("notloaded")
@@ -267,7 +291,7 @@ func (s *SnowflakeSuite) TestGet() {
 	s.Equal(&Connection{}, conn)
 }
 
-func (s *SnowflakeSuite) TestGetErr() {
+func (s *ConnectionSuite) TestGetErr() {
 	// fs containing no connections.toml
 	fs := afero.NewMemMapFs()
 
