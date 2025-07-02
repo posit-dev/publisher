@@ -18,7 +18,7 @@ var _ APIClient = &MockClient{}
 
 func (m *MockClient) CreateDeviceAuth(request DeviceAuthRequest) (*DeviceAuthResponse, error) {
 	args := m.Called(request)
-	return args.Get(2).(*DeviceAuthResponse), args.Error(1)
+	return args.Get(0).(*DeviceAuthResponse), args.Error(1)
 }
 
 func (m *MockClient) ExchangeToken(request TokenRequest) (*TokenResponse, error) {

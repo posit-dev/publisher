@@ -1,6 +1,6 @@
 package api
 
-// Copyright (C) 2024 by Posit Software, PBC.
+// Copyright (C) 2025 by Posit Software, PBC.
 
 import (
 	"github.com/posit-dev/publisher/internal/clients/cloud_auth"
@@ -69,10 +69,9 @@ func (s *PostConnectCloudDeviceAuthSuite) TestPostConnectCloudDeviceAuth() {
 	result := rec.Result()
 	s.Equal(http.StatusOK, result.StatusCode)
 	respBody, _ := io.ReadAll(rec.Body)
-	s.Equal("{\"device_code\":\"the_device_code\","+
-		"\"user_code\":\"the_user_code\","+
-		"\"verification_uri\":\"the_verification_uri\","+
-		"\"verification_uri_complete\":\"the_verification_uri_complete\","+
-		"\"expires_in\":1800,"+
-		"\"interval\":5}\n", string(respBody))
+	s.Equal("{\"deviceCode\":\"the_device_code\","+
+		"\"userCode\":\"the_user_code\","+
+		"\"verificationURIComplete\":\"the_verification_uri_complete\","+
+		"\"interval\":5}\n",
+		string(respBody))
 }
