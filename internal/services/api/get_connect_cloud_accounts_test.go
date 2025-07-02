@@ -3,6 +3,7 @@ package api
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import (
+	"encoding/json"
 	"github.com/posit-dev/publisher/internal/clients/connect_cloud"
 	"github.com/posit-dev/publisher/internal/clients/http_client"
 	"github.com/posit-dev/publisher/internal/events"
@@ -10,6 +11,8 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -81,28 +84,40 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts() {
 
 	result := rec.Result()
 	s.Equal(http.StatusOK, result.StatusCode)
+	
 	respBody, _ := io.ReadAll(rec.Body)
+	respMap := map[string]interface{}{}
+	err = json.Unmarshal(respBody, &respMap)
+	s.NoError(err)
+
+	// sort accounts by ID to ensure consistent order for testing
+	accounts := respMap["accounts"].(interface{})
+	slices.SortFunc(accounts.([]interface{}), func(a, b interface{}) int {
+		return strings.Compare(
+			a.(map[string]interface{})["name"].(string),
+			b.(map[string]interface{})["name"].(string))
+	})
 	// The expected response should include all accounts, with PermissionToPublish
 	// set to true for owner and publisher roles, false otherwise
-	s.JSONEq(`{
-		"accounts": [
-			{
-				"id": "account1",
-				"name": "Account 1",
-				"permissionToPublish": true
+	s.Equal(map[string]interface{}{
+		"accounts": []interface{}{
+			map[string]interface{}{
+				"id":                  "account1",
+				"name":                "Account 1",
+				"permissionToPublish": true,
 			},
-			{
-				"id": "account2",
-				"name": "Account 2",
-				"permissionToPublish": true
+			map[string]interface{}{
+				"id":                  "account2",
+				"name":                "Account 2",
+				"permissionToPublish": true,
 			},
-			{
-				"id": "account3",
-				"name": "Account 3",
-				"permissionToPublish": false
-			}
-		]
-	}`, string(respBody))
+			map[string]interface{}{
+				"id":                  "account3",
+				"name":                "Account 3",
+				"permissionToPublish": false,
+			},
+		},
+	}, respMap)
 }
 
 func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts_MissingBaseURL() {
