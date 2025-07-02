@@ -1,5 +1,7 @@
 package auth
 
+// Copyright (C) 2025 by Posit Software, PBC.
+
 import (
 	"net/http"
 )
