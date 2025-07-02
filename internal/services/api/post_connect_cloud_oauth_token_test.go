@@ -73,33 +73,33 @@ func (s *PostConnectCloudOAuthTokenSuite) TestPostConnectCloudOAuthToken() {
 
 func (s *PostConnectCloudOAuthTokenSuite) TestPostConnectCloudOAuthToken_BadRequestMappedError() {
 	tests := []struct {
-		name           string
-		errorCode      string
+		name            string
+		errorCode       string
 		expectedAPICode string
 	}{
 		{
-			name:           "authorization_pending error",
-			errorCode:      "authorization_pending",
+			name:            "authorization_pending error",
+			errorCode:       "authorization_pending",
 			expectedAPICode: "deviceAuthPending",
 		},
 		{
-			name:           "slow_down error",
-			errorCode:      "slow_down",
+			name:            "slow_down error",
+			errorCode:       "slow_down",
 			expectedAPICode: "deviceAuthSlowDown",
 		},
 		{
-			name:           "access_denied error",
-			errorCode:      "access_denied",
+			name:            "access_denied error",
+			errorCode:       "access_denied",
 			expectedAPICode: "deviceAuthAccessDenied",
 		},
 		{
-			name:           "expired_token error",
-			errorCode:      "expired_token",
+			name:            "expired_token error",
+			errorCode:       "expired_token",
 			expectedAPICode: "deviceAuthExpiredToken",
 		},
 		{
-			name:           "unknown error",
-			errorCode:      "blah",
+			name:            "unknown error",
+			errorCode:       "blah",
 			expectedAPICode: "unknown",
 		},
 	}
@@ -138,7 +138,6 @@ func (s *PostConnectCloudOAuthTokenSuite) TestPostConnectCloudOAuthToken_BadRequ
 		})
 	}
 }
-
 
 func (s *PostConnectCloudOAuthTokenSuite) TestPostConnectCloudOAuthToken_MissingBaseURL() {
 	rec := httptest.NewRecorder()
