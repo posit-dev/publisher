@@ -8,7 +8,6 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 	"time"
 
@@ -55,13 +54,13 @@ func (s *PostConnectCloudDeviceAuthSuite) TestPostConnectCloudDeviceAuth() {
 	}
 
 	rec := httptest.NewRecorder()
-	body := strings.NewReader(`{"baseURL": "https://api.login.staging.posit.cloud"}`)
 	req, err := http.NewRequest(
 		"POST",
 		"/connect-cloud/device-auth",
-		body,
+		nil,
 	)
 	s.NoError(err)
+	req.Header.Set("Cloud-Auth-Base-Url", "https://api.login.staging.posit.cloud")
 
 	handler := PostConnectCloudDeviceAuthHandlerFunc(log)
 	handler(rec, req)

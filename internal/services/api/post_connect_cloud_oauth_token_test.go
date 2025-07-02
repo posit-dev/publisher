@@ -57,13 +57,14 @@ func (s *PostConnectCloudOAuthTokenSuite) TestPostConnectCloudOAuthToken() {
 	}
 
 	rec := httptest.NewRecorder()
-	body := strings.NewReader(`{"baseURL": "https://api.login.staging.posit.cloud", "deviceCode": "the_device_code"}`)
+	body := strings.NewReader(`{"deviceCode": "the_device_code"}`)
 	req, err := http.NewRequest(
 		"POST",
 		"/connect-cloud/oauth/token",
 		body,
 	)
 	s.NoError(err)
+	req.Header.Set("Cloud-Auth-Base-Url", "https://api.login.staging.posit.cloud")
 
 	handler := PostConnectCloudOAuthTokenHandlerFunc(log)
 	handler(rec, req)
@@ -88,13 +89,14 @@ func (s *PostConnectCloudOAuthTokenSuite) TestPostConnectCloudOAuthToken_BadRequ
 	}
 
 	rec := httptest.NewRecorder()
-	body := strings.NewReader(`{"baseURL": "https://api.login.staging.posit.cloud", "deviceCode": "the_device_code"}`)
+	body := strings.NewReader(`{"deviceCode": "the_device_code"}`)
 	req, err := http.NewRequest(
 		"POST",
 		"/connect-cloud/oauth/token",
 		body,
 	)
 	s.NoError(err)
+	req.Header.Set("Cloud-Auth-Base-Url", "https://api.login.staging.posit.cloud")
 
 	handler := PostConnectCloudOAuthTokenHandlerFunc(log)
 	handler(rec, req)
@@ -119,13 +121,14 @@ func (s *PostConnectCloudOAuthTokenSuite) TestPostConnectCloudOAuthToken_BadRequ
 	}
 
 	rec := httptest.NewRecorder()
-	body := strings.NewReader(`{"baseURL": "https://api.login.staging.posit.cloud", "deviceCode": "the_device_code"}`)
+	body := strings.NewReader(`{"deviceCode": "the_device_code"}`)
 	req, err := http.NewRequest(
 		"POST",
 		"/connect-cloud/oauth/token",
 		body,
 	)
 	s.NoError(err)
+	req.Header.Set("Cloud-Auth-Base-Url", "https://api.login.staging.posit.cloud")
 
 	handler := PostConnectCloudOAuthTokenHandlerFunc(log)
 	handler(rec, req)

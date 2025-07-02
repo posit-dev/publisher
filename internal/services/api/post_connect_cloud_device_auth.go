@@ -4,6 +4,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/posit-dev/publisher/internal/clients/cloud_auth"
 	"net/http"
 	"time"
@@ -13,11 +14,8 @@ import (
 
 var cloudAuthClientFactory = cloud_auth.NewCloudAuthClient
 
+const cloudAuthBaseURLHeader = "Cloud-Auth-Base-Url"
 const cloudAuthClientID = "posit_publisher"
-
-type connectCloudDeviceAuthRequestBody struct {
-	BaseURL string `json:"baseURL"`
-}
 
 type connectCloudDeviceAuthResponseBody struct {
 	DeviceCode              string `json:"deviceCode"`
@@ -28,16 +26,13 @@ type connectCloudDeviceAuthResponseBody struct {
 
 func PostConnectCloudDeviceAuthHandlerFunc(log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		dec := json.NewDecoder(req.Body)
-		dec.DisallowUnknownFields()
-		var b connectCloudDeviceAuthRequestBody
-		err := dec.Decode(&b)
-		if err != nil {
-			BadRequest(w, req, log, err)
+		baseURL := req.Header.Get(cloudAuthBaseURLHeader)
+		if baseURL == "" {
+			BadRequest(w, req, log, errors.New("Cloud-Auth-Base-Url header is required"))
 			return
 		}
 
-		client := cloudAuthClientFactory(b.BaseURL, log, 10*time.Second)
+		client := cloudAuthClientFactory(baseURL, log, 10*time.Second)
 
 		deviceAuthRequest := cloud_auth.DeviceAuthRequest{
 			ClientID: cloudAuthClientID,
