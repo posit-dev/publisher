@@ -3,6 +3,7 @@ package api
 // Copyright (C) 2024 by Posit Software, PBC.
 
 import (
+	"fmt"
 	"github.com/posit-dev/publisher/internal/clients/cloud_auth"
 	"github.com/posit-dev/publisher/internal/clients/http_client"
 	"github.com/posit-dev/publisher/internal/events"
@@ -71,50 +72,75 @@ func (s *PostConnectCloudOAuthTokenSuite) TestPostConnectCloudOAuthToken() {
 }
 
 func (s *PostConnectCloudOAuthTokenSuite) TestPostConnectCloudOAuthToken_BadRequestMappedError() {
-	log := logging.New()
-
-	client := cloud_auth.NewMockClient()
-	resultErr := types.NewAgentError(
-		events.ServerErrorCode,
-		http_client.NewHTTPError("https://foo.bar", "POST", http.StatusBadRequest),
-		map[string]interface{}{"error": "authorization_pending"})
-	client.On("ExchangeToken", mock.Anything).Return(nil, resultErr)
-	cloudAuthClientFactory = func(baseURL string, log logging.Logger, timeout time.Duration) cloud_auth.APIClient {
-		return client
+	tests := []struct {
+		name           string
+		errorCode      string
+		expectedAPICode string
+	}{
+		{
+			name:           "authorization_pending error",
+			errorCode:      "authorization_pending",
+			expectedAPICode: "deviceAuthPending",
+		},
+		{
+			name:           "slow_down error",
+			errorCode:      "slow_down",
+			expectedAPICode: "deviceAuthSlowDown",
+		},
+		{
+			name:           "access_denied error",
+			errorCode:      "access_denied",
+			expectedAPICode: "deviceAuthAccessDenied",
+		},
+		{
+			name:           "expired_token error",
+			errorCode:      "expired_token",
+			expectedAPICode: "deviceAuthExpiredToken",
+		},
+		{
+			name:           "unknown error",
+			errorCode:      "blah",
+			expectedAPICode: "unknown",
+		},
 	}
 
-	rec := httptest.NewRecorder()
-	body := strings.NewReader(`{"deviceCode": "the_device_code"}`)
-	req, err := http.NewRequest(
-		"POST",
-		"/connect-cloud/oauth/token",
-		body,
-	)
-	s.NoError(err)
-	req.Header.Set("Cloud-Auth-Base-Url", "https://api.login.staging.posit.cloud")
+	for _, tc := range tests {
+		s.Run(tc.name, func() {
+			log := logging.New()
 
-	handler := PostConnectCloudOAuthTokenHandlerFunc(log)
-	handler(rec, req)
+			client := cloud_auth.NewMockClient()
+			resultErr := types.NewAgentError(
+				events.ServerErrorCode,
+				http_client.NewHTTPError("https://foo.bar", "POST", http.StatusBadRequest),
+				map[string]interface{}{"error": tc.errorCode})
+			client.On("ExchangeToken", mock.Anything).Return(nil, resultErr)
+			cloudAuthClientFactory = func(baseURL string, log logging.Logger, timeout time.Duration) cloud_auth.APIClient {
+				return client
+			}
 
-	result := rec.Result()
-	s.Equal(http.StatusBadRequest, result.StatusCode)
-	respBody, _ := io.ReadAll(rec.Body)
-	s.Equal("{\"code\":\"deviceAuthPending\"}\n", string(respBody))
+			rec := httptest.NewRecorder()
+			body := strings.NewReader(`{"deviceCode": "the_device_code"}`)
+			req, err := http.NewRequest(
+				"POST",
+				"/connect-cloud/oauth/token",
+				body,
+			)
+			s.NoError(err)
+			req.Header.Set("Cloud-Auth-Base-Url", "https://api.login.staging.posit.cloud")
+
+			handler := PostConnectCloudOAuthTokenHandlerFunc(log)
+			handler(rec, req)
+
+			result := rec.Result()
+			s.Equal(http.StatusBadRequest, result.StatusCode)
+			respBody, _ := io.ReadAll(rec.Body)
+			s.Equal(fmt.Sprintf("{\"code\":\"%s\"}\n", tc.expectedAPICode), string(respBody))
+		})
+	}
 }
 
-func (s *PostConnectCloudOAuthTokenSuite) TestPostConnectCloudOAuthToken_BadRequestUnknownError() {
-	log := logging.New()
 
-	client := cloud_auth.NewMockClient()
-	resultErr := types.NewAgentError(
-		events.ServerErrorCode,
-		http_client.NewHTTPError("https://foo.bar", "POST", http.StatusBadRequest),
-		map[string]interface{}{"error": "blah"})
-	client.On("ExchangeToken", mock.Anything).Return(nil, resultErr)
-	cloudAuthClientFactory = func(baseURL string, log logging.Logger, timeout time.Duration) cloud_auth.APIClient {
-		return client
-	}
-
+func (s *PostConnectCloudOAuthTokenSuite) TestPostConnectCloudOAuthToken_MissingBaseURL() {
 	rec := httptest.NewRecorder()
 	body := strings.NewReader(`{"deviceCode": "the_device_code"}`)
 	req, err := http.NewRequest(
@@ -123,13 +149,10 @@ func (s *PostConnectCloudOAuthTokenSuite) TestPostConnectCloudOAuthToken_BadRequ
 		body,
 	)
 	s.NoError(err)
-	req.Header.Set("Cloud-Auth-Base-Url", "https://api.login.staging.posit.cloud")
+	// Intentionally not setting Cloud-Auth-Base-Url header
 
-	handler := PostConnectCloudOAuthTokenHandlerFunc(log)
-	handler(rec, req)
+	s.h(rec, req)
 
 	result := rec.Result()
 	s.Equal(http.StatusBadRequest, result.StatusCode)
-	respBody, _ := io.ReadAll(rec.Body)
-	s.Equal("{\"code\":\"unknown\"}\n", string(respBody))
 }
