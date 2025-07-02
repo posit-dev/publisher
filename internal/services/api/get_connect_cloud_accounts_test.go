@@ -84,15 +84,14 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts() {
 
 	result := rec.Result()
 	s.Equal(http.StatusOK, result.StatusCode)
-	
+
 	respBody, _ := io.ReadAll(rec.Body)
 	respMap := map[string]interface{}{}
 	err = json.Unmarshal(respBody, &respMap)
 	s.NoError(err)
 
 	// sort accounts by ID to ensure consistent order for testing
-	accounts := respMap["accounts"].(interface{})
-	slices.SortFunc(accounts.([]interface{}), func(a, b interface{}) int {
+	slices.SortFunc(respMap["accounts"].([]interface{}), func(a, b interface{}) int {
 		return strings.Compare(
 			a.(map[string]interface{})["name"].(string),
 			b.(map[string]interface{})["name"].(string))
