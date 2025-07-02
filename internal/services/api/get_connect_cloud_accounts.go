@@ -5,7 +5,6 @@ package api
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/posit-dev/publisher/internal/clients/connect_cloud"
 	"net/http"
 	"time"
@@ -19,6 +18,8 @@ type connectCloudAccountsBodyAccount struct {
 	PermissionToPublish bool   `json:"permissionToPublish"`
 }
 
+var connectCloudClientFactory = connect_cloud.NewConnectCloudClientWithAuth
+
 const connectCloudBaseURLHeader = "Cloud-Auth-Base-Url"
 
 type connectCloudAccountsBody struct {
@@ -26,9 +27,7 @@ type connectCloudAccountsBody struct {
 }
 
 func GetConnectCloudAccountsFunc(log logging.Logger) http.HandlerFunc {
-	fmt.Println("asdf asdf asdf")
 	return func(w http.ResponseWriter, req *http.Request) {
-		fmt.Println("start!")
 		baseURL := req.Header.Get(connectCloudBaseURLHeader)
 		if baseURL == "" {
 			BadRequest(w, req, log, errors.New("Cloud-Auth-Base-Url header is required"))
@@ -36,16 +35,13 @@ func GetConnectCloudAccountsFunc(log logging.Logger) http.HandlerFunc {
 		}
 		authorization := req.Header.Get("Authorization")
 
-		client := connect_cloud.NewConnectCloudClientWithAuth(baseURL, log, 10*time.Second, authorization)
-		fmt.Println("calling vivid-api")
+		client := connectCloudClientFactory(baseURL, log, 10*time.Second, authorization)
 
 		currentUser, err := client.GetCurrentUser()
 		if err != nil {
-			fmt.Println("whee")
 			InternalError(w, req, log, err)
 			return
 		}
-		fmt.Println("Called vivid-api")
 
 		accounts := make([]connectCloudAccountsBodyAccount, 0, len(currentUser.AccountRoles))
 		for accountID, accountRole := range currentUser.AccountRoles {
@@ -62,6 +58,5 @@ func GetConnectCloudAccountsFunc(log logging.Logger) http.HandlerFunc {
 		}
 		w.Header().Set("content-type", "application/json")
 		json.NewEncoder(w).Encode(apiResponse)
-		fmt.Println("done!")
 	}
 }
