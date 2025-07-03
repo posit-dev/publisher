@@ -270,7 +270,7 @@ func (a *allSettings) checkRuntime(cfg *config.Config) error {
 }
 
 func (a *allSettings) checkAccess(cfg *config.Config) error {
-	if cfg.Connect.Access == nil {
+	if cfg.Connect.SystemAccess == nil {
 		// No access configuration present
 		return nil
 	}
