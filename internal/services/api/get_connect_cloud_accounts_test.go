@@ -77,7 +77,7 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts() {
 		nil,
 	)
 	s.NoError(err)
-	req.Header.Set(connectCloudBaseURLHeader, "https://api.login.staging.posit.cloud")
+	req.Header.Set("Connect-Cloud-Base-Url", "https://api.login.staging.posit.cloud")
 	req.Header.Set("Authorization", "Bearer token123")
 
 	s.h(rec, req)
@@ -127,7 +127,7 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts_MissingBaseUR
 		nil,
 	)
 	s.NoError(err)
-	// Not setting Cloud-Auth-Base-Url header
+	// Not setting Connect-Cloud-Base-Url header
 
 	s.h(rec, req)
 

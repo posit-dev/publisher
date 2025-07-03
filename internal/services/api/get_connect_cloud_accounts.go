@@ -4,7 +4,7 @@ package api
 
 import (
 	"encoding/json"
-	"errors"
+	"fmt"
 	"github.com/posit-dev/publisher/internal/clients/connect_cloud"
 	"net/http"
 	"time"
@@ -20,7 +20,7 @@ type connectCloudAccountsBodyAccount struct {
 
 var connectCloudClientFactory = connect_cloud.NewConnectCloudClientWithAuth
 
-const connectCloudBaseURLHeader = "Cloud-Auth-Base-Url"
+const connectCloudBaseURLHeader = "Connect-Cloud-Base-Url"
 
 type connectCloudAccountsBody struct {
 	Accounts []connectCloudAccountsBodyAccount `json:"accounts"`
@@ -30,7 +30,7 @@ func GetConnectCloudAccountsFunc(log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		baseURL := req.Header.Get(connectCloudBaseURLHeader)
 		if baseURL == "" {
-			BadRequest(w, req, log, errors.New("Cloud-Auth-Base-Url header is required"))
+			BadRequest(w, req, log, fmt.Errorf("%s header is required", connectCloudBaseURLHeader))
 			return
 		}
 		authorization := req.Header.Get("Authorization")
