@@ -15,10 +15,7 @@ import (
 )
 
 type Initialize interface {
-	Init(base util.AbsolutePath, configName string, python util.Path, rExecutable util.Path, log logging.Logger) (*config.Config, error)
-	InitIfNeeded(path util.AbsolutePath, configName string, log logging.Logger) error
 	GetPossibleConfigs(base util.AbsolutePath, python util.Path, rExecutable util.Path, entrypoint util.RelativePath, log logging.Logger) ([]*config.Config, error)
-
 	normalizeConfig(cfg *config.Config, base util.AbsolutePath, python util.Path, rExecutable util.Path, entrypoint util.RelativePath, log logging.Logger) error
 }
 
@@ -249,41 +246,4 @@ func (i *defaultInitialize) GetPossibleConfigs(
 		}
 	}
 	return configs, nil
-}
-
-func (i *defaultInitialize) Init(base util.AbsolutePath, configName string, pythonExecutable util.Path, rExecutable util.Path, log logging.Logger) (*config.Config, error) {
-	if configName == "" {
-		configName = config.DefaultConfigName
-	}
-	cfg, err := i.inspectProject(base, pythonExecutable, rExecutable, log)
-	if err != nil {
-		return nil, err
-	}
-	err = i.normalizeConfig(cfg, base, pythonExecutable, rExecutable, util.RelativePath{}, log)
-	if err != nil {
-		return nil, err
-	}
-	configPath := config.GetConfigPath(base, configName)
-	err = cfg.WriteFile(configPath)
-	if err != nil {
-		return nil, err
-	}
-	return cfg, nil
-}
-
-// InitIfNeeded runs an auto-initialize if the specified config file does not exist.
-func (i *defaultInitialize) InitIfNeeded(path util.AbsolutePath, configName string, log logging.Logger) error {
-	configPath := config.GetConfigPath(path, configName)
-	exists, err := configPath.Exists()
-	if err != nil {
-		return err
-	}
-	if !exists {
-		log.Info("Configuration file does not exist; creating it", "path", configPath.String())
-		_, err = i.Init(path, configName, util.Path{}, util.Path{}, log)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }
