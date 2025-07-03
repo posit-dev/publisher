@@ -145,23 +145,6 @@ shinyApp(ui = ui, server = server)
 	return appPath
 }
 
-func (s *InitializeSuite) createHTML() {
-	appPath := s.cwd.Join("index.html")
-	err := appPath.WriteFile([]byte(`
-		<html></html>
-	`), 0666)
-	s.NoError(err)
-}
-
-func (s *InitializeSuite) createRequirementsFile() {
-	appPath := s.cwd.Join("requirements.txt")
-	err := appPath.WriteFile([]byte(`
-		numpy
-		pandas
-	`), 0666)
-	s.NoError(err)
-}
-
 var emptyPyConfig = &config.Python{}
 
 var expectedPyConfig = &config.Python{
