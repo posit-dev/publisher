@@ -4,7 +4,7 @@ package api
 
 import (
 	"encoding/json"
-	"errors"
+	"fmt"
 	"github.com/posit-dev/publisher/internal/clients/cloud_auth"
 	"net/http"
 	"time"
@@ -28,7 +28,7 @@ func PostConnectCloudDeviceAuthHandlerFunc(log logging.Logger) http.HandlerFunc 
 	return func(w http.ResponseWriter, req *http.Request) {
 		baseURL := req.Header.Get(cloudAuthBaseURLHeader)
 		if baseURL == "" {
-			BadRequest(w, req, log, errors.New("Cloud-Auth-Base-Url header is required"))
+			BadRequest(w, req, log, fmt.Errorf("%s header is required", cloudAuthBaseURLHeader))
 			return
 		}
 
