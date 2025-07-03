@@ -51,8 +51,6 @@ func (e *tomlValidationError) Error() string {
 	return fmt.Sprintf("%s: %s", e.Key, e.Problem)
 }
 
-//func (e *jsonschema.ValidationError)
-
 func toTomlValidationError(e *jsonschema.ValidationError) *tomlValidationError {
 	if len(e.Causes) != 0 {
 		e = e.Causes[0]
@@ -95,7 +93,7 @@ func (v *Validator[T]) ValidateTOMLFile(path util.AbsolutePath) error {
 	// Read the TOML generically to get the anyContent.
 	// Can't use v.object here because Validate
 	// doesn't accept some object types.
-	var anyContent any
+	var anyContent map[string]interface{}
 	err = util.ReadTOMLFile(path, &anyContent)
 	if err != nil {
 		return err
