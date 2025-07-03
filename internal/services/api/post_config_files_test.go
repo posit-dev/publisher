@@ -4,6 +4,7 @@ package api
 
 import (
 	"encoding/json"
+	"github.com/posit-dev/publisher/internal/accounts"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -46,6 +47,7 @@ func (s *PostConfigFilesSuite) TestPostConfigFiles() {
 
 	configName := "myConfig"
 	cfg := config.New()
+	cfg.ServerType = accounts.ServerTypeConnect
 	cfg.Type = config.ContentTypeHTML
 	cfg.Files = []string{"*"}
 	configPath := config.GetConfigPath(s.cwd, configName)
@@ -117,6 +119,7 @@ func (s *PostConfigFilesSuite) TestPostConfigFilesExcludeTwice() {
 
 	configName := "myConfig"
 	cfg := config.New()
+	cfg.ServerType = accounts.ServerTypeConnect
 	cfg.Type = config.ContentTypeHTML
 	cfg.Files = []string{"*"}
 	configPath := config.GetConfigPath(s.cwd, configName)
@@ -162,6 +165,7 @@ func (s *PostConfigFilesSuite) TestPostConfigFilesIncludeTwice() {
 
 	configName := "myConfig"
 	cfg := config.New()
+	cfg.ServerType = accounts.ServerTypeConnect
 	cfg.Type = config.ContentTypeHTML
 	cfg.Files = []string{"*"}
 	configPath := config.GetConfigPath(s.cwd, configName)

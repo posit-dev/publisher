@@ -15,6 +15,7 @@ logs_url = 'https://connect.example.com/connect/#/apps/de2e7bdb-b085-401e-a65c-4
 
 [configuration]
 "$schema" = "https://cdn.posit.co/publisher/schemas/draft/posit-publishing-schema-v4.json"
+server_type = "connect"
 type = "quarto-static"
 entrypoint = "report.qmd"
 title = "Regional Quarterly Sales Report"
@@ -61,7 +62,7 @@ guid = "8b4fde3e-f995-4894-bc02-ae47538262ff"
 name = "Data Science Team"
 permissions = "editor"
 
-[configuration.connect.access]
+[configuration.connect.system_access]
 run_as = "rstudio-connect"
 run_as_current_user = false
 

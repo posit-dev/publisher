@@ -62,11 +62,11 @@ func ConnectContentFromConfig(cfg *config.Config) *ConnectContent {
 		Title:       cfg.Title,
 		Description: cfg.Description,
 	}
-	if cfg.Access != nil {
-		// access types map directly to Connect
-		c.AccessType = string(cfg.Access.Type)
-	}
 	if cfg.Connect != nil {
+		if cfg.Connect.Access != nil {
+			// access types map directly to Connect
+			c.AccessType = string(cfg.Connect.Access.Type)
+		}
 		if cfg.Connect.Runtime != nil {
 			c.ConnectionTimeout = copy(cfg.Connect.Runtime.ConnectionTimeout)
 			c.ReadTimeout = copy(cfg.Connect.Runtime.ReadTimeout)
@@ -78,8 +78,8 @@ func ConnectContentFromConfig(cfg *config.Config) *ConnectContent {
 			c.LoadFactor = copy(cfg.Connect.Runtime.LoadFactor)
 		}
 		if cfg.Connect.Access != nil {
-			c.RunAs = cfg.Connect.Access.RunAs
-			c.RunAsCurrentUser = copy(cfg.Connect.Access.RunAsCurrentUser)
+			c.RunAs = cfg.Connect.SystemAccess.RunAs
+			c.RunAsCurrentUser = copy(cfg.Connect.SystemAccess.RunAsCurrentUser)
 		}
 		if cfg.Connect.Kubernetes != nil {
 			c.MemoryRequest = copy(cfg.Connect.Kubernetes.MemoryRequest)

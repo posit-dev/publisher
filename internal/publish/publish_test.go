@@ -288,6 +288,7 @@ func (s *PublishSuite) publishWithClient(
 	client.On("ValidateDeployment", myContentID, mock.Anything).Return(errsMock.validateErr)
 
 	cfg := config.New()
+	cfg.ServerType = accounts.ServerTypeConnect
 	cfg.Type = config.ContentTypePythonDash
 	cfg.Entrypoint = "app.py"
 	cfg.Environment = map[string]string{

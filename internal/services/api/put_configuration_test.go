@@ -53,7 +53,8 @@ func (s *PutConfigurationSuite) TestPutConfiguration() {
 	req = mux.SetURLVars(req, map[string]string{"name": configName})
 
 	req.Body = io.NopCloser(strings.NewReader(`{
-		"$schema": "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json",
+		"$schema": "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v4.json",
+        "server_type": "connect",
 		"comments": [
 			" This is a configuration file",
 			" Use it to configure your project"
@@ -165,7 +166,8 @@ func (s *PutConfigurationSuite) TestPutConfigurationSubdir() {
 	})
 
 	req.Body = io.NopCloser(strings.NewReader(`{
-		"$schema": "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json",
+		"$schema": "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v4.json",
+        "server_type": "connect",
 		"comments": [
 			" This is a configuration file",
 			" Use it to configure your project"

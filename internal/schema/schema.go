@@ -18,8 +18,8 @@ import (
 var schemaFS embed.FS
 
 const schemaPrefix = "https://cdn.posit.co/publisher/schemas/"
-const ConfigSchemaURL = schemaPrefix + "posit-publishing-schema-v3.json"
-const DeploymentSchemaURL = schemaPrefix + "posit-publishing-record-schema-v3.json"
+const ConfigSchemaURL = schemaPrefix + "posit-publishing-schema-v4.json"
+const DeploymentSchemaURL = schemaPrefix + "posit-publishing-record-schema-v4.json"
 
 type Validator[T any] struct {
 	schema *jsonschema.Schema
@@ -50,6 +50,8 @@ type tomlValidationError struct {
 func (e *tomlValidationError) Error() string {
 	return fmt.Sprintf("%s: %s", e.Key, e.Problem)
 }
+
+//func (e *jsonschema.ValidationError)
 
 func toTomlValidationError(e *jsonschema.ValidationError) *tomlValidationError {
 	if len(e.Causes) != 0 {

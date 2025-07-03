@@ -148,6 +148,7 @@ func (s *RPublishFunctionalSuite) TestPublishWithClientFunctional() {
 	// Config for R Shiny app (instead of Python Dash)
 	cfg := config.New()
 	cfg.Schema = schema.ConfigSchemaURL
+	cfg.ServerType = accounts.ServerTypeConnect
 	cfg.Type = config.ContentTypeRShiny
 	cfg.Entrypoint = "app.R"
 	cfg.Title = "Test R Application"

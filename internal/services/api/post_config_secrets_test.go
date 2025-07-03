@@ -4,6 +4,7 @@ package api
 
 import (
 	"encoding/json"
+	"github.com/posit-dev/publisher/internal/accounts"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -74,6 +75,7 @@ func (s *PostConfigSecretsSuite) SetupTest() {
 
 func (s *PostConfigSecretsSuite) TestPostConfigSecretsAdd() {
 	cfg := config.New()
+	cfg.ServerType = accounts.ServerTypeConnect
 	cfg.Type = config.ContentTypeHTML
 	err := cfg.WriteFile(config.GetConfigPath(s.cwd, "myConfig"))
 	s.NoError(err)
@@ -99,6 +101,7 @@ func (s *PostConfigSecretsSuite) TestPostConfigSecretsAdd() {
 
 func (s *PostConfigSecretsSuite) TestPostConfigSecretsRemove() {
 	cfg := config.New()
+	cfg.ServerType = accounts.ServerTypeConnect
 	cfg.Type = config.ContentTypeHTML
 	cfg.Secrets = []string{"existing_secret", "test_secret"}
 	err := cfg.WriteFile(config.GetConfigPath(s.cwd, "myConfig"))
@@ -136,6 +139,7 @@ func (s *PostConfigSecretsSuite) TestPostConfigSecretsNotFound() {
 
 func (s *PostConfigSecretsSuite) TestPostConfigSecretsInvalidAction() {
 	cfg := config.New()
+	cfg.ServerType = accounts.ServerTypeConnect
 	cfg.Type = config.ContentTypeHTML
 	err := cfg.WriteFile(config.GetConfigPath(s.cwd, "myConfig"))
 	s.NoError(err)

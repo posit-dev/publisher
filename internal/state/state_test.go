@@ -51,7 +51,8 @@ func (s *StateSuite) TestEmpty() {
 func (s *StateSuite) createConfigFile(name string, bad bool) {
 	configFile := config.GetConfigPath(s.cwd, name)
 	configData := []byte(`
-		'$schema' = 'https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json'
+		'$schema' = 'https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v4.json'
+		server_type = 'connect'
 		type = 'python-dash'
 		entrypoint = 'app:app'
 		title = 'Super Title'
@@ -83,7 +84,8 @@ func (s *StateSuite) TestLoadConfig() {
 	min_procs := int32(1)
 
 	s.Equal(&config.Config{
-		Schema:      "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json",
+		Schema:      "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v4.json",
+		ServerType:  "connect",
 		Type:        "python-dash",
 		Entrypoint:  "app:app",
 		Validate:    true,
@@ -122,9 +124,9 @@ func (s *StateSuite) TestLoadConfigErr() {
 func (s *StateSuite) createTargetFile(name string, bad bool) {
 	targetFile := deployment.GetDeploymentPath(s.cwd, name)
 	targetData := []byte(`
-		'$schema' = 'https://cdn.posit.co/publisher/schemas/posit-publishing-record-schema-v3.json'
+		'$schema' = 'https://cdn.posit.co/publisher/schemas/posit-publishing-record-schema-v4.json'
 		server_url = 'https://connect.example.com'
-		server_type = "connect"
+		server_type = 'connect'
 		id = '1234567890ABCDEF'
 		dashboard_url = 'https://connect.example.com/connect/#/apps/1234567890ABCDEF'
 		direct_url = 'https://connect.example.com/content/1234567890ABCDEF/'
@@ -136,7 +138,8 @@ func (s *StateSuite) createTargetFile(name string, bad bool) {
 			'requirements.txt'
 		]
 		[configuration]
-		'$schema' = 'https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json'
+		'$schema' = 'https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v4.json'
+		server_type = 'connect'
 		type = 'python-dash'
 		entrypoint = 'app:app'
 		title = 'Super Title'
@@ -173,9 +176,9 @@ func (s *StateSuite) TestLoadTarget() {
 	d.CreatedAt = ""
 
 	s.Equal(&deployment.Deployment{
-		Schema:     "https://cdn.posit.co/publisher/schemas/posit-publishing-record-schema-v3.json",
+		Schema:     "https://cdn.posit.co/publisher/schemas/posit-publishing-record-schema-v4.json",
 		ServerURL:  "https://connect.example.com",
-		ServerType: "connect",
+		ServerType: accounts.ServerTypeConnect,
 		ConfigName: "myConfig",
 		Type:       config.ContentTypePythonDash,
 		CreatedAt:  "",
@@ -188,7 +191,8 @@ func (s *StateSuite) TestLoadTarget() {
 		DirectURL:    "https://connect.example.com/content/1234567890ABCDEF/",
 		LogsURL:      "https://connect.example.com/connect/#/apps/1234567890ABCDEF/logs",
 		Configuration: &config.Config{
-			Schema:      "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json",
+			Schema:      "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v4.json",
+			ServerType:  accounts.ServerTypeConnect,
 			Type:        "python-dash",
 			Entrypoint:  "app:app",
 			Validate:    true,
@@ -274,6 +278,7 @@ func (s *StateSuite) TestNewLocalID() {
 func (s *StateSuite) makeConfiguration(name string, pythonConfig *config.Python, rConfig *config.R) *config.Config {
 	path := config.GetConfigPath(s.cwd, name)
 	cfg := config.New()
+	cfg.ServerType = accounts.ServerTypeConnect
 	cfg.Type = config.ContentTypeUnknown
 	cfg.Entrypoint = "app.py"
 	cfg.Python = pythonConfig

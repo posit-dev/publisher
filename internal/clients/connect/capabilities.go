@@ -274,7 +274,7 @@ func (a *allSettings) checkAccess(cfg *config.Config) error {
 		// No access configuration present
 		return nil
 	}
-	racu := cfg.Connect.Access.RunAsCurrentUser
+	racu := cfg.Connect.SystemAccess.RunAsCurrentUser
 	if racu != nil && *racu {
 		if !a.general.License.CurrentUserExecution {
 			return errCurrentUserExecutionNotLicensed
@@ -290,7 +290,7 @@ func (a *allSettings) checkAccess(cfg *config.Config) error {
 		}
 	}
 
-	if cfg.Connect.Access.RunAs != "" && !a.user.CanAdmin() {
+	if cfg.Connect.SystemAccess.RunAs != "" && !a.user.CanAdmin() {
 		return adminError("run_as")
 	}
 	return nil

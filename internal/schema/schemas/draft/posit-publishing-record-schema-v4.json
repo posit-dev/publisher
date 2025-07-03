@@ -151,7 +151,7 @@
       }
     },
     "configuration": {
-      "$ref": "https://cdn.posit.co/publisher/schemas/draft/posit-publishing-schema-v4 .json"
+      "$ref": "https://cdn.posit.co/publisher/schemas/draft/posit-publishing-schema-v4.json"
     },
     "requirements": {
       "type": "array",
