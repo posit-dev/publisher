@@ -1,4 +1,4 @@
-// Copyright (C) 2024 by Posit Software, PBC.
+// Copyright (C) 2025 by Posit Software, PBC.
 
 import path from "path";
 import {
@@ -34,6 +34,8 @@ import {
   ContentType,
   FileAction,
   SnowflakeConnection,
+  ServerType,
+  PlatformName,
 } from "src/api";
 import {
   getPythonInterpreterPath,
@@ -56,10 +58,11 @@ import {
   relativePath,
   vscodeOpenFiles,
 } from "src/utils/files";
-import { ENTRYPOINT_FILE_EXTENSIONS, Products } from "src/constants";
+import { ENTRYPOINT_FILE_EXTENSIONS } from "src/constants";
 import { extensionSettings } from "src/extension";
-import { fetchSnowflakeConnections, findExistingCredentialByURL, productList } from "src/multiStepInputs/common";
+import { fetchSnowflakeConnections, findExistingCredentialByURL, platformList } from "src/multiStepInputs/common";
 import { openConfigurationCommand } from "src/commands";
+import { getEnumKeyByEnumValue } from "src/utils/enums";
 
 export async function newDeployment(
   viewId: string,
@@ -78,8 +81,9 @@ export async function newDeployment(
   let inspectionResults: ConfigurationInspectionResult[] = [];
   const contentRecordNames = new Map<string, string[]>();
 
-  // the selectedProduct will get overriden during the pickCredentials steps 
-  let selectedProduct: Products = Products.Connect;
+  // the serverType & platformName will be overwritten during the pickCredentials steps
+  let serverType: ServerType = ServerType.CONNECT;
+  let platformName: PlatformName = PlatformName.CONNECT;
   let connections: SnowflakeConnection[] = [];
   let connectionQuickPicks: QuickPickItemWithIndex[];
 
@@ -290,11 +294,11 @@ export async function newDeployment(
   };
 
   const isConnect = () => {
-    return selectedProduct === Products.Connect;
+    return serverType === ServerType.CONNECT;
   };
 
   const isSnowflake = () => {
-    return selectedProduct === Products.Snowflake;
+    return serverType === ServerType.SNOWFLAKE;
   };
 
   // ***************************************************************
@@ -308,7 +312,7 @@ export async function newDeployment(
   // If no credentials, then skip to create new credential
   // If some credentials, select either use of existing or creation of a new one
   // If creating credential:
-  // - Select the product
+  // - Select the platform
   // - Get the server url
   // - Get the API key for Connect OR get the Snowflake connection name
   // - Get the credential name
@@ -552,38 +556,41 @@ export async function newDeployment(
 
       if (newCredentialSelected()) {
         // the user opted for creating a new credential
-        return (input: MultiStepInput) => inputProduct(input, state);
+        return (input: MultiStepInput) => inputPlatform(input, state);
       }
       // the user selected an existing credential, so no need for any other steps
       return Promise.resolve(undefined);
     }
     // there are no existing credentials, force the user to create a new credential
-    return (input: MultiStepInput) => inputProduct(input, state);
+    return (input: MultiStepInput) => inputPlatform(input, state);
   }
 
   // ***************************************************************
-  // Step: New Credentials - Select the product (used for all products)
+  // Step: New Credentials - Select the platform (used for all platforms)
   // ***************************************************************
-  async function inputProduct(input: MultiStepInput, state: MultiStepState) {
+  async function inputPlatform(input: MultiStepInput, state: MultiStepState) {
     const pick = await input.showQuickPick({
       title: state.title,
       step: 0,
       totalSteps: 0,
       placeholder:
-        "Please select the product for the new credential.",
-      items: productList,
+        "Please select the platform for the new credential.",
+      items: platformList,
       buttons: [],
       shouldResume: () => Promise.resolve(false),
       ignoreFocusOut: true,
     });
 
-    selectedProduct = pick.label as Products;
+    const enumKey = getEnumKeyByEnumValue(PlatformName, pick.label);
+    // fallback to CONNECT if there is ever a case when the enumKey is not found
+    serverType = enumKey ? ServerType[enumKey] : ServerType.CONNECT;
+    platformName = pick.label as PlatformName;
 
     return (input: MultiStepInput) => inputServerUrl(input, state);
   }
 
   // ***************************************************************
-  // Step: New Credentials - Get the server url (used for Connect & Snowflake products)
+  // Step: New Credentials - Get the server url (used for Connect & Snowflake)
   // ***************************************************************
   async function inputServerUrl(input: MultiStepInput, state: MultiStepState) {
     let currentURL = newDeploymentData.newCredentials.url || "";
@@ -605,7 +612,7 @@ export async function newDeployment(
       step: 0,
       totalSteps: 0,
       value: currentURL,
-      prompt: `Please provide the ${selectedProduct} server's URL`,
+      prompt: `Please provide the ${platformName} server's URL`,
       placeholder: "Server URL",
       validate: (input: string) => {
         if (input.includes(" ")) {
@@ -689,12 +696,12 @@ export async function newDeployment(
       return (input: MultiStepInput) => inputSnowflakeConnection(input, state);
     }
 
-    // Should not land here since the product is forcefully picked in the very first step
+    // Should not land here since the platform is forcefully picked in the very first step
     return Promise.resolve(undefined);
   }
 
   // ***************************************************************
-  // Step: New Credentials - Enter the API Key (Connect product only)
+  // Step: New Credentials - Enter the API Key (Connect only)
   // ***************************************************************
   async function inputAPIKey(input: MultiStepInput, state: MultiStepState) {
     const currentAPIKey = newDeploymentData.newCredentials.apiKey || "";
@@ -773,7 +780,7 @@ export async function newDeployment(
   }
 
   // ***************************************************************
-  // Step: New Credentials - Enter the Snowflake connection name (Snowflake product only)
+  // Step: New Credentials - Enter the Snowflake connection name (Snowflake only)
   // ***************************************************************
   async function inputSnowflakeConnection(
     input: MultiStepInput,
@@ -827,7 +834,7 @@ export async function newDeployment(
   }
 
   // ***************************************************************
-  // Step: New Credentials - Name the credential (used for all products)
+  // Step: New Credentials - Name the credential (used for all platforms)
   // ***************************************************************
   async function inputCredentialName(
     input: MultiStepInput,
@@ -841,7 +848,7 @@ export async function newDeployment(
       totalSteps: 0,
       value: currentName,
       prompt: "Enter a unique nickname for this server.",
-      placeholder: `${selectedProduct}`,
+      placeholder: `${platformName}`,
       finalValidation: (input: string) => {
         input = input.trim();
         if (input === "") {

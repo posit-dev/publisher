@@ -1,4 +1,4 @@
-// Copyright (C) 2024 by Posit Software, PBC.
+// Copyright (C) 2025 by Posit Software, PBC.
 
 import {
   MultiStepInput,
@@ -11,7 +11,7 @@ import {
 
 import { InputBoxValidationSeverity, window } from "vscode";
 
-import { useApi, Credential, SnowflakeConnection } from "src/api";
+import { useApi, Credential, SnowflakeConnection, ServerType, PlatformName } from "src/api";
 import {
   getMessageFromError,
   getSummaryStringFromError,
@@ -21,8 +21,8 @@ import { checkSyntaxApiKey } from "src/utils/apiKeys";
 import { showProgress } from "src/utils/progress";
 import { openConfigurationCommand } from "src/commands";
 import { extensionSettings } from "src/extension";
-import { findExistingCredentialByURL, fetchSnowflakeConnections, productList } from "src/multiStepInputs/common";
-import { Products } from "src/constants";
+import { findExistingCredentialByURL, fetchSnowflakeConnections, platformList } from "src/multiStepInputs/common";
+import { getEnumKeyByEnumValue } from "src/utils/enums";
 
 const createNewCredentialLabel = "Create a New Credential";
 
@@ -36,8 +36,9 @@ export async function newCredential(
   const api = await useApi();
   let credentials: Credential[] = [];
 
-  // the selectedProduct will get overriden in the very first step
-  let selectedProduct: Products = Products.Connect;
+  // the serverType & platformName will be overwritten in the very first step
+  let serverType: ServerType = ServerType.CONNECT;
+  let platformName: PlatformName = PlatformName.CONNECT;
   let connections: SnowflakeConnection[] = [];
   let connectionQuickPicks: QuickPickItemWithIndex[];
 
@@ -48,18 +49,18 @@ export async function newCredential(
   };
 
   const isConnect = () => {
-    return selectedProduct === Products.Connect;
+    return serverType === ServerType.CONNECT;
   };
 
   const isSnowflake = () => {
-    return selectedProduct === Products.Snowflake;
+    return serverType === ServerType.SNOWFLAKE;
   };
 
   // ***************************************************************
   // Order of all steps
   // ***************************************************************
 
-  // Select the product
+  // Select the platform
   // Get the server url
   // Get the API key for Connect OR get the Snowflake connection name
   // Get the credential name
@@ -90,35 +91,38 @@ export async function newCredential(
     // No optional steps for this one.
     state.totalSteps = 4;
 
-    await MultiStepInput.run((input) => inputProduct(input, state));
+    await MultiStepInput.run((input) => inputPlatform(input, state));
     return state;
   }
 
   // ***************************************************************
-  // Step: Select the product for the credentials (used for all products)
+  // Step: Select the platform for the credentials (used for all platforms)
   // ***************************************************************
-  async function inputProduct(input: MultiStepInput, state: MultiStepState) {
-    const thisStepNumber = assignStep(state, "inputProduct");
+  async function inputPlatform(input: MultiStepInput, state: MultiStepState) {
+    const thisStepNumber = assignStep(state, "inputPlatform");
     const pick = await input.showQuickPick({
       title: state.title,
       step: thisStepNumber,
       totalSteps: state.totalSteps,
       placeholder:
-        "Please select the product for the new credential.",
-      items: productList,
+        "Please select the platform for the new credential.",
+      items: platformList,
       buttons: [],
       shouldResume: () => Promise.resolve(false),
       ignoreFocusOut: true,
     });
 
-    selectedProduct = pick.label as Products;
+    const enumKey = getEnumKeyByEnumValue(PlatformName, pick.label);
+    // fallback to CONNECT if there is ever a case when the enumKey is not found
+    serverType = enumKey ? ServerType[enumKey] : ServerType.CONNECT;
+    platformName = pick.label as PlatformName;
     state.lastStep = thisStepNumber;
 
     return (input: MultiStepInput) => inputServerUrl(input, state);
   }
 
   // ***************************************************************
-  // Step: Get the server url (used for Connect & Snowflake products)
+  // Step: Get the server url (used for Connect & Snowflake)
   // ***************************************************************
   async function inputServerUrl(input: MultiStepInput, state: MultiStepState) {
     const thisStepNumber = assignStep(state, "inputServerUrl");
@@ -144,7 +148,7 @@ export async function newCredential(
       step: thisStepNumber,
       totalSteps: state.totalSteps,
       value: currentURL,
-      prompt: `Please provide the ${selectedProduct} server's URL`,
+      prompt: `Please provide the ${platformName} server's URL`,
       placeholder: "Server URL",
       validate: (input: string) => {
         if (input.includes(" ")) {
@@ -229,12 +233,12 @@ export async function newCredential(
       return (input: MultiStepInput) => inputSnowflakeConnection(input, state);
     }
 
-    // Should not land here since the product is forcefully picked in the very first step
+    // Should not land here since the platform is forcefully picked in the very first step
     return Promise.resolve(undefined);
   }
 
   // ***************************************************************
-  // Step: Enter the API Key (Connect product only)
+  // Step: Enter the API Key (Connect only)
   // ***************************************************************
   async function inputAPIKey(input: MultiStepInput, state: MultiStepState) {
     const thisStepNumber = assignStep(state, "inputAPIKey");
@@ -319,7 +323,7 @@ export async function newCredential(
   }
 
   // ***************************************************************
-  // Step: Enter the Snowflake connection name (Snowflake product only)
+  // Step: Enter the Snowflake connection name (Snowflake only)
   // ***************************************************************
   async function inputSnowflakeConnection(
     input: MultiStepInput,
@@ -375,7 +379,7 @@ export async function newCredential(
   }
 
   // ***************************************************************
-  // Step: Name the credential (used for all products)
+  // Step: Name the credential (used for all platforms)
   // ***************************************************************
   async function inputCredentialName(
     input: MultiStepInput,
@@ -394,7 +398,7 @@ export async function newCredential(
       totalSteps: state.totalSteps,
       value: currentName,
       prompt: "Enter a unique nickname for this server.",
-      placeholder: `${selectedProduct}`,
+      placeholder: `${platformName}`,
       finalValidation: (input: string) => {
         input = input.trim();
         if (input === "") {

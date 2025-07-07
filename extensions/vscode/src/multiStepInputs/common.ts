@@ -1,7 +1,6 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
-import { useApi, Credential, SnowflakeConnection } from "src/api";
-import { Products } from "src/constants";
+import { useApi, Credential, SnowflakeConnection, PlatformName, PlatformDescription } from "src/api";
 import { getSummaryStringFromError } from "src/utils/errors";
 import { isAxiosErrorWithJson } from "src/utils/errorTypes";
 import { normalizeURL } from "src/utils/url";
@@ -21,17 +20,17 @@ export function findExistingCredentialByURL(
   });
 }
 
-// List of all available products
-export const productList: QuickPickItem[] = [{
+// List of all available platforms
+export const platformList: QuickPickItem[] = [{
   iconPath: new ThemeIcon("posit-publisher-posit-logo"),
-  label: Products.Connect,
+  label: PlatformName.CONNECT,
   description: "",
-  detail: "Distribute data science across your organization"
+  detail: PlatformDescription.CONNECT
 }, {
   iconPath: new ThemeIcon("posit-publisher-snowflake-logo"),
-  label: Products.Snowflake,
+  label: PlatformName.SNOWFLAKE,
   description: "",
-  detail: "Share your work with Snowflake"
+  detail: PlatformDescription.SNOWFLAKE
 }];
 
 // Fetch the list of all available snowflake connections
