@@ -4,6 +4,7 @@ package publish
 import (
 	"bytes"
 	"errors"
+	"github.com/posit-dev/publisher/internal/server_type"
 	"log/slog"
 	"strings"
 	"testing"
@@ -262,7 +263,7 @@ func (s *PublishSuite) publishWithClient(
 	expectedErr error) {
 
 	account := &accounts.Account{
-		ServerType: accounts.ServerTypeConnect,
+		ServerType: server_type.ServerTypeConnect,
 		Name:       "test-account",
 		URL:        "https://connect.example.com",
 	}

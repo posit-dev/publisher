@@ -64,7 +64,7 @@ func (s *PostCredentialTestSuite) Test409() {
 	cs, err := credentials.NewCredentialsService(s.log)
 	s.NoError(err)
 
-	_, err = cs.Set(name, url, ak, sf)
+	_, err = cs.Set(credentials.CreateCredentialDetails{Name: name, URL: url, ApiKey: ak, SnowflakeConnection: sf})
 	s.NoError(err)
 
 	cred := PostCredentialsRequest{

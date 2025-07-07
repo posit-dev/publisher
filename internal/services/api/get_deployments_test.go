@@ -4,13 +4,13 @@ package api
 
 import (
 	"encoding/json"
+	"github.com/posit-dev/publisher/internal/server_type"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"path/filepath"
 	"testing"
 
-	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/logging"
@@ -172,7 +172,7 @@ func createAlternateDeployment(root util.AbsolutePath, name string) (*deployment
 	path := deployment.GetDeploymentPath(root, name)
 	d := deployment.New()
 	d.ID = "87654321"
-	d.ServerType = accounts.ServerTypeConnect
+	d.ServerType = server_type.ServerTypeConnect
 	d.ConfigName = "htmlConfig"
 	cfg := config.New()
 	cfg.Type = config.ContentTypeHTML
@@ -222,7 +222,7 @@ func (s *GetDeploymentsSuite) makeSubdirDeployment(name string, subdir string) (
 	path := deployment.GetDeploymentPath(subdirPath, name)
 	d := deployment.New()
 	d.ID = "abc123"
-	d.ServerType = accounts.ServerTypeConnect
+	d.ServerType = server_type.ServerTypeConnect
 	d.ConfigName = name + "_config"
 	cfg := config.New()
 	cfg.ServerType = accounts.ServerTypeConnect

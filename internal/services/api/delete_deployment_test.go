@@ -4,13 +4,13 @@ package api
 
 import (
 	"fmt"
+	"github.com/posit-dev/publisher/internal/server_type"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"testing"
 
 	"github.com/gorilla/mux"
-	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/logging"
@@ -46,7 +46,7 @@ func createSampleDeployment(root util.AbsolutePath, name string) (*deployment.De
 	path := deployment.GetDeploymentPath(root, name)
 	d := deployment.New()
 	d.ID = "12345678"
-	d.ServerType = accounts.ServerTypeConnect
+	d.ServerType = server_type.ServerTypeConnect
 	d.ConfigName = "myConfig"
 	cfg := config.New()
 	cfg.ServerType = accounts.ServerTypeConnect

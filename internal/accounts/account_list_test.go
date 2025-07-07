@@ -4,6 +4,7 @@ package accounts
 
 import (
 	"errors"
+	"github.com/posit-dev/publisher/internal/server_type"
 	"testing"
 
 	"github.com/posit-dev/publisher/internal/logging"
@@ -111,7 +112,7 @@ func (s *AccountListSuite) TestGetAccountByNameNotFound() {
 func (s *AccountListSuite) TestGetAccountsByServerType() {
 	log := logging.New()
 
-	account := Account{Name: "name", ServerType: ServerTypeConnect}
+	account := Account{Name: "name", ServerType: server_type.ServerTypeConnect}
 	accounts := []Account{account}
 	provider := new(MockAccountProvider)
 	provider.On("Load").Return(accounts, nil)
@@ -123,7 +124,7 @@ func (s *AccountListSuite) TestGetAccountsByServerType() {
 		log:       log,
 	}
 
-	res, err := accountList.GetAccountsByServerType(ServerTypeConnect)
+	res, err := accountList.GetAccountsByServerType(server_type.ServerTypeConnect)
 	s.Nil(err)
 	s.Equal(account, res[0])
 }
@@ -131,7 +132,7 @@ func (s *AccountListSuite) TestGetAccountsByServerType() {
 func (s *AccountListSuite) TestGetAccountsByServerType_Empty() {
 	log := logging.New()
 
-	account := Account{Name: "name", ServerType: ServerTypeConnect}
+	account := Account{Name: "name", ServerType: server_type.ServerTypeConnect}
 	accounts := []Account{account}
 	provider := new(MockAccountProvider)
 	provider.On("Load").Return(accounts, nil)
@@ -143,7 +144,7 @@ func (s *AccountListSuite) TestGetAccountsByServerType_Empty() {
 		log:       log,
 	}
 
-	res, err := accountList.GetAccountsByServerType(ServerTypeCloud)
+	res, err := accountList.GetAccountsByServerType(server_type.ServerTypeConnectCloud)
 	s.Nil(err)
 	s.Empty(res)
 }

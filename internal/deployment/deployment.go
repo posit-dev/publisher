@@ -5,6 +5,7 @@ package deployment
 import (
 	"errors"
 	"fmt"
+	"github.com/posit-dev/publisher/internal/server_type"
 	"io"
 	"io/fs"
 	"strings"
@@ -12,7 +13,6 @@ import (
 	"time"
 
 	"github.com/pelletier/go-toml/v2"
-	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/inspect/dependencies/renv"
 	"github.com/posit-dev/publisher/internal/logging"
@@ -26,18 +26,18 @@ var DeploymentRecordMutex sync.Mutex
 
 type Deployment struct {
 	// Predeployment and full deployment fields
-	Schema        string              `toml:"$schema" mapstructure:"$schema" json:"$schema"`
-	ServerType    accounts.ServerType `toml:"server_type" mapstructure:"server_type" json:"serverType"`
-	ServerURL     string              `toml:"server_url" mapstructure:"server_url" json:"serverUrl"`
-	ClientVersion string              `toml:"client_version" mapstructure:"client_version" json:"-"`
-	CreatedAt     string              `toml:"created_at" mapstructure:"created_at" json:"createdAt"`
-	DismissedAt   string              `toml:"dismissed_at" mapstructure:"dismissed_at" json:"dismissedAt"`
-	Type          config.ContentType  `toml:"type" mapstructure:"type" json:"type"`
-	ConfigName    string              `toml:"configuration_name" mapstructure:"configuration_name" json:"configurationName"`
-	ID            types.ContentID     `toml:"id,omitempty" mapstructure:"id,omitempty" json:"id"`
-	DashboardURL  string              `toml:"dashboard_url,omitempty" mapstructure:"dashboard_url,omitempty" json:"dashboardUrl"`
-	DirectURL     string              `toml:"direct_url,omitempty" mapstructure:"direct_url,omitempty" json:"directUrl"`
-	LogsURL       string              `toml:"logs_url,omitempty" mapstructure:"logs_url,omitempty" json:"logsUrl"`
+	Schema        string                 `toml:"$schema" mapstructure:"$schema" json:"$schema"`
+	ServerType    server_type.ServerType `toml:"server_type" mapstructure:"server_type" json:"serverType"`
+	ServerURL     string                 `toml:"server_url" mapstructure:"server_url" json:"serverUrl"`
+	ClientVersion string                 `toml:"client_version" mapstructure:"client_version" json:"-"`
+	CreatedAt     string                 `toml:"created_at" mapstructure:"created_at" json:"createdAt"`
+	DismissedAt   string                 `toml:"dismissed_at" mapstructure:"dismissed_at" json:"dismissedAt"`
+	Type          config.ContentType     `toml:"type" mapstructure:"type" json:"type"`
+	ConfigName    string                 `toml:"configuration_name" mapstructure:"configuration_name" json:"configurationName"`
+	ID            types.ContentID        `toml:"id,omitempty" mapstructure:"id,omitempty" json:"id"`
+	DashboardURL  string                 `toml:"dashboard_url,omitempty" mapstructure:"dashboard_url,omitempty" json:"dashboardUrl"`
+	DirectURL     string                 `toml:"direct_url,omitempty" mapstructure:"direct_url,omitempty" json:"directUrl"`
+	LogsURL       string                 `toml:"logs_url,omitempty" mapstructure:"logs_url,omitempty" json:"logsUrl"`
 
 	// Full deployment fields
 	DeployedAt    string            `toml:"deployed_at,omitempty" mapstructure:"deployed_at,omitempty" json:"deployedAt"`
@@ -53,7 +53,7 @@ type Deployment struct {
 func New() *Deployment {
 	return &Deployment{
 		Schema:        schema.DeploymentSchemaURL,
-		ServerType:    accounts.ServerTypeConnect,
+		ServerType:    server_type.ServerTypeConnect,
 		ClientVersion: project.Version,
 		Type:          config.ContentTypeUnknown,
 		CreatedAt:     time.Now().Format(time.RFC3339),

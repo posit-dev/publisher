@@ -4,6 +4,7 @@ package api
 
 import (
 	"encoding/json"
+	"github.com/posit-dev/publisher/internal/server_type"
 	"net/http"
 
 	"github.com/posit-dev/publisher/internal/accounts"
@@ -43,7 +44,7 @@ func toGetAccountResponse(acct *accounts.Account) *getAccountResponse {
 // GetAccountsHandlerFunc returns a handler for the account list.
 func GetAccountsHandlerFunc(lister accounts.AccountList, log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		accounts, err := lister.GetAccountsByServerType(accounts.ServerTypeConnect)
+		accounts, err := lister.GetAccountsByServerType(server_type.ServerTypeConnect)
 		if err != nil {
 			InternalError(w, req, log, err)
 			return

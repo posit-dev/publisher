@@ -3,12 +3,12 @@ package deployment
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"github.com/posit-dev/publisher/internal/server_type"
 	"io/fs"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/schema"
@@ -43,7 +43,7 @@ func (s *DeploymentSuite) createDeploymentFile(name string) *Deployment {
 	path := GetDeploymentPath(s.cwd, name)
 	d := New()
 	d.Configuration = config.New()
-	d.ServerType = accounts.ServerTypeConnect
+	d.ServerType = server_type.ServerTypeConnect
 	d.DeployedAt = time.Now().UTC().Format(time.RFC3339)
 	d.Configuration.ServerType = accounts.ServerTypeConnect
 	d.Configuration.Type = config.ContentTypePythonDash
