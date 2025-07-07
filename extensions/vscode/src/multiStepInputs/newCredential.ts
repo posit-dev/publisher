@@ -11,7 +11,13 @@ import {
 
 import { InputBoxValidationSeverity, window } from "vscode";
 
-import { useApi, Credential, SnowflakeConnection, ServerType, PlatformName } from "src/api";
+import {
+  useApi,
+  Credential,
+  SnowflakeConnection,
+  ServerType,
+  PlatformName,
+} from "src/api";
 import {
   getMessageFromError,
   getSummaryStringFromError,
@@ -21,7 +27,11 @@ import { checkSyntaxApiKey } from "src/utils/apiKeys";
 import { showProgress } from "src/utils/progress";
 import { openConfigurationCommand } from "src/commands";
 import { extensionSettings } from "src/extension";
-import { findExistingCredentialByURL, fetchSnowflakeConnections, platformList } from "src/multiStepInputs/common";
+import {
+  findExistingCredentialByURL,
+  fetchSnowflakeConnections,
+  platformList,
+} from "src/multiStepInputs/common";
 import { getEnumKeyByEnumValue } from "src/utils/enums";
 
 const createNewCredentialLabel = "Create a New Credential";
@@ -104,8 +114,7 @@ export async function newCredential(
       title: state.title,
       step: thisStepNumber,
       totalSteps: state.totalSteps,
-      placeholder:
-        "Please select the platform for the new credential.",
+      placeholder: "Please select the platform for the new credential.",
       items: platformList,
       buttons: [],
       shouldResume: () => Promise.resolve(false),
@@ -350,8 +359,7 @@ export async function newCredential(
       title: state.title,
       step: thisStepNumber,
       totalSteps: state.totalSteps,
-      placeholder:
-        "Select the Snowflake connection to use for authentication.",
+      placeholder: "Select the Snowflake connection to use for authentication.",
       items: connectionQuickPicks,
       buttons: [],
       shouldResume: () => Promise.resolve(false),

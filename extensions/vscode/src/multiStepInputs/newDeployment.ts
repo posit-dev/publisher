@@ -60,7 +60,11 @@ import {
 } from "src/utils/files";
 import { ENTRYPOINT_FILE_EXTENSIONS } from "src/constants";
 import { extensionSettings } from "src/extension";
-import { fetchSnowflakeConnections, findExistingCredentialByURL, platformList } from "src/multiStepInputs/common";
+import {
+  fetchSnowflakeConnections,
+  findExistingCredentialByURL,
+  platformList,
+} from "src/multiStepInputs/common";
 import { openConfigurationCommand } from "src/commands";
 import { getEnumKeyByEnumValue } from "src/utils/enums";
 
@@ -573,8 +577,7 @@ export async function newDeployment(
       title: state.title,
       step: 0,
       totalSteps: 0,
-      placeholder:
-        "Please select the platform for the new credential.",
+      placeholder: "Please select the platform for the new credential.",
       items: platformList,
       buttons: [],
       shouldResume: () => Promise.resolve(false),
@@ -687,7 +690,7 @@ export async function newDeployment(
     });
 
     newDeploymentData.newCredentials.url = formatURL(url.trim());
-    
+
     if (isConnect()) {
       return (input: MultiStepInput) => inputAPIKey(input, state);
     }
@@ -805,8 +808,7 @@ export async function newDeployment(
       title: state.title,
       step: 0,
       totalSteps: 0,
-      placeholder:
-        "Select the Snowflake connection to use for authentication.",
+      placeholder: "Select the Snowflake connection to use for authentication.",
       items: connectionQuickPicks,
       buttons: [],
       shouldResume: () => Promise.resolve(false),

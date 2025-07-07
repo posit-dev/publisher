@@ -1,6 +1,12 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
-import { useApi, Credential, SnowflakeConnection, PlatformName, PlatformDescription } from "src/api";
+import {
+  useApi,
+  Credential,
+  SnowflakeConnection,
+  PlatformName,
+  PlatformDescription,
+} from "src/api";
 import { getSummaryStringFromError } from "src/utils/errors";
 import { isAxiosErrorWithJson } from "src/utils/errorTypes";
 import { normalizeURL } from "src/utils/url";
@@ -21,17 +27,20 @@ export function findExistingCredentialByURL(
 }
 
 // List of all available platforms
-export const platformList: QuickPickItem[] = [{
-  iconPath: new ThemeIcon("posit-publisher-posit-logo"),
-  label: PlatformName.CONNECT,
-  description: "",
-  detail: PlatformDescription.CONNECT
-}, {
-  iconPath: new ThemeIcon("posit-publisher-snowflake-logo"),
-  label: PlatformName.SNOWFLAKE,
-  description: "",
-  detail: PlatformDescription.SNOWFLAKE
-}];
+export const platformList: QuickPickItem[] = [
+  {
+    iconPath: new ThemeIcon("posit-publisher-posit-logo"),
+    label: PlatformName.CONNECT,
+    description: "",
+    detail: PlatformDescription.CONNECT,
+  },
+  {
+    iconPath: new ThemeIcon("posit-publisher-snowflake-logo"),
+    label: PlatformName.SNOWFLAKE,
+    description: "",
+    detail: PlatformDescription.SNOWFLAKE,
+  },
+];
 
 // Fetch the list of all available snowflake connections
 export const fetchSnowflakeConnections = async (serverUrl: string) => {

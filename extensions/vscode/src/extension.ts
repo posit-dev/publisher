@@ -219,9 +219,8 @@ export const extensionSettings = {
   connectCloud(): boolean {
     // get value from extension configuration - defaults to false
     const configuration = workspace.getConfiguration("positPublisher");
-    const value: boolean | undefined = configuration.get<boolean>(
-      "connectCloud",
-    );
+    const value: boolean | undefined =
+      configuration.get<boolean>("connectCloud");
     return value !== undefined ? value : false;
   },
 };
