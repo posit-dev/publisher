@@ -103,7 +103,7 @@ func (s *CapabilitiesSuite) TestRunAs() {
 	}
 	cfg := &config.Config{
 		Connect: &config.Connect{
-			SystemAccess: &config.ConnectSystemAccess{
+			Access: &config.ConnectSystemAccess{
 				RunAs: "someuser",
 			},
 		},
@@ -130,7 +130,7 @@ func (s *CapabilitiesSuite) TestRunAsCurrentUser() {
 	cfg := config.Config{
 		Type: config.ContentTypePythonDash,
 		Connect: &config.Connect{
-			SystemAccess: &config.ConnectSystemAccess{
+			Access: &config.ConnectSystemAccess{
 				RunAsCurrentUser: &truth,
 			},
 		},

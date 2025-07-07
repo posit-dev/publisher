@@ -46,7 +46,7 @@ version = "1.4"
 [configuration.environment]
 API_URL = "https://example.com/api"
 
-[configuration.connect.system_access]
+[configuration.connect.access]
 run_as = "rstudio-connect"
 run_as_current_user = false
 

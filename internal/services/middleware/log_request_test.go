@@ -42,7 +42,7 @@ func (s *LogRequestSuite) TestLogRequest() {
 	req, err := http.NewRequest(http.MethodGet, path, nil)
 	s.Nil(err)
 
-	LogRequest("Access", s.log, http.HandlerFunc(next)).ServeHTTP(rec, req)
+	LogRequest("AccessControl", s.log, http.HandlerFunc(next)).ServeHTTP(rec, req)
 
 	message := s.logBuffer.String()
 	s.Contains(message, "method=GET ")
@@ -66,7 +66,7 @@ func (s *LogRequestSuite) TestLogRequestJson() {
 	s.Nil(err)
 	req.Header.Set("Content-Type", "application/json")
 
-	LogRequest("Access", s.log, http.HandlerFunc(next)).ServeHTTP(rec, req)
+	LogRequest("AccessControl", s.log, http.HandlerFunc(next)).ServeHTTP(rec, req)
 
 	message := s.logBuffer.String()
 	s.Contains(message, "method=POST ")

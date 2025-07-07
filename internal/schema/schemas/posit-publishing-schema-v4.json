@@ -236,7 +236,7 @@
                 }
               }
             },
-            "system_access": {
+            "access": {
               "run_as": {
                 "type": "string",
                 "description": "The system username under which the content should be run. Must be an existing user in the allowed group. You must be an administrator to set this value.",
@@ -315,10 +315,10 @@
           "vanity_name": {
             "type": "string",
             "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])$",
-            "description": "The custom component of the vanity URL. If your account name is 'my-account' and this value is 'vanity',, the vanity URL will be https://my-account-vanity.share.connect.posit.cloud.",
+            "description": "The custom component of the vanity URL. If your account name is 'my-account' and this value is 'vanity', the vanity URL will be https://my-account-vanity.share.connect.posit.cloud.",
             "examples": ["sales-report"]
           },
-          "access": {
+          "access_control": {
             "public_access": {
               "type": "boolean",
               "description": "Whether or not the content is publicly accessible.",

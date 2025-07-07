@@ -29,7 +29,7 @@ func newHTTPService(
 	log logging.Logger) *Service {
 
 	if accessLog {
-		handler = middleware.LogRequest("Access Log", log, handler)
+		handler = middleware.LogRequest("AccessControl Log", log, handler)
 	}
 	handler = middleware.PanicRecovery(log, handler)
 

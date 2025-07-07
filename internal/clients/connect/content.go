@@ -63,9 +63,9 @@ func ConnectContentFromConfig(cfg *config.Config) *ConnectContent {
 		Description: cfg.Description,
 	}
 	if cfg.Connect != nil {
-		if cfg.Connect.Access != nil {
+		if cfg.Connect.AccessControl != nil {
 			// access types map directly to Connect
-			c.AccessType = string(cfg.Connect.Access.Type)
+			c.AccessType = string(cfg.Connect.AccessControl.Type)
 		}
 		if cfg.Connect.Runtime != nil {
 			c.ConnectionTimeout = copy(cfg.Connect.Runtime.ConnectionTimeout)
@@ -77,9 +77,9 @@ func ConnectContentFromConfig(cfg *config.Config) *ConnectContent {
 			c.MaxConnsPerProcess = copy(cfg.Connect.Runtime.MaxConnsPerProcess)
 			c.LoadFactor = copy(cfg.Connect.Runtime.LoadFactor)
 		}
-		if cfg.Connect.SystemAccess != nil {
-			c.RunAs = cfg.Connect.SystemAccess.RunAs
-			c.RunAsCurrentUser = copy(cfg.Connect.SystemAccess.RunAsCurrentUser)
+		if cfg.Connect.Access != nil {
+			c.RunAs = cfg.Connect.Access.RunAs
+			c.RunAsCurrentUser = copy(cfg.Connect.Access.RunAsCurrentUser)
 		}
 		if cfg.Connect.Kubernetes != nil {
 			c.MemoryRequest = copy(cfg.Connect.Kubernetes.MemoryRequest)

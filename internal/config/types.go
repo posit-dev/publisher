@@ -216,7 +216,7 @@ const (
 	AccessTypeACL       AccessType = "acl"
 )
 
-type ConnectAccess struct {
+type ConnectAccessControl struct {
 	Type   AccessType `toml:"type" mapstructure:"type" json:"type"`
 	Users  []User     `toml:"users,omitempty" mapstructure:"users,omitempty" json:"users,omitempty"`
 	Groups []Group    `toml:"groups,omitempty" mapstructure:"groups,omitempty" json:"groups,omitempty"`
@@ -237,10 +237,10 @@ type Group struct {
 }
 
 type Connect struct {
-	Access       *ConnectAccess       `toml:"access,omitempty" mapstructure:"access,omitempty" json:"access,omitempty"`
-	SystemAccess *ConnectSystemAccess `toml:"system_access,omitempty" mapstructure:"system_access,omitempty" json:"systemAccess,omitempty"`
-	Runtime      *ConnectRuntime      `toml:"runtime,omitempty" mapstructure:"runtime,omitempty" json:"runtime,omitempty"`
-	Kubernetes   *ConnectKubernetes   `toml:"kubernetes,omitempty" mapstructure:"kubernetes,omitempty" json:"kubernetes,omitempty"`
+	AccessControl *ConnectAccessControl `toml:"access_control,omitempty" mapstructure:"access_control,omitempty" json:"accessControl,omitempty"`
+	Access        *ConnectSystemAccess  `toml:"access,omitempty" mapstructure:"access,omitempty" json:"access,omitempty"`
+	Runtime       *ConnectRuntime       `toml:"runtime,omitempty" mapstructure:"runtime,omitempty" json:"runtime,omitempty"`
+	Kubernetes    *ConnectKubernetes    `toml:"kubernetes,omitempty" mapstructure:"kubernetes,omitempty" json:"kubernetes,omitempty"`
 }
 
 type ConnectSystemAccess struct {
