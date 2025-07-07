@@ -101,6 +101,6 @@ func DecodeTOMLMap(data map[string]interface{}, dest any) error {
 			return types.NewAgentError(types.ErrorUnknownTOMLKey, err, nil)
 		}
 	}
-	
+
 	return nil
 }
