@@ -15,13 +15,11 @@ type AuthMethod interface {
 
 type AuthFactory struct {
 	connections snowflake.Connections
-	access      snowflake.Access
 }
 
 func NewAuthFactory() AuthFactory {
 	return AuthFactory{
 		connections: snowflake.NewConnections(),
-		access:      snowflake.NewAccess(),
 	}
 }
 
@@ -32,7 +30,6 @@ func (af AuthFactory) NewClientAuth(acct *accounts.Account) (AuthMethod, error) 
 	case accounts.AuthTypeSnowflake:
 		auth, err := NewSnowflakeAuthenticator(
 			af.connections,
-			af.access,
 			acct.SnowflakeConnection,
 		)
 		if err != nil {

@@ -801,35 +801,27 @@ export async function newDeployment(
       return;
     }
 
-    let connectionIndex = 0;
+    const pick = await input.showQuickPick({
+      title: state.title,
+      step: 0,
+      totalSteps: 0,
+      placeholder:
+        "Select the Snowflake connection to use for authentication.",
+      items: connectionQuickPicks,
+      buttons: [],
+      shouldResume: () => Promise.resolve(false),
+      ignoreFocusOut: true,
+    });
 
-    // skip if we only have one choice.
-    if (connectionQuickPicks.length > 1) {
-      const pick = await input.showQuickPick({
-        title: state.title,
-        step: 0,
-        totalSteps: 0,
-        placeholder:
-          "Select the Snowflake connection configuration you want to use to authenticate.",
-        items: connectionQuickPicks,
-        buttons: [],
-        shouldResume: () => Promise.resolve(false),
-        ignoreFocusOut: true,
-      });
-
-      if (!pick || !isQuickPickItemWithIndex(pick)) {
-        return;
-      }
-
-      connectionIndex = pick.index;
+    if (!pick || !isQuickPickItemWithIndex(pick)) {
+      return;
     }
 
     // only one of api key and snowflake connection should be configured
     newDeploymentData.newCredentials.apiKey = "";
     newDeploymentData.newCredentials.snowflakeConnection =
-      connections[connectionIndex].name;
-    newDeploymentData.newCredentials.url =
-      connections[connectionIndex].serverUrl;
+      connections[pick.index].name;
+    newDeploymentData.newCredentials.url = connections[pick.index].serverUrl;
     return (input: MultiStepInput) => inputCredentialName(input, state);
   }
 

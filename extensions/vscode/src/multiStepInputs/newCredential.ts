@@ -333,8 +333,7 @@ export async function newCredential(
 
     // url should always be defined by the time we get to this step
     // but we have to type guard it for the API
-    const serverUrl =
-      typeof state.data.url === "string" ? state.data.url : "";
+    const serverUrl = typeof state.data.url === "string" ? state.data.url : "";
 
     try {
       await showProgress(
@@ -347,33 +346,26 @@ export async function newCredential(
       return;
     }
 
-    let connectionIndex = 0;
+    const pick = await input.showQuickPick({
+      title: state.title,
+      step: thisStepNumber,
+      totalSteps: state.totalSteps,
+      placeholder:
+        "Select the Snowflake connection to use for authentication.",
+      items: connectionQuickPicks,
+      buttons: [],
+      shouldResume: () => Promise.resolve(false),
+      ignoreFocusOut: true,
+    });
 
-    // skip if we only have one choice.
-    if (connectionQuickPicks.length > 1) {
-      const pick = await input.showQuickPick({
-        title: state.title,
-        step: thisStepNumber,
-        totalSteps: state.totalSteps,
-        placeholder:
-          "Select the Snowflake connection configuration you want to use to authenticate.",
-        items: connectionQuickPicks,
-        buttons: [],
-        shouldResume: () => Promise.resolve(false),
-        ignoreFocusOut: true,
-      });
-
-      if (!pick || !isQuickPickItemWithIndex(pick)) {
-        return;
-      }
-
-      connectionIndex = pick.index;
+    if (!pick || !isQuickPickItemWithIndex(pick)) {
+      return;
     }
 
     // only one of api key and snowflake connection should be configured
     state.data.apiKey = "";
-    state.data.snowflakeConnection = connections[connectionIndex].name;
-    state.data.url = connections[connectionIndex].serverUrl;
+    state.data.snowflakeConnection = connections[pick.index].name;
+    state.data.url = connections[pick.index].serverUrl;
     state.lastStep = thisStepNumber;
     return (input: MultiStepInput) => inputCredentialName(input, state);
   }
