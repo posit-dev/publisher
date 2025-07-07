@@ -5,6 +5,7 @@ package schema
 import (
 	"bytes"
 	"embed"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -21,21 +22,33 @@ const schemaPrefix = "https://cdn.posit.co/publisher/schemas/"
 const ConfigSchemaURL = schemaPrefix + "posit-publishing-schema-v4.json"
 const DeploymentSchemaURL = schemaPrefix + "posit-publishing-record-schema-v4.json"
 
-type Validator[T any] struct {
-	schema *jsonschema.Schema
+var ConfigSchemaURLs = []string{
+	schemaPrefix + "posit-publishing-schema-v3.json",
+	ConfigSchemaURL,
+}
+var DeploymentSchemaURLs = []string{
+	schemaPrefix + "posit-publishing-record-schema-v3.json",
+	DeploymentSchemaURL,
 }
 
-func NewValidator[T any](schemaURL string) (*Validator[T], error) {
+type Validator[T any] struct {
+	schemas map[string]*jsonschema.Schema
+}
+
+func NewValidator[T any](schemaURLs []string) (*Validator[T], error) {
 	jsonschema.Loaders = map[string]func(url string) (io.ReadCloser, error){
 		"https": loadSchema,
 	}
-	schema, err := jsonschema.Compile(schemaURL)
-
-	if err != nil {
-		return nil, err
+	schemas := make(map[string]*jsonschema.Schema)
+	for _, url := range schemaURLs {
+		schema, err := jsonschema.Compile(url)
+		if err != nil {
+			return nil, err
+		}
+		schemas[url] = schema
 	}
 	return &Validator[T]{
-		schema: schema,
+		schemas: schemas,
 	}, nil
 }
 
@@ -66,8 +79,23 @@ func toTomlValidationError(e *jsonschema.ValidationError) *tomlValidationError {
 	}
 }
 
-func (v *Validator[T]) ValidateContent(data any) error {
-	err := v.schema.Validate(data)
+func (v *Validator[T]) ValidateContent(data map[string]interface{}) error {
+	pertinentSchemaURL, ok := data["$schema"]
+	if !ok {
+		return errors.New("no $schema field found in data")
+	}
+
+	pertinentSchemaURLString, ok := pertinentSchemaURL.(string)
+	if !ok {
+		return errors.New("$schema field must a string")
+	}
+
+	schema, ok := v.schemas[pertinentSchemaURLString]
+	if !ok {
+		return fmt.Errorf("schema not supported: %s", pertinentSchemaURL)
+	}
+
+	err := schema.Validate(data)
 	if err != nil {
 		validationErr, ok := err.(*jsonschema.ValidationError)
 		if ok {
@@ -81,14 +109,14 @@ func (v *Validator[T]) ValidateContent(data any) error {
 	return nil
 }
 
-func (v *Validator[T]) ValidateTOMLFile(path util.AbsolutePath) error {
+func (v *Validator[T]) ValidateTOMLFile(path util.AbsolutePath) (map[string]interface{}, error) {
 	// First, try to read the TOML into the object.
 	// This will return nicer errors from the toml package
 	// for things like fields that cannot be mapped.
 	var typedContent T
 	err := util.ReadTOMLFile(path, &typedContent)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	// Read the TOML generically to get the anyContent.
 	// Can't use v.object here because Validate
@@ -96,9 +124,9 @@ func (v *Validator[T]) ValidateTOMLFile(path util.AbsolutePath) error {
 	var anyContent map[string]interface{}
 	err = util.ReadTOMLFile(path, &anyContent)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return v.ValidateContent(anyContent)
+	return anyContent, v.ValidateContent(anyContent)
 }
 
 func loadSchema(url string) (io.ReadCloser, error) {

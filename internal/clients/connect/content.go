@@ -77,7 +77,7 @@ func ConnectContentFromConfig(cfg *config.Config) *ConnectContent {
 			c.MaxConnsPerProcess = copy(cfg.Connect.Runtime.MaxConnsPerProcess)
 			c.LoadFactor = copy(cfg.Connect.Runtime.LoadFactor)
 		}
-		if cfg.Connect.Access != nil {
+		if cfg.Connect.SystemAccess != nil {
 			c.RunAs = cfg.Connect.SystemAccess.RunAs
 			c.RunAsCurrentUser = copy(cfg.Connect.SystemAccess.RunAsCurrentUser)
 		}

@@ -4,6 +4,7 @@ package util
 
 import (
 	"fmt"
+	"github.com/mitchellh/mapstructure"
 	"io"
 	"strings"
 
@@ -80,5 +81,26 @@ func ReadTOMLFile(path AbsolutePath, dest any) error {
 		}
 		return err
 	}
+	return nil
+}
+
+func DecodeTOMLMap(data map[string]interface{}, dest any) error {
+	decoderCfg := mapstructure.DecoderConfig{
+		ErrorUnused: true,
+		Result:      dest,
+	}
+
+	decoder, err := mapstructure.NewDecoder(&decoderCfg)
+	if err != nil {
+		return fmt.Errorf("failed to create mapstructure decoder: %w", err)
+	}
+
+	err = decoder.Decode(data)
+	if err != nil {
+		if strings.Contains(err.Error(), "has invalid keys") {
+			return types.NewAgentError(types.ErrorUnknownTOMLKey, err, nil)
+		}
+	}
+	
 	return nil
 }
