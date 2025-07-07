@@ -10,9 +10,8 @@ import { SchemaURL } from "./schema";
 
 export enum ServerType {
   CONNECT = "connect",
-  SHINY_APPS = "shinyapps",
-  CLOUD = "cloud",
   SNOWFLAKE = "snowflake",
+  CONNECT_CLOUD = "connect_cloud",
 }
 
 export enum ContentRecordState {

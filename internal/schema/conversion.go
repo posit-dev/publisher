@@ -38,8 +38,10 @@ func UpgradePublishingRecordSchema(data map[string]interface{}) error {
 		data["account_name"] = nil
 
 		// configuration is a v3 publishing schema instance, so we need to upgrade it
-		configuration, _ := data["configuration"].(map[string]interface{})
-		UpgradePublishingSchema(configuration)
+		configuration, ok := data["configuration"].(map[string]interface{})
+		if ok {
+			UpgradePublishingSchema(configuration)
+		}
 	}
 	return nil
 }
