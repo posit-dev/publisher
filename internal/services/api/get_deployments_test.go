@@ -225,7 +225,7 @@ func (s *GetDeploymentsSuite) makeSubdirDeployment(name string, subdir string) (
 	d.ServerType = server_type.ServerTypeConnect
 	d.ConfigName = name + "_config"
 	cfg := config.New()
-	cfg.ServerType = accounts.ServerTypeConnect
+	cfg.ServerType = server_type.ServerTypeConnect
 	cfg.Type = config.ContentTypeHTML
 	cfg.Entrypoint = subdir + ".html"
 	d.Configuration = cfg

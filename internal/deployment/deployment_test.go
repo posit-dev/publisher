@@ -45,7 +45,7 @@ func (s *DeploymentSuite) createDeploymentFile(name string) *Deployment {
 	d.Configuration = config.New()
 	d.ServerType = server_type.ServerTypeConnect
 	d.DeployedAt = time.Now().UTC().Format(time.RFC3339)
-	d.Configuration.ServerType = accounts.ServerTypeConnect
+	d.Configuration.ServerType = server_type.ServerTypeConnect
 	d.Configuration.Type = config.ContentTypePythonDash
 	d.Configuration.Entrypoint = "app.py"
 	d.Configuration.Python = &config.Python{

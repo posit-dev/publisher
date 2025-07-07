@@ -4,7 +4,7 @@ package api
 
 import (
 	"encoding/json"
-	"github.com/posit-dev/publisher/internal/accounts"
+	"github.com/posit-dev/publisher/internal/server_type"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -44,7 +44,7 @@ func (s *GetConfigurationsSuite) SetupTest() {
 func (s *GetConfigurationsSuite) makeConfiguration(name string) *config.Config {
 	path := config.GetConfigPath(s.cwd, name)
 	cfg := config.New()
-	cfg.ServerType = accounts.ServerTypeConnect
+	cfg.ServerType = server_type.ServerTypeConnect
 	cfg.Type = config.ContentTypePythonDash
 	cfg.Entrypoint = "app.py"
 	cfg.Python = &config.Python{
@@ -208,7 +208,7 @@ func (s *GetConfigurationsSuite) makeSubdirConfiguration(name string, subdir str
 
 	path := config.GetConfigPath(subdirPath, name)
 	cfg := config.New()
-	cfg.ServerType = accounts.ServerTypeConnect
+	cfg.ServerType = server_type.ServerTypeConnect
 	cfg.Type = config.ContentTypePythonDash
 
 	// make entrypoints unique by subdirectory for filtering

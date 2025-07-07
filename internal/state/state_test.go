@@ -5,6 +5,7 @@ package state
 import (
 	"errors"
 	"fmt"
+	"github.com/posit-dev/publisher/internal/server_type"
 	"io/fs"
 	"testing"
 
@@ -178,7 +179,7 @@ func (s *StateSuite) TestLoadTarget() {
 	s.Equal(&deployment.Deployment{
 		Schema:     "https://cdn.posit.co/publisher/schemas/posit-publishing-record-schema-v4.json",
 		ServerURL:  "https://connect.example.com",
-		ServerType: accounts.ServerTypeConnect,
+		ServerType: server_type.ServerTypeConnect,
 		ConfigName: "myConfig",
 		Type:       config.ContentTypePythonDash,
 		CreatedAt:  "",
@@ -192,7 +193,7 @@ func (s *StateSuite) TestLoadTarget() {
 		LogsURL:      "https://connect.example.com/connect/#/apps/1234567890ABCDEF/logs",
 		Configuration: &config.Config{
 			Schema:      "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v4.json",
-			ServerType:  accounts.ServerTypeConnect,
+			ServerType:  server_type.ServerTypeConnect,
 			Type:        "python-dash",
 			Entrypoint:  "app:app",
 			Validate:    true,
@@ -278,7 +279,7 @@ func (s *StateSuite) TestNewLocalID() {
 func (s *StateSuite) makeConfiguration(name string, pythonConfig *config.Python, rConfig *config.R) *config.Config {
 	path := config.GetConfigPath(s.cwd, name)
 	cfg := config.New()
-	cfg.ServerType = accounts.ServerTypeConnect
+	cfg.ServerType = server_type.ServerTypeConnect
 	cfg.Type = config.ContentTypeUnknown
 	cfg.Entrypoint = "app.py"
 	cfg.Python = pythonConfig

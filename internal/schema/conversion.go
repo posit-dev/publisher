@@ -2,7 +2,9 @@ package schema
 
 // Copyright (C) 2025 by Posit Software, PBC.
 
-import "github.com/posit-dev/publisher/internal/accounts"
+import (
+	"github.com/posit-dev/publisher/internal/server_type"
+)
 
 // UpgradePublishingSchema upgrades a publishing schema instance to the current version.
 func UpgradePublishingSchema(data map[string]interface{}) {
@@ -13,7 +15,7 @@ func UpgradePublishingSchema(data map[string]interface{}) {
 
 		// Assume server_type is connect. It might actually be snowflake, but we don't have enough information to
 		// determine that, and it shouldn't matter regardless.
-		data["server_type"] = accounts.ServerTypeConnect
+		data["server_type"] = server_type.ServerTypeConnect
 	}
 }
 
@@ -26,7 +28,7 @@ func UpgradePublishingRecordSchema(data map[string]interface{}) error {
 
 		serverUrl, ok := data["server_url"].(string)
 		if ok {
-			serverType, err := accounts.ServerTypeFromURL(serverUrl)
+			serverType, err := server_type.ServerTypeFromURL(serverUrl)
 			if err == nil {
 				return err
 			}

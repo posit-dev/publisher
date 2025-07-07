@@ -4,7 +4,7 @@ package api
 
 import (
 	"encoding/json"
-	"github.com/posit-dev/publisher/internal/accounts"
+	"github.com/posit-dev/publisher/internal/server_type"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -43,7 +43,7 @@ func (s *GetConfigSecretsSuite) SetupTest() {
 
 func (s *GetConfigSecretsSuite) TestGetConfigSecrets() {
 	cfg := config.New()
-	cfg.ServerType = accounts.ServerTypeConnect
+	cfg.ServerType = server_type.ServerTypeConnect
 	cfg.Type = config.ContentTypeHTML
 	cfg.Secrets = []string{
 		"secret1",
@@ -72,7 +72,7 @@ func (s *GetConfigSecretsSuite) TestGetConfigSecrets() {
 
 func (s *GetConfigSecretsSuite) TestGetConfigSecretsEmptySecrets() {
 	cfg := config.New()
-	cfg.ServerType = accounts.ServerTypeConnect
+	cfg.ServerType = server_type.ServerTypeConnect
 	cfg.Type = config.ContentTypeHTML
 	err := cfg.WriteFile(config.GetConfigPath(s.cwd, "myConfig"))
 	s.NoError(err)

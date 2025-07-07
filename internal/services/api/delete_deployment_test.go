@@ -49,7 +49,7 @@ func createSampleDeployment(root util.AbsolutePath, name string) (*deployment.De
 	d.ServerType = server_type.ServerTypeConnect
 	d.ConfigName = "myConfig"
 	cfg := config.New()
-	cfg.ServerType = accounts.ServerTypeConnect
+	cfg.ServerType = server_type.ServerTypeConnect
 	cfg.Type = config.ContentTypePythonDash
 	cfg.Entrypoint = "app.py"
 	cfg.Python = &config.Python{
