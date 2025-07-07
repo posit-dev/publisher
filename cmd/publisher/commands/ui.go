@@ -39,7 +39,7 @@ func (cmd *UICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) err
 	// We need to create these only after the credentials.UseKeychain setting has been resolved.
 	// This is because NewCredentialsService will use the value of UseKeychain to determine
 	// whether to use the keychain or not.
-	accounts, err := accounts.NewAccountList(ctx.Fs, ctx.Logger)
+	accountList, err := accounts.NewAccountList(ctx.Fs, ctx.Logger)
 	if err != nil {
 		return err
 	}
@@ -51,7 +51,7 @@ func (cmd *UICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) err
 		cmd.Listen,
 		true,
 		absPath,
-		accounts,
+		accountList,
 		log,
 		eventServer,
 		emitter)
