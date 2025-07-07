@@ -23,5 +23,6 @@ func (s *CLIContextSuite) TestNewCLIContext() {
 	log := logging.New()
 
 	ctx := NewCLIContext(fs, log)
+	s.Equal(fs, ctx.Fs)
 	s.Equal(log, ctx.Logger)
 }
