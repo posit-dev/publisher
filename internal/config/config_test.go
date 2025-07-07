@@ -4,6 +4,7 @@ package config
 
 import (
 	"bytes"
+	"github.com/posit-dev/publisher/internal/server_type"
 	"io/fs"
 	"strings"
 	"testing"
@@ -84,6 +85,22 @@ func (s *ConfigSuite) TestFromExampleFile() {
 	valuePtr := cfg.Connect.Kubernetes.DefaultPyEnvironmentManagement
 	s.NotNil(valuePtr)
 	s.Equal(true, *valuePtr)
+}
+
+func (s *ConfigSuite) TestFromExampleV3File() {
+	realDir, err := util.Getwd(nil)
+	s.NoError(err)
+	path := realDir.Join("..", "schema", "schemas", "config-v3.toml")
+	cfg, err := FromFile(path)
+	s.NoError(err)
+	s.NotNil(cfg)
+
+	valuePtr := cfg.Connect.Kubernetes.DefaultPyEnvironmentManagement
+	s.NotNil(valuePtr)
+	s.Equal(true, *valuePtr)
+
+	s.Equal(cfg.Schema, schema.ConfigSchemaURL)
+	s.Equal(cfg.ServerType, server_type.ServerTypeConnect)
 }
 
 func (s *ConfigSuite) TestFromFileErr() {
