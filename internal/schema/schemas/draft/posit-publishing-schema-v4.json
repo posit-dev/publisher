@@ -418,7 +418,8 @@
     "server_type": {
       "type": "string",
       "description": "The server type that this content will be deployed to.",
-      "enum": ["connect", "snowflake", "connect_cloud"]
+      "enum": ["connect", "snowflake", "connect_cloud"],
+      "default": "connect"
     },
     "comments": {
       "type": "array",
