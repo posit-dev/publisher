@@ -3,6 +3,11 @@ package commands
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"fmt"
+	"os"
+	"strings"
+
+	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/cli_types"
 	"github.com/posit-dev/publisher/internal/credentials"
 	"github.com/posit-dev/publisher/internal/events"
@@ -15,6 +20,11 @@ type UICmd struct {
 	Path        util.Path `help:"Sets the current working directory for the agent." arg:"" default:"."`
 	Listen      string    `help:"Network address to listen on." placeholder:"HOST[:PORT]" default:"localhost:0"`
 	UseKeychain bool      `help:"Use Keychain services to store/manage credentials." default:"true"`
+}
+
+func Fatal(err error) {
+	fmt.Fprintln(os.Stderr, "\n"+strings.TrimSpace(err.Error())+".")
+	os.Exit(1)
 }
 
 func (cmd *UICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
@@ -35,6 +45,14 @@ func (cmd *UICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) err
 
 	credentials.UseKeychain = cmd.UseKeychain
 
+	// We need to create these only after the credentials.UseKeychain setting has been resolved.
+	// This is because NewCredentialsService will use the value of UseKeychain to determine
+	// whether to use the keychain or not.
+	accounts, err := accounts.NewAccountList(ctx.Fs, ctx.Logger)
+	if err != nil {
+		Fatal(err)
+	}
+
 	// Auto-initialize if needed. This will be replaced by an API call from the UI
 	// for better error handling and startup performance.
 	svc := api.NewService(
@@ -42,7 +60,7 @@ func (cmd *UICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) err
 		cmd.Listen,
 		true,
 		absPath,
-		ctx.Accounts,
+		accounts,
 		log,
 		eventServer,
 		emitter)
