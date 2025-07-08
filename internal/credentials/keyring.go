@@ -6,9 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/google/uuid"
 	"github.com/posit-dev/publisher/internal/logging"
-	"github.com/posit-dev/publisher/internal/util"
 	"github.com/zalando/go-keyring"
 )
 
@@ -84,27 +82,18 @@ func (ks *keyringCredentialsService) List() ([]Credential, error) {
 
 // Set creates a Credential.
 // A guid is assigned to the Credential using the UUIDv4 specification.
-func (ks *keyringCredentialsService) Set(name string, url string, ak string, sf string) (*Credential, error) {
+func (ks *keyringCredentialsService) Set(credDetails CreateCredentialDetails) (*Credential, error) {
 	table, err := ks.load()
 	if err != nil {
 		return nil, err
 	}
 
-	normalizedUrl, err := util.NormalizeServerURL(url)
+	cred, err := credDetails.ToCredential()
 	if err != nil {
 		return nil, err
 	}
 
-	guid := uuid.New().String()
-	cred := Credential{
-		GUID:                guid,
-		Name:                name,
-		URL:                 normalizedUrl,
-		ApiKey:              ak,
-		SnowflakeConnection: sf,
-	}
-
-	err = ks.checkForConflicts(&table, &cred)
+	err = ks.checkForConflicts(&table, cred)
 	if err != nil {
 		return nil, err
 	}
@@ -114,8 +103,8 @@ func (ks *keyringCredentialsService) Set(name string, url string, ak string, sf 
 		return nil, fmt.Errorf("error marshalling credential: %v", err)
 	}
 
-	table[guid] = CredentialRecord{
-		GUID:    guid,
+	table[cred.GUID] = CredentialRecord{
+		GUID:    cred.GUID,
 		Version: CurrentVersion,
 		Data:    json.RawMessage(raw),
 	}
@@ -125,7 +114,7 @@ func (ks *keyringCredentialsService) Set(name string, url string, ak string, sf 
 		return nil, err
 	}
 
-	return &cred, nil
+	return cred, nil
 }
 
 // Resets the CredentialTable from keyring
