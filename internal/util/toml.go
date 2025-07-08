@@ -84,6 +84,7 @@ func ReadTOMLFile(path AbsolutePath, dest any) error {
 	return nil
 }
 
+// DecodeTOMLMap decodes a map that was read from a TOML file into a Go struct.
 func DecodeTOMLMap(data map[string]interface{}, dest any) error {
 	decoderCfg := mapstructure.DecoderConfig{
 		ErrorUnused: true,
@@ -100,6 +101,7 @@ func DecodeTOMLMap(data map[string]interface{}, dest any) error {
 		if strings.Contains(err.Error(), "has invalid keys") {
 			return types.NewAgentError(types.ErrorUnknownTOMLKey, err, nil)
 		}
+		return fmt.Errorf("failed to decode TOML: %w", err)
 	}
 
 	return nil
