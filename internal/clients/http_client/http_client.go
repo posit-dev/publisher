@@ -258,7 +258,6 @@ func NewHTTPClientForAccount(account *accounts.Account, timeout time.Duration, l
 	}, nil
 }
 
-
 func newBasicInternalHTTPClientWithAuth(timeout time.Duration, authValue string) *http.Client {
 	transport := newTransport()
 	clientAuth := auth.NewPlainAuthenticator(authValue)
