@@ -160,31 +160,47 @@ func (cr *CredentialRecord) ToCredential() (*Credential, error) {
 }
 
 type CreateCredentialDetails struct {
-	Name string
-	URL  string
+	Name       string
+	URL        string
+	ServerType server_type.ServerType
 
 	// Connect fields
-	ApiKey string `json:"apiKey"`
+	ApiKey string
 
 	// Snowflake fields
-	SnowflakeConnection string `json:"snowflakeConnection"`
+	SnowflakeConnection string
 
 	// Connect Cloud fields
-	AccountID    string `json:"accountId"`
-	AccountName  string `json:"accountName"`
-	RefreshToken string `json:"refreshToken"`
-	AccessToken  string `json:"accessToken"`
+	AccountID    string
+	AccountName  string
+	RefreshToken string
+	AccessToken  string
 }
 
 func (details CreateCredentialDetails) ToCredential() (*Credential, error) {
 	connectPresent := details.ApiKey != ""
 	snowflakePresent := details.SnowflakeConnection != ""
 	connectCloudPresent := details.AccountID != "" && details.AccountName != "" && details.RefreshToken != "" && details.AccessToken != ""
-	someServerTypePresent := connectPresent || snowflakePresent || connectCloudPresent
+
+	switch details.ServerType {
+	case server_type.ServerTypeConnect:
+		if !connectPresent || snowflakePresent || connectCloudPresent {
+			return nil, NewIncompleteCredentialError()
+		}
+	case server_type.ServerTypeSnowflake:
+		if !snowflakePresent || connectPresent || connectCloudPresent {
+			return nil, NewIncompleteCredentialError()
+		}
+	case server_type.ServerTypeConnectCloud:
+		if !connectCloudPresent || connectPresent || snowflakePresent {
+			return nil, NewIncompleteCredentialError()
+		}
+	default:
+		return nil, NewIncompleteCredentialError()
+	}
 
 	if details.Name == "" ||
-		details.URL == "" ||
-		!someServerTypePresent {
+		details.URL == "" {
 		return nil, NewIncompleteCredentialError()
 	}
 
@@ -193,15 +209,11 @@ func (details CreateCredentialDetails) ToCredential() (*Credential, error) {
 		return nil, err
 	}
 
-	serverType, err := server_type.ServerTypeFromURL(normalizedUrl)
-	if err != nil {
-		return nil, err
-	}
 	guid := uuid.New().String()
 	return &Credential{
 		GUID:                guid,
 		Name:                details.Name,
-		ServerType:          serverType,
+		ServerType:          details.ServerType,
 		URL:                 normalizedUrl,
 		ApiKey:              details.ApiKey,
 		SnowflakeConnection: details.SnowflakeConnection,

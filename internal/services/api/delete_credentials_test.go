@@ -3,6 +3,7 @@
 package api
 
 import (
+	"github.com/posit-dev/publisher/internal/server_type"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -37,7 +38,12 @@ func (s *DeleteCredentialsSuite) Test204() {
 	cs, err := credentials.NewCredentialsService(s.log)
 	s.NoError(err)
 
-	cred, err := cs.Set(credentials.CreateCredentialDetails{Name: "example", URL: "https://example.com", ApiKey: "12345", SnowflakeConnection: ""})
+	cred, err := cs.Set(credentials.CreateCredentialDetails{
+		ServerType:          server_type.ServerTypeConnect,
+		Name:                "example",
+		URL:                 "https://example.com",
+		ApiKey:              "12345",
+		SnowflakeConnection: ""})
 	s.NoError(err)
 
 	path, err := url.JoinPath("http://example.com/api/credentials/", cred.GUID)

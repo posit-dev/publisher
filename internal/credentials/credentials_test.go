@@ -173,7 +173,11 @@ func TestCreateCredentialDetailsTestSuite(t *testing.T) {
 }
 
 func (s *CreateCredentialDetailsTestSuite) TestToCredential() {
-	details := CreateCredentialDetails{Name: "newcred", URL: "https://b2.connect-server:3939/connect", ApiKey: "abcdeC2aqbh7dg8TO43XPu7r56YDh002"}
+	details := CreateCredentialDetails{
+		ServerType: server_type.ServerTypeConnect,
+		Name:       "newcred",
+		URL:        "https://b2.connect-server:3939/connect",
+		ApiKey:     "abcdeC2aqbh7dg8TO43XPu7r56YDh002"}
 	cred, err := details.ToCredential()
 	s.NoError(err)
 	s.NotEmpty(cred.GUID)
@@ -202,6 +206,6 @@ func (s *CreateCredentialDetailsTestSuite) TestToCredential_BlankDataErr() {
 	for _, createCredDetails := range testCases {
 		_, err := createCredDetails.ToCredential()
 		s.Error(err)
-		s.Equal(err.Error(), "New credentials require non-empty Name, URL and either Api Key, Snowflake, or Connect Cloud connection fields")
+		s.Equal("New credentials require non-empty Name, URL, Server Type, and either API Key, Snowflake, or Connect Cloud connection fields", err.Error())
 	}
 }
