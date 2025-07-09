@@ -6,6 +6,7 @@ import {
   SnowflakeConnection,
   PlatformName,
   PlatformDescription,
+  ServerType,
 } from "src/api";
 import { getSummaryStringFromError } from "src/utils/errors";
 import { isAxiosErrorWithJson } from "src/utils/errorTypes";
@@ -26,19 +27,31 @@ export function findExistingCredentialByURL(
   });
 }
 
+export const isConnect = (serverType: ServerType) => {
+  return serverType === ServerType.CONNECT;
+};
+
+export const isConnectCloud = (serverType: ServerType) => {
+  return serverType === ServerType.CONNECT_CLOUD;
+};
+
+export const isSnowflake = (serverType: ServerType) => {
+  return serverType === ServerType.SNOWFLAKE;
+};
+
 // List of all available platforms
 export const platformList: QuickPickItem[] = [
+  {
+    iconPath: new ThemeIcon("posit-publisher-posit-logo"),
+    label: PlatformName.CONNECT_CLOUD,
+    description: "",
+    detail: PlatformDescription.CONNECT_CLOUD,
+  },
   {
     iconPath: new ThemeIcon("posit-publisher-posit-logo"),
     label: PlatformName.CONNECT,
     description: "",
     detail: PlatformDescription.CONNECT,
-  },
-  {
-    iconPath: new ThemeIcon("posit-publisher-snowflake-logo"),
-    label: PlatformName.SNOWFLAKE,
-    description: "",
-    detail: PlatformDescription.SNOWFLAKE,
   },
 ];
 

@@ -31,6 +31,8 @@ import {
   findExistingCredentialByURL,
   fetchSnowflakeConnections,
   platformList,
+  isConnect,
+  isSnowflake,
 } from "src/multiStepInputs/common";
 import { getEnumKeyByEnumValue } from "src/utils/enums";
 
@@ -56,14 +58,6 @@ export async function newCredential(
     const sfc = await fetchSnowflakeConnections(serverUrl);
     connections = sfc.connections;
     connectionQuickPicks = sfc.connectionQuickPicks;
-  };
-
-  const isConnect = () => {
-    return serverType === ServerType.CONNECT;
-  };
-
-  const isSnowflake = () => {
-    return serverType === ServerType.SNOWFLAKE;
   };
 
   // ***************************************************************
@@ -99,7 +93,7 @@ export async function newCredential(
     };
 
     // No optional steps for this one.
-    state.totalSteps = 4;
+    state.totalSteps = extensionSettings.enableConnectCloud() ? 4 : 3;
 
     await MultiStepInput.run((input) => inputPlatform(input, state));
     return state;
@@ -109,23 +103,32 @@ export async function newCredential(
   // Step: Select the platform for the credentials (used for all platforms)
   // ***************************************************************
   async function inputPlatform(input: MultiStepInput, state: MultiStepState) {
-    const thisStepNumber = assignStep(state, "inputPlatform");
-    const pick = await input.showQuickPick({
-      title: state.title,
-      step: thisStepNumber,
-      totalSteps: state.totalSteps,
-      placeholder: "Please select the platform for the new credential.",
-      items: platformList,
-      buttons: [],
-      shouldResume: () => Promise.resolve(false),
-      ignoreFocusOut: true,
-    });
+    // skip platform selection unless the enableConnectCloud config has been turned on
+    if (extensionSettings.enableConnectCloud()) {
+      const thisStepNumber = assignStep(state, "inputPlatform");
+      const pick = await input.showQuickPick({
+        title: state.title,
+        step: thisStepNumber,
+        totalSteps: state.totalSteps,
+        placeholder: "Please select the platform for the new credential.",
+        items: platformList,
+        buttons: [],
+        shouldResume: () => Promise.resolve(false),
+        ignoreFocusOut: true,
+      });
 
-    const enumKey = getEnumKeyByEnumValue(PlatformName, pick.label);
-    // fallback to CONNECT if there is ever a case when the enumKey is not found
-    serverType = enumKey ? ServerType[enumKey] : ServerType.CONNECT;
-    platformName = pick.label as PlatformName;
-    state.lastStep = thisStepNumber;
+      const enumKey = getEnumKeyByEnumValue(PlatformName, pick.label);
+      // fallback to CONNECT if there is ever a case when the enumKey is not found
+      serverType = enumKey ? ServerType[enumKey] : ServerType.CONNECT;
+      platformName = pick.label as PlatformName;
+      state.lastStep = thisStepNumber;
+
+      return (input: MultiStepInput) => inputServerUrl(input, state);
+    }
+
+    // default to CONNECT, since there are no other products at the moment
+    serverType = ServerType.CONNECT;
+    platformName = PlatformName.CONNECT;
 
     return (input: MultiStepInput) => inputServerUrl(input, state);
   }
@@ -140,7 +143,7 @@ export async function newCredential(
         ? state.data.url
         : "";
 
-    if (currentURL === "" && isConnect()) {
+    if (currentURL === "" && isConnect(serverType)) {
       currentURL = await extensionSettings.defaultConnectServer();
     }
 
@@ -219,6 +222,10 @@ export async function newCredential(
               severity: InputBoxValidationSeverity.Error,
             });
           }
+          if (testResult.data.serverType) {
+            // serverType will be overwritten if it is snowflake
+            serverType = testResult.data.serverType;
+          }
         } catch (e) {
           return Promise.resolve({
             message: `Error: Invalid URL (unable to validate connectivity with Server URL - ${getMessageFromError(e)}).`,
@@ -234,11 +241,11 @@ export async function newCredential(
     state.data.url = formatURL(url.trim());
     state.lastStep = thisStepNumber;
 
-    if (isConnect()) {
+    if (isConnect(serverType)) {
       return (input: MultiStepInput) => inputAPIKey(input, state);
     }
 
-    if (isSnowflake()) {
+    if (isSnowflake(serverType)) {
       return (input: MultiStepInput) => inputSnowflakeConnection(input, state);
     }
 

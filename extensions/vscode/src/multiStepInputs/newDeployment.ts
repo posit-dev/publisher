@@ -63,6 +63,8 @@ import { extensionSettings } from "src/extension";
 import {
   fetchSnowflakeConnections,
   findExistingCredentialByURL,
+  isConnect,
+  isSnowflake,
   platformList,
 } from "src/multiStepInputs/common";
 import { openConfigurationCommand } from "src/commands";
@@ -295,14 +297,6 @@ export async function newDeployment(
     const sfc = await fetchSnowflakeConnections(serverUrl);
     connections = sfc.connections;
     connectionQuickPicks = sfc.connectionQuickPicks;
-  };
-
-  const isConnect = () => {
-    return serverType === ServerType.CONNECT;
-  };
-
-  const isSnowflake = () => {
-    return serverType === ServerType.SNOWFLAKE;
   };
 
   // ***************************************************************
@@ -573,21 +567,30 @@ export async function newDeployment(
   // Step: New Credentials - Select the platform (used for all platforms)
   // ***************************************************************
   async function inputPlatform(input: MultiStepInput, state: MultiStepState) {
-    const pick = await input.showQuickPick({
-      title: state.title,
-      step: 0,
-      totalSteps: 0,
-      placeholder: "Please select the platform for the new credential.",
-      items: platformList,
-      buttons: [],
-      shouldResume: () => Promise.resolve(false),
-      ignoreFocusOut: true,
-    });
+    // skip platform selection unless the enableConnectCloud config has been turned on
+    if (extensionSettings.enableConnectCloud()) {
+      const pick = await input.showQuickPick({
+        title: state.title,
+        step: 0,
+        totalSteps: 0,
+        placeholder: "Please select the platform for the new credential.",
+        items: platformList,
+        buttons: [],
+        shouldResume: () => Promise.resolve(false),
+        ignoreFocusOut: true,
+      });
 
-    const enumKey = getEnumKeyByEnumValue(PlatformName, pick.label);
-    // fallback to CONNECT if there is ever a case when the enumKey is not found
-    serverType = enumKey ? ServerType[enumKey] : ServerType.CONNECT;
-    platformName = pick.label as PlatformName;
+      const enumKey = getEnumKeyByEnumValue(PlatformName, pick.label);
+      // fallback to CONNECT if there is ever a case when the enumKey is not found
+      serverType = enumKey ? ServerType[enumKey] : ServerType.CONNECT;
+      platformName = pick.label as PlatformName;
+
+      return (input: MultiStepInput) => inputServerUrl(input, state);
+    }
+
+    // default to CONNECT, since there are no other products at the moment
+    serverType = ServerType.CONNECT;
+    platformName = PlatformName.CONNECT;
 
     return (input: MultiStepInput) => inputServerUrl(input, state);
   }
@@ -598,7 +601,7 @@ export async function newDeployment(
   async function inputServerUrl(input: MultiStepInput, state: MultiStepState) {
     let currentURL = newDeploymentData.newCredentials.url || "";
 
-    if (currentURL === "" && isConnect()) {
+    if (currentURL === "" && isConnect(serverType)) {
       currentURL = await extensionSettings.defaultConnectServer();
     }
 
@@ -677,6 +680,10 @@ export async function newDeployment(
               severity: InputBoxValidationSeverity.Error,
             });
           }
+          if (testResult.data.serverType) {
+            // serverType will be overwritten if it is snowflake
+            serverType = testResult.data.serverType;
+          }
         } catch (e) {
           return Promise.resolve({
             message: `Error: Invalid URL (unable to validate connectivity with Server URL - ${getMessageFromError(e)}).`,
@@ -691,11 +698,11 @@ export async function newDeployment(
 
     newDeploymentData.newCredentials.url = formatURL(url.trim());
 
-    if (isConnect()) {
+    if (isConnect(serverType)) {
       return (input: MultiStepInput) => inputAPIKey(input, state);
     }
 
-    if (isSnowflake()) {
+    if (isSnowflake(serverType)) {
       return (input: MultiStepInput) => inputSnowflakeConnection(input, state);
     }
 

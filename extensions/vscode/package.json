@@ -58,8 +58,8 @@
             "type": "string",
             "default": ""
           },
-          "positPublisher.connectCloud": {
-            "markdownDescription": "Controls whether Connect Cloud support changes are available in the plugin",
+          "positPublisher.enableConnectCloud": {
+            "markdownDescription": "Controls whether Connect Cloud support is available. This is an experimental feature and it is currently unstable. Please wait until it reaches alpha stage to turn it on.",
             "type": "boolean",
             "default": false
           }

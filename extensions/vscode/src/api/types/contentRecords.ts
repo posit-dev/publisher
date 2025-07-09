@@ -17,13 +17,11 @@ export enum ServerType {
 export enum PlatformName {
   CONNECT = "Posit Connect",
   CONNECT_CLOUD = "Posit Connect Cloud",
-  SNOWFLAKE = "Snowflake",
 }
 
 export enum PlatformDescription {
-  CONNECT = "Posit Connect is a server product from Posit for secure sharing of applications, reports, plots, and APIs.",
+  CONNECT = "Deploy data applications, documents, APIs, and more to your server.",
   CONNECT_CLOUD = "Deploy data applications and documents online. Free plan available.",
-  SNOWFLAKE = "Build in your language of choice-Python, Java, Scala.",
 }
 
 export enum ContentRecordState {
