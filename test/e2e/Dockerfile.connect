@@ -2,7 +2,8 @@
 # The Connect host to be used as the publishing target.
 # Multiple versions of R, Python and Quarto are installed and configured.
 
-FROM e2ebase AS connect-publisher-e2e
+ARG BUILDPLATFORM=linux/amd64
+FROM --platform=$BUILDPLATFORM e2ebase AS connect-publisher-e2e
 
 RUN export TZ=America/New_York
 
@@ -108,12 +109,12 @@ COPY test/e2e/bootstrap-secret.key /etc/rstudio-connect/bootstrap-secret.key
 ENV CONNECT_LICENSE=$(CONNECT_LICENSE)
 
 CMD [ "/opt/connect-manager/connect-manager", \
-  "--start-connect", \
-  "--connect-binary", "/opt/rstudio-connect/bin/connect", \
-  "--connect-user", "rstudio-connect", \
-  "--license-manager-binary", "/opt/rstudio-connect/bin/license-manager", \
-  "--connect-log", "/var/log/rstudio/rstudio-connect/rstudio-connect.log", \
-  "--manager-log", "/var/log/rstudio/rstudio-connect/connect-manager.log", \
-  "--connect-config-prefix", "/etc/rstudio-connect", \
-  "--connect-config", "rstudio-connect.gcfg", \
-  "--manager-port", "4723" ]
+    "--start-connect", \
+    "--connect-binary", "/opt/rstudio-connect/bin/connect", \
+    "--connect-user", "rstudio-connect", \
+    "--license-manager-binary", "/opt/rstudio-connect/bin/license-manager", \
+    "--connect-log", "/var/log/rstudio/rstudio-connect/rstudio-connect.log", \
+    "--manager-log", "/var/log/rstudio/rstudio-connect/connect-manager.log", \
+    "--connect-config-prefix", "/etc/rstudio-connect", \
+    "--connect-config", "rstudio-connect.gcfg", \
+    "--manager-port", "4723" ]

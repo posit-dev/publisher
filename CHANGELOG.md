@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed the naming of "Shiny for Python" and "Shiny for R" content types.
   (#2664)
 
+- Fixed the inability for e2e tests to run on some Mac systems due to the
+  docker files not being built for the correct platform.
+
 ### Added
 
 - Improved support for Posit Connect deployments hosted in Snowpark Container
