@@ -95,7 +95,7 @@ Once complete, a coverage report will open in your default browser.
 
 ### End-to-End Tests
 
-End-to-end tests are written in javaScript and utilize Cypress for testing the Posit Publisher VSCode extension.
+End-to-end tests are written in JavaScript and utilize Cypress for testing the Posit Publisher VSCode extension.
 
 They are not currently run within the CI pipeline, but can be run locally to verify that the extension works as expected in a Connect environment.
 
