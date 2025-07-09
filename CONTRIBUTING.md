@@ -103,7 +103,7 @@ They are not currently run within the CI pipeline, but can be run locally to ver
 
 To run the end-to-end tests, you should first create a virtual environment and install the necessary dependencies.
 
-This can be done by running the following command from the `tests/e2e` subdirectory of the repository:
+This can be done by running the following command from the `test/e2e` subdirectory of the repository:
 
 ```bash
 cd test/e2e
