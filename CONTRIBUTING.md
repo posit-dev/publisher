@@ -163,6 +163,8 @@ deactivate
 
 #### Running E2E Tests
 
+** NOTE: ** The instructions below assume that your terminal has the `test/e2e` directory as the current working directory. If you are not in that directory, you will need to adjust the commands accordingly.
+
 1. Activate your virtual environment if it is not already active.
 
 - Run the following command from the `test/e2e` subdirectory:
@@ -174,7 +176,8 @@ source .venv/bin/activate
 - Build the publisher and start the Cypress interactive test runner:
 
 ```bash
-just e2e
+just build-images
+just dev
 ```
 
 This will start the Cypress test runner, which will open a browser window and allow you to run the end-to-end tests against the Posit Publisher VSCode extension.
@@ -186,6 +189,15 @@ When done, you can deactivate the virtual environment with:
 ```bash
 deactivate
 ```
+
+And detach the Docker containers with:
+
+```bash
+just stop
+```
+
+**NOTE: ** If you are updating the images in any way, where you need to rebuild the images with `just build-images`,
+you will need to run the `just stop` command to remove the existing containers before running `just dev`.
 
 ## Development
 
