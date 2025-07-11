@@ -241,7 +241,7 @@ func (p *defaultPublisher) doPublish() error {
 	if err != nil {
 		return err
 	}
-	serverPublisher := connectpublisher.NewServerPublisher(p.State, p.log, client, nil, p.emitter, p.PublishHelper)
+	serverPublisher := connectpublisher.NewServerPublisher(p.State, p.log, client, p.emitter, p.PublishHelper)
 
 	if wasPreviouslyDeployed {
 		p.log.Info("Updating deployment", "content_id", contentID)
