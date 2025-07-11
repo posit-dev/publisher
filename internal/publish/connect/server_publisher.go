@@ -3,7 +3,6 @@ package connect
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import (
-	"github.com/posit-dev/publisher/internal/bundles"
 	"github.com/posit-dev/publisher/internal/clients/connect"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/logging"
@@ -19,7 +18,6 @@ type ServerPublisher struct {
 	log     logging.Logger
 	emitter events.Emitter
 	client  connect.APIClient
-	bundler bundles.Bundler
 	helper  *publishhelper.PublishHelper
 }
 
@@ -27,7 +25,6 @@ func NewServerPublisher(
 	state *state.State,
 	log logging.Logger,
 	client connect.APIClient,
-	bundler bundles.Bundler,
 	emitter events.Emitter,
 	helper *publishhelper.PublishHelper) *ServerPublisher {
 	return &ServerPublisher{
@@ -35,7 +32,6 @@ func NewServerPublisher(
 		log:     log,
 		emitter: emitter,
 		client:  client,
-		bundler: bundler,
 		helper:  helper,
 	}
 }
