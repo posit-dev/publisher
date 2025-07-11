@@ -3,6 +3,7 @@ package publish
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import (
+	"github.com/posit-dev/publisher/internal/publish/publishhelper"
 	"github.com/posit-dev/publisher/internal/server_type"
 	"os"
 	"path/filepath"
@@ -104,10 +105,10 @@ func (s *RPublishFunctionalSuite) TestGetRPackagesFunctional() {
 	s.Require().NoError(err)
 
 	publisher := &defaultPublisher{
-		State:          s.stateStore,
 		log:            s.log,
 		emitter:        s.emitter,
 		rPackageMapper: mapper,
+		PublishHelper:  publishhelper.NewPublishHelper(s.stateStore, s.log),
 	}
 
 	// Actually call getRPackages
@@ -179,10 +180,10 @@ func (s *RPublishFunctionalSuite) TestPublishWithClientFunctional() {
 	s.Require().NoError(err)
 
 	publisher := &defaultPublisher{
-		State:          stateStore,
 		log:            s.log,
 		emitter:        events.NewCapturingEmitter(),
 		rPackageMapper: rPackageMapper,
+		PublishHelper:  publishhelper.NewPublishHelper(s.stateStore, s.log),
 	}
 
 	// Test files to be deployed
@@ -202,7 +203,7 @@ shinyApp(ui = ui, server = server)
 	s.Require().NoError(err)
 
 	// The actual test call
-	err = publisher.publishWithClient(account, client)
+	err = publisher.PublishDirectory()
 	s.Require().NoError(err)
 
 	// Verify the mock calls were made as expected
