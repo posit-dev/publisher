@@ -413,13 +413,6 @@
           "fontPath": "dist/posit-publisher-icons.woff2",
           "fontCharacter": "\\f102"
         }
-      },
-      "posit-publisher-snowflake-logo": {
-        "description": "snowflake logo icon",
-        "default": {
-          "fontPath": "dist/posit-publisher-icons.woff2",
-          "fontCharacter": "\\f103"
-        }
       }
     },
     "viewsContainers": {

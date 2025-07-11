@@ -196,9 +196,7 @@ export async function newDeployment(
       const response = await api.credentials.list();
       credentials = response.data;
       credentialListItems = credentials.map((credential) => ({
-        iconPath: credential.snowflakeConnection
-          ? new ThemeIcon("posit-publisher-snowflake-logo")
-          : new ThemeIcon("posit-publisher-posit-logo"),
+        iconPath: new ThemeIcon("posit-publisher-posit-logo"),
         label: credential.name,
         description: credential.url,
       }));
