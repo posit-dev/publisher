@@ -12,7 +12,6 @@ import (
 	"github.com/posit-dev/publisher/internal/publish/publishhelper"
 	"github.com/posit-dev/publisher/internal/schema"
 
-	//connect_publisher "github.com/posit-dev/publisher/internal/publish/connect"
 	"io"
 	"maps"
 	"os"
@@ -35,7 +34,6 @@ type Publisher interface {
 }
 
 type defaultPublisher struct {
-	//*state.State
 	log            logging.Logger
 	emitter        events.Emitter
 	rPackageMapper renv.PackageMapper
