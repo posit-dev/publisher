@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/clients/connect"
@@ -67,6 +68,7 @@ func (s *RPublishFunctionalSuite) SetupTest() {
 func (s *RPublishFunctionalSuite) TearDownTest() {
 	parentDir := filepath.Dir(s.testProjectDir.String())
 	os.RemoveAll(parentDir)
+	clientFactory = connect.NewConnectClient
 }
 
 func (s *RPublishFunctionalSuite) createTestRenvLock() {
@@ -122,6 +124,13 @@ func (s *RPublishFunctionalSuite) TestGetRPackagesFunctional() {
 func (s *RPublishFunctionalSuite) TestPublishWithClientFunctional() {
 	// Set up a mock client
 	client := connect.NewMockClient()
+	clientFactory = func(
+		account *accounts.Account,
+		timeout time.Duration,
+		emitter events.Emitter,
+		log logging.Logger) (connect.APIClient, error) {
+		return client, nil
+	}
 
 	// Set up test account
 	account := &accounts.Account{
@@ -183,7 +192,7 @@ func (s *RPublishFunctionalSuite) TestPublishWithClientFunctional() {
 		log:            s.log,
 		emitter:        events.NewCapturingEmitter(),
 		rPackageMapper: rPackageMapper,
-		PublishHelper:  publishhelper.NewPublishHelper(s.stateStore, s.log),
+		PublishHelper:  publishhelper.NewPublishHelper(stateStore, s.log),
 	}
 
 	// Test files to be deployed
