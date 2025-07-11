@@ -3,7 +3,6 @@ package connect
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	//"github.com/posit-dev/publisher/internal/publish"
 	"os"
 
 	"github.com/posit-dev/publisher/internal/events"
