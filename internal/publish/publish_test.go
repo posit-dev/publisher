@@ -81,7 +81,7 @@ const renvLockContent = `{
 	},
 	"Packages": {
 		"mypkg": {
-			"Package": "mgypkg",
+			"Package": "mypkg",
 			"Version": "1.2.3",
 			"Source": "Repository",
 			"Repository": "CRAN",
