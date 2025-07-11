@@ -4,12 +4,12 @@ package credentials
 
 import (
 	"fmt"
+	"github.com/posit-dev/publisher/internal/server_type"
 	"io"
 	"os"
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/pelletier/go-toml/v2"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
@@ -21,15 +21,46 @@ var fsys = afero.NewOsFs()
 const ondiskFilename = ".connect-credentials"
 
 type fileCredential struct {
-	GUID                string `toml:"guid"`
-	Version             uint   `toml:"version"`
-	URL                 string `toml:"url"`
-	ApiKey              string `toml:"api_key"`
-	SnowflakeConnection string `toml:"snowflake_connection"`
+	GUID       string                 `toml:"guid"`
+	Version    uint                   `toml:"version"`
+	ServerType server_type.ServerType `toml:"server_type"`
+	URL        string                 `toml:"url"`
+
+	// Connect fields
+	ApiKey string `toml:"api_key,omitempty"`
+
+	// Snowflake fields
+	SnowflakeConnection string `toml:"snowflake_connection,omitempty"`
+
+	// Connect Cloud fields
+	AccountID    string `toml:"account_id,omitempty"`
+	AccountName  string `toml:"account_name,omitempty"`
+	RefreshToken string `toml:"refresh_token,omitempty"`
+	AccessToken  string `toml:"access_token,omitempty"`
 }
 
 func (cr *fileCredential) IsValid() bool {
-	return cr.URL != "" && (cr.ApiKey != "" || cr.SnowflakeConnection != "")
+	return cr.URL != "" && (cr.ApiKey != "" || cr.SnowflakeConnection != "" ||
+		(cr.AccountID != "" && cr.AccountName != "" && cr.RefreshToken != "" && cr.AccessToken != ""))
+}
+
+func (cr *fileCredential) toCredential(name string) (*Credential, error) {
+	serverType, err := server_type.ServerTypeFromURL(cr.URL)
+	if err != nil {
+		return nil, err
+	}
+	return &Credential{
+		Name:                name,
+		ServerType:          serverType,
+		GUID:                cr.GUID,
+		URL:                 cr.URL,
+		ApiKey:              cr.ApiKey,
+		SnowflakeConnection: cr.SnowflakeConnection,
+		AccountID:           cr.AccountID,
+		AccountName:         cr.AccountName,
+		RefreshToken:        cr.RefreshToken,
+		AccessToken:         cr.AccessToken,
+	}, nil
 }
 
 type fileCredentials struct {
@@ -42,35 +73,29 @@ func newFileCredentials() fileCredentials {
 	}
 }
 
-func (fcs *fileCredentials) CredentialsList() []Credential {
+func (fcs *fileCredentials) CredentialsList() ([]Credential, error) {
 	list := []Credential{}
 	for credName, fileCred := range fcs.Credentials {
-		list = append(list, Credential{
-			Name:                credName,
-			GUID:                fileCred.GUID,
-			URL:                 fileCred.URL,
-			ApiKey:              fileCred.ApiKey,
-			SnowflakeConnection: fileCred.SnowflakeConnection,
-		})
+		credential, err := fileCred.toCredential(credName)
+		if err != nil {
+			return nil, err
+		}
+		list = append(list, *credential)
 	}
-	return list
+	return list, nil
 }
 
-func (fcs *fileCredentials) CredentialByGuid(guid string) (Credential, error) {
-	var cred Credential
+func (fcs *fileCredentials) CredentialByGuid(guid string) (*Credential, error) {
 	for credName, fileCred := range fcs.Credentials {
 		if fileCred.GUID == guid {
-			cred = Credential{
-				Name:                credName,
-				GUID:                fileCred.GUID,
-				URL:                 fileCred.URL,
-				ApiKey:              fileCred.ApiKey,
-				SnowflakeConnection: fileCred.SnowflakeConnection,
+			cred, err := fileCred.toCredential(credName)
+			if err != nil {
+				return nil, err
 			}
 			return cred, nil
 		}
 	}
-	return Credential{}, NewNotFoundError(guid)
+	return nil, NewNotFoundError(guid)
 }
 
 func (fcs *fileCredentials) RemoveByName(name string) {
@@ -104,45 +129,37 @@ func NewFileCredentialsService(log logging.Logger) (*fileCredentialsService, err
 	return fservice, nil
 }
 
-func (c *fileCredentialsService) Set(name, url, ak string, sf string) (*Credential, error) {
+func (c *fileCredentialsService) Set(credDetails CreateCredentialDetails) (*Credential, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-
-	if name == "" || url == "" || (ak == "" && sf == "") {
-		return nil, NewIncompleteCredentialError()
-	}
 
 	creds, err := c.load()
 	if err != nil {
 		return nil, err
 	}
 
-	normalizedUrl, err := util.NormalizeServerURL(url)
+	cred, err := credDetails.ToCredential()
 	if err != nil {
 		return nil, err
 	}
 
-	guid := uuid.New().String()
-	cred := Credential{
-		GUID:                guid,
-		Name:                name,
-		URL:                 normalizedUrl,
-		ApiKey:              ak,
-		SnowflakeConnection: sf,
-	}
-
-	err = c.checkForConflicts(creds, cred)
+	err = c.checkForConflicts(creds, *cred)
 	if err != nil {
 		c.log.Debug("Conflicts storing new credential to file", "error", err.Error(), "filename", c.credsFilepath.String())
 		return nil, err
 	}
 
-	creds.Credentials[name] = fileCredential{
-		GUID:                guid,
+	creds.Credentials[credDetails.Name] = fileCredential{
+		GUID:                cred.GUID,
 		Version:             CurrentVersion,
-		URL:                 normalizedUrl,
-		ApiKey:              ak,
-		SnowflakeConnection: sf,
+		ServerType:          cred.ServerType,
+		URL:                 cred.URL,
+		ApiKey:              cred.ApiKey,
+		SnowflakeConnection: cred.SnowflakeConnection,
+		AccountID:           cred.AccountID,
+		AccountName:         cred.AccountName,
+		RefreshToken:        cred.RefreshToken,
+		AccessToken:         cred.AccessToken,
 	}
 
 	err = c.saveFile(creds)
@@ -151,7 +168,7 @@ func (c *fileCredentialsService) Set(name, url, ak string, sf string) (*Credenti
 		return nil, err
 	}
 
-	return &cred, nil
+	return cred, nil
 }
 
 func (c *fileCredentialsService) Get(guid string) (*Credential, error) {
@@ -170,7 +187,7 @@ func (c *fileCredentialsService) Get(guid string) (*Credential, error) {
 		return nil, err
 	}
 
-	return &credential, nil
+	return credential, nil
 }
 
 func (c *fileCredentialsService) List() ([]Credential, error) {
@@ -183,7 +200,7 @@ func (c *fileCredentialsService) List() ([]Credential, error) {
 		return nil, err
 	}
 
-	return creds.CredentialsList(), nil
+	return creds.CredentialsList()
 }
 
 func (c *fileCredentialsService) Delete(guid string) error {
@@ -321,7 +338,11 @@ func (c *fileCredentialsService) normalizeAll(creds *fileCredentials) error {
 
 func (c *fileCredentialsService) checkForConflicts(creds fileCredentials, newCred Credential) error {
 	// Check if URL or name are already used by another credential
-	for _, cred := range creds.CredentialsList() {
+	credsList, err := creds.CredentialsList()
+	if err != nil {
+		return err
+	}
+	for _, cred := range credsList {
 		err := cred.ConflictCheck(newCred)
 		if err != nil {
 			return err

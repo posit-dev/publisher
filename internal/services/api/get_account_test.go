@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/posit-dev/publisher/internal/server_type"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -34,7 +35,7 @@ func (s *GetAccountSuite) TestGetAccount() {
 	lister := &accounts.MockAccountList{}
 	lister.On("GetAccountByName", "myAccount").Return(&accounts.Account{
 		Name:       "myAccount",
-		ServerType: accounts.ServerTypeConnect,
+		ServerType: server_type.ServerTypeConnect,
 	}, nil)
 	h := GetAccountHandlerFunc(lister, s.log)
 
@@ -53,7 +54,7 @@ func (s *GetAccountSuite) TestGetAccount() {
 	s.NoError(dec.Decode(&res))
 
 	s.Equal("myAccount", res.Name)
-	s.Equal(string(accounts.ServerTypeConnect), res.Type)
+	s.Equal(string(server_type.ServerTypeConnect), res.Type)
 }
 
 func (s *GetAccountSuite) TestGetAccountNotFound() {

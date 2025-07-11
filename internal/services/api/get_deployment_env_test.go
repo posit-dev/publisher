@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"github.com/posit-dev/publisher/internal/server_type"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -60,7 +61,7 @@ func (s *GetDeploymentEnvSuite) TestGetDeploymentEnv() {
 	acct := &accounts.Account{
 		Name:       "myAccount",
 		URL:        "https://connect.example.com",
-		ServerType: accounts.ServerTypeConnect,
+		ServerType: server_type.ServerTypeConnect,
 	}
 	lister.On("GetAccountByServerURL", "https://connect.example.com").Return(acct, nil)
 
@@ -169,7 +170,7 @@ func (s *GetDeploymentEnvSuite) TestGetDeploymentEnvPassesStatusFromServer() {
 	acct := &accounts.Account{
 		Name:       "myAccount",
 		URL:        "https://connect.example.com",
-		ServerType: accounts.ServerTypeConnect,
+		ServerType: server_type.ServerTypeConnect,
 	}
 	lister.On("GetAccountByServerURL", "https://connect.example.com").Return(acct, nil)
 

@@ -5,6 +5,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/posit-dev/publisher/internal/server_type"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -45,7 +46,7 @@ func (s *PostDeploymentsSuite) TestPostDeployments() {
 	acct := &accounts.Account{
 		Name:       "myAccount",
 		URL:        "https://connect.example.com",
-		ServerType: accounts.ServerTypeConnect,
+		ServerType: server_type.ServerTypeConnect,
 	}
 	lister.On("GetAccountByName", "myAccount").Return(acct, nil)
 
@@ -82,7 +83,7 @@ func (s *PostDeploymentsSuite) TestPostDeployments() {
 	s.Equal(".", res.ProjectDir)
 	s.Equal("myConfig", res.ConfigName)
 	s.Equal("myConfig.toml", filepath.Base(res.ConfigPath))
-	s.Equal(accounts.ServerTypeConnect, res.ServerType)
+	s.Equal(server_type.ServerTypeConnect, res.ServerType)
 	s.Equal(acct.URL, res.ServerURL)
 	s.Equal(deploymentStateNew, res.State)
 }
@@ -92,7 +93,7 @@ func (s *PostDeploymentsSuite) TestPostDeploymentsWithID() {
 	acct := &accounts.Account{
 		Name:       "myAccount",
 		URL:        "https://connect.example.com",
-		ServerType: accounts.ServerTypeConnect,
+		ServerType: server_type.ServerTypeConnect,
 	}
 	lister.On("GetAccountByName", "myAccount").Return(acct, nil)
 
@@ -130,7 +131,7 @@ func (s *PostDeploymentsSuite) TestPostDeploymentsWithID() {
 	s.Equal(".", res.ProjectDir)
 	s.Equal("myConfig", res.ConfigName)
 	s.Equal("myConfig.toml", filepath.Base(res.ConfigPath))
-	s.Equal(accounts.ServerTypeConnect, res.ServerType)
+	s.Equal(server_type.ServerTypeConnect, res.ServerType)
 	s.Equal(acct.URL, res.ServerURL)
 	s.Equal(deploymentStateNew, res.State)
 	s.Equal(types.ContentID("abc"), res.ID)
@@ -144,7 +145,7 @@ func (s *PostDeploymentsSuite) TestPostDeploymentsNoConfig() {
 	acct := &accounts.Account{
 		Name:       "myAccount",
 		URL:        "https://connect.example.com",
-		ServerType: accounts.ServerTypeConnect,
+		ServerType: server_type.ServerTypeConnect,
 	}
 	lister.On("GetAccountByName", "myAccount").Return(acct, nil)
 
@@ -180,7 +181,7 @@ func (s *PostDeploymentsSuite) TestPostDeploymentsNoConfig() {
 	s.Equal(".", res.ProjectDir)
 	s.Equal("", res.ConfigName)
 	s.Equal("", res.ConfigPath)
-	s.Equal(accounts.ServerTypeConnect, res.ServerType)
+	s.Equal(server_type.ServerTypeConnect, res.ServerType)
 	s.Equal(acct.URL, res.ServerURL)
 	s.Equal(deploymentStateNew, res.State)
 }
@@ -190,7 +191,7 @@ func (s *PostDeploymentsSuite) TestPostDeploymentsNonexistentConfig() {
 	acct := &accounts.Account{
 		Name:       "myAccount",
 		URL:        "https://connect.example.com",
-		ServerType: accounts.ServerTypeConnect,
+		ServerType: server_type.ServerTypeConnect,
 	}
 	lister.On("GetAccountByName", "myAccount").Return(acct, nil)
 
@@ -290,7 +291,7 @@ func (s *PostDeploymentsSuite) TestPostDeploymentsSubdir() {
 	acct := &accounts.Account{
 		Name:       "myAccount",
 		URL:        "https://connect.example.com",
-		ServerType: accounts.ServerTypeConnect,
+		ServerType: server_type.ServerTypeConnect,
 	}
 	lister.On("GetAccountByName", "myAccount").Return(acct, nil)
 
@@ -328,7 +329,7 @@ func (s *PostDeploymentsSuite) TestPostDeploymentsSubdir() {
 	s.Equal(relProjectDir.String(), res.ProjectDir)
 	s.Equal("myConfig", res.ConfigName)
 	s.Equal("myConfig.toml", filepath.Base(res.ConfigPath))
-	s.Equal(accounts.ServerTypeConnect, res.ServerType)
+	s.Equal(server_type.ServerTypeConnect, res.ServerType)
 	s.Equal(acct.URL, res.ServerURL)
 	s.Equal(deploymentStateNew, res.State)
 }
