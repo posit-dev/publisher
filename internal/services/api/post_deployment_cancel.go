@@ -18,14 +18,13 @@ import (
 func PostDeploymentCancelHandlerFunc(base util.AbsolutePath, log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		name := mux.Vars(req)["name"]
-		localId := mux.Vars(req)["localid"]
 		projectDir, relProjectDir, err := ProjectDirFromRequest(base, w, req, log)
 		if err != nil {
 			// Response already returned by ProjectDirFromRequest
 			return
 		}
 		path := deployment.GetDeploymentPath(projectDir, name)
-		latest, err := publish.CancelDeployment(path, localId, log)
+		latest, err := publish.CancelDeployment(path, log)
 		if err != nil {
 			if errors.Is(err, fs.ErrNotExist) {
 				http.NotFound(w, req)
