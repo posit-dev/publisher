@@ -34,11 +34,10 @@ import (
 
 type PublishSuite struct {
 	utiltest.Suite
-	log        logging.Logger
-	logBuffer  *bytes.Buffer
-	fs         afero.Fs
-	cwd        util.AbsolutePath
-	clientMock *connect.MockClient
+	log       logging.Logger
+	logBuffer *bytes.Buffer
+	fs        afero.Fs
+	cwd       util.AbsolutePath
 }
 
 type mockPackageMapper struct {
