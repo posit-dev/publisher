@@ -49,6 +49,7 @@ export async function newCredential(
   let credentials: Credential[] = [];
 
   // the serverType & platformName will be overwritten in the very first step
+  // when the platform selector is introduced
   let serverType: ServerType = ServerType.CONNECT;
   let platformName: PlatformName = PlatformName.CONNECT;
   let connections: SnowflakeConnection[] = [];
@@ -64,7 +65,6 @@ export async function newCredential(
   // Order of all steps
   // ***************************************************************
 
-  // Select the platform
   // Get the server url
   // Get the API key for Connect OR get the Snowflake connection name
   // Get the credential name
@@ -143,7 +143,7 @@ export async function newCredential(
         ? state.data.url
         : "";
 
-    if (currentURL === "" && isConnect(serverType)) {
+    if (currentURL === "") {
       currentURL = await extensionSettings.defaultConnectServer();
     }
 
@@ -160,7 +160,7 @@ export async function newCredential(
       step: thisStepNumber,
       totalSteps: state.totalSteps,
       value: currentURL,
-      prompt: `Please provide the ${platformName} server's URL`,
+      prompt: "Please provide the Posit Connect server's URL",
       placeholder: "Server URL",
       validate: (input: string) => {
         if (input.includes(" ")) {
@@ -222,6 +222,7 @@ export async function newCredential(
               severity: InputBoxValidationSeverity.Error,
             });
           }
+
           if (testResult.data.serverType) {
             // serverType will be overwritten if it is snowflake
             serverType = testResult.data.serverType;

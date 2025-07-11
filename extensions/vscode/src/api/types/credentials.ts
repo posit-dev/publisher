@@ -1,4 +1,4 @@
-// Copyright (C) 2025 by Posit Software, PBC.
+// Copyright (C) 2024 by Posit Software, PBC.
 
 import { AgentError } from "./error";
 import { ServerType } from "./contentRecords";
@@ -8,7 +8,6 @@ export type Credential = {
   name: string;
   url: string;
   apiKey: string;
-  snowflakeConnection: string;
 };
 
 export type CredentialUser = {

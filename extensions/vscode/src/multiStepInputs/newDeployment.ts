@@ -88,6 +88,7 @@ export async function newDeployment(
   const contentRecordNames = new Map<string, string[]>();
 
   // the serverType & platformName will be overwritten during the pickCredentials steps
+  // when the platform selector is introduced
   let serverType: ServerType = ServerType.CONNECT;
   let platformName: PlatformName = PlatformName.CONNECT;
   let connections: SnowflakeConnection[] = [];
@@ -308,7 +309,6 @@ export async function newDeployment(
   // If no credentials, then skip to create new credential
   // If some credentials, select either use of existing or creation of a new one
   // If creating credential:
-  // - Select the platform
   // - Get the server url
   // - Get the API key for Connect OR get the Snowflake connection name
   // - Get the credential name
@@ -599,7 +599,7 @@ export async function newDeployment(
   async function inputServerUrl(input: MultiStepInput, state: MultiStepState) {
     let currentURL = newDeploymentData.newCredentials.url || "";
 
-    if (currentURL === "" && isConnect(serverType)) {
+    if (currentURL === "") {
       currentURL = await extensionSettings.defaultConnectServer();
     }
 
@@ -616,7 +616,7 @@ export async function newDeployment(
       step: 0,
       totalSteps: 0,
       value: currentURL,
-      prompt: `Please provide the ${platformName} server's URL`,
+      prompt: "Please provide the Posit Connect server's URL",
       placeholder: "Server URL",
       validate: (input: string) => {
         if (input.includes(" ")) {
@@ -678,6 +678,7 @@ export async function newDeployment(
               severity: InputBoxValidationSeverity.Error,
             });
           }
+
           if (testResult.data.serverType) {
             // serverType will be overwritten if it is snowflake
             serverType = testResult.data.serverType;
