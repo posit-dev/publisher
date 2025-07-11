@@ -5,8 +5,6 @@ package publish
 import (
 	"fmt"
 	"github.com/posit-dev/publisher/internal/config"
-	"github.com/posit-dev/publisher/internal/inspect/dependencies/pydeps"
-	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/project"
 	connectpublisher "github.com/posit-dev/publisher/internal/publish/connect"
 	"github.com/posit-dev/publisher/internal/publish/publishhelper"
@@ -18,7 +16,6 @@ import (
 	"time"
 
 	"github.com/mitchellh/mapstructure"
-	"github.com/posit-dev/publisher/internal/bundles"
 	connectclient "github.com/posit-dev/publisher/internal/clients/connect"
 	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/events"
@@ -312,90 +309,8 @@ func (p *defaultPublisher) CreateDeploymentRecord() {
 	p.Target.Configuration = &cfg
 }
 
-func (p *defaultPublisher) configureInterpreters() error {
-	if p.Config.Python != nil {
-		filename := p.Config.Python.PackageFile
-		if filename == "" {
-			filename = interpreters.PythonRequirementsFilename
-		}
-		p.log.Debug("Python configuration present", "PythonRequirementsFile", filename)
-
-		requirements, err := pydeps.ReadRequirementsFile(p.Dir.Join(filename))
-		p.log.Debug("Python requirements file in use", "requirements", requirements)
-		if err != nil {
-			return err
-		}
-		p.Target.Requirements = requirements
-	}
-
-	if p.Config.R != nil {
-		filename := p.Config.R.PackageFile
-		if filename == "" {
-			filename = interpreters.DefaultRenvLockfile
-		}
-		p.log.Debug("R configuration present", "filename", filename)
-		lockfile, err := renv.ReadLockfile(p.Dir.Join(filename))
-		if err != nil {
-			return err
-		}
-		p.log.Debug("Renv lockfile in use", "lockfile", lockfile)
-		p.Target.Renv = lockfile
-	}
-
-	return nil
-}
-
-func (p *defaultPublisher) createBundle() (*os.File, error) {
-	manifest := bundles.NewManifestFromConfig(p.Config)
-	p.log.Debug("Built manifest from config", "config", p.ConfigName)
-
-	if p.Config.R != nil {
-		rPackages, err := p.getRPackages()
-		if err != nil {
-			return nil, err
-		}
-		manifest.Packages = rPackages
-	}
-	p.log.Debug("Generated manifest:", manifest)
-
-	// Create Bundle step
-	op := events.PublishCreateBundleOp
-	prepareLog := p.log.WithArgs(logging.LogKeyOp, op)
-
-	bundler, err := bundles.NewBundler(p.Dir, manifest, p.Config.Files, p.log)
-	if err != nil {
-		return nil, err
-	}
-
-	p.emitter.Emit(events.New(op, events.StartPhase, events.NoError, createBundleStartData{}))
-	prepareLog.Info("Preparing files")
-	bundleFile, err := os.CreateTemp("", "bundle-*.tar.gz")
-	if err != nil {
-		return nil, types.OperationError(op, err)
-	}
-	manifest, err = bundler.CreateBundle(bundleFile)
-	if err != nil {
-		return nil, types.OperationError(op, err)
-	}
-
-	_, err = bundleFile.Seek(0, io.SeekStart)
-	if err != nil {
-		return nil, types.OperationError(op, err)
-	}
-	prepareLog.Info("Done preparing files", "filename", bundleFile.Name())
-	p.emitter.Emit(events.New(op, events.SuccessPhase, events.NoError, createBundleSuccessData{
-		Filename: bundleFile.Name(),
-	}))
-
-	// Update deployment record with new information
-	p.Target.Files = manifest.GetFilenames()
-
-	return bundleFile, nil
-}
-
 func CancelDeployment(
 	deploymentPath util.AbsolutePath,
-	localID string,
 	log logging.Logger,
 ) (*deployment.Deployment, error) {
 	// This function only marks the deployment record as being canceled.
