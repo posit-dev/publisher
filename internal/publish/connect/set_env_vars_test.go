@@ -1,4 +1,4 @@
-package publish
+package connect
 
 // Copyright (C) 2024 by Posit Software, PBC.
 
@@ -28,14 +28,15 @@ func (s *SetEnvVarsSuite) TestSetEnvVarsWithNoEnvironmentOrSecrets() {
 	log := logging.New()
 	emitter := events.NewCapturingEmitter()
 
-	publisher := &defaultPublisher{
+	client := connect.NewMockClient()
+	publisher := &ServerPublisher{
 		State:   stateStore,
 		log:     log,
 		emitter: emitter,
+		client:  client,
 	}
-	client := connect.NewMockClient()
 
-	err := publisher.setEnvVars(client, types.ContentID("test-content-id"))
+	err := publisher.setEnvVars(types.ContentID("test-content-id"))
 	s.NoError(err)
 
 	// No calls to the Connect API to set environment variables should be made
@@ -49,16 +50,17 @@ func (s *SetEnvVarsSuite) TestSetEnvVarsWithSecrets() {
 
 	stateStore.Secrets = map[string]string{"SOME_SECRET": "some-secret-value", "ANOTHER_SECRET": "another-secret-value"}
 
-	publisher := &defaultPublisher{
+	client := connect.NewMockClient()
+	publisher := &ServerPublisher{
 		State:   stateStore,
 		log:     log,
 		emitter: emitter,
+		client:  client,
 	}
-	client := connect.NewMockClient()
 
 	client.On("SetEnvVars", types.ContentID("test-content-id"), stateStore.Secrets, mock.Anything).Return(nil)
 
-	err := publisher.setEnvVars(client, types.ContentID("test-content-id"))
+	err := publisher.setEnvVars(types.ContentID("test-content-id"))
 	s.NoError(err)
 
 	client.AssertExpectations(s.T())
@@ -71,16 +73,17 @@ func (s *SetEnvVarsSuite) TestSetEnvVarsWithEnvironment() {
 
 	stateStore.Config.Environment = map[string]string{"TEST_ENV_VAR": "test-value", "ANOTHER_TEST_ENV_VAR": "another-test-value"}
 
-	publisher := &defaultPublisher{
+	client := connect.NewMockClient()
+	publisher := &ServerPublisher{
 		State:   stateStore,
 		log:     log,
 		emitter: emitter,
+		client:  client,
 	}
-	client := connect.NewMockClient()
 
 	client.On("SetEnvVars", types.ContentID("test-content-id"), stateStore.Config.Environment, mock.Anything).Return(nil)
 
-	err := publisher.setEnvVars(client, types.ContentID("test-content-id"))
+	err := publisher.setEnvVars(types.ContentID("test-content-id"))
 	s.NoError(err)
 
 	client.AssertExpectations(s.T())
@@ -93,12 +96,13 @@ func (s *SetEnvVarsSuite) TestSetEnvVarsWithSecretsAndEnvironment() {
 	log := logging.New()
 	emitter := events.NewCapturingEmitter()
 
-	publisher := &defaultPublisher{
+	client := connect.NewMockClient()
+	publisher := &ServerPublisher{
 		State:   stateStore,
 		log:     log,
 		emitter: emitter,
+		client:  client,
 	}
-	client := connect.NewMockClient()
 
 	combinedEnv := map[string]string{
 		"TEST_ENV_VAR":         "test-value",
@@ -108,7 +112,7 @@ func (s *SetEnvVarsSuite) TestSetEnvVarsWithSecretsAndEnvironment() {
 	}
 	client.On("SetEnvVars", types.ContentID("test-content-id"), combinedEnv, mock.Anything).Return(nil)
 
-	err := publisher.setEnvVars(client, types.ContentID("test-content-id"))
+	err := publisher.setEnvVars(types.ContentID("test-content-id"))
 	s.NoError(err)
 
 	client.AssertExpectations(s.T())
