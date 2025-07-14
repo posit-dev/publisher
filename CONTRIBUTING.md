@@ -12,6 +12,9 @@
   - [Testing](#testing)
     - [Unit Tests](#unit-tests)
       - [Coverage Reporting](#coverage-reporting)
+    - [End-to-End Tests](#end-to-end-tests)
+      - [E2E Test Setup](#e2e-test-setup)
+      - [Running E2E Tests](#running-e2e-tests)
   - [Development](#development)
     - [Build Tools](#build-tools)
     - [Environment Variables](#environment-variables)
@@ -24,6 +27,7 @@
     - [Before Releasing](#before-releasing)
     - [Instructions](#instructions)
   - [Updating Dependencies](#updating-dependencies)
+    - [Updating a Go dependency](#updating-a-go-dependency)
 
 ## Getting Started
 
@@ -88,6 +92,68 @@ just cover
 ```
 
 Once complete, a coverage report will open in your default browser.
+
+### End-to-End Tests
+
+End-to-end tests are written in JavaScript and utilize Cypress for testing the Posit Publisher VSCode extension.
+
+They are not currently run within the CI pipeline, but can be run locally to verify that the extension works as expected in a Connect environment.
+
+#### E2E Test Setup
+
+To run the end-to-end tests, you should first create a virtual environment and install the necessary dependencies.
+
+This can be done by running the following command from the `test/e2e` subdirectory of the repository:
+
+```bash
+cd test/e2e
+python3 -m venv .venv
+```
+
+Activate the virtual environment and install the dependencies:
+
+```bash
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+Build the e2e images:
+
+```bash
+just build-images
+```
+
+When done, you can deactivate the virtual environment with:
+
+```bash
+deactivate
+```
+
+#### Running E2E Tests
+
+1. Activate your virtual environment if it is not already active.
+
+- Run the following command from the `test/e2e` subdirectory:
+
+```bash
+source .venv/bin/activate
+```
+
+- Build the publisher and start the Cypress interactive test runner:
+
+```bash
+just e2e
+```
+
+This will start the Cypress test runner, which will open a browser window and allow you to run the end-to-end tests against the Posit Publisher VSCode extension.
+
+Use VSCode to modify the tests in the `test/e2e/tests` directory. Saving changes will automatically re-run the tests in the Cypress test runner.
+
+When done, you can deactivate the virtual environment with:
+
+```bash
+deactivate
+```
 
 ## Development
 
