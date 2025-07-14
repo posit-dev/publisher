@@ -96,7 +96,7 @@ func (t ContentType) IsAppContent() bool {
 type Config struct {
 	Comments      []string               `toml:"-" mapstructure:"-" json:"comments"`
 	Schema        string                 `toml:"$schema" mapstructure:"$schema" json:"$schema"`
-	ServerType    server_type.ServerType `toml:"server_type" mapstructure:"server_type" json:"server_type"`
+	ServerType    server_type.ServerType `toml:"server_type" mapstructure:"server_type" json:"serverType"`
 	Type          ContentType            `toml:"type" mapstructure:"type" json:"type"`
 	Entrypoint    string                 `toml:"entrypoint" mapstructure:"entrypoint" json:"entrypoint,omitempty"`
 	Validate      bool                   `toml:"validate" mapstructure:"validate" json:"validate"`

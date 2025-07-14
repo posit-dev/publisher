@@ -78,7 +78,7 @@ export async function newDeployment(
   let inspectionResults: ConfigurationInspectionResult[] = [];
   const contentRecordNames = new Map<string, string[]>();
 
-  let serverType: ServerType;
+  let serverType: ServerType = ServerType.CONNECT;
   let connections: SnowflakeConnection[] = [];
   let connectionQuickPicks: QuickPickItemWithIndex[];
 
@@ -961,6 +961,10 @@ export async function newDeployment(
       newDeploymentData.title,
       existingNames,
     );
+
+    newDeploymentData.entrypoint.inspectionResult.configuration.serverType =
+      serverType;
+
     configCreateResponse = (
       await api.configurations.createOrUpdate(
         configName,
