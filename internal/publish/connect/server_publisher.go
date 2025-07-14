@@ -10,7 +10,7 @@ import (
 	"github.com/posit-dev/publisher/internal/state"
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
-	"os"
+	"io"
 )
 
 type ServerPublisher struct {
@@ -45,10 +45,10 @@ func (c *ServerPublisher) GetContentInfo(contentID types.ContentID) publishhelpe
 	}
 }
 
-func (c *ServerPublisher) PublishToServer(contentID types.ContentID, bundleFile *os.File) error {
+func (c *ServerPublisher) PublishToServer(contentID types.ContentID, bundleReader io.Reader) error {
 	var err error
 
-	bundleID, err := c.uploadBundle(bundleFile, contentID)
+	bundleID, err := c.uploadBundle(bundleReader, contentID)
 	if err != nil {
 		return err
 	}
