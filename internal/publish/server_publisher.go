@@ -8,7 +8,7 @@ import (
 	"github.com/posit-dev/publisher/internal/publish/publishhelper"
 	"github.com/posit-dev/publisher/internal/server_type"
 	"github.com/posit-dev/publisher/internal/types"
-	"os"
+	"io"
 	"time"
 )
 
@@ -16,7 +16,7 @@ type ServerPublisher interface {
 	CreateDeployment() (contentID types.ContentID, err error)
 	GetContentInfo(contentID types.ContentID) publishhelper.ContentInfo
 	PreFlightChecks() error
-	PublishToServer(contentID types.ContentID, bundleFile *os.File) error
+	PublishToServer(contentID types.ContentID, bundleReader io.Reader) error
 }
 
 func (p *defaultPublisher) createServerPublisher() (ServerPublisher, error) {
