@@ -4,4 +4,5 @@ package connect_cloud
 
 type APIClient interface {
 	GetCurrentUser() (*UserResponse, error)
+	GetAccounts() (*AccountListResponse, error)
 }

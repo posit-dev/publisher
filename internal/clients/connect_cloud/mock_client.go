@@ -20,3 +20,8 @@ func (m *MockClient) GetCurrentUser() (*UserResponse, error) {
 	args := m.Called()
 	return args.Get(0).(*UserResponse), args.Error(1)
 }
+
+func (m *MockClient) GetAccounts() (*AccountListResponse, error) {
+	args := m.Called()
+	return args.Get(0).(*AccountListResponse), args.Error(1)
+}

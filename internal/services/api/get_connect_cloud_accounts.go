@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/posit-dev/publisher/internal/clients/connect_cloud"
 	"net/http"
+	"slices"
 	"time"
 
 	"github.com/posit-dev/publisher/internal/logging"
@@ -37,19 +38,25 @@ func GetConnectCloudAccountsFunc(log logging.Logger) http.HandlerFunc {
 
 		client := connectCloudClientFactory(baseURL, log, 10*time.Second, authorization)
 
-		currentUser, err := client.GetCurrentUser()
+		// implicitly creates a user if it doesn't exist
+		_, err := client.GetCurrentUser()
 		if err != nil {
 			InternalError(w, req, log, err)
 			return
 		}
 
-		accounts := make([]connectCloudAccountsBodyAccount, 0, len(currentUser.AccountRoles))
-		for accountID, accountRole := range currentUser.AccountRoles {
-			role := accountRole.Role
+		accountsResponse, err := client.GetAccounts()
+		if err != nil {
+			InternalError(w, req, log, err)
+			return
+		}
+
+		accounts := make([]connectCloudAccountsBodyAccount, 0, len(accountsResponse.Data))
+		for _, account := range accountsResponse.Data {
 			accounts = append(accounts, connectCloudAccountsBodyAccount{
-				ID:                  accountID,
-				Name:                accountRole.Account.Name,
-				PermissionToPublish: role == "owner" || role == "admin" || accountRole.Role == "publisher",
+				ID:                  account.ID,
+				Name:                account.Name,
+				PermissionToPublish: slices.Contains(account.Permissions, "content:create"),
 			})
 		}
 
