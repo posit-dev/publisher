@@ -613,7 +613,8 @@ func (s *PublishSuite) TestEmitNewClientError() {
 	state := &state.State{
 		Dir: s.cwd,
 		Account: &accounts.Account{
-			URL: "http://connect.example.com",
+			ServerType: server_type.ServerTypeConnect,
+			URL:        "http://connect.example.com",
 		},
 		Config: cfg,
 	}
