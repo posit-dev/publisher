@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/project"
-	connectpublisher "github.com/posit-dev/publisher/internal/publish/connect"
 	"github.com/posit-dev/publisher/internal/publish/publishhelper"
 	"github.com/posit-dev/publisher/internal/schema"
 
@@ -237,11 +236,10 @@ func (p *defaultPublisher) doPublish() error {
 		return err
 	}
 
-	client, err := clientFactory(p.Account, 2*time.Minute, p.emitter, p.log)
+	serverPublisher, err := p.createServerPublisher()
 	if err != nil {
 		return err
 	}
-	serverPublisher := connectpublisher.NewServerPublisher(p.State, p.log, client, p.emitter, p.PublishHelper)
 
 	if wasPreviouslyDeployed {
 		p.log.Info("Updating deployment", "content_id", contentID)
