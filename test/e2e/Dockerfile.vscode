@@ -2,7 +2,8 @@
 # Multiple Versions of R, Python and Quarto
 # VS Code server with extensions for python, r and quarto
 
-FROM e2ebase AS code-server
+ARG BUILDPLATFORM=linux/amd64
+FROM --platform=$BUILDPLATFORM e2ebase AS code-server
 
 RUN export TZ=America/New_York
 
