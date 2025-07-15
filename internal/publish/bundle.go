@@ -3,115 +3,58 @@ package publish
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"io"
-	"os"
-
 	"github.com/posit-dev/publisher/internal/bundles"
-	"github.com/posit-dev/publisher/internal/clients/connect"
 	"github.com/posit-dev/publisher/internal/events"
-	"github.com/posit-dev/publisher/internal/inspect/dependencies/pydeps"
-	"github.com/posit-dev/publisher/internal/inspect/dependencies/renv"
-	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/types"
-	"github.com/posit-dev/publisher/internal/util"
+	"io"
+	"os"
 )
 
-type createBundleStartData struct{}
-type createBundleSuccessData struct {
-	Filename string `mapstructure:"filename"`
-}
+func (p *defaultPublisher) createBundle() (*os.File, error) {
+	manifest := bundles.NewManifestFromConfig(p.Config)
+	p.log.Debug("Built manifest from config", "config", p.ConfigName)
 
-type uploadBundleStartData struct{}
-type uploadBundleSuccessData struct {
-	BundleID types.BundleID `mapstructure:"bundleId"`
-}
-
-func (p *defaultPublisher) createAndUploadBundle(
-	client connect.APIClient,
-	bundler bundles.Bundler,
-	contentID types.ContentID) (types.BundleID, error) {
+	if p.Config.R != nil {
+		rPackages, err := p.getRPackages()
+		if err != nil {
+			return nil, err
+		}
+		manifest.Packages = rPackages
+	}
+	p.log.Debug("Generated manifest:", manifest)
 
 	// Create Bundle step
 	op := events.PublishCreateBundleOp
 	prepareLog := p.log.WithArgs(logging.LogKeyOp, op)
 
+	bundler, err := bundles.NewBundler(p.Dir, manifest, p.Config.Files, p.log)
+	if err != nil {
+		return nil, err
+	}
+
 	p.emitter.Emit(events.New(op, events.StartPhase, events.NoError, createBundleStartData{}))
 	prepareLog.Info("Preparing files")
 	bundleFile, err := os.CreateTemp("", "bundle-*.tar.gz")
 	if err != nil {
-		return "", types.OperationError(op, err)
+		return nil, types.OperationError(op, err)
 	}
-	defer os.Remove(bundleFile.Name())
-	defer bundleFile.Close()
-	manifest, err := bundler.CreateBundle(bundleFile)
+	manifest, err = bundler.CreateBundle(bundleFile)
 	if err != nil {
-		return "", types.OperationError(op, err)
+		return nil, types.OperationError(op, err)
 	}
 
 	_, err = bundleFile.Seek(0, io.SeekStart)
 	if err != nil {
-		return "", types.OperationError(op, err)
+		return nil, types.OperationError(op, err)
 	}
 	prepareLog.Info("Done preparing files", "filename", bundleFile.Name())
 	p.emitter.Emit(events.New(op, events.SuccessPhase, events.NoError, createBundleSuccessData{
 		Filename: bundleFile.Name(),
 	}))
 
-	// Upload Bundle step
-	op = events.PublishUploadBundleOp
-	uploadLog := p.log.WithArgs(logging.LogKeyOp, op)
-
-	p.emitter.Emit(events.New(op, events.StartPhase, events.NoError, uploadBundleStartData{}))
-	uploadLog.Info("Uploading files")
-
-	bundleID, err := client.UploadBundle(contentID, bundleFile, p.log)
-	p.log.Debug("Bundle uploaded", "deployment", p.TargetName, "bundle_id", bundleID)
-	if err != nil {
-		return "", types.OperationError(op, err)
-	}
-
 	// Update deployment record with new information
 	p.Target.Files = manifest.GetFilenames()
-	p.Target.BundleID = bundleID
-	p.Target.BundleURL = util.GetBundleURL(p.Account.URL, contentID, bundleID)
 
-	if p.Config.Python != nil {
-		filename := p.Config.Python.PackageFile
-		if filename == "" {
-			filename = interpreters.PythonRequirementsFilename
-		}
-		p.log.Debug("Python configuration present", "PythonRequirementsFile", filename)
-
-		requirements, err := pydeps.ReadRequirementsFile(p.Dir.Join(filename))
-		p.log.Debug("Python requirements file in use", "requirements", requirements)
-		if err != nil {
-			return "", err
-		}
-		p.Target.Requirements = requirements
-	}
-
-	if p.Config.R != nil {
-		filename := p.Config.R.PackageFile
-		if filename == "" {
-			filename = interpreters.DefaultRenvLockfile
-		}
-		p.log.Debug("R configuration present", "filename", filename)
-		lockfile, err := renv.ReadLockfile(p.Dir.Join(filename))
-		if err != nil {
-			return "", err
-		}
-		p.log.Debug("Renv lockfile in use", "lockfile", lockfile)
-		p.Target.Renv = lockfile
-	}
-
-	_, err = p.writeDeploymentRecord()
-	if err != nil {
-		return "", err
-	}
-	uploadLog.Info("Done uploading files", "bundle_id", bundleID)
-	p.emitter.Emit(events.New(op, events.SuccessPhase, events.NoError, uploadBundleSuccessData{
-		BundleID: bundleID,
-	}))
-	return bundleID, nil
+	return bundleFile, nil
 }

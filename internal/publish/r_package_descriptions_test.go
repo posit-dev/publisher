@@ -4,6 +4,7 @@ package publish
 
 import (
 	"errors"
+	"github.com/posit-dev/publisher/internal/publish/publishhelper"
 	"testing"
 
 	"github.com/posit-dev/publisher/internal/bundles"
@@ -36,11 +37,12 @@ func TestRPackageDescSuite(t *testing.T) {
 }
 
 func (s *RPackageDescSuite) makePublisher() *defaultPublisher {
+	helper := publishhelper.NewPublishHelper(s.stateStore, s.log)
 	return &defaultPublisher{
-		State:          s.stateStore,
 		log:            s.log,
 		emitter:        s.emitter,
 		rPackageMapper: s.packageMapper,
+		PublishHelper:  helper,
 	}
 }
 

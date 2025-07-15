@@ -1,4 +1,4 @@
-package publish
+package connect
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
@@ -18,24 +18,25 @@ type createDeploymentSuccessData struct {
 	SaveName  string          `mapstructure:"saveName"`
 }
 
-func (p *defaultPublisher) createDeployment(client connect.APIClient) (types.ContentID, error) {
+func (c *ServerPublisher) CreateDeployment() (types.ContentID, error) {
 	op := events.PublishCreateNewDeploymentOp
-	log := p.log.WithArgs(logging.LogKeyOp, op)
+	log := c.log.WithArgs(logging.LogKeyOp, op)
 
-	p.emitter.Emit(events.New(op, events.StartPhase, events.NoError, createDeploymentStartData{
-		SaveName: p.SaveName,
+	c.emitter.Emit(events.New(op, events.StartPhase, events.NoError, createDeploymentStartData{
+		SaveName: c.SaveName,
 	}))
 	log.Info("Creating new deployment")
 
-	contentID, err := client.CreateDeployment(&connect.ConnectContent{}, log)
+	contentID, err := c.client.CreateDeployment(&connect.ConnectContent{}, log)
 	if err != nil {
 		return "", types.OperationError(op, err)
 	}
 
 	log.Info("Created deployment", "content_id", contentID)
-	p.emitter.Emit(events.New(op, events.SuccessPhase, events.NoError, createDeploymentSuccessData{
+	c.emitter.Emit(events.New(op, events.SuccessPhase, events.NoError, createDeploymentSuccessData{
 		ContentID: contentID,
-		SaveName:  p.SaveName,
+		SaveName:  c.SaveName,
 	}))
+
 	return contentID, nil
 }

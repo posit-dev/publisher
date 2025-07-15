@@ -1,4 +1,4 @@
-package publish
+package connect
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
@@ -22,21 +22,20 @@ type DeploymentNotFoundErrorDetails struct {
 	ContentID types.ContentID `mapstructure:"contentId"`
 }
 
-func (p *defaultPublisher) updateContent(
-	client connect.APIClient,
+func (c *ServerPublisher) updateContent(
 	contentID types.ContentID) error {
 
 	op := events.PublishUpdateDeploymentOp
-	log := p.log.WithArgs(logging.LogKeyOp, op)
+	log := c.log.WithArgs(logging.LogKeyOp, op)
 
-	p.emitter.Emit(events.New(op, events.StartPhase, events.NoError, updateContentStartData{
+	c.emitter.Emit(events.New(op, events.StartPhase, events.NoError, updateContentStartData{
 		ContentID: contentID,
-		SaveName:  p.SaveName,
+		SaveName:  c.SaveName,
 	}))
-	log.Info("Updating deployment settings", "content_id", contentID, "save_name", p.SaveName)
+	log.Info("Updating deployment settings", "content_id", contentID, "save_name", c.SaveName)
 
-	connectContent := connect.ConnectContentFromConfig(p.Config)
-	err := client.UpdateDeployment(contentID, connectContent, log)
+	connectContent := connect.ConnectContentFromConfig(c.Config)
+	err := c.client.UpdateDeployment(contentID, connectContent, log)
 	if err != nil {
 		httpErr, ok := err.(*http_client.HTTPError)
 		if ok && httpErr.Status == http.StatusNotFound {
@@ -50,6 +49,6 @@ func (p *defaultPublisher) updateContent(
 	}
 
 	log.Info("Done updating settings")
-	p.emitter.Emit(events.New(op, events.SuccessPhase, events.NoError, updateContentSuccessData{}))
+	c.emitter.Emit(events.New(op, events.SuccessPhase, events.NoError, updateContentSuccessData{}))
 	return nil
 }
