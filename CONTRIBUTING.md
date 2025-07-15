@@ -13,7 +13,9 @@
     - [Unit Tests](#unit-tests)
       - [Coverage Reporting](#coverage-reporting)
     - [End-to-End Tests](#end-to-end-tests)
-      - [E2E Test Setup](#e2e-test-setup)
+      - [Requirements](#requirements)
+        - [Docker Desktop](#docker-desktop)
+        - [Connect Server License](#connect-server-license)
       - [Running E2E Tests](#running-e2e-tests)
   - [Development](#development)
     - [Build Tools](#build-tools)
@@ -99,6 +101,36 @@ End-to-end tests are written in JavaScript and utilize Cypress for testing the P
 
 They are not currently run within the CI pipeline, but can be run locally to verify that the extension works as expected in a Connect environment.
 
+#### Requirements
+
+##### Docker Desktop
+
+To run the end-to-end tests, you will need to have Docker Desktop installed and running on your machine. (We have had issues with running
+alternatives to Docker Desktop, such as Podman, so we recommend using Docker Desktop.)
+
+The images used for the end-to-end tests are built using Dockerfiles located in the `test/e2e` directory and are currently built for
+an AMD64 architecture. If you are running on an ARM64 architecture (such as Apple Silicon), you will need to ensure that your Docker installation's Virtual Machine Settings are set to:
+
+- use the `Apple Virtualization framework` for the `Virtualization Framework` option
+- the `Use Rosetta for x86_64/amd64 emulation on Apple Silicon` option is enabled.
+
+##### Connect Server License
+
+To run the end-to-end tests, you will need a valid Posit Connect server license set within your environment within the `CONNECT_LICENSE` environment variable. We higly recommend setting this variable in your shell profile (e.g., `.bashrc`, `.zshrc`, etc.) so that it is available in all terminal sessions.
+
+```bash
+export CONNECT_LICENSE="your-connect-license-key"
+```
+
+To get an internal license, you can use the new [License Management app](https://connect.posit.it/support/license_management/)
+so users can create their own license keys for internal use! If you do not have access to this app, please reach out in #support.
+
+If you have to diagnose issues with the connect license, you can check the license status as reported by the Connect server by running the
+following command within the e2e-connect-publisher-e2e Docker container: `cat /var/log/rstudio/rstudio-connect/rstudio-connect.log`.
+Typically there will be a line which indicates a licensing failure, if that is the case.
+
+````bash
+
 #### E2E Test Setup
 
 To run the end-to-end tests, you should first create a virtual environment and install the necessary dependencies.
@@ -108,7 +140,7 @@ This can be done by running the following command from the `test/e2e` subdirecto
 ```bash
 cd test/e2e
 python3 -m venv .venv
-```
+````
 
 Activate the virtual environment and install the dependencies:
 
@@ -131,6 +163,8 @@ deactivate
 
 #### Running E2E Tests
 
+** NOTE: ** The instructions below assume that your terminal has the `test/e2e` directory as the current working directory. If you are not in that directory, you will need to adjust the commands accordingly.
+
 1. Activate your virtual environment if it is not already active.
 
 - Run the following command from the `test/e2e` subdirectory:
@@ -142,7 +176,8 @@ source .venv/bin/activate
 - Build the publisher and start the Cypress interactive test runner:
 
 ```bash
-just e2e
+just build-images
+just dev
 ```
 
 This will start the Cypress test runner, which will open a browser window and allow you to run the end-to-end tests against the Posit Publisher VSCode extension.
@@ -154,6 +189,15 @@ When done, you can deactivate the virtual environment with:
 ```bash
 deactivate
 ```
+
+And detach the Docker containers with:
+
+```bash
+just stop
+```
+
+**NOTE: ** If you are updating the images in any way, where you need to rebuild the images with `just build-images`,
+you will need to run the `just stop` command to remove the existing containers before running `just dev`.
 
 ## Development
 
