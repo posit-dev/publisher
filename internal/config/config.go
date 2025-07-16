@@ -60,12 +60,15 @@ func readLeadingComments(path util.AbsolutePath) ([]string, error) {
 }
 
 func FromFile(path util.AbsolutePath) (*Config, error) {
-	err := ValidateFile(path)
+	data, err := ValidateFile(path)
 	if err != nil {
 		return nil, err
 	}
+
+	schema.UpgradePublishingSchema(data)
+
 	cfg := New()
-	err = util.ReadTOMLFile(path, cfg)
+	err = util.DecodeTOMLMap(data, cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -76,10 +79,10 @@ func FromFile(path util.AbsolutePath) (*Config, error) {
 	return cfg, nil
 }
 
-func ValidateFile(path util.AbsolutePath) error {
-	validator, err := schema.NewValidator[Config](schema.ConfigSchemaURL)
+func ValidateFile(path util.AbsolutePath) (map[string]interface{}, error) {
+	validator, err := schema.NewValidator[Config](schema.ConfigSchemaURLs)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	return validator.ValidateTOMLFile(path)
 }

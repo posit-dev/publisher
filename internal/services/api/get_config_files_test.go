@@ -5,6 +5,7 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"github.com/posit-dev/publisher/internal/server_type"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -63,6 +64,7 @@ func (s *GetConfigFilesHandlerFuncSuite) TestHandlerFunc() {
 	rec := httptest.NewRecorder()
 
 	cfg := config.New()
+	cfg.ServerType = server_type.ServerTypeConnect
 	cfg.Type = config.ContentTypeHTML
 	cfg.Files = []string{"*", "!ignoreme"}
 	err = cfg.WriteFile(config.GetConfigPath(base, "myConfig"))
@@ -236,6 +238,7 @@ func (s *GetConfigFilesHandlerFuncSuite) TestHandlerFuncInvalidConfigFiles() {
 	s.NoError(err)
 
 	cfg := config.New()
+	cfg.ServerType = server_type.ServerTypeConnect
 	cfg.Type = config.ContentTypeHTML
 	cfg.Files = []string{"[Z-"}
 	err = cfg.WriteFile(config.GetConfigPath(base, "myConfig"))
@@ -277,6 +280,7 @@ func (s *GetConfigFilesHandlerFuncSuite) TestHandlerFuncSubdir() {
 	rec := httptest.NewRecorder()
 
 	cfg := config.New()
+	cfg.ServerType = server_type.ServerTypeConnect
 	cfg.Type = config.ContentTypeHTML
 	cfg.Files = []string{"*", "!ignoreme"}
 	err = cfg.WriteFile(config.GetConfigPath(projectDir, "myConfig"))

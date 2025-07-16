@@ -4,6 +4,7 @@ package config
 
 import (
 	"bytes"
+	"github.com/posit-dev/publisher/internal/server_type"
 	"io/fs"
 	"strings"
 	"testing"
@@ -35,6 +36,7 @@ func (s *ConfigSuite) SetupTest() {
 func (s *ConfigSuite) createConfigFile(name string) {
 	configFile := GetConfigPath(s.cwd, name)
 	cfg := New()
+	cfg.ServerType = "connect"
 	cfg.Type = "python-dash"
 	cfg.Entrypoint = "app.py"
 	cfg.Python = &Python{
@@ -85,6 +87,22 @@ func (s *ConfigSuite) TestFromExampleFile() {
 	s.Equal(true, *valuePtr)
 }
 
+func (s *ConfigSuite) TestFromExampleV3File() {
+	realDir, err := util.Getwd(nil)
+	s.NoError(err)
+	path := realDir.Join("..", "schema", "schemas", "config-v3.toml")
+	cfg, err := FromFile(path)
+	s.NoError(err)
+	s.NotNil(cfg)
+
+	valuePtr := cfg.Connect.Kubernetes.DefaultPyEnvironmentManagement
+	s.NotNil(valuePtr)
+	s.Equal(true, *valuePtr)
+
+	s.Equal(cfg.Schema, schema.ConfigSchemaURL)
+	s.Equal(cfg.ServerType, server_type.ServerTypeConnect)
+}
+
 func (s *ConfigSuite) TestFromFileErr() {
 	cfg, err := FromFile(s.cwd.Join("nonexistent.toml"))
 	s.ErrorIs(err, fs.ErrNotExist)
@@ -101,6 +119,7 @@ func (s *ConfigSuite) TestWriteFile() {
 func (s *ConfigSuite) TestWriteFileEmptyEntrypoint() {
 	configFile := GetConfigPath(s.cwd, "myConfig")
 	cfg := New()
+	cfg.ServerType = "connect"
 	cfg.Type = ContentTypeHTML
 	cfg.Entrypoint = ""
 	err := cfg.WriteFile(configFile)
@@ -141,7 +160,8 @@ func (s *ConfigSuite) TestWriteComments() {
 
 const commentedConfig = `# These are comments.
 # They will be preserved.
-'$schema' = 'https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json'
+'$schema' = 'https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v4.json'
+server_type = 'connect'
 type = 'html'
 entrypoint = 'index.html'
 `

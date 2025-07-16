@@ -62,3 +62,34 @@ func (s *TOMLSuite) TestReadTOMLFileBadKey() {
 	s.Equal(agentErr.Data["key"], "b")
 	s.Equal(agentErr.Data["problem"], "unknown key")
 }
+
+type TOMLMap struct {
+	A int64  `toml:"a"`
+	B string `toml:"b"`
+}
+
+func (s *TOMLSuite) TestDecodeTOMLMap() {
+	data := map[string]any{
+		"a": 1,
+		"b": "string",
+	}
+	tomlMap := TOMLMap{}
+	err := DecodeTOMLMap(data, &tomlMap)
+	s.NoError(err)
+	s.Equal(int64(1), tomlMap.A)
+	s.Equal("string", tomlMap.B)
+}
+
+func (s *TOMLSuite) TestDecodeTOMLMap_BadKey() {
+	data := map[string]any{
+		"a": 1,
+		"b": "string",
+		"c": "extra", // extra key not in TOMLMap
+	}
+	tomlMap := TOMLMap{}
+	err := DecodeTOMLMap(data, &tomlMap)
+	s.Error(err)
+	agentErr, ok := err.(*types.AgentError)
+	s.True(ok)
+	s.Equal(types.ErrorUnknownTOMLKey, agentErr.Code)
+}

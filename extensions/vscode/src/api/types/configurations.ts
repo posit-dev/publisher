@@ -4,6 +4,7 @@ import { AgentError } from "./error";
 import { ConnectConfig } from "./connect";
 import { SchemaURL } from "./schema";
 import { InterpreterDefaults } from "./interpreters";
+import { ServerType } from "./contentRecords";
 
 export type ConfigurationLocation = {
   configurationName: string;
@@ -110,6 +111,7 @@ export const contentTypeStrings = {
 
 export type ConfigurationDetails = {
   $schema: SchemaURL;
+  serverType: ServerType;
   type: ContentType;
   entrypoint?: string;
   title?: string;

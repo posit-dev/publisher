@@ -4,6 +4,7 @@ package api
 
 import (
 	"encoding/json"
+	"github.com/posit-dev/publisher/internal/server_type"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -44,6 +45,7 @@ func (s *GetConfigurationuite) SetupTest() {
 func (s *GetConfigurationuite) makeConfiguration(name string) *config.Config {
 	path := config.GetConfigPath(s.cwd, name)
 	cfg := config.New()
+	cfg.ServerType = server_type.ServerTypeConnect
 	cfg.Type = config.ContentTypePythonDash
 	cfg.Entrypoint = "app.py"
 	cfg.Python = &config.Python{
