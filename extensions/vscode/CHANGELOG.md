@@ -12,9 +12,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Improved support for Posit Connect deployments hosted in Snowpark Container
   Services. (#2687, #2691)
-- Introduced Connect Cloud support as an experimental feature behind a configuration
-  option. It is still very early stages and should not be used by the general public.
-  (#2688)
 
 - Fixed an issue where disabling the use of keychain credential storage
   would not work as expected. (#2697)
