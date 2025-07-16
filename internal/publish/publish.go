@@ -17,6 +17,7 @@ import (
 	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/inspect/dependencies/renv"
+	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/project"
 	"github.com/posit-dev/publisher/internal/schema"
@@ -65,7 +66,7 @@ type publishDeployedFailureData struct {
 	DirectURL    string `mapstructure:"url"`
 }
 
-func NewFromState(s *state.State, rExecutable util.Path, pythonExecutable util.Path, emitter events.Emitter, log logging.Logger) (Publisher, error) {
+func NewFromState(s *state.State, rInterpreter interpreters.RInterpreter, pythonInterpreter interpreters.PythonInterpreter, emitter events.Emitter, log logging.Logger) (Publisher, error) {
 	if s.LocalID != "" {
 		data := baseEventData{
 			LocalID: s.LocalID,
@@ -78,7 +79,17 @@ func NewFromState(s *state.State, rExecutable util.Path, pythonExecutable util.P
 		emitter = events.NewDataEmitter(dataMap, emitter)
 	}
 
-	packageManager, err := renv.NewPackageMapper(s.Dir, rExecutable, log)
+	rexec, err := rInterpreter.GetRExecutable()
+	if err != nil {
+		return nil, err
+	}
+
+	pyexec, err := pythonInterpreter.GetPythonExecutable()
+	if err != nil {
+		return nil, err
+	}
+
+	packageManager, err := renv.NewPackageMapper(s.Dir, rexec.Path, log)
 
 	// Handle difference where we have no SaveName when redeploying, since it is
 	// only sent in the first deployment. In the end, both should equate to same
@@ -96,8 +107,8 @@ func NewFromState(s *state.State, rExecutable util.Path, pythonExecutable util.P
 		log:            log,
 		emitter:        emitter,
 		rPackageMapper: packageManager,
-		r:              rExecutable,
-		python:         pythonExecutable,
+		r:              rexec.Path,
+		python:         pyexec.Path,
 	}, err
 }
 
