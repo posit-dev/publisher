@@ -9,13 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fixed the naming of "Shiny for Python" and "Shiny for R" content types.
-  (#2664)
-
+- Fixed the naming of "Shiny for Python" and "Shiny for R" content types. (#2664)
+- Fixed an issue where end-to-end tests could not run on some Mac systems due to Docker files not being built for the correct platform.
+- Fixed an issue where disabling keychain credential storage would not work as expected. (#2697)
 - Fixed inconsistent runtime discovery and selection at deploy time. (#2648)
-
-- Fixed the inability for e2e tests to run on some Mac systems due to the
-  docker files not being built for the correct platform.
 
 ### Added
 

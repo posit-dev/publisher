@@ -33,6 +33,12 @@ clear-credentials:
 dev: 
     #!/usr/bin/env bash
     set -euo pipefail
+    
+    # check to see if rsconnect-python is available, because if it is not, then the tests fail in weird ways....
+    rsconnect version || {
+        echo "rsconnect-python is not installed. Did you forget to start your virtual environment in which it is installed?"
+        exit 1
+    }
     just build-publisher
     just e2e
 
