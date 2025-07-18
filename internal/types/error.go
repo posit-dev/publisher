@@ -34,6 +34,10 @@ const (
 	ErrorTomlUnknownError             ErrorCode = "tomlUnknownError"
 	ErrorPythonExecNotFound           ErrorCode = "pythonExecNotFound"
 	ErrorRExecNotFound                ErrorCode = "rExecNotFound"
+	ErrorDeviceAuthPending            ErrorCode = "deviceAuthPending"
+	ErrorDeviceAuthSlowDown           ErrorCode = "deviceAuthSlowDown"
+	ErrorDeviceAuthAccessDenied       ErrorCode = "deviceAuthAccessDenied"
+	ErrorDeviceAuthExpiredToken       ErrorCode = "deviceAuthExpiredToken"
 )
 
 type EventableError interface {

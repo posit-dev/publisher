@@ -30,7 +30,7 @@ func TestPostTestCredentialsHandlerSuite(t *testing.T) {
 }
 
 func (s *PostTestCredentialsHandlerSuite) SetupTest() {
-	clientFactory = connect.NewConnectClient
+	connectClientFactory = connect.NewConnectClient
 }
 
 func (s *PostTestCredentialsHandlerSuite) TestPostTestCredentialsHandlerFunc() {
@@ -51,7 +51,7 @@ func (s *PostTestCredentialsHandlerSuite) TestPostTestCredentialsHandlerFunc() {
 		Email: "user@example.com",
 	}
 	client.On("TestAuthentication", mock.Anything).Return(user, nil)
-	clientFactory = func(account *accounts.Account, timeout time.Duration, emitter events.Emitter, log logging.Logger) (connect.APIClient, error) {
+	connectClientFactory = func(account *accounts.Account, timeout time.Duration, emitter events.Emitter, log logging.Logger) (connect.APIClient, error) {
 		return client, nil
 	}
 	handler := PostTestCredentialsHandlerFunc(log)
@@ -90,7 +90,7 @@ func (s *PostTestCredentialsHandlerSuite) TestPostTestCredentialsHandlerFuncWith
 	// succeed on the second request... https://connect.localtest.me/rsc/dev-password
 	client.On("TestAuthentication", mock.Anything).Return(user, nil)
 
-	clientFactory = func(account *accounts.Account, timeout time.Duration, emitter events.Emitter, log logging.Logger) (connect.APIClient, error) {
+	connectClientFactory = func(account *accounts.Account, timeout time.Duration, emitter events.Emitter, log logging.Logger) (connect.APIClient, error) {
 		return client, nil
 	}
 	handler := PostTestCredentialsHandlerFunc(log)
@@ -130,7 +130,7 @@ func (s *PostTestCredentialsHandlerSuite) TestPostTestCredentialsHandlerFuncWith
 	// succeed the third request... https://connect.example.com/pass
 	client.On("TestAuthentication", mock.Anything).Return(user, nil)
 
-	clientFactory = func(account *accounts.Account, timeout time.Duration, emitter events.Emitter, log logging.Logger) (connect.APIClient, error) {
+	connectClientFactory = func(account *accounts.Account, timeout time.Duration, emitter events.Emitter, log logging.Logger) (connect.APIClient, error) {
 		return client, nil
 	}
 	handler := PostTestCredentialsHandlerFunc(log)
@@ -160,7 +160,7 @@ func (s *PostTestCredentialsHandlerSuite) TestPostTestCredentialsHandlerFuncNoAp
 
 	client := connect.NewMockClient()
 	client.On("TestAuthentication", mock.Anything).Return(nil, nil)
-	clientFactory = func(account *accounts.Account, timeout time.Duration, emitter events.Emitter, log logging.Logger) (connect.APIClient, error) {
+	connectClientFactory = func(account *accounts.Account, timeout time.Duration, emitter events.Emitter, log logging.Logger) (connect.APIClient, error) {
 		return client, nil
 	}
 	handler := PostTestCredentialsHandlerFunc(log)
@@ -191,7 +191,7 @@ func (s *PostTestCredentialsHandlerSuite) TestPostTestCredentialsHandlerFuncBadA
 	testError := errors.New("test error from TestAuthentication")
 	client := connect.NewMockClient()
 	client.On("TestAuthentication", mock.Anything).Return(nil, testError)
-	clientFactory = func(account *accounts.Account, timeout time.Duration, emitter events.Emitter, log logging.Logger) (connect.APIClient, error) {
+	connectClientFactory = func(account *accounts.Account, timeout time.Duration, emitter events.Emitter, log logging.Logger) (connect.APIClient, error) {
 		return client, nil
 	}
 	handler := PostTestCredentialsHandlerFunc(log)

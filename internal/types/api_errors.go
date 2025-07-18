@@ -213,3 +213,31 @@ func APIErrorPythonExecNotFoundFromAgentError(aerr AgentError) APIErrorPythonExe
 func (apierr *APIErrorPythonExecNotFound) JSONResponse(w http.ResponseWriter) {
 	jsonResult(w, http.StatusUnprocessableEntity, apierr)
 }
+
+type APIErrorDeviceAuth struct {
+	Code ErrorCode `json:"code"`
+}
+
+func APIErrorDeviceAuthFromAgentError(aerr AgentError) APIErrorDeviceAuth {
+	resultCode := ErrorUnknown
+	errorCode, ok := aerr.Data["error"].(string)
+	if ok {
+		switch errorCode {
+		case "authorization_pending":
+			resultCode = ErrorDeviceAuthPending
+		case "slow_down":
+			resultCode = ErrorDeviceAuthSlowDown
+		case "expired_token":
+			resultCode = ErrorDeviceAuthExpiredToken
+		case "access_denied":
+			resultCode = ErrorDeviceAuthAccessDenied
+		}
+	}
+	return APIErrorDeviceAuth{
+		Code: resultCode,
+	}
+}
+
+func (apierr *APIErrorDeviceAuth) JSONResponse(w http.ResponseWriter) {
+	jsonResult(w, http.StatusBadRequest, apierr)
+}
