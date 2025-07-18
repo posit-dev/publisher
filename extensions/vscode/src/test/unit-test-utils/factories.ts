@@ -112,4 +112,5 @@ export const credentialFactory = Factory.define<Credential>(({ sequence }) => ({
   name: `Credential ${sequence}`,
   url: `https://connect.${sequence}.site.com/connect`,
   apiKey: `qwerty-${sequence}`,
+  serverType: ServerType.CONNECT,
 }));

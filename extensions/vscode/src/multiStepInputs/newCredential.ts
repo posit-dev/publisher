@@ -490,6 +490,7 @@ export async function newCredential(
       state.data.url,
       state.data.apiKey,
       state.data.snowflakeConnection,
+      serverType,
     );
   } catch (error: unknown) {
     const summary = getSummaryStringFromError("credentials::add", error);
