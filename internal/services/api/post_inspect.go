@@ -13,15 +13,11 @@ import (
 	"github.com/posit-dev/publisher/internal/bundles/matcher"
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/initialize"
+	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 )
-
-type postInspectRequestBody struct {
-	Python string `json:"python"`
-	R      string `json:"r"`
-}
 
 type postInspectResponseBody struct {
 	Configuration *config.Config `json:"configuration"`
@@ -59,126 +55,147 @@ func getEntrypointPath(projectDir util.AbsolutePath, w http.ResponseWriter, req 
 	return relEntrypoint, nil
 }
 
+type configGetter interface {
+	GetPossibleConfigs(base util.AbsolutePath, python util.Path, rExecutable util.Path, entrypoint util.RelativePath, log logging.Logger) ([]*config.Config, error)
+}
+
+type postInspectHandler struct {
+	base                util.AbsolutePath
+	log                 logging.Logger
+	initializer         configGetter
+	matchingWalker      func([]string, util.AbsolutePath, logging.Logger) (util.Walker, error)
+	interpretersResolve func(util.AbsolutePath, http.ResponseWriter, *http.Request, logging.Logger) (interpreters.RInterpreter, interpreters.PythonInterpreter, error)
+}
+
 func PostInspectHandlerFunc(base util.AbsolutePath, log logging.Logger) http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-		projectDir, relProjectDir, err := ProjectDirFromRequest(base, w, req, log)
+	handler := &postInspectHandler{
+		base:                base,
+		log:                 log,
+		initializer:         initialize.NewDefaultInitialize(),
+		matchingWalker:      matcher.NewMatchingWalker,
+		interpretersResolve: InterpretersFromRequest,
+	}
+
+	return handler.Handle
+}
+
+func (h *postInspectHandler) Handle(w http.ResponseWriter, req *http.Request) {
+	projectDir, relProjectDir, err := ProjectDirFromRequest(h.base, w, req, h.log)
+	if err != nil {
+		// Response already returned by ProjectDirFromRequest
+		return
+	}
+
+	// Parse and resolve executable paths for Python and R
+	rInterpreter, pythonInterpreter, err := h.interpretersResolve(projectDir, w, req, h.log)
+	if err != nil {
+		// Response already returned by InterpretersFromRequest
+		return
+	}
+
+	// At this point, it is ok if the system does not have R or Python interpreters.
+	rPath, _ := rInterpreter.GetRExecutable()
+	pythonPath, _ := pythonInterpreter.GetPythonExecutable()
+
+	h.log.Debug("Python path to be used for inspection", "path", pythonPath.String())
+	h.log.Debug("R path to be used for inspection", "path", rPath.String())
+
+	response := []postInspectResponseBody{}
+
+	if req.URL.Query().Get("recursive") == "true" {
+		h.log.Debug("Recursive inspection intent found")
+		walker, err := h.matchingWalker([]string{"*"}, projectDir, h.log)
 		if err != nil {
-			// Response already returned by ProjectDirFromRequest
+			InternalError(w, req, h.log, err)
 			return
 		}
-		dec := json.NewDecoder(req.Body)
-		dec.DisallowUnknownFields()
-		var b postInspectRequestBody
-		err = dec.Decode(&b)
-		if err != nil {
-			BadRequest(w, req, log, err)
-			return
-		}
-		pythonPath := util.NewPath(b.Python, nil)
-		rPath := util.NewPath(b.R, nil)
 
-		response := []postInspectResponseBody{}
-
-		log.Debug("Python path to be used for inspection", "path", pythonPath)
-		log.Debug("R path to be used for inspection", "path", rPath)
-
-		if req.URL.Query().Get("recursive") == "true" {
-			log.Debug("Recursive inspection intent found")
-			walker, err := matcher.NewMatchingWalker([]string{"*"}, projectDir, log)
+		h.log.Debug("Starting walk through directory", "directory", projectDir)
+		err = walker.Walk(projectDir, func(path util.AbsolutePath, info fs.FileInfo, err error) error {
 			if err != nil {
-				InternalError(w, req, log, err)
-				return
-			}
-
-			log.Debug("Starting walk through directory", "directory", projectDir)
-			err = walker.Walk(projectDir, func(path util.AbsolutePath, info fs.FileInfo, err error) error {
-				if err != nil {
-					if errors.Is(err, os.ErrNotExist) {
-						return nil
-					} else {
-						return err
-					}
-				}
-				if !info.IsDir() {
+				if errors.Is(err, os.ErrNotExist) {
 					return nil
-				}
-				if path.Base() == ".posit" {
-					// no need to inspect or recurse into .posit directories
-					return filepath.SkipDir
-				}
-				relProjectDir, err := path.Rel(base)
-				if err != nil {
+				} else {
 					return err
 				}
-				entrypoint := req.URL.Query().Get("entrypoint")
-				entrypointPath := util.NewRelativePath(entrypoint, base.Fs())
-
-				i := initialize.NewDefaultInitialize()
-				configs, err := i.GetPossibleConfigs(path, pythonPath, rPath, entrypointPath, log)
-				if err != nil {
-					return err
-				}
-
-				log.Debug("Possible configurations found for entrypoint", "path", entrypointPath.String(), "configs_len", len(configs))
-
-				for _, cfg := range configs {
-					if cfg.Type == config.ContentTypeUnknown {
-						log.Debug("Unknown configuration found, skipping", "entrypoint", cfg.Entrypoint)
-						continue
-					}
-
-					log.Debug("Including configuration result with response", "entrypoint", cfg.Entrypoint)
-
-					response = append(response, postInspectResponseBody{
-						ProjectDir:    relProjectDir.String(),
-						Configuration: cfg,
-					})
-				}
+			}
+			if !info.IsDir() {
 				return nil
-			})
-			if err != nil {
-				if aerr, ok := types.IsAgentErrorOf(err, types.ErrorPythonExecNotFound); ok {
-					apiErr := types.APIErrorPythonExecNotFoundFromAgentError(*aerr)
-					log.Error("Python executable not found", "error", err.Error())
-					apiErr.JSONResponse(w)
-					return
-				}
-				InternalError(w, req, log, err)
-				return
 			}
-		} else {
-			entrypointPath, err := getEntrypointPath(projectDir, w, req, log)
-			if err != nil {
-				// Response already returned by getEntrypointPath
-				return
+			if path.Base() == ".posit" {
+				// no need to inspect or recurse into .posit directories
+				return filepath.SkipDir
 			}
+			relProjectDir, err := path.Rel(h.base)
+			if err != nil {
+				return err
+			}
+			entrypoint := req.URL.Query().Get("entrypoint")
+			entrypointPath := util.NewRelativePath(entrypoint, h.base.Fs())
 
-			i := initialize.NewDefaultInitialize()
-			configs, err := i.GetPossibleConfigs(projectDir, pythonPath, rPath, entrypointPath, log)
+			configs, err := h.initializer.GetPossibleConfigs(path, pythonPath.Path, rPath.Path, entrypointPath, h.log)
 			if err != nil {
-				if aerr, ok := types.IsAgentErrorOf(err, types.ErrorPythonExecNotFound); ok {
-					apiErr := types.APIErrorPythonExecNotFoundFromAgentError(*aerr)
-					log.Error("Python executable not found", "error", err.Error())
-					apiErr.JSONResponse(w)
-					return
-				}
-				InternalError(w, req, log, err)
-				return
+				return err
 			}
 
-			log.Debug("Possible configurations found for entrypoint", "path", entrypointPath.String(), "configs_len", len(configs))
+			h.log.Debug("Possible configurations found for entrypoint", "path", entrypointPath.String(), "configs_len", len(configs))
 
-			response = make([]postInspectResponseBody, 0, len(configs))
 			for _, cfg := range configs {
-				log.Debug("Including configuration result with response", "entrypoint", cfg.Entrypoint)
+				if cfg.Type == config.ContentTypeUnknown {
+					h.log.Debug("Unknown configuration found, skipping", "entrypoint", cfg.Entrypoint)
+					continue
+				}
+
+				h.log.Debug("Including configuration result with response", "entrypoint", cfg.Entrypoint)
+
 				response = append(response, postInspectResponseBody{
 					ProjectDir:    relProjectDir.String(),
 					Configuration: cfg,
 				})
 			}
+			return nil
+		})
+		if err != nil {
+			if aerr, ok := types.IsAgentErrorOf(err, types.ErrorPythonExecNotFound); ok {
+				apiErr := types.APIErrorPythonExecNotFoundFromAgentError(*aerr)
+				h.log.Error("Python executable not found", "error", err.Error())
+				apiErr.JSONResponse(w)
+				return
+			}
+			InternalError(w, req, h.log, err)
+			return
 		}
-		w.Header().Set("content-type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+	} else {
+		entrypointPath, err := getEntrypointPath(projectDir, w, req, h.log)
+		if err != nil {
+			// Response already returned by getEntrypointPath
+			return
+		}
+
+		configs, err := h.initializer.GetPossibleConfigs(projectDir, pythonPath.Path, rPath.Path, entrypointPath, h.log)
+		if err != nil {
+			if aerr, ok := types.IsAgentErrorOf(err, types.ErrorPythonExecNotFound); ok {
+				apiErr := types.APIErrorPythonExecNotFoundFromAgentError(*aerr)
+				h.log.Error("Python executable not found", "error", err.Error())
+				apiErr.JSONResponse(w)
+				return
+			}
+			InternalError(w, req, h.log, err)
+			return
+		}
+
+		h.log.Debug("Possible configurations found for entrypoint", "path", entrypointPath.String(), "configs_len", len(configs))
+
+		response = make([]postInspectResponseBody, 0, len(configs))
+		for _, cfg := range configs {
+			h.log.Debug("Including configuration result with response", "entrypoint", cfg.Entrypoint)
+			response = append(response, postInspectResponseBody{
+				ProjectDir:    relProjectDir.String(),
+				Configuration: cfg,
+			})
+		}
 	}
+	w.Header().Set("content-type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
 }
