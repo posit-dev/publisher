@@ -159,6 +159,8 @@ func (s *AvailablePackagesSuite) TestGetLibPathsWindows() {
 		s.T().Skip()
 	}
 
+	rExecutablePath := util.NewAbsolutePath("R", nil)
+
 	setupMockRInterpreter := func(
 		base util.AbsolutePath,
 		rExecutableParam util.Path,
@@ -169,10 +171,9 @@ func (s *AvailablePackagesSuite) TestGetLibPathsWindows() {
 	) (interpreters.RInterpreter, error) {
 		i := interpreters.NewMockRInterpreter()
 		i.On("Init").Return(nil)
-		i.On("GetRExecutable").Return("R", nil)
+		i.On("GetRExecutable").Return(rExecutablePath, nil)
 		return i, nil
 	}
-	rExecutablePath := util.NewAbsolutePath("R", nil)
 
 	lister, err := NewAvailablePackageLister(s.base, util.NewPath("R", nil), s.log, setupMockRInterpreter, nil)
 	s.NoError(err)
