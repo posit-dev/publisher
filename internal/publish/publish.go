@@ -79,15 +79,9 @@ func NewFromState(s *state.State, rInterpreter interpreters.RInterpreter, python
 		emitter = events.NewDataEmitter(dataMap, emitter)
 	}
 
-	rexec, err := rInterpreter.GetRExecutable()
-	if err != nil {
-		return nil, err
-	}
-
-	pyexec, err := pythonInterpreter.GetPythonExecutable()
-	if err != nil {
-		return nil, err
-	}
+	// It is ok if the system does not have R or Python interpreters.
+	rexec, _ := rInterpreter.GetRExecutable()
+	pyexec, _ := pythonInterpreter.GetPythonExecutable()
 
 	packageManager, err := renv.NewPackageMapper(s.Dir, rexec.Path, log)
 
