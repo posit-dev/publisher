@@ -31,6 +31,7 @@ package credentials
 
 import (
 	"encoding/json"
+
 	"github.com/google/uuid"
 	"github.com/posit-dev/publisher/internal/server_type"
 	"github.com/posit-dev/publisher/internal/util"

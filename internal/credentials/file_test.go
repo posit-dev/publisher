@@ -4,11 +4,12 @@ package credentials
 
 import (
 	"fmt"
-	"github.com/posit-dev/publisher/internal/server_type"
 	"os"
 	"runtime"
 	"testing"
 	"time"
+
+	"github.com/posit-dev/publisher/internal/server_type"
 
 	"github.com/posit-dev/publisher/internal/logging/loggingtest"
 	"github.com/posit-dev/publisher/internal/util"

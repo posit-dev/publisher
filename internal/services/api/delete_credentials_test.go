@@ -3,11 +3,12 @@
 package api
 
 import (
-	"github.com/posit-dev/publisher/internal/server_type"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"testing"
+
+	"github.com/posit-dev/publisher/internal/server_type"
 
 	"github.com/gorilla/mux"
 	"github.com/posit-dev/publisher/internal/credentials"

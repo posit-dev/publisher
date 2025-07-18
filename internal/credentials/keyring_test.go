@@ -3,8 +3,9 @@
 package credentials
 
 import (
-	"github.com/posit-dev/publisher/internal/server_type"
 	"testing"
+
+	"github.com/posit-dev/publisher/internal/server_type"
 
 	"github.com/posit-dev/publisher/internal/logging/loggingtest"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
