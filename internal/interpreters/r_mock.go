@@ -46,8 +46,8 @@ func (m *MockRInterpreter) GetRExecutable() (util.AbsolutePath, error) {
 		return util.AbsolutePath{}, args.Error(1)
 	} else {
 		var i interface{} = arg0
-		if path, ok := i.(string); ok {
-			return util.NewAbsolutePath(path, nil), args.Error(1)
+		if path, ok := i.(util.AbsolutePath); ok {
+			return path, args.Error(1)
 		} else {
 			return util.AbsolutePath{}, args.Error(1)
 		}

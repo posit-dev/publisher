@@ -75,8 +75,8 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFunc() {
 	// Create a url.Values to hold query parameters
 	queryParams := url.Values{}
 	queryParams.Add("dir", ".")
-	queryParams.Add("r", "bin/my_r")
-	queryParams.Add("python", "bin/my_python")
+	queryParams.Add("r", "/bin/my_r")
+	queryParams.Add("python", "/bin/my_python")
 
 	// Encode query parameters and set them to the URL
 	parsedURL.RawQuery = queryParams.Encode()
@@ -97,10 +97,13 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFunc() {
 	publisher.On("PublishDirectory", mock.Anything).Return(nil)
 	publisherFactory = func(
 		state *state.State,
-		rExecutable util.Path,
-		pythonExecutable util.Path,
+		rInterpreter interpreters.RInterpreter,
+		pythonInterpreter interpreters.PythonInterpreter,
 		emitter events.Emitter,
 		log logging.Logger) (publish.Publisher, error) {
+		// confirm that the interpreter paths made it to the publisher factory.
+		s.Equal("/bin/my_r", rInterpreter.GetPreferredPath())
+		s.Equal("/bin/my_python", pythonInterpreter.GetPreferredPath())
 		return publisher, nil
 	}
 	stateFactory = func(
@@ -121,8 +124,8 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFunc() {
 		s.Equal("", saveName)
 
 		// confirm that the interpreter paths made it through the request.
-		s.Equal("bin/my_r", rInterpreter.GetPreferredPath())
-		s.Equal("bin/my_python", pythonInterpreter.GetPreferredPath())
+		s.Equal("/bin/my_r", rInterpreter.GetPreferredPath())
+		s.Equal("/bin/my_python", pythonInterpreter.GetPreferredPath())
 
 		st := state.Empty()
 		st.Account = &accounts.Account{}
@@ -248,7 +251,7 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFuncPublishErr
 	testErr := errors.New("test error from PublishDirectory")
 	publisher := &mockPublisher{}
 	publisher.On("PublishDirectory", mock.Anything).Return(testErr)
-	publisherFactory = func(*state.State, util.Path, util.Path, events.Emitter, logging.Logger) (publish.Publisher, error) {
+	publisherFactory = func(*state.State, interpreters.RInterpreter, interpreters.PythonInterpreter, events.Emitter, logging.Logger) (publish.Publisher, error) {
 		return publisher, nil
 	}
 
@@ -284,7 +287,7 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentSubdir() {
 
 	publisher := &mockPublisher{}
 	publisher.On("PublishDirectory", mock.Anything).Return(nil)
-	publisherFactory = func(*state.State, util.Path, util.Path, events.Emitter, logging.Logger) (publish.Publisher, error) {
+	publisherFactory = func(*state.State, interpreters.RInterpreter, interpreters.PythonInterpreter, events.Emitter, logging.Logger) (publish.Publisher, error) {
 		return publisher, nil
 	}
 	stateFactory = func(
@@ -337,7 +340,7 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFuncWithSecret
 
 	publisher := &mockPublisher{}
 	publisher.On("PublishDirectory", mock.Anything).Return(nil)
-	publisherFactory = func(*state.State, util.Path, util.Path, events.Emitter, logging.Logger) (publish.Publisher, error) {
+	publisherFactory = func(*state.State, interpreters.RInterpreter, interpreters.PythonInterpreter, events.Emitter, logging.Logger) (publish.Publisher, error) {
 		return publisher, nil
 	}
 

@@ -263,7 +263,7 @@ func (i *defaultPythonInterpreter) GetPythonRequires() string {
 	pyProjectRequires := NewPyProjectPythonRequires(i.base)
 	python_requires, err := pyProjectRequires.GetPythonVersionRequirement()
 	if err != nil {
-		i.log.Warn("Error retrieving Python requires", err)
+		i.log.Warn("Error retrieving Python requires", "error", err.Error())
 		python_requires = ""
 	}
 	return python_requires
