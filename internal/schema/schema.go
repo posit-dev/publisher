@@ -25,10 +25,14 @@ const DeploymentSchemaURL = schemaPrefix + "posit-publishing-record-schema-v4.js
 var ConfigSchemaURLs = []string{
 	schemaPrefix + "posit-publishing-schema-v3.json",
 	ConfigSchemaURL,
+	schemaPrefix + "draft/posit-publishing-schema-v3.json",
+	schemaPrefix + "draft/posit-publishing-schema-v4.json",
 }
 var DeploymentSchemaURLs = []string{
 	schemaPrefix + "posit-publishing-record-schema-v3.json",
 	DeploymentSchemaURL,
+	schemaPrefix + "draft/posit-publishing-record-schema-v3.json",
+	schemaPrefix + "draft/posit-publishing-record-schema-v4.json",
 }
 
 type Validator[T any] struct {
