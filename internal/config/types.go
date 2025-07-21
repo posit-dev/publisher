@@ -134,10 +134,10 @@ func (c *Config) HasSecret(secret string) bool {
 type Environment = map[string]string
 
 type Python struct {
-	Version               string `toml:"version,omitempty" json:"version"`
-	PackageFile           string `toml:"package_file,omitempty" json:"packageFile"`
-	PackageManager        string `toml:"package_manager,omitempty" json:"packageManager"`
-	RequiresPythonVersion string `toml:"requires_python,omitempty" json:"requiresPython"`
+	Version               string `toml:"version,omitempty" mapstructure:"version,omitempty" json:"version"`
+	PackageFile           string `toml:"package_file,omitempty" mapstructure:"package_file,omitempty" json:"packageFile"`
+	PackageManager        string `toml:"package_manager,omitempty" mapstructure:"package_manager,omitempty" json:"packageManager"`
+	RequiresPythonVersion string `toml:"requires_python,omitempty" mapstructure:"requires_python,omitempty" json:"requiresPython"`
 }
 
 func (p *Python) FillDefaults(
@@ -167,10 +167,10 @@ func (p *Python) FillDefaults(
 }
 
 type R struct {
-	Version          string `toml:"version,omitempty" json:"version"`
-	PackageFile      string `toml:"package_file,omitempty" json:"packageFile"`
-	PackageManager   string `toml:"package_manager,omitempty" json:"packageManager"`
-	RequiresRVersion string `toml:"requires_r,omitempty" json:"requiresR"`
+	Version          string `toml:"version,omitempty" mapstructure:"version,omitempty" json:"version"`
+	PackageFile      string `toml:"package_file,omitempty" mapstructure:"package_file,omitempty" json:"packageFile"`
+	PackageManager   string `toml:"package_manager,omitempty" mapstructure:"package_manager,omitempty" json:"packageManager"`
+	RequiresRVersion string `toml:"requires_r,omitempty" mapstructure:"requires_r,omitempty" json:"requiresR"`
 }
 
 func (r *R) FillDefaults(
@@ -200,18 +200,18 @@ func (r *R) FillDefaults(
 }
 
 type Jupyter struct {
-	HideAllInput    bool `toml:"hide_all_input,omitempty" json:"hideAllInput"`
-	HideTaggedInput bool `toml:"hide_tagged_input,omitempty" json:"hideTaggedInput"`
+	HideAllInput    bool `toml:"hide_all_input,omitempty" mapstructure:"hide_all_input,omitempty" json:"hideAllInput"`
+	HideTaggedInput bool `toml:"hide_tagged_input,omitempty" mapstructure:"hide_tagged_input,omitempty" json:"hideTaggedInput"`
 }
 
 type Quarto struct {
-	Version string   `toml:"version" json:"version"`
-	Engines []string `toml:"engines" json:"engines"`
+	Version string   `toml:"version" mapstructure:"version" json:"version"`
+	Engines []string `toml:"engines" mapstructure:"engines" json:"engines"`
 }
 
 type Schedule struct {
-	Start      string `toml:"start" json:"start"`
-	Recurrence string `toml:"recurrence" json:"recurrence"`
+	Start      string `toml:"start" mapstructure:"start" json:"start"`
+	Recurrence string `toml:"recurrence" mapstructure:"recurrence" json:"recurrence"`
 }
 
 type AccessType string
@@ -229,51 +229,51 @@ type ConnectAccessControl struct {
 }
 
 type User struct {
-	Id          string `toml:"id,omitempty" json:"id,omitempty"`
-	GUID        string `toml:"guid,omitempty" json:"guid,omitempty"`
-	Name        string `toml:"name,omitempty" json:"name,omitempty"`
-	Permissions string `toml:"permissions" json:"permissions"`
+	Id          string `toml:"id,omitempty" mapstructure:"id,omitempty" json:"id,omitempty"`
+	GUID        string `toml:"guid,omitempty" mapstructure:"guid,omitempty" json:"guid,omitempty"`
+	Name        string `toml:"name,omitempty" mapstructure:"name,omitempty" json:"name,omitempty"`
+	Permissions string `toml:"permissions" mapstructure:"permissions" json:"permissions"`
 }
 
 type Group struct {
-	Id          string `toml:"id,omitempty" json:"id,omitempty"`
-	GUID        string `toml:"guid,omitempty" json:"guid,omitempty"`
-	Name        string `toml:"name,omitempty" json:"name,omitempty"`
-	Permissions string `toml:"permissions" json:"permissions"`
+	Id          string `toml:"id,omitempty" mapstructure:"id,omitempty" json:"id,omitempty"`
+	GUID        string `toml:"guid,omitempty" mapstructure:"guid,omitempty" json:"guid,omitempty"`
+	Name        string `toml:"name,omitempty" mapstructure:"name,omitempty" json:"name,omitempty"`
+	Permissions string `toml:"permissions" mapstructure:"permissions" json:"permissions"`
 }
 
 type Connect struct {
-	Access        *ConnectAccess        `toml:"access,omitempty" json:"access,omitempty"`
+	Access        *ConnectSystemAccess  `toml:"access,omitempty" json:"access,omitempty"`
 	AccessControl *ConnectAccessControl `toml:"access_control,omitempty" json:"accessControl,omitempty"`
 	Runtime       *ConnectRuntime       `toml:"runtime,omitempty" json:"runtime,omitempty"`
 	Kubernetes    *ConnectKubernetes    `toml:"kubernetes,omitempty" json:"kubernetes,omitempty"`
 }
 
-type ConnectAccess struct {
-	RunAs            string `toml:"run_as,omitempty" json:"runAs,omitempty"`
-	RunAsCurrentUser *bool  `toml:"run_as_current_user,omitempty" json:"runAsCurrentUser,omitempty"`
+type ConnectSystemAccess struct {
+	RunAs            string `toml:"run_as,omitempty" mapstructure:"run_as,omitempty" json:"runAs,omitempty"`
+	RunAsCurrentUser *bool  `toml:"run_as_current_user,omitempty" mapstructure:"run_as_current_user,omitempty" json:"runAsCurrentUser,omitempty"`
 }
 
 type ConnectRuntime struct {
-	ConnectionTimeout  *int32   `toml:"connection_timeout,omitempty" json:"connectionTimeout,omitempty"`
-	ReadTimeout        *int32   `toml:"read_timeout,omitempty" json:"readTimeout,omitempty"`
-	InitTimeout        *int32   `toml:"init_timeout,omitempty" json:"initTimeout,omitempty"`
-	IdleTimeout        *int32   `toml:"idle_timeout,omitempty" json:"idleTimeout,omitempty"`
-	MaxProcesses       *int32   `toml:"max_processes,omitempty" json:"maxProcesses,omitempty"`
-	MinProcesses       *int32   `toml:"min_processes,omitempty" json:"minProcesses,omitempty"`
-	MaxConnsPerProcess *int32   `toml:"max_conns_per_process,omitempty" json:"maxConnsPerProcess,omitempty"`
-	LoadFactor         *float64 `toml:"load_factor,omitempty" json:"loadFactor,omitempty"`
+	ConnectionTimeout  *int32   `toml:"connection_timeout,omitempty" mapstructure:"connection_timeout,omitempty" json:"connectionTimeout,omitempty"`
+	ReadTimeout        *int32   `toml:"read_timeout,omitempty" mapstructure:"read_timeout,omitempty" json:"readTimeout,omitempty"`
+	InitTimeout        *int32   `toml:"init_timeout,omitempty" mapstructure:"init_timeout,omitempty" json:"initTimeout,omitempty"`
+	IdleTimeout        *int32   `toml:"idle_timeout,omitempty" mapstructure:"idle_timeout,omitempty" json:"idleTimeout,omitempty"`
+	MaxProcesses       *int32   `toml:"max_processes,omitempty" mapstructure:"max_processes,omitempty" json:"maxProcesses,omitempty"`
+	MinProcesses       *int32   `toml:"min_processes,omitempty" mapstructure:"min_processes,omitempty" json:"minProcesses,omitempty"`
+	MaxConnsPerProcess *int32   `toml:"max_conns_per_process,omitempty" mapstructure:"max_conns_per_process,omitempty" json:"maxConnsPerProcess,omitempty"`
+	LoadFactor         *float64 `toml:"load_factor,omitempty" mapstructure:"load_factor,omitempty" json:"loadFactor,omitempty"`
 }
 
 type ConnectKubernetes struct {
-	MemoryRequest                  *int64   `toml:"memory_request,omitempty" json:"memoryRequest,omitempty"`
-	MemoryLimit                    *int64   `toml:"memory_limit,omitempty" json:"memoryLimit,omitempty"`
-	CPURequest                     *float64 `toml:"cpu_request,omitempty" json:"cpuRequest,omitempty"`
-	CPULimit                       *float64 `toml:"cpu_limit,omitempty" json:"cpuLimit,omitempty"`
-	AMDGPULimit                    *int64   `toml:"amd_gpu_limit,omitempty" json:"amdGpuLimit,omitempty"`
-	NvidiaGPULimit                 *int64   `toml:"nvidia_gpu_limit,omitempty" json:"nvidiaGpuLimit,omitempty"`
-	ServiceAccountName             string   `toml:"service_account_name,omitempty" json:"serviceAccountName,omitempty"`
-	DefaultImageName               string   `toml:"default_image_name,omitempty" json:"defaultImageName,omitempty"`
-	DefaultREnvironmentManagement  *bool    `toml:"default_r_environment_management,omitempty" json:"defaultREnvironmentManagement"`
-	DefaultPyEnvironmentManagement *bool    `toml:"default_py_environment_management,omitempty" json:"defaultPyEnvironmentManagement"`
+	MemoryRequest                  *int64   `toml:"memory_request,omitempty" mapstructure:"memory_request,omitempty" json:"memoryRequest,omitempty"`
+	MemoryLimit                    *int64   `toml:"memory_limit,omitempty" mapstructure:"memory_limit,omitempty" json:"memoryLimit,omitempty"`
+	CPURequest                     *float64 `toml:"cpu_request,omitempty" mapstructure:"cpu_request,omitempty" json:"cpuRequest,omitempty"`
+	CPULimit                       *float64 `toml:"cpu_limit,omitempty" mapstructure:"cpu_limit,omitempty" json:"cpuLimit,omitempty"`
+	AMDGPULimit                    *int64   `toml:"amd_gpu_limit,omitempty" mapstructure:"amd_gpu_limit,omitempty" json:"amdGpuLimit,omitempty"`
+	NvidiaGPULimit                 *int64   `toml:"nvidia_gpu_limit,omitempty" mapstructure:"nvidia_gpu_limit,omitempty" json:"nvidiaGpuLimit,omitempty"`
+	ServiceAccountName             string   `toml:"service_account_name,omitempty" mapstructure:"service_account_name,omitempty" json:"serviceAccountName,omitempty"`
+	DefaultImageName               string   `toml:"default_image_name,omitempty" mapstructure:"default_image_name,omitempty" json:"defaultImageName,omitempty"`
+	DefaultREnvironmentManagement  *bool    `toml:"default_r_environment_management,omitempty" mapstructure:"default_r_environment_management,omitempty" json:"defaultREnvironmentManagement"`
+	DefaultPyEnvironmentManagement *bool    `toml:"default_py_environment_management,omitempty" mapstructure:"default_py_environment_management,omitempty" json:"defaultPyEnvironmentManagement"`
 }

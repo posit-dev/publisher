@@ -28,28 +28,28 @@ var DeploymentRecordMutex sync.Mutex
 
 type Deployment struct {
 	// Predeployment and full deployment fields
-	Schema        string                 `toml:"$schema" json:"$schema"`
-	ServerType    server_type.ServerType `toml:"server_type" json:"serverType"`
-	ServerURL     string                 `toml:"server_url" json:"serverUrl"`
-	ClientVersion string                 `toml:"client_version" json:"-"`
-	CreatedAt     string                 `toml:"created_at" json:"createdAt"`
-	DismissedAt   string                 `toml:"dismissed_at" json:"dismissedAt"`
-	Type          config.ContentType     `toml:"type" json:"type"`
-	ConfigName    string                 `toml:"configuration_name" json:"configurationName"`
-	ID            types.ContentID        `toml:"id,omitempty" json:"id"`
-	DashboardURL  string                 `toml:"dashboard_url,omitempty" json:"dashboardUrl"`
-	DirectURL     string                 `toml:"direct_url,omitempty" json:"directUrl"`
-	LogsURL       string                 `toml:"logs_url,omitempty" json:"logsUrl"`
+	Schema        string                 `toml:"$schema" mapstructure:"$schema" json:"$schema"`
+	ServerType    server_type.ServerType `toml:"server_type" mapstructure:"server_type" json:"serverType"`
+	ServerURL     string                 `toml:"server_url" mapstructure:"server_url" json:"serverUrl"`
+	ClientVersion string                 `toml:"client_version" mapstructure:"client_version" json:"-"`
+	CreatedAt     string                 `toml:"created_at" mapstructure:"created_at" json:"createdAt"`
+	DismissedAt   string                 `toml:"dismissed_at" mapstructure:"dismissed_at" json:"dismissedAt"`
+	Type          config.ContentType     `toml:"type" mapstructure:"type" json:"type"`
+	ConfigName    string                 `toml:"configuration_name" mapstructure:"configuration_name" json:"configurationName"`
+	ID            types.ContentID        `toml:"id,omitempty" mapstructure:"id,omitempty" json:"id"`
+	DashboardURL  string                 `toml:"dashboard_url,omitempty" mapstructure:"dashboard_url,omitempty" json:"dashboardUrl"`
+	DirectURL     string                 `toml:"direct_url,omitempty" mapstructure:"direct_url,omitempty" json:"directUrl"`
+	LogsURL       string                 `toml:"logs_url,omitempty" mapstructure:"logs_url,omitempty" json:"logsUrl"`
 
 	// Full deployment fields
-	DeployedAt    string            `toml:"deployed_at,omitempty" json:"deployedAt"`
-	BundleID      types.BundleID    `toml:"bundle_id,omitempty" json:"bundleId"`
-	BundleURL     string            `toml:"bundle_url,omitempty" json:"bundleUrl"`
-	Error         *types.AgentError `toml:"deployment_error,omitempty" json:"deploymentError"`
-	Files         []string          `toml:"files,multiline,omitempty" json:"files"`
-	Requirements  []string          `toml:"requirements,multiline,omitempty" json:"requirements"`
-	Configuration *config.Config    `toml:"configuration,omitempty" json:"configuration"`
-	Renv          *renv.Lockfile    `toml:"renv,omitempty" json:"renv"`
+	DeployedAt    string            `toml:"deployed_at,omitempty" mapstructure:"deployed_at,omitempty" json:"deployedAt"`
+	BundleID      types.BundleID    `toml:"bundle_id,omitempty" mapstructure:"bundle_id,omitempty" json:"bundleId"`
+	BundleURL     string            `toml:"bundle_url,omitempty" mapstructure:"bundle_url,omitempty" json:"bundleUrl"`
+	Error         *types.AgentError `toml:"deployment_error,omitempty" mapstructure:"deployment_error,omitempty" json:"deploymentError"`
+	Files         []string          `toml:"files,multiline,omitempty" mapstructure:"files,omitempty" json:"files"`
+	Requirements  []string          `toml:"requirements,multiline,omitempty" mapstructure:"requirements,omitempty" json:"requirements"`
+	Configuration *config.Config    `toml:"configuration,omitempty" mapstructure:"configuration,omitempty" json:"configuration"`
+	Renv          *renv.Lockfile    `toml:"renv,omitempty" mapstructure:"renv,omitempty" json:"renv"`
 }
 
 func New() *Deployment {
@@ -103,15 +103,20 @@ func RenameDeployment(base util.AbsolutePath, oldName, newName string) error {
 }
 
 func FromFile(path util.AbsolutePath) (*Deployment, error) {
-	err := ValidateFile(path)
+	data, err := ValidateFile(path)
 	if err != nil {
 		return nil, err
 	}
-	d := New()
 
-	err = util.ReadTOMLFile(path, d)
+	err = schema.UpgradePublishingRecordSchema(data)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to upgrade deployment schema to latest version: %w", err)
+	}
+
+	d := New()
+	err = util.DecodeTOMLMap(data, d)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode publishing record schema schema: %w", err)
 	}
 
 	// Migration
@@ -121,10 +126,10 @@ func FromFile(path util.AbsolutePath) (*Deployment, error) {
 	return d, nil
 }
 
-func ValidateFile(path util.AbsolutePath) error {
-	validator, err := schema.NewValidator[Deployment](schema.DeploymentSchemaURL)
+func ValidateFile(path util.AbsolutePath) (map[string]interface{}, error) {
+	validator, err := schema.NewValidator[Deployment](schema.DeploymentSchemaURLs)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	return validator.ValidateTOMLFile(path)
 }

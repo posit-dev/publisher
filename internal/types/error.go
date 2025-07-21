@@ -49,11 +49,11 @@ type EventableError interface {
 }
 
 type AgentError struct {
-	Code    ErrorCode `json:"code" toml:"code"`
-	Err     error     `json:"-" toml:"-"`
-	Message string    `json:"msg" toml:"message"`
-	Op      Operation `json:"operation" toml:"operation"`
-	Data    ErrorData `json:"data" toml:"data,omitempty"`
+	Code    ErrorCode `json:"code" mapstructure:"code" toml:"code"`
+	Err     error     `json:"-" mapstructure:"-" toml:"-"`
+	Message string    `json:"msg" mapstructure:"message" toml:"message"`
+	Op      Operation `json:"operation" mapstructure:"operation" toml:"operation"`
+	Data    ErrorData `json:"data" mapstructure:"data,omitempty" toml:"data,omitempty"`
 }
 
 // Normalize punctuation on messages derived from errors
