@@ -1,4 +1,4 @@
-// Copyright (C) 2023 by Posit Software, PBC.
+// Copyright (C) 2025 by Posit Software, PBC.
 
 import { AgentError } from "./error";
 import {
@@ -10,9 +10,18 @@ import { SchemaURL } from "./schema";
 
 export enum ServerType {
   CONNECT = "connect",
-  SHINY_APPS = "shinyapps",
-  CLOUD = "cloud",
+  CONNECT_CLOUD = "connect_cloud",
   SNOWFLAKE = "snowflake",
+}
+
+export enum PlatformName {
+  CONNECT = "Posit Connect",
+  CONNECT_CLOUD = "Posit Connect Cloud",
+}
+
+export enum PlatformDescription {
+  CONNECT = "Deploy data applications, documents, APIs, and more to your server.",
+  CONNECT_CLOUD = "Deploy data applications and documents online. Free plan available.",
 }
 
 export enum ContentRecordState {

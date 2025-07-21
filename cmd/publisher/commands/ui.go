@@ -3,6 +3,7 @@ package commands
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/cli_types"
 	"github.com/posit-dev/publisher/internal/credentials"
 	"github.com/posit-dev/publisher/internal/events"
@@ -35,6 +36,14 @@ func (cmd *UICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) err
 
 	credentials.UseKeychain = cmd.UseKeychain
 
+	// We need to create these only after the credentials.UseKeychain setting has been resolved.
+	// This is because NewCredentialsService will use the value of UseKeychain to determine
+	// whether to use the keychain or not.
+	accountList, err := accounts.NewAccountList(ctx.Fs, ctx.Logger)
+	if err != nil {
+		return err
+	}
+
 	// Auto-initialize if needed. This will be replaced by an API call from the UI
 	// for better error handling and startup performance.
 	svc := api.NewService(
@@ -42,7 +51,7 @@ func (cmd *UICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) err
 		cmd.Listen,
 		true,
 		absPath,
-		ctx.Accounts,
+		accountList,
 		log,
 		eventServer,
 		emitter)
