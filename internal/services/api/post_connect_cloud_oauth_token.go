@@ -44,15 +44,14 @@ func PostConnectCloudOAuthTokenHandlerFunc(log logging.Logger) http.HandlerFunc 
 		client := cloudAuthClientFactory(baseURL, log, 10*time.Second)
 
 		tokenRequest := cloud_auth.TokenRequest{
-			GrantType:  "device_code",
+			GrantType:  "urn:ietf:params:oauth:grant-type:device_code",
 			DeviceCode: b.DeviceCode,
-			ClientID:   cloudAuthClientID,
 		}
 		tokenResponse, err := client.ExchangeToken(tokenRequest)
 		if err != nil {
 			aerr, isBadRequest := http_client.IsHTTPAgentErrorStatusOf(err, http.StatusBadRequest)
 			if isBadRequest {
-				deviceAuthErr := types.APIErrorDeviceAuthFromAgentError(*aerr)
+				deviceAuthErr := types.APIErrorDeviceAuthFromAgentError(*aerr, log)
 				deviceAuthErr.JSONResponse(w)
 				return
 			}

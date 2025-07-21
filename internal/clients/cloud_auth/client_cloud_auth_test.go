@@ -42,7 +42,7 @@ func (s *CloudAuthClientSuite) TestCreateDeviceAuth() {
 		Interval:                5,
 	}
 
-	httpClient.On("PostForm", "/device_authorization", mock.Anything, mock.Anything, mock.Anything).
+	httpClient.On("PostForm", "/oauth/device/authorize", mock.Anything, mock.Anything, mock.Anything).
 		Return(nil).RunFn = func(args mock.Arguments) {
 		result := args.Get(2).(*DeviceAuthResponse)
 		result.DeviceCode = expectedResult.DeviceCode
@@ -53,15 +53,12 @@ func (s *CloudAuthClientSuite) TestCreateDeviceAuth() {
 		result.Interval = expectedResult.Interval
 	}
 
-	request := DeviceAuthRequest{
-		ClientID: "client_id",
-		Scope:    "scope",
-	}
 	client := &CloudAuthClient{
-		client: httpClient,
-		log:    logging.New(),
+		client:  httpClient,
+		log:     logging.New(),
+		baseURL: "https://login.staging.posit.cloud",
 	}
-	result, err := client.CreateDeviceAuth(request)
+	result, err := client.CreateDeviceAuth()
 	s.NoError(err)
 	s.Equal(expectedResult, result)
 }
@@ -89,11 +86,11 @@ func (s *CloudAuthClientSuite) TestExchangeToken() {
 	request := TokenRequest{
 		GrantType:  "grant_type",
 		DeviceCode: "device_code",
-		ClientID:   "client_id",
 	}
 	client := &CloudAuthClient{
-		client: httpClient,
-		log:    logging.New(),
+		client:  httpClient,
+		log:     logging.New(),
+		baseURL: "https://login.staging.posit.cloud",
 	}
 	result, err := client.ExchangeToken(request)
 	s.NoError(err)

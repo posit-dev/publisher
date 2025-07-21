@@ -5,7 +5,6 @@ package cloud_auth
 type TokenRequest struct {
 	GrantType  string `json:"grant_type"`
 	DeviceCode string `json:"device_code"`
-	ClientID   string `json:"client_id"`
 }
 
 type TokenResponse struct {

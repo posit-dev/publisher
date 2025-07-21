@@ -5,6 +5,7 @@ package types
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/posit-dev/publisher/internal/logging"
 	"net/http"
 )
 
@@ -218,7 +219,7 @@ type APIErrorDeviceAuth struct {
 	Code ErrorCode `json:"code"`
 }
 
-func APIErrorDeviceAuthFromAgentError(aerr AgentError) APIErrorDeviceAuth {
+func APIErrorDeviceAuthFromAgentError(aerr AgentError, log logging.Logger) APIErrorDeviceAuth {
 	resultCode := ErrorUnknown
 	errorCode, ok := aerr.Data["error"].(string)
 	if ok {
@@ -231,6 +232,8 @@ func APIErrorDeviceAuthFromAgentError(aerr AgentError) APIErrorDeviceAuth {
 			resultCode = ErrorDeviceAuthExpiredToken
 		case "access_denied":
 			resultCode = ErrorDeviceAuthAccessDenied
+		default:
+			log.Warn("unrecognized device auth error code: %s", "errorCode", errorCode)
 		}
 	}
 	return APIErrorDeviceAuth{

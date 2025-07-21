@@ -3,8 +3,7 @@ package cloud_auth
 // Copyright (C) 2025 by Posit Software, PBC.
 
 type DeviceAuthRequest struct {
-	ClientID string `json:"client_id"`
-	Scope    string `json:"scope"`
+	Scope string `json:"scope"`
 }
 
 type DeviceAuthResponse struct {

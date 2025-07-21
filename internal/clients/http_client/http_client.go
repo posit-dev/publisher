@@ -68,18 +68,20 @@ type HTTPError struct {
 	URL    string `mapstructure:"url"`
 	Method string `mapstructure:"method"`
 	Status int    `mapstructure:"status"`
+	Body   string `mapstructure:"body"`
 }
 
-func NewHTTPError(url, method string, status int) *HTTPError {
+func NewHTTPError(url, method string, status int, body string) *HTTPError {
 	return &HTTPError{
 		URL:    url,
 		Method: method,
 		Status: status,
+		Body:   body,
 	}
 }
 
 func (e *HTTPError) Error() string {
-	return fmt.Sprintf("unexpected response from the server (%d)", e.Status)
+	return fmt.Sprintf("unexpected response from the server (%d: %s)", e.Status, e.Body)
 }
 
 func (c *defaultHTTPClient) do(method string, path string, body io.Reader, bodyType string, log logging.Logger) ([]byte, error) {
@@ -88,6 +90,10 @@ func (c *defaultHTTPClient) do(method string, path string, body io.Reader, bodyT
 	if err != nil {
 		return nil, err
 	}
+	if bodyType != "" {
+		req.Header.Set("Content-Type", bodyType)
+	}
+
 	resp, err := c.client.Do(req)
 	if err != nil {
 		if e, ok := err.(net.Error); ok && e.Timeout() {
@@ -118,7 +124,7 @@ func (c *defaultHTTPClient) do(method string, path string, body io.Reader, bodyT
 		case http.StatusForbidden:
 			errCode = events.PermissionsCode
 		}
-		httpErr := NewHTTPError(apiURL, method, resp.StatusCode)
+		httpErr := NewHTTPError(apiURL, method, resp.StatusCode, string(body))
 		if errDetails == nil {
 			err = types.NewAgentError(
 				errCode,

@@ -111,7 +111,7 @@ func (s *PostConnectCloudOAuthTokenSuite) TestPostConnectCloudOAuthToken_BadRequ
 			client := cloud_auth.NewMockClient()
 			resultErr := types.NewAgentError(
 				events.ServerErrorCode,
-				http_client.NewHTTPError("https://foo.bar", "POST", http.StatusBadRequest),
+				http_client.NewHTTPError("https://foo.bar", "POST", http.StatusBadRequest, "uh oh"),
 				map[string]interface{}{"error": tc.errorCode})
 			client.On("ExchangeToken", mock.Anything).Return(nil, resultErr)
 			cloudAuthClientFactory = func(baseURL string, log logging.Logger, timeout time.Duration) cloud_auth.APIClient {

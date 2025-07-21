@@ -15,7 +15,6 @@ import (
 var cloudAuthClientFactory = cloud_auth.NewCloudAuthClient
 
 const cloudAuthBaseURLHeader = "Cloud-Auth-Base-Url"
-const cloudAuthClientID = "posit_publisher"
 
 type connectCloudDeviceAuthResponseBody struct {
 	DeviceCode              string `json:"deviceCode"`
@@ -34,11 +33,7 @@ func PostConnectCloudDeviceAuthHandlerFunc(log logging.Logger) http.HandlerFunc 
 
 		client := cloudAuthClientFactory(baseURL, log, 10*time.Second)
 
-		deviceAuthRequest := cloud_auth.DeviceAuthRequest{
-			ClientID: cloudAuthClientID,
-			Scope:    "vivid",
-		}
-		deviceAuthResult, err := client.CreateDeviceAuth(deviceAuthRequest)
+		deviceAuthResult, err := client.CreateDeviceAuth()
 		if err != nil {
 			InternalError(w, req, log, err)
 			return
