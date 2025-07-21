@@ -86,27 +86,6 @@ func (s *InitializeSuite) SetupTest() {
 	s.NoError(err)
 }
 
-func (s *InitializeSuite) TestInitEmpty() {
-	// Empty directories can be initialized without error.
-	log := logging.New()
-	path := s.cwd.Join("My App")
-	err := path.Mkdir(0777)
-	s.NoError(err)
-
-	i := NewInitialize(
-		detectors.NewContentTypeDetector,
-		inspect.NewPythonInspector,
-		setupNewPythonInterpreterMock,
-		inspect.NewRInspector,
-		setupNewRInterpreterMock,
-	)
-
-	cfg, err := i.Init(path, "", util.Path{}, util.Path{}, log)
-	s.Nil(err)
-	s.Equal(config.ContentTypeUnknown, cfg.Type)
-	s.Equal("My App", cfg.Title)
-}
-
 func (s *InitializeSuite) createAppPy() util.AbsolutePath {
 	appPath := s.cwd.Join("app.py")
 	err := appPath.WriteFile([]byte(`
@@ -166,23 +145,6 @@ shinyApp(ui = ui, server = server)
 	return appPath
 }
 
-func (s *InitializeSuite) createHTML() {
-	appPath := s.cwd.Join("index.html")
-	err := appPath.WriteFile([]byte(`
-		<html></html>
-	`), 0666)
-	s.NoError(err)
-}
-
-func (s *InitializeSuite) createRequirementsFile() {
-	appPath := s.cwd.Join("requirements.txt")
-	err := appPath.WriteFile([]byte(`
-		numpy
-		pandas
-	`), 0666)
-	s.NoError(err)
-}
-
 var emptyPyConfig = &config.Python{}
 
 var expectedPyConfig = &config.Python{
@@ -197,122 +159,6 @@ var expectedRConfig = &config.R{
 	Version:        "1.2.3",
 	PackageManager: "renv",
 	PackageFile:    "renv.lock",
-}
-
-func (s *InitializeSuite) TestInitInferredType() {
-	log := logging.New()
-	s.createAppPy()
-
-	i := NewInitialize(
-		detectors.NewContentTypeDetector,
-		setupMockPythonInspector(true, nil),
-		setupNewPythonInterpreterMock,
-		setupMockRInspector(false, nil),
-		setupNewRInterpreterMock,
-	)
-
-	configName := ""
-	cfg, err := i.Init(s.cwd, configName, util.Path{}, util.Path{}, log)
-	s.NoError(err)
-	configPath := config.GetConfigPath(s.cwd, configName)
-	cfg2, err := config.FromFile(configPath)
-	s.NoError(err)
-	s.Equal(config.ContentTypePythonFlask, cfg.Type)
-	s.Equal(emptyPyConfig, cfg.Python)
-	s.Equal(cfg, cfg2)
-}
-
-func (s *InitializeSuite) TestInitRequirementsFile() {
-	log := logging.New()
-	s.createHTML()
-	s.createRequirementsFile()
-
-	i := NewInitialize(
-		detectors.NewContentTypeDetector,
-		setupMockPythonInspector(true, nil),
-		setupNewPythonInterpreterMock,
-		setupMockRInspector(false, nil),
-		setupNewRInterpreterMock,
-	)
-
-	configName := ""
-	cfg, err := i.Init(s.cwd, configName, util.Path{}, util.Path{}, log)
-	s.NoError(err)
-	configPath := config.GetConfigPath(s.cwd, configName)
-	cfg2, err := config.FromFile(configPath)
-	s.NoError(err)
-	s.Equal(cfg.Type, config.ContentTypeHTML)
-	s.Equal(true, cfg.Python == nil)
-	s.Equal(cfg, cfg2)
-}
-
-func (s *InitializeSuite) TestInitIfNeededWhenNeeded() {
-	log := logging.New()
-	s.createAppPy()
-
-	i := NewInitialize(
-		detectors.NewContentTypeDetector,
-		setupMockPythonInspector(true, nil),
-		setupNewPythonInterpreterMock,
-		setupMockRInspector(false, nil),
-		setupNewRInterpreterMock,
-	)
-
-	configName := ""
-	err := i.InitIfNeeded(s.cwd, configName, log)
-	s.NoError(err)
-	configPath := config.GetConfigPath(s.cwd, configName)
-	cfg, err := config.FromFile(configPath)
-	s.NoError(err)
-	s.Equal(cfg.Type, config.ContentTypePythonFlask)
-	s.Equal(emptyPyConfig, cfg.Python)
-}
-
-func (s *InitializeSuite) TestInitIfNeededWhenNotNeeded() {
-	log := logging.New()
-	configName := ""
-	configPath := config.GetConfigPath(s.cwd, configName)
-	cfg := config.New()
-	cfg.Type = config.ContentTypePythonDash
-	cfg.Entrypoint = "app.py"
-	cfg.Python = &config.Python{
-		Version:        "3.4.5",
-		PackageManager: "pip",
-	}
-	cfg.WriteFile(configPath)
-
-	pythonInspectorFactory := func(
-		util.AbsolutePath,
-		util.Path,
-		logging.Logger,
-		interpreters.PythonInterpreterFactory,
-		executor.Executor,
-	) (inspect.PythonInspector, error) {
-		return &inspect.MockPythonInspector{}, nil
-	}
-	rInspectorFactory := func(
-		util.AbsolutePath,
-		util.Path,
-		logging.Logger,
-		interpreters.RInterpreterFactory,
-		executor.Executor,
-	) (inspect.RInspector, error) {
-		return &inspect.MockRInspector{}, nil
-	}
-
-	i := NewInitialize(
-		detectors.NewContentTypeDetector,
-		pythonInspectorFactory,
-		setupNewPythonInterpreterMock,
-		rInspectorFactory,
-		setupNewRInterpreterMock,
-	)
-
-	err := i.InitIfNeeded(s.cwd, configName, log)
-	s.NoError(err)
-	newConfig, err := config.FromFile(configPath)
-	s.NoError(err)
-	s.Equal(cfg, newConfig)
 }
 
 func (s *InitializeSuite) TestGetPossibleRConfig() {

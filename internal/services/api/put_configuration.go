@@ -82,7 +82,7 @@ func PutConfigurationHandlerFunc(base util.AbsolutePath, log logging.Logger) htt
 			// type to the validator.
 			rawConfig["type"] = string(config.ContentTypeHTML)
 		}
-		validator, err := schema.NewValidator[config.Config](schema.ConfigSchemaURL)
+		validator, err := schema.NewValidator[config.Config]([]string{schema.ConfigSchemaURL})
 		if err != nil {
 			InternalError(w, req, log, err)
 			return
