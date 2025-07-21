@@ -16,9 +16,11 @@ import (
 	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/inspect/dependencies/renv"
+	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/logging/loggingtest"
 	"github.com/posit-dev/publisher/internal/project"
+	"github.com/posit-dev/publisher/internal/server_type"
 	"github.com/posit-dev/publisher/internal/state"
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
@@ -119,7 +121,11 @@ func (s *PublishSuite) TearDownTest() {
 func (s *PublishSuite) TestNewFromState() {
 	stateStore := state.Empty()
 	stateStore.Dir = s.cwd
-	publisher, err := NewFromState(stateStore, util.Path{}, util.Path{}, events.NewNullEmitter(), logging.New())
+	mockRIntr := interpreters.NewMockRInterpreter()
+	mockPyIntr := interpreters.NewMockPythonInterpreter()
+	mockRIntr.On("GetRExecutable").Return(util.NewAbsolutePath("/path/to/r", nil), nil)
+	mockPyIntr.On("GetPythonExecutable").Return(util.NewAbsolutePath("/path/to/python", nil), nil)
+	publisher, err := NewFromState(stateStore, mockRIntr, mockPyIntr, events.NewNullEmitter(), logging.New())
 	s.NoError(err)
 	s.Equal(stateStore, publisher.(*defaultPublisher).State)
 }
@@ -262,7 +268,7 @@ func (s *PublishSuite) publishWithClient(
 	expectedErr error) {
 
 	account := &accounts.Account{
-		ServerType: accounts.ServerTypeConnect,
+		ServerType: server_type.ServerTypeConnect,
 		Name:       "test-account",
 		URL:        "https://connect.example.com",
 	}

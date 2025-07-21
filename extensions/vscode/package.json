@@ -401,6 +401,13 @@
           "fontPath": "dist/posit-publisher-icons.woff2",
           "fontCharacter": "\\f101"
         }
+      },
+      "posit-publisher-posit-logo": {
+        "description": "posit logo icon",
+        "default": {
+          "fontPath": "dist/posit-publisher-icons.woff2",
+          "fontCharacter": "\\f102"
+        }
       }
     },
     "viewsContainers": {

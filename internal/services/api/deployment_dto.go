@@ -3,9 +3,9 @@ package api
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/deployment"
+	"github.com/posit-dev/publisher/internal/server_type"
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 )
@@ -27,19 +27,19 @@ type deploymentLocation struct {
 
 type preDeploymentDTO struct {
 	deploymentLocation
-	Schema       string              `json:"$schema"`
-	ServerType   accounts.ServerType `json:"serverType"`
-	ServerURL    string              `json:"serverUrl"`
-	SaveName     string              `json:"saveName"`
-	CreatedAt    string              `json:"createdAt"`
-	DismissedAt  string              `toml:"dismissed_at,omitempty" json:"dismissedAt"`
-	ConfigName   string              `json:"configurationName,omitempty"`
-	ConfigPath   string              `json:"configurationPath,omitempty"`
-	Error        *types.AgentError   `json:"deploymentError,omitempty"`
-	ID           types.ContentID     `toml:"id,omitempty" json:"id"`
-	DashboardURL string              `toml:"dashboard_url,omitempty" json:"dashboardUrl"`
-	DirectURL    string              `toml:"direct_url,omitempty" json:"directUrl"`
-	LogsURL      string              `toml:"logs_url,omitempty" json:"logsUrl"`
+	Schema       string                 `json:"$schema"`
+	ServerType   server_type.ServerType `json:"serverType"`
+	ServerURL    string                 `json:"serverUrl"`
+	SaveName     string                 `json:"saveName"`
+	CreatedAt    string                 `json:"createdAt"`
+	DismissedAt  string                 `toml:"dismissed_at,omitempty" json:"dismissedAt"`
+	ConfigName   string                 `json:"configurationName,omitempty"`
+	ConfigPath   string                 `json:"configurationPath,omitempty"`
+	Error        *types.AgentError      `json:"deploymentError,omitempty"`
+	ID           types.ContentID        `toml:"id,omitempty" json:"id"`
+	DashboardURL string                 `toml:"dashboard_url,omitempty" json:"dashboardUrl"`
+	DirectURL    string                 `toml:"direct_url,omitempty" json:"directUrl"`
+	LogsURL      string                 `toml:"logs_url,omitempty" json:"logsUrl"`
 }
 
 type fullDeploymentDTO struct {
