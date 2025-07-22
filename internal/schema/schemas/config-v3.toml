@@ -1,11 +1,9 @@
-# Example schema file for the full draft schema
-"$schema" = "https://cdn.posit.co/publisher/schemas/draft/posit-publishing-schema-v4.json"
-server_type = "connect"
+# Example schema file
+"$schema" = "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json"
 type = "quarto-static"
 entrypoint = "report.qmd"
 title = "Regional Quarterly Sales Report"
 description = "This is the quarterly sales report, broken down by region."
-thumbnail = "images/thumbnail.jpg"
 validate = true
 
 files = [
@@ -13,42 +11,25 @@ files = [
     "*.qmd",
     "requirements.txt",
 ]
-
-tags = [ "sales", "quarterly", "regional" ]
-
-secrets = ["API_KEY"]
+secrets = ["API_KEY", "DATABASE_PASSWORD"]
 
 [python]
 version = "3.11.3"
 package_file = "requirements.txt"
 package_manager = "pip"
+requires_python = "<3.12"
 
 [r]
 version = "4.3.1"
 package_file = "renv.lock"
 package_manager = "renv"
+requires_r = ">=4.3.0"
 
 [quarto]
 version = "1.4"
 
 [environment]
 API_URL = "https://example.com/api"
-
-[[schedules]]
-start = "2023-10-25T08:00:00Z"
-recurrence = "FREQ=MONTHLY;INTERVAL=3"
-
-[[connect.access_control.users]]
-id = "jqpublic"
-guid = "536b456e-0311-4f92-ba10-dbf1db8a468e"
-name = "John Q. Public"
-permissions = "editor"
-
-[[connect.access_control.groups]]
-id = "Data Science Team"
-guid = "8b4fde3e-f995-4894-bc02-ae47538262ff"
-name = "Data Science Team"
-permissions = "editor"
 
 [connect.access]
 run_as = "rstudio-connect"

@@ -2,6 +2,7 @@ package config
 
 import (
 	"github.com/posit-dev/publisher/internal/interpreters"
+	"github.com/posit-dev/publisher/internal/server_type"
 )
 
 // Copyright (C) 2023 by Posit Software, PBC.
@@ -93,26 +94,26 @@ func (t ContentType) IsAppContent() bool {
 }
 
 type Config struct {
-	Comments      []string              `toml:"-" mapstructure:"-" json:"comments"`
-	Schema        string                `toml:"$schema" mapstructure:"$schema" json:"$schema"`
-	Type          ContentType           `toml:"type" mapstructure:"type" json:"type"`
-	Entrypoint    string                `toml:"entrypoint" mapstructure:"entrypoint" json:"entrypoint,omitempty"`
-	Validate      bool                  `toml:"validate" mapstructure:"validate" json:"validate"`
-	HasParameters bool                  `toml:"has_parameters,omitempty" mapstructure:"has_parameters,omitempty" json:"hasParameters"`
-	Files         []string              `toml:"files,multiline" mapstructure:"files" json:"files"`
-	Title         string                `toml:"title,omitempty" mapstructure:"title,omitempty" json:"title,omitempty"`
-	Description   string                `toml:"description,multiline,omitempty" mapstructure:"description,omitempty" json:"description,omitempty"`
-	ThumbnailFile string                `toml:"thumbnail,omitempty" mapstructure:"thumbnail,omitempty" json:"thumbnail,omitempty"`
-	Tags          []string              `toml:"tags,omitempty" mapstructure:"tags,omitempty" json:"tags,omitempty"`
-	Python        *Python               `toml:"python,omitempty" mapstructure:"python,omitempty" json:"python,omitempty"`
-	R             *R                    `toml:"r,omitempty" mapstructure:"r,omitempty" json:"r,omitempty"`
-	Jupyter       *Jupyter              `toml:"jupyter,omitempty" mapstructure:"jupyter,omitempty" json:"jupyter,omitempty"`
-	Quarto        *Quarto               `toml:"quarto,omitempty" mapstructure:"quarto,omitempty" json:"quarto,omitempty"`
-	Environment   Environment           `toml:"environment,omitempty" mapstructure:"environment,omitempty" json:"environment,omitempty"`
-	Secrets       []string              `toml:"secrets,omitempty" mapstructure:"secrets,omitempty" json:"secrets,omitempty"`
-	Schedules     []Schedule            `toml:"schedules,omitempty" mapstructure:"schedules,omitempty" json:"schedules,omitempty"`
-	Access        *ConnectAccessControl `toml:"access,omitempty" json:"access,omitempty"`
-	Connect       *Connect              `toml:"connect,omitempty" mapstructure:"connect,omitempty" json:"connect,omitempty"`
+	Comments      []string               `toml:"-" mapstructure:"-" json:"comments"`
+	Schema        string                 `toml:"$schema" mapstructure:"$schema" json:"$schema"`
+	ServerType    server_type.ServerType `toml:"server_type" mapstructure:"server_type" json:"serverType"`
+	Type          ContentType            `toml:"type" mapstructure:"type" json:"type"`
+	Entrypoint    string                 `toml:"entrypoint" mapstructure:"entrypoint" json:"entrypoint,omitempty"`
+	Validate      bool                   `toml:"validate" mapstructure:"validate" json:"validate"`
+	HasParameters bool                   `toml:"has_parameters,omitempty" mapstructure:"has_parameters,omitempty" json:"hasParameters"`
+	Files         []string               `toml:"files,multiline" mapstructure:"files" json:"files"`
+	Title         string                 `toml:"title,omitempty" mapstructure:"title,omitempty" json:"title,omitempty"`
+	Description   string                 `toml:"description,multiline,omitempty" mapstructure:"description,omitempty" json:"description,omitempty"`
+	ThumbnailFile string                 `toml:"thumbnail,omitempty" mapstructure:"thumbnail,omitempty" json:"thumbnail,omitempty"`
+	Tags          []string               `toml:"tags,omitempty" mapstructure:"tags,omitempty" json:"tags,omitempty"`
+	Python        *Python                `toml:"python,omitempty" mapstructure:"python,omitempty" json:"python,omitempty"`
+	R             *R                     `toml:"r,omitempty" mapstructure:"r,omitempty" json:"r,omitempty"`
+	Jupyter       *Jupyter               `toml:"jupyter,omitempty" mapstructure:"jupyter,omitempty" json:"jupyter,omitempty"`
+	Quarto        *Quarto                `toml:"quarto,omitempty" mapstructure:"quarto,omitempty" json:"quarto,omitempty"`
+	Environment   Environment            `toml:"environment,omitempty" mapstructure:"environment,omitempty" json:"environment,omitempty"`
+	Secrets       []string               `toml:"secrets,omitempty" mapstructure:"secrets,omitempty" json:"secrets,omitempty"`
+	Schedules     []Schedule             `toml:"schedules,omitempty" mapstructure:"schedules,omitempty" json:"schedules,omitempty"`
+	Connect       *Connect               `toml:"connect,omitempty" mapstructure:"connect,omitempty" json:"connect,omitempty"`
 }
 
 func (c *Config) HasSecret(secret string) bool {
@@ -236,9 +237,10 @@ type Group struct {
 }
 
 type Connect struct {
-	Access     *ConnectSystemAccess `toml:"access,omitempty" mapstructure:"access,omitempty" json:"access,omitempty"`
-	Runtime    *ConnectRuntime      `toml:"runtime,omitempty" mapstructure:"runtime,omitempty" json:"runtime,omitempty"`
-	Kubernetes *ConnectKubernetes   `toml:"kubernetes,omitempty" mapstructure:"kubernetes,omitempty" json:"kubernetes,omitempty"`
+	AccessControl *ConnectAccessControl `toml:"access_control,omitempty" mapstructure:"access_control,omitempty" json:"accessControl,omitempty"`
+	Access        *ConnectSystemAccess  `toml:"access,omitempty" mapstructure:"access,omitempty" json:"access,omitempty"`
+	Runtime       *ConnectRuntime       `toml:"runtime,omitempty" mapstructure:"runtime,omitempty" json:"runtime,omitempty"`
+	Kubernetes    *ConnectKubernetes    `toml:"kubernetes,omitempty" mapstructure:"kubernetes,omitempty" json:"kubernetes,omitempty"`
 }
 
 type ConnectSystemAccess struct {
