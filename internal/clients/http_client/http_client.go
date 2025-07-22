@@ -64,6 +64,14 @@ func NewBasicHTTPClient(baseURL string, timeout time.Duration) *defaultHTTPClien
 	}
 }
 
+func NewBasicHTTPClientWithAuth(baseURL string, timeout time.Duration, authHeader string) *defaultHTTPClient {
+	baseClient := newBasicInternalHTTPClientWithAuth(timeout, authHeader)
+	return &defaultHTTPClient{
+		client:  baseClient,
+		baseURL: baseURL,
+	}
+}
+
 type HTTPError struct {
 	URL    string `mapstructure:"url"`
 	Method string `mapstructure:"method"`
@@ -254,6 +262,23 @@ func loadCACertificates(path string, log logging.Logger) (*x509.CertPool, error)
 	return certPool, nil
 }
 
+func newTransport() *http.Transport {
+	// Based on http.DefaultTransport with customized dialer timeout.
+	dialer := net.Dialer{
+		Timeout:   30 * time.Second,
+		KeepAlive: 30 * time.Second,
+	}
+	return &http.Transport{
+		Proxy:                 http.ProxyFromEnvironment,
+		DialContext:           dialer.DialContext,
+		ForceAttemptHTTP2:     true,
+		MaxIdleConns:          100,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+	}
+}
+
 func newHTTPClientForAccount(account *accounts.Account, timeout time.Duration, log logging.Logger) (*http.Client, error) {
 	cookieJar, err := cookiejar.New(&cookiejar.Options{
 		PublicSuffixList: publicsuffix.List,
@@ -266,23 +291,10 @@ func newHTTPClientForAccount(account *accounts.Account, timeout time.Duration, l
 		return nil, err
 	}
 
-	// Based on http.DefaultTransport with customized dialer timeout and TLS config.
-	dialer := net.Dialer{
-		Timeout:   timeout,
-		KeepAlive: 30 * time.Second,
-	}
-	transport := &http.Transport{
-		Proxy:                 http.ProxyFromEnvironment,
-		DialContext:           dialer.DialContext,
-		ForceAttemptHTTP2:     true,
-		MaxIdleConns:          100,
-		IdleConnTimeout:       90 * time.Second,
-		TLSHandshakeTimeout:   10 * time.Second,
-		ExpectContinueTimeout: 1 * time.Second,
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: account.Insecure,
-			RootCAs:            certPool,
-		},
+	transport := newTransport()
+	transport.TLSClientConfig = &tls.Config{
+		InsecureSkipVerify: account.Insecure,
+		RootCAs:            certPool,
 	}
 	clientAuth, err := auth.NewAuthFactory().NewClientAuth(account)
 	if err != nil {
@@ -296,24 +308,23 @@ func newHTTPClientForAccount(account *accounts.Account, timeout time.Duration, l
 	}, nil
 }
 
+
 func newBasicInternalHTTPClient(timeout time.Duration) *http.Client {
 	// Based on http.DefaultTransport with customized dialer timeout.
-	dialer := net.Dialer{
-		Timeout:   timeout,
-		KeepAlive: 30 * time.Second,
-	}
-	transport := &http.Transport{
-		Proxy:                 http.ProxyFromEnvironment,
-		DialContext:           dialer.DialContext,
-		ForceAttemptHTTP2:     true,
-		MaxIdleConns:          100,
-		IdleConnTimeout:       90 * time.Second,
-		TLSHandshakeTimeout:   10 * time.Second,
-		ExpectContinueTimeout: 1 * time.Second,
-	}
+	transport := newTransport()
 	return &http.Client{
 		Timeout:   timeout,
 		Transport: transport,
+	}
+}
+
+func newBasicInternalHTTPClientWithAuth(timeout time.Duration, authValue string) *http.Client {
+	transport := newTransport()
+	clientAuth := auth.NewPlainAuthenticator(authValue)
+	authTransport := NewAuthenticatedTransport(transport, clientAuth)
+	return &http.Client{
+		Timeout:   timeout,
+		Transport: authTransport,
 	}
 }
 
