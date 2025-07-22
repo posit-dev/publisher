@@ -165,6 +165,67 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts_GetCurrentUse
 	s.Equal(http.StatusInternalServerError, result.StatusCode)
 }
 
+func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts_NoUserForLucidUser() {
+	client := connect_cloud.NewMockClient()
+
+	// Setup the error to simulate "no_user_for_lucid_user" error
+	errorData := map[string]interface{}{"error_type": "no_user_for_lucid_user"}
+	httpErr := http_client.NewHTTPError("https://foo.bar", "GET", http.StatusUnauthorized, "no user found")
+	agentErr := types.NewAgentError(events.ServerErrorCode, httpErr, errorData)
+
+	// Mock the GetCurrentUser call to return the no_user_for_lucid_user error
+	client.On("GetCurrentUser").Return((*connect_cloud.UserResponse)(nil), agentErr)
+
+	// Mock the CreateUser call to succeed
+	client.On("CreateUser").Return(nil)
+
+	// Mock the GetAccounts call to succeed after user creation
+	accountsResponse := &connect_cloud.AccountListResponse{
+		Data: []connect_cloud.Account{
+			{
+				ID:          "account1",
+				Name:        "Account 1",
+				Permissions: []string{"content:create"},
+			},
+		},
+	}
+	client.On("GetAccounts").Return(accountsResponse, nil)
+
+	connectCloudClientFactory = func(baseURL string, log logging.Logger, timeout time.Duration, authValue string) connect_cloud.APIClient {
+		return client
+	}
+
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest(
+		"GET",
+		"/connect-cloud/accounts",
+		nil,
+	)
+	s.NoError(err)
+	req.Header.Set(connectCloudBaseURLHeader, "https://api.login.staging.posit.cloud")
+	req.Header.Set("Authorization", "Bearer token123")
+
+	s.h(rec, req)
+
+	// Verify the response status code and body
+	result := rec.Result()
+	s.Equal(http.StatusOK, result.StatusCode)
+	s.NoError(err)
+
+	respBody, _ := io.ReadAll(rec.Body)
+	respMap := map[string]interface{}{}
+	err = json.Unmarshal(respBody, &respMap)
+	s.NoError(err)
+
+	// Verify the response contains the expected account
+	accounts := respMap["accounts"].([]interface{})
+	s.Len(accounts, 1)
+	account := accounts[0].(map[string]interface{})
+	s.Equal("account1", account["id"])
+	s.Equal("Account 1", account["name"])
+	s.Equal(true, account["permissionToPublish"])
+}
+
 func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts_GetAccountsError() {
 	client := connect_cloud.NewMockClient()
 	// Mock successful GetCurrentUser call
