@@ -5,6 +5,7 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"github.com/posit-dev/publisher/internal/server_type"
 	"net/http"
 	"net/http/httptest"
 	"net/url"

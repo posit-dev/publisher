@@ -5,6 +5,7 @@ package state
 import (
 	"errors"
 	"fmt"
+	"github.com/posit-dev/publisher/internal/server_type"
 	"io/fs"
 	"testing"
 
@@ -127,7 +128,7 @@ func (s *StateSuite) TestLoadConfigErr() {
 func (s *StateSuite) createTargetFile(name string, bad bool) {
 	targetFile := deployment.GetDeploymentPath(s.cwd, name)
 	targetData := []byte(`
-		'$schema' = 'https://cdn.posit.co/publisher/schemas/posit-publishing-record-schema-v3.json'
+		'$schema' = 'https://cdn.posit.co/publisher/schemas/posit-publishing-record-schema-v4.json'
 		server_url = 'https://connect.example.com'
 		server_type = 'connect'
 		id = '1234567890ABCDEF'
@@ -179,7 +180,7 @@ func (s *StateSuite) TestLoadTarget() {
 	d.CreatedAt = ""
 
 	s.Equal(&deployment.Deployment{
-		Schema:     "https://cdn.posit.co/publisher/schemas/posit-publishing-record-schema-v3.json",
+		Schema:     "https://cdn.posit.co/publisher/schemas/posit-publishing-record-schema-v4.json",
 		ServerURL:  "https://connect.example.com",
 		ServerType: server_type.ServerTypeConnect,
 		ConfigName: "myConfig",

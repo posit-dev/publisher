@@ -2,6 +2,7 @@ package config
 
 import (
 	"github.com/posit-dev/publisher/internal/interpreters"
+	"github.com/posit-dev/publisher/internal/server_type"
 )
 
 // Copyright (C) 2023 by Posit Software, PBC.
