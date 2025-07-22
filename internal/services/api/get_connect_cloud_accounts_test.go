@@ -170,7 +170,7 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts_NoUserForLuci
 
 	// Setup the error to simulate "no_user_for_lucid_user" error
 	errorData := map[string]interface{}{"error_type": "no_user_for_lucid_user"}
-	httpErr := http_client.NewHTTPError("https://foo.bar", "GET", http.StatusUnauthorized)
+	httpErr := http_client.NewHTTPError("https://foo.bar", "GET", http.StatusUnauthorized, "uh oh")
 	agentErr := types.NewAgentError(events.ServerErrorCode, httpErr, errorData)
 
 	// Mock the GetCurrentUser call to return the no_user_for_lucid_user error
