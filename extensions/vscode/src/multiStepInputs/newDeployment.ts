@@ -61,9 +61,11 @@ import {
 import { ENTRYPOINT_FILE_EXTENSIONS } from "src/constants";
 import { extensionSettings } from "src/extension";
 import {
+  authConnectCloud,
   fetchSnowflakeConnections,
   findExistingCredentialByURL,
   isConnect,
+  isConnectCloud,
   isSnowflake,
   platformList,
 } from "src/multiStepInputs/common";
@@ -582,6 +584,22 @@ export async function newDeployment(
       // fallback to CONNECT if there is ever a case when the enumKey is not found
       serverType = enumKey ? ServerType[enumKey] : ServerType.CONNECT;
       platformName = pick.label as PlatformName;
+
+      if (isConnectCloud(serverType)) {
+        try {
+          await showProgress(
+            "Authenticating with Connect Cloud",
+            viewId,
+            async () => await authConnectCloud(),
+          );
+          // TODO: fetch the accounts using the token
+        } catch {
+          // errors have already been displayed by authConnectCloud
+          return;
+        }
+        // bail out for now
+        return Promise.resolve(undefined);
+      }
 
       return (input: MultiStepInput) => inputServerUrl(input, state);
     }

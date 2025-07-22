@@ -33,6 +33,8 @@ import {
   platformList,
   isConnect,
   isSnowflake,
+  isConnectCloud,
+  authConnectCloud,
 } from "src/multiStepInputs/common";
 import { getEnumKeyByEnumValue } from "src/utils/enums";
 
@@ -122,6 +124,22 @@ export async function newCredential(
       serverType = enumKey ? ServerType[enumKey] : ServerType.CONNECT;
       platformName = pick.label as PlatformName;
       state.lastStep = thisStepNumber;
+
+      if (isConnectCloud(serverType)) {
+        try {
+          await showProgress(
+            "Authenticating with Connect Cloud",
+            viewId,
+            async () => await authConnectCloud(),
+          );
+          // TODO: fetch the accounts using the token
+        } catch {
+          // errors have already been displayed by authConnectCloud
+          return;
+        }
+        // bail out for now
+        return Promise.resolve(undefined);
+      }
 
       return (input: MultiStepInput) => inputServerUrl(input, state);
     }
