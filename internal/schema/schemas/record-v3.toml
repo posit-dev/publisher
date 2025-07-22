@@ -1,4 +1,4 @@
-"$schema" = "https://cdn.posit.co/publisher/schemas/posit-publishing-record-schema-v4.json"
+"$schema" = "https://cdn.posit.co/publisher/schemas/posit-publishing-record-schema-v3.json"
 server_type = "connect"
 server_url = "https://connect.example.com"
 id = "de2e7bdb-b085-401e-a65c-443e40009749"
@@ -14,8 +14,7 @@ direct_url = 'https://connect.example.com/content/de2e7bdb-b085-401e-a65c-443e40
 logs_url = 'https://connect.example.com/connect/#/apps/de2e7bdb-b085-401e-a65c-443e40009749/logs'
 
 [configuration]
-"$schema" = "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v4.json"
-server_type = "connect"
+"$schema" = "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json"
 type = "quarto-static"
 entrypoint = "report.qmd"
 validate = true

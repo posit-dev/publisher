@@ -4,6 +4,7 @@ package api
 
 import (
 	"encoding/json"
+	"github.com/posit-dev/publisher/internal/server_type"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -45,6 +46,7 @@ func (s *GetConfigRequirementsSuite) TestGetConfigRequirements() {
 	s.cwd.Join("requirements-dev.txt").WriteFile(reqs, 0666)
 
 	cfg := config.New()
+	cfg.ServerType = server_type.ServerTypeConnect
 	cfg.Type = config.ContentTypeHTML
 	cfg.Python = &config.Python{
 		Version:        "3.11.3",
@@ -90,6 +92,7 @@ func (s *GetConfigRequirementsSuite) TestGetConfigRequirementsNotFound() {
 
 func (s *GetConfigRequirementsSuite) TestGetConfigRequirementsNoRequirementsFile() {
 	cfg := config.New()
+	cfg.ServerType = server_type.ServerTypeConnect
 	cfg.Type = config.ContentTypeHTML
 	cfg.Python = &config.Python{
 		Version:        "3.11.3",
@@ -112,6 +115,7 @@ func (s *GetConfigRequirementsSuite) TestGetConfigRequirementsNoRequirementsFile
 
 func (s *GetConfigRequirementsSuite) TestGetConfigRequirementsNoPythonInConfig() {
 	cfg := config.New()
+	cfg.ServerType = server_type.ServerTypeConnect
 	cfg.Type = config.ContentTypeHTML
 	err := cfg.WriteFile(config.GetConfigPath(s.cwd, "myConfig"))
 	s.NoError(err)
@@ -137,6 +141,7 @@ func (s *GetConfigRequirementsSuite) TestGetConfigRequirementsSubdir() {
 	s.NoError(err)
 
 	cfg := config.New()
+	cfg.ServerType = server_type.ServerTypeConnect
 	cfg.Type = config.ContentTypeHTML
 	cfg.Python = &config.Python{
 		Version:        "3.11.3",

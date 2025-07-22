@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Bumped the credential version to 2 to support Posit Connect Cloud credentials. (#2684)
+- Changed the publishing and publishing record schema versions to v4 to add Posit Connect Cloud fields. (#2693)
 
 ## [1.16.1]
 

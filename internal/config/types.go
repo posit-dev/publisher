@@ -1,6 +1,8 @@
 package config
 
-import "github.com/posit-dev/publisher/internal/interpreters"
+import (
+	"github.com/posit-dev/publisher/internal/interpreters"
+)
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
