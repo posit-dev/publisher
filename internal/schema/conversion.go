@@ -35,6 +35,8 @@ func UpgradePublishingRecordSchema(data map[string]interface{}) error {
 			data["server_type"] = serverType
 		}
 
+		data["account_name"] = nil
+
 		// configuration is a v3 publishing schema instance, so we need to upgrade it
 		configuration, ok := data["configuration"].(map[string]interface{})
 		if ok {
