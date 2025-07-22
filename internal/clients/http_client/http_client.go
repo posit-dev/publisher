@@ -308,7 +308,6 @@ func newHTTPClientForAccount(account *accounts.Account, timeout time.Duration, l
 	}, nil
 }
 
-
 func newBasicInternalHTTPClient(timeout time.Duration) *http.Client {
 	// Based on http.DefaultTransport with customized dialer timeout.
 	transport := newTransport()
