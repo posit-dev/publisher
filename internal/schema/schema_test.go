@@ -2,6 +2,7 @@ package schema
 
 // Copyright (C) 2023 by Posit Software, PBC.
 import (
+	"strings"
 	"testing"
 
 	"github.com/posit-dev/publisher/internal/types"
@@ -28,38 +29,49 @@ func (s *SchemaSuite) SetupTest() {
 
 type genericContent map[string]any
 
+type validationTestCase struct {
+	schemaURL string
+	dataFile  []string
+}
+
 func (s *SchemaSuite) TestValidateConfig() {
-	validator, err := NewValidator[genericContent]([]string{ConfigSchemaURL})
-	s.NoError(err)
-	path := s.cwd.Join("schemas", "config.toml")
-	_, err = validator.ValidateTOMLFile(path)
-	s.NoError(err)
-}
+	cases := []validationTestCase{
+		{
+			schemaURL: ConfigSchemaURL,
+			dataFile:  []string{"config.toml"},
+		},
+		{
+			schemaURL: ConfigSchemaURL,
+			dataFile:  []string{"config_cloud.toml"},
+		},
+		{
+			schemaURL: "https://cdn.posit.co/publisher/schemas/draft/posit-publishing-schema-v4.json",
+			dataFile:  []string{"draft", "config.toml"},
+		},
+		{
+			schemaURL: "https://cdn.posit.co/publisher/schemas/draft/posit-publishing-schema-v4.json",
+			dataFile:  []string{"draft", "config_cloud.toml"},
+		},
+		{
+			schemaURL: DeploymentSchemaURL,
+			dataFile:  []string{"record.toml"},
+		},
+		{
+			schemaURL: "https://cdn.posit.co/publisher/schemas/draft/posit-publishing-record-schema-v4.json",
+			dataFile:  []string{"draft", "record.toml"},
+		},
+	}
 
-func (s *SchemaSuite) TestValidateDeployment() {
-	validator, err := NewValidator[genericContent]([]string{DeploymentSchemaURL})
-	s.NoError(err)
-	path := s.cwd.Join("schemas", "record.toml")
-	_, err = validator.ValidateTOMLFile(path)
-	s.NoError(err)
-}
-
-func (s *SchemaSuite) TestValidateDraftConfig() {
-	const draftConfigSchemaURL = "https://cdn.posit.co/publisher/schemas/draft/posit-publishing-schema-v4.json"
-	validator, err := NewValidator[genericContent]([]string{draftConfigSchemaURL})
-	s.NoError(err)
-	path := s.cwd.Join("schemas", "draft", "config.toml")
-	_, err = validator.ValidateTOMLFile(path)
-	s.NoError(err)
-}
-
-func (s *SchemaSuite) TestValidateDraftDeployment() {
-	const draftDeploymentSchemaURL = "https://cdn.posit.co/publisher/schemas/draft/posit-publishing-record-schema-v4.json"
-	validator, err := NewValidator[genericContent]([]string{draftDeploymentSchemaURL})
-	s.NoError(err)
-	path := s.cwd.Join("schemas", "draft", "record.toml")
-	_, err = validator.ValidateTOMLFile(path)
-	s.NoError(err)
+	for _, testCase := range cases {
+		s.Run(strings.Join(testCase.dataFile, "/"), func() {
+			validator, err := NewValidator[genericContent]([]string{testCase.schemaURL})
+			s.NoError(err)
+			schemaPath := append([]string{"schemas"}, testCase.dataFile...)
+			path := s.cwd.Join(schemaPath...)
+			_, err = validator.ValidateTOMLFile(path)
+			s.NoError(err)
+		})
+	}
 }
 
 func (s *SchemaSuite) TestValidationError() {
