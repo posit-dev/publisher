@@ -16,6 +16,10 @@ jobs:
     uses: ./.github/workflows/agent.yaml
   vscode:
     uses: ./.github/workflows/vscode.yaml
+  # E2E Tests
+  e2e:
+    uses: ./.github/workflows/e2e.yaml
+    secrets: inherit
 
   # Build
   build:

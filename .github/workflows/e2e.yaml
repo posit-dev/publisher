@@ -1,0 +1,85 @@
+name: E2E Tests
+on:
+  workflow_call:
+    secrets:
+      CONNECT_LICENSE:
+        required: true
+
+jobs:
+  cypress:
+    name: Cypress E2E Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+          cache: pip
+          cache-dependency-path: test/e2e/requirements.txt
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: npm
+          cache-dependency-path: test/e2e/package-lock.json
+
+      - name: Create Python venv and install dependencies
+        working-directory: test/e2e
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install -r requirements.txt
+          echo "VIRTUAL_ENV=$(pwd)/.venv" >> $GITHUB_ENV
+          echo "$(pwd)/.venv/bin" >> $GITHUB_PATH
+
+      - name: Install npm dependencies
+        working-directory: test/e2e
+        run: npm ci
+
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build Docker images
+        working-directory: test/e2e
+        run: |
+          source .venv/bin/activate
+          just build-images
+        env:
+          CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
+
+      - name: Run Cypress tests
+        working-directory: test/e2e
+        run: |
+          source .venv/bin/activate
+          just start
+          npx cypress run
+        env:
+          CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
+          CI: true
+
+      - name: Upload Cypress screenshots on failure
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: cypress-screenshots
+          path: test/e2e/cypress/screenshots
+          if-no-files-found: ignore
+
+      - name: Upload Cypress videos
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: cypress-videos
+          path: test/e2e/cypress/videos
+          if-no-files-found: ignore
+
+      - name: Stop containers
+        if: always()
+        working-directory: test/e2e
+        run: |
+          source .venv/bin/activate
+          just stop
