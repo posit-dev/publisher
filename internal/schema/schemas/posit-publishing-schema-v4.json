@@ -289,52 +289,53 @@
           "properties": {
             "version": {}
           }
-        }
-      },
-      "connect_cloud": {
-        "type": "object",
-        "additionalProperties": false,
-        "description": "Setting specific to Posit Connect Cloud deployments.",
-        "properties": {
-          "python": {
-            "type": "object",
-            "additionalProperties": false,
-            "description": "Python language and dependencies.",
-            "properties": {
-              "version": {}
-            }
-          },
-          "r": {
-            "type": "object",
-            "additionalProperties": false,
-            "description": "R language and dependencies.",
-            "properties": {
-              "version": {}
-            }
-          },
-          "vanity_name": {
-            "type": "string",
-            "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])$",
-            "description": "The custom component of the vanity URL. If your account name is 'my-account' and this value is 'vanity', the vanity URL will be https://my-account-vanity.share.connect.posit.cloud.",
-            "examples": ["sales-report"]
-          },
-          "access_control": {
-            "public_access": {
-              "type": "boolean",
-              "description": "Whether or not the content is publicly accessible.",
-              "default": false
+        },
+        "connect_cloud": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Setting specific to Posit Connect Cloud deployments.",
+          "properties": {
+            "python": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Python language and dependencies.",
+              "properties": {
+                "version": {}
+              }
             },
-            "organization_access": {
+            "r": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "R language and dependencies.",
+              "properties": {
+                "version": {}
+              }
+            },
+            "vanity_name": {
               "type": "string",
-              "enum": ["disabled", "viewer", "editor"],
-              "default": "disabled",
-              "description": "The default level of access for account members within an organizational account."
+              "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])$",
+              "description": "The custom component of the vanity URL. If your account name is 'my-account' and this value is 'vanity', the vanity URL will be https://my-account-vanity.share.connect.posit.cloud.",
+              "examples": ["sales-report"]
+            },
+            "access_control": {
+              "public_access": {
+                "type": "boolean",
+                "description": "Whether or not the content is publicly accessible.",
+                "default": false
+              },
+              "organization_access": {
+                "type": "string",
+                "enum": ["disabled", "viewer", "editor"],
+                "default": "disabled",
+                "description": "The default level of access for account members within an organizational account."
+              }
             }
           }
         }
       }
     }
   },
+  "unevaluatedProperties": false,
   "properties": {
     "server_type": {
       "type": "string",

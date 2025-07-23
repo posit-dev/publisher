@@ -328,6 +328,27 @@
               }
             }
           }
+        },
+        "schedules": {
+          "type": "array",
+          "description": "Schedules for recurring execution of this content. Only applies to reports, such as Quarto, R Markdown, and Jupyter Notebooks.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["start", "recurrence"],
+            "properties": {
+              "start": {
+                "type": "string",
+                "description": "Time for the first run of the content.",
+                "examples": ["2023-10-25T08:00:00Z"]
+              },
+              "recurrence": {
+                "type": "string",
+                "description": "Recurrence scheme for the content, in cron or iCalendar RRULE format.",
+                "examples": ["FREQ=MONTHLY;INTERVAL=3", "0 2 * * *"]
+              }
+            }
+          }
         }
       },
       "allOf": [
