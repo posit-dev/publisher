@@ -71,9 +71,13 @@ project-root/
 
 #### has_parameters
 
+_Valid when `server_type` is: `connect`, `snowflake`_
+
 `true` if this is a report that accepts parameters.
 
 #### validate
+
+_Valid when `server_type` is: `connect`, `snowflake`_
 
 Access the content after deploying, to validate that it is live. Defaults to `true`.
 
@@ -117,9 +121,13 @@ File containing package dependencies. The file must exist and be listed under 'f
 
 #### package_manager
 
+_Valid when `server_type` is: `connect`, `snowflake`_
+
 Package manager that will install the dependencies. Supported values are `pip` and `none`. If package-manager is `none`, dependencies will not be installed.
 
 #### version
+
+_Valid when `server_type` is: `connect`, `snowflake`_
 
 Python version. The server must have a matching Python major/minor version in order to run the content.
 
@@ -136,9 +144,13 @@ package_manager = "pip"
 
 #### package_file
 
+_Valid when `server_type` is: `connect`, `snowflake`_
+
 File containing package dependencies. This is usually `renv.lock`. The file must exist and be listed under 'files'.
 
 #### package_manager
+
+_Valid when `server_type` is: `connect`, `snowflake`_
 
 Package manager that will install the dependencies. Supported values are `renv` and `none`. If package-manager is `none`, dependencies will be assumed to be pre-installed on the server.
 
@@ -156,6 +168,8 @@ package_manager = "renv"
 ```
 
 ## Jupyter settings
+
+_Valid when `server_type` is: `connect`, `snowflake`_
 
 ### hide_all_input
 
@@ -175,6 +189,8 @@ hide_tagged_input = false
 
 ## Quarto settings
 
+_Valid when `server_type` is: `connect`, `snowflake`_
+
 #### engines
 
 List of Quarto engines required for this content.
@@ -190,6 +206,8 @@ engines = ["knitr"]
 ```
 
 ## Connect-specific settings
+
+_Valid when `server_type` is: `connect`, `snowflake`_
 
 ### Access settings
 
@@ -318,3 +336,27 @@ max_processes = 5
 min_processes = 1
 read_timeout = 30
 ```
+
+## Connect-specific settings
+
+_Valid when `server_type` is: `connect_cloud`_
+
+### vanity_name
+
+The custom component of the vanity URL. If your account name is 'my-account' and this value is 'vanity', the vanity URL will be https://my-account-vanity.share.connect.posit.cloud.
+
+Only supported for organizational accounts.
+
+### access_control
+
+Settings for who can do what with the content.
+
+Only supported for organizational accounts.
+
+#### public_access
+
+Specifies whether the content is publicly accessible.
+
+### organization_access
+
+Specifies the default level of access for account members within an organizational account. Can be `disabled`, `view`, or `editor`.
