@@ -69,19 +69,3 @@ func (s *PostConnectCloudDeviceAuthSuite) TestPostConnectCloudDeviceAuth() {
 		"\"interval\":5}\n",
 		string(respBody))
 }
-
-func (s *PostConnectCloudDeviceAuthSuite) TestPostConnectCloudDeviceAuth_MissingBaseURL() {
-	rec := httptest.NewRecorder()
-	req, err := http.NewRequest(
-		"POST",
-		"/connect-cloud/device-auth",
-		nil,
-	)
-	s.NoError(err)
-	// Intentionally not setting Cloud-Auth-Base-Url header
-
-	s.h(rec, req)
-
-	result := rec.Result()
-	s.Equal(http.StatusBadRequest, result.StatusCode)
-}

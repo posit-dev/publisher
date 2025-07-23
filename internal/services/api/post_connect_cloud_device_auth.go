@@ -4,7 +4,6 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/posit-dev/publisher/internal/clients/cloud_auth"
 	"net/http"
 	"time"
@@ -14,7 +13,15 @@ import (
 
 var cloudAuthClientFactory = cloud_auth.NewCloudAuthClient
 
-const cloudAuthBaseURLHeader = "Cloud-Auth-Base-Url"
+func getCloudAuthBaseURL(envName string) string {
+	switch envName {
+	case "development", "staging":
+		// Connect Cloud development environment is connected to staging auth
+		return "https://staging-api.connect.posit.cloud"
+	default:
+		return "https://api.connect.posit.cloud"
+	}
+}
 
 type connectCloudDeviceAuthResponseBody struct {
 	DeviceCode              string `json:"deviceCode"`
@@ -25,11 +32,8 @@ type connectCloudDeviceAuthResponseBody struct {
 
 func PostConnectCloudDeviceAuthHandlerFunc(log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		baseURL := req.Header.Get(cloudAuthBaseURLHeader)
-		if baseURL == "" {
-			BadRequest(w, req, log, fmt.Errorf("%s header is required", cloudAuthBaseURLHeader))
-			return
-		}
+		environment := req.Header.Get(connectCloudEnvironmentHeader)
+		baseURL := getCloudAuthBaseURL(environment)
 
 		client := cloudAuthClientFactory(baseURL, log, 10*time.Second)
 

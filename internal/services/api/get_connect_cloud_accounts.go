@@ -4,7 +4,6 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/posit-dev/publisher/internal/clients/connect_cloud"
 	"net/http"
 	"slices"
@@ -21,7 +20,19 @@ type connectCloudAccountsBodyAccount struct {
 
 var connectCloudClientFactory = connect_cloud.NewConnectCloudClientWithAuth
 
-const connectCloudBaseURLHeader = "Connect-Cloud-Base-Url"
+const connectCloudEnvironmentHeader = "Connect-Cloud-Environment"
+
+// const connectCloudBaseURLHeader = "Connect-Cloud-Base-Url"
+func getConnectCloudBaseURL(envName string) string {
+	switch envName {
+	case "development":
+		return "https://api.connect.posit.cloud"
+	case "staging":
+		return "https://staging-api.connect.posit.cloud"
+	default:
+		return "https://api.connect.posit.cloud"
+	}
+}
 
 type connectCloudAccountsBody struct {
 	Accounts []connectCloudAccountsBodyAccount `json:"accounts"`
@@ -29,11 +40,8 @@ type connectCloudAccountsBody struct {
 
 func GetConnectCloudAccountsFunc(log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		baseURL := req.Header.Get(connectCloudBaseURLHeader)
-		if baseURL == "" {
-			BadRequest(w, req, log, fmt.Errorf("%s header is required", connectCloudBaseURLHeader))
-			return
-		}
+		environment := req.Header.Get(connectCloudEnvironmentHeader)
+		baseURL := getConnectCloudBaseURL(environment)
 		authorization := req.Header.Get("Authorization")
 
 		client := connectCloudClientFactory(baseURL, log, 10*time.Second, authorization)
