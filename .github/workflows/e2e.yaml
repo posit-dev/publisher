@@ -7,23 +7,23 @@ on:
 
 jobs:
   cypress:
-    name: Cypress E2E Tests
+    name: e2e tests (cypress)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: "3.11"
           cache: pip
           cache-dependency-path: test/e2e/requirements.txt
 
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
           cache: npm
           cache-dependency-path: test/e2e/package-lock.json
 
@@ -39,6 +39,8 @@ jobs:
       - name: Install npm dependencies
         working-directory: test/e2e
         run: npm ci
+
+      - uses: extractions/setup-just@v2
 
       - name: Set up Docker
         uses: docker/setup-buildx-action@v2
