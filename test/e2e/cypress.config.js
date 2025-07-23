@@ -6,7 +6,7 @@ module.exports = defineConfig({
     supportFile: "support/index.js",
     specPattern: "tests/**/*.cy.{js,jsx,ts,tsx}",
     retries: {
-      runMode: 1,
+      runMode: 1, // Retry failed tests in run mode (ci)
       openMode: 0,
     },
     // eslint-disable-next-line no-unused-vars
