@@ -5,6 +5,7 @@ package connect_cloud
 type Account struct {
 	ID          string   `json:"id"`
 	Name        string   `json:"name"`
+	DisplayName string   `json:"display_name"`
 	Permissions []string `json:"permissions"`
 }
 

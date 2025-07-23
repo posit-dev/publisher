@@ -50,18 +50,21 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts() {
 	accountsResponse := &connect_cloud.AccountListResponse{
 		Data: []connect_cloud.Account{
 			{
-				ID:          "account1",
-				Name:        "Account 1",
+				ID:          "1",
+				Name:        "account1",
+				DisplayName: "Account 1",
 				Permissions: []string{"content:create"},
 			},
 			{
-				ID:          "account2",
-				Name:        "Account 2",
+				ID:          "2",
+				Name:        "account2",
+				DisplayName: "Account 2",
 				Permissions: []string{"content:create"},
 			},
 			{
-				ID:          "account3",
-				Name:        "Account 3",
+				ID:          "3",
+				Name:        "account3",
+				DisplayName: "Account 3",
 				Permissions: []string{},
 			},
 		},
@@ -104,18 +107,21 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts() {
 	s.Equal(map[string]interface{}{
 		"accounts": []interface{}{
 			map[string]interface{}{
-				"id":                  "account1",
-				"name":                "Account 1",
+				"id":                  "1",
+				"name":                "account1",
+				"displayName":         "Account 1",
 				"permissionToPublish": true,
 			},
 			map[string]interface{}{
-				"id":                  "account2",
-				"name":                "Account 2",
+				"id":                  "2",
+				"name":                "account2",
+				"displayName":         "Account 2",
 				"permissionToPublish": true,
 			},
 			map[string]interface{}{
-				"id":                  "account3",
-				"name":                "Account 3",
+				"id":                  "3",
+				"name":                "account3",
+				"displayName":         "Account 3",
 				"permissionToPublish": false,
 			},
 		},
