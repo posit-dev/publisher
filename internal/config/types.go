@@ -114,6 +114,7 @@ type Config struct {
 	Secrets       []string               `toml:"secrets,omitempty" mapstructure:"secrets,omitempty" json:"secrets,omitempty"`
 	Schedules     []Schedule             `toml:"schedules,omitempty" mapstructure:"schedules,omitempty" json:"schedules,omitempty"`
 	Connect       *Connect               `toml:"connect,omitempty" mapstructure:"connect,omitempty" json:"connect,omitempty"`
+	ConnectCloud  *ConnectCloud          `toml:"connect_cloud,omitempty" mapstructure:"connect_cloud,omitempty" json:"connectCloud,omitempty"`
 }
 
 func (c *Config) HasSecret(secret string) bool {
@@ -270,4 +271,22 @@ type ConnectKubernetes struct {
 	DefaultImageName               string   `toml:"default_image_name,omitempty" mapstructure:"default_image_name,omitempty" json:"defaultImageName,omitempty"`
 	DefaultREnvironmentManagement  *bool    `toml:"default_r_environment_management,omitempty" mapstructure:"default_r_environment_management,omitempty" json:"defaultREnvironmentManagement"`
 	DefaultPyEnvironmentManagement *bool    `toml:"default_py_environment_management,omitempty" mapstructure:"default_py_environment_management,omitempty" json:"defaultPyEnvironmentManagement"`
+}
+
+type ConnectCloud struct {
+	VanityName    string                     `toml:"vanity_name,omitempty" mapstructure:"vanity_name,omitempty" json:"vanityName,omitempty"`
+	AccessControl *ConnectCloudAccessControl `toml:"access_control,omitempty" mapstructure:"access_control,omitempty" json:"accessControl,omitempty"`
+}
+
+type OrganizationAccessType string
+
+const (
+	OrganizationAccessTypeDisabled AccessType = "disabled"
+	OrganizationAccessTypeViewer   AccessType = "viewer"
+	OrganizationAccessTypeEditor   AccessType = "editor"
+)
+
+type ConnectCloudAccessControl struct {
+	PublicAccess       bool                   `toml:"public_access,omitempty" mapstructure:"public_access,omitempty" json:"publicAccess,omitempty"`
+	OrganizationAccess OrganizationAccessType `toml:"organization_access,omitempty" mapstructure:"organization_access,omitempty" json:"organizationAccess,omitempty"`
 }

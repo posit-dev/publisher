@@ -1,0 +1,31 @@
+# Example schema file
+"$schema" = "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v4.json"
+server_type = "connect_cloud"
+type = "quarto-static"
+entrypoint = "report.qmd"
+title = "Regional Quarterly Sales Report"
+description = "This is the quarterly sales report, broken down by region."
+validate = true
+
+files = [
+    "*.py",
+    "*.qmd",
+    "requirements.txt",
+]
+secrets = ["API_KEY", "DATABASE_PASSWORD"]
+
+[python]
+version = "3.11.3"
+
+[r]
+version = "4.3.1"
+
+[environment]
+API_URL = "https://example.com/api"
+
+[connect_cloud]
+vanity_name = "sales-report"
+
+[connect_cloud.access_control]
+public_access = true
+organization_access = "viewer"

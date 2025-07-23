@@ -26,8 +26,13 @@
     "server_type": {
       "type": "string",
       "description": "Type of server",
-      "enum": ["connect", "snowflake"],
+      "enum": ["connect", "snowflake", "connect_cloud"],
       "examples": ["connect"]
+    },
+    "account_name": {
+      "type": ["string", "null"],
+      "description": "Name of the account on the server where this content was deployed.",
+      "examples": ["my-account"]
     },
     "id": {
       "type": "string",
