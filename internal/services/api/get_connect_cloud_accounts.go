@@ -14,8 +14,9 @@ import (
 )
 
 type connectCloudAccountsBodyAccount struct {
-	Name                string `json:"name"`
 	ID                  string `json:"id"`
+	Name                string `json:"name"`
+	DisplayName         string `json:"displayName"`
 	PermissionToPublish bool   `json:"permissionToPublish"`
 }
 
@@ -56,6 +57,7 @@ func GetConnectCloudAccountsFunc(log logging.Logger) http.HandlerFunc {
 			accounts = append(accounts, connectCloudAccountsBodyAccount{
 				ID:                  account.ID,
 				Name:                account.Name,
+				DisplayName:         account.DisplayName,
 				PermissionToPublish: slices.Contains(account.Permissions, "content:create"),
 			})
 		}
