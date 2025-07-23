@@ -4,6 +4,7 @@ package api
 
 import (
 	"github.com/posit-dev/publisher/internal/clients/cloud_auth"
+	"github.com/posit-dev/publisher/internal/types"
 	"github.com/stretchr/testify/mock"
 	"io"
 	"net/http"
@@ -45,7 +46,7 @@ func (s *PostConnectCloudDeviceAuthSuite) TestPostConnectCloudDeviceAuth() {
 		Interval:                5,
 	}
 	client.On("CreateDeviceAuth", mock.Anything).Return(&deviceAuthResult, nil)
-	cloudAuthClientFactory = func(baseURL string, log logging.Logger, timeout time.Duration) cloud_auth.APIClient {
+	cloudAuthClientFactory = func(environment types.CloudEnvironment, log logging.Logger, timeout time.Duration) cloud_auth.APIClient {
 		return client
 	}
 

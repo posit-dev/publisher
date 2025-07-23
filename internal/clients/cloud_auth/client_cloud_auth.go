@@ -3,7 +3,7 @@ package cloud_auth
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import (
-	"fmt"
+	"github.com/posit-dev/publisher/internal/types"
 	"net/url"
 	"time"
 
@@ -12,46 +12,44 @@ import (
 )
 
 type CloudAuthClient struct {
-	log     logging.Logger
-	client  http_client.HTTPClient
-	baseURL string
+	log      logging.Logger
+	client   http_client.HTTPClient
+	baseURL  string
+	clientID string
 }
 
 func NewCloudAuthClient(
-	baseURL string,
+	environment types.CloudEnvironment,
 	log logging.Logger,
 	timeout time.Duration) APIClient {
+	baseURL, clientID := getBaseURLAndClientID(environment)
 	httpClient := http_client.NewBasicHTTPClient(baseURL, timeout)
-
 	return &CloudAuthClient{
-		log:     log,
-		client:  httpClient,
-		baseURL: baseURL,
+		log:      log,
+		client:   httpClient,
+		baseURL:  baseURL,
+		clientID: clientID,
 	}
 }
 
-func (c CloudAuthClient) getClientID() (string, error) {
-	switch c.baseURL {
-	case "https://login.staging.posit.cloud":
-		return "posit-publisher-staging", nil
-	case "https://login.posit.cloud":
-		return "posit-publisher", nil
+func getBaseURLAndClientID(environment types.CloudEnvironment) (string, string) {
+	switch environment {
+	case types.CloudEnvironmentDevelopment:
+		return "https://login.staging.posit.cloud", "posit-publisher-development"
+	case types.CloudEnvironmentStaging:
+		return "https://login.staging.posit.cloud", "posit-publisher-staging"
 	default:
-		return "", fmt.Errorf("unable to determine client ID for unknown base URL: %s", c.baseURL)
+		return "https://login.posit.cloud", "posit-publisher"
 	}
 }
 
 func (c CloudAuthClient) CreateDeviceAuth() (*DeviceAuthResponse, error) {
-	clientId, err := c.getClientID()
-	if err != nil {
-		return nil, err
-	}
 	body := url.Values{
-		"client_id": {clientId},
+		"client_id": {c.clientID},
 		"scope":     {"vivid"},
 	}
 	into := DeviceAuthResponse{}
-	err = c.client.PostForm("/oauth/device/authorize", body, &into, c.log)
+	err := c.client.PostForm("/oauth/device/authorize", body, &into, c.log)
 	if err != nil {
 		return nil, err
 	}
@@ -59,17 +57,13 @@ func (c CloudAuthClient) CreateDeviceAuth() (*DeviceAuthResponse, error) {
 }
 
 func (c CloudAuthClient) ExchangeToken(request TokenRequest) (*TokenResponse, error) {
-	clientId, err := c.getClientID()
-	if err != nil {
-		return nil, err
-	}
 	body := url.Values{
 		"grant_type":  {request.GrantType},
 		"device_code": {request.DeviceCode},
-		"client_id":   {clientId},
+		"client_id":   {c.clientID},
 	}
 	into := TokenResponse{}
-	err = c.client.PostForm("/oauth/token", body, &into, c.log)
+	err := c.client.PostForm("/oauth/token", body, &into, c.log)
 	if err != nil {
 		return nil, err
 	}

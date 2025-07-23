@@ -3,11 +3,23 @@ package connect_cloud
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import (
+	"github.com/posit-dev/publisher/internal/types"
 	"time"
 
 	"github.com/posit-dev/publisher/internal/clients/http_client"
 	"github.com/posit-dev/publisher/internal/logging"
 )
+
+func getBaseURL(environment types.CloudEnvironment) string {
+	switch environment {
+	case types.CloudEnvironmentDevelopment:
+		return "https://api.dev.connect.posit.cloud"
+	case types.CloudEnvironmentStaging:
+		return "https://api.staging.connect.posit.cloud"
+	default:
+		return "https://api.connect.posit.cloud"
+	}
+}
 
 type ConnectCloudClient struct {
 	log    logging.Logger
@@ -15,11 +27,11 @@ type ConnectCloudClient struct {
 }
 
 func NewConnectCloudClientWithAuth(
-	baseURL string,
+	environment types.CloudEnvironment,
 	log logging.Logger,
 	timeout time.Duration,
 	authValue string) APIClient {
-	httpClient := http_client.NewBasicHTTPClientWithAuth(baseURL, timeout, authValue)
+	httpClient := http_client.NewBasicHTTPClientWithAuth(getBaseURL(environment), timeout, authValue)
 	return &ConnectCloudClient{
 		log:    log,
 		client: httpClient,
