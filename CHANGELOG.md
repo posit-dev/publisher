@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Added a new schema version `v4`, making `server_type` required. (#2693)
+- Added a new schema version `v4`, making `server_type` required, adding `connect_cloud` value to `server_type`, and adding config values for Connect Cloud. (#2693)
 
 ## [1.18.0]
 
