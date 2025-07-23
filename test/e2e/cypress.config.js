@@ -5,6 +5,10 @@ module.exports = defineConfig({
     baseUrl: "http://localhost:8080",
     supportFile: "support/index.js",
     specPattern: "tests/**/*.cy.{js,jsx,ts,tsx}",
+    retries: {
+      runMode: 1,
+      openMode: 0,
+    },
     // eslint-disable-next-line no-unused-vars
     setupNodeEvents(on, config) {
       // implement node event listeners here

@@ -18,6 +18,7 @@ jobs:
     uses: ./.github/workflows/vscode.yaml
   # E2E Tests
   e2e:
+    needs: [home-view-unit-tests, agent, vscode]
     uses: ./.github/workflows/e2e.yaml
     secrets: inherit
 

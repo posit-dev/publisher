@@ -55,7 +55,8 @@ jobs:
         working-directory: test/e2e
         run: |
           source .venv/bin/activate
-          just start
+          just start "connect-publisher-e2e"
+          just start "code-server"
           npx cypress run
         env:
           CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
