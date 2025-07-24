@@ -219,6 +219,6 @@ export const extensionSettings = {
   enableConnectCloud(): boolean {
     // defaulting to false for now until we have more bits integrated for
     // Connect Cloud to bring it in as an extension configuration value
-    return false;
+    return true;
   },
 };

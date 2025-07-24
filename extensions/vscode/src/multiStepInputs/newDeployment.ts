@@ -201,7 +201,10 @@ export async function newDeployment(
       credentialListItems = credentials.map((credential) => ({
         iconPath: new ThemeIcon("posit-publisher-posit-logo"),
         label: credential.name,
-        description: credential.url,
+        description:
+          credential.serverType === ServerType.CONNECT_CLOUD
+            ? `${credential.accountName} | Posit Connect Cloud`
+            : credential.url,
       }));
       credentialListItems.push({
         iconPath: new ThemeIcon("plus"),
