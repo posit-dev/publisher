@@ -10,7 +10,7 @@ import (
 	"github.com/posit-dev/publisher/internal/logging"
 )
 
-func getBaseURL(environment types.CloudEnvironment) string {
+func GetBaseURL(environment types.CloudEnvironment) string {
 	switch environment {
 	case types.CloudEnvironmentDevelopment:
 		return "https://api.dev.connect.posit.cloud"
@@ -31,7 +31,7 @@ func NewConnectCloudClientWithAuth(
 	log logging.Logger,
 	timeout time.Duration,
 	authValue string) APIClient {
-	httpClient := http_client.NewBasicHTTPClientWithAuth(getBaseURL(environment), timeout, authValue)
+	httpClient := http_client.NewBasicHTTPClientWithAuth(GetBaseURL(environment), timeout, authValue)
 	return &ConnectCloudClient{
 		log:    log,
 		client: httpClient,
