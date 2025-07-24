@@ -92,7 +92,7 @@ func (s *KeyringCredentialsTestSuite) TestSetURLCollisionError() {
 	s.NoError(err)
 	_, err = cs.Set(CreateCredentialDetails{ServerType: server_type.ServerTypeConnect, Name: "example", URL: "https://example.com", ApiKey: "12345", SnowflakeConnection: ""})
 	s.Error(err)
-	s.IsType(&URLCollisionError{}, err)
+	s.IsType(&CredentialIdentityCollision{}, err)
 }
 
 func (s *KeyringCredentialsTestSuite) TestGet() {
@@ -158,7 +158,7 @@ func (s *KeyringCredentialsTestSuite) TestSetCollisions() {
 	// URL collision
 	_, err = cs.Set(CreateCredentialDetails{ServerType: server_type.ServerTypeConnect, Name: "another_example", URL: "https://example.com", ApiKey: "12345", SnowflakeConnection: ""})
 	s.Error(err)
-	s.IsType(&URLCollisionError{}, err)
+	s.IsType(&CredentialIdentityCollision{}, err)
 }
 
 func (s *KeyringCredentialsTestSuite) TestList() {
