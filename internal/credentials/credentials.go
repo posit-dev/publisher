@@ -79,6 +79,9 @@ type CredentialV0 struct {
 }
 
 func (c *Credential) ConflictCheck(compareWith Credential) error {
+	if compareWith.ServerType == server_type.ServerTypeConnectCloud {
+		return nil
+	}
 	if compareWith.URL == c.URL {
 		return NewURLCollisionError(c.Name, c.URL)
 	}

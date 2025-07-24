@@ -97,6 +97,10 @@ interface InputBoxParameters {
   ignoreFocusOut?: boolean;
   placeholder?: string;
   shouldResume: () => Thenable<boolean>;
+  enabled?: boolean;
+  busy?: boolean;
+  validationMessage?: string | InputBoxValidationMessage;
+  valueSelection?: [number, number];
 }
 
 export class MultiStepInput {
@@ -230,6 +234,10 @@ export class MultiStepInput {
     placeholder,
     shouldResume,
     password,
+    enabled,
+    busy,
+    validationMessage,
+    valueSelection,
   }: P) {
     const disposables: Disposable[] = [];
     try {
@@ -240,6 +248,11 @@ export class MultiStepInput {
         input.title = title;
         input.step = step;
         input.totalSteps = totalSteps;
+        // enabled must default to true when undefined
+        input.enabled = enabled === undefined ? true : enabled;
+        input.busy = busy || false;
+        input.validationMessage = validationMessage;
+        input.valueSelection = valueSelection;
 
         if (password) {
           input.password = password;
