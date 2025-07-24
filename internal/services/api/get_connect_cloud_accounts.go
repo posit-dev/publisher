@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/posit-dev/publisher/internal/clients/connect_cloud"
+	"github.com/posit-dev/publisher/internal/clients/http_client"
 	"net/http"
 	"slices"
 	"time"
@@ -38,11 +39,26 @@ func GetConnectCloudAccountsFunc(log logging.Logger) http.HandlerFunc {
 
 		client := connectCloudClientFactory(baseURL, log, 10*time.Second, authorization)
 
-		// implicitly creates a user if it doesn't exist
 		_, err := client.GetCurrentUser()
 		if err != nil {
-			InternalError(w, req, log, err)
-			return
+			aerr, isUnauthorized := http_client.IsHTTPAgentErrorStatusOf(err, http.StatusUnauthorized)
+			if isUnauthorized {
+				errorType, ok := aerr.Data["error_type"].(string)
+				if ok && errorType == "no_user_for_lucid_user" {
+					// We have a user for the auth service, but not for Connect Cloud.
+					err = client.CreateUser()
+					if err != nil {
+						InternalError(w, req, log, aerr)
+						return
+					}
+				} else {
+					InternalError(w, req, log, aerr)
+					return
+				}
+			} else {
+				InternalError(w, req, log, aerr)
+				return
+			}
 		}
 
 		accountsResponse, err := client.GetAccounts()
