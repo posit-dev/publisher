@@ -27,14 +27,9 @@ jobs:
           cache: npm
           cache-dependency-path: test/e2e/package-lock.json
 
-      - name: Create Python venv and install dependencies
+      - name: Install Python dependencies
         working-directory: test/e2e
-        run: |
-          python -m venv .venv
-          source .venv/bin/activate
-          pip install -r requirements.txt
-          echo "VIRTUAL_ENV=$(pwd)/.venv" >> $GITHUB_ENV
-          echo "$(pwd)/.venv/bin" >> $GITHUB_PATH
+        run: pip install -r requirements.txt
 
       - name: Install npm dependencies
         working-directory: test/e2e
@@ -42,21 +37,17 @@ jobs:
 
       - uses: extractions/setup-just@v2
 
-      - name: Set up Docker
-        uses: docker/setup-buildx-action@v2
-
       - name: Build Docker images
+        working-directory: test/e2e
         run: |
-          source test/e2e/.venv/bin/activate
-          cd test/e2e
-          just build-images
+          docker build -f Dockerfile.base -t e2ebase --platform linux/amd64 .
+          docker compose build connect-publisher-e2e code-server
         env:
           CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
 
       - name: Run Cypress tests
         working-directory: test/e2e
         run: |
-          source .venv/bin/activate
           just start "connect-publisher-e2e"
           just start "code-server"
           npx cypress run
@@ -83,6 +74,4 @@ jobs:
       - name: Stop containers
         if: always()
         working-directory: test/e2e
-        run: |
-          source .venv/bin/activate
-          just stop
+        run: just stop
