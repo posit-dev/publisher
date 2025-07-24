@@ -58,7 +58,7 @@ func GetDeploymentEnvironmentHandlerFunc(base util.AbsolutePath, log logging.Log
 			return
 		}
 
-		client, err := clientFactory(account, 30*time.Second, events.NewNullEmitter(), log)
+		client, err := connectClientFactory(account, 30*time.Second, events.NewNullEmitter(), log)
 		if err != nil {
 			// If the client cannot be created, we did something wrong,
 			// return a 500

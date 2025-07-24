@@ -24,7 +24,7 @@ func TestHttpClientSuite(t *testing.T) {
 func (s *HttpClientSuite) TestIsHTTPAgentErrorStatusOf() {
 	agentErr := types.NewAgentError(
 		events.DeploymentFailedCode,
-		NewHTTPError("", "", http.StatusNotFound),
+		NewHTTPError("", "", http.StatusNotFound, "uh oh"),
 		nil,
 	)
 
