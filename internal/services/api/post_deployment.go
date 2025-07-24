@@ -124,7 +124,9 @@ func PostDeploymentHandlerFunc(
 		log := log.WithArgs("local_id", localID)
 		newState.LocalID = localID
 
-		publisher, err := publisherFactory(newState, rInterpreter, pythonInterpreter, emitter, log)
+		rExecutable := util.NewPath(b.R, nil)
+		pythonExecutable := util.NewPath(b.Python, nil)
+		publisher, err := publisherFactory(newState, rExecutable, pythonExecutable, emitter, log)
 		log.Debug("New publisher derived from state", "account", b.AccountName, "config", b.ConfigName)
 		if err != nil {
 			InternalError(w, req, log, err)

@@ -189,10 +189,6 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	r.Handle(ToPath("snowflake-connections"), GetSnowflakeConnectionsHandlerFunc(log, snowflake.NewConnections())).
 		Methods(http.MethodGet)
 
-	// GET /api/connect-cloud/accounts
-	r.Handle(ToPath("connect-cloud", "accounts"), GetConnectCloudAccountsFunc(log)).
-		Methods(http.MethodGet)
-
 	c := cors.AllowAll().Handler(r)
 	return c.ServeHTTP
 }

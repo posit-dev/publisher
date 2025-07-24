@@ -10,6 +10,7 @@ import (
 
 	"github.com/alecthomas/kong"
 	"github.com/posit-dev/publisher/cmd/publisher/commands"
+	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/cli_types"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/logging"
@@ -36,8 +37,9 @@ func Fatal(err error) {
 
 func main() {
 	ctx := &cli_types.CLIContext{
-		Fs:     afero.NewOsFs(),
-		Logger: events.NewCLILogger(0, os.Stderr),
+		Accounts: nil,
+		Fs:       afero.NewOsFs(),
+		Logger:   events.NewCLILogger(0, os.Stderr),
 	}
 	cli := cliSpec{
 		CommonArgs: cli_types.CommonArgs{},
@@ -53,9 +55,14 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 	ctx.Logger = events.NewCLILogger(cli.Verbose, os.Stderr)
+	accounts, err := accounts.NewAccountList(ctx.Fs, ctx.Logger)
+	if err != nil {
+		Fatal(err)
+	}
+	ctx.Accounts = accounts
 
 	logVersion(ctx.Logger)
-	err := args.Run(&cli.CommonArgs)
+	err = args.Run(&cli.CommonArgs)
 	if err != nil {
 		Fatal(err)
 	}

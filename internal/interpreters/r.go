@@ -478,7 +478,7 @@ func (i *defaultRInterpreter) getRenvLockfilePathFromRExecutable(rExecutable str
 	}
 	lines := strings.SplitN(string(append(output, stderr...)), "\n", -1)
 	for _, l := range lines {
-		i.log.Info("Parsing line for renv::path output", "output", l)
+		i.log.Info("Parsing line for renv::path output", "l", l)
 		m := renvLockRE.FindStringSubmatch(l)
 		if len(m) < 2 {
 			continue
@@ -529,7 +529,7 @@ func (i *defaultRInterpreter) GetRRequires() string {
 	rProjectRequires := NewRProjectRRequires(i.base)
 	rRequires, err := rProjectRequires.GetRVersionRequirement()
 	if err != nil {
-		i.log.Warn("Error retrieving required R version", "error", err.Error())
+		i.log.Warn("Error retrieving required R version", err)
 		rRequires = ""
 	}
 	return rRequires

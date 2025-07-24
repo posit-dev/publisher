@@ -6,18 +6,14 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/posit-dev/publisher/internal/server_type"
-
 	"github.com/posit-dev/publisher/internal/credentials"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/types"
 )
 
 type PostCredentialsRequest struct {
-	Name       string                 `json:"name"`
-	URL        string                 `json:"url"`
-	ServerType server_type.ServerType `json:"serverType"`
-
+	Name string `json:"name"`
+	URL  string `json:"url"`
 	// Connect fields
 	ApiKey string `json:"apiKey"`
 
@@ -61,7 +57,6 @@ func PostCredentialFuncHandler(log logging.Logger) http.HandlerFunc {
 		cred, err := cs.Set(credentials.CreateCredentialDetails{
 			Name:                body.Name,
 			URL:                 body.URL,
-			ServerType:          body.ServerType,
 			ApiKey:              body.ApiKey,
 			SnowflakeConnection: body.SnowflakeConnection,
 			AccountID:           body.AccountID,

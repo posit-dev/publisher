@@ -8,7 +8,6 @@ export type Credential = {
   name: string;
   url: string;
   apiKey: string;
-  serverType: ServerType;
 };
 
 export type CredentialUser = {
