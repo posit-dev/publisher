@@ -27,12 +27,14 @@ export class Credentials {
     url: string,
     apiKey: string,
     snowflakeConnection: string,
+    serverType: string,
   ) {
     return this.client.post<Credential>(`credentials`, {
       name,
       url,
       apiKey,
       snowflakeConnection,
+      serverType,
     });
   }
 

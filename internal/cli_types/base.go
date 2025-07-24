@@ -3,7 +3,6 @@ package cli_types
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/logging"
 
 	"github.com/spf13/afero"
@@ -19,15 +18,13 @@ type Log interface {
 }
 
 type CLIContext struct {
-	Accounts accounts.AccountList
-	Fs       afero.Fs
-	Logger   logging.Logger
+	Fs     afero.Fs
+	Logger logging.Logger
 }
 
-func NewCLIContext(accountList accounts.AccountList, fs afero.Fs, log logging.Logger) *CLIContext {
+func NewCLIContext(fs afero.Fs, log logging.Logger) *CLIContext {
 	return &CLIContext{
-		Accounts: accountList,
-		Fs:       fs,
-		Logger:   log,
+		Fs:     fs,
+		Logger: log,
 	}
 }
