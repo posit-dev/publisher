@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 
 ### Added
+
 - Added endpoints for performing OAuth Device Authorization Grant with Posit Cloud login. (#2692)
 
 ## [1.18.0]
