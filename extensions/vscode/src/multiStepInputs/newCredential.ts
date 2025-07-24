@@ -93,10 +93,10 @@ export async function newCredential(
         apiKey: <string | undefined>undefined, // eventual type is string
         name: <string | undefined>undefined, // eventual type is string
         snowflakeConnection: <string | undefined>undefined, // eventual type is string
-        connectCloudAccessToken: <string | undefined>undefined, // eventual type is string
-        connectCloudRefreshToken: <string | undefined>undefined, // eventual type is string
-        connectCloudAccountId: <string | undefined>undefined, // eventual type is string
-        connectCloudAccountName: <string | undefined>undefined, // eventual type is string
+        accessToken: <string | undefined>undefined, // eventual type is string
+        refreshToken: <string | undefined>undefined, // eventual type is string
+        accountId: <string | undefined>undefined, // eventual type is string
+        accountName: <string | undefined>undefined, // eventual type is string
       },
       promptStepNumbers: {},
     };
@@ -133,10 +133,22 @@ export async function newCredential(
       state.lastStep = thisStepNumber;
 
       if (isConnectCloud(serverType)) {
+        // TODO: the url should be handled in the agent for Connect Cloud
+        state.data.url = "https://staging.connect.posit.cloud";
+        // default everything outside the Connect Cloud fields to empty strings
+        state.data.apiKey = "";
+        state.data.snowflakeConnection = "";
+
         return (input: MultiStepInput) => authenticate(input, state);
       }
 
       if (isConnect(serverType)) {
+        // default everything outside the Connect fields to empty strings
+        state.data.accessToken = "";
+        state.data.refreshToken = "";
+        state.data.accountId = "";
+        state.data.accountName = "";
+
         return (input: MultiStepInput) => inputServerUrl(input, state);
       }
 
@@ -185,17 +197,12 @@ export async function newCredential(
     // authenticate with Connect Cloud
     try {
       const authToken = await authConnectCloud();
-      state.data.connectCloudAccessToken = authToken.accessToken;
-      state.data.connectCloudRefreshToken = authToken.refreshToken;
+      state.data.accessToken = authToken.accessToken;
+      state.data.refreshToken = authToken.refreshToken;
     } catch {
       // errors have already been displayed by authConnectCloud
       return Promise.resolve(undefined);
     }
-
-    // default everything outside the Connect Cloud fields to empty strings
-    state.data.apiKey = "";
-    state.data.snowflakeConnection = "";
-    state.data.url = "";
 
     return (input: MultiStepInput) => retrieveAccounts(input, state);
   }
@@ -235,9 +242,9 @@ export async function newCredential(
     });
 
     const accessToken =
-      typeof state.data.connectCloudAccessToken === "string" &&
-      state.data.connectCloudAccessToken.length
-        ? state.data.connectCloudAccessToken
+      typeof state.data.accessToken === "string" &&
+      state.data.accessToken.length
+        ? state.data.accessToken
         : "";
     // retrieve the user's accounts from Connect Cloud
     try {
@@ -265,8 +272,8 @@ export async function newCredential(
 
     if (publishableAccounts.length === 1) {
       // there is only one publishable account, use it and bail
-      state.data.connectCloudAccountId = publishableAccounts[0].id;
-      state.data.connectCloudAccountName = publishableAccounts[0].name;
+      state.data.accountId = publishableAccounts[0].id;
+      state.data.accountName = publishableAccounts[0].name;
       return (input: MultiStepInput) => inputCredentialName(input, state);
     } else if (publishableAccounts.length > 1) {
       // there are multiple publishable accounts, display the account selector
@@ -285,10 +292,8 @@ export async function newCredential(
 
       const account = publishableAccounts.find((a) => a.name === pick.label);
       // fallback to the first publishable account if the selected account is ever not found
-      state.data.connectCloudAccountId =
-        account?.id || publishableAccounts[0].id;
-      state.data.connectCloudAccountName =
-        account?.name || publishableAccounts[0].name;
+      state.data.accountId = account?.id || publishableAccounts[0].id;
+      state.data.accountName = account?.name || publishableAccounts[0].name;
       state.lastStep = thisStepNumber;
 
       return (input: MultiStepInput) => inputCredentialName(input, state);
@@ -656,14 +661,14 @@ export async function newCredential(
     isQuickPickItem(state.data.snowflakeConnection) ||
     state.data.name === undefined ||
     isQuickPickItem(state.data.name) ||
-    state.data.connectCloudAccessToken === undefined ||
-    isQuickPickItem(state.data.connectCloudAccessToken) ||
-    state.data.connectCloudRefreshToken === undefined ||
-    isQuickPickItem(state.data.connectCloudRefreshToken) ||
-    state.data.connectCloudAccountId === undefined ||
-    isQuickPickItem(state.data.connectCloudAccountId) ||
-    state.data.connectCloudAccountName === undefined ||
-    isQuickPickItem(state.data.connectCloudAccountName)
+    state.data.accessToken === undefined ||
+    isQuickPickItem(state.data.accessToken) ||
+    state.data.refreshToken === undefined ||
+    isQuickPickItem(state.data.refreshToken) ||
+    state.data.accountId === undefined ||
+    isQuickPickItem(state.data.accountId) ||
+    state.data.accountName === undefined ||
+    isQuickPickItem(state.data.accountName)
   ) {
     return;
   }
@@ -676,10 +681,10 @@ export async function newCredential(
       state.data.url,
       state.data.apiKey,
       state.data.snowflakeConnection,
-      state.data.connectCloudAccountId,
-      state.data.connectCloudAccountName,
-      state.data.connectCloudRefreshToken,
-      state.data.connectCloudAccessToken,
+      state.data.accountId,
+      state.data.accountName,
+      state.data.refreshToken,
+      state.data.accessToken,
       serverType,
     );
   } catch (error: unknown) {
