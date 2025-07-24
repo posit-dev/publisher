@@ -3,17 +3,18 @@ package api
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import (
-	"github.com/posit-dev/publisher/internal/clients/cloud_auth"
-	"github.com/stretchr/testify/mock"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/suite"
+
+	"github.com/posit-dev/publisher/internal/clients/cloud_auth"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/stretchr/testify/suite"
 )
 
 type PostConnectCloudDeviceAuthSuite struct {

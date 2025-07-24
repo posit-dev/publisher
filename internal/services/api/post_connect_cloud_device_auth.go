@@ -5,10 +5,10 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/posit-dev/publisher/internal/clients/cloud_auth"
 	"net/http"
 	"time"
 
+	"github.com/posit-dev/publisher/internal/clients/cloud_auth"
 	"github.com/posit-dev/publisher/internal/logging"
 )
 
