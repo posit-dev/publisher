@@ -12,3 +12,9 @@ export type AuthToken = {
   refreshToken: string;
   expiresIn: number;
 };
+
+export type ConnectCloudAccount = {
+  name: string;
+  id: string;
+  permissionToPublish: boolean;
+};

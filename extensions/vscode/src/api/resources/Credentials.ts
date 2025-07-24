@@ -27,12 +27,20 @@ export class Credentials {
     url: string,
     apiKey: string,
     snowflakeConnection: string,
+    connectCloudAccountId: string,
+    connectCloudAccountName: string,
+    connectCloudRefreshToken: string,
+    connectCloudAccessToken: string,
   ) {
     return this.client.post<Credential>(`credentials`, {
       name,
       url,
       apiKey,
       snowflakeConnection,
+      connectCloudAccountId,
+      connectCloudAccountName,
+      connectCloudRefreshToken,
+      connectCloudAccessToken,
     });
   }
 

@@ -104,7 +104,14 @@ export const fetchSnowflakeConnections = async (serverUrl: string) => {
 
 // Authenticate the user in Connect Cloud using device auth and return the token
 export const authConnectCloud = async () => {
-  let authToken: AuthToken | null = null;
+  let authToken: AuthToken = {
+    accessToken: "",
+    refreshToken: "",
+    expiresIn: 0,
+  };
+
+  let errorLocation = "";
+  let errorMessage = "";
 
   try {
     const api = await useApi();
@@ -116,68 +123,67 @@ export const authConnectCloud = async () => {
     // open external lucid auth browser window
     env.openExternal(Uri.parse(verificationURIComplete));
 
-    // poll for the user's authentication token using the device code
-    const pollingToken = setInterval(async () => {
-      try {
-        const tokenResponse = await api.connectCloud.token(deviceCode);
-        authToken = tokenResponse.data;
-        // we got the token info, so stop polling for the token
-        clearInterval(pollingToken);
-      } catch (err: unknown) {
-        if (axios.isAxiosError(err) && err.response?.data?.code) {
-          let errorMessage: string | null = null;
+    // promesify the interval so we can wait for the polling to complete
+    // this is needed because setInterval and setTimeout do not return a promise
+    await new Promise((resolve, reject) => {
+      // poll for the user's authentication token using the device code
+      const pollingToken = setInterval(async () => {
+        try {
+          const tokenResponse = await api.connectCloud.token(deviceCode);
+          authToken = tokenResponse.data;
+          // we got the token info, so stop polling for the token
+          clearInterval(pollingToken);
+          return resolve(authToken);
+        } catch (err: unknown) {
+          if (axios.isAxiosError(err) && err.response?.data?.code) {
+            let errMessage: string | null = null;
 
-          // handle the known polling errors
-          switch (err.response.data.code) {
-            case "deviceAuthAccessDenied":
-              errorMessage = "Access denied to Connect Cloud.";
-              break;
-            case "deviceAuthExpiredToken":
-              errorMessage = "Expired Connect Cloud authorization token.";
-              break;
-            case "deviceAuthSlowDown":
-              pollInterval *= 2;
-              break;
-            case "deviceAuthPending":
-              // DO NOTHING, let the polling continue, this is expected while authenticating
-              break;
-            default:
-              errorMessage =
-                "Unable to retrieve the Connect Cloud authorization token.";
-              break;
+            // handle the known polling errors
+            switch (err.response.data.code) {
+              case "deviceAuthAccessDenied":
+                errMessage = "Access denied to Connect Cloud.";
+                break;
+              case "deviceAuthExpiredToken":
+                errMessage = "Expired Connect Cloud authorization token.";
+                break;
+              case "deviceAuthSlowDown":
+                pollInterval *= 2;
+                break;
+              case "deviceAuthPending":
+                // DO NOTHING, let the polling continue, this is expected while authenticating
+                break;
+              default:
+                errMessage =
+                  "Unable to retrieve the Connect Cloud authorization token.";
+                break;
+            }
+
+            // there was a legit error, bail from polling for the token
+            if (errMessage) {
+              clearInterval(pollingToken);
+              errorLocation = "newCredentials, connectCloud.pollToken";
+              errorMessage = errMessage;
+              return reject(err);
+            } else {
+              // expected error while authenticating, continue polling
+              // return from the interval but not from the promise
+              return;
+            }
           }
 
-          // there was a legit error, bail from polling for the token
-          if (errorMessage) {
-            clearInterval(pollingToken);
-            displayError(
-              "newCredentials, connectCloud.pollToken",
-              errorMessage,
-              err,
-            );
-            throw err;
-          } else {
-            // expected error while authenticating
-            return;
-          }
-        }
-
-        // there was an unexpected error, bail from polling for the token
-        clearInterval(pollingToken);
-        displayError(
-          "newCredentials, connectCloud.pollToken",
-          "Unexpected error while retrieving the Connect Cloud authorization token.",
-          err,
-        );
-        throw err;
-      } // catch end
-    }, pollInterval); // interval end
+          // there was an unexpected error, bail from polling for the token
+          clearInterval(pollingToken);
+          errorLocation = "newCredentials, connectCloud.pollToken";
+          errorMessage =
+            "Unexpected error while retrieving the Connect Cloud authorization token.";
+          return reject(err);
+        } // catch end
+      }, pollInterval); // interval end
+    }); // promise end
   } catch (error) {
-    displayError(
-      "newCredentials, connectCloud.auth",
-      "Unable to authenticate with Connect Cloud.",
-      error,
-    );
+    errorLocation ||= "newCredentials, connectCloud.auth";
+    errorMessage ||= "Unable to authenticate with Connect Cloud.";
+    displayError(errorLocation, errorMessage, error);
     throw error;
   }
 

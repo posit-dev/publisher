@@ -1,10 +1,17 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import { AxiosInstance } from "axios";
-import { AuthToken, DeviceAuth } from "../types/connectCloud";
+import {
+  ConnectCloudAccount,
+  AuthToken,
+  DeviceAuth,
+} from "../types/connectCloud";
 
-const baseUrlHeader = {
-  headers: { "Cloud-Auth-Base-Url": "https://login.staging.posit.cloud" },
+const cloudAuthBaseUrlHeader = {
+  "Cloud-Auth-Base-Url": "https://login.staging.posit.cloud",
+};
+const connectCloudBaseUrlHeader = {
+  "Connect-Cloud-Base-Url": "https://api.staging.connect.posit.cloud",
 };
 
 export class ConnectCloud {
@@ -27,7 +34,7 @@ export class ConnectCloud {
     return this.client.post<DeviceAuth>(
       "connect-cloud/device-auth",
       {},
-      baseUrlHeader,
+      { headers: cloudAuthBaseUrlHeader },
     );
   }
 
@@ -43,7 +50,24 @@ export class ConnectCloud {
     return this.client.post<AuthToken>(
       "connect-cloud/oauth/token",
       { deviceCode },
-      baseUrlHeader,
+      { headers: cloudAuthBaseUrlHeader },
     );
+  }
+
+  // Get the user's account list from Connect Cloud
+  //
+  // Returned accounts include non-publishable accounts for the user
+  //
+  // Returns:
+  // 200 - ok
+  // 400 - bad request error
+  // 500 - internal server error
+  accounts(accessToken: string) {
+    return this.client.get<ConnectCloudAccount[]>("connect-cloud/accounts", {
+      headers: {
+        ...connectCloudBaseUrlHeader,
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
   }
 }
