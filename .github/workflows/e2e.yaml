@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -36,6 +38,12 @@ jobs:
         run: npm ci
 
       - uses: extractions/setup-just@v2
+
+      - name: Build publisher binary
+        run: just build
+
+      - name: Build VSCode extension
+        run: just package
 
       - name: Build Docker images
         working-directory: test/e2e
