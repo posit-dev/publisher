@@ -56,6 +56,26 @@ func (s *CredentialsServiceTestSuite) TestCredential() {
 		ApiKey: "abcdeC2aqbh7dg8TO43XPu7r56YDh000",
 	})
 	s.EqualError(err, "URL value conflicts with existing credential (friedtofu) URL: https://a1.connect-server:3939/connect")
+
+	cloudCred := Credential{
+		GUID:         "18cd5640-bee5-4b2a-992a-a2725ab6103d",
+		Name:         "friedtofu",
+		URL:          "https://api.connect.posit.cloud",
+		AccountID:    "123",
+		AccountName:  "fried tofu",
+		RefreshToken: "refresh-token",
+		AccessToken:  "access-token",
+	}
+	err = cloudCred.ConflictCheck(Credential{
+		GUID:         "18cd5640-bee5-4b2a-992a-a2725ab6103d",
+		Name:         "nofriedtofu",
+		URL:          "https://api.connect.posit.cloud",
+		AccountID:    "123",
+		AccountName:  "friedtofu",
+		RefreshToken: "refresh-token",
+		AccessToken:  "access-token",
+	})
+	s.EqualError(err, "URL value conflicts with existing credential (friedtofu) URL: https://api.connect.posit.cloud, account name: fried tofu")
 }
 
 func (s *CredentialsServiceTestSuite) TestCredentialRecord() {
