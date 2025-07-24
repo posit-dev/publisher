@@ -5,20 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.18.0]
+## [Unreleased]
 
 ### Fixed
 
-- Fixed the naming of "Shiny for Python" and "Shiny for R" content types. (#2664)
-- Fixed an issue where end-to-end tests could not run on some Mac systems due to Docker files not being built for the correct platform.
-- Fixed an issue where disabling keychain credential storage would not work as expected. (#2697)
-- Fixed inconsistent runtime discovery and selection at deploy time. (#2648)
+- Fixed the naming of "Shiny for Python" and "Shiny for R" content types.
+  (#2664)
+
+- Fixed the inability for e2e tests to run on some Mac systems due to the
+  docker files not being built for the correct platform.
 
 ### Added
 
 - Improved support for Posit Connect deployments hosted in Snowpark Container
   Services. (#2687, #2691)
-- Added internal API endpoint to list Connect Cloud accounts. (#2695)
 
 ### Changed
 

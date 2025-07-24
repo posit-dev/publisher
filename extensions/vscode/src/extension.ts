@@ -1,4 +1,4 @@
-// Copyright (C) 2025 by Posit Software, PBC.
+// Copyright (C) 2024 by Posit Software, PBC.
 
 import {
   ExtensionContext,
@@ -215,10 +215,5 @@ export const extensionSettings = {
       if (configURL !== null) value = configURL;
     }
     return value !== undefined ? value : "";
-  },
-  enableConnectCloud(): boolean {
-    // defaulting to false for now until we have more bits integrated for
-    // Connect Cloud to bring it in as an extension configuration value
-    return false;
   },
 };

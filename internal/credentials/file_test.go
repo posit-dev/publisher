@@ -4,12 +4,11 @@ package credentials
 
 import (
 	"fmt"
+	"github.com/posit-dev/publisher/internal/server_type"
 	"os"
 	"runtime"
 	"testing"
 	"time"
-
-	"github.com/posit-dev/publisher/internal/server_type"
 
 	"github.com/posit-dev/publisher/internal/logging/loggingtest"
 	"github.com/posit-dev/publisher/internal/util"
@@ -405,7 +404,7 @@ func (s *FileCredentialsServiceSuite) TestSet() {
 		},
 	})
 
-	newcred, err := cs.Set(CreateCredentialDetails{ServerType: server_type.ServerTypeConnect, Name: "newcred", URL: "https://b2.connect-server:3939/connect", ApiKey: "abcdeC2aqbh7dg8TO43XPu7r56YDh002", SnowflakeConnection: ""})
+	newcred, err := cs.Set(CreateCredentialDetails{Name: "newcred", URL: "https://b2.connect-server:3939/connect", ApiKey: "abcdeC2aqbh7dg8TO43XPu7r56YDh002", SnowflakeConnection: ""})
 	s.NoError(err)
 
 	s.Equal(newcred.Name, "newcred")
@@ -438,7 +437,7 @@ func (s *FileCredentialsServiceSuite) TestSet() {
 		},
 	})
 
-	newcred2, err := cs.Set(CreateCredentialDetails{ServerType: server_type.ServerTypeConnect, Name: "brand new cred wspaces", URL: "https://b3.connect-server:3939/connect", ApiKey: "abcdeC2aqbh7dg8TO43XPu7r56YDh003", SnowflakeConnection: ""})
+	newcred2, err := cs.Set(CreateCredentialDetails{Name: "brand new cred wspaces", URL: "https://b3.connect-server:3939/connect", ApiKey: "abcdeC2aqbh7dg8TO43XPu7r56YDh003", SnowflakeConnection: ""})
 	s.NoError(err)
 
 	s.Equal(newcred2.Name, "brand new cred wspaces")
@@ -480,12 +479,7 @@ func (s *FileCredentialsServiceSuite) TestSet() {
 		},
 	})
 
-	newcred3, err := cs.Set(CreateCredentialDetails{
-		ServerType:          server_type.ServerTypeSnowflake,
-		Name:                "snowcred",
-		URL:                 "https://example.snowflakecomputing.app/connect",
-		ApiKey:              "",
-		SnowflakeConnection: "snowy"})
+	newcred3, err := cs.Set(CreateCredentialDetails{Name: "snowcred", URL: "https://example.snowflakecomputing.app/connect", ApiKey: "", SnowflakeConnection: "snowy"})
 	s.NoError(err)
 
 	s.Equal(newcred3.Name, "snowcred")
@@ -533,10 +527,7 @@ func (s *FileCredentialsServiceSuite) TestSet() {
 		},
 	})
 
-	newcred4, err := cs.Set(CreateCredentialDetails{
-		ServerType:   server_type.ServerTypeConnectCloud,
-		Name:         "cloudy",
-		URL:          "https://api.connect.posit.cloud",
+	newcred4, err := cs.Set(CreateCredentialDetails{Name: "cloudy", URL: "https://api.connect.posit.cloud",
 		AccountID:    "0de62804-2b0b-4e11-8a52-a402bda89ff4",
 		AccountName:  "cloudy",
 		RefreshToken: "some_refresh_token",
@@ -617,7 +608,7 @@ func (s *FileCredentialsServiceSuite) TestSet_BlankDataErr() {
 	for _, createCredDetails := range testCases {
 		_, err := cs.Set(createCredDetails)
 		s.Error(err)
-		s.Equal("New credentials require non-empty Name, URL, Server Type, and either API Key, Snowflake, or Connect Cloud connection fields", err.Error())
+		s.Equal(err.Error(), "New credentials require non-empty Name, URL and either Api Key, Snowflake, or Connect Cloud connection fields")
 
 		creds, err := cs.load()
 		s.NoError(err)
@@ -657,7 +648,7 @@ func (s *FileCredentialsServiceSuite) TestSet_ConflictErr() {
 		expectedErrMessage := params[3]
 		s.loggerMock.On("Debug", "Conflicts storing new credential to file", "error", expectedErrMessage, "filename", cs.credsFilepath.String()).Return()
 
-		_, err := cs.Set(CreateCredentialDetails{ServerType: server_type.ServerTypeConnect, Name: params[0], URL: params[1], ApiKey: params[2]})
+		_, err := cs.Set(CreateCredentialDetails{Name: params[0], URL: params[1], ApiKey: params[2]})
 		s.Error(err)
 		s.loggerMock.AssertExpectations(s.T())
 
@@ -693,10 +684,10 @@ func (s *FileCredentialsServiceSuite) TestReset() {
 	_, err = cs.load()
 	s.NoError(err)
 
-	credOne, err := cs.Set(CreateCredentialDetails{ServerType: server_type.ServerTypeConnect, Name: "newcred", URL: "https://b2.connect-server:3939/connect", ApiKey: "abcdeC2aqbh7dg8TO43XPu7r56YDh002", SnowflakeConnection: ""})
+	credOne, err := cs.Set(CreateCredentialDetails{Name: "newcred", URL: "https://b2.connect-server:3939/connect", ApiKey: "abcdeC2aqbh7dg8TO43XPu7r56YDh002", SnowflakeConnection: ""})
 	s.NoError(err)
 
-	credTwo, err := cs.Set(CreateCredentialDetails{ServerType: server_type.ServerTypeConnect, Name: "newcredtwo", URL: "https://b5.connect-server:3939/connect", ApiKey: "abcdeC2aqbh7dg8TO43XPu7r56YDh007", SnowflakeConnection: ""})
+	credTwo, err := cs.Set(CreateCredentialDetails{Name: "newcredtwo", URL: "https://b5.connect-server:3939/connect", ApiKey: "abcdeC2aqbh7dg8TO43XPu7r56YDh007", SnowflakeConnection: ""})
 	s.NoError(err)
 
 	list, err := cs.List()

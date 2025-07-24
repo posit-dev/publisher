@@ -37,8 +37,6 @@ func (s *AvailablePackagesSuite) SetupTest() {
 }
 
 func (s *AvailablePackagesSuite) TestListAvailablePackages() {
-	rExecutablePath := util.NewAbsolutePath("R", nil)
-
 	setupMockRInterpreter := func(
 		base util.AbsolutePath,
 		rExecutableParam util.Path,
@@ -49,12 +47,14 @@ func (s *AvailablePackagesSuite) TestListAvailablePackages() {
 	) (interpreters.RInterpreter, error) {
 		i := interpreters.NewMockRInterpreter()
 		i.On("Init").Return(nil)
-		i.On("GetRExecutable").Return(rExecutablePath, nil)
+		i.On("GetRExecutable").Return("R", nil)
 		return i, nil
 	}
 
 	lister, err := NewAvailablePackageLister(s.base, util.Path{}, s.log, setupMockRInterpreter, nil)
 	s.NoError(err)
+
+	rExecutablePath := util.NewAbsolutePath("R", nil)
 
 	executor := executortest.NewMockExecutor()
 	executor.On("RunScript", rExecutablePath.String(), mock.Anything, mock.Anything, s.base, mock.Anything).Return([]byte(
@@ -79,8 +79,6 @@ BioCbooks https://bioconductor.org/packages/3.18/books
 `
 
 func (s *AvailablePackagesSuite) TestGetBioconductorRepos() {
-	rExecutablePath := util.NewAbsolutePath("R", nil)
-
 	setupMockRInterpreter := func(
 		base util.AbsolutePath,
 		rExecutableParam util.Path,
@@ -91,10 +89,12 @@ func (s *AvailablePackagesSuite) TestGetBioconductorRepos() {
 	) (interpreters.RInterpreter, error) {
 		i := interpreters.NewMockRInterpreter()
 		i.On("Init").Return(nil)
-		i.On("GetRExecutable").Return(rExecutablePath, nil)
+		i.On("GetRExecutable").Return("R", nil)
 		return i, nil
 	}
+
 	lister, _ := NewAvailablePackageLister(s.base, util.Path{}, s.log, setupMockRInterpreter, nil)
+	rExecutablePath := util.NewAbsolutePath("R", nil)
 
 	executor := executortest.NewMockExecutor()
 	executor.On("RunScript", rExecutablePath.String(), mock.Anything, mock.Anything, s.base, mock.Anything).Return([]byte(biocReposOutput), []byte{}, nil)
@@ -120,8 +120,6 @@ func (s *AvailablePackagesSuite) TestGetLibPaths() {
 		s.T().Skip()
 	}
 
-	rExecutablePath := util.NewAbsolutePath("R", nil)
-
 	setupMockRInterpreter := func(
 		base util.AbsolutePath,
 		rExecutableParam util.Path,
@@ -132,9 +130,10 @@ func (s *AvailablePackagesSuite) TestGetLibPaths() {
 	) (interpreters.RInterpreter, error) {
 		i := interpreters.NewMockRInterpreter()
 		i.On("Init").Return(nil)
-		i.On("GetRExecutable").Return(rExecutablePath, nil)
+		i.On("GetRExecutable").Return("R", nil)
 		return i, nil
 	}
+	rExecutablePath := util.NewAbsolutePath("R", nil)
 
 	lister, err := NewAvailablePackageLister(s.base, util.NewPath("R", nil), s.log, setupMockRInterpreter, nil)
 	s.NoError(err)
@@ -159,8 +158,6 @@ func (s *AvailablePackagesSuite) TestGetLibPathsWindows() {
 		s.T().Skip()
 	}
 
-	rExecutablePath := util.NewAbsolutePath("R", nil)
-
 	setupMockRInterpreter := func(
 		base util.AbsolutePath,
 		rExecutableParam util.Path,
@@ -171,9 +168,10 @@ func (s *AvailablePackagesSuite) TestGetLibPathsWindows() {
 	) (interpreters.RInterpreter, error) {
 		i := interpreters.NewMockRInterpreter()
 		i.On("Init").Return(nil)
-		i.On("GetRExecutable").Return(rExecutablePath, nil)
+		i.On("GetRExecutable").Return("R", nil)
 		return i, nil
 	}
+	rExecutablePath := util.NewAbsolutePath("R", nil)
 
 	lister, err := NewAvailablePackageLister(s.base, util.NewPath("R", nil), s.log, setupMockRInterpreter, nil)
 	s.NoError(err)

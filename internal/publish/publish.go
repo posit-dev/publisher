@@ -19,7 +19,6 @@ import (
 	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/inspect/dependencies/renv"
-	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/state"
 	"github.com/posit-dev/publisher/internal/types"
@@ -71,7 +70,7 @@ type publishDeployedFailureData struct {
 	DirectURL    string `mapstructure:"url"`
 }
 
-func NewFromState(s *state.State, rInterpreter interpreters.RInterpreter, pythonInterpreter interpreters.PythonInterpreter, emitter events.Emitter, log logging.Logger) (Publisher, error) {
+func NewFromState(s *state.State, rExecutable util.Path, pythonExecutable util.Path, emitter events.Emitter, log logging.Logger) (Publisher, error) {
 	if s.LocalID != "" {
 		data := baseEventData{
 			LocalID: s.LocalID,
@@ -84,11 +83,7 @@ func NewFromState(s *state.State, rInterpreter interpreters.RInterpreter, python
 		emitter = events.NewDataEmitter(dataMap, emitter)
 	}
 
-	// It is ok if the system does not have R or Python interpreters.
-	rexec, _ := rInterpreter.GetRExecutable()
-	pyexec, _ := pythonInterpreter.GetPythonExecutable()
-
-	packageManager, err := renv.NewPackageMapper(s.Dir, rexec.Path, log)
+	packageManager, err := renv.NewPackageMapper(s.Dir, rExecutable, log)
 
 	// Handle difference where we have no SaveName when redeploying, since it is
 	// only sent in the first deployment. In the end, both should equate to same
@@ -107,8 +102,8 @@ func NewFromState(s *state.State, rInterpreter interpreters.RInterpreter, python
 		log:            log,
 		emitter:        emitter,
 		rPackageMapper: packageManager,
-		r:              rexec.Path,
-		python:         pyexec.Path,
+		r:              rExecutable,
+		python:         pythonExecutable,
 		PublishHelper:  helper,
 	}, err
 }

@@ -5,6 +5,7 @@ package cli_types
 import (
 	"testing"
 
+	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
 	"github.com/stretchr/testify/suite"
@@ -19,10 +20,12 @@ func TestCLIContextSuite(t *testing.T) {
 }
 
 func (s *CLIContextSuite) TestNewCLIContext() {
+	accountList := &accounts.MockAccountList{}
 	fs := utiltest.NewMockFs()
 	log := logging.New()
 
-	ctx := NewCLIContext(fs, log)
-	s.Equal(fs, ctx.Fs)
+	ctx := NewCLIContext(accountList, fs, log)
+	s.Equal(accountList, ctx.Accounts)
 	s.Equal(log, ctx.Logger)
+	accountList.AssertNotCalled(s.T(), "GetAllAccounts")
 }
