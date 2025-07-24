@@ -192,6 +192,11 @@ export async function newCredential(
       return Promise.resolve(undefined);
     }
 
+    // default everything outside the Connect Cloud fields to empty strings
+    state.data.apiKey = "";
+    state.data.snowflakeConnection = "";
+    state.data.url = "";
+
     return (input: MultiStepInput) => retrieveAccounts(input, state);
   }
 
@@ -675,6 +680,7 @@ export async function newCredential(
       state.data.connectCloudAccountName,
       state.data.connectCloudRefreshToken,
       state.data.connectCloudAccessToken,
+      serverType,
     );
   } catch (error: unknown) {
     const summary = getSummaryStringFromError("credentials::add", error);

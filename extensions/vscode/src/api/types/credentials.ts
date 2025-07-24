@@ -8,6 +8,11 @@ export type Credential = {
   name: string;
   url: string;
   apiKey: string;
+  accountId: string;
+  accountName: string;
+  refreshToken: string;
+  accessToken: string;
+  serverType: ServerType;
 };
 
 export type CredentialUser = {
