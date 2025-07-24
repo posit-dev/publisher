@@ -66,7 +66,7 @@ func (s *PostConnectCloudDeviceAuthSuite) TestPostConnectCloudDeviceAuth() {
 	respBody, _ := io.ReadAll(rec.Body)
 	s.Equal("{\"deviceCode\":\"the_device_code\","+
 		"\"userCode\":\"the_user_code\","+
-		"\"verificationURIComplete\":\"the_verification_uri_complete\","+
+		"\"verificationURI\":\"the_verification_uri_complete\","+
 		"\"interval\":5}\n",
 		string(respBody))
 }
