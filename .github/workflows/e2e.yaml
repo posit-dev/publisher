@@ -99,9 +99,9 @@ jobs:
           path: test/e2e/cypress/screenshots
           if-no-files-found: ignore
 
-      - name: Upload Cypress videos
+      - name: Upload Cypress videos on failure
         uses: actions/upload-artifact@v4
-        if: always()
+        if: failure()
         with:
           name: cypress-videos
           path: test/e2e/cypress/videos

@@ -21,4 +21,6 @@ module.exports = defineConfig({
     CONNECT_MANAGER_URL: "http://localhost:4723",
   },
   chromeWebSecurity: false,
+  video: true,
+  videoUploadOnPasses: false,
 });
