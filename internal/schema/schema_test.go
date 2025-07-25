@@ -86,13 +86,13 @@ func (s *SchemaSuite) TestMissingSchemaField() {
 	// Create a validator with a single JSON schema
 	validator, err := NewValidator[genericContent](ConfigSchemaURL)
 	s.NoError(err)
-	
+
 	// Empty document (missing $schema field)
 	emptyDoc := map[string]any{}
-	
+
 	// Validate the content
 	err = validator.ValidateContent(emptyDoc)
-	
+
 	// Check that the error message matches the expected one
 	s.Error(err)
 	s.Equal("missing $schema field in TOML content", err.Error())
@@ -102,15 +102,15 @@ func (s *SchemaSuite) TestUnknownSchemaURL() {
 	// Create a validator with a single JSON schema
 	validator, err := NewValidator[genericContent](ConfigSchemaURL)
 	s.NoError(err)
-	
+
 	// Document with garbage schema URL
 	docWithBadSchema := map[string]any{
 		"$schema": "garbage-url-that-does-not-exist",
 	}
-	
+
 	// Validate the content
 	err = validator.ValidateContent(docWithBadSchema)
-	
+
 	// Check that the error message matches the expected one
 	s.Error(err)
 	s.Equal("unknown schema URL: garbage-url-that-does-not-exist", err.Error())
