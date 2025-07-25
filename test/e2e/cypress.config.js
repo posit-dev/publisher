@@ -1,5 +1,7 @@
 const { defineConfig } = require("cypress");
 
+const isCI = process.env.CI === "true";
+
 module.exports = defineConfig({
   e2e: {
     baseUrl: "http://localhost:8080",
@@ -9,6 +11,8 @@ module.exports = defineConfig({
       runMode: 1, // Retry failed tests in run mode (ci)
       openMode: 0,
     },
+    defaultCommandTimeout: isCI ? 20000 : 4000,
+    pageLoadTimeout: isCI ? 120000 : 60000,
     // eslint-disable-next-line no-unused-vars
     setupNodeEvents(on, config) {
       // implement node event listeners here
