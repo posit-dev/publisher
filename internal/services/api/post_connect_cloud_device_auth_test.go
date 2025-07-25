@@ -14,6 +14,7 @@ import (
 
 	"github.com/posit-dev/publisher/internal/clients/cloud_auth"
 	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
 )
 
@@ -46,7 +47,7 @@ func (s *PostConnectCloudDeviceAuthSuite) TestPostConnectCloudDeviceAuth() {
 		Interval:                5,
 	}
 	client.On("CreateDeviceAuth", mock.Anything).Return(&deviceAuthResult, nil)
-	cloudAuthClientFactory = func(baseURL string, log logging.Logger, timeout time.Duration) cloud_auth.APIClient {
+	cloudAuthClientFactory = func(environment types.CloudEnvironment, log logging.Logger, timeout time.Duration) cloud_auth.APIClient {
 		return client
 	}
 
@@ -69,20 +70,4 @@ func (s *PostConnectCloudDeviceAuthSuite) TestPostConnectCloudDeviceAuth() {
 		"\"verificationURI\":\"the_verification_uri_complete\","+
 		"\"interval\":5}\n",
 		string(respBody))
-}
-
-func (s *PostConnectCloudDeviceAuthSuite) TestPostConnectCloudDeviceAuth_MissingBaseURL() {
-	rec := httptest.NewRecorder()
-	req, err := http.NewRequest(
-		"POST",
-		"/connect-cloud/device-auth",
-		nil,
-	)
-	s.NoError(err)
-	// Intentionally not setting Cloud-Auth-Base-Url header
-
-	s.h(rec, req)
-
-	result := rec.Result()
-	s.Equal(http.StatusBadRequest, result.StatusCode)
 }

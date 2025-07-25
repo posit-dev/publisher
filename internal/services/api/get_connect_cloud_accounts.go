@@ -4,8 +4,8 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/posit-dev/publisher/internal/clients/connect_cloud"
+	"github.com/posit-dev/publisher/internal/types"
 	"net/http"
 	"slices"
 	"time"
@@ -21,7 +21,7 @@ type connectCloudAccountsBodyAccount struct {
 
 var connectCloudClientFactory = connect_cloud.NewConnectCloudClientWithAuth
 
-const connectCloudBaseURLHeader = "Connect-Cloud-Base-Url"
+const connectCloudEnvironmentHeader = "Connect-Cloud-Environment"
 
 type connectCloudAccountsBody struct {
 	Accounts []connectCloudAccountsBodyAccount `json:"accounts"`
@@ -29,14 +29,10 @@ type connectCloudAccountsBody struct {
 
 func GetConnectCloudAccountsFunc(log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		baseURL := req.Header.Get(connectCloudBaseURLHeader)
-		if baseURL == "" {
-			BadRequest(w, req, log, fmt.Errorf("%s header is required", connectCloudBaseURLHeader))
-			return
-		}
+		environment := types.CloudEnvironment(req.Header.Get(connectCloudEnvironmentHeader))
 		authorization := req.Header.Get("Authorization")
 
-		client := connectCloudClientFactory(baseURL, log, 10*time.Second, authorization)
+		client := connectCloudClientFactory(environment, log, 10*time.Second, authorization)
 
 		// implicitly creates a user if it doesn't exist
 		_, err := client.GetCurrentUser()
