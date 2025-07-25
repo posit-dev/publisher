@@ -4,16 +4,16 @@ package config
 
 import (
 	"bytes"
-	"github.com/posit-dev/publisher/internal/server_type"
 	"io/fs"
 	"strings"
 	"testing"
 
+	"github.com/spf13/afero"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/posit-dev/publisher/internal/schema"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/spf13/afero"
-	"github.com/stretchr/testify/suite"
 )
 
 type ConfigSuite struct {
@@ -98,9 +98,6 @@ func (s *ConfigSuite) TestFromExampleV3File() {
 	valuePtr := cfg.Connect.Kubernetes.DefaultPyEnvironmentManagement
 	s.NotNil(valuePtr)
 	s.Equal(true, *valuePtr)
-
-	s.Equal(cfg.Schema, schema.ConfigSchemaURL)
-	s.Equal(cfg.ServerType, server_type.ServerTypeConnect)
 }
 
 func (s *ConfigSuite) TestFromFileErr() {

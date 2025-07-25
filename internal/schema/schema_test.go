@@ -4,11 +4,12 @@ package schema
 import (
 	"testing"
 
+	"github.com/spf13/afero"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/spf13/afero"
-	"github.com/stretchr/testify/suite"
 )
 
 type SchemaSuite struct {
@@ -29,36 +30,36 @@ func (s *SchemaSuite) SetupTest() {
 type genericContent map[string]any
 
 func (s *SchemaSuite) TestValidateConfig() {
-	validator, err := NewValidator[genericContent]([]string{ConfigSchemaURL})
+	validator, err := NewValidator[genericContent](ConfigSchemaURL)
 	s.NoError(err)
 	path := s.cwd.Join("schemas", "config.toml")
-	_, err = validator.ValidateTOMLFile(path)
+	err = validator.ValidateTOMLFile(path)
 	s.NoError(err)
 }
 
 func (s *SchemaSuite) TestValidateDeployment() {
-	validator, err := NewValidator[genericContent]([]string{DeploymentSchemaURL})
+	validator, err := NewValidator[genericContent](DeploymentSchemaURL)
 	s.NoError(err)
 	path := s.cwd.Join("schemas", "record.toml")
-	_, err = validator.ValidateTOMLFile(path)
+	err = validator.ValidateTOMLFile(path)
 	s.NoError(err)
 }
 
 func (s *SchemaSuite) TestValidateDraftConfig() {
 	const draftConfigSchemaURL = "https://cdn.posit.co/publisher/schemas/draft/posit-publishing-schema-v4.json"
-	validator, err := NewValidator[genericContent]([]string{draftConfigSchemaURL})
+	validator, err := NewValidator[genericContent](draftConfigSchemaURL)
 	s.NoError(err)
 	path := s.cwd.Join("schemas", "draft", "config.toml")
-	_, err = validator.ValidateTOMLFile(path)
+	err = validator.ValidateTOMLFile(path)
 	s.NoError(err)
 }
 
 func (s *SchemaSuite) TestValidateDraftDeployment() {
 	const draftDeploymentSchemaURL = "https://cdn.posit.co/publisher/schemas/draft/posit-publishing-record-schema-v4.json"
-	validator, err := NewValidator[genericContent]([]string{draftDeploymentSchemaURL})
+	validator, err := NewValidator[genericContent](draftDeploymentSchemaURL)
 	s.NoError(err)
 	path := s.cwd.Join("schemas", "draft", "record.toml")
-	_, err = validator.ValidateTOMLFile(path)
+	err = validator.ValidateTOMLFile(path)
 	s.NoError(err)
 }
 
@@ -73,9 +74,9 @@ func (s *SchemaSuite) TestValidationError() {
 	err = path.WriteFile(badTOML, 0600)
 	s.NoError(err)
 
-	validator, err := NewValidator[genericContent]([]string{ConfigSchemaURL})
+	validator, err := NewValidator[genericContent](ConfigSchemaURL)
 	s.NoError(err)
-	_, err = validator.ValidateTOMLFile(path)
+	err = validator.ValidateTOMLFile(path)
 	agentErr, ok := err.(*types.AgentError)
 	s.True(ok)
 	s.Equal(agentErr.Code, tomlValidationErrorCode)

@@ -10,9 +10,10 @@ import (
 	"io"
 	"strings"
 
+	"github.com/santhosh-tekuri/jsonschema/v5"
+
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
-	"github.com/santhosh-tekuri/jsonschema/v5"
 )
 
 //go:embed schemas
@@ -39,7 +40,7 @@ type Validator[T any] struct {
 	schemas map[string]*jsonschema.Schema
 }
 
-func NewValidator[T any](schemaURLs []string) (*Validator[T], error) {
+func NewValidator[T any](schemaURLs ...string) (*Validator[T], error) {
 	jsonschema.Loaders = map[string]func(url string) (io.ReadCloser, error){
 		"https": loadSchema,
 	}
@@ -83,23 +84,18 @@ func toTomlValidationError(e *jsonschema.ValidationError) *tomlValidationError {
 	}
 }
 
-func (v *Validator[T]) ValidateContent(data map[string]interface{}) error {
-	pertinentSchemaURL, ok := data["$schema"]
+func (v *Validator[T]) ValidateContent(data map[string]any) error {
+	schemaURL, ok := data["$schema"]
 	if !ok {
-		return errors.New("no $schema field found in data")
+		return errors.New("missing $schema field in TOML content")
 	}
 
-	pertinentSchemaURLString, ok := pertinentSchemaURL.(string)
+	theSchema, ok := v.schemas[schemaURL.(string)]
 	if !ok {
-		return errors.New("$schema field must a string")
+		return fmt.Errorf("unknown schema URL: %s", schemaURL)
 	}
 
-	schema, ok := v.schemas[pertinentSchemaURLString]
-	if !ok {
-		return fmt.Errorf("schema not supported: %s", pertinentSchemaURL)
-	}
-
-	err := schema.Validate(data)
+	err := theSchema.Validate(data)
 	if err != nil {
 		validationErr, ok := err.(*jsonschema.ValidationError)
 		if ok {
@@ -113,14 +109,14 @@ func (v *Validator[T]) ValidateContent(data map[string]interface{}) error {
 	return nil
 }
 
-func (v *Validator[T]) ValidateTOMLFile(path util.AbsolutePath) (map[string]interface{}, error) {
+func (v *Validator[T]) ValidateTOMLFile(path util.AbsolutePath) error {
 	// First, try to read the TOML into the object.
 	// This will return nicer errors from the toml package
 	// for things like fields that cannot be mapped.
 	var typedContent T
 	err := util.ReadTOMLFile(path, &typedContent)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	// Read the TOML generically to get the anyContent.
 	// Can't use v.object here because Validate
@@ -128,9 +124,9 @@ func (v *Validator[T]) ValidateTOMLFile(path util.AbsolutePath) (map[string]inte
 	var anyContent map[string]interface{}
 	err = util.ReadTOMLFile(path, &anyContent)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return anyContent, v.ValidateContent(anyContent)
+	return v.ValidateContent(anyContent)
 }
 
 func loadSchema(url string) (io.ReadCloser, error) {
