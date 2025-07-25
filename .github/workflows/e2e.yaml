@@ -62,6 +62,11 @@ jobs:
           just start "connect-publisher-e2e"
           just start "code-server"
 
+      - name: Fix permissions for content-workspace in container
+        run: |
+          docker exec publisher-e2e.code-server chown -R root:root /home/coder/workspace
+          docker exec publisher-e2e.code-server chmod -R u+rw /home/coder/workspace
+
       - name: Kill any process using port 8080
         run: |
           PID=$(docker exec publisher-e2e.code-server sh -c "lsof -ti :8080 || netstat -tulnp 2>/dev/null | grep ':8080' | awk '{print \$7}' | cut -d'/' -f1 | head -n1" || true)

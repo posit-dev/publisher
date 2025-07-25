@@ -13,6 +13,7 @@ describe("Credentials Section", () => {
       .click();
 
     cy.toggleCredentialsSection();
+    cy.debugIframes();
     cy.publisherWebview()
       .findByText("No credentials have been added yet.")
       .should("be.visible");
@@ -61,6 +62,7 @@ describe("Credentials Section", () => {
       .click();
 
     cy.toggleCredentialsSection();
+    cy.debugIframes();
     cy.publisherWebview()
       .findByText("No credentials have been added yet.")
       .should("not.exist");
