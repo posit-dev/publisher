@@ -107,6 +107,15 @@ jobs:
           path: test/e2e/cypress/videos
           if-no-files-found: ignore
 
+      - name: Show code-server extension logs
+        if: always()
+        run: |
+          docker exec publisher-e2e.code-server sh -c 'find ~/.config/code-server/logs -type f -exec echo "--- {} ---" \; -exec cat {} \; || echo "No logs found"'
+
+      - name: Show installed extensions
+        if: always()
+        run: docker exec publisher-e2e.code-server code-server --list-extensions || true
+
       - name: Stop containers
         if: always()
         working-directory: test/e2e
