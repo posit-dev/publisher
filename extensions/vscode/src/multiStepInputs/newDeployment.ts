@@ -987,6 +987,10 @@ export async function newDeployment(
       newDeploymentData.title,
       existingNames,
     );
+
+    newDeploymentData.entrypoint.inspectionResult.configuration.serverType =
+      serverType;
+
     configCreateResponse = (
       await api.configurations.createOrUpdate(
         configName,
