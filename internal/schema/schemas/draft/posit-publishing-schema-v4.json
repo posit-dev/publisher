@@ -27,7 +27,8 @@
     "server_type": {
       "type": "string",
       "description": "The server type that this content will be deployed to.",
-      "enum": ["connect", "snowflake"]
+      "enum": ["connect", "snowflake"],
+      "default": "connect"
     },
     "type": {
       "type": "string",

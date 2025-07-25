@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Added a new schema version `v4`, making `server_type` required. (#2693)
+- Added a new schema version `v4`, adding `server_type` as a config field. (#2729)
 
 ## [1.18.0]
 
