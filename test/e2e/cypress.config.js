@@ -15,6 +15,12 @@ module.exports = defineConfig({
     pageLoadTimeout: isCI ? 120000 : 60000,
     // eslint-disable-next-line no-unused-vars
     setupNodeEvents(on, config) {
+      on("task", {
+        print(message) {
+          console.log(message);
+          return null;
+        },
+      });
       // implement node event listeners here
     },
   },
@@ -25,6 +31,5 @@ module.exports = defineConfig({
     CONNECT_MANAGER_URL: "http://localhost:4723",
   },
   chromeWebSecurity: false,
-  video: true,
-  videoUploadOnPasses: false,
+  video: isCI ? true : false,
 });
