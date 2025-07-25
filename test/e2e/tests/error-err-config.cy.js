@@ -13,6 +13,7 @@ describe("Detect error in config", () => {
     cy.getPublisherSidebarIcon()
       .should("be.visible", { timeout: 10000 })
       .click();
+    cy.debugIframes();
   });
 
   it("Show errors when Config is invalid", () => {

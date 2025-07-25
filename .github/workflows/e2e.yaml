@@ -1,0 +1,118 @@
+name: E2E Tests
+on:
+  workflow_call:
+    secrets:
+      CONNECT_LICENSE:
+        required: true
+
+jobs:
+  cypress:
+    name: e2e tests (cypress)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: test/e2e/requirements.txt
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: test/e2e/package-lock.json
+
+      - name: Install Python dependencies
+        working-directory: test/e2e
+        run: pip install -r requirements.txt
+
+      - name: Install npm dependencies
+        working-directory: test/e2e
+        run: npm ci
+
+      - uses: extractions/setup-just@v2
+
+      - name: Build publisher binary
+        run: just build
+
+      - name: Download VSIX artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+      - name: Build Docker images
+        working-directory: test/e2e
+        run: |
+          docker build -f Dockerfile.base -t e2ebase --platform linux/amd64 .
+          docker compose build connect-publisher-e2e code-server
+        env:
+          CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
+
+      - name: Start containers
+        working-directory: test/e2e
+        run: |
+          just start "connect-publisher-e2e"
+          just start "code-server"
+
+      - name: Fix permissions for content-workspace in container
+        run: |
+          docker exec publisher-e2e.code-server chown -R root:root /home/coder/workspace
+          docker exec publisher-e2e.code-server chmod -R u+rw /home/coder/workspace
+
+      - name: Kill any process using port 8080
+        run: |
+          PID=$(docker exec publisher-e2e.code-server sh -c "lsof -ti :8080 || netstat -tulnp 2>/dev/null | grep ':8080' | awk '{print \$7}' | cut -d'/' -f1 | head -n1" || true)
+          if [ -n "$PID" ]; then
+            echo "Killing process $PID using port 8080"
+            docker exec publisher-e2e.code-server kill -9 $PID || true
+          else
+            echo "No process using port 8080"
+          fi
+
+      - name: Wait for code-server to be ready
+        run: |
+          for i in {1..30}; do
+            if curl -sf http://localhost:8080 > /dev/null; then
+              echo "code-server is ready!"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "code-server did not become ready in time"
+          exit 1
+
+      - name: Run Cypress tests
+        working-directory: test/e2e
+        run: npx cypress run
+        env:
+          CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
+          CI: true
+
+      - name: Upload Cypress screenshots on failure
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: cypress-screenshots
+          path: test/e2e/cypress/screenshots
+          if-no-files-found: ignore
+
+      - name: Upload Cypress videos on failure
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: cypress-videos
+          path: test/e2e/cypress/videos
+          if-no-files-found: ignore
+
+      - name: Stop containers
+        if: always()
+        working-directory: test/e2e
+        run: just stop

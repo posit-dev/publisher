@@ -13,6 +13,7 @@ describe("Common", () => {
     cy.publisherWebview()
       .findByTestId("publisher-credentials-section")
       .should("exist");
+    cy.debugIframes();
     cy.publisherWebview()
       .findByTestId("publisher-help-section")
       .should("exist");
