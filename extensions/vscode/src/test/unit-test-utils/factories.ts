@@ -25,6 +25,7 @@ export const configurationFactory = Factory.define<Configuration>(
   ({ sequence }) => ({
     configuration: {
       $schema: "test-schema-url",
+      serverType: ServerType.CONNECT,
       type: ContentType.RMD,
       validate: true,
       configurationName: "",
@@ -97,6 +98,7 @@ export const contentRecordFactory = Factory.define<ContentRecord>(
     deploymentPath: `report/path/${sequence}`,
     configuration: {
       $schema: "test-schema-url",
+      serverType: ServerType.CONNECT,
       type: ContentType.RMD,
       validate: true,
       configurationName: "",
