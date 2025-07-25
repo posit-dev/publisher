@@ -4,21 +4,21 @@ package api
 
 import (
 	"encoding/json"
-	"github.com/posit-dev/publisher/internal/clients/cloud_auth"
-	"github.com/posit-dev/publisher/internal/types"
 	"net/http"
 	"time"
 
+	"github.com/posit-dev/publisher/internal/clients/cloud_auth"
 	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/types"
 )
 
 var cloudAuthClientFactory = cloud_auth.NewCloudAuthClient
 
 type connectCloudDeviceAuthResponseBody struct {
-	DeviceCode              string `json:"deviceCode"`
-	UserCode                string `json:"userCode"`
-	VerificationURIComplete string `json:"verificationURIComplete"`
-	Interval                int    `json:"interval"`
+	DeviceCode      string `json:"deviceCode"`
+	UserCode        string `json:"userCode"`
+	VerificationURI string `json:"verificationURI"`
+	Interval        int    `json:"interval"`
 }
 
 func PostConnectCloudDeviceAuthHandlerFunc(log logging.Logger) http.HandlerFunc {
@@ -33,10 +33,10 @@ func PostConnectCloudDeviceAuthHandlerFunc(log logging.Logger) http.HandlerFunc 
 		}
 
 		responseBody := connectCloudDeviceAuthResponseBody{
-			DeviceCode:              deviceAuthResult.DeviceCode,
-			UserCode:                deviceAuthResult.UserCode,
-			VerificationURIComplete: deviceAuthResult.VerificationURIComplete,
-			Interval:                deviceAuthResult.Interval,
+			DeviceCode:      deviceAuthResult.DeviceCode,
+			UserCode:        deviceAuthResult.UserCode,
+			VerificationURI: deviceAuthResult.VerificationURIComplete,
+			Interval:        deviceAuthResult.Interval,
 		}
 		w.Header().Set("content-type", "application/json")
 		json.NewEncoder(w).Encode(responseBody)

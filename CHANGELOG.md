@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Added
+
+- Added endpoints for performing OAuth Device Authorization Grant with Posit Cloud login. (#2692)
+
 ## [1.18.0]
 
 ### Fixed
@@ -19,7 +25,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved support for Posit Connect deployments hosted in Snowpark Container
   Services. (#2687, #2691)
 - Added internal API endpoint to list Connect Cloud accounts. (#2695)
-- Added endpoints for performing OAuth Device Authorization Grant with Posit Cloud login. (#2692)
 
 ### Changed
 

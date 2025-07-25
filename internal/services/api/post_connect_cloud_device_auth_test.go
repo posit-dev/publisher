@@ -3,18 +3,19 @@ package api
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import (
-	"github.com/posit-dev/publisher/internal/clients/cloud_auth"
-	"github.com/posit-dev/publisher/internal/types"
-	"github.com/stretchr/testify/mock"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
-	"github.com/posit-dev/publisher/internal/logging"
-	"github.com/posit-dev/publisher/internal/util/utiltest"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/posit-dev/publisher/internal/clients/cloud_auth"
+	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/types"
+	"github.com/posit-dev/publisher/internal/util/utiltest"
 )
 
 type PostConnectCloudDeviceAuthSuite struct {
@@ -66,7 +67,7 @@ func (s *PostConnectCloudDeviceAuthSuite) TestPostConnectCloudDeviceAuth() {
 	respBody, _ := io.ReadAll(rec.Body)
 	s.Equal("{\"deviceCode\":\"the_device_code\","+
 		"\"userCode\":\"the_user_code\","+
-		"\"verificationURIComplete\":\"the_verification_uri_complete\","+
+		"\"verificationURI\":\"the_verification_uri_complete\","+
 		"\"interval\":5}\n",
 		string(respBody))
 }

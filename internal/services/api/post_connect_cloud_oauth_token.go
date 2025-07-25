@@ -4,13 +4,13 @@ package api
 
 import (
 	"encoding/json"
-	"github.com/posit-dev/publisher/internal/clients/cloud_auth"
-	"github.com/posit-dev/publisher/internal/clients/http_client"
-	"github.com/posit-dev/publisher/internal/types"
 	"net/http"
 	"time"
 
+	"github.com/posit-dev/publisher/internal/clients/cloud_auth"
+	"github.com/posit-dev/publisher/internal/clients/http_client"
 	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/types"
 )
 
 type connectCloudOAuthTokenRequestBody struct {

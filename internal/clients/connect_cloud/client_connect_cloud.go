@@ -3,21 +3,26 @@ package connect_cloud
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import (
-	"github.com/posit-dev/publisher/internal/types"
 	"time"
+
+	"github.com/posit-dev/publisher/internal/types"
 
 	"github.com/posit-dev/publisher/internal/clients/http_client"
 	"github.com/posit-dev/publisher/internal/logging"
 )
 
+const baseURLDevelopment = "https://api.dev.connect.posit.cloud"
+const baseURLStaging = "https://api.staging.connect.posit.cloud"
+const baseURLProduction = "https://api.connect.posit.cloud"
+
 func GetBaseURL(environment types.CloudEnvironment) string {
 	switch environment {
 	case types.CloudEnvironmentDevelopment:
-		return "https://api.dev.connect.posit.cloud"
+		return baseURLDevelopment
 	case types.CloudEnvironmentStaging:
-		return "https://api.staging.connect.posit.cloud"
+		return baseURLStaging
 	default:
-		return "https://api.connect.posit.cloud"
+		return baseURLProduction
 	}
 }
 

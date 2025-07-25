@@ -1,14 +1,9 @@
 package api
 
-// Copyright (C) 2024 by Posit Software, PBC.
+// Copyright (C) 2025 by Posit Software, PBC.
 
 import (
 	"fmt"
-	"github.com/posit-dev/publisher/internal/clients/cloud_auth"
-	"github.com/posit-dev/publisher/internal/clients/http_client"
-	"github.com/posit-dev/publisher/internal/events"
-	"github.com/posit-dev/publisher/internal/types"
-	"github.com/stretchr/testify/mock"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -16,9 +11,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/posit-dev/publisher/internal/logging"
-	"github.com/posit-dev/publisher/internal/util/utiltest"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/posit-dev/publisher/internal/clients/cloud_auth"
+	"github.com/posit-dev/publisher/internal/clients/http_client"
+	"github.com/posit-dev/publisher/internal/events"
+	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/types"
+	"github.com/posit-dev/publisher/internal/util/utiltest"
 )
 
 type PostConnectCloudOAuthTokenSuite struct {

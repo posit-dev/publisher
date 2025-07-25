@@ -3,13 +3,21 @@ package cloud_auth
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import (
-	"github.com/posit-dev/publisher/internal/types"
 	"net/url"
 	"time"
+
+	"github.com/posit-dev/publisher/internal/types"
 
 	"github.com/posit-dev/publisher/internal/clients/http_client"
 	"github.com/posit-dev/publisher/internal/logging"
 )
+
+const clientIDDevelopment = "posit-publisher-development"
+const clientIDStaging = "posit-publisher-staging"
+const clientIDProduction = "posit-publisher"
+
+const baseURLStaging = "https://login.staging.posit.cloud"
+const baseURLProduction = "https://login.posit.cloud"
 
 type CloudAuthClient struct {
 	log      logging.Logger
@@ -35,11 +43,11 @@ func NewCloudAuthClient(
 func getBaseURLAndClientID(environment types.CloudEnvironment) (string, string) {
 	switch environment {
 	case types.CloudEnvironmentDevelopment:
-		return "https://login.staging.posit.cloud", "posit-publisher-development"
+		return baseURLStaging, clientIDDevelopment
 	case types.CloudEnvironmentStaging:
-		return "https://login.staging.posit.cloud", "posit-publisher-staging"
+		return baseURLStaging, clientIDStaging
 	default:
-		return "https://login.posit.cloud", "posit-publisher"
+		return baseURLProduction, clientIDProduction
 	}
 }
 
