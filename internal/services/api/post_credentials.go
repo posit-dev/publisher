@@ -4,8 +4,9 @@ package api
 
 import (
 	"encoding/json"
-	"github.com/posit-dev/publisher/internal/clients/connect_cloud"
 	"net/http"
+
+	"github.com/posit-dev/publisher/internal/clients/connect_cloud"
 
 	"github.com/posit-dev/publisher/internal/server_type"
 
@@ -59,7 +60,7 @@ func PostCredentialFuncHandler(log logging.Logger) http.HandlerFunc {
 			return
 		}
 
-		if body.URL == "" && body.ServerType == server_type.ServerTypeConnectCloud {
+		if body.ServerType == server_type.ServerTypeConnectCloud {
 			environment := types.CloudEnvironment(req.Header.Get(connectCloudEnvironmentHeader))
 			body.URL = connect_cloud.GetBaseURL(environment)
 		}
