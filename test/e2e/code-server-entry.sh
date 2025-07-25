@@ -1,6 +1,14 @@
 #!/bin/sh
 set -xeu
 
+# Get the latest linux-amd64 build
+VSIX_FILENAME=$(ls -Art /home/coder/vsix | grep linux-amd64 | tail -n 1 || true)
+
+# Install the Publisher extension if it exists
+if [ -n "$VSIX_FILENAME" ]; then
+  code-server --install-extension "/home/coder/vsix/${VSIX_FILENAME}" || exit 1
+fi
+
 # Custom vscode User settings, avoid setup wizards
 # echo > /home/coder/.local/share/code-server/User/settings.json
 mkdir -p /home/coder/.local/share/code-server/User
@@ -17,14 +25,5 @@ cat <<EOF > /home/coder/.local/share/code-server/User/settings.json
 
 EOF
 
-if [ "${CI:-}" = "true" ]; then
-  # In CI: Start code-server immediately, install extension later via API
-  exec /usr/bin/code-server --disable-workspace-trust --auth none --bind-addr 0.0.0.0:8080 .
-else
-  # Local: Install extension first, then start server (original behavior)
-  VSIX_FILENAME=$(ls -Art /home/coder/vsix | grep linux-amd64 | tail -n 1 || true)
-  if [ -n "$VSIX_FILENAME" ]; then
-    code-server --install-extension "/home/coder/vsix/${VSIX_FILENAME}" || exit 1
-  fi
-  exec /usr/bin/code-server --disable-workspace-trust --auth none --bind-addr 0.0.0.0:8080 .
-fi
+# Code server entrypoint that starts the service
+exec /usr/bin/code-server --disable-workspace-trust --auth none --bind-addr 0.0.0.0:8080 .
