@@ -123,6 +123,7 @@ interface InfoMessageParameters {
   location?: string;
   poll?: boolean;
   accessToken?: string;
+  browserUrl?: string;
 }
 
 export class MultiStepInput {
@@ -513,6 +514,7 @@ export class MultiStepInput {
     valueSelection,
     poll,
     accessToken,
+    browserUrl,
   }: P) {
     const disposables: Disposable[] = [];
     try {
@@ -553,6 +555,19 @@ export class MultiStepInput {
           const api = await useApi();
           const pollingInterval = 5;
           let abortPolling = false;
+
+          if (browserUrl) {
+            // await opening the external browser window so the polling
+            // actually begins after the user selects an option from the pop-up
+            await env.openExternal(Uri.parse(browserUrl));
+
+            // bail out if the user did anything on the openExternal window operation
+            // to cause the multi-stepper to be hidden
+            if (abortPolling) {
+              // return custom internal error when aborting
+              return reject(new AbortError()); // bubble up the error
+            }
+          }
 
           const pollAccountApi = async (
             maxAttempts?: number,

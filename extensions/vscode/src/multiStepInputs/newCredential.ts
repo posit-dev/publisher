@@ -58,6 +58,8 @@ export async function newCredential(
   let connections: SnowflakeConnection[] = [];
   let connectionQuickPicks: QuickPickItemWithIndex[];
   let connectCloudAccounts: ConnectCloudAccount[] = [];
+  let connectCloudUrl: string = "";
+  let connectCloudPolling: boolean = false;
 
   const getSnowflakeConnections = async (serverUrl: string) => {
     const sfc = await fetchSnowflakeConnections(serverUrl);
@@ -255,6 +257,8 @@ export async function newCredential(
         shouldResume: () => Promise.resolve(false),
         ignoreFocusOut: true,
         accessToken,
+        browserUrl: connectCloudUrl,
+        poll: connectCloudPolling,
       });
       connectCloudAccounts = resp;
     } catch (error) {
@@ -322,9 +326,12 @@ export async function newCredential(
         // there are zero accounts for the user, so they must be going through the
         // sign-up process, open a browser to complete the sign-up in Connect Cloud
 
-        // TODO: implement me!
+        // populate the account polling props
+        connectCloudPolling = true;
+        connectCloudUrl = "https://staging.connect.posit.cloud";
 
-        return (input: MultiStepInput) => inputCredentialName(input, state);
+        // call the retrieveAccounts step again with the populated polling props
+        return (input: MultiStepInput) => retrieveAccounts(input, state);
       }
     }
   }
