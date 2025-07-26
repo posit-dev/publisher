@@ -1,6 +1,6 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { ConfigurationInspectionResult } from "src/api";
+import { ConfigurationInspectionResult, useApi } from "src/api";
 import {
   isAxiosErrorWithJson,
   resolveAgentJsonErrorMsg,
@@ -13,8 +13,14 @@ import {
   QuickInput,
   QuickInputButtons,
   InputBoxValidationMessage,
+  env,
+  Uri,
 } from "vscode";
+import { AuthToken, ConnectCloudAccount } from "src/api/types/connectCloud";
+import { getSummaryStringFromError } from "src/utils/errors";
+import axios from "axios";
 
+export class AbortError extends Error {}
 class InputFlowAction {
   static back = new InputFlowAction();
   static cancel = new InputFlowAction();
@@ -101,6 +107,22 @@ interface InputBoxParameters {
   busy?: boolean;
   validationMessage?: string | InputBoxValidationMessage;
   valueSelection?: [number, number];
+}
+interface InfoMessageParameters {
+  title: string;
+  step: number;
+  totalSteps: number;
+  value: string;
+  prompt: string;
+  ignoreFocusOut?: boolean;
+  shouldResume: () => Thenable<boolean>;
+  enabled?: boolean;
+  busy?: boolean;
+  validationMessage?: string | InputBoxValidationMessage;
+  valueSelection?: [number, number];
+  location?: string;
+  poll?: boolean;
+  accessToken?: string;
 }
 
 export class MultiStepInput {
@@ -331,6 +353,241 @@ export class MultiStepInput {
         this.current = input;
         this.current.show();
       });
+    } finally {
+      disposables.forEach((d) => d.dispose());
+    }
+  }
+
+  async showAuthInfoMessage<P extends InfoMessageParameters>({
+    title,
+    step,
+    totalSteps,
+    value,
+    prompt,
+    ignoreFocusOut,
+    shouldResume,
+    enabled,
+    busy,
+    validationMessage,
+    valueSelection,
+    location,
+  }: P) {
+    const disposables: Disposable[] = [];
+    try {
+      // eslint-disable-next-line no-async-promise-executor
+      return await new Promise<AuthToken>(async (resolve, reject) => {
+        const input = window.createInputBox();
+        input.title = title;
+        input.step = step;
+        input.totalSteps = totalSteps;
+        // enabled must default to true when undefined
+        input.enabled = enabled === undefined ? true : enabled;
+        input.busy = busy || false;
+        input.validationMessage = validationMessage;
+        input.valueSelection = valueSelection;
+        input.value = value || "";
+        input.prompt = prompt;
+        input.ignoreFocusOut = ignoreFocusOut ?? false;
+        disposables.push(
+          input.onDidHide(() => {
+            // abort polling anytime the multi-stepper is hidden
+            abortPolling = true;
+            (async () => {
+              reject(
+                shouldResume && (await shouldResume())
+                  ? InputFlowAction.resume
+                  : InputFlowAction.cancel,
+              );
+            })().catch(reject);
+          }),
+        );
+        if (this.current) {
+          this.current.dispose();
+        }
+        this.current = input;
+        this.current.show();
+
+        const api = await useApi();
+        let abortPolling = false;
+        let pollingInterval = 0;
+        let deviceCode = "";
+        let authUrl = "";
+
+        try {
+          // get the device auth details like url, code and interval
+          const resp = await api.connectCloud.auth();
+          deviceCode = resp.data.deviceCode;
+          authUrl = resp.data.verificationURIComplete;
+          pollingInterval = resp.data.interval * 1000;
+        } catch (error) {
+          getSummaryStringFromError(`${location}, connectCloud.auth`, error);
+          return reject(error); // bubble up the error
+        }
+
+        // await opening the external lucid auth browser window so the polling
+        // actually begins after the user selects an option from the pop-up
+        await env.openExternal(Uri.parse(authUrl));
+
+        // bail out if the user did anything on the openExternal window operation
+        // to cause the multi-stepper to be hidden
+        if (abortPolling) {
+          // return custom internal error when aborting
+          return reject(new AbortError()); // bubble up the error
+        }
+
+        const pollAuthApi = async (
+          maxAttempts?: number,
+        ): Promise<AuthToken> => {
+          let attempts = 0;
+
+          const executePolling = async (): Promise<AuthToken> => {
+            try {
+              const tokenResponse = await api.connectCloud.token(deviceCode);
+              // we got the token info, so stop polling for the token
+              return tokenResponse.data;
+            } catch (err: unknown) {
+              if (axios.isAxiosError(err) && err.response?.data?.code) {
+                // handle the expected polling errors
+                switch (err.response.data.code) {
+                  case "deviceAuthSlowDown":
+                    pollingInterval += 1000; // slowdown the interval by 1 second
+                    break;
+                  case "deviceAuthPending":
+                    // DO NOTHING, let the polling continue, this is expected while authenticating
+                    break;
+                  default:
+                    throw err; // bubble up any other errors
+                }
+              } else {
+                // there was an unexpected error, bail from polling for the token
+                throw err; // bubble up the error
+              }
+            }
+
+            attempts++;
+            if ((maxAttempts && attempts >= maxAttempts) || abortPolling) {
+              // return custom internal error when aborting or
+              // when the max attemps have been reached
+              throw new AbortError(); // bubble up the error
+            }
+            // exit condition has not been met, wait the interval time and poll again
+            await new Promise((resolve) =>
+              setTimeout(resolve, pollingInterval),
+            );
+            return executePolling(); // recursive call to continue polling
+          };
+
+          return await executePolling();
+        };
+
+        // start the auth polling
+        return pollAuthApi(120) // 120 max attempts every 5 seconds means 10 minutes
+          .then(resolve)
+          .catch((error) => {
+            // do not log the custom internal error
+            if (!(error instanceof AbortError)) {
+              getSummaryStringFromError(
+                `${location}, connectCloud.token`,
+                error,
+              );
+            }
+            return reject(error); // bubble up the error
+          });
+      }); // outer promise end
+    } finally {
+      disposables.forEach((d) => d.dispose());
+    }
+  }
+
+  async showAccountInfoMessage<P extends InfoMessageParameters>({
+    title,
+    step,
+    totalSteps,
+    value,
+    prompt,
+    ignoreFocusOut,
+    shouldResume,
+    enabled,
+    busy,
+    validationMessage,
+    valueSelection,
+    poll,
+    accessToken,
+  }: P) {
+    const disposables: Disposable[] = [];
+    try {
+      return await new Promise<ConnectCloudAccount[]>(
+        // eslint-disable-next-line no-async-promise-executor
+        async (resolve, reject) => {
+          const input = window.createInputBox();
+          input.title = title;
+          input.step = step;
+          input.totalSteps = totalSteps;
+          // enabled must default to true when undefined
+          input.enabled = enabled === undefined ? true : enabled;
+          input.busy = busy || false;
+          input.validationMessage = validationMessage;
+          input.valueSelection = valueSelection;
+          input.value = value || "";
+          input.prompt = prompt;
+          input.ignoreFocusOut = ignoreFocusOut ?? false;
+          disposables.push(
+            input.onDidHide(() => {
+              // abort polling anytime the multi-stepper is hidden
+              abortPolling = true;
+              (async () => {
+                reject(
+                  shouldResume && (await shouldResume())
+                    ? InputFlowAction.resume
+                    : InputFlowAction.cancel,
+                );
+              })().catch(reject);
+            }),
+          );
+          if (this.current) {
+            this.current.dispose();
+          }
+          this.current = input;
+          this.current.show();
+
+          const api = await useApi();
+          const pollingInterval = 5;
+          let abortPolling = false;
+
+          const pollAccountApi = async (
+            maxAttempts?: number,
+          ): Promise<ConnectCloudAccount[]> => {
+            let attempts = 0;
+
+            const executePolling = async (): Promise<ConnectCloudAccount[]> => {
+              const resp = await api.connectCloud.accounts(accessToken || "");
+              // we got the account info, so stop polling for the account
+              if (!poll || resp.data.length > 0) {
+                return resp.data;
+              }
+
+              attempts++;
+              if ((maxAttempts && attempts >= maxAttempts) || abortPolling) {
+                // return custom internal error when aborting or
+                // when the max attemps have been reached
+                throw new AbortError(); // bubble up the error
+              }
+              // exit condition has not been met, wait the interval time and poll again
+              await new Promise((resolve) =>
+                setTimeout(resolve, pollingInterval),
+              );
+              return executePolling(); // recursive call to continue polling
+            };
+
+            return await executePolling();
+          };
+
+          // start the account polling
+          return pollAccountApi(120) // 120 max attempts every 5 seconds means 10 minutes
+            .then(resolve)
+            .catch(reject);
+        },
+      ); // outer promise end
     } finally {
       disposables.forEach((d) => d.dispose());
     }

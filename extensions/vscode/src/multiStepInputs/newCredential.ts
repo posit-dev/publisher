@@ -7,6 +7,7 @@ import {
   isQuickPickItem,
   isQuickPickItemWithIndex,
   assignStep,
+  AbortError,
 } from "./multiStepHelper";
 
 import { InputBoxValidationSeverity, window } from "vscode";
@@ -34,8 +35,6 @@ import {
   isConnect,
   isSnowflake,
   isConnectCloud,
-  authConnectCloud,
-  displayError,
 } from "src/multiStepInputs/common";
 import { getEnumKeyByEnumValue } from "src/utils/enums";
 import { ConnectCloudAccount } from "src/api/types/connectCloud";
@@ -168,39 +167,48 @@ export async function newCredential(
   // ***************************************************************
   async function authenticate(input: MultiStepInput, state: MultiStepState) {
     const thisStepNumber = assignStep(state, "authenticate");
+    const location = "newCredentials";
 
-    // we do not await this input box because it is treated as an information message
-    // that we do not want to hide until we move to the next step
-    input.showInputBox({
-      title: state.title,
-      step: thisStepNumber,
-      totalSteps: state.totalSteps,
-      // disables user input
-      enabled: false,
-      // shows a progress indicator on the input box
-      busy: true,
-      value: "Authenticating with Connect Cloud ...",
-      // moves the cursor to the start of the value text to avoid the automated text highlight
-      valueSelection: [0, 0],
-      // displays a custom information message below the input box that hides the prompt and
-      // default message: "Please 'Enter' to confirm your input or 'Escape' to cancel"
-      validationMessage: {
-        message:
-          "Please follow the next steps in the external browser or 'Escape' to abort",
-        severity: InputBoxValidationSeverity.Info,
-      },
-      prompt: "",
-      shouldResume: () => Promise.resolve(false),
-      ignoreFocusOut: true,
-    });
-
-    // authenticate with Connect Cloud
     try {
-      const authToken = await authConnectCloud();
-      state.data.accessToken = authToken.accessToken;
-      state.data.refreshToken = authToken.refreshToken;
-    } catch {
-      // errors have already been displayed by authConnectCloud
+      // we do not await this input box because it is treated as an information message
+      // that we do not want to hide until we move to the next step
+      const resp = await input.showAuthInfoMessage({
+        title: state.title,
+        step: thisStepNumber,
+        totalSteps: state.totalSteps,
+        // disables user input
+        enabled: false,
+        // shows a progress indicator on the input box
+        busy: true,
+        value: "Authenticating with Connect Cloud ...",
+        // moves the cursor to the start of the value text to avoid the automated text highlight
+        valueSelection: [0, 0],
+        // displays a custom information message below the input box that hides the prompt and
+        // default message: "Please 'Enter' to confirm your input or 'Escape' to cancel"
+        validationMessage: {
+          message:
+            "Please follow the next steps in the external browser or 'Escape' to abort",
+          severity: InputBoxValidationSeverity.Info,
+        },
+        prompt: "",
+        shouldResume: () => Promise.resolve(false),
+        ignoreFocusOut: true,
+        location,
+      });
+      state.data.accessToken = resp.accessToken;
+      state.data.refreshToken = resp.refreshToken;
+    } catch (error) {
+      if (error instanceof AbortError) {
+        // swallows the custom internal error because we don't need
+        // an error message everytime the user decides to abort or
+        // whenever the user just plain abandones the task
+        return Promise.resolve(undefined);
+      } else if (error instanceof Error) {
+        // display an error message for all other errors
+        window.showErrorMessage(
+          `Failed to authenticate. ${getSummaryStringFromError(location, error)}`,
+        );
+      }
       return Promise.resolve(undefined);
     }
 
@@ -215,47 +223,52 @@ export async function newCredential(
     state: MultiStepState,
   ) {
     const thisStepNumber = assignStep(state, "retrieveAccounts");
-
-    // we do not await this input box because it is treated as an information message
-    // that we do not want to hide until we move to the next step
-    input.showInputBox({
-      title: state.title,
-      step: thisStepNumber,
-      totalSteps: state.totalSteps,
-      // disables user input
-      enabled: false,
-      // shows a progress indicator on the input box
-      busy: true,
-      value: "Retrieving accounts from Connect Cloud ...",
-      // moves the cursor to the start of the value text to avoid the automated text highlight
-      valueSelection: [0, 0],
-      // displays a custom information message below the input box that hides the prompt and
-      // default message: "Please 'Enter' to confirm your input or 'Escape' to cancel"
-      validationMessage: {
-        message:
-          "Please wait while we get your account data or 'Escape' to abort",
-        severity: InputBoxValidationSeverity.Info,
-      },
-      prompt: "",
-      shouldResume: () => Promise.resolve(false),
-      ignoreFocusOut: true,
-    });
-
+    const location = "newCredentials, connectCloud.accounts";
     const accessToken =
       typeof state.data.accessToken === "string" &&
       state.data.accessToken.length
         ? state.data.accessToken
         : "";
-    // retrieve the user's accounts from Connect Cloud
+
     try {
-      const accounts = await api.connectCloud.accounts(accessToken);
-      connectCloudAccounts = accounts.data;
-    } catch (err) {
-      displayError(
-        "newCredentials, connectCloud.accounts",
-        `Unable to retrieve accounts from Connect Cloud - ${getMessageFromError(err)}).`,
-        err,
-      );
+      // we do not await this input box because it is treated as an information message
+      // that we do not want to hide until we move to the next step
+      const resp = await input.showAccountInfoMessage({
+        title: state.title,
+        step: thisStepNumber,
+        totalSteps: state.totalSteps,
+        // disables user input
+        enabled: false,
+        // shows a progress indicator on the input box
+        busy: true,
+        value: "Retrieving accounts from Connect Cloud ...",
+        // moves the cursor to the start of the value text to avoid the automated text highlight
+        valueSelection: [0, 0],
+        // displays a custom information message below the input box that hides the prompt and
+        // default message: "Please 'Enter' to confirm your input or 'Escape' to cancel"
+        validationMessage: {
+          message:
+            "Please wait while we get your account data or 'Escape' to abort",
+          severity: InputBoxValidationSeverity.Info,
+        },
+        prompt: "",
+        shouldResume: () => Promise.resolve(false),
+        ignoreFocusOut: true,
+        accessToken,
+      });
+      connectCloudAccounts = resp;
+    } catch (error) {
+      if (error instanceof AbortError) {
+        // swallows the custom internal error because we don't need
+        // an error message everytime the user decides to abort or
+        // whenever the user just plain abandones the task
+        return Promise.resolve(undefined);
+      } else if (error instanceof Error) {
+        // display an error message for all other errors
+        window.showErrorMessage(
+          `Unable to retrieve accounts from Connect Cloud. ${getSummaryStringFromError(location, error)}`,
+        );
+      }
       return Promise.resolve(undefined);
     }
 
