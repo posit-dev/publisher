@@ -328,7 +328,8 @@ export async function newCredential(
 
         // populate the account polling props
         connectCloudPolling = true;
-        connectCloudUrl = "https://staging.connect.posit.cloud";
+        connectCloudUrl =
+          "https://login.staging.posit.cloud/oauth/authorize?client_id=posit-connect-cloud-staging&redirect_uri=https%3A%2F%2Fstaging.connect.posit.cloud%2Fauth&response_type=code&show_login=0&show_signup=0&state=eyJyZWRpcmVjdCI6Ii9ob21lIn0%3D&local=1&google=1&github=1";
 
         // call the retrieveAccounts step again with the populated polling props
         return (input: MultiStepInput) => retrieveAccounts(input, state);

@@ -553,7 +553,6 @@ export class MultiStepInput {
           this.current.show();
 
           const api = await useApi();
-          const pollingInterval = 5;
           let abortPolling = false;
 
           if (browserUrl) {
@@ -588,9 +587,7 @@ export class MultiStepInput {
                 throw new AbortError(); // bubble up the error
               }
               // exit condition has not been met, wait the interval time and poll again
-              await new Promise((resolve) =>
-                setTimeout(resolve, pollingInterval),
-              );
+              await new Promise((resolve) => setTimeout(resolve, 5000));
               return executePolling(); // recursive call to continue polling
             };
 
