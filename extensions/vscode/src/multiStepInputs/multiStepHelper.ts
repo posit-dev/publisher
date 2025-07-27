@@ -421,6 +421,8 @@ export class MultiStepInput {
           deviceCode = resp.data.deviceCode;
           authUrl = resp.data.verificationURIComplete;
           pollingInterval = resp.data.interval * 1000;
+          // display the user code in the message
+          input.value += ` (using code: ${resp.data.userCode})`;
         } catch (error) {
           getSummaryStringFromError(`${location}, connectCloud.auth`, error);
           return reject(error); // bubble up the error

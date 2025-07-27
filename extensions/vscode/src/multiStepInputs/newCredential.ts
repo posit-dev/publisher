@@ -6,7 +6,6 @@ import {
   QuickPickItemWithIndex,
   isQuickPickItem,
   isQuickPickItemWithIndex,
-  assignStep,
   AbortError,
 } from "./multiStepHelper";
 
@@ -90,9 +89,11 @@ export async function newCredential(
   async function collectInputs() {
     const state: MultiStepState = {
       title: "Create a New Credential",
-      step: -1,
+      // We're going to disable displaying the steps due to the complex
+      // nature of calculation with multiple paths through this flow.
+      step: 0,
       lastStep: 0,
-      totalSteps: -1,
+      totalSteps: 0,
       data: {
         // each attribute is initialized to undefined
         // to be returned when it has not been canceled
@@ -108,9 +109,6 @@ export async function newCredential(
       promptStepNumbers: {},
     };
 
-    // No optional steps for this one.
-    state.totalSteps = extensionSettings.enableConnectCloud() ? 4 : 3;
-
     await MultiStepInput.run((input) => inputPlatform(input, state));
     return state;
   }
@@ -121,11 +119,10 @@ export async function newCredential(
   async function inputPlatform(input: MultiStepInput, state: MultiStepState) {
     // skip platform selection unless the enableConnectCloud config has been turned on
     if (extensionSettings.enableConnectCloud()) {
-      const thisStepNumber = assignStep(state, "inputPlatform");
       const pick = await input.showQuickPick({
         title: state.title,
-        step: thisStepNumber,
-        totalSteps: state.totalSteps,
+        step: 0,
+        totalSteps: 0,
         placeholder: "Please select the platform for the new credential.",
         items: platformList,
         buttons: [],
@@ -137,7 +134,6 @@ export async function newCredential(
       // fallback to CONNECT if there is ever a case when the enumKey is not found
       serverType = enumKey ? ServerType[enumKey] : ServerType.CONNECT;
       platformName = pick.label as PlatformName;
-      state.lastStep = thisStepNumber;
 
       if (isConnectCloud(serverType)) {
         // default everything outside the Connect Cloud fields to empty strings
@@ -173,7 +169,6 @@ export async function newCredential(
   // Step: Complete device authentication for Connect Cloud (Connect Cloud only)
   // ***************************************************************
   async function authenticate(input: MultiStepInput, state: MultiStepState) {
-    const thisStepNumber = assignStep(state, "authenticate");
     const location = "newCredentials";
 
     try {
@@ -181,8 +176,8 @@ export async function newCredential(
       // until the api calls happening in the background have completed
       const resp = await input.showAuthInfoMessage({
         title: state.title,
-        step: thisStepNumber,
-        totalSteps: state.totalSteps,
+        step: 0,
+        totalSteps: 0,
         // disables user input
         enabled: false,
         // shows a progress indicator on the input box
@@ -232,7 +227,6 @@ export async function newCredential(
     input: MultiStepInput,
     state: MultiStepState,
   ) {
-    const thisStepNumber = assignStep(state, "retrieveAccounts");
     const location = "newCredentials, connectCloud.accounts";
     const accessToken =
       typeof state.data.accessToken === "string" &&
@@ -245,8 +239,8 @@ export async function newCredential(
       // until the api calls happening in the background have completed
       const resp = await input.showAccountInfoMessage({
         title: state.title,
-        step: thisStepNumber,
-        totalSteps: state.totalSteps,
+        step: 0,
+        totalSteps: 0,
         // disables user input
         enabled: false,
         // shows a progress indicator on the input box
@@ -330,14 +324,13 @@ export async function newCredential(
   // Step: Select the Connect Cloud account for the credential (Connect Cloud only)
   // ***************************************************************
   async function inputAccount(input: MultiStepInput, state: MultiStepState) {
-    const thisStepNumber = assignStep(state, "inputAccount");
     const accounts = getPublishableAccounts(connectCloudAccounts);
 
     // display the account selector
     const pick = await input.showQuickPick({
       title: state.title,
-      step: thisStepNumber,
-      totalSteps: state.totalSteps,
+      step: 0,
+      totalSteps: 0,
       placeholder:
         "Please select the Connect Cloud account to be used for the new credential.",
       items: accounts.map((a) => ({ label: a.displayName })),
@@ -350,7 +343,6 @@ export async function newCredential(
     // fallback to the first publishable account if the selected account is ever not found
     state.data.accountId = account?.id || accounts[0].id;
     state.data.accountName = account?.displayName || accounts[0].displayName;
-    state.lastStep = thisStepNumber;
 
     return (input: MultiStepInput) => inputCredentialName(input, state);
   }
@@ -359,12 +351,10 @@ export async function newCredential(
   // Step: Select whether to sign up for a Connect Cloud account (Connect Cloud only)
   // ***************************************************************
   async function inputSignup(input: MultiStepInput, state: MultiStepState) {
-    const thisStepNumber = assignStep(state, "inputSignup");
-
     const pick = await input.showQuickPick({
       title: state.title,
-      step: thisStepNumber,
-      totalSteps: state.totalSteps,
+      step: 0,
+      totalSteps: 0,
       placeholder:
         "The authenticated Posit Connect Cloud account is not publishable. Sign up for an indiviual plan?",
       items: [
@@ -391,7 +381,6 @@ export async function newCredential(
   // Step: Get the server url (used for Connect & Snowflake)
   // ***************************************************************
   async function inputServerUrl(input: MultiStepInput, state: MultiStepState) {
-    const thisStepNumber = assignStep(state, "inputServerUrl");
     let currentURL =
       typeof state.data.url === "string" && state.data.url.length
         ? state.data.url
@@ -411,8 +400,8 @@ export async function newCredential(
 
     const url = await input.showInputBox({
       title: state.title,
-      step: thisStepNumber,
-      totalSteps: state.totalSteps,
+      step: 0,
+      totalSteps: 0,
       value: currentURL,
       prompt: "Please provide the Posit Connect server's URL",
       placeholder: "Server URL",
@@ -494,7 +483,6 @@ export async function newCredential(
     });
 
     state.data.url = formatURL(url.trim());
-    state.lastStep = thisStepNumber;
 
     if (isConnect(serverType)) {
       return (input: MultiStepInput) => inputAPIKey(input, state);
@@ -512,7 +500,6 @@ export async function newCredential(
   // Step: Enter the API Key (Connect only)
   // ***************************************************************
   async function inputAPIKey(input: MultiStepInput, state: MultiStepState) {
-    const thisStepNumber = assignStep(state, "inputAPIKey");
     const currentAPIKey =
       typeof state.data.apiKey === "string" && state.data.apiKey.length
         ? state.data.apiKey
@@ -521,8 +508,8 @@ export async function newCredential(
 
     const apiKey = await input.showInputBox({
       title: state.title,
-      step: thisStepNumber,
-      totalSteps: state.totalSteps,
+      step: 0,
+      totalSteps: 0,
       password: true,
       value: currentAPIKey,
       prompt: `The API key to be used to authenticate with Posit Connect.
@@ -589,7 +576,6 @@ export async function newCredential(
     state.data.apiKey = apiKey;
     state.data.snowflakeConnection = "";
     state.data.url = validatedURL;
-    state.lastStep = thisStepNumber;
     return (input: MultiStepInput) => inputCredentialName(input, state);
   }
 
@@ -600,8 +586,6 @@ export async function newCredential(
     input: MultiStepInput,
     state: MultiStepState,
   ) {
-    const thisStepNumber = assignStep(state, "inputSnowflakeConnection");
-
     // url should always be defined by the time we get to this step
     // but we have to type guard it for the API
     const serverUrl = typeof state.data.url === "string" ? state.data.url : "";
@@ -619,8 +603,8 @@ export async function newCredential(
 
     const pick = await input.showQuickPick({
       title: state.title,
-      step: thisStepNumber,
-      totalSteps: state.totalSteps,
+      step: 0,
+      totalSteps: 0,
       placeholder: "Select the Snowflake connection to use for authentication.",
       items: connectionQuickPicks,
       buttons: [],
@@ -636,7 +620,6 @@ export async function newCredential(
     state.data.apiKey = "";
     state.data.snowflakeConnection = connections[pick.index].name;
     state.data.url = connections[pick.index].serverUrl;
-    state.lastStep = thisStepNumber;
     return (input: MultiStepInput) => inputCredentialName(input, state);
   }
 
@@ -647,20 +630,24 @@ export async function newCredential(
     input: MultiStepInput,
     state: MultiStepState,
   ) {
-    const thisStepNumber = assignStep(state, "inputCredentialName");
-
     const currentName =
       typeof state.data.name === "string" && state.data.name.length
         ? state.data.name
         : "";
 
+    const accountName =
+      typeof state.data.accountName === "string" &&
+      state.data.accountName.length
+        ? state.data.accountName
+        : "";
+
     const name = await input.showInputBox({
       title: state.title,
-      step: thisStepNumber,
-      totalSteps: state.totalSteps,
+      step: 0,
+      totalSteps: 0,
       value: currentName,
-      prompt: "Enter a unique nickname for this server.",
-      placeholder: `${platformName}`,
+      prompt: `Enter a unique nickname for this ${isConnectCloud(serverType) ? "account" : "server"}.`,
+      placeholder: `${isConnectCloud(serverType) ? accountName : platformName}`,
       finalValidation: (input: string) => {
         input = input.trim();
         if (input === "") {
@@ -690,7 +677,6 @@ export async function newCredential(
     });
 
     state.data.name = name.trim();
-    state.lastStep = thisStepNumber;
 
     // last step to create a new credential
   }
