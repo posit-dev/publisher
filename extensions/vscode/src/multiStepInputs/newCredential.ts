@@ -35,11 +35,16 @@ import {
   isConnect,
   isSnowflake,
   isConnectCloud,
+  getPublishableAccounts,
 } from "src/multiStepInputs/common";
 import { getEnumKeyByEnumValue } from "src/utils/enums";
 import { ConnectCloudAccount } from "src/api/types/connectCloud";
 
 const createNewCredentialLabel = "Create a New Credential";
+const connectCloudSignupUrlStaging =
+  "https://login.staging.posit.cloud/logout?redirect=https://login.staging.posit.cloud/register?redirect=";
+const connectCloudUrlStaging =
+  "https://login.staging.posit.cloud/oauth/authorize?client_id=posit-connect-cloud-staging&redirect_uri=https://staging.connect.posit.cloud/auth&response_type=code&show_login=0&show_signup=0&state=eyJyZWRpcmVjdCI6Ii9ob21lIn0%3D&local=1&google=1&github=1";
 
 export async function newCredential(
   viewId: string,
@@ -111,7 +116,7 @@ export async function newCredential(
   }
 
   // ***************************************************************
-  // Step: Select the platform for the credentials (used for all platforms)
+  // Step: Select the platform for the credential (used for all platforms)
   // ***************************************************************
   async function inputPlatform(input: MultiStepInput, state: MultiStepState) {
     // skip platform selection unless the enableConnectCloud config has been turned on
@@ -135,9 +140,8 @@ export async function newCredential(
       state.lastStep = thisStepNumber;
 
       if (isConnectCloud(serverType)) {
-        // TODO: the url should be handled in the agent for Connect Cloud
-        state.data.url = "https://staging.connect.posit.cloud";
         // default everything outside the Connect Cloud fields to empty strings
+        state.data.url = "";
         state.data.apiKey = "";
         state.data.snowflakeConnection = "";
 
@@ -166,15 +170,15 @@ export async function newCredential(
   }
 
   // ***************************************************************
-  // Step: Kick-off device authentication for Connect Cloud (Connect Cloud only)
+  // Step: Complete device authentication for Connect Cloud (Connect Cloud only)
   // ***************************************************************
   async function authenticate(input: MultiStepInput, state: MultiStepState) {
     const thisStepNumber = assignStep(state, "authenticate");
     const location = "newCredentials";
 
     try {
-      // we do not await this input box because it is treated as an information message
-      // that we do not want to hide until we move to the next step
+      // we await this input box that it is treated as an information message
+      // until the api calls happening in the background have completed
       const resp = await input.showAuthInfoMessage({
         title: state.title,
         step: thisStepNumber,
@@ -201,6 +205,8 @@ export async function newCredential(
       });
       state.data.accessToken = resp.accessToken;
       state.data.refreshToken = resp.refreshToken;
+      // clean-up
+      connectCloudSignupUrl = "";
     } catch (error) {
       if (error instanceof AbortError) {
         // swallows the custom internal error because we don't need
@@ -235,8 +241,8 @@ export async function newCredential(
         : "";
 
     try {
-      // we do not await this input box because it is treated as an information message
-      // that we do not want to hide until we move to the next step
+      // we await this input box that it is treated as an information message
+      // until the api calls happening in the background have completed
       const resp = await input.showAccountInfoMessage({
         title: state.title,
         step: thisStepNumber,
@@ -263,6 +269,9 @@ export async function newCredential(
         poll: connectCloudPolling,
       });
       connectCloudAccounts = resp;
+      // clean-up
+      connectCloudUrl = "";
+      connectCloudPolling = false;
     } catch (error) {
       if (error instanceof AbortError) {
         // swallows the custom internal error because we don't need
@@ -278,92 +287,104 @@ export async function newCredential(
       return Promise.resolve(undefined);
     }
 
-    return (input: MultiStepInput) => inputAccount(input, state);
+    return (input: MultiStepInput) => determineAccountFlow(input, state);
   }
 
   // ***************************************************************
-  // Step: Select the Connect Cloud account for the credentials (Connect Cloud only)
+  // Step: Determine the correct flow for the user's account list (Connect Cloud only)
   // ***************************************************************
-  async function inputAccount(
-    input: MultiStepInput,
+  function determineAccountFlow(
+    _: MultiStepInput,
     state: MultiStepState,
-  ): Promise<((input: MultiStepInput) => unknown) | undefined> {
-    const publishableAccounts = connectCloudAccounts.filter(
-      (a) => a.permissionToPublish,
-    );
+  ): (input: MultiStepInput) => Promise<unknown> {
+    const accounts = getPublishableAccounts(connectCloudAccounts);
 
-    if (publishableAccounts.length === 1) {
-      // there is only one publishable account, use it and bail
-      state.data.accountId = publishableAccounts[0].id;
-      state.data.accountName = publishableAccounts[0].displayName;
+    if (accounts.length === 1) {
+      // case 1: there is only one publishable account, use it and create the credential
+      state.data.accountId = accounts[0].id;
+      state.data.accountName = accounts[0].displayName;
       return (input: MultiStepInput) => inputCredentialName(input, state);
-    } else if (publishableAccounts.length > 1) {
-      // there are multiple publishable accounts, display the account selector
-      const thisStepNumber = assignStep(state, "inputAccount");
-      const pick = await input.showQuickPick({
-        title: state.title,
-        step: thisStepNumber,
-        totalSteps: state.totalSteps,
-        placeholder:
-          "Please select the Connect Cloud account to be used for the new credential.",
-        items: publishableAccounts.map((a) => ({ label: a.displayName })),
-        buttons: [],
-        shouldResume: () => Promise.resolve(false),
-        ignoreFocusOut: true,
-      });
-
-      const account = publishableAccounts.find(
-        (a) => a.displayName === pick.label,
-      );
-      // fallback to the first publishable account if the selected account is ever not found
-      state.data.accountId = account?.id || publishableAccounts[0].id;
-      state.data.accountName =
-        account?.displayName || publishableAccounts[0].displayName;
-      state.lastStep = thisStepNumber;
-
-      return (input: MultiStepInput) => inputCredentialName(input, state);
+    } else if (accounts.length > 1) {
+      // case 2: there are multiple publishable accounts, display the account selector
+      return (input: MultiStepInput) => inputAccount(input, state);
     } else {
       if (connectCloudAccounts.length > 0) {
-        // there are no publishable accounts, but the user has at least one account,
-        // so they could be a guest or viewer on that account, ask if they want to sign-up
-        const thisStepNumber = assignStep(state, "inputAccount");
-        const pick = await input.showQuickPick({
-          title: state.title,
-          step: thisStepNumber,
-          totalSteps: state.totalSteps,
-          placeholder:
-            "You may not publish to the authenticated Posit Connect Cloud account. Would you like to sign up for an indiviual plan?",
-          items: [
-            { label: "Sign up for an individual Posit Connect Cloud plan" },
-            { label: "Exit" },
-          ],
-          buttons: [],
-          shouldResume: () => Promise.resolve(false),
-          ignoreFocusOut: true,
-        });
-
-        if (pick.label === "Exit") {
-          // bail out
-          return Promise.resolve(undefined);
-        }
-
-        connectCloudSignupUrl =
-          "https://login.staging.posit.cloud/logout?redirect=https://login.staging.posit.cloud/register?redirect=";
-        // go to the authenticate step again so the user may sign up for an individual plan
-        return (input: MultiStepInput) => authenticate(input, state);
+        // case 3: there are no publishable accounts, but the user has at least one account,
+        // so they could be a guest or viewer on that account, ask if they want to sign up
+        return (input: MultiStepInput) => inputSignup(input, state);
       } else {
-        // there are zero accounts for the user, so they must be going through the
-        // sign-up process, open a browser to complete the sign-up in Connect Cloud
+        // case 4: there are zero accounts for the user, so they must be going through the
+        // sign up process, open a browser to finish creating the account in Connect Cloud
 
         // populate the account polling props
         connectCloudPolling = true;
-        connectCloudUrl =
-          "https://login.staging.posit.cloud/oauth/authorize?client_id=posit-connect-cloud-staging&redirect_uri=https://staging.connect.posit.cloud/auth&response_type=code&show_login=0&show_signup=0&state=eyJyZWRpcmVjdCI6Ii9ob21lIn0%3D&local=1&google=1&github=1";
+        connectCloudUrl = connectCloudUrlStaging;
 
         // call the retrieveAccounts step again with the populated polling props
         return (input: MultiStepInput) => retrieveAccounts(input, state);
       }
     }
+  }
+
+  // ***************************************************************
+  // Step: Select the Connect Cloud account for the credential (Connect Cloud only)
+  // ***************************************************************
+  async function inputAccount(input: MultiStepInput, state: MultiStepState) {
+    const thisStepNumber = assignStep(state, "inputAccount");
+    const accounts = getPublishableAccounts(connectCloudAccounts);
+
+    // display the account selector
+    const pick = await input.showQuickPick({
+      title: state.title,
+      step: thisStepNumber,
+      totalSteps: state.totalSteps,
+      placeholder:
+        "Please select the Connect Cloud account to be used for the new credential.",
+      items: accounts.map((a) => ({ label: a.displayName })),
+      buttons: [],
+      shouldResume: () => Promise.resolve(false),
+      ignoreFocusOut: true,
+    });
+
+    const account = accounts.find((a) => a.displayName === pick.label);
+    // fallback to the first publishable account if the selected account is ever not found
+    state.data.accountId = account?.id || accounts[0].id;
+    state.data.accountName = account?.displayName || accounts[0].displayName;
+    state.lastStep = thisStepNumber;
+
+    return (input: MultiStepInput) => inputCredentialName(input, state);
+  }
+
+  // ***************************************************************
+  // Step: Select whether to sign up for a Connect Cloud account (Connect Cloud only)
+  // ***************************************************************
+  async function inputSignup(input: MultiStepInput, state: MultiStepState) {
+    const thisStepNumber = assignStep(state, "inputSignup");
+
+    const pick = await input.showQuickPick({
+      title: state.title,
+      step: thisStepNumber,
+      totalSteps: state.totalSteps,
+      placeholder:
+        "The authenticated Posit Connect Cloud account is not publishable. Sign up for an indiviual plan?",
+      items: [
+        { label: "Sign up for an individual Posit Connect Cloud plan" },
+        { label: "Exit" },
+      ],
+      buttons: [],
+      shouldResume: () => Promise.resolve(false),
+      ignoreFocusOut: true,
+    });
+
+    if (pick.label === "Exit") {
+      // bail out
+      return Promise.resolve(undefined);
+    }
+
+    connectCloudSignupUrl = connectCloudSignupUrlStaging;
+
+    // go to the authenticate step again to have the user sign up for an individual plan
+    return (input: MultiStepInput) => authenticate(input, state);
   }
 
   // ***************************************************************

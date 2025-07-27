@@ -13,6 +13,7 @@ import { isAxiosErrorWithJson } from "src/utils/errorTypes";
 import { normalizeURL } from "src/utils/url";
 import { QuickPickItem, ThemeIcon, window } from "vscode";
 import { QuickPickItemWithIndex } from "./multiStepHelper";
+import { ConnectCloudAccount } from "src/api/types/connectCloud";
 
 // Search for the first credential that includes
 // the targetURL.
@@ -37,6 +38,10 @@ export const isConnectCloud = (serverType: ServerType) => {
 
 export const isSnowflake = (serverType: ServerType) => {
   return serverType === ServerType.SNOWFLAKE;
+};
+
+export const getPublishableAccounts = (accounts: ConnectCloudAccount[]) => {
+  return accounts.filter((a) => a.permissionToPublish);
 };
 
 export const displayError = (
