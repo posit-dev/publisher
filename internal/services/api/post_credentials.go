@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/posit-dev/publisher/internal/clients/connect_cloud"
 	"github.com/posit-dev/publisher/internal/server_type"
 
 	"github.com/posit-dev/publisher/internal/credentials"
@@ -56,6 +57,11 @@ func PostCredentialFuncHandler(log logging.Logger) http.HandlerFunc {
 			}
 			InternalError(w, req, log, err)
 			return
+		}
+
+		if body.ServerType == server_type.ServerTypeConnectCloud {
+			environment := types.CloudEnvironment(req.Header.Get(connectCloudEnvironmentHeader))
+			body.URL = connect_cloud.GetBaseURL(environment)
 		}
 
 		cred, err := cs.Set(credentials.CreateCredentialDetails{
