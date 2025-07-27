@@ -372,6 +372,7 @@ export class MultiStepInput {
     validationMessage,
     valueSelection,
     location,
+    browserUrl,
   }: P) {
     const disposables: Disposable[] = [];
     try {
@@ -425,9 +426,16 @@ export class MultiStepInput {
           return reject(error); // bubble up the error
         }
 
+        // @ts-expect-error the resulting URL may have 2 levels of nesting with params:
+        // lucid logout -> redirect to lucid register -> redirect to lucid aut.
+        // Unfortunately that much nesting and the params encoding is not correctly handled
+        // by vscode with: env.openExternal(Uri.parse(`${browserUrl || ""}${authUrl}`))
+        // hence we have to give the string url directly to `env.openExternal` and ignore
+        // the type error from typescript so the encoding is correct for the nested redirecs
+
         // await opening the external lucid auth browser window so the polling
         // actually begins after the user selects an option from the pop-up
-        await env.openExternal(Uri.parse(authUrl));
+        await env.openExternal(`${browserUrl || ""}${authUrl}`);
 
         // bail out if the user did anything on the openExternal window operation
         // to cause the multi-stepper to be hidden
