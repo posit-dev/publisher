@@ -7,11 +7,8 @@ import {
   DeviceAuth,
 } from "../types/connectCloud";
 
-const cloudAuthBaseUrlHeader = {
-  "Cloud-Auth-Base-Url": "https://login.staging.posit.cloud",
-};
-const connectCloudBaseUrlHeader = {
-  "Connect-Cloud-Base-Url": "https://api.staging.connect.posit.cloud",
+const cloudAuthEnvironmentHeader = {
+  "Connect-Cloud-Environment": "staging",
 };
 
 export class ConnectCloud {
@@ -34,7 +31,7 @@ export class ConnectCloud {
     return this.client.post<DeviceAuth>(
       "connect-cloud/device-auth",
       {},
-      { headers: cloudAuthBaseUrlHeader },
+      { headers: cloudAuthEnvironmentHeader },
     );
   }
 
@@ -50,7 +47,7 @@ export class ConnectCloud {
     return this.client.post<AuthToken>(
       "connect-cloud/oauth/token",
       { deviceCode },
-      { headers: cloudAuthBaseUrlHeader },
+      { headers: cloudAuthEnvironmentHeader },
     );
   }
 
@@ -65,7 +62,7 @@ export class ConnectCloud {
   accounts(accessToken: string) {
     return this.client.get<ConnectCloudAccount[]>("connect-cloud/accounts", {
       headers: {
-        ...connectCloudBaseUrlHeader,
+        ...cloudAuthEnvironmentHeader,
         Authorization: `Bearer ${accessToken}`,
       },
     });
