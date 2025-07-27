@@ -79,11 +79,11 @@ type CredentialV0 struct {
 }
 
 func (c *Credential) ConflictCheck(compareWith Credential) error {
-	if compareWith.ServerType == server_type.ServerTypeConnectCloud {
-		return nil
-	}
-	if compareWith.URL == c.URL {
-		return NewURLCollisionError(c.Name, c.URL)
+	if compareWith.URL == c.URL && compareWith.AccountID == c.AccountID {
+		// Connect/Snowflake credentials have unique URLs and empty AccountID.
+		// Connect Cloud credentials may have duplicate URLs, but their account IDs must be unique. AccountName is also
+		// unique, but may become unstable in the future if we allow users to change it.
+		return NewIdentityCollisionError(c.Name, c.URL, c.AccountName)
 	}
 	if compareWith.Name == c.Name {
 		return NewNameCollisionError(c.Name, c.URL)
