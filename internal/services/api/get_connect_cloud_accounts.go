@@ -26,10 +26,6 @@ var connectCloudClientFactory = connect_cloud.NewConnectCloudClientWithAuth
 
 const connectCloudEnvironmentHeader = "Connect-Cloud-Environment"
 
-// type connectCloudAccountsBody struct {
-// 	Accounts []connectCloudAccountsBodyAccount `json:"accounts"`
-// }
-
 func GetConnectCloudAccountsFunc(log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		environment := types.CloudEnvironment(req.Header.Get(connectCloudEnvironmentHeader))
@@ -75,9 +71,6 @@ func GetConnectCloudAccountsFunc(log logging.Logger) http.HandlerFunc {
 			})
 		}
 
-		// apiResponse := connectCloudAccountsBody{
-		// 	Accounts: accounts,
-		// }
 		w.Header().Set("content-type", "application/json")
 		json.NewEncoder(w).Encode(accounts)
 	}
