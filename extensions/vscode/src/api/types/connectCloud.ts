@@ -14,7 +14,8 @@ export type AuthToken = {
 };
 
 export type ConnectCloudAccount = {
-  name: string;
   id: string;
+  name: string;
+  displayName: string;
   permissionToPublish: boolean;
 };

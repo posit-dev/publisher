@@ -295,7 +295,7 @@ export async function newCredential(
     if (publishableAccounts.length === 1) {
       // there is only one publishable account, use it and bail
       state.data.accountId = publishableAccounts[0].id;
-      state.data.accountName = publishableAccounts[0].name;
+      state.data.accountName = publishableAccounts[0].displayName;
       return (input: MultiStepInput) => inputCredentialName(input, state);
     } else if (publishableAccounts.length > 1) {
       // there are multiple publishable accounts, display the account selector
@@ -306,16 +306,19 @@ export async function newCredential(
         totalSteps: state.totalSteps,
         placeholder:
           "Please select the Connect Cloud account to be used for the new credential.",
-        items: publishableAccounts.map((a) => ({ label: a.name })),
+        items: publishableAccounts.map((a) => ({ label: a.displayName })),
         buttons: [],
         shouldResume: () => Promise.resolve(false),
         ignoreFocusOut: true,
       });
 
-      const account = publishableAccounts.find((a) => a.name === pick.label);
+      const account = publishableAccounts.find(
+        (a) => a.displayName === pick.label,
+      );
       // fallback to the first publishable account if the selected account is ever not found
       state.data.accountId = account?.id || publishableAccounts[0].id;
-      state.data.accountName = account?.name || publishableAccounts[0].name;
+      state.data.accountName =
+        account?.displayName || publishableAccounts[0].displayName;
       state.lastStep = thisStepNumber;
 
       return (input: MultiStepInput) => inputCredentialName(input, state);
