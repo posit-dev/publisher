@@ -69,7 +69,7 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts() {
 	}
 	client.On("GetAccounts").Return(accountsResponse, nil)
 
-	connectCloudClientFactory = func(baseURL string, log logging.Logger, timeout time.Duration, authValue string) connect_cloud.APIClient {
+	connectCloudClientFactory = func(environment types.CloudEnvironment, log logging.Logger, timeout time.Duration, authValue string) connect_cloud.APIClient {
 		return client
 	}
 
@@ -121,22 +121,6 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts() {
 	}, respData)
 }
 
-func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts_MissingBaseURL() {
-	rec := httptest.NewRecorder()
-	req, err := http.NewRequest(
-		"GET",
-		"/connect-cloud/accounts",
-		nil,
-	)
-	s.NoError(err)
-	// Not setting Connect-Cloud-Base-Url header
-
-	s.h(rec, req)
-
-	result := rec.Result()
-	s.Equal(http.StatusBadRequest, result.StatusCode)
-}
-
 func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts_GetCurrentUserError() {
 	client := connect_cloud.NewMockClient()
 	client.On("GetCurrentUser").Return((*connect_cloud.UserResponse)(nil), types.NewAgentError(
@@ -144,7 +128,7 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts_GetCurrentUse
 		http_client.NewHTTPError("https://foo.bar", "GET", http.StatusBadRequest, "uh oh"), nil))
 	// No need to mock GetAccounts since the function returns after GetCurrentUser fails
 
-	connectCloudClientFactory = func(baseURL string, log logging.Logger, timeout time.Duration, authValue string) connect_cloud.APIClient {
+	connectCloudClientFactory = func(environment types.CloudEnvironment, log logging.Logger, timeout time.Duration, authValue string) connect_cloud.APIClient {
 		return client
 	}
 
@@ -155,7 +139,7 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts_GetCurrentUse
 		nil,
 	)
 	s.NoError(err)
-	req.Header.Set(connectCloudBaseURLHeader, "https://api.login.staging.posit.cloud")
+	req.Header.Set("Connect-Cloud-Environment", "staging")
 	req.Header.Set("Authorization", "Bearer token123")
 
 	s.h(rec, req)
@@ -190,7 +174,7 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts_NoUserForLuci
 	}
 	client.On("GetAccounts").Return(accountsResponse, nil)
 
-	connectCloudClientFactory = func(baseURL string, log logging.Logger, timeout time.Duration, authValue string) connect_cloud.APIClient {
+	connectCloudClientFactory = func(environment types.CloudEnvironment, log logging.Logger, timeout time.Duration, authValue string) connect_cloud.APIClient {
 		return client
 	}
 
@@ -201,7 +185,7 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts_NoUserForLuci
 		nil,
 	)
 	s.NoError(err)
-	req.Header.Set(connectCloudBaseURLHeader, "https://api.login.staging.posit.cloud")
+	req.Header.Set("Connect-Cloud-Environment", "staging")
 	req.Header.Set("Authorization", "Bearer token123")
 
 	s.h(rec, req)
@@ -236,7 +220,7 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts_GetAccountsEr
 		events.ServerErrorCode,
 		http_client.NewHTTPError("https://foo.bar", "GET", http.StatusBadRequest, "uh oh"), nil))
 
-	connectCloudClientFactory = func(baseURL string, log logging.Logger, timeout time.Duration, authValue string) connect_cloud.APIClient {
+	connectCloudClientFactory = func(environment types.CloudEnvironment, log logging.Logger, timeout time.Duration, authValue string) connect_cloud.APIClient {
 		return client
 	}
 
@@ -247,7 +231,7 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts_GetAccountsEr
 		nil,
 	)
 	s.NoError(err)
-	req.Header.Set(connectCloudBaseURLHeader, "https://api.login.staging.posit.cloud")
+	req.Header.Set("Connect-Cloud-Environment", "staging")
 	req.Header.Set("Authorization", "Bearer token123")
 
 	s.h(rec, req)

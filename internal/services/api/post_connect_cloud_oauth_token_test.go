@@ -4,17 +4,18 @@ package api
 
 import (
 	"fmt"
-	"github.com/posit-dev/publisher/internal/clients/cloud_auth"
-	"github.com/posit-dev/publisher/internal/clients/http_client"
-	"github.com/posit-dev/publisher/internal/events"
-	"github.com/posit-dev/publisher/internal/types"
-	"github.com/stretchr/testify/mock"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/posit-dev/publisher/internal/clients/cloud_auth"
+	"github.com/posit-dev/publisher/internal/clients/http_client"
+	"github.com/posit-dev/publisher/internal/events"
+	"github.com/posit-dev/publisher/internal/types"
+	"github.com/stretchr/testify/mock"
 
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
@@ -49,7 +50,7 @@ func (s *PostConnectCloudOAuthTokenSuite) TestPostConnectCloudOAuthToken() {
 		Scope:        "vivid",
 	}
 	client.On("ExchangeToken", mock.Anything).Return(&deviceAuthResult, nil)
-	cloudAuthClientFactory = func(baseURL string, log logging.Logger, timeout time.Duration) cloud_auth.APIClient {
+	cloudAuthClientFactory = func(environment types.CloudEnvironment, log logging.Logger, timeout time.Duration) cloud_auth.APIClient {
 		return client
 	}
 
@@ -114,7 +115,7 @@ func (s *PostConnectCloudOAuthTokenSuite) TestPostConnectCloudOAuthToken_BadRequ
 				http_client.NewHTTPError("https://foo.bar", "POST", http.StatusBadRequest, "uh oh"),
 				map[string]interface{}{"error": tc.errorCode})
 			client.On("ExchangeToken", mock.Anything).Return(nil, resultErr)
-			cloudAuthClientFactory = func(baseURL string, log logging.Logger, timeout time.Duration) cloud_auth.APIClient {
+			cloudAuthClientFactory = func(environment types.CloudEnvironment, log logging.Logger, timeout time.Duration) cloud_auth.APIClient {
 				return client
 			}
 

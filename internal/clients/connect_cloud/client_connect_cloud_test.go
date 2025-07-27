@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/posit-dev/publisher/internal/types"
+
 	"github.com/posit-dev/publisher/internal/clients/http_client"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
@@ -25,8 +27,7 @@ func TestConnectCloudClientSuite(t *testing.T) {
 func (s *ConnectCloudClientSuite) TestNewConnectCloudClient() {
 	timeout := 10 * time.Second
 	log := logging.New()
-
-	apiClient := NewConnectCloudClientWithAuth("https://api.staging.login.posit.cloud", log, timeout, "Bearer the_token")
+	apiClient := NewConnectCloudClientWithAuth(types.CloudEnvironmentStaging, log, timeout, "Bearer the_token")
 	client := apiClient.(*ConnectCloudClient)
 	s.NotNil(client.client)
 }
