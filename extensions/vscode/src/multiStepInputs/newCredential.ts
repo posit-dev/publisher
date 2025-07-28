@@ -7,6 +7,7 @@ import {
   isQuickPickItem,
   isQuickPickItemWithIndex,
   AbortError,
+  InputStep,
 } from "./multiStepHelper";
 
 import { InputBoxValidationSeverity, window } from "vscode";
@@ -110,8 +111,7 @@ export async function newCredential(
     };
 
     await MultiStepInput.run({
-      //@ts-expect-error TODO: get help with this typescript error
-      stepFunction: (input) => inputPlatform(input, state),
+      step: (input) => inputPlatform(input, state),
       skippable: false,
     });
     return state;
@@ -146,7 +146,7 @@ export async function newCredential(
         state.data.snowflakeConnection = "";
 
         return {
-          stepFunction: (input: MultiStepInput) => authenticate(input, state),
+          step: (input: MultiStepInput) => authenticate(input, state),
           skippable: true,
         };
       }
@@ -158,18 +158,22 @@ export async function newCredential(
         state.data.accountId = "";
         state.data.accountName = "";
 
-        return (input: MultiStepInput) => inputServerUrl(input, state);
+        return {
+          step: (input: MultiStepInput) => inputServerUrl(input, state),
+        };
       }
 
       // Should not land here since the platform is forcefully picked in the very first step
-      return Promise.resolve(undefined);
+      return;
     }
 
     // default to CONNECT, since there are no other products at the moment
     serverType = ServerType.CONNECT;
     platformName = PlatformName.CONNECT;
 
-    return (input: MultiStepInput) => inputServerUrl(input, state);
+    return {
+      step: (input: MultiStepInput) => inputServerUrl(input, state),
+    };
   }
 
   // ***************************************************************
@@ -221,11 +225,11 @@ export async function newCredential(
           `Failed to authenticate. ${getSummaryStringFromError(location, error)}`,
         );
       }
-      return Promise.resolve(undefined);
+      return;
     }
 
     return {
-      stepFunction: (input: MultiStepInput) => retrieveAccounts(input, state),
+      step: (input: MultiStepInput) => retrieveAccounts(input, state),
       skippable: true,
     };
   }
@@ -288,12 +292,11 @@ export async function newCredential(
           `Unable to retrieve accounts from Connect Cloud. ${getSummaryStringFromError(location, error)}`,
         );
       }
-      return Promise.resolve(undefined);
+      return;
     }
 
     return {
-      stepFunction: (input: MultiStepInput) =>
-        determineAccountFlow(input, state),
+      step: (input: MultiStepInput) => determineAccountFlow(input, state),
       skippable: true,
     };
   }
@@ -303,20 +306,22 @@ export async function newCredential(
   // ***************************************************************
   function determineAccountFlow(_: MultiStepInput, state: MultiStepState) {
     const accounts = getPublishableAccounts(connectCloudAccounts);
+    let step: (input: MultiStepInput) => Thenable<InputStep | void>;
+    let skippable: boolean | undefined;
 
     if (accounts.length === 1) {
       // case 1: there is only one publishable account, use it and create the credential
       state.data.accountId = accounts[0].id;
       state.data.accountName = accounts[0].displayName;
-      return (input: MultiStepInput) => inputCredentialName(input, state);
+      step = (input: MultiStepInput) => inputCredentialName(input, state);
     } else if (accounts.length > 1) {
       // case 2: there are multiple publishable accounts, display the account selector
-      return (input: MultiStepInput) => inputAccount(input, state);
+      step = (input: MultiStepInput) => inputAccount(input, state);
     } else {
       if (connectCloudAccounts.length > 0) {
         // case 3: there are no publishable accounts, but the user has at least one account,
         // so they could be a guest or viewer on that account, ask if they want to sign up
-        return (input: MultiStepInput) => inputSignup(input, state);
+        step = (input: MultiStepInput) => inputSignup(input, state);
       } else {
         // case 4: there are zero accounts for the user, so they must be going through the
         // sign up process, open a browser to finish creating the account in Connect Cloud
@@ -327,13 +332,13 @@ export async function newCredential(
 
         // call the retrieveAccounts step again with the populated polling props
 
-        return {
-          stepFunction: (input: MultiStepInput) =>
-            retrieveAccounts(input, state),
-          skippable: true,
-        };
+        step = (input: MultiStepInput) => retrieveAccounts(input, state);
+        skippable = true;
       }
     }
+
+    // must return a promise since the step itself does not await on anything
+    return Promise.resolve({ step, skippable });
   }
 
   // ***************************************************************
@@ -360,7 +365,9 @@ export async function newCredential(
     state.data.accountId = account?.id || accounts[0].id;
     state.data.accountName = account?.displayName || accounts[0].displayName;
 
-    return (input: MultiStepInput) => inputCredentialName(input, state);
+    return {
+      step: (input: MultiStepInput) => inputCredentialName(input, state),
+    };
   }
 
   // ***************************************************************
@@ -372,7 +379,7 @@ export async function newCredential(
       step: 0,
       totalSteps: 0,
       placeholder:
-        "The authenticated Posit Connect Cloud account is not publishable. Sign up for an indiviual plan?",
+        "This Posit Connect Cloud account is not publishable. Sign up for an indiviual plan?",
       items: [
         { label: "Sign up for an individual Posit Connect Cloud plan" },
         { label: "Exit" },
@@ -384,14 +391,14 @@ export async function newCredential(
 
     if (pick.label === "Exit") {
       // bail out
-      return Promise.resolve(undefined);
+      return;
     }
 
     connectCloudSignupUrl = connectCloudSignupUrlStaging;
 
     // go to the authenticate step again to have the user sign up for an individual plan
     return {
-      stepFunction: (input: MultiStepInput) => authenticate(input, state),
+      step: (input: MultiStepInput) => authenticate(input, state),
       skippable: true,
     };
   }
@@ -504,15 +511,19 @@ export async function newCredential(
     state.data.url = formatURL(url.trim());
 
     if (isConnect(serverType)) {
-      return (input: MultiStepInput) => inputAPIKey(input, state);
+      return {
+        step: (input: MultiStepInput) => inputAPIKey(input, state),
+      };
     }
 
     if (isSnowflake(serverType)) {
-      return (input: MultiStepInput) => inputSnowflakeConnection(input, state);
+      return {
+        step: (input: MultiStepInput) => inputSnowflakeConnection(input, state),
+      };
     }
 
     // Should not land here since the platform is forcefully picked in the very first step
-    return Promise.resolve(undefined);
+    return;
   }
 
   // ***************************************************************
@@ -595,7 +606,9 @@ export async function newCredential(
     state.data.apiKey = apiKey;
     state.data.snowflakeConnection = "";
     state.data.url = validatedURL;
-    return (input: MultiStepInput) => inputCredentialName(input, state);
+    return {
+      step: (input: MultiStepInput) => inputCredentialName(input, state),
+    };
   }
 
   // ***************************************************************
@@ -639,7 +652,9 @@ export async function newCredential(
     state.data.apiKey = "";
     state.data.snowflakeConnection = connections[pick.index].name;
     state.data.url = connections[pick.index].serverUrl;
-    return (input: MultiStepInput) => inputCredentialName(input, state);
+    return {
+      step: (input: MultiStepInput) => inputCredentialName(input, state),
+    };
   }
 
   // ***************************************************************
