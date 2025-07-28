@@ -4,6 +4,8 @@ package connect_cloud
 
 import (
 	"github.com/stretchr/testify/mock"
+
+	"github.com/posit-dev/publisher/internal/clients/types"
 )
 
 type MockClient struct {
@@ -24,4 +26,24 @@ func (m *MockClient) GetCurrentUser() (*UserResponse, error) {
 func (m *MockClient) GetAccounts() (*AccountListResponse, error) {
 	args := m.Called()
 	return args.Get(0).(*AccountListResponse), args.Error(1)
+}
+
+func (m *MockClient) CreateContent(request *types.CreateContentRequest) (*types.ContentResponse, error) {
+	args := m.Called(request)
+	return args.Get(0).(*types.ContentResponse), args.Error(1)
+}
+
+func (m *MockClient) UpdateContent(request *types.UpdateContentRequest) (*types.ContentResponse, error) {
+	args := m.Called(request)
+	return args.Get(0).(*types.ContentResponse), args.Error(1)
+}
+
+func (m *MockClient) GetAuthorization(request *types.AuthorizationRequest) (*types.AuthorizationResponse, error) {
+	args := m.Called(request)
+	return args.Get(0).(*types.AuthorizationResponse), args.Error(1)
+}
+
+func (m *MockClient) GetRevision(revisionID string) (*types.Revision, error) {
+	args := m.Called(revisionID)
+	return args.Get(0).(*types.Revision), args.Error(1)
 }
