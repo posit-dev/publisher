@@ -11,3 +11,9 @@ Cypress.on("window:before:load", (win) => {
 });
 
 configure({ testIdAttribute: "data-automation" });
+
+/* eslint-disable mocha/no-top-level-hooks */
+afterEach(() => {
+  cy.debugIframes();
+});
+/* eslint-enable mocha/no-top-level-hooks */

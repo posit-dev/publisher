@@ -14,6 +14,9 @@ describe("Common", () => {
       .findByTestId("publisher-credentials-section")
       .should("exist");
     cy.debugIframes();
+    cy.publisherWebview().then((body) => {
+      cy.task("print", body.innerHTML);
+    });
     cy.publisherWebview()
       .findByTestId("publisher-help-section")
       .should("exist");
