@@ -91,12 +91,12 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts() {
 	s.Equal(http.StatusOK, result.StatusCode)
 
 	respBody, _ := io.ReadAll(rec.Body)
-	respMap := map[string]interface{}{}
-	err = json.Unmarshal(respBody, &respMap)
+	var respData []interface{}
+	err = json.Unmarshal(respBody, &respData)
 	s.NoError(err)
 
 	// sort accounts by ID to ensure consistent order for testing
-	slices.SortFunc(respMap["accounts"].([]interface{}), func(a, b interface{}) int {
+	slices.SortFunc(respData, func(a, b interface{}) int {
 		return strings.Compare(
 			a.(map[string]interface{})["name"].(string),
 			b.(map[string]interface{})["name"].(string))
@@ -104,28 +104,26 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts() {
 
 	// The expected response should include all accounts, with PermissionToPublish
 	// set to true for accounts with "content:create" permission, false otherwise
-	s.Equal(map[string]interface{}{
-		"accounts": []interface{}{
-			map[string]interface{}{
-				"id":                  "1",
-				"name":                "account1",
-				"displayName":         "Account 1",
-				"permissionToPublish": true,
-			},
-			map[string]interface{}{
-				"id":                  "2",
-				"name":                "account2",
-				"displayName":         "Account 2",
-				"permissionToPublish": true,
-			},
-			map[string]interface{}{
-				"id":                  "3",
-				"name":                "account3",
-				"displayName":         "Account 3",
-				"permissionToPublish": false,
-			},
+	s.Equal([]interface{}{
+		map[string]interface{}{
+			"id":                  "1",
+			"name":                "account1",
+			"displayName":         "Account 1",
+			"permissionToPublish": true,
 		},
-	}, respMap)
+		map[string]interface{}{
+			"id":                  "2",
+			"name":                "account2",
+			"displayName":         "Account 2",
+			"permissionToPublish": true,
+		},
+		map[string]interface{}{
+			"id":                  "3",
+			"name":                "account3",
+			"displayName":         "Account 3",
+			"permissionToPublish": false,
+		},
+	}, respData)
 }
 
 func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts_MissingBaseURL() {
@@ -148,7 +146,7 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts_GetCurrentUse
 	client := connect_cloud.NewMockClient()
 	client.On("GetCurrentUser").Return((*connect_cloud.UserResponse)(nil), types.NewAgentError(
 		events.ServerErrorCode,
-		http_client.NewHTTPError("https://foo.bar", "GET", http.StatusBadRequest), nil))
+		http_client.NewHTTPError("https://foo.bar", "GET", http.StatusBadRequest, "uh oh"), nil))
 	// No need to mock GetAccounts since the function returns after GetCurrentUser fails
 
 	connectCloudClientFactory = func(baseURL string, log logging.Logger, timeout time.Duration, authValue string) connect_cloud.APIClient {
@@ -180,7 +178,7 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts_GetAccountsEr
 	// Mock GetAccounts with error
 	client.On("GetAccounts").Return((*connect_cloud.AccountListResponse)(nil), types.NewAgentError(
 		events.ServerErrorCode,
-		http_client.NewHTTPError("https://foo.bar", "GET", http.StatusBadRequest), nil))
+		http_client.NewHTTPError("https://foo.bar", "GET", http.StatusBadRequest, "uh oh"), nil))
 
 	connectCloudClientFactory = func(baseURL string, log logging.Logger, timeout time.Duration, authValue string) connect_cloud.APIClient {
 		return client

@@ -30,7 +30,7 @@ func TestGetSnowflakeConnectionsHandlerSuite(t *testing.T) {
 }
 
 func (s *GetSnowflakeConnectionsHandlerSuite) SetupTest() {
-	clientFactory = connect.NewConnectClient
+	connectClientFactory = connect.NewConnectClient
 }
 
 func (s *GetSnowflakeConnectionsHandlerSuite) TestGetSnowflakeConnectionsHandlerFunc() {
@@ -65,7 +65,7 @@ func (s *GetSnowflakeConnectionsHandlerSuite) TestGetSnowflakeConnectionsHandler
 	clients["one"].On("TestAuthentication", log).Return(&connect.User{}, nil).Once()
 	// "two" fails, and tries again with an added path element and fails again
 	clients["two"].On("TestAuthentication", log).Return(nil, errors.New("unauth")).Twice()
-	clientFactory = func(account *accounts.Account, timeout time.Duration, emitter events.Emitter, log logging.Logger) (connect.APIClient, error) {
+	connectClientFactory = func(account *accounts.Account, timeout time.Duration, emitter events.Emitter, log logging.Logger) (connect.APIClient, error) {
 		// developer error if not:
 		s.Contains(clients, account.SnowflakeConnection)
 		return clients[account.SnowflakeConnection], nil
@@ -134,7 +134,7 @@ func (s *GetSnowflakeConnectionsHandlerSuite) TestGetSnowflakeConnectionsHandler
 		// to define the actual connections
 		"one": {},
 	}, nil)
-	clientFactory = func(account *accounts.Account, timeout time.Duration, emitter events.Emitter, log logging.Logger) (connect.APIClient, error) {
+	connectClientFactory = func(account *accounts.Account, timeout time.Duration, emitter events.Emitter, log logging.Logger) (connect.APIClient, error) {
 		return nil, errors.New("client error")
 	}
 	handler(rec, req)

@@ -5,10 +5,11 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/posit-dev/publisher/internal/clients/connect_cloud"
 	"net/http"
 	"slices"
 	"time"
+
+	"github.com/posit-dev/publisher/internal/clients/connect_cloud"
 
 	"github.com/posit-dev/publisher/internal/logging"
 )
@@ -23,10 +24,6 @@ type connectCloudAccountsBodyAccount struct {
 var connectCloudClientFactory = connect_cloud.NewConnectCloudClientWithAuth
 
 const connectCloudBaseURLHeader = "Connect-Cloud-Base-Url"
-
-type connectCloudAccountsBody struct {
-	Accounts []connectCloudAccountsBodyAccount `json:"accounts"`
-}
 
 func GetConnectCloudAccountsFunc(log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
@@ -62,10 +59,7 @@ func GetConnectCloudAccountsFunc(log logging.Logger) http.HandlerFunc {
 			})
 		}
 
-		apiResponse := connectCloudAccountsBody{
-			Accounts: accounts,
-		}
 		w.Header().Set("content-type", "application/json")
-		json.NewEncoder(w).Encode(apiResponse)
+		json.NewEncoder(w).Encode(accounts)
 	}
 }

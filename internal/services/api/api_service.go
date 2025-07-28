@@ -189,6 +189,14 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	r.Handle(ToPath("snowflake-connections"), GetSnowflakeConnectionsHandlerFunc(log, snowflake.NewConnections())).
 		Methods(http.MethodGet)
 
+	// POST /api/connect-cloud/device-auth
+	r.Handle(ToPath("connect-cloud", "device-auth"), PostConnectCloudDeviceAuthHandlerFunc(log)).
+		Methods(http.MethodPost)
+
+	// POST /api/connect-cloud/oauth/token
+	r.Handle(ToPath("connect-cloud", "oauth", "token"), PostConnectCloudOAuthTokenHandlerFunc(log)).
+		Methods(http.MethodPost)
+
 	// GET /api/connect-cloud/accounts
 	r.Handle(ToPath("connect-cloud", "accounts"), GetConnectCloudAccountsFunc(log)).
 		Methods(http.MethodGet)
