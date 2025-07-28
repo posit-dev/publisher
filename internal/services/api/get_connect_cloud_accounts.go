@@ -9,14 +9,14 @@ import (
 	"time"
 
 	"github.com/posit-dev/publisher/internal/clients/connect_cloud"
-	"github.com/posit-dev/publisher/internal/types"
-
 	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/types"
 )
 
-type connectCloudAccountsResponseItem struct {
-	Name                string `json:"name"`
+type connectCloudAccountsBodyAccount struct {
 	ID                  string `json:"id"`
+	Name                string `json:"name"`
+	DisplayName         string `json:"displayName"`
 	PermissionToPublish bool   `json:"permissionToPublish"`
 }
 
@@ -44,11 +44,12 @@ func GetConnectCloudAccountsFunc(log logging.Logger) http.HandlerFunc {
 			return
 		}
 
-		accounts := make([]connectCloudAccountsResponseItem, 0, len(accountsResponse.Data))
+		accounts := make([]connectCloudAccountsBodyAccount, 0, len(accountsResponse.Data))
 		for _, account := range accountsResponse.Data {
-			accounts = append(accounts, connectCloudAccountsResponseItem{
+			accounts = append(accounts, connectCloudAccountsBodyAccount{
 				ID:                  account.ID,
 				Name:                account.Name,
+				DisplayName:         account.DisplayName,
 				PermissionToPublish: slices.Contains(account.Permissions, "content:create"),
 			})
 		}
