@@ -5,9 +5,13 @@ package state
 import (
 	"errors"
 	"fmt"
-	"github.com/posit-dev/publisher/internal/server_type"
 	"io/fs"
 	"testing"
+
+	"github.com/posit-dev/publisher/internal/server_type"
+
+	"github.com/spf13/afero"
+	"github.com/stretchr/testify/suite"
 
 	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/config"
@@ -17,8 +21,6 @@ import (
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/spf13/afero"
-	"github.com/stretchr/testify/suite"
 )
 
 type StateSuite struct {
@@ -52,7 +54,7 @@ func (s *StateSuite) TestEmpty() {
 func (s *StateSuite) createConfigFile(name string, bad bool) {
 	configFile := config.GetConfigPath(s.cwd, name)
 	configData := []byte(`
-		'$schema' = 'https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v4.json'
+		'$schema' = 'https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json'
 		server_type = 'connect'
 		type = 'python-dash'
 		entrypoint = 'app:app'
@@ -85,7 +87,7 @@ func (s *StateSuite) TestLoadConfig() {
 	min_procs := int32(1)
 
 	s.Equal(&config.Config{
-		Schema:      "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v4.json",
+		Schema:      "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json",
 		ServerType:  "connect",
 		Type:        "python-dash",
 		Entrypoint:  "app:app",
@@ -125,7 +127,7 @@ func (s *StateSuite) TestLoadConfigErr() {
 func (s *StateSuite) createTargetFile(name string, bad bool) {
 	targetFile := deployment.GetDeploymentPath(s.cwd, name)
 	targetData := []byte(`
-		'$schema' = 'https://cdn.posit.co/publisher/schemas/posit-publishing-record-schema-v4.json'
+		'$schema' = 'https://cdn.posit.co/publisher/schemas/posit-publishing-record-schema-v3.json'
 		server_url = 'https://connect.example.com'
 		server_type = 'connect'
 		id = '1234567890ABCDEF'
@@ -139,7 +141,7 @@ func (s *StateSuite) createTargetFile(name string, bad bool) {
 			'requirements.txt'
 		]
 		[configuration]
-		'$schema' = 'https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v4.json'
+		'$schema' = 'https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json'
 		server_type = 'connect'
 		type = 'python-dash'
 		entrypoint = 'app:app'
@@ -177,7 +179,7 @@ func (s *StateSuite) TestLoadTarget() {
 	d.CreatedAt = ""
 
 	s.Equal(&deployment.Deployment{
-		Schema:     "https://cdn.posit.co/publisher/schemas/posit-publishing-record-schema-v4.json",
+		Schema:     "https://cdn.posit.co/publisher/schemas/posit-publishing-record-schema-v3.json",
 		ServerURL:  "https://connect.example.com",
 		ServerType: server_type.ServerTypeConnect,
 		ConfigName: "myConfig",
@@ -192,7 +194,7 @@ func (s *StateSuite) TestLoadTarget() {
 		DirectURL:    "https://connect.example.com/content/1234567890ABCDEF/",
 		LogsURL:      "https://connect.example.com/connect/#/apps/1234567890ABCDEF/logs",
 		Configuration: &config.Config{
-			Schema:      "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v4.json",
+			Schema:      "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json",
 			ServerType:  server_type.ServerTypeConnect,
 			Type:        "python-dash",
 			Entrypoint:  "app:app",

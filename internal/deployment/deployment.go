@@ -122,7 +122,7 @@ func FromFile(path util.AbsolutePath) (*Deployment, error) {
 }
 
 func ValidateFile(path util.AbsolutePath) error {
-	validator, err := schema.NewValidator[Deployment](schema.DeploymentSchemaURLs...)
+	validator, err := schema.NewValidator[Deployment](schema.DeploymentSchemaURL)
 	if err != nil {
 		return err
 	}

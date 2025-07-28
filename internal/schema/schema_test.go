@@ -4,12 +4,11 @@ package schema
 import (
 	"testing"
 
-	"github.com/spf13/afero"
-	"github.com/stretchr/testify/suite"
-
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
+	"github.com/spf13/afero"
+	"github.com/stretchr/testify/suite"
 )
 
 type SchemaSuite struct {
@@ -46,7 +45,7 @@ func (s *SchemaSuite) TestValidateDeployment() {
 }
 
 func (s *SchemaSuite) TestValidateDraftConfig() {
-	const draftConfigSchemaURL = "https://cdn.posit.co/publisher/schemas/draft/posit-publishing-schema-v4.json"
+	const draftConfigSchemaURL = "https://cdn.posit.co/publisher/schemas/draft/posit-publishing-schema-v3.json"
 	validator, err := NewValidator[genericContent](draftConfigSchemaURL)
 	s.NoError(err)
 	path := s.cwd.Join("schemas", "draft", "config.toml")
@@ -55,7 +54,7 @@ func (s *SchemaSuite) TestValidateDraftConfig() {
 }
 
 func (s *SchemaSuite) TestValidateDraftDeployment() {
-	const draftDeploymentSchemaURL = "https://cdn.posit.co/publisher/schemas/draft/posit-publishing-record-schema-v4.json"
+	const draftDeploymentSchemaURL = "https://cdn.posit.co/publisher/schemas/draft/posit-publishing-record-schema-v3.json"
 	validator, err := NewValidator[genericContent](draftDeploymentSchemaURL)
 	s.NoError(err)
 	path := s.cwd.Join("schemas", "draft", "record.toml")
@@ -69,7 +68,7 @@ func (s *SchemaSuite) TestValidationError() {
 	err = cwd.MkdirAll(0700)
 	s.NoError(err)
 
-	badTOML := []byte("\"$schema\" = \"https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v4.json\"\nbad-attr = 1\n")
+	badTOML := []byte("bad-attr = 1\n")
 	path := cwd.Join("test.toml")
 	err = path.WriteFile(badTOML, 0600)
 	s.NoError(err)
@@ -80,38 +79,4 @@ func (s *SchemaSuite) TestValidationError() {
 	agentErr, ok := err.(*types.AgentError)
 	s.True(ok)
 	s.Equal(agentErr.Code, tomlValidationErrorCode)
-}
-
-func (s *SchemaSuite) TestMissingSchemaField() {
-	// Create a validator with a single JSON schema
-	validator, err := NewValidator[genericContent](ConfigSchemaURL)
-	s.NoError(err)
-
-	// Empty document (missing $schema field)
-	emptyDoc := map[string]any{}
-
-	// Validate the content
-	err = validator.ValidateContent(emptyDoc)
-
-	// Check that the error message matches the expected one
-	s.Error(err)
-	s.Equal("missing $schema field in TOML content", err.Error())
-}
-
-func (s *SchemaSuite) TestUnknownSchemaURL() {
-	// Create a validator with a single JSON schema
-	validator, err := NewValidator[genericContent](ConfigSchemaURL)
-	s.NoError(err)
-
-	// Document with garbage schema URL
-	docWithBadSchema := map[string]any{
-		"$schema": "garbage-url-that-does-not-exist",
-	}
-
-	// Validate the content
-	err = validator.ValidateContent(docWithBadSchema)
-
-	// Check that the error message matches the expected one
-	s.Error(err)
-	s.Equal("unknown schema URL: garbage-url-that-does-not-exist", err.Error())
 }
