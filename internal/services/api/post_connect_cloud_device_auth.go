@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/posit-dev/publisher/internal/clients/cloud_auth"
+
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/types"
 )
