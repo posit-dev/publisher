@@ -43,7 +43,7 @@ func (s *ValidateContentSuite) SetupTest() {
 	s.dir = util.NewAbsolutePath("/test/dir", s.fs)
 	s.testPath = s.dir.Join("test_deployment.toml")
 	s.dir.MkdirAll(0755)
-	
+
 	// Set up base objects
 	s.log = logging.NewDiscardLogger()
 	s.emitter = events.NewCapturingEmitter()
@@ -65,12 +65,12 @@ func (s *ValidateContentSuite) SetupTest() {
 			Title:       "Test Content",
 			Description: "Test content description",
 		},
-		Target:  &deployment.Deployment{
+		Target: &deployment.Deployment{
 			ID: contentID,
 		},
 		LocalID: "test-local-id",
 	}
-	
+
 	// Create publisher helper
 	s.helper = publishhelper.NewPublishHelper(s.state, s.log)
 }
@@ -88,30 +88,30 @@ func (s *ValidateContentSuite) createServerPublisher() *ServerPublisher {
 func (s *ValidateContentSuite) TestValidateContentSuccess() {
 	// Mock data
 	contentID := types.ContentID("test-content-id")
-	
+
 	// Set up mock client
 	s.client.On("ValidateDeployment",
-		contentID, 
+		contentID,
 		mock.Anything, // logger
 	).Return(nil)
-	
+
 	// Create publisher
 	publisher := s.createServerPublisher()
-	
+
 	// Call the function under test
 	err := publisher.validateContent(contentID)
-	
+
 	// Verify results
 	s.NoError(err)
-	
+
 	// Verify mock calls
 	s.client.AssertExpectations(s.T())
-	
+
 	// Verify events
 	s.Len(s.emitter.Events, 2)
 	s.Equal("publish/validateDeployment/start", s.emitter.Events[0].Type)
 	s.Equal("publish/validateDeployment/success", s.emitter.Events[1].Type)
-	
+
 	// Verify the event data contains the direct URL
 	s.Contains(s.emitter.Events[0].Data, "url")
 	s.Contains(s.emitter.Events[0].Data["url"].(string), "connect.example.com")
@@ -121,30 +121,30 @@ func (s *ValidateContentSuite) TestValidateContentSuccess() {
 func (s *ValidateContentSuite) TestValidateContentFailure() {
 	// Mock data
 	contentID := types.ContentID("test-content-id")
-	
+
 	// Set up mock client to return an error
 	mockError := types.NewAgentError(types.ErrorDeployedContentNotRunning, nil, nil)
 	s.client.On("ValidateDeployment",
-		contentID, 
+		contentID,
 		mock.Anything, // logger
 	).Return(mockError)
-	
+
 	// Create publisher
 	publisher := s.createServerPublisher()
-	
+
 	// Call the function under test
 	err := publisher.validateContent(contentID)
-	
+
 	// Verify results
 	s.Error(err)
-	
+
 	// Verify mock calls
 	s.client.AssertExpectations(s.T())
-	
+
 	// Verify only start event was emitted
 	s.Len(s.emitter.Events, 1)
 	s.Equal("publish/validateDeployment/start", s.emitter.Events[0].Type)
-	
+
 	// Verify the event data contains the direct URL
 	s.Contains(s.emitter.Events[0].Data, "url")
 }

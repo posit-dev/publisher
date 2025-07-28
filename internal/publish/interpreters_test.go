@@ -41,11 +41,11 @@ func (s *InterpretersSuite) SetupTest() {
 	s.fs = afero.NewMemMapFs()
 	s.dir = util.NewAbsolutePath("/test/dir", s.fs)
 	s.dir.MkdirAll(0755)
-	
+
 	// Set up logging and events
 	s.log = logging.NewDiscardLogger()
 	s.emitter = events.NewCapturingEmitter()
-	
+
 	// Create state with required properties
 	s.stateStore = &state.State{
 		Dir:         s.dir,
@@ -91,29 +91,29 @@ flask==2.0.1
 	requirementsPath := s.dir.Join(interpreters.PythonRequirementsFilename)
 	err := requirementsPath.WriteFile([]byte(requirementsTxt), 0644)
 	s.NoError(err)
-	
+
 	// Configure the publisher with Python settings
 	s.stateStore.Config = &config.Config{
 		Python: &config.Python{
 			Version: "3.9",
 		},
 	}
-	
+
 	// Create and run the publisher
 	publisher := s.createPublisher()
 	err = publisher.configureInterpreters()
 	s.NoError(err)
-	
+
 	// Check that the requirements were extracted correctly
 	s.NotNil(publisher.Target.Requirements)
-	
+
 	expectedRequirements := []string{
 		"numpy==1.22.0",
 		"pandas>=1.3.0",
 		"scikit-learn",
 		"flask==2.0.1",
 	}
-	
+
 	s.Equal(expectedRequirements, publisher.Target.Requirements)
 	s.Nil(publisher.Target.Renv) // No R environment should be configured
 }
@@ -153,40 +153,40 @@ func (s *InterpretersSuite) TestConfigureInterpretersR() {
 	renvPath := s.dir.Join(interpreters.DefaultRenvLockfile)
 	err := renvPath.WriteFile([]byte(renvLockContent), 0644)
 	s.NoError(err)
-	
+
 	// Configure the publisher with R settings
 	s.stateStore.Config = &config.Config{
 		R: &config.R{
 			Version: "4.2.0",
 		},
 	}
-	
+
 	// Create and run the publisher
 	publisher := s.createPublisher()
 	err = publisher.configureInterpreters()
 	s.NoError(err)
-	
+
 	// Check that the R environment was extracted correctly
 	s.NotNil(publisher.Target.Renv)
 	s.Equal("4.2.0", publisher.Target.Renv.R.Version)
-	
+
 	// Check package details
 	s.Equal(2, len(publisher.Target.Renv.Packages))
-	
+
 	// Check for ggplot2
 	s.Contains(publisher.Target.Renv.Packages, renv.PackageName("ggplot2"))
 	ggplot := publisher.Target.Renv.Packages[renv.PackageName("ggplot2")]
 	s.Equal("3.4.0", ggplot.Version)
 	s.Equal("Repository", ggplot.Source)
 	s.Equal(renv.RepoURL("CRAN"), ggplot.Repository)
-	
+
 	// Check for dplyr
 	s.Contains(publisher.Target.Renv.Packages, renv.PackageName("dplyr"))
 	dplyr := publisher.Target.Renv.Packages[renv.PackageName("dplyr")]
 	s.Equal("1.1.0", dplyr.Version)
 	s.Equal("Repository", dplyr.Source)
 	s.Equal(renv.RepoURL("CRAN"), dplyr.Repository)
-	
+
 	s.Empty(publisher.Target.Requirements) // No Python requirements should be set
 }
 
@@ -199,7 +199,7 @@ numpy==1.22.0
 	requirementsPath := s.dir.Join(interpreters.PythonRequirementsFilename)
 	err := requirementsPath.WriteFile([]byte(requirementsTxt), 0644)
 	s.NoError(err)
-	
+
 	// Create an renv.lock file
 	renvLockContent := `{
   "R": {
@@ -226,7 +226,7 @@ numpy==1.22.0
 	renvPath := s.dir.Join(interpreters.DefaultRenvLockfile)
 	err = renvPath.WriteFile([]byte(renvLockContent), 0644)
 	s.NoError(err)
-	
+
 	// Configure the publisher with both R and Python settings
 	s.stateStore.Config = &config.Config{
 		R: &config.R{
@@ -236,12 +236,12 @@ numpy==1.22.0
 			Version: "3.9",
 		},
 	}
-	
+
 	// Create and run the publisher
 	publisher := s.createPublisher()
 	err = publisher.configureInterpreters()
 	s.NoError(err)
-	
+
 	// Check that the Python requirements were extracted correctly
 	s.NotNil(publisher.Target.Requirements)
 	expectedRequirements := []string{
@@ -249,11 +249,11 @@ numpy==1.22.0
 		"numpy==1.22.0",
 	}
 	s.Equal(expectedRequirements, publisher.Target.Requirements)
-	
+
 	// Check that the R environment was extracted correctly
 	s.NotNil(publisher.Target.Renv)
 	s.Equal("4.2.0", publisher.Target.Renv.R.Version)
-	
+
 	// Check package details
 	s.Equal(1, len(publisher.Target.Renv.Packages))
 	s.Contains(publisher.Target.Renv.Packages, renv.PackageName("shiny"))
@@ -269,7 +269,7 @@ func (s *InterpretersSuite) TestConfigureInterpretersCustomFilenames() {
 	customRequirementsPath := s.dir.Join("custom-requirements.txt")
 	err := customRequirementsPath.WriteFile([]byte(requirementsTxt), 0644)
 	s.NoError(err)
-	
+
 	// Create a custom renv lock file
 	renvLockContent := map[string]interface{}{
 		"R": map[string]interface{}{
@@ -293,11 +293,11 @@ func (s *InterpretersSuite) TestConfigureInterpretersCustomFilenames() {
 	}
 	renvLockContentBytes, err := json.Marshal(renvLockContent)
 	s.NoError(err)
-	
+
 	customRenvPath := s.dir.Join("custom-renv.lock")
 	err = customRenvPath.WriteFile(renvLockContentBytes, 0644)
 	s.NoError(err)
-	
+
 	// Configure the publisher with custom filenames
 	s.stateStore.Config = &config.Config{
 		R: &config.R{
@@ -309,16 +309,16 @@ func (s *InterpretersSuite) TestConfigureInterpretersCustomFilenames() {
 			PackageFile: "custom-requirements.txt",
 		},
 	}
-	
+
 	// Create and run the publisher
 	publisher := s.createPublisher()
 	err = publisher.configureInterpreters()
 	s.NoError(err)
-	
+
 	// Check Python requirements
 	s.NotNil(publisher.Target.Requirements)
 	s.Equal([]string{"tensorflow==2.9.0"}, publisher.Target.Requirements)
-	
+
 	// Check R environment
 	s.NotNil(publisher.Target.Renv)
 	s.Equal("4.1.0", publisher.Target.Renv.R.Version)
@@ -336,12 +336,12 @@ func (s *InterpretersSuite) TestConfigureInterpretersMissingFiles() {
 			Version: "3.9",
 		},
 	}
-	
+
 	// Create and run the publisher
 	publisher := s.createPublisher()
 	err := publisher.configureInterpreters()
 	s.Error(err) // We expect an error since the files don't exist
-	
+
 	// The Target properties should remain nil
 	s.Nil(publisher.Target.Requirements)
 	s.Nil(publisher.Target.Renv)

@@ -46,7 +46,7 @@ func (s *UpdateContentSuite) SetupTest() {
 	s.dir = util.NewAbsolutePath("/test/dir", s.fs)
 	s.testPath = s.dir.Join("test_deployment.toml")
 	s.dir.MkdirAll(0755)
-	
+
 	// Set up base objects
 	s.log = logging.NewDiscardLogger()
 	s.emitter = events.NewCapturingEmitter()
@@ -70,7 +70,7 @@ func (s *UpdateContentSuite) SetupTest() {
 		Target:  deployment.New(),
 		LocalID: "test-local-id",
 	}
-	
+
 	// Create publisher helper
 	s.helper = publishhelper.NewPublishHelper(s.state, s.log)
 }
@@ -88,31 +88,31 @@ func (s *UpdateContentSuite) createServerPublisher() *ServerPublisher {
 func (s *UpdateContentSuite) TestUpdateContentSuccess() {
 	// Mock data
 	contentID := types.ContentID("test-content-id")
-	
+
 	// Set up mock client
 	s.client.On("UpdateDeployment",
-		contentID, 
+		contentID,
 		mock.AnythingOfType("*connect.ConnectContent"),
 		mock.Anything, // logger
 	).Return(nil)
-	
+
 	// Create publisher
 	publisher := s.createServerPublisher()
-	
+
 	// Call the function under test
 	err := publisher.updateContent(contentID)
-	
+
 	// Verify results
 	s.NoError(err)
-	
+
 	// Verify mock calls
 	s.client.AssertExpectations(s.T())
-	
+
 	// Verify events
 	s.Len(s.emitter.Events, 2)
 	s.Equal("publish/createDeployment/start", s.emitter.Events[0].Type)
 	s.Equal("publish/createDeployment/success", s.emitter.Events[1].Type)
-	
+
 	// Verify the event data contains the correct values
 	s.Equal(contentID, s.emitter.Events[0].Data["contentId"])
 	s.Equal("test-save-name", s.emitter.Events[0].Data["saveName"])
@@ -121,28 +121,28 @@ func (s *UpdateContentSuite) TestUpdateContentSuccess() {
 func (s *UpdateContentSuite) TestUpdateContentGenericError() {
 	// Mock data
 	contentID := types.ContentID("test-content-id")
-	
+
 	// Set up mock client to return an error
 	mockError := errors.New("update failed")
 	s.client.On("UpdateDeployment",
-		contentID, 
+		contentID,
 		mock.AnythingOfType("*connect.ConnectContent"),
 		mock.Anything, // logger
 	).Return(mockError)
-	
+
 	// Create publisher
 	publisher := s.createServerPublisher()
-	
+
 	// Call the function under test
 	err := publisher.updateContent(contentID)
-	
+
 	// Verify results
 	s.Error(err)
 	s.Contains(err.Error(), "update failed")
-	
+
 	// Verify mock calls
 	s.client.AssertExpectations(s.T())
-	
+
 	// Verify only start event was emitted
 	s.Len(s.emitter.Events, 1)
 	s.Equal("publish/createDeployment/start", s.emitter.Events[0].Type)
@@ -151,41 +151,41 @@ func (s *UpdateContentSuite) TestUpdateContentGenericError() {
 func (s *UpdateContentSuite) TestUpdateContentNotFoundError() {
 	// Mock data
 	contentID := types.ContentID("test-content-id")
-	
+
 	// Create a 404 HTTP error
 	httpError := http_client.NewHTTPError(
 		"https://connect.example.com/api/content/test-content-id",
 		"PUT",
 		http.StatusNotFound,
 	)
-	
+
 	// Set up mock client to return an error
 	s.client.On("UpdateDeployment",
-		contentID, 
+		contentID,
 		mock.AnythingOfType("*connect.ConnectContent"),
 		mock.Anything, // logger
 	).Return(httpError)
-	
+
 	// Create publisher
 	publisher := s.createServerPublisher()
-	
+
 	// Call the function under test
 	err := publisher.updateContent(contentID)
-	
+
 	// Verify results
 	s.Error(err)
-	
+
 	// The error should be of type AgentError with code DeploymentNotFoundCode
 	agentErr, isAgentErr := err.(*types.AgentError)
 	s.True(isAgentErr)
 	s.Equal(events.DeploymentNotFoundCode, agentErr.GetCode())
-	
+
 	// The error details should contain the content ID
 	s.Equal(contentID, agentErr.GetData()["contentId"])
-	
+
 	// Verify mock calls
 	s.client.AssertExpectations(s.T())
-	
+
 	// Verify only start event was emitted
 	s.Len(s.emitter.Events, 1)
 	s.Equal("publish/createDeployment/start", s.emitter.Events[0].Type)
