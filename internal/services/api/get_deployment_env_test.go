@@ -47,7 +47,7 @@ func (s *GetDeploymentEnvSuite) SetupTest() {
 	s.cwd = cwd
 	s.cwd.MkdirAll(0700)
 
-	clientFactory = connect.NewConnectClient
+	connectClientFactory = connect.NewConnectClient
 }
 
 func (s *GetDeploymentEnvSuite) TestGetDeploymentEnv() {
@@ -68,7 +68,7 @@ func (s *GetDeploymentEnvSuite) TestGetDeploymentEnv() {
 	client := connect.NewMockClient()
 	var env types.Environment = []string{"foo", "bar"}
 	client.On("GetEnvVars", types.ContentID("123"), s.log).Return(&env, nil)
-	clientFactory = func(account *accounts.Account, timeout time.Duration, emitter events.Emitter, log logging.Logger) (connect.APIClient, error) {
+	connectClientFactory = func(account *accounts.Account, timeout time.Duration, emitter events.Emitter, log logging.Logger) (connect.APIClient, error) {
 		return client, nil
 	}
 
@@ -175,9 +175,9 @@ func (s *GetDeploymentEnvSuite) TestGetDeploymentEnvPassesStatusFromServer() {
 	lister.On("GetAccountByServerURL", "https://connect.example.com").Return(acct, nil)
 
 	client := connect.NewMockClient()
-	httpErr := http_client.NewHTTPError("https://connect.example.com", "GET", http.StatusNotFound)
+	httpErr := http_client.NewHTTPError("https://connect.example.com", "GET", http.StatusNotFound, "uh oh")
 	client.On("GetEnvVars", types.ContentID("123"), s.log).Return(nil, httpErr)
-	clientFactory = func(account *accounts.Account, timeout time.Duration, emitter events.Emitter, log logging.Logger) (connect.APIClient, error) {
+	connectClientFactory = func(account *accounts.Account, timeout time.Duration, emitter events.Emitter, log logging.Logger) (connect.APIClient, error) {
 		return client, nil
 	}
 

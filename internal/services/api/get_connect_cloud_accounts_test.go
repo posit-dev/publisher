@@ -140,7 +140,7 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts_GetCurrentUse
 	client := connect_cloud.NewMockClient()
 	client.On("GetCurrentUser").Return((*connect_cloud.UserResponse)(nil), types.NewAgentError(
 		events.ServerErrorCode,
-		http_client.NewHTTPError("https://foo.bar", "GET", http.StatusBadRequest), nil))
+		http_client.NewHTTPError("https://foo.bar", "GET", http.StatusBadRequest, "uh oh"), nil))
 	// No need to mock GetAccounts since the function returns after GetCurrentUser fails
 
 	connectCloudClientFactory = func(baseURL string, log logging.Logger, timeout time.Duration, authValue string) connect_cloud.APIClient {
@@ -172,7 +172,7 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts_GetAccountsEr
 	// Mock GetAccounts with error
 	client.On("GetAccounts").Return((*connect_cloud.AccountListResponse)(nil), types.NewAgentError(
 		events.ServerErrorCode,
-		http_client.NewHTTPError("https://foo.bar", "GET", http.StatusBadRequest), nil))
+		http_client.NewHTTPError("https://foo.bar", "GET", http.StatusBadRequest, "uh oh"), nil))
 
 	connectCloudClientFactory = func(baseURL string, log logging.Logger, timeout time.Duration, authValue string) connect_cloud.APIClient {
 		return client
