@@ -72,7 +72,17 @@ export const assignStep = (state: MultiStepState, uniqueId: string): number => {
   return previous;
 };
 
-type InputStep = (input: MultiStepInput) => Thenable<InputStep | void>;
+// InputStep now can have a 'skippable' property (optional)
+type InputStepFunction = (
+  input: MultiStepInput,
+) => Promise<InputStepFunction | void>;
+
+interface InputStepWithSkippableFlag {
+  stepFunction: InputStepFunction;
+  skippable?: boolean;
+}
+
+type InputStep = InputStepFunction | InputStepWithSkippableFlag;
 
 interface QuickPickParameters<T extends QuickPickItem> {
   title: string;
@@ -134,39 +144,74 @@ export class MultiStepInput {
   }
 
   private current?: QuickInput;
-  private steps: InputStep[] = [];
+  private steps: InputStep[] = []; // Store the steps in a history stack
 
-  // These were templatized: rivate async stepThrough<T>(start: InputStep) {
+  // These were templatized: private async stepThrough<T>(start: InputStep) {
   private async stepThrough(start: InputStep) {
-    let step: InputStep | void = start;
-    while (step) {
-      this.steps.push(step);
+    let currentStep: InputStep | void = start;
+    while (currentStep) {
+      this.steps.push(currentStep); // Add the current step to the history
       if (this.current) {
         this.current.enabled = false;
         this.current.busy = true;
       }
       try {
-        step = await step(this);
+        currentStep = await this.executeStep(currentStep);
       } catch (err) {
         if (err === InputFlowAction.back) {
-          this.steps.pop();
-          step = this.steps.pop();
+          // Handle "Back" button press
+          this.steps.pop(); // Remove the current step (the one that caused the 'back' action)
+
+          // Iterate backward through the history to find the previous non-skippable step
+          while (this.steps.length > 0) {
+            const previousStep = this.steps.pop();
+
+            // Extract the step function and check the skippable flag
+            const stepToConsider =
+              typeof previousStep === "function"
+                ? previousStep
+                : previousStep?.stepFunction;
+            const isSkippable =
+              typeof previousStep !== "function" &&
+              previousStep?.skippable === true;
+
+            if (!isSkippable) {
+              currentStep = stepToConsider; // Found a non-skippable step, go back to it
+              break;
+            }
+            // If skippable, continue popping to find the next non-skippable step
+          }
+
+          if (this.steps.length === 0 && currentStep === undefined) {
+            // If all previous steps were skippable, and we've popped everything,
+            // effectively cancel the input flow.
+            throw InputFlowAction.cancel;
+          }
         } else if (err === InputFlowAction.resume) {
-          step = this.steps.pop();
+          currentStep = this.steps.pop();
         } else if (err === InputFlowAction.cancel) {
-          step = undefined;
+          currentStep = undefined; // Cancel the whole flow
         } else {
           let errMsg = `Internal Error: MultiStepInput::stepThrough, err = ${JSON.stringify(err)}.`;
           if (isAxiosErrorWithJson(err)) {
             errMsg = resolveAgentJsonErrorMsg(err);
           }
           window.showErrorMessage(errMsg);
-          step = undefined;
+          currentStep = undefined;
         }
       }
     }
     if (this.current) {
       this.current.dispose();
+    }
+  }
+
+  // Helper to execute the step function, handling the new InputStep type
+  private async executeStep(step: InputStep): Promise<InputStep | void> {
+    if (typeof step === "function") {
+      return await step(this);
+    } else {
+      return await step.stepFunction(this);
     }
   }
 

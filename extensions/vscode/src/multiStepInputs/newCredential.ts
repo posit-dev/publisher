@@ -109,7 +109,11 @@ export async function newCredential(
       promptStepNumbers: {},
     };
 
-    await MultiStepInput.run((input) => inputPlatform(input, state));
+    await MultiStepInput.run({
+      //@ts-expect-error TODO: get help with this typescript error
+      stepFunction: (input) => inputPlatform(input, state),
+      skippable: false,
+    });
     return state;
   }
 
@@ -141,7 +145,10 @@ export async function newCredential(
         state.data.apiKey = "";
         state.data.snowflakeConnection = "";
 
-        return (input: MultiStepInput) => authenticate(input, state);
+        return {
+          stepFunction: (input: MultiStepInput) => authenticate(input, state),
+          skippable: true,
+        };
       }
 
       if (isConnect(serverType)) {
@@ -217,7 +224,10 @@ export async function newCredential(
       return Promise.resolve(undefined);
     }
 
-    return (input: MultiStepInput) => retrieveAccounts(input, state);
+    return {
+      stepFunction: (input: MultiStepInput) => retrieveAccounts(input, state),
+      skippable: true,
+    };
   }
 
   // ***************************************************************
@@ -281,16 +291,17 @@ export async function newCredential(
       return Promise.resolve(undefined);
     }
 
-    return (input: MultiStepInput) => determineAccountFlow(input, state);
+    return {
+      stepFunction: (input: MultiStepInput) =>
+        determineAccountFlow(input, state),
+      skippable: true,
+    };
   }
 
   // ***************************************************************
   // Step: Determine the correct flow for the user's account list (Connect Cloud only)
   // ***************************************************************
-  function determineAccountFlow(
-    _: MultiStepInput,
-    state: MultiStepState,
-  ): (input: MultiStepInput) => Promise<unknown> {
+  function determineAccountFlow(_: MultiStepInput, state: MultiStepState) {
     const accounts = getPublishableAccounts(connectCloudAccounts);
 
     if (accounts.length === 1) {
@@ -315,7 +326,12 @@ export async function newCredential(
         connectCloudUrl = connectCloudUrlStaging;
 
         // call the retrieveAccounts step again with the populated polling props
-        return (input: MultiStepInput) => retrieveAccounts(input, state);
+
+        return {
+          stepFunction: (input: MultiStepInput) =>
+            retrieveAccounts(input, state),
+          skippable: true,
+        };
       }
     }
   }
@@ -374,7 +390,10 @@ export async function newCredential(
     connectCloudSignupUrl = connectCloudSignupUrlStaging;
 
     // go to the authenticate step again to have the user sign up for an individual plan
-    return (input: MultiStepInput) => authenticate(input, state);
+    return {
+      stepFunction: (input: MultiStepInput) => authenticate(input, state),
+      skippable: true,
+    };
   }
 
   // ***************************************************************
