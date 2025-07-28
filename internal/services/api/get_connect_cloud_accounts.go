@@ -4,15 +4,14 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"slices"
 	"time"
 
 	"github.com/posit-dev/publisher/internal/clients/connect_cloud"
 	"github.com/posit-dev/publisher/internal/clients/http_client"
-
 	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/types"
 )
 
 type connectCloudAccountsBodyAccount struct {
@@ -24,18 +23,14 @@ type connectCloudAccountsBodyAccount struct {
 
 var connectCloudClientFactory = connect_cloud.NewConnectCloudClientWithAuth
 
-const connectCloudBaseURLHeader = "Connect-Cloud-Base-Url"
+const connectCloudEnvironmentHeader = "Connect-Cloud-Environment"
 
 func GetConnectCloudAccountsFunc(log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		baseURL := req.Header.Get(connectCloudBaseURLHeader)
-		if baseURL == "" {
-			BadRequest(w, req, log, fmt.Errorf("%s header is required", connectCloudBaseURLHeader))
-			return
-		}
+		environment := types.CloudEnvironment(req.Header.Get(connectCloudEnvironmentHeader))
 		authorization := req.Header.Get("Authorization")
 
-		client := connectCloudClientFactory(baseURL, log, 10*time.Second, authorization)
+		client := connectCloudClientFactory(environment, log, 10*time.Second, authorization)
 
 		_, err := client.GetCurrentUser()
 		if err != nil {

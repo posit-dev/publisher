@@ -3,6 +3,7 @@ package connect_cloud
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import (
+	"github.com/posit-dev/publisher/internal/types"
 	"testing"
 	"time"
 
@@ -26,7 +27,7 @@ func (s *ConnectCloudClientSuite) TestNewConnectCloudClient() {
 	timeout := 10 * time.Second
 	log := logging.New()
 
-	apiClient := NewConnectCloudClientWithAuth("https://api.staging.login.posit.cloud", log, timeout, "Bearer the_token")
+	apiClient := NewConnectCloudClientWithAuth(types.CloudEnvironmentStaging, log, timeout, "Bearer the_token")
 	client := apiClient.(*ConnectCloudClient)
 	s.NotNil(client.client)
 }

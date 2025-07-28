@@ -42,7 +42,8 @@ func PostConnectCloudOAuthTokenHandlerFunc(log logging.Logger) http.HandlerFunc 
 			return
 		}
 
-		client := cloudAuthClientFactory(baseURL, log, 10*time.Second)
+		environment := types.CloudEnvironment(req.Header.Get(connectCloudEnvironmentHeader))
+		client := cloudAuthClientFactory(environment, log, 10*time.Second)
 
 		tokenRequest := cloud_auth.TokenRequest{
 			GrantType:  "urn:ietf:params:oauth:grant-type:device_code",
