@@ -157,6 +157,7 @@ func (s *UpdateContentSuite) TestUpdateContentNotFoundError() {
 		"https://connect.example.com/api/content/test-content-id",
 		"PUT",
 		http.StatusNotFound,
+		"uh oh",
 	)
 
 	// Set up mock client to return an error
