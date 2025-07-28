@@ -10,10 +10,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/posit-dev/publisher/internal/logging"
-	"github.com/posit-dev/publisher/internal/util/utiltest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/util/utiltest"
 )
 
 type ConnectCloudUploadClientSuite struct {

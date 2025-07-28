@@ -9,19 +9,37 @@ import (
 	"github.com/posit-dev/publisher/internal/clients/http_client"
 	"github.com/posit-dev/publisher/internal/clients/types"
 	"github.com/posit-dev/publisher/internal/logging"
+	types2 "github.com/posit-dev/publisher/internal/types"
 )
+
+const baseURLDevelopment = "https://api.dev.connect.posit.cloud"
+const baseURLStaging = "https://api.staging.connect.posit.cloud"
+const baseURLProduction = "https://api.connect.posit.cloud"
+
+func getBaseURL(environment types2.CloudEnvironment) string {
+	switch environment {
+	case types2.CloudEnvironmentDevelopment:
+		return baseURLDevelopment
+	case types2.CloudEnvironmentStaging:
+		return baseURLStaging
+	default:
+		return baseURLProduction
+	}
+}
 
 type ConnectCloudClient struct {
 	log    logging.Logger
 	client http_client.HTTPClient
 }
 
+var _ APIClient = &ConnectCloudClient{}
+
 func NewConnectCloudClientWithAuth(
-	baseURL string,
+	environment types2.CloudEnvironment,
 	log logging.Logger,
 	timeout time.Duration,
 	authValue string) APIClient {
-	httpClient := http_client.NewBasicHTTPClientWithAuth(baseURL, timeout, authValue)
+	httpClient := http_client.NewBasicHTTPClientWithAuth(getBaseURL(environment), timeout, authValue)
 	return &ConnectCloudClient{
 		log:    log,
 		client: httpClient,
@@ -31,6 +49,23 @@ func NewConnectCloudClientWithAuth(
 func (c ConnectCloudClient) GetCurrentUser() (*UserResponse, error) {
 	into := UserResponse{}
 	err := c.client.Get("/v1/users/me", &into, c.log)
+	if err != nil {
+		return nil, err
+	}
+	return &into, nil
+}
+
+func (c ConnectCloudClient) CreateUser() error {
+	err := c.client.Post("/v1/users", nil, nil, c.log)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c ConnectCloudClient) GetAccounts() (*AccountListResponse, error) {
+	into := AccountListResponse{}
+	err := c.client.Get("/v1/accounts?has_user_role=true", &into, c.log)
 	if err != nil {
 		return nil, err
 	}
