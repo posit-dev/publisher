@@ -4,16 +4,17 @@ package api
 
 import (
 	"encoding/json"
-	"github.com/posit-dev/publisher/internal/clients/connect_cloud"
-	"github.com/posit-dev/publisher/internal/types"
 	"net/http"
 	"slices"
 	"time"
 
+	"github.com/posit-dev/publisher/internal/clients/connect_cloud"
+	"github.com/posit-dev/publisher/internal/types"
+
 	"github.com/posit-dev/publisher/internal/logging"
 )
 
-type connectCloudAccountsBodyAccount struct {
+type connectCloudAccountsResponseItem struct {
 	Name                string `json:"name"`
 	ID                  string `json:"id"`
 	PermissionToPublish bool   `json:"permissionToPublish"`
@@ -22,10 +23,6 @@ type connectCloudAccountsBodyAccount struct {
 var connectCloudClientFactory = connect_cloud.NewConnectCloudClientWithAuth
 
 const connectCloudEnvironmentHeader = "Connect-Cloud-Environment"
-
-type connectCloudAccountsBody struct {
-	Accounts []connectCloudAccountsBodyAccount `json:"accounts"`
-}
 
 func GetConnectCloudAccountsFunc(log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
@@ -47,19 +44,16 @@ func GetConnectCloudAccountsFunc(log logging.Logger) http.HandlerFunc {
 			return
 		}
 
-		accounts := make([]connectCloudAccountsBodyAccount, 0, len(accountsResponse.Data))
+		accounts := make([]connectCloudAccountsResponseItem, 0, len(accountsResponse.Data))
 		for _, account := range accountsResponse.Data {
-			accounts = append(accounts, connectCloudAccountsBodyAccount{
+			accounts = append(accounts, connectCloudAccountsResponseItem{
 				ID:                  account.ID,
 				Name:                account.Name,
 				PermissionToPublish: slices.Contains(account.Permissions, "content:create"),
 			})
 		}
 
-		apiResponse := connectCloudAccountsBody{
-			Accounts: accounts,
-		}
 		w.Header().Set("content-type", "application/json")
-		json.NewEncoder(w).Encode(apiResponse)
+		json.NewEncoder(w).Encode(accounts)
 	}
 }

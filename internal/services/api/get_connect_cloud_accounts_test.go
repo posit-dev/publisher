@@ -88,12 +88,12 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts() {
 	s.Equal(http.StatusOK, result.StatusCode)
 
 	respBody, _ := io.ReadAll(rec.Body)
-	respMap := map[string]interface{}{}
-	err = json.Unmarshal(respBody, &respMap)
+	var respData []interface{}
+	err = json.Unmarshal(respBody, &respData)
 	s.NoError(err)
 
 	// sort accounts by ID to ensure consistent order for testing
-	slices.SortFunc(respMap["accounts"].([]interface{}), func(a, b interface{}) int {
+	slices.SortFunc(respData, func(a, b interface{}) int {
 		return strings.Compare(
 			a.(map[string]interface{})["name"].(string),
 			b.(map[string]interface{})["name"].(string))
@@ -101,25 +101,23 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts() {
 
 	// The expected response should include all accounts, with PermissionToPublish
 	// set to true for accounts with "content:create" permission, false otherwise
-	s.Equal(map[string]interface{}{
-		"accounts": []interface{}{
-			map[string]interface{}{
-				"id":                  "account1",
-				"name":                "Account 1",
-				"permissionToPublish": true,
-			},
-			map[string]interface{}{
-				"id":                  "account2",
-				"name":                "Account 2",
-				"permissionToPublish": true,
-			},
-			map[string]interface{}{
-				"id":                  "account3",
-				"name":                "Account 3",
-				"permissionToPublish": false,
-			},
+	s.Equal([]interface{}{
+		map[string]interface{}{
+			"id":                  "account1",
+			"name":                "Account 1",
+			"permissionToPublish": true,
 		},
-	}, respMap)
+		map[string]interface{}{
+			"id":                  "account2",
+			"name":                "Account 2",
+			"permissionToPublish": true,
+		},
+		map[string]interface{}{
+			"id":                  "account3",
+			"name":                "Account 3",
+			"permissionToPublish": false,
+		},
+	}, respData)
 }
 
 func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts_GetCurrentUserError() {

@@ -14,6 +14,8 @@ import (
 
 var cloudAuthClientFactory = cloud_auth.NewCloudAuthClient
 
+const cloudAuthBaseURLHeader = "Cloud-Auth-Base-Url"
+
 type connectCloudDeviceAuthResponseBody struct {
 	DeviceCode      string `json:"deviceCode"`
 	UserCode        string `json:"userCode"`
