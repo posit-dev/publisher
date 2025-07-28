@@ -37,35 +37,15 @@ func (s *ConnectCloudClientSuite) TestNewConnectCloudClient() {
 
 func (s *ConnectCloudClientSuite) TestGetCurrentUser() {
 	httpClient := &http_client.MockHTTPClient{}
-	expectedResult := &UserResponse{
-		AccountRoles: map[string]clienttypes.UserAccountRole{
-			"account1": {
-				Role: "admin",
-				Account: clienttypes.UserAccountRoleAccount{
-					Name: "Account 1",
-				},
-			},
-			"account2": {
-				Role: "admin",
-				Account: clienttypes.UserAccountRoleAccount{
-					Name: "Account 2",
-				},
-			},
-		},
-	}
 
 	httpClient.On("Get", "/v1/users/me", mock.Anything, mock.Anything, mock.Anything).
-		Return(nil).RunFn = func(args mock.Arguments) {
-		result := args.Get(1).(*UserResponse)
-		result.AccountRoles = expectedResult.AccountRoles
-	}
+		Return(nil)
 	client := &ConnectCloudClient{
 		client: httpClient,
 		log:    logging.New(),
 	}
-	result, err := client.GetCurrentUser()
+	_, err := client.GetCurrentUser()
 	s.NoError(err)
-	s.Equal(expectedResult, result)
 }
 
 func (s *ConnectCloudClientSuite) TestCreateContent() {

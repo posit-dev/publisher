@@ -32,6 +32,8 @@ type ConnectCloudClient struct {
 	client http_client.HTTPClient
 }
 
+var _ APIClient = &ConnectCloudClient{}
+
 func NewConnectCloudClientWithAuth(
 	environment types2.CloudEnvironment,
 	log logging.Logger,
@@ -51,6 +53,14 @@ func (c ConnectCloudClient) GetCurrentUser() (*UserResponse, error) {
 		return nil, err
 	}
 	return &into, nil
+}
+
+func (c ConnectCloudClient) CreateUser() error {
+	err := c.client.Post("/v1/users", nil, nil, c.log)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (c ConnectCloudClient) GetAccounts() (*AccountListResponse, error) {

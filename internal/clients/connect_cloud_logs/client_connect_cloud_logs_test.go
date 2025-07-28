@@ -6,11 +6,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/posit-dev/publisher/internal/clients/http_client"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/suite"
 )
 
 type ConnectCloudLogsClientSuite struct {
@@ -33,7 +34,7 @@ func (s *ConnectCloudLogsClientSuite) TestNewConnectCloudLogsClient() {
 
 func (s *ConnectCloudLogsClientSuite) TestGetLogs() {
 	httpClient := &http_client.MockHTTPClient{}
-	
+
 	logChannelID := "publish-log-channel-123"
 	expectedResponse := &LogsResponse{
 		Data: []LogMessage{
@@ -66,12 +67,12 @@ func (s *ConnectCloudLogsClientSuite) TestGetLogs() {
 		result := args.Get(1).(*LogsResponse)
 		*result = *expectedResponse
 	}
-	
+
 	client := &ConnectCloudLogsClient{
 		client: httpClient,
 		log:    logging.New(),
 	}
-	
+
 	response, err := client.GetLogs(logChannelID)
 	s.NoError(err)
 	s.Equal(expectedResponse, response)
