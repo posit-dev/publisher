@@ -258,7 +258,9 @@ export async function selectNewOrExistingConfig(
     };
     // start the progression through the steps
 
-    await MultiStepInput.run((input) => inputConfigFileSelection(input, state));
+    await MultiStepInput.run({
+      step: (input) => inputConfigFileSelection(input, state),
+    });
     return state as MultiStepState;
   }
 
@@ -288,8 +290,10 @@ export async function selectNewOrExistingConfig(
       });
       state.data.existingConfigurationName = pick;
       if (newConfigurationSelected(state)) {
-        return (input: MultiStepInput) =>
-          inputEntryPointSelection(input, state);
+        return {
+          step: (input: MultiStepInput) =>
+            inputEntryPointSelection(input, state),
+        };
       }
       // last step, nothing gets returned.
       return;
@@ -321,7 +325,9 @@ export async function selectNewOrExistingConfig(
       });
 
       state.data.entryPoint = pick;
-      return (input: MultiStepInput) => inputTitle(input, state);
+      return {
+        step: (input: MultiStepInput) => inputTitle(input, state),
+      };
     } else {
       state.data.entryPoint = entryPointListItems[0];
       // We're skipping this step, so we must silently just jump to the next step
