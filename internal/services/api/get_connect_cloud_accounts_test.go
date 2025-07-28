@@ -4,10 +4,6 @@ package api
 
 import (
 	"encoding/json"
-	"github.com/posit-dev/publisher/internal/clients/connect_cloud"
-	"github.com/posit-dev/publisher/internal/clients/http_client"
-	"github.com/posit-dev/publisher/internal/events"
-	"github.com/posit-dev/publisher/internal/types"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -16,9 +12,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/posit-dev/publisher/internal/clients/connect_cloud"
+	"github.com/posit-dev/publisher/internal/clients/http_client"
+	"github.com/posit-dev/publisher/internal/events"
+	"github.com/posit-dev/publisher/internal/types"
+
+	"github.com/stretchr/testify/suite"
+
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/stretchr/testify/suite"
 )
 
 type GetConnectCloudAccountsSuite struct {
@@ -217,12 +219,11 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts_NoUserForLuci
 	s.NoError(err)
 
 	respBody, _ := io.ReadAll(rec.Body)
-	respMap := map[string]interface{}{}
-	err = json.Unmarshal(respBody, &respMap)
+	accounts := []any{}
+	err = json.Unmarshal(respBody, &accounts)
 	s.NoError(err)
 
 	// Verify the response contains the expected account
-	accounts := respMap["accounts"].([]interface{})
 	s.Len(accounts, 1)
 	account := accounts[0].(map[string]interface{})
 	s.Equal("account1", account["id"])
