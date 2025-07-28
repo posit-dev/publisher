@@ -128,3 +128,12 @@ export const DebounceDelaysMS = {
   refreshRPackages: 1000,
   refreshPythonPackages: 1000,
 };
+
+const connectCloudLogoutUrlStaging = "https://login.staging.posit.cloud/logout";
+const connectCloudSignupUrlStaging =
+  "https://login.staging.posit.cloud/register";
+
+export const CONNECT_CLOUD_SIGNUP_URL_STAGING = `${connectCloudLogoutUrlStaging}?redirect=${connectCloudSignupUrlStaging}?redirect=`;
+
+export const CONNECT_CLOUD_URL_STAGING =
+  "https://staging.connect.posit.cloud/home";

@@ -39,12 +39,12 @@ import {
 } from "src/multiStepInputs/common";
 import { getEnumKeyByEnumValue } from "src/utils/enums";
 import { ConnectCloudAccount } from "src/api/types/connectCloud";
+import {
+  CONNECT_CLOUD_SIGNUP_URL_STAGING,
+  CONNECT_CLOUD_URL_STAGING,
+} from "src/constants";
 
 const createNewCredentialLabel = "Create a New Credential";
-const connectCloudSignupUrlStaging =
-  "https://login.staging.posit.cloud/logout?redirect=https://login.staging.posit.cloud/register?redirect=";
-const connectCloudUrlStaging =
-  "https://login.staging.posit.cloud/oauth/authorize?client_id=posit-connect-cloud-staging&redirect_uri=https://staging.connect.posit.cloud/auth&response_type=code&show_login=0&show_signup=0&state=eyJyZWRpcmVjdCI6Ii9ob21lIn0%3D&local=1&google=1&github=1";
 
 export async function newCredential(
   viewId: string,
@@ -57,7 +57,7 @@ export async function newCredential(
   let credentials: Credential[] = [];
 
   // the serverType & platformName will be overwritten in the very first step
-  // when the platform selector is introduced
+  // when the platform is selected
   let serverType: ServerType = ServerType.CONNECT;
   let platformName: PlatformName = PlatformName.CONNECT;
   let connections: SnowflakeConnection[] = [];
@@ -74,9 +74,10 @@ export async function newCredential(
   };
 
   // ***************************************************************
-  // Order of all steps
+  // Order of all steps for Connect
   // ***************************************************************
 
+  // Select the platform
   // Get the server url
   // Get the API key for Connect OR get the Snowflake connection name
   // Get the credential name
@@ -112,7 +113,6 @@ export async function newCredential(
 
     await MultiStepInput.run({
       step: (input) => inputPlatform(input, state),
-      skippable: false,
     });
     return state;
   }
@@ -218,7 +218,7 @@ export async function newCredential(
         // swallows the custom internal error because we don't need
         // an error message everytime the user decides to abort or
         // whenever the user just plain abandones the task
-        return Promise.resolve(undefined);
+        return;
       } else if (error instanceof Error) {
         // display an error message for all other errors
         window.showErrorMessage(
@@ -285,7 +285,7 @@ export async function newCredential(
         // swallows the custom internal error because we don't need
         // an error message everytime the user decides to abort or
         // whenever the user just plain abandones the task
-        return Promise.resolve(undefined);
+        return;
       } else if (error instanceof Error) {
         // display an error message for all other errors
         window.showErrorMessage(
@@ -328,7 +328,7 @@ export async function newCredential(
 
         // populate the account polling props
         connectCloudPolling = true;
-        connectCloudUrl = connectCloudUrlStaging;
+        connectCloudUrl = CONNECT_CLOUD_URL_STAGING;
 
         // call the retrieveAccounts step again with the populated polling props
 
@@ -394,7 +394,7 @@ export async function newCredential(
       return;
     }
 
-    connectCloudSignupUrl = connectCloudSignupUrlStaging;
+    connectCloudSignupUrl = CONNECT_CLOUD_SIGNUP_URL_STAGING;
 
     // go to the authenticate step again to have the user sign up for an individual plan
     return {
