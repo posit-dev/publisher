@@ -3,42 +3,25 @@ package connect_cloud
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import (
+	"fmt"
 	"time"
 
-	"github.com/posit-dev/publisher/internal/types"
-
 	"github.com/posit-dev/publisher/internal/clients/http_client"
+	"github.com/posit-dev/publisher/internal/clients/types"
 	"github.com/posit-dev/publisher/internal/logging"
 )
-
-const baseURLDevelopment = "https://api.dev.connect.posit.cloud"
-const baseURLStaging = "https://api.staging.connect.posit.cloud"
-const baseURLProduction = "https://api.connect.posit.cloud"
-
-func getBaseURL(environment types.CloudEnvironment) string {
-	switch environment {
-	case types.CloudEnvironmentDevelopment:
-		return baseURLDevelopment
-	case types.CloudEnvironmentStaging:
-		return baseURLStaging
-	default:
-		return baseURLProduction
-	}
-}
 
 type ConnectCloudClient struct {
 	log    logging.Logger
 	client http_client.HTTPClient
 }
 
-var _ APIClient = &ConnectCloudClient{}
-
 func NewConnectCloudClientWithAuth(
-	environment types.CloudEnvironment,
+	baseURL string,
 	log logging.Logger,
 	timeout time.Duration,
 	authValue string) APIClient {
-	httpClient := http_client.NewBasicHTTPClientWithAuth(getBaseURL(environment), timeout, authValue)
+	httpClient := http_client.NewBasicHTTPClientWithAuth(baseURL, timeout, authValue)
 	return &ConnectCloudClient{
 		log:    log,
 		client: httpClient,
@@ -54,18 +37,38 @@ func (c ConnectCloudClient) GetCurrentUser() (*UserResponse, error) {
 	return &into, nil
 }
 
-func (c ConnectCloudClient) CreateUser() error {
-	err := c.client.Post("/v1/users", nil, nil, c.log)
+func (c ConnectCloudClient) CreateContent(request *types.CreateContentRequest) (*types.ContentResponse, error) {
+	into := types.ContentResponse{}
+	err := c.client.Post("/v1/contents", request, &into, c.log)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return &into, nil
 }
 
-func (c ConnectCloudClient) GetAccounts() (*AccountListResponse, error) {
-	//TODO implement me
-	into := AccountListResponse{}
-	err := c.client.Get("/v1/accounts?has_user_role=true", &into, c.log)
+func (c ConnectCloudClient) UpdateContent(request *types.UpdateContentRequest) (*types.ContentResponse, error) {
+	into := types.ContentResponse{}
+	url := fmt.Sprintf("/v1/contents/%s?new_bundle=true", request.ContentID)
+	err := c.client.Patch(url, &request.ContentRequestBase, &into, c.log)
+	if err != nil {
+		return nil, err
+	}
+	return &into, nil
+}
+
+func (c ConnectCloudClient) GetRevision(revisionID string) (*types.Revision, error) {
+	into := types.Revision{}
+	url := fmt.Sprintf("/v1/revisions/%s", revisionID)
+	err := c.client.Get(url, &into, c.log)
+	if err != nil {
+		return nil, err
+	}
+	return &into, nil
+}
+
+func (c ConnectCloudClient) GetAuthorization(request *types.AuthorizationRequest) (*types.AuthorizationResponse, error) {
+	into := types.AuthorizationResponse{}
+	err := c.client.Post("/v1/authorization", request, &into, c.log)
 	if err != nil {
 		return nil, err
 	}
