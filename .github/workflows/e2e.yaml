@@ -51,7 +51,7 @@ jobs:
       - name: Build Docker images
         working-directory: test/e2e
         run: |
-          docker build -f Dockerfile.base -t e2ebase --platform linux/amd64 .
+          docker build --build-arg GH_DOWNLOAD_TOKEN=${{ secrets.GH_DOWNLOAD_TOKEN }} -f Dockerfile.base -t e2ebase --platform linux/amd64 .
           docker compose build connect-publisher-e2e code-server
         env:
           CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
@@ -61,11 +61,6 @@ jobs:
         run: |
           just start "connect-publisher-e2e"
           just start "code-server"
-
-      - name: Fix permissions for content-workspace in container
-        run: |
-          docker exec publisher-e2e.code-server chown -R root:root /home/coder/workspace
-          docker exec publisher-e2e.code-server chmod -R u+rw /home/coder/workspace
 
       - name: Stop any processes using port 8080
         run: |
@@ -88,6 +83,19 @@ jobs:
           done
           echo "code-server did not become ready in time"
           exit 1
+
+      - name: Print workspace file ownership before tests
+        run: |
+          docker exec publisher-e2e.code-server ls -lR /home/coder/workspace/content-workspace || true
+
+      - name: Fix workspace ownership for content-workspace
+        run: |
+          docker exec publisher-e2e.code-server chown -R coder:coder /home/coder/workspace/content-workspace || true
+          docker exec publisher-e2e.code-server chmod -R u+rw /home/coder/workspace/content-workspace || true
+
+      - name: Monitor resource usage during Cypress tests
+        run: |
+          nohup bash -c 'for i in {1..30}; do docker stats --no-stream >> resource-usage.log; sleep 5; done' &
 
       - name: Run Cypress tests
         working-directory: test/e2e
@@ -117,6 +125,38 @@ jobs:
         with:
           name: cypress-videos
           path: test/e2e/cypress/videos
+          if-no-files-found: ignore
+
+      - name: Print code-server logs on failure
+        if: failure()
+        run: |
+          docker cp publisher-e2e.code-server:/home/coder/.config/code-server/logs ./code-server-logs || true
+          ls -l ./code-server-logs || true
+          cat ./code-server-logs/*/* || true
+
+      - name: Find code-server logs
+        if: failure()
+        run: |
+          docker exec publisher-e2e.code-server find /home/coder -type d -name logs || true
+          docker exec publisher-e2e.code-server find /var/log -type f || true
+
+      - name: Print process info on failure
+        if: failure()
+        run: |
+          docker exec publisher-e2e.code-server ps aux || true
+
+      - name: Print resource usage on failure
+        if: failure()
+        run: |
+          docker exec publisher-e2e.code-server sh -c "top -b -n 1" || true
+          docker stats --no-stream || true
+
+      - name: Upload resource usage log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: resource-usage
+          path: resource-usage.log
           if-no-files-found: ignore
 
       - name: Stop containers

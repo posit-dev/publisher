@@ -2,6 +2,7 @@
 
 describe("Create Deployments", () => {
   beforeEach(() => {
+    cy.exec("chmod -R u+rw content-workspace");
     cy.resetConnect();
     cy.setAdminCredentials();
     cy.clearupDeployments(".");
