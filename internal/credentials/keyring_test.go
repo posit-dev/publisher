@@ -5,6 +5,8 @@ package credentials
 import (
 	"testing"
 
+	"github.com/posit-dev/publisher/internal/server_type"
+
 	"github.com/posit-dev/publisher/internal/logging/loggingtest"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
 	"github.com/stretchr/testify/suite"
@@ -36,7 +38,12 @@ func (s *KeyringCredentialsTestSuite) TestSet() {
 		log: s.log,
 	}
 
-	cred, err := cs.Set(CreateCredentialDetails{Name: "example", URL: "https://example.com", ApiKey: "12345", SnowflakeConnection: ""})
+	cred, err := cs.Set(CreateCredentialDetails{
+		ServerType:          server_type.ServerTypeConnect,
+		Name:                "example",
+		URL:                 "https://example.com",
+		ApiKey:              "12345",
+		SnowflakeConnection: ""})
 	s.NoError(err)
 	s.NotNil(cred.GUID)
 	s.Equal(cred.Name, "example")
@@ -44,7 +51,12 @@ func (s *KeyringCredentialsTestSuite) TestSet() {
 	s.Equal(cred.ApiKey, "12345")
 	s.Equal(cred.SnowflakeConnection, "")
 
-	cred, err = cs.Set(CreateCredentialDetails{Name: "sfexample", URL: "https://example.snowflakecomputing.app", ApiKey: "", SnowflakeConnection: "snow"})
+	cred, err = cs.Set(CreateCredentialDetails{
+		ServerType:          server_type.ServerTypeSnowflake,
+		Name:                "sfexample",
+		URL:                 "https://example.snowflakecomputing.app",
+		ApiKey:              "",
+		SnowflakeConnection: "snow"})
 	s.NoError(err)
 	s.NotNil(cred.GUID)
 	s.Equal(cred.Name, "sfexample")
@@ -52,7 +64,10 @@ func (s *KeyringCredentialsTestSuite) TestSet() {
 	s.Equal(cred.ApiKey, "")
 	s.Equal(cred.SnowflakeConnection, "snow")
 
-	cred, err = cs.Set(CreateCredentialDetails{Name: "cloudy", URL: "https://api.connect.posit.cloud",
+	cred, err = cs.Set(CreateCredentialDetails{
+		ServerType:   server_type.ServerTypeConnectCloud,
+		Name:         "cloudy",
+		URL:          "https://api.connect.posit.cloud",
 		AccountID:    "0de62804-2b0b-4e11-8a52-a402bda89ff4",
 		AccountName:  "cloudy",
 		RefreshToken: "some_refresh_token",
@@ -73,11 +88,11 @@ func (s *KeyringCredentialsTestSuite) TestSetURLCollisionError() {
 		log: s.log,
 	}
 
-	_, err := cs.Set(CreateCredentialDetails{Name: "example", URL: "https://example.com", ApiKey: "12345", SnowflakeConnection: ""})
+	_, err := cs.Set(CreateCredentialDetails{ServerType: server_type.ServerTypeConnect, Name: "example", URL: "https://example.com", ApiKey: "12345", SnowflakeConnection: ""})
 	s.NoError(err)
-	_, err = cs.Set(CreateCredentialDetails{Name: "example", URL: "https://example.com", ApiKey: "12345", SnowflakeConnection: ""})
+	_, err = cs.Set(CreateCredentialDetails{ServerType: server_type.ServerTypeConnect, Name: "example", URL: "https://example.com", ApiKey: "12345", SnowflakeConnection: ""})
 	s.Error(err)
-	s.IsType(&URLCollisionError{}, err)
+	s.IsType(&CredentialIdentityCollision{}, err)
 }
 
 func (s *KeyringCredentialsTestSuite) TestGet() {
@@ -96,7 +111,7 @@ func (s *KeyringCredentialsTestSuite) TestGet() {
 	s.log.AssertExpectations(s.T())
 
 	// pass if exists
-	cred, err := cs.Set(CreateCredentialDetails{Name: "example", URL: "https://example.com", ApiKey: "12345", SnowflakeConnection: ""})
+	cred, err := cs.Set(CreateCredentialDetails{ServerType: server_type.ServerTypeConnect, Name: "example", URL: "https://example.com", ApiKey: "12345", SnowflakeConnection: ""})
 	s.NoError(err)
 	res, err := cs.Get(cred.GUID)
 	s.NoError(err)
@@ -109,14 +124,14 @@ func (s *KeyringCredentialsTestSuite) TestNormalizedSet() {
 	}
 
 	// pass if no change (already normalized)
-	cred, err := cs.Set(CreateCredentialDetails{Name: "example", URL: "https://example.com", ApiKey: "12345", SnowflakeConnection: ""})
+	cred, err := cs.Set(CreateCredentialDetails{ServerType: server_type.ServerTypeConnect, Name: "example", URL: "https://example.com", ApiKey: "12345", SnowflakeConnection: ""})
 	s.NoError(err)
 	res, err := cs.Get(cred.GUID)
 	s.NoError(err)
 	s.Equal(res.URL, cred.URL)
 
 	// pass if URL ends up normalized
-	cred, err = cs.Set(CreateCredentialDetails{Name: "example2", URL: "https://example.com///another/seg/", ApiKey: "12345", SnowflakeConnection: ""})
+	cred, err = cs.Set(CreateCredentialDetails{ServerType: server_type.ServerTypeConnect, Name: "example2", URL: "https://example.com///another/seg/", ApiKey: "12345", SnowflakeConnection: ""})
 	s.NoError(err)
 	s.NotEqual(cred.URL, "https://example.com///another/seg/")
 
@@ -132,18 +147,18 @@ func (s *KeyringCredentialsTestSuite) TestSetCollisions() {
 	}
 
 	// add a credential
-	_, err := cs.Set(CreateCredentialDetails{Name: "example", URL: "https://example.com", ApiKey: "12345", SnowflakeConnection: ""})
+	_, err := cs.Set(CreateCredentialDetails{ServerType: server_type.ServerTypeConnect, Name: "example", URL: "https://example.com", ApiKey: "12345", SnowflakeConnection: ""})
 	s.NoError(err)
 
 	// name collision
-	_, err = cs.Set(CreateCredentialDetails{Name: "example", URL: "https://more_examples.com", ApiKey: "12345", SnowflakeConnection: ""})
+	_, err = cs.Set(CreateCredentialDetails{ServerType: server_type.ServerTypeConnect, Name: "example", URL: "https://more_examples.com", ApiKey: "12345", SnowflakeConnection: ""})
 	s.Error(err)
 	s.IsType(&NameCollisionError{}, err)
 
 	// URL collision
-	_, err = cs.Set(CreateCredentialDetails{Name: "another_example", URL: "https://example.com", ApiKey: "12345", SnowflakeConnection: ""})
+	_, err = cs.Set(CreateCredentialDetails{ServerType: server_type.ServerTypeConnect, Name: "another_example", URL: "https://example.com", ApiKey: "12345", SnowflakeConnection: ""})
 	s.Error(err)
-	s.IsType(&URLCollisionError{}, err)
+	s.IsType(&CredentialIdentityCollision{}, err)
 }
 
 func (s *KeyringCredentialsTestSuite) TestList() {
@@ -156,9 +171,9 @@ func (s *KeyringCredentialsTestSuite) TestList() {
 	s.Equal(creds, []Credential{})
 
 	// Add a couple creds to be assert on the list again
-	nc1, err := cs.Set(CreateCredentialDetails{Name: "example", URL: "https://a.example.com", ApiKey: "12345", SnowflakeConnection: ""})
+	nc1, err := cs.Set(CreateCredentialDetails{ServerType: server_type.ServerTypeConnect, Name: "example", URL: "https://a.example.com", ApiKey: "12345", SnowflakeConnection: ""})
 	s.NoError(err)
-	nc2, err := cs.Set(CreateCredentialDetails{Name: "example2", URL: "https://b.example.com", ApiKey: "12345", SnowflakeConnection: ""})
+	nc2, err := cs.Set(CreateCredentialDetails{ServerType: server_type.ServerTypeConnect, Name: "example2", URL: "https://b.example.com", ApiKey: "12345", SnowflakeConnection: ""})
 	s.NoError(err)
 
 	creds, err = cs.List()
@@ -173,7 +188,7 @@ func (s *KeyringCredentialsTestSuite) TestDelete() {
 		log: s.log,
 	}
 
-	cred, err := cs.Set(CreateCredentialDetails{Name: "example", URL: "https://example.com", ApiKey: "12345", SnowflakeConnection: ""})
+	cred, err := cs.Set(CreateCredentialDetails{ServerType: server_type.ServerTypeConnect, Name: "example", URL: "https://example.com", ApiKey: "12345", SnowflakeConnection: ""})
 	s.NoError(err)
 
 	// no error if exists
@@ -197,9 +212,9 @@ func (s *KeyringCredentialsTestSuite) TestReset() {
 	s.Equal(creds, []Credential{})
 
 	// Add a couple creds to be assert on the list again
-	_, err = cs.Set(CreateCredentialDetails{Name: "example", URL: "https://a.example.com", ApiKey: "12345", SnowflakeConnection: ""})
+	_, err = cs.Set(CreateCredentialDetails{ServerType: server_type.ServerTypeConnect, Name: "example", URL: "https://a.example.com", ApiKey: "12345", SnowflakeConnection: ""})
 	s.NoError(err)
-	_, err = cs.Set(CreateCredentialDetails{Name: "example2", URL: "https://b.example.com", ApiKey: "12345", SnowflakeConnection: ""})
+	_, err = cs.Set(CreateCredentialDetails{ServerType: server_type.ServerTypeConnect, Name: "example2", URL: "https://b.example.com", ApiKey: "12345", SnowflakeConnection: ""})
 	s.NoError(err)
 
 	creds, err = cs.List()

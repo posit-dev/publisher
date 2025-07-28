@@ -50,18 +50,21 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts() {
 	accountsResponse := &connect_cloud.AccountListResponse{
 		Data: []connect_cloud.Account{
 			{
-				ID:          "account1",
-				Name:        "Account 1",
+				ID:          "1",
+				Name:        "account1",
+				DisplayName: "Account 1",
 				Permissions: []string{"content:create"},
 			},
 			{
-				ID:          "account2",
-				Name:        "Account 2",
+				ID:          "2",
+				Name:        "account2",
+				DisplayName: "Account 2",
 				Permissions: []string{"content:create"},
 			},
 			{
-				ID:          "account3",
-				Name:        "Account 3",
+				ID:          "3",
+				Name:        "account3",
+				DisplayName: "Account 3",
 				Permissions: []string{},
 			},
 		},
@@ -88,12 +91,12 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts() {
 	s.Equal(http.StatusOK, result.StatusCode)
 
 	respBody, _ := io.ReadAll(rec.Body)
-	respMap := map[string]interface{}{}
-	err = json.Unmarshal(respBody, &respMap)
+	var respData []interface{}
+	err = json.Unmarshal(respBody, &respData)
 	s.NoError(err)
 
 	// sort accounts by ID to ensure consistent order for testing
-	slices.SortFunc(respMap["accounts"].([]interface{}), func(a, b interface{}) int {
+	slices.SortFunc(respData, func(a, b interface{}) int {
 		return strings.Compare(
 			a.(map[string]interface{})["name"].(string),
 			b.(map[string]interface{})["name"].(string))
@@ -101,25 +104,26 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts() {
 
 	// The expected response should include all accounts, with PermissionToPublish
 	// set to true for accounts with "content:create" permission, false otherwise
-	s.Equal(map[string]interface{}{
-		"accounts": []interface{}{
-			map[string]interface{}{
-				"id":                  "account1",
-				"name":                "Account 1",
-				"permissionToPublish": true,
-			},
-			map[string]interface{}{
-				"id":                  "account2",
-				"name":                "Account 2",
-				"permissionToPublish": true,
-			},
-			map[string]interface{}{
-				"id":                  "account3",
-				"name":                "Account 3",
-				"permissionToPublish": false,
-			},
+	s.Equal([]interface{}{
+		map[string]interface{}{
+			"id":                  "1",
+			"name":                "account1",
+			"displayName":         "Account 1",
+			"permissionToPublish": true,
 		},
-	}, respMap)
+		map[string]interface{}{
+			"id":                  "2",
+			"name":                "account2",
+			"displayName":         "Account 2",
+			"permissionToPublish": true,
+		},
+		map[string]interface{}{
+			"id":                  "3",
+			"name":                "account3",
+			"displayName":         "Account 3",
+			"permissionToPublish": false,
+		},
+	}, respData)
 }
 
 func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts_MissingBaseURL() {

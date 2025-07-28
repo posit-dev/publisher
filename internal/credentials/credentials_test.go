@@ -4,8 +4,9 @@ package credentials
 
 import (
 	"errors"
-	"github.com/posit-dev/publisher/internal/server_type"
 	"testing"
+
+	"github.com/posit-dev/publisher/internal/server_type"
 
 	"github.com/posit-dev/publisher/internal/logging/loggingtest"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
@@ -27,7 +28,7 @@ func (s *CredentialsServiceTestSuite) SetupTest() {
 	s.log = loggingtest.NewMockLogger()
 }
 
-func (s *CredentialsServiceTestSuite) TestCredential() {
+func (s *CredentialsServiceTestSuite) TestCredential_ConflictCheck_Connect() {
 	cred := Credential{
 		GUID:   "18cd5640-bee5-4b2a-992a-a2725ab6103d",
 		Name:   "friedtofu",
@@ -55,6 +56,39 @@ func (s *CredentialsServiceTestSuite) TestCredential() {
 		ApiKey: "abcdeC2aqbh7dg8TO43XPu7r56YDh000",
 	})
 	s.EqualError(err, "URL value conflicts with existing credential (friedtofu) URL: https://a1.connect-server:3939/connect")
+}
+
+func (s *CredentialsServiceTestSuite) TestCredential_ConflictCheck_ConnectCloud() {
+	cloudCred := Credential{
+		GUID:         "18cd5640-bee5-4b2a-992a-a2725ab6103d",
+		Name:         "friedtofu",
+		URL:          "https://api.connect.posit.cloud",
+		AccountID:    "123",
+		AccountName:  "fried tofu",
+		RefreshToken: "refresh-token",
+		AccessToken:  "access-token",
+	}
+	err := cloudCred.ConflictCheck(Credential{
+		GUID:         "18cd5640-bee5-4b2a-992a-a2725ab6103d",
+		Name:         "nofriedtofu",
+		URL:          "https://api.connect.posit.cloud",
+		AccountID:    "123",
+		AccountName:  "friedtofu",
+		RefreshToken: "refresh-token",
+		AccessToken:  "access-token",
+	})
+	s.EqualError(err, "URL value conflicts with existing credential (friedtofu) URL: https://api.connect.posit.cloud, account name: fried tofu")
+
+	err = cloudCred.ConflictCheck(Credential{
+		GUID:         "18cd5640-bee5-4b2a-992a-a2725ab6103d",
+		Name:         "nofriedtofu",
+		URL:          "https://api.connect.posit.cloud",
+		AccountID:    "456",
+		AccountName:  "friedpotato",
+		RefreshToken: "refresh-token",
+		AccessToken:  "access-token",
+	})
+	s.NoError(err)
 }
 
 func (s *CredentialsServiceTestSuite) TestCredentialRecord() {
@@ -173,7 +207,11 @@ func TestCreateCredentialDetailsTestSuite(t *testing.T) {
 }
 
 func (s *CreateCredentialDetailsTestSuite) TestToCredential() {
-	details := CreateCredentialDetails{Name: "newcred", URL: "https://b2.connect-server:3939/connect", ApiKey: "abcdeC2aqbh7dg8TO43XPu7r56YDh002"}
+	details := CreateCredentialDetails{
+		ServerType: server_type.ServerTypeConnect,
+		Name:       "newcred",
+		URL:        "https://b2.connect-server:3939/connect",
+		ApiKey:     "abcdeC2aqbh7dg8TO43XPu7r56YDh002"}
 	cred, err := details.ToCredential()
 	s.NoError(err)
 	s.NotEmpty(cred.GUID)
@@ -202,6 +240,6 @@ func (s *CreateCredentialDetailsTestSuite) TestToCredential_BlankDataErr() {
 	for _, createCredDetails := range testCases {
 		_, err := createCredDetails.ToCredential()
 		s.Error(err)
-		s.Equal(err.Error(), "New credentials require non-empty Name, URL and either Api Key, Snowflake, or Connect Cloud connection fields")
+		s.Equal("New credentials require non-empty Name, URL, Server Type, and either API Key, Snowflake, or Connect Cloud connection fields", err.Error())
 	}
 }

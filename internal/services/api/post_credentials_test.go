@@ -9,6 +9,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/posit-dev/publisher/internal/server_type"
+
 	"github.com/posit-dev/publisher/internal/credentials"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
@@ -36,9 +38,10 @@ func (s *PostCredentialTestSuite) SetupTest() {
 func (s *PostCredentialTestSuite) Test201() {
 
 	body := PostCredentialsRequest{
-		Name:   "example",
-		URL:    "http://example.com",
-		ApiKey: "12345",
+		ServerType: server_type.ServerTypeConnect,
+		Name:       "example",
+		URL:        "http://example.com",
+		ApiKey:     "12345",
 	}
 
 	data, err := json.Marshal(body)
@@ -59,15 +62,15 @@ func (s *PostCredentialTestSuite) Test409() {
 	name := "example"
 	url := "http://example.com"
 	ak := "12345"
-	sf := ""
 
 	cs, err := credentials.NewCredentialsService(s.log)
 	s.NoError(err)
 
-	_, err = cs.Set(credentials.CreateCredentialDetails{Name: name, URL: url, ApiKey: ak, SnowflakeConnection: sf})
+	_, err = cs.Set(credentials.CreateCredentialDetails{ServerType: server_type.ServerTypeConnect, Name: name, URL: url, ApiKey: ak})
 	s.NoError(err)
 
 	cred := PostCredentialsRequest{
+		ServerType:          server_type.ServerTypeConnect,
 		Name:                "collision",
 		URL:                 "http://example.com",
 		ApiKey:              "12345",

@@ -54,18 +54,23 @@ func (e *NotFoundError) Error() string {
 	return fmt.Sprintf("credential not found: %s", e.GUID)
 }
 
-// URL is used by another credential
-type URLCollisionError struct {
-	Name string
-	URL  string
+// Credential has already been defined
+type CredentialIdentityCollision struct {
+	Name        string
+	URL         string
+	AccountName string
 }
 
-func NewURLCollisionError(name, url string) *URLCollisionError {
-	return &URLCollisionError{name, url}
+func NewIdentityCollisionError(name, url, accountName string) *CredentialIdentityCollision {
+	return &CredentialIdentityCollision{Name: name, URL: url, AccountName: accountName}
 }
 
-func (e *URLCollisionError) Error() string {
-	return fmt.Sprintf("URL value conflicts with existing credential (%s) URL: %s", e.Name, e.URL)
+func (e *CredentialIdentityCollision) Error() string {
+	msg := fmt.Sprintf("URL value conflicts with existing credential (%s) URL: %s", e.Name, e.URL)
+	if e.AccountName != "" {
+		msg += fmt.Sprintf(", account name: %s", e.AccountName)
+	}
+	return msg
 }
 
 // Name is used by another credential
@@ -101,7 +106,7 @@ func NewIncompleteCredentialError() *IncompleteCredentialError {
 }
 
 func (e *IncompleteCredentialError) Error() string {
-	return "New credentials require non-empty Name, URL and either Api Key, Snowflake, or Connect Cloud connection fields"
+	return "New credentials require non-empty Name, URL, Server Type, and either API Key, Snowflake, or Connect Cloud connection fields"
 }
 
 func NewBackupFileAgentError(filename string, err error) *types.AgentError {
