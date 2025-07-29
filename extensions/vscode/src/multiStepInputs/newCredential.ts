@@ -111,9 +111,21 @@ export async function newCredential(
       promptStepNumbers: {},
     };
 
-    await MultiStepInput.run({
-      step: (input) => inputPlatform(input, state),
-    });
+    if (extensionSettings.enableConnectCloud()) {
+      // select the platform only when the enableConnectCloud config has been turned on
+      await MultiStepInput.run({
+        step: (input) => inputPlatform(input, state),
+      });
+    } else {
+      // default to CONNECT (since there are no other products at the moment)
+      // when the enableConnectCloud config is turned off
+      serverType = ServerType.CONNECT;
+      platformName = PlatformName.CONNECT;
+
+      await MultiStepInput.run({
+        step: (input) => inputServerUrl(input, state),
+      });
+    }
     return state;
   }
 
@@ -121,59 +133,48 @@ export async function newCredential(
   // Step: Select the platform for the credential (used for all platforms)
   // ***************************************************************
   async function inputPlatform(input: MultiStepInput, state: MultiStepState) {
-    // skip platform selection unless the enableConnectCloud config has been turned on
-    if (extensionSettings.enableConnectCloud()) {
-      const pick = await input.showQuickPick({
-        title: state.title,
-        step: 0,
-        totalSteps: 0,
-        placeholder: "Please select the platform for the new credential.",
-        items: platformList,
-        buttons: [],
-        shouldResume: () => Promise.resolve(false),
-        ignoreFocusOut: true,
-      });
+    const pick = await input.showQuickPick({
+      title: state.title,
+      step: 0,
+      totalSteps: 0,
+      placeholder: "Please select the platform for the new credential.",
+      items: platformList,
+      buttons: [],
+      shouldResume: () => Promise.resolve(false),
+      ignoreFocusOut: true,
+    });
 
-      const enumKey = getEnumKeyByEnumValue(PlatformName, pick.label);
-      // fallback to CONNECT if there is ever a case when the enumKey is not found
-      serverType = enumKey ? ServerType[enumKey] : ServerType.CONNECT;
-      platformName = pick.label as PlatformName;
+    const enumKey = getEnumKeyByEnumValue(PlatformName, pick.label);
+    // fallback to CONNECT if there is ever a case when the enumKey is not found
+    serverType = enumKey ? ServerType[enumKey] : ServerType.CONNECT;
+    platformName = pick.label as PlatformName;
 
-      if (isConnectCloud(serverType)) {
-        // default everything outside the Connect Cloud fields to empty strings
-        state.data.url = "";
-        state.data.apiKey = "";
-        state.data.snowflakeConnection = "";
+    if (isConnectCloud(serverType)) {
+      // default everything outside the Connect Cloud fields to empty strings
+      state.data.url = "";
+      state.data.apiKey = "";
+      state.data.snowflakeConnection = "";
 
-        return {
-          step: (input: MultiStepInput) => authenticate(input, state),
-          skippable: true,
-        };
-      }
-
-      if (isConnect(serverType)) {
-        // default everything outside the Connect fields to empty strings
-        state.data.accessToken = "";
-        state.data.refreshToken = "";
-        state.data.accountId = "";
-        state.data.accountName = "";
-
-        return {
-          step: (input: MultiStepInput) => inputServerUrl(input, state),
-        };
-      }
-
-      // Should not land here since the platform is forcefully picked in the very first step
-      return;
+      return {
+        step: (input: MultiStepInput) => authenticate(input, state),
+        skippable: true,
+      };
     }
 
-    // default to CONNECT, since there are no other products at the moment
-    serverType = ServerType.CONNECT;
-    platformName = PlatformName.CONNECT;
+    if (isConnect(serverType)) {
+      // default everything outside the Connect fields to empty strings
+      state.data.accessToken = "";
+      state.data.refreshToken = "";
+      state.data.accountId = "";
+      state.data.accountName = "";
 
-    return {
-      step: (input: MultiStepInput) => inputServerUrl(input, state),
-    };
+      return {
+        step: (input: MultiStepInput) => inputServerUrl(input, state),
+      };
+    }
+
+    // Should not land here since the platform is forcefully picked in the very first step
+    return;
   }
 
   // ***************************************************************

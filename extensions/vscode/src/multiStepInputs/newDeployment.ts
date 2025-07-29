@@ -549,6 +549,7 @@ export async function newDeployment(
     newDeploymentData.title = title;
     return {
       step: (input: MultiStepInput) => pickCredentials(input, state),
+      skippable: newCredentialForced(),
     };
   }
 
@@ -577,78 +578,73 @@ export async function newDeployment(
       });
       newDeploymentData.existingCredentialName = pick.label;
 
-      if (newCredentialSelected()) {
-        // the user opted for creating a new credential
-        return {
-          step: (input: MultiStepInput) => inputPlatform(input, state),
-        };
+      if (!newCredentialSelected()) {
+        // the user selected an existing credential, bail out
+        return;
       }
-      // the user selected an existing credential, so no need for any other steps
-      return;
     }
-    // there are no existing credentials, force the user to create a new credential
-    return {
-      step: (input: MultiStepInput) => inputPlatform(input, state),
-    };
+
+    // either the user opted for creating a brand new credential or
+    // there are no existing credentials, so force the user to create a new credential
+    if (extensionSettings.enableConnectCloud()) {
+      // select the platform only when the enableConnectCloud config has been turned on
+      return { step: (input: MultiStepInput) => inputPlatform(input, state) };
+    } else {
+      // default to CONNECT (since there are no other products at the moment)
+      // when the enableConnectCloud config is turned off
+      serverType = ServerType.CONNECT;
+      platformName = PlatformName.CONNECT;
+
+      return { step: (input: MultiStepInput) => inputServerUrl(input, state) };
+    }
   }
 
   // ***************************************************************
   // Step: New Credentials - Select the platform (used for all platforms)
   // ***************************************************************
   async function inputPlatform(input: MultiStepInput, state: MultiStepState) {
-    // skip platform selection unless the enableConnectCloud config has been turned on
-    if (extensionSettings.enableConnectCloud()) {
-      const pick = await input.showQuickPick({
-        title: state.title,
-        step: 0,
-        totalSteps: 0,
-        placeholder: "Please select the platform for the new credential.",
-        items: platformList,
-        buttons: [],
-        shouldResume: () => Promise.resolve(false),
-        ignoreFocusOut: true,
-      });
+    const pick = await input.showQuickPick({
+      title: state.title,
+      step: 0,
+      totalSteps: 0,
+      placeholder: "Please select the platform for the new credential.",
+      items: platformList,
+      buttons: [],
+      shouldResume: () => Promise.resolve(false),
+      ignoreFocusOut: true,
+    });
 
-      const enumKey = getEnumKeyByEnumValue(PlatformName, pick.label);
-      // fallback to CONNECT if there is ever a case when the enumKey is not found
-      serverType = enumKey ? ServerType[enumKey] : ServerType.CONNECT;
-      platformName = pick.label as PlatformName;
+    const enumKey = getEnumKeyByEnumValue(PlatformName, pick.label);
+    // fallback to CONNECT if there is ever a case when the enumKey is not found
+    serverType = enumKey ? ServerType[enumKey] : ServerType.CONNECT;
+    platformName = pick.label as PlatformName;
 
-      if (isConnectCloud(serverType)) {
-        // default everything outside the Connect Cloud fields to empty strings
-        newDeploymentData.newCredentials.url = "";
-        newDeploymentData.newCredentials.apiKey = "";
-        newDeploymentData.newCredentials.snowflakeConnection = "";
+    if (isConnectCloud(serverType)) {
+      // default everything outside the Connect Cloud fields to empty strings
+      newDeploymentData.newCredentials.url = "";
+      newDeploymentData.newCredentials.apiKey = "";
+      newDeploymentData.newCredentials.snowflakeConnection = "";
 
-        return {
-          step: (input: MultiStepInput) => authenticate(input, state),
-          skippable: true,
-        };
-      }
-
-      if (isConnect(serverType)) {
-        // default everything outside the Connect fields to empty strings
-        newDeploymentData.newCredentials.accessToken = "";
-        newDeploymentData.newCredentials.refreshToken = "";
-        newDeploymentData.newCredentials.accountId = "";
-        newDeploymentData.newCredentials.accountName = "";
-
-        return {
-          step: (input: MultiStepInput) => inputServerUrl(input, state),
-        };
-      }
-
-      // Should not land here since the platform is forcefully picked in the very first step
-      return;
+      return {
+        step: (input: MultiStepInput) => authenticate(input, state),
+        skippable: true,
+      };
     }
 
-    // default to CONNECT, since there are no other products at the moment
-    serverType = ServerType.CONNECT;
-    platformName = PlatformName.CONNECT;
+    if (isConnect(serverType)) {
+      // default everything outside the Connect fields to empty strings
+      newDeploymentData.newCredentials.accessToken = "";
+      newDeploymentData.newCredentials.refreshToken = "";
+      newDeploymentData.newCredentials.accountId = "";
+      newDeploymentData.newCredentials.accountName = "";
 
-    return {
-      step: (input: MultiStepInput) => inputServerUrl(input, state),
-    };
+      return {
+        step: (input: MultiStepInput) => inputServerUrl(input, state),
+      };
+    }
+
+    // Should not land here since the platform is forcefully picked in the very first step
+    return;
   }
 
   // ***************************************************************
@@ -1131,14 +1127,15 @@ export async function newDeployment(
     state: MultiStepState,
   ) {
     const currentName = newDeploymentData.newCredentials.name || "";
+    const accountName = newDeploymentData.newCredentials.accountName || "";
 
     const name = await input.showInputBox({
       title: state.title,
       step: 0,
       totalSteps: 0,
       value: currentName,
-      prompt: "Enter a unique nickname for this server.",
-      placeholder: `${platformName}`,
+      prompt: `Enter a unique nickname for this ${isConnectCloud(serverType) ? "account" : "server"}.`,
+      placeholder: `${isConnectCloud(serverType) ? accountName : platformName}`,
       finalValidation: (input: string) => {
         input = input.trim();
         if (input === "") {
