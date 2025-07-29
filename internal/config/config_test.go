@@ -87,19 +87,6 @@ func (s *ConfigSuite) TestFromExampleFile() {
 	s.Equal(true, *valuePtr)
 }
 
-func (s *ConfigSuite) TestFromExampleV3File() {
-	realDir, err := util.Getwd(nil)
-	s.NoError(err)
-	path := realDir.Join("..", "schema", "schemas", "config-v3.toml")
-	cfg, err := FromFile(path)
-	s.NoError(err)
-	s.NotNil(cfg)
-
-	valuePtr := cfg.Connect.Kubernetes.DefaultPyEnvironmentManagement
-	s.NotNil(valuePtr)
-	s.Equal(true, *valuePtr)
-}
-
 func (s *ConfigSuite) TestFromFileErr() {
 	cfg, err := FromFile(s.cwd.Join("nonexistent.toml"))
 	s.ErrorIs(err, fs.ErrNotExist)
@@ -157,7 +144,7 @@ func (s *ConfigSuite) TestWriteComments() {
 
 const commentedConfig = `# These are comments.
 # They will be preserved.
-'$schema' = 'https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v4.json'
+'$schema' = 'https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json'
 server_type = 'connect'
 type = 'html'
 entrypoint = 'index.html'

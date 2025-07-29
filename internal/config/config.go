@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/pelletier/go-toml/v2"
-
 	"github.com/posit-dev/publisher/internal/schema"
 	"github.com/posit-dev/publisher/internal/util"
 )
@@ -78,7 +77,7 @@ func FromFile(path util.AbsolutePath) (*Config, error) {
 }
 
 func ValidateFile(path util.AbsolutePath) error {
-	validator, err := schema.NewValidator[Config](schema.ConfigSchemaURLs...)
+	validator, err := schema.NewValidator[Config](schema.ConfigSchemaURL)
 	if err != nil {
 		return err
 	}
