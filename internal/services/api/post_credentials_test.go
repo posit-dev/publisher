@@ -57,6 +57,36 @@ func (s *PostCredentialTestSuite) Test201() {
 	s.Equal(http.StatusCreated, rec.Result().StatusCode)
 }
 
+func (s *PostCredentialTestSuite) Test201_ConnectCloud() {
+
+	body := PostCredentialsRequest{
+		ServerType:   server_type.ServerTypeConnectCloud,
+		Name:         "example",
+		AccountID:    "123",
+		AccountName:  "my account",
+		RefreshToken: "123",
+		AccessToken:  "123",
+	}
+
+	data, err := json.Marshal(body)
+	s.NoError(err)
+
+	req, err := http.NewRequest("POST", "http://example.com/api/credentials", bytes.NewBuffer(data))
+	s.NoError(err)
+	req.Header.Set("Connect-Cloud-Environment", "staging")
+
+	rec := httptest.NewRecorder()
+	h := PostCredentialFuncHandler(s.log)
+	h(rec, req)
+
+	s.Equal(http.StatusCreated, rec.Result().StatusCode)
+
+	response := PostCredentialsResponse{}
+	err = json.NewDecoder(rec.Body).Decode(&response)
+	s.NoError(err)
+	s.Equal(response.URL, "https://api.staging.connect.posit.cloud", "URL should be set according to the environment header")
+}
+
 func (s *PostCredentialTestSuite) Test409() {
 
 	name := "example"
