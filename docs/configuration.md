@@ -68,13 +68,13 @@ project-root/
 
 #### has_parameters
 
-_Valid when `server_type` is: `connect`, `snowflake`_
+\_Valid when `product_type` is: `connect`
 
 `true` if this is a report that accepts parameters.
 
 #### validate
 
-_Valid when `server_type` is: `connect`, `snowflake`_
+\_Valid when `product_type` is: `connect`
 
 Access the content after deploying, to validate that it is live. Defaults to `true`.
 
@@ -118,13 +118,13 @@ File containing package dependencies. The file must exist and be listed under 'f
 
 #### package_manager
 
-_Valid when `server_type` is: `connect`, `snowflake`_
+\_Valid when `product_type` is: `connect`
 
 Package manager that will install the dependencies. Supported values are `pip` and `none`. If package-manager is `none`, dependencies will not be installed.
 
 #### version
 
-_Valid when `server_type` is: `connect`, `snowflake`_
+\_Valid when `product_type` is: `connect`
 
 Python version. The server must have a matching Python major/minor version in order to run the content.
 
@@ -141,13 +141,13 @@ package_manager = "pip"
 
 #### package_file
 
-_Valid when `server_type` is: `connect`, `snowflake`_
+\_Valid when `product_type` is: `connect`
 
 File containing package dependencies. This is usually `renv.lock`. The file must exist and be listed under 'files'.
 
 #### package_manager
 
-_Valid when `server_type` is: `connect`, `snowflake`_
+\_Valid when `product_type` is: `connect`
 
 Package manager that will install the dependencies. Supported values are `renv` and `none`. If package-manager is `none`, dependencies will be assumed to be pre-installed on the server.
 
@@ -166,7 +166,7 @@ package_manager = "renv"
 
 ## Jupyter settings
 
-_Valid when `server_type` is: `connect`, `snowflake`_
+\_Valid when `product_type` is: `connect`
 
 ### hide_all_input
 
@@ -186,7 +186,7 @@ hide_tagged_input = false
 
 ## Quarto settings
 
-_Valid when `server_type` is: `connect`, `snowflake`_
+\_Valid when `product_type` is: `connect`
 
 #### engines
 
@@ -204,7 +204,7 @@ engines = ["knitr"]
 
 ## Connect-specific settings
 
-_Valid when `server_type` is: `connect`, `snowflake`_
+\_Valid when `product_type` is: `connect`
 
 ### Access settings
 
@@ -336,7 +336,7 @@ read_timeout = 30
 
 ## Connect-specific settings
 
-_Valid when `server_type` is: `connect_cloud`_
+_Valid when `product_type` is: `connect_cloud`_
 
 ### vanity_name
 
