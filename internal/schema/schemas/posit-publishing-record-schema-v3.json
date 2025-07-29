@@ -27,8 +27,7 @@
       "type": "string",
       "description": "Type of server",
       "enum": ["connect", "snowflake"],
-      "examples": ["connect"],
-      "default": "connect"
+      "examples": ["connect"]
     },
     "id": {
       "type": "string",

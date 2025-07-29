@@ -3,11 +3,15 @@ package deployment
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"github.com/posit-dev/publisher/internal/server_type"
 	"io/fs"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/posit-dev/publisher/internal/server_type"
+
+	"github.com/spf13/afero"
+	"github.com/stretchr/testify/suite"
 
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/logging"
@@ -15,8 +19,6 @@ import (
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/spf13/afero"
-	"github.com/stretchr/testify/suite"
 )
 
 type DeploymentSuite struct {
@@ -45,7 +47,7 @@ func (s *DeploymentSuite) createDeploymentFile(name string) *Deployment {
 	d.Configuration = config.New()
 	d.ServerType = server_type.ServerTypeConnect
 	d.DeployedAt = time.Now().UTC().Format(time.RFC3339)
-	d.Configuration.ServerType = server_type.ServerTypeConnect
+	d.Configuration.ProductType = config.ProductTypeConnect
 	d.Configuration.Type = config.ContentTypePythonDash
 	d.Configuration.Entrypoint = "app.py"
 	d.Configuration.Python = &config.Python{
@@ -90,32 +92,6 @@ func (s *DeploymentSuite) TestFromExampleFile() {
 	s.NotNil(d)
 
 	cfgPath := schemaDir.Join("config.toml")
-	cfg, err := config.FromFile(cfgPath)
-	s.NoError(err)
-
-	// Deployments do not round-trip config comments
-	cfg.Comments = nil
-	s.Equal(cfg, d.Configuration)
-
-	s.Equal("https://connect.example.com", d.ServerURL)
-	s.Equal(types.ContentID("de2e7bdb-b085-401e-a65c-443e40009749"), d.ID)
-	s.Equal(types.BundleID("123"), d.BundleID)
-	s.Equal("https://connect.example.com/__api__/v1/content/de2e7bdb-b085-401e-a65c-443e40009749/bundles/123/download", d.BundleURL)
-	s.Equal("https://connect.example.com/connect/#/apps/de2e7bdb-b085-401e-a65c-443e40009749", d.DashboardURL)
-	s.Equal("https://connect.example.com/connect/#/apps/de2e7bdb-b085-401e-a65c-443e40009749/logs", d.LogsURL)
-}
-
-func (s *DeploymentSuite) TestFromExampleV3File() {
-	realDir, err := util.Getwd(nil)
-	s.NoError(err)
-	schemaDir := realDir.Join("..", "schema", "schemas")
-
-	path := schemaDir.Join("record-v3.toml")
-	d, err := FromFile(path)
-	s.NoError(err)
-	s.NotNil(d)
-
-	cfgPath := schemaDir.Join("config-v3.toml")
 	cfg, err := config.FromFile(cfgPath)
 	s.NoError(err)
 

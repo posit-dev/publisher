@@ -13,12 +13,13 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
+	"github.com/spf13/afero"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/spf13/afero"
-	"github.com/stretchr/testify/suite"
 )
 
 type PutConfigurationSuite struct {
@@ -54,7 +55,7 @@ func (s *PutConfigurationSuite) TestPutConfiguration() {
 
 	req.Body = io.NopCloser(strings.NewReader(`{
 		"$schema": "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json",
-        "serverType": "connect",
+        "productType": "connect",
 		"comments": [
 			" This is a configuration file",
 			" Use it to configure your project"
@@ -167,7 +168,7 @@ func (s *PutConfigurationSuite) TestPutConfigurationSubdir() {
 
 	req.Body = io.NopCloser(strings.NewReader(`{
 		"$schema": "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json",
-        "serverType": "connect",
+        "productType": "connect",
 		"comments": [
 			" This is a configuration file",
 			" Use it to configure your project"

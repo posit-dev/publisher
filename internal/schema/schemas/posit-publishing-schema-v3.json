@@ -24,10 +24,10 @@
         "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json"
       ]
     },
-    "server_type": {
+    "product_type": {
       "type": "string",
-      "description": "The server type that this content will be deployed to.",
-      "enum": ["connect", "snowflake"],
+      "description": "The product that this content will be deployed to.",
+      "enum": ["connect"],
       "default": "connect"
     },
     "type": {

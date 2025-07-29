@@ -4,19 +4,19 @@ package api
 
 import (
 	"encoding/json"
-	"github.com/posit-dev/publisher/internal/server_type"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"testing"
 
 	"github.com/gorilla/mux"
+	"github.com/spf13/afero"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/spf13/afero"
-	"github.com/stretchr/testify/suite"
 )
 
 type GetConfigRequirementsSuite struct {
@@ -46,7 +46,7 @@ func (s *GetConfigRequirementsSuite) TestGetConfigRequirements() {
 	s.cwd.Join("requirements-dev.txt").WriteFile(reqs, 0666)
 
 	cfg := config.New()
-	cfg.ServerType = server_type.ServerTypeConnect
+	cfg.ProductType = config.ProductTypeConnect
 	cfg.Type = config.ContentTypeHTML
 	cfg.Python = &config.Python{
 		Version:        "3.11.3",
@@ -92,7 +92,7 @@ func (s *GetConfigRequirementsSuite) TestGetConfigRequirementsNotFound() {
 
 func (s *GetConfigRequirementsSuite) TestGetConfigRequirementsNoRequirementsFile() {
 	cfg := config.New()
-	cfg.ServerType = server_type.ServerTypeConnect
+	cfg.ProductType = config.ProductTypeConnect
 	cfg.Type = config.ContentTypeHTML
 	cfg.Python = &config.Python{
 		Version:        "3.11.3",
@@ -115,7 +115,7 @@ func (s *GetConfigRequirementsSuite) TestGetConfigRequirementsNoRequirementsFile
 
 func (s *GetConfigRequirementsSuite) TestGetConfigRequirementsNoPythonInConfig() {
 	cfg := config.New()
-	cfg.ServerType = server_type.ServerTypeConnect
+	cfg.ProductType = config.ProductTypeConnect
 	cfg.Type = config.ContentTypeHTML
 	err := cfg.WriteFile(config.GetConfigPath(s.cwd, "myConfig"))
 	s.NoError(err)
@@ -141,7 +141,7 @@ func (s *GetConfigRequirementsSuite) TestGetConfigRequirementsSubdir() {
 	s.NoError(err)
 
 	cfg := config.New()
-	cfg.ServerType = server_type.ServerTypeConnect
+	cfg.ProductType = config.ProductTypeConnect
 	cfg.Type = config.ContentTypeHTML
 	cfg.Python = &config.Python{
 		Version:        "3.11.3",
