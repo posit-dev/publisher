@@ -217,3 +217,22 @@ func (s *ConnectCloudClientSuite) TestGetAuthorization() {
 	s.True(response.Authorized)
 	s.Equal("authorization-token-123", response.Token)
 }
+
+func (s *ConnectCloudClientSuite) TestPublishContent() {
+	httpClient := &http_client.MockHTTPClient{}
+
+	contentID := "449e7a5c-69d3-4b8a-aaaf-5c9b713ebc65"
+	expectedURL := "/v1/content/" + contentID + "/publish"
+
+	httpClient.On("Post", expectedURL, nil, mock.Anything, mock.Anything).
+		Return(nil)
+
+	client := &ConnectCloudClient{
+		client: httpClient,
+		log:    logging.New(),
+	}
+
+	err := client.PublishContent(contentID)
+	s.NoError(err)
+	httpClient.AssertCalled(s.T(), "Post", expectedURL, nil, mock.Anything, mock.Anything)
+}

@@ -52,3 +52,8 @@ func (m *MockClient) GetRevision(revisionID string) (*types.Revision, error) {
 	args := m.Called(revisionID)
 	return args.Get(0).(*types.Revision), args.Error(1)
 }
+
+func (m *MockClient) PublishContent(contentID string) error {
+	args := m.Called(contentID)
+	return args.Error(0)
+}

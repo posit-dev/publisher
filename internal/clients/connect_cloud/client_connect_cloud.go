@@ -109,3 +109,12 @@ func (c ConnectCloudClient) GetAuthorization(request *types.AuthorizationRequest
 	}
 	return &into, nil
 }
+
+func (c ConnectCloudClient) PublishContent(contentID string) error {
+	url := fmt.Sprintf("/v1/content/%s/publish", contentID)
+	err := c.client.Post(url, nil, nil, c.log)
+	if err != nil {
+		return err
+	}
+	return nil
+}

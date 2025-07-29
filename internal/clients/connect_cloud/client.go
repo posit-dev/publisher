@@ -12,4 +12,5 @@ type APIClient interface {
 	UpdateContent(request *types.UpdateContentRequest) (*types.ContentResponse, error)
 	GetAuthorization(request *types.AuthorizationRequest) (*types.AuthorizationResponse, error)
 	GetRevision(revisionID string) (*types.Revision, error)
+	PublishContent(contentID string) error
 }
