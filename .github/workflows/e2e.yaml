@@ -102,6 +102,7 @@ jobs:
         run: npx cypress run
         env:
           CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
+          CONNECT_CLOUD_ENV: ${{ env.CONNECT_CLOUD_ENV }} # defaults to staging
           CI: true
 
       - name: Run Cypress tests (headed mode)
@@ -109,6 +110,7 @@ jobs:
         run: npx cypress run --headed --browser electron
         env:
           CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
+          CONNECT_CLOUD_ENV: ${{ env.CONNECT_CLOUD_ENV }} # defaults to staging
           CI: true
 
       - name: Upload Cypress screenshots on failure

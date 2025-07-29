@@ -29,6 +29,7 @@ module.exports = defineConfig({
     BOOTSTRAP_SECRET_KEY: "bootstrap-secret.key", // To be updated by Cypress when spinning up
     CONNECT_SERVER_URL: "http://localhost:3939",
     CONNECT_MANAGER_URL: "http://localhost:4723",
+    CONNECT_CLOUD_ENV: process.env.CONNECT_CLOUD_ENV || "staging",
   },
   chromeWebSecurity: false,
   video: isCI ? true : false,
