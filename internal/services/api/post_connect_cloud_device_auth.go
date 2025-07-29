@@ -8,11 +8,14 @@ import (
 	"time"
 
 	"github.com/posit-dev/publisher/internal/clients/cloud_auth"
+
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/types"
 )
 
 var cloudAuthClientFactory = cloud_auth.NewCloudAuthClient
+
+const cloudAuthBaseURLHeader = "Cloud-Auth-Base-Url"
 
 type connectCloudDeviceAuthResponseBody struct {
 	DeviceCode      string `json:"deviceCode"`

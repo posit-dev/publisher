@@ -32,6 +32,7 @@ func NewCloudAuthClient(
 	timeout time.Duration) APIClient {
 	baseURL, clientID := getBaseURLAndClientID(environment)
 	httpClient := http_client.NewBasicHTTPClient(baseURL, timeout)
+
 	return &CloudAuthClient{
 		log:      log,
 		client:   httpClient,

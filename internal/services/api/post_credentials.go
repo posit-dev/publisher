@@ -77,7 +77,7 @@ func PostCredentialFuncHandler(log logging.Logger) http.HandlerFunc {
 			AccessToken:         body.AccessToken,
 		})
 		if err != nil {
-			if _, ok := err.(*credentials.URLCollisionError); ok {
+			if _, ok := err.(*credentials.CredentialIdentityCollision); ok {
 				http.Error(w, http.StatusText(http.StatusConflict), http.StatusConflict)
 				return
 			}
