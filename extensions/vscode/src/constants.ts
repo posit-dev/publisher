@@ -133,7 +133,8 @@ const connectCloudLogoutUrlStaging = "https://login.staging.posit.cloud/logout";
 const connectCloudSignupUrlStaging =
   "https://login.staging.posit.cloud/register";
 
+// TODO: Introduce a more sophisticated mechanism for getting the proper URLs per environment,
+// it will need to work nicely within CI for automated E2E test runs against staging
 export const CONNECT_CLOUD_SIGNUP_URL_STAGING = `${connectCloudLogoutUrlStaging}?redirect=${connectCloudSignupUrlStaging}?redirect=`;
-
 export const CONNECT_CLOUD_URL_STAGING =
   "https://staging.connect.posit.cloud/home";
