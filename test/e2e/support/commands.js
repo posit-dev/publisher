@@ -134,7 +134,9 @@ EOF`,
 });
 
 Cypress.Commands.add("clearupDeployments", (subdir) => {
-  cy.exec(`rm -rf content-workspace/${subdir}/.posit`);
+  cy.exec(`rm -rf content-workspace/${subdir}/.posit`, {
+    failOnNonZeroExit: false,
+  });
 });
 
 // returns
@@ -230,4 +232,30 @@ Cypress.Commands.add("resetConnect", () => {
   cy.resetConnectData();
   cy.startConnect();
   cy.bootstrapAdmin();
+});
+
+Cypress.Commands.add("waitForPublisherIframe", (timeout = 60000) => {
+  cy.get("iframe", { timeout }).should("exist");
+});
+
+// Debug: Print all iframes and their attributes before trying to select the webview
+Cypress.Commands.add("debugIframes", () => {
+  cy.get("iframe", { timeout: 20000 }).each(($el, idx) => {
+    cy.wrap($el)
+      .invoke("attr", "class")
+      .then((cls) => {
+        cy.wrap($el)
+          .invoke("attr", "id")
+          .then((id) => {
+            cy.wrap($el)
+              .invoke("attr", "src")
+              .then((src) => {
+                cy.task(
+                  "print",
+                  `iframe[${idx}] class=${cls} id=${id} src=${src}`,
+                );
+              });
+          });
+      });
+  });
 });

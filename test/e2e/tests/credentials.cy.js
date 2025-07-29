@@ -11,6 +11,8 @@ describe("Credentials Section", () => {
     cy.getPublisherSidebarIcon()
       .should("be.visible", { timeout: 10000 })
       .click();
+    cy.waitForPublisherIframe(); // Wait after triggering extension
+    cy.debugIframes();
 
     cy.toggleCredentialsSection();
     cy.debugIframes();
@@ -60,6 +62,8 @@ describe("Credentials Section", () => {
     cy.getPublisherSidebarIcon()
       .should("be.visible", { timeout: 10000 })
       .click();
+    cy.waitForPublisherIframe(); // Wait after triggering extension
+    cy.debugIframes();
 
     cy.toggleCredentialsSection();
     cy.debugIframes();

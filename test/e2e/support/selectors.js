@@ -96,25 +96,3 @@ Cypress.Commands.add("findInPublisherWebview", (selector) => {
     return Cypress.$(webview).find(selector);
   });
 });
-
-// Debug: Print all iframes and their attributes before trying to select the webview
-Cypress.Commands.add("debugIframes", () => {
-  cy.get("iframe", { timeout: 20000 }).each(($el, idx) => {
-    cy.wrap($el)
-      .invoke("attr", "class")
-      .then((cls) => {
-        cy.wrap($el)
-          .invoke("attr", "id")
-          .then((id) => {
-            cy.wrap($el)
-              .invoke("attr", "src")
-              .then((src) => {
-                cy.task(
-                  "print",
-                  `iframe[${idx}] class=${cls} id=${id} src=${src}`,
-                );
-              });
-          });
-      });
-  });
-});

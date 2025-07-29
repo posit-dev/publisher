@@ -2,7 +2,6 @@
 
 describe("Create Deployments", () => {
   beforeEach(() => {
-    cy.exec("chmod -R u+rw content-workspace");
     cy.resetConnect();
     cy.setAdminCredentials();
     cy.clearupDeployments(".");
@@ -11,6 +10,8 @@ describe("Create Deployments", () => {
   });
 
   it("fastapi at top of workspace", () => {
+    cy.waitForPublisherIframe(); // Wait after triggering extension
+    cy.debugIframes();
     cy.createDeployment(
       ".",
       "simple.py",
@@ -45,6 +46,8 @@ describe("Create Deployments", () => {
   });
 
   it("fastAPI in subdirectory of workspace", () => {
+    cy.waitForPublisherIframe(); // Wait after triggering extension
+    cy.debugIframes();
     cy.createDeployment(
       "fastapi-simple",
       "fastapi-main.py",

@@ -8,15 +8,15 @@ describe("Detect error in config", () => {
     cy.resetConnect();
     cy.setAdminCredentials();
     cy.visit("/").debug();
-
     // Select the publisher extension
     cy.getPublisherSidebarIcon()
       .should("be.visible", { timeout: 10000 })
       .click();
-    cy.debugIframes();
   });
 
   it("Show errors when Config is invalid", () => {
+    cy.waitForPublisherIframe();
+    cy.debugIframes();
     // click on the select deployment button
     cy.publisherWebview()
       .findByTestId("select-deployment")
@@ -52,6 +52,8 @@ describe("Detect error in config", () => {
   });
 
   it("Show errors when Config is missing", () => {
+    cy.waitForPublisherIframe();
+    cy.debugIframes();
     // click on the select deployment button
     cy.publisherWebview()
       .findByTestId("select-deployment")
