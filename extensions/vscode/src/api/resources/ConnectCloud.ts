@@ -6,10 +6,9 @@ import {
   AuthToken,
   DeviceAuth,
 } from "../types/connectCloud";
+import { CONNECT_CLOUD_ENV } from "src/constants";
 
-const cloudAuthEnvironmentHeader = {
-  "Connect-Cloud-Environment": "staging",
-};
+const envHeader = { "Connect-Cloud-Environment": CONNECT_CLOUD_ENV };
 
 export class ConnectCloud {
   private client: AxiosInstance;
@@ -31,7 +30,7 @@ export class ConnectCloud {
     return this.client.post<DeviceAuth>(
       "connect-cloud/device-auth",
       {},
-      { headers: cloudAuthEnvironmentHeader },
+      { headers: envHeader },
     );
   }
 
@@ -47,7 +46,7 @@ export class ConnectCloud {
     return this.client.post<AuthToken>(
       "connect-cloud/oauth/token",
       { deviceCode },
-      { headers: cloudAuthEnvironmentHeader },
+      { headers: envHeader },
     );
   }
 
@@ -62,7 +61,7 @@ export class ConnectCloud {
   accounts(accessToken: string) {
     return this.client.get<ConnectCloudAccount[]>("connect-cloud/accounts", {
       headers: {
-        ...cloudAuthEnvironmentHeader,
+        ...envHeader,
         Authorization: `Bearer ${accessToken}`,
       },
     });

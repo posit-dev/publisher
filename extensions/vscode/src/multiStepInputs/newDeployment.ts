@@ -61,8 +61,8 @@ import {
   vscodeOpenFiles,
 } from "src/utils/files";
 import {
-  CONNECT_CLOUD_SIGNUP_URL_STAGING,
-  CONNECT_CLOUD_URL_STAGING,
+  CONNECT_CLOUD_SIGNUP_URL,
+  CONNECT_CLOUD_URL,
   ENTRYPOINT_FILE_EXTENSIONS,
 } from "src/constants";
 import { extensionSettings } from "src/extension";
@@ -795,7 +795,7 @@ export async function newDeployment(
 
         // populate the account polling props
         connectCloudPolling = true;
-        connectCloudUrl = CONNECT_CLOUD_URL_STAGING;
+        connectCloudUrl = CONNECT_CLOUD_URL;
 
         // call the retrieveAccounts step again with the populated polling props
 
@@ -862,7 +862,7 @@ export async function newDeployment(
       return;
     }
 
-    connectCloudSignupUrl = CONNECT_CLOUD_SIGNUP_URL_STAGING;
+    connectCloudSignupUrl = CONNECT_CLOUD_SIGNUP_URL;
 
     // go to the authenticate step again to have the user sign up for an individual plan
     return {

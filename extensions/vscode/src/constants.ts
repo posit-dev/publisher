@@ -1,4 +1,6 @@
-// Copyright (C) 2024 by Posit Software, PBC.
+// Copyright (C) 2025 by Posit Software, PBC.
+
+import config from "./config";
 
 export const POSIT_FOLDER = "**/.posit";
 export const PUBLISH_FOLDER = "**/.posit/publish";
@@ -129,12 +131,6 @@ export const DebounceDelaysMS = {
   refreshPythonPackages: 1000,
 };
 
-const connectCloudLogoutUrlStaging = "https://login.staging.posit.cloud/logout";
-const connectCloudSignupUrlStaging =
-  "https://login.staging.posit.cloud/register";
-
-// TODO: Introduce a more sophisticated mechanism for getting the proper URLs per environment,
-// it will need to work nicely within CI for automated E2E test runs against staging
-export const CONNECT_CLOUD_SIGNUP_URL_STAGING = `${connectCloudLogoutUrlStaging}?redirect=${connectCloudSignupUrlStaging}?redirect=`;
-export const CONNECT_CLOUD_URL_STAGING =
-  "https://staging.connect.posit.cloud/home";
+export const CONNECT_CLOUD_ENV = config.env;
+export const CONNECT_CLOUD_SIGNUP_URL = `${config.cloudLogoutURL}?redirect=${config.cloudRegisterURL}?redirect=`;
+export const CONNECT_CLOUD_URL = config.connectCloudURL;

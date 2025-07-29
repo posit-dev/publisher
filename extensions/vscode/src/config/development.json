@@ -1,0 +1,5 @@
+{
+  "cloudLogoutURL": "https://login.staging.posit.cloud/logout",
+  "cloudRegisterURL": "https://login.staging.posit.cloud/register",
+  "connectCloudURL": "https://dev.connect.posit.cloud/home"
+}
