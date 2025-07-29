@@ -2,12 +2,9 @@
 
 ## General settings
 
-#### server_type
+#### product_type
 
-The type of server the content is being deployed to. Valid values are:
-
-- `connect` (for Posit Connect)
-- `snowflake` (for Connect on Snowflake's Snowpark Container Services)
+The type of server the content is being deployed to. Only valid value is `connect`. Defaults to `connect`.
 
 #### type
 
@@ -79,12 +76,12 @@ Access the content after deploying, to validate that it is live. Defaults to `tr
 
 #### $schema
 
-URL of the json-schema definition for this file. Must be 'https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v4.json'. TOML editing tools may use this to provide validation and/or autocomplete.
+URL of the json-schema definition for this file. Must be 'https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json'. TOML editing tools may use this to provide validation and/or autocomplete.
 
 Example:
 
 ```toml
-"$schema" = "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v4.json"
+"$schema" = "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json"
 type = "quarto-static"
 entrypoint = "report.qmd"
 title = "Regional Quarterly Sales Report"
