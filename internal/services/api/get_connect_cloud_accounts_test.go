@@ -4,10 +4,6 @@ package api
 
 import (
 	"encoding/json"
-	"github.com/posit-dev/publisher/internal/clients/connect_cloud"
-	"github.com/posit-dev/publisher/internal/clients/http_client"
-	"github.com/posit-dev/publisher/internal/events"
-	"github.com/posit-dev/publisher/internal/types"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -16,9 +12,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/posit-dev/publisher/internal/clients/connect_cloud"
+	"github.com/posit-dev/publisher/internal/clients/http_client"
+	"github.com/posit-dev/publisher/internal/events"
+	"github.com/posit-dev/publisher/internal/types"
+
+	"github.com/stretchr/testify/suite"
+
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/stretchr/testify/suite"
 )
 
 type GetConnectCloudAccountsSuite struct {
@@ -50,25 +52,28 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts() {
 	accountsResponse := &connect_cloud.AccountListResponse{
 		Data: []connect_cloud.Account{
 			{
-				ID:          "account1",
-				Name:        "Account 1",
+				ID:          "1",
+				Name:        "account1",
+				DisplayName: "Account 1",
 				Permissions: []string{"content:create"},
 			},
 			{
-				ID:          "account2",
-				Name:        "Account 2",
+				ID:          "2",
+				Name:        "account2",
+				DisplayName: "Account 2",
 				Permissions: []string{"content:create"},
 			},
 			{
-				ID:          "account3",
-				Name:        "Account 3",
+				ID:          "3",
+				Name:        "account3",
+				DisplayName: "Account 3",
 				Permissions: []string{},
 			},
 		},
 	}
 	client.On("GetAccounts").Return(accountsResponse, nil)
 
-	connectCloudClientFactory = func(baseURL string, log logging.Logger, timeout time.Duration, authValue string) connect_cloud.APIClient {
+	connectCloudClientFactory = func(environment types.CloudEnvironment, log logging.Logger, timeout time.Duration, authValue string) connect_cloud.APIClient {
 		return client
 	}
 
@@ -88,12 +93,12 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts() {
 	s.Equal(http.StatusOK, result.StatusCode)
 
 	respBody, _ := io.ReadAll(rec.Body)
-	respMap := map[string]interface{}{}
-	err = json.Unmarshal(respBody, &respMap)
+	var respData []interface{}
+	err = json.Unmarshal(respBody, &respData)
 	s.NoError(err)
 
 	// sort accounts by ID to ensure consistent order for testing
-	slices.SortFunc(respMap["accounts"].([]interface{}), func(a, b interface{}) int {
+	slices.SortFunc(respData, func(a, b interface{}) int {
 		return strings.Compare(
 			a.(map[string]interface{})["name"].(string),
 			b.(map[string]interface{})["name"].(string))
@@ -101,51 +106,36 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts() {
 
 	// The expected response should include all accounts, with PermissionToPublish
 	// set to true for accounts with "content:create" permission, false otherwise
-	s.Equal(map[string]interface{}{
-		"accounts": []interface{}{
-			map[string]interface{}{
-				"id":                  "account1",
-				"name":                "Account 1",
-				"permissionToPublish": true,
-			},
-			map[string]interface{}{
-				"id":                  "account2",
-				"name":                "Account 2",
-				"permissionToPublish": true,
-			},
-			map[string]interface{}{
-				"id":                  "account3",
-				"name":                "Account 3",
-				"permissionToPublish": false,
-			},
+	s.Equal([]interface{}{
+		map[string]interface{}{
+			"id":                  "1",
+			"name":                "account1",
+			"displayName":         "Account 1",
+			"permissionToPublish": true,
 		},
-	}, respMap)
-}
-
-func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts_MissingBaseURL() {
-	rec := httptest.NewRecorder()
-	req, err := http.NewRequest(
-		"GET",
-		"/connect-cloud/accounts",
-		nil,
-	)
-	s.NoError(err)
-	// Not setting Connect-Cloud-Base-Url header
-
-	s.h(rec, req)
-
-	result := rec.Result()
-	s.Equal(http.StatusBadRequest, result.StatusCode)
+		map[string]interface{}{
+			"id":                  "2",
+			"name":                "account2",
+			"displayName":         "Account 2",
+			"permissionToPublish": true,
+		},
+		map[string]interface{}{
+			"id":                  "3",
+			"name":                "account3",
+			"displayName":         "Account 3",
+			"permissionToPublish": false,
+		},
+	}, respData)
 }
 
 func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts_GetCurrentUserError() {
 	client := connect_cloud.NewMockClient()
 	client.On("GetCurrentUser").Return((*connect_cloud.UserResponse)(nil), types.NewAgentError(
 		events.ServerErrorCode,
-		http_client.NewHTTPError("https://foo.bar", "GET", http.StatusBadRequest), nil))
+		http_client.NewHTTPError("https://foo.bar", "GET", http.StatusBadRequest, "uh oh"), nil))
 	// No need to mock GetAccounts since the function returns after GetCurrentUser fails
 
-	connectCloudClientFactory = func(baseURL string, log logging.Logger, timeout time.Duration, authValue string) connect_cloud.APIClient {
+	connectCloudClientFactory = func(environment types.CloudEnvironment, log logging.Logger, timeout time.Duration, authValue string) connect_cloud.APIClient {
 		return client
 	}
 
@@ -156,13 +146,73 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts_GetCurrentUse
 		nil,
 	)
 	s.NoError(err)
-	req.Header.Set(connectCloudBaseURLHeader, "https://api.login.staging.posit.cloud")
+	req.Header.Set("Connect-Cloud-Environment", "staging")
 	req.Header.Set("Authorization", "Bearer token123")
 
 	s.h(rec, req)
 
 	result := rec.Result()
 	s.Equal(http.StatusInternalServerError, result.StatusCode)
+}
+
+func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts_NoUserForLucidUser() {
+	client := connect_cloud.NewMockClient()
+
+	// Setup the error to simulate "no_user_for_lucid_user" error
+	errorData := map[string]interface{}{"error_type": "no_user_for_lucid_user"}
+	httpErr := http_client.NewHTTPError("https://foo.bar", "GET", http.StatusUnauthorized, "uh oh")
+	agentErr := types.NewAgentError(events.ServerErrorCode, httpErr, errorData)
+
+	// Mock the GetCurrentUser call to return the no_user_for_lucid_user error
+	client.On("GetCurrentUser").Return((*connect_cloud.UserResponse)(nil), agentErr)
+
+	// Mock the CreateUser call to succeed
+	client.On("CreateUser").Return(nil)
+
+	// Mock the GetAccounts call to succeed after user creation
+	accountsResponse := &connect_cloud.AccountListResponse{
+		Data: []connect_cloud.Account{
+			{
+				ID:          "account1",
+				Name:        "Account 1",
+				Permissions: []string{"content:create"},
+			},
+		},
+	}
+	client.On("GetAccounts").Return(accountsResponse, nil)
+
+	connectCloudClientFactory = func(environment types.CloudEnvironment, log logging.Logger, timeout time.Duration, authValue string) connect_cloud.APIClient {
+		return client
+	}
+
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest(
+		"GET",
+		"/connect-cloud/accounts",
+		nil,
+	)
+	s.NoError(err)
+	req.Header.Set(connectCloudEnvironmentHeader, "staging")
+	req.Header.Set("Authorization", "Bearer token123")
+
+	s.h(rec, req)
+
+	// Verify the response status code and body
+	result := rec.Result()
+	s.Equal(http.StatusOK, result.StatusCode)
+	s.NoError(err)
+
+	respBody, _ := io.ReadAll(rec.Body)
+	accounts := []any{}
+	err = json.Unmarshal(respBody, &accounts)
+	s.NoError(err)
+
+	// Verify the response contains the expected account
+	s.Len(accounts, 1)
+	account := accounts[0].(map[string]interface{})
+	s.Equal("account1", account["id"])
+	s.Equal("Account 1", account["name"])
+	s.Equal(true, account["permissionToPublish"])
 }
 
 func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts_GetAccountsError() {
@@ -174,9 +224,9 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts_GetAccountsEr
 	// Mock GetAccounts with error
 	client.On("GetAccounts").Return((*connect_cloud.AccountListResponse)(nil), types.NewAgentError(
 		events.ServerErrorCode,
-		http_client.NewHTTPError("https://foo.bar", "GET", http.StatusBadRequest), nil))
+		http_client.NewHTTPError("https://foo.bar", "GET", http.StatusBadRequest, "uh oh"), nil))
 
-	connectCloudClientFactory = func(baseURL string, log logging.Logger, timeout time.Duration, authValue string) connect_cloud.APIClient {
+	connectCloudClientFactory = func(environment types.CloudEnvironment, log logging.Logger, timeout time.Duration, authValue string) connect_cloud.APIClient {
 		return client
 	}
 
@@ -187,7 +237,7 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts_GetAccountsEr
 		nil,
 	)
 	s.NoError(err)
-	req.Header.Set(connectCloudBaseURLHeader, "https://api.login.staging.posit.cloud")
+	req.Header.Set("Connect-Cloud-Environment", "staging")
 	req.Header.Set("Authorization", "Bearer token123")
 
 	s.h(rec, req)

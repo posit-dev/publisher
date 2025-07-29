@@ -4,18 +4,18 @@ package api
 
 import (
 	"encoding/json"
-	"github.com/posit-dev/publisher/internal/server_type"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/gorilla/mux"
+	"github.com/spf13/afero"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/spf13/afero"
-	"github.com/stretchr/testify/suite"
 )
 
 type GetConfigSecretsSuite struct {
@@ -43,7 +43,7 @@ func (s *GetConfigSecretsSuite) SetupTest() {
 
 func (s *GetConfigSecretsSuite) TestGetConfigSecrets() {
 	cfg := config.New()
-	cfg.ServerType = server_type.ServerTypeConnect
+	cfg.ProductType = config.ProductTypeConnect
 	cfg.Type = config.ContentTypeHTML
 	cfg.Secrets = []string{
 		"secret1",
@@ -72,7 +72,7 @@ func (s *GetConfigSecretsSuite) TestGetConfigSecrets() {
 
 func (s *GetConfigSecretsSuite) TestGetConfigSecretsEmptySecrets() {
 	cfg := config.New()
-	cfg.ServerType = server_type.ServerTypeConnect
+	cfg.ProductType = config.ProductTypeConnect
 	cfg.Type = config.ContentTypeHTML
 	err := cfg.WriteFile(config.GetConfigPath(s.cwd, "myConfig"))
 	s.NoError(err)

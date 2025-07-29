@@ -5,55 +5,36 @@ package schema
 import (
 	"bytes"
 	"embed"
-	"errors"
 	"fmt"
 	"io"
 	"strings"
 
-	"github.com/santhosh-tekuri/jsonschema/v5"
-
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
+	"github.com/santhosh-tekuri/jsonschema/v5"
 )
 
 //go:embed schemas
 var schemaFS embed.FS
 
 const schemaPrefix = "https://cdn.posit.co/publisher/schemas/"
-const ConfigSchemaURL = schemaPrefix + "posit-publishing-schema-v4.json"
-const DeploymentSchemaURL = schemaPrefix + "posit-publishing-record-schema-v4.json"
-
-var ConfigSchemaURLs = []string{
-	schemaPrefix + "posit-publishing-schema-v3.json",
-	ConfigSchemaURL,
-	schemaPrefix + "draft/posit-publishing-schema-v3.json",
-	schemaPrefix + "draft/posit-publishing-schema-v4.json",
-}
-var DeploymentSchemaURLs = []string{
-	schemaPrefix + "posit-publishing-record-schema-v3.json",
-	DeploymentSchemaURL,
-	schemaPrefix + "draft/posit-publishing-record-schema-v3.json",
-	schemaPrefix + "draft/posit-publishing-record-schema-v4.json",
-}
+const ConfigSchemaURL = schemaPrefix + "posit-publishing-schema-v3.json"
+const DeploymentSchemaURL = schemaPrefix + "posit-publishing-record-schema-v3.json"
 
 type Validator[T any] struct {
-	schemas map[string]*jsonschema.Schema
+	schema *jsonschema.Schema
 }
 
-func NewValidator[T any](schemaURLs ...string) (*Validator[T], error) {
+func NewValidator[T any](schemaURL string) (*Validator[T], error) {
 	jsonschema.Loaders = map[string]func(url string) (io.ReadCloser, error){
 		"https": loadSchema,
 	}
-	schemas := make(map[string]*jsonschema.Schema)
-	for _, url := range schemaURLs {
-		schema, err := jsonschema.Compile(url)
-		if err != nil {
-			return nil, err
-		}
-		schemas[url] = schema
+	schema, err := jsonschema.Compile(schemaURL)
+	if err != nil {
+		return nil, err
 	}
 	return &Validator[T]{
-		schemas: schemas,
+		schema: schema,
 	}, nil
 }
 
@@ -84,18 +65,8 @@ func toTomlValidationError(e *jsonschema.ValidationError) *tomlValidationError {
 	}
 }
 
-func (v *Validator[T]) ValidateContent(data map[string]any) error {
-	schemaURL, ok := data["$schema"]
-	if !ok {
-		return errors.New("missing $schema field in TOML content")
-	}
-
-	theSchema, ok := v.schemas[schemaURL.(string)]
-	if !ok {
-		return fmt.Errorf("unknown schema URL: %s", schemaURL)
-	}
-
-	err := theSchema.Validate(data)
+func (v *Validator[T]) ValidateContent(data any) error {
+	err := v.schema.Validate(data)
 	if err != nil {
 		validationErr, ok := err.(*jsonschema.ValidationError)
 		if ok {
@@ -121,7 +92,7 @@ func (v *Validator[T]) ValidateTOMLFile(path util.AbsolutePath) error {
 	// Read the TOML generically to get the anyContent.
 	// Can't use v.object here because Validate
 	// doesn't accept some object types.
-	var anyContent map[string]interface{}
+	var anyContent any
 	err = util.ReadTOMLFile(path, &anyContent)
 	if err != nil {
 		return err

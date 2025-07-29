@@ -671,7 +671,7 @@ func (s *ConnectClientSuite) TestValidateDeploymentTargetForbiddenFailure() {
 	// Forbidden
 	returnErr := types.NewAgentError(
 		events.ServerErrorCode,
-		http_client.NewHTTPError("", "", http.StatusForbidden),
+		http_client.NewHTTPError("", "", http.StatusForbidden, "uh oh"),
 		nil,
 	)
 	httpClient.On("Get", "/__api__/v1/content/e8922765-4880-43cd-abc0-d59fe59b8b4b", content, lgr).Return(returnErr)
@@ -700,7 +700,7 @@ func (s *ConnectClientSuite) TestValidateDeploymentTargetNotFoundFailure() {
 	// Not Found
 	returnErr := types.NewAgentError(
 		events.ServerErrorCode,
-		http_client.NewHTTPError("", "", http.StatusNotFound),
+		http_client.NewHTTPError("", "", http.StatusNotFound, "uh oh"),
 		nil,
 	)
 
@@ -730,7 +730,7 @@ func (s *ConnectClientSuite) TestValidateDeploymentTargetUnknownFailure() {
 	// Not Found
 	returnErr := types.NewAgentError(
 		events.ServerErrorCode,
-		http_client.NewHTTPError("", "", http.StatusBadGateway),
+		http_client.NewHTTPError("", "", http.StatusBadGateway, "uh oh"),
 		nil,
 	)
 
@@ -741,7 +741,7 @@ func (s *ConnectClientSuite) TestValidateDeploymentTargetUnknownFailure() {
 	}
 	expectedErr := types.NewAgentError(
 		events.DeploymentFailedCode,
-		errors.New("Cannot deploy content: ID e8922765-4880-43cd-abc0-d59fe59b8b4b - Unknown error: unexpected response from the server (502)"),
+		errors.New("Cannot deploy content: ID e8922765-4880-43cd-abc0-d59fe59b8b4b - Unknown error: unexpected response from the server (502: uh oh)"),
 		nil)
 	err := client.ValidateDeploymentTarget("e8922765-4880-43cd-abc0-d59fe59b8b4b", s.cfg, lgr)
 	aerr, ok := types.IsAgentError(err)

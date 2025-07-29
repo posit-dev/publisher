@@ -1,6 +1,5 @@
 # Example schema file
-"$schema" = "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v4.json"
-server_type = "connect"
+"$schema" = "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json"
 type = "quarto-static"
 entrypoint = "report.qmd"
 title = "Regional Quarterly Sales Report"
