@@ -39,7 +39,10 @@ import {
 } from "src/multiStepInputs/common";
 import { getEnumKeyByEnumValue } from "src/utils/enums";
 import { ConnectCloudAccount } from "src/api/types/connectCloud";
-import { CONNECT_CLOUD_SIGNUP_URL, CONNECT_CLOUD_URL } from "src/constants";
+import {
+  CONNECT_CLOUD_SIGNUP_URL,
+  CONNECT_CLOUD_ACCOUNT_URL,
+} from "src/constants";
 
 const createNewCredentialLabel = "Create a New Credential";
 
@@ -326,7 +329,7 @@ export async function newCredential(
 
         // populate the account polling props
         connectCloudPolling = true;
-        connectCloudUrl = CONNECT_CLOUD_URL;
+        connectCloudUrl = CONNECT_CLOUD_ACCOUNT_URL;
 
         // call the retrieveAccounts step again with the populated polling props
 

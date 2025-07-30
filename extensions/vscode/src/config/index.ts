@@ -8,9 +8,9 @@ export enum env {
 }
 
 type Config = {
-  cloudLogoutURL: string;
-  cloudRegisterURL: string;
+  cloudURL: string;
   connectCloudURL: string;
+  oauthClientID: string;
   env: env;
 };
 

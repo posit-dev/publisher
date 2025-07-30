@@ -131,6 +131,8 @@ export const DebounceDelaysMS = {
   refreshPythonPackages: 1000,
 };
 
+const accountRedirect = btoa(JSON.stringify({ redirect: "/account/done" }));
+
 export const CONNECT_CLOUD_ENV = config.env;
-export const CONNECT_CLOUD_SIGNUP_URL = `${config.cloudLogoutURL}?redirect=${config.cloudRegisterURL}?redirect=`;
-export const CONNECT_CLOUD_URL = config.connectCloudURL;
+export const CONNECT_CLOUD_SIGNUP_URL = `${config.cloudURL}/logout?redirect=${config.cloudURL}/register?redirect=`;
+export const CONNECT_CLOUD_ACCOUNT_URL = `${config.cloudURL}/oauth/authorize?client_id=${config.oauthClientID}&redirect_uri=${config.connectCloudURL}/auth&state=${accountRedirect}&response_type=code&show_login=0&show_signup=0&local=1&google=1&github=1`;

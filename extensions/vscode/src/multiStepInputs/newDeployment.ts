@@ -62,7 +62,7 @@ import {
 } from "src/utils/files";
 import {
   CONNECT_CLOUD_SIGNUP_URL,
-  CONNECT_CLOUD_URL,
+  CONNECT_CLOUD_ACCOUNT_URL,
   ENTRYPOINT_FILE_EXTENSIONS,
 } from "src/constants";
 import { extensionSettings } from "src/extension";
@@ -795,7 +795,7 @@ export async function newDeployment(
 
         // populate the account polling props
         connectCloudPolling = true;
-        connectCloudUrl = CONNECT_CLOUD_URL;
+        connectCloudUrl = CONNECT_CLOUD_ACCOUNT_URL;
 
         // call the retrieveAccounts step again with the populated polling props
 

@@ -14,7 +14,6 @@ import {
   QuickInputButtons,
   InputBoxValidationMessage,
   env,
-  Uri,
 } from "vscode";
 import { AuthToken, ConnectCloudAccount } from "src/api/types/connectCloud";
 import { getSummaryStringFromError } from "src/utils/errors";
@@ -454,7 +453,7 @@ export class MultiStepInput {
         }
 
         // @ts-expect-error the resulting URL may have 2 levels of nesting with params:
-        // lucid logout -> redirect to lucid register -> redirect to lucid aut.
+        // lucid logout -> redirect to lucid register -> redirect to lucid auth.
         // Unfortunately that much nesting and the params encoding is not correctly handled
         // by vscode with: env.openExternal(Uri.parse(`${browserUrl || ""}${authUrl}`))
         // hence we have to give the string url directly to `env.openExternal` and ignore
@@ -591,9 +590,16 @@ export class MultiStepInput {
           let abortPolling = false;
 
           if (browserUrl) {
+            // @ts-expect-error the resulting URL will have 1 level of nesting with params:
+            // lucid logout -> redirect to connect cloud account.
+            // Unfortunately that much nesting and the params encoding is not correctly handled
+            // by vscode with: env.openExternal(Uri.parse(browserUrl))
+            // hence we have to give the string url directly to `env.openExternal` and ignore
+            // the type error from typescript so the encoding is correct for the nested redirec
+
             // await opening the external browser window so the polling
             // actually begins after the user selects an option from the pop-up
-            await env.openExternal(Uri.parse(browserUrl));
+            await env.openExternal(browserUrl);
 
             // bail out if the user did anything on the openExternal window operation
             // to cause the multi-stepper to be hidden

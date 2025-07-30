@@ -1,5 +1,5 @@
 {
-  "cloudLogoutURL": "https://login.posit.cloud/logout",
-  "cloudRegisterURL": "https://login.posit.cloud/register",
-  "connectCloudURL": "https://connect.posit.cloud/home"
+  "cloudURL": "https://login.posit.cloud",
+  "connectCloudURL": "https://connect.posit.cloud",
+  "oauthClientID": "posit-connect-cloud"
 }
