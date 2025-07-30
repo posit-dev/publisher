@@ -10,7 +10,6 @@ import {
   QuickPickItemWithIndex,
   QuickPickItemWithInspectionResult,
 } from "src/multiStepInputs/multiStepHelper";
-
 import {
   commands,
   InputBoxValidationSeverity,
@@ -70,6 +69,17 @@ import {
 } from "src/multiStepInputs/common";
 import { openConfigurationCommand } from "src/commands";
 import { getEnumKeyByEnumValue } from "src/utils/enums";
+
+function getProductType(serverType: ServerType): ProductType {
+  switch (serverType) {
+    case ServerType.CONNECT:
+      return ProductType.CONNECT;
+    case ServerType.SNOWFLAKE:
+      return ProductType.CONNECT;
+    case ServerType.CONNECT_CLOUD:
+      return ProductType.CONNECT_CLOUD;
+  }
+}
 
 export async function newDeployment(
   viewId: string,
@@ -990,9 +1000,7 @@ export async function newDeployment(
     );
 
     newDeploymentData.entrypoint.inspectionResult.configuration.productType =
-      serverType === ServerType.CONNECT
-        ? ProductType.CONNECT
-        : ProductType.CONNECT_CLOUD;
+      getProductType(serverType);
 
     configCreateResponse = (
       await api.configurations.createOrUpdate(
