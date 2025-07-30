@@ -408,6 +408,7 @@
       "examples": ["app.py", "model/*.csv", "!model/excludeme.csv"]
     },
     "python": {
+      "$comment": "Note: this object is extended by the other config definitions. Extensions should use additionalProperties: false to prevent unexpected properties.",
       "type": "object",
       "description": "Python language and dependencies.",
       "properties": {
@@ -419,6 +420,7 @@
       }
     },
     "r": {
+      "$comment": "Note: this object is extended by the other config definitions. Extensions should use additionalProperties: false to prevent unexpected properties.",
       "type": "object",
       "description": "R language and dependencies.",
       "properties": {
@@ -492,6 +494,7 @@
       "if": {
         "anyOf": [
           {
+            "$comment": "Note: this object is extended by the other config definitions. Extensions should use additionalProperties: false to prevent unexpected properties.",
             "properties": {
               "product_type": false
             }
