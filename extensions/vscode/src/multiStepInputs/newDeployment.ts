@@ -2,41 +2,40 @@
 
 import path from "path";
 import {
-  isQuickPickItem,
-  isQuickPickItemWithIndex,
-  isQuickPickItemWithInspectionResult,
   MultiStepInput,
   MultiStepState,
-  QuickPickItemWithIndex,
   QuickPickItemWithInspectionResult,
+  QuickPickItemWithIndex,
+  isQuickPickItem,
+  isQuickPickItemWithInspectionResult,
+  isQuickPickItemWithIndex,
 } from "src/multiStepInputs/multiStepHelper";
 
 import {
-  commands,
   InputBoxValidationSeverity,
   QuickPickItem,
   QuickPickItemKind,
   ThemeIcon,
   Uri,
+  commands,
   window,
   workspace,
 } from "vscode";
 
 import {
-  areInspectionResultsSimilarEnough,
-  Configuration,
-  ConfigurationInspectionResult,
-  ContentType,
-  contentTypeStrings,
-  Credential,
-  EntryPointPath,
-  FileAction,
-  PlatformName,
-  PreContentRecord,
-  ProductType,
-  ServerType,
-  SnowflakeConnection,
   useApi,
+  Credential,
+  Configuration,
+  PreContentRecord,
+  contentTypeStrings,
+  ConfigurationInspectionResult,
+  EntryPointPath,
+  areInspectionResultsSimilarEnough,
+  ContentType,
+  FileAction,
+  SnowflakeConnection,
+  ServerType,
+  PlatformName,
 } from "src/api";
 import {
   getPythonInterpreterPath,
@@ -47,7 +46,7 @@ import {
   getSummaryStringFromError,
 } from "src/utils/errors";
 import { isAxiosErrorWithJson } from "src/utils/errorTypes";
-import { newConfigFileNameFromTitle, newDeploymentName } from "src/utils/names";
+import { newDeploymentName, newConfigFileNameFromTitle } from "src/utils/names";
 import { formatURL } from "src/utils/url";
 import { checkSyntaxApiKey } from "src/utils/apiKeys";
 import { DeploymentObjects } from "src/types/shared";
@@ -988,12 +987,6 @@ export async function newDeployment(
       newDeploymentData.title,
       existingNames,
     );
-
-    newDeploymentData.entrypoint.inspectionResult.configuration.productType =
-      serverType === ServerType.CONNECT
-        ? ProductType.CONNECT
-        : ProductType.CONNECT_CLOUD;
-
     configCreateResponse = (
       await api.configurations.createOrUpdate(
         configName,
