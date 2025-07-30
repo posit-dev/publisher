@@ -74,7 +74,7 @@ _Valid when `product_type` is `connect`_
 
 #### validate
 
-_\*\*Valid when `product_type` is `connect`_
+_Valid when `product_type` is `connect`_
 
 Access the content after deploying, to validate that it is live. Defaults to `true`.
 
