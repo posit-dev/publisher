@@ -330,7 +330,7 @@ func (s *SchemaSuite) TestDisallowedProperties() {
 		s.Run(description, func() {
 			// Create a valid base configuration map
 			baseConfig := map[string]any{
-				"$schema":     "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v4.json",
+				"$schema":     "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json",
 				"server_type": tc.serverType,
 				"type":        "python-shiny",
 				"entrypoint":  "foo.py",
