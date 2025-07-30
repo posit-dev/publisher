@@ -5,6 +5,7 @@
   "description": "Posit Publishing Configuration",
   "$defs": {
     "config_connect": {
+      "description": "Extensions to the base schema for Posit Connect deployments.",
       "properties": {
         "has_parameters": {
           "type": "boolean",
@@ -262,6 +263,7 @@
       ]
     },
     "config_connect_cloud": {
+      "description": "Extensions to the base schema for Posit Connect Cloud deployments.",
       "properties": {
         "product_type": {
           "type": "string",
@@ -494,7 +496,7 @@
       "if": {
         "anyOf": [
           {
-            "$comment": "Note: this object is extended by the other config definitions. Extensions should use additionalProperties: false to prevent unexpected properties.",
+            "$comment": "Default to connect if product_type is not specified.",
             "properties": {
               "product_type": false
             }
