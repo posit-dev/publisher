@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/posit-dev/publisher/internal/clients/connect_cloud"
+
 	"github.com/posit-dev/publisher/internal/server_type"
 
 	"github.com/posit-dev/publisher/internal/credentials"

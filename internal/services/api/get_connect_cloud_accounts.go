@@ -10,12 +10,11 @@ import (
 
 	"github.com/posit-dev/publisher/internal/clients/connect_cloud"
 	"github.com/posit-dev/publisher/internal/clients/http_client"
-	"github.com/posit-dev/publisher/internal/types"
-
 	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/types"
 )
 
-type connectCloudAccountsResponseItem struct {
+type connectCloudAccountsBodyAccount struct {
 	ID                  string `json:"id"`
 	Name                string `json:"name"`
 	DisplayName         string `json:"displayName"`
@@ -61,9 +60,9 @@ func GetConnectCloudAccountsFunc(log logging.Logger) http.HandlerFunc {
 			return
 		}
 
-		accounts := make([]connectCloudAccountsResponseItem, 0, len(accountsResponse.Data))
+		accounts := make([]connectCloudAccountsBodyAccount, 0, len(accountsResponse.Data))
 		for _, account := range accountsResponse.Data {
-			accounts = append(accounts, connectCloudAccountsResponseItem{
+			accounts = append(accounts, connectCloudAccountsBodyAccount{
 				ID:                  account.ID,
 				Name:                account.Name,
 				DisplayName:         account.DisplayName,

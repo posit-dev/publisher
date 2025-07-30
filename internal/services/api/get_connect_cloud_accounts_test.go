@@ -17,9 +17,10 @@ import (
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/types"
 
+	"github.com/stretchr/testify/suite"
+
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/stretchr/testify/suite"
 )
 
 type GetConnectCloudAccountsSuite struct {
@@ -191,7 +192,7 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts_NoUserForLuci
 		nil,
 	)
 	s.NoError(err)
-	req.Header.Set("Connect-Cloud-Environment", "staging")
+	req.Header.Set(connectCloudEnvironmentHeader, "staging")
 	req.Header.Set("Authorization", "Bearer token123")
 
 	s.h(rec, req)
@@ -202,12 +203,11 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts_NoUserForLuci
 	s.NoError(err)
 
 	respBody, _ := io.ReadAll(rec.Body)
-	respMap := map[string]interface{}{}
-	err = json.Unmarshal(respBody, &respMap)
+	accounts := []any{}
+	err = json.Unmarshal(respBody, &accounts)
 	s.NoError(err)
 
 	// Verify the response contains the expected account
-	accounts := respMap["accounts"].([]interface{})
 	s.Len(accounts, 1)
 	account := accounts[0].(map[string]interface{})
 	s.Equal("account1", account["id"])

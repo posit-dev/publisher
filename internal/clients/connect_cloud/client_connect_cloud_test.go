@@ -27,6 +27,7 @@ func TestConnectCloudClientSuite(t *testing.T) {
 func (s *ConnectCloudClientSuite) TestNewConnectCloudClient() {
 	timeout := 10 * time.Second
 	log := logging.New()
+
 	apiClient := NewConnectCloudClientWithAuth(types.CloudEnvironmentStaging, log, timeout, "Bearer the_token")
 	client := apiClient.(*ConnectCloudClient)
 	s.NotNil(client.client)
