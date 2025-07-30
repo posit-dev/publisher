@@ -6,7 +6,6 @@ import {
   ContentRecord,
   ServerType,
   ContentRecordState,
-  ProductType,
 } from "src/api/types/contentRecords";
 import { ContentType, Configuration } from "src/api/types/configurations";
 import { Credential } from "src/api/types/credentials";
@@ -26,7 +25,6 @@ export const configurationFactory = Factory.define<Configuration>(
   ({ sequence }) => ({
     configuration: {
       $schema: "test-schema-url",
-      productType: ProductType.CONNECT,
       type: ContentType.RMD,
       validate: true,
       configurationName: "",
@@ -99,7 +97,6 @@ export const contentRecordFactory = Factory.define<ContentRecord>(
     deploymentPath: `report/path/${sequence}`,
     configuration: {
       $schema: "test-schema-url",
-      productType: ProductType.CONNECT,
       type: ContentType.RMD,
       validate: true,
       configurationName: "",

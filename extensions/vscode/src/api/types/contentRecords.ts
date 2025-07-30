@@ -14,11 +14,6 @@ export enum ServerType {
   SNOWFLAKE = "snowflake",
 }
 
-export enum ProductType {
-  CONNECT = "connect",
-  CONNECT_CLOUD = "connect_cloud",
-}
-
 export enum PlatformName {
   CONNECT = "Posit Connect",
   CONNECT_CLOUD = "Posit Connect Cloud",
