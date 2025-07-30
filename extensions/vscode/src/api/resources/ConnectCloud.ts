@@ -6,7 +6,7 @@ import {
   AuthToken,
   DeviceAuth,
 } from "../types/connectCloud";
-import { CONNECT_CLOUD_ENV } from "src/constants";
+import { CONNECT_CLOUD_ENV } from "../../constants";
 
 const envHeader = { "Connect-Cloud-Environment": CONNECT_CLOUD_ENV };
 
