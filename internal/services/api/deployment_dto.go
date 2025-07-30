@@ -30,7 +30,7 @@ type preDeploymentDTO struct {
 	Schema       string                 `json:"$schema"`
 	ServerType   server_type.ServerType `json:"serverType"`
 	ServerURL    string                 `json:"serverUrl"`
-	AccountName  string                 `json:"accountName"`
+	ConnectCloud *connectCloudDTO       `json:"connectCloud"`
 	SaveName     string                 `json:"saveName"`
 	CreatedAt    string                 `json:"createdAt"`
 	DismissedAt  string                 `toml:"dismissed_at,omitempty" json:"dismissedAt"`
@@ -41,6 +41,10 @@ type preDeploymentDTO struct {
 	DashboardURL string                 `toml:"dashboard_url,omitempty" json:"dashboardUrl"`
 	DirectURL    string                 `toml:"direct_url,omitempty" json:"directUrl"`
 	LogsURL      string                 `toml:"logs_url,omitempty" json:"logsUrl"`
+}
+
+type connectCloudDTO struct {
+	AccountName string `json:"accountName"`
 }
 
 type fullDeploymentDTO struct {
@@ -95,6 +99,15 @@ func deploymentAsDTO(d *deployment.Deployment, err error, projectDir util.Absolu
 		if d.ConfigName != "" {
 			configPath = getConfigPath(projectDir, d.ConfigName).String()
 		}
+		var connectCloud connectCloudDTO
+		if d.ConnectCloud != nil {
+			connectCloud = connectCloudDTO{
+				AccountName: d.ConnectCloud.AccountName,
+			}
+		} else {
+			connectCloud = connectCloudDTO{}
+		}
+
 		return preDeploymentDTO{
 			deploymentLocation: deploymentLocation{
 				State:      deploymentStateNew,
@@ -105,7 +118,7 @@ func deploymentAsDTO(d *deployment.Deployment, err error, projectDir util.Absolu
 			Schema:       d.Schema,
 			ServerType:   d.ServerType,
 			ServerURL:    d.ServerURL,
-			AccountName:  d.AccountName,
+			ConnectCloud: &connectCloud,
 			SaveName:     saveName, // TODO: remove this duplicate (remove frontend references first)
 			CreatedAt:    d.CreatedAt,
 			DismissedAt:  d.DismissedAt,

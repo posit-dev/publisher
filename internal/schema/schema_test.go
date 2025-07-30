@@ -55,6 +55,10 @@ func (s *SchemaSuite) TestValidateFile() {
 			dataFile:  []string{"record.toml"},
 		},
 		{
+			schemaURL: DeploymentSchemaURL,
+			dataFile:  []string{"record_cloud.toml"},
+		},
+		{
 			schemaURL: "https://cdn.posit.co/publisher/schemas/draft/posit-publishing-record-schema-v3.json",
 			dataFile:  []string{"draft", "record.toml"},
 		},
