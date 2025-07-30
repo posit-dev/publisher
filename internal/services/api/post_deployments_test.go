@@ -88,7 +88,7 @@ func (s *PostDeploymentsSuite) TestPostDeployments() {
 	s.Equal("myConfig.toml", filepath.Base(res.ConfigPath))
 	s.Equal(server_type.ServerTypeConnectCloud, res.ServerType)
 	s.Equal(acct.URL, res.ServerURL)
-	s.Equal(acct.ConnectCloudAccountName, res.AccountName)
+	s.Equal(acct.ConnectCloudAccountName, res.ConnectCloud.AccountName)
 	s.Equal(deploymentStateNew, res.State)
 }
 

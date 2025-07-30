@@ -31,7 +31,6 @@ type Deployment struct {
 	Schema        string                 `toml:"$schema" json:"$schema"`
 	ServerType    server_type.ServerType `toml:"server_type" json:"serverType"`
 	ServerURL     string                 `toml:"server_url" json:"serverUrl"`
-	AccountName   string                 `toml:"account_name,omitempty" json:"accountName"`
 	ClientVersion string                 `toml:"client_version" json:"-"`
 	CreatedAt     string                 `toml:"created_at" json:"createdAt"`
 	DismissedAt   string                 `toml:"dismissed_at" json:"dismissedAt"`
@@ -41,6 +40,7 @@ type Deployment struct {
 	DashboardURL  string                 `toml:"dashboard_url,omitempty" json:"dashboardUrl"`
 	DirectURL     string                 `toml:"direct_url,omitempty" json:"directUrl"`
 	LogsURL       string                 `toml:"logs_url,omitempty" json:"logsUrl"`
+	ConnectCloud  *ConnectCloud          `toml:"connect_cloud,omitempty" json:"connectCloud"`
 
 	// Full deployment fields
 	DeployedAt    string            `toml:"deployed_at,omitempty" json:"deployedAt"`
@@ -51,6 +51,10 @@ type Deployment struct {
 	Requirements  []string          `toml:"requirements,multiline,omitempty" json:"requirements"`
 	Configuration *config.Config    `toml:"configuration,omitempty" json:"configuration"`
 	Renv          *renv.Lockfile    `toml:"renv,omitempty" json:"renv"`
+}
+
+type ConnectCloud struct {
+	AccountName string `toml:"account_name" json:"accountName"`
 }
 
 func New() *Deployment {
