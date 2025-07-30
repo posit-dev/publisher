@@ -63,7 +63,6 @@ func (c ConnectCloudClient) CreateUser() error {
 }
 
 func (c ConnectCloudClient) GetAccounts() (*AccountListResponse, error) {
-	//TODO implement me
 	into := AccountListResponse{}
 	err := c.client.Get("/v1/accounts?has_user_role=true", &into, c.log)
 	if err != nil {
