@@ -31,13 +31,13 @@ func (s *SchemaSuite) SetupTest() {
 
 type genericContent map[string]any
 
-type validationTestCase struct {
+type fileValidationTestCase struct {
 	schemaURL string
 	dataFile  []string
 }
 
-func (s *SchemaSuite) TestValidateConfig() {
-	cases := []validationTestCase{
+func (s *SchemaSuite) TestValidateFile() {
+	cases := []fileValidationTestCase{
 		{
 			schemaURL: ConfigSchemaURL,
 			dataFile:  []string{"config.toml"},
@@ -67,6 +67,63 @@ func (s *SchemaSuite) TestValidateConfig() {
 			schemaPath := append([]string{"schemas"}, testCase.dataFile...)
 			path := s.cwd.Join(schemaPath...)
 			err = validator.ValidateTOMLFile(path)
+			s.NoError(err)
+		})
+	}
+}
+
+type dataValidationTestCase struct {
+	title string
+	data  map[string]any
+}
+
+func (s *SchemaSuite) TestValidateConfig() {
+	cases := []dataValidationTestCase{
+		{
+			title: "connect config without product_type",
+			data: map[string]any{
+				"$schema":    ConfigSchemaURL,
+				"type":       "python-dash",
+				"entrypoint": "app.py",
+				"python": map[string]any{
+					"requires_python": ">=3.8",
+				},
+				"connect": map[string]any{},
+			},
+		},
+		{
+			title: "connect config with product_type",
+			data: map[string]any{
+				"$schema":      ConfigSchemaURL,
+				"product_type": "connect",
+				"type":         "python-dash",
+				"entrypoint":   "app.py",
+				"python": map[string]any{
+					"requires_python": ">=3.8",
+				},
+				"connect": map[string]any{},
+			},
+		},
+		{
+			title: "connect cloud config with product_type",
+			data: map[string]any{
+				"$schema":      ConfigSchemaURL,
+				"product_type": "connect_cloud",
+				"type":         "python-dash",
+				"entrypoint":   "app.py",
+				"python": map[string]any{
+					"version": "3.8",
+				},
+				"connect_cloud": map[string]any{},
+			},
+		},
+	}
+
+	for _, testCase := range cases {
+		s.Run(testCase.title, func() {
+			validator, err := NewValidator[genericContent](ConfigSchemaURL)
+			s.NoError(err)
+			err = validator.ValidateContent(testCase.data)
 			s.NoError(err)
 		})
 	}
