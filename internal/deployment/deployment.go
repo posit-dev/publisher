@@ -31,6 +31,7 @@ type Deployment struct {
 	Schema        string                 `toml:"$schema" json:"$schema"`
 	ServerType    server_type.ServerType `toml:"server_type" json:"serverType"`
 	ServerURL     string                 `toml:"server_url" json:"serverUrl"`
+	AccountName   string                 `toml:"account_name,omitempty" json:"accountName"`
 	ClientVersion string                 `toml:"client_version" json:"-"`
 	CreatedAt     string                 `toml:"created_at" json:"createdAt"`
 	DismissedAt   string                 `toml:"dismissed_at" json:"dismissedAt"`
