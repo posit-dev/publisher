@@ -26,7 +26,6 @@ requirements = [
 
 [configuration]
 '$schema' = 'https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json'
-server_type = 'connect'
 type = 'python-fastapi'
 entrypoint = 'simple.py'
 validate = true

@@ -2,7 +2,6 @@
 # Please review and modify as needed. See the documentation for more options:
 # https://github.com/posit-dev/publisher/blob/main/docs/configuration.md
 '$schema' = 'https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json'
-server_type = 'connect'
 type = 'quarto-static'
 entrypoint = 'quarto-project.qmd'
 validate = true
