@@ -29,7 +29,6 @@ RequirementsFile = 'quarto-project/requirements.txt'
 
 [configuration]
 '$schema' = 'https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json'
-server_type = 'connect'
 type = 'quarto-static'
 entrypoint = 'quarto-project.qmd'
 validate = true
