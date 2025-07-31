@@ -1,3 +1,5 @@
+// Copyright (C) 2025 by Posit Software, PBC.
+
 import development from "./development.json";
 import staging from "./staging.json";
 
