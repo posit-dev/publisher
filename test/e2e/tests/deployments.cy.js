@@ -4,8 +4,11 @@ describe("Deployments Section", () => {
   beforeEach(() => {
     cy.resetConnect();
     cy.setAdminCredentials();
-    cy.clearupDeployments("static");
     cy.visit("/");
+  });
+
+  afterEach(() => {
+    cy.clearupDeployments("static");
   });
 
   it("Static Content Deployment", () => {

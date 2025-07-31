@@ -56,6 +56,17 @@ jobs:
         env:
           CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
 
+      - name: Print host user and group info
+        run: |
+          echo "USER: $(whoami)"
+          echo "UID: $(id -u)"
+          echo "GID: $(id -g)"
+          id
+          ls -ld .
+
+      - name: Ensure content-workspace exists
+        run: mkdir -p ./test/e2e/content-workspace
+
       - name: Start containers
         working-directory: test/e2e
         run: |
@@ -86,12 +97,12 @@ jobs:
 
       - name: Print workspace file ownership before tests
         run: |
-          docker exec publisher-e2e.code-server ls -lR /home/coder/workspace/content-workspace || true
+          docker exec publisher-e2e.code-server ls -lR /home/coder/workspace || true
 
       - name: Fix workspace ownership for content-workspace
         run: |
-          docker exec publisher-e2e.code-server chown -R coder:coder /home/coder/workspace/content-workspace || true
-          docker exec publisher-e2e.code-server chmod -R u+rw /home/coder/workspace/content-workspace || true
+          docker exec publisher-e2e.code-server chown -R coder:coder /home/coder/workspace || true
+          docker exec publisher-e2e.code-server chmod -R u+rw /home/coder/workspace || true
 
       - name: Monitor resource usage during Cypress tests
         run: |

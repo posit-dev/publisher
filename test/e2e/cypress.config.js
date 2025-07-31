@@ -12,7 +12,7 @@ module.exports = defineConfig({
       openMode: 0,
     },
     defaultCommandTimeout: isCI ? 20000 : 4000,
-    pageLoadTimeout: isCI ? 120000 : 60000,
+    pageLoadTimeout: isCI ? 60000 : 30000,
     // eslint-disable-next-line no-unused-vars
     setupNodeEvents(on, config) {
       on("task", {
