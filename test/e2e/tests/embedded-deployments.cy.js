@@ -4,9 +4,12 @@ describe("Create Deployments", () => {
   beforeEach(() => {
     cy.resetConnect();
     cy.setAdminCredentials();
+    cy.visit("/");
+  });
+
+  afterEach(() => {
     cy.clearupDeployments(".");
     cy.clearupDeployments("fastapi-simple");
-    cy.visit("/");
   });
 
   it("fastapi at top of workspace", () => {

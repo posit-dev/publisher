@@ -56,6 +56,17 @@ jobs:
         env:
           CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
 
+      - name: Print host user and group info
+        run: |
+          echo "USER: $(whoami)"
+          echo "UID: $(id -u)"
+          echo "GID: $(id -g)"
+          id
+          ls -ld .
+
+      - name: Ensure content-workspace exists
+        run: mkdir -p ./test/e2e/content-workspace
+
       - name: Start containers
         working-directory: test/e2e
         run: |
