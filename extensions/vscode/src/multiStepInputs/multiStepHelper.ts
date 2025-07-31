@@ -1,4 +1,4 @@
-// Copyright (C) 2024 by Posit Software, PBC.
+// Copyright (C) 2025 by Posit Software, PBC.
 
 import { ConfigurationInspectionResult } from "src/api";
 import {
