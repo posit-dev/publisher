@@ -3,7 +3,7 @@
 export type DeviceAuth = {
   deviceCode: string;
   userCode: string;
-  verificationURIComplete: string;
+  verificationURI: string;
   interval: number;
 };
 

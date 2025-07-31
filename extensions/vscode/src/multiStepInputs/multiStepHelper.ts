@@ -443,7 +443,7 @@ export class MultiStepInput {
           // get the device auth details like url, code and interval
           const resp = await api.connectCloud.auth();
           deviceCode = resp.data.deviceCode;
-          authUrl = resp.data.verificationURIComplete;
+          authUrl = resp.data.verificationURI;
           pollingInterval = resp.data.interval * 1000;
           // display the user code in the message
           input.value += ` (using code: ${resp.data.userCode})`;
