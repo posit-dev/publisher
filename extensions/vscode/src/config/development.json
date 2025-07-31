@@ -1,5 +1,4 @@
 {
   "cloudURL": "https://login.staging.posit.cloud",
-  "connectCloudURL": "https://dev.connect.posit.cloud",
-  "oauthClientID": "posit-connect-cloud-development"
+  "connectCloudURL": "https://dev.connect.posit.cloud"
 }

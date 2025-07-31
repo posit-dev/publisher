@@ -1,5 +1,4 @@
 {
   "cloudURL": "https://login.posit.cloud",
-  "connectCloudURL": "https://connect.posit.cloud",
-  "oauthClientID": "posit-connect-cloud"
+  "connectCloudURL": "https://connect.posit.cloud"
 }
