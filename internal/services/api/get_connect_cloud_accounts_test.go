@@ -84,7 +84,7 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts() {
 		nil,
 	)
 	s.NoError(err)
-	req.Header.Set("Connect-Cloud-Base-Url", "https://api.login.staging.posit.cloud")
+	req.Header.Set("Connect-Cloud-Environment", "staging")
 	req.Header.Set("Authorization", "Bearer token123")
 
 	s.h(rec, req)
@@ -166,21 +166,6 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts_NoUserForLuci
 	// Mock the GetCurrentUser call to return the no_user_for_lucid_user error
 	client.On("GetCurrentUser").Return((*connect_cloud.UserResponse)(nil), agentErr)
 
-	// Mock the CreateUser call to succeed
-	client.On("CreateUser").Return(nil)
-
-	// Mock the GetAccounts call to succeed after user creation
-	accountsResponse := &connect_cloud.AccountListResponse{
-		Data: []connect_cloud.Account{
-			{
-				ID:          "account1",
-				Name:        "Account 1",
-				Permissions: []string{"content:create"},
-			},
-		},
-	}
-	client.On("GetAccounts").Return(accountsResponse, nil)
-
 	connectCloudClientFactory = func(environment types.CloudEnvironment, log logging.Logger, timeout time.Duration, authValue string) connect_cloud.APIClient {
 		return client
 	}
@@ -207,12 +192,8 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts_NoUserForLuci
 	err = json.Unmarshal(respBody, &accounts)
 	s.NoError(err)
 
-	// Verify the response contains the expected account
-	s.Len(accounts, 1)
-	account := accounts[0].(map[string]interface{})
-	s.Equal("account1", account["id"])
-	s.Equal("Account 1", account["name"])
-	s.Equal(true, account["permissionToPublish"])
+	// Verify the response contains an account array with zero length
+	s.Len(accounts, 0)
 }
 
 func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts_GetAccountsError() {
@@ -226,7 +207,7 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts_GetAccountsEr
 		events.ServerErrorCode,
 		http_client.NewHTTPError("https://foo.bar", "GET", http.StatusBadRequest, "uh oh"), nil))
 
-	connectCloudClientFactory = func(environment types.CloudEnvironment, log logging.Logger, timeout time.Duration, authValue string) connect_cloud.APIClient {
+	connectCloudClientFactory = func(_ types.CloudEnvironment, _ logging.Logger, _ time.Duration, _ string) connect_cloud.APIClient {
 		return client
 	}
 
