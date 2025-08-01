@@ -70,19 +70,52 @@ export async function newCredential(
   let platformName: PlatformName = PlatformName.CONNECT;
   let connections: SnowflakeConnection[] = [];
   let connectionQuickPicks: QuickPickItemWithIndex[];
-  let connectCloudAccounts: ConnectCloudAccount[] = [];
-  let connectCloudUrl: string = "";
-  let connectCloudSignupUrl: string = "";
-  let connectCloudPolling: boolean = false;
-  let deviceCode: string = "";
-  let userCode: string = "";
-  let verificationURI: string = "";
-  let interval: number = 0;
+
+  type ConnectCloudData = {
+    accounts: ConnectCloudAccount[];
+    auth: DeviceAuth;
+    accountUrl?: string;
+    signupUrl?: string;
+    shouldPoll?: boolean;
+  };
+
+  const connectCloudData: ConnectCloudData = {
+    accounts: [],
+    auth: {
+      deviceCode: "",
+      userCode: "",
+      verificationURI: "",
+      interval: 0,
+    },
+  };
 
   const getSnowflakeConnections = async (serverUrl: string) => {
     const sfc = await fetchSnowflakeConnections(serverUrl);
     connections = sfc.connections;
     connectionQuickPicks = sfc.connectionQuickPicks;
+  };
+
+  // reset all Connect data to empty strings so new credentials will saved
+  const resetConnectData = () => {
+    state.data.url = "";
+    state.data.apiKey = "";
+    state.data.snowflakeConnection = "";
+  };
+
+  // reset all Connect Clound data to empty strings so new credentials will saved
+  const resetConnectCloudData = () => {
+    state.data.accessToken = "";
+    state.data.refreshToken = "";
+    state.data.accountId = "";
+    state.data.accountName = "";
+  };
+
+  // update the device auth data for Connect Cloud
+  const updateConnectCloudAuthData = (data?: DeviceAuth) => {
+    connectCloudData.auth.deviceCode = data?.deviceCode || "";
+    connectCloudData.auth.verificationURI = data?.verificationURI || "";
+    connectCloudData.auth.userCode = data?.userCode || "";
+    connectCloudData.auth.interval = data?.interval || 0;
   };
 
   // ***************************************************************
@@ -133,11 +166,7 @@ export async function newCredential(
       // when the enableConnectCloud config is turned off
       serverType = ServerType.CONNECT;
       platformName = PlatformName.CONNECT;
-      // default everything outside the Connect fields to empty strings
-      state.data.accessToken = "";
-      state.data.refreshToken = "";
-      state.data.accountId = "";
-      state.data.accountName = "";
+      resetConnectCloudData();
 
       await MultiStepInput.run({
         step: (input) => inputServerUrl(input, state),
@@ -167,11 +196,7 @@ export async function newCredential(
     platformName = pick.label as PlatformName;
 
     if (isConnectCloud(serverType)) {
-      // default everything outside the Connect Cloud fields to empty strings
-      state.data.url = "";
-      state.data.apiKey = "";
-      state.data.snowflakeConnection = "";
-
+      resetConnectData();
       return {
         step: (input: MultiStepInput) => initDeviceAuth(input, state),
         skippable: true,
@@ -179,12 +204,7 @@ export async function newCredential(
     }
 
     if (isConnect(serverType)) {
-      // default everything outside the Connect fields to empty strings
-      state.data.accessToken = "";
-      state.data.refreshToken = "";
-      state.data.accountId = "";
-      state.data.accountName = "";
-
+      resetConnectCloudData();
       return {
         step: (input: MultiStepInput) => inputServerUrl(input, state),
       };
@@ -227,10 +247,7 @@ export async function newCredential(
         ignoreFocusOut: true,
         apiFunction: () => fetchDeviceAuth(),
       });
-      deviceCode = resp.data?.deviceCode || "";
-      verificationURI = resp.data?.verificationURI || "";
-      userCode = resp.data?.userCode || "";
-      interval = resp.data?.interval || 0;
+      updateConnectCloudAuthData(resp.data);
     } catch (error) {
       if (error instanceof AbortError) {
         // swallows the custom internal error because we don't need
@@ -270,7 +287,7 @@ export async function newCredential(
         enabled: false,
         // shows a progress indicator on the input box
         busy: true,
-        value: `Authenticating with Connect Cloud ... (using code: ${userCode})`,
+        value: `Authenticating with Connect Cloud ... (using code: ${connectCloudData.auth.userCode})`,
         // moves the cursor to the start of the value text to avoid the automated text highlight
         valueSelection: [0, 0],
         // displays a custom information message below the input box that hides the prompt and
@@ -283,20 +300,17 @@ export async function newCredential(
         prompt: "",
         shouldResume: () => Promise.resolve(false),
         ignoreFocusOut: true,
-        apiFunction: () => fetchAuthToken(deviceCode),
+        apiFunction: () => fetchAuthToken(connectCloudData.auth.deviceCode),
         shouldPollApi: true,
-        pollingInterval: interval * 1000,
+        pollingInterval: connectCloudData.auth.interval * 1000,
         exitPollingCondition: (r) => Boolean(r.data),
-        browserUrl: `${connectCloudSignupUrl || ""}${verificationURI}`,
+        browserUrl: `${connectCloudData.signupUrl || ""}${connectCloudData.auth.verificationURI}`,
       });
       state.data.accessToken = resp.data?.accessToken;
       state.data.refreshToken = resp.data?.refreshToken;
       // clean-up
-      connectCloudSignupUrl = "";
-      verificationURI = "";
-      deviceCode = "";
-      userCode = "";
-      interval = 0;
+      connectCloudData.signupUrl = undefined;
+      updateConnectCloudAuthData();
     } catch (error) {
       if (error instanceof AbortError) {
         // swallows the custom internal error because we don't need
@@ -359,14 +373,14 @@ export async function newCredential(
         shouldResume: () => Promise.resolve(false),
         ignoreFocusOut: true,
         apiFunction: () => fetchConnectCloudAccounts(accessToken),
-        shouldPollApi: connectCloudPolling,
+        shouldPollApi: connectCloudData.shouldPoll,
         exitPollingCondition: (r) => Boolean(r.data && r.data.length > 0),
-        browserUrl: connectCloudUrl,
+        browserUrl: connectCloudData.accountUrl,
       });
-      connectCloudAccounts = resp.data || [];
+      connectCloudData.accounts = resp.data || [];
       // clean-up
-      connectCloudUrl = "";
-      connectCloudPolling = false;
+      connectCloudData.accountUrl = undefined;
+      connectCloudData.shouldPoll = undefined;
     } catch (error) {
       if (error instanceof AbortError) {
         // swallows the custom internal error because we don't need
@@ -392,7 +406,7 @@ export async function newCredential(
   // Step: Determine the correct flow for the user's account list (Connect Cloud only)
   // ***************************************************************
   function determineAccountFlow(_: MultiStepInput, state: MultiStepState) {
-    const accounts = getPublishableAccounts(connectCloudAccounts);
+    const accounts = getPublishableAccounts(connectCloudData.accounts);
     let step: (input: MultiStepInput) => Thenable<InputStep | void>;
     let skippable: boolean | undefined;
 
@@ -405,7 +419,7 @@ export async function newCredential(
       // case 2: there are multiple publishable accounts, display the account selector
       step = (input: MultiStepInput) => inputAccount(input, state);
     } else {
-      if (connectCloudAccounts.length > 0) {
+      if (connectCloudData.accounts.length > 0) {
         // case 3: there are no publishable accounts, but the user has at least one account,
         // so they could be a guest or viewer on that account, ask if they want to sign up
         step = (input: MultiStepInput) => inputSignup(input, state);
@@ -414,8 +428,8 @@ export async function newCredential(
         // sign up process, open a browser to finish creating the account in Connect Cloud
 
         // populate the account polling props
-        connectCloudPolling = true;
-        connectCloudUrl = CONNECT_CLOUD_ACCOUNT_URL;
+        connectCloudData.shouldPoll = true;
+        connectCloudData.accountUrl = CONNECT_CLOUD_ACCOUNT_URL;
 
         // call the retrieveAccounts step again with the populated polling props
 
@@ -432,7 +446,7 @@ export async function newCredential(
   // Step: Select the Connect Cloud account for the credential (Connect Cloud only)
   // ***************************************************************
   async function inputAccount(input: MultiStepInput, state: MultiStepState) {
-    const accounts = getPublishableAccounts(connectCloudAccounts);
+    const accounts = getPublishableAccounts(connectCloudData.accounts);
 
     // display the account selector
     const pick = await input.showQuickPick({
@@ -481,7 +495,7 @@ export async function newCredential(
       return;
     }
 
-    connectCloudSignupUrl = CONNECT_CLOUD_SIGNUP_URL;
+    connectCloudData.signupUrl = CONNECT_CLOUD_SIGNUP_URL;
 
     // go to the authenticate step again to have the user sign up for an individual plan
     return {
