@@ -10,11 +10,9 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/mock"
-
-	"github.com/posit-dev/publisher/internal/clients/cloud_auth"
-
 	"github.com/stretchr/testify/suite"
 
+	"github.com/posit-dev/publisher/internal/clients/cloud_auth"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util/utiltest"

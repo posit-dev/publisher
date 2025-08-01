@@ -5,13 +5,47 @@
 Before you begin, make sure you have the following installed:
 
 - [Visual Studio Code](https://code.visualstudio.com/download)
+  - The [`connor4312.esbuild-problem-matchers`](https://marketplace.visualstudio.com/items?itemName=connor4312.esbuild-problem-matchers) extension.
 - [Node.js](https://nodejs.org/en)
 - [Just](https://just.systems)
 
-## Install Extension
+## Development Workflow
 
-To get this extension packaged and installed installed in VSCode, execute the
-following Just commands from this directory.
+You can run the Posit Publisher extension with the changes you have locally by
+using VS Code's extension development host.
+
+### Run Extension
+
+Open the `extensions/vscode` directory as the workspace in VS Code
+and run the "Run Extension" debug launch configuration.
+
+#### Important Note
+
+The "Run Extension" launch configurations run the `extensions/vscode` esbuild
+which will detect changes in the extension code.
+
+If you have any changes in the Go server make sure to run `just build` in the
+root directory.
+
+If you have changes in the `webviews` make sure to rebuild them:
+
+- `npm run --prefix webviews/homeView`
+
+Running `just` in the root directory will rebuild and repackage everything
+ensuring you have all code changes reflected when you run the extension in the
+development host.
+
+#### References
+
+- [Our VS Code launch configuration file](.vscode/launch.json)
+- [Our VS Code tasks file](.vscode/tasks.json)
+- [VS Code debug configurations Launch configurations](https://code.visualstudio.com/docs/debugtest/debugging-configuration#_launch-configurations)
+- [VS Code Bundling Extensions Using esbuild](https://code.visualstudio.com/api/working-with-extensions/bundling-extension#using-esbuild)
+
+## Install Packaged Extension
+
+You can also install the packaged extension to your VS Code install outside of
+the extension development host. To do this run:
 
 ```console
 just
@@ -22,16 +56,6 @@ Execute the following to uninstall the extension.
 
 ```console
 just uninstall
-```
-
-## Development Workflow
-
-### Configuration
-
-To configure the project for development, run the following command. Invocation will download all project dependencies.
-
-```console
-just configure
 ```
 
 ### Testing
@@ -90,17 +114,6 @@ Debugging the home view is done with browser development tools. Activate the pub
 extension under test, and then use the palette command `Developer:Open Webview Developer Tools` to
 launch the browser debugging window. Note: This command will appear to do nothing if there is no webview
 visible within the extension at the time, so be sure to switch to the publisher extension view before issuing the command.
-
-### Re-building the Webview(s)
-
-The built-in debugger watches for extension changes, but not changes for our
-webviews. To rebuild the webviews without running the entire `just` or `just
-package` command, run the following command replacing the prefix with the
-webview you would like to build.
-
-```console
-npm run --prefix webviews/homeView build
-```
 
 ### Packaging
 

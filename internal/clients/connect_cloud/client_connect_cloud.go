@@ -15,7 +15,7 @@ const baseURLDevelopment = "https://api.dev.connect.posit.cloud"
 const baseURLStaging = "https://api.staging.connect.posit.cloud"
 const baseURLProduction = "https://api.connect.posit.cloud"
 
-func getBaseURL(environment types.CloudEnvironment) string {
+func GetBaseURL(environment types.CloudEnvironment) string {
 	switch environment {
 	case types.CloudEnvironmentDevelopment:
 		return baseURLDevelopment
@@ -38,7 +38,7 @@ func NewConnectCloudClientWithAuth(
 	log logging.Logger,
 	timeout time.Duration,
 	authValue string) APIClient {
-	httpClient := http_client.NewBasicHTTPClientWithAuth(getBaseURL(environment), timeout, authValue)
+	httpClient := http_client.NewBasicHTTPClientWithAuth(GetBaseURL(environment), timeout, authValue)
 	return &ConnectCloudClient{
 		log:    log,
 		client: httpClient,
@@ -63,7 +63,6 @@ func (c ConnectCloudClient) CreateUser() error {
 }
 
 func (c ConnectCloudClient) GetAccounts() (*AccountListResponse, error) {
-	//TODO implement me
 	into := AccountListResponse{}
 	err := c.client.Get("/v1/accounts?has_user_role=true", &into, c.log)
 	if err != nil {
