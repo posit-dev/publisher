@@ -1,0 +1,178 @@
+name: E2E Tests
+on:
+  workflow_call:
+    secrets:
+      CONNECT_LICENSE:
+        required: true
+
+jobs:
+  cypress:
+    name: e2e tests (cypress)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: test/e2e/requirements.txt
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: test/e2e/package-lock.json
+
+      - name: Install Python dependencies
+        working-directory: test/e2e
+        run: pip install -r requirements.txt
+
+      - name: Install npm dependencies
+        working-directory: test/e2e
+        run: npm ci
+
+      - uses: extractions/setup-just@v2
+
+      - name: Build publisher binary
+        run: just build
+
+      - name: Download VSIX artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+      - name: Build Docker images
+        working-directory: test/e2e
+        run: |
+          docker build --build-arg GH_DOWNLOAD_TOKEN=${{ secrets.GH_DOWNLOAD_TOKEN }} -f Dockerfile.base -t e2ebase --platform linux/amd64 .
+          docker compose build connect-publisher-e2e code-server
+        env:
+          CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
+
+      - name: Print host user and group info
+        run: |
+          echo "USER: $(whoami)"
+          echo "UID: $(id -u)"
+          echo "GID: $(id -g)"
+          id
+          ls -ld .
+
+      - name: Ensure content-workspace exists
+        run: mkdir -p ./test/e2e/content-workspace
+
+      - name: Start containers
+        working-directory: test/e2e
+        run: |
+          just start "connect-publisher-e2e"
+          just start "code-server"
+
+      - name: Stop any processes using port 8080
+        run: |
+          PID=$(docker exec publisher-e2e.code-server sh -c "lsof -ti :8080 || netstat -tulnp 2>/dev/null | grep ':8080' | awk '{print \$7}' | cut -d'/' -f1 | head -n1" || true)
+          if [ -n "$PID" ]; then
+            echo "Killing process $PID using port 8080"
+            docker exec publisher-e2e.code-server kill -9 $PID || true
+          else
+            echo "No process using port 8080"
+          fi
+
+      - name: Wait for code-server to be ready
+        run: |
+          for i in {1..30}; do
+            if curl -sf http://localhost:8080 > /dev/null; then
+              echo "code-server is ready!"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "code-server did not become ready in time"
+          exit 1
+
+      - name: Print workspace file ownership before tests
+        run: |
+          docker exec publisher-e2e.code-server ls -lR /home/coder/workspace/content-workspace || true
+
+      - name: Fix workspace ownership for content-workspace
+        run: |
+          docker exec publisher-e2e.code-server chown -R coder:coder /home/coder/workspace/content-workspace || true
+          docker exec publisher-e2e.code-server chmod -R u+rw /home/coder/workspace/content-workspace || true
+
+      - name: Monitor resource usage during Cypress tests
+        run: |
+          nohup bash -c 'for i in {1..30}; do docker stats --no-stream >> resource-usage.log; sleep 5; done' &
+
+      - name: Run Cypress tests
+        working-directory: test/e2e
+        run: npx cypress run
+        env:
+          CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
+          CONNECT_CLOUD_ENV: ${{ env.CONNECT_CLOUD_ENV }} # defaults to staging
+          CI: true
+
+      - name: Run Cypress tests (headed mode)
+        working-directory: test/e2e
+        run: npx cypress run --headed --browser electron
+        env:
+          CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
+          CONNECT_CLOUD_ENV: ${{ env.CONNECT_CLOUD_ENV }} # defaults to staging
+          CI: true
+
+      - name: Upload Cypress screenshots on failure
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: cypress-screenshots
+          path: test/e2e/cypress/screenshots
+          if-no-files-found: ignore
+
+      - name: Upload Cypress videos on failure
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: cypress-videos
+          path: test/e2e/cypress/videos
+          if-no-files-found: ignore
+
+      - name: Print code-server logs on failure
+        if: failure()
+        run: |
+          docker cp publisher-e2e.code-server:/home/coder/.config/code-server/logs ./code-server-logs || true
+          ls -l ./code-server-logs || true
+          cat ./code-server-logs/*/* || true
+
+      - name: Find code-server logs
+        if: failure()
+        run: |
+          docker exec publisher-e2e.code-server find /home/coder -type d -name logs || true
+          docker exec publisher-e2e.code-server find /var/log -type f || true
+
+      - name: Print process info on failure
+        if: failure()
+        run: |
+          docker exec publisher-e2e.code-server ps aux || true
+
+      - name: Print resource usage on failure
+        if: failure()
+        run: |
+          docker exec publisher-e2e.code-server sh -c "top -b -n 1" || true
+          docker stats --no-stream || true
+
+      - name: Upload resource usage log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: resource-usage
+          path: resource-usage.log
+          if-no-files-found: ignore
+
+      - name: Stop containers
+        if: always()
+        working-directory: test/e2e
+        run: just stop

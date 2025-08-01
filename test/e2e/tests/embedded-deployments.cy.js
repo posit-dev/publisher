@@ -4,12 +4,17 @@ describe("Create Deployments", () => {
   beforeEach(() => {
     cy.resetConnect();
     cy.setAdminCredentials();
-    cy.clearupDeployments(".");
-    cy.clearupDeployments("fastapi-simple");
     cy.visit("/");
   });
 
+  afterEach(() => {
+    cy.clearupDeployments(".");
+    cy.clearupDeployments("fastapi-simple");
+  });
+
   it("fastapi at top of workspace", () => {
+    cy.waitForPublisherIframe(); // Wait after triggering extension
+    cy.debugIframes();
     cy.createDeployment(
       ".",
       "simple.py",
@@ -44,6 +49,8 @@ describe("Create Deployments", () => {
   });
 
   it("fastAPI in subdirectory of workspace", () => {
+    cy.waitForPublisherIframe(); // Wait after triggering extension
+    cy.debugIframes();
     cy.createDeployment(
       "fastapi-simple",
       "fastapi-main.py",

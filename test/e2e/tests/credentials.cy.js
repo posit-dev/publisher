@@ -11,8 +11,11 @@ describe("Credentials Section", () => {
     cy.getPublisherSidebarIcon()
       .should("be.visible", { timeout: 10000 })
       .click();
+    cy.waitForPublisherIframe(); // Wait after triggering extension
+    cy.debugIframes();
 
     cy.toggleCredentialsSection();
+    cy.debugIframes();
     cy.publisherWebview()
       .findByText("No credentials have been added yet.")
       .should("be.visible");
@@ -59,8 +62,11 @@ describe("Credentials Section", () => {
     cy.getPublisherSidebarIcon()
       .should("be.visible", { timeout: 10000 })
       .click();
+    cy.waitForPublisherIframe(); // Wait after triggering extension
+    cy.debugIframes();
 
     cy.toggleCredentialsSection();
+    cy.debugIframes();
     cy.publisherWebview()
       .findByText("No credentials have been added yet.")
       .should("not.exist");

@@ -123,34 +123,41 @@ RUN curl -O https://cdn.rstudio.com/r/${OS_IDENTIFIER}/pkgs/r-${R_VERSION}_1_amd
 
 FROM base AS quarto-1.4.556
 ENV QUARTO_VERSION=1.4.556
-# from https://docs.posit.co/resources/install-quarto.html#download-install-quarto-tar
+ARG GH_DOWNLOAD_TOKEN
 RUN mkdir -p /opt/quarto/${QUARTO_VERSION} \
-    && curl -o quarto.tar.gz -L \
-        "https://github.com/quarto-dev/quarto-cli/releases/download/v${QUARTO_VERSION}/quarto-${QUARTO_VERSION}-linux-amd64.tar.gz" \
+    && curl -H "Authorization: token ${GH_DOWNLOAD_TOKEN}" -fSL -o quarto.tar.gz \
+    "https://github.com/quarto-dev/quarto-cli/releases/download/v${QUARTO_VERSION}/quarto-${QUARTO_VERSION}-linux-amd64.tar.gz" \
+    && file quarto.tar.gz | grep 'gzip compressed data' \
     && tar -zxvf quarto.tar.gz -C "/opt/quarto/${QUARTO_VERSION}" --strip-components=1 \
     && rm quarto.tar.gz
 
 FROM base AS quarto-1.5.52
 ENV QUARTO_VERSION=1.5.52
+ARG GH_DOWNLOAD_TOKEN
 RUN mkdir -p /opt/quarto/${QUARTO_VERSION} \
-    && curl -o quarto.tar.gz -L \
-        "https://github.com/quarto-dev/quarto-cli/releases/download/v${QUARTO_VERSION}/quarto-${QUARTO_VERSION}-linux-amd64.tar.gz" \
+    && curl -H "Authorization: token ${GH_DOWNLOAD_TOKEN}" -fSL -o quarto.tar.gz \
+    "https://github.com/quarto-dev/quarto-cli/releases/download/v${QUARTO_VERSION}/quarto-${QUARTO_VERSION}-linux-amd64.tar.gz" \
+    && file quarto.tar.gz | grep 'gzip compressed data' \
     && tar -zxvf quarto.tar.gz -C "/opt/quarto/${QUARTO_VERSION}" --strip-components=1 \
     && rm quarto.tar.gz
 
 FROM base AS quarto-1.6.42
 ENV QUARTO_VERSION=1.6.42
+ARG GH_DOWNLOAD_TOKEN
 RUN mkdir -p /opt/quarto/${QUARTO_VERSION} \
-    && curl -o quarto.tar.gz -L \
-        "https://github.com/quarto-dev/quarto-cli/releases/download/v${QUARTO_VERSION}/quarto-${QUARTO_VERSION}-linux-amd64.tar.gz" \
+    && curl -H "Authorization: token ${GH_DOWNLOAD_TOKEN}" -fSL -o quarto.tar.gz \
+    "https://github.com/quarto-dev/quarto-cli/releases/download/v${QUARTO_VERSION}/quarto-${QUARTO_VERSION}-linux-amd64.tar.gz" \
+    && file quarto.tar.gz | grep 'gzip compressed data' \
     && tar -zxvf quarto.tar.gz -C "/opt/quarto/${QUARTO_VERSION}" --strip-components=1 \
     && rm quarto.tar.gz
 
 FROM base AS quarto-1.7.6
 ENV QUARTO_VERSION=1.7.6
+ARG GH_DOWNLOAD_TOKEN
 RUN mkdir -p /opt/quarto/${QUARTO_VERSION} \
-    && curl -o quarto.tar.gz -L \
-        "https://github.com/quarto-dev/quarto-cli/releases/download/v${QUARTO_VERSION}/quarto-${QUARTO_VERSION}-linux-amd64.tar.gz" \
+    && curl -H "Authorization: token ${GH_DOWNLOAD_TOKEN}" -fSL -o quarto.tar.gz \
+    "https://github.com/quarto-dev/quarto-cli/releases/download/v${QUARTO_VERSION}/quarto-${QUARTO_VERSION}-linux-amd64.tar.gz" \
+    && file quarto.tar.gz | grep 'gzip compressed data' \
     && tar -zxvf quarto.tar.gz -C "/opt/quarto/${QUARTO_VERSION}" --strip-components=1 \
     && rm quarto.tar.gz
 
@@ -195,4 +202,4 @@ ARG QUARTO_VERSION=1.4.556
 RUN ln -s /opt/quarto/${QUARTO_VERSION}/bin/quarto /usr/bin/quarto
 
 # clean up from our apt-update
-RUN rm -rf /var/lib/apt/lists/* 
+RUN rm -rf /var/lib/apt/lists/*

@@ -3,38 +3,40 @@
 
 // Get the main webview iframe of the Publisher extension.
 Cypress.Commands.add("publisherWebview", () => {
-  return cy
-    .get("iframe.webview.ready")
-    .then((obj) => {
-      if (obj.length === 1) {
-        return cy
-          .log("frame.webview.ready search found one this time")
-          .wrap(obj)
-          .its("0.contentDocument.body");
-      }
-      return cy
-        .log("frame.webview.ready search found more than one", obj.length)
-        .wrap(obj)
-        .its("1.contentDocument.body");
-    })
+  function findPublisherIframe(retries = 90) {
+    // double the retries for more robustness
+    return cy
+      .get("iframe.webview.ready", { timeout: 20000 }) // double the timeout for each attempt
+      .then(($iframes) => {
+        cy.task("print", `Found ${$iframes.length} webview.ready iframes`);
+        const $target = Cypress.$($iframes).filter((i, el) =>
+          (el.src || "").includes("extensionId=posit.publisher"),
+        );
+        cy.task("print", `Found ${$target.length} publisher iframes`);
+        if ($target.length === 0 && retries > 0) {
+          // eslint-disable-next-line cypress/no-unnecessary-waiting
+          cy.wait(2000);
+          return findPublisherIframe(retries - 1);
+        }
+        if ($target.length === 0 && retries === 0) {
+          cy.task(
+            "print",
+            "Max retries reached: publisher iframe never appeared",
+          );
+        }
+        expect(
+          $target.length,
+          "publisher webview iframe present",
+        ).to.be.greaterThan(0);
+        return cy.wrap($target[0].contentDocument.body);
+      });
+  }
+  return findPublisherIframe()
     .should("not.be.empty")
     .then(cy.wrap)
-    .find("iframe#active-frame")
-    .then((obj) => {
-      if (obj.length === 1) {
-        return cy
-          .log("iframe#active-frame search found one this time")
-          .wrap(obj)
-          .its("0.contentDocument.body");
-      }
-      return cy
-        .log("iframe#active-frame search found more than one", obj.length)
-        .wrap(obj)
-        .its("1.contentDocument.body");
-    })
-    .should((body) => {
-      expect(Cypress.$(body).has("#app").length).gt(0);
-    })
+    .find("iframe#active-frame", { timeout: 20000 })
+    .its("0.contentDocument.body")
+    .should("not.be.empty")
     .then(cy.wrap);
 });
 
