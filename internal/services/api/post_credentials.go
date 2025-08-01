@@ -60,8 +60,9 @@ func PostCredentialFuncHandler(log logging.Logger) http.HandlerFunc {
 			return
 		}
 
+		var environment types.CloudEnvironment
 		if body.ServerType == server_type.ServerTypeConnectCloud {
-			environment := types.CloudEnvironment(req.Header.Get(connectCloudEnvironmentHeader))
+			environment = types.CloudEnvironment(req.Header.Get(connectCloudEnvironmentHeader))
 			body.URL = connect_cloud.GetBaseURL(environment)
 		}
 
@@ -75,6 +76,7 @@ func PostCredentialFuncHandler(log logging.Logger) http.HandlerFunc {
 			AccountName:         body.AccountName,
 			RefreshToken:        body.RefreshToken,
 			AccessToken:         body.AccessToken,
+			CloudEnvironment:    environment,
 		})
 		if err != nil {
 			if _, ok := err.(*credentials.CredentialIdentityCollision); ok {
