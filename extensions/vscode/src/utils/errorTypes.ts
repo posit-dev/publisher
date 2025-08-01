@@ -21,7 +21,9 @@ export type ErrorCode =
   | "tomlUnknownError"
   | "pythonExecNotFound"
   | "credentialsCannotBackupFile"
-  | "credentialsCorrupted";
+  | "credentialsCorrupted"
+  | "deviceAuthAccessDenied"
+  | "deviceAuthExpiredToken";
 
 export type axiosErrorWithJson<T = { code: ErrorCode; details: unknown }> =
   AxiosError & {
@@ -194,6 +196,28 @@ export const errCannotBackupCredentialsFileMessage = (
   return `Unrecognizable credentials for Posit Publisher were found. ${err.response.data.details.message}`;
 };
 
+// Device auth access denied error
+export type ErrDeviceAuthAccessDenied =
+  MkErrorDataType<"deviceAuthAccessDenied">;
+export const isErrDeviceAuthAccessDenied =
+  mkErrorTypeGuard<ErrDeviceAuthAccessDenied>("deviceAuthAccessDenied");
+export const errDeviceAuthAccessDeniedMessage = (
+  err: axiosErrorWithJson<ErrDeviceAuthAccessDenied>,
+) => {
+  return `Posit Connect Cloud access denied: ${err.response.data.code}`;
+};
+
+// Device auth expired token error
+export type ErrDeviceAuthExpiredToken =
+  MkErrorDataType<"deviceAuthExpiredToken">;
+export const isDeviceAuthExpiredToken =
+  mkErrorTypeGuard<ErrDeviceAuthExpiredToken>("deviceAuthExpiredToken");
+export const errDeviceAuthExpiredTokenMessage = (
+  err: axiosErrorWithJson<ErrDeviceAuthExpiredToken>,
+) => {
+  return `Expired Posit Connect Cloud authorization token: ${err.response.data.code}`;
+};
+
 // Tries to match an Axios error that comes with an identifiable Json structured data
 // defaulting to be ErrUnknown message when
 export function resolveAgentJsonErrorMsg(err: axiosErrorWithJson) {
@@ -215,6 +239,14 @@ export function resolveAgentJsonErrorMsg(err: axiosErrorWithJson) {
 
   if (isErrPythonExecNotFoundError(err)) {
     return errPythonExecNotFoundErrorMessage(err);
+  }
+
+  if (isErrDeviceAuthAccessDenied(err)) {
+    return errDeviceAuthAccessDeniedMessage(err);
+  }
+
+  if (isDeviceAuthExpiredToken(err)) {
+    return errDeviceAuthExpiredTokenMessage(err);
   }
 
   return errUnknownMessage(err as axiosErrorWithJson<ErrUnknown>);
