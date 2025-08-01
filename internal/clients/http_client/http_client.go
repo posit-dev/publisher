@@ -332,7 +332,6 @@ func IsHTTPAgentErrorStatusOf(err error, status int) (*types.AgentError, bool) {
 		if httperr, isHttpErr := aerr.Err.(*HTTPError); isHttpErr {
 			return aerr, httperr.Status == status
 		}
-
 	}
 	return nil, false
 }

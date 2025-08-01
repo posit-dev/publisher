@@ -1,4 +1,4 @@
-package connect
+package types
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/posit-dev/publisher/internal/util/utiltest"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/posit-dev/publisher/internal/util/utiltest"
 )
 
 type AppTypesSuite struct {

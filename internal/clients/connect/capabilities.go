@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/posit-dev/publisher/internal/clients/connect/server_settings"
+	clienttypes "github.com/posit-dev/publisher/internal/clients/types"
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/types"
@@ -97,7 +98,7 @@ func (c *ConnectClient) getSettings(base util.AbsolutePath, cfg *config.Config, 
 	}
 
 	schedulerPath := ""
-	appMode := AppModeFromType(cfg.Type)
+	appMode := clienttypes.AppModeFromType(cfg.Type)
 	if !appMode.IsStaticContent() {
 		// Scheduler settings don't apply to static content,
 		// and the API will err if you try.
@@ -247,7 +248,7 @@ func (a *allSettings) checkRuntime(cfg *config.Config) error {
 		// No runtime configuration present
 		return nil
 	}
-	appMode := AppModeFromType(cfg.Type)
+	appMode := clienttypes.AppModeFromType(cfg.Type)
 	if appMode.IsStaticContent() {
 		return errRuntimeSettingsForStaticContent
 	}

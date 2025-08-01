@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+
 	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/clients/connect"
 	"github.com/posit-dev/publisher/internal/events"
