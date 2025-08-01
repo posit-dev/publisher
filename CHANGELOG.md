@@ -11,6 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added endpoints for performing OAuth Device Authorization Grant with Posit Cloud login. (#2692)
 
+## [1.18.1]
+
+### Fixed
+
+- Updated software components used by Posit Publisher to address CVE-2025-7783
+  (#2741)
+
 ## [1.18.0]
 
 ### Fixed
