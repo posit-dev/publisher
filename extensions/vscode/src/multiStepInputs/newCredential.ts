@@ -133,6 +133,11 @@ export async function newCredential(
       // when the enableConnectCloud config is turned off
       serverType = ServerType.CONNECT;
       platformName = PlatformName.CONNECT;
+      // default everything outside the Connect fields to empty strings
+      state.data.accessToken = "";
+      state.data.refreshToken = "";
+      state.data.accountId = "";
+      state.data.accountName = "";
 
       await MultiStepInput.run({
         step: (input) => inputServerUrl(input, state),

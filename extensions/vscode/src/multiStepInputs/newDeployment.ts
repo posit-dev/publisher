@@ -606,6 +606,11 @@ export async function newDeployment(
       // when the enableConnectCloud config is turned off
       serverType = ServerType.CONNECT;
       platformName = PlatformName.CONNECT;
+      // default everything outside the Connect fields to empty strings
+      newDeploymentData.newCredentials.accessToken = "";
+      newDeploymentData.newCredentials.refreshToken = "";
+      newDeploymentData.newCredentials.accountId = "";
+      newDeploymentData.newCredentials.accountName = "";
 
       return { step: (input: MultiStepInput) => inputServerUrl(input, state) };
     }
