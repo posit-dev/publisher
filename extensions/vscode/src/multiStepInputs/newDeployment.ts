@@ -955,6 +955,10 @@ export async function newDeployment(
         newDeploymentData.newCredentials.url,
         newDeploymentData.newCredentials.apiKey,
         newDeploymentData.newCredentials.snowflakeConnection,
+        "",
+        "",
+        "",
+        "",
         serverType,
       );
       newOrSelectedCredential = response.data;

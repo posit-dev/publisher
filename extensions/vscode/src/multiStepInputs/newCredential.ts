@@ -6,6 +6,9 @@ import {
   QuickPickItemWithIndex,
   isQuickPickItem,
   isQuickPickItemWithIndex,
+  AbortError,
+  InputStep,
+  InfoMessageParameters,
 } from "./multiStepHelper";
 
 import { InputBoxValidationSeverity, window } from "vscode";
@@ -32,8 +35,22 @@ import {
   platformList,
   isConnect,
   isSnowflake,
+  isConnectCloud,
+  getPublishableAccounts,
+  fetchDeviceAuth,
+  fetchAuthToken,
+  fetchConnectCloudAccounts,
 } from "src/multiStepInputs/common";
 import { getEnumKeyByEnumValue } from "src/utils/enums";
+import {
+  AuthToken,
+  ConnectCloudAccount,
+  DeviceAuth,
+} from "src/api/types/connectCloud";
+import {
+  CONNECT_CLOUD_SIGNUP_URL,
+  CONNECT_CLOUD_ACCOUNT_URL,
+} from "src/constants";
 
 const createNewCredentialLabel = "Create a New Credential";
 
@@ -48,11 +65,19 @@ export async function newCredential(
   let credentials: Credential[] = [];
 
   // the serverType & platformName will be overwritten in the very first step
-  // when the platform selector is introduced
+  // when the platform is selected
   let serverType: ServerType = ServerType.CONNECT;
   let platformName: PlatformName = PlatformName.CONNECT;
   let connections: SnowflakeConnection[] = [];
   let connectionQuickPicks: QuickPickItemWithIndex[];
+  let connectCloudAccounts: ConnectCloudAccount[] = [];
+  let connectCloudUrl: string = "";
+  let connectCloudSignupUrl: string = "";
+  let connectCloudPolling: boolean = false;
+  let deviceCode: string = "";
+  let userCode: string = "";
+  let verificationURI: string = "";
+  let interval: number = 0;
 
   const getSnowflakeConnections = async (serverUrl: string) => {
     const sfc = await fetchSnowflakeConnections(serverUrl);
@@ -61,9 +86,10 @@ export async function newCredential(
   };
 
   // ***************************************************************
-  // Order of all steps
+  // Order of all steps for Connect
   // ***************************************************************
 
+  // Select the platform
   // Get the server url
   // Get the API key for Connect OR get the Snowflake connection name
   // Get the credential name
@@ -89,6 +115,10 @@ export async function newCredential(
         apiKey: <string | undefined>undefined, // eventual type is string
         name: <string | undefined>undefined, // eventual type is string
         snowflakeConnection: <string | undefined>undefined, // eventual type is string
+        accessToken: <string | undefined>undefined, // eventual type is string
+        refreshToken: <string | undefined>undefined, // eventual type is string
+        accountId: <string | undefined>undefined, // eventual type is string
+        accountName: <string | undefined>undefined, // eventual type is string
       },
       promptStepNumbers: {},
     };
@@ -131,7 +161,328 @@ export async function newCredential(
     serverType = enumKey ? ServerType[enumKey] : ServerType.CONNECT;
     platformName = pick.label as PlatformName;
 
-    return { step: (input: MultiStepInput) => inputServerUrl(input, state) };
+    if (isConnectCloud(serverType)) {
+      // default everything outside the Connect Cloud fields to empty strings
+      state.data.url = "";
+      state.data.apiKey = "";
+      state.data.snowflakeConnection = "";
+
+      return {
+        step: (input: MultiStepInput) => initDeviceAuth(input, state),
+        skippable: true,
+      };
+    }
+
+    if (isConnect(serverType)) {
+      // default everything outside the Connect fields to empty strings
+      state.data.accessToken = "";
+      state.data.refreshToken = "";
+      state.data.accountId = "";
+      state.data.accountName = "";
+
+      return {
+        step: (input: MultiStepInput) => inputServerUrl(input, state),
+      };
+    }
+
+    // Should not land here since the platform is forcefully picked in the very first step
+    return;
+  }
+
+  // ***************************************************************
+  // Step: Kick-off device authentication for Connect Cloud (Connect Cloud only)
+  // ***************************************************************
+  async function initDeviceAuth(input: MultiStepInput, state: MultiStepState) {
+    try {
+      // we await this input box that it is treated as an information message
+      // until the api calls happening in the background have completed
+      const resp = await input.showInfoMessage<
+        DeviceAuth,
+        InfoMessageParameters<DeviceAuth>
+      >({
+        title: state.title,
+        step: 0,
+        totalSteps: 0,
+        // disables user input
+        enabled: false,
+        // shows a progress indicator on the input box
+        busy: true,
+        value: "Authenticating with Connect Cloud ...",
+        // moves the cursor to the start of the value text to avoid the automated text highlight
+        valueSelection: [0, 0],
+        // displays a custom information message below the input box that hides the prompt and
+        // default message: "Please 'Enter' to confirm your input or 'Escape' to cancel"
+        validationMessage: {
+          message:
+            "Please follow the next steps in the external browser or 'Escape' to abort",
+          severity: InputBoxValidationSeverity.Info,
+        },
+        prompt: "",
+        shouldResume: () => Promise.resolve(false),
+        ignoreFocusOut: true,
+        apiFunction: () => fetchDeviceAuth(),
+      });
+      deviceCode = resp.data?.deviceCode || "";
+      verificationURI = resp.data?.verificationURI || "";
+      userCode = resp.data?.userCode || "";
+      interval = resp.data?.interval || 0;
+    } catch (error) {
+      if (error instanceof AbortError) {
+        // swallows the custom internal error because we don't need
+        // an error message everytime the user decides to abort or
+        // whenever the user just plain abandones the task
+        return;
+      } else if (error instanceof Error) {
+        // display an error message for all other errors
+        window.showErrorMessage(
+          `Failed to authenticate. ${getSummaryStringFromError("newCredentials, fetchDeviceAuth", error)}`,
+        );
+      }
+      return;
+    }
+
+    return {
+      step: (input: MultiStepInput) => authenticate(input, state),
+      skippable: true,
+    };
+  }
+
+  // ***************************************************************
+  // Step: Complete device authentication for Connect Cloud (Connect Cloud only)
+  // ***************************************************************
+  async function authenticate(input: MultiStepInput, state: MultiStepState) {
+    try {
+      // we await this input box that it is treated as an information message
+      // until the api calls happening in the background have completed
+      const resp = await input.showInfoMessage<
+        AuthToken,
+        InfoMessageParameters<AuthToken>
+      >({
+        title: state.title,
+        step: 0,
+        totalSteps: 0,
+        // disables user input
+        enabled: false,
+        // shows a progress indicator on the input box
+        busy: true,
+        value: `Authenticating with Connect Cloud ... (using code: ${userCode})`,
+        // moves the cursor to the start of the value text to avoid the automated text highlight
+        valueSelection: [0, 0],
+        // displays a custom information message below the input box that hides the prompt and
+        // default message: "Please 'Enter' to confirm your input or 'Escape' to cancel"
+        validationMessage: {
+          message:
+            "Please follow the next steps in the external browser or 'Escape' to abort",
+          severity: InputBoxValidationSeverity.Info,
+        },
+        prompt: "",
+        shouldResume: () => Promise.resolve(false),
+        ignoreFocusOut: true,
+        apiFunction: () => fetchAuthToken(deviceCode),
+        shouldPollApi: true,
+        pollingInterval: interval * 1000,
+        exitPollingCondition: (r) => Boolean(r.data),
+        browserUrl: `${connectCloudSignupUrl || ""}${verificationURI}`,
+      });
+      state.data.accessToken = resp.data?.accessToken;
+      state.data.refreshToken = resp.data?.refreshToken;
+      // clean-up
+      connectCloudSignupUrl = "";
+      verificationURI = "";
+      deviceCode = "";
+      userCode = "";
+      interval = 0;
+    } catch (error) {
+      if (error instanceof AbortError) {
+        // swallows the custom internal error because we don't need
+        // an error message everytime the user decides to abort or
+        // whenever the user just plain abandones the task
+        return;
+      } else if (error instanceof Error) {
+        // display an error message for all other errors
+        window.showErrorMessage(
+          `Failed to authenticate. ${getSummaryStringFromError("newCredentials, fetchAuthToken", error)}`,
+        );
+      }
+      return;
+    }
+
+    return {
+      step: (input: MultiStepInput) => retrieveAccounts(input, state),
+      skippable: true,
+    };
+  }
+
+  // ***************************************************************
+  // Step: Retrieve the user's accounts from Connect Cloud (Connect Cloud only)
+  // ***************************************************************
+  async function retrieveAccounts(
+    input: MultiStepInput,
+    state: MultiStepState,
+  ) {
+    const accessToken =
+      typeof state.data.accessToken === "string" &&
+      state.data.accessToken.length
+        ? state.data.accessToken
+        : "";
+
+    try {
+      // we await this input box that it is treated as an information message
+      // until the api calls happening in the background have completed
+      const resp = await input.showInfoMessage<
+        ConnectCloudAccount[],
+        InfoMessageParameters<ConnectCloudAccount[]>
+      >({
+        title: state.title,
+        step: 0,
+        totalSteps: 0,
+        // disables user input
+        enabled: false,
+        // shows a progress indicator on the input box
+        busy: true,
+        value: "Retrieving accounts from Connect Cloud ...",
+        // moves the cursor to the start of the value text to avoid the automated text highlight
+        valueSelection: [0, 0],
+        // displays a custom information message below the input box that hides the prompt and
+        // default message: "Please 'Enter' to confirm your input or 'Escape' to cancel"
+        validationMessage: {
+          message:
+            "Please wait while we get your account data or 'Escape' to abort",
+          severity: InputBoxValidationSeverity.Info,
+        },
+        prompt: "",
+        shouldResume: () => Promise.resolve(false),
+        ignoreFocusOut: true,
+        apiFunction: () => fetchConnectCloudAccounts(accessToken),
+        shouldPollApi: connectCloudPolling,
+        exitPollingCondition: (r) => Boolean(r.data && r.data.length > 0),
+        browserUrl: connectCloudUrl,
+      });
+      connectCloudAccounts = resp.data || [];
+      // clean-up
+      connectCloudUrl = "";
+      connectCloudPolling = false;
+    } catch (error) {
+      if (error instanceof AbortError) {
+        // swallows the custom internal error because we don't need
+        // an error message everytime the user decides to abort or
+        // whenever the user just plain abandones the task
+        return;
+      } else if (error instanceof Error) {
+        // display an error message for all other errors
+        window.showErrorMessage(
+          `Unable to retrieve accounts from Connect Cloud. ${getSummaryStringFromError("newCredentials, fetchConnectCloudAccounts", error)}`,
+        );
+      }
+      return;
+    }
+
+    return {
+      step: (input: MultiStepInput) => determineAccountFlow(input, state),
+      skippable: true,
+    };
+  }
+
+  // ***************************************************************
+  // Step: Determine the correct flow for the user's account list (Connect Cloud only)
+  // ***************************************************************
+  function determineAccountFlow(_: MultiStepInput, state: MultiStepState) {
+    const accounts = getPublishableAccounts(connectCloudAccounts);
+    let step: (input: MultiStepInput) => Thenable<InputStep | void>;
+    let skippable: boolean | undefined;
+
+    if (accounts.length === 1) {
+      // case 1: there is only one publishable account, use it and create the credential
+      state.data.accountId = accounts[0].id;
+      state.data.accountName = accounts[0].displayName;
+      step = (input: MultiStepInput) => inputCredentialName(input, state);
+    } else if (accounts.length > 1) {
+      // case 2: there are multiple publishable accounts, display the account selector
+      step = (input: MultiStepInput) => inputAccount(input, state);
+    } else {
+      if (connectCloudAccounts.length > 0) {
+        // case 3: there are no publishable accounts, but the user has at least one account,
+        // so they could be a guest or viewer on that account, ask if they want to sign up
+        step = (input: MultiStepInput) => inputSignup(input, state);
+      } else {
+        // case 4: there are zero accounts for the user, so they must be going through the
+        // sign up process, open a browser to finish creating the account in Connect Cloud
+
+        // populate the account polling props
+        connectCloudPolling = true;
+        connectCloudUrl = CONNECT_CLOUD_ACCOUNT_URL;
+
+        // call the retrieveAccounts step again with the populated polling props
+
+        step = (input: MultiStepInput) => retrieveAccounts(input, state);
+        skippable = true;
+      }
+    }
+
+    // must return a promise since the step itself does not await on anything
+    return Promise.resolve({ step, skippable });
+  }
+
+  // ***************************************************************
+  // Step: Select the Connect Cloud account for the credential (Connect Cloud only)
+  // ***************************************************************
+  async function inputAccount(input: MultiStepInput, state: MultiStepState) {
+    const accounts = getPublishableAccounts(connectCloudAccounts);
+
+    // display the account selector
+    const pick = await input.showQuickPick({
+      title: state.title,
+      step: 0,
+      totalSteps: 0,
+      placeholder:
+        "Please select the Connect Cloud account to be used for the new credential.",
+      items: accounts.map((a) => ({ label: a.displayName })),
+      buttons: [],
+      shouldResume: () => Promise.resolve(false),
+      ignoreFocusOut: true,
+    });
+
+    const account = accounts.find((a) => a.displayName === pick.label);
+    // fallback to the first publishable account if the selected account is ever not found
+    state.data.accountId = account?.id || accounts[0].id;
+    state.data.accountName = account?.displayName || accounts[0].displayName;
+
+    return {
+      step: (input: MultiStepInput) => inputCredentialName(input, state),
+    };
+  }
+
+  // ***************************************************************
+  // Step: Select whether to sign up for a Connect Cloud account (Connect Cloud only)
+  // ***************************************************************
+  async function inputSignup(input: MultiStepInput, state: MultiStepState) {
+    const pick = await input.showQuickPick({
+      title: state.title,
+      step: 0,
+      totalSteps: 0,
+      placeholder:
+        "This Posit Connect Cloud account is not publishable. Sign up for an indiviual plan?",
+      items: [
+        { label: "Sign up for an individual Posit Connect Cloud plan" },
+        { label: "Exit" },
+      ],
+      buttons: [],
+      shouldResume: () => Promise.resolve(false),
+      ignoreFocusOut: true,
+    });
+
+    if (pick.label === "Exit") {
+      // bail out
+      return;
+    }
+
+    connectCloudSignupUrl = CONNECT_CLOUD_SIGNUP_URL;
+
+    // go to the authenticate step again to have the user sign up for an individual plan
+    return {
+      step: (input: MultiStepInput) => initDeviceAuth(input, state),
+      skippable: true,
+    };
   }
 
   // ***************************************************************
@@ -242,7 +593,9 @@ export async function newCredential(
     state.data.url = formatURL(url.trim());
 
     if (isConnect(serverType)) {
-      return { step: (input: MultiStepInput) => inputAPIKey(input, state) };
+      return {
+        step: (input: MultiStepInput) => inputAPIKey(input, state),
+      };
     }
 
     if (isSnowflake(serverType)) {
@@ -398,13 +751,19 @@ export async function newCredential(
         ? state.data.name
         : "";
 
+    const accountName =
+      typeof state.data.accountName === "string" &&
+      state.data.accountName.length
+        ? state.data.accountName
+        : "";
+
     const name = await input.showInputBox({
       title: state.title,
       step: 0,
       totalSteps: 0,
       value: currentName,
-      prompt: "Enter a unique nickname for this server.",
-      placeholder: `${platformName}`,
+      prompt: `Enter a unique nickname for this ${isConnectCloud(serverType) ? "account" : "server"}.`,
+      placeholder: `${isConnectCloud(serverType) ? accountName : platformName}`,
       finalValidation: (input: string) => {
         input = input.trim();
         if (input === "") {
@@ -474,7 +833,15 @@ export async function newCredential(
     state.data.snowflakeConnection === undefined ||
     isQuickPickItem(state.data.snowflakeConnection) ||
     state.data.name === undefined ||
-    isQuickPickItem(state.data.name)
+    isQuickPickItem(state.data.name) ||
+    state.data.accessToken === undefined ||
+    isQuickPickItem(state.data.accessToken) ||
+    state.data.refreshToken === undefined ||
+    isQuickPickItem(state.data.refreshToken) ||
+    state.data.accountId === undefined ||
+    isQuickPickItem(state.data.accountId) ||
+    state.data.accountName === undefined ||
+    isQuickPickItem(state.data.accountName)
   ) {
     return;
   }
@@ -487,6 +854,10 @@ export async function newCredential(
       state.data.url,
       state.data.apiKey,
       state.data.snowflakeConnection,
+      state.data.accountId,
+      state.data.accountName,
+      state.data.refreshToken,
+      state.data.accessToken,
       serverType,
     );
   } catch (error: unknown) {
