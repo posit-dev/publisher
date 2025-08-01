@@ -96,14 +96,14 @@ export async function newCredential(
   };
 
   // reset all Connect data to empty strings so new credentials will saved
-  const resetConnectData = () => {
+  const resetConnectData = (state: MultiStepState) => {
     state.data.url = "";
     state.data.apiKey = "";
     state.data.snowflakeConnection = "";
   };
 
   // reset all Connect Clound data to empty strings so new credentials will saved
-  const resetConnectCloudData = () => {
+  const resetConnectCloudData = (state: MultiStepState) => {
     state.data.accessToken = "";
     state.data.refreshToken = "";
     state.data.accountId = "";
@@ -119,13 +119,42 @@ export async function newCredential(
   };
 
   // ***************************************************************
-  // Order of all steps for Connect
+  // Order of all steps for creating a new Connect credential
   // ***************************************************************
 
   // Select the platform
   // Get the server url
   // Get the API key for Connect OR get the Snowflake connection name
   // Get the credential name
+  // result in calling credential API
+
+  // ***************************************************************
+  // Order of all steps for creating a new Connect Cloud credential
+  // ***************************************************************
+
+  // Select the platform
+  // Initialize the device authentication
+  // Poll the device authentication
+  // Retrive the user's accounts
+  // Determine the correct next step:
+  //  - If there is only one publishable account:
+  //    Get the credential name
+  //  - If there are multiple publishable accounts:
+  //    Get selected account from account list
+  //    Get the credential name
+  //  - If there are no publishable accounts, but there is at least one account:
+  //    Get sign up for individual plan
+  //    Initialize the device authentication
+  //    Poll the device authentication
+  //    Poll for the user's new account
+  //    Determine the correct next step
+  //     - There will be only one publishable account:
+  //       Get the credential name
+  //  - If there are zero accounts for the user:
+  //    Poll for the user's new account
+  //    Determine the correct next step
+  //     - There will be only one publishable account:
+  //       Get the credential name
   // result in calling credential API
 
   // ***************************************************************
@@ -166,7 +195,7 @@ export async function newCredential(
       // when the enableConnectCloud config is turned off
       serverType = ServerType.CONNECT;
       platformName = PlatformName.CONNECT;
-      resetConnectCloudData();
+      resetConnectCloudData(state);
 
       await MultiStepInput.run({
         step: (input) => inputServerUrl(input, state),
@@ -196,7 +225,7 @@ export async function newCredential(
     platformName = pick.label as PlatformName;
 
     if (isConnectCloud(serverType)) {
-      resetConnectData();
+      resetConnectData(state);
       return {
         step: (input: MultiStepInput) => initDeviceAuth(input, state),
         skippable: true,
@@ -204,7 +233,7 @@ export async function newCredential(
     }
 
     if (isConnect(serverType)) {
-      resetConnectCloudData();
+      resetConnectCloudData(state);
       return {
         step: (input: MultiStepInput) => inputServerUrl(input, state),
       };
@@ -495,7 +524,11 @@ export async function newCredential(
       return;
     }
 
+    // populate the sign up url
     connectCloudData.signupUrl = CONNECT_CLOUD_SIGNUP_URL;
+    // populate the account polling props
+    connectCloudData.shouldPoll = true;
+    connectCloudData.accountUrl = CONNECT_CLOUD_ACCOUNT_URL;
 
     // go to the authenticate step again to have the user sign up for an individual plan
     return {

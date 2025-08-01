@@ -13,6 +13,7 @@ import {
   QuickInput,
   QuickInputButtons,
   InputBoxValidationMessage,
+  env,
 } from "vscode";
 
 export class AbortError extends Error {}

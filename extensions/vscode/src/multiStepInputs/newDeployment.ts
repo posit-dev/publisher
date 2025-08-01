@@ -364,7 +364,7 @@ export async function newDeployment(
   };
 
   // ***************************************************************
-  // Order of all steps for Connect
+  // Order of all steps for creating a new Connect deployment
   // NOTE: This multi-stepper is used for multiple commands
   // ***************************************************************
 
@@ -378,6 +378,45 @@ export async function newDeployment(
   // - Get the server url
   // - Get the API key for Connect OR get the Snowflake connection name
   // - Get the credential name
+  // Auto-name the config file to use
+  // Auto-name the contentRecord
+  // Call APIs and hopefully succeed at everything
+  // Return the names of the contentRecord, config and credentials
+
+  // ***************************************************************
+  // Order of all steps for creating a new Connect Cloud deployment
+  // NOTE: This multi-stepper is used for multiple commands
+  // ***************************************************************
+
+  // Select the entrypoint, if there is more than one
+  // Select the content type, if there is more than one
+  // Prompt for Title
+  // If no credentials, then skip to create new credential
+  // If some credentials, select either use of existing or creation of a new one
+  // If creating credential:
+  // - Select the platform
+  // - Initialize the device authentication
+  // - Poll the device authentication
+  // - Retrive the user's accounts
+  // - Determine the correct next step:
+  //    - If there is only one publishable account:
+  //      Get the credential name
+  //    - If there are multiple publishable accounts:
+  //      Get selected account from account list
+  //      Get the credential name
+  //    - If there are no publishable accounts, but there is at least one account:
+  //      Get sign up for individual plan
+  //      Initialize the device authentication
+  //      Poll the device authentication
+  //      Poll for the user's new account
+  //      Determine the correct next step
+  //        - There will be only one publishable account:
+  //          Get the credential name
+  //    - If there are zero accounts for the user:
+  //      Poll for the user's new account
+  //      Determine the correct next step
+  //        - There will be only one publishable account:
+  //          Get the credential name
   // Auto-name the config file to use
   // Auto-name the contentRecord
   // Call APIs and hopefully succeed at everything
@@ -962,7 +1001,11 @@ export async function newDeployment(
       return;
     }
 
+    // populate the sign up url
     connectCloudData.signupUrl = CONNECT_CLOUD_SIGNUP_URL;
+    // populate the account polling props
+    connectCloudData.shouldPoll = true;
+    connectCloudData.accountUrl = CONNECT_CLOUD_ACCOUNT_URL;
 
     // go to the authenticate step again to have the user sign up for an individual plan
     return {
