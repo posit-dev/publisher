@@ -18,6 +18,8 @@ type Account struct {
 	ApiKey              string                 `json:"-"`                 // For Connect servers
 	SnowflakeConnection string                 `json:"-"`                 // Snowflake connection name used instead of API Key in SPCS
 	CloudEnvironment    types.CloudEnvironment `json:"cloud_environment"` // Environment for Connect Cloud (production, staging, development)
+	CloudAccountID      string                 `json:"cloud_account_id"`  // Account ID for Connect Cloud
+	CloudAccountName    string                 `json:"cloud_account_name"` // Account name for Connect Cloud
 }
 
 // AuthType returns the detected AccountAuthType based on the properties of the
