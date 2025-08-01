@@ -153,192 +153,200 @@ func (s *SchemaSuite) TestValidationError() {
 }
 
 type invalidPropertyTestCase struct {
-	serverType string
-	basePath   []string
-	propName   string
-	propValue  any
+	productType string
+	basePath    []string
+	propName    string
+	propValue   any
 }
 
 func (s *SchemaSuite) TestDisallowedProperties() {
 	cases := []invalidPropertyTestCase{
 		// Root level invalid properties
 		{
-			serverType: "connect",
-			basePath:   []string{},
-			propName:   "garbage",
-			propValue:  "value",
+			productType: "connect",
+			basePath:    []string{},
+			propName:    "garbage",
+			propValue:   "value",
 		},
 
-		// Connect server_type invalid properties
+		// Connect product_type invalid properties
 		{
-			serverType: "connect",
-			basePath:   []string{"python"},
-			propName:   "garbage",
-			propValue:  "value",
+			productType: "connect",
+			basePath:    []string{"python"},
+			propName:    "garbage",
+			propValue:   "value",
 		},
 		{
-			serverType: "connect",
-			basePath:   []string{"r"},
-			propName:   "garbage",
-			propValue:  "value",
+			productType: "connect",
+			basePath:    []string{"r"},
+			propName:    "garbage",
+			propValue:   "value",
 		},
 		{
-			serverType: "connect",
-			basePath:   []string{"jupyter"},
-			propName:   "garbage",
-			propValue:  "value",
+			productType: "connect",
+			basePath:    []string{"jupyter"},
+			propName:    "garbage",
+			propValue:   "value",
 		},
 		{
-			serverType: "connect",
-			basePath:   []string{"quarto"},
-			propName:   "garbage",
-			propValue:  "value",
+			productType: "connect",
+			basePath:    []string{"quarto"},
+			propName:    "garbage",
+			propValue:   "value",
 		},
 		{
-			serverType: "connect",
-			basePath:   []string{"connect"},
-			propName:   "garbage",
-			propValue:  "value",
+			productType: "connect",
+			basePath:    []string{"connect"},
+			propName:    "garbage",
+			propValue:   "value",
 		},
 		{
-			serverType: "connect",
-			basePath:   []string{"connect", "runtime"},
-			propName:   "garbage",
-			propValue:  "value",
+			productType: "connect",
+			basePath:    []string{"connect", "runtime"},
+			propName:    "garbage",
+			propValue:   "value",
 		},
 		{
-			serverType: "connect",
-			basePath:   []string{"connect", "kubernetes"},
-			propName:   "garbage",
-			propValue:  "value",
+			productType: "connect",
+			basePath:    []string{"connect", "kubernetes"},
+			propName:    "garbage",
+			propValue:   "value",
 		},
 		{
-			serverType: "connect",
-			basePath:   []string{"connect", "access"},
-			propName:   "garbage",
-			propValue:  "value",
-		},
-
-		// Connect Cloud server_type invalid properties
-		{
-			serverType: "connect_cloud",
-			basePath:   []string{"python"},
-			propName:   "garbage",
-			propValue:  "value",
-		},
-		{
-			serverType: "connect_cloud",
-			basePath:   []string{"python"},
-			propName:   "requires_python",
-			propValue:  ">=3.8",
-		},
-		{
-			serverType: "connect_cloud",
-			basePath:   []string{"python"},
-			propName:   "package_file",
-			propValue:  "requirements.txt",
-		},
-		{
-			serverType: "connect_cloud",
-			basePath:   []string{"python"},
-			propName:   "package_manager",
-			propValue:  "pip",
-		},
-		{
-			serverType: "connect_cloud",
-			basePath:   []string{"r"},
-			propName:   "garbage",
-			propValue:  "value",
-		},
-		{
-			serverType: "connect_cloud",
-			basePath:   []string{"r"},
-			propName:   "requires_r",
-			propValue:  ">=4.2",
-		},
-		{
-			serverType: "connect_cloud",
-			basePath:   []string{"r"},
-			propName:   "package_file",
-			propValue:  "renv.lock",
-		},
-		{
-			serverType: "connect_cloud",
-			basePath:   []string{"r"},
-			propName:   "package_manager",
-			propValue:  "renv",
-		},
-		{
-			serverType: "connect_cloud",
-			basePath:   []string{"connect_cloud"},
-			propName:   "garbage",
-			propValue:  "value",
-		},
-		{
-			serverType: "connect_cloud",
-			basePath:   []string{"connect_cloud", "python"},
-			propName:   "garbage",
-			propValue:  "value",
-		},
-		{
-			serverType: "connect_cloud",
-			basePath:   []string{"connect_cloud", "r"},
-			propName:   "garbage",
-			propValue:  "value",
-		},
-		{
-			serverType: "connect_cloud",
-			basePath:   []string{"connect_cloud", "access_control"},
-			propName:   "garbage",
-			propValue:  "value",
-		},
-		{
-			serverType: "connect_cloud",
-			basePath:   []string{},
-			propName:   "jupyter",
-			propValue:  map[string]any{},
-		},
-		{
-			serverType: "connect_cloud",
-			basePath:   []string{},
-			propName:   "quarto",
-			propValue:  map[string]any{},
-		},
-		{
-			serverType: "connect_cloud",
-			basePath:   []string{},
-			propName:   "has_parameters",
-			propValue:  true,
+			productType: "connect",
+			basePath:    []string{"connect", "access"},
+			propName:    "garbage",
+			propValue:   "value",
 		},
 
-		// Connect properties shouldn't be allowed with connect_cloud server_type
+		// Connect Cloud product_type invalid properties
 		{
-			serverType: "connect_cloud",
-			basePath:   []string{},
-			propName:   "connect",
-			propValue:  map[string]any{},
+			productType: "connect_cloud",
+			basePath:    []string{"python"},
+			propName:    "garbage",
+			propValue:   "value",
+		},
+		{
+			productType: "connect_cloud",
+			basePath:    []string{"python"},
+			propName:    "requires_python",
+			propValue:   ">=3.8",
+		},
+		{
+			productType: "connect_cloud",
+			basePath:    []string{"python"},
+			propName:    "package_file",
+			propValue:   "requirements.txt",
+		},
+		{
+			productType: "connect_cloud",
+			basePath:    []string{"python"},
+			propName:    "package_manager",
+			propValue:   "pip",
+		},
+		{
+			productType: "connect_cloud",
+			basePath:    []string{"r"},
+			propName:    "garbage",
+			propValue:   "value",
+		},
+		{
+			productType: "connect_cloud",
+			basePath:    []string{"r"},
+			propName:    "requires_r",
+			propValue:   ">=4.2",
+		},
+		{
+			productType: "connect_cloud",
+			basePath:    []string{"r"},
+			propName:    "package_file",
+			propValue:   "renv.lock",
+		},
+		{
+			productType: "connect_cloud",
+			basePath:    []string{"r"},
+			propName:    "package_manager",
+			propValue:   "renv",
+		},
+		{
+			productType: "connect_cloud",
+			basePath:    []string{"connect_cloud"},
+			propName:    "garbage",
+			propValue:   "value",
+		},
+		{
+			productType: "connect_cloud",
+			basePath:    []string{"connect_cloud", "python"},
+			propName:    "garbage",
+			propValue:   "value",
+		},
+		{
+			productType: "connect_cloud",
+			basePath:    []string{"connect_cloud", "r"},
+			propName:    "garbage",
+			propValue:   "value",
+		},
+		{
+			productType: "connect_cloud",
+			basePath:    []string{"connect_cloud", "access_control"},
+			propName:    "garbage",
+			propValue:   "value",
+		},
+		{
+			productType: "connect_cloud",
+			basePath:    []string{},
+			propName:    "jupyter",
+			propValue:   map[string]any{},
+		},
+		{
+			productType: "connect_cloud",
+			basePath:    []string{},
+			propName:    "quarto",
+			propValue:   map[string]any{},
+		},
+		{
+			productType: "connect_cloud",
+			basePath:    []string{},
+			propName:    "has_parameters",
+			propValue:   true,
 		},
 
-		// Connect_cloud properties shouldn't be allowed with connect server_type
+		// Connect properties shouldn't be allowed with connect_cloud product_type
 		{
-			serverType: "connect",
-			basePath:   []string{},
-			propName:   "connect_cloud",
-			propValue:  map[string]any{},
+			productType: "connect_cloud",
+			basePath:    []string{},
+			propName:    "connect",
+			propValue:   map[string]any{},
+		},
+
+		// Connect_cloud properties shouldn't be allowed with connect product_type
+		{
+			productType: "connect",
+			basePath:    []string{},
+			propName:    "connect_cloud",
+			propValue:   map[string]any{},
 		},
 	}
 
 	for _, tc := range cases {
 		propPath := append(tc.basePath, tc.propName)
-		description := fmt.Sprintf("%s:  .%s=%s", tc.serverType, strings.Join(propPath, "."), tc.propValue)
+		description := fmt.Sprintf("%s:  .%s=%s", tc.productType, strings.Join(propPath, "."), tc.propValue)
 		s.Run(description, func() {
+			// Set up the validator
+			validator, err := NewValidator[genericContent](ConfigSchemaURL)
+			s.NoError(err)
+
 			// Create a valid base configuration map
 			baseConfig := map[string]any{
-				"$schema":     "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json",
-				"server_type": tc.serverType,
-				"type":        "python-shiny",
-				"entrypoint":  "foo.py",
+				"$schema":      ConfigSchemaURL,
+				"product_type": tc.productType,
+				"type":         "html",
+				"entrypoint":   "index.html",
 			}
+
+			// Ensure it's valid
+			err = validator.ValidateContent(baseConfig)
+			s.NoError(err, "Base config should be valid before adding invalid property")
 
 			// Acquire the nested structure
 			target := baseConfig
@@ -352,13 +360,9 @@ func (s *SchemaSuite) TestDisallowedProperties() {
 			// Add the invalid property
 			target[tc.propName] = tc.propValue
 
-			// Set up the validator
-			validator, err := NewValidator[genericContent](ConfigSchemaURL)
-			s.NoError(err)
-
 			// Validate and expect an error
 			err = validator.ValidateContent(baseConfig)
-			s.Error(err, "Expected validation error for case: %s", description)
+			s.Error(err, "Expected validation error")
 
 			// Check that it's a schema validation error
 			agentErr, ok := err.(*types.AgentError)
