@@ -6,14 +6,12 @@ import (
 	"testing"
 	"time"
 
-	clienttypes "github.com/posit-dev/publisher/internal/clients/types"
-
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/posit-dev/publisher/internal/clients/http_client"
+	clienttypes "github.com/posit-dev/publisher/internal/clients/types"
 	"github.com/posit-dev/publisher/internal/logging"
-	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
 )
 
