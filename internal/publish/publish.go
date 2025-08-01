@@ -18,6 +18,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 
 	connectclient "github.com/posit-dev/publisher/internal/clients/connect"
+	connectcloudclient "github.com/posit-dev/publisher/internal/clients/connect_cloud"
 	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/inspect/dependencies/renv"
@@ -198,6 +199,24 @@ func (p *defaultPublisher) emitErrorEvents(err error) {
 }
 
 var clientFactory = connectclient.NewConnectClient
+
+var cloudClientFactory = connectcloudclient.NewConnectCloudClientWithAuth
+
+//
+//// connectCloudClientFactory creates a new Connect Cloud client
+//var connectCloudClientFactory = func(account *types.Account, timeout time.Duration, log logging.Logger) (connectcloudclient.APIClient, error) {
+//	// Create a Connect Cloud client with the account's API key
+//	if account.APIKey == "" {
+//		return nil, fmt.Errorf("Connect Cloud requires an API key")
+//	}
+//
+//	return connectcloudclient.NewConnectCloudClientWithAuth(
+//		account.CloudEnvironment,
+//		log,
+//		timeout,
+//		account.APIKey,
+//	), nil
+//}
 
 func (p *defaultPublisher) PublishDirectory() error {
 	p.log.Info("Publishing from directory", logging.LogKeyOp, events.AgentOp, "path", p.Dir, "localID", p.State.LocalID)
