@@ -4,7 +4,6 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -27,12 +26,6 @@ type connectCloudOAuthTokenResponseBody struct {
 
 func PostConnectCloudOAuthTokenHandlerFunc(log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		baseURL := req.Header.Get(cloudAuthBaseURLHeader)
-		if baseURL == "" {
-			BadRequest(w, req, log, fmt.Errorf("%s header is required", cloudAuthBaseURLHeader))
-			return
-		}
-
 		dec := json.NewDecoder(req.Body)
 		dec.DisallowUnknownFields()
 		var b connectCloudOAuthTokenRequestBody

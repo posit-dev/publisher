@@ -32,6 +32,7 @@ func GetConnectCloudAccountsFunc(log logging.Logger) http.HandlerFunc {
 
 		client := connectCloudClientFactory(environment, log, 10*time.Second, authorization)
 
+		isNewUser := false
 		_, err := client.GetCurrentUser()
 		if err != nil {
 			aerr, isUnauthorized := http_client.IsHTTPAgentErrorStatusOf(err, http.StatusUnauthorized)
@@ -39,11 +40,8 @@ func GetConnectCloudAccountsFunc(log logging.Logger) http.HandlerFunc {
 				errorType, ok := aerr.Data["error_type"].(string)
 				if ok && errorType == "no_user_for_lucid_user" {
 					// We have a user for the auth service, but not for Connect Cloud.
-					err = client.CreateUser()
-					if err != nil {
-						InternalError(w, req, log, aerr)
-						return
-					}
+					// Therefore, it must be a new user with zero accounts.
+					isNewUser = true
 				} else {
 					InternalError(w, req, log, aerr)
 					return
@@ -54,20 +52,23 @@ func GetConnectCloudAccountsFunc(log logging.Logger) http.HandlerFunc {
 			}
 		}
 
-		accountsResponse, err := client.GetAccounts()
-		if err != nil {
-			InternalError(w, req, log, err)
-			return
-		}
+		accounts := make([]connectCloudAccountsBodyAccount, 0)
+		if !isNewUser {
+			// It's an existing Connect Cloud user, fetch their accounts
+			accountsResponse, err := client.GetAccounts()
+			if err != nil {
+				InternalError(w, req, log, err)
+				return
+			}
 
-		accounts := make([]connectCloudAccountsBodyAccount, 0, len(accountsResponse.Data))
-		for _, account := range accountsResponse.Data {
-			accounts = append(accounts, connectCloudAccountsBodyAccount{
-				ID:                  account.ID,
-				Name:                account.Name,
-				DisplayName:         account.DisplayName,
-				PermissionToPublish: slices.Contains(account.Permissions, "content:create"),
-			})
+			for _, account := range accountsResponse.Data {
+				accounts = append(accounts, connectCloudAccountsBodyAccount{
+					ID:                  account.ID,
+					Name:                account.Name,
+					DisplayName:         account.DisplayName,
+					PermissionToPublish: slices.Contains(account.Permissions, "content:create"),
+				})
+			}
 		}
 
 		w.Header().Set("content-type", "application/json")
