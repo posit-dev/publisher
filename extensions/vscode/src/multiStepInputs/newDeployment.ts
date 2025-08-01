@@ -11,6 +11,7 @@ import {
   isQuickPickItemWithIndex,
   AbortError,
   InputStep,
+  InfoMessageParameters,
 } from "src/multiStepInputs/multiStepHelper";
 
 import {
@@ -67,6 +68,9 @@ import {
 } from "src/constants";
 import { extensionSettings } from "src/extension";
 import {
+  fetchAuthToken,
+  fetchConnectCloudAccounts,
+  fetchDeviceAuth,
   fetchSnowflakeConnections,
   findExistingCredentialByURL,
   getPublishableAccounts,
@@ -77,7 +81,11 @@ import {
 } from "src/multiStepInputs/common";
 import { openConfigurationCommand } from "src/commands";
 import { getEnumKeyByEnumValue } from "src/utils/enums";
-import { ConnectCloudAccount } from "src/api/types/connectCloud";
+import {
+  AuthToken,
+  ConnectCloudAccount,
+  DeviceAuth,
+} from "src/api/types/connectCloud";
 
 export async function newDeployment(
   viewId: string,
@@ -106,6 +114,10 @@ export async function newDeployment(
   let connectCloudUrl: string = "";
   let connectCloudSignupUrl: string = "";
   let connectCloudPolling: boolean = false;
+  let deviceCode: string = "";
+  let userCode: string = "";
+  let verificationURI: string = "";
+  let interval: number = 0;
 
   let newConfig: Configuration | undefined;
   let newOrSelectedCredential: Credential | undefined;
@@ -626,7 +638,7 @@ export async function newDeployment(
       newDeploymentData.newCredentials.snowflakeConnection = "";
 
       return {
-        step: (input: MultiStepInput) => authenticate(input, state),
+        step: (input: MultiStepInput) => initDeviceAuth(input, state),
         skippable: true,
       };
     }
@@ -648,15 +660,16 @@ export async function newDeployment(
   }
 
   // ***************************************************************
-  // Step: New Credentials - Complete device authentication (Connect Cloud only)
+  // Step: New Credentials - Kick-off device authentication (Connect Cloud only)
   // ***************************************************************
-  async function authenticate(input: MultiStepInput, state: MultiStepState) {
-    const location = "newCredentials";
-
+  async function initDeviceAuth(input: MultiStepInput, state: MultiStepState) {
     try {
       // we await this input box that it is treated as an information message
       // until the api calls happening in the background have completed
-      const resp = await input.showAuthInfoMessage({
+      const resp = await input.showInfoMessage<
+        DeviceAuth,
+        InfoMessageParameters<DeviceAuth>
+      >({
         title: state.title,
         step: 0,
         totalSteps: 0,
@@ -677,13 +690,12 @@ export async function newDeployment(
         prompt: "",
         shouldResume: () => Promise.resolve(false),
         ignoreFocusOut: true,
-        location,
-        browserUrl: connectCloudSignupUrl,
+        apiFunction: () => fetchDeviceAuth(),
       });
-      newDeploymentData.newCredentials.accessToken = resp.accessToken;
-      newDeploymentData.newCredentials.refreshToken = resp.refreshToken;
-      // clean-up
-      connectCloudSignupUrl = "";
+      deviceCode = resp.data?.deviceCode || "";
+      verificationURI = resp.data?.verificationURI || "";
+      userCode = resp.data?.userCode || "";
+      interval = resp.data?.interval || 0;
     } catch (error) {
       if (error instanceof AbortError) {
         // swallows the custom internal error because we don't need
@@ -693,7 +705,73 @@ export async function newDeployment(
       } else if (error instanceof Error) {
         // display an error message for all other errors
         window.showErrorMessage(
-          `Failed to authenticate. ${getSummaryStringFromError(location, error)}`,
+          `Failed to authenticate. ${getSummaryStringFromError("newCredentials, fetchDeviceAuth", error)}`,
+        );
+      }
+      return;
+    }
+
+    return {
+      step: (input: MultiStepInput) => authenticate(input, state),
+      skippable: true,
+    };
+  }
+
+  // ***************************************************************
+  // Step: New Credentials - Complete device authentication (Connect Cloud only)
+  // ***************************************************************
+  async function authenticate(input: MultiStepInput, state: MultiStepState) {
+    try {
+      // we await this input box that it is treated as an information message
+      // until the api calls happening in the background have completed
+      const resp = await input.showInfoMessage<
+        AuthToken,
+        InfoMessageParameters<AuthToken>
+      >({
+        title: state.title,
+        step: 0,
+        totalSteps: 0,
+        // disables user input
+        enabled: false,
+        // shows a progress indicator on the input box
+        busy: true,
+        value: `Authenticating with Connect Cloud ... (using code: ${userCode})`,
+        // moves the cursor to the start of the value text to avoid the automated text highlight
+        valueSelection: [0, 0],
+        // displays a custom information message below the input box that hides the prompt and
+        // default message: "Please 'Enter' to confirm your input or 'Escape' to cancel"
+        validationMessage: {
+          message:
+            "Please follow the next steps in the external browser or 'Escape' to abort",
+          severity: InputBoxValidationSeverity.Info,
+        },
+        prompt: "",
+        shouldResume: () => Promise.resolve(false),
+        ignoreFocusOut: true,
+        apiFunction: () => fetchAuthToken(deviceCode),
+        shouldPollApi: true,
+        pollingInterval: interval * 1000,
+        exitPollingCondition: (r) => Boolean(r.data),
+        browserUrl: `${connectCloudSignupUrl || ""}${verificationURI}`,
+      });
+      newDeploymentData.newCredentials.accessToken = resp.data?.accessToken;
+      newDeploymentData.newCredentials.refreshToken = resp.data?.refreshToken;
+      // clean-up
+      connectCloudSignupUrl = "";
+      verificationURI = "";
+      deviceCode = "";
+      userCode = "";
+      interval = 0;
+    } catch (error) {
+      if (error instanceof AbortError) {
+        // swallows the custom internal error because we don't need
+        // an error message everytime the user decides to abort or
+        // whenever the user just plain abandones the task
+        return;
+      } else if (error instanceof Error) {
+        // display an error message for all other errors
+        window.showErrorMessage(
+          `Failed to authenticate. ${getSummaryStringFromError("newCredentials, fetchAuthToken", error)}`,
         );
       }
       return;
@@ -712,13 +790,15 @@ export async function newDeployment(
     input: MultiStepInput,
     state: MultiStepState,
   ) {
-    const location = "newCredentials, connectCloud.accounts";
     const accessToken = newDeploymentData.newCredentials.accessToken || "";
 
     try {
       // we await this input box that it is treated as an information message
       // until the api calls happening in the background have completed
-      const resp = await input.showAccountInfoMessage({
+      const resp = await input.showInfoMessage<
+        ConnectCloudAccount[],
+        InfoMessageParameters<ConnectCloudAccount[]>
+      >({
         title: state.title,
         step: 0,
         totalSteps: 0,
@@ -739,11 +819,12 @@ export async function newDeployment(
         prompt: "",
         shouldResume: () => Promise.resolve(false),
         ignoreFocusOut: true,
-        accessToken,
+        apiFunction: () => fetchConnectCloudAccounts(accessToken),
+        shouldPollApi: connectCloudPolling,
+        exitPollingCondition: (r) => Boolean(r.data && r.data.length > 0),
         browserUrl: connectCloudUrl,
-        poll: connectCloudPolling,
       });
-      connectCloudAccounts = resp;
+      connectCloudAccounts = resp.data || [];
       // clean-up
       connectCloudUrl = "";
       connectCloudPolling = false;
@@ -756,7 +837,7 @@ export async function newDeployment(
       } else if (error instanceof Error) {
         // display an error message for all other errors
         window.showErrorMessage(
-          `Unable to retrieve accounts from Connect Cloud. ${getSummaryStringFromError(location, error)}`,
+          `Unable to retrieve accounts from Connect Cloud. ${getSummaryStringFromError("newCredentials, fetchConnectCloudAccounts", error)}`,
         );
       }
       return;
@@ -866,7 +947,7 @@ export async function newDeployment(
 
     // go to the authenticate step again to have the user sign up for an individual plan
     return {
-      step: (input: MultiStepInput) => authenticate(input, state),
+      step: (input: MultiStepInput) => initDeviceAuth(input, state),
       skippable: true,
     };
   }

@@ -1,6 +1,6 @@
-// Copyright (C) 2024 by Posit Software, PBC.
+// Copyright (C) 2025 by Posit Software, PBC.
 
-import { ConfigurationInspectionResult, useApi } from "src/api";
+import { ConfigurationInspectionResult } from "src/api";
 import {
   isAxiosErrorWithJson,
   resolveAgentJsonErrorMsg,
@@ -15,11 +15,16 @@ import {
   InputBoxValidationMessage,
   env,
 } from "vscode";
-import { AuthToken, ConnectCloudAccount } from "src/api/types/connectCloud";
-import { getSummaryStringFromError } from "src/utils/errors";
-import axios from "axios";
 
 export class AbortError extends Error {}
+
+export interface ApiResponse<T> {
+  // data returned from the api request
+  data?: T;
+  // a number (usually in ms) used to adjust the interval frequency
+  intervalAdjustment: number;
+}
+
 class InputFlowAction {
   static back = new InputFlowAction();
   static cancel = new InputFlowAction();
@@ -106,12 +111,9 @@ interface InputBoxParameters {
   ignoreFocusOut?: boolean;
   placeholder?: string;
   shouldResume: () => Thenable<boolean>;
-  enabled?: boolean;
-  busy?: boolean;
-  validationMessage?: string | InputBoxValidationMessage;
-  valueSelection?: [number, number];
 }
-interface InfoMessageParameters {
+
+export interface InfoMessageParameters<T> {
   title: string;
   step: number;
   totalSteps: number;
@@ -123,9 +125,10 @@ interface InfoMessageParameters {
   busy?: boolean;
   validationMessage?: string | InputBoxValidationMessage;
   valueSelection?: [number, number];
-  location?: string;
-  poll?: boolean;
-  accessToken?: string;
+  apiFunction: () => Promise<ApiResponse<T>>;
+  shouldPollApi?: boolean;
+  pollingInterval?: number;
+  exitPollingCondition?: (resp: ApiResponse<T>) => boolean;
   browserUrl?: string;
 }
 
@@ -281,10 +284,6 @@ export class MultiStepInput {
     placeholder,
     shouldResume,
     password,
-    enabled,
-    busy,
-    validationMessage,
-    valueSelection,
   }: P) {
     const disposables: Disposable[] = [];
     try {
@@ -295,11 +294,6 @@ export class MultiStepInput {
         input.title = title;
         input.step = step;
         input.totalSteps = totalSteps;
-        // enabled must default to true when undefined
-        input.enabled = enabled === undefined ? true : enabled;
-        input.busy = busy || false;
-        input.validationMessage = validationMessage;
-        input.valueSelection = valueSelection;
 
         if (password) {
           input.password = password;
@@ -383,7 +377,7 @@ export class MultiStepInput {
     }
   }
 
-  async showAuthInfoMessage<P extends InfoMessageParameters>({
+  async showInfoMessage<T, P extends InfoMessageParameters<T>>({
     title,
     step,
     totalSteps,
@@ -395,166 +389,20 @@ export class MultiStepInput {
     busy,
     validationMessage,
     valueSelection,
-    location,
+    apiFunction,
+    shouldPollApi,
+    pollingInterval,
+    exitPollingCondition,
     browserUrl,
   }: P) {
     const disposables: Disposable[] = [];
     try {
-      // eslint-disable-next-line no-async-promise-executor
-      return await new Promise<AuthToken>(async (resolve, reject) => {
-        const input = window.createInputBox();
-        input.title = title;
-        input.step = step;
-        input.totalSteps = totalSteps;
-        // enabled must default to true when undefined
-        input.enabled = enabled === undefined ? true : enabled;
-        input.busy = busy || false;
-        input.validationMessage = validationMessage;
-        input.valueSelection = valueSelection;
-        input.value = value || "";
-        input.prompt = prompt;
-        input.ignoreFocusOut = ignoreFocusOut ?? false;
-        disposables.push(
-          input.onDidHide(() => {
-            // abort polling anytime the multi-stepper is hidden
-            abortPolling = true;
-            (async () => {
-              reject(
-                shouldResume && (await shouldResume())
-                  ? InputFlowAction.resume
-                  : InputFlowAction.cancel,
-              );
-            })().catch(reject);
-          }),
-        );
-        if (this.current) {
-          this.current.dispose();
-        }
-        this.current = input;
-        this.current.show();
-
-        const api = await useApi();
-        let abortPolling = false;
-        let pollingInterval = 0;
-        let deviceCode = "";
-        let authUrl = "";
-
-        try {
-          // get the device auth details like url, code and interval
-          const resp = await api.connectCloud.auth();
-          deviceCode = resp.data.deviceCode;
-          authUrl = resp.data.verificationURI;
-          pollingInterval = resp.data.interval * 1000;
-          // display the user code in the message
-          input.value += ` (using code: ${resp.data.userCode})`;
-        } catch (error) {
-          getSummaryStringFromError(`${location}, connectCloud.auth`, error);
-          return reject(error); // bubble up the error
-        }
-
-        // @ts-expect-error the resulting URL may have 2 levels of nesting with params:
-        // lucid logout -> redirect to lucid register -> redirect to lucid auth.
-        // Unfortunately that much nesting and the params encoding is not correctly handled
-        // by vscode with: env.openExternal(Uri.parse(`${browserUrl || ""}${authUrl}`))
-        // hence we have to give the string url directly to `env.openExternal` and ignore
-        // the type error from typescript so the encoding is correct for the nested redirecs
-
-        // await opening the external lucid auth browser window so the polling
-        // actually begins after the user selects an option from the pop-up
-        await env.openExternal(`${browserUrl || ""}${authUrl}`);
-
-        // bail out if the user did anything on the openExternal window operation
-        // to cause the multi-stepper to be hidden
-        if (abortPolling) {
-          // return custom internal error when aborting
-          return reject(new AbortError()); // bubble up the error
-        }
-
-        const pollAuthApi = async (
-          maxAttempts?: number,
-        ): Promise<AuthToken> => {
-          let attempts = 0;
-
-          const executePolling = async (): Promise<AuthToken> => {
-            try {
-              const tokenResponse = await api.connectCloud.token(deviceCode);
-              // we got the token info, so stop polling for the token
-              return tokenResponse.data;
-            } catch (err: unknown) {
-              if (axios.isAxiosError(err) && err.response?.data?.code) {
-                // handle the expected polling errors
-                switch (err.response.data.code) {
-                  case "deviceAuthSlowDown":
-                    pollingInterval += 1000; // slowdown the interval by 1 second
-                    break;
-                  case "deviceAuthPending":
-                    // DO NOTHING, let the polling continue, this is expected while authenticating
-                    break;
-                  default:
-                    throw err; // bubble up any other errors
-                }
-              } else {
-                // there was an unexpected error, bail from polling for the token
-                throw err; // bubble up the error
-              }
-            }
-
-            attempts++;
-            if ((maxAttempts && attempts >= maxAttempts) || abortPolling) {
-              // return custom internal error when aborting or
-              // when the max attemps have been reached
-              throw new AbortError(); // bubble up the error
-            }
-            // exit condition has not been met, wait the interval time and poll again
-            await new Promise((resolve) =>
-              setTimeout(resolve, pollingInterval),
-            );
-            return executePolling(); // recursive call to continue polling
-          };
-
-          return await executePolling();
-        };
-
-        // start the auth polling
-        return pollAuthApi(120) // 120 max attempts every 5 seconds means 10 minutes
-          .then(resolve)
-          .catch((error) => {
-            // do not log the custom internal error
-            if (!(error instanceof AbortError)) {
-              getSummaryStringFromError(
-                `${location}, connectCloud.token`,
-                error,
-              );
-            }
-            return reject(error); // bubble up the error
-          });
-      }); // outer promise end
-    } finally {
-      disposables.forEach((d) => d.dispose());
-    }
-  }
-
-  async showAccountInfoMessage<P extends InfoMessageParameters>({
-    title,
-    step,
-    totalSteps,
-    value,
-    prompt,
-    ignoreFocusOut,
-    shouldResume,
-    enabled,
-    busy,
-    validationMessage,
-    valueSelection,
-    poll,
-    accessToken,
-    browserUrl,
-  }: P) {
-    const disposables: Disposable[] = [];
-    try {
-      return await new Promise<ConnectCloudAccount[]>(
+      return await new Promise<ApiResponse<T>>(
         // eslint-disable-next-line no-async-promise-executor
         async (resolve, reject) => {
+          let abortPolling = false;
+          // default the polling interval to 5 seconds
+          pollingInterval ||= 5000;
           const input = window.createInputBox();
           input.title = title;
           input.step = step;
@@ -586,9 +434,6 @@ export class MultiStepInput {
           this.current = input;
           this.current.show();
 
-          const api = await useApi();
-          let abortPolling = false;
-
           if (browserUrl) {
             // @ts-expect-error the resulting URL will have 1 level of nesting with params:
             // lucid logout -> redirect to connect cloud account.
@@ -609,16 +454,21 @@ export class MultiStepInput {
             }
           }
 
-          const pollAccountApi = async (
+          const pollApiFunction = async (
+            interval: number,
             maxAttempts?: number,
-          ): Promise<ConnectCloudAccount[]> => {
+          ): Promise<ApiResponse<T>> => {
             let attempts = 0;
 
-            const executePolling = async (): Promise<ConnectCloudAccount[]> => {
-              const resp = await api.connectCloud.accounts(accessToken || "");
-              // we got the account info, so stop polling for the account
-              if (!poll || resp.data.length > 0) {
-                return resp.data;
+            const executePolling = async (): Promise<ApiResponse<T>> => {
+              const resp = await apiFunction();
+              interval += resp.intervalAdjustment;
+              if (
+                !shouldPollApi ||
+                (exitPollingCondition && exitPollingCondition(resp))
+              ) {
+                // either no polling is needed or we have met the exit condition, stop polling
+                return resp;
               }
 
               attempts++;
@@ -628,15 +478,15 @@ export class MultiStepInput {
                 throw new AbortError(); // bubble up the error
               }
               // exit condition has not been met, wait the interval time and poll again
-              await new Promise((resolve) => setTimeout(resolve, 5000));
+              await new Promise((resolve) => setTimeout(resolve, interval));
               return executePolling(); // recursive call to continue polling
             };
 
             return await executePolling();
           };
 
-          // start the account polling
-          return pollAccountApi(120) // 120 max attempts every 5 seconds means 10 minutes
+          // start polling (poll every 5 seconds at most 120 times === 10 minutes max time)
+          return pollApiFunction(pollingInterval, 120)
             .then(resolve)
             .catch(reject);
         },
