@@ -334,7 +334,7 @@ min_processes = 1
 read_timeout = 30
 ```
 
-## Connect-specific settings
+## Connect Cloud-specific settings
 
 _Valid when `product_type` is `connect_cloud`_
 
