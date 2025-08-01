@@ -46,7 +46,7 @@ describe("Detect error in config", () => {
     cy.publisherWebview()
       .findByTestId("publisher-deployment-section")
       .find(
-        'p:contains("The selected Configuration has a schema error on line 18.")',
+        'p:contains("The selected Configuration has a schema error on line 17.")',
       );
   });
 
