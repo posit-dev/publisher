@@ -3,10 +3,17 @@ package publish
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import (
-	"github.com/posit-dev/publisher/internal/server_type"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
+
+	"github.com/posit-dev/publisher/internal/publish/publishhelper"
+	"github.com/posit-dev/publisher/internal/server_type"
+
+	"github.com/spf13/afero"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/suite"
 
 	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/clients/connect"
@@ -21,9 +28,6 @@ import (
 	"github.com/posit-dev/publisher/internal/state"
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
-	"github.com/spf13/afero"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/suite"
 )
 
 type RPublishFunctionalSuite struct {
@@ -66,6 +70,7 @@ func (s *RPublishFunctionalSuite) SetupTest() {
 func (s *RPublishFunctionalSuite) TearDownTest() {
 	parentDir := filepath.Dir(s.testProjectDir.String())
 	os.RemoveAll(parentDir)
+	clientFactory = connect.NewConnectClient
 }
 
 func (s *RPublishFunctionalSuite) createTestRenvLock() {
@@ -104,10 +109,10 @@ func (s *RPublishFunctionalSuite) TestGetRPackagesFunctional() {
 	s.Require().NoError(err)
 
 	publisher := &defaultPublisher{
-		State:          s.stateStore,
 		log:            s.log,
 		emitter:        s.emitter,
 		rPackageMapper: mapper,
+		PublishHelper:  publishhelper.NewPublishHelper(s.stateStore, s.log),
 	}
 
 	// Actually call getRPackages
@@ -121,6 +126,13 @@ func (s *RPublishFunctionalSuite) TestGetRPackagesFunctional() {
 func (s *RPublishFunctionalSuite) TestPublishWithClientFunctional() {
 	// Set up a mock client
 	client := connect.NewMockClient()
+	clientFactory = func(
+		account *accounts.Account,
+		timeout time.Duration,
+		emitter events.Emitter,
+		log logging.Logger) (connect.APIClient, error) {
+		return client, nil
+	}
 
 	// Set up test account
 	account := &accounts.Account{
@@ -179,10 +191,10 @@ func (s *RPublishFunctionalSuite) TestPublishWithClientFunctional() {
 	s.Require().NoError(err)
 
 	publisher := &defaultPublisher{
-		State:          stateStore,
 		log:            s.log,
 		emitter:        events.NewCapturingEmitter(),
 		rPackageMapper: rPackageMapper,
+		PublishHelper:  publishhelper.NewPublishHelper(stateStore, s.log),
 	}
 
 	// Test files to be deployed
@@ -202,7 +214,7 @@ shinyApp(ui = ui, server = server)
 	s.Require().NoError(err)
 
 	// The actual test call
-	err = publisher.publishWithClient(account, client)
+	err = publisher.PublishDirectory()
 	s.Require().NoError(err)
 
 	// Verify the mock calls were made as expected

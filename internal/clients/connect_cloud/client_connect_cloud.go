@@ -54,16 +54,7 @@ func (c ConnectCloudClient) GetCurrentUser() (*UserResponse, error) {
 	return &into, nil
 }
 
-func (c ConnectCloudClient) CreateUser() error {
-	err := c.client.Post("/v1/users", nil, nil, c.log)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func (c ConnectCloudClient) GetAccounts() (*AccountListResponse, error) {
-	//TODO implement me
 	into := AccountListResponse{}
 	err := c.client.Get("/v1/accounts?has_user_role=true", &into, c.log)
 	if err != nil {
