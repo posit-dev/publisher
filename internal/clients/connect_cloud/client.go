@@ -6,7 +6,6 @@ import "github.com/posit-dev/publisher/internal/clients/types"
 
 type APIClient interface {
 	GetCurrentUser() (*UserResponse, error)
-	CreateUser() error
 	GetAccounts() (*AccountListResponse, error)
 	CreateContent(request *types.CreateContentRequest) (*types.ContentResponse, error)
 	UpdateContent(request *types.UpdateContentRequest) (*types.ContentResponse, error)
