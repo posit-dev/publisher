@@ -362,6 +362,12 @@
         "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json"
       ]
     },
+    "product_type": {
+      "type": "string",
+      "description": "The product that this content will be deployed to.",
+      "enum": ["connect"],
+      "default": "connect"
+    },
     "type": {
       "type": "string",
       "description": "Indicates the type of content being deployed. Valid values are: html, jupyter-notebook, jupyter-voila, python-bokeh, python-dash, python-fastapi, python-flask, python-gradio, python-shiny, python-streamlit, quarto-shiny, quarto-static, r-plumber, r-shiny, rmd-shiny, rmd",
