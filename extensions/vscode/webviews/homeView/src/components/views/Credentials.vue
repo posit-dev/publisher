@@ -12,9 +12,9 @@
       v-else
       v-for="credential in home.sortedCredentials"
       :title="credential.name"
-      :description="credential.url"
+      :description="getDescription(credential)"
       :data-automation="`${credential.name}-list`"
-      codicon="codicon-key"
+      posit-icon="posit-publisher-icons-posit-logo"
       align-icon-with-twisty
       :data-vscode-context="vscodeContext(credential)"
     />
@@ -30,7 +30,7 @@ import WelcomeView from "src/components/WelcomeView.vue";
 import { useHomeStore } from "src/stores/home";
 import { useHostConduitService } from "src/HostConduitService";
 
-import { Credential } from "../../../../../src/api";
+import { Credential, ServerType } from "../../../../../src/api";
 import { WebviewToHostMessageType } from "../../../../../src/types/messages/webviewToHostMessages";
 
 const home = useHomeStore();
@@ -57,6 +57,12 @@ const sectionActions = computed(() => {
     },
   ];
 });
+
+const getDescription = (credential: Credential) => {
+  return credential.serverType === ServerType.CONNECT_CLOUD
+    ? `${credential.accountName} | Posit Connect Cloud`
+    : credential.url;
+};
 
 const vscodeContext = (credential: Credential) => {
   return JSON.stringify({
