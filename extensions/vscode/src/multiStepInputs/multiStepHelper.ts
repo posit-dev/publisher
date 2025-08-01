@@ -1,4 +1,4 @@
-// Copyright (C) 2024 by Posit Software, PBC.
+// Copyright (C) 2025 by Posit Software, PBC.
 
 import { ConfigurationInspectionResult } from "src/api";
 import {
@@ -13,7 +13,17 @@ import {
   QuickInput,
   QuickInputButtons,
   InputBoxValidationMessage,
+  env,
 } from "vscode";
+
+export class AbortError extends Error {}
+
+export interface ApiResponse<T> {
+  // data returned from the api request
+  data?: T;
+  // a number (usually in ms) used to adjust the interval frequency
+  intervalAdjustment: number;
+}
 
 class InputFlowAction {
   static back = new InputFlowAction();
@@ -66,7 +76,11 @@ export const assignStep = (state: MultiStepState, uniqueId: string): number => {
   return previous;
 };
 
-type InputStep = (input: MultiStepInput) => Thenable<InputStep | void>;
+// InputStep now can have a 'skippable' property (optional)
+export type InputStep = {
+  step: (input: MultiStepInput) => Thenable<InputStep | void>;
+  skippable?: boolean;
+};
 
 interface QuickPickParameters<T extends QuickPickItem> {
   title: string;
@@ -99,6 +113,25 @@ interface InputBoxParameters {
   shouldResume: () => Thenable<boolean>;
 }
 
+export interface InfoMessageParameters<T> {
+  title: string;
+  step: number;
+  totalSteps: number;
+  value: string;
+  prompt: string;
+  ignoreFocusOut?: boolean;
+  shouldResume: () => Thenable<boolean>;
+  enabled?: boolean;
+  busy?: boolean;
+  validationMessage?: string | InputBoxValidationMessage;
+  valueSelection?: [number, number];
+  apiFunction: () => Promise<ApiResponse<T>>;
+  shouldPollApi?: boolean;
+  pollingInterval?: number;
+  exitPollingCondition?: (resp: ApiResponse<T>) => boolean;
+  browserUrl?: string;
+}
+
 export class MultiStepInput {
   // These were templatized: static async run<T>(start: InputStep) {
   static run(start: InputStep) {
@@ -107,34 +140,55 @@ export class MultiStepInput {
   }
 
   private current?: QuickInput;
-  private steps: InputStep[] = [];
+  private steps: InputStep[] = []; // store the steps in a history stack
 
-  // These were templatized: rivate async stepThrough<T>(start: InputStep) {
+  // These were templatized: private async stepThrough<T>(start: InputStep) {
   private async stepThrough(start: InputStep) {
-    let step: InputStep | void = start;
-    while (step) {
-      this.steps.push(step);
+    let currentStep: InputStep | void = start;
+    while (currentStep) {
+      // add the current step to the history
+      this.steps.push(currentStep);
       if (this.current) {
         this.current.enabled = false;
         this.current.busy = true;
       }
       try {
-        step = await step(this);
+        currentStep = await currentStep.step(this);
       } catch (err) {
+        // handle "Back" button press
         if (err === InputFlowAction.back) {
+          // remove the current step (the one that caused the 'back' action)
           this.steps.pop();
-          step = this.steps.pop();
+
+          // iterate backward through the history to find the previous non-skippable step
+          while (this.steps.length > 0) {
+            const previousStep = this.steps.pop();
+
+            if (previousStep?.skippable !== true) {
+              // found a non-skippable step, go back to it
+              currentStep = previousStep;
+              break;
+            }
+            // if skippable, continue popping to find the next non-skippable step
+          }
+
+          if (this.steps.length === 0 && currentStep === undefined) {
+            // if all previous steps were skippable, and we've popped everything,
+            // effectively cancel the input flow
+            throw InputFlowAction.cancel;
+          }
         } else if (err === InputFlowAction.resume) {
-          step = this.steps.pop();
+          currentStep = this.steps.pop();
         } else if (err === InputFlowAction.cancel) {
-          step = undefined;
+          // cancel the whole flow
+          currentStep = undefined;
         } else {
           let errMsg = `Internal Error: MultiStepInput::stepThrough, err = ${JSON.stringify(err)}.`;
           if (isAxiosErrorWithJson(err)) {
             errMsg = resolveAgentJsonErrorMsg(err);
           }
           window.showErrorMessage(errMsg);
-          step = undefined;
+          currentStep = undefined;
         }
       }
     }
@@ -318,6 +372,125 @@ export class MultiStepInput {
         this.current = input;
         this.current.show();
       });
+    } finally {
+      disposables.forEach((d) => d.dispose());
+    }
+  }
+
+  async showInfoMessage<T, P extends InfoMessageParameters<T>>({
+    title,
+    step,
+    totalSteps,
+    value,
+    prompt,
+    ignoreFocusOut,
+    shouldResume,
+    enabled,
+    busy,
+    validationMessage,
+    valueSelection,
+    apiFunction,
+    shouldPollApi,
+    pollingInterval,
+    exitPollingCondition,
+    browserUrl,
+  }: P) {
+    const disposables: Disposable[] = [];
+    try {
+      return await new Promise<ApiResponse<T>>(
+        // eslint-disable-next-line no-async-promise-executor
+        async (resolve, reject) => {
+          let abortPolling = false;
+          // default the polling interval to 5 seconds
+          pollingInterval ||= 5000;
+          const input = window.createInputBox();
+          input.title = title;
+          input.step = step;
+          input.totalSteps = totalSteps;
+          // enabled must default to true when undefined
+          input.enabled = enabled === undefined ? true : enabled;
+          input.busy = busy || false;
+          input.validationMessage = validationMessage;
+          input.valueSelection = valueSelection;
+          input.value = value || "";
+          input.prompt = prompt;
+          input.ignoreFocusOut = ignoreFocusOut ?? false;
+          disposables.push(
+            input.onDidHide(() => {
+              // abort polling anytime the multi-stepper is hidden
+              abortPolling = true;
+              (async () => {
+                reject(
+                  shouldResume && (await shouldResume())
+                    ? InputFlowAction.resume
+                    : InputFlowAction.cancel,
+                );
+              })().catch(reject);
+            }),
+          );
+          if (this.current) {
+            this.current.dispose();
+          }
+          this.current = input;
+          this.current.show();
+
+          if (browserUrl) {
+            // @ts-expect-error the resulting URL will have 1 level of nesting with params:
+            // lucid logout -> redirect to connect cloud account.
+            // Unfortunately that much nesting and the params encoding is not correctly handled
+            // by vscode with: env.openExternal(Uri.parse(browserUrl))
+            // hence we have to give the string url directly to `env.openExternal` and ignore
+            // the type error from typescript so the encoding is correct for the nested redirec
+
+            // await opening the external browser window so the polling
+            // actually begins after the user selects an option from the pop-up
+            await env.openExternal(browserUrl);
+
+            // bail out if the user did anything on the openExternal window operation
+            // to cause the multi-stepper to be hidden
+            if (abortPolling) {
+              // return custom internal error when aborting
+              return reject(new AbortError()); // bubble up the error
+            }
+          }
+
+          const pollApiFunction = async (
+            interval: number,
+            maxAttempts?: number,
+          ): Promise<ApiResponse<T>> => {
+            let attempts = 0;
+
+            const executePolling = async (): Promise<ApiResponse<T>> => {
+              const resp = await apiFunction();
+              interval += resp.intervalAdjustment;
+              if (
+                !shouldPollApi ||
+                (exitPollingCondition && exitPollingCondition(resp))
+              ) {
+                // either no polling is needed or we have met the exit condition, stop polling
+                return resp;
+              }
+
+              attempts++;
+              if ((maxAttempts && attempts >= maxAttempts) || abortPolling) {
+                // return custom internal error when aborting or
+                // when the max attemps have been reached
+                throw new AbortError(); // bubble up the error
+              }
+              // exit condition has not been met, wait the interval time and poll again
+              await new Promise((resolve) => setTimeout(resolve, interval));
+              return executePolling(); // recursive call to continue polling
+            };
+
+            return await executePolling();
+          };
+
+          // start polling (poll every 5 seconds at most 120 times === 10 minutes max time)
+          return pollApiFunction(pollingInterval, 120)
+            .then(resolve)
+            .catch(reject);
+        },
+      ); // outer promise end
     } finally {
       disposables.forEach((d) => d.dispose());
     }

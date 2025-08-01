@@ -1,4 +1,6 @@
-// Copyright (C) 2024 by Posit Software, PBC.
+// Copyright (C) 2025 by Posit Software, PBC.
+
+import config from "./config";
 
 export const POSIT_FOLDER = "**/.posit";
 export const PUBLISH_FOLDER = "**/.posit/publish";
@@ -128,3 +130,7 @@ export const DebounceDelaysMS = {
   refreshRPackages: 1000,
   refreshPythonPackages: 1000,
 };
+
+export const CONNECT_CLOUD_ENV = config.env;
+export const CONNECT_CLOUD_SIGNUP_URL = `${config.connectCloudURL}/logout?redirect=${config.cloudURL}/register?redirect=`;
+export const CONNECT_CLOUD_ACCOUNT_URL = `${config.connectCloudURL}/account/done`;

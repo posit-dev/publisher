@@ -3,9 +3,10 @@ package connect_cloud
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import (
-	"github.com/posit-dev/publisher/internal/types"
 	"testing"
 	"time"
+
+	"github.com/posit-dev/publisher/internal/types"
 
 	"github.com/posit-dev/publisher/internal/clients/http_client"
 	"github.com/posit-dev/publisher/internal/logging"

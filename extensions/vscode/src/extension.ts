@@ -217,8 +217,10 @@ export const extensionSettings = {
     return value !== undefined ? value : "";
   },
   enableConnectCloud(): boolean {
-    // defaulting to false for now until we have more bits integrated for
-    // Connect Cloud to bring it in as an extension configuration value
-    return false;
+    // get value from extension configuration - defaults to false
+    const configuration = workspace.getConfiguration("positPublisher");
+    const value: boolean | undefined =
+      configuration.get<boolean>("enableConnectCloud");
+    return value !== undefined ? value : false;
   },
 };

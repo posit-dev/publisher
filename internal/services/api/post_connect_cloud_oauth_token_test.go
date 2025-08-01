@@ -62,8 +62,6 @@ func (s *PostConnectCloudOAuthTokenSuite) TestPostConnectCloudOAuthToken() {
 		body,
 	)
 	s.NoError(err)
-	req.Header.Set("Cloud-Auth-Base-Url", "https://api.login.staging.posit.cloud")
-
 	s.h(rec, req)
 
 	result := rec.Result()
@@ -127,7 +125,6 @@ func (s *PostConnectCloudOAuthTokenSuite) TestPostConnectCloudOAuthToken_BadRequ
 				body,
 			)
 			s.NoError(err)
-			req.Header.Set("Cloud-Auth-Base-Url", "https://api.login.staging.posit.cloud")
 
 			handler := PostConnectCloudOAuthTokenHandlerFunc(log)
 			handler(rec, req)
@@ -138,21 +135,4 @@ func (s *PostConnectCloudOAuthTokenSuite) TestPostConnectCloudOAuthToken_BadRequ
 			s.Equal(fmt.Sprintf("{\"code\":\"%s\"}\n", tc.expectedAPICode), string(respBody))
 		})
 	}
-}
-
-func (s *PostConnectCloudOAuthTokenSuite) TestPostConnectCloudOAuthToken_MissingBaseURL() {
-	rec := httptest.NewRecorder()
-	body := strings.NewReader(`{"deviceCode": "the_device_code"}`)
-	req, err := http.NewRequest(
-		"POST",
-		"/connect-cloud/oauth/token",
-		body,
-	)
-	s.NoError(err)
-	// Intentionally not setting Cloud-Auth-Base-Url header
-
-	s.h(rec, req)
-
-	result := rec.Result()
-	s.Equal(http.StatusBadRequest, result.StatusCode)
 }
