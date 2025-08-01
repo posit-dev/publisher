@@ -26,7 +26,7 @@
     "server_type": {
       "type": "string",
       "description": "Type of server",
-      "enum": ["connect", "snowflake"],
+      "enum": ["connect", "snowflake", "connect_cloud"],
       "examples": ["connect"]
     },
     "id": {
@@ -234,6 +234,30 @@
       },
       "description": "Project-relative paths of the files that were included in the deployment.",
       "examples": ["app.py", "model/weights.csv"]
+    },
+    "connect_cloud": {
+      "type": "object",
+      "description": "Additional metadata for deployments to Posit Connect Cloud.",
+      "additionalProperties": false,
+      "required": ["account_name"],
+      "properties": {
+        "account_name": {
+          "type": ["string"],
+          "description": "Name of the account on the server where this content was deployed.",
+          "examples": ["my-account"]
+        }
+      }
     }
+  },
+  "if": {
+    "required": ["server_type"],
+    "properties": {
+      "server_type": {
+        "const": "connect_cloud"
+      }
+    }
+  },
+  "then": {
+    "required": ["connect_cloud"]
   }
 }
