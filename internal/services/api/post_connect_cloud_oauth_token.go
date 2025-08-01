@@ -10,6 +10,7 @@ import (
 
 	"github.com/posit-dev/publisher/internal/clients/cloud_auth"
 	"github.com/posit-dev/publisher/internal/clients/http_client"
+	"github.com/posit-dev/publisher/internal/cloud"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/types"
 )
@@ -41,7 +42,7 @@ func PostConnectCloudOAuthTokenHandlerFunc(log logging.Logger) http.HandlerFunc 
 			return
 		}
 
-		environment := types.CloudEnvironment(req.Header.Get(connectCloudEnvironmentHeader))
+		environment := cloud.GetCloudEnvironment(req.Header.Get(connectCloudEnvironmentHeader))
 		client := cloudAuthClientFactory(environment, log, 10*time.Second)
 
 		tokenRequest := cloud_auth.TokenRequest{
