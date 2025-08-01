@@ -232,15 +232,18 @@
               }
             },
             "access": {
-              "run_as": {
-                "type": "string",
-                "description": "The system username under which the content should be run. Must be an existing user in the allowed group. You must be an administrator to set this value.",
-                "examples": ["rstudio-connect"]
-              },
-              "run_as_current_user": {
-                "type": "boolean",
-                "default": false,
-                "description": "For application content types, run a separate process under the user account of each visiting user under that user's server account. Requires PAM authentication on the Posit Connect server. You must be an administrator to set this value."
+              "additionalProperties": false,
+              "properties": {
+                "run_as": {
+                  "type": "string",
+                  "description": "The system username under which the content should be run. Must be an existing user in the allowed group. You must be an administrator to set this value.",
+                  "examples": ["rstudio-connect"]
+                },
+                "run_as_current_user": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "For application content types, run a separate process under the user account of each visiting user under that user's server account. Requires PAM authentication on the Posit Connect server. You must be an administrator to set this value."
+                }
               }
             }
           }
@@ -314,16 +317,19 @@
               "examples": ["sales-report"]
             },
             "access_control": {
-              "public_access": {
-                "type": "boolean",
-                "description": "Whether or not the content is publicly accessible.",
-                "default": false
-              },
-              "organization_access": {
-                "type": "string",
-                "enum": ["disabled", "viewer", "editor"],
-                "default": "disabled",
-                "description": "The default level of access for account members within an organizational account."
+              "additionalProperties": false,
+              "properties": {
+                "public_access": {
+                  "type": "boolean",
+                  "description": "Whether or not the content is publicly accessible.",
+                  "default": false
+                },
+                "organization_access": {
+                  "type": "string",
+                  "enum": ["disabled", "viewer", "editor"],
+                  "default": "disabled",
+                  "description": "The default level of access for account members within an organizational account."
+                }
               }
             }
           }
