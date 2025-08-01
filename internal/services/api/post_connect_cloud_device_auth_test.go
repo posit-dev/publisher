@@ -58,7 +58,6 @@ func (s *PostConnectCloudDeviceAuthSuite) TestPostConnectCloudDeviceAuth() {
 		nil,
 	)
 	s.NoError(err)
-	req.Header.Set("Cloud-Auth-Base-Url", "https://api.login.staging.posit.cloud")
 
 	s.h(rec, req)
 
