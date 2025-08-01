@@ -4,12 +4,14 @@ package publish
 
 import (
 	"fmt"
+	"io"
+	"time"
+
 	connectpublisher "github.com/posit-dev/publisher/internal/publish/connect"
+	connectcloudpublisher "github.com/posit-dev/publisher/internal/publish/connect_cloud"
 	"github.com/posit-dev/publisher/internal/publish/publishhelper"
 	"github.com/posit-dev/publisher/internal/server_type"
 	"github.com/posit-dev/publisher/internal/types"
-	"io"
-	"time"
 )
 
 type ServerPublisher interface {
@@ -19,6 +21,9 @@ type ServerPublisher interface {
 	PublishToServer(contentID types.ContentID, bundleReader io.Reader) error
 }
 
+var _ ServerPublisher = (*connectpublisher.ServerPublisher)(nil)
+var _ ServerPublisher = (*connectcloudpublisher.ServerPublisher)(nil)
+
 func (p *defaultPublisher) createServerPublisher() (ServerPublisher, error) {
 	switch p.Account.ServerType {
 	case server_type.ServerTypeConnect, server_type.ServerTypeSnowflake:
@@ -27,6 +32,13 @@ func (p *defaultPublisher) createServerPublisher() (ServerPublisher, error) {
 			return nil, err
 		}
 		return connectpublisher.NewServerPublisher(p.State, p.log, client, p.emitter, p.PublishHelper), nil
+	case server_type.ServerTypeConnectCloud:
+		// For Connect Cloud, we need to create a different client
+		client, err := cloudClientFactory(p.Account, 2*time.Minute, p.log)
+		if err != nil {
+			return nil, err
+		}
+		return connectcloudpublisher.NewServerPublisher(p.State, p.log, client, p.emitter, p.PublishHelper), nil
 	default:
 		return nil, fmt.Errorf("unsupported server type: %s", p.Account.ServerType)
 	}
