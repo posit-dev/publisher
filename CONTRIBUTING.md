@@ -113,12 +113,9 @@ an AMD64 architecture. If you are running on an ARM64 architecture (such as Appl
 
 ##### Connect Server License
 
-To run the end-to-end tests, you will need a valid Posit Connect server license.
-Set the `CONNECT_LICENSE` environment variable.
+To run the end-to-end tests, you will need a valid Posit Connect server license file.
 
-```bash
-export CONNECT_LICENSE="your-connect-license-key"
-```
+Place it in `./test/e2e/licenses/connect-license.lic`.
 
 If you have to diagnose issues with the connect license, you can check the license status as reported by the Connect server by running the
 following command within the e2e-connect-publisher-e2e Docker container: `cat /var/log/rstudio/rstudio-connect/rstudio-connect.log`.
