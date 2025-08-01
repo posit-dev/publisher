@@ -5,7 +5,7 @@ set -xeu
 VSIX_FILENAME=$(ls -Art /home/coder/vsix | grep linux-amd64 | tail -n 1)
 
 # Install the Publisher extension
-code-server --install-extension "/home/coder/vsix/${VSIX_FILENAME}"
+#code-server --install-extension "/home/coder/vsix/${VSIX_FILENAME}"
 
 # Custom vscode User settings, avoid setup wizards
 # echo > /home/coder/.local/share/code-server/User/settings.json
