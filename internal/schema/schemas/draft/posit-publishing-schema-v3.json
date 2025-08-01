@@ -311,6 +311,7 @@
               }
             },
             "access": {
+              "type": "object",
               "additionalProperties": false,
               "properties": {
                 "run_as": {
@@ -418,6 +419,7 @@
             "examples": ["sales-report"]
           },
           "access_control": {
+            "type": "object",
             "additionalProperties": false,
             "properties": {
               "public_access": {
