@@ -19,3 +19,11 @@ export type ConnectCloudAccount = {
   displayName: string;
   permissionToPublish: boolean;
 };
+
+export type ConnectCloudData = {
+  accounts: ConnectCloudAccount[];
+  auth: DeviceAuth;
+  accountUrl?: string;
+  signupUrl?: string;
+  shouldPoll?: boolean;
+};
