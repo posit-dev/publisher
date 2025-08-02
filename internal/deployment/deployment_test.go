@@ -3,11 +3,15 @@ package deployment
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"github.com/posit-dev/publisher/internal/server_type"
 	"io/fs"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/posit-dev/publisher/internal/server_type"
+
+	"github.com/spf13/afero"
+	"github.com/stretchr/testify/suite"
 
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/logging"
@@ -15,8 +19,6 @@ import (
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/spf13/afero"
-	"github.com/stretchr/testify/suite"
 )
 
 type DeploymentSuite struct {
@@ -45,6 +47,7 @@ func (s *DeploymentSuite) createDeploymentFile(name string) *Deployment {
 	d.Configuration = config.New()
 	d.ServerType = server_type.ServerTypeConnect
 	d.DeployedAt = time.Now().UTC().Format(time.RFC3339)
+	d.Configuration.ProductType = config.ProductTypeConnect
 	d.Configuration.Type = config.ContentTypePythonDash
 	d.Configuration.Entrypoint = "app.py"
 	d.Configuration.Python = &config.Python{
