@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/posit-dev/publisher/internal/clients/cloud_auth"
+	"github.com/posit-dev/publisher/internal/cloud"
 	"github.com/posit-dev/publisher/internal/logging"
-	"github.com/posit-dev/publisher/internal/types"
 )
 
 var cloudAuthClientFactory = cloud_auth.NewCloudAuthClient
@@ -23,7 +23,7 @@ type connectCloudDeviceAuthResponseBody struct {
 
 func PostConnectCloudDeviceAuthHandlerFunc(log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		environment := types.CloudEnvironment(req.Header.Get(connectCloudEnvironmentHeader))
+		environment := cloud.GetCloudEnvironment(req.Header.Get(connectCloudEnvironmentHeader))
 		client := cloudAuthClientFactory(environment, log, 10*time.Second)
 
 		deviceAuthResult, err := client.CreateDeviceAuth()

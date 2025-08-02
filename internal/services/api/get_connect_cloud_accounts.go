@@ -10,8 +10,8 @@ import (
 
 	"github.com/posit-dev/publisher/internal/clients/connect_cloud"
 	"github.com/posit-dev/publisher/internal/clients/http_client"
+	"github.com/posit-dev/publisher/internal/cloud"
 	"github.com/posit-dev/publisher/internal/logging"
-	"github.com/posit-dev/publisher/internal/types"
 )
 
 type connectCloudAccountsBodyAccount struct {
@@ -27,7 +27,7 @@ const connectCloudEnvironmentHeader = "Connect-Cloud-Environment"
 
 func GetConnectCloudAccountsFunc(log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		environment := types.CloudEnvironment(req.Header.Get(connectCloudEnvironmentHeader))
+		environment := cloud.GetCloudEnvironment(req.Header.Get(connectCloudEnvironmentHeader))
 		authorization := req.Header.Get("Authorization")
 
 		client := connectCloudClientFactory(environment, log, 10*time.Second, authorization)
