@@ -9,18 +9,19 @@ import (
 	"os"
 	"time"
 
-	"github.com/mitchellh/mapstructure"
-	"github.com/posit-dev/publisher/internal/accounts"
-	"github.com/posit-dev/publisher/internal/bundles"
-	"github.com/posit-dev/publisher/internal/clients/connect"
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/interpreters"
+	"github.com/posit-dev/publisher/internal/project"
+	"github.com/posit-dev/publisher/internal/publish/publishhelper"
+	"github.com/posit-dev/publisher/internal/schema"
+
+	"github.com/mitchellh/mapstructure"
+
+	connectclient "github.com/posit-dev/publisher/internal/clients/connect"
 	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/inspect/dependencies/renv"
-	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
-	"github.com/posit-dev/publisher/internal/project"
-	"github.com/posit-dev/publisher/internal/schema"
 	"github.com/posit-dev/publisher/internal/state"
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
@@ -31,12 +32,17 @@ type Publisher interface {
 }
 
 type defaultPublisher struct {
-	*state.State
 	log            logging.Logger
 	emitter        events.Emitter
 	rPackageMapper renv.PackageMapper
 	r              util.Path
 	python         util.Path
+	*publishhelper.PublishHelper
+}
+
+type createBundleStartData struct{}
+type createBundleSuccessData struct {
+	Filename string `mapstructure:"filename"`
 }
 
 type baseEventData struct {
@@ -96,22 +102,36 @@ func NewFromState(s *state.State, rInterpreter interpreters.RInterpreter, python
 		s.TargetName = s.SaveName
 	}
 
+	helper := publishhelper.NewPublishHelper(s, log)
+
 	return &defaultPublisher{
-		State:          s,
 		log:            log,
 		emitter:        emitter,
 		rPackageMapper: packageManager,
 		r:              rexec.Path,
 		python:         pyexec.Path,
+		PublishHelper:  helper,
 	}, err
 }
 
-func logAppInfo(w io.Writer, accountURL string, contentID types.ContentID, log logging.Logger, publishingErr error) {
-	dashboardURL := util.GetDashboardURL(accountURL, contentID)
-	logsURL := util.GetLogsURL(accountURL, contentID)
-	directURL := util.GetDirectURL(accountURL, contentID)
+func (p *defaultPublisher) GetDeployedContentID() (types.ContentID, bool) {
+	if p.Target == nil || p.Target.ID == "" {
+		return "", false
+	}
+	return p.Target.ID, true
+}
+
+func (p *defaultPublisher) IsDeployed() bool {
+	_, ok := p.GetDeployedContentID()
+	return ok
+}
+
+func (p *defaultPublisher) logAppInfo(w io.Writer, log logging.Logger, publishingErr error) {
+	dashboardURL := p.Target.DashboardURL
+	logsURL := p.Target.LogsURL
+	directURL := p.Target.DirectURL
 	if publishingErr != nil {
-		if contentID == "" {
+		if p.Target.ID == "" {
 			// Publishing failed before a content ID was known
 			return
 		}
@@ -123,8 +143,8 @@ func logAppInfo(w io.Writer, accountURL string, contentID types.ContentID, log l
 			"dashboardURL", dashboardURL,
 			"directURL", directURL,
 			"logsURL", logsURL,
-			"serverURL", accountURL,
-			"contentID", contentID,
+			"serverURL", p.Account.URL,
+			"contentID", p.Target.ID,
 		)
 		fmt.Fprintln(w)
 		fmt.Fprintln(w, "Dashboard URL: ", dashboardURL)
@@ -132,18 +152,11 @@ func logAppInfo(w io.Writer, accountURL string, contentID types.ContentID, log l
 	}
 }
 
-func (p *defaultPublisher) isDeployed() bool {
-	return p.Target != nil && p.Target.ID != ""
-}
-
 func (p *defaultPublisher) emitErrorEvents(err error) {
 	agentErr, ok := err.(*types.AgentError)
 	if !ok {
 		agentErr = types.NewAgentError(types.ErrorUnknown, err, nil)
 	}
-	dashboardURL := ""
-	directURL := ""
-	logsURL := ""
 
 	var data events.EventData
 
@@ -154,20 +167,15 @@ func (p *defaultPublisher) emitErrorEvents(err error) {
 	// Record the error in the deployment record
 	if p.Target != nil {
 		p.Target.Error = agentErr
-		_, writeErr := p.writeDeploymentRecord()
+		_, writeErr := p.WriteDeploymentRecord()
 		if writeErr != nil {
 			p.log.Warn("failed to write updated deployment record", "name", p.TargetName, "err", writeErr)
 		}
-		if p.isDeployed() {
-			// Provide URL in the event, if we got far enough in the deployment.
-			dashboardURL = util.GetDashboardURL(p.Account.URL, p.Target.ID)
-			logsURL = util.GetLogsURL(p.Account.URL, p.Target.ID)
-			directURL = util.GetDirectURL(p.Account.URL, p.Target.ID)
-
+		if p.IsDeployed() {
 			mapstructure.Decode(publishDeployedFailureData{
-				DashboardURL: dashboardURL,
-				LogsURL:      logsURL,
-				DirectURL:    directURL,
+				DashboardURL: p.Target.DashboardURL,
+				LogsURL:      p.Target.LogsURL,
+				DirectURL:    p.Target.DirectURL,
 			}, &data)
 		}
 	}
@@ -189,7 +197,7 @@ func (p *defaultPublisher) emitErrorEvents(err error) {
 		data))
 }
 
-var clientFactory = connect.NewConnectClient
+var clientFactory = connectclient.NewConnectClient
 
 func (p *defaultPublisher) PublishDirectory() error {
 	p.log.Info("Publishing from directory", logging.LogKeyOp, events.AgentOp, "path", p.Dir, "localID", p.State.LocalID)
@@ -199,45 +207,114 @@ func (p *defaultPublisher) PublishDirectory() error {
 	}))
 	p.log.Info("Starting deployment to server", "server", p.Account.URL)
 
-	// TODO: factory method to create client based on server type
-	// TODO: timeout option
-	client, err := clientFactory(p.Account, 2*time.Minute, p.emitter, p.log)
+	err := p.doPublish()
+	p.logAppInfo(os.Stderr, p.log, err)
 	if err != nil {
 		p.emitErrorEvents(err)
 		return err
-	}
-	err = p.publishWithClient(p.Account, client)
-	if p.isDeployed() {
-		logAppInfo(os.Stderr, p.Account.URL, p.Target.ID, p.log, err)
-	}
-	if err != nil {
-		p.emitErrorEvents(err)
 	} else {
 		p.emitter.Emit(events.New(events.PublishOp, events.SuccessPhase, events.NoError, publishSuccessData{
-			DashboardURL: util.GetDashboardURL(p.Account.URL, p.Target.ID),
-			LogsURL:      util.GetLogsURL(p.Account.URL, p.Target.ID),
-			DirectURL:    util.GetDirectURL(p.Account.URL, p.Target.ID),
+			DashboardURL: p.Target.DashboardURL,
+			LogsURL:      p.Target.LogsURL,
+			DirectURL:    p.Target.DirectURL,
 			ServerURL:    p.Account.URL,
 			ContentID:    p.Target.ID,
 		}))
 	}
-	return err
+	return nil
 }
 
-func (p *defaultPublisher) writeDeploymentRecord() (*deployment.Deployment, error) {
-	now := time.Now().Format(time.RFC3339)
-	p.Target.DeployedAt = now
-	p.Target.ConfigName = p.ConfigName
-	p.Target.Configuration = p.Config
+func (p *defaultPublisher) doPublish() error {
+	contentID, wasPreviouslyDeployed := p.GetDeployedContentID()
+	p.CreateDeploymentRecord()
+	_, err := p.WriteDeploymentRecord()
+	if err != nil {
+		return err
+	}
 
-	recordPath := deployment.GetDeploymentPath(p.Dir, p.SaveName)
-	localID := string(p.State.LocalID)
-	return p.Target.WriteFile(recordPath, localID, p.log)
+	err = p.configureInterpreters()
+	if err != nil {
+		return err
+	}
+
+	serverPublisher, err := p.createServerPublisher()
+	if err != nil {
+		return err
+	}
+
+	if wasPreviouslyDeployed {
+		p.log.Info("Updating deployment", "content_id", contentID)
+	} else {
+		// Create a new deployment; we will update it with details later.
+		contentID, err = serverPublisher.CreateDeployment()
+		if err != nil {
+			return err
+		}
+	}
+
+	p.setContentInfo(serverPublisher.GetContentInfo(contentID))
+
+	err = serverPublisher.PreFlightChecks()
+	if err != nil {
+		return err
+	}
+
+	bundleFile, err := p.createBundle()
+	if err != nil {
+		return err
+	}
+	defer bundleFile.Close()
+	defer os.Remove(bundleFile.Name())
+
+	err = serverPublisher.PublishToServer(contentID, bundleFile)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (p *defaultPublisher) setContentInfo(info publishhelper.ContentInfo) {
+	p.Target.ID = info.ContentID
+	p.Target.DashboardURL = info.DashboardURL
+	p.Target.DirectURL = info.DirectURL
+	p.Target.LogsURL = info.LogsURL
+}
+
+func (p *defaultPublisher) CreateDeploymentRecord() {
+	p.Target = &deployment.Deployment{}
+
+	// Initial deployment record doesn't know the files or
+	// bundleID. These will be added after the
+	// bundle upload.
+	cfg := *p.Config
+
+	created := ""
+	var contentType config.ContentType
+
+	if p.Target != nil {
+		created = p.Target.CreatedAt
+		contentType = p.Target.Type
+		if contentType == "" || contentType == config.ContentTypeUnknown {
+			contentType = cfg.Type
+		}
+	} else {
+		created = time.Now().Format(time.RFC3339)
+		contentType = cfg.Type
+	}
+
+	p.Target.Schema = schema.DeploymentSchemaURL
+	p.Target.ServerType = p.Account.ServerType
+	p.Target.ServerURL = p.Account.URL
+	p.Target.ClientVersion = project.Version
+	p.Target.Type = contentType
+	p.Target.CreatedAt = created
+	p.Target.ConfigName = p.ConfigName
+	p.Target.Configuration = &cfg
 }
 
 func CancelDeployment(
 	deploymentPath util.AbsolutePath,
-	localID string,
 	log logging.Logger,
 ) (*deployment.Deployment, error) {
 	// This function only marks the deployment record as being canceled.
@@ -262,126 +339,4 @@ func CancelDeployment(
 	// with a fake local ID that only we know).
 	d, err := target.WriteFile(deploymentPath, newLocalID, log)
 	return d, err
-}
-
-func (p *defaultPublisher) createDeploymentRecord(
-	contentID types.ContentID,
-	account *accounts.Account) {
-
-	// Initial deployment record doesn't know the files or
-	// bundleID. These will be added after the
-	// bundle upload.
-	cfg := *p.Config
-
-	created := ""
-	var contentType config.ContentType
-
-	if p.Target != nil {
-		created = p.Target.CreatedAt
-		contentType = p.Target.Type
-		if contentType == "" || contentType == config.ContentTypeUnknown {
-			contentType = cfg.Type
-		}
-	} else {
-		created = time.Now().Format(time.RFC3339)
-		contentType = cfg.Type
-	}
-
-	p.Target = &deployment.Deployment{
-		Schema:        schema.DeploymentSchemaURL,
-		ServerType:    account.ServerType,
-		ServerURL:     account.URL,
-		ClientVersion: project.Version,
-		Type:          contentType,
-		CreatedAt:     created,
-		DismissedAt:   "",
-		ID:            contentID,
-		ConfigName:    p.ConfigName,
-		Files:         nil,
-		Requirements:  nil,
-		Configuration: &cfg,
-		BundleID:      "",
-		DashboardURL:  util.GetDashboardURL(p.Account.URL, contentID),
-		DirectURL:     util.GetDirectURL(p.Account.URL, contentID),
-		LogsURL:       util.GetLogsURL(p.Account.URL, contentID),
-		Error:         nil,
-	}
-
-}
-
-func (p *defaultPublisher) publishWithClient(
-	account *accounts.Account,
-	client connect.APIClient) error {
-
-	var err error
-	var contentID types.ContentID
-
-	if p.isDeployed() {
-		contentID = p.Target.ID
-		p.log.Info("Updating deployment", "content_id", contentID)
-	} else {
-		// Create a new deployment; we will update it with details later.
-		contentID, err = p.createDeployment(client)
-	}
-	if err != nil {
-		return err
-	}
-
-	p.createDeploymentRecord(contentID, account)
-
-	manifest := bundles.NewManifestFromConfig(p.Config)
-	p.log.Debug("Built manifest from config", "config", p.ConfigName)
-
-	if p.Config.R != nil {
-		rPackages, err := p.getRPackages()
-		if err != nil {
-			return err
-		}
-		manifest.Packages = rPackages
-	}
-	p.log.Debug("Generated manifest:", manifest)
-
-	bundler, err := bundles.NewBundler(p.Dir, manifest, p.Config.Files, p.log)
-	if err != nil {
-		return err
-	}
-
-	err = p.preFlightChecks(client)
-	if err != nil {
-		return err
-	}
-
-	bundleID, err := p.createAndUploadBundle(client, bundler, contentID)
-	if err != nil {
-		return err
-	}
-
-	err = p.updateContent(client, contentID)
-	if err != nil {
-		return err
-	}
-
-	err = p.setEnvVars(client, contentID)
-	if err != nil {
-		return err
-	}
-
-	taskID, err := p.deployBundle(client, contentID, bundleID)
-	if err != nil {
-		return err
-	}
-
-	taskLogger := p.log.WithArgs("source", "server.log")
-	err = client.WaitForTask(taskID, taskLogger)
-	if err != nil {
-		return err
-	}
-
-	if p.Config.Validate {
-		err = p.validateContent(client, contentID)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }

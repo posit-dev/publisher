@@ -5,14 +5,16 @@ package deployment
 import (
 	"errors"
 	"fmt"
-	"github.com/posit-dev/publisher/internal/server_type"
 	"io"
 	"io/fs"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/posit-dev/publisher/internal/server_type"
+
 	"github.com/pelletier/go-toml/v2"
+
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/inspect/dependencies/renv"
 	"github.com/posit-dev/publisher/internal/logging"
