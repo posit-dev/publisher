@@ -18,7 +18,7 @@ import {
   Credential,
   SnowflakeConnection,
   ServerType,
-  PlatformName,
+  ProductName,
 } from "src/api";
 import {
   getMessageFromError,
@@ -65,10 +65,10 @@ export async function newCredential(
   const api = await useApi();
   let credentials: Credential[] = [];
 
-  // the serverType & platformName will be overwritten in the very first step
+  // the serverType & productName will be overwritten in the very first step
   // when the platform is selected
   let serverType: ServerType = ServerType.CONNECT;
-  let platformName: PlatformName = PlatformName.CONNECT;
+  let productName: ProductName = ProductName.CONNECT;
   let connections: SnowflakeConnection[] = [];
   let connectionQuickPicks: QuickPickItemWithIndex[];
 
@@ -187,7 +187,7 @@ export async function newCredential(
       // default to CONNECT (since there are no other products at the moment)
       // when the enableConnectCloud config is turned off
       serverType = ServerType.CONNECT;
-      platformName = PlatformName.CONNECT;
+      productName = ProductName.CONNECT;
       resetConnectCloudData(state);
 
       await MultiStepInput.run({
@@ -212,10 +212,10 @@ export async function newCredential(
       ignoreFocusOut: true,
     });
 
-    const enumKey = getEnumKeyByEnumValue(PlatformName, pick.label);
+    const enumKey = getEnumKeyByEnumValue(ProductName, pick.label);
     // fallback to CONNECT if there is ever a case when the enumKey is not found
     serverType = enumKey ? ServerType[enumKey] : ServerType.CONNECT;
-    platformName = pick.label as PlatformName;
+    productName = pick.label as ProductName;
 
     if (isConnectCloud(serverType)) {
       resetConnectData(state);
@@ -807,7 +807,7 @@ export async function newCredential(
       totalSteps: 0,
       value: currentName,
       prompt: `Enter a unique nickname for this ${isConnectCloud(serverType) ? "account" : "server"}.`,
-      placeholder: `${isConnectCloud(serverType) ? accountName : platformName}`,
+      placeholder: `${isConnectCloud(serverType) ? accountName : productName}`,
       finalValidation: (input: string) => {
         input = input.trim();
         if (input === "") {

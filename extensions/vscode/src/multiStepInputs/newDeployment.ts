@@ -33,9 +33,8 @@ import {
   Credential,
   EntryPointPath,
   FileAction,
-  PlatformName,
+  ProductName,
   PreContentRecord,
-  ProductType,
   ServerType,
   SnowflakeConnection,
   useApi,
@@ -73,6 +72,7 @@ import {
   fetchDeviceAuth,
   fetchSnowflakeConnections,
   findExistingCredentialByURL,
+  getProductType,
   getPublishableAccounts,
   isConnect,
   isConnectCloud,
@@ -87,17 +87,6 @@ import {
   ConnectCloudData,
   DeviceAuth,
 } from "src/api/types/connectCloud";
-
-function getProductType(serverType: ServerType): ProductType {
-  switch (serverType) {
-    case ServerType.CONNECT:
-      return ProductType.CONNECT;
-    case ServerType.SNOWFLAKE:
-      return ProductType.CONNECT;
-    case ServerType.CONNECT_CLOUD:
-      return ProductType.CONNECT_CLOUD;
-  }
-}
 
 export async function newDeployment(
   viewId: string,
@@ -116,10 +105,10 @@ export async function newDeployment(
   let inspectionResults: ConfigurationInspectionResult[] = [];
   const contentRecordNames = new Map<string, string[]>();
 
-  // the serverType & platformName will be overwritten during the pickCredentials steps
+  // the serverType & productName will be overwritten during the pickCredentials steps
   // when the platform is selected
   let serverType: ServerType = ServerType.CONNECT;
-  let platformName: PlatformName = PlatformName.CONNECT;
+  let productName: ProductName = ProductName.CONNECT;
   let connections: SnowflakeConnection[] = [];
   let connectionQuickPicks: QuickPickItemWithIndex[];
 
@@ -681,7 +670,7 @@ export async function newDeployment(
       // default to CONNECT (since there are no other products at the moment)
       // when the enableConnectCloud config is turned off
       serverType = ServerType.CONNECT;
-      platformName = PlatformName.CONNECT;
+      productName = ProductName.CONNECT;
       resetConnectCloudData();
 
       return { step: (input: MultiStepInput) => inputServerUrl(input, state) };
@@ -703,10 +692,10 @@ export async function newDeployment(
       ignoreFocusOut: true,
     });
 
-    const enumKey = getEnumKeyByEnumValue(PlatformName, pick.label);
+    const enumKey = getEnumKeyByEnumValue(ProductName, pick.label);
     // fallback to CONNECT if there is ever a case when the enumKey is not found
     serverType = enumKey ? ServerType[enumKey] : ServerType.CONNECT;
-    platformName = pick.label as PlatformName;
+    productName = pick.label as ProductName;
 
     if (isConnectCloud(serverType)) {
       resetConnectData();
@@ -1281,7 +1270,7 @@ export async function newDeployment(
       totalSteps: 0,
       value: currentName,
       prompt: `Enter a unique nickname for this ${isConnectCloud(serverType) ? "account" : "server"}.`,
-      placeholder: `${isConnectCloud(serverType) ? accountName : platformName}`,
+      placeholder: `${isConnectCloud(serverType) ? accountName : productName}`,
       finalValidation: (input: string) => {
         input = input.trim();
         if (input === "") {
