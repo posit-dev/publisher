@@ -8,11 +8,12 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/spf13/afero"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/posit-dev/publisher/internal/schema"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/spf13/afero"
-	"github.com/stretchr/testify/suite"
 )
 
 type ConfigSuite struct {
@@ -35,6 +36,7 @@ func (s *ConfigSuite) SetupTest() {
 func (s *ConfigSuite) createConfigFile(name string) {
 	configFile := GetConfigPath(s.cwd, name)
 	cfg := New()
+	cfg.ProductType = "connect"
 	cfg.Type = "python-dash"
 	cfg.Entrypoint = "app.py"
 	cfg.Python = &Python{
@@ -101,6 +103,7 @@ func (s *ConfigSuite) TestWriteFile() {
 func (s *ConfigSuite) TestWriteFileEmptyEntrypoint() {
 	configFile := GetConfigPath(s.cwd, "myConfig")
 	cfg := New()
+	cfg.ProductType = "connect"
 	cfg.Type = ContentTypeHTML
 	cfg.Entrypoint = ""
 	err := cfg.WriteFile(configFile)
@@ -142,6 +145,7 @@ func (s *ConfigSuite) TestWriteComments() {
 const commentedConfig = `# These are comments.
 # They will be preserved.
 '$schema' = 'https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json'
+product_type = 'connect'
 type = 'html'
 entrypoint = 'index.html'
 `

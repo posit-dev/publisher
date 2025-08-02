@@ -11,12 +11,13 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
+	"github.com/spf13/afero"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/spf13/afero"
-	"github.com/stretchr/testify/suite"
 )
 
 type GetConfigurationuite struct {
@@ -44,6 +45,7 @@ func (s *GetConfigurationuite) SetupTest() {
 func (s *GetConfigurationuite) makeConfiguration(name string) *config.Config {
 	path := config.GetConfigPath(s.cwd, name)
 	cfg := config.New()
+	cfg.ProductType = config.ProductTypeConnect
 	cfg.Type = config.ContentTypePythonDash
 	cfg.Entrypoint = "app.py"
 	cfg.Python = &config.Python{

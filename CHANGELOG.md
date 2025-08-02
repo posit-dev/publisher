@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added endpoints for performing OAuth Device Authorization Grant with Posit Cloud login. (#2692)
+- Added `product_type` field to the config schema. (#2729)
 
 ## [1.18.1]
 
@@ -32,7 +33,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved support for Posit Connect deployments hosted in Snowpark Container
   Services. (#2687, #2691)
 - Added internal API endpoint to list Connect Cloud accounts. (#2695)
-- Added endpoints for performing OAuth Device Authorization Grant with Posit Cloud login. (#2692)
 
 ### Changed
 
