@@ -45,6 +45,7 @@ import { getEnumKeyByEnumValue } from "src/utils/enums";
 import {
   AuthToken,
   ConnectCloudAccount,
+  ConnectCloudData,
   DeviceAuth,
 } from "src/api/types/connectCloud";
 import {
@@ -70,14 +71,6 @@ export async function newCredential(
   let platformName: PlatformName = PlatformName.CONNECT;
   let connections: SnowflakeConnection[] = [];
   let connectionQuickPicks: QuickPickItemWithIndex[];
-
-  type ConnectCloudData = {
-    accounts: ConnectCloudAccount[];
-    auth: DeviceAuth;
-    accountUrl?: string;
-    signupUrl?: string;
-    shouldPoll?: boolean;
-  };
 
   const connectCloudData: ConnectCloudData = {
     accounts: [],
