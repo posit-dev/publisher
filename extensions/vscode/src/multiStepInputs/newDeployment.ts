@@ -2,43 +2,43 @@
 
 import path from "path";
 import {
+  isQuickPickItem,
+  isQuickPickItemWithIndex,
+  isQuickPickItemWithInspectionResult,
   MultiStepInput,
   MultiStepState,
-  QuickPickItemWithInspectionResult,
   QuickPickItemWithIndex,
-  isQuickPickItem,
-  isQuickPickItemWithInspectionResult,
-  isQuickPickItemWithIndex,
+  QuickPickItemWithInspectionResult,
   AbortError,
   InputStep,
   InfoMessageParameters,
 } from "src/multiStepInputs/multiStepHelper";
-
 import {
+  commands,
   InputBoxValidationSeverity,
   QuickPickItem,
   QuickPickItemKind,
   ThemeIcon,
   Uri,
-  commands,
   window,
   workspace,
 } from "vscode";
 
 import {
-  useApi,
-  Credential,
-  Configuration,
-  PreContentRecord,
-  contentTypeStrings,
-  ConfigurationInspectionResult,
-  EntryPointPath,
   areInspectionResultsSimilarEnough,
+  Configuration,
+  ConfigurationInspectionResult,
   ContentType,
+  contentTypeStrings,
+  Credential,
+  EntryPointPath,
   FileAction,
-  SnowflakeConnection,
-  ServerType,
   PlatformName,
+  PreContentRecord,
+  ProductType,
+  ServerType,
+  SnowflakeConnection,
+  useApi,
 } from "src/api";
 import {
   getPythonInterpreterPath,
@@ -49,7 +49,7 @@ import {
   getSummaryStringFromError,
 } from "src/utils/errors";
 import { isAxiosErrorWithJson } from "src/utils/errorTypes";
-import { newDeploymentName, newConfigFileNameFromTitle } from "src/utils/names";
+import { newConfigFileNameFromTitle, newDeploymentName } from "src/utils/names";
 import { formatURL } from "src/utils/url";
 import { checkSyntaxApiKey } from "src/utils/apiKeys";
 import { DeploymentObjects } from "src/types/shared";
@@ -87,6 +87,17 @@ import {
   ConnectCloudData,
   DeviceAuth,
 } from "src/api/types/connectCloud";
+
+function getProductType(serverType: ServerType): ProductType {
+  switch (serverType) {
+    case ServerType.CONNECT:
+      return ProductType.CONNECT;
+    case ServerType.SNOWFLAKE:
+      return ProductType.CONNECT;
+    case ServerType.CONNECT_CLOUD:
+      return ProductType.CONNECT_CLOUD;
+  }
+}
 
 export async function newDeployment(
   viewId: string,
@@ -1427,6 +1438,10 @@ export async function newDeployment(
       newDeploymentData.title,
       existingNames,
     );
+
+    newDeploymentData.entrypoint.inspectionResult.configuration.productType =
+      getProductType(serverType);
+
     configCreateResponse = (
       await api.configurations.createOrUpdate(
         configName,
