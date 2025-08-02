@@ -4,9 +4,10 @@ import {
   useApi,
   Credential,
   SnowflakeConnection,
-  PlatformName,
-  PlatformDescription,
   ServerType,
+  ProductType,
+  ProductName,
+  ProductDescription,
 } from "src/api";
 import { getSummaryStringFromError } from "src/utils/errors";
 import { isAxiosErrorWithJson } from "src/utils/errorTypes";
@@ -39,19 +40,30 @@ export const isSnowflake = (serverType: ServerType) => {
   return serverType === ServerType.SNOWFLAKE;
 };
 
+export const getProductType = (serverType: ServerType): ProductType => {
+  switch (serverType) {
+    case ServerType.CONNECT:
+      return ProductType.CONNECT;
+    case ServerType.SNOWFLAKE:
+      return ProductType.CONNECT;
+    case ServerType.CONNECT_CLOUD:
+      return ProductType.CONNECT_CLOUD;
+  }
+};
+
 // List of all available platforms
 export const platformList: QuickPickItem[] = [
   {
     iconPath: new ThemeIcon("posit-publisher-posit-logo"),
-    label: PlatformName.CONNECT_CLOUD,
+    label: ProductName.CONNECT_CLOUD,
     description: "",
-    detail: PlatformDescription.CONNECT_CLOUD,
+    detail: ProductDescription.CONNECT_CLOUD,
   },
   {
     iconPath: new ThemeIcon("posit-publisher-posit-logo"),
-    label: PlatformName.CONNECT,
+    label: ProductName.CONNECT,
     description: "",
-    detail: PlatformDescription.CONNECT,
+    detail: ProductDescription.CONNECT,
   },
 ];
 
