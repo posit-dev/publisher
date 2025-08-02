@@ -930,7 +930,6 @@ export async function newDeployment(
         connectCloudData.accountUrl = CONNECT_CLOUD_ACCOUNT_URL;
 
         // call the retrieveAccounts step again with the populated polling props
-
         step = (input: MultiStepInput) => retrieveAccounts(input, state);
         skippable = true;
       }
