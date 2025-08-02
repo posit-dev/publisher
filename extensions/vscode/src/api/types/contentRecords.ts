@@ -19,12 +19,12 @@ export enum ProductType {
   CONNECT_CLOUD = "connect_cloud",
 }
 
-export enum PlatformName {
+export enum ProductName {
   CONNECT = "Posit Connect",
   CONNECT_CLOUD = "Posit Connect Cloud",
 }
 
-export enum PlatformDescription {
+export enum ProductDescription {
   CONNECT = "Deploy data applications, documents, APIs, and more to your server.",
   CONNECT_CLOUD = "Deploy data applications and documents online. Free plan available.",
 }
