@@ -397,100 +397,97 @@ export class MultiStepInput {
   }: P) {
     const disposables: Disposable[] = [];
     try {
-      return await new Promise<ApiResponse<T>>(
-        // eslint-disable-next-line no-async-promise-executor
-        async (resolve, reject) => {
-          let abortPolling = false;
-          // default the polling interval to 5 seconds
-          pollingInterval ||= 5000;
-          const input = window.createInputBox();
-          input.title = title;
-          input.step = step;
-          input.totalSteps = totalSteps;
-          // enabled must default to true when undefined
-          input.enabled = enabled === undefined ? true : enabled;
-          input.busy = busy || false;
-          input.validationMessage = validationMessage;
-          input.valueSelection = valueSelection;
-          input.value = value || "";
-          input.prompt = prompt;
-          input.ignoreFocusOut = ignoreFocusOut ?? false;
-          disposables.push(
-            input.onDidHide(() => {
-              // abort polling anytime the multi-stepper is hidden
-              abortPolling = true;
-              (async () => {
-                reject(
-                  shouldResume && (await shouldResume())
-                    ? InputFlowAction.resume
-                    : InputFlowAction.cancel,
-                );
-              })().catch(reject);
-            }),
-          );
-          if (this.current) {
-            this.current.dispose();
+      return await new Promise<ApiResponse<T>>((resolve, reject) => {
+        let abortPolling = false;
+        // default the polling interval to 5 seconds
+        pollingInterval ||= 5000;
+        const input = window.createInputBox();
+        input.title = title;
+        input.step = step;
+        input.totalSteps = totalSteps;
+        // enabled must default to true when undefined
+        input.enabled = enabled === undefined ? true : enabled;
+        input.busy = busy || false;
+        input.validationMessage = validationMessage;
+        input.valueSelection = valueSelection;
+        input.value = value || "";
+        input.prompt = prompt;
+        input.ignoreFocusOut = ignoreFocusOut ?? false;
+        disposables.push(
+          input.onDidHide(() => {
+            // abort polling anytime the multi-stepper is hidden
+            abortPolling = true;
+            (async () => {
+              reject(
+                shouldResume && (await shouldResume())
+                  ? InputFlowAction.resume
+                  : InputFlowAction.cancel,
+              );
+            })().catch(reject);
+          }),
+        );
+        if (this.current) {
+          this.current.dispose();
+        }
+        this.current = input;
+        this.current.show();
+
+        if (browserUrl) {
+          // @ts-expect-error the resulting URL may have multiple levels of nested redirects:
+          // url 1 -> redirect to url 2 -> redirect to url 3 -> etc.
+          // Unfortunately that much nesting of redirect params encoding is not properly handled
+          // by vscode: `env.openExternal(Uri.parse(browserUrl))`.
+          // Therefore, we have to give the string URL directly to `env.openExternal` and ignore
+          // the type error from typescript so the encoding is correct for the nested redirects.
+
+          // await opening the external browser window so the polling
+          // actually begins after the user selects an option from the open browser pop-up
+          await env.openExternal(browserUrl);
+
+          // bail out if the user did anything on the openExternal window operation
+          // to cause the multi-stepper to be hidden
+          if (abortPolling) {
+            // return custom internal error when aborting
+            return reject(new AbortError()); // bubble up the error
           }
-          this.current = input;
-          this.current.show();
+        }
 
-          if (browserUrl) {
-            // @ts-expect-error the resulting URL may have multiple levels of nested redirects:
-            // url 1 -> redirect to url 2 -> redirect to url 3 -> etc.
-            // Unfortunately that much nesting of redirect params encoding is not properly handled
-            // by vscode: `env.openExternal(Uri.parse(browserUrl))`.
-            // Therefore, we have to give the string URL directly to `env.openExternal` and ignore
-            // the type error from typescript so the encoding is correct for the nested redirects.
+        const pollApiFunction = async (
+          interval: number,
+          maxAttempts?: number,
+        ): Promise<ApiResponse<T>> => {
+          let attempts = 0;
 
-            // await opening the external browser window so the polling
-            // actually begins after the user selects an option from the open browser pop-up
-            await env.openExternal(browserUrl);
-
-            // bail out if the user did anything on the openExternal window operation
-            // to cause the multi-stepper to be hidden
-            if (abortPolling) {
-              // return custom internal error when aborting
-              return reject(new AbortError()); // bubble up the error
+          const executePolling = async (): Promise<ApiResponse<T>> => {
+            const resp = await apiFunction();
+            interval += resp.intervalAdjustment;
+            if (
+              !shouldPollApi ||
+              (exitPollingCondition && exitPollingCondition(resp))
+            ) {
+              // either no polling is needed or we have met the exit condition, stop polling
+              return resp;
             }
-          }
 
-          const pollApiFunction = async (
-            interval: number,
-            maxAttempts?: number,
-          ): Promise<ApiResponse<T>> => {
-            let attempts = 0;
-
-            const executePolling = async (): Promise<ApiResponse<T>> => {
-              const resp = await apiFunction();
-              interval += resp.intervalAdjustment;
-              if (
-                !shouldPollApi ||
-                (exitPollingCondition && exitPollingCondition(resp))
-              ) {
-                // either no polling is needed or we have met the exit condition, stop polling
-                return resp;
-              }
-
-              attempts++;
-              if ((maxAttempts && attempts >= maxAttempts) || abortPolling) {
-                // return custom internal error when aborting or
-                // when the max attemps have been reached
-                throw new AbortError(); // bubble up the error
-              }
-              // exit condition has not been met, wait the interval time and poll again
-              await new Promise((resolve) => setTimeout(resolve, interval));
-              return executePolling(); // recursive call to continue polling
-            };
-
-            return await executePolling();
+            attempts++;
+            if ((maxAttempts && attempts >= maxAttempts) || abortPolling) {
+              // return custom internal error when aborting or
+              // when the max attemps have been reached
+              throw new AbortError(); // bubble up the error
+            }
+            // exit condition has not been met, wait the interval time and poll again
+            await new Promise((resolve) => setTimeout(resolve, interval));
+            return executePolling(); // recursive call to continue polling
           };
 
-          // start polling (poll every 5 seconds at most 120 times === 10 minutes max time)
-          return pollApiFunction(pollingInterval, 120)
-            .then(resolve)
-            .catch(reject);
-        },
-      ); // outer promise end
+          return await executePolling();
+        };
+
+        // start polling (poll every 5 seconds at most 120 times === 10 minutes max time)
+        return pollApiFunction(pollingInterval, 120)
+          .then(resolve)
+          .catch(reject);
+      }); // outer promise end
     } finally {
       disposables.forEach((d) => d.dispose());
     }
