@@ -2,43 +2,42 @@
 
 import path from "path";
 import {
+  isQuickPickItem,
+  isQuickPickItemWithIndex,
+  isQuickPickItemWithInspectionResult,
   MultiStepInput,
   MultiStepState,
-  QuickPickItemWithInspectionResult,
   QuickPickItemWithIndex,
-  isQuickPickItem,
-  isQuickPickItemWithInspectionResult,
-  isQuickPickItemWithIndex,
+  QuickPickItemWithInspectionResult,
   AbortError,
   InputStep,
   InfoMessageParameters,
 } from "src/multiStepInputs/multiStepHelper";
-
 import {
+  commands,
   InputBoxValidationSeverity,
   QuickPickItem,
   QuickPickItemKind,
   ThemeIcon,
   Uri,
-  commands,
   window,
   workspace,
 } from "vscode";
 
 import {
-  useApi,
-  Credential,
-  Configuration,
-  PreContentRecord,
-  contentTypeStrings,
-  ConfigurationInspectionResult,
-  EntryPointPath,
   areInspectionResultsSimilarEnough,
+  Configuration,
+  ConfigurationInspectionResult,
   ContentType,
+  contentTypeStrings,
+  Credential,
+  EntryPointPath,
   FileAction,
-  SnowflakeConnection,
+  ProductName,
+  PreContentRecord,
   ServerType,
-  PlatformName,
+  SnowflakeConnection,
+  useApi,
 } from "src/api";
 import {
   getPythonInterpreterPath,
@@ -49,7 +48,7 @@ import {
   getSummaryStringFromError,
 } from "src/utils/errors";
 import { isAxiosErrorWithJson } from "src/utils/errorTypes";
-import { newDeploymentName, newConfigFileNameFromTitle } from "src/utils/names";
+import { newConfigFileNameFromTitle, newDeploymentName } from "src/utils/names";
 import { formatURL } from "src/utils/url";
 import { checkSyntaxApiKey } from "src/utils/apiKeys";
 import { DeploymentObjects } from "src/types/shared";
@@ -73,6 +72,7 @@ import {
   fetchDeviceAuth,
   fetchSnowflakeConnections,
   findExistingCredentialByURL,
+  getProductType,
   getPublishableAccounts,
   isConnect,
   isConnectCloud,
@@ -84,6 +84,7 @@ import { getEnumKeyByEnumValue } from "src/utils/enums";
 import {
   AuthToken,
   ConnectCloudAccount,
+  ConnectCloudData,
   DeviceAuth,
 } from "src/api/types/connectCloud";
 
@@ -104,20 +105,12 @@ export async function newDeployment(
   let inspectionResults: ConfigurationInspectionResult[] = [];
   const contentRecordNames = new Map<string, string[]>();
 
-  // the serverType & platformName will be overwritten during the pickCredentials steps
+  // the serverType & productName will be overwritten during the pickCredentials steps
   // when the platform is selected
   let serverType: ServerType = ServerType.CONNECT;
-  let platformName: PlatformName = PlatformName.CONNECT;
+  let productName: ProductName = ProductName.CONNECT;
   let connections: SnowflakeConnection[] = [];
   let connectionQuickPicks: QuickPickItemWithIndex[];
-
-  type ConnectCloudData = {
-    accounts: ConnectCloudAccount[];
-    auth: DeviceAuth;
-    accountUrl?: string;
-    signupUrl?: string;
-    shouldPoll?: boolean;
-  };
 
   const connectCloudData: ConnectCloudData = {
     accounts: [],
@@ -677,7 +670,7 @@ export async function newDeployment(
       // default to CONNECT (since there are no other products at the moment)
       // when the enableConnectCloud config is turned off
       serverType = ServerType.CONNECT;
-      platformName = PlatformName.CONNECT;
+      productName = ProductName.CONNECT;
       resetConnectCloudData();
 
       return { step: (input: MultiStepInput) => inputServerUrl(input, state) };
@@ -699,10 +692,10 @@ export async function newDeployment(
       ignoreFocusOut: true,
     });
 
-    const enumKey = getEnumKeyByEnumValue(PlatformName, pick.label);
+    const enumKey = getEnumKeyByEnumValue(ProductName, pick.label);
     // fallback to CONNECT if there is ever a case when the enumKey is not found
     serverType = enumKey ? ServerType[enumKey] : ServerType.CONNECT;
-    platformName = pick.label as PlatformName;
+    productName = pick.label as ProductName;
 
     if (isConnectCloud(serverType)) {
       resetConnectData();
@@ -937,7 +930,6 @@ export async function newDeployment(
         connectCloudData.accountUrl = CONNECT_CLOUD_ACCOUNT_URL;
 
         // call the retrieveAccounts step again with the populated polling props
-
         step = (input: MultiStepInput) => retrieveAccounts(input, state);
         skippable = true;
       }
@@ -1278,7 +1270,7 @@ export async function newDeployment(
       totalSteps: 0,
       value: currentName,
       prompt: `Enter a unique nickname for this ${isConnectCloud(serverType) ? "account" : "server"}.`,
-      placeholder: `${isConnectCloud(serverType) ? accountName : platformName}`,
+      placeholder: `${isConnectCloud(serverType) ? accountName : productName}`,
       finalValidation: (input: string) => {
         input = input.trim();
         if (input === "") {
@@ -1435,6 +1427,10 @@ export async function newDeployment(
       newDeploymentData.title,
       existingNames,
     );
+
+    newDeploymentData.entrypoint.inspectionResult.configuration.productType =
+      getProductType(serverType);
+
     configCreateResponse = (
       await api.configurations.createOrUpdate(
         configName,

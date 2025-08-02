@@ -11,12 +11,13 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
+	"github.com/spf13/afero"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/spf13/afero"
-	"github.com/stretchr/testify/suite"
 )
 
 type PostConfigFilesSuite struct {
@@ -46,6 +47,7 @@ func (s *PostConfigFilesSuite) TestPostConfigFiles() {
 
 	configName := "myConfig"
 	cfg := config.New()
+	cfg.ProductType = config.ProductTypeConnect
 	cfg.Type = config.ContentTypeHTML
 	cfg.Files = []string{"*"}
 	configPath := config.GetConfigPath(s.cwd, configName)
@@ -117,6 +119,7 @@ func (s *PostConfigFilesSuite) TestPostConfigFilesExcludeTwice() {
 
 	configName := "myConfig"
 	cfg := config.New()
+	cfg.ProductType = config.ProductTypeConnect
 	cfg.Type = config.ContentTypeHTML
 	cfg.Files = []string{"*"}
 	configPath := config.GetConfigPath(s.cwd, configName)
@@ -162,6 +165,7 @@ func (s *PostConfigFilesSuite) TestPostConfigFilesIncludeTwice() {
 
 	configName := "myConfig"
 	cfg := config.New()
+	cfg.ProductType = config.ProductTypeConnect
 	cfg.Type = config.ContentTypeHTML
 	cfg.Files = []string{"*"}
 	configPath := config.GetConfigPath(s.cwd, configName)

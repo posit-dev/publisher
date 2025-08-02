@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added `product_type` field to the config schema. (#2729)
 - Introduced Posit Connect Cloud support as an experimental feature behind a configuration
   option. This feature is still in development and may not work entirely as expected.
   (#2746, #2751, #2753, #2754, #2763, #2764)
