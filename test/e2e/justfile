@@ -55,6 +55,11 @@ e2e:
     just install
     just start "connect-publisher-e2e"
     just start "code-server"
+
+    # Install the Publisher extension
+    VSIX_FILENAME=$(ls -Art ../../dist | grep linux-amd64 | tail -n 1)
+    docker compose exec code-server code-server --install-extension "/home/coder/vsix/${VSIX_FILENAME}"
+
     npm run cypress:open
 
 # This will build all of the images, but you can also force a rebuild for one of them
