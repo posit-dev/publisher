@@ -39,6 +39,51 @@ func (s *AccountSuite) TestAuthTypeSnowflake() {
 	s.Equal(AuthTypeSnowflake, auth)
 }
 
+func (s *AccountSuite) TestAuthTypeToken() {
+	account := Account{
+		Token:      "T123456789",
+		PrivateKey: "base64-encoded-private-key",
+	}
+	auth := account.AuthType()
+	s.Equal(AuthTypeToken, auth)
+}
+
+func (s *AccountSuite) TestAuthTypeTokenWithMissingFields() {
+	// Missing private key
+	account := Account{
+		Token: "T123456789",
+	}
+	auth := account.AuthType()
+	s.Equal(AuthTypeNone, auth)
+
+	// Missing token
+	account = Account{
+		PrivateKey: "base64-encoded-private-key",
+	}
+	auth = account.AuthType()
+	s.Equal(AuthTypeNone, auth)
+}
+
+func (s *AccountSuite) TestAuthTypePrecedence() {
+	// API key has precedence over token
+	account := Account{
+		ApiKey:     "abc",
+		Token:      "T123456789",
+		PrivateKey: "base64-encoded-private-key",
+	}
+	auth := account.AuthType()
+	s.Equal(AuthTypeAPIKey, auth)
+
+	// Snowflake connection has precedence over token
+	account = Account{
+		SnowflakeConnection: "default",
+		Token:               "T123456789",
+		PrivateKey:          "base64-encoded-private-key",
+	}
+	auth = account.AuthType()
+	s.Equal(AuthTypeSnowflake, auth)
+}
+
 func (s *AccountSuite) TestHasCredential() {
 	account := Account{
 		ApiKey:              "abc",
@@ -48,5 +93,19 @@ func (s *AccountSuite) TestHasCredential() {
 	account.ApiKey = ""
 	s.True(account.HasCredential())
 	account.SnowflakeConnection = ""
+	s.False(account.HasCredential())
+
+	// Test token credentials
+	account.Token = "T123456789"
+	account.PrivateKey = "base64-encoded-private-key"
+	s.True(account.HasCredential())
+
+	// Test with only token (missing private key)
+	account.PrivateKey = ""
+	s.False(account.HasCredential())
+
+	// Test with only private key (missing token)
+	account.Token = ""
+	account.PrivateKey = "base64-encoded-private-key"
 	s.False(account.HasCredential())
 }
