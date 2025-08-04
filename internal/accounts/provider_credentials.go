@@ -44,7 +44,6 @@ func (p *CredentialsProvider) Load() ([]Account, error) {
 			URL:                 cred.URL,
 			ApiKey:              cred.ApiKey,
 			SnowflakeConnection: cred.SnowflakeConnection,
-			AccountName:         cred.AccountName,
 			CloudEnvironment:    cred.CloudEnvironment,
 			CloudAccountID:      cred.AccountID,
 			CloudAccountName:    cred.AccountName,
