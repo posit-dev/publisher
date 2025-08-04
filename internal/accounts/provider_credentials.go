@@ -4,6 +4,7 @@ package accounts
 
 import (
 	"errors"
+
 	"github.com/posit-dev/publisher/internal/credentials"
 	"github.com/posit-dev/publisher/internal/logging"
 )
@@ -47,6 +48,7 @@ func (p *CredentialsProvider) Load() ([]Account, error) {
 			CloudEnvironment:    cred.CloudEnvironment,
 			CloudAccountID:      cred.AccountID,
 			CloudAccountName:    cred.AccountName,
+			CloudRefreshToken:   cred.RefreshToken,
 		}
 		i++
 	}
