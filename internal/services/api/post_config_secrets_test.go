@@ -10,12 +10,13 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
+	"github.com/spf13/afero"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/spf13/afero"
-	"github.com/stretchr/testify/suite"
 )
 
 type ApplySecretActionSuite struct {
@@ -74,6 +75,7 @@ func (s *PostConfigSecretsSuite) SetupTest() {
 
 func (s *PostConfigSecretsSuite) TestPostConfigSecretsAdd() {
 	cfg := config.New()
+	cfg.ProductType = config.ProductTypeConnect
 	cfg.Type = config.ContentTypeHTML
 	err := cfg.WriteFile(config.GetConfigPath(s.cwd, "myConfig"))
 	s.NoError(err)
@@ -99,6 +101,7 @@ func (s *PostConfigSecretsSuite) TestPostConfigSecretsAdd() {
 
 func (s *PostConfigSecretsSuite) TestPostConfigSecretsRemove() {
 	cfg := config.New()
+	cfg.ProductType = config.ProductTypeConnect
 	cfg.Type = config.ContentTypeHTML
 	cfg.Secrets = []string{"existing_secret", "test_secret"}
 	err := cfg.WriteFile(config.GetConfigPath(s.cwd, "myConfig"))
@@ -136,6 +139,7 @@ func (s *PostConfigSecretsSuite) TestPostConfigSecretsNotFound() {
 
 func (s *PostConfigSecretsSuite) TestPostConfigSecretsInvalidAction() {
 	cfg := config.New()
+	cfg.ProductType = config.ProductTypeConnect
 	cfg.Type = config.ContentTypeHTML
 	err := cfg.WriteFile(config.GetConfigPath(s.cwd, "myConfig"))
 	s.NoError(err)

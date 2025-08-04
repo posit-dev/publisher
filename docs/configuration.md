@@ -2,6 +2,10 @@
 
 ## General settings
 
+#### product_type
+
+The type of server the content is being deployed to. Only valid value is `connect`. Defaults to `connect`.
+
 #### type
 
 Indicates the type of content being deployed. Valid values are:
