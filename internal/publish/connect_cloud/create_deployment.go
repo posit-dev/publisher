@@ -30,7 +30,7 @@ func (c *ServerPublisher) CreateDeployment() (content_types.ContentID, error) {
 	// Create the content request
 	contentRequest := &types.CreateContentRequest{
 		ContentRequestBase: c.getContentRequestBase(),
-		AccountID:          c.helper.Account.ConnectCloudAccountID,
+		AccountID:          c.helper.Account.CloudAccountID,
 	}
 
 	// Call the Cloud API to create the content
