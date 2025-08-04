@@ -10,12 +10,13 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/spf13/afero"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/spf13/afero"
-	"github.com/stretchr/testify/suite"
 )
 
 type GetConfigurationsSuite struct {
@@ -43,6 +44,7 @@ func (s *GetConfigurationsSuite) SetupTest() {
 func (s *GetConfigurationsSuite) makeConfiguration(name string) *config.Config {
 	path := config.GetConfigPath(s.cwd, name)
 	cfg := config.New()
+	cfg.ProductType = config.ProductTypeConnect
 	cfg.Type = config.ContentTypePythonDash
 	cfg.Entrypoint = "app.py"
 	cfg.Python = &config.Python{
@@ -206,6 +208,7 @@ func (s *GetConfigurationsSuite) makeSubdirConfiguration(name string, subdir str
 
 	path := config.GetConfigPath(subdirPath, name)
 	cfg := config.New()
+	cfg.ProductType = config.ProductTypeConnect
 	cfg.Type = config.ContentTypePythonDash
 
 	// make entrypoints unique by subdirectory for filtering

@@ -1,6 +1,8 @@
 package config
 
-import "github.com/posit-dev/publisher/internal/interpreters"
+import (
+	"github.com/posit-dev/publisher/internal/interpreters"
+)
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
@@ -92,6 +94,7 @@ func (t ContentType) IsAppContent() bool {
 
 type Config struct {
 	Comments      []string    `toml:"-" json:"comments"`
+	ProductType   ProductType `toml:"product_type" json:"productType"`
 	Schema        string      `toml:"$schema" json:"$schema"`
 	Type          ContentType `toml:"type" json:"type"`
 	Entrypoint    string      `toml:"entrypoint" json:"entrypoint,omitempty"`
@@ -109,9 +112,15 @@ type Config struct {
 	Environment   Environment `toml:"environment,omitempty" json:"environment,omitempty"`
 	Secrets       []string    `toml:"secrets,omitempty" json:"secrets,omitempty"`
 	Schedules     []Schedule  `toml:"schedules,omitempty" json:"schedules,omitempty"`
-	Access        *Access     `toml:"access,omitempty" json:"access,omitempty"`
 	Connect       *Connect    `toml:"connect,omitempty" json:"connect,omitempty"`
 }
+
+type ProductType string
+
+const (
+	ProductTypeConnect      ProductType = "connect"
+	ProductTypeConnectCloud ProductType = "connect_cloud"
+)
 
 func (c *Config) HasSecret(secret string) bool {
 	for _, s := range c.Secrets {
@@ -213,7 +222,7 @@ const (
 	AccessTypeACL       AccessType = "acl"
 )
 
-type Access struct {
+type ConnectAccessControl struct {
 	Type   AccessType `toml:"type" json:"type"`
 	Users  []User     `toml:"users,omitempty" json:"users,omitempty"`
 	Groups []Group    `toml:"groups,omitempty" json:"groups,omitempty"`
@@ -234,9 +243,10 @@ type Group struct {
 }
 
 type Connect struct {
-	Access     *ConnectAccess     `toml:"access,omitempty" json:"access,omitempty"`
-	Runtime    *ConnectRuntime    `toml:"runtime,omitempty" json:"runtime,omitempty"`
-	Kubernetes *ConnectKubernetes `toml:"kubernetes,omitempty" json:"kubernetes,omitempty"`
+	Access        *ConnectAccess        `toml:"access,omitempty" json:"access,omitempty"`
+	AccessControl *ConnectAccessControl `toml:"access_control,omitempty" json:"accessControl,omitempty"`
+	Runtime       *ConnectRuntime       `toml:"runtime,omitempty" json:"runtime,omitempty"`
+	Kubernetes    *ConnectKubernetes    `toml:"kubernetes,omitempty" json:"kubernetes,omitempty"`
 }
 
 type ConnectAccess struct {

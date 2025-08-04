@@ -22,25 +22,30 @@ describe("Credentials Section", () => {
 
     cy.get(".quick-input-titlebar").should(
       "have.text",
-      "Create a New Credential (1/3)",
+      "Create a New Credential",
+    );
+
+    cy.get(".quick-input-message").should(
+      "include.text",
+      "Please provide the Posit Connect server's URL",
     );
 
     cy.get(".quick-input-widget").type(
       `http://connect-publisher-e2e:3939{enter}`,
     );
 
-    cy.get(".quick-input-titlebar", { timeout: 10000 }).should(
-      "have.text",
-      "Create a New Credential (2/3)",
+    cy.get(".quick-input-message", { timeout: 10000 }).should(
+      "include.text",
+      "The API key to be used to authenticate with Posit Connect.",
     );
 
     cy.get(".quick-input-widget").type(
       `${Cypress.env("BOOTSTRAP_ADMIN_API_KEY")}{enter}`,
     );
 
-    cy.get(".quick-input-titlebar", { timeout: 10000 }).should(
-      "have.text",
-      "Create a New Credential (3/3)",
+    cy.get(".quick-input-message", { timeout: 10000 }).should(
+      "include.text",
+      "Enter a unique nickname for this server.",
     );
 
     cy.get(".quick-input-widget").type("admin-code-server{enter}");

@@ -9,10 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/posit-dev/publisher/internal/interpreters"
-	"github.com/posit-dev/publisher/internal/publish/publishhelper"
-	"github.com/posit-dev/publisher/internal/server_type"
-
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -24,9 +20,12 @@ import (
 	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/inspect/dependencies/renv"
+	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/logging/loggingtest"
 	"github.com/posit-dev/publisher/internal/project"
+	"github.com/posit-dev/publisher/internal/publish/publishhelper"
+	"github.com/posit-dev/publisher/internal/server_type"
 	"github.com/posit-dev/publisher/internal/state"
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
@@ -318,6 +317,7 @@ func (s *PublishSuite) publishWithClient(
 	client.On("ValidateDeployment", myContentID, mock.Anything).Return(errsMock.validateErr)
 
 	cfg := config.New()
+	cfg.ProductType = config.ProductTypeConnect
 	cfg.Type = config.ContentTypePythonDash
 	cfg.Entrypoint = "app.py"
 	cfg.Environment = map[string]string{
