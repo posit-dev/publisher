@@ -5,7 +5,6 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/posit-dev/publisher/internal/server_type"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -14,14 +13,17 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/posit-dev/publisher/internal/server_type"
+
+	"github.com/spf13/afero"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/spf13/afero"
-	"github.com/stretchr/testify/suite"
 )
 
 type PostDeploymentsSuite struct {
@@ -44,9 +46,10 @@ func (s *PostDeploymentsSuite) SetupTest() {
 func (s *PostDeploymentsSuite) TestPostDeployments() {
 	lister := &accounts.MockAccountList{}
 	acct := &accounts.Account{
-		Name:       "myAccount",
-		URL:        "https://connect.example.com",
-		ServerType: server_type.ServerTypeConnect,
+		Name:                    "myAccount",
+		URL:                     "https://connect.example.com",
+		ServerType:              server_type.ServerTypeConnectCloud,
+		ConnectCloudAccountName: "my-cool-account",
 	}
 	lister.On("GetAccountByName", "myAccount").Return(acct, nil)
 
@@ -83,8 +86,9 @@ func (s *PostDeploymentsSuite) TestPostDeployments() {
 	s.Equal(".", res.ProjectDir)
 	s.Equal("myConfig", res.ConfigName)
 	s.Equal("myConfig.toml", filepath.Base(res.ConfigPath))
-	s.Equal(server_type.ServerTypeConnect, res.ServerType)
+	s.Equal(server_type.ServerTypeConnectCloud, res.ServerType)
 	s.Equal(acct.URL, res.ServerURL)
+	s.Equal(acct.ConnectCloudAccountName, res.ConnectCloud.AccountName)
 	s.Equal(deploymentStateNew, res.State)
 }
 

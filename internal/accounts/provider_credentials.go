@@ -4,6 +4,7 @@ package accounts
 
 import (
 	"errors"
+
 	"github.com/posit-dev/publisher/internal/credentials"
 	"github.com/posit-dev/publisher/internal/logging"
 )
@@ -37,12 +38,13 @@ func (p *CredentialsProvider) Load() ([]Account, error) {
 	i := 0
 	for _, cred := range creds {
 		accounts[i] = Account{
-			Source:              AccountSourceKeychain,
-			ServerType:          cred.ServerType,
-			Name:                cred.Name,
-			URL:                 cred.URL,
-			ApiKey:              cred.ApiKey,
-			SnowflakeConnection: cred.SnowflakeConnection,
+			Source:                  AccountSourceKeychain,
+			ServerType:              cred.ServerType,
+			Name:                    cred.Name,
+			URL:                     cred.URL,
+			ApiKey:                  cred.ApiKey,
+			SnowflakeConnection:     cred.SnowflakeConnection,
+			ConnectCloudAccountName: cred.AccountName,
 		}
 		i++
 	}
