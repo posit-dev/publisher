@@ -93,40 +93,45 @@ export async function newCredential(
       promptStepNumbers: {},
     };
 
-    await MultiStepInput.run((input) => inputPlatform(input, state));
+    if (extensionSettings.enableConnectCloud()) {
+      // select the platform only when the enableConnectCloud config has been turned on
+      await MultiStepInput.run({
+        step: (input) => inputPlatform(input, state),
+      });
+    } else {
+      // default to CONNECT (since there are no other products at the moment)
+      // when the enableConnectCloud config is turned off
+      serverType = ServerType.CONNECT;
+      platformName = PlatformName.CONNECT;
+
+      await MultiStepInput.run({
+        step: (input) => inputServerUrl(input, state),
+      });
+    }
     return state;
   }
 
   // ***************************************************************
-  // Step: Select the platform for the credentials (used for all platforms)
+  // Step: Select the platform for the credential (used for all platforms)
   // ***************************************************************
   async function inputPlatform(input: MultiStepInput, state: MultiStepState) {
-    // skip platform selection unless the enableConnectCloud config has been turned on
-    if (extensionSettings.enableConnectCloud()) {
-      const pick = await input.showQuickPick({
-        title: state.title,
-        step: 0,
-        totalSteps: 0,
-        placeholder: "Please select the platform for the new credential.",
-        items: platformList,
-        buttons: [],
-        shouldResume: () => Promise.resolve(false),
-        ignoreFocusOut: true,
-      });
+    const pick = await input.showQuickPick({
+      title: state.title,
+      step: 0,
+      totalSteps: 0,
+      placeholder: "Please select the platform for the new credential.",
+      items: platformList,
+      buttons: [],
+      shouldResume: () => Promise.resolve(false),
+      ignoreFocusOut: true,
+    });
 
-      const enumKey = getEnumKeyByEnumValue(PlatformName, pick.label);
-      // fallback to CONNECT if there is ever a case when the enumKey is not found
-      serverType = enumKey ? ServerType[enumKey] : ServerType.CONNECT;
-      platformName = pick.label as PlatformName;
+    const enumKey = getEnumKeyByEnumValue(PlatformName, pick.label);
+    // fallback to CONNECT if there is ever a case when the enumKey is not found
+    serverType = enumKey ? ServerType[enumKey] : ServerType.CONNECT;
+    platformName = pick.label as PlatformName;
 
-      return (input: MultiStepInput) => inputServerUrl(input, state);
-    }
-
-    // default to CONNECT, since there are no other products at the moment
-    serverType = ServerType.CONNECT;
-    platformName = PlatformName.CONNECT;
-
-    return (input: MultiStepInput) => inputServerUrl(input, state);
+    return { step: (input: MultiStepInput) => inputServerUrl(input, state) };
   }
 
   // ***************************************************************
@@ -237,15 +242,17 @@ export async function newCredential(
     state.data.url = formatURL(url.trim());
 
     if (isConnect(serverType)) {
-      return (input: MultiStepInput) => inputAPIKey(input, state);
+      return { step: (input: MultiStepInput) => inputAPIKey(input, state) };
     }
 
     if (isSnowflake(serverType)) {
-      return (input: MultiStepInput) => inputSnowflakeConnection(input, state);
+      return {
+        step: (input: MultiStepInput) => inputSnowflakeConnection(input, state),
+      };
     }
 
     // Should not land here since the platform is forcefully picked in the very first step
-    return Promise.resolve(undefined);
+    return;
   }
 
   // ***************************************************************
@@ -328,7 +335,9 @@ export async function newCredential(
     state.data.apiKey = apiKey;
     state.data.snowflakeConnection = "";
     state.data.url = validatedURL;
-    return (input: MultiStepInput) => inputCredentialName(input, state);
+    return {
+      step: (input: MultiStepInput) => inputCredentialName(input, state),
+    };
   }
 
   // ***************************************************************
@@ -372,7 +381,9 @@ export async function newCredential(
     state.data.apiKey = "";
     state.data.snowflakeConnection = connections[pick.index].name;
     state.data.url = connections[pick.index].serverUrl;
-    return (input: MultiStepInput) => inputCredentialName(input, state);
+    return {
+      step: (input: MultiStepInput) => inputCredentialName(input, state),
+    };
   }
 
   // ***************************************************************
