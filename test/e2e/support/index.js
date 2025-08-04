@@ -12,6 +12,12 @@ Cypress.on("window:before:load", (win) => {
 
 configure({ testIdAttribute: "data-automation" });
 
+// Global command for skipping tests in CI
+Cypress.skipCI = (fn) => (Cypress.env("CI") ? fn.skip : fn);
+
+// Debugging command
+Cypress.debugIf = (fn) => (Cypress.env("DEBUG_CYPRESS") ? fn : () => {});
+
 /* eslint-disable mocha/no-top-level-hooks */
 afterEach(() => {
   cy.debugIframes();

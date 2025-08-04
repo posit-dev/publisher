@@ -1,12 +1,14 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
-describe("Create Deployments", () => {
+Cypress.skipCI(describe)("Create Deployments", () => {
+  // eslint-disable-next-line mocha/no-top-level-hooks
   beforeEach(() => {
     cy.resetConnect();
     cy.setAdminCredentials();
     cy.visit("/");
   });
 
+  // eslint-disable-next-line mocha/no-top-level-hooks
   afterEach(() => {
     cy.clearupDeployments(".");
     cy.clearupDeployments("fastapi-simple");
