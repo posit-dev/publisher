@@ -23,11 +23,6 @@ func (m *MockCloudClient) GetCurrentUser() (*connect_cloud.UserResponse, error) 
 	return args.Get(0).(*connect_cloud.UserResponse), args.Error(1)
 }
 
-func (m *MockCloudClient) CreateUser() error {
-	args := m.Called()
-	return args.Error(0)
-}
-
 func (m *MockCloudClient) GetAccounts() (*connect_cloud.AccountListResponse, error) {
 	args := m.Called()
 	return args.Get(0).(*connect_cloud.AccountListResponse), args.Error(1)
