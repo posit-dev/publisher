@@ -238,24 +238,28 @@ Cypress.Commands.add("waitForPublisherIframe", (timeout = 60000) => {
   cy.get("iframe", { timeout }).should("exist");
 });
 
-// Debug: Print all iframes and their attributes before trying to select the webview
+// Debug: Waits for all iframes to exist (helps with timing issues in CI).
+// If DEBUG_CYPRESS is "true", also logs iframe attributes for debugging.
 Cypress.Commands.add("debugIframes", () => {
   cy.get("iframe", { timeout: 20000 }).each(($el, idx) => {
-    cy.wrap($el)
-      .invoke("attr", "class")
-      .then((cls) => {
-        cy.wrap($el)
-          .invoke("attr", "id")
-          .then((id) => {
-            cy.wrap($el)
-              .invoke("attr", "src")
-              .then((src) => {
-                cy.task(
-                  "print",
-                  `iframe[${idx}] class=${cls} id=${id} src=${src}`,
-                );
-              });
-          });
-      });
+    // Always wait for iframes, but only print if debugging is enabled
+    if (Cypress.env("DEBUG_CYPRESS") === "true") {
+      cy.wrap($el)
+        .invoke("attr", "class")
+        .then((cls) => {
+          cy.wrap($el)
+            .invoke("attr", "id")
+            .then((id) => {
+              cy.wrap($el)
+                .invoke("attr", "src")
+                .then((src) => {
+                  cy.task(
+                    "print",
+                    `iframe[${idx}] class=${cls} id=${id} src=${src}`,
+                  );
+                });
+            });
+        });
+    }
   });
 });

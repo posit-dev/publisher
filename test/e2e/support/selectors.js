@@ -8,11 +8,15 @@ Cypress.Commands.add("publisherWebview", () => {
     return cy
       .get("iframe.webview.ready", { timeout: 20000 }) // double the timeout for each attempt
       .then(($iframes) => {
-        cy.task("print", `Found ${$iframes.length} webview.ready iframes`);
+        if (Cypress.env("DEBUG_CYPRESS") === "true") {
+          cy.task("print", `Found ${$iframes.length} webview.ready iframes`);
+        }
         const $target = Cypress.$($iframes).filter((i, el) =>
           (el.src || "").includes("extensionId=posit.publisher"),
         );
-        cy.task("print", `Found ${$target.length} publisher iframes`);
+        if (Cypress.env("DEBUG_CYPRESS") === "true") {
+          cy.task("print", `Found ${$target.length} publisher iframes`);
+        }
         if ($target.length === 0 && retries > 0) {
           // eslint-disable-next-line cypress/no-unnecessary-waiting
           cy.wait(2000);

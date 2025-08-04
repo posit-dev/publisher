@@ -20,6 +20,8 @@ Cypress.debugIf = (fn) => (Cypress.env("DEBUG_CYPRESS") ? fn : () => {});
 
 /* eslint-disable mocha/no-top-level-hooks */
 afterEach(() => {
-  cy.debugIframes();
+  if (Cypress.env("DEBUG_CYPRESS") === "true") {
+    cy.debugIframes();
+  }
 });
 /* eslint-enable mocha/no-top-level-hooks */

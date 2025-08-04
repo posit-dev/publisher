@@ -17,7 +17,9 @@ module.exports = defineConfig({
     setupNodeEvents(on, config) {
       on("task", {
         print(message) {
-          console.log(message);
+          if (typeof message !== "undefined") {
+            console.log(message);
+          }
           return null;
         },
       });
@@ -27,6 +29,8 @@ module.exports = defineConfig({
   env: {
     BOOTSTRAP_ADMIN_API_KEY: "", // To be updated by Cypress when spinning up
     BOOTSTRAP_SECRET_KEY: "bootstrap-secret.key", // To be updated by Cypress when spinning up
+    CI: process.env.CI || "false",
+    DEBUG_CYPRESS: process.env.DEBUG_CYPRESS || "false",
     CONNECT_SERVER_URL: "http://localhost:3939",
     CONNECT_MANAGER_URL: "http://localhost:4723",
     CONNECT_CLOUD_ENV: process.env.CONNECT_CLOUD_ENV || "staging",
