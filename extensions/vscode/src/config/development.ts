@@ -1,0 +1,4 @@
+export const development = {
+  cloudURL: "https://login.staging.posit.cloud",
+  connectCloudURL: "https://dev.connect.posit.cloud",
+};
