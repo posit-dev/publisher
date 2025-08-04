@@ -123,13 +123,6 @@ const (
 	ProductTypeConnectCloud ProductType = "connect_cloud"
 )
 
-type ProductType string
-
-const (
-	ProductTypeConnect      ProductType = "connect"
-	ProductTypeConnectCloud ProductType = "connect_cloud"
-)
-
 func (c *Config) HasSecret(secret string) bool {
 	for _, s := range c.Secrets {
 		if s == secret {
