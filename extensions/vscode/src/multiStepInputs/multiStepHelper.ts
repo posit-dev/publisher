@@ -1,4 +1,5 @@
 // Copyright (C) 2025 by Posit Software, PBC.
+// Copyright (C) 2025 by Posit Software, PBC.
 
 import { ConfigurationInspectionResult } from "src/api";
 import {
@@ -69,6 +70,7 @@ export const assignStep = (state: MultiStepState, uniqueId: string): number => {
 // InputStep now can have a 'skippable' property (optional)
 export type InputStep = {
   step: (input: MultiStepInput) => Thenable<InputStep | void>;
+  // used to optionally skip a step when navigating backwards in the multi-stepper
   skippable?: boolean;
 };
 

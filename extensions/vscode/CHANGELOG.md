@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Added `product_type` field to the config schema. (#2729)
+- Added support to publishing schema for Connect Cloud. (#2729, #2747)
 
 ## [1.18.1]
 
