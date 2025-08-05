@@ -188,7 +188,6 @@ func NewManifestFromConfig(cfg *config.Config) *Manifest {
 		}
 	}
 	if cfg.Python != nil {
-		//packageManager := nil.(*PythonPackageManager)
 		packageManager := (*PythonPackageManager)(nil)
 		if cfg.Python.PackageManager != "" {
 			packageManager = &PythonPackageManager{
