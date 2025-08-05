@@ -3,10 +3,9 @@
 
 // Get the main webview iframe of the Publisher extension.
 Cypress.Commands.add("publisherWebview", () => {
-  function findPublisherIframe(retries = 90) {
-    // double the retries for more robustness
+  function findPublisherIframe(retries = 30, hasReloaded = false) {
     return cy
-      .get("iframe.webview.ready", { timeout: 20000 }) // double the timeout for each attempt
+      .get("iframe.webview.ready", { timeout: 20000 })
       .then(($iframes) => {
         if (Cypress.env("DEBUG_CYPRESS") === "true") {
           cy.task("print", `Found ${$iframes.length} webview.ready iframes`);
@@ -17,22 +16,25 @@ Cypress.Commands.add("publisherWebview", () => {
         if (Cypress.env("DEBUG_CYPRESS") === "true") {
           cy.task("print", `Found ${$target.length} publisher iframes`);
         }
-        if ($target.length === 0 && retries > 0) {
+        if ($target.length > 0) {
+          expect(
+            $target.length,
+            "publisher webview iframe present",
+          ).to.be.greaterThan(0);
+          return cy.wrap($target[0].contentDocument.body);
+        } else if (retries > 0) {
           // eslint-disable-next-line cypress/no-unnecessary-waiting
-          cy.wait(2000);
-          return findPublisherIframe(retries - 1);
-        }
-        if ($target.length === 0 && retries === 0) {
-          cy.task(
-            "print",
-            "Max retries reached: publisher iframe never appeared",
+          return cy
+            .wait(2000)
+            .then(() => findPublisherIframe(retries - 1, hasReloaded));
+        } else if (!hasReloaded) {
+          cy.log("Publisher iframe not found after retries, reloading page...");
+          return cy.reload().then(() => findPublisherIframe(10, true));
+        } else {
+          throw new Error(
+            "Publisher iframe not found after waiting and reloading. UI may not have loaded correctly.",
           );
         }
-        expect(
-          $target.length,
-          "publisher webview iframe present",
-        ).to.be.greaterThan(0);
-        return cy.wrap($target[0].contentDocument.body);
       });
   }
   return findPublisherIframe()

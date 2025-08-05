@@ -10,7 +10,7 @@ jobs:
     name: e2e tests (cypress)
     runs-on: ubuntu-latest
     env:
-      DEBUG_CYPRESS: "true" # Set to 'true' to enable extra logging
+      DEBUG_CYPRESS: "true" # Set to true to enable extra logging
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
