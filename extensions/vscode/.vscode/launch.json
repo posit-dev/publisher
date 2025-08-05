@@ -12,7 +12,10 @@
       "args": ["--extensionDevelopmentPath=${workspaceFolder}"],
       "outFiles": ["${workspaceFolder}/dist/**/*.js"],
       "preLaunchTask": "${defaultBuildTask}",
-      "env": { "POSIT_PUBLISHER_USE_EXTERNAL_AGENT": "FALSE" },
+      "env": {
+        "POSIT_PUBLISHER_USE_EXTERNAL_AGENT": "FALSE",
+        "CONNECT_CLOUD_ENV": "staging"
+      },
       "cwd": "${workspaceFolder}/../../test/sample-content"
     },
     {
@@ -22,7 +25,10 @@
       "args": ["--extensionDevelopmentPath=${workspaceFolder}"],
       "outFiles": ["${workspaceFolder}/dist/**/*.js"],
       "preLaunchTask": "${defaultBuildTask}",
-      "env": { "POSIT_PUBLISHER_USE_EXTERNAL_AGENT": "TRUE" },
+      "env": {
+        "POSIT_PUBLISHER_USE_EXTERNAL_AGENT": "TRUE",
+        "CONNECT_CLOUD_ENV": "staging"
+      },
       "cwd": "${workspaceFolder}/../../test/sample-content"
     },
     {
@@ -34,7 +40,10 @@
         "--extensionTestsPath=${workspaceFolder}/out/test/suite/index"
       ],
       "outFiles": ["${workspaceFolder}/out/test/**/*.js"],
-      "preLaunchTask": "tsc"
+      "preLaunchTask": "tsc",
+      "env": {
+        "CONNECT_CLOUD_ENV": "staging"
+      }
     }
   ]
 }

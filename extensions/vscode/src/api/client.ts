@@ -1,4 +1,4 @@
-// Copyright (C) 2023 by Posit Software, PBC.
+// Copyright (C) 2025 by Posit Software, PBC.
 
 import axios, { AxiosResponse } from "axios";
 
@@ -12,6 +12,7 @@ import { Secrets } from "./resources/Secrets";
 import { EntryPoints } from "./resources/Entrypoints";
 import { SnowflakeConnections } from "./resources/SnowflakeConnections";
 import * as Entities from "entities";
+import { ConnectCloud } from "./resources/ConnectCloud";
 
 class PublishingClientApi {
   private client;
@@ -26,6 +27,7 @@ class PublishingClientApi {
   apiServiceIsUp: Promise<boolean>;
   entrypoints: EntryPoints;
   snowflakeConnections: SnowflakeConnections;
+  connectCloud: ConnectCloud;
 
   constructor(apiBaseUrl: string, apiServiceIsUp: Promise<boolean>) {
     this.client = axios.create({
@@ -61,6 +63,7 @@ class PublishingClientApi {
     this.secrets = new Secrets(this.client);
     this.entrypoints = new EntryPoints(this.client);
     this.snowflakeConnections = new SnowflakeConnections(this.client);
+    this.connectCloud = new ConnectCloud(this.client);
   }
 
   logDuration(response: AxiosResponse<unknown, unknown>) {
