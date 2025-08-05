@@ -50,6 +50,14 @@ jobs:
           name: dist
           path: dist
 
+      - name: Write Connect license file
+        if: env.CONNECT_LICENSE != ''
+        run: |
+          mkdir -p ./test/e2e/licenses
+          echo "$CONNECT_LICENSE" > ./test/e2e/licenses/connect-license.lic
+        env:
+          CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
+
       - name: Build Docker images
         working-directory: test/e2e
         run: |
