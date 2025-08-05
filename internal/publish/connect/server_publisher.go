@@ -3,6 +3,8 @@ package connect
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import (
+	"io"
+
 	"github.com/posit-dev/publisher/internal/clients/connect"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/logging"
@@ -10,7 +12,6 @@ import (
 	"github.com/posit-dev/publisher/internal/state"
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
-	"io"
 )
 
 type ServerPublisher struct {
