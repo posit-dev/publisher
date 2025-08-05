@@ -150,17 +150,15 @@ jobs:
         run: |
           docker exec publisher-e2e.code-server ls -lR /home/coder/workspace || true
 
+      - name: Prepare test environment
+        working-directory: test/e2e
+        run: |
+          # Clean up any static TOML files before tests run to avoid 'file not found' errors
+          docker exec publisher-e2e.code-server rm -f /home/coder/workspace/static*.toml || true
+
       - name: Run Cypress tests
         working-directory: test/e2e
         run: npx cypress run
-        env:
-          CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
-          CONNECT_CLOUD_ENV: ${{ env.CONNECT_CLOUD_ENV }} # defaults to staging
-          CI: true
-
-      - name: Run Cypress tests (headed mode)
-        working-directory: test/e2e
-        run: npx cypress run --headed --browser electron
         env:
           CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
           CONNECT_CLOUD_ENV: ${{ env.CONNECT_CLOUD_ENV }} # defaults to staging
@@ -189,9 +187,14 @@ jobs:
       - name: Print code-server logs on failure
         if: failure() && env.DEBUG_CYPRESS == 'true'
         run: |
-          docker cp publisher-e2e.code-server:/home/coder/.config/code-server/logs ./code-server-logs || true
-          ls -l ./code-server-logs || true
-          cat ./code-server-logs/*/* || true
+          docker exec publisher-e2e.code-server cat /root/.local/share/code-server/logs/*/* || true
+
+      - name: Print Publisher extension logs on failure
+        if: failure() && env.DEBUG_CYPRESS == 'true'
+        run: |
+          echo "=== Last 50 lines of Publisher logs ==="
+          docker exec publisher-e2e.code-server bash -c 'find /root/.local/share/code-server/logs -type f -name "*.log" | grep -E "posit.publisher|Deployment.log" | xargs tail -n 50 || true'
+          echo "======================================="
 
       - name: Print code-server container logs
         if: failure() && env.DEBUG_CYPRESS == 'true'
