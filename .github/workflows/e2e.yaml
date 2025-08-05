@@ -76,6 +76,22 @@ jobs:
           just start "connect-publisher-e2e"
           just start "code-server"
 
+      - name: Wait for Connect server to be ready
+        run: |
+          echo "Waiting for Connect server to be ready..."
+          for i in {1..30}; do
+            if curl -sf http://localhost:3939/__ping__ > /dev/null; then
+              echo "Connect server is ready!"
+              break
+            fi
+            if [ $i -eq 30 ]; then
+              echo "WARNING: Timeout waiting for Connect server to be ready"
+              # Continue anyway, don't exit with error
+            fi
+            echo "Waiting for Connect server (attempt $i/30)..."
+            sleep 2
+          done
+
       - name: Stop any processes using port 8080
         run: |
           PID=$(docker exec publisher-e2e.code-server sh -c "lsof -ti :8080 || netstat -tulnp 2>/dev/null | grep ':8080' | awk '{print \$7}' | cut -d'/' -f1 | head -n1" || true)
@@ -91,12 +107,43 @@ jobs:
           for i in {1..30}; do
             if curl -sf http://localhost:8080 > /dev/null; then
               echo "code-server is ready!"
-              exit 0
+              break
+            fi
+            if [ $i -eq 30 ]; then
+              echo "code-server did not become ready in time"
+              exit 1
             fi
             sleep 2
           done
-          echo "code-server did not become ready in time"
-          exit 1
+
+      - name: List VSIX files on host
+        working-directory: test/e2e
+        run: ls -l ../../dist || true
+
+      - name: List VSIX files in container
+        working-directory: test/e2e
+        run: docker compose exec code-server ls -l /home/coder/vsix || true
+
+      - name: Install and wait for VS Code extension to be ready
+        working-directory: test/e2e
+        run: |
+          # Install the Publisher extension
+          VSIX_FILENAME=$(ls -Art ../../dist | grep linux-amd64 | tail -n 1)
+          docker compose exec code-server code-server --install-extension "/home/coder/vsix/${VSIX_FILENAME}"
+
+          # Wait for the extension to be installed (more reliable than process grep)
+          echo "Waiting for Publisher extension to be installed..."
+          for i in {1..60}; do
+            if docker compose exec code-server code-server --list-extensions | grep -q posit.publisher; then
+              echo "Publisher extension appears to be installed!"
+              break
+            fi
+            if [ $i -eq 60 ]; then
+              echo "WARNING: Timeout waiting for Publisher extension to be installed"
+            fi
+            echo "Waiting for extension installation (attempt $i/60)..."
+            sleep 2
+          done
 
       - name: Print workspace file ownership before tests
         if: env.DEBUG_CYPRESS == 'true'
@@ -135,6 +182,10 @@ jobs:
           path: test/e2e/cypress/videos
           if-no-files-found: ignore
 
+      - name: List installed VS Code extensions
+        if: env.DEBUG_CYPRESS == 'true'
+        run: docker compose exec code-server code-server --list-extensions --show-versions || true
+
       - name: Print code-server logs on failure
         if: failure() && env.DEBUG_CYPRESS == 'true'
         run: |
@@ -142,11 +193,23 @@ jobs:
           ls -l ./code-server-logs || true
           cat ./code-server-logs/*/* || true
 
-      - name: Find code-server logs
+      - name: Print code-server container logs
+        if: failure() && env.DEBUG_CYPRESS == 'true'
+        run: docker compose logs code-server || true
+
+      - name: List /home/coder directory contents
+        if: failure() && env.DEBUG_CYPRESS == 'true'
+        run: docker exec publisher-e2e.code-server ls -lR /home/coder || true
+
+      - name: Find all logs directories
         if: failure() && env.DEBUG_CYPRESS == 'true'
         run: |
-          docker exec publisher-e2e.code-server find /home/coder -type d -name logs || true
-          docker exec publisher-e2e.code-server find /var/log -type f || true
+          docker exec publisher-e2e.code-server find / -type d -name logs 2>/dev/null | grep -v "/proc/" || true
+
+      - name: Find all recent log files
+        if: failure() && env.DEBUG_CYPRESS == 'true'
+        run: |
+          docker exec publisher-e2e.code-server find / -type f \( -name "*.log" -o -name "*.txt" \) 2>/dev/null | grep -v "/proc/" || true
 
       - name: Print process info on failure
         if: failure() && env.DEBUG_CYPRESS == 'true'
