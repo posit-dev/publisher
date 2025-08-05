@@ -46,10 +46,10 @@ func (s *PostDeploymentsSuite) SetupTest() {
 func (s *PostDeploymentsSuite) TestPostDeployments() {
 	lister := &accounts.MockAccountList{}
 	acct := &accounts.Account{
-		Name:                    "myAccount",
-		URL:                     "https://connect.example.com",
-		ServerType:              server_type.ServerTypeConnectCloud,
-		ConnectCloudAccountName: "my-cool-account",
+		Name:             "myAccount",
+		URL:              "https://connect.example.com",
+		ServerType:       server_type.ServerTypeConnectCloud,
+		CloudAccountName: "my-cool-account",
 	}
 	lister.On("GetAccountByName", "myAccount").Return(acct, nil)
 
@@ -88,7 +88,7 @@ func (s *PostDeploymentsSuite) TestPostDeployments() {
 	s.Equal("myConfig.toml", filepath.Base(res.ConfigPath))
 	s.Equal(server_type.ServerTypeConnectCloud, res.ServerType)
 	s.Equal(acct.URL, res.ServerURL)
-	s.Equal(acct.ConnectCloudAccountName, res.ConnectCloud.AccountName)
+	s.Equal(acct.CloudAccountName, res.ConnectCloud.AccountName)
 	s.Equal(deploymentStateNew, res.State)
 }
 

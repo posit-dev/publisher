@@ -93,7 +93,7 @@ func PostDeploymentsHandlerFunc(
 		d.ServerType = acct.ServerType
 		d.ConfigName = b.ConfigName
 		d.ConnectCloud = &deployment.ConnectCloud{
-			AccountName: acct.ConnectCloudAccountName,
+			AccountName: acct.CloudAccountName,
 		}
 
 		if b.ID != "" {
