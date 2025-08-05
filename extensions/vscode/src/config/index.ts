@@ -1,8 +1,8 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
-import development from "./development.json";
-import production from "./production.json";
-import staging from "./staging.json";
+import { development } from "./development";
+import { production } from "./production";
+import { staging } from "./staging";
 
 export enum env {
   DEV = "development",
