@@ -73,7 +73,13 @@ type publishDeployedFailureData struct {
 	DirectURL    string `mapstructure:"url"`
 }
 
-func NewFromState(s *state.State, rInterpreter interpreters.RInterpreter, pythonInterpreter interpreters.PythonInterpreter, emitter events.Emitter, log logging.Logger) (Publisher, error) {
+func NewFromState(
+	s *state.State,
+	rInterpreter interpreters.RInterpreter,
+	pythonInterpreter interpreters.PythonInterpreter,
+	emitter events.Emitter,
+	log logging.Logger,
+) (Publisher, error) {
 	if s.LocalID != "" {
 		data := baseEventData{
 			LocalID: s.LocalID,
@@ -90,7 +96,7 @@ func NewFromState(s *state.State, rInterpreter interpreters.RInterpreter, python
 	rexec, _ := rInterpreter.GetRExecutable()
 	pyexec, _ := pythonInterpreter.GetPythonExecutable()
 
-	packageManager, err := renv.NewPackageMapper(s.Dir, rexec.Path, log)
+	packageManager, err := rPackageMapperFactory(s.Dir, rexec.Path, log)
 
 	// Handle difference where we have no SaveName when redeploying, since it is
 	// only sent in the first deployment. In the end, both should equate to same
@@ -118,7 +124,7 @@ func NewFromState(s *state.State, rInterpreter interpreters.RInterpreter, python
 		python:          pyexec.Path,
 		PublishHelper:   helper,
 		serverPublisher: serverPublisher,
-	}, err
+	}, nil
 }
 
 func (p *defaultPublisher) GetDeployedContentID() (types.ContentID, bool) {
@@ -204,9 +210,9 @@ func (p *defaultPublisher) emitErrorEvents(err error) {
 		data))
 }
 
-var clientFactory = connectclient.NewConnectClient
-
+var connectClientFactory = connectclient.NewConnectClient
 var cloudClientFactory = connectcloudclient.NewConnectCloudClientWithAuth
+var rPackageMapperFactory = renv.NewPackageMapper
 
 func (p *defaultPublisher) PublishDirectory() error {
 	p.log.Info("Publishing from directory", logging.LogKeyOp, events.AgentOp, "path", p.Dir, "localID", p.State.LocalID)

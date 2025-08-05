@@ -30,7 +30,7 @@ var _ ServerPublisher = (*connectcloudpublisher.ServerPublisher)(nil)
 func createServerPublisher(ph *publishhelper.PublishHelper, emitter events.Emitter, log logging.Logger) (ServerPublisher, error) {
 	switch ph.Account.ServerType {
 	case server_type.ServerTypeConnect, server_type.ServerTypeSnowflake:
-		client, err := clientFactory(ph.Account, 2*time.Minute, emitter, log)
+		client, err := connectClientFactory(ph.Account, 2*time.Minute, emitter, log)
 		if err != nil {
 			return nil, err
 		}

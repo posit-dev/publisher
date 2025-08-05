@@ -73,13 +73,13 @@ func (s *ConnectCloudClientSuite) TestCreateContent() {
 	}
 
 	expectedResponse := &clienttypes.ContentResponse{
-		ID:                    "449e7a5c-69d3-4b8a-aaaf-5c9b713ebc65",
-		SourceBundleID:        "449e7a5c-69d3-4b8a-aaaf-5c9b713ebc65",
-		SourceBundleUploadURL: "https://bundle.upload.url",
+		ID: "449e7a5c-69d3-4b8a-aaaf-5c9b713ebc65",
 		NextRevision: &clienttypes.Revision{
-			ID:                "449e7a5c-69d3-4b8a-aaaf-5c9b713ebc65",
-			PublishLogChannel: "publish-log-channel-1",
-			PublishResult:     clienttypes.PublishResultSuccess,
+			ID:                    "449e7a5c-69d3-4b8a-aaaf-5c9b713ebc65",
+			PublishLogChannel:     "publish-log-channel-1",
+			PublishResult:         clienttypes.PublishResultSuccess,
+			SourceBundleID:        "449e7a5c-69d3-4b8a-aaaf-5c9b713ebc65",
+			SourceBundleUploadURL: "https://bundle.upload.url",
 		},
 	}
 
@@ -127,17 +127,17 @@ func (s *ConnectCloudClientSuite) TestUpdateContent() {
 	}
 
 	expectedResponse := &clienttypes.ContentResponse{
-		ID:                    contentID,
-		SourceBundleID:        "559e7a5c-69d3-4b8a-bbaf-5c9b713ebc76",
-		SourceBundleUploadURL: "https://new-bundle.upload.url",
+		ID: contentID,
 		NextRevision: &clienttypes.Revision{
-			ID:                "559e7a5c-69d3-4b8a-bbaf-5c9b713ebc76",
-			PublishLogChannel: "publish-log-channel-2",
-			PublishResult:     clienttypes.PublishResultSuccess,
+			ID:                    "559e7a5c-69d3-4b8a-bbaf-5c9b713ebc76",
+			PublishLogChannel:     "publish-log-channel-2",
+			PublishResult:         clienttypes.PublishResultSuccess,
+			SourceBundleID:        "559e7a5c-69d3-4b8a-bbaf-5c9b713ebc76",
+			SourceBundleUploadURL: "https://new-bundle.upload.url",
 		},
 	}
 
-	httpClient.On("Patch", "/v1/contents/"+contentID+"?new_bundle=true", &request.ContentRequestBase, mock.Anything, mock.Anything).
+	httpClient.On("Patch", "/v1/contents/"+contentID, &request.ContentRequestBase, mock.Anything, mock.Anything).
 		Return(nil).RunFn = func(args mock.Arguments) {
 		result := args.Get(2).(*clienttypes.ContentResponse)
 		*result = *expectedResponse
@@ -221,7 +221,7 @@ func (s *ConnectCloudClientSuite) TestPublishContent() {
 	httpClient := &http_client.MockHTTPClient{}
 
 	contentID := "449e7a5c-69d3-4b8a-aaaf-5c9b713ebc65"
-	expectedURL := "/v1/content/" + contentID + "/publish"
+	expectedURL := "/v1/contents/" + contentID + "/publish"
 
 	httpClient.On("Post", expectedURL, nil, mock.Anything, mock.Anything).
 		Return(nil)

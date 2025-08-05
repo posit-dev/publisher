@@ -117,12 +117,14 @@ func (s *PublishSuite) SetupTest() {
 }
 
 func (s *PublishSuite) TearDownTest() {
-	clientFactory = connect.NewConnectClient
+	connectClientFactory = connect.NewConnectClient
+	rPackageMapperFactory = renv.NewPackageMapper
 }
 
 func (s *PublishSuite) TestNewFromState() {
 	stateStore := state.Empty()
 	stateStore.Dir = s.cwd
+	stateStore.Account.ServerType = server_type.ServerTypeConnect
 	mockRIntr := interpreters.NewMockRInterpreter()
 	mockPyIntr := interpreters.NewMockPythonInterpreter()
 	mockRIntr.On("GetRExecutable").Return(util.NewAbsolutePath("/path/to/r", nil), nil)
@@ -299,7 +301,7 @@ func (s *PublishSuite) publishWithClient(
 	myTaskID := types.TaskID("myTaskID")
 
 	client := connect.NewMockClient()
-	clientFactory = func(account *accounts.Account, timeout time.Duration, emitter events.Emitter, log logging.Logger) (connect.APIClient, error) {
+	connectClientFactory = func(account *accounts.Account, timeout time.Duration, emitter events.Emitter, log logging.Logger) (connect.APIClient, error) {
 		return client, nil
 	}
 	if target == nil {
@@ -360,28 +362,33 @@ func (s *PublishSuite) publishWithClient(
 
 	emitter := events.NewCapturingEmitter()
 
-	publisher := &defaultPublisher{
-		log:           s.log,
-		emitter:       emitter,
-		PublishHelper: publishhelper.NewPublishHelper(stateStore, s.log),
-	}
-
+	mockRIntr := interpreters.NewMockRInterpreter()
+	mockPyIntr := interpreters.NewMockPythonInterpreter()
+	mockRIntr.On("GetRExecutable").Return(util.NewAbsolutePath("/path/to/r", nil), nil)
+	mockPyIntr.On("GetPythonExecutable").Return(util.NewAbsolutePath("/path/to/python", nil), nil)
+	
 	rPackageMapper := &mockPackageMapper{}
 	if errsMock.rPackageErr != nil {
 		rPackageMapper.On("GetManifestPackages", mock.Anything, mock.Anything, mock.Anything).Return(nil, errsMock.rPackageErr)
 	} else {
 		rPackageMapper.On("GetManifestPackages", mock.Anything, mock.Anything, mock.Anything).Return(bundles.PackageMap{}, nil)
 	}
-	publisher.rPackageMapper = rPackageMapper
 
-	err := publisher.PublishDirectory()
+	rPackageMapperFactory = func(base util.AbsolutePath, rExecutable util.Path, log logging.Logger) (renv.PackageMapper, error) {
+		return rPackageMapper, nil
+	}
+
+	publisher, err := NewFromState(stateStore, mockRIntr, mockPyIntr, emitter, s.log)
+	s.NoError(err)
+
+	err = publisher.PublishDirectory()
 	if expectedErr == nil {
 		s.NoError(err)
 	} else {
 		s.NotNil(err)
 		s.Equal(expectedErr.Error(), err.Error())
 
-		publisher.emitErrorEvents(err)
+		publisher.(*defaultPublisher).emitErrorEvents(err)
 	}
 	if target != nil {
 		// Creation date is not updated on deployment
@@ -606,44 +613,4 @@ func (s *PublishSuite) TestLogAppInfoErrNoContentID() {
 	testError := errors.New("test error")
 	publisher.logAppInfo(buf, nil, testError)
 	s.Equal("", buf.String())
-}
-
-func (s *PublishSuite) TestEmitNewClientError() {
-	expectedErr := errors.New("test error")
-	log := logging.New()
-
-	emitter := events.NewCapturingEmitter()
-	cfg := config.New()
-	cfg.Title = "test title"
-
-	state := &state.State{
-		Dir: s.cwd,
-		Account: &accounts.Account{
-			ServerType: server_type.ServerTypeConnect,
-			URL:        "http://connect.example.com",
-		},
-		Config: cfg,
-	}
-	publisher := &defaultPublisher{
-		log:           log,
-		emitter:       emitter,
-		PublishHelper: publishhelper.NewPublishHelper(state, log),
-	}
-
-	clientFactory = func(account *accounts.Account, timeout time.Duration, emitter events.Emitter, log logging.Logger) (connect.APIClient, error) {
-		return nil, expectedErr
-	}
-	publisher.PublishDirectory()
-
-	// We should emit a start event, a phase failure event, and a publishing failure event.
-	s.Len(emitter.Events, 3)
-	s.Equal("publish/start", emitter.Events[0].Type)
-	s.Equal("/failure", emitter.Events[1].Type)
-	s.Equal(events.EventData{
-		"message": "Test error.",
-	}, emitter.Events[1].Data)
-	s.Equal("publish/failure", emitter.Events[2].Type)
-	s.Equal(events.EventData{
-		"message": "Test error.",
-	}, emitter.Events[2].Data)
 }

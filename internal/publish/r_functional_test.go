@@ -70,7 +70,7 @@ func (s *RPublishFunctionalSuite) SetupTest() {
 func (s *RPublishFunctionalSuite) TearDownTest() {
 	parentDir := filepath.Dir(s.testProjectDir.String())
 	os.RemoveAll(parentDir)
-	clientFactory = connect.NewConnectClient
+	connectClientFactory = connect.NewConnectClient
 }
 
 func (s *RPublishFunctionalSuite) createTestRenvLock() {
@@ -126,7 +126,7 @@ func (s *RPublishFunctionalSuite) TestGetRPackagesFunctional() {
 func (s *RPublishFunctionalSuite) TestPublishWithClientFunctional() {
 	// Set up a mock client
 	client := connect.NewMockClient()
-	clientFactory = func(
+	connectClientFactory = func(
 		account *accounts.Account,
 		timeout time.Duration,
 		emitter events.Emitter,
