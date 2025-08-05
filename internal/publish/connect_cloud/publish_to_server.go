@@ -6,6 +6,7 @@ import (
 	"io"
 
 	"github.com/posit-dev/publisher/internal/clients/types"
+	"github.com/posit-dev/publisher/internal/events"
 	internal_types "github.com/posit-dev/publisher/internal/types"
 )
 
@@ -20,13 +21,24 @@ type publishToServerSuccessData struct {
 func (c *ServerPublisher) PublishToServer(contentID internal_types.ContentID, bundleReader io.Reader) error {
 	// If we didn't create the content earlier in ServerPublisher, we need to update the content with the latest info
 	if c.content == nil {
+		op := events.PublishUpdateDeploymentOp
+
+		base, err := c.getContentRequestBase()
+		if err != nil {
+			return internal_types.OperationError(op, err)
+		}
+
 		updateRequest := &types.UpdateContentRequest{
-			ContentRequestBase: c.getContentRequestBase(),
+			ContentRequestBase: *base,
 			ContentID:          string(contentID),
 		}
 
-		var err error
-		c.content, err = c.client.UpdateContent(updateRequest)
+		_, err = c.client.UpdateContent(updateRequest)
+		if err != nil {
+			return err
+		}
+
+		c.content, err = c.client.UpdateContentBundle(contentID)
 		if err != nil {
 			return err
 		}

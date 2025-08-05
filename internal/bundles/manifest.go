@@ -69,8 +69,8 @@ type Environment struct {
 }
 
 type Python struct {
-	Version        string               `json:"version"` // The Python version
-	PackageManager PythonPackageManager `json:"package_manager"`
+	Version        string                `json:"version"` // The Python version
+	PackageManager *PythonPackageManager `json:"package_manager"`
 }
 
 type Quarto struct {
@@ -188,12 +188,17 @@ func NewManifestFromConfig(cfg *config.Config) *Manifest {
 		}
 	}
 	if cfg.Python != nil {
-		m.Python = &Python{
-			Version: cfg.Python.Version,
-			PackageManager: PythonPackageManager{
+		//packageManager := nil.(*PythonPackageManager)
+		packageManager := (*PythonPackageManager)(nil)
+		if cfg.Python.PackageManager != "" {
+			packageManager = &PythonPackageManager{
 				Name:        cfg.Python.PackageManager,
 				PackageFile: cfg.Python.PackageFile,
-			},
+			}
+		}
+		m.Python = &Python{
+			Version:        cfg.Python.Version,
+			PackageManager: packageManager,
 		}
 		// If the configuration specifies a specific python version constraint
 		// (e.g. ">=3.8"), declare the environment requires that version.

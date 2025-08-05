@@ -38,6 +38,7 @@ type defaultPublisher struct {
 	r              util.Path
 	python         util.Path
 	*publishhelper.PublishHelper
+	serverPublisher ServerPublisher
 }
 
 type createBundleStartData struct{}
@@ -104,13 +105,19 @@ func NewFromState(s *state.State, rInterpreter interpreters.RInterpreter, python
 
 	helper := publishhelper.NewPublishHelper(s, log)
 
+	serverPublisher, err := createServerPublisher(helper, emitter, log)
+	if err != nil {
+		return nil, err
+	}
+
 	return &defaultPublisher{
-		log:            log,
-		emitter:        emitter,
-		rPackageMapper: packageManager,
-		r:              rexec.Path,
-		python:         pyexec.Path,
-		PublishHelper:  helper,
+		log:             log,
+		emitter:         emitter,
+		rPackageMapper:  packageManager,
+		r:               rexec.Path,
+		python:          pyexec.Path,
+		PublishHelper:   helper,
+		serverPublisher: serverPublisher,
 	}, err
 }
 
@@ -239,24 +246,19 @@ func (p *defaultPublisher) doPublish() error {
 		return err
 	}
 
-	serverPublisher, err := p.createServerPublisher()
-	if err != nil {
-		return err
-	}
-
 	if wasPreviouslyDeployed {
 		p.log.Info("Updating deployment", "content_id", contentID)
 	} else {
 		// Create a new deployment; we will update it with details later.
-		contentID, err = serverPublisher.CreateDeployment()
+		contentID, err = p.serverPublisher.CreateDeployment()
 		if err != nil {
 			return err
 		}
 	}
 
-	p.setContentInfo(serverPublisher.GetContentInfo(contentID))
+	p.setContentInfo(p.serverPublisher.GetContentInfo(contentID))
 
-	err = serverPublisher.PreFlightChecks()
+	err = p.serverPublisher.PreFlightChecks()
 	if err != nil {
 		return err
 	}
@@ -268,7 +270,7 @@ func (p *defaultPublisher) doPublish() error {
 	defer bundleFile.Close()
 	defer os.Remove(bundleFile.Name())
 
-	err = serverPublisher.PublishToServer(contentID, bundleFile)
+	err = p.serverPublisher.PublishToServer(contentID, bundleFile)
 	if err != nil {
 		return err
 	}
@@ -285,6 +287,7 @@ func (p *defaultPublisher) setContentInfo(info publishhelper.ContentInfo) {
 
 func (p *defaultPublisher) CreateDeploymentRecord() {
 	p.Target = &deployment.Deployment{}
+	p.serverPublisher.UpdateState()
 
 	// Initial deployment record doesn't know the files or
 	// bundleID. These will be added after the

@@ -38,8 +38,8 @@ func NewConnectCloudClientWithAuth(
 	environment types.CloudEnvironment,
 	log logging.Logger,
 	timeout time.Duration,
-	authValue string) APIClient {
-	httpClient := http_client.NewBasicHTTPClientWithAuth(getBaseURL(environment), timeout, authValue)
+	accessToken string) APIClient {
+	httpClient := http_client.NewBasicHTTPClientWithBearerAuth(getBaseURL(environment), timeout, accessToken)
 	return &ConnectCloudClient{
 		log:    log,
 		client: httpClient,
@@ -75,8 +75,18 @@ func (c ConnectCloudClient) CreateContent(request *clienttypes.CreateContentRequ
 
 func (c ConnectCloudClient) UpdateContent(request *clienttypes.UpdateContentRequest) (*clienttypes.ContentResponse, error) {
 	into := clienttypes.ContentResponse{}
-	url := fmt.Sprintf("/v1/contents/%s?new_bundle=true", request.ContentID)
+	url := fmt.Sprintf("/v1/contents/%s", request.ContentID)
 	err := c.client.Patch(url, &request.ContentRequestBase, &into, c.log)
+	if err != nil {
+		return nil, err
+	}
+	return &into, nil
+}
+
+func (c ConnectCloudClient) UpdateContentBundle(contentID types.ContentID) (*clienttypes.ContentResponse, error) {
+	into := clienttypes.ContentResponse{}
+	url := fmt.Sprintf("/v1/contents/%s?new_bundle=true", contentID)
+	err := c.client.Patch(url, nil, &into, c.log)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +113,7 @@ func (c ConnectCloudClient) GetAuthorization(request *clienttypes.AuthorizationR
 }
 
 func (c ConnectCloudClient) PublishContent(contentID string) error {
-	url := fmt.Sprintf("/v1/content/%s/publish", contentID)
+	url := fmt.Sprintf("/v1/contents/%s/publish", contentID)
 	err := c.client.Post(url, nil, nil, c.log)
 	if err != nil {
 		return err

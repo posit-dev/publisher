@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/posit-dev/publisher/internal/clients/types"
+	content_types "github.com/posit-dev/publisher/internal/types"
 )
 
 type MockClient struct {
@@ -35,6 +36,11 @@ func (m *MockClient) CreateContent(request *types.CreateContentRequest) (*types.
 
 func (m *MockClient) UpdateContent(request *types.UpdateContentRequest) (*types.ContentResponse, error) {
 	args := m.Called(request)
+	return args.Get(0).(*types.ContentResponse), args.Error(1)
+}
+
+func (m *MockClient) UpdateContentBundle(contentID content_types.ContentID) (*types.ContentResponse, error) {
+	args := m.Called(contentID)
 	return args.Get(0).(*types.ContentResponse), args.Error(1)
 }
 

@@ -7,6 +7,8 @@ import (
 	"io"
 	"time"
 
+	"github.com/posit-dev/publisher/internal/events"
+	"github.com/posit-dev/publisher/internal/logging"
 	connectpublisher "github.com/posit-dev/publisher/internal/publish/connect"
 	connectcloudpublisher "github.com/posit-dev/publisher/internal/publish/connect_cloud"
 	"github.com/posit-dev/publisher/internal/publish/publishhelper"
@@ -15,6 +17,7 @@ import (
 )
 
 type ServerPublisher interface {
+	UpdateState()
 	CreateDeployment() (contentID types.ContentID, err error)
 	GetContentInfo(contentID types.ContentID) publishhelper.ContentInfo
 	PreFlightChecks() error
@@ -24,19 +27,19 @@ type ServerPublisher interface {
 var _ ServerPublisher = (*connectpublisher.ServerPublisher)(nil)
 var _ ServerPublisher = (*connectcloudpublisher.ServerPublisher)(nil)
 
-func (p *defaultPublisher) createServerPublisher() (ServerPublisher, error) {
-	switch p.Account.ServerType {
+func createServerPublisher(ph *publishhelper.PublishHelper, emitter events.Emitter, log logging.Logger) (ServerPublisher, error) {
+	switch ph.Account.ServerType {
 	case server_type.ServerTypeConnect, server_type.ServerTypeSnowflake:
-		client, err := clientFactory(p.Account, 2*time.Minute, p.emitter, p.log)
+		client, err := clientFactory(ph.Account, 2*time.Minute, emitter, log)
 		if err != nil {
 			return nil, err
 		}
-		return connectpublisher.NewServerPublisher(p.State, p.log, client, p.emitter, p.PublishHelper), nil
+		return connectpublisher.NewServerPublisher(ph.State, log, client, emitter, ph), nil
 	case server_type.ServerTypeConnectCloud:
 		// For Connect Cloud, we need to create a different client
-		client := cloudClientFactory(p.Account.CloudEnvironment, p.log, 2*time.Minute, p.Account.CloudAccessToken)
-		return connectcloudpublisher.NewServerPublisher(p.State, p.log, client, p.emitter, p.PublishHelper), nil
+		client := cloudClientFactory(ph.Account.CloudEnvironment, log, 2*time.Minute, ph.Account.CloudAccessToken)
+		return connectcloudpublisher.NewServerPublisher(ph.State, log, client, emitter, ph), nil
 	default:
-		return nil, fmt.Errorf("unsupported server type: %s", p.Account.ServerType)
+		return nil, fmt.Errorf("unsupported server type: %s", ph.Account.ServerType)
 	}
 }

@@ -29,7 +29,7 @@ func (c *ServerPublisher) uploadBundle(
 	c.emitter.Emit(events.New(op, events.StartPhase, events.NoError, uploadBundleStartData{}))
 	uploadLog.Info("Uploading files")
 	// Upload bundle using the upload URL from the content response
-	uploadURL := c.content.SourceBundleUploadURL
+	uploadURL := c.content.NextRevision.SourceBundleUploadURL
 
 	uploadClient := connect_cloud_upload.NewConnectCloudUploadClient(uploadURL, c.log, 5*time.Minute)
 	err := uploadClient.UploadBundle(bundleReader)
@@ -42,7 +42,7 @@ func (c *ServerPublisher) uploadBundle(
 	}
 
 	// Update deployment record with new information
-	bundleID := types.BundleID(c.content.SourceBundleID)
+	bundleID := types.BundleID(c.content.NextRevision.SourceBundleID)
 	c.Target.BundleID = bundleID
 	c.Target.BundleURL = util.GetBundleURL(c.Account.URL, contentID, c.Target.BundleID)
 
