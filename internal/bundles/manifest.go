@@ -11,7 +11,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/posit-dev/publisher/internal/clients/connect"
+	"github.com/posit-dev/publisher/internal/clients/types"
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/dcf"
@@ -45,12 +45,12 @@ type Manifest struct {
 
 // Metadata contains details about this deployment (type, etc).
 type Metadata struct {
-	AppMode         connect.AppMode `json:"appmode"`                    // Selects the runtime for this content.
-	ContentCategory string          `json:"content_category,omitempty"` // A refinement of the AppMode used by plots and sites
-	Entrypoint      string          `json:"entrypoint,omitempty"`       // The main file being deployed.
-	PrimaryRmd      string          `json:"primary_rmd,omitempty"`      // The rendering target for Rmd deployments.
-	PrimaryHtml     string          `json:"primary_html,omitempty"`     // The default document for static deployments.
-	HasParameters   bool            `json:"has_parameters,omitempty"`   // True if this is content allows parameter customization.
+	AppMode         types.AppMode `json:"appmode"`                    // Selects the runtime for this content.
+	ContentCategory string        `json:"content_category,omitempty"` // A refinement of the AppMode used by plots and sites
+	Entrypoint      string        `json:"entrypoint,omitempty"`       // The main file being deployed.
+	PrimaryRmd      string        `json:"primary_rmd,omitempty"`      // The rendering target for Rmd deployments.
+	PrimaryHtml     string        `json:"primary_html,omitempty"`     // The default document for static deployments.
+	HasParameters   bool          `json:"has_parameters,omitempty"`   // True if this is content allows parameter customization.
 }
 
 type EnvironmentR struct {
@@ -163,7 +163,7 @@ func NewManifest() *Manifest {
 }
 
 func NewManifestFromConfig(cfg *config.Config) *Manifest {
-	contentType := connect.AppModeFromType(cfg.Type)
+	contentType := types.AppModeFromType(cfg.Type)
 	m := &Manifest{
 		Version: 1,
 		Metadata: Metadata{

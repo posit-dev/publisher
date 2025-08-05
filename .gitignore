@@ -30,6 +30,9 @@ node_modules
 .pnpm-store
 .Rproj.user
 
+# debugging binaries created by running our launch.json config in VS Code
+cmd/publisher/__debug_bin*
+
 # Possible e2e tests deployment assets
 test/e2e/content-workspace/**/.posit
 screenshots/

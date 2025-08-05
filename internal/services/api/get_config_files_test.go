@@ -11,15 +11,16 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
+	"github.com/spf13/afero"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/services/api/files"
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/spf13/afero"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/suite"
 )
 
 type GetConfigFilesHandlerFuncSuite struct {
@@ -63,6 +64,7 @@ func (s *GetConfigFilesHandlerFuncSuite) TestHandlerFunc() {
 	rec := httptest.NewRecorder()
 
 	cfg := config.New()
+	cfg.ProductType = config.ProductTypeConnect
 	cfg.Type = config.ContentTypeHTML
 	cfg.Files = []string{"*", "!ignoreme"}
 	err = cfg.WriteFile(config.GetConfigPath(base, "myConfig"))
@@ -236,6 +238,7 @@ func (s *GetConfigFilesHandlerFuncSuite) TestHandlerFuncInvalidConfigFiles() {
 	s.NoError(err)
 
 	cfg := config.New()
+	cfg.ProductType = config.ProductTypeConnect
 	cfg.Type = config.ContentTypeHTML
 	cfg.Files = []string{"[Z-"}
 	err = cfg.WriteFile(config.GetConfigPath(base, "myConfig"))
@@ -277,6 +280,7 @@ func (s *GetConfigFilesHandlerFuncSuite) TestHandlerFuncSubdir() {
 	rec := httptest.NewRecorder()
 
 	cfg := config.New()
+	cfg.ProductType = config.ProductTypeConnect
 	cfg.Type = config.ContentTypeHTML
 	cfg.Files = []string{"*", "!ignoreme"}
 	err = cfg.WriteFile(config.GetConfigPath(projectDir, "myConfig"))

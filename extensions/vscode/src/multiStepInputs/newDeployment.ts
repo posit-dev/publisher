@@ -2,40 +2,39 @@
 
 import path from "path";
 import {
+  isQuickPickItem,
+  isQuickPickItemWithIndex,
+  isQuickPickItemWithInspectionResult,
   MultiStepInput,
   MultiStepState,
-  QuickPickItemWithInspectionResult,
   QuickPickItemWithIndex,
-  isQuickPickItem,
-  isQuickPickItemWithInspectionResult,
-  isQuickPickItemWithIndex,
+  QuickPickItemWithInspectionResult,
 } from "src/multiStepInputs/multiStepHelper";
-
 import {
+  commands,
   InputBoxValidationSeverity,
   QuickPickItem,
   QuickPickItemKind,
   ThemeIcon,
   Uri,
-  commands,
   window,
   workspace,
 } from "vscode";
 
 import {
-  useApi,
-  Credential,
-  Configuration,
-  PreContentRecord,
-  contentTypeStrings,
-  ConfigurationInspectionResult,
-  EntryPointPath,
   areInspectionResultsSimilarEnough,
+  Configuration,
+  ConfigurationInspectionResult,
   ContentType,
+  contentTypeStrings,
+  Credential,
+  EntryPointPath,
   FileAction,
-  SnowflakeConnection,
+  ProductName,
+  PreContentRecord,
   ServerType,
-  PlatformName,
+  SnowflakeConnection,
+  useApi,
 } from "src/api";
 import {
   getPythonInterpreterPath,
@@ -46,7 +45,7 @@ import {
   getSummaryStringFromError,
 } from "src/utils/errors";
 import { isAxiosErrorWithJson } from "src/utils/errorTypes";
-import { newDeploymentName, newConfigFileNameFromTitle } from "src/utils/names";
+import { newConfigFileNameFromTitle, newDeploymentName } from "src/utils/names";
 import { formatURL } from "src/utils/url";
 import { checkSyntaxApiKey } from "src/utils/apiKeys";
 import { DeploymentObjects } from "src/types/shared";
@@ -63,6 +62,7 @@ import { extensionSettings } from "src/extension";
 import {
   fetchSnowflakeConnections,
   findExistingCredentialByURL,
+  getProductType,
   isConnect,
   isSnowflake,
   platformList,
@@ -87,10 +87,10 @@ export async function newDeployment(
   let inspectionResults: ConfigurationInspectionResult[] = [];
   const contentRecordNames = new Map<string, string[]>();
 
-  // the serverType & platformName will be overwritten during the pickCredentials steps
+  // the serverType & productName will be overwritten during the pickCredentials steps
   // when the platform selector is introduced
   let serverType: ServerType = ServerType.CONNECT;
-  let platformName: PlatformName = PlatformName.CONNECT;
+  let productName: ProductName = ProductName.CONNECT;
   let connections: SnowflakeConnection[] = [];
   let connectionQuickPicks: QuickPickItemWithIndex[];
 
@@ -335,9 +335,9 @@ export async function newDeployment(
     };
 
     // start the progression through the steps
-    await MultiStepInput.run((input) =>
-      inputEntryPointFileSelection(input, state),
-    );
+    await MultiStepInput.run({
+      step: (input) => inputEntryPointFileSelection(input, state),
+    });
     return state as MultiStepState;
   }
 
@@ -410,8 +410,10 @@ export async function newDeployment(
         }
       } while (!selectedEntrypointFile);
       newDeploymentData.entrypoint.filePath = selectedEntrypointFile;
-      return (input: MultiStepInput) =>
-        inputEntryPointInspectionResultSelection(input, state);
+      return {
+        step: (input: MultiStepInput) =>
+          inputEntryPointInspectionResultSelection(input, state),
+      };
     } else {
       // We were passed in a specific file, so set and continue to inspection
       newDeploymentData.entrypoint.filePath = entryPointFile;
@@ -476,7 +478,7 @@ export async function newDeployment(
       }
 
       newDeploymentData.entrypoint.inspectionResult = pick.inspectionResult;
-      return (input: MultiStepInput) => inputTitle(input, state);
+      return { step: (input: MultiStepInput) => inputTitle(input, state) };
     } else {
       newDeploymentData.entrypoint.inspectionResult =
         inspectionQuickPicks[0].inspectionResult;
@@ -522,7 +524,10 @@ export async function newDeployment(
     });
 
     newDeploymentData.title = title;
-    return (input: MultiStepInput) => pickCredentials(input, state);
+    return {
+      step: (input: MultiStepInput) => pickCredentials(input, state),
+      skippable: newCredentialForced(),
+    };
   }
 
   // ***************************************************************
@@ -550,47 +555,48 @@ export async function newDeployment(
       });
       newDeploymentData.existingCredentialName = pick.label;
 
-      if (newCredentialSelected()) {
-        // the user opted for creating a new credential
-        return (input: MultiStepInput) => inputPlatform(input, state);
+      if (!newCredentialSelected()) {
+        // the user selected an existing credential, bail out
+        return;
       }
-      // the user selected an existing credential, so no need for any other steps
-      return Promise.resolve(undefined);
     }
-    // there are no existing credentials, force the user to create a new credential
-    return (input: MultiStepInput) => inputPlatform(input, state);
+
+    // either the user opted for creating a brand new credential or
+    // there are no existing credentials, so force the user to create a new credential
+    if (extensionSettings.enableConnectCloud()) {
+      // select the platform only when the enableConnectCloud config has been turned on
+      return { step: (input: MultiStepInput) => inputPlatform(input, state) };
+    } else {
+      // default to CONNECT (since there are no other products at the moment)
+      // when the enableConnectCloud config is turned off
+      serverType = ServerType.CONNECT;
+      productName = ProductName.CONNECT;
+
+      return { step: (input: MultiStepInput) => inputServerUrl(input, state) };
+    }
   }
 
   // ***************************************************************
   // Step: New Credentials - Select the platform (used for all platforms)
   // ***************************************************************
   async function inputPlatform(input: MultiStepInput, state: MultiStepState) {
-    // skip platform selection unless the enableConnectCloud config has been turned on
-    if (extensionSettings.enableConnectCloud()) {
-      const pick = await input.showQuickPick({
-        title: state.title,
-        step: 0,
-        totalSteps: 0,
-        placeholder: "Please select the platform for the new credential.",
-        items: platformList,
-        buttons: [],
-        shouldResume: () => Promise.resolve(false),
-        ignoreFocusOut: true,
-      });
+    const pick = await input.showQuickPick({
+      title: state.title,
+      step: 0,
+      totalSteps: 0,
+      placeholder: "Please select the platform for the new credential.",
+      items: platformList,
+      buttons: [],
+      shouldResume: () => Promise.resolve(false),
+      ignoreFocusOut: true,
+    });
 
-      const enumKey = getEnumKeyByEnumValue(PlatformName, pick.label);
-      // fallback to CONNECT if there is ever a case when the enumKey is not found
-      serverType = enumKey ? ServerType[enumKey] : ServerType.CONNECT;
-      platformName = pick.label as PlatformName;
+    const enumKey = getEnumKeyByEnumValue(ProductName, pick.label);
+    // fallback to CONNECT if there is ever a case when the enumKey is not found
+    serverType = enumKey ? ServerType[enumKey] : ServerType.CONNECT;
+    productName = pick.label as ProductName;
 
-      return (input: MultiStepInput) => inputServerUrl(input, state);
-    }
-
-    // default to CONNECT, since there are no other products at the moment
-    serverType = ServerType.CONNECT;
-    platformName = PlatformName.CONNECT;
-
-    return (input: MultiStepInput) => inputServerUrl(input, state);
+    return { step: (input: MultiStepInput) => inputServerUrl(input, state) };
   }
 
   // ***************************************************************
@@ -698,15 +704,17 @@ export async function newDeployment(
     newDeploymentData.newCredentials.url = formatURL(url.trim());
 
     if (isConnect(serverType)) {
-      return (input: MultiStepInput) => inputAPIKey(input, state);
+      return { step: (input: MultiStepInput) => inputAPIKey(input, state) };
     }
 
     if (isSnowflake(serverType)) {
-      return (input: MultiStepInput) => inputSnowflakeConnection(input, state);
+      return {
+        step: (input: MultiStepInput) => inputSnowflakeConnection(input, state),
+      };
     }
 
     // Should not land here since the platform is forcefully picked in the very first step
-    return Promise.resolve(undefined);
+    return;
   }
 
   // ***************************************************************
@@ -785,7 +793,9 @@ export async function newDeployment(
     newDeploymentData.newCredentials.apiKey = apiKey;
     newDeploymentData.newCredentials.snowflakeConnection = "";
     newDeploymentData.newCredentials.url = validatedURL;
-    return (input: MultiStepInput) => inputCredentialName(input, state);
+    return {
+      step: (input: MultiStepInput) => inputCredentialName(input, state),
+    };
   }
 
   // ***************************************************************
@@ -830,7 +840,9 @@ export async function newDeployment(
     newDeploymentData.newCredentials.snowflakeConnection =
       connections[pick.index].name;
     newDeploymentData.newCredentials.url = connections[pick.index].serverUrl;
-    return (input: MultiStepInput) => inputCredentialName(input, state);
+    return {
+      step: (input: MultiStepInput) => inputCredentialName(input, state),
+    };
   }
 
   // ***************************************************************
@@ -848,7 +860,7 @@ export async function newDeployment(
       totalSteps: 0,
       value: currentName,
       prompt: "Enter a unique nickname for this server.",
-      placeholder: `${platformName}`,
+      placeholder: `${productName}`,
       finalValidation: (input: string) => {
         input = input.trim();
         if (input === "") {
@@ -987,6 +999,10 @@ export async function newDeployment(
       newDeploymentData.title,
       existingNames,
     );
+
+    newDeploymentData.entrypoint.inspectionResult.configuration.productType =
+      getProductType(serverType);
+
     configCreateResponse = (
       await api.configurations.createOrUpdate(
         configName,

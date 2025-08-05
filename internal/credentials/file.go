@@ -12,6 +12,7 @@ import (
 
 	"github.com/pelletier/go-toml/v2"
 	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/spf13/afero"
 )
@@ -33,10 +34,11 @@ type fileCredential struct {
 	SnowflakeConnection string `toml:"snowflake_connection,omitempty"`
 
 	// Connect Cloud fields
-	AccountID    string `toml:"account_id,omitempty"`
-	AccountName  string `toml:"account_name,omitempty"`
-	RefreshToken string `toml:"refresh_token,omitempty"`
-	AccessToken  string `toml:"access_token,omitempty"`
+	AccountID        string                 `toml:"account_id,omitempty"`
+	AccountName      string                 `toml:"account_name,omitempty"`
+	RefreshToken     string                 `toml:"refresh_token,omitempty"`
+	AccessToken      string                 `toml:"access_token,omitempty"`
+	CloudEnvironment types.CloudEnvironment `toml:"cloud_environment,omitempty"`
 }
 
 func (cr *fileCredential) IsValid() bool {
@@ -60,6 +62,7 @@ func (cr *fileCredential) toCredential(name string) (*Credential, error) {
 		AccountName:         cr.AccountName,
 		RefreshToken:        cr.RefreshToken,
 		AccessToken:         cr.AccessToken,
+		CloudEnvironment:    cr.CloudEnvironment,
 	}, nil
 }
 
@@ -160,6 +163,7 @@ func (c *fileCredentialsService) Set(credDetails CreateCredentialDetails) (*Cred
 		AccountName:         cred.AccountName,
 		RefreshToken:        cred.RefreshToken,
 		AccessToken:         cred.AccessToken,
+		CloudEnvironment:    cred.CloudEnvironment,
 	}
 
 	err = c.saveFile(creds)

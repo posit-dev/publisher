@@ -5,14 +5,16 @@ package deployment
 import (
 	"errors"
 	"fmt"
-	"github.com/posit-dev/publisher/internal/server_type"
 	"io"
 	"io/fs"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/posit-dev/publisher/internal/server_type"
+
 	"github.com/pelletier/go-toml/v2"
+
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/inspect/dependencies/renv"
 	"github.com/posit-dev/publisher/internal/logging"
@@ -38,6 +40,7 @@ type Deployment struct {
 	DashboardURL  string                 `toml:"dashboard_url,omitempty" json:"dashboardUrl"`
 	DirectURL     string                 `toml:"direct_url,omitempty" json:"directUrl"`
 	LogsURL       string                 `toml:"logs_url,omitempty" json:"logsUrl"`
+	ConnectCloud  *ConnectCloud          `toml:"connect_cloud,omitempty" json:"connectCloud"`
 
 	// Full deployment fields
 	DeployedAt    string            `toml:"deployed_at,omitempty" json:"deployedAt"`
@@ -48,6 +51,10 @@ type Deployment struct {
 	Requirements  []string          `toml:"requirements,multiline,omitempty" json:"requirements"`
 	Configuration *config.Config    `toml:"configuration,omitempty" json:"configuration"`
 	Renv          *renv.Lockfile    `toml:"renv,omitempty" json:"renv"`
+}
+
+type ConnectCloud struct {
+	AccountName string `toml:"account_name" json:"accountName"`
 }
 
 func New() *Deployment {

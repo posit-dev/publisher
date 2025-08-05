@@ -10,12 +10,14 @@ import (
 	"testing"
 
 	"github.com/posit-dev/publisher/internal/server_type"
+	"github.com/posit-dev/publisher/internal/types"
+
+	"github.com/stretchr/testify/suite"
+	"github.com/zalando/go-keyring"
 
 	"github.com/posit-dev/publisher/internal/credentials"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/stretchr/testify/suite"
-	"github.com/zalando/go-keyring"
 )
 
 type PostCredentialTestSuite struct {
@@ -55,6 +57,47 @@ func (s *PostCredentialTestSuite) Test201() {
 	h(rec, req)
 
 	s.Equal(http.StatusCreated, rec.Result().StatusCode)
+}
+
+func (s *PostCredentialTestSuite) Test201_ConnectCloud() {
+
+	body := PostCredentialsRequest{
+		ServerType:   server_type.ServerTypeConnectCloud,
+		Name:         "example",
+		AccountID:    "123",
+		AccountName:  "my account",
+		RefreshToken: "123",
+		AccessToken:  "123",
+	}
+
+	data, err := json.Marshal(body)
+	s.NoError(err)
+
+	req, err := http.NewRequest("POST", "http://example.com/api/credentials", bytes.NewBuffer(data))
+	s.NoError(err)
+	req.Header.Set("Connect-Cloud-Environment", "staging")
+
+	rec := httptest.NewRecorder()
+	h := PostCredentialFuncHandler(s.log)
+	h(rec, req)
+
+	s.Equal(http.StatusCreated, rec.Result().StatusCode)
+
+	response := PostCredentialsResponse{}
+	err = json.NewDecoder(rec.Body).Decode(&response)
+	s.NoError(err)
+	s.Equal(PostCredentialsResponse{
+		GUID:             response.GUID, // GUID is generated, so we can't predict it
+		Name:             "example",
+		ServerType:       server_type.ServerTypeConnectCloud,
+		URL:              "https://staging.connect.posit.cloud",
+		ApiKey:           "",
+		AccountID:        "123",
+		AccountName:      "my account",
+		RefreshToken:     "123",
+		AccessToken:      "123",
+		CloudEnvironment: types.CloudEnvironmentStaging,
+	}, response)
 }
 
 func (s *PostCredentialTestSuite) Test409() {

@@ -6,6 +6,19 @@ file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Added support to publishing schema for Connect Cloud. (#2729, #2747)
+
+## [1.18.1]
+
+### Fixed
+
+- Updated software components used by Posit Publisher to address CVE-2025-7783
+  (#2741)
+
 ## [1.18.0]
 
 ### Fixed

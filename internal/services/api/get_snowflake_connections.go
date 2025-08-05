@@ -63,7 +63,7 @@ func GetSnowflakeConnectionsHandlerFunc(log logging.Logger, connections snowflak
 				}
 
 				timeout := time.Second * 30
-				client, err := clientFactory(acct, timeout, nil, log)
+				client, err := connectClientFactory(acct, timeout, nil, log)
 				if err != nil {
 					InternalError(w, req, log, err)
 					return

@@ -6,8 +6,7 @@
   - [Quick Start](#quick-start)
   - [Getting Started](#getting-started)
     - [Prerequisites](#prerequisites)
-    - [Installing](#installing)
-    - [Execution](#execution)
+    - [Setup](#setup)
     - [Committing Changes to the repo](#committing-changes-to-the-repo)
   - [Testing](#testing)
     - [Unit Tests](#unit-tests)
@@ -39,10 +38,10 @@ local machine for development and testing purposes.
 ### Prerequisites
 
 - [Go](https://go.dev/dl/)
-- [Just](https://just.systems/man/en/chapter_4.html)
+- [Just](https://github.com/casey/just?tab=readme-ov-file#installation)
 - [Node.js](https://nodejs.org/en/download/)
 
-### Installing
+### Setup
 
 To get your development environment up and running, invoke the default Just command.
 
@@ -50,15 +49,11 @@ To get your development environment up and running, invoke the default Just comm
 just
 ```
 
-On success, a `publisher` executable will exist in the `./bin` directory.
+This installs dependencies, builds and packages the Go binary and the VS Code
+extension.
 
-### Execution
-
-Invoke the following Just command to run the built executable.
-
-```console
-just run
-```
+See the [Posit Publisher VS Code Extension CONTRIBUTING guide](./extensions/vscode/CONTRIBUTING.md)
+next for setting up your development workflow.
 
 ### Committing Changes to the repo
 
@@ -205,7 +200,7 @@ you will need to run the `just stop` command to remove the existing containers b
 
 ### Build Tools
 
-The build tooling entrypoint is `just`. See the [installation instructions](https://just.systems/man/en/chapter_4.html) for your operating system to install Just.
+The build tooling entrypoint is `just`. See the [installation instructions](https://github.com/casey/just?tab=readme-ov-file#installation) for your operating system to install Just.
 
 Execute `just -l` for a list of available commands and documentation.
 

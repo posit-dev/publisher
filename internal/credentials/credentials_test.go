@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/posit-dev/publisher/internal/server_type"
+	"github.com/posit-dev/publisher/internal/types"
 
 	"github.com/posit-dev/publisher/internal/logging/loggingtest"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
@@ -28,34 +29,123 @@ func (s *CredentialsServiceTestSuite) SetupTest() {
 	s.log = loggingtest.NewMockLogger()
 }
 
-func (s *CredentialsServiceTestSuite) TestCredential() {
+func (s *CredentialsServiceTestSuite) TestCredential_ConflictCheck_Connect() {
 	cred := Credential{
-		GUID:   "18cd5640-bee5-4b2a-992a-a2725ab6103d",
-		Name:   "friedtofu",
-		URL:    "https://a1.connect-server:3939/connect",
-		ApiKey: "abcdeC2aqbh7dg8TO43XPu7r56YDh000",
+		GUID:       "18cd5640-bee5-4b2a-992a-a2725ab6103d",
+		Name:       "friedtofu",
+		URL:        "https://a1.connect-server:3939/connect",
+		ServerType: server_type.ServerTypeConnect,
+		ApiKey:     "abcdeC2aqbh7dg8TO43XPu7r56YDh000",
+		// Note: AccountID is empty for Connect credentials
 	}
 
+	// Different URL, should not conflict
 	err := cred.ConflictCheck(Credential{
-		Name:   "no friedtofu",
-		URL:    "https://nota1.connect-server:3939/connect",
-		ApiKey: "abcdeC2aqbh7dg8TO43XPu7r56YDh000",
+		Name:       "no friedtofu",
+		URL:        "https://nota1.connect-server:3939/connect",
+		ServerType: server_type.ServerTypeConnect,
+		ApiKey:     "abcdeC2aqbh7dg8TO43XPu7r56YDh000",
 	})
 	s.NoError(err)
 
+	// Same name, should conflict
 	err = cred.ConflictCheck(Credential{
-		Name:   "friedtofu",
-		URL:    "https://nota1.connect-server:3939/connect",
-		ApiKey: "abcdeC2aqbh7dg8TO43XPu7r56YDh000",
+		Name:       "friedtofu",
+		URL:        "https://nota1.connect-server:3939/connect",
+		ServerType: server_type.ServerTypeConnect,
+		ApiKey:     "abcdeC2aqbh7dg8TO43XPu7r56YDh000",
 	})
 	s.EqualError(err, "Name value conflicts with existing credential (friedtofu) URL: https://a1.connect-server:3939/connect")
 
+	// Same URL with empty AccountID, should conflict
 	err = cred.ConflictCheck(Credential{
-		Name:   "no friedtofu",
-		URL:    "https://a1.connect-server:3939/connect",
-		ApiKey: "abcdeC2aqbh7dg8TO43XPu7r56YDh000",
+		Name:       "no friedtofu",
+		URL:        "https://a1.connect-server:3939/connect",
+		ServerType: server_type.ServerTypeConnect,
+		ApiKey:     "abcdeC2aqbh7dg8TO43XPu7r56YDh000",
 	})
 	s.EqualError(err, "URL value conflicts with existing credential (friedtofu) URL: https://a1.connect-server:3939/connect")
+}
+
+func (s *CredentialsServiceTestSuite) TestCredential_ConflictCheck_ConnectCloud() {
+	cloudCred := Credential{
+		GUID:            "18cd5640-bee5-4b2a-992a-a2725ab6103d",
+		Name:            "friedtofu",
+		URL:             "https://api.connect.posit.cloud",
+		ServerType:      server_type.ServerTypeConnectCloud,
+		AccountID:       "123",
+		AccountName:     "fried tofu",
+		RefreshToken:    "refresh-token",
+		AccessToken:     "access-token",
+		CloudEnvironment: "production",
+	}
+	err := cloudCred.ConflictCheck(Credential{
+		GUID:            "18cd5640-bee5-4b2a-992a-a2725ab6103d",
+		Name:            "nofriedtofu",
+		URL:             "https://api.connect.posit.cloud",
+		ServerType:      server_type.ServerTypeConnectCloud,
+		AccountID:       "123",
+		AccountName:     "friedtofu",
+		RefreshToken:    "refresh-token",
+		AccessToken:     "access-token",
+		CloudEnvironment: "production",
+	})
+	s.EqualError(err, "URL value conflicts with existing credential (friedtofu) URL: https://api.connect.posit.cloud, account name: fried tofu")
+
+	err = cloudCred.ConflictCheck(Credential{
+		GUID:            "18cd5640-bee5-4b2a-992a-a2725ab6103d",
+		Name:            "nofriedtofu",
+		URL:             "https://api.connect.posit.cloud",
+		ServerType:      server_type.ServerTypeConnectCloud,
+		AccountID:       "456",
+		AccountName:     "friedpotato",
+		RefreshToken:    "refresh-token",
+		AccessToken:     "access-token",
+		CloudEnvironment: "production",
+	})
+	s.NoError(err)
+	
+	// Test that same AccountID with different CloudEnvironment doesn't conflict
+	err = cloudCred.ConflictCheck(Credential{
+		GUID:            "18cd5640-bee5-4b2a-992a-a2725ab6103d",
+		Name:            "nofriedtofu",
+		URL:             "https://api.connect.posit.cloud",
+		ServerType:      server_type.ServerTypeConnectCloud,
+		AccountID:       "123", // Same AccountID
+		AccountName:     "fried tofu",
+		RefreshToken:    "refresh-token",
+		AccessToken:     "access-token",
+		CloudEnvironment: "staging", // Different environment
+	})
+	s.NoError(err)
+	
+	// Test that different AccountID with same CloudEnvironment doesn't conflict
+	err = cloudCred.ConflictCheck(Credential{
+		GUID:            "18cd5640-bee5-4b2a-992a-a2725ab6103d",
+		Name:            "nofriedtofu",
+		URL:             "https://api.connect.posit.cloud",
+		ServerType:      server_type.ServerTypeConnectCloud,
+		AccountID:       "789", // Different AccountID
+		AccountName:     "friedpotato",
+		RefreshToken:    "refresh-token",
+		AccessToken:     "access-token",
+		CloudEnvironment: "production", // Same environment
+	})
+	s.NoError(err)
+	
+	// Test that same AccountID AND same CloudEnvironment causes a conflict
+	err = cloudCred.ConflictCheck(Credential{
+		GUID:            "18cd5640-bee5-4b2a-992a-a2725ab6103d",
+		Name:            "nofriedtofu",
+		URL:             "https://api.connect.posit.cloud",
+		ServerType:      server_type.ServerTypeConnectCloud,
+		AccountID:       "123", // Same AccountID
+		AccountName:     "fried tofu",
+		RefreshToken:    "refresh-token",
+		AccessToken:     "access-token",
+		CloudEnvironment: "production", // Same environment
+	})
+	s.EqualError(err, "URL value conflicts with existing credential (friedtofu) URL: https://api.connect.posit.cloud, account name: fried tofu")
 }
 
 func (s *CredentialsServiceTestSuite) TestCredentialRecord() {
@@ -191,6 +281,33 @@ func (s *CreateCredentialDetailsTestSuite) TestToCredential() {
 	s.Equal(cred.AccountName, "")
 	s.Equal(cred.RefreshToken, "")
 	s.Equal(cred.AccessToken, "")
+	s.Equal(cred.CloudEnvironment, types.CloudEnvironment(""))
+}
+
+func (s *CreateCredentialDetailsTestSuite) TestToCredential_ConnectCloud() {
+	details := CreateCredentialDetails{
+		ServerType:       server_type.ServerTypeConnectCloud,
+		Name:             "cloudcred",
+		URL:              "https://api.connect.posit.cloud",
+		AccountID:        "123",
+		AccountName:      "myaccount",
+		RefreshToken:     "refresh-token",
+		AccessToken:      "access-token",
+		CloudEnvironment: "production",
+	}
+	cred, err := details.ToCredential()
+	s.NoError(err)
+	s.NotEmpty(cred.GUID)
+	s.Equal(cred.Name, details.Name)
+	s.Equal(cred.URL, details.URL)
+	s.Equal(cred.ServerType, server_type.ServerTypeConnectCloud)
+	s.Equal(cred.AccountID, details.AccountID)
+	s.Equal(cred.AccountName, details.AccountName)
+	s.Equal(cred.RefreshToken, details.RefreshToken)
+	s.Equal(cred.AccessToken, details.AccessToken)
+	s.Equal(cred.CloudEnvironment, details.CloudEnvironment)
+	s.Equal(cred.ApiKey, "")
+	s.Equal(cred.SnowflakeConnection, "")
 }
 
 func (s *CreateCredentialDetailsTestSuite) TestToCredential_BlankDataErr() {
