@@ -3,9 +3,11 @@
 
 // Get the main webview iframe of the Publisher extension.
 Cypress.Commands.add("publisherWebview", () => {
+  // Wait up to 60 seconds (30 retries x 2s) for the publisher iframe, then reload once and try 10 more times.
+  // If still not found, log a clear error and fail the test.
   function findPublisherIframe(retries = 30, hasReloaded = false) {
     return cy
-      .get("iframe.webview.ready", { timeout: 20000 })
+      .get("iframe.webview.ready", { timeout: 30000 })
       .then(($iframes) => {
         if (Cypress.env("DEBUG_CYPRESS") === "true") {
           cy.task("print", `Found ${$iframes.length} webview.ready iframes`);
@@ -31,6 +33,9 @@ Cypress.Commands.add("publisherWebview", () => {
           cy.log("Publisher iframe not found after retries, reloading page...");
           return cy.reload().then(() => findPublisherIframe(10, true));
         } else {
+          cy.log(
+            "ERROR: Publisher iframe not found after waiting and reloading. UI may not have loaded correctly. If this happens often, check Connect service health or add a backend health check before running tests.",
+          );
           throw new Error(
             "Publisher iframe not found after waiting and reloading. UI may not have loaded correctly.",
           );
@@ -40,7 +45,7 @@ Cypress.Commands.add("publisherWebview", () => {
   return findPublisherIframe()
     .should("not.be.empty")
     .then(cy.wrap)
-    .find("iframe#active-frame", { timeout: 20000 })
+    .find("iframe#active-frame", { timeout: 30000 })
     .its("0.contentDocument.body")
     .should("not.be.empty")
     .then(cy.wrap);
