@@ -3,6 +3,7 @@
 import { AxiosInstance } from "axios";
 import { Credential, TestResult } from "../types/credentials";
 import { ServerType } from "../types/contentRecords";
+import { CONNECT_CLOUD_ENV_HEADER } from "../../constants";
 
 export class Credentials {
   private client: AxiosInstance;
@@ -44,7 +45,9 @@ export class Credentials {
       refreshToken,
       accessToken,
       serverType,
-    });
+    },
+    { headers: CONNECT_CLOUD_ENV_HEADER },
+  );
   }
 
   // Returns:

@@ -1,14 +1,13 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import { AxiosInstance } from "axios";
-import { CONNECT_CLOUD_ENV } from "../../constants";
+import { CONNECT_CLOUD_ENV_HEADER } from "../../constants";
 import {
   DeviceAuth,
   AuthToken,
   ConnectCloudAccount,
 } from "../types/connectCloud";
 
-const envHeader = { "Connect-Cloud-Environment": CONNECT_CLOUD_ENV };
 
 export class ConnectCloud {
   private client: AxiosInstance;
@@ -30,7 +29,7 @@ export class ConnectCloud {
     return this.client.post<DeviceAuth>(
       "connect-cloud/device-auth",
       {},
-      { headers: envHeader },
+      { headers: CONNECT_CLOUD_ENV_HEADER },
     );
   }
 
@@ -46,7 +45,7 @@ export class ConnectCloud {
     return this.client.post<AuthToken>(
       "connect-cloud/oauth/token",
       { deviceCode },
-      { headers: envHeader },
+      { headers: CONNECT_CLOUD_ENV_HEADER },
     );
   }
 
@@ -61,7 +60,7 @@ export class ConnectCloud {
   accounts(accessToken: string) {
     return this.client.get<ConnectCloudAccount[]>("connect-cloud/accounts", {
       headers: {
-        ...envHeader,
+        ...CONNECT_CLOUD_ENV_HEADER,
         Authorization: `Bearer ${accessToken}`,
       },
     });

@@ -81,21 +81,21 @@ type CredentialV0 struct {
 	ApiKey string `json:"apiKey"`
 }
 
-func (c *Credential) ConflictCheck(compareWith Credential) error {
-	if c.ServerType == server_type.ServerTypeConnectCloud {
+func (c *Credential) ConflictCheck(newCred Credential) error {
+	if newCred.ServerType == server_type.ServerTypeConnectCloud {
 		// this is a Connect Cloud credential
-		if c.AccountID == compareWith.AccountID && c.CloudEnvironment == compareWith.CloudEnvironment {
+		if c.ServerType == server_type.ServerTypeConnectCloud && c.AccountID == newCred.AccountID && c.CloudEnvironment == newCred.CloudEnvironment {
 			// Connect Cloud credentials must have unique AccountID and CloudEnvironment combinations.
 			return NewIdentityCollisionError(c.Name, c.URL, c.AccountName)
 		}
 	} else {
 		// this is a Connect or Snowflake credential
-		if c.URL == compareWith.URL {
+		if c.URL == newCred.URL {
 			// Connect/Snowflake credentials have unique URLs.
 			return NewIdentityCollisionError(c.Name, c.URL, c.AccountName)
 		}
 	}
-	if compareWith.Name == c.Name {
+	if newCred.Name == c.Name {
 		return NewNameCollisionError(c.Name, c.URL)
 	}
 	return nil
