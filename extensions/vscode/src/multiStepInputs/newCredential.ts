@@ -501,9 +501,9 @@ export async function newCredential(
       step: 0,
       totalSteps: 0,
       placeholder:
-        "This Posit Connect Cloud account is not publishable. Sign up for an indiviual plan?",
+        "You don't have permission to publish to this account. To publish, create a new account.",
       items: [
-        { label: "Sign up for an individual Posit Connect Cloud plan" },
+        { label: "Sign up for a new Posit Connect Cloud account" },
         { label: "Exit" },
       ],
       buttons: [],
