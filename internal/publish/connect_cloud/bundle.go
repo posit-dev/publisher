@@ -38,10 +38,6 @@ func (c *ServerPublisher) uploadBundle(
 	if err != nil {
 		return types.OperationError(op, fmt.Errorf("bundle upload failed: %w", err))
 	}
-	if err != nil {
-		uploadLog.Info("Done uploading files")
-		return types.OperationError(op, err)
-	}
 
 	// Update deployment record with new information
 	bundleID := types.BundleID(c.content.NextRevision.SourceBundleID)
