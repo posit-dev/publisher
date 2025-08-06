@@ -2,6 +2,7 @@
 
 import { AxiosInstance } from "axios";
 import { Credential, TestResult } from "../types/credentials";
+import { ServerType } from "../types/contentRecords";
 
 export class Credentials {
   private client: AxiosInstance;
@@ -27,13 +28,21 @@ export class Credentials {
     url: string,
     apiKey: string,
     snowflakeConnection: string,
-    serverType: string,
+    accountId: string,
+    accountName: string,
+    refreshToken: string,
+    accessToken: string,
+    serverType: ServerType,
   ) {
     return this.client.post<Credential>(`credentials`, {
       name,
       url,
       apiKey,
       snowflakeConnection,
+      accountId,
+      accountName,
+      refreshToken,
+      accessToken,
       serverType,
     });
   }

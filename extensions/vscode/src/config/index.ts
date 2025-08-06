@@ -1,6 +1,7 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import { development } from "./development";
+import { production } from "./production";
 import { staging } from "./staging";
 
 export enum env {
@@ -22,8 +23,7 @@ if (process.env.CONNECT_CLOUD_ENV === env.STAGING) {
 } else if (process.env.CONNECT_CLOUD_ENV === env.DEV) {
   config = { ...development, env: env.DEV };
 } else {
-  // TODO: Change for go live: { ...production, env: env.PROD }
-  config = { ...staging, env: env.DEV };
+  config = { ...production, env: env.PROD };
 }
 
 export default config;
