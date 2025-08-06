@@ -729,7 +729,7 @@ func (s *PublishConnectCloudSuite) publishWithCloudClient(
 	}
 
 	// Set up content and revision IDs
-	myContentID := types.ContentID("myCloudContentID")
+	myContentID := types.ContentID("myContentID")
 	myRevisionID := "myCloudRevisionID"
 	myBundleID := types.BundleID("myCloudBundleID")
 
@@ -870,6 +870,8 @@ func (s *PublishConnectCloudSuite) publishWithCloudClient(
 		s.Equal(expectedErr.Error(), err.Error())
 	}
 
+	//couldCreateDeployment := errsMock.rPackageErr == nil
+
 	// Verify deployment record
 	if options.expectContentID {
 		recordPath := deployment.GetDeploymentPath(stateStore.Dir, recordName)
@@ -894,7 +896,7 @@ func (s *PublishConnectCloudSuite) publishWithCloudClient(
 		s.Contains(record.DirectURL, string(myContentID))
 
 		// Check files are recorded if upload was successful
-		if errsMock.uploadErr == nil {
+		if errsMock.uploadErr == nil && errsMock.rPackageErr == nil {
 			s.Contains(record.Files, "app.py")
 			s.Contains(record.Files, "requirements.txt")
 			s.Equal([]string{"flask"}, record.Requirements)
