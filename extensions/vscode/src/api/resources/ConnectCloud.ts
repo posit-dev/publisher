@@ -8,7 +8,6 @@ import {
   ConnectCloudAccount,
 } from "../types/connectCloud";
 
-
 export class ConnectCloud {
   private client: AxiosInstance;
 

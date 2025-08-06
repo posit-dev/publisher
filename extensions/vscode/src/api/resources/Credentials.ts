@@ -35,19 +35,21 @@ export class Credentials {
     accessToken: string,
     serverType: ServerType,
   ) {
-    return this.client.post<Credential>(`credentials`, {
-      name,
-      url,
-      apiKey,
-      snowflakeConnection,
-      accountId,
-      accountName,
-      refreshToken,
-      accessToken,
-      serverType,
-    },
-    { headers: CONNECT_CLOUD_ENV_HEADER },
-  );
+    return this.client.post<Credential>(
+      `credentials`,
+      {
+        name,
+        url,
+        apiKey,
+        snowflakeConnection,
+        accountId,
+        accountName,
+        refreshToken,
+        accessToken,
+        serverType,
+      },
+      { headers: CONNECT_CLOUD_ENV_HEADER },
+    );
   }
 
   // Returns:
