@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added endpoints for performing OAuth Device Authorization Grant with Posit Cloud login. (#2692)
 - Added support to publishing schema for Connect Cloud. (#2729, #2747)
 
+### Changed
+
+- The "Select Deployment" input can now be dismissed by focusing another element
+  similar to other inputs. (#2780)
+
 ## [1.18.1]
 
 ### Fixed
