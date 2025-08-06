@@ -63,13 +63,6 @@ func (c *ServerPublisher) UpdateState() {
 	}
 }
 
-//
-//// getCloudUIURL transforms an API URL into the corresponding UI URL
-//// e.g., https://api.connect.posit.cloud -> https://connect.posit.cloud
-//func getCloudUIURL(apiURL string) string {
-//	return strings.Replace(apiURL, "api.", "", 1)
-//}
-
 func getCloudUIURL(env types.CloudEnvironment) string {
 	switch env {
 	case types.CloudEnvironmentDevelopment:
@@ -98,7 +91,7 @@ func (c *ServerPublisher) GetContentInfo(contentID types.ContentID) publishhelpe
 	uiBaseURL := getCloudUIURL(c.helper.Account.CloudEnvironment)
 	dashboardURL := fmt.Sprintf("%s/%s/content/%s", uiBaseURL, c.helper.Account.CloudAccountName, contentID)
 	directURL := getCloudDirectURL(c.helper.Account.CloudEnvironment, contentID)
-	logsURL := fmt.Sprintf("%s/logs", dashboardURL)
+	logsURL := fmt.Sprintf("%s/history", dashboardURL)
 	return publishhelper.ContentInfo{
 		ContentID:    contentID,
 		DashboardURL: dashboardURL,
