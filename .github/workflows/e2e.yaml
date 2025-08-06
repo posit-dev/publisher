@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DEBUG_CYPRESS: "true" # Set to true to enable extra logging
+      ACTIONS_STEP_DEBUG: "false" # Set to false to suppress yaml warnings
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -66,8 +67,8 @@ jobs:
         env:
           CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
 
-      - name: Print host user and group info
-        if: env.DEBUG_CYPRESS == 'true'
+      - name: "[DEBUG] Print host user and group info"
+        if: env.DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true'
         run: |
           echo "USER: $(whoami)"
           echo "UID: $(id -u)"
@@ -124,14 +125,6 @@ jobs:
             sleep 2
           done
 
-      - name: List VSIX files on host
-        working-directory: test/e2e
-        run: ls -l ../../dist || true
-
-      - name: List VSIX files in container
-        working-directory: test/e2e
-        run: docker compose exec code-server ls -l /home/coder/vsix || true
-
       - name: Install and wait for VS Code extension to be ready
         working-directory: test/e2e
         run: |
@@ -153,15 +146,15 @@ jobs:
             sleep 2
           done
 
-      - name: Print workspace file ownership before tests
-        if: env.DEBUG_CYPRESS == 'true'
+      - name: "[DEBUG] Print workspace file ownership before tests"
+        if: env.DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true'
         run: |
           docker exec publisher-e2e.code-server ls -lR /home/coder/workspace || true
 
       - name: Prepare test environment
         working-directory: test/e2e
         run: |
-          # Clean up any static TOML files before tests run to avoid 'file not found' errors
+          # Clean up any static TOML files before tests
           docker exec publisher-e2e.code-server rm -f /home/coder/workspace/static*.toml || true
 
       - name: Run Cypress tests
@@ -188,44 +181,41 @@ jobs:
           path: test/e2e/cypress/videos
           if-no-files-found: ignore
 
-      - name: List installed VS Code extensions
-        if: env.DEBUG_CYPRESS == 'true'
+      - name: "[DEBUG] List installed VS Code extensions"
+        if: env.DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true'
+        working-directory: test/e2e
         run: docker compose exec code-server code-server --list-extensions --show-versions || true
 
-      - name: Print code-server logs on failure
-        if: failure() && env.DEBUG_CYPRESS == 'true'
+      - name: "[DEBUG] Display test/e2e directory tree"
+        if: env.DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true'
+        run: |
+          echo "Directory tree for test/e2e:"
+          if command -v tree > /dev/null; then
+            tree test/e2e
+          else
+            find test/e2e
+          fi
+
+      - name: "[DEBUG] Print code-server logs on failure"
+        if: failure() && (env.DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true')
         run: |
           docker exec publisher-e2e.code-server cat /root/.local/share/code-server/logs/*/* || true
 
-      - name: Print Publisher extension logs on failure
-        if: failure() && env.DEBUG_CYPRESS == 'true'
+      - name: "[DEBUG] Print Publisher extension logs on failure"
+        if: failure() && (env.DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true')
         run: |
           echo "=== Last 50 lines of Publisher logs ==="
           docker exec publisher-e2e.code-server bash -c 'find /root/.local/share/code-server/logs -type f -name "*.log" | grep -E "posit.publisher|Deployment.log" | xargs tail -n 50 || true'
           echo "======================================="
 
-      - name: Print code-server container logs
-        if: failure() && env.DEBUG_CYPRESS == 'true'
+      - name: "[DEBUG] Print code-server container logs"
+        if: failure() && (env.DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true')
+        working-directory: test/e2e
         run: docker compose logs code-server || true
 
-      - name: List /home/coder directory contents
-        if: failure() && env.DEBUG_CYPRESS == 'true'
+      - name: "[DEBUG] List /home/coder directory contents"
+        if: failure() && (env.DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true')
         run: docker exec publisher-e2e.code-server ls -lR /home/coder || true
-
-      - name: Find all logs directories
-        if: failure() && env.DEBUG_CYPRESS == 'true'
-        run: |
-          docker exec publisher-e2e.code-server find / -type d -name logs 2>/dev/null | grep -v "/proc/" || true
-
-      - name: Find all recent log files
-        if: failure() && env.DEBUG_CYPRESS == 'true'
-        run: |
-          docker exec publisher-e2e.code-server find / -type f \( -name "*.log" -o -name "*.txt" \) 2>/dev/null | grep -v "/proc/" || true
-
-      - name: Print process info on failure
-        if: failure() && env.DEBUG_CYPRESS == 'true'
-        run: |
-          docker exec publisher-e2e.code-server ps aux || true
 
       - name: Stop containers
         if: always()
