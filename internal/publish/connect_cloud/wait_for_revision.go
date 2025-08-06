@@ -42,8 +42,7 @@ func (c *ServerPublisher) waitForRevision(contentID internaltypes.ContentID) err
 		// Check if publish has completed (success or failure)
 		if revision.PublishResult != "" {
 			if revision.PublishResult == types.PublishResultFailure {
-				errorMsg := fmt.Sprintf("publish failed: %s", revision.PublishErrorCode)
-				return internaltypes.OperationError(op, fmt.Errorf(errorMsg))
+				return internaltypes.OperationError(op, fmt.Errorf("publish failed: %s", revision.PublishErrorCode))
 			}
 
 			// Success case

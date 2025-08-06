@@ -1,5 +1,7 @@
 package types
 
+import "github.com/posit-dev/publisher/internal/types"
+
 // Copyright (C) 2025 by Posit Software, PBC.
 
 // UserResponse represents a response from the Connect Cloud user endpoint.
@@ -109,13 +111,13 @@ type CreateContentRequest struct {
 // UpdateContentRequest represents a request to update an existing content item.
 type UpdateContentRequest struct {
 	ContentRequestBase
-	ContentID string `json:"-"` // Not sent in the request body, used for the URL
+	ContentID types.ContentID `json:"-"` // Not sent in the request body, used for the URL
 }
 
 // ContentResponse represents a response from creating or updating a content item.
 type ContentResponse struct {
-	ID           string    `json:"id"`
-	NextRevision *Revision `json:"next_revision,omitempty"`
+	ID           types.ContentID `json:"id"`
+	NextRevision *Revision       `json:"next_revision,omitempty"`
 }
 
 // AuthorizationRequest represents a request to authorize access to a resource.

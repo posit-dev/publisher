@@ -7,6 +7,8 @@ import (
 	"io"
 	"time"
 
+	connectclient "github.com/posit-dev/publisher/internal/clients/connect"
+	connectcloudclient "github.com/posit-dev/publisher/internal/clients/connect_cloud"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/logging"
 	connectpublisher "github.com/posit-dev/publisher/internal/publish/connect"
@@ -15,6 +17,10 @@ import (
 	"github.com/posit-dev/publisher/internal/server_type"
 	"github.com/posit-dev/publisher/internal/types"
 )
+
+// Factories for API clients
+var connectClientFactory = connectclient.NewConnectClient
+var cloudClientFactory = connectcloudclient.NewConnectCloudClientWithAuth
 
 type ServerPublisher interface {
 	UpdateState()

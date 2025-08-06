@@ -3,6 +3,7 @@ package connect_cloud
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/posit-dev/publisher/internal/clients/http_client"
 	clienttypes "github.com/posit-dev/publisher/internal/clients/types"
 	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
 )
 
@@ -102,7 +104,7 @@ func (s *ConnectCloudClientSuite) TestCreateContent() {
 func (s *ConnectCloudClientSuite) TestUpdateContent() {
 	httpClient := &http_client.MockHTTPClient{}
 
-	contentID := "449e7a5c-69d3-4b8a-aaaf-5c9b713ebc65"
+	contentID := types.ContentID("449e7a5c-69d3-4b8a-aaaf-5c9b713ebc65")
 	request := &clienttypes.UpdateContentRequest{
 		ContentRequestBase: clienttypes.ContentRequestBase{
 			Title:       "my updated content",
@@ -137,7 +139,7 @@ func (s *ConnectCloudClientSuite) TestUpdateContent() {
 		},
 	}
 
-	httpClient.On("Patch", "/v1/contents/"+contentID, &request.ContentRequestBase, mock.Anything, mock.Anything).
+	httpClient.On("Patch", fmt.Sprintf("/v1/contents/%s", contentID), &request.ContentRequestBase, mock.Anything, mock.Anything).
 		Return(nil).RunFn = func(args mock.Arguments) {
 		result := args.Get(2).(*clienttypes.ContentResponse)
 		*result = *expectedResponse
@@ -221,7 +223,7 @@ func (s *ConnectCloudClientSuite) TestPublishContent() {
 	httpClient := &http_client.MockHTTPClient{}
 
 	contentID := "449e7a5c-69d3-4b8a-aaaf-5c9b713ebc65"
-	expectedURL := "/v1/contents/" + contentID + "/publish"
+	expectedURL := fmt.Sprintf("/v1/contents/%s/publish", contentID)
 
 	httpClient.On("Post", expectedURL, nil, mock.Anything, mock.Anything).
 		Return(nil)
@@ -234,4 +236,38 @@ func (s *ConnectCloudClientSuite) TestPublishContent() {
 	err := client.PublishContent(contentID)
 	s.NoError(err)
 	httpClient.AssertCalled(s.T(), "Post", expectedURL, nil, mock.Anything, mock.Anything)
+}
+
+func (s *ConnectCloudClientSuite) TestUpdateContentBundle() {
+	httpClient := &http_client.MockHTTPClient{}
+
+	contentID := types.ContentID("449e7a5c-69d3-4b8a-aaaf-5c9b713ebc65")
+	expectedURL := fmt.Sprintf("/v1/contents/%s?new_bundle=true", contentID)
+
+	expectedResponse := &clienttypes.ContentResponse{
+		ID: contentID,
+		NextRevision: &clienttypes.Revision{
+			ID:                    "559e7a5c-69d3-4b8a-bbaf-5c9b713ebc76",
+			PublishLogChannel:     "publish-log-channel-2",
+			PublishResult:         clienttypes.PublishResultSuccess,
+			SourceBundleID:        "559e7a5c-69d3-4b8a-bbaf-5c9b713ebc76",
+			SourceBundleUploadURL: "https://new-bundle.upload.url",
+		},
+	}
+
+	httpClient.On("Patch", expectedURL, nil, mock.Anything, mock.Anything).
+		Return(nil).RunFn = func(args mock.Arguments) {
+		result := args.Get(2).(*clienttypes.ContentResponse)
+		*result = *expectedResponse
+	}
+
+	client := &ConnectCloudClient{
+		client: httpClient,
+		log:    logging.New(),
+	}
+
+	response, err := client.UpdateContentBundle(contentID)
+	s.NoError(err)
+	s.Equal(expectedResponse, response)
+	httpClient.AssertCalled(s.T(), "Patch", expectedURL, nil, mock.Anything, mock.Anything)
 }

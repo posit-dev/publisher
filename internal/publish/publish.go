@@ -11,8 +11,6 @@ import (
 
 	"github.com/mitchellh/mapstructure"
 
-	connectclient "github.com/posit-dev/publisher/internal/clients/connect"
-	connectcloudclient "github.com/posit-dev/publisher/internal/clients/connect_cloud"
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/events"
@@ -97,6 +95,9 @@ func NewFromState(
 	pyexec, _ := pythonInterpreter.GetPythonExecutable()
 
 	packageManager, err := rPackageMapperFactory(s.Dir, rexec.Path, log)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create R package mapper: %w", err)
+	}
 
 	// Handle difference where we have no SaveName when redeploying, since it is
 	// only sent in the first deployment. In the end, both should equate to same
@@ -210,8 +211,6 @@ func (p *defaultPublisher) emitErrorEvents(err error) {
 		data))
 }
 
-var connectClientFactory = connectclient.NewConnectClient
-var cloudClientFactory = connectcloudclient.NewConnectCloudClientWithAuth
 var rPackageMapperFactory = renv.NewPackageMapper
 
 func (p *defaultPublisher) PublishDirectory() error {

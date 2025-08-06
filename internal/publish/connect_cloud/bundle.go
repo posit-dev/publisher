@@ -14,6 +14,8 @@ import (
 	"github.com/posit-dev/publisher/internal/util"
 )
 
+var UploadAPIClientFactory = connect_cloud_upload.NewConnectCloudUploadClient
+
 type uploadBundleStartData struct{}
 type uploadBundleSuccessData struct {
 	BundleID types.BundleID `mapstructure:"bundleId"`
@@ -31,7 +33,7 @@ func (c *ServerPublisher) uploadBundle(
 	// Upload bundle using the upload URL from the content response
 	uploadURL := c.content.NextRevision.SourceBundleUploadURL
 
-	uploadClient := connect_cloud_upload.NewConnectCloudUploadClient(uploadURL, c.log, 5*time.Minute)
+	uploadClient := UploadAPIClientFactory(uploadURL, c.log, 5*time.Minute)
 	err := uploadClient.UploadBundle(bundleReader)
 	if err != nil {
 		return types.OperationError(op, fmt.Errorf("bundle upload failed: %w", err))

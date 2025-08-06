@@ -10,10 +10,6 @@ import (
 	internal_types "github.com/posit-dev/publisher/internal/types"
 )
 
-type publishToServerStartData struct {
-	ContentID string `mapstructure:"contentId"`
-}
-
 type publishToServerSuccessData struct {
 	ContentID string `mapstructure:"contentId"`
 }
@@ -30,7 +26,7 @@ func (c *ServerPublisher) PublishToServer(contentID internal_types.ContentID, bu
 
 		updateRequest := &types.UpdateContentRequest{
 			ContentRequestBase: *base,
-			ContentID:          string(contentID),
+			ContentID:          contentID,
 		}
 
 		_, err = c.client.UpdateContent(updateRequest)
