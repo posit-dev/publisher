@@ -10,12 +10,14 @@ import (
 	"testing"
 
 	"github.com/posit-dev/publisher/internal/server_type"
+	"github.com/posit-dev/publisher/internal/types"
+
+	"github.com/stretchr/testify/suite"
+	"github.com/zalando/go-keyring"
 
 	"github.com/posit-dev/publisher/internal/credentials"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/stretchr/testify/suite"
-	"github.com/zalando/go-keyring"
 )
 
 type PostCredentialTestSuite struct {
@@ -84,7 +86,18 @@ func (s *PostCredentialTestSuite) Test201_ConnectCloud() {
 	response := PostCredentialsResponse{}
 	err = json.NewDecoder(rec.Body).Decode(&response)
 	s.NoError(err)
-	s.Equal(response.URL, "https://api.staging.connect.posit.cloud", "URL should be set according to the environment header")
+	s.Equal(PostCredentialsResponse{
+		GUID:             response.GUID, // GUID is generated, so we can't predict it
+		Name:             "example",
+		ServerType:       server_type.ServerTypeConnectCloud,
+		URL:              "https://staging.connect.posit.cloud",
+		ApiKey:           "",
+		AccountID:        "123",
+		AccountName:      "my account",
+		RefreshToken:     "123",
+		AccessToken:      "123",
+		CloudEnvironment: types.CloudEnvironmentStaging,
+	}, response)
 }
 
 func (s *PostCredentialTestSuite) Test409() {

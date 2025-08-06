@@ -31,7 +31,7 @@
             : undefined,
         ]"
       />
-      <div
+      <i
         v-if="codicon"
         class="tree-item-icon text-icon codicon"
         :class="codicon"
