@@ -33,7 +33,9 @@ import (
 	"encoding/json"
 
 	"github.com/google/uuid"
+
 	"github.com/posit-dev/publisher/internal/server_type"
+	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 
 	"github.com/posit-dev/publisher/internal/logging"
@@ -56,10 +58,11 @@ type Credential struct {
 	SnowflakeConnection string `json:"snowflakeConnection"`
 
 	// Connect Cloud fields
-	AccountID    string `json:"accountId"`
-	AccountName  string `json:"accountName"`
-	RefreshToken string `json:"refreshToken"`
-	AccessToken  string `json:"accessToken"`
+	AccountID        string                 `json:"accountId"`
+	AccountName      string                 `json:"accountName"`
+	RefreshToken     string                 `json:"refreshToken"`
+	AccessToken      string                 `json:"accessToken"`
+	CloudEnvironment types.CloudEnvironment `json:"cloudEnvironment"`
 }
 
 type CredentialV2 = Credential
@@ -79,11 +82,18 @@ type CredentialV0 struct {
 }
 
 func (c *Credential) ConflictCheck(compareWith Credential) error {
-	if compareWith.URL == c.URL && compareWith.AccountID == c.AccountID {
-		// Connect/Snowflake credentials have unique URLs and empty AccountID.
-		// Connect Cloud credentials may have duplicate URLs, but their account IDs must be unique. AccountName is also
-		// unique, but may become unstable in the future if we allow users to change it.
-		return NewIdentityCollisionError(c.Name, c.URL, c.AccountName)
+	if c.ServerType == server_type.ServerTypeConnectCloud {
+		// this is a Connect Cloud credential
+		if c.AccountID == compareWith.AccountID && c.CloudEnvironment == compareWith.CloudEnvironment {
+			// Connect Cloud credentials must have unique AccountID and CloudEnvironment combinations.
+			return NewIdentityCollisionError(c.Name, c.URL, c.AccountName)
+		}
+	} else {
+		// this is a Connect or Snowflake credential
+		if c.URL == compareWith.URL {
+			// Connect/Snowflake credentials have unique URLs.
+			return NewIdentityCollisionError(c.Name, c.URL, c.AccountName)
+		}
 	}
 	if compareWith.Name == c.Name {
 		return NewNameCollisionError(c.Name, c.URL)
@@ -126,6 +136,7 @@ func (cr *CredentialV1) toV2() (*CredentialV2, error) {
 		AccountID:           "",
 		RefreshToken:        "",
 		AccessToken:         "",
+		CloudEnvironment:    "",
 	}, nil
 }
 
@@ -175,10 +186,11 @@ type CreateCredentialDetails struct {
 	SnowflakeConnection string
 
 	// Connect Cloud fields
-	AccountID    string
-	AccountName  string
-	RefreshToken string
-	AccessToken  string
+	AccountID        string
+	AccountName      string
+	RefreshToken     string
+	AccessToken      string
+	CloudEnvironment types.CloudEnvironment
 }
 
 func (details CreateCredentialDetails) ToCredential() (*Credential, error) {
@@ -225,6 +237,7 @@ func (details CreateCredentialDetails) ToCredential() (*Credential, error) {
 		AccountName:         details.AccountName,
 		RefreshToken:        details.RefreshToken,
 		AccessToken:         details.AccessToken,
+		CloudEnvironment:    details.CloudEnvironment,
 	}, nil
 }
 

@@ -17,6 +17,7 @@ import (
 
 	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/clients/http_client"
+	clienttypes "github.com/posit-dev/publisher/internal/clients/types"
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/logging"
@@ -165,37 +166,37 @@ func (c *ConnectClient) TestAuthentication(log logging.Logger) (*User, error) {
 }
 
 type connectGetContentDTO struct {
-	GUID               types.ContentID    `json:"guid"`
-	Name               types.ContentName  `json:"name"`
-	Title              types.NullString   `json:"title"`
-	Description        string             `json:"description"`
-	AccessType         string             `json:"access_type"`
-	ConnectionTimeout  types.NullInt32    `json:"connection_timeout"`
-	ReadTimeout        types.NullInt32    `json:"read_timeout"`
-	InitTimeout        types.NullInt32    `json:"init_timeout"`
-	IdleTimeout        types.NullInt32    `json:"idle_timeout"`
-	MaxProcesses       types.NullInt32    `json:"max_processes"`
-	MinProcesses       types.NullInt32    `json:"min_processes"`
-	MaxConnsPerProcess types.NullInt32    `json:"max_conns_per_process"`
-	LoadFactor         types.NullFloat64  `json:"load_factor"`
-	Created            types.Time         `json:"created_time"`
-	LastDeployed       types.Time         `json:"last_deployed_time"`
-	BundleId           types.NullInt64Str `json:"bundle_id"`
-	AppMode            AppMode            `json:"app_mode"`
-	ContentCategory    string             `json:"content_category"`
-	Parameterized      bool               `json:"parameterized"`
-	ClusterName        types.NullString   `json:"cluster_name"`
-	ImageName          types.NullString   `json:"image_name"`
-	RVersion           types.NullString   `json:"r_version"`
-	PyVersion          types.NullString   `json:"py_version"`
-	QuartoVersion      types.NullString   `json:"quarto_version"`
-	RunAs              types.NullString   `json:"run_as"`
-	RunAsCurrentUser   bool               `json:"run_as_current_user"`
-	OwnerGUID          types.GUID         `json:"owner_guid"`
-	ContentURL         string             `json:"content_url"`
-	DashboardURL       string             `json:"dashboard_url"`
-	Role               string             `json:"app_role"`
-	Id                 types.Int64Str     `json:"id"`
+	GUID               types.ContentID     `json:"guid"`
+	Name               types.ContentName   `json:"name"`
+	Title              types.NullString    `json:"title"`
+	Description        string              `json:"description"`
+	AccessType         string              `json:"access_type"`
+	ConnectionTimeout  types.NullInt32     `json:"connection_timeout"`
+	ReadTimeout        types.NullInt32     `json:"read_timeout"`
+	InitTimeout        types.NullInt32     `json:"init_timeout"`
+	IdleTimeout        types.NullInt32     `json:"idle_timeout"`
+	MaxProcesses       types.NullInt32     `json:"max_processes"`
+	MinProcesses       types.NullInt32     `json:"min_processes"`
+	MaxConnsPerProcess types.NullInt32     `json:"max_conns_per_process"`
+	LoadFactor         types.NullFloat64   `json:"load_factor"`
+	Created            types.Time          `json:"created_time"`
+	LastDeployed       types.Time          `json:"last_deployed_time"`
+	BundleId           types.NullInt64Str  `json:"bundle_id"`
+	AppMode            clienttypes.AppMode `json:"app_mode"`
+	ContentCategory    string              `json:"content_category"`
+	Parameterized      bool                `json:"parameterized"`
+	ClusterName        types.NullString    `json:"cluster_name"`
+	ImageName          types.NullString    `json:"image_name"`
+	RVersion           types.NullString    `json:"r_version"`
+	PyVersion          types.NullString    `json:"py_version"`
+	QuartoVersion      types.NullString    `json:"quarto_version"`
+	RunAs              types.NullString    `json:"run_as"`
+	RunAsCurrentUser   bool                `json:"run_as_current_user"`
+	OwnerGUID          types.GUID          `json:"owner_guid"`
+	ContentURL         string              `json:"content_url"`
+	DashboardURL       string              `json:"dashboard_url"`
+	Role               string              `json:"app_role"`
+	Id                 types.Int64Str      `json:"id"`
 	// Tags         []tagOutputDTO    `json:"tags,omitempty"`
 	// Owner        *ownerOutputDTO   `json:"owner,omitempty"`
 }
@@ -540,9 +541,10 @@ func (c *ConnectClient) ValidateDeploymentTarget(contentID types.ContentID, cfg 
 
 	// Verify content type has not changed
 	log.Info("Verifying app mode is the same")
-	configAppType := AppModeFromType(cfg.Type)
-	if content.AppMode != configAppType && content.AppMode != UnknownMode {
-		msg := fmt.Sprintf("Content was previously deployed as '%s' but your configuration is set to '%s'.", ContentTypeFromAppMode(content.AppMode), cfg.Type)
+	configAppType := clienttypes.AppModeFromType(cfg.Type)
+	if content.AppMode != configAppType && content.AppMode != clienttypes.UnknownMode {
+		msg := fmt.Sprintf("Content was previously deployed as '%s' but your configuration is set to '%s'.",
+			clienttypes.ContentTypeFromAppMode(content.AppMode), cfg.Type)
 		return types.NewAgentError(events.AppModeNotModifiableCode, errors.New(msg), nil)
 	}
 
