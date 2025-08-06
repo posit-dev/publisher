@@ -21,7 +21,6 @@ func getCloudContentType(contentType config.ContentType) (types.ContentType, err
 		return types.ContentTypeShiny, nil
 	case config.ContentTypePythonStreamlit:
 		return types.ContentTypeStreamlit, nil
-	case config.ContentTypePythonGradio:
 	case config.ContentTypeQuartoDeprecated, config.ContentTypeQuarto:
 		return types.ContentTypeQuarto, nil
 	case config.ContentTypeRMarkdown:

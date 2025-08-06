@@ -870,8 +870,6 @@ func (s *PublishConnectCloudSuite) publishWithCloudClient(
 		s.Equal(expectedErr.Error(), err.Error())
 	}
 
-	//couldCreateDeployment := errsMock.rPackageErr == nil
-
 	// Verify deployment record
 	if options.expectContentID {
 		recordPath := deployment.GetDeploymentPath(stateStore.Dir, recordName)
