@@ -14,7 +14,7 @@
       :title="credential.name"
       :description="getDescription(credential)"
       :data-automation="`${credential.name}-list`"
-      posit-icon="posit-publisher-icons-posit-logo"
+      codicon="posit-publisher-icons-posit-logo"
       align-icon-with-twisty
       :data-vscode-context="vscodeContext(credential)"
     />
