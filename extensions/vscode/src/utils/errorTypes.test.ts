@@ -23,6 +23,12 @@ import {
   isErrTOMLValidationError,
   errTOMLValidationErrorMessage,
   isErrPythonExecNotFoundError,
+  isErrDeviceAuthAccessDenied,
+  errDeviceAuthAccessDeniedMessage,
+  ErrDeviceAuthAccessDenied,
+  ErrDeviceAuthExpiredToken,
+  errDeviceAuthExpiredTokenMessage,
+  isDeviceAuthExpiredToken,
 } from "./errorTypes";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -367,5 +373,71 @@ describe("resolveAgentJsonErrorMsg", () => {
     );
 
     expect(msg).toBe("Could not find a Python executable.");
+  });
+});
+
+describe("ErrDeviceAuthAccessDenied", () => {
+  test("isErrDeviceAuthAccessDenied", () => {
+    let result = isErrDeviceAuthAccessDenied(
+      mkAxiosJsonErr({
+        code: "deviceAuthAccessDenied",
+      }),
+    );
+
+    expect(result).toBe(true);
+
+    result = isErrDeviceAuthAccessDenied(
+      mkAxiosJsonErr({
+        code: "i_let_u_in",
+      }),
+    );
+
+    expect(result).toBe(false);
+  });
+
+  test("errDeviceAuthAccessDeniedMessage", () => {
+    const err = mkAxiosJsonErr({
+      code: "deviceAuthAccessDenied",
+    });
+
+    const msg = errDeviceAuthAccessDeniedMessage(
+      err as axiosErrorWithJson<ErrDeviceAuthAccessDenied>,
+    );
+    expect(msg).toBe(
+      `Posit Connect Cloud access denied: deviceAuthAccessDenied`,
+    );
+  });
+});
+
+describe("ErrDeviceAuthExpiredToken", () => {
+  test("isDeviceAuthExpiredToken", () => {
+    let result = isDeviceAuthExpiredToken(
+      mkAxiosJsonErr({
+        code: "deviceAuthExpiredToken",
+      }),
+    );
+
+    expect(result).toBe(true);
+
+    result = isDeviceAuthExpiredToken(
+      mkAxiosJsonErr({
+        code: "i_expired_ur_token",
+      }),
+    );
+
+    expect(result).toBe(false);
+  });
+
+  test("errDeviceAuthExpiredTokenMessage", () => {
+    const err = mkAxiosJsonErr({
+      code: "deviceAuthExpiredToken",
+    });
+
+    const msg = errDeviceAuthExpiredTokenMessage(
+      err as axiosErrorWithJson<ErrDeviceAuthExpiredToken>,
+    );
+    expect(msg).toBe(
+      `Expired Posit Connect Cloud authorization token: deviceAuthExpiredToken`,
+    );
   });
 });

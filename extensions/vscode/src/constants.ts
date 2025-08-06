@@ -132,3 +132,5 @@ export const DebounceDelaysMS = {
 };
 
 export const CONNECT_CLOUD_ENV = config.env;
+export const CONNECT_CLOUD_SIGNUP_URL = `${config.connectCloudURL}/logout?redirect=${config.cloudURL}/register?redirect=`;
+export const CONNECT_CLOUD_ACCOUNT_URL = `${config.connectCloudURL}/account/done`;

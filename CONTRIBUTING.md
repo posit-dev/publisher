@@ -113,20 +113,16 @@ an AMD64 architecture. If you are running on an ARM64 architecture (such as Appl
 
 ##### Connect Server License
 
-To run the end-to-end tests, you will need a valid Posit Connect server license set within your environment within the `CONNECT_LICENSE` environment variable. We higly recommend setting this variable in your shell profile (e.g., `.bashrc`, `.zshrc`, etc.) so that it is available in all terminal sessions.
+To run the end-to-end tests, you will need a valid Posit Connect server license.
+Set the `CONNECT_LICENSE` environment variable.
 
 ```bash
 export CONNECT_LICENSE="your-connect-license-key"
 ```
 
-To get an internal license, you can use the new [License Management app](https://connect.posit.it/support/license_management/)
-so users can create their own license keys for internal use! If you do not have access to this app, please reach out in #support.
-
 If you have to diagnose issues with the connect license, you can check the license status as reported by the Connect server by running the
 following command within the e2e-connect-publisher-e2e Docker container: `cat /var/log/rstudio/rstudio-connect/rstudio-connect.log`.
 Typically there will be a line which indicates a licensing failure, if that is the case.
-
-````bash
 
 #### E2E Test Setup
 
@@ -137,7 +133,7 @@ This can be done by running the following command from the `test/e2e` subdirecto
 ```bash
 cd test/e2e
 python3 -m venv .venv
-````
+```
 
 Activate the virtual environment and install the dependencies:
 
