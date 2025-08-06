@@ -36,6 +36,7 @@
         class="tree-item-icon text-icon codicon"
         :class="codicon"
       />
+      <i v-if="positIcon" class="tree-item-icon text-icon" :class="positIcon" />
       <div class="tree-item-label-container">
         <span class="tree-item-title" data-automation="req">{{ title }}</span>
         <span v-if="$slots.description" class="tree-item-description">
@@ -75,6 +76,7 @@ interface Props {
   tooltip?: string;
   alignIconWithTwisty?: boolean;
   codicon?: string;
+  positIcon?: string;
   actions?: ActionButton[];
   indentLevel?: number;
   expandable?: boolean;
