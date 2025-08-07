@@ -40,7 +40,7 @@ func ServerTypeFromURL(urlStr string) (ServerType, error) {
 		return "", err
 	}
 	host := u.Hostname()
-	if strings.HasSuffix(host, ".connect.posit.cloud") {
+	if strings.HasSuffix(host, "connect.posit.cloud") {
 		return ServerTypeConnectCloud, nil
 	} else if strings.HasSuffix(host, ".snowflakecomputing.app") {
 		return ServerTypeSnowflake, nil
@@ -48,4 +48,13 @@ func ServerTypeFromURL(urlStr string) (ServerType, error) {
 		return ServerTypeSnowflake, nil
 	}
 	return ServerTypeConnect, nil
+}
+
+func (t ServerType) IsCloud() bool {
+	return t == ServerTypeConnectCloud
+}
+
+func (t ServerType) IsConnectLike() bool {
+	// Snowflake is Posit Connect under the hood, but has a different auth model.
+	return t == ServerTypeConnect || t == ServerTypeSnowflake
 }
