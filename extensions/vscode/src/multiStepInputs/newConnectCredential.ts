@@ -39,7 +39,7 @@ export async function newConnectCredential(
   viewId: string,
   viewTitle: string,
   startingServerUrl?: string,
-): Promise<string | undefined> {
+): Promise<Credential | undefined> {
   // ***************************************************************
   // API Calls and results
   // ***************************************************************
@@ -350,8 +350,10 @@ export async function newConnectCredential(
   }
 
   // ***************************************************************
-  // Get the list of existing credentials
-  // Kick off the input collection
+  // Get the list of existing credentials while showing progress.
+  // Kick off the input collection and await until it completes.
+  // This is a promise which returns the state data used to
+  // collect the info.
   // ***************************************************************
   credentials = await getExistingCredentials(viewId);
   const state = await collectInputs();
@@ -379,6 +381,7 @@ export async function newConnectCredential(
     isQuickPickItem(state.data.url) ||
     isMissingConnectStateData(state)
   ) {
+    console.log("User has dismissed the New Connect Credential flow. Exiting.");
     return;
   }
 
@@ -389,8 +392,9 @@ export async function newConnectCredential(
     typeof snowflakeConnection !== "string" ? "" : snowflakeConnection;
 
   // create the credential!
+  let newCredential: Credential | undefined = undefined;
   try {
-    await api.credentials.create(
+    const resp = await api.credentials.create(
       state.data.name,
       state.data.url,
       state.data.apiKey,
@@ -401,10 +405,11 @@ export async function newConnectCredential(
       "",
       serverType,
     );
+    newCredential = resp.data;
   } catch (error: unknown) {
     const summary = getSummaryStringFromError("credentials::add", error);
     window.showInformationMessage(summary);
   }
 
-  return state.data.name;
+  return newCredential;
 }

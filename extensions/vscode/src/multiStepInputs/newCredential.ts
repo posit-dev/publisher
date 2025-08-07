@@ -1,12 +1,7 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
-import {
-  MultiStepInput,
-  MultiStepState,
-  isQuickPickItem,
-} from "./multiStepHelper";
-
-import { ServerType, ProductName } from "src/api";
+import { MultiStepInput, MultiStepState } from "./multiStepHelper";
+import { Credential, ServerType, ProductName } from "src/api";
 import { extensionSettings } from "src/extension";
 import { isConnectCloud, platformList } from "src/multiStepInputs/common";
 import { newConnectCredential } from "./newConnectCredential";
@@ -18,10 +13,11 @@ const viewTitle = "Create a New Credential";
 export async function newCredential(
   viewId: string,
   startingServerUrl?: string,
-): Promise<string | undefined> {
+): Promise<Credential | undefined> {
   // the serverType will be overwritten in the very first step
   // when the platform is selected
   let serverType: ServerType = ServerType.CONNECT;
+  let newCredential: Credential | undefined = undefined;
 
   // ***************************************************************
   // Order of all steps for creating a new credential
@@ -43,11 +39,7 @@ export async function newCredential(
       step: 0,
       lastStep: 0,
       totalSteps: 0,
-      data: {
-        // each attribute is initialized to undefined
-        // to be returned when it has not been canceled
-        name: <string | undefined>undefined, // eventual type is string
-      },
+      data: {},
       promptStepNumbers: {},
     };
 
@@ -57,7 +49,7 @@ export async function newCredential(
         step: (input) => inputPlatform(input, state),
       });
     } else {
-      state.data.name = await newConnectCredential(
+      newCredential = await newConnectCredential(
         viewId,
         viewTitle,
         startingServerUrl,
@@ -86,12 +78,12 @@ export async function newCredential(
     serverType = enumKey ? ServerType[enumKey] : serverType;
 
     if (isConnectCloud(serverType)) {
-      state.data.name = await newConnectCloudCredential(viewId, viewTitle);
+      newCredential = await newConnectCloudCredential(viewId, viewTitle);
       return;
     }
 
     // CONNECT was selected
-    state.data.name = await newConnectCredential(
+    newCredential = await newConnectCredential(
       viewId,
       viewTitle,
       startingServerUrl,
@@ -99,20 +91,17 @@ export async function newCredential(
   }
 
   // ***************************************************************
-  // Kick off the input collection
+  // Kick off the input collection and await until it completes.
   // ***************************************************************
-  const state = await collectInputs();
+  await collectInputs();
 
   // make sure user has not hit escape or moved away from the window
   // before completing the steps. This also serves as a type guard on
   // our state data vars down to the actual type desired
-  if (
-    // have to add type guards here to eliminate the variability
-    state.data.name === undefined ||
-    isQuickPickItem(state.data.name)
-  ) {
+  if (!newCredential) {
+    console.log("User has dismissed the New Credential flow. Exiting.");
     return;
   }
 
-  return state.data.name;
+  return newCredential;
 }

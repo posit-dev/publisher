@@ -35,7 +35,7 @@ import {
 export async function newConnectCloudCredential(
   viewId: string,
   viewTitle: string,
-): Promise<string | undefined> {
+): Promise<Credential | undefined> {
   // ***************************************************************
   // API Calls and results
   // ***************************************************************
@@ -433,8 +433,10 @@ export async function newConnectCloudCredential(
   }
 
   // ***************************************************************
-  // Get the list of existing credentials
-  // Kick off the input collection
+  // Get the list of existing credentials while showing progress.
+  // Kick off the input collection and await until it completes.
+  // This is a promise which returns the state data used to
+  // collect the info.
   // ***************************************************************
   credentials = await getExistingCredentials(viewId);
   const state = await collectInputs();
@@ -455,12 +457,16 @@ export async function newConnectCloudCredential(
     state.data.accountName === undefined ||
     isQuickPickItem(state.data.accountName)
   ) {
+    console.log(
+      "User has dismissed the New Connect Cloud Credential flow. Exiting.",
+    );
     return;
   }
 
   // create the credential!
+  let newCredential: Credential | undefined = undefined;
   try {
-    await api.credentials.create(
+    const resp = await api.credentials.create(
       state.data.name,
       "",
       "",
@@ -471,10 +477,11 @@ export async function newConnectCloudCredential(
       state.data.accessToken,
       serverType,
     );
+    newCredential = resp.data;
   } catch (error: unknown) {
     const summary = getSummaryStringFromError("credentials::add", error);
     window.showInformationMessage(summary);
   }
 
-  return state.data.name;
+  return newCredential;
 }

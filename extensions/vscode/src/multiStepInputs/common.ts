@@ -32,6 +32,8 @@ import {
 import axios from "axios";
 import { showProgress } from "src/utils/progress";
 
+export const createNewCredentialLabel = "Create a New Credential";
+
 // Search for the first credential that includes
 // the targetURL.
 export function findExistingCredentialByURL(
@@ -210,7 +212,7 @@ export const inputCredentialNameStep = async (
           severity: InputBoxValidationSeverity.Error,
         });
       }
-      if (input === "Create a New Credential") {
+      if (input === createNewCredentialLabel) {
         return Promise.resolve({
           message:
             "Error: Nickname is reserved for internal use. Please provide another value.",

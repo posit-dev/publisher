@@ -1719,10 +1719,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           this.webviewConduit.sendMsg({
             kind: HostToWebviewMessageType.SHOW_DISABLE_OVERLAY,
           });
-          credentialName = await newCredential(
+          const credential = await newCredential(
             Views.HomeView,
             contentRecord.serverUrl,
           );
+          credentialName = credential?.name;
           if (!credentialName) {
             return undefined;
           }
@@ -1764,10 +1765,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       this.state.findCredentialForContentRecord(currentContentRecord);
     let credentialName = credential?.name;
     if (!credentialName) {
-      credentialName = await newCredential(
+      const credential = await newCredential(
         Views.HomeView,
         currentContentRecord.serverUrl,
       );
+      credentialName = credential?.name;
       if (!credentialName) {
         return undefined;
       }
