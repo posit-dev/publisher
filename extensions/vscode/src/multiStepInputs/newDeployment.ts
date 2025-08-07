@@ -597,6 +597,18 @@ export async function newDeployment(
   }
   await collectInputs();
 
+  const isMissingCredentialData = () => {
+    // either the existingCredentialName needs to be present and legitimate
+    // or the newOrSelectedCredential object must be present
+    return (
+      (!newCredentialForced() &&
+        (!newDeploymentData.existingCredentialName ||
+          (newDeploymentData.existingCredentialName &&
+            newCredentialSelected()))) ||
+      (newCredentialForced() && !newOrSelectedCredential)
+    );
+  };
+
   // make sure user has not hit escape or moved away from the window
   // before completing the steps. This also serves as a type guard on
   // our state data vars down to the actual type desired
@@ -604,8 +616,7 @@ export async function newDeployment(
     !newDeploymentData.entrypoint.filePath ||
     !newDeploymentData.entrypoint.inspectionResult ||
     !newDeploymentData.title ||
-    (!newCredentialForced() && !newDeploymentData.existingCredentialName) ||
-    (newCredentialForced() && !newOrSelectedCredential)
+    isMissingCredentialData()
   ) {
     console.log("User has dismissed the New Deployment flow. Exiting.");
     return undefined;

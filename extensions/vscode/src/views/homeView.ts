@@ -1095,13 +1095,17 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
    * Once the server url is provided, the user is prompted with the url hostname as the default server name.
    */
   public addCredential = async (startingServerUrl?: string) => {
-    const credential = await newCredential(
-      Views.HomeView,
-      createNewCredentialLabel,
-      startingServerUrl,
-    );
-    if (credential) {
-      this.refreshCredentials();
+    try {
+      const credential = await newCredential(
+        Views.HomeView,
+        createNewCredentialLabel,
+        startingServerUrl,
+      );
+      if (credential) {
+        this.refreshCredentials();
+      }
+    } catch {
+      /* the user dismissed this flow, do nothing more */
     }
   };
 
@@ -1733,6 +1737,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           if (!credentialName) {
             return undefined;
           }
+        } catch {
+          /* the user dismissed this flow, do nothing more */
+          return undefined;
         } finally {
           // enable our home view, we are done with our sequence
           this.webviewConduit.sendMsg({
@@ -1771,12 +1778,16 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       this.state.findCredentialForContentRecord(currentContentRecord);
     let credentialName = credential?.name;
     if (!credentialName) {
-      const credential = await newCredential(
-        Views.HomeView,
-        createNewCredentialLabel,
-        currentContentRecord.serverUrl,
-      );
-      credentialName = credential?.name;
+      try {
+        const credential = await newCredential(
+          Views.HomeView,
+          createNewCredentialLabel,
+          currentContentRecord.serverUrl,
+        );
+        credentialName = credential?.name;
+      } catch {
+        /* the user dismissed this flow, do nothing more */
+      }
       if (!credentialName) {
         return undefined;
       }
