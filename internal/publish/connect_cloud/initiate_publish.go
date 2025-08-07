@@ -15,7 +15,6 @@ type deployBundleSuccessData struct {
 }
 
 func (c *ServerPublisher) initiatePublish(contentID types.ContentID) error {
-
 	op := events.PublishDeployBundleOp
 	log := c.log.WithArgs(logging.LogKeyOp, op)
 

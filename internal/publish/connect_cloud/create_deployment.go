@@ -46,7 +46,7 @@ func (c *ServerPublisher) CreateDeployment() (content_types.ContentID, error) {
 	// Store the content response for later use
 	c.content = contentResponse
 
-	contentID := content_types.ContentID(contentResponse.ID)
+	contentID := contentResponse.ID
 	log.Info("Created deployment", "content_id", contentID)
 
 	c.emitter.Emit(events.New(op, events.SuccessPhase, events.NoError, createDeploymentSuccessData{

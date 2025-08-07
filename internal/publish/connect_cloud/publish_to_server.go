@@ -40,7 +40,7 @@ func (c *ServerPublisher) PublishToServer(contentID internal_types.ContentID, bu
 		}
 	}
 
-	err := c.uploadBundle(bundleReader, contentID)
+	err := c.uploadBundle(bundleReader)
 	if err != nil {
 		return err
 	}

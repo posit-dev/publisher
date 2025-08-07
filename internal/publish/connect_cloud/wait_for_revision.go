@@ -19,21 +19,21 @@ const (
 	maxPollTime = 5 * time.Minute
 )
 
+var sleep = time.Sleep
+var since = time.Since
+
 func (c *ServerPublisher) waitForRevision(contentID internaltypes.ContentID) error {
 	op := events.PublishWaitForDeploymentOp
 	log := c.log.WithArgs(logging.LogKeyOp, op)
 
 	// Get the revision ID to monitor for completion
 	revisionID := c.content.NextRevision.ID
-	if revisionID == "" {
-		return internaltypes.OperationError(op, fmt.Errorf("no revision ID found in content response"))
-	}
 
 	// Wait for publish to complete by polling the revision status
 	log.Info("Waiting for publish to complete", "revision_id", revisionID)
 
 	startTime := time.Now()
-	for time.Since(startTime) < maxPollTime {
+	for since(startTime) < maxPollTime {
 		revision, err := c.client.GetRevision(revisionID)
 		if err != nil {
 			return internaltypes.OperationError(op, fmt.Errorf("failed to get revision status: %w", err))
@@ -54,7 +54,7 @@ func (c *ServerPublisher) waitForRevision(contentID internaltypes.ContentID) err
 		}
 
 		// Wait before polling again
-		time.Sleep(pollInterval)
+		sleep(pollInterval)
 	}
 
 	return internaltypes.OperationError(op, fmt.Errorf("timed out waiting for publish to complete after %s", maxPollTime))

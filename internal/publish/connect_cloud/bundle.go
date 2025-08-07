@@ -11,7 +11,6 @@ import (
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/types"
-	"github.com/posit-dev/publisher/internal/util"
 )
 
 var UploadAPIClientFactory = connect_cloud_upload.NewConnectCloudUploadClient
@@ -21,9 +20,7 @@ type uploadBundleSuccessData struct {
 	BundleID types.BundleID `mapstructure:"bundleId"`
 }
 
-func (c *ServerPublisher) uploadBundle(
-	bundleReader io.Reader,
-	contentID types.ContentID) error {
+func (c *ServerPublisher) uploadBundle(bundleReader io.Reader) error {
 	// Upload Bundle step
 	op := events.PublishUploadBundleOp
 	uploadLog := c.log.WithArgs(logging.LogKeyOp, op)
@@ -42,7 +39,6 @@ func (c *ServerPublisher) uploadBundle(
 	// Update deployment record with new information
 	bundleID := types.BundleID(c.content.NextRevision.SourceBundleID)
 	c.Target.BundleID = bundleID
-	c.Target.BundleURL = util.GetBundleURL(c.Account.URL, contentID, c.Target.BundleID)
 
 	_, err = c.helper.WriteDeploymentRecord()
 	if err != nil {
