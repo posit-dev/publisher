@@ -27,6 +27,11 @@ describe("Deployments Section", () => {
         `/.posit/publish/deployments/${tomlFiles.contentRecord.name}`,
       );
     }).deployCurrentlySelected();
+    cy.retryWithBackoff(
+      () => cy.publisherWebview().findByTestId("publisher-deployment-section"),
+      5,
+      500,
+    ).should("exist");
   });
 
   // Unable to run this,
@@ -52,5 +57,10 @@ describe("Deployments Section", () => {
         `/.posit/publish/deployments/${tomlFiles.contentRecord.name}`,
       );
     }).deployCurrentlySelected();
+    cy.retryWithBackoff(
+      () => cy.publisherWebview().findByTestId("publisher-deployment-section"),
+      5,
+      500,
+    ).should("exist");
   });
 });

@@ -11,7 +11,11 @@ describe("Common", () => {
       .click();
     cy.waitForPublisherIframe(); // Wait after triggering extension
     cy.debugIframes();
-    cy.findByText("Posit Publisher: Home").should("exist");
+    cy.retryWithBackoff(
+      () => cy.findByText("Posit Publisher: Home"),
+      5,
+      500,
+    ).should("exist");
     cy.publisherWebview()
       .findByTestId("publisher-deployment-section")
       .should("exist");

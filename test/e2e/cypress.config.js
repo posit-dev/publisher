@@ -36,5 +36,6 @@ module.exports = defineConfig({
     CONNECT_CLOUD_ENV: process.env.CONNECT_CLOUD_ENV || "staging",
   },
   chromeWebSecurity: false,
-  video: isCI ? true : false,
+  video: isCI ? false : false,
+  numTestsKeptInMemory: 0,
 });

@@ -48,6 +48,11 @@ Cypress.skipCI(describe)("Create Deployments", () => {
         return cy.log("File saved.");
       })
       .deployCurrentlySelected();
+    cy.retryWithBackoff(
+      () => cy.publisherWebview().findByTestId("publisher-deployment-section"),
+      5,
+      500,
+    ).should("exist");
   });
 
   it("fastAPI in subdirectory of workspace", () => {
@@ -84,5 +89,10 @@ Cypress.skipCI(describe)("Create Deployments", () => {
         return cy.log("File saved.");
       })
       .deployCurrentlySelected();
+    cy.retryWithBackoff(
+      () => cy.publisherWebview().findByTestId("publisher-deployment-section"),
+      5,
+      500,
+    ).should("exist");
   });
 });
