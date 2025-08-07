@@ -462,11 +462,11 @@ export async function newConnectCloudCredential(
     console.log(
       "User has dismissed the New Connect Cloud Credential flow. Exiting.",
     );
-    return;
+    throw new AbortError();
   }
 
   // create the credential!
-  let newCredential: Credential | undefined = undefined;
+  let credential: Credential | undefined = undefined;
   try {
     const resp = await api.credentials.create(
       state.data.name,
@@ -479,11 +479,11 @@ export async function newConnectCloudCredential(
       state.data.accessToken,
       serverType,
     );
-    newCredential = resp.data;
+    credential = resp.data;
   } catch (error: unknown) {
     const summary = getSummaryStringFromError("credentials::add", error);
     window.showInformationMessage(summary);
   }
 
-  return newCredential;
+  return credential;
 }

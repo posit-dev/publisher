@@ -1,6 +1,7 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import {
+  AbortError,
   InputStep,
   MultiStepInput,
   MultiStepState,
@@ -385,7 +386,7 @@ export async function newConnectCredential(
     isMissingConnectStateData(state)
   ) {
     console.log("User has dismissed the New Connect Credential flow. Exiting.");
-    return;
+    throw new AbortError();
   }
 
   // default anything that hasn't been initialized in the state
@@ -395,7 +396,7 @@ export async function newConnectCredential(
     typeof snowflakeConnection !== "string" ? "" : snowflakeConnection;
 
   // create the credential!
-  let newCredential: Credential | undefined = undefined;
+  let credential: Credential | undefined = undefined;
   try {
     const resp = await api.credentials.create(
       state.data.name,
@@ -408,11 +409,11 @@ export async function newConnectCredential(
       "",
       serverType,
     );
-    newCredential = resp.data;
+    credential = resp.data;
   } catch (error: unknown) {
     const summary = getSummaryStringFromError("credentials::add", error);
     window.showInformationMessage(summary);
   }
 
-  return newCredential;
+  return credential;
 }

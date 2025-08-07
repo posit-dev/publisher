@@ -16,7 +16,7 @@ export async function newCredential(
   // the serverType will be overwritten in the very first step
   // when the platform is selected
   let serverType: ServerType = ServerType.CONNECT;
-  let newCredential: Credential | undefined = undefined;
+  let credential: Credential | undefined = undefined;
   let previousStep: InputStep | undefined = undefined;
 
   // ***************************************************************
@@ -48,11 +48,15 @@ export async function newCredential(
       previousStep = { step: (input) => inputPlatform(input, state) };
       await MultiStepInput.run(previousStep);
     } else {
-      newCredential = await newConnectCredential(
-        viewId,
-        state.title,
-        startingServerUrl,
-      );
+      try {
+        credential = await newConnectCredential(
+          viewId,
+          state.title,
+          startingServerUrl,
+        );
+      } catch {
+        /* the user dismissed this flow, do nothing more */
+      }
     }
     return state;
   }
@@ -77,21 +81,30 @@ export async function newCredential(
     serverType = enumKey ? ServerType[enumKey] : serverType;
 
     if (isConnectCloud(serverType)) {
-      newCredential = await newConnectCloudCredential(
-        viewId,
-        state.title,
-        previousStep,
-      );
+      try {
+        credential = await newConnectCloudCredential(
+          viewId,
+          state.title,
+          previousStep,
+        );
+      } catch {
+        /* the user dismissed this flow, do nothing more */
+      }
       return;
     }
 
     // CONNECT was selected
-    newCredential = await newConnectCredential(
-      viewId,
-      state.title,
-      startingServerUrl,
-      previousStep,
-    );
+    try {
+      credential = await newConnectCredential(
+        viewId,
+        state.title,
+        startingServerUrl,
+        previousStep,
+      );
+    } catch {
+      /* the user dismissed this flow, do nothing more */
+    }
+    return;
   }
 
   // ***************************************************************
@@ -102,10 +115,10 @@ export async function newCredential(
   // make sure user has not hit escape or moved away from the window
   // before completing the steps. This also serves as a type guard on
   // our state data vars down to the actual type desired
-  if (!newCredential) {
+  if (!credential) {
     console.log("User has dismissed the New Credential flow. Exiting.");
     return;
   }
 
-  return newCredential;
+  return credential;
 }
