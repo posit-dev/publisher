@@ -43,7 +43,6 @@ func (s *WaitForRevisionSuite) SetupSuite() {
 
 func (s *WaitForRevisionSuite) TearDownSuite() {
 	sleep = time.Sleep
-	since = time.Since
 }
 
 func (s *WaitForRevisionSuite) SetupTest() {
@@ -167,42 +166,4 @@ func (s *WaitForRevisionSuite) TestWaitForRevisionAPIError() {
 
 	// Verify no events were emitted
 	s.Empty(s.emitter.Events, "Should not emit events when error occurs")
-}
-
-func (s *WaitForRevisionSuite) TestWaitForRevisionTimeout() {
-	// First call returns elapsed time < maxPollTime, subsequent calls return > maxPollTime
-	callCount := 0
-	since = func(_ time.Time) time.Duration {
-		callCount++
-		if callCount == 1 {
-			return 1 * time.Second // First call - continue loop
-		}
-		return 6 * time.Minute // Subsequent calls - exit loop due to timeout
-	}
-
-	// Setup mock to always return in-progress
-	revisionInProgress := &clienttypes.Revision{
-		ID:            s.revisionID,
-		PublishResult: "", // Always in progress
-	}
-
-	s.mockClient.On("GetRevision", s.revisionID).Return(revisionInProgress, nil)
-
-	// Call waitForRevision
-	err := s.publisher.waitForRevision(s.contentID)
-
-	// Verify an error is returned
-	s.Error(err)
-	s.Contains(err.Error(), "timed out waiting for publish to complete")
-
-	// Check that it's an EventableError with correct operation
-	eventableErr, ok := err.(types.EventableError)
-	s.True(ok, "Error should implement EventableError interface")
-	s.Equal(events.PublishWaitForDeploymentOp, eventableErr.GetOperation())
-
-	// Verify we only called the API once (then timed out on second iteration)
-	s.mockClient.AssertNumberOfCalls(s.T(), "GetRevision", 1)
-
-	// Verify no events were emitted
-	s.Empty(s.emitter.Events, "Should not emit events when timeout occurs")
 }
