@@ -3,24 +3,37 @@
 import {
   MultiStepInput,
   MultiStepState,
+  QuickPickItemWithIndex,
   isQuickPickItem,
-  InputStep,
+  isQuickPickItemWithIndex,
 } from "./multiStepHelper";
 
-import { window } from "vscode";
+import { InputBoxValidationSeverity, window } from "vscode";
 
-import { useApi, Credential, ServerType, ProductName } from "src/api";
-import { getSummaryStringFromError } from "src/utils/errors";
+import {
+  useApi,
+  Credential,
+  ServerType,
+  ProductName,
+  SnowflakeConnection,
+} from "src/api";
+import {
+  getMessageFromError,
+  getSummaryStringFromError,
+} from "src/utils/errors";
 import { showProgress } from "src/utils/progress";
 import {
   isConnect,
-  inputCredentialNameStep,
-  StepFunction,
-  inputServerUrlStep,
-  inputAPIKeyStep,
-  inputSnowflakeConnectionStep,
   isSnowflake,
+  findExistingCredentialByURL,
+  fetchSnowflakeConnections,
+  inputCredentialNameStep,
+  getExistingCredentials,
 } from "src/multiStepInputs/common";
+import { openConfigurationCommand } from "src/commands";
+import { extensionSettings } from "src/extension";
+import { formatURL } from "src/utils/url";
+import { checkSyntaxApiKey } from "src/utils/apiKeys";
 
 export async function newConnectCredential(
   viewId: string,
@@ -34,31 +47,13 @@ export async function newConnectCredential(
   let credentials: Credential[] = [];
 
   // globals
-  const productName: ProductName = ProductName.CONNECT;
   let serverType: ServerType = ServerType.CONNECT;
-
-  const stepFunction: Record<
-    StepFunction,
-    (input: MultiStepInput, state: MultiStepState) => Promise<void | InputStep>
-  > = {
-    [StepFunction.INPUT_PLATFORM]: () => Promise.resolve(),
-    [StepFunction.INIT_DEVICE_AUTH]: () => Promise.resolve(),
-    [StepFunction.AUTHENTICATE]: () => Promise.resolve(),
-    [StepFunction.RETRIEVE_ACCOUNTS]: () => Promise.resolve(),
-    [StepFunction.DETERMINE_ACCOUNT_FLOW]: () => Promise.resolve(),
-    [StepFunction.INPUT_ACCOUNT]: () => Promise.resolve(),
-    [StepFunction.INPUT_SIGNUP]: () => Promise.resolve(),
-    [StepFunction.INPUT_SERVER_URL]: inputServerUrl,
-    [StepFunction.INPUT_API_KEY]: inputAPIKey,
-    [StepFunction.INPUT_SNOWFLAKE_CONNECTION]: inputSnowflakeConnection,
-    [StepFunction.INPUT_CREDENTIAL_NAME]: inputCredentialName,
-  };
+  const productName: ProductName = ProductName.CONNECT;
 
   // ***************************************************************
   // Order of all steps for creating a new Connect credential
   // ***************************************************************
 
-  // Select the platform
   // Get the server url
   // Get the API key for Connect OR get the Snowflake connection name
   // Get the credential name
@@ -89,7 +84,7 @@ export async function newConnectCredential(
     };
 
     await MultiStepInput.run({
-      step: (input) => stepFunction.inputServerUrl(input, state),
+      step: (input) => inputServerUrl(input, state),
     });
     return state;
   }
@@ -98,21 +93,114 @@ export async function newConnectCredential(
   // Step: Get the server url (used for Connect & Snowflake)
   // ***************************************************************
   async function inputServerUrl(input: MultiStepInput, state: MultiStepState) {
-    const data = await inputServerUrlStep(
-      input,
-      state,
-      serverType,
-      credentials,
-    );
+    let currentURL = typeof state.data.url === "string" ? state.data.url : "";
 
-    const { step, skippable } = data.inputStep;
-    state.data.url = data.url;
-    // the serverType can be overwritten with SNOWFLAKE in this step
-    serverType = data.serverType;
+    if (currentURL === "") {
+      currentURL = await extensionSettings.defaultConnectServer();
+    }
+
+    // Two credentials for the same URL is not allowed so clear the default if one is found
+    if (
+      currentURL !== "" &&
+      findExistingCredentialByURL(credentials, currentURL)
+    ) {
+      currentURL = "";
+    }
+
+    const resp = await input.showInputBox({
+      title: state.title,
+      step: 0,
+      totalSteps: 0,
+      value: currentURL,
+      prompt: "Please provide the Posit Connect server's URL",
+      placeholder: "Server URL",
+      validate: (input: string) => {
+        if (input.includes(" ")) {
+          return Promise.resolve({
+            message: "Error: Invalid URL (spaces are not allowed).",
+            severity: InputBoxValidationSeverity.Error,
+          });
+        }
+        return Promise.resolve(undefined);
+      },
+      finalValidation: async (input: string) => {
+        input = formatURL(input);
+        try {
+          // will validate that this is a valid URL
+          new URL(input);
+        } catch (e) {
+          if (!(e instanceof TypeError)) {
+            return Promise.resolve({
+              message: `Unexpected error within NewCredential::inputSeverUrl.finalValidation: ${JSON.stringify(e)}`,
+              severity: InputBoxValidationSeverity.Error,
+            });
+          }
+          return Promise.resolve({
+            message: `Error: Invalid URL (${getMessageFromError(e)}).`,
+            severity: InputBoxValidationSeverity.Error,
+          });
+        }
+        const existingCredential = findExistingCredentialByURL(
+          credentials,
+          input,
+        );
+        if (existingCredential) {
+          return Promise.resolve({
+            message: `Error: Invalid URL (this server URL is already assigned to your credential "${existingCredential.name}". Only one credential per unique URL is allowed).`,
+            severity: InputBoxValidationSeverity.Error,
+          });
+        }
+        try {
+          const testResult = await api.credentials.test(
+            input,
+            !extensionSettings.verifyCertificates(), // insecure = !verifyCertificates
+          );
+          if (testResult.status !== 200) {
+            return Promise.resolve({
+              message: `Error: Invalid URL (unable to validate connectivity with Server URL - API Call result: ${testResult.status} - ${testResult.statusText}).`,
+              severity: InputBoxValidationSeverity.Error,
+            });
+          }
+          const err = testResult.data.error;
+          if (err) {
+            if (err.code === "errorCertificateVerification") {
+              return Promise.resolve({
+                message: `Error: URL Not Accessible - ${err.msg}. If applicable, consider disabling [Verify TLS Certificates](${openConfigurationCommand}).`,
+                severity: InputBoxValidationSeverity.Error,
+              });
+            }
+            return Promise.resolve({
+              message: `Error: Invalid URL (unable to validate connectivity with Server URL - ${getMessageFromError(err)}).`,
+              severity: InputBoxValidationSeverity.Error,
+            });
+          }
+
+          if (testResult.data.serverType) {
+            // serverType will be overwritten if it is snowflake
+            serverType = testResult.data.serverType;
+          }
+        } catch (e) {
+          return Promise.resolve({
+            message: `Error: Invalid URL (unable to validate connectivity with Server URL - ${getMessageFromError(e)}).`,
+            severity: InputBoxValidationSeverity.Error,
+          });
+        }
+        return Promise.resolve(undefined);
+      },
+      shouldResume: () => Promise.resolve(false),
+      ignoreFocusOut: true,
+    });
+
+    state.data.url = formatURL(resp.trim());
+
+    if (isSnowflake(serverType)) {
+      return {
+        step: (input: MultiStepInput) => inputSnowflakeConnection(input, state),
+      };
+    }
 
     return {
-      step: (input: MultiStepInput) => stepFunction[step](input, state),
-      skippable,
+      step: (input: MultiStepInput) => inputAPIKey(input, state),
     };
   }
 
@@ -120,15 +208,79 @@ export async function newConnectCredential(
   // Step: Enter the API Key (Connect only)
   // ***************************************************************
   async function inputAPIKey(input: MultiStepInput, state: MultiStepState) {
-    const data = await inputAPIKeyStep(input, state);
-    const { step, skippable } = data.inputStep;
+    const currentAPIKey =
+      typeof state.data.apiKey === "string" ? state.data.apiKey : "";
 
-    state.data.apiKey = data.apiKey;
-    state.data.url = data.url;
+    const resp = await input.showInputBox({
+      title: state.title,
+      step: 0,
+      totalSteps: 0,
+      password: true,
+      value: currentAPIKey,
+      prompt: `The API key to be used to authenticate with Posit Connect.
+        See the [User Guide](https://docs.posit.co/connect/user/api-keys/index.html#api-keys-creating)
+        for further information.`,
+      validate: (input: string) => {
+        if (input.includes(" ")) {
+          return Promise.resolve({
+            message: "Error: Invalid API Key (spaces are not allowed).",
+            severity: InputBoxValidationSeverity.Error,
+          });
+        }
+        return Promise.resolve(undefined);
+      },
+      finalValidation: async (input: string) => {
+        // validate that the API key is formed correctly
+        const errorMsg = checkSyntaxApiKey(input);
+        if (errorMsg) {
+          return Promise.resolve({
+            message: `Error: Invalid API Key (${errorMsg}).`,
+            severity: InputBoxValidationSeverity.Error,
+          });
+        }
+        // url should always be defined by the time we get to this step
+        // but we have to type guard it for the API
+        const serverUrl =
+          typeof state.data.url === "string" ? state.data.url : "";
+        try {
+          const testResult = await api.credentials.test(
+            serverUrl,
+            !extensionSettings.verifyCertificates(), // insecure = !verifyCertificates
+            input,
+          );
+          if (testResult.status !== 200) {
+            return Promise.resolve({
+              message: `Error: Invalid API Key (unable to validate API Key - API Call result: ${testResult.status} - ${testResult.statusText}).`,
+              severity: InputBoxValidationSeverity.Error,
+            });
+          }
+          if (testResult.data.error) {
+            return Promise.resolve({
+              message: `Error: Invalid API Key (${testResult.data.error.msg}).`,
+              severity: InputBoxValidationSeverity.Error,
+            });
+          }
+          // we have success, but credentials.test may have returned a different
+          // url for us to use.
+          if (testResult.data.url) {
+            state.data.url = testResult.data.url;
+          }
+        } catch (e) {
+          return Promise.resolve({
+            message: `Error: Invalid API Key (${getMessageFromError(e)})`,
+            severity: InputBoxValidationSeverity.Error,
+          });
+        }
+        return Promise.resolve(undefined);
+      },
+      shouldResume: () => Promise.resolve(false),
+      ignoreFocusOut: true,
+    });
+
+    state.data.apiKey = resp;
 
     return {
-      step: (input: MultiStepInput) => stepFunction[step](input, state),
-      skippable,
+      step: (input: MultiStepInput) => inputCredentialName(input, state),
     };
   }
 
@@ -139,19 +291,43 @@ export async function newConnectCredential(
     input: MultiStepInput,
     state: MultiStepState,
   ) {
-    const data = await inputSnowflakeConnectionStep(input, state, viewId);
+    // url should always be defined by the time we get to this step
+    // but we have to type guard it for the API
+    const serverUrl = typeof state.data.url === "string" ? state.data.url : "";
+    let connections: SnowflakeConnection[] = [];
+    let connectionQuickPicks: QuickPickItemWithIndex[] = [];
 
-    // bail if the step errored out
-    if (!data) return;
+    try {
+      await showProgress("Reading Snowflake connections", viewId, async () => {
+        const resp = await fetchSnowflakeConnections(serverUrl);
+        connections = resp.connections;
+        connectionQuickPicks = resp.connectionQuickPicks;
+      });
+    } catch {
+      // errors have already been displayed by fetchSnowflakeConnections
+      return;
+    }
 
-    const { step, skippable } = data.inputStep;
+    const pick = await input.showQuickPick({
+      title: state.title,
+      step: 0,
+      totalSteps: 0,
+      placeholder: "Select the Snowflake connection to use for authentication.",
+      items: connectionQuickPicks,
+      buttons: [],
+      shouldResume: () => Promise.resolve(false),
+      ignoreFocusOut: true,
+    });
 
-    state.data.snowflakeConnection = data.snowflakeConnection;
-    state.data.url = data.url;
+    if (!pick || !isQuickPickItemWithIndex(pick)) {
+      return;
+    }
+
+    state.data.snowflakeConnection = connections[pick.index].name;
+    state.data.url = connections[pick.index].serverUrl;
 
     return {
-      step: (input: MultiStepInput) => stepFunction[step](input, state),
-      skippable,
+      step: (input: MultiStepInput) => inputCredentialName(input, state),
     };
   }
 
@@ -174,27 +350,10 @@ export async function newConnectCredential(
   }
 
   // ***************************************************************
-  // Wait for the api promise to complete while showing progress
+  // Get the list of existing credentials
   // Kick off the input collection
-  // and await until it completes.
-  // This is a promise which returns the state data used to
-  // collect the info.
   // ***************************************************************
-  try {
-    await showProgress("Initializing::newCredential", viewId, async () => {
-      const response = await api.credentials.list();
-      credentials = response.data;
-    });
-  } catch (error: unknown) {
-    const summary = getSummaryStringFromError(
-      "newCredentials, credentials.list",
-      error,
-    );
-    window.showInformationMessage(
-      `Unable to query existing credentials. ${summary}`,
-    );
-  }
-
+  credentials = await getExistingCredentials(viewId);
   const state = await collectInputs();
 
   const isMissingConnectStateData = (state: MultiStepState) => {
