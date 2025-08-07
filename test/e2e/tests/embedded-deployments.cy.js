@@ -1,5 +1,6 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
+// Skipping in CI only because of unresolved permissions issues
 Cypress.skipCI(describe)("Create Deployments", () => {
   // eslint-disable-next-line mocha/no-top-level-hooks
   beforeEach(() => {
@@ -92,8 +93,13 @@ Cypress.skipCI(describe)("Create Deployments", () => {
         return cy.log("File saved.");
       })
       .deployCurrentlySelected();
-    cy.findUniqueInPublisherWebview(
-      '[data-automation="publisher-deployment-section"]',
+    cy.retryWithBackoff(
+      () =>
+        cy.findUniqueInPublisherWebview(
+          '[data-automation="publisher-deployment-section"]',
+        ),
+      5,
+      500,
     ).should("exist");
   });
 });

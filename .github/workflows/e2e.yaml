@@ -68,7 +68,7 @@ jobs:
           CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
 
       - name: "[DEBUG] Print host user and group info"
-        if: env.DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true'
+        if: always() && (env.DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true')
         run: |
           echo "USER: $(whoami)"
           echo "UID: $(id -u)"
@@ -147,7 +147,7 @@ jobs:
           done
 
       - name: "[DEBUG] Print workspace file ownership before tests"
-        if: env.DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true'
+        if: always() && (env.DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true')
         run: |
           docker exec publisher-e2e.code-server ls -lR /home/coder/workspace || true
 
@@ -182,12 +182,12 @@ jobs:
           if-no-files-found: ignore
 
       - name: "[DEBUG] List installed VS Code extensions"
-        if: env.DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true'
+        if: always() && (env.DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true')
         working-directory: test/e2e
         run: docker compose exec code-server code-server --list-extensions --show-versions || true
 
       - name: "[DEBUG] Display test/e2e directory tree"
-        if: env.DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true'
+        if: always() && (env.DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true')
         run: |
           echo "Directory tree for test/e2e:"
           if command -v tree > /dev/null; then
@@ -197,24 +197,26 @@ jobs:
           fi
 
       - name: "[DEBUG] Print code-server logs on failure"
-        if: failure() && (env.DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true')
+        if: always() && (env.DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true')
         run: |
-          docker exec publisher-e2e.code-server cat /root/.local/share/code-server/logs/*/* || true
+          docker exec publisher-e2e.code-server bash -c 'find /root/.local -type f -name "*.log" 2>/dev/null | xargs ls -la || echo "No logs found"'
+          docker exec publisher-e2e.code-server bash -c 'find /root/.local -type f -name "*.log" 2>/dev/null | head -n 5 | xargs cat || echo "No logs found"'
 
       - name: "[DEBUG] Print Publisher extension logs on failure"
-        if: failure() && (env.DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true')
+        if: always() && (env.DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true')
         run: |
-          echo "=== Last 50 lines of Publisher logs ==="
-          docker exec publisher-e2e.code-server bash -c 'find /root/.local/share/code-server/logs -type f -name "*.log" | grep -E "posit.publisher|Deployment.log" | xargs tail -n 50 || true'
+          echo "=== Finding Publisher logs ==="
+          docker exec publisher-e2e.code-server bash -c 'find /root -type f -name "*.log" 2>/dev/null | grep -i "posit\|publisher" || echo "No publisher logs found"'
+          docker exec publisher-e2e.code-server bash -c 'find /home -type f -name "*.log" 2>/dev/null | grep -i "posit\|publisher" || echo "No publisher logs found"'
           echo "======================================="
 
       - name: "[DEBUG] Print code-server container logs"
-        if: failure() && (env.DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true')
+        if: always() && (env.DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true')
         working-directory: test/e2e
         run: docker compose logs code-server || true
 
       - name: "[DEBUG] List /home/coder directory contents"
-        if: failure() && (env.DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true')
+        if: always() && (env.DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true')
         run: docker exec publisher-e2e.code-server ls -lR /home/coder || true
 
       - name: Stop containers
