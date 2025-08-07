@@ -293,6 +293,7 @@ func (p *defaultPublisher) setContentInfo(info publishhelper.ContentInfo) {
 func (p *defaultPublisher) CreateDeploymentRecord() {
 	p.Target = &deployment.Deployment{}
 	p.serverPublisher.UpdateState()
+	p.Config.ForceProductTypeCompliance()
 
 	// Initial deployment record doesn't know the files or
 	// bundleID. These will be added after the

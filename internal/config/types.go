@@ -1,6 +1,9 @@
 package config
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/posit-dev/publisher/internal/interpreters"
 )
 
@@ -122,6 +125,27 @@ const (
 	ProductTypeConnect      ProductType = "connect"
 	ProductTypeConnectCloud ProductType = "connect_cloud"
 )
+
+// ForceProductTypeCompliance modifies the config in place to ensure that it complies with the JSON schema.
+func (c *Config) ForceProductTypeCompliance() {
+	if c.ProductType == ProductTypeConnectCloud {
+		// These fields are disallowed by the schema
+		if c.Python != nil {
+			c.Python.PackageManager = ""
+			c.Python.PackageFile = ""
+			c.Python.RequiresPythonVersion = ""
+
+			// Connect Cloud requires Python version to be in the format "X.Y"
+			pythonVersionSplit := strings.Split(c.Python.Version, ".")
+			c.Python.Version = fmt.Sprintf("%s.%s", pythonVersionSplit[0], pythonVersionSplit[1])
+		}
+		if c.R != nil {
+			c.R.PackageManager = ""
+			c.R.PackageFile = ""
+			c.R.RequiresRVersion = ""
+		}
+	}
+}
 
 func (c *Config) HasSecret(secret string) bool {
 	for _, s := range c.Secrets {

@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/posit-dev/publisher/internal/accounts"
-	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/publish/publishhelper"
@@ -102,26 +101,9 @@ func (s *ServerPublisherSuite) TestGetContentInfo() {
 }
 
 func (s *ServerPublisherSuite) TestUpdateState() {
-	// Create a config with Python and R settings
-	cfg := &config.Config{
-		Python: &config.Python{
-			Version:               "3.10.4",
-			PackageManager:        "pip",
-			PackageFile:           "requirements.txt",
-			RequiresPythonVersion: ">=3.9",
-		},
-		R: &config.R{
-			Version:          "4.2.1",
-			PackageManager:   "renv",
-			PackageFile:      "renv.lock",
-			RequiresRVersion: ">=4.0",
-		},
-	}
-
-	// Set up a state with the config and target
+	// Set up a state with target and account
 	target := &deployment.Deployment{}
 	s.publisher.State = &state.State{
-		Config: cfg,
 		Target: target,
 		Account: &accounts.Account{
 			CloudAccountName: "test-account",
@@ -134,18 +116,4 @@ func (s *ServerPublisherSuite) TestUpdateState() {
 	// Verify ConnectCloud field is set in target
 	s.Require().NotNil(target.ConnectCloud)
 	s.Equal("test-account", target.ConnectCloud.AccountName)
-
-	// Verify Python configuration changes
-	s.Require().NotNil(cfg.Python)
-	s.Equal("", cfg.Python.PackageManager, "should be unset")
-	s.Equal("", cfg.Python.PackageFile, "should be unset")
-	s.Equal("", cfg.Python.RequiresPythonVersion, "should be unset")
-	s.Equal("3.10", cfg.Python.Version, "should be converted to X.Y format")
-
-	// Verify R configuration changes
-	s.Require().NotNil(cfg.R)
-	s.Equal("", cfg.R.PackageManager, "should be unset")
-	s.Equal("", cfg.R.PackageFile, "should be unset")
-	s.Equal("", cfg.R.RequiresRVersion, "should be unset")
-	s.Equal("4.2.1", cfg.R.Version, "should remain unchanged")
 }

@@ -4,7 +4,6 @@ package connect_cloud
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/posit-dev/publisher/internal/clients/connect_cloud"
 	clienttypes "github.com/posit-dev/publisher/internal/clients/types"
@@ -44,22 +43,6 @@ func (c *ServerPublisher) UpdateState() {
 	// These fields are required by the schema
 	c.Target.ConnectCloud = &deployment.ConnectCloud{
 		AccountName: c.Account.CloudAccountName,
-	}
-
-	// These fields are disallowed by the schema
-	if c.Config.Python != nil {
-		c.Config.Python.PackageManager = ""
-		c.Config.Python.PackageFile = ""
-		c.Config.Python.RequiresPythonVersion = ""
-
-		// Connect Cloud requires Python version to be in the format "X.Y"
-		pythonVersionSplit := strings.Split(c.Config.Python.Version, ".")
-		c.Config.Python.Version = fmt.Sprintf("%s.%s", pythonVersionSplit[0], pythonVersionSplit[1])
-	}
-	if c.Config.R != nil {
-		c.Config.R.PackageManager = ""
-		c.Config.R.PackageFile = ""
-		c.Config.R.RequiresRVersion = ""
 	}
 }
 
