@@ -1,6 +1,11 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
-import { InputStep, MultiStepInput, MultiStepState } from "./multiStepHelper";
+import {
+  AbortError,
+  InputStep,
+  MultiStepInput,
+  MultiStepState,
+} from "./multiStepHelper";
 import { Credential, ServerType, ProductName } from "src/api";
 import { extensionSettings } from "src/extension";
 import { isConnectCloud, platformList } from "src/multiStepInputs/common";
@@ -12,12 +17,13 @@ export async function newCredential(
   viewId: string,
   viewTitle: string,
   startingServerUrl?: string,
+  previousSteps?: InputStep[],
 ): Promise<Credential | undefined> {
   // the serverType will be overwritten in the very first step
   // when the platform is selected
   let serverType: ServerType = ServerType.CONNECT;
   let credential: Credential | undefined = undefined;
-  let previousStep: InputStep | undefined = undefined;
+  const steps: InputStep[] = [];
 
   // ***************************************************************
   // Order of all steps for creating a new credential
@@ -45,14 +51,18 @@ export async function newCredential(
 
     if (extensionSettings.enableConnectCloud()) {
       // select the platform only when the enableConnectCloud config has been turned on
-      previousStep = { step: (input) => inputPlatform(input, state) };
-      await MultiStepInput.run(previousStep);
+      const currentStep = {
+        step: (input: MultiStepInput) => inputPlatform(input, state),
+      };
+      steps.push(currentStep);
+      await MultiStepInput.run(currentStep, previousSteps);
     } else {
       try {
         credential = await newConnectCredential(
           viewId,
           state.title,
           startingServerUrl,
+          previousSteps,
         );
       } catch {
         /* the user dismissed this flow, do nothing more */
@@ -82,11 +92,10 @@ export async function newCredential(
 
     if (isConnectCloud(serverType)) {
       try {
-        credential = await newConnectCloudCredential(
-          viewId,
-          state.title,
-          previousStep,
-        );
+        credential = await newConnectCloudCredential(viewId, state.title, [
+          ...(previousSteps || []),
+          ...steps,
+        ]);
       } catch {
         /* the user dismissed this flow, do nothing more */
       }
@@ -99,7 +108,7 @@ export async function newCredential(
         viewId,
         state.title,
         startingServerUrl,
-        previousStep,
+        [...(previousSteps || []), ...steps],
       );
     } catch {
       /* the user dismissed this flow, do nothing more */
@@ -117,7 +126,7 @@ export async function newCredential(
   // our state data vars down to the actual type desired
   if (!credential) {
     console.log("User has dismissed the New Credential flow. Exiting.");
-    return;
+    throw new AbortError();
   }
 
   return credential;

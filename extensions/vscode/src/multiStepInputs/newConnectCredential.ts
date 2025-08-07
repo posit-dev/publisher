@@ -41,7 +41,7 @@ export async function newConnectCredential(
   viewId: string,
   viewTitle: string,
   startingServerUrl?: string,
-  previousStep?: InputStep,
+  previousSteps?: InputStep[],
 ): Promise<Credential | undefined> {
   // ***************************************************************
   // API Calls and results
@@ -88,7 +88,7 @@ export async function newConnectCredential(
 
     await MultiStepInput.run(
       { step: (input) => inputServerUrl(input, state) },
-      previousStep,
+      previousSteps,
     );
     return state;
   }

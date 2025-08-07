@@ -2,6 +2,7 @@
 
 import path from "path";
 import {
+  InputStep,
   isQuickPickItem,
   isQuickPickItemWithInspectionResult,
   MultiStepInput,
@@ -66,6 +67,8 @@ export async function newDeployment(
   // API Calls and results
   // ***************************************************************
   const api = await useApi();
+  const steps: InputStep[] = [];
+  let inspectionQuickPicks: QuickPickItemWithInspectionResult[] = [];
 
   let credentials: Credential[] = [];
   let credentialListItems: QuickPickItem[] = [];
@@ -262,6 +265,25 @@ export async function newDeployment(
     }
   };
 
+  const getInspectionQuickPicks = async () => {
+    if (!newDeploymentData.entrypoint.filePath) {
+      return;
+    }
+    // Have to create a copy of the guarded value, to keep language service happy
+    // within anonymous function below
+    const entryPointFilePath = path.join(
+      projectDir,
+      newDeploymentData.entrypoint.filePath,
+    );
+
+    inspectionQuickPicks = await showProgress(
+      "Scanning::newDeployment",
+      viewId,
+      async () =>
+        await getConfigurationInspectionQuickPicks(entryPointFilePath),
+    );
+  };
+
   // ***************************************************************
   // Order of all steps for creating a new deployment
   // NOTE: This multi-stepper is used for multiple commands
@@ -298,9 +320,16 @@ export async function newDeployment(
     };
 
     // start the progression through the steps
-    await MultiStepInput.run({
-      step: (input) => inputEntryPointFileSelection(input, state),
-    });
+    const skippable = entryPointFile !== undefined;
+    const currentStep = {
+      step: (input: MultiStepInput) =>
+        inputEntryPointFileSelection(input, state),
+      skippable,
+    };
+    if (!skippable) {
+      steps.push(currentStep);
+    }
+    await MultiStepInput.run(currentStep);
     return state as MultiStepState;
   }
 
@@ -311,6 +340,8 @@ export async function newDeployment(
     input: MultiStepInput,
     state: MultiStepState,
   ) {
+    let selectedEntrypointFile: string | undefined = undefined;
+
     // show only if we were not passed in a file
     if (entryPointFile === undefined) {
       if (newDeploymentData.entrypoint.filePath) {
@@ -319,7 +350,6 @@ export async function newDeployment(
         });
       }
 
-      let selectedEntrypointFile: string | undefined = undefined;
       do {
         const pick = await input.showQuickPick({
           title: state.title,
@@ -372,14 +402,30 @@ export async function newDeployment(
           }
         }
       } while (!selectedEntrypointFile);
-      newDeploymentData.entrypoint.filePath = selectedEntrypointFile;
-      return {
-        step: (input: MultiStepInput) =>
-          inputEntryPointInspectionResultSelection(input, state),
-      };
+    }
+
+    // use the selected entry point file if we were not passed in a specific file
+    // otherwise use the passed in specific file and continue to inspection
+    newDeploymentData.entrypoint.filePath =
+      selectedEntrypointFile || entryPointFile;
+
+    // get the inspections only after the `filePath` has been initialized
+    await getInspectionQuickPicks();
+
+    const skippable = inspectionQuickPicks.length <= 1;
+    const currentStep = {
+      step: (input: MultiStepInput) =>
+        inputEntryPointInspectionResultSelection(input, state),
+      skippable,
+    };
+    if (!skippable) {
+      steps.push(currentStep);
+    }
+
+    // if we were not passed in a file, go interactively to the next step
+    if (entryPointFile === undefined) {
+      return currentStep;
     } else {
-      // We were passed in a specific file, so set and continue to inspection
-      newDeploymentData.entrypoint.filePath = entryPointFile;
       // We're skipping this step, so we must silently just jump to the next step
       return inputEntryPointInspectionResultSelection(input, state);
     }
@@ -392,23 +438,10 @@ export async function newDeployment(
     input: MultiStepInput,
     state: MultiStepState,
   ) {
-    if (!newDeploymentData.entrypoint.filePath) {
-      return;
-    }
-    // Have to create a copy of the guarded value, to keep language service happy
-    // within anonymous function below
-    const entryPointFilePath = path.join(
-      projectDir,
-      newDeploymentData.entrypoint.filePath,
-    );
-
-    const inspectionQuickPicks = await showProgress(
-      "Scanning::newDeployment",
-      viewId,
-      async () =>
-        await getConfigurationInspectionQuickPicks(entryPointFilePath),
-    );
-
+    const currentStep = {
+      step: (input: MultiStepInput) => inputTitle(input, state),
+    };
+    steps.push(currentStep);
     // skip if we only have one choice.
     if (inspectionQuickPicks.length > 1) {
       if (newDeploymentData.entrypoint.inspectionResult) {
@@ -441,9 +474,7 @@ export async function newDeployment(
       }
 
       newDeploymentData.entrypoint.inspectionResult = pick.inspectionResult;
-      return {
-        step: (input: MultiStepInput) => inputTitle(input, state),
-      };
+      return currentStep;
     } else {
       newDeploymentData.entrypoint.inspectionResult =
         inspectionQuickPicks[0].inspectionResult;
@@ -489,10 +520,15 @@ export async function newDeployment(
     });
 
     newDeploymentData.title = title;
-    return {
+    const skippable = newCredentialForced();
+    const currentStep = {
       step: (input: MultiStepInput) => pickCredentials(input, state),
-      skippable: newCredentialForced(),
+      skippable,
     };
+    if (!skippable) {
+      steps.push(currentStep);
+    }
+    return currentStep;
   }
 
   // ***************************************************************
@@ -528,7 +564,16 @@ export async function newDeployment(
 
     // either the user opted for creating a brand new credential or
     // there are no existing credentials, so force the user to create a new credential
-    newOrSelectedCredential = await newCredential(viewId, viewTitle);
+    try {
+      newOrSelectedCredential = await newCredential(
+        viewId,
+        viewTitle,
+        undefined,
+        steps,
+      );
+    } catch {
+      /* the user dismissed this flow, do nothing more */
+    }
   }
 
   // ***************************************************************
