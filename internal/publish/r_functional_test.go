@@ -190,11 +190,17 @@ func (s *RPublishFunctionalSuite) TestPublishWithClientFunctional() {
 	rPackageMapper, err := renv.NewPackageMapper(s.testProjectDir, util.Path{}, s.log)
 	s.Require().NoError(err)
 
+	serverPublisher, err := createServerPublisher(
+		publishhelper.NewPublishHelper(stateStore, s.log),
+		events.NewCapturingEmitter(),
+		s.log)
+	s.NoError(err)
 	publisher := &defaultPublisher{
-		log:            s.log,
-		emitter:        events.NewCapturingEmitter(),
-		rPackageMapper: rPackageMapper,
-		PublishHelper:  publishhelper.NewPublishHelper(stateStore, s.log),
+		log:             s.log,
+		emitter:         events.NewCapturingEmitter(),
+		rPackageMapper:  rPackageMapper,
+		PublishHelper:   publishhelper.NewPublishHelper(stateStore, s.log),
+		serverPublisher: serverPublisher,
 	}
 
 	// Test files to be deployed
