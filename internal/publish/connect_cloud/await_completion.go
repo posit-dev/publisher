@@ -19,7 +19,7 @@ const (
 
 var sleep = time.Sleep
 
-func (c *ServerPublisher) waitForRevision(contentID internaltypes.ContentID) error {
+func (c *ServerPublisher) awaitCompletion(contentID internaltypes.ContentID) error {
 	op := events.PublishWaitForDeploymentOp
 	log := c.log.WithArgs(logging.LogKeyOp, op)
 

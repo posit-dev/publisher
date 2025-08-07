@@ -21,8 +21,8 @@ import (
 	"github.com/posit-dev/publisher/internal/util/utiltest"
 )
 
-// WaitForRevisionSuite is a test suite for testing wait_for_revision.go
-type WaitForRevisionSuite struct {
+// AwaitCompletionSuite is a test suite for testing await_completion.go
+type AwaitCompletionSuite struct {
 	utiltest.Suite
 	mockClient *connect_cloud.MockClient
 	emitter    *events.CapturingEmitter
@@ -33,19 +33,19 @@ type WaitForRevisionSuite struct {
 	revisionID string
 }
 
-func TestWaitForRevisionSuite(t *testing.T) {
-	suite.Run(t, new(WaitForRevisionSuite))
+func TestAwaitCompletionSuite(t *testing.T) {
+	suite.Run(t, new(AwaitCompletionSuite))
 }
 
-func (s *WaitForRevisionSuite) SetupSuite() {
+func (s *AwaitCompletionSuite) SetupSuite() {
 	sleep = func(d time.Duration) {}
 }
 
-func (s *WaitForRevisionSuite) TearDownSuite() {
+func (s *AwaitCompletionSuite) TearDownSuite() {
 	sleep = time.Sleep
 }
 
-func (s *WaitForRevisionSuite) SetupTest() {
+func (s *AwaitCompletionSuite) SetupTest() {
 	sleep = func(d time.Duration) {}
 
 	// Set up test constants
@@ -83,7 +83,7 @@ func (s *WaitForRevisionSuite) SetupTest() {
 	}
 }
 
-func (s *WaitForRevisionSuite) TestWaitForRevisionSuccess() {
+func (s *AwaitCompletionSuite) TestAwaitCompletionSuccess() {
 
 	// Setup mock to return success after one call
 	revisionInProgress := &clienttypes.Revision{
@@ -100,8 +100,8 @@ func (s *WaitForRevisionSuite) TestWaitForRevisionSuccess() {
 	s.mockClient.On("GetRevision", s.revisionID).Return(revisionInProgress, nil).Once()
 	s.mockClient.On("GetRevision", s.revisionID).Return(revisionSuccess, nil).Once()
 
-	// Call waitForRevision
-	err := s.publisher.waitForRevision(s.contentID)
+	// Call awaitCompletion
+	err := s.publisher.awaitCompletion(s.contentID)
 
 	// Verify no error is returned
 	s.NoError(err)
@@ -115,7 +115,7 @@ func (s *WaitForRevisionSuite) TestWaitForRevisionSuccess() {
 	s.Equal(events.EventData{"contentId": string(s.contentID)}, s.emitter.Events[0].Data)
 }
 
-func (s *WaitForRevisionSuite) TestWaitForRevisionFailure() {
+func (s *AwaitCompletionSuite) TestAwaitCompletionFailure() {
 	// Setup mock to return failure
 	revisionFailure := &clienttypes.Revision{
 		ID:               s.revisionID,
@@ -125,8 +125,8 @@ func (s *WaitForRevisionSuite) TestWaitForRevisionFailure() {
 
 	s.mockClient.On("GetRevision", s.revisionID).Return(revisionFailure, nil)
 
-	// Call waitForRevision
-	err := s.publisher.waitForRevision(s.contentID)
+	// Call awaitCompletion
+	err := s.publisher.awaitCompletion(s.contentID)
 
 	// Verify an error is returned
 	s.Error(err)
@@ -144,13 +144,13 @@ func (s *WaitForRevisionSuite) TestWaitForRevisionFailure() {
 	s.Empty(s.emitter.Events, "Should not emit events when error occurs")
 }
 
-func (s *WaitForRevisionSuite) TestWaitForRevisionAPIError() {
+func (s *AwaitCompletionSuite) TestAwaitCompletionAPIError() {
 	// Setup mock to return API error
 	apiError := errors.New("API connection error")
 	s.mockClient.On("GetRevision", s.revisionID).Return((*clienttypes.Revision)(nil), apiError)
 
-	// Call waitForRevision
-	err := s.publisher.waitForRevision(s.contentID)
+	// Call awaitCompletion
+	err := s.publisher.awaitCompletion(s.contentID)
 
 	// Verify an error is returned
 	s.Error(err)

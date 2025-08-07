@@ -50,7 +50,7 @@ func (c *ServerPublisher) PublishToServer(contentID internal_types.ContentID, bu
 		return err
 	}
 
-	err = c.waitForRevision(contentID)
+	err = c.awaitCompletion(contentID)
 	if err != nil {
 		return err
 	}
