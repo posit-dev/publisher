@@ -5,8 +5,9 @@ package server_type
 import (
 	"testing"
 
-	"github.com/posit-dev/publisher/internal/util/utiltest"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/posit-dev/publisher/internal/util/utiltest"
 )
 
 type AccountTypeSuite struct {
@@ -28,8 +29,8 @@ func (s *AccountTypeSuite) TestAccountTypeFromURL() {
 		url        string
 		serverType ServerType
 	}{
-		{"https://api.staging.connect.posit.cloud", ServerTypeConnectCloud},
-		{"https://api.connect.posit.cloud", ServerTypeConnectCloud},
+		{"https://staging.connect.posit.cloud", ServerTypeConnectCloud},
+		{"https://connect.posit.cloud", ServerTypeConnectCloud},
 		{"https://example.com", ServerTypeConnect},
 		{"https://example.com/connect/#/content", ServerTypeConnect},
 		{"https://example.snowflakecomputing.app", ServerTypeSnowflake},
