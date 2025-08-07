@@ -49,3 +49,12 @@ func ServerTypeFromURL(urlStr string) (ServerType, error) {
 	}
 	return ServerTypeConnect, nil
 }
+
+func (t ServerType) IsCloud() bool {
+	return t == ServerTypeConnectCloud
+}
+
+func (t ServerType) IsConnectLike() bool {
+	// Snowflake is Posit Connect under the hood, but has a different auth model.
+	return t == ServerTypeConnect || t == ServerTypeSnowflake
+}

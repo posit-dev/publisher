@@ -82,15 +82,15 @@ type CredentialV0 struct {
 }
 
 func (c *Credential) ConflictCheck(newCred Credential) error {
-	if newCred.ServerType == server_type.ServerTypeConnectCloud {
+	if newCred.ServerType.IsCloud() {
 		// this is a Connect Cloud credential
-		if c.ServerType == server_type.ServerTypeConnectCloud && c.AccountID == newCred.AccountID && c.CloudEnvironment == newCred.CloudEnvironment {
+		if c.ServerType.IsCloud() && c.AccountID == newCred.AccountID && c.CloudEnvironment == newCred.CloudEnvironment {
 			// Connect Cloud credentials must have unique AccountID and CloudEnvironment combinations.
 			return NewIdentityCollisionError(c.Name, c.URL, c.AccountName)
 		}
 	} else {
 		// this is a Connect or Snowflake credential
-		if c.URL == newCred.URL {
+		if c.ServerType.IsConnectLike() && c.URL == newCred.URL {
 			// Connect/Snowflake credentials have unique URLs.
 			return NewIdentityCollisionError(c.Name, c.URL, c.AccountName)
 		}
