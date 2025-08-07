@@ -55,7 +55,9 @@ describe("Credentials Section", () => {
 
     cy.retryWithBackoff(
       () =>
-        cy.findInPublisherWebview('[data-automation="admin-code-server-list"]'),
+        cy.findUniqueInPublisherWebview(
+          '[data-automation="admin-code-server-list"]',
+        ),
       5,
       500,
     ).then(($credRecord) => {
@@ -81,7 +83,7 @@ describe("Credentials Section", () => {
 
     cy.retryWithBackoff(
       () =>
-        cy.findInPublisherWebview(
+        cy.findUniqueInPublisherWebview(
           '[data-automation="dummy-credential-one-list"]',
         ),
       5,
@@ -94,7 +96,7 @@ describe("Credentials Section", () => {
 
     cy.retryWithBackoff(
       () =>
-        cy.findInPublisherWebview(
+        cy.findUniqueInPublisherWebview(
           '[data-automation="dummy-credential-two-list"]',
         ),
       5,

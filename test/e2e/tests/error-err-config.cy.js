@@ -35,7 +35,10 @@ describe("Detect error in config", () => {
 
     // confirm that the selector shows the error
     cy.retryWithBackoff(
-      () => cy.publisherWebview().findByTestId("publisher-deployment-section"),
+      () =>
+        cy.findUniqueInPublisherWebview(
+          '[data-automation="publisher-deployment-section"]',
+        ),
       5,
       500,
     )
@@ -48,7 +51,10 @@ describe("Detect error in config", () => {
 
     // confirm that we also have an error section
     cy.retryWithBackoff(
-      () => cy.publisherWebview().findByTestId("publisher-deployment-section"),
+      () =>
+        cy.findUniqueInPublisherWebview(
+          '[data-automation="publisher-deployment-section"]',
+        ),
       5,
       500,
     ).find(
@@ -77,7 +83,10 @@ describe("Detect error in config", () => {
 
     // confirm that the selector shows the error
     cy.retryWithBackoff(
-      () => cy.publisherWebview().findByTestId("publisher-deployment-section"),
+      () =>
+        cy.findUniqueInPublisherWebview(
+          '[data-automation="publisher-deployment-section"]',
+        ),
       5,
       500,
     )
@@ -93,7 +102,10 @@ describe("Detect error in config", () => {
 
     // confirm that we also have an error section
     cy.retryWithBackoff(
-      () => cy.publisherWebview().findByTestId("publisher-deployment-section"),
+      () =>
+        cy.findUniqueInPublisherWebview(
+          '[data-automation="publisher-deployment-section"]',
+        ),
       5,
       500,
     ).find(

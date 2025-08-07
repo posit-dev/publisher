@@ -305,6 +305,78 @@ Cypress.Commands.add(
   },
 );
 
+Cypress.Commands.add("findUnique", (selector, options = {}) => {
+  return cy.get("body").then(($body) => {
+    const elements = $body.find(selector);
+    const count = elements.length;
+
+    cy.log(`Found ${count} elements matching selector: "${selector}"`);
+
+    if (count > 1) {
+      // Log details about each matching element
+      elements.each((index, el) => {
+        const $el = Cypress.$(el);
+        cy.log(`Match #${index + 1}:`);
+        cy.log(
+          `- Text: ${$el.text().substring(0, 50)}${$el.text().length > 50 ? "..." : ""}`,
+        );
+        cy.log(
+          `- HTML: ${$el.prop("outerHTML").substring(0, 100)}${$el.prop("outerHTML").length > 100 ? "..." : ""}`,
+        );
+      });
+
+      throw new Error(
+        `Expected to find exactly 1 element with selector "${selector}", but found ${count} elements`,
+      );
+    } else if (count === 0) {
+      // Let Cypress handle the "not found" timeout
+      return cy.get(selector, options);
+    }
+
+    // Return the single element
+    return cy.wrap(elements);
+  });
+});
+
+// For webview elements
+Cypress.Commands.add(
+  "findUniqueInPublisherWebview",
+  (selector, options = {}) => {
+    return cy.publisherWebview().then(($body) => {
+      const elements = $body.find(selector);
+      const count = elements.length;
+
+      cy.log(
+        `Found ${count} elements in webview matching selector: "${selector}"`,
+      );
+
+      if (count > 1) {
+        // Log details about each matching element
+        elements.each((index, el) => {
+          const $el = Cypress.$(el);
+          cy.log(`Match #${index + 1}:`);
+          cy.log(
+            `- Text: ${$el.text().substring(0, 50)}${$el.text().length > 50 ? "..." : ""}`,
+          );
+          cy.log(
+            `- HTML: ${$el.prop("outerHTML").substring(0, 100)}${$el.prop("outerHTML").length > 100 ? "..." : ""}`,
+          );
+        });
+
+        throw new Error(
+          `Expected to find exactly 1 element in webview with selector "${selector}", but found ${count} elements`,
+        );
+      } else if (count === 0) {
+        // Let Cypress handle the "not found" timeout
+        return cy.findInPublisherWebview(selector, options);
+      }
+
+      // Return the single element
+      return cy.wrap(elements);
+    });
+  },
+);
+
 Cypress.on("uncaught:exception", () => {
   // Prevent CI from failing on harmless errors
   return false;

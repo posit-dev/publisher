@@ -49,7 +49,10 @@ Cypress.skipCI(describe)("Create Deployments", () => {
       })
       .deployCurrentlySelected();
     cy.retryWithBackoff(
-      () => cy.publisherWebview().findByTestId("publisher-deployment-section"),
+      () =>
+        cy.findUniqueInPublisherWebview(
+          '[data-automation="publisher-deployment-section"]',
+        ),
       5,
       500,
     ).should("exist");
@@ -89,10 +92,8 @@ Cypress.skipCI(describe)("Create Deployments", () => {
         return cy.log("File saved.");
       })
       .deployCurrentlySelected();
-    cy.retryWithBackoff(
-      () => cy.publisherWebview().findByTestId("publisher-deployment-section"),
-      5,
-      500,
+    cy.findUniqueInPublisherWebview(
+      '[data-automation="publisher-deployment-section"]',
     ).should("exist");
   });
 });

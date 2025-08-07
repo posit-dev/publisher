@@ -28,7 +28,10 @@ describe("Deployments Section", () => {
       );
     }).deployCurrentlySelected();
     cy.retryWithBackoff(
-      () => cy.publisherWebview().findByTestId("publisher-deployment-section"),
+      () =>
+        cy.findUniqueInPublisherWebview(
+          '[data-automation="publisher-deployment-section"]',
+        ),
       5,
       500,
     ).should("exist");
@@ -58,7 +61,10 @@ describe("Deployments Section", () => {
       );
     }).deployCurrentlySelected();
     cy.retryWithBackoff(
-      () => cy.publisherWebview().findByTestId("publisher-deployment-section"),
+      () =>
+        cy.findUniqueInPublisherWebview(
+          '[data-automation="publisher-deployment-section"]',
+        ),
       5,
       500,
     ).should("exist");

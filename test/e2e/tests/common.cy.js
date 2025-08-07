@@ -16,18 +16,33 @@ describe("Common", () => {
       5,
       500,
     ).should("exist");
-    cy.publisherWebview()
-      .findByTestId("publisher-deployment-section")
-      .should("exist");
-    cy.publisherWebview()
-      .findByTestId("publisher-credentials-section")
-      .should("exist");
+    cy.retryWithBackoff(
+      () =>
+        cy.findUniqueInPublisherWebview(
+          '[data-automation="publisher-deployment-section"]',
+        ),
+      5,
+      500,
+    ).should("exist");
+    cy.retryWithBackoff(
+      () =>
+        cy.findUniqueInPublisherWebview(
+          '[data-automation="publisher-credentials-section"]',
+        ),
+      5,
+      500,
+    ).should("exist");
     cy.debugIframes();
     cy.publisherWebview().then((body) => {
       cy.task("print", body.innerHTML);
     });
-    cy.publisherWebview()
-      .findByTestId("publisher-help-section")
-      .should("exist");
+    cy.retryWithBackoff(
+      () =>
+        cy.findUniqueInPublisherWebview(
+          '[data-automation="publisher-help-section"]',
+        ),
+      5,
+      500,
+    ).should("exist");
   });
 });
