@@ -1,6 +1,7 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import {
+  InputStep,
   MultiStepInput,
   MultiStepState,
   QuickPickItemWithIndex,
@@ -39,6 +40,7 @@ export async function newConnectCredential(
   viewId: string,
   viewTitle: string,
   startingServerUrl?: string,
+  previousStep?: InputStep,
 ): Promise<Credential | undefined> {
   // ***************************************************************
   // API Calls and results
@@ -83,9 +85,10 @@ export async function newConnectCredential(
       promptStepNumbers: {},
     };
 
-    await MultiStepInput.run({
-      step: (input) => inputServerUrl(input, state),
-    });
+    await MultiStepInput.run(
+      { step: (input) => inputServerUrl(input, state) },
+      previousStep,
+    );
     return state;
   }
 

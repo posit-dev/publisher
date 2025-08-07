@@ -35,6 +35,7 @@ import {
 export async function newConnectCloudCredential(
   viewId: string,
   viewTitle: string,
+  previousStep?: InputStep,
 ): Promise<Credential | undefined> {
   // ***************************************************************
   // API Calls and results
@@ -116,9 +117,10 @@ export async function newConnectCloudCredential(
       promptStepNumbers: {},
     };
 
-    await MultiStepInput.run({
-      step: (input) => initDeviceAuth(input, state),
-    });
+    await MultiStepInput.run(
+      { step: (input) => initDeviceAuth(input, state), skippable: true },
+      previousStep,
+    );
     return state;
   }
 

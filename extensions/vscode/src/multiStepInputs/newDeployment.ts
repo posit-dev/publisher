@@ -55,6 +55,8 @@ import {
 } from "src/multiStepInputs/common";
 import { newCredential } from "./newCredential";
 
+const viewTitle = "Create a New Deployment";
+
 export async function newDeployment(
   viewId: string,
   projectDir = ".",
@@ -285,7 +287,7 @@ export async function newDeployment(
   // ***************************************************************
   async function collectInputs() {
     const state: MultiStepState = {
-      title: "Create a New Deployment",
+      title: viewTitle,
       // We're going to temporarily disable display of steps due to the complex
       // nature of calculation with multiple paths through this flow.
       step: 0,
@@ -526,10 +528,7 @@ export async function newDeployment(
 
     // either the user opted for creating a brand new credential or
     // there are no existing credentials, so force the user to create a new credential
-    newOrSelectedCredential = await newCredential(
-      viewId,
-      "Create a New Credential",
-    );
+    newOrSelectedCredential = await newCredential(viewId, viewTitle);
   }
 
   // ***************************************************************

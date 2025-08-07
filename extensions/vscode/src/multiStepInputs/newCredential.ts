@@ -1,6 +1,6 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
-import { MultiStepInput, MultiStepState } from "./multiStepHelper";
+import { InputStep, MultiStepInput, MultiStepState } from "./multiStepHelper";
 import { Credential, ServerType, ProductName } from "src/api";
 import { extensionSettings } from "src/extension";
 import { isConnectCloud, platformList } from "src/multiStepInputs/common";
@@ -8,16 +8,16 @@ import { newConnectCredential } from "./newConnectCredential";
 import { newConnectCloudCredential } from "./newConnectCloudCredential";
 import { getEnumKeyByEnumValue } from "src/utils/enums";
 
-const viewTitle = "Create a New Credential";
-
 export async function newCredential(
   viewId: string,
+  viewTitle: string,
   startingServerUrl?: string,
 ): Promise<Credential | undefined> {
   // the serverType will be overwritten in the very first step
   // when the platform is selected
   let serverType: ServerType = ServerType.CONNECT;
   let newCredential: Credential | undefined = undefined;
+  let previousStep: InputStep | undefined = undefined;
 
   // ***************************************************************
   // Order of all steps for creating a new credential
@@ -45,13 +45,12 @@ export async function newCredential(
 
     if (extensionSettings.enableConnectCloud()) {
       // select the platform only when the enableConnectCloud config has been turned on
-      await MultiStepInput.run({
-        step: (input) => inputPlatform(input, state),
-      });
+      previousStep = { step: (input) => inputPlatform(input, state) };
+      await MultiStepInput.run(previousStep);
     } else {
       newCredential = await newConnectCredential(
         viewId,
-        viewTitle,
+        state.title,
         startingServerUrl,
       );
     }
@@ -78,15 +77,20 @@ export async function newCredential(
     serverType = enumKey ? ServerType[enumKey] : serverType;
 
     if (isConnectCloud(serverType)) {
-      newCredential = await newConnectCloudCredential(viewId, viewTitle);
+      newCredential = await newConnectCloudCredential(
+        viewId,
+        state.title,
+        previousStep,
+      );
       return;
     }
 
     // CONNECT was selected
     newCredential = await newConnectCredential(
       viewId,
-      viewTitle,
+      state.title,
       startingServerUrl,
+      previousStep,
     );
   }
 

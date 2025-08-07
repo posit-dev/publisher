@@ -94,6 +94,7 @@ import {
   SelectionIsPreContentRecord,
   setSelectionIsPreContentRecord,
 } from "../extension";
+import { createNewCredentialLabel } from "src/multiStepInputs/common";
 
 enum HomeViewInitialized {
   initialized = "initialized",
@@ -1094,7 +1095,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
    * Once the server url is provided, the user is prompted with the url hostname as the default server name.
    */
   public addCredential = async (startingServerUrl?: string) => {
-    const credential = await newCredential(Views.HomeView, startingServerUrl);
+    const credential = await newCredential(
+      Views.HomeView,
+      createNewCredentialLabel,
+      startingServerUrl,
+    );
     if (credential) {
       this.refreshCredentials();
     }
@@ -1721,6 +1726,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           });
           const credential = await newCredential(
             Views.HomeView,
+            createNewCredentialLabel,
             contentRecord.serverUrl,
           );
           credentialName = credential?.name;
@@ -1767,6 +1773,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     if (!credentialName) {
       const credential = await newCredential(
         Views.HomeView,
+        createNewCredentialLabel,
         currentContentRecord.serverUrl,
       );
       credentialName = credential?.name;

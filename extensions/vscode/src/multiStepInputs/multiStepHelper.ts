@@ -135,8 +135,11 @@ export interface InfoMessageParameters<T> {
 
 export class MultiStepInput {
   // These were templatized: static async run<T>(start: InputStep) {
-  static run(start: InputStep) {
+  static run(start: InputStep, previousStep?: InputStep) {
     const input = new MultiStepInput();
+    if (previousStep) {
+      input.steps.push(previousStep);
+    }
     return input.stepThrough(start);
   }
 
