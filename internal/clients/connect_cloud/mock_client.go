@@ -13,6 +13,11 @@ type MockClient struct {
 	mock.Mock
 }
 
+func (m *MockClient) GetContent(contentID content_types.ContentID) (*types.ContentResponse, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
 func NewMockClient() *MockClient {
 	return new(MockClient)
 }
