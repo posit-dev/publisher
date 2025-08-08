@@ -6,13 +6,14 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/spf13/afero"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/schema"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/spf13/afero"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/suite"
 )
 
 type PythonSuite struct {
@@ -38,11 +39,12 @@ func (s *PythonSuite) TestInferTypePreferredFilename() {
 	s.Nil(err)
 	s.Len(configs, 1)
 
+	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypePythonFlask,
 		Entrypoint: filename,
-		Validate:   true,
+		Validate:   &validate,
 		Files:      []string{},
 		Python:     &config.Python{},
 	}, configs[0])
@@ -66,11 +68,12 @@ func (s *PythonSuite) TestInferTypeAlternatePreferredFilename() {
 	s.Nil(err)
 	s.Len(configs, 1)
 
+	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypePythonFlask,
 		Entrypoint: filename,
-		Validate:   true,
+		Validate:   &validate,
 		Files:      []string{},
 		Python:     &config.Python{},
 	}, configs[0])
@@ -91,11 +94,12 @@ func (s *PythonSuite) TestInferTypeOnlyPythonFile() {
 	s.Nil(err)
 	s.Len(configs, 1)
 
+	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypePythonFlask,
 		Entrypoint: filename,
-		Validate:   true,
+		Validate:   &validate,
 		Files:      []string{},
 		Python:     &config.Python{},
 	}, configs[0])
@@ -159,11 +163,12 @@ func (s *PythonSuite) TestInferTypeWithEntrypoint() {
 	s.Nil(err)
 	s.Len(configs, 1)
 
+	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypePythonFlask,
 		Entrypoint: filename,
-		Validate:   true,
+		Validate:   &validate,
 		Files:      []string{},
 		Python:     &config.Python{},
 	}, configs[0])
@@ -183,11 +188,12 @@ func (s *PythonSuite) TestInferTypeGradio() {
 	s.Nil(err)
 	s.Len(configs, 1)
 
+	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypePythonGradio,
 		Entrypoint: filename,
-		Validate:   true,
+		Validate:   &validate,
 		Files:      []string{},
 		Python:     &config.Python{},
 	}, configs[0])

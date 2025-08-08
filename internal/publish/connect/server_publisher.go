@@ -75,7 +75,7 @@ func (c *ServerPublisher) PublishToServer(contentID types.ContentID, bundleReade
 		return err
 	}
 
-	if c.Config.Validate {
+	if c.Config.GetValidate() {
 		err = c.validateContent(contentID)
 		if err != nil {
 			return err

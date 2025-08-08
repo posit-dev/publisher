@@ -8,13 +8,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/spf13/afero"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/schema"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/spf13/afero"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/suite"
 )
 
 type ManifestSuite struct {
@@ -134,13 +135,14 @@ func (s *ManifestSuite) TestReadManifestFileErr() {
 }
 
 func (s *ManifestSuite) TestNewManifestFromConfig() {
+	hasParams := true
 	cfg := &config.Config{
 		Schema:        schema.ConfigSchemaURL,
 		Type:          "python-dash",
 		Entrypoint:    "app:myapp",
 		Title:         "Super Title",
 		Description:   "minimal description",
-		HasParameters: true,
+		HasParameters: &hasParams,
 		Python: &config.Python{
 			Version:        "3.4.5",
 			PackageFile:    "requirements.in",
@@ -182,12 +184,13 @@ func (s *ManifestSuite) TestNewManifestFromConfig() {
 }
 
 func (s *ManifestSuite) TestNewManifestFromConfigWithJupyterOptions() {
+	hasParams := true
 	cfg := &config.Config{
 		Schema:        schema.ConfigSchemaURL,
 		Type:          "jupyter-notebook",
 		Entrypoint:    "notebook.ipynb",
 		Title:         "Some Notebook",
-		HasParameters: true,
+		HasParameters: &hasParams,
 		Python: &config.Python{
 			Version:        "3.4.5",
 			PackageFile:    "requirements.in",

@@ -166,7 +166,8 @@ func (s *RPublishFunctionalSuite) TestPublishWithClientFunctional() {
 	cfg.Entrypoint = "app.R"
 	cfg.Title = "Test R Application"
 	cfg.Environment = map[string]string{"TEST_VAR": "test-value"}
-	cfg.Validate = true
+	validate := true
+	cfg.Validate = &validate
 
 	cfg.R = &config.R{
 		PackageManager: "renv",

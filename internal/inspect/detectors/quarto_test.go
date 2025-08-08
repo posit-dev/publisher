@@ -10,14 +10,15 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/executor/executortest"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/schema"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/suite"
 )
 
 type QuartoDetectorSuite struct {
@@ -79,12 +80,13 @@ func (s *QuartoDetectorSuite) TestInferTypeMarkdownDoc() {
 	}
 	configs := s.runInferType("quarto-doc-none")
 	s.Len(configs, 1)
+	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeQuarto,
 		Entrypoint: "quarto-doc-none.qmd",
 		Title:      "quarto-doc-none",
-		Validate:   true,
+		Validate:   &validate,
 		Files:      []string{},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
@@ -99,12 +101,13 @@ func (s *QuartoDetectorSuite) TestInferTypeMarkdownProject() {
 	}
 	configs := s.runInferType("quarto-proj-none")
 	s.Len(configs, 1)
+	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeQuarto,
 		Entrypoint: "quarto-proj-none.qmd",
 		Title:      "quarto-proj-none",
-		Validate:   true,
+		Validate:   &validate,
 		Files:      []string{"/quarto-proj-none.qmd", "/_quarto.yml"},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
@@ -119,12 +122,13 @@ func (s *QuartoDetectorSuite) TestInferTypeMarkdownProjectWindows() {
 	}
 	configs := s.runInferType("quarto-proj-none-windows")
 	s.Len(configs, 1)
+	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeQuarto,
 		Entrypoint: "quarto-proj-none.qmd",
 		Title:      "quarto-proj-none",
-		Validate:   true,
+		Validate:   &validate,
 		Files:      []string{"/quarto-proj-none.qmd", "/_quarto.yml"},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
@@ -139,12 +143,13 @@ func (s *QuartoDetectorSuite) TestInferTypePythonProject() {
 	}
 	configs := s.runInferType("quarto-proj-py")
 	s.Len(configs, 1)
+	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeQuarto,
 		Entrypoint: "quarto-proj-py.qmd",
 		Title:      "quarto-proj-py",
-		Validate:   true,
+		Validate:   &validate,
 		Files:      []string{"/quarto-proj-py.qmd", "/_quarto.yml"},
 		Python:     &config.Python{},
 		Quarto: &config.Quarto{
@@ -160,12 +165,13 @@ func (s *QuartoDetectorSuite) TestInferTypeRProject() {
 	}
 	configs := s.runInferType("quarto-proj-r")
 	s.Len(configs, 1)
+	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeQuarto,
 		Entrypoint: "quarto-proj-r.qmd",
 		Title:      "quarto-proj-r",
-		Validate:   true,
+		Validate:   &validate,
 		Files:      []string{"/quarto-proj-r.qmd", "/_quarto.yml"},
 		R:          &config.R{},
 		Quarto: &config.Quarto{
@@ -181,12 +187,13 @@ func (s *QuartoDetectorSuite) TestInferTypeRAndPythonProject() {
 	}
 	configs := s.runInferType("quarto-proj-r-py")
 	s.Len(configs, 1)
+	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeQuarto,
 		Entrypoint: "quarto-proj-r-py.qmd",
 		Title:      "quarto-proj-r-py",
-		Validate:   true,
+		Validate:   &validate,
 		Files:      []string{"/quarto-proj-r-py.qmd", "/_quarto.yml"},
 		Python:     &config.Python{},
 		R:          &config.R{},
@@ -203,12 +210,13 @@ func (s *QuartoDetectorSuite) TestInferTypeRShinyProject() {
 	}
 	configs := s.runInferType("quarto-proj-r-shiny")
 	s.Len(configs, 1)
+	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeQuartoShiny,
 		Entrypoint: "quarto-proj-r-shiny.qmd",
 		Title:      "quarto-proj-r-shiny",
-		Validate:   true,
+		Validate:   &validate,
 		Files:      []string{"/quarto-proj-r-shiny.qmd", "/_quarto.yml"},
 		R:          &config.R{},
 		Quarto: &config.Quarto{
@@ -224,12 +232,13 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoWebsite() {
 	}
 	configs := s.runInferType("quarto-website-none")
 	s.Len(configs, 2)
+	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeQuarto,
 		Entrypoint: "about.qmd",
 		Title:      "About",
-		Validate:   true,
+		Validate:   &validate,
 		Files:      []string{"/index.qmd", "/about.qmd", "/_quarto.yml"},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
@@ -241,7 +250,7 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoWebsite() {
 		Type:       config.ContentTypeQuarto,
 		Entrypoint: "index.qmd",
 		Title:      "quarto-website-none",
-		Validate:   true,
+		Validate:   &validate,
 		Files: []string{
 			"/index.qmd",
 			"/about.qmd",
@@ -290,12 +299,13 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoWebsite_viaQuartoYml() {
 	s.Nil(err)
 
 	s.Len(configs, 1)
+	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeQuarto,
 		Entrypoint: "_quarto.yml",
 		Title:      "Content Dashboard",
-		Validate:   true,
+		Validate:   &validate,
 		Files: []string{
 			"/all.qmd",
 			"/index.qmd",
@@ -321,12 +331,13 @@ func (s *QuartoDetectorSuite) TestInferTypeRMarkdownDoc() {
 	}
 	configs := s.runInferType("rmd-static-1")
 	s.Len(configs, 1)
+	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeQuarto,
 		Entrypoint: "static.Rmd",
 		Title:      "static",
-		Validate:   true,
+		Validate:   &validate,
 		Files:      []string{},
 		R:          &config.R{},
 		Quarto: &config.Quarto{
@@ -342,12 +353,13 @@ func (s *QuartoDetectorSuite) TestInferTypeMultidocProject() {
 	}
 	configs := s.runInferType("quarto-multidoc-proj-none")
 	s.Len(configs, 2)
+	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeQuarto,
 		Entrypoint: "document1.qmd",
 		Title:      "quarto-proj-none-multidocument",
-		Validate:   true,
+		Validate:   &validate,
 		Files:      []string{"/document1.qmd", "/document2.qmd", "/_quarto.yml"},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
@@ -359,7 +371,7 @@ func (s *QuartoDetectorSuite) TestInferTypeMultidocProject() {
 		Type:       config.ContentTypeQuarto,
 		Entrypoint: "document2.qmd",
 		Title:      "quarto-proj-none-multidocument",
-		Validate:   true,
+		Validate:   &validate,
 		Files:      []string{"/document1.qmd", "/document2.qmd", "/_quarto.yml"},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
@@ -374,12 +386,13 @@ func (s *QuartoDetectorSuite) TestInferTypeNotebook() {
 	}
 	configs := s.runInferType("stock-report-jupyter")
 	s.Len(configs, 1)
+	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeQuarto,
 		Entrypoint: "stock-report-jupyter.ipynb",
 		Title:      "Stock Report: TSLA",
-		Validate:   true,
+		Validate:   &validate,
 		Files:      []string{"/stock-report-jupyter.ipynb"},
 		Python:     &config.Python{},
 		Quarto: &config.Quarto{
@@ -395,12 +408,13 @@ func (s *QuartoDetectorSuite) TestInferTypeRevalJSQuartoShiny() {
 	}
 	configs := s.runInferType("dashboard")
 	s.Len(configs, 1)
+	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeQuartoShiny,
 		Entrypoint: "dashboard.qmd",
 		Title:      "posit::conf(2024)",
-		Validate:   true,
+		Validate:   &validate,
 		Files:      []string{"/dashboard.qmd"},
 		Quarto: &config.Quarto{
 			Version: "1.5.54",
@@ -416,12 +430,13 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoScriptPy() {
 	}
 	configs := s.runInferType("quarto-script-py")
 	s.Len(configs, 1)
+	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeQuarto,
 		Entrypoint: "script.py",
 		Title:      "Penguin data transformations",
-		Validate:   true,
+		Validate:   &validate,
 		Files:      []string{"/script.py", "/_quarto.yml"},
 		Python:     &config.Python{},
 		Quarto: &config.Quarto{
@@ -437,12 +452,13 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoScriptR() {
 	}
 	configs := s.runInferType("quarto-script-r")
 	s.Len(configs, 1)
+	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeQuarto,
 		Entrypoint: "script.R",
 		Title:      "Penguin data transformations",
-		Validate:   true,
+		Validate:   &validate,
 		Files:      []string{"/script.R", "/_quarto.yml"},
 		Quarto: &config.Quarto{
 			Version: "1.5.54",

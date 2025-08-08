@@ -6,13 +6,14 @@ import (
 	"os"
 	"testing"
 
+	"github.com/spf13/afero"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/schema"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/spf13/afero"
-	"github.com/stretchr/testify/suite"
 )
 
 type AllSuite struct {
@@ -41,18 +42,19 @@ func (s *AllSuite) TestInferTypeDirectory() {
 	s.NoError(err)
 	s.Len(configs, 2)
 
+	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeHTML,
 		Entrypoint: "index.html",
-		Validate:   true,
+		Validate:   &validate,
 		Files:      []string{"/index.html"},
 	}, configs[0])
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypePythonDash,
 		Entrypoint: appFilename,
-		Validate:   true,
+		Validate:   &validate,
 		Files:      []string{},
 		Python:     &config.Python{},
 	}, configs[1])
@@ -99,12 +101,13 @@ func (s *AllSuite) TestInferAll() {
 	detector := NewContentTypeDetector(logging.New())
 	t, err := detector.InferType(base, util.RelativePath{})
 	s.NoError(err)
+	validate := true
 	s.Equal([]*config.Config{
 		{
 			Schema:     schema.ConfigSchemaURL,
 			Type:       config.ContentTypePythonDash,
 			Entrypoint: appFilename,
-			Validate:   true,
+			Validate:   &validate,
 			Files:      []string{},
 			Python:     &config.Python{},
 		},
@@ -112,7 +115,7 @@ func (s *AllSuite) TestInferAll() {
 			Schema:     schema.ConfigSchemaURL,
 			Type:       config.ContentTypeHTML,
 			Entrypoint: "myfile.html",
-			Validate:   true,
+			Validate:   &validate,
 			Files:      []string{"/myfile.html"},
 			Python:     nil,
 		},

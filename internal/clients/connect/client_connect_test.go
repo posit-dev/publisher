@@ -11,6 +11,9 @@ import (
 	"time"
 
 	"github.com/mitchellh/mapstructure"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/clients/connect/server_settings"
 	"github.com/posit-dev/publisher/internal/clients/http_client"
@@ -22,8 +25,6 @@ import (
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/suite"
 )
 
 type ConnectClientSuite struct {
@@ -33,13 +34,14 @@ type ConnectClientSuite struct {
 
 func TestConnectClientSuite(t *testing.T) {
 	s := new(ConnectClientSuite)
+	hasParams := true
 	s.cfg = &config.Config{
 		Schema:        schema.ConfigSchemaURL,
 		Type:          "python-dash",
 		Entrypoint:    "app:myapp",
 		Title:         "Super Title",
 		Description:   "minimal description",
-		HasParameters: true,
+		HasParameters: &hasParams,
 		Python: &config.Python{
 			Version:        "3.4.5",
 			PackageFile:    "requirements.in",
