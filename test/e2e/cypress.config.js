@@ -1,5 +1,7 @@
 const { defineConfig } = require("cypress");
 
+const DEBUG_CYPRESS = process.env.DEBUG_CYPRESS === "true";
+const ACTIONS_STEP_DEBUG = process.env.ACTIONS_STEP_DEBUG === "true";
 const isCI = process.env.CI === "true";
 
 module.exports = defineConfig({
@@ -36,6 +38,6 @@ module.exports = defineConfig({
     CONNECT_CLOUD_ENV: process.env.CONNECT_CLOUD_ENV || "staging",
   },
   chromeWebSecurity: false,
-  video: isCI ? false : false,
+  video: DEBUG_CYPRESS || ACTIONS_STEP_DEBUG,
   numTestsKeptInMemory: 0,
 });

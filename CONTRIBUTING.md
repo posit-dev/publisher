@@ -96,7 +96,7 @@ End-to-end tests are written in JavaScript and utilize Cypress for testing the P
 
 These tests can be run locally to verify that the extension works as expected in a Connect environment.
 
-These tests also run automatically in the GitHub Actions CI pipeline for pull requests after the unit tests have passed. The workflow uses the `CONNECT_LICENSE` secret stored in the repository settings to authenticate with Connect during testing. Results, including screenshots of failed tests of test runs, are uploaded as artifacts for troubleshooting. (video replays can be optionally enabled in cypress.config.js)
+These tests also run automatically in the GitHub Actions CI pipeline for pull requests after the unit tests have passed. The workflow uses the `CONNECT_LICENSE` secret stored in the repository settings to authenticate with Connect during testing. Results, including screenshots of failed tests of test runs, are uploaded as artifacts for troubleshooting. (Video replays can be optionally enabled by setting local environment variable `DEBUG_CYPRESS` or `ACTIONS_STEP_DEBUG` to true).
 
 #### Requirements
 
