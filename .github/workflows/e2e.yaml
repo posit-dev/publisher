@@ -10,7 +10,7 @@ jobs:
     name: e2e tests (cypress)
     runs-on: ubuntu-latest
     env:
-      DEBUG_CYPRESS: "true" # Set to true to enable extra logging
+      DEBUG_CYPRESS: "false" # Set to true to enable extra logging
       ACTIONS_STEP_DEBUG: "false" # Set to false to suppress yaml warnings
     steps:
       - name: Checkout code
@@ -196,13 +196,17 @@ jobs:
             find test/e2e -path "*/node_modules" -prune -o -path "*/.venv" -prune -o -print
           fi
 
-      - name: "[DEBUG] Print code-server logs on failure"
+      - name: "[DEBUG] Print code-server logs"
         if: always() && (env.DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true')
         run: |
-          docker exec publisher-e2e.code-server bash -c 'find /root/.local -type f -name "*.log" 2>/dev/null | xargs ls -la || echo "No logs found"'
-          docker exec publisher-e2e.code-server bash -c 'find /root/.local -type f -name "*.log" 2>/dev/null | head -n 5 | xargs cat || echo "No logs found"'
+          echo "=== Code Server Log Files ==="
+          docker exec publisher-e2e.code-server bash -c 'find /root/.local -type f -name "*.log" 2>/dev/null | while read -r file; do echo "FILE: $file"; done'
+          echo "=== Main Code Server Logs (sample) ==="
+          docker exec publisher-e2e.code-server bash -c 'cat /root/.local/share/code-server/coder-logs/code-server-*.log 2>/dev/null | tail -n 50 || echo "No logs found"'
+          echo "=== Extension Host Logs (sample) ==="
+          docker exec publisher-e2e.code-server bash -c 'find /root/.local -name "remoteexthost.log" -type f 2>/dev/null | head -n 1 | xargs cat | tail -n 50 || echo "No logs found"'
 
-      - name: "[DEBUG] Print Publisher extension logs on failure"
+      - name: "[DEBUG] Print Publisher extension logs"
         if: always() && (env.DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true')
         run: |
           echo "=== Finding Publisher logs ==="
