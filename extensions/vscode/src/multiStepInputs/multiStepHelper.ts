@@ -464,9 +464,11 @@ export class MultiStepInput {
           ): Promise<ApiResponse<T>> => {
             let attempts = 0;
 
-            const executePolling = async (): Promise<ApiResponse<T>> => {
+            // polling loop
+            while (true) {
               const resp = await apiFunction();
               interval += resp.intervalAdjustment;
+
               if (
                 !shouldPollApi ||
                 (exitPollingCondition && exitPollingCondition(resp))
@@ -478,15 +480,13 @@ export class MultiStepInput {
               attempts++;
               if ((maxAttempts && attempts >= maxAttempts) || abortPolling) {
                 // return custom internal error when aborting or
-                // when the max attemps have been reached
+                // when the max attempts have been reached
                 throw new AbortError(); // bubble up the error
               }
+
               // exit condition has not been met, wait the interval time and poll again
               await new Promise((resolve) => setTimeout(resolve, interval));
-              return executePolling(); // recursive call to continue polling
-            };
-
-            return await executePolling();
+            }
           };
 
           // start polling (poll every 5 seconds at most 120 times === 10 minutes max time)
