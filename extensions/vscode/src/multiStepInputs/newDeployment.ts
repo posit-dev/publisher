@@ -67,14 +67,35 @@ export async function newDeployment(
   // API Calls and results
   // ***************************************************************
   const api = await useApi();
-  const steps: InputStep[] = [];
-  let inspectionQuickPicks: QuickPickItemWithInspectionResult[] = [];
+
+  // local step history that gets passed down to any sub-flows
+  const stepHistory: InputStep[] = [];
+
+  enum step {
+    ENTRY_FILE_SELECTION = "inputEntryPointFileSelection",
+    RETRIEVE_CONTENT_TYPES = "retrieveContentTypes",
+    INPUT_CONTENT_TYPE = "inputContentType",
+    INPUT_TITLE = "inputTitle",
+    PICK_CREDENTIALS = "pickCredentials",
+  }
+
+  const steps: Record<
+    step,
+    (input: MultiStepInput, state: MultiStepState) => Promise<void | InputStep>
+  > = {
+    [step.ENTRY_FILE_SELECTION]: inputEntryPointFileSelection,
+    [step.RETRIEVE_CONTENT_TYPES]: retrieveContentTypes,
+    [step.INPUT_CONTENT_TYPE]: inputContentType,
+    [step.INPUT_TITLE]: inputTitle,
+    [step.PICK_CREDENTIALS]: pickCredentials,
+  };
 
   let credentials: Credential[] = [];
   let credentialListItems: QuickPickItem[] = [];
 
   const entryPointListItems: QuickPickItem[] = [];
   let inspectionResults: ConfigurationInspectionResult[] = [];
+  let inspectionQuickPicks: QuickPickItemWithInspectionResult[] = [];
   const contentRecordNames = new Map<string, string[]>();
 
   let newConfig: Configuration | undefined;
@@ -284,15 +305,32 @@ export async function newDeployment(
     );
   };
 
+  const stepHistoryFlush = (name: string) => {
+    if (!stepHistory.length) {
+      // nothing to flush, bail!
+      return;
+    }
+    // flush the step history after the step passed in if this is not the last step
+    // added to the history so we don't double count the upcoming steps
+    // this would mean the user landed back at this step from the backward flow
+    if (stepHistory.at(-1)?.name !== name) {
+      const index = stepHistory.findIndex((s) => s.name === name);
+      if (index > -1) {
+        stepHistory.splice(index + 1);
+      }
+    }
+  };
+
   // ***************************************************************
   // Order of all steps for creating a new deployment
   // NOTE: This multi-stepper is used for multiple commands
   // ***************************************************************
 
   // Select the entrypoint, if there is more than one
+  // Retrieve content types
   // Select the content type, if there is more than one
   // Prompt for Title
-  // If no credentials, then skip to create new credential
+  // If no credentials, then create new credential
   // If some credentials, select either use of existing or creation of a new one
   // If creating credential:
   // - Select the platform
@@ -319,16 +357,27 @@ export async function newDeployment(
       promptStepNumbers: {},
     };
 
-    // start the progression through the steps
-    const skippable = entryPointFile !== undefined;
-    const currentStep = {
-      step: (input: MultiStepInput) =>
-        inputEntryPointFileSelection(input, state),
-      skippable,
-    };
-    if (!skippable) {
-      steps.push(currentStep);
+    let currentStep: InputStep;
+    // we were passed in a specific file so retrieve the inspections
+    if (entryPointFile) {
+      currentStep = {
+        name: step.RETRIEVE_CONTENT_TYPES,
+        step: (input: MultiStepInput) =>
+          steps[step.RETRIEVE_CONTENT_TYPES](input, state),
+        skipStepHistory: true,
+      };
+      // we don't want to land on the retrieveContentTypes step in the backward flow
+      // from sub-flows, so we don't register this step in the step history array
+    } else {
+      currentStep = {
+        name: step.ENTRY_FILE_SELECTION,
+        step: (input: MultiStepInput) =>
+          steps[step.ENTRY_FILE_SELECTION](input, state),
+      };
+      stepHistory.push(currentStep);
     }
+
+    // start the progression through the steps
     await MultiStepInput.run(currentStep);
     return state as MultiStepState;
   }
@@ -340,171 +389,181 @@ export async function newDeployment(
     input: MultiStepInput,
     state: MultiStepState,
   ) {
+    stepHistoryFlush(step.ENTRY_FILE_SELECTION);
+
+    if (newDeploymentData.entrypoint.filePath) {
+      entryPointListItems.forEach((item) => {
+        item.picked = item.label === newDeploymentData.entrypoint.filePath;
+      });
+    }
+
     let selectedEntrypointFile: string | undefined = undefined;
-
-    // show only if we were not passed in a file
-    if (entryPointFile === undefined) {
-      if (newDeploymentData.entrypoint.filePath) {
-        entryPointListItems.forEach((item) => {
-          item.picked = item.label === newDeploymentData.entrypoint.filePath;
-        });
-      }
-
-      do {
-        const pick = await input.showQuickPick({
-          title: state.title,
-          step: 0,
-          totalSteps: 0,
-          placeholder:
-            "Select entrypoint file. This is your main file for your project. (Use this field to filter selections.)",
-          items: entryPointListItems,
-          buttons: [],
-          shouldResume: () => Promise.resolve(false),
-          ignoreFocusOut: true,
-        });
-
-        if (pick.label === browseForEntrypointLabel) {
-          let baseUri = Uri.parse(".");
-          const workspaceFolders = workspace.workspaceFolders;
-          if (workspaceFolders !== undefined) {
-            baseUri = workspaceFolders[0].uri;
-          }
-          selectedEntrypointFile = undefined;
-          const fileUris = await window.showOpenDialog({
-            defaultUri: baseUri,
-            openLabel: "Select",
-            canSelectFolders: false,
-            canSelectMany: false,
-            title: "Select Entrypoint File (main file for your project)",
-          });
-          if (!fileUris || !fileUris[0]) {
-            // canceled.
-            continue;
-          }
-          const fileUri = fileUris[0];
-
-          if (relativeDir(fileUri)) {
-            selectedEntrypointFile = relativePath(fileUri);
-          } else {
-            window.showErrorMessage(
-              `Entrypoint files must be located within the open workspace.`,
-              {
-                modal: true,
-              },
-            );
-            selectedEntrypointFile = undefined;
-          }
-        } else {
-          if (isQuickPickItem(pick)) {
-            selectedEntrypointFile = pick.label;
-          } else {
-            return;
-          }
-        }
-      } while (!selectedEntrypointFile);
-    }
-
-    // use the selected entry point file if we were not passed in a specific file
-    // otherwise use the passed in specific file and continue to inspection
-    newDeploymentData.entrypoint.filePath =
-      selectedEntrypointFile || entryPointFile;
-
-    // get the inspections only after the `filePath` has been initialized
-    await getInspectionQuickPicks();
-
-    const skippable = inspectionQuickPicks.length <= 1;
-    const currentStep = {
-      step: (input: MultiStepInput) =>
-        inputEntryPointInspectionResultSelection(input, state),
-      skippable,
-    };
-    if (!skippable) {
-      steps.push(currentStep);
-    }
-
-    // if we were not passed in a file, go interactively to the next step
-    if (entryPointFile === undefined) {
-      return currentStep;
-    } else {
-      // We're skipping this step, so we must silently just jump to the next step
-      return inputEntryPointInspectionResultSelection(input, state);
-    }
-  }
-
-  // ***************************************************************
-  // Step: Select the content inspection result should use
-  // ***************************************************************
-  async function inputEntryPointInspectionResultSelection(
-    input: MultiStepInput,
-    state: MultiStepState,
-  ) {
-    const currentStep = {
-      step: (input: MultiStepInput) => inputTitle(input, state),
-    };
-    steps.push(currentStep);
-    // skip if we only have one choice.
-    if (inspectionQuickPicks.length > 1) {
-      if (newDeploymentData.entrypoint.inspectionResult) {
-        inspectionQuickPicks.forEach((pick) => {
-          if (
-            pick.inspectionResult &&
-            newDeploymentData.entrypoint.inspectionResult
-          ) {
-            pick.picked = areInspectionResultsSimilarEnough(
-              pick.inspectionResult,
-              newDeploymentData.entrypoint.inspectionResult,
-            );
-          }
-        });
-      }
-
+    do {
       const pick = await input.showQuickPick({
         title: state.title,
         step: 0,
         totalSteps: 0,
-        placeholder: `Select the content type for your entrypoint file (${newDeploymentData.entrypoint.filePath}).`,
-        items: inspectionQuickPicks,
+        placeholder:
+          "Select entrypoint file. This is your main file for your project. (Use this field to filter selections.)",
+        items: entryPointListItems,
         buttons: [],
         shouldResume: () => Promise.resolve(false),
         ignoreFocusOut: true,
       });
 
-      if (!pick || !isQuickPickItemWithInspectionResult(pick)) {
-        return;
-      }
+      if (pick.label === browseForEntrypointLabel) {
+        let baseUri = Uri.parse(".");
+        const workspaceFolders = workspace.workspaceFolders;
+        if (workspaceFolders !== undefined) {
+          baseUri = workspaceFolders[0].uri;
+        }
+        selectedEntrypointFile = undefined;
+        const fileUris = await window.showOpenDialog({
+          defaultUri: baseUri,
+          openLabel: "Select",
+          canSelectFolders: false,
+          canSelectMany: false,
+          title: "Select Entrypoint File (main file for your project)",
+        });
+        if (!fileUris || !fileUris[0]) {
+          // canceled.
+          continue;
+        }
+        const fileUri = fileUris[0];
 
-      newDeploymentData.entrypoint.inspectionResult = pick.inspectionResult;
-      return currentStep;
+        if (relativeDir(fileUri)) {
+          selectedEntrypointFile = relativePath(fileUri);
+        } else {
+          window.showErrorMessage(
+            `Entrypoint files must be located within the open workspace.`,
+            {
+              modal: true,
+            },
+          );
+          selectedEntrypointFile = undefined;
+        }
+      } else {
+        if (isQuickPickItem(pick)) {
+          selectedEntrypointFile = pick.label;
+        } else {
+          return;
+        }
+      }
+    } while (!selectedEntrypointFile);
+
+    // use the selected entry point file and continue to inspection
+    newDeploymentData.entrypoint.filePath = selectedEntrypointFile;
+
+    // we don't want to land on the retrieveContentTypes step in the backward flow
+    // from sub-flows, so we don't register this step in the step history array
+    return {
+      name: step.RETRIEVE_CONTENT_TYPES,
+      step: (input: MultiStepInput) =>
+        steps[step.RETRIEVE_CONTENT_TYPES](input, state),
+      skipStepHistory: true,
+    };
+  }
+
+  // ***************************************************************
+  // Step: Retrieve the content types
+  // ***************************************************************
+  async function retrieveContentTypes(
+    _: MultiStepInput,
+    state: MultiStepState,
+  ) {
+    // use the passed in a specific file and continue to inspection
+    newDeploymentData.entrypoint.filePath ||= entryPointFile;
+
+    // get the inspections only after the `filePath` has been initialized
+    await getInspectionQuickPicks();
+
+    let currentStep: InputStep;
+    // if we have multiple choices, select the content inspection result
+    if (inspectionQuickPicks.length > 1) {
+      currentStep = {
+        name: step.INPUT_CONTENT_TYPE,
+        step: (input: MultiStepInput) =>
+          steps[step.INPUT_CONTENT_TYPE](input, state),
+      };
     } else {
+      // otherwise auto select the only choice and input the title
       newDeploymentData.entrypoint.inspectionResult =
         inspectionQuickPicks[0].inspectionResult;
-      // We're skipping this step, so we must silently just jump to the next step
-      return inputTitle(input, state);
+      currentStep = {
+        name: step.INPUT_TITLE,
+        step: (input: MultiStepInput) => steps[step.INPUT_TITLE](input, state),
+      };
     }
+
+    stepHistory.push(currentStep);
+    return currentStep;
+  }
+
+  // ***************************************************************
+  // Step: Select the content inspection result should use
+  // ***************************************************************
+  async function inputContentType(
+    input: MultiStepInput,
+    state: MultiStepState,
+  ) {
+    stepHistoryFlush(step.INPUT_CONTENT_TYPE);
+
+    if (newDeploymentData.entrypoint.inspectionResult) {
+      inspectionQuickPicks.forEach((pick) => {
+        if (
+          pick.inspectionResult &&
+          newDeploymentData.entrypoint.inspectionResult
+        ) {
+          pick.picked = areInspectionResultsSimilarEnough(
+            pick.inspectionResult,
+            newDeploymentData.entrypoint.inspectionResult,
+          );
+        }
+      });
+    }
+
+    const pick = await input.showQuickPick({
+      title: state.title,
+      step: 0,
+      totalSteps: 0,
+      placeholder: `Select the content type for your entrypoint file (${newDeploymentData.entrypoint.filePath}).`,
+      items: inspectionQuickPicks,
+      buttons: [],
+      shouldResume: () => Promise.resolve(false),
+      ignoreFocusOut: true,
+    });
+
+    if (!pick || !isQuickPickItemWithInspectionResult(pick)) {
+      return;
+    }
+
+    newDeploymentData.entrypoint.inspectionResult = pick.inspectionResult;
+
+    const currentStep = {
+      name: step.INPUT_TITLE,
+      step: (input: MultiStepInput) => steps[step.INPUT_TITLE](input, state),
+    };
+    stepHistory.push(currentStep);
+    return currentStep;
   }
 
   // ***************************************************************
   // Step: Input the Title
   // ***************************************************************
   async function inputTitle(input: MultiStepInput, state: MultiStepState) {
+    stepHistoryFlush(step.INPUT_TITLE);
+
     // in case we have backed up from the subsequent check, we need to reset
     // the selection that it will update. This will allow steps to be the minimum number
     // as long as we don't know for certain it will take more steps.
-
-    let initialValue = "";
-    if (newDeploymentData.entrypoint.inspectionResult) {
-      const detail =
-        newDeploymentData.entrypoint.inspectionResult.configuration.title;
-      if (detail) {
-        initialValue = detail;
-      }
-    }
+    const initialValue =
+      newDeploymentData.entrypoint.inspectionResult?.configuration.title || "";
 
     const title = await input.showInputBox({
       title: state.title,
       step: 0,
       totalSteps: 0,
-      value: newDeploymentData.title ? newDeploymentData.title : initialValue,
+      value: newDeploymentData.title || initialValue,
       prompt: "Enter a title for your content or application.",
       validate: (value) => {
         if (value.length < 3) {
@@ -520,60 +579,72 @@ export async function newDeployment(
     });
 
     newDeploymentData.title = title;
-    const skippable = newCredentialForced();
-    const currentStep = {
-      step: (input: MultiStepInput) => pickCredentials(input, state),
-      skippable,
-    };
-    if (!skippable) {
-      steps.push(currentStep);
+
+    // if there are existing credentials, allow the user to select one or create a new one
+    if (!newCredentialForced()) {
+      const currentStep = {
+        name: step.PICK_CREDENTIALS,
+        step: (input: MultiStepInput) =>
+          steps[step.PICK_CREDENTIALS](input, state),
+      };
+      stepHistory.push(currentStep);
+      return currentStep;
     }
-    return currentStep;
+    // there are no existing credentials, so force the user to create a new credential
+    return await inputNewCredential();
   }
 
   // ***************************************************************
-  // Step: Select the credentials to be used
+  // Step: Select the credential to be used
   // ***************************************************************
   async function pickCredentials(input: MultiStepInput, state: MultiStepState) {
-    // if there are existing credentials, allow the user to select one or create a new one
-    if (!newCredentialForced()) {
-      if (newDeploymentData.existingCredentialName) {
-        credentialListItems.forEach((credential) => {
-          credential.picked =
-            credential.label === newDeploymentData.existingCredentialName;
-        });
-      }
-      const pick = await input.showQuickPick({
-        title: state.title,
-        step: 0,
-        totalSteps: 0,
-        placeholder:
-          "Select the credential you want to use to deploy. (Use this field to filter selections.)",
-        items: credentialListItems,
-        buttons: [],
-        shouldResume: () => Promise.resolve(false),
-        ignoreFocusOut: true,
-      });
-      newDeploymentData.existingCredentialName = pick.label;
+    stepHistoryFlush(step.PICK_CREDENTIALS);
 
-      if (!newCredentialSelected()) {
-        // the user selected an existing credential, bail out
-        return;
-      }
+    if (newDeploymentData.existingCredentialName) {
+      credentialListItems.forEach((credential) => {
+        credential.picked =
+          credential.label === newDeploymentData.existingCredentialName;
+      });
+    }
+    const pick = await input.showQuickPick({
+      title: state.title,
+      step: 0,
+      totalSteps: 0,
+      placeholder:
+        "Select the credential you want to use to deploy. (Use this field to filter selections.)",
+      items: credentialListItems,
+      buttons: [],
+      shouldResume: () => Promise.resolve(false),
+      ignoreFocusOut: true,
+    });
+    newDeploymentData.existingCredentialName = pick.label;
+
+    if (newCredentialSelected()) {
+      // the user opted for creating a brand new credential
+      return await inputNewCredential();
     }
 
-    // either the user opted for creating a brand new credential or
-    // there are no existing credentials, so force the user to create a new credential
+    // the user selected an existing credential, making this the
+    // last step to create a new deployment
+    return;
+  }
+
+  // ***************************************************************
+  // Create a new credential to be used
+  // ***************************************************************
+  async function inputNewCredential() {
     try {
       newOrSelectedCredential = await newCredential(
         viewId,
         viewTitle,
         undefined,
-        steps,
+        stepHistory,
       );
     } catch {
       /* the user dismissed this flow, do nothing more */
     }
+
+    // last step to create a new deployment
   }
 
   // ***************************************************************

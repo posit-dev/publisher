@@ -57,6 +57,29 @@ export async function newConnectCloudCredential(
     },
   };
 
+  enum step {
+    INIT_DEVICE_AUTH = "initDeviceAuth",
+    AUTHENTICATE = "authenticate",
+    RETRIEVE_ACCOUNTS = "retrieveAccounts",
+    DETERMINE_ACCT_FLOW = "determineAccountFlow",
+    INPUT_ACCT = "inputAccount",
+    INPUT_SIGNUP = "inputSignup",
+    INPUT_CRED_NAME = "inputCredentialName",
+  }
+
+  const steps: Record<
+    step,
+    (input: MultiStepInput, state: MultiStepState) => Promise<void | InputStep>
+  > = {
+    [step.INIT_DEVICE_AUTH]: initDeviceAuth,
+    [step.AUTHENTICATE]: authenticate,
+    [step.RETRIEVE_ACCOUNTS]: retrieveAccounts,
+    [step.DETERMINE_ACCT_FLOW]: determineAccountFlow,
+    [step.INPUT_ACCT]: inputAccount,
+    [step.INPUT_SIGNUP]: inputSignup,
+    [step.INPUT_CRED_NAME]: inputCredentialName,
+  };
+
   // update the device auth data for Connect Cloud
   const updateConnectCloudAuthData = (data?: DeviceAuth) => {
     connectCloudData.auth.deviceCode = data?.deviceCode || "";
@@ -118,7 +141,11 @@ export async function newConnectCloudCredential(
     };
 
     await MultiStepInput.run(
-      { step: (input) => initDeviceAuth(input, state), skippable: true },
+      {
+        name: step.INIT_DEVICE_AUTH,
+        step: (input) => steps[step.INIT_DEVICE_AUTH](input, state),
+        skipStepHistory: true,
+      },
       previousSteps,
     );
     return state;
@@ -174,8 +201,9 @@ export async function newConnectCloudCredential(
     }
 
     return {
-      step: (input: MultiStepInput) => authenticate(input, state),
-      skippable: true,
+      name: step.AUTHENTICATE,
+      step: (input: MultiStepInput) => steps[step.AUTHENTICATE](input, state),
+      skipStepHistory: true,
     };
   }
 
@@ -239,8 +267,10 @@ export async function newConnectCloudCredential(
     }
 
     return {
-      step: (input: MultiStepInput) => retrieveAccounts(input, state),
-      skippable: true,
+      name: step.RETRIEVE_ACCOUNTS,
+      step: (input: MultiStepInput) =>
+        steps[step.RETRIEVE_ACCOUNTS](input, state),
+      skipStepHistory: true,
     };
   }
 
@@ -308,8 +338,10 @@ export async function newConnectCloudCredential(
     }
 
     return {
-      step: (input: MultiStepInput) => determineAccountFlow(input, state),
-      skippable: true,
+      name: step.DETERMINE_ACCT_FLOW,
+      step: (input: MultiStepInput) =>
+        steps[step.DETERMINE_ACCT_FLOW](input, state),
+      skipStepHistory: true,
     };
   }
 
@@ -318,28 +350,37 @@ export async function newConnectCloudCredential(
   // ***************************************************************
   function determineAccountFlow(_: MultiStepInput, state: MultiStepState) {
     const accounts = getPublishableAccounts(connectCloudData.accounts);
-    let step: (input: MultiStepInput) => Thenable<InputStep | void>;
-    let skippable: boolean | undefined;
+    let name: string = "";
+    let stepFunc: (input: MultiStepInput) => Thenable<InputStep | void>;
+    let skipStepHistory: boolean | undefined;
 
     if (accounts.length === 1) {
       // case 1: there is only one publishable account, use it and create the credential
-      step = (input: MultiStepInput) => inputCredentialName(input, state);
+      name = step.INPUT_CRED_NAME;
+      stepFunc = (input: MultiStepInput) =>
+        steps[step.INPUT_CRED_NAME](input, state);
       // populate the selected account props
       state.data.accountId = accounts[0].id;
       state.data.accountName = accounts[0].displayName;
     } else if (accounts.length > 1) {
       // case 2: there are multiple publishable accounts, display the account selector
-      step = (input: MultiStepInput) => inputAccount(input, state);
+      name = step.INPUT_ACCT;
+      stepFunc = (input: MultiStepInput) =>
+        steps[step.INPUT_ACCT](input, state);
     } else {
       if (connectCloudData.accounts.length > 0) {
         // case 3: there are no publishable accounts, but the user has at least one account,
         // so they could be a guest or viewer on that account, ask if they want to sign up
-        step = (input: MultiStepInput) => inputSignup(input, state);
+        name = step.INPUT_SIGNUP;
+        stepFunc = (input: MultiStepInput) =>
+          steps[step.INPUT_SIGNUP](input, state);
       } else {
         // case 4: there are zero accounts for the user, so they must be going through the
         // sign up process, open a browser to finish creating the account in Connect
-        step = (input: MultiStepInput) => retrieveAccounts(input, state);
-        skippable = true;
+        name = step.RETRIEVE_ACCOUNTS;
+        stepFunc = (input: MultiStepInput) =>
+          steps[step.RETRIEVE_ACCOUNTS](input, state);
+        skipStepHistory = true;
         // populate the account polling props
         connectCloudData.shouldPoll = true;
         connectCloudData.accountUrl = CONNECT_CLOUD_ACCOUNT_URL;
@@ -347,7 +388,7 @@ export async function newConnectCloudCredential(
     }
 
     // must return a promise for function signature to match other functions
-    return Promise.resolve({ step, skippable });
+    return Promise.resolve({ name, step: stepFunc, skipStepHistory });
   }
 
   // ***************************************************************
@@ -375,7 +416,9 @@ export async function newConnectCloudCredential(
     state.data.accountName = account?.displayName || accounts[0].displayName;
 
     return {
-      step: (input: MultiStepInput) => inputCredentialName(input, state),
+      name: step.INPUT_CRED_NAME,
+      step: (input: MultiStepInput) =>
+        steps[step.INPUT_CRED_NAME](input, state),
     };
   }
 
@@ -411,8 +454,10 @@ export async function newConnectCloudCredential(
 
     // go to the authenticate step again to have the user sign up for an individual plan
     return {
-      step: (input: MultiStepInput) => initDeviceAuth(input, state),
-      skippable: true,
+      name: step.INIT_DEVICE_AUTH,
+      step: (input: MultiStepInput) =>
+        steps[step.INIT_DEVICE_AUTH](input, state),
+      skipStepHistory: true,
     };
   }
 

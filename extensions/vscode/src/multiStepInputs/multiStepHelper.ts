@@ -76,11 +76,13 @@ export const assignStep = (state: MultiStepState, uniqueId: string): number => {
   return previous;
 };
 
-// InputStep now can have a 'skippable' property (optional)
+// InputStep now can have 'skipStepHistory' and 'name' properties (optional)
 export type InputStep = {
+  // the name for the step
+  name?: string;
+  // used to optionally skip adding the step to the history stack
+  skipStepHistory?: boolean;
   step: (input: MultiStepInput) => Thenable<InputStep | void>;
-  // used to optionally skip a step when navigating backwards in the multi-stepper
-  skippable?: boolean;
 };
 
 interface QuickPickParameters<T extends QuickPickItem> {
@@ -150,8 +152,10 @@ export class MultiStepInput {
   private async stepThrough(start: InputStep) {
     let currentStep: InputStep | void = start;
     while (currentStep) {
-      // add the current step to the history
-      this.steps.push(currentStep);
+      if (!currentStep.skipStepHistory) {
+        // add the current step to the history
+        this.steps.push(currentStep);
+      }
       if (this.current) {
         this.current.enabled = false;
         this.current.busy = true;
@@ -163,22 +167,10 @@ export class MultiStepInput {
         if (err === InputFlowAction.back) {
           // remove the current step (the one that caused the 'back' action)
           this.steps.pop();
-
-          // iterate backward through the history to find the previous non-skippable step
-          while (this.steps.length > 0) {
-            const previousStep = this.steps.pop();
-
-            if (previousStep?.skippable !== true) {
-              // found a non-skippable step, go back to it
-              currentStep = previousStep;
-              break;
-            }
-            // if skippable, continue popping to find the next non-skippable step
-          }
+          currentStep = this.steps.pop();
 
           if (this.steps.length === 0 && currentStep === undefined) {
-            // if all previous steps were skippable, and we've popped everything,
-            // effectively cancel the input flow
+            // if we've popped everything, effectively cancel the input flow
             throw InputFlowAction.cancel;
           }
         } else if (err === InputFlowAction.resume) {

@@ -23,7 +23,36 @@ export async function newCredential(
   // when the platform is selected
   let serverType: ServerType = ServerType.CONNECT;
   let credential: Credential | undefined = undefined;
-  const steps: InputStep[] = [];
+
+  // local step history that gets passed down to any sub-flows
+  const stepHistory: InputStep[] = [];
+
+  enum step {
+    INPUT_PLATFORM = "inputPlatform",
+  }
+
+  const steps: Record<
+    step,
+    (input: MultiStepInput, state: MultiStepState) => Promise<void | InputStep>
+  > = {
+    [step.INPUT_PLATFORM]: inputPlatform,
+  };
+
+  const stepHistoryFlush = (name: string) => {
+    if (!stepHistory.length) {
+      // nothing to flush, bail!
+      return;
+    }
+    // flush the step history after the step passed in if this is not the last step
+    // added to the history so we don't double count the upcoming steps
+    // this would mean the user landed back at this step from the backward flow
+    if (stepHistory.at(-1)?.name !== name) {
+      const index = stepHistory.findIndex((s) => s.name === name);
+      if (index > -1) {
+        stepHistory.splice(index + 1);
+      }
+    }
+  };
 
   // ***************************************************************
   // Order of all steps for creating a new credential
@@ -52,9 +81,11 @@ export async function newCredential(
     if (extensionSettings.enableConnectCloud()) {
       // select the platform only when the enableConnectCloud config has been turned on
       const currentStep = {
-        step: (input: MultiStepInput) => inputPlatform(input, state),
+        name: step.INPUT_PLATFORM,
+        step: (input: MultiStepInput) =>
+          steps[step.INPUT_PLATFORM](input, state),
       };
-      steps.push(currentStep);
+      stepHistory.push(currentStep);
       await MultiStepInput.run(currentStep, previousSteps);
     } else {
       try {
@@ -75,6 +106,8 @@ export async function newCredential(
   // Step: Select the platform for the credential (used for all platforms)
   // ***************************************************************
   async function inputPlatform(input: MultiStepInput, state: MultiStepState) {
+    stepHistoryFlush(step.INPUT_PLATFORM);
+
     const pick = await input.showQuickPick({
       title: state.title,
       step: 0,
@@ -90,12 +123,14 @@ export async function newCredential(
     // fallback to the default if there is ever a case when the enumKey is not found
     serverType = enumKey ? ServerType[enumKey] : serverType;
 
+    const prevSteps = [...(previousSteps || []), ...stepHistory];
     if (isConnectCloud(serverType)) {
       try {
-        credential = await newConnectCloudCredential(viewId, state.title, [
-          ...(previousSteps || []),
-          ...steps,
-        ]);
+        credential = await newConnectCloudCredential(
+          viewId,
+          state.title,
+          prevSteps,
+        );
       } catch {
         /* the user dismissed this flow, do nothing more */
       }
@@ -108,7 +143,7 @@ export async function newCredential(
         viewId,
         state.title,
         startingServerUrl,
-        [...(previousSteps || []), ...steps],
+        prevSteps,
       );
     } catch {
       /* the user dismissed this flow, do nothing more */

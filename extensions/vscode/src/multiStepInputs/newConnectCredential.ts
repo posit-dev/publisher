@@ -53,6 +53,23 @@ export async function newConnectCredential(
   let serverType: ServerType = ServerType.CONNECT;
   const productName: ProductName = ProductName.CONNECT;
 
+  enum step {
+    INPUT_SERVER_URL = "inputServerUrl",
+    INPUT_API_KEY = "inputAPIKey",
+    INPUT_SNOWFLAKE_CONN = "inputSnowflakeConnection",
+    INPUT_CRED_NAME = "inputCredentialName",
+  }
+
+  const steps: Record<
+    step,
+    (input: MultiStepInput, state: MultiStepState) => Promise<void | InputStep>
+  > = {
+    [step.INPUT_SERVER_URL]: inputServerUrl,
+    [step.INPUT_API_KEY]: inputAPIKey,
+    [step.INPUT_SNOWFLAKE_CONN]: inputSnowflakeConnection,
+    [step.INPUT_CRED_NAME]: inputCredentialName,
+  };
+
   // ***************************************************************
   // Order of all steps for creating a new Connect credential
   // ***************************************************************
@@ -87,7 +104,10 @@ export async function newConnectCredential(
     };
 
     await MultiStepInput.run(
-      { step: (input) => inputServerUrl(input, state) },
+      {
+        name: step.INPUT_SERVER_URL,
+        step: (input) => steps[step.INPUT_SERVER_URL](input, state),
+      },
       previousSteps,
     );
     return state;
@@ -199,12 +219,15 @@ export async function newConnectCredential(
 
     if (isSnowflake(serverType)) {
       return {
-        step: (input: MultiStepInput) => inputSnowflakeConnection(input, state),
+        name: step.INPUT_SNOWFLAKE_CONN,
+        step: (input: MultiStepInput) =>
+          steps[step.INPUT_SNOWFLAKE_CONN](input, state),
       };
     }
 
     return {
-      step: (input: MultiStepInput) => inputAPIKey(input, state),
+      name: step.INPUT_API_KEY,
+      step: (input: MultiStepInput) => steps[step.INPUT_API_KEY](input, state),
     };
   }
 
@@ -284,7 +307,9 @@ export async function newConnectCredential(
     state.data.apiKey = resp;
 
     return {
-      step: (input: MultiStepInput) => inputCredentialName(input, state),
+      name: step.INPUT_CRED_NAME,
+      step: (input: MultiStepInput) =>
+        steps[step.INPUT_CRED_NAME](input, state),
     };
   }
 
@@ -331,7 +356,9 @@ export async function newConnectCredential(
     state.data.url = connections[pick.index].serverUrl;
 
     return {
-      step: (input: MultiStepInput) => inputCredentialName(input, state),
+      name: step.INPUT_CRED_NAME,
+      step: (input: MultiStepInput) =>
+        steps[step.INPUT_CRED_NAME](input, state),
     };
   }
 
