@@ -636,13 +636,15 @@ type PublishConnectCloudSuite struct {
 
 // mockCloudError represents errors in the Cloud publishing process
 type mockCloudError struct {
-	createContentErr  error
-	updateContentErr  error
-	updateBundleErr   error
-	revisionErr       error
-	uploadErr         error
-	publishContentErr error
-	rPackageErr       error
+	createContentErr    error
+	updateContentErr    error
+	updateBundleErr     error
+	revisionErr         error
+	uploadErr           error
+	publishContentErr   error
+	rPackageErr         error
+	getContentErr       error
+	getAuthorizationErr error
 }
 
 func TestPublishConnectCloudSuite(t *testing.T) {
@@ -693,6 +695,16 @@ func (s *PublishConnectCloudSuite) TestPublishWithClientNewFailPublishContent() 
 func (s *PublishConnectCloudSuite) TestPublishWithClientNewFailRPackages() {
 	rPackageErr := errors.New("error from GetManifestPackages")
 	s.publishWithCloudClient(nil, &mockCloudError{rPackageErr: rPackageErr}, rPackageErr)
+}
+
+func (s *PublishConnectCloudSuite) TestPublishWithClientNewFailGetContent() {
+	getContentErr := errors.New("error from GetContent")
+	s.publishWithCloudClient(nil, &mockCloudError{getContentErr: getContentErr}, getContentErr)
+}
+
+func (s *PublishConnectCloudSuite) TestPublishWithClientNewFailGetAuthorization() {
+	getAuthorizationErr := errors.New("error from GetAuthorization")
+	s.publishWithCloudClient(nil, &mockCloudError{getAuthorizationErr: getAuthorizationErr}, fmt.Errorf("failed to get authorization token: %w", getAuthorizationErr))
 }
 
 type cloudPublishTestOptions struct {
@@ -773,6 +785,30 @@ func (s *PublishConnectCloudSuite) publishWithCloudClient(
 
 	// Setup publish content
 	cloudClient.On("PublishContent", string(myContentID)).Return(errsMock.publishContentErr)
+
+	// Setup GetContent to return a content response with the updated revision
+	// Create a separate response for GetContent with the updated PublishLogChannel
+	publishLogChannel := "publish-log-channel-cloud" // Define it here to use in both places
+	updatedContentResponse := &clienttypes.ContentResponse{
+		ID: myContentID,
+		NextRevision: &clienttypes.Revision{
+			ID:                myRevisionID,
+			PublishLogChannel: publishLogChannel, // This is needed for watchLogs
+			PublishResult:     clienttypes.PublishResultSuccess,
+		},
+	}
+	cloudClient.On("GetContent", myContentID).Return(updatedContentResponse, errsMock.getContentErr)
+
+	// Setup GetAuthorization to return a successful response for log channel access
+	cloudClient.On("GetAuthorization", mock.MatchedBy(func(req *clienttypes.AuthorizationRequest) bool {
+		// Verify the request is for log channel access with the right resource ID and permission
+		return req.ResourceType == "log_channel" &&
+			req.ResourceID == publishLogChannel &&
+			req.Permission == "revision.logs:read"
+	})).Return(&clienttypes.AuthorizationResponse{
+		Authorized: true,
+		Token:      "test-logs-access-token",
+	}, errsMock.getAuthorizationErr)
 
 	// Create the mock for connect_cloud_upload client factory
 	uploadClient := connect_cloud_upload.NewMockUploadClient()

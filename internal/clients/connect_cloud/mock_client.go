@@ -13,6 +13,11 @@ type MockClient struct {
 	mock.Mock
 }
 
+func (m *MockClient) GetContent(contentID content_types.ContentID) (*types.ContentResponse, error) {
+	args := m.Called(contentID)
+	return args.Get(0).(*types.ContentResponse), args.Error(1)
+}
+
 func NewMockClient() *MockClient {
 	return new(MockClient)
 }

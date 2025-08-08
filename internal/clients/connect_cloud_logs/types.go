@@ -12,13 +12,21 @@ const (
 	LogTypeRuntime LogType = "runtime"
 )
 
+type LogLevel string
+
+const (
+	LogLevelDebug LogLevel = "debug"
+	LogLevelInfo  LogLevel = "info"
+	LogLevelError LogLevel = "error"
+)
+
 // LogMessage represents a single log message.
 type LogMessage struct {
-	Timestamp int64   `json:"timestamp"`
-	SortKey   int64   `json:"sort_key"`
-	Message   string  `json:"message"`
-	Type      LogType `json:"type"`
-	Level     string  `json:"level"`
+	Timestamp int64    `json:"timestamp"`
+	SortKey   int64    `json:"sort_key"`
+	Message   string   `json:"message"`
+	Type      LogType  `json:"type"`
+	Level     LogLevel `json:"level"`
 }
 
 // LogsResponse represents a response containing a collection of log messages.
