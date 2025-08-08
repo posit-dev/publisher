@@ -7,14 +7,12 @@ type AccountSource string
 const (
 	AccountSourceRsconnectPython AccountSource = "rsconnect-python"
 	AccountSourceRsconnect       AccountSource = "rsconnect"
-	AccountSourceEnvironment     AccountSource = "environment"
 	AccountSourceKeychain        AccountSource = "keychain"
 )
 
 var sourceDescriptions = map[AccountSource]string{
 	AccountSourceRsconnectPython: "rsconnect-python",
 	AccountSourceRsconnect:       "RStudio IDE/rsconnect",
-	AccountSourceEnvironment:     "CONNECT_SERVER environment variable",
 }
 
 func (source AccountSource) Description() string {

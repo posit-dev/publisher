@@ -20,6 +20,5 @@ func TestAccountSourceSuite(t *testing.T) {
 func (s *AccountSourceSuite) TestDescription() {
 	s.Equal("rsconnect-python", AccountSourceRsconnectPython.Description())
 	s.Equal("RStudio IDE/rsconnect", AccountSourceRsconnect.Description())
-	s.Equal("CONNECT_SERVER environment variable", AccountSourceEnvironment.Description())
 	s.Equal("hey", AccountSource("hey").Description())
 }
