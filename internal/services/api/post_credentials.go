@@ -61,7 +61,7 @@ func PostCredentialFuncHandler(log logging.Logger) http.HandlerFunc {
 		}
 
 		var environment types.CloudEnvironment
-		if body.ServerType == server_type.ServerTypeConnectCloud {
+		if body.ServerType.IsCloud() {
 			environment = cloud.GetCloudEnvironment(req.Header.Get(connectCloudEnvironmentHeader))
 			body.URL = cloud.GetFrontendURL(environment)
 		}

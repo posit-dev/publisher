@@ -3,6 +3,7 @@
 import { AxiosInstance } from "axios";
 import { Credential, TestResult } from "../types/credentials";
 import { ServerType } from "../types/contentRecords";
+import { CONNECT_CLOUD_ENV_HEADER } from "../../constants";
 
 export class Credentials {
   private client: AxiosInstance;
@@ -34,17 +35,21 @@ export class Credentials {
     accessToken: string,
     serverType: ServerType,
   ) {
-    return this.client.post<Credential>(`credentials`, {
-      name,
-      url,
-      apiKey,
-      snowflakeConnection,
-      accountId,
-      accountName,
-      refreshToken,
-      accessToken,
-      serverType,
-    });
+    return this.client.post<Credential>(
+      `credentials`,
+      {
+        name,
+        url,
+        apiKey,
+        snowflakeConnection,
+        accountId,
+        accountName,
+        refreshToken,
+        accessToken,
+        serverType,
+      },
+      { headers: CONNECT_CLOUD_ENV_HEADER },
+    );
   }
 
   // Returns:
