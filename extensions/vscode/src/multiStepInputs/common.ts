@@ -137,28 +137,26 @@ export const fetchDeviceAuth = async (): Promise<ApiResponse<DeviceAuth>> => {
 export const fetchAuthToken = async (
   deviceCode: string,
 ): Promise<ApiResponse<AuthToken>> => {
-  let intervalAdjustment = 0;
   try {
     const api = await useApi();
     const resp = await api.connectCloud.token(deviceCode);
-    return { data: resp.data, intervalAdjustment };
+    return { data: resp.data, intervalAdjustment: 0 };
   } catch (err: unknown) {
     if (axios.isAxiosError(err) && err.response?.data?.code) {
-      // handle the expected polling errors
+      // handle the expected polling error codes
       switch (err.response.data.code) {
         case "deviceAuthSlowDown":
-          // adjust the interval by 1 second
-          intervalAdjustment = 1000;
-          break;
+          // this is not an actual error, adjust the interval by 1 second
+          // and return the promise w/o the `data` property to continue polling
+          return { intervalAdjustment: 1000 };
         case "deviceAuthPending":
-          // DO NOTHING, this is expected while authenticating
-          break;
+          // this is not an actual error, this is expected while authenticating
+          // just return the promise w/o the `data` property to continue polling
+          return { intervalAdjustment: 0 };
         default:
           // bubble up any other errors
           throw err;
       }
-      // this is not an actual error so return the promise w/o the `data` property
-      return { intervalAdjustment };
     } else {
       // there was an unexpected error, bubble up the error
       throw err;
