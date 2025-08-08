@@ -6,12 +6,13 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/spf13/afero"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/schema"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/spf13/afero"
-	"github.com/stretchr/testify/suite"
 )
 
 type StaticHTMLDetectorSuite struct {
@@ -42,18 +43,19 @@ func (s *StaticHTMLDetectorSuite) TestInferType() {
 	s.Nil(err)
 	s.Len(configs, 2)
 
+	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeHTML,
 		Entrypoint: filename,
-		Validate:   true,
+		Validate:   &validate,
 		Files:      []string{fmt.Sprintf("/%s", filename)},
 	}, configs[0])
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeHTML,
 		Entrypoint: otherFilename,
-		Validate:   true,
+		Validate:   &validate,
 		Files:      []string{fmt.Sprintf("/%s", otherFilename)},
 	}, configs[1])
 }
@@ -79,11 +81,12 @@ func (s *StaticHTMLDetectorSuite) TestInferTypeWithEntrypoint() {
 	s.Nil(err)
 	s.Len(configs, 1)
 
+	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeHTML,
 		Entrypoint: otherFilename,
-		Validate:   true,
+		Validate:   &validate,
 		Files:      []string{fmt.Sprintf("/%s", otherFilename)},
 	}, configs[0])
 }
