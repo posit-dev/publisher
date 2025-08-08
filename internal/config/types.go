@@ -138,14 +138,16 @@ func (c *Config) ForceProductTypeCompliance() {
 	if c.ProductType == ProductTypeConnectCloud {
 		// These fields are disallowed by the schema
 		if c.Python != nil {
-			//c.Python.PackageManager = ""
-			//c.Python.PackageFile = ""
-			//c.Python.RequiresPythonVersion = ""
+			c.Python.PackageManager = ""
+			c.Python.PackageFile = ""
+			c.Python.RequiresPythonVersion = ""
 
 			if c.Python.Version != "" {
 				// Connect Cloud requires Python version to be in the format "X.Y"
 				pythonVersionSplit := strings.Split(c.Python.Version, ".")
-				c.Python.Version = fmt.Sprintf("%s.%s", pythonVersionSplit[0], pythonVersionSplit[1])
+				if len(pythonVersionSplit) >= 2 {
+					c.Python.Version = fmt.Sprintf("%s.%s", pythonVersionSplit[0], pythonVersionSplit[1])
+				}
 			}
 		}
 		if c.R != nil {
