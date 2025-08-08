@@ -10,8 +10,7 @@ jobs:
     name: e2e tests (cypress)
     runs-on: ubuntu-latest
     env:
-      DEBUG_CYPRESS: "false" # Set to true to enable extra logging
-      ACTIONS_STEP_DEBUG: "false" # Set to false to suppress yaml warnings
+      DEBUG_CYPRESS: "false" # Set to true to enable extra logging and video recording replays
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -68,7 +67,7 @@ jobs:
           CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
 
       - name: "[DEBUG] Print host user and group info"
-        if: always() && (env.DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true')
+        if: always() && (env.DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG)
         run: |
           echo "USER: $(whoami)"
           echo "UID: $(id -u)"
@@ -147,7 +146,7 @@ jobs:
           done
 
       - name: "[DEBUG] Print workspace file ownership before tests"
-        if: always() && (env.DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true')
+        if: always() && (env.DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG)
         run: |
           docker exec publisher-e2e.code-server ls -lR /home/coder/workspace || true
 
@@ -164,6 +163,7 @@ jobs:
           CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
           CONNECT_CLOUD_ENV: ${{ env.CONNECT_CLOUD_ENV }} # defaults to staging
           CI: true
+          DEBUG_CYPRESS: ${{ env.DEBUG_CYPRESS }}
 
       - name: Upload Cypress screenshots on failure
         uses: actions/upload-artifact@v4
@@ -173,21 +173,21 @@ jobs:
           path: test/e2e/cypress/screenshots
           if-no-files-found: ignore
 
-      - name: Upload Cypress videos on failure
+      - name: "[DEBUG] Upload Cypress videos"
         uses: actions/upload-artifact@v4
-        if: failure()
+        if: always() && (env.DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG)
         with:
           name: cypress-videos
           path: test/e2e/cypress/videos
           if-no-files-found: ignore
 
       - name: "[DEBUG] List installed VS Code extensions"
-        if: always() && (env.DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true')
+        if: always() && (env.DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG)
         working-directory: test/e2e
         run: docker compose exec code-server code-server --list-extensions --show-versions || true
 
       - name: "[DEBUG] Display test/e2e directory tree"
-        if: always() && (env.DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true')
+        if: always() && (env.DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG)
         run: |
           echo "Directory tree for test/e2e:"
           if command -v tree > /dev/null; then
@@ -197,7 +197,7 @@ jobs:
           fi
 
       - name: "[DEBUG] Print code-server logs"
-        if: always() && (env.DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true')
+        if: always() && (env.DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG)
         run: |
           echo "=== Code Server Log Files ==="
           docker exec publisher-e2e.code-server bash -c 'find /root/.local -type f -name "*.log" 2>/dev/null | while read -r file; do echo "FILE: $file"; done'
@@ -207,7 +207,7 @@ jobs:
           docker exec publisher-e2e.code-server bash -c 'find /root/.local -name "remoteexthost.log" -type f 2>/dev/null | head -n 1 | xargs cat | tail -n 50 || echo "No logs found"'
 
       - name: "[DEBUG] Print Publisher extension logs"
-        if: always() && (env.DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true')
+        if: always() && (env.DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG)
         run: |
           echo "=== Finding Publisher logs ==="
           docker exec publisher-e2e.code-server bash -c 'find /root -type f -name "*.log" 2>/dev/null | grep -i "posit\|publisher" || echo "No publisher logs found"'
@@ -215,12 +215,12 @@ jobs:
           echo "======================================="
 
       - name: "[DEBUG] Print code-server container logs"
-        if: always() && (env.DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true')
+        if: always() && (env.DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG)
         working-directory: test/e2e
         run: docker compose logs code-server || true
 
       - name: "[DEBUG] List /home/coder directory contents"
-        if: always() && (env.DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true')
+        if: always() && (env.DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG)
         run: docker exec publisher-e2e.code-server ls -lR /home/coder || true
 
       - name: Stop containers
