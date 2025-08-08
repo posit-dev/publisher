@@ -117,16 +117,6 @@ func PutConfigurationHandlerFunc(base util.AbsolutePath, log logging.Logger) htt
 			return
 		}
 
-		// Then decode into a Config to be written to file.
-		//dec := json.NewDecoder(bytes.NewReader(body))
-		//dec.DisallowUnknownFields()
-		//var cfg config.Config
-		//err = dec.Decode(&cfg)
-		//if err != nil {
-		//	BadRequest(w, req, log, err)
-		//	return
-		//}
-
 		configPath := config.GetConfigPath(projectDir, name)
 
 		err = cfg.WriteFile(configPath)

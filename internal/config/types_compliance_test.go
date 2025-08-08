@@ -62,6 +62,7 @@ func (s *ConfigProductTypeComplianceSuite) TestConnectCloudWithAllSettings() {
 	s.Nil(cfg.Jupyter)
 }
 
+// TestConnectCloudWithMalformedPythonVersion tests when ProductType is ProductTypeConnectCloud
 // and Python version is malformed.
 func (s *ConfigProductTypeComplianceSuite) TestConnectCloudWithMalformedPythonVersion() {
 	// Test with an empty version string
