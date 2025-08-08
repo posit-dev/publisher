@@ -7,15 +7,16 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/spf13/afero"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/posit-dev/publisher/internal/bundles"
 	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/spf13/afero"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/suite"
 )
 
 type ManifestPackagesSuite struct {
@@ -93,7 +94,7 @@ func (s *ManifestPackagesSuite) TestCRAN() {
 			Repository: "https://cran.rstudio.com",
 		},
 	}, nil)
-	mapper.lister = lister
+	mapper.(*defaultPackageMapper).lister = lister
 
 	manifestPackages, err := mapper.GetManifestPackages(base, lockfilePath, logging.New())
 	s.NoError(err)
@@ -159,7 +160,7 @@ func (s *ManifestPackagesSuite) TestBioconductor() {
 			Repository: "https://bioconductor.org/packages/3.18/bioc",
 		},
 	}, nil)
-	mapper.lister = lister
+	mapper.(*defaultPackageMapper).lister = lister
 
 	manifestPackages, err := mapper.GetManifestPackages(base, lockfilePath, logging.New())
 	s.NoError(err)
@@ -192,7 +193,7 @@ func (s *ManifestPackagesSuite) TestVersionMismatch() {
 			Repository: "https://cran.rstudio.com",
 		},
 	}, nil)
-	mapper.lister = lister
+	mapper.(*defaultPackageMapper).lister = lister
 
 	manifestPackages, err := mapper.GetManifestPackages(base, lockfilePath, logging.New())
 	s.NotNil(err)
@@ -222,7 +223,7 @@ func (s *ManifestPackagesSuite) TestDevVersion() {
 			Repository: "https://cran.rstudio.com",
 		},
 	}, nil)
-	mapper.lister = lister
+	mapper.(*defaultPackageMapper).lister = lister
 
 	manifestPackages, err := mapper.GetManifestPackages(base, lockfilePath, logging.New())
 	s.NotNil(err)
@@ -251,7 +252,7 @@ func (s *ManifestPackagesSuite) TestMissingDescriptionFile() {
 			Repository: "https://cran.rstudio.com",
 		},
 	}, nil)
-	mapper.lister = lister
+	mapper.(*defaultPackageMapper).lister = lister
 
 	manifestPackages, err := mapper.GetManifestPackages(base, lockfilePath, logging.New())
 	s.NotNil(err)
@@ -273,7 +274,7 @@ func (s *ManifestPackagesSuite) TestMissingLockfile_BubblesUpRenvError() {
 		nil)
 	rIntprMock := interpreters.NewMockRInterpreter()
 	rIntprMock.On("RenvEnvironmentErrorCheck").Return(renvAgentErr)
-	mapper.rInterpreterFactory = func() (interpreters.RInterpreter, error) {
+	mapper.(*defaultPackageMapper).rInterpreterFactory = func() (interpreters.RInterpreter, error) {
 		return rIntprMock, nil
 	}
 

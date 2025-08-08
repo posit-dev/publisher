@@ -8,13 +8,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/spf13/afero"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/schema"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/spf13/afero"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/suite"
 )
 
 type ManifestSuite struct {
@@ -167,7 +168,7 @@ func (s *ManifestSuite) TestNewManifestFromConfig() {
 		},
 		Python: &Python{
 			Version: "3.4.5",
-			PackageManager: PythonPackageManager{
+			PackageManager: &PythonPackageManager{
 				Name:        "pip",
 				PackageFile: "requirements.in",
 			},
@@ -207,7 +208,7 @@ func (s *ManifestSuite) TestNewManifestFromConfigWithJupyterOptions() {
 		},
 		Python: &Python{
 			Version: "3.4.5",
-			PackageManager: PythonPackageManager{
+			PackageManager: &PythonPackageManager{
 				Name:        "pip",
 				PackageFile: "requirements.in",
 			},
@@ -249,7 +250,7 @@ func (s *ManifestSuite) TestNewManifestFromConfigVersionRequirements() {
 		Version: 1,
 		Python: &Python{
 			Version: "3.4.5",
-			PackageManager: PythonPackageManager{
+			PackageManager: &PythonPackageManager{
 				Name:        "pip",
 				PackageFile: "requirements.in",
 			},

@@ -38,8 +38,8 @@ func NewConnectCloudClientWithAuth(
 	environment types.CloudEnvironment,
 	log logging.Logger,
 	timeout time.Duration,
-	authValue string) APIClient {
-	httpClient := http_client.NewBasicHTTPClientWithAuth(getBaseURL(environment), timeout, authValue)
+	accessToken string) APIClient {
+	httpClient := http_client.NewBasicHTTPClientWithBearerAuth(getBaseURL(environment), timeout, accessToken)
 	return &ConnectCloudClient{
 		log:    log,
 		client: httpClient,
@@ -50,7 +50,7 @@ func (c ConnectCloudClient) GetCurrentUser() (*UserResponse, error) {
 	into := UserResponse{}
 	err := c.client.Get("/v1/users/me", &into, c.log)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error in get current user response: %w", err)
 	}
 	return &into, nil
 }
@@ -59,7 +59,7 @@ func (c ConnectCloudClient) GetAccounts() (*AccountListResponse, error) {
 	into := AccountListResponse{}
 	err := c.client.Get("/v1/accounts?has_user_role=true", &into, c.log)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error in get accounts response: %w", err)
 	}
 	return &into, nil
 }
@@ -68,17 +68,27 @@ func (c ConnectCloudClient) CreateContent(request *clienttypes.CreateContentRequ
 	into := clienttypes.ContentResponse{}
 	err := c.client.Post("/v1/contents", request, &into, c.log)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error in create content response: %w", err)
 	}
 	return &into, nil
 }
 
 func (c ConnectCloudClient) UpdateContent(request *clienttypes.UpdateContentRequest) (*clienttypes.ContentResponse, error) {
 	into := clienttypes.ContentResponse{}
-	url := fmt.Sprintf("/v1/contents/%s?new_bundle=true", request.ContentID)
+	url := fmt.Sprintf("/v1/contents/%s", request.ContentID)
 	err := c.client.Patch(url, &request.ContentRequestBase, &into, c.log)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error in update content response: %w", err)
+	}
+	return &into, nil
+}
+
+func (c ConnectCloudClient) UpdateContentBundle(contentID types.ContentID) (*clienttypes.ContentResponse, error) {
+	into := clienttypes.ContentResponse{}
+	url := fmt.Sprintf("/v1/contents/%s?new_bundle=true", contentID)
+	err := c.client.Patch(url, nil, &into, c.log)
+	if err != nil {
+		return nil, fmt.Errorf("error in update content bundle response: %w", err)
 	}
 	return &into, nil
 }
@@ -88,7 +98,7 @@ func (c ConnectCloudClient) GetRevision(revisionID string) (*clienttypes.Revisio
 	url := fmt.Sprintf("/v1/revisions/%s", revisionID)
 	err := c.client.Get(url, &into, c.log)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error in get revision response: %w", err)
 	}
 	return &into, nil
 }
@@ -97,16 +107,16 @@ func (c ConnectCloudClient) GetAuthorization(request *clienttypes.AuthorizationR
 	into := clienttypes.AuthorizationResponse{}
 	err := c.client.Post("/v1/authorization", request, &into, c.log)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error in get authorization response: %w", err)
 	}
 	return &into, nil
 }
 
 func (c ConnectCloudClient) PublishContent(contentID string) error {
-	url := fmt.Sprintf("/v1/content/%s/publish", contentID)
+	url := fmt.Sprintf("/v1/contents/%s/publish", contentID)
 	err := c.client.Post(url, nil, nil, c.log)
 	if err != nil {
-		return err
+		return fmt.Errorf("error in publish content response: %w", err)
 	}
 	return nil
 }

@@ -22,7 +22,7 @@ func NewConnectCloudLogsClientWithAuth(
 	log logging.Logger,
 	timeout time.Duration,
 	authValue string) LogsAPIClient {
-	httpClient := http_client.NewBasicHTTPClientWithAuth(baseURL, timeout, authValue)
+	httpClient := http_client.NewBasicHTTPClientWithBearerAuth(baseURL, timeout, authValue)
 	return &ConnectCloudLogsClient{
 		log:    log,
 		client: httpClient,

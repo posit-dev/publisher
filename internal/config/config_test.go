@@ -209,3 +209,144 @@ func (s *ConfigSuite) TestApplySecretActionRemoveFromEmptySecrets() {
 	s.NoError(err)
 	s.Equal([]string{}, cfg.Secrets)
 }
+
+func (s *ConfigSuite) TestForceProductTypeComplianceNonCloud() {
+	// Test that nothing changes for non-Cloud product types
+	cfg := &Config{
+		ProductType: ProductTypeConnect,
+		Python: &Python{
+			Version:               "3.10.4",
+			PackageManager:        "pip",
+			PackageFile:           "requirements.txt",
+			RequiresPythonVersion: ">=3.9",
+		},
+		R: &R{
+			Version:          "4.2.1",
+			PackageManager:   "renv",
+			PackageFile:      "renv.lock",
+			RequiresRVersion: ">=4.0",
+		},
+	}
+
+	// Make a copy to compare against
+	original := &Config{
+		ProductType: ProductTypeConnect,
+		Python: &Python{
+			Version:               "3.10.4",
+			PackageManager:        "pip",
+			PackageFile:           "requirements.txt",
+			RequiresPythonVersion: ">=3.9",
+		},
+		R: &R{
+			Version:          "4.2.1",
+			PackageManager:   "renv",
+			PackageFile:      "renv.lock",
+			RequiresRVersion: ">=4.0",
+		},
+	}
+
+	// Call ForceProductTypeCompliance
+	cfg.ForceProductTypeCompliance()
+
+	// Verify nothing changed
+	s.Equal(original.Python.Version, cfg.Python.Version, "Python version should not change")
+	s.Equal(original.Python.PackageManager, cfg.Python.PackageManager, "Python package manager should not change")
+	s.Equal(original.Python.PackageFile, cfg.Python.PackageFile, "Python package file should not change")
+	s.Equal(original.Python.RequiresPythonVersion, cfg.Python.RequiresPythonVersion, "Python requires version should not change")
+
+	s.Equal(original.R.Version, cfg.R.Version, "R version should not change")
+	s.Equal(original.R.PackageManager, cfg.R.PackageManager, "R package manager should not change")
+	s.Equal(original.R.PackageFile, cfg.R.PackageFile, "R package file should not change")
+	s.Equal(original.R.RequiresRVersion, cfg.R.RequiresRVersion, "R requires version should not change")
+}
+
+func (s *ConfigSuite) TestForceProductTypeComplianceCloud() {
+	// Test that fields are unset for Cloud product type
+	cfg := &Config{
+		ProductType: ProductTypeConnectCloud,
+		Python: &Python{
+			Version:               "3.10.4",
+			PackageManager:        "pip",
+			PackageFile:           "requirements.txt",
+			RequiresPythonVersion: ">=3.9",
+		},
+		R: &R{
+			Version:          "4.2.1",
+			PackageManager:   "renv",
+			PackageFile:      "renv.lock",
+			RequiresRVersion: ">=4.0",
+		},
+	}
+
+	// Call ForceProductTypeCompliance
+	cfg.ForceProductTypeCompliance()
+
+	// Verify Python fields are modified as expected
+	s.Equal("3.10", cfg.Python.Version, "Python version should be in X.Y format")
+	s.Equal("", cfg.Python.PackageManager, "Python package manager should be unset")
+	s.Equal("", cfg.Python.PackageFile, "Python package file should be unset")
+	s.Equal("", cfg.Python.RequiresPythonVersion, "Python requires version should be unset")
+
+	// Verify R fields are modified as expected
+	s.Equal("4.2.1", cfg.R.Version, "R version should remain unchanged")
+	s.Equal("", cfg.R.PackageManager, "R package manager should be unset")
+	s.Equal("", cfg.R.PackageFile, "R package file should be unset")
+	s.Equal("", cfg.R.RequiresRVersion, "R requires version should be unset")
+}
+
+func (s *ConfigSuite) TestForceProductTypeCompliancePythonVersionFormats() {
+	// Test different Python version formats
+	testCases := []struct {
+		name           string
+		inputVersion   string
+		expectedOutput string
+	}{
+		{
+			name:           "Major.Minor",
+			inputVersion:   "3.10",
+			expectedOutput: "3.10",
+		},
+		{
+			name:           "Major.Minor.Patch",
+			inputVersion:   "3.10.4",
+			expectedOutput: "3.10",
+		},
+		{
+			name:           "Major.Minor.Patch.Build",
+			inputVersion:   "3.10.4.1",
+			expectedOutput: "3.10",
+		},
+	}
+
+	for _, tc := range testCases {
+		s.Run(tc.name, func() {
+			cfg := &Config{
+				ProductType: ProductTypeConnectCloud,
+				Python: &Python{
+					Version: tc.inputVersion,
+				},
+			}
+
+			// Call ForceProductTypeCompliance
+			cfg.ForceProductTypeCompliance()
+
+			// Verify Python version is in the expected format
+			s.Equal(tc.expectedOutput, cfg.Python.Version, "Python version should be in X.Y format")
+		})
+	}
+}
+
+func (s *ConfigSuite) TestForceProductTypeComplianceNilFields() {
+	// Test with nil Python and R fields
+	cfg := &Config{
+		ProductType: ProductTypeConnectCloud,
+		// No Python or R fields
+	}
+
+	// Call ForceProductTypeCompliance
+	cfg.ForceProductTypeCompliance()
+
+	// Verify no panic occurred and fields are still nil
+	s.Nil(cfg.Python, "Python field should still be nil")
+	s.Nil(cfg.R, "R field should still be nil")
+}

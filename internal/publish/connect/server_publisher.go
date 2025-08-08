@@ -37,6 +37,10 @@ func NewServerPublisher(
 	}
 }
 
+func (c *ServerPublisher) UpdateState() {
+	// Connect doesn't require any state updates before publishing
+}
+
 func (c *ServerPublisher) GetContentInfo(contentID types.ContentID) publishhelper.ContentInfo {
 	return publishhelper.ContentInfo{
 		ContentID:    contentID,
