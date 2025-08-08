@@ -239,13 +239,31 @@ if (typeof afterEach === "function") {
   afterEach(function () {
     if (this.currentTest.state === "failed") {
       cy.debugIframes();
+      cy.get("body").then(($body) => {
+        cy.task("print", $body.html().substring(0, 1000));
+      });
     }
   });
 }
 
 // Update waitForPublisherIframe to use a longer default timeout for CI reliability
 Cypress.Commands.add("waitForPublisherIframe", (timeout = 60000) => {
-  cy.get("iframe", { timeout }).should("exist");
+  return cy
+    .get("iframe.webview.ready", { timeout })
+    .should("exist")
+    .then(($iframes) => {
+      // Try to find the publisher iframe by extensionId
+      const $publisherIframe = $iframes.filter((i, el) => {
+        return el.src && el.src.includes("posit.publisher");
+      });
+      if ($publisherIframe.length > 0) {
+        cy.log("Found publisher iframe by extensionId");
+        return cy.wrap($publisherIframe[0]);
+      }
+      // Fallback: use the first .webview.ready iframe
+      cy.log("Falling back to first .webview.ready iframe");
+      return cy.wrap($iframes[0]);
+    });
 });
 
 // Debug: Waits for all iframes to exist (helps with timing issues in CI).

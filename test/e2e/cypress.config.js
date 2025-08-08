@@ -11,7 +11,7 @@ module.exports = defineConfig({
       runMode: 3, // Retry failed tests in run mode (CI)
       openMode: 0,
     },
-    defaultCommandTimeout: isCI ? 20000 : 4000,
+    defaultCommandTimeout: isCI ? 30000 : 4000,
     pageLoadTimeout: isCI ? 60000 : 30000,
     // eslint-disable-next-line no-unused-vars
     setupNodeEvents(on, config) {

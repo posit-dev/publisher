@@ -23,6 +23,26 @@ Cypress.Commands.add("publisherWebview", () => {
             $target.length,
             "publisher webview iframe present",
           ).to.be.greaterThan(0);
+
+          // Verify iframe has actual content
+          const body = $target[0].contentDocument?.body;
+          if (body) {
+            const bodyText = body.innerText || "";
+            const hasAutomationElements =
+              body.querySelector("[data-automation]") !== null;
+
+            if (bodyText.includes("Posit") || hasAutomationElements) {
+              cy.log(
+                "Publisher iframe content verified to contain expected content",
+              );
+            } else {
+              cy.log(
+                "WARNING: Publisher iframe found but content may not be fully loaded",
+              );
+              cy.log(`Content sample: ${bodyText.substring(0, 100)}`);
+            }
+          }
+
           return cy.wrap($target[0].contentDocument.body);
         } else if (retries > 0) {
           // eslint-disable-next-line cypress/no-unnecessary-waiting
@@ -61,7 +81,32 @@ Cypress.Commands.add("publisherWebview", () => {
     .find("iframe#active-frame", { timeout: 30000 })
     .its("0.contentDocument.body")
     .should("not.be.empty")
-    .then(cy.wrap);
+    .then((body) => {
+      // We need to wrap in jQuery to use html() and text()
+      const $body = Cypress.$(body);
+
+      // Now we can safely use jQuery methods
+      if ($body.length > 0) {
+        const bodyText = $body.text() || "";
+
+        if (!bodyText.includes("Posit Publisher")) {
+          cy.log(
+            "WARNING: Publisher webview inner content doesn't contain expected text",
+          );
+          cy.log(`Content preview: ${bodyText.substring(0, 200)}`);
+
+          if (Cypress.env("DEBUG_CYPRESS") === "true") {
+            const bodyHtml = $body.html() || "";
+            cy.task(
+              "print",
+              `Publisher webview HTML: ${bodyHtml.substring(0, 500)}...`,
+            );
+          }
+        }
+      }
+
+      return cy.wrap(body);
+    });
 });
 
 // Backup publisherWebview command using extreme iframe finder
@@ -167,7 +212,37 @@ Cypress.Commands.add(
 
           if ($publisherIframe.length > 0) {
             cy.log("[Extreme] Found publisher iframe by extensionId!");
-            return cy.wrap($publisherIframe.eq(0));
+
+            // Wait for iframe content to be ready with retry logic
+            return cy
+              .wrap($publisherIframe.eq(0))
+              .its("0.contentDocument.body", { timeout: 5000 })
+              .should("not.be.empty")
+              .then(($body) => {
+                // Check if content is actually loaded
+                const hasContent =
+                  $body.text().includes("Posit") ||
+                  $body.find("[data-automation]").length > 0;
+
+                if (hasContent) {
+                  cy.log("[Extreme] Publisher webview content loaded!");
+                  return cy.wrap($publisherIframe.eq(0));
+                } else {
+                  cy.log(
+                    "[Extreme] Publisher iframe found but content not loaded yet",
+                  );
+                  cy.log(
+                    "Body text preview: " + $body.text().substring(0, 100),
+                  );
+
+                  if (attempt < maxAttempts) {
+                    // eslint-disable-next-line cypress/no-unnecessary-waiting
+                    cy.wait(5000); // Wait longer between content checks
+                    return attemptFindIframe(attempt + 1, maxAttempts);
+                  }
+                }
+                return cy.wrap($publisherIframe.eq(0));
+              });
           }
 
           // Try to find by class and ready state

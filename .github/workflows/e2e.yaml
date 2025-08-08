@@ -191,9 +191,9 @@ jobs:
         run: |
           echo "Directory tree for test/e2e:"
           if command -v tree > /dev/null; then
-            tree test/e2e
+            tree -I "node_modules|.venv" test/e2e
           else
-            find test/e2e
+            find test/e2e -path "*/node_modules" -prune -o -path "*/.venv" -prune -o -print
           fi
 
       - name: "[DEBUG] Print code-server logs on failure"
