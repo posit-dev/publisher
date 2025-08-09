@@ -39,5 +39,5 @@ module.exports = defineConfig({
   },
   chromeWebSecurity: false,
   video: DEBUG_CYPRESS || ACTIONS_STEP_DEBUG,
-  numTestsKeptInMemory: 0,
+  numTestsKeptInMemory: isCI ? 0 : 50,
 });
