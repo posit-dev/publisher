@@ -69,80 +69,80 @@ func (s *CredentialsServiceTestSuite) TestCredential_ConflictCheck_Connect() {
 
 func (s *CredentialsServiceTestSuite) TestCredential_ConflictCheck_ConnectCloud() {
 	cloudCred := Credential{
-		GUID:            "18cd5640-bee5-4b2a-992a-a2725ab6103d",
-		Name:            "friedtofu",
-		URL:             "https://api.connect.posit.cloud",
-		ServerType:      server_type.ServerTypeConnectCloud,
-		AccountID:       "123",
-		AccountName:     "fried tofu",
-		RefreshToken:    "refresh-token",
-		AccessToken:     "access-token",
+		GUID:             "18cd5640-bee5-4b2a-992a-a2725ab6103d",
+		Name:             "friedtofu",
+		URL:              "https://api.connect.posit.cloud",
+		ServerType:       server_type.ServerTypeConnectCloud,
+		AccountID:        "123",
+		AccountName:      "fried tofu",
+		RefreshToken:     "refresh-token",
+		AccessToken:      "access-token",
 		CloudEnvironment: "production",
 	}
 	err := cloudCred.ConflictCheck(Credential{
-		GUID:            "18cd5640-bee5-4b2a-992a-a2725ab6103d",
-		Name:            "nofriedtofu",
-		URL:             "https://api.connect.posit.cloud",
-		ServerType:      server_type.ServerTypeConnectCloud,
-		AccountID:       "123",
-		AccountName:     "friedtofu",
-		RefreshToken:    "refresh-token",
-		AccessToken:     "access-token",
+		GUID:             "18cd5640-bee5-4b2a-992a-a2725ab6103d",
+		Name:             "nofriedtofu",
+		URL:              "https://api.connect.posit.cloud",
+		ServerType:       server_type.ServerTypeConnectCloud,
+		AccountID:        "123",
+		AccountName:      "friedtofu",
+		RefreshToken:     "refresh-token",
+		AccessToken:      "access-token",
 		CloudEnvironment: "production",
 	})
 	s.EqualError(err, "URL value conflicts with existing credential (friedtofu) URL: https://api.connect.posit.cloud, account name: fried tofu")
 
 	err = cloudCred.ConflictCheck(Credential{
-		GUID:            "18cd5640-bee5-4b2a-992a-a2725ab6103d",
-		Name:            "nofriedtofu",
-		URL:             "https://api.connect.posit.cloud",
-		ServerType:      server_type.ServerTypeConnectCloud,
-		AccountID:       "456",
-		AccountName:     "friedpotato",
-		RefreshToken:    "refresh-token",
-		AccessToken:     "access-token",
+		GUID:             "18cd5640-bee5-4b2a-992a-a2725ab6103d",
+		Name:             "nofriedtofu",
+		URL:              "https://api.connect.posit.cloud",
+		ServerType:       server_type.ServerTypeConnectCloud,
+		AccountID:        "456",
+		AccountName:      "friedpotato",
+		RefreshToken:     "refresh-token",
+		AccessToken:      "access-token",
 		CloudEnvironment: "production",
 	})
 	s.NoError(err)
-	
+
 	// Test that same AccountID with different CloudEnvironment doesn't conflict
 	err = cloudCred.ConflictCheck(Credential{
-		GUID:            "18cd5640-bee5-4b2a-992a-a2725ab6103d",
-		Name:            "nofriedtofu",
-		URL:             "https://api.connect.posit.cloud",
-		ServerType:      server_type.ServerTypeConnectCloud,
-		AccountID:       "123", // Same AccountID
-		AccountName:     "fried tofu",
-		RefreshToken:    "refresh-token",
-		AccessToken:     "access-token",
+		GUID:             "18cd5640-bee5-4b2a-992a-a2725ab6103d",
+		Name:             "nofriedtofu",
+		URL:              "https://api.connect.posit.cloud",
+		ServerType:       server_type.ServerTypeConnectCloud,
+		AccountID:        "123", // Same AccountID
+		AccountName:      "fried tofu",
+		RefreshToken:     "refresh-token",
+		AccessToken:      "access-token",
 		CloudEnvironment: "staging", // Different environment
 	})
 	s.NoError(err)
-	
+
 	// Test that different AccountID with same CloudEnvironment doesn't conflict
 	err = cloudCred.ConflictCheck(Credential{
-		GUID:            "18cd5640-bee5-4b2a-992a-a2725ab6103d",
-		Name:            "nofriedtofu",
-		URL:             "https://api.connect.posit.cloud",
-		ServerType:      server_type.ServerTypeConnectCloud,
-		AccountID:       "789", // Different AccountID
-		AccountName:     "friedpotato",
-		RefreshToken:    "refresh-token",
-		AccessToken:     "access-token",
+		GUID:             "18cd5640-bee5-4b2a-992a-a2725ab6103d",
+		Name:             "nofriedtofu",
+		URL:              "https://api.connect.posit.cloud",
+		ServerType:       server_type.ServerTypeConnectCloud,
+		AccountID:        "789", // Different AccountID
+		AccountName:      "friedpotato",
+		RefreshToken:     "refresh-token",
+		AccessToken:      "access-token",
 		CloudEnvironment: "production", // Same environment
 	})
 	s.NoError(err)
-	
+
 	// Test that same AccountID AND same CloudEnvironment causes a conflict
 	err = cloudCred.ConflictCheck(Credential{
-		GUID:            "18cd5640-bee5-4b2a-992a-a2725ab6103d",
-		Name:            "nofriedtofu",
-		URL:             "https://api.connect.posit.cloud",
-		ServerType:      server_type.ServerTypeConnectCloud,
-		AccountID:       "123", // Same AccountID
-		AccountName:     "fried tofu",
-		RefreshToken:    "refresh-token",
-		AccessToken:     "access-token",
+		GUID:             "18cd5640-bee5-4b2a-992a-a2725ab6103d",
+		Name:             "nofriedtofu",
+		URL:              "https://api.connect.posit.cloud",
+		ServerType:       server_type.ServerTypeConnectCloud,
+		AccountID:        "123", // Same AccountID
+		AccountName:      "fried tofu",
+		RefreshToken:     "refresh-token",
+		AccessToken:      "access-token",
 		CloudEnvironment: "production", // Same environment
 	})
 	s.EqualError(err, "URL value conflicts with existing credential (friedtofu) URL: https://api.connect.posit.cloud, account name: fried tofu")
@@ -165,6 +165,51 @@ func (s *CredentialsServiceTestSuite) TestCredentialRecord() {
 		Name:       "friedtofu",
 		URL:        "https://a1.connect-server:3939/connect",
 		ApiKey:     "abcdeC2aqbh7dg8TO43XPu7r56YDh000",
+	})
+}
+
+func (s *CredentialsServiceTestSuite) TestCredentialRecordWithToken() {
+	// Test V3 record with token authentication
+	record := CredentialRecord{
+		GUID:    "18cd5640-bee5-4b2a-992a-a2725ab6103d",
+		Version: 3,
+		Data: []byte(`
+		{"guid":"18cd5640-bee5-4b2a-992a-a2725ab6103d","name":"friedtofu",
+		"url": "https://a1.connect-server:3939/connect","serverType":"connect",
+		"token":"T12345abcdef","privateKey":"base64-encoded-private-key"}`),
+	}
+
+	credResult, err := record.ToCredential()
+	s.NoError(err)
+	s.Equal(credResult, &Credential{
+		ServerType: server_type.ServerTypeConnect,
+		GUID:       "18cd5640-bee5-4b2a-992a-a2725ab6103d",
+		Name:       "friedtofu",
+		URL:        "https://a1.connect-server:3939/connect",
+		ApiKey:     "",
+		Token:      "T12345abcdef",
+		PrivateKey: "base64-encoded-private-key",
+	})
+
+	// Test v2 to v3 upgrade
+	recordV2 := CredentialRecord{
+		GUID:    "18cd5640-bee5-4b2a-992a-a2725ab6103d",
+		Version: 2,
+		Data: []byte(`
+		{"guid":"18cd5640-bee5-4b2a-992a-a2725ab6103d","name":"friedtofu",
+		"url": "https://a1.connect-server:3939/connect","serverType":"connect","apiKey":"abcdeC2aqbh7dg8TO43XPu7r56YDh000"}`),
+	}
+
+	credResultV2, err := recordV2.ToCredential()
+	s.NoError(err)
+	s.Equal(credResultV2, &Credential{
+		ServerType: server_type.ServerTypeConnect,
+		GUID:       "18cd5640-bee5-4b2a-992a-a2725ab6103d",
+		Name:       "friedtofu",
+		URL:        "https://a1.connect-server:3939/connect",
+		ApiKey:     "abcdeC2aqbh7dg8TO43XPu7r56YDh000",
+		Token:      "",
+		PrivateKey: "",
 	})
 }
 
@@ -282,6 +327,8 @@ func (s *CreateCredentialDetailsTestSuite) TestToCredential() {
 	s.Equal(cred.RefreshToken, "")
 	s.Equal(cred.AccessToken, "")
 	s.Equal(cred.CloudEnvironment, types.CloudEnvironment(""))
+	s.Equal(cred.Token, "")
+	s.Equal(cred.PrivateKey, "")
 }
 
 func (s *CreateCredentialDetailsTestSuite) TestToCredential_ConnectCloud() {
@@ -310,6 +357,60 @@ func (s *CreateCredentialDetailsTestSuite) TestToCredential_ConnectCloud() {
 	s.Equal(cred.SnowflakeConnection, "")
 }
 
+func (s *CreateCredentialDetailsTestSuite) TestToCredential_TokenAuth() {
+	details := CreateCredentialDetails{
+		ServerType: server_type.ServerTypeConnect,
+		Name:       "token-auth-cred",
+		URL:        "https://b2.connect-server:3939/connect",
+		Token:      "T12345abcdef",
+		PrivateKey: "base64-encoded-private-key"}
+	cred, err := details.ToCredential()
+	s.NoError(err)
+	s.NotEmpty(cred.GUID)
+	s.Equal(cred.Name, details.Name)
+	s.Equal(cred.URL, details.URL)
+	s.Equal(cred.Token, details.Token)
+	s.Equal(cred.PrivateKey, details.PrivateKey)
+	s.Equal(cred.ServerType, server_type.ServerTypeConnect)
+	s.Equal(cred.ApiKey, "")
+	s.Equal(cred.SnowflakeConnection, "")
+	s.Equal(cred.AccountID, "")
+	s.Equal(cred.AccountName, "")
+	s.Equal(cred.RefreshToken, "")
+	s.Equal(cred.AccessToken, "")
+}
+
+func (s *CreateCredentialDetailsTestSuite) TestToCredential_InvalidTokenAuth() {
+	// Missing private key
+	details := CreateCredentialDetails{
+		ServerType: server_type.ServerTypeConnect,
+		Name:       "token-auth-cred",
+		URL:        "https://b2.connect-server:3939/connect",
+		Token:      "T12345abcdef"}
+	_, err := details.ToCredential()
+	s.Error(err)
+
+	// Missing token
+	details = CreateCredentialDetails{
+		ServerType: server_type.ServerTypeConnect,
+		Name:       "token-auth-cred",
+		URL:        "https://b2.connect-server:3939/connect",
+		PrivateKey: "base64-encoded-private-key"}
+	_, err = details.ToCredential()
+	s.Error(err)
+
+	// Both API key and token auth (not allowed)
+	details = CreateCredentialDetails{
+		ServerType: server_type.ServerTypeConnect,
+		Name:       "token-auth-cred",
+		URL:        "https://b2.connect-server:3939/connect",
+		ApiKey:     "abcdeC2aqbh7dg8TO43XPu7r56YDh002",
+		Token:      "T12345abcdef",
+		PrivateKey: "base64-encoded-private-key"}
+	_, err = details.ToCredential()
+	s.Error(err)
+}
+
 func (s *CreateCredentialDetailsTestSuite) TestToCredential_BlankDataErr() {
 	testCases := map[string]CreateCredentialDetails{
 		"empty credential":             CreateCredentialDetails{URL: "https://b2.connect-server:3939/connect", ApiKey: "abcdeC2aqbh7dg8TO43XPu7r56YDh002"},
@@ -319,6 +420,9 @@ func (s *CreateCredentialDetailsTestSuite) TestToCredential_BlankDataErr() {
 		"partial Connect Cloud cred 2": CreateCredentialDetails{Name: "newcred", URL: "https://b2.connect-server:3939/connect", AccountID: "1234"},
 		"partial Connect Cloud cred 3": CreateCredentialDetails{Name: "newcred", URL: "https://b2.connect-server:3939/connect", AccessToken: "abcdeC2aqbh7dg8TO43XPu7r56YDh002"},
 		"partial Connect Cloud cred 4": CreateCredentialDetails{Name: "newcred", URL: "https://b2.connect-server:3939/connect", RefreshToken: "abcdeC2aqbh7dg8TO43XPu7r56YDh002"},
+		"partial Token cred 1":         CreateCredentialDetails{Name: "newcred", URL: "https://b2.connect-server:3939/connect", Token: "T12345abcdef"},
+		"partial Token cred 2":         CreateCredentialDetails{Name: "newcred", URL: "https://b2.connect-server:3939/connect", PrivateKey: "base64-encoded-private-key"},
+		"both API Key and Token":       CreateCredentialDetails{Name: "newcred", URL: "https://b2.connect-server:3939/connect", ApiKey: "abcdeC2aqbh7dg8TO43XPu7r56YDh002", Token: "T12345abcdef", PrivateKey: "base64-encoded-private-key"},
 	}
 
 	for _, createCredDetails := range testCases {

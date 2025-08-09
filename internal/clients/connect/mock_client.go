@@ -101,3 +101,13 @@ func (m *MockClient) ValidateDeploymentTarget(contentID types.ContentID, log log
 	args := m.Called(contentID, log)
 	return args.Error(0)
 }
+
+func (m *MockClient) GetCurrentUser(log logging.Logger) (*User, error) {
+	args := m.Called(log)
+	user := args.Get(0)
+	if user == nil {
+		return nil, args.Error(1)
+	} else {
+		return user.(*User), args.Error(1)
+	}
+}

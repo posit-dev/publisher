@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added Cypress E2E CI Setup and Test Reliability Improvements (#2721)
 - Added endpoints for performing OAuth Device Authorization Grant with Posit Cloud login. (#2692)
 - Added support to publishing schema for Connect Cloud. (#2729, #2747)
+- Added support for one-click token authentication with Connect. (#2769)
 
 ### Changed
 

@@ -32,4 +32,5 @@ type APIClient interface {
 	WaitForTask(taskID types.TaskID, log logging.Logger) error
 	ValidateDeployment(types.ContentID, logging.Logger) error
 	CheckCapabilities(util.AbsolutePath, *config.Config, *types.ContentID, logging.Logger) error
+	GetCurrentUser(logging.Logger) (*User, error)
 }

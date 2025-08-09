@@ -550,3 +550,15 @@ func (c *ConnectClient) ValidateDeploymentTarget(contentID types.ContentID, cfg 
 
 	return nil
 }
+
+// GetCurrentUser retrieves information about the current authenticated user using the users/current endpoint
+func (c *ConnectClient) GetCurrentUser(log logging.Logger) (*User, error) {
+	var connectUser UserDTO
+	err := c.client.Get("/__api__/v1/user", &connectUser, log)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert from UserDTO to User
+	return connectUser.toUser(), nil
+}

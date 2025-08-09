@@ -429,7 +429,7 @@ func (s *FileCredentialsServiceSuite) TestSet() {
 			},
 			"newcred": {
 				GUID:                newcred.GUID,
-				Version:             2,
+				Version:             3,
 				ServerType:          server_type.ServerTypeConnect,
 				URL:                 "https://b2.connect-server:3939/connect",
 				ApiKey:              "abcdeC2aqbh7dg8TO43XPu7r56YDh002",
@@ -463,7 +463,7 @@ func (s *FileCredentialsServiceSuite) TestSet() {
 			},
 			"newcred": {
 				GUID:                newcred.GUID,
-				Version:             2,
+				Version:             3,
 				ServerType:          server_type.ServerTypeConnect,
 				URL:                 "https://b2.connect-server:3939/connect",
 				ApiKey:              "abcdeC2aqbh7dg8TO43XPu7r56YDh002",
@@ -471,7 +471,7 @@ func (s *FileCredentialsServiceSuite) TestSet() {
 			},
 			"brand new cred wspaces": {
 				GUID:                newcred2.GUID,
-				Version:             2,
+				Version:             3,
 				ServerType:          server_type.ServerTypeConnect,
 				URL:                 "https://b3.connect-server:3939/connect",
 				ApiKey:              "abcdeC2aqbh7dg8TO43XPu7r56YDh003",
@@ -508,7 +508,7 @@ func (s *FileCredentialsServiceSuite) TestSet() {
 			},
 			"newcred": {
 				GUID:                newcred.GUID,
-				Version:             2,
+				Version:             3,
 				ServerType:          server_type.ServerTypeConnect,
 				URL:                 "https://b2.connect-server:3939/connect",
 				ApiKey:              "abcdeC2aqbh7dg8TO43XPu7r56YDh002",
@@ -516,7 +516,7 @@ func (s *FileCredentialsServiceSuite) TestSet() {
 			},
 			"brand new cred wspaces": {
 				GUID:                newcred2.GUID,
-				Version:             2,
+				Version:             3,
 				ServerType:          server_type.ServerTypeConnect,
 				URL:                 "https://b3.connect-server:3939/connect",
 				ApiKey:              "abcdeC2aqbh7dg8TO43XPu7r56YDh003",
@@ -524,7 +524,7 @@ func (s *FileCredentialsServiceSuite) TestSet() {
 			},
 			"snowcred": {
 				GUID:                newcred3.GUID,
-				Version:             2,
+				Version:             3,
 				ServerType:          server_type.ServerTypeSnowflake,
 				URL:                 "https://example.snowflakecomputing.app/connect",
 				ApiKey:              "",
@@ -566,7 +566,7 @@ func (s *FileCredentialsServiceSuite) TestSet() {
 			},
 			"newcred": {
 				GUID:                newcred.GUID,
-				Version:             2,
+				Version:             3,
 				ServerType:          server_type.ServerTypeConnect,
 				URL:                 "https://b2.connect-server:3939/connect",
 				ApiKey:              "abcdeC2aqbh7dg8TO43XPu7r56YDh002",
@@ -574,7 +574,7 @@ func (s *FileCredentialsServiceSuite) TestSet() {
 			},
 			"brand new cred wspaces": {
 				GUID:                newcred2.GUID,
-				Version:             2,
+				Version:             3,
 				ServerType:          server_type.ServerTypeConnect,
 				URL:                 "https://b3.connect-server:3939/connect",
 				ApiKey:              "abcdeC2aqbh7dg8TO43XPu7r56YDh003",
@@ -582,7 +582,7 @@ func (s *FileCredentialsServiceSuite) TestSet() {
 			},
 			"snowcred": {
 				GUID:                newcred3.GUID,
-				Version:             2,
+				Version:             3,
 				ServerType:          server_type.ServerTypeSnowflake,
 				URL:                 "https://example.snowflakecomputing.app/connect",
 				ApiKey:              "",
@@ -590,7 +590,7 @@ func (s *FileCredentialsServiceSuite) TestSet() {
 			},
 			"cloudy": {
 				GUID:         newcred4.GUID,
-				Version:      2,
+				Version:      3,
 				ServerType:   server_type.ServerTypeConnectCloud,
 				URL:          "https://api.connect.posit.cloud",
 				AccountID:    newcred4.AccountID,
@@ -600,6 +600,52 @@ func (s *FileCredentialsServiceSuite) TestSet() {
 			},
 		},
 	})
+}
+
+func (s *FileCredentialsServiceSuite) fileSetupTokenAuthTest() {
+	// Create an empty file
+	fileData := []byte(`[credentials]`)
+	err := os.WriteFile(s.testdata.Join("test-token-auth.toml").String(), fileData, 0644)
+	s.NoError(err)
+}
+
+func (s *FileCredentialsServiceSuite) TestSetTokenAuth() {
+	// Create the test file
+	s.fileSetupTokenAuthTest()
+
+	cs := &fileCredentialsService{
+		log:           s.loggerMock,
+		credsFilepath: s.testdata.Join("test-token-auth.toml"),
+	}
+
+	// Create a new token auth credential
+	cred, err := cs.Set(CreateCredentialDetails{
+		ServerType: server_type.ServerTypeConnect,
+		Name:       "token-auth",
+		URL:        "https://connect.example.com",
+		Token:      "T123456789abcdef",
+		PrivateKey: "base64-encoded-private-key",
+	})
+	s.NoError(err)
+	s.NotNil(cred)
+	s.Equal(cred.Name, "token-auth")
+	s.Equal(cred.URL, "https://connect.example.com")
+	s.Equal(cred.Token, "T123456789abcdef")
+	s.Equal(cred.PrivateKey, "base64-encoded-private-key")
+	s.Equal(cred.ServerType, server_type.ServerTypeConnect)
+
+	// Load the credential and verify it was saved correctly
+	savedCred, err := cs.Get(cred.GUID)
+	s.NoError(err)
+	s.NotNil(savedCred)
+	s.Equal(savedCred.Name, "token-auth")
+	s.Equal(savedCred.URL, "https://connect.example.com")
+	s.Equal(savedCred.Token, "T123456789abcdef")
+	s.Equal(savedCred.PrivateKey, "base64-encoded-private-key")
+	s.Equal(savedCred.ServerType, server_type.ServerTypeConnect)
+
+	// Cleanup
+	_ = os.Remove(cs.credsFilepath.String())
 }
 
 func (s *FileCredentialsServiceSuite) TestSet_BlankDataErr() {
@@ -678,15 +724,29 @@ func (s *FileCredentialsServiceSuite) TestSet_ConflictErr() {
 	}
 }
 
+func (s *FileCredentialsServiceSuite) fileSetupResetTest() {
+	// Create a minimal credential file
+	fileData := []byte(`[credentials]`)
+	err := os.WriteFile(s.testdata.Join("to-reset.toml").String(), fileData, 0644)
+	s.NoError(err)
+}
+
 func (s *FileCredentialsServiceSuite) TestReset() {
+	// Make sure the test file exists
+	s.fileSetupResetTest()
+
+	resetPath := s.testdata.Join("to-reset.toml")
 	cs := &fileCredentialsService{
 		log:           s.loggerMock,
-		credsFilepath: s.testdata.Join("to-reset.toml"),
+		credsFilepath: resetPath,
 	}
 
 	expectedCredsBackupPath := s.testdata.Join(fmt.Sprintf(".connect-credentials-%s", time.Now().Format(time.DateOnly)))
 
 	// Creds backup shouldn't exist and should be cleared after each test
+	_ = os.Remove(expectedCredsBackupPath.String())
+
+	// Creds backup shouldn't exist
 	_, err := expectedCredsBackupPath.Stat()
 	s.ErrorIs(err, os.ErrNotExist)
 
@@ -727,14 +787,14 @@ func (s *FileCredentialsServiceSuite) TestReset() {
 	s.Equal(fmt.Sprintf(`[credentials]
 [credentials.newcred]
 guid = '%s'
-version = 2
+version = 3
 server_type = 'connect'
 url = 'https://b2.connect-server:3939/connect'
 api_key = 'abcdeC2aqbh7dg8TO43XPu7r56YDh002'
 
 [credentials.newcredtwo]
 guid = '%s'
-version = 2
+version = 3
 server_type = 'connect'
 url = 'https://b5.connect-server:3939/connect'
 api_key = 'abcdeC2aqbh7dg8TO43XPu7r56YDh007'

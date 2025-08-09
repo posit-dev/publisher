@@ -5,6 +5,7 @@ package api
 import (
 	"net/http"
 	"path"
+	"time"
 
 	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/api_client/auth/snowflake"
@@ -21,6 +22,8 @@ import (
 )
 
 const APIPrefix string = "api"
+
+const DefaultTimeout = 30 * time.Second
 
 func NewService(
 	fragment string,
@@ -195,6 +198,14 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 
 	// POST /api/connect-cloud/oauth/token
 	r.Handle(ToPath("connect-cloud", "oauth", "token"), PostConnectCloudOAuthTokenHandlerFunc(log)).
+		Methods(http.MethodPost)
+
+	// POST /api/connect/token - Generate a new token for Connect authentication
+	r.Handle(ToPath("connect", "token"), PostConnectTokenHandlerFunc(log)).
+		Methods(http.MethodPost)
+
+	// POST /api/connect/token/user - Check if a token has been claimed and get user info
+	r.Handle(ToPath("connect", "token", "user"), PostConnectTokenUserHandlerFunc(log)).
 		Methods(http.MethodPost)
 
 	// GET /api/connect-cloud/accounts
