@@ -2,7 +2,7 @@
 
 import { describe, expect, test, vi, beforeEach, afterEach } from "vitest";
 import { ServerType } from "src/api/types/contentRecords";
-import { newCredential } from "./newCredential";
+import { newConnectCredential } from "./newConnectCredential";
 
 // Mock the MultiStepInput module
 vi.mock("./multiStepHelper", () => {
@@ -77,7 +77,7 @@ vi.mock("vscode", () => {
 // Mock API client
 const mockGenerateToken = vi.fn();
 const mockVerifyToken = vi.fn();
-const mockCreate = vi.fn();
+const mockConnectCreate = vi.fn();
 const mockTest = vi.fn();
 const mockList = vi.fn();
 
@@ -88,7 +88,7 @@ vi.mock("src/api", () => {
         credentials: {
           generateToken: mockGenerateToken,
           verifyToken: mockVerifyToken,
-          create: mockCreate,
+          connectCreate: mockConnectCreate,
           test: mockTest,
           list: mockList,
         },
@@ -109,7 +109,7 @@ vi.mock("src/utils/progress", () => {
   };
 });
 
-describe("newCredential API calls", () => {
+describe("newConnectCredential API calls", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
@@ -130,7 +130,7 @@ describe("newCredential API calls", () => {
       status: 200,
       data: { username: "testuser", guid: "user-123" },
     });
-    mockCreate.mockResolvedValue({
+    mockConnectCreate.mockResolvedValue({
       status: 201,
       data: {
         guid: "credential-123",
@@ -147,8 +147,12 @@ describe("newCredential API calls", () => {
   });
 
   test("token authentication APIs are called", async () => {
-    // Call newCredential
-    await newCredential("test-view-id");
+    // Call newConnectCredential
+    try {
+      await newConnectCredential("test-view-id", "Create a New Credential");
+    } catch {
+      /* the user dismissed this flow, do nothing more */
+    }
 
     // Since we mocked MultiStepInput.run to do nothing, we need to
     // mock the credential creation process directly by calling the API methods
@@ -161,18 +165,14 @@ describe("newCredential API calls", () => {
       token: "test-token-123",
       privateKey: "test-private-key-123",
     });
-    await mockCreate(
+    await mockConnectCreate(
       "My Connect Server",
       "https://connect.example.com",
       "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      ServerType.CONNECT,
       "test-token-123",
       "test-private-key-123",
+      "",
+      ServerType.CONNECT,
     );
 
     // Verify API calls were made with expected parameters
@@ -184,18 +184,14 @@ describe("newCredential API calls", () => {
       token: "test-token-123",
       privateKey: "test-private-key-123",
     });
-    expect(mockCreate).toHaveBeenCalledWith(
+    expect(mockConnectCreate).toHaveBeenCalledWith(
       "My Connect Server",
       "https://connect.example.com",
       "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      ServerType.CONNECT,
       "test-token-123",
       "test-private-key-123",
+      "",
+      ServerType.CONNECT,
     );
   });
 });

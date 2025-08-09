@@ -24,18 +24,14 @@ export class Credentials {
   // 400 - bad request
   // 409 - conflict
   // 500 - internal server error
-  create(
+  connectCreate(
     name: string,
     url: string,
     apiKey: string,
+    token: string,
+    privateKey: string,
     snowflakeConnection: string,
-    accountId: string,
-    accountName: string,
-    refreshToken: string,
-    accessToken: string,
     serverType: ServerType,
-    token?: string,
-    privateKey?: string,
   ) {
     return this.client.post<Credential>(
       `credentials`,
@@ -43,14 +39,46 @@ export class Credentials {
         name,
         url,
         apiKey,
+        token,
+        privateKey,
         snowflakeConnection,
+        serverType,
+        accountId: "",
+        accountName: "",
+        refreshToken: "",
+        accessToken: "",
+      },
+      { headers: CONNECT_CLOUD_ENV_HEADER },
+    );
+  }
+
+  // Returns:
+  // 201 - accepted
+  // 400 - bad request
+  // 409 - conflict
+  // 500 - internal server error
+  connectCloudCreate(
+    name: string,
+    accountId: string,
+    accountName: string,
+    refreshToken: string,
+    accessToken: string,
+    serverType: ServerType,
+  ) {
+    return this.client.post<Credential>(
+      `credentials`,
+      {
+        name,
         accountId,
         accountName,
         refreshToken,
         accessToken,
         serverType,
-        token,
-        privateKey,
+        url: "",
+        apiKey: "",
+        snowflakeConnection: "",
+        token: "",
+        privateKey: "",
       },
       { headers: CONNECT_CLOUD_ENV_HEADER },
     );

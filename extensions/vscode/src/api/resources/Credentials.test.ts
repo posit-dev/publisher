@@ -27,18 +27,14 @@ describe("Credentials API client", () => {
     mockAxiosPost.mockResolvedValue({ data: { guid: "test-guid" } });
 
     // Call create with token parameters
-    await credentials.create(
+    await credentials.connectCreate(
       "Test Credential",
       "https://connect.example.com",
       "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      ServerType.CONNECT,
       "test-token-123",
       "test-private-key-123",
+      "",
+      ServerType.CONNECT,
     );
 
     // Verify correct parameters were passed to axios post
@@ -48,14 +44,14 @@ describe("Credentials API client", () => {
         name: "Test Credential",
         url: "https://connect.example.com",
         apiKey: "",
+        token: "test-token-123",
+        privateKey: "test-private-key-123",
         snowflakeConnection: "",
+        serverType: ServerType.CONNECT,
         accountId: "",
         accountName: "",
         refreshToken: "",
         accessToken: "",
-        serverType: ServerType.CONNECT,
-        token: "test-token-123",
-        privateKey: "test-private-key-123",
       },
       {
         headers: {

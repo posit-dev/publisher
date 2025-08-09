@@ -161,6 +161,12 @@ export async function newCredential(
   // our state data vars down to the actual type desired
   if (!credential) {
     console.log("User has dismissed the New Credential flow. Exiting.");
+    // it is necessary to throw here because this can be part of a
+    // sub-flow and we need to identify when the user has abandoned this
+    // flow (could be history backwards navigation) so we don't override
+    // valid data with undefined in the parent flow since promises are
+    // async in nature and resolve in unpredictible order specially when
+    // navigating backwards and then forward in the multi-stepper steps
     throw new AbortError();
   }
 
