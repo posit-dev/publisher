@@ -37,6 +37,14 @@ describe("Credentials Section", () => {
       `http://connect-publisher-e2e:3939{enter}`,
     );
 
+    cy.get(".quick-input-and-message input", { timeout: 10000 }).should(
+      "have.attr",
+      "placeholder",
+      "Select authentication method",
+    );
+
+    cy.get(".quick-input-list .monaco-list-row").eq(1).click();
+
     cy.get(".quick-input-message", { timeout: 10000 }).should(
       "include.text",
       "The API key to be used to authenticate with Posit Connect.",
