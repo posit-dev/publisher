@@ -1297,7 +1297,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
             quickPick.activeItems = lastMatches;
           }
           quickPick.title = "Select Deployment";
-          quickPick.ignoreFocusOut = true;
           quickPick.matchOnDescription = true;
           quickPick.matchOnDetail = true;
           quickPick.show();
