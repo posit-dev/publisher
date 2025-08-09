@@ -15,7 +15,7 @@ describe("getEnumKeyByEnumValue", () => {
     ["bar", "FOO"],
     ["moo", "BAZ"],
     ["spam", "HAM"],
-    ["random", null],
+    ["random", undefined],
   ])(
     `When enum value: "%s" is passed in, it returns enum key: "%s"`,
     (value, expected) => {
