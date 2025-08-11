@@ -149,9 +149,8 @@ func IsAgentError(err error) (*AgentError, bool) {
 // returning the error as AgentError type when it is
 // and a bool flag of the comparison result.
 func IsAgentErrorOf(err error, code ErrorCode) (*AgentError, bool) {
-	aerr, ok := IsAgentError(err)
-	if !ok {
-		return nil, false
+	if err, isAgentErr := err.(*AgentError); isAgentErr {
+		return err, err.Code == code
 	}
-	return aerr, aerr.Code == code
+	return nil, false
 }
