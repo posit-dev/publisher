@@ -69,6 +69,7 @@ func (c CloudAuthClient) ExchangeToken(request TokenRequest) (*TokenResponse, er
 	body := url.Values{
 		"grant_type": {request.GrantType},
 		"client_id":  {c.clientID},
+		"scope":      {"vivid"},
 	}
 	if request.DeviceCode != "" {
 		body.Set("device_code", request.DeviceCode)

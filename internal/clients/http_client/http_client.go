@@ -8,6 +8,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -328,8 +329,10 @@ func newBasicInternalHTTPClientWithAuth(timeout time.Duration, authValue string)
 }
 
 func IsHTTPAgentErrorStatusOf(err error, status int) (*types.AgentError, bool) {
-	if aerr, isAgentErr := err.(*types.AgentError); isAgentErr {
-		if httperr, isHttpErr := aerr.Err.(*HTTPError); isHttpErr {
+	var aerr *types.AgentError
+	if errors.As(err, &aerr) {
+		var httperr *HTTPError
+		if errors.As(aerr.Err, &httperr) {
 			return aerr, httperr.Status == status
 		}
 	}

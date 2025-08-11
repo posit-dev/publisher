@@ -72,6 +72,7 @@ func retryAuthErr[V any](c *ConnectCloudClient, makeRequest func() (V, error)) (
 		_, ok := http_client.IsHTTPAgentErrorStatusOf(err, http.StatusUnauthorized)
 		if ok {
 			// If this is a 401 due to an expired token, we should refresh the token and retry the request.
+			c.log.Debug("received 401 Unauthorized response, attempting to refresh token and retry request")
 			authClient := cloudAuthClientFactory(c.account.CloudEnvironment, c.log, 10*time.Second)
 			tokenRequest := cloud_auth.TokenRequest{
 				GrantType:    "refresh_token",
@@ -82,34 +83,40 @@ func retryAuthErr[V any](c *ConnectCloudClient, makeRequest func() (V, error)) (
 				var zero V
 				return zero, fmt.Errorf("error refreshing token: %w", err)
 			}
-			_, err = c.credService.Set(credentials.CreateCredentialDetails{
-				Name:         c.account.Name,
-				URL:          c.account.URL,
-				ServerType:   c.account.ServerType,
-				AccountID:    c.account.CloudAccountID,
-				AccountName:  c.account.CloudAccountName,
-				RefreshToken: resp.RefreshToken,
-				AccessToken:  resp.AccessToken,
+			_, err = c.credService.ForceSet(credentials.CreateCredentialDetails{
+				Name:             c.account.Name,
+				URL:              c.account.URL,
+				ServerType:       c.account.ServerType,
+				AccountID:        c.account.CloudAccountID,
+				AccountName:      c.account.CloudAccountName,
+				CloudEnvironment: c.account.CloudEnvironment,
+				RefreshToken:     resp.RefreshToken,
+				AccessToken:      resp.AccessToken,
 			})
 			if err != nil {
 				var zero V
 				return zero, fmt.Errorf("error updating credential with new token: %w", err)
 			}
+			c.account.CloudAccessToken = resp.AccessToken
+			c.account.CloudRefreshToken = resp.RefreshToken
 
 			// Set the client to one with the new token.
-			c.client = http_client.NewBasicHTTPClientWithBearerAuth(getBaseURL(c.account.CloudEnvironment), c.timeout, resp.AccessToken)
+			c.client = http_client.NewBasicHTTPClientWithBearerAuth(getBaseURL(c.account.CloudEnvironment), c.timeout, fmt.Sprintf("Bearer %s", resp.AccessToken))
 
 			f, err = makeRequest()
 			if err != nil {
 				var zero V
-				return zero, fmt.Errorf("error in retried request after token refresh: %w", err)
+				return zero, err
 			}
+			return f, nil
 		}
+		var zero V
+		return zero, err
 	}
 	return f, nil
 }
 
-func (c ConnectCloudClient) GetCurrentUser() (*UserResponse, error) {
+func (c *ConnectCloudClient) GetCurrentUser() (*UserResponse, error) {
 	into := UserResponse{}
 	err := c.client.Get("/v1/users/me", &into, c.log)
 	if err != nil {
@@ -118,7 +125,7 @@ func (c ConnectCloudClient) GetCurrentUser() (*UserResponse, error) {
 	return &into, nil
 }
 
-func (c ConnectCloudClient) GetAccounts() (*AccountListResponse, error) {
+func (c *ConnectCloudClient) GetAccounts() (*AccountListResponse, error) {
 	into := AccountListResponse{}
 	err := c.client.Get("/v1/accounts?has_user_role=true", &into, c.log)
 	if err != nil {
@@ -127,7 +134,7 @@ func (c ConnectCloudClient) GetAccounts() (*AccountListResponse, error) {
 	return &into, nil
 }
 
-func (c ConnectCloudClient) CreateContent(request *clienttypes.CreateContentRequest) (*clienttypes.ContentResponse, error) {
+func (c *ConnectCloudClient) CreateContent(request *clienttypes.CreateContentRequest) (*clienttypes.ContentResponse, error) {
 	doIt := func() (*clienttypes.ContentResponse, error) {
 		into := clienttypes.ContentResponse{}
 		err := c.client.Post("/v1/contents", request, &into, c.log)
@@ -136,10 +143,11 @@ func (c ConnectCloudClient) CreateContent(request *clienttypes.CreateContentRequ
 		}
 		return &into, nil
 	}
-	return retryAuthErr(&c, doIt)
+	r, err := retryAuthErr(c, doIt)
+	return r, err
 }
 
-func (c ConnectCloudClient) UpdateContent(request *clienttypes.UpdateContentRequest) (*clienttypes.ContentResponse, error) {
+func (c *ConnectCloudClient) UpdateContent(request *clienttypes.UpdateContentRequest) (*clienttypes.ContentResponse, error) {
 	doIt := func() (*clienttypes.ContentResponse, error) {
 		into := clienttypes.ContentResponse{}
 		url := fmt.Sprintf("/v1/contents/%s", request.ContentID)
@@ -149,10 +157,10 @@ func (c ConnectCloudClient) UpdateContent(request *clienttypes.UpdateContentRequ
 		}
 		return &into, nil
 	}
-	return retryAuthErr(&c, doIt)
+	return retryAuthErr(c, doIt)
 }
 
-func (c ConnectCloudClient) UpdateContentBundle(contentID types.ContentID) (*clienttypes.ContentResponse, error) {
+func (c *ConnectCloudClient) UpdateContentBundle(contentID types.ContentID) (*clienttypes.ContentResponse, error) {
 	doIt := func() (*clienttypes.ContentResponse, error) {
 		into := clienttypes.ContentResponse{}
 		url := fmt.Sprintf("/v1/contents/%s?new_bundle=true", contentID)
@@ -162,10 +170,10 @@ func (c ConnectCloudClient) UpdateContentBundle(contentID types.ContentID) (*cli
 		}
 		return &into, nil
 	}
-	return retryAuthErr(&c, doIt)
+	return retryAuthErr(c, doIt)
 }
 
-func (c ConnectCloudClient) GetRevision(revisionID string) (*clienttypes.Revision, error) {
+func (c *ConnectCloudClient) GetRevision(revisionID string) (*clienttypes.Revision, error) {
 	doIt := func() (*clienttypes.Revision, error) {
 		into := clienttypes.Revision{}
 		url := fmt.Sprintf("/v1/revisions/%s", revisionID)
@@ -175,10 +183,10 @@ func (c ConnectCloudClient) GetRevision(revisionID string) (*clienttypes.Revisio
 		}
 		return &into, nil
 	}
-	return retryAuthErr(&c, doIt)
+	return retryAuthErr(c, doIt)
 }
 
-func (c ConnectCloudClient) GetAuthorization(request *clienttypes.AuthorizationRequest) (*clienttypes.AuthorizationResponse, error) {
+func (c *ConnectCloudClient) GetAuthorization(request *clienttypes.AuthorizationRequest) (*clienttypes.AuthorizationResponse, error) {
 	doIt := func() (*clienttypes.AuthorizationResponse, error) {
 		into := clienttypes.AuthorizationResponse{}
 		err := c.client.Post("/v1/authorization", request, &into, c.log)
@@ -187,10 +195,10 @@ func (c ConnectCloudClient) GetAuthorization(request *clienttypes.AuthorizationR
 		}
 		return &into, nil
 	}
-	return retryAuthErr(&c, doIt)
+	return retryAuthErr(c, doIt)
 }
 
-func (c ConnectCloudClient) PublishContent(contentID string) error {
+func (c *ConnectCloudClient) PublishContent(contentID string) error {
 	doIt := func() (bool, error) {
 		url := fmt.Sprintf("/v1/contents/%s/publish", contentID)
 		err := c.client.Post(url, nil, nil, c.log)
@@ -199,6 +207,6 @@ func (c ConnectCloudClient) PublishContent(contentID string) error {
 		}
 		return true, nil
 	}
-	_, err := retryAuthErr(&c, doIt)
+	_, err := retryAuthErr(c, doIt)
 	return err
 }
