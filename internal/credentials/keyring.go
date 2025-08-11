@@ -99,8 +99,8 @@ func (ks *keyringCredentialsService) doSet(credDetails CreateCredentialDetails, 
 	if checkConflict {
 		err = ks.checkForConflicts(&table, cred)
 		if err != nil {
+			return nil, err
 		}
-		return nil, err
 	}
 
 	raw, err := json.Marshal(cred)
