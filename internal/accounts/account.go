@@ -20,7 +20,9 @@ type Account struct {
 	CloudEnvironment    types.CloudEnvironment `json:"cloud_environment"`  // Environment for Connect Cloud (production, staging, development)
 	CloudAccountID      string                 `json:"cloud_account_id"`   // Account ID for Connect Cloud
 	CloudAccountName    string                 `json:"cloud_account_name"` // Account name for Connect Cloud
-	CloudAccessToken    string                 `json:"-"`                  // Refresh token for OAuth authentication
+	CloudAccessToken    string                 `json:"-"`                  // Access token for OAuth authentication
+	CloudRefreshToken   string                 `json:"-"`                  // Refresh token for OAuth authentication
+
 }
 
 // AuthType returns the detected AccountAuthType based on the properties of the

@@ -67,10 +67,16 @@ func (c CloudAuthClient) CreateDeviceAuth() (*DeviceAuthResponse, error) {
 
 func (c CloudAuthClient) ExchangeToken(request TokenRequest) (*TokenResponse, error) {
 	body := url.Values{
-		"grant_type":  {request.GrantType},
-		"device_code": {request.DeviceCode},
-		"client_id":   {c.clientID},
+		"grant_type": {request.GrantType},
+		"client_id":  {c.clientID},
 	}
+	if request.DeviceCode != "" {
+		body.Set("device_code", request.DeviceCode)
+	}
+	if request.RefreshToken != "" {
+		body.Set("refresh_token", request.RefreshToken)
+	}
+
 	into := TokenResponse{}
 	err := c.client.PostForm("/oauth/token", body, &into, c.log)
 	if err != nil {

@@ -4,6 +4,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"slices"
 	"time"
@@ -30,10 +31,14 @@ func GetConnectCloudAccountsFunc(log logging.Logger) http.HandlerFunc {
 		environment := cloud.GetCloudEnvironment(req.Header.Get(connectCloudEnvironmentHeader))
 		authorization := req.Header.Get("Authorization")
 
-		client := connectCloudClientFactory(environment, log, 10*time.Second, authorization)
+		client, err := connectCloudClientFactory(environment, log, 10*time.Second, nil, authorization)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Error creating client: %v", err), http.StatusInternalServerError)
+			return
+		}
 
 		isNewUser := false
-		_, err := client.GetCurrentUser()
+		_, err = client.GetCurrentUser()
 		if err != nil {
 			aerr, isUnauthorized := http_client.IsHTTPAgentErrorStatusOf(err, http.StatusUnauthorized)
 			if isUnauthorized {

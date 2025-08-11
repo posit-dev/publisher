@@ -30,7 +30,8 @@ func (s *ConnectCloudClientSuite) TestNewConnectCloudClient() {
 	timeout := 10 * time.Second
 	log := logging.New()
 
-	apiClient := NewConnectCloudClientWithAuth("https://api.staging.login.posit.cloud", log, timeout, "Bearer the_token")
+	apiClient, err := NewConnectCloudClientWithAuth(types.CloudEnvironmentStaging, log, timeout, nil, "Bearer the_token")
+	s.NoError(err)
 	client := apiClient.(*ConnectCloudClient)
 	s.NotNil(client.client)
 }
