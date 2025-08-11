@@ -51,7 +51,8 @@ func (m *MockClient) UpdateContentBundle(contentID content_types.ContentID) (*ty
 
 func (m *MockClient) GetAuthorization(request *types.AuthorizationRequest) (*types.AuthorizationResponse, error) {
 	args := m.Called(request)
-	return args.Get(0).(*types.AuthorizationResponse), args.Error(1)
+	foo, bar := args.Get(0).(*types.AuthorizationResponse), args.Error(1)
+	return foo, bar
 }
 
 func (m *MockClient) GetRevision(revisionID string) (*types.Revision, error) {

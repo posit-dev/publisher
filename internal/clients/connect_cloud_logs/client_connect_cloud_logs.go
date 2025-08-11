@@ -16,7 +16,8 @@ import (
 	"github.com/posit-dev/publisher/internal/types"
 )
 
-// ConnectCloudLogsClient is a client for the Connect Cloud Logs API.
+const logLookback = 60 * time.Second
+
 type ConnectCloudLogsClient struct {
 	log    logging.Logger
 	client *sse.Client
@@ -33,7 +34,6 @@ func getBaseURL(env types.CloudEnvironment) string {
 	}
 }
 
-// NewConnectCloudLogsClient creates a new ConnectCloudLogsClient with authentication.
 func NewConnectCloudLogsClient(
 	environment types.CloudEnvironment,
 	logChannel string,
@@ -44,9 +44,9 @@ func NewConnectCloudLogsClient(
 	clientAuth := auth.NewPlainAuthenticator(fmt.Sprintf("Bearer %s", accessToken))
 	authTransport := http_client.NewAuthenticatedTransport(transport, clientAuth)
 
-	//client := sse.NewClient(fmt.Sprintf("%s/v1/logs/%s?previous_n=100", getBaseURL(environment), logChannel))
-	// 5 seconds ago
-	sortKeyGt := time.Now().Add(-5 * time.Second).UnixNano()
+	// Start streaming logs from a minute ago to avoid missing any logs that may have been emitted before we connected.
+	// Since log channels are unique per revision, we should not see logs from previous publishes.
+	sortKeyGt := time.Now().Add(-logLookback).UnixNano()
 	client := sse.NewClient(fmt.Sprintf("%s/v1/logs/%s/stream?sort_key__gt=%d", getBaseURL(environment), logChannel, sortKeyGt))
 	client.Connection.Transport = authTransport
 	return &ConnectCloudLogsClient{
