@@ -3,10 +3,11 @@ package connect_cloud
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import (
+	"github.com/stretchr/testify/mock"
+
 	"github.com/posit-dev/publisher/internal/clients/cloud_auth"
 	clienttypes "github.com/posit-dev/publisher/internal/clients/types"
 	"github.com/posit-dev/publisher/internal/types"
-	"github.com/stretchr/testify/mock"
 )
 
 // MockAPIClient is a mock implementation of the APIClient interface
