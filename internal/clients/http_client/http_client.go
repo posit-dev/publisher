@@ -46,7 +46,9 @@ type defaultHTTPClient struct {
 	baseURL string
 }
 
-func NewDefaultHTTPClient(account *accounts.Account, timeout time.Duration, log logging.Logger) (*defaultHTTPClient, error) {
+var _ HTTPClient = &defaultHTTPClient{}
+
+func NewDefaultHTTPClient(account *accounts.Account, timeout time.Duration, log logging.Logger) (HTTPClient, error) {
 	baseClient, err := newHTTPClientForAccount(account, timeout, log)
 	if err != nil {
 		return nil, err
@@ -57,7 +59,7 @@ func NewDefaultHTTPClient(account *accounts.Account, timeout time.Duration, log 
 	}, nil
 }
 
-func NewBasicHTTPClient(baseURL string, timeout time.Duration) *defaultHTTPClient {
+func NewBasicHTTPClient(baseURL string, timeout time.Duration) HTTPClient {
 	baseClient := newBasicInternalHTTPClient(timeout)
 	return &defaultHTTPClient{
 		client:  baseClient,
@@ -65,7 +67,7 @@ func NewBasicHTTPClient(baseURL string, timeout time.Duration) *defaultHTTPClien
 	}
 }
 
-func NewBasicHTTPClientWithBearerAuth(baseURL string, timeout time.Duration, authHeaderValue string) *defaultHTTPClient {
+func NewBasicHTTPClientWithBearerAuth(baseURL string, timeout time.Duration, authHeaderValue string) HTTPClient {
 	baseClient := newBasicInternalHTTPClientWithAuth(timeout, authHeaderValue)
 	return &defaultHTTPClient{
 		client:  baseClient,

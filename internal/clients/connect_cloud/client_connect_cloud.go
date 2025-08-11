@@ -65,6 +65,8 @@ func NewConnectCloudClientWithAuth(
 }
 
 var cloudAuthClientFactory = cloud_auth.NewCloudAuthClient
+var credServiceFactory = credentials.NewCredentialsService
+var httpClientFactory = http_client.NewBasicHTTPClientWithBearerAuth
 
 func retryAuthErr[V any](c *ConnectCloudClient, makeRequest func() (V, error)) (V, error) {
 	f, err := makeRequest()
@@ -101,7 +103,7 @@ func retryAuthErr[V any](c *ConnectCloudClient, makeRequest func() (V, error)) (
 			c.account.CloudRefreshToken = resp.RefreshToken
 
 			// Set the client to one with the new token.
-			c.client = http_client.NewBasicHTTPClientWithBearerAuth(getBaseURL(c.account.CloudEnvironment), c.timeout, fmt.Sprintf("Bearer %s", resp.AccessToken))
+			c.client = httpClientFactory(getBaseURL(c.account.CloudEnvironment), c.timeout, fmt.Sprintf("Bearer %s", resp.AccessToken))
 
 			f, err = makeRequest()
 			if err != nil {
