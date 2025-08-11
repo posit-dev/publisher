@@ -76,7 +76,7 @@ func retryAuthErr[V any](c *ConnectCloudClient, makeRequest func() (V, error)) (
 		if isUnauthorized {
 			// If this is a 401 due to an expired token, we should refresh the token and retry the request.
 			c.log.Debug("received 401 Unauthorized response, attempting to refresh token and retry request")
-			authClient := cloudAuthClientFactory(c.account.CloudEnvironment, c.log, 10*time.Second)
+			authClient := cloudAuthClientFactory(c.account.CloudEnvironment, c.log, c.timeout)
 			tokenRequest := cloud_auth.TokenRequest{
 				GrantType:    "refresh_token",
 				RefreshToken: c.account.CloudRefreshToken,
