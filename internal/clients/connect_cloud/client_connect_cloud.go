@@ -71,7 +71,6 @@ var httpClientFactory = http_client.NewBasicHTTPClientWithBearerAuth
 func retryAuthErr[V any](c *ConnectCloudClient, makeRequest func() (V, error)) (V, error) {
 	f, err := makeRequest()
 	if err != nil {
-		_, ok := http_client.IsHTTPAgentErrorStatusOf(err, http.StatusUnauthorized)
 		_, isUnauthorized := http_client.IsHTTPAgentErrorStatusOf(err, http.StatusUnauthorized)
 		if isUnauthorized {
 			// If this is a 401 due to an expired token, we should refresh the token and retry the request.
