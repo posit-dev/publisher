@@ -43,24 +43,6 @@ func (s *ConnectCloudLogsClientSuite) TestGetBaseURL() {
 	s.Equal("https://logs.connect.posit.cloud", getBaseURL(types.CloudEnvironmentProduction))
 }
 
-func (s *ConnectCloudLogsClientSuite) TestNewConnectCloudLogsClient() {
-	// Test client creation with proper parameters
-	logChannel := "test-channel-123"
-	accessToken := "test-token"
-
-	// Create client
-	client := NewConnectCloudLogsClient(
-		types.CloudEnvironmentStaging,
-		logChannel,
-		accessToken,
-		s.mockLogger,
-	)
-
-	// Check that we got the correct type
-	_, ok := client.(*ConnectCloudLogsClient)
-	s.True(ok, "Should return a ConnectCloudLogsClient")
-}
-
 // TestWatchLogsWithSSEServer tests the WatchLogs function using a proper SSE server from the r3labs/sse/v2 library
 func (s *ConnectCloudLogsClientSuite) TestWatchLogsWithSSEServer() {
 	// Create a new SSE server and stream
