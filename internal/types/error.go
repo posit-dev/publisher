@@ -3,7 +3,6 @@ package types
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"errors"
 	"slices"
 	"strings"
 
@@ -140,9 +139,8 @@ func OperationError(op Operation, err error) EventableError {
 // returning the error as AgentError type when it is
 // and a bool flag of the comparison result.
 func IsAgentError(err error) (*AgentError, bool) {
-	var aerr *AgentError
-	if errors.As(err, &aerr) {
-		return aerr, true
+	if aerr, ok := err.(*AgentError); ok {
+		return aerr, ok
 	}
 	return nil, false
 }
