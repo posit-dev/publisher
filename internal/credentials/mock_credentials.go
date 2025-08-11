@@ -1,5 +1,7 @@
 package credentials
 
+// Copyright (C) 2025 by Posit Software, PBC.
+
 import (
 	"github.com/stretchr/testify/mock"
 )
