@@ -41,8 +41,8 @@ func (c *ConnectCloudUploadClient) UploadBundle(bundleContent io.Reader) error {
 		return fmt.Errorf("error creating request: %w", err)
 	}
 
-	// Set the Content-Type header to application/octet-stream
-	req.Header.Set("Content-Type", "application/octet-stream")
+	// Set the Content-Type header to application/gzip
+	req.Header.Set("Content-Type", "application/gzip")
 
 	// Execute the request
 	resp, err := c.client.Do(req)

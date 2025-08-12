@@ -64,8 +64,8 @@ func NewBasicHTTPClient(baseURL string, timeout time.Duration) *defaultHTTPClien
 	}
 }
 
-func NewBasicHTTPClientWithAuth(baseURL string, timeout time.Duration, authHeader string) *defaultHTTPClient {
-	baseClient := newBasicInternalHTTPClientWithAuth(timeout, authHeader)
+func NewBasicHTTPClientWithBearerAuth(baseURL string, timeout time.Duration, authValue string) *defaultHTTPClient {
+	baseClient := newBasicInternalHTTPClientWithAuth(timeout, fmt.Sprintf("Bearer %s", authValue))
 	return &defaultHTTPClient{
 		client:  baseClient,
 		baseURL: baseURL,

@@ -169,7 +169,7 @@ func (s *ManifestSuite) TestNewManifestFromConfig() {
 		},
 		Python: &Python{
 			Version: "3.4.5",
-			PackageManager: PythonPackageManager{
+			PackageManager: &PythonPackageManager{
 				Name:        "pip",
 				PackageFile: "requirements.in",
 			},
@@ -210,7 +210,7 @@ func (s *ManifestSuite) TestNewManifestFromConfigWithJupyterOptions() {
 		},
 		Python: &Python{
 			Version: "3.4.5",
-			PackageManager: PythonPackageManager{
+			PackageManager: &PythonPackageManager{
 				Name:        "pip",
 				PackageFile: "requirements.in",
 			},
@@ -252,7 +252,7 @@ func (s *ManifestSuite) TestNewManifestFromConfigVersionRequirements() {
 		Version: 1,
 		Python: &Python{
 			Version: "3.4.5",
-			PackageManager: PythonPackageManager{
+			PackageManager: &PythonPackageManager{
 				Name:        "pip",
 				PackageFile: "requirements.in",
 			},

@@ -70,7 +70,7 @@ func (s *RPublishFunctionalSuite) SetupTest() {
 func (s *RPublishFunctionalSuite) TearDownTest() {
 	parentDir := filepath.Dir(s.testProjectDir.String())
 	os.RemoveAll(parentDir)
-	clientFactory = connect.NewConnectClient
+	connectClientFactory = connect.NewConnectClient
 }
 
 func (s *RPublishFunctionalSuite) createTestRenvLock() {
@@ -126,7 +126,7 @@ func (s *RPublishFunctionalSuite) TestGetRPackagesFunctional() {
 func (s *RPublishFunctionalSuite) TestPublishWithClientFunctional() {
 	// Set up a mock client
 	client := connect.NewMockClient()
-	clientFactory = func(
+	connectClientFactory = func(
 		account *accounts.Account,
 		timeout time.Duration,
 		emitter events.Emitter,
@@ -191,11 +191,17 @@ func (s *RPublishFunctionalSuite) TestPublishWithClientFunctional() {
 	rPackageMapper, err := renv.NewPackageMapper(s.testProjectDir, util.Path{}, s.log)
 	s.Require().NoError(err)
 
+	serverPublisher, err := createServerPublisher(
+		publishhelper.NewPublishHelper(stateStore, s.log),
+		events.NewCapturingEmitter(),
+		s.log)
+	s.NoError(err)
 	publisher := &defaultPublisher{
-		log:            s.log,
-		emitter:        events.NewCapturingEmitter(),
-		rPackageMapper: rPackageMapper,
-		PublishHelper:  publishhelper.NewPublishHelper(stateStore, s.log),
+		log:             s.log,
+		emitter:         events.NewCapturingEmitter(),
+		rPackageMapper:  rPackageMapper,
+		PublishHelper:   publishhelper.NewPublishHelper(stateStore, s.log),
+		serverPublisher: serverPublisher,
 	}
 
 	// Test files to be deployed
