@@ -33,7 +33,9 @@ Cypress.Commands.add("publisherWebview", () => {
         .its("1.contentDocument.body");
     })
     .should((body) => {
-      expect(Cypress.$(body).has("#app").length).gt(0);
+      const $body = Cypress.$(body);
+      expect($body.length).gt(0);
+      expect($body.find("#app").length).gt(0);
     })
     .then(cy.wrap);
 });

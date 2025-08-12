@@ -10,6 +10,7 @@ services:
     privileged: true
     environment:
       - CONNECT_LICENSE
+      - CONNECT_CLOUD_ENV=${CONNECT_CLOUD_ENV:-staging}
     ports:
       - "3232:3232"
       - "3939:3939"
@@ -24,6 +25,7 @@ services:
     environment:
       - DOCKER_USER=publisher
       - PASSWORD=password
+      - CONNECT_CLOUD_ENV=${CONNECT_CLOUD_ENV:-staging}
     volumes:
       - ./code-server-entry.sh:/home/coder/entrypoint.sh
       - ./e2e-test.connect-credentials:/root/.connect-credentials
