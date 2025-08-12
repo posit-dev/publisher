@@ -27,6 +27,7 @@ import {
   isPublishSuccess,
   isPublishRestoreEnvStatus,
   restoreMsgToStatusSuffix,
+  ProductType,
 } from "src/api";
 import { Commands, Views } from "src/constants";
 import {
@@ -44,6 +45,7 @@ enum LogStageStatus {
   completed,
   failed,
   canceled,
+  notApplicable,
 }
 
 type LogStage = {
@@ -54,6 +56,7 @@ type LogStage = {
   status: LogStageStatus;
   stages: LogStage[];
   events: EventStreamMessage[];
+  productType: ProductType[];
 };
 
 type LogsTreeItem = LogsTreeStageItem | LogsTreeLogItem;
@@ -61,6 +64,7 @@ type LogsTreeItem = LogsTreeStageItem | LogsTreeLogItem;
 const createLogStage = (
   inactiveLabel: string,
   activeLabel: string,
+  productType: ProductType[] = [],
   alternatePaths?: string[],
   collapseState?: TreeItemCollapsibleState,
   status: LogStageStatus = LogStageStatus.notStarted,
@@ -70,6 +74,7 @@ const createLogStage = (
   return {
     inactiveLabel,
     activeLabel,
+    productType,
     alternatePaths,
     collapseState,
     status,
@@ -112,25 +117,36 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
         createLogStage(
           "Get Package Descriptions",
           "Getting Package Descriptions",
+          [ProductType.CONNECT, ProductType.CONNECT_CLOUD],
         ),
       ],
       // skipped
       [
         "publish/checkCapabilities",
-        createLogStage("Check Capabilities", "Checking Capabilities"),
+        createLogStage("Check Capabilities", "Checking Capabilities", [
+          ProductType.CONNECT,
+        ]),
       ],
       [
         "publish/createBundle",
-        createLogStage("Create Bundle", "Creating Bundle"),
+        createLogStage("Create Bundle", "Creating Bundle", [
+          ProductType.CONNECT,
+          ProductType.CONNECT_CLOUD,
+        ]),
       ],
       // new one
       [
         "publish/createRevision",
-        createLogStage("Create Revision", "Creating Revision"),
+        createLogStage("Create Revision", "Creating Revision", [
+          ProductType.CONNECT_CLOUD,
+        ]),
       ],
       [
         "publish/uploadBundle",
-        createLogStage("Upload Bundle", "Uploading Bundle"),
+        createLogStage("Upload Bundle", "Uploading Bundle", [
+          ProductType.CONNECT,
+          ProductType.CONNECT_CLOUD,
+        ]),
       ],
       // skipped
       [
@@ -138,30 +154,42 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
         createLogStage(
           "Create Deployment Record",
           "Creating Deployment Record",
+          [ProductType.CONNECT],
         ),
       ],
       // new one
       [
         "publish/publishRevision",
-        createLogStage("Publish Revision", "Publishing Revision"),
+        createLogStage("Publish Revision", "Publishing Revision", [
+          ProductType.CONNECT_CLOUD,
+        ]),
       ],
       [
         "publish/deployBundle",
-        createLogStage("Deploy Bundle", "Deploying Bundle"),
+        createLogStage("Deploy Bundle", "Deploying Bundle", [
+          ProductType.CONNECT,
+          ProductType.CONNECT_CLOUD,
+        ]),
       ],
       // skipped
       [
         "publish/restoreEnv",
-        createLogStage("Restore Environment", RestoringEnvironmentLabel),
+        createLogStage("Restore Environment", RestoringEnvironmentLabel, [
+          ProductType.CONNECT,
+        ]),
       ],
       // skipped
-      ["publish/runContent", createLogStage("Run Content", "Running Content")],
+      [
+        "publish/runContent",
+        createLogStage("Run Content", "Running Content", [ProductType.CONNECT]),
+      ],
       // skipped
       [
         "publish/validateDeployment",
         createLogStage(
           "Validate Deployment Record",
           "Validating Deployment Record",
+          [ProductType.CONNECT],
         ),
       ],
     ]);
@@ -169,6 +197,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
     this.publishingStage = createLogStage(
       "Publishing",
       "Published",
+      [ProductType.CONNECT, ProductType.CONNECT_CLOUD],
       undefined,
       TreeItemCollapsibleState.Expanded,
       LogStageStatus.notStarted,
@@ -191,6 +220,10 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
       this.publishingStage.events.push(msg);
 
       this.stages.forEach((stage) => {
+        // TODO: make it dynamic based on the msg
+        if (!stage.productType.includes(ProductType.CONNECT_CLOUD)) {
+          stage.status = LogStageStatus.notApplicable;
+        }
         if (stage.status === LogStageStatus.notStarted) {
           stage.status = LogStageStatus.skipped;
         }
@@ -358,7 +391,9 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
       const result = [];
       let count = 0;
       element.stages.forEach((stage: LogStage) => {
-        result.push(new LogsTreeStageItem(stage));
+        if (stage.status !== LogStageStatus.notApplicable) {
+          result.push(new LogsTreeStageItem(stage));
+        }
       });
       result.push(
         ...element.events.map(
@@ -458,6 +493,10 @@ export class LogsTreeStageItem extends TreeItem {
         this.label = this.stage.inactiveLabel;
         this.iconPath = new ThemeIcon("circle-slash");
         this.collapsibleState = TreeItemCollapsibleState.Expanded;
+        break;
+      case LogStageStatus.notApplicable:
+        this.label = "";
+        this.iconPath = "";
         break;
     }
   }

@@ -95,6 +95,7 @@ export function deployProject(
       );
 
       const handleProgressMessages = (msg: EventStreamMessage) => {
+        console.log("---- handleProgressMessages", msg.type);
         if (streamID === msg.data.localId) {
           const progressStr = eventMsgToString(msg);
           progress.report({
