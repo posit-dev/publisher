@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/posit-dev/publisher/internal/clients/connect_cloud"
@@ -29,8 +30,13 @@ func GetConnectCloudAccountsFunc(log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		environment := cloud.GetCloudEnvironment(req.Header.Get(connectCloudEnvironmentHeader))
 		authorization := req.Header.Get("Authorization")
+		authSplit := strings.Split(authorization, " ")
+		if len(authSplit) != 2 || authSplit[0] != "Bearer" {
+			http.Error(w, "Invalid Authorization header", http.StatusUnauthorized)
+			return
+		}
 
-		client := connectCloudClientFactory(environment, log, 10*time.Second, authorization)
+		client := connectCloudClientFactory(environment, log, 10*time.Second, authSplit[1])
 
 		isNewUser := false
 		_, err := client.GetCurrentUser()
