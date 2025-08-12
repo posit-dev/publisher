@@ -57,13 +57,11 @@ func NewConnectCloudLogsClient(
 
 func (c ConnectCloudLogsClient) WatchLogs(ctx context.Context, logLogger logging.Logger) error {
 	events := make(chan *sse.Event)
-	go func() {
-		err := c.client.SubscribeChanWithContext(ctx, "", events)
-		if err != nil {
-			c.log.Error("failed to subscribe to log channel", "error", err)
-		}
-		c.log.Info("successfully subscribed to log channel")
-	}()
+	err := c.client.SubscribeChanWithContext(ctx, "", events)
+	if err != nil {
+		c.log.Error("failed to subscribe to log channel", "error", err)
+	}
+	c.log.Info("successfully subscribed to log channel")
 
 	go func() {
 		for {
