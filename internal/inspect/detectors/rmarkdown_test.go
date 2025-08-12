@@ -7,14 +7,15 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/spf13/afero"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/executor/executortest"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/schema"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/spf13/afero"
-	"github.com/stretchr/testify/suite"
 )
 
 type RMarkdownSuite struct {
@@ -53,12 +54,13 @@ func (s *RMarkdownSuite) TestInferType() {
 	s.Nil(err)
 	s.Len(configs, 1)
 
+	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeRMarkdown,
 		Title:      "Special Report",
 		Entrypoint: filename,
-		Validate:   true,
+		Validate:   &validate,
 		Files:      []string{},
 		R:          &config.R{},
 	}, configs[0])
@@ -89,12 +91,13 @@ func (s *RMarkdownSuite) TestInferTypeWithPython() {
 	configs, err := detector.InferType(base, util.RelativePath{})
 	s.Nil(err)
 	s.Len(configs, 1)
+	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeRMarkdown,
 		Title:      "Special Report",
 		Entrypoint: filename,
-		Validate:   true,
+		Validate:   &validate,
 		Files:      []string{},
 		Python:     &config.Python{},
 	}, configs[0])
@@ -137,13 +140,15 @@ func (s *RMarkdownSuite) TestInferTypeParameterized() {
 	s.Nil(err)
 	s.Len(configs, 1)
 
+	validate := true
+	hasParams := true
 	s.Equal(&config.Config{
 		Schema:        schema.ConfigSchemaURL,
 		Type:          config.ContentTypeRMarkdown,
 		Title:         "Special Report",
 		Entrypoint:    filename,
-		Validate:      true,
-		HasParameters: true,
+		Validate:      &validate,
+		HasParameters: &hasParams,
 		Files:         []string{},
 		R:             &config.R{},
 	}, configs[0])
@@ -176,12 +181,13 @@ func (s *RMarkdownSuite) TestInferTypeShinyRmdRuntime() {
 	s.Nil(err)
 	s.Len(configs, 1)
 
+	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeRMarkdownShiny,
 		Title:      "Interactive Report",
 		Entrypoint: filename,
-		Validate:   true,
+		Validate:   &validate,
 		Files:      []string{},
 		R:          &config.R{},
 	}, configs[0])
@@ -214,12 +220,13 @@ func (s *RMarkdownSuite) TestInferTypeShinyRmdServer() {
 	s.Nil(err)
 	s.Len(configs, 1)
 
+	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeRMarkdownShiny,
 		Title:      "Interactive Report",
 		Entrypoint: filename,
-		Validate:   true,
+		Validate:   &validate,
 		Files:      []string{},
 		R:          &config.R{},
 	}, configs[0])
@@ -253,12 +260,13 @@ func (s *RMarkdownSuite) TestInferTypeShinyRmdServerType() {
 	s.Nil(err)
 	s.Len(configs, 1)
 
+	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeRMarkdownShiny,
 		Title:      "Interactive Report",
 		Entrypoint: filename,
-		Validate:   true,
+		Validate:   &validate,
 		Files:      []string{},
 		R:          &config.R{},
 	}, configs[0])
@@ -287,12 +295,13 @@ func (s *RMarkdownSuite) TestInferTypeNoMetadata() {
 	s.Nil(err)
 	s.Len(configs, 1)
 
+	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeRMarkdown,
 		Title:      "",
 		Entrypoint: filename,
-		Validate:   true,
+		Validate:   &validate,
 		Files:      []string{},
 		R:          &config.R{},
 	}, configs[0])
@@ -317,12 +326,13 @@ func (s *RMarkdownSuite) TestInferTypeWithEntrypoint() {
 	s.Nil(err)
 	s.Len(configs, 1)
 
+	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeRMarkdown,
 		Title:      "Special Report",
 		Entrypoint: filename,
-		Validate:   true,
+		Validate:   &validate,
 		Files:      []string{},
 		R:          &config.R{},
 	}, configs[0])
@@ -346,12 +356,13 @@ func (s *RMarkdownSuite) TestInferTypeRmdSite() {
 	s.Nil(err)
 
 	s.Len(configs, 1)
+	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeRMarkdown,
 		Entrypoint: "index.Rmd",
 		Title:      "Testing RMD Site",
-		Validate:   true,
+		Validate:   &validate,
 		Files: []string{
 			"/_site.yml",
 			"/index.Rmd",
@@ -378,12 +389,13 @@ func (s *RMarkdownSuite) TestInferTypeRmdSite_FromSiteYml() {
 	s.Nil(err)
 
 	s.Len(configs, 1)
+	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeRMarkdown,
 		Entrypoint: "_site.yml",
 		Title:      "Testing RMD Site",
-		Validate:   true,
+		Validate:   &validate,
 		Files: []string{
 			"/_site.yml",
 			"/index.Rmd",
@@ -410,12 +422,13 @@ func (s *RMarkdownSuite) TestInferTypeRmdSite_FromSiteYml_NoMeta() {
 	s.Nil(err)
 
 	s.Len(configs, 1)
+	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeRMarkdown,
 		Entrypoint: "_site.yml",
 		Title:      "",
-		Validate:   true,
+		Validate:   &validate,
 		Files: []string{
 			"/_site.yml",
 		},
@@ -441,12 +454,13 @@ func (s *RMarkdownSuite) TestInferTypeRmdSite_Bookdown() {
 	s.Nil(err)
 
 	s.Len(configs, 1)
+	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeRMarkdown,
 		Entrypoint: "index.Rmd",
 		Title:      "A Minimal Book Example",
-		Validate:   true,
+		Validate:   &validate,
 		Files: []string{
 			"/_bookdown.yml",
 			"/index.Rmd",
@@ -473,12 +487,13 @@ func (s *RMarkdownSuite) TestInferTypeRmdSite_FromBookdownYml() {
 	s.Nil(err)
 
 	s.Len(configs, 1)
+	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeRMarkdown,
 		Entrypoint: "_bookdown.yml",
 		Title:      "A Minimal Book Example",
-		Validate:   true,
+		Validate:   &validate,
 		Files: []string{
 			"/_bookdown.yml",
 			"/index.Rmd",

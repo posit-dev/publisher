@@ -229,7 +229,7 @@ func NewManifestFromConfig(cfg *config.Config) *Manifest {
 		m.Metadata.PrimaryHtml = cfg.Entrypoint
 	}
 
-	m.Metadata.HasParameters = cfg.HasParameters
+	m.Metadata.HasParameters = cfg.GetHasParameters()
 	return m
 }
 
