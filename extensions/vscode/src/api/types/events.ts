@@ -1,6 +1,7 @@
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import { ErrorCode } from "../../utils/errorTypes";
+import { ProductType } from "./contentRecords";
 
 export enum EventSourceReadyState {
   CONNECTING = 0,
@@ -192,6 +193,13 @@ const eventVerbToString = new Map<string, activeInactivePhrases>([
     },
   ],
   [
+    "publish/updateContent",
+    {
+      inActive: "Update Content",
+      active: "Updating Content",
+    },
+  ],
+  [
     "publish/uploadBundle",
     {
       inActive: "Upload Bundle",
@@ -203,6 +211,13 @@ const eventVerbToString = new Map<string, activeInactivePhrases>([
     {
       inActive: "Create Deployment",
       active: "Creating Deployment",
+    },
+  ],
+  [
+    "publish/deployContent",
+    {
+      inActive: "Deploy Content",
+      active: "Deploying Content",
     },
   ],
   [
@@ -383,6 +398,7 @@ export interface PublishStart extends EventStreamMessage {
   data: {
     localId: string;
     server: string;
+    productType: ProductType;
   };
 }
 export type OnPublishStartCallback = (msg: PublishStart) => void;

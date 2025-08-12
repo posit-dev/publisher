@@ -27,6 +27,7 @@ import {
   isPublishSuccess,
   isPublishRestoreEnvStatus,
   restoreMsgToStatusSuffix,
+  ProductType,
 } from "src/api";
 import { Commands, Views } from "src/constants";
 import {
@@ -44,6 +45,7 @@ enum LogStageStatus {
   completed,
   failed,
   canceled,
+  notApplicable,
 }
 
 type LogStage = {
@@ -54,6 +56,7 @@ type LogStage = {
   status: LogStageStatus;
   stages: LogStage[];
   events: EventStreamMessage[];
+  productType: ProductType[];
 };
 
 type LogsTreeItem = LogsTreeStageItem | LogsTreeLogItem;
@@ -62,6 +65,7 @@ const createLogStage = (
   inactiveLabel: string,
   activeLabel: string,
   alternatePaths?: string[],
+  productType: ProductType[] = [],
   collapseState?: TreeItemCollapsibleState,
   status: LogStageStatus = LogStageStatus.notStarted,
   stages: LogStage[] = [],
@@ -70,6 +74,7 @@ const createLogStage = (
   return {
     inactiveLabel,
     activeLabel,
+    productType,
     alternatePaths,
     collapseState,
     status,
@@ -112,41 +117,71 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
         createLogStage(
           "Get Package Descriptions",
           "Getting Package Descriptions",
+          [ProductType.CONNECT, ProductType.CONNECT_CLOUD],
         ),
       ],
       [
         "publish/checkCapabilities",
-        createLogStage("Check Capabilities", "Checking Capabilities"),
+        createLogStage("Check Capabilities", "Checking Capabilities", [
+          ProductType.CONNECT,
+        ]),
       ],
       [
         "publish/createBundle",
-        createLogStage("Create Bundle", "Creating Bundle"),
+        createLogStage("Create Bundle", "Creating Bundle", [
+          ProductType.CONNECT,
+          ProductType.CONNECT_CLOUD,
+        ]),
+      ],
+      [
+        "publish/updateContent",
+        createLogStage("Update Content", "Updating Content", [
+          ProductType.CONNECT_CLOUD,
+        ]),
       ],
       [
         "publish/uploadBundle",
-        createLogStage("Upload Bundle", "Uploading Bundle"),
+        createLogStage("Upload Bundle", "Uploading Bundle", [
+          ProductType.CONNECT,
+          ProductType.CONNECT_CLOUD,
+        ]),
       ],
       [
         "publish/createDeployment",
         createLogStage(
           "Create Deployment Record",
           "Creating Deployment Record",
+          [ProductType.CONNECT],
         ),
       ],
       [
+        "publish/deployContent",
+        createLogStage("Deploy Content", "Deploying Content", [
+          ProductType.CONNECT_CLOUD,
+        ]),
+      ],
+      [
         "publish/deployBundle",
-        createLogStage("Deploy Bundle", "Deploying Bundle"),
+        createLogStage("Deploy Bundle", "Deploying Bundle", [
+          ProductType.CONNECT,
+        ]),
       ],
       [
         "publish/restoreEnv",
-        createLogStage("Restore Environment", RestoringEnvironmentLabel),
+        createLogStage("Restore Environment", RestoringEnvironmentLabel, [
+          ProductType.CONNECT,
+        ]),
       ],
-      ["publish/runContent", createLogStage("Run Content", "Running Content")],
+      [
+        "publish/runContent",
+        createLogStage("Run Content", "Running Content", [ProductType.CONNECT]),
+      ],
       [
         "publish/validateDeployment",
         createLogStage(
           "Validate Deployment Record",
           "Validating Deployment Record",
+          [ProductType.CONNECT],
         ),
       ],
     ]);
@@ -154,6 +189,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
     this.publishingStage = createLogStage(
       "Publishing",
       "Published",
+      [ProductType.CONNECT, ProductType.CONNECT_CLOUD],
       undefined,
       TreeItemCollapsibleState.Expanded,
       LogStageStatus.notStarted,
@@ -165,6 +201,11 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
     // Reset events when a new publish starts
     this.stream.register("publish/start", (msg: EventStreamMessage) => {
       this.resetStages();
+      this.stages.forEach((stage) => {
+        if (!stage.productType.includes(msg.data.productType as ProductType)) {
+          stage.status = LogStageStatus.notApplicable;
+        }
+      });
       this.publishingStage.inactiveLabel = `Publish "${msg.data.title}" to ${msg.data.server}`;
       this.publishingStage.activeLabel = `Publishing "${msg.data.title}" to ${msg.data.server}`;
       this.publishingStage.status = LogStageStatus.inProgress;
@@ -343,7 +384,9 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
       const result = [];
       let count = 0;
       element.stages.forEach((stage: LogStage) => {
-        result.push(new LogsTreeStageItem(stage));
+        if (stage.status !== LogStageStatus.notApplicable) {
+          result.push(new LogsTreeStageItem(stage));
+        }
       });
       result.push(
         ...element.events.map(
@@ -443,6 +486,10 @@ export class LogsTreeStageItem extends TreeItem {
         this.label = this.stage.inactiveLabel;
         this.iconPath = new ThemeIcon("circle-slash");
         this.collapsibleState = TreeItemCollapsibleState.Expanded;
+        break;
+      case LogStageStatus.notApplicable:
+        this.label = "";
+        this.iconPath = "";
         break;
     }
   }
