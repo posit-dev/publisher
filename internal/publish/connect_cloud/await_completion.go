@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/posit-dev/publisher/internal/clients/types"
-	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/logging"
 	internaltypes "github.com/posit-dev/publisher/internal/types"
 )
@@ -19,10 +18,7 @@ const (
 
 var sleep = time.Sleep
 
-func (c *ServerPublisher) awaitCompletion(contentID internaltypes.ContentID) error {
-	op := events.PublishWaitForDeploymentOp
-	log := c.log.WithArgs(logging.LogKeyOp, op)
-
+func (c *ServerPublisher) awaitCompletion(log logging.Logger, op internaltypes.Operation) error {
 	// Get the revision ID to monitor for completion
 	revisionID := c.content.NextRevision.ID
 
@@ -43,9 +39,6 @@ func (c *ServerPublisher) awaitCompletion(contentID internaltypes.ContentID) err
 
 			// Success case
 			log.Info("Publish completed successfully")
-			c.emitter.Emit(events.New(op, events.SuccessPhase, events.NoError, publishToServerSuccessData{
-				ContentID: string(contentID),
-			}))
 			return nil
 		}
 

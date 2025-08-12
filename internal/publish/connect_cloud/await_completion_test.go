@@ -100,19 +100,16 @@ func (s *AwaitCompletionSuite) TestAwaitCompletionSuccess() {
 	s.mockClient.On("GetRevision", s.revisionID).Return(revisionInProgress, nil).Once()
 	s.mockClient.On("GetRevision", s.revisionID).Return(revisionSuccess, nil).Once()
 
+	op := events.PublishDeployContentOp
+
 	// Call awaitCompletion
-	err := s.publisher.awaitCompletion(s.contentID)
+	err := s.publisher.awaitCompletion(logging.New(), op)
 
 	// Verify no error is returned
 	s.NoError(err)
 
 	// Verify mock was called twice
 	s.mockClient.AssertNumberOfCalls(s.T(), "GetRevision", 2)
-
-	// Verify emitter received the success event
-	s.Len(s.emitter.Events, 1, "Should have emitted 1 event (success)")
-	s.Equal("publish/waitForDeployment/success", s.emitter.Events[0].Type)
-	s.Equal(events.EventData{"contentId": string(s.contentID)}, s.emitter.Events[0].Data)
 }
 
 func (s *AwaitCompletionSuite) TestAwaitCompletionFailure() {
@@ -125,8 +122,10 @@ func (s *AwaitCompletionSuite) TestAwaitCompletionFailure() {
 
 	s.mockClient.On("GetRevision", s.revisionID).Return(revisionFailure, nil)
 
+	op := events.PublishDeployContentOp
+
 	// Call awaitCompletion
-	err := s.publisher.awaitCompletion(s.contentID)
+	err := s.publisher.awaitCompletion(logging.New(), op)
 
 	// Verify an error is returned
 	s.Error(err)
@@ -135,13 +134,10 @@ func (s *AwaitCompletionSuite) TestAwaitCompletionFailure() {
 	// Check that it's an EventableError with correct operation
 	eventableErr, ok := err.(types.EventableError)
 	s.True(ok, "Error should implement EventableError interface")
-	s.Equal(events.PublishWaitForDeploymentOp, eventableErr.GetOperation())
+	s.Equal(op, eventableErr.GetOperation())
 
 	// Verify mock was called once
 	s.mockClient.AssertNumberOfCalls(s.T(), "GetRevision", 1)
-
-	// Verify no events were emitted
-	s.Empty(s.emitter.Events, "Should not emit events when error occurs")
 }
 
 func (s *AwaitCompletionSuite) TestAwaitCompletionAPIError() {
@@ -149,8 +145,10 @@ func (s *AwaitCompletionSuite) TestAwaitCompletionAPIError() {
 	apiError := errors.New("API connection error")
 	s.mockClient.On("GetRevision", s.revisionID).Return((*clienttypes.Revision)(nil), apiError)
 
+	op := events.PublishDeployContentOp
+
 	// Call awaitCompletion
-	err := s.publisher.awaitCompletion(s.contentID)
+	err := s.publisher.awaitCompletion(logging.New(), op)
 
 	// Verify an error is returned
 	s.Error(err)
@@ -159,11 +157,8 @@ func (s *AwaitCompletionSuite) TestAwaitCompletionAPIError() {
 	// Check that it's an EventableError with correct operation
 	eventableErr, ok := err.(types.EventableError)
 	s.True(ok, "Error should implement EventableError interface")
-	s.Equal(events.PublishWaitForDeploymentOp, eventableErr.GetOperation())
+	s.Equal(op, eventableErr.GetOperation())
 
 	// Verify mock was called once
 	s.mockClient.AssertNumberOfCalls(s.T(), "GetRevision", 1)
-
-	// Verify no events were emitted
-	s.Empty(s.emitter.Events, "Should not emit events when error occurs")
 }

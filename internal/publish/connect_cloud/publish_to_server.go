@@ -7,17 +7,18 @@ import (
 
 	"github.com/posit-dev/publisher/internal/clients/types"
 	"github.com/posit-dev/publisher/internal/events"
+	"github.com/posit-dev/publisher/internal/logging"
 	internal_types "github.com/posit-dev/publisher/internal/types"
 )
 
-type publishToServerSuccessData struct {
+type deployContentData struct {
 	ContentID string `mapstructure:"contentId"`
 }
 
-func (c *ServerPublisher) PublishToServer(contentID internal_types.ContentID, bundleReader io.Reader) error {
+func (c *ServerPublisher) updateContent(contentID internal_types.ContentID) error {
 	// If we didn't create the content earlier in ServerPublisher, we need to update the content with the latest info
 	if c.content == nil {
-		op := events.PublishUpdateDeploymentOp
+		op := events.PublishUpdateContentOp
 
 		base, err := c.getContentRequestBase()
 		if err != nil {
@@ -39,18 +40,44 @@ func (c *ServerPublisher) PublishToServer(contentID internal_types.ContentID, bu
 			return err
 		}
 	}
+	return nil
+}
 
-	err := c.uploadBundle(bundleReader)
+func (c *ServerPublisher) doPublish(contentID internal_types.ContentID) error {
+	op := events.PublishDeployContentOp
+	log := c.log.WithArgs(logging.LogKeyOp, op)
+	data := deployContentData{
+		ContentID: string(contentID),
+	}
+
+	c.emitter.Emit(events.New(op, events.StartPhase, events.NoError, data))
+
+	err := c.initiatePublish(log, op, contentID)
 	if err != nil {
 		return err
 	}
 
-	err = c.initiatePublish(contentID)
+	err = c.awaitCompletion(log, op)
 	if err != nil {
 		return err
 	}
 
-	err = c.awaitCompletion(contentID)
+	c.emitter.Emit(events.New(op, events.SuccessPhase, events.NoError, data))
+	return nil
+}
+
+func (c *ServerPublisher) PublishToServer(contentID internal_types.ContentID, bundleReader io.Reader) error {
+	err := c.updateContent(contentID)
+	if err != nil {
+		return err
+	}
+
+	err = c.uploadBundle(bundleReader)
+	if err != nil {
+		return err
+	}
+
+	err = c.doPublish(contentID)
 	if err != nil {
 		return err
 	}
