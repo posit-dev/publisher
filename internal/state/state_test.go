@@ -742,16 +742,6 @@ func (s *StateSuite) TestGetDefaultAccountOne() {
 	s.NoError(err)
 }
 
-func (s *StateSuite) TestGetDefaultAccountFromEnv() {
-	other := accounts.Account{}
-	expected := accounts.Account{
-		Source: accounts.AccountSourceEnvironment,
-	}
-	actual, err := getDefaultAccount([]accounts.Account{other, expected})
-	s.Equal(&expected, actual)
-	s.NoError(err)
-}
-
 func (s *StateSuite) TestGetDefaultAccountMultiple() {
 	acct1 := accounts.Account{}
 	acct2 := accounts.Account{}

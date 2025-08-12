@@ -48,6 +48,8 @@ func (p *CredentialsProvider) Load() ([]Account, error) {
 			CloudAccountID:      cred.AccountID,
 			CloudAccountName:    cred.AccountName,
 			CloudAccessToken:    cred.AccessToken,
+			Token:               cred.Token,
+			PrivateKey:          cred.PrivateKey,
 		}
 		i++
 	}

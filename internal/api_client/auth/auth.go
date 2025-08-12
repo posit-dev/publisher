@@ -36,6 +36,12 @@ func (af AuthFactory) NewClientAuth(acct *accounts.Account) (AuthMethod, error) 
 			return nil, err
 		}
 		return auth, nil
+	case accounts.AuthTypeToken:
+		auth, err := NewTokenAuthenticator(acct.Token, acct.PrivateKey)
+		if err != nil {
+			return nil, err
+		}
+		return auth, nil
 	case accounts.AuthTypeNone:
 		// We can't publish without authentication. However, when a
 		// user is adding a new credential, the first thing we do is
