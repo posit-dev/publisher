@@ -51,7 +51,7 @@ func (s *LogsSuite) SetupTest() {
 	s.logsClient = new(MockLogsAPIClient)
 
 	// Replace the factory function with one that returns our mock
-	logsClientFactory = func(environment internaltypes.CloudEnvironment, logChannel string, accessToken string, log logging.Logger) connect_cloud_logs.LogsAPIClient {
+	LogsClientFactory = func(environment internaltypes.CloudEnvironment, logChannel string, accessToken string, log logging.Logger) connect_cloud_logs.LogsAPIClient {
 		return s.logsClient
 	}
 
@@ -75,7 +75,7 @@ func (s *LogsSuite) SetupTest() {
 }
 
 func (s *LogsSuite) TearDownTest() {
-	logsClientFactory = connect_cloud_logs.NewConnectCloudLogsClient
+	LogsClientFactory = connect_cloud_logs.NewConnectCloudLogsClient
 }
 
 func (s *LogsSuite) TestWatchLogs() {

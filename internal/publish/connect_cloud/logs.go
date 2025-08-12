@@ -12,7 +12,7 @@ import (
 	"github.com/posit-dev/publisher/internal/logging"
 )
 
-var logsClientFactory = connect_cloud_logs.NewConnectCloudLogsClient
+var LogsClientFactory = connect_cloud_logs.NewConnectCloudLogsClient
 
 func (c *ServerPublisher) getAuthorizationToken() (string, error) {
 	request := &types.AuthorizationRequest{
@@ -36,7 +36,7 @@ func (c *ServerPublisher) watchLogs(ctx context.Context) error {
 		return err
 	}
 
-	logsClient := logsClientFactory(c.Account.CloudEnvironment,
+	logsClient := LogsClientFactory(c.Account.CloudEnvironment,
 		c.content.NextRevision.PublishLogChannel,
 		authToken,
 		c.log)

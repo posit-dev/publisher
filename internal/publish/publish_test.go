@@ -18,6 +18,7 @@ import (
 	"github.com/posit-dev/publisher/internal/bundles"
 	"github.com/posit-dev/publisher/internal/clients/connect"
 	"github.com/posit-dev/publisher/internal/clients/connect_cloud"
+	"github.com/posit-dev/publisher/internal/clients/connect_cloud_logs"
 	"github.com/posit-dev/publisher/internal/clients/connect_cloud_upload"
 	clienttypes "github.com/posit-dev/publisher/internal/clients/types"
 	"github.com/posit-dev/publisher/internal/config"
@@ -133,6 +134,7 @@ func (s *BasePublishSuite) TearDownTest() {
 	connectClientFactory = connect.NewConnectClient
 	cloudClientFactory = connect_cloud.NewConnectCloudClientWithAuth
 	connect_cloud2.UploadAPIClientFactory = connect_cloud_upload.NewConnectCloudUploadClient
+	connect_cloud2.LogsClientFactory = connect_cloud_logs.NewConnectCloudLogsClient
 	rPackageMapperFactory = renv.NewPackageMapper
 }
 
@@ -645,6 +647,7 @@ type mockCloudError struct {
 	rPackageErr         error
 	getContentErr       error
 	getAuthorizationErr error
+	watchLogsErr        error
 }
 
 func TestPublishConnectCloudSuite(t *testing.T) {
@@ -705,6 +708,11 @@ func (s *PublishConnectCloudSuite) TestPublishWithClientNewFailGetContent() {
 func (s *PublishConnectCloudSuite) TestPublishWithClientNewFailGetAuthorization() {
 	getAuthorizationErr := errors.New("error from GetAuthorization")
 	s.publishWithCloudClient(nil, &mockCloudError{getAuthorizationErr: getAuthorizationErr}, fmt.Errorf("failed to get authorization token: %w", getAuthorizationErr))
+}
+
+func (s *PublishConnectCloudSuite) TestPublishWithClientNewFailWatchLogs() {
+	watchLogsErr := errors.New("error from WatchLogs")
+	s.publishWithCloudClient(nil, &mockCloudError{watchLogsErr: watchLogsErr}, fmt.Errorf("error watching logs: %w", watchLogsErr))
 }
 
 type cloudPublishTestOptions struct {
@@ -818,6 +826,18 @@ func (s *PublishConnectCloudSuite) publishWithCloudClient(
 	//origUploadAPIClientFactory = uploadAPIClientFactory
 	connect_cloud2.UploadAPIClientFactory = func(uploadURL string, log logging.Logger, timeout time.Duration) connect_cloud_upload.UploadAPIClient {
 		return uploadClient
+	}
+
+	logsClient := connect_cloud_logs.NewMockLogsClient()
+	logsClient.On("WatchLogs", mock.Anything, mock.Anything).Return(errsMock.watchLogsErr)
+
+	connect_cloud2.LogsClientFactory = func(
+		environment types.CloudEnvironment,
+		logChannel string,
+		accessToken string,
+		log logging.Logger,
+	) connect_cloud_logs.LogsAPIClient {
+		return logsClient
 	}
 
 	// Create event emitter
