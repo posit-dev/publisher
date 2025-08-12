@@ -35,6 +35,10 @@ export function isQuickPickItem(d: QuickPickItem | string): d is QuickPickItem {
   return typeof d !== "string";
 }
 
+export function isString(d: StateData): d is string {
+  return typeof d === "string";
+}
+
 export type QuickPickItemWithIndex = QuickPickItem & { index: number };
 export type QuickPickItemWithInspectionResult = QuickPickItem & {
   inspectionResult?: ConfigurationInspectionResult;
@@ -54,16 +58,21 @@ export function isQuickPickItemWithInspectionResult(
   );
 }
 
+export type StateData =
+  | QuickPickItem
+  | QuickPickItemWithInspectionResult
+  | string
+  | undefined;
+
 export interface MultiStepState {
   title: string;
   step: number;
   lastStep: number;
   totalSteps: number;
-  data: Record<
-    string,
-    QuickPickItem | QuickPickItemWithInspectionResult | string | undefined
-  >;
+  data: Record<string, StateData>;
   promptStepNumbers: Record<string, number>;
+  // state data validator
+  isValid: () => boolean | void;
 }
 
 export const assignStep = (state: MultiStepState, uniqueId: string): number => {

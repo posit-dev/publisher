@@ -26,27 +26,28 @@ describe("Credentials API client", () => {
     // Setup mock response
     mockAxiosPost.mockResolvedValue({ data: { guid: "test-guid" } });
 
+    const data = {
+      name: "Test Credential",
+      url: "https://connect.example.com",
+      apiKey: "",
+      token: "test-token-123",
+      privateKey: "test-private-key-123",
+      snowflakeConnection: "",
+    };
+
     // Call connect create with token parameters
-    await credentials.connectCreate(
-      "Test Credential",
-      "https://connect.example.com",
-      "",
-      "test-token-123",
-      "test-private-key-123",
-      "",
-      ServerType.CONNECT,
-    );
+    await credentials.connectCreate(data, ServerType.CONNECT);
 
     // Verify correct parameters were passed to axios post
     expect(mockAxiosPost).toHaveBeenCalledWith(
       "credentials",
       {
-        name: "Test Credential",
-        url: "https://connect.example.com",
-        apiKey: "",
-        token: "test-token-123",
-        privateKey: "test-private-key-123",
-        snowflakeConnection: "",
+        name: data.name,
+        url: data.url,
+        apiKey: data.apiKey,
+        token: data.token,
+        privateKey: data.privateKey,
+        snowflakeConnection: data.snowflakeConnection,
         serverType: ServerType.CONNECT,
         accountId: "",
         accountName: "",
@@ -65,25 +66,26 @@ describe("Credentials API client", () => {
     // Setup mock response
     mockAxiosPost.mockResolvedValue({ data: { guid: "test-guid" } });
 
+    const data = {
+      name: "Test Credential",
+      accountId: "test-account",
+      accountName: "Test Account",
+      refreshToken: "refresh-token-test",
+      accessToken: "access-token-test",
+    };
+
     // Call connect cloud create with device auth parameters
-    await credentials.connectCloudCreate(
-      "Test Credential",
-      "test-account",
-      "Test Account",
-      "refresh-token-test",
-      "access-token-test",
-      ServerType.CONNECT_CLOUD,
-    );
+    await credentials.connectCloudCreate(data, ServerType.CONNECT_CLOUD);
 
     // Verify correct parameters were passed to axios post
     expect(mockAxiosPost).toHaveBeenCalledWith(
       "credentials",
       {
-        name: "Test Credential",
-        accountId: "test-account",
-        accountName: "Test Account",
-        refreshToken: "refresh-token-test",
-        accessToken: "access-token-test",
+        name: data.name,
+        accountId: data.accountId,
+        accountName: data.accountName,
+        refreshToken: data.refreshToken,
+        accessToken: data.accessToken,
         serverType: ServerType.CONNECT_CLOUD,
         url: "",
         apiKey: "",

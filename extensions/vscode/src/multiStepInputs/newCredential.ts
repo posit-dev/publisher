@@ -76,6 +76,7 @@ export async function newCredential(
       totalSteps: 0,
       data: {},
       promptStepNumbers: {},
+      isValid: () => {},
     };
 
     if (extensionSettings.enableConnectCloud()) {
@@ -157,8 +158,7 @@ export async function newCredential(
   await collectInputs();
 
   // make sure user has not hit escape or moved away from the window
-  // before completing the steps. This also serves as a type guard on
-  // our state data vars down to the actual type desired
+  // before completing the steps
   if (!credential) {
     console.log("User has dismissed the New Credential flow. Exiting.");
     // it is necessary to throw here because this can be part of a

@@ -4,6 +4,7 @@ import { AxiosInstance } from "axios";
 import { Credential, TestResult } from "../types/credentials";
 import { ServerType } from "../types/contentRecords";
 import { CONNECT_CLOUD_ENV_HEADER } from "../../constants";
+import { StateData } from "src/multiStepInputs/multiStepHelper";
 
 export class Credentials {
   private client: AxiosInstance;
@@ -24,24 +25,16 @@ export class Credentials {
   // 400 - bad request
   // 409 - conflict
   // 500 - internal server error
-  connectCreate(
-    name: string,
-    url: string,
-    apiKey: string,
-    token: string,
-    privateKey: string,
-    snowflakeConnection: string,
-    serverType: ServerType,
-  ) {
+  connectCreate(data: Record<string, StateData>, serverType: ServerType) {
     return this.client.post<Credential>(
       `credentials`,
       {
-        name,
-        url,
-        apiKey,
-        token,
-        privateKey,
-        snowflakeConnection,
+        name: data.name,
+        url: data.url,
+        apiKey: data.apiKey,
+        token: data.token,
+        privateKey: data.privateKey,
+        snowflakeConnection: data.snowflakeConnection,
         serverType,
         accountId: "",
         accountName: "",
@@ -57,22 +50,15 @@ export class Credentials {
   // 400 - bad request
   // 409 - conflict
   // 500 - internal server error
-  connectCloudCreate(
-    name: string,
-    accountId: string,
-    accountName: string,
-    refreshToken: string,
-    accessToken: string,
-    serverType: ServerType,
-  ) {
+  connectCloudCreate(data: Record<string, StateData>, serverType: ServerType) {
     return this.client.post<Credential>(
       `credentials`,
       {
-        name,
-        accountId,
-        accountName,
-        refreshToken,
-        accessToken,
+        name: data.name,
+        accountId: data.accountId,
+        accountName: data.accountName,
+        refreshToken: data.refreshToken,
+        accessToken: data.accessToken,
         serverType,
         url: "",
         apiKey: "",

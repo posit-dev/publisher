@@ -355,6 +355,7 @@ export async function newDeployment(
       totalSteps: 0,
       data: {},
       promptStepNumbers: {},
+      isValid: () => {},
     };
 
     let currentStep: InputStep;
@@ -681,8 +682,7 @@ export async function newDeployment(
   };
 
   // make sure user has not hit escape or moved away from the window
-  // before completing the steps. This also serves as a type guard on
-  // our state data vars down to the actual type desired
+  // before completing the steps
   if (
     !newDeploymentData.entrypoint.filePath ||
     !newDeploymentData.entrypoint.inspectionResult ||

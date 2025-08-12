@@ -6,8 +6,8 @@ import {
   MultiStepInput,
   MultiStepState,
   QuickPickItemWithIndex,
-  isQuickPickItem,
   isQuickPickItemWithIndex,
+  isString,
 } from "./multiStepHelper";
 
 import { InputBoxValidationSeverity, window } from "vscode";
@@ -37,6 +37,17 @@ import { extensionSettings } from "src/extension";
 import { formatURL } from "src/utils/url";
 import { checkSyntaxApiKey } from "src/utils/apiKeys";
 import { ConnectAuthTokenActivator } from "src/auth/ConnectAuthTokenActivator";
+import { getEnumKeyByEnumValue } from "src/utils/enums";
+
+enum AuthMethod {
+  API_KEY = "apiKey",
+  TOKEN = "token",
+}
+
+enum AuthMethodName {
+  API_KEY = "API Key",
+  TOKEN = "Token Authentication",
+}
 
 export async function newConnectCredential(
   viewId: string,
@@ -53,6 +64,7 @@ export async function newConnectCredential(
   // globals
   let serverType: ServerType = ServerType.CONNECT;
   const productName: ProductName = ProductName.CONNECT;
+  let authMethod: AuthMethod = AuthMethod.TOKEN;
 
   enum step {
     INPUT_SERVER_URL = "inputServerUrl",
@@ -73,6 +85,38 @@ export async function newConnectCredential(
     [step.INPUT_CRED_NAME]: inputCredentialName,
     [step.INPUT_AUTH_METHOD]: inputAuthMethod,
     [step.INPUT_TOKEN]: inputToken,
+  };
+
+  const isToken = (authMethod: AuthMethod) => {
+    return authMethod === AuthMethod.TOKEN;
+  };
+
+  const isApiKey = (authMethod: AuthMethod) => {
+    return authMethod === AuthMethod.API_KEY;
+  };
+
+  const isValidTokenAuth = () => {
+    // for token authentication, require token and privateKey
+    return (
+      isConnect(serverType) &&
+      isToken(authMethod) &&
+      isString(state.data.token) &&
+      isString(state.data.privateKey)
+    );
+  };
+
+  const isValidApiKeyAuth = () => {
+    // for API key authentication, require apiKey
+    return (
+      isConnect(serverType) &&
+      isApiKey(authMethod) &&
+      isString(state.data.apiKey)
+    );
+  };
+
+  const isValidSnowflakeAuth = () => {
+    // for Snowflake, require snowflakeConnection
+    return isSnowflake(serverType) && isString(state.data.snowflakeConnection);
   };
 
   // ***************************************************************
@@ -104,11 +148,17 @@ export async function newConnectCredential(
         apiKey: <string | undefined>undefined, // eventual type is string
         name: <string | undefined>undefined, // eventual type is string
         snowflakeConnection: <string | undefined>undefined, // eventual type is string
-        authMethod: <string | undefined>undefined, // "token" or "apiKey"
         token: <string | undefined>undefined, // token ID for token authentication
         privateKey: <string | undefined>undefined, // private key for token authentication
       },
       promptStepNumbers: {},
+      isValid: () => {
+        return (
+          isString(state.data.name) &&
+          isString(state.data.url) &&
+          (isValidApiKeyAuth() || isValidTokenAuth() || isValidSnowflakeAuth())
+        );
+      },
     };
 
     await MultiStepInput.run(
@@ -246,10 +296,13 @@ export async function newConnectCredential(
   async function inputAuthMethod(input: MultiStepInput, state: MultiStepState) {
     const authMethods = [
       {
-        label: "Token Authentication",
+        label: AuthMethodName.TOKEN,
         description: "Recommended - one click connection",
       },
-      { label: "API Key", description: "Manually enter an API key" },
+      {
+        label: AuthMethodName.API_KEY,
+        description: "Manually enter an API key",
+      },
     ];
 
     const pick = await input.showQuickPick({
@@ -264,20 +317,22 @@ export async function newConnectCredential(
       ignoreFocusOut: true,
     });
 
-    state.data.authMethod = pick.label === "API Key" ? "apiKey" : "token";
+    const enumKey = getEnumKeyByEnumValue(AuthMethodName, pick.label);
+    // fallback to the default if there is ever a case when the enumKey is not found
+    authMethod = enumKey ? AuthMethod[enumKey] : authMethod;
 
-    if (state.data.authMethod === "apiKey") {
+    if (isApiKey(authMethod)) {
       return {
         name: step.INPUT_API_KEY,
         step: (input: MultiStepInput) =>
           steps[step.INPUT_API_KEY](input, state),
       };
-    } else {
-      return {
-        name: step.INPUT_TOKEN,
-        step: (input: MultiStepInput) => steps[step.INPUT_TOKEN](input, state),
-      };
     }
+
+    return {
+      name: step.INPUT_TOKEN,
+      step: (input: MultiStepInput) => steps[step.INPUT_TOKEN](input, state),
+    };
   }
 
   // ***************************************************************
@@ -468,50 +523,9 @@ export async function newConnectCredential(
   credentials = await getExistingCredentials(viewId);
   const state = await collectInputs();
 
-  const isMissingTokenAuthData = () => {
-    // for token authentication, require token and privateKey
-    return (
-      isConnect(serverType) &&
-      state.data.authMethod === "token" &&
-      (state.data.token === undefined ||
-        isQuickPickItem(state.data.token) ||
-        state.data.privateKey === undefined ||
-        isQuickPickItem(state.data.privateKey))
-    );
-  };
-
-  const isMissingApiKeyAuthData = () => {
-    // for API key authentication, require apiKey
-    return (
-      isConnect(serverType) &&
-      state.data.authMethod === "apiKey" &&
-      (state.data.apiKey === undefined || isQuickPickItem(state.data.apiKey))
-    );
-  };
-
-  const isMissingSnowflakeAuthData = () => {
-    // for Snowflake, require snowflakeConnection
-    return (
-      isSnowflake(serverType) &&
-      (state.data.snowflakeConnection === undefined ||
-        isQuickPickItem(state.data.snowflakeConnection))
-    );
-  };
-
   // make sure user has not hit escape or moved away from the window
-  // before completing the steps. This also serves as a type guard on
-  // our state data vars down to the actual type desired
-  if (
-    // common required fields for all authentication methods
-    state.data.name === undefined ||
-    isQuickPickItem(state.data.name) ||
-    state.data.url === undefined ||
-    isQuickPickItem(state.data.url) ||
-    // authentication method specific fields
-    isMissingTokenAuthData() ||
-    isMissingApiKeyAuthData() ||
-    isMissingSnowflakeAuthData()
-  ) {
+  // before completing the steps
+  if (!state.isValid()) {
     console.log("User has dismissed the New Connect Credential flow. Exiting.");
     // it is necessary to throw here because this can be part of a
     // sub-flow and we need to identify when the user has abandoned this
@@ -522,27 +536,10 @@ export async function newConnectCredential(
     throw new AbortError();
   }
 
-  // at this point, we've validated that all required fields are present and are strings
-  // provide appropriate defaults for anything that needs forceful initialization
-  const { apiKey, token, privateKey, snowflakeConnection } = state.data;
-  state.data.apiKey = typeof apiKey !== "string" ? "" : apiKey;
-  state.data.token = typeof token !== "string" ? "" : token;
-  state.data.privateKey = typeof privateKey !== "string" ? "" : privateKey;
-  state.data.snowflakeConnection =
-    typeof snowflakeConnection !== "string" ? "" : snowflakeConnection;
-
   // create the credential!
   let credential: Credential | undefined = undefined;
   try {
-    const resp = await api.credentials.connectCreate(
-      state.data.name,
-      state.data.url,
-      state.data.apiKey,
-      state.data.token,
-      state.data.privateKey,
-      state.data.snowflakeConnection,
-      serverType,
-    );
+    const resp = await api.credentials.connectCreate(state.data, serverType);
     credential = resp.data;
   } catch (error: unknown) {
     const summary = getSummaryStringFromError("credentials::add", error);

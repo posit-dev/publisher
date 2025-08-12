@@ -21,7 +21,7 @@ vi.mock("./multiStepHelper", () => {
       state.promptStepNumbers[stepName] = state.step;
       return state.step;
     },
-    isQuickPickItem: vi.fn(() => false),
+    isString: vi.fn(() => true),
     isQuickPickItemWithIndex: vi.fn(() => false),
   };
 });

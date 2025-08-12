@@ -3,10 +3,10 @@
 import {
   MultiStepInput,
   MultiStepState,
-  isQuickPickItem,
   InputStep,
   AbortError,
   InfoMessageParameters,
+  isString,
 } from "./multiStepHelper";
 
 import { InputBoxValidationSeverity, window } from "vscode";
@@ -132,12 +132,22 @@ export async function newConnectCloudCredential(
       data: {
         // each attribute is initialized to undefined
         // to be returned when it has not been canceled
+        name: <string | undefined>undefined, // eventual type is string
         accessToken: <string | undefined>undefined, // eventual type is string
         refreshToken: <string | undefined>undefined, // eventual type is string
         accountId: <string | undefined>undefined, // eventual type is string
         accountName: <string | undefined>undefined, // eventual type is string
       },
       promptStepNumbers: {},
+      isValid: () => {
+        return (
+          isString(state.data.name) &&
+          isString(state.data.accessToken) &&
+          isString(state.data.refreshToken) &&
+          isString(state.data.accountId) &&
+          isString(state.data.accountName)
+        );
+      },
     };
 
     await MultiStepInput.run(
@@ -489,21 +499,8 @@ export async function newConnectCloudCredential(
   const state = await collectInputs();
 
   // make sure user has not hit escape or moved away from the window
-  // before completing the steps. This also serves as a type guard on
-  // our state data vars down to the actual type desired
-  if (
-    // have to add type guards here to eliminate the variability
-    state.data.name === undefined ||
-    isQuickPickItem(state.data.name) ||
-    state.data.accessToken === undefined ||
-    isQuickPickItem(state.data.accessToken) ||
-    state.data.refreshToken === undefined ||
-    isQuickPickItem(state.data.refreshToken) ||
-    state.data.accountId === undefined ||
-    isQuickPickItem(state.data.accountId) ||
-    state.data.accountName === undefined ||
-    isQuickPickItem(state.data.accountName)
-  ) {
+  // before completing the steps
+  if (!state.isValid()) {
     console.log(
       "User has dismissed the New Connect Cloud Credential flow. Exiting.",
     );
@@ -520,11 +517,7 @@ export async function newConnectCloudCredential(
   let credential: Credential | undefined = undefined;
   try {
     const resp = await api.credentials.connectCloudCreate(
-      state.data.name,
-      state.data.accountId,
-      state.data.accountName,
-      state.data.refreshToken,
-      state.data.accessToken,
+      state.data,
       serverType,
     );
     credential = resp.data;
