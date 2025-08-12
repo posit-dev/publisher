@@ -3,6 +3,7 @@ package connect_cloud
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import (
+	"context"
 	"io"
 
 	"github.com/posit-dev/publisher/internal/clients/types"
@@ -84,6 +85,20 @@ func (c *ServerPublisher) PublishToServer(contentID internal_types.ContentID, bu
 	}
 
 	err = c.uploadBundle(bundleReader)
+	if err != nil {
+		return err
+	}
+
+	// refetch the content to get the new revision's log channel
+	content, err := c.client.GetContent(c.content.ID)
+	if err != nil {
+		return err
+	}
+	c.content = content
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	err = c.watchLogs(ctx)
 	if err != nil {
 		return err
 	}
