@@ -136,6 +136,7 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts_GetCurrentUse
 	// No need to mock GetAccounts since the function returns after GetCurrentUser fails
 
 	connectCloudClientFactory = func(environment types.CloudEnvironment, log logging.Logger, timeout time.Duration, authValue string) connect_cloud.APIClient {
+		s.Equal(authValue, "token123")
 		return client
 	}
 
@@ -225,4 +226,44 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts_GetAccountsEr
 
 	result := rec.Result()
 	s.Equal(http.StatusInternalServerError, result.StatusCode)
+}
+
+func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts_MissingAuthHeader() {
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest(
+		"GET",
+		"/connect-cloud/accounts",
+		nil,
+	)
+	s.NoError(err)
+	req.Header.Set("Connect-Cloud-Environment", "staging")
+	// No Authorization header set
+
+	s.h(rec, req)
+
+	result := rec.Result()
+	s.Equal(http.StatusUnauthorized, result.StatusCode)
+
+	respBody, _ := io.ReadAll(rec.Body)
+	s.Equal("Invalid Authorization header\n", string(respBody))
+}
+
+func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts_InvalidAuthFormat() {
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest(
+		"GET",
+		"/connect-cloud/accounts",
+		nil,
+	)
+	s.NoError(err)
+	req.Header.Set("Connect-Cloud-Environment", "staging")
+	req.Header.Set("Authorization", "InvalidFormat") // Missing "Bearer " prefix
+
+	s.h(rec, req)
+
+	result := rec.Result()
+	s.Equal(http.StatusUnauthorized, result.StatusCode)
+
+	respBody, _ := io.ReadAll(rec.Body)
+	s.Equal("Invalid Authorization header\n", string(respBody))
 }
