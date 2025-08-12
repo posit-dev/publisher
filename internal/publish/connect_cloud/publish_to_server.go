@@ -23,7 +23,9 @@ func (c *ServerPublisher) updateContent(contentID internal_types.ContentID) erro
 	if c.content == nil {
 		op := events.PublishUpdateContentOp
 		data := updateContentData{}
+		log := c.log.WithArgs(logging.LogKeyOp, op)
 		c.emitter.Emit(events.New(op, events.StartPhase, events.NoError, data))
+		log.Info("Determining content settings")
 
 		base, err := c.getContentRequestBase()
 		if err != nil {
@@ -35,6 +37,7 @@ func (c *ServerPublisher) updateContent(contentID internal_types.ContentID) erro
 			ContentID:          contentID,
 		}
 
+		log.Info("Updating content settings")
 		_, err = c.client.UpdateContent(updateRequest)
 		if err != nil {
 			return err
@@ -46,6 +49,7 @@ func (c *ServerPublisher) updateContent(contentID internal_types.ContentID) erro
 		}
 
 		c.emitter.Emit(events.New(op, events.SuccessPhase, events.NoError, data))
+		log.Info("Updated content settings")
 	}
 	return nil
 }
