@@ -34,11 +34,17 @@ func (t *AuthenticatedTransport) RoundTrip(req *http.Request) (*http.Response, e
 	if t.auth != nil {
 		// RoundTrippers are not permitted to modify the request.
 		req = cloneRequest(req)
-		t.auth.AddAuthHeaders(req)
+		err := t.auth.AddAuthHeaders(req)
+		if err != nil {
+			return nil, err
+		}
 	}
+
 	// Base.RoundTripper will close the request body
 	reqBodyClosed = true
-	return t.base.RoundTrip(req)
+	resp, err := t.base.RoundTrip(req)
+
+	return resp, err
 }
 
 func cloneRequest(req *http.Request) *http.Request {
