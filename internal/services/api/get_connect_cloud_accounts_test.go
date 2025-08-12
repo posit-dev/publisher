@@ -243,7 +243,7 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts_MissingAuthHe
 
 	result := rec.Result()
 	s.Equal(http.StatusUnauthorized, result.StatusCode)
-	
+
 	respBody, _ := io.ReadAll(rec.Body)
 	s.Equal("Invalid Authorization header\n", string(respBody))
 }
@@ -257,13 +257,13 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts_InvalidAuthFo
 	)
 	s.NoError(err)
 	req.Header.Set("Connect-Cloud-Environment", "staging")
-	req.Header.Set("Authorization", "InvalidFormat")  // Missing "Bearer " prefix
+	req.Header.Set("Authorization", "InvalidFormat") // Missing "Bearer " prefix
 
 	s.h(rec, req)
 
 	result := rec.Result()
 	s.Equal(http.StatusUnauthorized, result.StatusCode)
-	
+
 	respBody, _ := io.ReadAll(rec.Body)
 	s.Equal("Invalid Authorization header\n", string(respBody))
 }
