@@ -192,6 +192,13 @@ const eventVerbToString = new Map<string, activeInactivePhrases>([
     },
   ],
   [
+    "publish/createRevision",
+    {
+      inActive: "Create Revision",
+      active: "Creating Revision",
+    },
+  ],
+  [
     "publish/uploadBundle",
     {
       inActive: "Upload Bundle",
@@ -203,6 +210,13 @@ const eventVerbToString = new Map<string, activeInactivePhrases>([
     {
       inActive: "Create Deployment",
       active: "Creating Deployment",
+    },
+  ],
+  [
+    "publish/publishRevision",
+    {
+      inActive: "Publish Revision",
+      active: "Publishing Revision",
     },
   ],
   [

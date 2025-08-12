@@ -12,6 +12,8 @@ export type EventStreamRegistration = (message: EventStreamMessage) => void;
 export type UnregisterCallback = { unregister: () => void };
 
 export function displayEventStreamMessage(msg: EventStreamMessage): string {
+  console.log("----- displayEventStreamMessage", msg.type);
+  console.log("----- displayEventStreamMessage", msg);
   if (msg.type === "publish/checkCapabilities/log") {
     if (msg.data.username) {
       return `${msg.data.message}: username ${msg.data.username}, email ${msg.data.email}`;

@@ -114,6 +114,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
           "Getting Package Descriptions",
         ),
       ],
+      // skipped
       [
         "publish/checkCapabilities",
         createLogStage("Check Capabilities", "Checking Capabilities"),
@@ -122,10 +123,16 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
         "publish/createBundle",
         createLogStage("Create Bundle", "Creating Bundle"),
       ],
+      // new one
+      [
+        "publish/createRevision",
+        createLogStage("Create Revision", "Creating Revision"),
+      ],
       [
         "publish/uploadBundle",
         createLogStage("Upload Bundle", "Uploading Bundle"),
       ],
+      // skipped
       [
         "publish/createDeployment",
         createLogStage(
@@ -133,15 +140,23 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
           "Creating Deployment Record",
         ),
       ],
+      // new one
+      [
+        "publish/publishRevision",
+        createLogStage("Publish Revision", "Publishing Revision"),
+      ],
       [
         "publish/deployBundle",
         createLogStage("Deploy Bundle", "Deploying Bundle"),
       ],
+      // skipped
       [
         "publish/restoreEnv",
         createLogStage("Restore Environment", RestoringEnvironmentLabel),
       ],
+      // skipped
       ["publish/runContent", createLogStage("Run Content", "Running Content")],
+      // skipped
       [
         "publish/validateDeployment",
         createLogStage(
