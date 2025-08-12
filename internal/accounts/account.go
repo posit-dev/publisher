@@ -22,23 +22,28 @@ type Account struct {
 	CloudAccountName    string                 `json:"cloud_account_name"` // Account name for Connect Cloud
 	CloudAccessToken    string                 `json:"-"`                  // Access token for OAuth authentication
 	CloudRefreshToken   string                 `json:"-"`                  // Refresh token for OAuth authentication
-
+	Token               string                 `json:"-"`                  // Token ID for token-based authentication
+	PrivateKey          string                 `json:"-"`                  // Base64-encoded private key for signing requests
 }
 
 // AuthType returns the detected AccountAuthType based on the properties of the
 // Account.
 func (acct *Account) AuthType() AccountAuthType {
-	// an account should have either an API key or a Snowflake connection name, never both.
+	// An account should have one of: API key, Snowflake connection name, or token+private key
 	if acct.ApiKey != "" {
 		return AuthTypeAPIKey
 	} else if acct.SnowflakeConnection != "" {
 		return AuthTypeSnowflake
+	} else if acct.Token != "" && acct.PrivateKey != "" {
+		return AuthTypeToken
 	}
 	return AuthTypeNone
 }
 
-// HasCredential returns true if the Account is configured with an API Key or
-// Snowflake connection name, i.e. if it ought to be able to authenticate.
+// HasCredential returns true if the Account is configured with valid credentials
+// for authentication.
 func (acct *Account) HasCredential() bool {
-	return acct.ApiKey != "" || acct.SnowflakeConnection != ""
+	return acct.ApiKey != "" ||
+		acct.SnowflakeConnection != "" ||
+		(acct.Token != "" && acct.PrivateKey != "")
 }

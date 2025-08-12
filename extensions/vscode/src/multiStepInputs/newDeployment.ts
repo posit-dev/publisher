@@ -1429,7 +1429,7 @@ export async function newDeployment(
     );
 
     newDeploymentData.entrypoint.inspectionResult.configuration.productType =
-      getProductType(serverType);
+      getProductType(newOrSelectedCredential!.serverType);
 
     configCreateResponse = (
       await api.configurations.createOrUpdate(

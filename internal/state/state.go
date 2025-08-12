@@ -61,13 +61,7 @@ func getDefaultAccount(accountList []accounts.Account) (*accounts.Account, error
 	if len(accountList) == 0 {
 		return nil, errNoAccounts
 	} else if len(accountList) > 1 {
-		// If an account was provided via environment variables, use it.
-		for _, acct := range accountList {
-			if acct.Source == accounts.AccountSourceEnvironment {
-				return &acct, nil
-			}
-		}
-		// Otherwise we don't have a way to choose
+		// we don't have a way to choose
 		return nil, errMultipleAccounts
 	}
 	return &accountList[0], nil

@@ -8,6 +8,7 @@ import (
 
 	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/api_client/auth/snowflake"
+	"github.com/posit-dev/publisher/internal/api_client/auth/tokenutil"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
 	"github.com/stretchr/testify/suite"
 )
@@ -45,4 +46,28 @@ func (s *AuthSuite) TestNewClientAuth() {
 	// Proves we called the snowflake auth constructor with the connection
 	// name, without having to set up everything else. See
 	// snowflake_test.go for full constructor tests.
+}
+
+func (s *AuthSuite) TestNewClientAuthToken() {
+	// Generate a valid token for testing
+	tokenID, _, privateKey, err := tokenutil.GenerateToken()
+	s.NoError(err)
+
+	// Test with valid token credentials
+	af := NewAuthFactory()
+	auth, err := af.NewClientAuth(&accounts.Account{
+		Token:      tokenID,
+		PrivateKey: privateKey,
+	})
+	s.NoError(err)
+	s.NotNil(auth)
+	s.IsType(&tokenAuthenticator{}, auth)
+
+	// Test with invalid private key
+	_, err = af.NewClientAuth(&accounts.Account{
+		Token:      tokenID,
+		PrivateKey: "invalid-key",
+	})
+	s.Error(err)
+	s.Contains(err.Error(), "invalid private key")
 }

@@ -34,6 +34,8 @@ export class Credentials {
     refreshToken: string,
     accessToken: string,
     serverType: ServerType,
+    token?: string,
+    privateKey?: string,
   ) {
     return this.client.post<Credential>(
       `credentials`,
@@ -47,6 +49,8 @@ export class Credentials {
         refreshToken,
         accessToken,
         serverType,
+        token,
+        privateKey,
       },
       { headers: CONNECT_CLOUD_ENV_HEADER },
     );
@@ -90,6 +94,32 @@ export class Credentials {
       url,
       apiKey,
       insecure,
+    });
+  }
+
+  // Generates a new token for Connect authentication
+  // Returns token ID, claim URL, and private key
+  generateToken(serverUrl: string) {
+    return this.client.post<{
+      token: string;
+      claimUrl: string;
+      privateKey: string;
+    }>(`connect/token`, {
+      serverUrl,
+    });
+  }
+
+  // Verifies if a token has been claimed
+  // Returns the user information if the token has been claimed
+  verifyToken(serverUrl: string, token: string, privateKey: string) {
+    return this.client.post<{
+      username?: string;
+      guid?: string;
+      [key: string]: unknown;
+    }>(`connect/token/user`, {
+      serverUrl,
+      token,
+      privateKey,
     });
   }
 }

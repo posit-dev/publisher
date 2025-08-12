@@ -43,7 +43,7 @@ import (
 
 const ServiceName = "Posit Publisher Safe Storage"
 
-const CurrentVersion = 2
+const CurrentVersion = 3
 
 type Credential struct {
 	GUID       string                 `json:"guid"`
@@ -63,9 +63,32 @@ type Credential struct {
 	RefreshToken     string                 `json:"refreshToken"`
 	AccessToken      string                 `json:"accessToken"`
 	CloudEnvironment types.CloudEnvironment `json:"cloudEnvironment"`
+
+	// Token authentication fields
+	Token      string `json:"token"`
+	PrivateKey string `json:"privateKey"`
 }
 
-type CredentialV2 = Credential
+type CredentialV3 = Credential
+type CredentialV2 struct {
+	GUID       string                 `json:"guid"`
+	Name       string                 `json:"name"`
+	ServerType server_type.ServerType `json:"serverType"`
+	URL        string                 `json:"url"`
+
+	// Connect fields
+	ApiKey string `json:"apiKey"`
+
+	// Snowflake fields
+	SnowflakeConnection string `json:"snowflakeConnection"`
+
+	// Connect Cloud fields
+	AccountID        string                 `json:"accountId"`
+	AccountName      string                 `json:"accountName"`
+	RefreshToken     string                 `json:"refreshToken"`
+	AccessToken      string                 `json:"accessToken"`
+	CloudEnvironment types.CloudEnvironment `json:"cloudEnvironment"`
+}
 
 type CredentialV1 struct {
 	GUID                string `json:"guid"`
@@ -140,6 +163,23 @@ func (cr *CredentialV1) toV2() (*CredentialV2, error) {
 	}, nil
 }
 
+func (cr *CredentialV2) toV3() (*CredentialV3, error) {
+	return &CredentialV3{
+		GUID:                cr.GUID,
+		ServerType:          cr.ServerType,
+		Name:                cr.Name,
+		URL:                 cr.URL,
+		ApiKey:              cr.ApiKey,
+		SnowflakeConnection: cr.SnowflakeConnection,
+		AccountID:           cr.AccountID,
+		AccountName:         cr.AccountName,
+		RefreshToken:        cr.RefreshToken,
+		AccessToken:         cr.AccessToken,
+		Token:               "",
+		PrivateKey:          "",
+	}, nil
+}
+
 // ToCredential converts a CredentialRecord to a Credential based on its version.
 func (cr *CredentialRecord) ToCredential() (*Credential, error) {
 	switch cr.Version {
@@ -148,7 +188,11 @@ func (cr *CredentialRecord) ToCredential() (*Credential, error) {
 		if err := json.Unmarshal(cr.Data, &cred); err != nil {
 			return nil, NewCorruptedError(cr.GUID)
 		}
-		convertedCred, err := cred.toV1().toV2()
+		v2Cred, err := cred.toV1().toV2()
+		if err != nil {
+			return nil, NewCorruptedError(cr.GUID)
+		}
+		convertedCred, err := v2Cred.toV3()
 		if err != nil {
 			return nil, NewCorruptedError(cr.GUID)
 		}
@@ -158,13 +202,27 @@ func (cr *CredentialRecord) ToCredential() (*Credential, error) {
 		if err := json.Unmarshal(cr.Data, &cred); err != nil {
 			return nil, NewCorruptedError(cr.GUID)
 		}
-		convertedCred, err := cred.toV2()
+		v2Cred, err := cred.toV2()
+		if err != nil {
+			return nil, NewCorruptedError(cr.GUID)
+		}
+		convertedCred, err := v2Cred.toV3()
 		if err != nil {
 			return nil, NewCorruptedError(cr.GUID)
 		}
 		return convertedCred, nil
 	case 2:
 		var cred CredentialV2
+		if err := json.Unmarshal(cr.Data, &cred); err != nil {
+			return nil, NewCorruptedError(cr.GUID)
+		}
+		convertedCred, err := cred.toV3()
+		if err != nil {
+			return nil, NewCorruptedError(cr.GUID)
+		}
+		return convertedCred, nil
+	case 3:
+		var cred CredentialV3
 		if err := json.Unmarshal(cr.Data, &cred); err != nil {
 			return nil, NewCorruptedError(cr.GUID)
 		}
@@ -191,24 +249,33 @@ type CreateCredentialDetails struct {
 	RefreshToken     string
 	AccessToken      string
 	CloudEnvironment types.CloudEnvironment
+
+	// Token authentication fields
+	Token      string
+	PrivateKey string
 }
 
 func (details CreateCredentialDetails) ToCredential() (*Credential, error) {
 	connectPresent := details.ApiKey != ""
 	snowflakePresent := details.SnowflakeConnection != ""
 	connectCloudPresent := details.AccountID != "" && details.AccountName != "" && details.RefreshToken != "" && details.AccessToken != ""
+	tokenAuthPresent := details.Token != "" && details.PrivateKey != ""
 
 	switch details.ServerType {
 	case server_type.ServerTypeConnect:
-		if !connectPresent || snowflakePresent || connectCloudPresent {
+		// Connect can use either API key or token auth, but not both
+		if (connectPresent && tokenAuthPresent) ||
+			(!connectPresent && !tokenAuthPresent) ||
+			snowflakePresent ||
+			connectCloudPresent {
 			return nil, NewIncompleteCredentialError()
 		}
 	case server_type.ServerTypeSnowflake:
-		if !snowflakePresent || connectPresent || connectCloudPresent {
+		if !snowflakePresent || connectPresent || connectCloudPresent || tokenAuthPresent {
 			return nil, NewIncompleteCredentialError()
 		}
 	case server_type.ServerTypeConnectCloud:
-		if !connectCloudPresent || connectPresent || snowflakePresent {
+		if !connectCloudPresent || connectPresent || snowflakePresent || tokenAuthPresent {
 			return nil, NewIncompleteCredentialError()
 		}
 	default:
@@ -238,6 +305,8 @@ func (details CreateCredentialDetails) ToCredential() (*Credential, error) {
 		RefreshToken:        details.RefreshToken,
 		AccessToken:         details.AccessToken,
 		CloudEnvironment:    details.CloudEnvironment,
+		Token:               details.Token,
+		PrivateKey:          details.PrivateKey,
 	}, nil
 }
 

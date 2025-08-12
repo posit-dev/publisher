@@ -41,11 +41,16 @@ type fileCredential struct {
 	RefreshToken     string                 `toml:"refresh_token,omitempty"`
 	AccessToken      string                 `toml:"access_token,omitempty"`
 	CloudEnvironment types.CloudEnvironment `toml:"cloud_environment,omitempty"`
+
+	// Token authentication fields
+	Token      string `toml:"token,omitempty"`
+	PrivateKey string `toml:"private_key,omitempty"`
 }
 
 func (cr *fileCredential) IsValid() bool {
 	return cr.URL != "" && (cr.ApiKey != "" || cr.SnowflakeConnection != "" ||
-		(cr.AccountID != "" && cr.AccountName != "" && cr.RefreshToken != "" && cr.AccessToken != ""))
+		(cr.AccountID != "" && cr.AccountName != "" && cr.RefreshToken != "" && cr.AccessToken != "") ||
+		(cr.Token != "" && cr.PrivateKey != ""))
 }
 
 func (cr *fileCredential) toCredential(name string) (*Credential, error) {
@@ -65,6 +70,8 @@ func (cr *fileCredential) toCredential(name string) (*Credential, error) {
 		RefreshToken:        cr.RefreshToken,
 		AccessToken:         cr.AccessToken,
 		CloudEnvironment:    cr.CloudEnvironment,
+		Token:               cr.Token,
+		PrivateKey:          cr.PrivateKey,
 	}, nil
 }
 
@@ -176,6 +183,8 @@ func (c *fileCredentialsService) doSet(credDetails CreateCredentialDetails, chec
 		RefreshToken:        cred.RefreshToken,
 		AccessToken:         cred.AccessToken,
 		CloudEnvironment:    cred.CloudEnvironment,
+		Token:               cred.Token,
+		PrivateKey:          cred.PrivateKey,
 	}
 
 	err = c.saveFile(creds)

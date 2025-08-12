@@ -31,6 +31,10 @@ type PostCredentialsRequest struct {
 	AccountName  string `json:"accountName"`
 	RefreshToken string `json:"refreshToken"`
 	AccessToken  string `json:"accessToken"`
+
+	// Token authentication fields
+	Token      string `json:"token"`
+	PrivateKey string `json:"privateKey"`
 }
 
 type PostCredentialsResponse = credentials.Credential
@@ -77,6 +81,8 @@ func PostCredentialFuncHandler(log logging.Logger) http.HandlerFunc {
 			RefreshToken:        body.RefreshToken,
 			AccessToken:         body.AccessToken,
 			CloudEnvironment:    environment,
+			Token:               body.Token,
+			PrivateKey:          body.PrivateKey,
 		})
 		if err != nil {
 			if _, ok := err.(*credentials.CredentialIdentityCollision); ok {
