@@ -865,8 +865,8 @@ func (s *PublishConnectCloudSuite) publishWithCloudClient(
 	}
 	if expectedErr == nil {
 		s.NoError(err)
-		s.Equal(12, len(emitter.Events))
 
+		s.Equal(12, len(emitter.Events))
 		s.Equal("publish/start", emitter.Events[0].Type)
 		s.Equal("publish/createNewDeployment/start", emitter.Events[1].Type)
 		s.Equal("publish/createNewDeployment/success", emitter.Events[2].Type)
