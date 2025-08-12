@@ -37,6 +37,10 @@ func NewServerPublisher(
 	}
 }
 
+func (c *ServerPublisher) UpdateState() {
+	// Connect doesn't require any state updates before publishing
+}
+
 func (c *ServerPublisher) GetContentInfo(contentID types.ContentID) publishhelper.ContentInfo {
 	return publishhelper.ContentInfo{
 		ContentID:    contentID,
@@ -75,7 +79,7 @@ func (c *ServerPublisher) PublishToServer(contentID types.ContentID, bundleReade
 		return err
 	}
 
-	if c.Config.Validate {
+	if c.Config.GetValidate() {
 		err = c.validateContent(contentID)
 		if err != nil {
 			return err

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/mitchellh/mapstructure"
+
 	"github.com/posit-dev/publisher/internal/project"
 	"github.com/posit-dev/publisher/internal/types"
 )
@@ -56,6 +57,7 @@ const (
 	PublishRestoreREnvOp             Operation = "publish/restoreREnv"
 	PublishRunContentOp              Operation = "publish/runContent"
 	PublishSetVanityUrlOp            Operation = "publish/setVanityURL"
+	PublishWaitForDeploymentOp       Operation = "publish/waitForDeployment"
 	PublishValidateDeploymentOp      Operation = "publish/validateDeployment"
 	PublishOp                        Operation = "publish"
 )

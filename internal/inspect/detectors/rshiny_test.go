@@ -5,12 +5,13 @@ package detectors
 import (
 	"testing"
 
+	"github.com/spf13/afero"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/schema"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/spf13/afero"
-	"github.com/stretchr/testify/suite"
 )
 
 type ShinySuite struct {
@@ -36,12 +37,13 @@ func (s *ShinySuite) TestInferTypeAppR() {
 	s.Nil(err)
 	s.Len(configs, 1)
 
+	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeRShiny,
 		Title:      "",
 		Entrypoint: filename,
-		Validate:   true,
+		Validate:   &validate,
 		Files:      []string{},
 		R:          &config.R{},
 	}, configs[0])
@@ -62,12 +64,13 @@ func (s *ShinySuite) TestInferTypeServerR() {
 	s.Nil(err)
 	s.Len(configs, 1)
 
+	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeRShiny,
 		Title:      "",
 		Entrypoint: filename,
-		Validate:   true,
+		Validate:   &validate,
 		Files:      []string{},
 		R:          &config.R{},
 	}, configs[0])
@@ -103,12 +106,13 @@ func (s *ShinySuite) TestInferTypeWithEntrypoint() {
 	s.Nil(err)
 	s.Len(configs, 1)
 
+	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeRShiny,
 		Title:      "",
 		Entrypoint: filename,
-		Validate:   true,
+		Validate:   &validate,
 		Files:      []string{},
 		R:          &config.R{},
 	}, configs[0])

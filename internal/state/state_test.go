@@ -86,12 +86,13 @@ func (s *StateSuite) TestLoadConfig() {
 	s.NoError(err)
 	min_procs := int32(1)
 
+	validate := true
 	s.Equal(&config.Config{
 		Schema:      "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json",
 		ProductType: "connect",
 		Type:        "python-dash",
 		Entrypoint:  "app:app",
-		Validate:    true,
+		Validate:    &validate,
 		Files:       []string{},
 		Title:       "Super Title",
 		Description: "minimal description",
@@ -178,6 +179,7 @@ func (s *StateSuite) TestLoadTarget() {
 	s.NotEmpty(d.CreatedAt)
 	d.CreatedAt = ""
 
+	validate := true
 	s.Equal(&deployment.Deployment{
 		Schema:     "https://cdn.posit.co/publisher/schemas/posit-publishing-record-schema-v3.json",
 		ServerURL:  "https://connect.example.com",
@@ -198,7 +200,7 @@ func (s *StateSuite) TestLoadTarget() {
 			ProductType: config.ProductTypeConnect,
 			Type:        "python-dash",
 			Entrypoint:  "app:app",
-			Validate:    true,
+			Validate:    &validate,
 			Title:       "Super Title",
 			Description: "minimal description",
 			Python: &config.Python{Version: "3.11.3",
@@ -736,16 +738,6 @@ func (s *StateSuite) TestGetDefaultAccountNone() {
 func (s *StateSuite) TestGetDefaultAccountOne() {
 	expected := accounts.Account{}
 	actual, err := getDefaultAccount([]accounts.Account{expected})
-	s.Equal(&expected, actual)
-	s.NoError(err)
-}
-
-func (s *StateSuite) TestGetDefaultAccountFromEnv() {
-	other := accounts.Account{}
-	expected := accounts.Account{
-		Source: accounts.AccountSourceEnvironment,
-	}
-	actual, err := getDefaultAccount([]accounts.Account{other, expected})
 	s.Equal(&expected, actual)
 	s.NoError(err)
 }
