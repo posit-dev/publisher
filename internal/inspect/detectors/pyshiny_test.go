@@ -6,12 +6,13 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/spf13/afero"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/schema"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/spf13/afero"
-	"github.com/stretchr/testify/suite"
 )
 
 type PyShinySuite struct {
@@ -37,11 +38,12 @@ func (s *PyShinySuite) TestInferType() {
 	s.Nil(err)
 	s.Len(configs, 1)
 
+	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypePythonShiny,
 		Entrypoint: filename,
-		Validate:   true,
+		Validate:   &validate,
 		Files:      []string{fmt.Sprintf("/%s", filename)},
 		Python:     &config.Python{},
 	}, configs[0])
@@ -62,11 +64,12 @@ func (s *PyShinySuite) TestInferTypeShinyExpress() {
 	s.Nil(err)
 	s.Len(configs, 1)
 
+	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypePythonShiny,
 		Entrypoint: "shiny.express.app:app_2e_py",
-		Validate:   true,
+		Validate:   &validate,
 		Files:      []string{fmt.Sprintf("/%s", filename)},
 		Python:     &config.Python{},
 	}, configs[0])
@@ -91,11 +94,12 @@ func (s *PyShinySuite) TestInferTypeWithEntrypoint() {
 	s.Nil(err)
 	s.Len(configs, 1)
 
+	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypePythonShiny,
 		Entrypoint: filename,
-		Validate:   true,
+		Validate:   &validate,
 		Files:      []string{fmt.Sprintf("/%s", filename)},
 		Python:     &config.Python{},
 	}, configs[0])
@@ -119,11 +123,12 @@ func (s *PyShinySuite) TestInferTypeWithExtraFile() {
 	s.Nil(err)
 	s.Len(configs, 1)
 
+	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypePythonShiny,
 		Entrypoint: filename,
-		Validate:   true,
+		Validate:   &validate,
 		Files:      []string{fmt.Sprintf("/%s", filename)},
 		Python:     &config.Python{},
 	}, configs[0])

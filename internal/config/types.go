@@ -96,13 +96,13 @@ func (t ContentType) IsAppContent() bool {
 }
 
 type Config struct {
-	Comments      []string      `toml:"-" json:"comments"`
-	ProductType   ProductType   `toml:"product_type" json:"productType"`
-	Schema        string        `toml:"$schema" json:"$schema"`
-	Type          ContentType   `toml:"type" json:"type"`
+	Comments      []string      `toml:"-" json:"comments,omitempty"`
+	ProductType   ProductType   `toml:"product_type" json:"productType,omitempty"`
+	Schema        string        `toml:"$schema" json:"$schema,omitempty"`
+	Type          ContentType   `toml:"type" json:"type,omitempty"`
 	Entrypoint    string        `toml:"entrypoint" json:"entrypoint,omitempty"`
-	Validate      bool          `toml:"validate" json:"validate"`
-	HasParameters bool          `toml:"has_parameters,omitempty" json:"hasParameters"`
+	Validate      *bool         `toml:"validate" json:"validate,omitempty"`
+	HasParameters *bool         `toml:"has_parameters,omitempty" json:"hasParameters,omitempty"`
 	Files         []string      `toml:"files,multiline" json:"files"`
 	Title         string        `toml:"title,omitempty" json:"title,omitempty"`
 	Description   string        `toml:"description,multiline,omitempty" json:"description,omitempty"`
@@ -119,6 +119,47 @@ type Config struct {
 	ConnectCloud  *ConnectCloud `toml:"connect_cloud,omitempty" json:"connectCloud,omitempty"`
 }
 
+func (c *Config) GetValidate() bool {
+	if c.Validate == nil {
+		return false
+	}
+	return *c.Validate
+}
+
+func (c *Config) GetHasParameters() bool {
+	if c.HasParameters == nil {
+		return false
+	}
+	return *c.HasParameters
+}
+
+// ForceProductTypeCompliance modifies the config in place to ensure that it complies with the JSON schema.
+func (c *Config) ForceProductTypeCompliance() {
+	if c.ProductType.IsConnectCloud() {
+		// These fields are disallowed by the schema
+		if c.Python != nil {
+			c.Python.PackageManager = ""
+			c.Python.PackageFile = ""
+			c.Python.RequiresPythonVersion = ""
+
+			if c.Python.Version != "" {
+				// Connect Cloud requires Python version to be in the format "X.Y"
+				pythonVersionSplit := strings.Split(c.Python.Version, ".")
+				if len(pythonVersionSplit) >= 2 {
+					c.Python.Version = fmt.Sprintf("%s.%s", pythonVersionSplit[0], pythonVersionSplit[1])
+				}
+			}
+		}
+		if c.R != nil {
+			c.R.PackageManager = ""
+			c.R.PackageFile = ""
+			c.R.RequiresRVersion = ""
+		}
+		c.Quarto = nil
+		c.Jupyter = nil
+	}
+}
+
 type ProductType string
 
 const (
@@ -126,25 +167,12 @@ const (
 	ProductTypeConnectCloud ProductType = "connect_cloud"
 )
 
-// ForceProductTypeCompliance modifies the config in place to ensure that it complies with the JSON schema.
-func (c *Config) ForceProductTypeCompliance() {
-	if c.ProductType == ProductTypeConnectCloud {
-		// These fields are disallowed by the schema
-		if c.Python != nil {
-			c.Python.PackageManager = ""
-			c.Python.PackageFile = ""
-			c.Python.RequiresPythonVersion = ""
+func (p ProductType) IsConnect() bool {
+	return p == ProductTypeConnect
+}
 
-			// Connect Cloud requires Python version to be in the format "X.Y"
-			pythonVersionSplit := strings.Split(c.Python.Version, ".")
-			c.Python.Version = fmt.Sprintf("%s.%s", pythonVersionSplit[0], pythonVersionSplit[1])
-		}
-		if c.R != nil {
-			c.R.PackageManager = ""
-			c.R.PackageFile = ""
-			c.R.RequiresRVersion = ""
-		}
-	}
+func (p ProductType) IsConnectCloud() bool {
+	return p == ProductTypeConnectCloud
 }
 
 func (c *Config) HasSecret(secret string) bool {
@@ -159,10 +187,10 @@ func (c *Config) HasSecret(secret string) bool {
 type Environment = map[string]string
 
 type Python struct {
-	Version               string `toml:"version,omitempty" json:"version"`
-	PackageFile           string `toml:"package_file,omitempty" json:"packageFile"`
-	PackageManager        string `toml:"package_manager,omitempty" json:"packageManager"`
-	RequiresPythonVersion string `toml:"requires_python,omitempty" json:"requiresPython"`
+	Version               string `toml:"version,omitempty" json:"version,omitempty"`
+	PackageFile           string `toml:"package_file,omitempty" json:"packageFile,omitempty"`
+	PackageManager        string `toml:"package_manager,omitempty" json:"packageManager,omitempty"`
+	RequiresPythonVersion string `toml:"requires_python,omitempty" json:"requiresPython,omitempty"`
 }
 
 func (p *Python) FillDefaults(
@@ -192,10 +220,10 @@ func (p *Python) FillDefaults(
 }
 
 type R struct {
-	Version          string `toml:"version,omitempty" json:"version"`
-	PackageFile      string `toml:"package_file,omitempty" json:"packageFile"`
-	PackageManager   string `toml:"package_manager,omitempty" json:"packageManager"`
-	RequiresRVersion string `toml:"requires_r,omitempty" json:"requiresR"`
+	Version          string `toml:"version,omitempty" json:"version,omitempty"`
+	PackageFile      string `toml:"package_file,omitempty" json:"packageFile,omitempty"`
+	PackageManager   string `toml:"package_manager,omitempty" json:"packageManager,omitempty"`
+	RequiresRVersion string `toml:"requires_r,omitempty" json:"requiresR,omitempty"`
 }
 
 func (r *R) FillDefaults(
@@ -225,18 +253,18 @@ func (r *R) FillDefaults(
 }
 
 type Jupyter struct {
-	HideAllInput    bool `toml:"hide_all_input,omitempty" json:"hideAllInput"`
-	HideTaggedInput bool `toml:"hide_tagged_input,omitempty" json:"hideTaggedInput"`
+	HideAllInput    bool `toml:"hide_all_input,omitempty" json:"hideAllInput,omitempty"`
+	HideTaggedInput bool `toml:"hide_tagged_input,omitempty" json:"hideTaggedInput,omitempty"`
 }
 
 type Quarto struct {
-	Version string   `toml:"version" json:"version"`
-	Engines []string `toml:"engines" json:"engines"`
+	Version string   `toml:"version,omitempty" json:"version,omitempty"`
+	Engines []string `toml:"engines,omitempty" json:"engines,omitempty"`
 }
 
 type Schedule struct {
-	Start      string `toml:"start" json:"start"`
-	Recurrence string `toml:"recurrence" json:"recurrence"`
+	Start      string `toml:"start,omitempty" json:"start,omitempty"`
+	Recurrence string `toml:"recurrence,omitempty" json:"recurrence,omitempty"`
 }
 
 type AccessType string
@@ -248,7 +276,7 @@ const (
 )
 
 type ConnectAccessControl struct {
-	Type   AccessType `toml:"type" json:"type"`
+	Type   AccessType `toml:"type" json:"type,omitempty"`
 	Users  []User     `toml:"users,omitempty" json:"users,omitempty"`
 	Groups []Group    `toml:"groups,omitempty" json:"groups,omitempty"`
 }
@@ -299,8 +327,8 @@ type ConnectKubernetes struct {
 	NvidiaGPULimit                 *int64   `toml:"nvidia_gpu_limit,omitempty" json:"nvidiaGpuLimit,omitempty"`
 	ServiceAccountName             string   `toml:"service_account_name,omitempty" json:"serviceAccountName,omitempty"`
 	DefaultImageName               string   `toml:"default_image_name,omitempty" json:"defaultImageName,omitempty"`
-	DefaultREnvironmentManagement  *bool    `toml:"default_r_environment_management,omitempty" json:"defaultREnvironmentManagement"`
-	DefaultPyEnvironmentManagement *bool    `toml:"default_py_environment_management,omitempty" json:"defaultPyEnvironmentManagement"`
+	DefaultREnvironmentManagement  *bool    `toml:"default_r_environment_management,omitempty" json:"defaultREnvironmentManagement,omitempty"`
+	DefaultPyEnvironmentManagement *bool    `toml:"default_py_environment_management,omitempty" json:"defaultPyEnvironmentManagement,omitempty"`
 }
 
 type ConnectCloud struct {
