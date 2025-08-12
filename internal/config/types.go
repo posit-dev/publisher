@@ -135,7 +135,7 @@ func (c *Config) GetHasParameters() bool {
 
 // ForceProductTypeCompliance modifies the config in place to ensure that it complies with the JSON schema.
 func (c *Config) ForceProductTypeCompliance() {
-	if c.ProductType == ProductTypeConnectCloud {
+	if c.ProductType.IsConnectCloud() {
 		// These fields are disallowed by the schema
 		if c.Python != nil {
 			c.Python.PackageManager = ""
@@ -166,6 +166,14 @@ const (
 	ProductTypeConnect      ProductType = "connect"
 	ProductTypeConnectCloud ProductType = "connect_cloud"
 )
+
+func (p ProductType) IsConnect() bool {
+	return p == ProductTypeConnect
+}
+
+func (p ProductType) IsConnectCloud() bool {
+	return p == ProductTypeConnectCloud
+}
 
 func (c *Config) HasSecret(secret string) bool {
 	for _, s := range c.Secrets {
