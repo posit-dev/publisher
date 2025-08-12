@@ -49,8 +49,9 @@ type baseEventData struct {
 }
 
 type publishStartData struct {
-	Server string `mapstructure:"server"`
-	Title  string `mapstructure:"title"`
+	Server      string             `mapstructure:"server"`
+	Title       string             `mapstructure:"title"`
+	ProductType config.ProductType `mapstructure:"productType"`
 }
 
 type publishSuccessData struct {
@@ -216,8 +217,9 @@ var rPackageMapperFactory = renv.NewPackageMapper
 func (p *defaultPublisher) PublishDirectory() error {
 	p.log.Info("Publishing from directory", logging.LogKeyOp, events.AgentOp, "path", p.Dir, "localID", p.State.LocalID)
 	p.emitter.Emit(events.New(events.PublishOp, events.StartPhase, events.NoError, publishStartData{
-		Server: p.Account.URL,
-		Title:  p.Config.Title,
+		Server:      p.Account.URL,
+		Title:       p.Config.Title,
+		ProductType: p.Config.ProductType,
 	}))
 	p.log.Info("Starting deployment to server", "server", p.Account.URL)
 

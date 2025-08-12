@@ -11,14 +11,19 @@ import (
 	internal_types "github.com/posit-dev/publisher/internal/types"
 )
 
-type deployContentData struct {
+type publishContentData struct {
 	ContentID string `mapstructure:"contentId"`
+}
+
+type updateContentData struct {
 }
 
 func (c *ServerPublisher) updateContent(contentID internal_types.ContentID) error {
 	// If we didn't create the content earlier in ServerPublisher, we need to update the content with the latest info
 	if c.content == nil {
 		op := events.PublishUpdateContentOp
+		data := updateContentData{}
+		c.emitter.Emit(events.New(op, events.StartPhase, events.NoError, data))
 
 		base, err := c.getContentRequestBase()
 		if err != nil {
@@ -39,6 +44,8 @@ func (c *ServerPublisher) updateContent(contentID internal_types.ContentID) erro
 		if err != nil {
 			return err
 		}
+
+		c.emitter.Emit(events.New(op, events.SuccessPhase, events.NoError, data))
 	}
 	return nil
 }
@@ -46,7 +53,7 @@ func (c *ServerPublisher) updateContent(contentID internal_types.ContentID) erro
 func (c *ServerPublisher) doPublish(contentID internal_types.ContentID) error {
 	op := events.PublishDeployContentOp
 	log := c.log.WithArgs(logging.LogKeyOp, op)
-	data := deployContentData{
+	data := publishContentData{
 		ContentID: string(contentID),
 	}
 
