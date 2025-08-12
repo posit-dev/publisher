@@ -4,7 +4,7 @@ import { AxiosInstance } from "axios";
 import { Credential, TestResult } from "../types/credentials";
 import { ServerType } from "../types/contentRecords";
 import { CONNECT_CLOUD_ENV_HEADER } from "../../constants";
-import { StateData } from "src/multiStepInputs/multiStepHelper";
+import { StateData } from "../../multiStepInputs/multiStepHelper";
 
 export class Credentials {
   private client: AxiosInstance;

@@ -1,10 +1,10 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
-import { ConfigurationInspectionResult } from "src/api";
+import { ConfigurationInspectionResult } from "../api";
 import {
   isAxiosErrorWithJson,
   resolveAgentJsonErrorMsg,
-} from "src/utils/errorTypes";
+} from "../utils/errorTypes";
 import {
   QuickPickItem,
   window,
