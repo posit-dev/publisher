@@ -8,12 +8,13 @@ import (
 	"slices"
 	"strings"
 
+	"gopkg.in/yaml.v3"
+
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/executor"
 	"github.com/posit-dev/publisher/internal/inspect/dependencies/pydeps"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
-	"gopkg.in/yaml.v3"
 )
 
 type RMarkdownDetector struct {
@@ -161,7 +162,8 @@ func (d *RMarkdownDetector) configFromFileInspect(base util.AbsolutePath, entryp
 		}
 
 		if metadata.Params != nil {
-			cfg.HasParameters = true
+			hasParams := true
+			cfg.HasParameters = &hasParams
 		}
 	}
 	needsR, needsPython, err := pydeps.DetectMarkdownLanguages(base)
