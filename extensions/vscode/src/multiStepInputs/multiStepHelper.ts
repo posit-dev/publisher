@@ -1,10 +1,10 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
-import { ConfigurationInspectionResult } from "src/api";
+import { ConfigurationInspectionResult } from "../api";
 import {
   isAxiosErrorWithJson,
   resolveAgentJsonErrorMsg,
-} from "src/utils/errorTypes";
+} from "../utils/errorTypes";
 import {
   QuickPickItem,
   window,
@@ -35,6 +35,10 @@ export function isQuickPickItem(d: QuickPickItem | string): d is QuickPickItem {
   return typeof d !== "string";
 }
 
+export function isString(d: StateData): d is string {
+  return typeof d === "string";
+}
+
 export type QuickPickItemWithIndex = QuickPickItem & { index: number };
 export type QuickPickItemWithInspectionResult = QuickPickItem & {
   inspectionResult?: ConfigurationInspectionResult;
@@ -54,16 +58,21 @@ export function isQuickPickItemWithInspectionResult(
   );
 }
 
+export type StateData =
+  | QuickPickItem
+  | QuickPickItemWithInspectionResult
+  | string
+  | undefined;
+
 export interface MultiStepState {
   title: string;
   step: number;
   lastStep: number;
   totalSteps: number;
-  data: Record<
-    string,
-    QuickPickItem | QuickPickItemWithInspectionResult | string | undefined
-  >;
+  data: Record<string, StateData>;
   promptStepNumbers: Record<string, number>;
+  // state data validator
+  isValid: () => boolean | void;
 }
 
 export const assignStep = (state: MultiStepState, uniqueId: string): number => {
@@ -76,11 +85,13 @@ export const assignStep = (state: MultiStepState, uniqueId: string): number => {
   return previous;
 };
 
-// InputStep now can have a 'skippable' property (optional)
+// InputStep now can have 'skipStepHistory' and 'name' properties (optional)
 export type InputStep = {
+  // the name for the step
+  name?: string;
+  // used to optionally skip adding the step to the history stack
+  skipStepHistory?: boolean;
   step: (input: MultiStepInput) => Thenable<InputStep | void>;
-  // used to optionally skip a step when navigating backwards in the multi-stepper
-  skippable?: boolean;
 };
 
 interface QuickPickParameters<T extends QuickPickItem> {
@@ -135,8 +146,11 @@ export interface InfoMessageParameters<T> {
 
 export class MultiStepInput {
   // These were templatized: static async run<T>(start: InputStep) {
-  static run(start: InputStep) {
+  static run(start: InputStep, previousSteps?: InputStep[]) {
     const input = new MultiStepInput();
+    if (previousSteps) {
+      input.steps.push(...previousSteps);
+    }
     return input.stepThrough(start);
   }
 
@@ -147,8 +161,10 @@ export class MultiStepInput {
   private async stepThrough(start: InputStep) {
     let currentStep: InputStep | void = start;
     while (currentStep) {
-      // add the current step to the history
-      this.steps.push(currentStep);
+      if (!currentStep.skipStepHistory) {
+        // add the current step to the history
+        this.steps.push(currentStep);
+      }
       if (this.current) {
         this.current.enabled = false;
         this.current.busy = true;
@@ -160,22 +176,10 @@ export class MultiStepInput {
         if (err === InputFlowAction.back) {
           // remove the current step (the one that caused the 'back' action)
           this.steps.pop();
-
-          // iterate backward through the history to find the previous non-skippable step
-          while (this.steps.length > 0) {
-            const previousStep = this.steps.pop();
-
-            if (previousStep?.skippable !== true) {
-              // found a non-skippable step, go back to it
-              currentStep = previousStep;
-              break;
-            }
-            // if skippable, continue popping to find the next non-skippable step
-          }
+          currentStep = this.steps.pop();
 
           if (this.steps.length === 0 && currentStep === undefined) {
-            // if all previous steps were skippable, and we've popped everything,
-            // effectively cancel the input flow
+            // if we've popped everything, effectively cancel the input flow
             throw InputFlowAction.cancel;
           }
         } else if (err === InputFlowAction.resume) {
@@ -461,9 +465,11 @@ export class MultiStepInput {
           ): Promise<ApiResponse<T>> => {
             let attempts = 0;
 
-            const executePolling = async (): Promise<ApiResponse<T>> => {
+            // polling loop
+            while (true) {
               const resp = await apiFunction();
               interval += resp.intervalAdjustment;
+
               if (
                 !shouldPollApi ||
                 (exitPollingCondition && exitPollingCondition(resp))
@@ -475,15 +481,13 @@ export class MultiStepInput {
               attempts++;
               if ((maxAttempts && attempts >= maxAttempts) || abortPolling) {
                 // return custom internal error when aborting or
-                // when the max attemps have been reached
+                // when the max attempts have been reached
                 throw new AbortError(); // bubble up the error
               }
+
               // exit condition has not been met, wait the interval time and poll again
               await new Promise((resolve) => setTimeout(resolve, interval));
-              return executePolling(); // recursive call to continue polling
-            };
-
-            return await executePolling();
+            }
           };
 
           // start polling (poll every 5 seconds at most 120 times === 10 minutes max time)
