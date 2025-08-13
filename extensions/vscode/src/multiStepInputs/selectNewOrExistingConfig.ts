@@ -255,6 +255,7 @@ export async function selectNewOrExistingConfig(
         title: undefined, // eventual type is string
       },
       promptStepNumbers: {},
+      isValid: () => {},
     };
     // start the progression through the steps
 

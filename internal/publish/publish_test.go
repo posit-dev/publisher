@@ -18,6 +18,7 @@ import (
 	"github.com/posit-dev/publisher/internal/bundles"
 	"github.com/posit-dev/publisher/internal/clients/connect"
 	"github.com/posit-dev/publisher/internal/clients/connect_cloud"
+	"github.com/posit-dev/publisher/internal/clients/connect_cloud_logs"
 	"github.com/posit-dev/publisher/internal/clients/connect_cloud_upload"
 	clienttypes "github.com/posit-dev/publisher/internal/clients/types"
 	"github.com/posit-dev/publisher/internal/config"
@@ -133,6 +134,7 @@ func (s *BasePublishSuite) TearDownTest() {
 	connectClientFactory = connect.NewConnectClient
 	cloudClientFactory = connect_cloud.NewConnectCloudClientWithAuth
 	connect_cloud2.UploadAPIClientFactory = connect_cloud_upload.NewConnectCloudUploadClient
+	connect_cloud2.LogsClientFactory = connect_cloud_logs.NewConnectCloudLogsClient
 	rPackageMapperFactory = renv.NewPackageMapper
 }
 
@@ -636,13 +638,16 @@ type PublishConnectCloudSuite struct {
 
 // mockCloudError represents errors in the Cloud publishing process
 type mockCloudError struct {
-	createContentErr  error
-	updateContentErr  error
-	updateBundleErr   error
-	revisionErr       error
-	uploadErr         error
-	publishContentErr error
-	rPackageErr       error
+	createContentErr    error
+	updateContentErr    error
+	updateBundleErr     error
+	revisionErr         error
+	uploadErr           error
+	publishContentErr   error
+	rPackageErr         error
+	getContentErr       error
+	getAuthorizationErr error
+	watchLogsErr        error
 }
 
 func TestPublishConnectCloudSuite(t *testing.T) {
@@ -693,6 +698,21 @@ func (s *PublishConnectCloudSuite) TestPublishWithClientNewFailPublishContent() 
 func (s *PublishConnectCloudSuite) TestPublishWithClientNewFailRPackages() {
 	rPackageErr := errors.New("error from GetManifestPackages")
 	s.publishWithCloudClient(nil, &mockCloudError{rPackageErr: rPackageErr}, rPackageErr)
+}
+
+func (s *PublishConnectCloudSuite) TestPublishWithClientNewFailGetContent() {
+	getContentErr := errors.New("error from GetContent")
+	s.publishWithCloudClient(nil, &mockCloudError{getContentErr: getContentErr}, getContentErr)
+}
+
+func (s *PublishConnectCloudSuite) TestPublishWithClientNewFailGetAuthorization() {
+	getAuthorizationErr := errors.New("error from GetAuthorization")
+	s.publishWithCloudClient(nil, &mockCloudError{getAuthorizationErr: getAuthorizationErr}, fmt.Errorf("failed to get authorization token: %w", getAuthorizationErr))
+}
+
+func (s *PublishConnectCloudSuite) TestPublishWithClientNewFailWatchLogs() {
+	watchLogsErr := errors.New("error from WatchLogs")
+	s.publishWithCloudClient(nil, &mockCloudError{watchLogsErr: watchLogsErr}, fmt.Errorf("error watching logs: %w", watchLogsErr))
 }
 
 type cloudPublishTestOptions struct {
@@ -774,6 +794,30 @@ func (s *PublishConnectCloudSuite) publishWithCloudClient(
 	// Setup publish content
 	cloudClient.On("PublishContent", string(myContentID)).Return(errsMock.publishContentErr)
 
+	// Setup GetContent to return a content response with the updated revision
+	// Create a separate response for GetContent with the updated PublishLogChannel
+	publishLogChannel := "publish-log-channel-cloud" // Define it here to use in both places
+	updatedContentResponse := &clienttypes.ContentResponse{
+		ID: myContentID,
+		NextRevision: &clienttypes.Revision{
+			ID:                myRevisionID,
+			PublishLogChannel: publishLogChannel, // This is needed for watchLogs
+			PublishResult:     clienttypes.PublishResultSuccess,
+		},
+	}
+	cloudClient.On("GetContent", myContentID).Return(updatedContentResponse, errsMock.getContentErr)
+
+	// Setup GetAuthorization to return a successful response for log channel access
+	cloudClient.On("GetAuthorization", mock.MatchedBy(func(req *clienttypes.AuthorizationRequest) bool {
+		// Verify the request is for log channel access with the right resource ID and permission
+		return req.ResourceType == "log_channel" &&
+			req.ResourceID == publishLogChannel &&
+			req.Permission == "revision.logs:read"
+	})).Return(&clienttypes.AuthorizationResponse{
+		Authorized: true,
+		Token:      "test-logs-access-token",
+	}, errsMock.getAuthorizationErr)
+
 	// Create the mock for connect_cloud_upload client factory
 	uploadClient := connect_cloud_upload.NewMockUploadClient()
 	uploadClient.On("UploadBundle", mock.Anything).Return(errsMock.uploadErr)
@@ -782,6 +826,18 @@ func (s *PublishConnectCloudSuite) publishWithCloudClient(
 	//origUploadAPIClientFactory = uploadAPIClientFactory
 	connect_cloud2.UploadAPIClientFactory = func(uploadURL string, log logging.Logger, timeout time.Duration) connect_cloud_upload.UploadAPIClient {
 		return uploadClient
+	}
+
+	logsClient := connect_cloud_logs.NewMockLogsClient()
+	logsClient.On("WatchLogs", mock.Anything, mock.Anything).Return(errsMock.watchLogsErr)
+
+	connect_cloud2.LogsClientFactory = func(
+		environment types.CloudEnvironment,
+		logChannel string,
+		accessToken string,
+		log logging.Logger,
+	) connect_cloud_logs.LogsAPIClient {
+		return logsClient
 	}
 
 	// Create event emitter
