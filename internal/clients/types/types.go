@@ -1,5 +1,7 @@
 package types
 
+import "github.com/posit-dev/publisher/internal/types"
+
 // Copyright (C) 2025 by Posit Software, PBC.
 
 // UserResponse represents a response from the Connect Cloud user endpoint.
@@ -62,11 +64,13 @@ type Secret struct {
 
 // Revision represents a content revision.
 type Revision struct {
-	ID                string                 `json:"id"`
-	PublishLogChannel string                 `json:"publish_log_channel"`
-	PublishResult     PublishResult          `json:"publish_result"`
-	PublishErrorCode  string                 `json:"publish_error_code,omitempty"`
-	PublishErrorArgs  map[string]interface{} `json:"publish_error_args,omitempty"`
+	ID                    string                 `json:"id"`
+	PublishLogChannel     string                 `json:"publish_log_channel"`
+	PublishResult         PublishResult          `json:"publish_result"`
+	PublishErrorCode      string                 `json:"publish_error_code,omitempty"`
+	PublishErrorArgs      map[string]interface{} `json:"publish_error_args,omitempty"`
+	SourceBundleID        string                 `json:"source_bundle_id"`
+	SourceBundleUploadURL string                 `json:"source_bundle_upload_url"`
 }
 
 type PublishResult string
@@ -78,9 +82,12 @@ const (
 
 // NextRevision represents the configuration for the next content revision.
 type NextRevision struct {
-	SourceType    string `json:"source_type"`
-	RVersion      string `json:"r_version,omitempty"`
-	PythonVersion string `json:"python_version,omitempty"`
+	SourceType    string      `json:"source_type"`
+	RVersion      string      `json:"r_version,omitempty"`
+	PythonVersion string      `json:"python_version,omitempty"`
+	ContentType   ContentType `json:"content_type,omitempty"`
+	AppMode       AppMode     `json:"app_mode,omitempty"`
+	PrimaryFile   string      `json:"primary_file,omitempty"`
 }
 
 // ContentRequestBase contains common fields for content creation and update requests.
@@ -104,15 +111,13 @@ type CreateContentRequest struct {
 // UpdateContentRequest represents a request to update an existing content item.
 type UpdateContentRequest struct {
 	ContentRequestBase
-	ContentID string `json:"-"` // Not sent in the request body, used for the URL
+	ContentID types.ContentID `json:"-"` // Not sent in the request body, used for the URL
 }
 
 // ContentResponse represents a response from creating or updating a content item.
 type ContentResponse struct {
-	ID                    string    `json:"id"`
-	SourceBundleID        string    `json:"source_bundle_id"`
-	SourceBundleUploadURL string    `json:"source_bundle_upload_url"`
-	NextRevision          *Revision `json:"next_revision,omitempty"`
+	ID           types.ContentID `json:"id"`
+	NextRevision *Revision       `json:"next_revision,omitempty"`
 }
 
 // AuthorizationRequest represents a request to authorize access to a resource.

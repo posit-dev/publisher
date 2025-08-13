@@ -11,6 +11,7 @@ import (
 	"unicode"
 
 	"github.com/gorilla/mux"
+
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/schema"
@@ -63,8 +64,31 @@ func PutConfigurationHandlerFunc(base util.AbsolutePath, log logging.Logger) htt
 			return
 		}
 
-		// First, decode into a map for schema validation
-		rawDecoder := json.NewDecoder(bytes.NewReader(body))
+		// First, load the body into a Config struct to make any necessary adjustments.
+		dec := json.NewDecoder(bytes.NewReader(body))
+		dec.DisallowUnknownFields()
+		// use constructor to get default values
+		cfg := config.New()
+		err = dec.Decode(&cfg)
+		if err != nil {
+			BadRequest(w, req, log, err)
+			return
+		}
+
+		// Apply any necessary transformations to the config to ensure schema compliance
+		cfg.ForceProductTypeCompliance()
+
+		// Then marshal it back to JSON so we can load it into a map...
+		var buf bytes.Buffer
+		enc := json.NewEncoder(&buf)
+		err = enc.Encode(cfg)
+		if err != nil {
+			InternalError(w, req, log, err)
+			return
+		}
+
+		// Now load it into a map so we can validate it.
+		rawDecoder := json.NewDecoder(bytes.NewReader(buf.Bytes()))
 		var rawConfig map[string]any
 		err = rawDecoder.Decode(&rawConfig)
 		if err != nil {
@@ -93,16 +117,6 @@ func PutConfigurationHandlerFunc(base util.AbsolutePath, log logging.Logger) htt
 			return
 		}
 
-		// Then decode into a Config to be written to file.
-		dec := json.NewDecoder(bytes.NewReader(body))
-		dec.DisallowUnknownFields()
-		var cfg config.Config
-		err = dec.Decode(&cfg)
-		if err != nil {
-			BadRequest(w, req, log, err)
-			return
-		}
-
 		configPath := config.GetConfigPath(projectDir, name)
 
 		err = cfg.WriteFile(configPath)
@@ -122,7 +136,7 @@ func PutConfigurationHandlerFunc(base util.AbsolutePath, log logging.Logger) htt
 				RelPath: relPath.String(),
 			},
 			ProjectDir:    relProjectDir.String(),
-			Configuration: &cfg,
+			Configuration: cfg,
 		}
 		w.Header().Set("content-type", "application/json")
 		w.WriteHeader(http.StatusOK)

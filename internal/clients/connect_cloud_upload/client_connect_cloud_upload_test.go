@@ -62,7 +62,7 @@ func (s *ConnectCloudUploadClientSuite) TestUploadBundle() {
 	s.NoError(err)
 
 	// Verify the content type and uploaded data
-	assert.Equal(s.T(), "application/octet-stream", receivedContentType)
+	assert.Equal(s.T(), "application/gzip", receivedContentType)
 	assert.Equal(s.T(), testData, receivedData.Bytes())
 }
 

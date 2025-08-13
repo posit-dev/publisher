@@ -4,6 +4,7 @@ package publish
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"log/slog"
 	"strings"
 	"testing"
@@ -16,6 +17,10 @@ import (
 	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/bundles"
 	"github.com/posit-dev/publisher/internal/clients/connect"
+	"github.com/posit-dev/publisher/internal/clients/connect_cloud"
+	"github.com/posit-dev/publisher/internal/clients/connect_cloud_logs"
+	"github.com/posit-dev/publisher/internal/clients/connect_cloud_upload"
+	clienttypes "github.com/posit-dev/publisher/internal/clients/types"
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/events"
@@ -24,6 +29,7 @@ import (
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/logging/loggingtest"
 	"github.com/posit-dev/publisher/internal/project"
+	connect_cloud2 "github.com/posit-dev/publisher/internal/publish/connect_cloud"
 	"github.com/posit-dev/publisher/internal/publish/publishhelper"
 	"github.com/posit-dev/publisher/internal/server_type"
 	"github.com/posit-dev/publisher/internal/state"
@@ -32,13 +38,21 @@ import (
 	"github.com/posit-dev/publisher/internal/util/utiltest"
 )
 
-type PublishSuite struct {
+// BasePublishSuite provides common functionality for publish testing
+type BasePublishSuite struct {
 	utiltest.Suite
 	log       logging.Logger
 	logBuffer *bytes.Buffer
 	fs        afero.Fs
 	cwd       util.AbsolutePath
 }
+
+// PublishConnectSuite extends BasePublishSuite for Connect Server testing
+type PublishConnectSuite struct {
+	BasePublishSuite
+}
+
+// PublishConnectCloudSuite extends BasePublishSuite for Connect Cloud testing
 
 type mockPackageMapper struct {
 	mock.Mock
@@ -68,7 +82,7 @@ type publishErrsMock struct {
 }
 
 func TestPublishSuite(t *testing.T) {
-	suite.Run(t, new(PublishSuite))
+	suite.Run(t, new(PublishConnectSuite))
 }
 
 const renvLockContent = `{
@@ -96,7 +110,7 @@ const renvLockContent = `{
 }
 `
 
-func (s *PublishSuite) SetupTest() {
+func (s *BasePublishSuite) SetupTest() {
 	s.logBuffer = new(bytes.Buffer)
 	opts := &slog.HandlerOptions{Level: slog.LevelInfo}
 	stdLogger := slog.New(slog.NewTextHandler(s.logBuffer, opts))
@@ -116,13 +130,18 @@ func (s *PublishSuite) SetupTest() {
 	cwd.Join("renv.lock").WriteFile([]byte(renvLockContent), 0600)
 }
 
-func (s *PublishSuite) TearDownTest() {
-	clientFactory = connect.NewConnectClient
+func (s *BasePublishSuite) TearDownTest() {
+	connectClientFactory = connect.NewConnectClient
+	cloudClientFactory = connect_cloud.NewConnectCloudClientWithAuth
+	connect_cloud2.UploadAPIClientFactory = connect_cloud_upload.NewConnectCloudUploadClient
+	connect_cloud2.LogsClientFactory = connect_cloud_logs.NewConnectCloudLogsClient
+	rPackageMapperFactory = renv.NewPackageMapper
 }
 
-func (s *PublishSuite) TestNewFromState() {
+func (s *PublishConnectSuite) TestNewFromState() {
 	stateStore := state.Empty()
 	stateStore.Dir = s.cwd
+	stateStore.Account.ServerType = server_type.ServerTypeConnect
 	mockRIntr := interpreters.NewMockRInterpreter()
 	mockPyIntr := interpreters.NewMockPythonInterpreter()
 	mockRIntr.On("GetRExecutable").Return(util.NewAbsolutePath("/path/to/r", nil), nil)
@@ -132,11 +151,11 @@ func (s *PublishSuite) TestNewFromState() {
 	s.Equal(stateStore, publisher.(*defaultPublisher).State)
 }
 
-func (s *PublishSuite) TestPublishWithClientNewSuccess() {
+func (s *PublishConnectSuite) TestPublishWithClientNewSuccess() {
 	s.publishWithClient(nil, &publishErrsMock{}, nil)
 }
 
-func (s *PublishSuite) TestPublishWithClientNewUpdate() {
+func (s *PublishConnectSuite) TestPublishWithClientNewUpdate() {
 	target := deployment.New()
 	target.ID = "myContentID"
 	// Make CreatedAt earlier so it will differ from DeployedAt.
@@ -144,68 +163,68 @@ func (s *PublishSuite) TestPublishWithClientNewUpdate() {
 	s.publishWithClient(target, &publishErrsMock{}, nil)
 }
 
-func (s *PublishSuite) TestPublishWithClientNewFailAuth() {
+func (s *PublishConnectSuite) TestPublishWithClientNewFailAuth() {
 	authErr := errors.New("error from TestAuthentication")
 	s.publishWithClient(nil, &publishErrsMock{authErr: authErr}, authErr)
 }
 
-func (s *PublishSuite) TestPublishWithClientNewFailCapabilities() {
+func (s *PublishConnectSuite) TestPublishWithClientNewFailCapabilities() {
 	capabilitiesErr := errors.New("error from CheckCapabilities")
 	s.publishWithClient(nil, &publishErrsMock{capabilitiesErr: capabilitiesErr}, capabilitiesErr)
 }
 
-func (s *PublishSuite) TestPublishWithClientNewFailCreate() {
+func (s *PublishConnectSuite) TestPublishWithClientNewFailCreate() {
 	createErr := errors.New("error from Create")
 	s.publishWithClient(nil, &publishErrsMock{createErr: createErr}, createErr, func(options *publishTestOptions) {
 		options.expectContentID = false
 	})
 }
 
-func (s *PublishSuite) TestPublishWithClientNewFailEnvVars() {
+func (s *PublishConnectSuite) TestPublishWithClientNewFailEnvVars() {
 	envVarErr := errors.New("error from SetEnvVars")
 	s.publishWithClient(nil, &publishErrsMock{envVarErr: envVarErr}, envVarErr)
 }
 
-func (s *PublishSuite) TestPublishWithClientNewFailUpload() {
+func (s *PublishConnectSuite) TestPublishWithClientNewFailUpload() {
 	uploadErr := errors.New("error from Upload")
 	s.publishWithClient(nil, &publishErrsMock{uploadErr: uploadErr}, uploadErr)
 }
 
-func (s *PublishSuite) TestPublishWithClientNewFailDeploy() {
+func (s *PublishConnectSuite) TestPublishWithClientNewFailDeploy() {
 	deployErr := errors.New("error from Deploy")
 	s.publishWithClient(nil, &publishErrsMock{deployErr: deployErr}, deployErr)
 }
 
-func (s *PublishSuite) TestPublishWithClientNewFailWaitForTask() {
+func (s *PublishConnectSuite) TestPublishWithClientNewFailWaitForTask() {
 	waitErr := errors.New("error from WaitForTask")
 	s.publishWithClient(nil, &publishErrsMock{waitErr: waitErr}, waitErr)
 }
 
-func (s *PublishSuite) TestPublishWithClientNewFailValidation() {
+func (s *PublishConnectSuite) TestPublishWithClientNewFailValidation() {
 	validateErr := errors.New("error from ValidateDeployment")
 	s.publishWithClient(nil, &publishErrsMock{validateErr: validateErr}, validateErr)
 }
 
-func (s *PublishSuite) TestPublishWithClientNewRPackages() {
+func (s *PublishConnectSuite) TestPublishWithClientNewRPackages() {
 	rPackageErr := errors.New("error from GetManifestPackages")
 	s.publishWithClient(nil, &publishErrsMock{rPackageErr: rPackageErr}, rPackageErr)
 }
 
-func (s *PublishSuite) TestPublishWithClientRedeployFailAuth() {
+func (s *PublishConnectSuite) TestPublishWithClientRedeployFailAuth() {
 	target := deployment.New()
 	target.ID = "myContentID"
 	authErr := errors.New("error from TestAuthentication")
 	s.publishWithClient(target, &publishErrsMock{authErr: authErr}, authErr)
 }
 
-func (s *PublishSuite) TestPublishWithClientRedeployFailCapabilities() {
+func (s *PublishConnectSuite) TestPublishWithClientRedeployFailCapabilities() {
 	target := deployment.New()
 	target.ID = "myContentID"
 	capErr := errors.New("error from CheckCapabilities")
 	s.publishWithClient(target, &publishErrsMock{capabilitiesErr: capErr}, capErr)
 }
 
-func (s *PublishSuite) TestPublishWithClientRedeployErrors() {
+func (s *PublishConnectSuite) TestPublishWithClientRedeployErrors() {
 	target := deployment.New()
 	target.ID = "myContentID"
 
@@ -226,42 +245,42 @@ func (s *PublishSuite) TestPublishWithClientRedeployErrors() {
 
 }
 
-func (s *PublishSuite) TestPublishWithClientRedeployFailUpdate() {
+func (s *PublishConnectSuite) TestPublishWithClientRedeployFailUpdate() {
 	target := deployment.New()
 	target.ID = "myContentID"
 	updateErr := errors.New("error from Update")
 	s.publishWithClient(target, &publishErrsMock{createErr: updateErr}, updateErr)
 }
 
-func (s *PublishSuite) TestPublishWithClientRedeployFailEnvVars() {
+func (s *PublishConnectSuite) TestPublishWithClientRedeployFailEnvVars() {
 	target := deployment.New()
 	target.ID = "myContentID"
 	envVarErr := errors.New("error from SetEnvVars")
 	s.publishWithClient(target, &publishErrsMock{envVarErr: envVarErr}, envVarErr)
 }
 
-func (s *PublishSuite) TestPublishWithClientRedeployFailUpload() {
+func (s *PublishConnectSuite) TestPublishWithClientRedeployFailUpload() {
 	target := deployment.New()
 	target.ID = "myContentID"
 	uploadErr := errors.New("error from Upload")
 	s.publishWithClient(target, &publishErrsMock{uploadErr: uploadErr}, uploadErr)
 }
 
-func (s *PublishSuite) TestPublishWithClientRedeployFailDeploy() {
+func (s *PublishConnectSuite) TestPublishWithClientRedeployFailDeploy() {
 	target := deployment.New()
 	target.ID = "myContentID"
 	deployErr := errors.New("error from Deploy")
 	s.publishWithClient(target, &publishErrsMock{deployErr: deployErr}, deployErr)
 }
 
-func (s *PublishSuite) TestPublishWithClientRedeployFailWaitForTask() {
+func (s *PublishConnectSuite) TestPublishWithClientRedeployFailWaitForTask() {
 	target := deployment.New()
 	target.ID = "myContentID"
 	waitErr := errors.New("error from WaitForTask")
 	s.publishWithClient(target, &publishErrsMock{waitErr: waitErr}, waitErr)
 }
 
-func (s *PublishSuite) TestPublishWithClientRedeployFailValidation() {
+func (s *PublishConnectSuite) TestPublishWithClientRedeployFailValidation() {
 	validateErr := errors.New("error from ValidateDeployment")
 	s.publishWithClient(nil, &publishErrsMock{validateErr: validateErr}, validateErr)
 }
@@ -276,7 +295,7 @@ func defaultPublishTestOptions() *publishTestOptions {
 	}
 }
 
-func (s *PublishSuite) publishWithClient(
+func (s *PublishConnectSuite) publishWithClient(
 	target *deployment.Deployment,
 	errsMock *publishErrsMock,
 	expectedErr error,
@@ -299,7 +318,7 @@ func (s *PublishSuite) publishWithClient(
 	myTaskID := types.TaskID("myTaskID")
 
 	client := connect.NewMockClient()
-	clientFactory = func(account *accounts.Account, timeout time.Duration, emitter events.Emitter, log logging.Logger) (connect.APIClient, error) {
+	connectClientFactory = func(account *accounts.Account, timeout time.Duration, emitter events.Emitter, log logging.Logger) (connect.APIClient, error) {
 		return client, nil
 	}
 	if target == nil {
@@ -360,11 +379,10 @@ func (s *PublishSuite) publishWithClient(
 
 	emitter := events.NewCapturingEmitter()
 
-	publisher := &defaultPublisher{
-		log:           s.log,
-		emitter:       emitter,
-		PublishHelper: publishhelper.NewPublishHelper(stateStore, s.log),
-	}
+	mockRIntr := interpreters.NewMockRInterpreter()
+	mockPyIntr := interpreters.NewMockPythonInterpreter()
+	mockRIntr.On("GetRExecutable").Return(util.NewAbsolutePath("/path/to/r", nil), nil)
+	mockPyIntr.On("GetPythonExecutable").Return(util.NewAbsolutePath("/path/to/python", nil), nil)
 
 	rPackageMapper := &mockPackageMapper{}
 	if errsMock.rPackageErr != nil {
@@ -372,16 +390,22 @@ func (s *PublishSuite) publishWithClient(
 	} else {
 		rPackageMapper.On("GetManifestPackages", mock.Anything, mock.Anything, mock.Anything).Return(bundles.PackageMap{}, nil)
 	}
-	publisher.rPackageMapper = rPackageMapper
 
-	err := publisher.PublishDirectory()
+	rPackageMapperFactory = func(base util.AbsolutePath, rExecutable util.Path, log logging.Logger) (renv.PackageMapper, error) {
+		return rPackageMapper, nil
+	}
+
+	publisher, err := NewFromState(stateStore, mockRIntr, mockPyIntr, emitter, s.log)
+	s.NoError(err)
+
+	err = publisher.PublishDirectory()
 	if expectedErr == nil {
 		s.NoError(err)
 	} else {
 		s.NotNil(err)
 		s.Equal(expectedErr.Error(), err.Error())
 
-		publisher.emitErrorEvents(err)
+		publisher.(*defaultPublisher).emitErrorEvents(err)
 	}
 	if target != nil {
 		// Creation date is not updated on deployment
@@ -439,7 +463,7 @@ func (s *PublishSuite) publishWithClient(
 	s.False(exists)
 }
 
-func (s *PublishSuite) TestEmitErrorEventsNoTarget() {
+func (s *PublishConnectSuite) TestEmitErrorEventsNoTarget() {
 	expectedErr := errors.New("test error")
 	log := logging.New()
 
@@ -462,7 +486,7 @@ func (s *PublishSuite) TestEmitErrorEventsNoTarget() {
 	s.Equal("publish/failure", emitter.Events[1].Type)
 }
 
-func (s *PublishSuite) TestEmitErrorEventsWithTarget() {
+func (s *PublishConnectSuite) TestEmitErrorEventsWithTarget() {
 	expectedErr := errors.New("test error")
 	log := logging.New()
 
@@ -505,22 +529,22 @@ func (s *PublishSuite) TestEmitErrorEventsWithTarget() {
 	s.Equal("publish/failure", emitter.Events[1].Type)
 }
 
-func (s *PublishSuite) TestGetDashboardURL() {
+func (s *PublishConnectSuite) TestGetDashboardURL() {
 	expected := "https://connect.example.com:1234/connect/#/apps/d0e5c94a-d37f-4f26-bfc5-515c4c5ea50f"
 	s.Equal(expected, util.GetDashboardURL("https://connect.example.com:1234", "d0e5c94a-d37f-4f26-bfc5-515c4c5ea50f"))
 }
 
-func (s *PublishSuite) TestGetDirectURL() {
+func (s *PublishConnectSuite) TestGetDirectURL() {
 	expected := "https://connect.example.com:1234/content/d0e5c94a-d37f-4f26-bfc5-515c4c5ea50f/"
 	s.Equal(expected, util.GetDirectURL("https://connect.example.com:1234", "d0e5c94a-d37f-4f26-bfc5-515c4c5ea50f"))
 }
 
-func (s *PublishSuite) TestGetLogsURL() {
+func (s *PublishConnectSuite) TestGetLogsURL() {
 	expected := "https://connect.example.com:1234/connect/#/apps/d0e5c94a-d37f-4f26-bfc5-515c4c5ea50f/logs"
 	s.Equal(expected, util.GetLogsURL("https://connect.example.com:1234", "d0e5c94a-d37f-4f26-bfc5-515c4c5ea50f"))
 }
 
-func (s *PublishSuite) TestLogAppInfo() {
+func (s *PublishConnectSuite) TestLogAppInfo() {
 	accountURL := "https://connect.example.com:1234"
 	contentID := types.ContentID("myContentID")
 	directURL := util.GetDirectURL(accountURL, contentID)
@@ -553,7 +577,7 @@ func (s *PublishSuite) TestLogAppInfo() {
 	s.Contains(str, dashboardURL)
 }
 
-func (s *PublishSuite) TestLogAppInfoErr() {
+func (s *PublishConnectSuite) TestLogAppInfoErr() {
 	accountURL := "https://connect.example.com:1234"
 	contentID := types.ContentID("myContentID")
 	directURL := util.GetDirectURL(accountURL, contentID)
@@ -585,7 +609,7 @@ func (s *PublishSuite) TestLogAppInfoErr() {
 	s.Contains(str, logsURL)
 }
 
-func (s *PublishSuite) TestLogAppInfoErrNoContentID() {
+func (s *PublishConnectSuite) TestLogAppInfoErrNoContentID() {
 	accountURL := "https://connect.example.com:1234"
 	contentID := types.ContentID("")
 
@@ -608,42 +632,335 @@ func (s *PublishSuite) TestLogAppInfoErrNoContentID() {
 	s.Equal("", buf.String())
 }
 
-func (s *PublishSuite) TestEmitNewClientError() {
-	expectedErr := errors.New("test error")
-	log := logging.New()
+type PublishConnectCloudSuite struct {
+	BasePublishSuite
+}
 
-	emitter := events.NewCapturingEmitter()
-	cfg := config.New()
-	cfg.Title = "test title"
+// mockCloudError represents errors in the Cloud publishing process
+type mockCloudError struct {
+	createContentErr    error
+	updateContentErr    error
+	updateBundleErr     error
+	revisionErr         error
+	uploadErr           error
+	publishContentErr   error
+	rPackageErr         error
+	getContentErr       error
+	getAuthorizationErr error
+	watchLogsErr        error
+}
 
-	state := &state.State{
-		Dir: s.cwd,
-		Account: &accounts.Account{
-			ServerType: server_type.ServerTypeConnect,
-			URL:        "http://connect.example.com",
+func TestPublishConnectCloudSuite(t *testing.T) {
+	suite.Run(t, new(PublishConnectCloudSuite))
+}
+
+// Add a test for publishing to Connect Cloud with successful creation
+func (s *PublishConnectCloudSuite) TestPublishWithClientNewSuccess() {
+	s.publishWithCloudClient(nil, &mockCloudError{}, nil)
+}
+
+func (s *PublishConnectCloudSuite) TestPublishWithClientNewFailCreateContent() {
+	createContentErr := errors.New("error from CreateContent")
+	s.publishWithCloudClient(nil, &mockCloudError{createContentErr: createContentErr}, createContentErr, func(options *cloudPublishTestOptions) {
+		options.expectContentID = false
+	})
+}
+
+func (s *PublishConnectCloudSuite) TestPublishWithClientNewFailUpdateContent() {
+	target := deployment.New()
+	target.ID = "myContentID"
+	updateContentErr := errors.New("error from UpdateContent")
+	s.publishWithCloudClient(target, &mockCloudError{updateContentErr: updateContentErr}, updateContentErr)
+}
+
+func (s *PublishConnectCloudSuite) TestPublishWithClientNewFailUpdateBundle() {
+	target := deployment.New()
+	target.ID = "myContentID"
+	updateBundleErr := errors.New("error from UpdateBundle")
+	s.publishWithCloudClient(target, &mockCloudError{updateBundleErr: updateBundleErr}, updateBundleErr)
+}
+
+func (s *PublishConnectCloudSuite) TestPublishWithClientNewFailRevision() {
+	revisionErr := errors.New("error from GetRevision")
+	s.publishWithCloudClient(nil, &mockCloudError{revisionErr: revisionErr}, fmt.Errorf("failed to get revision status: %w", revisionErr))
+}
+
+func (s *PublishConnectCloudSuite) TestPublishWithClientNewFailUpload() {
+	uploadErr := errors.New("error from UploadBundle")
+	s.publishWithCloudClient(nil, &mockCloudError{uploadErr: uploadErr}, fmt.Errorf("bundle upload failed: %w", uploadErr))
+}
+
+func (s *PublishConnectCloudSuite) TestPublishWithClientNewFailPublishContent() {
+	publishContentErr := errors.New("error from PublishContent")
+	s.publishWithCloudClient(nil, &mockCloudError{publishContentErr: publishContentErr}, fmt.Errorf("content publish failed: %w", publishContentErr))
+}
+
+func (s *PublishConnectCloudSuite) TestPublishWithClientNewFailRPackages() {
+	rPackageErr := errors.New("error from GetManifestPackages")
+	s.publishWithCloudClient(nil, &mockCloudError{rPackageErr: rPackageErr}, rPackageErr)
+}
+
+func (s *PublishConnectCloudSuite) TestPublishWithClientNewFailGetContent() {
+	getContentErr := errors.New("error from GetContent")
+	s.publishWithCloudClient(nil, &mockCloudError{getContentErr: getContentErr}, getContentErr)
+}
+
+func (s *PublishConnectCloudSuite) TestPublishWithClientNewFailGetAuthorization() {
+	getAuthorizationErr := errors.New("error from GetAuthorization")
+	s.publishWithCloudClient(nil, &mockCloudError{getAuthorizationErr: getAuthorizationErr}, fmt.Errorf("failed to get authorization token: %w", getAuthorizationErr))
+}
+
+func (s *PublishConnectCloudSuite) TestPublishWithClientNewFailWatchLogs() {
+	watchLogsErr := errors.New("error from WatchLogs")
+	s.publishWithCloudClient(nil, &mockCloudError{watchLogsErr: watchLogsErr}, fmt.Errorf("error watching logs: %w", watchLogsErr))
+}
+
+type cloudPublishTestOptions struct {
+	expectContentID bool
+}
+
+func defaultCloudPublishTestOptions() *cloudPublishTestOptions {
+	return &cloudPublishTestOptions{
+		expectContentID: true,
+	}
+}
+
+// publishWithCloudClient is a helper method to test publishing with Connect Cloud
+func (s *PublishConnectCloudSuite) publishWithCloudClient(
+	target *deployment.Deployment,
+	errsMock *mockCloudError,
+	expectedErr error,
+	optionFns ...func(options *cloudPublishTestOptions),
+) {
+	options := defaultCloudPublishTestOptions()
+	for _, fn := range optionFns {
+		fn(options)
+	}
+
+	// Create account
+	account := &accounts.Account{
+		ServerType:       server_type.ServerTypeConnectCloud,
+		Name:             "test-cloud-account",
+		URL:              "https://api.connect.posit.cloud",
+		CloudAccountName: "test-account",
+		CloudAccountID:   "account-123",
+		CloudEnvironment: types.CloudEnvironmentProduction,
+		CloudAccessToken: "test-token", // Add a test token
+	}
+
+	// Set up content and revision IDs
+	myContentID := types.ContentID("myContentID")
+	myRevisionID := "myCloudRevisionID"
+	myBundleID := types.BundleID("myCloudBundleID")
+
+	// Create mock Cloud client
+	cloudClient := connect_cloud.NewMockClient()
+	cloudClientFactory = func(env types.CloudEnvironment, log logging.Logger, timeout time.Duration, accessToken string) connect_cloud.APIClient {
+		return cloudClient
+	}
+
+	// Setup content response for creation/update
+	contentResponse := &clienttypes.ContentResponse{
+		ID: myContentID,
+		NextRevision: &clienttypes.Revision{
+			ID:                    myRevisionID,
+			PublishLogChannel:     "publish-log-channel-cloud",
+			SourceBundleID:        string(myBundleID),
+			SourceBundleUploadURL: "https://upload.url",
 		},
-		Config: cfg,
-	}
-	publisher := &defaultPublisher{
-		log:           log,
-		emitter:       emitter,
-		PublishHelper: publishhelper.NewPublishHelper(state, log),
 	}
 
-	clientFactory = func(account *accounts.Account, timeout time.Duration, emitter events.Emitter, log logging.Logger) (connect.APIClient, error) {
-		return nil, expectedErr
+	// Mock CreateContent or UpdateContent based on whether we have a target
+	if target == nil {
+		// We need to match the exact request with the account ID
+		cloudClient.On("CreateContent", mock.MatchedBy(func(req *clienttypes.CreateContentRequest) bool {
+			return req.AccountID == "account-123"
+		})).Return(contentResponse, errsMock.createContentErr)
+	} else {
+		cloudClient.On("UpdateContent", mock.Anything).Return(contentResponse, errsMock.updateContentErr)
+		cloudClient.On("UpdateContentBundle", mock.MatchedBy(func(id types.ContentID) bool {
+			return id == myContentID
+		})).Return(contentResponse, errsMock.updateBundleErr)
 	}
-	publisher.PublishDirectory()
 
-	// We should emit a start event, a phase failure event, and a publishing failure event.
-	s.Len(emitter.Events, 3)
-	s.Equal("publish/start", emitter.Events[0].Type)
-	s.Equal("/failure", emitter.Events[1].Type)
-	s.Equal(events.EventData{
-		"message": "Test error.",
-	}, emitter.Events[1].Data)
-	s.Equal("publish/failure", emitter.Events[2].Type)
-	s.Equal(events.EventData{
-		"message": "Test error.",
-	}, emitter.Events[2].Data)
+	// Setup revision with successful result when polled
+	revision := &clienttypes.Revision{
+		ID:                myRevisionID,
+		PublishLogChannel: "publish-log-channel-cloud",
+		PublishResult:     clienttypes.PublishResultSuccess,
+	}
+	cloudClient.On("GetRevision", myRevisionID).Return(revision, errsMock.revisionErr)
+
+	// Setup publish content
+	cloudClient.On("PublishContent", string(myContentID)).Return(errsMock.publishContentErr)
+
+	// Setup GetContent to return a content response with the updated revision
+	// Create a separate response for GetContent with the updated PublishLogChannel
+	publishLogChannel := "publish-log-channel-cloud" // Define it here to use in both places
+	updatedContentResponse := &clienttypes.ContentResponse{
+		ID: myContentID,
+		NextRevision: &clienttypes.Revision{
+			ID:                myRevisionID,
+			PublishLogChannel: publishLogChannel, // This is needed for watchLogs
+			PublishResult:     clienttypes.PublishResultSuccess,
+		},
+	}
+	cloudClient.On("GetContent", myContentID).Return(updatedContentResponse, errsMock.getContentErr)
+
+	// Setup GetAuthorization to return a successful response for log channel access
+	cloudClient.On("GetAuthorization", mock.MatchedBy(func(req *clienttypes.AuthorizationRequest) bool {
+		// Verify the request is for log channel access with the right resource ID and permission
+		return req.ResourceType == "log_channel" &&
+			req.ResourceID == publishLogChannel &&
+			req.Permission == "revision.logs:read"
+	})).Return(&clienttypes.AuthorizationResponse{
+		Authorized: true,
+		Token:      "test-logs-access-token",
+	}, errsMock.getAuthorizationErr)
+
+	// Create the mock for connect_cloud_upload client factory
+	uploadClient := connect_cloud_upload.NewMockUploadClient()
+	uploadClient.On("UploadBundle", mock.Anything).Return(errsMock.uploadErr)
+
+	// Replace the factory function - do this BEFORE creating the publisher
+	//origUploadAPIClientFactory = uploadAPIClientFactory
+	connect_cloud2.UploadAPIClientFactory = func(uploadURL string, log logging.Logger, timeout time.Duration) connect_cloud_upload.UploadAPIClient {
+		return uploadClient
+	}
+
+	logsClient := connect_cloud_logs.NewMockLogsClient()
+	logsClient.On("WatchLogs", mock.Anything, mock.Anything).Return(errsMock.watchLogsErr)
+
+	connect_cloud2.LogsClientFactory = func(
+		environment types.CloudEnvironment,
+		logChannel string,
+		accessToken string,
+		log logging.Logger,
+	) connect_cloud_logs.LogsAPIClient {
+		return logsClient
+	}
+
+	// Create event emitter
+	emitter := events.NewCapturingEmitter()
+
+	// Mock interpreters
+	mockRIntr := interpreters.NewMockRInterpreter()
+	mockPyIntr := interpreters.NewMockPythonInterpreter()
+	mockRIntr.On("GetRExecutable").Return(util.NewAbsolutePath("/path/to/r", nil), nil)
+	mockPyIntr.On("GetPythonExecutable").Return(util.NewAbsolutePath("/path/to/python", nil), nil)
+
+	// Mock R package mapper
+	rPackageMapper := &mockPackageMapper{}
+	if errsMock.rPackageErr != nil {
+		rPackageMapper.On("GetManifestPackages", mock.Anything, mock.Anything, mock.Anything).Return(nil, errsMock.rPackageErr)
+	} else {
+		rPackageMapper.On("GetManifestPackages", mock.Anything, mock.Anything, mock.Anything).Return(bundles.PackageMap{}, nil)
+	}
+
+	// Replace factory function
+	rPackageMapperFactory = func(base util.AbsolutePath, rExecutable util.Path, log logging.Logger) (renv.PackageMapper, error) {
+		return rPackageMapper, nil
+	}
+
+	// Create config
+	cfg := config.New()
+	cfg.ProductType = config.ProductTypeConnectCloud
+	cfg.Type = config.ContentTypePythonDash
+	cfg.Entrypoint = "app.py"
+	cfg.Environment = map[string]string{
+		"FOO": "BAR",
+	}
+	cfg.Python = &config.Python{
+		Version:        "3.4.5",
+		PackageManager: "pip",
+	}
+	cfg.R = &config.R{
+		Version:        "4.3.2",
+		PackageManager: "renv",
+		PackageFile:    "renv.lock",
+	}
+
+	// Setup names for saving
+	saveName := ""
+	targetName := ""
+	recordName := ""
+
+	if target != nil {
+		targetName = "targetToLoad"
+		recordName = targetName
+		saveName = targetName
+
+		// Make CreatedAt earlier so it will differ from DeployedAt
+		target.CreatedAt = time.Now().Add(-time.Hour).Format(time.RFC3339)
+	} else {
+		saveName = "saveAsThis"
+		targetName = saveName
+		recordName = saveName
+	}
+
+	// Create state
+	stateStore := &state.State{
+		Dir:        s.cwd,
+		Account:    account,
+		Config:     cfg,
+		ConfigName: "myConfig",
+		Target:     target,
+		TargetName: targetName,
+		SaveName:   saveName,
+	}
+
+	// Create publisher
+	publisher, err := NewFromState(stateStore, mockRIntr, mockPyIntr, emitter, s.log)
+	s.NoError(err)
+
+	// Publish directory
+	fmt.Printf("\nRunning PublishDirectory with mock client: %v\n", cloudClient)
+	err = publisher.PublishDirectory()
+	if err != nil {
+		fmt.Printf("Error from PublishDirectory: %v\n", err)
+	}
+	if expectedErr == nil {
+		s.NoError(err)
+	} else {
+		s.NotNil(err)
+		s.Equal(expectedErr.Error(), err.Error())
+	}
+
+	// Verify deployment record
+	if options.expectContentID {
+		recordPath := deployment.GetDeploymentPath(stateStore.Dir, recordName)
+		record, err := deployment.FromFile(recordPath)
+		s.NoError(err)
+
+		// Verify the record has the right content ID
+		s.Equal(myContentID, record.ID)
+
+		// Verify client version
+		s.Equal(project.Version, record.ClientVersion)
+
+		// Verify timestamps
+		s.NotEqual("", record.DeployedAt)
+
+		// Verify config name
+		s.Equal("myConfig", record.ConfigName)
+		s.NotNil(record.Configuration)
+
+		// Verify URLs
+		s.Contains(record.DashboardURL, string(myContentID))
+		s.Contains(record.DirectURL, string(myContentID))
+
+		// Check files are recorded if upload was successful
+		if errsMock.uploadErr == nil && errsMock.rPackageErr == nil {
+			s.Contains(record.Files, "app.py")
+			s.Contains(record.Files, "requirements.txt")
+			s.Equal([]string{"flask"}, record.Requirements)
+			s.Contains(record.Renv.Packages, renv.PackageName("mypkg"))
+		}
+	}
+
+	// Check we don't have bad deployment record
+	badPath := deployment.GetDeploymentPath(stateStore.Dir, "")
+	exists, err := badPath.Exists()
+	s.NoError(err)
+	s.False(exists)
 }

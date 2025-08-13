@@ -64,8 +64,8 @@ func NewBasicHTTPClient(baseURL string, timeout time.Duration) *defaultHTTPClien
 	}
 }
 
-func NewBasicHTTPClientWithAuth(baseURL string, timeout time.Duration, authHeader string) *defaultHTTPClient {
-	baseClient := newBasicInternalHTTPClientWithAuth(timeout, authHeader)
+func NewBasicHTTPClientWithBearerAuth(baseURL string, timeout time.Duration, authValue string) *defaultHTTPClient {
+	baseClient := newBasicInternalHTTPClientWithAuth(timeout, fmt.Sprintf("Bearer %s", authValue))
 	return &defaultHTTPClient{
 		client:  baseClient,
 		baseURL: baseURL,
@@ -262,7 +262,7 @@ func loadCACertificates(path string, log logging.Logger) (*x509.CertPool, error)
 	return certPool, nil
 }
 
-func newTransport() *http.Transport {
+func NewTransport() *http.Transport {
 	// Based on http.DefaultTransport with customized dialer timeout.
 	dialer := net.Dialer{
 		Timeout:   30 * time.Second,
@@ -291,7 +291,7 @@ func newHTTPClientForAccount(account *accounts.Account, timeout time.Duration, l
 		return nil, err
 	}
 
-	transport := newTransport()
+	transport := NewTransport()
 	transport.TLSClientConfig = &tls.Config{
 		InsecureSkipVerify: account.Insecure,
 		RootCAs:            certPool,
@@ -310,7 +310,7 @@ func newHTTPClientForAccount(account *accounts.Account, timeout time.Duration, l
 
 func newBasicInternalHTTPClient(timeout time.Duration) *http.Client {
 	// Based on http.DefaultTransport with customized dialer timeout.
-	transport := newTransport()
+	transport := NewTransport()
 	return &http.Client{
 		Timeout:   timeout,
 		Transport: transport,
@@ -318,7 +318,7 @@ func newBasicInternalHTTPClient(timeout time.Duration) *http.Client {
 }
 
 func newBasicInternalHTTPClientWithAuth(timeout time.Duration, authValue string) *http.Client {
-	transport := newTransport()
+	transport := NewTransport()
 	clientAuth := auth.NewPlainAuthenticator(authValue)
 	authTransport := NewAuthenticatedTransport(transport, clientAuth)
 	return &http.Client{
