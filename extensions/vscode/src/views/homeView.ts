@@ -94,6 +94,7 @@ import {
   SelectionIsPreContentRecord,
   setSelectionIsPreContentRecord,
 } from "../extension";
+import { createNewCredentialLabel } from "src/multiStepInputs/common";
 
 enum HomeViewInitialized {
   initialized = "initialized",
@@ -1094,9 +1095,17 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
    * Once the server url is provided, the user is prompted with the url hostname as the default server name.
    */
   public addCredential = async (startingServerUrl?: string) => {
-    const credential = await newCredential(Views.HomeView, startingServerUrl);
-    if (credential) {
-      this.refreshCredentials();
+    try {
+      const credential = await newCredential(
+        Views.HomeView,
+        createNewCredentialLabel,
+        startingServerUrl,
+      );
+      if (credential) {
+        this.refreshCredentials();
+      }
+    } catch {
+      /* the user dismissed this flow, do nothing more */
     }
   };
 
@@ -1718,13 +1727,18 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           this.webviewConduit.sendMsg({
             kind: HostToWebviewMessageType.SHOW_DISABLE_OVERLAY,
           });
-          credentialName = await newCredential(
+          const credential = await newCredential(
             Views.HomeView,
+            createNewCredentialLabel,
             contentRecord.serverUrl,
           );
+          credentialName = credential?.name;
           if (!credentialName) {
             return undefined;
           }
+        } catch {
+          /* the user dismissed this flow, do nothing more */
+          return undefined;
         } finally {
           // enable our home view, we are done with our sequence
           this.webviewConduit.sendMsg({
@@ -1763,10 +1777,16 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       this.state.findCredentialForContentRecord(currentContentRecord);
     let credentialName = credential?.name;
     if (!credentialName) {
-      credentialName = await newCredential(
-        Views.HomeView,
-        currentContentRecord.serverUrl,
-      );
+      try {
+        const credential = await newCredential(
+          Views.HomeView,
+          createNewCredentialLabel,
+          currentContentRecord.serverUrl,
+        );
+        credentialName = credential?.name;
+      } catch {
+        /* the user dismissed this flow, do nothing more */
+      }
       if (!credentialName) {
         return undefined;
       }
