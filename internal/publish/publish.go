@@ -49,20 +49,23 @@ type baseEventData struct {
 }
 
 type publishStartData struct {
-	Server string `mapstructure:"server"`
-	Title  string `mapstructure:"title"`
+	Server      string             `mapstructure:"server"`
+	Title       string             `mapstructure:"title"`
+	ProductType config.ProductType `mapstructure:"productType"`
 }
 
 type publishSuccessData struct {
-	ContentID    types.ContentID `mapstructure:"contentId"`
-	DashboardURL string          `mapstructure:"dashboardUrl"`
-	LogsURL      string          `mapstructure:"logsUrl"`
-	DirectURL    string          `mapstructure:"directUrl"`
-	ServerURL    string          `mapstructure:"serverUrl"`
+	ContentID    types.ContentID    `mapstructure:"contentId"`
+	DashboardURL string             `mapstructure:"dashboardUrl"`
+	LogsURL      string             `mapstructure:"logsUrl"`
+	DirectURL    string             `mapstructure:"directUrl"`
+	ServerURL    string             `mapstructure:"serverUrl"`
+	ProductType  config.ProductType `mapstructure:"productType"`
 }
 
 type publishFailureData struct {
-	Message string `mapstructure:"message"`
+	Message     string             `mapstructure:"message"`
+	ProductType config.ProductType `mapstructure:"productType"`
 }
 
 type publishDeployedFailureData struct {
@@ -175,7 +178,8 @@ func (p *defaultPublisher) emitErrorEvents(err error) {
 	var data events.EventData
 
 	mapstructure.Decode(publishFailureData{
-		Message: agentErr.Message,
+		Message:     agentErr.Message,
+		ProductType: p.Config.ProductType,
 	}, &data)
 
 	// Record the error in the deployment record
@@ -216,8 +220,9 @@ var rPackageMapperFactory = renv.NewPackageMapper
 func (p *defaultPublisher) PublishDirectory() error {
 	p.log.Info("Publishing from directory", logging.LogKeyOp, events.AgentOp, "path", p.Dir, "localID", p.State.LocalID)
 	p.emitter.Emit(events.New(events.PublishOp, events.StartPhase, events.NoError, publishStartData{
-		Server: p.Account.URL,
-		Title:  p.Config.Title,
+		Server:      p.Account.URL,
+		Title:       p.Config.Title,
+		ProductType: p.Config.ProductType,
 	}))
 	p.log.Info("Starting deployment to server", "server", p.Account.URL)
 
@@ -233,6 +238,7 @@ func (p *defaultPublisher) PublishDirectory() error {
 			DirectURL:    p.Target.DirectURL,
 			ServerURL:    p.Account.URL,
 			ContentID:    p.Target.ID,
+			ProductType:  p.Config.ProductType,
 		}))
 	}
 	return nil
