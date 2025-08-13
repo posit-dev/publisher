@@ -37,7 +37,6 @@ import { extensionSettings } from "src/extension";
 import { formatURL } from "src/utils/url";
 import { checkSyntaxApiKey } from "src/utils/apiKeys";
 import { ConnectAuthTokenActivator } from "src/auth/ConnectAuthTokenActivator";
-import { getEnumKeyByEnumValue } from "src/utils/enums";
 
 enum AuthMethod {
   API_KEY = "apiKey",
@@ -48,6 +47,15 @@ enum AuthMethodName {
   API_KEY = "API Key",
   TOKEN = "Token Authentication",
 }
+
+const getAuthMethod = (authMethodName: AuthMethodName) => {
+  switch (authMethodName) {
+    case AuthMethodName.API_KEY:
+      return AuthMethod.API_KEY;
+    case AuthMethodName.TOKEN:
+      return AuthMethod.TOKEN;
+  }
+};
 
 export async function newConnectCredential(
   viewId: string,
@@ -317,9 +325,7 @@ export async function newConnectCredential(
       ignoreFocusOut: true,
     });
 
-    const enumKey = getEnumKeyByEnumValue(AuthMethodName, pick.label);
-    // fallback to the default if there is ever a case when the enumKey is not found
-    authMethod = enumKey ? AuthMethod[enumKey] : authMethod;
+    authMethod = getAuthMethod(pick.label as AuthMethodName);
 
     if (isApiKey(authMethod)) {
       return {
