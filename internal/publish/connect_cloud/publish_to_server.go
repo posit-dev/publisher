@@ -55,7 +55,12 @@ func (c *ServerPublisher) updateContent(contentID internal_types.ContentID) erro
 	return nil
 }
 
-func (c *ServerPublisher) doPublish(contentID internal_types.ContentID) error {
+func (c *ServerPublisher) PublishToServer(contentID internal_types.ContentID, bundleReader io.Reader) error {
+	err := c.updateContent(contentID)
+	if err != nil {
+		return err
+	}
+
 	op := events.PublishDeployContentOp
 	log := c.log.WithArgs(logging.LogKeyOp, op)
 	data := publishContentData{
@@ -64,7 +69,12 @@ func (c *ServerPublisher) doPublish(contentID internal_types.ContentID) error {
 
 	c.emitter.Emit(events.New(op, events.StartPhase, events.NoError, data))
 
-	err := c.initiatePublish(log, op, contentID)
+	err = c.initiatePublish(log, op, contentID)
+	if err != nil {
+		return err
+	}
+
+	err = c.uploadBundle(bundleReader)
 	if err != nil {
 		return err
 	}
@@ -89,23 +99,6 @@ func (c *ServerPublisher) doPublish(contentID internal_types.ContentID) error {
 	}
 
 	c.emitter.Emit(events.New(op, events.SuccessPhase, events.NoError, data))
-	return nil
-}
 
-func (c *ServerPublisher) PublishToServer(contentID internal_types.ContentID, bundleReader io.Reader) error {
-	err := c.updateContent(contentID)
-	if err != nil {
-		return err
-	}
-
-	err = c.uploadBundle(bundleReader)
-	if err != nil {
-		return err
-	}
-
-	err = c.doPublish(contentID)
-	if err != nil {
-		return err
-	}
 	return nil
 }
