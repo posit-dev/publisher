@@ -55,15 +55,17 @@ type publishStartData struct {
 }
 
 type publishSuccessData struct {
-	ContentID    types.ContentID `mapstructure:"contentId"`
-	DashboardURL string          `mapstructure:"dashboardUrl"`
-	LogsURL      string          `mapstructure:"logsUrl"`
-	DirectURL    string          `mapstructure:"directUrl"`
-	ServerURL    string          `mapstructure:"serverUrl"`
+	ContentID    types.ContentID    `mapstructure:"contentId"`
+	DashboardURL string             `mapstructure:"dashboardUrl"`
+	LogsURL      string             `mapstructure:"logsUrl"`
+	DirectURL    string             `mapstructure:"directUrl"`
+	ServerURL    string             `mapstructure:"serverUrl"`
+	ProductType  config.ProductType `mapstructure:"productType"`
 }
 
 type publishFailureData struct {
-	Message string `mapstructure:"message"`
+	Message     string             `mapstructure:"message"`
+	ProductType config.ProductType `mapstructure:"productType"`
 }
 
 type publishDeployedFailureData struct {
@@ -176,7 +178,8 @@ func (p *defaultPublisher) emitErrorEvents(err error) {
 	var data events.EventData
 
 	mapstructure.Decode(publishFailureData{
-		Message: agentErr.Message,
+		Message:     agentErr.Message,
+		ProductType: p.Config.ProductType,
 	}, &data)
 
 	// Record the error in the deployment record
@@ -235,6 +238,7 @@ func (p *defaultPublisher) PublishDirectory() error {
 			DirectURL:    p.Target.DirectURL,
 			ServerURL:    p.Account.URL,
 			ContentID:    p.Target.ID,
+			ProductType:  p.Config.ProductType,
 		}))
 	}
 	return nil
