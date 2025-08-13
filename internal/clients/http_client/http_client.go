@@ -75,6 +75,10 @@ func NewBasicHTTPClientWithBearerAuth(baseURL string, timeout time.Duration, aut
 	}
 }
 
+type HTTPClientWithBearerAuthFactory func(baseURL string, timeout time.Duration, authValue string) HTTPClient
+
+var _ HTTPClientWithBearerAuthFactory = NewBasicHTTPClientWithBearerAuth
+
 type HTTPError struct {
 	URL    string `mapstructure:"url"`
 	Method string `mapstructure:"method"`

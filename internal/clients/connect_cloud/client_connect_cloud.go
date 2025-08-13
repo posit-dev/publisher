@@ -32,11 +32,13 @@ func getBaseURL(environment types.CloudEnvironment) string {
 }
 
 type ConnectCloudClient struct {
-	account     *accounts.Account
-	log         logging.Logger
-	client      http_client.HTTPClient
-	credService credentials.CredentialsService
-	timeout     time.Duration
+	account                *accounts.Account
+	log                    logging.Logger
+	client                 http_client.HTTPClient
+	credService            credentials.CredentialsService
+	timeout                time.Duration
+	cloudAuthClientFactory cloud_auth.CloudAuthClientFactory
+	httpClientFactory      http_client.HTTPClientWithBearerAuthFactory
 }
 
 var _ APIClient = &ConnectCloudClient{}
@@ -46,27 +48,26 @@ func NewConnectCloudClientWithAuth(
 	log logging.Logger,
 	timeout time.Duration,
 	account *accounts.Account,
-	authorizationHeader string) (APIClient, error) {
+	authToken string,
+) (APIClient, error) {
 	if account != nil {
-		authorizationHeader = fmt.Sprintf("Bearer %s", account.CloudAccessToken)
+		authToken = fmt.Sprintf("Bearer %s", account.CloudAccessToken)
 	}
-	httpClient := http_client.NewBasicHTTPClientWithBearerAuth(getBaseURL(environment), timeout, authorizationHeader)
+	httpClient := http_client.NewBasicHTTPClientWithBearerAuth(getBaseURL(environment), timeout, authToken)
 	credService, err := credentials.NewCredentialsService(log)
 	if err != nil {
 		return nil, err
 	}
 	return &ConnectCloudClient{
-		account:     account,
-		log:         log,
-		client:      httpClient,
-		credService: credService,
-		timeout:     timeout,
+		account:                account,
+		log:                    log,
+		client:                 httpClient,
+		credService:            credService,
+		timeout:                timeout,
+		cloudAuthClientFactory: cloud_auth.NewCloudAuthClient,
+		httpClientFactory:      http_client.NewBasicHTTPClientWithBearerAuth,
 	}, nil
 }
-
-var cloudAuthClientFactory = cloud_auth.NewCloudAuthClient
-var credServiceFactory = credentials.NewCredentialsService
-var httpClientFactory = http_client.NewBasicHTTPClientWithBearerAuth
 
 func retryAuthErr[V any](c *ConnectCloudClient, makeRequest func() (V, error)) (V, error) {
 	f, err := makeRequest()
@@ -75,7 +76,7 @@ func retryAuthErr[V any](c *ConnectCloudClient, makeRequest func() (V, error)) (
 		if isUnauthorized {
 			// If this is a 401 due to an expired token, we should refresh the token and retry the request.
 			c.log.Debug("received 401 Unauthorized response, attempting to refresh token and retry request")
-			authClient := cloudAuthClientFactory(c.account.CloudEnvironment, c.log, c.timeout)
+			authClient := c.cloudAuthClientFactory(c.account.CloudEnvironment, c.log, c.timeout)
 			tokenRequest := cloud_auth.TokenRequest{
 				GrantType:    "refresh_token",
 				RefreshToken: c.account.CloudRefreshToken,
@@ -103,7 +104,7 @@ func retryAuthErr[V any](c *ConnectCloudClient, makeRequest func() (V, error)) (
 			c.account.CloudRefreshToken = resp.RefreshToken
 
 			// Set the client to one with the new token.
-			c.client = httpClientFactory(getBaseURL(c.account.CloudEnvironment), c.timeout, fmt.Sprintf("Bearer %s", resp.AccessToken))
+			c.client = c.httpClientFactory(getBaseURL(c.account.CloudEnvironment), c.timeout, fmt.Sprintf("Bearer %s", resp.AccessToken))
 
 			f, err = makeRequest()
 			if err != nil {

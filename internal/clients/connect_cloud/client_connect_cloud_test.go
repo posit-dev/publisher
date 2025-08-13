@@ -278,16 +278,6 @@ func (s *ConnectCloudClientSuite) TestUpdateContentBundle() {
 }
 
 func (s *ConnectCloudClientSuite) TestCreateContentWithRetryAuth() {
-	// Save the original factory functions so we can restore them after the test
-	origCloudAuthClientFactory := cloudAuthClientFactory
-	origCredServiceFactory := credServiceFactory
-	origHttpClientFactory := httpClientFactory
-	defer func() {
-		cloudAuthClientFactory = origCloudAuthClientFactory
-		credServiceFactory = origCredServiceFactory
-		httpClientFactory = origHttpClientFactory
-	}()
-
 	// Setup mock HTTP client for initial request that will fail with 401
 	firstHttpClient := &http_client.MockHTTPClient{}
 	firstHttpError := &http_client.HTTPError{
@@ -361,16 +351,12 @@ func (s *ConnectCloudClientSuite) TestCreateContentWithRetryAuth() {
 	})).Return(&credentials.Credential{}, nil)
 
 	// Replace factory functions with mocks
-	cloudAuthClientFactory = func(environment types.CloudEnvironment, log logging.Logger, timeout time.Duration) cloud_auth.APIClient {
+	cloudAuthClientFactory := func(environment types.CloudEnvironment, log logging.Logger, timeout time.Duration) cloud_auth.APIClient {
 		return mockCloudAuthClient
 	}
 
-	credServiceFactory = func(log logging.Logger) (credentials.CredentialsService, error) {
-		return mockCredService, nil
-	}
-
 	//Factory is called to create a new client with the refresh
-	httpClientFactory = func(baseURL string, timeout time.Duration, authHeaderValue string) http_client.HTTPClient {
+	httpClientFactory := func(baseURL string, timeout time.Duration, authHeaderValue string) http_client.HTTPClient {
 		// Verify that the new token is used for the auth header
 		s.Equal("Bearer NEW_ACCESS_TOKEN", authHeaderValue)
 		return secondHttpClient
@@ -387,11 +373,13 @@ func (s *ConnectCloudClientSuite) TestCreateContentWithRetryAuth() {
 
 	// Setup the client
 	client := &ConnectCloudClient{
-		client:      firstHttpClient,
-		log:         logging.New(),
-		account:     account,
-		credService: mockCredService,
-		timeout:     10 * time.Second,
+		client:                 firstHttpClient,
+		log:                    logging.New(),
+		account:                account,
+		credService:            mockCredService,
+		timeout:                10 * time.Second,
+		cloudAuthClientFactory: cloudAuthClientFactory,
+		httpClientFactory:      httpClientFactory,
 	}
 
 	// Test the CreateContent method which should trigger the retry mechanism

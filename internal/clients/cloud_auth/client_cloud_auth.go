@@ -43,6 +43,10 @@ func NewCloudAuthClient(
 	}
 }
 
+type CloudAuthClientFactory func(environment types.CloudEnvironment, log logging.Logger, timeout time.Duration) APIClient
+
+var _ CloudAuthClientFactory = NewCloudAuthClient
+
 func getBaseURLAndClientID(environment types.CloudEnvironment) (string, string) {
 	switch environment {
 	case types.CloudEnvironmentDevelopment:
