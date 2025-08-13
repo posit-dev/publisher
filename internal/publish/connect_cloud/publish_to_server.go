@@ -16,15 +16,11 @@ type publishContentData struct {
 	ContentID internal_types.ContentID `mapstructure:"contentId"`
 }
 
-type updateContentData struct {
-	ContentID internal_types.ContentID `mapstructure:"contentId"`
-}
-
 func (c *ServerPublisher) updateContent(contentID internal_types.ContentID) error {
 	// If we didn't create the content earlier in ServerPublisher, we need to update the content with the latest info
 	if c.content == nil {
 		op := events.PublishUpdateContentOp
-		data := updateContentData{ContentID: contentID}
+		data := publishContentData{ContentID: contentID}
 		log := c.log.WithArgs(logging.LogKeyOp, op)
 		c.emitter.Emit(events.New(op, events.StartPhase, events.NoError, data))
 		log.Info("Determining content settings")
