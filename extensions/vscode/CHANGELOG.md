@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added schema and agent support for publishing to Connect Cloud. (#2729, #2747, #2771)
+- Introduced Posit Connect Cloud support behind a configuration option. This feature is
+  still in active development but works end-to-end for publishing to Connect Cloud. ()
 
 ## [1.18.1]
 

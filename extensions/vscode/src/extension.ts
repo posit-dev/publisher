@@ -20,7 +20,6 @@ import { DocumentTracker } from "./entrypointTracker";
 import { getXDGConfigProperty } from "src/utils/config";
 import { PublisherState } from "./state";
 import { PublisherAuthProvider } from "./authProvider";
-import { env } from "./config";
 
 const STATE_CONTEXT = "posit.publish.state";
 
@@ -218,10 +217,10 @@ export const extensionSettings = {
     return value !== undefined ? value : "";
   },
   enableConnectCloud(): boolean {
-    // enable Connect Cloud support for dev and staging environments only
-    return (
-      process.env.CONNECT_CLOUD_ENV === env.STAGING ||
-      process.env.CONNECT_CLOUD_ENV === env.DEV
-    );
+    // get value from extension configuration - defaults to false
+    const configuration = workspace.getConfiguration("positPublisher");
+    const value: boolean | undefined =
+      configuration.get<boolean>("enableConnectCloud");
+    return value !== undefined ? value : false;
   },
 };
