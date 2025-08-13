@@ -36,6 +36,7 @@ import {
 } from "src/utils/errorEnhancer";
 import { showErrorMessageWithTroubleshoot } from "src/utils/window";
 import { DeploymentFailureRenvHandler } from "src/views/deployHandlers";
+import { isConnectCloudProduct } from "src/multiStepInputs/common";
 
 enum LogStageStatus {
   notStarted,
@@ -514,11 +515,17 @@ export class LogsTreeLogItem extends TreeItem {
       this.iconPath = new ThemeIcon("debug-stackframe-dot");
     }
 
-    if (msg.data.dashboardUrl !== undefined) {
+    const productType = msg.data.productType as ProductType;
+    const url =
+      msg.type === "publish/failure" && isConnectCloudProduct(productType)
+        ? msg.data.logsUrl
+        : msg.data.dashboardUrl;
+
+    if (url) {
       this.command = {
         title: "View",
         command: Commands.Logs.Visit,
-        arguments: [msg.data.dashboardUrl],
+        arguments: [url],
       };
     }
   }

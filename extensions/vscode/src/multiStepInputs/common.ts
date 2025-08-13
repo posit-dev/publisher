@@ -46,6 +46,14 @@ export const isSnowflake = (serverType: ServerType) => {
   return serverType === ServerType.SNOWFLAKE;
 };
 
+export const isConnectProduct = (productType: ProductType) => {
+  return productType === ProductType.CONNECT;
+};
+
+export const isConnectCloudProduct = (productType: ProductType) => {
+  return productType === ProductType.CONNECT_CLOUD;
+};
+
 export const getProductType = (serverType: ServerType): ProductType => {
   switch (serverType) {
     case ServerType.CONNECT:
@@ -54,6 +62,16 @@ export const getProductType = (serverType: ServerType): ProductType => {
       return ProductType.CONNECT;
     case ServerType.CONNECT_CLOUD:
       return ProductType.CONNECT_CLOUD;
+  }
+};
+
+// get the product name using the product type
+export const getProductNameFromType = (productType: ProductType) => {
+  switch (productType) {
+    case ProductType.CONNECT:
+      return ProductName.CONNECT;
+    case ProductType.CONNECT_CLOUD:
+      return ProductName.CONNECT_CLOUD;
   }
 };
 

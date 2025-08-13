@@ -5,7 +5,11 @@ import { Disposable } from "vscode";
 import EventSource from "eventsource";
 import { Readable } from "stream";
 
-import { Events, EventStreamMessage } from "src/api";
+import { Events, EventStreamMessage, ProductType } from "src/api";
+import {
+  getProductNameFromType,
+  isConnectCloudProduct,
+} from "./multiStepInputs/common";
 
 export type EventStreamRegistration = (message: EventStreamMessage) => void;
 
@@ -73,8 +77,14 @@ export function displayEventStreamMessage(msg: EventStreamMessage): string {
   }
 
   if (msg.type === "publish/failure") {
-    if (msg.data.dashboardUrl) {
-      return `Deployment failed, click to view Connect logs: ${msg.data.dashboardUrl}`;
+    const productType = msg.data.productType as ProductType;
+    const productName = getProductNameFromType(productType);
+    const url = isConnectCloudProduct(productType)
+      ? msg.data.logsUrl
+      : msg.data.dashboardUrl;
+
+    if (url) {
+      return `Deployment failed, click to view ${productName} logs: ${url}`;
     }
     if (msg.data.canceled === "true") {
       return "Deployment dismissed";

@@ -1369,6 +1369,7 @@ export interface PublishSuccess extends EventStreamMessage {
     dashboardUrl: string;
     directUrl: string;
     serverUrl: string;
+    productType: ProductType;
   };
 }
 export type OnPublishSuccessCallback = (msg: PublishSuccess) => void;
@@ -1381,6 +1382,7 @@ export interface PublishFailure extends EventStreamMessage {
   data: {
     dashboardUrl: string;
     url: string;
+    productType: ProductType;
     canceled?: string; // not defined if not user canceled. Value of "true" if true.
     // and other non-defined attributes
   };
