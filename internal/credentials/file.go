@@ -142,14 +142,14 @@ func NewFileCredentialsService(log logging.Logger) (*fileCredentialsService, err
 }
 
 func (c *fileCredentialsService) Set(credDetails CreateCredentialDetails) (*Credential, error) {
-	return c.doSet(credDetails, true)
+	return c.set(credDetails, true)
 }
 
 func (c *fileCredentialsService) ForceSet(credDetails CreateCredentialDetails) (*Credential, error) {
-	return c.doSet(credDetails, false)
+	return c.set(credDetails, false)
 }
 
-func (c *fileCredentialsService) doSet(credDetails CreateCredentialDetails, checkConflict bool) (*Credential, error) {
+func (c *fileCredentialsService) set(credDetails CreateCredentialDetails, checkConflict bool) (*Credential, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 

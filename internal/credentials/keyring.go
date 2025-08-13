@@ -78,14 +78,14 @@ func (ks *keyringCredentialsService) List() ([]Credential, error) {
 }
 
 func (ks *keyringCredentialsService) Set(credDetails CreateCredentialDetails) (*Credential, error) {
-	return ks.doSet(credDetails, true)
+	return ks.set(credDetails, true)
 }
 
 func (ks *keyringCredentialsService) ForceSet(credDetails CreateCredentialDetails) (*Credential, error) {
-	return ks.doSet(credDetails, false)
+	return ks.set(credDetails, false)
 }
 
-func (ks *keyringCredentialsService) doSet(credDetails CreateCredentialDetails, checkConflict bool) (*Credential, error) {
+func (ks *keyringCredentialsService) set(credDetails CreateCredentialDetails, checkConflict bool) (*Credential, error) {
 	table, err := ks.load()
 	if err != nil {
 		return nil, err
