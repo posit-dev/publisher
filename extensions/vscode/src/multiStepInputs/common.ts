@@ -203,7 +203,8 @@ export const inputCredentialNameStep = async (
           severity: InputBoxValidationSeverity.Error,
         });
       }
-      if (credentials.find((cred) => cred.name === input)) {
+      const credInUse = credentials.some((cred) => cred.name === input);
+      if (credInUse) {
         return Promise.resolve({
           message:
             "Error: Invalid Nickname (value is already in use by a different credential).",
