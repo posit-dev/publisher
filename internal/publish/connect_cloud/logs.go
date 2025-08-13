@@ -30,7 +30,7 @@ func (c *ServerPublisher) getAuthorizationToken() (string, error) {
 	return response.Token, nil
 }
 
-func (c *ServerPublisher) watchLogs(ctx context.Context) error {
+func (c *ServerPublisher) watchLogs(ctx context.Context, op events.Operation) error {
 	authToken, err := c.getAuthorizationToken()
 	if err != nil {
 		return err
@@ -41,7 +41,7 @@ func (c *ServerPublisher) watchLogs(ctx context.Context) error {
 		authToken,
 		c.log)
 
-	logLogger := c.log.WithArgs(logging.LogKeyOp, events.PublishWaitForDeploymentOp)
+	logLogger := c.log.WithArgs(logging.LogKeyOp, op)
 	err = logsClient.WatchLogs(ctx, logLogger)
 	if err != nil {
 		return fmt.Errorf("error watching logs: %w", err)

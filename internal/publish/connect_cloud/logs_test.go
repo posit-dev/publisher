@@ -13,6 +13,7 @@ import (
 	"github.com/posit-dev/publisher/internal/clients/connect_cloud"
 	"github.com/posit-dev/publisher/internal/clients/connect_cloud_logs"
 	"github.com/posit-dev/publisher/internal/clients/types"
+	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/publish/publishhelper"
 	"github.com/posit-dev/publisher/internal/state"
@@ -94,7 +95,7 @@ func (s *LogsSuite) TestWatchLogs() {
 
 	// Call watchLogs
 	ctx := context.Background()
-	err := s.publisher.watchLogs(ctx)
+	err := s.publisher.watchLogs(ctx, events.PublishDeployContentOp)
 	s.NoError(err)
 
 	// Verify expectations
