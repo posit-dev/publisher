@@ -937,9 +937,9 @@ func (s *PublishConnectCloudSuite) publishWithCloudClient(
 		s.Equal("publish/getRPackageDescriptions/success", emitter.Events[4].Type)
 		s.Equal("publish/createBundle/start", emitter.Events[5].Type)
 		s.Equal("publish/createBundle/success", emitter.Events[6].Type)
-		s.Equal("publish/uploadBundle/start", emitter.Events[7].Type)
-		s.Equal("publish/uploadBundle/success", emitter.Events[8].Type)
-		s.Equal("publish/deployContent/start", emitter.Events[9].Type)
+		s.Equal("publish/deployContent/start", emitter.Events[7].Type)
+		s.Equal("publish/uploadBundle/start", emitter.Events[8].Type)
+		s.Equal("publish/uploadBundle/success", emitter.Events[9].Type)
 		s.Equal("publish/deployContent/success", emitter.Events[10].Type)
 		s.Equal("publish/success", emitter.Events[11].Type)
 	} else {
