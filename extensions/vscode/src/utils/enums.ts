@@ -11,7 +11,7 @@
 export const getEnumKeyByEnumValue = <T extends Record<string, string>>(
   myEnum: T,
   enumValue: string,
-): keyof T | null => {
+): keyof T | undefined => {
   const keys = Object.keys(myEnum).filter((x) => myEnum[x] === enumValue);
-  return keys.length ? keys[0] : null;
+  return keys.at(0);
 };
