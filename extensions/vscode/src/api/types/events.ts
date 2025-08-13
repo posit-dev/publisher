@@ -85,6 +85,16 @@ export interface EventSubscriptionTargetCallbackMap {
   "publish/createDeployment/success": OnPublishCreateDeploymentSuccessCallback;
   "publish/createDeployment/failure": OnPublishCreateDeploymentFailureCallback;
 
+  "publish/deployContent/start": OnPublishDeployContentStartCallback;
+  "publish/deployContent/log": OnPublishDeployContentLogCallback;
+  "publish/deployContent/success": OnPublishDeployContentSuccessCallback;
+  "publish/deployContent/failure": OnPublishDeployContentFailureCallback;
+
+  "publish/updateContent/start": OnPublishUpdateContentStartCallback;
+  "publish/updateContent/log": OnPublishUpdateContentLogCallback;
+  "publish/updateContent/success": OnPublishUpdateContentSuccessCallback;
+  "publish/updateContent/failure": OnPublishUpdateContentFailureCallback;
+
   "publish/uploadBundle/start": OnPublishUploadBundleStartCallback;
   "publish/uploadBundle/log": OnPublishUploadBundleLogCallback;
   "publish/uploadBundle/success": OnPublishUploadBundleSuccessCallback;
@@ -676,6 +686,107 @@ export function isPublishCreateDeploymentFailure(
   arg: Events,
 ): arg is PublishCreateDeploymentFailure {
   return arg.type === "publish/createDeployment/failure";
+}
+
+export interface PublishDeployContentStart extends EventStreamMessage {
+  type: "publish/deployContent/start";
+}
+export type OnPublishDeployContentStartCallback = (
+  msg: PublishDeployContentStart,
+) => void;
+export function isPublishDeployContentStart(
+  arg: Events,
+): arg is PublishDeployContentStart {
+  return arg.type === "publish/deployContent/start";
+}
+
+export interface PublishDeployContentLog extends EventStreamMessage {
+  type: "publish/deployContent/log";
+}
+export type OnPublishDeployContentLogCallback = (
+  msg: PublishDeployContentLog,
+) => void;
+export function isPublishDeployContentLog(
+  arg: Events,
+): arg is PublishDeployContentLog {
+  return arg.type === "publish/deployContent/log";
+}
+
+export interface PublishDeployContentSuccess extends EventStreamMessage {
+  type: "publish/deployContent/success";
+}
+export type OnPublishDeployContentSuccessCallback = (
+  msg: PublishDeployContentSuccess,
+) => void;
+export function isPublishDeployContentSuccess(
+  arg: Events,
+): arg is PublishDeployContentSuccess {
+  return arg.type === "publish/deployContent/success";
+}
+
+export interface PublishDeployContentFailure extends EventStreamMessage {
+  type: "publish/deployContent/failure";
+  error: string; // translated internally
+  // structured data not guaranteed, use selective or generic queries
+  // from data map
+}
+export type OnPublishDeployContentFailureCallback = (
+  msg: PublishDeployContentFailure,
+) => void;
+export function isPublishDeployContentFailure(
+  arg: Events,
+): arg is PublishDeployContentFailure {
+  return arg.type === "publish/deployContent/failure";
+}
+
+export interface PublishUpdateContentStart extends EventStreamMessage {
+  type: "publish/updateContent/start";
+}
+export type OnPublishUpdateContentStartCallback = (
+  msg: PublishUpdateContentStart,
+) => void;
+export function isPublishUpdateContentStart(
+  arg: Events,
+): arg is PublishUpdateContentStart {
+  return arg.type === "publish/updateContent/start";
+}
+export interface PublishUpdateContentLog extends EventStreamMessage {
+  type: "publish/updateContent/log";
+}
+export type OnPublishUpdateContentLogCallback = (
+  msg: PublishUpdateContentLog,
+) => void;
+export function isPublishUpdateContentLog(
+  arg: Events,
+): arg is PublishUpdateContentLog {
+  return arg.type === "publish/updateContent/log";
+}
+
+export interface PublishUpdateContentSuccess extends EventStreamMessage {
+  type: "publish/updateContent/success";
+}
+export type OnPublishUpdateContentSuccessCallback = (
+  msg: PublishUpdateContentSuccess,
+) => void;
+export function isPublishUpdateContentSuccess(
+  arg: Events,
+): arg is PublishUpdateContentSuccess {
+  return arg.type === "publish/updateContent/success";
+}
+
+export interface PublishUpdateContentFailure extends EventStreamMessage {
+  type: "publish/updateContent/failure";
+  error: string; // translated internally
+  // structured data not guaranteed, use selective or generic queries
+  // from data map
+}
+export type OnPublishUpdateContentFailureCallback = (
+  msg: PublishUpdateContentFailure,
+) => void;
+export function isPublishUpdateContentFailure(
+  arg: Events,
+): arg is PublishUpdateContentFailure {
+  return arg.type === "publish/updateContent/failure";
 }
 
 export interface PublishUploadBundleStart extends EventStreamMessage {
@@ -1309,6 +1420,14 @@ export type Events =
   | PublishCreateDeploymentStart
   | PublishCreateDeploymentSuccess
   | PublishCreateDeploymentFailure
+  | PublishDeployContentStart
+  | PublishDeployContentLog
+  | PublishDeployContentSuccess
+  | PublishDeployContentFailure
+  | PublishUpdateContentStart
+  | PublishUpdateContentLog
+  | PublishUpdateContentSuccess
+  | PublishUpdateContentFailure
   | PublishUploadBundleStart
   | PublishUploadBundleSuccess
   | PublishUploadBundleFailure

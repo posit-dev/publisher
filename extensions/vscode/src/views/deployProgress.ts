@@ -249,6 +249,70 @@ export function deployProject(
       );
       registrations.push(
         stream.register(
+          "publish/deployContent/start",
+          (msg: EventStreamMessage) => {
+            handleProgressMessages(msg);
+          },
+        ),
+      );
+      registrations.push(
+        stream.register(
+          "publish/deployContent/success",
+          (msg: EventStreamMessage) => {
+            handleProgressMessages(msg);
+          },
+        ),
+      );
+      registrations.push(
+        stream.register(
+          "publish/deployContent/failure",
+          (msg: EventStreamMessage) => {
+            handleProgressMessages(msg);
+          },
+        ),
+      );
+      registrations.push(
+        stream.register(
+          "publish/deployContent/log",
+          (msg: EventStreamMessage) => {
+            handleProgressMessages(msg);
+          },
+        ),
+      );
+      registrations.push(
+        stream.register(
+          "publish/updateContent/start",
+          (msg: EventStreamMessage) => {
+            handleProgressMessages(msg);
+          },
+        ),
+      );
+      registrations.push(
+        stream.register(
+          "publish/updateContent/success",
+          (msg: EventStreamMessage) => {
+            handleProgressMessages(msg);
+          },
+        ),
+      );
+      registrations.push(
+        stream.register(
+          "publish/updateContent/failure",
+          (msg: EventStreamMessage) => {
+            handleProgressMessages(msg);
+          },
+        ),
+      );
+      registrations.push(
+        stream.register(
+          "publish/updateContent/log",
+          (msg: EventStreamMessage) => {
+            handleProgressMessages(msg);
+          },
+        ),
+      );
+      registrations.push(
+        stream.register(
           "publish/uploadBundle/start",
           (msg: EventStreamMessage) => {
             handleProgressMessages(msg);
