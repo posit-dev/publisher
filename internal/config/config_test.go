@@ -85,6 +85,8 @@ func (s *ConfigSuite) TestFromExampleFile() {
 	valuePtr := cfg.Connect.Kubernetes.DefaultPyEnvironmentManagement
 	s.NotNil(valuePtr)
 	s.Equal(true, *valuePtr)
+
+	s.Equal(ProductTypeConnect, cfg.ProductType, "ProductType should be set to its default value")
 }
 
 func (s *ConfigSuite) TestFromFileErr() {
