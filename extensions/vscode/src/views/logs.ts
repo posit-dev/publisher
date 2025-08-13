@@ -65,8 +65,8 @@ type LogsTreeItem = LogsTreeStageItem | LogsTreeLogItem;
 const createLogStage = (
   inactiveLabel: string,
   activeLabel: string,
-  alternatePaths?: string[],
   productType: ProductType[] = [],
+  alternatePaths?: string[],
   collapseState?: TreeItemCollapsibleState,
   status: LogStageStatus = LogStageStatus.notStarted,
   stages: LogStage[] = [],
@@ -489,8 +489,8 @@ export class LogsTreeStageItem extends TreeItem {
         this.collapsibleState = TreeItemCollapsibleState.Expanded;
         break;
       case LogStageStatus.notApplicable:
-        this.label = "";
-        this.iconPath = "";
+        this.label = `${this.stage.inactiveLabel} (not applicable)`;
+        this.iconPath = new ThemeIcon("circle-slash");
         break;
     }
   }
