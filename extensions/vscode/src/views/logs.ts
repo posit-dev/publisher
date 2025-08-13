@@ -65,8 +65,8 @@ type LogsTreeItem = LogsTreeStageItem | LogsTreeLogItem;
 const createLogStage = (
   inactiveLabel: string,
   activeLabel: string,
-  alternatePaths?: string[],
   productType: ProductType[] = [],
+  alternatePaths?: string[],
   collapseState?: TreeItemCollapsibleState,
   status: LogStageStatus = LogStageStatus.notStarted,
   stages: LogStage[] = [],
