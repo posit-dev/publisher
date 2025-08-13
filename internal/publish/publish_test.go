@@ -468,7 +468,11 @@ func (s *PublishConnectSuite) TestEmitErrorEventsNoTarget() {
 	log := logging.New()
 
 	emitter := events.NewCapturingEmitter()
-	state := &state.State{}
+	state := &state.State{
+		Config: &config.Config{
+			ProductType: config.ProductTypeConnect,
+		},
+	}
 	publisher := &defaultPublisher{
 		log:           log,
 		emitter:       emitter,
@@ -499,6 +503,9 @@ func (s *PublishConnectSuite) TestEmitErrorEventsWithTarget() {
 	emitter := events.NewCapturingEmitter()
 	state := &state.State{
 		Dir: base,
+		Config: &config.Config{
+			ProductType: config.ProductTypeConnect,
+		},
 		Account: &accounts.Account{
 			URL: "connect.example.com",
 		},
