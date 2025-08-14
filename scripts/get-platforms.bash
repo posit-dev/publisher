@@ -15,7 +15,7 @@ CI="${CI:-false}"
 platforms="${USE_PLATFORM:-$(go env GOHOSTOS)/$(go env GOHOSTARCH)}"
 if [ "$CI" = "true" ]; then
     platforms=(
-        "darwin/amd64"
+        # "darwin/amd64"
         "darwin/arm64"
         # "dragonfly/amd64"
         # "freebsd/386"
@@ -24,7 +24,7 @@ if [ "$CI" = "true" ]; then
         # "linux/386"
         "linux/amd64"
         # "linux/arm"
-        "linux/arm64"
+        # "linux/arm64"
         # "linux/ppc64"
         # "linux/ppc64le"
         # "linux/mips"
@@ -41,7 +41,7 @@ if [ "$CI" = "true" ]; then
         # "plan9/amd64"
         # "solaris/amd64"
         # "windows/386"
-        "windows/amd64"
+        # "windows/amd64"
     )
 fi
 
