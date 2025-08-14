@@ -6,11 +6,13 @@ import (
 	"testing"
 
 	"github.com/posit-dev/publisher/internal/server_type"
+	"github.com/posit-dev/publisher/internal/types"
+
+	"github.com/stretchr/testify/suite"
+	"github.com/zalando/go-keyring"
 
 	"github.com/posit-dev/publisher/internal/logging/loggingtest"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/stretchr/testify/suite"
-	"github.com/zalando/go-keyring"
 )
 
 type KeyringCredentialsTestSuite struct {
@@ -80,7 +82,7 @@ func (s *KeyringCredentialsTestSuite) TestSet() {
 	s.Equal(cred.AccountID, "0de62804-2b0b-4e11-8a52-a402bda89ff4")
 	s.Equal(cred.AccountName, "cloudy")
 	s.Equal(cred.RefreshToken, "some_refresh_token")
-	s.Equal(cred.AccessToken, "some_access_token")
+	s.Equal(cred.AccessToken, types.CloudAuthToken("some_access_token"))
 }
 
 func (s *KeyringCredentialsTestSuite) TestSetURLCollisionError() {

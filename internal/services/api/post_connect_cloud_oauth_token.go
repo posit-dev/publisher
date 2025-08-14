@@ -19,9 +19,9 @@ type connectCloudOAuthTokenRequestBody struct {
 }
 
 type connectCloudOAuthTokenResponseBody struct {
-	AccessToken  string `json:"accessToken"`
-	RefreshToken string `json:"refreshToken"`
-	ExpiresIn    int    `json:"expiresIn"`
+	AccessToken  types.CloudAuthToken `json:"accessToken"`
+	RefreshToken string               `json:"refreshToken"`
+	ExpiresIn    int                  `json:"expiresIn"`
 }
 
 func PostConnectCloudOAuthTokenHandlerFunc(log logging.Logger) http.HandlerFunc {

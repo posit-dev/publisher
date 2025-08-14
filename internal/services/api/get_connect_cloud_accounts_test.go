@@ -74,7 +74,7 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts() {
 	}
 	client.On("GetAccounts").Return(accountsResponse, nil)
 
-	connectCloudClientFactory = func(environment types.CloudEnvironment, log logging.Logger, timeout time.Duration, account *accounts.Account, authValue string) (connect_cloud.APIClient, error) {
+	connectCloudClientFactory = func(environment types.CloudEnvironment, log logging.Logger, timeout time.Duration, account *accounts.Account, authValue types.CloudAuthToken) (connect_cloud.APIClient, error) {
 		return client, nil
 	}
 
@@ -136,8 +136,8 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts_GetCurrentUse
 		http_client.NewHTTPError("https://foo.bar", "GET", http.StatusBadRequest, "uh oh"), nil))
 	// No need to mock GetAccounts since the function returns after GetCurrentUser fails
 
-	connectCloudClientFactory = func(environment types.CloudEnvironment, log logging.Logger, timeout time.Duration, account *accounts.Account, authValue string) (connect_cloud.APIClient, error) {
-		s.Equal(authValue, "token123")
+	connectCloudClientFactory = func(environment types.CloudEnvironment, log logging.Logger, timeout time.Duration, account *accounts.Account, authValue types.CloudAuthToken) (connect_cloud.APIClient, error) {
+		s.Equal(authValue, types.CloudAuthToken("token123"))
 		return client, nil
 	}
 
@@ -168,7 +168,7 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts_NoUserForLuci
 	// Mock the GetCurrentUser call to return the no_user_for_lucid_user error
 	client.On("GetCurrentUser").Return((*connect_cloud.UserResponse)(nil), agentErr)
 
-	connectCloudClientFactory = func(environment types.CloudEnvironment, log logging.Logger, timeout time.Duration, account *accounts.Account, authValue string) (connect_cloud.APIClient, error) {
+	connectCloudClientFactory = func(environment types.CloudEnvironment, log logging.Logger, timeout time.Duration, account *accounts.Account, authValue types.CloudAuthToken) (connect_cloud.APIClient, error) {
 		return client, nil
 	}
 
@@ -209,7 +209,7 @@ func (s *GetConnectCloudAccountsSuite) TestGetConnectCloudAccounts_GetAccountsEr
 		events.ServerErrorCode,
 		http_client.NewHTTPError("https://foo.bar", "GET", http.StatusBadRequest, "uh oh"), nil))
 
-	connectCloudClientFactory = func(_ types.CloudEnvironment, _ logging.Logger, _ time.Duration, _ *accounts.Account, _ string) (connect_cloud.APIClient, error) {
+	connectCloudClientFactory = func(_ types.CloudEnvironment, _ logging.Logger, _ time.Duration, _ *accounts.Account, _ types.CloudAuthToken) (connect_cloud.APIClient, error) {
 		return client, nil
 	}
 
