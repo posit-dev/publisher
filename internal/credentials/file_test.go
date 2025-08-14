@@ -11,12 +11,13 @@ import (
 
 	"github.com/posit-dev/publisher/internal/server_type"
 
-	"github.com/posit-dev/publisher/internal/logging/loggingtest"
-	"github.com/posit-dev/publisher/internal/util"
-	"github.com/posit-dev/publisher/internal/util/utiltest"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/posit-dev/publisher/internal/logging/loggingtest"
+	"github.com/posit-dev/publisher/internal/util"
+	"github.com/posit-dev/publisher/internal/util/utiltest"
 )
 
 type FileCredentialsServiceSuite struct {
@@ -729,6 +730,53 @@ func (s *FileCredentialsServiceSuite) fileSetupResetTest() {
 	fileData := []byte(`[credentials]`)
 	err := os.WriteFile(s.testdata.Join("to-reset.toml").String(), fileData, 0644)
 	s.NoError(err)
+}
+
+func (s *FileCredentialsServiceSuite) TestForceSet() {
+	cs := &fileCredentialsService{
+		log:           s.loggerMock,
+		credsFilepath: s.testdata.Join("testset.toml"),
+	}
+
+	creds, err := cs.load()
+	s.NoError(err)
+
+	// Verify the initial state of the file
+	s.Equal(creds, fileCredentials{
+		Credentials: map[string]fileCredential{
+			"preexistent": {
+				GUID:    "18cd5640-bee5-4b2a-992a-a2725ab6103d",
+				Version: 0,
+				URL:     "https://a1.connect-server:3939/connect",
+				ApiKey:  "abcdeC2aqbh7dg8TO43XPu7r56YDh000",
+			},
+		},
+	})
+
+	// This would normally fail with Set() due to name conflict
+	newcred, err := cs.ForceSet(CreateCredentialDetails{ServerType: server_type.ServerTypeConnect, Name: "preexistent", URL: "https://b2.connect-server:3939/connect", ApiKey: "abcdeC2aqbh7dg8TO43XPu7r56YDh002"})
+	s.NoError(err)
+
+	s.Equal(newcred.Name, "preexistent")
+	s.Equal(newcred.URL, "https://b2.connect-server:3939/connect")
+	s.Equal(newcred.ApiKey, "abcdeC2aqbh7dg8TO43XPu7r56YDh002")
+
+	creds, err = cs.load()
+	s.NoError(err)
+
+	// The existing credential should be updated with the new values
+	s.Equal(creds, fileCredentials{
+		Credentials: map[string]fileCredential{
+			"preexistent": {
+				GUID:                newcred.GUID,
+				Version:             3,
+				ServerType:          server_type.ServerTypeConnect,
+				URL:                 "https://b2.connect-server:3939/connect",
+				ApiKey:              "abcdeC2aqbh7dg8TO43XPu7r56YDh002",
+				SnowflakeConnection: "",
+			},
+		},
+	})
 }
 
 func (s *FileCredentialsServiceSuite) TestReset() {

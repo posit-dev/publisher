@@ -6,8 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/zalando/go-keyring"
+
+	"github.com/posit-dev/publisher/internal/logging"
 )
 
 type keyringCredentialsService struct {
@@ -29,8 +30,6 @@ func (ks *keyringCredentialsService) IsSupported() bool {
 	return true
 }
 
-// Delete removes a Credential by its guid.
-// If lookup by guid fails, a NotFoundError is returned.
 func (ks *keyringCredentialsService) Delete(guid string) error {
 	table, err := ks.load()
 	if err != nil {
@@ -47,7 +46,6 @@ func (ks *keyringCredentialsService) Delete(guid string) error {
 	return ks.save(table)
 }
 
-// Get retrieves a Credential by its guid.
 func (ks *keyringCredentialsService) Get(guid string) (*Credential, error) {
 	table, err := ks.load()
 	if err != nil {
@@ -63,7 +61,6 @@ func (ks *keyringCredentialsService) Get(guid string) (*Credential, error) {
 	return cr.ToCredential()
 }
 
-// List retrieves all Credentials
 func (ks *keyringCredentialsService) List() ([]Credential, error) {
 	records, err := ks.load()
 	if err != nil {
@@ -80,9 +77,15 @@ func (ks *keyringCredentialsService) List() ([]Credential, error) {
 	return creds, nil
 }
 
-// Set creates a Credential.
-// A guid is assigned to the Credential using the UUIDv4 specification.
 func (ks *keyringCredentialsService) Set(credDetails CreateCredentialDetails) (*Credential, error) {
+	return ks.set(credDetails, true)
+}
+
+func (ks *keyringCredentialsService) ForceSet(credDetails CreateCredentialDetails) (*Credential, error) {
+	return ks.set(credDetails, false)
+}
+
+func (ks *keyringCredentialsService) set(credDetails CreateCredentialDetails, checkConflict bool) (*Credential, error) {
 	table, err := ks.load()
 	if err != nil {
 		return nil, err
@@ -93,9 +96,11 @@ func (ks *keyringCredentialsService) Set(credDetails CreateCredentialDetails) (*
 		return nil, err
 	}
 
-	err = ks.checkForConflicts(&table, cred)
-	if err != nil {
-		return nil, err
+	if checkConflict {
+		err = ks.checkForConflicts(&table, cred)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	raw, err := json.Marshal(cred)
@@ -117,8 +122,6 @@ func (ks *keyringCredentialsService) Set(credDetails CreateCredentialDetails) (*
 	return cred, nil
 }
 
-// Resets the CredentialTable from keyring
-// it is a last resort in case the keyring data turns out to be irrecognizable
 // There is no backup for keyring data due to encryption, always returns empty string
 func (ks *keyringCredentialsService) Reset() (string, error) {
 	ks.log.Warn("Corrupted credentials data found. The stored data was reset.", "credentials_service", "keyring")

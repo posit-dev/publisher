@@ -8,10 +8,13 @@ import {
 } from "./multiStepHelper";
 import { Credential, ServerType, ProductName } from "src/api";
 import { extensionSettings } from "src/extension";
-import { isConnectCloud, platformList } from "src/multiStepInputs/common";
+import {
+  getServerType,
+  isConnectCloud,
+  platformList,
+} from "src/multiStepInputs/common";
 import { newConnectCredential } from "./newConnectCredential";
 import { newConnectCloudCredential } from "./newConnectCloudCredential";
-import { getEnumKeyByEnumValue } from "src/utils/enums";
 
 export async function newCredential(
   viewId: string,
@@ -120,9 +123,7 @@ export async function newCredential(
       ignoreFocusOut: true,
     });
 
-    const enumKey = getEnumKeyByEnumValue(ProductName, pick.label);
-    // fallback to the default if there is ever a case when the enumKey is not found
-    serverType = enumKey ? ServerType[enumKey] : serverType;
+    serverType = getServerType(pick.label as ProductName);
 
     const prevSteps = [...(previousSteps || []), ...stepHistory];
     if (isConnectCloud(serverType)) {

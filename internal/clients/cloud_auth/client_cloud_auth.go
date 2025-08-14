@@ -19,6 +19,8 @@ const clientIDProduction = "posit-publisher"
 const baseURLStaging = "https://login.staging.posit.cloud"
 const baseURLProduction = "https://login.posit.cloud"
 
+const authScope = "vivid"
+
 type CloudAuthClient struct {
 	log      logging.Logger
 	client   http_client.HTTPClient
@@ -41,6 +43,10 @@ func NewCloudAuthClient(
 	}
 }
 
+type CloudAuthClientFactory func(environment types.CloudEnvironment, log logging.Logger, timeout time.Duration) APIClient
+
+var _ CloudAuthClientFactory = NewCloudAuthClient
+
 func getBaseURLAndClientID(environment types.CloudEnvironment) (string, string) {
 	switch environment {
 	case types.CloudEnvironmentDevelopment:
@@ -55,7 +61,7 @@ func getBaseURLAndClientID(environment types.CloudEnvironment) (string, string) 
 func (c CloudAuthClient) CreateDeviceAuth() (*DeviceAuthResponse, error) {
 	body := url.Values{
 		"client_id": {c.clientID},
-		"scope":     {"vivid"},
+		"scope":     {authScope},
 	}
 	into := DeviceAuthResponse{}
 	err := c.client.PostForm("/oauth/device/authorize", body, &into, c.log)
@@ -67,10 +73,17 @@ func (c CloudAuthClient) CreateDeviceAuth() (*DeviceAuthResponse, error) {
 
 func (c CloudAuthClient) ExchangeToken(request TokenRequest) (*TokenResponse, error) {
 	body := url.Values{
-		"grant_type":  {request.GrantType},
-		"device_code": {request.DeviceCode},
-		"client_id":   {c.clientID},
+		"grant_type": {request.GrantType},
+		"client_id":  {c.clientID},
+		"scope":      {authScope},
 	}
+	if request.DeviceCode != "" {
+		body.Set("device_code", request.DeviceCode)
+	}
+	if request.RefreshToken != "" {
+		body.Set("refresh_token", request.RefreshToken)
+	}
+
 	into := TokenResponse{}
 	err := c.client.PostForm("/oauth/token", body, &into, c.log)
 	if err != nil {
