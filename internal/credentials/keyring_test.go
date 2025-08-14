@@ -202,6 +202,32 @@ func (s *KeyringCredentialsTestSuite) TestDelete() {
 	s.log.AssertExpectations(s.T())
 }
 
+func (s *KeyringCredentialsTestSuite) TestForceSet() {
+	cs := keyringCredentialsService{
+		log: s.log,
+	}
+
+	// First test - add credential with regular Set
+	cred, err := cs.Set(CreateCredentialDetails{ServerType: server_type.ServerTypeConnect, Name: "example", URL: "https://example.com", ApiKey: "12345", SnowflakeConnection: ""})
+	s.NoError(err)
+	s.Equal("example", cred.Name)
+
+	// Using ForceSet to override name collision
+	// This would normally fail with Set() due to name collision
+	newcred, err := cs.ForceSet(CreateCredentialDetails{ServerType: server_type.ServerTypeConnect, Name: "example", URL: "https://modified.example.com", ApiKey: "modified-key", SnowflakeConnection: ""})
+	s.NoError(err)
+	s.Equal("example", newcred.Name)
+	s.Equal("https://modified.example.com", newcred.URL)
+	s.Equal("modified-key", newcred.ApiKey)
+
+	// Verify that the credential was updated
+	retCred, err := cs.Get(newcred.GUID)
+	s.NoError(err)
+	s.Equal("example", retCred.Name)
+	s.Equal("https://modified.example.com", retCred.URL)
+	s.Equal("modified-key", retCred.ApiKey)
+}
+
 func (s *KeyringCredentialsTestSuite) TestReset() {
 	cs := keyringCredentialsService{
 		log: s.log,

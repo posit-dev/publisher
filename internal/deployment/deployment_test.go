@@ -105,6 +105,8 @@ func (s *DeploymentSuite) TestFromExampleFile() {
 	s.Equal("https://connect.example.com/__api__/v1/content/de2e7bdb-b085-401e-a65c-443e40009749/bundles/123/download", d.BundleURL)
 	s.Equal("https://connect.example.com/connect/#/apps/de2e7bdb-b085-401e-a65c-443e40009749", d.DashboardURL)
 	s.Equal("https://connect.example.com/connect/#/apps/de2e7bdb-b085-401e-a65c-443e40009749/logs", d.LogsURL)
+
+	s.Equal(config.ProductTypeConnect, d.Configuration.ProductType, "ProductType should be set to its default value")
 }
 
 func (s *DeploymentSuite) TestFromFileErr() {

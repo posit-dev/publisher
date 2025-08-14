@@ -3,8 +3,9 @@ package cloud_auth
 // Copyright (C) 2025 by Posit Software, PBC.
 
 type TokenRequest struct {
-	GrantType  string `json:"grant_type"`
-	DeviceCode string `json:"device_code"`
+	GrantType    string `json:"grant_type"`
+	DeviceCode   string `json:"device_code"`
+	RefreshToken string `json:"refresh_token"`
 }
 
 type TokenResponse struct {

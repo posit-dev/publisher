@@ -75,6 +75,7 @@ func FromFile(path util.AbsolutePath) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	cfg.PopulateDefaults()
 	return cfg, nil
 }
 

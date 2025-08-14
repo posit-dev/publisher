@@ -119,6 +119,12 @@ type Config struct {
 	ConnectCloud  *ConnectCloud `toml:"connect_cloud,omitempty" json:"connectCloud,omitempty"`
 }
 
+func (c *Config) PopulateDefaults() {
+	if c.ProductType == "" {
+		c.ProductType = ProductTypeConnect
+	}
+}
+
 func (c *Config) GetValidate() bool {
 	if c.Validate == nil {
 		return false

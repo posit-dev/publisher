@@ -11,6 +11,7 @@ import {
 } from "src/api";
 import { EventStream, UnregisterCallback } from "src/events";
 import { getSummaryStringFromError } from "src/utils/errors";
+import { getProductName } from "src/multiStepInputs/common";
 
 type UpdateActiveContentRecordCB = (
   contentRecord: ContentRecord | PreContentRecord | PreContentRecordWithConfig,
@@ -59,6 +60,10 @@ export function deployProject(
           // update the UX locally
           updateActiveContentRecordCB(response.data);
 
+          const productName = getProductName(
+            response.data.configuration.productType,
+          );
+
           // we must have been successful...
           // inject a psuedo end of publishing event
           stream.injectMessage({
@@ -70,8 +75,7 @@ export function deployProject(
               // and other non-defined attributes
               localId: localID,
               canceled: "true",
-              message:
-                "Deployment has been dismissed, but will continue to be processed on the Connect Server.",
+              message: `Deployment has been dismissed, but will continue to be processed on the ${productName} Server.`,
             },
             error: "Deployment has been dismissed.",
           });
@@ -242,6 +246,70 @@ export function deployProject(
       registrations.push(
         stream.register(
           "publish/createDeployment/log",
+          (msg: EventStreamMessage) => {
+            handleProgressMessages(msg);
+          },
+        ),
+      );
+      registrations.push(
+        stream.register(
+          "publish/deployContent/start",
+          (msg: EventStreamMessage) => {
+            handleProgressMessages(msg);
+          },
+        ),
+      );
+      registrations.push(
+        stream.register(
+          "publish/deployContent/success",
+          (msg: EventStreamMessage) => {
+            handleProgressMessages(msg);
+          },
+        ),
+      );
+      registrations.push(
+        stream.register(
+          "publish/deployContent/failure",
+          (msg: EventStreamMessage) => {
+            handleProgressMessages(msg);
+          },
+        ),
+      );
+      registrations.push(
+        stream.register(
+          "publish/deployContent/log",
+          (msg: EventStreamMessage) => {
+            handleProgressMessages(msg);
+          },
+        ),
+      );
+      registrations.push(
+        stream.register(
+          "publish/updateContent/start",
+          (msg: EventStreamMessage) => {
+            handleProgressMessages(msg);
+          },
+        ),
+      );
+      registrations.push(
+        stream.register(
+          "publish/updateContent/success",
+          (msg: EventStreamMessage) => {
+            handleProgressMessages(msg);
+          },
+        ),
+      );
+      registrations.push(
+        stream.register(
+          "publish/updateContent/failure",
+          (msg: EventStreamMessage) => {
+            handleProgressMessages(msg);
+          },
+        ),
+      );
+      registrations.push(
+        stream.register(
+          "publish/updateContent/log",
           (msg: EventStreamMessage) => {
             handleProgressMessages(msg);
           },
