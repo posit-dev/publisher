@@ -57,6 +57,14 @@
             "markdownDescription": "Provides the default URL for the Posit Connect server when defining new credentials.",
             "type": "string",
             "default": ""
+          },
+          "positPublisher.enableConnectCloud": {
+            "markdownDescription": "🧪 Controls whether Posit Connect Cloud support is available. This is a new feature in active development.",
+            "type": "boolean",
+            "default": false,
+            "tags": [
+              "experimental"
+            ]
           }
         }
       }
