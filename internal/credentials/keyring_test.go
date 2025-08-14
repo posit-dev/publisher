@@ -209,10 +209,6 @@ func (s *KeyringCredentialsTestSuite) TestForceSet() {
 		log: s.log,
 	}
 
-	//allCreds, err := cs.List()
-	//s.NoError(err)
-	//s.Len(allCreds, 0)
-
 	// First test - add credential with regular Set
 	cred, err := cs.Set(CreateCredentialDetails{ServerType: server_type.ServerTypeConnect, Name: "example", URL: "https://example.com", ApiKey: "12345", SnowflakeConnection: ""})
 	s.NoError(err)
