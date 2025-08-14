@@ -57,6 +57,13 @@ func (s *ContentRequestSuite) TestGetContentRequestBase() {
 		Python: &config.Python{
 			Version: "3.10.0",
 		},
+		ConnectCloud: &config.ConnectCloud{
+			VanityName: "test-vanity-name",
+			AccessControl: &config.ConnectCloudAccessControl{
+				PublicAccess:       true,
+				OrganizationAccess: config.OrganizationAccessTypeViewer,
+			},
+		},
 	}
 	s.publisher.SaveName = "test-save-name"
 
@@ -70,8 +77,9 @@ func (s *ContentRequestSuite) TestGetContentRequestBase() {
 	// Verify all fields are set correctly
 	s.Equal("Test Content Title", base.Title)
 	s.Equal("Test content description", base.Description)
-	s.Equal(clienttypes.ViewPrivateEditPrivate, base.Access)
+	s.Equal(clienttypes.ViewPublicEditPrivate, base.Access)
 	s.Equal(clienttypes.PythonDashMode, base.AppMode)
+	s.Equal("test-vanity-name", base.VanityName)
 
 	// Verify NextRevision fields
 	s.Equal("bundle", base.NextRevision.SourceType)

@@ -345,9 +345,9 @@ type ConnectCloud struct {
 type OrganizationAccessType string
 
 const (
-	OrganizationAccessTypeDisabled AccessType = "disabled"
-	OrganizationAccessTypeViewer   AccessType = "viewer"
-	OrganizationAccessTypeEditor   AccessType = "editor"
+	OrganizationAccessTypeDisabled OrganizationAccessType = "disabled"
+	OrganizationAccessTypeViewer   OrganizationAccessType = "viewer"
+	OrganizationAccessTypeEditor   OrganizationAccessType = "editor"
 )
 
 type ConnectCloudAccessControl struct {
