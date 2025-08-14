@@ -96,20 +96,35 @@ func (ks *keyringCredentialsService) set(credDetails CreateCredentialDetails, ch
 		return nil, err
 	}
 
+	guidToUpdate := cred.GUID
 	if checkConflict {
 		err = ks.checkForConflicts(&table, cred)
 		if err != nil {
 			return nil, err
 		}
+	} else {
+		// since keyring creds are indexed by GUID, we need to find the GUID of the credential with the passed credential's name
+		for guid, record := range table {
+			tableCred, err := record.ToCredential()
+			if err != nil {
+				return nil, NewCorruptedError(guid)
+			}
+
+			if tableCred.Name == credDetails.Name {
+				guidToUpdate = tableCred.GUID
+				break
+			}
+		}
 	}
 
+	cred.GUID = guidToUpdate
 	raw, err := json.Marshal(cred)
 	if err != nil {
 		return nil, fmt.Errorf("error marshalling credential: %v", err)
 	}
 
-	table[cred.GUID] = CredentialRecord{
-		GUID:    cred.GUID,
+	table[guidToUpdate] = CredentialRecord{
+		GUID:    guidToUpdate,
 		Version: CurrentVersion,
 		Data:    json.RawMessage(raw),
 	}
