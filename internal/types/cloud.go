@@ -9,3 +9,5 @@ const (
 	CloudEnvironmentStaging     CloudEnvironment = "staging"
 	CloudEnvironmentProduction  CloudEnvironment = "production"
 )
+
+type CloudAuthToken string

@@ -14,6 +14,7 @@ import (
 	"github.com/posit-dev/publisher/internal/clients/http_client"
 	"github.com/posit-dev/publisher/internal/cloud"
 	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/types"
 )
 
 type connectCloudAccountsBodyAccount struct {
@@ -36,8 +37,9 @@ func GetConnectCloudAccountsFunc(log logging.Logger) http.HandlerFunc {
 			http.Error(w, "Invalid Authorization header", http.StatusUnauthorized)
 			return
 		}
+		authToken := types.CloudAuthToken(authSplit[1])
 
-		client, err := connectCloudClientFactory(environment, log, 10*time.Second, nil, authSplit[1])
+		client, err := connectCloudClientFactory(environment, log, 10*time.Second, nil, authToken)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Error creating client: %v", err), http.StatusInternalServerError)
 			return

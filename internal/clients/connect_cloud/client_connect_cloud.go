@@ -48,12 +48,12 @@ func NewConnectCloudClientWithAuth(
 	log logging.Logger,
 	timeout time.Duration,
 	account *accounts.Account,
-	authToken string,
+	authToken types.CloudAuthToken,
 ) (APIClient, error) {
 	if account != nil {
-		authToken = fmt.Sprintf("Bearer %s", account.CloudAccessToken)
+		authToken = account.CloudAccessToken
 	}
-	httpClient := http_client.NewBasicHTTPClientWithBearerAuth(getBaseURL(environment), timeout, authToken)
+	httpClient := http_client.NewBasicHTTPClientWithBearerAuth(getBaseURL(environment), timeout, string(authToken))
 	credService, err := credentials.NewCredentialsService(log)
 	if err != nil {
 		return nil, err
@@ -99,7 +99,7 @@ func (c *ConnectCloudClient) refreshCred() error {
 	c.account.CloudRefreshToken = resp.RefreshToken
 
 	// Set the client to one with the new token.
-	c.client = c.httpClientFactory(getBaseURL(c.account.CloudEnvironment), c.timeout, resp.AccessToken)
+	c.client = c.httpClientFactory(getBaseURL(c.account.CloudEnvironment), c.timeout, string(resp.AccessToken))
 	return nil
 }
 

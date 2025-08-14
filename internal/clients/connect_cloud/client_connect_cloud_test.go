@@ -396,6 +396,6 @@ func (s *ConnectCloudClientSuite) TestCreateContentWithRetryAuth() {
 	mockCredService.AssertExpectations(s.T())
 
 	// Verify account was updated with new tokens
-	s.Equal("NEW_ACCESS_TOKEN", account.CloudAccessToken)
+	s.Equal(types.CloudAuthToken("NEW_ACCESS_TOKEN"), account.CloudAccessToken)
 	s.Equal("NEW_REFRESH_TOKEN", account.CloudRefreshToken)
 }
