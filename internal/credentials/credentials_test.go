@@ -9,11 +9,12 @@ import (
 	"github.com/posit-dev/publisher/internal/server_type"
 	"github.com/posit-dev/publisher/internal/types"
 
-	"github.com/posit-dev/publisher/internal/logging/loggingtest"
-	"github.com/posit-dev/publisher/internal/util/utiltest"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/suite"
 	"github.com/zalando/go-keyring"
+
+	"github.com/posit-dev/publisher/internal/logging/loggingtest"
+	"github.com/posit-dev/publisher/internal/util/utiltest"
 )
 
 type CredentialsServiceTestSuite struct {
@@ -325,7 +326,7 @@ func (s *CreateCredentialDetailsTestSuite) TestToCredential() {
 	s.Equal(cred.AccountID, "")
 	s.Equal(cred.AccountName, "")
 	s.Equal(cred.RefreshToken, "")
-	s.Equal(cred.AccessToken, "")
+	s.Equal(cred.AccessToken, types.CloudAuthToken(""))
 	s.Equal(cred.CloudEnvironment, types.CloudEnvironment(""))
 	s.Equal(cred.Token, "")
 	s.Equal(cred.PrivateKey, "")
@@ -377,7 +378,7 @@ func (s *CreateCredentialDetailsTestSuite) TestToCredential_TokenAuth() {
 	s.Equal(cred.AccountID, "")
 	s.Equal(cred.AccountName, "")
 	s.Equal(cred.RefreshToken, "")
-	s.Equal(cred.AccessToken, "")
+	s.Equal(cred.AccessToken, types.CloudAuthToken(""))
 }
 
 func (s *CreateCredentialDetailsTestSuite) TestToCredential_InvalidTokenAuth() {

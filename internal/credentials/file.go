@@ -39,7 +39,7 @@ type fileCredential struct {
 	AccountID        string                 `toml:"account_id,omitempty"`
 	AccountName      string                 `toml:"account_name,omitempty"`
 	RefreshToken     string                 `toml:"refresh_token,omitempty"`
-	AccessToken      string                 `toml:"access_token,omitempty"`
+	AccessToken      types.CloudAuthToken   `toml:"access_token,omitempty"`
 	CloudEnvironment types.CloudEnvironment `toml:"cloud_environment,omitempty"`
 
 	// Token authentication fields

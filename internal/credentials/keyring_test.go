@@ -6,11 +6,13 @@ import (
 	"testing"
 
 	"github.com/posit-dev/publisher/internal/server_type"
+	"github.com/posit-dev/publisher/internal/types"
+
+	"github.com/stretchr/testify/suite"
+	"github.com/zalando/go-keyring"
 
 	"github.com/posit-dev/publisher/internal/logging/loggingtest"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/stretchr/testify/suite"
-	"github.com/zalando/go-keyring"
 )
 
 type KeyringCredentialsTestSuite struct {
@@ -80,7 +82,7 @@ func (s *KeyringCredentialsTestSuite) TestSet() {
 	s.Equal(cred.AccountID, "0de62804-2b0b-4e11-8a52-a402bda89ff4")
 	s.Equal(cred.AccountName, "cloudy")
 	s.Equal(cred.RefreshToken, "some_refresh_token")
-	s.Equal(cred.AccessToken, "some_access_token")
+	s.Equal(cred.AccessToken, types.CloudAuthToken("some_access_token"))
 }
 
 func (s *KeyringCredentialsTestSuite) TestSetURLCollisionError() {
@@ -219,6 +221,7 @@ func (s *KeyringCredentialsTestSuite) TestForceSet() {
 	s.Equal("example", newcred.Name)
 	s.Equal("https://modified.example.com", newcred.URL)
 	s.Equal("modified-key", newcred.ApiKey)
+	s.Equal(cred.GUID, newcred.GUID, "cred should be replaced rather than created")
 
 	// Verify that the credential was updated
 	retCred, err := cs.Get(newcred.GUID)
@@ -226,6 +229,10 @@ func (s *KeyringCredentialsTestSuite) TestForceSet() {
 	s.Equal("example", retCred.Name)
 	s.Equal("https://modified.example.com", retCred.URL)
 	s.Equal("modified-key", retCred.ApiKey)
+
+	allCreds, err := cs.List()
+	s.NoError(err)
+	s.Len(allCreds, 1, "a duplicate credential should not have been created")
 }
 
 func (s *KeyringCredentialsTestSuite) TestReset() {
