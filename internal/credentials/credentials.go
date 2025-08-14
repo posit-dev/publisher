@@ -61,7 +61,7 @@ type Credential struct {
 	AccountID        string                 `json:"accountId"`
 	AccountName      string                 `json:"accountName"`
 	RefreshToken     string                 `json:"refreshToken"`
-	AccessToken      string                 `json:"accessToken"`
+	AccessToken      types.CloudAuthToken   `json:"accessToken"`
 	CloudEnvironment types.CloudEnvironment `json:"cloudEnvironment"`
 
 	// Token authentication fields
@@ -86,7 +86,7 @@ type CredentialV2 struct {
 	AccountID        string                 `json:"accountId"`
 	AccountName      string                 `json:"accountName"`
 	RefreshToken     string                 `json:"refreshToken"`
-	AccessToken      string                 `json:"accessToken"`
+	AccessToken      types.CloudAuthToken   `json:"accessToken"`
 	CloudEnvironment types.CloudEnvironment `json:"cloudEnvironment"`
 }
 
@@ -247,7 +247,7 @@ type CreateCredentialDetails struct {
 	AccountID        string
 	AccountName      string
 	RefreshToken     string
-	AccessToken      string
+	AccessToken      types.CloudAuthToken
 	CloudEnvironment types.CloudEnvironment
 
 	// Token authentication fields

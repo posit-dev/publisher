@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/posit-dev/publisher/internal/server_type"
+	"github.com/posit-dev/publisher/internal/types"
 
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/mock"
@@ -550,7 +551,7 @@ func (s *FileCredentialsServiceSuite) TestSet() {
 	s.Equal(newcred4.AccountID, "0de62804-2b0b-4e11-8a52-a402bda89ff4")
 	s.Equal(newcred4.AccountName, "cloudy")
 	s.Equal(newcred4.RefreshToken, "some_refresh_token")
-	s.Equal(newcred4.AccessToken, "some_access_token")
+	s.Equal(newcred4.AccessToken, types.CloudAuthToken("some_access_token"))
 
 	creds, err = cs.load()
 	s.NoError(err)
