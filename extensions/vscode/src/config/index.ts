@@ -18,12 +18,12 @@ type Config = {
 
 let config: Config;
 
-if (process.env.CONNECT_CLOUD_ENV === env.STAGING) {
-  config = { ...staging, env: env.STAGING };
+if (process.env.CONNECT_CLOUD_ENV === env.PROD) {
+  config = { ...production, env: env.PROD };
 } else if (process.env.CONNECT_CLOUD_ENV === env.DEV) {
   config = { ...development, env: env.DEV };
 } else {
-  config = { ...production, env: env.PROD };
+  config = { ...staging, env: env.STAGING };
 }
 
 export default config;
