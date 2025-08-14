@@ -313,10 +313,21 @@ func (details CreateCredentialDetails) ToCredential() (*Credential, error) {
 type CredServiceFactory = func(log logging.Logger) (CredentialsService, error)
 
 type CredentialsService interface {
+	// Delete removes a Credential by its guid.
+	// If lookup by guid fails, a NotFoundError is returned.
 	Delete(guid string) error
+	// Get retrieves a Credential by its guid.
 	Get(guid string) (*Credential, error)
+	// List retrieves all Credentials.
 	List() ([]Credential, error)
+	// Set creates a Credential.
+	// A guid is assigned to the Credential using the UUIDv4 specification.
 	Set(details CreateCredentialDetails) (*Credential, error)
+	// ForceSet is like Set but doesn't check for conflicts with existing credentials.
+	ForceSet(details CreateCredentialDetails) (*Credential, error)
+	// Reset Reset the CredentialTable from keyring
+	// It is a last resort in case the data turns out to be unrecognizable.
+	// There is no backup for keyring data due to encryption, always returns empty string.
 	Reset() (string, error)
 }
 

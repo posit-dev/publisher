@@ -43,7 +43,10 @@ func createServerPublisher(ph *publishhelper.PublishHelper, emitter events.Emitt
 		return connectpublisher.NewServerPublisher(ph.State, log, client, emitter, ph), nil
 	case server_type.ServerTypeConnectCloud:
 		// For Connect Cloud, we need to create a different client
-		client := cloudClientFactory(ph.Account.CloudEnvironment, log, 2*time.Minute, ph.Account.CloudAccessToken)
+		client, err := cloudClientFactory(ph.Account.CloudEnvironment, log, 2*time.Minute, ph.Account, "")
+		if err != nil {
+			return nil, fmt.Errorf("error creating cloud client: %w", err)
+		}
 		return connectcloudpublisher.NewServerPublisher(ph.State, log, client, emitter, ph), nil
 	default:
 		return nil, fmt.Errorf("unsupported server type: %s", ph.Account.ServerType)

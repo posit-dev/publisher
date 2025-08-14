@@ -762,8 +762,8 @@ func (s *PublishConnectCloudSuite) publishWithCloudClient(
 
 	// Create mock Cloud client
 	cloudClient := connect_cloud.NewMockClient()
-	cloudClientFactory = func(env types.CloudEnvironment, log logging.Logger, timeout time.Duration, accessToken string) connect_cloud.APIClient {
-		return cloudClient
+	cloudClientFactory = func(env types.CloudEnvironment, log logging.Logger, timeout time.Duration, account *accounts.Account, authorizationHeader string) (connect_cloud.APIClient, error) {
+		return cloudClient, nil
 	}
 
 	// Setup content response for creation/update

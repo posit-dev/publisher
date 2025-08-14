@@ -8,6 +8,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -45,7 +46,9 @@ type defaultHTTPClient struct {
 	baseURL string
 }
 
-func NewDefaultHTTPClient(account *accounts.Account, timeout time.Duration, log logging.Logger) (*defaultHTTPClient, error) {
+var _ HTTPClient = &defaultHTTPClient{}
+
+func NewDefaultHTTPClient(account *accounts.Account, timeout time.Duration, log logging.Logger) (HTTPClient, error) {
 	baseClient, err := newHTTPClientForAccount(account, timeout, log)
 	if err != nil {
 		return nil, err
@@ -56,7 +59,7 @@ func NewDefaultHTTPClient(account *accounts.Account, timeout time.Duration, log 
 	}, nil
 }
 
-func NewBasicHTTPClient(baseURL string, timeout time.Duration) *defaultHTTPClient {
+func NewBasicHTTPClient(baseURL string, timeout time.Duration) HTTPClient {
 	baseClient := newBasicInternalHTTPClient(timeout)
 	return &defaultHTTPClient{
 		client:  baseClient,
@@ -64,13 +67,17 @@ func NewBasicHTTPClient(baseURL string, timeout time.Duration) *defaultHTTPClien
 	}
 }
 
-func NewBasicHTTPClientWithBearerAuth(baseURL string, timeout time.Duration, authValue string) *defaultHTTPClient {
+func NewBasicHTTPClientWithBearerAuth(baseURL string, timeout time.Duration, authValue string) HTTPClient {
 	baseClient := newBasicInternalHTTPClientWithAuth(timeout, fmt.Sprintf("Bearer %s", authValue))
 	return &defaultHTTPClient{
 		client:  baseClient,
 		baseURL: baseURL,
 	}
 }
+
+type HTTPClientWithBearerAuthFactory func(baseURL string, timeout time.Duration, authValue string) HTTPClient
+
+var _ HTTPClientWithBearerAuthFactory = NewBasicHTTPClientWithBearerAuth
 
 type HTTPError struct {
 	URL    string `mapstructure:"url"`
@@ -328,8 +335,10 @@ func newBasicInternalHTTPClientWithAuth(timeout time.Duration, authValue string)
 }
 
 func IsHTTPAgentErrorStatusOf(err error, status int) (*types.AgentError, bool) {
-	if aerr, isAgentErr := err.(*types.AgentError); isAgentErr {
-		if httperr, isHttpErr := aerr.Err.(*HTTPError); isHttpErr {
+	var aerr *types.AgentError
+	if errors.As(err, &aerr) {
+		var httperr *HTTPError
+		if errors.As(aerr.Err, &httperr) {
 			return aerr, httperr.Status == status
 		}
 	}
