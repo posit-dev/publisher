@@ -99,7 +99,7 @@ func (c *ConnectCloudClient) refreshCred() error {
 	c.account.CloudRefreshToken = resp.RefreshToken
 
 	// Set the client to one with the new token.
-	c.client = c.httpClientFactory(getBaseURL(c.account.CloudEnvironment), c.timeout, fmt.Sprintf("Bearer %s", resp.AccessToken))
+	c.client = c.httpClientFactory(getBaseURL(c.account.CloudEnvironment), c.timeout, resp.AccessToken)
 	return nil
 }
 

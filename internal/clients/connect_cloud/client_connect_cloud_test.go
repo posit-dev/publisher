@@ -356,9 +356,9 @@ func (s *ConnectCloudClientSuite) TestCreateContentWithRetryAuth() {
 	}
 
 	//Factory is called to create a new client with the refresh
-	httpClientFactory := func(baseURL string, timeout time.Duration, authHeaderValue string) http_client.HTTPClient {
+	httpClientFactory := func(baseURL string, timeout time.Duration, authToken string) http_client.HTTPClient {
 		// Verify that the new token is used for the auth header
-		s.Equal("Bearer NEW_ACCESS_TOKEN", authHeaderValue)
+		s.Equal("NEW_ACCESS_TOKEN", authToken)
 		return secondHttpClient
 	}
 
