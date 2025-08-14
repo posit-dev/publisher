@@ -221,6 +221,7 @@ func (s *KeyringCredentialsTestSuite) TestForceSet() {
 	s.Equal("example", newcred.Name)
 	s.Equal("https://modified.example.com", newcred.URL)
 	s.Equal("modified-key", newcred.ApiKey)
+	s.Equal(cred.GUID, newcred.GUID, "cred should be replaced rather than created")
 
 	// Verify that the credential was updated
 	retCred, err := cs.Get(newcred.GUID)
@@ -228,6 +229,10 @@ func (s *KeyringCredentialsTestSuite) TestForceSet() {
 	s.Equal("example", retCred.Name)
 	s.Equal("https://modified.example.com", retCred.URL)
 	s.Equal("modified-key", retCred.ApiKey)
+
+	allCreds, err := cs.List()
+	s.NoError(err)
+	s.Len(allCreds, 1, "a duplicate credential should not have been created")
 }
 
 func (s *KeyringCredentialsTestSuite) TestReset() {
