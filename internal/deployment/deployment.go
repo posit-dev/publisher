@@ -53,6 +53,15 @@ type Deployment struct {
 	Renv          *renv.Lockfile    `toml:"renv,omitempty" json:"renv"`
 }
 
+func (d *Deployment) PopulateDefaults() {
+	if d.LogsURL == "" && d.ID != "" {
+		d.LogsURL = util.GetLogsURL(d.ServerURL, d.ID)
+	}
+	if d.Configuration != nil {
+		d.Configuration.PopulateDefaults()
+	}
+}
+
 type ConnectCloud struct {
 	AccountName string `toml:"account_name" json:"accountName"`
 }
@@ -120,9 +129,8 @@ func FromFile(path util.AbsolutePath) (*Deployment, error) {
 	}
 
 	// Migration
-	if d.LogsURL == "" && d.ID != "" {
-		d.LogsURL = util.GetLogsURL(d.ServerURL, d.ID)
-	}
+	d.PopulateDefaults()
+
 	return d, nil
 }
 

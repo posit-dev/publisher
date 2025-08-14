@@ -468,7 +468,11 @@ func (s *PublishConnectSuite) TestEmitErrorEventsNoTarget() {
 	log := logging.New()
 
 	emitter := events.NewCapturingEmitter()
-	state := &state.State{}
+	state := &state.State{
+		Config: &config.Config{
+			ProductType: config.ProductTypeConnect,
+		},
+	}
 	publisher := &defaultPublisher{
 		log:           log,
 		emitter:       emitter,
@@ -499,6 +503,9 @@ func (s *PublishConnectSuite) TestEmitErrorEventsWithTarget() {
 	emitter := events.NewCapturingEmitter()
 	state := &state.State{
 		Dir: base,
+		Config: &config.Config{
+			ProductType: config.ProductTypeConnect,
+		},
 		Account: &accounts.Account{
 			URL: "connect.example.com",
 		},
@@ -755,8 +762,8 @@ func (s *PublishConnectCloudSuite) publishWithCloudClient(
 
 	// Create mock Cloud client
 	cloudClient := connect_cloud.NewMockClient()
-	cloudClientFactory = func(env types.CloudEnvironment, log logging.Logger, timeout time.Duration, accessToken string) connect_cloud.APIClient {
-		return cloudClient
+	cloudClientFactory = func(env types.CloudEnvironment, log logging.Logger, timeout time.Duration, account *accounts.Account, authorizationHeader string) (connect_cloud.APIClient, error) {
+		return cloudClient, nil
 	}
 
 	// Setup content response for creation/update
@@ -921,6 +928,20 @@ func (s *PublishConnectCloudSuite) publishWithCloudClient(
 	}
 	if expectedErr == nil {
 		s.NoError(err)
+
+		s.Equal(12, len(emitter.Events))
+		s.Equal("publish/start", emitter.Events[0].Type)
+		s.Equal("publish/createNewDeployment/start", emitter.Events[1].Type)
+		s.Equal("publish/createNewDeployment/success", emitter.Events[2].Type)
+		s.Equal("publish/getRPackageDescriptions/start", emitter.Events[3].Type)
+		s.Equal("publish/getRPackageDescriptions/success", emitter.Events[4].Type)
+		s.Equal("publish/createBundle/start", emitter.Events[5].Type)
+		s.Equal("publish/createBundle/success", emitter.Events[6].Type)
+		s.Equal("publish/deployContent/start", emitter.Events[7].Type)
+		s.Equal("publish/uploadBundle/start", emitter.Events[8].Type)
+		s.Equal("publish/uploadBundle/success", emitter.Events[9].Type)
+		s.Equal("publish/deployContent/success", emitter.Events[10].Type)
+		s.Equal("publish/success", emitter.Events[11].Type)
 	} else {
 		s.NotNil(err)
 		s.Equal(expectedErr.Error(), err.Error())
