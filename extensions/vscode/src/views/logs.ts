@@ -5,6 +5,7 @@ import {
   EventEmitter,
   ExtensionContext,
   ProviderResult,
+  ThemeColor,
   ThemeIcon,
   TreeDataProvider,
   TreeItem,
@@ -460,15 +461,24 @@ export class LogsTreeStageItem extends TreeItem {
     switch (status) {
       case LogStageStatus.notStarted:
         this.label = this.stage.inactiveLabel;
-        this.iconPath = new ThemeIcon("circle-large-outline");
+        this.iconPath = new ThemeIcon(
+          "circle-large-outline",
+          new ThemeColor("testing.iconQueued"),
+        );
         break;
       case LogStageStatus.neverStarted:
         this.label = this.stage.inactiveLabel;
-        this.iconPath = new ThemeIcon("circle-slash");
+        this.iconPath = new ThemeIcon(
+          "circle-slash",
+          new ThemeColor("testing.iconSkipped"),
+        );
         break;
       case LogStageStatus.skipped:
         this.label = `${this.stage.inactiveLabel} (skipped)`;
-        this.iconPath = new ThemeIcon("check");
+        this.iconPath = new ThemeIcon(
+          "check",
+          new ThemeColor("testing.iconSkipped"),
+        );
         break;
       case LogStageStatus.inProgress:
         this.label = this.stage.activeLabel;
@@ -476,21 +486,33 @@ export class LogsTreeStageItem extends TreeItem {
         break;
       case LogStageStatus.completed:
         this.label = this.stage.inactiveLabel;
-        this.iconPath = new ThemeIcon("check");
+        this.iconPath = new ThemeIcon(
+          "check",
+          new ThemeColor("testing.iconPassed"),
+        );
         break;
       case LogStageStatus.failed:
         this.label = this.stage.inactiveLabel;
-        this.iconPath = new ThemeIcon("error");
+        this.iconPath = new ThemeIcon(
+          "error",
+          new ThemeColor("testing.iconErrored"),
+        );
         this.collapsibleState = TreeItemCollapsibleState.Expanded;
         break;
       case LogStageStatus.canceled:
         this.label = this.stage.inactiveLabel;
-        this.iconPath = new ThemeIcon("circle-slash");
+        this.iconPath = new ThemeIcon(
+          "circle-slash",
+          new ThemeColor("testing.iconSkipped"),
+        );
         this.collapsibleState = TreeItemCollapsibleState.Expanded;
         break;
       case LogStageStatus.notApplicable:
         this.label = `${this.stage.inactiveLabel} (not applicable)`;
-        this.iconPath = new ThemeIcon("circle-slash");
+        this.iconPath = new ThemeIcon(
+          "circle-slash",
+          new ThemeColor("testing.iconSkipped"),
+        );
         break;
     }
   }
