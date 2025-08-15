@@ -1,15 +1,23 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
-describe("Create Deployments", () => {
+// Skipping in CI only because of unresolved permissions issues
+Cypress.skipCI(describe)("Create Deployments", () => {
+  // eslint-disable-next-line mocha/no-top-level-hooks
   beforeEach(() => {
     cy.resetConnect();
     cy.setAdminCredentials();
-    cy.clearupDeployments(".");
-    cy.clearupDeployments("fastapi-simple");
     cy.visit("/");
   });
 
+  // eslint-disable-next-line mocha/no-top-level-hooks
+  afterEach(() => {
+    cy.clearupDeployments(".");
+    cy.clearupDeployments("fastapi-simple");
+  });
+
   it("fastapi at top of workspace", () => {
+    cy.waitForPublisherIframe(); // Wait after triggering extension
+    cy.debugIframes();
     cy.createDeployment(
       ".",
       "simple.py",
@@ -41,9 +49,19 @@ describe("Create Deployments", () => {
         return cy.log("File saved.");
       })
       .deployCurrentlySelected();
+    cy.retryWithBackoff(
+      () =>
+        cy.findUniqueInPublisherWebview(
+          '[data-automation="publisher-deployment-section"]',
+        ),
+      5,
+      500,
+    ).should("exist");
   });
 
   it("fastAPI in subdirectory of workspace", () => {
+    cy.waitForPublisherIframe(); // Wait after triggering extension
+    cy.debugIframes();
     cy.createDeployment(
       "fastapi-simple",
       "fastapi-main.py",
@@ -75,5 +93,13 @@ describe("Create Deployments", () => {
         return cy.log("File saved.");
       })
       .deployCurrentlySelected();
+    cy.retryWithBackoff(
+      () =>
+        cy.findUniqueInPublisherWebview(
+          '[data-automation="publisher-deployment-section"]',
+        ),
+      5,
+      500,
+    ).should("exist");
   });
 });

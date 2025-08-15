@@ -20,5 +20,5 @@ cat <<EOF > /home/coder/.local/share/code-server/User/settings.json
 
 EOF
 
-# Run the original code server entrypoint that starts the service
-/usr/bin/code-server --disable-workspace-trust --auth none --bind-addr 0.0.0.0:8080 .
+# Code server entrypoint that starts the service
+exec /usr/bin/code-server --disable-workspace-trust --auth none --bind-addr 0.0.0.0:8080 .

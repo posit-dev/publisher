@@ -47,6 +47,10 @@ Cypress.Commands.add(
       .should("be.visible", { timeout: 10000 })
       .click();
 
+    // Small wait to allow the UI to settle in CI before proceeding
+    // eslint-disable-next-line cypress/no-unnecessary-waiting
+    cy.wait(1000);
+
     // Create a new deployment via the select-deployment button
     cy.publisherWebview()
       .findByTestId("select-deployment")
