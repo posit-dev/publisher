@@ -57,8 +57,23 @@ func (s *ContentRequestSuite) TestGetContentRequestBase() {
 		Python: &config.Python{
 			Version: "3.10.0",
 		},
+		ConnectCloud: &config.ConnectCloud{
+			VanityName: "test-vanity-name",
+			AccessControl: &config.ConnectCloudAccessControl{
+				PublicAccess:       true,
+				OrganizationAccess: config.OrganizationAccessTypeViewer,
+			},
+		},
+		Environment: map[string]string{
+			"ENV_VAR_1": "env_value_1",
+			"ENV_VAR_2": "env_value_2",
+		},
 	}
 	s.publisher.SaveName = "test-save-name"
+	s.publisher.Secrets = map[string]string{
+		"SECRET_1": "secret_value_1",
+		"SECRET_2": "secret_value_2",
+	}
 
 	// Call getContentRequestBase
 	base, err := s.publisher.getContentRequestBase()
@@ -70,8 +85,9 @@ func (s *ContentRequestSuite) TestGetContentRequestBase() {
 	// Verify all fields are set correctly
 	s.Equal("Test Content Title", base.Title)
 	s.Equal("Test content description", base.Description)
-	s.Equal(clienttypes.ViewPrivateEditPrivate, base.Access)
+	s.Equal(clienttypes.ViewPublicEditPrivate, base.Access)
 	s.Equal(clienttypes.PythonDashMode, base.AppMode)
+	s.Equal("test-vanity-name", base.VanityName)
 
 	// Verify NextRevision fields
 	s.Equal("bundle", base.NextRevision.SourceType)
@@ -80,6 +96,17 @@ func (s *ContentRequestSuite) TestGetContentRequestBase() {
 	s.Equal(clienttypes.ContentTypeDash, base.NextRevision.ContentType)
 	s.Equal(clienttypes.PythonDashMode, base.NextRevision.AppMode)
 	s.Equal("app.py", base.NextRevision.PrimaryFile)
+
+	// Verify Secrets includes both environment variables and secrets
+	s.Len(base.Secrets, 4) // 2 environment variables + 2 secrets
+	secretMap := make(map[string]string)
+	for _, secret := range base.Secrets {
+		secretMap[secret.Name] = secret.Value
+	}
+	s.Equal("env_value_1", secretMap["ENV_VAR_1"])
+	s.Equal("env_value_2", secretMap["ENV_VAR_2"])
+	s.Equal("secret_value_1", secretMap["SECRET_1"])
+	s.Equal("secret_value_2", secretMap["SECRET_2"])
 }
 
 func (s *ContentRequestSuite) TestGetContentRequestBaseNoTitle() {
