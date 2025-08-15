@@ -4,6 +4,7 @@ package connect_cloud
 
 import (
 	"fmt"
+	"maps"
 
 	"github.com/posit-dev/publisher/internal/clients/types"
 	"github.com/posit-dev/publisher/internal/config"
@@ -53,6 +54,52 @@ func (c *ServerPublisher) getContentRequestBase() (*types.ContentRequestBase, er
 
 	appMode := types.AppModeFromType(c.Config.Type)
 
+	combinedEnv := make(map[string]string)
+	maps.Copy(combinedEnv, c.Config.Environment)
+	maps.Copy(combinedEnv, c.Secrets)
+	secrets := make([]types.Secret, 0, len(c.Secrets))
+	for k, v := range combinedEnv {
+		secrets = append(secrets, types.Secret{
+			Name:  k,
+			Value: v,
+		})
+	}
+
+	cloudCfg := c.Config.ConnectCloud
+
+	access := types.ViewPrivateEditPrivate
+	vanityName := ""
+	if cloudCfg != nil {
+		if cloudCfg.AccessControl != nil {
+			orgAccess := cloudCfg.AccessControl.OrganizationAccess
+			publicAccess := cloudCfg.AccessControl.PublicAccess
+			switch orgAccess {
+			case config.OrganizationAccessTypeViewer:
+				if publicAccess {
+					access = types.ViewPublicEditPrivate
+				} else {
+					access = types.ViewTeamEditPrivate
+				}
+			case config.OrganizationAccessTypeEditor:
+				if publicAccess {
+					access = types.ViewPublicEditTeam
+				} else {
+					access = types.ViewTeamEditTeam
+				}
+			default:
+				// config.OrganizationAccessTypeDisabled
+				if publicAccess {
+					c.log.Warn("Organization access is disabled, but public access is enabled - organization access will be set to viewer.")
+					access = types.ViewPublicEditPrivate
+				} else {
+					access = types.ViewPrivateEditPrivate
+				}
+			}
+		}
+
+		vanityName = cloudCfg.VanityName
+	}
+
 	return &types.ContentRequestBase{
 		Title:       title,
 		Description: c.Config.Description,
@@ -64,7 +111,9 @@ func (c *ServerPublisher) getContentRequestBase() (*types.ContentRequestBase, er
 			AppMode:       appMode,
 			PrimaryFile:   c.Config.Entrypoint,
 		},
-		Access:  types.ViewPrivateEditPrivate,
-		AppMode: types.AppModeFromType(c.Config.Type),
+		Access:     access,
+		AppMode:    types.AppModeFromType(c.Config.Type),
+		Secrets:    secrets,
+		VanityName: vanityName,
 	}, nil
 }
