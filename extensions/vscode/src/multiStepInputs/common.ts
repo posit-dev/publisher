@@ -8,10 +8,10 @@ import {
   ProductType,
   ProductName,
   ProductDescription,
-} from "src/api";
-import { getSummaryStringFromError } from "src/utils/errors";
-import { isAxiosErrorWithJson } from "src/utils/errorTypes";
-import { normalizeURL } from "src/utils/url";
+} from "../api";
+import { getSummaryStringFromError } from "../utils/errors";
+import { isAxiosErrorWithJson } from "../utils/errorTypes";
+import { normalizeURL } from "../utils/url";
 import {
   InputBoxValidationSeverity,
   QuickPickItem,
@@ -28,9 +28,9 @@ import {
   AuthToken,
   ConnectCloudAccount,
   DeviceAuth,
-} from "src/api/types/connectCloud";
+} from "../api/types/connectCloud";
 import axios from "axios";
-import { showProgress } from "src/utils/progress";
+import { showProgress } from "../utils/progress";
 
 export const createNewCredentialLabel = "Create a New Credential";
 
