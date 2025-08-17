@@ -478,6 +478,9 @@ export async function newConnectCloudCredential(
     input: MultiStepInput,
     state: MultiStepState,
   ) {
+    // default the credential name to the account name
+    state.data.name =
+      typeof state.data.accountName === "string" ? state.data.accountName : "";
     state.data.name = await inputCredentialNameStep(
       input,
       state,

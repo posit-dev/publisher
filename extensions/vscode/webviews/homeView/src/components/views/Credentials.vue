@@ -30,8 +30,9 @@ import WelcomeView from "src/components/WelcomeView.vue";
 import { useHomeStore } from "src/stores/home";
 import { useHostConduitService } from "src/HostConduitService";
 
-import { Credential, ServerType } from "../../../../../src/api";
+import { Credential, ProductName } from "../../../../../src/api";
 import { WebviewToHostMessageType } from "../../../../../src/types/messages/webviewToHostMessages";
+import { isConnectCloud } from "../../../../../src/multiStepInputs/common";
 
 const home = useHomeStore();
 
@@ -59,8 +60,8 @@ const sectionActions = computed(() => {
 });
 
 const getDescription = (credential: Credential) => {
-  return credential.serverType === ServerType.CONNECT_CLOUD
-    ? `${credential.accountName} | Posit Connect Cloud`
+  return isConnectCloud(credential.serverType)
+    ? ProductName.CONNECT_CLOUD
     : credential.url;
 };
 
