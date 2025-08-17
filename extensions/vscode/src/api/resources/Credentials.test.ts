@@ -56,7 +56,7 @@ describe("Credentials API client", () => {
         accessToken: "",
       },
       {
-        headers: { CONNECT_CLOUD_ENV_HEADER },
+        headers: { ...CONNECT_CLOUD_ENV_HEADER },
       },
     );
   });
@@ -93,7 +93,7 @@ describe("Credentials API client", () => {
         snowflakeConnection: "",
       },
       {
-        headers: { CONNECT_CLOUD_ENV_HEADER },
+        headers: { ...CONNECT_CLOUD_ENV_HEADER },
       },
     );
   });
