@@ -20,6 +20,7 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
+      external: ["vscode"], // Exclude 'vscode' module
       output: {
         entryFileNames: `[name].js`,
         chunkFileNames: `[name].js`,
