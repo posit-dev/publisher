@@ -32,7 +32,7 @@ import { useHostConduitService } from "src/HostConduitService";
 
 import { Credential, ProductName } from "../../../../../src/api";
 import { WebviewToHostMessageType } from "../../../../../src/types/messages/webviewToHostMessages";
-import { isConnectCloud } from "../../../../../src/multiStepInputs/common";
+import { isConnectCloud } from "../../../../../src/utils/multiStepHelpers";
 
 const home = useHomeStore();
 

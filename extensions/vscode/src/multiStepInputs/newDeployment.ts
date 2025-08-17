@@ -50,12 +50,12 @@ import {
   vscodeOpenFiles,
 } from "src/utils/files";
 import { ENTRYPOINT_FILE_EXTENSIONS } from "src/constants";
+import { newCredential } from "./newCredential";
 import {
   createNewCredentialLabel,
-  getProductType,
   isConnectCloud,
-} from "src/multiStepInputs/common";
-import { newCredential } from "./newCredential";
+  getProductType,
+} from "src/utils/multiStepHelpers";
 
 const viewTitle = "Create a New Deployment";
 

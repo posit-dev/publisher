@@ -18,7 +18,6 @@ import {
   fetchDeviceAuth,
   fetchAuthToken,
   fetchConnectCloudAccounts,
-  getPublishableAccounts,
   getExistingCredentials,
 } from "src/multiStepInputs/common";
 import {
@@ -31,6 +30,7 @@ import {
   CONNECT_CLOUD_ACCOUNT_URL,
   CONNECT_CLOUD_SIGNUP_URL,
 } from "src/constants";
+import { getPublishableAccounts } from "src/utils/multiStepHelpers";
 
 export async function newConnectCloudCredential(
   viewId: string,
