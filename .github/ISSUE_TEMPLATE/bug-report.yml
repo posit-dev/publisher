@@ -34,14 +34,12 @@ body:
     validations:
       required: false
 
-  - type: dropdown
+  - type: input
     id: ide
     attributes:
       label: IDE
       description: "Which IDE are you using?"
-      options:
-        - Positron
-        - VS Code
+      placeholder: "e.g., Positron, VS Code, other"
     validations:
       required: false
 
