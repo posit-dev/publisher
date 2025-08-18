@@ -73,7 +73,7 @@ func (ks *keyringCredentialsService) Delete(guid string) error {
 		ks.log.Debug("Failed to remove GUID from guid list", "error", err.Error())
 	}
 
-	return ks.save(table)
+	return nil
 }
 
 func (ks *keyringCredentialsService) Get(guid string) (*Credential, error) {
@@ -202,9 +202,7 @@ func (ks *keyringCredentialsService) Reset() (string, error) {
 		ks.log.Debug("Failed to delete credential GUIDs list", "error", err.Error())
 	}
 
-	// Initialize with empty table
-	newTable := make(map[string]CredentialRecord)
-	return "", ks.save(newTable)
+	return "", nil
 }
 
 func (ks *keyringCredentialsService) checkForConflicts(
