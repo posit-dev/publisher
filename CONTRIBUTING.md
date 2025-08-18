@@ -192,6 +192,14 @@ just stop
 **NOTE: ** If you are updating the images in any way, where you need to rebuild the images with `just build-images`,
 you will need to run the `just stop` command to remove the existing containers before running `just dev`.
 
+#### Repeat Tests Headless Script
+
+Allows you to run your Cypress E2E tests multiple times in headless mode, either for all tests or for specific test files. It is useful for detecting flaky tests and verifying test suite stability.
+
+```bash
+./repeat-cypress-headless.sh [REPEAT=N] [spec1] [spec2] [...]
+```
+
 ## Development
 
 ### Build Tools
