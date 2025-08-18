@@ -21,6 +21,9 @@ body:
     id: connect-version
     attributes:
       label: Connect Version
+      description: |
+        Find this in Connect: System page → Info tab → under System Info.
+        See https://docs.posit.co/connect/admin/server-management/#determine-version-installed
       placeholder: "e.g., 2025.07.0"
     validations:
       required: false
