@@ -135,7 +135,10 @@ func (v *Validator[T]) ValidateContent(data any) error {
 		if ok {
 			// Return all causes in the Data field of a single error.
 			e := toTomlValidationError(validationErr)
-			return types.NewAgentError(tomlValidationErrorCode, e, e)
+			aErr := types.NewAgentError(tomlValidationErrorCode, e, e)
+			// NewAgentError uppercases the first letter, but we re-lowercase it since it's a field name.
+			aErr.Message = strings.ToLower(aErr.Message[:1]) + aErr.Message[1:]
+			return aErr
 		} else {
 			return err
 		}
