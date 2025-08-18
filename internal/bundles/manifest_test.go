@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/spf13/afero"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/posit-dev/publisher/internal/config"
@@ -107,31 +106,6 @@ func (s *ManifestSuite) TestToJSON() {
 	decodedManifest, err := ReadManifest(bytes.NewReader(manifestJson))
 	s.Nil(err)
 	s.Equal(manifest, decodedManifest)
-}
-
-func (s *ManifestSuite) TestReadManifestFile() {
-	manifestJson := []byte(`{"version": 1, "platform": "4.1.0"}`)
-	manifestPath := util.NewPath(ManifestFilename, afero.NewMemMapFs())
-	err := manifestPath.WriteFile(manifestJson, 0600)
-	s.Nil(err)
-
-	manifest, err := ReadManifestFile(manifestPath)
-	s.Nil(err)
-	s.Equal(&Manifest{
-		Version:  1,
-		Platform: "4.1.0",
-		Packages: PackageMap{},
-		Files:    ManifestFileMap{},
-	}, manifest)
-}
-
-func (s *ManifestSuite) TestReadManifestFileErr() {
-	fs := utiltest.NewMockFs()
-	fs.On("Open", mock.Anything).Return(nil, os.ErrNotExist)
-	manifestPath := util.NewPath(ManifestFilename, fs)
-	manifest, err := ReadManifestFile(manifestPath)
-	s.ErrorIs(err, os.ErrNotExist)
-	s.Nil(manifest)
 }
 
 func (s *ManifestSuite) TestNewManifestFromConfig() {
