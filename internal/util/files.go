@@ -24,21 +24,6 @@ func Chdir(dir string) (string, error) {
 	return oldWd, nil
 }
 
-// DirFromPath returns the directory associated with the specified path.
-// If the path is a directory, it is returned.
-// Otherwise, the parent dir of the path is returned.
-func DirFromPath(path Path) (Path, error) {
-	isDir, err := path.IsDir()
-	if err != nil {
-		return Path{}, err
-	}
-	if isDir {
-		return path, nil
-	} else {
-		return path.Dir(), nil
-	}
-}
-
 var pythonBinPaths = []string{
 	"bin/python",
 	"bin/python3",
