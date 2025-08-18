@@ -227,18 +227,6 @@ func (ks *keyringCredentialsService) checkForConflicts(
 
 // Saves the CredentialTable by storing each credential separately
 func (ks *keyringCredentialsService) save(table CredentialTable) error {
-	// Get existing credentials to determine what needs to be updated/added/removed
-	existingCreds, loadErr := ks.loadIndividualCredentials()
-	if loadErr != nil {
-		return fmt.Errorf("failed to load existing credentials: %v", loadErr)
-	}
-
-	// Track existing GUIDs to detect deletions
-	existingGUIDs := make(map[string]bool)
-	for guid := range existingCreds {
-		existingGUIDs[guid] = true
-	}
-
 	// Add or update each credential in the table
 	for guid, record := range table {
 		data, err := json.Marshal(record)
@@ -250,18 +238,6 @@ func (ks *keyringCredentialsService) save(table CredentialTable) error {
 		err = keyring.Set(ServiceName, key, string(data))
 		if err != nil {
 			return fmt.Errorf("failed to set credential %s: %v", guid, err)
-		}
-
-		// Mark this GUID as processed
-		delete(existingGUIDs, guid)
-	}
-
-	// Delete any credentials that are no longer in the table
-	for guid := range existingGUIDs {
-		key := CredentialKeyPrefix + guid
-		err := keyring.Delete(ServiceName, key)
-		if err != nil && err != keyring.ErrNotFound {
-			ks.log.Debug("Failed to delete credential", "credential", guid, "error", err.Error())
 		}
 	}
 
