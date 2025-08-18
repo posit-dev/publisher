@@ -5,8 +5,9 @@ package types
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/posit-dev/publisher/internal/logging"
 	"net/http"
+
+	"github.com/posit-dev/publisher/internal/logging"
 )
 
 func jsonResult(w http.ResponseWriter, status int, result any) {
@@ -83,7 +84,12 @@ func APIErrorInvalidTOMLFileFromAgentError(aerr AgentError) APIErrorInvalidTOMLF
 	}
 }
 
-// ErrorTomlValidationError
+type ErrorTomlValidationDetailsSubError struct {
+	Key             string `json:"key"`
+	Problem         string `json:"problem"`
+	SchemaReference string `json:"schemaReference"`
+}
+
 type ErrorTomlValidationDetails struct {
 	Filename        string `json:"filename"`
 	Message         string `json:"message"`
