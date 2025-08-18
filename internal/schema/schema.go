@@ -147,14 +147,6 @@ func (v *Validator[T]) ValidateContent(data any) error {
 }
 
 func (v *Validator[T]) ValidateTOMLFile(path util.AbsolutePath) error {
-	// First, try to read the TOML into the object.
-	// This will return nicer errors from the toml package
-	// for things like fields that cannot be mapped.
-	//var typedContent T
-	//err := util.ReadTOMLFile(path, &typedContent)
-	//if err != nil {
-	//	return err
-	//}
 	// Read the TOML generically to get the anyContent.
 	// Can't use v.object here because Validate
 	// doesn't accept some object types.
