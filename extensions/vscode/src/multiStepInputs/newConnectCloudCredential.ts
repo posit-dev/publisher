@@ -136,7 +136,8 @@ export async function newConnectCloudCredential(
         accessToken: <string | undefined>undefined, // eventual type is string
         refreshToken: <string | undefined>undefined, // eventual type is string
         accountId: <string | undefined>undefined, // eventual type is string
-        accountName: <string | undefined>undefined, // eventual type is string
+        accountName: <string | undefined>undefined, // eventual type is
+        displayName: <string | undefined>undefined, // eventual type is string
       },
       promptStepNumbers: {},
       isValid: () => {
@@ -293,6 +294,12 @@ export async function newConnectCloudCredential(
   ) {
     const accessToken =
       typeof state.data.accessToken === "string" ? state.data.accessToken : "";
+    const value = connectCloudData.shouldPoll
+      ? "Waiting for account setup in Connect Cloud..."
+      : "Retrieving accounts from Connect Cloud ...";
+    const message = connectCloudData.shouldPoll
+      ? "Please complete your account setup or 'Escape' to abort"
+      : "Please wait while we get your account data or 'Escape' to abort";
 
     try {
       // we await this input box that it is treated as an information message
@@ -308,14 +315,13 @@ export async function newConnectCloudCredential(
         enabled: false,
         // shows a progress indicator on the input box
         busy: true,
-        value: "Retrieving accounts from Connect Cloud ...",
+        value,
         // moves the cursor to the start of the value text to avoid the automated text highlight
         valueSelection: [0, 0],
         // displays a custom information message below the input box that hides the prompt and
         // default message: "Please 'Enter' to confirm your input or 'Escape' to cancel"
         validationMessage: {
-          message:
-            "Please wait while we get your account data or 'Escape' to abort",
+          message,
           severity: InputBoxValidationSeverity.Info,
         },
         prompt: "",
@@ -371,7 +377,8 @@ export async function newConnectCloudCredential(
         steps[step.INPUT_CRED_NAME](input, state);
       // populate the selected account props
       state.data.accountId = accounts[0].id;
-      state.data.accountName = accounts[0].displayName;
+      state.data.accountName = accounts[0].name;
+      state.data.displayName = accounts[0].displayName;
     } else if (accounts.length > 1) {
       // case 2: there are multiple publishable accounts, display the account selector
       name = step.INPUT_ACCT;
@@ -423,7 +430,8 @@ export async function newConnectCloudCredential(
     const account = accounts.find((a) => a.displayName === pick.label);
     // fallback to the first publishable account if the selected account is ever not found
     state.data.accountId = account?.id || accounts[0].id;
-    state.data.accountName = account?.displayName || accounts[0].displayName;
+    state.data.accountName = account?.name || accounts[0].name;
+    state.data.displayName = account?.displayName || accounts[0].displayName;
 
     return {
       name: step.INPUT_CRED_NAME,
@@ -478,16 +486,12 @@ export async function newConnectCloudCredential(
     input: MultiStepInput,
     state: MultiStepState,
   ) {
-    // default the credential name to the account name
-    const preFilledName =
-      typeof state.data.accountName === "string" ? state.data.accountName : "";
     state.data.name = await inputCredentialNameStep(
       input,
       state,
       serverType,
       productName,
       credentials,
-      preFilledName,
     );
 
     // last step to create a new credential
