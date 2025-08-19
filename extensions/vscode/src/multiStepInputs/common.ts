@@ -5,21 +5,35 @@ import {
   Credential,
   SnowflakeConnection,
   ServerType,
-  ProductType,
   ProductName,
   ProductDescription,
-} from "src/api";
-import { getSummaryStringFromError } from "src/utils/errors";
-import { isAxiosErrorWithJson } from "src/utils/errorTypes";
-import { normalizeURL } from "src/utils/url";
-import { QuickPickItem, ThemeIcon, window } from "vscode";
-import { ApiResponse, QuickPickItemWithIndex } from "./multiStepHelper";
+} from "../api";
+import { getSummaryStringFromError } from "../utils/errors";
+import { isAxiosErrorWithJson } from "../utils/errorTypes";
+import { normalizeURL } from "../utils/url";
+import {
+  InputBoxValidationSeverity,
+  QuickPickItem,
+  ThemeIcon,
+  window,
+} from "vscode";
+import {
+  ApiResponse,
+  MultiStepInput,
+  MultiStepState,
+  QuickPickItemWithIndex,
+} from "./multiStepHelper";
 import {
   AuthToken,
   ConnectCloudAccount,
   DeviceAuth,
-} from "src/api/types/connectCloud";
+} from "../api/types/connectCloud";
 import axios from "axios";
+import { showProgress } from "../utils/progress";
+import {
+  isConnectCloud,
+  createNewCredentialLabel,
+} from "../utils/multiStepHelpers";
 
 // Search for the first credential that includes
 // the targetURL.
@@ -33,33 +47,6 @@ export function findExistingCredentialByURL(
     return newURL.includes(existing);
   });
 }
-
-export const isConnect = (serverType: ServerType) => {
-  return serverType === ServerType.CONNECT;
-};
-
-export const isConnectCloud = (serverType: ServerType) => {
-  return serverType === ServerType.CONNECT_CLOUD;
-};
-
-export const isSnowflake = (serverType: ServerType) => {
-  return serverType === ServerType.SNOWFLAKE;
-};
-
-export const getProductType = (serverType: ServerType): ProductType => {
-  switch (serverType) {
-    case ServerType.CONNECT:
-      return ProductType.CONNECT;
-    case ServerType.SNOWFLAKE:
-      return ProductType.CONNECT;
-    case ServerType.CONNECT_CLOUD:
-      return ProductType.CONNECT_CLOUD;
-  }
-};
-
-export const getPublishableAccounts = (accounts: ConnectCloudAccount[]) => {
-  return accounts.filter((a) => a.permissionToPublish);
-};
 
 // List of all available platforms
 export const platformList: QuickPickItem[] = [
@@ -124,28 +111,26 @@ export const fetchDeviceAuth = async (): Promise<ApiResponse<DeviceAuth>> => {
 export const fetchAuthToken = async (
   deviceCode: string,
 ): Promise<ApiResponse<AuthToken>> => {
-  let intervalAdjustment = 0;
   try {
     const api = await useApi();
     const resp = await api.connectCloud.token(deviceCode);
-    return { data: resp.data, intervalAdjustment };
+    return { data: resp.data, intervalAdjustment: 0 };
   } catch (err: unknown) {
     if (axios.isAxiosError(err) && err.response?.data?.code) {
-      // handle the expected polling errors
+      // handle the expected polling error codes
       switch (err.response.data.code) {
         case "deviceAuthSlowDown":
-          // adjust the interval by 1 second
-          intervalAdjustment = 1000;
-          break;
+          // this is not an actual error, adjust the interval by 1 second
+          // and return the promise w/o the `data` property to continue polling
+          return { intervalAdjustment: 1000 };
         case "deviceAuthPending":
-          // DO NOTHING, this is expected while authenticating
-          break;
+          // this is not an actual error, this is expected while authenticating
+          // just return the promise w/o the `data` property to continue polling
+          return { intervalAdjustment: 0 };
         default:
           // bubble up any other errors
           throw err;
       }
-      // this is not an actual error so return the promise w/o the `data` property
-      return { intervalAdjustment };
     } else {
       // there was an unexpected error, bubble up the error
       throw err;
@@ -160,4 +145,83 @@ export const fetchConnectCloudAccounts = async (
   const api = await useApi();
   const resp = await api.connectCloud.accounts(accessToken);
   return { data: resp.data, intervalAdjustment: 0 };
+};
+
+// ***************************************************************
+// Step: Name the credential (used for all platforms)
+// ***************************************************************
+export const inputCredentialNameStep = async (
+  input: MultiStepInput,
+  state: MultiStepState,
+  serverType: ServerType,
+  productName: ProductName,
+  credentials: Credential[],
+  preFilledName: string = "",
+) => {
+  const currentName =
+    typeof state.data.name === "string" ? state.data.name : "";
+  const accountName =
+    typeof state.data.accountName === "string" ? state.data.accountName : "";
+
+  const resp = await input.showInputBox({
+    title: state.title,
+    step: 0,
+    totalSteps: 0,
+    value: currentName || preFilledName,
+    prompt: `Enter a unique nickname for this ${isConnectCloud(serverType) ? "account" : "server"}.`,
+    placeholder: `${isConnectCloud(serverType) ? accountName : productName}`,
+    finalValidation: (input: string) => {
+      input = input.trim();
+      if (input === "") {
+        return Promise.resolve({
+          message: "Error: Invalid Nickname (a value is required).",
+          severity: InputBoxValidationSeverity.Error,
+        });
+      }
+      const credInUse = credentials.some((cred) => cred.name === input);
+      if (credInUse) {
+        return Promise.resolve({
+          message:
+            "Error: Invalid Nickname (value is already in use by a different credential).",
+          severity: InputBoxValidationSeverity.Error,
+        });
+      }
+      if (input === createNewCredentialLabel) {
+        return Promise.resolve({
+          message:
+            "Error: Nickname is reserved for internal use. Please provide another value.",
+          severity: InputBoxValidationSeverity.Error,
+        });
+      }
+      return Promise.resolve(undefined);
+    },
+    shouldResume: () => Promise.resolve(false),
+    ignoreFocusOut: true,
+  });
+
+  return resp.trim();
+};
+
+// ***************************************************************
+// Fetch the existing credentials while waiting for the api
+// promise to complete while showing progress
+// ***************************************************************
+export const getExistingCredentials = async (viewId: string) => {
+  let credentials: Credential[] = [];
+  try {
+    await showProgress("Initializing::newCredential", viewId, async () => {
+      const api = await useApi();
+      const response = await api.credentials.list();
+      credentials = response.data;
+    });
+  } catch (error: unknown) {
+    const summary = getSummaryStringFromError(
+      "newCredentials, credentials.list",
+      error,
+    );
+    window.showInformationMessage(
+      `Unable to query existing credentials. ${summary}`,
+    );
+  }
+  return credentials;
 };

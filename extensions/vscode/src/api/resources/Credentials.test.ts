@@ -4,6 +4,7 @@ import { describe, expect, test, vi, beforeEach } from "vitest";
 import { AxiosInstance } from "axios";
 import { Credentials } from "./Credentials";
 import { ServerType } from "../types/contentRecords";
+import { CONNECT_CLOUD_ENV_HEADER } from "../../constants";
 
 // Simple mock for the axios client
 const mockAxiosPost = vi.fn();
@@ -22,45 +23,77 @@ describe("Credentials API client", () => {
     credentials = new Credentials(mockAxiosClient as unknown as AxiosInstance);
   });
 
-  test("create supports token authentication parameters", async () => {
+  test("connect create supports token authentication parameters", async () => {
     // Setup mock response
     mockAxiosPost.mockResolvedValue({ data: { guid: "test-guid" } });
 
-    // Call create with token parameters
-    await credentials.create(
-      "Test Credential",
-      "https://connect.example.com",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      ServerType.CONNECT,
-      "test-token-123",
-      "test-private-key-123",
-    );
+    const data = {
+      name: "Test Credential",
+      url: "https://connect.example.com",
+      apiKey: "",
+      token: "test-token-123",
+      privateKey: "test-private-key-123",
+      snowflakeConnection: "",
+    };
+
+    // Call connect create with token parameters
+    await credentials.connectCreate(data, ServerType.CONNECT);
 
     // Verify correct parameters were passed to axios post
     expect(mockAxiosPost).toHaveBeenCalledWith(
       "credentials",
       {
-        name: "Test Credential",
-        url: "https://connect.example.com",
-        apiKey: "",
-        snowflakeConnection: "",
+        name: data.name,
+        url: data.url,
+        apiKey: data.apiKey,
+        token: data.token,
+        privateKey: data.privateKey,
+        snowflakeConnection: data.snowflakeConnection,
+        serverType: ServerType.CONNECT,
         accountId: "",
         accountName: "",
         refreshToken: "",
         accessToken: "",
-        serverType: ServerType.CONNECT,
-        token: "test-token-123",
-        privateKey: "test-private-key-123",
       },
       {
-        headers: {
-          "Connect-Cloud-Environment": "production",
-        },
+        headers: { ...CONNECT_CLOUD_ENV_HEADER },
+      },
+    );
+  });
+
+  test("connect cloud create supports device authentication parameters", async () => {
+    // Setup mock response
+    mockAxiosPost.mockResolvedValue({ data: { guid: "test-guid" } });
+
+    const data = {
+      name: "Test Credential",
+      accountId: "test-account",
+      accountName: "Test Account",
+      refreshToken: "refresh-token-test",
+      accessToken: "access-token-test",
+    };
+
+    // Call connect cloud create with device auth parameters
+    await credentials.connectCloudCreate(data, ServerType.CONNECT_CLOUD);
+
+    // Verify correct parameters were passed to axios post
+    expect(mockAxiosPost).toHaveBeenCalledWith(
+      "credentials",
+      {
+        name: data.name,
+        accountId: data.accountId,
+        accountName: data.accountName,
+        refreshToken: data.refreshToken,
+        accessToken: data.accessToken,
+        serverType: ServerType.CONNECT_CLOUD,
+        url: "",
+        apiKey: "",
+        token: "",
+        privateKey: "",
+        snowflakeConnection: "",
+      },
+      {
+        headers: { ...CONNECT_CLOUD_ENV_HEADER },
       },
     );
   });

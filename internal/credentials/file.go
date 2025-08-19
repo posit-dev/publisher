@@ -12,10 +12,11 @@ import (
 	"github.com/posit-dev/publisher/internal/server_type"
 
 	"github.com/pelletier/go-toml/v2"
+	"github.com/spf13/afero"
+
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
-	"github.com/spf13/afero"
 )
 
 var fsys = afero.NewOsFs()
@@ -38,7 +39,7 @@ type fileCredential struct {
 	AccountID        string                 `toml:"account_id,omitempty"`
 	AccountName      string                 `toml:"account_name,omitempty"`
 	RefreshToken     string                 `toml:"refresh_token,omitempty"`
-	AccessToken      string                 `toml:"access_token,omitempty"`
+	AccessToken      types.CloudAuthToken   `toml:"access_token,omitempty"`
 	CloudEnvironment types.CloudEnvironment `toml:"cloud_environment,omitempty"`
 
 	// Token authentication fields
@@ -141,6 +142,14 @@ func NewFileCredentialsService(log logging.Logger) (*fileCredentialsService, err
 }
 
 func (c *fileCredentialsService) Set(credDetails CreateCredentialDetails) (*Credential, error) {
+	return c.set(credDetails, true)
+}
+
+func (c *fileCredentialsService) ForceSet(credDetails CreateCredentialDetails) (*Credential, error) {
+	return c.set(credDetails, false)
+}
+
+func (c *fileCredentialsService) set(credDetails CreateCredentialDetails, checkConflict bool) (*Credential, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -154,10 +163,12 @@ func (c *fileCredentialsService) Set(credDetails CreateCredentialDetails) (*Cred
 		return nil, err
 	}
 
-	err = c.checkForConflicts(creds, *cred)
-	if err != nil {
-		c.log.Debug("Conflicts storing new credential to file", "error", err.Error(), "filename", c.credsFilepath.String())
-		return nil, err
+	if checkConflict {
+		err = c.checkForConflicts(creds, *cred)
+		if err != nil {
+			c.log.Debug("Conflicts storing new credential to file", "error", err.Error(), "filename", c.credsFilepath.String())
+			return nil, err
+		}
 	}
 
 	creds.Credentials[credDetails.Name] = fileCredential{
@@ -245,8 +256,6 @@ func (c *fileCredentialsService) Delete(guid string) error {
 	return nil
 }
 
-// Resets the credentials file
-// it is a last resort in case the data turns out to be irrecognizable
 // Returns the backup path of the original credentials file
 func (c *fileCredentialsService) Reset() (string, error) {
 	copyFilename, err := c.backupFile()

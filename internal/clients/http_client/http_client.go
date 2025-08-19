@@ -8,6 +8,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -45,7 +46,9 @@ type defaultHTTPClient struct {
 	baseURL string
 }
 
-func NewDefaultHTTPClient(account *accounts.Account, timeout time.Duration, log logging.Logger) (*defaultHTTPClient, error) {
+var _ HTTPClient = &defaultHTTPClient{}
+
+func NewDefaultHTTPClient(account *accounts.Account, timeout time.Duration, log logging.Logger) (HTTPClient, error) {
 	baseClient, err := newHTTPClientForAccount(account, timeout, log)
 	if err != nil {
 		return nil, err
@@ -56,7 +59,7 @@ func NewDefaultHTTPClient(account *accounts.Account, timeout time.Duration, log 
 	}, nil
 }
 
-func NewBasicHTTPClient(baseURL string, timeout time.Duration) *defaultHTTPClient {
+func NewBasicHTTPClient(baseURL string, timeout time.Duration) HTTPClient {
 	baseClient := newBasicInternalHTTPClient(timeout)
 	return &defaultHTTPClient{
 		client:  baseClient,
@@ -64,13 +67,17 @@ func NewBasicHTTPClient(baseURL string, timeout time.Duration) *defaultHTTPClien
 	}
 }
 
-func NewBasicHTTPClientWithAuth(baseURL string, timeout time.Duration, authHeader string) *defaultHTTPClient {
-	baseClient := newBasicInternalHTTPClientWithAuth(timeout, authHeader)
+func NewBasicHTTPClientWithBearerAuth(baseURL string, timeout time.Duration, authValue string) HTTPClient {
+	baseClient := newBasicInternalHTTPClientWithAuth(timeout, fmt.Sprintf("Bearer %s", authValue))
 	return &defaultHTTPClient{
 		client:  baseClient,
 		baseURL: baseURL,
 	}
 }
+
+type HTTPClientWithBearerAuthFactory func(baseURL string, timeout time.Duration, authValue string) HTTPClient
+
+var _ HTTPClientWithBearerAuthFactory = NewBasicHTTPClientWithBearerAuth
 
 type HTTPError struct {
 	URL    string `mapstructure:"url"`
@@ -262,7 +269,7 @@ func loadCACertificates(path string, log logging.Logger) (*x509.CertPool, error)
 	return certPool, nil
 }
 
-func newTransport() *http.Transport {
+func NewTransport() *http.Transport {
 	// Based on http.DefaultTransport with customized dialer timeout.
 	dialer := net.Dialer{
 		Timeout:   30 * time.Second,
@@ -291,7 +298,7 @@ func newHTTPClientForAccount(account *accounts.Account, timeout time.Duration, l
 		return nil, err
 	}
 
-	transport := newTransport()
+	transport := NewTransport()
 	transport.TLSClientConfig = &tls.Config{
 		InsecureSkipVerify: account.Insecure,
 		RootCAs:            certPool,
@@ -310,7 +317,7 @@ func newHTTPClientForAccount(account *accounts.Account, timeout time.Duration, l
 
 func newBasicInternalHTTPClient(timeout time.Duration) *http.Client {
 	// Based on http.DefaultTransport with customized dialer timeout.
-	transport := newTransport()
+	transport := NewTransport()
 	return &http.Client{
 		Timeout:   timeout,
 		Transport: transport,
@@ -318,7 +325,7 @@ func newBasicInternalHTTPClient(timeout time.Duration) *http.Client {
 }
 
 func newBasicInternalHTTPClientWithAuth(timeout time.Duration, authValue string) *http.Client {
-	transport := newTransport()
+	transport := NewTransport()
 	clientAuth := auth.NewPlainAuthenticator(authValue)
 	authTransport := NewAuthenticatedTransport(transport, clientAuth)
 	return &http.Client{
@@ -328,8 +335,10 @@ func newBasicInternalHTTPClientWithAuth(timeout time.Duration, authValue string)
 }
 
 func IsHTTPAgentErrorStatusOf(err error, status int) (*types.AgentError, bool) {
-	if aerr, isAgentErr := err.(*types.AgentError); isAgentErr {
-		if httperr, isHttpErr := aerr.Err.(*HTTPError); isHttpErr {
+	var aerr *types.AgentError
+	if errors.As(err, &aerr) {
+		var httperr *HTTPError
+		if errors.As(aerr.Err, &httperr) {
 			return aerr, httperr.Status == status
 		}
 	}

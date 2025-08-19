@@ -36,6 +36,11 @@ func (m *CredentialsServiceMock) Set(credDetails credentials.CreateCredentialDet
 	return args.Get(0).(*credentials.Credential), args.Error(1)
 }
 
+func (m *CredentialsServiceMock) ForceSet(credDetails credentials.CreateCredentialDetails) (*credentials.Credential, error) {
+	args := m.Called(credDetails)
+	return args.Get(0).(*credentials.Credential), args.Error(1)
+}
+
 func (m *CredentialsServiceMock) Reset() (string, error) {
 	args := m.Called()
 	return args.Get(0).(string), args.Error(1)

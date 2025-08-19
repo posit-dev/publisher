@@ -69,8 +69,8 @@ type Environment struct {
 }
 
 type Python struct {
-	Version        string               `json:"version"` // The Python version
-	PackageManager PythonPackageManager `json:"package_manager"`
+	Version        string                `json:"version"` // The Python version
+	PackageManager *PythonPackageManager `json:"package_manager"`
 }
 
 type Quarto struct {
@@ -101,16 +101,8 @@ type Package struct {
 
 type ManifestFileMap map[string]ManifestFile
 
-func NewManifestFileMap() ManifestFileMap {
-	return ManifestFileMap{}
-}
-
 type ManifestFile struct {
 	Checksum string `json:"checksum"`
-}
-
-func NewManifestFile() ManifestFile {
-	return ManifestFile{}
 }
 
 // ReadManifest reads and parses the manifest.
@@ -142,16 +134,6 @@ func (m *Manifest) WriteManifestFile(path util.Path) error {
 	}
 	defer f.Close()
 	return m.WriteManifest(f)
-}
-
-// ReadManifest reads and parses the manifest file stored at path.
-func ReadManifestFile(path util.Path) (*Manifest, error) {
-	f, err := path.Open()
-	if err != nil {
-		return nil, fmt.Errorf("cannot open manifest file %s: %w", path, err)
-	}
-	defer f.Close()
-	return ReadManifest(f)
 }
 
 func NewManifest() *Manifest {
@@ -188,12 +170,16 @@ func NewManifestFromConfig(cfg *config.Config) *Manifest {
 		}
 	}
 	if cfg.Python != nil {
-		m.Python = &Python{
-			Version: cfg.Python.Version,
-			PackageManager: PythonPackageManager{
+		packageManager := (*PythonPackageManager)(nil)
+		if cfg.Python.PackageManager != "" {
+			packageManager = &PythonPackageManager{
 				Name:        cfg.Python.PackageManager,
 				PackageFile: cfg.Python.PackageFile,
-			},
+			}
+		}
+		m.Python = &Python{
+			Version:        cfg.Python.Version,
+			PackageManager: packageManager,
 		}
 		// If the configuration specifies a specific python version constraint
 		// (e.g. ">=3.8"), declare the environment requires that version.
@@ -225,7 +211,7 @@ func NewManifestFromConfig(cfg *config.Config) *Manifest {
 		m.Metadata.PrimaryHtml = cfg.Entrypoint
 	}
 
-	m.Metadata.HasParameters = cfg.HasParameters
+	m.Metadata.HasParameters = cfg.GetHasParameters()
 	return m
 }
 

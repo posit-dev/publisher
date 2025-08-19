@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/mitchellh/mapstructure"
+
 	"github.com/posit-dev/publisher/internal/project"
 	"github.com/posit-dev/publisher/internal/types"
 )
@@ -50,8 +51,10 @@ const (
 	PublishSetEnvVarsOp              Operation = "publish/setEnvVars"
 	PublishCreateBundleOp            Operation = "publish/createBundle"
 	PublishUpdateDeploymentOp        Operation = "publish/createDeployment"
+	PublishUpdateContentOp           Operation = "publish/updateContent"
 	PublishUploadBundleOp            Operation = "publish/uploadBundle"
 	PublishDeployBundleOp            Operation = "publish/deployBundle"
+	PublishDeployContentOp           Operation = "publish/deployContent"
 	PublishRestorePythonEnvOp        Operation = "publish/restorePythonEnv"
 	PublishRestoreREnvOp             Operation = "publish/restoreREnv"
 	PublishRunContentOp              Operation = "publish/runContent"

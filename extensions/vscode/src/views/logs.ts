@@ -5,6 +5,7 @@ import {
   EventEmitter,
   ExtensionContext,
   ProviderResult,
+  ThemeColor,
   ThemeIcon,
   TreeDataProvider,
   TreeItem,
@@ -27,6 +28,7 @@ import {
   isPublishSuccess,
   isPublishRestoreEnvStatus,
   restoreMsgToStatusSuffix,
+  ProductType,
 } from "src/api";
 import { Commands, Views } from "src/constants";
 import {
@@ -35,6 +37,7 @@ import {
 } from "src/utils/errorEnhancer";
 import { showErrorMessageWithTroubleshoot } from "src/utils/window";
 import { DeploymentFailureRenvHandler } from "src/views/deployHandlers";
+import { isConnectCloudProduct } from "src/utils/multiStepHelpers";
 
 enum LogStageStatus {
   notStarted,
@@ -44,6 +47,7 @@ enum LogStageStatus {
   completed,
   failed,
   canceled,
+  notApplicable,
 }
 
 type LogStage = {
@@ -54,6 +58,7 @@ type LogStage = {
   status: LogStageStatus;
   stages: LogStage[];
   events: EventStreamMessage[];
+  productType: ProductType[];
 };
 
 type LogsTreeItem = LogsTreeStageItem | LogsTreeLogItem;
@@ -61,6 +66,7 @@ type LogsTreeItem = LogsTreeStageItem | LogsTreeLogItem;
 const createLogStage = (
   inactiveLabel: string,
   activeLabel: string,
+  productType: ProductType[] = [],
   alternatePaths?: string[],
   collapseState?: TreeItemCollapsibleState,
   status: LogStageStatus = LogStageStatus.notStarted,
@@ -70,6 +76,7 @@ const createLogStage = (
   return {
     inactiveLabel,
     activeLabel,
+    productType,
     alternatePaths,
     collapseState,
     status,
@@ -112,41 +119,71 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
         createLogStage(
           "Get Package Descriptions",
           "Getting Package Descriptions",
+          [ProductType.CONNECT, ProductType.CONNECT_CLOUD],
         ),
       ],
       [
         "publish/checkCapabilities",
-        createLogStage("Check Capabilities", "Checking Capabilities"),
+        createLogStage("Check Capabilities", "Checking Capabilities", [
+          ProductType.CONNECT,
+        ]),
       ],
       [
         "publish/createBundle",
-        createLogStage("Create Bundle", "Creating Bundle"),
+        createLogStage("Create Bundle", "Creating Bundle", [
+          ProductType.CONNECT,
+          ProductType.CONNECT_CLOUD,
+        ]),
+      ],
+      [
+        "publish/updateContent",
+        createLogStage("Update Content", "Updating Content", [
+          ProductType.CONNECT_CLOUD,
+        ]),
       ],
       [
         "publish/uploadBundle",
-        createLogStage("Upload Bundle", "Uploading Bundle"),
+        createLogStage("Upload Bundle", "Uploading Bundle", [
+          ProductType.CONNECT,
+          ProductType.CONNECT_CLOUD,
+        ]),
       ],
       [
         "publish/createDeployment",
         createLogStage(
           "Create Deployment Record",
           "Creating Deployment Record",
+          [ProductType.CONNECT],
         ),
       ],
       [
+        "publish/deployContent",
+        createLogStage("Deploy Content", "Deploying Content", [
+          ProductType.CONNECT_CLOUD,
+        ]),
+      ],
+      [
         "publish/deployBundle",
-        createLogStage("Deploy Bundle", "Deploying Bundle"),
+        createLogStage("Deploy Bundle", "Deploying Bundle", [
+          ProductType.CONNECT,
+        ]),
       ],
       [
         "publish/restoreEnv",
-        createLogStage("Restore Environment", RestoringEnvironmentLabel),
+        createLogStage("Restore Environment", RestoringEnvironmentLabel, [
+          ProductType.CONNECT,
+        ]),
       ],
-      ["publish/runContent", createLogStage("Run Content", "Running Content")],
+      [
+        "publish/runContent",
+        createLogStage("Run Content", "Running Content", [ProductType.CONNECT]),
+      ],
       [
         "publish/validateDeployment",
         createLogStage(
           "Validate Deployment Record",
           "Validating Deployment Record",
+          [ProductType.CONNECT],
         ),
       ],
     ]);
@@ -154,6 +191,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
     this.publishingStage = createLogStage(
       "Publishing",
       "Published",
+      [ProductType.CONNECT, ProductType.CONNECT_CLOUD],
       undefined,
       TreeItemCollapsibleState.Expanded,
       LogStageStatus.notStarted,
@@ -165,6 +203,11 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
     // Reset events when a new publish starts
     this.stream.register("publish/start", (msg: EventStreamMessage) => {
       this.resetStages();
+      this.stages.forEach((stage) => {
+        if (!stage.productType.includes(msg.data.productType as ProductType)) {
+          stage.status = LogStageStatus.notApplicable;
+        }
+      });
       this.publishingStage.inactiveLabel = `Publish "${msg.data.title}" to ${msg.data.server}`;
       this.publishingStage.activeLabel = `Publishing "${msg.data.title}" to ${msg.data.server}`;
       this.publishingStage.status = LogStageStatus.inProgress;
@@ -343,7 +386,9 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
       const result = [];
       let count = 0;
       element.stages.forEach((stage: LogStage) => {
-        result.push(new LogsTreeStageItem(stage));
+        if (stage.status !== LogStageStatus.notApplicable) {
+          result.push(new LogsTreeStageItem(stage));
+        }
       });
       result.push(
         ...element.events.map(
@@ -416,15 +461,24 @@ export class LogsTreeStageItem extends TreeItem {
     switch (status) {
       case LogStageStatus.notStarted:
         this.label = this.stage.inactiveLabel;
-        this.iconPath = new ThemeIcon("circle-large-outline");
+        this.iconPath = new ThemeIcon(
+          "circle-large-outline",
+          new ThemeColor("testing.iconQueued"),
+        );
         break;
       case LogStageStatus.neverStarted:
         this.label = this.stage.inactiveLabel;
-        this.iconPath = new ThemeIcon("circle-slash");
+        this.iconPath = new ThemeIcon(
+          "circle-slash",
+          new ThemeColor("testing.iconSkipped"),
+        );
         break;
       case LogStageStatus.skipped:
         this.label = `${this.stage.inactiveLabel} (skipped)`;
-        this.iconPath = new ThemeIcon("check");
+        this.iconPath = new ThemeIcon(
+          "check",
+          new ThemeColor("testing.iconSkipped"),
+        );
         break;
       case LogStageStatus.inProgress:
         this.label = this.stage.activeLabel;
@@ -432,17 +486,33 @@ export class LogsTreeStageItem extends TreeItem {
         break;
       case LogStageStatus.completed:
         this.label = this.stage.inactiveLabel;
-        this.iconPath = new ThemeIcon("check");
+        this.iconPath = new ThemeIcon(
+          "check",
+          new ThemeColor("testing.iconPassed"),
+        );
         break;
       case LogStageStatus.failed:
         this.label = this.stage.inactiveLabel;
-        this.iconPath = new ThemeIcon("error");
+        this.iconPath = new ThemeIcon(
+          "error",
+          new ThemeColor("testing.iconErrored"),
+        );
         this.collapsibleState = TreeItemCollapsibleState.Expanded;
         break;
       case LogStageStatus.canceled:
         this.label = this.stage.inactiveLabel;
-        this.iconPath = new ThemeIcon("circle-slash");
+        this.iconPath = new ThemeIcon(
+          "circle-slash",
+          new ThemeColor("testing.iconSkipped"),
+        );
         this.collapsibleState = TreeItemCollapsibleState.Expanded;
+        break;
+      case LogStageStatus.notApplicable:
+        this.label = `${this.stage.inactiveLabel} (not applicable)`;
+        this.iconPath = new ThemeIcon(
+          "circle-slash",
+          new ThemeColor("testing.iconSkipped"),
+        );
         break;
     }
   }
@@ -467,11 +537,17 @@ export class LogsTreeLogItem extends TreeItem {
       this.iconPath = new ThemeIcon("debug-stackframe-dot");
     }
 
-    if (msg.data.dashboardUrl !== undefined) {
+    const productType = msg.data.productType as ProductType;
+    const url =
+      msg.type === "publish/failure" && isConnectCloudProduct(productType)
+        ? msg.data.logsUrl
+        : msg.data.dashboardUrl;
+
+    if (url) {
       this.command = {
         title: "View",
         command: Commands.Logs.Visit,
-        arguments: [msg.data.dashboardUrl],
+        arguments: [url],
       };
     }
   }

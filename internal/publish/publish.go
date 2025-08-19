@@ -9,19 +9,17 @@ import (
 	"os"
 	"time"
 
-	"github.com/posit-dev/publisher/internal/config"
-	"github.com/posit-dev/publisher/internal/interpreters"
-	"github.com/posit-dev/publisher/internal/project"
-	"github.com/posit-dev/publisher/internal/publish/publishhelper"
-	"github.com/posit-dev/publisher/internal/schema"
-
 	"github.com/mitchellh/mapstructure"
 
-	connectclient "github.com/posit-dev/publisher/internal/clients/connect"
+	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/inspect/dependencies/renv"
+	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/project"
+	"github.com/posit-dev/publisher/internal/publish/publishhelper"
+	"github.com/posit-dev/publisher/internal/schema"
 	"github.com/posit-dev/publisher/internal/state"
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
@@ -38,6 +36,7 @@ type defaultPublisher struct {
 	r              util.Path
 	python         util.Path
 	*publishhelper.PublishHelper
+	serverPublisher ServerPublisher
 }
 
 type createBundleStartData struct{}
@@ -50,20 +49,23 @@ type baseEventData struct {
 }
 
 type publishStartData struct {
-	Server string `mapstructure:"server"`
-	Title  string `mapstructure:"title"`
+	Server      string             `mapstructure:"server"`
+	Title       string             `mapstructure:"title"`
+	ProductType config.ProductType `mapstructure:"productType"`
 }
 
 type publishSuccessData struct {
-	ContentID    types.ContentID `mapstructure:"contentId"`
-	DashboardURL string          `mapstructure:"dashboardUrl"`
-	LogsURL      string          `mapstructure:"logsUrl"`
-	DirectURL    string          `mapstructure:"directUrl"`
-	ServerURL    string          `mapstructure:"serverUrl"`
+	ContentID    types.ContentID    `mapstructure:"contentId"`
+	DashboardURL string             `mapstructure:"dashboardUrl"`
+	LogsURL      string             `mapstructure:"logsUrl"`
+	DirectURL    string             `mapstructure:"directUrl"`
+	ServerURL    string             `mapstructure:"serverUrl"`
+	ProductType  config.ProductType `mapstructure:"productType"`
 }
 
 type publishFailureData struct {
-	Message string `mapstructure:"message"`
+	Message     string             `mapstructure:"message"`
+	ProductType config.ProductType `mapstructure:"productType"`
 }
 
 type publishDeployedFailureData struct {
@@ -72,7 +74,13 @@ type publishDeployedFailureData struct {
 	DirectURL    string `mapstructure:"url"`
 }
 
-func NewFromState(s *state.State, rInterpreter interpreters.RInterpreter, pythonInterpreter interpreters.PythonInterpreter, emitter events.Emitter, log logging.Logger) (Publisher, error) {
+func NewFromState(
+	s *state.State,
+	rInterpreter interpreters.RInterpreter,
+	pythonInterpreter interpreters.PythonInterpreter,
+	emitter events.Emitter,
+	log logging.Logger,
+) (Publisher, error) {
 	if s.LocalID != "" {
 		data := baseEventData{
 			LocalID: s.LocalID,
@@ -89,7 +97,10 @@ func NewFromState(s *state.State, rInterpreter interpreters.RInterpreter, python
 	rexec, _ := rInterpreter.GetRExecutable()
 	pyexec, _ := pythonInterpreter.GetPythonExecutable()
 
-	packageManager, err := renv.NewPackageMapper(s.Dir, rexec.Path, log)
+	packageManager, err := rPackageMapperFactory(s.Dir, rexec.Path, log)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create R package mapper: %w", err)
+	}
 
 	// Handle difference where we have no SaveName when redeploying, since it is
 	// only sent in the first deployment. In the end, both should equate to same
@@ -104,14 +115,20 @@ func NewFromState(s *state.State, rInterpreter interpreters.RInterpreter, python
 
 	helper := publishhelper.NewPublishHelper(s, log)
 
+	serverPublisher, err := createServerPublisher(helper, emitter, log)
+	if err != nil {
+		return nil, err
+	}
+
 	return &defaultPublisher{
-		log:            log,
-		emitter:        emitter,
-		rPackageMapper: packageManager,
-		r:              rexec.Path,
-		python:         pyexec.Path,
-		PublishHelper:  helper,
-	}, err
+		log:             log,
+		emitter:         emitter,
+		rPackageMapper:  packageManager,
+		r:               rexec.Path,
+		python:          pyexec.Path,
+		PublishHelper:   helper,
+		serverPublisher: serverPublisher,
+	}, nil
 }
 
 func (p *defaultPublisher) GetDeployedContentID() (types.ContentID, bool) {
@@ -161,7 +178,8 @@ func (p *defaultPublisher) emitErrorEvents(err error) {
 	var data events.EventData
 
 	mapstructure.Decode(publishFailureData{
-		Message: agentErr.Message,
+		Message:     agentErr.Message,
+		ProductType: p.Config.ProductType,
 	}, &data)
 
 	// Record the error in the deployment record
@@ -197,13 +215,14 @@ func (p *defaultPublisher) emitErrorEvents(err error) {
 		data))
 }
 
-var clientFactory = connectclient.NewConnectClient
+var rPackageMapperFactory = renv.NewPackageMapper
 
 func (p *defaultPublisher) PublishDirectory() error {
 	p.log.Info("Publishing from directory", logging.LogKeyOp, events.AgentOp, "path", p.Dir, "localID", p.State.LocalID)
 	p.emitter.Emit(events.New(events.PublishOp, events.StartPhase, events.NoError, publishStartData{
-		Server: p.Account.URL,
-		Title:  p.Config.Title,
+		Server:      p.Account.URL,
+		Title:       p.Config.Title,
+		ProductType: p.Config.ProductType,
 	}))
 	p.log.Info("Starting deployment to server", "server", p.Account.URL)
 
@@ -219,6 +238,7 @@ func (p *defaultPublisher) PublishDirectory() error {
 			DirectURL:    p.Target.DirectURL,
 			ServerURL:    p.Account.URL,
 			ContentID:    p.Target.ID,
+			ProductType:  p.Config.ProductType,
 		}))
 	}
 	return nil
@@ -237,24 +257,19 @@ func (p *defaultPublisher) doPublish() error {
 		return err
 	}
 
-	serverPublisher, err := p.createServerPublisher()
-	if err != nil {
-		return err
-	}
-
 	if wasPreviouslyDeployed {
 		p.log.Info("Updating deployment", "content_id", contentID)
 	} else {
 		// Create a new deployment; we will update it with details later.
-		contentID, err = serverPublisher.CreateDeployment()
+		contentID, err = p.serverPublisher.CreateDeployment()
 		if err != nil {
 			return err
 		}
 	}
 
-	p.setContentInfo(serverPublisher.GetContentInfo(contentID))
+	p.setContentInfo(p.serverPublisher.GetContentInfo(contentID))
 
-	err = serverPublisher.PreFlightChecks()
+	err = p.serverPublisher.PreFlightChecks()
 	if err != nil {
 		return err
 	}
@@ -266,7 +281,7 @@ func (p *defaultPublisher) doPublish() error {
 	defer bundleFile.Close()
 	defer os.Remove(bundleFile.Name())
 
-	err = serverPublisher.PublishToServer(contentID, bundleFile)
+	err = p.serverPublisher.PublishToServer(contentID, bundleFile)
 	if err != nil {
 		return err
 	}
@@ -283,6 +298,8 @@ func (p *defaultPublisher) setContentInfo(info publishhelper.ContentInfo) {
 
 func (p *defaultPublisher) CreateDeploymentRecord() {
 	p.Target = &deployment.Deployment{}
+	p.serverPublisher.UpdateState()
+	p.Config.ForceProductTypeCompliance()
 
 	// Initial deployment record doesn't know the files or
 	// bundleID. These will be added after the

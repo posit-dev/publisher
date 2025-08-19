@@ -2,16 +2,12 @@
 
 import path from "path";
 import {
+  InputStep,
   isQuickPickItem,
-  isQuickPickItemWithIndex,
   isQuickPickItemWithInspectionResult,
   MultiStepInput,
   MultiStepState,
-  QuickPickItemWithIndex,
   QuickPickItemWithInspectionResult,
-  AbortError,
-  InputStep,
-  InfoMessageParameters,
 } from "src/multiStepInputs/multiStepHelper";
 import {
   commands,
@@ -33,24 +29,17 @@ import {
   Credential,
   EntryPointPath,
   FileAction,
-  ProductName,
   PreContentRecord,
-  ServerType,
-  SnowflakeConnection,
+  ProductName,
   useApi,
 } from "src/api";
 import {
   getPythonInterpreterPath,
   getRInterpreterPath,
 } from "src/utils/vscode";
-import {
-  getMessageFromError,
-  getSummaryStringFromError,
-} from "src/utils/errors";
+import { getSummaryStringFromError } from "src/utils/errors";
 import { isAxiosErrorWithJson } from "src/utils/errorTypes";
 import { newConfigFileNameFromTitle, newDeploymentName } from "src/utils/names";
-import { formatURL } from "src/utils/url";
-import { checkSyntaxApiKey } from "src/utils/apiKeys";
 import { DeploymentObjects } from "src/types/shared";
 import { showProgress } from "src/utils/progress";
 import {
@@ -60,33 +49,15 @@ import {
   relativePath,
   vscodeOpenFiles,
 } from "src/utils/files";
+import { ENTRYPOINT_FILE_EXTENSIONS } from "src/constants";
+import { newCredential } from "./newCredential";
 import {
-  CONNECT_CLOUD_SIGNUP_URL,
-  CONNECT_CLOUD_ACCOUNT_URL,
-  ENTRYPOINT_FILE_EXTENSIONS,
-} from "src/constants";
-import { extensionSettings } from "src/extension";
-import {
-  fetchAuthToken,
-  fetchConnectCloudAccounts,
-  fetchDeviceAuth,
-  fetchSnowflakeConnections,
-  findExistingCredentialByURL,
-  getProductType,
-  getPublishableAccounts,
-  isConnect,
+  createNewCredentialLabel,
   isConnectCloud,
-  isSnowflake,
-  platformList,
-} from "src/multiStepInputs/common";
-import { openConfigurationCommand } from "src/commands";
-import { getEnumKeyByEnumValue } from "src/utils/enums";
-import {
-  AuthToken,
-  ConnectCloudAccount,
-  ConnectCloudData,
-  DeviceAuth,
-} from "src/api/types/connectCloud";
+  getProductType,
+} from "src/utils/multiStepHelpers";
+
+const viewTitle = "Create a New Deployment";
 
 export async function newDeployment(
   viewId: string,
@@ -98,35 +69,40 @@ export async function newDeployment(
   // ***************************************************************
   const api = await useApi();
 
+  // local step history that gets passed down to any sub-flows
+  const stepHistory: InputStep[] = [];
+
+  enum step {
+    ENTRY_FILE_SELECTION = "inputEntryPointFileSelection",
+    RETRIEVE_CONTENT_TYPES = "retrieveContentTypes",
+    INPUT_CONTENT_TYPE = "inputContentType",
+    INPUT_TITLE = "inputTitle",
+    PICK_CREDENTIALS = "pickCredentials",
+  }
+
+  const steps: Record<
+    step,
+    (input: MultiStepInput, state: MultiStepState) => Promise<void | InputStep>
+  > = {
+    [step.ENTRY_FILE_SELECTION]: inputEntryPointFileSelection,
+    [step.RETRIEVE_CONTENT_TYPES]: retrieveContentTypes,
+    [step.INPUT_CONTENT_TYPE]: inputContentType,
+    [step.INPUT_TITLE]: inputTitle,
+    [step.PICK_CREDENTIALS]: pickCredentials,
+  };
+
   let credentials: Credential[] = [];
   let credentialListItems: QuickPickItem[] = [];
 
   const entryPointListItems: QuickPickItem[] = [];
   let inspectionResults: ConfigurationInspectionResult[] = [];
+  let inspectionQuickPicks: QuickPickItemWithInspectionResult[] = [];
   const contentRecordNames = new Map<string, string[]>();
-
-  // the serverType & productName will be overwritten during the pickCredentials steps
-  // when the platform is selected
-  let serverType: ServerType = ServerType.CONNECT;
-  let productName: ProductName = ProductName.CONNECT;
-  let connections: SnowflakeConnection[] = [];
-  let connectionQuickPicks: QuickPickItemWithIndex[];
-
-  const connectCloudData: ConnectCloudData = {
-    accounts: [],
-    auth: {
-      deviceCode: "",
-      userCode: "",
-      verificationURI: "",
-      interval: 0,
-    },
-  };
 
   let newConfig: Configuration | undefined;
   let newOrSelectedCredential: Credential | undefined;
   let newContentRecord: PreContentRecord | undefined;
 
-  const createNewCredentialLabel = "Create a New Credential";
   const browseForEntrypointLabel = "Open...";
 
   // Collected Data
@@ -135,49 +111,14 @@ export async function newDeployment(
     inspectionResult?: ConfigurationInspectionResult;
     contentType?: ContentType;
   };
-  type NewCredentialAttrs = {
-    url?: string;
-    name?: string;
-    apiKey?: string;
-    snowflakeConnection?: string;
-    accessToken?: string;
-    refreshToken?: string;
-    accountId?: string;
-    accountName?: string;
-  };
   type NewDeploymentData = {
     entrypoint: SelectedEntrypoint;
     title?: string;
     existingCredentialName?: string;
-    newCredentials: NewCredentialAttrs;
   };
 
   const newDeploymentData: NewDeploymentData = {
     entrypoint: {},
-    newCredentials: {},
-  };
-
-  // reset all Connect data to empty strings so new credentials will saved
-  const resetConnectData = () => {
-    newDeploymentData.newCredentials.url = "";
-    newDeploymentData.newCredentials.apiKey = "";
-    newDeploymentData.newCredentials.snowflakeConnection = "";
-  };
-
-  // reset all Connect Clound data to empty strings so new credentials will saved
-  const resetConnectCloudData = () => {
-    newDeploymentData.newCredentials.accessToken = "";
-    newDeploymentData.newCredentials.refreshToken = "";
-    newDeploymentData.newCredentials.accountId = "";
-    newDeploymentData.newCredentials.accountName = "";
-  };
-
-  // update the device auth data for Connect Cloud
-  const updateConnectCloudAuthData = (data?: DeviceAuth) => {
-    connectCloudData.auth.deviceCode = data?.deviceCode || "";
-    connectCloudData.auth.verificationURI = data?.verificationURI || "";
-    connectCloudData.auth.userCode = data?.userCode || "";
-    connectCloudData.auth.interval = data?.interval || 0;
   };
 
   const newCredentialForced = (): boolean => {
@@ -188,10 +129,6 @@ export async function newDeployment(
     return Boolean(
       newDeploymentData?.existingCredentialName === createNewCredentialLabel,
     );
-  };
-
-  const newCredentialByAnyMeans = (): boolean => {
-    return newCredentialForced() || newCredentialSelected();
   };
 
   const getConfigurationInspectionQuickPicks = async (
@@ -254,10 +191,9 @@ export async function newDeployment(
       credentialListItems = credentials.map((credential) => ({
         iconPath: new ThemeIcon("posit-publisher-posit-logo"),
         label: credential.name,
-        description:
-          credential.serverType === ServerType.CONNECT_CLOUD
-            ? `${credential.accountName} | Posit Connect Cloud`
-            : credential.url,
+        description: isConnectCloud(credential.serverType)
+          ? ProductName.CONNECT_CLOUD
+          : credential.url,
       }));
       credentialListItems.push({
         iconPath: new ThemeIcon("plus"),
@@ -350,66 +286,55 @@ export async function newDeployment(
     }
   };
 
-  const getSnowflakeConnections = async (serverUrl: string) => {
-    const sfc = await fetchSnowflakeConnections(serverUrl);
-    connections = sfc.connections;
-    connectionQuickPicks = sfc.connectionQuickPicks;
+  const getInspectionQuickPicks = async () => {
+    if (!newDeploymentData.entrypoint.filePath) {
+      return;
+    }
+    // Have to create a copy of the guarded value, to keep language service happy
+    // within anonymous function below
+    const entryPointFilePath = path.join(
+      projectDir,
+      newDeploymentData.entrypoint.filePath,
+    );
+
+    inspectionQuickPicks = await showProgress(
+      "Scanning::newDeployment",
+      viewId,
+      async () =>
+        await getConfigurationInspectionQuickPicks(entryPointFilePath),
+    );
+  };
+
+  const stepHistoryFlush = (name: string) => {
+    if (!stepHistory.length) {
+      // nothing to flush, bail!
+      return;
+    }
+    // flush the step history after the step passed in if this is not the last step
+    // added to the history so we don't double count the upcoming steps
+    // this would mean the user landed back at this step from the backward flow
+    if (stepHistory.at(-1)?.name !== name) {
+      const index = stepHistory.findIndex((s) => s.name === name);
+      if (index > -1) {
+        stepHistory.splice(index + 1);
+      }
+    }
   };
 
   // ***************************************************************
-  // Order of all steps for creating a new Connect deployment
+  // Order of all steps for creating a new deployment
   // NOTE: This multi-stepper is used for multiple commands
   // ***************************************************************
 
   // Select the entrypoint, if there is more than one
+  // Retrieve content types
   // Select the content type, if there is more than one
   // Prompt for Title
-  // If no credentials, then skip to create new credential
+  // If no credentials, then create new credential
   // If some credentials, select either use of existing or creation of a new one
   // If creating credential:
   // - Select the platform
-  // - Get the server url
-  // - Get the API key for Connect OR get the Snowflake connection name
-  // - Get the credential name
-  // Auto-name the config file to use
-  // Auto-name the contentRecord
-  // Call APIs and hopefully succeed at everything
-  // Return the names of the contentRecord, config and credentials
-
-  // ***************************************************************
-  // Order of all steps for creating a new Connect Cloud deployment
-  // NOTE: This multi-stepper is used for multiple commands
-  // ***************************************************************
-
-  // Select the entrypoint, if there is more than one
-  // Select the content type, if there is more than one
-  // Prompt for Title
-  // If no credentials, then skip to create new credential
-  // If some credentials, select either use of existing or creation of a new one
-  // If creating credential:
-  // - Select the platform
-  // - Initialize the device authentication
-  // - Poll the device authentication
-  // - Retrive the user's accounts
-  // - Determine the correct next step:
-  //    - If there is only one publishable account:
-  //      Get the credential name
-  //    - If there are multiple publishable accounts:
-  //      Get selected account from account list
-  //      Get the credential name
-  //    - If there are no publishable accounts, but there is at least one account:
-  //      Get sign up for individual plan
-  //      Initialize the device authentication
-  //      Poll the device authentication
-  //      Poll for the user's new account
-  //      Determine the correct next step
-  //        - There will be only one publishable account:
-  //          Get the credential name
-  //    - If there are zero accounts for the user:
-  //      Poll for the user's new account
-  //      Determine the correct next step
-  //        - There will be only one publishable account:
-  //          Get the credential name
+  // - Create a new Connect or Connect Cloud credential
   // Auto-name the config file to use
   // Auto-name the contentRecord
   // Call APIs and hopefully succeed at everything
@@ -422,7 +347,7 @@ export async function newDeployment(
   // ***************************************************************
   async function collectInputs() {
     const state: MultiStepState = {
-      title: "Create a New Deployment",
+      title: viewTitle,
       // We're going to temporarily disable display of steps due to the complex
       // nature of calculation with multiple paths through this flow.
       step: 0,
@@ -430,12 +355,31 @@ export async function newDeployment(
       totalSteps: 0,
       data: {},
       promptStepNumbers: {},
+      isValid: () => {},
     };
 
+    let currentStep: InputStep;
+    // we were passed in a specific file so retrieve the inspections
+    if (entryPointFile) {
+      currentStep = {
+        name: step.RETRIEVE_CONTENT_TYPES,
+        step: (input: MultiStepInput) =>
+          steps[step.RETRIEVE_CONTENT_TYPES](input, state),
+        skipStepHistory: true,
+      };
+      // we don't want to land on the retrieveContentTypes step in the backward flow
+      // from sub-flows, so we don't register this step in the step history array
+    } else {
+      currentStep = {
+        name: step.ENTRY_FILE_SELECTION,
+        step: (input: MultiStepInput) =>
+          steps[step.ENTRY_FILE_SELECTION](input, state),
+      };
+      stepHistory.push(currentStep);
+    }
+
     // start the progression through the steps
-    await MultiStepInput.run({
-      step: (input) => inputEntryPointFileSelection(input, state),
-    });
+    await MultiStepInput.run(currentStep);
     return state as MultiStepState;
   }
 
@@ -446,169 +390,181 @@ export async function newDeployment(
     input: MultiStepInput,
     state: MultiStepState,
   ) {
-    // show only if we were not passed in a file
-    if (entryPointFile === undefined) {
-      if (newDeploymentData.entrypoint.filePath) {
-        entryPointListItems.forEach((item) => {
-          item.picked = item.label === newDeploymentData.entrypoint.filePath;
-        });
-      }
+    stepHistoryFlush(step.ENTRY_FILE_SELECTION);
 
-      let selectedEntrypointFile: string | undefined = undefined;
-      do {
-        const pick = await input.showQuickPick({
-          title: state.title,
-          step: 0,
-          totalSteps: 0,
-          placeholder:
-            "Select entrypoint file. This is your main file for your project. (Use this field to filter selections.)",
-          items: entryPointListItems,
-          buttons: [],
-          shouldResume: () => Promise.resolve(false),
-          ignoreFocusOut: true,
-        });
-
-        if (pick.label === browseForEntrypointLabel) {
-          let baseUri = Uri.parse(".");
-          const workspaceFolders = workspace.workspaceFolders;
-          if (workspaceFolders !== undefined) {
-            baseUri = workspaceFolders[0].uri;
-          }
-          selectedEntrypointFile = undefined;
-          const fileUris = await window.showOpenDialog({
-            defaultUri: baseUri,
-            openLabel: "Select",
-            canSelectFolders: false,
-            canSelectMany: false,
-            title: "Select Entrypoint File (main file for your project)",
-          });
-          if (!fileUris || !fileUris[0]) {
-            // canceled.
-            continue;
-          }
-          const fileUri = fileUris[0];
-
-          if (relativeDir(fileUri)) {
-            selectedEntrypointFile = relativePath(fileUri);
-          } else {
-            window.showErrorMessage(
-              `Entrypoint files must be located within the open workspace.`,
-              {
-                modal: true,
-              },
-            );
-            selectedEntrypointFile = undefined;
-          }
-        } else {
-          if (isQuickPickItem(pick)) {
-            selectedEntrypointFile = pick.label;
-          } else {
-            return;
-          }
-        }
-      } while (!selectedEntrypointFile);
-      newDeploymentData.entrypoint.filePath = selectedEntrypointFile;
-      return {
-        step: (input: MultiStepInput) =>
-          inputEntryPointInspectionResultSelection(input, state),
-      };
-    } else {
-      // We were passed in a specific file, so set and continue to inspection
-      newDeploymentData.entrypoint.filePath = entryPointFile;
-      // We're skipping this step, so we must silently just jump to the next step
-      return inputEntryPointInspectionResultSelection(input, state);
+    if (newDeploymentData.entrypoint.filePath) {
+      entryPointListItems.forEach((item) => {
+        item.picked = item.label === newDeploymentData.entrypoint.filePath;
+      });
     }
-  }
 
-  // ***************************************************************
-  // Step: Select the content inspection result should use
-  // ***************************************************************
-  async function inputEntryPointInspectionResultSelection(
-    input: MultiStepInput,
-    state: MultiStepState,
-  ) {
-    if (!newDeploymentData.entrypoint.filePath) {
-      return;
-    }
-    // Have to create a copy of the guarded value, to keep language service happy
-    // within anonymous function below
-    const entryPointFilePath = path.join(
-      projectDir,
-      newDeploymentData.entrypoint.filePath,
-    );
-
-    const inspectionQuickPicks = await showProgress(
-      "Scanning::newDeployment",
-      viewId,
-      async () =>
-        await getConfigurationInspectionQuickPicks(entryPointFilePath),
-    );
-
-    // skip if we only have one choice.
-    if (inspectionQuickPicks.length > 1) {
-      if (newDeploymentData.entrypoint.inspectionResult) {
-        inspectionQuickPicks.forEach((pick) => {
-          if (
-            pick.inspectionResult &&
-            newDeploymentData.entrypoint.inspectionResult
-          ) {
-            pick.picked = areInspectionResultsSimilarEnough(
-              pick.inspectionResult,
-              newDeploymentData.entrypoint.inspectionResult,
-            );
-          }
-        });
-      }
-
+    let selectedEntrypointFile: string | undefined = undefined;
+    do {
       const pick = await input.showQuickPick({
         title: state.title,
         step: 0,
         totalSteps: 0,
-        placeholder: `Select the content type for your entrypoint file (${newDeploymentData.entrypoint.filePath}).`,
-        items: inspectionQuickPicks,
+        placeholder:
+          "Select entrypoint file. This is your main file for your project. (Use this field to filter selections.)",
+        items: entryPointListItems,
         buttons: [],
         shouldResume: () => Promise.resolve(false),
         ignoreFocusOut: true,
       });
 
-      if (!pick || !isQuickPickItemWithInspectionResult(pick)) {
-        return;
-      }
+      if (pick.label === browseForEntrypointLabel) {
+        let baseUri = Uri.parse(".");
+        const workspaceFolders = workspace.workspaceFolders;
+        if (workspaceFolders !== undefined) {
+          baseUri = workspaceFolders[0].uri;
+        }
+        selectedEntrypointFile = undefined;
+        const fileUris = await window.showOpenDialog({
+          defaultUri: baseUri,
+          openLabel: "Select",
+          canSelectFolders: false,
+          canSelectMany: false,
+          title: "Select Entrypoint File (main file for your project)",
+        });
+        if (!fileUris || !fileUris[0]) {
+          // canceled.
+          continue;
+        }
+        const fileUri = fileUris[0];
 
-      newDeploymentData.entrypoint.inspectionResult = pick.inspectionResult;
-      return {
-        step: (input: MultiStepInput) => inputTitle(input, state),
+        if (relativeDir(fileUri)) {
+          selectedEntrypointFile = relativePath(fileUri);
+        } else {
+          window.showErrorMessage(
+            `Entrypoint files must be located within the open workspace.`,
+            {
+              modal: true,
+            },
+          );
+          selectedEntrypointFile = undefined;
+        }
+      } else {
+        if (isQuickPickItem(pick)) {
+          selectedEntrypointFile = pick.label;
+        } else {
+          return;
+        }
+      }
+    } while (!selectedEntrypointFile);
+
+    // use the selected entry point file and continue to inspection
+    newDeploymentData.entrypoint.filePath = selectedEntrypointFile;
+
+    // we don't want to land on the retrieveContentTypes step in the backward flow
+    // from sub-flows, so we don't register this step in the step history array
+    return {
+      name: step.RETRIEVE_CONTENT_TYPES,
+      step: (input: MultiStepInput) =>
+        steps[step.RETRIEVE_CONTENT_TYPES](input, state),
+      skipStepHistory: true,
+    };
+  }
+
+  // ***************************************************************
+  // Step: Retrieve the content types
+  // ***************************************************************
+  async function retrieveContentTypes(
+    _: MultiStepInput,
+    state: MultiStepState,
+  ) {
+    // use the passed in a specific file and continue to inspection
+    newDeploymentData.entrypoint.filePath ||= entryPointFile;
+
+    // get the inspections only after the `filePath` has been initialized
+    await getInspectionQuickPicks();
+
+    let currentStep: InputStep;
+    // if we have multiple choices, select the content inspection result
+    if (inspectionQuickPicks.length > 1) {
+      currentStep = {
+        name: step.INPUT_CONTENT_TYPE,
+        step: (input: MultiStepInput) =>
+          steps[step.INPUT_CONTENT_TYPE](input, state),
       };
     } else {
+      // otherwise auto select the only choice and input the title
       newDeploymentData.entrypoint.inspectionResult =
         inspectionQuickPicks[0].inspectionResult;
-      // We're skipping this step, so we must silently just jump to the next step
-      return inputTitle(input, state);
+      currentStep = {
+        name: step.INPUT_TITLE,
+        step: (input: MultiStepInput) => steps[step.INPUT_TITLE](input, state),
+      };
     }
+
+    stepHistory.push(currentStep);
+    return currentStep;
+  }
+
+  // ***************************************************************
+  // Step: Select the content inspection result should use
+  // ***************************************************************
+  async function inputContentType(
+    input: MultiStepInput,
+    state: MultiStepState,
+  ) {
+    stepHistoryFlush(step.INPUT_CONTENT_TYPE);
+
+    if (newDeploymentData.entrypoint.inspectionResult) {
+      inspectionQuickPicks.forEach((pick) => {
+        if (
+          pick.inspectionResult &&
+          newDeploymentData.entrypoint.inspectionResult
+        ) {
+          pick.picked = areInspectionResultsSimilarEnough(
+            pick.inspectionResult,
+            newDeploymentData.entrypoint.inspectionResult,
+          );
+        }
+      });
+    }
+
+    const pick = await input.showQuickPick({
+      title: state.title,
+      step: 0,
+      totalSteps: 0,
+      placeholder: `Select the content type for your entrypoint file (${newDeploymentData.entrypoint.filePath}).`,
+      items: inspectionQuickPicks,
+      buttons: [],
+      shouldResume: () => Promise.resolve(false),
+      ignoreFocusOut: true,
+    });
+
+    if (!pick || !isQuickPickItemWithInspectionResult(pick)) {
+      return;
+    }
+
+    newDeploymentData.entrypoint.inspectionResult = pick.inspectionResult;
+
+    const currentStep = {
+      name: step.INPUT_TITLE,
+      step: (input: MultiStepInput) => steps[step.INPUT_TITLE](input, state),
+    };
+    stepHistory.push(currentStep);
+    return currentStep;
   }
 
   // ***************************************************************
   // Step: Input the Title
   // ***************************************************************
   async function inputTitle(input: MultiStepInput, state: MultiStepState) {
+    stepHistoryFlush(step.INPUT_TITLE);
+
     // in case we have backed up from the subsequent check, we need to reset
     // the selection that it will update. This will allow steps to be the minimum number
     // as long as we don't know for certain it will take more steps.
-
-    let initialValue = "";
-    if (newDeploymentData.entrypoint.inspectionResult) {
-      const detail =
-        newDeploymentData.entrypoint.inspectionResult.configuration.title;
-      if (detail) {
-        initialValue = detail;
-      }
-    }
+    const initialValue =
+      newDeploymentData.entrypoint.inspectionResult?.configuration.title || "";
 
     const title = await input.showInputBox({
       title: state.title,
       step: 0,
       totalSteps: 0,
-      value: newDeploymentData.title ? newDeploymentData.title : initialValue,
+      value: newDeploymentData.title || initialValue,
       prompt: "Enter a title for your content or application.",
       validate: (value) => {
         if (value.length < 3) {
@@ -624,692 +580,77 @@ export async function newDeployment(
     });
 
     newDeploymentData.title = title;
-    return {
-      step: (input: MultiStepInput) => pickCredentials(input, state),
-      skippable: newCredentialForced(),
-    };
-  }
 
-  // ***************************************************************
-  // Step: Select the credentials to be used
-  // ***************************************************************
-  async function pickCredentials(input: MultiStepInput, state: MultiStepState) {
     // if there are existing credentials, allow the user to select one or create a new one
     if (!newCredentialForced()) {
-      if (newDeploymentData.existingCredentialName) {
-        credentialListItems.forEach((credential) => {
-          credential.picked =
-            credential.label === newDeploymentData.existingCredentialName;
-        });
-      }
-      const pick = await input.showQuickPick({
-        title: state.title,
-        step: 0,
-        totalSteps: 0,
-        placeholder:
-          "Select the credential you want to use to deploy. (Use this field to filter selections.)",
-        items: credentialListItems,
-        buttons: [],
-        shouldResume: () => Promise.resolve(false),
-        ignoreFocusOut: true,
-      });
-      newDeploymentData.existingCredentialName = pick.label;
-
-      if (!newCredentialSelected()) {
-        // the user selected an existing credential, bail out
-        return;
-      }
+      const currentStep = {
+        name: step.PICK_CREDENTIALS,
+        step: (input: MultiStepInput) =>
+          steps[step.PICK_CREDENTIALS](input, state),
+      };
+      stepHistory.push(currentStep);
+      return currentStep;
     }
-
-    // either the user opted for creating a brand new credential or
     // there are no existing credentials, so force the user to create a new credential
-    if (extensionSettings.enableConnectCloud()) {
-      // select the platform only when the enableConnectCloud config has been turned on
-      return { step: (input: MultiStepInput) => inputPlatform(input, state) };
-    } else {
-      // default to CONNECT (since there are no other products at the moment)
-      // when the enableConnectCloud config is turned off
-      serverType = ServerType.CONNECT;
-      productName = ProductName.CONNECT;
-      resetConnectCloudData();
-
-      return { step: (input: MultiStepInput) => inputServerUrl(input, state) };
-    }
+    return await inputNewCredential();
   }
 
   // ***************************************************************
-  // Step: New Credentials - Select the platform (used for all platforms)
+  // Step: Select the credential to be used
   // ***************************************************************
-  async function inputPlatform(input: MultiStepInput, state: MultiStepState) {
-    const pick = await input.showQuickPick({
-      title: state.title,
-      step: 0,
-      totalSteps: 0,
-      placeholder: "Please select the platform for the new credential.",
-      items: platformList,
-      buttons: [],
-      shouldResume: () => Promise.resolve(false),
-      ignoreFocusOut: true,
-    });
+  async function pickCredentials(input: MultiStepInput, state: MultiStepState) {
+    stepHistoryFlush(step.PICK_CREDENTIALS);
 
-    const enumKey = getEnumKeyByEnumValue(ProductName, pick.label);
-    // fallback to CONNECT if there is ever a case when the enumKey is not found
-    serverType = enumKey ? ServerType[enumKey] : ServerType.CONNECT;
-    productName = pick.label as ProductName;
-
-    if (isConnectCloud(serverType)) {
-      resetConnectData();
-      return {
-        step: (input: MultiStepInput) => initDeviceAuth(input, state),
-        skippable: true,
-      };
-    }
-
-    if (isConnect(serverType)) {
-      resetConnectCloudData();
-      return {
-        step: (input: MultiStepInput) => inputServerUrl(input, state),
-      };
-    }
-
-    // Should not land here since the platform is forcefully picked in the very first step
-    return;
-  }
-
-  // ***************************************************************
-  // Step: New Credentials - Kick-off device authentication (Connect Cloud only)
-  // ***************************************************************
-  async function initDeviceAuth(input: MultiStepInput, state: MultiStepState) {
-    try {
-      // we await this input box that it is treated as an information message
-      // until the api calls happening in the background have completed
-      const resp = await input.showInfoMessage<
-        DeviceAuth,
-        InfoMessageParameters<DeviceAuth>
-      >({
-        title: state.title,
-        step: 0,
-        totalSteps: 0,
-        // disables user input
-        enabled: false,
-        // shows a progress indicator on the input box
-        busy: true,
-        value: "Authenticating with Connect Cloud ...",
-        // moves the cursor to the start of the value text to avoid the automated text highlight
-        valueSelection: [0, 0],
-        // displays a custom information message below the input box that hides the prompt and
-        // default message: "Please 'Enter' to confirm your input or 'Escape' to cancel"
-        validationMessage: {
-          message:
-            "Please follow the next steps in the external browser or 'Escape' to abort",
-          severity: InputBoxValidationSeverity.Info,
-        },
-        prompt: "",
-        shouldResume: () => Promise.resolve(false),
-        ignoreFocusOut: true,
-        apiFunction: () => fetchDeviceAuth(),
+    if (newDeploymentData.existingCredentialName) {
+      credentialListItems.forEach((credential) => {
+        credential.picked =
+          credential.label === newDeploymentData.existingCredentialName;
       });
-      updateConnectCloudAuthData(resp.data);
-    } catch (error) {
-      if (error instanceof AbortError) {
-        // swallows the custom internal error because we don't need
-        // an error message everytime the user decides to abort or
-        // whenever the user just plain abandones the task
-        return;
-      } else if (error instanceof Error) {
-        // display an error message for all other errors
-        window.showErrorMessage(
-          `Failed to authenticate. ${getSummaryStringFromError("newCredentials, fetchDeviceAuth", error)}`,
-        );
-      }
-      return;
     }
-
-    return {
-      step: (input: MultiStepInput) => authenticate(input, state),
-      skippable: true,
-    };
-  }
-
-  // ***************************************************************
-  // Step: New Credentials - Complete device authentication (Connect Cloud only)
-  // ***************************************************************
-  async function authenticate(input: MultiStepInput, state: MultiStepState) {
-    try {
-      // we await this input box that it is treated as an information message
-      // until the api calls happening in the background have completed
-      const resp = await input.showInfoMessage<
-        AuthToken,
-        InfoMessageParameters<AuthToken>
-      >({
-        title: state.title,
-        step: 0,
-        totalSteps: 0,
-        // disables user input
-        enabled: false,
-        // shows a progress indicator on the input box
-        busy: true,
-        value: `Authenticating with Connect Cloud ... (using code: ${connectCloudData.auth.userCode})`,
-        // moves the cursor to the start of the value text to avoid the automated text highlight
-        valueSelection: [0, 0],
-        // displays a custom information message below the input box that hides the prompt and
-        // default message: "Please 'Enter' to confirm your input or 'Escape' to cancel"
-        validationMessage: {
-          message:
-            "Please follow the next steps in the external browser or 'Escape' to abort",
-          severity: InputBoxValidationSeverity.Info,
-        },
-        prompt: "",
-        shouldResume: () => Promise.resolve(false),
-        ignoreFocusOut: true,
-        apiFunction: () => fetchAuthToken(connectCloudData.auth.deviceCode),
-        shouldPollApi: true,
-        pollingInterval: connectCloudData.auth.interval * 1000,
-        exitPollingCondition: (r) => Boolean(r.data),
-        browserUrl: `${connectCloudData.signupUrl || ""}${connectCloudData.auth.verificationURI}`,
-      });
-      newDeploymentData.newCredentials.accessToken = resp.data?.accessToken;
-      newDeploymentData.newCredentials.refreshToken = resp.data?.refreshToken;
-      // clean-up
-      connectCloudData.signupUrl = "";
-      updateConnectCloudAuthData();
-    } catch (error) {
-      if (error instanceof AbortError) {
-        // swallows the custom internal error because we don't need
-        // an error message everytime the user decides to abort or
-        // whenever the user just plain abandones the task
-        return;
-      } else if (error instanceof Error) {
-        // display an error message for all other errors
-        window.showErrorMessage(
-          `Failed to authenticate. ${getSummaryStringFromError("newCredentials, fetchAuthToken", error)}`,
-        );
-      }
-      return;
-    }
-
-    return {
-      step: (input: MultiStepInput) => retrieveAccounts(input, state),
-      skippable: true,
-    };
-  }
-
-  // ***************************************************************
-  // Step: New Credentials - Retrieve the user's accounts (Connect Cloud only)
-  // ***************************************************************
-  async function retrieveAccounts(
-    input: MultiStepInput,
-    state: MultiStepState,
-  ) {
-    const accessToken = newDeploymentData.newCredentials.accessToken || "";
-
-    try {
-      // we await this input box that it is treated as an information message
-      // until the api calls happening in the background have completed
-      const resp = await input.showInfoMessage<
-        ConnectCloudAccount[],
-        InfoMessageParameters<ConnectCloudAccount[]>
-      >({
-        title: state.title,
-        step: 0,
-        totalSteps: 0,
-        // disables user input
-        enabled: false,
-        // shows a progress indicator on the input box
-        busy: true,
-        value: "Retrieving accounts from Connect Cloud ...",
-        // moves the cursor to the start of the value text to avoid the automated text highlight
-        valueSelection: [0, 0],
-        // displays a custom information message below the input box that hides the prompt and
-        // default message: "Please 'Enter' to confirm your input or 'Escape' to cancel"
-        validationMessage: {
-          message:
-            "Please wait while we get your account data or 'Escape' to abort",
-          severity: InputBoxValidationSeverity.Info,
-        },
-        prompt: "",
-        shouldResume: () => Promise.resolve(false),
-        ignoreFocusOut: true,
-        apiFunction: () => fetchConnectCloudAccounts(accessToken),
-        shouldPollApi: connectCloudData.shouldPoll,
-        exitPollingCondition: (r) => Boolean(r.data && r.data.length > 0),
-        browserUrl: connectCloudData.accountUrl,
-      });
-      connectCloudData.accounts = resp.data || [];
-      // clean-up
-      connectCloudData.accountUrl = "";
-      connectCloudData.shouldPoll = false;
-    } catch (error) {
-      if (error instanceof AbortError) {
-        // swallows the custom internal error because we don't need
-        // an error message everytime the user decides to abort or
-        // whenever the user just plain abandones the task
-        return;
-      } else if (error instanceof Error) {
-        // display an error message for all other errors
-        window.showErrorMessage(
-          `Unable to retrieve accounts from Connect Cloud. ${getSummaryStringFromError("newCredentials, fetchConnectCloudAccounts", error)}`,
-        );
-      }
-      return;
-    }
-
-    return {
-      step: (input: MultiStepInput) => determineAccountFlow(input, state),
-      skippable: true,
-    };
-  }
-
-  // ***************************************************************
-  // Step: New Credentials - Determine the correct flow for the user's account list (Connect Cloud only)
-  // ***************************************************************
-  function determineAccountFlow(_: MultiStepInput, state: MultiStepState) {
-    const accounts = getPublishableAccounts(connectCloudData.accounts);
-    let step: (input: MultiStepInput) => Thenable<InputStep | void>;
-    let skippable: boolean | undefined;
-
-    if (accounts.length === 1) {
-      // case 1: there is only one publishable account, use it and create the credential
-      newDeploymentData.newCredentials.accountId = accounts[0].id;
-      newDeploymentData.newCredentials.accountName = accounts[0].displayName;
-      step = (input: MultiStepInput) => inputCredentialName(input, state);
-    } else if (accounts.length > 1) {
-      // case 2: there are multiple publishable accounts, display the account selector
-      step = (input: MultiStepInput) => inputAccount(input, state);
-    } else {
-      if (connectCloudData.accounts.length > 0) {
-        // case 3: there are no publishable accounts, but the user has at least one account,
-        // so they could be a guest or viewer on that account, ask if they want to sign up
-        step = (input: MultiStepInput) => inputSignup(input, state);
-      } else {
-        // case 4: there are zero accounts for the user, so they must be going through the
-        // sign up process, open a browser to finish creating the account in Connect Cloud
-
-        // populate the account polling props
-        connectCloudData.shouldPoll = true;
-        connectCloudData.accountUrl = CONNECT_CLOUD_ACCOUNT_URL;
-
-        // call the retrieveAccounts step again with the populated polling props
-        step = (input: MultiStepInput) => retrieveAccounts(input, state);
-        skippable = true;
-      }
-    }
-
-    // must return a promise since the step itself does not await on anything
-    return Promise.resolve({ step, skippable });
-  }
-
-  // ***************************************************************
-  // Step: New Credentials - Select the Connect Cloud account (Connect Cloud only)
-  // ***************************************************************
-  async function inputAccount(input: MultiStepInput, state: MultiStepState) {
-    const accounts = getPublishableAccounts(connectCloudData.accounts);
-
-    // display the account selector
     const pick = await input.showQuickPick({
       title: state.title,
       step: 0,
       totalSteps: 0,
       placeholder:
-        "Please select the Connect Cloud account to be used for the new credential.",
-      items: accounts.map((a) => ({ label: a.displayName })),
+        "Select the credential you want to use to deploy. (Use this field to filter selections.)",
+      items: credentialListItems,
       buttons: [],
       shouldResume: () => Promise.resolve(false),
       ignoreFocusOut: true,
     });
+    newDeploymentData.existingCredentialName = pick.label;
 
-    const account = accounts.find((a) => a.displayName === pick.label);
-    // fallback to the first publishable account if the selected account is ever not found
-    newDeploymentData.newCredentials.accountId = account?.id || accounts[0].id;
-    newDeploymentData.newCredentials.accountName =
-      account?.displayName || accounts[0].displayName;
-
-    return {
-      step: (input: MultiStepInput) => inputCredentialName(input, state),
-    };
-  }
-
-  // ***************************************************************
-  // Step: New Credentials - Select whether to sign up for a Connect Cloud account (Connect Cloud only)
-  // ***************************************************************
-  async function inputSignup(input: MultiStepInput, state: MultiStepState) {
-    const pick = await input.showQuickPick({
-      title: state.title,
-      step: 0,
-      totalSteps: 0,
-      placeholder:
-        "This Posit Connect Cloud account is not publishable. Sign up for an indiviual plan?",
-      items: [
-        { label: "Sign up for an individual Posit Connect Cloud plan" },
-        { label: "Exit" },
-      ],
-      buttons: [],
-      shouldResume: () => Promise.resolve(false),
-      ignoreFocusOut: true,
-    });
-
-    if (pick.label === "Exit") {
-      // bail out
-      return;
+    if (newCredentialSelected()) {
+      // the user opted for creating a brand new credential
+      return await inputNewCredential();
     }
 
-    // populate the sign up url
-    connectCloudData.signupUrl = CONNECT_CLOUD_SIGNUP_URL;
-    // populate the account polling props
-    connectCloudData.shouldPoll = true;
-    connectCloudData.accountUrl = CONNECT_CLOUD_ACCOUNT_URL;
-
-    // go to the authenticate step again to have the user sign up for an individual plan
-    return {
-      step: (input: MultiStepInput) => initDeviceAuth(input, state),
-      skippable: true,
-    };
-  }
-
-  // ***************************************************************
-  // Step: New Credentials - Get the server url (used for Connect & Snowflake)
-  // ***************************************************************
-  async function inputServerUrl(input: MultiStepInput, state: MultiStepState) {
-    let currentURL = newDeploymentData.newCredentials.url || "";
-
-    if (currentURL === "") {
-      currentURL = await extensionSettings.defaultConnectServer();
-    }
-
-    // Two credentials for the same URL is not allowed so clear the default if one is found
-    if (
-      currentURL !== "" &&
-      findExistingCredentialByURL(credentials, currentURL)
-    ) {
-      currentURL = "";
-    }
-
-    const url = await input.showInputBox({
-      title: state.title,
-      step: 0,
-      totalSteps: 0,
-      value: currentURL,
-      prompt: "Please provide the Posit Connect server's URL",
-      placeholder: "Server URL",
-      validate: (input: string) => {
-        if (input.includes(" ")) {
-          return Promise.resolve({
-            message: "Error: Invalid URL (spaces are not allowed).",
-            severity: InputBoxValidationSeverity.Error,
-          });
-        }
-        return Promise.resolve(undefined);
-      },
-      finalValidation: async (input: string) => {
-        input = formatURL(input);
-        try {
-          // will validate that this is a valid URL
-          new URL(input);
-        } catch (e) {
-          if (!(e instanceof TypeError)) {
-            return Promise.resolve({
-              message: `Unexpected error within NewCredential::inputSeverUrl.finalValidation: ${JSON.stringify(e)}`,
-              severity: InputBoxValidationSeverity.Error,
-            });
-          }
-          return Promise.resolve({
-            message: `Error: Invalid URL (${getMessageFromError(e)}).`,
-            severity: InputBoxValidationSeverity.Error,
-          });
-        }
-        const existingCredential = findExistingCredentialByURL(
-          credentials,
-          input,
-        );
-        if (existingCredential) {
-          return Promise.resolve({
-            message: `Error: Invalid URL (this server URL is already assigned to your credential "${existingCredential.name}". Only one credential per unique URL is allowed).`,
-            severity: InputBoxValidationSeverity.Error,
-          });
-        }
-        try {
-          const testResult = await api.credentials.test(
-            input,
-            !extensionSettings.verifyCertificates(), // insecure = !verifyCertificates
-          );
-          if (testResult.status !== 200) {
-            return Promise.resolve({
-              message: `Error: Invalid URL (unable to validate connectivity with Server URL - API Call result: ${testResult.status} - ${testResult.statusText}).`,
-              severity: InputBoxValidationSeverity.Error,
-            });
-          }
-          const err = testResult.data.error;
-          if (err) {
-            if (err.code === "errorCertificateVerification") {
-              return Promise.resolve({
-                message: `Error: URL Not Accessible - ${err.msg}. If applicable, consider disabling [Verify TLS Certificates](${openConfigurationCommand}).`,
-                severity: InputBoxValidationSeverity.Error,
-              });
-            }
-            return Promise.resolve({
-              message: `Error: Invalid URL (unable to validate connectivity with Server URL - ${getMessageFromError(err)}).`,
-              severity: InputBoxValidationSeverity.Error,
-            });
-          }
-
-          if (testResult.data.serverType) {
-            // serverType will be overwritten if it is snowflake
-            serverType = testResult.data.serverType;
-          }
-        } catch (e) {
-          return Promise.resolve({
-            message: `Error: Invalid URL (unable to validate connectivity with Server URL - ${getMessageFromError(e)}).`,
-            severity: InputBoxValidationSeverity.Error,
-          });
-        }
-        return Promise.resolve(undefined);
-      },
-      shouldResume: () => Promise.resolve(false),
-      ignoreFocusOut: true,
-    });
-
-    newDeploymentData.newCredentials.url = formatURL(url.trim());
-
-    if (isConnect(serverType)) {
-      return {
-        step: (input: MultiStepInput) => inputAPIKey(input, state),
-      };
-    }
-
-    if (isSnowflake(serverType)) {
-      return {
-        step: (input: MultiStepInput) => inputSnowflakeConnection(input, state),
-      };
-    }
-
-    // Should not land here since the platform is forcefully picked in the very first step
+    // the user selected an existing credential, making this the
+    // last step to create a new deployment
     return;
   }
 
   // ***************************************************************
-  // Step: New Credentials - Enter the API Key (Connect only)
+  // Create a new credential to be used
   // ***************************************************************
-  async function inputAPIKey(input: MultiStepInput, state: MultiStepState) {
-    const currentAPIKey = newDeploymentData.newCredentials.apiKey || "";
-    let validatedURL = "";
-
-    const apiKey = await input.showInputBox({
-      title: state.title,
-      step: 0,
-      totalSteps: 0,
-      password: true,
-      value: currentAPIKey,
-      prompt: `The API key to be used to authenticate with Posit Connect.
-    See the [User Guide](https://docs.posit.co/connect/user/api-keys/index.html#api-keys-creating)
-    for further information.`,
-      validate: (input: string) => {
-        if (input.includes(" ")) {
-          return Promise.resolve({
-            message: "Error: Invalid API Key (spaces are not allowed).",
-            severity: InputBoxValidationSeverity.Error,
-          });
-        }
-        return Promise.resolve(undefined);
-      },
-      finalValidation: async (input: string) => {
-        // first validate that the API key is formed correctly
-        const errorMsg = checkSyntaxApiKey(input);
-        if (errorMsg) {
-          return Promise.resolve({
-            message: `Error: Invalid API Key (${errorMsg}).`,
-            severity: InputBoxValidationSeverity.Error,
-          });
-        }
-        // url should always be defined by the time we get to this step
-        // but we have to type guard it for the API
-        const serverUrl = newDeploymentData.newCredentials.url || "";
-        try {
-          const testResult = await api.credentials.test(
-            serverUrl,
-            !extensionSettings.verifyCertificates(), // insecure = !verifyCertificates
-            input,
-          );
-          if (testResult.status !== 200) {
-            return Promise.resolve({
-              message: `Error: Invalid API Key (unable to validate API Key - API Call result: ${testResult.status} - ${testResult.statusText}).`,
-              severity: InputBoxValidationSeverity.Error,
-            });
-          }
-          if (testResult.data.error) {
-            return Promise.resolve({
-              message: `Error: Invalid API Key (${testResult.data.error.msg}).`,
-              severity: InputBoxValidationSeverity.Error,
-            });
-          }
-          // we have success, but credentials.test may have returned a different
-          // url for us to use.
-          if (testResult.data.url) {
-            validatedURL = testResult.data.url;
-          }
-        } catch (e) {
-          return Promise.resolve({
-            message: `Error: Invalid API Key (${getMessageFromError(e)})`,
-            severity: InputBoxValidationSeverity.Error,
-          });
-        }
-        return Promise.resolve(undefined);
-      },
-      shouldResume: () => Promise.resolve(false),
-      ignoreFocusOut: true,
-    });
-
-    // only one of api key and snowflake connection should be configured
-    newDeploymentData.newCredentials.apiKey = apiKey;
-    newDeploymentData.newCredentials.snowflakeConnection = "";
-    newDeploymentData.newCredentials.url = validatedURL;
-    return {
-      step: (input: MultiStepInput) => inputCredentialName(input, state),
-    };
-  }
-
-  // ***************************************************************
-  // Step: New Credentials - Enter the Snowflake connection name (Snowflake only)
-  // ***************************************************************
-  async function inputSnowflakeConnection(
-    input: MultiStepInput,
-    state: MultiStepState,
-  ) {
-    // url should always be defined by the time we get to this step
-    // but we have to type guard it for the API
-    const serverUrl = newDeploymentData.newCredentials.url || "";
-
+  async function inputNewCredential() {
     try {
-      await showProgress(
-        "Reading Snowflake connections",
+      newOrSelectedCredential = await newCredential(
         viewId,
-        async () => await getSnowflakeConnections(serverUrl),
+        viewTitle,
+        undefined,
+        stepHistory,
       );
     } catch {
-      // errors have already been displayed by getSnowflakeConnections
-      return;
+      /* the user dismissed this flow, do nothing more */
     }
 
-    const pick = await input.showQuickPick({
-      title: state.title,
-      step: 0,
-      totalSteps: 0,
-      placeholder: "Select the Snowflake connection to use for authentication.",
-      items: connectionQuickPicks,
-      buttons: [],
-      shouldResume: () => Promise.resolve(false),
-      ignoreFocusOut: true,
-    });
-
-    if (!pick || !isQuickPickItemWithIndex(pick)) {
-      return;
-    }
-
-    // only one of api key and snowflake connection should be configured
-    newDeploymentData.newCredentials.apiKey = "";
-    newDeploymentData.newCredentials.snowflakeConnection =
-      connections[pick.index].name;
-    newDeploymentData.newCredentials.url = connections[pick.index].serverUrl;
-    return {
-      step: (input: MultiStepInput) => inputCredentialName(input, state),
-    };
+    // last step to create a new deployment
   }
 
   // ***************************************************************
-  // Step: New Credentials - Name the credential (used for all platforms)
-  // ***************************************************************
-  async function inputCredentialName(
-    input: MultiStepInput,
-    state: MultiStepState,
-  ) {
-    const currentName = newDeploymentData.newCredentials.name || "";
-    const accountName = newDeploymentData.newCredentials.accountName || "";
-
-    const name = await input.showInputBox({
-      title: state.title,
-      step: 0,
-      totalSteps: 0,
-      value: currentName,
-      prompt: `Enter a unique nickname for this ${isConnectCloud(serverType) ? "account" : "server"}.`,
-      placeholder: `${isConnectCloud(serverType) ? accountName : productName}`,
-      finalValidation: (input: string) => {
-        input = input.trim();
-        if (input === "") {
-          return Promise.resolve({
-            message: "Error: Invalid Nickname (a value is required).",
-            severity: InputBoxValidationSeverity.Error,
-          });
-        }
-        if (credentials.find((credential) => credential.name === input)) {
-          return Promise.resolve({
-            message:
-              "Error: Invalid Nickname (value is already in use by a different credential).",
-            severity: InputBoxValidationSeverity.Error,
-          });
-        }
-        if (input === createNewCredentialLabel) {
-          return Promise.resolve({
-            message:
-              "Error: Nickname is reserved for internal use. Please provide another value.",
-            severity: InputBoxValidationSeverity.Error,
-          });
-        }
-        return Promise.resolve(undefined);
-      },
-      shouldResume: () => Promise.resolve(false),
-      ignoreFocusOut: true,
-    });
-
-    newDeploymentData.newCredentials.name = name.trim();
-
-    // last step to create a new credential
-  }
-
-  // ***************************************************************
-  // Wait for the api promise to complete
-  // Kick off the input collection
-  // and await until it completes.
-  // This is a promise which returns the state data used to
-  // collect the info.
+  // Wait for the api promise to complete while showing progress.
+  // Kick off the input collection and await until it completes.
   // ***************************************************************
   try {
     await showProgress(
@@ -1328,69 +669,32 @@ export async function newDeployment(
   }
   await collectInputs();
 
+  const isMissingCredentialData = () => {
+    // either the existingCredentialName needs to be present and legitimate
+    // or the newOrSelectedCredential object must be present
+    return (
+      (!newCredentialForced() &&
+        (!newDeploymentData.existingCredentialName ||
+          (newDeploymentData.existingCredentialName &&
+            newCredentialSelected() &&
+            !newOrSelectedCredential))) ||
+      (newCredentialForced() && !newOrSelectedCredential)
+    );
+  };
+
   // make sure user has not hit escape or moved away from the window
-  // before completing the steps. This also serves as a type guard on
-  // our state data vars down to the actual type desired
+  // before completing the steps
   if (
     !newDeploymentData.entrypoint.filePath ||
     !newDeploymentData.entrypoint.inspectionResult ||
     !newDeploymentData.title ||
-    (!newCredentialByAnyMeans() && !newDeploymentData.existingCredentialName)
+    isMissingCredentialData()
   ) {
-    console.log("User has dismissed flow. Exiting.");
+    console.log("User has dismissed the New Deployment flow. Exiting.");
     return undefined;
   }
 
-  // Maybe create a new credential?
-  if (newCredentialByAnyMeans()) {
-    // have to type guard here, will protect us against
-    // cancellation.
-    if (
-      newDeploymentData.newCredentials.url === undefined ||
-      newDeploymentData.newCredentials.apiKey === undefined ||
-      newDeploymentData.newCredentials.snowflakeConnection === undefined ||
-      newDeploymentData.newCredentials.accountId === undefined ||
-      newDeploymentData.newCredentials.accountName === undefined ||
-      newDeploymentData.newCredentials.refreshToken === undefined ||
-      newDeploymentData.newCredentials.accessToken === undefined ||
-      !newDeploymentData.newCredentials.name ||
-      // separate from the type guards, make sure url is non-empty and at least
-      // one of the secondary values is actually non-empty for Posit Connect
-      (isConnect(serverType) &&
-        (newDeploymentData.newCredentials.url === "" ||
-          (newDeploymentData.newCredentials.apiKey === "" &&
-            newDeploymentData.newCredentials.snowflakeConnection === ""))) ||
-      // separate from the type guards, make sure all of these are actually
-      // non-empty for Posit Connect Cloud
-      (isConnectCloud(serverType) &&
-        (newDeploymentData.newCredentials.accountId === "" ||
-          newDeploymentData.newCredentials.accountName === "" ||
-          newDeploymentData.newCredentials.refreshToken === "" ||
-          newDeploymentData.newCredentials.accessToken === ""))
-    ) {
-      console.log("User has dismissed flow. Exiting.");
-      return undefined;
-    }
-    try {
-      // NEED an credential to be returned from this API
-      // and assigned to newOrExistingCredential
-      const response = await api.credentials.create(
-        newDeploymentData.newCredentials.name,
-        newDeploymentData.newCredentials.url,
-        newDeploymentData.newCredentials.apiKey,
-        newDeploymentData.newCredentials.snowflakeConnection,
-        newDeploymentData.newCredentials.accountId,
-        newDeploymentData.newCredentials.accountName,
-        newDeploymentData.newCredentials.refreshToken,
-        newDeploymentData.newCredentials.accessToken,
-        serverType,
-      );
-      newOrSelectedCredential = response.data;
-    } catch (error: unknown) {
-      const summary = getSummaryStringFromError("credentials::add", error);
-      window.showInformationMessage(summary);
-    }
-  } else if (newDeploymentData.existingCredentialName) {
+  if (!newOrSelectedCredential && newDeploymentData.existingCredentialName) {
     newOrSelectedCredential = credentials.find(
       (credential) =>
         credential.name === newDeploymentData.existingCredentialName,
@@ -1401,7 +705,7 @@ export async function newDeployment(
       );
       return undefined;
     }
-  } else {
+  } else if (!newOrSelectedCredential) {
     // we are not creating a credential but also do not have a required existing value
     window.showErrorMessage(
       "Internal Error: NewDeployment Unexpected type guard failure @2",
@@ -1429,7 +733,7 @@ export async function newDeployment(
     );
 
     newDeploymentData.entrypoint.inspectionResult.configuration.productType =
-      getProductType(serverType);
+      getProductType(newOrSelectedCredential.serverType);
 
     configCreateResponse = (
       await api.configurations.createOrUpdate(
@@ -1477,7 +781,7 @@ export async function newDeployment(
     const contentRecordName = newDeploymentName(existingNames);
     const response = await api.contentRecords.createNew(
       newDeploymentData.entrypoint.inspectionResult.projectDir,
-      newOrSelectedCredential?.name,
+      newOrSelectedCredential.name,
       configName,
       contentRecordName,
     );
@@ -1515,12 +819,6 @@ export async function newDeployment(
     );
   }
 
-  if (!newOrSelectedCredential) {
-    window.showErrorMessage(
-      "Internal Error: NewDeployment Unexpected type guard failure @5",
-    );
-    return undefined;
-  }
   return {
     contentRecord: newContentRecord,
     configuration: newConfig,

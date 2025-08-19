@@ -94,7 +94,9 @@ Once complete, a coverage report will open in your default browser.
 
 End-to-end tests are written in JavaScript and utilize Cypress for testing the Posit Publisher VSCode extension.
 
-They are not currently run within the CI pipeline, but can be run locally to verify that the extension works as expected in a Connect environment.
+These tests can be run locally to verify that the extension works as expected in a Connect environment.
+
+These tests also run automatically in the GitHub Actions CI pipeline for pull requests after the unit tests have passed. The workflow uses the `CONNECT_LICENSE` secret stored in the repository settings to authenticate with Connect during testing. Results, including screenshots of failed tests of test runs, are uploaded as artifacts for troubleshooting. (Video replays can be optionally enabled by setting local environment variable `DEBUG_CYPRESS` or `ACTIONS_STEP_DEBUG` to true).
 
 #### Requirements
 
@@ -189,6 +191,14 @@ just stop
 
 **NOTE: ** If you are updating the images in any way, where you need to rebuild the images with `just build-images`,
 you will need to run the `just stop` command to remove the existing containers before running `just dev`.
+
+#### Repeat Tests Headless Script
+
+Allows you to run your Cypress E2E tests multiple times in headless mode, either for all tests or for specific test files. It is useful for detecting flaky tests and verifying test suite stability.
+
+```bash
+./repeat-cypress-headless.sh [REPEAT=N] [spec1] [spec2] [...]
+```
 
 ## Development
 

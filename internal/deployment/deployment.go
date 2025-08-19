@@ -4,7 +4,6 @@ package deployment
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"io/fs"
 	"strings"
@@ -53,6 +52,15 @@ type Deployment struct {
 	Renv          *renv.Lockfile    `toml:"renv,omitempty" json:"renv"`
 }
 
+func (d *Deployment) PopulateDefaults() {
+	if d.LogsURL == "" && d.ID != "" {
+		d.LogsURL = util.GetLogsURL(d.ServerURL, d.ID)
+	}
+	if d.Configuration != nil {
+		d.Configuration.PopulateDefaults()
+	}
+}
+
 type ConnectCloud struct {
 	AccountName string `toml:"account_name" json:"accountName"`
 }
@@ -80,31 +88,8 @@ func ListDeploymentFiles(base util.AbsolutePath) ([]util.AbsolutePath, error) {
 	return dir.Glob("*.toml")
 }
 
-func UntitledDeploymentName(base util.AbsolutePath) (string, error) {
-	for i := 1; ; i++ {
-		name := fmt.Sprintf("Untitled-%d", i)
-		exists, err := GetDeploymentPath(base, name).Exists()
-		if err != nil {
-			return "", err
-		}
-		if !exists {
-			return name, nil
-		}
-	}
-}
-
 func SaveNameFromPath(path util.AbsolutePath) string {
 	return strings.TrimSuffix(path.Base(), ".toml")
-}
-
-func RenameDeployment(base util.AbsolutePath, oldName, newName string) error {
-	err := util.ValidateFilename(newName)
-	if err != nil {
-		return err
-	}
-	oldPath := GetDeploymentPath(base, oldName)
-	newPath := GetDeploymentPath(base, newName)
-	return oldPath.Rename(newPath.Path)
 }
 
 func FromFile(path util.AbsolutePath) (*Deployment, error) {
@@ -120,9 +105,8 @@ func FromFile(path util.AbsolutePath) (*Deployment, error) {
 	}
 
 	// Migration
-	if d.LogsURL == "" && d.ID != "" {
-		d.LogsURL = util.GetLogsURL(d.ServerURL, d.ID)
-	}
+	d.PopulateDefaults()
+
 	return d, nil
 }
 

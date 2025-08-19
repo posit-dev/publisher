@@ -4,14 +4,17 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/posit-dev/publisher/internal/clients/connect_cloud"
 	"github.com/posit-dev/publisher/internal/clients/http_client"
 	"github.com/posit-dev/publisher/internal/cloud"
 	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/types"
 )
 
 type connectCloudAccountsBodyAccount struct {
@@ -29,11 +32,21 @@ func GetConnectCloudAccountsFunc(log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		environment := cloud.GetCloudEnvironment(req.Header.Get(connectCloudEnvironmentHeader))
 		authorization := req.Header.Get("Authorization")
+		authSplit := strings.Split(authorization, " ")
+		if len(authSplit) != 2 || authSplit[0] != "Bearer" {
+			http.Error(w, "Invalid Authorization header", http.StatusUnauthorized)
+			return
+		}
+		authToken := types.CloudAuthToken(authSplit[1])
 
-		client := connectCloudClientFactory(environment, log, 10*time.Second, authorization)
+		client, err := connectCloudClientFactory(environment, log, 10*time.Second, nil, authToken)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Error creating client: %v", err), http.StatusInternalServerError)
+			return
+		}
 
 		isNewUser := false
-		_, err := client.GetCurrentUser()
+		_, err = client.GetCurrentUser()
 		if err != nil {
 			aerr, isUnauthorized := http_client.IsHTTPAgentErrorStatusOf(err, http.StatusUnauthorized)
 			if isUnauthorized {

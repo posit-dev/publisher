@@ -4,11 +4,16 @@ describe("Deployments Section", () => {
   beforeEach(() => {
     cy.resetConnect();
     cy.setAdminCredentials();
-    cy.clearupDeployments("static");
     cy.visit("/");
   });
 
+  afterEach(() => {
+    cy.clearupDeployments("static");
+  });
+
   it("Static Content Deployment", () => {
+    cy.waitForPublisherIframe(); // Wait after triggering extension
+    cy.debugIframes();
     cy.createDeployment("static", "index.html", "static", (tomlFiles) => {
       const config = tomlFiles.config.contents;
       expect(config.title).to.equal("static");
@@ -22,6 +27,14 @@ describe("Deployments Section", () => {
         `/.posit/publish/deployments/${tomlFiles.contentRecord.name}`,
       );
     }).deployCurrentlySelected();
+    cy.retryWithBackoff(
+      () =>
+        cy.findUniqueInPublisherWebview(
+          '[data-automation="publisher-deployment-section"]',
+        ),
+      5,
+      500,
+    ).should("exist");
   });
 
   // Unable to run this,
@@ -31,6 +44,8 @@ describe("Deployments Section", () => {
   // extra bit of work when we want to change that version around to different
   // ones.
   it.skip("ShinyApp Content Deployment", () => {
+    cy.waitForPublisherIframe(); // Wait after triggering extension
+    cy.debugIframes();
     cy.createDeployment("shinyapp", "app.R", "ShinyApp", (tomlFiles) => {
       const config = tomlFiles.config.contents;
       expect(config.title).to.equal("ShinyApp");
@@ -45,5 +60,13 @@ describe("Deployments Section", () => {
         `/.posit/publish/deployments/${tomlFiles.contentRecord.name}`,
       );
     }).deployCurrentlySelected();
+    cy.retryWithBackoff(
+      () =>
+        cy.findUniqueInPublisherWebview(
+          '[data-automation="publisher-deployment-section"]',
+        ),
+      5,
+      500,
+    ).should("exist");
   });
 });

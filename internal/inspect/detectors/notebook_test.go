@@ -8,12 +8,13 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/spf13/afero"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/schema"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/spf13/afero"
-	"github.com/stretchr/testify/suite"
 )
 
 type NotebookDetectorSuite struct {
@@ -77,11 +78,12 @@ func (s *NotebookDetectorSuite) TestInferTypePlainNotebook() {
 	s.Nil(err)
 	s.Len(configs, 1)
 
+	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeJupyterNotebook,
 		Entrypoint: filename,
-		Validate:   true,
+		Validate:   &validate,
 		Files:      []string{},
 		Python:     &config.Python{},
 	}, configs[0])
@@ -102,11 +104,12 @@ func (s *NotebookDetectorSuite) TestInferTypeVoilaNotebook() {
 	s.Nil(err)
 	s.Len(configs, 1)
 
+	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeJupyterVoila,
 		Entrypoint: filename,
-		Validate:   true,
+		Validate:   &validate,
 		Files:      []string{},
 		Python:     &config.Python{},
 	}, configs[0])
@@ -181,11 +184,12 @@ func (s *NotebookDetectorSuite) TestInferTypeWithEntrypoint() {
 	s.Nil(err)
 	s.Len(configs, 1)
 
+	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeJupyterNotebook,
 		Entrypoint: filename,
-		Validate:   true,
+		Validate:   &validate,
 		Files:      []string{},
 		Python:     &config.Python{},
 	}, configs[0])

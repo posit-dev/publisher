@@ -27,10 +27,10 @@ type PostCredentialsRequest struct {
 	SnowflakeConnection string `json:"snowflakeConnection"`
 
 	// Connect Cloud fields
-	AccountID    string `json:"accountId"`
-	AccountName  string `json:"accountName"`
-	RefreshToken string `json:"refreshToken"`
-	AccessToken  string `json:"accessToken"`
+	AccountID    string               `json:"accountId"`
+	AccountName  string               `json:"accountName"`
+	RefreshToken string               `json:"refreshToken"`
+	AccessToken  types.CloudAuthToken `json:"accessToken"`
 
 	// Token authentication fields
 	Token      string `json:"token"`

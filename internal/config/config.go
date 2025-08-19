@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/pelletier/go-toml/v2"
+
 	"github.com/posit-dev/publisher/internal/schema"
 	"github.com/posit-dev/publisher/internal/util"
 )
@@ -16,10 +17,11 @@ import (
 const DefaultConfigName = "default"
 
 func New() *Config {
+	validate := true
 	return &Config{
 		Schema:   schema.ConfigSchemaURL,
 		Type:     ContentTypeUnknown,
-		Validate: true,
+		Validate: &validate,
 		Files:    []string{},
 	}
 }
@@ -73,6 +75,7 @@ func FromFile(path util.AbsolutePath) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	cfg.PopulateDefaults()
 	return cfg, nil
 }
 

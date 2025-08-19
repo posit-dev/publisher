@@ -8,13 +8,13 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/spf13/afero"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/schema"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/spf13/afero"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/suite"
 )
 
 type ManifestSuite struct {
@@ -108,39 +108,15 @@ func (s *ManifestSuite) TestToJSON() {
 	s.Equal(manifest, decodedManifest)
 }
 
-func (s *ManifestSuite) TestReadManifestFile() {
-	manifestJson := []byte(`{"version": 1, "platform": "4.1.0"}`)
-	manifestPath := util.NewPath(ManifestFilename, afero.NewMemMapFs())
-	err := manifestPath.WriteFile(manifestJson, 0600)
-	s.Nil(err)
-
-	manifest, err := ReadManifestFile(manifestPath)
-	s.Nil(err)
-	s.Equal(&Manifest{
-		Version:  1,
-		Platform: "4.1.0",
-		Packages: PackageMap{},
-		Files:    ManifestFileMap{},
-	}, manifest)
-}
-
-func (s *ManifestSuite) TestReadManifestFileErr() {
-	fs := utiltest.NewMockFs()
-	fs.On("Open", mock.Anything).Return(nil, os.ErrNotExist)
-	manifestPath := util.NewPath(ManifestFilename, fs)
-	manifest, err := ReadManifestFile(manifestPath)
-	s.ErrorIs(err, os.ErrNotExist)
-	s.Nil(manifest)
-}
-
 func (s *ManifestSuite) TestNewManifestFromConfig() {
+	hasParams := true
 	cfg := &config.Config{
 		Schema:        schema.ConfigSchemaURL,
 		Type:          "python-dash",
 		Entrypoint:    "app:myapp",
 		Title:         "Super Title",
 		Description:   "minimal description",
-		HasParameters: true,
+		HasParameters: &hasParams,
 		Python: &config.Python{
 			Version:        "3.4.5",
 			PackageFile:    "requirements.in",
@@ -167,7 +143,7 @@ func (s *ManifestSuite) TestNewManifestFromConfig() {
 		},
 		Python: &Python{
 			Version: "3.4.5",
-			PackageManager: PythonPackageManager{
+			PackageManager: &PythonPackageManager{
 				Name:        "pip",
 				PackageFile: "requirements.in",
 			},
@@ -182,12 +158,13 @@ func (s *ManifestSuite) TestNewManifestFromConfig() {
 }
 
 func (s *ManifestSuite) TestNewManifestFromConfigWithJupyterOptions() {
+	hasParams := true
 	cfg := &config.Config{
 		Schema:        schema.ConfigSchemaURL,
 		Type:          "jupyter-notebook",
 		Entrypoint:    "notebook.ipynb",
 		Title:         "Some Notebook",
-		HasParameters: true,
+		HasParameters: &hasParams,
 		Python: &config.Python{
 			Version:        "3.4.5",
 			PackageFile:    "requirements.in",
@@ -207,7 +184,7 @@ func (s *ManifestSuite) TestNewManifestFromConfigWithJupyterOptions() {
 		},
 		Python: &Python{
 			Version: "3.4.5",
-			PackageManager: PythonPackageManager{
+			PackageManager: &PythonPackageManager{
 				Name:        "pip",
 				PackageFile: "requirements.in",
 			},
@@ -249,7 +226,7 @@ func (s *ManifestSuite) TestNewManifestFromConfigVersionRequirements() {
 		Version: 1,
 		Python: &Python{
 			Version: "3.4.5",
-			PackageManager: PythonPackageManager{
+			PackageManager: &PythonPackageManager{
 				Name:        "pip",
 				PackageFile: "requirements.in",
 			},

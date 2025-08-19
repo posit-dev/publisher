@@ -23,14 +23,6 @@ func InternalError(w http.ResponseWriter, req *http.Request, log logging.Logger,
 	log.Error(text, "method", req.Method, "url", req.URL.String(), "error", err)
 }
 
-func MethodNotAllowed(w http.ResponseWriter, req *http.Request, log logging.Logger) {
-	status := http.StatusMethodNotAllowed
-	text := http.StatusText(status)
-	w.WriteHeader(status)
-	w.Write([]byte(text))
-	log.Error(text, "method", req.Method, "url", req.URL.String())
-}
-
 func BadRequest(w http.ResponseWriter, req *http.Request, log logging.Logger, err error) {
 	status := http.StatusBadRequest
 	text := http.StatusText(status)

@@ -11,8 +11,11 @@ describe("Credentials Section", () => {
     cy.getPublisherSidebarIcon()
       .should("be.visible", { timeout: 10000 })
       .click();
+    cy.waitForPublisherIframe(); // Wait after triggering extension
+    cy.debugIframes();
 
     cy.toggleCredentialsSection();
+    cy.debugIframes();
     cy.publisherWebview()
       .findByText("No credentials have been added yet.")
       .should("be.visible");
@@ -33,6 +36,14 @@ describe("Credentials Section", () => {
     cy.get(".quick-input-widget").type(
       `http://connect-publisher-e2e:3939{enter}`,
     );
+
+    cy.get(".quick-input-and-message input", { timeout: 10000 }).should(
+      "have.attr",
+      "placeholder",
+      "Select authentication method",
+    );
+
+    cy.get(".quick-input-list .monaco-list-row").eq(1).click();
 
     cy.get(".quick-input-message", { timeout: 10000 }).should(
       "include.text",
@@ -174,8 +185,11 @@ describe("Credentials Section", () => {
     cy.getPublisherSidebarIcon()
       .should("be.visible", { timeout: 10000 })
       .click();
+    cy.waitForPublisherIframe(); // Wait after triggering extension
+    cy.debugIframes();
 
     cy.toggleCredentialsSection();
+    cy.debugIframes();
     cy.publisherWebview()
       .findByText("No credentials have been added yet.")
       .should("not.exist");
