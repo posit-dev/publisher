@@ -156,6 +156,7 @@ export const inputCredentialNameStep = async (
   serverType: ServerType,
   productName: ProductName,
   credentials: Credential[],
+  preFilledName: string = "",
 ) => {
   const currentName =
     typeof state.data.name === "string" ? state.data.name : "";
@@ -166,7 +167,7 @@ export const inputCredentialNameStep = async (
     title: state.title,
     step: 0,
     totalSteps: 0,
-    value: currentName,
+    value: currentName || preFilledName,
     prompt: `Enter a unique nickname for this ${isConnectCloud(serverType) ? "account" : "server"}.`,
     placeholder: `${isConnectCloud(serverType) ? accountName : productName}`,
     finalValidation: (input: string) => {

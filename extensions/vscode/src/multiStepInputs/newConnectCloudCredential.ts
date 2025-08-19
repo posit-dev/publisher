@@ -479,7 +479,7 @@ export async function newConnectCloudCredential(
     state: MultiStepState,
   ) {
     // default the credential name to the account name
-    state.data.name =
+    const preFilledName =
       typeof state.data.accountName === "string" ? state.data.accountName : "";
     state.data.name = await inputCredentialNameStep(
       input,
@@ -487,6 +487,7 @@ export async function newConnectCloudCredential(
       serverType,
       productName,
       credentials,
+      preFilledName,
     );
 
     // last step to create a new credential
