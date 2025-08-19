@@ -4,6 +4,7 @@ import { describe, expect, test, vi, beforeEach } from "vitest";
 import { AxiosInstance } from "axios";
 import { Credentials } from "./Credentials";
 import { ServerType } from "../types/contentRecords";
+import { CONNECT_CLOUD_ENV_HEADER } from "../../constants";
 
 // Simple mock for the axios client
 const mockAxiosPost = vi.fn();
@@ -55,9 +56,7 @@ describe("Credentials API client", () => {
         accessToken: "",
       },
       {
-        headers: {
-          "Connect-Cloud-Environment": "production",
-        },
+        headers: { ...CONNECT_CLOUD_ENV_HEADER },
       },
     );
   });
@@ -94,9 +93,7 @@ describe("Credentials API client", () => {
         snowflakeConnection: "",
       },
       {
-        headers: {
-          "Connect-Cloud-Environment": "production",
-        },
+        headers: { ...CONNECT_CLOUD_ENV_HEADER },
       },
     );
   });

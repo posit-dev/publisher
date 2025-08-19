@@ -180,14 +180,6 @@ func (p RelativePath) WithoutExt() RelativePath {
 	return NewRelativePath(withoutExt, p.fs)
 }
 
-func PathFromSlash(fs afero.Fs, path string) Path {
-	return NewPath(filepath.FromSlash(path), fs)
-}
-
-func PathFromEnvironment(envVar string, fs afero.Fs) Path {
-	return NewPath(os.Getenv(envVar), fs)
-}
-
 func Getwd(fs afero.Fs) (AbsolutePath, error) {
 	// os.Getwd returns an absolute path
 	wd, err := os.Getwd()

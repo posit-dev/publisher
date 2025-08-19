@@ -261,7 +261,7 @@ func (s *CredentialsServiceTestSuite) TestNewCredentialsService_KeyringErrFallba
 	keyringErr := errors.New("this is a teapot, unsupported system")
 	keyring.MockInitWithError(keyringErr)
 
-	s.log.On("Debug", "System keyring service is not available", "error", "failed to load credentials: this is a teapot, unsupported system").Return()
+	s.log.On("Debug", "System keyring service is not available", "error", "failed to get known credential GUIDs: this is a teapot, unsupported system").Return()
 	s.log.On("Debug", "Fallback to file managed credentials service due to unavailable system keyring.").Return()
 
 	credservice, err := NewCredentialsService(s.log)
