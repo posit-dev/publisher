@@ -24,6 +24,7 @@ if (process.env.CONNECT_CLOUD_ENV === env.STAGING) {
   config = { ...development, env: env.DEV };
 } else {
   config = { ...production, env: env.PROD };
+  config = { ...staging, env: env.STAGING }; // TODO: remove for go-live
 }
 
 export default config;
