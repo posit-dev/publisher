@@ -113,7 +113,7 @@ func TestRDependencyScanner_Functional(t *testing.T) {
 
 	base := util.NewAbsolutePath(dir, nil)
 
-	// Create an R script that uses two non-base, non-renv packages so the lockfile is meaningful
+	// Create an R script that uses two packages so the lockfile is meaningful
 	rScript := `
 			library(glue)
 			library(cli)
@@ -143,4 +143,9 @@ func TestRDependencyScanner_Functional(t *testing.T) {
 	lf, err := ReadLockfile(lockfilePath)
 	r.NoError(err)
 	r.NotNil(lf.Packages, "Packages map should be present")
+	// Assert packages referenced by the script exist in lockfile
+	_, hasGlue := lf.Packages[PackageName("glue")]
+	_, hasCli := lf.Packages[PackageName("cli")]
+	r.True(hasGlue, "lockfile should include glue package entry")
+	r.True(hasCli, "lockfile should include cli package entry")
 }

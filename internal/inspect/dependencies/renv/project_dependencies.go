@@ -60,7 +60,7 @@ func (s *defaultRDependencyScanner) ScanDependencies(base util.AbsolutePath, rEx
 	try(renv::init(project = proj, bare = TRUE, force = TRUE), silent = TRUE)
 	if (length(deps) > 0) try(renv::install(deps, project = proj), silent = TRUE)
 	lockfile <- file.path(proj, "renv.lock")
-	renv::snapshot(project = proj, lockfile = lockfile, prompt = FALSE)
+	renv::snapshot(project = proj, lockfile = lockfile, prompt = FALSE, type = "all")
 	invisible()
 })()`, tmpProjPath)
 
