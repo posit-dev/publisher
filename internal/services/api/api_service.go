@@ -144,6 +144,14 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	r.Handle(ToPath("configurations", "{name}", "packages", "r"), NewGetConfigRPackagesHandler(base, log)).
 		Methods(http.MethodGet)
 
+	// POST /api/configurations/$NAME/integration-requests
+	r.Handle(ToPath("configurations", "{name}", "integration-requests"), PostIntegrationRequestFuncHandler(base, log)).
+		Methods(http.MethodPost)
+
+	// DELETE /api/configurations/$NAME/integration-requests/$GUID
+	r.Handle(ToPath("configurations", "{name}", "integration-requests", "{guid}"), DeleteIntegrationRequestFuncHandler(base, log)).
+		Methods(http.MethodDelete)
+
 	// GET /api/deployments
 	r.Handle(ToPath("deployments"), GetDeploymentsHandlerFunc(base, log)).
 		Methods(http.MethodGet)
