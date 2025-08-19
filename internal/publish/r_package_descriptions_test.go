@@ -4,8 +4,9 @@ package publish
 
 import (
 	"errors"
-	"github.com/posit-dev/publisher/internal/publish/publishhelper"
 	"testing"
+
+	"github.com/posit-dev/publisher/internal/publish/publishhelper"
 
 	"github.com/posit-dev/publisher/internal/bundles"
 	"github.com/posit-dev/publisher/internal/config"

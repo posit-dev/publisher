@@ -91,7 +91,7 @@ func (s *BundleSuite) SetupTest() {
 
 	// Since we're using a discard logger, we need to create a mock packageMapper that doesn't verify the logger
 	mockPM := &bundleMockPackageMapper{}
-	mockPM.On("GetManifestPackages", mock.Anything, mock.Anything, mock.Anything).Return(bundles.PackageMap{}, nil)
+	mockPM.On("GetManifestPackages", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(bundles.PackageMap{}, nil)
 	s.packageMapper = mockPM
 }
 
@@ -218,8 +218,8 @@ type bundleMockPackageMapper struct {
 	mock.Mock
 }
 
-func (m *bundleMockPackageMapper) GetManifestPackages(dir util.AbsolutePath, lockfilePath util.AbsolutePath, log logging.Logger) (bundles.PackageMap, error) {
-	args := m.Called(dir, lockfilePath, log)
+func (m *bundleMockPackageMapper) GetManifestPackages(dir util.AbsolutePath, lockfilePath util.AbsolutePath, log logging.Logger, recreateLockfile bool) (bundles.PackageMap, error) {
+	args := m.Called(dir, lockfilePath, log, recreateLockfile)
 	if packages, ok := args.Get(0).(bundles.PackageMap); ok {
 		return packages, args.Error(1)
 	}

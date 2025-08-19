@@ -96,7 +96,7 @@ func (s *ManifestPackagesSuite) TestCRAN() {
 	}, nil)
 	mapper.(*defaultPackageMapper).lister = lister
 
-	manifestPackages, err := mapper.GetManifestPackages(base, lockfilePath, logging.New())
+	manifestPackages, err := mapper.GetManifestPackages(base, lockfilePath, logging.New(), false)
 	s.NoError(err)
 
 	var expected bundles.PackageMap
@@ -162,7 +162,7 @@ func (s *ManifestPackagesSuite) TestBioconductor() {
 	}, nil)
 	mapper.(*defaultPackageMapper).lister = lister
 
-	manifestPackages, err := mapper.GetManifestPackages(base, lockfilePath, logging.New())
+	manifestPackages, err := mapper.GetManifestPackages(base, lockfilePath, logging.New(), false)
 	s.NoError(err)
 
 	var expected bundles.PackageMap
@@ -195,7 +195,7 @@ func (s *ManifestPackagesSuite) TestVersionMismatch() {
 	}, nil)
 	mapper.(*defaultPackageMapper).lister = lister
 
-	manifestPackages, err := mapper.GetManifestPackages(base, lockfilePath, logging.New())
+	manifestPackages, err := mapper.GetManifestPackages(base, lockfilePath, logging.New(), false)
 	s.NotNil(err)
 	s.Nil(manifestPackages)
 
@@ -225,7 +225,7 @@ func (s *ManifestPackagesSuite) TestDevVersion() {
 	}, nil)
 	mapper.(*defaultPackageMapper).lister = lister
 
-	manifestPackages, err := mapper.GetManifestPackages(base, lockfilePath, logging.New())
+	manifestPackages, err := mapper.GetManifestPackages(base, lockfilePath, logging.New(), false)
 	s.NotNil(err)
 	s.Nil(manifestPackages)
 
@@ -254,7 +254,7 @@ func (s *ManifestPackagesSuite) TestMissingDescriptionFile() {
 	}, nil)
 	mapper.(*defaultPackageMapper).lister = lister
 
-	manifestPackages, err := mapper.GetManifestPackages(base, lockfilePath, logging.New())
+	manifestPackages, err := mapper.GetManifestPackages(base, lockfilePath, logging.New(), false)
 	s.NotNil(err)
 	s.ErrorIs(err, errPackageNotFound)
 	s.Nil(manifestPackages)
@@ -278,9 +278,52 @@ func (s *ManifestPackagesSuite) TestMissingLockfile_BubblesUpRenvError() {
 		return rIntprMock, nil
 	}
 
-	_, err = mapper.GetManifestPackages(base, lockfilePath, logging.New())
+	_, err = mapper.GetManifestPackages(base, lockfilePath, logging.New(), false)
 	s.NotNil(err)
 	aerr, isAgentErr := types.IsAgentError(err)
 	s.Equal(isAgentErr, true)
 	s.Equal(aerr.Code, types.ErrorRenvPackageNotInstalled)
+}
+
+// scannerAdapter adapts a testify mock to the RDependencyScanner interface for tests
+type scannerAdapter struct{ m *mock.Mock }
+
+func (s *scannerAdapter) ScanDependencies(base util.AbsolutePath, rExecutable string) (util.AbsolutePath, error) {
+	args := s.m.Called(base, rExecutable)
+	if p, ok := args.Get(0).(util.AbsolutePath); ok {
+		return p, args.Error(1)
+	}
+	return util.AbsolutePath{}, args.Error(1)
+}
+
+func (s *ManifestPackagesSuite) TestMissingLockfile_RecreateFromScanner() {
+	base := s.testdata.Join("cran_project")
+	missingLockfilePath := base.Join("does-not-exist.lock")
+
+	mapper, err := NewPackageMapper(base, util.Path{}, s.log)
+	s.NoError(err)
+
+	// Override scanner to return the known renv.lock in cran_project
+	genPath := base.Join("renv.lock")
+	m := mapper.(*defaultPackageMapper)
+	mm := &mock.Mock{}
+	mm.On("ScanDependencies", base, mock.Anything).Return(genPath, nil)
+	m.newScanner = func(log logging.Logger) RDependencyScanner { return &scannerAdapter{mm} }
+
+	// Setup lister
+	lister := &mockPackageLister{}
+	libPath := base.Join("renv_library")
+	otherlibPath := util.NewAbsolutePath("/nonexistent", afero.NewMemMapFs())
+	lister.On("GetLibPaths", mock.Anything).Return([]util.AbsolutePath{otherlibPath, libPath}, nil)
+	lister.On("GetBioconductorRepos", mock.Anything, mock.Anything).Return(nil, nil)
+	lister.On("ListAvailablePackages", mock.Anything, mock.Anything).Return([]AvailablePackage{{
+		Name:       "mypkg",
+		Version:    "1.2.3",
+		Repository: "https://cran.rstudio.com",
+	}}, nil)
+	m.lister = lister
+
+	manifestPackages, err := mapper.GetManifestPackages(base, missingLockfilePath, logging.New(), true)
+	s.NoError(err)
+	s.NotEmpty(manifestPackages)
 }

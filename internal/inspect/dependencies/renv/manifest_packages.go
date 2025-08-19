@@ -20,7 +20,7 @@ import (
 )
 
 type PackageMapper interface {
-	GetManifestPackages(base util.AbsolutePath, lockfilePath util.AbsolutePath, log logging.Logger) (bundles.PackageMap, error)
+	GetManifestPackages(base util.AbsolutePath, lockfilePath util.AbsolutePath, log logging.Logger, recreateLockfile bool) (bundles.PackageMap, error)
 }
 
 type rInterpreterFactory = func() (interpreters.RInterpreter, error)
@@ -29,6 +29,7 @@ type defaultPackageMapper struct {
 	rInterpreterFactory rInterpreterFactory
 	rExecutable         util.Path
 	lister              AvailablePackagesLister
+	newScanner          func(log logging.Logger) RDependencyScanner
 }
 
 func NewPackageMapper(base util.AbsolutePath, rExecutable util.Path, log logging.Logger) (PackageMapper, error) {
@@ -40,6 +41,9 @@ func NewPackageMapper(base util.AbsolutePath, rExecutable util.Path, log logging
 		},
 		rExecutable: rExecutable,
 		lister:      lister,
+		newScanner: func(l logging.Logger) RDependencyScanner {
+			return NewRDependencyScanner(l, nil)
+		},
 	}, err
 }
 
@@ -190,14 +194,39 @@ func mkRenvReadErrDetails(lockfile string, pkg PackageName, lockVersion, libVers
 func (m *defaultPackageMapper) GetManifestPackages(
 	base util.AbsolutePath,
 	lockfilePath util.AbsolutePath,
-	log logging.Logger) (bundles.PackageMap, error) {
+	log logging.Logger,
+	recreateLockfile bool) (bundles.PackageMap, error) {
 
 	lockfile, err := ReadLockfile(lockfilePath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return nil, m.renvEnvironmentCheck(log)
+			if recreateLockfile {
+				// Try to create a lockfile using the RDependencyScanner
+				rInterp, ierr := m.rInterpreterFactory()
+				if ierr != nil {
+					return nil, ierr
+				}
+				rExec, ierr := rInterp.GetRExecutable()
+				if ierr != nil {
+					return nil, m.renvEnvironmentCheck(log)
+				}
+				scanner := m.newScanner(log)
+				generatedPath, ierr := scanner.ScanDependencies(base, rExec.String())
+				if ierr != nil {
+					return nil, ierr
+				}
+				lockfilePath = generatedPath
+			} else {
+				return nil, m.renvEnvironmentCheck(log)
+			}
+		} else {
+			return nil, err
 		}
-		return nil, err
+		// If we reach here, we attempted recreation; read the generated lockfile
+		lockfile, err = ReadLockfile(lockfilePath)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	libPaths, err := m.lister.GetLibPaths(log)

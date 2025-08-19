@@ -33,7 +33,7 @@ func (p *defaultPublisher) getRPackages() (bundles.PackageMap, error) {
 	lockfilePath := p.Dir.Join(lockfileString)
 
 	log.Debug("Collecting manifest R packages", "lockfile", lockfilePath)
-	rPackages, err := p.rPackageMapper.GetManifestPackages(p.Dir, lockfilePath, log)
+	rPackages, err := p.rPackageMapper.GetManifestPackages(p.Dir, lockfilePath, log, false)
 	if err != nil {
 		// If error is an already well detailed agent error, pass it along
 		if aerr, isAgentErr := types.IsAgentError(err); isAgentErr {
