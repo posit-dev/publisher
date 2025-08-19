@@ -2,7 +2,7 @@
 
 import axios from "axios";
 import { isAxiosErrorWithJson, resolveAgentJsonErrorMsg } from "./errorTypes";
-import { isAgentError } from "src/api/types/error";
+import { isAgentError } from "../api/types/error";
 
 export type ErrorMessage = string[];
 export type ErrorMessages = ErrorMessage[];

@@ -94,7 +94,7 @@ import {
   SelectionIsPreContentRecord,
   setSelectionIsPreContentRecord,
 } from "../extension";
-import { createNewCredentialLabel } from "src/multiStepInputs/common";
+import { createNewCredentialLabel } from "src/utils/multiStepHelpers";
 
 enum HomeViewInitialized {
   initialized = "initialized",
