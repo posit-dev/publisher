@@ -66,12 +66,13 @@ func (s *PyShinySuite) TestInferTypeShinyExpress() {
 
 	validate := true
 	s.Equal(&config.Config{
-		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypePythonShiny,
-		Entrypoint: "shiny.express.app:app_2e_py",
-		Validate:   &validate,
-		Files:      []string{fmt.Sprintf("/%s", filename)},
-		Python:     &config.Python{},
+		Schema:              schema.ConfigSchemaURL,
+		Type:                config.ContentTypePythonShiny,
+		Entrypoint:          "app.py",
+		EntrypointObjectRef: "shiny.express.app:app_2e_py",
+		Validate:            &validate,
+		Files:               []string{fmt.Sprintf("/%s", filename)},
+		Python:              &config.Python{},
 	}, configs[0])
 }
 
