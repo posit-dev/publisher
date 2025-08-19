@@ -9,7 +9,7 @@ import { Events, EventStreamMessage, ProductType } from "src/api";
 import {
   getProductName,
   isConnectCloudProduct,
-} from "./multiStepInputs/common";
+} from "./utils/multiStepHelpers";
 
 export type EventStreamRegistration = (message: EventStreamMessage) => void;
 

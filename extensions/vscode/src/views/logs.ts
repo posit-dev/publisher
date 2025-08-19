@@ -37,7 +37,7 @@ import {
 } from "src/utils/errorEnhancer";
 import { showErrorMessageWithTroubleshoot } from "src/utils/window";
 import { DeploymentFailureRenvHandler } from "src/views/deployHandlers";
-import { isConnectCloudProduct } from "src/multiStepInputs/common";
+import { isConnectCloudProduct } from "src/utils/multiStepHelpers";
 
 enum LogStageStatus {
   notStarted,

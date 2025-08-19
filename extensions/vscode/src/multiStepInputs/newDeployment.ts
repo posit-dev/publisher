@@ -30,7 +30,7 @@ import {
   EntryPointPath,
   FileAction,
   PreContentRecord,
-  ServerType,
+  ProductName,
   useApi,
 } from "src/api";
 import {
@@ -50,11 +50,12 @@ import {
   vscodeOpenFiles,
 } from "src/utils/files";
 import { ENTRYPOINT_FILE_EXTENSIONS } from "src/constants";
+import { newCredential } from "./newCredential";
 import {
   createNewCredentialLabel,
+  isConnectCloud,
   getProductType,
-} from "src/multiStepInputs/common";
-import { newCredential } from "./newCredential";
+} from "src/utils/multiStepHelpers";
 
 const viewTitle = "Create a New Deployment";
 
@@ -190,10 +191,9 @@ export async function newDeployment(
       credentialListItems = credentials.map((credential) => ({
         iconPath: new ThemeIcon("posit-publisher-posit-logo"),
         label: credential.name,
-        description:
-          credential.serverType === ServerType.CONNECT_CLOUD
-            ? `${credential.accountName} | Posit Connect Cloud`
-            : credential.url,
+        description: isConnectCloud(credential.serverType)
+          ? ProductName.CONNECT_CLOUD
+          : credential.url,
       }));
       credentialListItems.push({
         iconPath: new ThemeIcon("plus"),
@@ -676,7 +676,8 @@ export async function newDeployment(
       (!newCredentialForced() &&
         (!newDeploymentData.existingCredentialName ||
           (newDeploymentData.existingCredentialName &&
-            newCredentialSelected()))) ||
+            newCredentialSelected() &&
+            !newOrSelectedCredential))) ||
       (newCredentialForced() && !newOrSelectedCredential)
     );
   };
