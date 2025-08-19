@@ -3,6 +3,7 @@ package connect_cloud
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -142,7 +143,6 @@ func (s *ContentRequestSuite) TestGetContentRequestBaseUnsupportedType() {
 	base, err := s.publisher.getContentRequestBase()
 
 	// Verify an error is returned
-	s.Error(err)
+	s.Error(err, fmt.Sprintf("Connect Cloud does not support the content type '%s'", s.publisher.Config.Type))
 	s.Nil(base)
-	s.Contains(err.Error(), "unsupported content type")
 }
