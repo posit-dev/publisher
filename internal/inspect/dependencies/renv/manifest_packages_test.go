@@ -308,7 +308,7 @@ func (s *ManifestPackagesSuite) TestMissingLockfile_RecreateFromScanner() {
 	m := mapper.(*defaultPackageMapper)
 	mm := &mock.Mock{}
 	mm.On("ScanDependencies", base, mock.Anything).Return(genPath, nil)
-	m.newScanner = func(log logging.Logger) RDependencyScanner { return &scannerAdapter{mm} }
+	m.scanner = &scannerAdapter{mm}
 
 	// Setup lister
 	lister := &mockPackageLister{}

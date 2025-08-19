@@ -57,7 +57,8 @@ func TestRDependencyScanner_ScanDependencies(t *testing.T) {
 		}
 	})
 
-	scanner := NewRDependencyScanner(log, exec)
+	scanner := NewRDependencyScanner(log)
+	scanner.rExecutor = exec
 
 	lockfilePath, err := scanner.ScanDependencies(cwd, rExecPath)
 	r.NoError(err)
@@ -90,7 +91,8 @@ func TestRDependencyScanner_ErrWhenLockfileNotCreated(t *testing.T) {
 		mock.Anything,
 	).Return([]byte("ok"), []byte(""), nil)
 
-	scanner := NewRDependencyScanner(log, exec)
+	scanner := NewRDependencyScanner(log)
+	scanner.rExecutor = exec
 	_, err = scanner.ScanDependencies(cwd, rExecPath)
 	r.Error(err)
 	exec.AssertExpectations(t)
@@ -129,7 +131,7 @@ func TestRDependencyScanner_Functional(t *testing.T) {
 	r.NoError(err)
 	r.NotEmpty(rExec.String())
 
-	scanner := NewRDependencyScanner(log, nil)
+	scanner := NewRDependencyScanner(log)
 	lockfilePath, err := scanner.ScanDependencies(base, rExec.String())
 	r.NoError(err)
 

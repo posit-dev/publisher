@@ -29,7 +29,7 @@ type defaultPackageMapper struct {
 	rInterpreterFactory rInterpreterFactory
 	rExecutable         util.Path
 	lister              AvailablePackagesLister
-	newScanner          func(log logging.Logger) RDependencyScanner
+	scanner             RDependencyScanner
 }
 
 func NewPackageMapper(base util.AbsolutePath, rExecutable util.Path, log logging.Logger) (PackageMapper, error) {
@@ -41,9 +41,7 @@ func NewPackageMapper(base util.AbsolutePath, rExecutable util.Path, log logging
 		},
 		rExecutable: rExecutable,
 		lister:      lister,
-		newScanner: func(l logging.Logger) RDependencyScanner {
-			return NewRDependencyScanner(l, nil)
-		},
+		scanner:     NewRDependencyScanner(log),
 	}, err
 }
 
@@ -210,8 +208,7 @@ func (m *defaultPackageMapper) GetManifestPackages(
 				if ierr != nil {
 					return nil, m.renvEnvironmentCheck(log)
 				}
-				scanner := m.newScanner(log)
-				generatedPath, ierr := scanner.ScanDependencies(base, rExec.String())
+				generatedPath, ierr := m.scanner.ScanDependencies(base, rExec.String())
 				if ierr != nil {
 					return nil, ierr
 				}

@@ -25,13 +25,9 @@ type defaultRDependencyScanner struct {
 	log       logging.Logger
 }
 
-func NewRDependencyScanner(log logging.Logger, cmdExecutorOverride executor.Executor) *defaultRDependencyScanner {
-	exec := cmdExecutorOverride
-	if exec == nil {
-		exec = executor.NewExecutor()
-	}
+func NewRDependencyScanner(log logging.Logger) *defaultRDependencyScanner {
 	return &defaultRDependencyScanner{
-		rExecutor: exec,
+		rExecutor: executor.NewExecutor(),
 		log:       log,
 	}
 }
