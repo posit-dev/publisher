@@ -96,27 +96,28 @@ func (t ContentType) IsAppContent() bool {
 }
 
 type Config struct {
-	Comments      []string      `toml:"-" json:"comments,omitempty"`
-	ProductType   ProductType   `toml:"product_type" json:"productType,omitempty"`
-	Schema        string        `toml:"$schema" json:"$schema,omitempty"`
-	Type          ContentType   `toml:"type" json:"type,omitempty"`
-	Entrypoint    string        `toml:"entrypoint" json:"entrypoint,omitempty"`
-	Validate      *bool         `toml:"validate" json:"validate,omitempty"`
-	HasParameters *bool         `toml:"has_parameters,omitempty" json:"hasParameters,omitempty"`
-	Files         []string      `toml:"files,multiline" json:"files"`
-	Title         string        `toml:"title,omitempty" json:"title,omitempty"`
-	Description   string        `toml:"description,multiline,omitempty" json:"description,omitempty"`
-	ThumbnailFile string        `toml:"thumbnail,omitempty" json:"thumbnail,omitempty"`
-	Tags          []string      `toml:"tags,omitempty" json:"tags,omitempty"`
-	Python        *Python       `toml:"python,omitempty" json:"python,omitempty"`
-	R             *R            `toml:"r,omitempty" json:"r,omitempty"`
-	Jupyter       *Jupyter      `toml:"jupyter,omitempty" json:"jupyter,omitempty"`
-	Quarto        *Quarto       `toml:"quarto,omitempty" json:"quarto,omitempty"`
-	Environment   Environment   `toml:"environment,omitempty" json:"environment,omitempty"`
-	Secrets       []string      `toml:"secrets,omitempty" json:"secrets,omitempty"`
-	Schedules     []Schedule    `toml:"schedules,omitempty" json:"schedules,omitempty"`
-	Connect       *Connect      `toml:"connect,omitempty" json:"connect,omitempty"`
-	ConnectCloud  *ConnectCloud `toml:"connect_cloud,omitempty" json:"connectCloud,omitempty"`
+	Comments            []string             `toml:"-" json:"comments,omitempty"`
+	ProductType         ProductType          `toml:"product_type" json:"productType,omitempty"`
+	Schema              string               `toml:"$schema" json:"$schema,omitempty"`
+	Type                ContentType          `toml:"type" json:"type,omitempty"`
+	Entrypoint          string               `toml:"entrypoint" json:"entrypoint,omitempty"`
+	Validate            *bool                `toml:"validate" json:"validate,omitempty"`
+	HasParameters       *bool                `toml:"has_parameters,omitempty" json:"hasParameters,omitempty"`
+	Files               []string             `toml:"files,multiline" json:"files"`
+	Title               string               `toml:"title,omitempty" json:"title,omitempty"`
+	Description         string               `toml:"description,multiline,omitempty" json:"description,omitempty"`
+	ThumbnailFile       string               `toml:"thumbnail,omitempty" json:"thumbnail,omitempty"`
+	Tags                []string             `toml:"tags,omitempty" json:"tags,omitempty"`
+	Python              *Python              `toml:"python,omitempty" json:"python,omitempty"`
+	R                   *R                   `toml:"r,omitempty" json:"r,omitempty"`
+	Jupyter             *Jupyter             `toml:"jupyter,omitempty" json:"jupyter,omitempty"`
+	Quarto              *Quarto              `toml:"quarto,omitempty" json:"quarto,omitempty"`
+	Environment         Environment          `toml:"environment,omitempty" json:"environment,omitempty"`
+	Secrets             []string             `toml:"secrets,omitempty" json:"secrets,omitempty"`
+	Schedules           []Schedule           `toml:"schedules,omitempty" json:"schedules,omitempty"`
+	Connect             *Connect             `toml:"connect,omitempty" json:"connect,omitempty"`
+	ConnectCloud        *ConnectCloud        `toml:"connect_cloud,omitempty" json:"connectCloud,omitempty"`
+	IntegrationRequests []IntegrationRequest `toml:"integration_requests,omitempty" json:"integration_requests,omitempty"`
 }
 
 func (c *Config) PopulateDefaults() {
@@ -353,4 +354,13 @@ const (
 type ConnectCloudAccessControl struct {
 	PublicAccess       bool                   `toml:"public_access,omitempty"  json:"publicAccess,omitempty"`
 	OrganizationAccess OrganizationAccessType `toml:"organization_access,omitempty" json:"organizationAccess,omitempty"`
+}
+
+type IntegrationRequest struct {
+	Guid            string         `toml:"guid,omitempty" json:"guid,omitempty"`
+	Name            string         `toml:"name,omitempty" json:"name,omitempty"`
+	Description     string         `toml:"description,omitempty" json:"description,omitempty"`
+	AuthType        string         `toml:"auth_type,omitempty" json:"auth_type,omitempty"`
+	IntegrationType string         `toml:"type,omitempty" json:"type,omitempty"`
+	Config          map[string]any `toml:"config,omitempty" json:"config,omitempty"`
 }

@@ -138,3 +138,21 @@ func (cfg *Config) RemoveSecret(secret string) error {
 	}
 	return nil
 }
+
+func (cfg *Config) AddIntegrationRequest(ir IntegrationRequest) error {
+	if cfg.IntegrationRequests == nil {
+		cfg.IntegrationRequests = []IntegrationRequest{}
+	}
+	cfg.IntegrationRequests = append(cfg.IntegrationRequests, ir)
+	return nil
+}
+
+func (cfg *Config) RemoveIntegrationRequest(Guid string) error {
+	for i, r := range cfg.IntegrationRequests {
+		if r.Guid == Guid {
+			cfg.IntegrationRequests = append(cfg.IntegrationRequests[:i], cfg.IntegrationRequests[i+1:]...)
+			break
+		}
+	}
+	return nil
+}
