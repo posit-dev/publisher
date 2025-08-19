@@ -676,7 +676,8 @@ export async function newDeployment(
       (!newCredentialForced() &&
         (!newDeploymentData.existingCredentialName ||
           (newDeploymentData.existingCredentialName &&
-            newCredentialSelected()))) ||
+            newCredentialSelected() &&
+            !newOrSelectedCredential))) ||
       (newCredentialForced() && !newOrSelectedCredential)
     );
   };
