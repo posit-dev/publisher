@@ -9,12 +9,13 @@ import (
 	"strings"
 
 	"github.com/alecthomas/kong"
+	"github.com/spf13/afero"
+
 	"github.com/posit-dev/publisher/cmd/publisher/commands"
 	"github.com/posit-dev/publisher/internal/cli_types"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/project"
-	"github.com/spf13/afero"
 )
 
 type cliSpec struct {
@@ -35,10 +36,10 @@ func Fatal(err error) {
 }
 
 func main() {
-	ctx := &cli_types.CLIContext{
-		Fs:     afero.NewOsFs(),
-		Logger: events.NewCLILogger(0, os.Stderr),
-	}
+	ctx := cli_types.NewCLIContext(
+		afero.NewOsFs(),
+		events.NewCLILogger(0, os.Stderr),
+	)
 	cli := cliSpec{
 		CommonArgs: cli_types.CommonArgs{},
 	}

@@ -233,6 +233,7 @@ func (cr *CredentialRecord) ToCredential() (*Credential, error) {
 }
 
 type CreateCredentialDetails struct {
+	GUID       string // Optional, used for migration to preserve original GUID
 	Name       string
 	URL        string
 	ServerType server_type.ServerType
@@ -292,7 +293,12 @@ func (details CreateCredentialDetails) ToCredential() (*Credential, error) {
 		return nil, err
 	}
 
-	guid := uuid.New().String()
+	// If a GUID is provided, use it (for migration)
+	// Otherwise, generate a new GUID
+	guid := details.GUID
+	if guid == "" {
+		guid = uuid.New().String()
+	}
 	return &Credential{
 		GUID:                guid,
 		Name:                details.Name,

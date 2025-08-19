@@ -19,7 +19,6 @@ import (
 )
 
 type Bundler interface {
-	CreateManifest() (*Manifest, error)
 	CreateBundle(archive io.Writer) (*Manifest, error)
 }
 
@@ -78,11 +77,6 @@ type bundle struct {
 	archive  util.TarWriter // Archive containing the files
 	numFiles int64          // Number of files in the bundle
 	size     int64          // Total uncompressed size of the files, in bytes
-}
-
-func (b *bundler) CreateManifest() (*Manifest, error) {
-	b.log.Info("Creating manifest from directory", "source_dir", b.baseDir)
-	return b.makeBundle(nil)
 }
 
 func (b *bundler) CreateBundle(archive io.Writer) (*Manifest, error) {
