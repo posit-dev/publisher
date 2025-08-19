@@ -58,7 +58,7 @@ type mockPackageMapper struct {
 	mock.Mock
 }
 
-func (m *mockPackageMapper) GetManifestPackages(base util.AbsolutePath, lockfilePath util.AbsolutePath, log logging.Logger, recreateLockfile bool) (bundles.PackageMap, error) {
+func (m *mockPackageMapper) GetManifestPackages(base util.AbsolutePath, lockfilePath util.AbsolutePath, log logging.Logger) (bundles.PackageMap, error) {
 	args := m.Called(base, lockfilePath)
 	pkgs := args.Get(0)
 	if pkgs == nil {
@@ -66,6 +66,14 @@ func (m *mockPackageMapper) GetManifestPackages(base util.AbsolutePath, lockfile
 	} else {
 		return pkgs.(bundles.PackageMap), args.Error(1)
 	}
+}
+
+func (m *mockPackageMapper) ScanDependencies(base util.AbsolutePath, log logging.Logger) (util.AbsolutePath, error) {
+	args := m.Called(base)
+	if p, ok := args.Get(0).(util.AbsolutePath); ok {
+		return p, args.Error(1)
+	}
+	return util.AbsolutePath{}, args.Error(1)
 }
 
 type publishErrsMock struct {
@@ -386,9 +394,9 @@ func (s *PublishConnectSuite) publishWithClient(
 
 	rPackageMapper := &mockPackageMapper{}
 	if errsMock.rPackageErr != nil {
-		rPackageMapper.On("GetManifestPackages", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, errsMock.rPackageErr)
+		rPackageMapper.On("GetManifestPackages", mock.Anything, mock.Anything).Return(nil, errsMock.rPackageErr)
 	} else {
-		rPackageMapper.On("GetManifestPackages", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(bundles.PackageMap{}, nil)
+		rPackageMapper.On("GetManifestPackages", mock.Anything, mock.Anything).Return(bundles.PackageMap{}, nil)
 	}
 
 	rPackageMapperFactory = func(base util.AbsolutePath, rExecutable util.Path, log logging.Logger) (renv.PackageMapper, error) {
@@ -859,9 +867,9 @@ func (s *PublishConnectCloudSuite) publishWithCloudClient(
 	// Mock R package mapper
 	rPackageMapper := &mockPackageMapper{}
 	if errsMock.rPackageErr != nil {
-		rPackageMapper.On("GetManifestPackages", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, errsMock.rPackageErr)
+		rPackageMapper.On("GetManifestPackages", mock.Anything, mock.Anything).Return(nil, errsMock.rPackageErr)
 	} else {
-		rPackageMapper.On("GetManifestPackages", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(bundles.PackageMap{}, nil)
+		rPackageMapper.On("GetManifestPackages", mock.Anything, mock.Anything).Return(bundles.PackageMap{}, nil)
 	}
 
 	// Replace factory function

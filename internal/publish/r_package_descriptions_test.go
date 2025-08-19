@@ -90,7 +90,7 @@ func (s *RPackageDescSuite) TestGetRPackages() {
 	s.packageMapper.On("GetManifestPackages", s.dirPath, expectedLockfilePath).Return(s.successPackageMap, nil)
 
 	publisher := s.makePublisher()
-	packageMap, err := publisher.getRPackages()
+	packageMap, err := publisher.getRPackages(false)
 	s.NoError(err)
 	s.Equal(packageMap, s.successPackageMap)
 	s.log.AssertExpectations(s.T())
@@ -112,7 +112,7 @@ func (s *RPackageDescSuite) TestGetRPackages_PackageFilePresent() {
 	s.packageMapper.On("GetManifestPackages", s.dirPath, expectedLockfilePath).Return(s.successPackageMap, nil)
 
 	publisher := s.makePublisher()
-	packageMap, err := publisher.getRPackages()
+	packageMap, err := publisher.getRPackages(false)
 	s.NoError(err)
 	s.Equal(packageMap, s.successPackageMap)
 	s.log.AssertExpectations(s.T())
@@ -132,7 +132,7 @@ func (s *RPackageDescSuite) TestGetRPackages_ScanPackagesError() {
 	s.packageMapper.On("GetManifestPackages", s.dirPath, expectedLockfilePath).Return(bundles.PackageMap{}, expectedPkgsErr)
 
 	publisher := s.makePublisher()
-	_, err := publisher.getRPackages()
+	_, err := publisher.getRPackages(false)
 	s.NotNil(err)
 	s.Equal(err.(*types.AgentError).Message, "Could not scan R packages from lockfile: custom.lock, chair is required to reach the top shelf")
 	s.log.AssertExpectations(s.T())
@@ -155,8 +155,32 @@ func (s *RPackageDescSuite) TestGetRPackages_ScanPackagesKnownAgentError() {
 	s.packageMapper.On("GetManifestPackages", s.dirPath, expectedLockfilePath).Return(bundles.PackageMap{}, expectedPkgsAgentErr)
 
 	publisher := s.makePublisher()
-	_, err := publisher.getRPackages()
+	_, err := publisher.getRPackages(false)
 	s.NotNil(err)
 	s.Equal(err.(*types.AgentError).Message, "Bad package version, this is a known failure.")
+	s.log.AssertExpectations(s.T())
+}
+
+func (s *RPackageDescSuite) TestGetRPackages_ScanDependenciesTrue_UsesScannerLockfile() {
+	// Log only called on success
+	s.log.On("Info", "Done collecting R package descriptions").Return()
+
+	// Configure a specific package file, so we can check that it is not used.
+	s.stateStore.Config = &config.Config{
+		R: &config.R{
+			PackageFile: "renv_default.lock",
+		},
+	}
+
+	// Scanner returns a fake lockfile path
+	generated := s.dirPath.Join("scanned.lock")
+	s.packageMapper.On("ScanDependencies", s.dirPath).Return(generated, nil)
+	// Ensure GetManifestPackages is called with the generated lockfile, not the default
+	s.packageMapper.On("GetManifestPackages", s.dirPath, generated).Return(s.successPackageMap, nil)
+
+	publisher := s.makePublisher()
+	packageMap, err := publisher.getRPackages(true)
+	s.NoError(err)
+	s.Equal(s.successPackageMap, packageMap)
 	s.log.AssertExpectations(s.T())
 }

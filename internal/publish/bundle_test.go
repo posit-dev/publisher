@@ -218,10 +218,18 @@ type bundleMockPackageMapper struct {
 	mock.Mock
 }
 
-func (m *bundleMockPackageMapper) GetManifestPackages(dir util.AbsolutePath, lockfilePath util.AbsolutePath, log logging.Logger, recreateLockfile bool) (bundles.PackageMap, error) {
-	args := m.Called(dir, lockfilePath, log, recreateLockfile)
+func (m *bundleMockPackageMapper) GetManifestPackages(dir util.AbsolutePath, lockfilePath util.AbsolutePath, log logging.Logger) (bundles.PackageMap, error) {
+	args := m.Called(dir, lockfilePath, log)
 	if packages, ok := args.Get(0).(bundles.PackageMap); ok {
 		return packages, args.Error(1)
 	}
 	return nil, args.Error(1)
+}
+
+func (m *bundleMockPackageMapper) ScanDependencies(base util.AbsolutePath, log logging.Logger) (util.AbsolutePath, error) {
+	args := m.Called(base)
+	if p, ok := args.Get(0).(util.AbsolutePath); ok {
+		return p, args.Error(1)
+	}
+	return util.AbsolutePath{}, args.Error(1)
 }

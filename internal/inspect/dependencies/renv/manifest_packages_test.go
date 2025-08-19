@@ -96,7 +96,7 @@ func (s *ManifestPackagesSuite) TestCRAN() {
 	}, nil)
 	mapper.(*defaultPackageMapper).lister = lister
 
-	manifestPackages, err := mapper.GetManifestPackages(base, lockfilePath, logging.New(), false)
+	manifestPackages, err := mapper.GetManifestPackages(base, lockfilePath, logging.New())
 	s.NoError(err)
 
 	var expected bundles.PackageMap
@@ -162,7 +162,7 @@ func (s *ManifestPackagesSuite) TestBioconductor() {
 	}, nil)
 	mapper.(*defaultPackageMapper).lister = lister
 
-	manifestPackages, err := mapper.GetManifestPackages(base, lockfilePath, logging.New(), false)
+	manifestPackages, err := mapper.GetManifestPackages(base, lockfilePath, logging.New())
 	s.NoError(err)
 
 	var expected bundles.PackageMap
@@ -195,7 +195,7 @@ func (s *ManifestPackagesSuite) TestVersionMismatch() {
 	}, nil)
 	mapper.(*defaultPackageMapper).lister = lister
 
-	manifestPackages, err := mapper.GetManifestPackages(base, lockfilePath, logging.New(), false)
+	manifestPackages, err := mapper.GetManifestPackages(base, lockfilePath, logging.New())
 	s.NotNil(err)
 	s.Nil(manifestPackages)
 
@@ -225,7 +225,7 @@ func (s *ManifestPackagesSuite) TestDevVersion() {
 	}, nil)
 	mapper.(*defaultPackageMapper).lister = lister
 
-	manifestPackages, err := mapper.GetManifestPackages(base, lockfilePath, logging.New(), false)
+	manifestPackages, err := mapper.GetManifestPackages(base, lockfilePath, logging.New())
 	s.NotNil(err)
 	s.Nil(manifestPackages)
 
@@ -254,7 +254,7 @@ func (s *ManifestPackagesSuite) TestMissingDescriptionFile() {
 	}, nil)
 	mapper.(*defaultPackageMapper).lister = lister
 
-	manifestPackages, err := mapper.GetManifestPackages(base, lockfilePath, logging.New(), false)
+	manifestPackages, err := mapper.GetManifestPackages(base, lockfilePath, logging.New())
 	s.NotNil(err)
 	s.ErrorIs(err, errPackageNotFound)
 	s.Nil(manifestPackages)
@@ -278,7 +278,7 @@ func (s *ManifestPackagesSuite) TestMissingLockfile_BubblesUpRenvError() {
 		return rIntprMock, nil
 	}
 
-	_, err = mapper.GetManifestPackages(base, lockfilePath, logging.New(), false)
+	_, err = mapper.GetManifestPackages(base, lockfilePath, logging.New())
 	s.NotNil(err)
 	aerr, isAgentErr := types.IsAgentError(err)
 	s.Equal(isAgentErr, true)
@@ -296,9 +296,9 @@ func (s *scannerAdapter) ScanDependencies(base util.AbsolutePath, rExecutable st
 	return util.AbsolutePath{}, args.Error(1)
 }
 
-func (s *ManifestPackagesSuite) TestMissingLockfile_RecreateFromScanner() {
+func (s *ManifestPackagesSuite) TestLockFile_CreateFromScanner() {
 	base := s.testdata.Join("cran_project")
-	missingLockfilePath := base.Join("does-not-exist.lock")
+	// Generate a lockfile via the scanner and ensure we use it.
 
 	mapper, err := NewPackageMapper(base, util.Path{}, s.log)
 	s.NoError(err)
@@ -323,7 +323,12 @@ func (s *ManifestPackagesSuite) TestMissingLockfile_RecreateFromScanner() {
 	}}, nil)
 	m.lister = lister
 
-	manifestPackages, err := mapper.GetManifestPackages(base, missingLockfilePath, logging.New(), true)
+	// With new API, caller requests scanning first, then passes the generated lockfile.
+	genPath2, err := mapper.ScanDependencies(base, logging.New())
+	s.NoError(err)
+	manifestPackages, err := mapper.GetManifestPackages(base, genPath2, logging.New())
 	s.NoError(err)
 	s.NotEmpty(manifestPackages)
+	// Ensure the scanner was indeed invoked
+	mm.AssertExpectations(s.T())
 }

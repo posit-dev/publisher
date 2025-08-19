@@ -20,7 +20,11 @@ import (
 )
 
 type PackageMapper interface {
-	GetManifestPackages(base util.AbsolutePath, lockfilePath util.AbsolutePath, log logging.Logger, recreateLockfile bool) (bundles.PackageMap, error)
+	// GetManifestPackages reads the provided lockfile and returns a manifest package map.
+	GetManifestPackages(base util.AbsolutePath, lockfilePath util.AbsolutePath, log logging.Logger) (bundles.PackageMap, error)
+	// ScanDependencies runs a dependency scan using R + renv and returns the
+	// path to a generated lockfile for the given base project directory.
+	ScanDependencies(base util.AbsolutePath, log logging.Logger) (util.AbsolutePath, error)
 }
 
 type rInterpreterFactory = func() (interpreters.RInterpreter, error)
@@ -192,38 +196,15 @@ func mkRenvReadErrDetails(lockfile string, pkg PackageName, lockVersion, libVers
 func (m *defaultPackageMapper) GetManifestPackages(
 	base util.AbsolutePath,
 	lockfilePath util.AbsolutePath,
-	log logging.Logger,
-	recreateLockfile bool) (bundles.PackageMap, error) {
+	log logging.Logger) (bundles.PackageMap, error) {
 
 	lockfile, err := ReadLockfile(lockfilePath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			if recreateLockfile {
-				// Try to create a lockfile using the RDependencyScanner
-				rInterp, ierr := m.rInterpreterFactory()
-				if ierr != nil {
-					return nil, ierr
-				}
-				rExec, ierr := rInterp.GetRExecutable()
-				if ierr != nil {
-					return nil, m.renvEnvironmentCheck(log)
-				}
-				generatedPath, ierr := m.scanner.ScanDependencies(base, rExec.String())
-				if ierr != nil {
-					return nil, ierr
-				}
-				lockfilePath = generatedPath
-			} else {
-				return nil, m.renvEnvironmentCheck(log)
-			}
-		} else {
-			return nil, err
+			// No lockfile and not recreating -> surface renv environment guidance
+			return nil, m.renvEnvironmentCheck(log)
 		}
-		// If we reach here, we attempted recreation; read the generated lockfile
-		lockfile, err = ReadLockfile(lockfilePath)
-		if err != nil {
-			return nil, err
-		}
+		return nil, err
 	}
 
 	libPaths, err := m.lister.GetLibPaths(log)
@@ -283,6 +264,27 @@ func (m *defaultPackageMapper) GetManifestPackages(
 		manifestPackages[string(pkg.Package)] = *manifestPkg
 	}
 	return manifestPackages, nil
+}
+
+// ScanDependencies uses the RDependencyScanner to generate a renv.lock for the
+// given base project directory and returns the lockfile path.
+func (m *defaultPackageMapper) ScanDependencies(
+	base util.AbsolutePath,
+	log logging.Logger,
+) (util.AbsolutePath, error) {
+	rInterp, err := m.rInterpreterFactory()
+	if err != nil {
+		return util.AbsolutePath{}, err
+	}
+	rExec, err := rInterp.GetRExecutable()
+	if err != nil {
+		return util.AbsolutePath{}, m.renvEnvironmentCheck(log)
+	}
+	generatedPath, err := m.scanner.ScanDependencies(base, rExec.String())
+	if err != nil {
+		return util.AbsolutePath{}, err
+	}
+	return generatedPath, nil
 }
 
 func (m *defaultPackageMapper) renvEnvironmentCheck(
