@@ -27,7 +27,7 @@ func getCloudContentType(contentType config.ContentType) (types.ContentType, err
 	case config.ContentTypeRMarkdown:
 		return types.ContentTypeRMarkdown, nil
 	}
-	return "", fmt.Errorf("unsupported content type: %s", contentType)
+	return "", fmt.Errorf("Connect Cloud does not support the content type '%s'", contentType)
 }
 
 func (c *ServerPublisher) getContentRequestBase() (*types.ContentRequestBase, error) {
