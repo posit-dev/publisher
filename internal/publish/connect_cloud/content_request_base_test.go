@@ -143,6 +143,6 @@ func (s *ContentRequestSuite) TestGetContentRequestBaseUnsupportedType() {
 	base, err := s.publisher.getContentRequestBase()
 
 	// Verify an error is returned
-	s.Error(err, fmt.Sprintf("Connect Cloud does not support the content type '%s'", s.publisher.Config.Type))
+	s.Error(err, fmt.Sprintf("content type '%s' is not supported by Connect Cloud", s.publisher.Config.Type))
 	s.Nil(base)
 }
