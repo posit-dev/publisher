@@ -46,7 +46,6 @@ func (s *defaultRDependencyScanner) ScanDependencies(base util.AbsolutePath, rEx
 	tmpProjPath := filepath.ToSlash(tmpProjectPath.String()) // Use forward-slash for compatibility across platforms.
 	script := fmt.Sprintf(`(function(){
 	if (is.function(renv::consent)) try(renv::consent(provided = TRUE), silent = TRUE)
-	options(repos = c(CRAN = "https://cloud.r-project.org"))
 	deps <- tryCatch({
 		d <- renv::dependencies(path = ".", progress = FALSE)
 		unique(stats::na.omit(d$Package))

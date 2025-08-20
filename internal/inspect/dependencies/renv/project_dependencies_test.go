@@ -151,3 +151,55 @@ func TestRDependencyScanner_Functional(t *testing.T) {
 	r.True(hasGlue, "lockfile should include glue package entry")
 	r.True(hasCli, "lockfile should include cli package entry")
 }
+
+// TestRDependencyScanner_Functional_NoMirror forces an R session with no CRAN mirror
+// (options(repos) CRAN="@CRAN@") and verifies ScanDependencies does not prompt for a mirror.
+func TestRDependencyScanner_Functional_NoMirror(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping functional test in short mode")
+	}
+
+	r := require.New(t)
+	log := logging.New()
+
+	// Create a real temp project where we can inspect dependencies
+	dir, err := os.MkdirTemp("", "publisher-renv-functional-nocran-*")
+	r.NoError(err)
+	defer os.RemoveAll(dir)
+	base := util.NewAbsolutePath(dir, nil)
+	rScript := `
+			library(cli)
+			cli::cli_alert_success("ok")
+		`
+	err = base.Join("main.R").WriteFile([]byte(rScript), 0644)
+	r.NoError(err)
+
+	// Prepare an R user profile that unsets the CRAN mirror
+	// We set CRAN to @CRAN@ to simulate no mirror configured
+	profDir, err := os.MkdirTemp("", "r-profile-user-*")
+	r.NoError(err)
+	defer os.RemoveAll(profDir)
+	profPath := filepath.Join(profDir, ".Rprofile")
+	r.NoError(os.WriteFile(profPath, []byte(`options(repos = c(CRAN = "@CRAN@"))`), 0644))
+
+	// Ensure R uses the newly created profile and that we restore the old one after the test
+	oldProfile := os.Getenv("R_PROFILE_USER")
+	t.Cleanup(func() {
+		_ = os.Setenv("R_PROFILE_USER", oldProfile)
+	})
+	r.NoError(os.Setenv("R_PROFILE_USER", profPath))
+
+	interp, err := interpreters.NewRInterpreter(base, util.Path{}, log, nil, nil, nil)
+	r.NoError(err)
+	rExec, err := interp.GetRExecutable()
+	r.NoError(err)
+	r.NotEmpty(rExec.String())
+
+	// Confirm renv does not prompt for mirror and lockfile is created.
+	scanner := NewRDependencyScanner(log)
+	lockfilePath, err := scanner.ScanDependencies(base, rExec.String())
+	r.NoError(err)
+	exists, e2 := lockfilePath.Exists()
+	r.NoError(e2)
+	r.True(exists)
+}
