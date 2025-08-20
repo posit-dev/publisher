@@ -6,10 +6,7 @@ import EventSource from "eventsource";
 import { Readable } from "stream";
 
 import { Events, EventStreamMessage, ProductType } from "src/api";
-import {
-  getProductName,
-  isConnectCloudProduct,
-} from "./utils/multiStepHelpers";
+import { getProductName } from "src/utils/multiStepHelpers";
 
 export type EventStreamRegistration = (message: EventStreamMessage) => void;
 
@@ -69,7 +66,7 @@ export function displayEventStreamMessage(msg: EventStreamMessage): string {
   }
 
   if (msg.type === "publish/validateDeployment/failure") {
-    return `${msg.data.message}: status ${msg.data.status} on ${msg.data.url}`;
+    return `${msg.data.message}: status ${msg.data.status} on ${msg.data.logsUrl}`;
   }
 
   if (msg.type === "publish/success") {
@@ -79,9 +76,7 @@ export function displayEventStreamMessage(msg: EventStreamMessage): string {
   if (msg.type === "publish/failure") {
     const productType = msg.data.productType as ProductType;
     const productName = getProductName(productType);
-    const url = isConnectCloudProduct(productType)
-      ? msg.data.logsUrl
-      : msg.data.dashboardUrl;
+    const url = msg.data.logsUrl || msg.data.dashboardUrl;
 
     if (url) {
       return `Deployment failed, click to view ${productName} logs: ${url}`;
