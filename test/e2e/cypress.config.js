@@ -1,9 +1,15 @@
 const { defineConfig } = require("cypress");
 const { authenticateOAuthDevice } = require("./support/oauth-task");
+const fs = require("fs");
+const path = require("path");
 
 const DEBUG_CYPRESS = process.env.DEBUG_CYPRESS === "true";
 const ACTIONS_STEP_DEBUG = process.env.ACTIONS_STEP_DEBUG === "true";
 const isCI = process.env.CI === "true";
+
+// Load PCC config and inject into Cypress env
+const configPath = path.resolve(__dirname, "config/pcc.qa.staging.json");
+const pccConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
 
 module.exports = defineConfig({
   e2e: {
@@ -41,6 +47,7 @@ module.exports = defineConfig({
     CONNECT_SERVER_URL: "http://localhost:3939",
     CONNECT_MANAGER_URL: "http://localhost:4723",
     CONNECT_CLOUD_ENV: process.env.CONNECT_CLOUD_ENV || "staging",
+    pccConfig,
   },
   chromeWebSecurity: false,
   video: DEBUG_CYPRESS || ACTIONS_STEP_DEBUG,

@@ -78,6 +78,7 @@ describe("Credentials Section", () => {
   });
 
   it("New Connect Cloud Credential - OAuth Device Code", () => {
+    const user = Cypress.env("pccConfig").gh_user_free_plan;
     cy.getPublisherSidebarIcon()
       .should("be.visible", { timeout: 10000 })
       .click();
@@ -155,13 +156,13 @@ describe("Credentials Section", () => {
     // Wait for window.open to be called
     cy.get("@windowOpen").should("have.been.called");
 
-    // Run the OAuth task with VS Code's captured URL
+    // Run the OAuth task with VS Code's captured URL and loaded user credentials
     cy.window().then((win) => {
       cy.task(
         "authenticateOAuthDevice",
         {
-          email: "tim.yaeger@posit.co",
-          password: "7b*H5:Efj4rf77wba8'+",
+          email: user.email,
+          password: user.auth.password,
           oauthUrl: win.oauthUrl, // Pass VS Code's OAuth URL to Playwright
         },
         { timeout: 60000 },
