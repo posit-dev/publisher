@@ -136,7 +136,7 @@ export async function newConnectCloudCredential(
         accessToken: <string | undefined>undefined, // eventual type is string
         refreshToken: <string | undefined>undefined, // eventual type is string
         accountId: <string | undefined>undefined, // eventual type is string
-        accountName: <string | undefined>undefined, // eventual type is
+        accountName: <string | undefined>undefined, // eventual type is string
         displayName: <string | undefined>undefined, // eventual type is string
       },
       promptStepNumbers: {},
