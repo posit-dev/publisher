@@ -33,7 +33,8 @@ for SPEC in "${SPECS[@]}"; do
   for ((i=1; i<=REPEAT; i++)); do
     echo ""
     echo "=== Cypress run #$i for $SPEC_NAME ==="
-    if npx cypress run --spec "$SPEC"; then
+    PLAYWRIGHT_HEADLESS=true npx cypress run --spec "$SPEC"
+    if [ $? -eq 0 ]; then
       echo "Run #$i PASSED"
       ((PASS_COUNT++))
       ((TOTAL_PASS++))
