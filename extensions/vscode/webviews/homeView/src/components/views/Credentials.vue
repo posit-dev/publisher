@@ -15,19 +15,19 @@
       :description="getDescription(credential)"
       :data-automation="`${credential.name}-list`"
       codicon="posit-publisher-icons-posit-logo"
-			:actions="[
-      	{
-					label: 'Delete Credential',
-					codicon: 'codicon-trash',
-					fn: () => sendMsg({
-						kind: WebviewToHostMessageType.DELETE_CREDENTIAL,
-						content: {
-							credentialGUID: credential.guid,
-							credentialName: credential.name,
-						}
-					}),
-				},
-			]"
+      :actions="[
+        {
+          label: 'Delete Credential',
+          codicon: 'codicon-trash',
+          fn: () => sendMsg({
+            kind: WebviewToHostMessageType.DELETE_CREDENTIAL,
+            content: {
+              credentialGUID: credential.guid,
+              credentialName: credential.name,
+            }
+          }),
+        },
+      ]"
       align-icon-with-twisty
       :data-vscode-context="vscodeContext(credential)"
     />
