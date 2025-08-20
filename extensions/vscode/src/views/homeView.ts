@@ -187,6 +187,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         return this.showNewCredentialForDeployment();
       case WebviewToHostMessageType.NEW_CREDENTIAL:
         return this.showNewCredential();
+			case WebviewToHostMessageType.DELETE_CREDENTIAL:
+				return this.deleteCredential(msg.content);
       case WebviewToHostMessageType.VIEW_PUBLISHING_LOG:
         return this.showPublishingLog();
       case WebviewToHostMessageType.SHOW_ASSOCIATE_GUID:
