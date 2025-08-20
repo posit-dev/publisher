@@ -28,6 +28,17 @@ describe("Credentials Section", () => {
       "Create a New Credential",
     );
 
+    cy.get(
+      'input[aria-label*="Please select the platform for the new credential."]',
+    ).should(
+      "have.attr",
+      "placeholder",
+      "Please select the platform for the new credential.",
+    );
+
+    // Explicitly select the 'server' option by label
+    cy.get(".quick-input-list-row").contains("server").click();
+
     cy.get(".quick-input-message").should(
       "include.text",
       "Please provide the Posit Connect server's URL",
@@ -163,7 +174,7 @@ describe("Credentials Section", () => {
     // Wait for the nickname input field to appear
     cy.get(".quick-input-message", { timeout: 15000 }).should(
       "include.text",
-      "Enter a unique nickname for this server.",
+      "Enter a unique nickname for this account.",
     );
 
     // Continue with credential creation after OAuth success
