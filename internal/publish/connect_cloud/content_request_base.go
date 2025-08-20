@@ -12,22 +12,22 @@ import (
 
 func getCloudContentType(contentType config.ContentType) (types.ContentType, error) {
 	switch contentType {
-	case config.ContentTypeHTML, config.ContentTypeJupyterNotebook, config.ContentTypeJupyterVoila:
+	case config.ContentTypeJupyterNotebook:
 		return types.ContentTypeJupyter, nil
 	case config.ContentTypePythonBokeh:
 		return types.ContentTypeBokeh, nil
 	case config.ContentTypePythonDash:
 		return types.ContentTypeDash, nil
-	case config.ContentTypePythonShiny, config.ContentTypeRShiny, config.ContentTypeQuartoShiny, config.ContentTypeRMarkdownShiny:
+	case config.ContentTypePythonShiny, config.ContentTypeRShiny:
 		return types.ContentTypeShiny, nil
 	case config.ContentTypePythonStreamlit:
 		return types.ContentTypeStreamlit, nil
-	case config.ContentTypeQuartoDeprecated, config.ContentTypeQuarto:
+	case config.ContentTypeQuartoDeprecated, config.ContentTypeQuarto, config.ContentTypeHTML:
 		return types.ContentTypeQuarto, nil
 	case config.ContentTypeRMarkdown:
 		return types.ContentTypeRMarkdown, nil
 	}
-	return "", fmt.Errorf("unsupported content type: %s", contentType)
+	return "", fmt.Errorf("content type '%s' is not supported by Connect Cloud", contentType)
 }
 
 func (c *ServerPublisher) getContentRequestBase() (*types.ContentRequestBase, error) {
