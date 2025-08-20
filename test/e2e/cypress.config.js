@@ -2,6 +2,7 @@ const { defineConfig } = require("cypress");
 const { authenticateOAuthDevice } = require("./support/oauth-task");
 const fs = require("fs");
 const path = require("path");
+const { execSync } = require("child_process");
 
 const DEBUG_CYPRESS = process.env.DEBUG_CYPRESS === "true";
 const ACTIONS_STEP_DEBUG = process.env.ACTIONS_STEP_DEBUG === "true";
@@ -10,6 +11,31 @@ const isCI = process.env.CI === "true";
 // Load PCC config and inject into Cypress env
 const configPath = path.resolve(__dirname, "config/pcc.qa.staging.json");
 const pccConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
+
+function getAwsSecret(secretName) {
+  try {
+    const result = execSync(
+      `aws secretsmanager get-secret-value --secret-id "${secretName}" --query SecretString --output text`,
+      { encoding: "utf8", stdio: "pipe" },
+    );
+    return result.trim();
+  } catch (error) {
+    console.warn(
+      `Warning: Could not fetch AWS secret "${secretName}": ${error.message}`,
+    );
+    console.warn(
+      "Using placeholder value. Make sure AWS CLI is configured if you need real credentials.",
+    );
+    return "PLACEHOLDER_PASSWORD"; // Return a fallback so config doesn't break
+  }
+}
+
+// Replace placeholder password with actual secret (gracefully handle failures)
+if (pccConfig.gh_user_publisher.auth.password === "UPDATE") {
+  pccConfig.gh_user_publisher.auth.password = getAwsSecret(
+    "vivid.qa.local.password.ccqa1",
+  );
+}
 
 module.exports = defineConfig({
   e2e: {

@@ -78,7 +78,7 @@ describe("Credentials Section", () => {
   });
 
   it("New Connect Cloud Credential - OAuth Device Code", () => {
-    const user = Cypress.env("pccConfig").gh_user_free_plan;
+    const user = Cypress.env("pccConfig").gh_user_publisher;
     cy.getPublisherSidebarIcon()
       .should("be.visible", { timeout: 10000 })
       .click();
