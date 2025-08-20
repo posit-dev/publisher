@@ -88,6 +88,15 @@ export async function newConnectCloudCredential(
     connectCloudData.auth.interval = data?.interval || 0;
   };
 
+  const getAvailableAccounts = () => {
+    const existing = credentials
+      .filter((c) => c.accountId)
+      .map((c) => c.accountId);
+    return getPublishableAccounts(connectCloudData.accounts).filter(
+      (a) => !existing.includes(a.id),
+    );
+  };
+
   // ***************************************************************
   // Order of all steps for creating a new Connect Cloud credential
   // ***************************************************************
@@ -365,7 +374,7 @@ export async function newConnectCloudCredential(
   // Step: Determine the correct flow for the user's account list (Connect Cloud only)
   // ***************************************************************
   function determineAccountFlow(_: MultiStepInput, state: MultiStepState) {
-    const accounts = getPublishableAccounts(connectCloudData.accounts);
+    const accounts = getAvailableAccounts();
     let name: string = "";
     let stepFunc: (input: MultiStepInput) => Thenable<InputStep | void>;
     let skipStepHistory: boolean | undefined;
@@ -387,7 +396,8 @@ export async function newConnectCloudCredential(
     } else {
       if (connectCloudData.accounts.length > 0) {
         // case 3: there are no publishable accounts, but the user has at least one account,
-        // so they could be a guest or viewer on that account, ask if they want to sign up
+        // so they could be a guest or viewer on that account or already have a credential for it,
+        // ask if they want to sign up
         name = step.INPUT_SIGNUP;
         stepFunc = (input: MultiStepInput) =>
           steps[step.INPUT_SIGNUP](input, state);
@@ -412,7 +422,7 @@ export async function newConnectCloudCredential(
   // Step: Select the Connect Cloud account for the credential (Connect Cloud only)
   // ***************************************************************
   async function inputAccount(input: MultiStepInput, state: MultiStepState) {
-    const accounts = getPublishableAccounts(connectCloudData.accounts);
+    const accounts = getAvailableAccounts();
 
     // display the account selector
     const pick = await input.showQuickPick({
@@ -449,7 +459,7 @@ export async function newConnectCloudCredential(
       step: 0,
       totalSteps: 0,
       placeholder:
-        "You don't have permission to publish to this account. To publish, create a new account.",
+        "You don’t have any accounts available for publishing. Do you want to create a new account?",
       items: [
         { label: "Create a new Posit Connect Cloud account" },
         { label: "Exit" },
