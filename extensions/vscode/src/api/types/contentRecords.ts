@@ -53,6 +53,10 @@ type OptionalPreDeploymentFields = {
   directUrl?: string;
 };
 
+type ConnectCloud = {
+  accountName: string;
+};
+
 type ContentRecordRecord = {
   $schema: SchemaURL;
   serverType: ServerType;
@@ -63,6 +67,7 @@ type ContentRecordRecord = {
   configurationName: string;
   type: ContentType;
   deploymentError: AgentError | null;
+  connectCloud: ConnectCloud | null;
 } & ContentRecordLocation;
 
 export type PreContentRecord = {

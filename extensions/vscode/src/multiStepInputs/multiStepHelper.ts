@@ -406,8 +406,8 @@ export class MultiStepInput {
         // eslint-disable-next-line no-async-promise-executor
         async (resolve, reject) => {
           let abortPolling = false;
-          // default the polling interval to 5 seconds
-          pollingInterval ||= 5000;
+          // default the polling interval to 2 seconds
+          pollingInterval ||= 2000;
           const input = window.createInputBox();
           input.title = title;
           input.step = step;
@@ -490,8 +490,8 @@ export class MultiStepInput {
             }
           };
 
-          // start polling (poll every 5 seconds at most 120 times === 10 minutes max time)
-          return pollApiFunction(pollingInterval, 120)
+          // start polling (poll every 2 seconds at most 300 times === 10 minutes max time)
+          return pollApiFunction(pollingInterval, 300)
             .then(resolve)
             .catch(reject);
         },

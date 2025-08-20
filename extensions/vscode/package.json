@@ -229,7 +229,7 @@
       },
       {
         "command": "posit.publisher.homeView.navigateToDeployment.ContentLog",
-        "title": "View Content Log on Connect",
+        "title": "View Deployed Content Log",
         "icon": "$(output)",
         "category": "Posit Publisher"
       },

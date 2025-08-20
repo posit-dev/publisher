@@ -94,9 +94,9 @@ export type ErrTOMLValidationError = MkErrorDataType<
 export const isErrTOMLValidationError =
   mkErrorTypeGuard<ErrTOMLValidationError>("tomlValidationError");
 export const errTOMLValidationErrorMessage = (
-  _: axiosErrorWithJson<ErrTOMLValidationError>,
+  err: axiosErrorWithJson<ErrTOMLValidationError>,
 ) => {
-  return `The Configuration has a schema error`;
+  return `The Configuration has a schema error: ${err.response.data.details.message}`;
 };
 
 // Invalid TOML file(s)
