@@ -19,8 +19,15 @@ async function authenticateOAuthDevice(credentials) {
 
     console.log("✅ Using VS Code's device code:", userCode);
 
-    // Determine headless mode based on Cypress environment
-    const isCypressHeadless = process.env.CYPRESS_INTERNAL_ENV === "run";
+    // Determine headless mode: always headless in CI, otherwise only if PLAYWRIGHT_HEADLESS=true
+    let isCypressHeadless = false;
+    if (process.env.CI === "true") {
+      isCypressHeadless = true;
+    } else if (process.env.PLAYWRIGHT_HEADLESS === "true") {
+      isCypressHeadless = true;
+    } else if (process.env.PLAYWRIGHT_HEADLESS === "false") {
+      isCypressHeadless = false;
+    }
     // Auto-install browsers if missing
     let browser;
     let context;
