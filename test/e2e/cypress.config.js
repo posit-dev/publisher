@@ -30,11 +30,10 @@ function getAwsSecret(secretName) {
   }
 }
 
-// Replace placeholder password with actual secret (gracefully handle failures)
+// Rewrite placeholder password with actual secret and handle failures
 if (pccConfig.gh_user_publisher.auth.password === "UPDATE") {
-  pccConfig.gh_user_publisher.auth.password = getAwsSecret(
-    "vivid.qa.local.password.ccqa1",
-  );
+  const fetchedPassword = getAwsSecret("vivid.qa.local.password.ccqa1");
+  pccConfig.gh_user_publisher.auth.password = fetchedPassword;
 }
 
 module.exports = defineConfig({

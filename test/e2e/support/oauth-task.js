@@ -19,12 +19,23 @@ async function authenticateOAuthDevice(credentials) {
 
     console.log("✅ Using VS Code's device code:", userCode);
 
+    // Determine headless mode based on Cypress environment
+    const isCypressHeadless = process.env.CYPRESS_INTERNAL_ENV === "run";
     // Auto-install browsers if missing
     let browser;
+    let context;
     try {
       browser = await chromium.launch({
-        headless: false,
+        headless: isCypressHeadless,
         slowMo: 500,
+        args: [
+          "--disable-blink-features=AutomationControlled",
+          "--window-size=1280,800",
+        ],
+      });
+      context = await browser.newContext({
+        userAgent:
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.51 Safari/537.36",
       });
     } catch (error) {
       if (error.message.includes("Executable doesn't exist")) {
@@ -37,15 +48,23 @@ async function authenticateOAuthDevice(credentials) {
         });
 
         browser = await chromium.launch({
-          headless: false,
+          headless: isCypressHeadless,
           slowMo: 500,
+          args: [
+            "--disable-blink-features=AutomationControlled",
+            "--window-size=1280,800",
+          ],
+        });
+        context = await browser.newContext({
+          userAgent:
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.51 Safari/537.36",
         });
       } else {
         throw error;
       }
     }
 
-    const page = await browser.newPage();
+    const page = await context.newPage();
 
     try {
       console.log("🌐 Navigating to OAuth page...");
