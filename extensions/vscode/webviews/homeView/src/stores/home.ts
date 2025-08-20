@@ -10,6 +10,7 @@ import {
   Configuration,
   ConfigurationError,
   isPreContentRecord,
+  ServerType,
 } from "../../../../src/api";
 import { isConfigurationError } from "../../../../src/api/types/configurations";
 import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
@@ -19,6 +20,11 @@ import {
   isAgentErrorInvalidTOML,
   isAgentErrorTypeUnknown,
 } from "../../../../src/api/types/error";
+import {
+  getProductType,
+  isConnectCloudProduct,
+  isConnectProduct,
+} from "../../../../src/utils/multiStepHelpers";
 
 export const useHomeStore = defineStore("home", () => {
   const platformFileSeparator = ref<string>("/");
@@ -123,12 +129,28 @@ export const useHomeStore = defineStore("home", () => {
   // credential. Can be undefined if a Credential is not specified or found.
   const serverCredential = computed(() => {
     return credentials.value.find((cfg) => {
-      const credentialUrl = cfg.url.toLowerCase();
-      const recordUrl = selectedContentRecord.value?.serverUrl.toLowerCase();
-      if (!recordUrl) {
-        return false;
+      // default to CONNECT when the server type is missing (i.e. could be an old connect deployment)
+      const serverType =
+        selectedContentRecord.value?.serverType || ServerType.CONNECT;
+      const productType = getProductType(serverType);
+      if (isConnectCloudProduct(productType)) {
+        const credentialAccountName = cfg.accountName;
+        const recordAccountName =
+          selectedContentRecord.value?.connectCloud?.accountName;
+        if (!recordAccountName) {
+          return false;
+        }
+        return credentialAccountName === recordAccountName;
+      } else if (isConnectProduct(productType)) {
+        const credentialUrl = cfg.url.toLowerCase();
+        const recordUrl = selectedContentRecord.value?.serverUrl.toLowerCase();
+        if (!recordUrl) {
+          return false;
+        }
+        return normalizeURL(credentialUrl) === normalizeURL(recordUrl);
       }
-      return normalizeURL(credentialUrl) === normalizeURL(recordUrl);
+
+      return false;
     });
   });
 

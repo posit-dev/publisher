@@ -113,7 +113,7 @@
         v-if="home.config.active.isCredentialMissing"
         data-automation="missing-creds"
       >
-        A Credential for the Deployment's server URL was not found.
+        No credential was found for the deployment's server.
         <a
           class="webview-link"
           role="button"
@@ -251,6 +251,8 @@ import {
   Configuration,
   isPreContentRecord,
   isConfigurationError,
+  ServerType,
+  ProductName,
 } from "../../../../src/api";
 import {
   ErrorMessageActionIds,
@@ -276,6 +278,11 @@ import {
   isAgentErrorInvalidTOML,
   isAgentErrorDeployedContentNotRunning,
 } from "../../../../src/api/types/error";
+import {
+  getProductType,
+  isConnectCloudProduct,
+  isConnectProduct,
+} from "../../../../src/utils/multiStepHelpers";
 
 const home = useHomeStore();
 const hostConduit = useHostConduitService();
@@ -382,7 +389,15 @@ const credentialSubTitle = computed(() => {
   if (home.serverCredential?.name) {
     return `${home.serverCredential.name}`;
   }
-  return `Missing Credential for ${home.selectedContentRecord?.serverUrl}`;
+  const serverType =
+    home.selectedContentRecord?.serverType || ServerType.CONNECT;
+  const productType = getProductType(serverType);
+  if (isConnectCloudProduct(productType)) {
+    return `Missing Credential for ${ProductName.CONNECT_CLOUD}`;
+  } else if (isConnectProduct(productType)) {
+    return `Missing Credential for ${home.selectedContentRecord?.serverUrl}`;
+  }
+  return "Missing Credential";
 });
 
 const entrypointSubTitle = computed(() => {

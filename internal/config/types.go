@@ -73,27 +73,28 @@ func (t ContentType) IsAppContent() bool {
 }
 
 type Config struct {
-	Comments      []string      `toml:"-" json:"comments,omitempty"`
-	ProductType   ProductType   `toml:"product_type" json:"productType,omitempty"`
-	Schema        string        `toml:"$schema" json:"$schema,omitempty"`
-	Type          ContentType   `toml:"type" json:"type,omitempty"`
-	Entrypoint    string        `toml:"entrypoint" json:"entrypoint,omitempty"`
-	Validate      *bool         `toml:"validate" json:"validate,omitempty"`
-	HasParameters *bool         `toml:"has_parameters,omitempty" json:"hasParameters,omitempty"`
-	Files         []string      `toml:"files,multiline" json:"files"`
-	Title         string        `toml:"title,omitempty" json:"title,omitempty"`
-	Description   string        `toml:"description,multiline,omitempty" json:"description,omitempty"`
-	ThumbnailFile string        `toml:"thumbnail,omitempty" json:"thumbnail,omitempty"`
-	Tags          []string      `toml:"tags,omitempty" json:"tags,omitempty"`
-	Python        *Python       `toml:"python,omitempty" json:"python,omitempty"`
-	R             *R            `toml:"r,omitempty" json:"r,omitempty"`
-	Jupyter       *Jupyter      `toml:"jupyter,omitempty" json:"jupyter,omitempty"`
-	Quarto        *Quarto       `toml:"quarto,omitempty" json:"quarto,omitempty"`
-	Environment   Environment   `toml:"environment,omitempty" json:"environment,omitempty"`
-	Secrets       []string      `toml:"secrets,omitempty" json:"secrets,omitempty"`
-	Schedules     []Schedule    `toml:"schedules,omitempty" json:"schedules,omitempty"`
-	Connect       *Connect      `toml:"connect,omitempty" json:"connect,omitempty"`
-	ConnectCloud  *ConnectCloud `toml:"connect_cloud,omitempty" json:"connectCloud,omitempty"`
+	Comments            []string      `toml:"-" json:"comments,omitempty"`
+	ProductType         ProductType   `toml:"product_type" json:"productType,omitempty"`
+	Schema              string        `toml:"$schema" json:"$schema,omitempty"`
+	Type                ContentType   `toml:"type" json:"type,omitempty"`
+	Entrypoint          string        `toml:"entrypoint" json:"entrypoint,omitempty"`
+	EntrypointObjectRef string        `toml:"-" json:"entrypointObjectRef,omitempty"`
+	Validate            *bool         `toml:"validate" json:"validate,omitempty"`
+	HasParameters       *bool         `toml:"has_parameters,omitempty" json:"hasParameters,omitempty"`
+	Files               []string      `toml:"files,multiline" json:"files"`
+	Title               string        `toml:"title,omitempty" json:"title,omitempty"`
+	Description         string        `toml:"description,multiline,omitempty" json:"description,omitempty"`
+	ThumbnailFile       string        `toml:"thumbnail,omitempty" json:"thumbnail,omitempty"`
+	Tags                []string      `toml:"tags,omitempty" json:"tags,omitempty"`
+	Python              *Python       `toml:"python,omitempty" json:"python,omitempty"`
+	R                   *R            `toml:"r,omitempty" json:"r,omitempty"`
+	Jupyter             *Jupyter      `toml:"jupyter,omitempty" json:"jupyter,omitempty"`
+	Quarto              *Quarto       `toml:"quarto,omitempty" json:"quarto,omitempty"`
+	Environment         Environment   `toml:"environment,omitempty" json:"environment,omitempty"`
+	Secrets             []string      `toml:"secrets,omitempty" json:"secrets,omitempty"`
+	Schedules           []Schedule    `toml:"schedules,omitempty" json:"schedules,omitempty"`
+	Connect             *Connect      `toml:"connect,omitempty" json:"connect,omitempty"`
+	ConnectCloud        *ConnectCloud `toml:"connect_cloud,omitempty" json:"connectCloud,omitempty"`
 }
 
 func (c *Config) PopulateDefaults() {
@@ -140,7 +141,14 @@ func (c *Config) ForceProductTypeCompliance() {
 		}
 		c.Quarto = nil
 		c.Jupyter = nil
+	} else if c.ProductType.IsConnect() {
+		// object-reference-style entrypoint is only allowed by Connect
+		if c.EntrypointObjectRef != "" {
+			c.Entrypoint = c.EntrypointObjectRef
+		}
 	}
+	// unset the field to ensure it doesn't appear in the object undergoing schema validation
+	c.EntrypointObjectRef = ""
 }
 
 type ProductType string
