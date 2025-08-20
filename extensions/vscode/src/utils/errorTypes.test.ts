@@ -271,16 +271,13 @@ describe("ErrTOMLValidationError", () => {
         line: 7,
         column: 1,
         key: "shortcut_key",
-        message: "foo: must be an integer",
       },
     });
 
     const msg = errTOMLValidationErrorMessage(
       err as axiosErrorWithJson<ErrTOMLValidationError>,
     );
-    expect(msg).toBe(
-      `The Configuration has a schema error: foo: must be an integer`,
-    );
+    expect(msg).toBe(`The Configuration has a schema error`);
   });
 });
 

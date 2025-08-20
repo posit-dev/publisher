@@ -157,8 +157,6 @@ type invalidPropertyTestCase struct {
 	basePath    []string
 	propName    string
 	propValue   any
-
-	message string
 }
 
 func (s *SchemaSuite) TestDisallowedProperties() {
@@ -169,7 +167,6 @@ func (s *SchemaSuite) TestDisallowedProperties() {
 			basePath:    []string{},
 			propName:    "garbage",
 			propValue:   "value",
-			message:     "garbage: not allowed.",
 		},
 
 		// Connect product_type invalid properties
@@ -178,56 +175,48 @@ func (s *SchemaSuite) TestDisallowedProperties() {
 			basePath:    []string{"python"},
 			propName:    "garbage",
 			propValue:   "value",
-			message:     "python: additionalProperties 'garbage' not allowed.",
 		},
 		{
 			productType: "connect",
 			basePath:    []string{"r"},
 			propName:    "garbage",
 			propValue:   "value",
-			message:     "r: additionalProperties 'garbage' not allowed.",
 		},
 		{
 			productType: "connect",
 			basePath:    []string{"jupyter"},
 			propName:    "garbage",
 			propValue:   "value",
-			message:     "jupyter: additionalProperties 'garbage' not allowed.",
 		},
 		{
 			productType: "connect",
 			basePath:    []string{"quarto"},
 			propName:    "garbage",
 			propValue:   "value",
-			message:     "quarto: missing properties: 'version'; quarto: additionalProperties 'garbage' not allowed.",
 		},
 		{
 			productType: "connect",
 			basePath:    []string{"connect"},
 			propName:    "garbage",
 			propValue:   "value",
-			message:     "connect: additionalProperties 'garbage' not allowed.",
 		},
 		{
 			productType: "connect",
 			basePath:    []string{"connect", "runtime"},
 			propName:    "garbage",
 			propValue:   "value",
-			message:     "connect.runtime: additionalProperties 'garbage' not allowed.",
 		},
 		{
 			productType: "connect",
 			basePath:    []string{"connect", "kubernetes"},
 			propName:    "garbage",
 			propValue:   "value",
-			message:     "connect.kubernetes: additionalProperties 'garbage' not allowed.",
 		},
 		{
 			productType: "connect",
 			basePath:    []string{"connect", "access"},
 			propName:    "garbage",
 			propValue:   "value",
-			message:     "connect.access: additionalProperties 'garbage' not allowed.",
 		},
 
 		// Connect Cloud product_type invalid properties
@@ -236,105 +225,90 @@ func (s *SchemaSuite) TestDisallowedProperties() {
 			basePath:    []string{"python"},
 			propName:    "garbage",
 			propValue:   "value",
-			message:     "python: additionalProperties 'garbage' not allowed.",
 		},
 		{
 			productType: "connect_cloud",
 			basePath:    []string{"python"},
 			propName:    "requires_python",
 			propValue:   ">=3.8",
-			message:     "python: additionalProperties 'requires_python' not allowed.",
 		},
 		{
 			productType: "connect_cloud",
 			basePath:    []string{"python"},
 			propName:    "package_file",
 			propValue:   "requirements.txt",
-			message:     "python: additionalProperties 'package_file' not allowed.",
 		},
 		{
 			productType: "connect_cloud",
 			basePath:    []string{"python"},
 			propName:    "package_manager",
 			propValue:   "pip",
-			message:     "python: additionalProperties 'package_manager' not allowed.",
 		},
 		{
 			productType: "connect_cloud",
 			basePath:    []string{"r"},
 			propName:    "garbage",
 			propValue:   "value",
-			message:     "r: additionalProperties 'garbage' not allowed.",
 		},
 		{
 			productType: "connect_cloud",
 			basePath:    []string{"r"},
 			propName:    "requires_r",
 			propValue:   ">=4.2",
-			message:     "r: additionalProperties 'requires_r' not allowed.",
 		},
 		{
 			productType: "connect_cloud",
 			basePath:    []string{"r"},
 			propName:    "package_file",
 			propValue:   "renv.lock",
-			message:     "r: additionalProperties 'package_file' not allowed.",
 		},
 		{
 			productType: "connect_cloud",
 			basePath:    []string{"r"},
 			propName:    "package_manager",
 			propValue:   "renv",
-			message:     "r: additionalProperties 'package_manager' not allowed.",
 		},
 		{
 			productType: "connect_cloud",
 			basePath:    []string{"connect_cloud"},
 			propName:    "garbage",
 			propValue:   "value",
-			message:     "connect_cloud: additionalProperties 'garbage' not allowed.",
 		},
 		{
 			productType: "connect_cloud",
 			basePath:    []string{"connect_cloud", "python"},
 			propName:    "garbage",
 			propValue:   "value",
-			message:     "connect_cloud.python: additionalProperties 'garbage' not allowed.",
 		},
 		{
 			productType: "connect_cloud",
 			basePath:    []string{"connect_cloud", "r"},
 			propName:    "garbage",
 			propValue:   "value",
-			message:     "connect_cloud.r: additionalProperties 'garbage' not allowed.",
 		},
 		{
 			productType: "connect_cloud",
 			basePath:    []string{"connect_cloud", "access_control"},
 			propName:    "garbage",
 			propValue:   "value",
-			message:     "connect_cloud.access_control: additionalProperties 'garbage' not allowed.",
 		},
 		{
 			productType: "connect_cloud",
 			basePath:    []string{},
 			propName:    "jupyter",
 			propValue:   map[string]any{},
-			message:     "jupyter: not allowed.",
 		},
 		{
 			productType: "connect_cloud",
 			basePath:    []string{},
 			propName:    "quarto",
 			propValue:   map[string]any{},
-			message:     "quarto: not allowed.",
 		},
 		{
 			productType: "connect_cloud",
 			basePath:    []string{},
 			propName:    "has_parameters",
 			propValue:   true,
-			message:     "has_parameters: not allowed.",
 		},
 
 		// Connect properties shouldn't be allowed with connect_cloud product_type
@@ -343,7 +317,6 @@ func (s *SchemaSuite) TestDisallowedProperties() {
 			basePath:    []string{},
 			propName:    "connect",
 			propValue:   map[string]any{},
-			message:     "connect: not allowed.",
 		},
 
 		// Connect_cloud properties shouldn't be allowed with connect product_type
@@ -352,7 +325,6 @@ func (s *SchemaSuite) TestDisallowedProperties() {
 			basePath:    []string{},
 			propName:    "connect_cloud",
 			propValue:   map[string]any{},
-			message:     "connect_cloud: not allowed.",
 		},
 	}
 
@@ -395,8 +367,7 @@ func (s *SchemaSuite) TestDisallowedProperties() {
 			// Check that it's a schema validation error
 			agentErr, ok := err.(*types.AgentError)
 			s.True(ok)
-			s.Equal(tomlValidationErrorCode, agentErr.Code)
-			s.Equal(tc.message, agentErr.Message)
+			s.Equal(agentErr.Code, tomlValidationErrorCode)
 		})
 	}
 }

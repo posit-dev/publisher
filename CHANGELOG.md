@@ -15,7 +15,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added schema and agent support for publishing to Connect Cloud. (#2729, #2747, #2771)
 - Added colors to the logs indicating queued, skipped, passed, and errored log
   stage statuses. (#2382)
-- Improved error messaging when deployment fails due to a schema validation error. (#2831)
 
 ### Changed
 
