@@ -9,7 +9,7 @@ const ACTIONS_STEP_DEBUG = process.env.ACTIONS_STEP_DEBUG === "true";
 const isCI = process.env.CI === "true";
 
 // Load PCC config and inject into Cypress env
-const configPath = path.resolve(__dirname, "config/pcc.qa.staging.json");
+const configPath = path.resolve(__dirname, "config/staging-pccqa.json");
 const pccConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
 
 function getAwsSecret(secretName) {
@@ -31,9 +31,11 @@ function getAwsSecret(secretName) {
 }
 
 // Rewrite placeholder password with actual secret and handle failures
-if (pccConfig.gh_user_publisher.auth.password === "UPDATE") {
+if (process.env.CI === "true" && process.env.PCC_USER_CCQA3) {
+  pccConfig.pcc_user_ccqa3.auth.password = process.env.PCC_USER_CCQA3;
+} else if (pccConfig.pcc_user_ccqa3.auth.password === "UPDATE") {
   const fetchedPassword = getAwsSecret("vivid.qa.local.password.ccqa1");
-  pccConfig.gh_user_publisher.auth.password = fetchedPassword;
+  pccConfig.pcc_user_ccqa3.auth.password = fetchedPassword;
 }
 
 module.exports = defineConfig({
