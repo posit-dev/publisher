@@ -71,6 +71,7 @@ export const preContentRecordFactory = Factory.define<PreContentRecord>(
     projectDir: `report-GUD${sequence}`,
     deploymentName: `report ${sequence}`,
     deploymentPath: `report/path/${sequence}`,
+    connectCloud: { accountName: "" },
   }),
 );
 
@@ -107,6 +108,7 @@ export const contentRecordFactory = Factory.define<ContentRecord>(
     },
     configurationPath: `report/path/configuration-${sequence}`,
     configurationRelPath: `report/path/configuration-${sequence}`,
+    connectCloud: { accountName: "" },
   }),
 );
 

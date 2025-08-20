@@ -121,7 +121,7 @@ async function initializeExtension(context: ExtensionContext) {
   // Then the registration of the data providers with the VSCode framework
   projectTreeDataProvider.register();
   logsTreeDataProvider.register();
-  homeViewProvider.register(watchers);
+  await homeViewProvider.register(watchers);
 
   context.subscriptions.push(
     commands.registerCommand(Commands.InitProject, async (viewId: string) => {

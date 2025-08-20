@@ -156,20 +156,19 @@ export const inputCredentialNameStep = async (
   serverType: ServerType,
   productName: ProductName,
   credentials: Credential[],
-  preFilledName: string = "",
 ) => {
-  const currentName =
-    typeof state.data.name === "string" ? state.data.name : "";
-  const accountName =
-    typeof state.data.accountName === "string" ? state.data.accountName : "";
+  const { name, displayName } = state.data;
+  const currentName = typeof name === "string" ? name : "";
+  const accountDisplayName = typeof displayName === "string" ? displayName : "";
 
   const resp = await input.showInputBox({
     title: state.title,
     step: 0,
     totalSteps: 0,
-    value: currentName || preFilledName,
+    // default the credential name to the account display name for Connect Cloud when available
+    value: currentName || accountDisplayName,
     prompt: `Enter a unique nickname for this ${isConnectCloud(serverType) ? "account" : "server"}.`,
-    placeholder: `${isConnectCloud(serverType) ? accountName : productName}`,
+    placeholder: `${isConnectCloud(serverType) ? accountDisplayName : productName}`,
     finalValidation: (input: string) => {
       input = input.trim();
       if (input === "") {
