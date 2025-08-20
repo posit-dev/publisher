@@ -30,8 +30,19 @@ func (p *defaultPublisher) getRPackages(scanDependencies bool) (bundles.PackageM
 	var lockfilePath util.AbsolutePath
 	var lockfileString string
 	if scanDependencies {
+		var scanPaths []string
+		if p.Config != nil && len(p.Config.Files) > 0 {
+			scanPaths = make([]string, 0, len(p.Config.Files))
+			for _, f := range p.Config.Files {
+				scanPaths = append(scanPaths, p.Dir.Join(f).String())
+			}
+		} else {
+			// No files were selected, in this case we mimic NewBundler
+			// which implies the project directory itself.
+			scanPaths = []string{p.Dir.String()}
+		}
 		// Ask the mapper to scan dependencies and return a generated lockfile
-		generated, err := p.rPackageMapper.ScanDependencies(p.Dir, log)
+		generated, err := p.rPackageMapper.ScanDependencies(scanPaths, log)
 		if err != nil {
 			// If error is already an agent error, return as-is
 			if aerr, isAgentErr := types.IsAgentError(err); isAgentErr {

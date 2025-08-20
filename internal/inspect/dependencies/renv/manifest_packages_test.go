@@ -288,8 +288,8 @@ func (s *ManifestPackagesSuite) TestMissingLockfile_BubblesUpRenvError() {
 // scannerAdapter adapts a testify mock to the RDependencyScanner interface for tests
 type scannerAdapter struct{ m *mock.Mock }
 
-func (s *scannerAdapter) ScanDependencies(base util.AbsolutePath, rExecutable string) (util.AbsolutePath, error) {
-	args := s.m.Called(base, rExecutable)
+func (s *scannerAdapter) ScanDependencies(paths []string, rExecutable string) (util.AbsolutePath, error) {
+	args := s.m.Called(paths, rExecutable)
 	if p, ok := args.Get(0).(util.AbsolutePath); ok {
 		return p, args.Error(1)
 	}
@@ -307,7 +307,7 @@ func (s *ManifestPackagesSuite) TestLockFile_CreateFromScanner() {
 	genPath := base.Join("renv.lock")
 	m := mapper.(*defaultPackageMapper)
 	mm := &mock.Mock{}
-	mm.On("ScanDependencies", base, mock.Anything).Return(genPath, nil)
+	mm.On("ScanDependencies", mock.Anything, mock.Anything).Return(genPath, nil)
 	m.scanner = &scannerAdapter{mm}
 
 	// Setup lister
@@ -324,7 +324,7 @@ func (s *ManifestPackagesSuite) TestLockFile_CreateFromScanner() {
 	m.lister = lister
 
 	// With new API, caller requests scanning first, then passes the generated lockfile.
-	genPath2, err := mapper.ScanDependencies(base, logging.New())
+	genPath2, err := mapper.ScanDependencies([]string{"."}, logging.New())
 	s.NoError(err)
 	manifestPackages, err := mapper.GetManifestPackages(base, genPath2, logging.New())
 	s.NoError(err)

@@ -68,8 +68,8 @@ func (m *mockPackageMapper) GetManifestPackages(base util.AbsolutePath, lockfile
 	}
 }
 
-func (m *mockPackageMapper) ScanDependencies(base util.AbsolutePath, log logging.Logger) (util.AbsolutePath, error) {
-	args := m.Called(base)
+func (m *mockPackageMapper) ScanDependencies(paths []string, log logging.Logger) (util.AbsolutePath, error) {
+	args := m.Called(paths, mock.Anything)
 	if p, ok := args.Get(0).(util.AbsolutePath); ok {
 		return p, args.Error(1)
 	}

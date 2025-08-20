@@ -23,8 +23,10 @@ type PackageMapper interface {
 	// GetManifestPackages reads the provided lockfile and returns a manifest package map.
 	GetManifestPackages(base util.AbsolutePath, lockfilePath util.AbsolutePath, log logging.Logger) (bundles.PackageMap, error)
 	// ScanDependencies runs a dependency scan using R + renv and returns the
-	// path to a generated lockfile for the given base project directory.
-	ScanDependencies(base util.AbsolutePath, log logging.Logger) (util.AbsolutePath, error)
+	// path to a generated lockfile for the given base project directory. The
+	// paths parameter is a list of file or directory paths (or glob patterns)
+	// to scan; pass ["."] to scan the working directory.
+	ScanDependencies(paths []string, log logging.Logger) (util.AbsolutePath, error)
 }
 
 type rInterpreterFactory = func() (interpreters.RInterpreter, error)
@@ -267,9 +269,9 @@ func (m *defaultPackageMapper) GetManifestPackages(
 }
 
 // ScanDependencies uses the RDependencyScanner to generate a renv.lock for the
-// given base project directory and returns the lockfile path.
+// given R source files/directories and returns the lockfile path.
 func (m *defaultPackageMapper) ScanDependencies(
-	base util.AbsolutePath,
+	paths []string,
 	log logging.Logger,
 ) (util.AbsolutePath, error) {
 	rInterp, err := m.rInterpreterFactory()
@@ -280,7 +282,8 @@ func (m *defaultPackageMapper) ScanDependencies(
 	if err != nil {
 		return util.AbsolutePath{}, m.renvEnvironmentCheck(log)
 	}
-	generatedPath, err := m.scanner.ScanDependencies(base, rExec.String())
+	// Use the paths as provided; scanner executes independent of project base.
+	generatedPath, err := m.scanner.ScanDependencies(paths, rExec.String())
 	if err != nil {
 		return util.AbsolutePath{}, err
 	}
