@@ -6,13 +6,19 @@ body:
     attributes:
       value: |
         ## System Details
+
         Please provide the following information to help us diagnose the issue.
+
+        Clicking Copy System Info under Help and Feedback in the sidebar will
+        copy system info for the fields below to your clipboard.
 
   - type: input
     id: publisher-version
     attributes:
       label: Publisher Version
-      description: "Find this in Positron/VS Code: Extensions view → Posit Publisher → under Installation on the right"
+      description: |
+        Found in copied system info or,
+        in Positron/VS Code: Extensions view → Posit Publisher → under Installation on the right.
       placeholder: "e.g., 1.18.0"
     validations:
       required: false
@@ -32,7 +38,9 @@ body:
     id: os
     attributes:
       label: Your OS
-      description: "Operating system and version"
+      description: |
+        Operating system and version
+        Found in copied system info.
       placeholder: "e.g., macOS 14.2, Windows 11, Ubuntu 22.04"
     validations:
       required: false
@@ -41,7 +49,9 @@ body:
     id: ide
     attributes:
       label: IDE
-      description: "Which IDE are you using?"
+      description: |
+        Which IDE are you using?
+        Found in copied system info.
       placeholder: "e.g., Positron, VS Code, other"
     validations:
       required: false
