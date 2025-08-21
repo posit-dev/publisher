@@ -58,7 +58,8 @@ describe("Detect error in config", () => {
       5,
       500,
     ).find(
-      'p:contains("The selected Configuration has a schema error on line 17.")',
+      // TODO: This error message will have more detail added in https://github.com/posit-dev/publisher/issues/2864.
+      'p:contains("The selected Configuration has an error.")',
     );
   });
 

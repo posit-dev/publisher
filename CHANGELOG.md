@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added colors to the logs indicating queued, skipped, passed, and errored log
   stage statuses. (#2382)
 - Improved error messaging when deployment fails due to a schema validation error. (#2831)
+- Added a Copy System Info command and item in the "Help and Feedback" view to
+  easily copy system information - extension version, IDE, and platform details
+  (#2835)
 
 ### Changed
 
