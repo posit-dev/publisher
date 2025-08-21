@@ -25,6 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The "Select Deployment" input can now be dismissed by focusing another element
   similar to other inputs. (#2780)
+- Publish failure logs and deployment validation failure logs link to the logs
+  view directly in Posit Connect and Posit Connect Cloud when available (#2859)
 
 ## [1.18.1]
 
