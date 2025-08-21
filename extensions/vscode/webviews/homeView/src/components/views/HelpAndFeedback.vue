@@ -30,6 +30,16 @@
         })
       "
     />
+    <TreeItem
+      title="Copy System Info"
+      tooltip="Copy system information to clipboard including extension version and IDE details"
+      align-icon-with-twisty
+      @click="
+        hostConduit.sendMsg({
+          kind: WebviewToHostMessageType.COPY_SYSTEM_INFO,
+        })
+      "
+    />
   </TreeSection>
 </template>
 

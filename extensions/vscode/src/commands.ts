@@ -7,6 +7,8 @@ import { ExtensionContext, Position, window, Range, Uri } from "vscode";
 import { HOST } from "src";
 import { EditConfigurationSelection } from "./types/messages/webviewToHostMessages";
 
+export { copySystemInfoCommand } from "./commands/copySystemInfo";
+
 export const create = async (
   context: ExtensionContext,
   path: string,
