@@ -25,6 +25,7 @@ export enum WebviewToHostMessageType {
   NEW_DEPLOYMENT = "newDeployment",
   NEW_CREDENTIAL_FOR_DEPLOYMENT = "newCredentialForDeployment",
   NEW_CREDENTIAL = "newCredential",
+  DELETE_CREDENTIAL = "deleteCredential",
   VIEW_PUBLISHING_LOG = "viewPublishingLog",
   SHOW_ASSOCIATE_GUID = "ShowAssociateGUID",
   UPDATE_SELECTION_CREDENTIAL_STATE = "UpdateSelectionCredentialStateMsg",
@@ -64,6 +65,7 @@ export type WebviewToHostMessage =
   | NewDeploymentMsg
   | NewCredentialForDeploymentMsg
   | NewCredentialMsg
+  | DeleteCredentialMsg
   | ViewPublishingLog
   | ShowAssociateGUIDMsg
   | UpdateSelectionCredentialStateMsg
@@ -94,6 +96,7 @@ export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
     msg.kind === WebviewToHostMessageType.NEW_DEPLOYMENT ||
     msg.kind === WebviewToHostMessageType.NEW_CREDENTIAL_FOR_DEPLOYMENT ||
     msg.kind === WebviewToHostMessageType.NEW_CREDENTIAL ||
+    msg.kind === WebviewToHostMessageType.DELETE_CREDENTIAL ||
     msg.kind === WebviewToHostMessageType.VIEW_PUBLISHING_LOG ||
     msg.kind === WebviewToHostMessageType.SHOW_ASSOCIATE_GUID ||
     msg.kind === WebviewToHostMessageType.UPDATE_SELECTION_CREDENTIAL_STATE ||
@@ -214,6 +217,14 @@ export type NewCredentialForDeploymentMsg =
 
 export type NewCredentialMsg =
   AnyWebviewToHostMessage<WebviewToHostMessageType.NEW_CREDENTIAL>;
+
+export type DeleteCredentialMsg = AnyWebviewToHostMessage<
+  WebviewToHostMessageType.DELETE_CREDENTIAL,
+  {
+    credentialGUID: string;
+    credentialName: string;
+  }
+>;
 
 export type ViewPublishingLog =
   AnyWebviewToHostMessage<WebviewToHostMessageType.VIEW_PUBLISHING_LOG>;
