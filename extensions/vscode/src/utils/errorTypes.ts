@@ -204,7 +204,7 @@ export const isErrDeviceAuthAccessDenied =
 export const errDeviceAuthAccessDeniedMessage = (
   err: axiosErrorWithJson<ErrDeviceAuthAccessDenied>,
 ) => {
-  return `Posit Connect Cloud access denied: ${err.response.data.code}`;
+  return "Failed to authenticate: the authorization request was denied.";
 };
 
 // Device auth expired token error
@@ -215,7 +215,7 @@ export const isDeviceAuthExpiredToken =
 export const errDeviceAuthExpiredTokenMessage = (
   err: axiosErrorWithJson<ErrDeviceAuthExpiredToken>,
 ) => {
-  return `Expired Posit Connect Cloud authorization token: ${err.response.data.code}`;
+  return "Failed to authenticate: your authorization session has expired.";
 };
 
 // Tries to match an Axios error that comes with an identifiable Json structured data
