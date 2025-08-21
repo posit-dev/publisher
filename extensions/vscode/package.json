@@ -238,6 +238,12 @@
         "title": "Deploy with Posit Publisher",
         "icon": "$(posit-publisher-publish)",
         "category": "Posit Publisher"
+      },
+      {
+        "command": "posit.publisher.homeView.copySystemInfo",
+        "title": "Copy System Info",
+        "icon": "$(copy)",
+        "category": "Posit Publisher"
       }
     ],
     "menus": {
@@ -347,6 +353,10 @@
         {
           "command": "posit.publisher.homeView.navigateToDeployment.ContentLog",
           "when": "posit.publisher.homeView.initialized == 'initialized' && isWorkspaceTrusted"
+        },
+        {
+          "command": "posit.publisher.homeView.copySystemInfo",
+          "when": "posit.publish.state == 'initialized' && isWorkspaceTrusted"
         }
       ],
       "webview/context": [
