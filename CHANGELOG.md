@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added colors to the logs indicating queued, skipped, passed, and errored log
   stage statuses. (#2382)
 - Improved error messaging when deployment fails due to a schema validation error. (#2831)
+- Added a delete button for Credentials in the Credentials View (#2862)
 
 ### Changed
 
