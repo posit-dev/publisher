@@ -13,8 +13,9 @@ type Bioconductor struct {
 }
 
 type Lockfile struct {
-	R            R                       `toml:"r" json:"r"`
-	Bioconductor Bioconductor            `toml:"bioconductor" json:"Bioconductor"`
+	R R `toml:"r" json:"r"`
+	// Exclude Bioconductor from deployment TOML; keep JSON for renv.lock parsing
+	Bioconductor Bioconductor            `toml:"-" json:"Bioconductor"`
 	Packages     map[PackageName]Package `toml:"packages" json:"packages"`
 }
 
@@ -45,26 +46,26 @@ type Package struct {
 	RemoteReposName   string        `toml:"remote_repos_name,omitempty" json:"remoteReposName,omitempty"`
 	RemotePkgPlatform string        `toml:"remote_pkg_platform,omitempty" json:"remotePkgPlatform,omitempty"`
 	RemoteSha         string        `toml:"remote_sha,omitempty" json:"remoteSha,omitempty"`
-	
+
 	// Additional fields from renv.lock that we want to copy to the manifest
-	Type             string   `toml:"type,omitempty" json:"Type,omitempty"`
-	Title            string   `toml:"title,omitempty" json:"Title,omitempty"`
-	AuthorsAtR       string   `toml:"authors@r,omitempty" json:"Authors@R,omitempty"`
-	Maintainer       string   `toml:"maintainer,omitempty" json:"Maintainer,omitempty"`
-	Description      string   `toml:"description,omitempty" json:"Description,omitempty"`
-	URL              string   `toml:"url,omitempty" json:"URL,omitempty"`
-	BugReports       string   `toml:"bugreports,omitempty" json:"BugReports,omitempty"`
-	License          string   `toml:"license,omitempty" json:"License,omitempty"`
-	Imports          []string `toml:"imports,omitempty" json:"Imports,omitempty"`
-	Suggests         []string `toml:"suggests,omitempty" json:"Suggests,omitempty"`
-	VignetteBuilder  string   `toml:"vignettebuilder,omitempty" json:"VignetteBuilder,omitempty"`
-	RoxygenNote      string   `toml:"roxygennote,omitempty" json:"RoxygenNote,omitempty"`
-	Encoding         string   `toml:"encoding,omitempty" json:"Encoding,omitempty"`
-	NeedsCompilation string   `toml:"needscompilation,omitempty" json:"NeedsCompilation,omitempty"`
-	Author           string   `toml:"author,omitempty" json:"Author,omitempty"`
-	ConfigTesthat    string   `toml:"config/testthat/edition,omitempty" json:"Config/testthat/edition,omitempty"`
-	ConfigNeeds      string   `toml:"config/needs/website,omitempty" json:"Config/Needs/website,omitempty"`
-	SystemRequirements string `toml:"systemrequirements,omitempty" json:"SystemRequirements,omitempty"`
+	Type               string   `toml:"type,omitempty" json:"Type,omitempty"`
+	Title              string   `toml:"title,omitempty" json:"Title,omitempty"`
+	AuthorsAtR         string   `toml:"authors@r,omitempty" json:"Authors@R,omitempty"`
+	Maintainer         string   `toml:"maintainer,omitempty" json:"Maintainer,omitempty"`
+	Description        string   `toml:"description,omitempty" json:"Description,omitempty"`
+	URL                string   `toml:"url,omitempty" json:"URL,omitempty"`
+	BugReports         string   `toml:"bugreports,omitempty" json:"BugReports,omitempty"`
+	License            string   `toml:"license,omitempty" json:"License,omitempty"`
+	Imports            []string `toml:"imports,omitempty" json:"Imports,omitempty"`
+	Suggests           []string `toml:"suggests,omitempty" json:"Suggests,omitempty"`
+	VignetteBuilder    string   `toml:"vignettebuilder,omitempty" json:"VignetteBuilder,omitempty"`
+	RoxygenNote        string   `toml:"roxygennote,omitempty" json:"RoxygenNote,omitempty"`
+	Encoding           string   `toml:"encoding,omitempty" json:"Encoding,omitempty"`
+	NeedsCompilation   string   `toml:"needscompilation,omitempty" json:"NeedsCompilation,omitempty"`
+	Author             string   `toml:"author,omitempty" json:"Author,omitempty"`
+	ConfigTesthat      string   `toml:"config/testthat/edition,omitempty" json:"Config/testthat/edition,omitempty"`
+	ConfigNeeds        string   `toml:"config/needs/website,omitempty" json:"Config/Needs/website,omitempty"`
+	SystemRequirements string   `toml:"systemrequirements,omitempty" json:"SystemRequirements,omitempty"`
 }
 
 func ReadLockfile(path util.AbsolutePath) (*Lockfile, error) {
