@@ -72,7 +72,17 @@ func (c *ServerPublisher) getContentRequestBase() (*types.ContentRequestBase, er
 	if cloudCfg != nil {
 		if cloudCfg.AccessControl != nil {
 			orgAccess := cloudCfg.AccessControl.OrganizationAccess
-			publicAccess := cloudCfg.AccessControl.PublicAccess
+			publicAccess := true
+			if cloudCfg.AccessControl.PublicAccess != nil {
+				publicAccess = *cloudCfg.AccessControl.PublicAccess
+			} else {
+				accountPrivateContentEntitlement := false
+				if accountPrivateContentEntitlement {
+					publicAccess = false
+				} else {
+					publicAccess = true
+				}
+			}
 			switch orgAccess {
 			case config.OrganizationAccessTypeViewer:
 				if publicAccess {
@@ -87,9 +97,11 @@ func (c *ServerPublisher) getContentRequestBase() (*types.ContentRequestBase, er
 					access = types.ViewTeamEditTeam
 				}
 			default:
-				// config.OrganizationAccessTypeDisabled
+				// config.OrganizationAccessTypeDisabled or unset
 				if publicAccess {
-					c.log.Warn("Organization access is disabled, but public access is enabled - organization access will be set to viewer.")
+					if orgAccess == config.OrganizationAccessTypeDisabled {
+						c.log.Warn("Organization access is not set, but public access is enabled - organization will have view access.")
+					}
 					access = types.ViewPublicEditPrivate
 				} else {
 					access = types.ViewPrivateEditPrivate

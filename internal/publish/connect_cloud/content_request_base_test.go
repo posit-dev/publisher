@@ -47,6 +47,7 @@ func (s *ContentRequestSuite) SetupTest() {
 
 func (s *ContentRequestSuite) TestGetContentRequestBase() {
 	// Setup publisher with a configuration that has all fields populated
+	publicAccess := true
 	s.publisher.Config = &config.Config{
 		Title:       "Test Content Title",
 		Description: "Test content description",
@@ -61,7 +62,7 @@ func (s *ContentRequestSuite) TestGetContentRequestBase() {
 		ConnectCloud: &config.ConnectCloud{
 			VanityName: "test-vanity-name",
 			AccessControl: &config.ConnectCloudAccessControl{
-				PublicAccess:       true,
+				PublicAccess:       &publicAccess,
 				OrganizationAccess: config.OrganizationAccessTypeViewer,
 			},
 		},
