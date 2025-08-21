@@ -201,14 +201,16 @@ export type ErrDeviceAuthAccessDenied =
   MkErrorDataType<"deviceAuthAccessDenied">;
 export const isErrDeviceAuthAccessDenied =
   mkErrorTypeGuard<ErrDeviceAuthAccessDenied>("deviceAuthAccessDenied");
-export const errDeviceAuthAccessDeniedMessage = "Failed to authenticate: the authorization request was denied.";
+export const errDeviceAuthAccessDeniedMessage =
+  "Failed to authenticate: the authorization request was denied.";
 
 // Device auth expired token error
 export type ErrDeviceAuthExpiredToken =
   MkErrorDataType<"deviceAuthExpiredToken">;
 export const isDeviceAuthExpiredToken =
   mkErrorTypeGuard<ErrDeviceAuthExpiredToken>("deviceAuthExpiredToken");
-export const errDeviceAuthExpiredTokenMessage = "Failed to authenticate: your authorization session has expired.";
+export const errDeviceAuthExpiredTokenMessage =
+  "Failed to authenticate: your authorization session has expired.";
 
 // Tries to match an Axios error that comes with an identifiable Json structured data
 // defaulting to be ErrUnknown message when
