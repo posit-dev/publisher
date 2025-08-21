@@ -1,0 +1,100 @@
+name: Report a bug
+description: Found something? Thank you for telling us!
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## System Details
+
+        Please provide the following information to help us diagnose the issue.
+
+        Clicking Copy System Info under Help and Feedback in the sidebar will
+        copy system info for the fields below to your clipboard.
+
+  - type: input
+    id: publisher-version
+    attributes:
+      label: Publisher Version
+      description: |
+        Found in copied system info or,
+        in Positron/VS Code: Extensions view → Posit Publisher → under Installation on the right.
+      placeholder: "e.g., 1.18.0"
+    validations:
+      required: false
+
+  - type: input
+    id: connect-version
+    attributes:
+      label: Connect Version
+      description: |
+        Find this in Connect: System page → Info tab → under System Info.
+        See https://docs.posit.co/connect/admin/server-management/#determine-version-installed
+      placeholder: "e.g., 2025.07.0"
+    validations:
+      required: false
+
+  - type: input
+    id: os
+    attributes:
+      label: Your OS
+      description: |
+        Operating system and version
+        Found in copied system info.
+      placeholder: "e.g., macOS 14.2, Windows 11, Ubuntu 22.04"
+    validations:
+      required: false
+
+  - type: input
+    id: ide
+    attributes:
+      label: IDE
+      description: |
+        Which IDE are you using?
+        Found in copied system info.
+      placeholder: "e.g., Positron, VS Code, other"
+    validations:
+      required: false
+
+  - type: input
+    id: content-type
+    attributes:
+      label: Content Type to Deploy
+      description: "What type of content are you trying to deploy?"
+      placeholder: "e.g., FastAPI app, Shiny app, Quarto document"
+    validations:
+      required: false
+
+  - type: textarea
+    id: problem-statement
+    attributes:
+      label: Problem Statement
+      description: "Describe the problem you're experiencing"
+      placeholder: "A clear and concise description of what the bug is"
+    validations:
+      required: false
+
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: Steps to Reproduce
+      description: "List the steps to reproduce the behavior"
+      placeholder: |
+        1. Go to '...'
+        2. Click on '....'
+        3. Scroll down to '....'
+        4. See error
+    validations:
+      required: false
+
+  - type: textarea
+    id: publisher-output
+    attributes:
+      label: Publisher Output and Logs
+      description: |
+        Publisher output helps us to identify the problem.
+        It is located in the "Output" window under the "Posit Publisher Deployment" option.
+        See https://github.com/posit-dev/publisher/blob/main/docs/troubleshooting.md#publisher-output
+      placeholder: "Paste the relevant output here"
+    validations:
+      required: false
