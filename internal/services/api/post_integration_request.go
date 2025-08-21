@@ -47,6 +47,7 @@ func PostIntegrationRequestFuncHandler(base util.AbsolutePath, log logging.Logge
 
 		ir := config.IntegrationRequest{
 			Guid:            body.Guid,
+			Name:            body.Name,
 			Description:     body.Description,
 			AuthType:        body.AuthType,
 			IntegrationType: body.IntegrationType,
