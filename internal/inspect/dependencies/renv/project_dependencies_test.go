@@ -14,28 +14,39 @@ import (
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 )
 
-func TestRDependencyScanner_ScanDependencies(t *testing.T) {
-	r := require.New(t)
+// RDependencyScannerSuite groups unit tests for R dependency scanning using testify/suite
+type RDependencyScannerSuite struct {
+	suite.Suite
+	fs        afero.Fs
+	cwd       util.AbsolutePath
+	log       logging.Logger
+	rExecPath string
+	exec      *executortest.MockExecutor
+}
 
-	// Setup in-memory workspace base
-	fs := afero.NewMemMapFs()
-	cwd, err := util.Getwd(fs)
-	r.NoError(err)
-	r.NoError(cwd.MkdirAll(0777))
+func TestRDependencyScannerSuite(t *testing.T) {
+	suite.Run(t, new(RDependencyScannerSuite))
+}
 
-	log := logging.New()
+func (s *RDependencyScannerSuite) SetupTest() {
+	s.fs = afero.NewMemMapFs()
+	cwd, err := util.Getwd(s.fs)
+	s.Require().NoError(err)
+	s.Require().NoError(cwd.MkdirAll(0777))
+	s.cwd = cwd
+	s.log = logging.New()
+	s.rExecPath = "/usr/bin/R"
+	s.exec = executortest.NewMockExecutor()
+}
 
-	// Fake R executable path
-	rExecPath := "/usr/bin/R"
-
-	// Mock executor to capture the script invocation; return success
-	exec := executortest.NewMockExecutor()
-	exec.On(
+func (s *RDependencyScannerSuite) TestScanDependencies() {
+	// Expect a RunScript call that includes renv::dependencies and renv::snapshot
+	s.exec.On(
 		"RunScript",
-		rExecPath,
+		s.rExecPath,
 		[]string{"-s"},
 		mock.MatchedBy(func(script string) bool {
 			return strings.Contains(script, "renv::dependencies(") && strings.Contains(script, "renv::snapshot(")
@@ -43,7 +54,7 @@ func TestRDependencyScanner_ScanDependencies(t *testing.T) {
 		mock.Anything, // working dir is the temporary project now
 		mock.Anything,
 	).Return([]byte("ok"), []byte(""), nil).Run(func(args mock.Arguments) {
-		// Extract the temp project path (tmpProjPath <- "...") from the script and create tmpProjPath/renv.lock
+		// Extract tmpProjPath from the script and create tmpProjPath/renv.lock
 		script := args.Get(2).(string)
 		start := strings.Index(script, "tmpProjPath <- \"")
 		if start >= 0 {
@@ -57,62 +68,61 @@ func TestRDependencyScanner_ScanDependencies(t *testing.T) {
 		}
 	})
 
-	scanner := NewRDependencyScanner(log)
-	scanner.rExecutor = exec
+	scanner := NewRDependencyScanner(s.log)
+	scanner.rExecutor = s.exec
 
-	lockfilePath, err := scanner.ScanDependencies([]string{cwd.String()}, rExecPath)
-	r.NoError(err)
-	// Should be an absolute path ending with renv.lock
-	r.True(filepath.IsAbs(lockfilePath.String()))
-	r.Equal("renv.lock", filepath.Base(lockfilePath.String()))
+	lockfilePath, err := scanner.ScanDependencies([]string{s.cwd.String()}, s.rExecPath)
+	s.Require().NoError(err)
+	s.True(filepath.IsAbs(lockfilePath.String()))
+	s.Equal("renv.lock", filepath.Base(lockfilePath.String()))
 
-	exec.AssertExpectations(t)
+	s.exec.AssertExpectations(s.T())
 }
 
-func TestRDependencyScanner_ErrWhenLockfileNotCreated(t *testing.T) {
-	r := require.New(t)
-
-	fs := afero.NewMemMapFs()
-	cwd, err := util.Getwd(fs)
-	r.NoError(err)
-	r.NoError(cwd.MkdirAll(0777))
-
-	log := logging.New()
-	rExecPath := "/usr/bin/R"
-
-	// Mock executor: simulate R script success but do NOT create the lockfile
-	exec := executortest.NewMockExecutor()
-	exec.On(
+func (s *RDependencyScannerSuite) TestErrWhenLockfileNotCreated() {
+	// Simulate script success but do NOT create lockfile
+	s.exec.On(
 		"RunScript",
-		rExecPath,
+		s.rExecPath,
 		[]string{"-s"},
-		mock.Anything, // script
+		mock.Anything,
 		mock.Anything,
 		mock.Anything,
 	).Return([]byte("ok"), []byte(""), nil)
 
-	scanner := NewRDependencyScanner(log)
-	scanner.rExecutor = exec
-	_, err = scanner.ScanDependencies([]string{cwd.String()}, rExecPath)
-	r.Error(err)
-	exec.AssertExpectations(t)
+	scanner := NewRDependencyScanner(s.log)
+	scanner.rExecutor = s.exec
+
+	_, err := scanner.ScanDependencies([]string{s.cwd.String()}, s.rExecPath)
+	s.Require().Error(err)
+	s.exec.AssertExpectations(s.T())
 }
 
-// TestRDependencyScanner_Functional runs the scanner against a real R installation
-// to generate an actual lockfile and validate its contents using a non-renv package.
-func TestRDependencyScanner_Functional(t *testing.T) {
+// RDependencyScannerFunctionalSuite groups functional tests that require a real R installation.
+type RDependencyScannerFunctionalSuite struct {
+	suite.Suite
+	log logging.Logger
+}
+
+func TestRDependencyScannerFunctionalSuite(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping functional test in short mode")
+		t.Skip("skipping functional suite in short mode")
+	}
+	suite.Run(t, new(RDependencyScannerFunctionalSuite))
+}
+
+func (s *RDependencyScannerFunctionalSuite) SetupTest() {
+	s.log = logging.New()
+}
+
+// runs the scanner against a real R installation and validates multiple packages appear in the lockfile
+func (s *RDependencyScannerFunctionalSuite) TestFunctional() {
+	if testing.Short() {
+		s.T().Skip("skipping functional test in short mode")
 	}
 
-	r := require.New(t)
-	log := logging.New()
-
 	// Create a real temp project where we can inspect dependencies
-	dir, err := os.MkdirTemp("", "publisher-renv-functional-*")
-	r.NoError(err)
-	defer os.RemoveAll(dir)
-
+	dir := s.T().TempDir()
 	base := util.NewAbsolutePath(dir, nil)
 
 	// Create an R script that uses two packages so the lockfile is meaningful
@@ -122,143 +132,121 @@ func TestRDependencyScanner_Functional(t *testing.T) {
 			y <- glue::glue("a = {1}")
 			cli::cli_alert_success(y)
 		`
-	err = base.Join("main.R").WriteFile([]byte(rScript), 0644)
-	r.NoError(err)
+	err := base.Join("main.R").WriteFile([]byte(rScript), 0644)
+	s.Require().NoError(err)
 
 	// Also create a nested directory with another script using a different package
-	r.NoError(base.Join("nested").MkdirAll(0777))
+	s.Require().NoError(base.Join("nested").MkdirAll(0777))
 	nestedScript := `
 			library(jsonlite)
 			jsonlite::toJSON(list(a=1))
 		`
-	r.NoError(base.Join("nested", "child.R").WriteFile([]byte(nestedScript), 0644))
+	s.Require().NoError(base.Join("nested", "child.R").WriteFile([]byte(nestedScript), 0644))
 
-	interp, err := interpreters.NewRInterpreter(base, util.Path{}, log, nil, nil, nil)
-	r.NoError(err)
+	interp, err := interpreters.NewRInterpreter(base, util.Path{}, s.log, nil, nil, nil)
+	s.Require().NoError(err)
 	rExec, err := interp.GetRExecutable()
-	r.NoError(err)
-	r.NotEmpty(rExec.String())
+	s.Require().NoError(err)
+	s.Require().NotEmpty(rExec.String())
 
-	scanner := NewRDependencyScanner(log)
+	scanner := NewRDependencyScanner(s.log)
 	lockfilePath, err := scanner.ScanDependencies([]string{base.String()}, rExec.String())
-	r.NoError(err)
+	s.Require().NoError(err)
 
 	// Validate the lockfile exists and parses
 	exists, err := lockfilePath.Exists()
-	r.NoError(err)
-	r.True(exists, "lockfile should exist")
-	r.True(filepath.IsAbs(lockfilePath.String()))
-	r.Equal("renv.lock", filepath.Base(lockfilePath.String()))
+	s.Require().NoError(err)
+	s.True(exists, "lockfile should exist")
+	s.True(filepath.IsAbs(lockfilePath.String()))
+	s.Equal("renv.lock", filepath.Base(lockfilePath.String()))
 
 	lf, err := ReadLockfile(lockfilePath)
-	r.NoError(err)
-	r.NotNil(lf.Packages, "Packages map should be present")
+	s.Require().NoError(err)
+	s.NotNil(lf.Packages, "Packages map should be present")
 	// Assert packages referenced by the scripts (including nested) exist in lockfile
 	_, hasGlue := lf.Packages[PackageName("glue")]
 	_, hasCli := lf.Packages[PackageName("cli")]
 	_, hasJsonlite := lf.Packages[PackageName("jsonlite")]
-	r.True(hasGlue, "lockfile should include glue package entry")
-	r.True(hasCli, "lockfile should include cli package entry")
-	r.True(hasJsonlite, "lockfile should include jsonlite from nested file")
+	s.True(hasGlue, "lockfile should include glue package entry")
+	s.True(hasCli, "lockfile should include cli package entry")
+	s.True(hasJsonlite, "lockfile should include jsonlite from nested file")
 }
 
-// TestRDependencyScanner_Functional_NoMirror forces an R session with no CRAN mirror
-// (options(repos) CRAN="@CRAN@") and verifies ScanDependencies does not prompt for a mirror.
-func TestRDependencyScanner_Functional_NoMirror(t *testing.T) {
+// forces an R session with no CRAN mirror and verifies ScanDependencies does not prompt for a mirror
+func (s *RDependencyScannerFunctionalSuite) TestFunctional_NoMirror() {
 	if testing.Short() {
-		t.Skip("skipping functional test in short mode")
+		s.T().Skip("skipping functional test in short mode")
 	}
 
-	r := require.New(t)
-	log := logging.New()
-
 	// Create a real temp project where we can inspect dependencies
-	dir, err := os.MkdirTemp("", "publisher-renv-functional-nocran-*")
-	r.NoError(err)
-	defer os.RemoveAll(dir)
+	dir := s.T().TempDir()
 	base := util.NewAbsolutePath(dir, nil)
 	rScript := `
 			library(cli)
 			cli::cli_alert_success("ok")
 		`
-	err = base.Join("main.R").WriteFile([]byte(rScript), 0644)
-	r.NoError(err)
+	s.Require().NoError(base.Join("main.R").WriteFile([]byte(rScript), 0644))
 
 	// Prepare an R user profile that unsets the CRAN mirror
-	// We set CRAN to @CRAN@ to simulate no mirror configured
-	profDir, err := os.MkdirTemp("", "r-profile-user-*")
-	r.NoError(err)
-	defer os.RemoveAll(profDir)
+	profDir := s.T().TempDir()
 	profPath := filepath.Join(profDir, ".Rprofile")
-	r.NoError(os.WriteFile(profPath, []byte(`options(repos = c(CRAN = "@CRAN@"))`), 0644))
+	s.Require().NoError(os.WriteFile(profPath, []byte(`options(repos = c(CRAN = "@CRAN@"))`), 0644))
 
 	// Ensure R uses the newly created profile and that we restore the old one after the test
 	oldProfile := os.Getenv("R_PROFILE_USER")
-	t.Cleanup(func() {
-		_ = os.Setenv("R_PROFILE_USER", oldProfile)
-	})
-	r.NoError(os.Setenv("R_PROFILE_USER", profPath))
+	s.T().Cleanup(func() { _ = os.Setenv("R_PROFILE_USER", oldProfile) })
+	s.Require().NoError(os.Setenv("R_PROFILE_USER", profPath))
 
-	interp, err := interpreters.NewRInterpreter(base, util.Path{}, log, nil, nil, nil)
-	r.NoError(err)
+	interp, err := interpreters.NewRInterpreter(base, util.Path{}, s.log, nil, nil, nil)
+	s.Require().NoError(err)
 	rExec, err := interp.GetRExecutable()
-	r.NoError(err)
-	r.NotEmpty(rExec.String())
+	s.Require().NoError(err)
+	s.Require().NotEmpty(rExec.String())
 
-	// Confirm renv does not prompt for mirror and lockfile is created.
-	scanner := NewRDependencyScanner(log)
+	scanner := NewRDependencyScanner(s.log)
 	lockfilePath, err := scanner.ScanDependencies([]string{base.String()}, rExec.String())
-	r.NoError(err)
+	s.Require().NoError(err)
 	exists, e2 := lockfilePath.Exists()
-	r.NoError(e2)
-	r.True(exists)
+	s.Require().NoError(e2)
+	s.True(exists)
 }
 
-// TestRDependencyScanner_Functional_PathsFilter ensures that when specific paths
-// are provided, only dependencies from those paths are included, even if other
-// files in the directory reference additional packages.
-func TestRDependencyScanner_Functional_PathsFilter(t *testing.T) {
+// ensures that when specific paths are provided, only dependencies from those paths are included
+func (s *RDependencyScannerFunctionalSuite) TestFunctional_PathsFilter() {
 	if testing.Short() {
-		t.Skip("skipping functional test in short mode")
+		s.T().Skip("skipping functional test in short mode")
 	}
 
-	r := require.New(t)
-	log := logging.New()
-
-	// Create a real temp project with two files: one included, one ignored
-	dir, err := os.MkdirTemp("", "publisher-renv-functional-filter-*")
-	r.NoError(err)
-	defer os.RemoveAll(dir)
+	dir := s.T().TempDir()
 	base := util.NewAbsolutePath(dir, nil)
 
 	// included file references glue
 	included := base.Join("included.R")
-	r.NoError(included.WriteFile([]byte(`library(glue); glue::glue("x={1}")`), 0644))
+	s.Require().NoError(included.WriteFile([]byte(`library(glue); glue::glue("x={1}")`), 0644))
 
 	// ignored file references cli (should not be scanned)
 	ignored := base.Join("ignored.R")
-	r.NoError(ignored.WriteFile([]byte(`library(cli); cli::cli_alert_success("ok")`), 0644))
+	s.Require().NoError(ignored.WriteFile([]byte(`library(cli); cli::cli_alert_success("ok")`), 0644))
 
-	interp, err := interpreters.NewRInterpreter(base, util.Path{}, log, nil, nil, nil)
-	r.NoError(err)
+	interp, err := interpreters.NewRInterpreter(base, util.Path{}, s.log, nil, nil, nil)
+	s.Require().NoError(err)
 	rExec, err := interp.GetRExecutable()
-	r.NoError(err)
-	r.NotEmpty(rExec.String())
+	s.Require().NoError(err)
+	s.Require().NotEmpty(rExec.String())
 
-	scanner := NewRDependencyScanner(log)
+	scanner := NewRDependencyScanner(s.log)
 	lockfilePath, err := scanner.ScanDependencies([]string{included.String()}, rExec.String())
-	r.NoError(err)
+	s.Require().NoError(err)
 
 	exists, err := lockfilePath.Exists()
-	r.NoError(err)
-	r.True(exists)
+	s.Require().NoError(err)
+	s.True(exists)
 
-	// The lockfile should only have glue, as ignored.R was not
-	// passed to ScanDependencies.
+	// The lockfile should only have glue, as ignored.R was not passed to ScanDependencies.
 	lf, err := ReadLockfile(lockfilePath)
-	r.NoError(err)
+	s.Require().NoError(err)
 	_, hasGlue := lf.Packages[PackageName("glue")]
 	_, hasCli := lf.Packages[PackageName("cli")]
-	r.True(hasGlue, "lockfile should include glue from included file")
-	r.False(hasCli, "lockfile should NOT include cli from ignored file")
+	s.True(hasGlue, "lockfile should include glue from included file")
+	s.False(hasCli, "lockfile should NOT include cli from ignored file")
 }
