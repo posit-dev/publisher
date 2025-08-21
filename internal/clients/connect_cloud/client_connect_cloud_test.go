@@ -60,7 +60,7 @@ func (s *ConnectCloudClientSuite) TestCreateContent() {
 		ContentRequestBase: clienttypes.ContentRequestBase{
 			Title:       "my cool content",
 			Description: "Don't you just love my piece of content?",
-			NextRevision: clienttypes.NextRevision{
+			NextRevision: clienttypes.RequestRevision{
 				SourceType:    "bundle",
 				RVersion:      "4.0.0",
 				PythonVersion: "3.11.0",
@@ -114,7 +114,7 @@ func (s *ConnectCloudClientSuite) TestUpdateContent() {
 		ContentRequestBase: clienttypes.ContentRequestBase{
 			Title:       "my updated content",
 			Description: "This content was updated",
-			NextRevision: clienttypes.NextRevision{
+			NextRevision: clienttypes.RequestRevision{
 				SourceType:    "bundle",
 				RVersion:      "4.2.0",
 				PythonVersion: "3.12.0",
