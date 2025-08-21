@@ -34,6 +34,10 @@ func NewRDependencyScanner(log logging.Logger) *defaultRDependencyScanner {
 }
 
 func (s *defaultRDependencyScanner) ScanDependencies(paths []string, rExecutable string) (util.AbsolutePath, error) {
+	if len(paths) == 0 {
+		return util.AbsolutePath{}, fmt.Errorf("no paths to scan dependencies of")
+	}
+
 	// Create a temp directory in the system temp location (not under the project)
 	tmpRoot := util.NewPath("", nil)
 	tmpProjectPath, err := tmpRoot.TempDir("publisher-renv-")

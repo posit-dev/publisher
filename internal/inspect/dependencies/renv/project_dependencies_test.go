@@ -87,7 +87,7 @@ func TestRDependencyScanner_ErrWhenLockfileNotCreated(t *testing.T) {
 		rExecPath,
 		[]string{"-s"},
 		mock.Anything, // script
-		mock.Anything, // working dir is temp project now
+		mock.Anything,
 		mock.Anything,
 	).Return([]byte("ok"), []byte(""), nil)
 
