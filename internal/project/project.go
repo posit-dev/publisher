@@ -6,13 +6,6 @@ package project
 var Version string
 var Mode string
 
-func UserAgent() string {
-	if Version != "" {
-		return "posit-publisher/" + Version
-	}
-	return "posit-publisher"
-}
-
 func DevelopmentBuild() bool {
 	return Mode == "dev"
 }

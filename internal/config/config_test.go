@@ -352,3 +352,19 @@ func (s *ConfigSuite) TestForceProductTypeComplianceNilFields() {
 	s.Nil(cfg.Python, "Python field should still be nil")
 	s.Nil(cfg.R, "R field should still be nil")
 }
+
+func (s *ConfigSuite) TestForceProductTypeComplianceEntrypointObjectRef() {
+	// Test with Entrypoint and EntrypointObjectRef set
+	cfg := &Config{
+		ProductType:         ProductTypeConnect,
+		Entrypoint:          "app.py",
+		EntrypointObjectRef: "shiny.express.app:app_2e_py",
+	}
+
+	// Call ForceProductTypeCompliance
+	cfg.ForceProductTypeCompliance()
+
+	// Verify Entrypoint changes
+	s.Equal(cfg.Entrypoint, "shiny.express.app:app_2e_py", "Entrypoint should get set from EntrypointObjectRef")
+	s.Empty(cfg.EntrypointObjectRef, "EntrypointObjectRef should get cleared out")
+}

@@ -101,16 +101,8 @@ type Package struct {
 
 type ManifestFileMap map[string]ManifestFile
 
-func NewManifestFileMap() ManifestFileMap {
-	return ManifestFileMap{}
-}
-
 type ManifestFile struct {
 	Checksum string `json:"checksum"`
-}
-
-func NewManifestFile() ManifestFile {
-	return ManifestFile{}
 }
 
 // ReadManifest reads and parses the manifest.
@@ -142,16 +134,6 @@ func (m *Manifest) WriteManifestFile(path util.Path) error {
 	}
 	defer f.Close()
 	return m.WriteManifest(f)
-}
-
-// ReadManifest reads and parses the manifest file stored at path.
-func ReadManifestFile(path util.Path) (*Manifest, error) {
-	f, err := path.Open()
-	if err != nil {
-		return nil, fmt.Errorf("cannot open manifest file %s: %w", path, err)
-	}
-	defer f.Close()
-	return ReadManifest(f)
 }
 
 func NewManifest() *Manifest {

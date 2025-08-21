@@ -7,11 +7,11 @@ import (
 	"os"
 	"testing"
 
-	"github.com/posit-dev/publisher/internal/util"
-	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/spf13/afero"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/posit-dev/publisher/internal/util"
+	"github.com/posit-dev/publisher/internal/util/utiltest"
 )
 
 type DCFSuite struct {
@@ -50,44 +50,6 @@ func (s *DCFSuite) TestReadFileNonexistent() {
 	data, err := r.ReadFile(path)
 	s.ErrorIs(err, os.ErrNotExist)
 	s.Nil(data)
-}
-
-func (s *DCFSuite) TestReadFiles() {
-	fs := afero.NewMemMapFs()
-	path, err := util.Getwd(fs)
-	s.NoError(err)
-
-	err = path.Join("a.dcf").WriteFile([]byte(`a: 1`), 0600)
-	s.NoError(err)
-	err = path.Join("b.dcf").WriteFile([]byte(`b: 2`), 0600)
-	s.NoError(err)
-	err = path.Join("c.txt").WriteFile([]byte(`c: 3`), 0600)
-	s.NoError(err)
-
-	expectedRecords := Records{
-		{"a": "1"},
-		{"b": "2"},
-	}
-	r := NewFileReader(nil)
-
-	records, err := r.ReadFiles(path, "*.dcf")
-	s.Nil(err)
-	s.Equal(expectedRecords, records)
-}
-
-func (s *DCFSuite) TestReadFilesErr() {
-	fs := afero.NewMemMapFs()
-	path, err := util.Getwd(fs)
-	s.NoError(err)
-
-	err = path.Join("a.dcf").WriteFile([]byte(`abc`), 0600)
-	s.NoError(err)
-
-	r := NewFileReader(nil)
-
-	records, err := r.ReadFiles(path, "*.dcf")
-	s.NotNil(err)
-	s.Nil(records)
 }
 
 func (s *DCFSuite) TestDecode() {

@@ -10,6 +10,10 @@ node_modules
 
 .DS_Store
 
+*renv/
+*.venv/
+.envrc
+
 # Visual Studio Code
 .vscode/*
 !.vscode/recommended.settings.json
@@ -31,6 +35,7 @@ cmd/publisher/__debug_bin*
 
 # Possible e2e tests deployment assets
 test/e2e/content-workspace/**/.posit
+screenshots/
 
 # license files should not be commited to this repository
 *.lic

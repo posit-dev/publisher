@@ -8,11 +8,8 @@ import {
 } from "./multiStepHelper";
 import { Credential, ServerType, ProductName } from "src/api";
 import { extensionSettings } from "src/extension";
-import {
-  getServerType,
-  isConnectCloud,
-  platformList,
-} from "src/multiStepInputs/common";
+import { platformList } from "src/multiStepInputs/common";
+import { getServerType, isConnectCloud } from "../utils/multiStepHelpers";
 import { newConnectCredential } from "./newConnectCredential";
 import { newConnectCloudCredential } from "./newConnectCloudCredential";
 
