@@ -30,8 +30,15 @@ func getCloudContentType(contentType config.ContentType) (types.ContentType, err
 	return "", fmt.Errorf("content type '%s' is not supported by Connect Cloud", contentType)
 }
 
-func (c *ServerPublisher) getContentRequestBase() (*types.ContentRequestBase, error) {
+func (c *ServerPublisher) hasPermissionForPrivateContent() (bool, error) {
+	account, err := c.client.GetAccount(c.Account.CloudAccountID)
+	if err != nil {
+		return false, err
+	}
+	return account.License.Entitlements.AccountPrivateContentFlag.Enabled, nil
+}
 
+func (c *ServerPublisher) getContentRequestBase() (*types.ContentRequestBase, error) {
 	// Extract config details for the request
 	title := c.Config.Title
 	if title == "" {
@@ -69,20 +76,28 @@ func (c *ServerPublisher) getContentRequestBase() (*types.ContentRequestBase, er
 
 	access := types.ViewPrivateEditPrivate
 	vanityName := ""
+
 	if cloudCfg != nil {
 		if cloudCfg.AccessControl != nil {
 			orgAccess := cloudCfg.AccessControl.OrganizationAccess
-			publicAccess := true
+
+			var publicAccess bool
 			if cloudCfg.AccessControl.PublicAccess != nil {
 				publicAccess = *cloudCfg.AccessControl.PublicAccess
 			} else {
-				accountPrivateContentEntitlement := false
-				if accountPrivateContentEntitlement {
+				// if the config doesn't specify whether public access is enabled, we need to determine if the account
+				// is entitled to private access. If they are, we default to private access.
+				hasPermissionForPrivateContent, err := c.hasPermissionForPrivateContent()
+				if err != nil {
+					return nil, fmt.Errorf("failed to check account permissions for creating private content: %w", err)
+				}
+				if hasPermissionForPrivateContent {
 					publicAccess = false
 				} else {
 					publicAccess = true
 				}
 			}
+
 			switch orgAccess {
 			case config.OrganizationAccessTypeViewer:
 				if publicAccess {

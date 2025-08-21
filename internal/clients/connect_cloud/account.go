@@ -3,9 +3,7 @@ package connect_cloud
 // Copyright (C) 2025 by Posit Software, PBC.
 
 type AccountEntitlement struct {
-	Type      string `json:"type"`
-	LicenseID string `json:"license_id"`
-	Enabled   bool   `json:"enabled"`
+	Enabled bool `json:"enabled"`
 }
 
 type AccountEntitlements struct {

@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/posit-dev/publisher/internal/accounts"
+	"github.com/posit-dev/publisher/internal/clients/connect_cloud"
 	clienttypes "github.com/posit-dev/publisher/internal/clients/types"
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/logging"
@@ -146,4 +147,77 @@ func (s *ContentRequestSuite) TestGetContentRequestBaseUnsupportedType() {
 	// Verify an error is returned
 	s.Error(err, fmt.Sprintf("content type '%s' is not supported by Connect Cloud", s.publisher.Config.Type))
 	s.Nil(base)
+}
+
+func (s *ContentRequestSuite) TestGetContentRequestBaseWithUnsetPublicAccess() {
+	testCases := []struct {
+		name                      string
+		privateContentEntitlement bool
+		expectedContentAccess     clienttypes.ContentAccess
+	}{
+		{
+			name:                      "not entitled to private access",
+			privateContentEntitlement: false,
+			expectedContentAccess:     clienttypes.ViewPublicEditPrivate,
+		},
+		{
+			name:                      "entitled to private access",
+			privateContentEntitlement: true,
+			expectedContentAccess:     clienttypes.ViewPrivateEditPrivate,
+		},
+	}
+	for _, tc := range testCases {
+		s.Run(tc.name, func() {
+			// Setup mock client
+			mockClient := connect_cloud.NewMockClient()
+			s.publisher.client = mockClient
+
+			// Setup account with CloudAccountID
+			s.publisher.Account.CloudAccountID = "test-account-id"
+
+			// Setup publisher with configuration that has no PublicAccess set (nil)
+			s.publisher.Config = &config.Config{
+				Title:       "Test Content Title",
+				Description: "Test content description",
+				Type:        config.ContentTypePythonDash,
+				Entrypoint:  "app.py",
+				ConnectCloud: &config.ConnectCloud{
+					AccessControl: &config.ConnectCloudAccessControl{
+						PublicAccess:       nil, // This is the key - PublicAccess is unset
+						OrganizationAccess: config.OrganizationAccessTypeDisabled,
+					},
+				},
+			}
+			s.publisher.SaveName = "test-save-name"
+
+			// Setup mock to return account with private content entitlement defined in test case
+			mockAccount := &connect_cloud.Account{
+				ID:          "test-account-id",
+				Name:        "test-account",
+				DisplayName: "Test Account",
+				License: &connect_cloud.AccountLicense{
+					Entitlements: connect_cloud.AccountEntitlements{
+						AccountPrivateContentFlag: connect_cloud.AccountEntitlement{
+							Enabled: tc.privateContentEntitlement,
+						},
+					},
+				},
+			}
+			mockClient.On("GetAccount", "test-account-id").Return(mockAccount, nil)
+
+			// Call getContentRequestBase
+			base, err := s.publisher.getContentRequestBase()
+
+			// Verify no error is returned
+			s.NoError(err)
+			s.NotNil(base)
+
+			// Verify that access is set as expected based on entitlement
+			s.Equal(tc.expectedContentAccess, base.Access)
+
+			// Verify the mock was called
+			mockClient.AssertExpectations(s.T())
+		})
+	}
+
 }

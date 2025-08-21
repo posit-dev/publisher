@@ -352,8 +352,8 @@ Only supported for organizational accounts.
 
 #### public_access
 
-Specifies whether the content is publicly accessible.
+Specifies whether the content is publicly accessible. Defaults to `true` on free accounts and `false` on paid accounts.
 
-### organization_access
+#### organization_access
 
 Specifies the default level of access for account members within an organizational account. Can be `disabled`, `view`, or `editor`.
