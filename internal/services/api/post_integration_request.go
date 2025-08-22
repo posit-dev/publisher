@@ -1,3 +1,5 @@
+// Copyright (C) 2025 by Posit Software, PBC.
+
 package api
 
 import (
