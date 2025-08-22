@@ -13,7 +13,6 @@ type APIClient interface {
 	GetContent(contentID internaltypes.ContentID) (*types.ContentResponse, error)
 	CreateContent(request *types.CreateContentRequest) (*types.ContentResponse, error)
 	UpdateContent(request *types.UpdateContentRequest) (*types.ContentResponse, error)
-	UpdateContentBundle(contentID internaltypes.ContentID) (*types.ContentResponse, error)
 	GetAuthorization(request *types.AuthorizationRequest) (*types.AuthorizationResponse, error)
 	GetRevision(revisionID string) (*types.Revision, error)
 	PublishContent(contentID string) error

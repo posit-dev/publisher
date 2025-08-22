@@ -44,11 +44,6 @@ func (m *MockClient) UpdateContent(request *types.UpdateContentRequest) (*types.
 	return args.Get(0).(*types.ContentResponse), args.Error(1)
 }
 
-func (m *MockClient) UpdateContentBundle(contentID content_types.ContentID) (*types.ContentResponse, error) {
-	args := m.Called(contentID)
-	return args.Get(0).(*types.ContentResponse), args.Error(1)
-}
-
 func (m *MockClient) GetAuthorization(request *types.AuthorizationRequest) (*types.AuthorizationResponse, error) {
 	args := m.Called(request)
 	return args.Get(0).(*types.AuthorizationResponse), args.Error(1)
