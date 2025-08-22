@@ -38,7 +38,8 @@ func (c *ServerPublisher) hasPermissionForPrivateContent() (bool, error) {
 	return account.License.Entitlements.AccountPrivateContentFlag.Enabled, nil
 }
 
-func (c *ServerPublisher) getContentRequestBase() (*types.ContentRequestBase, error) {
+func (c *ServerPublisher) getContentRequestBase(isFirstDeploy bool) (*types.ContentRequestBase, error) {
+
 	// Extract config details for the request
 	title := c.Config.Title
 	if title == "" {
@@ -118,25 +119,30 @@ func (c *ServerPublisher) getContentRequestBase() (*types.ContentRequestBase, er
 		}
 	}
 
-	vanityName := ""
-	if cloudCfg != nil {
-		vanityName = cloudCfg.VanityName
+	revision := types.RequestRevision{
+		SourceType:    "bundle",
+		RVersion:      rVersion,
+		PythonVersion: pythonVersion,
+		ContentType:   cloudContentType,
+		AppMode:       appMode,
+		PrimaryFile:   c.Config.Entrypoint,
 	}
-
-	return &types.ContentRequestBase{
+	base := &types.ContentRequestBase{
 		Title:       title,
 		Description: c.Config.Description,
-		NextRevision: types.NextRevision{
-			SourceType:    "bundle",
-			RVersion:      rVersion,
-			PythonVersion: pythonVersion,
-			ContentType:   cloudContentType,
-			AppMode:       appMode,
-			PrimaryFile:   c.Config.Entrypoint,
-		},
-		Access:     access,
-		AppMode:    types.AppModeFromType(c.Config.Type),
-		Secrets:    secrets,
-		VanityName: vanityName,
-	}, nil
+		Access:      access,
+		AppMode:     types.AppModeFromType(c.Config.Type),
+		Secrets:     secrets,
+	}
+	if isFirstDeploy {
+		base.NextRevision = &revision
+	} else {
+		base.RevisionOverrides = &revision
+	}
+
+	if cloudCfg != nil && cloudCfg.VanityName != "" {
+		base.VanityName = cloudCfg.VanityName
+	}
+
+	return base, nil
 }
