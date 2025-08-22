@@ -20,6 +20,7 @@ import { DocumentTracker } from "./entrypointTracker";
 import { getXDGConfigProperty } from "src/utils/config";
 import { PublisherState } from "./state";
 import { PublisherAuthProvider } from "./authProvider";
+import { copySystemInfoCommand } from "src/commands";
 
 const STATE_CONTEXT = "posit.publish.state";
 
@@ -121,7 +122,7 @@ async function initializeExtension(context: ExtensionContext) {
   // Then the registration of the data providers with the VSCode framework
   projectTreeDataProvider.register();
   logsTreeDataProvider.register();
-  homeViewProvider.register(watchers);
+  await homeViewProvider.register(watchers);
 
   context.subscriptions.push(
     commands.registerCommand(Commands.InitProject, async (viewId: string) => {
@@ -134,6 +135,9 @@ async function initializeExtension(context: ExtensionContext) {
     ),
     commands.registerCommand(Commands.ShowPublishingLog, () =>
       commands.executeCommand(Commands.Logs.Focus),
+    ),
+    commands.registerCommand(Commands.HomeView.CopySystemInfo, () =>
+      copySystemInfoCommand(context),
     ),
   );
   setStateContext(PositPublishState.initialized);

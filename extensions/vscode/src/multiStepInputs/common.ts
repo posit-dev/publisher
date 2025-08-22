@@ -5,13 +5,12 @@ import {
   Credential,
   SnowflakeConnection,
   ServerType,
-  ProductType,
   ProductName,
   ProductDescription,
-} from "src/api";
-import { getSummaryStringFromError } from "src/utils/errors";
-import { isAxiosErrorWithJson } from "src/utils/errorTypes";
-import { normalizeURL } from "src/utils/url";
+} from "../api";
+import { getSummaryStringFromError } from "../utils/errors";
+import { isAxiosErrorWithJson } from "../utils/errorTypes";
+import { normalizeURL } from "../utils/url";
 import {
   InputBoxValidationSeverity,
   QuickPickItem,
@@ -28,11 +27,13 @@ import {
   AuthToken,
   ConnectCloudAccount,
   DeviceAuth,
-} from "src/api/types/connectCloud";
+} from "../api/types/connectCloud";
 import axios from "axios";
-import { showProgress } from "src/utils/progress";
-
-export const createNewCredentialLabel = "Create a New Credential";
+import { showProgress } from "../utils/progress";
+import {
+  isConnectCloud,
+  createNewCredentialLabel,
+} from "../utils/multiStepHelpers";
 
 // Search for the first credential that includes
 // the targetURL.
@@ -46,59 +47,6 @@ export function findExistingCredentialByURL(
     return newURL.includes(existing);
   });
 }
-
-export const isConnect = (serverType: ServerType) => {
-  return serverType === ServerType.CONNECT;
-};
-
-export const isConnectCloud = (serverType: ServerType) => {
-  return serverType === ServerType.CONNECT_CLOUD;
-};
-
-export const isSnowflake = (serverType: ServerType) => {
-  return serverType === ServerType.SNOWFLAKE;
-};
-
-export const isConnectProduct = (productType: ProductType) => {
-  return productType === ProductType.CONNECT;
-};
-
-export const isConnectCloudProduct = (productType: ProductType) => {
-  return productType === ProductType.CONNECT_CLOUD;
-};
-
-export const getProductType = (serverType: ServerType): ProductType => {
-  switch (serverType) {
-    case ServerType.CONNECT:
-      return ProductType.CONNECT;
-    case ServerType.SNOWFLAKE:
-      return ProductType.CONNECT;
-    case ServerType.CONNECT_CLOUD:
-      return ProductType.CONNECT_CLOUD;
-  }
-};
-
-export const getProductName = (productType: ProductType) => {
-  switch (productType) {
-    case ProductType.CONNECT:
-      return ProductName.CONNECT;
-    case ProductType.CONNECT_CLOUD:
-      return ProductName.CONNECT_CLOUD;
-  }
-};
-
-export const getServerType = (productName: ProductName) => {
-  switch (productName) {
-    case ProductName.CONNECT:
-      return ServerType.CONNECT;
-    case ProductName.CONNECT_CLOUD:
-      return ServerType.CONNECT_CLOUD;
-  }
-};
-
-export const getPublishableAccounts = (accounts: ConnectCloudAccount[]) => {
-  return accounts.filter((a) => a.permissionToPublish);
-};
 
 // List of all available platforms
 export const platformList: QuickPickItem[] = [
@@ -209,18 +157,18 @@ export const inputCredentialNameStep = async (
   productName: ProductName,
   credentials: Credential[],
 ) => {
-  const currentName =
-    typeof state.data.name === "string" ? state.data.name : "";
-  const accountName =
-    typeof state.data.accountName === "string" ? state.data.accountName : "";
+  const { name, displayName } = state.data;
+  const currentName = typeof name === "string" ? name : "";
+  const accountDisplayName = typeof displayName === "string" ? displayName : "";
 
   const resp = await input.showInputBox({
     title: state.title,
     step: 0,
     totalSteps: 0,
-    value: currentName,
+    // default the credential name to the account display name for Connect Cloud when available
+    value: currentName || accountDisplayName,
     prompt: `Enter a unique nickname for this ${isConnectCloud(serverType) ? "account" : "server"}.`,
-    placeholder: `${isConnectCloud(serverType) ? accountName : productName}`,
+    placeholder: `${isConnectCloud(serverType) ? accountDisplayName : productName}`,
     finalValidation: (input: string) => {
       input = input.trim();
       if (input === "") {

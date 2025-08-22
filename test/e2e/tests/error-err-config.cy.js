@@ -8,7 +8,6 @@ describe("Detect error in config", () => {
     cy.resetConnect();
     cy.setAdminCredentials();
     cy.visit("/").debug();
-
     // Select the publisher extension
     cy.getPublisherSidebarIcon()
       .should("be.visible", { timeout: 10000 })
@@ -16,6 +15,8 @@ describe("Detect error in config", () => {
   });
 
   it("Show errors when Config is invalid", () => {
+    cy.waitForPublisherIframe();
+    cy.debugIframes();
     // click on the select deployment button
     cy.publisherWebview()
       .findByTestId("select-deployment")
@@ -33,8 +34,14 @@ describe("Detect error in config", () => {
       .click();
 
     // confirm that the selector shows the error
-    cy.publisherWebview()
-      .findByTestId("publisher-deployment-section")
+    cy.retryWithBackoff(
+      () =>
+        cy.findUniqueInPublisherWebview(
+          '[data-automation="publisher-deployment-section"]',
+        ),
+      5,
+      500,
+    )
       .find(".deployment-control")
       .find(".quick-pick-option")
       .find(".quick-pick-row")
@@ -43,14 +50,22 @@ describe("Detect error in config", () => {
       .should("have.text", "Unknown Title • Error in quarto-project-8G2B");
 
     // confirm that we also have an error section
-    cy.publisherWebview()
-      .findByTestId("publisher-deployment-section")
-      .find(
-        'p:contains("The selected Configuration has a schema error on line 17.")',
-      );
+    cy.retryWithBackoff(
+      () =>
+        cy.findUniqueInPublisherWebview(
+          '[data-automation="publisher-deployment-section"]',
+        ),
+      5,
+      500,
+    ).find(
+      // TODO: This error message will have more detail added in https://github.com/posit-dev/publisher/issues/2864.
+      'p:contains("The selected Configuration has an error.")',
+    );
   });
 
   it("Show errors when Config is missing", () => {
+    cy.waitForPublisherIframe();
+    cy.debugIframes();
     // click on the select deployment button
     cy.publisherWebview()
       .findByTestId("select-deployment")
@@ -68,8 +83,14 @@ describe("Detect error in config", () => {
       .click();
 
     // confirm that the selector shows the error
-    cy.publisherWebview()
-      .findByTestId("publisher-deployment-section")
+    cy.retryWithBackoff(
+      () =>
+        cy.findUniqueInPublisherWebview(
+          '[data-automation="publisher-deployment-section"]',
+        ),
+      5,
+      500,
+    )
       .find(".deployment-control")
       .find(".quick-pick-option")
       .find(".quick-pick-row")
@@ -81,10 +102,15 @@ describe("Detect error in config", () => {
       );
 
     // confirm that we also have an error section
-    cy.publisherWebview()
-      .findByTestId("publisher-deployment-section")
-      .find(
-        'p:contains("The last Configuration used for this Deployment was not found.")',
-      );
+    cy.retryWithBackoff(
+      () =>
+        cy.findUniqueInPublisherWebview(
+          '[data-automation="publisher-deployment-section"]',
+        ),
+      5,
+      500,
+    ).find(
+      'p:contains("The last Configuration used for this Deployment was not found.")',
+    );
   });
 });

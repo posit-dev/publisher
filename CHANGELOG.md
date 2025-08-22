@@ -9,16 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added Cypress E2E CI Setup and Test Reliability Improvements (#2721)
 - Added endpoints for performing OAuth Device Authorization Grant with Posit Cloud login. (#2692)
 - Added support for one-click token authentication with Connect. (#2769)
 - Added schema and agent support for publishing to Connect Cloud. (#2729, #2747, #2771)
 - Added colors to the logs indicating queued, skipped, passed, and errored log
   stage statuses. (#2382)
+- Improved error messaging when deployment fails due to a schema validation error. (#2831)
+- Added a Copy System Info command and item in the "Help and Feedback" view to
+  easily copy system information - extension version, IDE, and platform details
+  (#2835)
+- Added a delete button for Credentials in the Credentials View (#2862)
 
 ### Changed
 
 - The "Select Deployment" input can now be dismissed by focusing another element
   similar to other inputs. (#2780)
+- Publish failure logs and deployment validation failure logs link to the logs
+  view directly in Posit Connect and Posit Connect Cloud when available (#2859)
 
 ## [1.18.1]
 

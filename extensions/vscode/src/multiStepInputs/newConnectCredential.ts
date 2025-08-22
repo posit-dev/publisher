@@ -25,13 +25,12 @@ import {
 } from "src/utils/errors";
 import { showProgress } from "src/utils/progress";
 import {
-  isConnect,
-  isSnowflake,
   findExistingCredentialByURL,
   fetchSnowflakeConnections,
   inputCredentialNameStep,
   getExistingCredentials,
 } from "src/multiStepInputs/common";
+import { isConnect, isSnowflake } from "../utils/multiStepHelpers";
 import { openConfigurationCommand } from "src/commands";
 import { extensionSettings } from "src/extension";
 import { formatURL } from "src/utils/url";

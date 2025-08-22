@@ -37,6 +37,8 @@ import {
   AllContentRecordTypes,
   EnvironmentConfig,
   PreContentRecordWithConfig,
+  ProductName,
+  ServerType,
 } from "src/api";
 import { EventStream } from "src/events";
 import { getPythonInterpreterPath, getRInterpreterPath } from "../utils/vscode";
@@ -94,7 +96,12 @@ import {
   SelectionIsPreContentRecord,
   setSelectionIsPreContentRecord,
 } from "../extension";
-import { createNewCredentialLabel } from "src/multiStepInputs/common";
+import {
+  createNewCredentialLabel,
+  getProductType,
+  isConnectCloudProduct,
+  isConnectProduct,
+} from "src/utils/multiStepHelpers";
 
 enum HomeViewInitialized {
   initialized = "initialized",
@@ -180,6 +187,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         return this.showNewCredentialForDeployment();
       case WebviewToHostMessageType.NEW_CREDENTIAL:
         return this.showNewCredential();
+      case WebviewToHostMessageType.DELETE_CREDENTIAL:
+        return this.deleteCredential(msg.content);
       case WebviewToHostMessageType.VIEW_PUBLISHING_LOG:
         return this.showPublishingLog();
       case WebviewToHostMessageType.SHOW_ASSOCIATE_GUID:
@@ -188,6 +197,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         return this.updateSelectionCredentialState(msg.content.state);
       case WebviewToHostMessageType.UPDATE_SELECTION_IS_PRE_CONTENT_RECORD:
         return this.updateSelectionIsPreContentRecordState(msg.content.state);
+      case WebviewToHostMessageType.COPY_SYSTEM_INFO:
+        return await this.copySystemInfo();
       default:
         window.showErrorMessage(
           `Internal Error: onConduitMessage unhandled msg: ${JSON.stringify(msg)}`,
@@ -201,6 +212,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       "vscode.open",
       Uri.parse(msg.content.uri),
     );
+  }
+
+  private async copySystemInfo() {
+    return await commands.executeCommand(Commands.HomeView.CopySystemInfo);
   }
 
   private async updateSelectionCredentialState(state: string) {
@@ -1234,7 +1249,15 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         if (credential?.name) {
           details.push(credential.name);
         } else {
-          details.push(`Missing Credential for ${contentRecord.serverUrl}`);
+          const serverType = contentRecord.serverType || ServerType.CONNECT;
+          const productType = getProductType(serverType);
+          let message = "Missing Credential";
+          if (isConnectCloudProduct(productType)) {
+            message += ` for ${ProductName.CONNECT_CLOUD}`;
+          } else if (isConnectProduct(productType)) {
+            message += ` for ${contentRecord.serverUrl}`;
+          }
+          details.push(message);
           problem = true;
         }
 
@@ -1811,7 +1834,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     this.configWatchers?.dispose();
   }
 
-  public register(watchers: WatcherManager) {
+  public async register(watchers: WatcherManager) {
     this.stream.register("publish/start", () => {
       this.onPublishStart();
     });
@@ -1830,6 +1853,22 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       }),
     );
 
+    const currentContentRecord = await this.state.getSelectedContentRecord();
+    const serverType = currentContentRecord?.serverType || ServerType.CONNECT;
+    const productType = getProductType(serverType);
+
+    // register this command for Connect only,
+    // since Connect Cloud does not support this feature at the moment
+    if (isConnectProduct(productType)) {
+      this.context.subscriptions.push(
+        commands.registerCommand(
+          Commands.HomeView.AssociateDeployment,
+          () => showAssociateGUID(this.state),
+          this,
+        ),
+      );
+    }
+
     this.context.subscriptions.push(
       commands.registerCommand(
         Commands.HomeView.SelectDeployment,
@@ -1847,11 +1886,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       commands.registerCommand(
         Commands.HomeView.ShowSelectConfigForDeployment,
         this.showSelectOrCreateConfigForDeployment,
-        this,
-      ),
-      commands.registerCommand(
-        Commands.HomeView.AssociateDeployment,
-        () => showAssociateGUID(this.state),
         this,
       ),
       commands.registerCommand(

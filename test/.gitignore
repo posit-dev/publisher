@@ -5,3 +5,4 @@ go_coverage.html
 uv.lock
 pyproject.toml
 .python-version
+.venv

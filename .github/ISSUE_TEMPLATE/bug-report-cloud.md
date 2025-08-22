@@ -1,15 +1,15 @@
 ---
-name: Report a bug
-about: Found something? Thank you for telling us!
-labels: ["bug"]
+name: 🐞 Report a Connect ☁️ bug
+about: Found something unexpected? Please tell us!
+labels: ["cloud", "bug"]
 ---
 
 ## System details
 
-    Publisher Version        :
-    Connect Version          :
-    Your OS                  :
-    Content Type to Deploy   :
+    Connect Cloud Account Name   :
+    COnnect Clouy Account Type   :
+    Connect Cloud Deployment URL :
+    Content Type to Deploy       :
 
 ## Publisher Output and Logs
 

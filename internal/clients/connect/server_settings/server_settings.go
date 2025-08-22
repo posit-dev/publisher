@@ -5,7 +5,6 @@ package server_settings
 import (
 	"errors"
 	"fmt"
-	"strings"
 )
 
 // The type definitions here are lifted from Connect's server_settings.
@@ -184,22 +183,6 @@ type LicenseStatus struct {
 }
 
 type UserInfoEditableBy UserInfoEditableType
-
-func NewUserInfoEditableByFromType(t UserInfoEditableType) UserInfoEditableBy {
-	return UserInfoEditableBy(strings.ToLower(string(t)))
-}
-
-func (c UserInfoEditableBy) Type() UserInfoEditableType {
-	switch strings.ToLower(string(c)) {
-	case "adminandself":
-		return UserEditAdminAndSelf
-	case "admin":
-		return UserEditAdmin
-	case "provider":
-		return UserEditProvider
-	}
-	return UserEditProvider
-}
 
 type UserInfoEditableType string
 

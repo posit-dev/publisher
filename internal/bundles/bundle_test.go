@@ -18,15 +18,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/spf13/afero"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/posit-dev/publisher/internal/bundles/bundlestest"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/logging/loggingtest"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/spf13/afero"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/suite"
 )
 
 type TarSuite struct {
@@ -311,24 +312,6 @@ func (s *BundlerSuite) getTarFileNames(buf *bytes.Buffer) []string {
 	return names
 }
 
-func (s *BundlerSuite) TestCreateManifest() {
-	s.makeFile("testfile")
-	s.makeFile(filepath.Join("subdir", "testfile"))
-
-	log := logging.New()
-	bundler, err := NewBundler(s.cwd, NewManifest(), nil, log)
-	s.Nil(err)
-
-	manifest, err := bundler.CreateManifest()
-	s.Nil(err)
-	s.NotNil(manifest)
-	// Manifest filenames are always Posix paths, not Windows paths
-	s.Equal([]string{
-		"subdir/testfile",
-		"testfile",
-	}, manifest.GetFilenames())
-}
-
 func (s *BundlerSuite) TestMultipleCallsFromDirectory() {
 	// The bundler should be reusable for multiple
 	// passes over the bundle directory.
@@ -339,7 +322,7 @@ func (s *BundlerSuite) TestMultipleCallsFromDirectory() {
 	bundler, err := NewBundler(s.cwd, NewManifest(), nil, log)
 	s.Nil(err)
 
-	manifest, err := bundler.CreateManifest()
+	manifest, err := bundler.CreateBundle(io.Discard)
 	s.Nil(err)
 	s.NotNil(manifest)
 	// Manifest filenames are always Posix paths, not Windows paths

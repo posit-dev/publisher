@@ -15,8 +15,21 @@
       :description="getDescription(credential)"
       :data-automation="`${credential.name}-list`"
       codicon="posit-publisher-icons-posit-logo"
+      :actions="[
+        {
+          label: 'Delete Credential',
+          codicon: 'codicon-trash',
+          fn: () =>
+            sendMsg({
+              kind: WebviewToHostMessageType.DELETE_CREDENTIAL,
+              content: {
+                credentialGUID: credential.guid,
+                credentialName: credential.name,
+              },
+            }),
+        },
+      ]"
       align-icon-with-twisty
-      :data-vscode-context="vscodeContext(credential)"
     />
   </TreeSection>
 </template>
@@ -30,8 +43,9 @@ import WelcomeView from "src/components/WelcomeView.vue";
 import { useHomeStore } from "src/stores/home";
 import { useHostConduitService } from "src/HostConduitService";
 
-import { Credential, ServerType } from "../../../../../src/api";
+import { Credential, ProductName } from "../../../../../src/api";
 import { WebviewToHostMessageType } from "../../../../../src/types/messages/webviewToHostMessages";
+import { isConnectCloud } from "../../../../../src/utils/multiStepHelpers";
 
 const home = useHomeStore();
 
@@ -59,17 +73,8 @@ const sectionActions = computed(() => {
 });
 
 const getDescription = (credential: Credential) => {
-  return credential.serverType === ServerType.CONNECT_CLOUD
-    ? `${credential.accountName} | Posit Connect Cloud`
+  return isConnectCloud(credential.serverType)
+    ? ProductName.CONNECT_CLOUD
     : credential.url;
-};
-
-const vscodeContext = (credential: Credential) => {
-  return JSON.stringify({
-    credentialGUID: credential.guid,
-    credentialName: credential.name,
-    webviewSection: "credentials-tree-item",
-    preventDefaultContextMenuItems: true,
-  });
 };
 </script>

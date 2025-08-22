@@ -11,7 +11,7 @@ import {
 } from "src/api";
 import { EventStream, UnregisterCallback } from "src/events";
 import { getSummaryStringFromError } from "src/utils/errors";
-import { getProductName } from "src/multiStepInputs/common";
+import { getProductName } from "src/utils/multiStepHelpers";
 
 type UpdateActiveContentRecordCB = (
   contentRecord: ContentRecord | PreContentRecord | PreContentRecordWithConfig,

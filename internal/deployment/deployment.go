@@ -4,7 +4,6 @@ package deployment
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"io/fs"
 	"strings"
@@ -89,31 +88,8 @@ func ListDeploymentFiles(base util.AbsolutePath) ([]util.AbsolutePath, error) {
 	return dir.Glob("*.toml")
 }
 
-func UntitledDeploymentName(base util.AbsolutePath) (string, error) {
-	for i := 1; ; i++ {
-		name := fmt.Sprintf("Untitled-%d", i)
-		exists, err := GetDeploymentPath(base, name).Exists()
-		if err != nil {
-			return "", err
-		}
-		if !exists {
-			return name, nil
-		}
-	}
-}
-
 func SaveNameFromPath(path util.AbsolutePath) string {
 	return strings.TrimSuffix(path.Base(), ".toml")
-}
-
-func RenameDeployment(base util.AbsolutePath, oldName, newName string) error {
-	err := util.ValidateFilename(newName)
-	if err != nil {
-		return err
-	}
-	oldPath := GetDeploymentPath(base, oldName)
-	newPath := GetDeploymentPath(base, newName)
-	return oldPath.Rename(newPath.Path)
 }
 
 func FromFile(path util.AbsolutePath) (*Deployment, error) {

@@ -11,8 +11,11 @@ describe("Credentials Section", () => {
     cy.getPublisherSidebarIcon()
       .should("be.visible", { timeout: 10000 })
       .click();
+    cy.waitForPublisherIframe(); // Wait after triggering extension
+    cy.debugIframes();
 
     cy.toggleCredentialsSection();
+    cy.debugIframes();
     cy.publisherWebview()
       .findByText("No credentials have been added yet.")
       .should("be.visible");
@@ -58,8 +61,13 @@ describe("Credentials Section", () => {
 
     cy.get(".quick-input-widget").type("admin-code-server{enter}");
 
-    cy.findInPublisherWebview(
-      '[data-automation="admin-code-server-list"]',
+    cy.retryWithBackoff(
+      () =>
+        cy.findUniqueInPublisherWebview(
+          '[data-automation="admin-code-server-list"]',
+        ),
+      5,
+      500,
     ).then(($credRecord) => {
       expect($credRecord.find(".tree-item-title").text()).to.equal(
         "admin-code-server",
@@ -72,22 +80,35 @@ describe("Credentials Section", () => {
     cy.getPublisherSidebarIcon()
       .should("be.visible", { timeout: 10000 })
       .click();
+    cy.waitForPublisherIframe(); // Wait after triggering extension
+    cy.debugIframes();
 
     cy.toggleCredentialsSection();
+    cy.debugIframes();
     cy.publisherWebview()
       .findByText("No credentials have been added yet.")
       .should("not.exist");
 
-    cy.findInPublisherWebview(
-      '[data-automation="dummy-credential-one-list"]',
+    cy.retryWithBackoff(
+      () =>
+        cy.findUniqueInPublisherWebview(
+          '[data-automation="dummy-credential-one-list"]',
+        ),
+      5,
+      500,
     ).should(($credRecord) => {
       expect($credRecord.find(".tree-item-title").text()).to.equal(
         "dummy-credential-one",
       );
     });
 
-    cy.findInPublisherWebview(
-      '[data-automation="dummy-credential-two-list"]',
+    cy.retryWithBackoff(
+      () =>
+        cy.findUniqueInPublisherWebview(
+          '[data-automation="dummy-credential-two-list"]',
+        ),
+      5,
+      500,
     ).should(($credRecord) => {
       expect($credRecord.find(".tree-item-title").text()).to.equal(
         "dummy-credential-two",
@@ -95,18 +116,28 @@ describe("Credentials Section", () => {
     });
   });
 
-  // As of this moment, haven;t found a way to trigger the context menu (right-click)
-  // within webview elements.
-  // Deleting a credential requires right-click on the credential record for a submenu to show up.
-  // it("Delete Credentials", () => {});
-  /**
-   * Dev Note, to consider how we trigger context menu events from components
-   e.target?.dispatchEvent(
-      new MouseEvent("contextmenu", {
-        bubbles: true,
-        clientX: e.clientX,
-        clientY: e.clientY,
-      }),
-    );
-   */
+  it("Delete Credential", () => {
+    cy.setDummyCredentials();
+    cy.getPublisherSidebarIcon()
+      .should("be.visible", { timeout: 10000 })
+      .click();
+    cy.waitForPublisherIframe(); // Wait after triggering extension
+    cy.debugIframes();
+
+    cy.toggleCredentialsSection();
+    cy.publisherWebview();
+    cy.retryWithBackoff(() =>
+      cy.findUniqueInPublisherWebview(
+        '[data-automation="dummy-credential-one-list"]',
+      ),
+    ).then(($credRecord) => {
+      cy.wrap($credRecord).should("be.visible").trigger("mouseover");
+      cy.wrap($credRecord)
+        .find('[aria-label="Delete Credential"]')
+        // Required to click the delete button that's shown only via hover
+        .click({ force: true });
+    });
+    cy.get(".dialog-buttons").findByText("Delete").should("be.visible").click();
+    cy.get('[data-automation="dummy-credential-one-list"]').should("not.exist");
+  });
 });

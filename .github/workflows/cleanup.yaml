@@ -9,11 +9,11 @@ jobs:
       FUZZBUCKET_CREDENTIALS: ${{ secrets.FUZZBUCKET_CREDENTIALS }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: 3.11
-      - uses: extractions/setup-just@v2
+      - uses: extractions/setup-just@v3
       - run: just bats fuzzbucket-stop

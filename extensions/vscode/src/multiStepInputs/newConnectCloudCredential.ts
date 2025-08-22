@@ -18,7 +18,6 @@ import {
   fetchDeviceAuth,
   fetchAuthToken,
   fetchConnectCloudAccounts,
-  getPublishableAccounts,
   getExistingCredentials,
 } from "src/multiStepInputs/common";
 import {
@@ -31,6 +30,7 @@ import {
   CONNECT_CLOUD_ACCOUNT_URL,
   CONNECT_CLOUD_SIGNUP_URL,
 } from "src/constants";
+import { getPublishableAccounts } from "src/utils/multiStepHelpers";
 
 export async function newConnectCloudCredential(
   viewId: string,
@@ -88,6 +88,15 @@ export async function newConnectCloudCredential(
     connectCloudData.auth.interval = data?.interval || 0;
   };
 
+  const getAvailableAccounts = () => {
+    const existing = credentials
+      .filter((c) => c.accountId)
+      .map((c) => c.accountId);
+    return getPublishableAccounts(connectCloudData.accounts).filter(
+      (a) => !existing.includes(a.id),
+    );
+  };
+
   // ***************************************************************
   // Order of all steps for creating a new Connect Cloud credential
   // ***************************************************************
@@ -137,6 +146,7 @@ export async function newConnectCloudCredential(
         refreshToken: <string | undefined>undefined, // eventual type is string
         accountId: <string | undefined>undefined, // eventual type is string
         accountName: <string | undefined>undefined, // eventual type is string
+        displayName: <string | undefined>undefined, // eventual type is string
       },
       promptStepNumbers: {},
       isValid: () => {
@@ -293,6 +303,12 @@ export async function newConnectCloudCredential(
   ) {
     const accessToken =
       typeof state.data.accessToken === "string" ? state.data.accessToken : "";
+    const value = connectCloudData.shouldPoll
+      ? "Waiting for account setup in Connect Cloud..."
+      : "Retrieving accounts from Connect Cloud ...";
+    const message = connectCloudData.shouldPoll
+      ? "Please complete your account setup or 'Escape' to abort"
+      : "Please wait while we get your account data or 'Escape' to abort";
 
     try {
       // we await this input box that it is treated as an information message
@@ -308,14 +324,13 @@ export async function newConnectCloudCredential(
         enabled: false,
         // shows a progress indicator on the input box
         busy: true,
-        value: "Retrieving accounts from Connect Cloud ...",
+        value,
         // moves the cursor to the start of the value text to avoid the automated text highlight
         valueSelection: [0, 0],
         // displays a custom information message below the input box that hides the prompt and
         // default message: "Please 'Enter' to confirm your input or 'Escape' to cancel"
         validationMessage: {
-          message:
-            "Please wait while we get your account data or 'Escape' to abort",
+          message,
           severity: InputBoxValidationSeverity.Info,
         },
         prompt: "",
@@ -359,7 +374,7 @@ export async function newConnectCloudCredential(
   // Step: Determine the correct flow for the user's account list (Connect Cloud only)
   // ***************************************************************
   function determineAccountFlow(_: MultiStepInput, state: MultiStepState) {
-    const accounts = getPublishableAccounts(connectCloudData.accounts);
+    const accounts = getAvailableAccounts();
     let name: string = "";
     let stepFunc: (input: MultiStepInput) => Thenable<InputStep | void>;
     let skipStepHistory: boolean | undefined;
@@ -371,7 +386,8 @@ export async function newConnectCloudCredential(
         steps[step.INPUT_CRED_NAME](input, state);
       // populate the selected account props
       state.data.accountId = accounts[0].id;
-      state.data.accountName = accounts[0].displayName;
+      state.data.accountName = accounts[0].name;
+      state.data.displayName = accounts[0].displayName;
     } else if (accounts.length > 1) {
       // case 2: there are multiple publishable accounts, display the account selector
       name = step.INPUT_ACCT;
@@ -380,7 +396,8 @@ export async function newConnectCloudCredential(
     } else {
       if (connectCloudData.accounts.length > 0) {
         // case 3: there are no publishable accounts, but the user has at least one account,
-        // so they could be a guest or viewer on that account, ask if they want to sign up
+        // so they could be a guest or viewer on that account or already have a credential for it,
+        // ask if they want to sign up
         name = step.INPUT_SIGNUP;
         stepFunc = (input: MultiStepInput) =>
           steps[step.INPUT_SIGNUP](input, state);
@@ -405,7 +422,7 @@ export async function newConnectCloudCredential(
   // Step: Select the Connect Cloud account for the credential (Connect Cloud only)
   // ***************************************************************
   async function inputAccount(input: MultiStepInput, state: MultiStepState) {
-    const accounts = getPublishableAccounts(connectCloudData.accounts);
+    const accounts = getAvailableAccounts();
 
     // display the account selector
     const pick = await input.showQuickPick({
@@ -423,7 +440,8 @@ export async function newConnectCloudCredential(
     const account = accounts.find((a) => a.displayName === pick.label);
     // fallback to the first publishable account if the selected account is ever not found
     state.data.accountId = account?.id || accounts[0].id;
-    state.data.accountName = account?.displayName || accounts[0].displayName;
+    state.data.accountName = account?.name || accounts[0].name;
+    state.data.displayName = account?.displayName || accounts[0].displayName;
 
     return {
       name: step.INPUT_CRED_NAME,
@@ -441,7 +459,7 @@ export async function newConnectCloudCredential(
       step: 0,
       totalSteps: 0,
       placeholder:
-        "You don't have permission to publish to this account. To publish, create a new account.",
+        "You don’t have any accounts available for publishing. Do you want to create a new account?",
       items: [
         { label: "Create a new Posit Connect Cloud account" },
         { label: "Exit" },

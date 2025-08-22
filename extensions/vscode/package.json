@@ -229,7 +229,7 @@
       },
       {
         "command": "posit.publisher.homeView.navigateToDeployment.ContentLog",
-        "title": "View Content Log on Connect",
+        "title": "View Deployed Content Log",
         "icon": "$(output)",
         "category": "Posit Publisher"
       },
@@ -237,6 +237,12 @@
         "command": "posit.publisher.deployWithEntrypoint",
         "title": "Deploy with Posit Publisher",
         "icon": "$(posit-publisher-publish)",
+        "category": "Posit Publisher"
+      },
+      {
+        "command": "posit.publisher.homeView.copySystemInfo",
+        "title": "Copy System Info",
+        "icon": "$(copy)",
         "category": "Posit Publisher"
       }
     ],
@@ -347,6 +353,10 @@
         {
           "command": "posit.publisher.homeView.navigateToDeployment.ContentLog",
           "when": "posit.publisher.homeView.initialized == 'initialized' && isWorkspaceTrusted"
+        },
+        {
+          "command": "posit.publisher.homeView.copySystemInfo",
+          "when": "posit.publish.state == 'initialized' && isWorkspaceTrusted"
         }
       ],
       "webview/context": [
@@ -391,10 +401,6 @@
           "command": "posit.publisher.showPublishingLog",
           "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'homeview-active-contentRecord-more-menu'",
           "group": "show@2"
-        },
-        {
-          "command": "posit.publisher.homeView.deleteCredential",
-          "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'credentials-tree-item'"
         },
         {
           "command": "posit.publisher.homeView.removeSecret",
