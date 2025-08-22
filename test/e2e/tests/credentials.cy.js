@@ -217,18 +217,28 @@ describe("Credentials Section", () => {
       .and("have.text", "dummy-credential-two");
   });
 
-  // As of this moment, haven;t found a way to trigger the context menu (right-click)
-  // within webview elements.
-  // Deleting a credential requires right-click on the credential record for a submenu to show up.
-  // it("Delete Credentials", () => {});
-  /**
-   * Dev Note, to consider how we trigger context menu events from components
-   e.target?.dispatchEvent(
-      new MouseEvent("contextmenu", {
-        bubbles: true,
-        clientX: e.clientX,
-        clientY: e.clientY,
-      }),
-    );
-   */
+  it("Delete Credential", () => {
+    cy.setDummyCredentials();
+    cy.getPublisherSidebarIcon()
+      .should("be.visible", { timeout: 10000 })
+      .click();
+    cy.waitForPublisherIframe(); // Wait after triggering extension
+    cy.debugIframes();
+
+    cy.toggleCredentialsSection();
+    cy.publisherWebview();
+    cy.retryWithBackoff(() =>
+      cy.findUniqueInPublisherWebview(
+        '[data-automation="dummy-credential-one-list"]',
+      ),
+    ).then(($credRecord) => {
+      cy.wrap($credRecord).should("be.visible").trigger("mouseover");
+      cy.wrap($credRecord)
+        .find('[aria-label="Delete Credential"]')
+        // Required to click the delete button that's shown only via hover
+        .click({ force: true });
+    });
+    cy.get(".dialog-buttons").findByText("Delete").should("be.visible").click();
+    cy.get('[data-automation="dummy-credential-one-list"]').should("not.exist");
+  });
 });

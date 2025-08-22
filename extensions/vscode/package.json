@@ -403,10 +403,6 @@
           "group": "show@2"
         },
         {
-          "command": "posit.publisher.homeView.deleteCredential",
-          "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'credentials-tree-item'"
-        },
-        {
           "command": "posit.publisher.homeView.removeSecret",
           "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'secrets-tree-item'"
         }
