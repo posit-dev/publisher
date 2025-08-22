@@ -114,10 +114,16 @@ func (s *ContentRequestSuite) TestGetContentRequestBase() {
 
 func (s *ContentRequestSuite) TestGetContentRequestBaseNoTitle() {
 	// Setup publisher with a configuration that has no title
+	publicAccess := true
 	s.publisher.Config = &config.Config{
 		Description: "Test content description",
 		Type:        config.ContentTypePythonDash,
 		Entrypoint:  "app.py",
+		ConnectCloud: &config.ConnectCloud{
+			AccessControl: &config.ConnectCloudAccessControl{
+				PublicAccess: &publicAccess,
+			},
+		},
 	}
 	s.publisher.SaveName = "test-save-name"
 

@@ -74,56 +74,52 @@ func (c *ServerPublisher) getContentRequestBase() (*types.ContentRequestBase, er
 
 	cloudCfg := c.Config.ConnectCloud
 
-	access := types.ViewPrivateEditPrivate
-	vanityName := ""
-
-	if cloudCfg != nil {
-		if cloudCfg.AccessControl != nil {
-			orgAccess := cloudCfg.AccessControl.OrganizationAccess
-
-			var publicAccess bool
-			if cloudCfg.AccessControl.PublicAccess != nil {
-				publicAccess = *cloudCfg.AccessControl.PublicAccess
-			} else {
-				// if the config doesn't specify whether public access is enabled, we need to determine if the account
-				// is entitled to private access. If they are, we default to private access.
-				hasPermissionForPrivateContent, err := c.hasPermissionForPrivateContent()
-				if err != nil {
-					return nil, fmt.Errorf("failed to check account permissions for creating private content: %w", err)
-				}
-				if hasPermissionForPrivateContent {
-					publicAccess = false
-				} else {
-					publicAccess = true
-				}
-			}
-
-			switch orgAccess {
-			case config.OrganizationAccessTypeViewer:
-				if publicAccess {
-					access = types.ViewPublicEditPrivate
-				} else {
-					access = types.ViewTeamEditPrivate
-				}
-			case config.OrganizationAccessTypeEditor:
-				if publicAccess {
-					access = types.ViewPublicEditTeam
-				} else {
-					access = types.ViewTeamEditTeam
-				}
-			default:
-				// config.OrganizationAccessTypeDisabled or unset
-				if publicAccess {
-					if orgAccess == config.OrganizationAccessTypeDisabled {
-						c.log.Warn("Organization access is not set, but public access is enabled - organization will have view access.")
-					}
-					access = types.ViewPublicEditPrivate
-				} else {
-					access = types.ViewPrivateEditPrivate
-				}
-			}
+	var publicAccess bool
+	if cloudCfg == nil || cloudCfg.AccessControl != nil && cloudCfg.AccessControl.PublicAccess == nil {
+		// if the config doesn't specify whether public access is enabled, we need to determine if the account
+		// is entitled to private access. If they are, we default to private access.
+		hasPermissionForPrivateContent, err := c.hasPermissionForPrivateContent()
+		if err != nil {
+			return nil, fmt.Errorf("failed to check account permissions for creating private content: %w", err)
 		}
+		publicAccess = !hasPermissionForPrivateContent
+	} else {
+		publicAccess = *cloudCfg.AccessControl.PublicAccess
+	}
 
+	orgAccess := config.OrganizationAccessTypeDisabled
+	if cloudCfg != nil && cloudCfg.AccessControl != nil {
+		orgAccess = cloudCfg.AccessControl.OrganizationAccess
+	}
+
+	access := types.ViewPrivateEditPrivate
+	switch orgAccess {
+	case config.OrganizationAccessTypeViewer:
+		if publicAccess {
+			access = types.ViewPublicEditPrivate
+		} else {
+			access = types.ViewTeamEditPrivate
+		}
+	case config.OrganizationAccessTypeEditor:
+		if publicAccess {
+			access = types.ViewPublicEditTeam
+		} else {
+			access = types.ViewTeamEditTeam
+		}
+	default:
+		// config.OrganizationAccessTypeDisabled or unset
+		if publicAccess {
+			if orgAccess == config.OrganizationAccessTypeDisabled {
+				c.log.Warn("Organization access is not set, but public access is enabled - organization will have view access.")
+			}
+			access = types.ViewPublicEditPrivate
+		} else {
+			access = types.ViewPrivateEditPrivate
+		}
+	}
+
+	vanityName := ""
+	if cloudCfg != nil {
 		vanityName = cloudCfg.VanityName
 	}
 
