@@ -243,6 +243,10 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
           stage.status = LogStageStatus.neverStarted;
         } else if (stage.status === LogStageStatus.inProgress) {
           stage.status = failedOrCanceledStatus;
+          if (stage.status === LogStageStatus.failed) {
+            this.publishingStage.collapseState =
+              TreeItemCollapsibleState.Expanded;
+          }
         }
       });
 
@@ -441,10 +445,14 @@ export class LogsTreeStageItem extends TreeItem {
   constructor(stage: LogStage) {
     let collapsibleState = stage.collapseState;
     if (collapsibleState === undefined) {
-      collapsibleState =
-        stage.events.length || stage.stages.length
-          ? TreeItemCollapsibleState.Collapsed
-          : TreeItemCollapsibleState.None;
+      if (stage.status === LogStageStatus.failed) {
+        collapsibleState = TreeItemCollapsibleState.Expanded;
+      } else {
+        collapsibleState =
+          stage.events.length || stage.stages.length
+            ? TreeItemCollapsibleState.Collapsed
+            : TreeItemCollapsibleState.None;
+      }
     }
 
     super(stage.inactiveLabel, collapsibleState);
