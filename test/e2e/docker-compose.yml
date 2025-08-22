@@ -42,7 +42,7 @@ services:
       - ./licenses/workbench-license.lic:/etc/rstudio-server/license.lic
       - ./logs/preview:/var/log/rstudio-server
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8787/health-check"]
+      test: ["CMD", "curl", "-sf", "http://localhost:8787/health-check"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -58,7 +58,7 @@ services:
       - ./licenses/workbench-license.lic:/etc/rstudio-server/license.lic
       - ./logs/release:/var/log/rstudio-server
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8787/health-check"]
+      test: ["CMD", "curl", "-sf", "http://localhost:8787/health-check"]
       interval: 10s
       timeout: 5s
       retries: 3
