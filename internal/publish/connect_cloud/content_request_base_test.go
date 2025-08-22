@@ -77,7 +77,7 @@ func (s *ContentRequestSuite) TestGetContentRequestBase() {
 	}
 
 	// Call getContentRequestBase
-	base, err := s.publisher.getContentRequestBase()
+	base, err := s.publisher.getContentRequestBase(true)
 
 	// Verify no error is returned
 	s.NoError(err)
@@ -90,7 +90,7 @@ func (s *ContentRequestSuite) TestGetContentRequestBase() {
 	s.Equal(clienttypes.PythonDashMode, base.AppMode)
 	s.Equal("test-vanity-name", base.VanityName)
 
-	// Verify NextRevision fields
+	// Verify RequestRevision fields
 	s.Equal("bundle", base.NextRevision.SourceType)
 	s.Equal("4.3.0", base.NextRevision.RVersion)
 	s.Equal("3.10.0", base.NextRevision.PythonVersion)
@@ -120,7 +120,7 @@ func (s *ContentRequestSuite) TestGetContentRequestBaseNoTitle() {
 	s.publisher.SaveName = "test-save-name"
 
 	// Call getContentRequestBase
-	base, err := s.publisher.getContentRequestBase()
+	base, err := s.publisher.getContentRequestBase(true)
 
 	// Verify no error is returned
 	s.NoError(err)
@@ -128,6 +128,42 @@ func (s *ContentRequestSuite) TestGetContentRequestBaseNoTitle() {
 
 	// Verify title is set to SaveName
 	s.Equal("test-save-name", base.Title)
+}
+
+func (s *ContentRequestSuite) TestGetContentRequestBaseRevisionOverrides() {
+	// Setup publisher with a configuration that has all fields populated
+	s.publisher.Config = &config.Config{
+		Title:       "Test Content Title",
+		Description: "Test content description",
+		Type:        config.ContentTypePythonDash,
+		Entrypoint:  "app.py",
+		R: &config.R{
+			Version: "4.3.0",
+		},
+		Python: &config.Python{
+			Version: "3.10.0",
+		},
+	}
+	s.publisher.SaveName = "test-save-name"
+
+	// Call getContentRequestBase with isFirstDeploy = false
+	base, err := s.publisher.getContentRequestBase(false)
+
+	// Verify no error is returned
+	s.NoError(err)
+	s.NotNil(base)
+
+	// Verify NextRevision is not set
+	s.Nil(base.NextRevision)
+
+	// Verify RevisionOverrides is set correctly
+	s.NotNil(base.RevisionOverrides)
+	s.Equal("bundle", base.RevisionOverrides.SourceType)
+	s.Equal("4.3.0", base.RevisionOverrides.RVersion)
+	s.Equal("3.10.0", base.RevisionOverrides.PythonVersion)
+	s.Equal(clienttypes.ContentTypeDash, base.RevisionOverrides.ContentType)
+	s.Equal(clienttypes.PythonDashMode, base.RevisionOverrides.AppMode)
+	s.Equal("app.py", base.RevisionOverrides.PrimaryFile)
 }
 
 func (s *ContentRequestSuite) TestGetContentRequestBaseUnsupportedType() {
@@ -140,7 +176,7 @@ func (s *ContentRequestSuite) TestGetContentRequestBaseUnsupportedType() {
 	}
 
 	// Call getContentRequestBase
-	base, err := s.publisher.getContentRequestBase()
+	base, err := s.publisher.getContentRequestBase(true)
 
 	// Verify an error is returned
 	s.Error(err, fmt.Sprintf("content type '%s' is not supported by Connect Cloud", s.publisher.Config.Type))
