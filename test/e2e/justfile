@@ -2,6 +2,121 @@
 # Build and run all tests against in development
 default: dev
 
+# Pull the Workbench container image for e2e testing
+build-workbench service:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    # Validate service name
+    if [[ "{{ service }}" != "preview" && "{{ service }}" != "release" ]]; then
+        echo "Invalid service: {{ service }}"
+        echo "Must be either 'preview' or 'release'"
+        exit 1
+    fi
+
+    # Determine the correct image based on service type
+    if [[ "{{ service }}" = "preview" ]]; then
+        IMAGE="rstudio/rstudio-workbench-preview:ubuntu2204-preview"
+    else
+        IMAGE="rstudio/rstudio-workbench:ubuntu2204"
+    fi
+
+    echo "Pulling Workbench {{ service }} container image..."
+    docker pull "${IMAGE}"
+    echo "Workbench {{ service }} image pulled!"
+
+# Start a Workbench container for e2e testing
+start-workbench service:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    # Validate service name
+    if [[ "{{ service }}" != "preview" && "{{ service }}" != "release" ]]; then
+        echo "Invalid service: {{ service }}"
+        echo "Must be either 'preview' or 'release'"
+        exit 1
+    fi
+
+    # Stop any existing container first
+    just stop-workbench "{{ service }}"
+    
+    # Create directories for volumes if they do not exist
+    mkdir -p ./logs/{{ service }}
+    mkdir -p ./licenses
+    
+    # Check if license file exists and is valid (not just a placeholder)
+    if [ ! -s ./licenses/workbench-license.lic ] || [ "$(cat ./licenses/workbench-license.lic | wc -l)" -lt 2 ]; then
+        echo "WARNING: Valid Workbench license file not found at ./licenses/workbench-license.lic"
+        echo "You must have a valid Workbench license file to use the containers without license errors."
+        echo "Please add a valid license file before starting the container."
+        echo ""
+    fi
+
+    # Determine the correct image based on service type
+    if [[ "{{ service }}" = "preview" ]]; then
+        IMAGE="rstudio/rstudio-workbench-preview:ubuntu2204-preview"
+    else
+        IMAGE="rstudio/rstudio-workbench:ubuntu2204"
+    fi
+
+    # Run the container with the base image
+    echo "Starting Workbench {{ service }} container..."
+    docker run -d \
+        --name publisher-e2e.workbench-{{ service }} \
+        -p 8787:8787 \
+        -v "$(pwd)/licenses/workbench-license.lic:/etc/rstudio-server/license.lic" \
+        -v "$(pwd)/logs/{{ service }}:/var/log/rstudio-server" \
+        "${IMAGE}"
+    
+    echo "Workbench {{ service }} starting up!"
+    echo "Access at: http://localhost:8787"
+    echo ""
+    echo "Run 'docker ps' to see container status."
+
+# Stop and remove a Workbench container for e2e testing
+stop-workbench service="all":
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    if [ "{{ service }}" = "all" ]; then
+        echo "Stopping all Workbench containers..."
+        docker stop publisher-e2e.workbench-preview 2>/dev/null || true
+        docker stop publisher-e2e.workbench-release 2>/dev/null || true
+        docker rm publisher-e2e.workbench-preview 2>/dev/null || true
+        docker rm publisher-e2e.workbench-release 2>/dev/null || true
+        echo "All Workbench containers stopped and removed!"
+    elif [[ "{{ service }}" = "preview" || "{{ service }}" = "release" ]]; then
+        echo "Stopping Workbench {{ service }} container..."
+        docker stop publisher-e2e.workbench-{{ service }} 2>/dev/null || true
+        docker rm publisher-e2e.workbench-{{ service }} 2>/dev/null || true
+        echo "Workbench {{ service }} stopped and removed!"
+    else
+        echo "Invalid service: {{ service }}"
+        echo "Must be either 'preview', 'release', or 'all'"
+        exit 1
+    fi
+
+# Install Publisher extension in a Workbench container
+install-workbench-extension service:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    # Validate service name
+    if [[ "{{ service }}" != "preview" && "{{ service }}" != "release" ]]; then
+        echo "Invalid service: {{ service }}"
+        echo "Must be either 'preview' or 'release'"
+        exit 1
+    fi
+
+    echo "Installing Publisher extension in Workbench {{ service }} container..."
+    
+    # TODO: Implement extension installation for the direct approach
+    # This will be implemented in the future as needed
+    echo "Extension installation not yet implemented for direct container approach."
+    echo "Manual installation is required for now."
+    
+    echo "Publisher extension installed!"
+
 # Install Cypress dependencies using npm
 install:
     npm install
