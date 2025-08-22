@@ -283,6 +283,10 @@
       ],
       "commandPalette": [
         {
+          "command": "posit.publisher.homeView.associateDeployment",
+          "when": "posit.publish.selection.isConnectContentRecord == 'true'"
+        },
+        {
           "command": "posit.publisher.init-project",
           "when": "workbenchState == folder && posit.publish.state == 'initialized' && isWorkspaceTrusted"
         },
