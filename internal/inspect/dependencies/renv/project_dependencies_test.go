@@ -34,8 +34,8 @@ func TestRDependencyScannerSuite(t *testing.T) {
 func (s *RDependencyScannerSuite) SetupTest() {
 	s.fs = afero.NewMemMapFs()
 	cwd, err := util.Getwd(s.fs)
-	s.Require().NoError(err)
-	s.Require().NoError(cwd.MkdirAll(0777))
+	s.NoError(err)
+	s.NoError(cwd.MkdirAll(0777))
 	s.cwd = cwd
 	s.log = logging.New()
 	s.rExecPath = "/usr/bin/R"
@@ -72,7 +72,7 @@ func (s *RDependencyScannerSuite) TestScanDependencies() {
 	scanner.rExecutor = s.exec
 
 	lockfilePath, err := scanner.ScanDependencies([]string{s.cwd.String()}, s.rExecPath)
-	s.Require().NoError(err)
+	s.NoError(err)
 	s.True(filepath.IsAbs(lockfilePath.String()))
 	s.Equal("renv.lock", filepath.Base(lockfilePath.String()))
 
@@ -94,7 +94,7 @@ func (s *RDependencyScannerSuite) TestErrWhenLockfileNotCreated() {
 	scanner.rExecutor = s.exec
 
 	_, err := scanner.ScanDependencies([]string{s.cwd.String()}, s.rExecPath)
-	s.Require().Error(err)
+	s.Error(err)
 	s.exec.AssertExpectations(s.T())
 }
 
@@ -133,35 +133,35 @@ func (s *RDependencyScannerFunctionalSuite) TestFunctional() {
 			cli::cli_alert_success(y)
 		`
 	err := base.Join("main.R").WriteFile([]byte(rScript), 0644)
-	s.Require().NoError(err)
+	s.NoError(err)
 
 	// Also create a nested directory with another script using a different package
-	s.Require().NoError(base.Join("nested").MkdirAll(0777))
+	s.NoError(base.Join("nested").MkdirAll(0777))
 	nestedScript := `
 			library(jsonlite)
 			jsonlite::toJSON(list(a=1))
 		`
-	s.Require().NoError(base.Join("nested", "child.R").WriteFile([]byte(nestedScript), 0644))
+	s.NoError(base.Join("nested", "child.R").WriteFile([]byte(nestedScript), 0644))
 
 	interp, err := interpreters.NewRInterpreter(base, util.Path{}, s.log, nil, nil, nil)
-	s.Require().NoError(err)
+	s.NoError(err)
 	rExec, err := interp.GetRExecutable()
-	s.Require().NoError(err)
-	s.Require().NotEmpty(rExec.String())
+	s.NoError(err)
+	s.NotEmpty(rExec.String())
 
 	scanner := NewRDependencyScanner(s.log)
 	lockfilePath, err := scanner.ScanDependencies([]string{base.String()}, rExec.String())
-	s.Require().NoError(err)
+	s.NoError(err)
 
 	// Validate the lockfile exists and parses
 	exists, err := lockfilePath.Exists()
-	s.Require().NoError(err)
+	s.NoError(err)
 	s.True(exists, "lockfile should exist")
 	s.True(filepath.IsAbs(lockfilePath.String()))
 	s.Equal("renv.lock", filepath.Base(lockfilePath.String()))
 
 	lf, err := ReadLockfile(lockfilePath)
-	s.Require().NoError(err)
+	s.NoError(err)
 	s.NotNil(lf.Packages, "Packages map should be present")
 	// Assert packages referenced by the scripts (including nested) exist in lockfile
 	_, hasGlue := lf.Packages[PackageName("glue")]
@@ -185,29 +185,29 @@ func (s *RDependencyScannerFunctionalSuite) TestFunctional_NoMirror() {
 			library(cli)
 			cli::cli_alert_success("ok")
 		`
-	s.Require().NoError(base.Join("main.R").WriteFile([]byte(rScript), 0644))
+	s.NoError(base.Join("main.R").WriteFile([]byte(rScript), 0644))
 
 	// Prepare an R user profile that unsets the CRAN mirror
 	profDir := s.T().TempDir()
 	profPath := filepath.Join(profDir, ".Rprofile")
-	s.Require().NoError(os.WriteFile(profPath, []byte(`options(repos = c(CRAN = "@CRAN@"))`), 0644))
+	s.NoError(os.WriteFile(profPath, []byte(`options(repos = c(CRAN = "@CRAN@"))`), 0644))
 
 	// Ensure R uses the newly created profile and that we restore the old one after the test
 	oldProfile := os.Getenv("R_PROFILE_USER")
 	s.T().Cleanup(func() { _ = os.Setenv("R_PROFILE_USER", oldProfile) })
-	s.Require().NoError(os.Setenv("R_PROFILE_USER", profPath))
+	s.NoError(os.Setenv("R_PROFILE_USER", profPath))
 
 	interp, err := interpreters.NewRInterpreter(base, util.Path{}, s.log, nil, nil, nil)
-	s.Require().NoError(err)
+	s.NoError(err)
 	rExec, err := interp.GetRExecutable()
-	s.Require().NoError(err)
-	s.Require().NotEmpty(rExec.String())
+	s.NoError(err)
+	s.NotEmpty(rExec.String())
 
 	scanner := NewRDependencyScanner(s.log)
 	lockfilePath, err := scanner.ScanDependencies([]string{base.String()}, rExec.String())
-	s.Require().NoError(err)
+	s.NoError(err)
 	exists, e2 := lockfilePath.Exists()
-	s.Require().NoError(e2)
+	s.NoError(e2)
 	s.True(exists)
 }
 
@@ -222,29 +222,29 @@ func (s *RDependencyScannerFunctionalSuite) TestFunctional_PathsFilter() {
 
 	// included file references glue
 	included := base.Join("included.R")
-	s.Require().NoError(included.WriteFile([]byte(`library(glue); glue::glue("x={1}")`), 0644))
+	s.NoError(included.WriteFile([]byte(`library(glue); glue::glue("x={1}")`), 0644))
 
 	// ignored file references cli (should not be scanned)
 	ignored := base.Join("ignored.R")
-	s.Require().NoError(ignored.WriteFile([]byte(`library(cli); cli::cli_alert_success("ok")`), 0644))
+	s.NoError(ignored.WriteFile([]byte(`library(cli); cli::cli_alert_success("ok")`), 0644))
 
 	interp, err := interpreters.NewRInterpreter(base, util.Path{}, s.log, nil, nil, nil)
-	s.Require().NoError(err)
+	s.NoError(err)
 	rExec, err := interp.GetRExecutable()
-	s.Require().NoError(err)
-	s.Require().NotEmpty(rExec.String())
+	s.NoError(err)
+	s.NotEmpty(rExec.String())
 
 	scanner := NewRDependencyScanner(s.log)
 	lockfilePath, err := scanner.ScanDependencies([]string{included.String()}, rExec.String())
-	s.Require().NoError(err)
+	s.NoError(err)
 
 	exists, err := lockfilePath.Exists()
-	s.Require().NoError(err)
+	s.NoError(err)
 	s.True(exists)
 
 	// The lockfile should only have glue, as ignored.R was not passed to ScanDependencies.
 	lf, err := ReadLockfile(lockfilePath)
-	s.Require().NoError(err)
+	s.NoError(err)
 	_, hasGlue := lf.Packages[PackageName("glue")]
 	_, hasCli := lf.Packages[PackageName("cli")]
 	s.True(hasGlue, "lockfile should include glue from included file")
