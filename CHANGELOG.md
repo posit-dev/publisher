@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   easily copy system information - extension version, IDE, and platform details
   (#2835)
 - Added a delete button for Credentials in the Credentials View (#2862)
+- Introduced auto expansion for a log item when a deployment fails (#2857)
 
 ### Changed
 
