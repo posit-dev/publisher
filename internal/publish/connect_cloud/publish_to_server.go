@@ -75,6 +75,7 @@ func (c *ServerPublisher) PublishToServer(contentID internal_types.ContentID, bu
 	if err != nil {
 		return err
 	}
+	log.Info("Getting content logs...")
 
 	// refetch the content to get the new revision's log channel
 	content, err := c.client.GetContent(c.content.ID)
