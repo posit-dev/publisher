@@ -15,8 +15,21 @@
       :description="getDescription(credential)"
       :data-automation="`${credential.name}-list`"
       codicon="posit-publisher-icons-posit-logo"
+      :actions="[
+        {
+          label: 'Delete Credential',
+          codicon: 'codicon-trash',
+          fn: () =>
+            sendMsg({
+              kind: WebviewToHostMessageType.DELETE_CREDENTIAL,
+              content: {
+                credentialGUID: credential.guid,
+                credentialName: credential.name,
+              },
+            }),
+        },
+      ]"
       align-icon-with-twisty
-      :data-vscode-context="vscodeContext(credential)"
     />
   </TreeSection>
 </template>
@@ -63,14 +76,5 @@ const getDescription = (credential: Credential) => {
   return isConnectCloud(credential.serverType)
     ? ProductName.CONNECT_CLOUD
     : credential.url;
-};
-
-const vscodeContext = (credential: Credential) => {
-  return JSON.stringify({
-    credentialGUID: credential.guid,
-    credentialName: credential.name,
-    webviewSection: "credentials-tree-item",
-    preventDefaultContextMenuItems: true,
-  });
 };
 </script>

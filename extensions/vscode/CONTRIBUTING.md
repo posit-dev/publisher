@@ -29,7 +29,7 @@ root directory.
 
 If you have changes in the `webviews` make sure to rebuild them:
 
-- `npm run --prefix webviews/homeView`
+- `npm run build --prefix webviews/homeView`
 
 Running `just` in the root directory will rebuild and repackage everything
 ensuring you have all code changes reflected when you run the extension in the

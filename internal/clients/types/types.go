@@ -80,8 +80,8 @@ const (
 	PublishResultFailure PublishResult = "failure"
 )
 
-// NextRevision represents the configuration for the next content revision.
-type NextRevision struct {
+// RequestRevision represents the configuration for the next content revision.
+type RequestRevision struct {
 	SourceType    string      `json:"source_type"`
 	RVersion      string      `json:"r_version,omitempty"`
 	PythonVersion string      `json:"python_version,omitempty"`
@@ -92,14 +92,15 @@ type NextRevision struct {
 
 // ContentRequestBase contains common fields for content creation and update requests.
 type ContentRequestBase struct {
-	Title        string        `json:"title"`
-	Description  string        `json:"description,omitempty"`
-	NextRevision NextRevision  `json:"next_revision"`
-	Access       ContentAccess `json:"access"`
-	Secrets      []Secret      `json:"secrets,omitempty"`
-	VanityName   string        `json:"vanity_name,omitempty"`
-	AppMode      AppMode       `json:"app_mode"`
-	ContentType  ContentType   `json:"content_type"`
+	Title             string           `json:"title"`
+	Description       string           `json:"description,omitempty"`
+	NextRevision      *RequestRevision `json:"next_revision,omitempty"`
+	RevisionOverrides *RequestRevision `json:"revision_overrides,omitempty"`
+	Access            ContentAccess    `json:"access"`
+	Secrets           []Secret         `json:"secrets,omitempty"`
+	VanityName        string           `json:"vanity_name,omitempty"`
+	AppMode           AppMode          `json:"app_mode"`
+	ContentType       ContentType      `json:"content_type"`
 }
 
 // CreateContentRequest represents a request to create a new content item.

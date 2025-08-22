@@ -37,7 +37,6 @@ import {
 } from "src/utils/errorEnhancer";
 import { showErrorMessageWithTroubleshoot } from "src/utils/window";
 import { DeploymentFailureRenvHandler } from "src/views/deployHandlers";
-import { isConnectCloudProduct } from "src/utils/multiStepHelpers";
 
 enum LogStageStatus {
   notStarted,
@@ -537,11 +536,14 @@ export class LogsTreeLogItem extends TreeItem {
       this.iconPath = new ThemeIcon("debug-stackframe-dot");
     }
 
-    const productType = msg.data.productType as ProductType;
-    const url =
-      msg.type === "publish/failure" && isConnectCloudProduct(productType)
-        ? msg.data.logsUrl
-        : msg.data.dashboardUrl;
+    // Prefer logs urls when a validate deployment failure or publish failure
+    const isFailureType =
+      msg.type === "publish/validateDeployment/failure" ||
+      msg.type === "publish/failure";
+
+    const url = isFailureType
+      ? msg.data.logsUrl || msg.data.dashboardUrl
+      : msg.data.dashboardUrl;
 
     if (url) {
       this.command = {

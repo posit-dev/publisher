@@ -28,7 +28,7 @@ func (c *ServerPublisher) CreateDeployment() (content_types.ContentID, error) {
 	log.Info("Creating new Connect Cloud deployment")
 
 	// Create the content request
-	base, err := c.getContentRequestBase()
+	base, err := c.getContentRequestBase(true)
 	if err != nil {
 		return "", content_types.OperationError(op, err)
 	}
