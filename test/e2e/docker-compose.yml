@@ -41,6 +41,7 @@ services:
     volumes:
       - ./licenses/workbench-license.lic:/etc/rstudio-server/license.lic
       - ./logs/workbench-preview:/var/log/rstudio/rstudio-server
+      - ./config/workbench-logging.conf:/etc/rstudio/logging.conf
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:8787/health-check"]
       interval: 2s
@@ -56,6 +57,7 @@ services:
     volumes:
       - ./licenses/workbench-license.lic:/etc/rstudio-server/license.lic
       - ./logs/workbench-release:/var/log/rstudio/rstudio-server
+      - ./config/workbench-logging.conf:/etc/rstudio/logging.conf
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:8787/health-check"]
       interval: 2s
