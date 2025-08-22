@@ -191,7 +191,7 @@
           </div>
         </template>
         <template v-else>
-          <div v-if="isPreContentRecordWithoutID">
+          <div v-if="isPreContentRecordWithoutID && isConnectPreContentRecord">
             Is this already deployed to a Connect server? You can
             <a class="webview-link" role="button" @click="onAssociateDeployment"
               >update that previous deployment</a
@@ -457,6 +457,13 @@ const isPreContentRecordWithoutID = computed(() => {
     isPreContentRecord(home.selectedContentRecord) &&
     !isPreContentRecordWithID.value
   );
+});
+
+const isConnectPreContentRecord = computed(() => {
+  const serverType =
+    home.selectedContentRecord?.serverType || ServerType.CONNECT;
+  const productType = getProductType(serverType);
+  return isConnectProduct(productType);
 });
 
 const isDismissedContentRecord = computed(() => {
