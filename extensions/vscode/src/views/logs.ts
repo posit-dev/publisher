@@ -429,9 +429,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
   /**
    * Reveals the first failing LogsTreeStageItem in the tree view.
    */
-  public async revealFailingState(
-    treeView: TreeView<LogsTreeItem>,
-  ): Promise<void> {
+  public revealFailingState(treeView: TreeView<LogsTreeItem>): void {
     const failureItem = this.findFirstFailureItem();
 
     if (failureItem) {
