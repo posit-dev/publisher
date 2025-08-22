@@ -135,7 +135,7 @@ start-workbench service:
     fi
     
     # Create directories for volumes if they do not exist
-    mkdir -p ./logs/{{ service }}
+    mkdir -p ./logs/workbench-{{ service }}
     mkdir -p ./licenses
     
     # Check if license file exists and is valid (not just a placeholder)

@@ -40,7 +40,7 @@ services:
       - "8787:8787"
     volumes:
       - ./licenses/workbench-license.lic:/etc/rstudio-server/license.lic
-      - ./logs/preview:/var/log/rstudio-server
+      - ./logs/workbench-preview:/var/log/rstudio/rstudio-server
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:8787/health-check"]
       interval: 2s
@@ -55,7 +55,7 @@ services:
       - "8787:8787"
     volumes:
       - ./licenses/workbench-license.lic:/etc/rstudio-server/license.lic
-      - ./logs/release:/var/log/rstudio-server
+      - ./logs/workbench-release:/var/log/rstudio/rstudio-server
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:8787/health-check"]
       interval: 2s
