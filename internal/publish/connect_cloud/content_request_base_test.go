@@ -12,9 +12,11 @@ import (
 	"github.com/posit-dev/publisher/internal/clients/connect_cloud"
 	clienttypes "github.com/posit-dev/publisher/internal/clients/types"
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/publish/publishhelper"
 	"github.com/posit-dev/publisher/internal/state"
+	content_types "github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
 )
 
@@ -191,23 +193,235 @@ func (s *ContentRequestSuite) TestGetContentRequestBaseUnsupportedType() {
 	s.Nil(base)
 }
 
-func (s *ContentRequestSuite) TestGetContentRequestBaseWithUnsetPublicAccess() {
+func (s *ContentRequestSuite) TestGetAccess() {
 	testCases := []struct {
 		name                      string
-		privateContentEntitlement bool
-		expectedContentAccess     clienttypes.ContentAccess
+		isFirstDeploy             bool
+		accessControl             *config.ConnectCloudAccessControl
+		privateContentEntitlement *bool
+		existingContentAccess     *clienttypes.ContentAccess
+		expectedAccess            clienttypes.ContentAccess
+		//expectError               bool
+		//errorMessage              string
 	}{
+		// First deploy cases with privateContentEntitlement
 		{
-			name:                      "not entitled to private access",
-			privateContentEntitlement: false,
-			expectedContentAccess:     clienttypes.ViewPublicEditPrivate,
+			name:                      "first deploy - no config, not entitled to private",
+			isFirstDeploy:             true,
+			accessControl:             nil,
+			privateContentEntitlement: boolPtr(false),
+			expectedAccess:            clienttypes.ViewPublicEditPrivate,
 		},
 		{
-			name:                      "entitled to private access",
-			privateContentEntitlement: true,
-			expectedContentAccess:     clienttypes.ViewPrivateEditPrivate,
+			name:                      "first deploy - no config, entitled to private",
+			isFirstDeploy:             true,
+			accessControl:             nil,
+			privateContentEntitlement: boolPtr(true),
+			expectedAccess:            clienttypes.ViewPrivateEditPrivate,
+		},
+		{
+			name:          "first deploy - public true, org disabled",
+			isFirstDeploy: true,
+			accessControl: &config.ConnectCloudAccessControl{
+				PublicAccess:       boolPtr(true),
+				OrganizationAccess: config.OrganizationAccessTypeDisabled,
+			},
+			expectedAccess: clienttypes.ViewPublicEditPrivate,
+		},
+		{
+			name:          "first deploy - public true, org viewer",
+			isFirstDeploy: true,
+			accessControl: &config.ConnectCloudAccessControl{
+				PublicAccess:       boolPtr(true),
+				OrganizationAccess: config.OrganizationAccessTypeViewer,
+			},
+			expectedAccess: clienttypes.ViewPublicEditPrivate,
+		},
+		{
+			name:          "first deploy - public true, org editor",
+			isFirstDeploy: true,
+			accessControl: &config.ConnectCloudAccessControl{
+				PublicAccess:       boolPtr(true),
+				OrganizationAccess: config.OrganizationAccessTypeEditor,
+			},
+			expectedAccess: clienttypes.ViewPublicEditTeam,
+		},
+		{
+			name:          "first deploy - public false, org disabled",
+			isFirstDeploy: true,
+			accessControl: &config.ConnectCloudAccessControl{
+				PublicAccess:       boolPtr(false),
+				OrganizationAccess: config.OrganizationAccessTypeDisabled,
+			},
+			expectedAccess: clienttypes.ViewPrivateEditPrivate,
+		},
+		{
+			name:          "first deploy - public false, org viewer",
+			isFirstDeploy: true,
+			accessControl: &config.ConnectCloudAccessControl{
+				PublicAccess:       boolPtr(false),
+				OrganizationAccess: config.OrganizationAccessTypeViewer,
+			},
+			expectedAccess: clienttypes.ViewTeamEditPrivate,
+		},
+		{
+			name:          "first deploy - public false, org editor",
+			isFirstDeploy: true,
+			accessControl: &config.ConnectCloudAccessControl{
+				PublicAccess:       boolPtr(false),
+				OrganizationAccess: config.OrganizationAccessTypeEditor,
+			},
+			expectedAccess: clienttypes.ViewTeamEditTeam,
+		},
+
+		// Subsequent deploy cases - both access control settings provided
+		{
+			name:          "subsequent deploy - public false, org disabled",
+			isFirstDeploy: false,
+			accessControl: &config.ConnectCloudAccessControl{
+				PublicAccess:       boolPtr(false),
+				OrganizationAccess: config.OrganizationAccessTypeDisabled,
+			},
+			expectedAccess: clienttypes.ViewPrivateEditPrivate,
+		},
+		{
+			name:          "subsequent deploy - public false, org viewer",
+			isFirstDeploy: false,
+			accessControl: &config.ConnectCloudAccessControl{
+				PublicAccess:       boolPtr(false),
+				OrganizationAccess: config.OrganizationAccessTypeViewer,
+			},
+			expectedAccess: clienttypes.ViewTeamEditPrivate,
+		},
+		{
+			name:          "subsequent deploy - public false, org editor",
+			isFirstDeploy: false,
+			accessControl: &config.ConnectCloudAccessControl{
+				PublicAccess:       boolPtr(false),
+				OrganizationAccess: config.OrganizationAccessTypeEditor,
+			},
+			expectedAccess: clienttypes.ViewTeamEditTeam,
+		},
+		{
+			name:          "subsequent deploy - public true, org disabled",
+			isFirstDeploy: false,
+			accessControl: &config.ConnectCloudAccessControl{
+				PublicAccess:       boolPtr(true),
+				OrganizationAccess: config.OrganizationAccessTypeDisabled,
+			},
+			expectedAccess: clienttypes.ViewPublicEditPrivate,
+		},
+		{
+			name:          "subsequent deploy - public true, org viewer",
+			isFirstDeploy: false,
+			accessControl: &config.ConnectCloudAccessControl{
+				PublicAccess:       boolPtr(true),
+				OrganizationAccess: config.OrganizationAccessTypeViewer,
+			},
+			expectedAccess: clienttypes.ViewPublicEditPrivate,
+		},
+		{
+			name:          "subsequent deploy - public true, org editor",
+			isFirstDeploy: false,
+			accessControl: &config.ConnectCloudAccessControl{
+				PublicAccess:       boolPtr(true),
+				OrganizationAccess: config.OrganizationAccessTypeEditor,
+			},
+			expectedAccess: clienttypes.ViewPublicEditTeam,
+		},
+
+		// Subsequent deploy cases - only PublicAccess provided
+		{
+			name:          "subsequent deploy - only public true, existing ViewTeamEditPrivate",
+			isFirstDeploy: false,
+			accessControl: &config.ConnectCloudAccessControl{
+				PublicAccess: boolPtr(true),
+			},
+			existingContentAccess: contentAccessPtr(clienttypes.ViewTeamEditPrivate),
+			expectedAccess:        clienttypes.ViewPublicEditPrivate,
+		},
+		{
+			name:          "subsequent deploy - only public false, existing ViewPublicEditTeam",
+			isFirstDeploy: false,
+			accessControl: &config.ConnectCloudAccessControl{
+				PublicAccess: boolPtr(false),
+			},
+			existingContentAccess: contentAccessPtr(clienttypes.ViewPublicEditTeam),
+			expectedAccess:        clienttypes.ViewTeamEditPrivate,
+		},
+		{
+			name:          "subsequent deploy - only public true, existing ViewPrivateEditPrivate",
+			isFirstDeploy: false,
+			accessControl: &config.ConnectCloudAccessControl{
+				PublicAccess: boolPtr(true),
+			},
+			existingContentAccess: contentAccessPtr(clienttypes.ViewPrivateEditPrivate),
+			expectedAccess:        clienttypes.ViewPublicEditPrivate,
+		},
+		{
+			name:          "subsequent deploy - only public false, existing ViewPublicEditPrivate",
+			isFirstDeploy: false,
+			accessControl: &config.ConnectCloudAccessControl{
+				PublicAccess: boolPtr(false),
+			},
+			existingContentAccess: contentAccessPtr(clienttypes.ViewPublicEditPrivate),
+			expectedAccess:        clienttypes.ViewPrivateEditPrivate,
+		},
+		{
+			name:          "subsequent deploy - only public true, existing ViewTeamEditTeam",
+			isFirstDeploy: false,
+			accessControl: &config.ConnectCloudAccessControl{
+				PublicAccess: boolPtr(true),
+			},
+			existingContentAccess: contentAccessPtr(clienttypes.ViewTeamEditTeam),
+			expectedAccess:        clienttypes.ViewPublicEditTeam,
+		},
+		{
+			name:          "subsequent deploy - only public false, existing ViewTeamEditTeam",
+			isFirstDeploy: false,
+			accessControl: &config.ConnectCloudAccessControl{
+				PublicAccess: boolPtr(false),
+			},
+			existingContentAccess: contentAccessPtr(clienttypes.ViewTeamEditTeam),
+			expectedAccess:        clienttypes.ViewTeamEditTeam,
+		},
+		// Subsequent deploy cases - only OrganizationAccess provided
+		{
+			name:          "subsequent deploy - only org editor, existing ViewPublicEditPrivate",
+			isFirstDeploy: false,
+			accessControl: &config.ConnectCloudAccessControl{
+				OrganizationAccess: config.OrganizationAccessTypeDisabled,
+			},
+			existingContentAccess: contentAccessPtr(clienttypes.ViewPublicEditPrivate),
+			expectedAccess:        clienttypes.ViewPublicEditPrivate,
+		},
+		{
+			name:          "subsequent deploy - only org viewer, existing ViewPrivateEditPrivate",
+			isFirstDeploy: false,
+			accessControl: &config.ConnectCloudAccessControl{
+				OrganizationAccess: config.OrganizationAccessTypeViewer,
+			},
+			existingContentAccess: contentAccessPtr(clienttypes.ViewPrivateEditPrivate),
+			expectedAccess:        clienttypes.ViewTeamEditPrivate,
+		},
+		{
+			name:          "subsequent deploy - only org editor, existing ViewPublicEditPrivate",
+			isFirstDeploy: false,
+			accessControl: &config.ConnectCloudAccessControl{
+				OrganizationAccess: config.OrganizationAccessTypeEditor,
+			},
+			existingContentAccess: contentAccessPtr(clienttypes.ViewPublicEditPrivate),
+			expectedAccess:        clienttypes.ViewPublicEditTeam,
+		},
+		// Subsequent deploy cases - no access control settings
+		{
+			name:           "subsequent deploy - no access control (nil config)",
+			isFirstDeploy:  false,
+			accessControl:  nil,
+			expectedAccess: "view_private_edit_private",
 		},
 	}
+
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
 			// Setup mock client
@@ -216,50 +430,63 @@ func (s *ContentRequestSuite) TestGetContentRequestBaseWithUnsetPublicAccess() {
 
 			// Setup account with CloudAccountID
 			s.publisher.Account.CloudAccountID = "test-account-id"
+			s.publisher.Target = &deployment.Deployment{ID: "test-content-id"}
 
-			// Setup publisher with configuration that has no PublicAccess set (nil)
-			s.publisher.Config = &config.Config{
-				Title:       "Test Content Title",
-				Description: "Test content description",
-				Type:        config.ContentTypePythonDash,
-				Entrypoint:  "app.py",
-				ConnectCloud: &config.ConnectCloud{
-					AccessControl: &config.ConnectCloudAccessControl{
-						PublicAccess:       nil, // This is the key - PublicAccess is unset
-						OrganizationAccess: config.OrganizationAccessTypeDisabled,
-					},
-				},
+			// Setup configuration
+			var connectCloudConfig *config.ConnectCloud
+			if tc.accessControl != nil {
+				connectCloudConfig = &config.ConnectCloud{
+					AccessControl: tc.accessControl,
+				}
 			}
-			s.publisher.SaveName = "test-save-name"
 
-			// Setup mock to return account with private content entitlement defined in test case
-			mockAccount := &connect_cloud.Account{
-				ID:          "test-account-id",
-				Name:        "test-account",
-				DisplayName: "Test Account",
-				License: &connect_cloud.AccountLicense{
-					Entitlements: connect_cloud.AccountEntitlements{
-						AccountPrivateContentFlag: connect_cloud.AccountEntitlement{
-							Enabled: tc.privateContentEntitlement,
+			s.publisher.Config = &config.Config{
+				ConnectCloud: connectCloudConfig,
+			}
+
+			// Setup mock expectations
+			if tc.isFirstDeploy && (tc.accessControl == nil || tc.accessControl.PublicAccess == nil) && tc.privateContentEntitlement != nil {
+				// Mock GetAccount call for private content entitlement check
+				mockAccount := &connect_cloud.Account{
+					ID:          "test-account-id",
+					Name:        "test-account",
+					DisplayName: "Test Account",
+					License: &connect_cloud.AccountLicense{
+						Entitlements: connect_cloud.AccountEntitlements{
+							AccountPrivateContentFlag: connect_cloud.AccountEntitlement{
+								Enabled: *tc.privateContentEntitlement,
+							},
 						},
 					},
-				},
+				}
+				mockClient.On("GetAccount", "test-account-id").Return(mockAccount, nil)
 			}
-			mockClient.On("GetAccount", "test-account-id").Return(mockAccount, nil)
 
-			// Call getContentRequestBase
-			base, err := s.publisher.getContentRequestBase()
+			if !tc.isFirstDeploy && tc.existingContentAccess != nil {
+				// Mock GetContent call for existing content access
+				mockContent := &clienttypes.ContentResponse{
+					ID:     content_types.ContentID("test-content-id"),
+					Access: *tc.existingContentAccess,
+				}
+				mockClient.On("GetContent", content_types.ContentID("test-content-id")).Return(mockContent, nil)
+			}
 
-			// Verify no error is returned
+			// Call getAccess
+			access, err := s.publisher.getAccess(tc.isFirstDeploy)
 			s.NoError(err)
-			s.NotNil(base)
+			s.Equal(tc.expectedAccess, access)
 
-			// Verify that access is set as expected based on entitlement
-			s.Equal(tc.expectedContentAccess, base.Access)
-
-			// Verify the mock was called
+			// Verify mock expectations were met
 			mockClient.AssertExpectations(s.T())
 		})
 	}
+}
 
+// Helper functions for test cases
+func boolPtr(b bool) *bool {
+	return &b
+}
+
+func contentAccessPtr(access clienttypes.ContentAccess) *clienttypes.ContentAccess {
+	return &access
 }
