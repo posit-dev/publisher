@@ -202,5 +202,11 @@
       }
     }
   },
-  "resources": []
+  "resources": [],
+  "project": {
+    "dir": "$DIR",
+    "files": {
+      "input": ["$DIR/quarto-doc-none.qmd", "$DIR/subdir/subpage.qmd"]
+    }
+  }
 }
