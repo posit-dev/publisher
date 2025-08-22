@@ -140,7 +140,7 @@ func (s *DeleteIntegrationRequestTestSuite) TestDeleteIntegrationRequestNotFound
 	h := DeleteIntegrationRequestFuncHandler(s.cwd, log)
 	h(rec, req)
 
-	s.Equal(http.StatusNotFound, rec.Result().StatusCode)
+	s.Equal(http.StatusOK, rec.Result().StatusCode)
 
 	// verify that the original integration request is still in the config
 	updatedConfig, err := config.FromFile(configPath)

@@ -174,9 +174,9 @@ func (cfg *Config) AddIntegrationRequest(ir IntegrationRequest) error {
 	return nil
 }
 
-func (cfg *Config) RemoveIntegrationRequest(Guid string) error {
+func (cfg *Config) RemoveIntegrationRequest(ir IntegrationRequest) error {
 	for i, r := range cfg.IntegrationRequests {
-		if r.Guid == Guid {
+		if reflect.DeepEqual(ir, r) {
 			cfg.IntegrationRequests = append(cfg.IntegrationRequests[:i], cfg.IntegrationRequests[i+1:]...)
 			break
 		}
