@@ -158,15 +158,21 @@ deactivate
 
 ** NOTE: ** The instructions below assume that your terminal has the `test/e2e` directory as the current working directory. If you are not in that directory, you will need to adjust the commands accordingly.
 
-1. Activate your virtual environment if it is not already active.
+Activate your virtual environment if it is not already active.
 
-- Run the following command from the `test/e2e` subdirectory:
+Run the following command from the `test/e2e` subdirectory:
 
 ```bash
 source .venv/bin/activate
 ```
 
-- Build the publisher and start the Cypress interactive test runner:
+AWS Login to a vivid profile is needed to access the test user credentials for PCC by getting secrets from AWS Secret Manager:
+
+```bash
+aws sso login --profile vivid-staging
+```
+
+Build the publisher and start the Cypress interactive test runner:
 
 ```bash
 just build-images
@@ -176,6 +182,12 @@ just dev
 This will start the Cypress test runner, which will open a browser window and allow you to run the end-to-end tests against the Posit Publisher VSCode extension.
 
 Use VSCode to modify the tests in the `test/e2e/tests` directory. Saving changes will automatically re-run the tests in the Cypress test runner.
+
+Tests can also be run in headless mode with:
+
+```bash
+npx cypress run
+```
 
 When done, you can deactivate the virtual environment with:
 

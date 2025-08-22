@@ -17,29 +17,24 @@ for arg in "$@"; do
   fi
 done
 
-# If no specs provided, run all tests as one group
+# If no spec files provided, find all spec files in the default Cypress spec directory
 if [ ${#SPECS[@]} -eq 0 ]; then
-  SPECS=("")
+  while IFS= read -r -d '' file; do
+    SPECS+=("$file")
+  done < <(find ../e2e/tests -type f -name "*.cy.js" -print0 | sort -z)
 fi
 
 for SPEC in "${SPECS[@]}"; do
   PASS_COUNT=0
   FAIL_COUNT=0
-  if [ -n "$SPEC" ]; then
-    SPEC_ARG="--spec $SPEC"
-    echo ""
-    echo "===== Running $SPEC $REPEAT times ====="
-    SPEC_NAME="$SPEC"
-  else
-    SPEC_ARG=""
-    echo ""
-    echo "===== Running ALL TESTS $REPEAT times ====="
-    SPEC_NAME="ALL TESTS"
-  fi
+  SPEC_NAME=$(basename "$SPEC")
+  echo ""
+  echo "===== Running $SPEC_NAME $REPEAT times ====="
   for ((i=1; i<=REPEAT; i++)); do
     echo ""
-    echo "=== Cypress run #$i for $SPEC ==="
-    if npx cypress run $SPEC_ARG; then
+    echo "=== Cypress run #$i for $SPEC_NAME ==="
+    PLAYWRIGHT_HEADLESS=true npx cypress run --spec "$SPEC"
+    if [ $? -eq 0 ]; then
       echo "Run #$i PASSED"
       ((PASS_COUNT++))
       ((TOTAL_PASS++))
