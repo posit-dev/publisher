@@ -5,7 +5,6 @@ import (
 	"errors"
 	"io/fs"
 	"net/http"
-	"reflect"
 
 	"github.com/gorilla/mux"
 	"github.com/posit-dev/publisher/internal/config"
@@ -50,7 +49,7 @@ func DeleteIntegrationRequestFuncHandler(base util.AbsolutePath, log logging.Log
 		}
 
 		// create a target integration request from the request body
-		targetIR := config.IntegrationRequest{
+		targetIr := config.IntegrationRequest{
 			Guid:            body.Guid,
 			Name:            body.Name,
 			Description:     body.Description,
@@ -59,21 +58,12 @@ func DeleteIntegrationRequestFuncHandler(base util.AbsolutePath, log logging.Log
 			Config:          body.Config,
 		}
 
-		found := false
-		for i, ir := range cfg.IntegrationRequests {
-			if reflect.DeepEqual(ir, targetIR) {
-				cfg.IntegrationRequests = append(cfg.IntegrationRequests[:i], cfg.IntegrationRequests[i+1:]...)
-				found = true
-				break
-			}
-		}
-
-		if !found {
-			http.NotFound(w, req)
+		err = cfg.RemoveIntegrationRequest(targetIr)
+		if err != nil {
+			InternalError(w, req, log, err)
 			return
 		}
 
-		// Save the updated configuration
 		err = cfg.WriteFile(configPath)
 		if err != nil {
 			InternalError(w, req, log, err)
