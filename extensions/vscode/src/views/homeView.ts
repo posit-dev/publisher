@@ -187,6 +187,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         return this.showNewCredentialForDeployment();
       case WebviewToHostMessageType.NEW_CREDENTIAL:
         return this.showNewCredential();
+      case WebviewToHostMessageType.DELETE_CREDENTIAL:
+        return this.deleteCredential(msg.content);
       case WebviewToHostMessageType.VIEW_PUBLISHING_LOG:
         return this.showPublishingLog();
       case WebviewToHostMessageType.SHOW_ASSOCIATE_GUID:
@@ -195,6 +197,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         return this.updateSelectionCredentialState(msg.content.state);
       case WebviewToHostMessageType.UPDATE_SELECTION_IS_PRE_CONTENT_RECORD:
         return this.updateSelectionIsPreContentRecordState(msg.content.state);
+      case WebviewToHostMessageType.COPY_SYSTEM_INFO:
+        return await this.copySystemInfo();
       default:
         window.showErrorMessage(
           `Internal Error: onConduitMessage unhandled msg: ${JSON.stringify(msg)}`,
@@ -208,6 +212,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       "vscode.open",
       Uri.parse(msg.content.uri),
     );
+  }
+
+  private async copySystemInfo() {
+    return await commands.executeCommand(Commands.HomeView.CopySystemInfo);
   }
 
   private async updateSelectionCredentialState(state: string) {

@@ -9,10 +9,10 @@ jobs:
         runner: [macos-latest, windows-latest, ubuntu-latest]
     runs-on: ${{ matrix.runner }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - uses: extractions/setup-just@v2
+      - uses: extractions/setup-just@v3
 
       # Install R with rig for our funcitonal tests to ensure we are compatible with it.
       # We aren't used r-lib/actions here becuase rig, especially on windows, installs in

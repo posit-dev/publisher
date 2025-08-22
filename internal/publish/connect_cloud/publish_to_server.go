@@ -25,7 +25,7 @@ func (c *ServerPublisher) updateContent(contentID internal_types.ContentID) erro
 		c.emitter.Emit(events.New(op, events.StartPhase, events.NoError, data))
 		log.Info("Determining content settings")
 
-		base, err := c.getContentRequestBase()
+		base, err := c.getContentRequestBase(false)
 		if err != nil {
 			return internal_types.OperationError(op, err)
 		}
