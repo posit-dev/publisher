@@ -201,22 +201,16 @@ export type ErrDeviceAuthAccessDenied =
   MkErrorDataType<"deviceAuthAccessDenied">;
 export const isErrDeviceAuthAccessDenied =
   mkErrorTypeGuard<ErrDeviceAuthAccessDenied>("deviceAuthAccessDenied");
-export const errDeviceAuthAccessDeniedMessage = (
-  err: axiosErrorWithJson<ErrDeviceAuthAccessDenied>,
-) => {
-  return `Posit Connect Cloud access denied: ${err.response.data.code}`;
-};
+export const errDeviceAuthAccessDeniedMessage =
+  "The authorization request was denied.";
 
 // Device auth expired token error
 export type ErrDeviceAuthExpiredToken =
   MkErrorDataType<"deviceAuthExpiredToken">;
 export const isDeviceAuthExpiredToken =
   mkErrorTypeGuard<ErrDeviceAuthExpiredToken>("deviceAuthExpiredToken");
-export const errDeviceAuthExpiredTokenMessage = (
-  err: axiosErrorWithJson<ErrDeviceAuthExpiredToken>,
-) => {
-  return `Expired Posit Connect Cloud authorization token: ${err.response.data.code}`;
-};
+export const errDeviceAuthExpiredTokenMessage =
+  "Your authorization session has expired.";
 
 // Tries to match an Axios error that comes with an identifiable Json structured data
 // defaulting to be ErrUnknown message when
@@ -242,11 +236,11 @@ export function resolveAgentJsonErrorMsg(err: axiosErrorWithJson) {
   }
 
   if (isErrDeviceAuthAccessDenied(err)) {
-    return errDeviceAuthAccessDeniedMessage(err);
+    return errDeviceAuthAccessDeniedMessage;
   }
 
   if (isDeviceAuthExpiredToken(err)) {
-    return errDeviceAuthExpiredTokenMessage(err);
+    return errDeviceAuthExpiredTokenMessage;
   }
 
   return errUnknownMessage(err as axiosErrorWithJson<ErrUnknown>);
