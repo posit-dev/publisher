@@ -284,3 +284,51 @@ func (s *ManifestPackagesSuite) TestMissingLockfile_BubblesUpRenvError() {
 	s.Equal(isAgentErr, true)
 	s.Equal(aerr.Code, types.ErrorRenvPackageNotInstalled)
 }
+
+// scannerAdapter adapts a testify mock to the RDependencyScanner interface for tests
+type scannerAdapter struct{ m *mock.Mock }
+
+func (s *scannerAdapter) ScanDependencies(paths []string, rExecutable string) (util.AbsolutePath, error) {
+	args := s.m.Called(paths, rExecutable)
+	if p, ok := args.Get(0).(util.AbsolutePath); ok {
+		return p, args.Error(1)
+	}
+	return util.AbsolutePath{}, args.Error(1)
+}
+
+func (s *ManifestPackagesSuite) TestLockFile_CreateFromScanner() {
+	base := s.testdata.Join("cran_project")
+	// Generate a lockfile via the scanner and ensure we use it.
+
+	mapper, err := NewPackageMapper(base, util.Path{}, s.log)
+	s.NoError(err)
+
+	// Override scanner to return the known renv.lock in cran_project
+	genPath := base.Join("renv.lock")
+	m := mapper.(*defaultPackageMapper)
+	mm := &mock.Mock{}
+	mm.On("ScanDependencies", mock.Anything, mock.Anything).Return(genPath, nil)
+	m.scanner = &scannerAdapter{mm}
+
+	// Setup lister
+	lister := &mockPackageLister{}
+	libPath := base.Join("renv_library")
+	otherlibPath := util.NewAbsolutePath("/nonexistent", afero.NewMemMapFs())
+	lister.On("GetLibPaths", mock.Anything).Return([]util.AbsolutePath{otherlibPath, libPath}, nil)
+	lister.On("GetBioconductorRepos", mock.Anything, mock.Anything).Return(nil, nil)
+	lister.On("ListAvailablePackages", mock.Anything, mock.Anything).Return([]AvailablePackage{{
+		Name:       "mypkg",
+		Version:    "1.2.3",
+		Repository: "https://cran.rstudio.com",
+	}}, nil)
+	m.lister = lister
+
+	// With new API, caller requests scanning first, then passes the generated lockfile.
+	genPath2, err := mapper.ScanDependencies([]string{"."}, logging.New())
+	s.NoError(err)
+	manifestPackages, err := mapper.GetManifestPackages(base, genPath2, logging.New())
+	s.NoError(err)
+	s.NotEmpty(manifestPackages)
+	// Ensure the scanner was indeed invoked
+	mm.AssertExpectations(s.T())
+}

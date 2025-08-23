@@ -3,12 +3,13 @@ package publish
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"io"
+	"os"
+
 	"github.com/posit-dev/publisher/internal/bundles"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/types"
-	"io"
-	"os"
 )
 
 func (p *defaultPublisher) createBundle() (*os.File, error) {
@@ -16,7 +17,7 @@ func (p *defaultPublisher) createBundle() (*os.File, error) {
 	p.log.Debug("Built manifest from config", "config", p.ConfigName)
 
 	if p.Config.R != nil {
-		rPackages, err := p.getRPackages()
+		rPackages, err := p.getRPackages(false)
 		if err != nil {
 			return nil, err
 		}
