@@ -325,7 +325,7 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoWebsite() {
 			{
 				Schema:     schema.ConfigSchemaURL,
 				Type:       contenttypes.ContentTypeHTML,
-				Entrypoint: "_site",
+				Entrypoint: "_site/about.html",
 				Title:      "About",
 				Validate:   &validate,
 				Files: []string{
@@ -354,7 +354,7 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoWebsite() {
 			{
 				Schema:     schema.ConfigSchemaURL,
 				Type:       contenttypes.ContentTypeHTML,
-				Entrypoint: "_site",
+				Entrypoint: "_site/index.html",
 				Title:      "quarto-website-none",
 				Validate:   &validate,
 				Files: []string{
@@ -427,7 +427,7 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoWebsite_viaQuartoYml() {
 			{
 				Schema:     schema.ConfigSchemaURL,
 				Type:       contenttypes.ContentTypeHTML,
-				Entrypoint: "_site",
+				Entrypoint: "_site/index.html",
 				Title:      "Content Dashboard",
 				Validate:   &validate,
 				Files: []string{
@@ -501,7 +501,9 @@ func (s *QuartoDetectorSuite) TestInferTypeMultidocProject() {
 				Validate:   &validate,
 				Files: []string{
 					"/document1.html",
+					"/document1_files",
 					"/document2.html",
+					"/document2_files",
 				},
 			},
 		},
@@ -526,7 +528,9 @@ func (s *QuartoDetectorSuite) TestInferTypeMultidocProject() {
 				Validate:   &validate,
 				Files: []string{
 					"/document1.html",
+					"/document1_files",
 					"/document2.html",
+					"/document2_files",
 				},
 			},
 		},
