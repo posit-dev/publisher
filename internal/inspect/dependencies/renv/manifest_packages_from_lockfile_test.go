@@ -102,28 +102,57 @@ func normalizeList(s string) string {
 	return strings.Join(clean, ",")
 }
 
-// assertPackageMatchesExpected compares an actual package against an expected one, normalizing where sensible.
-func (s *LockfilePackageMapperSuite) assertPackageMatchesExpected(pkgName string, expectedPkg, actualPkg bundles.Package) {
-	// Top-level fields
-	s.Equal(expectedPkg.Source, actualPkg.Source, "Source mismatch for %s", pkgName)
-	s.Equal(expectedPkg.Repository, actualPkg.Repository, "Repository mismatch for %s", pkgName)
+// comparePackages performs detailed comparison between two package representations.
+// Handles differences in field availability and formats between different sources.
+//
+// Parameters:
+//   - skipMissingFields: if true, skip fields not present in target package
+//   - skipTitle: if true, skip Title field entirely; if false, require non-empty Title
+//   - iterateFromFirst: if true, iterate over pkg1's fields; if false, iterate over pkg2's fields
+func (s *LockfilePackageMapperSuite) comparePackages(pkgName string, pkg1, pkg2 bundles.Package, skipMissingFields, skipTitle, iterateFromFirst bool) {
+	// Top-level fields should match exactly
+	s.Equal(pkg1.Source, pkg2.Source, "Source mismatch for %s", pkgName)
+	s.Equal(pkg1.Repository, pkg2.Repository, "Repository mismatch for %s", pkgName)
 
-	// Description fields present in expected must exist and match after normalization
-	for field, expectedVal := range expectedPkg.Description {
-		actualVal, ok := actualPkg.Description[field]
+	// Determine which package's fields to iterate over
+	var sourceFields map[string]string
+	var targetFields map[string]string
+	if iterateFromFirst {
+		sourceFields = pkg1.Description
+		targetFields = pkg2.Description
+	} else {
+		sourceFields = pkg2.Description
+		targetFields = pkg1.Description
+	}
+
+	// Compare description fields
+	for field, sourceVal := range sourceFields {
+		targetVal, ok := targetFields[field]
+
+		// Handle missing fields based on comparison type
 		if !ok {
-			// renv.lock may not provide every DESCRIPTION field; skip if not present in actual
-			continue
+			if skipMissingFields {
+				// Skip fields not present in target
+				continue
+			} else {
+				// Require field to be present (compatibility testing)
+				s.True(ok, "Expected field %s missing for package %s", field, pkgName)
+				continue
+			}
 		}
 
-		// Special handling for Title: just require non-empty
-		if field == "Title" {
-			s.NotEmpty(actualVal, "Title should be non-empty for package %s", pkgName)
-			continue
-		}
+		// Handle fields with known differences
+		switch field {
+		case "Title":
+			if skipTitle {
+				// Skip Title field entirely
+				continue
+			}
+			// Title may be generated differently - just require non-empty
+			s.NotEmpty(targetVal, "Title should be non-empty for package %s", pkgName)
 
-		// Special handling for Depends: ignore version constraints and require containment
-		if field == "Depends" {
+		case "Depends":
+			// Compare package names only, ignoring version constraints
 			toNames := func(s string) []string {
 				items := strings.Split(normalizeWhitespace(s), ",")
 				out := make([]string, 0, len(items))
@@ -132,7 +161,6 @@ func (s *LockfilePackageMapperSuite) assertPackageMatchesExpected(pkgName string
 					if t == "" {
 						continue
 					}
-					// Strip version constraint in parentheses, e.g., "pkg (>= 1.0)" -> "pkg"
 					if idx := strings.Index(t, " ("); idx != -1 {
 						t = t[:idx]
 					}
@@ -141,39 +169,55 @@ func (s *LockfilePackageMapperSuite) assertPackageMatchesExpected(pkgName string
 				return out
 			}
 
-			expNames := toNames(expectedVal)
-			actNames := toNames(actualVal)
-			// Build a set for faster lookup
-			set := map[string]struct{}{}
-			for _, n := range actNames {
-				set[n] = struct{}{}
+			sourceNames := toNames(sourceVal)
+			targetNames := toNames(targetVal)
+			nameSet := map[string]struct{}{}
+			for _, n := range targetNames {
+				nameSet[n] = struct{}{}
 			}
-			for _, n := range expNames {
-				_, present := set[n]
+			// Check that all source dependencies are present in target
+			for _, n := range sourceNames {
+				_, present := nameSet[n]
 				s.True(present, "Depends should contain %s for package %s", n, pkgName)
 			}
-			continue
-		}
 
-		// Special handling for list-like fields
-		if field == "Imports" || field == "Suggests" {
+		case "Imports", "Suggests":
+			// Normalize list formatting for comparison
 			s.Equal(
-				normalizeList(normalizeWhitespace(expectedVal)),
-				normalizeList(normalizeWhitespace(actualVal)),
-				"Field %s mismatch for package %s",
-				field, pkgName,
+				normalizeList(normalizeWhitespace(sourceVal)),
+				normalizeList(normalizeWhitespace(targetVal)),
+				"Field %s mismatch for package %s", field, pkgName,
 			)
-			continue
-		}
 
-		// Default normalization for multiline/whitespace-heavy fields
-		s.Equal(
-			normalizeWhitespace(expectedVal),
-			normalizeWhitespace(actualVal),
-			"Field %s mismatch for package %s",
-			field, pkgName,
-		)
+		default:
+			// For other fields, normalize whitespace and compare
+			s.Equal(
+				normalizeWhitespace(sourceVal),
+				normalizeWhitespace(targetVal),
+				"Field %s mismatch for package %s", field, pkgName,
+			)
+		}
 	}
+}
+
+// assertPackageMatchesExpected compares actual package output against test fixtures.
+func (s *LockfilePackageMapperSuite) assertPackageMatchesExpected(pkgName string, expectedPkg, actualPkg bundles.Package) {
+	// skipMissingFields=true: test fixtures may have more fields than lockfile can provide
+	// skipTitle=false: require Title to be non-empty
+	// iterateFromFirst=true: iterate over expected package fields
+	s.comparePackages(pkgName, expectedPkg, actualPkg, true, false, true)
+}
+
+// assertLockfileVsLegacyCompat compares lockfile vs legacy mapper outputs for compatibility.
+func (s *LockfilePackageMapperSuite) assertLockfileVsLegacyCompat(pkgName string, lockfilePkg, legacyPkg bundles.Package) {
+	// Core description fields that should always match
+	s.Equal(legacyPkg.Description["Package"], lockfilePkg.Description["Package"], "Package field mismatch for %s", pkgName)
+	s.Equal(legacyPkg.Description["Version"], lockfilePkg.Description["Version"], "Version field mismatch for %s", pkgName)
+
+	// skipMissingFields=true: legacy is superset, may have fields lockfile doesn't
+	// skipTitle=true: lockfile may use generic fallback for Title
+	// iterateFromFirst=true: iterate over lockfile fields (first parameter)
+	s.comparePackages(pkgName, lockfilePkg, legacyPkg, true, true, true)
 }
 
 func (s *LockfilePackageMapperSuite) TestCRAN_Functional() {
@@ -225,72 +269,6 @@ func (s *LockfilePackageMapperSuite) TestBioconductor_Functional() {
 }
 
 // --- Compatibility tests ensuring lockfile-only path matches legacy path on core fields ---
-
-// assertLockfileVsLegacyCompat compares lockfile-only vs legacy outputs for a package.
-func (s *LockfilePackageMapperSuite) assertLockfileVsLegacyCompat(pkgName string, lockfilePkg, legacyPkg bundles.Package) {
-	// Top-level
-	s.Equal(legacyPkg.Source, lockfilePkg.Source, "Source mismatch for %s", pkgName)
-	s.Equal(legacyPkg.Repository, lockfilePkg.Repository, "Repository mismatch for %s", pkgName)
-
-	// Core description fields
-	s.Equal(legacyPkg.Description["Package"], lockfilePkg.Description["Package"], "Package field mismatch for %s", pkgName)
-	s.Equal(legacyPkg.Description["Version"], lockfilePkg.Description["Version"], "Version field mismatch for %s", pkgName)
-
-	// For fields present in lockfile output, require compatibility with legacy, with normalization.
-	for field, lockVal := range lockfilePkg.Description {
-		// Skip Title: lockfile path may use a generic fallback
-		if field == "Title" {
-			continue
-		}
-		legVal, ok := legacyPkg.Description[field]
-		if !ok {
-			// If legacy lacks the field, skip: legacy is source-of-truth superset.
-			continue
-		}
-		switch field {
-		case "Imports", "Suggests":
-			s.Equal(
-				normalizeList(normalizeWhitespace(legVal)),
-				normalizeList(normalizeWhitespace(lockVal)),
-				"Field %s mismatch for %s", field, pkgName,
-			)
-		case "Depends":
-			// Compare names only, ignoring version constraints in either side.
-			// Require that legacy Depends entries are present in lockfile Depends.
-			toNames := func(sv string) []string {
-				items := strings.Split(normalizeWhitespace(sv), ",")
-				out := make([]string, 0, len(items))
-				for _, it := range items {
-					t := strings.TrimSpace(it)
-					if t == "" {
-						continue
-					}
-					if idx := strings.Index(t, " ("); idx != -1 {
-						t = t[:idx]
-					}
-					out = append(out, t)
-				}
-				return out
-			}
-			legNames := toNames(legVal)
-			lockNames := toNames(lockVal)
-			set := map[string]struct{}{}
-			for _, n := range lockNames {
-				set[n] = struct{}{}
-			}
-			for _, n := range legNames {
-				_, present := set[n]
-				s.True(present, "Depends should contain %s for %s", n, pkgName)
-			}
-		default:
-			s.Equal(
-				normalizeWhitespace(legVal),
-				normalizeWhitespace(lockVal),
-				"Field %s mismatch for %s", field, pkgName,
-			)
-		}
-	}
-}
 
 func (s *LockfilePackageMapperSuite) TestCRAN_LockfileCompatibility() {
 	base := s.testdata.Join("cran_project")
