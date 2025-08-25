@@ -35,6 +35,7 @@ import {
   ErrorMessageActionIds,
   findErrorMessageSplitOption,
 } from "src/utils/errorEnhancer";
+import { extensionSettings } from "src/extension";
 import { showErrorMessageWithTroubleshoot } from "src/utils/window";
 import { DeploymentFailureRenvHandler } from "src/views/deployHandlers";
 
@@ -243,6 +244,13 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
           stage.status = LogStageStatus.neverStarted;
         } else if (stage.status === LogStageStatus.inProgress) {
           stage.status = failedOrCanceledStatus;
+        }
+
+        if (
+          stage.status === LogStageStatus.failed &&
+          extensionSettings.autoOpenLogsOnFailure()
+        ) {
+          commands.executeCommand(Commands.Logs.Focus);
         }
       });
 
