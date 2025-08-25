@@ -5,8 +5,6 @@ package renv
 import (
 	"fmt"
 	"reflect"
-	"slices"
-	"strconv"
 	"strings"
 
 	"github.com/posit-dev/publisher/internal/bundles"
@@ -15,8 +13,10 @@ import (
 	"github.com/posit-dev/publisher/internal/util/dcf"
 )
 
-// LockfilePackageMapper provides a way to map renv.lock packages to manifest packages
-// without requiring the R packages to be installed in the library
+// LockfilePackageMapper enables deployment without requiring R packages to be
+// installed locally. This is essential for CI/CD environments and situations
+// where the build environment differs from the development environment.
+// It provides an alternative to defaultPackageMapper which requires installed R libraries.
 type LockfilePackageMapper struct {
 	base util.AbsolutePath
 	log  logging.Logger
@@ -30,27 +30,23 @@ func NewLockfilePackageMapper(base util.AbsolutePath, log logging.Logger) *Lockf
 	}
 }
 
-// GetManifestPackagesFromLockfile reads the renv.lock file and converts it directly to manifest packages
-// without requiring the R packages to be installed in a library
+// GetManifestPackagesFromLockfile extracts package information directly from renv.lock
+// without requiring installed R packages. This contrasts with defaultPackageMapper.GetManifestPackages
+// which reads DESCRIPTION files from installed R libraries. Both approaches must produce
+// equivalent manifest output for the same renv.lock to ensure deployment consistency.
 func (m *LockfilePackageMapper) GetManifestPackagesFromLockfile(
 	lockfilePath util.AbsolutePath) (bundles.PackageMap, error) {
-	return m.GetManifestPackagesFromLockfileWithAvailablePackages(lockfilePath, nil)
-}
-
-// GetManifestPackagesFromLockfileWithAvailablePackages reads the renv.lock file and converts it to manifest packages.
-// If availablePackages is provided, it will perform dev version detection similar to the legacy mapper.
-func (m *LockfilePackageMapper) GetManifestPackagesFromLockfileWithAvailablePackages(
-	lockfilePath util.AbsolutePath, availablePackages []AvailablePackage) (bundles.PackageMap, error) {
 
 	lockfile, err := ReadLockfile(lockfilePath)
 	if err != nil {
 		return nil, err
 	}
 
-	// This will hold our manifest packages
 	manifestPackages := bundles.PackageMap{}
 
-	// Pre-compute repository lookups from lockfile
+	// Repository lookups are pre-computed because LockfilePackageMapper must normalize repository
+	// references consistently to produce the same output format as defaultPackageMapper.
+	// Both approaches handle packages that may reference repositories by name ("CRAN") or URL.
 	repoNameByURL := map[string]string{}
 	cranRepoURL := ""
 	biocRepoURLs := []string{}
@@ -65,8 +61,9 @@ func (m *LockfilePackageMapper) GetManifestPackagesFromLockfileWithAvailablePack
 		}
 	}
 
-	// Also derive standard Bioconductor repos from the Bioconductor.Version field when present.
-	// This covers lockfiles that only record the version without listing BioC URLs in R.Repositories.
+	// Bioconductor repositories must be derived from version information when missing
+	// because renv sometimes only records the version without explicit repository URLs,
+	// but we need resolvable URLs for consistent deployment across environments.
 	if lockfile.Bioconductor.Version != "" {
 		v := lockfile.Bioconductor.Version
 		// Known BioC repo patterns
@@ -96,35 +93,41 @@ func (m *LockfilePackageMapper) GetManifestPackagesFromLockfileWithAvailablePack
 		}
 	}
 
-	// Choose a default Bioconductor repo when Bioconductor is in use
+	// Default Bioconductor repository selection is needed because packages may reference
+	// "Bioconductor" as a source without specifying which specific BioC repository,
+	// requiring us to provide a sensible default for package resolution.
 	defaultBiocURL := ""
 	if lockfile.Bioconductor.Version != "" {
 		defaultBiocURL = strings.TrimRight("https://bioconductor.org/packages/"+lockfile.Bioconductor.Version+"/bioc", "/")
 	}
 
-	// Resolve repository URL and canonical source name using precomputed maps.
-	// See resolveRepoAndSource helper for implementation.
+	// Repository resolution is delegated to resolveRepoAndSource to ensure LockfilePackageMapper
+	// and defaultPackageMapper produce identical normalization (URLs converted to repository names).
 
-	// Process each package in the lockfile
 	for pkgName, pkg := range lockfile.Packages {
 		manifestPkg := &bundles.Package{
 			Source:     pkg.Source,
 			Repository: string(pkg.Repository),
 		}
 
-		// Normalize repository URL (trim trailing slash) for comparisons
+		// Repository URL normalization is required for consistent comparisons because
+		// different sources may use trailing slashes inconsistently, but we need
+		// exact matches when looking up repository names.
 		repoURL := strings.TrimRight(string(pkg.Repository), "/")
 
-		// Remotes declared by renv (e.g. RemoteRepos/RemoteType)
+		// Remote package handling covers git-based sources that don't use traditional
+		// repositories but still need to be deployable with their remote URLs.
 		if string(pkg.Repository) == "" && pkg.RemoteRepos != "" && pkg.RemoteReposName != "" {
 			manifestPkg.Source = pkg.RemoteReposName
 			setIf(manifestPkg, "Repository", pkg.RemoteRepos)
 		} else if string(pkg.Repository) == "" && pkg.RemoteType != "" {
-			// Handle packages installed from remote sources (GitHub, GitLab, Bitbucket)
+			// Git-hosted packages (GitHub, GitLab, etc.) need special URL construction
+			// because they don't follow standard repository conventions.
 			manifestPkg.Source = pkg.RemoteType
 			setIf(manifestPkg, "Repository", remoteRepoURL(pkg.RemoteType, pkg.RemotePkgRef))
 		} else if pkg.Source == "Bioconductor" || pkg.Source == "Repository" || repoURL != "" {
-			// Resolve Source and Repository via precomputed repository map
+			// Standard repository packages require normalization to ensure LockfilePackageMapper
+			// and defaultPackageMapper produce equivalent output with repository names (not URLs).
 			resolvedSource, resolvedRepo, err := resolveRepoAndSource(repoNameByURL, cranRepoURL, defaultBiocURL, string(pkg.Repository), pkg.Source, string(pkgName))
 			if err != nil {
 				return nil, err
@@ -133,23 +136,19 @@ func (m *LockfilePackageMapper) GetManifestPackagesFromLockfileWithAvailablePack
 			manifestPkg.Repository = resolvedRepo
 		}
 
-		// Check for dev versions to match legacy mapper behavior
-		if manifestPkg.Source == "CRAN" && isDevVersionFromLockfile(pkg, availablePackages) {
-			// Clear Source/Repository to trigger SourceMissing error, matching legacy behavior
-			manifestPkg.Source = ""
-			manifestPkg.Repository = ""
-		}
-
-		// Create description record with the package name, version and other available metadata
+		// DESCRIPTION record construction follows R package conventions because
+		// deployment targets expect standard package metadata format.
 		description := dcf.Record{
 			"Package": string(pkgName),
 			"Version": pkg.Version,
 		}
 
-		// Add common fields for R packages
+		// Package type standardization is required because deployment environments
+		// expect consistent metadata regardless of the source lockfile format.
 		description["Type"] = "Package"
 
-		// Add Title: prefer package Title, otherwise fallback to "<Source> R package"
+		// Title fallback ensures every package has a descriptive title for deployment
+		// environments that display package information to users.
 		fallbackTitle := strings.TrimSpace(firstNonEmpty(manifestPkg.Source, pkg.Source) + " R package")
 		description["Title"] = firstNonEmpty(pkg.Title, fallbackTitle)
 
@@ -175,9 +174,9 @@ func (m *LockfilePackageMapper) GetManifestPackagesFromLockfileWithAvailablePack
 	return manifestPackages, nil
 }
 
-// copyAllFieldsToDesc copies Hash, Remote* and other relevant fields from the lockfile Package
-// into the DESCRIPTION record when they are non-empty. Arrays are joined as comma-separated lists
-// and some fields are mapped to their DESCRIPTION keys (e.g., AuthorsAtR -> Authors@R).
+// copyAllFieldsToDesc transfers metadata from lockfile packages to DESCRIPTION format
+// because deployment environments expect R package metadata in the standard DESCRIPTION
+// format, not the renv.lock JSON format. This ensures compatibility across tools.
 
 func copyAllFieldsToDesc(pkg Package, desc dcf.Record) {
 	// Core metadata
@@ -202,7 +201,9 @@ func copyAllFieldsToDesc(pkg Package, desc dcf.Record) {
 	setIf(desc, "RemotePkgPlatform", pkg.RemotePkgPlatform)
 	setIf(desc, "RemoteSha", pkg.RemoteSha)
 
-	// URLs: prefer GitHub defaults when applicable, otherwise use values in lockfile
+	// URLs: GitHub packages need special URL construction because they follow
+	// different conventions than traditional R repositories, and deployment
+	// environments benefit from having direct links to source and issue tracking.
 	if pkg.RemoteType == "github" && pkg.RemotePkgRef != "" {
 		setIf(desc, "URL", "https://github.com/"+pkg.RemotePkgRef)
 		setIf(desc, "BugReports", "https://github.com/"+pkg.RemotePkgRef+"/issues")
@@ -214,7 +215,8 @@ func copyAllFieldsToDesc(pkg Package, desc dcf.Record) {
 	desc["Config/testthat/edition"] = firstNonEmpty(desc["Config/testthat/edition"], pkg.ConfigTesthat)
 	desc["Config/Needs/website"] = firstNonEmpty(desc["Config/Needs/website"], pkg.ConfigNeeds)
 
-	// Arrays: Imports, Suggests, Depends (from Requirements)
+	// Arrays: Dependencies are formatted as comma-separated strings because that's
+	// the DESCRIPTION file standard format expected by R package management tools.
 	setIf(desc, "Imports", strings.Join(pkg.Imports, ", "))
 	setIf(desc, "Suggests", strings.Join(pkg.Suggests, ", "))
 	if len(pkg.Requirements) > 0 {
@@ -225,7 +227,8 @@ func copyAllFieldsToDesc(pkg Package, desc dcf.Record) {
 		setIf(desc, "Depends", strings.Join(deps, ", "))
 	}
 
-	// Repository info from lockfile (if present)
+	// Repository info from lockfile is preserved for debugging and compatibility
+	// with tools that expect to see the original repository reference.
 	setIf(desc, "Repository", string(pkg.Repository))
 }
 
@@ -290,9 +293,9 @@ func setIf(dst any, key string, val string) {
 	}
 }
 
-// resolveRepoAndSource resolves repository name and canonical source name using
-// the repositories map. This is used for consistency and to allow to switch
-// install source more easily by just replcacing the "Repositories" section.
+// resolveRepoAndSource normalizes repository references to ensure defaultPackageMapper (legacy) and
+// LockfilePackageMapper produce equivalent output. This consistency is critical for deployment
+// reliability regardless of which approach was used during publish.
 func resolveRepoAndSource(
 	repoNameByURL map[string]string,
 	cranRepoURL string,
@@ -301,7 +304,8 @@ func resolveRepoAndSource(
 	src string,
 	pkgName string,
 ) (string, string, error) {
-	// Normalize and translate placeholders
+	// Repository placeholder resolution is needed because renv uses shortcuts like
+	// "CRAN" that must be resolved to actual URLs for deployment consistency.
 	repoURL := strings.TrimRight(repoStr, "/")
 	repoName := repoStr
 
@@ -312,7 +316,9 @@ func resolveRepoAndSource(
 		repoURL = cranRepoURL
 	}
 
-	// Fill missing BioC repo from version when applicable
+	// Bioconductor repository defaulting is required because Bioconductor packages
+	// may not explicitly specify their repository URL, but we need a resolvable
+	// location for deployment to work correctly.
 	if repoURL == "" && src == "Bioconductor" {
 		if defaultBiocURL == "" {
 			return "", "", fmt.Errorf("Bioconductor package %s has no repository and no Bioconductor repositories are listed in renv.lock", pkgName)
@@ -360,60 +366,4 @@ func resolveRepoAndSource(
 
 	// Always return the repository name (not URL) for consistent output
 	return resolvedSource, repoName, nil
-}
-
-// isDevVersionFromLockfile checks if a package is a dev version using lockfile information.
-// If availablePackages is provided, it uses the same logic as the legacy mapper.
-// Otherwise, it makes a best-effort determination based on lockfile data.
-func isDevVersionFromLockfile(pkg Package, availablePackages []AvailablePackage) bool {
-	// If we have available packages, use the same logic as legacy mapper
-	if availablePackages != nil {
-		repoVersion := findAvailableVersionFromLockfile(pkg.Package, availablePackages)
-		if repoVersion == "" {
-			return false
-		}
-		cmp := slices.Compare(packageVersionFromLockfile(pkg.Version), packageVersionFromLockfile(repoVersion))
-		return cmp > 0
-	}
-
-	// Without available packages, detect obvious dev packages
-	// Packages from GitHub, GitLab, Bitbucket are always dev
-	if pkg.Source == "GitHub" || pkg.Source == "GitLab" || pkg.Source == "Bitbucket" {
-		return true
-	}
-	
-	// Packages with RemoteType are dev packages
-	if pkg.RemoteType != "" {
-		return true
-	}
-	
-	// Local packages are dev packages
-	if pkg.Source == "Local" || pkg.Source == "unknown" {
-		return true
-	}
-
-	return false
-}
-
-// findAvailableVersionFromLockfile finds the version of a package in available packages
-func findAvailableVersionFromLockfile(pkgName PackageName, availablePackages []AvailablePackage) string {
-	for _, avail := range availablePackages {
-		if avail.Name == pkgName {
-			return avail.Version
-		}
-	}
-	return ""
-}
-
-// packageVersionFromLockfile parses a version string into comparable integers (copied from legacy mapper)
-func packageVersionFromLockfile(vs string) []int {
-	parts := strings.FieldsFunc(vs, func(c rune) bool {
-		return c < '0' || c > '9'
-	})
-	values := []int{}
-	for _, part := range parts {
-		v, _ := strconv.Atoi(part)
-		values = append(values, v)
-	}
-	return values
 }
