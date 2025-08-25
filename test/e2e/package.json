@@ -6,7 +6,8 @@
     "cypress": "cypress run",
     "cypress:open": "cypress open --e2e",
     "lint": "eslint . --fix",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "postinstall": "node ../../test/scripts/install-op-cli.cjs"
   },
   "license": "UNLICENSED",
   "private": true,
@@ -19,7 +20,7 @@
     "eslint-plugin-cypress": "^4.1.0",
     "eslint-plugin-mocha": "^10.5.0",
     "lint-staged": "^15.4.3",
-    "playwright": "^1.40.0",
+    "playwright": "^1.55.0",
     "prettier": "^3.4.2",
     "smol-toml": "^1.3.1",
     "wait-on": "^8.0.2"

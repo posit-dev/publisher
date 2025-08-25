@@ -12,21 +12,41 @@ const isCI = process.env.CI === "true";
 const configPath = path.resolve(__dirname, "config/staging-pccqa.json");
 const pccConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
 
-function getAwsSecret(secretName) {
+// 1Password CLI secret fetch helper
+function get1PasswordSecret(item, field, vault) {
   try {
+    // Prefer system PATH op, fallback to local bin/op
+    function findOpInPath() {
+      try {
+        const which = process.platform === "win32" ? "where" : "which";
+        const opPath = execSync(`${which} op`, { encoding: "utf8" })
+          .split(/\r?\n/)[0]
+          .trim();
+        if (opPath && fs.existsSync(opPath)) {
+          return opPath;
+        }
+      } catch {
+        // ignore errors, treat as not found
+      }
+      return null;
+    }
+    const localOp = path.resolve(
+      __dirname,
+      "../bin",
+      process.platform === "win32" ? "op.exe" : "op",
+    );
+    const opCommand =
+      findOpInPath() || (fs.existsSync(localOp) ? localOp : "op");
     const result = execSync(
-      `aws secretsmanager get-secret-value --secret-id "${secretName}" --query SecretString --output text`,
-      { encoding: "utf8", stdio: "pipe" },
+      `"${opCommand}" item get "${item}" --field "${field}" --vault "${vault}" --reveal`,
+      { encoding: "utf8" },
     );
     return result.trim();
   } catch (error) {
     console.warn(
-      `Warning: Could not fetch AWS secret "${secretName}": ${error.message}`,
+      `Warning: Could not fetch 1Password secret '${item}': ${error.message}`,
     );
-    console.warn(
-      "Using placeholder value. Make sure AWS CLI is configured if you need real credentials.",
-    );
-    return "PLACEHOLDER_PASSWORD"; // Return a fallback so config doesn't break
+    return "PLACEHOLDER_PASSWORD";
   }
 }
 
@@ -34,8 +54,12 @@ function getAwsSecret(secretName) {
 if (process.env.CI === "true" && process.env.PCC_USER_CCQA3) {
   pccConfig.pcc_user_ccqa3.auth.password = process.env.PCC_USER_CCQA3;
 } else if (pccConfig.pcc_user_ccqa3.auth.password === "UPDATE") {
-  const fetchedPassword = getAwsSecret("vivid.qa.local.password.ccqa1");
-  pccConfig.pcc_user_ccqa3.auth.password = fetchedPassword;
+  // Replace with your actual item, field, and vault names
+  pccConfig.pcc_user_ccqa3.auth.password = get1PasswordSecret(
+    "pcc_user_ccqa3",
+    "password",
+    "Employee",
+  );
 }
 
 module.exports = defineConfig({

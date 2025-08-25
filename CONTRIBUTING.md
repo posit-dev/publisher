@@ -160,17 +160,19 @@ deactivate
 
 Activate your virtual environment if it is not already active.
 
-Run the following command from the `test/e2e` subdirectory:
+Run the following commands from the `test/e2e` subdirectory:
 
 ```bash
 source .venv/bin/activate
 ```
 
-AWS Login to a vivid profile is needed to access the test user credentials for PCC by getting secrets from AWS Secret Manager:
+To access the test user credentials for PCC, you must authenticate with the 1Password CLI before running E2E tests:
 
 ```bash
-aws sso login --profile vivid-staging
+eval $(bin/op signin)
 ```
+
+This command will prompt you to authenticate and set the required session environment variable for your shell. You need to do this once per terminal session before running the tests.
 
 Build the publisher and start the Cypress interactive test runner:
 
