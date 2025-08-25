@@ -210,7 +210,7 @@
     "quarto": {
       "version": "1.4.553"
     },
-    "dir": "$DIR/quarto-website-none",
+    "dir": "$DIR",
     "engines": ["markdown"],
     "config": {
       "project": {
@@ -241,12 +241,9 @@
       "language": {}
     },
     "files": {
-      "input": [
-        "$DIR/quarto-website-none/index.qmd",
-        "$DIR/quarto-website-none/about.qmd"
-      ],
+      "input": ["$DIR/index.qmd", "$DIR/about.qmd"],
       "resources": [],
-      "config": ["$DIR/quarto-website-none/_quarto.yml"],
+      "config": ["$DIR/_quarto.yml"],
       "configResources": []
     }
   }

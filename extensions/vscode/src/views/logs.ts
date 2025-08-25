@@ -10,6 +10,7 @@ import {
   TreeDataProvider,
   TreeItem,
   TreeItemCollapsibleState,
+  TreeView,
   Uri,
   commands,
   env,
@@ -376,8 +377,9 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
    * @returns The child elements of the parent element.
    */
   getChildren(element?: LogsTreeItem): ProviderResult<Array<LogsTreeItem>> {
+    const root = new LogsTreeStageItem(this.publishingStage);
     if (element === undefined) {
-      return [new LogsTreeStageItem(this.publishingStage)];
+      return [root];
     }
 
     // Map the events array to LogsTreeItem instances and return them as children
@@ -386,16 +388,15 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
       let count = 0;
       element.stages.forEach((stage: LogStage) => {
         if (stage.status !== LogStageStatus.notApplicable) {
-          result.push(new LogsTreeStageItem(stage));
+          result.push(new LogsTreeStageItem(stage, root));
         }
       });
       result.push(
         ...element.events.map(
           (e) =>
             new LogsTreeLogItem(
-              e,
+              { msg: e, id: `${element.id}/${count++}`, parent: element },
               TreeItemCollapsibleState.None,
-              `${element.id}/${count++}`,
             ),
         ),
       );
@@ -403,6 +404,60 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
     }
 
     return [];
+  }
+
+  getParent(element: LogsTreeItem): ProviderResult<LogsTreeItem> {
+    return element.parent;
+  }
+
+  /**
+   * Returns either
+   * the first LogsTreeStageItem with `LogStageStatus.failed` or
+   * the last LogsTreeLogItem of that stage if the stage has events
+   *
+   * Returns `undefined` if no LogsTreeStageItems have `LogsStateStatus.failed`
+   */
+  private getTreeItemToReveal(): LogsTreeItem | undefined {
+    const root = new LogsTreeStageItem(this.publishingStage);
+
+    for (const stage of this.publishingStage.stages) {
+      if (stage.status === LogStageStatus.failed) {
+        const stageItem = new LogsTreeStageItem(stage, root);
+
+        if (stage.events.length) {
+          const lastEventIndex = stage.events.length - 1;
+          const lastEvent = stage.events[lastEventIndex];
+          return new LogsTreeLogItem(
+            {
+              msg: lastEvent,
+              id: `${stageItem.id}/${lastEventIndex}`,
+              parent: stageItem,
+            },
+            TreeItemCollapsibleState.None,
+          );
+        }
+
+        return stageItem;
+      }
+    }
+
+    return undefined;
+  }
+
+  /**
+   * Reveals the first failing LogsTreeStageItem in the tree view or the last
+   * event of that stage if it has events.
+   */
+  public revealFailingState(treeView: TreeView<LogsTreeItem>): void {
+    const revealItem = this.getTreeItemToReveal();
+
+    if (revealItem) {
+      treeView.reveal(revealItem, {
+        select: false,
+        focus: false,
+        expand: 2,
+      });
+    }
   }
 
   /**
@@ -417,9 +472,16 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
     this.registerEvents();
 
     // Create a tree view with the specified view name and options
+    const treeView = window.createTreeView(Views.Logs, {
+      treeDataProvider: this,
+    });
+
     this.context.subscriptions.push(
-      window.createTreeView(Views.Logs, {
-        treeDataProvider: this,
+      treeView,
+      treeView.onDidChangeVisibility((e) => {
+        if (e.visible) {
+          this.revealFailingState(treeView);
+        }
       }),
       commands.registerCommand(
         Commands.Logs.Visit,
@@ -437,8 +499,9 @@ export class LogsTreeStageItem extends TreeItem {
   stages: LogStage[] = [];
   events: EventStreamMessage[] = [];
   stage: LogStage;
+  parent?: LogsTreeStageItem;
 
-  constructor(stage: LogStage) {
+  constructor(stage: LogStage, parent?: LogsTreeStageItem) {
     let collapsibleState = stage.collapseState;
     if (collapsibleState === undefined) {
       collapsibleState =
@@ -450,6 +513,7 @@ export class LogsTreeStageItem extends TreeItem {
     super(stage.inactiveLabel, collapsibleState);
     this.id = stage.inactiveLabel;
     this.stage = stage;
+    this.parent = parent;
 
     this.stages = stage.stages;
     this.events = stage.events;
@@ -521,10 +585,15 @@ export class LogsTreeStageItem extends TreeItem {
  * Represents a tree item for displaying logs in the tree view.
  */
 export class LogsTreeLogItem extends TreeItem {
+  parent: LogsTreeStageItem;
+
   constructor(
-    msg: EventStreamMessage,
+    {
+      msg,
+      id,
+      parent,
+    }: { msg: EventStreamMessage; id: string; parent: LogsTreeStageItem },
     state: TreeItemCollapsibleState = TreeItemCollapsibleState.None,
-    id: string,
   ) {
     if (msg.data.message) {
       msg.data.message = msg.data.message.replaceAll("\n", " ");
@@ -532,6 +601,7 @@ export class LogsTreeLogItem extends TreeItem {
     super(displayEventStreamMessage(msg), state);
     this.id = id;
     this.tooltip = JSON.stringify(msg);
+    this.parent = parent;
     if (!isPublishSuccess(msg) && !isPublishFailure(msg)) {
       this.iconPath = new ThemeIcon("debug-stackframe-dot");
     }
