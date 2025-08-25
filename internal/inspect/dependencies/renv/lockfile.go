@@ -4,6 +4,7 @@ package renv
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/posit-dev/publisher/internal/util"
 )
@@ -79,6 +80,31 @@ func ReadLockfile(path util.AbsolutePath) (*Lockfile, error) {
 		return nil, err
 	}
 	return &lockfile, nil
+}
+
+// ValidateModernLockfile enforces requirements for renv >= 1.1.0 lockfiles.
+// Modern lockfiles have a top-level Repositories section, while legacy
+// lockfiles (< 1.1.0) lack this section.
+func ValidateModernLockfile(lockfile *Lockfile) error {
+	if len(lockfile.R.Repositories) == 0 {
+		return fmt.Errorf("renv.lock is not compatible, missing Repositories section. Regenerate the lockfile with renv >= 1.1.0")
+	}
+	return nil
+}
+
+// isURL checks if a string looks like a URL (contains "://")
+func isURL(s string) bool {
+	return len(s) > 0 && (s[0:4] == "http" || s[0:3] == "ftp") && contains(s, "://")
+}
+
+// contains checks if a string contains a substring (simple implementation)
+func contains(s, substr string) bool {
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return true
+		}
+	}
+	return false
 }
 
 // Example package installed from CRAN

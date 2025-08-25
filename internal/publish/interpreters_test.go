@@ -135,7 +135,7 @@ func (s *InterpretersSuite) TestConfigureInterpretersR() {
       "Package": "ggplot2",
       "Version": "3.4.0",
       "Source": "Repository",
-      "Repository": "CRAN",
+	"Repository": "https://cran.rstudio.com",
       "Hash": "0a3c5486c0becf09adf603a63a234635",
       "Requirements": []
     },
@@ -143,7 +143,7 @@ func (s *InterpretersSuite) TestConfigureInterpretersR() {
       "Package": "dplyr",
       "Version": "1.1.0",
       "Source": "Repository",
-      "Repository": "CRAN",
+	"Repository": "https://cran.rstudio.com",
       "Hash": "d3c34618017e7ae252d46d79a1b9892c",
       "Requirements": []
     }
@@ -178,14 +178,14 @@ func (s *InterpretersSuite) TestConfigureInterpretersR() {
 	ggplot := publisher.Target.Renv.Packages[renv.PackageName("ggplot2")]
 	s.Equal("3.4.0", ggplot.Version)
 	s.Equal("Repository", ggplot.Source)
-	s.Equal(renv.RepoURL("CRAN"), ggplot.Repository)
+	s.Equal(renv.RepoURL("https://cran.rstudio.com"), ggplot.Repository)
 
 	// Check for dplyr
 	s.Contains(publisher.Target.Renv.Packages, renv.PackageName("dplyr"))
 	dplyr := publisher.Target.Renv.Packages[renv.PackageName("dplyr")]
 	s.Equal("1.1.0", dplyr.Version)
 	s.Equal("Repository", dplyr.Source)
-	s.Equal(renv.RepoURL("CRAN"), dplyr.Repository)
+	s.Equal(renv.RepoURL("https://cran.rstudio.com"), dplyr.Repository)
 
 	s.Empty(publisher.Target.Requirements) // No Python requirements should be set
 }
@@ -212,11 +212,11 @@ numpy==1.22.0
     ]
   },
   "Packages": {
-    "shiny": {
+		"shiny": {
       "Package": "shiny",
       "Version": "1.7.4",
       "Source": "Repository",
-      "Repository": "CRAN",
+			"Repository": "https://cran.rstudio.com",
       "Hash": "c2eae3d8c670fa9dfa35a12066f4a1d5",
       "Requirements": []
     }
@@ -260,7 +260,7 @@ numpy==1.22.0
 	shiny := publisher.Target.Renv.Packages[renv.PackageName("shiny")]
 	s.Equal("1.7.4", shiny.Version)
 	s.Equal("Repository", shiny.Source)
-	s.Equal(renv.RepoURL("CRAN"), shiny.Repository)
+	s.Equal(renv.RepoURL("https://cran.rstudio.com"), shiny.Repository)
 }
 
 func (s *InterpretersSuite) TestConfigureInterpretersCustomFilenames() {
@@ -286,7 +286,7 @@ func (s *InterpretersSuite) TestConfigureInterpretersCustomFilenames() {
 				"Package":    "tidyverse",
 				"Version":    "1.3.2",
 				"Source":     "Repository",
-				"Repository": "CRAN",
+				"Repository": "https://cran.rstudio.com",
 				"Hash":       "a7b2a7fe2c4ab12134839835f87ce2c8",
 			},
 		},

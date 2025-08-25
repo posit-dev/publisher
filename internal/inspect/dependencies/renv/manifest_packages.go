@@ -89,6 +89,23 @@ func findRepoNameByURL(repoUrl RepoURL, repos []Repository) string {
 	return ""
 }
 
+// normalizeRepositoryToName converts repository URLs to repository names for consistency.
+// Both legacy and lockfile-only mappers should use repository names, not URLs.
+func normalizeRepositoryToName(repoStr string, repos []Repository) string {
+	// If it's already a name (not a URL), try to find it in the repos list
+	if !isURL(repoStr) {
+		for _, repo := range repos {
+			if repo.Name == repoStr {
+				return repoStr // Valid repository name
+			}
+		}
+		return repoStr // Return as-is if not found (could be special case like "CRAN")
+	}
+
+	// It's a URL, look up the corresponding name
+	return findRepoNameByURL(RepoURL(repoStr), repos)
+}
+
 func findRepoUrl(pkgName PackageName, availablePackages []AvailablePackage) string {
 	for _, avail := range availablePackages {
 		if avail.Name == pkgName {
@@ -102,7 +119,7 @@ func toManifestPackage(pkg *Package, repos []Repository, availablePackages, bioc
 	// See rsconnect:::standardizeRenvPackage
 	out := &bundles.Package{
 		Source:     pkg.Source,
-		Repository: string(pkg.Repository),
+		Repository: normalizeRepositoryToName(string(pkg.Repository), repos),
 	}
 	source := pkg.Source
 
@@ -119,19 +136,43 @@ func toManifestPackage(pkg *Package, repos []Repository, availablePackages, bioc
 				out.Repository = ""
 			} else {
 				out.Source = "CRAN"
-				out.Repository = findRepoUrl(pkg.Package, availablePackages)
+				// Normalize URL to repository name for consistency
+				repoUrl := findRepoUrl(pkg.Package, availablePackages)
+				out.Repository = normalizeRepositoryToName(repoUrl, repos)
+				if out.Repository == "" {
+					out.Repository = "CRAN" // fallback to name
+				}
 			}
 		} else {
 			// Repository comes from DESCRIPTION and is set by repo, so can be
 			// anything. So we must look up from the package name.
-			out.Repository = findRepoUrl(pkg.Package, availablePackages)
-			out.Source = findRepoNameByURL(RepoURL(out.Repository), repos)
+			repoUrl := findRepoUrl(pkg.Package, availablePackages)
+			out.Repository = normalizeRepositoryToName(repoUrl, repos)
+			out.Source = findRepoNameByURL(RepoURL(repoUrl), repos)
+
+			// If lookup from installed packages failed, fall back to lockfile repository info
+			if out.Source == "" && out.Repository == "" && pkg.Repository != "" {
+				out.Repository = normalizeRepositoryToName(string(pkg.Repository), repos)
+				out.Source = findRepoNameByURL(pkg.Repository, repos)
+			}
+
+			// If this resolves to CRAN and the package is a dev version (newer than available),
+			// clear Source/Repository to trigger SourceMissing error, matching prior behavior.
+			if strings.EqualFold(out.Source, "CRAN") && isDevVersion(pkg, availablePackages) {
+				out.Source = ""
+				out.Repository = ""
+			}
 		}
 	case "Bioconductor":
-		out.Repository = findRepoUrl(pkg.Package, availablePackages)
-		if out.Repository == "" {
+		repoUrl := findRepoUrl(pkg.Package, availablePackages)
+		if repoUrl == "" {
 			// Try packages defined from default bioC repos
-			out.Repository = findRepoUrl(pkg.Package, biocPackages)
+			repoUrl = findRepoUrl(pkg.Package, biocPackages)
+		}
+		out.Repository = normalizeRepositoryToName(repoUrl, repos)
+		// If still empty, use fallback name to match lockfile mapper behavior
+		if out.Repository == "" {
+			out.Repository = "BioCsoft"
 		}
 	case "Bitbucket", "GitHub", "GitLab":
 		out.Source = strings.ToLower(pkg.Source)

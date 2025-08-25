@@ -5,6 +5,8 @@ package renv
 import (
 	"fmt"
 	"reflect"
+	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/posit-dev/publisher/internal/bundles"
@@ -32,6 +34,13 @@ func NewLockfilePackageMapper(base util.AbsolutePath, log logging.Logger) *Lockf
 // without requiring the R packages to be installed in a library
 func (m *LockfilePackageMapper) GetManifestPackagesFromLockfile(
 	lockfilePath util.AbsolutePath) (bundles.PackageMap, error) {
+	return m.GetManifestPackagesFromLockfileWithAvailablePackages(lockfilePath, nil)
+}
+
+// GetManifestPackagesFromLockfileWithAvailablePackages reads the renv.lock file and converts it to manifest packages.
+// If availablePackages is provided, it will perform dev version detection similar to the legacy mapper.
+func (m *LockfilePackageMapper) GetManifestPackagesFromLockfileWithAvailablePackages(
+	lockfilePath util.AbsolutePath, availablePackages []AvailablePackage) (bundles.PackageMap, error) {
 
 	lockfile, err := ReadLockfile(lockfilePath)
 	if err != nil {
@@ -122,6 +131,13 @@ func (m *LockfilePackageMapper) GetManifestPackagesFromLockfile(
 			}
 			manifestPkg.Source = resolvedSource
 			manifestPkg.Repository = resolvedRepo
+		}
+
+		// Check for dev versions to match legacy mapper behavior
+		if manifestPkg.Source == "CRAN" && isDevVersionFromLockfile(pkg, availablePackages) {
+			// Clear Source/Repository to trigger SourceMissing error, matching legacy behavior
+			manifestPkg.Source = ""
+			manifestPkg.Repository = ""
 		}
 
 		// Create description record with the package name, version and other available metadata
@@ -274,10 +290,9 @@ func setIf(dst any, key string, val string) {
 	}
 }
 
-// resolveRepoAndSource resolves a repository URL and canonical source name using
-// precomputed lockfile repository maps. It also translates the CRAN placeholder to
-// the concrete CRAN URL and fills Bioconductor defaults from Bioconductor.Version
-// when needed. Error messages match prior behavior.
+// resolveRepoAndSource resolves repository name and canonical source name using
+// the repositories map. This is used for consistency and to allow to switch
+// install source more easily by just replcacing the "Repositories" section.
 func resolveRepoAndSource(
 	repoNameByURL map[string]string,
 	cranRepoURL string,
@@ -288,6 +303,8 @@ func resolveRepoAndSource(
 ) (string, string, error) {
 	// Normalize and translate placeholders
 	repoURL := strings.TrimRight(repoStr, "/")
+	repoName := repoStr
+
 	if repoStr == "CRAN" {
 		if cranRepoURL == "" {
 			return "", "", fmt.Errorf("CRAN package %s but no CRAN repository listed in renv.lock", pkgName)
@@ -301,23 +318,102 @@ func resolveRepoAndSource(
 			return "", "", fmt.Errorf("Bioconductor package %s has no repository and no Bioconductor repositories are listed in renv.lock", pkgName)
 		}
 		repoURL = defaultBiocURL
+		// Look up the name for the default Bioc URL
+		if name, found := repoNameByURL[defaultBiocURL]; found {
+			repoName = name
+		} else {
+			repoName = "BioCsoft" // fallback name
+		}
+	} else if isURL(repoStr) {
+		// If we have a URL, look up the corresponding repository name
+		repoURL = strings.TrimRight(repoStr, "/")
+		if name, found := repoNameByURL[repoURL]; found {
+			repoName = name
+		} else {
+			return "", "", fmt.Errorf("Package %s references repository URL %s which is not listed in renv.lock R.repositories", pkgName, repoURL)
+		}
+	} else if repoStr != "" {
+		// We have a name reference, resolve it to URL for validation
+		for url, name := range repoNameByURL {
+			if name == repoStr {
+				repoURL = url
+				repoName = name
+				break
+			}
+		}
+		if repoURL == repoStr && !isURL(repoStr) {
+			return "", "", fmt.Errorf("Package %s references repository %s which cannot be resolved to a URL", pkgName, repoStr)
+		}
 	}
 
-	// Lookup canonical name from lockfile repositories
-	name, ok := repoNameByURL[repoURL]
-	if !ok || repoURL == "" {
-		if repoURL == "" {
-			return "", "", fmt.Errorf("Package %s has an unresolved repository; cannot generate manifest entry", pkgName)
-		}
-		return "", "", fmt.Errorf("Package %s references repository %s which is not listed in renv.lock R.repositories", pkgName, repoURL)
+	// Validate we can resolve to a URL
+	if repoURL == "" {
+		return "", "", fmt.Errorf("Package %s has an unresolved repository; cannot generate manifest entry", pkgName)
 	}
 
 	// Standardize Bioconductor source label in manifest
-	resolvedSource := name
+	resolvedSource := repoName
 	lowerURL := strings.ToLower(repoURL)
-	if src == "Bioconductor" || strings.HasPrefix(name, "BioC") || strings.Contains(lowerURL, "bioconductor.org/packages/") {
+	if src == "Bioconductor" || strings.HasPrefix(repoName, "BioC") || strings.Contains(lowerURL, "bioconductor.org/packages/") {
 		resolvedSource = "Bioconductor"
 	}
 
-	return resolvedSource, repoURL, nil
+	// Always return the repository name (not URL) for consistent output
+	return resolvedSource, repoName, nil
+}
+
+// isDevVersionFromLockfile checks if a package is a dev version using lockfile information.
+// If availablePackages is provided, it uses the same logic as the legacy mapper.
+// Otherwise, it makes a best-effort determination based on lockfile data.
+func isDevVersionFromLockfile(pkg Package, availablePackages []AvailablePackage) bool {
+	// If we have available packages, use the same logic as legacy mapper
+	if availablePackages != nil {
+		repoVersion := findAvailableVersionFromLockfile(pkg.Package, availablePackages)
+		if repoVersion == "" {
+			return false
+		}
+		cmp := slices.Compare(packageVersionFromLockfile(pkg.Version), packageVersionFromLockfile(repoVersion))
+		return cmp > 0
+	}
+
+	// Without available packages, detect obvious dev packages
+	// Packages from GitHub, GitLab, Bitbucket are always dev
+	if pkg.Source == "GitHub" || pkg.Source == "GitLab" || pkg.Source == "Bitbucket" {
+		return true
+	}
+	
+	// Packages with RemoteType are dev packages
+	if pkg.RemoteType != "" {
+		return true
+	}
+	
+	// Local packages are dev packages
+	if pkg.Source == "Local" || pkg.Source == "unknown" {
+		return true
+	}
+
+	return false
+}
+
+// findAvailableVersionFromLockfile finds the version of a package in available packages
+func findAvailableVersionFromLockfile(pkgName PackageName, availablePackages []AvailablePackage) string {
+	for _, avail := range availablePackages {
+		if avail.Name == pkgName {
+			return avail.Version
+		}
+	}
+	return ""
+}
+
+// packageVersionFromLockfile parses a version string into comparable integers (copied from legacy mapper)
+func packageVersionFromLockfile(vs string) []int {
+	parts := strings.FieldsFunc(vs, func(c rune) bool {
+		return c < '0' || c > '9'
+	})
+	values := []int{}
+	for _, part := range parts {
+		v, _ := strconv.Atoi(part)
+		values = append(values, v)
+	}
+	return values
 }

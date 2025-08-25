@@ -100,7 +100,7 @@ const renvLockContent = `{
 			"Package": "mypkg",
 			"Version": "1.2.3",
 			"Source": "Repository",
-			"Repository": "CRAN",
+			"Repository": "https://cran.rstudio.com",
 			"Requirements": [
 			"R"
 			],

@@ -307,9 +307,18 @@ func (s *LockfilePackageMapperSuite) TestCRAN_LockfileCompatibility() {
 	legacyPkgs, err := legacyMapper.GetManifestPackages(base, lockfilePath, s.log)
 	s.NoError(err)
 
-	// Lockfile-only path
+	// Get the same available packages that the legacy mapper uses for dev version detection
+	lockfile, err := ReadLockfile(lockfilePath)
+	s.NoError(err)
+	
+	repos := lockfile.R.Repositories
+	defaultMapper := legacyMapper.(*defaultPackageMapper)
+	availablePackages, err := defaultMapper.lister.ListAvailablePackages(repos, s.log)
+	s.NoError(err)
+
+	// Lockfile-only path with available packages for dev version detection
 	lockMapper := NewLockfilePackageMapper(base, s.log)
-	lockPkgs, err := lockMapper.GetManifestPackagesFromLockfile(lockfilePath)
+	lockPkgs, err := lockMapper.GetManifestPackagesFromLockfileWithAvailablePackages(lockfilePath, availablePackages)
 	s.NoError(err)
 
 	// Ensure core compatibility for the expected package(s)
