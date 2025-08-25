@@ -14,15 +14,15 @@ import (
 )
 
 // LockfilePackageMapper enables deployment without requiring R packages to be
-// installed locally. This is essential for CI/CD environments and situations
-// where the build environment differs from the development environment.
+// installed locally.
+// This is useful because it does not require a specific R environment to be set up
+// and aligned with the renv.lock file.
 // It provides an alternative to defaultPackageMapper which requires installed R libraries.
 type LockfilePackageMapper struct {
 	base util.AbsolutePath
 	log  logging.Logger
 }
 
-// NewLockfilePackageMapper creates a new LockfilePackageMapper
 func NewLockfilePackageMapper(base util.AbsolutePath, log logging.Logger) *LockfilePackageMapper {
 	return &LockfilePackageMapper{
 		base: base,
@@ -49,15 +49,11 @@ func (m *LockfilePackageMapper) GetManifestPackagesFromLockfile(
 	// Both approaches handle packages that may reference repositories by name ("CRAN") or URL.
 	repoNameByURL := map[string]string{}
 	cranRepoURL := ""
-	biocRepoURLs := []string{}
 	for _, r := range lockfile.R.Repositories {
 		url := strings.TrimRight(string(r.URL), "/")
 		repoNameByURL[url] = r.Name
 		if r.Name == "CRAN" && cranRepoURL == "" {
 			cranRepoURL = url
-		}
-		if isBiocRepository(r) {
-			biocRepoURLs = append(biocRepoURLs, url)
 		}
 	}
 
@@ -79,23 +75,11 @@ func (m *LockfilePackageMapper) GetManifestPackagesFromLockfile(
 			if _, seen := repoNameByURL[u]; !seen {
 				repoNameByURL[u] = name
 			}
-			// Maintain a list of BioC URLs for default selection when needed
-			already := false
-			for _, existing := range biocRepoURLs {
-				if existing == u {
-					already = true
-					break
-				}
-			}
-			if !already {
-				biocRepoURLs = append(biocRepoURLs, u)
-			}
 		}
 	}
 
 	// Default Bioconductor repository selection is needed because packages may reference
-	// "Bioconductor" as a source without specifying which specific BioC repository,
-	// requiring us to provide a sensible default for package resolution.
+	// "Bioconductor" as a source without specifying which specific BioC repository
 	defaultBiocURL := ""
 	if lockfile.Bioconductor.Version != "" {
 		defaultBiocURL = strings.TrimRight("https://bioconductor.org/packages/"+lockfile.Bioconductor.Version+"/bioc", "/")
@@ -230,15 +214,6 @@ func copyAllFieldsToDesc(pkg Package, desc dcf.Record) {
 	// Repository info from lockfile is preserved for debugging and compatibility
 	// with tools that expect to see the original repository reference.
 	setIf(desc, "Repository", string(pkg.Repository))
-}
-
-// helper: identify bioconductor repository entries
-func isBiocRepository(r Repository) bool {
-	if r.Name != "" && strings.HasPrefix(r.Name, "BioC") {
-		return true
-	}
-	u := strings.ToLower(string(r.URL))
-	return strings.Contains(u, "bioconductor.org/packages/")
 }
 
 // firstNonEmpty returns the first non-empty string among a and b.

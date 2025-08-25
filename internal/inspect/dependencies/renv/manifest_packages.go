@@ -192,8 +192,7 @@ func toManifestPackage(pkg *Package, repos []Repository, availablePackages, bioc
 			out.Repository = "BioCsoft"
 		}
 	case "Bitbucket", "GitHub", "GitLab":
-		// Git-based sources use lowercase names for consistency with standard
-		// remote type conventions in R package management tools.
+		// Git-based sources use lowercase names for consistency.
 		out.Source = strings.ToLower(pkg.Source)
 	case "Local", "unknown":
 		// Local and unknown sources cannot be deployed because they lack
