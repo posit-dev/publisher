@@ -66,6 +66,8 @@ const onMessageFromHost = (msg: HostToWebviewMessage): void => {
       return onRefreshConfigDataMsg(msg);
     case HostToWebviewMessageType.REFRESH_CREDENTIAL_DATA:
       return onRefreshCredentialDataMsg(msg);
+    case HostToWebviewMessageType.PUBLISH_CANCEL:
+      return onPublishCancelMsg();
     case HostToWebviewMessageType.PUBLISH_START:
       return onPublishStartMsg();
     case HostToWebviewMessageType.PUBLISH_FINISH_SUCCESS:
@@ -163,6 +165,12 @@ const onRefreshConfigDataMsg = (msg: RefreshConfigDataMsg) => {
 const onRefreshCredentialDataMsg = (msg: RefreshCredentialDataMsg) => {
   const home = useHomeStore();
   home.credentials = msg.content.credentials;
+};
+const onPublishCancelMsg = () => {
+  const home = useHomeStore();
+  home.publishInProgress = false;
+  // TODO: add
+  // home.publishInitiated = false;
 };
 const onPublishStartMsg = () => {
   const home = useHomeStore();
