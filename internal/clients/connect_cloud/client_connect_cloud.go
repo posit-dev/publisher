@@ -137,6 +137,28 @@ func (c *ConnectCloudClient) GetAccounts() (*AccountListResponse, error) {
 	return &into, nil
 }
 
+func (c *ConnectCloudClient) getAccount(accountID string) (*Account, error) {
+	into := Account{}
+	url := fmt.Sprintf("/v1/accounts/%s", accountID)
+	err := c.client.Get(url, &into, c.log)
+	if err != nil {
+		return nil, fmt.Errorf("error in get account response: %w", err)
+	}
+	return &into, nil
+}
+
+func (c *ConnectCloudClient) GetAccount(accountID string) (*Account, error) {
+	r, err := c.getAccount(accountID)
+	shouldRetry, handlingErr := c.handleAuthErr(err)
+	if handlingErr != nil {
+		return nil, handlingErr
+	}
+	if shouldRetry {
+		r, err = c.getAccount(accountID)
+	}
+	return r, err
+}
+
 func (c *ConnectCloudClient) getContent(contentID types.ContentID) (*clienttypes.ContentResponse, error) {
 	into := clienttypes.ContentResponse{}
 	err := c.client.Get(fmt.Sprintf("/v1/contents/%s", contentID), &into, c.log)

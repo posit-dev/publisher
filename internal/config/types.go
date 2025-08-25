@@ -336,6 +336,6 @@ const (
 )
 
 type ConnectCloudAccessControl struct {
-	PublicAccess       bool                   `toml:"public_access,omitempty"  json:"publicAccess,omitempty"`
+	PublicAccess       *bool                  `toml:"public_access,omitempty"  json:"publicAccess,omitempty"`
 	OrganizationAccess OrganizationAccessType `toml:"organization_access,omitempty" json:"organizationAccess,omitempty"`
 }
