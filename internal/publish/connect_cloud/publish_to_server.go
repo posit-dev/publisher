@@ -88,7 +88,8 @@ func (c *ServerPublisher) PublishToServer(contentID internal_types.ContentID, bu
 	ctx, cancel := context.WithCancel(context.Background())
 	defer func() {
 		go func() {
-			// Allow up to 5 seconds for logs to flush before cancelling
+			// Allow up to 5 seconds for logs to flush before cancelling.
+			// Needs goroutine to avoid blocking the completion of the deployment.
 			time.Sleep(5 * time.Second)
 			cancel()
 		}()
