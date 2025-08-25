@@ -49,6 +49,13 @@ export enum SelectionIsPreContentRecord {
   false = "false",
 }
 
+const SELECTION_IS_CONNECT_CONTENT_RECORD_CONTEXT =
+  "posit.publish.selection.isConnectContentRecord";
+export enum SelectionIsConnectContentRecord {
+  true = "true",
+  false = "false",
+}
+
 // Once the extension is activate, hang on to the service so that we can stop it on deactivation.
 let service: Service;
 
@@ -76,6 +83,16 @@ export function setSelectionIsPreContentRecord(
   commands.executeCommand(
     "setContext",
     SELECTION_IS_PRE_CONTENT_RECORD_CONTEXT,
+    context,
+  );
+}
+
+export function setSelectionIsConnectContentRecord(
+  context: SelectionIsConnectContentRecord,
+) {
+  commands.executeCommand(
+    "setContext",
+    SELECTION_IS_CONNECT_CONTENT_RECORD_CONTEXT,
     context,
   );
 }
@@ -122,7 +139,7 @@ async function initializeExtension(context: ExtensionContext) {
   // Then the registration of the data providers with the VSCode framework
   projectTreeDataProvider.register();
   logsTreeDataProvider.register();
-  await homeViewProvider.register(watchers);
+  homeViewProvider.register(watchers);
 
   context.subscriptions.push(
     commands.registerCommand(Commands.InitProject, async (viewId: string) => {
