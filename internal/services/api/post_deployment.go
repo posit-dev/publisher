@@ -121,7 +121,7 @@ func PostDeploymentHandlerFunc(
 		w.WriteHeader(http.StatusAccepted)
 		json.NewEncoder(w).Encode(response)
 
-		log := log.WithArgs("local_id", localID)
+		log := log.WithArgs("localId", localID)
 		newState.LocalID = localID
 
 		publisher, err := publisherFactory(newState, rInterpreter, pythonInterpreter, emitter, log)

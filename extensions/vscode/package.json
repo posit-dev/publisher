@@ -283,6 +283,10 @@
       ],
       "commandPalette": [
         {
+          "command": "posit.publisher.homeView.associateDeployment",
+          "when": "posit.publish.selection.isConnectContentRecord == 'true'"
+        },
+        {
           "command": "posit.publisher.init-project",
           "when": "workbenchState == folder && posit.publish.state == 'initialized' && isWorkspaceTrusted"
         },
@@ -366,7 +370,7 @@
         },
         {
           "command": "posit.publisher.homeView.associateDeployment",
-          "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'even-easier-deploy-more-menu-matching-configs' && posit.publish.selection.hasCredentialMatch == 'true' && posit.publish.selection.isPreContentRecord == 'false'"
+          "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'even-easier-deploy-more-menu-matching-configs' && posit.publish.selection.hasCredentialMatch == 'true' && posit.publish.selection.isPreContentRecord == 'false' && posit.publish.selection.isConnectContentRecord == 'true'"
         },
         {
           "command": "posit.publisher.homeView.createConfigForDeployment",
