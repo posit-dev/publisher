@@ -511,7 +511,6 @@ export async function newConnectCredential(
     if (!state.data.name && typeof state.data.url === "string") {
       try {
         const url = new URL(state.data.url);
-        // Default the name to the hostname of the given URL
         state.data.name = url.hostname;
       } catch {
         // If URL parsing fails, leave name unchanged
