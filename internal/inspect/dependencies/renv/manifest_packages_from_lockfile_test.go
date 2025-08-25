@@ -307,7 +307,6 @@ func (s *LockfilePackageMapperSuite) TestCRAN_LockfileCompatibility() {
 	legacyPkgs, err := legacyMapper.GetManifestPackages(base, lockfilePath, s.log)
 	s.NoError(err)
 
-
 	// Lockfile-only path - should produce equivalent output to legacy mapper
 	lockMapper := NewLockfilePackageMapper(base, s.log)
 	lockPkgs, err := lockMapper.GetManifestPackagesFromLockfile(lockfilePath)
