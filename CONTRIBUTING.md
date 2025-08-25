@@ -166,10 +166,18 @@ Run the following commands from the `test/e2e` subdirectory:
 source .venv/bin/activate
 ```
 
-To access the test user credentials for PCC, you must authenticate with the 1Password CLI before running E2E tests:
+To access the test user credentials for PCC, you must authenticate with the 1Password CLI before running E2E tests.
+
+If you have the 1Password CLI (`op`) installed globally (in your PATH), run:
 
 ```bash
-eval $(bin/op signin)
+eval $(op signin)
+```
+
+If you do **not** have `op` in your PATH, use the locally installed CLI:
+
+```bash
+eval $(../bin/op signin)
 ```
 
 This command will prompt you to authenticate and set the required session environment variable for your shell. You need to do this once per terminal session before running the tests.
