@@ -224,11 +224,22 @@ install-workbench-extension service:
         exit 1
     fi
     
+    # Check if dist directory exists and is not empty
+    if [ ! -d "../../dist" ] || [ -z "$(ls -A ../../dist 2>/dev/null)" ]; then
+        echo "ERROR: Publisher VSIX directory (../../dist) does not exist or is empty."
+        echo ""
+        echo "Please build the extension first with:"
+        echo "USE_PLATFORM=\"linux/amd64\" just ../../build && USE_PLATFORM=\"linux/amd64\" just ../../package"
+        exit 1
+    fi
+    
     # Find the latest built VSIX for Publisher (linux-amd64 version)
     VSIX_FILENAME=$(ls -Art ../../dist | grep linux-amd64 | tail -n 1)
     if [ -z "$VSIX_FILENAME" ]; then
-        echo "Error: No Publisher VSIX found in ../../dist directory."
-        echo "Please build the extension first with: USE_PLATFORM=\"linux/amd64\" just ../../build && USE_PLATFORM=\"linux/amd64\" just ../../package"
+        echo "ERROR: No linux-amd64 Publisher VSIX found in ../../dist directory."
+        echo ""
+        echo "Please build the extension first with:"
+        echo "USE_PLATFORM=\"linux/amd64\" just ../../build && USE_PLATFORM=\"linux/amd64\" just ../../package"
         exit 1
     fi
     
