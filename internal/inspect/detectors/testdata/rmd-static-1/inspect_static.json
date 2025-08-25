@@ -103,6 +103,7 @@
         "section-title-citation": "Citation",
         "appendix-attribution-cite-as": "For attribution, please cite this work as:",
         "appendix-attribution-bibtex": "BibTeX citation:",
+        "appendix-view-license": "View License",
         "title-block-author-single": "Author",
         "title-block-author-plural": "Authors",
         "title-block-affiliation-single": "Affiliation",
@@ -187,12 +188,14 @@
         "listing-page-minutes-compact": "{0} min",
         "listing-page-category-all": "All",
         "listing-page-no-matches": "No matching items",
-        "listing-page-words": "{0} words"
+        "listing-page-words": "{0} words",
+        "listing-page-filter": "Filter",
+        "draft": "Draft"
       },
       "metadata": {
         "lang": "en",
         "fig-responsive": true,
-        "quarto-version": "1.4.553",
+        "quarto-version": "1.7.33",
         "title": "static"
       },
       "extensions": {
@@ -202,5 +205,40 @@
       }
     }
   },
-  "resources": []
+  "resources": [],
+  "fileInformation": {
+    "static.Rmd": {
+      "includeMap": [],
+      "codeCells": [
+        {
+          "start": 5,
+          "end": 7,
+          "file": "static.Rmd",
+          "source": "knitr::opts_chunk$set(echo = TRUE)\n",
+          "language": "r",
+          "metadata": {}
+        },
+        {
+          "start": 15,
+          "end": 17,
+          "file": "static.Rmd",
+          "source": "summary(cars)\n",
+          "language": "r",
+          "metadata": {}
+        },
+        {
+          "start": 23,
+          "end": 25,
+          "file": "static.Rmd",
+          "source": "plot(pressure)\n",
+          "language": "r",
+          "metadata": {}
+        }
+      ],
+      "metadata": {
+        "title": "static",
+        "output": "html_document"
+      }
+    }
+  }
 }
