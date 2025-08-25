@@ -5,6 +5,7 @@ package renv
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/posit-dev/publisher/internal/util"
 )
@@ -98,18 +99,7 @@ func ValidateModernLockfile(lockfile *Lockfile) error {
 // and LockfilePackageMapper (lockfile-only approach) must produce identical output formats regardless
 // of whether packages reference repositories by name ("CRAN") or URL ("https://cloud.r-project.org").
 func isURL(s string) bool {
-	return len(s) > 0 && (s[0:4] == "http" || s[0:3] == "ftp") && contains(s, "://")
-}
-
-// contains provides substring search without importing strings package.
-// We avoid the strings import here to keep lockfile parsing dependencies minimal.
-func contains(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
-	}
-	return false
+	return len(s) > 0 && (s[0:4] == "http" || s[0:3] == "ftp") && strings.Contains(s, "://")
 }
 
 // Example package installed from CRAN
