@@ -229,7 +229,7 @@ install-workbench-extension service:
         echo "ERROR: Publisher VSIX directory (../../dist) does not exist or is empty."
         echo ""
         echo "Please build the extension first with:"
-        echo "USE_PLATFORM=\"linux/amd64\" just ../../build && USE_PLATFORM=\"linux/amd64\" just ../../package"
+        echo "just build-publisher"
         exit 1
     fi
     
@@ -239,7 +239,7 @@ install-workbench-extension service:
         echo "ERROR: No linux-amd64 Publisher VSIX found in ../../dist directory."
         echo ""
         echo "Please build the extension first with:"
-        echo "USE_PLATFORM=\"linux/amd64\" just ../../build && USE_PLATFORM=\"linux/amd64\" just ../../package"
+        echo "just build-publisher"
         exit 1
     fi
     
