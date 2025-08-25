@@ -411,15 +411,33 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
   }
 
   /**
-   * Returns the first LogsTreeStageItem with `LogStageStatus.failed`
-   * Returns undefined if no LogsTreeStageItems have the `LogStageStatus.failed`
+   * Returns either
+   * the first LogsTreeStageItem with `LogStageStatus.failed` or
+   * the last LogsTreeLogItem of that stage if the stage has events
+   *
+   * Returns `undefined` if no LogsTreeStageItems have `LogsStateStatus.failed`
    */
-  private findFirstFailureItem(): LogsTreeStageItem | undefined {
+  private getTreeItemToReveal(): LogsTreeItem | undefined {
     const root = new LogsTreeStageItem(this.publishingStage);
 
     for (const stage of this.publishingStage.stages) {
       if (stage.status === LogStageStatus.failed) {
-        return new LogsTreeStageItem(stage, root);
+        const stageItem = new LogsTreeStageItem(stage, root);
+
+        if (stage.events.length) {
+          const lastEventIndex = stage.events.length - 1;
+          const lastEvent = stage.events[lastEventIndex];
+          return new LogsTreeLogItem(
+            {
+              msg: lastEvent,
+              id: `${stageItem.id}/${lastEventIndex}`,
+              parent: stageItem,
+            },
+            TreeItemCollapsibleState.None,
+          );
+        }
+
+        return stageItem;
       }
     }
 
@@ -427,13 +445,14 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
   }
 
   /**
-   * Reveals the first failing LogsTreeStageItem in the tree view.
+   * Reveals the first failing LogsTreeStageItem in the tree view or the last
+   * event of that stage if it has events.
    */
   public revealFailingState(treeView: TreeView<LogsTreeItem>): void {
-    const failureItem = this.findFirstFailureItem();
+    const revealItem = this.getTreeItemToReveal();
 
-    if (failureItem) {
-      treeView.reveal(failureItem, {
+    if (revealItem) {
+      treeView.reveal(revealItem, {
         select: false,
         focus: false,
         expand: 2,
