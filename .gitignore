@@ -36,6 +36,7 @@ cmd/publisher/__debug_bin*
 # Possible e2e tests deployment assets
 test/e2e/content-workspace/**/.posit
 screenshots/
+test/e2e/.venv/
 
 # license files should not be commited to this repository
 *.lic

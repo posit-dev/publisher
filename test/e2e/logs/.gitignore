@@ -1,0 +1,6 @@
+# Ignore all logs in this directory
+*
+# Except this .gitignore file
+!.gitignore
+# And any subdirectories (to make subdirectories trackable)
+!*/
