@@ -127,16 +127,15 @@ func (m *LockfilePackageMapper) GetManifestPackagesFromLockfile(
 			"Version": pkg.Version,
 		}
 
-		// Package type standardization is required because deployment environments
-		// expect consistent metadata regardless of the source lockfile format.
 		description["Type"] = "Package"
 
-		// Title fallback ensures every package has a descriptive title for deployment
-		// environments that display package information to users.
+		// Title fallback ensures every package has a descriptive title
+		// when we display information to users.
+		// This generates "<Source> R Package" as the title if missing.
 		fallbackTitle := strings.TrimSpace(firstNonEmpty(manifestPkg.Source, pkg.Source) + " R package")
 		description["Title"] = firstNonEmpty(pkg.Title, fallbackTitle)
 
-		// Populate all other fields from the lockfile package into the DESCRIPTION
+		// Populate all standard fields from the lockfile package into the DESCRIPTION
 		copyAllFieldsToDesc(pkg, description)
 
 		// Validate we resolved a usable Source
@@ -148,20 +147,16 @@ func (m *LockfilePackageMapper) GetManifestPackagesFromLockfile(
 			return nil, fmt.Errorf("Package %s has an unresolved repository; cannot generate manifest entry", pkgName)
 		}
 
-		// Set the description in the manifest package
+		// Set the generated DESCRIPTION in the manifest and add the package
 		manifestPkg.Description = description
-
-		// Add to the package map
 		manifestPackages[string(pkgName)] = *manifestPkg
 	}
 
 	return manifestPackages, nil
 }
 
-// copyAllFieldsToDesc transfers metadata from lockfile packages to DESCRIPTION format
-// because deployment environments expect R package metadata in the standard DESCRIPTION
-// format, not the renv.lock JSON format. This ensures compatibility across tools.
-
+// copyAllFieldsToDesc transfers metadata from lockfile packages to what is
+// expected by manifest.json via the DCF.
 func copyAllFieldsToDesc(pkg Package, desc dcf.Record) {
 	// Core metadata
 	setIf(desc, "Hash", pkg.Hash)
@@ -194,6 +189,7 @@ func copyAllFieldsToDesc(pkg Package, desc dcf.Record) {
 	}
 	setIf(desc, "URL", pkg.URL)
 	setIf(desc, "BugReports", pkg.BugReports)
+	setIf(desc, "Repository", string(pkg.Repository))
 
 	// Special mapped config fields
 	desc["Config/testthat/edition"] = firstNonEmpty(desc["Config/testthat/edition"], pkg.ConfigTesthat)
@@ -211,9 +207,6 @@ func copyAllFieldsToDesc(pkg Package, desc dcf.Record) {
 		setIf(desc, "Depends", strings.Join(deps, ", "))
 	}
 
-	// Repository info from lockfile is preserved for debugging and compatibility
-	// with tools that expect to see the original repository reference.
-	setIf(desc, "Repository", string(pkg.Repository))
 }
 
 // firstNonEmpty returns the first non-empty string among a and b.
@@ -269,7 +262,7 @@ func setIf(dst any, key string, val string) {
 }
 
 // resolveRepoAndSource normalizes repository references to ensure defaultPackageMapper (legacy) and
-// LockfilePackageMapper produce equivalent output. This consistency is critical for deployment
+// LockfilePackageMapper produce equivalent output. This consistency is necessary for deployment
 // reliability regardless of which approach was used during publish.
 func resolveRepoAndSource(
 	repoNameByURL map[string]string,
@@ -280,7 +273,7 @@ func resolveRepoAndSource(
 	pkgName string,
 ) (string, string, error) {
 	// Repository placeholder resolution is needed because renv uses shortcuts like
-	// "CRAN" that must be resolved to actual URLs for deployment consistency.
+	// "CRAN" that must be resolved to actual URLs for consistency.
 	repoURL := strings.TrimRight(repoStr, "/")
 	repoName := repoStr
 
@@ -327,7 +320,7 @@ func resolveRepoAndSource(
 		}
 	}
 
-	// Validate we can resolve to a URL
+	// Validate we could resolve to a Repository URL
 	if repoURL == "" {
 		return "", "", fmt.Errorf("Package %s has an unresolved repository; cannot generate manifest entry", pkgName)
 	}
