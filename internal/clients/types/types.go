@@ -1,6 +1,11 @@
 package types
 
-import "github.com/posit-dev/publisher/internal/types"
+import (
+	"fmt"
+
+	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/types"
+)
 
 // Copyright (C) 2025 by Posit Software, PBC.
 
@@ -55,6 +60,26 @@ const (
 	// ContentTypeRMarkdown represents an R Markdown document.
 	ContentTypeRMarkdown ContentType = "rmarkdown"
 )
+
+func CloudContentTypeFromPublisherType(contentType config.ContentType) (ContentType, error) {
+	switch contentType {
+	case config.ContentTypeJupyterNotebook:
+		return ContentTypeJupyter, nil
+	case config.ContentTypePythonBokeh:
+		return ContentTypeBokeh, nil
+	case config.ContentTypePythonDash:
+		return ContentTypeDash, nil
+	case config.ContentTypePythonShiny, config.ContentTypeRShiny:
+		return ContentTypeShiny, nil
+	case config.ContentTypePythonStreamlit:
+		return ContentTypeStreamlit, nil
+	case config.ContentTypeQuartoDeprecated, config.ContentTypeQuarto, config.ContentTypeHTML:
+		return ContentTypeQuarto, nil
+	case config.ContentTypeRMarkdown:
+		return ContentTypeRMarkdown, nil
+	}
+	return "", fmt.Errorf("content type '%s' is not supported by Connect Cloud", contentType)
+}
 
 // Secret represents a secret key-value pair.
 type Secret struct {

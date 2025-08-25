@@ -147,6 +147,36 @@ func (s *PutConfigurationSuite) TestPutConfigurationBadJSON() {
 	s.Equal(http.StatusBadRequest, rec.Result().StatusCode)
 }
 
+func (s *PutConfigurationSuite) TestPutConfigurationConnectCloudUnsupportedContentType() {
+	log := logging.New()
+
+	configName := "myConfig"
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest("PUT", "/api/configurations/"+configName, nil)
+	s.NoError(err)
+	req = mux.SetURLVars(req, map[string]string{"name": configName})
+
+	req.Body = io.NopCloser(strings.NewReader(`{
+		"$schema": "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json",
+		"productType": "connect_cloud",
+		"type": "python-fastapi",
+		"entrypoint": "main.py"
+	}`))
+
+	handler := PutConfigurationHandlerFunc(s.cwd, log)
+	handler(rec, req)
+	s.Equal(http.StatusBadRequest, rec.Result().StatusCode)
+	body, err := io.ReadAll(rec.Result().Body)
+	s.NoError(err)
+	s.Equal("Bad Request: content type 'python-fastapi' is not supported by Connect Cloud\n", string(body))
+
+	// Since the configuration was invalid, it should not have been written.
+	configPath := config.GetConfigPath(s.cwd, configName)
+	exists, err := configPath.Exists()
+	s.NoError(err)
+	s.False(exists)
+}
+
 func (s *PutConfigurationSuite) TestPutConfigurationSubdir() {
 	log := logging.New()
 

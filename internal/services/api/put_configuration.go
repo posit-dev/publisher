@@ -12,6 +12,7 @@ import (
 
 	"github.com/gorilla/mux"
 
+	"github.com/posit-dev/publisher/internal/clients/types"
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/schema"
@@ -106,6 +107,16 @@ func PutConfigurationHandlerFunc(base util.AbsolutePath, log logging.Logger) htt
 			// type to the validator.
 			rawConfig["type"] = string(config.ContentTypeHTML)
 		}
+
+		// Perform code-based validation for nice error messages
+		if cfg.ProductType.IsConnectCloud() {
+			_, err = types.CloudContentTypeFromPublisherType(config.ContentType(rawConfig["type"].(string)))
+			if err != nil {
+				BadRequest(w, req, log, err)
+				return
+			}
+		}
+
 		validator, err := schema.NewValidator[config.Config](schema.ConfigSchemaURL)
 		if err != nil {
 			InternalError(w, req, log, err)
