@@ -74,6 +74,7 @@ func (t ContentType) IsAppContent() bool {
 
 type Config struct {
 	Comments            []string      `toml:"-" json:"comments,omitempty"`
+	Alternatives        []Config      `toml:"-" json:"alternatives,omitempty"`
 	ProductType         ProductType   `toml:"product_type" json:"productType,omitempty"`
 	Schema              string        `toml:"$schema" json:"$schema,omitempty"`
 	Type                ContentType   `toml:"type" json:"type,omitempty"`

@@ -3,7 +3,6 @@ package detectors
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"encoding/json"
 	"fmt"
 	"path/filepath"
 	"slices"
@@ -42,166 +41,17 @@ func NewQuartoDetector(log logging.Logger) *QuartoDetector {
 	}
 }
 
-type quartoMetadata struct {
-	Title   string `json:"title"`
-	Runtime string `json:"runtime"`
-	Server  any    `json:"server"`
-}
-
-type quartoProjectConfig struct {
-	Project struct {
-		Title      string   `json:"title"`
-		PreRender  []string `json:"pre-render"`
-		PostRender []string `json:"post-render"`
-		OutputDir  string   `json:"output-dir"`
-	} `json:"project"`
-	Website struct {
-		Title string `json:"title"`
-	} `json:"website"`
-}
-
-type quartoFilesData struct {
-	Input           []string `json:"input"`
-	ConfigResources []string `json:"configResources"`
-}
-
-type quartoInspectOutput struct {
-	// Only the fields we use are included; the rest
-	// are discarded by the JSON decoder.
-	Quarto struct {
-		Version string `json:"version"`
-	} `json:"quarto"`
-	Project struct {
-		Config quartoProjectConfig `json:"config"`
-		Files  quartoFilesData     `json:"files"`
-	} `json:"project"`
-	Engines []string        `json:"engines"`
-	Files   quartoFilesData `json:"files"`
-	// For single quarto docs without _quarto.yml
-	Formats struct {
-		HTML struct {
-			Metadata quartoMetadata `json:"metadata"`
-			Pandoc   struct {
-				OutputFile string `json:"output-file"`
-			} `json:"pandoc"`
-		} `json:"html"`
-		RevealJS struct {
-			Metadata quartoMetadata `json:"metadata"`
-			Pandoc   struct {
-				OutputFile string `json:"output-file"`
-			} `json:"pandoc"`
-		} `json:"revealjs"`
-	} `json:"formats"`
-
-	// For single quarto docs without _quarto.yml,
-	// there is no project section in the output.
-	FileInformation map[string]struct {
-		Metadata struct {
-			ResourceFiles []string `json:"resource_files"`
-		} `json:"metadata"`
-	} `json:"fileInformation"`
-
-	// For directory inspect (commonly due to _quarto.yml picked up as entrypoint)
-	Config quartoProjectConfig `json:"config"`
-}
-
 func (d *QuartoDetector) quartoInspect(path util.AbsolutePath) (*quartoInspectOutput, error) {
 	args := []string{"inspect", path.String()}
 	out, _, err := d.executor.RunCommand("quarto", args, util.AbsolutePath{}, d.log)
 	if err != nil {
 		return nil, fmt.Errorf("quarto inspect failed: %w", err)
 	}
-	var inspectOutput quartoInspectOutput
-	err = json.Unmarshal(out, &inspectOutput)
+	inspectOutput, err := NewQuartoInspectOutput(out)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't decode quarto inspect output: %w", err)
+		return nil, err
 	}
-	return &inspectOutput, nil
-}
-
-func getInputFiles(inspectOutput *quartoInspectOutput) []string {
-	if inspectOutput.Files.Input != nil {
-		return inspectOutput.Files.Input
-	}
-	if inspectOutput.Project.Files.Input != nil {
-		return inspectOutput.Project.Files.Input
-	}
-	if inspectOutput.FileInformation != nil {
-		filenames := []string{}
-		for name := range inspectOutput.FileInformation {
-			filenames = append(filenames, name)
-		}
-		return filenames
-	}
-	return []string{}
-}
-
-func getConfigResources(inspectOutput *quartoInspectOutput) []string {
-	// When inspection is done on a specific file (e.g: picking index.qmd as entrypoint)
-	if inspectOutput.Project.Files.ConfigResources != nil {
-		return inspectOutput.Project.Files.ConfigResources
-	}
-	// When inspection is done on directory (picking _quarto.yml as entrypoint)
-	if inspectOutput.Files.ConfigResources != nil {
-		return inspectOutput.Files.ConfigResources
-	}
-	return []string{}
-}
-
-func uniqueFileResources(target []string, resourceFiles []string) []string {
-	resourcesFound := []string{}
-	for _, fileResource := range resourceFiles {
-		// Prevent duplicated files
-		if slices.Contains(target, fileResource) {
-			continue
-		}
-
-		// Prevent special YML files here (those are handled later)
-		if slices.Contains(specialYmlFiles, fileResource) {
-			continue
-		}
-
-		resourcesFound = append(resourcesFound, fileResource)
-	}
-	return resourcesFound
-}
-
-func getFileInfoResources(inspectOutput *quartoInspectOutput) []string {
-	if inspectOutput.FileInformation == nil {
-		return []string{}
-	}
-
-	filesResources := []string{}
-	for _, fileInfo := range inspectOutput.FileInformation {
-		if fileInfo.Metadata.ResourceFiles != nil {
-			filesResources = append(
-				filesResources,
-				uniqueFileResources(filesResources, fileInfo.Metadata.ResourceFiles)...)
-		}
-	}
-
-	return filesResources
-}
-
-func getPrePostRenderFiles(inspectOutput *quartoInspectOutput) []string {
-	filenames := []string{}
-	preRender := inspectOutput.Config.Project.PreRender
-	preRenderAlt := inspectOutput.Project.Config.Project.PreRender
-	postRender := inspectOutput.Config.Project.PostRender
-	postRenderAlt := inspectOutput.Project.Config.Project.PostRender
-	if preRender != nil {
-		filenames = append(filenames, preRender...)
-	}
-	if preRenderAlt != nil {
-		filenames = append(filenames, preRenderAlt...)
-	}
-	if postRender != nil {
-		filenames = append(filenames, postRender...)
-	}
-	if postRenderAlt != nil {
-		filenames = append(filenames, postRenderAlt...)
-	}
-	return filenames
+	return inspectOutput, nil
 }
 
 func (d *QuartoDetector) needsPython(inspectOutput *quartoInspectOutput) bool {
@@ -321,6 +171,7 @@ func (d *QuartoDetector) configFromFileInspect(base util.AbsolutePath, entrypoin
 		cfg.Type = config.ContentTypeQuartoShiny
 	} else {
 		cfg.Type = config.ContentTypeQuarto
+		d.includeStaticConfig(base, cfg, inspectOutput)
 	}
 
 	var needR, needPython bool
@@ -365,12 +216,7 @@ func (d *QuartoDetector) configFromFileInspect(base util.AbsolutePath, entrypoin
 		Engines: engines,
 	}
 
-	// Include the entrypoint, its associated files and pre-post render scripts
-	filesToInclude := getInputFiles(inspectOutput)
-	filesToInclude = append(filesToInclude, getConfigResources(inspectOutput)...)
-	filesToInclude = append(filesToInclude, getFileInfoResources(inspectOutput)...)
-	filesToInclude = append(filesToInclude, getPrePostRenderFiles(inspectOutput)...)
-	for _, inputFile := range filesToInclude {
+	for _, inputFile := range inspectOutput.ProjectRequiredFiles() {
 		var relPath string
 		if filepath.IsAbs(inputFile) {
 			relPath, err = filepath.Rel(base.String(), inputFile)
@@ -399,6 +245,54 @@ func (d *QuartoDetector) configFromFileInspect(base util.AbsolutePath, entrypoin
 		}
 	}
 	return cfg, nil
+}
+
+// Include the static assets configuration for the Quarto project, under Config.Alternatives
+// so the user has the option to deploy the static version of the project.
+func (d *QuartoDetector) includeStaticConfig(base util.AbsolutePath, cfg *config.Config, inspectOutput *quartoInspectOutput) {
+	entrypointRel := util.NewRelativePath(cfg.Entrypoint, nil)
+
+	// If the entrypoint is a script, we don't generate a static configuration.
+	if entrypointRel.Ext() == ".R" || entrypointRel.Ext() == ".py" {
+		return
+	}
+
+	staticCfg := config.New()
+	staticCfg.Type = config.ContentTypeHTML
+	staticCfg.Title = cfg.Title
+
+	// With output-dir present, we know that any static asset will be in that directory.
+	// If it is a website project, quarto inspect sets _site as the default output directory.
+	outputDir := inspectOutput.OutputDir()
+	if outputDir != "" {
+		staticCfg.Entrypoint = outputDir
+		staticCfg.Files = []string{fmt.Sprint("/", outputDir)}
+		cfg.Alternatives = append(cfg.Alternatives, *staticCfg)
+		return
+	}
+
+	// Last option to generate a static configuration,
+	// use inspect output files.input to generate a list with the .html ext version of the files.
+	// (If there is a render list, files.input is already filtered down to the applicable files.)
+	htmlInputFiles := inspectOutput.HTMLAbsPathsFromInputList(base)
+	for _, file := range htmlInputFiles {
+		relFile, err := file.Rel(base)
+		if err != nil {
+			d.log.Error("Error generating Quarto static configuration", "error", err)
+			return
+		}
+		// If the entrypoint is not set, use the first file as the entrypoint.
+		if staticCfg.Entrypoint == "" {
+			staticCfg.Entrypoint = relFile.Base()
+		}
+		staticCfg.Files = append(staticCfg.Files, fmt.Sprint("/", relFile.String()))
+	}
+
+	// If it wasn't possible to find any files for a static configuration,
+	// we don't include alternatives.
+	if len(staticCfg.Files) > 0 {
+		cfg.Alternatives = append(cfg.Alternatives, *staticCfg)
+	}
 }
 
 func (d *QuartoDetector) isQuartoYaml(entrypointBase string) bool {
