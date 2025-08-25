@@ -49,12 +49,13 @@ func (s *LockfilePackageMapperSuite) TestCRAN() {
 	err = json.Unmarshal(content, &expected)
 	s.NoError(err)
 
-	// Compare just the Source and Repository, since our lockfile parser can't get all the DESCRIPTION fields
-	for pkgName, pkg := range manifestPackages {
-		s.Equal(expected[pkgName].Source, pkg.Source)
-		s.Equal(expected[pkgName].Repository, pkg.Repository)
-		s.Equal(expected[pkgName].Description["Package"], pkg.Description["Package"])
-		s.Equal(expected[pkgName].Description["Version"], pkg.Description["Version"])
+	// Use comprehensive field comparison - tests all fields present in expected.json
+	for pkgName, expectedPkg := range expected {
+		actualPkg, ok := manifestPackages[pkgName]
+		s.True(ok, "Expected package %s not found in manifest", pkgName)
+		if ok {
+			s.assertPackageMatchesExpected(pkgName, expectedPkg, actualPkg)
+		}
 	}
 }
 
@@ -73,22 +74,23 @@ func (s *LockfilePackageMapperSuite) TestBioconductor() {
 	err = json.Unmarshal(content, &expected)
 	s.NoError(err)
 
-	// Compare just the Source and Repository, since our lockfile parser can't get all the DESCRIPTION fields
-	for pkgName, pkg := range manifestPackages {
-		s.Equal(expected[pkgName].Source, pkg.Source)
-		s.Equal(expected[pkgName].Repository, pkg.Repository)
-		s.Equal(expected[pkgName].Description["Package"], pkg.Description["Package"])
-		s.Equal(expected[pkgName].Description["Version"], pkg.Description["Version"])
+	// Use comprehensive field comparison - tests all fields present in expected.json
+	for pkgName, expectedPkg := range expected {
+		actualPkg, ok := manifestPackages[pkgName]
+		s.True(ok, "Expected package %s not found in manifest", pkgName)
+		if ok {
+			s.assertPackageMatchesExpected(pkgName, expectedPkg, actualPkg)
+		}
 	}
 }
 
-// normalizeWhitespace collapses all whitespace (including newlines) to single spaces and trims ends.
+// normalizeWhitespace uniforms the spacing for comparison equality in tests.
 func normalizeWhitespace(s string) string {
 	wsRegexp := regexp.MustCompile(`\s+`)
 	return strings.TrimSpace(wsRegexp.ReplaceAllString(s, " "))
 }
 
-// normalizeList normalizes comma-separated lists by trimming items and removing empties.
+// normalizeList uniforms comma-separated lists for comparison equality in tests.
 func normalizeList(s string) string {
 	items := strings.Split(s, ",")
 	clean := make([]string, 0, len(items))
