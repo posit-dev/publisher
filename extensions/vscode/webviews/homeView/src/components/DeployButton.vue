@@ -1,7 +1,9 @@
 <template>
   <vscode-button
     :data-automation="`deploy-button`"
-    :disabled="!haveResources || home.publishInProgress"
+    :disabled="
+      !haveResources || home.publishInProgress || home.publishInitiated
+    "
     @click="deploy"
   >
     Deploy Your Project
@@ -37,6 +39,9 @@ const deploy = () => {
     );
     return;
   }
+
+  // stop the user from double clicking the deploy button by mistake
+  home.publishInitiated = true;
 
   // Only send up secrets that have values
   const secrets: Record<string, string> = {};
