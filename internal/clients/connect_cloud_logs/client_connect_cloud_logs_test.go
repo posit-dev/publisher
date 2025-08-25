@@ -70,6 +70,7 @@ func (s *ConnectCloudLogsClientSuite) TestWatchLogsWithSSEServer() {
 		// Signal that all messages have been processed
 		close(processed)
 	})
+	mockLogLogger.On("Info", "Test runtime message").Once()
 
 	// Create our logs client with the SSE client
 	logsClient := &ConnectCloudLogsClient{
@@ -111,7 +112,7 @@ func (s *ConnectCloudLogsClientSuite) TestWatchLogsWithSSEServer() {
 		{
 			Timestamp: time.Now().Unix(),
 			SortKey:   4,
-			Message:   "Test runtime message (should be ignored)",
+			Message:   "Test runtime message",
 			Type:      LogTypeRuntime,
 			Level:     LogLevelInfo,
 		},

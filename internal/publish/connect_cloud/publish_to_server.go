@@ -5,6 +5,7 @@ package connect_cloud
 import (
 	"context"
 	"io"
+	"time"
 
 	"github.com/posit-dev/publisher/internal/clients/types"
 	"github.com/posit-dev/publisher/internal/events"
@@ -85,7 +86,13 @@ func (c *ServerPublisher) PublishToServer(contentID internal_types.ContentID, bu
 	c.content = content
 
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	defer func() {
+		go func() {
+			// Allow up to 5 seconds for logs to flush before cancelling
+			time.Sleep(5 * time.Second)
+			cancel()
+		}()
+	}()
 	err = c.watchLogs(ctx, op)
 	if err != nil {
 		return err
