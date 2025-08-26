@@ -138,7 +138,7 @@ func (s *ConfigProductTypeComplianceSuite) TestProductTypeConnect() {
 
 	cfg.ForceProductTypeCompliance()
 
-	// Verify fields taht interfere with schema validation are cleared
+	// Verify fields that interfere with schema validation are cleared up
 	s.Equal("", cfg.EntrypointObjectRef)
 	s.Nil(cfg.Alternatives)
 
