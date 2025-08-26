@@ -270,7 +270,7 @@
     "quarto": {
       "version": "1.5.54"
     },
-    "dir": "$DIR/quarto-script-r",
+    "dir": "$DIR",
     "engines": ["knitr"],
     "config": {
       "project": {
@@ -279,19 +279,19 @@
       "language": {}
     },
     "files": {
-      "input": ["$DIR/quarto-script-r/script.R"],
+      "input": ["$DIR/script.R"],
       "resources": [],
-      "config": ["$DIR/quarto-script-r/_quarto.yml"],
+      "config": ["$DIR/_quarto.yml"],
       "configResources": []
     },
     "fileInformation": {
-      "$DIR/quarto-script-r/script.R": {
+      "$DIR/script.R": {
         "includeMap": [],
         "codeCells": [
           {
             "start": 10,
             "end": 13,
-            "file": "$DIR/quarto-script-r/script.R",
+            "file": "$DIR/script.R",
             "source": "library(palmerpenguins)\nlibrary(jsonlite)\n",
             "language": "r",
             "metadata": {}
@@ -299,7 +299,7 @@
           {
             "start": 17,
             "end": 20,
-            "file": "$DIR/quarto-script-r/script.R",
+            "file": "$DIR/script.R",
             "source": "gentoo_f <- subset(penguins, species == \"Gentoo\" & sex == \"female\")\nadelie_m <- subset(penguins, species == \"Adelie\" & sex == \"male\")\n",
             "language": "r",
             "metadata": {}
@@ -307,7 +307,7 @@
           {
             "start": 24,
             "end": 26,
-            "file": "$DIR/quarto-script-r/script.R",
+            "file": "$DIR/script.R",
             "source": "summary(gentoo_f)\n",
             "language": "r",
             "metadata": {}
@@ -315,7 +315,7 @@
           {
             "start": 30,
             "end": 32,
-            "file": "$DIR/quarto-script-r/script.R",
+            "file": "$DIR/script.R",
             "source": "summary(adelie_m)\n",
             "language": "r",
             "metadata": {}
@@ -323,7 +323,7 @@
           {
             "start": 36,
             "end": 41,
-            "file": "$DIR/quarto-script-r/script.R",
+            "file": "$DIR/script.R",
             "source": "write(jsonlite::toJSON(gentoo_f), \"gentoo-f.json\")\nwrite.csv(gentoo_f, \"gentoo-f.csv\")\nwrite(jsonlite::toJSON(adelie_m), \"adelie-m.json\")\nwrite.csv(adelie_m, \"adelie-m.csv\")\n",
             "language": "r",
             "metadata": {}
@@ -331,7 +331,7 @@
           {
             "start": 55,
             "end": 62,
-            "file": "$DIR/quarto-script-r/script.R",
+            "file": "$DIR/script.R",
             "source": "cat(\"Identified\", nrow(gentoo_f), \"female Gentoo penguins.\\n\")\ncat(\"Identified\", nrow(adelie_m), \"male Adelie penguins.\\n\")\ncat(\"\\n\")\ncat(\"CSV files are attached.\\n\")\n",
             "language": "r",
             "metadata": {

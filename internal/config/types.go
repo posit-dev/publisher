@@ -74,6 +74,7 @@ func (t ContentType) IsAppContent() bool {
 
 type Config struct {
 	Comments            []string      `toml:"-" json:"comments,omitempty"`
+	Alternatives        []Config      `toml:"-" json:"alternatives,omitempty"`
 	ProductType         ProductType   `toml:"product_type" json:"productType,omitempty"`
 	Schema              string        `toml:"$schema" json:"$schema,omitempty"`
 	Type                ContentType   `toml:"type" json:"type,omitempty"`
@@ -336,6 +337,6 @@ const (
 )
 
 type ConnectCloudAccessControl struct {
-	PublicAccess       bool                   `toml:"public_access,omitempty"  json:"publicAccess,omitempty"`
+	PublicAccess       *bool                  `toml:"public_access,omitempty"  json:"publicAccess,omitempty"`
 	OrganizationAccess OrganizationAccessType `toml:"organization_access,omitempty" json:"organizationAccess,omitempty"`
 }

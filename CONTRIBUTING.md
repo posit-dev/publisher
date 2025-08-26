@@ -166,7 +166,7 @@ Run the following commands from the `test/e2e` subdirectory:
 source .venv/bin/activate
 ```
 
-To access the test user credentials for PCC, you must authenticate with the 1Password CLI before running E2E tests.
+To access the test user credentials for PCC, you must authenticate with the 1Password CLI before running E2E tests. Request access to this 1Password [publisher vault](https://positpbc.1password.com/app#/7qnaxd5rhjcigmkv5nunrx33p4).
 
 If you have the 1Password CLI (`op`) installed globally (in your PATH), run:
 
@@ -174,7 +174,7 @@ If you have the 1Password CLI (`op`) installed globally (in your PATH), run:
 eval $(op signin)
 ```
 
-If you do **not** have `op` in your PATH, use the locally installed CLI:
+If you do **not** have `op` in your PATH, use the locally installed CLI that the `npm install` postinstall will add in `../bin/op`:
 
 ```bash
 eval $(../bin/op signin)

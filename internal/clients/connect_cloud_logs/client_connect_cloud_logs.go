@@ -78,15 +78,13 @@ func (c ConnectCloudLogsClient) WatchLogs(ctx context.Context, logLogger logging
 				}
 
 				for _, line := range logsResponse.Data {
-					if line.Type == LogTypeBuild {
-						switch line.Level {
-						case LogLevelDebug:
-							logLogger.Debug(line.Message)
-						case LogLevelError:
-							logLogger.Error(line.Message)
-						default:
-							logLogger.Info(line.Message)
-						}
+					switch line.Level {
+					case LogLevelDebug:
+						logLogger.Debug(line.Message)
+					case LogLevelError:
+						logLogger.Error(line.Message)
+					default:
+						logLogger.Info(line.Message)
 					}
 				}
 			}

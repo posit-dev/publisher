@@ -23,7 +23,7 @@ if (process.env.CI === "true" && process.env.PCC_USER_CCQA3) {
   pccConfig.pcc_user_ccqa3.auth.password = get1PasswordSecret(
     "pcc_user_ccqa3",
     "password",
-    "Employee",
+    "Publisher",
   );
 }
 

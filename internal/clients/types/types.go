@@ -71,6 +71,8 @@ type Revision struct {
 	PublishErrorArgs      map[string]interface{} `json:"publish_error_args,omitempty"`
 	SourceBundleID        string                 `json:"source_bundle_id"`
 	SourceBundleUploadURL string                 `json:"source_bundle_upload_url"`
+	PublishError          string                 `json:"publish_error,omitempty"`
+	PublishErrorDetails   string                 `json:"publish_error_details,omitempty"`
 }
 
 type PublishResult string
@@ -119,6 +121,7 @@ type UpdateContentRequest struct {
 type ContentResponse struct {
 	ID           types.ContentID `json:"id"`
 	NextRevision *Revision       `json:"next_revision,omitempty"`
+	Access       ContentAccess   `json:"access"`
 }
 
 // AuthorizationRequest represents a request to authorize access to a resource.
