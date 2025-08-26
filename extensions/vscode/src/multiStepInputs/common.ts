@@ -198,7 +198,6 @@ export const inputCredentialNameStep = async (
     ignoreFocusOut: true,
   });
 
-  window.showInformationMessage("Credential has been added!");
   return resp.trim();
 };
 
