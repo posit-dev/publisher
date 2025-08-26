@@ -283,6 +283,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       // Most failures will occur on the event stream. These are the ones which
       // are immediately rejected as part of the API request to initiate deployment.
       showImmediateDeploymentFailureMessage(error);
+    } finally {
+      this.webviewConduit.sendMsg({
+        kind: HostToWebviewMessageType.PUBLISH_INIT,
+      });
     }
   }
 

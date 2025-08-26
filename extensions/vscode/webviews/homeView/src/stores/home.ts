@@ -29,6 +29,7 @@ import {
 export const useHomeStore = defineStore("home", () => {
   const platformFileSeparator = ref<string>("/");
   const publishInProgress = ref(false);
+  const publishInitiated = ref(false);
 
   const contentRecords = ref<(ContentRecord | PreContentRecord)[]>([]);
   const configurations = ref<Configuration[]>([]);
@@ -463,6 +464,7 @@ export const useHomeStore = defineStore("home", () => {
     platformFileSeparator,
     showDisabledOverlay,
     publishInProgress,
+    publishInitiated,
     contentRecords,
     configurations,
     configurationsInError,
