@@ -68,6 +68,14 @@ func (m *mockPackageMapper) GetManifestPackages(base util.AbsolutePath, lockfile
 	}
 }
 
+func (m *mockPackageMapper) ScanDependencies(paths []string, log logging.Logger) (util.AbsolutePath, error) {
+	args := m.Called(paths, mock.Anything)
+	if p, ok := args.Get(0).(util.AbsolutePath); ok {
+		return p, args.Error(1)
+	}
+	return util.AbsolutePath{}, args.Error(1)
+}
+
 type publishErrsMock struct {
 	rPackageErr     error
 	authErr         error
@@ -386,9 +394,9 @@ func (s *PublishConnectSuite) publishWithClient(
 
 	rPackageMapper := &mockPackageMapper{}
 	if errsMock.rPackageErr != nil {
-		rPackageMapper.On("GetManifestPackages", mock.Anything, mock.Anything, mock.Anything).Return(nil, errsMock.rPackageErr)
+		rPackageMapper.On("GetManifestPackages", mock.Anything, mock.Anything).Return(nil, errsMock.rPackageErr)
 	} else {
-		rPackageMapper.On("GetManifestPackages", mock.Anything, mock.Anything, mock.Anything).Return(bundles.PackageMap{}, nil)
+		rPackageMapper.On("GetManifestPackages", mock.Anything, mock.Anything).Return(bundles.PackageMap{}, nil)
 	}
 
 	rPackageMapperFactory = func(base util.AbsolutePath, rExecutable util.Path, log logging.Logger) (renv.PackageMapper, error) {
@@ -655,6 +663,7 @@ type mockCloudError struct {
 	getContentErr       error
 	getAuthorizationErr error
 	watchLogsErr        error
+	getAccountErr       error
 }
 
 func TestPublishConnectCloudSuite(t *testing.T) {
@@ -720,6 +729,13 @@ func (s *PublishConnectCloudSuite) TestPublishWithClientNewFailGetAuthorization(
 func (s *PublishConnectCloudSuite) TestPublishWithClientNewFailWatchLogs() {
 	watchLogsErr := errors.New("error from WatchLogs")
 	s.publishWithCloudClient(nil, &mockCloudError{watchLogsErr: watchLogsErr}, fmt.Errorf("error watching logs: %w", watchLogsErr))
+}
+
+func (s *PublishConnectCloudSuite) TestPublishWithClientNewFailGetAccount() {
+	getAccountErr := errors.New("error from GetAccount")
+	s.publishWithCloudClient(nil, &mockCloudError{getAccountErr: getAccountErr}, fmt.Errorf("failed to check account permissions for creating private content: %w", getAccountErr), func(options *cloudPublishTestOptions) {
+		options.expectContentID = false
+	})
 }
 
 type cloudPublishTestOptions struct {
@@ -790,6 +806,21 @@ func (s *PublishConnectCloudSuite) publishWithCloudClient(
 		})).Return(contentResponse, errsMock.updateBundleErr)
 	}
 
+	// Setup GetAccount for private content entitlement check
+	mockAccount := &connect_cloud.Account{
+		ID:          "account-123",
+		Name:        "test-account",
+		DisplayName: "Test Account",
+		License: &connect_cloud.AccountLicense{
+			Entitlements: connect_cloud.AccountEntitlements{
+				AccountPrivateContentFlag: connect_cloud.AccountEntitlement{
+					Enabled: false, // Default to no private content entitlement
+				},
+			},
+		},
+	}
+	cloudClient.On("GetAccount", "account-123").Return(mockAccount, errsMock.getAccountErr)
+
 	// Setup revision with successful result when polled
 	revision := &clienttypes.Revision{
 		ID:                myRevisionID,
@@ -859,9 +890,9 @@ func (s *PublishConnectCloudSuite) publishWithCloudClient(
 	// Mock R package mapper
 	rPackageMapper := &mockPackageMapper{}
 	if errsMock.rPackageErr != nil {
-		rPackageMapper.On("GetManifestPackages", mock.Anything, mock.Anything, mock.Anything).Return(nil, errsMock.rPackageErr)
+		rPackageMapper.On("GetManifestPackages", mock.Anything, mock.Anything).Return(nil, errsMock.rPackageErr)
 	} else {
-		rPackageMapper.On("GetManifestPackages", mock.Anything, mock.Anything, mock.Anything).Return(bundles.PackageMap{}, nil)
+		rPackageMapper.On("GetManifestPackages", mock.Anything, mock.Anything).Return(bundles.PackageMap{}, nil)
 	}
 
 	// Replace factory function

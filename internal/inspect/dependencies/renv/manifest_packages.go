@@ -20,7 +20,13 @@ import (
 )
 
 type PackageMapper interface {
+	// GetManifestPackages reads the provided lockfile and returns a manifest package map.
 	GetManifestPackages(base util.AbsolutePath, lockfilePath util.AbsolutePath, log logging.Logger) (bundles.PackageMap, error)
+	// ScanDependencies runs a dependency scan using R + renv and returns the
+	// path to a generated lockfile for the given base project directory. The
+	// paths parameter is a list of file or directory paths (or glob patterns)
+	// to scan; pass ["."] to scan the working directory.
+	ScanDependencies(paths []string, log logging.Logger) (util.AbsolutePath, error)
 }
 
 type rInterpreterFactory = func() (interpreters.RInterpreter, error)
@@ -29,6 +35,7 @@ type defaultPackageMapper struct {
 	rInterpreterFactory rInterpreterFactory
 	rExecutable         util.Path
 	lister              AvailablePackagesLister
+	scanner             RDependencyScanner
 }
 
 func NewPackageMapper(base util.AbsolutePath, rExecutable util.Path, log logging.Logger) (PackageMapper, error) {
@@ -40,6 +47,7 @@ func NewPackageMapper(base util.AbsolutePath, rExecutable util.Path, log logging
 		},
 		rExecutable: rExecutable,
 		lister:      lister,
+		scanner:     NewRDependencyScanner(log),
 	}, err
 }
 
@@ -195,6 +203,7 @@ func (m *defaultPackageMapper) GetManifestPackages(
 	lockfile, err := ReadLockfile(lockfilePath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
+			// No lockfile and not recreating -> surface renv environment guidance
 			return nil, m.renvEnvironmentCheck(log)
 		}
 		return nil, err
@@ -257,6 +266,28 @@ func (m *defaultPackageMapper) GetManifestPackages(
 		manifestPackages[string(pkg.Package)] = *manifestPkg
 	}
 	return manifestPackages, nil
+}
+
+// ScanDependencies uses the RDependencyScanner to generate a renv.lock for the
+// given R source files/directories and returns the lockfile path.
+func (m *defaultPackageMapper) ScanDependencies(
+	paths []string,
+	log logging.Logger,
+) (util.AbsolutePath, error) {
+	rInterp, err := m.rInterpreterFactory()
+	if err != nil {
+		return util.AbsolutePath{}, err
+	}
+	rExec, err := rInterp.GetRExecutable()
+	if err != nil {
+		return util.AbsolutePath{}, m.renvEnvironmentCheck(log)
+	}
+	// Use the paths as provided; scanner executes independent of project base.
+	generatedPath, err := m.scanner.ScanDependencies(paths, rExec.String())
+	if err != nil {
+		return util.AbsolutePath{}, err
+	}
+	return generatedPath, nil
 }
 
 func (m *defaultPackageMapper) renvEnvironmentCheck(

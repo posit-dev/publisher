@@ -34,7 +34,7 @@ func (c *ServerPublisher) awaitCompletion(log logging.Logger, op internaltypes.O
 		// Check if publish has completed (success or failure)
 		if revision.PublishResult != "" {
 			if revision.PublishResult == types.PublishResultFailure {
-				return internaltypes.OperationError(op, fmt.Errorf("publish failed: %s", revision.PublishErrorCode))
+				return internaltypes.OperationError(op, fmt.Errorf("%s: %s", revision.PublishError, revision.PublishErrorDetails))
 			}
 
 			// Success case

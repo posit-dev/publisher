@@ -116,7 +116,7 @@ func (s *RPublishFunctionalSuite) TestGetRPackagesFunctional() {
 	}
 
 	// Actually call getRPackages
-	packageMap, err := publisher.getRPackages()
+	packageMap, err := publisher.getRPackages(false)
 
 	// we should have a valid package map which includes renv
 	s.Require().Nil(err)
