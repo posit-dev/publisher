@@ -150,6 +150,8 @@ func (c *Config) ForceProductTypeCompliance() {
 	}
 	// unset the field to ensure it doesn't appear in the object undergoing schema validation
 	c.EntrypointObjectRef = ""
+	// unset alternatives so it doesn't interfere with schema validation
+	c.Alternatives = nil
 }
 
 type ProductType string
