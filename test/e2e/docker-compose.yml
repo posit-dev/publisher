@@ -10,6 +10,9 @@ services:
     privileged: true
     environment:
       - CONNECT_LICENSE
+    volumes:
+      - ./logs:/var/log/rstudio/rstudio-connect
+      - ./licenses/connect-license.lic:/var/lib/rstudio-connect/connect-license.lic
     ports:
       - "3232:3232"
       - "3939:3939"
