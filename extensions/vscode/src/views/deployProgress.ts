@@ -12,6 +12,8 @@ import {
 import { EventStream, UnregisterCallback } from "src/events";
 import { getSummaryStringFromError } from "src/utils/errors";
 import { getProductName } from "src/utils/multiStepHelpers";
+import { HostToWebviewMessageType } from "src/types/messages/hostToWebviewMessages";
+import { WebviewConduit } from "src/utils/webviewConduit";
 
 type UpdateActiveContentRecordCB = (
   contentRecord: ContentRecord | PreContentRecord | PreContentRecordWithConfig,
@@ -24,6 +26,8 @@ export function deployProject(
   stream: EventStream,
   updateActiveContentRecordCB: UpdateActiveContentRecordCB,
 ) {
+  const webviewConduit = new WebviewConduit();
+
   window.withProgress(
     {
       location: ProgressLocation.Notification,
@@ -75,7 +79,7 @@ export function deployProject(
               // and other non-defined attributes
               localId: localID,
               canceled: "true",
-              message: `Deployment has been dismissed, but will continue to be processed on the ${productName} Server.`,
+              message: `Deployment has been dismissed, but may continue to be processed on the ${productName} Server.`,
             },
             error: "Deployment has been dismissed.",
           });
@@ -86,6 +90,10 @@ export function deployProject(
             error,
           );
           window.showErrorMessage(`Unable to dismiss deployment: ${summary}`);
+        } finally {
+          webviewConduit.sendMsg({
+            kind: HostToWebviewMessageType.PUBLISH_CANCEL,
+          });
         }
         resolveCB();
       });

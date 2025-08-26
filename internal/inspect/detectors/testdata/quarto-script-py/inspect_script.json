@@ -270,7 +270,7 @@
     "quarto": {
       "version": "1.5.54"
     },
-    "dir": "$DIR/quarto-script-py",
+    "dir": "$DIR",
     "engines": ["jupyter"],
     "config": {
       "project": {
@@ -279,19 +279,19 @@
       "language": {}
     },
     "files": {
-      "input": ["$DIR/quarto-script-py/script.py"],
+      "input": ["$DIR/script.py"],
       "resources": [],
-      "config": ["$DIR/quarto-script-py/_quarto.yml"],
+      "config": ["$DIR/_quarto.yml"],
       "configResources": []
     },
     "fileInformation": {
-      "$DIR/quarto-script-py/script.py": {
+      "$DIR/script.py": {
         "includeMap": [],
         "codeCells": [
           {
             "start": 11,
             "end": 15,
-            "file": "$DIR/quarto-script-py/script.py",
+            "file": "$DIR/script.py",
             "source": "import palmerpenguins\n\npenguins = palmerpenguins.load_penguins()\n",
             "language": "python",
             "metadata": {}
@@ -299,7 +299,7 @@
           {
             "start": 19,
             "end": 28,
-            "file": "$DIR/quarto-script-py/script.py",
+            "file": "$DIR/script.py",
             "source": "gentoo_f = penguins[\n    (penguins[\"species\"] == \"Gentoo\") &\n    (penguins[\"sex\"] == \"female\")\n]\nadelie_m = penguins[\n    (penguins[\"species\"] == \"Adelie\") &\n    (penguins[\"sex\"] == \"male\")\n]\n",
             "language": "python",
             "metadata": {}
@@ -307,7 +307,7 @@
           {
             "start": 32,
             "end": 34,
-            "file": "$DIR/quarto-script-py/script.py",
+            "file": "$DIR/script.py",
             "source": "gentoo_f.describe()\n",
             "language": "python",
             "metadata": {}
@@ -315,7 +315,7 @@
           {
             "start": 38,
             "end": 40,
-            "file": "$DIR/quarto-script-py/script.py",
+            "file": "$DIR/script.py",
             "source": "adelie_m.describe()\n",
             "language": "python",
             "metadata": {}
@@ -323,7 +323,7 @@
           {
             "start": 44,
             "end": 49,
-            "file": "$DIR/quarto-script-py/script.py",
+            "file": "$DIR/script.py",
             "source": "gentoo_f.to_csv(\"gentoo-f.csv\")\ngentoo_f.to_json(\"gentoo-f.json\", orient=\"records\")\nadelie_m.to_csv(\"adelie-m.csv\")\nadelie_m.to_json(\"adelie-m.json\", orient=\"records\")\n",
             "language": "python",
             "metadata": {}
@@ -331,7 +331,7 @@
           {
             "start": 64,
             "end": 71,
-            "file": "$DIR/quarto-script-py/script.py",
+            "file": "$DIR/script.py",
             "source": "print(\"Identified\", len(gentoo_f), \"female Gentoo penguins.\")\nprint(\"Identified\", len(adelie_m), \"male Adelie penguins.\")\nprint(\"\")\nprint(\"CSV files are attached.\")\n",
             "language": "python",
             "metadata": {

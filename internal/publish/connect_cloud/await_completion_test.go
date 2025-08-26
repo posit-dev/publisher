@@ -115,9 +115,11 @@ func (s *AwaitCompletionSuite) TestAwaitCompletionSuccess() {
 func (s *AwaitCompletionSuite) TestAwaitCompletionFailure() {
 	// Setup mock to return failure
 	revisionFailure := &clienttypes.Revision{
-		ID:               s.revisionID,
-		PublishResult:    clienttypes.PublishResultFailure,
-		PublishErrorCode: "RUNTIME_ERROR",
+		ID:                  s.revisionID,
+		PublishResult:       clienttypes.PublishResultFailure,
+		PublishErrorCode:    "RUNTIME_ERROR",
+		PublishError:        "Runtime error",
+		PublishErrorDetails: "Unable to start the app",
 	}
 
 	s.mockClient.On("GetRevision", s.revisionID).Return(revisionFailure, nil)
@@ -128,8 +130,7 @@ func (s *AwaitCompletionSuite) TestAwaitCompletionFailure() {
 	err := s.publisher.awaitCompletion(logging.New(), op)
 
 	// Verify an error is returned
-	s.Error(err)
-	s.Contains(err.Error(), "publish failed: RUNTIME_ERROR")
+	s.Error(err, "Runtime error: Unable to start the app")
 
 	// Check that it's an EventableError with correct operation
 	eventableErr, ok := err.(types.EventableError)

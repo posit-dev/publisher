@@ -58,6 +58,21 @@ func (s *CreateDeploymentSuite) SetupTest() {
 	// Create a mock client
 	s.mockClient = connect_cloud.NewMockClient()
 
+	// Setup GetAccount for private content entitlement check
+	mockAccount := &connect_cloud.Account{
+		ID:          s.accountID,
+		Name:        "test-account",
+		DisplayName: "Test Account",
+		License: &connect_cloud.AccountLicense{
+			Entitlements: connect_cloud.AccountEntitlements{
+				AccountPrivateContentFlag: connect_cloud.AccountEntitlement{
+					Enabled: false, // Default to no private content entitlement
+				},
+			},
+		},
+	}
+	s.mockClient.On("GetAccount", s.accountID).Return(mockAccount, nil)
+
 	// Set up capturing emitter to verify events
 	s.emitter = events.NewCapturingEmitter()
 
