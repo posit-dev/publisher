@@ -71,6 +71,8 @@ type Revision struct {
 	PublishErrorArgs      map[string]interface{} `json:"publish_error_args,omitempty"`
 	SourceBundleID        string                 `json:"source_bundle_id"`
 	SourceBundleUploadURL string                 `json:"source_bundle_upload_url"`
+	PublishError          string                 `json:"publish_error,omitempty"`
+	PublishErrorDetails   string                 `json:"publish_error_details,omitempty"`
 }
 
 type PublishResult string
