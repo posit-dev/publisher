@@ -11,6 +11,7 @@ import {
   isContentRecordError,
   PreContentRecord,
   PreContentRecordWithConfig,
+  ServerType,
   UpdateAllConfigsWithDefaults,
   UpdateConfigWithDefaults,
   useApi,
@@ -30,6 +31,10 @@ import {
 import { DeploymentSelector, SelectionState } from "src/types/shared";
 import { LocalState, Views } from "./constants";
 import { getPythonInterpreterPath, getRInterpreterPath } from "./utils/vscode";
+import {
+  getProductType,
+  isConnectCloudProduct,
+} from "./utils/multiStepHelpers";
 
 function findContentRecord<
   T extends ContentRecord | PreContentRecord | PreContentRecordWithConfig,
@@ -66,6 +71,13 @@ function findCredentialForContentRecord(
   contentRecord: ContentRecord | PreContentRecord | PreContentRecordWithConfig,
   creds: Credential[],
 ): Credential | undefined {
+  const serverType = contentRecord.serverType || ServerType.CONNECT;
+  const productType = getProductType(serverType);
+  if (isConnectCloudProduct(productType)) {
+    return creds.find(
+      (c) => c.accountName === contentRecord.connectCloud?.accountName,
+    );
+  }
   return creds.find(
     (cfg) =>
       normalizeURL(cfg.url).toLowerCase() ===

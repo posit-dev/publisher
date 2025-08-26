@@ -4,8 +4,9 @@ package publish
 
 import (
 	"errors"
-	"github.com/posit-dev/publisher/internal/publish/publishhelper"
 	"testing"
+
+	"github.com/posit-dev/publisher/internal/publish/publishhelper"
 
 	"github.com/posit-dev/publisher/internal/bundles"
 	"github.com/posit-dev/publisher/internal/config"
@@ -89,7 +90,7 @@ func (s *RPackageDescSuite) TestGetRPackages() {
 	s.packageMapper.On("GetManifestPackages", s.dirPath, expectedLockfilePath).Return(s.successPackageMap, nil)
 
 	publisher := s.makePublisher()
-	packageMap, err := publisher.getRPackages()
+	packageMap, err := publisher.getRPackages(false)
 	s.NoError(err)
 	s.Equal(packageMap, s.successPackageMap)
 	s.log.AssertExpectations(s.T())
@@ -111,7 +112,7 @@ func (s *RPackageDescSuite) TestGetRPackages_PackageFilePresent() {
 	s.packageMapper.On("GetManifestPackages", s.dirPath, expectedLockfilePath).Return(s.successPackageMap, nil)
 
 	publisher := s.makePublisher()
-	packageMap, err := publisher.getRPackages()
+	packageMap, err := publisher.getRPackages(false)
 	s.NoError(err)
 	s.Equal(packageMap, s.successPackageMap)
 	s.log.AssertExpectations(s.T())
@@ -131,7 +132,7 @@ func (s *RPackageDescSuite) TestGetRPackages_ScanPackagesError() {
 	s.packageMapper.On("GetManifestPackages", s.dirPath, expectedLockfilePath).Return(bundles.PackageMap{}, expectedPkgsErr)
 
 	publisher := s.makePublisher()
-	_, err := publisher.getRPackages()
+	_, err := publisher.getRPackages(false)
 	s.NotNil(err)
 	s.Equal(err.(*types.AgentError).Message, "Could not scan R packages from lockfile: custom.lock, chair is required to reach the top shelf")
 	s.log.AssertExpectations(s.T())
@@ -154,8 +155,69 @@ func (s *RPackageDescSuite) TestGetRPackages_ScanPackagesKnownAgentError() {
 	s.packageMapper.On("GetManifestPackages", s.dirPath, expectedLockfilePath).Return(bundles.PackageMap{}, expectedPkgsAgentErr)
 
 	publisher := s.makePublisher()
-	_, err := publisher.getRPackages()
+	_, err := publisher.getRPackages(false)
 	s.NotNil(err)
 	s.Equal(err.(*types.AgentError).Message, "Bad package version, this is a known failure.")
+	s.log.AssertExpectations(s.T())
+}
+
+func (s *RPackageDescSuite) TestGetRPackages_ScanDependenciesTrue_UsesScannerLockfile() {
+	// Log only called on success
+	s.log.On("Info", "Done collecting R package descriptions").Return()
+
+	// Configure a specific package file, so we can check that it is not used.
+	s.stateStore.Config = &config.Config{
+		R: &config.R{
+			PackageFile: "renv_default.lock",
+		},
+	}
+
+	// Scanner returns a fake lockfile path
+	generated := s.dirPath.Join("scanned.lock")
+	s.packageMapper.On("ScanDependencies", []string{s.dirPath.String()}, mock.Anything).Return(generated, nil)
+	// Ensure GetManifestPackages is called with the generated lockfile, not the default
+	s.packageMapper.On("GetManifestPackages", s.dirPath, generated).Return(s.successPackageMap, nil)
+
+	publisher := s.makePublisher()
+	packageMap, err := publisher.getRPackages(true)
+	s.NoError(err)
+	s.Equal(s.successPackageMap, packageMap)
+	s.log.AssertExpectations(s.T())
+}
+
+func (s *RPackageDescSuite) TestGetRPackages_ScanDependencies_UsesOnlyConfigFiles() {
+	// Log only called on success
+	s.log.On("Info", "Done collecting R package descriptions").Return()
+
+	// Configure specific files; ensure publisher only passes these
+	s.stateStore.Config = &config.Config{
+		Files: []string{"a.R", "subdir/b.R"},
+		R: &config.R{
+			PackageFile: "ignored-when-scan.lock",
+		},
+	}
+
+	// Create the files in the project dir, plus an extra file that should be ignored
+	_ = s.dirPath.Join("a.R").WriteFile([]byte("print('a')"), 0644)
+	_ = s.dirPath.Join("subdir").MkdirAll(0777)
+	_ = s.dirPath.Join("subdir", "b.R").WriteFile([]byte("print('b')"), 0644)
+	// This file is NOT in config.Files and must be ignored
+	_ = s.dirPath.Join("subdir", "ignored.R").WriteFile([]byte("print('ignored')"), 0644)
+
+	// This are the files we specified in Config.Files and thus we
+	// expect will be used.
+	expectedPaths := []string{s.dirPath.Join("a.R").String(), s.dirPath.Join("subdir", "b.R").String()}
+
+	// Setup ScanDependencies and GetManifestPackages in a way that they expect
+	// expectedPaths to be passed as an argument when publisher.getRPackages
+	// is invoked.
+	generated := s.dirPath.Join("scanned.lock")
+	s.packageMapper.On("ScanDependencies", expectedPaths, mock.Anything).Return(generated, nil)
+	s.packageMapper.On("GetManifestPackages", s.dirPath, generated).Return(s.successPackageMap, nil)
+
+	publisher := s.makePublisher()
+	packageMap, err := publisher.getRPackages(true)
+	s.NoError(err)
+	s.Equal(s.successPackageMap, packageMap)
 	s.log.AssertExpectations(s.T())
 }

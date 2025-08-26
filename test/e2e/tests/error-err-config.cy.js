@@ -58,8 +58,7 @@ describe("Detect error in config", () => {
       5,
       500,
     ).find(
-      // TODO: This error message will have more detail added in https://github.com/posit-dev/publisher/issues/2864.
-      'p:contains("The selected Configuration has an error.")',
+      'p:contains("The selected Configuration has an error: invalidParam: not allowed.")',
     );
   });
 
