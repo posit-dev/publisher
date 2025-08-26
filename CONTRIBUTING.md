@@ -158,15 +158,31 @@ deactivate
 
 ** NOTE: ** The instructions below assume that your terminal has the `test/e2e` directory as the current working directory. If you are not in that directory, you will need to adjust the commands accordingly.
 
-1. Activate your virtual environment if it is not already active.
+Activate your virtual environment if it is not already active.
 
-- Run the following command from the `test/e2e` subdirectory:
+Run the following commands from the `test/e2e` subdirectory:
 
 ```bash
 source .venv/bin/activate
 ```
 
-- Build the publisher and start the Cypress interactive test runner:
+To access the test user credentials for PCC, you must authenticate with the 1Password CLI before running E2E tests. Request access to this 1Password [publisher vault](https://positpbc.1password.com/app#/7qnaxd5rhjcigmkv5nunrx33p4).
+
+If you have the 1Password CLI (`op`) installed globally (in your PATH), run:
+
+```bash
+eval $(op signin)
+```
+
+If you do **not** have `op` in your PATH, use the locally installed CLI that the `npm install` postinstall will add in `../bin/op`:
+
+```bash
+eval $(../bin/op signin)
+```
+
+This command will prompt you to authenticate and set the required session environment variable for your shell. You need to do this once per terminal session before running the tests.
+
+Build the publisher and start the Cypress interactive test runner:
 
 ```bash
 just build-images
@@ -176,6 +192,12 @@ just dev
 This will start the Cypress test runner, which will open a browser window and allow you to run the end-to-end tests against the Posit Publisher VSCode extension.
 
 Use VSCode to modify the tests in the `test/e2e/tests` directory. Saving changes will automatically re-run the tests in the Cypress test runner.
+
+Tests can also be run in headless mode with:
+
+```bash
+npx cypress run
+```
 
 When done, you can deactivate the virtual environment with:
 

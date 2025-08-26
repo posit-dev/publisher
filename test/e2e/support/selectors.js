@@ -123,9 +123,24 @@ Cypress.Commands.add("publisherWebviewExtreme", () => {
     })
     .should("not.be.empty")
     .then(cy.wrap)
-    .find("iframe#active-frame", { timeout: 30000 })
-    .its("0.contentDocument.body")
-    .should("not.be.empty")
+    .find("iframe#active-frame")
+    .then((obj) => {
+      if (obj.length === 1) {
+        return cy
+          .log("iframe#active-frame search found one this time")
+          .wrap(obj)
+          .its("0.contentDocument.body");
+      }
+      return cy
+        .log("iframe#active-frame search found more than one", obj.length)
+        .wrap(obj)
+        .its("1.contentDocument.body");
+    })
+    .should((body) => {
+      const $body = Cypress.$(body);
+      expect($body.length).gt(0);
+      expect($body.find("#app").length).gt(0);
+    })
     .then(cy.wrap);
 });
 

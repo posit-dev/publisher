@@ -165,6 +165,7 @@ jobs:
           CI: true
           DEBUG_CYPRESS: ${{ env.DEBUG_CYPRESS }}
           ACTIONS_STEP_DEBUG: ${{ runner.debug && 'true' || 'false' }}
+          PCC_USER_CCQA3: ${{ secrets.PCC_USER_CCQA3 }}
 
       - name: Upload Cypress screenshots on failure
         uses: actions/upload-artifact@v4

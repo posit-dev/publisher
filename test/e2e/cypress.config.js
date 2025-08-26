@@ -1,8 +1,28 @@
 const { defineConfig } = require("cypress");
+const { authenticateOAuthDevice } = require("./support/oauth-task");
+const fs = require("fs");
+const path = require("path");
+const { get1PasswordSecret } = require("./support/op-utils");
 
 const DEBUG_CYPRESS = process.env.DEBUG_CYPRESS === "true";
 const ACTIONS_STEP_DEBUG = process.env.ACTIONS_STEP_DEBUG === "true";
 const isCI = process.env.CI === "true";
+
+// Load PCC config and inject into Cypress env
+const configPath = path.resolve(__dirname, "config/staging-pccqa.json");
+const pccConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
+
+// Rewrite placeholder password with actual secret and handle failures
+if (process.env.CI === "true" && process.env.PCC_USER_CCQA3) {
+  pccConfig.pcc_user_ccqa3.auth.password = process.env.PCC_USER_CCQA3;
+} else if (pccConfig.pcc_user_ccqa3.auth.password === "UPDATE") {
+  // Update as needed with correct 1pass vault and item names
+  pccConfig.pcc_user_ccqa3.auth.password = get1PasswordSecret(
+    "pcc_user_ccqa3",
+    "password",
+    "Publisher",
+  );
+}
 
 module.exports = defineConfig({
   e2e: {
@@ -15,9 +35,14 @@ module.exports = defineConfig({
     },
     defaultCommandTimeout: isCI ? 30000 : 4000,
     pageLoadTimeout: isCI ? 60000 : 30000,
+    cookies: {
+      preserve: /_xsrf|session|connect\.sid|auth|oauth/,
+    },
+    experimentalOriginDependencies: true,
     // eslint-disable-next-line no-unused-vars
     setupNodeEvents(on, config) {
       on("task", {
+        authenticateOAuthDevice,
         print(message) {
           if (typeof message !== "undefined") {
             console.log(message);
@@ -25,7 +50,6 @@ module.exports = defineConfig({
           return null;
         },
       });
-      // implement node event listeners here
     },
   },
   env: {
@@ -36,6 +60,7 @@ module.exports = defineConfig({
     CONNECT_SERVER_URL: "http://localhost:3939",
     CONNECT_MANAGER_URL: "http://localhost:4723",
     CONNECT_CLOUD_ENV: process.env.CONNECT_CLOUD_ENV || "staging",
+    pccConfig,
   },
   chromeWebSecurity: false,
   video: DEBUG_CYPRESS || ACTIONS_STEP_DEBUG,
