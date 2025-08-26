@@ -31,6 +31,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   if a stage is marked as failed (#2857, #2858)
 - Added a configuration option that, when enabled, will auto open Publisher logs
   on a failed deploy (#2860)
+- Use server hostname as the default credential name for new Connect credentials
+  (#2922)
 
 ### Changed
 
