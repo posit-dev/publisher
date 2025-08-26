@@ -244,4 +244,12 @@ export const extensionSettings = {
       configuration.get<boolean>("enableConnectCloud");
     return value !== undefined ? value : false;
   },
+  autoOpenLogsOnFailure(): boolean {
+    // get value from extension configuration - defaults to false
+    const configuration = workspace.getConfiguration("positPublisher");
+    const value: boolean | undefined = configuration.get<boolean>(
+      "autoOpenLogsOnFailure",
+    );
+    return value !== undefined ? value : false;
+  },
 };

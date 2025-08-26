@@ -29,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a delete button for Credentials in the Credentials View (#2862)
 - When opened, the Publisher logs scroll to and expand the first failed stage
   if a stage is marked as failed (#2857, #2858)
+- Added a configuration option that, when enabled, will auto open Publisher logs
+  on a failed deploy (#2860)
 
 ### Changed
 
