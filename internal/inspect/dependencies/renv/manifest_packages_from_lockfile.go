@@ -30,6 +30,12 @@ func NewLockfilePackageMapper(base util.AbsolutePath, log logging.Logger) *Lockf
 	}
 }
 
+// GetManifestPackages implements the PackageMapper interface for LockfilePackageMapper.
+// It delegates to GetManifestPackagesFromLockfile, using the mapper's stored base and log.
+func (m *LockfilePackageMapper) GetManifestPackages(base util.AbsolutePath, lockfilePath util.AbsolutePath, log logging.Logger) (bundles.PackageMap, error) {
+	return m.GetManifestPackagesFromLockfile(lockfilePath)
+}
+
 // GetManifestPackagesFromLockfile extracts package information directly from renv.lock
 // without requiring installed R packages. This contrasts with defaultPackageMapper.GetManifestPackages
 // which reads DESCRIPTION files from installed R libraries. Both approaches must produce
@@ -37,10 +43,14 @@ func NewLockfilePackageMapper(base util.AbsolutePath, log logging.Logger) *Lockf
 func (m *LockfilePackageMapper) GetManifestPackagesFromLockfile(
 	lockfilePath util.AbsolutePath) (bundles.PackageMap, error) {
 
+	m.log.Debug("Reading lockfile for package manifest generation", "lockfile", lockfilePath.String())
+
 	lockfile, err := ReadLockfile(lockfilePath)
 	if err != nil {
 		return nil, err
 	}
+
+	m.log.Debug("Processing packages from lockfile", "package_count", len(lockfile.Packages))
 
 	manifestPackages := bundles.PackageMap{}
 
@@ -62,6 +72,7 @@ func (m *LockfilePackageMapper) GetManifestPackagesFromLockfile(
 	// but we need resolvable URLs for consistent deployment across environments.
 	if lockfile.Bioconductor.Version != "" {
 		v := lockfile.Bioconductor.Version
+		m.log.Debug("Adding Bioconductor repositories", "bioc_version", v)
 		// Known BioC repo patterns
 		candidates := map[string]string{
 			"BioCsoft":      "https://bioconductor.org/packages/" + v + "/bioc",
@@ -152,6 +163,7 @@ func (m *LockfilePackageMapper) GetManifestPackagesFromLockfile(
 		manifestPackages[string(pkgName)] = *manifestPkg
 	}
 
+	m.log.Debug("Successfully generated manifest packages from lockfile", "manifest_package_count", len(manifestPackages))
 	return manifestPackages, nil
 }
 
