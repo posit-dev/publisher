@@ -424,8 +424,7 @@
             "properties": {
               "public_access": {
                 "type": "boolean",
-                "description": "Whether or not the content is publicly accessible.",
-                "default": false
+                "description": "Whether or not the content is publicly accessible."
               },
               "organization_access": {
                 "type": "string",

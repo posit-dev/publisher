@@ -121,6 +121,7 @@ type UpdateContentRequest struct {
 type ContentResponse struct {
 	ID           types.ContentID `json:"id"`
 	NextRevision *Revision       `json:"next_revision,omitempty"`
+	Access       ContentAccess   `json:"access"`
 }
 
 // AuthorizationRequest represents a request to authorize access to a resource.
