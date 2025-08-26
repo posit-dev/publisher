@@ -16,11 +16,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added colors to the logs indicating queued, skipped, passed, and errored log
   stage statuses. (#2382)
 - Improved error messaging when deployment fails due to a schema validation error. (#2831)
+- Added a Copy System Info command and item in the "Help and Feedback" view to
+  easily copy system information - extension version, IDE, and platform details
+  (#2835)
+- Added a delete button for Credentials in the Credentials View (#2862)
+- When opened, the Publisher logs scroll to and expand the first failed stage
+  if a stage is marked as failed (#2857, #2858)
 
 ### Changed
 
 - The "Select Deployment" input can now be dismissed by focusing another element
   similar to other inputs. (#2780)
+- Publish failure logs and deployment validation failure logs link to the logs
+  view directly in Posit Connect and Posit Connect Cloud when available (#2859)
 
 ## [1.18.1]
 

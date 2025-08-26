@@ -87,7 +87,11 @@ import { newCredential } from "src/multiStepInputs/newCredential";
 import { PublisherState } from "src/state";
 import { throttleWithLastPending } from "src/utils/throttle";
 import { showAssociateGUID } from "src/actions/showAssociateGUID";
-import { extensionSettings } from "src/extension";
+import {
+  extensionSettings,
+  SelectionIsConnectContentRecord,
+  setSelectionIsConnectContentRecord,
+} from "src/extension";
 import { openFileInEditor } from "src/commands";
 import { showImmediateDeploymentFailureMessage } from "./publishFailures";
 import {
@@ -187,6 +191,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         return this.showNewCredentialForDeployment();
       case WebviewToHostMessageType.NEW_CREDENTIAL:
         return this.showNewCredential();
+      case WebviewToHostMessageType.DELETE_CREDENTIAL:
+        return this.deleteCredential(msg.content);
       case WebviewToHostMessageType.VIEW_PUBLISHING_LOG:
         return this.showPublishingLog();
       case WebviewToHostMessageType.SHOW_ASSOCIATE_GUID:
@@ -195,6 +201,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         return this.updateSelectionCredentialState(msg.content.state);
       case WebviewToHostMessageType.UPDATE_SELECTION_IS_PRE_CONTENT_RECORD:
         return this.updateSelectionIsPreContentRecordState(msg.content.state);
+      case WebviewToHostMessageType.UPDATE_SELECTION_IS_CONNECT_CONTENT_RECORD:
+        return this.updateSelectionIsConnectContentRecordState(
+          msg.content.state,
+        );
+      case WebviewToHostMessageType.COPY_SYSTEM_INFO:
+        return await this.copySystemInfo();
       default:
         window.showErrorMessage(
           `Internal Error: onConduitMessage unhandled msg: ${JSON.stringify(msg)}`,
@@ -208,6 +220,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       "vscode.open",
       Uri.parse(msg.content.uri),
     );
+  }
+
+  private async copySystemInfo() {
+    return await commands.executeCommand(Commands.HomeView.CopySystemInfo);
   }
 
   private async updateSelectionCredentialState(state: string) {
@@ -224,6 +240,14 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         ? SelectionIsPreContentRecord.true
         : SelectionIsPreContentRecord.false;
     return await setSelectionIsPreContentRecord(match);
+  }
+
+  private async updateSelectionIsConnectContentRecordState(state: string) {
+    const match =
+      state === SelectionIsConnectContentRecord.true
+        ? SelectionIsConnectContentRecord.true
+        : SelectionIsConnectContentRecord.false;
+    return await setSelectionIsConnectContentRecord(match);
   }
 
   private async initiateDeployment(
@@ -1826,7 +1850,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     this.configWatchers?.dispose();
   }
 
-  public async register(watchers: WatcherManager) {
+  public register(watchers: WatcherManager) {
     this.stream.register("publish/start", () => {
       this.onPublishStart();
     });
@@ -1845,22 +1869,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       }),
     );
 
-    const currentContentRecord = await this.state.getSelectedContentRecord();
-    const serverType = currentContentRecord?.serverType || ServerType.CONNECT;
-    const productType = getProductType(serverType);
-
-    // register this command for Connect only,
-    // since Connect Cloud does not support this feature at the moment
-    if (isConnectProduct(productType)) {
-      this.context.subscriptions.push(
-        commands.registerCommand(
-          Commands.HomeView.AssociateDeployment,
-          () => showAssociateGUID(this.state),
-          this,
-        ),
-      );
-    }
-
     this.context.subscriptions.push(
       commands.registerCommand(
         Commands.HomeView.SelectDeployment,
@@ -1878,6 +1886,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       commands.registerCommand(
         Commands.HomeView.ShowSelectConfigForDeployment,
         this.showSelectOrCreateConfigForDeployment,
+        this,
+      ),
+      commands.registerCommand(
+        Commands.HomeView.AssociateDeployment,
+        () => showAssociateGUID(this.state),
         this,
       ),
       commands.registerCommand(

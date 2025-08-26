@@ -24,10 +24,6 @@ import {
   errTOMLValidationErrorMessage,
   isErrPythonExecNotFoundError,
   isErrDeviceAuthAccessDenied,
-  errDeviceAuthAccessDeniedMessage,
-  ErrDeviceAuthAccessDenied,
-  ErrDeviceAuthExpiredToken,
-  errDeviceAuthExpiredTokenMessage,
   isDeviceAuthExpiredToken,
 } from "./errorTypes";
 
@@ -397,19 +393,6 @@ describe("ErrDeviceAuthAccessDenied", () => {
 
     expect(result).toBe(false);
   });
-
-  test("errDeviceAuthAccessDeniedMessage", () => {
-    const err = mkAxiosJsonErr({
-      code: "deviceAuthAccessDenied",
-    });
-
-    const msg = errDeviceAuthAccessDeniedMessage(
-      err as axiosErrorWithJson<ErrDeviceAuthAccessDenied>,
-    );
-    expect(msg).toBe(
-      `Posit Connect Cloud access denied: deviceAuthAccessDenied`,
-    );
-  });
 });
 
 describe("ErrDeviceAuthExpiredToken", () => {
@@ -429,18 +412,5 @@ describe("ErrDeviceAuthExpiredToken", () => {
     );
 
     expect(result).toBe(false);
-  });
-
-  test("errDeviceAuthExpiredTokenMessage", () => {
-    const err = mkAxiosJsonErr({
-      code: "deviceAuthExpiredToken",
-    });
-
-    const msg = errDeviceAuthExpiredTokenMessage(
-      err as axiosErrorWithJson<ErrDeviceAuthExpiredToken>,
-    );
-    expect(msg).toBe(
-      `Expired Posit Connect Cloud authorization token: deviceAuthExpiredToken`,
-    );
   });
 });

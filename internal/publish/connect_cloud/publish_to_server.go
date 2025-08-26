@@ -25,7 +25,7 @@ func (c *ServerPublisher) updateContent(contentID internal_types.ContentID) erro
 		c.emitter.Emit(events.New(op, events.StartPhase, events.NoError, data))
 		log.Info("Determining content settings")
 
-		base, err := c.getContentRequestBase()
+		base, err := c.getContentRequestBase(false)
 		if err != nil {
 			return internal_types.OperationError(op, err)
 		}
@@ -75,6 +75,7 @@ func (c *ServerPublisher) PublishToServer(contentID internal_types.ContentID, bu
 	if err != nil {
 		return err
 	}
+	log.Info("Getting content logs...")
 
 	// refetch the content to get the new revision's log channel
 	content, err := c.client.GetContent(c.content.ID)

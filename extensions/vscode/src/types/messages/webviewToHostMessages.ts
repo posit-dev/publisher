@@ -25,10 +25,13 @@ export enum WebviewToHostMessageType {
   NEW_DEPLOYMENT = "newDeployment",
   NEW_CREDENTIAL_FOR_DEPLOYMENT = "newCredentialForDeployment",
   NEW_CREDENTIAL = "newCredential",
+  DELETE_CREDENTIAL = "deleteCredential",
   VIEW_PUBLISHING_LOG = "viewPublishingLog",
   SHOW_ASSOCIATE_GUID = "ShowAssociateGUID",
   UPDATE_SELECTION_CREDENTIAL_STATE = "UpdateSelectionCredentialStateMsg",
   UPDATE_SELECTION_IS_PRE_CONTENT_RECORD = "UpdateSelectionIsPreContentRecordMsg",
+  UPDATE_SELECTION_IS_CONNECT_CONTENT_RECORD = "UpdateSelectionIsConnectContentRecordMsg",
+  COPY_SYSTEM_INFO = "copySystemInfo",
 }
 
 export type AnyWebviewToHostMessage<
@@ -63,10 +66,13 @@ export type WebviewToHostMessage =
   | NewDeploymentMsg
   | NewCredentialForDeploymentMsg
   | NewCredentialMsg
+  | DeleteCredentialMsg
   | ViewPublishingLog
   | ShowAssociateGUIDMsg
   | UpdateSelectionCredentialStateMsg
-  | UpdateSelectionIsPreContentRecordMsg;
+  | UpdateSelectionIsPreContentRecordMsg
+  | UpdateSelectionIsConnectContentRecordMsg
+  | CopySystemInfoMsg;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
@@ -92,10 +98,15 @@ export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
     msg.kind === WebviewToHostMessageType.NEW_DEPLOYMENT ||
     msg.kind === WebviewToHostMessageType.NEW_CREDENTIAL_FOR_DEPLOYMENT ||
     msg.kind === WebviewToHostMessageType.NEW_CREDENTIAL ||
+    msg.kind === WebviewToHostMessageType.DELETE_CREDENTIAL ||
     msg.kind === WebviewToHostMessageType.VIEW_PUBLISHING_LOG ||
     msg.kind === WebviewToHostMessageType.SHOW_ASSOCIATE_GUID ||
     msg.kind === WebviewToHostMessageType.UPDATE_SELECTION_CREDENTIAL_STATE ||
-    msg.kind === WebviewToHostMessageType.UPDATE_SELECTION_IS_PRE_CONTENT_RECORD
+    msg.kind ===
+      WebviewToHostMessageType.UPDATE_SELECTION_IS_PRE_CONTENT_RECORD ||
+    msg.kind ===
+      WebviewToHostMessageType.UPDATE_SELECTION_IS_CONNECT_CONTENT_RECORD ||
+    msg.kind === WebviewToHostMessageType.COPY_SYSTEM_INFO
   );
 }
 
@@ -211,6 +222,14 @@ export type NewCredentialForDeploymentMsg =
 export type NewCredentialMsg =
   AnyWebviewToHostMessage<WebviewToHostMessageType.NEW_CREDENTIAL>;
 
+export type DeleteCredentialMsg = AnyWebviewToHostMessage<
+  WebviewToHostMessageType.DELETE_CREDENTIAL,
+  {
+    credentialGUID: string;
+    credentialName: string;
+  }
+>;
+
 export type ViewPublishingLog =
   AnyWebviewToHostMessage<WebviewToHostMessageType.VIEW_PUBLISHING_LOG>;
 
@@ -230,3 +249,13 @@ export type UpdateSelectionIsPreContentRecordMsg = AnyWebviewToHostMessage<
     state: string;
   }
 >;
+
+export type UpdateSelectionIsConnectContentRecordMsg = AnyWebviewToHostMessage<
+  WebviewToHostMessageType.UPDATE_SELECTION_IS_CONNECT_CONTENT_RECORD,
+  {
+    state: string;
+  }
+>;
+
+export type CopySystemInfoMsg =
+  AnyWebviewToHostMessage<WebviewToHostMessageType.COPY_SYSTEM_INFO>;

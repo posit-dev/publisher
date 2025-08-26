@@ -3,7 +3,7 @@ description: "Sets up the workflow"
 runs:
   using: "composite"
   steps:
-    - uses: extractions/setup-just@v2
+    - uses: extractions/setup-just@v3
     - uses: actions/setup-go@v5
       with:
         go-version-file: go.mod

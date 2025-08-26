@@ -238,6 +238,12 @@
         "title": "Deploy with Posit Publisher",
         "icon": "$(posit-publisher-publish)",
         "category": "Posit Publisher"
+      },
+      {
+        "command": "posit.publisher.homeView.copySystemInfo",
+        "title": "Copy System Info",
+        "icon": "$(copy)",
+        "category": "Posit Publisher"
       }
     ],
     "menus": {
@@ -276,6 +282,10 @@
         }
       ],
       "commandPalette": [
+        {
+          "command": "posit.publisher.homeView.associateDeployment",
+          "when": "posit.publish.selection.isConnectContentRecord == 'true'"
+        },
         {
           "command": "posit.publisher.init-project",
           "when": "workbenchState == folder && posit.publish.state == 'initialized' && isWorkspaceTrusted"
@@ -347,6 +357,10 @@
         {
           "command": "posit.publisher.homeView.navigateToDeployment.ContentLog",
           "when": "posit.publisher.homeView.initialized == 'initialized' && isWorkspaceTrusted"
+        },
+        {
+          "command": "posit.publisher.homeView.copySystemInfo",
+          "when": "posit.publish.state == 'initialized' && isWorkspaceTrusted"
         }
       ],
       "webview/context": [
@@ -356,7 +370,7 @@
         },
         {
           "command": "posit.publisher.homeView.associateDeployment",
-          "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'even-easier-deploy-more-menu-matching-configs' && posit.publish.selection.hasCredentialMatch == 'true' && posit.publish.selection.isPreContentRecord == 'false'"
+          "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'even-easier-deploy-more-menu-matching-configs' && posit.publish.selection.hasCredentialMatch == 'true' && posit.publish.selection.isPreContentRecord == 'false' && posit.publish.selection.isConnectContentRecord == 'true'"
         },
         {
           "command": "posit.publisher.homeView.createConfigForDeployment",
@@ -391,10 +405,6 @@
           "command": "posit.publisher.showPublishingLog",
           "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'homeview-active-contentRecord-more-menu'",
           "group": "show@2"
-        },
-        {
-          "command": "posit.publisher.homeView.deleteCredential",
-          "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'credentials-tree-item'"
         },
         {
           "command": "posit.publisher.homeView.removeSecret",

@@ -210,7 +210,7 @@
     "quarto": {
       "version": "1.4.553"
     },
-    "dir": "$DIR/quarto-proj-py",
+    "dir": "$DIR",
     "engines": ["jupyter"],
     "config": {
       "project": {
@@ -220,9 +220,9 @@
       "language": {}
     },
     "files": {
-      "input": ["$DIR/quarto-proj-py/quarto-proj-py.qmd"],
+      "input": ["$DIR/quarto-proj-py.qmd"],
       "resources": [],
-      "config": ["$DIR/quarto-proj-py/_quarto.yml"],
+      "config": ["$DIR/_quarto.yml"],
       "configResources": []
     }
   }
