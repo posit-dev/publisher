@@ -235,18 +235,17 @@ Cypress.Commands.add("resetConnect", () => {
 });
 
 // Add a global afterEach to log iframes if a test fails (for CI reliability)
-describe("Global afterEach for CI debug", () => {
-  if (typeof afterEach === "function") {
-    afterEach(function () {
-      if (this.currentTest.state === "failed") {
-        cy.debugIframes();
-        cy.get("body").then(($body) => {
-          cy.task("print", $body.html().substring(0, 1000));
-        });
-      }
-    });
-  }
-});
+if (typeof afterEach === "function") {
+  /* eslint-disable-next-line mocha/no-top-level-hooks */
+  afterEach(function () {
+    if (this.currentTest.state === "failed") {
+      cy.debugIframes();
+      cy.get("body").then(($body) => {
+        cy.task("print", $body.html().substring(0, 1000));
+      });
+    }
+  });
+}
 
 // Update waitForPublisherIframe to use a longer default timeout for CI reliability
 Cypress.Commands.add("waitForPublisherIframe", (timeout = 60000) => {
