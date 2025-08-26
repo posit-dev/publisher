@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/posit-dev/publisher/internal/bundles"
+	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/dcf"
@@ -19,14 +20,18 @@ import (
 // and aligned with the renv.lock file.
 // It provides an alternative to defaultPackageMapper which requires installed R libraries.
 type LockfilePackageMapper struct {
-	base util.AbsolutePath
-	log  logging.Logger
+	base        util.AbsolutePath
+	rExecutable util.Path
+	log         logging.Logger
+	scanner     RDependencyScanner
 }
 
-func NewLockfilePackageMapper(base util.AbsolutePath, log logging.Logger) *LockfilePackageMapper {
+func NewLockfilePackageMapper(base util.AbsolutePath, rExecutable util.Path, log logging.Logger) *LockfilePackageMapper {
 	return &LockfilePackageMapper{
-		base: base,
-		log:  log,
+		base:        base,
+		rExecutable: rExecutable,
+		log:         log,
+		scanner:     NewRDependencyScanner(log),
 	}
 }
 
@@ -346,4 +351,30 @@ func resolveRepoAndSource(
 
 	// Always return the repository name (not URL) for consistent output
 	return resolvedSource, repoName, nil
+}
+
+// ScanDependencies uses renv to scan for dependencies and generate a lockfile.
+// This works with just an R executable and doesn't require a full R environment setup.
+func (m *LockfilePackageMapper) ScanDependencies(paths []string, log logging.Logger) (util.AbsolutePath, error) {
+	if m.rExecutable.String() == "" {
+		return util.AbsolutePath{}, fmt.Errorf("R executable not available for dependency scanning")
+	}
+
+	rInterpreter, err := interpreters.NewRInterpreter(m.base, m.rExecutable, m.log, nil, nil, nil)
+	if err != nil {
+		log.Warn("Failed to create R interpreter for lockfile mapper", "error", err)
+		return util.AbsolutePath{}, err
+	}
+
+	// Check if renv package is installed
+	if aerr := rInterpreter.IsRenvInstalled(m.rExecutable.String()); aerr != nil {
+		return util.AbsolutePath{}, aerr
+	}
+
+	// Use the scanner to generate a lockfile
+	generatedPath, err := m.scanner.ScanDependencies(paths, m.rExecutable.String())
+	if err != nil {
+		return util.AbsolutePath{}, err
+	}
+	return generatedPath, nil
 }

@@ -51,6 +51,7 @@ type RInterpreter interface {
 	GetPreferredPath() string
 	CreateLockfile(util.AbsolutePath) error
 	RenvEnvironmentErrorCheck() *types.AgentError
+	IsRenvInstalled(rexecPath string) *types.AgentError
 	GetRRequires() string
 }
 
@@ -198,7 +199,7 @@ func (i *defaultRInterpreter) RenvEnvironmentErrorCheck() *types.AgentError {
 		return i.cannotVerifyRenvErr(err)
 	}
 
-	aerr := i.isRenvInstalled(rExec.String())
+	aerr := i.IsRenvInstalled(rExec.String())
 	if aerr != nil {
 		return aerr
 	}
@@ -211,7 +212,7 @@ func (i *defaultRInterpreter) RenvEnvironmentErrorCheck() *types.AgentError {
 	return i.prepRenvActionCommand(rExec.String(), renvStatusOutput)
 }
 
-func (i *defaultRInterpreter) isRenvInstalled(rexecPath string) *types.AgentError {
+func (i *defaultRInterpreter) IsRenvInstalled(rexecPath string) *types.AgentError {
 	output, _, err := i.cmdExecutor.RunScript(rexecPath, []string{"-s"}, "cat(system.file(package = \"renv\"))", i.base, i.log)
 	if err != nil {
 		i.log.Error("Unable to determine if renv is installed", "error", err.Error())

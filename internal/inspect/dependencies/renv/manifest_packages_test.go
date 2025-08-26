@@ -300,7 +300,7 @@ func (s *ManifestPackagesSuite) TestLockFile_CreateFromScanner() {
 	base := s.testdata.Join("cran_project")
 	// Generate a lockfile via the scanner and ensure we use it.
 
-	mapper, err := NewPackageMapper(base, util.Path{}, s.log)
+	mapper, err := NewPackageMapper(base, util.Path{}, s.log, false)
 	s.NoError(err)
 
 	// Override scanner to return the known renv.lock in cran_project

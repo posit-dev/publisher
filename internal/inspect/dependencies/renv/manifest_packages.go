@@ -40,7 +40,7 @@ type defaultPackageMapper struct {
 
 func NewPackageMapper(base util.AbsolutePath, rExecutable util.Path, log logging.Logger, lockfileOnly bool) (PackageMapper, error) {
 	if lockfileOnly {
-		return NewLockfilePackageMapper(base, log), nil
+		return NewLockfilePackageMapper(base, rExecutable, log), nil
 	}
 
 	lister, err := NewAvailablePackageLister(base, rExecutable, log, nil, nil)

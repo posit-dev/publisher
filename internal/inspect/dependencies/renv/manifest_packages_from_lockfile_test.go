@@ -38,7 +38,7 @@ func (s *LockfilePackageMapperSuite) TestCRAN() {
 	base := s.testdata.Join("cran_project")
 	lockfilePath := base.Join("renv.lock")
 
-	mapper := NewLockfilePackageMapper(base, s.log)
+	mapper := NewLockfilePackageMapper(base, util.Path{}, s.log)
 	manifestPackages, err := mapper.GetManifestPackagesFromLockfile(lockfilePath)
 	s.NoError(err)
 
@@ -63,7 +63,7 @@ func (s *LockfilePackageMapperSuite) TestBioconductor() {
 	base := s.testdata.Join("bioc_project")
 	lockfilePath := base.Join("renv.lock")
 
-	mapper := NewLockfilePackageMapper(base, s.log)
+	mapper := NewLockfilePackageMapper(base, util.Path{}, s.log)
 	manifestPackages, err := mapper.GetManifestPackagesFromLockfile(lockfilePath)
 	s.NoError(err)
 
@@ -224,7 +224,7 @@ func (s *LockfilePackageMapperSuite) TestCRAN_Functional() {
 	base := s.testdata.Join("cran_project")
 	lockfilePath := base.Join("renv.lock")
 
-	mapper := NewLockfilePackageMapper(base, s.log)
+	mapper := NewLockfilePackageMapper(base, util.Path{}, s.log)
 	manifestPackages, err := mapper.GetManifestPackagesFromLockfile(lockfilePath)
 	s.NoError(err)
 
@@ -248,7 +248,7 @@ func (s *LockfilePackageMapperSuite) TestBioconductor_Functional() {
 	base := s.testdata.Join("bioc_project")
 	lockfilePath := base.Join("renv.lock")
 
-	mapper := NewLockfilePackageMapper(base, s.log)
+	mapper := NewLockfilePackageMapper(base, util.Path{}, s.log)
 	manifestPackages, err := mapper.GetManifestPackagesFromLockfile(lockfilePath)
 	s.NoError(err)
 
@@ -288,7 +288,7 @@ func (s *LockfilePackageMapperSuite) TestCRAN_LockfileCompatibility() {
 	s.NoError(err)
 
 	// Lockfile-only path - should produce equivalent output to legacy mapper
-	lockMapper := NewLockfilePackageMapper(base, s.log)
+	lockMapper := NewLockfilePackageMapper(base, util.Path{}, s.log)
 	lockPkgs, err := lockMapper.GetManifestPackagesFromLockfile(lockfilePath)
 	s.NoError(err)
 
@@ -326,7 +326,7 @@ func (s *LockfilePackageMapperSuite) TestBioconductor_LockfileCompatibility() {
 	s.NoError(err)
 
 	// Lockfile-only path
-	lockMapper := NewLockfilePackageMapper(base, s.log)
+	lockMapper := NewLockfilePackageMapper(base, util.Path{}, s.log)
 	lockPkgs, err := lockMapper.GetManifestPackagesFromLockfile(lockfilePath)
 	s.NoError(err)
 

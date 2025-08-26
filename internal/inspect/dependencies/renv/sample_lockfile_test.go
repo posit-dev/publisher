@@ -47,7 +47,7 @@ func (s *SampleLockfileSuite) TestSample() {
 	s.NoError(err)
 
 	// Use our lockfile mapper to get the packages
-	mapper := NewLockfilePackageMapper(cwd, s.log)
+	mapper := NewLockfilePackageMapper(cwd, util.Path{}, s.log)
 	manifestPackages, err := mapper.GetManifestPackagesFromLockfile(lockfilePath)
 	s.NoError(err)
 
