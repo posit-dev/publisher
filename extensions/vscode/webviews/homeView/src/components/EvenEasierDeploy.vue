@@ -98,7 +98,7 @@
       </p>
 
       <p v-if="home.config.active.isUnknownError">
-        The selected Configuration has an error.
+        The selected Configuration has an error: {{ getConfigError }}
         <a
           class="webview-link"
           role="button"
@@ -283,9 +283,23 @@ import {
   isConnectCloudProduct,
   isConnectProduct,
 } from "../../../../src/utils/multiStepHelpers";
+import { getSummaryStringFromError } from "../../../../src/utils/errors";
 
 const home = useHomeStore();
 const hostConduit = useHostConduitService();
+
+const getConfigError = computed((): string => {
+  if (!home.selectedConfiguration) {
+    return "";
+  }
+  const error = isConfigurationError(home.selectedConfiguration)
+    ? home.selectedConfiguration.error
+    : null;
+  if (!error) {
+    return "";
+  }
+  return getSummaryStringFromError("EvenEasierDeploy", error);
+});
 
 const toolbarActions = computed(() => {
   const result = [];
