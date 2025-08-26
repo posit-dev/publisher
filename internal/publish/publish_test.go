@@ -68,6 +68,14 @@ func (m *mockPackageMapper) GetManifestPackages(base util.AbsolutePath, lockfile
 	}
 }
 
+func (m *mockPackageMapper) ScanDependencies(paths []string, log logging.Logger) (util.AbsolutePath, error) {
+	args := m.Called(paths, mock.Anything)
+	if p, ok := args.Get(0).(util.AbsolutePath); ok {
+		return p, args.Error(1)
+	}
+	return util.AbsolutePath{}, args.Error(1)
+}
+
 type publishErrsMock struct {
 	rPackageErr     error
 	authErr         error
@@ -386,9 +394,9 @@ func (s *PublishConnectSuite) publishWithClient(
 
 	rPackageMapper := &mockPackageMapper{}
 	if errsMock.rPackageErr != nil {
-		rPackageMapper.On("GetManifestPackages", mock.Anything, mock.Anything, mock.Anything).Return(nil, errsMock.rPackageErr)
+		rPackageMapper.On("GetManifestPackages", mock.Anything, mock.Anything).Return(nil, errsMock.rPackageErr)
 	} else {
-		rPackageMapper.On("GetManifestPackages", mock.Anything, mock.Anything, mock.Anything).Return(bundles.PackageMap{}, nil)
+		rPackageMapper.On("GetManifestPackages", mock.Anything, mock.Anything).Return(bundles.PackageMap{}, nil)
 	}
 
 	rPackageMapperFactory = func(base util.AbsolutePath, rExecutable util.Path, log logging.Logger) (renv.PackageMapper, error) {
@@ -859,9 +867,9 @@ func (s *PublishConnectCloudSuite) publishWithCloudClient(
 	// Mock R package mapper
 	rPackageMapper := &mockPackageMapper{}
 	if errsMock.rPackageErr != nil {
-		rPackageMapper.On("GetManifestPackages", mock.Anything, mock.Anything, mock.Anything).Return(nil, errsMock.rPackageErr)
+		rPackageMapper.On("GetManifestPackages", mock.Anything, mock.Anything).Return(nil, errsMock.rPackageErr)
 	} else {
-		rPackageMapper.On("GetManifestPackages", mock.Anything, mock.Anything, mock.Anything).Return(bundles.PackageMap{}, nil)
+		rPackageMapper.On("GetManifestPackages", mock.Anything, mock.Anything).Return(bundles.PackageMap{}, nil)
 	}
 
 	// Replace factory function
