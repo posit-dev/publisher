@@ -94,7 +94,19 @@ func (s *ConfigProductTypeComplianceSuite) TestConnectCloudWithMalformedPythonVe
 // No changes should be made to the configuration.
 func (s *ConfigProductTypeComplianceSuite) TestProductTypeConnect() {
 	cfg := &Config{
-		ProductType: ProductTypeConnect,
+		Alternatives: []Config{
+			{
+				Python: &Python{
+					Version:               "3.9.7",
+					PackageManager:        "pip",
+					PackageFile:           "requirements.txt",
+					RequiresPythonVersion: ">=3.9.0",
+				},
+			},
+		},
+		Entrypoint:          "some-entrypoint.py",
+		EntrypointObjectRef: "some-ref",
+		ProductType:         ProductTypeConnect,
 		Python: &Python{
 			Version:               "3.9.7",
 			PackageManager:        "pip",
@@ -125,6 +137,10 @@ func (s *ConfigProductTypeComplianceSuite) TestProductTypeConnect() {
 	originalJupyter := *cfg.Jupyter
 
 	cfg.ForceProductTypeCompliance()
+
+	// Verify fields taht interfere with schema validation are cleared
+	s.Equal("", cfg.EntrypointObjectRef)
+	s.Nil(cfg.Alternatives)
 
 	// Verify all fields remain unchanged for ProductTypeConnect
 	s.Equal(original.ProductType, cfg.ProductType)
