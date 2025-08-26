@@ -113,7 +113,7 @@
         v-if="home.config.active.isCredentialMissing"
         data-automation="missing-creds"
       >
-        No credential was found for the deployment's server.
+        {{ missingCredentialMessage }}
         <a
           class="webview-link"
           role="button"
@@ -412,6 +412,18 @@ const credentialSubTitle = computed(() => {
     return `Missing Credential for ${home.selectedContentRecord?.serverUrl}`;
   }
   return "Missing Credential";
+});
+
+const missingCredentialMessage = computed(() => {
+  const serverType =
+    home.selectedContentRecord?.serverType || ServerType.CONNECT;
+  const productType = getProductType(serverType);
+  if (isConnectCloudProduct(productType)) {
+    return "No credential was found for the deployment's account.";
+  } else if (isConnectProduct(productType)) {
+    return "No credential was found for the deployment's server.";
+  }
+  return "";
 });
 
 const entrypointSubTitle = computed(() => {
