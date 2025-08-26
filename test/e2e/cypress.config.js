@@ -1,8 +1,11 @@
 const { defineConfig } = require("cypress");
-const { authenticateOAuthDevice } = require("./support/oauth-task");
 const fs = require("fs");
 const path = require("path");
 const { get1PasswordSecret } = require("./support/op-utils");
+const {
+  authenticateOAuthDevice,
+  runDeviceWorkflow,
+} = require("./support/oauth-task");
 
 const DEBUG_CYPRESS = process.env.DEBUG_CYPRESS === "true";
 const ACTIONS_STEP_DEBUG = process.env.ACTIONS_STEP_DEBUG === "true";
@@ -48,6 +51,9 @@ module.exports = defineConfig({
             console.log(message);
           }
           return null;
+        },
+        async runDeviceWorkflow({ email, password, env = "staging" }) {
+          return await runDeviceWorkflow({ email, password, env });
         },
       });
     },

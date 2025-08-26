@@ -235,16 +235,18 @@ Cypress.Commands.add("resetConnect", () => {
 });
 
 // Add a global afterEach to log iframes if a test fails (for CI reliability)
-if (typeof afterEach === "function") {
-  afterEach(function () {
-    if (this.currentTest.state === "failed") {
-      cy.debugIframes();
-      cy.get("body").then(($body) => {
-        cy.task("print", $body.html().substring(0, 1000));
-      });
-    }
-  });
-}
+describe("Global afterEach for CI debug", () => {
+  if (typeof afterEach === "function") {
+    afterEach(function () {
+      if (this.currentTest.state === "failed") {
+        cy.debugIframes();
+        cy.get("body").then(($body) => {
+          cy.task("print", $body.html().substring(0, 1000));
+        });
+      }
+    });
+  }
+});
 
 // Update waitForPublisherIframe to use a longer default timeout for CI reliability
 Cypress.Commands.add("waitForPublisherIframe", (timeout = 60000) => {
@@ -394,6 +396,46 @@ Cypress.Commands.add(
     });
   },
 );
+
+Cypress.Commands.add("setPCCCredentials", (options = {}) => {
+  const {
+    email,
+    password,
+    nickname = "pcc-test-credential",
+    env = Cypress.env("CONNECT_CLOUD_ENV") || "staging",
+    guid = "b7e2c1a1-1234-4cde-8f00-abcdefabcdef", // generate or allow override if needed
+  } = options;
+
+  if (!email || !password) {
+    throw new Error("Email and password are required for PCC credential setup");
+  }
+
+  cy.log("Setting up PCC credential via device workflow");
+
+  // Run the device workflow to get access tokens
+  cy.task(
+    "runDeviceWorkflow",
+    { email, password, env },
+    { timeout: 120000 },
+  ).then((tokenResult) => {
+    cy.log("Device workflow completed successfully", tokenResult);
+    if (!tokenResult.success) {
+      throw new Error(`Device workflow failed: ${tokenResult.error}`);
+    }
+
+    // Write the credential file in TOML format, using the correct PCC URL
+    const toml = `
+[credentials]
+[credentials.${nickname}]
+guid = '${guid}'
+version = 0
+url = 'https://cloud.posit.co'
+access_token = '${tokenResult.access_token}'
+refresh_token = '${tokenResult.refresh_token}'
+`;
+    cy.writeFile("e2e-test.connect-credentials", toml);
+  });
+});
 
 Cypress.on("uncaught:exception", () => {
   // Prevent CI from failing on harmless errors
