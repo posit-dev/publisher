@@ -12,7 +12,7 @@ describe("Deployments Section", () => {
       cy.clearupDeployments("static");
     });
 
-    it("Static Content Deployment", () => {
+    it("CS Static Content Deployment", () => {
       cy.waitForPublisherIframe(); // Wait after triggering extension
       cy.debugIframes();
       cy.createDeployment("static", "index.html", "static", (tomlFiles) => {
@@ -44,7 +44,7 @@ describe("Deployments Section", () => {
     // the current version of R within our code-server image, so we'll have an
     // extra bit of work when we want to change that version around to different
     // ones.
-    it.skip("ShinyApp Content Deployment", () => {
+    it.skip("CS ShinyApp Content Deployment", () => {
       cy.waitForPublisherIframe(); // Wait after triggering extension
       cy.debugIframes();
       cy.createDeployment("shinyapp", "app.R", "ShinyApp", (tomlFiles) => {
@@ -76,25 +76,46 @@ describe("Deployments Section", () => {
     beforeEach(() => {
       cy.resetConnect();
       cy.resetCredentials();
-      cy.visit("/");
-    });
-
-    it("writes a PCC credential file via setPCCCredentials", () => {
       const user = Cypress.env("pccConfig").pcc_user_ccqa3;
-      cy.log("About to call setPCCCredentials with:");
-      cy.log("Email: " + user.email);
-      cy.log("Env: " + (Cypress.env("CONNECT_CLOUD_ENV") || "staging"));
       cy.setPCCCredentials({
         email: user.email,
         password: user.auth.password,
         nickname: "pcc-deploy-credential",
       });
-      cy.log("Called setPCCCredentials");
-      // Confirm the file was written and contains the expected nickname
-      cy.readFile("e2e-test.connect-credentials").should(
-        "include",
-        "[credentials.pcc-deploy-credential]",
-      );
+      cy.visit("/");
+    });
+
+    it("PCC Static Content Deployment", () => {
+      cy.waitForPublisherIframe();
+      cy.debugIframes();
+      cy.pause();
+      cy.createDeployment(
+        "static",
+        "index.html",
+        "static",
+        (tomlFiles) => {
+          const config = tomlFiles.config.contents;
+          expect(config.title).to.equal("static");
+          expect(config.type).to.equal("html");
+          expect(config.entrypoint).to.equal("index.html");
+          expect(config.files[0]).to.equal("/index.html");
+          expect(config.files[1]).to.equal(
+            `/.posit/publish/${tomlFiles.config.name}`,
+          );
+          expect(config.files[2]).to.equal(
+            `/.posit/publish/deployments/${tomlFiles.contentRecord.name}`,
+          );
+        },
+        "pcc-deploy-credential, https://cloud.posit.co",
+      ).deployCurrentlySelected();
+      cy.retryWithBackoff(
+        () =>
+          cy.findUniqueInPublisherWebview(
+            '[data-automation="publisher-deployment-section"]',
+          ),
+        5,
+        500,
+      ).should("exist");
     });
   });
 });

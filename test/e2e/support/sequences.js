@@ -21,6 +21,7 @@ Cypress.Commands.add(
     entrypointFile, // string
     title, // string
     verifyTomlCallback, // func({config: { filename: string, contents: {},}, contentRecord: { filename: string, contents: {}})
+    credentialLabel, // string (optional)
   ) => {
     // Temporarily ignore uncaught exception due to a vscode worker being cancelled at some point.
     cy.on("uncaught:exception", () => false);
@@ -98,7 +99,7 @@ Cypress.Commands.add(
 
     cy.get(".quick-input-widget")
       .find(
-        '[aria-label="admin-code-server, http://connect-publisher-e2e:3939"]',
+        `[aria-label="${credentialLabel || "admin-code-server, http://connect-publisher-e2e:3939"}"]`,
       )
       .should("be.visible")
       .click();
