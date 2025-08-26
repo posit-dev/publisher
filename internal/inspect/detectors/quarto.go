@@ -282,6 +282,8 @@ func (d *QuartoDetector) includeStaticConfig(base util.AbsolutePath, cfg *config
 	}
 }
 
+// Generate a static configuration based on the output-dir specified in the project,
+// with discoverability and generation of the entrypoint HTML file related to the output-dir.
 func (d *QuartoDetector) staticConfigFromOutputDir(base util.AbsolutePath, cfg *config.Config, inspectOutput *quartoInspectOutput) *config.Config {
 	outputDir := inspectOutput.OutputDir()
 
@@ -331,6 +333,7 @@ func (d *QuartoDetector) staticConfigFromOutputDir(base util.AbsolutePath, cfg *
 	return staticCfg
 }
 
+// Generate a static configuration based on the existing project files that quarto inspect reports.
 func (d *QuartoDetector) staticConfigFromFilesLookup(base util.AbsolutePath, cfg *config.Config, inspectOutput *quartoInspectOutput) *config.Config {
 	staticCfg := config.New()
 	staticCfg.Type = contenttypes.ContentTypeHTML
