@@ -10,8 +10,6 @@ import (
 	"github.com/posit-dev/publisher/internal/config"
 )
 
-
-
 func (c *ServerPublisher) hasPermissionForPrivateContent() (bool, error) {
 	account, err := c.client.GetAccount(c.Account.CloudAccountID)
 	if err != nil {
