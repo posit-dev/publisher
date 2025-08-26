@@ -10,6 +10,7 @@ import (
 type APIClient interface {
 	GetCurrentUser() (*UserResponse, error)
 	GetAccounts() (*AccountListResponse, error)
+	GetAccount(accountID string) (*Account, error)
 	GetContent(contentID internaltypes.ContentID) (*types.ContentResponse, error)
 	CreateContent(request *types.CreateContentRequest) (*types.ContentResponse, error)
 	UpdateContent(request *types.UpdateContentRequest) (*types.ContentResponse, error)

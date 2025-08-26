@@ -87,7 +87,11 @@ import { newCredential } from "src/multiStepInputs/newCredential";
 import { PublisherState } from "src/state";
 import { throttleWithLastPending } from "src/utils/throttle";
 import { showAssociateGUID } from "src/actions/showAssociateGUID";
-import { extensionSettings } from "src/extension";
+import {
+  extensionSettings,
+  SelectionIsConnectContentRecord,
+  setSelectionIsConnectContentRecord,
+} from "src/extension";
 import { openFileInEditor } from "src/commands";
 import { showImmediateDeploymentFailureMessage } from "./publishFailures";
 import {
@@ -197,6 +201,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         return this.updateSelectionCredentialState(msg.content.state);
       case WebviewToHostMessageType.UPDATE_SELECTION_IS_PRE_CONTENT_RECORD:
         return this.updateSelectionIsPreContentRecordState(msg.content.state);
+      case WebviewToHostMessageType.UPDATE_SELECTION_IS_CONNECT_CONTENT_RECORD:
+        return this.updateSelectionIsConnectContentRecordState(
+          msg.content.state,
+        );
       case WebviewToHostMessageType.COPY_SYSTEM_INFO:
         return await this.copySystemInfo();
       default:
@@ -234,6 +242,14 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     return await setSelectionIsPreContentRecord(match);
   }
 
+  private async updateSelectionIsConnectContentRecordState(state: string) {
+    const match =
+      state === SelectionIsConnectContentRecord.true
+        ? SelectionIsConnectContentRecord.true
+        : SelectionIsConnectContentRecord.false;
+    return await setSelectionIsConnectContentRecord(match);
+  }
+
   private async initiateDeployment(
     deploymentName: string,
     credentialName: string,
@@ -267,6 +283,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       // Most failures will occur on the event stream. These are the ones which
       // are immediately rejected as part of the API request to initiate deployment.
       showImmediateDeploymentFailureMessage(error);
+    } finally {
+      this.webviewConduit.sendMsg({
+        kind: HostToWebviewMessageType.PUBLISH_INIT,
+      });
     }
   }
 
@@ -1834,7 +1854,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     this.configWatchers?.dispose();
   }
 
-  public async register(watchers: WatcherManager) {
+  public register(watchers: WatcherManager) {
     this.stream.register("publish/start", () => {
       this.onPublishStart();
     });
@@ -1853,22 +1873,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       }),
     );
 
-    const currentContentRecord = await this.state.getSelectedContentRecord();
-    const serverType = currentContentRecord?.serverType || ServerType.CONNECT;
-    const productType = getProductType(serverType);
-
-    // register this command for Connect only,
-    // since Connect Cloud does not support this feature at the moment
-    if (isConnectProduct(productType)) {
-      this.context.subscriptions.push(
-        commands.registerCommand(
-          Commands.HomeView.AssociateDeployment,
-          () => showAssociateGUID(this.state),
-          this,
-        ),
-      );
-    }
-
     this.context.subscriptions.push(
       commands.registerCommand(
         Commands.HomeView.SelectDeployment,
@@ -1886,6 +1890,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       commands.registerCommand(
         Commands.HomeView.ShowSelectConfigForDeployment,
         this.showSelectOrCreateConfigForDeployment,
+        this,
+      ),
+      commands.registerCommand(
+        Commands.HomeView.AssociateDeployment,
+        () => showAssociateGUID(this.state),
         this,
       ),
       commands.registerCommand(

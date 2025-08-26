@@ -98,7 +98,7 @@
       </p>
 
       <p v-if="home.config.active.isUnknownError">
-        The selected Configuration has an error.
+        The selected Configuration has an error: {{ getConfigError }}
         <a
           class="webview-link"
           role="button"
@@ -191,7 +191,7 @@
           </div>
         </template>
         <template v-else>
-          <div v-if="isPreContentRecordWithoutID">
+          <div v-if="isPreContentRecordWithoutID && isConnectPreContentRecord">
             Is this already deployed to a Connect server? You can
             <a class="webview-link" role="button" @click="onAssociateDeployment"
               >update that previous deployment</a
@@ -283,9 +283,23 @@ import {
   isConnectCloudProduct,
   isConnectProduct,
 } from "../../../../src/utils/multiStepHelpers";
+import { getSummaryStringFromError } from "../../../../src/utils/errors";
 
 const home = useHomeStore();
 const hostConduit = useHostConduitService();
+
+const getConfigError = computed((): string => {
+  if (!home.selectedConfiguration) {
+    return "";
+  }
+  const error = isConfigurationError(home.selectedConfiguration)
+    ? home.selectedConfiguration.error
+    : null;
+  if (!error) {
+    return "";
+  }
+  return getSummaryStringFromError("EvenEasierDeploy", error);
+});
 
 const toolbarActions = computed(() => {
   const result = [];
@@ -457,6 +471,13 @@ const isPreContentRecordWithoutID = computed(() => {
     isPreContentRecord(home.selectedContentRecord) &&
     !isPreContentRecordWithID.value
   );
+});
+
+const isConnectPreContentRecord = computed(() => {
+  const serverType =
+    home.selectedContentRecord?.serverType || ServerType.CONNECT;
+  const productType = getProductType(serverType);
+  return isConnectProduct(productType);
 });
 
 const isDismissedContentRecord = computed(() => {

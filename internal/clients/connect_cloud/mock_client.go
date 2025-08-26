@@ -34,6 +34,11 @@ func (m *MockClient) GetAccounts() (*AccountListResponse, error) {
 	return args.Get(0).(*AccountListResponse), args.Error(1)
 }
 
+func (m *MockClient) GetAccount(accountID string) (*Account, error) {
+	args := m.Called(accountID)
+	return args.Get(0).(*Account), args.Error(1)
+}
+
 func (m *MockClient) CreateContent(request *types.CreateContentRequest) (*types.ContentResponse, error) {
 	args := m.Called(request)
 	return args.Get(0).(*types.ContentResponse), args.Error(1)

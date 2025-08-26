@@ -29,6 +29,7 @@ import {
 export const useHomeStore = defineStore("home", () => {
   const platformFileSeparator = ref<string>("/");
   const publishInProgress = ref(false);
+  const publishInitiated = ref(false);
 
   const contentRecords = ref<(ContentRecord | PreContentRecord)[]>([]);
   const configurations = ref<Configuration[]>([]);
@@ -214,9 +215,10 @@ export const useHomeStore = defineStore("home", () => {
     });
   };
 
-  watch([selectedContentRecord], () =>
-    updateSelectionIsPreContentRecordState(),
-  );
+  watch([selectedContentRecord], () => {
+    updateSelectionIsPreContentRecordState();
+    updateSelectionIsConnectContentRecordState();
+  });
 
   const updateSelectionIsPreContentRecordState = () => {
     const hostConduit = useHostConduitService();
@@ -226,6 +228,19 @@ export const useHomeStore = defineStore("home", () => {
         state: isPreContentRecord(selectedContentRecord.value)
           ? "true"
           : "false",
+      },
+    });
+  };
+
+  const updateSelectionIsConnectContentRecordState = () => {
+    const hostConduit = useHostConduitService();
+    const serverType =
+      selectedContentRecord.value?.serverType || ServerType.CONNECT;
+    const productType = getProductType(serverType);
+    hostConduit.sendMsg({
+      kind: WebviewToHostMessageType.UPDATE_SELECTION_IS_CONNECT_CONTENT_RECORD,
+      content: {
+        state: isConnectProduct(productType) ? "true" : "false",
       },
     });
   };
@@ -449,6 +464,7 @@ export const useHomeStore = defineStore("home", () => {
     platformFileSeparator,
     showDisabledOverlay,
     publishInProgress,
+    publishInitiated,
     contentRecords,
     configurations,
     configurationsInError,

@@ -46,7 +46,7 @@ func (s *QuartoDetectorSuite) runInferType(testName string) []*config.Config {
 	// Replace the $DIR placeholder in the file with
 	// the correct path (json-escaped)
 	placeholder := []byte("$DIR")
-	baseDir, err := json.Marshal(base.Dir().String())
+	baseDir, err := json.Marshal(base.String())
 	s.NoError(err)
 	baseDir = baseDir[1 : len(baseDir)-1]
 
@@ -87,10 +87,26 @@ func (s *QuartoDetectorSuite) TestInferTypeMarkdownDoc() {
 		Entrypoint: "quarto-doc-none.qmd",
 		Title:      "quarto-doc-none",
 		Validate:   &validate,
-		Files:      []string{},
+		Files: []string{
+			"/quarto-doc-none.qmd",
+			"/subdir/subpage.qmd",
+		},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
 			Engines: []string{"markdown"},
+		},
+		Alternatives: []config.Config{
+			{
+				Schema:     schema.ConfigSchemaURL,
+				Type:       config.ContentTypeHTML,
+				Entrypoint: "quarto-doc-none.html",
+				Title:      "quarto-doc-none",
+				Validate:   &validate,
+				Files: []string{
+					"/quarto-doc-none.html",
+					"/subdir/subpage.html",
+				},
+			},
 		},
 	}, configs[0])
 }
@@ -113,6 +129,18 @@ func (s *QuartoDetectorSuite) TestInferTypeMarkdownProject() {
 			Version: "1.4.553",
 			Engines: []string{"markdown"},
 		},
+		Alternatives: []config.Config{
+			{
+				Schema:     schema.ConfigSchemaURL,
+				Type:       config.ContentTypeHTML,
+				Entrypoint: "quarto-proj-none.html",
+				Title:      "quarto-proj-none",
+				Validate:   &validate,
+				Files: []string{
+					"/quarto-proj-none.html",
+				},
+			},
+		},
 	}, configs[0])
 }
 
@@ -133,6 +161,18 @@ func (s *QuartoDetectorSuite) TestInferTypeMarkdownProjectWindows() {
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
 			Engines: []string{"markdown"},
+		},
+		Alternatives: []config.Config{
+			{
+				Schema:     schema.ConfigSchemaURL,
+				Type:       config.ContentTypeHTML,
+				Entrypoint: "quarto-proj-none.html",
+				Title:      "quarto-proj-none",
+				Validate:   &validate,
+				Files: []string{
+					"/quarto-proj-none.html",
+				},
+			},
 		},
 	}, configs[0])
 }
@@ -156,6 +196,18 @@ func (s *QuartoDetectorSuite) TestInferTypePythonProject() {
 			Version: "1.4.553",
 			Engines: []string{"jupyter"},
 		},
+		Alternatives: []config.Config{
+			{
+				Schema:     schema.ConfigSchemaURL,
+				Type:       config.ContentTypeHTML,
+				Entrypoint: "quarto-proj-py.html",
+				Title:      "quarto-proj-py",
+				Validate:   &validate,
+				Files: []string{
+					"/quarto-proj-py.html",
+				},
+			},
+		},
 	}, configs[0])
 }
 
@@ -177,6 +229,18 @@ func (s *QuartoDetectorSuite) TestInferTypeRProject() {
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
 			Engines: []string{"knitr"},
+		},
+		Alternatives: []config.Config{
+			{
+				Schema:     schema.ConfigSchemaURL,
+				Type:       config.ContentTypeHTML,
+				Entrypoint: "quarto-proj-r.html",
+				Title:      "quarto-proj-r",
+				Validate:   &validate,
+				Files: []string{
+					"/quarto-proj-r.html",
+				},
+			},
 		},
 	}, configs[0])
 }
@@ -200,6 +264,18 @@ func (s *QuartoDetectorSuite) TestInferTypeRAndPythonProject() {
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
 			Engines: []string{"jupyter", "knitr"},
+		},
+		Alternatives: []config.Config{
+			{
+				Schema:     schema.ConfigSchemaURL,
+				Type:       config.ContentTypeHTML,
+				Entrypoint: "quarto-proj-r-py.html",
+				Title:      "quarto-proj-r-py",
+				Validate:   &validate,
+				Files: []string{
+					"/quarto-proj-r-py.html",
+				},
+			},
 		},
 	}, configs[0])
 }
@@ -244,6 +320,18 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoWebsite() {
 			Version: "1.4.553",
 			Engines: []string{"markdown"},
 		},
+		Alternatives: []config.Config{
+			{
+				Schema:     schema.ConfigSchemaURL,
+				Type:       config.ContentTypeHTML,
+				Entrypoint: "_site",
+				Title:      "About",
+				Validate:   &validate,
+				Files: []string{
+					"/_site",
+				},
+			},
+		},
 	}, configs[0])
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
@@ -260,6 +348,18 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoWebsite() {
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
 			Engines: []string{"markdown"},
+		},
+		Alternatives: []config.Config{
+			{
+				Schema:     schema.ConfigSchemaURL,
+				Type:       config.ContentTypeHTML,
+				Entrypoint: "_site",
+				Title:      "quarto-website-none",
+				Validate:   &validate,
+				Files: []string{
+					"/_site",
+				},
+			},
 		},
 	}, configs[1])
 }
@@ -322,6 +422,18 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoWebsite_viaQuartoYml() {
 			Engines: []string{"jupyter", "markdown"},
 		},
 		Python: &config.Python{},
+		Alternatives: []config.Config{
+			{
+				Schema:     schema.ConfigSchemaURL,
+				Type:       config.ContentTypeHTML,
+				Entrypoint: "_site",
+				Title:      "Content Dashboard",
+				Validate:   &validate,
+				Files: []string{
+					"/_site",
+				},
+			},
+		},
 	}, configs[0])
 }
 
@@ -338,11 +450,25 @@ func (s *QuartoDetectorSuite) TestInferTypeRMarkdownDoc() {
 		Entrypoint: "static.Rmd",
 		Title:      "static",
 		Validate:   &validate,
-		Files:      []string{},
-		R:          &config.R{},
+		Files: []string{
+			"/static.Rmd",
+		},
+		R: &config.R{},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
 			Engines: []string{"knitr"},
+		},
+		Alternatives: []config.Config{
+			{
+				Schema:     schema.ConfigSchemaURL,
+				Type:       config.ContentTypeHTML,
+				Entrypoint: "static.html",
+				Title:      "static",
+				Validate:   &validate,
+				Files: []string{
+					"/static.html",
+				},
+			},
 		},
 	}, configs[0])
 }
@@ -365,6 +491,19 @@ func (s *QuartoDetectorSuite) TestInferTypeMultidocProject() {
 			Version: "1.4.553",
 			Engines: []string{"markdown"},
 		},
+		Alternatives: []config.Config{
+			{
+				Schema:     schema.ConfigSchemaURL,
+				Type:       config.ContentTypeHTML,
+				Entrypoint: "document1.html",
+				Title:      "quarto-proj-none-multidocument",
+				Validate:   &validate,
+				Files: []string{
+					"/document1.html",
+					"/document2.html",
+				},
+			},
+		},
 	}, configs[0])
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
@@ -376,6 +515,19 @@ func (s *QuartoDetectorSuite) TestInferTypeMultidocProject() {
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
 			Engines: []string{"markdown"},
+		},
+		Alternatives: []config.Config{
+			{
+				Schema:     schema.ConfigSchemaURL,
+				Type:       config.ContentTypeHTML,
+				Entrypoint: "document1.html",
+				Title:      "quarto-proj-none-multidocument",
+				Validate:   &validate,
+				Files: []string{
+					"/document1.html",
+					"/document2.html",
+				},
+			},
 		},
 	}, configs[1])
 }
@@ -398,6 +550,18 @@ func (s *QuartoDetectorSuite) TestInferTypeNotebook() {
 		Quarto: &config.Quarto{
 			Version: "1.5.54",
 			Engines: []string{"jupyter"},
+		},
+		Alternatives: []config.Config{
+			{
+				Schema:     schema.ConfigSchemaURL,
+				Type:       config.ContentTypeHTML,
+				Entrypoint: "stock-report-jupyter.html",
+				Title:      "Stock Report: TSLA",
+				Validate:   &validate,
+				Files: []string{
+					"/stock-report-jupyter.html",
+				},
+			},
 		},
 	}, configs[0])
 }

@@ -5,6 +5,7 @@ package connect_cloud
 import (
 	"context"
 	"io"
+	"time"
 
 	"github.com/posit-dev/publisher/internal/clients/types"
 	"github.com/posit-dev/publisher/internal/events"
@@ -70,6 +71,7 @@ func (c *ServerPublisher) PublishToServer(contentID internal_types.ContentID, bu
 	if err != nil {
 		return err
 	}
+	log.Info("Getting content logs...")
 
 	// refetch the content to get the new revision's log channel
 	content, err := c.client.GetContent(c.content.ID)
@@ -79,7 +81,14 @@ func (c *ServerPublisher) PublishToServer(contentID internal_types.ContentID, bu
 	c.content = content
 
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	defer func() {
+		go func() {
+			// Allow up to 5 seconds for logs to flush before cancelling.
+			// Needs goroutine to avoid blocking the completion of the deployment.
+			time.Sleep(5 * time.Second)
+			cancel()
+		}()
+	}()
 	err = c.watchLogs(ctx, op)
 	if err != nil {
 		return err

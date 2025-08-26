@@ -196,6 +196,13 @@ const eventVerbToString = new Map<string, activeInactivePhrases>([
     },
   ],
   [
+    "publish/createNewDeployment",
+    {
+      active: "Creating New Deployment",
+      inActive: "Create New Deployment",
+    },
+  ],
+  [
     "publish/createBundle",
     {
       inActive: "Create Bundle",
@@ -690,6 +697,9 @@ export function isPublishCreateDeploymentFailure(
 
 export interface PublishDeployContentStart extends EventStreamMessage {
   type: "publish/deployContent/start";
+  data: {
+    localId: string;
+  };
 }
 export type OnPublishDeployContentStartCallback = (
   msg: PublishDeployContentStart,
@@ -702,6 +712,9 @@ export function isPublishDeployContentStart(
 
 export interface PublishDeployContentLog extends EventStreamMessage {
   type: "publish/deployContent/log";
+  data: {
+    localId: string;
+  };
 }
 export type OnPublishDeployContentLogCallback = (
   msg: PublishDeployContentLog,
@@ -714,6 +727,9 @@ export function isPublishDeployContentLog(
 
 export interface PublishDeployContentSuccess extends EventStreamMessage {
   type: "publish/deployContent/success";
+  data: {
+    localId: string;
+  };
 }
 export type OnPublishDeployContentSuccessCallback = (
   msg: PublishDeployContentSuccess,
@@ -741,6 +757,9 @@ export function isPublishDeployContentFailure(
 
 export interface PublishUpdateContentStart extends EventStreamMessage {
   type: "publish/updateContent/start";
+  data: {
+    localId: string;
+  };
 }
 export type OnPublishUpdateContentStartCallback = (
   msg: PublishUpdateContentStart,
@@ -764,6 +783,9 @@ export function isPublishUpdateContentLog(
 
 export interface PublishUpdateContentSuccess extends EventStreamMessage {
   type: "publish/updateContent/success";
+  data: {
+    localId: string;
+  };
 }
 export type OnPublishUpdateContentSuccessCallback = (
   msg: PublishUpdateContentSuccess,
