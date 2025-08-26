@@ -247,7 +247,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
         }
       });
 
-      const showLogsOption = "View Log";
+      const showLogsOption = "View Publishing Log";
       const options = [showLogsOption];
       const enhancedError = findErrorMessageSplitOption(msg.data.message);
       if (enhancedError && enhancedError.buttonStr) {
@@ -421,7 +421,10 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
     const root = new LogsTreeStageItem(this.publishingStage);
 
     for (const stage of this.publishingStage.stages) {
-      if (stage.status === LogStageStatus.failed) {
+      if (
+        stage.status === LogStageStatus.failed ||
+        stage.status === LogStageStatus.canceled
+      ) {
         const stageItem = new LogsTreeStageItem(stage, root);
 
         if (stage.events.length) {
@@ -453,9 +456,8 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
 
     if (revealItem) {
       treeView.reveal(revealItem, {
-        select: false,
-        focus: false,
-        expand: 2,
+        select: true,
+        focus: true,
       });
     }
   }

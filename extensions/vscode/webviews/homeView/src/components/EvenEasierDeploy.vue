@@ -166,7 +166,7 @@
           </div>
           <p class="progress-log-anchor">
             <a class="webview-link" role="button" @click="onViewPublishingLog">
-              View Log
+              View Publishing Log
             </a>
           </p>
         </div>

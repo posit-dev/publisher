@@ -17,6 +17,7 @@ export enum HostToWebviewMessageType {
   REFRESH_CONTENTRECORD_DATA = "refreshContentRecordData",
   REFRESH_CONFIG_DATA = "refreshConfigData",
   REFRESH_CREDENTIAL_DATA = "refreshCredentialData",
+  PUBLISH_CANCEL = "publishCancel",
   PUBLISH_INIT = "publishInit",
   PUBLISH_START = "publishStart",
   PUBLISH_FINISH_SUCCESS = "publishFinishSuccess",
@@ -47,6 +48,7 @@ export type HostToWebviewMessage =
   | RefreshContentRecordDataMsg
   | RefreshConfigDataMsg
   | RefreshCredentialDataMsg
+  | PublishCancelMsg
   | PublishInitMsg
   | PublishStartMsg
   | PublishFinishSuccessMsg
@@ -68,6 +70,7 @@ export function isHostToWebviewMessage(msg: any): msg is HostToWebviewMessage {
     msg.kind === HostToWebviewMessageType.REFRESH_CONTENTRECORD_DATA ||
     msg.kind === HostToWebviewMessageType.REFRESH_CONFIG_DATA ||
     msg.kind === HostToWebviewMessageType.REFRESH_CREDENTIAL_DATA ||
+    msg.kind === HostToWebviewMessageType.PUBLISH_CANCEL ||
     msg.kind === HostToWebviewMessageType.PUBLISH_INIT ||
     msg.kind === HostToWebviewMessageType.PUBLISH_START ||
     msg.kind === HostToWebviewMessageType.PUBLISH_FINISH_SUCCESS ||
@@ -107,6 +110,8 @@ export type RefreshCredentialDataMsg = AnyHostToWebviewMessage<
     credentials: Credential[];
   }
 >;
+export type PublishCancelMsg =
+  AnyHostToWebviewMessage<HostToWebviewMessageType.PUBLISH_CANCEL>;
 export type PublishInitMsg =
   AnyHostToWebviewMessage<HostToWebviewMessageType.PUBLISH_INIT>;
 export type PublishStartMsg =
