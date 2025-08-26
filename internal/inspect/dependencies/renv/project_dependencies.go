@@ -53,16 +53,16 @@ func (s *defaultRDependencyScanner) ScanDependencies(paths []string, rExecutable
 		return util.AbsolutePath{}, err
 	}
 	script := fmt.Sprintf(`(function(){
-	if (is.function(renv::consent)) try(renv::consent(provided = TRUE), silent = TRUE)
+	options(renv.consent = TRUE)
 	rPathsVec <- %s
 	deps <- tryCatch({
 		d <- renv::dependencies(path = rPathsVec, progress = FALSE)
-		unique(stats::na.omit(d$Package))
+		d$Package[!is.na(d$Package)]
 	}, error = function(e) character())
 	deps <- setdiff(deps, c("renv"))
 	tmpProjPath <- "%s"
 	try(renv::init(project = tmpProjPath, bare = TRUE, force = TRUE), silent = TRUE)
-	if (length(deps) > 0) try(renv::install(deps, project = tmpProjPath), silent = TRUE)
+	try(renv::install(deps, project = tmpProjPath), silent = TRUE)
 	lockfile <- file.path(tmpProjPath, "renv.lock")
 	renv::snapshot(project = tmpProjPath, lockfile = lockfile, prompt = FALSE, type = "all")
 	invisible()
