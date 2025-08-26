@@ -63,7 +63,7 @@ export async function newDeployment(
   viewId: string,
   projectDir = ".",
   entryPointFile?: string,
-): Promise<DeploymentObjects | undefined> {
+): Promise<DeploymentObjects> {
   // ***************************************************************
   // API Calls and results
   // ***************************************************************
@@ -120,6 +120,12 @@ export async function newDeployment(
   const newDeploymentData: NewDeploymentData = {
     entrypoint: {},
   };
+
+  const getDeploymentObjects = (): DeploymentObjects => ({
+    contentRecord: newContentRecord,
+    configuration: newConfig,
+    credential: newOrSelectedCredential,
+  });
 
   const newCredentialForced = (): boolean => {
     return credentials.length === 0;
@@ -665,7 +671,7 @@ export async function newDeployment(
     );
   } catch {
     // errors have already been displayed by the underlying promises..
-    return undefined;
+    return getDeploymentObjects();
   }
   await collectInputs();
 
@@ -691,7 +697,7 @@ export async function newDeployment(
     isMissingCredentialData()
   ) {
     console.log("User has dismissed the New Deployment flow. Exiting.");
-    return undefined;
+    return getDeploymentObjects();
   }
 
   if (!newOrSelectedCredential && newDeploymentData.existingCredentialName) {
@@ -703,14 +709,14 @@ export async function newDeployment(
       window.showErrorMessage(
         `Internal Error: NewDeployment Unable to find credential: ${newDeploymentData.existingCredentialName}`,
       );
-      return undefined;
+      return getDeploymentObjects();
     }
   } else if (!newOrSelectedCredential) {
     // we are not creating a credential but also do not have a required existing value
     window.showErrorMessage(
       "Internal Error: NewDeployment Unexpected type guard failure @2",
     );
-    return undefined;
+    return getDeploymentObjects();
   }
 
   // Create the Config File
@@ -751,7 +757,7 @@ export async function newDeployment(
       error,
     );
     window.showErrorMessage(`Failed to create config file. ${summary}`);
-    return undefined;
+    return getDeploymentObjects();
   }
 
   try {
@@ -794,7 +800,7 @@ export async function newDeployment(
     window.showErrorMessage(
       `Failed to create pre-deployment record. ${summary}`,
     );
-    return undefined;
+    return getDeploymentObjects();
   }
 
   try {
@@ -819,9 +825,5 @@ export async function newDeployment(
     );
   }
 
-  return {
-    contentRecord: newContentRecord,
-    configuration: newConfig,
-    credential: newOrSelectedCredential,
-  };
+  return getDeploymentObjects();
 }
