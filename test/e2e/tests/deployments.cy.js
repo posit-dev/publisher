@@ -12,10 +12,10 @@ describe("Deployments Section", () => {
       cy.clearupDeployments("static");
     });
 
-    it("CS Static Content Deployment", () => {
+    it("PCS Static Content Deployment", () => {
       cy.waitForPublisherIframe(); // Wait after triggering extension
       cy.debugIframes();
-      cy.createPCDeployment("static", "index.html", "static", (tomlFiles) => {
+      cy.createPCSDeployment("static", "index.html", "static", (tomlFiles) => {
         const config = tomlFiles.config.contents;
         expect(config.title).to.equal("static");
         expect(config.type).to.equal("html");
@@ -44,10 +44,10 @@ describe("Deployments Section", () => {
     // the current version of R within our code-server image, so we'll have an
     // extra bit of work when we want to change that version around to different
     // ones.
-    it.skip("CS ShinyApp Content Deployment", () => {
+    it.skip("PCS ShinyApp Content Deployment", () => {
       cy.waitForPublisherIframe(); // Wait after triggering extension
       cy.debugIframes();
-      cy.createPCDeployment("shinyapp", "app.R", "ShinyApp", (tomlFiles) => {
+      cy.createPCSDeployment("shinyapp", "app.R", "ShinyApp", (tomlFiles) => {
         const config = tomlFiles.config.contents;
         expect(config.title).to.equal("ShinyApp");
         expect(config.type).to.equal("r-shiny");

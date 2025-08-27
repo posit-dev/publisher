@@ -16,7 +16,7 @@
 
 // Connect Server deployment sequence
 Cypress.Commands.add(
-  "createPCDeployment",
+  "createPCSDeployment",
   (
     projectDir, // string
     entrypointFile, // string
@@ -137,7 +137,7 @@ Cypress.Commands.add(
   },
 );
 
-// PCC deployment sequence
+// Connect Cloud deployment sequence
 Cypress.Commands.add(
   "createPCCDeployment",
   (

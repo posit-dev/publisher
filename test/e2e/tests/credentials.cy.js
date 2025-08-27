@@ -7,7 +7,11 @@ describe("Credentials Section", () => {
     cy.visit("/");
   });
 
-  it("New Connect Server Credential", () => {
+  afterEach(() => {
+    cy.resetCredentials();
+  });
+
+  it("New PCS Credential", () => {
     cy.getPublisherSidebarIcon()
       .should("be.visible", { timeout: 10000 })
       .click();
@@ -77,7 +81,7 @@ describe("Credentials Section", () => {
       .should("have.text", "admin-code-server");
   });
 
-  it("New Connect Cloud Credential - OAuth Device Code", () => {
+  it("New PCC Credential - OAuth Device Code", () => {
     const user = Cypress.env("pccConfig").pcc_user_ccqa3;
     cy.addPCCCredential(user, "connect-cloud-credential");
     cy.findInPublisherWebview(

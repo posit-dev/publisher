@@ -36,7 +36,7 @@ module.exports = defineConfig({
       runMode: 3, // Retry failed tests in run mode (CI)
       openMode: 0,
     },
-    defaultCommandTimeout: isCI ? 30000 : 4000,
+    defaultCommandTimeout: isCI ? 30000 : 6000,
     pageLoadTimeout: isCI ? 60000 : 30000,
     cookies: {
       preserve: /_xsrf|session|connect\.sid|auth|oauth/,

@@ -3,7 +3,7 @@
 // NOTE:: The error cases are created here by using pre-created files.
 // Because of this, they are not suitable for deployment (due to their hard-coded values)
 
-describe("Detect error in config", () => {
+describe("Detect errors in config", () => {
   beforeEach(() => {
     cy.resetConnect();
     cy.setAdminCredentials();
