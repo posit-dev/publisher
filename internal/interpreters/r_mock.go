@@ -90,8 +90,8 @@ func (m *MockRInterpreter) GetLockFilePath() (util.RelativePath, bool, error) {
 	}
 }
 
-func (m *MockRInterpreter) CreateLockfile(lockfilePath util.AbsolutePath) error {
-	args := m.Called(lockfilePath)
+func (m *MockRInterpreter) CreateLockfile(lockfilePath util.AbsolutePath, scanDependencies bool) error {
+	args := m.Called(lockfilePath, scanDependencies)
 	return args.Error(0)
 }
 

@@ -49,7 +49,7 @@ type RInterpreter interface {
 	GetLockFilePath() (util.RelativePath, bool, error)
 	GetPackageManager() string
 	GetPreferredPath() string
-	CreateLockfile(util.AbsolutePath) error
+	CreateLockfile(util.AbsolutePath, bool) error
 	RenvEnvironmentErrorCheck() *types.AgentError
 	GetRRequires() string
 }
@@ -494,27 +494,78 @@ func (i *defaultRInterpreter) getRenvLockfilePathFromRExecutable(rExecutable str
 
 // CreateLockfile creates a lockfile at the specified path
 // by invoking R to run `renv::snapshot()`.
-func (i *defaultRInterpreter) CreateLockfile(lockfilePath util.AbsolutePath) error {
+func (i *defaultRInterpreter) CreateLockfile(lockfilePath util.AbsolutePath, scanDependencies bool) error {
 	rExecutable, err := i.GetRExecutable()
 	if err != nil {
 		return err
 	}
-	i.log.Info("Creating renv lockfile", "path", lockfilePath.String(), "r", rExecutable)
+
+	if lockfilePath.Path.String() == "" {
+		lockfilePath = i.base.Join(DefaultRenvLockfile)
+		i.log.Debug("looking for default renv lockfile", "lockfilePath", lockfilePath)
+	}
+
+	i.log.Info(
+		"Creating renv lockfile",
+		"path",
+		lockfilePath.String(),
+		"r",
+		rExecutable,
+		"useScanDependencies",
+		scanDependencies,
+	)
 
 	err = lockfilePath.Dir().MkdirAll(0777)
 	if err != nil {
 		return err
 	}
-	var cmd string
-	if lockfilePath.String() == "" {
-		cmd = "renv::snapshot()"
+
+	var stdout, stderr []byte
+
+	// Build the R script, either following the pattern in
+	// defaultRDependencyScanner.ScanDependencies or the old renv::snapshot() pattern
+	if scanDependencies {
+		script := fmt.Sprintf(`(function(){
+			options(renv.consent = TRUE)
+			deps <- tryCatch({
+				d <- renv::dependencies(path = ".", progress = FALSE)
+				d$Package[!is.na(d$Package)]
+			}, error = function(e) character())
+			deps <- setdiff(deps, c("renv"))
+			try(renv::init(bare = TRUE, force = TRUE), silent = TRUE)
+			try(renv::install(deps), silent = TRUE)
+			lockfilePath <- "%s"
+			renv::snapshot(lockfile = lockfilePath, prompt = FALSE, type = "all")
+			invisible()
+        })()`, lockfilePath.String())
+		stdout, stderr, err = i.cmdExecutor.RunScript(rExecutable.String(), []string{"-s"}, script, i.base, i.log)
+		i.log.Debug("ScanDependencies-based renv lockfile creation", "stdout", string(stdout), "stderr", string(stderr))
 	} else {
-		escaped := strings.ReplaceAll(lockfilePath.String(), `\`, `\\`)
-		cmd = fmt.Sprintf(`renv::snapshot(lockfile="%s")`, escaped)
+		var cmd string
+		if lockfilePath.String() == "" {
+			cmd = "renv::snapshot()"
+		} else {
+			escaped := strings.ReplaceAll(lockfilePath.String(), `\`, `\\`)
+			cmd = fmt.Sprintf(`renv::snapshot(lockfile="%s")`, escaped)
+		}
+		stdout, stderr, err = i.cmdExecutor.RunScript(rExecutable.String(), []string{"-s"}, cmd, i.base, i.log)
+		i.log.Debug("renv::snapshot()", "out", string(stdout), "err", string(stderr))
 	}
-	stdout, stderr, err := i.cmdExecutor.RunScript(rExecutable.String(), []string{"-s"}, cmd, i.base, i.log)
-	i.log.Debug("renv::snapshot()", "out", string(stdout), "err", string(stderr))
-	return err
+
+	if err != nil {
+		return err
+	}
+
+	// Ensure the lockfile was created
+	exists, err := lockfilePath.Exists()
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return fmt.Errorf("renv could not create lockfile: %s", lockfilePath.String())
+	}
+
+	return nil
 }
 
 func (i *defaultRInterpreter) GetPackageManager() string {

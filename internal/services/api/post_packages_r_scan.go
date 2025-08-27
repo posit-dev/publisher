@@ -61,12 +61,13 @@ func (h *PostPackagesRScanHandler) ServeHTTP(w http.ResponseWriter, req *http.Re
 	lockfileAbsPath := projectDir.Join(path.String())
 	rPath := util.NewPath(b.R, nil)
 
+	// TODO: There is a null pointer dereference here when running CreateLockfile.
 	rInterpreter, err := h.rInterpreterFactory(projectDir, rPath, h.log, nil, nil, nil)
 	if err != nil {
 		InternalError(w, req, h.log, err)
 		return
 	}
-	err = rInterpreter.CreateLockfile(lockfileAbsPath)
+	err = rInterpreter.CreateLockfile(lockfileAbsPath, false)
 	if err != nil {
 		InternalError(w, req, h.log, err)
 		return

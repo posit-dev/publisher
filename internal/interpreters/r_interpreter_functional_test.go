@@ -161,7 +161,7 @@ func (s *RInterpreterFunctionalSuite) TestCreateLockfile() {
 
 	// Create the lockfile - this might fail in non-project contexts,
 	// but we should still attempt it for real-world testing
-	err = s.interpreter.CreateLockfile(lockfilePath)
+	err = s.interpreter.CreateLockfile(lockfilePath, false)
 	if err != nil {
 		s.T().Logf("Error creating lockfile (may be expected in non-project context): %v", err)
 		return
