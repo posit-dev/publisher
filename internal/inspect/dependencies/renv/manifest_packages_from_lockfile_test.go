@@ -394,3 +394,50 @@ func (s *LockfilePackageMapperSuite) TestRSPMRepositoryHandling() {
 	// Check version from description
 	s.Equal("2.5.1", r6Pkg.Description["Version"])
 }
+
+func (s *LockfilePackageMapperSuite) TestRSPMRepositoryHandling_MissingRemoteRepos() {
+	// Test the case where a package has Repository="RSPM" but no RemoteRepos field
+	// This should resolve to the standard RSPM repository URL
+	lockfileContent := `{
+		"R": {
+			"Version": "4.3.3",
+			"Repositories": [
+				{
+					"Name": "CRAN",
+					"URL": "https://cloud.r-project.org"
+				}
+			]
+		},
+		"Packages": {
+			"renv": {
+				"Package": "renv",
+				"Version": "0.17.3",
+				"Source": "Repository",
+				"Repository": "RSPM",
+				"Requirements": [
+					"utils"
+				],
+				"Hash": "4543b8cd233ae25c6aba8548be9e747e"
+			}
+		}
+	}`
+
+	// Create a temporary lockfile
+	tempDirPath := s.T().TempDir()
+	tempDir := util.NewAbsolutePath(tempDirPath, nil)
+	lockfilePath := tempDir.Join("test_rspm_missing_remote_repos.lock")
+	err := lockfilePath.WriteFile([]byte(lockfileContent), 0644)
+	s.NoError(err)
+
+	mapper := NewLockfilePackageMapper(tempDir, util.Path{}, s.log)
+	manifestPackages, err := mapper.GetManifestPackagesFromLockfile(lockfilePath)
+	
+	// Should succeed with RSPM resolving to standard repository
+	s.NoError(err)
+	s.Contains(manifestPackages, "renv")
+	
+	renvPkg := manifestPackages["renv"]
+	// Should resolve to standard RSPM repository when no RemoteRepos is provided
+	s.Equal("RSPM", renvPkg.Source)
+	s.Equal("https://packagemanager.rstudio.com/all/latest", renvPkg.Repository)
+}
