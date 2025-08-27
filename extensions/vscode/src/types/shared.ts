@@ -25,9 +25,9 @@ export type DeploymentSelectorState = DeploymentSelector & {
 export type SelectionState = DeploymentSelectorState | null;
 
 export type DeploymentObjects = {
-  contentRecord: ContentRecord | PreContentRecord;
-  configuration: Configuration;
-  credential: Credential;
+  contentRecord?: ContentRecord | PreContentRecord;
+  configuration?: Configuration;
+  credential?: Credential;
 };
 
 export class RExecutable {
