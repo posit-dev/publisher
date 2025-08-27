@@ -29,6 +29,11 @@ func (p *defaultPublisher) createBundle() (*os.File, error) {
 	op := events.PublishCreateBundleOp
 	prepareLog := p.log.WithArgs(logging.LogKeyOp, op)
 
+	err := p.readInterpreterDetails()
+	if err != nil {
+		return nil, err
+	}
+
 	bundler, err := bundles.NewBundler(p.Dir, manifest, p.Config.Files, p.log)
 	if err != nil {
 		return nil, err
