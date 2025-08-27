@@ -4,7 +4,7 @@
 
 #### product_type
 
-The type of server the content is being deployed to. Only valid value is `connect`. Defaults to `connect`.
+The type of server the content is being deployed to. May be set to `connect` or `connect_cloud`. Defaults to `connect`.
 
 #### type
 
@@ -68,13 +68,13 @@ project-root/
 
 #### has_parameters
 
-_Valid when `product_type` is `connect`_
+_Only valid when `product_type` is `connect`_
 
 `true` if this is a report that accepts parameters.
 
 #### validate
 
-_Valid when `product_type` is `connect`_
+_Only valid when `product_type` is `connect`_
 
 Access the content after deploying, to validate that it is live. Defaults to `true`.
 
@@ -114,17 +114,17 @@ API_URL = "https://example.com/api"
 
 #### package_file
 
+_Only valid when `product_type` is `connect`_
+
 File containing package dependencies. The file must exist and be listed under 'files'. The default is 'requirements.txt'.
 
 #### package_manager
 
-_Valid when `product_type` is `connect`_
+_Only valid when `product_type` is `connect`_
 
 Package manager that will install the dependencies. Supported values are `pip` and `none`. If package-manager is `none`, dependencies will not be installed.
 
 #### version
-
-_Valid when `product_type` is `connect`_
 
 Python version. The server must have a matching Python major/minor version in order to run the content.
 
@@ -141,13 +141,13 @@ package_manager = "pip"
 
 #### package_file
 
-_Valid when `product_type` is `connect`_
+_Only valid when `product_type` is `connect`_
 
 File containing package dependencies. This is usually `renv.lock`. The file must exist and be listed under 'files'.
 
 #### package_manager
 
-_Valid when `product_type` is `connect`_
+_Only valid when `product_type` is `connect`_
 
 Package manager that will install the dependencies. Supported values are `renv` and `none`. If package-manager is `none`, dependencies will be assumed to be pre-installed on the server.
 
@@ -166,7 +166,7 @@ package_manager = "renv"
 
 ## Jupyter settings
 
-_Valid when `product_type` is `connect`_
+_Only valid when `product_type` is `connect`_
 
 ### hide_all_input
 
@@ -186,7 +186,7 @@ hide_tagged_input = false
 
 ## Quarto settings
 
-_Valid when `product_type` is `connect`_
+_Only valid when `product_type` is `connect`_
 
 #### engines
 
@@ -204,7 +204,7 @@ engines = ["knitr"]
 
 ## Connect-specific settings
 
-_Valid when `product_type` is `connect`_
+_Only valid when `product_type` is `connect`_
 
 ### Access settings
 
@@ -226,7 +226,7 @@ run_as_current_user = true
 
 ### Kubernetes settings
 
-Settings used with Posit Connect's off-host execution feature, where content is run in Kubernetes.";
+Settings used with Posit Connect's off-host execution feature, where content is run in Kubernetes.
 
 #### amd_gpu_limit
 
@@ -336,7 +336,7 @@ read_timeout = 30
 
 ## Connect Cloud-specific settings
 
-_Valid when `product_type` is `connect_cloud`_
+_Only valid when `product_type` is `connect_cloud`_
 
 ### vanity_name
 
