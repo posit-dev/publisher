@@ -431,11 +431,11 @@ func (s *LockfilePackageMapperSuite) TestRSPMRepositoryHandling_MissingRemoteRep
 
 	mapper := NewLockfilePackageMapper(tempDir, util.Path{}, s.log)
 	manifestPackages, err := mapper.GetManifestPackagesFromLockfile(lockfilePath)
-	
+
 	// Should succeed with RSPM resolving to standard repository
 	s.NoError(err)
 	s.Contains(manifestPackages, "renv")
-	
+
 	renvPkg := manifestPackages["renv"]
 	// Should resolve to standard RSPM repository when no RemoteRepos is provided
 	s.Equal("RSPM", renvPkg.Source)
