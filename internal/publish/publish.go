@@ -252,11 +252,6 @@ func (p *defaultPublisher) doPublish() error {
 		return err
 	}
 
-	err = p.configureInterpreters()
-	if err != nil {
-		return err
-	}
-
 	if wasPreviouslyDeployed {
 		p.log.Info("Updating deployment", "content_id", contentID)
 	} else {
@@ -280,6 +275,11 @@ func (p *defaultPublisher) doPublish() error {
 	}
 	defer bundleFile.Close()
 	defer os.Remove(bundleFile.Name())
+
+	err = p.readInterpreterDetails()
+	if err != nil {
+		return err
+	}
 
 	err = p.serverPublisher.PublishToServer(contentID, bundleFile)
 	if err != nil {

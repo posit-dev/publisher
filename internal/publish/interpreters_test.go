@@ -101,7 +101,7 @@ flask==2.0.1
 
 	// Create and run the publisher
 	publisher := s.createPublisher()
-	err = publisher.configureInterpreters()
+	err = publisher.readInterpreterDetails()
 	s.NoError(err)
 
 	// Check that the requirements were extracted correctly
@@ -163,7 +163,7 @@ func (s *InterpretersSuite) TestConfigureInterpretersR() {
 
 	// Create and run the publisher
 	publisher := s.createPublisher()
-	err = publisher.configureInterpreters()
+	err = publisher.readInterpreterDetails()
 	s.NoError(err)
 
 	// Check that the R environment was extracted correctly
@@ -239,7 +239,7 @@ numpy==1.22.0
 
 	// Create and run the publisher
 	publisher := s.createPublisher()
-	err = publisher.configureInterpreters()
+	err = publisher.readInterpreterDetails()
 	s.NoError(err)
 
 	// Check that the Python requirements were extracted correctly
@@ -312,7 +312,7 @@ func (s *InterpretersSuite) TestConfigureInterpretersCustomFilenames() {
 
 	// Create and run the publisher
 	publisher := s.createPublisher()
-	err = publisher.configureInterpreters()
+	err = publisher.readInterpreterDetails()
 	s.NoError(err)
 
 	// Check Python requirements
@@ -339,7 +339,7 @@ func (s *InterpretersSuite) TestConfigureInterpretersMissingFiles() {
 
 	// Create and run the publisher
 	publisher := s.createPublisher()
-	err := publisher.configureInterpreters()
+	err := publisher.readInterpreterDetails()
 	s.Error(err) // We expect an error since the files don't exist
 
 	// The Target properties should remain nil
