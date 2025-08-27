@@ -16,7 +16,7 @@
   "packages": {
     "DT": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "DT",
         "Type": "Package",
@@ -36,14 +36,14 @@
         "NeedsCompilation": "no",
         "Packaged": "2024-02-19 15:40:34 UTC; yihui",
         "Author": "Yihui Xie [aut, cre],\n  Joe Cheng [aut],\n  Xianying Tan [aut],\n  JJ Allaire [ctb],\n  Maximilian Girlich [ctb],\n  Greg Freedman Ellis [ctb],\n  Johannes Rauh [ctb],\n  SpryMedia Limited [ctb, cph] (DataTables in htmlwidgets/lib),\n  Brian Reavis [ctb, cph] (selectize.js in htmlwidgets/lib),\n  Leon Gersen [ctb, cph] (noUiSlider in htmlwidgets/lib),\n  Bartek Szopka [ctb, cph] (jquery.highlight.js in htmlwidgets/lib),\n  Alex Pickering [ctb],\n  William Holmes [ctb],\n  Mikko Marttila [ctb],\n  Andres Quintero [ctb],\n  Stéphane Laurent [ctb],\n  Posit Software, PBC [cph, fnd]",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2024-02-19 16:50:02 UTC",
         "Built": "R 4.3.1; ; 2024-02-19 17:42:21 UTC; unix"
       }
     },
     "MASS": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "MASS",
         "Priority": "recommended",
@@ -65,14 +65,14 @@
         "Packaged": "2024-01-13 12:39:26 UTC; ripley",
         "Author": "Brian Ripley [aut, cre, cph],\n  Bill Venables [ctb],\n  Douglas M. Bates [ctb],\n  Kurt Hornik [trl] (partial port ca 1998),\n  Albrecht Gebhardt [trl] (partial port ca 1998),\n  David Firth [ctb]",
         "Maintainer": "Brian Ripley <ripley@stats.ox.ac.uk>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2024-01-13 13:36:16 UTC",
         "Built": "R 4.3.3; aarch64-apple-darwin20; 2024-03-01 22:47:06 UTC; unix"
       }
     },
     "Matrix": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "Matrix",
         "Version": "1.6-5",
@@ -98,14 +98,14 @@
         "Packaged": "2024-01-11 08:36:29 UTC; maechler",
         "Author": "Douglas Bates [aut] (<https://orcid.org/0000-0001-8316-9503>),\n  Martin Maechler [aut, cre] (<https://orcid.org/0000-0002-8685-9910>),\n  Mikael Jagan [aut] (<https://orcid.org/0000-0002-3542-2938>),\n  Timothy A. Davis [ctb] (<https://orcid.org/0000-0001-7614-6899>,\n    SuiteSparse libraries, notably CHOLMOD and AMD, collaborators\n    listed in dir(pattern=\"^[A-Z]+[.]txt$\", full.names=TRUE,\n    system.file(\"doc\", \"SuiteSparse\", package=\"Matrix\"))),\n  Jens Oehlschlägel [ctb] (initial nearPD()),\n  Jason Riedy [ctb] (<https://orcid.org/0000-0002-4345-4200>, GNU\n    Octave's condest() and onenormest(), Copyright: Regents of the\n    University of California),\n  R Core Team [ctb] (base R's matrix implementation)",
         "Maintainer": "Martin Maechler <mmaechler+Matrix@gmail.com>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2024-01-11 17:50:15 UTC",
         "Built": "R 4.3.3; aarch64-apple-darwin20; 2024-03-01 22:47:11 UTC; unix"
       }
     },
     "R6": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "R6",
         "Title": "Encapsulated Classes with Reference Semantics",
@@ -122,14 +122,14 @@
         "Packaged": "2021-08-06 20:18:46 UTC; winston",
         "Author": "Winston Chang [aut, cre]",
         "Maintainer": "Winston Chang <winston@stdout.org>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2021-08-19 14:00:05 UTC",
         "Built": "R 4.3.0; ; 2023-04-11 04:31:18 UTC; unix"
       }
     },
     "RColorBrewer": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "RColorBrewer",
         "Version": "1.1-3",
@@ -143,14 +143,14 @@
         "License": "Apache License 2.0",
         "Packaged": "2022-04-03 10:26:20 UTC; neuwirth",
         "NeedsCompilation": "no",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2022-04-03 19:20:13 UTC",
         "Built": "R 4.3.3; ; 2025-01-25 21:34:26 UTC; unix"
       }
     },
     "Rcpp": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "Rcpp",
         "Title": "Seamless R and C++ Integration",
@@ -169,7 +169,7 @@
         "Encoding": "UTF-8",
         "NeedsCompilation": "yes",
         "Packaged": "2024-01-08 12:50:16 UTC; edd",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2024-01-09 08:20:35 UTC",
         "Built": "R 4.3.1; aarch64-apple-darwin20; 2024-01-10 02:58:10 UTC; unix",
         "Archs": "Rcpp.so.dSYM"
@@ -177,7 +177,7 @@
     },
     "TTR": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "TTR",
         "Type": "Package",
@@ -196,7 +196,7 @@
         "Packaged": "2023-11-28 00:12:35 UTC; josh",
         "Author": "Joshua Ulrich [cre, aut],\n  Ethan B. Smith [ctb]",
         "Maintainer": "Joshua Ulrich <josh.m.ulrich@gmail.com>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2023-11-28 05:20:21 UTC",
         "Built": "R 4.3.3; aarch64-apple-darwin20; 2025-01-24 14:02:48 UTC; unix",
         "Archs": "TTR.so.dSYM",
@@ -211,7 +211,7 @@
     },
     "askpass": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "askpass",
         "Type": "Package",
@@ -231,7 +231,7 @@
         "Packaged": "2023-09-03 19:16:12 UTC; jeroen",
         "Author": "Jeroen Ooms [aut, cre] (<https://orcid.org/0000-0002-4035-0289>)",
         "Maintainer": "Jeroen Ooms <jeroen@berkeley.edu>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2023-09-03 20:00:02 UTC",
         "Built": "R 4.3.0; aarch64-apple-darwin20; 2023-09-03 20:37:07 UTC; unix",
         "Archs": "askpass.so.dSYM"
@@ -239,7 +239,7 @@
     },
     "base64enc": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "base64enc",
         "Version": "0.1-3",
@@ -253,7 +253,7 @@
         "URL": "http://www.rforge.net/base64enc",
         "NeedsCompilation": "yes",
         "Packaged": "2015-02-04 20:31:00 UTC; svnuser",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2015-07-28 08:03:37",
         "Built": "R 4.3.3; aarch64-apple-darwin20; 2025-01-25 21:34:50 UTC; unix",
         "Archs": "base64enc.so.dSYM"
@@ -261,7 +261,7 @@
     },
     "bslib": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "bslib",
         "Title": "Custom 'Bootstrap' 'Sass' Themes for 'shiny' and 'rmarkdown'",
@@ -287,14 +287,14 @@
         "Packaged": "2024-03-28 21:43:16 UTC; cpsievert",
         "Author": "Carson Sievert [aut, cre] (<https://orcid.org/0000-0002-4958-2844>),\n  Joe Cheng [aut],\n  Garrick Aden-Buie [aut] (<https://orcid.org/0000-0002-7111-0077>),\n  Posit Software, PBC [cph, fnd],\n  Bootstrap contributors [ctb] (Bootstrap library),\n  Twitter, Inc [cph] (Bootstrap library),\n  Javi Aguilar [ctb, cph] (Bootstrap colorpicker library),\n  Thomas Park [ctb, cph] (Bootswatch library),\n  PayPal [ctb, cph] (Bootstrap accessibility plugin)",
         "Maintainer": "Carson Sievert <carson@posit.co>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2024-03-29 01:00:03 UTC",
         "Built": "R 4.3.1; ; 2024-03-29 03:57:09 UTC; unix"
       }
     },
     "cachem": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "cachem",
         "Version": "1.1.0",
@@ -314,7 +314,7 @@
         "Packaged": "2024-05-15 15:54:22 UTC; winston",
         "Author": "Winston Chang [aut, cre],\n  Posit Software, PBC [cph, fnd]",
         "Maintainer": "Winston Chang <winston@posit.co>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2024-05-16 09:50:11 UTC",
         "Built": "R 4.3.3; aarch64-apple-darwin20; 2025-01-25 21:35:37 UTC; unix",
         "Archs": "cachem.so.dSYM"
@@ -322,7 +322,7 @@
     },
     "cli": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "cli",
         "Title": "Helpers for Developing Command Line Interfaces",
@@ -343,7 +343,7 @@
         "Packaged": "2023-12-10 22:38:10 UTC; gaborcsardi",
         "Author": "Gábor Csárdi [aut, cre],\n  Hadley Wickham [ctb],\n  Kirill Müller [ctb],\n  Salim Brüggemann [ctb] (<https://orcid.org/0000-0002-5329-5987>),\n  Posit Software, PBC [cph, fnd]",
         "Maintainer": "Gábor Csárdi <csardi.gabor@gmail.com>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2023-12-11 07:40:13 UTC",
         "Built": "R 4.3.1; aarch64-apple-darwin20; 2023-12-11 09:28:31 UTC; unix",
         "Archs": "cli.so.dSYM"
@@ -351,7 +351,7 @@
     },
     "colorspace": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "colorspace",
         "Version": "2.1-0",
@@ -373,7 +373,7 @@
         "Packaged": "2023-01-23 08:50:11 UTC; zeileis",
         "Author": "Ross Ihaka [aut],\n  Paul Murrell [aut] (<https://orcid.org/0000-0002-3224-8858>),\n  Kurt Hornik [aut] (<https://orcid.org/0000-0003-4198-9911>),\n  Jason C. Fisher [aut] (<https://orcid.org/0000-0001-9032-8912>),\n  Reto Stauffer [aut] (<https://orcid.org/0000-0002-3798-5507>),\n  Claus O. Wilke [aut] (<https://orcid.org/0000-0002-7470-9261>),\n  Claire D. McWhite [aut] (<https://orcid.org/0000-0001-7346-3047>),\n  Achim Zeileis [aut, cre] (<https://orcid.org/0000-0003-0918-3766>)",
         "Maintainer": "Achim Zeileis <Achim.Zeileis@R-project.org>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2023-01-23 11:40:02 UTC",
         "Built": "R 4.3.0; aarch64-apple-darwin20; 2023-04-11 04:31:17 UTC; unix",
         "Archs": "colorspace.so.dSYM"
@@ -381,7 +381,7 @@
     },
     "cpp11": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "cpp11",
         "Title": "A C++11 Interface for R's C Interface",
@@ -403,14 +403,14 @@
         "Packaged": "2023-12-01 19:16:04 UTC; davis",
         "Author": "Davis Vaughan [aut, cre] (<https://orcid.org/0000-0003-4777-038X>),\n  Jim Hester [aut] (<https://orcid.org/0000-0002-2739-7082>),\n  Romain François [aut] (<https://orcid.org/0000-0002-2444-4226>),\n  Benjamin Kietzman [ctb],\n  Posit Software, PBC [cph, fnd]",
         "Maintainer": "Davis Vaughan <davis@posit.co>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2023-12-02 13:20:02 UTC",
         "Built": "R 4.3.1; ; 2023-12-02 15:15:15 UTC; unix"
       }
     },
     "crosstalk": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "crosstalk",
         "Type": "Package",
@@ -429,14 +429,14 @@
         "Packaged": "2023-11-22 16:29:50 UTC; cpsievert",
         "Author": "Joe Cheng [aut],\n  Carson Sievert [aut, cre] (<https://orcid.org/0000-0002-4958-2844>),\n  Posit Software, PBC [cph, fnd],\n  jQuery Foundation [cph] (jQuery library and jQuery UI library),\n  jQuery contributors [ctb, cph] (jQuery library; authors listed in\n    inst/www/shared/jquery-AUTHORS.txt),\n  Mark Otto [ctb] (Bootstrap library),\n  Jacob Thornton [ctb] (Bootstrap library),\n  Bootstrap contributors [ctb] (Bootstrap library),\n  Twitter, Inc [cph] (Bootstrap library),\n  Brian Reavis [ctb, cph] (selectize.js library),\n  Kristopher Michael Kowal [ctb, cph] (es5-shim library),\n  es5-shim contributors [ctb, cph] (es5-shim library),\n  Denis Ineshin [ctb, cph] (ion.rangeSlider library),\n  Sami Samhuri [ctb, cph] (Javascript strftime library)",
         "Maintainer": "Carson Sievert <carson@posit.co>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2023-11-23 08:50:07 UTC",
         "Built": "R 4.3.3; ; 2025-01-24 13:56:53 UTC; unix"
       }
     },
     "curl": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "curl",
         "Type": "Package",
@@ -458,7 +458,7 @@
         "Packaged": "2024-02-26 21:12:31 UTC; jeroen",
         "Author": "Jeroen Ooms [aut, cre] (<https://orcid.org/0000-0002-4035-0289>),\n  Hadley Wickham [ctb],\n  RStudio [cph]",
         "Maintainer": "Jeroen Ooms <jeroen@berkeley.edu>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2024-03-01 23:22:46 UTC",
         "Built": "R 4.3.1; aarch64-apple-darwin20; 2024-03-04 03:09:58 UTC; unix",
         "Archs": "curl.so.dSYM"
@@ -466,7 +466,7 @@
     },
     "data.table": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "data.table",
         "Version": "1.15.2",
@@ -485,7 +485,7 @@
         "Packaged": "2024-02-27 06:21:25 UTC; tysonbarrett",
         "Author": "Tyson Barrett [aut, cre],\n  Matt Dowle [aut],\n  Arun Srinivasan [aut],\n  Jan Gorecki [aut],\n  Michael Chirico [aut],\n  Toby Hocking [aut] (<https://orcid.org/0000-0002-3146-0865>),\n  Pasha Stetsenko [ctb],\n  Tom Short [ctb],\n  Steve Lianoglou [ctb],\n  Eduard Antonyan [ctb],\n  Markus Bonsch [ctb],\n  Hugh Parsonage [ctb],\n  Scott Ritchie [ctb],\n  Kun Ren [ctb],\n  Xianying Tan [ctb],\n  Rick Saporta [ctb],\n  Otto Seiskari [ctb],\n  Xianghui Dong [ctb],\n  Michel Lang [ctb],\n  Watal Iwasaki [ctb],\n  Seth Wenchel [ctb],\n  Karl Broman [ctb],\n  Tobias Schmidt [ctb],\n  David Arenburg [ctb],\n  Ethan Smith [ctb],\n  Francois Cocquemas [ctb],\n  Matthieu Gomez [ctb],\n  Philippe Chataignon [ctb],\n  Nello Blaser [ctb],\n  Dmitry Selivanov [ctb],\n  Andrey Riabushenko [ctb],\n  Cheng Lee [ctb],\n  Declan Groves [ctb],\n  Daniel Possenriede [ctb],\n  Felipe Parages [ctb],\n  Denes Toth [ctb],\n  Mus Yaramaz-David [ctb],\n  Ayappan Perumal [ctb],\n  James Sams [ctb],\n  Martin Morgan [ctb],\n  Michael Quinn [ctb],\n  @javrucebo [ctb],\n  @marc-outins [ctb],\n  Roy Storey [ctb],\n  Manish Saraswat [ctb],\n  Morgan Jacob [ctb],\n  Michael Schubmehl [ctb],\n  Davis Vaughan [ctb],\n  Leonardo Silvestri [ctb],\n  Jim Hester [ctb],\n  Anthony Damico [ctb],\n  Sebastian Freundt [ctb],\n  David Simons [ctb],\n  Elliott Sales de Andrade [ctb],\n  Cole Miller [ctb],\n  Jens Peder Meldgaard [ctb],\n  Vaclav Tlapak [ctb],\n  Kevin Ushey [ctb],\n  Dirk Eddelbuettel [ctb],\n  Benjamin Schwendinger [ctb],\n  Tony Fischetti [ctb],\n  Ofek Shilon [ctb],\n  Vadim Khotilovich [ctb],\n  Hadley Wickham [ctb],\n  Bennet Becker [ctb],\n  Kyle Haynes [ctb],\n  Boniface Christian Kamgang [ctb],\n  Olivier Delmarcell [ctb],\n  Josh O'Brien [ctb],\n  Dereck de Mezquita [ctb],\n  Michael Czekanski [ctb]",
         "Maintainer": "Tyson Barrett <t.barrett88@gmail.com>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2024-02-29 07:10:06 UTC",
         "Built": "R 4.3.1; aarch64-apple-darwin20; 2024-03-03 23:45:35 UTC; unix",
         "Archs": "data_table.so.dSYM"
@@ -493,7 +493,7 @@
     },
     "digest": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "digest",
         "Author": "Dirk Eddelbuettel <edd@debian.org> with contributions\n by Antoine Lucas, Jarek Tuszynski, Henrik Bengtsson, Simon Urbanek,\n Mario Frasca, Bryan Lewis, Murray Stokely, Hannes Muehleisen,\n Duncan Murdoch, Jim Hester, Wush Wu, Qiang Kou, Thierry Onkelinx,\n Michel Lang, Viliam Simko, Kurt Hornik, Radford Neal, Kendon Bell,\n Matthew de Queljoe, Ion Suruceanu, Bill Denney, Dirk Schumacher,\n Winston Chang, Dean Attali, and Michael Chirico.",
@@ -511,7 +511,7 @@
         "VignetteBuilder": "simplermarkdown",
         "NeedsCompilation": "yes",
         "Packaged": "2024-03-10 19:40:54 UTC; edd",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2024-03-11 14:10:06 UTC",
         "Built": "R 4.3.1; aarch64-apple-darwin20; 2024-03-11 14:47:50 UTC; unix",
         "Archs": "digest.so.dSYM"
@@ -519,7 +519,7 @@
     },
     "dplyr": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Type": "Package",
         "Package": "dplyr",
@@ -543,7 +543,7 @@
         "Packaged": "2023-11-16 21:48:56 UTC; hadleywickham",
         "Author": "Hadley Wickham [aut, cre] (<https://orcid.org/0000-0003-4757-117X>),\n  Romain François [aut] (<https://orcid.org/0000-0002-2444-4226>),\n  Lionel Henry [aut],\n  Kirill Müller [aut] (<https://orcid.org/0000-0002-1416-3412>),\n  Davis Vaughan [aut] (<https://orcid.org/0000-0003-4777-038X>),\n  Posit Software, PBC [cph, fnd]",
         "Maintainer": "Hadley Wickham <hadley@posit.co>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2023-11-17 16:50:02 UTC",
         "Built": "R 4.3.1; aarch64-apple-darwin20; 2023-11-17 18:07:23 UTC; unix",
         "Archs": "dplyr.so.dSYM"
@@ -551,7 +551,7 @@
     },
     "evaluate": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "evaluate",
         "Type": "Package",
@@ -572,14 +572,14 @@
         "Packaged": "2023-11-01 13:28:50 UTC; yihui",
         "Author": "Hadley Wickham [aut],\n  Yihui Xie [aut, cre] (<https://orcid.org/0000-0003-0645-5666>),\n  Michael Lawrence [ctb],\n  Thomas Kluyver [ctb],\n  Jeroen Ooms [ctb],\n  Barret Schloerke [ctb],\n  Adam Ryczkowski [ctb],\n  Hiroaki Yutani [ctb],\n  Michel Lang [ctb],\n  Karolis Koncevičius [ctb],\n  Posit Software, PBC [cph, fnd]",
         "Maintainer": "Yihui Xie <xie@yihui.name>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2023-11-01 14:10:02 UTC",
         "Built": "R 4.3.1; ; 2023-11-01 15:47:07 UTC; unix"
       }
     },
     "fansi": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "fansi",
         "Title": "ANSI Control Sequence Aware String Functions",
@@ -600,7 +600,7 @@
         "Packaged": "2023-12-06 00:59:41 UTC; bg",
         "Author": "Brodie Gaslam [aut, cre],\n  Elliott Sales De Andrade [ctb],\n  R Core Team [cph] (UTF8 byte length calcs from src/util.c)",
         "Maintainer": "Brodie Gaslam <brodie.gaslam@yahoo.com>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2023-12-08 03:30:02 UTC",
         "Built": "R 4.3.3; aarch64-apple-darwin20; 2025-01-25 21:34:02 UTC; unix",
         "Archs": "fansi.so.dSYM"
@@ -608,7 +608,7 @@
     },
     "farver": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Type": "Package",
         "Package": "farver",
@@ -627,7 +627,7 @@
         "Packaged": "2024-05-13 08:31:27 UTC; thomas",
         "Author": "Thomas Lin Pedersen [cre, aut]\n    (<https://orcid.org/0000-0002-5147-4711>),\n  Berendea Nicolae [aut] (Author of the ColorSpace C++ library),\n  Romain François [aut] (<https://orcid.org/0000-0002-2444-4226>),\n  Posit, PBC [cph, fnd]",
         "Maintainer": "Thomas Lin Pedersen <thomas.pedersen@posit.co>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2024-05-13 09:33:09 UTC",
         "Built": "R 4.3.3; aarch64-apple-darwin20; 2025-01-25 20:54:45 UTC; unix",
         "Archs": "farver.so.dSYM"
@@ -635,7 +635,7 @@
     },
     "fastmap": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "fastmap",
         "Title": "Fast Data Structures",
@@ -652,7 +652,7 @@
         "Packaged": "2024-05-14 17:54:13 UTC; winston",
         "Author": "Winston Chang [aut, cre],\n  Posit Software, PBC [cph, fnd],\n  Tessil [cph] (hopscotch_map library)",
         "Maintainer": "Winston Chang <winston@posit.co>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2024-05-15 09:00:07 UTC",
         "Built": "R 4.3.3; aarch64-apple-darwin20; 2025-01-25 21:34:45 UTC; unix",
         "Archs": "fastmap.so.dSYM"
@@ -660,7 +660,7 @@
     },
     "fontawesome": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Type": "Package",
         "Package": "fontawesome",
@@ -682,14 +682,14 @@
         "Packaged": "2023-08-19 02:32:12 UTC; rich",
         "Author": "Richard Iannone [aut, cre] (<https://orcid.org/0000-0003-3925-190X>),\n  Christophe Dervieux [ctb] (<https://orcid.org/0000-0003-4474-2498>),\n  Winston Chang [ctb],\n  Dave Gandy [ctb, cph] (Font-Awesome font),\n  Posit Software, PBC [cph, fnd]",
         "Maintainer": "Richard Iannone <rich@posit.co>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2023-08-19 04:52:40 UTC",
         "Built": "R 4.3.0; ; 2023-08-27 05:56:15 UTC; unix"
       }
     },
     "formattable": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "formattable",
         "Title": "Create 'Formattable' Data Structures",
@@ -712,7 +712,7 @@
         "Packaged": "2021-01-07 01:43:38 UTC; ken",
         "Author": "Kun Ren [aut, cre],\n  Kenton Russell [aut]",
         "Maintainer": "Kun Ren <ken@renkun.me>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2021-01-07 20:20:10 UTC",
         "Built": "R 4.3.0; ; 2023-04-06 19:12:31 UTC; unix",
         "RemoteType": "standard",
@@ -726,7 +726,7 @@
     },
     "fs": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "fs",
         "Title": "Cross-Platform File System Operations Based on 'libuv'",
@@ -752,7 +752,7 @@
         "Packaged": "2024-04-25 11:57:22 UTC; gaborcsardi",
         "Author": "Jim Hester [aut],\n  Hadley Wickham [aut],\n  Gábor Csárdi [aut, cre],\n  libuv project contributors [cph] (libuv library),\n  Joyent, Inc. and other Node contributors [cph] (libuv library),\n  Posit Software, PBC [cph, fnd]",
         "Maintainer": "Gábor Csárdi <csardi.gabor@gmail.com>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2024-04-25 12:50:02 UTC",
         "Built": "R 4.3.1; aarch64-apple-darwin20; 2024-04-25 12:55:18 UTC; unix",
         "Archs": "fs.so.dSYM"
@@ -760,7 +760,7 @@
     },
     "generics": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "generics",
         "Title": "Common S3 Generics not Provided by Base R Methods Related to\nModel Fitting",
@@ -781,14 +781,14 @@
         "Packaged": "2022-07-05 14:52:13 UTC; davis",
         "Author": "Hadley Wickham [aut, cre],\n  Max Kuhn [aut],\n  Davis Vaughan [aut],\n  RStudio [cph]",
         "Maintainer": "Hadley Wickham <hadley@rstudio.com>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2022-07-05 19:40:02 UTC",
         "Built": "R 4.3.0; ; 2023-04-11 04:31:30 UTC; unix"
       }
     },
     "ggplot2": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "ggplot2",
         "Version": "3.5.1",
@@ -813,14 +813,14 @@
         "Packaged": "2024-04-22 10:39:16 UTC; thomas",
         "Author": "Hadley Wickham [aut] (<https://orcid.org/0000-0003-4757-117X>),\n  Winston Chang [aut] (<https://orcid.org/0000-0002-1576-2126>),\n  Lionel Henry [aut],\n  Thomas Lin Pedersen [aut, cre]\n    (<https://orcid.org/0000-0002-5147-4711>),\n  Kohske Takahashi [aut],\n  Claus Wilke [aut] (<https://orcid.org/0000-0002-7470-9261>),\n  Kara Woo [aut] (<https://orcid.org/0000-0002-5125-4188>),\n  Hiroaki Yutani [aut] (<https://orcid.org/0000-0002-3385-7233>),\n  Dewey Dunnington [aut] (<https://orcid.org/0000-0002-9415-4582>),\n  Teun van den Brand [aut] (<https://orcid.org/0000-0002-9335-7468>),\n  Posit, PBC [cph, fnd]",
         "Maintainer": "Thomas Lin Pedersen <thomas.pedersen@posit.co>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2024-04-23 08:00:08 UTC",
         "Built": "R 4.3.1; ; 2024-04-23 10:51:48 UTC; unix"
       }
     },
     "ggthemes": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "ggthemes",
         "Version": "5.1.0",
@@ -842,7 +842,7 @@
         "Packaged": "2024-02-09 17:47:25 UTC; jrnold",
         "Author": "Jeffrey B. Arnold [aut, cre] (<https://orcid.org/0000-0001-9953-3904>),\n  Gergely Daroczi [ctb],\n  Bo Werth [ctb],\n  Brian Weitzner [ctb],\n  Joshua Kunst [ctb],\n  Baptise Auguie [ctb],\n  Bob Rudis [ctb],\n  Hadley Wickham [ctb] (Code from the ggplot2 package.),\n  Justin Talbot [ctb] (Code from the labeling package),\n  Joshua London [ctb]",
         "Maintainer": "Jeffrey B. Arnold <jeffrey.arnold@gmail.com>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2024-02-10 00:30:02 UTC",
         "Built": "R 4.3.1; ; 2024-02-10 03:38:32 UTC; unix",
         "RemoteType": "standard",
@@ -856,7 +856,7 @@
     },
     "glue": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "glue",
         "Title": "Interpreted String Literals",
@@ -879,7 +879,7 @@
         "Packaged": "2024-01-08 16:10:57 UTC; jenny",
         "Author": "Jim Hester [aut] (<https://orcid.org/0000-0002-2739-7082>),\n  Jennifer Bryan [aut, cre] (<https://orcid.org/0000-0002-6983-2759>),\n  Posit Software, PBC [cph, fnd]",
         "Maintainer": "Jennifer Bryan <jenny@posit.co>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2024-01-09 23:13:08 UTC",
         "Built": "R 4.3.1; aarch64-apple-darwin20; 2024-01-10 02:57:39 UTC; unix",
         "Archs": "glue.so.dSYM"
@@ -887,7 +887,7 @@
     },
     "gtable": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "gtable",
         "Title": "Arrange 'Grobs' in Tables",
@@ -909,14 +909,14 @@
         "Packaged": "2024-04-22 10:46:27 UTC; thomas",
         "Author": "Hadley Wickham [aut],\n  Thomas Lin Pedersen [aut, cre],\n  Posit Software, PBC [cph, fnd]",
         "Maintainer": "Thomas Lin Pedersen <thomas.pedersen@posit.co>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2024-04-22 20:40:02 UTC",
         "Built": "R 4.3.1; ; 2024-04-22 21:19:12 UTC; unix"
       }
     },
     "highr": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "highr",
         "Type": "Package",
@@ -937,14 +937,14 @@
         "Packaged": "2022-12-22 06:43:07 UTC; yihui",
         "Author": "Yihui Xie [aut, cre] (<https://orcid.org/0000-0003-0645-5666>),\n  Yixuan Qiu [aut],\n  Christopher Gandrud [ctb],\n  Qiang Li [ctb]",
         "Maintainer": "Yihui Xie <xie@yihui.name>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2022-12-22 07:00:02 UTC",
         "Built": "R 4.3.0; ; 2023-04-11 04:37:24 UTC; unix"
       }
     },
     "htmltools": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Type": "Package",
         "Package": "htmltools",
@@ -968,7 +968,7 @@
         "Packaged": "2024-04-02 14:26:15 UTC; cpsievert",
         "Author": "Joe Cheng [aut],\n  Carson Sievert [aut, cre] (<https://orcid.org/0000-0002-4958-2844>),\n  Barret Schloerke [aut] (<https://orcid.org/0000-0001-9986-114X>),\n  Winston Chang [aut] (<https://orcid.org/0000-0002-1576-2126>),\n  Yihui Xie [aut],\n  Jeff Allen [aut],\n  Posit Software, PBC [cph, fnd]",
         "Maintainer": "Carson Sievert <carson@posit.co>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2024-04-04 05:03:00 UTC",
         "Built": "R 4.3.3; aarch64-apple-darwin20; 2025-01-24 13:53:48 UTC; unix",
         "Archs": "htmltools.so.dSYM"
@@ -976,7 +976,7 @@
     },
     "htmlwidgets": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Type": "Package",
         "Package": "htmlwidgets",
@@ -997,14 +997,14 @@
         "Packaged": "2023-12-06 00:11:16 UTC; cpsievert",
         "Author": "Ramnath Vaidyanathan [aut, cph],\n  Yihui Xie [aut],\n  JJ Allaire [aut],\n  Joe Cheng [aut],\n  Carson Sievert [aut, cre] (<https://orcid.org/0000-0002-4958-2844>),\n  Kenton Russell [aut, cph],\n  Ellis Hughes [ctb],\n  Posit Software, PBC [cph, fnd]",
         "Maintainer": "Carson Sievert <carson@posit.co>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2023-12-06 06:00:06 UTC",
         "Built": "R 4.3.1; ; 2023-12-06 06:39:43 UTC; unix"
       }
     },
     "httpuv": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Type": "Package",
         "Package": "httpuv",
@@ -1027,7 +1027,7 @@
         "Packaged": "2024-03-25 21:06:08 UTC; cpsievert",
         "Author": "Joe Cheng [aut],\n  Winston Chang [aut, cre],\n  Posit, PBC fnd [cph],\n  Hector Corrada Bravo [ctb],\n  Jeroen Ooms [ctb],\n  Andrzej Krzemienski [cph] (optional.hpp),\n  libuv project contributors [cph] (libuv library, see src/libuv/AUTHORS\n    file),\n  Joyent, Inc. and other Node contributors [cph] (libuv library, see\n    src/libuv/AUTHORS file; and http-parser library, see\n    src/http-parser/AUTHORS file),\n  Niels Provos [cph] (libuv subcomponent: tree.h),\n  Internet Systems Consortium, Inc. [cph] (libuv subcomponent: inet_pton\n    and inet_ntop, contained in src/libuv/src/inet.c),\n  Alexander Chemeris [cph] (libuv subcomponent: stdint-msvc2008.h (from\n    msinttypes)),\n  Google, Inc. [cph] (libuv subcomponent: pthread-fixes.c),\n  Sony Mobile Communcations AB [cph] (libuv subcomponent:\n    pthread-fixes.c),\n  Berkeley Software Design Inc. [cph] (libuv subcomponent:\n    android-ifaddrs.h, android-ifaddrs.c),\n  Kenneth MacKay [cph] (libuv subcomponent: android-ifaddrs.h,\n    android-ifaddrs.c),\n  Emergya (Cloud4all, FP7/2007-2013, grant agreement no 289016) [cph]\n    (libuv subcomponent: android-ifaddrs.h, android-ifaddrs.c),\n  Steve Reid [aut] (SHA-1 implementation),\n  James Brown [aut] (SHA-1 implementation),\n  Bob Trower [aut] (base64 implementation),\n  Alexander Peslyak [aut] (MD5 implementation),\n  Trantor Standard Systems [cph] (base64 implementation),\n  Igor Sysoev [cph] (http-parser)",
         "Maintainer": "Winston Chang <winston@posit.co>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2024-03-26 05:50:06 UTC",
         "Built": "R 4.3.1; aarch64-apple-darwin20; 2024-03-26 06:52:02 UTC; unix",
         "Archs": "httpuv.so.dSYM"
@@ -1035,7 +1035,7 @@
     },
     "httr": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "httr",
         "Title": "Tools for Working with URLs and HTTP",
@@ -1056,14 +1056,14 @@
         "Packaged": "2023-08-15 02:56:56 UTC; hadleywickham",
         "Author": "Hadley Wickham [aut, cre],\n  Posit, PBC [cph, fnd]",
         "Maintainer": "Hadley Wickham <hadley@posit.co>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2023-08-15 09:00:02 UTC",
         "Built": "R 4.3.0; ; 2023-08-15 09:41:58 UTC; unix"
       }
     },
     "isoband": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "isoband",
         "Title": "Generate Isolines and Isobands from Regularly Spaced Elevation\nGrids",
@@ -1085,7 +1085,7 @@
         "Packaged": "2022-12-19 20:10:02 UTC; hadleywickham",
         "Author": "Hadley Wickham [aut, cre] (<https://orcid.org/0000-0003-4757-117X>),\n  Claus O. Wilke [aut] (Original author,\n    <https://orcid.org/0000-0002-7470-9261>),\n  Thomas Lin Pedersen [aut] (<https://orcid.org/0000-0002-5147-4711>)",
         "Maintainer": "Hadley Wickham <hadley@posit.co>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2022-12-20 10:00:13 UTC",
         "Built": "R 4.3.3; aarch64-apple-darwin20; 2025-01-25 14:51:41 UTC; unix",
         "Archs": "isoband.so.dSYM"
@@ -1093,7 +1093,7 @@
     },
     "jquerylib": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "jquerylib",
         "Title": "Obtain 'jQuery' as an HTML Dependency Object",
@@ -1110,14 +1110,14 @@
         "Packaged": "2021-04-26 16:40:21 UTC; cpsievert",
         "Author": "Carson Sievert [aut, cre] (<https://orcid.org/0000-0002-4958-2844>),\n  Joe Cheng [aut],\n  RStudio [cph],\n  jQuery Foundation [cph] (jQuery library and jQuery UI library),\n  jQuery contributors [ctb, cph] (jQuery library; authors listed in\n    inst/lib/jquery-AUTHORS.txt)",
         "Maintainer": "Carson Sievert <carson@rstudio.com>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2021-04-26 17:10:02 UTC",
         "Built": "R 4.3.3; ; 2025-01-24 17:55:32 UTC; unix"
       }
     },
     "jsonlite": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "jsonlite",
         "Version": "1.8.8",
@@ -1136,7 +1136,7 @@
         "NeedsCompilation": "yes",
         "Packaged": "2023-12-04 12:57:12 UTC; jeroen",
         "Author": "Jeroen Ooms [aut, cre] (<https://orcid.org/0000-0002-4035-0289>),\n  Duncan Temple Lang [ctb],\n  Lloyd Hilaiel [cph] (author of bundled libyajl)",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2023-12-04 15:20:02 UTC",
         "Built": "R 4.3.1; aarch64-apple-darwin20; 2023-12-04 17:05:52 UTC; unix",
         "Archs": "jsonlite.so.dSYM"
@@ -1144,7 +1144,7 @@
     },
     "knitr": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "knitr",
         "Type": "Package",
@@ -1167,14 +1167,14 @@
         "Packaged": "2023-10-27 03:03:09 UTC; yihui",
         "Author": "Yihui Xie [aut, cre] (<https://orcid.org/0000-0003-0645-5666>),\n  Abhraneel Sarma [ctb],\n  Adam Vogt [ctb],\n  Alastair Andrew [ctb],\n  Alex Zvoleff [ctb],\n  Amar Al-Zubaidi [ctb],\n  Andre Simon [ctb] (the CSS files under inst/themes/ were derived from\n    the Highlight package http://www.andre-simon.de),\n  Aron Atkins [ctb],\n  Aaron Wolen [ctb],\n  Ashley Manton [ctb],\n  Atsushi Yasumoto [ctb] (<https://orcid.org/0000-0002-8335-495X>),\n  Ben Baumer [ctb],\n  Brian Diggs [ctb],\n  Brian Zhang [ctb],\n  Bulat Yapparov [ctb],\n  Cassio Pereira [ctb],\n  Christophe Dervieux [ctb],\n  David Hall [ctb],\n  David Hugh-Jones [ctb],\n  David Robinson [ctb],\n  Doug Hemken [ctb],\n  Duncan Murdoch [ctb],\n  Elio Campitelli [ctb],\n  Ellis Hughes [ctb],\n  Emily Riederer [ctb],\n  Fabian Hirschmann [ctb],\n  Fitch Simeon [ctb],\n  Forest Fang [ctb],\n  Frank E Harrell Jr [ctb] (the Sweavel package at inst/misc/Sweavel.sty),\n  Garrick Aden-Buie [ctb],\n  Gregoire Detrez [ctb],\n  Hadley Wickham [ctb],\n  Hao Zhu [ctb],\n  Heewon Jeon [ctb],\n  Henrik Bengtsson [ctb],\n  Hiroaki Yutani [ctb],\n  Ian Lyttle [ctb],\n  Hodges Daniel [ctb],\n  Jacob Bien [ctb],\n  Jake Burkhead [ctb],\n  James Manton [ctb],\n  Jared Lander [ctb],\n  Jason Punyon [ctb],\n  Javier Luraschi [ctb],\n  Jeff Arnold [ctb],\n  Jenny Bryan [ctb],\n  Jeremy Ashkenas [ctb, cph] (the CSS file at\n    inst/misc/docco-classic.css),\n  Jeremy Stephens [ctb],\n  Jim Hester [ctb],\n  Joe Cheng [ctb],\n  Johannes Ranke [ctb],\n  John Honaker [ctb],\n  John Muschelli [ctb],\n  Jonathan Keane [ctb],\n  JJ Allaire [ctb],\n  Johan Toloe [ctb],\n  Jonathan Sidi [ctb],\n  Joseph Larmarange [ctb],\n  Julien Barnier [ctb],\n  Kaiyin Zhong [ctb],\n  Kamil Slowikowski [ctb],\n  Karl Forner [ctb],\n  Kevin K. Smith [ctb],\n  Kirill Mueller [ctb],\n  Kohske Takahashi [ctb],\n  Lorenz Walthert [ctb],\n  Lucas Gallindo [ctb],\n  Marius Hofert [ctb],\n  Martin Modrák [ctb],\n  Michael Chirico [ctb],\n  Michael Friendly [ctb],\n  Michal Bojanowski [ctb],\n  Michel Kuhlmann [ctb],\n  Miller Patrick [ctb],\n  Nacho Caballero [ctb],\n  Nick Salkowski [ctb],\n  Niels Richard Hansen [ctb],\n  Noam Ross [ctb],\n  Obada Mahdi [ctb],\n  Pavel N. Krivitsky [ctb] (<https://orcid.org/0000-0002-9101-3362>),\n  Pedro Faria [ctb],\n  Qiang Li [ctb],\n  Ramnath Vaidyanathan [ctb],\n  Richard Cotton [ctb],\n  Robert Krzyzanowski [ctb],\n  Rodrigo Copetti [ctb],\n  Romain Francois [ctb],\n  Ruaridh Williamson [ctb],\n  Sagiru Mati [ctb] (<https://orcid.org/0000-0003-1413-3974>),\n  Scott Kostyshak [ctb],\n  Sebastian Meyer [ctb],\n  Sietse Brouwer [ctb],\n  Simon de Bernard [ctb],\n  Sylvain Rousseau [ctb],\n  Taiyun Wei [ctb],\n  Thibaut Assus [ctb],\n  Thibaut Lamadon [ctb],\n  Thomas Leeper [ctb],\n  Tim Mastny [ctb],\n  Tom Torsney-Weir [ctb],\n  Trevor Davis [ctb],\n  Viktoras Veitas [ctb],\n  Weicheng Zhu [ctb],\n  Wush Wu [ctb],\n  Zachary Foster [ctb],\n  Zhian N. Kamvar [ctb] (<https://orcid.org/0000-0003-1458-7108>),\n  Posit Software, PBC [cph, fnd]",
         "Maintainer": "Yihui Xie <xie@yihui.name>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2023-10-30 09:10:12 UTC",
         "Built": "R 4.3.1; ; 2023-10-30 10:36:12 UTC; unix"
       }
     },
     "labeling": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "labeling",
         "Type": "Package",
@@ -1189,14 +1189,14 @@
         "NeedsCompilation": "no",
         "Imports": "stats, graphics",
         "Packaged": "2023-08-29 21:01:57 UTC; loki",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2023-08-29 22:20:02 UTC",
         "Built": "R 4.3.3; ; 2025-01-25 21:34:13 UTC; unix"
       }
     },
     "later": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "later",
         "Type": "Package",
@@ -1217,7 +1217,7 @@
         "Packaged": "2023-12-06 00:38:14 UTC; cpsievert",
         "Author": "Winston Chang [aut, cre],\n  Joe Cheng [aut],\n  Posit Software, PBC [cph],\n  Marcus Geelnard [ctb, cph] (TinyCThread library,\n    https://tinycthread.github.io/),\n  Evan Nemerson [ctb, cph] (TinyCThread library,\n    https://tinycthread.github.io/)",
         "Maintainer": "Winston Chang <winston@posit.co>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2023-12-06 09:10:05 UTC",
         "Built": "R 4.3.1; aarch64-apple-darwin20; 2023-12-06 11:48:36 UTC; unix",
         "Archs": "later.so.dSYM"
@@ -1225,7 +1225,7 @@
     },
     "lattice": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "lattice",
         "Version": "0.22-5",
@@ -1247,14 +1247,14 @@
         "Packaged": "2023-10-23 20:44:42 UTC; deepayan",
         "Author": "Deepayan Sarkar [aut, cre] (<https://orcid.org/0000-0003-4107-1553>),\n  Felix Andrews [ctb],\n  Kevin Wright [ctb] (documentation),\n  Neil Klepeis [ctb],\n  Johan Larsson [ctb] (miscellaneous improvements),\n  Zhijian (Jason) Wen [cph] (filled contour code),\n  Paul Murrell [ctb],\n  Stefan Eng [ctb] (violin plot improvements),\n  Achim Zeileis [ctb] (modern colors),\n  Alexandre Courtiol [ctb] (generics for larrows, lpolygon, lrect and\n    lsegments)",
         "Maintainer": "Deepayan Sarkar <deepayan.sarkar@r-project.org>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2023-10-24 07:00:02 UTC",
         "Built": "R 4.3.3; aarch64-apple-darwin20; 2024-03-01 22:47:06 UTC; unix"
       }
     },
     "lazyeval": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "lazyeval",
         "Version": "0.2.2",
@@ -1271,7 +1271,7 @@
         "Packaged": "2019-03-15 14:18:01 UTC; lionel",
         "Author": "Hadley Wickham [aut, cre],\n  RStudio [cph]",
         "Maintainer": "Hadley Wickham <hadley@rstudio.com>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2019-03-15 17:50:07 UTC",
         "Built": "R 4.3.3; aarch64-apple-darwin20; 2025-01-25 21:45:41 UTC; unix",
         "Archs": "lazyeval.so.dSYM"
@@ -1279,7 +1279,7 @@
     },
     "lifecycle": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "lifecycle",
         "Title": "Manage the Life Cycle of your Package Functions",
@@ -1301,14 +1301,14 @@
         "Packaged": "2023-11-06 16:07:36 UTC; lionel",
         "Author": "Lionel Henry [aut, cre],\n  Hadley Wickham [aut] (<https://orcid.org/0000-0003-4757-117X>),\n  Posit Software, PBC [cph, fnd]",
         "Maintainer": "Lionel Henry <lionel@posit.co>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2023-11-07 10:10:10 UTC",
         "Built": "R 4.3.3; ; 2025-01-24 13:53:23 UTC; unix"
       }
     },
     "magrittr": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Type": "Package",
         "Package": "magrittr",
@@ -1330,7 +1330,7 @@
         "Packaged": "2022-03-29 09:34:37 UTC; lionel",
         "Author": "Stefan Milton Bache [aut, cph] (Original author and creator of\n    magrittr),\n  Hadley Wickham [aut],\n  Lionel Henry [cre],\n  RStudio [cph, fnd]",
         "Maintainer": "Lionel Henry <lionel@rstudio.com>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2022-03-30 07:30:09 UTC",
         "Built": "R 4.3.3; aarch64-apple-darwin20; 2025-01-25 21:33:13 UTC; unix",
         "Archs": "magrittr.so.dSYM"
@@ -1338,7 +1338,7 @@
     },
     "memoise": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "memoise",
         "Title": "'Memoisation' of Functions",
@@ -1356,14 +1356,14 @@
         "Packaged": "2021-11-24 21:24:50 UTC; jhester",
         "Author": "Hadley Wickham [aut],\n  Jim Hester [aut],\n  Winston Chang [aut, cre],\n  Kirill Müller [aut],\n  Daniel Cook [aut],\n  Mark Edmondson [ctb]",
         "Maintainer": "Winston Chang <winston@rstudio.com>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2021-11-26 16:11:10 UTC",
         "Built": "R 4.3.3; ; 2025-01-24 13:53:42 UTC; unix"
       }
     },
     "mgcv": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "mgcv",
         "Version": "1.9-1",
@@ -1380,14 +1380,14 @@
         "License": "GPL (>= 2)",
         "NeedsCompilation": "yes",
         "Packaged": "2023-12-20 10:39:06 UTC; sw283",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2023-12-21 00:30:02 UTC",
         "Built": "R 4.3.3; aarch64-apple-darwin20; 2024-03-01 22:47:34 UTC; unix"
       }
     },
     "mime": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "mime",
         "Type": "Package",
@@ -1405,7 +1405,7 @@
         "Packaged": "2021-09-28 02:06:04 UTC; yihui",
         "Author": "Yihui Xie [aut, cre] (<https://orcid.org/0000-0003-0645-5666>),\n  Jeffrey Horner [ctb],\n  Beilei Bian [ctb]",
         "Maintainer": "Yihui Xie <xie@yihui.name>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2021-09-28 05:00:05 UTC",
         "Built": "R 4.3.0; aarch64-apple-darwin20; 2023-04-11 04:31:23 UTC; unix",
         "Archs": "mime.so.dSYM"
@@ -1413,7 +1413,7 @@
     },
     "munsell": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "munsell",
         "Type": "Package",
@@ -1431,14 +1431,14 @@
         "BugReports": "https://github.com/cwickham/munsell/issues",
         "NeedsCompilation": "no",
         "Packaged": "2024-04-01 20:42:09 UTC; charlottewickham",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2024-04-01 23:40:10 UTC",
         "Built": "R 4.3.1; ; 2024-04-02 01:54:41 UTC; unix"
       }
     },
     "nlme": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "nlme",
         "Version": "3.1-164",
@@ -1461,14 +1461,14 @@
         "Packaged": "2023-11-27 10:37:08 UTC; hornik",
         "Author": "José Pinheiro [aut] (S version),\n  Douglas Bates [aut] (up to 2007),\n  Saikat DebRoy [ctb] (up to 2002),\n  Deepayan Sarkar [ctb] (up to 2005),\n  EISPACK authors [ctb] (src/rs.f),\n  Siem Heisterkamp [ctb] (Author fixed sigma),\n  Bert Van Willigen [ctb] (Programmer fixed sigma),\n  Johannes Ranke [ctb] (varConstProp()),\n  R Core Team [aut, cre]",
         "Maintainer": "R Core Team <R-core@R-project.org>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2023-11-27 15:26:12 UTC",
         "Built": "R 4.3.3; aarch64-apple-darwin20; 2024-03-01 22:47:11 UTC; unix"
       }
     },
     "openssl": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "openssl",
         "Type": "Package",
@@ -1489,7 +1489,7 @@
         "Packaged": "2024-04-21 20:40:22 UTC; jeroen",
         "Author": "Jeroen Ooms [aut, cre] (<https://orcid.org/0000-0002-4035-0289>),\n  Oliver Keyes [ctb]",
         "Maintainer": "Jeroen Ooms <jeroen@berkeley.edu>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2024-04-21 21:32:40 UTC",
         "Built": "R 4.3.1; aarch64-apple-darwin20; 2024-04-21 22:12:17 UTC; unix",
         "Archs": "openssl.so.dSYM"
@@ -1497,7 +1497,7 @@
     },
     "pillar": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "pillar",
         "Title": "Coloured Formatting for Columns",
@@ -1523,14 +1523,14 @@
         "Packaged": "2023-03-21 08:42:46 UTC; kirill",
         "Author": "Kirill Müller [aut, cre] (<https://orcid.org/0000-0002-1416-3412>),\n  Hadley Wickham [aut],\n  RStudio [cph]",
         "Maintainer": "Kirill Müller <kirill@cynkra.com>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2023-03-22 08:10:02 UTC",
         "Built": "R 4.3.0; ; 2023-04-11 04:41:34 UTC; unix"
       }
     },
     "pkgconfig": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "pkgconfig",
         "Title": "Private Configuration for 'R' Packages",
@@ -1547,14 +1547,14 @@
         "Encoding": "UTF-8",
         "NeedsCompilation": "no",
         "Packaged": "2019-09-22 08:42:40 UTC; gaborcsardi",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2019-09-22 09:20:02 UTC",
         "Built": "R 4.3.3; ; 2025-01-25 21:33:41 UTC; unix"
       }
     },
     "plotly": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "plotly",
         "Title": "Create Interactive Web Graphics via 'plotly.js'",
@@ -1575,14 +1575,14 @@
         "Packaged": "2024-01-13 20:51:33 UTC; cpsievert",
         "Author": "Carson Sievert [aut, cre] (<https://orcid.org/0000-0002-4958-2844>),\n  Chris Parmer [aut],\n  Toby Hocking [aut],\n  Scott Chamberlain [aut],\n  Karthik Ram [aut],\n  Marianne Corvellec [aut] (<https://orcid.org/0000-0002-1994-3581>),\n  Pedro Despouy [aut],\n  Salim Brüggemann [ctb] (<https://orcid.org/0000-0002-5329-5987>),\n  Plotly Technologies Inc. [cph]",
         "Maintainer": "Carson Sievert <cpsievert1@gmail.com>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2024-01-13 22:40:02 UTC",
         "Built": "R 4.3.1; ; 2024-01-14 00:44:58 UTC; unix"
       }
     },
     "promises": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Type": "Package",
         "Package": "promises",
@@ -1605,7 +1605,7 @@
         "Packaged": "2024-04-04 20:02:05 UTC; jcheng",
         "Author": "Joe Cheng [aut, cre],\n  Posit Software, PBC [cph, fnd]",
         "Maintainer": "Joe Cheng <joe@posit.co>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2024-04-05 15:00:06 UTC",
         "Built": "R 4.3.1; aarch64-apple-darwin20; 2024-04-07 20:47:32 UTC; unix",
         "Archs": "promises.so.dSYM"
@@ -1613,7 +1613,7 @@
     },
     "purrr": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "purrr",
         "Title": "Functional Programming Tools",
@@ -1637,7 +1637,7 @@
         "Packaged": "2023-08-08 16:13:31 UTC; hadleywickham",
         "Author": "Hadley Wickham [aut, cre] (<https://orcid.org/0000-0003-4757-117X>),\n  Lionel Henry [aut],\n  RStudio [cph, fnd]",
         "Maintainer": "Hadley Wickham <hadley@rstudio.com>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2023-08-10 08:20:07 UTC",
         "Built": "R 4.3.0; aarch64-apple-darwin20; 2023-08-10 10:46:03 UTC; unix",
         "Archs": "purrr.so.dSYM"
@@ -1645,7 +1645,7 @@
     },
     "quantmod": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "quantmod",
         "Type": "Package",
@@ -1664,14 +1664,14 @@
         "Packaged": "2024-02-13 17:49:13 UTC; josh",
         "Author": "Jeffrey A. Ryan [aut, cph],\n  Joshua M. Ulrich [cre, aut],\n  Ethan B. Smith [ctb],\n  Wouter Thielen [ctb],\n  Paul Teetor [ctb],\n  Steve Bronder [ctb]",
         "Maintainer": "Joshua M. Ulrich <josh.m.ulrich@gmail.com>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2024-02-14 08:20:02 UTC",
         "Built": "R 4.3.1; ; 2024-02-18 07:39:04 UTC; unix"
       }
     },
     "rappdirs": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Type": "Package",
         "Package": "rappdirs",
@@ -1692,7 +1692,7 @@
         "Packaged": "2021-01-28 22:29:57 UTC; hadley",
         "Author": "Hadley Wickham [trl, cre, cph],\n  RStudio [cph],\n  Sridhar Ratnakumar [aut],\n  Trent Mick [aut],\n  ActiveState [cph] (R/appdir.r, R/cache.r, R/data.r, R/log.r translated\n    from appdirs),\n  Eddy Petrisor [ctb],\n  Trevor Davis [trl, aut],\n  Gabor Csardi [ctb],\n  Gregory Jefferis [ctb]",
         "Maintainer": "Hadley Wickham <hadley@rstudio.com>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2021-01-31 05:40:02 UTC",
         "Built": "R 4.3.3; aarch64-apple-darwin20; 2025-01-25 21:35:37 UTC; unix",
         "Archs": "rappdirs.so.dSYM"
@@ -1700,7 +1700,7 @@
     },
     "rlang": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "rlang",
         "Version": "1.1.3",
@@ -1724,7 +1724,7 @@
         "Packaged": "2024-01-09 13:33:10 UTC; lionel",
         "Author": "Lionel Henry [aut, cre],\n  Hadley Wickham [aut],\n  mikefc [cph] (Hash implementation based on Mike's xxhashlite),\n  Yann Collet [cph] (Author of the embedded xxHash library),\n  Posit, PBC [cph, fnd]",
         "Maintainer": "Lionel Henry <lionel@posit.co>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2024-01-10 12:00:02 UTC",
         "Built": "R 4.3.1; aarch64-apple-darwin20; 2024-01-10 14:27:43 UTC; unix",
         "Archs": "rlang.so.dSYM"
@@ -1732,7 +1732,7 @@
     },
     "rmarkdown": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Type": "Package",
         "Package": "rmarkdown",
@@ -1755,14 +1755,14 @@
         "NeedsCompilation": "no",
         "Packaged": "2024-03-04 15:00:37 UTC; yihui",
         "Author": "JJ Allaire [aut],\n  Yihui Xie [aut, cre] (<https://orcid.org/0000-0003-0645-5666>),\n  Christophe Dervieux [aut] (<https://orcid.org/0000-0003-4474-2498>),\n  Jonathan McPherson [aut],\n  Javier Luraschi [aut],\n  Kevin Ushey [aut],\n  Aron Atkins [aut],\n  Hadley Wickham [aut],\n  Joe Cheng [aut],\n  Winston Chang [aut],\n  Richard Iannone [aut] (<https://orcid.org/0000-0003-3925-190X>),\n  Andrew Dunning [ctb] (<https://orcid.org/0000-0003-0464-5036>),\n  Atsushi Yasumoto [ctb, cph] (<https://orcid.org/0000-0002-8335-495X>,\n    Number sections Lua filter),\n  Barret Schloerke [ctb],\n  Carson Sievert [ctb] (<https://orcid.org/0000-0002-4958-2844>),\n  Devon Ryan [ctb] (<https://orcid.org/0000-0002-8549-0971>),\n  Frederik Aust [ctb] (<https://orcid.org/0000-0003-4900-788X>),\n  Jeff Allen [ctb],\n  JooYoung Seo [ctb] (<https://orcid.org/0000-0002-4064-6012>),\n  Malcolm Barrett [ctb],\n  Rob Hyndman [ctb],\n  Romain Lesur [ctb],\n  Roy Storey [ctb],\n  Ruben Arslan [ctb],\n  Sergio Oller [ctb],\n  Posit Software, PBC [cph, fnd],\n  jQuery UI contributors [ctb, cph] (jQuery UI library; authors listed in\n    inst/rmd/h/jqueryui/AUTHORS.txt),\n  Mark Otto [ctb] (Bootstrap library),\n  Jacob Thornton [ctb] (Bootstrap library),\n  Bootstrap contributors [ctb] (Bootstrap library),\n  Twitter, Inc [cph] (Bootstrap library),\n  Alexander Farkas [ctb, cph] (html5shiv library),\n  Scott Jehl [ctb, cph] (Respond.js library),\n  Ivan Sagalaev [ctb, cph] (highlight.js library),\n  Greg Franko [ctb, cph] (tocify library),\n  John MacFarlane [ctb, cph] (Pandoc templates),\n  Google, Inc. [ctb, cph] (ioslides library),\n  Dave Raggett [ctb] (slidy library),\n  W3C [cph] (slidy library),\n  Dave Gandy [ctb, cph] (Font-Awesome),\n  Ben Sperry [ctb] (Ionicons),\n  Drifty [cph] (Ionicons),\n  Aidan Lister [ctb, cph] (jQuery StickyTabs),\n  Benct Philip Jonsson [ctb, cph] (pagebreak Lua filter),\n  Albert Krewinkel [ctb, cph] (pagebreak Lua filter)",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2024-03-05 17:40:02 UTC",
         "Built": "R 4.3.1; ; 2024-03-05 18:32:49 UTC; unix"
       }
     },
     "sass": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Type": "Package",
         "Package": "sass",
@@ -1784,7 +1784,7 @@
         "Packaged": "2024-03-15 21:58:01 UTC; cpsievert",
         "Author": "Joe Cheng [aut],\n  Timothy Mastny [aut],\n  Richard Iannone [aut] (<https://orcid.org/0000-0003-3925-190X>),\n  Barret Schloerke [aut] (<https://orcid.org/0000-0001-9986-114X>),\n  Carson Sievert [aut, cre] (<https://orcid.org/0000-0002-4958-2844>),\n  Christophe Dervieux [ctb] (<https://orcid.org/0000-0003-4474-2498>),\n  RStudio [cph, fnd],\n  Sass Open Source Foundation [ctb, cph] (LibSass library),\n  Greter Marcel [ctb, cph] (LibSass library),\n  Mifsud Michael [ctb, cph] (LibSass library),\n  Hampton Catlin [ctb, cph] (LibSass library),\n  Natalie Weizenbaum [ctb, cph] (LibSass library),\n  Chris Eppstein [ctb, cph] (LibSass library),\n  Adams Joseph [ctb, cph] (json.cpp),\n  Trifunovic Nemanja [ctb, cph] (utf8.h)",
         "Maintainer": "Carson Sievert <carson@rstudio.com>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2024-03-15 22:30:02 UTC",
         "Built": "R 4.3.1; aarch64-apple-darwin20; 2024-03-16 06:27:02 UTC; unix",
         "Archs": "sass.so.dSYM"
@@ -1792,7 +1792,7 @@
     },
     "scales": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "scales",
         "Title": "Scale Functions for Visualization",
@@ -1814,14 +1814,14 @@
         "Packaged": "2023-11-27 20:27:59 UTC; thomas",
         "Author": "Hadley Wickham [aut],\n  Thomas Lin Pedersen [cre, aut]\n    (<https://orcid.org/0000-0002-5147-4711>),\n  Dana Seidel [aut],\n  Posit, PBC [cph, fnd]",
         "Maintainer": "Thomas Lin Pedersen <thomas.pedersen@posit.co>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2023-11-28 09:10:06 UTC",
         "Built": "R 4.3.1; ; 2023-11-28 10:46:16 UTC; unix"
       }
     },
     "stringi": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "stringi",
         "Version": "1.8.4",
@@ -1843,14 +1843,14 @@
         "NeedsCompilation": "yes",
         "Packaged": "2024-05-06 12:50:25 UTC; gagolews",
         "License_is_FOSS": "yes",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2024-05-06 15:00:02 UTC",
         "Built": "R 4.3.1; aarch64-apple-darwin20; 2024-05-06 16:17:47 UTC; unix"
       }
     },
     "stringr": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "stringr",
         "Title": "Simple, Consistent Wrappers for Common String Operations",
@@ -1873,14 +1873,14 @@
         "Packaged": "2023-11-14 15:03:52 UTC; hadleywickham",
         "Author": "Hadley Wickham [aut, cre, cph],\n  Posit Software, PBC [cph, fnd]",
         "Maintainer": "Hadley Wickham <hadley@posit.co>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2023-11-14 23:10:02 UTC",
         "Built": "R 4.3.1; ; 2023-11-15 03:38:32 UTC; unix"
       }
     },
     "sys": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "sys",
         "Type": "Package",
@@ -1899,7 +1899,7 @@
         "Packaged": "2023-05-22 21:45:03 UTC; jeroen",
         "Author": "Jeroen Ooms [aut, cre] (<https://orcid.org/0000-0002-4035-0289>),\n  Gábor Csárdi [ctb]",
         "Maintainer": "Jeroen Ooms <jeroen@berkeley.edu>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2023-05-23 07:50:02 UTC",
         "Built": "R 4.3.0; aarch64-apple-darwin20; 2023-05-28 16:46:07 UTC; unix",
         "Archs": "sys.so.dSYM"
@@ -1907,7 +1907,7 @@
     },
     "tibble": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "tibble",
         "Title": "Simple Data Frames",
@@ -1934,7 +1934,7 @@
         "Packaged": "2023-03-19 09:23:10 UTC; kirill",
         "Author": "Kirill Müller [aut, cre] (<https://orcid.org/0000-0002-1416-3412>),\n  Hadley Wickham [aut],\n  Romain Francois [ctb],\n  Jennifer Bryan [ctb],\n  RStudio [cph, fnd]",
         "Maintainer": "Kirill Müller <kirill@cynkra.com>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2023-03-20 06:30:02 UTC",
         "Built": "R 4.3.0; aarch64-apple-darwin20; 2023-04-11 04:44:38 UTC; unix",
         "Archs": "tibble.so.dSYM"
@@ -1942,7 +1942,7 @@
     },
     "tidyr": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "tidyr",
         "Title": "Tidy Messy Data",
@@ -1966,7 +1966,7 @@
         "Packaged": "2024-01-23 14:27:23 UTC; hadleywickham",
         "Author": "Hadley Wickham [aut, cre],\n  Davis Vaughan [aut],\n  Maximilian Girlich [aut],\n  Kevin Ushey [ctb],\n  Posit Software, PBC [cph, fnd]",
         "Maintainer": "Hadley Wickham <hadley@posit.co>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2024-01-24 14:50:09 UTC",
         "Built": "R 4.3.1; aarch64-apple-darwin20; 2024-01-24 16:08:02 UTC; unix",
         "Archs": "tidyr.so.dSYM"
@@ -1974,7 +1974,7 @@
     },
     "tidyselect": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "tidyselect",
         "Title": "Select from a Set of Strings",
@@ -1997,14 +1997,14 @@
         "Packaged": "2024-03-11 11:46:04 UTC; lionel",
         "Author": "Lionel Henry [aut, cre],\n  Hadley Wickham [aut],\n  Posit Software, PBC [cph, fnd]",
         "Maintainer": "Lionel Henry <lionel@posit.co>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2024-03-11 14:10:02 UTC",
         "Built": "R 4.3.1; ; 2024-03-11 15:03:27 UTC; unix"
       }
     },
     "tinytex": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "tinytex",
         "Type": "Package",
@@ -2023,14 +2023,14 @@
         "Packaged": "2024-05-06 16:53:21 UTC; yihui",
         "Author": "Yihui Xie [aut, cre, cph] (<https://orcid.org/0000-0003-0645-5666>),\n  Posit Software, PBC [cph, fnd],\n  Christophe Dervieux [ctb] (<https://orcid.org/0000-0003-4474-2498>),\n  Devon Ryan [ctb] (<https://orcid.org/0000-0002-8549-0971>),\n  Ethan Heinzen [ctb],\n  Fernando Cagua [ctb]",
         "Maintainer": "Yihui Xie <xie@yihui.name>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2024-05-06 17:30:02 UTC",
         "Built": "R 4.3.1; ; 2024-05-06 19:45:08 UTC; unix"
       }
     },
     "utf8": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "utf8",
         "Title": "Unicode Text Processing",
@@ -2050,7 +2050,7 @@
         "Packaged": "2023-10-22 13:43:19 UTC; kirill",
         "Author": "Patrick O. Perry [aut, cph],\n  Kirill Müller [cre],\n  Unicode, Inc. [cph, dtc] (Unicode Character Database)",
         "Maintainer": "Kirill Müller <kirill@cynkra.com>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2023-10-22 21:50:02 UTC",
         "Built": "R 4.3.1; aarch64-apple-darwin20; 2023-10-23 00:05:46 UTC; unix",
         "Archs": "utf8.so.dSYM"
@@ -2058,7 +2058,7 @@
     },
     "vctrs": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "vctrs",
         "Title": "Vector Helpers",
@@ -2081,7 +2081,7 @@
         "Packaged": "2023-12-01 16:27:12 UTC; davis",
         "Author": "Hadley Wickham [aut],\n  Lionel Henry [aut],\n  Davis Vaughan [aut, cre],\n  data.table team [cph] (Radix sort based on data.table's forder() and\n    their contribution to R's order()),\n  Posit Software, PBC [cph, fnd]",
         "Maintainer": "Davis Vaughan <davis@posit.co>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2023-12-01 23:50:02 UTC",
         "Built": "R 4.3.3; aarch64-apple-darwin20; 2025-01-24 17:56:25 UTC; unix",
         "Archs": "vctrs.so.dSYM"
@@ -2089,7 +2089,7 @@
     },
     "viridisLite": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "viridisLite",
         "Type": "Package",
@@ -2109,14 +2109,14 @@
         "NeedsCompilation": "no",
         "Packaged": "2023-05-02 21:38:46 UTC; simon",
         "Author": "Simon Garnier [aut, cre],\n  Noam Ross [ctb, cph],\n  Bob Rudis [ctb, cph],\n  Marco Sciaini [ctb, cph],\n  Antônio Pedro Camargo [ctb, cph],\n  Cédric Scherer [ctb, cph]",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2023-05-02 23:50:02 UTC",
         "Built": "R 4.3.3; ; 2025-01-25 21:34:35 UTC; unix"
       }
     },
     "withr": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "withr",
         "Title": "Run Code 'With' Temporarily Modified Global State",
@@ -2139,14 +2139,14 @@
         "Packaged": "2024-01-16 10:22:29 UTC; lionel",
         "Author": "Jim Hester [aut],\n  Lionel Henry [aut, cre],\n  Kirill Müller [aut],\n  Kevin Ushey [aut],\n  Hadley Wickham [aut],\n  Winston Chang [aut],\n  Jennifer Bryan [ctb],\n  Richard Cotton [ctb],\n  Posit Software, PBC [cph, fnd]",
         "Maintainer": "Lionel Henry <lionel@posit.co>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2024-01-16 14:20:02 UTC",
         "Built": "R 4.3.1; ; 2024-01-16 15:41:33 UTC; unix"
       }
     },
     "xfun": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "xfun",
         "Type": "Package",
@@ -2166,7 +2166,7 @@
         "Packaged": "2024-05-15 05:31:06 UTC; yihui",
         "Author": "Yihui Xie [aut, cre, cph] (<https://orcid.org/0000-0003-0645-5666>),\n  Wush Wu [ctb],\n  Daijiang Li [ctb],\n  Xianying Tan [ctb],\n  Salim Brüggemann [ctb] (<https://orcid.org/0000-0002-5329-5987>),\n  Christophe Dervieux [ctb],\n  Posit Software, PBC [cph, fnd]",
         "Maintainer": "Yihui Xie <xie@yihui.name>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2024-05-15 06:00:02 UTC",
         "Built": "R 4.3.3; aarch64-apple-darwin20; 2024-05-15 08:42:16 UTC; unix",
         "Archs": "xfun.so.dSYM"
@@ -2174,7 +2174,7 @@
     },
     "xts": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "xts",
         "Type": "Package",
@@ -2194,7 +2194,7 @@
         "Packaged": "2024-01-19 19:31:01 UTC; josh",
         "Author": "Jeffrey A. Ryan [aut, cph],\n  Joshua M. Ulrich [cre, aut],\n  Ross Bennett [ctb],\n  Corwin Joy [ctb]",
         "Maintainer": "Joshua M. Ulrich <josh.m.ulrich@gmail.com>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2024-01-21 16:10:02 UTC",
         "Built": "R 4.3.1; aarch64-apple-darwin20; 2024-01-21 17:27:37 UTC; unix",
         "Archs": "xts.so.dSYM"
@@ -2202,7 +2202,7 @@
     },
     "yaml": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "yaml",
         "Type": "Package",
@@ -2218,7 +2218,7 @@
         "BugReports": "https://github.com/vubiostat/r-yaml/issues",
         "NeedsCompilation": "yes",
         "Packaged": "2023-12-11 16:46:09 UTC; garbetsp",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2023-12-11 18:50:02 UTC",
         "Built": "R 4.3.1; aarch64-apple-darwin20; 2023-12-11 20:17:10 UTC; unix",
         "Archs": "yaml.so.dSYM"
@@ -2226,7 +2226,7 @@
     },
     "zoo": {
       "Source": "CRAN",
-      "Repository": "CRAN",
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "zoo",
         "Version": "1.8-12",
@@ -2243,7 +2243,7 @@
         "Packaged": "2023-04-11 21:24:32 UTC; zeileis",
         "Author": "Achim Zeileis [aut, cre] (<https://orcid.org/0000-0003-0918-3766>),\n  Gabor Grothendieck [aut],\n  Jeffrey A. Ryan [aut],\n  Joshua M. Ulrich [ctb],\n  Felix Andrews [ctb]",
         "Maintainer": "Achim Zeileis <Achim.Zeileis@R-project.org>",
-        "Repository": "CRAN",
+        "Repository": "https://cloud.r-project.org",
         "Date/Publication": "2023-04-13 12:13:20 UTC",
         "Built": "R 4.3.0; aarch64-apple-darwin20; 2023-04-13 12:27:13 UTC; unix",
         "Archs": "zoo.so.dSYM"

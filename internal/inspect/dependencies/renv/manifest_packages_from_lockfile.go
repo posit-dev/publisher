@@ -108,21 +108,21 @@ func (m *LockfilePackageMapper) GetManifestPackagesFromLockfile(
 
 		// DESCRIPTION record construction follows R package conventions because
 		// deployment targets expect standard package metadata format.
-		description := dcf.Record{
+		manifestPkg.Description = dcf.Record{
 			"Package": string(pkgName),
 			"Version": pkg.Version,
 		}
 
-		description["Type"] = "Package"
+		manifestPkg.Description["Type"] = "Package"
 
 		// Title fallback ensures every package has a descriptive title
 		// when we display information to users.
 		// This generates "<Source> R Package" as the title if missing.
 		fallbackTitle := strings.TrimSpace(firstNonEmpty(manifestPkg.Source, pkg.Source) + " R package")
-		description["Title"] = firstNonEmpty(pkg.Title, fallbackTitle)
+		manifestPkg.Description["Title"] = firstNonEmpty(pkg.Title, fallbackTitle)
 
 		// Populate all standard fields from the lockfile package into the DESCRIPTION
-		copyAllFieldsToDesc(pkg, description)
+		copyAllFieldsToDesc(pkg, manifestPkg)
 
 		// Validate we resolved a usable Source
 		if manifestPkg.Source == "" {
@@ -133,8 +133,6 @@ func (m *LockfilePackageMapper) GetManifestPackagesFromLockfile(
 			return nil, fmt.Errorf("Package %s has an unresolved repository; cannot generate manifest entry", pkgName)
 		}
 
-		// Set the generated DESCRIPTION in the manifest and add the package
-		manifestPkg.Description = description
 		manifestPackages[string(pkgName)] = *manifestPkg
 	}
 
@@ -144,7 +142,9 @@ func (m *LockfilePackageMapper) GetManifestPackagesFromLockfile(
 
 // copyAllFieldsToDesc transfers metadata from lockfile packages to what is
 // expected by manifest.json via the DCF.
-func copyAllFieldsToDesc(pkg Package, desc dcf.Record) {
+func copyAllFieldsToDesc(pkg Package, manifestPkg *bundles.Package) {
+	desc := manifestPkg.Description
+
 	// Core metadata
 	setIf(desc, "Hash", pkg.Hash)
 	setIf(desc, "Authors@R", pkg.AuthorsAtR)
@@ -176,7 +176,7 @@ func copyAllFieldsToDesc(pkg Package, desc dcf.Record) {
 	}
 	setIf(desc, "URL", pkg.URL)
 	setIf(desc, "BugReports", pkg.BugReports)
-	setIf(desc, "Repository", string(pkg.Repository))
+	setIf(desc, "Repository", manifestPkg.Repository)
 
 	// Special mapped config fields
 	desc["Config/testthat/edition"] = firstNonEmpty(desc["Config/testthat/edition"], pkg.ConfigTesthat)
