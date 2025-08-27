@@ -101,27 +101,6 @@ func findRepoNameByURL(repoUrl RepoURL, repos []Repository) string {
 	return ""
 }
 
-// normalizeRepositoryToURL ensures consistent output between defaultPackageMapper and LockfilePackageMapper.
-// The defaultPackageMapper uses installed R libraries while LockfilePackageMapper reads renv.lock directly,
-// but both must use repository URLs (not names) in the Repository field to match manifest.Package spec.
-func normalizeRepositoryToURL(repoStr string, repos []Repository) string {
-	// If it's already a URL, return as-is
-	if isURL(repoStr) {
-		return repoStr
-	}
-
-	// Name-to-URL resolution is required because packages may reference repositories
-	// by name, but we need consistent URL-based references in the final manifest.
-	for _, repo := range repos {
-		if repo.Name == repoStr {
-			return string(repo.URL)
-		}
-	}
-
-	// If not found, return as-is (could be special case like hardcoded repository)
-	return repoStr
-}
-
 func findRepoUrl(pkgName PackageName, availablePackages []AvailablePackage) string {
 	for _, avail := range availablePackages {
 		if avail.Name == pkgName {
@@ -132,17 +111,15 @@ func findRepoUrl(pkgName PackageName, availablePackages []AvailablePackage) stri
 }
 
 func toManifestPackage(pkg *Package, repos []Repository, availablePackages, biocPackages []AvailablePackage) *bundles.Package {
-	// rsconnect compatibility requires following the same package normalization
-	// logic to ensure deployments work consistently with existing rsconnect workflows.
+	// See rsconnect:::standardizeRenvPackage
 	out := &bundles.Package{
 		Source:     pkg.Source,
-		Repository: normalizeRepositoryToURL(string(pkg.Repository), repos),
+		Repository: string(pkg.Repository),
 	}
 	source := pkg.Source
 
 	if pkg.Repository == "" && strings.Contains(pkg.RemoteRepos, "bioconductor.org") {
-		// renv bug workaround: https://github.com/rstudio/renv/issues/1202
-		// renv sometimes fails to set Repository field for Bioconductor packages
+		// Workaround for https://github.com/rstudio/renv/issues/1202
 		source = "Bioconductor"
 	}
 
@@ -150,66 +127,27 @@ func toManifestPackage(pkg *Package, repos []Repository, availablePackages, bioc
 	case "Repository":
 		if pkg.Repository == "CRAN" {
 			if isDevVersion(pkg, availablePackages) {
-				// Dev versions from CRAN cannot be reliably deployed because they're
-				// newer than what's available in repositories, so we clear Source/Repository
-				// to trigger an error that guides users to publish stable versions.
 				out.Source = ""
 				out.Repository = ""
 			} else {
 				out.Source = "CRAN"
-				// Repository normalization ensures defaultPackageMapper output matches LockfilePackageMapper
-				// by always using repository URLs rather than names.
-				repoUrl := findRepoUrl(pkg.Package, availablePackages)
-				out.Repository = normalizeRepositoryToURL(repoUrl, repos)
-				if out.Repository == "" {
-					out.Repository = "CRAN" // fallback to name
-				}
+				out.Repository = findRepoUrl(pkg.Package, availablePackages)
 			}
 		} else {
-			// Non-CRAN repositories require lookup from available packages because
-			// the Repository field in DESCRIPTION files is set by the repository
-			// and may contain arbitrary values that need validation.
-			repoUrl := findRepoUrl(pkg.Package, availablePackages)
-			out.Repository = normalizeRepositoryToURL(repoUrl, repos)
-			out.Source = findRepoNameByURL(RepoURL(repoUrl), repos)
-
-			// Fallback to lockfile repository info is needed when available packages
-			// lookup fails, ensuring defaultPackageMapper produces equivalent output to LockfilePackageMapper
-			// even when packages aren't available in the current R environment.
-			if out.Source == "" && out.Repository == "" && pkg.Repository != "" {
-				out.Repository = normalizeRepositoryToURL(string(pkg.Repository), repos)
-				out.Source = findRepoNameByURL(pkg.Repository, repos)
-			}
-
-			// Dev version detection for non-CRAN repositories ensures consistency
-			// with CRAN behavior by preventing deployment of packages newer than
-			// what's available in their source repositories.
-			if strings.EqualFold(out.Source, "CRAN") && isDevVersion(pkg, availablePackages) {
-				out.Source = ""
-				out.Repository = ""
-			}
+			// Repository comes from DESCRIPTION and is set by repo, so can be
+			// anything. So we must look up from the package name.
+			out.Repository = findRepoUrl(pkg.Package, availablePackages)
+			out.Source = findRepoNameByURL(RepoURL(out.Repository), repos)
 		}
 	case "Bioconductor":
-		// Bioconductor package resolution requires checking both standard and
-		// Bioconductor-specific package lists because BioC packages may not
-		// be available in default CRAN mirrors.
-		repoUrl := findRepoUrl(pkg.Package, availablePackages)
-		if repoUrl == "" {
-			// Try packages defined from default bioC repos
-			repoUrl = findRepoUrl(pkg.Package, biocPackages)
-		}
-		out.Repository = normalizeRepositoryToURL(repoUrl, repos)
-		// BioCsoft fallback ensures defaultPackageMapper compatibility with LockfilePackageMapper behavior
-		// when repository resolution fails but we know it's a Bioconductor package.
+		out.Repository = findRepoUrl(pkg.Package, availablePackages)
 		if out.Repository == "" {
-			out.Repository = "BioCsoft"
+			// Try packages defined from default bioC repos
+			out.Repository = findRepoUrl(pkg.Package, biocPackages)
 		}
 	case "Bitbucket", "GitHub", "GitLab":
-		// Git-based sources use lowercase names for consistency.
 		out.Source = strings.ToLower(pkg.Source)
 	case "Local", "unknown":
-		// Local and unknown sources cannot be deployed because they lack
-		// reproducible installation sources, so we clear them to trigger errors.
 		out.Source = ""
 		out.Repository = ""
 	}
