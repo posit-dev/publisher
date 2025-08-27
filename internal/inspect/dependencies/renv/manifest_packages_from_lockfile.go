@@ -80,25 +80,21 @@ func (m *LockfilePackageMapper) GetManifestPackagesFromLockfile(
 			Repository: string(pkg.Repository),
 		}
 
-		// Repository URL normalization is required for consistent comparisons because
-		// different sources may use trailing slashes inconsistently, but we need
-		// exact matches when looking up repository names.
-		repoURL := strings.TrimRight(string(pkg.Repository), "/")
+		// Determine the repository identifier from various possible sources
+		// Priority: Repository field, then RemoteRepos for packages with explicit remote repositories
+		repoIdentifier := firstNonEmpty(string(pkg.Repository), pkg.RemoteRepos)
 
-		// Remote package handling covers git-based sources that don't use traditional
-		// repositories but still need to be deployable with their remote URLs.
-		if string(pkg.Repository) == "" && pkg.RemoteRepos != "" && pkg.RemoteReposName != "" {
-			manifestPkg.Source = pkg.RemoteReposName
-			setIf(manifestPkg, "Repository", pkg.RemoteRepos)
-		} else if string(pkg.Repository) == "" && pkg.RemoteType != "" {
+		if repoIdentifier == "" && pkg.RemoteType != "" {
 			// Git-hosted packages (GitHub, GitLab, etc.) need special URL construction
 			// because they don't follow standard repository conventions.
 			manifestPkg.Source = pkg.RemoteType
-			setIf(manifestPkg, "Repository", remoteRepoURL(pkg.RemoteType, pkg.RemotePkgRef))
-		} else if pkg.Source == "Bioconductor" || pkg.Source == "Repository" || repoURL != "" {
-			// Standard repository packages require normalization to ensure LockfilePackageMapper
-			// and defaultPackageMapper produce equivalent output with repository names (not URLs).
-			resolvedSource, resolvedRepo, err := resolveRepoAndSource(repoNameByURL, cranRepoURL, defaultBiocURL, string(pkg.Repository), pkg.Source, string(pkgName))
+			manifestPkg.Repository = remoteRepoURL(pkg.RemoteType, pkg.RemotePkgRef)
+		} else if repoIdentifier != "" || pkg.Source == "Bioconductor" {
+			// All repository-based packages use the same resolution logic:
+			// - CRAN packages with Repository="CRAN"
+			// - Custom repository packages with Repository URLs
+			// - Bioconductor packages (may not have Repository field, resolved via Source)
+			resolvedSource, resolvedRepo, err := resolveRepoAndSource(repoNameByURL, cranRepoURL, defaultBiocURL, repoIdentifier, pkg.Source, string(pkgName))
 			if err != nil {
 				return nil, err
 			}
