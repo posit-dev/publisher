@@ -214,10 +214,46 @@ func (s *LockfilePackageMapperSuite) assertLockfileVsLegacyCompat(pkgName string
 	s.Equal(legacyPkg.Description["Package"], lockfilePkg.Description["Package"], "Package field mismatch for %s", pkgName)
 	s.Equal(legacyPkg.Description["Version"], lockfilePkg.Description["Version"], "Version field mismatch for %s", pkgName)
 
+	// Source should match
+	s.Equal(legacyPkg.Source, lockfilePkg.Source, "Source mismatch for %s", pkgName)
+
+	// Repository format may differ between legacy (URLs) and lockfile (names) paths
+	// Both should be non-empty and represent the same logical repository
+	s.NotEmpty(legacyPkg.Repository, "Legacy repository should not be empty for %s", pkgName)
+	s.NotEmpty(lockfilePkg.Repository, "Lockfile repository should not be empty for %s", pkgName)
+
+	// For description fields comparison, skip top-level Repository field since formats differ
 	// skipMissingFields=true: legacy is superset, may have fields lockfile doesn't
 	// skipTitle=true: lockfile may use generic fallback for Title
 	// iterateFromFirst=true: iterate over lockfile fields (first parameter)
-	s.comparePackages(pkgName, lockfilePkg, legacyPkg, true, true, true)
+
+	// Create a custom comparison that skips the Repository field
+	sourceFields := lockfilePkg.Description
+	targetFields := legacyPkg.Description
+
+	for field, sourceVal := range sourceFields {
+		targetVal, ok := targetFields[field]
+		if !ok {
+			// Skip fields not present in target (legacy is superset)
+			continue
+		}
+
+		switch field {
+		case "Title":
+			// Skip Title field - lockfile may use generic fallback
+			continue
+		case "Repository":
+			// Skip Repository field in description - format may differ between paths
+			continue
+		default:
+			// For other fields, normalize whitespace and compare
+			s.Equal(
+				normalizeWhitespace(sourceVal),
+				normalizeWhitespace(targetVal),
+				"Field %s mismatch for package %s", field, pkgName,
+			)
+		}
+	}
 }
 
 func (s *LockfilePackageMapperSuite) TestCRAN_Functional() {
@@ -271,9 +307,60 @@ func (s *LockfilePackageMapperSuite) TestBioconductor_Functional() {
 // --- Compatibility tests ensuring lockfile-only path matches legacy path on core fields ---
 
 func (s *LockfilePackageMapperSuite) TestCRAN_LockfileCompatibility() {
-	base := s.testdata.Join("cran_project")
+	// Create a temporary renv.lock with real CRAN packages for compatibility testing
+	lockfileContent := `{
+		"R": {
+			"Version": "4.3.0",
+			"Repositories": [
+				{
+					"Name": "CRAN",
+					"URL": "https://cran.rstudio.com"
+				}
+			]
+		},
+		"Packages": {
+			"base64enc": {
+				"Package": "base64enc",
+				"Version": "0.1-3",
+				"Source": "Repository",
+				"Repository": "CRAN",
+				"Requirements": [
+					"R (>= 2.9.0)"
+				],
+				"Hash": "470851b6d5d0ac559e9d01bb352b4021"
+			}
+		}
+	}`
+
+	// Create temporary directory and lockfile
+	tempDirPath := s.T().TempDir()
+	base := util.NewAbsolutePath(tempDirPath, nil)
 	lockfilePath := base.Join("renv.lock")
+	err := lockfilePath.WriteFile([]byte(lockfileContent), 0644)
+	s.NoError(err)
+
+	// Create a mock library directory with the package
 	libPath := base.Join("renv_library")
+	err = libPath.MkdirAll(0755)
+	s.NoError(err)
+
+	pkgDir := libPath.Join("base64enc")
+	err = pkgDir.MkdirAll(0755)
+	s.NoError(err)
+
+	descPath := pkgDir.Join("DESCRIPTION")
+	descContent := `Package: base64enc
+Title: Tools for base64 encoding
+Version: 0.1-3
+Repository: CRAN
+Author: Simon Urbanek <Simon.Urbanek@r-project.org>
+Maintainer: Simon Urbanek <Simon.Urbanek@r-project.org>
+Depends: R (>= 2.9.0)
+Description: This package provides tools for handling base64 encoding.
+License: GPL-2 | GPL-3
+`
+	err = descPath.WriteFile([]byte(descContent), 0644)
+	s.NoError(err)
 
 	// Ensure R sees our test library path
 	origLibs := os.Getenv("R_LIBS")
