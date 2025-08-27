@@ -320,6 +320,10 @@
           "when": "false"
         },
         {
+          "command": "posit.publisher.logs.visit",
+          "when": "false"
+        },
+        {
           "command": "posit.publisher.homeView.edit.Configuration",
           "when": "false"
         },

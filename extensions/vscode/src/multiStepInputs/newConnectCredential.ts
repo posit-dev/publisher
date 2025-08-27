@@ -508,6 +508,15 @@ export async function newConnectCredential(
     input: MultiStepInput,
     state: MultiStepState,
   ) {
+    if (!state.data.name && typeof state.data.url === "string") {
+      try {
+        const url = new URL(state.data.url);
+        state.data.name = url.hostname;
+      } catch {
+        // If URL parsing fails, leave name unchanged
+      }
+    }
+
     state.data.name = await inputCredentialNameStep(
       input,
       state,

@@ -7,15 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Fixed
+
+- Fixed the "Posit Publisher: View Deployment Logs in Connect" incorrectly being
+  available in the Command Palette (#2899)
+
 ### Added
 
 - Added script to always enable the PCC flag for publisher e2e tests prior to running
 - Added staging.json config for test user details and ability to retrieve from AWS and GH secrets (CI)
 - Added Cypress E2E Test for PCC Oauth and credential adding
 - Added repeat-cypress-headless.sh script for easily repeating e2e tests
-
-### Added
-
 - Added Cypress E2E CI Setup and Test Reliability Improvements (#2721)
 - Added endpoints for performing OAuth Device Authorization Grant with Posit Cloud login. (#2692)
 - Added support for one-click token authentication with Connect. (#2769)
@@ -31,6 +33,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   if a stage is marked as failed (#2857, #2858)
 - Added a configuration option that, when enabled, will auto open Publisher logs
   on a failed deploy (#2860)
+- Use server hostname as the default credential name for new Connect credentials
+  (#2922)
 
 ### Changed
 
