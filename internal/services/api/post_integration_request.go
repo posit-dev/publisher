@@ -14,15 +14,7 @@ import (
 	"github.com/posit-dev/publisher/internal/util"
 )
 
-type PostIntegrationRequestRequest struct {
-	Guid            string         `json:"guid,omitempty"`
-	Name            string         `json:"name,omitempty"`
-	Description     string         `json:"description,omitempty"`
-	AuthType        string         `json:"auth_type,omitempty"`
-	IntegrationType string         `json:"type,omitempty"`
-	Config          map[string]any `json:"config,omitempty"`
-}
-
+type PostIntegrationRequestRequest = config.IntegrationRequest
 type PostIntegrationRequestResponse = config.IntegrationRequest
 
 func PostIntegrationRequestFuncHandler(base util.AbsolutePath, log logging.Logger) http.HandlerFunc {
