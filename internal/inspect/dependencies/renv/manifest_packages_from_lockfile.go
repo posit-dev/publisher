@@ -62,37 +62,7 @@ func (m *LockfilePackageMapper) GetManifestPackagesFromLockfile(
 	// Repository lookups are pre-computed because LockfilePackageMapper must normalize repository
 	// references consistently to produce the same output format as defaultPackageMapper.
 	// Both approaches handle packages that may reference repositories by name ("CRAN") or URL.
-	repoNameByURL := map[string]string{}
-	cranRepoURL := ""
-	for _, r := range lockfile.R.Repositories {
-		url := strings.TrimRight(string(r.URL), "/")
-		repoNameByURL[url] = r.Name
-		if r.Name == "CRAN" && cranRepoURL == "" {
-			cranRepoURL = url
-		}
-	}
-
-	// Bioconductor repositories must be derived from version information when missing
-	// because renv sometimes only records the version without explicit repository URLs,
-	// but we need resolvable URLs for consistent deployment across environments.
-	if lockfile.Bioconductor.Version != "" {
-		v := lockfile.Bioconductor.Version
-		m.log.Debug("Adding Bioconductor repositories", "bioc_version", v)
-		// Known BioC repo patterns
-		candidates := map[string]string{
-			"BioCsoft":      "https://bioconductor.org/packages/" + v + "/bioc",
-			"BioCann":       "https://bioconductor.org/packages/" + v + "/data/annotation",
-			"BioCexp":       "https://bioconductor.org/packages/" + v + "/data/experiment",
-			"BioCworkflows": "https://bioconductor.org/packages/" + v + "/workflows",
-			"BioCbooks":     "https://bioconductor.org/packages/" + v + "/books",
-		}
-		for name, url := range candidates {
-			u := strings.TrimRight(url, "/")
-			if _, seen := repoNameByURL[u]; !seen {
-				repoNameByURL[u] = name
-			}
-		}
-	}
+	repoNameByURL, cranRepoURL := m.findAllRepositories(lockfile)
 
 	// Default Bioconductor repository selection is needed because packages may reference
 	// "Bioconductor" as a source without specifying which specific BioC repository
@@ -332,6 +302,7 @@ func resolveRepoAndSource(
 				break
 			}
 		}
+
 		if repoURL == repoStr && !isURL(repoStr) {
 			return "", "", fmt.Errorf("Package %s references repository %s which cannot be resolved to a URL", pkgName, repoStr)
 		}
@@ -349,8 +320,11 @@ func resolveRepoAndSource(
 		resolvedSource = "Bioconductor"
 	}
 
-	// Always return the repository name (not URL) for consistent output
-	return resolvedSource, repoName, nil
+	// Return repository name as Source and repository URL as Repository
+	// This matches the manifest.Package field expectations:
+	// - Source should be the repository name (from renv.lock Repository field)
+	// - Repository should be the repository URL (from renv.lock Repositories[].URL or RemoteRepos)
+	return resolvedSource, repoURL, nil
 }
 
 // ScanDependencies uses renv to scan for dependencies and generate a lockfile.
@@ -377,4 +351,71 @@ func (m *LockfilePackageMapper) ScanDependencies(paths []string, log logging.Log
 		return util.AbsolutePath{}, err
 	}
 	return generatedPath, nil
+}
+
+// findAllRepositories builds a comprehensive repository map from both the explicit
+// R.Repositories section and dynamically discovered repositories from package RemoteRepos fields.
+// This ensures all repository references can be resolved, even for packages from repositories
+// like RSPM that may not be explicitly listed in the lockfile's repository section.
+func (m *LockfilePackageMapper) findAllRepositories(lockfile *Lockfile) (map[string]string, string) {
+	repoNameByURL := map[string]string{}
+	cranRepoURL := ""
+
+	// Process explicit repositories from R.Repositories section
+	for _, r := range lockfile.R.Repositories {
+		url := strings.TrimRight(string(r.URL), "/")
+		repoNameByURL[url] = r.Name
+		if r.Name == "CRAN" && cranRepoURL == "" {
+			cranRepoURL = url
+		}
+	}
+
+	// Discover additional repositories from package RemoteRepos fields
+	// This handles cases where packages reference repositories (like RSPM) that aren't
+	// explicitly listed in the R.Repositories section of the lockfile
+	for _, pkg := range lockfile.Packages {
+		if pkg.RemoteRepos != "" && pkg.Repository != "" {
+			remoteURL := strings.TrimRight(pkg.RemoteRepos, "/")
+			repoName := string(pkg.Repository)
+
+			// If this repository name isn't mapped to any URL yet, add it
+			found := false
+			for _, name := range repoNameByURL {
+				if name == repoName {
+					found = true
+					break
+				}
+			}
+
+			if !found {
+				repoNameByURL[remoteURL] = repoName
+				m.log.Debug("Discovered repository from package RemoteRepos",
+					"repository", repoName, "url", remoteURL, "package", string(pkg.Package))
+			}
+		}
+	}
+
+	// Bioconductor repositories must be derived from version information when missing
+	// because renv sometimes only records the version without explicit repository URLs,
+	// but we need resolvable URLs for consistent deployment across environments.
+	if lockfile.Bioconductor.Version != "" {
+		v := lockfile.Bioconductor.Version
+		m.log.Debug("Adding Bioconductor repositories", "bioc_version", v)
+		// Known BioC repo patterns
+		candidates := map[string]string{
+			"BioCsoft":      "https://bioconductor.org/packages/" + v + "/bioc",
+			"BioCann":       "https://bioconductor.org/packages/" + v + "/data/annotation",
+			"BioCexp":       "https://bioconductor.org/packages/" + v + "/data/experiment",
+			"BioCworkflows": "https://bioconductor.org/packages/" + v + "/workflows",
+			"BioCbooks":     "https://bioconductor.org/packages/" + v + "/books",
+		}
+		for name, url := range candidates {
+			u := strings.TrimRight(url, "/")
+			if _, seen := repoNameByURL[u]; !seen {
+				repoNameByURL[u] = name
+			}
+		}
+	}
+
+	return repoNameByURL, cranRepoURL
 }

@@ -1,7 +1,7 @@
 {
   "mypkg": {
     "Source": "CRAN",
-    "Repository": "CRAN",
+    "Repository": "https://cran.rstudio.com",
     "description": {
       "Package": "mypkg",
       "Title": "A Sample Package",

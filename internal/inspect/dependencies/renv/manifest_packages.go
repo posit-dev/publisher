@@ -101,24 +101,25 @@ func findRepoNameByURL(repoUrl RepoURL, repos []Repository) string {
 	return ""
 }
 
-// normalizeRepositoryToName ensures consistent output between defaultPackageMapper and LockfilePackageMapper.
+// normalizeRepositoryToURL ensures consistent output between defaultPackageMapper and LockfilePackageMapper.
 // The defaultPackageMapper uses installed R libraries while LockfilePackageMapper reads renv.lock directly,
-// but both must use repository names (not URLs) to produce equivalent manifests regardless of input format.
-func normalizeRepositoryToName(repoStr string, repos []Repository) string {
-	// Repository name validation ensures we only return valid names that exist
-	// in the lockfile's repository section, preventing invalid references.
-	if !isURL(repoStr) {
-		for _, repo := range repos {
-			if repo.Name == repoStr {
-				return repoStr // Valid repository name
-			}
-		}
-		return repoStr // Return as-is if not found (could be special case like "CRAN")
+// but both must use repository URLs (not names) in the Repository field to match manifest.Package spec.
+func normalizeRepositoryToURL(repoStr string, repos []Repository) string {
+	// If it's already a URL, return as-is
+	if isURL(repoStr) {
+		return repoStr
 	}
 
-	// URL-to-name resolution is required because packages may reference repositories
-	// by URL, but we need consistent name-based references in the final manifest.
-	return findRepoNameByURL(RepoURL(repoStr), repos)
+	// Name-to-URL resolution is required because packages may reference repositories
+	// by name, but we need consistent URL-based references in the final manifest.
+	for _, repo := range repos {
+		if repo.Name == repoStr {
+			return string(repo.URL)
+		}
+	}
+
+	// If not found, return as-is (could be special case like hardcoded repository)
+	return repoStr
 }
 
 func findRepoUrl(pkgName PackageName, availablePackages []AvailablePackage) string {
@@ -135,7 +136,7 @@ func toManifestPackage(pkg *Package, repos []Repository, availablePackages, bioc
 	// logic to ensure deployments work consistently with existing rsconnect workflows.
 	out := &bundles.Package{
 		Source:     pkg.Source,
-		Repository: normalizeRepositoryToName(string(pkg.Repository), repos),
+		Repository: normalizeRepositoryToURL(string(pkg.Repository), repos),
 	}
 	source := pkg.Source
 
@@ -157,9 +158,9 @@ func toManifestPackage(pkg *Package, repos []Repository, availablePackages, bioc
 			} else {
 				out.Source = "CRAN"
 				// Repository normalization ensures defaultPackageMapper output matches LockfilePackageMapper
-				// by always using repository names rather than URLs.
+				// by always using repository URLs rather than names.
 				repoUrl := findRepoUrl(pkg.Package, availablePackages)
-				out.Repository = normalizeRepositoryToName(repoUrl, repos)
+				out.Repository = normalizeRepositoryToURL(repoUrl, repos)
 				if out.Repository == "" {
 					out.Repository = "CRAN" // fallback to name
 				}
@@ -169,14 +170,14 @@ func toManifestPackage(pkg *Package, repos []Repository, availablePackages, bioc
 			// the Repository field in DESCRIPTION files is set by the repository
 			// and may contain arbitrary values that need validation.
 			repoUrl := findRepoUrl(pkg.Package, availablePackages)
-			out.Repository = normalizeRepositoryToName(repoUrl, repos)
+			out.Repository = normalizeRepositoryToURL(repoUrl, repos)
 			out.Source = findRepoNameByURL(RepoURL(repoUrl), repos)
 
 			// Fallback to lockfile repository info is needed when available packages
 			// lookup fails, ensuring defaultPackageMapper produces equivalent output to LockfilePackageMapper
 			// even when packages aren't available in the current R environment.
 			if out.Source == "" && out.Repository == "" && pkg.Repository != "" {
-				out.Repository = normalizeRepositoryToName(string(pkg.Repository), repos)
+				out.Repository = normalizeRepositoryToURL(string(pkg.Repository), repos)
 				out.Source = findRepoNameByURL(pkg.Repository, repos)
 			}
 
@@ -197,7 +198,7 @@ func toManifestPackage(pkg *Package, repos []Repository, availablePackages, bioc
 			// Try packages defined from default bioC repos
 			repoUrl = findRepoUrl(pkg.Package, biocPackages)
 		}
-		out.Repository = normalizeRepositoryToName(repoUrl, repos)
+		out.Repository = normalizeRepositoryToURL(repoUrl, repos)
 		// BioCsoft fallback ensures defaultPackageMapper compatibility with LockfilePackageMapper behavior
 		// when repository resolution fails but we know it's a Bioconductor package.
 		if out.Repository == "" {

@@ -338,3 +338,59 @@ func (s *LockfilePackageMapperSuite) TestBioconductor_LockfileCompatibility() {
 		}
 	}
 }
+
+func (s *LockfilePackageMapperSuite) TestRSPMRepositoryHandling() {
+	// Test that RSPM repository references are properly handled when not in repositories section
+	// but available through RemoteRepos fields
+	lockfileContent := `{
+		"R": {
+			"Version": "4.3.3",
+			"Repositories": [
+				{
+					"Name": "CRAN",
+					"URL": "https://cloud.r-project.org"
+				}
+			]
+		},
+		"Packages": {
+			"R6": {
+				"Package": "R6",
+				"Version": "2.5.1",
+				"Source": "Repository",
+				"Repository": "RSPM",
+				"RemoteType": "standard",
+				"RemotePkgRef": "R6",
+				"RemoteRef": "R6",
+				"RemoteRepos": "https://packagemanager.posit.co/cran/latest",
+				"RemoteReposName": "CRAN",
+				"RemotePkgPlatform": "x86_64-apple-darwin20",
+				"RemoteSha": "2.5.1",
+				"Requirements": [
+					"R"
+				],
+				"Hash": "470851b6d5d0ac559e9d01bb352b4021"
+			}
+		}
+	}`
+
+	// Create a temporary lockfile
+	tempDirPath := s.T().TempDir()
+	tempDir := util.NewAbsolutePath(tempDirPath, nil)
+	lockfilePath := tempDir.Join("test_rspm_renv.lock")
+	err := lockfilePath.WriteFile([]byte(lockfileContent), 0644)
+	s.NoError(err)
+
+	mapper := NewLockfilePackageMapper(tempDir, util.Path{}, s.log)
+	manifestPackages, err := mapper.GetManifestPackagesFromLockfile(lockfilePath)
+	s.NoError(err)
+
+	// Verify that the R6 package was processed successfully
+	s.Contains(manifestPackages, "R6")
+	r6Pkg := manifestPackages["R6"]
+
+	// RSPM should be resolved through the RemoteRepos field
+	s.Equal("https://packagemanager.posit.co/cran/latest", r6Pkg.Repository)
+	s.Equal("RSPM", r6Pkg.Source)
+	// Check version from description
+	s.Equal("2.5.1", r6Pkg.Description["Version"])
+}

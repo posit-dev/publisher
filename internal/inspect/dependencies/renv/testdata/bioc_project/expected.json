@@ -1,7 +1,7 @@
 {
   "Biobase": {
     "Source": "Bioconductor",
-    "Repository": "BioCsoft",
+    "Repository": "https://bioconductor.org/packages/3.18/bioc",
     "description": {
       "Package": "Biobase",
       "Title": "Biobase: Base functions for Bioconductor",
