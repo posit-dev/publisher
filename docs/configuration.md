@@ -6,6 +6,8 @@
 
 The type of server the content is being deployed to. May be set to `connect` or `connect_cloud`. Defaults to `connect`.
 
+Many of the fields described here are only valid for one product_type value. If not otherwise specified, fields are valid for both.
+
 #### type
 
 Indicates the type of content being deployed. Valid values are:
