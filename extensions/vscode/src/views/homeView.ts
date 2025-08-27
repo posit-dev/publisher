@@ -39,6 +39,7 @@ import {
   PreContentRecordWithConfig,
   ProductName,
   ServerType,
+  IntegrationRequest,
 } from "src/api";
 import { EventStream } from "src/events";
 import { getPythonInterpreterPath, getRInterpreterPath } from "../utils/vscode";
@@ -199,6 +200,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         return this.updateSelectionIsPreContentRecordState(msg.content.state);
       case WebviewToHostMessageType.COPY_SYSTEM_INFO:
         return await this.copySystemInfo();
+      case WebviewToHostMessageType.ADD_INTEGRATION_REQUEST:
+        return await this.addIntegrationRequest();
+      case WebviewToHostMessageType.DELETE_INTEGRATION_REQUEST:
+        return await this.deleteIntegrationRequest(msg.content);
       default:
         window.showErrorMessage(
           `Internal Error: onConduitMessage unhandled msg: ${JSON.stringify(msg)}`,
@@ -1082,6 +1087,100 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       const summary = getSummaryStringFromError("removeSecret", error);
       window.showInformationMessage(
         `Failed to remove secret from configuration. ${summary}`,
+      );
+    }
+  };
+
+  private inputIntegrationRequest = async (
+    // integrationRequests: IntegrationRequest[] | undefined,
+  ) => {
+    const value = await window.showInputBox({
+      title: "Add an Integration Request",
+      prompt: "Enter the body of the integration request.",
+      ignoreFocusOut: true,
+      validateInput: (value: string) => {
+        // let parsed: IntegrationRequest | undefined;
+        try {
+          JSON.parse(value);
+        } catch {
+          return "Integration request body must be valid JSON.";
+        }
+
+        // if (integrationRequests) {
+        //   for (const ir in integrationRequests) {
+        //     if (ir === parsed) {
+        //       return "There is already an integration request with this body.";
+        //     }
+        //   }
+        // }
+        return;
+      },
+    });
+    return JSON.parse(value || "{}") as IntegrationRequest;
+  };
+
+  public addIntegrationRequest = async () => {
+    const activeConfig = await this.state.getSelectedConfiguration();
+    if (activeConfig === undefined) {
+      console.error("homeView::addIntegration: No active configuration.");
+      return;
+    }
+    if (isConfigurationError(activeConfig)) {
+      console.error(
+        "homeView::addIntegration: Unable to add integration into a configuration with error.",
+      );
+      return;
+    }
+
+    const integrationRequest = await this.inputIntegrationRequest(
+      // activeConfig.configuration.environment,
+    );
+    if (integrationRequest === undefined) {
+      // Canceled by the user
+      return;
+    }
+
+    try {
+      await showProgress("Adding Integration Request", Views.HomeView, async () => {
+        const api = await useApi();
+        await api.integrationRequests.add(
+          activeConfig.configurationName,
+          integrationRequest,
+        );
+      });
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError("addIntegrationRequest", error);
+      window.showInformationMessage(
+        `Failed to add integration request to configuration. ${summary}`,
+      );
+    }
+  };
+
+  public deleteIntegrationRequest = async (context: { request: IntegrationRequest }) => {
+    const activeConfig = await this.state.getSelectedConfiguration();
+    if (activeConfig === undefined) {
+      console.error("homeView::deleteIntegrationRequest: No active configuration.");
+      return;
+    }
+    if (isConfigurationError(activeConfig)) {
+      console.error(
+        "homeView::deleteIntegrationRequest: Unable to delete integration request from a configuration with error.",
+      );
+      return;
+    }
+
+    try {
+      await showProgress("Removing Integration Request", Views.HomeView, async () => {
+        const api = await useApi();
+        await api.integrationRequests.delete(
+          activeConfig.configurationName,
+          context.request,
+        );
+      });
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError("removeIntegrationRequest", error);
+      window.showInformationMessage(
+        `Failed to remove integration request from configuration. ${summary}`,
       );
     }
   };
