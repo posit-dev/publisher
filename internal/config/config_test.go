@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/schema"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
@@ -71,7 +72,7 @@ func (s *ConfigSuite) TestFromFile() {
 	cfg, err := FromFile(path)
 	s.NoError(err)
 	s.NotNil(cfg)
-	s.Equal(ContentTypePythonDash, cfg.Type)
+	s.Equal(contenttypes.ContentTypePythonDash, cfg.Type)
 }
 
 func (s *ConfigSuite) TestFromExampleFile() {
@@ -106,7 +107,7 @@ func (s *ConfigSuite) TestWriteFileEmptyEntrypoint() {
 	configFile := GetConfigPath(s.cwd, "myConfig")
 	cfg := New()
 	cfg.ProductType = "connect"
-	cfg.Type = ContentTypeHTML
+	cfg.Type = contenttypes.ContentTypeHTML
 	cfg.Entrypoint = ""
 	err := cfg.WriteFile(configFile)
 	s.NoError(err)

@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
 )
@@ -47,7 +48,7 @@ func NewContentTypeDetector(log logging.Logger) *ContentTypeDetector {
 
 func newUnknownConfig() *config.Config {
 	cfg := config.New()
-	cfg.Type = config.ContentTypeUnknown
+	cfg.Type = contenttypes.ContentTypeUnknown
 	return cfg
 }
 

@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
@@ -47,7 +48,7 @@ func (s *GetConfigRequirementsSuite) TestGetConfigRequirements() {
 
 	cfg := config.New()
 	cfg.ProductType = config.ProductTypeConnect
-	cfg.Type = config.ContentTypeHTML
+	cfg.Type = contenttypes.ContentTypeHTML
 	cfg.Python = &config.Python{
 		Version:        "3.11.3",
 		PackageManager: "pip",
@@ -93,7 +94,7 @@ func (s *GetConfigRequirementsSuite) TestGetConfigRequirementsNotFound() {
 func (s *GetConfigRequirementsSuite) TestGetConfigRequirementsNoRequirementsFile() {
 	cfg := config.New()
 	cfg.ProductType = config.ProductTypeConnect
-	cfg.Type = config.ContentTypeHTML
+	cfg.Type = contenttypes.ContentTypeHTML
 	cfg.Python = &config.Python{
 		Version:        "3.11.3",
 		PackageManager: "pip",
@@ -116,7 +117,7 @@ func (s *GetConfigRequirementsSuite) TestGetConfigRequirementsNoRequirementsFile
 func (s *GetConfigRequirementsSuite) TestGetConfigRequirementsNoPythonInConfig() {
 	cfg := config.New()
 	cfg.ProductType = config.ProductTypeConnect
-	cfg.Type = config.ContentTypeHTML
+	cfg.Type = contenttypes.ContentTypeHTML
 	err := cfg.WriteFile(config.GetConfigPath(s.cwd, "myConfig"))
 	s.NoError(err)
 
@@ -142,7 +143,7 @@ func (s *GetConfigRequirementsSuite) TestGetConfigRequirementsSubdir() {
 
 	cfg := config.New()
 	cfg.ProductType = config.ProductTypeConnect
-	cfg.Type = config.ContentTypeHTML
+	cfg.Type = contenttypes.ContentTypeHTML
 	cfg.Python = &config.Python{
 		Version:        "3.11.3",
 		PackageManager: "pip",

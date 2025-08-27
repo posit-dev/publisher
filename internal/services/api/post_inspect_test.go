@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
@@ -51,7 +52,7 @@ func (s *PostInspectHandlerFuncSuite) SetupTest() {
 // Helper to create a simple configuration for testing
 func createTestConfig() *config.Config {
 	cfg := config.New()
-	cfg.Type = config.ContentTypeRMarkdown
+	cfg.Type = contenttypes.ContentTypeRMarkdown
 	cfg.Entrypoint = "index.rmd"
 	return cfg
 }

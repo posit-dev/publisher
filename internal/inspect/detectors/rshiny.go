@@ -4,6 +4,7 @@ package detectors
 
 import (
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/executor"
 	"github.com/posit-dev/publisher/internal/util"
 )
@@ -46,7 +47,7 @@ func (d *RShinyDetector) InferType(base util.AbsolutePath, entrypoint util.Relat
 		}
 		if exists {
 			cfg := config.New()
-			cfg.Type = config.ContentTypeRShiny
+			cfg.Type = contenttypes.ContentTypeRShiny
 			cfg.Entrypoint = relEntrypoint
 
 			// Indicate that R inspection is needed.

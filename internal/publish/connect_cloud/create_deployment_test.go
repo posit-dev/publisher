@@ -13,6 +13,7 @@ import (
 	"github.com/posit-dev/publisher/internal/clients/connect_cloud"
 	clienttypes "github.com/posit-dev/publisher/internal/clients/types"
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/logging"
@@ -80,7 +81,7 @@ func (s *CreateDeploymentSuite) SetupTest() {
 	cfg := config.New()
 	cfg.Title = s.title
 	cfg.Description = s.description
-	cfg.Type = config.ContentTypePythonDash
+	cfg.Type = contenttypes.ContentTypePythonDash
 	cfg.Entrypoint = s.entrypoint
 	cfg.R = &config.R{Version: s.rVersion}
 	cfg.Python = &config.Python{Version: s.pythonVersion}

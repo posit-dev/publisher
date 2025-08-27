@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/publish/publishhelper"
 	"github.com/posit-dev/publisher/internal/server_type"
 
@@ -162,7 +163,7 @@ func (s *RPublishFunctionalSuite) TestPublishWithClientFunctional() {
 	cfg := config.New()
 	cfg.Schema = schema.ConfigSchemaURL
 	cfg.ProductType = config.ProductTypeConnect
-	cfg.Type = config.ContentTypeRShiny
+	cfg.Type = contenttypes.ContentTypeRShiny
 	cfg.Entrypoint = "app.R"
 	cfg.Title = "Test R Application"
 	cfg.Environment = map[string]string{"TEST_VAR": "test-value"}

@@ -5,7 +5,7 @@ package types
 import (
 	"fmt"
 
-	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/contenttypes"
 )
 
 type AppMode string
@@ -255,27 +255,27 @@ func (t AppMode) Description() string {
 	}
 }
 
-var connectContentTypeMap = map[config.ContentType]AppMode{
-	config.ContentTypeHTML:             StaticMode,
-	config.ContentTypeJupyterNotebook:  StaticJupyterMode,
-	config.ContentTypeJupyterVoila:     JupyterVoilaMode,
-	config.ContentTypePythonBokeh:      PythonBokehMode,
-	config.ContentTypePythonDash:       PythonDashMode,
-	config.ContentTypePythonFastAPI:    PythonFastAPIMode,
-	config.ContentTypePythonFlask:      PythonAPIMode,
-	config.ContentTypePythonShiny:      PythonShinyMode,
-	config.ContentTypePythonStreamlit:  PythonStreamlitMode,
-	config.ContentTypePythonGradio:     PythonGradioMode,
-	config.ContentTypeQuartoShiny:      ShinyQuartoMode,
-	config.ContentTypeQuartoDeprecated: StaticQuartoMode,
-	config.ContentTypeQuarto:           StaticQuartoMode,
-	config.ContentTypeRPlumber:         PlumberAPIMode,
-	config.ContentTypeRShiny:           ShinyMode,
-	config.ContentTypeRMarkdownShiny:   ShinyRmdMode,
-	config.ContentTypeRMarkdown:        StaticRmdMode,
+var connectContentTypeMap = map[contenttypes.ContentType]AppMode{
+	contenttypes.ContentTypeHTML:             StaticMode,
+	contenttypes.ContentTypeJupyterNotebook:  StaticJupyterMode,
+	contenttypes.ContentTypeJupyterVoila:     JupyterVoilaMode,
+	contenttypes.ContentTypePythonBokeh:      PythonBokehMode,
+	contenttypes.ContentTypePythonDash:       PythonDashMode,
+	contenttypes.ContentTypePythonFastAPI:    PythonFastAPIMode,
+	contenttypes.ContentTypePythonFlask:      PythonAPIMode,
+	contenttypes.ContentTypePythonShiny:      PythonShinyMode,
+	contenttypes.ContentTypePythonStreamlit:  PythonStreamlitMode,
+	contenttypes.ContentTypePythonGradio:     PythonGradioMode,
+	contenttypes.ContentTypeQuartoShiny:      ShinyQuartoMode,
+	contenttypes.ContentTypeQuartoDeprecated: StaticQuartoMode,
+	contenttypes.ContentTypeQuarto:           StaticQuartoMode,
+	contenttypes.ContentTypeRPlumber:         PlumberAPIMode,
+	contenttypes.ContentTypeRShiny:           ShinyMode,
+	contenttypes.ContentTypeRMarkdownShiny:   ShinyRmdMode,
+	contenttypes.ContentTypeRMarkdown:        StaticRmdMode,
 }
 
-func AppModeFromType(t config.ContentType) AppMode {
+func AppModeFromType(t contenttypes.ContentType) AppMode {
 	mode, ok := connectContentTypeMap[t]
 	if !ok {
 		mode = UnknownMode
@@ -283,29 +283,29 @@ func AppModeFromType(t config.ContentType) AppMode {
 	return mode
 }
 
-var contentTypeConnectMap = map[AppMode]config.ContentType{
-	StaticMode:          config.ContentTypeHTML,
-	StaticJupyterMode:   config.ContentTypeJupyterNotebook,
-	JupyterVoilaMode:    config.ContentTypeJupyterVoila,
-	PythonBokehMode:     config.ContentTypePythonBokeh,
-	PythonDashMode:      config.ContentTypePythonDash,
-	PythonFastAPIMode:   config.ContentTypePythonFastAPI,
-	PythonAPIMode:       config.ContentTypePythonFlask,
-	PythonGradioMode:    config.ContentTypePythonGradio,
-	PythonShinyMode:     config.ContentTypePythonShiny,
-	PythonStreamlitMode: config.ContentTypePythonStreamlit,
-	ShinyQuartoMode:     config.ContentTypeQuartoShiny,
-	StaticQuartoMode:    config.ContentTypeQuarto,
-	PlumberAPIMode:      config.ContentTypeRPlumber,
-	ShinyMode:           config.ContentTypeRShiny,
-	ShinyRmdMode:        config.ContentTypeRMarkdownShiny,
-	StaticRmdMode:       config.ContentTypeRMarkdown,
+var contentTypeConnectMap = map[AppMode]contenttypes.ContentType{
+	StaticMode:          contenttypes.ContentTypeHTML,
+	StaticJupyterMode:   contenttypes.ContentTypeJupyterNotebook,
+	JupyterVoilaMode:    contenttypes.ContentTypeJupyterVoila,
+	PythonBokehMode:     contenttypes.ContentTypePythonBokeh,
+	PythonDashMode:      contenttypes.ContentTypePythonDash,
+	PythonFastAPIMode:   contenttypes.ContentTypePythonFastAPI,
+	PythonAPIMode:       contenttypes.ContentTypePythonFlask,
+	PythonGradioMode:    contenttypes.ContentTypePythonGradio,
+	PythonShinyMode:     contenttypes.ContentTypePythonShiny,
+	PythonStreamlitMode: contenttypes.ContentTypePythonStreamlit,
+	ShinyQuartoMode:     contenttypes.ContentTypeQuartoShiny,
+	StaticQuartoMode:    contenttypes.ContentTypeQuarto,
+	PlumberAPIMode:      contenttypes.ContentTypeRPlumber,
+	ShinyMode:           contenttypes.ContentTypeRShiny,
+	ShinyRmdMode:        contenttypes.ContentTypeRMarkdownShiny,
+	StaticRmdMode:       contenttypes.ContentTypeRMarkdown,
 }
 
-func ContentTypeFromAppMode(a AppMode) config.ContentType {
+func ContentTypeFromAppMode(a AppMode) contenttypes.ContentType {
 	contentType, ok := contentTypeConnectMap[a]
 	if !ok {
-		contentType = config.ContentTypeUnknown
+		contentType = contenttypes.ContentTypeUnknown
 	}
 	return contentType
 }

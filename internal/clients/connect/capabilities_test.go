@@ -6,10 +6,12 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/suite"
+
 	"github.com/posit-dev/publisher/internal/clients/connect/server_settings"
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/stretchr/testify/suite"
 )
 
 type CapabilitiesSuite struct {
@@ -52,7 +54,7 @@ func (s *CapabilitiesSuite) TestCheckMatchingPython() {
 
 func makeMinMaxProcs(min, max int32) *config.Config {
 	return &config.Config{
-		Type: config.ContentTypePythonShiny,
+		Type: contenttypes.ContentTypePythonShiny,
 		Connect: &config.Connect{
 			Runtime: &config.ConnectRuntime{
 				MinProcesses: &min,
@@ -81,7 +83,7 @@ func (s *CapabilitiesSuite) TestMinMaxProcs() {
 
 func (s *CapabilitiesSuite) TestRuntimeNonWorker() {
 	cfg := &config.Config{
-		Type: config.ContentTypeHTML,
+		Type: contenttypes.ContentTypeHTML,
 		Connect: &config.Connect{
 			Runtime: &config.ConnectRuntime{},
 		},
@@ -128,7 +130,7 @@ func (s *CapabilitiesSuite) TestRunAsCurrentUser() {
 	}
 	truth := true
 	cfg := config.Config{
-		Type: config.ContentTypePythonDash,
+		Type: contenttypes.ContentTypePythonDash,
 		Connect: &config.Connect{
 			Access: &config.ConnectAccess{
 				RunAsCurrentUser: &truth,
@@ -150,7 +152,7 @@ func (s *CapabilitiesSuite) TestRunAsCurrentUser() {
 	s.ErrorContains(notAdmin.checkConfig(&cfg), "run_as_current_user requires administrator privileges")
 
 	notAnApp := cfg
-	notAnApp.Type = config.ContentTypeJupyterNotebook
+	notAnApp.Type = contenttypes.ContentTypeJupyterNotebook
 	s.ErrorIs(goodSettings.checkConfig(&notAnApp), errOnlyAppsCanRACU)
 }
 
@@ -171,7 +173,7 @@ func (s *CapabilitiesSuite) TestAPILicense() {
 	}
 	missing := allSettings{}
 	cfg := &config.Config{
-		Type: config.ContentTypePythonFlask,
+		Type: contenttypes.ContentTypePythonFlask,
 	}
 	s.NoError(allowed.checkConfig(cfg))
 	s.ErrorIs(missing.checkConfig(cfg), errAPIsNotLicensed)

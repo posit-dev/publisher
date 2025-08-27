@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/executor"
 	"github.com/posit-dev/publisher/internal/inspect/dependencies/pydeps"
 	"github.com/posit-dev/publisher/internal/logging"
@@ -168,9 +169,9 @@ func (d *QuartoDetector) configFromFileInspect(base util.AbsolutePath, entrypoin
 
 	if isQuartoShiny(&inspectOutput.Formats.HTML.Metadata) ||
 		isQuartoShiny(&inspectOutput.Formats.RevealJS.Metadata) {
-		cfg.Type = config.ContentTypeQuartoShiny
+		cfg.Type = contenttypes.ContentTypeQuartoShiny
 	} else {
-		cfg.Type = config.ContentTypeQuarto
+		cfg.Type = contenttypes.ContentTypeQuarto
 		d.includeStaticConfig(base, cfg, inspectOutput)
 	}
 
@@ -258,7 +259,7 @@ func (d *QuartoDetector) includeStaticConfig(base util.AbsolutePath, cfg *config
 	}
 
 	staticCfg := config.New()
-	staticCfg.Type = config.ContentTypeHTML
+	staticCfg.Type = contenttypes.ContentTypeHTML
 	staticCfg.Title = cfg.Title
 
 	// With output-dir present, we know that any static asset will be in that directory.
