@@ -12,6 +12,7 @@
       >
         <ProjectFiles v-model:expanded="projectFilesExpanded" />
         <Secrets />
+        <Integrations />
         <PythonPackages />
         <RPackages />
       </template>
@@ -28,6 +29,7 @@ import OverlayableView from "src/components/OverlayableView.vue";
 import EvenEasierDeploy from "src/components/EvenEasierDeploy.vue";
 import ProjectFiles from "src/components/views/projectFiles/ProjectFiles.vue";
 import Secrets from "src/components/views/secrets/Secrets.vue";
+import Integrations from "src/components/views/Integrations.vue";
 import PythonPackages from "src/components/views/PythonPackages.vue";
 import RPackages from "src/components/views/RPackages.vue";
 import Credentials from "src/components/views/Credentials.vue";

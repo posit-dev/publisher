@@ -12,7 +12,7 @@ import {
   isPreContentRecord,
   ServerType,
 } from "../../../../src/api";
-import { isConfigurationError } from "../../../../src/api/types/configurations";
+import { IntegrationRequest, isConfigurationError } from "../../../../src/api/types/configurations";
 import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
 import { RPackage } from "../../../../src/api/types/packages";
 import { DeploymentSelector } from "../../../../src/types/shared";
@@ -41,6 +41,8 @@ export const useHomeStore = defineStore("home", () => {
 
   const serverSecrets = ref<Set<string>>(new Set());
   const secrets = ref(new Map<string, string | undefined>());
+
+  const integrationRequests = ref<IntegrationRequest[]>([]);
 
   const environment = computed((): Map<string, string> => {
     const result = new Map<string, string>();
@@ -122,6 +124,19 @@ export const useHomeStore = defineStore("home", () => {
       });
 
       secrets.value = result;
+    },
+    { immediate: true },
+  );
+
+  watch(
+    [selectedConfiguration],
+    ([config]) => {
+      if (config === undefined || isConfigurationError(config)) {
+        integrationRequests.value = [];
+        return;
+      }
+
+      integrationRequests.value = config.configuration.integrationRequests || [];
     },
     { immediate: true },
   );
@@ -309,6 +324,10 @@ export const useHomeStore = defineStore("home", () => {
       .length;
   });
 
+  const clearIntegrations = () => {
+    integrationRequests.value = [];
+  };
+
   const python = {
     active: {
       isEmptyRequirements: computed(() => {
@@ -472,6 +491,7 @@ export const useHomeStore = defineStore("home", () => {
     sortedCredentials,
     serverSecrets,
     secrets,
+    integrationRequests,
     environment,
     duplicatedEnvironmentVariables,
     selectedContentRecord,
@@ -495,6 +515,7 @@ export const useHomeStore = defineStore("home", () => {
     updateRPackages,
     clearSecretValues,
     secretsWithValueCount,
+    clearIntegrations,
     python,
     r,
     config,

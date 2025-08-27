@@ -126,9 +126,19 @@ export type ConfigurationDetails = {
   validate: boolean;
   files?: string[];
   secrets?: string[];
+  integrationRequests?: IntegrationRequest[];
   schedules?: ScheduleConfig[];
   access?: AccessConfig;
   connect?: ConnectConfig;
+};
+
+export type IntegrationRequest = {
+  guid?: string;
+  name?: string;
+  description?: string;
+  authType?: string;
+  type?: string;
+  config?: Record<string, string | undefined>;
 };
 
 export type PythonConfig = {
