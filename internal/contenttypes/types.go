@@ -1,5 +1,7 @@
 package contenttypes
 
+// Copyright (C) 2025 by Posit Software, PBC.
+
 type ContentType string
 
 const (
@@ -62,4 +64,3 @@ func (t ContentType) IsAppContent() bool {
 	}
 	return false
 }
-
