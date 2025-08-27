@@ -15,7 +15,7 @@ describe("Deployments Section", () => {
     it("CS Static Content Deployment", () => {
       cy.waitForPublisherIframe(); // Wait after triggering extension
       cy.debugIframes();
-      cy.createDeployment("static", "index.html", "static", (tomlFiles) => {
+      cy.createPCDeployment("static", "index.html", "static", (tomlFiles) => {
         const config = tomlFiles.config.contents;
         expect(config.title).to.equal("static");
         expect(config.type).to.equal("html");
@@ -47,7 +47,7 @@ describe("Deployments Section", () => {
     it.skip("CS ShinyApp Content Deployment", () => {
       cy.waitForPublisherIframe(); // Wait after triggering extension
       cy.debugIframes();
-      cy.createDeployment("shinyapp", "app.R", "ShinyApp", (tomlFiles) => {
+      cy.createPCDeployment("shinyapp", "app.R", "ShinyApp", (tomlFiles) => {
         const config = tomlFiles.config.contents;
         expect(config.title).to.equal("ShinyApp");
         expect(config.type).to.equal("r-shiny");
@@ -74,40 +74,47 @@ describe("Deployments Section", () => {
 
   describe("PCC Deployments", () => {
     beforeEach(() => {
-      cy.resetConnect();
       cy.resetCredentials();
-      const user = Cypress.env("pccConfig").pcc_user_ccqa3;
-      cy.setPCCCredentials({
-        email: user.email,
-        password: user.auth.password,
-        nickname: "pcc-deploy-credential",
-      });
       cy.visit("/");
+      const user = Cypress.env("pccConfig").pcc_user_ccqa3;
+      cy.log("PCC user for setPCCCredential: " + JSON.stringify(user));
+      cy.setPCCCredential(user, "pcc-deploy-credential");
+      cy.findInPublisherWebview(
+        '[data-automation="pcc-deploy-credential-list"]',
+      )
+        .find(".tree-item-title")
+        .should("have.text", "pcc-deploy-credential");
     });
 
-    it("PCC Static Content Deployment", () => {
-      cy.waitForPublisherIframe();
+    afterEach(() => {
+      cy.clearupDeployments("examples-shiny-python");
+      cy.resetCredentials();
+    });
+
+    it("PCC Shiny Python Example Deployment", () => {
+      cy.waitForPublisherIframe(); // Wait after triggering extension
       cy.debugIframes();
-      cy.pause();
-      cy.createDeployment(
-        "static",
-        "index.html",
-        "static",
+      // Select files to include in deployment
+      const filesToSelect = ["data", "requirements.txt", "styles.css"];
+      cy.createPCCDeployment(
+        "examples-shiny-python",
+        "app.py",
+        "shiny-python-pcc",
         (tomlFiles) => {
           const config = tomlFiles.config.contents;
-          expect(config.title).to.equal("static");
-          expect(config.type).to.equal("html");
-          expect(config.entrypoint).to.equal("index.html");
-          expect(config.files[0]).to.equal("/index.html");
-          expect(config.files[1]).to.equal(
-            `/.posit/publish/${tomlFiles.config.name}`,
-          );
-          expect(config.files[2]).to.equal(
-            `/.posit/publish/deployments/${tomlFiles.contentRecord.name}`,
+          expect(config.title).to.equal("shiny-python-pcc");
+          expect(config.type).to.equal("python-shiny");
+          expect(config.entrypoint).to.equal("app.py");
+          // Check that all selected files are included
+          ["/app.py", "/data", "/requirements.txt", "/styles.css"].forEach(
+            (file) => {
+              expect(config.files).to.include(file);
+            },
           );
         },
-        "pcc-deploy-credential, https://cloud.posit.co",
-      ).deployCurrentlySelected();
+        filesToSelect,
+      );
+      cy.deployCurrentlySelected();
       cy.retryWithBackoff(
         () =>
           cy.findUniqueInPublisherWebview(

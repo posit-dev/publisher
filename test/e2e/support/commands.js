@@ -396,45 +396,155 @@ Cypress.Commands.add(
   },
 );
 
-Cypress.Commands.add("setPCCCredentials", (options = {}) => {
-  const {
-    email,
-    password,
-    nickname = "pcc-test-credential",
-    env = Cypress.env("CONNECT_CLOUD_ENV") || "staging",
-    guid = "b7e2c1a1-1234-4cde-8f00-abcdefabcdef", // generate or allow override if needed
-  } = options;
+Cypress.Commands.add(
+  "addPCCCredential",
+  (user, nickname = "connect-cloud-credential") => {
+    cy.getPublisherSidebarIcon()
+      .should("be.visible", { timeout: 10000 })
+      .click();
 
-  if (!email || !password) {
-    throw new Error("Email and password are required for PCC credential setup");
-  }
+    cy.toggleCredentialsSection();
+    cy.publisherWebview()
+      .findByText("No credentials have been added yet.")
+      .should("be.visible");
 
-  cy.log("Setting up PCC credential via device workflow");
+    cy.clickSectionAction("New Credential");
+    cy.get(".quick-input-widget").should("be.visible");
 
-  // Run the device workflow to get access tokens
-  cy.task(
-    "runDeviceWorkflow",
-    { email, password, env },
-    { timeout: 120000 },
-  ).then((tokenResult) => {
-    cy.log("Device workflow completed successfully", tokenResult);
-    if (!tokenResult.success) {
-      throw new Error(`Device workflow failed: ${tokenResult.error}`);
-    }
+    cy.get(".quick-input-titlebar")
+      .should("have.text", "Create a New Credential")
+      .click();
 
-    // Write the credential file in TOML format, using the correct PCC URL
-    const toml = `
-[credentials]
+    cy.get(
+      'input[aria-label*="Please select the platform for the new credential."]',
+    ).should(
+      "have.attr",
+      "placeholder",
+      "Please select the platform for the new credential.",
+    );
+
+    cy.get(".quick-input-list-row")
+      .contains("Posit Connect Cloud")
+      .should("be.visible")
+      .click();
+
+    // Wait for the dialog box to appear and be visible
+    cy.get(".monaco-dialog-box", { timeout: 10000 })
+      .should("be.visible")
+      .should("have.attr", "aria-modal", "true");
+
+    // Handle the OAuth popup window BEFORE clicking Open
+    cy.window().then((win) => {
+      cy.stub(win, "open")
+        .callsFake((url) => {
+          win.oauthUrl = url;
+          const mockWindow = {
+            closed: false,
+            close: function () {
+              this.closed = true;
+              setTimeout(() => {
+                win.dispatchEvent(new Event("focus"));
+              }, 100);
+            },
+            focus: () => {},
+            postMessage: () => {},
+          };
+          win.mockOAuthWindow = mockWindow;
+          return mockWindow;
+        })
+        .as("windowOpen");
+    });
+
+    // Click the "Open" button to start the OAuth flow
+    cy.get(".monaco-dialog-box .dialog-buttons a.monaco-button")
+      .contains("Open")
+      .should("be.visible")
+      .click();
+
+    // Wait for window.open to be called
+    cy.get("@windowOpen").should("have.been.called");
+
+    // Run the OAuth task with VS Code's captured URL and loaded user credentials
+    cy.window().then((win) => {
+      cy.task(
+        "authenticateOAuthDevice",
+        {
+          email: user.email,
+          password: user.auth.password,
+          oauthUrl: win.oauthUrl,
+        },
+        { timeout: 60000 },
+      );
+    });
+
+    // Wait for OAuth completion and VS Code to detect it
+    cy.get(".monaco-dialog-box").should("not.exist", { timeout: 30000 });
+
+    // Wait for the nickname input field to appear
+    cy.get(".quick-input-message", { timeout: 15000 }).should(
+      "include.text",
+      "Enter a unique nickname for this account.",
+    );
+
+    // Continue with credential creation after OAuth success
+    cy.get(".quick-input-and-message input", { timeout: 5000 })
+      .should("exist")
+      .should("be.visible");
+
+    cy.get(".quick-input-widget").type(`${nickname}{enter}`);
+    // No assertion here; do it in the test.
+  },
+);
+
+Cypress.Commands.add(
+  "setPCCCredential",
+  (user, nickname = "pcc-credential") => {
+    cy.task(
+      "runDeviceWorkflow",
+      {
+        email: user.email,
+        password: user.auth.password,
+        env: Cypress.env("PCC_ENV") || "staging",
+      },
+      { timeout: 90000 },
+    ).then((oauthResult) => {
+      cy.getPublisherSidebarIcon()
+        .should("be.visible", { timeout: 15000 })
+        .click({ force: true });
+      const guid = user.guid || "57413399-c622-4806-806a-2e18cb32d550";
+      const version = 3;
+      const server_type = "connect_cloud";
+      const url =
+        Cypress.env("PCC_URL") || "https://staging.connect.posit.cloud";
+      const cloud_environment = Cypress.env("PCC_ENV") || "staging";
+      const refresh_token = oauthResult.refresh_token;
+      const access_token = oauthResult.access_token;
+      const account_id = user.account_id;
+      const account_name = user.account_name;
+      if (!oauthResult || !oauthResult.success) {
+        throw new Error(
+          `Device OAuth failed: ${oauthResult && oauthResult.error}`,
+        );
+      }
+      if (!refresh_token || !access_token || !account_id || !account_name) {
+        throw new Error("Missing required PCC credential fields");
+      }
+      const toml = `
 [credentials.${nickname}]
 guid = '${guid}'
-version = 0
-url = 'https://cloud.posit.co'
-access_token = '${tokenResult.access_token}'
-refresh_token = '${tokenResult.refresh_token}'
+version = ${version}
+server_type = '${server_type}'
+url = '${url}'
+account_id = '${account_id}'
+account_name = '${account_name}'
+refresh_token = '${refresh_token}'
+access_token = '${access_token}'
+cloud_environment = '${cloud_environment}'
 `;
-    cy.writeFile("e2e-test.connect-credentials", toml);
-  });
-});
+      cy.writeFile("e2e-test.connect-credentials", toml);
+    });
+  },
+);
 
 Cypress.on("uncaught:exception", () => {
   // Prevent CI from failing on harmless errors

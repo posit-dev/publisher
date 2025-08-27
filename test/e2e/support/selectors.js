@@ -147,6 +147,7 @@ Cypress.Commands.add("publisherWebviewExtreme", () => {
 Cypress.Commands.add("getPublisherSidebarIcon", () => {
   return cy.findByLabelText("Posit Publisher", {
     selector: ".codicon-posit-publisher-publish",
+    timeout: 10000,
   });
 });
 
