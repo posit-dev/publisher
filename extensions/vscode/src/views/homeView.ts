@@ -793,7 +793,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
   }
 
-  // TODO This logic will need reworking
   private async onScanForRPackageRequirements() {
     if (this.root === undefined) {
       // We shouldn't get here if there's no workspace folder open.
