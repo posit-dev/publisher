@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/executor/executortest"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/schema"
@@ -57,7 +58,7 @@ func (s *RMarkdownSuite) TestInferType() {
 	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypeRMarkdown,
+		Type:       contenttypes.ContentTypeRMarkdown,
 		Title:      "Special Report",
 		Entrypoint: filename,
 		Validate:   &validate,
@@ -94,7 +95,7 @@ func (s *RMarkdownSuite) TestInferTypeWithPython() {
 	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypeRMarkdown,
+		Type:       contenttypes.ContentTypeRMarkdown,
 		Title:      "Special Report",
 		Entrypoint: filename,
 		Validate:   &validate,
@@ -144,7 +145,7 @@ func (s *RMarkdownSuite) TestInferTypeParameterized() {
 	hasParams := true
 	s.Equal(&config.Config{
 		Schema:        schema.ConfigSchemaURL,
-		Type:          config.ContentTypeRMarkdown,
+		Type:          contenttypes.ContentTypeRMarkdown,
 		Title:         "Special Report",
 		Entrypoint:    filename,
 		Validate:      &validate,
@@ -184,7 +185,7 @@ func (s *RMarkdownSuite) TestInferTypeShinyRmdRuntime() {
 	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypeRMarkdownShiny,
+		Type:       contenttypes.ContentTypeRMarkdownShiny,
 		Title:      "Interactive Report",
 		Entrypoint: filename,
 		Validate:   &validate,
@@ -223,7 +224,7 @@ func (s *RMarkdownSuite) TestInferTypeShinyRmdServer() {
 	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypeRMarkdownShiny,
+		Type:       contenttypes.ContentTypeRMarkdownShiny,
 		Title:      "Interactive Report",
 		Entrypoint: filename,
 		Validate:   &validate,
@@ -263,7 +264,7 @@ func (s *RMarkdownSuite) TestInferTypeShinyRmdServerType() {
 	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypeRMarkdownShiny,
+		Type:       contenttypes.ContentTypeRMarkdownShiny,
 		Title:      "Interactive Report",
 		Entrypoint: filename,
 		Validate:   &validate,
@@ -298,7 +299,7 @@ func (s *RMarkdownSuite) TestInferTypeNoMetadata() {
 	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypeRMarkdown,
+		Type:       contenttypes.ContentTypeRMarkdown,
 		Title:      "",
 		Entrypoint: filename,
 		Validate:   &validate,
@@ -329,7 +330,7 @@ func (s *RMarkdownSuite) TestInferTypeWithEntrypoint() {
 	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypeRMarkdown,
+		Type:       contenttypes.ContentTypeRMarkdown,
 		Title:      "Special Report",
 		Entrypoint: filename,
 		Validate:   &validate,
@@ -359,7 +360,7 @@ func (s *RMarkdownSuite) TestInferTypeRmdSite() {
 	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypeRMarkdown,
+		Type:       contenttypes.ContentTypeRMarkdown,
 		Entrypoint: "index.Rmd",
 		Title:      "Testing RMD Site",
 		Validate:   &validate,
@@ -392,7 +393,7 @@ func (s *RMarkdownSuite) TestInferTypeRmdSite_FromSiteYml() {
 	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypeRMarkdown,
+		Type:       contenttypes.ContentTypeRMarkdown,
 		Entrypoint: "_site.yml",
 		Title:      "Testing RMD Site",
 		Validate:   &validate,
@@ -425,7 +426,7 @@ func (s *RMarkdownSuite) TestInferTypeRmdSite_FromSiteYml_NoMeta() {
 	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypeRMarkdown,
+		Type:       contenttypes.ContentTypeRMarkdown,
 		Entrypoint: "_site.yml",
 		Title:      "",
 		Validate:   &validate,
@@ -457,7 +458,7 @@ func (s *RMarkdownSuite) TestInferTypeRmdSite_Bookdown() {
 	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypeRMarkdown,
+		Type:       contenttypes.ContentTypeRMarkdown,
 		Entrypoint: "index.Rmd",
 		Title:      "A Minimal Book Example",
 		Validate:   &validate,
@@ -490,7 +491,7 @@ func (s *RMarkdownSuite) TestInferTypeRmdSite_FromBookdownYml() {
 	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypeRMarkdown,
+		Type:       contenttypes.ContentTypeRMarkdown,
 		Entrypoint: "_bookdown.yml",
 		Title:      "A Minimal Book Example",
 		Validate:   &validate,

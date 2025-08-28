@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
@@ -48,7 +49,7 @@ func (s *PostConfigFilesSuite) TestPostConfigFiles() {
 	configName := "myConfig"
 	cfg := config.New()
 	cfg.ProductType = config.ProductTypeConnect
-	cfg.Type = config.ContentTypeHTML
+	cfg.Type = contenttypes.ContentTypeHTML
 	cfg.Files = []string{"*"}
 	configPath := config.GetConfigPath(s.cwd, configName)
 	err := cfg.WriteFile(configPath)
@@ -98,7 +99,7 @@ func (s *PostConfigFilesSuite) TestPostConfigFilesBadJSON() {
 	log := logging.New()
 
 	cfg := config.New()
-	cfg.Type = config.ContentTypeHTML
+	cfg.Type = contenttypes.ContentTypeHTML
 	err := cfg.WriteFile(config.GetConfigPath(s.cwd, "myConfig"))
 	s.NoError(err)
 
@@ -120,7 +121,7 @@ func (s *PostConfigFilesSuite) TestPostConfigFilesExcludeTwice() {
 	configName := "myConfig"
 	cfg := config.New()
 	cfg.ProductType = config.ProductTypeConnect
-	cfg.Type = config.ContentTypeHTML
+	cfg.Type = contenttypes.ContentTypeHTML
 	cfg.Files = []string{"*"}
 	configPath := config.GetConfigPath(s.cwd, configName)
 	err := cfg.WriteFile(configPath)
@@ -166,7 +167,7 @@ func (s *PostConfigFilesSuite) TestPostConfigFilesIncludeTwice() {
 	configName := "myConfig"
 	cfg := config.New()
 	cfg.ProductType = config.ProductTypeConnect
-	cfg.Type = config.ContentTypeHTML
+	cfg.Type = contenttypes.ContentTypeHTML
 	cfg.Files = []string{"*"}
 	configPath := config.GetConfigPath(s.cwd, configName)
 	err := cfg.WriteFile(configPath)
