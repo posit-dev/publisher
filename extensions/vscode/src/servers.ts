@@ -48,15 +48,27 @@ export class Server implements Disposable {
         this.port,
         this.useKeyChain,
       );
-      // Spawn child process
-      this.process = spawn(command, args);
-      // Handle error output
-      this.process.stderr.on("data", (data) => {
-        // Write stderr to output channel
-        this.outputChannel.append(data.toString());
-      });
-      // Wait for server to start
-      await this.isUp();
+
+      const doStart = async () => {
+        // Spawn child process
+        this.process = spawn(command, args);
+        // Handle error output
+        this.process.stderr.on("data", (data) => {
+          // Write stderr to output channel
+          this.outputChannel.append(data.toString());
+        });
+
+        this.process.on("close", (code) => {
+          console.log(`Agent process exited with code ${code}; restarting...`);
+          doStart();
+        });
+
+        // Wait for server to start
+        await this.isUp();
+      };
+
+      await doStart();
+
       // Dispose of status message
       message.dispose();
     }
