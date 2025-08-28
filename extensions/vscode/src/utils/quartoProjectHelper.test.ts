@@ -1,5 +1,6 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
+import * as path from "path";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { QuartoProjectHelper } from "./quartoProjectHelper";
 
@@ -169,6 +170,8 @@ describe("QuartoProjectHelper", () => {
     });
 
     describe("output-dir rendering", () => {
+      const outputDir = path.join("_output-dirz", "index.html");
+
       test("rendering exists, does not call extension", async () => {
         filesGetFn.mockResolvedValue({
           data: {
@@ -180,7 +183,7 @@ describe("QuartoProjectHelper", () => {
         const helper = new QuartoProjectHelper(
           mockFilesApi,
           "index.qmd",
-          "_output-dirz/index.html",
+          outputDir,
           ".",
         );
         await helper.verifyRenderedOutput();
@@ -198,7 +201,7 @@ describe("QuartoProjectHelper", () => {
         const helper = new QuartoProjectHelper(
           mockFilesApi,
           "index.qmd",
-          "_output-dirz/index.html",
+          outputDir,
           ".",
         );
         await helper.verifyRenderedOutput();
@@ -211,6 +214,9 @@ describe("QuartoProjectHelper", () => {
   });
 
   describe("multi-level workspace", () => {
+    const projectDir = path.join("march-reports", "src");
+    const entrypoint = path.join(projectDir, "index.qmd");
+
     describe("single doc rendering", () => {
       test("rendering exists, does not call extension", async () => {
         filesGetFn.mockResolvedValue({
@@ -222,9 +228,9 @@ describe("QuartoProjectHelper", () => {
 
         const helper = new QuartoProjectHelper(
           mockFilesApi,
-          "march-reports/src/index.qmd",
+          path.join("march-reports", "src", "index.qmd"),
           "index.html",
-          "march-reports/src",
+          path.join("march-reports", "src"),
         );
         await helper.verifyRenderedOutput();
         expect(mockRenderCmd).not.toHaveBeenCalled();
@@ -240,13 +246,13 @@ describe("QuartoProjectHelper", () => {
 
         const helper = new QuartoProjectHelper(
           mockFilesApi,
-          "march-reports/src/index.qmd",
+          entrypoint,
           "index.html",
-          "march-reports/src",
+          projectDir,
         );
         await helper.verifyRenderedOutput();
         expect(mockRenderCmd).toHaveBeenCalledWith(
-          "quarto render march-reports/src --to html",
+          `quarto render ${projectDir} --to html`,
           true,
         );
       });
@@ -263,23 +269,25 @@ describe("QuartoProjectHelper", () => {
 
         const helper = new QuartoProjectHelper(
           mockFilesApi,
-          "march-reports/src/index.qmd",
+          entrypoint,
           "index.html",
-          "march-reports/src",
+          projectDir,
         );
         await helper.verifyRenderedOutput();
         expect(mockRenderCmd).toHaveBeenCalledWith(
-          "quarto render march-reports/src --to html",
+          `quarto render ${projectDir} --to html`,
           true,
         );
         expect(mockRenderCmd).toHaveBeenCalledWith(
-          "quarto render march-reports/src/index.qmd --to html",
+          `quarto render ${entrypoint} --to html`,
           true,
         );
       });
     });
 
     describe("output-dir rendering", () => {
+      const outputDir = path.join("_output-dirz", "index.html");
+
       test("rendering exists, does not call extension", async () => {
         filesGetFn.mockResolvedValue({
           data: {
@@ -290,9 +298,9 @@ describe("QuartoProjectHelper", () => {
 
         const helper = new QuartoProjectHelper(
           mockFilesApi,
-          "march-reports/src/index.qmd",
-          "_output-dirz/index.html",
-          "march-reports/src",
+          entrypoint,
+          outputDir,
+          projectDir,
         );
         await helper.verifyRenderedOutput();
         expect(mockRenderCmd).not.toHaveBeenCalled();
@@ -308,13 +316,13 @@ describe("QuartoProjectHelper", () => {
 
         const helper = new QuartoProjectHelper(
           mockFilesApi,
-          "march-reports/src/index.qmd",
-          "_output-dirz/index.html",
-          "march-reports/src",
+          entrypoint,
+          outputDir,
+          projectDir,
         );
         await helper.verifyRenderedOutput();
         expect(mockRenderCmd).toHaveBeenCalledWith(
-          "quarto render march-reports/src --to html",
+          `quarto render ${projectDir} --to html`,
           true,
         );
       });
