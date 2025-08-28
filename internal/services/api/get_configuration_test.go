@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
@@ -46,7 +47,7 @@ func (s *GetConfigurationuite) makeConfiguration(name string) *config.Config {
 	path := config.GetConfigPath(s.cwd, name)
 	cfg := config.New()
 	cfg.ProductType = config.ProductTypeConnect
-	cfg.Type = config.ContentTypePythonDash
+	cfg.Type = contenttypes.ContentTypePythonDash
 	cfg.Entrypoint = "app.py"
 	cfg.Python = &config.Python{
 		Version:        "3.4.5",

@@ -16,6 +16,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/services/api/files"
 	"github.com/posit-dev/publisher/internal/types"
@@ -65,7 +66,7 @@ func (s *GetConfigFilesHandlerFuncSuite) TestHandlerFunc() {
 
 	cfg := config.New()
 	cfg.ProductType = config.ProductTypeConnect
-	cfg.Type = config.ContentTypeHTML
+	cfg.Type = contenttypes.ContentTypeHTML
 	cfg.Files = []string{"*", "!ignoreme"}
 	err = cfg.WriteFile(config.GetConfigPath(base, "myConfig"))
 	s.NoError(err)
@@ -96,7 +97,7 @@ func (s *GetConfigFilesHandlerFuncSuite) TestHandlerFuncGetFileReturnsError() {
 	src := &files.File{Rel: base.String()}
 
 	cfg := config.New()
-	cfg.Type = config.ContentTypeHTML
+	cfg.Type = contenttypes.ContentTypeHTML
 	cfg.Files = []string{"*", "!ignoreme"}
 	err = cfg.WriteFile(config.GetConfigPath(base, "myConfig"))
 	s.NoError(err)
@@ -163,7 +164,7 @@ func (s *GetConfigFilesHandlerFuncSuite) TestHandlerFuncConfigUnknownFields() {
 	s.NoError(err)
 
 	cfg := config.New()
-	cfg.Type = config.ContentTypeHTML
+	cfg.Type = contenttypes.ContentTypeHTML
 	err = cfg.WriteFile(config.GetConfigPath(base, "myConfig"))
 	s.NoError(err)
 
@@ -210,7 +211,7 @@ func (s *GetConfigFilesHandlerFuncSuite) TestHandlerFuncInvalidTOML() {
 	s.NoError(err)
 
 	cfg := config.New()
-	cfg.Type = config.ContentTypeHTML
+	cfg.Type = contenttypes.ContentTypeHTML
 	err = cfg.WriteFile(config.GetConfigPath(base, "myConfig"))
 	s.NoError(err)
 
@@ -239,7 +240,7 @@ func (s *GetConfigFilesHandlerFuncSuite) TestHandlerFuncInvalidConfigFiles() {
 
 	cfg := config.New()
 	cfg.ProductType = config.ProductTypeConnect
-	cfg.Type = config.ContentTypeHTML
+	cfg.Type = contenttypes.ContentTypeHTML
 	cfg.Files = []string{"[Z-"}
 	err = cfg.WriteFile(config.GetConfigPath(base, "myConfig"))
 	s.NoError(err)
@@ -281,7 +282,7 @@ func (s *GetConfigFilesHandlerFuncSuite) TestHandlerFuncSubdir() {
 
 	cfg := config.New()
 	cfg.ProductType = config.ProductTypeConnect
-	cfg.Type = config.ContentTypeHTML
+	cfg.Type = contenttypes.ContentTypeHTML
 	cfg.Files = []string{"*", "!ignoreme"}
 	err = cfg.WriteFile(config.GetConfigPath(projectDir, "myConfig"))
 	s.NoError(err)
@@ -322,7 +323,7 @@ func (s *GetConfigFilesHandlerFuncSuite) TestHandlerFuncBadSubdir() {
 	rec := httptest.NewRecorder()
 
 	cfg := config.New()
-	cfg.Type = config.ContentTypeHTML
+	cfg.Type = contenttypes.ContentTypeHTML
 	cfg.Files = []string{"*"}
 	err = cfg.WriteFile(config.GetConfigPath(projectDir, "myConfig"))
 	s.NoError(err)

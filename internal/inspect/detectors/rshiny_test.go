@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/schema"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
@@ -40,7 +41,7 @@ func (s *ShinySuite) TestInferTypeAppR() {
 	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypeRShiny,
+		Type:       contenttypes.ContentTypeRShiny,
 		Title:      "",
 		Entrypoint: filename,
 		Validate:   &validate,
@@ -67,7 +68,7 @@ func (s *ShinySuite) TestInferTypeServerR() {
 	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypeRShiny,
+		Type:       contenttypes.ContentTypeRShiny,
 		Title:      "",
 		Entrypoint: filename,
 		Validate:   &validate,
@@ -109,7 +110,7 @@ func (s *ShinySuite) TestInferTypeWithEntrypoint() {
 	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypeRShiny,
+		Type:       contenttypes.ContentTypeRShiny,
 		Title:      "",
 		Entrypoint: filename,
 		Validate:   &validate,

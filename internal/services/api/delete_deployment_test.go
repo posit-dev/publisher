@@ -4,20 +4,23 @@ package api
 
 import (
 	"fmt"
-	"github.com/posit-dev/publisher/internal/server_type"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"testing"
 
+	"github.com/posit-dev/publisher/internal/contenttypes"
+	"github.com/posit-dev/publisher/internal/server_type"
+
 	"github.com/gorilla/mux"
+	"github.com/spf13/afero"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/spf13/afero"
-	"github.com/stretchr/testify/suite"
 )
 
 type DeleteDeploymentSuite struct {
@@ -50,7 +53,7 @@ func createSampleDeployment(root util.AbsolutePath, name string) (*deployment.De
 	d.ConfigName = "myConfig"
 	cfg := config.New()
 	cfg.ProductType = config.ProductTypeConnect
-	cfg.Type = config.ContentTypePythonDash
+	cfg.Type = contenttypes.ContentTypePythonDash
 	cfg.Entrypoint = "app.py"
 	cfg.Python = &config.Python{
 		Version:        "3.4.5",

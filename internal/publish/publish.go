@@ -12,6 +12,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/inspect/dependencies/renv"
@@ -307,12 +308,12 @@ func (p *defaultPublisher) CreateDeploymentRecord() {
 	cfg := *p.Config
 
 	created := ""
-	var contentType config.ContentType
+	var contentType contenttypes.ContentType
 
 	if p.Target != nil {
 		created = p.Target.CreatedAt
 		contentType = p.Target.Type
-		if contentType == "" || contentType == config.ContentTypeUnknown {
+		if contentType == "" || contentType == contenttypes.ContentTypeUnknown {
 			contentType = cfg.Type
 		}
 	} else {

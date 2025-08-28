@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
@@ -44,7 +45,7 @@ func (s *GetConfigSecretsSuite) SetupTest() {
 func (s *GetConfigSecretsSuite) TestGetConfigSecrets() {
 	cfg := config.New()
 	cfg.ProductType = config.ProductTypeConnect
-	cfg.Type = config.ContentTypeHTML
+	cfg.Type = contenttypes.ContentTypeHTML
 	cfg.Secrets = []string{
 		"secret1",
 		"secret2",
@@ -73,7 +74,7 @@ func (s *GetConfigSecretsSuite) TestGetConfigSecrets() {
 func (s *GetConfigSecretsSuite) TestGetConfigSecretsEmptySecrets() {
 	cfg := config.New()
 	cfg.ProductType = config.ProductTypeConnect
-	cfg.Type = config.ContentTypeHTML
+	cfg.Type = contenttypes.ContentTypeHTML
 	err := cfg.WriteFile(config.GetConfigPath(s.cwd, "myConfig"))
 	s.NoError(err)
 

@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/server_type"
 
 	"github.com/spf13/afero"
@@ -48,7 +49,7 @@ func (s *DeploymentSuite) createDeploymentFile(name string) *Deployment {
 	d.ServerType = server_type.ServerTypeConnect
 	d.DeployedAt = time.Now().UTC().Format(time.RFC3339)
 	d.Configuration.ProductType = config.ProductTypeConnect
-	d.Configuration.Type = config.ContentTypePythonDash
+	d.Configuration.Type = contenttypes.ContentTypePythonDash
 	d.Configuration.Entrypoint = "app.py"
 	d.Configuration.Python = &config.Python{
 		Version:        "3.4.5",

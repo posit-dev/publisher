@@ -1,6 +1,11 @@
 package types
 
-import "github.com/posit-dev/publisher/internal/types"
+import (
+	"fmt"
+
+	"github.com/posit-dev/publisher/internal/contenttypes"
+	"github.com/posit-dev/publisher/internal/types"
+)
 
 // Copyright (C) 2025 by Posit Software, PBC.
 
@@ -135,4 +140,25 @@ type AuthorizationRequest struct {
 type AuthorizationResponse struct {
 	Authorized bool   `json:"authorized"`
 	Token      string `json:"token,omitempty"`
+}
+
+// CloudContentTypeFromPublisherType converts publisher content types to cloud client content types
+func CloudContentTypeFromPublisherType(contentType contenttypes.ContentType) (ContentType, error) {
+	switch contentType {
+	case contenttypes.ContentTypeJupyterNotebook:
+		return ContentTypeJupyter, nil
+	case contenttypes.ContentTypePythonBokeh:
+		return ContentTypeBokeh, nil
+	case contenttypes.ContentTypePythonDash:
+		return ContentTypeDash, nil
+	case contenttypes.ContentTypePythonShiny, contenttypes.ContentTypeRShiny:
+		return ContentTypeShiny, nil
+	case contenttypes.ContentTypePythonStreamlit:
+		return ContentTypeStreamlit, nil
+	case contenttypes.ContentTypeQuartoDeprecated, contenttypes.ContentTypeQuarto, contenttypes.ContentTypeHTML:
+		return ContentTypeQuarto, nil
+	case contenttypes.ContentTypeRMarkdown:
+		return ContentTypeRMarkdown, nil
+	}
+	return "", fmt.Errorf("content type '%s' is not supported by Connect Cloud", contentType)
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/posit-dev/publisher/internal/clients/connect_cloud"
 	clienttypes "github.com/posit-dev/publisher/internal/clients/types"
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/publish/publishhelper"
@@ -54,7 +55,7 @@ func (s *ContentRequestSuite) TestGetContentRequestBase() {
 	s.publisher.Config = &config.Config{
 		Title:       "Test Content Title",
 		Description: "Test content description",
-		Type:        config.ContentTypePythonDash,
+		Type:        contenttypes.ContentTypePythonDash,
 		Entrypoint:  "app.py",
 		R: &config.R{
 			Version: "4.3.0",
@@ -119,7 +120,7 @@ func (s *ContentRequestSuite) TestGetContentRequestBaseNoTitle() {
 	publicAccess := true
 	s.publisher.Config = &config.Config{
 		Description: "Test content description",
-		Type:        config.ContentTypePythonDash,
+		Type:        contenttypes.ContentTypePythonDash,
 		Entrypoint:  "app.py",
 		ConnectCloud: &config.ConnectCloud{
 			AccessControl: &config.ConnectCloudAccessControl{
@@ -145,7 +146,7 @@ func (s *ContentRequestSuite) TestGetContentRequestBaseRevisionOverrides() {
 	s.publisher.Config = &config.Config{
 		Title:       "Test Content Title",
 		Description: "Test content description",
-		Type:        config.ContentTypePythonDash,
+		Type:        contenttypes.ContentTypePythonDash,
 		Entrypoint:  "app.py",
 		R: &config.R{
 			Version: "4.3.0",
@@ -181,7 +182,7 @@ func (s *ContentRequestSuite) TestGetContentRequestBaseUnsupportedType() {
 	s.publisher.Config = &config.Config{
 		Title:       "Test Content Title",
 		Description: "Test content description",
-		Type:        config.ContentType("unsupported-type"),
+		Type:        contenttypes.ContentType("unsupported-type"),
 		Entrypoint:  "app.py",
 	}
 
