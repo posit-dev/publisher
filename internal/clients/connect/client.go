@@ -4,6 +4,7 @@ package connect
 
 import (
 	"io"
+	"time"
 
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/logging"
@@ -20,6 +21,16 @@ type User struct {
 	Email     string       `json:"email"`
 }
 
+type Integration struct {
+	Guid        types.GUID     `json:"guid"`
+	Name        string         `json:"name"`
+	Description string         `json:"description"`
+	AuthType    string         `json:"auth_type"`
+	Template    string         `json:"template"`
+	Config      map[string]any `json:"config"`
+	CreatedTime time.Time      `json:"created_time"`
+}
+
 type APIClient interface {
 	TestAuthentication(logging.Logger) (*User, error)
 	ContentDetails(contentID types.ContentID, body *ConnectContent, log logging.Logger) error
@@ -33,4 +44,5 @@ type APIClient interface {
 	ValidateDeployment(types.ContentID, logging.Logger) error
 	CheckCapabilities(util.AbsolutePath, *config.Config, *types.ContentID, logging.Logger) error
 	GetCurrentUser(logging.Logger) (*User, error)
+	GetIntegrations(logging.Logger) ([]Integration, error)
 }

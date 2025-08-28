@@ -136,9 +136,19 @@ export type IntegrationRequest = {
   guid?: string;
   name?: string;
   description?: string;
-  authType?: string;
+  auth_type?: string;
   type?: string;
   config?: Record<string, string | undefined>;
+};
+
+export type Integration = {
+  guid?: string;
+  name?: string;
+  description?: string;
+  auth_type?: string;
+  template?: string;
+  config?: Record<string, string | undefined>;
+  created_time?: string;
 };
 
 export type PythonConfig = {
