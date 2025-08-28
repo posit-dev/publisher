@@ -45,6 +45,8 @@ services:
       - ./logs/workbench-preview:/var/log/rstudio/rstudio-server
       - ./config/workbench-logging.conf:/etc/rstudio/logging.conf
       - ./content-workspace:/home/rstudio
+      - ./workbench-entrypoint.sh:/workbench-entrypoint.sh
+    entrypoint: ["/workbench-entrypoint.sh"]
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:8787/health-check"]
       interval: 2s
@@ -62,6 +64,8 @@ services:
       - ./logs/workbench-release:/var/log/rstudio/rstudio-server
       - ./config/workbench-logging.conf:/etc/rstudio/logging.conf
       - ./content-workspace:/home/rstudio
+      - ./workbench-entrypoint.sh:/workbench-entrypoint.sh
+    entrypoint: ["/workbench-entrypoint.sh"]
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:8787/health-check"]
       interval: 2s
