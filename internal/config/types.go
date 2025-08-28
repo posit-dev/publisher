@@ -95,7 +95,7 @@ type Config struct {
 	Schedules           []Schedule           `toml:"schedules,omitempty" json:"schedules,omitempty"`
 	Connect             *Connect             `toml:"connect,omitempty" json:"connect,omitempty"`
 	ConnectCloud        *ConnectCloud        `toml:"connect_cloud,omitempty" json:"connectCloud,omitempty"`
-	IntegrationRequests []IntegrationRequest `toml:"integration_requests,omitempty" json:"integration_requests,omitempty"`
+	IntegrationRequests []IntegrationRequest `toml:"integration_requests,omitempty,inline,multiline" json:"integration_requests,omitempty"`
 }
 
 func (c *Config) PopulateDefaults() {

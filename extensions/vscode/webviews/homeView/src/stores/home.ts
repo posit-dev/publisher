@@ -128,8 +128,8 @@ export const useHomeStore = defineStore("home", () => {
   );
 
   watch(
-    [selectedConfiguration],
-    ([config]) => {
+    [selectedContentRecord, selectedConfiguration],
+    ([contentRecord, config], [prevContentRecord]) => {
       if (config === undefined || isConfigurationError(config)) {
         integrationRequests.value = [];
         return;
