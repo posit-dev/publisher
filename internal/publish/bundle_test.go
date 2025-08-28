@@ -181,8 +181,12 @@ func (s *BundleSuite) TestCreateBundle() {
 
 	// No need to mock log calls with discard logger
 
+	// Create the manifest
+	manifest, err := publisher.createManifest()
+	s.NoError(err)
+
 	// Call createBundle
-	bundleFile, err := publisher.createBundle()
+	bundleFile, err := publisher.createBundle(manifest)
 	s.NoError(err)
 	defer bundleFile.Close()
 	defer os.Remove(bundleFile.Name())

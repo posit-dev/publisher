@@ -265,12 +265,17 @@ func (p *defaultPublisher) doPublish() error {
 
 	p.setContentInfo(p.serverPublisher.GetContentInfo(contentID))
 
+	manifest, err := p.createManifest()
+	if err != nil {
+		return err
+	}
+
 	err = p.serverPublisher.PreFlightChecks()
 	if err != nil {
 		return err
 	}
 
-	bundleFile, err := p.createBundle()
+	bundleFile, err := p.createBundle(manifest)
 	if err != nil {
 		return err
 	}
