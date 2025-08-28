@@ -1,5 +1,7 @@
 package publish
 
+// Copyright (C) 2025 by Posit Software, PBC.
+
 import (
 	"github.com/posit-dev/publisher/internal/bundles"
 )
