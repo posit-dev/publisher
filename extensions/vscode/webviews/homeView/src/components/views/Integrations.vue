@@ -10,7 +10,8 @@
     <TreeItem
       v-else
       v-for="integrationRequest in home.integrationRequests"
-      :title="JSON.stringify(integrationRequest)"
+      :title="integrationRequest.name"
+      :description="integrationRequest.description"
       :data-automation="`${JSON.stringify(integrationRequest)}-list`"
       codicon="posit-publisher-icons-posit-logo"
       :actions="[
@@ -44,6 +45,8 @@ import { WebviewToHostMessageType } from "../../../../../src/types/messages/webv
 
 const home = useHomeStore();
 
+const credentialName = home.serverCredential!.name;
+
 const { sendMsg } = useHostConduitService();
 
 const sectionActions = computed(() => {
@@ -54,6 +57,9 @@ const sectionActions = computed(() => {
       fn: () => {
         sendMsg({
           kind: WebviewToHostMessageType.ADD_INTEGRATION_REQUEST,
+          content: {
+            accountName: credentialName,
+          }
         });
       },
     },
