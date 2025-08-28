@@ -23,6 +23,14 @@ node_modules
 !.vscode/extensions.json
 !.vscode/*.code-snippets
 
+# Workbench
+test/e2e/**/.duckdb/
+test/e2e/**/.ipython/
+test/e2e/**/.local/
+test/e2e/**/.positron-server/
+test/e2e/**/.vscode-server/
+test/e2e/**/.connect-credentials
+
 # Local History for Visual Studio Code
 .history/
 
@@ -38,6 +46,7 @@ cmd/publisher/__debug_bin*
 test/e2e/content-workspace/**/.posit
 screenshots/
 test/e2e/.venv/
+test/e2e/**/.positron_workspace
 
 # license files should not be commited to this repository
 *.lic
