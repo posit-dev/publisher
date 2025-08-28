@@ -245,11 +245,11 @@ export const extensionSettings = {
     return value !== undefined ? value : false;
   },
   autoOpenLogsOnFailure(): boolean {
-    // get value from extension configuration - defaults to false
+    // get value from extension configuration - defaults to true
     const configuration = workspace.getConfiguration("positPublisher");
     const value: boolean | undefined = configuration.get<boolean>(
       "autoOpenLogsOnFailure",
     );
-    return value !== undefined ? value : false;
+    return value !== undefined ? value : true;
   },
 };

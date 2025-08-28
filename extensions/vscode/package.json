@@ -69,7 +69,7 @@
           "positPublisher.autoOpenLogsOnFailure": {
             "markdownDescription": "Opens Publisher logs automatically on a failed deploy",
             "type": "boolean",
-            "default": false
+            "default": true
           }
         }
       }
