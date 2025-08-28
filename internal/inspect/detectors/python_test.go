@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/schema"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
@@ -42,7 +43,7 @@ func (s *PythonSuite) TestInferTypePreferredFilename() {
 	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypePythonFlask,
+		Type:       contenttypes.ContentTypePythonFlask,
 		Entrypoint: filename,
 		Validate:   &validate,
 		Files:      []string{},
@@ -71,7 +72,7 @@ func (s *PythonSuite) TestInferTypeAlternatePreferredFilename() {
 	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypePythonFlask,
+		Type:       contenttypes.ContentTypePythonFlask,
 		Entrypoint: filename,
 		Validate:   &validate,
 		Files:      []string{},
@@ -97,7 +98,7 @@ func (s *PythonSuite) TestInferTypeOnlyPythonFile() {
 	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypePythonFlask,
+		Type:       contenttypes.ContentTypePythonFlask,
 		Entrypoint: filename,
 		Validate:   &validate,
 		Files:      []string{},
@@ -166,7 +167,7 @@ func (s *PythonSuite) TestInferTypeWithEntrypoint() {
 	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypePythonFlask,
+		Type:       contenttypes.ContentTypePythonFlask,
 		Entrypoint: filename,
 		Validate:   &validate,
 		Files:      []string{},
@@ -191,7 +192,7 @@ func (s *PythonSuite) TestInferTypeGradio() {
 	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypePythonGradio,
+		Type:       contenttypes.ContentTypePythonGradio,
 		Entrypoint: filename,
 		Validate:   &validate,
 		Files:      []string{},

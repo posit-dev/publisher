@@ -4,6 +4,7 @@ package inspect
 
 import (
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/executor"
 	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
@@ -98,7 +99,7 @@ func (i *defaultRInspector) RequiresR(cfg *config.Config) (bool, error) {
 		// InferType returned an R configuration for us to fill in.
 		return true, nil
 	}
-	if cfg.Type != config.ContentTypeHTML && !cfg.Type.IsPythonContent() {
+	if cfg.Type != contenttypes.ContentTypeHTML && !cfg.Type.IsPythonContent() {
 		// Presence of renv.lock implies R is needed,
 		// unless we're deploying pre-rendered Rmd or Quarto
 		// (where there will usually be a source file and

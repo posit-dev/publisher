@@ -17,6 +17,7 @@ import (
 	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/bundles"
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/logging"
@@ -72,7 +73,7 @@ func (s *BundleSuite) SetupTest() {
 			ServerType: server_type.ServerTypeConnect,
 		},
 		Config: &config.Config{
-			Type:       config.ContentTypeRShiny,
+			Type:       contenttypes.ContentTypeRShiny,
 			Entrypoint: "app.R",
 			Files:      []string{"*.R", "data/", "www/"},
 			R: &config.R{

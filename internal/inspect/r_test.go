@@ -6,15 +6,17 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/spf13/afero"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/executor"
 	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/spf13/afero"
-	"github.com/stretchr/testify/suite"
 )
 
 type RSuite struct {
@@ -190,7 +192,7 @@ func (s *RSuite) TestRequiresRNoRButWithTypeAsPython() {
 	s.NoError(err)
 
 	cfg := &config.Config{
-		Type: config.ContentTypePythonFastAPI,
+		Type: contenttypes.ContentTypePythonFastAPI,
 	}
 	require, err := i.RequiresR(cfg)
 	s.NoError(err)
@@ -203,7 +205,7 @@ func (s *RSuite) TestRequiresRNoRButWithTypeEqualContentTypeHTML() {
 	s.NoError(err)
 
 	cfg := &config.Config{
-		Type: config.ContentTypeHTML,
+		Type: contenttypes.ContentTypeHTML,
 	}
 	require, err := i.RequiresR(cfg)
 	s.NoError(err)

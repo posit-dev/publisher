@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/schema"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
@@ -46,14 +47,14 @@ func (s *StaticHTMLDetectorSuite) TestInferType() {
 	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypeHTML,
+		Type:       contenttypes.ContentTypeHTML,
 		Entrypoint: filename,
 		Validate:   &validate,
 		Files:      []string{fmt.Sprintf("/%s", filename)},
 	}, configs[0])
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypeHTML,
+		Type:       contenttypes.ContentTypeHTML,
 		Entrypoint: otherFilename,
 		Validate:   &validate,
 		Files:      []string{fmt.Sprintf("/%s", otherFilename)},
@@ -84,7 +85,7 @@ func (s *StaticHTMLDetectorSuite) TestInferTypeWithEntrypoint() {
 	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypeHTML,
+		Type:       contenttypes.ContentTypeHTML,
 		Entrypoint: otherFilename,
 		Validate:   &validate,
 		Files:      []string{fmt.Sprintf("/%s", otherFilename)},

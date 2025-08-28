@@ -13,6 +13,7 @@ import (
 
 	"github.com/posit-dev/publisher/internal/clients/types"
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/dcf"
 )
@@ -205,9 +206,9 @@ func NewManifestFromConfig(cfg *config.Config) *Manifest {
 		}
 	}
 	switch cfg.Type {
-	case config.ContentTypeRMarkdown, config.ContentTypeRMarkdownShiny:
+	case contenttypes.ContentTypeRMarkdown, contenttypes.ContentTypeRMarkdownShiny:
 		m.Metadata.PrimaryRmd = cfg.Entrypoint
-	case config.ContentTypeHTML:
+	case contenttypes.ContentTypeHTML:
 		m.Metadata.PrimaryHtml = cfg.Entrypoint
 	}
 

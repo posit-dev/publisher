@@ -10,6 +10,8 @@ import (
 
 	"github.com/pelletier/go-toml/v2"
 
+	"github.com/posit-dev/publisher/internal/clients/types"
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/schema"
 	"github.com/posit-dev/publisher/internal/util"
 )
@@ -20,7 +22,7 @@ func New() *Config {
 	validate := true
 	return &Config{
 		Schema:   schema.ConfigSchemaURL,
-		Type:     ContentTypeUnknown,
+		Type:     contenttypes.ContentTypeUnknown,
 		Validate: &validate,
 		Files:    []string{},
 	}
@@ -76,7 +78,24 @@ func FromFile(path util.AbsolutePath) (*Config, error) {
 		return nil, err
 	}
 	cfg.PopulateDefaults()
+
+	err = validate(cfg)
+	if err != nil {
+		return nil, err
+	}
+
 	return cfg, nil
+}
+
+// validate performs additional validation beyond schema validation. This validation is intended only to apply to an
+// existing config file, not to a new config file being created.
+func validate(cfg *Config) error {
+	if cfg.ProductType.IsConnectCloud() {
+		// Don't allow app modes that don't map to a Cloud content type
+		_, err := types.CloudContentTypeFromPublisherType(cfg.Type)
+		return err
+	}
+	return nil
 }
 
 func ValidateFile(path util.AbsolutePath) error {

@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/schema"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
@@ -33,7 +34,7 @@ func (s *ConfigSuite) SetupTest() {
 	s.cwd.MkdirAll(0700)
 }
 
-func (s *ConfigSuite) createConfigFile(name string) {
+func (s *ConfigSuite) createConfigFile(name string, opts ...func(*Config)) {
 	configFile := GetConfigPath(s.cwd, name)
 	cfg := New()
 	cfg.ProductType = "connect"
@@ -42,6 +43,9 @@ func (s *ConfigSuite) createConfigFile(name string) {
 	cfg.Python = &Python{
 		Version:        "3.4.5",
 		PackageManager: "pip",
+	}
+	for _, opt := range opts {
+		opt(cfg)
 	}
 	err := cfg.WriteFile(configFile)
 	s.NoError(err)
@@ -71,7 +75,19 @@ func (s *ConfigSuite) TestFromFile() {
 	cfg, err := FromFile(path)
 	s.NoError(err)
 	s.NotNil(cfg)
-	s.Equal(ContentTypePythonDash, cfg.Type)
+	s.Equal(contenttypes.ContentTypePythonDash, cfg.Type)
+}
+
+func (s *ConfigSuite) TestFromFileUnsupportedContentType() {
+	s.createConfigFile("myConfig", func(cfg *Config) {
+		cfg.ProductType = ProductTypeConnectCloud
+		cfg.Type = contenttypes.ContentTypePythonFastAPI
+		cfg.Python.PackageFile = ""
+	})
+	path := GetConfigPath(s.cwd, "myConfig")
+	cfg, err := FromFile(path)
+	s.ErrorContains(err, "python: additionalProperties 'package_manager' not allowed")
+	s.Nil(cfg)
 }
 
 func (s *ConfigSuite) TestFromExampleFile() {
@@ -106,7 +122,7 @@ func (s *ConfigSuite) TestWriteFileEmptyEntrypoint() {
 	configFile := GetConfigPath(s.cwd, "myConfig")
 	cfg := New()
 	cfg.ProductType = "connect"
-	cfg.Type = ContentTypeHTML
+	cfg.Type = contenttypes.ContentTypeHTML
 	cfg.Entrypoint = ""
 	err := cfg.WriteFile(configFile)
 	s.NoError(err)

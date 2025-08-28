@@ -5,7 +5,12 @@ package initialize
 import (
 	"testing"
 
+	"github.com/spf13/afero"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/executor"
 	"github.com/posit-dev/publisher/internal/inspect"
 	"github.com/posit-dev/publisher/internal/inspect/detectors"
@@ -13,9 +18,6 @@ import (
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/spf13/afero"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/suite"
 )
 
 // TODO = initialize not currently testing R project
@@ -180,7 +182,7 @@ func (s *InitializeSuite) TestGetPossibleRConfig() {
 	s.NoError(err)
 
 	s.Len(configs, 1)
-	s.Equal(config.ContentTypeRShiny, configs[0].Type)
+	s.Equal(contenttypes.ContentTypeRShiny, configs[0].Type)
 	s.Equal("app.R", configs[0].Entrypoint)
 	s.Equal([]string{"/app.R", "/renv.lock"}, configs[0].Files)
 	s.Equal(emptyRConfig, configs[0].R)
@@ -205,7 +207,7 @@ func (s *InitializeSuite) TestGetPossiblePythonConfig() {
 	s.NoError(err)
 
 	s.Len(configs, 1)
-	s.Equal(config.ContentTypePythonFlask, configs[0].Type)
+	s.Equal(contenttypes.ContentTypePythonFlask, configs[0].Type)
 	s.Equal("app.py", configs[0].Entrypoint)
 	s.Equal([]string{"/app.py", "/requirements.txt"}, configs[0].Files)
 	s.Equal(emptyPyConfig, configs[0].Python)
@@ -228,7 +230,7 @@ func (s *InitializeSuite) TestGetPossibleHTMLConfig() {
 	s.NoError(err)
 
 	s.Len(configs, 1)
-	s.Equal(config.ContentTypeHTML, configs[0].Type)
+	s.Equal(contenttypes.ContentTypeHTML, configs[0].Type)
 	s.Equal("index.html", configs[0].Entrypoint)
 	s.Equal([]string{"/index.html"}, configs[0].Files)
 	s.Nil(configs[0].Python)
@@ -249,7 +251,7 @@ func (s *InitializeSuite) TestGetPossibleConfigsEmpty() {
 	s.NoError(err)
 
 	s.Len(configs, 1)
-	s.Equal(config.ContentTypeUnknown, configs[0].Type)
+	s.Equal(contenttypes.ContentTypeUnknown, configs[0].Type)
 	s.Equal("unknown", configs[0].Entrypoint)
 	s.Nil(configs[0].Python)
 }
@@ -301,7 +303,7 @@ func (s *InitializeSuite) TestGetPossibleConfigsWithMissingEntrypoint() {
 	s.NoError(err)
 
 	s.Len(configs, 1)
-	s.Equal(config.ContentTypeUnknown, configs[0].Type)
+	s.Equal(contenttypes.ContentTypeUnknown, configs[0].Type)
 	s.Equal("nonexistent.py", configs[0].Entrypoint)
 	s.Nil(configs[0].Python)
 }
@@ -310,7 +312,7 @@ func (s *InitializeSuite) TestNormalizeConfigHandlesUnknownConfigs() {
 	log := logging.New()
 
 	cfg := config.New()
-	cfg.Type = config.ContentTypeUnknown
+	cfg.Type = contenttypes.ContentTypeUnknown
 
 	i := NewInitialize(
 		detectors.NewContentTypeDetector,
