@@ -308,7 +308,7 @@ func (d *QuartoDetector) staticConfigFromOutputDir(base util.AbsolutePath, cfg *
 	// - look up for an index file
 	// - OR use the static version of the first file in files.input, "outputDir + files[0] + .html"
 	if d.isQuartoYaml(cfg.Entrypoint) || entrypointIsDir {
-		d.log.Debug("Choosen entrypoint is _quarto.yml, attemtping to use first file from files.input as static entrypoint")
+		d.log.Debug("Chosen entrypoint is _quarto.yml, attempting to use first file from files.input as static entrypoint")
 
 		indexFile, foundIndex := inspectOutput.IndexHTMLFilepath(base)
 
