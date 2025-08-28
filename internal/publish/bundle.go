@@ -18,7 +18,7 @@ func (p *defaultPublisher) createBundle(manifest *bundles.Manifest) (*os.File, e
 	p.emitter.Emit(events.New(op, events.StartPhase, events.NoError, createBundleStartData{}))
 	prepareLog.Info("Preparing files")
 
-	err := p.readInterpreterDetails()
+	err := p.addInterpreterDetailsToTarget()
 	if err != nil {
 		return nil, err
 	}
