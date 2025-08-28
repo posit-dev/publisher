@@ -145,9 +145,13 @@ Cypress.Commands.add("publisherWebviewExtreme", () => {
 });
 
 Cypress.Commands.add("getPublisherSidebarIcon", () => {
+  // Robust check for CI (handles true, "true", false, "false", undefined)
+  const isCI = Cypress.env("CI") === true || Cypress.env("CI") === "true";
+  const timeout = isCI ? 30000 : 10000;
+  cy.log(`getPublisherSidebarIcon timeout: ${timeout}`);
   return cy.findByLabelText("Posit Publisher", {
     selector: ".codicon-posit-publisher-publish",
-    timeout: 10000,
+    timeout,
   });
 });
 
