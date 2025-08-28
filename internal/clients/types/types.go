@@ -59,6 +59,8 @@ const (
 	ContentTypeStreamlit ContentType = "streamlit"
 	// ContentTypeRMarkdown represents an R Markdown document.
 	ContentTypeRMarkdown ContentType = "rmarkdown"
+	// ContentTypeStatic represents static content.
+	ContentTypeStatic ContentType = "static"
 )
 
 // Secret represents a secret key-value pair.
@@ -155,10 +157,12 @@ func CloudContentTypeFromPublisherType(contentType contenttypes.ContentType) (Co
 		return ContentTypeShiny, nil
 	case contenttypes.ContentTypePythonStreamlit:
 		return ContentTypeStreamlit, nil
-	case contenttypes.ContentTypeQuartoDeprecated, contenttypes.ContentTypeQuarto, contenttypes.ContentTypeHTML:
+	case contenttypes.ContentTypeQuartoDeprecated, contenttypes.ContentTypeQuarto:
 		return ContentTypeQuarto, nil
 	case contenttypes.ContentTypeRMarkdown:
 		return ContentTypeRMarkdown, nil
+	case contenttypes.ContentTypeHTML:
+		return ContentTypeStatic, nil
 	}
 	return "", fmt.Errorf("content type '%s' is not supported by Connect Cloud", contentType)
 }
