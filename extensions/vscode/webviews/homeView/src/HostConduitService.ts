@@ -15,6 +15,7 @@ import {
   RefreshFilesMsg,
   SetPathSeparatorMsg,
   UpdateServerEnvironmentMsg,
+  RefreshIntegrationRequestsMsg,
 } from "../../../src/types/messages/hostToWebviewMessages";
 import {
   WebviewToHostMessage,
@@ -94,6 +95,8 @@ const onMessageFromHost = (msg: HostToWebviewMessage): void => {
       return onSetPathSeparatorMsg(msg);
     case HostToWebviewMessageType.UPDATE_SERVER_ENVIRONMENT:
       return onUpdateServerEnvironmentMsg(msg);
+    case HostToWebviewMessageType.REFRESH_INTEGRATION_REQUESTS:
+      return onRefreshIntegrationRequestsMsg(msg);
     default:
       console.warn(`unexpected command: ${JSON.stringify(msg)}`);
   }
@@ -244,4 +247,9 @@ const onUpdateRPackages = (msg: UpdateRPackages) => {
 const onUpdateServerEnvironmentMsg = (msg: UpdateServerEnvironmentMsg) => {
   const home = useHomeStore();
   home.serverSecrets = new Set(msg.content.environment);
+};
+
+const onRefreshIntegrationRequestsMsg = (msg: RefreshIntegrationRequestsMsg) => {
+  const home = useHomeStore();
+  home.integrationRequests = msg.content.integrationRequests;
 };

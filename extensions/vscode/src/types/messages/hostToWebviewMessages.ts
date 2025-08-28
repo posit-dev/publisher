@@ -8,6 +8,7 @@ import {
   ContentRecordFile,
   PreContentRecord,
   ConfigurationError,
+  IntegrationRequest,
 } from "../../api";
 import { DeploymentSelector } from "../shared";
 
@@ -31,6 +32,7 @@ export enum HostToWebviewMessageType {
   HIDE_DISABLE_OVERLAY = "hideDisableOverlay",
   SET_PATH_SEPARATOR = "setPathSeparator",
   UPDATE_SERVER_ENVIRONMENT = "updateServerEnvironment",
+  REFRESH_INTEGRATION_REQUESTS = "refreshIntegrationRequests",
 }
 
 export type AnyHostToWebviewMessage<
@@ -61,7 +63,8 @@ export type HostToWebviewMessage =
   | ShowDisableOverlayMsg
   | HideDisableOverlayMsg
   | SetPathSeparatorMsg
-  | UpdateServerEnvironmentMsg;
+  | UpdateServerEnvironmentMsg
+  | RefreshIntegrationRequestsMsg;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function isHostToWebviewMessage(msg: any): msg is HostToWebviewMessage {
@@ -83,7 +86,8 @@ export function isHostToWebviewMessage(msg: any): msg is HostToWebviewMessage {
     msg.kind === HostToWebviewMessageType.SHOW_DISABLE_OVERLAY ||
     msg.kind === HostToWebviewMessageType.HIDE_DISABLE_OVERLAY ||
     msg.kind === HostToWebviewMessageType.SET_PATH_SEPARATOR ||
-    msg.kind === HostToWebviewMessageType.UPDATE_SERVER_ENVIRONMENT
+    msg.kind === HostToWebviewMessageType.UPDATE_SERVER_ENVIRONMENT ||
+    msg.kind === HostToWebviewMessageType.REFRESH_INTEGRATION_REQUESTS
   );
 }
 
@@ -181,5 +185,12 @@ export type UpdateServerEnvironmentMsg = AnyHostToWebviewMessage<
   HostToWebviewMessageType.UPDATE_SERVER_ENVIRONMENT,
   {
     environment: string[];
+  }
+>;
+
+export type RefreshIntegrationRequestsMsg = AnyHostToWebviewMessage<
+  HostToWebviewMessageType.REFRESH_INTEGRATION_REQUESTS,
+  {
+    integrationRequests: IntegrationRequest[];
   }
 >;
