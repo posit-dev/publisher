@@ -111,3 +111,8 @@ func (m *MockClient) GetCurrentUser(log logging.Logger) (*User, error) {
 		return user.(*User), args.Error(1)
 	}
 }
+
+func (m *MockClient) GetIntegrations(log logging.Logger) ([]Integration, error) {
+	args := m.Called(log)
+	return args.Get(0).([]Integration), args.Error(1)
+}

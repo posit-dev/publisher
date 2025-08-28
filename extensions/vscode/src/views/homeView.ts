@@ -40,6 +40,7 @@ import {
   ProductName,
   ServerType,
   IntegrationRequest,
+  Integration,
 } from "src/api";
 import { EventStream } from "src/events";
 import { getPythonInterpreterPath, getRInterpreterPath } from "../utils/vscode";
@@ -67,7 +68,7 @@ import {
 } from "src/types/messages/webviewToHostMessages";
 import { HostToWebviewMessageType } from "src/types/messages/hostToWebviewMessages";
 import { confirmDelete, confirmOverwrite } from "src/dialogs";
-import { DeploymentQuickPick } from "src/types/quickPicks";
+import { DeploymentQuickPick, IntegrationQuickPick } from "src/types/quickPicks";
 import { selectNewOrExistingConfig } from "src/multiStepInputs/selectNewOrExistingConfig";
 import { RPackage, RVersionConfig } from "src/api/types/packages";
 import { calculateTitle } from "src/utils/titles";
@@ -210,7 +211,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       case WebviewToHostMessageType.COPY_SYSTEM_INFO:
         return await this.copySystemInfo();
       case WebviewToHostMessageType.ADD_INTEGRATION_REQUEST:
-        return await this.addIntegrationRequest();
+        return await this.addIntegrationRequest(msg.content.accountName);
       case WebviewToHostMessageType.DELETE_INTEGRATION_REQUEST:
         return await this.deleteIntegrationRequest(msg.content);
       default:
@@ -469,6 +470,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     this.configWatchers.configFile?.onDidChange(() => {
       this.debounceSendRefreshedFilesLists();
       this.updateServerEnvironment();
+      this.refreshIntegrationRequests();
     }, this);
 
     this.configWatchers.pythonPackageFile?.onDidCreate(
@@ -644,6 +646,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     this.refreshRPackages,
     DebounceDelaysMS.refreshRPackages,
   );
+
+  private async refreshIntegrationRequests() {
+    // TODO
+  }
 
   private async refreshRPackages() {
     const activeConfiguration = await this.state.getSelectedConfiguration();
@@ -1123,35 +1129,16 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
   };
 
-  private inputIntegrationRequest = async (
-    // integrationRequests: IntegrationRequest[] | undefined,
-  ) => {
-    const value = await window.showInputBox({
-      title: "Add an Integration Request",
-      prompt: "Enter the body of the integration request.",
-      ignoreFocusOut: true,
-      validateInput: (value: string) => {
-        // let parsed: IntegrationRequest | undefined;
-        try {
-          JSON.parse(value);
-        } catch {
-          return "Integration request body must be valid JSON.";
-        }
+  public getIntegrations = async (accountName: string) => {
+    const api = await useApi();
+    const response = await api.integrationRequests.getIntegrations(
+      accountName,
+    );
+    console.log("Fetched integrations");
+    console.log(response.data);
+  }
 
-        // if (integrationRequests) {
-        //   for (const ir in integrationRequests) {
-        //     if (ir === parsed) {
-        //       return "There is already an integration request with this body.";
-        //     }
-        //   }
-        // }
-        return;
-      },
-    });
-    return JSON.parse(value || "{}") as IntegrationRequest;
-  };
-
-  public addIntegrationRequest = async () => {
+  public addIntegrationRequest = async (accountName: string) => {
     const activeConfig = await this.state.getSelectedConfiguration();
     if (activeConfig === undefined) {
       console.error("homeView::addIntegration: No active configuration.");
@@ -1164,10 +1151,14 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
 
-    const integrationRequest = await this.inputIntegrationRequest(
-      // activeConfig.configuration.environment,
+    const api = await useApi();
+    const response = await api.integrationRequests.getIntegrations(
+      accountName,
     );
-    if (integrationRequest === undefined) {
+
+    const integration = await this.showIntegrationQuickPick(response.data);
+
+    if (integration === undefined) {
       // Canceled by the user
       return;
     }
@@ -1177,7 +1168,15 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         const api = await useApi();
         await api.integrationRequests.add(
           activeConfig.configurationName,
-          integrationRequest,
+          activeConfig.projectDir,
+          {
+            guid: integration.guid,
+            name: integration.name,
+            // description: integration.description,
+            // auth_type: integration.auth_type,
+            // type: integration.template,
+            // config: integration.config,
+          } as IntegrationRequest,
         );
       });
     } catch (error: unknown) {
@@ -1206,6 +1205,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         const api = await useApi();
         await api.integrationRequests.delete(
           activeConfig.configurationName,
+          activeConfig.projectDir,
           context.request,
         );
       });
@@ -1283,6 +1283,49 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
   private showPublishingLog() {
     return commands.executeCommand(Commands.Logs.Focus);
+  }
+
+  private async showIntegrationQuickPick(integrations: Integration[]): Promise<Integration | undefined> {
+    // const api = await useApi();
+    // const response = await api.integrationRequests.getIntegrations(
+    //   accountName,
+    // );
+    // return response.data[0];
+    const integrationQuickPickList: IntegrationQuickPick[] = integrations.map((integration) => {
+      return {
+        label: integration.name,
+        description: integration.description,
+        integration,
+      } as IntegrationQuickPick;
+    });
+
+    const toDispose: Disposable[] = [];
+    const integration = await new Promise<IntegrationQuickPick | undefined>(
+      (resolve) => {
+        const quickPick = window.createQuickPick<IntegrationQuickPick>();
+        this.disposables.push(quickPick);
+
+        quickPick.items = integrationQuickPickList;
+        quickPick.title = "Select Integration";
+        quickPick.matchOnDescription = true;
+        quickPick.matchOnDetail = true;
+        quickPick.show();
+
+        quickPick.onDidAccept(
+          () => {
+            quickPick.hide();
+            if (quickPick.selectedItems.length > 0) {
+              return resolve(quickPick.selectedItems[0]);
+            }
+            resolve(undefined);
+          },
+          undefined,
+          toDispose,
+        );
+        quickPick.onDidHide(() => resolve(undefined), undefined, toDispose);
+      },
+    ).finally(() => Disposable.from(...toDispose).dispose());
+    return integration?.integration;
   }
 
   private async showDeploymentQuickPick(
@@ -1986,6 +2029,28 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         },
       }),
     );
+
+    this.state.getSelectedContentRecord().then((currentContentRecord) => {
+      const serverType = currentContentRecord?.serverType || ServerType.CONNECT;
+      const productType = getProductType(serverType);
+
+      // register this command for Connect only,
+      // since Connect Cloud does not support this feature at the moment
+      if (isConnectProduct(productType)) {
+        this.context.subscriptions.push(
+          commands.registerCommand(
+            Commands.HomeView.AddIntegrationRequest,
+            () => this.showIntegrationQuickPick,
+            this,
+          ),
+          commands.registerCommand(
+            Commands.HomeView.DeleteIntegrationRequest,
+            () => this.deleteIntegrationRequest,
+            this,
+          ),
+        );
+      }
+    });
 
     this.context.subscriptions.push(
       commands.registerCommand(

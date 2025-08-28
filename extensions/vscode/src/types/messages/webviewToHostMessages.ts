@@ -18,6 +18,7 @@ export enum WebviewToHostMessageType {
   REQUEST_CREDENTIALS = "requestCredentials",
   VSCODE_OPEN_RELATIVE = "VSCodeOpenRelativeMsg",
   ADD_SECRET = "addSecret",
+  GET_INTEGRATIONS = "getIntegrations",
   ADD_INTEGRATION_REQUEST = "addIntegrationRequest",
   DELETE_INTEGRATION_REQUEST = "deleteIntegrationRequest",
   REFRESH_PYTHON_PACKAGES = "RefreshPythonPackagesMsg",
@@ -113,7 +114,8 @@ export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
       WebviewToHostMessageType.UPDATE_SELECTION_IS_CONNECT_CONTENT_RECORD ||
     msg.kind === WebviewToHostMessageType.COPY_SYSTEM_INFO ||
     msg.kind === WebviewToHostMessageType.ADD_INTEGRATION_REQUEST ||
-    msg.kind === WebviewToHostMessageType.DELETE_INTEGRATION_REQUEST
+    msg.kind === WebviewToHostMessageType.DELETE_INTEGRATION_REQUEST ||
+    msg.kind === WebviewToHostMessageType.GET_INTEGRATIONS
   );
 }
 
@@ -198,7 +200,13 @@ export type RequestCredentialsMsg =
 export type AddSecretMsg =
   AnyWebviewToHostMessage<WebviewToHostMessageType.ADD_SECRET>;
 
-export type AddIntegrationRequestMsg = AnyWebviewToHostMessage<WebviewToHostMessageType.ADD_INTEGRATION_REQUEST>;
+export type AddIntegrationRequestMsg = 
+  AnyWebviewToHostMessage<
+    WebviewToHostMessageType.ADD_INTEGRATION_REQUEST,
+    {
+      accountName: string;
+    }
+>;
 
 export type DeleteIntegrationRequestMsg = AnyWebviewToHostMessage<
   WebviewToHostMessageType.DELETE_INTEGRATION_REQUEST,
