@@ -28,7 +28,13 @@ Cypress.Commands.add(
 
     // Open the entrypoint ahead of time for easier selection later.
     // Always open the Explorer before interacting with the file tree
-    cy.get("a.codicon-explorer-view-icon").first().click();
+    cy.get("body").then(($body) => {
+      if ($body.find(".explorer-viewlet:visible").length === 0) {
+        cy.get("a.codicon-explorer-view-icon").first().click();
+        cy.get(".explorer-viewlet", { timeout: 10000 }).should("be.visible");
+      }
+    });
+
     // expand the subdirectory
     if (projectDir !== ".") {
       cy.get(".explorer-viewlet").find(`[aria-label="${projectDir}"]`).click();
@@ -176,6 +182,10 @@ Cypress.Commands.add(
     cy.getPublisherSidebarIcon()
       .should("be.visible", { timeout: 10000 })
       .click();
+
+    // Small wait to allow the UI to settle in CI before proceeding
+    // eslint-disable-next-line cypress/no-unnecessary-waiting
+    cy.wait(1000);
 
     cy.publisherWebview()
       .findByTestId("select-deployment")
