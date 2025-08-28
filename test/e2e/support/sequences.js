@@ -27,6 +27,8 @@ Cypress.Commands.add(
     cy.on("uncaught:exception", () => false);
 
     // Open the entrypoint ahead of time for easier selection later.
+    // Always open the Explorer before interacting with the file tree
+    cy.get("a.codicon-explorer-view-icon").first().click();
     // expand the subdirectory
     if (projectDir !== ".") {
       cy.get(".explorer-viewlet").find(`[aria-label="${projectDir}"]`).click();
@@ -153,7 +155,7 @@ Cypress.Commands.add(
 
     cy.get("body").then(($body) => {
       if ($body.find(".explorer-viewlet:visible").length === 0) {
-        cy.get('a[aria-label*="Explorer"]', { timeout: 10000 }).first().click();
+        cy.get("a.codicon-explorer-view-icon").first().click();
         cy.get(".explorer-viewlet", { timeout: 10000 }).should("be.visible");
       }
     });

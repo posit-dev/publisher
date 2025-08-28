@@ -72,7 +72,7 @@ describe("Deployments Section", () => {
     });
   });
 
-  describe("PCC Deployments", () => {
+  describe("Connect Cloud Deployments", () => {
     beforeEach(() => {
       cy.resetCredentials();
       cy.visit("/");
@@ -140,7 +140,6 @@ describe("Deployments Section", () => {
                   " and title: " +
                   expectedTitle,
               );
-              cy.pause();
               cy.task("confirmPCCPublishSuccess", {
                 publishedUrl,
                 expectedTitle,
