@@ -53,10 +53,11 @@ Cypress.Commands.add(
 
     // activate the publisher extension
     cy.getPublisherSidebarIcon().should("be.visible").click();
-
-    // Small wait to allow the UI to settle in CI before proceeding
-    // eslint-disable-next-line cypress/no-unnecessary-waiting
-    cy.wait(1000);
+    cy.publisherWebview()
+      .findByTestId("select-deployment")
+      .should("be.visible");
+    // Add a log to indicate UI is ready
+    cy.log("DEBUG: select-deployment button is visible, UI should be ready");
 
     // Create a new deployment via the select-deployment button
     cy.publisherWebview()
@@ -178,11 +179,13 @@ Cypress.Commands.add(
       .find(`[aria-label="${entrypointFile}"]`)
       .should("be.visible");
 
+    // activate the publisher extension
     cy.getPublisherSidebarIcon().should("be.visible").click();
-
-    // Small wait to allow the UI to settle in CI before proceeding
-    // eslint-disable-next-line cypress/no-unnecessary-waiting
-    cy.wait(1000);
+    cy.publisherWebview()
+      .findByTestId("select-deployment")
+      .should("be.visible");
+    // Add a log to indicate UI is ready
+    cy.log("DEBUG: select-deployment button is visible, UI should be ready");
 
     cy.publisherWebview()
       .findByTestId("select-deployment")
