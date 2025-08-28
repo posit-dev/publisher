@@ -439,6 +439,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     this.updateServerEnvironment();
     this.refreshPythonPackages();
     this.refreshRPackages();
+    this.refreshIntegrationRequests();
 
     this.configWatchers?.dispose();
     if (cfg && isConfigurationError(cfg)) {
@@ -627,7 +628,29 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   );
 
   private async refreshIntegrationRequests() {
-    // TODO
+    const activeConfig = await this.state.getSelectedConfiguration();
+    if (activeConfig && !isConfigurationError(activeConfig)) {
+      try {
+        const api = await useApi();
+        const response = await api.integrationRequests.list(
+          activeConfig.configurationName,
+          activeConfig.projectDir
+        );
+        
+        this.webviewConduit.sendMsg({
+          kind: HostToWebviewMessageType.REFRESH_INTEGRATION_REQUESTS,
+          content: {
+            integrationRequests: response.data,
+          },
+        });
+      } catch (error: unknown) {
+        const summary = getSummaryStringFromError(
+          "homeView::refreshIntegrationRequests",
+          error
+        );
+        console.error(`Failed to fetch integration requests: ${summary}`);
+      }
+    }
   }
 
   private async refreshRPackages() {
@@ -1119,12 +1142,18 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
 
-    const api = await useApi();
-    const response = await api.integrationRequests.getIntegrations(
-      accountName,
-    );
-
-    const integration = await this.showIntegrationQuickPick(response.data);
+    let integration;
+    try {
+      const api = await useApi();
+      const response = await api.integrationRequests.getIntegrations(
+        accountName,
+      );
+      integration = await this.showIntegrationQuickPick(response.data);
+    } catch (error: unknown) {
+      console.error("Error fetching integrations:", error);
+      window.showErrorMessage("Failed to fetch available integrations. Please try again later.");
+      return;
+    }
 
     if (integration === undefined) {
       // Canceled by the user
@@ -1147,10 +1176,21 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           } as IntegrationRequest,
         );
       });
+      
+      // Refresh integration requests to show the newly added one in the UI
+      await this.refreshIntegrationRequests();
     } catch (error: unknown) {
-      const summary = getSummaryStringFromError("addIntegrationRequest", error);
+      // Safely get error summary without risking HTML decoding issues
+      let errorMessage = "Unknown error";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (isAxiosError(error) && typeof error.response?.data === 'string') {
+        errorMessage = error.response.data;
+      }
+      
+      console.error("Failed to add integration request:", error);
       window.showInformationMessage(
-        `Failed to add integration request to configuration. ${summary}`,
+        `Failed to add integration request to configuration. ${errorMessage}`,
       );
     }
   };
@@ -1177,6 +1217,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           context.request,
         );
       });
+      
+      await this.refreshIntegrationRequests();
     } catch (error: unknown) {
       const summary = getSummaryStringFromError("removeIntegrationRequest", error);
       window.showInformationMessage(
