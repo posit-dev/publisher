@@ -39,6 +39,10 @@ jobs:
         working-directory: test/e2e
         run: npm ci
 
+      - name: Install Playwright browsers
+        working-directory: test/e2e
+        run: npx playwright install --with-deps
+
       - uses: extractions/setup-just@v3
 
       - name: Build publisher binary

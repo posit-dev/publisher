@@ -6,6 +6,7 @@ const {
   authenticateOAuthDevice,
   runDeviceWorkflow,
 } = require("./support/oauth-task");
+const { confirmPCCPublishSuccess } = require("./support/publish-success-task");
 
 const DEBUG_CYPRESS = process.env.DEBUG_CYPRESS === "true";
 const ACTIONS_STEP_DEBUG = process.env.ACTIONS_STEP_DEBUG === "true";
@@ -55,6 +56,7 @@ module.exports = defineConfig({
         async runDeviceWorkflow({ email, password, env = "staging" }) {
           return await runDeviceWorkflow({ email, password, env });
         },
+        confirmPCCPublishSuccess,
       });
     },
   },

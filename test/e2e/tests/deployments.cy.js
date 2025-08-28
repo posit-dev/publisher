@@ -91,7 +91,7 @@ describe("Deployments Section", () => {
       cy.resetCredentials();
     });
 
-    it("PCC Shiny Python Example Deployment", () => {
+    it("PCC Shiny Python Deployment", () => {
       cy.waitForPublisherIframe(); // Wait after triggering extension
       cy.debugIframes();
       // Select files to include in deployment
@@ -111,6 +111,10 @@ describe("Deployments Section", () => {
               expect(config.files).to.include(file);
             },
           );
+          // --- Add public access to the config TOML before deploy ---
+          config.connect_cloud = config.connect_cloud || {};
+          config.connect_cloud.access_control = { public_access: true };
+          cy.savePublisherFile(tomlFiles.config.path, config);
         },
         filesToSelect,
       );
@@ -123,6 +127,33 @@ describe("Deployments Section", () => {
         5,
         500,
       ).should("exist");
+      // Load the deployment TOML to get the published URL
+      cy.getPublisherTomlFilePaths("examples-shiny-python").then(
+        (filePaths) => {
+          cy.loadTomlFile(filePaths.contentRecord.path).then(
+            (contentRecord) => {
+              const publishedUrl = contentRecord.direct_url;
+              const expectedTitle = "Restaurant tipping"; // Use the actual app title
+              cy.log(
+                "About to call confirmPCCPublishSuccess with URL: " +
+                  publishedUrl +
+                  " and title: " +
+                  expectedTitle,
+              );
+              cy.pause();
+              cy.task("confirmPCCPublishSuccess", {
+                publishedUrl,
+                expectedTitle,
+              }).then((result) => {
+                expect(
+                  result.success,
+                  result.error || "Publish confirmation failed",
+                ).to.be.true;
+              });
+            },
+          );
+        },
+      );
     });
   });
 });
