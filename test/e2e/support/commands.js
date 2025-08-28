@@ -270,7 +270,7 @@ Cypress.Commands.add("waitForPublisherIframe", (timeout = 60000) => {
 // Debug: Waits for all iframes to exist (helps with timing issues in CI).
 // If DEBUG_CYPRESS is "true", also logs iframe attributes for debugging.
 Cypress.Commands.add("debugIframes", () => {
-  cy.get("iframe", { timeout: 20000 }).each(($el, idx) => {
+  cy.get("iframe", { timeout: 30000 }).each(($el, idx) => {
     // Always wait for iframes, but only print if debugging is enabled
     if (Cypress.env("DEBUG_CYPRESS") === "true") {
       cy.wrap($el)
@@ -399,9 +399,7 @@ Cypress.Commands.add(
 Cypress.Commands.add(
   "addPCCCredential",
   (user, nickname = "connect-cloud-credential") => {
-    cy.getPublisherSidebarIcon()
-      .should("be.visible", { timeout: 10000 })
-      .click();
+    cy.getPublisherSidebarIcon().should("be.visible").click();
 
     cy.toggleCredentialsSection();
     cy.publisherWebview()
@@ -429,7 +427,7 @@ Cypress.Commands.add(
       .click();
 
     // Wait for the dialog box to appear and be visible
-    cy.get(".monaco-dialog-box", { timeout: 10000 })
+    cy.get(".monaco-dialog-box")
       .should("be.visible")
       .should("have.attr", "aria-modal", "true");
 
@@ -487,7 +485,7 @@ Cypress.Commands.add(
     );
 
     // Continue with credential creation after OAuth success
-    cy.get(".quick-input-and-message input", { timeout: 5000 })
+    cy.get(".quick-input-and-message input")
       .should("exist")
       .should("be.visible");
 

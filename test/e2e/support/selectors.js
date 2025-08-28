@@ -145,13 +145,8 @@ Cypress.Commands.add("publisherWebviewExtreme", () => {
 });
 
 Cypress.Commands.add("getPublisherSidebarIcon", () => {
-  // Robust check for CI (handles true, "true", false, "false", undefined)
-  const isCI = Cypress.env("CI") === true || Cypress.env("CI") === "true";
-  const timeout = isCI ? 30000 : 10000;
-  cy.log(`getPublisherSidebarIcon timeout: ${timeout}`);
   return cy.findByLabelText("Posit Publisher", {
     selector: ".codicon-posit-publisher-publish",
-    timeout,
   });
 });
 
@@ -213,81 +208,77 @@ Cypress.Commands.add(
     function attemptFindIframe(attempt = 1, maxAttempts = 10) {
       cy.log(`[Extreme] Iframe find attempt ${attempt}/${maxAttempts}`);
 
-      return cy
-        .get("iframe", { timeout: 10000, log: false })
-        .then(($iframes) => {
-          cy.log(`[Extreme] Found ${$iframes.length} iframes`);
+      return cy.get("iframe", { log: false }).then(($iframes) => {
+        cy.log(`[Extreme] Found ${$iframes.length} iframes`);
 
-          // Log all iframes for debugging
-          $iframes.each((i, iframe) => {
-            cy.log(
-              `iframe[${i}] class=${iframe.className} id=${iframe.id} src=${iframe.src}`,
-            );
-          });
-
-          // Try to find by publisher extension ID in src
-          const $publisherIframe = $iframes.filter((i, el) => {
-            return el.src && el.src.includes("extensionId=posit.publisher");
-          });
-
-          if ($publisherIframe.length > 0) {
-            cy.log("[Extreme] Found publisher iframe by extensionId!");
-
-            // Wait for iframe content to be ready with retry logic
-            return cy
-              .wrap($publisherIframe.eq(0))
-              .its("0.contentDocument.body", { timeout: 5000 })
-              .should("not.be.empty")
-              .then(($body) => {
-                // Check if content is actually loaded
-                const hasContent =
-                  $body.text().includes("Posit") ||
-                  $body.find("[data-automation]").length > 0;
-
-                if (hasContent) {
-                  cy.log("[Extreme] Publisher webview content loaded!");
-                  return cy.wrap($publisherIframe.eq(0));
-                } else {
-                  cy.log(
-                    "[Extreme] Publisher iframe found but content not loaded yet",
-                  );
-                  cy.log(
-                    "Body text preview: " + $body.text().substring(0, 100),
-                  );
-
-                  if (attempt < maxAttempts) {
-                    // eslint-disable-next-line cypress/no-unnecessary-waiting
-                    cy.wait(5000); // Wait longer between content checks
-                    return attemptFindIframe(attempt + 1, maxAttempts);
-                  }
-                }
-                return cy.wrap($publisherIframe.eq(0));
-              });
-          }
-
-          // Try to find by class and ready state
-          const $readyIframe = $iframes.filter((i, el) => {
-            return (
-              el.className &&
-              el.className.includes("webview") &&
-              el.className.includes("ready")
-            );
-          });
-
-          if ($readyIframe.length > 0) {
-            cy.log("[Extreme] Found ready webview iframe!");
-            return cy.wrap($readyIframe.eq(0));
-          }
-
-          if (attempt < maxAttempts) {
-            // eslint-disable-next-line cypress/no-unnecessary-waiting
-            cy.wait(3000); // Wait longer between attempts
-            cy.reload(); // Try reloading the page
-            return attemptFindIframe(attempt + 1, maxAttempts);
-          }
-
-          throw new Error("Publisher iframe not found after exhaustive search");
+        // Log all iframes for debugging
+        $iframes.each((i, iframe) => {
+          cy.log(
+            `iframe[${i}] class=${iframe.className} id=${iframe.id} src=${iframe.src}`,
+          );
         });
+
+        // Try to find by publisher extension ID in src
+        const $publisherIframe = $iframes.filter((i, el) => {
+          return el.src && el.src.includes("extensionId=posit.publisher");
+        });
+
+        if ($publisherIframe.length > 0) {
+          cy.log("[Extreme] Found publisher iframe by extensionId!");
+
+          // Wait for iframe content to be ready with retry logic
+          return cy
+            .wrap($publisherIframe.eq(0))
+            .its("0.contentDocument.body")
+            .should("not.be.empty")
+            .then(($body) => {
+              // Check if content is actually loaded
+              const hasContent =
+                $body.text().includes("Posit") ||
+                $body.find("[data-automation]").length > 0;
+
+              if (hasContent) {
+                cy.log("[Extreme] Publisher webview content loaded!");
+                return cy.wrap($publisherIframe.eq(0));
+              } else {
+                cy.log(
+                  "[Extreme] Publisher iframe found but content not loaded yet",
+                );
+                cy.log("Body text preview: " + $body.text().substring(0, 100));
+
+                if (attempt < maxAttempts) {
+                  // eslint-disable-next-line cypress/no-unnecessary-waiting
+                  cy.wait(5000); // Wait longer between content checks
+                  return attemptFindIframe(attempt + 1, maxAttempts);
+                }
+              }
+              return cy.wrap($publisherIframe.eq(0));
+            });
+        }
+
+        // Try to find by class and ready state
+        const $readyIframe = $iframes.filter((i, el) => {
+          return (
+            el.className &&
+            el.className.includes("webview") &&
+            el.className.includes("ready")
+          );
+        });
+
+        if ($readyIframe.length > 0) {
+          cy.log("[Extreme] Found ready webview iframe!");
+          return cy.wrap($readyIframe.eq(0));
+        }
+
+        if (attempt < maxAttempts) {
+          // eslint-disable-next-line cypress/no-unnecessary-waiting
+          cy.wait(3000); // Wait longer between attempts
+          cy.reload(); // Try reloading the page
+          return attemptFindIframe(attempt + 1, maxAttempts);
+        }
+
+        throw new Error("Publisher iframe not found after exhaustive search");
+      });
     }
 
     return attemptFindIframe();

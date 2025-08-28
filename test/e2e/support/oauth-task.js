@@ -1,6 +1,7 @@
 // OAuth Device Flow Task - Automates OAuth completion for VS Code extension and supports programmatic device workflow
 const { chromium } = require("playwright");
 const axios = require("axios");
+const { getPlaywrightTimeout } = require("./playwright-utils");
 
 function getPlaywrightHeadless() {
   if (process.env.CI === "true") return true;
@@ -39,7 +40,9 @@ async function authorizeDeviceWithBrowser(verificationUrl, email, password) {
     let emailField = null;
     for (const selector of emailSelectors) {
       try {
-        await page.waitForSelector(selector, { timeout: 2000 });
+        await page.waitForSelector(selector, {
+          timeout: getPlaywrightTimeout(),
+        });
         emailField = selector;
         break;
       } catch {
@@ -57,7 +60,9 @@ async function authorizeDeviceWithBrowser(verificationUrl, email, password) {
     let continueButton = null;
     for (const selector of continueSelectors) {
       try {
-        await page.waitForSelector(selector, { timeout: 2000 });
+        await page.waitForSelector(selector, {
+          timeout: getPlaywrightTimeout(),
+        });
         continueButton = selector;
         break;
       } catch {
@@ -78,7 +83,9 @@ async function authorizeDeviceWithBrowser(verificationUrl, email, password) {
     let passwordField = null;
     for (const selector of passwordSelectors) {
       try {
-        await page.waitForSelector(selector, { timeout: 5000 });
+        await page.waitForSelector(selector, {
+          timeout: getPlaywrightTimeout(),
+        });
         passwordField = selector;
         break;
       } catch {
@@ -97,7 +104,9 @@ async function authorizeDeviceWithBrowser(verificationUrl, email, password) {
     let loginButton = null;
     for (const selector of loginSelectors) {
       try {
-        await page.waitForSelector(selector, { timeout: 2000 });
+        await page.waitForSelector(selector, {
+          timeout: getPlaywrightTimeout(),
+        });
         loginButton = selector;
         break;
       } catch {
@@ -110,11 +119,15 @@ async function authorizeDeviceWithBrowser(verificationUrl, email, password) {
       await page.click(loginButton);
     }
     // Handle authorization page
-    await page.waitForSelector("text=Authorize access", { timeout: 10000 });
+    await page.waitForSelector("text=Authorize access", {
+      timeout: getPlaywrightTimeout(),
+    });
     await page.click('button:has-text("Continue")');
     await page.click('button:has-text("Authorize")');
     // Wait for success
-    await page.waitForSelector("text=Access authorized", { timeout: 10000 });
+    await page.waitForSelector("text=Access authorized", {
+      timeout: getPlaywrightTimeout(),
+    });
   } finally {
     if (browser) await browser.close();
   }

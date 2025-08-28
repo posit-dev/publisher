@@ -31,7 +31,7 @@ Cypress.Commands.add(
     cy.get("body").then(($body) => {
       if ($body.find(".explorer-viewlet:visible").length === 0) {
         cy.get("a.codicon-explorer-view-icon").first().click();
-        cy.get(".explorer-viewlet", { timeout: 10000 }).should("be.visible");
+        cy.get(".explorer-viewlet").should("be.visible");
       }
     });
 
@@ -52,9 +52,7 @@ Cypress.Commands.add(
       .should("be.visible");
 
     // activate the publisher extension
-    cy.getPublisherSidebarIcon()
-      .should("be.visible", { timeout: 10000 })
-      .click();
+    cy.getPublisherSidebarIcon().should("be.visible").click();
 
     // Small wait to allow the UI to settle in CI before proceeding
     // eslint-disable-next-line cypress/no-unnecessary-waiting
@@ -70,7 +68,7 @@ Cypress.Commands.add(
     // Ux displayed via quick input
     // This has taken longer than 4 seconds on some laptops, so we're increasing
     // the timeout
-    cy.get(".quick-input-widget", { timeout: 10000 }).should("be.visible");
+    cy.get(".quick-input-widget").should("be.visible");
 
     // confirm we've got the correct sequence
     cy.get(".quick-input-titlebar").should("have.text", "Select Deployment");
@@ -116,30 +114,31 @@ Cypress.Commands.add(
       .getPublisherTomlFilePaths(projectDir)
       .then((filePaths) => {
         // Wait for the contentRecord TOML file to exist before loading
-        cy.readFile(filePaths.contentRecord.path, { timeout: 10000 });
-        let result = {
-          config: {
-            name: filePaths.config.name,
-            path: filePaths.config.path,
-            contents: {},
-          },
-          contentRecord: {
-            name: filePaths.contentRecord.name,
-            path: filePaths.contentRecord.path,
-            contents: {},
-          },
-        };
-        cy.loadTomlFile(filePaths.config.path)
-          .then((config) => {
-            result.config.contents = config;
-          })
-          .loadTomlFile(filePaths.contentRecord.path)
-          .then((contentRecord) => {
-            result.contentRecord.contents = contentRecord;
-          })
-          .then(() => {
-            return result;
-          });
+        cy.readFile(filePaths.contentRecord.path).then(() => {
+          let result = {
+            config: {
+              name: filePaths.config.name,
+              path: filePaths.config.path,
+              contents: {},
+            },
+            contentRecord: {
+              name: filePaths.contentRecord.name,
+              path: filePaths.contentRecord.path,
+              contents: {},
+            },
+          };
+          cy.loadTomlFile(filePaths.config.path)
+            .then((config) => {
+              result.config.contents = config;
+            })
+            .loadTomlFile(filePaths.contentRecord.path)
+            .then((contentRecord) => {
+              result.contentRecord.contents = contentRecord;
+            })
+            .then(() => {
+              return result;
+            });
+        });
       })
       .then((tomlFiles) => {
         return verifyTomlCallback(tomlFiles);
@@ -162,7 +161,7 @@ Cypress.Commands.add(
     cy.get("body").then(($body) => {
       if ($body.find(".explorer-viewlet:visible").length === 0) {
         cy.get("a.codicon-explorer-view-icon").first().click();
-        cy.get(".explorer-viewlet", { timeout: 10000 }).should("be.visible");
+        cy.get(".explorer-viewlet").should("be.visible");
       }
     });
 
@@ -179,9 +178,7 @@ Cypress.Commands.add(
       .find(`[aria-label="${entrypointFile}"]`)
       .should("be.visible");
 
-    cy.getPublisherSidebarIcon()
-      .should("be.visible", { timeout: 10000 })
-      .click();
+    cy.getPublisherSidebarIcon().should("be.visible").click();
 
     // Small wait to allow the UI to settle in CI before proceeding
     // eslint-disable-next-line cypress/no-unnecessary-waiting
@@ -193,7 +190,7 @@ Cypress.Commands.add(
         Cypress.$(dplyPicker).trigger("click");
       });
 
-    cy.get(".quick-input-widget", { timeout: 10000 }).should("be.visible");
+    cy.get(".quick-input-widget").should("be.visible");
     cy.get(".quick-input-titlebar").should("have.text", "Select Deployment");
     cy.get(".quick-input-list")
       .find(
@@ -241,30 +238,31 @@ Cypress.Commands.add(
       .getPublisherTomlFilePaths(projectDir)
       .then((filePaths) => {
         // Wait for the contentRecord TOML file to exist before loading
-        cy.readFile(filePaths.contentRecord.path, { timeout: 10000 });
-        let result = {
-          config: {
-            name: filePaths.config.name,
-            path: filePaths.config.path,
-            contents: {},
-          },
-          contentRecord: {
-            name: filePaths.contentRecord.name,
-            path: filePaths.contentRecord.path,
-            contents: {},
-          },
-        };
-        cy.loadTomlFile(filePaths.config.path)
-          .then((config) => {
-            result.config.contents = config;
-          })
-          .loadTomlFile(filePaths.contentRecord.path)
-          .then((contentRecord) => {
-            result.contentRecord.contents = contentRecord;
-          })
-          .then(() => {
-            return result;
-          });
+        cy.readFile(filePaths.contentRecord.path).then(() => {
+          let result = {
+            config: {
+              name: filePaths.config.name,
+              path: filePaths.config.path,
+              contents: {},
+            },
+            contentRecord: {
+              name: filePaths.contentRecord.name,
+              path: filePaths.contentRecord.path,
+              contents: {},
+            },
+          };
+          cy.loadTomlFile(filePaths.config.path)
+            .then((config) => {
+              result.config.contents = config;
+            })
+            .loadTomlFile(filePaths.contentRecord.path)
+            .then((contentRecord) => {
+              result.contentRecord.contents = contentRecord;
+            })
+            .then(() => {
+              return result;
+            });
+        });
       })
       .then((tomlFiles) => {
         return verifyTomlCallback(tomlFiles);
@@ -282,9 +280,7 @@ Cypress.Commands.add("deployCurrentlySelected", () => {
   // Wait for deploying message to finish
   cy.get(".notifications-toasts", { timeout: 30000 })
     .should("be.visible")
-    .findByText("Deploying your project: Starting to Deploy...", {
-      timeout: 10000,
-    })
+    .findByText("Deploying your project: Starting to Deploy...")
     .should("not.exist");
 
   cy.findByText("Deployment was successful", { timeout: 60000 }).should(

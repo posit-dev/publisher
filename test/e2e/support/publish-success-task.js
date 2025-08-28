@@ -1,4 +1,5 @@
 const { chromium } = require("playwright");
+const { getPlaywrightTimeout } = require("./playwright-utils");
 
 function getPlaywrightHeadless() {
   if (process.env.CI === "true") return true;
@@ -38,7 +39,7 @@ async function confirmPCCPublishSuccess({ publishedUrl, expectedTitle }) {
         );
         const response = await page.goto(publishedUrl, {
           waitUntil: "domcontentloaded",
-          timeout: 10000,
+          timeout: getPlaywrightTimeout(),
         });
         console.log(
           `[Playwright] Attempt ${attempt}: Navigation complete, status: ${response && response.status()}`,
@@ -58,7 +59,7 @@ async function confirmPCCPublishSuccess({ publishedUrl, expectedTitle }) {
             let h1Text = null;
             try {
               await page.waitForSelector(".navbar-static-top h1", {
-                timeout: 10000,
+                timeout: getPlaywrightTimeout(),
               });
               const h1 = await page.locator(".navbar-static-top h1").first();
               h1Text = await h1.textContent();

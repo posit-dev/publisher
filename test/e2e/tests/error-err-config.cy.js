@@ -9,9 +9,7 @@ describe("Detect errors in config", () => {
     cy.setAdminCredentials();
     cy.visit("/").debug();
     // Select the publisher extension
-    cy.getPublisherSidebarIcon()
-      .should("be.visible", { timeout: 10000 })
-      .click();
+    cy.getPublisherSidebarIcon().should("be.visible").click();
   });
 
   it("Show errors when Config is invalid", () => {
