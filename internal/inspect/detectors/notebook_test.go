@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/schema"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
@@ -81,7 +82,7 @@ func (s *NotebookDetectorSuite) TestInferTypePlainNotebook() {
 	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypeJupyterNotebook,
+		Type:       contenttypes.ContentTypeJupyterNotebook,
 		Entrypoint: filename,
 		Validate:   &validate,
 		Files:      []string{},
@@ -107,7 +108,7 @@ func (s *NotebookDetectorSuite) TestInferTypeVoilaNotebook() {
 	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypeJupyterVoila,
+		Type:       contenttypes.ContentTypeJupyterVoila,
 		Entrypoint: filename,
 		Validate:   &validate,
 		Files:      []string{},
@@ -187,7 +188,7 @@ func (s *NotebookDetectorSuite) TestInferTypeWithEntrypoint() {
 	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypeJupyterNotebook,
+		Type:       contenttypes.ContentTypeJupyterNotebook,
 		Entrypoint: filename,
 		Validate:   &validate,
 		Files:      []string{},

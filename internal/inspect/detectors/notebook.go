@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/inspect/dependencies/pydeps"
 	"github.com/posit-dev/publisher/internal/util"
 )
@@ -69,12 +70,12 @@ func (d *NotebookDetector) InferType(base util.AbsolutePath, entrypoint util.Rel
 			return nil, err
 		}
 		cfg := config.New()
-		cfg.Type = config.ContentTypeHTML
+		cfg.Type = contenttypes.ContentTypeHTML
 		cfg.Entrypoint = relEntrypoint.String()
 		if isVoila {
-			cfg.Type = config.ContentTypeJupyterVoila
+			cfg.Type = contenttypes.ContentTypeJupyterVoila
 		} else {
-			cfg.Type = config.ContentTypeJupyterNotebook
+			cfg.Type = contenttypes.ContentTypeJupyterNotebook
 		}
 		// indicate that Python inspection is needed
 		cfg.Python = &config.Python{}

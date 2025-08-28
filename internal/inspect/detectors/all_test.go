@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/schema"
 	"github.com/posit-dev/publisher/internal/util"
@@ -45,14 +46,14 @@ func (s *AllSuite) TestInferTypeDirectory() {
 	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypeHTML,
+		Type:       contenttypes.ContentTypeHTML,
 		Entrypoint: "index.html",
 		Validate:   &validate,
 		Files:      []string{"/index.html"},
 	}, configs[0])
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypePythonDash,
+		Type:       contenttypes.ContentTypePythonDash,
 		Entrypoint: appFilename,
 		Validate:   &validate,
 		Files:      []string{},
@@ -72,7 +73,7 @@ func (s *AllSuite) TestInferTypeDirectoryIndeterminate() {
 	configs, err := detector.InferType(base, util.RelativePath{})
 	s.NoError(err)
 	s.Len(configs, 1)
-	s.Equal(config.ContentTypeUnknown, configs[0].Type)
+	s.Equal(contenttypes.ContentTypeUnknown, configs[0].Type)
 }
 
 func (s *AllSuite) TestInferTypeErr() {
@@ -105,7 +106,7 @@ func (s *AllSuite) TestInferAll() {
 	s.Equal([]*config.Config{
 		{
 			Schema:     schema.ConfigSchemaURL,
-			Type:       config.ContentTypePythonDash,
+			Type:       contenttypes.ContentTypePythonDash,
 			Entrypoint: appFilename,
 			Validate:   &validate,
 			Files:      []string{},
@@ -113,7 +114,7 @@ func (s *AllSuite) TestInferAll() {
 		},
 		{
 			Schema:     schema.ConfigSchemaURL,
-			Type:       config.ContentTypeHTML,
+			Type:       contenttypes.ContentTypeHTML,
 			Entrypoint: "myfile.html",
 			Validate:   &validate,
 			Files:      []string{"/myfile.html"},
@@ -135,5 +136,5 @@ func (s *AllSuite) TestInferAllIndeterminate() {
 	s.NoError(err)
 
 	s.Len(configs, 1)
-	s.Equal(config.ContentTypeUnknown, configs[0].Type)
+	s.Equal(contenttypes.ContentTypeUnknown, configs[0].Type)
 }

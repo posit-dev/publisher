@@ -17,8 +17,10 @@ import (
 	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/bundles"
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/events"
+	"github.com/posit-dev/publisher/internal/inspect/dependencies/renv"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/logging/loggingtest"
 	"github.com/posit-dev/publisher/internal/publish/publishhelper"
@@ -72,7 +74,7 @@ func (s *BundleSuite) SetupTest() {
 			ServerType: server_type.ServerTypeConnect,
 		},
 		Config: &config.Config{
-			Type:       config.ContentTypeRShiny,
+			Type:       contenttypes.ContentTypeRShiny,
 			Entrypoint: "app.R",
 			Files:      []string{"*.R", "data/", "www/"},
 			R: &config.R{
@@ -98,10 +100,40 @@ func (s *BundleSuite) SetupTest() {
 func (s *BundleSuite) createTestFiles() {
 	// Create a simple Shiny app
 	appR := "print('hi')\n"
+	renvLock := `
+{
+  "R": {
+    "Version": "4.3.0",
+    "Repositories": [
+      {
+        "Name": "CRAN",
+        "URL": "https://cran.rstudio.com"
+      }
+    ]
+  },
+  "Packages": {
+    "R6": {
+      "Package": "R6",
+      "Version": "2.5.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R"
+      ],
+      "Hash": "470851b6d5d0ac559e9d01bb352b4021"
+    }
+  }
+}
+`
 
 	// Create app.R
 	appRPath := s.dir.Join("app.R")
 	err := appRPath.WriteFile([]byte(appR), 0644)
+	s.NoError(err)
+
+	// Create renv.lock
+	renvLockPath := s.dir.Join("renv.lock")
+	err = renvLockPath.WriteFile([]byte(renvLock), 0644)
 	s.NoError(err)
 
 	// Create data directory with a CSV file
@@ -149,8 +181,12 @@ func (s *BundleSuite) TestCreateBundle() {
 
 	// No need to mock log calls with discard logger
 
+	// Create the manifest
+	manifest, err := publisher.createManifest()
+	s.NoError(err)
+
 	// Call createBundle
-	bundleFile, err := publisher.createBundle()
+	bundleFile, err := publisher.createBundle(manifest)
 	s.NoError(err)
 	defer bundleFile.Close()
 	defer os.Remove(bundleFile.Name())
@@ -182,6 +218,13 @@ func (s *BundleSuite) TestCreateBundle() {
 		"www/styles.css",
 	}
 	s.ElementsMatch(expectedTargetFiles, publisher.Target.Files)
+
+	// Verify interpreter details were read and set in Target
+	s.Equal(publisher.Target.Renv.R.Version, "4.3.0")
+	s.Equal(len(publisher.Target.Renv.R.Repositories), 1)
+	s.Equal(publisher.Target.Renv.R.Repositories[0].Name, "CRAN")
+	s.Equal(len(publisher.Target.Renv.Packages), 1)
+	s.Equal(publisher.Target.Renv.Packages["R6"].Package, renv.PackageName("R6"))
 
 	// Using discard logger - no assertions needed
 }

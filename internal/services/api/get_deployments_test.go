@@ -4,12 +4,17 @@ package api
 
 import (
 	"encoding/json"
-	"github.com/posit-dev/publisher/internal/server_type"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"path/filepath"
 	"testing"
+
+	"github.com/posit-dev/publisher/internal/contenttypes"
+	"github.com/posit-dev/publisher/internal/server_type"
+
+	"github.com/spf13/afero"
+	"github.com/stretchr/testify/suite"
 
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/deployment"
@@ -17,8 +22,6 @@ import (
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/spf13/afero"
-	"github.com/stretchr/testify/suite"
 )
 
 type GetDeploymentsSuite struct {
@@ -175,7 +178,7 @@ func createAlternateDeployment(root util.AbsolutePath, name string) (*deployment
 	d.ServerType = server_type.ServerTypeConnect
 	d.ConfigName = "htmlConfig"
 	cfg := config.New()
-	cfg.Type = config.ContentTypeHTML
+	cfg.Type = contenttypes.ContentTypeHTML
 	cfg.Entrypoint = "index.html"
 	d.Configuration = cfg
 	_, err := d.WriteFile(path, "", logging.New())
@@ -226,7 +229,7 @@ func (s *GetDeploymentsSuite) makeSubdirDeployment(name string, subdir string) (
 	d.ConfigName = name + "_config"
 	cfg := config.New()
 	cfg.ProductType = config.ProductTypeConnect
-	cfg.Type = config.ContentTypeHTML
+	cfg.Type = contenttypes.ContentTypeHTML
 	cfg.Entrypoint = subdir + ".html"
 	d.Configuration = cfg
 	d.DeployedAt = "2024-09-17T16:57:51-07:00"

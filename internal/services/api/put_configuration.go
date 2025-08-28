@@ -13,6 +13,7 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/schema"
 	"github.com/posit-dev/publisher/internal/util"
@@ -100,11 +101,11 @@ func PutConfigurationHandlerFunc(base util.AbsolutePath, log logging.Logger) htt
 		camelToSnakeMap(rawConfig)
 
 		t, ok := rawConfig["type"]
-		if ok && t == string(config.ContentTypeUnknown) {
+		if ok && t == string(contenttypes.ContentTypeUnknown) {
 			// We permit configurations with `unknown` type to be created,
 			// even though they don't pass validation. Pass a known
 			// type to the validator.
-			rawConfig["type"] = string(config.ContentTypeHTML)
+			rawConfig["type"] = string(contenttypes.ContentTypeHTML)
 		}
 		validator, err := schema.NewValidator[config.Config](schema.ConfigSchemaURL)
 		if err != nil {

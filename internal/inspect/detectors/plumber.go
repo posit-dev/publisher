@@ -4,6 +4,7 @@ package detectors
 
 import (
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/executor"
 	"github.com/posit-dev/publisher/internal/util"
 )
@@ -45,7 +46,7 @@ func (d *PlumberDetector) InferType(base util.AbsolutePath, entrypoint util.Rela
 		}
 		if exists {
 			cfg := config.New()
-			cfg.Type = config.ContentTypeRPlumber
+			cfg.Type = contenttypes.ContentTypeRPlumber
 			cfg.Entrypoint = relEntrypoint
 
 			// Indicate that R inspection is needed.

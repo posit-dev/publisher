@@ -75,5 +75,6 @@ func (p *defaultPublisher) getRPackages(scanDependencies bool) (bundles.PackageM
 	}
 	log.Info("Done collecting R package descriptions")
 	p.emitter.Emit(events.New(op, events.SuccessPhase, events.NoError, getRPackageDescriptionsSuccessData{}))
+
 	return rPackages, nil
 }

@@ -8,7 +8,8 @@ import (
 	"github.com/posit-dev/publisher/internal/interpreters"
 )
 
-func (p *defaultPublisher) configureInterpreters() error {
+// addInterpreterDetailsToTarget reads interpreter-specific dependency files and updates the Target deployment record for recordkeeping.
+func (p *defaultPublisher) addInterpreterDetailsToTarget() error {
 	if p.Config.Python != nil {
 		filename := p.Config.Python.PackageFile
 		if filename == "" {
