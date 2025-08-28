@@ -7,7 +7,6 @@ import {
   MultiStepState,
 } from "./multiStepHelper";
 import { Credential, ServerType, ProductName } from "src/api";
-import { extensionSettings } from "src/extension";
 import { platformList } from "src/multiStepInputs/common";
 import { getServerType, isConnectCloud } from "../utils/multiStepHelpers";
 import { newConnectCredential } from "./newConnectCredential";
@@ -79,27 +78,13 @@ export async function newCredential(
       isValid: () => {},
     };
 
-    if (extensionSettings.enableConnectCloud()) {
-      // select the platform only when the enableConnectCloud config has been turned on
-      const currentStep = {
-        name: step.INPUT_PLATFORM,
-        step: (input: MultiStepInput) =>
-          steps[step.INPUT_PLATFORM](input, state),
-      };
-      stepHistory.push(currentStep);
-      await MultiStepInput.run(currentStep, previousSteps);
-    } else {
-      try {
-        credential = await newConnectCredential(
-          viewId,
-          state.title,
-          startingServerUrl,
-          previousSteps,
-        );
-      } catch {
-        /* the user dismissed this flow, do nothing more */
-      }
-    }
+    const currentStep = {
+      name: step.INPUT_PLATFORM,
+      step: (input: MultiStepInput) => steps[step.INPUT_PLATFORM](input, state),
+    };
+    stepHistory.push(currentStep);
+    await MultiStepInput.run(currentStep, previousSteps);
+
     return state;
   }
 
