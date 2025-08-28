@@ -10,9 +10,9 @@
     <TreeItem
       v-else
       v-for="integrationRequest in home.integrationRequests"
-      :title="integrationRequest.name"
+      :title="integrationRequest.name ?? ''"
       :description="integrationRequest.description"
-      :data-automation="`${JSON.stringify(integrationRequest)}-list`"
+      :data-automation="`integration-request-${integrationRequest.name || ''}-list`"
       codicon="posit-publisher-icons-posit-logo"
       :actions="[
         {
