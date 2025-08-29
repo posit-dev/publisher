@@ -109,7 +109,7 @@ describe("ConnectAuthTokenActivator", () => {
       "test-private-key-123",
     );
     expect(mockShowInformationMessage).toHaveBeenCalledWith(
-      "Successfully authenticated as testuser",
+      "Successfully connected to https://connect.example.com as testuser 🎉",
     );
 
     // Verify result

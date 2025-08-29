@@ -6,7 +6,6 @@ import {
   MultiStepInput,
   MultiStepState,
 } from "./multiStepHelper";
-import { window } from "vscode";
 import { Credential, ServerType, ProductName } from "src/api";
 import { platformList } from "src/multiStepInputs/common";
 import { getServerType, isConnectCloud } from "../utils/multiStepHelpers";
@@ -153,11 +152,6 @@ export async function newCredential(
     // navigating backwards and then forward in the multi-stepper steps
     throw new AbortError();
   }
-
-  window.showInformationMessage(
-    // To prevent a large refactor for the flow, we added the as Credential declaration
-    `Successfully added ${(credential as Credential).name} 🎉`,
-  );
 
   return credential;
 }

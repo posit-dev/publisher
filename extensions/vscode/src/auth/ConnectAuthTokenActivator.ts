@@ -72,7 +72,7 @@ export class ConnectAuthTokenActivator {
       const userName = await this.pollForTokenClaim(token, privateKey);
 
       // Step 4: Handle success
-      this.onTokenClaimSuccess(userName);
+      this.onTokenClaimSuccess(userName, this.serverUrl);
 
       return { token, privateKey, userName };
     } catch (error) {
@@ -179,8 +179,10 @@ export class ConnectAuthTokenActivator {
     );
   }
 
-  private onTokenClaimSuccess(userName: string): void {
-    window.showInformationMessage(`Successfully authenticated as ${userName}`);
+  private onTokenClaimSuccess(userName: string, serverUrl: string): void {
+    window.showInformationMessage(
+      `Successfully connected to ${serverUrl} as ${userName} 🎉`,
+    );
   }
 
   private handleError(error: unknown): void {
