@@ -529,9 +529,12 @@ func (s *LockfilePackageMapperSuite) TestRSPMRepositoryHandling_MissingRemoteRep
 	s.Equal("https://packagemanager.rstudio.com/all/latest", renvPkg.Repository)
 }
 
-func (s *LockfilePackageMapperSuite) TestDescriptionFields_FromLockfile() {
+func (s *LockfilePackageMapperSuite) TestHashingFields_FromLockfile() {
 	// Verifies that Description contains Package, Version, Depends, Imports, Suggests, LinkingTo
 	// when provided in renv.lock, with list fields joined by commas.
+	//
+	// Those fields are the ones used by packrat to compute hash of packages
+	// if missing the cache would always result in a miss.
 	lockfileContent := `{
 		"R": {
 			"Version": "4.3.3",
