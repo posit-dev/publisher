@@ -500,11 +500,6 @@ func (i *defaultRInterpreter) CreateLockfile(lockfilePath util.AbsolutePath, sca
 		return err
 	}
 
-	if lockfilePath.Path.String() == "" {
-		lockfilePath = i.base.Join(DefaultRenvLockfile)
-		i.log.Debug("looking for default renv lockfile", "lockfilePath", lockfilePath)
-	}
-
 	i.log.Info(
 		"Creating renv lockfile",
 		"path",
@@ -522,9 +517,13 @@ func (i *defaultRInterpreter) CreateLockfile(lockfilePath util.AbsolutePath, sca
 
 	var stdout, stderr []byte
 
-	// Build the R script, either following the pattern in
-	// defaultRDependencyScanner.ScanDependencies or the old renv::snapshot() pattern
+	// Create the renv lockfile, either following the pattern in
+	// defaultRDependencyScanner.ScanDependencies or the existing renv::snapshot() pattern
 	if scanDependencies {
+		if lockfilePath.Path.String() == "" {
+			lockfilePath = i.base.Join(DefaultRenvLockfile)
+			i.log.Debug("Using default renv lockfile name", "lockfilePath", lockfilePath)
+		}
 		script := fmt.Sprintf(`(function(){
 			options(renv.consent = TRUE)
 			deps <- tryCatch({
@@ -540,6 +539,17 @@ func (i *defaultRInterpreter) CreateLockfile(lockfilePath util.AbsolutePath, sca
         })()`, lockfilePath.String())
 		stdout, stderr, err = i.cmdExecutor.RunScript(rExecutable.String(), []string{"-s"}, script, i.base, i.log)
 		i.log.Debug("ScanDependencies-based renv lockfile creation", "stdout", string(stdout), "stderr", string(stderr))
+
+		// Ensure the lockfile was created
+		exists, err := lockfilePath.Exists()
+		if err != nil {
+			return err
+		}
+		if !exists {
+			return fmt.Errorf("renv could not create lockfile: %s", lockfilePath.String())
+		}
+
+		return nil
 	} else {
 		var cmd string
 		if lockfilePath.String() == "" {
@@ -550,22 +560,9 @@ func (i *defaultRInterpreter) CreateLockfile(lockfilePath util.AbsolutePath, sca
 		}
 		stdout, stderr, err = i.cmdExecutor.RunScript(rExecutable.String(), []string{"-s"}, cmd, i.base, i.log)
 		i.log.Debug("renv::snapshot()", "out", string(stdout), "err", string(stderr))
-	}
-
-	if err != nil {
 		return err
 	}
 
-	// Ensure the lockfile was created
-	exists, err := lockfilePath.Exists()
-	if err != nil {
-		return err
-	}
-	if !exists {
-		return fmt.Errorf("renv could not create lockfile: %s", lockfilePath.String())
-	}
-
-	return nil
 }
 
 func (i *defaultRInterpreter) GetPackageManager() string {

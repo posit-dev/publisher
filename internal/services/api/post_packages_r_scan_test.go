@@ -64,7 +64,7 @@ func (s *PostPackagesRScanSuite) TestServeHTTP() {
 	) (interpreters.RInterpreter, error) {
 		i := interpreters.NewMockRInterpreter()
 		i.On("Init").Return(nil)
-		i.On("CreateLockfile", lockFilePath).Return(nil)
+		i.On("CreateLockfile", lockFilePath, false).Return(nil)
 		return i, nil
 	}
 
@@ -95,7 +95,7 @@ func (s *PostPackagesRScanSuite) TestServeHTTPEmptyBody() {
 		existsFuncOverride util.ExistsFunc,
 	) (interpreters.RInterpreter, error) {
 		i := interpreters.NewMockRInterpreter()
-		i.On("CreateLockfile", mock.Anything).Return(nil)
+		i.On("CreateLockfile", mock.Anything, false).Return(nil)
 		return i, nil
 	}
 
@@ -128,7 +128,7 @@ func (s *PostPackagesRScanSuite) TestServeHTTPWithSaveName() {
 		existsFuncOverride util.ExistsFunc,
 	) (interpreters.RInterpreter, error) {
 		i := interpreters.NewMockRInterpreter()
-		i.On("CreateLockfile", util.NewAbsolutePath(destPath.String(), fs)).Return(nil)
+		i.On("CreateLockfile", util.NewAbsolutePath(destPath.String(), fs), false).Return(nil)
 		return i, nil
 	}
 
@@ -161,7 +161,7 @@ func (s *PostPackagesRScanSuite) TestServeHTTPWithSaveNameInSubdir() {
 		existsFuncOverride util.ExistsFunc,
 	) (interpreters.RInterpreter, error) {
 		i := interpreters.NewMockRInterpreter()
-		i.On("CreateLockfile", destPath).Return(nil)
+		i.On("CreateLockfile", destPath, false).Return(nil)
 		return i, nil
 	}
 
@@ -194,7 +194,7 @@ func (s *PostPackagesRScanSuite) TestServeHTTPErr() {
 	) (interpreters.RInterpreter, error) {
 		i := interpreters.NewMockRInterpreter()
 		i.On("Init").Return(nil)
-		i.On("CreateLockfile", destPath).Return(testError)
+		i.On("CreateLockfile", destPath, false).Return(testError)
 		return i, nil
 	}
 
@@ -232,7 +232,7 @@ func (s *PostPackagesRScanSuite) TestServeHTTPSubdir() {
 	) (interpreters.RInterpreter, error) {
 		i := interpreters.NewMockRInterpreter()
 		i.On("Init").Return(nil)
-		i.On("CreateLockfile", destPath).Return(nil)
+		i.On("CreateLockfile", destPath, false).Return(nil)
 		return i, nil
 	}
 
