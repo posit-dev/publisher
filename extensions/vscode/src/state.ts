@@ -1,6 +1,6 @@
-// Copyright (C) 2024 by Posit Software, PBC.
+// Copyright (C) 2025 by Posit Software, PBC.
 
-import { Disposable, Event, EventEmitter, Memento, window } from "vscode";
+import { Disposable, env, Event, EventEmitter, Memento, window } from "vscode";
 
 import {
   Configuration,
@@ -35,6 +35,10 @@ import {
   getProductType,
   isConnectCloudProduct,
 } from "./utils/multiStepHelpers";
+import {
+  ConnectCloudTrafficType,
+  recordAddConnectCloudUrlParams,
+} from "./utils/connectCloudHelpers";
 
 function findContentRecord<
   T extends ContentRecord | PreContentRecord | PreContentRecordWithConfig,
@@ -162,7 +166,11 @@ export class PublisherState implements Disposable {
         selection.deploymentName,
         selection.projectDir,
       );
-      const cr = response.data;
+      const cr = recordAddConnectCloudUrlParams(
+        response.data,
+        env.appName,
+        ConnectCloudTrafficType.CONTENT,
+      );
       if (!isContentRecordError(cr)) {
         // its not foolproof, but it may help
         if (!this.findContentRecord(cr.saveName, cr.projectDir)) {
@@ -263,9 +271,15 @@ export class PublisherState implements Disposable {
         const response = await api.contentRecords.getAll(".", {
           recursive: true,
         });
-
+        const contentRecords = response.data.map((record) =>
+          recordAddConnectCloudUrlParams(
+            record,
+            env.appName,
+            ConnectCloudTrafficType.CONTENT,
+          ),
+        );
         // Currently we filter out any Content Records in error
-        this.contentRecords = response.data.filter(
+        this.contentRecords = contentRecords.filter(
           (
             r,
           ): r is
