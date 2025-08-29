@@ -7,18 +7,18 @@ concurrency:
   cancel-in-progress: true
 jobs:
   # Linting and formatting
-  # lint:
-  #   uses: ./.github/workflows/lint.yaml
+  lint:
+    uses: ./.github/workflows/lint.yaml
   # Unit Tests
-  # home-view-unit-tests:
-  #   uses: ./.github/workflows/home-view-unit-test.yaml
-  # agent:
-  #   uses: ./.github/workflows/agent.yaml
-  # vscode:
-  #   uses: ./.github/workflows/vscode.yaml
+  home-view-unit-tests:
+    uses: ./.github/workflows/home-view-unit-test.yaml
+  agent:
+    uses: ./.github/workflows/agent.yaml
+  vscode:
+    uses: ./.github/workflows/vscode.yaml
   # E2E Tests
   e2e:
-    needs: [package]
+    needs: [home-view-unit-tests, agent, vscode, package]
     uses: ./.github/workflows/e2e.yaml
     secrets: inherit
 
@@ -28,12 +28,12 @@ jobs:
   package:
     needs: build
     uses: ./.github/workflows/package.yaml
-  # archive:
-  #   needs: build
-  #   uses: ./.github/workflows/archive.yaml
-  # upload:
-  #   needs:
-  #     - archive
-  #     - package
-  #   uses: ./.github/workflows/upload.yaml
-  #   secrets: inherit
+  archive:
+    needs: build
+    uses: ./.github/workflows/archive.yaml
+  upload:
+    needs:
+      - archive
+      - package
+    uses: ./.github/workflows/upload.yaml
+    secrets: inherit
