@@ -10,12 +10,14 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
+	"github.com/spf13/afero"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/spf13/afero"
-	"github.com/stretchr/testify/suite"
 )
 
 type DeleteConfigurationSuite struct {
@@ -43,7 +45,7 @@ func (s *DeleteConfigurationSuite) SetupTest() {
 func createSampleConfiguration(root util.AbsolutePath, name string) (*config.Config, error) {
 	path := config.GetConfigPath(root, name)
 	cfg := config.New()
-	cfg.Type = config.ContentTypePythonDash
+	cfg.Type = contenttypes.ContentTypePythonDash
 	cfg.Entrypoint = "app.py"
 	return cfg, cfg.WriteFile(path)
 }

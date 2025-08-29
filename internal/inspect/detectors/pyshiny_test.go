@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/schema"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
@@ -41,7 +42,7 @@ func (s *PyShinySuite) TestInferType() {
 	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypePythonShiny,
+		Type:       contenttypes.ContentTypePythonShiny,
 		Entrypoint: filename,
 		Validate:   &validate,
 		Files:      []string{fmt.Sprintf("/%s", filename)},
@@ -67,7 +68,7 @@ func (s *PyShinySuite) TestInferTypeShinyExpress() {
 	validate := true
 	s.Equal(&config.Config{
 		Schema:              schema.ConfigSchemaURL,
-		Type:                config.ContentTypePythonShiny,
+		Type:                contenttypes.ContentTypePythonShiny,
 		Entrypoint:          "app.py",
 		EntrypointObjectRef: "shiny.express.app:app_2e_py",
 		Validate:            &validate,
@@ -98,7 +99,7 @@ func (s *PyShinySuite) TestInferTypeWithEntrypoint() {
 	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypePythonShiny,
+		Type:       contenttypes.ContentTypePythonShiny,
 		Entrypoint: filename,
 		Validate:   &validate,
 		Files:      []string{fmt.Sprintf("/%s", filename)},
@@ -127,7 +128,7 @@ func (s *PyShinySuite) TestInferTypeWithExtraFile() {
 	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypePythonShiny,
+		Type:       contenttypes.ContentTypePythonShiny,
 		Entrypoint: filename,
 		Validate:   &validate,
 		Files:      []string{fmt.Sprintf("/%s", filename)},

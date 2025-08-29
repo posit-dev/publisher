@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
@@ -45,7 +46,7 @@ func (s *GetConfigurationsSuite) makeConfiguration(name string) *config.Config {
 	path := config.GetConfigPath(s.cwd, name)
 	cfg := config.New()
 	cfg.ProductType = config.ProductTypeConnect
-	cfg.Type = config.ContentTypePythonDash
+	cfg.Type = contenttypes.ContentTypePythonDash
 	cfg.Entrypoint = "app.py"
 	cfg.Python = &config.Python{
 		Version:        "3.4.5",
@@ -169,7 +170,7 @@ func (s *GetConfigurationsSuite) TestGetConfigurationsByEntrypoint() {
 	matchingConfig := s.makeConfiguration("matching")
 	path := config.GetConfigPath(s.cwd, "nonmatching")
 	nonMatchingConfig := config.New()
-	nonMatchingConfig.Type = config.ContentTypeHTML
+	nonMatchingConfig.Type = contenttypes.ContentTypeHTML
 	nonMatchingConfig.Entrypoint = "index.html"
 	err := nonMatchingConfig.WriteFile(path)
 	s.NoError(err)
@@ -209,7 +210,7 @@ func (s *GetConfigurationsSuite) makeSubdirConfiguration(name string, subdir str
 	path := config.GetConfigPath(subdirPath, name)
 	cfg := config.New()
 	cfg.ProductType = config.ProductTypeConnect
-	cfg.Type = config.ContentTypePythonDash
+	cfg.Type = contenttypes.ContentTypePythonDash
 
 	// make entrypoints unique by subdirectory for filtering
 	cfg.Entrypoint = subdir + ".py"

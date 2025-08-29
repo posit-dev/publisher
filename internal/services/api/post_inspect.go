@@ -12,6 +12,7 @@ import (
 
 	"github.com/posit-dev/publisher/internal/bundles/matcher"
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/initialize"
 	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
@@ -141,7 +142,7 @@ func (h *postInspectHandler) Handle(w http.ResponseWriter, req *http.Request) {
 			h.log.Debug("Possible configurations found for entrypoint", "path", entrypointPath.String(), "configs_len", len(configs))
 
 			for _, cfg := range configs {
-				if cfg.Type == config.ContentTypeUnknown {
+				if cfg.Type == contenttypes.ContentTypeUnknown {
 					h.log.Debug("Unknown configuration found, skipping", "entrypoint", cfg.Entrypoint)
 					continue
 				}

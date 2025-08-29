@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/executor/executortest"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/schema"
@@ -83,7 +84,7 @@ func (s *QuartoDetectorSuite) TestInferTypeMarkdownDoc() {
 	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypeQuarto,
+		Type:       contenttypes.ContentTypeQuarto,
 		Entrypoint: "quarto-doc-none.qmd",
 		Title:      "quarto-doc-none",
 		Validate:   &validate,
@@ -98,7 +99,7 @@ func (s *QuartoDetectorSuite) TestInferTypeMarkdownDoc() {
 		Alternatives: []config.Config{
 			{
 				Schema:     schema.ConfigSchemaURL,
-				Type:       config.ContentTypeHTML,
+				Type:       contenttypes.ContentTypeHTML,
 				Entrypoint: "quarto-doc-none.html",
 				Title:      "quarto-doc-none",
 				Validate:   &validate,
@@ -120,7 +121,7 @@ func (s *QuartoDetectorSuite) TestInferTypeMarkdownProject() {
 	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypeQuarto,
+		Type:       contenttypes.ContentTypeQuarto,
 		Entrypoint: "quarto-proj-none.qmd",
 		Title:      "quarto-proj-none",
 		Validate:   &validate,
@@ -132,7 +133,7 @@ func (s *QuartoDetectorSuite) TestInferTypeMarkdownProject() {
 		Alternatives: []config.Config{
 			{
 				Schema:     schema.ConfigSchemaURL,
-				Type:       config.ContentTypeHTML,
+				Type:       contenttypes.ContentTypeHTML,
 				Entrypoint: "quarto-proj-none.html",
 				Title:      "quarto-proj-none",
 				Validate:   &validate,
@@ -153,7 +154,7 @@ func (s *QuartoDetectorSuite) TestInferTypeMarkdownProjectWindows() {
 	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypeQuarto,
+		Type:       contenttypes.ContentTypeQuarto,
 		Entrypoint: "quarto-proj-none.qmd",
 		Title:      "quarto-proj-none",
 		Validate:   &validate,
@@ -165,7 +166,7 @@ func (s *QuartoDetectorSuite) TestInferTypeMarkdownProjectWindows() {
 		Alternatives: []config.Config{
 			{
 				Schema:     schema.ConfigSchemaURL,
-				Type:       config.ContentTypeHTML,
+				Type:       contenttypes.ContentTypeHTML,
 				Entrypoint: "quarto-proj-none.html",
 				Title:      "quarto-proj-none",
 				Validate:   &validate,
@@ -186,7 +187,7 @@ func (s *QuartoDetectorSuite) TestInferTypePythonProject() {
 	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypeQuarto,
+		Type:       contenttypes.ContentTypeQuarto,
 		Entrypoint: "quarto-proj-py.qmd",
 		Title:      "quarto-proj-py",
 		Validate:   &validate,
@@ -199,7 +200,7 @@ func (s *QuartoDetectorSuite) TestInferTypePythonProject() {
 		Alternatives: []config.Config{
 			{
 				Schema:     schema.ConfigSchemaURL,
-				Type:       config.ContentTypeHTML,
+				Type:       contenttypes.ContentTypeHTML,
 				Entrypoint: "quarto-proj-py.html",
 				Title:      "quarto-proj-py",
 				Validate:   &validate,
@@ -220,7 +221,7 @@ func (s *QuartoDetectorSuite) TestInferTypeRProject() {
 	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypeQuarto,
+		Type:       contenttypes.ContentTypeQuarto,
 		Entrypoint: "quarto-proj-r.qmd",
 		Title:      "quarto-proj-r",
 		Validate:   &validate,
@@ -233,7 +234,7 @@ func (s *QuartoDetectorSuite) TestInferTypeRProject() {
 		Alternatives: []config.Config{
 			{
 				Schema:     schema.ConfigSchemaURL,
-				Type:       config.ContentTypeHTML,
+				Type:       contenttypes.ContentTypeHTML,
 				Entrypoint: "quarto-proj-r.html",
 				Title:      "quarto-proj-r",
 				Validate:   &validate,
@@ -254,7 +255,7 @@ func (s *QuartoDetectorSuite) TestInferTypeRAndPythonProject() {
 	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypeQuarto,
+		Type:       contenttypes.ContentTypeQuarto,
 		Entrypoint: "quarto-proj-r-py.qmd",
 		Title:      "quarto-proj-r-py",
 		Validate:   &validate,
@@ -268,7 +269,7 @@ func (s *QuartoDetectorSuite) TestInferTypeRAndPythonProject() {
 		Alternatives: []config.Config{
 			{
 				Schema:     schema.ConfigSchemaURL,
-				Type:       config.ContentTypeHTML,
+				Type:       contenttypes.ContentTypeHTML,
 				Entrypoint: "quarto-proj-r-py.html",
 				Title:      "quarto-proj-r-py",
 				Validate:   &validate,
@@ -289,7 +290,7 @@ func (s *QuartoDetectorSuite) TestInferTypeRShinyProject() {
 	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypeQuartoShiny,
+		Type:       contenttypes.ContentTypeQuartoShiny,
 		Entrypoint: "quarto-proj-r-shiny.qmd",
 		Title:      "quarto-proj-r-shiny",
 		Validate:   &validate,
@@ -311,7 +312,7 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoWebsite() {
 	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypeQuarto,
+		Type:       contenttypes.ContentTypeQuarto,
 		Entrypoint: "about.qmd",
 		Title:      "About",
 		Validate:   &validate,
@@ -323,8 +324,8 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoWebsite() {
 		Alternatives: []config.Config{
 			{
 				Schema:     schema.ConfigSchemaURL,
-				Type:       config.ContentTypeHTML,
-				Entrypoint: "_site",
+				Type:       contenttypes.ContentTypeHTML,
+				Entrypoint: "_site/about.html",
 				Title:      "About",
 				Validate:   &validate,
 				Files: []string{
@@ -335,7 +336,7 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoWebsite() {
 	}, configs[0])
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypeQuarto,
+		Type:       contenttypes.ContentTypeQuarto,
 		Entrypoint: "index.qmd",
 		Title:      "quarto-website-none",
 		Validate:   &validate,
@@ -352,8 +353,8 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoWebsite() {
 		Alternatives: []config.Config{
 			{
 				Schema:     schema.ConfigSchemaURL,
-				Type:       config.ContentTypeHTML,
-				Entrypoint: "_site",
+				Type:       contenttypes.ContentTypeHTML,
+				Entrypoint: "_site/index.html",
 				Title:      "quarto-website-none",
 				Validate:   &validate,
 				Files: []string{
@@ -402,7 +403,7 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoWebsite_viaQuartoYml() {
 	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypeQuarto,
+		Type:       contenttypes.ContentTypeQuarto,
 		Entrypoint: "_quarto.yml",
 		Title:      "Content Dashboard",
 		Validate:   &validate,
@@ -425,8 +426,8 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoWebsite_viaQuartoYml() {
 		Alternatives: []config.Config{
 			{
 				Schema:     schema.ConfigSchemaURL,
-				Type:       config.ContentTypeHTML,
-				Entrypoint: "_site",
+				Type:       contenttypes.ContentTypeHTML,
+				Entrypoint: "_site/index.html",
 				Title:      "Content Dashboard",
 				Validate:   &validate,
 				Files: []string{
@@ -446,7 +447,7 @@ func (s *QuartoDetectorSuite) TestInferTypeRMarkdownDoc() {
 	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypeQuarto,
+		Type:       contenttypes.ContentTypeQuarto,
 		Entrypoint: "static.Rmd",
 		Title:      "static",
 		Validate:   &validate,
@@ -461,7 +462,7 @@ func (s *QuartoDetectorSuite) TestInferTypeRMarkdownDoc() {
 		Alternatives: []config.Config{
 			{
 				Schema:     schema.ConfigSchemaURL,
-				Type:       config.ContentTypeHTML,
+				Type:       contenttypes.ContentTypeHTML,
 				Entrypoint: "static.html",
 				Title:      "static",
 				Validate:   &validate,
@@ -482,7 +483,7 @@ func (s *QuartoDetectorSuite) TestInferTypeMultidocProject() {
 	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypeQuarto,
+		Type:       contenttypes.ContentTypeQuarto,
 		Entrypoint: "document1.qmd",
 		Title:      "quarto-proj-none-multidocument",
 		Validate:   &validate,
@@ -494,20 +495,22 @@ func (s *QuartoDetectorSuite) TestInferTypeMultidocProject() {
 		Alternatives: []config.Config{
 			{
 				Schema:     schema.ConfigSchemaURL,
-				Type:       config.ContentTypeHTML,
+				Type:       contenttypes.ContentTypeHTML,
 				Entrypoint: "document1.html",
 				Title:      "quarto-proj-none-multidocument",
 				Validate:   &validate,
 				Files: []string{
 					"/document1.html",
+					"/document1_files",
 					"/document2.html",
+					"/document2_files",
 				},
 			},
 		},
 	}, configs[0])
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypeQuarto,
+		Type:       contenttypes.ContentTypeQuarto,
 		Entrypoint: "document2.qmd",
 		Title:      "quarto-proj-none-multidocument",
 		Validate:   &validate,
@@ -519,13 +522,15 @@ func (s *QuartoDetectorSuite) TestInferTypeMultidocProject() {
 		Alternatives: []config.Config{
 			{
 				Schema:     schema.ConfigSchemaURL,
-				Type:       config.ContentTypeHTML,
+				Type:       contenttypes.ContentTypeHTML,
 				Entrypoint: "document1.html",
 				Title:      "quarto-proj-none-multidocument",
 				Validate:   &validate,
 				Files: []string{
 					"/document1.html",
+					"/document1_files",
 					"/document2.html",
+					"/document2_files",
 				},
 			},
 		},
@@ -541,7 +546,7 @@ func (s *QuartoDetectorSuite) TestInferTypeNotebook() {
 	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypeQuarto,
+		Type:       contenttypes.ContentTypeQuarto,
 		Entrypoint: "stock-report-jupyter.ipynb",
 		Title:      "Stock Report: TSLA",
 		Validate:   &validate,
@@ -554,7 +559,7 @@ func (s *QuartoDetectorSuite) TestInferTypeNotebook() {
 		Alternatives: []config.Config{
 			{
 				Schema:     schema.ConfigSchemaURL,
-				Type:       config.ContentTypeHTML,
+				Type:       contenttypes.ContentTypeHTML,
 				Entrypoint: "stock-report-jupyter.html",
 				Title:      "Stock Report: TSLA",
 				Validate:   &validate,
@@ -575,7 +580,7 @@ func (s *QuartoDetectorSuite) TestInferTypeRevalJSQuartoShiny() {
 	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypeQuartoShiny,
+		Type:       contenttypes.ContentTypeQuartoShiny,
 		Entrypoint: "dashboard.qmd",
 		Title:      "posit::conf(2024)",
 		Validate:   &validate,
@@ -597,7 +602,7 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoScriptPy() {
 	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypeQuarto,
+		Type:       contenttypes.ContentTypeQuarto,
 		Entrypoint: "script.py",
 		Title:      "Penguin data transformations",
 		Validate:   &validate,
@@ -619,7 +624,7 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoScriptR() {
 	validate := true
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypeQuarto,
+		Type:       contenttypes.ContentTypeQuarto,
 		Entrypoint: "script.R",
 		Title:      "Penguin data transformations",
 		Validate:   &validate,

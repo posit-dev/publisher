@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/server_type"
 
 	"github.com/pelletier/go-toml/v2"
@@ -27,19 +28,19 @@ var DeploymentRecordMutex sync.Mutex
 
 type Deployment struct {
 	// Predeployment and full deployment fields
-	Schema        string                 `toml:"$schema" json:"$schema"`
-	ServerType    server_type.ServerType `toml:"server_type" json:"serverType"`
-	ServerURL     string                 `toml:"server_url" json:"serverUrl"`
-	ClientVersion string                 `toml:"client_version" json:"-"`
-	CreatedAt     string                 `toml:"created_at" json:"createdAt"`
-	DismissedAt   string                 `toml:"dismissed_at" json:"dismissedAt"`
-	Type          config.ContentType     `toml:"type" json:"type"`
-	ConfigName    string                 `toml:"configuration_name" json:"configurationName"`
-	ID            types.ContentID        `toml:"id,omitempty" json:"id"`
-	DashboardURL  string                 `toml:"dashboard_url,omitempty" json:"dashboardUrl"`
-	DirectURL     string                 `toml:"direct_url,omitempty" json:"directUrl"`
-	LogsURL       string                 `toml:"logs_url,omitempty" json:"logsUrl"`
-	ConnectCloud  *ConnectCloud          `toml:"connect_cloud,omitempty" json:"connectCloud"`
+	Schema        string                   `toml:"$schema" json:"$schema"`
+	ServerType    server_type.ServerType   `toml:"server_type" json:"serverType"`
+	ServerURL     string                   `toml:"server_url" json:"serverUrl"`
+	ClientVersion string                   `toml:"client_version" json:"-"`
+	CreatedAt     string                   `toml:"created_at" json:"createdAt"`
+	DismissedAt   string                   `toml:"dismissed_at" json:"dismissedAt"`
+	Type          contenttypes.ContentType `toml:"type" json:"type"`
+	ConfigName    string                   `toml:"configuration_name" json:"configurationName"`
+	ID            types.ContentID          `toml:"id,omitempty" json:"id"`
+	DashboardURL  string                   `toml:"dashboard_url,omitempty" json:"dashboardUrl"`
+	DirectURL     string                   `toml:"direct_url,omitempty" json:"directUrl"`
+	LogsURL       string                   `toml:"logs_url,omitempty" json:"logsUrl"`
+	ConnectCloud  *ConnectCloud            `toml:"connect_cloud,omitempty" json:"connectCloud"`
 
 	// Full deployment fields
 	DeployedAt    string            `toml:"deployed_at,omitempty" json:"deployedAt"`
@@ -70,7 +71,7 @@ func New() *Deployment {
 		Schema:        schema.DeploymentSchemaURL,
 		ServerType:    server_type.ServerTypeConnect,
 		ClientVersion: project.Version,
-		Type:          config.ContentTypeUnknown,
+		Type:          contenttypes.ContentTypeUnknown,
 		CreatedAt:     time.Now().Format(time.RFC3339),
 	}
 }

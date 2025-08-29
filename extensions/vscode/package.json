@@ -58,18 +58,10 @@
             "type": "string",
             "default": ""
           },
-          "positPublisher.enableConnectCloud": {
-            "markdownDescription": "🧪 Controls whether Posit Connect Cloud support is available. This is a new feature in active development.",
-            "type": "boolean",
-            "default": false,
-            "tags": [
-              "experimental"
-            ]
-          },
           "positPublisher.autoOpenLogsOnFailure": {
             "markdownDescription": "Opens Publisher logs automatically on a failed deploy",
             "type": "boolean",
-            "default": false
+            "default": true
           }
         }
       }

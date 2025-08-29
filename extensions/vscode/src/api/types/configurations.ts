@@ -111,6 +111,7 @@ export const contentTypeStrings = {
 
 export type ConfigurationDetails = {
   $schema: SchemaURL;
+  alternatives?: ConfigurationDetails[];
   productType: ProductType;
   type: ContentType;
   entrypoint?: string;
