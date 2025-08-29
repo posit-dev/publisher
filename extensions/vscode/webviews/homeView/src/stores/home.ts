@@ -41,7 +41,22 @@ export const useHomeStore = defineStore("home", () => {
   const serverSecrets = ref<Set<string>>(new Set());
   const secrets = ref(new Map<string, string | undefined>());
 
-  const integrationRequests = ref<IntegrationRequest[]>([]);
+  const integrationRequests = computed({
+    get: (): IntegrationRequest[] => {
+      const config = selectedConfiguration.value;
+      if (config === undefined || isConfigurationError(config)) {
+        return [];
+      }
+
+      return config.configuration.integrationRequests || [];
+    },
+    set: (requests: IntegrationRequest[]) => {
+      const config = selectedConfiguration.value;
+      if (config !== undefined && !isConfigurationError(config)) {
+        config.configuration.integrationRequests = requests;
+      }
+    }
+  });
 
   const environment = computed((): Map<string, string> => {
     const result = new Map<string, string>();
@@ -127,18 +142,6 @@ export const useHomeStore = defineStore("home", () => {
     { immediate: true },
   );
 
-  watch(
-    [selectedContentRecord, selectedConfiguration],
-    ([contentRecord, config], [prevContentRecord]) => {
-      if (config === undefined || isConfigurationError(config)) {
-        integrationRequests.value = [];
-        return;
-      }
-
-      integrationRequests.value = config.configuration.integrationRequests || [];
-    },
-    { immediate: true },
-  );
 
   // Always use the content record as the source of truth for the
   // credential. Can be undefined if a Credential is not specified or found.
@@ -309,9 +312,6 @@ export const useHomeStore = defineStore("home", () => {
       .length;
   });
 
-  const clearIntegrations = () => {
-    integrationRequests.value = [];
-  };
 
   const python = {
     active: {
@@ -499,7 +499,6 @@ export const useHomeStore = defineStore("home", () => {
     updateRPackages,
     clearSecretValues,
     secretsWithValueCount,
-    clearIntegrations,
     python,
     r,
     config,
