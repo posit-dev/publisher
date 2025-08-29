@@ -175,7 +175,11 @@ func copyAllFieldsToDesc(pkg Package, manifestPkg *bundles.Package) {
 	// the DESCRIPTION file standard format expected by R package management tools.
 	setIf(desc, "Imports", strings.Join(pkg.Imports, ", "))
 	setIf(desc, "Suggests", strings.Join(pkg.Suggests, ", "))
-	if len(pkg.Requirements) > 0 {
+	setIf(desc, "LinkingTo", strings.Join(pkg.LinkingTo, ", "))
+	// Prefer explicit Depends list if present in the lockfile; otherwise fall back to Requirements
+	if len(pkg.Depends) > 0 {
+		setIf(desc, "Depends", strings.Join(pkg.Depends, ", "))
+	} else if len(pkg.Requirements) > 0 {
 		deps := make([]string, 0, len(pkg.Requirements))
 		for _, dep := range pkg.Requirements {
 			deps = append(deps, string(dep))

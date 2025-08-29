@@ -528,3 +528,65 @@ func (s *LockfilePackageMapperSuite) TestRSPMRepositoryHandling_MissingRemoteRep
 	s.Equal("RSPM", renvPkg.Source)
 	s.Equal("https://packagemanager.rstudio.com/all/latest", renvPkg.Repository)
 }
+
+func (s *LockfilePackageMapperSuite) TestDescriptionFields_FromLockfile() {
+	// Verifies that Description contains Package, Version, Depends, Imports, Suggests, LinkingTo
+	// when provided in renv.lock, with list fields joined by commas.
+	lockfileContent := `{
+		"R": {
+			"Version": "4.3.3",
+			"Repositories": [
+				{ "Name": "CRAN", "URL": "https://cloud.r-project.org" }
+			]
+		},
+		"Packages": {
+			"mypkg": {
+				"Package": "mypkg",
+				"Version": "1.0.0",
+				"Source": "Repository",
+				"Repository": "CRAN",
+				"Depends": [
+					"R (>= 3.5.0)",
+					"foo",
+					"bar"
+				],
+				"Imports": [
+					"glue",
+					"stringr"
+				],
+				"Suggests": [
+					"knitr",
+					"rmarkdown"
+				],
+				"LinkingTo": [
+					"Rcpp",
+					"cpp11 (>= 0.5.0)"
+				],
+				"Hash": "deadbeef"
+			}
+		}
+	}`
+
+	// Create a temporary lockfile
+	tempDirPath := s.T().TempDir()
+	tempDir := util.NewAbsolutePath(tempDirPath, nil)
+	lockfilePath := tempDir.Join("renv.lock")
+	s.NoError(lockfilePath.WriteFile([]byte(lockfileContent), 0644))
+
+	mapper := NewLockfilePackageMapper(tempDir, util.Path{}, s.log)
+	manifestPackages, err := mapper.GetManifestPackagesFromLockfile(lockfilePath)
+	s.NoError(err)
+
+	// Validate presence and formatting of fields in Description
+	s.Contains(manifestPackages, "mypkg")
+	pkg := manifestPackages["mypkg"]
+
+	desc := pkg.Description
+	s.Equal("mypkg", desc["Package"])
+	s.Equal("1.0.0", desc["Version"])
+	// List fields should be comma+space separated strings
+	s.Equal("R (>= 3.5.0), foo, bar", desc["Depends"])
+	s.Equal("glue, stringr", desc["Imports"])
+	s.Equal("knitr, rmarkdown", desc["Suggests"])
+	s.Equal("Rcpp, cpp11 (>= 0.5.0)", desc["LinkingTo"])
+}

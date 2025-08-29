@@ -40,6 +40,7 @@ type Package struct {
 	Source            string        `toml:"source" json:"source"`
 	Repository        RepoURL       `toml:"repository" json:"repository"`
 	Requirements      []PackageName `toml:"requirements,omitempty" json:"requirements"`
+	Depends           []string      `toml:"depends,omitempty" json:"Depends,omitempty"`
 	Hash              string        `toml:"hash" json:"hash"`
 	RemoteType        string        `toml:"remote_type,omitempty" json:"remoteType,omitempty"`
 	RemotePkgRef      string        `toml:"remote_pkg_ref,omitempty" json:"remotePkgRef,omitempty"`
@@ -60,6 +61,7 @@ type Package struct {
 	License            string   `toml:"license,omitempty" json:"License,omitempty"`
 	Imports            []string `toml:"imports,omitempty" json:"Imports,omitempty"`
 	Suggests           []string `toml:"suggests,omitempty" json:"Suggests,omitempty"`
+	LinkingTo          []string `toml:"linkingto,omitempty" json:"LinkingTo,omitempty"`
 	VignetteBuilder    string   `toml:"vignettebuilder,omitempty" json:"VignetteBuilder,omitempty"`
 	RoxygenNote        string   `toml:"roxygennote,omitempty" json:"RoxygenNote,omitempty"`
 	Encoding           string   `toml:"encoding,omitempty" json:"Encoding,omitempty"`
