@@ -28,6 +28,19 @@ Cypress.Commands.add("publisherWebview", () => {
           const body = $target[0].contentDocument?.body;
           if (body) {
             const bodyText = body.innerText || "";
+            // If the webview shows the VS Code placeholder about missing data provider,
+            // force a retry so the test reloads/reattempts activation instead of failing.
+            if (
+              bodyText.includes(
+                "There is no data provider registered that can provide view data",
+              )
+            ) {
+              cy.task(
+                "print",
+                "DEBUG: Publisher webview shows 'no data provider' placeholder — triggering retry/reload",
+              );
+              throw new Error("publisher webview: no data provider registered");
+            }
             const hasAutomationElements =
               body.querySelector("[data-automation]") !== null;
 
@@ -246,6 +259,23 @@ Cypress.Commands.add(
                 );
                 cy.log("Body text preview: " + $body.text().substring(0, 100));
 
+                // If the webview shows the VS Code placeholder about missing data provider,
+                // log and throw to trigger the outer retry/reload flow.
+                const bodyText = ($body && $body.text && $body.text()) || "";
+                if (
+                  bodyText.includes(
+                    "There is no data provider registered that can provide view data",
+                  )
+                ) {
+                  cy.task(
+                    "print",
+                    "DEBUG: Extreme finder detected 'no data provider' placeholder — triggering retry/reload",
+                  );
+                  throw new Error(
+                    "publisher webview: no data provider registered (extreme)",
+                  );
+                }
+
                 if (attempt < maxAttempts) {
                   // eslint-disable-next-line cypress/no-unnecessary-waiting
                   cy.wait(5000); // Wait longer between content checks
@@ -254,33 +284,24 @@ Cypress.Commands.add(
               }
               return cy.wrap($publisherIframe.eq(0));
             });
+        } else {
+          cy.log("[Extreme] No publisher iframe found, retrying...");
+          if (attempt < maxAttempts) {
+            // eslint-disable-next-line cypress/no-unnecessary-waiting
+            cy.wait(2000); // Wait before retrying
+            return attemptFindIframe(attempt + 1, maxAttempts);
+          }
         }
-
-        // Try to find by class and ready state
-        const $readyIframe = $iframes.filter((i, el) => {
-          return (
-            el.className &&
-            el.className.includes("webview") &&
-            el.className.includes("ready")
-          );
-        });
-
-        if ($readyIframe.length > 0) {
-          cy.log("[Extreme] Found ready webview iframe!");
-          return cy.wrap($readyIframe.eq(0));
-        }
-
-        if (attempt < maxAttempts) {
-          // eslint-disable-next-line cypress/no-unnecessary-waiting
-          cy.wait(3000); // Wait longer between attempts
-          cy.reload(); // Try reloading the page
-          return attemptFindIframe(attempt + 1, maxAttempts);
-        }
-
-        throw new Error("Publisher iframe not found after exhaustive search");
       });
     }
 
-    return attemptFindIframe();
+    return attemptFindIframe().then(($iframe) => {
+      if ($iframe.length === 0) {
+        throw new Error(
+          "Publisher iframe not found after extreme search attempts",
+        );
+      }
+      return $iframe;
+    });
   },
 );

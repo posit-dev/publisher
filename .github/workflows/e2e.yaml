@@ -127,6 +127,7 @@ jobs:
             fi
             sleep 2
           done
+          sleep 2
 
       - name: Install and wait for VS Code extension to be ready
         working-directory: test/e2e
@@ -135,19 +136,29 @@ jobs:
           VSIX_FILENAME=$(ls -Art ../../dist | grep linux-amd64 | tail -n 1)
           docker compose exec code-server code-server --install-extension "/home/coder/vsix/${VSIX_FILENAME}"
 
-          # Wait for the extension to be installed (more reliable than process grep)
+          # Wait for the extension to be installed (more attempts, shorter sleep)
           echo "Waiting for Publisher extension to be installed..."
-          for i in {1..60}; do
+          for i in {1..90}; do
             if docker compose exec code-server code-server --list-extensions | grep -q posit.publisher; then
               echo "Publisher extension appears to be installed!"
               break
             fi
-            if [ $i -eq 60 ]; then
+            if [ $i -eq 90 ]; then
               echo "WARNING: Timeout waiting for Publisher extension to be installed"
             fi
-            echo "Waiting for extension installation (attempt $i/60)..."
-            sleep 2
+            echo "Waiting for extension installation (attempt $i/90)..."
+            sleep 1
           done
+
+      - name: Verify Publisher extension installed (fail fast)
+        working-directory: test/e2e
+        run: |
+          if ! docker compose exec code-server code-server --list-extensions | grep -q posit.publisher; then
+            echo "ERROR: Publisher extension not found in code-server; aborting tests"
+            echo "=== Recent code-server logs ==="
+            docker compose exec code-server bash -lc 'cat /root/.local/share/code-server/coder-logs/code-server-*.log 2>/dev/null || true'
+            exit 1
+          fi
 
       - name: "[DEBUG] Print workspace file ownership before tests"
         if: always() && (env.DEBUG_CYPRESS == 'true' || runner.debug)
@@ -170,6 +181,23 @@ jobs:
           DEBUG_CYPRESS: ${{ env.DEBUG_CYPRESS }}
           ACTIONS_STEP_DEBUG: ${{ runner.debug && 'true' || 'false' }}
           PCC_USER_CCQA3: ${{ secrets.PCC_USER_CCQA3 }}
+
+      - name: Collect extension logs (failure)
+        if: failure()
+        working-directory: test/e2e
+        run: |
+          mkdir -p test/e2e/cypress/artifacts
+          # Create a tarball of extension / code-server logs inside the container and copy it out
+          docker compose exec code-server bash -lc 'mkdir -p /tmp/extension-logs && find /root -type f -name "*.log" -maxdepth 4 -exec cp --parents {} /tmp/extension-logs/ \; || true; tar -czf /tmp/extension-logs.tgz -C /tmp extension-logs || true'
+          docker cp publisher-e2e.code-server:/tmp/extension-logs.tgz test/e2e/cypress/artifacts/extension-logs.tgz || true
+
+      - name: Upload extension logs artifact
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-logs
+          path: test/e2e/cypress/artifacts/extension-logs.tgz
+          if-no-files-found: ignore
 
       - name: Upload Cypress screenshots on failure
         uses: actions/upload-artifact@v4
@@ -215,9 +243,8 @@ jobs:
       - name: "[DEBUG] Print Publisher extension logs"
         if: always() && (env.DEBUG_CYPRESS == 'true' || runner.debug)
         run: |
-          echo "=== Finding Publisher logs ==="
-          docker exec publisher-e2e.code-server bash -c 'find /root -type f -name "*.log" 2>/dev/null | grep -i "posit\|publisher" || echo "No publisher logs found"'
-          docker exec publisher-e2e.code-server bash -c 'find /home -type f -name "*.log" 2>/dev/null | grep -i "posit\|publisher" || echo "No publisher logs found"'
+          echo "=== Finding Publisher logs (tail) ==="
+          docker exec publisher-e2e.code-server bash -lc 'find /root /home -type f -name "*.log" 2>/dev/null | grep -i "posit\|publisher" | while read -r file; do echo "---- FILE: $file ----"; tail -n 200 "$file" || true; done' || echo "No publisher logs found"
           echo "======================================="
 
       - name: "[DEBUG] Print code-server container logs"
