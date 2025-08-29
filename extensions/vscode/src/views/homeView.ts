@@ -106,10 +106,7 @@ import {
   isConnectCloudProduct,
   isConnectProduct,
 } from "src/utils/multiStepHelpers";
-import {
-  ConnectCloudTrafficType,
-  recordAddConnectCloudUrlParams,
-} from "src/utils/connectCloudHelpers";
+import { recordAddConnectCloudUrlParams } from "src/utils/connectCloudHelpers";
 
 enum HomeViewInitialized {
   initialized = "initialized",
@@ -1691,11 +1688,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           recursive: false,
         });
         const contentRecords = response.data.map((record) =>
-          recordAddConnectCloudUrlParams(
-            record,
-            env.appName,
-            ConnectCloudTrafficType.CONTENT,
-          ),
+          recordAddConnectCloudUrlParams(record, env.appName),
         );
         contentRecords.forEach((cfg) => {
           if (!isContentRecordError(cfg)) {

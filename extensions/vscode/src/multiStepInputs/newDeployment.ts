@@ -57,10 +57,7 @@ import {
   isConnectCloud,
   getProductType,
 } from "src/utils/multiStepHelpers";
-import {
-  ConnectCloudTrafficType,
-  recordAddConnectCloudUrlParams,
-} from "src/utils/connectCloudHelpers";
+import { recordAddConnectCloudUrlParams } from "src/utils/connectCloudHelpers";
 
 const viewTitle = "Create a New Deployment";
 
@@ -295,11 +292,7 @@ export async function newDeployment(
         },
       );
       const contentRecordList = response.data.map((record) =>
-        recordAddConnectCloudUrlParams(
-          record,
-          env.appName,
-          ConnectCloudTrafficType.CONTENT,
-        ),
+        recordAddConnectCloudUrlParams(record, env.appName),
       );
       // Note.. we want all of the contentRecord filenames regardless if they are valid or not.
       contentRecordList.forEach((contentRecord) => {

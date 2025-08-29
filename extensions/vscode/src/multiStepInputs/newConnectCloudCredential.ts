@@ -31,10 +31,7 @@ import {
   CONNECT_CLOUD_SIGNUP_URL,
 } from "src/constants";
 import { getPublishableAccounts } from "src/utils/multiStepHelpers";
-import {
-  ConnectCloudTrafficType,
-  getConnectCloudTrafficParams,
-} from "src/utils/connectCloudHelpers";
+import { getConnectCloudTrafficParams } from "src/utils/connectCloudHelpers";
 
 export async function newConnectCloudCredential(
   viewId: string,
@@ -412,14 +409,9 @@ export async function newConnectCloudCredential(
         stepFunc = (input: MultiStepInput) =>
           steps[step.RETRIEVE_ACCOUNTS](input, state);
         skipStepHistory = true;
-
-        const trafficParams = getConnectCloudTrafficParams(
-          env.appName,
-          ConnectCloudTrafficType.AUTH,
-        );
         // populate the account polling props
         connectCloudData.shouldPoll = true;
-        connectCloudData.accountUrl = `${CONNECT_CLOUD_ACCOUNT_URL}${trafficParams}`;
+        connectCloudData.accountUrl = `${CONNECT_CLOUD_ACCOUNT_URL}${getConnectCloudTrafficParams(env.appName)}`;
       }
     }
 
@@ -485,14 +477,9 @@ export async function newConnectCloudCredential(
 
     // populate the sign up url
     connectCloudData.signupUrl = CONNECT_CLOUD_SIGNUP_URL;
-
-    const trafficParams = getConnectCloudTrafficParams(
-      env.appName,
-      ConnectCloudTrafficType.AUTH,
-    );
     // populate the account polling props
     connectCloudData.shouldPoll = true;
-    connectCloudData.accountUrl = `${CONNECT_CLOUD_ACCOUNT_URL}${trafficParams}`;
+    connectCloudData.accountUrl = `${CONNECT_CLOUD_ACCOUNT_URL}${getConnectCloudTrafficParams(env.appName)}`;
 
     // go to the authenticate step again to have the user sign up for an individual plan
     return {

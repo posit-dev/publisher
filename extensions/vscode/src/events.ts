@@ -7,21 +7,14 @@ import { Readable } from "stream";
 
 import { Events, EventStreamMessage, ProductType } from "src/api";
 import { getProductName } from "src/utils/multiStepHelpers";
-import {
-  ConnectCloudTrafficType,
-  msgAddConnectCloudUrlParams,
-} from "./utils/connectCloudHelpers";
+import { msgAddConnectCloudUrlParams } from "./utils/connectCloudHelpers";
 
 export type EventStreamRegistration = (message: EventStreamMessage) => void;
 
 export type UnregisterCallback = { unregister: () => void };
 
 export function displayEventStreamMessage(msg: EventStreamMessage): string {
-  msg = msgAddConnectCloudUrlParams(
-    msg,
-    env.appName,
-    ConnectCloudTrafficType.CONTENT,
-  );
+  msg = msgAddConnectCloudUrlParams(msg, env.appName);
 
   if (msg.type === "publish/checkCapabilities/log") {
     if (msg.data.username) {

@@ -35,10 +35,7 @@ import {
   getProductType,
   isConnectCloudProduct,
 } from "./utils/multiStepHelpers";
-import {
-  ConnectCloudTrafficType,
-  recordAddConnectCloudUrlParams,
-} from "./utils/connectCloudHelpers";
+import { recordAddConnectCloudUrlParams } from "./utils/connectCloudHelpers";
 
 function findContentRecord<
   T extends ContentRecord | PreContentRecord | PreContentRecordWithConfig,
@@ -166,11 +163,7 @@ export class PublisherState implements Disposable {
         selection.deploymentName,
         selection.projectDir,
       );
-      const cr = recordAddConnectCloudUrlParams(
-        response.data,
-        env.appName,
-        ConnectCloudTrafficType.CONTENT,
-      );
+      const cr = recordAddConnectCloudUrlParams(response.data, env.appName);
       if (!isContentRecordError(cr)) {
         // its not foolproof, but it may help
         if (!this.findContentRecord(cr.saveName, cr.projectDir)) {
@@ -272,11 +265,7 @@ export class PublisherState implements Disposable {
           recursive: true,
         });
         const contentRecords = response.data.map((record) =>
-          recordAddConnectCloudUrlParams(
-            record,
-            env.appName,
-            ConnectCloudTrafficType.CONTENT,
-          ),
+          recordAddConnectCloudUrlParams(record, env.appName),
         );
         // Currently we filter out any Content Records in error
         this.contentRecords = contentRecords.filter(

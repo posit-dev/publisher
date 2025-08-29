@@ -9,19 +9,10 @@ import {
 } from "src/api";
 import { getProductType, isConnectCloudProduct } from "./multiStepHelpers";
 
-export enum ConnectCloudTrafficType {
-  AUTH = "auth",
-  CONTENT = "content",
-}
-
 // traffic params are used in Connect Cloud to gather data about
 // the traffic coming from Publisher usage to Connect Cloud
-export const getConnectCloudTrafficParams = (
-  ideName: string,
-  type: ConnectCloudTrafficType,
-) => {
-  ideName = ideName.trim().toLowerCase().replaceAll(" ", "-");
-  return `?utm_source=publisher-${ideName}&utm_medium=ide&utm_campaign=${type}`;
+export const getConnectCloudTrafficParams = (ideName: string) => {
+  return `?utm_source=publisher-${ideName.trim().toLowerCase().replaceAll(" ", "-")}`;
 };
 
 // given a valid content record add the Connect Cloud traffict params
@@ -29,12 +20,11 @@ export const getConnectCloudTrafficParams = (
 export const recordAddConnectCloudUrlParams = (
   record: AllContentRecordTypes,
   ideName: string,
-  type: ConnectCloudTrafficType,
 ) => {
   if (!isContentRecordError(record)) {
     const productType = getProductType(record.serverType);
     if (isConnectCloudProduct(productType)) {
-      const params = getConnectCloudTrafficParams(ideName, type);
+      const params = getConnectCloudTrafficParams(ideName);
       if (record.dashboardUrl && !record.dashboardUrl.includes(params)) {
         record.dashboardUrl += `${params}`;
       }
@@ -55,10 +45,9 @@ export const recordAddConnectCloudUrlParams = (
 export const msgAddConnectCloudUrlParams = (
   msg: EventStreamMessage,
   ideName: string,
-  type: ConnectCloudTrafficType,
 ) => {
   if (isConnectCloudProduct(msg.data.productType as ProductType)) {
-    const params = getConnectCloudTrafficParams(ideName, type);
+    const params = getConnectCloudTrafficParams(ideName);
     if (msg.data?.dashboardUrl && !msg.data.dashboardUrl.includes(params)) {
       msg.data.dashboardUrl += `${params}`;
     }
