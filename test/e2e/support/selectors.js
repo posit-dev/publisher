@@ -28,6 +28,19 @@ Cypress.Commands.add("publisherWebview", () => {
           const body = $target[0].contentDocument?.body;
           if (body) {
             const bodyText = body.innerText || "";
+            // If the webview shows the VS Code placeholder about missing data provider,
+            // force a retry so the test reloads/reattempts activation instead of failing.
+            if (
+              bodyText.includes(
+                "There is no data provider registered that can provide view data",
+              )
+            ) {
+              cy.task(
+                "print",
+                "DEBUG: Publisher webview shows 'no data provider' placeholder — triggering retry/reload",
+              );
+              throw new Error("publisher webview: no data provider registered");
+            }
             const hasAutomationElements =
               body.querySelector("[data-automation]") !== null;
 
@@ -208,83 +221,87 @@ Cypress.Commands.add(
     function attemptFindIframe(attempt = 1, maxAttempts = 10) {
       cy.log(`[Extreme] Iframe find attempt ${attempt}/${maxAttempts}`);
 
-      return cy
-        .get("iframe", { timeout: 10000, log: false })
-        .then(($iframes) => {
-          cy.log(`[Extreme] Found ${$iframes.length} iframes`);
+      return cy.get("iframe", { log: false }).then(($iframes) => {
+        cy.log(`[Extreme] Found ${$iframes.length} iframes`);
 
-          // Log all iframes for debugging
-          $iframes.each((i, iframe) => {
-            cy.log(
-              `iframe[${i}] class=${iframe.className} id=${iframe.id} src=${iframe.src}`,
-            );
-          });
+        // Log all iframes for debugging
+        $iframes.each((i, iframe) => {
+          cy.log(
+            `iframe[${i}] class=${iframe.className} id=${iframe.id} src=${iframe.src}`,
+          );
+        });
 
-          // Try to find by publisher extension ID in src
-          const $publisherIframe = $iframes.filter((i, el) => {
-            return el.src && el.src.includes("extensionId=posit.publisher");
-          });
+        // Try to find by publisher extension ID in src
+        const $publisherIframe = $iframes.filter((i, el) => {
+          return el.src && el.src.includes("extensionId=posit.publisher");
+        });
 
-          if ($publisherIframe.length > 0) {
-            cy.log("[Extreme] Found publisher iframe by extensionId!");
+        if ($publisherIframe.length > 0) {
+          cy.log("[Extreme] Found publisher iframe by extensionId!");
 
-            // Wait for iframe content to be ready with retry logic
-            return cy
-              .wrap($publisherIframe.eq(0))
-              .its("0.contentDocument.body", { timeout: 5000 })
-              .should("not.be.empty")
-              .then(($body) => {
-                // Check if content is actually loaded
-                const hasContent =
-                  $body.text().includes("Posit") ||
-                  $body.find("[data-automation]").length > 0;
+          // Wait for iframe content to be ready with retry logic
+          return cy
+            .wrap($publisherIframe.eq(0))
+            .its("0.contentDocument.body")
+            .should("not.be.empty")
+            .then(($body) => {
+              // Check if content is actually loaded
+              const hasContent =
+                $body.text().includes("Posit") ||
+                $body.find("[data-automation]").length > 0;
 
-                if (hasContent) {
-                  cy.log("[Extreme] Publisher webview content loaded!");
-                  return cy.wrap($publisherIframe.eq(0));
-                } else {
-                  cy.log(
-                    "[Extreme] Publisher iframe found but content not loaded yet",
-                  );
-                  cy.log(
-                    "Body text preview: " + $body.text().substring(0, 100),
-                  );
-
-                  if (attempt < maxAttempts) {
-                    // eslint-disable-next-line cypress/no-unnecessary-waiting
-                    cy.wait(5000); // Wait longer between content checks
-                    return attemptFindIframe(attempt + 1, maxAttempts);
-                  }
-                }
+              if (hasContent) {
+                cy.log("[Extreme] Publisher webview content loaded!");
                 return cy.wrap($publisherIframe.eq(0));
-              });
-          }
+              } else {
+                cy.log(
+                  "[Extreme] Publisher iframe found but content not loaded yet",
+                );
+                cy.log("Body text preview: " + $body.text().substring(0, 100));
 
-          // Try to find by class and ready state
-          const $readyIframe = $iframes.filter((i, el) => {
-            return (
-              el.className &&
-              el.className.includes("webview") &&
-              el.className.includes("ready")
-            );
-          });
+                // If the webview shows the VS Code placeholder about missing data provider,
+                // log and throw to trigger the outer retry/reload flow.
+                const bodyText = ($body && $body.text && $body.text()) || "";
+                if (
+                  bodyText.includes(
+                    "There is no data provider registered that can provide view data",
+                  )
+                ) {
+                  cy.task(
+                    "print",
+                    "DEBUG: Extreme finder detected 'no data provider' placeholder — triggering retry/reload",
+                  );
+                  throw new Error(
+                    "publisher webview: no data provider registered (extreme)",
+                  );
+                }
 
-          if ($readyIframe.length > 0) {
-            cy.log("[Extreme] Found ready webview iframe!");
-            return cy.wrap($readyIframe.eq(0));
-          }
-
+                if (attempt < maxAttempts) {
+                  // eslint-disable-next-line cypress/no-unnecessary-waiting
+                  cy.wait(5000); // Wait longer between content checks
+                  return attemptFindIframe(attempt + 1, maxAttempts);
+                }
+              }
+              return cy.wrap($publisherIframe.eq(0));
+            });
+        } else {
+          cy.log("[Extreme] No publisher iframe found, retrying...");
           if (attempt < maxAttempts) {
             // eslint-disable-next-line cypress/no-unnecessary-waiting
-            cy.wait(3000); // Wait longer between attempts
-            cy.reload(); // Try reloading the page
+            cy.wait(2000); // Wait before retrying
             return attemptFindIframe(attempt + 1, maxAttempts);
           }
-
-          throw new Error("Publisher iframe not found after exhaustive search");
-        });
+        }
+      });
     }
 
-    return attemptFindIframe();
+    return attemptFindIframe().then(($iframe) => {
+      if ($iframe.length === 0) {
+        throw new Error(
+          "Publisher iframe not found after extreme search attempts",
+        );
+      }
+      return $iframe;
+    });
   },
 );

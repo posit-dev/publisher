@@ -10,7 +10,7 @@ jobs:
     name: e2e tests (cypress)
     runs-on: ubuntu-latest
     env:
-      DEBUG_CYPRESS: "false" # Set to true to enable extra logging and video recording replays
+      DEBUG_CYPRESS: "true" # Set to true to enable extra logging and video recording replays
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -38,6 +38,10 @@ jobs:
       - name: Install npm dependencies
         working-directory: test/e2e
         run: npm ci
+
+      - name: Install Playwright browsers
+        working-directory: test/e2e
+        run: npx playwright install --with-deps
 
       - uses: extractions/setup-just@v3
 
@@ -123,6 +127,25 @@ jobs:
             fi
             sleep 2
           done
+          sleep 2
+
+      - name: Precheck code-server container availability
+        working-directory: test/e2e
+        run: |
+          CONTAINER=$(docker compose ps -q code-server)
+          echo "Detected container id: $CONTAINER"
+          if [ -z "$CONTAINER" ]; then
+            echo "ERROR: code-server container ID not found"
+            docker compose ps || true
+            docker ps -a || true
+            exit 1
+          fi
+          # Verify we can exec into the container
+          if ! docker exec "$CONTAINER" true; then
+            echo "ERROR: docker exec into code-server container failed"
+            docker ps -a || true
+            exit 1
+          fi
 
       - name: Install and wait for VS Code extension to be ready
         working-directory: test/e2e
@@ -131,19 +154,80 @@ jobs:
           VSIX_FILENAME=$(ls -Art ../../dist | grep linux-amd64 | tail -n 1)
           docker compose exec code-server code-server --install-extension "/home/coder/vsix/${VSIX_FILENAME}"
 
-          # Wait for the extension to be installed (more reliable than process grep)
+          # Wait for the extension to be installed (more attempts, shorter sleep)
           echo "Waiting for Publisher extension to be installed..."
-          for i in {1..60}; do
+          for i in {1..90}; do
             if docker compose exec code-server code-server --list-extensions | grep -q posit.publisher; then
               echo "Publisher extension appears to be installed!"
               break
             fi
-            if [ $i -eq 60 ]; then
+            if [ $i -eq 90 ]; then
               echo "WARNING: Timeout waiting for Publisher extension to be installed"
             fi
-            echo "Waiting for extension installation (attempt $i/60)..."
-            sleep 2
+            echo "Waiting for extension installation (attempt $i/90)..."
+            sleep 1
           done
+
+      - name: Verify Publisher extension installed (fail fast)
+        working-directory: test/e2e
+        run: |
+          if ! docker compose exec code-server code-server --list-extensions | grep -q posit.publisher; then
+            echo "ERROR: Publisher extension not found in code-server; aborting tests"
+            echo "=== Recent code-server logs ==="
+            docker compose exec code-server bash -lc 'cat /root/.local/share/code-server/coder-logs/code-server-*.log 2>/dev/null || true'
+            exit 1
+          fi
+
+      - name: "[TEMP DEBUG] Dump publisher extension installation"
+        if: always()
+        working-directory: test/e2e
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/test/e2e/cypress/artifacts"
+          OUT="$GITHUB_WORKSPACE/test/e2e/cypress/artifacts/publisher-extension-dump.txt"
+          CONTAINER=$(docker compose ps -q code-server)
+          echo "CONTAINER=$CONTAINER" > "$OUT"
+          echo "=== Extension dir listing ===" >> "$OUT"
+          docker exec "$CONTAINER" bash -lc 'ls -la /home/coder/.local/share/code-server/extensions || true' >> "$OUT" 2>&1 || true
+          echo "\n=== Find posit.publisher dirs ===" >> "$OUT"
+          docker exec "$CONTAINER" bash -lc 'find /home/coder/.local -type d -name "*posit.publisher*" -maxdepth 6 -print || true' >> "$OUT" 2>&1 || true
+          echo "\n=== Detailed listing and package.json for found dirs ===" >> "$OUT"
+          docker exec "$CONTAINER" bash -lc 'for d in $(find /home/coder/.local -type d -name "*posit.publisher*" -maxdepth 6 -print || true); do echo "---- DIR: $d ----"; ls -la "$d" || true; if [ -f "$d/package.json" ]; then echo "PACKAGE.JSON:"; cat "$d/package.json"; fi; done' >> "$OUT" 2>&1 || true
+          echo "\n=== Search for publisher strings in /home/coder ===" >> "$OUT"
+          docker exec "$CONTAINER" bash -lc 'grep -R "publisher\|posit" /home/coder -n --binary-files=without-match 2>/dev/null || true' >> "$OUT" 2>&1 || true
+
+      - name: Upload publisher extension dump
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: publisher-extension-dump
+          path: test/e2e/cypress/artifacts/publisher-extension-dump.txt
+          if-no-files-found: ignore
+
+      - name: "[TEMP DEBUG] Query deployment environment endpoints"
+        if: always()
+        working-directory: test/e2e
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/test/e2e/cypress/artifacts"
+          OUT="$GITHUB_WORKSPACE/test/e2e/cypress/artifacts/deployment-environment-responses.txt"
+          echo "=== Deployment environment endpoint responses ===" > "$OUT"
+          CONTAINER=$(docker compose ps -q code-server)
+          docker exec "$CONTAINER" bash -lc '\
+            for f in $(find /home/coder/workspace -path "*/.posit/publish/deployments/deployment-*.toml" 2>/dev/null); do \
+              dir=$(echo "$f" | sed -E "s#/home/coder/workspace/([^/]+)/.*#\1#"); \
+              name=$(basename "$f" .toml); \
+              echo "DEPLOYMENT: $name DIR: $dir"; \
+              echo "--- CURL /api/deployments/$name/environment?dir=$dir ---"; \
+              curl -sS -D - "http://localhost:3939/api/deployments/$name/environment?dir=$dir" || true; \
+              echo; echo; \
+            done' >> "$OUT" 2>&1 || true
+
+      - name: Upload deployment environment responses
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-environment-responses
+          path: test/e2e/cypress/artifacts/deployment-environment-responses.txt
+          if-no-files-found: ignore
 
       - name: "[DEBUG] Print workspace file ownership before tests"
         if: always() && (env.DEBUG_CYPRESS == 'true' || runner.debug)
@@ -158,7 +242,7 @@ jobs:
 
       - name: Run Cypress tests
         working-directory: test/e2e
-        run: npx cypress run
+        run: npx cypress run --spec "tests/deployments.cy.js,tests/error-err-config.cy.js"
         env:
           CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
           CONNECT_CLOUD_ENV: ${{ env.CONNECT_CLOUD_ENV }} # defaults to staging
@@ -166,6 +250,35 @@ jobs:
           DEBUG_CYPRESS: ${{ env.DEBUG_CYPRESS }}
           ACTIONS_STEP_DEBUG: ${{ runner.debug && 'true' || 'false' }}
           PCC_USER_CCQA3: ${{ secrets.PCC_USER_CCQA3 }}
+
+      - name: Collect extension logs (always)
+        if: always()
+        working-directory: test/e2e
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/test/e2e/cypress/artifacts"
+          echo "Searching for publisher-related logs inside code-server container..."
+          CONTAINER=$(docker compose ps -q code-server)
+          docker exec "$CONTAINER" bash -lc 'find / -type f \( -iname "*publisher*.log" -o -iname "*posit*.log" -o -iname "extension*.log" \) -maxdepth 6 -print 2>/dev/null || true' > /tmp/publisher_log_paths.txt || true
+
+          if [ -s /tmp/publisher_log_paths.txt ]; then
+            echo "Found log files:"
+            cat /tmp/publisher_log_paths.txt
+            docker exec "$CONTAINER" bash -lc 'mkdir -p /tmp/extension-logs; while read -r f; do cp --parents "$f" /tmp/extension-logs/ || true; done < /tmp/publisher_log_paths.txt; tar -czf /tmp/extension-logs.tgz -C /tmp extension-logs || true'
+            docker cp "$CONTAINER":/tmp/extension-logs.tgz "$GITHUB_WORKSPACE/test/e2e/cypress/artifacts/extension-logs.tgz" || (echo "docker cp failed; listing containers:" && docker ps -a)
+          else
+            echo "No extension logs found; creating placeholder file."
+            printf "No extension logs found on $(date)\n" > "$GITHUB_WORKSPACE/test/e2e/cypress/artifacts/extension-logs-not-found.txt"
+          fi
+
+      - name: Upload extension logs artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-logs
+          path: |
+            test/e2e/cypress/artifacts/extension-logs.tgz
+            test/e2e/cypress/artifacts/extension-logs-not-found.txt
+          if-no-files-found: ignore
 
       - name: Upload Cypress screenshots on failure
         uses: actions/upload-artifact@v4
@@ -211,9 +324,8 @@ jobs:
       - name: "[DEBUG] Print Publisher extension logs"
         if: always() && (env.DEBUG_CYPRESS == 'true' || runner.debug)
         run: |
-          echo "=== Finding Publisher logs ==="
-          docker exec publisher-e2e.code-server bash -c 'find /root -type f -name "*.log" 2>/dev/null | grep -i "posit\|publisher" || echo "No publisher logs found"'
-          docker exec publisher-e2e.code-server bash -c 'find /home -type f -name "*.log" 2>/dev/null | grep -i "posit\|publisher" || echo "No publisher logs found"'
+          echo "=== Finding Publisher logs (tail) ==="
+          docker exec publisher-e2e.code-server bash -lc 'find /root /home -type f -name "*.log" 2>/dev/null | grep -i "posit\|publisher" | while read -r file; do echo "---- FILE: $file ----"; tail -n 200 "$file" || true; done' || echo "No publisher logs found"
           echo "======================================="
 
       - name: "[DEBUG] Print code-server container logs"

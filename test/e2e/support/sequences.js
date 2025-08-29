@@ -14,8 +14,9 @@
 //   }
 // })
 
+// Connect Server deployment sequence
 Cypress.Commands.add(
-  "createDeployment",
+  "createPCSDeployment",
   (
     projectDir, // string
     entrypointFile, // string
@@ -26,6 +27,14 @@ Cypress.Commands.add(
     cy.on("uncaught:exception", () => false);
 
     // Open the entrypoint ahead of time for easier selection later.
+    // Always open the Explorer before interacting with the file tree
+    cy.get("body").then(($body) => {
+      if ($body.find(".explorer-viewlet:visible").length === 0) {
+        cy.get("a.codicon-explorer-view-icon").first().click();
+        cy.get(".explorer-viewlet").should("be.visible");
+      }
+    });
+
     // expand the subdirectory
     if (projectDir !== ".") {
       cy.get(".explorer-viewlet").find(`[aria-label="${projectDir}"]`).click();
@@ -43,13 +52,12 @@ Cypress.Commands.add(
       .should("be.visible");
 
     // activate the publisher extension
-    cy.getPublisherSidebarIcon()
-      .should("be.visible", { timeout: 10000 })
-      .click();
-
-    // Small wait to allow the UI to settle in CI before proceeding
-    // eslint-disable-next-line cypress/no-unnecessary-waiting
-    cy.wait(1000);
+    cy.getPublisherSidebarIcon().should("be.visible").click();
+    cy.publisherWebview()
+      .findByTestId("select-deployment")
+      .should("be.visible");
+    // Add a log to indicate UI is ready
+    cy.log("DEBUG: select-deployment button is visible, UI should be ready");
 
     // Create a new deployment via the select-deployment button
     cy.publisherWebview()
@@ -61,7 +69,7 @@ Cypress.Commands.add(
     // Ux displayed via quick input
     // This has taken longer than 4 seconds on some laptops, so we're increasing
     // the timeout
-    cy.get(".quick-input-widget", { timeout: 10000 }).should("be.visible");
+    cy.get(".quick-input-widget").should("be.visible");
 
     // confirm we've got the correct sequence
     cy.get(".quick-input-titlebar").should("have.text", "Select Deployment");
@@ -106,28 +114,257 @@ Cypress.Commands.add(
     return cy
       .getPublisherTomlFilePaths(projectDir)
       .then((filePaths) => {
-        let result = {
-          config: {
-            name: filePaths.config.name,
-            path: filePaths.config.path,
-            contents: {},
-          },
-          contentRecord: {
-            name: filePaths.contentRecord.name,
-            path: filePaths.contentRecord.path,
-            contents: {},
-          },
-        };
-        cy.loadTomlFile(filePaths.config.path)
-          .then((config) => {
-            result.config.contents = config;
+        // Debug: print the filePaths object and the specific contentRecord path
+        cy.task(
+          "print",
+          `DEBUG: getPublisherTomlFilePaths: ${JSON.stringify(filePaths)}`,
+        );
+        cy.task(
+          "print",
+          `DEBUG: contentRecord.path before readFile: ${filePaths.contentRecord.path}`,
+        );
+        // Debug: list the publish directory so CI logs contain current files
+        cy.exec(
+          "ls -la content-workspace/" + projectDir + "/.posit/publish || true",
+        ).then((res) => {
+          cy.task("print", `DEBUG: publish dir listing:\n${res.stdout}`);
+        });
+
+        const contentPath = filePaths.contentRecord.path;
+        const contentDir = contentPath.replace(/\/[^/]+$/, "");
+
+        // Poll the publish directory until a deployment-*.toml appears; pick the newest
+        cy.retryWithBackoff(
+          () =>
+            cy
+              .exec(
+                `bash -lc 'ls -1t "${contentDir}"/deployment-*.toml 2>/dev/null | head -n1 || true'`,
+                { failOnNonZero: false },
+              )
+              .then((res) => {
+                const out = (res && res.stdout && res.stdout.trim()) || "";
+                if (out) {
+                  const first = out.split(/\r?\n/)[0].trim();
+                  const foundPath = first.includes("/")
+                    ? first
+                    : `${contentDir}/${first}`;
+                  return foundPath;
+                }
+                throw new Error("no deployment TOML found yet");
+              }),
+          24,
+          2500,
+        )
+          .then((foundPath) => {
+            // Now read the discovered file (with a generous timeout as a fallback)
+            return cy
+              .readFile(foundPath, { timeout: 120000 })
+              .then(() => ({ foundPath }));
           })
-          .loadTomlFile(filePaths.contentRecord.path)
-          .then((contentRecord) => {
-            result.contentRecord.contents = contentRecord;
+          .then(({ foundPath }) => {
+            let result = {
+              config: {
+                name: filePaths.config.name,
+                path: filePaths.config.path,
+                contents: {},
+              },
+              contentRecord: {
+                name: filePaths.contentRecord.name,
+                path: filePaths.contentRecord.path,
+                contents: {},
+              },
+            };
+            // load config and the actually-found contentRecord
+            cy.loadTomlFile(filePaths.config.path)
+              .then((config) => {
+                result.config.contents = config;
+              })
+              .then(() => cy.loadTomlFile(foundPath))
+              .then((contentRecord) => {
+                result.contentRecord.contents = contentRecord;
+                // update the result paths/names to the discovered file
+                result.contentRecord.path = foundPath;
+                result.contentRecord.name = foundPath.split("/").pop();
+              })
+              .then(() => {
+                return result;
+              });
+          });
+      })
+      .then((tomlFiles) => {
+        return verifyTomlCallback(tomlFiles);
+      });
+  },
+);
+
+// Connect Cloud deployment sequence
+Cypress.Commands.add(
+  "createPCCDeployment",
+  (
+    projectDir, // string
+    entrypointFile, // string
+    title, // string
+    verifyTomlCallback, // func
+    filesToSelect = [], // array of file/dir names to select in the file selection pane (optional)
+  ) => {
+    cy.on("uncaught:exception", () => false);
+
+    cy.get("body").then(($body) => {
+      if ($body.find(".explorer-viewlet:visible").length === 0) {
+        cy.get("a.codicon-explorer-view-icon").first().click();
+        cy.get(".explorer-viewlet").should("be.visible");
+      }
+    });
+
+    if (projectDir !== ".") {
+      cy.get(".explorer-viewlet").find(`[aria-label="${projectDir}"]`).click();
+    }
+
+    cy.get(".explorer-viewlet")
+      .find(`[aria-label="${entrypointFile}"]`)
+      .should("be.visible")
+      .dblclick();
+
+    cy.get(".tabs-container")
+      .find(`[aria-label="${entrypointFile}"]`)
+      .should("be.visible");
+
+    // activate the publisher extension
+    cy.getPublisherSidebarIcon().should("be.visible").click();
+    cy.publisherWebview()
+      .findByTestId("select-deployment")
+      .should("be.visible");
+    // Add a log to indicate UI is ready
+    cy.log("DEBUG: select-deployment button is visible, UI should be ready");
+
+    cy.publisherWebview()
+      .findByTestId("select-deployment")
+      .then((dplyPicker) => {
+        Cypress.$(dplyPicker).trigger("click");
+      });
+
+    cy.get(".quick-input-widget").should("be.visible");
+    cy.get(".quick-input-titlebar").should("have.text", "Select Deployment");
+    cy.get(".quick-input-list")
+      .find(
+        '[aria-label="Create a New Deployment, (or pick one of the existing deployments below), New"]',
+      )
+      .should("be.visible")
+      .click();
+
+    let targetLabel = `${projectDir}/${entrypointFile}, Open Files`;
+    if (projectDir === ".") {
+      targetLabel = `${entrypointFile}, Open Files`;
+    }
+
+    cy.get(".quick-input-widget")
+      .find(`[aria-label="${targetLabel}"]`)
+      .should("be.visible")
+      .click();
+
+    cy.get(".quick-input-widget")
+      .find(".quick-input-filter input")
+      .type(`${title}{enter}`);
+
+    cy.get(".quick-input-widget")
+      .contains(".quick-input-list-row", "pcc-deploy-credential")
+      .should("be.visible")
+      .click();
+
+    // If filesToSelect is provided and not empty, select additional files
+    if (Array.isArray(filesToSelect) && filesToSelect.length > 0) {
+      filesToSelect.forEach((fileOrDir) => {
+        cy.publisherWebview()
+          .find('[data-automation="project-files"]')
+          .find(`vscode-checkbox[aria-label="${fileOrDir}"]`)
+          .should("exist")
+          .then(($checkbox) => {
+            if ($checkbox.attr("aria-checked") !== "true") {
+              cy.wrap($checkbox).click({ force: true });
+            }
           })
-          .then(() => {
-            return result;
+          .should("have.attr", "aria-checked", "true");
+      });
+    }
+
+    return cy
+      .getPublisherTomlFilePaths(projectDir)
+      .then((filePaths) => {
+        // Debug: print the filePaths object and the specific contentRecord path
+        cy.task(
+          "print",
+          `DEBUG: getPublisherTomlFilePaths: ${JSON.stringify(filePaths)}`,
+        );
+        cy.task(
+          "print",
+          `DEBUG: contentRecord.path before readFile: ${filePaths.contentRecord.path}`,
+        );
+        // Debug: list the publish directory so CI logs contain current files
+        cy.exec(
+          "ls -la content-workspace/" + projectDir + "/.posit/publish || true",
+        ).then((res) => {
+          cy.task("print", `DEBUG: publish dir listing:\n${res.stdout}`);
+        });
+
+        const contentPath = filePaths.contentRecord.path;
+        const contentDir = contentPath.replace(/\/[^/]+$/, "");
+
+        // Poll the publish directory until a deployment-*.toml appears; pick the newest
+        cy.retryWithBackoff(
+          () =>
+            cy
+              .exec(
+                `bash -lc 'ls -1t "${contentDir}"/deployment-*.toml 2>/dev/null | head -n1 || true'`,
+                { failOnNonZero: false },
+              )
+              .then((res) => {
+                const out = (res && res.stdout && res.stdout.trim()) || "";
+                if (out) {
+                  const first = out.split(/\r?\n/)[0].trim();
+                  const foundPath = first.includes("/")
+                    ? first
+                    : `${contentDir}/${first}`;
+                  return foundPath;
+                }
+                throw new Error("no deployment TOML found yet");
+              }),
+          24,
+          2500,
+        )
+          .then((foundPath) => {
+            // Now read the discovered file (with a generous timeout as a fallback)
+            return cy
+              .readFile(foundPath, { timeout: 120000 })
+              .then(() => ({ foundPath }));
+          })
+          .then(({ foundPath }) => {
+            let result = {
+              config: {
+                name: filePaths.config.name,
+                path: filePaths.config.path,
+                contents: {},
+              },
+              contentRecord: {
+                name: filePaths.contentRecord.name,
+                path: filePaths.contentRecord.path,
+                contents: {},
+              },
+            };
+            // load config and the actually-found contentRecord
+            cy.loadTomlFile(filePaths.config.path)
+              .then((config) => {
+                result.config.contents = config;
+              })
+              .then(() => cy.loadTomlFile(foundPath))
+              .then((contentRecord) => {
+                result.contentRecord.contents = contentRecord;
+                // update the result paths/names to the discovered file
+                result.contentRecord.path = foundPath;
+                result.contentRecord.name = foundPath.split("/").pop();
+              })
+              .then(() => {
+                return result;
+              });
           });
       })
       .then((tomlFiles) => {
@@ -143,9 +380,8 @@ Cypress.Commands.add("deployCurrentlySelected", () => {
     .then((dplyBtn) => {
       Cypress.$(dplyBtn).trigger("click");
     });
-
-  // Wait for deploying  message to finish
-  cy.get(".notifications-toasts")
+  // Wait for deploying message to finish
+  cy.get(".notifications-toasts", { timeout: 30000 })
     .should("be.visible")
     .findByText("Deploying your project: Starting to Deploy...")
     .should("not.exist");

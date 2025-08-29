@@ -6,9 +6,7 @@ describe("Common", () => {
   });
 
   it("Publisher extension can be selected and initial state", () => {
-    cy.getPublisherSidebarIcon()
-      .should("be.visible", { timeout: 10000 })
-      .click();
+    cy.getPublisherSidebarIcon().should("be.visible").click();
     cy.waitForPublisherIframe(); // Wait after triggering extension
     cy.debugIframes();
     cy.retryWithBackoff(

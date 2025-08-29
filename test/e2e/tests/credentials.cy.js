@@ -7,10 +7,12 @@ describe("Credentials Section", () => {
     cy.visit("/");
   });
 
-  it("New Connect Server Credential", () => {
-    cy.getPublisherSidebarIcon()
-      .should("be.visible", { timeout: 10000 })
-      .click();
+  afterEach(() => {
+    cy.resetCredentials();
+  });
+
+  it("New PCS Credential", () => {
+    cy.getPublisherSidebarIcon().should("be.visible").click();
     cy.waitForPublisherIframe(); // Wait after triggering extension
     cy.debugIframes();
 
@@ -48,7 +50,7 @@ describe("Credentials Section", () => {
       `http://connect-publisher-e2e:3939{enter}`,
     );
 
-    cy.get(".quick-input-and-message input", { timeout: 10000 }).should(
+    cy.get(".quick-input-and-message input").should(
       "have.attr",
       "placeholder",
       "Select authentication method",
@@ -56,7 +58,7 @@ describe("Credentials Section", () => {
 
     cy.get(".quick-input-list .monaco-list-row").eq(1).click();
 
-    cy.get(".quick-input-message", { timeout: 10000 }).should(
+    cy.get(".quick-input-message").should(
       "include.text",
       "The API key to be used to authenticate with Posit Connect.",
     );
@@ -65,7 +67,7 @@ describe("Credentials Section", () => {
       `${Cypress.env("BOOTSTRAP_ADMIN_API_KEY")}{enter}`,
     );
 
-    cy.get(".quick-input-message", { timeout: 10000 }).should(
+    cy.get(".quick-input-message").should(
       "include.text",
       "Enter a unique nickname for this server.",
     );
@@ -77,114 +79,9 @@ describe("Credentials Section", () => {
       .should("have.text", "admin-code-server");
   });
 
-  it("New Connect Cloud Credential - OAuth Device Code", () => {
+  it("New PCC Credential - OAuth Device Code", () => {
     const user = Cypress.env("pccConfig").pcc_user_ccqa3;
-    cy.getPublisherSidebarIcon()
-      .should("be.visible", { timeout: 10000 })
-      .click();
-
-    cy.toggleCredentialsSection();
-    cy.publisherWebview()
-      .findByText("No credentials have been added yet.")
-      .should("be.visible");
-
-    cy.clickSectionAction("New Credential");
-    cy.get(".quick-input-widget").should("be.visible");
-
-    cy.get(".quick-input-titlebar")
-      .should("have.text", "Create a New Credential")
-      .click();
-
-    cy.get(
-      'input[aria-label*="Please select the platform for the new credential."]',
-    ).should(
-      "have.attr",
-      "placeholder",
-      "Please select the platform for the new credential.",
-    );
-
-    cy.get(".quick-input-list-row")
-      .contains("Posit Connect Cloud")
-      .should("be.visible")
-      .click();
-
-    // Wait for the dialog box to appear and be visible
-    cy.get(".monaco-dialog-box", { timeout: 10000 })
-      .should("be.visible")
-      .should("have.attr", "aria-modal", "true");
-
-    // Handle the OAuth popup window BEFORE clicking Open
-    cy.window().then((win) => {
-      // Override window.open to simulate the popup behavior
-      cy.stub(win, "open")
-        .callsFake((url) => {
-          // Store the OAuth URL for later use
-          win.oauthUrl = url;
-          console.log("OAuth URL captured:", url);
-
-          // Create a mock window object that will simulate closing after OAuth
-          const mockWindow = {
-            closed: false,
-            close: function () {
-              this.closed = true;
-              // Notify the extension that the popup has closed (OAuth completed)
-              setTimeout(() => {
-                win.dispatchEvent(new Event("focus"));
-                console.log(
-                  "OAuth popup closed - extension should check for completion",
-                );
-              }, 100);
-            },
-            focus: () => {},
-            postMessage: () => {},
-          };
-
-          // Store the mock window for later use
-          win.mockOAuthWindow = mockWindow;
-
-          return mockWindow;
-        })
-        .as("windowOpen");
-    });
-
-    // Click the "Open" button to start the OAuth flow
-    cy.get(".monaco-dialog-box .dialog-buttons a.monaco-button")
-      .contains("Open")
-      .should("be.visible")
-      .click();
-
-    // Wait for window.open to be called
-    cy.get("@windowOpen").should("have.been.called");
-
-    // Run the OAuth task with VS Code's captured URL and loaded user credentials
-    cy.window().then((win) => {
-      cy.task(
-        "authenticateOAuthDevice",
-        {
-          email: user.email,
-          password: user.auth.password,
-          oauthUrl: win.oauthUrl, // Pass VS Code's OAuth URL to Playwright
-        },
-        { timeout: 60000 },
-      );
-    });
-
-    // Wait for OAuth completion and VS Code to detect it
-    cy.get(".monaco-dialog-box").should("not.exist", { timeout: 30000 });
-
-    // Wait for the nickname input field to appear
-    cy.get(".quick-input-message", { timeout: 15000 }).should(
-      "include.text",
-      "Enter a unique nickname for this account.",
-    );
-
-    // Continue with credential creation after OAuth success
-    cy.get(".quick-input-and-message input", { timeout: 5000 })
-      .should("exist")
-      .should("be.visible");
-
-    cy.get(".quick-input-widget").type("connect-cloud-credential{enter}");
-
+    cy.addPCCCredential(user, "connect-cloud-credential");
     cy.findInPublisherWebview(
       '[data-automation="connect-cloud-credential-list"]',
     )
@@ -194,9 +91,7 @@ describe("Credentials Section", () => {
 
   it("Existing Credentials Load", () => {
     cy.setDummyCredentials();
-    cy.getPublisherSidebarIcon()
-      .should("be.visible", { timeout: 10000 })
-      .click();
+    cy.getPublisherSidebarIcon().should("be.visible").click();
     cy.waitForPublisherIframe(); // Wait after triggering extension
     cy.debugIframes();
 
@@ -207,21 +102,19 @@ describe("Credentials Section", () => {
       .should("not.exist");
 
     cy.findInPublisherWebview('[data-automation="dummy-credential-one-list"]')
-      .find(".tree-item-title", { timeout: 10000 })
+      .find(".tree-item-title")
       .should("exist")
       .and("have.text", "dummy-credential-one");
 
     cy.findInPublisherWebview('[data-automation="dummy-credential-two-list"]')
-      .find(".tree-item-title", { timeout: 10000 })
+      .find(".tree-item-title")
       .should("exist")
       .and("have.text", "dummy-credential-two");
   });
 
   it("Delete Credential", () => {
     cy.setDummyCredentials();
-    cy.getPublisherSidebarIcon()
-      .should("be.visible", { timeout: 10000 })
-      .click();
+    cy.getPublisherSidebarIcon().should("be.visible").click();
     cy.waitForPublisherIframe(); // Wait after triggering extension
     cy.debugIframes();
 

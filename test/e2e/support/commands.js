@@ -156,7 +156,8 @@ Cypress.Commands.add("getPublisherTomlFilePaths", (projectDir) => {
   let contentRecordFileName = "";
   let contentRecordFilePath = "";
 
-  cy.expandWildcardFile(configTargetDir, "*.toml")
+  return cy
+    .expandWildcardFile(configTargetDir, "*.toml")
     .then((configFile) => {
       configFileName = configFile;
       configFilePath = `${configTargetDir}/${configFile}`;
@@ -181,21 +182,14 @@ Cypress.Commands.add("getPublisherTomlFilePaths", (projectDir) => {
 });
 
 Cypress.Commands.add("expandWildcardFile", (targetDir, wildCardPath) => {
-  return cy
-    .exec("pwd")
-    .then((result) => {
-      return cy.log("CWD", result.stdout);
-    })
-    .then(() => {
-      const cmd = `cd ${targetDir} && file=$(echo ${wildCardPath}) && echo $file`;
-      return cy.exec(cmd);
-    })
-    .then((result) => {
-      if (result.code === 0 && result.stdout) {
-        return result.stdout;
-      }
-      throw new Error(`Could not expandWildcardFile. ${result.stderr}`);
-    });
+  // List all matching files, sort by mtime descending, pick the newest
+  const cmd = `cd ${targetDir} && ls -1t ${wildCardPath} 2>/dev/null | head -n1`;
+  return cy.exec(cmd).then((result) => {
+    if (result.code === 0 && result.stdout) {
+      return result.stdout.trim();
+    }
+    throw new Error(`Could not expandWildcardFile. ${result.stderr}`);
+  });
 });
 
 Cypress.Commands.add("savePublisherFile", (filePath, jsonObject) => {
@@ -236,6 +230,7 @@ Cypress.Commands.add("resetConnect", () => {
 
 // Add a global afterEach to log iframes if a test fails (for CI reliability)
 if (typeof afterEach === "function") {
+  /* eslint-disable-next-line mocha/no-top-level-hooks */
   afterEach(function () {
     if (this.currentTest.state === "failed") {
       cy.debugIframes();
@@ -246,30 +241,63 @@ if (typeof afterEach === "function") {
   });
 }
 
-// Update waitForPublisherIframe to use a longer default timeout for CI reliability
+// Update waitForPublisherIframe to use a quick DOM check and retryWithBackoff for resilience
 Cypress.Commands.add("waitForPublisherIframe", (timeout = 60000) => {
+  const attempts = Math.max(3, Math.ceil(timeout / 1000));
+  const delay = 1000;
+
+  // Quick non-blocking check first
   return cy
-    .get("iframe.webview.ready", { timeout })
-    .should("exist")
-    .then(($iframes) => {
-      // Try to find the publisher iframe by extensionId
-      const $publisherIframe = $iframes.filter((i, el) => {
-        return el.src && el.src.includes("posit.publisher");
-      });
+    .document()
+    .then((doc) => {
+      const initial = doc.querySelectorAll("iframe.webview.ready");
+      if (initial && initial.length) {
+        return initial;
+      }
+
+      // If no iframe found, attempt to open the Publisher sidebar to trigger the webview
+      return cy
+        .getPublisherSidebarIcon({ timeout: 2000 })
+        .then(($icon) => {
+          if ($icon && $icon.length) {
+            cy.wrap($icon).click({ force: true });
+          }
+        })
+        .then(() =>
+          // Poll the document for an iframe.webview.ready using retryWithBackoff
+          cy.retryWithBackoff(
+            () =>
+              cy.document().then((d) => {
+                const iframes = d.querySelectorAll("iframe.webview.ready");
+                if (iframes && iframes.length) {
+                  return iframes;
+                }
+                throw new Error("no publisher iframe yet");
+              }),
+            attempts,
+            delay,
+          ),
+        );
+    })
+    .then((iframes) => {
+      // iframes may be a NodeList; prefer iframe whose src includes the extension id
+      const $publisherIframe = Cypress.$(iframes).filter(
+        (i, el) => el.src && el.src.includes("posit.publisher"),
+      );
       if ($publisherIframe.length > 0) {
         cy.log("Found publisher iframe by extensionId");
         return cy.wrap($publisherIframe[0]);
       }
-      // Fallback: use the first .webview.ready iframe
       cy.log("Falling back to first .webview.ready iframe");
-      return cy.wrap($iframes[0]);
+      // iframes[0] works for NodeList or array-like
+      return cy.wrap(iframes[0]);
     });
 });
 
 // Debug: Waits for all iframes to exist (helps with timing issues in CI).
 // If DEBUG_CYPRESS is "true", also logs iframe attributes for debugging.
 Cypress.Commands.add("debugIframes", () => {
-  cy.get("iframe", { timeout: 20000 }).each(($el, idx) => {
+  cy.get("iframe", { timeout: 30000 }).each(($el, idx) => {
     // Always wait for iframes, but only print if debugging is enabled
     if (Cypress.env("DEBUG_CYPRESS") === "true") {
       cy.wrap($el)
@@ -307,17 +335,32 @@ Cypress.Commands.add(
     let attempt = 0;
     function tryFn() {
       attempt++;
-      return fn().then((result) => {
-        if (result && result.length) {
-          return result;
-        } else if (attempt < maxAttempts) {
-          const delay = initialDelay * Math.pow(2, attempt - 1);
-          cy.wait(delay);
-          return tryFn();
-        } else {
-          throw new Error("Element not found after retries with backoff");
-        }
-      });
+      return cy
+        .wrap(null)
+        .then(() => fn())
+        .then(
+          (result) => {
+            const ok =
+              result &&
+              (result.length ||
+                (typeof result === "object" && Object.keys(result).length));
+            if (ok) {
+              return result;
+            }
+            if (attempt < maxAttempts) {
+              const delay = initialDelay * Math.pow(2, attempt - 1);
+              return cy.wait(delay).then(tryFn);
+            }
+            throw new Error("Element not found after retries with backoff");
+          },
+          (err) => {
+            if (attempt < maxAttempts) {
+              const delay = initialDelay * Math.pow(2, attempt - 1);
+              return cy.wait(delay).then(tryFn);
+            }
+            throw err;
+          },
+        );
     }
     return tryFn();
   },
@@ -391,6 +434,154 @@ Cypress.Commands.add(
 
       // Return the single element
       return cy.wrap(elements);
+    });
+  },
+);
+
+Cypress.Commands.add(
+  "addPCCCredential",
+  (user, nickname = "connect-cloud-credential") => {
+    cy.getPublisherSidebarIcon().should("be.visible").click();
+
+    cy.toggleCredentialsSection();
+    cy.publisherWebview()
+      .findByText("No credentials have been added yet.")
+      .should("be.visible");
+
+    cy.clickSectionAction("New Credential");
+    cy.get(".quick-input-widget").should("be.visible");
+
+    cy.get(".quick-input-titlebar")
+      .should("have.text", "Create a New Credential")
+      .click();
+
+    cy.get(
+      'input[aria-label*="Please select the platform for the new credential."]',
+    ).should(
+      "have.attr",
+      "placeholder",
+      "Please select the platform for the new credential.",
+    );
+
+    cy.get(".quick-input-list-row")
+      .contains("Posit Connect Cloud")
+      .should("be.visible")
+      .click();
+
+    // Wait for the dialog box to appear and be visible
+    cy.get(".monaco-dialog-box")
+      .should("be.visible")
+      .should("have.attr", "aria-modal", "true");
+
+    // Handle the OAuth popup window BEFORE clicking Open
+    cy.window().then((win) => {
+      cy.stub(win, "open")
+        .callsFake((url) => {
+          win.oauthUrl = url;
+          const mockWindow = {
+            closed: false,
+            close: function () {
+              this.closed = true;
+              setTimeout(() => {
+                win.dispatchEvent(new Event("focus"));
+              }, 100);
+            },
+            focus: () => {},
+            postMessage: () => {},
+          };
+          win.mockOAuthWindow = mockWindow;
+          return mockWindow;
+        })
+        .as("windowOpen");
+    });
+
+    // Click the "Open" button to start the OAuth flow
+    cy.get(".monaco-dialog-box .dialog-buttons a.monaco-button")
+      .contains("Open")
+      .should("be.visible")
+      .click();
+
+    // Wait for window.open to be called
+    cy.get("@windowOpen").should("have.been.called");
+
+    // Run the OAuth task with VS Code's captured URL and loaded user credentials
+    cy.window().then((win) => {
+      cy.task(
+        "authenticateOAuthDevice",
+        {
+          email: user.email,
+          password: user.auth.password,
+          oauthUrl: win.oauthUrl,
+        },
+        { timeout: 60000 },
+      );
+    });
+
+    // Wait for OAuth completion and VS Code to detect it
+    cy.get(".monaco-dialog-box").should("not.exist", { timeout: 30000 });
+
+    // Wait for the nickname input field to appear
+    cy.get(".quick-input-message", { timeout: 15000 }).should(
+      "include.text",
+      "Enter a unique nickname for this account.",
+    );
+
+    // Continue with credential creation after OAuth success
+    cy.get(".quick-input-and-message input")
+      .should("exist")
+      .should("be.visible");
+
+    cy.get(".quick-input-widget").type(`${nickname}{enter}`);
+    // No assertion here; do it in the test.
+  },
+);
+
+Cypress.Commands.add(
+  "setPCCCredential",
+  (user, nickname = "pcc-credential") => {
+    cy.task(
+      "runDeviceWorkflow",
+      {
+        email: user.email,
+        password: user.auth.password,
+        env: Cypress.env("PCC_ENV") || "staging",
+      },
+      { timeout: 90000 },
+    ).then((oauthResult) => {
+      cy.getPublisherSidebarIcon()
+        .should("be.visible", { timeout: 15000 })
+        .click({ force: true });
+      const guid = user.guid || "57413399-c622-4806-806a-2e18cb32d550";
+      const version = 3;
+      const server_type = "connect_cloud";
+      const url =
+        Cypress.env("PCC_URL") || "https://staging.connect.posit.cloud";
+      const cloud_environment = Cypress.env("PCC_ENV") || "staging";
+      const refresh_token = oauthResult.refresh_token;
+      const access_token = oauthResult.access_token;
+      const account_id = user.account_id;
+      const account_name = user.account_name;
+      if (!oauthResult || !oauthResult.success) {
+        throw new Error(
+          `Device OAuth failed: ${oauthResult && oauthResult.error}`,
+        );
+      }
+      if (!refresh_token || !access_token || !account_id || !account_name) {
+        throw new Error("Missing required PCC credential fields");
+      }
+      const toml = `
+[credentials.${nickname}]
+guid = '${guid}'
+version = ${version}
+server_type = '${server_type}'
+url = '${url}'
+account_id = '${account_id}'
+account_name = '${account_name}'
+refresh_token = '${refresh_token}'
+access_token = '${access_token}'
+cloud_environment = '${cloud_environment}'
+`;
+      cy.writeFile("e2e-test.connect-credentials", toml);
     });
   },
 );
