@@ -182,7 +182,7 @@ https://www.gnu.org/licenses/.`,
 		{`R version 4.3.0 (2023-04-21) -- "Already Tomorrow"
 				Copyright (C) 2023 The R Foundation for Statistical Computing
 				Platform: x86_64-apple-darwin20 (64-bit)
-				
+
 				R is free software and comes with ABSOLUTELY NO WARRANTY.
 				You are welcome to redistribute it under the terms of the
 				GNU General Public License versions 2 or 3.
@@ -559,7 +559,7 @@ func (s *RSuite) TestCreateLockfileWithInvalidR() {
 	interpreter.fs = s.cwd.Fs()
 	interpreter.rExecutable = util.AbsolutePath{}
 
-	err := interpreter.CreateLockfile(util.NewAbsolutePath("abc/xxy/renv.lock", s.cwd.Fs()))
+	err := interpreter.CreateLockfile(util.NewAbsolutePath("abc/xxy/renv.lock", s.cwd.Fs()), false)
 	s.Error(err)
 	_, ok := types.IsAgentErrorOf(err, types.ErrorRExecNotFound)
 	s.Equal(true, ok)
@@ -578,7 +578,7 @@ func (s *RSuite) TestCreateLockfileWithNonEmptyPath() {
 	interpreter.version = "1.2.3"
 	interpreter.fs = s.cwd.Fs()
 
-	err := i.CreateLockfile(util.NewAbsolutePath("abc/xxy/renv.lock", s.cwd.Fs()))
+	err := i.CreateLockfile(util.NewAbsolutePath("abc/xxy/renv.lock", s.cwd.Fs()), false)
 	s.NoError(err)
 }
 
@@ -595,7 +595,7 @@ func (s *RSuite) TestCreateLockfileWithEmptyPath() {
 	interpreter.version = "1.2.3"
 	interpreter.fs = s.cwd.Fs()
 
-	err := i.CreateLockfile(util.AbsolutePath{})
+	err := i.CreateLockfile(util.AbsolutePath{}, false)
 	s.NoError(err)
 }
 
