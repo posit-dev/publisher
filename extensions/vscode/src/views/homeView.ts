@@ -1162,6 +1162,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   }
 
   public addIntegrationRequest = async (accountName: string) => {
+    const api = await useApi();
     const activeConfig = await this.state.getSelectedConfiguration();
     if (activeConfig === undefined) {
       console.error("homeView::addIntegration: No active configuration.");
@@ -1174,13 +1175,16 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
 
-    let integration;
+    let integration: Integration | undefined;
+    let integrations: Integration[] = [];
     try {
-      const api = await useApi();
-      const response = await api.integrationRequests.getIntegrations(
-        accountName,
-      );
-      integration = await this.showIntegrationQuickPick(response.data);
+      await showProgress("Retreiving Integrations from deployment server", Views.HomeView, async () =>  {
+        const response = await api.integrationRequests.getIntegrations(
+          accountName,
+        );
+        integrations = response.data;
+      });
+      integration = await this.showIntegrationQuickPick(integrations);
     } catch (error: unknown) {
       console.error("Error fetching integrations:", error);
       window.showErrorMessage("Failed to fetch available integrations. Please try again later.");
@@ -1194,13 +1198,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
     try {
       await showProgress("Adding Integration Request", Views.HomeView, async () => {
-        const api = await useApi();
         await api.integrationRequests.add(
           activeConfig.configurationName,
           activeConfig.projectDir,
           {
             guid: integration.guid,
-            name: integration.name,
+            name: integration.name, 
             // description: integration.description,
             // auth_type: integration.auth_type,
             // type: integration.template,
@@ -1342,7 +1345,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     });
 
     const toDispose: Disposable[] = [];
-    const integration = await new Promise<IntegrationQuickPick | undefined>(
+    const result = await new Promise<IntegrationQuickPick | undefined>(
       (resolve) => {
         const quickPick = window.createQuickPick<IntegrationQuickPick>();
         this.disposables.push(quickPick);
@@ -1367,7 +1370,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         quickPick.onDidHide(() => resolve(undefined), undefined, toDispose);
       },
     ).finally(() => Disposable.from(...toDispose).dispose());
-    return integration?.integration;
+    return result?.integration;
   }
 
   private async showDeploymentQuickPick(
