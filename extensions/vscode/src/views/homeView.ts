@@ -813,8 +813,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
 
-    const relPathPackageFile =
-      activeConfiguration.configuration.r.packageFile || "renv.lock";
+    const relPathPackageFile = activeConfiguration.configuration.r.packageFile;
 
     const fileUri = Uri.joinPath(
       this.root.uri,
