@@ -24,6 +24,7 @@ import {
 import { useFileStore } from "src/stores/file";
 import { useHomeStore } from "src/stores/home";
 import { vscodeAPI } from "src/vscode";
+import { IntegrationRequest, useApi } from "../../../src/api";
 
 let hostConduit: HostConduit | undefined = undefined;
 
@@ -252,4 +253,17 @@ const onUpdateServerEnvironmentMsg = (msg: UpdateServerEnvironmentMsg) => {
 const onRefreshIntegrationRequestsMsg = (msg: RefreshIntegrationRequestsMsg) => {
   const home = useHomeStore();
   home.integrationRequests = msg.content.integrationRequests;
+  // useApi().then((api) => {
+  //   api.integrationRequests.getIntegrations(home.serverCredential!.name).then((response) => {
+  //     const integrations = response.data;
+  //     const requests = msg.content.integrationRequests.map((ir) => {
+  //       const matchingIntegration = integrations.find(integration => integration.guid === ir.guid);
+  //       return {
+  //         ...ir,
+  //         name: matchingIntegration?.name || ir.name
+  //       };
+  //     });
+  //     home.integrationRequests = requests;
+  //   });
+  // });
 };

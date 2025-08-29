@@ -1202,7 +1202,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           activeConfig.projectDir,
           {
             guid: integration.guid,
-            name: integration.name, 
+            // name: integration.name, 
             // description: integration.description,
             // auth_type: integration.auth_type,
             // type: integration.template,
