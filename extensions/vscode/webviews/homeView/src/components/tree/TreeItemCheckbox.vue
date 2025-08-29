@@ -32,8 +32,10 @@
         }"
       />
       <vscode-checkbox
+        v-if="title.includes('a')"
         :checked="checked"
         :disabled="disabled"
+        :data-automation="`checkbox-is-checked-${checked}`"
         class="tree-item-checkbox"
         :class="{ 'opacity-100': disableOpacity }"
         @click="checked ? $emit('uncheck') : $emit('check')"
@@ -43,6 +45,12 @@
           {{ description }}
         </span>
       </vscode-checkbox>
+      <CodeCheckbox v-else class="tree-item-checkbox">
+        <span class="tree-item-title">{{ title }}</span>
+        <span v-if="description" class="tree-item-description">
+          {{ description }}
+        </span>
+      </CodeCheckbox>
       <div v-if="actions" class="actions">
         <ActionToolbar :title="title" :actions="actions" />
       </div>
@@ -61,6 +69,7 @@
 import { computed } from "vue";
 
 import ActionToolbar, { ActionButton } from "src/components/ActionToolbar.vue";
+import CodeCheckbox from "src/components/CodeCheckbox.vue";
 
 export type TreeItemStyle = "emphasized" | "default" | "deemphasized";
 
