@@ -202,24 +202,24 @@ export function UpdateConfigWithDefaults(
   // Fill in empty definitions with the current defaults
   // but only if the section is defined (which indicates the dependency)
   if (config.configuration.r !== undefined) {
-    if (config.configuration.r.version === "") {
+    if (!config.configuration.r.version) {
       config.configuration.r.version = defaults.r.version;
     }
-    if (config.configuration.r.packageFile === "") {
+    if (!config.configuration.r.packageFile) {
       config.configuration.r.packageFile = defaults.r.packageFile;
     }
-    if (config.configuration.r.packageManager === "") {
+    if (!config.configuration.r.packageManager) {
       config.configuration.r.packageManager = defaults.r.packageManager;
     }
   }
   if (config.configuration.python !== undefined) {
-    if (config.configuration.python.version === "") {
+    if (!config.configuration.python.version) {
       config.configuration.python.version = defaults.python.version;
     }
-    if (config.configuration.python.packageFile === "") {
+    if (!config.configuration.python.packageFile) {
       config.configuration.python.packageFile = defaults.python.packageFile;
     }
-    if (config.configuration.python.packageManager === "") {
+    if (!config.configuration.python.packageManager) {
       config.configuration.python.packageManager =
         defaults.python.packageManager;
     }
