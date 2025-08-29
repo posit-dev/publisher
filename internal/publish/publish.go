@@ -98,7 +98,8 @@ func NewFromState(
 	rexec, _ := rInterpreter.GetRExecutable()
 	pyexec, _ := pythonInterpreter.GetPythonExecutable()
 
-	packageManager, err := rPackageMapperFactory(s.Dir, rexec.Path, log)
+	// TODO: Switch to using lockfileOnly
+	packageManager, err := rPackageMapperFactory(s.Dir, rexec.Path, log, false)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create R package mapper: %w", err)
 	}

@@ -400,7 +400,7 @@ func (s *PublishConnectSuite) publishWithClient(
 		rPackageMapper.On("GetManifestPackages", mock.Anything, mock.Anything).Return(bundles.PackageMap{}, nil)
 	}
 
-	rPackageMapperFactory = func(base util.AbsolutePath, rExecutable util.Path, log logging.Logger) (renv.PackageMapper, error) {
+	rPackageMapperFactory = func(base util.AbsolutePath, rExecutable util.Path, log logging.Logger, lockfileOnly bool) (renv.PackageMapper, error) {
 		return rPackageMapper, nil
 	}
 
@@ -886,7 +886,7 @@ func (s *PublishConnectCloudSuite) publishWithCloudClient(
 	}
 
 	// Replace factory function
-	rPackageMapperFactory = func(base util.AbsolutePath, rExecutable util.Path, log logging.Logger) (renv.PackageMapper, error) {
+	rPackageMapperFactory = func(base util.AbsolutePath, rExecutable util.Path, log logging.Logger, lockfileOnly bool) (renv.PackageMapper, error) {
 		return rPackageMapper, nil
 	}
 

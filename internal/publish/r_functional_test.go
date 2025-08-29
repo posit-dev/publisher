@@ -106,22 +106,47 @@ func (s *RPublishFunctionalSuite) TestGetRPackagesFunctional() {
 		s.T().Logf("Could not get R executable: %v", err)
 	}
 
-	mapper, err := renv.NewPackageMapper(s.testProjectDir, util.Path{}, s.log)
-	s.Require().NoError(err)
-
-	publisher := &defaultPublisher{
-		log:            s.log,
-		emitter:        s.emitter,
-		rPackageMapper: mapper,
-		PublishHelper:  publishhelper.NewPublishHelper(s.stateStore, s.log),
+	// Test both lockfileOnly approaches
+	testCases := []struct {
+		name         string
+		lockfileOnly bool
+		description  string
+	}{
+		{
+			name:         "R Environment Approach",
+			lockfileOnly: false,
+			description:  "Uses R environment and installed packages (defaultPackageMapper)",
+		},
+		{
+			name:         "Lockfile Only Approach",
+			lockfileOnly: true,
+			description:  "Uses only renv.lock without R environment (LockfilePackageMapper)",
+		},
 	}
 
-	// Actually call getRPackages
-	packageMap, err := publisher.getRPackages(false)
+	for _, tc := range testCases {
+		s.Run(tc.name, func() {
+			s.T().Logf("Testing %s: %s", tc.name, tc.description)
 
-	// we should have a valid package map which includes renv
-	s.Require().Nil(err)
-	s.Require().Contains(packageMap, "renv")
+			mapper, err := renv.NewPackageMapper(s.testProjectDir, util.Path{}, s.log, tc.lockfileOnly)
+			s.Require().NoError(err)
+
+			publisher := &defaultPublisher{
+				log:            s.log,
+				emitter:        s.emitter,
+				rPackageMapper: mapper,
+				PublishHelper:  publishhelper.NewPublishHelper(s.stateStore, s.log),
+			}
+
+			// Actually call getRPackages
+			packageMap, err := publisher.getRPackages(false)
+
+			// Both approaches should have a valid package map which includes renv
+			s.Require().Nil(err)
+			s.Require().Contains(packageMap, "renv")
+			s.T().Logf("Successfully found %d packages using %s", len(packageMap), tc.name)
+		})
+	}
 }
 
 func (s *RPublishFunctionalSuite) TestPublishWithClientFunctional() {
@@ -189,25 +214,39 @@ func (s *RPublishFunctionalSuite) TestPublishWithClientFunctional() {
 		TargetName: "test-deployment",
 	}
 
-	rPackageMapper, err := renv.NewPackageMapper(s.testProjectDir, util.Path{}, s.log)
-	s.Require().NoError(err)
-
-	serverPublisher, err := createServerPublisher(
-		publishhelper.NewPublishHelper(stateStore, s.log),
-		events.NewCapturingEmitter(),
-		s.log)
-	s.NoError(err)
-	publisher := &defaultPublisher{
-		log:             s.log,
-		emitter:         events.NewCapturingEmitter(),
-		rPackageMapper:  rPackageMapper,
-		PublishHelper:   publishhelper.NewPublishHelper(stateStore, s.log),
-		serverPublisher: serverPublisher,
+	// Test both package mapper approaches in this integration test
+	testCases := []struct {
+		name         string
+		lockfileOnly bool
+	}{
+		{"R Environment Integration", false},
+		{"Lockfile Only Integration", true},
 	}
 
-	// Test files to be deployed
-	appRPath := s.testProjectDir.Join("app.R")
-	err = appRPath.WriteFile([]byte(`
+	for _, tc := range testCases {
+		s.Run(tc.name, func() {
+			s.T().Logf("Testing integration with %s", tc.name)
+
+			// Create mapper for this test case
+			packageMapper, mapperErr := renv.NewPackageMapper(s.testProjectDir, util.Path{}, s.log, tc.lockfileOnly)
+			s.Require().NoError(mapperErr)
+
+			serverPublisher, err := createServerPublisher(
+				publishhelper.NewPublishHelper(stateStore, s.log),
+				events.NewCapturingEmitter(),
+				s.log)
+			s.NoError(err)
+			publisher := &defaultPublisher{
+				log:             s.log,
+				emitter:         events.NewCapturingEmitter(),
+				rPackageMapper:  packageMapper,
+				PublishHelper:   publishhelper.NewPublishHelper(stateStore, s.log),
+				serverPublisher: serverPublisher,
+			}
+
+			// Test files to be deployed
+			appRPath := s.testProjectDir.Join("app.R")
+			err = appRPath.WriteFile([]byte(`
 library(shiny)
 
 ui <- fluidPage(
@@ -219,23 +258,27 @@ server <- function(input, output) {
 
 shinyApp(ui = ui, server = server)
 `), 0644)
-	s.Require().NoError(err)
+			s.Require().NoError(err)
 
-	// The actual test call
-	err = publisher.PublishDirectory()
-	s.Require().NoError(err)
+			// The actual test call
+			err = publisher.PublishDirectory()
+			s.Require().NoError(err)
 
-	// Verify the mock calls were made as expected
-	client.AssertExpectations(s.T())
+			// Verify the mock calls were made as expected
+			client.AssertExpectations(s.T())
 
-	// Verify deployment record was created with correct information
-	recordPath := deployment.GetDeploymentPath(stateStore.Dir, stateStore.TargetName)
-	record, err := deployment.FromFile(recordPath)
-	s.Require().NoError(err)
+			// Verify deployment record was created with correct information
+			recordPath := deployment.GetDeploymentPath(stateStore.Dir, stateStore.TargetName)
+			record, err := deployment.FromFile(recordPath)
+			s.Require().NoError(err)
 
-	s.Equal(contentID, record.ID)
-	s.Equal(bundleID, record.BundleID)
-	s.Equal("https://connect.example.com/connect/#/apps/test-content-id", record.DashboardURL)
-	s.Equal("https://connect.example.com/content/test-content-id/", record.DirectURL)
-	s.NotEmpty(record.DeployedAt)
+			s.Equal(contentID, record.ID)
+			s.Equal(bundleID, record.BundleID)
+			s.Equal("https://connect.example.com/connect/#/apps/test-content-id", record.DashboardURL)
+			s.Equal("https://connect.example.com/content/test-content-id/", record.DirectURL)
+			s.NotEmpty(record.DeployedAt)
+
+			s.T().Logf("Successfully completed integration test with %s", tc.name)
+		})
+	}
 }
