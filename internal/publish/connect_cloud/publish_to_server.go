@@ -37,15 +37,11 @@ func (c *ServerPublisher) updateContent(contentID internal_types.ContentID) erro
 		}
 
 		log.Info("Updating content settings")
-		_, err = c.client.UpdateContent(updateRequest)
+		newContent, err := c.client.UpdateContent(updateRequest)
 		if err != nil {
 			return err
 		}
-
-		c.content, err = c.client.UpdateContentBundle(contentID)
-		if err != nil {
-			return err
-		}
+		c.content = newContent
 
 		c.emitter.Emit(events.New(op, events.SuccessPhase, events.NoError, data))
 		log.Info("Updated content settings")
