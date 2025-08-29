@@ -33,3 +33,35 @@ services:
       - ../../dist:/home/coder/vsix
     ports:
       - "8080:8080"
+
+  # Workbench Preview Container
+  workbench-preview:
+    container_name: publisher-e2e.workbench-preview
+    image: rstudio/rstudio-workbench-preview:ubuntu2204-preview
+    ports:
+      - "8787:8787"
+    volumes:
+      - ./licenses/workbench-license.lic:/etc/rstudio-server/license.lic
+      - ./logs/workbench-preview:/var/log/rstudio/rstudio-server
+      - ./config/workbench-logging.conf:/etc/rstudio/logging.conf
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8787/health-check"]
+      interval: 2s
+      timeout: 1s
+      retries: 30
+
+  # Workbench Release Container
+  workbench-release:
+    container_name: publisher-e2e.workbench-release
+    image: rstudio/rstudio-workbench:ubuntu2204
+    ports:
+      - "8787:8787"
+    volumes:
+      - ./licenses/workbench-license.lic:/etc/rstudio-server/license.lic
+      - ./logs/workbench-release:/var/log/rstudio/rstudio-server
+      - ./config/workbench-logging.conf:/etc/rstudio/logging.conf
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8787/health-check"]
+      interval: 2s
+      timeout: 1s
+      retries: 30

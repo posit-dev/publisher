@@ -75,6 +75,7 @@ export async function newDeployment(
   enum step {
     ENTRY_FILE_SELECTION = "inputEntryPointFileSelection",
     RETRIEVE_CONTENT_TYPES = "retrieveContentTypes",
+    INPUT_CONFIG_ALTERNATIVES = "inputConfigAlternatives",
     INPUT_CONTENT_TYPE = "inputContentType",
     INPUT_TITLE = "inputTitle",
     PICK_CREDENTIALS = "pickCredentials",
@@ -86,6 +87,7 @@ export async function newDeployment(
   > = {
     [step.ENTRY_FILE_SELECTION]: inputEntryPointFileSelection,
     [step.RETRIEVE_CONTENT_TYPES]: retrieveContentTypes,
+    [step.INPUT_CONFIG_ALTERNATIVES]: inputConfigAlternatives,
     [step.INPUT_CONTENT_TYPE]: inputContentType,
     [step.INPUT_TITLE]: inputTitle,
     [step.PICK_CREDENTIALS]: pickCredentials,
@@ -135,6 +137,23 @@ export async function newDeployment(
     return Boolean(
       newDeploymentData?.existingCredentialName === createNewCredentialLabel,
     );
+  };
+
+  const hasConfigAlternatives = (): boolean => {
+    const alternatives =
+      newDeploymentData.entrypoint.inspectionResult?.configuration
+        ?.alternatives;
+    return Boolean(alternatives && alternatives.length);
+  };
+
+  const useAlternativeConfig = () => {
+    const insRes = newDeploymentData.entrypoint.inspectionResult;
+    if (
+      insRes?.configuration?.alternatives &&
+      insRes?.configuration?.alternatives.length
+    ) {
+      insRes.configuration = insRes.configuration.alternatives[0];
+    }
   };
 
   const getConfigurationInspectionQuickPicks = async (
@@ -484,26 +503,27 @@ export async function newDeployment(
     // get the inspections only after the `filePath` has been initialized
     await getInspectionQuickPicks();
 
-    let currentStep: InputStep;
-    // if we have multiple choices, select the content inspection result
-    if (inspectionQuickPicks.length > 1) {
-      currentStep = {
-        name: step.INPUT_CONTENT_TYPE,
-        step: (input: MultiStepInput) =>
-          steps[step.INPUT_CONTENT_TYPE](input, state),
-      };
-    } else {
-      // otherwise auto select the only choice and input the title
+    // default next step, select the content inspection result
+    let nextStepId = step.INPUT_CONTENT_TYPE;
+
+    // if there is only one choice, set it as the inspection result
+    // account for the existence of config alternatives too.
+    if (inspectionQuickPicks.length === 1) {
       newDeploymentData.entrypoint.inspectionResult =
         inspectionQuickPicks[0].inspectionResult;
-      currentStep = {
-        name: step.INPUT_TITLE,
-        step: (input: MultiStepInput) => steps[step.INPUT_TITLE](input, state),
-      };
+      // If applicable, the user has to pick a config alternative
+      nextStepId = hasConfigAlternatives()
+        ? step.INPUT_CONFIG_ALTERNATIVES
+        : step.INPUT_TITLE;
     }
 
-    stepHistory.push(currentStep);
-    return currentStep;
+    const nextStep: InputStep = {
+      name: nextStepId,
+      step: (input: MultiStepInput) => steps[nextStepId](input, state),
+    };
+
+    stepHistory.push(nextStep);
+    return nextStep;
   }
 
   // ***************************************************************
@@ -546,12 +566,68 @@ export async function newDeployment(
 
     newDeploymentData.entrypoint.inspectionResult = pick.inspectionResult;
 
-    const currentStep = {
+    // default next step, select the content inspection result
+    let nextStepId = step.INPUT_TITLE;
+
+    if (hasConfigAlternatives()) {
+      // If applicable, the user has to pick a config alternative
+      nextStepId = step.INPUT_CONFIG_ALTERNATIVES;
+    }
+
+    const nextStep = {
+      name: nextStepId,
+      step: (input: MultiStepInput) => steps[nextStepId](input, state),
+    };
+    stepHistory.push(nextStep);
+    return nextStep;
+  }
+
+  // ***************************************************************
+  // Step: Present content type deployment alternatives if available
+  // ***************************************************************
+  async function inputConfigAlternatives(
+    input: MultiStepInput,
+    state: MultiStepState,
+  ) {
+    stepHistoryFlush(step.INPUT_CONFIG_ALTERNATIVES);
+
+    const useSourceCode = "Publish document with source code";
+    const useRenderedDoc = "Publish rendered document only";
+
+    // At the moment the only configuration alternatives we handle
+    // are related to publishing the source code or the rendered version alternative
+    const pick = await input.showQuickPick({
+      title: state.title,
+      step: 0,
+      totalSteps: 0,
+      placeholder: "Publish the source code or the rendered document?",
+      items: [
+        {
+          iconPath: new ThemeIcon("file-code"),
+          label: useSourceCode,
+          description: "Connect will render it for you",
+        },
+        {
+          iconPath: new ThemeIcon("preview"),
+          label: useRenderedDoc,
+        },
+      ],
+      buttons: [],
+      shouldResume: () => Promise.resolve(false),
+      ignoreFocusOut: true,
+    });
+
+    // If wants to push rendered code, update the inspectionResult to use that config
+    if (pick.label === useRenderedDoc) {
+      useAlternativeConfig();
+    }
+
+    const nextStep = {
       name: step.INPUT_TITLE,
       step: (input: MultiStepInput) => steps[step.INPUT_TITLE](input, state),
     };
-    stepHistory.push(currentStep);
-    return currentStep;
+    stepHistory.push(nextStep);
+    return nextStep;
   }
 
   // ***************************************************************

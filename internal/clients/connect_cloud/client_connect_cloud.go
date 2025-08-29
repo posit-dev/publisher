@@ -203,7 +203,7 @@ func (c *ConnectCloudClient) CreateContent(request *clienttypes.CreateContentReq
 
 func (c *ConnectCloudClient) updateContent(request *clienttypes.UpdateContentRequest) (*clienttypes.ContentResponse, error) {
 	into := clienttypes.ContentResponse{}
-	url := fmt.Sprintf("/v1/contents/%s", request.ContentID)
+	url := fmt.Sprintf("/v1/contents/%s?new_bundle=true", request.ContentID)
 	err := c.client.Patch(url, &request.ContentRequestBase, &into, c.log)
 	if err != nil {
 		return nil, fmt.Errorf("error in update content response: %w", err)
@@ -219,28 +219,6 @@ func (c *ConnectCloudClient) UpdateContent(request *clienttypes.UpdateContentReq
 	}
 	if shouldRetry {
 		r, err = c.updateContent(request)
-	}
-	return r, err
-}
-
-func (c *ConnectCloudClient) updateContentBundle(contentID types.ContentID) (*clienttypes.ContentResponse, error) {
-	into := clienttypes.ContentResponse{}
-	url := fmt.Sprintf("/v1/contents/%s?new_bundle=true", contentID)
-	err := c.client.Patch(url, nil, &into, c.log)
-	if err != nil {
-		return nil, fmt.Errorf("error in update content bundle response: %w", err)
-	}
-	return &into, nil
-}
-
-func (c *ConnectCloudClient) UpdateContentBundle(contentID types.ContentID) (*clienttypes.ContentResponse, error) {
-	r, err := c.updateContentBundle(contentID)
-	shouldRetry, handlingErr := c.handleAuthErr(err)
-	if handlingErr != nil {
-		return nil, handlingErr
-	}
-	if shouldRetry {
-		r, err = c.updateContentBundle(contentID)
 	}
 	return r, err
 }

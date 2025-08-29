@@ -1,4 +1,3 @@
-
 # Build and run all tests against in development
 default: dev
 
@@ -93,3 +92,203 @@ old-dev:
     just start "connect-publisher-e2e"
     just start "code-server"
     npm run cypress:open
+
+# =====================================================================
+# Workbench-specific commands
+# These commands use the Workbench services defined in docker-compose.yml
+# The Workbench images include the default user: rstudio/rstudio
+# =====================================================================
+
+# Pull the Workbench container image
+build-workbench service="all":
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    # Always remove existing containers first for clean builds
+    just remove-workbench "{{ service }}"
+
+    if [ "{{ service }}" = "all" ]; then
+        echo "Pulling all Workbench container images..."
+        # Use docker compose pull for both services
+        docker compose pull workbench-preview workbench-release
+        echo "All Workbench images pulled!"
+    elif [[ "{{ service }}" = "preview" || "{{ service }}" = "release" ]]; then
+        echo "Pulling Workbench {{ service }} container image..."
+        docker compose pull workbench-{{ service }}
+        echo "Workbench {{ service }} image pulled!"
+    else
+        echo "Invalid service: {{ service }}"
+        echo "Must be either 'preview', 'release', or 'all'"
+        exit 1
+    fi
+
+# Start a Workbench container
+start-workbench service:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    # Validate service name
+    if [[ "{{ service }}" != "preview" && "{{ service }}" != "release" ]]; then
+        echo "Invalid service: {{ service }}"
+        echo "Must be either 'preview' or 'release'"
+        exit 1
+    fi
+    
+    # Create directories for volumes if they do not exist
+    mkdir -p ./logs/workbench-{{ service }}
+    mkdir -p ./licenses
+    
+    # Check if license file exists and is valid (not just a placeholder)
+    if [ ! -s ./licenses/workbench-license.lic ] || [ "$(cat ./licenses/workbench-license.lic | wc -l)" -lt 2 ]; then
+        echo "WARNING: Valid Workbench license file not found at ./licenses/workbench-license.lic"
+        echo "You must have a valid Workbench license file to use the containers without license errors."
+        echo "Please add a valid license file before starting the container."
+        echo ""
+    fi
+
+    echo "Starting Workbench {{ service }} container..."
+    docker compose up -d workbench-{{ service }}
+    
+    echo "Waiting for container to become healthy..."
+    # Docker compose has built-in healthcheck support
+    
+    # Simple approach: Loop with a counter, no external tools needed
+    MAX_ATTEMPTS=120  # 60 seconds (120 * 0.5s)
+    attempts=0
+    
+    while [ $attempts -lt $MAX_ATTEMPTS ]; do
+        if docker compose ps | grep "workbench-{{ service }}" | grep -q "healthy"; then
+            echo ""
+            echo "✅ Workbench {{ service }} is healthy and ready!"
+            break
+        fi
+        echo -n "."
+        sleep 0.5
+        attempts=$((attempts + 1))
+    done
+    
+    # Check if we timed out
+    if [ $attempts -eq $MAX_ATTEMPTS ]; then
+        echo ""
+        echo "⚠️ Timed out waiting for container to become healthy"
+        echo "Check container logs with: docker logs publisher-e2e.workbench-{{ service }}"
+    fi
+    echo ""
+    
+    echo "Access Workbench at: http://localhost:8787"
+
+# Stop a Workbench container
+stop-workbench service="all":
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    if [ "{{ service }}" = "all" ]; then
+        echo "Stopping all Workbench containers..."
+        docker compose stop workbench-preview workbench-release 2>/dev/null || true
+        echo "All Workbench containers stopped!"
+    elif [[ "{{ service }}" = "preview" || "{{ service }}" = "release" ]]; then
+        echo "Stopping Workbench {{ service }} container..."
+        docker compose stop workbench-{{ service }} 2>/dev/null || true
+        echo "Workbench {{ service }} stopped!"
+    else
+        echo "Invalid service: {{ service }}"
+        echo "Must be either 'preview', 'release', or 'all'"
+        exit 1
+    fi
+
+# Remove Workbench containers to ensure clean builds
+remove-workbench service="all":
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    # First stop the containers
+    just stop-workbench "{{ service }}"
+    
+    if [ "{{ service }}" = "all" ]; then
+        echo "Removing all Workbench containers..."
+        docker compose rm -f workbench-preview workbench-release 2>/dev/null || true
+        echo "All Workbench containers removed!"
+    elif [[ "{{ service }}" = "preview" || "{{ service }}" = "release" ]]; then
+        echo "Removing Workbench {{ service }} container..."
+        docker compose rm -f workbench-{{ service }} 2>/dev/null || true
+        echo "Workbench {{ service }} container removed!"
+    else
+        echo "Invalid service: {{ service }}"
+        echo "Must be either 'preview', 'release', or 'all'"
+        exit 1
+    fi
+
+# Install Publisher extension in a running Workbench container
+install-workbench-extension service:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    # Validate service name
+    if [[ "{{ service }}" != "preview" && "{{ service }}" != "release" ]]; then
+        echo "Invalid service: {{ service }}"
+        echo "Must be either 'preview' or 'release'"
+        exit 1
+    fi
+
+    echo "Installing Publisher extension in Workbench {{ service }} container..."
+    
+    # Check if container is running
+    if ! docker ps | grep "publisher-e2e.workbench-{{ service }}" | grep -q "Up"; then
+        echo "Container publisher-e2e.workbench-{{ service }} is not running."
+        echo "Please start it first with: just start-workbench {{ service }}"
+        exit 1
+    fi
+    
+    # Check if dist directory exists and is not empty
+    if [ ! -d "../../dist" ] || [ -z "$(ls -A ../../dist 2>/dev/null)" ]; then
+        echo "ERROR: Publisher VSIX directory (../../dist) does not exist or is empty."
+        echo ""
+        echo "Please build the extension first with:"
+        echo "just build-publisher"
+        exit 1
+    fi
+    
+    # Find the latest built VSIX for Publisher (linux-amd64 version)
+    VSIX_FILENAME=$(ls -Art ../../dist | grep linux-amd64 | tail -n 1)
+    if [ -z "$VSIX_FILENAME" ]; then
+        echo "ERROR: No linux-amd64 Publisher VSIX found in ../../dist directory."
+        echo ""
+        echo "Please build the extension first with:"
+        echo "just build-publisher"
+        exit 1
+    fi
+    
+    echo "Using VSIX: $VSIX_FILENAME"
+    
+    # Create a directory in the user home folder to copy the VSIX
+    docker exec publisher-e2e.workbench-{{ service }} bash -c "mkdir -p /home/rstudio/vsix"
+    
+    # Copy the VSIX file to the container
+    docker cp "../../dist/$VSIX_FILENAME" "publisher-e2e.workbench-{{ service }}:/home/rstudio/vsix/$VSIX_FILENAME"
+    
+    # Set proper ownership for the VSIX file
+    docker exec publisher-e2e.workbench-{{ service }} bash -c "chown -R rstudio:rstudio /home/rstudio/vsix"
+    
+    # Run installation command as the rstudio user to ensure proper permissions
+    docker exec -u rstudio publisher-e2e.workbench-{{ service }} bash -c "cd /usr/lib/rstudio-server/bin/positron-server && ./bin/positron-server --install-extension /home/rstudio/vsix/$VSIX_FILENAME --force"
+    
+    # Show the installed extension with detailed information
+    echo "Verifying installation..."
+    echo "Available Publisher extension directories:"
+    docker exec publisher-e2e.workbench-{{ service }} bash -c "ls -la /home/rstudio/.positron-server/extensions/ | grep -i publisher"
+    
+    echo ""
+    echo "Installed extension metadata:"
+    docker exec publisher-e2e.workbench-{{ service }} bash -c "find /home/rstudio/.positron-server/extensions -path '*publisher*' -name package.json | xargs grep -A 2 version"
+    
+    echo ""
+    echo "Extension timestamp information:"
+    docker exec publisher-e2e.workbench-{{ service }} bash -c "stat -c '%n was last modified %y' /home/rstudio/.positron-server/extensions/*/package.json | grep publisher"
+    
+    # Clean up
+    docker exec publisher-e2e.workbench-{{ service }} rm -rf /home/rstudio/vsix
+    
+    # Summary message
+    echo ""
+    echo "✅ Publisher extension successfully installed!"
+    echo "Note: You may need to restart existing Positron sessions for the changes to take effect."

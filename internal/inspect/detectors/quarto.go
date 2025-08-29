@@ -258,42 +258,119 @@ func (d *QuartoDetector) includeStaticConfig(base util.AbsolutePath, cfg *config
 		return
 	}
 
-	staticCfg := config.New()
-	staticCfg.Type = contenttypes.ContentTypeHTML
-	staticCfg.Title = cfg.Title
+	d.log.Debug("Generating Quarto static configuration", "entrypoint", cfg.Entrypoint)
 
 	// With output-dir present, we know that any static asset will be in that directory.
 	// If it is a website project, quarto inspect sets _site as the default output directory.
-	outputDir := inspectOutput.OutputDir()
-	if outputDir != "" {
-		staticCfg.Entrypoint = outputDir
-		staticCfg.Files = []string{fmt.Sprint("/", outputDir)}
-		cfg.Alternatives = append(cfg.Alternatives, *staticCfg)
+	if inspectOutput.OutputDir() != "" {
+		staticCfg := d.staticConfigFromOutputDir(base, cfg, inspectOutput)
+		if staticCfg != nil {
+			cfg.Alternatives = append(cfg.Alternatives, *staticCfg)
+		}
 		return
 	}
+
+	d.log.Debug("Quarto project does not specify an output-dir")
+	d.log.Debug("Attempting to generate Quarto document static configuration from HTML files in project")
 
 	// Last option to generate a static configuration,
 	// use inspect output files.input to generate a list with the .html ext version of the files.
 	// (If there is a render list, files.input is already filtered down to the applicable files.)
+	staticCfg := d.staticConfigFromFilesLookup(base, cfg, inspectOutput)
+	if staticCfg != nil {
+		cfg.Alternatives = append(cfg.Alternatives, *staticCfg)
+	}
+}
+
+// Generate a static configuration based on the output-dir specified in the project,
+// with discoverability and generation of the entrypoint HTML file related to the output-dir.
+func (d *QuartoDetector) staticConfigFromOutputDir(base util.AbsolutePath, cfg *config.Config, inspectOutput *quartoInspectOutput) *config.Config {
+	outputDir := inspectOutput.OutputDir()
+
+	d.log.Debug("Quarto project has output-dir specified", "output_dir", outputDir)
+
+	staticCfg := config.New()
+	staticCfg.Type = contenttypes.ContentTypeHTML
+	staticCfg.Title = cfg.Title
+
+	// Prep the rendered version of the entrypoint path.
+	outputDirRel := util.NewRelativePath(outputDir, nil)
+	outputDirEntrypoint := outputDirRel.Join(cfg.Entrypoint)
+	htmlVerEntrypoint := outputDirEntrypoint.WithoutExt().String() + ".html"
+
+	entrypointIsDir, err := base.Join(cfg.Entrypoint).IsDir()
+	if err != nil {
+		d.log.Error("Error generating Quarto static configuration", "error", err)
+		return nil
+	}
+
+	// If the entrypoint is a directory or _quarto.yml:
+	// - look up for an index file
+	// - OR use the static version of the first file in files.input, "outputDir + files[0] + .html"
+	if d.isQuartoYaml(cfg.Entrypoint) || entrypointIsDir {
+		d.log.Debug("Chosen entrypoint is _quarto.yml, attempting to use first file from files.input as static entrypoint")
+
+		indexFile, foundIndex := inspectOutput.IndexHTMLFilepath(base)
+
+		if !foundIndex {
+			htmlInputFiles := inspectOutput.HTMLAbsPathsFromInputList(base)
+			indexFile = htmlInputFiles[0]
+		}
+
+		indexFileRel, err := indexFile.Rel(base)
+		if err != nil {
+			d.log.Error("Error generating Quarto static configuration", "error", err)
+			return nil
+		}
+
+		// htmlVerEntrypoint = htmlInputFiles[0].String()
+		htmlVerEntrypoint = outputDirRel.Join(indexFileRel.String()).String()
+		d.log.Debug("Using first file from files.input as static entrypoint", "entrypoint", htmlVerEntrypoint)
+	}
+
+	staticCfg.Entrypoint = htmlVerEntrypoint
+	staticCfg.Files = []string{fmt.Sprint("/", outputDir)}
+	return staticCfg
+}
+
+// Generate a static configuration based on the existing project files that quarto inspect reports.
+func (d *QuartoDetector) staticConfigFromFilesLookup(base util.AbsolutePath, cfg *config.Config, inspectOutput *quartoInspectOutput) *config.Config {
+	staticCfg := config.New()
+	staticCfg.Type = contenttypes.ContentTypeHTML
+	staticCfg.Title = cfg.Title
+
 	htmlInputFiles := inspectOutput.HTMLAbsPathsFromInputList(base)
 	for _, file := range htmlInputFiles {
 		relFile, err := file.Rel(base)
 		if err != nil {
 			d.log.Error("Error generating Quarto static configuration", "error", err)
-			return
+			return nil
 		}
-		// If the entrypoint is not set, use the first file as the entrypoint.
+
+		// If the entrypoint is not set, use the first file provided by quarto as the entrypoint.
 		if staticCfg.Entrypoint == "" {
 			staticCfg.Entrypoint = relFile.Base()
 		}
 		staticCfg.Files = append(staticCfg.Files, fmt.Sprint("/", relFile.String()))
+
+		// Include any accompanying *_files directory for each HTML file.
+		assetsDir, existsDir := inspectOutput.fileAssetsDir(file)
+		if existsDir {
+			relAssetsDir, err := assetsDir.Rel(base)
+			if err != nil {
+				d.log.Error("Error generating Quarto static configuration", "error", err)
+				return nil
+			}
+			staticCfg.Files = append(staticCfg.Files, fmt.Sprint("/", relAssetsDir.String()))
+		}
 	}
 
 	// If it wasn't possible to find any files for a static configuration,
 	// we don't include alternatives.
 	if len(staticCfg.Files) > 0 {
-		cfg.Alternatives = append(cfg.Alternatives, *staticCfg)
+		return staticCfg
 	}
+	return nil
 }
 
 func (d *QuartoDetector) isQuartoYaml(entrypointBase string) bool {

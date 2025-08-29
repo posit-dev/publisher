@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"slices"
+	"strings"
 
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/spf13/afero"
@@ -134,20 +135,48 @@ func (o *quartoInspectOutput) InputFiles() []string {
 	return []string{}
 }
 
+func (o *quartoInspectOutput) toHTMLFilepath(base util.AbsolutePath, file string) util.AbsolutePath {
+	var abspath util.AbsolutePath
+	if filepath.IsAbs(file) {
+		abspath = util.NewAbsolutePath(file, o.fs)
+	} else {
+		abspath = base.Join(file)
+	}
+	return abspath.Dir().Join(abspath.WithoutExt().Base() + ".html")
+}
+
 // Generate a list of absolute paths for the HTML version of the input files.
 func (o *quartoInspectOutput) HTMLAbsPathsFromInputList(base util.AbsolutePath) []util.AbsolutePath {
 	htmlFiles := []util.AbsolutePath{}
 	for _, file := range o.InputFiles() {
-		var abspath util.AbsolutePath
-		if filepath.IsAbs(file) {
-			abspath = util.NewAbsolutePath(file, o.fs)
-		} else {
-			abspath = base.Join(file)
-		}
-		htmlVerFile := abspath.Dir().Join(abspath.WithoutExt().Base() + ".html")
+		htmlVerFile := o.toHTMLFilepath(base, file)
 		htmlFiles = append(htmlFiles, htmlVerFile)
 	}
 	return htmlFiles
+}
+
+// Find an index.html
+func (o *quartoInspectOutput) IndexHTMLFilepath(base util.AbsolutePath) (util.AbsolutePath, bool) {
+	for _, file := range o.InputFiles() {
+		if strings.Contains(file, "index.") {
+			return o.toHTMLFilepath(base, file), true
+		}
+	}
+	return util.AbsolutePath{}, false
+}
+
+// Standalone rendered files by Quarto may have a *_files directory
+// alongside the HTML file. E.g: Resulting assets from index.qmd, may be index.html and index_files/
+func (o *quartoInspectOutput) fileAssetsDir(filepath util.AbsolutePath) (util.AbsolutePath, bool) {
+	assetsDirname := filepath.WithoutExt().Base() + "_files"
+	assetsPath := filepath.Dir().Join(assetsDirname)
+	exists, err := assetsPath.Exists()
+	// We don't really care if there is an error while looking up for an assets dir.
+	// Ignore and don't return the error if the directory doesn't exist.
+	if exists && err == nil {
+		return assetsPath, true
+	}
+	return util.AbsolutePath{}, false
 }
 
 // ConfigResources can be in two places, depending on
