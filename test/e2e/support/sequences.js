@@ -142,9 +142,12 @@ Cypress.Commands.add(
                 { failOnNonZero: false },
               )
               .then((res) => {
-                const name = (res && res.stdout && res.stdout.trim()) || "";
-                if (name) {
-                  const foundPath = `${contentDir}/${name}`;
+                const out = (res && res.stdout && res.stdout.trim()) || "";
+                if (out) {
+                  const first = out.split(/\r?\n/)[0].trim();
+                  const foundPath = first.includes("/")
+                    ? first
+                    : `${contentDir}/${first}`;
                   return foundPath;
                 }
                 throw new Error("no deployment TOML found yet");
@@ -315,9 +318,12 @@ Cypress.Commands.add(
                 { failOnNonZero: false },
               )
               .then((res) => {
-                const name = (res && res.stdout && res.stdout.trim()) || "";
-                if (name) {
-                  const foundPath = `${contentDir}/${name}`;
+                const out = (res && res.stdout && res.stdout.trim()) || "";
+                if (out) {
+                  const first = out.split(/\r?\n/)[0].trim();
+                  const foundPath = first.includes("/")
+                    ? first
+                    : `${contentDir}/${first}`;
                   return foundPath;
                 }
                 throw new Error("no deployment TOML found yet");

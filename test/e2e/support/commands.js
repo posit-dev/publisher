@@ -241,23 +241,56 @@ if (typeof afterEach === "function") {
   });
 }
 
-// Update waitForPublisherIframe to use a longer default timeout for CI reliability
+// Update waitForPublisherIframe to use a quick DOM check and retryWithBackoff for resilience
 Cypress.Commands.add("waitForPublisherIframe", (timeout = 60000) => {
+  const attempts = Math.max(3, Math.ceil(timeout / 1000));
+  const delay = 1000;
+
+  // Quick non-blocking check first
   return cy
-    .get("iframe.webview.ready", { timeout })
-    .should("exist")
-    .then(($iframes) => {
-      // Try to find the publisher iframe by extensionId
-      const $publisherIframe = $iframes.filter((i, el) => {
-        return el.src && el.src.includes("posit.publisher");
-      });
+    .document()
+    .then((doc) => {
+      const initial = doc.querySelectorAll("iframe.webview.ready");
+      if (initial && initial.length) {
+        return initial;
+      }
+
+      // If no iframe found, attempt to open the Publisher sidebar to trigger the webview
+      return cy
+        .getPublisherSidebarIcon({ timeout: 2000 })
+        .then(($icon) => {
+          if ($icon && $icon.length) {
+            cy.wrap($icon).click({ force: true });
+          }
+        })
+        .then(() =>
+          // Poll the document for an iframe.webview.ready using retryWithBackoff
+          cy.retryWithBackoff(
+            () =>
+              cy.document().then((d) => {
+                const iframes = d.querySelectorAll("iframe.webview.ready");
+                if (iframes && iframes.length) {
+                  return iframes;
+                }
+                throw new Error("no publisher iframe yet");
+              }),
+            attempts,
+            delay,
+          ),
+        );
+    })
+    .then((iframes) => {
+      // iframes may be a NodeList; prefer iframe whose src includes the extension id
+      const $publisherIframe = Cypress.$(iframes).filter(
+        (i, el) => el.src && el.src.includes("posit.publisher"),
+      );
       if ($publisherIframe.length > 0) {
         cy.log("Found publisher iframe by extensionId");
         return cy.wrap($publisherIframe[0]);
       }
-      // Fallback: use the first .webview.ready iframe
       cy.log("Falling back to first .webview.ready iframe");
-      return cy.wrap($iframes[0]);
+      // iframes[0] works for NodeList or array-like
+      return cy.wrap(iframes[0]);
     });
 });
 
@@ -302,17 +335,32 @@ Cypress.Commands.add(
     let attempt = 0;
     function tryFn() {
       attempt++;
-      return fn().then((result) => {
-        if (result && result.length) {
-          return result;
-        } else if (attempt < maxAttempts) {
-          const delay = initialDelay * Math.pow(2, attempt - 1);
-          cy.wait(delay);
-          return tryFn();
-        } else {
-          throw new Error("Element not found after retries with backoff");
-        }
-      });
+      return cy
+        .wrap(null)
+        .then(() => fn())
+        .then(
+          (result) => {
+            const ok =
+              result &&
+              (result.length ||
+                (typeof result === "object" && Object.keys(result).length));
+            if (ok) {
+              return result;
+            }
+            if (attempt < maxAttempts) {
+              const delay = initialDelay * Math.pow(2, attempt - 1);
+              return cy.wait(delay).then(tryFn);
+            }
+            throw new Error("Element not found after retries with backoff");
+          },
+          (err) => {
+            if (attempt < maxAttempts) {
+              const delay = initialDelay * Math.pow(2, attempt - 1);
+              return cy.wait(delay).then(tryFn);
+            }
+            throw err;
+          },
+        );
     }
     return tryFn();
   },
