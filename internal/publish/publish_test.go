@@ -22,6 +22,7 @@ import (
 	"github.com/posit-dev/publisher/internal/clients/connect_cloud_upload"
 	clienttypes "github.com/posit-dev/publisher/internal/clients/types"
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/inspect/dependencies/renv"
@@ -345,7 +346,7 @@ func (s *PublishConnectSuite) publishWithClient(
 
 	cfg := config.New()
 	cfg.ProductType = config.ProductTypeConnect
-	cfg.Type = config.ContentTypePythonDash
+	cfg.Type = contenttypes.ContentTypePythonDash
 	cfg.Entrypoint = "app.py"
 	cfg.Environment = map[string]string{
 		"FOO": "BAR",
@@ -892,7 +893,7 @@ func (s *PublishConnectCloudSuite) publishWithCloudClient(
 	// Create config
 	cfg := config.New()
 	cfg.ProductType = config.ProductTypeConnectCloud
-	cfg.Type = config.ContentTypePythonDash
+	cfg.Type = contenttypes.ContentTypePythonDash
 	cfg.Entrypoint = "app.py"
 	cfg.Environment = map[string]string{
 		"FOO": "BAR",

@@ -955,7 +955,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         projectDir,
         entryPointFile,
       );
-      if (deploymentObjects) {
+      const { contentRecord, configuration, credential } = deploymentObjects;
+      // a new deployment is considered successful, only if all objects below are present
+      // there can be cases when one object is present (i.e credential) but not others
+      // but that is still not considered a total success for creating a new deployment
+      if (contentRecord && configuration && credential) {
         // add out new objects into our collections possibly ahead (we don't know) of
         // the file refresh activity (for contentRecord and config)
         // and the credential refresh that we will kick off
@@ -966,28 +970,28 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         let refreshCredentials = false;
         if (
           !this.state.findContentRecord(
-            deploymentObjects.contentRecord.saveName,
-            deploymentObjects.contentRecord.projectDir,
+            contentRecord.saveName,
+            contentRecord.projectDir,
           )
         ) {
-          this.state.contentRecords.push(deploymentObjects.contentRecord);
+          this.state.contentRecords.push(contentRecord);
         }
         if (
           !this.state.findValidConfig(
-            deploymentObjects.configuration.configurationName,
-            deploymentObjects.configuration.projectDir,
+            configuration.configurationName,
+            configuration.projectDir,
           )
         ) {
-          this.state.configurations.push(deploymentObjects.configuration);
+          this.state.configurations.push(configuration);
         }
-        if (!this.state.findCredential(deploymentObjects.credential.name)) {
-          this.state.credentials.push(deploymentObjects.credential);
+        if (!this.state.findCredential(credential.name)) {
+          this.state.credentials.push(credential);
           refreshCredentials = true;
         }
         const deploymentSelector: DeploymentSelector = {
-          deploymentPath: deploymentObjects.contentRecord.deploymentPath,
-          deploymentName: deploymentObjects.contentRecord.saveName,
-          projectDir: deploymentObjects.contentRecord.projectDir,
+          deploymentPath: contentRecord.deploymentPath,
+          deploymentName: contentRecord.saveName,
+          projectDir: contentRecord.projectDir,
         };
 
         this.propagateDeploymentSelection(deploymentSelector);
@@ -996,12 +1000,19 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           this.refreshCredentials();
         }
         return {
-          deploymentName: deploymentObjects.contentRecord.deploymentName,
-          deploymentPath: deploymentObjects.contentRecord.deploymentPath,
-          projectDir: deploymentObjects.contentRecord.projectDir,
-          credentialName: deploymentObjects.credential.name,
-          configurationName: deploymentObjects.configuration.configurationName,
+          deploymentName: contentRecord.deploymentName,
+          deploymentPath: contentRecord.deploymentPath,
+          projectDir: contentRecord.projectDir,
+          credentialName: credential.name,
+          configurationName: configuration.configurationName,
         };
+      } else {
+        // refresh the credential list in the case when creating a new deployment failed
+        // but creating a new credential succeeded
+        if (credential && !this.state.findCredential(credential.name)) {
+          this.state.credentials.push(credential);
+          this.refreshCredentials();
+        }
       }
       return undefined;
     } finally {

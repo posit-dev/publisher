@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"testing"
 
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/server_type"
 
 	"github.com/spf13/afero"
@@ -185,7 +186,7 @@ func (s *StateSuite) TestLoadTarget() {
 		ServerURL:  "https://connect.example.com",
 		ServerType: server_type.ServerTypeConnect,
 		ConfigName: "myConfig",
-		Type:       config.ContentTypePythonDash,
+		Type:       contenttypes.ContentTypePythonDash,
 		CreatedAt:  "",
 		Files: []string{
 			"app.py",
@@ -284,7 +285,7 @@ func (s *StateSuite) makeConfiguration(name string, pythonConfig *config.Python,
 	path := config.GetConfigPath(s.cwd, name)
 	cfg := config.New()
 	cfg.ProductType = config.ProductTypeConnect
-	cfg.Type = config.ContentTypeUnknown
+	cfg.Type = contenttypes.ContentTypeUnknown
 	cfg.Entrypoint = "app.py"
 	cfg.Python = pythonConfig
 	cfg.R = rConfig

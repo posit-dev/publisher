@@ -5,10 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [Unreleased]
+
+### Fixed
+
+- Fixed the Python and R Packages views incorrectly stating the default package
+  files were missing even when they were present (#2882, #2884)
+
+## [1.19.0]
+
+### Fixed
+
+- Fixed the "Posit Publisher: View Deployment Logs in Connect" incorrectly being
+  available in the Command Palette (#2899)
 
 ### Added
 
+- Added script to always enable the PCC flag for publisher e2e tests prior to running
+- Added staging.json config for test user details and ability to retrieve from AWS and GH secrets (CI)
+- Added Cypress E2E Test for PCC Oauth and credential adding
+- Added repeat-cypress-headless.sh script for easily repeating e2e tests
 - Added Cypress E2E CI Setup and Test Reliability Improvements (#2721)
 - Added endpoints for performing OAuth Device Authorization Grant with Posit Cloud login. (#2692)
 - Added support for one-click token authentication with Connect. (#2769)
@@ -22,6 +38,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a delete button for Credentials in the Credentials View (#2862)
 - When opened, the Publisher logs scroll to and expand the first failed stage
   if a stage is marked as failed (#2857, #2858)
+- Added a configuration option that will auto open Publisher logs on a failed deploy (#2860)
+- Use server hostname as the default credential name for new Connect credentials
+  (#2922)
+- Introduced Posit Connect Cloud support. This feature allows publishing to Connect Cloud.
 
 ### Changed
 

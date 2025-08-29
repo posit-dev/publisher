@@ -36,6 +36,7 @@ import {
   ErrorMessageActionIds,
   findErrorMessageSplitOption,
 } from "src/utils/errorEnhancer";
+import { extensionSettings } from "src/extension";
 import { showErrorMessageWithTroubleshoot } from "src/utils/window";
 import { DeploymentFailureRenvHandler } from "src/views/deployHandlers";
 
@@ -245,9 +246,16 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
         } else if (stage.status === LogStageStatus.inProgress) {
           stage.status = failedOrCanceledStatus;
         }
+
+        if (
+          stage.status === LogStageStatus.failed &&
+          extensionSettings.autoOpenLogsOnFailure()
+        ) {
+          commands.executeCommand(Commands.Logs.Focus);
+        }
       });
 
-      const showLogsOption = "View Log";
+      const showLogsOption = "View Publishing Log";
       const options = [showLogsOption];
       const enhancedError = findErrorMessageSplitOption(msg.data.message);
       if (enhancedError && enhancedError.buttonStr) {
@@ -421,7 +429,10 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
     const root = new LogsTreeStageItem(this.publishingStage);
 
     for (const stage of this.publishingStage.stages) {
-      if (stage.status === LogStageStatus.failed) {
+      if (
+        stage.status === LogStageStatus.failed ||
+        stage.status === LogStageStatus.canceled
+      ) {
         const stageItem = new LogsTreeStageItem(stage, root);
 
         if (stage.events.length) {
@@ -453,9 +464,8 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
 
     if (revealItem) {
       treeView.reveal(revealItem, {
-        select: false,
-        focus: false,
-        expand: 2,
+        select: true,
+        focus: true,
       });
     }
   }

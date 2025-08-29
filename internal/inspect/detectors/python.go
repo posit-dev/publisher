@@ -4,16 +4,17 @@ package detectors
 
 import (
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/util"
 )
 
 type PythonAppDetector struct {
 	inferenceHelper
-	contentType config.ContentType
+	contentType contenttypes.ContentType
 	imports     []string
 }
 
-func NewPythonAppDetector(contentType config.ContentType, imports []string) *PythonAppDetector {
+func NewPythonAppDetector(contentType contenttypes.ContentType, imports []string) *PythonAppDetector {
 	return &PythonAppDetector{
 		inferenceHelper: defaultInferenceHelper{},
 		contentType:     contentType,
@@ -22,7 +23,7 @@ func NewPythonAppDetector(contentType config.ContentType, imports []string) *Pyt
 }
 
 func NewFlaskDetector() *PythonAppDetector {
-	return NewPythonAppDetector(config.ContentTypePythonFlask, []string{
+	return NewPythonAppDetector(contenttypes.ContentTypePythonFlask, []string{
 		"flask", // also matches flask_api, flask_openapi3, etc.
 		"flasgger",
 		"falcon", // must check for this after falcon.asgi (FastAPI)
@@ -32,7 +33,7 @@ func NewFlaskDetector() *PythonAppDetector {
 }
 
 func NewFastAPIDetector() *PythonAppDetector {
-	return NewPythonAppDetector(config.ContentTypePythonFastAPI, []string{
+	return NewPythonAppDetector(contenttypes.ContentTypePythonFastAPI, []string{
 		"fastapi",
 		"falcon.asgi",
 		"quart",
@@ -43,25 +44,25 @@ func NewFastAPIDetector() *PythonAppDetector {
 }
 
 func NewDashDetector() *PythonAppDetector {
-	return NewPythonAppDetector(config.ContentTypePythonDash, []string{
+	return NewPythonAppDetector(contenttypes.ContentTypePythonDash, []string{
 		"dash", // also matches dash_core_components, dash_bio, etc.
 	})
 }
 
 func NewGradioDetector() *PythonAppDetector {
-	return NewPythonAppDetector(config.ContentTypePythonGradio, []string{
+	return NewPythonAppDetector(contenttypes.ContentTypePythonGradio, []string{
 		"gradio",
 	})
 }
 
 func NewStreamlitDetector() *PythonAppDetector {
-	return NewPythonAppDetector(config.ContentTypePythonStreamlit, []string{
+	return NewPythonAppDetector(contenttypes.ContentTypePythonStreamlit, []string{
 		"streamlit",
 	})
 }
 
 func NewBokehDetector() *PythonAppDetector {
-	return NewPythonAppDetector(config.ContentTypePythonBokeh, []string{
+	return NewPythonAppDetector(contenttypes.ContentTypePythonBokeh, []string{
 		"bokeh",
 	})
 }

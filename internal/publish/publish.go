@@ -12,6 +12,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/inspect/dependencies/renv"
@@ -252,11 +253,6 @@ func (p *defaultPublisher) doPublish() error {
 		return err
 	}
 
-	err = p.configureInterpreters()
-	if err != nil {
-		return err
-	}
-
 	if wasPreviouslyDeployed {
 		p.log.Info("Updating deployment", "content_id", contentID)
 	} else {
@@ -269,12 +265,17 @@ func (p *defaultPublisher) doPublish() error {
 
 	p.setContentInfo(p.serverPublisher.GetContentInfo(contentID))
 
+	manifest, err := p.createManifest()
+	if err != nil {
+		return err
+	}
+
 	err = p.serverPublisher.PreFlightChecks()
 	if err != nil {
 		return err
 	}
 
-	bundleFile, err := p.createBundle()
+	bundleFile, err := p.createBundle(manifest)
 	if err != nil {
 		return err
 	}
@@ -307,12 +308,12 @@ func (p *defaultPublisher) CreateDeploymentRecord() {
 	cfg := *p.Config
 
 	created := ""
-	var contentType config.ContentType
+	var contentType contenttypes.ContentType
 
 	if p.Target != nil {
 		created = p.Target.CreatedAt
 		contentType = p.Target.Type
-		if contentType == "" || contentType == config.ContentTypeUnknown {
+		if contentType == "" || contentType == contenttypes.ContentTypeUnknown {
 			contentType = cfg.Type
 		}
 	} else {

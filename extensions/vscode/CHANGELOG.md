@@ -6,13 +6,43 @@ file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.19.0]
+
+### Fixed
+
+- Fixed the "Posit Publisher: View Deployment Logs in Connect" incorrectly being
+  available in the Command Palette (#2899)
 
 ### Added
 
+- Added script to always enable the PCC flag for publisher e2e tests prior to running
+- Added staging.json config for test user details and ability to retrieve from AWS and GH secrets (CI)
+- Added Cypress E2E Test for PCC Oauth and credential adding
+- Added repeat-cypress-headless.sh script for easily repeating e2e tests
+- Added Cypress E2E CI Setup and Test Reliability Improvements (#2721)
+- Added endpoints for performing OAuth Device Authorization Grant with Posit Cloud login. (#2692)
+- Added support for one-click token authentication with Connect. (#2769)
 - Added schema and agent support for publishing to Connect Cloud. (#2729, #2747, #2771)
-- Introduced Posit Connect Cloud support behind a configuration option. This feature is
-  still in active development but works end-to-end for publishing to Connect Cloud. (#2810)
+- Added colors to the logs indicating queued, skipped, passed, and errored log
+  stage statuses. (#2382)
+- Improved error messaging when deployment fails due to a schema validation error. (#2831)
+- Added a Copy System Info command and item in the "Help and Feedback" view to
+  easily copy system information - extension version, IDE, and platform details
+  (#2835)
+- Added a delete button for Credentials in the Credentials View (#2862)
+- When opened, the Publisher logs scroll to and expand the first failed stage
+  if a stage is marked as failed (#2857, #2858)
+- Added a configuration option that will auto open Publisher logs on a failed deploy (#2860)
+- Use server hostname as the default credential name for new Connect credentials
+  (#2922)
+- Introduced Posit Connect Cloud support. This feature allows publishing to Connect Cloud.
+
+### Changed
+
+- The "Select Deployment" input can now be dismissed by focusing another element
+  similar to other inputs. (#2780)
+- Publish failure logs and deployment validation failure logs link to the logs
+  view directly in Posit Connect and Posit Connect Cloud when available (#2859)
 
 ## [1.18.1]
 

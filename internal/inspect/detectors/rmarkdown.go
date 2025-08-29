@@ -11,6 +11,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/executor"
 	"github.com/posit-dev/publisher/internal/inspect/dependencies/pydeps"
 	"github.com/posit-dev/publisher/internal/logging"
@@ -130,9 +131,9 @@ func (d *RMarkdownDetector) configFromFileInspect(base util.AbsolutePath, entryp
 	cfg.Entrypoint = relEntrypoint.String()
 
 	if isShinyRmd(metadata) {
-		cfg.Type = config.ContentTypeRMarkdownShiny
+		cfg.Type = contenttypes.ContentTypeRMarkdownShiny
 	} else {
-		cfg.Type = config.ContentTypeRMarkdown
+		cfg.Type = contenttypes.ContentTypeRMarkdown
 	}
 
 	if isSite, siteConfigFile := d.isSite(base); isSite {

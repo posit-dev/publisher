@@ -17,6 +17,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
@@ -89,7 +90,7 @@ func (s *PutConfigurationSuite) TestPutConfiguration() {
 	s.Nil(responseBody.Error)
 	s.Equal(".", responseBody.ProjectDir)
 	s.NotNil(responseBody.Configuration)
-	s.Equal(config.ContentTypePythonShiny, responseBody.Configuration.Type)
+	s.Equal(contenttypes.ContentTypePythonShiny, responseBody.Configuration.Type)
 	expected := true
 	s.Equal(&expected, responseBody.Configuration.Connect.Kubernetes.DefaultREnvironmentManagement)
 	s.Len(responseBody.Configuration.Comments, 2)
@@ -202,7 +203,7 @@ func (s *PutConfigurationSuite) TestPutConfigurationSubdir() {
 	s.Nil(responseBody.Error)
 	s.Equal(relProjectDir.String(), responseBody.ProjectDir)
 	s.NotNil(responseBody.Configuration)
-	s.Equal(config.ContentTypePythonShiny, responseBody.Configuration.Type)
+	s.Equal(contenttypes.ContentTypePythonShiny, responseBody.Configuration.Type)
 	expected := true
 	s.Equal(&expected, responseBody.Configuration.Connect.Kubernetes.DefaultREnvironmentManagement)
 	s.Len(responseBody.Configuration.Comments, 2)
