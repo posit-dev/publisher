@@ -114,32 +114,79 @@ Cypress.Commands.add(
     return cy
       .getPublisherTomlFilePaths(projectDir)
       .then((filePaths) => {
-        // Wait for the contentRecord TOML file to exist before loading
-        cy.readFile(filePaths.contentRecord.path).then(() => {
-          let result = {
-            config: {
-              name: filePaths.config.name,
-              path: filePaths.config.path,
-              contents: {},
-            },
-            contentRecord: {
-              name: filePaths.contentRecord.name,
-              path: filePaths.contentRecord.path,
-              contents: {},
-            },
-          };
-          cy.loadTomlFile(filePaths.config.path)
-            .then((config) => {
-              result.config.contents = config;
-            })
-            .loadTomlFile(filePaths.contentRecord.path)
-            .then((contentRecord) => {
-              result.contentRecord.contents = contentRecord;
-            })
-            .then(() => {
-              return result;
-            });
+        // Debug: print the filePaths object and the specific contentRecord path
+        cy.task(
+          "print",
+          `DEBUG: getPublisherTomlFilePaths: ${JSON.stringify(filePaths)}`,
+        );
+        cy.task(
+          "print",
+          `DEBUG: contentRecord.path before readFile: ${filePaths.contentRecord.path}`,
+        );
+        // Debug: list the publish directory so CI logs contain current files
+        cy.exec(
+          "ls -la content-workspace/" + projectDir + "/.posit/publish || true",
+        ).then((res) => {
+          cy.task("print", `DEBUG: publish dir listing:\n${res.stdout}`);
         });
+
+        const contentPath = filePaths.contentRecord.path;
+        const contentDir = contentPath.replace(/\/[^/]+$/, "");
+
+        // Poll the publish directory until a deployment-*.toml appears; pick the newest
+        cy.retryWithBackoff(
+          () =>
+            cy
+              .exec(
+                `bash -lc 'ls -1t "${contentDir}"/deployment-*.toml 2>/dev/null | head -n1 || true'`,
+                { failOnNonZero: false },
+              )
+              .then((res) => {
+                const name = (res && res.stdout && res.stdout.trim()) || "";
+                if (name) {
+                  const foundPath = `${contentDir}/${name}`;
+                  return foundPath;
+                }
+                throw new Error("no deployment TOML found yet");
+              }),
+          24,
+          2500,
+        )
+          .then((foundPath) => {
+            // Now read the discovered file (with a generous timeout as a fallback)
+            return cy
+              .readFile(foundPath, { timeout: 120000 })
+              .then(() => ({ foundPath }));
+          })
+          .then(({ foundPath }) => {
+            let result = {
+              config: {
+                name: filePaths.config.name,
+                path: filePaths.config.path,
+                contents: {},
+              },
+              contentRecord: {
+                name: filePaths.contentRecord.name,
+                path: filePaths.contentRecord.path,
+                contents: {},
+              },
+            };
+            // load config and the actually-found contentRecord
+            cy.loadTomlFile(filePaths.config.path)
+              .then((config) => {
+                result.config.contents = config;
+              })
+              .then(() => cy.loadTomlFile(foundPath))
+              .then((contentRecord) => {
+                result.contentRecord.contents = contentRecord;
+                // update the result paths/names to the discovered file
+                result.contentRecord.path = foundPath;
+                result.contentRecord.name = foundPath.split("/").pop();
+              })
+              .then(() => {
+                return result;
+              });
+          });
       })
       .then((tomlFiles) => {
         return verifyTomlCallback(tomlFiles);
@@ -240,32 +287,79 @@ Cypress.Commands.add(
     return cy
       .getPublisherTomlFilePaths(projectDir)
       .then((filePaths) => {
-        // Wait for the contentRecord TOML file to exist before loading
-        cy.readFile(filePaths.contentRecord.path).then(() => {
-          let result = {
-            config: {
-              name: filePaths.config.name,
-              path: filePaths.config.path,
-              contents: {},
-            },
-            contentRecord: {
-              name: filePaths.contentRecord.name,
-              path: filePaths.contentRecord.path,
-              contents: {},
-            },
-          };
-          cy.loadTomlFile(filePaths.config.path)
-            .then((config) => {
-              result.config.contents = config;
-            })
-            .loadTomlFile(filePaths.contentRecord.path)
-            .then((contentRecord) => {
-              result.contentRecord.contents = contentRecord;
-            })
-            .then(() => {
-              return result;
-            });
+        // Debug: print the filePaths object and the specific contentRecord path
+        cy.task(
+          "print",
+          `DEBUG: getPublisherTomlFilePaths: ${JSON.stringify(filePaths)}`,
+        );
+        cy.task(
+          "print",
+          `DEBUG: contentRecord.path before readFile: ${filePaths.contentRecord.path}`,
+        );
+        // Debug: list the publish directory so CI logs contain current files
+        cy.exec(
+          "ls -la content-workspace/" + projectDir + "/.posit/publish || true",
+        ).then((res) => {
+          cy.task("print", `DEBUG: publish dir listing:\n${res.stdout}`);
         });
+
+        const contentPath = filePaths.contentRecord.path;
+        const contentDir = contentPath.replace(/\/[^/]+$/, "");
+
+        // Poll the publish directory until a deployment-*.toml appears; pick the newest
+        cy.retryWithBackoff(
+          () =>
+            cy
+              .exec(
+                `bash -lc 'ls -1t "${contentDir}"/deployment-*.toml 2>/dev/null | head -n1 || true'`,
+                { failOnNonZero: false },
+              )
+              .then((res) => {
+                const name = (res && res.stdout && res.stdout.trim()) || "";
+                if (name) {
+                  const foundPath = `${contentDir}/${name}`;
+                  return foundPath;
+                }
+                throw new Error("no deployment TOML found yet");
+              }),
+          24,
+          2500,
+        )
+          .then((foundPath) => {
+            // Now read the discovered file (with a generous timeout as a fallback)
+            return cy
+              .readFile(foundPath, { timeout: 120000 })
+              .then(() => ({ foundPath }));
+          })
+          .then(({ foundPath }) => {
+            let result = {
+              config: {
+                name: filePaths.config.name,
+                path: filePaths.config.path,
+                contents: {},
+              },
+              contentRecord: {
+                name: filePaths.contentRecord.name,
+                path: filePaths.contentRecord.path,
+                contents: {},
+              },
+            };
+            // load config and the actually-found contentRecord
+            cy.loadTomlFile(filePaths.config.path)
+              .then((config) => {
+                result.config.contents = config;
+              })
+              .then(() => cy.loadTomlFile(foundPath))
+              .then((contentRecord) => {
+                result.contentRecord.contents = contentRecord;
+                // update the result paths/names to the discovered file
+                result.contentRecord.path = foundPath;
+                result.contentRecord.name = foundPath.split("/").pop();
+              })
+              .then(() => {
+                return result;
+              });
+          });
       })
       .then((tomlFiles) => {
         return verifyTomlCallback(tomlFiles);

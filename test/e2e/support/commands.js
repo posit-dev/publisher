@@ -156,7 +156,8 @@ Cypress.Commands.add("getPublisherTomlFilePaths", (projectDir) => {
   let contentRecordFileName = "";
   let contentRecordFilePath = "";
 
-  cy.expandWildcardFile(configTargetDir, "*.toml")
+  return cy
+    .expandWildcardFile(configTargetDir, "*.toml")
     .then((configFile) => {
       configFileName = configFile;
       configFilePath = `${configTargetDir}/${configFile}`;
@@ -181,21 +182,14 @@ Cypress.Commands.add("getPublisherTomlFilePaths", (projectDir) => {
 });
 
 Cypress.Commands.add("expandWildcardFile", (targetDir, wildCardPath) => {
-  return cy
-    .exec("pwd")
-    .then((result) => {
-      return cy.log("CWD", result.stdout);
-    })
-    .then(() => {
-      const cmd = `cd ${targetDir} && file=$(echo ${wildCardPath}) && echo $file`;
-      return cy.exec(cmd);
-    })
-    .then((result) => {
-      if (result.code === 0 && result.stdout) {
-        return result.stdout;
-      }
-      throw new Error(`Could not expandWildcardFile. ${result.stderr}`);
-    });
+  // List all matching files, sort by mtime descending, pick the newest
+  const cmd = `cd ${targetDir} && ls -1t ${wildCardPath} 2>/dev/null | head -n1`;
+  return cy.exec(cmd).then((result) => {
+    if (result.code === 0 && result.stdout) {
+      return result.stdout.trim();
+    }
+    throw new Error(`Could not expandWildcardFile. ${result.stderr}`);
+  });
 });
 
 Cypress.Commands.add("savePublisherFile", (filePath, jsonObject) => {
