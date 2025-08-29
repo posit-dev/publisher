@@ -43,6 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   similar to other inputs. (#2780)
 - Publish failure logs and deployment validation failure logs link to the logs
   view directly in Posit Connect and Posit Connect Cloud when available (#2859)
+- If the agent process crashes or is killed, the extension will now restart it. (#2961)
 
 ## [1.18.1]
 
