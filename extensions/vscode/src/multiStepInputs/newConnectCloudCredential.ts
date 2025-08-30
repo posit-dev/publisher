@@ -233,6 +233,10 @@ export async function newConnectCloudCredential(
   // ***************************************************************
   async function authenticate(input: MultiStepInput, state: MultiStepState) {
     try {
+      const trafficParams = getConnectCloudTrafficParams(env.appName).replace(
+        "?",
+        "&",
+      );
       // we await this input box that it is treated as an information message
       // until the api calls happening in the background have completed
       const resp = await input.showInfoMessage<
@@ -263,7 +267,7 @@ export async function newConnectCloudCredential(
         shouldPollApi: true,
         pollingInterval: connectCloudData.auth.interval * 1000,
         exitPollingCondition: (r) => Boolean(r.data),
-        browserUrl: `${connectCloudData.signupUrl || ""}${connectCloudData.auth.verificationURI}`,
+        browserUrl: `${connectCloudData.signupUrl || ""}${connectCloudData.auth.verificationURI}${trafficParams}`,
       });
 
       state.data.accessToken = resp.data?.accessToken;

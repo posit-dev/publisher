@@ -28,6 +28,9 @@ export const recordAddConnectCloudUrlParams = (
       if (record.dashboardUrl && !record.dashboardUrl.includes(params)) {
         record.dashboardUrl += `${params}`;
       }
+      if (record.serverUrl && !record.serverUrl.includes(params)) {
+        record.serverUrl += `${params}`;
+      }
       if (
         isContentRecord(record) &&
         record.logsUrl &&
@@ -50,6 +53,9 @@ export const msgAddConnectCloudUrlParams = (
     const params = getConnectCloudTrafficParams(ideName);
     if (msg.data?.dashboardUrl && !msg.data.dashboardUrl.includes(params)) {
       msg.data.dashboardUrl += `${params}`;
+    }
+    if (msg.data?.serverUrl && !msg.data.serverUrl.includes(params)) {
+      msg.data.serverUrl += `${params}`;
     }
     if (msg.data?.logsUrl && !msg.data.logsUrl.includes(params)) {
       msg.data.logsUrl += `${params}`;
