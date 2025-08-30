@@ -13,7 +13,7 @@ import {
 import { mkExtensionContextStateMock } from "src/test/unit-test-utils/vscode-mocks";
 import { LocalState } from "./constants";
 import { PublisherState } from "./state";
-import { PreContentRecord } from "src/api";
+import { AllContentRecordTypes, PreContentRecord } from "src/api";
 
 class mockApiClient {
   readonly contentRecords = {
@@ -61,6 +61,14 @@ vi.mock("src/utils/progress", () => {
   };
 });
 
+vi.mock("src/utils/connectCloudHelpers", () => ({
+  recordAddConnectCloudUrlParams: vi.fn(
+    (record: AllContentRecordTypes, _ideName: string) => {
+      return record;
+    },
+  ),
+}));
+
 vi.mock("vscode", () => {
   // mock Disposable
   const disposableMock = vi.fn();
@@ -82,6 +90,9 @@ vi.mock("vscode", () => {
     window: windowMock,
     workspace: workspaceStateMock,
     EventEmitter: vi.fn(),
+    env: {
+      appName: "",
+    },
   };
 });
 

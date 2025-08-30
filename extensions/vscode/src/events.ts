@@ -1,18 +1,21 @@
-// Copyright (C) 2024 by Posit Software, PBC.
+// Copyright (C) 2025 by Posit Software, PBC.
 
-import { Disposable } from "vscode";
+import { Disposable, env } from "vscode";
 
 import EventSource from "eventsource";
 import { Readable } from "stream";
 
 import { Events, EventStreamMessage, ProductType } from "src/api";
 import { getProductName } from "src/utils/multiStepHelpers";
+import { msgAddConnectCloudUrlParams } from "./utils/connectCloudHelpers";
 
 export type EventStreamRegistration = (message: EventStreamMessage) => void;
 
 export type UnregisterCallback = { unregister: () => void };
 
 export function displayEventStreamMessage(msg: EventStreamMessage): string {
+  msg = msgAddConnectCloudUrlParams(msg, env.appName);
+
   if (msg.type === "publish/checkCapabilities/log") {
     if (msg.data.username) {
       return `${msg.data.message}: username ${msg.data.username}, email ${msg.data.email}`;
