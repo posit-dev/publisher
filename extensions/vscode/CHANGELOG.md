@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use server hostname as the default credential name for new Connect credentials
   (#2922)
 - Introduced Posit Connect Cloud support. This feature allows publishing to Connect Cloud.
+- Added an extra param for all Connect Cloud redirects to collect traffic data from Publisher (#2969)
 
 ### Changed
 
