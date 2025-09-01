@@ -58,7 +58,7 @@ func (s *RInterpreterFunctionalSuite) SetupTest() {
 		s.defaultInterpreter = s.interpreter.(*defaultRInterpreter)
 
 		// Check if renv is installed
-		aerr := s.defaultInterpreter.isRenvInstalled(s.rExecutable.String())
+		aerr := s.defaultInterpreter.IsRenvInstalled(s.rExecutable.String())
 		s.renvInstalled = (aerr == nil)
 		if !s.renvInstalled {
 			s.T().Logf("renv is not installed: %s", aerr.Error())
@@ -101,10 +101,10 @@ func (s *RInterpreterFunctionalSuite) createTestRenvLock() {
 	s.Require().NoError(err)
 }
 
-// TestIsRenvInstalled tests the isRenvInstalled function with a real R executable
+// TestIsRenvInstalled tests the IsRenvInstalled function with a real R executable
 func (s *RInterpreterFunctionalSuite) TestIsRenvInstalled() {
 	// Attempt to detect if renv is installed
-	aerr := s.defaultInterpreter.isRenvInstalled(s.rExecutable.String())
+	aerr := s.defaultInterpreter.IsRenvInstalled(s.rExecutable.String())
 
 	// If renv is not installed, we expect an error with ErrorRenvPackageNotInstalled code
 	if aerr != nil {
