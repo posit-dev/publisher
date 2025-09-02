@@ -605,7 +605,7 @@ export async function newDeployment(
         {
           iconPath: new ThemeIcon("file-code"),
           label: useSourceCode,
-          description: "Connect will render it for you",
+          description: "The server will render it for you",
         },
         {
           iconPath: new ThemeIcon("preview"),
