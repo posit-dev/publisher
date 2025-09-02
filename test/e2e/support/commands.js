@@ -1,6 +1,7 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import "@testing-library/cypress/add-commands";
+import "cypress-wait-until";
 import { parse } from "smol-toml";
 import "./selectors";
 import "./sequences";
