@@ -15,7 +15,7 @@ cat > /etc/rstudio/positron-user-settings.json << EOF
   "extensions.autoCheckUpdates": false,
   "update.showReleaseNotes": false,
   "update.mode": "none",
-  "telemetry.telemetryLevel": "off",
+  "telemetry.telemetryLevel": "off"
 }
 EOF
 
