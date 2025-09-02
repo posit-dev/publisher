@@ -17,7 +17,11 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{ checked: boolean; disabled?: boolean }>();
+defineProps<{
+  checked: boolean;
+  disabled?: boolean;
+  disableOpacity?: boolean;
+}>();
 
 const emit = defineEmits<{
   changed: [checked: boolean];
@@ -36,8 +40,10 @@ const handleChange = (event: Event) => {
   position: relative;
   user-select: none;
 
+  --checkbox-opacity: v-bind('disableOpacity ? 1 : "var(--disabled-opacity)"');
+
   &.disabled {
-    opacity: var(--disabled-opacity);
+    opacity: var(--checkbox-opacity);
   }
 
   input[type="checkbox"] {
