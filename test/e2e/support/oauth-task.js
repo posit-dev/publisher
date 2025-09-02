@@ -15,6 +15,9 @@ async function authorizeDeviceWithBrowser(verificationUrl, email, password) {
   const isCypressHeadless = getPlaywrightHeadless();
   let browser;
   try {
+    console.log(`🚀 Starting OAuth automation for: ${email}`);
+    console.log(`🔗 Verification URL: ${verificationUrl}`);
+
     browser = await chromium.launch({
       headless: isCypressHeadless,
       slowMo: 500,
@@ -28,8 +31,17 @@ async function authorizeDeviceWithBrowser(verificationUrl, email, password) {
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.51 Safari/537.36",
     });
     const page = await context.newPage();
+
+    // Capture browser console logs
+    page.on("console", (msg) => {
+      console.log(`🌐 Browser console [${msg.type()}]:`, msg.text());
+    });
+
+    console.log(`📖 Navigating to OAuth page...`);
     await page.goto(verificationUrl);
     await page.waitForLoadState("networkidle");
+
+    console.log(`✉️ Filling email field with: ${email}`);
     // Fill email field
     const emailSelectors = [
       'input[name="email"]',
@@ -51,7 +63,10 @@ async function authorizeDeviceWithBrowser(verificationUrl, email, password) {
     }
     if (!emailField) throw new Error("Could not find email input field");
     await page.fill(emailField, email);
+    console.log(`📤 Email filled successfully`);
+
     // Click continue button
+    console.log(`🔘 Looking for continue button...`);
     const continueSelectors = [
       'button:has-text("Continue")',
       'button[type="submit"]',
@@ -74,6 +89,7 @@ async function authorizeDeviceWithBrowser(verificationUrl, email, password) {
     } else {
       await page.click(continueButton);
     }
+    console.log(`🔑 Looking for password field...`);
     // Fill password field
     const passwordSelectors = [
       'input[name="password"]',
@@ -94,6 +110,9 @@ async function authorizeDeviceWithBrowser(verificationUrl, email, password) {
     }
     if (!passwordField) throw new Error("Could not find password input field");
     await page.fill(passwordField, password);
+    console.log(`🔑 Password filled successfully`);
+
+    console.log(`🔘 Looking for login button...`);
     // Click login button
     const loginSelectors = [
       'button:has-text("Log in")',
@@ -118,16 +137,21 @@ async function authorizeDeviceWithBrowser(verificationUrl, email, password) {
     } else {
       await page.click(loginButton);
     }
+    console.log(`🔐 Handling authorization page...`);
     // Handle authorization page
     await page.waitForSelector("text=Authorize access", {
       timeout: getPlaywrightTimeout(),
     });
+    console.log(`✅ Found authorization page, clicking Continue...`);
     await page.click('button:has-text("Continue")');
+    console.log(`✅ Clicking Authorize...`);
     await page.click('button:has-text("Authorize")');
+    console.log(`⏳ Waiting for success confirmation...`);
     // Wait for success
     await page.waitForSelector("text=Access authorized", {
       timeout: getPlaywrightTimeout(),
     });
+    console.log(`🎉 OAuth authorization completed successfully!`);
   } finally {
     if (browser) await browser.close();
   }

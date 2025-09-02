@@ -53,6 +53,14 @@ module.exports = defineConfig({
     experimentalOriginDependencies: true,
     // eslint-disable-next-line no-unused-vars
     setupNodeEvents(on, config) {
+      // Install cypress-terminal-report for enhanced logging in headless mode
+      require("cypress-terminal-report/src/installLogsPrinter")(on, {
+        printLogsToConsole: "always",
+        includeSuccessfulHookLogs: true,
+        commandTrimLength: 800,
+        compactLogs: 1,
+      });
+
       on("task", {
         authenticateOAuthDevice,
         print(message) {
