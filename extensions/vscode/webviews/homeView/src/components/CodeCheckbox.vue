@@ -1,7 +1,12 @@
 <template>
-  <div class="vscode-checkbox">
+  <div class="vscode-checkbox" :class="{ disabled: disabled }">
     <label>
-      <input type="checkbox" />
+      <input
+        :checked="checked"
+        :disabled="disabled"
+        type="checkbox"
+        @change="handleChange"
+      />
       <span class="icon">
         <i class="codicon codicon-check icon-checked"></i>
         <i class="codicon codicon-chrome-minimize icon-indeterminate"></i>
@@ -12,9 +17,16 @@
 </template>
 
 <script setup lang="ts">
-/**
- * disabled
- */
+defineProps<{ checked: boolean; disabled?: boolean }>();
+
+const emit = defineEmits<{
+  changed: [checked: boolean];
+}>();
+
+const handleChange = (event: Event) => {
+  const checked = (event.target as HTMLInputElement).checked;
+  emit("changed", checked);
+};
 </script>
 
 <style lang="scss" scoped>
@@ -23,6 +35,9 @@
   flex: 1;
   position: relative;
   user-select: none;
+
+  &.disabled {
+    opacity: var(--disabled-opacity);
 }
 
 .vscode-checkbox input[type="checkbox"] {
