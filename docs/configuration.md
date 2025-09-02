@@ -159,9 +159,9 @@ _Only valid when `product_type` is `connect`_
 
 Controls how Publisher retrieves dependencies for R projects.
 
-- `false` (default): Read package metadata directly from `renv.lock`. 
+- `false` (default): Read package metadata directly from `renv.lock`.
   This does not require a local `renv` library to be present in your workspace.
-- `true`: Read package metadata from the local `renv` library (legacy behavior). 
+- `true`: Read package metadata from the local `renv` library (legacy behavior).
   This requires an initialized `renv` library matching your lockfile.
 
 #### version
