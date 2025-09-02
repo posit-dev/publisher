@@ -53,9 +53,8 @@ export class QuartoProjectHelper {
   }
 
   async render() {
-    try {
-      await this.isQuartoAvailable();
-    } catch (_) {
+    const quartoAvaliable = await this.isQuartoAvailable();
+    if (!quartoAvaliable) {
       // Quarto is not available on the system,
       // just return and let the user continue, nothing we can do
       return Promise.reject(new ErrorNoQuarto());
@@ -65,7 +64,7 @@ export class QuartoProjectHelper {
       // If project rendering succeeds, stop and continue
       await this.renderProject();
       return;
-    } catch (_) {
+    } catch {
       // Rendering the project failed, could possibly be that this is not a project,
       // meaning a _quarto.yml configuration missing.
     }
@@ -74,15 +73,20 @@ export class QuartoProjectHelper {
       // The user might have standalone .qmd document that can be rendered,
       // we'll try that out.
       await this.renderDocument();
-    } catch (_) {
+    } catch {
       // Definitely could not render.
       // Surface the first encountered error as it may provide better details.
       return Promise.reject(new ErrorQuartoRender());
     }
   }
 
-  isQuartoAvailable(): Promise<void> {
-    return runTerminalCommand("quarto --version");
+  async isQuartoAvailable(): Promise<boolean> {
+    try {
+      await runTerminalCommand("quarto --version");
+      return Promise.resolve(true);
+    } catch {
+      return Promise.resolve(false);
+    }
   }
 
   renderedEntrypointExists(files: ContentRecordFile[]): boolean {
