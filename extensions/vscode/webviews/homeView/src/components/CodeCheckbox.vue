@@ -114,6 +114,7 @@ const handleChange = (event: Event) => {
   }
 
   .text {
+    flex-grow: 1;
     opacity: 0.9;
     padding-inline-start: calc(var(--design-unit) * 2px + 2px);
   }
