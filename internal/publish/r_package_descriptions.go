@@ -30,8 +30,8 @@ func (p *defaultPublisher) getRPackages(scanDependencies bool) (bundles.PackageM
 
 	var lockfilePath util.AbsolutePath
 	var lockfileString string
-    if scanDependencies {
-        log.Info("Detect dependencies from project")
+	if scanDependencies {
+		log.Info("Detect dependencies from project")
 		var scanPaths []string
 		if p.Config != nil && len(p.Config.Files) > 0 {
 			scanPaths = make([]string, 0, len(p.Config.Files))
@@ -65,12 +65,12 @@ func (p *defaultPublisher) getRPackages(scanDependencies bool) (bundles.PackageM
 	}
 
 	// Detect mapper type to decide which message to emit
-    if _, isLock := p.rPackageMapper.(*renv.LockfilePackageMapper); isLock {
-        log.Info("Loading packages from renv.lock", "lockfile", lockfilePath.String())
-    } else {
-        log.Info("Loading packages from local R library")
-    }
-    log.Debug("Collecting manifest R packages", "lockfile", lockfilePath)
+	if _, isLock := p.rPackageMapper.(*renv.LockfilePackageMapper); isLock {
+		log.Info("Loading packages from renv.lock", "lockfile", lockfilePath.String())
+	} else {
+		log.Info("Loading packages from local R library")
+	}
+	log.Debug("Collecting manifest R packages", "lockfile", lockfilePath)
 
 	rPackages, err := p.rPackageMapper.GetManifestPackages(p.Dir, lockfilePath, log)
 	if err != nil {
