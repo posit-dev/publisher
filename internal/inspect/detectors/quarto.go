@@ -217,12 +217,22 @@ func (d *QuartoDetector) configFromFileInspect(base util.AbsolutePath, entrypoin
 		Engines: engines,
 	}
 
+	err = d.includeProjectFilesConfig(base, cfg, inspectOutput)
+	if err != nil {
+		return nil, err
+	}
+
+	return cfg, nil
+}
+
+func (d *QuartoDetector) includeProjectFilesConfig(base util.AbsolutePath, cfg *config.Config, inspectOutput *quartoInspectOutput) error {
 	for _, inputFile := range inspectOutput.ProjectRequiredFiles() {
 		var relPath string
+		var err error
 		if filepath.IsAbs(inputFile) {
 			relPath, err = filepath.Rel(base.String(), inputFile)
 			if err != nil {
-				return nil, err
+				return err
 			}
 		} else {
 			relPath = inputFile
@@ -234,7 +244,7 @@ func (d *QuartoDetector) configFromFileInspect(base util.AbsolutePath, entrypoin
 		path := base.Join(filename)
 		exists, err := path.Exists()
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		if exists {
@@ -245,7 +255,23 @@ func (d *QuartoDetector) configFromFileInspect(base util.AbsolutePath, entrypoin
 			}
 		}
 	}
-	return cfg, nil
+
+	d.includeExtensionsDirIfAny(base, cfg)
+
+	return nil
+}
+
+func (d *QuartoDetector) includeExtensionsDirIfAny(base util.AbsolutePath, cfg *config.Config) {
+	extensionsDir := base.Join("_extensions")
+	exists, err := extensionsDir.Exists()
+	if err != nil {
+		d.log.Error("Error checking for Quarto _extensions directory", "error", err)
+		return
+	}
+	if exists {
+		d.log.Debug("Including Quarto _extensions directory in deployment files")
+		cfg.Files = append(cfg.Files, "/_extensions")
+	}
 }
 
 // Include the static assets configuration for the Quarto project, under Config.Alternatives
