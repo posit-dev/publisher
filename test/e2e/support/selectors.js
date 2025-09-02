@@ -145,9 +145,101 @@ Cypress.Commands.add("publisherWebviewExtreme", () => {
 });
 
 Cypress.Commands.add("getPublisherSidebarIcon", () => {
-  return cy.findByLabelText("Posit Publisher", {
-    selector: ".codicon-posit-publisher-publish",
-  });
+  // Advanced Publisher icon finder that waits for extension stability
+  const maxAttempts = 30;
+  const stabilityChecks = 3; // Number of consecutive checks to confirm stability
+
+  function waitForExtensionStability(attempt = 1) {
+    cy.log(`Checking extension stability (attempt ${attempt}/${maxAttempts})`);
+
+    return cy.get("body", { timeout: 2000 }).then(($body) => {
+      const bodyText = $body.text();
+      const isLoading =
+        bodyText.includes("starting posit publisher") ||
+        bodyText.includes("python extension loading") ||
+        bodyText.includes("please wait") ||
+        bodyText.includes("activating extension");
+
+      if (isLoading) {
+        cy.log("Extension still loading, waiting for stability...");
+        if (attempt < maxAttempts) {
+          // eslint-disable-next-line cypress/no-unnecessary-waiting
+          cy.wait(1500);
+          return waitForExtensionStability(attempt + 1);
+        }
+        cy.log(
+          "WARNING: Extension still appears to be loading after max attempts",
+        );
+      } else {
+        cy.log("Extension loading indicators cleared");
+      }
+
+      return findAndVerifyIcon();
+    });
+  }
+
+  function findAndVerifyIcon() {
+    const selectors = [
+      'button[aria-label*="Posit Publisher"]',
+      'button[title*="Posit Publisher"]',
+      'button[aria-label*="Publisher"]',
+      'button[title*="Publisher"]',
+      ".codicon-posit-publisher-publish",
+    ];
+
+    function trySelectors(selectorIndex = 0, stabilityCount = 0) {
+      if (selectorIndex >= selectors.length) {
+        cy.log("No icon found with any selector, retrying...");
+        // eslint-disable-next-line cypress/no-unnecessary-waiting
+        cy.wait(2000);
+        return findAndVerifyIcon();
+      }
+
+      const selector = selectors[selectorIndex];
+      cy.log(`Trying selector: ${selector}`);
+
+      return cy.get("body").then(($body) => {
+        const elements = $body.find(selector);
+
+        if (elements.length > 0 && elements.is(":visible")) {
+          cy.log(`Found potentially stable icon with ${selector}`);
+
+          // Wait and verify stability multiple times
+          // eslint-disable-next-line cypress/no-unnecessary-waiting
+          return cy.wait(1000).then(() => {
+            return cy.get("body").then(($bodyAfter) => {
+              const elementsAfter = $bodyAfter.find(selector);
+
+              if (elementsAfter.length > 0 && elementsAfter.is(":visible")) {
+                if (stabilityCount >= stabilityChecks - 1) {
+                  cy.log(
+                    `Icon confirmed stable after ${stabilityChecks} checks`,
+                  );
+                  return cy.get(selector).first().should("be.visible");
+                } else {
+                  cy.log(
+                    `Stability check ${stabilityCount + 1}/${stabilityChecks} passed`,
+                  );
+                  return trySelectors(selectorIndex, stabilityCount + 1);
+                }
+              } else {
+                cy.log(
+                  "Icon disappeared during stability check, trying next selector",
+                );
+                return trySelectors(selectorIndex + 1, 0);
+              }
+            });
+          });
+        } else {
+          return trySelectors(selectorIndex + 1, 0);
+        }
+      });
+    }
+
+    return trySelectors();
+  }
+
+  return waitForExtensionStability();
 });
 
 Cypress.Commands.add("toggleCredentialsSection", () => {
