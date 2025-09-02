@@ -9,6 +9,20 @@ interface FilesApi {
   get: () => Promise<AxiosResponse<ContentRecordFile>>;
 }
 
+export class ErrorNoQuarto extends Error {
+  constructor() {
+    super("Could not find Quarto binary on the system.");
+    this.name = "ErrorNoQuarto";
+  }
+}
+
+export class ErrorQuartoRender extends Error {
+  constructor() {
+    super("Could not render Quarto project.");
+    this.name = "ErrorQuartoRender";
+  }
+}
+
 export class QuartoProjectHelper {
   readonly filesApi: FilesApi;
   readonly entrypoint: string;
@@ -32,18 +46,19 @@ export class QuartoProjectHelper {
     const renderingExists = this.renderedEntrypointExists(
       filesResponse.data.files,
     );
-    if (renderingExists) {
-      // Existing renderings present, do nothing
-      return;
+    if (!renderingExists) {
+      // No renderings, we'll help out rendering, if possible
+      return this.render();
     }
+  }
 
-    // No renderings, we'll help out rendering, if possible
+  async render() {
     try {
       await this.isQuartoAvailable();
     } catch (_) {
       // Quarto is not available on the system,
-      // let the user continue, nothing we can do
-      return;
+      // just return and let the user continue, nothing we can do
+      return Promise.reject(new ErrorNoQuarto());
     }
 
     try {
@@ -53,14 +68,16 @@ export class QuartoProjectHelper {
     } catch (_) {
       // Rendering the project failed, could possibly be that this is not a project,
       // meaning a _quarto.yml configuration missing.
-      // But the user might have standalone .qmd document that can be rendered,
-      // we'll try that out.
     }
 
     try {
+      // The user might have standalone .qmd document that can be rendered,
+      // we'll try that out.
       await this.renderDocument();
     } catch (_) {
-      return Promise.reject();
+      // Definitely could not render.
+      // Surface the first encountered error as it may provide better details.
+      return Promise.reject(new ErrorQuartoRender());
     }
   }
 

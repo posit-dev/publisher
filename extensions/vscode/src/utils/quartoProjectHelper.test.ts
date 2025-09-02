@@ -2,7 +2,11 @@
 
 import * as path from "path";
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import { QuartoProjectHelper } from "./quartoProjectHelper";
+import {
+  ErrorNoQuarto,
+  ErrorQuartoRender,
+  QuartoProjectHelper,
+} from "./quartoProjectHelper";
 
 const mockQuartoCheck = vi.fn().mockResolvedValue(0);
 const mockRenderCmd = vi.fn().mockResolvedValue(0);
@@ -326,6 +330,59 @@ describe("QuartoProjectHelper", () => {
           true,
         );
       });
+    });
+  });
+
+  describe("errors", () => {
+    test("there is no quarto binary", async () => {
+      filesGetFn.mockResolvedValue({
+        data: {
+          id: ".",
+          files: singleLevelProjectDir.noRendering,
+        },
+      });
+
+      mockQuartoCheck.mockRejectedValueOnce(new Error("oops"));
+
+      const helper = new QuartoProjectHelper(
+        mockFilesApi,
+        "index.qmd",
+        "index.html",
+        ".",
+      );
+
+      try {
+        await helper.render();
+      } catch (err) {
+        expect(err).toBeInstanceOf(ErrorNoQuarto);
+      }
+    });
+
+    test("could not render by any means", async () => {
+      filesGetFn.mockResolvedValue({
+        data: {
+          id: ".",
+          files: singleLevelProjectDir.noRendering,
+        },
+      });
+
+      mockRenderCmd.mockRejectedValueOnce(
+        new Error("Quarto cannot render lettuce"),
+      );
+      mockRenderCmd.mockRejectedValueOnce(1);
+
+      const helper = new QuartoProjectHelper(
+        mockFilesApi,
+        "index.qmd",
+        "index.html",
+        ".",
+      );
+
+      try {
+        await helper.render();
+      } catch (err) {
+        expect(err).toBeInstanceOf(ErrorQuartoRender);
+      }
     });
   });
 });
