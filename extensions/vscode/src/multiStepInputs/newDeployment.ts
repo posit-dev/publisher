@@ -56,7 +56,6 @@ import {
   isConnectCloud,
   getProductType,
 } from "src/utils/multiStepHelpers";
-import { QuartoProjectHelper } from "src/utils/quartoProjectHelper";
 
 const viewTitle = "Create a New Deployment";
 
@@ -620,19 +619,7 @@ export async function newDeployment(
 
     // If wants to push rendered code, update the inspectionResult to use that config
     if (pick.label === useRenderedDoc) {
-      const entrypoint = newDeploymentData.entrypoint.filePath || "";
       useAlternativeConfig();
-      const quartoHelper = new QuartoProjectHelper(
-        api.files,
-        entrypoint,
-        newDeploymentData.entrypoint.inspectionResult!.configuration.entrypoint!,
-        newDeploymentData.entrypoint.inspectionResult!.projectDir,
-      );
-      try {
-        await quartoHelper.verifyRenderedOutput();
-      } catch (err) {
-        console.log(err);
-      }
     }
 
     const nextStep = {
