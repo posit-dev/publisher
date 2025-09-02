@@ -31,21 +31,13 @@
           click: isExpandable ? toggleExpanded : undefined,
         }"
       />
-      <vscode-checkbox
-        v-if="title.includes('a')"
+      <CodeCheckbox
         :checked="checked"
         :disabled="disabled"
-        :data-automation="`checkbox-is-checked-${checked}`"
+        :disable-opacity="disableOpacity"
         class="tree-item-checkbox"
-        :class="{ 'opacity-100': disableOpacity }"
-        @click="checked ? $emit('uncheck') : $emit('check')"
+        @changed="checked ? $emit('uncheck') : $emit('check')"
       >
-        <span class="tree-item-title">{{ title }}</span>
-        <span v-if="description" class="tree-item-description">
-          {{ description }}
-        </span>
-      </vscode-checkbox>
-      <CodeCheckbox v-else class="tree-item-checkbox">
         <span class="tree-item-title">{{ title }}</span>
         <span v-if="description" class="tree-item-description">
           {{ description }}
