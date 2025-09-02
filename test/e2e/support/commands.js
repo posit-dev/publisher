@@ -1,7 +1,7 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import "@testing-library/cypress/add-commands";
-import { parse, stringify } from "smol-toml";
+import { parse } from "smol-toml";
 import "./selectors";
 import "./sequences";
 
@@ -202,13 +202,57 @@ Cypress.Commands.add("savePublisherFile", (filePath, jsonObject) => {
   return cy
     .exec("pwd")
     .then((result) => {
-      return cy
-        .log("savePublisherFile CWD", result.stdout)
-        .log("filePath", filePath);
+      cy.log("savePublisherFile CWD", result.stdout);
+      cy.log("filePath", filePath);
     })
     .then(() => {
-      const tomlString = stringify(jsonObject);
-      return cy.writeFile(filePath, tomlString);
+      // Read the original file to preserve formatting and comments
+      return cy.readFile(filePath, { encoding: "utf8" });
+    })
+    .then((originalContent) => {
+      cy.log("Original file content length:", originalContent.length);
+
+      // For now, we only need to add the connect_cloud section
+      // Look for existing connect_cloud section or add it
+      let modifiedContent = originalContent;
+
+      if (jsonObject.connect_cloud) {
+        const connectCloudSection = "\n[connect_cloud]\n";
+        const accessControlSection = `[connect_cloud.access_control]\npublic_access = ${jsonObject.connect_cloud.access_control.public_access}\n`;
+
+        // Check if connect_cloud section already exists
+        if (!modifiedContent.includes("[connect_cloud]")) {
+          // Add the new section at the end
+          modifiedContent =
+            modifiedContent.trim() +
+            "\n\n" +
+            connectCloudSection +
+            accessControlSection;
+        } else {
+          // Replace existing section (simple approach for now)
+          const connectCloudRegex = /\[connect_cloud\][\s\S]*?(?=\n\[|\n\n|$)/;
+          modifiedContent = modifiedContent.replace(
+            connectCloudRegex,
+            connectCloudSection + accessControlSection,
+          );
+        }
+      }
+
+      cy.log(`Modified file content length: ${modifiedContent.length}`);
+      return cy.writeFile(filePath, modifiedContent);
+    })
+    .then(() => {
+      // Verify the file was written successfully by reading it back
+      return cy.readFile(filePath).then((content) => {
+        cy.log(`File written successfully, content length: ${content.length}`);
+        if (content.length < 10) {
+          throw new Error(
+            `TOML file appears to be empty or invalid after write: ${filePath}`,
+          );
+        }
+        // Don't return the content - just return null to indicate success
+        return null;
+      });
     });
 });
 
@@ -543,6 +587,46 @@ cloud_environment = '${cloud_environment}'
     });
   },
 );
+
+Cypress.Commands.add("waitForTomlFileReady", (maxAttempts = 10) => {
+  function checkTomlReady(attempt = 1) {
+    cy.log(
+      `Checking if TOML file is ready (attempt ${attempt}/${maxAttempts})`,
+    );
+
+    return cy.publisherWebview().then(($webview) => {
+      // Look for indicators that the TOML file is loaded and editable
+      const $body = Cypress.$($webview);
+
+      // Check for file tree being visible and interactive
+      const hasFileTree = $body.find('[data-automation*="file"]').length > 0;
+      const hasCheckboxes = $body.find('input[type="checkbox"]').length > 0;
+      const hasTomlContent =
+        $body.text().includes("files") || $body.text().includes("entrypoint");
+
+      if (hasFileTree && hasCheckboxes && hasTomlContent) {
+        cy.log(
+          "TOML file appears ready - file tree, checkboxes, and content detected",
+        );
+        return cy.wrap(true);
+      } else {
+        cy.log(
+          `TOML not ready yet - fileTree:${hasFileTree}, checkboxes:${hasCheckboxes}, content:${hasTomlContent}`,
+        );
+
+        if (attempt < maxAttempts) {
+          // eslint-disable-next-line cypress/no-unnecessary-waiting
+          cy.wait(1500);
+          return checkTomlReady(attempt + 1);
+        } else {
+          throw new Error("TOML file did not become ready within timeout");
+        }
+      }
+    });
+  }
+
+  return checkTomlReady();
+});
 
 Cypress.on("uncaught:exception", () => {
   // Prevent CI from failing on harmless errors

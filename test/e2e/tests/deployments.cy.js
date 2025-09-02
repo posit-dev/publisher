@@ -95,7 +95,7 @@ describe("Deployments Section", () => {
       cy.waitForPublisherIframe(); // Wait after triggering extension
       cy.debugIframes();
       // Select files to include in deployment
-      const filesToSelect = ["data", "requirements.txt", "styles.css"];
+      const filesToSelect = ["data", "README.md", "styles.css"];
       cy.createPCCDeployment(
         "examples-shiny-python",
         "app.py",
@@ -105,12 +105,10 @@ describe("Deployments Section", () => {
           expect(config.title).to.equal("shiny-python-pcc");
           expect(config.type).to.equal("python-shiny");
           expect(config.entrypoint).to.equal("app.py");
-          // Check that all selected files are included
-          ["/app.py", "/data", "/requirements.txt", "/styles.css"].forEach(
-            (file) => {
-              expect(config.files).to.include(file);
-            },
-          );
+          // Check that all selected files are included (note: requirements.txt is auto-managed)
+          ["/app.py", "/data", "/README.md", "/styles.css"].forEach((file) => {
+            expect(config.files).to.include(file);
+          });
           // --- Add public access to the config TOML before deploy ---
           config.connect_cloud = config.connect_cloud || {};
           config.connect_cloud.access_control = { public_access: true };
