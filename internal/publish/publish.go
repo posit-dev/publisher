@@ -31,13 +31,15 @@ type Publisher interface {
 }
 
 type defaultPublisher struct {
-	log            logging.Logger
-	emitter        events.Emitter
-	rPackageMapper renv.PackageMapper
-	r              util.Path
-	python         util.Path
-	*publishhelper.PublishHelper
-	serverPublisher ServerPublisher
+    log            logging.Logger
+    emitter        events.Emitter
+    rPackageMapper renv.PackageMapper
+    r              util.Path
+    python         util.Path
+    *publishhelper.PublishHelper
+    serverPublisher ServerPublisher
+    // true when using legacy library-based manifest package generation
+    rPackagesFromLibrary bool
 }
 
 type createBundleStartData struct{}
@@ -98,8 +100,13 @@ func NewFromState(
 	rexec, _ := rInterpreter.GetRExecutable()
 	pyexec, _ := pythonInterpreter.GetPythonExecutable()
 
-	// TODO: Switch to using lockfileOnly
-	packageManager, err := rPackageMapperFactory(s.Dir, rexec.Path, log, false)
+    // Select R package mapping strategy from config; default to lockfile-based
+    packagesFromLibrary := false
+    if s.Config != nil && s.Config.R != nil && s.Config.R.PackagesFromLibrary != nil {
+        packagesFromLibrary = *s.Config.R.PackagesFromLibrary
+    }
+    lockfileOnly := !packagesFromLibrary
+    packageManager, err := rPackageMapperFactory(s.Dir, rexec.Path, log, lockfileOnly)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create R package mapper: %w", err)
 	}
@@ -122,15 +129,16 @@ func NewFromState(
 		return nil, err
 	}
 
-	return &defaultPublisher{
-		log:             log,
-		emitter:         emitter,
-		rPackageMapper:  packageManager,
-		r:               rexec.Path,
-		python:          pyexec.Path,
-		PublishHelper:   helper,
-		serverPublisher: serverPublisher,
-	}, nil
+    return &defaultPublisher{
+        log:             log,
+        emitter:         emitter,
+        rPackageMapper:  packageManager,
+        r:               rexec.Path,
+        python:          pyexec.Path,
+        PublishHelper:   helper,
+        serverPublisher: serverPublisher,
+        rPackagesFromLibrary: packagesFromLibrary,
+    }, nil
 }
 
 func (p *defaultPublisher) GetDeployedContentID() (types.ContentID, bool) {
