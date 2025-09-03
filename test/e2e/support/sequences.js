@@ -212,9 +212,12 @@ Cypress.Commands.add(
       .should("be.visible")
       .click();
 
+    cy.get(".quick-input-widget").find(".quick-input-filter input").type(title);
+
     cy.get(".quick-input-widget")
       .find(".quick-input-filter input")
-      .type(`${title}{enter}`);
+      .should("have.value", title)
+      .type("{enter}");
 
     cy.get(".quick-input-widget")
       .contains(".quick-input-list-row", "pcc-deploy-credential")

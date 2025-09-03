@@ -190,30 +190,63 @@ Cypress.Commands.add("expandWildcardFile", (targetDir, wildCardPath) => {
 });
 
 Cypress.Commands.add("savePublisherFile", (filePath, jsonObject) => {
-  return cy.readFile(filePath, { encoding: "utf8" }).then((originalContent) => {
-    let modifiedContent = originalContent;
+  // First check if file exists and get its permissions
+  return cy
+    .exec(`ls -la "${filePath}"`, { failOnNonZeroExit: false })
+    .then((lsResult) => {
+      cy.log(`File permissions: ${lsResult.stdout}`);
 
-    if (jsonObject.connect_cloud) {
-      const connectCloudSection = "\n[connect_cloud]\n";
-      const accessControlSection = `[connect_cloud.access_control]\npublic_access = ${jsonObject.connect_cloud.access_control.public_access}\n`;
+      // Check if we can write to the directory
+      const dirPath = filePath.substring(0, filePath.lastIndexOf("/"));
+      return cy
+        .exec(`test -w "${dirPath}"`, { failOnNonZeroExit: false })
+        .then((dirResult) => {
+          cy.log(`Directory writable: ${dirResult.code === 0}`);
 
-      if (!modifiedContent.includes("[connect_cloud]")) {
-        modifiedContent =
-          modifiedContent.trim() +
-          "\n\n" +
-          connectCloudSection +
-          accessControlSection;
-      } else {
-        const connectCloudRegex = /\[connect_cloud\][\s\S]*?(?=\n\[|\n\n|$)/;
-        modifiedContent = modifiedContent.replace(
-          connectCloudRegex,
-          connectCloudSection + accessControlSection,
-        );
+          // Check if file is writable
+          return cy
+            .exec(`test -w "${filePath}"`, { failOnNonZeroExit: false })
+            .then((fileResult) => {
+              cy.log(`File writable: ${fileResult.code === 0}`);
+
+              if (fileResult.code !== 0) {
+                // Try to make it writable
+                cy.log(`Attempting to make file writable...`);
+                return cy
+                  .exec(`chmod 644 "${filePath}"`, { failOnNonZeroExit: false })
+                  .then(() => {
+                    return cy.readFile(filePath, { encoding: "utf8" });
+                  });
+              } else {
+                return cy.readFile(filePath, { encoding: "utf8" });
+              }
+            });
+        });
+    })
+    .then((originalContent) => {
+      let modifiedContent = originalContent;
+
+      if (jsonObject.connect_cloud) {
+        const connectCloudSection = "\n[connect_cloud]\n";
+        const accessControlSection = `[connect_cloud.access_control]\npublic_access = ${jsonObject.connect_cloud.access_control.public_access}\n`;
+
+        if (!modifiedContent.includes("[connect_cloud]")) {
+          modifiedContent =
+            modifiedContent.trim() +
+            "\n\n" +
+            connectCloudSection +
+            accessControlSection;
+        } else {
+          const connectCloudRegex = /\[connect_cloud\][\s\S]*?(?=\n\[|\n\n|$)/;
+          modifiedContent = modifiedContent.replace(
+            connectCloudRegex,
+            connectCloudSection + accessControlSection,
+          );
+        }
       }
-    }
 
-    return cy.writeFile(filePath, modifiedContent);
-  });
+      return cy.writeFile(filePath, modifiedContent);
+    });
 });
 
 Cypress.Commands.add("loadTomlFile", (filePath) => {
