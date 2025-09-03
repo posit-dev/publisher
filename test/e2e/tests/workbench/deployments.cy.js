@@ -98,9 +98,9 @@ Cypress.Commands.add("cleanupWorkbenchData", (projectDir) => {
     if (result.stderr) cy.log(`Cleanup stderr: ${result.stderr}`);
   });
 
-  // Remove test-* directories
+  // Remove workbench e2e projects
   cy.exec(
-    'for dir in content-workspace/test-*; do rm -rf "$dir" 2>/dev/null || true; done',
+    'for dir in content-workspace/workbench-e2e-*; do rm -rf "$dir" 2>/dev/null || true; done',
     {
       failOnNonZeroExit: false,
     },
@@ -197,7 +197,7 @@ Cypress.Commands.add("startWorkbenchPositronPythonProject", () => {
 
   // Set a randomized project name
   cy.contains("Set project name").should("be.visible");
-  const projectName = `test-${Date.now().toString(36).substring(4)}`;
+  const projectName = `workbench-e2e-${Math.random().toString(36).slice(2, 10)}`;
   cy.contains("span", "Enter a name for your new Python Project")
     .parent("label")
     .find("input")
