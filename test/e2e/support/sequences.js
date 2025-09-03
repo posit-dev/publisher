@@ -156,6 +156,7 @@ Cypress.Commands.add(
     title, // string
     verifyTomlCallback, // func
     filesToSelect = [], // array of file/dir names to select in the file selection pane (optional)
+    credentialName = "pcc-deploy-credential", // string - name of the credential to select (optional)
   ) => {
     cy.on("uncaught:exception", () => false);
 
@@ -220,7 +221,8 @@ Cypress.Commands.add(
       .type("{enter}");
 
     cy.get(".quick-input-widget")
-      .contains(".quick-input-list-row", "pcc-deploy-credential")
+      .find(".quick-input-list-row")
+      .contains(credentialName)
       .should("be.visible")
       .click();
 
@@ -232,18 +234,30 @@ Cypress.Commands.add(
 
     // If filesToSelect is provided and not empty, select additional files
     if (Array.isArray(filesToSelect) && filesToSelect.length > 0) {
+      // Wait a moment for file tree to fully render in CI
       filesToSelect.forEach((fileOrDir) => {
-        cy.publisherWebview()
-          .find('[data-automation="project-files"]')
-          .find(`vscode-checkbox[aria-label="${fileOrDir}"]`)
+        // Retry with backoff for CI stability
+        cy.retryWithBackoff(
+          () =>
+            cy
+              .publisherWebview()
+              .find('[data-automation="project-files"]')
+              .contains(".tree-item-title", fileOrDir)
+              .closest(".tree-item")
+              .find('.vscode-checkbox input[type="checkbox"]'),
+          10, // more retries
+          1000, // longer delays
+        )
           .should("exist")
           .should("be.visible")
           .then(($checkbox) => {
-            const isChecked = $checkbox.attr("aria-checked") === "true";
+            const isChecked = $checkbox.prop("checked");
             if (!isChecked) {
               cy.wrap($checkbox).click({ force: true });
+              // eslint-disable-next-line cypress/no-unnecessary-waiting
+              cy.wait(500); // Small wait after click
               // Verify the click worked
-              cy.wrap($checkbox).should("have.attr", "aria-checked", "true");
+              cy.wrap($checkbox).should("be.checked");
             }
           });
       });
