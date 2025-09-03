@@ -50,6 +50,7 @@ func (s *defaultRDependencyScanner) ScanDependencies(paths []string, rExecutable
 
 func (s *defaultRDependencyScanner) ScanDependenciesInDir(paths []string, rExecutable string, targetPath util.Path) (util.AbsolutePath, error) {
 	// Build R script: ensure non-interactive renv, detect deps from the base project (working dir),
+	// regardless of the destination targetPath for the lockfile.
 	// initialize a temporary renv project in tmpDir, install deps into it, then snapshot its lockfile.
 	normalizedProjectPath := filepath.ToSlash(targetPath.String()) // Use forward-slash for compatibility across platforms.
 	rPathsVec, err := s.toRPathsVector(paths)

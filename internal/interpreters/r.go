@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/afero"
 
 	"github.com/posit-dev/publisher/internal/executor"
+	"github.com/posit-dev/publisher/internal/inspect/dependencies/renv"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
@@ -516,6 +517,20 @@ func (i *defaultRInterpreter) CreateLockfile(lockfilePath util.AbsolutePath) err
 	stdout, stderr, err := i.cmdExecutor.RunScript(rExecutable.String(), []string{"-s"}, cmd, i.base, i.log)
 	i.log.Debug("renv::snapshot()", "out", string(stdout), "err", string(stderr))
 	return err
+}
+
+func (i *defaultRInterpreter) SetupRenvInDir(
+	targetPath util.AbsolutePath,
+) (util.AbsolutePath, error) {
+	rExecutable, err := i.GetRExecutable()
+	if err != nil {
+		return util.AbsolutePath{}, err
+	}
+
+	s := renv.NewRDependencyScanner(i.log)
+	pathSlice := []string{targetPath.String()}
+
+	return s.ScanDependenciesInDir(pathSlice, rExecutable.String(), targetPath.Path)
 }
 
 func (i *defaultRInterpreter) GetPackageManager() string {
