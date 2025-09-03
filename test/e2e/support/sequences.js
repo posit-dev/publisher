@@ -239,11 +239,13 @@ Cypress.Commands.add(
           .should("exist")
           .should("be.visible")
           .then(($checkbox) => {
-            if ($checkbox.attr("aria-checked") !== "true") {
+            const isChecked = $checkbox.attr("aria-checked") === "true";
+            if (!isChecked) {
               cy.wrap($checkbox).click({ force: true });
+              // Verify the click worked
+              cy.wrap($checkbox).should("have.attr", "aria-checked", "true");
             }
-          })
-          .should("have.attr", "aria-checked", "true");
+          });
       });
     }
 
