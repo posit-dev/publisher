@@ -2076,26 +2076,19 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       }),
     );
 
-    this.state.getSelectedContentRecord().then((currentContentRecord) => {
-      const serverType = currentContentRecord?.serverType || ServerType.CONNECT;
-      const productType = getProductType(serverType);
-
-      // register this command for Connect only,
-      // since Connect Cloud does not support this feature at the moment
-      if (isConnectProduct(productType)) {
-        this.context.subscriptions.push(
-          commands.registerCommand(
-            Commands.HomeView.AddIntegrationRequest,
-            () => this.showIntegrationQuickPick,
-            this,
-          ),
-          commands.registerCommand(
-            Commands.HomeView.DeleteIntegrationRequest,
-            () => this.deleteIntegrationRequest,
-            this,
-          ),
-        );
-      }
+    this.state.getSelectedContentRecord().then(() => {
+      this.context.subscriptions.push(
+        commands.registerCommand(
+          Commands.HomeView.AddIntegrationRequest,
+          () => this.showIntegrationQuickPick,
+          this,
+        ),
+        commands.registerCommand(
+          Commands.HomeView.DeleteIntegrationRequest,
+          () => this.deleteIntegrationRequest,
+          this,
+        ),
+      );
     });
 
     this.context.subscriptions.push(
