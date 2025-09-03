@@ -151,8 +151,8 @@ export async function newDeployment(
   ): ConfigurationInspectionResult => {
     // At the moment the only alternative we handle is the rendered version alternative
     return {
-      projectDir: insRes!.projectDir,
-      configuration: insRes!.configuration!.alternatives![0],
+      projectDir: insRes.projectDir,
+      configuration: insRes.configuration!.alternatives![0],
     };
   };
 
@@ -601,21 +601,24 @@ export async function newDeployment(
   ) {
     stepHistoryFlush(step.INPUT_CONFIG_ALTERNATIVES);
 
+    if (!newDeploymentData.entrypoint.inspectionResult) {
+      return;
+    }
+
     // At the moment the only configuration alternatives we handle
     // are related to publishing the source code or the rendered version alternative
+    const inspectionResult = newDeploymentData.entrypoint.inspectionResult;
     const inspectionOptions: QuickPickItemWithInspectionResult[] = [
       {
         iconPath: new ThemeIcon("file-code"),
         label: "Publish document with source code",
         description: "Connect will render it for you",
-        inspectionResult: newDeploymentData.entrypoint.inspectionResult,
+        inspectionResult: inspectionResult,
       },
       {
         iconPath: new ThemeIcon("preview"),
         label: "Publish rendered document only",
-        inspectionResult: inspectionResultAlternative(
-          newDeploymentData.entrypoint.inspectionResult!,
-        ),
+        inspectionResult: inspectionResultAlternative(inspectionResult),
       },
     ];
 
@@ -635,7 +638,7 @@ export async function newDeployment(
     }
 
     // If wants to push rendered code, update the inspectionResult to use that config
-    if (pick.inspectionResult!.configuration.type === ContentType.HTML) {
+    if (pick.inspectionResult?.configuration.type === ContentType.HTML) {
       useAlternativeConfig();
     }
 
