@@ -108,6 +108,7 @@ import {
   isConnectCloudProduct,
   isConnectProduct,
 } from "src/utils/multiStepHelpers";
+import { normalizeURL } from "src/utils/url";
 
 enum HomeViewInitialized {
   initialized = "initialized",
@@ -647,20 +648,64 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     DebounceDelaysMS.refreshRPackages,
   );
 
-  private async refreshIntegrationRequests() {
+  private async getCurrentServerCredential() {
+    const activeContentRecord = await this.state.getSelectedContentRecord();
+    return this.state.credentials.find((cfg) => {
+      // default to CONNECT when the server type is missing (i.e. could be an old connect deployment)
+      const serverType =
+        activeContentRecord?.serverType || ServerType.CONNECT;
+      const productType = getProductType(serverType);
+      if (isConnectCloudProduct(productType)) {
+        const credentialAccountName = cfg.accountName;
+        const recordAccountName =
+          activeContentRecord?.connectCloud?.accountName;
+        if (!recordAccountName) {
+          return false;
+        }
+        return credentialAccountName === recordAccountName;
+      } else if (isConnectProduct(productType)) {
+        const credentialUrl = cfg.url.toLowerCase();
+        const recordUrl = activeContentRecord?.serverUrl.toLowerCase();
+        if (!recordUrl) {
+          return false;
+        }
+        return normalizeURL(credentialUrl) === normalizeURL(recordUrl);
+      }
+
+      return false;
+    });
+  }
+
+  private async refreshIntegrationRequests(accountName?: string) {
+    if (!accountName) {
+      accountName = (await this.getCurrentServerCredential())?.name;
+    }
+
     const activeConfig = await this.state.getSelectedConfiguration();
     if (activeConfig && !isConfigurationError(activeConfig)) {
       try {
         const api = await useApi();
-        const response = await api.integrationRequests.list(
+        let response = await api.integrationRequests.list(
           activeConfig.configurationName,
           activeConfig.projectDir
         );
+        const integrationRequests = response.data;
+
+        response = await api.integrationRequests.getIntegrations(accountName!);
+        const integrations = response.data;
+        const requests = integrationRequests.map((ir) => {
+          const matchingIntegration = integrations.find(integration => integration.guid === ir.guid);
+          return {
+            ...ir,
+            displayName: matchingIntegration?.name,
+            displayDescription: matchingIntegration?.description,
+          };
+        });
         
         this.webviewConduit.sendMsg({
           kind: HostToWebviewMessageType.REFRESH_INTEGRATION_REQUESTS,
           content: {
-            integrationRequests: response.data,
+            integrationRequests: requests,
           },
         });
       } catch (error: unknown) {
@@ -1177,7 +1222,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     let integration: Integration | undefined;
     let integrations: Integration[] = [];
     try {
-      await showProgress("Retreiving Integrations from deployment server", Views.HomeView, async () =>  {
+      await showProgress("Retrieving Integrations from deployment server", Views.HomeView, async () =>  {
         const response = await api.integrationRequests.getIntegrations(
           accountName,
         );
@@ -1204,7 +1249,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
             guid: integration.guid,
             // name: integration.name, 
             // description: integration.description,
-            // auth_type: integration.auth_type,
+            // authType: integration.authType,
             // type: integration.template,
             // config: integration.config,
           } as IntegrationRequest,
@@ -1212,7 +1257,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       });
       
       // Refresh integration requests to show the newly added one in the UI
-      await this.refreshIntegrationRequests();
+      await this.refreshIntegrationRequests(accountName);
     } catch (error: unknown) {
       // Safely get error summary without risking HTML decoding issues
       let errorMessage = "Unknown error";
@@ -1229,7 +1274,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
   };
 
-  public deleteIntegrationRequest = async (context: { request: IntegrationRequest }) => {
+  public deleteIntegrationRequest = async (context: { accountName: string, request: IntegrationRequest }) => {
     const activeConfig = await this.state.getSelectedConfiguration();
     if (activeConfig === undefined) {
       console.error("homeView::deleteIntegrationRequest: No active configuration.");
@@ -1251,8 +1296,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           context.request,
         );
       });
-      
-      await this.refreshIntegrationRequests();
+
+      await this.refreshIntegrationRequests(context.accountName);
     } catch (error: unknown) {
       const summary = getSummaryStringFromError("removeIntegrationRequest", error);
       window.showInformationMessage(
@@ -1330,11 +1375,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   }
 
   private async showIntegrationQuickPick(integrations: Integration[]): Promise<Integration | undefined> {
-    // const api = await useApi();
-    // const response = await api.integrationRequests.getIntegrations(
-    //   accountName,
-    // );
-    // return response.data[0];
     const integrationQuickPickList: IntegrationQuickPick[] = integrations.map((integration) => {
       return {
         label: integration.name,

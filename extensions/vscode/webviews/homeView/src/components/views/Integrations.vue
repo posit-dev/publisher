@@ -1,17 +1,17 @@
 <template>
   <TreeSection
-    title="IntegrationRequests"
+    title="Integration Requests"
     data-automation="publisher-integrationRequests-section"
     :actions="sectionActions"
   >
     <WelcomeView v-if="!home.integrationRequests.length">
-      <p>No integrationRequests have been added yet.</p>
+      <p>No integration requests have been added yet.</p>
     </WelcomeView>
     <TreeItem
       v-else
       v-for="integrationRequest in home.integrationRequests"
-      :title="integrationRequest.name ?? ''"
-      :description="integrationRequest.description"
+      :title="integrationRequest.displayName ?? ''"
+      :description="integrationRequest.displayDescription ?? ''"
       :data-automation="`integration-request-${integrationRequest.name || ''}-list`"
       codicon="posit-publisher-icons-posit-logo"
       :actions="[
@@ -23,6 +23,7 @@
               kind: WebviewToHostMessageType.DELETE_INTEGRATION_REQUEST,
               content: {
                 request: integrationRequest,
+                accountName: accountName,
               },
             }),
         },
@@ -43,11 +44,9 @@ import { useHostConduitService } from "src/HostConduitService";
 
 import { WebviewToHostMessageType } from "../../../../../src/types/messages/webviewToHostMessages";
 
-const home = useHomeStore();
-
-const credentialName = home.serverCredential!.name;
-
 const { sendMsg } = useHostConduitService();
+const home = useHomeStore();
+const accountName = home.serverCredential!.name;
 
 const sectionActions = computed(() => {
   return [
@@ -58,7 +57,7 @@ const sectionActions = computed(() => {
         sendMsg({
           kind: WebviewToHostMessageType.ADD_INTEGRATION_REQUEST,
           content: {
-            accountName: credentialName,
+            accountName: accountName,
           }
         });
       },

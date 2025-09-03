@@ -212,6 +212,7 @@ export type DeleteIntegrationRequestMsg = AnyWebviewToHostMessage<
   WebviewToHostMessageType.DELETE_INTEGRATION_REQUEST,
   {
     request: IntegrationRequest;
+    accountName: string;
   }
 >;
 

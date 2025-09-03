@@ -51,7 +51,7 @@ export const useHomeStore = defineStore("home", () => {
 
       return config.configuration.integrationRequests || [];
     },
-    set: async (requests: IntegrationRequest[]) => {
+    set: (requests: IntegrationRequest[]) => {
       const config = selectedConfiguration.value;
       
       if (config !== undefined && !isConfigurationError(config)) {
