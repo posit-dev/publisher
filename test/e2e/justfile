@@ -69,6 +69,7 @@ build-images:
     docker build -f Dockerfile.base --tag e2ebase --platform linux/amd64 .
     just build "connect-publisher-e2e"
     just build "code-server"
+    just build-workbench "release"
 
 build-publisher:
     USE_PLATFORM="linux/amd64" just ../../build
