@@ -28,6 +28,10 @@ var specialYmlFiles = []string{
 	"_brand.yaml",
 }
 
+// When there is no quarto binary or version detected,
+// this is the default we will use on deployment configurations.
+var defaultQuartoVersion = "1.7.34"
+
 type QuartoDetector struct {
 	inferenceHelper
 	executor executor.Executor
@@ -153,8 +157,18 @@ func (d *QuartoDetector) configFromFileInspect(base util.AbsolutePath, entrypoin
 	inspectOutput, err := d.quartoInspect(entrypointPath)
 	if err != nil {
 		// Maybe this isn't really a quarto project, or maybe the user doesn't have quarto.
-		// We log this error and continue checking the other files.
 		d.log.Warn("quarto inspect failed", "file", entrypointPath.String(), "error", err)
+
+		// If the inspection fails, but we have a quarto.yml or .qmd file, we can still generate a basic config.
+		d.log.Warn("attempting to identify Quarto project by files context", "file", entrypointPath.String())
+
+		config, err := d.genNonInspectConfig(base, entrypointPath)
+		if err == nil && config != nil {
+			d.log.Info("Generated Quarto configuration without Quarto binary inspection", "file", entrypointPath.String())
+			return config, nil
+		}
+
+		d.log.Warn("Could not identify Quarto project by files context", "file", entrypointPath.String())
 		return nil, nil
 	}
 
@@ -399,6 +413,66 @@ func (d *QuartoDetector) staticConfigFromFilesLookup(base util.AbsolutePath, cfg
 		return staticCfg
 	}
 	return nil
+}
+
+// When "quarto inspect" fails, it very likely means that the system does not have a Quarto binary.
+// If files are noticed that match Quarto files - .qmd - we generate a basic non-inspect configuration.
+func (d *QuartoDetector) genNonInspectConfig(base util.AbsolutePath, entrypointPath util.AbsolutePath) (*config.Config, error) {
+	quartoYmlPath := base.Join("_quarto.yml")
+	quartoYmlExists, err := quartoYmlPath.Exists()
+	if err != nil {
+		return nil, err
+	}
+
+	// If entrypoint is not a .qmd file, nor a quarto yml configuration file
+	// we don't generate a configuration.
+	if !quartoYmlExists && entrypointPath.Ext() != ".qmd" {
+		return nil, nil
+	}
+
+	relEntrypoint, err := entrypointPath.Rel(base)
+	if err != nil {
+		return nil, err
+	}
+
+	cfg := config.New()
+	cfg.Type = contenttypes.ContentTypeQuarto
+	cfg.Entrypoint = relEntrypoint.String()
+	cfg.Quarto = &config.Quarto{
+		Version: defaultQuartoVersion,
+	}
+
+	// We will attempt to include any files that are common in Quarto projects.
+	qmdFilepaths, err := base.Glob("*.qmd")
+	if err != nil {
+		return nil, err
+	}
+
+	for _, path := range qmdFilepaths {
+		relPath, err := path.Rel(base)
+		if err != nil {
+			return nil, err
+		}
+		cfg.Files = append(cfg.Files, fmt.Sprint("/", relPath.String()))
+	}
+
+	for _, filename := range specialYmlFiles {
+		path := base.Join(filename)
+		exists, err := path.Exists()
+		if err != nil {
+			return nil, err
+		}
+
+		if exists {
+			cfg.Files = append(cfg.Files, fmt.Sprint("/", filename))
+			// Update entrypoint to keep the original _quarto.* file
+			if cfg.Entrypoint == "." {
+				cfg.Entrypoint = filename
+			}
+		}
+	}
+
+	return cfg, nil
 }
 
 func (d *QuartoDetector) renderSource(cfg *config.Config) string {
