@@ -400,7 +400,7 @@ func (s *PublishConnectSuite) publishWithClient(
 		rPackageMapper.On("GetManifestPackages", mock.Anything, mock.Anything).Return(bundles.PackageMap{}, nil)
 	}
 
-	rPackageMapperFactory = func(base util.AbsolutePath, rExecutable util.Path, log logging.Logger) (renv.PackageMapper, error) {
+	rPackageMapperFactory = func(base util.AbsolutePath, rExecutable util.Path, log logging.Logger, lockfileOnly bool) (renv.PackageMapper, error) {
 		return rPackageMapper, nil
 	}
 
@@ -656,7 +656,6 @@ type PublishConnectCloudSuite struct {
 type mockCloudError struct {
 	createContentErr    error
 	updateContentErr    error
-	updateBundleErr     error
 	revisionErr         error
 	uploadErr           error
 	publishContentErr   error
@@ -688,13 +687,6 @@ func (s *PublishConnectCloudSuite) TestPublishWithClientNewFailUpdateContent() {
 	target.ID = "myContentID"
 	updateContentErr := errors.New("error from UpdateContent")
 	s.publishWithCloudClient(target, &mockCloudError{updateContentErr: updateContentErr}, updateContentErr)
-}
-
-func (s *PublishConnectCloudSuite) TestPublishWithClientNewFailUpdateBundle() {
-	target := deployment.New()
-	target.ID = "myContentID"
-	updateBundleErr := errors.New("error from UpdateBundle")
-	s.publishWithCloudClient(target, &mockCloudError{updateBundleErr: updateBundleErr}, updateBundleErr)
 }
 
 func (s *PublishConnectCloudSuite) TestPublishWithClientNewFailRevision() {
@@ -802,9 +794,6 @@ func (s *PublishConnectCloudSuite) publishWithCloudClient(
 		})).Return(contentResponse, errsMock.createContentErr)
 	} else {
 		cloudClient.On("UpdateContent", mock.Anything).Return(contentResponse, errsMock.updateContentErr)
-		cloudClient.On("UpdateContentBundle", mock.MatchedBy(func(id types.ContentID) bool {
-			return id == myContentID
-		})).Return(contentResponse, errsMock.updateBundleErr)
 	}
 
 	// Setup GetAccount for private content entitlement check
@@ -897,7 +886,7 @@ func (s *PublishConnectCloudSuite) publishWithCloudClient(
 	}
 
 	// Replace factory function
-	rPackageMapperFactory = func(base util.AbsolutePath, rExecutable util.Path, log logging.Logger) (renv.PackageMapper, error) {
+	rPackageMapperFactory = func(base util.AbsolutePath, rExecutable util.Path, log logging.Logger, lockfileOnly bool) (renv.PackageMapper, error) {
 		return rPackageMapper, nil
 	}
 

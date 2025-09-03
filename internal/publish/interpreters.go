@@ -35,6 +35,10 @@ func (p *defaultPublisher) addInterpreterDetailsToTarget() error {
 		if err != nil {
 			return err
 		}
+		// Enforce modern renv.lock format when publishing
+		if err := renv.ValidateModernLockfile(lockfile); err != nil {
+			return err
+		}
 		p.log.Debug("Renv lockfile in use", "lockfile", lockfile)
 		p.Target.Renv = lockfile
 	}

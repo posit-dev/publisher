@@ -100,6 +100,14 @@ func (m *MockRInterpreter) RenvEnvironmentErrorCheck() *types.AgentError {
 	return args.Error(0).(*types.AgentError)
 }
 
+func (m *MockRInterpreter) IsRenvInstalled(rexecPath string) *types.AgentError {
+	args := m.Called(rexecPath)
+	if args.Get(0) == nil {
+		return nil
+	}
+	return args.Get(0).(*types.AgentError)
+}
+
 func (m *MockRInterpreter) GetPackageManager() string {
 	args := m.Called()
 	arg0 := args.Get(0)

@@ -5,11 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.19.1]
+## [Unreleased]
 
-### Added
+### Fixed
 
-- Added a celebratory message when credential token is connected
+- Fixed the Python and R Packages views incorrectly stating the default package
+  files were missing even when they were present (#2882, #2884)
+
+### Changed
+
+- R manifest package generation now uses only `renv.lock` file by default. To use the
+  local `renv` library instead, set `[r].packages_from_library = true` in the
+  configuration.
 
 ## [1.19.0]
 
