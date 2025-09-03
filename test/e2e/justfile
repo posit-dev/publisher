@@ -239,56 +239,46 @@ install-workbench-extension service:
         echo "Container publisher-e2e.workbench-{{ service }} is not running."
         echo "Please start it first with: just start-workbench {{ service }}"
         exit 1
-    fi
+    fi   
     
-    # Check if dist directory exists and is not empty
-    if [ ! -d "../../dist" ] || [ -z "$(ls -A ../../dist 2>/dev/null)" ]; then
-        echo "ERROR: Publisher VSIX directory (../../dist) does not exist or is empty."
-        echo ""
-        echo "Please build the extension first with:"
-        echo "just build-publisher"
-        exit 1
-    fi
+    # Find the VSIX file directly from the mounted volume
+    echo "Looking for VSIX file in container..."
+    VSIX_FILENAME=$(docker exec publisher-e2e.workbench-{{ service }} bash -c "ls -Art /home/rstudio/vsix | grep linux-amd64 | tail -n 1")
     
-    # Find the latest built VSIX for Publisher (linux-amd64 version)
-    VSIX_FILENAME=$(ls -Art ../../dist | grep linux-amd64 | tail -n 1)
     if [ -z "$VSIX_FILENAME" ]; then
-        echo "ERROR: No linux-amd64 Publisher VSIX found in ../../dist directory."
-        echo ""
-        echo "Please build the extension first with:"
-        echo "just build-publisher"
+        echo "ERROR: No linux-amd64 Publisher VSIX found in container."
+        echo "Contents of /home/rstudio/vsix:"
+        docker exec publisher-e2e.workbench-{{ service }} bash -c "ls -la /home/rstudio/vsix"
         exit 1
     fi
     
     echo "Using VSIX: $VSIX_FILENAME"
     
-    # Create a directory in the user home folder to copy the VSIX
-    docker exec publisher-e2e.workbench-{{ service }} bash -c "mkdir -p /home/rstudio/vsix"
-    
-    # Copy the VSIX file to the container
-    docker cp "../../dist/$VSIX_FILENAME" "publisher-e2e.workbench-{{ service }}:/home/rstudio/vsix/$VSIX_FILENAME"
-    
-    # Set proper ownership for the VSIX file
+    # Set proper ownership for the VSIX directory and files
     docker exec publisher-e2e.workbench-{{ service }} bash -c "chown -R rstudio:rstudio /home/rstudio/vsix"
     
     # Run installation command as the rstudio user to ensure proper permissions
+    echo "Installing extension..."
     docker exec -u rstudio publisher-e2e.workbench-{{ service }} bash -c "cd /usr/lib/rstudio-server/bin/positron-server && ./bin/positron-server --install-extension /home/rstudio/vsix/$VSIX_FILENAME --force"
     
-    # Show the installed extension with detailed information
+    # Verify the extension is installed
     echo "Verifying installation..."
-    echo "Available Publisher extension directories:"
-    docker exec publisher-e2e.workbench-{{ service }} bash -c "ls -la /home/rstudio/.positron-server/extensions/ | grep -i publisher"
+    for i in {1..30}; do
+        if docker exec publisher-e2e.workbench-{{ service }} bash -c "find /home/rstudio/.positron-server/extensions -path '*publisher*' -name package.json" | grep -q publisher; then
+            echo "Publisher extension successfully installed!"
+            break
+        fi
+        if [ $i -eq 30 ]; then
+            echo "ERROR: Failed to verify extension installation"
+            exit 1
+        fi
+        echo "Waiting for extension verification (attempt $i/30)..."
+        sleep 2
+    done
     
-    echo ""
-    echo "Installed extension metadata:"
-    docker exec publisher-e2e.workbench-{{ service }} bash -c "find /home/rstudio/.positron-server/extensions -path '*publisher*' -name package.json | xargs grep -A 2 version"
-    
-    echo ""
-    echo "Extension timestamp information:"
-    docker exec publisher-e2e.workbench-{{ service }} bash -c "stat -c '%n was last modified %y' /home/rstudio/.positron-server/extensions/*/package.json | grep publisher"
-    
-    # Clean up
-    docker exec publisher-e2e.workbench-{{ service }} rm -rf /home/rstudio/vsix
+    # Show the extension details
+    echo "Extension details:"
+    docker exec publisher-e2e.workbench-{{ service }} bash -c "find /home/rstudio/.positron-server/extensions -path '*publisher*' -name package.json | xargs grep -A 2 version" || true
     
     # Summary message
     echo ""
