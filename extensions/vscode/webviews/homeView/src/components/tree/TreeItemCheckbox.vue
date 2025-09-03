@@ -31,18 +31,18 @@
           click: isExpandable ? toggleExpanded : undefined,
         }"
       />
-      <vscode-checkbox
+      <CodeCheckbox
         :checked="checked"
         :disabled="disabled"
+        :disable-opacity="disableOpacity"
         class="tree-item-checkbox"
-        :class="{ 'opacity-100': disableOpacity }"
-        @click="checked ? $emit('uncheck') : $emit('check')"
+        @changed="checked ? $emit('uncheck') : $emit('check')"
       >
         <span class="tree-item-title">{{ title }}</span>
         <span v-if="description" class="tree-item-description">
           {{ description }}
         </span>
-      </vscode-checkbox>
+      </CodeCheckbox>
       <div v-if="actions" class="actions">
         <ActionToolbar :title="title" :actions="actions" />
       </div>
@@ -61,6 +61,7 @@
 import { computed } from "vue";
 
 import ActionToolbar, { ActionButton } from "src/components/ActionToolbar.vue";
+import CodeCheckbox from "src/components/CodeCheckbox.vue";
 
 export type TreeItemStyle = "emphasized" | "default" | "deemphasized";
 
