@@ -292,6 +292,7 @@ func (d *QuartoDetector) staticConfigFromOutputDir(base util.AbsolutePath, cfg *
 	staticCfg := config.New()
 	staticCfg.Type = contenttypes.ContentTypeHTML
 	staticCfg.Title = cfg.Title
+	staticCfg.Source = d.renderSource(cfg)
 
 	// Prep the rendered version of the entrypoint path.
 	outputDirRel := util.NewRelativePath(outputDir, nil)
@@ -338,6 +339,7 @@ func (d *QuartoDetector) staticConfigFromFilesLookup(base util.AbsolutePath, cfg
 	staticCfg := config.New()
 	staticCfg.Type = contenttypes.ContentTypeHTML
 	staticCfg.Title = cfg.Title
+	staticCfg.Source = d.renderSource(cfg)
 
 	htmlInputFiles := inspectOutput.HTMLAbsPathsFromInputList(base)
 	for _, file := range htmlInputFiles {
@@ -371,6 +373,13 @@ func (d *QuartoDetector) staticConfigFromFilesLookup(base util.AbsolutePath, cfg
 		return staticCfg
 	}
 	return nil
+}
+
+func (d *QuartoDetector) renderSource(cfg *config.Config) string {
+	if cfg.Entrypoint == "." {
+		return "_quarto.yml"
+	}
+	return cfg.Entrypoint
 }
 
 func (d *QuartoDetector) isQuartoYaml(entrypointBase string) bool {
