@@ -16,7 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Added an extra param for all Connect Cloud redirects to collect traffic data from Publisher (#2969)
+- Added UTM parameters for Connect Cloud links to see who is coming from
+  Publisher (#2969)
 
 ### Changed
 
