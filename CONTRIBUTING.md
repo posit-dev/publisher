@@ -126,6 +126,16 @@ If you have to diagnose issues with the connect license, you can check the licen
 following command within the e2e-connect-publisher-e2e Docker container: `cat /var/log/rstudio/rstudio-connect/rstudio-connect.log`.
 Typically there will be a line which indicates a licensing failure, if that is the case.
 
+##### Workbench License
+
+To run Workbench tests, you will need a valid Posit Workbench license file.
+
+Create the license file in the expected location:
+
+`test/e2e/licenses/workbench-license.lic`
+
+In CI, the license is stored in GitHub secrets and written to the same location automatically.
+
 #### E2E Test Setup
 
 To run the end-to-end tests, you should first create a virtual environment and install the necessary dependencies.
@@ -149,6 +159,8 @@ Build the e2e images:
 ```bash
 just build-images
 ```
+
+This will build the Docker images for Connect, VS Code, and Workbench.
 
 When done, you can deactivate the virtual environment with:
 
@@ -201,6 +213,27 @@ just stop
 
 **NOTE: ** If you are updating the images in any way, where you need to rebuild the images with `just build-images`,
 you will need to run the `just stop` command to remove the existing containers before running `just dev`.
+
+#### Running E2E Workbench Tests
+
+Workbench tests require both Connect and Workbench licenses as described in the [Connect Server License](#connect-server-license) and [Workbench License](#workbench-license) sections.
+
+The Workbench Docker container includes R, Python, and Quarto and a default user as documented in the [Workbench Dockerhub page](https://hub.docker.com/r/rstudio/rstudio-workbench).
+
+Run the Cypress tests as described in [Running E2E Tests](#running-e2e-tests) and select the specs in the `workbench` folder.
+
+#### Manual Workbench Testing
+
+For manual testing in Workbench:
+
+```bash
+cd test/e2e
+just build-workbench release
+just start-workbench release
+just install-workbench-extension release
+```
+
+Login with username/password: rstudio/rstudio
 
 #### Repeat Tests Headless Script
 
