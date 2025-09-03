@@ -257,8 +257,11 @@ install-workbench-extension service:
     # Set proper ownership for the VSIX directory and files
     docker exec publisher-e2e.workbench-{{ service }} bash -c "chown -R rstudio:rstudio /home/rstudio/vsix"
     
+    # Create the .positron-server directory with proper permissions
+    echo "Creating .positron-server directory with proper permissions..."
+    docker exec publisher-e2e.workbench-{{ service }} bash -c "mkdir -p /home/rstudio/.positron-server && chown -R rstudio:rstudio /home/rstudio/.positron-server"
+    
     # Run installation command as the rstudio user to ensure proper permissions
-    echo "Installing extension..."
     docker exec -u rstudio publisher-e2e.workbench-{{ service }} bash -c "cd /usr/lib/rstudio-server/bin/positron-server && ./bin/positron-server --install-extension /home/rstudio/vsix/$VSIX_FILENAME --force"
     
     # Verify the extension is installed
