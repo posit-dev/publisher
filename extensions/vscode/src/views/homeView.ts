@@ -1,4 +1,4 @@
-// Copyright (C) 2024 by Posit Software, PBC.
+// Copyright (C) 2025 by Posit Software, PBC.
 
 import path from "path";
 import debounce from "debounce";
@@ -106,6 +106,7 @@ import {
   isConnectCloudProduct,
   isConnectProduct,
 } from "src/utils/multiStepHelpers";
+import { recordAddConnectCloudUrlParams } from "src/utils/connectCloudHelpers";
 
 enum HomeViewInitialized {
   initialized = "initialized",
@@ -1686,7 +1687,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         const response = await api.contentRecords.getAll(entrypointDir, {
           recursive: false,
         });
-        response.data.forEach((cfg) => {
+        const contentRecords = response.data.map((record) =>
+          recordAddConnectCloudUrlParams(record, env.appName),
+        );
+        contentRecords.forEach((cfg) => {
           if (!isContentRecordError(cfg)) {
             contentRecordList.push(cfg);
           }

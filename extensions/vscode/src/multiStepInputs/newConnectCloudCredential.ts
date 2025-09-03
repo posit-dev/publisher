@@ -9,7 +9,7 @@ import {
   isString,
 } from "./multiStepHelper";
 
-import { InputBoxValidationSeverity, window } from "vscode";
+import { env, InputBoxValidationSeverity, window } from "vscode";
 
 import { useApi, Credential, ServerType, ProductName } from "src/api";
 import { getSummaryStringFromError } from "src/utils/errors";
@@ -31,6 +31,7 @@ import {
   CONNECT_CLOUD_SIGNUP_URL,
 } from "src/constants";
 import { getPublishableAccounts } from "src/utils/multiStepHelpers";
+import { getConnectCloudTrafficParams } from "src/utils/connectCloudHelpers";
 
 export async function newConnectCloudCredential(
   viewId: string,
@@ -232,6 +233,10 @@ export async function newConnectCloudCredential(
   // ***************************************************************
   async function authenticate(input: MultiStepInput, state: MultiStepState) {
     try {
+      const trafficParams = getConnectCloudTrafficParams(env.appName).replace(
+        "?",
+        "&",
+      );
       // we await this input box that it is treated as an information message
       // until the api calls happening in the background have completed
       const resp = await input.showInfoMessage<
@@ -262,7 +267,7 @@ export async function newConnectCloudCredential(
         shouldPollApi: true,
         pollingInterval: connectCloudData.auth.interval * 1000,
         exitPollingCondition: (r) => Boolean(r.data),
-        browserUrl: `${connectCloudData.signupUrl || ""}${connectCloudData.auth.verificationURI}`,
+        browserUrl: `${connectCloudData.signupUrl || ""}${connectCloudData.auth.verificationURI}${trafficParams}`,
       });
 
       state.data.accessToken = resp.data?.accessToken;
@@ -410,7 +415,7 @@ export async function newConnectCloudCredential(
         skipStepHistory = true;
         // populate the account polling props
         connectCloudData.shouldPoll = true;
-        connectCloudData.accountUrl = CONNECT_CLOUD_ACCOUNT_URL;
+        connectCloudData.accountUrl = `${CONNECT_CLOUD_ACCOUNT_URL}${getConnectCloudTrafficParams(env.appName)}`;
       }
     }
 
@@ -478,7 +483,7 @@ export async function newConnectCloudCredential(
     connectCloudData.signupUrl = CONNECT_CLOUD_SIGNUP_URL;
     // populate the account polling props
     connectCloudData.shouldPoll = true;
-    connectCloudData.accountUrl = CONNECT_CLOUD_ACCOUNT_URL;
+    connectCloudData.accountUrl = `${CONNECT_CLOUD_ACCOUNT_URL}${getConnectCloudTrafficParams(env.appName)}`;
 
     // go to the authenticate step again to have the user sign up for an individual plan
     return {
