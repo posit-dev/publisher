@@ -80,6 +80,7 @@ func (c *Config) ForceProductTypeCompliance() {
 			c.R.PackageManager = ""
 			c.R.PackageFile = ""
 			c.R.RequiresRVersion = ""
+			c.R.PackagesFromLibrary = nil
 		}
 		c.Quarto = nil
 		c.Jupyter = nil
@@ -159,6 +160,10 @@ type R struct {
 	PackageFile      string `toml:"package_file,omitempty" json:"packageFile,omitempty"`
 	PackageManager   string `toml:"package_manager,omitempty" json:"packageManager,omitempty"`
 	RequiresRVersion string `toml:"requires_r,omitempty" json:"requiresR,omitempty"`
+	// When true, generate manifest packages by reading the local renv library
+	// (legacy behavior). When false (default), generate directly from renv.lock
+	// without requiring local R libraries.
+	PackagesFromLibrary *bool `toml:"packages_from_library,omitempty" json:"packagesFromLibrary,omitempty"`
 }
 
 func (r *R) FillDefaults(

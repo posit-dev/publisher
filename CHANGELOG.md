@@ -12,6 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed the Python and R Packages views incorrectly stating the default package
   files were missing even when they were present (#2882, #2884)
 
+### Changed
+
+- R manifest package generation now uses only `renv.lock` file by default. To use the
+  local `renv` library instead, set `[r].packages_from_library = true` in the
+  configuration.
+
 ## [1.19.0]
 
 ### Fixed
