@@ -211,7 +211,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       case WebviewToHostMessageType.COPY_SYSTEM_INFO:
         return await this.copySystemInfo();
       case WebviewToHostMessageType.ADD_INTEGRATION_REQUEST:
-        return await this.addIntegrationRequest(msg.content.accountName);
+        return await this.addIntegrationRequest();
       case WebviewToHostMessageType.DELETE_INTEGRATION_REQUEST:
         return await this.deleteIntegrationRequest(msg.content);
       default:
@@ -456,11 +456,22 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       cfg = await this.state.getSelectedConfiguration();
     }
 
+    const contentRecord = await this.state.getSelectedContentRecord();
+    if (contentRecord === undefined) {
+      console.error("homeView::addIntegration: No active content record.");
+      return;
+    }
+    const credential = this.state.findCredentialForContentRecord(contentRecord);
+    if (credential === undefined) {
+      window.showErrorMessage("No valid credential found for the current deployment server.");
+      return;
+    }
+
     this.sendRefreshedFilesLists();
     this.updateServerEnvironment();
     this.refreshPythonPackages();
     this.refreshRPackages();
-    this.refreshIntegrationRequests();
+    this.refreshIntegrationRequests(credential.name);
 
     this.configWatchers?.dispose();
     if (cfg && isConfigurationError(cfg)) {
@@ -1205,7 +1216,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     console.log(response.data);
   }
 
-  public addIntegrationRequest = async (accountName: string) => {
+  public addIntegrationRequest = async () => {
     const api = await useApi();
     const activeConfig = await this.state.getSelectedConfiguration();
     if (activeConfig === undefined) {
@@ -1219,12 +1230,23 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
 
+    const contentRecord = await this.state.getSelectedContentRecord();
+    if (contentRecord === undefined) {
+      console.error("homeView::addIntegration: No active content record.");
+      return;
+    }
+    const credential = this.state.findCredentialForContentRecord(contentRecord);
+    if (credential === undefined) {
+      window.showErrorMessage("No valid credential found for the current deployment server.");
+      return;
+    }
+
     let integration: Integration | undefined;
     let integrations: Integration[] = [];
     try {
       await showProgress("Retrieving Integrations from deployment server", Views.HomeView, async () =>  {
         const response = await api.integrationRequests.getIntegrations(
-          accountName,
+          credential.name,
         );
         integrations = response.data;
       });
@@ -1257,7 +1279,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       });
       
       // Refresh integration requests to show the newly added one in the UI
-      await this.refreshIntegrationRequests(accountName);
+      await this.refreshIntegrationRequests(credential.name);
     } catch (error: unknown) {
       // Safely get error summary without risking HTML decoding issues
       let errorMessage = "Unknown error";
@@ -1274,7 +1296,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
   };
 
-  public deleteIntegrationRequest = async (context: { accountName: string, request: IntegrationRequest }) => {
+  public deleteIntegrationRequest = async (context: { request: IntegrationRequest }) => {
     const activeConfig = await this.state.getSelectedConfiguration();
     if (activeConfig === undefined) {
       console.error("homeView::deleteIntegrationRequest: No active configuration.");
@@ -1287,17 +1309,31 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
 
+    const contentRecord = await this.state.getSelectedContentRecord();
+    if (contentRecord === undefined) {
+      console.error("homeView::addIntegration: No active content record.");
+      return;
+    }
+    const credential = this.state.findCredentialForContentRecord(contentRecord);
+    if (credential === undefined) {
+      window.showErrorMessage("No valid credential found for the current deployment server.");
+      return;
+    }
+
     try {
       await showProgress("Removing Integration Request", Views.HomeView, async () => {
         const api = await useApi();
+        const request = {
+          guid: context.request.guid,
+        };
         await api.integrationRequests.delete(
           activeConfig.configurationName,
           activeConfig.projectDir,
-          context.request,
+          request,
         );
       });
 
-      await this.refreshIntegrationRequests(context.accountName);
+      await this.refreshIntegrationRequests(credential.name);
     } catch (error: unknown) {
       const summary = getSummaryStringFromError("removeIntegrationRequest", error);
       window.showInformationMessage(
