@@ -190,7 +190,7 @@
       },
       {
         "command": "posit.publisher.logs.visit",
-        "title": "View Deployment Logs in Connect",
+        "title": "View Deployment Logs",
         "icon": "$(link-external)",
         "category": "Posit Publisher"
       },
@@ -202,7 +202,7 @@
       },
       {
         "command": "posit.publisher.homeView.navigateToDeployment.Content",
-        "title": "View Deployment in Connect",
+        "title": "View Deployment",
         "icon": "$(server-process)",
         "category": "Posit Publisher"
       },

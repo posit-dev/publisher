@@ -11,6 +11,7 @@ import {
 } from "src/multiStepInputs/multiStepHelper";
 import {
   commands,
+  env,
   InputBoxValidationSeverity,
   QuickPickItem,
   QuickPickItemKind,
@@ -56,6 +57,7 @@ import {
   isConnectCloud,
   getProductType,
 } from "src/utils/multiStepHelpers";
+import { recordAddConnectCloudUrlParams } from "src/utils/connectCloudHelpers";
 
 const viewTitle = "Create a New Deployment";
 
@@ -299,7 +301,9 @@ export async function newDeployment(
           recursive: true,
         },
       );
-      const contentRecordList = response.data;
+      const contentRecordList = response.data.map((record) =>
+        recordAddConnectCloudUrlParams(record, env.appName),
+      );
       // Note.. we want all of the contentRecord filenames regardless if they are valid or not.
       contentRecordList.forEach((contentRecord) => {
         let existingList = contentRecordNames.get(contentRecord.projectDir);
