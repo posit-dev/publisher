@@ -164,6 +164,32 @@ Cypress.Commands.add("startWorkbenchPositronSession", () => {
 });
 
 /**
+ * Waits for Workbench extensions to be activated and the interpreter to be ready
+ * This is a common pattern used in various Workbench operations where we need to
+ * ensure that the extensions are fully loaded and the interpreter is available.
+ */
+Cypress.Commands.add("waitForExtensionsAndInterpreter", () => {
+  cy.log("Waiting for extensions to be activated and interpreter to be ready");
+
+  // First wait for the "Activating Extensions..." indicator to appear
+  cy.get('[aria-label="Activating Extensions..."]', {
+    timeout: 30_000,
+  }).should("be.visible");
+
+  // Then wait for it to disappear, indicating extensions are loaded
+  cy.get('[aria-label="Activating Extensions..."]', {
+    timeout: 30_000,
+  }).should("not.exist");
+
+  // Finally, wait for the interpreter button to be visible, indicating Python is ready
+  cy.get('[aria-label="Select Interpreter Session"]', {
+    timeout: 30_000,
+  }).should("be.visible");
+
+  cy.log("Extensions activated and interpreter ready");
+});
+
+/**
  * Starts a Positron session in Workbench and creates a new Python project
  * This includes waiting for all necessary UI elements and session initialization
  *
@@ -212,20 +238,13 @@ Cypress.Commands.add("startWorkbenchPositronPythonProject", () => {
   cy.contains("Where would you like to").should("be.visible");
   cy.get("button").contains("Current Window").click();
 
-  // Wait for the project to open and initialize extensions
+  // Wait for the project to open
   cy.get(`[aria-label="Explorer Section: ${projectName}"]`).should(
     "be.visible",
   );
-  cy.get('[aria-label="Activating Extensions..."]', {
-    timeout: 30_000,
-  }).should("be.visible");
-  cy.get('[aria-label="Activating Extensions..."]', {
-    timeout: 30_000,
-  }).should("not.exist");
-  // Wait for the interpreter button to load at the top right
-  cy.get('[aria-label="Select Interpreter Session"]', {
-    timeout: 30_000,
-  }).should("be.visible");
+
+  // Wait for extensions to be activated and interpreter to be ready
+  cy.waitForExtensionsAndInterpreter();
 
   cy.log(`Successfully created Python project: ${projectName}`);
 });
@@ -246,11 +265,18 @@ Cypress.Commands.add("startWorkbenchPositronPythonProject", () => {
  *          config: { name: string, path: string, contents: Object },
  *          contentRecord: { name: string, path: string, contents: Object }
  *        }
+ * @param {string} [platformType="Connect"] - The type of platform to deploy to ("Connect" for Posit Connect or "Cloud" for Posit Connect Cloud)
  * @returns {Cypress.Chainable} - Chain that can be extended with additional deployment actions
  */
 Cypress.Commands.add(
   "createPositronDeployment",
-  (projectDir, entrypointFile, title, verifyTomlCallback) => {
+  (
+    projectDir,
+    entrypointFile,
+    title,
+    verifyTomlCallback,
+    platformType = "Connect",
+  ) => {
     // Temporarily ignore uncaught exception due to a vscode worker being cancelled at some point
     cy.on("uncaught:exception", () => false);
 
@@ -326,9 +352,43 @@ Cypress.Commands.add(
       .type(`${title}` + "{enter}");
 
     cy.get(".quick-input-widget")
+      .should("be.visible")
+      .within(() => {
+        cy.get('[role="listbox"]')
+          .should("have.attr", "aria-label")
+          .and("include", "Please select the platform");
+
+        // Choose the appropriate platform based on the platformType parameter
+        if (platformType.toLowerCase().includes("cloud")) {
+          cy.get(
+            '[aria-label="Posit Connect Cloud, Deploy data applications and documents online. Free plan available."]',
+          ).click();
+        } else {
+          cy.get(
+            '[aria-label="Posit Connect, Deploy data applications, documents, APIs, and more to your server."]',
+          ).click();
+        }
+      });
+
+    cy.get(".quick-input-widget")
       .should("contain.text", "Please provide the Posit Connect server's URL")
       .find("input")
       .type("http://connect-publisher-e2e:3939" + "{enter}");
+
+    // Wait for the authentication method selection dialog
+    cy.get(".quick-input-widget")
+      .should("be.visible")
+      .within(() => {
+        // Verify we're on the authentication method selection screen using the input's aria-label
+        cy.get(
+          'input[aria-label="Select authentication method - Create a New Deployment"]',
+        ).should("be.visible");
+
+        // Click on the "API Key" option
+        cy.get('[aria-label="API Key, Manually enter an API key"]')
+          .should("be.visible")
+          .click();
+      });
 
     cy.get(".quick-input-widget")
       .should("contain.text", "The API key")
