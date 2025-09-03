@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- R manifest package generation now uses only `renv.lock` by default. To use the
+- R manifest package generation now uses only `renv.lock` file by default. To use the
   local `renv` library instead, set `[r].packages_from_library = true` in the
   configuration.
 
