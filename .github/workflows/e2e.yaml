@@ -4,6 +4,8 @@ on:
     secrets:
       CONNECT_LICENSE:
         required: true
+      WORKBENCH_LICENSE:
+        required: true
 
 jobs:
   cypress:
@@ -58,11 +60,19 @@ jobs:
         env:
           CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
 
+      - name: Write Workbench license file
+        if: env.WORKBENCH_LICENSE != ''
+        run: |
+          mkdir -p ./test/e2e/licenses
+          echo "$WORKBENCH_LICENSE" > ./test/e2e/licenses/workbench-license.lic
+        env:
+          WORKBENCH_LICENSE: ${{ secrets.WORKBENCH_LICENSE }}
+
       - name: Build Docker images
         working-directory: test/e2e
         run: |
           docker build --build-arg GH_DOWNLOAD_TOKEN=${{ secrets.GH_DOWNLOAD_TOKEN }} -f Dockerfile.base -t e2ebase --platform linux/amd64 .
-          docker compose build connect-publisher-e2e code-server
+          docker compose build connect-publisher-e2e code-server workbench-release
         env:
           CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
 
