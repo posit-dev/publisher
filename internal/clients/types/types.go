@@ -105,7 +105,7 @@ type ContentRequestBase struct {
 	Description       string           `json:"description,omitempty"`
 	NextRevision      *RequestRevision `json:"next_revision,omitempty"`
 	RevisionOverrides *RequestRevision `json:"revision_overrides,omitempty"`
-	Access            ContentAccess    `json:"access"`
+	Access            ContentAccess    `json:"access,omitempty"`
 	Secrets           []Secret         `json:"secrets,omitempty"`
 	VanityName        string           `json:"vanity_name,omitempty"`
 	AppMode           AppMode          `json:"app_mode"`
