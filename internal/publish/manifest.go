@@ -43,7 +43,7 @@ func (p *defaultPublisher) createManifest() (*bundles.Manifest, error) {
 			// Displays a log message under the package collection activity
 			// So that the user knows we automatically detected dependencies.
 			log := p.log.WithArgs(logging.LogKeyOp, events.PublishGetRPackageDescriptionsOp)
-			log.Info("No renv.lock found; dependencies will be automatically detected.")
+			log.Info("No renv.lock found; automatically scanning for dependencies.")
 		}
 
 		rPackages, err := p.getRPackages(scanDependencies)
