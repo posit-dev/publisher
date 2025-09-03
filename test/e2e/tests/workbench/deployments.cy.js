@@ -1,6 +1,8 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
-describe("Workbench > Positron", { baseUrl: "http://localhost:8787" }, () => {
+const WORKBENCH_BASE_URL = Cypress.env("WORKBENCH_URL");
+
+describe("Workbench > Positron", { baseUrl: WORKBENCH_BASE_URL }, () => {
   // Each test must set this var to enable project-specific cleanup
   let projectDir;
 
