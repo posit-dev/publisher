@@ -83,7 +83,7 @@ Cypress.Commands.add("cleanupAndRestartWorkbench", (projectDir) => {
   // Stop and remove the container
   cy.log("Stopping and removing Workbench container");
   cy.exec(`just remove-workbench release`, {
-    failOnNonZeroExit: false,
+    failOnNonZeroExit: true, // Fail the test if this critical operation fails
     timeout: 10_000,
   }).then((result) => {
     cy.log(`Remove workbench result: exit code ${result.code}`);
@@ -117,7 +117,26 @@ Cypress.Commands.add("cleanupAndRestartWorkbench", (projectDir) => {
       );
   });
 
-  cy.log("Workbench container started and ready with clean data");
+  // Install the Publisher extension
+  cy.log("Installing Publisher extension in Workbench");
+  cy.exec(`just install-workbench-extension release`, {
+    failOnNonZeroExit: false,
+    timeout: 10_000,
+  }).then((result) => {
+    cy.log(`Install extension result: exit code ${result.code}`);
+    if (result.stdout)
+      cy.log(
+        `Install extension stdout: ${result.stdout.substring(0, 500)}${result.stdout.length > 500 ? "..." : ""}`,
+      );
+    if (result.stderr)
+      cy.log(
+        `Install extension stderr: ${result.stderr.substring(0, 500)}${result.stderr.length > 500 ? "..." : ""}`,
+      );
+  });
+
+  cy.log(
+    "Workbench container started and ready with clean data and Publisher extension installed",
+  );
 });
 
 /**
