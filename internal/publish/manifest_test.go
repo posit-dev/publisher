@@ -130,6 +130,7 @@ func (s *ManifestSuite) TestCreateManifest_WithLockfile_UsesLockfile() {
 	s.NoError(err)
 	s.NotNil(manifest)
 	s.Equal(expectedPackages, manifest.Packages)
+	packageMapper.AssertNotCalled(s.T(), "ScanDependencies", mock.Anything, mock.Anything)
 }
 
 func (s *ManifestSuite) TestCreateManifest_EmptyPackageFile_WithDetectedLockfile() {
