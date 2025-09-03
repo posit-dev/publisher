@@ -74,8 +74,8 @@ func (s *defaultRDependencyScanner) ScanDependenciesInDir(paths []string, rExecu
 
 	// Run the script (use the temporary project as the working directory)
 	// Ensure working directory is provided as an AbsolutePath
-	absTmp := util.NewAbsolutePath(targetPath.String(), nil)
-	stdout, stderr, err := s.rExecutor.RunScript(rExecutable, []string{"-s"}, script, absTmp, s.log)
+	absTarget := util.NewAbsolutePath(targetPath.String(), nil)
+	stdout, stderr, err := s.rExecutor.RunScript(rExecutable, []string{"-s"}, script, absTarget, s.log)
 	s.log.Debug("RDependencyScanner renv scan", "stdout", string(stdout), "stderr", string(stderr))
 	if err != nil {
 		return util.AbsolutePath{}, err

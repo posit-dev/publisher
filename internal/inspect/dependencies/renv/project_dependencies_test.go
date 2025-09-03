@@ -54,11 +54,11 @@ func (s *RDependencyScannerSuite) TestScanDependencies() {
 		mock.Anything, // working dir is the temporary project now
 		mock.Anything,
 	).Return([]byte("ok"), []byte(""), nil).Run(func(args mock.Arguments) {
-		// Extract tmpProjPath from the script and create tmpProjPath/renv.lock
+		// Extract targetPath from the script and create targetPath/renv.lock
 		script := args.Get(2).(string)
-		start := strings.Index(script, "tmpProjPath <- \"")
+		start := strings.Index(script, "targetPath <- \"")
 		if start >= 0 {
-			start += len("tmpProjPath <- \"")
+			start += len("targetPath <- \"")
 			end := strings.Index(script[start:], "\"")
 			if end > 0 {
 				proj := script[start : start+end]
@@ -75,6 +75,50 @@ func (s *RDependencyScannerSuite) TestScanDependencies() {
 	s.NoError(err)
 	s.True(filepath.IsAbs(lockfilePath.String()))
 	s.Equal("renv.lock", filepath.Base(lockfilePath.String()))
+
+	s.exec.AssertExpectations(s.T())
+}
+
+func (s *RDependencyScannerSuite) TestScanDependenciesInDir() {
+	// Expect a RunScript call that includes renv::dependencies and renv::snapshot
+	s.exec.On(
+		"RunScript",
+		s.rExecPath,
+		[]string{"-s"},
+		mock.MatchedBy(func(script string) bool {
+			return strings.Contains(script, "renv::dependencies(") && strings.Contains(script, "renv::snapshot(")
+		}),
+		mock.Anything, // working dir is the temporary project now
+		mock.Anything,
+	).Return([]byte("ok"), []byte(""), nil).Run(func(args mock.Arguments) {
+		// Extract targetPath from the script and create targetPath/renv.lock
+		script := args.Get(2).(string)
+		start := strings.Index(script, "targetPath <- \"")
+		if start >= 0 {
+			start += len("targetPath <- \"")
+			end := strings.Index(script[start:], "\"")
+			if end > 0 {
+				proj := script[start : start+end]
+				lock := util.NewAbsolutePath(filepath.Join(proj, "renv.lock"), nil)
+				_ = lock.WriteFile([]byte("{}"), 0666)
+			}
+		}
+	})
+
+	scanner := NewRDependencyScanner(s.log)
+	scanner.rExecutor = s.exec
+
+	tmpRoot := util.NewPath("", nil)
+	tmpTarget, err := tmpRoot.TempDir("publisher-renv-test")
+	s.NoError(err)
+	defer func() { _ = tmpTarget.RemoveAll() }()
+
+	lockfilePath, err := scanner.ScanDependenciesInDir([]string{s.cwd.String()}, s.rExecPath, tmpTarget)
+	s.NoError(err)
+	s.True(filepath.IsAbs(lockfilePath.String()))
+	s.Equal("renv.lock", filepath.Base(lockfilePath.String()))
+	// The lockfile path should be created under the provided tmpTarget.
+	s.Equal(tmpTarget.String(), filepath.Dir(lockfilePath.String()))
 
 	s.exec.AssertExpectations(s.T())
 }
