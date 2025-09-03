@@ -45,9 +45,13 @@ func (s *defaultRDependencyScanner) ScanDependencies(paths []string, rExecutable
 		return util.AbsolutePath{}, err
 	}
 
+	return s.ScanDependenciesInDir(paths, rExecutable, tmpProjectPath)
+}
+
+func (s *defaultRDependencyScanner) ScanDependenciesInDir(paths []string, rExecutable string, targetPath util.Path) (util.AbsolutePath, error) {
 	// Build R script: ensure non-interactive renv, detect deps from the base project (working dir),
 	// initialize a temporary renv project in tmpDir, install deps into it, then snapshot its lockfile.
-	tmpProjPath := filepath.ToSlash(tmpProjectPath.String()) // Use forward-slash for compatibility across platforms.
+	normalizedProjectPath := filepath.ToSlash(targetPath.String()) // Use forward-slash for compatibility across platforms.
 	rPathsVec, err := s.toRPathsVector(paths)
 	if err != nil {
 		return util.AbsolutePath{}, err
@@ -60,17 +64,17 @@ func (s *defaultRDependencyScanner) ScanDependencies(paths []string, rExecutable
 		d$Package[!is.na(d$Package)]
 	}, error = function(e) character())
 	deps <- setdiff(deps, c("renv"))
-	tmpProjPath <- "%s"
-	try(renv::init(project = tmpProjPath, bare = TRUE, force = TRUE), silent = TRUE)
-	try(renv::install(deps, project = tmpProjPath), silent = TRUE)
-	lockfile <- file.path(tmpProjPath, "renv.lock")
-	renv::snapshot(project = tmpProjPath, lockfile = lockfile, prompt = FALSE, type = "all")
+	targetPath <- "%s"
+	try(renv::init(project = targetPath, bare = TRUE, force = TRUE), silent = TRUE)
+	try(renv::install(deps, project = targetPath), silent = TRUE)
+	lockfile <- file.path(targetPath, "renv.lock")
+	renv::snapshot(project = targetPath, lockfile = lockfile, prompt = FALSE, type = "all")
 	invisible()
-})()`, rPathsVec, tmpProjPath)
+})()`, rPathsVec, normalizedProjectPath)
 
 	// Run the script (use the temporary project as the working directory)
 	// Ensure working directory is provided as an AbsolutePath
-	absTmp := util.NewAbsolutePath(tmpProjectPath.String(), nil)
+	absTmp := util.NewAbsolutePath(targetPath.String(), nil)
 	stdout, stderr, err := s.rExecutor.RunScript(rExecutable, []string{"-s"}, script, absTmp, s.log)
 	s.log.Debug("RDependencyScanner renv scan", "stdout", string(stdout), "stderr", string(stderr))
 	if err != nil {
@@ -78,7 +82,7 @@ func (s *defaultRDependencyScanner) ScanDependencies(paths []string, rExecutable
 	}
 
 	// Ensure the lockfile was created
-	lockfilePath := tmpProjectPath.Join("renv.lock")
+	lockfilePath := targetPath.Join("renv.lock")
 	exists, err := lockfilePath.Exists()
 	if err != nil {
 		return util.AbsolutePath{}, err
