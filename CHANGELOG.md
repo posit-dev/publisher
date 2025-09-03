@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed an issue where the package file checkbox in the Project Files view
   would occassionally be unchecked even when the file was included (#2793)
 
+### Added
+
+- Added an extra param for all Connect Cloud redirects to collect traffic data from Publisher (#2969)
+
 ### Changed
 
 - R manifest package generation now uses only `renv.lock` file by default. To use the
