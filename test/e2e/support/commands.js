@@ -5,6 +5,7 @@ import "cypress-wait-until";
 import { parse } from "smol-toml";
 import "./selectors";
 import "./sequences";
+import "./workbench";
 
 const connectManagerServer = Cypress.env("CONNECT_MANAGER_URL");
 

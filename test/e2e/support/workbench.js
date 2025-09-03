@@ -1,61 +1,21 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
-const WORKBENCH_BASE_URL = Cypress.env("WORKBENCH_URL");
-
-describe("Workbench > Positron", { baseUrl: WORKBENCH_BASE_URL }, () => {
-  // Each test must set this var to enable project-specific cleanup
-  let projectDir;
-
-  beforeEach(() => {
-    cy.cleanupAndRestartWorkbench();
-
-    cy.resetConnect();
-    cy.setAdminCredentials();
-    cy.visit("/");
-
-    cy.loginToWorkbench();
-  });
-
-  afterEach(() => {
-    cy.cleanupWorkbenchData(projectDir);
-  });
-
-  it("Static Content Deployment", () => {
-    projectDir = "static";
-
-    cy.startWorkbenchPositronPythonProject(projectDir);
-
-    // Publish the content
-    cy.createPositronDeployment(
-      projectDir,
-      "index.html",
-      "static",
-      (tomlFiles) => {
-        const config = tomlFiles.config.contents;
-        expect(config.title).to.equal(projectDir);
-        expect(config.type).to.equal("html");
-        expect(config.entrypoint).to.equal("index.html");
-        expect(config.files[0]).to.equal("/index.html");
-        expect(config.files[1]).to.equal(
-          `/.posit/publish/${tomlFiles.config.name}`,
-        );
-        expect(config.files[2]).to.equal(
-          `/.posit/publish/deployments/${tomlFiles.contentRecord.name}`,
-        );
-      },
-    ).deployCurrentlySelected();
-  });
-});
+/**
+ * Support file containing Workbench-specific Cypress commands
+ */
 
 /**
- * Logs into Workbench using default credentials and waits for the UI to load.
+ * Logs into Workbench using default credentials and waits for the UI to load
+ * Uses the default Workbench username/password as documented here: https://hub.docker.com/r/rstudio/rstudio-workbench
  * @param {string} username - The username to login with (defaults to "rstudio")
  * @param {string} password - The password to login with (defaults to "rstudio")
  */
 Cypress.Commands.add(
-  "loginToWorkbench",
+  "visitAndLoginToWorkbench",
   (username = "rstudio", password = "rstudio") => {
     cy.log(`Logging into Workbench as ${username}`);
+
+    cy.visit("/");
 
     // Enter credentials and submit the form
     cy.get("#username").type(username);
@@ -102,16 +62,23 @@ Cypress.Commands.add("cleanupWorkbenchData", (projectDir) => {
 
   // Remove workbench e2e projects
   cy.exec(
-    'for dir in content-workspace/workbench-e2e-*; do rm -rf "$dir" 2>/dev/null || true; done',
+    `for dir in content-workspace/${Cypress.env("WORKBENCH_PROJECT_PREFIX")}*; do rm -rf "$dir" 2>/dev/null || true; done`,
     {
       failOnNonZeroExit: false,
     },
   ).then((result) => {
-    cy.log(`Bash loop cleanup result: code ${result.code}`);
-    if (result.stderr) cy.log(`Cleanup stderr: ${result.stderr}`);
+    cy.log(`Cleanup projects result: code ${result.code}`);
+    if (result.stderr) cy.log(`Cleanup projects stderr: ${result.stderr}`);
   });
 });
 
+/**
+ * Cleans up and restarts the Workbench container to ensure a fresh state
+ * This function stops the current container, removes any test data, and starts a fresh container
+ * with clean state. It handles container lifecycle operations using the justfile commands
+ *
+ * @param {string} projectDir - Optional project directory to clean up specific project data
+ */
 Cypress.Commands.add("cleanupAndRestartWorkbench", (projectDir) => {
   // Stop and remove the container
   cy.log("Stopping and removing Workbench container");
@@ -199,7 +166,7 @@ Cypress.Commands.add("startWorkbenchPositronPythonProject", () => {
 
   // Set a randomized project name
   cy.contains("Set project name").should("be.visible");
-  const projectName = `workbench-e2e-${Math.random().toString(36).slice(2, 10)}`;
+  const projectName = `${Cypress.env("WORKBENCH_PROJECT_PREFIX")}${Math.random().toString(36).slice(2, 10)}`;
   cy.contains("span", "Enter a name for your new Python Project")
     .parent("label")
     .find("input")
@@ -241,34 +208,42 @@ Cypress.Commands.add("startWorkbenchPositronPythonProject", () => {
     timeout: 30_000,
   }).should("be.visible");
 
-  // TODO need some other command to wait for more stuff in the IDE before proceeding
-  // Observed a session failed to start and prevented the rest of the test from working
-
   cy.log(`Successfully created Python project: ${projectName}`);
 });
 
+/**
+ * Creates a new Positron deployment in Workbench
+ *
+ * Note: This function is derived from the VS Code deployment flow in the main Publisher extension tests,
+ * but has been specifically adapted for the Workbench UI environment which has different navigation
+ * patterns, element selectors, and timing considerations. In particular, the Workbench integration
+ * requires additional steps to handle the Positron editor context and different menu structures.
+ *
+ * @param {string} projectDir - The directory containing the project to deploy
+ * @param {string} entrypointFile - The primary file to use as the entrypoint (e.g., "index.html")
+ * @param {string} title - The title to give to the deployment
+ * @param {Function} verifyTomlCallback - Callback function to verify TOML configuration
+ *        The callback receives an object with structure: {
+ *          config: { name: string, path: string, contents: Object },
+ *          contentRecord: { name: string, path: string, contents: Object }
+ *        }
+ * @returns {Cypress.Chainable} - Chain that can be extended with additional deployment actions
+ */
 Cypress.Commands.add(
   "createPositronDeployment",
-  (
-    projectDir, // string
-    entrypointFile, // string
-    title, // string
-    verifyTomlCallback, // func({config: { filename: string, contents: {},}, contentRecord: { filename: string, contents: {}})
-  ) => {
+  (projectDir, entrypointFile, title, verifyTomlCallback) => {
     // Temporarily ignore uncaught exception due to a vscode worker being cancelled at some point
     cy.on("uncaught:exception", () => false);
 
     // Open the entrypoint ahead of time for easier selection later
-    // expand the subdirectory
-    if (projectDir !== ".") {
-      // Open the folder with our content
-      cy.get("button").contains("Open Folder...").click();
-      cy.get(".quick-input-widget").within(() => {
-        cy.get(".quick-input-box input").should("be.visible");
-        cy.get('.monaco-list-row[aria-label="static"]').click();
-        cy.get(".quick-input-header a[role='button']").contains("OK").click();
-      });
-    }
+    // Uses the Workbench-specific file open flow
+    // Note this deviates from the VS Code logic and does not currently handle projectDir = "."
+    cy.get("button").contains("Open Folder...").click();
+    cy.get(".quick-input-widget").within(() => {
+      cy.get(".quick-input-box input").should("be.visible");
+      cy.get('.monaco-list-row[aria-label="static"]').click();
+      cy.get(".quick-input-header a[role='button']").contains("OK").click();
+    });
 
     // open the entrypoint file
     cy.get(".explorer-viewlet")
@@ -281,19 +256,19 @@ Cypress.Commands.add(
       .find(`[aria-label="${entrypointFile}"]`)
       .should("be.visible");
 
-    // activate the publisher extension
-    // Open Publisher, due to viewport size it is buried in the "..." menu
+    // Activate the publisher extension
+    // In Workbench the viewport size causes Publisher to be in the "..." menu
     cy.get(
       '[id="workbench.parts.activitybar"] .action-item[role="button"][aria-label="Additional Views"]',
       {
         timeout: 30_000,
       },
     ).click();
-    // Wait for popup menu to appear
+    // Wait for popup menu that contains Publisher to appear
     cy.get('.monaco-menu .actions-container[role="menu"]')
       .should("be.visible")
       .within(() => {
-        // Finally, double-click the Posit Publisher menu item
+        // Finally, double-click the Posit Publisher menu item, single click often fails to open it
         cy.findByLabelText("Posit Publisher").dblclick();
       });
 
@@ -318,7 +293,7 @@ Cypress.Commands.add(
     // Create a new deployment
     cy.get(".quick-input-list").contains("Create a New Deployment").click();
 
-    // prompt for select entrypoint
+    // Prompt for select entrypoint
     // Note this deviates from the VS Code logic and does not currently handle projectDir = "."
     const targetLabel = `${entrypointFile}, Open Files`;
     cy.get(".quick-input-widget")
