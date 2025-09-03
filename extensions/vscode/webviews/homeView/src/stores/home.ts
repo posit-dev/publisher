@@ -398,6 +398,13 @@ export const useHomeStore = defineStore("home", () => {
     },
   };
 
+  const isConnectCloud = computed((): boolean => {
+    const serverType =
+      selectedContentRecord.value?.serverType || ServerType.CONNECT;
+    const productType = getProductType(serverType);
+    return isConnectCloudProduct(productType);
+  });
+
   const anyActiveAlerts = computed(() => {
     return (
       !config.active.isAlertActive.value &&
@@ -498,6 +505,7 @@ export const useHomeStore = defineStore("home", () => {
     selectedContentRecord,
     selectedConfiguration,
     serverCredential,
+    isConnectCloud,
     initializingRequestComplete,
     lastContentRecordResult,
     lastContentRecordMsg,

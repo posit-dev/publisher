@@ -12,7 +12,7 @@
       >
         <ProjectFiles v-model:expanded="projectFilesExpanded" />
         <Secrets />
-        <Integrations />
+        <Integrations v-if="!home.isConnectCloud" />
         <PythonPackages />
         <RPackages />
       </template>
