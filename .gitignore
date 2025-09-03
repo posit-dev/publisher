@@ -24,12 +24,13 @@ node_modules
 !.vscode/*.code-snippets
 
 # Workbench
-test/e2e/**/.duckdb/
-test/e2e/**/.ipython/
-test/e2e/**/.local/
-test/e2e/**/.positron-server/
-test/e2e/**/.vscode-server/
-test/e2e/**/.connect-credentials
+test/e2e/content-workspace/.duckdb/
+test/e2e/content-workspace/.ipython/
+test/e2e/content-workspace/.local/
+test/e2e/content-workspace/.positron-server/
+test/e2e/content-workspace/.vscode-server/
+test/e2e/content-workspace/.connect-credentials
+test/e2e/**/content-workspace/test-*
 
 # Local History for Visual Studio Code
 .history/
