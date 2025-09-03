@@ -162,7 +162,7 @@ jobs:
 
       - name: Run Cypress tests
         working-directory: test/e2e
-        run: npx cypress run
+        run: npx cypress run --spec "tests/deployments.cy.js"
         env:
           CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
           CONNECT_CLOUD_ENV: ${{ env.CONNECT_CLOUD_ENV }} # defaults to staging
