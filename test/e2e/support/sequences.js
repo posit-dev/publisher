@@ -221,7 +221,7 @@ Cypress.Commands.add(
       .should("be.visible")
       .click();
 
-    // Wait for publisher webview to be ready for file selection
+    // Wait for the deployment configuration to load instead of waiting for quick-input to disappear
     cy.publisherWebview()
       .find('[data-automation="project-files"]')
       .should("be.visible")
@@ -229,65 +229,18 @@ Cypress.Commands.add(
 
     // If filesToSelect is provided and not empty, select additional files
     if (Array.isArray(filesToSelect) && filesToSelect.length > 0) {
-      cy.log(
-        `Selecting ${filesToSelect.length} additional files for deployment`,
-      );
-
-      // Wait for extension to finish its automatic file selection/deselection
-      // eslint-disable-next-line cypress/no-unnecessary-waiting
-      cy.wait(2000);
-
       filesToSelect.forEach((fileOrDir) => {
-        cy.log(`Processing file selection for: ${fileOrDir}`);
-
-        // Find the checkbox and attempt to select it
         cy.publisherWebview()
           .find('[data-automation="project-files"]')
           .find(`vscode-checkbox[aria-label="${fileOrDir}"]`)
           .should("exist")
           .should("be.visible")
           .then(($checkbox) => {
-            const isChecked = $checkbox.attr("aria-checked") === "true";
-            const isDisabled =
-              $checkbox.attr("disabled") === "true" ||
-              $checkbox.attr("aria-disabled") === "true" ||
-              $checkbox.hasClass("disabled");
-
-            cy.log(
-              `File ${fileOrDir} - checked: ${isChecked}, disabled: ${isDisabled}`,
-            );
-
-            if (isDisabled) {
-              cy.log(
-                `WARNING: ${fileOrDir} is disabled by extension, skipping`,
-              );
-              return;
-            }
-
-            if (!isChecked) {
-              cy.log(`Clicking to check: ${fileOrDir}`);
+            if ($checkbox.attr("aria-checked") !== "true") {
               cy.wrap($checkbox).click({ force: true });
-
-              // Wait and verify the click took effect
-              // eslint-disable-next-line cypress/no-unnecessary-waiting
-              cy.wait(500);
-
-              // Re-check if it's still enabled and verify selection
-              cy.wrap($checkbox).then(($cb) => {
-                const stillDisabled =
-                  $cb.attr("disabled") === "true" ||
-                  $cb.attr("aria-disabled") === "true" ||
-                  $cb.hasClass("disabled");
-                if (!stillDisabled) {
-                  cy.wrap($cb).should("have.attr", "aria-checked", "true");
-                } else {
-                  cy.log(`${fileOrDir} became disabled after click`);
-                }
-              });
-            } else {
-              cy.log(`${fileOrDir} is already checked`);
             }
-          });
+          })
+          .should("have.attr", "aria-checked", "true");
       });
     }
 

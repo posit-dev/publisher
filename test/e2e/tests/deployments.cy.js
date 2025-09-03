@@ -75,6 +75,8 @@ describe("Deployments Section", () => {
   describe("Connect Cloud Deployments", () => {
     beforeEach(() => {
       cy.resetCredentials();
+      // Clean up any existing deployment files before starting
+      cy.clearupDeployments("examples-shiny-python");
       cy.visit("/");
       const user = Cypress.env("pccConfig").pcc_user_ccqa3;
       cy.log("PCC user for setPCCCredential: " + JSON.stringify(user));
@@ -109,13 +111,23 @@ describe("Deployments Section", () => {
           ["/app.py", "/data", "/README.md", "/styles.css"].forEach((file) => {
             expect(config.files).to.include(file);
           });
-          // --- Add public access to the config TOML before deploy ---
-          config.connect_cloud = config.connect_cloud || {};
-          config.connect_cloud.access_control = { public_access: true };
-          cy.savePublisherFile(tomlFiles.config.path, config);
+          // Don't save here - files haven't been selected yet!
         },
         filesToSelect,
       );
+
+      // NOW add public access and save AFTER file selections are complete
+      cy.getPublisherTomlFilePaths("examples-shiny-python").then(
+        (filePaths) => {
+          cy.loadTomlFile(filePaths.config.path).then((config) => {
+            // Add public access to the config TOML before deploy
+            config.connect_cloud = config.connect_cloud || {};
+            config.connect_cloud.access_control = { public_access: true };
+            cy.savePublisherFile(filePaths.config.path, config);
+          });
+        },
+      );
+
       cy.deployCurrentlySelected();
       cy.retryWithBackoff(
         () =>

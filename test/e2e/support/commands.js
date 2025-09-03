@@ -156,17 +156,16 @@ Cypress.Commands.add("getPublisherTomlFilePaths", (projectDir) => {
   let contentRecordFileName = "";
   let contentRecordFilePath = "";
 
-  cy.expandWildcardFile(configTargetDir, "*.toml")
+  return cy
+    .expandWildcardFile(configTargetDir, "*.toml")
     .then((configFile) => {
       configFileName = configFile;
       configFilePath = `${configTargetDir}/${configFile}`;
+      return cy.expandWildcardFile(contentRecordTargetDir, "*.toml");
     })
-    .expandWildcardFile(contentRecordTargetDir, "*.toml")
     .then((contentRecordFile) => {
       contentRecordFileName = contentRecordFile;
       contentRecordFilePath = `${contentRecordTargetDir}/${contentRecordFile}`;
-    })
-    .then(() => {
       return {
         config: {
           name: configFileName,
@@ -181,84 +180,44 @@ Cypress.Commands.add("getPublisherTomlFilePaths", (projectDir) => {
 });
 
 Cypress.Commands.add("expandWildcardFile", (targetDir, wildCardPath) => {
-  return cy
-    .exec("pwd")
-    .then((result) => {
-      return cy.log("CWD", result.stdout);
-    })
-    .then(() => {
-      const cmd = `cd ${targetDir} && file=$(echo ${wildCardPath}) && echo $file`;
-      return cy.exec(cmd);
-    })
-    .then((result) => {
-      if (result.code === 0 && result.stdout) {
-        return result.stdout;
-      }
-      throw new Error(`Could not expandWildcardFile. ${result.stderr}`);
-    });
+  const cmd = `cd ${targetDir} && ls -t ${wildCardPath} | head -1`;
+  return cy.exec(cmd).then((result) => {
+    if (result.code === 0 && result.stdout) {
+      return result.stdout.trim();
+    }
+    throw new Error(`Could not expandWildcardFile. ${result.stderr}`);
+  });
 });
 
 Cypress.Commands.add("savePublisherFile", (filePath, jsonObject) => {
-  return cy
-    .exec("pwd")
-    .then((result) => {
-      cy.log("savePublisherFile CWD", result.stdout);
-      cy.log("filePath", filePath);
-    })
-    .then(() => {
-      // Read the original file to preserve formatting and comments
-      return cy.readFile(filePath, { encoding: "utf8" });
-    })
-    .then((originalContent) => {
-      cy.log("Original file content length:", originalContent.length);
+  return cy.readFile(filePath, { encoding: "utf8" }).then((originalContent) => {
+    let modifiedContent = originalContent;
 
-      // For now, we only need to add the connect_cloud section
-      // Look for existing connect_cloud section or add it
-      let modifiedContent = originalContent;
+    if (jsonObject.connect_cloud) {
+      const connectCloudSection = "\n[connect_cloud]\n";
+      const accessControlSection = `[connect_cloud.access_control]\npublic_access = ${jsonObject.connect_cloud.access_control.public_access}\n`;
 
-      if (jsonObject.connect_cloud) {
-        const connectCloudSection = "\n[connect_cloud]\n";
-        const accessControlSection = `[connect_cloud.access_control]\npublic_access = ${jsonObject.connect_cloud.access_control.public_access}\n`;
-
-        // Check if connect_cloud section already exists
-        if (!modifiedContent.includes("[connect_cloud]")) {
-          // Add the new section at the end
-          modifiedContent =
-            modifiedContent.trim() +
-            "\n\n" +
-            connectCloudSection +
-            accessControlSection;
-        } else {
-          // Replace existing section (simple approach for now)
-          const connectCloudRegex = /\[connect_cloud\][\s\S]*?(?=\n\[|\n\n|$)/;
-          modifiedContent = modifiedContent.replace(
-            connectCloudRegex,
-            connectCloudSection + accessControlSection,
-          );
-        }
+      if (!modifiedContent.includes("[connect_cloud]")) {
+        modifiedContent =
+          modifiedContent.trim() +
+          "\n\n" +
+          connectCloudSection +
+          accessControlSection;
+      } else {
+        const connectCloudRegex = /\[connect_cloud\][\s\S]*?(?=\n\[|\n\n|$)/;
+        modifiedContent = modifiedContent.replace(
+          connectCloudRegex,
+          connectCloudSection + accessControlSection,
+        );
       }
+    }
 
-      cy.log(`Modified file content length: ${modifiedContent.length}`);
-      return cy.writeFile(filePath, modifiedContent);
-    })
-    .then(() => {
-      // Verify the file was written successfully by reading it back
-      return cy.readFile(filePath).then((content) => {
-        cy.log(`File written successfully, content length: ${content.length}`);
-        if (content.length < 10) {
-          throw new Error(
-            `TOML file appears to be empty or invalid after write: ${filePath}`,
-          );
-        }
-        // Don't return the content - just return null to indicate success
-        return null;
-      });
-    });
+    return cy.writeFile(filePath, modifiedContent);
+  });
 });
 
 Cypress.Commands.add("loadTomlFile", (filePath) => {
   return cy
-    .log("filePath", filePath)
     .exec(`cat ${filePath}`, { failOnNonZeroExit: false })
     .then((result) => {
       if (result.code === 0 && result.stdout) {
@@ -587,46 +546,6 @@ cloud_environment = '${cloud_environment}'
     });
   },
 );
-
-Cypress.Commands.add("waitForTomlFileReady", (maxAttempts = 10) => {
-  function checkTomlReady(attempt = 1) {
-    cy.log(
-      `Checking if TOML file is ready (attempt ${attempt}/${maxAttempts})`,
-    );
-
-    return cy.publisherWebview().then(($webview) => {
-      // Look for indicators that the TOML file is loaded and editable
-      const $body = Cypress.$($webview);
-
-      // Check for file tree being visible and interactive
-      const hasFileTree = $body.find('[data-automation*="file"]').length > 0;
-      const hasCheckboxes = $body.find('input[type="checkbox"]').length > 0;
-      const hasTomlContent =
-        $body.text().includes("files") || $body.text().includes("entrypoint");
-
-      if (hasFileTree && hasCheckboxes && hasTomlContent) {
-        cy.log(
-          "TOML file appears ready - file tree, checkboxes, and content detected",
-        );
-        return cy.wrap(true);
-      } else {
-        cy.log(
-          `TOML not ready yet - fileTree:${hasFileTree}, checkboxes:${hasCheckboxes}, content:${hasTomlContent}`,
-        );
-
-        if (attempt < maxAttempts) {
-          // eslint-disable-next-line cypress/no-unnecessary-waiting
-          cy.wait(1500);
-          return checkTomlReady(attempt + 1);
-        } else {
-          throw new Error("TOML file did not become ready within timeout");
-        }
-      }
-    });
-  }
-
-  return checkTomlReady();
-});
 
 Cypress.on("uncaught:exception", () => {
   // Prevent CI from failing on harmless errors
