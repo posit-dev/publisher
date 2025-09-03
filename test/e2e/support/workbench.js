@@ -121,7 +121,7 @@ Cypress.Commands.add("cleanupAndRestartWorkbench", (projectDir) => {
   cy.log("Installing Publisher extension in Workbench");
   cy.exec(`just install-workbench-extension release`, {
     failOnNonZeroExit: true,
-    timeout: 10_000,
+    timeout: 30_000,
   }).then((result) => {
     cy.log(`Install extension result: exit code ${result.code}`);
     if (result.stdout)

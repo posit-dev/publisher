@@ -46,6 +46,7 @@ services:
       - ./config/workbench-logging.conf:/etc/rstudio/logging.conf
       - ./content-workspace:/home/rstudio
       - ./workbench-entrypoint.sh:/workbench-entrypoint.sh
+      - ../../dist:/home/rstudio/vsix
     entrypoint: ["/workbench-entrypoint.sh"]
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:8787/health-check"]
@@ -65,6 +66,7 @@ services:
       - ./config/workbench-logging.conf:/etc/rstudio/logging.conf
       - ./content-workspace:/home/rstudio
       - ./workbench-entrypoint.sh:/workbench-entrypoint.sh
+      - ../../dist:/home/rstudio/vsix
     entrypoint: ["/workbench-entrypoint.sh"]
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:8787/health-check"]
