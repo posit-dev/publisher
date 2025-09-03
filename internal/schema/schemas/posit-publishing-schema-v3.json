@@ -61,6 +61,11 @@
               "default": "",
               "description": "R interpreter version, required to run the content. If not specified it will be detected from the one in use.",
               "examples": [">3.8", "<4.3", ">=3.5.0"]
+            },
+            "packages_from_library": {
+              "type": "boolean",
+              "default": false,
+              "description": "When true, generate manifest packages from the local renv library (legacy behavior). When false (default), read packages from renv.lock."
             }
           }
         },
