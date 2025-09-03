@@ -612,7 +612,7 @@ export async function newDeployment(
       {
         iconPath: new ThemeIcon("file-code"),
         label: "Publish document with source code",
-        description: "Connect will render it for you",
+        description: "The server will render it for you",
         inspectionResult: inspectionResult,
       },
       {
