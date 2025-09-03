@@ -83,7 +83,7 @@ Cypress.Commands.add("cleanupAndRestartWorkbench", (projectDir) => {
   // Stop and remove the container
   cy.log("Stopping and removing Workbench container");
   cy.exec(`just remove-workbench release`, {
-    failOnNonZeroExit: true, // Fail the test if this critical operation fails
+    failOnNonZeroExit: true,
     timeout: 10_000,
   }).then((result) => {
     cy.log(`Remove workbench result: exit code ${result.code}`);
@@ -103,7 +103,7 @@ Cypress.Commands.add("cleanupAndRestartWorkbench", (projectDir) => {
   // Start a fresh container, the justfile command includes a health check wait
   cy.log("Starting fresh Workbench container");
   cy.exec(`just start-workbench release`, {
-    failOnNonZeroExit: false,
+    failOnNonZeroExit: true,
     timeout: 60_000, // Should match the timeout in justfile
   }).then((result) => {
     cy.log(`Start workbench result: exit code ${result.code}`);
@@ -120,7 +120,7 @@ Cypress.Commands.add("cleanupAndRestartWorkbench", (projectDir) => {
   // Install the Publisher extension
   cy.log("Installing Publisher extension in Workbench");
   cy.exec(`just install-workbench-extension release`, {
-    failOnNonZeroExit: false,
+    failOnNonZeroExit: true,
     timeout: 10_000,
   }).then((result) => {
     cy.log(`Install extension result: exit code ${result.code}`);
