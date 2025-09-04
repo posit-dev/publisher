@@ -80,6 +80,11 @@ func (s *RDependencyScannerSuite) TestScanDependencies() {
 }
 
 func (s *RDependencyScannerSuite) TestScanDependenciesInDir() {
+	tmpRoot := util.NewPath("", nil)
+	tmpTarget, err := tmpRoot.TempDir("publisher-renv-test")
+	s.NoError(err)
+	defer func() { _ = tmpTarget.RemoveAll() }()
+
 	// Expect a RunScript call that includes renv::dependencies and renv::snapshot
 	s.exec.On(
 		"RunScript",
@@ -88,30 +93,15 @@ func (s *RDependencyScannerSuite) TestScanDependenciesInDir() {
 		mock.MatchedBy(func(script string) bool {
 			return strings.Contains(script, "renv::dependencies(") && strings.Contains(script, "renv::snapshot(")
 		}),
-		mock.Anything, // working dir is the temporary project now
+		mock.Anything,
 		mock.Anything,
 	).Return([]byte("ok"), []byte(""), nil).Run(func(args mock.Arguments) {
-		// Extract targetPath from the script and create targetPath/renv.lock
-		script := args.Get(2).(string)
-		start := strings.Index(script, "targetPath <- \"")
-		if start >= 0 {
-			start += len("targetPath <- \"")
-			end := strings.Index(script[start:], "\"")
-			if end > 0 {
-				proj := script[start : start+end]
-				lock := util.NewAbsolutePath(filepath.Join(proj, "renv.lock"), nil)
-				_ = lock.WriteFile([]byte("{}"), 0666)
-			}
-		}
+		lock := util.NewAbsolutePath(filepath.Join(tmpTarget.String(), "renv.lock"), nil)
+		_ = lock.WriteFile([]byte("{}"), 0666)
 	})
 
 	scanner := NewRDependencyScanner(s.log)
 	scanner.rExecutor = s.exec
-
-	tmpRoot := util.NewPath("", nil)
-	tmpTarget, err := tmpRoot.TempDir("publisher-renv-test")
-	s.NoError(err)
-	defer func() { _ = tmpTarget.RemoveAll() }()
 
 	lockfilePath, err := scanner.ScanDependenciesInDir([]string{s.cwd.String()}, s.rExecPath, tmpTarget)
 	s.NoError(err)
