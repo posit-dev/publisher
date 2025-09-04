@@ -180,7 +180,7 @@ func NewManifestFromConfig(cfg *config.Config) *Manifest {
 			// We use nil so the option is omitted from the JSON and it's
 			// compatible with older servers that did not support uv.
 			var allowUv *bool = nil
-			packageManagerName := "pip"
+			packageManagerName := "pip" // auto = pip
 			switch cfg.Python.PackageManager {
 			case "pip":
 				// The user explicitly forced pip, let's disable uv.
@@ -190,6 +190,9 @@ func NewManifestFromConfig(cfg *config.Config) *Manifest {
 				// The user explicitly forced uv, let's enable it.
 				allowUv = config.BoolPtr(true)
 				packageManagerName = "uv"
+			case "none":
+				// The user requested no package management.
+				packageManagerName = "none"
 			}
 
 			packageManager = &PythonPackageManager{

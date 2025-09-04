@@ -124,7 +124,14 @@ File containing package dependencies. The file must exist and be listed under 'f
 
 _Only valid when `product_type` is `connect`_
 
-Package manager that will install the dependencies. Supported values are `pip` and `none`. If package-manager is `none`, dependencies will not be installed.
+Package manager that will install the dependencies.
+Supported values are `pip`, `uv` and `none`.
+
+Omitting the value will let the server decide.
+
+If package_manager is `uv`, dependencies will be installed using `uv pip`
+If package_manager is `pip`, dependencies will be installed using `pip`
+If package_manager is `none`, dependencies will not be installed.
 
 #### version
 

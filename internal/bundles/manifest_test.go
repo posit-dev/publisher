@@ -252,6 +252,7 @@ func (s *ManifestSuite) TestNewManifestFromConfig_PythonPackageManagerVariants_J
 		{name: "auto", inputPM: "auto", expectedName: "pip", expectAllowUv: nil},
 		{name: "pip", inputPM: "pip", expectedName: "pip", expectAllowUv: config.BoolPtr(false)},
 		{name: "uv", inputPM: "uv", expectedName: "uv", expectAllowUv: config.BoolPtr(true)},
+		{name: "none", inputPM: "none", expectedName: "none", expectAllowUv: nil},
 	}
 
 	for _, tc := range cases {
