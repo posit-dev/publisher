@@ -396,6 +396,11 @@
       "description": "Name of the primary file containing the content. For Python flask, dash, fastapi, and python-shiny projects, this specifies the object within the file in module:object format. See the documentation at https://docs.posit.co/connect/user/publishing-cli-apps/#publishing-rsconnect-python-entrypoint.",
       "examples": ["app.py", "report.qmd"]
     },
+    "source": {
+      "type": "string",
+      "description": "Name of the primary file that acts as the source for content that can be rendered on demand. Only useful when deploying static content which has been rendered from Quarto, Rmarkdown or Jupyter Notebooks",
+      "examples": ["report.qmd", "_quarto.yml"]
+    },
     "title": {
       "type": "string",
       "pattern": "^[^\t\n\f\r]{3,1000}$|",
