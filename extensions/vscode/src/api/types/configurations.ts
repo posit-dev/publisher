@@ -133,10 +133,12 @@ export type ConfigurationDetails = {
 };
 
 export type IntegrationRequest = {
+  displayName?: string;
+  displayDescription?: string;
   guid?: string;
   name?: string;
   description?: string;
-  auth_type?: string;
+  authType?: string;
   type?: string;
   config?: Record<string, string | undefined>;
 };
