@@ -49,6 +49,14 @@ describe("URL util", () => {
       ).toBe("https://connect.company.com");
     });
 
+    test("should handle several sub-domains", () => {
+      expect(
+        normalizeConnectURL(
+          "https://deeply.nested.sub.domain.connect.company.com/connect",
+        ),
+      ).toBe("https://deeply.nested.sub.domain.connect.company.com");
+    });
+
     test("should not modify URLs without /connect suffix", () => {
       expect(normalizeConnectURL("https://connect.company.com")).toBe(
         "https://connect.company.com",
