@@ -129,11 +129,12 @@ export class QuartoProjectHelper {
 
   renderProject() {
     const command = `quarto render ${this.projectDir} --to html`;
-    return runTerminalCommand(command, true);
+    return runTerminalCommand(command);
   }
 
   renderDocument() {
-    const command = `quarto render ${this.entrypoint} --to html`;
-    return runTerminalCommand(command, true);
+    const fullEntryPath = path.join(this.projectDir, this.entrypoint);
+    const command = `quarto render ${fullEntryPath} --to html`;
+    return runTerminalCommand(command);
   }
 }

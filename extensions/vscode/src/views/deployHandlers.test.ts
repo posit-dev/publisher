@@ -13,13 +13,15 @@ const windowMethodsMocks = {
   showErrorMessageWithTroubleshoot: vi.fn(),
   showInformationMsg: vi.fn(),
   runTerminalCommand: vi.fn(),
+  openTerminalCommand: vi.fn(),
   taskWithProgressMsg: vi.fn((_: string, cb: () => void) => cb()),
 };
 
 vi.mock("src/utils/window", () => {
   return {
-    runTerminalCommand: (c: string, show: boolean = false) =>
-      windowMethodsMocks.runTerminalCommand(c, show),
+    runTerminalCommand: (c: string) => windowMethodsMocks.runTerminalCommand(c),
+    openTerminalCommand: (c: string) =>
+      windowMethodsMocks.openTerminalCommand(c),
     showInformationMsg: (m: string) => windowMethodsMocks.showInformationMsg(m),
     taskWithProgressMsg: (m: string, cb: () => void) =>
       windowMethodsMocks.taskWithProgressMsg(m, cb),
@@ -97,9 +99,8 @@ describe("Deploy Handlers", () => {
         expect(
           windowMethodsMocks.showErrorMessageWithTroubleshoot,
         ).toHaveBeenCalledWith(errData.message, errData.actionLabel);
-        expect(windowMethodsMocks.runTerminalCommand).toHaveBeenCalledWith(
-          "/user/lib/R renv::status();",
-          true,
+        expect(windowMethodsMocks.openTerminalCommand).toHaveBeenCalledWith(
+          "/user/lib/R renv::status()",
         );
 
         // No progrss indicator is shown when we open the terminal
@@ -145,8 +146,7 @@ describe("Deploy Handlers", () => {
           );
           // Terminal command executed
           expect(windowMethodsMocks.runTerminalCommand).toHaveBeenCalledWith(
-            `${command}; exit $?`,
-            false,
+            command,
           );
           expect(windowMethodsMocks.showInformationMsg).toHaveBeenCalledWith(
             "Finished setting up renv.",
