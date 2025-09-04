@@ -72,7 +72,9 @@ jobs:
         working-directory: test/e2e
         run: |
           docker build --build-arg GH_DOWNLOAD_TOKEN=${{ secrets.GH_DOWNLOAD_TOKEN }} -f Dockerfile.base -t e2ebase --platform linux/amd64 .
-          docker compose build connect-publisher-e2e code-server workbench-release
+          docker compose build connect-publisher-e2e code-server
+          just build-workbench "release"
+
         env:
           CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
 
@@ -93,6 +95,7 @@ jobs:
         run: |
           just start "connect-publisher-e2e"
           just start "code-server"
+          just start-workbench "release"
 
       - name: Wait for Connect server to be ready
         run: |
@@ -154,6 +157,11 @@ jobs:
             echo "Waiting for extension installation (attempt $i/60)..."
             sleep 2
           done
+
+      - name: Install Workbench Positron extension
+        working-directory: test/e2e
+        run: |
+          just install-workbench-extension "release"
 
       - name: "[DEBUG] Print workspace file ownership before tests"
         if: always() && (env.DEBUG_CYPRESS == 'true' || runner.debug)
