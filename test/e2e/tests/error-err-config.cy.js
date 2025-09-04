@@ -9,7 +9,7 @@ describe("Detect errors in config", () => {
     cy.setAdminCredentials();
     cy.visit("/").debug();
     // Select the publisher extension
-    cy.getPublisherSidebarIcon().should("be.visible").click();
+    cy.getPublisherSidebarIcon().click();
   });
 
   it("Show errors when Config is invalid", () => {

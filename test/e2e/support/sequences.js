@@ -52,7 +52,7 @@ Cypress.Commands.add(
       .should("be.visible");
 
     // activate the publisher extension
-    cy.getPublisherSidebarIcon().should("be.visible").click();
+    cy.getPublisherSidebarIcon().click();
     cy.publisherWebview()
       .findByTestId("select-deployment")
       .should("be.visible");
@@ -181,7 +181,7 @@ Cypress.Commands.add(
       .should("be.visible");
 
     // activate the publisher extension
-    cy.getPublisherSidebarIcon().should("be.visible").click();
+    cy.getPublisherSidebarIcon().click();
     cy.publisherWebview()
       .findByTestId("select-deployment")
       .should("be.visible");
@@ -314,5 +314,6 @@ Cypress.Commands.add("deployCurrentlySelected", () => {
 
   cy.findByText("Deployment was successful", { timeout: 60000 }).should(
     "be.visible",
+    { message: "Deployment didn't succeed within 60 seconds." },
   );
 });

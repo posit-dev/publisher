@@ -6,6 +6,7 @@ describe("Deployments Section", () => {
       cy.resetConnect();
       cy.setAdminCredentials();
       cy.visit("/");
+      cy.getPublisherSidebarIcon().click();
     });
 
     afterEach(() => {

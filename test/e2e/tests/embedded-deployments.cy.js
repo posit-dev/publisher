@@ -5,6 +5,7 @@ describe("Create PCS Deployments", () => {
     cy.resetConnect();
     cy.setAdminCredentials();
     cy.visit("/");
+    cy.getPublisherSidebarIcon().click();
   });
 
   afterEach(() => {
@@ -13,8 +14,7 @@ describe("Create PCS Deployments", () => {
   });
 
   it("PCS fastapi at top of workspace", () => {
-    cy.getPublisherSidebarIcon().should("be.visible").click();
-    cy.waitForPublisherIframe(); // Wait after triggering extension
+    cy.waitForPublisherIframe();
     cy.debugIframes();
     cy.createPCSDeployment(
       ".",
@@ -54,7 +54,6 @@ describe("Create PCS Deployments", () => {
   });
 
   it("PCS fastAPI in subdirectory of workspace", () => {
-    cy.getPublisherSidebarIcon().should("be.visible").click();
     cy.waitForPublisherIframe(); // Wait after triggering extension
     cy.debugIframes();
     cy.createPCSDeployment(

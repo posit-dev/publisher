@@ -435,7 +435,7 @@ Cypress.Commands.add(
 Cypress.Commands.add(
   "addPCCCredential",
   (user, nickname = "connect-cloud-credential") => {
-    cy.getPublisherSidebarIcon().should("be.visible").click();
+    cy.getPublisherSidebarIcon().click();
 
     cy.toggleCredentialsSection();
     cy.publisherWebview()
@@ -542,9 +542,7 @@ Cypress.Commands.add(
       },
       { timeout: 90000 },
     ).then((oauthResult) => {
-      cy.getPublisherSidebarIcon()
-        .should("be.visible", { timeout: 15000 })
-        .click({ force: true });
+      cy.getPublisherSidebarIcon().click();
       const guid = user.guid || "57413399-c622-4806-806a-2e18cb32d550";
       const version = 3;
       const server_type = "connect_cloud";
