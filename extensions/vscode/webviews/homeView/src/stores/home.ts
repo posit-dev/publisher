@@ -34,6 +34,8 @@ export const useHomeStore = defineStore("home", () => {
   const platformFileSeparator = ref<string>("/");
   const publishInProgress = ref(false);
   const publishInitiated = ref(false);
+  const contentRenderInProgress = ref(false);
+  const contentRenderFailed = ref(false);
 
   const contentRecords = ref<(ContentRecord | PreContentRecord)[]>([]);
   const configurations = ref<Configuration[]>([]);
@@ -466,6 +468,8 @@ export const useHomeStore = defineStore("home", () => {
     showDisabledOverlay,
     publishInProgress,
     publishInitiated,
+    contentRenderInProgress,
+    contentRenderFailed,
     contentRecords,
     configurations,
     configurationsInError,
