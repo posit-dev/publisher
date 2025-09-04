@@ -1,21 +1,19 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
-// Skipping in CI only because of unresolved permissions issues
-Cypress.skipCI(describe)("Create PCS Deployments", () => {
-  // eslint-disable-next-line mocha/no-top-level-hooks
+describe("Create PCS Deployments", () => {
   beforeEach(() => {
     cy.resetConnect();
     cy.setAdminCredentials();
     cy.visit("/");
   });
 
-  // eslint-disable-next-line mocha/no-top-level-hooks
   afterEach(() => {
     cy.clearupDeployments(".");
     cy.clearupDeployments("fastapi-simple");
   });
 
   it("PCS fastapi at top of workspace", () => {
+    cy.getPublisherSidebarIcon().should("be.visible").click();
     cy.waitForPublisherIframe(); // Wait after triggering extension
     cy.debugIframes();
     cy.createPCSDeployment(
@@ -56,6 +54,7 @@ Cypress.skipCI(describe)("Create PCS Deployments", () => {
   });
 
   it("PCS fastAPI in subdirectory of workspace", () => {
+    cy.getPublisherSidebarIcon().should("be.visible").click();
     cy.waitForPublisherIframe(); // Wait after triggering extension
     cy.debugIframes();
     cy.createPCSDeployment(
