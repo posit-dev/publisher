@@ -11,6 +11,7 @@ import (
 	"github.com/posit-dev/publisher/internal/bundles"
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/events"
+	"github.com/posit-dev/publisher/internal/inspect/dependencies/renv"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/logging/loggingtest"
 	"github.com/posit-dev/publisher/internal/state"
@@ -77,6 +78,7 @@ func (s *RPackageDescSuite) SetupTest() {
 func (s *RPackageDescSuite) TestGetRPackages() {
 	// Log only called on success
 	s.log.On("Info", "Done collecting R package descriptions").Return()
+	s.log.On("Info", "Loading packages from local R library").Return()
 
 	expectedLockfilePath := s.dirPath.Join("renv.lock")
 
@@ -99,6 +101,7 @@ func (s *RPackageDescSuite) TestGetRPackages() {
 func (s *RPackageDescSuite) TestGetRPackages_PackageFilePresent() {
 	// Log only called on success
 	s.log.On("Info", "Done collecting R package descriptions").Return()
+	s.log.On("Info", "Loading packages from local R library").Return()
 
 	expectedLockfilePath := s.dirPath.Join("custom.lock")
 
@@ -131,6 +134,7 @@ func (s *RPackageDescSuite) TestGetRPackages_ScanPackagesError() {
 
 	s.packageMapper.On("GetManifestPackages", s.dirPath, expectedLockfilePath).Return(bundles.PackageMap{}, expectedPkgsErr)
 
+	s.log.On("Info", "Loading packages from local R library").Return()
 	publisher := s.makePublisher()
 	_, err := publisher.getRPackages(false)
 	s.NotNil(err)
@@ -154,6 +158,7 @@ func (s *RPackageDescSuite) TestGetRPackages_ScanPackagesKnownAgentError() {
 
 	s.packageMapper.On("GetManifestPackages", s.dirPath, expectedLockfilePath).Return(bundles.PackageMap{}, expectedPkgsAgentErr)
 
+	s.log.On("Info", "Loading packages from local R library").Return()
 	publisher := s.makePublisher()
 	_, err := publisher.getRPackages(false)
 	s.NotNil(err)
@@ -162,7 +167,9 @@ func (s *RPackageDescSuite) TestGetRPackages_ScanPackagesKnownAgentError() {
 }
 
 func (s *RPackageDescSuite) TestGetRPackages_ScanDependenciesTrue_UsesScannerLockfile() {
-	// Log only called on success
+	// Emitted when scanDependencies=true
+	s.log.On("Info", "Detect dependencies from project").Return()
+	s.log.On("Info", "Loading packages from local R library").Return()
 	s.log.On("Info", "Done collecting R package descriptions").Return()
 
 	// Configure a specific package file, so we can check that it is not used.
@@ -186,7 +193,9 @@ func (s *RPackageDescSuite) TestGetRPackages_ScanDependenciesTrue_UsesScannerLoc
 }
 
 func (s *RPackageDescSuite) TestGetRPackages_ScanDependencies_UsesOnlyConfigFiles() {
-	// Log only called on success
+	// Emitted when scanDependencies=true
+	s.log.On("Info", "Detect dependencies from project").Return()
+	s.log.On("Info", "Loading packages from local R library").Return()
 	s.log.On("Info", "Done collecting R package descriptions").Return()
 
 	// Configure specific files; ensure publisher only passes these
@@ -219,5 +228,103 @@ func (s *RPackageDescSuite) TestGetRPackages_ScanDependencies_UsesOnlyConfigFile
 	packageMap, err := publisher.getRPackages(true)
 	s.NoError(err)
 	s.Equal(s.successPackageMap, packageMap)
+	s.log.AssertExpectations(s.T())
+}
+
+// Verifies that when packages_from_library=true, getRPackages emits the
+// library-loading log message. This test relies on the mock mapper type,
+// which exercises the library branch in getRPackages.
+func (s *RPackageDescSuite) TestGetRPackages_LogsLibraryWhenPackagesFromLibraryTrue() {
+	// Log only called on success
+	s.log.On("Info", "Done collecting R package descriptions").Return()
+	s.log.On("Info", "Loading packages from local R library").Return()
+
+	// Set packages_from_library=true in config (2 lines, no helper)
+	t := true
+	s.stateStore.Config = &config.Config{R: &config.R{PackagesFromLibrary: &t}}
+
+	expectedLockfilePath := s.dirPath.Join("renv.lock")
+	s.packageMapper.On("GetManifestPackages", s.dirPath, expectedLockfilePath).Return(s.successPackageMap, nil)
+
+	publisher := s.makePublisher()
+	packageMap, err := publisher.getRPackages(false)
+	s.NoError(err)
+	s.Equal(s.successPackageMap, packageMap)
+	s.log.AssertExpectations(s.T())
+}
+
+// Lockfile branch: PackagesFromLibrary=false should log lockfile message when using the lockfile mapper.
+func (s *RPackageDescSuite) TestGetRPackages_LogsLockfileWhenPackagesFromLibraryFalse() {
+	s.log.On("Info", "Done collecting R package descriptions").Return()
+	s.log.On("Info", "Loading packages from renv.lock", "lockfile", mock.Anything).Return()
+	s.log.On("Debug", "Reading lockfile for package manifest generation", "lockfile", mock.Anything).Return()
+	s.log.On("Debug", "Processing packages from lockfile", "package_count", mock.Anything).Return()
+	s.log.On("Debug", "Successfully generated manifest packages from lockfile", "manifest_package_count", mock.Anything).Return()
+
+	// Create a minimal renv.lock in the project dir
+	lockfile := s.dirPath.Join("renv.lock")
+	_ = lockfile.WriteFile([]byte(`{
+  "R": {
+    "Version": "4.3.0",
+    "Repositories": [{"Name":"CRAN","URL":"https://cran.rstudio.com"}]
+  },
+  "Packages": {
+    "R6": {"Package":"R6","Version":"2.5.1","Source":"Repository","Repository":"CRAN","Hash":"abc"}
+  }
+}`), 0644)
+
+	f := false
+	s.stateStore.Config = &config.Config{R: &config.R{PackagesFromLibrary: &f}}
+
+	// Swap in a real lockfile mapper to exercise the lockfile branch
+	helper := publishhelper.NewPublishHelper(s.stateStore, s.log)
+	publisher := &defaultPublisher{
+		log:            s.log,
+		emitter:        s.emitter,
+		rPackageMapper: renv.NewLockfilePackageMapper(s.dirPath, util.NewPath("R", s.dirPath.Fs()), s.log),
+		PublishHelper:  helper,
+	}
+
+	packageMap, err := publisher.getRPackages(false)
+	s.NoError(err)
+	s.NotNil(packageMap)
+	s.Contains(packageMap, "R6")
+	s.log.AssertExpectations(s.T())
+}
+
+// Lockfile branch default: PackagesFromLibrary=nil should behave like false and log lockfile message.
+func (s *RPackageDescSuite) TestGetRPackages_LogsLockfileWhenPackagesFromLibraryNil() {
+	s.log.On("Info", "Done collecting R package descriptions").Return()
+	s.log.On("Info", "Loading packages from renv.lock", "lockfile", mock.Anything).Return()
+	s.log.On("Debug", "Reading lockfile for package manifest generation", "lockfile", mock.Anything).Return()
+	s.log.On("Debug", "Processing packages from lockfile", "package_count", mock.Anything).Return()
+	s.log.On("Debug", "Successfully generated manifest packages from lockfile", "manifest_package_count", mock.Anything).Return()
+
+	// Ensure a minimal renv.lock exists
+	lockfile := s.dirPath.Join("renv.lock")
+	_ = lockfile.WriteFile([]byte(`{
+  "R": {
+    "Version": "4.3.0",
+    "Repositories": [{"Name":"CRAN","URL":"https://cran.rstudio.com"}]
+  },
+  "Packages": {
+    "R6": {"Package":"R6","Version":"2.5.1","Source":"Repository","Repository":"CRAN","Hash":"abc"}
+  }
+}`), 0644)
+
+	s.stateStore.Config = &config.Config{R: &config.R{PackagesFromLibrary: nil}}
+
+	helper := publishhelper.NewPublishHelper(s.stateStore, s.log)
+	publisher := &defaultPublisher{
+		log:            s.log,
+		emitter:        s.emitter,
+		rPackageMapper: renv.NewLockfilePackageMapper(s.dirPath, util.NewPath("R", s.dirPath.Fs()), s.log),
+		PublishHelper:  helper,
+	}
+
+	packageMap, err := publisher.getRPackages(false)
+	s.NoError(err)
+	s.NotNil(packageMap)
+	s.Contains(packageMap, "R6")
 	s.log.AssertExpectations(s.T())
 }

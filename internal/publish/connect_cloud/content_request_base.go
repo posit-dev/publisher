@@ -24,7 +24,7 @@ func (c *ServerPublisher) getAccess(isFirstDeploy bool) (types.ContentAccess, er
 	var publicAccess bool
 	var orgAccess config.OrganizationAccessType
 	if isFirstDeploy {
-		if cloudCfg == nil || cloudCfg.AccessControl != nil && cloudCfg.AccessControl.PublicAccess == nil {
+		if cloudCfg == nil || cloudCfg.AccessControl == nil || cloudCfg.AccessControl.PublicAccess == nil {
 			// If the config doesn't specify whether public access is enabled, we need to determine if the account
 			// is entitled to private access. If they are, we default to private access.
 			hasPermissionForPrivateContent, err := c.hasPermissionForPrivateContent()
@@ -39,6 +39,7 @@ func (c *ServerPublisher) getAccess(isFirstDeploy bool) (types.ContentAccess, er
 			orgAccess = cloudCfg.AccessControl.OrganizationAccess
 		}
 	} else {
+		// redeploy
 		if cloudCfg != nil {
 			if cloudCfg.AccessControl != nil {
 				accessControl := cloudCfg.AccessControl
@@ -83,6 +84,8 @@ func (c *ServerPublisher) getAccess(isFirstDeploy bool) (types.ContentAccess, er
 				// if AccessControl isn't present, default to the server setting
 				return "", nil
 			}
+		} else {
+			return "", nil
 		}
 	}
 

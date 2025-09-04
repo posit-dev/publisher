@@ -61,6 +61,11 @@
               "default": "",
               "description": "R interpreter version, required to run the content. If not specified it will be detected from the one in use.",
               "examples": [">3.8", "<4.3", ">=3.5.0"]
+            },
+            "packages_from_library": {
+              "type": "boolean",
+              "default": false,
+              "description": "When true, generate manifest packages from the local renv library (legacy behavior). When false (default), read packages from renv.lock."
             }
           }
         },
@@ -390,6 +395,11 @@
       "type": "string",
       "description": "Name of the primary file containing the content. For Python flask, dash, fastapi, and python-shiny projects, this specifies the object within the file in module:object format. See the documentation at https://docs.posit.co/connect/user/publishing-cli-apps/#publishing-rsconnect-python-entrypoint.",
       "examples": ["app.py", "report.qmd"]
+    },
+    "source": {
+      "type": "string",
+      "description": "Name of the primary file that acts as the source for content that can be rendered on demand. Only useful when deploying static content which has been rendered from Quarto, Rmarkdown or Jupyter Notebooks",
+      "examples": ["report.qmd", "_quarto.yml"]
     },
     "title": {
       "type": "string",

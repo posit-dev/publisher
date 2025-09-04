@@ -11,6 +11,7 @@ import {
 } from "src/multiStepInputs/multiStepHelper";
 import {
   commands,
+  env,
   InputBoxValidationSeverity,
   QuickPickItem,
   QuickPickItemKind,
@@ -56,6 +57,7 @@ import {
   isConnectCloud,
   getProductType,
 } from "src/utils/multiStepHelpers";
+import { recordAddConnectCloudUrlParams } from "src/utils/connectCloudHelpers";
 
 const viewTitle = "Create a New Deployment";
 
@@ -144,6 +146,16 @@ export async function newDeployment(
       newDeploymentData.entrypoint.inspectionResult?.configuration
         ?.alternatives;
     return Boolean(alternatives && alternatives.length);
+  };
+
+  const inspectionResultAlternative = (
+    insRes: ConfigurationInspectionResult,
+  ): ConfigurationInspectionResult => {
+    // At the moment the only alternative we handle is the rendered version alternative
+    return {
+      projectDir: insRes.projectDir,
+      configuration: insRes.configuration!.alternatives![0],
+    };
   };
 
   const useAlternativeConfig = () => {
@@ -289,7 +301,9 @@ export async function newDeployment(
           recursive: true,
         },
       );
-      const contentRecordList = response.data;
+      const contentRecordList = response.data.map((record) =>
+        recordAddConnectCloudUrlParams(record, env.appName),
+      );
       // Note.. we want all of the contentRecord filenames regardless if they are valid or not.
       contentRecordList.forEach((contentRecord) => {
         let existingList = contentRecordNames.get(contentRecord.projectDir);
@@ -591,34 +605,44 @@ export async function newDeployment(
   ) {
     stepHistoryFlush(step.INPUT_CONFIG_ALTERNATIVES);
 
-    const useSourceCode = "Publish document with source code";
-    const useRenderedDoc = "Publish rendered document only";
+    if (!newDeploymentData.entrypoint.inspectionResult) {
+      return;
+    }
 
     // At the moment the only configuration alternatives we handle
     // are related to publishing the source code or the rendered version alternative
+    const inspectionResult = newDeploymentData.entrypoint.inspectionResult;
+    const inspectionOptions: QuickPickItemWithInspectionResult[] = [
+      {
+        iconPath: new ThemeIcon("file-code"),
+        label: "Publish document with source code",
+        description: "The server will render it for you",
+        inspectionResult: inspectionResult,
+      },
+      {
+        iconPath: new ThemeIcon("preview"),
+        label: "Publish rendered document only",
+        inspectionResult: inspectionResultAlternative(inspectionResult),
+      },
+    ];
+
     const pick = await input.showQuickPick({
       title: state.title,
       step: 0,
       totalSteps: 0,
       placeholder: "Publish the source code or the rendered document?",
-      items: [
-        {
-          iconPath: new ThemeIcon("file-code"),
-          label: useSourceCode,
-          description: "Connect will render it for you",
-        },
-        {
-          iconPath: new ThemeIcon("preview"),
-          label: useRenderedDoc,
-        },
-      ],
+      items: inspectionOptions,
       buttons: [],
       shouldResume: () => Promise.resolve(false),
       ignoreFocusOut: true,
     });
 
+    if (!pick || !isQuickPickItemWithInspectionResult(pick)) {
+      return;
+    }
+
     // If wants to push rendered code, update the inspectionResult to use that config
-    if (pick.label === useRenderedDoc) {
+    if (pick.inspectionResult?.configuration.type === ContentType.HTML) {
       useAlternativeConfig();
     }
 

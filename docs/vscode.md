@@ -44,10 +44,14 @@ project needs.
 
 ### R Packages
 
-For R projects, you need an `renv.lock` file that captures the R package dependencies
-for your project. You also need an active `renv` library with those packages installed
-so the extension can gather details about them. See the
-[renv documentation](https://rstudio.github.io/renv/articles/renv.html) for more details.
+If a `renv.lock` file is provided, Publisher reads package information directly
+from the lockfile (no local `renv` library required to publish).
+
+If a lockfile is not provided Publisher will try to detect dependencies
+from the code itself.
+
+In case you want Publisher to read dependencies from the `renv` library,
+set `packages_from_library = true` under `[r]` in your configuration.
 
 ### Ready to Deploy
 
@@ -186,9 +190,11 @@ You can specify an alternate name in the deployment configuration file using the
 
 ![](https://cdn.posit.co/publisher/assets/img/r-packages.png)
 
-If your `renv.lock` file and library are out of sync, run `renv::snapshot()`
-or `renv::restore()` to update the lockfile or library, respectively. Clicking
-the "eye" icon in the R Packages view will run `renv::snapshot()` for you.
+If your `renv.lock` file and library are out of sync, you can still publish by
+default because Publisher uses the lockfile. However, it's good practice to keep
+them in sync: run `renv::snapshot()` (update lockfile from library) or
+`renv::restore()` (update library from lockfile). Clicking the "eye" icon in the
+R Packages view runs `renv::snapshot()` for you.
 
 ### Credentials
 

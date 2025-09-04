@@ -10,7 +10,6 @@ import {
   vsCodeOption,
   vsCodeProgressRing,
   vsCodeDivider,
-  vsCodeCheckbox,
 } from "@vscode/webview-ui-toolkit";
 
 import App from "src/App.vue";
@@ -28,7 +27,6 @@ provideVSCodeDesignSystem().register(
   vsCodeOption(),
   vsCodeProgressRing(),
   vsCodeDivider(),
-  vsCodeCheckbox(),
 );
 
 const pinia = createPinia();

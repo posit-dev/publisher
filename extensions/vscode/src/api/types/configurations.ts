@@ -115,6 +115,7 @@ export type ConfigurationDetails = {
   productType: ProductType;
   type: ContentType;
   entrypoint?: string;
+  source?: string;
   title?: string;
   description?: string;
   thumbnail?: string;
