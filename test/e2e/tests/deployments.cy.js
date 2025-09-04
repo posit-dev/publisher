@@ -124,21 +124,10 @@ describe("Deployments Section", () => {
             config.connect_cloud = config.connect_cloud || {};
             config.connect_cloud.access_control = { public_access: true };
 
-            // Use Docker exec to append the connect_cloud section to the file
-            const dockerPath = filePaths.config.path.replace(
-              "content-workspace/",
-              "/home/coder/workspace/",
+            cy.writeTomlFile(
+              filePaths.config.path,
+              "[connect_cloud]\n[connect_cloud.access_control]\npublic_access = true",
             );
-
-            cy.exec(
-              `docker exec publisher-e2e.code-server bash -c "echo -e '\\n[connect_cloud]\\n[connect_cloud.access_control]\\npublic_access = true' >> '${dockerPath}'"`,
-            ).then((result) => {
-              if (result.code !== 0) {
-                throw new Error(
-                  `Failed to append to config via Docker: ${result.stderr}`,
-                );
-              }
-            });
           });
         },
       );

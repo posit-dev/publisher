@@ -39,11 +39,7 @@ Cypress.skipCI(describe)("Create PCS Deployments", () => {
       },
     )
       .then((tomlFiles) => {
-        tomlFiles.config.contents.python.version = "3.11.3";
-        return cy.savePublisherFile(
-          tomlFiles.config.path,
-          tomlFiles.config.contents,
-        );
+        return cy.writeTomlFile(tomlFiles.config.path, "version = '3.11.3'");
       })
       .then(() => {
         return cy.log("File saved.");
@@ -83,11 +79,7 @@ Cypress.skipCI(describe)("Create PCS Deployments", () => {
       },
     )
       .then((tomlFiles) => {
-        tomlFiles.config.contents.python.version = "3.11.3";
-        return cy.savePublisherFile(
-          tomlFiles.config.path,
-          tomlFiles.config.contents,
-        );
+        return cy.writeTomlFile(tomlFiles.config.path, "version = '3.11.3'");
       })
       .then(() => {
         return cy.log("File saved.");

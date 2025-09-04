@@ -580,6 +580,27 @@ cloud_environment = '${cloud_environment}'
   },
 );
 
+Cypress.Commands.add("writeTomlFile", (filePath, tomlContent) => {
+  // filePath: relative to project root (e.g. content-workspace/...)
+  // tomlContent: string to append (should include section header if needed)
+  const dockerPath = filePath.replace(
+    "content-workspace/",
+    "/home/coder/workspace/",
+  );
+  // Use double quotes for shell, single quotes for TOML if needed
+  return cy
+    .exec(
+      `docker exec publisher-e2e.code-server bash -c "cat <<EOF >> '${dockerPath}'\n${tomlContent}\nEOF"`,
+    )
+    .then((result) => {
+      if (result.code !== 0) {
+        throw new Error(
+          `Failed to append to TOML via Docker: ${result.stderr}`,
+        );
+      }
+    });
+});
+
 Cypress.on("uncaught:exception", () => {
   // Prevent CI from failing on harmless errors
   return false;
