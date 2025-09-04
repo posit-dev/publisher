@@ -693,7 +693,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           },
         });
       } catch (_: unknown) {
-        console.error(`Failed to fetch integration requests`);
+        console.error(`Failed to fetch integration requests for [${credentialName}]`);
         this.webviewConduit.sendMsg({
           kind: HostToWebviewMessageType.REFRESH_INTEGRATION_REQUESTS,
           content: {
