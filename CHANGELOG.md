@@ -70,6 +70,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed an issue deploying content to free Posit Connect Cloud accounts with incorrect
   access settings. (#3005)
 
+### Added
+
+- When creating a Connect credential provided server URLs are accepted even when
+  they contain extra paths (#2999)
+
 ## [1.19.1]
 
 ### Fixed
