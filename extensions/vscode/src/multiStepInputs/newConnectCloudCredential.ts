@@ -272,9 +272,6 @@ export async function newConnectCloudCredential(
 
       state.data.accessToken = resp.data?.accessToken;
       state.data.refreshToken = resp.data?.refreshToken;
-      window.showInformationMessage(
-        `Successfully connected to Connect Cloud 🎉`,
-      );
 
       // clean-up
       connectCloudData.signupUrl = undefined;

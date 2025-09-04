@@ -65,10 +65,10 @@ describe("Credentials Section", () => {
       `${Cypress.env("BOOTSTRAP_ADMIN_API_KEY")}{enter}`,
     );
 
-    cy.get(".notifications-toasts")
-      .should("be.visible")
-      .findByText("Successfully connected to http://connect-publisher-e2e:3939")
-      .should("be.visible");
+    cy.get(".quick-input-message", { timeout: 15000 }).should(
+      "include.text",
+      "Successfully connected to http://connect-publisher-e2e:3939 🎉",
+    );
 
     cy.get(".quick-input-message", { timeout: 10000 }).should(
       "include.text",
@@ -177,10 +177,10 @@ describe("Credentials Section", () => {
     // Wait for OAuth completion and VS Code to detect it
     cy.get(".monaco-dialog-box").should("not.exist", { timeout: 30000 });
 
-    cy.get(".notifications-toasts")
-      .should("be.visible")
-      .findByText("Successfully connected to Connect Cloud 🎉")
-      .should("be.visible");
+    cy.get(".quick-input-message", { timeout: 15000 }).should(
+      "include.text",
+      "Successfully connected to Connect Cloud 🎉",
+    );
 
     // Wait for the nickname input field to appear
     cy.get(".quick-input-message", { timeout: 15000 }).should(
