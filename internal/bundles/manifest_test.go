@@ -4,6 +4,7 @@ package bundles
 
 import (
 	"bytes"
+	"encoding/json"
 	"os"
 	"strings"
 	"testing"
@@ -146,6 +147,7 @@ func (s *ManifestSuite) TestNewManifestFromConfig() {
 			PackageManager: &PythonPackageManager{
 				Name:        "pip",
 				PackageFile: "requirements.in",
+				AllowUv:     config.BoolPtr(false),
 			},
 		},
 		Quarto: &Quarto{
@@ -187,6 +189,7 @@ func (s *ManifestSuite) TestNewManifestFromConfigWithJupyterOptions() {
 			PackageManager: &PythonPackageManager{
 				Name:        "pip",
 				PackageFile: "requirements.in",
+				AllowUv:     config.BoolPtr(false),
 			},
 		},
 		Jupyter: &Jupyter{
@@ -229,10 +232,58 @@ func (s *ManifestSuite) TestNewManifestFromConfigVersionRequirements() {
 			PackageManager: &PythonPackageManager{
 				Name:        "pip",
 				PackageFile: "requirements.in",
+				AllowUv:     config.BoolPtr(false),
 			},
 		},
 		Platform: "4.5.6",
 		Packages: map[string]Package{},
 		Files:    map[string]ManifestFile{},
 	}, m)
+}
+
+func (s *ManifestSuite) TestNewManifestFromConfig_PythonPackageManagerVariants_JSON() {
+	// Validate JSON output for package_manager cases: auto, pip, uv
+	cases := []struct {
+		name          string
+		inputPM       string
+		expectedName  string
+		expectAllowUv *bool // nil means field should be omitted
+	}{
+		{name: "auto", inputPM: "auto", expectedName: "pip", expectAllowUv: nil},
+		{name: "pip", inputPM: "pip", expectedName: "pip", expectAllowUv: config.BoolPtr(false)},
+		{name: "uv", inputPM: "uv", expectedName: "uv", expectAllowUv: config.BoolPtr(true)},
+	}
+
+	for _, tc := range cases {
+		cfg := &config.Config{
+			Type:       "python-fastapi",
+			Entrypoint: "app:app",
+			Python: &config.Python{
+				Version:        "3.11",
+				PackageFile:    "requirements.txt",
+				PackageManager: tc.inputPM,
+			},
+		}
+		m := NewManifestFromConfig(cfg)
+		data, err := m.ToJSON()
+		s.Require().NoError(err, tc.name)
+
+		var root map[string]any
+		s.Require().NoError(json.Unmarshal(data, &root), tc.name)
+
+		py, ok := root["python"].(map[string]any)
+		s.Require().True(ok, tc.name)
+		pm, ok := py["package_manager"].(map[string]any)
+		s.Require().True(ok, tc.name)
+
+		s.Equal(tc.expectedName, pm["name"], tc.name)
+
+		allowUvVal, allowUvExists := pm["allow_uv"]
+		if tc.expectAllowUv == nil {
+			s.False(allowUvExists, tc.name)
+		} else {
+			s.True(allowUvExists, tc.name)
+			s.Equal(*tc.expectAllowUv, allowUvVal.(bool), tc.name)
+		}
+	}
 }
