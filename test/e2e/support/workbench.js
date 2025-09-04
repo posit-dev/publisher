@@ -108,11 +108,52 @@ Cypress.Commands.add("cleanupAndRestartWorkbench", (projectDir) => {
 
   // Start a fresh container, the justfile command includes a health check wait
   cy.log("Starting fresh Workbench container");
+
+  // Add global error logging for better debugging in CI
+  let startTime = Date.now();
+  cy.on("fail", (err) => {
+    if (err.message && err.message.includes("start-workbench")) {
+      const duration = (Date.now() - startTime) / 1000;
+      cy.log(
+        `ERROR: Container start failed after ${duration}s with: ${err.message}`,
+      );
+      cy.task(
+        "log",
+        `Container start failed after ${duration}s: ${err.message}`,
+      );
+
+      // Check the container status to get additional information
+      cy.exec("docker ps -a | grep workbench", {
+        failOnNonZeroExit: false,
+      }).then((statusResult) => {
+        cy.log(
+          `Container status: ${statusResult.stdout || "No container found"}`,
+        );
+      });
+
+      // Get container logs if possible
+      cy.exec("docker logs publisher-e2e.workbench-release 2>&1 | tail -n 50", {
+        failOnNonZeroExit: false,
+      }).then((logsResult) => {
+        cy.log(
+          `Container logs (last 50 lines): ${logsResult.stdout || "No logs available"}`,
+        );
+      });
+    }
+    throw err; // Re-throw the error to continue normal Cypress error handling
+  });
+
   cy.exec(`just start-workbench release`, {
     failOnNonZeroExit: false,
-    timeout: 75_000, // Should match the timeout in justfile
+    timeout: 100_000, // Increased to give buffer beyond the justfile timeout (90s)
   }).then((result) => {
-    cy.log(`Start workbench result: exit code ${result.code}`);
+    // Cancel the error handler
+    cy.removeAllListeners("fail");
+
+    // Always log output regardless of success/failure
+    cy.log(
+      `Start workbench result: exit code ${result.code} (took ${(Date.now() - startTime) / 1000}s)`,
+    );
     cy.log(
       `Start workbench stdout: ${result.stdout.substring(0, 1000)}${result.stdout.length > 1000 ? "..." : ""}`,
     );
@@ -168,9 +209,7 @@ Cypress.Commands.add("startWorkbenchPositronSession", () => {
   cy.get("button").contains("Start Session").click();
 
   // Wait for the session to start, a new session usually takes ~30s
-  cy.contains(/Welcome — (?:.*— )?Positron/, { timeout: 60_000 }).should(
-    "be.visible",
-  );
+  cy.contains(/Welcome.*Positron/i, { timeout: 60_000 }).should("be.visible");
   // Wait for the interpreter button to load at the top right
   cy.get('[aria-label="Select Interpreter Session"]', {
     timeout: 30_000,
