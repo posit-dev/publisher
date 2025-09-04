@@ -394,6 +394,9 @@ func (s *PublishConnectSuite) publishWithClient(
 	mockPyIntr.On("GetPythonExecutable").Return(util.NewAbsolutePath("/path/to/python", nil), nil)
 
 	rPackageMapper := &mockPackageMapper{}
+	// Allow optional scanning when lockfile is not detected (createManifest may trigger it).
+	generated := s.cwd.Join("scanned.lock")
+	rPackageMapper.On("ScanDependencies", []string{s.cwd.String()}, mock.Anything).Return(generated, nil).Maybe()
 	if errsMock.rPackageErr != nil {
 		rPackageMapper.On("GetManifestPackages", mock.Anything, mock.Anything).Return(nil, errsMock.rPackageErr)
 	} else {
@@ -879,6 +882,9 @@ func (s *PublishConnectCloudSuite) publishWithCloudClient(
 
 	// Mock R package mapper
 	rPackageMapper := &mockPackageMapper{}
+	// Allow optional scanning when lockfile is not detected (createManifest may trigger it).
+	generated := s.cwd.Join("scanned.lock")
+	rPackageMapper.On("ScanDependencies", []string{s.cwd.String()}, mock.Anything).Return(generated, nil).Maybe()
 	if errsMock.rPackageErr != nil {
 		rPackageMapper.On("GetManifestPackages", mock.Anything, mock.Anything).Return(nil, errsMock.rPackageErr)
 	} else {
