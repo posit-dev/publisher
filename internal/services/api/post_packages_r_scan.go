@@ -60,7 +60,7 @@ func (h *PostPackagesRScanHandler) ServeHTTP(w http.ResponseWriter, req *http.Re
 		return
 	}
 	dependencyScanner := renv.NewRDependencyScanner(h.log)
-	err = dependencyScanner.SetupRenvInDir(projectDir.String(), lockfileRelPath.String(), b.R)
+	_, err = dependencyScanner.SetupRenvInDir(projectDir.String(), lockfileRelPath.String(), b.R)
 	if err != nil {
 		InternalError(w, req, h.log, err)
 		return

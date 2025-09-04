@@ -49,11 +49,10 @@ func (s *defaultRDependencyScanner) ScanDependencies(paths []string, rExecutable
 	return s.ScanDependenciesInDir(paths, tmpProjectPath, "", rExecutable)
 }
 
-func (i *defaultRDependencyScanner) SetupRenvInDir(targetPath string, lockfile string, rExecutable string) error {
+func (i *defaultRDependencyScanner) SetupRenvInDir(targetPath string, lockfile string, rExecutable string) (util.AbsolutePath, error) {
 	pathSlice := []string{targetPath}
 
-	_, err := i.ScanDependenciesInDir(pathSlice, util.NewPath(targetPath, nil), lockfile, rExecutable)
-	return err
+	return i.ScanDependenciesInDir(pathSlice, util.NewPath(targetPath, nil), lockfile, rExecutable)
 }
 
 // ScanDependenciesInDir uses renv to scan the provided paths and create set up
