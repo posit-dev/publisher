@@ -349,7 +349,7 @@ func (s *RDependencyScannerFunctionalSuite) TestScanDependenciesInDirFunctional(
 
 // runs the dependency scanner in "setup renv" mode twice successively to that it functions
 // with existing renv infrastructure
-func (s *RDependencyScannerFunctionalSuite) TestSetupRenvInLockfileFunctional() {
+func (s *RDependencyScannerFunctionalSuite) TestSetupRenvInDirWithExistingInfraFunctional() {
 	if testing.Short() {
 		s.T().Skip("skipping functional test in short mode")
 	}
