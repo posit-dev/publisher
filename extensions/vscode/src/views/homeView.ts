@@ -457,22 +457,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       cfg = await this.state.getSelectedConfiguration();
     }
 
-    const contentRecord = await this.state.getSelectedContentRecord();
-    if (contentRecord === undefined) {
-      console.error("homeView::addIntegration: No active content record.");
-      return;
-    }
-    const credential = this.state.findCredentialForContentRecord(contentRecord);
-    if (credential === undefined) {
-      window.showErrorMessage("No valid credential found for the current deployment server.");
-      return;
-    }
-
     this.sendRefreshedFilesLists();
     this.updateServerEnvironment();
     this.refreshPythonPackages();
     this.refreshRPackages();
-    this.refreshIntegrationRequests(credential.name);
+    this.refreshIntegrationRequests();
 
     this.configWatchers?.dispose();
     if (cfg && isConfigurationError(cfg)) {
@@ -483,7 +472,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     this.configWatchers.configFile?.onDidChange(() => {
       this.debounceSendRefreshedFilesLists();
       this.updateServerEnvironment();
-      this.refreshIntegrationRequests(credential.name);
+      this.refreshIntegrationRequests();
     }, this);
 
     this.configWatchers.pythonPackageFile?.onDidCreate(
@@ -662,12 +651,17 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
   private async refreshIntegrationRequests(credentialName?: string) {
     if (!credentialName) {
-      const contentRecord = await this.state.getSelectedContentRecord();
-      if (contentRecord === undefined) {
-        console.error("homeView::addIntegration: No active content record.");
+      const activeContentRecord = await this.state.getSelectedContentRecord();
+      if (activeContentRecord === undefined) {
+        this.webviewConduit.sendMsg({
+          kind: HostToWebviewMessageType.REFRESH_INTEGRATION_REQUESTS,
+          content: {
+            integrationRequests: [],
+          },
+        });
         return;
       }
-      const credential = this.state.findCredentialForContentRecord(contentRecord);
+      const credential = this.state.findCredentialForContentRecord(activeContentRecord);
       credentialName = credential?.name;
     }
 
@@ -679,10 +673,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           activeConfig.configurationName,
           activeConfig.projectDir
         );
-        const integrationRequests = response.data;
+        const integrationRequests = response.data ?? [];
 
         response = await api.integrationRequests.getIntegrations(credentialName!);
-        const integrations = response.data;
+        const integrations = response.data ?? [];
         const requests = integrationRequests.map((ir) => {
           const matchingIntegration = integrations.find(integration => integration.guid === ir.guid);
           return {
@@ -704,6 +698,13 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           error
         );
         console.error(`Failed to fetch integration requests: ${summary}`);
+        // Send an empty list to the webview to clear stale data
+        this.webviewConduit.sendMsg({
+          kind: HostToWebviewMessageType.REFRESH_INTEGRATION_REQUESTS,
+          content: {
+            integrationRequests: [],
+          },
+        });
       }
     }
   }
@@ -1223,7 +1224,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     let integration: Integration | undefined;
     let integrations: Integration[] = [];
     try {
-      await showProgress("Retrieving Integrations from deployment server", Views.HomeView, async () =>  {
+      await showProgress("Retrieving Integrations from deployment server", Views.HomeView, async () => {
         const response = await api.integrationRequests.getIntegrations(
           credential.name,
         );
