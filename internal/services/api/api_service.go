@@ -11,6 +11,7 @@ import (
 	"github.com/posit-dev/publisher/internal/api_client/auth/snowflake"
 	"github.com/posit-dev/publisher/internal/credentials"
 	"github.com/posit-dev/publisher/internal/events"
+	"github.com/posit-dev/publisher/internal/inspect/dependencies/renv"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/services/api/files"
 	"github.com/posit-dev/publisher/internal/services/api/paths"
@@ -185,7 +186,7 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 		Methods(http.MethodPost)
 
 	// POST /api/packages/r/scan
-	r.Handle(ToPath("packages", "r", "scan"), NewPostPackagesRScanHandler(base, log, nil)).
+	r.Handle(ToPath("packages", "r", "scan"), NewPostPackagesRScanHandler(base, log, renv.NewRDependencyScannerFactory())).
 		Methods(http.MethodPost)
 
 	// GET /api/snowflake-connections

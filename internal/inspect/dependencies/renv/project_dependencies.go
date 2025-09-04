@@ -20,11 +20,23 @@ type RDependencyScanner interface {
 	// ScanDependencies creates a temp directory and uses renv::dependencies +
 	// renv::snapshot() to produce a lockfile, returning its absolute path.
 	ScanDependencies(paths []string, rExecutable string) (util.AbsolutePath, error)
+
+	// SetupRenvInDir sets up renv in the specified directory with the given lockfile name
+	// and R executable path, returning the absolute path to the created lockfile.
+	SetupRenvInDir(targetPath string, lockfile string, rExecutable string) (util.AbsolutePath, error)
 }
 
 type defaultRDependencyScanner struct {
 	rExecutor executor.Executor
 	log       logging.Logger
+}
+
+type RDependencyScannerFactory func(log logging.Logger) RDependencyScanner
+
+func NewRDependencyScannerFactory() RDependencyScannerFactory {
+	return func(log logging.Logger) RDependencyScanner {
+		return NewRDependencyScanner(log)
+	}
 }
 
 func NewRDependencyScanner(log logging.Logger) *defaultRDependencyScanner {
