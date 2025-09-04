@@ -46,7 +46,6 @@ func (s *DeleteIntegrationRequestTestSuite) TestDeleteIntegrationRequest() {
 	configName := "testConfig"
 	cfg := config.New()
 	cfg.ProductType = config.ProductTypeConnect
-	cfg.Type = config.ContentTypeHTML
 
 	cfg.IntegrationRequests = []config.IntegrationRequest{
 		{
@@ -106,7 +105,6 @@ func (s *DeleteIntegrationRequestTestSuite) TestDeleteIntegrationRequestNotFound
 	configName := "testConfig"
 	cfg := config.New()
 	cfg.ProductType = config.ProductTypeConnect
-	cfg.Type = config.ContentTypeHTML
 
 	cfg.IntegrationRequests = []config.IntegrationRequest{
 		{
@@ -156,7 +154,6 @@ func (s *DeleteIntegrationRequestTestSuite) TestDeleteIntegrationRequestMultiple
 	configName := "testConfig"
 	cfg := config.New()
 	cfg.ProductType = config.ProductTypeConnect
-	cfg.Type = config.ContentTypeHTML
 
 	cfg.IntegrationRequests = []config.IntegrationRequest{
 		{
