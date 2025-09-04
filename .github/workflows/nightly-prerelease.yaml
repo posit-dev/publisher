@@ -1,0 +1,179 @@
+name: Nightly Pre-release
+on:
+  # TODO: Enable schedule after testing
+  # schedule:
+  #   # Run at 7 AM UTC daily
+  #   - cron: "0 07 * * *"
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: "Dry run"
+        required: false
+        default: true
+        type: boolean
+
+jobs:
+  check:
+    name: Check if release needed
+    runs-on: ubuntu-latest
+    outputs:
+      skip: ${{ steps.check-tag.outputs.skip }}
+      current-sha: ${{ steps.check-tag.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Check existing tags
+        id: check-tag
+        run: |
+          # Check if any version tags point to the current commit on main
+          EXISTING_TAGS=$(git tag --points-at main | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' || true)
+
+          if [ -n "$EXISTING_TAGS" ]; then
+            echo "Current commit on main is already tagged: $EXISTING_TAGS"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            
+            # Add job summary
+            echo "## ⏭️ Pre-release Skipped" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "The current commit on \`main\` is already tagged:" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo "$EXISTING_TAGS" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "Current commit on main is not tagged"
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  version:
+    name: Calculate next version
+    needs: check
+    if: needs.check.outputs.skip == 'false'
+    runs-on: ubuntu-latest
+    outputs:
+      next-version: ${{ steps.calculate.outputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "lts/*"
+
+      - name: Calculate version
+        id: calculate
+        run: |
+          # Install semver globally for easy CLI usage
+          npm install -g semver
+
+          # Get all version tags and filter by odd/even minor versions
+          TAGS=$(git tag -l 'v*.*.*' | sed 's/^v//')
+
+          # Find latest release (even minor) and latest pre-release (odd minor)
+          LATEST_RELEASE=""
+          LATEST_PRERELEASE=""
+
+          for TAG in $TAGS; do
+            MINOR=$(echo "$TAG" | cut -d. -f2)
+            if [ $((MINOR % 2)) -eq 0 ]; then
+              # Even minor = release
+              if [ -z "$LATEST_RELEASE" ] || [ "$(semver "$TAG" -r ">$LATEST_RELEASE")" = "$TAG" ]; then
+                LATEST_RELEASE="$TAG"
+              fi
+            else
+              # Odd minor = pre-release
+              if [ -z "$LATEST_PRERELEASE" ] || [ "$(semver "$TAG" -r ">$LATEST_PRERELEASE")" = "$TAG" ]; then
+                LATEST_PRERELEASE="$TAG"
+              fi
+            fi
+          done
+
+          echo "Latest release: ${LATEST_RELEASE:-none}"
+          echo "Latest pre-release: ${LATEST_PRERELEASE:-none}"
+
+          # Calculate next version
+          if [ -n "$LATEST_RELEASE" ]; then
+            # Get the pre-release minor (next odd number after release minor)
+            RELEASE_MINOR=$(echo "$LATEST_RELEASE" | cut -d. -f2)
+            PRERELEASE_MINOR=$((RELEASE_MINOR + 1))
+            
+            # Check if we need to start a new series or increment existing
+            if [ -n "$LATEST_PRERELEASE" ]; then
+              PR_MINOR=$(echo "$LATEST_PRERELEASE" | cut -d. -f2)
+              if [ "$PR_MINOR" = "$PRERELEASE_MINOR" ]; then
+                # Increment patch in current pre-release series
+                NEXT_VERSION=$(semver -i patch "$LATEST_PRERELEASE")
+              else
+                # Start new pre-release series
+                NEXT_VERSION=$(semver -i minor "$LATEST_RELEASE")
+              fi
+            else
+              # No pre-release exists, start new series
+              NEXT_VERSION=$(semver -i minor "$LATEST_RELEASE")
+            fi
+          else
+            # No releases found, start at 1.1.0
+            NEXT_VERSION="1.1.0"
+          fi
+
+          echo "Next pre-release version: v$NEXT_VERSION"
+          echo "version=v$NEXT_VERSION" >> "$GITHUB_OUTPUT"
+
+          # Add job summary
+          if [ "${{ github.event.inputs.dry-run }}" = "true" ]; then
+            echo "## 🔍 Dry Run Mode" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Would create tag:** \`v$NEXT_VERSION\`" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## 📦 Pre-release Version" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Next version:** \`v$NEXT_VERSION\`" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Type | Version |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|---------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Latest Release | \`${LATEST_RELEASE:-none}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Latest Pre-release | \`${LATEST_PRERELEASE:-none}\` |" >> $GITHUB_STEP_SUMMARY
+
+  tag:
+    name: Create tag
+    needs: [check, version]
+    if: needs.check.outputs.skip == 'false' && github.event.inputs.dry-run != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          # Use a PAT to ensure the tag push triggers the release workflow
+          # GITHUB_TOKEN doesn't trigger other workflows by default
+          token: ${{ secrets.RELEASE_PAT || secrets.GITHUB_TOKEN }}
+          ref: main
+
+      - name: Create tag
+        env:
+          NEXT_VERSION: ${{ needs.version.outputs.next-version }}
+        run: |
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Create the tag
+          git tag -a "$NEXT_VERSION" -m "Nightly pre-release $NEXT_VERSION"
+
+          # Push the tag (this will trigger the release workflow)
+          git push origin "$NEXT_VERSION"
+
+          echo "✅ Created and pushed tag: $NEXT_VERSION"
+
+          # Add job summary
+          echo "## ✅ Tag Created" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Successfully created and pushed tag: \`$NEXT_VERSION\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The release workflow should now be triggered automatically." >> $GITHUB_STEP_SUMMARY
