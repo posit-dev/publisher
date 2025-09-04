@@ -202,10 +202,7 @@ export type AddSecretMsg =
 
 export type AddIntegrationRequestMsg = 
   AnyWebviewToHostMessage<
-    WebviewToHostMessageType.ADD_INTEGRATION_REQUEST,
-    {
-      accountName: string;
-    }
+    WebviewToHostMessageType.ADD_INTEGRATION_REQUEST
 >;
 
 export type DeleteIntegrationRequestMsg = AnyWebviewToHostMessage<

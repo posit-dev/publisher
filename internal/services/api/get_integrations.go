@@ -35,12 +35,12 @@ func GetIntegrationsHandlerFunc(lister accounts.AccountList, log logging.Logger)
 		}
 
 		integrations, err := client.GetIntegrations(log)
-
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
+
 		w.Header().Set("content-type", "application/json")
 		json.NewEncoder(w).Encode(integrations)
 	}

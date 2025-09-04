@@ -42,23 +42,25 @@ export const useHomeStore = defineStore("home", () => {
   const serverSecrets = ref<Set<string>>(new Set());
   const secrets = ref(new Map<string, string | undefined>());
 
-  const integrationRequests = computed({
-    get: (): IntegrationRequest[] => {
-      const config = selectedConfiguration.value;
-      if (config === undefined || isConfigurationError(config)) {
-        return [];
-      }
+  const integrationRequests = ref<IntegrationRequest[]>([]);
 
-      return config.configuration.integrationRequests || [];
-    },
-    set: async (requests: IntegrationRequest[]) => {
-      const config = selectedConfiguration.value;
+  // const integrationRequests = computed({
+  //   get: (): IntegrationRequest[] => {
+  //     const config = selectedConfiguration.value;
+  //     if (config === undefined || isConfigurationError(config)) {
+  //       return [];
+  //     }
+
+  //     return config.configuration.integrationRequests || [];
+  //   },
+  //   set: (requests: IntegrationRequest[]) => {
+  //     const config = selectedConfiguration.value;
       
-      if (config !== undefined && !isConfigurationError(config)) {
-        config.configuration.integrationRequests = requests;
-      }
-    }
-  });
+  //     if (config !== undefined && !isConfigurationError(config)) {
+  //       config.configuration.integrationRequests = requests;
+  //     }
+  //   }
+  // });
 
   const environment = computed((): Map<string, string> => {
     const result = new Map<string, string>();
