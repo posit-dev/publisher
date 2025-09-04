@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -128,13 +129,15 @@ func (s *PostPackagesRScanSuite) TestServeHTTPWithSaveNameInSubdir() {
 	base := util.NewAbsolutePath("/project", fs)
 	err = base.MkdirAll(0777)
 	s.NoError(err)
+
+	saveName := filepath.FromSlash(".renv/profiles/staging/renv.lock")
 	destPath := base.Join(".renv", "profiles", "staging", "renv.lock")
 
 	log := logging.New()
 
 	setupMockDependencyScanner := func(log logging.Logger) renv.RDependencyScanner {
 		mockScanner := renv.NewMockRDependencyScanner()
-		mockScanner.On("SetupRenvInDir", base.String(), ".renv/profiles/staging/renv.lock", "").Return(destPath, nil)
+		mockScanner.On("SetupRenvInDir", base.String(), saveName, "").Return(destPath, nil)
 		return mockScanner
 	}
 
