@@ -46,7 +46,6 @@ func (s *PostIntegrationRequestTestSuite) TestPostIntegrationRequest() {
 	configName := "testConfig"
 	cfg := config.New()
 	cfg.ProductType = config.ProductTypeConnect
-	cfg.Type = config.ContentTypeHTML
 	configPath := config.GetConfigPath(s.cwd, configName)
 	err := cfg.WriteFile(configPath)
 	s.NoError(err)
@@ -86,7 +85,6 @@ func (s *PostIntegrationRequestTestSuite) TestPostIntegrationRequestAlreadyExist
 	configName := "testConfig"
 	cfg := config.New()
 	cfg.ProductType = config.ProductTypeConnect
-	cfg.Type = config.ContentTypeHTML
 	cfg.IntegrationRequests = []config.IntegrationRequest{
 		{
 			Name:   "existing-integration",
