@@ -12,14 +12,12 @@ const mockQuartoCheck = vi.fn().mockResolvedValue(0);
 const mockRenderCmd = vi.fn().mockResolvedValue(0);
 vi.mock("./window", () => {
   return {
-    runTerminalCommand: vi
-      .fn()
-      .mockImplementation((cmd: string, show: boolean = false) => {
-        if (cmd === "quarto --version") {
-          return mockQuartoCheck(cmd);
-        }
-        return mockRenderCmd(cmd, show);
-      }),
+    runTerminalCommand: vi.fn().mockImplementation((cmd: string) => {
+      if (cmd === "quarto --version") {
+        return mockQuartoCheck(cmd);
+      }
+      return mockRenderCmd(cmd);
+    }),
   };
 });
 
@@ -139,10 +137,7 @@ describe("QuartoProjectHelper", () => {
           ".",
         );
         await helper.verifyRenderedOutput();
-        expect(mockRenderCmd).toHaveBeenCalledWith(
-          "quarto render . --to html",
-          true,
-        );
+        expect(mockRenderCmd).toHaveBeenCalledWith("quarto render . --to html");
       });
 
       test("fails to render project, attempts to render standalone document", async () => {
@@ -162,13 +157,9 @@ describe("QuartoProjectHelper", () => {
           ".",
         );
         await helper.verifyRenderedOutput();
-        expect(mockRenderCmd).toHaveBeenCalledWith(
-          "quarto render . --to html",
-          true,
-        );
+        expect(mockRenderCmd).toHaveBeenCalledWith("quarto render . --to html");
         expect(mockRenderCmd).toHaveBeenCalledWith(
           "quarto render index.qmd --to html",
-          true,
         );
       });
     });
@@ -209,17 +200,14 @@ describe("QuartoProjectHelper", () => {
           ".",
         );
         await helper.verifyRenderedOutput();
-        expect(mockRenderCmd).toHaveBeenCalledWith(
-          "quarto render . --to html",
-          true,
-        );
+        expect(mockRenderCmd).toHaveBeenCalledWith("quarto render . --to html");
       });
     });
   });
 
   describe("multi-level workspace", () => {
     const projectDir = path.join("march-reports", "src");
-    const entrypoint = path.join(projectDir, "index.qmd");
+    const sourceEntrypoint = "index.qmd";
 
     describe("single doc rendering", () => {
       test("rendering exists, does not call extension", async () => {
@@ -232,9 +220,9 @@ describe("QuartoProjectHelper", () => {
 
         const helper = new QuartoProjectHelper(
           mockFilesApi,
-          path.join("march-reports", "src", "index.qmd"),
+          sourceEntrypoint,
           "index.html",
-          path.join("march-reports", "src"),
+          projectDir,
         );
         await helper.verifyRenderedOutput();
         expect(mockRenderCmd).not.toHaveBeenCalled();
@@ -250,14 +238,13 @@ describe("QuartoProjectHelper", () => {
 
         const helper = new QuartoProjectHelper(
           mockFilesApi,
-          entrypoint,
+          sourceEntrypoint,
           "index.html",
           projectDir,
         );
         await helper.verifyRenderedOutput();
         expect(mockRenderCmd).toHaveBeenCalledWith(
           `quarto render ${projectDir} --to html`,
-          true,
         );
       });
 
@@ -273,18 +260,16 @@ describe("QuartoProjectHelper", () => {
 
         const helper = new QuartoProjectHelper(
           mockFilesApi,
-          entrypoint,
+          sourceEntrypoint,
           "index.html",
           projectDir,
         );
         await helper.verifyRenderedOutput();
         expect(mockRenderCmd).toHaveBeenCalledWith(
           `quarto render ${projectDir} --to html`,
-          true,
         );
         expect(mockRenderCmd).toHaveBeenCalledWith(
-          `quarto render ${entrypoint} --to html`,
-          true,
+          `quarto render ${path.join(projectDir, sourceEntrypoint)} --to html`,
         );
       });
     });
@@ -302,7 +287,7 @@ describe("QuartoProjectHelper", () => {
 
         const helper = new QuartoProjectHelper(
           mockFilesApi,
-          entrypoint,
+          sourceEntrypoint,
           outputDir,
           projectDir,
         );
@@ -320,14 +305,13 @@ describe("QuartoProjectHelper", () => {
 
         const helper = new QuartoProjectHelper(
           mockFilesApi,
-          entrypoint,
+          sourceEntrypoint,
           outputDir,
           projectDir,
         );
         await helper.verifyRenderedOutput();
         expect(mockRenderCmd).toHaveBeenCalledWith(
           `quarto render ${projectDir} --to html`,
-          true,
         );
       });
     });

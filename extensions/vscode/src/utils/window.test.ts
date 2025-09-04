@@ -6,6 +6,7 @@ import {
   showErrorMessageWithTroubleshoot,
   showInformationMsg,
   taskWithProgressMsg,
+  openTerminalCommand,
   runTerminalCommand,
 } from "./window";
 
@@ -58,6 +59,7 @@ vi.mock("vscode", () => {
 
 describe("Consumers of vscode window", () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     terminalMock.exitStatus.code = 0;
   });
 
@@ -137,32 +139,39 @@ describe("Consumers of vscode window", () => {
   });
 
   describe("runTerminalCommand", () => {
-    test("showing the terminal", async () => {
-      await runTerminalCommand("stat somefile.txt", true);
-      expect(terminalMock.sendText).toHaveBeenCalledWith("stat somefile.txt");
-      expect(terminalMock.show).toHaveBeenCalled();
-      // For terminals that we open, we don't track close events
-      expect(window.onDidCloseTerminal).not.toHaveBeenCalled();
-    });
-
-    test("NOT showing the terminal", async () => {
-      await runTerminalCommand("stat somefile.txt");
-      expect(terminalMock.sendText).toHaveBeenCalledWith("stat somefile.txt");
-      // For terminals that we DO NOT open, we DO track close events
+    test("sends text command to terminal and executes it without opening it", async () => {
+      const exitStatus = await runTerminalCommand("stat somefile.txt");
+      expect(terminalMock.sendText).toHaveBeenCalledWith(
+        "stat somefile.txt; exit $?",
+      );
       expect(terminalMock.show).not.toHaveBeenCalled();
+      // For terminals that DON'T open, we track close events
       expect(window.onDidCloseTerminal).toHaveBeenCalled();
+      expect(exitStatus).toBe(0);
     });
 
     test("catch non zero exit status", async () => {
       terminalMock.exitStatus.code = 1;
       try {
         await runTerminalCommand("stat somefile.txt");
-      } catch (_) {
-        expect(terminalMock.sendText).toHaveBeenCalledWith("stat somefile.txt");
-        // For terminals that we DO NOT open, we DO track close events
+      } catch (existStatus) {
+        expect(terminalMock.sendText).toHaveBeenCalledWith(
+          "stat somefile.txt; exit $?",
+        );
         expect(terminalMock.show).not.toHaveBeenCalled();
         expect(window.onDidCloseTerminal).toHaveBeenCalled();
+        expect(existStatus).toBe(1);
       }
+    });
+  });
+
+  describe("openTerminalCommand", () => {
+    test("sends text command to terminal and opens it", () => {
+      openTerminalCommand("stat somefile.txt");
+      expect(terminalMock.sendText).toHaveBeenCalledWith("stat somefile.txt;");
+      expect(terminalMock.show).toHaveBeenCalled();
+      // For terminals that we open, we don't track close events
+      expect(window.onDidCloseTerminal).not.toHaveBeenCalled();
     });
   });
 });
