@@ -22,6 +22,8 @@ export enum HostToWebviewMessageType {
   PUBLISH_START = "publishStart",
   PUBLISH_FINISH_SUCCESS = "publishFinishSuccess",
   PUBLISH_FINISH_FAILURE = "publishFinishFailure",
+  CONTENT_RENDER_FINISHED = "contentRenderFinished",
+  CONTENT_RENDER_FAILURE = "contentRenderFailure",
   UPDATE_CONTENTRECORD_SELECTION = "updateContentRecordSelection",
   SAVE_SELECTION = "saveSelection",
   REFRESH_FILES = "refreshFiles",
@@ -53,6 +55,8 @@ export type HostToWebviewMessage =
   | PublishStartMsg
   | PublishFinishSuccessMsg
   | PublishFinishFailureMsg
+  | ContentRenderFinishedMsg
+  | ContentRenderFailureMsg
   | UpdateContentRecordSelectionMsg
   | SaveSelectionMsg
   | RefreshFilesMsg
@@ -126,6 +130,10 @@ export type PublishFinishFailureMsg = AnyHostToWebviewMessage<
     };
   }
 >;
+export type ContentRenderFinishedMsg =
+  AnyHostToWebviewMessage<HostToWebviewMessageType.CONTENT_RENDER_FINISHED>;
+export type ContentRenderFailureMsg =
+  AnyHostToWebviewMessage<HostToWebviewMessageType.CONTENT_RENDER_FAILURE>;
 export type UpdateContentRecordSelectionMsg = AnyHostToWebviewMessage<
   HostToWebviewMessageType.UPDATE_CONTENTRECORD_SELECTION,
   {
