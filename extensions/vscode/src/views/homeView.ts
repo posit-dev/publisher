@@ -68,7 +68,10 @@ import {
 } from "src/types/messages/webviewToHostMessages";
 import { HostToWebviewMessageType } from "src/types/messages/hostToWebviewMessages";
 import { confirmDelete, confirmOverwrite } from "src/dialogs";
-import { DeploymentQuickPick, IntegrationQuickPick } from "src/types/quickPicks";
+import {
+  DeploymentQuickPick,
+  IntegrationQuickPick,
+} from "src/types/quickPicks";
 import { selectNewOrExistingConfig } from "src/multiStepInputs/selectNewOrExistingConfig";
 import { RPackage, RVersionConfig } from "src/api/types/packages";
 import { calculateTitle } from "src/utils/titles";
@@ -662,7 +665,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         });
         return;
       }
-      const credential = this.state.findCredentialForContentRecord(activeContentRecord);
+      const credential =
+        this.state.findCredentialForContentRecord(activeContentRecord);
       credentialName = credential?.name;
     }
 
@@ -672,21 +676,25 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         const api = await useApi();
         let response = await api.integrationRequests.list(
           activeConfig.configurationName,
-          activeConfig.projectDir
+          activeConfig.projectDir,
         );
         const integrationRequests = response.data ?? [];
 
-        response = await api.integrationRequests.getIntegrations(credentialName!);
+        response = await api.integrationRequests.getIntegrations(
+          credentialName!,
+        );
         const integrations = response.data ?? [];
         const requests = integrationRequests.map((ir) => {
-          const matchingIntegration = integrations.find(integration => integration.guid === ir.guid);
+          const matchingIntegration = integrations.find(
+            (integration) => integration.guid === ir.guid,
+          );
           return {
             ...ir,
             displayName: matchingIntegration?.name,
             displayDescription: matchingIntegration?.description,
           };
         });
-        
+
         this.webviewConduit.sendMsg({
           kind: HostToWebviewMessageType.REFRESH_INTEGRATION_REQUESTS,
           content: {
@@ -694,7 +702,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           },
         });
       } catch (_: unknown) {
-        console.error(`Failed to fetch integration requests for [${credentialName}]`);
+        console.error(
+          `Failed to fetch integration requests for [${credentialName}]`,
+        );
         this.webviewConduit.sendMsg({
           kind: HostToWebviewMessageType.REFRESH_INTEGRATION_REQUESTS,
           content: {
@@ -1185,12 +1195,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
   public getIntegrations = async (accountName: string) => {
     const api = await useApi();
-    const response = await api.integrationRequests.getIntegrations(
-      accountName,
-    );
+    const response = await api.integrationRequests.getIntegrations(accountName);
     console.log("Fetched integrations");
     console.log(response.data);
-  }
+  };
 
   public addIntegrationRequest = async () => {
     const api = await useApi();
@@ -1213,23 +1221,31 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
     const credential = this.state.findCredentialForContentRecord(contentRecord);
     if (credential === undefined) {
-      window.showErrorMessage("No valid credential found for the current deployment server.");
+      window.showErrorMessage(
+        "No valid credential found for the current deployment server.",
+      );
       return;
     }
 
     let integration: Integration | undefined;
     let integrations: Integration[] = [];
     try {
-      await showProgress("Retrieving Integrations from deployment server", Views.HomeView, async () => {
-        const response = await api.integrationRequests.getIntegrations(
-          credential.name,
-        );
-        integrations = response.data;
-      });
+      await showProgress(
+        "Retrieving Integrations from deployment server",
+        Views.HomeView,
+        async () => {
+          const response = await api.integrationRequests.getIntegrations(
+            credential.name,
+          );
+          integrations = response.data;
+        },
+      );
       integration = await this.showIntegrationQuickPick(integrations);
     } catch (error: unknown) {
       console.error("Error fetching integrations:", error);
-      window.showErrorMessage("Failed to fetch available integrations. Please try again later.");
+      window.showErrorMessage(
+        "Failed to fetch available integrations. Please try again later.",
+      );
       return;
     }
 
@@ -1239,21 +1255,25 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
 
     try {
-      await showProgress("Adding Integration Request", Views.HomeView, async () => {
-        await api.integrationRequests.add(
-          activeConfig.configurationName,
-          activeConfig.projectDir,
-          {
-            guid: integration.guid,
-            // name: integration.name, 
-            // description: integration.description,
-            // authType: integration.authType,
-            // type: integration.template,
-            // config: integration.config,
-          } as IntegrationRequest,
-        );
-      });
-      
+      await showProgress(
+        "Adding Integration Request",
+        Views.HomeView,
+        async () => {
+          await api.integrationRequests.add(
+            activeConfig.configurationName,
+            activeConfig.projectDir,
+            {
+              guid: integration.guid,
+              // name: integration.name,
+              // description: integration.description,
+              // authType: integration.authType,
+              // type: integration.template,
+              // config: integration.config,
+            } as IntegrationRequest,
+          );
+        },
+      );
+
       // Refresh integration requests to show the newly added one in the UI
       await this.refreshIntegrationRequests(credential.name);
     } catch (error: unknown) {
@@ -1261,10 +1281,13 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       let errorMessage = "Unknown error";
       if (error instanceof Error) {
         errorMessage = error.message;
-      } else if (isAxiosError(error) && typeof error.response?.data === 'string') {
+      } else if (
+        isAxiosError(error) &&
+        typeof error.response?.data === "string"
+      ) {
         errorMessage = error.response.data;
       }
-      
+
       console.error("Failed to add integration request:", error);
       window.showInformationMessage(
         `Failed to add integration request to configuration. ${errorMessage}`,
@@ -1272,10 +1295,14 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
   };
 
-  public deleteIntegrationRequest = async (context: { request: IntegrationRequest }) => {
+  public deleteIntegrationRequest = async (context: {
+    request: IntegrationRequest;
+  }) => {
     const activeConfig = await this.state.getSelectedConfiguration();
     if (activeConfig === undefined) {
-      console.error("homeView::deleteIntegrationRequest: No active configuration.");
+      console.error(
+        "homeView::deleteIntegrationRequest: No active configuration.",
+      );
       return;
     }
     if (isConfigurationError(activeConfig)) {
@@ -1286,20 +1313,27 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
 
     try {
-      await showProgress("Removing Integration Request", Views.HomeView, async () => {
-        const api = await useApi();
-        await api.integrationRequests.delete(
-          activeConfig.configurationName,
-          activeConfig.projectDir,
-          {
-            guid: context.request.guid,
-          },
-        );
-      });
+      await showProgress(
+        "Removing Integration Request",
+        Views.HomeView,
+        async () => {
+          const api = await useApi();
+          await api.integrationRequests.delete(
+            activeConfig.configurationName,
+            activeConfig.projectDir,
+            {
+              guid: context.request.guid,
+            },
+          );
+        },
+      );
 
       await this.refreshIntegrationRequests();
     } catch (error: unknown) {
-      const summary = getSummaryStringFromError("removeIntegrationRequest", error);
+      const summary = getSummaryStringFromError(
+        "removeIntegrationRequest",
+        error,
+      );
       window.showInformationMessage(
         `Failed to remove integration request from configuration. ${summary}`,
       );
@@ -1375,14 +1409,18 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     return await commands.executeCommand(Commands.Logs.WebviewFocus);
   }
 
-  private async showIntegrationQuickPick(integrations: Integration[]): Promise<Integration | undefined> {
-    const integrationQuickPickList: IntegrationQuickPick[] = integrations.map((integration) => {
-      return {
-        label: integration.name,
-        description: integration.description,
-        integration,
-      } as IntegrationQuickPick;
-    });
+  private async showIntegrationQuickPick(
+    integrations: Integration[],
+  ): Promise<Integration | undefined> {
+    const integrationQuickPickList: IntegrationQuickPick[] = integrations.map(
+      (integration) => {
+        return {
+          label: integration.name,
+          description: integration.description,
+          integration,
+        } as IntegrationQuickPick;
+      },
+    );
 
     const toDispose: Disposable[] = [];
     const result = await new Promise<IntegrationQuickPick | undefined>(

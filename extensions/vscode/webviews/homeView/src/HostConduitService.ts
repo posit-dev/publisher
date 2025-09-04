@@ -249,8 +249,12 @@ const onUpdateServerEnvironmentMsg = (msg: UpdateServerEnvironmentMsg) => {
   home.serverSecrets = new Set(msg.content.environment);
 };
 
-const onRefreshIntegrationRequestsMsg = (msg: RefreshIntegrationRequestsMsg) => {
+const onRefreshIntegrationRequestsMsg = (
+  msg: RefreshIntegrationRequestsMsg,
+) => {
   const home = useHomeStore();
-  console.log(`onRefreshIntegrationRequestsMsg: ${JSON.stringify(home.integrationRequests)}`);
+  console.log(
+    `onRefreshIntegrationRequestsMsg: ${JSON.stringify(home.integrationRequests)}`,
+  );
   home.integrationRequests = msg.content.integrationRequests;
 };

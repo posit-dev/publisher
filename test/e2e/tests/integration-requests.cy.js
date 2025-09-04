@@ -10,7 +10,6 @@ describe("IntegrationRequests Section", () => {
   });
 
   it("Connect Cloud should not display IntegrationRequests", () => {
-
     // first create a Connect Cloud credential via OAuth
     const user = Cypress.env("pccConfig").pcc_user_ccqa3;
 
@@ -93,8 +92,7 @@ describe("IntegrationRequests Section", () => {
       .should("have.text", "connect-cloud-deployment-test");
 
     // modified from the createDeployment function
-    cy.getPublisherSidebarIcon()
-      .should("be.visible", { timeout: 10000 });
+    cy.getPublisherSidebarIcon().should("be.visible", { timeout: 10000 });
 
     // Small wait to allow the UI to settle in CI before proceeding
     // eslint-disable-next-line cypress/no-unnecessary-waiting
@@ -155,8 +153,6 @@ describe("IntegrationRequests Section", () => {
     // eslint-disable-next-line cypress/no-unnecessary-waiting
     cy.wait(500);
 
-    cy.publisherWebview()
-      .findByText("IntegrationRequests")
-      .should("not.exist");
+    cy.publisherWebview().findByText("IntegrationRequests").should("not.exist");
   });
 });

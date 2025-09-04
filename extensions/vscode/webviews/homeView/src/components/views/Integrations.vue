@@ -54,7 +54,7 @@ const sectionActions = computed(() => {
       codicon: "codicon-add",
       fn: () => {
         sendMsg({
-          kind: WebviewToHostMessageType.ADD_INTEGRATION_REQUEST
+          kind: WebviewToHostMessageType.ADD_INTEGRATION_REQUEST,
         });
       },
     },
