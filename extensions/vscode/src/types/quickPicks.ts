@@ -17,5 +17,5 @@ export interface DeploymentQuickPick extends QuickPickItem {
 }
 
 export interface IntegrationQuickPick extends QuickPickItem {
-  integration: Integration
+  integration: Integration;
 }
