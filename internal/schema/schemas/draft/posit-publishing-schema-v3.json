@@ -497,7 +497,7 @@
     },
     "source": {
       "type": "string",
-      "description": "Name of the primary file that acts as the source for content that can be rendered on demand.",
+      "description": "Name of the primary file that acts as the source for content that can be rendered on demand. Only useful when deploying static content which has been rendered from Quarto, Rmarkdown or Jupyter Notebooks",
       "examples": ["report.qmd", "_quarto.yml"]
     },
     "title": {
