@@ -135,6 +135,10 @@ jobs:
           VSIX_FILENAME=$(ls -Art ../../dist | grep linux-amd64 | tail -n 1)
           docker compose exec code-server code-server --install-extension "/home/coder/vsix/${VSIX_FILENAME}"
 
+          # Set proper ownership for workspace files before tests
+          docker exec publisher-e2e.code-server chown -R coder:coder /home/coder/workspace || true
+          docker exec publisher-e2e.code-server chmod -R 755 /home/coder/workspace || true
+
           # Wait for the extension to be installed (more reliable than process grep)
           echo "Waiting for Publisher extension to be installed..."
           for i in {1..60}; do

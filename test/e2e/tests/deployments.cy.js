@@ -119,11 +119,70 @@ describe("Deployments Section", () => {
       // NOW add public access and save AFTER file selections are complete
       cy.getPublisherTomlFilePaths("examples-shiny-python").then(
         (filePaths) => {
+          // Debug: Check file permissions before attempting to write
+          cy.task(
+            "print",
+            `About to modify config file: ${filePaths.config.path}`,
+          );
+
+          // First check current permissions and ownership
+          cy.exec(`ls -la "${filePaths.config.path}"`).then((result) => {
+            cy.task("print", `Current file permissions: ${result.stdout}`);
+          });
+
+          // Try to make file writable with more aggressive approach
+          cy.exec(
+            `chmod 666 "${filePaths.config.path}" && chown $(whoami) "${filePaths.config.path}"`,
+            { failOnNonZeroExit: false },
+          ).then((result) => {
+            cy.task(
+              "print",
+              `Permission fix result: ${JSON.stringify(result)}`,
+            );
+          });
+
+          // Verify permissions after attempting to fix them
+          cy.exec(`ls -la "${filePaths.config.path}"`).then((result) => {
+            cy.task("print", `Permissions after fix attempt: ${result.stdout}`);
+          });
+
           cy.loadTomlFile(filePaths.config.path).then((config) => {
             // Add public access to the config TOML before deploy
             config.connect_cloud = config.connect_cloud || {};
             config.connect_cloud.access_control = { public_access: true };
-            cy.savePublisherFile(filePaths.config.path, config);
+
+            cy.task(
+              "print",
+              `About to append connect_cloud section using Docker exec`,
+            );
+
+            // Use Docker exec to append the connect_cloud section to the file
+            const dockerPath = filePaths.config.path.replace(
+              "content-workspace/",
+              "/home/coder/workspace/",
+            );
+
+            cy.exec(
+              `docker exec publisher-e2e.code-server bash -c "echo -e '\\n[connect_cloud]\\n[connect_cloud.access_control]\\npublic_access = true' >> '${dockerPath}'"`,
+            ).then((result) => {
+              cy.task(
+                "print",
+                `Docker file append result: ${JSON.stringify(result)}`,
+              );
+              if (result.code !== 0) {
+                throw new Error(
+                  `Failed to append to config via Docker: ${result.stderr}`,
+                );
+              }
+            });
+
+            // Verify the file was actually modified
+            cy.loadTomlFile(filePaths.config.path).then((updatedConfig) => {
+              cy.task(
+                "print",
+                `Verified config after save: ${JSON.stringify(updatedConfig, null, 2)}`,
+              );
+            });
           });
         },
       );
