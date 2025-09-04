@@ -692,13 +692,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
             integrationRequests: requests,
           },
         });
-      } catch (error: unknown) {
-        const summary = getSummaryStringFromError(
-          "homeView::refreshIntegrationRequests",
-          error
-        );
-        console.error(`Failed to fetch integration requests: ${summary}`);
-        // Send an empty list to the webview to clear stale data
+      } catch (_: unknown) {
+        console.error(`Failed to fetch integration requests`);
         this.webviewConduit.sendMsg({
           kind: HostToWebviewMessageType.REFRESH_INTEGRATION_REQUESTS,
           content: {
@@ -1292,13 +1287,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     try {
       await showProgress("Removing Integration Request", Views.HomeView, async () => {
         const api = await useApi();
-        const request = {
-          guid: context.request.guid,
-        };
         await api.integrationRequests.delete(
           activeConfig.configurationName,
           activeConfig.projectDir,
-          request,
+          {
+            guid: context.request.guid,
+          },
         );
       });
 
