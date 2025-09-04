@@ -23,7 +23,6 @@
               kind: WebviewToHostMessageType.DELETE_INTEGRATION_REQUEST,
               content: {
                 request: integrationRequest,
-                accountName: accountName,
               },
             }),
         },
@@ -55,10 +54,7 @@ const sectionActions = computed(() => {
       codicon: "codicon-add",
       fn: () => {
         sendMsg({
-          kind: WebviewToHostMessageType.ADD_INTEGRATION_REQUEST,
-          content: {
-            accountName: accountName,
-          }
+          kind: WebviewToHostMessageType.ADD_INTEGRATION_REQUEST
         });
       },
     },
