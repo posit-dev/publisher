@@ -198,6 +198,7 @@ func (s *ContentRequestSuite) TestGetAccess() {
 	testCases := []struct {
 		name                      string
 		isFirstDeploy             bool
+		nilConfig                 bool
 		accessControl             *config.ConnectCloudAccessControl
 		privateContentEntitlement *bool
 		existingContentAccess     *clienttypes.ContentAccess
@@ -209,12 +210,27 @@ func (s *ContentRequestSuite) TestGetAccess() {
 		{
 			name:                      "first deploy - no config, not entitled to private",
 			isFirstDeploy:             true,
-			accessControl:             nil,
+			nilConfig:                 true,
 			privateContentEntitlement: boolPtr(false),
 			expectedAccess:            clienttypes.ViewPublicEditPrivate,
 		},
 		{
 			name:                      "first deploy - no config, entitled to private",
+			isFirstDeploy:             true,
+			accessControl:             nil,
+			nilConfig:                 true,
+			privateContentEntitlement: boolPtr(true),
+			expectedAccess:            clienttypes.ViewPrivateEditPrivate,
+		},
+		{
+			name:                      "first deploy - nil access control, not entitled to private",
+			isFirstDeploy:             true,
+			accessControl:             nil,
+			privateContentEntitlement: boolPtr(false),
+			expectedAccess:            clienttypes.ViewPublicEditPrivate,
+		},
+		{
+			name:                      "first deploy - nil access control, entitled to private",
 			isFirstDeploy:             true,
 			accessControl:             nil,
 			privateContentEntitlement: boolPtr(true),
@@ -418,7 +434,7 @@ func (s *ContentRequestSuite) TestGetAccess() {
 		{
 			name:           "subsequent deploy - no access control (nil config)",
 			isFirstDeploy:  false,
-			accessControl:  nil,
+			nilConfig:      true,
 			expectedAccess: "view_private_edit_private",
 		},
 	}
@@ -434,15 +450,16 @@ func (s *ContentRequestSuite) TestGetAccess() {
 			s.publisher.Target = &deployment.Deployment{ID: "test-content-id"}
 
 			// Setup configuration
-			var connectCloudConfig *config.ConnectCloud
-			if tc.accessControl != nil {
-				connectCloudConfig = &config.ConnectCloud{
-					AccessControl: tc.accessControl,
-				}
+			connectCloudConfig := &config.ConnectCloud{
+				AccessControl: tc.accessControl,
 			}
 
 			s.publisher.Config = &config.Config{
 				ConnectCloud: connectCloudConfig,
+			}
+
+			if tc.nilConfig {
+				s.publisher.Config.ConnectCloud = nil
 			}
 
 			// Setup mock expectations
