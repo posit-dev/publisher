@@ -83,18 +83,24 @@ Cypress.Commands.add("cleanupAndRestartWorkbench", (projectDir) => {
   // Stop and remove the container
   cy.log("Stopping and removing Workbench container");
   cy.exec(`just remove-workbench release`, {
-    failOnNonZeroExit: true,
+    failOnNonZeroExit: false,
     timeout: 10_000,
   }).then((result) => {
     cy.log(`Remove workbench result: exit code ${result.code}`);
-    if (result.stdout)
+    cy.log(
+      `Remove workbench stdout: ${result.stdout.substring(0, 1000)}${result.stdout.length > 1000 ? "..." : ""}`,
+    );
+    if (result.stderr) {
+      cy.log(`Remove workbench stderr: ${result.stderr}`);
+    }
+
+    // For container removal, we don't need to fail the test if it returns non-zero
+    // since the container might not exist yet, just log the result
+    if (result.code !== 0) {
       cy.log(
-        `Remove workbench stdout: ${result.stdout.substring(0, 500)}${result.stdout.length > 500 ? "..." : ""}`,
+        `Warning: remove-workbench command returned non-zero exit code: ${result.code}`,
       );
-    if (result.stderr)
-      cy.log(
-        `Remove workbench stderr: ${result.stderr.substring(0, 500)}${result.stderr.length > 500 ? "..." : ""}`,
-      );
+    }
   });
 
   // Clean up the workspace data
@@ -103,35 +109,45 @@ Cypress.Commands.add("cleanupAndRestartWorkbench", (projectDir) => {
   // Start a fresh container, the justfile command includes a health check wait
   cy.log("Starting fresh Workbench container");
   cy.exec(`just start-workbench release`, {
-    failOnNonZeroExit: true,
-    timeout: 60_000, // Should match the timeout in justfile
+    failOnNonZeroExit: false,
+    timeout: 75_000, // Should match the timeout in justfile
   }).then((result) => {
     cy.log(`Start workbench result: exit code ${result.code}`);
-    if (result.stdout)
-      cy.log(
-        `Start workbench stdout: ${result.stdout.substring(0, 500)}${result.stdout.length > 500 ? "..." : ""}`,
+    cy.log(
+      `Start workbench stdout: ${result.stdout.substring(0, 1000)}${result.stdout.length > 1000 ? "..." : ""}`,
+    );
+    if (result.stderr) {
+      cy.log(`Start workbench stderr: ${result.stderr}`);
+    }
+
+    // Fail the test with a more descriptive message if the command failed
+    if (result.code !== 0) {
+      throw new Error(
+        `Failed to start Workbench container. Exit code: ${result.code}. See logs above for details.`,
       );
-    if (result.stderr)
-      cy.log(
-        `Start workbench stderr: ${result.stderr.substring(0, 500)}${result.stderr.length > 500 ? "..." : ""}`,
-      );
+    }
   });
 
   // Install the Publisher extension
   cy.log("Installing Publisher extension in Workbench");
   cy.exec(`just install-workbench-extension release`, {
-    failOnNonZeroExit: true,
+    failOnNonZeroExit: false,
     timeout: 30_000,
   }).then((result) => {
     cy.log(`Install extension result: exit code ${result.code}`);
-    if (result.stdout)
-      cy.log(
-        `Install extension stdout: ${result.stdout.substring(0, 500)}${result.stdout.length > 500 ? "..." : ""}`,
+    cy.log(
+      `Install extension stdout: ${result.stdout.substring(0, 1000)}${result.stdout.length > 1000 ? "..." : ""}`,
+    );
+    if (result.stderr) {
+      cy.log(`Install extension stderr: ${result.stderr}`);
+    }
+
+    // Fail the test with a more descriptive message if the command failed
+    if (result.code !== 0) {
+      throw new Error(
+        `Failed to install Workbench extension. Exit code: ${result.code}. See logs above for details.`,
       );
-    if (result.stderr)
-      cy.log(
-        `Install extension stderr: ${result.stderr.substring(0, 500)}${result.stderr.length > 500 ? "..." : ""}`,
-      );
+    }
   });
 
   cy.log(
