@@ -21,6 +21,7 @@ type Config struct {
 	Type                ContentType   `toml:"type" json:"type,omitempty"`
 	Entrypoint          string        `toml:"entrypoint" json:"entrypoint,omitempty"`
 	EntrypointObjectRef string        `toml:"-" json:"entrypointObjectRef,omitempty"`
+	Source              string        `toml:"source,omitempty" json:"source,omitempty"`
 	Validate            *bool         `toml:"validate" json:"validate,omitempty"`
 	HasParameters       *bool         `toml:"has_parameters,omitempty" json:"hasParameters,omitempty"`
 	Files               []string      `toml:"files,multiline" json:"files"`

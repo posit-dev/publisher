@@ -101,6 +101,7 @@ func (s *QuartoDetectorSuite) TestInferTypeMarkdownDoc() {
 				Schema:     schema.ConfigSchemaURL,
 				Type:       contenttypes.ContentTypeHTML,
 				Entrypoint: "quarto-doc-none.html",
+				Source:     "quarto-doc-none.qmd",
 				Title:      "quarto-doc-none",
 				Validate:   &validate,
 				Files: []string{
@@ -135,6 +136,7 @@ func (s *QuartoDetectorSuite) TestInferTypeMarkdownProject() {
 				Schema:     schema.ConfigSchemaURL,
 				Type:       contenttypes.ContentTypeHTML,
 				Entrypoint: "quarto-proj-none.html",
+				Source:     "quarto-proj-none.qmd",
 				Title:      "quarto-proj-none",
 				Validate:   &validate,
 				Files: []string{
@@ -168,6 +170,7 @@ func (s *QuartoDetectorSuite) TestInferTypeMarkdownProjectWindows() {
 				Schema:     schema.ConfigSchemaURL,
 				Type:       contenttypes.ContentTypeHTML,
 				Entrypoint: "quarto-proj-none.html",
+				Source:     "quarto-proj-none.qmd",
 				Title:      "quarto-proj-none",
 				Validate:   &validate,
 				Files: []string{
@@ -202,6 +205,7 @@ func (s *QuartoDetectorSuite) TestInferTypePythonProject() {
 				Schema:     schema.ConfigSchemaURL,
 				Type:       contenttypes.ContentTypeHTML,
 				Entrypoint: "quarto-proj-py.html",
+				Source:     "quarto-proj-py.qmd",
 				Title:      "quarto-proj-py",
 				Validate:   &validate,
 				Files: []string{
@@ -236,6 +240,7 @@ func (s *QuartoDetectorSuite) TestInferTypeRProject() {
 				Schema:     schema.ConfigSchemaURL,
 				Type:       contenttypes.ContentTypeHTML,
 				Entrypoint: "quarto-proj-r.html",
+				Source:     "quarto-proj-r.qmd",
 				Title:      "quarto-proj-r",
 				Validate:   &validate,
 				Files: []string{
@@ -271,6 +276,7 @@ func (s *QuartoDetectorSuite) TestInferTypeRAndPythonProject() {
 				Schema:     schema.ConfigSchemaURL,
 				Type:       contenttypes.ContentTypeHTML,
 				Entrypoint: "quarto-proj-r-py.html",
+				Source:     "quarto-proj-r-py.qmd",
 				Title:      "quarto-proj-r-py",
 				Validate:   &validate,
 				Files: []string{
@@ -326,6 +332,7 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoWebsite() {
 				Schema:     schema.ConfigSchemaURL,
 				Type:       contenttypes.ContentTypeHTML,
 				Entrypoint: "_site/about.html",
+				Source:     "about.qmd",
 				Title:      "About",
 				Validate:   &validate,
 				Files: []string{
@@ -355,6 +362,7 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoWebsite() {
 				Schema:     schema.ConfigSchemaURL,
 				Type:       contenttypes.ContentTypeHTML,
 				Entrypoint: "_site/index.html",
+				Source:     "index.qmd",
 				Title:      "quarto-website-none",
 				Validate:   &validate,
 				Files: []string{
@@ -428,6 +436,7 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoWebsite_viaQuartoYml() {
 				Schema:     schema.ConfigSchemaURL,
 				Type:       contenttypes.ContentTypeHTML,
 				Entrypoint: "_site/index.html",
+				Source:     "_quarto.yml",
 				Title:      "Content Dashboard",
 				Validate:   &validate,
 				Files: []string{
@@ -464,6 +473,7 @@ func (s *QuartoDetectorSuite) TestInferTypeRMarkdownDoc() {
 				Schema:     schema.ConfigSchemaURL,
 				Type:       contenttypes.ContentTypeHTML,
 				Entrypoint: "static.html",
+				Source:     "static.Rmd",
 				Title:      "static",
 				Validate:   &validate,
 				Files: []string{
@@ -497,6 +507,7 @@ func (s *QuartoDetectorSuite) TestInferTypeMultidocProject() {
 				Schema:     schema.ConfigSchemaURL,
 				Type:       contenttypes.ContentTypeHTML,
 				Entrypoint: "document1.html",
+				Source:     "document1.qmd",
 				Title:      "quarto-proj-none-multidocument",
 				Validate:   &validate,
 				Files: []string{
@@ -524,6 +535,7 @@ func (s *QuartoDetectorSuite) TestInferTypeMultidocProject() {
 				Schema:     schema.ConfigSchemaURL,
 				Type:       contenttypes.ContentTypeHTML,
 				Entrypoint: "document1.html",
+				Source:     "document2.qmd",
 				Title:      "quarto-proj-none-multidocument",
 				Validate:   &validate,
 				Files: []string{
@@ -561,6 +573,7 @@ func (s *QuartoDetectorSuite) TestInferTypeNotebook() {
 				Schema:     schema.ConfigSchemaURL,
 				Type:       contenttypes.ContentTypeHTML,
 				Entrypoint: "stock-report-jupyter.html",
+				Source:     "stock-report-jupyter.ipynb",
 				Title:      "Stock Report: TSLA",
 				Validate:   &validate,
 				Files: []string{
