@@ -62,7 +62,16 @@ module.exports = defineConfig({
       });
 
       on("task", {
-        authenticateOAuthDevice,
+        authenticateOAuthDevice: async (args) => {
+          console.log(
+            "[Cypress] Starting Playwright authenticateOAuthDevice task",
+          );
+          const result = await authenticateOAuthDevice(args);
+          console.log(
+            "[Cypress] Playwright authenticateOAuthDevice task finished",
+          );
+          return result;
+        },
         print(message) {
           if (typeof message !== "undefined") {
             console.log(message);
@@ -70,7 +79,10 @@ module.exports = defineConfig({
           return null;
         },
         async runDeviceWorkflow({ email, password, env = "staging" }) {
-          return await runDeviceWorkflow({ email, password, env });
+          console.log("[Cypress] Starting Playwright runDeviceWorkflow task");
+          const result = await runDeviceWorkflow({ email, password, env });
+          console.log("[Cypress] Playwright runDeviceWorkflow task finished");
+          return result;
         },
         confirmPCCPublishSuccess,
       });

@@ -13,24 +13,34 @@ function getPlaywrightHeadless() {
 // Shared Playwright browser automation for device code verification
 async function authorizeDeviceWithBrowser(verificationUrl, email, password) {
   const isCypressHeadless = getPlaywrightHeadless();
-  let browser;
+  let browser, context, page;
   try {
     console.log(`🚀 Starting OAuth automation for: ${email}`);
     console.log(`🔗 Verification URL: ${verificationUrl}`);
 
     browser = await chromium.launch({
       headless: isCypressHeadless,
-      slowMo: 500,
+      slowMo: 0,
       args: [
         "--disable-blink-features=AutomationControlled",
         "--window-size=1280,800",
+        "--disable-web-security",
+        "--disable-features=VizDisplayCompositor",
+        "--disable-background-networking",
+        "--disable-background-timer-throttling",
+        "--disable-backgrounding-occluded-windows",
+        "--disable-renderer-backgrounding",
+        "--disable-extensions",
+        "--no-sandbox",
+        "--disable-gpu",
       ],
     });
-    const context = await browser.newContext({
+    context = await browser.newContext({
       userAgent:
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.51 Safari/537.36",
+      ignoreHTTPSErrors: true,
     });
-    const page = await context.newPage();
+    page = await context.newPage();
 
     // Capture browser console logs
     page.on("console", (msg) => {
@@ -153,7 +163,19 @@ async function authorizeDeviceWithBrowser(verificationUrl, email, password) {
     });
     console.log(`🎉 OAuth authorization completed successfully!`);
   } finally {
-    if (browser) await browser.close();
+    try {
+      if (page) {
+        await page.close();
+      }
+      if (context) {
+        await context.close();
+      }
+      if (browser) {
+        await browser.close();
+      }
+    } catch (cleanupErr) {
+      console.error("Cleanup error:", cleanupErr);
+    }
   }
 }
 
@@ -188,6 +210,7 @@ async function authenticateOAuthDevice(credentials) {
 
 // Fully programmatic device workflow (API + browser)
 async function runDeviceWorkflow({ email, password, env = "staging" }) {
+  let browser;
   try {
     // Use login.<env>.posit.cloud for device code and token endpoints
     const deviceCodeUrl = `https://login.${env}.posit.cloud/oauth/device/authorize?client_id=posit-publisher-${env}&scope=vivid`;
@@ -251,6 +274,8 @@ async function runDeviceWorkflow({ email, password, env = "staging" }) {
   } catch (err) {
     console.error("runDeviceWorkflow error:", err);
     return { success: false, error: err.message || String(err) };
+  } finally {
+    if (browser) await browser.close();
   }
 }
 
