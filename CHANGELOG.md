@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - R dependencies are automatically detected when a project does not include an
   `renv.lock` file.
+- Setting `Python.package_manager=pip` will now force pip as the package manager
+  enven when the server default is `uv`.
 
 ### Fixed
 
