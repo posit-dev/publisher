@@ -155,7 +155,7 @@ start-workbench service:
     # Docker compose has built-in healthcheck support
     
     # Simple approach: Loop with a counter, no external tools needed
-    MAX_ATTEMPTS=120  # 60 seconds (120 * 0.5s)
+    MAX_ATTEMPTS=180  # 90 seconds (180 * 0.5s) 
     attempts=0
     
     while [ $attempts -lt $MAX_ATTEMPTS ]; do
