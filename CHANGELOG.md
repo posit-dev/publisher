@@ -7,11 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-
-- R dependencies are automatically detected when a project does not include an
-  `renv.lock` file.
-
 ### Fixed
 
 - Fixed the Python and R Packages views incorrectly stating the default package
@@ -23,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added UTM parameters for Connect Cloud links to see who is coming from
   Publisher (#2969)
+- R dependencies are automatically detected when a project does not include an
+  `renv.lock` file.
+- Added a celebratory message when credential token is connected (#2901)
 
 ### Changed
 
