@@ -107,13 +107,17 @@ jobs:
 
           # Build compose services in parallel after base is ready
           wait
-          docker compose build --parallel connect-publisher-e2e code-server workbench-release
+          docker compose build --parallel connect-publisher-e2e code-server
+          just build-workbench "release"
+
         env:
           CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
 
       - name: Start containers
         working-directory: test/e2e
-        run: docker compose up -d connect-publisher-e2e code-server
+        run: |
+          docker compose up -d connect-publisher-e2e code-server
+          just start-workbench "release"
 
       - name: Wait for services to be ready
         run: |
@@ -170,6 +174,11 @@ jobs:
             echo "Waiting for extension installation (attempt $i/30)..."
             sleep 1
           done
+
+      - name: Install Workbench Positron extension
+        working-directory: test/e2e
+        run: |
+          just install-workbench-extension "release"
 
       - name: Prepare test environment
         working-directory: test/e2e
