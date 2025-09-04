@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.19.1]
 
 ### Added
 
@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed the Python and R Packages views incorrectly stating the default package
   files were missing even when they were present (#2882, #2884)
 - Fixed an issue where the package file checkbox in the Project Files view
-  would occassionally be unchecked even when the file was included (#2793)
+  would occasionally be unchecked even when the file was included (#2793)
 
 ### Added
 
