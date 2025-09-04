@@ -220,8 +220,6 @@ Cypress.Commands.add("startWorkbenchPositronSession", () => {
 
 /**
  * Waits for Workbench extensions to be activated and the interpreter to be ready
- * This is a common pattern used in various Workbench operations where we need to
- * ensure that the extensions are fully loaded and the interpreter is available.
  */
 Cypress.Commands.add("waitForExtensionsAndInterpreter", () => {
   cy.log("Waiting for extensions to be activated and interpreter to be ready");
@@ -236,12 +234,100 @@ Cypress.Commands.add("waitForExtensionsAndInterpreter", () => {
     timeout: 30_000,
   }).should("not.exist");
 
-  // Finally, wait for the interpreter button to be visible, indicating Python is ready
-  cy.get('[aria-label="Select Interpreter Session"]', {
-    timeout: 30_000,
-  }).should("be.visible");
+  // Check if interpreter is loaded or needs to be started
+  cy.isInterpreterLoaded().then((loaded) => {
+    if (!loaded) {
+      cy.selectInterpreter();
+    }
+  });
 
   cy.log("Extensions activated and interpreter ready");
+});
+
+/**
+ * Checks if interpreter is loaded
+ */
+Cypress.Commands.add("isInterpreterLoaded", () => {
+  let interpreterStatus = null;
+
+  return cy
+    .waitUntil(
+      () => {
+        return cy.document({ log: false }).then(($document) => {
+          const loadedSelector = $document.querySelector(
+            '[aria-label="Select Interpreter Session"]',
+          );
+          const notLoadedSelector = $document.querySelector(
+            '[aria-label="Start New Interpreter Session"]',
+          );
+
+          if (loadedSelector) {
+            // Found the loaded state
+            interpreterStatus = true;
+            cy.log("Interpreter is loaded");
+            // Return a resolved promise with the status
+            return cy.wrap(true);
+          }
+
+          if (notLoadedSelector) {
+            // Found the not-loaded state
+            interpreterStatus = false;
+            cy.log("Interpreter is not loaded");
+            // Return a resolved promise with the status
+            return cy.wrap(false);
+          }
+
+          // Not ready yet, retry
+          return cy.wrap(null);
+        });
+      },
+      {
+        timeout: 30000,
+        interval: 1000,
+        errorMsg:
+          "Timed out waiting for interpreter to be in a recognized state",
+      },
+    )
+    .then(() => {
+      return interpreterStatus;
+    });
+});
+
+/**
+ * Selects interpreter if not already loaded
+ * @param {string} [interpreterName] - Optional interpreter name to select (e.g., 'Python 3.12', 'R 4.4')
+ *                                    If not provided, will select the suggested interpreter
+ */
+Cypress.Commands.add("selectInterpreter", (interpreterName = null) => {
+  cy.log("Selecting interpreter");
+  cy.get('[aria-label="Start New Interpreter Session"]').click();
+
+  cy.get(".quick-input-widget", { timeout: 15000 })
+    .should("contain.text", "Start New Interpreter Session")
+    .and("be.visible")
+    .within(() => {
+      if (interpreterName) {
+        cy.log(`Selecting specific interpreter: ${interpreterName}`);
+
+        cy.get("input").type(interpreterName);
+
+        // Find and click the first matching entry using native regex support
+        cy.get(".monaco-list-row")
+          .first()
+          .contains(new RegExp(interpreterName.split(/[. ]/)[0], "i"))
+          .click();
+      } else {
+        cy.log("Selecting suggested interpreter");
+
+        // Find the row with "Suggested" in its aria-label and click it
+        cy.get('.monaco-list-row[aria-label*="Suggested"]').click();
+      }
+    });
+
+  // Wait for the interpreter to load (outside the quick input widget)
+  cy.get('[aria-label="Select Interpreter Session"]', {
+    timeout: 90_000,
+  }).should("be.visible");
 });
 
 /**
