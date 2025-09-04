@@ -12,7 +12,10 @@ import {
   isPreContentRecord,
   ServerType,
 } from "../../../../src/api";
-import { IntegrationRequest, isConfigurationError } from "../../../../src/api/types/configurations";
+import {
+  IntegrationRequest,
+  isConfigurationError,
+} from "../../../../src/api/types/configurations";
 import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
 import { RPackage } from "../../../../src/api/types/packages";
 import { DeploymentSelector } from "../../../../src/types/shared";
@@ -55,7 +58,7 @@ export const useHomeStore = defineStore("home", () => {
   //   },
   //   set: (requests: IntegrationRequest[]) => {
   //     const config = selectedConfiguration.value;
-      
+
   //     if (config !== undefined && !isConfigurationError(config)) {
   //       config.configuration.integrationRequests = requests;
   //     }
@@ -145,7 +148,6 @@ export const useHomeStore = defineStore("home", () => {
     },
     { immediate: true },
   );
-
 
   // Always use the content record as the source of truth for the
   // credential. Can be undefined if a Credential is not specified or found.
@@ -329,7 +331,6 @@ export const useHomeStore = defineStore("home", () => {
     return Array.from(secrets.value.values()).filter((v) => v !== undefined)
       .length;
   });
-
 
   const python = {
     active: {

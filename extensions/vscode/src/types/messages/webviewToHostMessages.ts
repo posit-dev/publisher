@@ -200,10 +200,8 @@ export type RequestCredentialsMsg =
 export type AddSecretMsg =
   AnyWebviewToHostMessage<WebviewToHostMessageType.ADD_SECRET>;
 
-export type AddIntegrationRequestMsg = 
-  AnyWebviewToHostMessage<
-    WebviewToHostMessageType.ADD_INTEGRATION_REQUEST
->;
+export type AddIntegrationRequestMsg =
+  AnyWebviewToHostMessage<WebviewToHostMessageType.ADD_INTEGRATION_REQUEST>;
 
 export type DeleteIntegrationRequestMsg = AnyWebviewToHostMessage<
   WebviewToHostMessageType.DELETE_INTEGRATION_REQUEST,

@@ -22,7 +22,9 @@ export class IntegrationRequests {
   }
 
   getIntegrations(accountName: string) {
-    return this.client.get<Integration[]>(`accounts/${accountName}/integrations`);
+    return this.client.get<Integration[]>(
+      `accounts/${accountName}/integrations`,
+    );
   }
 
   // Returns:
