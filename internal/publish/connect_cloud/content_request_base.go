@@ -39,6 +39,7 @@ func (c *ServerPublisher) getAccess(isFirstDeploy bool) (types.ContentAccess, er
 			orgAccess = cloudCfg.AccessControl.OrganizationAccess
 		}
 	} else {
+		// redeploy
 		if cloudCfg != nil {
 			if cloudCfg.AccessControl != nil {
 				accessControl := cloudCfg.AccessControl
@@ -83,6 +84,8 @@ func (c *ServerPublisher) getAccess(isFirstDeploy bool) (types.ContentAccess, er
 				// if AccessControl isn't present, default to the server setting
 				return "", nil
 			}
+		} else {
+			return "", nil
 		}
 	}
 
