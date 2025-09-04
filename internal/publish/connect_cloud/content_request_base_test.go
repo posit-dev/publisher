@@ -435,7 +435,7 @@ func (s *ContentRequestSuite) TestGetAccess() {
 			name:           "subsequent deploy - no access control (nil config)",
 			isFirstDeploy:  false,
 			nilConfig:      true,
-			expectedAccess: "view_private_edit_private",
+			expectedAccess: "",
 		},
 	}
 
