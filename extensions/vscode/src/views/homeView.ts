@@ -108,7 +108,6 @@ import {
   isConnectCloudProduct,
   isConnectProduct,
 } from "src/utils/multiStepHelpers";
-import { normalizeURL } from "src/utils/url";
 
 enum HomeViewInitialized {
   initialized = "initialized",
@@ -659,37 +658,16 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     DebounceDelaysMS.refreshRPackages,
   );
 
-  private async getCurrentServerCredential() {
-    const activeContentRecord = await this.state.getSelectedContentRecord();
-    return this.state.credentials.find((cfg) => {
-      // default to CONNECT when the server type is missing (i.e. could be an old connect deployment)
-      const serverType =
-        activeContentRecord?.serverType || ServerType.CONNECT;
-      const productType = getProductType(serverType);
-      if (isConnectCloudProduct(productType)) {
-        const credentialAccountName = cfg.accountName;
-        const recordAccountName =
-          activeContentRecord?.connectCloud?.accountName;
-        if (!recordAccountName) {
-          return false;
-        }
-        return credentialAccountName === recordAccountName;
-      } else if (isConnectProduct(productType)) {
-        const credentialUrl = cfg.url.toLowerCase();
-        const recordUrl = activeContentRecord?.serverUrl.toLowerCase();
-        if (!recordUrl) {
-          return false;
-        }
-        return normalizeURL(credentialUrl) === normalizeURL(recordUrl);
+
+  private async refreshIntegrationRequests(credentialName?: string) {
+    if (!credentialName) {
+      const contentRecord = await this.state.getSelectedContentRecord();
+      if (contentRecord === undefined) {
+        console.error("homeView::addIntegration: No active content record.");
+        return;
       }
-
-      return false;
-    });
-  }
-
-  private async refreshIntegrationRequests(accountName?: string) {
-    if (!accountName) {
-      accountName = (await this.getCurrentServerCredential())?.name;
+      const credential = this.state.findCredentialForContentRecord(contentRecord);
+      credentialName = credential?.name;
     }
 
     const activeConfig = await this.state.getSelectedConfiguration();
@@ -702,7 +680,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         );
         const integrationRequests = response.data;
 
-        response = await api.integrationRequests.getIntegrations(accountName!);
+        response = await api.integrationRequests.getIntegrations(credentialName!);
         const integrations = response.data;
         const requests = integrationRequests.map((ir) => {
           const matchingIntegration = integrations.find(integration => integration.guid === ir.guid);
@@ -1309,20 +1287,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
 
-    const contentRecord = await this.state.getSelectedContentRecord();
-    if (contentRecord === undefined) {
-      console.error("homeView::addIntegration: No active content record.");
-      return;
-    }
-    const credential = this.state.findCredentialForContentRecord(contentRecord);
-    if (credential === undefined) {
-      window.showErrorMessage("No valid credential found for the current deployment server.");
-      return;
-    }
-
     try {
       await showProgress("Removing Integration Request", Views.HomeView, async () => {
         const api = await useApi();
+        // can't just pass context.request since it 
+        // has displayName and displayDescription fields
+        // that are not expected by the API
         const request = {
           guid: context.request.guid,
         };
@@ -1333,7 +1303,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         );
       });
 
-      await this.refreshIntegrationRequests(credential.name);
+      await this.refreshIntegrationRequests();
     } catch (error: unknown) {
       const summary = getSummaryStringFromError("removeIntegrationRequest", error);
       window.showInformationMessage(
