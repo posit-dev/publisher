@@ -80,6 +80,7 @@ func (s *defaultRDependencyScanner) ScanDependenciesInDir(paths []string, target
 	if lockfile == "" {
 		lockfile = interpreters.DefaultRenvLockfile
 	}
+	lockfile = filepath.ToSlash(lockfile) // Lockfile may in fact contain slashes.
 	script := fmt.Sprintf(`(function(){
 	options(renv.consent = TRUE)
 	rPathsVec <- %s
