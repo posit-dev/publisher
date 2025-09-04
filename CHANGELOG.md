@@ -7,22 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
+### Fixed
 
-- R dependencies are automatically detected when a project does not include an
-  `renv.lock` file.
+- Fixed an issue deploying content to free Posit Connect Cloud accounts with incorrect  
+  access settings.
+
+## [1.19.1]
 
 ### Fixed
 
 - Fixed the Python and R Packages views incorrectly stating the default package
   files were missing even when they were present (#2882, #2884)
 - Fixed an issue where the package file checkbox in the Project Files view
-  would occassionally be unchecked even when the file was included (#2793)
+  would occasionally be unchecked even when the file was included (#2793)
 
 ### Added
 
 - Added UTM parameters for Connect Cloud links to see who is coming from
   Publisher (#2969)
+- R dependencies are automatically detected when a project does not include an
+  `renv.lock` file.
+- Added a celebratory message when credential token is connected (#2901)
 
 ### Changed
 
