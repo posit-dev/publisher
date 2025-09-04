@@ -108,7 +108,6 @@ import {
   isConnectCloudProduct,
   isConnectProduct,
 } from "src/utils/multiStepHelpers";
-import { normalizeURL } from "src/utils/url";
 
 enum HomeViewInitialized {
   initialized = "initialized",
@@ -648,37 +647,21 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     DebounceDelaysMS.refreshRPackages,
   );
 
-  private async getCurrentServerCredential() {
-    const activeContentRecord = await this.state.getSelectedContentRecord();
-    return this.state.credentials.find((cfg) => {
-      // default to CONNECT when the server type is missing (i.e. could be an old connect deployment)
-      const serverType =
-        activeContentRecord?.serverType || ServerType.CONNECT;
-      const productType = getProductType(serverType);
-      if (isConnectCloudProduct(productType)) {
-        const credentialAccountName = cfg.accountName;
-        const recordAccountName =
-          activeContentRecord?.connectCloud?.accountName;
-        if (!recordAccountName) {
-          return false;
-        }
-        return credentialAccountName === recordAccountName;
-      } else if (isConnectProduct(productType)) {
-        const credentialUrl = cfg.url.toLowerCase();
-        const recordUrl = activeContentRecord?.serverUrl.toLowerCase();
-        if (!recordUrl) {
-          return false;
-        }
-        return normalizeURL(credentialUrl) === normalizeURL(recordUrl);
-      }
-
-      return false;
-    });
-  }
-
   private async refreshIntegrationRequests(accountName?: string) {
     if (!accountName) {
-      accountName = (await this.getCurrentServerCredential())?.name;
+      const activeContentRecord = await this.state.getSelectedContentRecord();
+      if (activeContentRecord === undefined) {
+        this.webviewConduit.sendMsg({
+          kind: HostToWebviewMessageType.REFRESH_INTEGRATION_REQUESTS,
+          content: {
+            integrationRequests: [],
+          },
+        });
+        return;
+      }
+      const activeCredential = this.state.findCredentialForContentRecord(activeContentRecord);
+
+      accountName = activeCredential?.accountName;
     }
 
     const activeConfig = await this.state.getSelectedConfiguration();
