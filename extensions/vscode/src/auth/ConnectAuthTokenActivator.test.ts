@@ -36,7 +36,6 @@ vi.mock("src/utils/errors", () => ({
 
 // Type guards for mocked functions
 const mockUseApi = vi.mocked(useApi);
-const mockShowInformationMessage = vi.mocked(window.showInformationMessage);
 const mockShowErrorMessage = vi.mocked(window.showErrorMessage);
 const mockOpenExternal = vi.mocked(env.openExternal);
 
@@ -107,9 +106,6 @@ describe("ConnectAuthTokenActivator", () => {
       "https://connect.example.com",
       "test-token-123",
       "test-private-key-123",
-    );
-    expect(mockShowInformationMessage).toHaveBeenCalledWith(
-      "Successfully authenticated as testuser",
     );
 
     // Verify result

@@ -167,7 +167,8 @@ export const inputCredentialNameStep = async (
     totalSteps: 0,
     // default the credential name to the account display name for Connect Cloud when available
     value: currentName || accountDisplayName,
-    prompt: `Enter a unique nickname for this ${isConnectCloud(serverType) ? "account" : "server"}.`,
+    prompt: `Successfully connected to ${isConnectCloud(serverType) ? "Connect Cloud" : `${state.data.url}`} 🎉
+      Enter a unique nickname for this ${isConnectCloud(serverType) ? "account" : "server"}.`,
     placeholder: `${isConnectCloud(serverType) ? accountDisplayName : productName}`,
     finalValidation: (input: string) => {
       input = input.trim();
