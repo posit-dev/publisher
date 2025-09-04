@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- R dependencies are automatically detected when a project does not include an
+  `renv.lock` file.
+
 ### Fixed
 
 - Fixed the Python and R Packages views incorrectly stating the default package

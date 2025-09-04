@@ -5,6 +5,7 @@ package publish
 import (
 	"testing"
 
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
@@ -40,19 +41,17 @@ func TestManifestSuite(t *testing.T) {
 	suite.Run(t, new(ManifestSuite))
 }
 
-func (s *ManifestSuite) TestCreateManifest() {
+func (s *ManifestSuite) TestCreateManifest_WithoutLockfile_ScansDependencies() {
 	log := logging.New()
 	emitter := events.NewNullEmitter()
 	packageMapper := &mockManifestPackageMapper{}
 
-	// Create a config with R configuration
+	// Intentionally reference renv.lock but do not create it, to assert scanning is triggered.
 	cfg := &config.Config{
-		R: &config.R{},
+		R: &config.R{PackageFile: "renv.lock"},
 	}
 
-	stateStore := &state.State{
-		Config: cfg,
-	}
+	stateStore := &state.State{Config: cfg}
 	helper := publishhelper.NewPublishHelper(stateStore, log)
 
 	publisher := &defaultPublisher{
@@ -62,7 +61,11 @@ func (s *ManifestSuite) TestCreateManifest() {
 		PublishHelper:  helper,
 	}
 
-	// Mock the getRPackages call
+	dir := util.NewAbsolutePath("/mem/manifest-test", afero.NewMemMapFs())
+	_ = dir.MkdirAll(0o777)
+	stateStore.Dir = dir
+
+	// Expect: scanning produces a lockfile and we pass that to GetManifestPackages.
 	expectedPackages := bundles.PackageMap{
 		"testpkg": bundles.Package{
 			Description: dcf.Record{
@@ -71,7 +74,134 @@ func (s *ManifestSuite) TestCreateManifest() {
 			},
 		},
 	}
-	packageMapper.On("GetManifestPackages", mock.Anything, mock.Anything, mock.Anything).Return(expectedPackages, nil)
+	generated := dir.Join("scanned.lock")
+	packageMapper.On("ScanDependencies", []string{dir.String()}, mock.Anything).Return(generated, nil)
+	packageMapper.On("GetManifestPackages", dir, generated, mock.Anything).Return(expectedPackages, nil)
+
+	manifest, err := publisher.createManifest()
+
+	s.NoError(err)
+	s.NotNil(manifest)
+	s.Equal(expectedPackages, manifest.Packages)
+}
+
+func (s *ManifestSuite) TestCreateManifest_WithLockfile_UsesLockfile() {
+	log := logging.New()
+	emitter := events.NewNullEmitter()
+	packageMapper := &mockManifestPackageMapper{}
+
+	// Provide an explicit lockfile to assert scanning is skipped.
+	cfg := &config.Config{
+		R: &config.R{PackageFile: "renv.lock"},
+	}
+
+	stateStore := &state.State{Config: cfg}
+	helper := publishhelper.NewPublishHelper(stateStore, log)
+
+	publisher := &defaultPublisher{
+		log:            log,
+		emitter:        emitter,
+		rPackageMapper: packageMapper,
+		PublishHelper:  helper,
+	}
+
+	dir := util.NewAbsolutePath("/mem/manifest-test-with", afero.NewMemMapFs())
+	_ = dir.MkdirAll(0o777)
+	stateStore.Dir = dir
+
+	lockfile := dir.Join("renv.lock")
+	_ = lockfile.WriteFile([]byte("{}"), 0o644)
+
+	expectedPackages := bundles.PackageMap{
+		"testpkg": bundles.Package{
+			Description: dcf.Record{
+				"Package": "testpkg",
+				"Version": "1.0.0",
+			},
+		},
+	}
+
+	// Expect GetManifestPackages to be called with the explicit lockfile;
+	// ScanDependencies must not be invoked in this case.
+	packageMapper.On("GetManifestPackages", dir, lockfile, mock.Anything).Return(expectedPackages, nil)
+
+	manifest, err := publisher.createManifest()
+
+	s.NoError(err)
+	s.NotNil(manifest)
+	s.Equal(expectedPackages, manifest.Packages)
+	packageMapper.AssertNotCalled(s.T(), "ScanDependencies", mock.Anything, mock.Anything)
+}
+
+func (s *ManifestSuite) TestCreateManifest_EmptyPackageFile_WithDetectedLockfile() {
+	log := logging.New()
+	emitter := events.NewNullEmitter()
+	packageMapper := &mockManifestPackageMapper{}
+
+	// packageFile empty: createManifest should detect the lockfile path.
+	cfg := &config.Config{
+		R: &config.R{PackageFile: ""},
+	}
+
+	stateStore := &state.State{Config: cfg}
+	helper := publishhelper.NewPublishHelper(stateStore, log)
+
+	publisher := &defaultPublisher{
+		log:            log,
+		emitter:        emitter,
+		rPackageMapper: packageMapper,
+		PublishHelper:  helper,
+	}
+
+	dir := util.NewAbsolutePath("/mem/manifest-empty-detect", afero.NewMemMapFs())
+	_ = dir.MkdirAll(0o777)
+	stateStore.Dir = dir
+
+	lockfile := dir.Join("renv.lock")
+	_ = lockfile.WriteFile([]byte("{}"), 0o644)
+
+	expectedPackages := bundles.PackageMap{
+		"testpkg": bundles.Package{Description: dcf.Record{"Package": "testpkg", "Version": "1.0.0"}},
+	}
+
+	// Expect: use detected lockfile path; do not scan.
+	packageMapper.On("GetManifestPackages", dir, lockfile, mock.Anything).Return(expectedPackages, nil)
+
+	manifest, err := publisher.createManifest()
+
+	s.NoError(err)
+	s.NotNil(manifest)
+	s.Equal(expectedPackages, manifest.Packages)
+	packageMapper.AssertNotCalled(s.T(), "ScanDependencies", mock.Anything, mock.Anything)
+}
+
+func (s *ManifestSuite) TestCreateManifest_EmptyPackageFile_NoLockfile_ScansDependencies() {
+	log := logging.New()
+	emitter := events.NewNullEmitter()
+	packageMapper := &mockManifestPackageMapper{}
+
+	cfg := &config.Config{R: &config.R{PackageFile: ""}}
+	stateStore := &state.State{Config: cfg}
+	helper := publishhelper.NewPublishHelper(stateStore, log)
+
+	publisher := &defaultPublisher{
+		log:            log,
+		emitter:        emitter,
+		rPackageMapper: packageMapper,
+		PublishHelper:  helper,
+	}
+
+	// No lockfile present: expect scanning.
+	dir := util.NewAbsolutePath("/mem/manifest-empty-scan", afero.NewMemMapFs())
+	_ = dir.MkdirAll(0o777)
+	stateStore.Dir = dir
+
+	expectedPackages := bundles.PackageMap{
+		"testpkg": bundles.Package{Description: dcf.Record{"Package": "testpkg", "Version": "1.0.0"}},
+	}
+	generated := dir.Join("scanned.lock")
+	packageMapper.On("ScanDependencies", []string{dir.String()}, mock.Anything).Return(generated, nil)
+	packageMapper.On("GetManifestPackages", dir, generated, mock.Anything).Return(expectedPackages, nil)
 
 	manifest, err := publisher.createManifest()
 
