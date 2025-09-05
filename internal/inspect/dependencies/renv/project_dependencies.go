@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/posit-dev/publisher/internal/executor"
+	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
 )
@@ -19,6 +20,10 @@ type RDependencyScanner interface {
 	// ScanDependencies creates a temp directory and uses renv::dependencies +
 	// renv::snapshot() to produce a lockfile, returning its absolute path.
 	ScanDependencies(paths []string, rExecutable string) (util.AbsolutePath, error)
+
+	// SetupRenvInDir sets up renv in the specified directory with the given lockfile name
+	// and R executable path, returning the absolute path to the created lockfile.
+	SetupRenvInDir(targetPath string, lockfile string, rExecutable string) (util.AbsolutePath, error)
 }
 
 type defaultRDependencyScanner struct {
@@ -45,13 +50,29 @@ func (s *defaultRDependencyScanner) ScanDependencies(paths []string, rExecutable
 		return util.AbsolutePath{}, err
 	}
 
+	return s.ScanDependenciesInDir(paths, tmpProjectPath, "", rExecutable)
+}
+
+func (i *defaultRDependencyScanner) SetupRenvInDir(targetPath string, lockfile string, rExecutable string) (util.AbsolutePath, error) {
+	pathSlice := []string{targetPath}
+
+	return i.ScanDependenciesInDir(pathSlice, util.NewPath(targetPath, nil), lockfile, rExecutable)
+}
+
+// ScanDependenciesInDir uses renv to scan the provided paths and create set up
+func (s *defaultRDependencyScanner) ScanDependenciesInDir(paths []string, targetDir util.Path, lockfile string, rExecutable string) (util.AbsolutePath, error) {
 	// Build R script: ensure non-interactive renv, detect deps from the base project (working dir),
+	// regardless of the destination targetPath for the lockfile.
 	// initialize a temporary renv project in tmpDir, install deps into it, then snapshot its lockfile.
-	tmpProjPath := filepath.ToSlash(tmpProjectPath.String()) // Use forward-slash for compatibility across platforms.
+	normalizedProjectPath := filepath.ToSlash(targetDir.String()) // Use forward-slash for compatibility across platforms.
 	rPathsVec, err := s.toRPathsVector(paths)
 	if err != nil {
 		return util.AbsolutePath{}, err
 	}
+	if lockfile == "" {
+		lockfile = interpreters.DefaultRenvLockfile
+	}
+	lockfile = filepath.ToSlash(lockfile) // Lockfile may in fact contain slashes.
 	script := fmt.Sprintf(`(function(){
 	options(renv.consent = TRUE)
 	rPathsVec <- %s
@@ -60,25 +81,25 @@ func (s *defaultRDependencyScanner) ScanDependencies(paths []string, rExecutable
 		d$Package[!is.na(d$Package)]
 	}, error = function(e) character())
 	deps <- setdiff(deps, c("renv"))
-	tmpProjPath <- "%s"
-	try(renv::init(project = tmpProjPath, bare = TRUE, force = TRUE), silent = TRUE)
-	try(renv::install(deps, project = tmpProjPath), silent = TRUE)
-	lockfile <- file.path(tmpProjPath, "renv.lock")
-	renv::snapshot(project = tmpProjPath, lockfile = lockfile, prompt = FALSE, type = "all")
+	targetPath <- "%s"
+	try(renv::init(project = targetPath, bare = TRUE, force = TRUE), silent = TRUE)
+	try(renv::install(deps, project = targetPath), silent = TRUE)
+	lockfile <- file.path(targetPath, "%s")
+	renv::snapshot(project = targetPath, lockfile = lockfile, prompt = FALSE, type = "all")
 	invisible()
-})()`, rPathsVec, tmpProjPath)
+})()`, rPathsVec, normalizedProjectPath, lockfile)
 
 	// Run the script (use the temporary project as the working directory)
 	// Ensure working directory is provided as an AbsolutePath
-	absTmp := util.NewAbsolutePath(tmpProjectPath.String(), nil)
-	stdout, stderr, err := s.rExecutor.RunScript(rExecutable, []string{"-s"}, script, absTmp, s.log)
+	absTarget := util.NewAbsolutePath(targetDir.String(), nil)
+	stdout, stderr, err := s.rExecutor.RunScript(rExecutable, []string{"-s"}, script, absTarget, s.log)
 	s.log.Debug("RDependencyScanner renv scan", "stdout", string(stdout), "stderr", string(stderr))
 	if err != nil {
 		return util.AbsolutePath{}, err
 	}
 
 	// Ensure the lockfile was created
-	lockfilePath := tmpProjectPath.Join("renv.lock")
+	lockfilePath := targetDir.Join(lockfile)
 	exists, err := lockfilePath.Exists()
 	if err != nil {
 		return util.AbsolutePath{}, err

@@ -54,11 +54,11 @@ func (s *RDependencyScannerSuite) TestScanDependencies() {
 		mock.Anything, // working dir is the temporary project now
 		mock.Anything,
 	).Return([]byte("ok"), []byte(""), nil).Run(func(args mock.Arguments) {
-		// Extract tmpProjPath from the script and create tmpProjPath/renv.lock
+		// Extract targetPath from the script and create targetPath/renv.lock
 		script := args.Get(2).(string)
-		start := strings.Index(script, "tmpProjPath <- \"")
+		start := strings.Index(script, "targetPath <- \"")
 		if start >= 0 {
-			start += len("tmpProjPath <- \"")
+			start += len("targetPath <- \"")
 			end := strings.Index(script[start:], "\"")
 			if end > 0 {
 				proj := script[start : start+end]
@@ -75,6 +75,41 @@ func (s *RDependencyScannerSuite) TestScanDependencies() {
 	s.NoError(err)
 	s.True(filepath.IsAbs(lockfilePath.String()))
 	s.Equal("renv.lock", filepath.Base(lockfilePath.String()))
+
+	s.exec.AssertExpectations(s.T())
+}
+
+func (s *RDependencyScannerSuite) TestScanDependenciesInDir() {
+	tmpRoot := util.NewPath("", nil)
+	tmpTarget, err := tmpRoot.TempDir("publisher-renv-test")
+	s.NoError(err)
+	defer func() { _ = tmpTarget.RemoveAll() }()
+
+	// Expect a RunScript call that includes renv::dependencies and renv::snapshot
+	s.exec.On(
+		"RunScript",
+		s.rExecPath,
+		[]string{"-s"},
+		mock.MatchedBy(func(script string) bool {
+			return strings.Contains(script, "renv::dependencies(") && strings.Contains(script, "renv::snapshot(")
+		}),
+		mock.Anything,
+		mock.Anything,
+	).Return([]byte("ok"), []byte(""), nil).Run(func(args mock.Arguments) {
+		lock := util.NewAbsolutePath(filepath.Join(tmpTarget.String(), "renv.lock"), nil)
+		_ = lock.WriteFile([]byte("{}"), 0666)
+	})
+
+	scanner := NewRDependencyScanner(s.log)
+	scanner.rExecutor = s.exec
+
+	// Test with a different lockfile name
+	lockfilePath, err := scanner.ScanDependenciesInDir([]string{s.cwd.String()}, tmpTarget, "", s.rExecPath)
+	s.NoError(err)
+	s.True(filepath.IsAbs(lockfilePath.String()))
+	s.Equal("renv.lock", filepath.Base(lockfilePath.String()))
+	// The lockfile path should be created under the provided tmpTarget.
+	s.Equal(tmpTarget.String(), filepath.Dir(lockfilePath.String()))
 
 	s.exec.AssertExpectations(s.T())
 }
@@ -116,7 +151,7 @@ func (s *RDependencyScannerFunctionalSuite) SetupTest() {
 }
 
 // runs the scanner against a real R installation and validates multiple packages appear in the lockfile
-func (s *RDependencyScannerFunctionalSuite) TestFunctional() {
+func (s *RDependencyScannerFunctionalSuite) TestScanDependenciesFunctional() {
 	if testing.Short() {
 		s.T().Skip("skipping functional test in short mode")
 	}
@@ -249,4 +284,212 @@ func (s *RDependencyScannerFunctionalSuite) TestFunctional_PathsFilter() {
 	_, hasCli := lf.Packages[PackageName("cli")]
 	s.True(hasGlue, "lockfile should include glue from included file")
 	s.False(hasCli, "lockfile should NOT include cli from ignored file")
+}
+
+// runs the scanner against a real R installation and validates multiple packages appear in the lockfile,
+// passing in a custom lockfile name and running in the project directory itself
+func (s *RDependencyScannerFunctionalSuite) TestScanDependenciesInDirFunctional() {
+	if testing.Short() {
+		s.T().Skip("skipping functional test in short mode")
+	}
+
+	// Create a real temp project where we can inspect dependencies
+	dir := s.T().TempDir()
+	base := util.NewAbsolutePath(dir, nil)
+
+	// Create an R script that uses two packages so the lockfile is meaningful
+	rScript := `
+			library(glue)
+			library(cli)
+			y <- glue::glue("a = {1}")
+			cli::cli_alert_success(y)
+		`
+	err := base.Join("main.R").WriteFile([]byte(rScript), 0644)
+	s.NoError(err)
+
+	// Also create a nested directory with another script using a different package
+	s.NoError(base.Join("nested").MkdirAll(0777))
+	nestedScript := `
+			library(jsonlite)
+			jsonlite::toJSON(list(a=1))
+		`
+	s.NoError(base.Join("nested", "child.R").WriteFile([]byte(nestedScript), 0644))
+
+	interp, err := interpreters.NewRInterpreter(base, util.Path{}, s.log, nil, nil, nil)
+	s.NoError(err)
+	rExec, err := interp.GetRExecutable()
+	s.NoError(err)
+	s.NotEmpty(rExec.String())
+
+	scanner := NewRDependencyScanner(s.log)
+	lockfilePath, err := scanner.ScanDependenciesInDir([]string{base.String()}, base.Path, "different.lockfile", rExec.String())
+	s.NoError(err)
+
+	// Validate the lockfile exists and parses
+	exists, err := lockfilePath.Exists()
+	s.NoError(err)
+	s.True(exists, "lockfile should exist")
+	s.True(filepath.IsAbs(lockfilePath.String()))
+
+	// Validate that the path and lockfile name are used.
+	s.Equal("different.lockfile", filepath.Base(lockfilePath.String()))
+	s.Equal(dir, filepath.Dir(lockfilePath.String()))
+
+	lf, err := ReadLockfile(lockfilePath)
+	s.NoError(err)
+	s.NotNil(lf.Packages, "Packages map should be present")
+	// Assert packages referenced by the scripts (including nested) exist in lockfile
+	_, hasGlue := lf.Packages[PackageName("glue")]
+	_, hasCli := lf.Packages[PackageName("cli")]
+	_, hasJsonlite := lf.Packages[PackageName("jsonlite")]
+	s.True(hasGlue, "lockfile should include glue package entry")
+	s.True(hasCli, "lockfile should include cli package entry")
+	s.True(hasJsonlite, "lockfile should include jsonlite from nested file")
+}
+
+// runs the dependency scanner in "setup renv" mode twice successively to that it functions
+// with existing renv infrastructure
+func (s *RDependencyScannerFunctionalSuite) TestSetupRenvInDirWithExistingInfraFunctional() {
+	if testing.Short() {
+		s.T().Skip("skipping functional test in short mode")
+	}
+
+	// Create a real temp project where we can inspect dependencies
+	dir := s.T().TempDir()
+	base := util.NewAbsolutePath(dir, nil)
+
+	// Create a single R script and run a scan to create renv infra.
+	rScript := `
+			library(glue)
+			library(cli)
+			y <- glue::glue("a = {1}")
+			cli::cli_alert_success(y)
+		`
+	err := base.Join("main.R").WriteFile([]byte(rScript), 0644)
+	s.NoError(err)
+
+	interp, err := interpreters.NewRInterpreter(base, util.Path{}, s.log, nil, nil, nil)
+	s.NoError(err)
+	rExec, err := interp.GetRExecutable()
+	s.NoError(err)
+	s.NotEmpty(rExec.String())
+
+	scanner := NewRDependencyScanner(s.log)
+	lockfilePath, err := scanner.SetupRenvInDir(base.String(), "", rExec.String())
+	s.NoError(err)
+
+	// Validate the lockfile exists and parses
+	exists, err := lockfilePath.Exists()
+	s.NoError(err)
+	s.True(exists, "lockfile should exist")
+	s.True(filepath.IsAbs(lockfilePath.String()))
+
+	// Validate that the path and default lockfile name are used.
+	s.Equal("renv.lock", filepath.Base(lockfilePath.String()))
+	s.Equal(dir, filepath.Dir(lockfilePath.String()))
+
+	lf, err := ReadLockfile(lockfilePath)
+	s.NoError(err)
+	s.NotNil(lf.Packages, "Packages map should be present")
+	// Assert packages referenced by the scripts (including nested) exist in lockfile
+	_, hasGlue := lf.Packages[PackageName("glue")]
+	_, hasCli := lf.Packages[PackageName("cli")]
+	_, hasJsonlite := lf.Packages[PackageName("jsonlite")]
+	s.True(hasGlue, "lockfile should include glue package entry")
+	s.True(hasCli, "lockfile should include cli package entry")
+	s.False(hasJsonlite, "lockfile should not include jsonlite from nested file")
+
+	// Create a second script and run another scan.
+	s.NoError(base.Join("nested").MkdirAll(0777))
+	nestedScript := `
+			library(jsonlite)
+			jsonlite::toJSON(list(a=1))
+		`
+	s.NoError(base.Join("nested", "child.R").WriteFile([]byte(nestedScript), 0644))
+
+	lockfilePath, err = scanner.SetupRenvInDir(base.String(), "", rExec.String())
+	s.NoError(err)
+
+	// Validate the lockfile exists and parses
+	exists, err = lockfilePath.Exists()
+	s.NoError(err)
+	s.True(exists, "lockfile should exist")
+	s.True(filepath.IsAbs(lockfilePath.String()))
+
+	// Validate that the path and default lockfile name are used.
+	s.Equal("renv.lock", filepath.Base(lockfilePath.String()))
+	s.Equal(dir, filepath.Dir(lockfilePath.String()))
+
+	lf, err = ReadLockfile(lockfilePath)
+	s.NoError(err)
+	s.NotNil(lf.Packages, "Packages map should be present")
+	// Assert packages referenced by the scripts (including nested) exist in lockfile
+	_, hasGlue = lf.Packages[PackageName("glue")]
+	_, hasCli = lf.Packages[PackageName("cli")]
+	_, hasJsonlite = lf.Packages[PackageName("jsonlite")]
+	s.True(hasGlue, "lockfile should include glue package entry")
+	s.True(hasCli, "lockfile should include cli package entry")
+	s.True(hasJsonlite, "lockfile should now include jsonlite from nested file")
+}
+
+// runs the dependency scanner in "setup renv" mode with a lockfile in a subdirectory
+func (s *RDependencyScannerFunctionalSuite) TestSetupRenvWithSubdirLockfileInfraFunctional() {
+	if testing.Short() {
+		s.T().Skip("skipping functional test in short mode")
+	}
+
+	// Create a real temp project where we can inspect dependencies
+	dir := s.T().TempDir()
+	base := util.NewAbsolutePath(dir, nil)
+
+	// Create an R script that uses two packages so the lockfile is meaningful
+	rScript := `
+			library(glue)
+			library(cli)
+			y <- glue::glue("a = {1}")
+			cli::cli_alert_success(y)
+		`
+	err := base.Join("main.R").WriteFile([]byte(rScript), 0644)
+	s.NoError(err)
+
+	// Also create a nested directory with another script using a different package
+	s.NoError(base.Join("nested").MkdirAll(0777))
+	nestedScript := `
+			library(jsonlite)
+			jsonlite::toJSON(list(a=1))
+		`
+	s.NoError(base.Join("nested", "child.R").WriteFile([]byte(nestedScript), 0644))
+
+	interp, err := interpreters.NewRInterpreter(base, util.Path{}, s.log, nil, nil, nil)
+	s.NoError(err)
+	rExec, err := interp.GetRExecutable()
+	s.NoError(err)
+	s.NotEmpty(rExec.String())
+
+	lockfileName := filepath.Join("nested", "different.lockfile")
+
+	scanner := NewRDependencyScanner(s.log)
+	lockfilePath, err := scanner.SetupRenvInDir(base.String(), lockfileName, rExec.String())
+	s.NoError(err)
+
+	// Validate the lockfile exists and parses
+	exists, err := lockfilePath.Exists()
+	s.NoError(err)
+	s.True(exists, "lockfile should exist")
+	s.True(filepath.IsAbs(lockfilePath.String()))
+
+	// creates a lockfile at "{dir}/nested/different.lockfile"
+	s.Equal("different.lockfile", filepath.Base(lockfilePath.String()))
+	s.Equal(filepath.Join(dir, "nested"), filepath.Dir(lockfilePath.String()))
+
+	lf, err := ReadLockfile(lockfilePath)
+	s.NoError(err)
+	s.NotNil(lf.Packages, "Packages map should be present")
+	// Assert packages referenced by the scripts (including nested) exist in lockfile
+	_, hasGlue := lf.Packages[PackageName("glue")]
+	_, hasCli := lf.Packages[PackageName("cli")]
+	_, hasJsonlite := lf.Packages[PackageName("jsonlite")]
+	s.True(hasGlue, "lockfile should include glue package entry")
+	s.True(hasCli, "lockfile should include cli package entry")
+	s.True(hasJsonlite, "lockfile should now include jsonlite from nested file")
 }
