@@ -136,17 +136,14 @@ export type ConfigurationDetails = {
 // See types in internal/clients/connect/client.go
 // for more information or to add more.
 export type LicenseInfo = {
-  status: string;
-  tier: string;
-  "oauth-integrations": boolean;
+  "oauth-integrations"?: boolean;
 };
 
 // See types in internal/clients/connect/client.go
 // for more information or to add more.
 export type ServerSettings = {
-  version: string;
-  license: LicenseInfo;
-  oauth_integrations_enabled: boolean;
+  license?: LicenseInfo;
+  oauth_integrations_enabled?: boolean;
 };
 
 export type IntegrationRequest = {

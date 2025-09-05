@@ -797,7 +797,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
     const credential =
       this.state.findCredentialForContentRecord(activeContentRecord);
-    if (!credential) {
+    if (credential === undefined) {
       return;
     }
 
