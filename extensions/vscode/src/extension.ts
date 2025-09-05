@@ -11,7 +11,7 @@ import {
 import * as ports from "src/ports";
 import { Service } from "src/services";
 import { ProjectTreeDataProvider } from "src/views/project";
-import { LogsTreeDataProvider } from "src/views/logs";
+import { LogsTreeDataProvider, LogsViewProvider } from "src/views/logs";
 import { EventStream } from "src/events";
 import { HomeViewProvider } from "src/views/homeView";
 import { WatcherManager } from "src/watchers";
@@ -54,6 +54,12 @@ const SELECTION_IS_CONNECT_CONTENT_RECORD_CONTEXT =
 export enum SelectionIsConnectContentRecord {
   true = "true",
   false = "false",
+}
+
+const LOGS_VIEWMODE_CONTEXT = "posit.publish.logs.viewMode";
+enum LogsViewMode {
+  tree = "tree",
+  webview = "webview",
 }
 
 // Once the extension is activate, hang on to the service so that we can stop it on deactivation.
@@ -131,17 +137,51 @@ async function initializeExtension(context: ExtensionContext) {
   // First the construction of the data providers
   const projectTreeDataProvider = new ProjectTreeDataProvider(context);
 
+  // Logs tree view
   const logsTreeDataProvider = new LogsTreeDataProvider(context, stream);
 
   const homeViewProvider = new HomeViewProvider(context, stream, state);
   context.subscriptions.push(homeViewProvider);
 
+  // Logs web view
+  const logsViewProvider = new LogsViewProvider(context, stream);
+  context.subscriptions.push(logsViewProvider);
+
   // Then the registration of the data providers with the VSCode framework
   projectTreeDataProvider.register();
   logsTreeDataProvider.register();
   homeViewProvider.register(watchers);
+  logsViewProvider.register();
+
+  // Set the initial logs view mode to 'tree'
+  commands.executeCommand(
+    "setContext",
+    LOGS_VIEWMODE_CONTEXT,
+    LogsViewMode.tree,
+  );
+
+  // Handler function to toggle the logs view mode
+  const toggleLogsViewModeHandler = () => {
+    // Get the current logs view mode from the context
+    const currentMode = context.globalState.get(
+      LOGS_VIEWMODE_CONTEXT,
+      LogsViewMode.tree,
+    );
+    const newMode =
+      currentMode === LogsViewMode.tree
+        ? LogsViewMode.webview
+        : LogsViewMode.tree;
+
+    // Update the context key, which automatically toggles the logs view's visibility
+    commands.executeCommand("setContext", LOGS_VIEWMODE_CONTEXT, newMode);
+
+    // Save the setting for persistence
+    context.globalState.update(LOGS_VIEWMODE_CONTEXT, newMode);
+  };
 
   context.subscriptions.push(
+    commands.registerCommand(Commands.Logs.Tree, toggleLogsViewModeHandler),
+    commands.registerCommand(Commands.Logs.Webview, toggleLogsViewModeHandler),
     commands.registerCommand(Commands.InitProject, async (viewId: string) => {
       setInitializationInProgressContext(InitializationInProgress.true);
       await homeViewProvider.showNewDeploymentMultiStep(viewId);
@@ -150,9 +190,10 @@ async function initializeExtension(context: ExtensionContext) {
     commands.registerCommand(Commands.ShowOutputChannel, () =>
       service.showOutputChannel(),
     ),
-    commands.registerCommand(Commands.ShowPublishingLog, () =>
-      commands.executeCommand(Commands.Logs.Focus),
-    ),
+    commands.registerCommand(Commands.ShowPublishingLog, () => {
+      commands.executeCommand(Commands.Logs.TreeFocus);
+      commands.executeCommand(Commands.Logs.WebviewFocus);
+    }),
     commands.registerCommand(Commands.HomeView.CopySystemInfo, () =>
       copySystemInfoCommand(context),
     ),

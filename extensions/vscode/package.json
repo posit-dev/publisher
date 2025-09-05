@@ -68,6 +68,16 @@
     ],
     "commands": [
       {
+        "command": "posit.publisher.logs.tree",
+        "title": "Open Raw Logs",
+        "icon": "$(list-unordered)"
+      },
+      {
+        "command": "posit.publisher.logs.webview",
+        "title": "Open Summarized Logs",
+        "icon": "$(list-tree)"
+      },
+      {
         "command": "posit.publisher.init-project",
         "title": "Initialize Project",
         "icon": "${star)",
@@ -252,6 +262,16 @@
         }
       ],
       "view/title": [
+        {
+          "command": "posit.publisher.logs.tree",
+          "when": "view == posit.publisher.logs",
+          "group": "navigation@1"
+        },
+        {
+          "command": "posit.publisher.logs.webview",
+          "when": "view == posit.publisher.rawlogs",
+          "group": "navigation@1"
+        },
         {
           "command": "posit.publisher.files.refresh",
           "when": "view == posit.publisher.files && isWorkspaceTrusted",
@@ -480,7 +500,15 @@
           "name": "Log",
           "contextualTitle": "Log",
           "icon": "$(output)",
-          "when": "workbenchState == folder && posit.publish.state == 'initialized' && posit.publisher.homeView.userHasInitiatedDeploymentOperation == 'true' && isWorkspaceTrusted"
+          "when": "workbenchState == folder && posit.publish.state == 'initialized' && posit.publisher.homeView.userHasInitiatedDeploymentOperation == 'true' && isWorkspaceTrusted && posit.publish.logs.viewMode == 'tree'"
+        },
+        {
+          "id": "posit.publisher.rawlogs",
+          "name": "Raw Log",
+          "type": "webview",
+          "contextualTitle": "Log",
+          "icon": "$(output)",
+          "when": "workbenchState == folder && posit.publish.state == 'initialized' && posit.publisher.homeView.userHasInitiatedDeploymentOperation == 'true' && isWorkspaceTrusted && posit.publish.logs.viewMode == 'webview'"
         }
       ]
     },
