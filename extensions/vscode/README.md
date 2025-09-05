@@ -92,6 +92,10 @@ Logs are organized to easily identify what went wrong.
 
 ![Deploying logs with organized steps in the Posit Publisher Logs view](https://cdn.posit.co/publisher/assets/img/deployment-logs.gif)
 
+### Manage OAuth Integrations
+
+Specify OAuth Integrations requirements directly in the "Integration Requests" pane in the Publisher UI to automatically associate required integrations at deployment.
+
 ## Help and feedback
 
 Documentation can be found in the
