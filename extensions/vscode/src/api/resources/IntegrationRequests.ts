@@ -1,7 +1,7 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import { AxiosInstance } from "axios";
-import { Integration, IntegrationRequest } from "../types/configurations";
+import { IntegrationRequest } from "../types/configurations";
 
 export class IntegrationRequests {
   private client: AxiosInstance;
@@ -18,12 +18,6 @@ export class IntegrationRequests {
     return this.client.get<IntegrationRequest[]>(
       `configurations/${encodedName}/integration-requests`,
       { params: { dir } },
-    );
-  }
-
-  getIntegrations(accountName: string) {
-    return this.client.get<Integration[]>(
-      `accounts/${accountName}/integrations`,
     );
   }
 

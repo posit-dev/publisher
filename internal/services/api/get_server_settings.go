@@ -5,6 +5,7 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -15,7 +16,7 @@ import (
 	"github.com/posit-dev/publisher/internal/logging"
 )
 
-func GetIntegrationsHandlerFunc(lister accounts.AccountList, log logging.Logger) http.HandlerFunc {
+func GetServerSettingsHandlerFunc(lister accounts.AccountList, log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		name := mux.Vars(req)["name"]
 		account, err := lister.GetAccountByName(name)
@@ -33,14 +34,15 @@ func GetIntegrationsHandlerFunc(lister accounts.AccountList, log logging.Logger)
 			return
 		}
 
-		integrations, err := client.GetIntegrations(log)
+		settings, err := client.GetServerSettings(log)
 		if err != nil {
+			fmt.Printf("Error getting server settings: %v\n", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
 		w.Header().Set("content-type", "application/json")
-		json.NewEncoder(w).Encode(integrations)
+		json.NewEncoder(w).Encode(settings)
 	}
 }
