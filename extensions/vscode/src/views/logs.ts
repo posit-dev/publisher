@@ -19,6 +19,7 @@ import {
   commands,
   env,
   window,
+  workspace,
 } from "vscode";
 
 import { EventStream, displayEventStreamMessage } from "src/events";
@@ -46,6 +47,8 @@ import { DeploymentFailureRenvHandler } from "src/views/deployHandlers";
 import { getUri } from "src/utils/getUri";
 import { getNonce } from "src/utils/getNonce";
 import { formatTimestampString } from "src/utils/date";
+import path from "path";
+import { getSummaryStringFromError } from "src/utils/errors";
 
 enum LogStageStatus {
   notStarted,
@@ -185,6 +188,18 @@ export class LogsViewProvider implements WebviewViewProvider, Disposable {
       .trim();
   }
 
+  private static getLogsText(html: unknown) {
+    return String(html)
+      .replaceAll("<br>", "\n")
+      .replaceAll("<br/>", "\n")
+      .replaceAll("<br />", "\n")
+      .trim();
+  }
+
+  private static getLogsFilename() {
+    return `publisher-logs-${new Date().toISOString().split(".").at(0)}.txt`;
+  }
+
   public static refreshContent(events: EventStreamMessage[]) {
     if (LogsViewProvider.currentView) {
       LogsViewProvider.currentView.webview.postMessage({
@@ -224,6 +239,38 @@ export class LogsViewProvider implements WebviewViewProvider, Disposable {
     Disposable.from(...this.disposables).dispose();
   }
 
+  private async writeAndOpenLogsFile(content: unknown) {
+    const fileName = LogsViewProvider.getLogsFilename();
+    const workspaceFolders = workspace.workspaceFolders;
+    if (!workspaceFolders) {
+      window.showErrorMessage("No workspace open to save the file.");
+      return;
+    }
+    // use the first workspace folder
+    const workspaceUri = workspaceFolders[0].uri;
+    // determine the path to save the file (e.g., in the root of the first workspace folder)
+    const filePath = Uri.file(path.join(workspaceUri.fsPath, fileName));
+    const fileUri = Uri.joinPath(workspaceUri, fileName);
+    const fileContent = new TextEncoder().encode(
+      LogsViewProvider.getLogsText(content),
+    );
+
+    try {
+      // save the file
+      await workspace.fs.writeFile(filePath, fileContent);
+      // open the file in the editor
+      const document = await workspace.openTextDocument(fileUri);
+      await window.showTextDocument(document);
+
+      window.showInformationMessage(
+        `File '${fileName}' created and opened successfully.`,
+      );
+    } catch (err: unknown) {
+      const summary = getSummaryStringFromError("failed to write file", err);
+      window.showErrorMessage(summary);
+    }
+  }
+
   public resolveWebviewView(webviewView: WebviewView) {
     LogsViewProvider.currentView = webviewView;
 
@@ -245,18 +292,16 @@ export class LogsViewProvider implements WebviewViewProvider, Disposable {
       this.extensionUri,
     );
 
-    webviewView.webview.onDidReceiveMessage((message) => {
-      switch (message.command) {
+    webviewView.webview.onDidReceiveMessage(async (message) => {
+      const { command, content } = message;
+      switch (command) {
         case "copy":
-          env.clipboard.writeText(
-            String(message.text)
-              .replaceAll("<br>", "\n")
-              .replaceAll("<br/>", "\n")
-              .replaceAll("<br />", "\n")
-              .trim(),
-          );
+          env.clipboard.writeText(LogsViewProvider.getLogsText(content));
           window.showInformationMessage("Logs copied to clipboard!");
           return;
+        case "save":
+          await this.writeAndOpenLogsFile(content);
+          break;
       }
     });
   }
@@ -278,6 +323,9 @@ export class LogsViewProvider implements WebviewViewProvider, Disposable {
 
     const nonce = getNonce();
 
+    const btnStyle =
+      "display:flex;align-items:center;border-radius:0.25rem;border:none;padding:0.25rem 0.5rem;cursor:pointer;";
+
     return /*html*/ `
     <!DOCTYPE html>
       <html lang="en">
@@ -289,13 +337,16 @@ export class LogsViewProvider implements WebviewViewProvider, Disposable {
           <title>Raw Logs</title>
       </head>
       <body>
-        <button
-          id="copyButton"
-          style="display:flex;align-items:center;border-radius:0.25rem;border:none;padding:0.25rem 0.5rem;cursor:pointer;"
-        >
-          <span class="codicon codicon-copy" style="margin-right:0.25rem;"></span>
-          Copy Logs
-        </button>
+        <div style="display:flex;gap:1rem;">
+          <button id="copyButton" style="${btnStyle}">
+            <span class="codicon codicon-copy" style="margin-right:0.25rem;"></span>
+            Copy
+          </button>
+          <button id="saveButton" style="${btnStyle}">
+            <span class="codicon codicon-save" style="margin-right:0.25rem;"></span>
+            Save
+          </button>
+        </div>
         <pre id="content">${LogsViewProvider.getLogsHTML(this.events)}</pre>
         <script nonce="${nonce}">
             const vscode = acquireVsCodeApi();
@@ -308,7 +359,13 @@ export class LogsViewProvider implements WebviewViewProvider, Disposable {
             document.getElementById('copyButton').addEventListener('click', () => {
               vscode.postMessage({
                 command: 'copy',
-                text: document.querySelector('#content').innerHTML
+                content: document.querySelector('#content').innerHTML,
+              });
+            });
+            document.getElementById('saveButton').addEventListener('click', () => {
+              vscode.postMessage({
+                command: 'save',
+                content: document.querySelector('#content').innerHTML,
               });
             });
         </script>
