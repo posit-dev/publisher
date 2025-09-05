@@ -466,6 +466,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     this.refreshPythonPackages();
     this.refreshRPackages();
     this.refreshIntegrationRequests();
+    this.refreshConnectServerSettings();
 
     this.configWatchers?.dispose();
     if (cfg && isConfigurationError(cfg)) {
@@ -680,7 +681,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         );
         const integrationRequests = response.data ?? [];
 
-        response = await api.integrationRequests.getIntegrations(
+        response = await api.connectServer.getIntegrations(
           credentialName!,
         );
         const integrations = response.data ?? [];
@@ -780,6 +781,30 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         packages,
       },
     });
+  }
+
+  private async refreshConnectServerSettings() {
+    const activeContentRecord = await this.state.getSelectedContentRecord();
+    if (activeContentRecord === undefined) {
+      return;
+    }
+
+    const serverType = activeContentRecord.serverType || ServerType.CONNECT;
+    const productType = getProductType(serverType);
+    if (!isConnectProduct(productType)) {
+      return;
+    }
+
+    const credential =
+      this.state.findCredentialForContentRecord(activeContentRecord);
+    if (!credential) {
+      return;
+    }
+
+    const api = await useApi();
+    const result = await api.connectServer.getServerSettings(credential.name);
+    console.log("This is a test 🔥");
+    console.log(result.data);
   }
 
   private async onRelativeOpenVSCode(msg: VSCodeOpenRelativeMsg) {
@@ -1195,7 +1220,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
   public getIntegrations = async (accountName: string) => {
     const api = await useApi();
-    const response = await api.integrationRequests.getIntegrations(accountName);
+    const response = await api.connectServer.getIntegrations(accountName);
     console.log("Fetched integrations");
     console.log(response.data);
   };
@@ -1234,7 +1259,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         "Retrieving Integrations from deployment server",
         Views.HomeView,
         async () => {
-          const response = await api.integrationRequests.getIntegrations(
+          const response = await api.connectServer.getIntegrations(
             credential.name,
           );
           integrations = response.data;

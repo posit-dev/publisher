@@ -31,6 +31,40 @@ type Integration struct {
 	CreatedTime time.Time      `json:"created_time"`
 }
 
+// LicenseInfo and ServerSettings represent the currently relevant
+// subset of the information returned by the Connect server settings API.
+// Additional fields may be added in the future as needed. See
+// src/connect/api/serversettings/serversettings.go in the Connect source
+// repository for the full set of fields.
+
+type LicenseInfo struct {
+	// Status indicates the license state. One of "evaluation",
+	// "activated" or "expired"
+	Status string `json:"status"`
+
+	// Tier indicates the selected product package (basic, enhanced,
+	// advanced). Set only for 2024+ licenses.
+	Tier string `json:"tier"`
+
+	// OAuthIntegrations specifies if an installation is allowed to use
+	// OAuth integrations to support viewer-based auth.
+	OAuthIntegrations bool `json:"oauth-integrations"`
+}
+
+type ServerSettings struct {
+	// Version indicates the Posit Connect product version.
+	//
+	// Shared only for logged-in users and when not Server.HideVersion.
+	Version string `json:"version"`
+
+	// License contains information about the capabilities allowed by the
+	// in-use product license.
+	License LicenseInfo `json:"license"`
+
+	// OAuthIntegrationsEnabled indicates whether the ability to include oAuth integrations is enabled.
+	OAuthIntegrationsEnabled bool `json:"oauth_integrations_enabled"`
+}
+
 type APIClient interface {
 	TestAuthentication(logging.Logger) (*User, error)
 	ContentDetails(contentID types.ContentID, body *ConnectContent, log logging.Logger) error
@@ -45,4 +79,5 @@ type APIClient interface {
 	CheckCapabilities(util.AbsolutePath, *config.Config, *types.ContentID, logging.Logger) error
 	GetCurrentUser(logging.Logger) (*User, error)
 	GetIntegrations(logging.Logger) ([]Integration, error)
+	GetServerSettings(logging.Logger) (*ServerSettings, error)
 }
