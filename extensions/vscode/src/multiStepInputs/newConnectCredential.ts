@@ -365,11 +365,11 @@ export async function newConnectCredential(
         totalSteps: 0,
         enabled: false,
         busy: true,
-        value: `Authenticating on ${state.data.url}`,
+        value: `Authenticating with ${state.data.url}`,
         valueSelection: [0, 0],
         validationMessage: {
           message:
-            "Please follow the next steps in the external browser or 'Escape' to abort",
+            "Please follow the steps in your browser or 'Escape' to cancel",
           severity: InputBoxValidationSeverity.Info,
         },
         prompt: "",
