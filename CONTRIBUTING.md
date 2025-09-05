@@ -270,19 +270,7 @@ To update the schema:
 - Verify that the unit tests pass. They load the example files and validate them against the schemas.
 - The `draft` folder contains schemas that are a superset of the main schemas, and have ideas for the other settings we have considered adding. Usually we have added any new fields to those schemas and example files as well.
 
-As Pull Requests are merged into main, we update (or create in the case of a new
-schema) the file on the CDN (in S3). Currently, this is a manual process:
-
-- Log into the AWS console (https://rstudio.awsapps.com/start/#/)
-- Select `Posit Connect Production`, then `Power User`.
-- Select `View all services`, then `S3`.
-- Open the `Posit Publisher` bucket, then the `publisher` folder.
-- Click `Upload`, then `Add Folder`.
-- Select your local `schemas` folder (`internal/schema/schemas`).
-- Click the `Upload` button to complete the upload.
-- Verify availability of the updated schema(s) on the CDN. There may be a delay due to caching.
-  - https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json
-  - https://cdn.posit.co/publisher/schemas/posit-publishing-record-schema-v3.json
+As Pull Requests are merged into main, we update (or create in the case of a new schema) the file on the CDN (in S3). Currently, this is a manual process requiring write access to our S3 bucket.
 
 #### Force Even Better TOML to update
 
