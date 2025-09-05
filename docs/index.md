@@ -28,6 +28,7 @@ Supported features:
 - Collaborate via git, or by downloading a source bundle from Connect
 - Pre-flight checking of settings before deploying to Connect
 - Verification that deployed apps can successfully start
+- View and manage OAuth Integration content requirements directly from the "Integration Requests" pane in the Publisher UI.
 
 What's not supported yet but is on our to-do list:
 
