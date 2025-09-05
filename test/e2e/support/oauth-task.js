@@ -1,67 +1,35 @@
 // OAuth Device Flow Task - Automates OAuth completion for VS Code extension and supports programmatic device workflow
-const { chromium } = require("playwright");
 const axios = require("axios");
 const { getPlaywrightTimeout } = require("./playwright-utils");
-
-function getPlaywrightHeadless() {
-  if (process.env.CI === "true") return true;
-  if (process.env.PLAYWRIGHT_HEADLESS === "true") return true;
-  if (process.env.PLAYWRIGHT_HEADLESS === "false") return false;
-  return false;
-}
+const {
+  getSharedBrowserContext,
+  cleanupSharedBrowser,
+} = require("./shared-browser");
 
 // Shared Playwright browser automation for device code verification
 async function authorizeDeviceWithBrowser(verificationUrl, email, password) {
-  const isCypressHeadless = getPlaywrightHeadless();
-  let browser, context, page;
+  let page;
   try {
     console.log(`🚀 Starting OAuth automation for: ${email}`);
     console.log(`🔗 Verification URL: ${verificationUrl}`);
 
-    browser = await chromium.launch({
-      headless: isCypressHeadless,
-      slowMo: 0,
-      args: [
-        "--disable-blink-features=AutomationControlled",
-        "--window-size=1280,800",
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage",
-        "--disable-web-security",
-        "--disable-features=VizDisplayCompositor,TranslateUI",
-        "--disable-background-networking",
-        "--disable-background-timer-throttling",
-        "--disable-backgrounding-occluded-windows",
-        "--disable-renderer-backgrounding",
-        "--disable-extensions",
-        "--disable-gpu",
-        "--disable-ipc-flooding-protection",
-        "--disable-hang-monitor",
-        "--disable-client-side-phishing-detection",
-        "--disable-component-update",
-        "--disable-default-apps",
-        "--disable-domain-reliability",
-        "--disable-sync",
-      ],
-    });
-    context = await browser.newContext({
-      userAgent:
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.51 Safari/537.36",
-      ignoreHTTPSErrors: true,
-    });
+    // Use fresh browser context for OAuth to avoid state issues
+    const { context } = await getSharedBrowserContext(true);
     page = await context.newPage();
 
-    // Block Google analytics and tracking requests
+    // Block Google analytics and tracking requests to improve speed and reliability
     await page.route("**/*google-analytics.com*", (route) => route.abort());
     await page.route("**/*googletagmanager.com*", (route) => route.abort());
     await page.route("**/*android.clients.google.com*", (route) =>
       route.abort(),
     );
 
-    // Capture browser console logs
-    page.on("console", (msg) => {
-      console.log(`🌐 Browser console [${msg.type()}]:`, msg.text());
-    });
+    // Capture browser console logs only in debug mode
+    if (process.env.DEBUG_PLAYWRIGHT === "true") {
+      page.on("console", (msg) => {
+        console.log(`🌐 Browser console [${msg.type()}]:`, msg.text());
+      });
+    }
 
     console.log(`📖 Navigating to OAuth page...`);
     await page.goto(verificationUrl);
@@ -180,11 +148,10 @@ async function authorizeDeviceWithBrowser(verificationUrl, email, password) {
     console.log(`🎉 OAuth authorization completed successfully!`);
   } finally {
     try {
+      // Only close the page, not the shared browser/context
       if (page) await page.close();
-      if (context) await context.close();
-      if (browser) await browser.close();
     } catch (cleanupErr) {
-      console.log("[Playwright] Cleanup error:", cleanupErr.message);
+      console.log("[Playwright] Page cleanup error:", cleanupErr.message);
     }
   }
 }
@@ -220,7 +187,6 @@ async function authenticateOAuthDevice(credentials) {
 
 // Fully programmatic device workflow (API + browser)
 async function runDeviceWorkflow({ email, password, env = "staging" }) {
-  let browser;
   try {
     // Use login.<env>.posit.cloud for device code and token endpoints
     const deviceCodeUrl = `https://login.${env}.posit.cloud/oauth/device/authorize?client_id=posit-publisher-${env}&scope=vivid`;
@@ -284,18 +250,17 @@ async function runDeviceWorkflow({ email, password, env = "staging" }) {
   } catch (err) {
     console.error("runDeviceWorkflow error:", err);
     return { success: false, error: err.message || String(err) };
-  } finally {
-    if (browser) {
-      try {
-        await browser.close();
-      } catch (cleanupErr) {
-        console.log(
-          "[Playwright] runDeviceWorkflow cleanup error:",
-          cleanupErr.message,
-        );
-      }
-    }
   }
+  // No cleanup needed - shared browser handles its own lifecycle
 }
 
-module.exports = { authenticateOAuthDevice, runDeviceWorkflow };
+module.exports = {
+  authenticateOAuthDevice,
+  runDeviceWorkflow,
+  cleanupSharedBrowser,
+};
+
+// Clean up shared browser on process exit
+process.on("exit", cleanupSharedBrowser);
+process.on("SIGINT", cleanupSharedBrowser);
+process.on("SIGTERM", cleanupSharedBrowser);

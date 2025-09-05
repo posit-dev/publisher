@@ -1,54 +1,18 @@
-const { chromium } = require("playwright");
 const { getPlaywrightTimeout } = require("./playwright-utils");
 
-function getPlaywrightHeadless() {
-  if (process.env.CI === "true") return true;
-  if (process.env.PLAYWRIGHT_HEADLESS === "true") return true;
-  if (process.env.PLAYWRIGHT_HEADLESS === "false") return false;
-  return false;
-}
+// Import shared browser context from shared-browser utility
+const { getSharedBrowserContext } = require("./shared-browser");
 
 async function confirmPCCPublishSuccess({ publishedUrl, expectedTitle }) {
-  let browser, context, page;
+  let page;
   try {
-    console.log(
-      "Playwright confirmPCCPublishSuccess called with:",
-      publishedUrl,
-      expectedTitle,
-    );
-    const isHeadless = getPlaywrightHeadless();
-    browser = await chromium.launch({
-      headless: isHeadless,
-      slowMo: 0,
-      args: [
-        "--disable-blink-features=AutomationControlled",
-        "--window-size=1280,800",
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage",
-        "--disable-web-security",
-        "--disable-features=VizDisplayCompositor,TranslateUI",
-        "--disable-background-networking",
-        "--disable-background-timer-throttling",
-        "--disable-backgrounding-occluded-windows",
-        "--disable-renderer-backgrounding",
-        "--disable-extensions",
-        "--disable-gpu",
-        "--disable-ipc-flooding-protection",
-        "--disable-hang-monitor",
-        "--disable-client-side-phishing-detection",
-        "--disable-component-update",
-        "--disable-default-apps",
-        "--disable-domain-reliability",
-        "--disable-sync",
-      ],
-    });
-    context = await browser.newContext({
-      ignoreHTTPSErrors: true,
-    });
+    console.log(`🔍 Verifying published app at: ${publishedUrl}`);
+
+    // Use shared browser context for better performance
+    const { context } = await getSharedBrowserContext();
     page = await context.newPage();
 
-    // Block Google analytics and tracking requests
+    // Block Google analytics and tracking requests to improve speed and reliability
     await page.route("**/*google-analytics.com*", (route) => route.abort());
     await page.route("**/*googletagmanager.com*", (route) => route.abort());
     await page.route("**/*android.clients.google.com*", (route) =>
@@ -112,7 +76,6 @@ async function confirmPCCPublishSuccess({ publishedUrl, expectedTitle }) {
             }
           }
         } else if (response && response.status() === 404) {
-          await browser.close();
           return {
             success: false,
             error: `HTTP 404: Page not found at ${publishedUrl}`,
@@ -136,8 +99,6 @@ async function confirmPCCPublishSuccess({ publishedUrl, expectedTitle }) {
   } finally {
     try {
       if (page) await page.close();
-      if (context) await context.close();
-      if (browser) await browser.close();
     } catch (cleanupErr) {
       console.log("[Playwright] Cleanup error:", cleanupErr.message);
     }

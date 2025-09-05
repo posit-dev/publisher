@@ -4,10 +4,15 @@
 // Because of this, they are not suitable for deployment (due to their hard-coded values)
 
 describe("Detect errors in config", () => {
-  beforeEach(() => {
+  // Global setup - run once for entire test suite
+  before(() => {
     cy.resetConnect();
     cy.setAdminCredentials();
-    cy.visit("/").debug();
+  });
+
+  beforeEach(() => {
+    // Light navigation only
+    cy.visit("/");
     cy.getPublisherSidebarIcon().click();
     cy.waitForPublisherIframe();
     cy.debugIframes();

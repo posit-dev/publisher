@@ -326,23 +326,18 @@ Cypress.Commands.add("waitForPublisherIframe", (timeout = 60000) => {
 // If DEBUG_CYPRESS is "true", also logs iframe attributes for debugging.
 Cypress.Commands.add("debugIframes", () => {
   if (Cypress.env("DEBUG_CYPRESS") !== "true") return;
-  cy.get("iframe", { timeout: 30000 }).each(($el, idx) => {
-    cy.wrap($el)
-      .invoke("attr", "class")
-      .then((cls) => {
-        cy.wrap($el)
-          .invoke("attr", "id")
-          .then((id) => {
-            cy.wrap($el)
-              .invoke("attr", "src")
-              .then((src) => {
-                cy.task(
-                  "print",
-                  `iframe[${idx}] class=${cls} id=${id} src=${src}`,
-                );
-              });
-          });
-      });
+  // Simplified logging - less verbose
+  cy.get("iframe", { timeout: 30000 }).then(($iframes) => {
+    cy.task("print", `Found ${$iframes.length} iframes total`);
+    $iframes.each((idx, el) => {
+      const src = el.src || "";
+      if (src.includes("posit.publisher") || src.includes("webview")) {
+        cy.task(
+          "print",
+          `iframe[${idx}] src=${src.substring(0, 100)}${src.length > 100 ? "..." : ""}`,
+        );
+      }
+    });
   });
 });
 
@@ -399,21 +394,9 @@ Cypress.Commands.add("findUnique", (selector, options = {}) => {
     const elements = $body.find(selector);
     const count = elements.length;
 
-    cy.log(`Found ${count} elements matching selector: "${selector}"`);
-
     if (count > 1) {
-      // Log details about each matching element
-      elements.each((index, el) => {
-        const $el = Cypress.$(el);
-        cy.log(`Match #${index + 1}:`);
-        cy.log(
-          `- Text: ${$el.text().substring(0, 50)}${$el.text().length > 50 ? "..." : ""}`,
-        );
-        cy.log(
-          `- HTML: ${$el.prop("outerHTML").substring(0, 100)}${$el.prop("outerHTML").length > 100 ? "..." : ""}`,
-        );
-      });
-
+      // Simplified logging for multiple matches
+      cy.log(`Found ${count} elements matching selector: "${selector}"`);
       throw new Error(
         `Expected to find exactly 1 element with selector "${selector}", but found ${count} elements`,
       );
@@ -435,23 +418,11 @@ Cypress.Commands.add(
       const elements = $body.find(selector);
       const count = elements.length;
 
-      cy.log(
-        `Found ${count} elements in webview matching selector: "${selector}"`,
-      );
-
       if (count > 1) {
-        // Log details about each matching element
-        elements.each((index, el) => {
-          const $el = Cypress.$(el);
-          cy.log(`Match #${index + 1}:`);
-          cy.log(
-            `- Text: ${$el.text().substring(0, 50)}${$el.text().length > 50 ? "..." : ""}`,
-          );
-          cy.log(
-            `- HTML: ${$el.prop("outerHTML").substring(0, 100)}${$el.prop("outerHTML").length > 100 ? "..." : ""}`,
-          );
-        });
-
+        // Simplified logging for multiple matches
+        cy.log(
+          `Found ${count} elements in webview matching selector: "${selector}"`,
+        );
         throw new Error(
           `Expected to find exactly 1 element in webview with selector "${selector}", but found ${count} elements`,
         );
@@ -615,6 +586,30 @@ cloud_environment = '${cloud_environment}'
 Cypress.Commands.add("writeTomlFile", (filePath, tomlContent) => {
   // filePath: relative to project root (e.g. content-workspace/...)
   // tomlContent: string to append (should include section header if needed)
+  // Enhanced: Can also accept array of operations for batching
+
+  if (Array.isArray(filePath)) {
+    // Batch mode: filePath is actually an array of {path, content} objects
+    const operations = filePath;
+    const commands = operations
+      .map((op) => {
+        const dockerPath = op.path.replace(
+          "content-workspace/",
+          "/home/coder/workspace/",
+        );
+        const escapedContent = op.content
+          .replace(/\\/g, "\\\\")
+          .replace(/'/g, "'\"'\"'");
+        return `cat <<EOF >> '${dockerPath}'\n${escapedContent}\nEOF`;
+      })
+      .join(" && ");
+
+    return cy.exec(
+      `docker exec publisher-e2e.code-server bash -c "${commands}"`,
+    );
+  }
+
+  // Original single file mode
   const dockerPath = filePath.replace(
     "content-workspace/",
     "/home/coder/workspace/",
