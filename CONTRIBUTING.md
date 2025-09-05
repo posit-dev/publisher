@@ -15,7 +15,9 @@
       - [Requirements](#requirements)
         - [Docker Desktop](#docker-desktop)
         - [Connect Server License](#connect-server-license)
+      - [E2E Test Setup](#e2e-test-setup)
       - [Running E2E Tests](#running-e2e-tests)
+      - [Repeat Tests Headless Script](#repeat-tests-headless-script)
   - [Development](#development)
     - [Build Tools](#build-tools)
     - [Environment Variables](#environment-variables)
@@ -156,6 +158,8 @@ deactivate
 
 #### Running E2E Tests
 
+Running end to end tests locally requires credentials for Posit Connect Cloud and licenses for a Connect server. You can either rely on github CI to run these, or contact a member of the team to help get these set up.
+
 ** NOTE: ** The instructions below assume that your terminal has the `test/e2e` directory as the current working directory. If you are not in that directory, you will need to adjust the commands accordingly.
 
 Activate your virtual environment if it is not already active.
@@ -165,22 +169,6 @@ Run the following commands from the `test/e2e` subdirectory:
 ```bash
 source .venv/bin/activate
 ```
-
-To access the test user credentials for PCC, you must authenticate with the 1Password CLI before running E2E tests. Request access to the 1Password Publisher vault if needed. A direct link to the vault is available in the #Publisher Slack channel bookmarks.
-
-If you have the 1Password CLI (`op`) installed globally (in your PATH), run:
-
-```bash
-eval $(op signin)
-```
-
-If you do **not** have `op` in your PATH, use the locally installed CLI that the `npm install` postinstall will add in `../bin/op`:
-
-```bash
-eval $(../bin/op signin)
-```
-
-This command will prompt you to authenticate and set the required session environment variable for your shell. You need to do this once per terminal session before running the tests.
 
 Build the publisher and start the Cypress interactive test runner:
 
@@ -282,19 +270,7 @@ To update the schema:
 - Verify that the unit tests pass. They load the example files and validate them against the schemas.
 - The `draft` folder contains schemas that are a superset of the main schemas, and have ideas for the other settings we have considered adding. Usually we have added any new fields to those schemas and example files as well.
 
-As Pull Requests are merged into main, we update (or create in the case of a new
-schema) the file on the CDN (in S3). Currently, this is a manual process:
-
-- Log into the AWS console (https://rstudio.awsapps.com/start/#/)
-- Select `Posit Connect Production`, then `Power User`.
-- Select `View all services`, then `S3`.
-- Open the `Posit Publisher` bucket, then the `publisher` folder.
-- Click `Upload`, then `Add Folder`.
-- Select your local `schemas` folder (`internal/schema/schemas`).
-- Click the `Upload` button to complete the upload.
-- Verify availability of the updated schema(s) on the CDN. There may be a delay due to caching.
-  - https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json
-  - https://cdn.posit.co/publisher/schemas/posit-publishing-record-schema-v3.json
+As Pull Requests are merged into main, we update (or create in the case of a new schema) the file on the CDN (in S3). Currently, this is a manual process requiring write access to our S3 bucket.
 
 #### Force Even Better TOML to update
 
