@@ -649,3 +649,41 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoScriptR() {
 		R: &config.R{},
 	}, configs[0])
 }
+
+func (s *QuartoDetectorSuite) TestInferIncludeExtensionsDir() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip("This test does not run on Windows")
+	}
+	configs := s.runInferType("quarto-proj-r-with-extensions")
+	s.Len(configs, 1)
+	validate := true
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       contenttypes.ContentTypeQuarto,
+		Entrypoint: "quarto-proj-r.qmd",
+		Title:      "quarto-proj-r",
+		Validate:   &validate,
+		Files: []string{
+			"/quarto-proj-r.qmd",
+			"/_quarto.yml",
+			"/_extensions",
+		},
+		R: &config.R{},
+		Quarto: &config.Quarto{
+			Version: "1.4.553",
+			Engines: []string{"knitr"},
+		},
+		Alternatives: []config.Config{
+			{
+				Schema:     schema.ConfigSchemaURL,
+				Type:       contenttypes.ContentTypeHTML,
+				Entrypoint: "quarto-proj-r.html",
+				Title:      "quarto-proj-r",
+				Validate:   &validate,
+				Files: []string{
+					"/quarto-proj-r.html",
+				},
+			},
+		},
+	}, configs[0])
+}
