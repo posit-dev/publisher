@@ -32,23 +32,14 @@ func PostIntegrationRequestFuncHandler(base util.AbsolutePath, log logging.Logge
 		}
 		dec := json.NewDecoder(req.Body)
 		dec.DisallowUnknownFields()
-		var body PostIntegrationRequestRequest
-		err = dec.Decode(&body)
+		var request PostIntegrationRequestRequest
+		err = dec.Decode(&request)
 		if err != nil {
 			InternalError(w, req, log, err)
 			return
 		}
 
-		ir := config.IntegrationRequest{
-			Guid:            body.Guid,
-			Name:            body.Name,
-			Description:     body.Description,
-			AuthType:        body.AuthType,
-			IntegrationType: body.IntegrationType,
-			Config:          body.Config,
-		}
-
-		err = cfg.AddIntegrationRequest(ir)
+		err = cfg.AddIntegrationRequest(request)
 		if err != nil {
 			InternalError(w, req, log, err)
 			return
