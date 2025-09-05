@@ -133,11 +133,25 @@ EOF`,
   );
 });
 
-Cypress.Commands.add("clearupDeployments", (subdir) => {
-  cy.exec(`rm -rf content-workspace/${subdir}/.posit`, {
-    failOnNonZeroExit: false,
-  });
-});
+Cypress.Commands.add(
+  "clearupDeployments",
+  (subdir, excludeDirs = ["config-errors"]) => {
+    // If subdir is provided, only target that directory
+    if (subdir) {
+      // If subdir is in the exclude list, skip deletion
+      if (excludeDirs.includes(subdir)) return;
+      const target = `content-workspace/${subdir}/.posit`;
+      cy.exec(`rm -rf ${target}`, { failOnNonZeroExit: false });
+    } else {
+      // Build a list of all .posit directories except excluded ones
+      const excludePatterns = excludeDirs
+        .map((dir) => `-not -path "*/${dir}/*"`)
+        .join(" ");
+      const findCmd = `find content-workspace -type d -name ".posit" ${excludePatterns}`;
+      cy.exec(`${findCmd} -exec rm -rf {} +`, { failOnNonZeroExit: false });
+    }
+  },
+);
 
 // returns
 // config: {
@@ -306,26 +320,24 @@ Cypress.Commands.add("waitForPublisherIframe", (timeout = 60000) => {
 // Debug: Waits for all iframes to exist (helps with timing issues in CI).
 // If DEBUG_CYPRESS is "true", also logs iframe attributes for debugging.
 Cypress.Commands.add("debugIframes", () => {
+  if (Cypress.env("DEBUG_CYPRESS") !== "true") return;
   cy.get("iframe", { timeout: 30000 }).each(($el, idx) => {
-    // Always wait for iframes, but only print if debugging is enabled
-    if (Cypress.env("DEBUG_CYPRESS") === "true") {
-      cy.wrap($el)
-        .invoke("attr", "class")
-        .then((cls) => {
-          cy.wrap($el)
-            .invoke("attr", "id")
-            .then((id) => {
-              cy.wrap($el)
-                .invoke("attr", "src")
-                .then((src) => {
-                  cy.task(
-                    "print",
-                    `iframe[${idx}] class=${cls} id=${id} src=${src}`,
-                  );
-                });
-            });
-        });
-    }
+    cy.wrap($el)
+      .invoke("attr", "class")
+      .then((cls) => {
+        cy.wrap($el)
+          .invoke("attr", "id")
+          .then((id) => {
+            cy.wrap($el)
+              .invoke("attr", "src")
+              .then((src) => {
+                cy.task(
+                  "print",
+                  `iframe[${idx}] class=${cls} id=${id} src=${src}`,
+                );
+              });
+          });
+      });
   });
 });
 

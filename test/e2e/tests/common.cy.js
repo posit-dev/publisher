@@ -4,11 +4,11 @@ describe("Common", () => {
   beforeEach(() => {
     cy.visit("/");
     cy.getPublisherSidebarIcon().click();
+    cy.waitForPublisherIframe();
+    cy.debugIframes();
   });
 
   it("Publisher extension can be selected and initial state", () => {
-    cy.waitForPublisherIframe(); // Wait after triggering extension
-    cy.debugIframes();
     cy.retryWithBackoff(
       () => cy.findByText("Posit Publisher: Home"),
       5,

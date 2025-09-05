@@ -6,6 +6,8 @@ describe("Credentials Section", () => {
     cy.resetCredentials();
     cy.visit("/");
     cy.getPublisherSidebarIcon().click();
+    cy.waitForPublisherIframe();
+    cy.debugIframes();
   });
 
   afterEach(() => {
@@ -13,9 +15,6 @@ describe("Credentials Section", () => {
   });
 
   it("New PCS Credential", () => {
-    cy.waitForPublisherIframe(); // Wait after triggering extension
-    cy.debugIframes();
-
     cy.toggleCredentialsSection();
     cy.debugIframes();
     cy.publisherWebview()
@@ -202,9 +201,6 @@ describe("Credentials Section", () => {
 
   it("Existing Credentials Load", () => {
     cy.setDummyCredentials();
-    cy.waitForPublisherIframe(); // Wait after triggering extension
-    cy.debugIframes();
-
     cy.toggleCredentialsSection();
     cy.refreshCredentials();
 
@@ -225,9 +221,6 @@ describe("Credentials Section", () => {
 
   it("Delete Credential", () => {
     cy.setDummyCredentials();
-    cy.waitForPublisherIframe(); // Wait after triggering extension
-    cy.debugIframes();
-
     cy.toggleCredentialsSection();
     cy.refreshCredentials();
 

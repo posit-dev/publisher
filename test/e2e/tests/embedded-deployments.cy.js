@@ -3,19 +3,19 @@
 describe("Create PCS Deployments", () => {
   beforeEach(() => {
     cy.resetConnect();
+    cy.clearupDeployments();
     cy.setAdminCredentials();
     cy.visit("/");
     cy.getPublisherSidebarIcon().click();
+    cy.waitForPublisherIframe();
+    cy.debugIframes();
   });
 
   afterEach(() => {
-    cy.clearupDeployments(".");
-    cy.clearupDeployments("fastapi-simple");
+    cy.clearupDeployments();
   });
 
   it("PCS fastapi at top of workspace", () => {
-    cy.waitForPublisherIframe();
-    cy.debugIframes();
     cy.createPCSDeployment(
       ".",
       "simple.py",
@@ -54,8 +54,6 @@ describe("Create PCS Deployments", () => {
   });
 
   it("PCS fastAPI in subdirectory of workspace", () => {
-    cy.waitForPublisherIframe(); // Wait after triggering extension
-    cy.debugIframes();
     cy.createPCSDeployment(
       "fastapi-simple",
       "fastapi-main.py",

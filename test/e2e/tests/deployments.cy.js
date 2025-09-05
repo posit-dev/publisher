@@ -4,18 +4,19 @@ describe("Deployments Section", () => {
   describe("Connect Server Deployments", () => {
     beforeEach(() => {
       cy.resetConnect();
+      cy.clearupDeployments();
       cy.setAdminCredentials();
       cy.visit("/");
       cy.getPublisherSidebarIcon().click();
+      cy.waitForPublisherIframe();
+      cy.debugIframes();
     });
 
     afterEach(() => {
-      cy.clearupDeployments("static");
+      cy.clearupDeployments();
     });
 
     it("PCS Static Content Deployment", () => {
-      cy.waitForPublisherIframe(); // Wait after triggering extension
-      cy.debugIframes();
       cy.createPCSDeployment("static", "index.html", "static", (tomlFiles) => {
         const config = tomlFiles.config.contents;
         expect(config.title).to.equal("static");
@@ -46,8 +47,6 @@ describe("Deployments Section", () => {
     // extra bit of work when we want to change that version around to different
     // ones.
     it.skip("PCS ShinyApp Content Deployment", () => {
-      cy.waitForPublisherIframe(); // Wait after triggering extension
-      cy.debugIframes();
       cy.createPCSDeployment("shinyapp", "app.R", "ShinyApp", (tomlFiles) => {
         const config = tomlFiles.config.contents;
         expect(config.title).to.equal("ShinyApp");
@@ -76,8 +75,7 @@ describe("Deployments Section", () => {
   describe("Connect Cloud Deployments", () => {
     beforeEach(() => {
       cy.resetCredentials();
-      // Clean up any existing deployment files before starting
-      cy.clearupDeployments("examples-shiny-python");
+      cy.clearupDeployments();
       cy.visit("/");
       const user = Cypress.env("pccConfig").pcc_user_ccqa3;
       cy.log("PCC user for setPCCCredential: " + JSON.stringify(user));
@@ -90,13 +88,11 @@ describe("Deployments Section", () => {
     });
 
     afterEach(() => {
-      cy.clearupDeployments("examples-shiny-python");
+      cy.clearupDeployments();
       cy.resetCredentials();
     });
 
     it("PCC Shiny Python Deployment", () => {
-      cy.waitForPublisherIframe(); // Wait after triggering extension
-      cy.debugIframes();
       // Select files to include in deployment
       const filesToSelect = ["data", "README.md", "styles.css"];
       cy.createPCCDeployment(
