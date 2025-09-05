@@ -86,8 +86,9 @@ type Jupyter struct {
 
 type PythonPackageManager struct {
 	Name        string `json:"name"`
-	Version     string `json:"version,omitempty"` // Package manager version
-	PackageFile string `json:"package_file"`      // Filename listing dependencies; usually "requirements.txt"
+	Version     string `json:"version,omitempty"`  // Package manager version
+	PackageFile string `json:"package_file"`       // Filename listing dependencies; usually "requirements.txt"
+	AllowUv     *bool  `json:"allow_uv,omitempty"` // Whether the package manager can be "uv"
 }
 
 type PackageMap map[string]Package
@@ -173,9 +174,31 @@ func NewManifestFromConfig(cfg *config.Config) *Manifest {
 	if cfg.Python != nil {
 		packageManager := (*PythonPackageManager)(nil)
 		if cfg.Python.PackageManager != "" {
+			// By default, let's the server decide which package manager to use.
+			// So we ask for pip, but allow the server to use uv if available.
+			//
+			// We use nil so the option is omitted from the JSON and it's
+			// compatible with older servers that did not support uv.
+			var allowUv *bool = nil
+			packageManagerName := "pip" // auto = pip
+			switch cfg.Python.PackageManager {
+			case "pip":
+				// The user explicitly forced pip, let's disable uv.
+				allowUv = config.BoolPtr(false)
+				packageManagerName = "pip"
+			case "uv":
+				// The user explicitly forced uv, let's enable it.
+				allowUv = config.BoolPtr(true)
+				packageManagerName = "uv"
+			case "none":
+				// The user requested no package management.
+				packageManagerName = "none"
+			}
+
 			packageManager = &PythonPackageManager{
-				Name:        cfg.Python.PackageManager,
+				Name:        packageManagerName,
 				PackageFile: cfg.Python.PackageFile,
+				AllowUv:     allowUv,
 			}
 		}
 		m.Python = &Python{
