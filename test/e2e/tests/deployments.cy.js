@@ -1,11 +1,16 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
 describe("Deployments Section", () => {
+  // Global setup for all deployment tests
+  before(() => {
+    cy.resetConnect();
+    cy.clearupDeployments();
+    cy.setAdminCredentials();
+  });
+
   describe("Connect Server Deployments", () => {
     beforeEach(() => {
-      cy.resetConnect();
-      cy.clearupDeployments();
-      cy.setAdminCredentials();
+      // Only light reset operations
       cy.visit("/");
       cy.getPublisherSidebarIcon().click();
       cy.waitForPublisherIframe();

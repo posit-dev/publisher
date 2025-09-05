@@ -1,17 +1,19 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
 describe("Credentials Section", () => {
-  beforeEach(() => {
+  // Global setup - run once for entire test suite
+  before(() => {
     cy.resetConnect();
+    cy.setAdminCredentials(); // Set up admin credential once
+  });
+
+  beforeEach(() => {
+    // Reset credentials for clean slate, but skip heavy Connect reset
     cy.resetCredentials();
     cy.visit("/");
     cy.getPublisherSidebarIcon().click();
     cy.waitForPublisherIframe();
     cy.debugIframes();
-  });
-
-  afterEach(() => {
-    cy.resetCredentials();
   });
 
   it("New PCS Credential", () => {
