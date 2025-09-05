@@ -1,0 +1,20 @@
+{
+  "quarto": {
+    "version": "1.4.553"
+  },
+  "dir": "$DIR/quarto-proj-r",
+  "engines": ["knitr"],
+  "config": {
+    "project": {
+      "title": "quarto-proj-r"
+    },
+    "editor": "visual",
+    "language": {}
+  },
+  "files": {
+    "input": ["$DIR/quarto-proj-r/quarto-proj-r.qmd"],
+    "resources": [],
+    "config": ["$DIR/quarto-proj-r/_quarto.yml"],
+    "configResources": []
+  }
+}

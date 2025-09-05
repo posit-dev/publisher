@@ -296,6 +296,10 @@ func (s *scannerAdapter) ScanDependencies(paths []string, rExecutable string) (u
 	return util.AbsolutePath{}, args.Error(1)
 }
 
+func (scannerAdapter *scannerAdapter) SetupRenvInDir(targetPath string, lockfile string, rExecutable string) (util.AbsolutePath, error) {
+	return util.AbsolutePath{}, nil
+}
+
 func (s *ManifestPackagesSuite) TestLockFile_CreateFromScanner() {
 	base := s.testdata.Join("cran_project")
 	// Generate a lockfile via the scanner and ensure we use it.
