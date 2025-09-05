@@ -198,3 +198,50 @@ func (s *DeleteIntegrationRequestTestSuite) TestDeleteIntegrationRequestMultiple
 	s.Equal("first-ir", updatedConfig.IntegrationRequests[0].Name)
 	s.Equal("third-ir", updatedConfig.IntegrationRequests[1].Name)
 }
+
+func (s *DeleteIntegrationRequestTestSuite) TestDeleteIntegrationRequestConfigNotFound() {
+	log := logging.New()
+	configName := "missingConfig" // no file written
+
+	body := DeleteIntegrationRequestRequest{Name: "whatever"}
+	data, err := json.Marshal(body)
+	s.NoError(err)
+
+	req, err := http.NewRequest("DELETE", "/api/configurations/"+configName+"/integration-requests", bytes.NewBuffer(data))
+	s.NoError(err)
+	rec := httptest.NewRecorder()
+	req = mux.SetURLVars(req, map[string]string{"name": configName})
+
+	h := DeleteIntegrationRequestFuncHandler(s.cwd, log)
+	h(rec, req)
+
+	s.Equal(http.StatusNotFound, rec.Result().StatusCode)
+}
+
+func (s *DeleteIntegrationRequestTestSuite) TestDeleteIntegrationRequestUnknownField() {
+	log := logging.New()
+	configName := "cfgUnknownField"
+	cfg := config.New()
+	cfg.ProductType = config.ProductTypeConnect
+	cfg.IntegrationRequests = []config.IntegrationRequest{{Name: "keep"}}
+	configPath := config.GetConfigPath(s.cwd, configName)
+	err := cfg.WriteFile(configPath)
+	s.NoError(err)
+
+	payload := []byte(`{"name":"keep","unexpected":"x"}`)
+	req, err := http.NewRequest("DELETE", "/api/configurations/"+configName+"/integration-requests", bytes.NewBuffer(payload))
+	s.NoError(err)
+	rec := httptest.NewRecorder()
+	req = mux.SetURLVars(req, map[string]string{"name": configName})
+
+	h := DeleteIntegrationRequestFuncHandler(s.cwd, log)
+	h(rec, req)
+
+	s.Equal(http.StatusInternalServerError, rec.Result().StatusCode)
+
+	// ensure original still present
+	updated, err := config.FromFile(configPath)
+	s.NoError(err)
+	s.Len(updated.IntegrationRequests, 1)
+	s.Equal("keep", updated.IntegrationRequests[0].Name)
+}
