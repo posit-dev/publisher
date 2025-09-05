@@ -1,11 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { shallowMount, mount } from "@vue/test-utils"; // added mount
 import { WebviewToHostMessageType } from "../../../../../src/types/messages/webviewToHostMessages";
-import {
-  setHomeState,
-  resetHomeState,
-  getSendMsgMock,
-} from "../../test/mocks";
+import { setHomeState, resetHomeState, getSendMsgMock } from "../../test/mocks";
 import IntegrationRequests from "./IntegrationRequests.vue";
 
 function mountComponent(opts = { shallow: true }) {
@@ -70,7 +66,11 @@ describe("IntegrationRequests", () => {
   it("renders integration requests and handles delete action via props", () => {
     const requests = [
       { name: "req1", displayName: "Request One", displayDescription: "First" },
-      { name: "req2", displayName: "Request Two", displayDescription: "Second" },
+      {
+        name: "req2",
+        displayName: "Request Two",
+        displayDescription: "Second",
+      },
     ];
     setHomeState({
       serverSettings: {

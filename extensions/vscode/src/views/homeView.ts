@@ -681,9 +681,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         );
         const integrationRequests = response.data ?? [];
 
-        response = await api.connectServer.getIntegrations(
-          credentialName!,
-        );
+        response = await api.connectServer.getIntegrations(credentialName!);
         const integrations = response.data ?? [];
         const requests = integrationRequests.map((ir) => {
           const matchingIntegration = integrations.find(
@@ -2183,7 +2181,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         },
       }),
     );
-    
+
     commands.registerCommand(
       Commands.HomeView.AddIntegrationRequest,
       this.addIntegrationRequest,
@@ -2191,9 +2189,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     );
 
     this.state.getSelectedContentRecord().then(() => {
-      this.context.subscriptions.push(
-        
-      );
+      this.context.subscriptions.push();
     });
 
     this.context.subscriptions.push(

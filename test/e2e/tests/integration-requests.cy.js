@@ -127,32 +127,22 @@ describe("IntegrationRequests Section", () => {
       .should("be.visible")
       .click();
 
-    // eslint-disable-next-line cypress/no-unnecessary-waiting
-    cy.wait(500);
-
     cy.get(".quick-input-widget")
       .find('[aria-label="index.html"')
       .should("be.visible")
       .click();
 
-    // eslint-disable-next-line cypress/no-unnecessary-waiting
-    cy.wait(500);
-
     cy.get(".quick-input-widget")
       .find(".quick-input-filter input")
       .type(`static{enter}`);
-
-    // eslint-disable-next-line cypress/no-unnecessary-waiting
-    cy.wait(500);
 
     cy.get(".quick-input-widget")
       .contains("connect-cloud-deployment-test")
       .should("be.visible")
       .click();
 
-    // eslint-disable-next-line cypress/no-unnecessary-waiting
-    cy.wait(500);
-
-    cy.publisherWebview().findByText("Integration Requests").should("not.exist");
+    cy.publisherWebview()
+      .findByText("Integration Requests")
+      .should("not.exist");
   });
 });

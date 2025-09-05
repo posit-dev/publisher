@@ -1,11 +1,11 @@
 import { reactive } from "vue";
+import { vi } from "vitest";
 
 // Internal holders (avoid require on aliased paths)
 let __setHomeState;
 let __resetHomeState;
 let __sendMsgMock;
 
-// Hoisted mocks
 vi.mock("src/stores/home", () => {
   const state = reactive({
     serverSettings: {},

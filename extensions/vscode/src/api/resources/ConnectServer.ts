@@ -23,6 +23,8 @@ export class ConnectServer {
   // 200 - accepted
   // 500 - internal server error
   getServerSettings(accountName: string) {
-    return this.client.get<ServerSettings>(`accounts/${accountName}/server-settings`);
+    return this.client.get<ServerSettings>(
+      `accounts/${accountName}/server-settings`,
+    );
   }
 }

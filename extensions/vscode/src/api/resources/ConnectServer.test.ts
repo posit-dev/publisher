@@ -1,3 +1,5 @@
+// Copyright (C) 2025 by Posit Software, PBC.
+
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import { AxiosInstance } from "axios";
 import { ConnectServer } from "./ConnectServer";

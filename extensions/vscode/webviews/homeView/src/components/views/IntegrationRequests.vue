@@ -54,8 +54,10 @@ const { sendMsg } = useHostConduitService();
 const home = useHomeStore();
 
 const isOAuthIntegrationsSupported = computed(() => {
-  const validLicense = home.serverSettings?.license?.["oauth-integrations"] ?? false;
-  const oauthIntegrationsEnabled = home.serverSettings?.oauth_integrations_enabled ?? false;
+  const validLicense =
+    home.serverSettings?.license?.["oauth-integrations"] ?? false;
+  const oauthIntegrationsEnabled =
+    home.serverSettings?.oauth_integrations_enabled ?? false;
   return validLicense && oauthIntegrationsEnabled;
 });
 
