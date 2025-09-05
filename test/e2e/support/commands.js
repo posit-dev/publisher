@@ -342,11 +342,8 @@ Cypress.Commands.add("debugIframes", () => {
 });
 
 Cypress.Commands.add("findInPublisherWebview", (selector) => {
-  // Always wait for the publisher iframe and body before running the selector
-  return cy.waitForPublisherIframe().then(() => {
-    return cy.publisherWebview().then((webview) => {
-      return cy.wrap(webview).find(selector);
-    });
+  return cy.publisherWebview().then((webview) => {
+    return cy.wrap(webview).find(selector);
   });
 });
 

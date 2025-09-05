@@ -23,21 +23,37 @@ async function confirmPCCPublishSuccess({ publishedUrl, expectedTitle }) {
       args: [
         "--disable-blink-features=AutomationControlled",
         "--window-size=1280,800",
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
         "--disable-web-security",
-        "--disable-features=VizDisplayCompositor",
+        "--disable-features=VizDisplayCompositor,TranslateUI",
         "--disable-background-networking",
         "--disable-background-timer-throttling",
         "--disable-backgrounding-occluded-windows",
         "--disable-renderer-backgrounding",
         "--disable-extensions",
-        "--no-sandbox",
         "--disable-gpu",
+        "--disable-ipc-flooding-protection",
+        "--disable-hang-monitor",
+        "--disable-client-side-phishing-detection",
+        "--disable-component-update",
+        "--disable-default-apps",
+        "--disable-domain-reliability",
+        "--disable-sync",
       ],
     });
     context = await browser.newContext({
       ignoreHTTPSErrors: true,
     });
     page = await context.newPage();
+
+    // Block Google analytics and tracking requests
+    await page.route("**/*google-analytics.com*", (route) => route.abort());
+    await page.route("**/*googletagmanager.com*", (route) => route.abort());
+    await page.route("**/*android.clients.google.com*", (route) =>
+      route.abort(),
+    );
 
     const maxAttempts = 5; // 5 attempts * 2s = 10 seconds max
     const delay = 2000;

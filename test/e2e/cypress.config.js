@@ -38,7 +38,7 @@ module.exports = defineConfig({
     supportFile: "support/index.js",
     specPattern: "tests/**/*.cy.{js,jsx,ts,tsx}",
     retries: {
-      runMode: 3, // Retry failed tests in run mode (CI)
+      runMode: 2, // Retry failed tests in run mode (CI)
       openMode: 0,
     },
     defaultCommandTimeout: isCI
@@ -51,6 +51,13 @@ module.exports = defineConfig({
       preserve: /_xsrf|session|connect\.sid|auth|oauth/,
     },
     experimentalOriginDependencies: true,
+    blockHosts: [
+      "*.google-analytics.com",
+      "*.googletagmanager.com",
+      "*.open-vsx.org",
+      "*.android.clients.google.com",
+    ],
+    modifyObstructiveThirdPartyCode: true,
     // eslint-disable-next-line no-unused-vars
     setupNodeEvents(on, config) {
       // Install cypress-terminal-report for enhanced logging in headless mode
