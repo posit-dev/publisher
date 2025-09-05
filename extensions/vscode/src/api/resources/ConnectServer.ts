@@ -1,7 +1,7 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import { AxiosInstance } from "axios";
-import { Integration, ServerSettings } from "../types/configurations";
+import { Integration, ServerSettings } from "../types/connect";
 
 export class ConnectServer {
   private client: AxiosInstance;

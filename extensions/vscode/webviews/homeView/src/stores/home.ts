@@ -11,11 +11,11 @@ import {
   ConfigurationError,
   isPreContentRecord,
   ServerType,
+  ServerSettings,
 } from "../../../../src/api";
 import {
   IntegrationRequest,
   isConfigurationError,
-  ServerSettings,
 } from "../../../../src/api/types/configurations";
 import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
 import { RPackage } from "../../../../src/api/types/packages";
