@@ -135,17 +135,11 @@ async function confirmPCCPublishSuccess({ publishedUrl, expectedTitle }) {
     return { success: false, error: err.message || String(err) };
   } finally {
     try {
-      if (page) {
-        await page.close();
-      }
-      if (context) {
-        await context.close();
-      }
-      if (browser) {
-        await browser.close();
-      }
+      if (page) await page.close();
+      if (context) await context.close();
+      if (browser) await browser.close();
     } catch (cleanupErr) {
-      console.error("Cleanup error:", cleanupErr);
+      console.log("[Playwright] Cleanup error:", cleanupErr.message);
     }
   }
 }

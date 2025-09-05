@@ -180,17 +180,11 @@ async function authorizeDeviceWithBrowser(verificationUrl, email, password) {
     console.log(`🎉 OAuth authorization completed successfully!`);
   } finally {
     try {
-      if (page) {
-        await page.close();
-      }
-      if (context) {
-        await context.close();
-      }
-      if (browser) {
-        await browser.close();
-      }
+      if (page) await page.close();
+      if (context) await context.close();
+      if (browser) await browser.close();
     } catch (cleanupErr) {
-      console.error("Cleanup error:", cleanupErr);
+      console.log("[Playwright] Cleanup error:", cleanupErr.message);
     }
   }
 }
@@ -291,7 +285,16 @@ async function runDeviceWorkflow({ email, password, env = "staging" }) {
     console.error("runDeviceWorkflow error:", err);
     return { success: false, error: err.message || String(err) };
   } finally {
-    if (browser) await browser.close();
+    if (browser) {
+      try {
+        await browser.close();
+      } catch (cleanupErr) {
+        console.log(
+          "[Playwright] runDeviceWorkflow cleanup error:",
+          cleanupErr.message,
+        );
+      }
+    }
   }
 }
 

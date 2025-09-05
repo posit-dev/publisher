@@ -261,6 +261,11 @@ Cypress.Commands.add("refreshCredentials", () => {
   cy.publisherWebview()
     .find('a[aria-label="Refresh Credentials"]')
     .click({ force: true });
+
+  // Clear the cached webview since content will change
+  cy.window().then((win) => {
+    delete win.cachedPublisherWebview;
+  });
 });
 
 Cypress.Commands.add("toggleHelpSection", () => {

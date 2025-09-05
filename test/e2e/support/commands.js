@@ -131,6 +131,11 @@ api_key = 'qWeR742Pax9hVOb9fk2aSbRONkyxQ9yG'
 
 EOF`,
   );
+
+  // Clear cached webview since credentials will change
+  cy.window().then((win) => {
+    delete win.cachedPublisherWebview;
+  });
 });
 
 Cypress.Commands.add(
@@ -342,8 +347,28 @@ Cypress.Commands.add("debugIframes", () => {
 });
 
 Cypress.Commands.add("findInPublisherWebview", (selector) => {
-  return cy.publisherWebview().then((webview) => {
-    return cy.wrap(webview).find(selector);
+  // Only use caching for tests that don't refresh content
+  const testTitle = Cypress.currentTest.title;
+  const skipCaching =
+    testTitle.includes("Credential") ||
+    testTitle.includes("Delete") ||
+    testTitle.includes("Load");
+
+  if (skipCaching) {
+    // No caching for credential tests that change webview content
+    return cy.publisherWebview().then((webview) => {
+      return cy.wrap(webview).find(selector);
+    });
+  }
+
+  // Use caching for deployment and static tests
+  return cy.window().then((win) => {
+    if (!win.cachedPublisherWebview) {
+      win.cachedPublisherWebview = cy.publisherWebview();
+    }
+    return win.cachedPublisherWebview.then((webview) => {
+      return cy.wrap(webview).find(selector);
+    });
   });
 });
 
