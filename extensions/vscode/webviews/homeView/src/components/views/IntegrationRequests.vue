@@ -4,7 +4,14 @@
     data-automation="publisher-integrationRequests-section"
     :actions="sectionActions"
   >
-    <WelcomeView v-if="!home.integrationRequests.length">
+    <WelcomeView v-if="!isOAuthIntegrationsSupported">
+      <p>
+        OAuth Integrations are not supported with your current server
+        configuration or license. Please contact your server administrator for
+        more information.
+      </p>
+    </WelcomeView>
+    <WelcomeView v-else-if="!home.integrationRequests.length">
       <p>No integration requests have been added yet.</p>
     </WelcomeView>
     <TreeItem
@@ -45,9 +52,18 @@ import { WebviewToHostMessageType } from "../../../../../src/types/messages/webv
 
 const { sendMsg } = useHostConduitService();
 const home = useHomeStore();
-const accountName = home.serverCredential!.name;
+
+const isOAuthIntegrationsSupported = computed(() => {
+  const validLicense = home.serverSettings?.license?.["oauth-integrations"] ?? false;
+  const oauthIntegrationsEnabled = home.serverSettings?.oauth_integrations_enabled ?? false;
+  return validLicense && oauthIntegrationsEnabled;
+});
 
 const sectionActions = computed(() => {
+  if (!isOAuthIntegrationsSupported.value) {
+    return [];
+  }
+
   return [
     {
       label: "Add Integration Request",
@@ -58,13 +74,6 @@ const sectionActions = computed(() => {
         });
       },
     },
-    // {
-    //   label: "Refresh Integration Requests",
-    //   codicon: "codicon-refresh",
-    //   fn: () => {
-    //     sendMsg({ kind: WebviewToHostMessageType.REQUEST_CREDENTIALS });
-    //   },
-    // },
   ];
 });
 </script>
