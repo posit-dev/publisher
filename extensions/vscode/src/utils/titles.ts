@@ -20,7 +20,9 @@ export const calculateTitle = (
       ? undefined
       : config?.configuration.title;
   if (title) {
-    title += ` (${contentRecord.configurationName.split("-").at(-1)})`;
+    let configCode = (config?.configurationName || "").split("-").at(-1);
+    configCode = configCode ? ` (${configCode})` : "";
+    title += configCode;
     return {
       title,
       problem: false,
