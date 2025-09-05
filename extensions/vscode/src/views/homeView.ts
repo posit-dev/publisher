@@ -48,6 +48,7 @@ import { getSummaryStringFromError } from "src/utils/errors";
 import { getNonce } from "src/utils/getNonce";
 import { getUri } from "src/utils/getUri";
 import { deployProject } from "src/views/deployProgress";
+import { renderQuartoContent } from "src/views/renders";
 import { WebviewConduit } from "src/utils/webviewConduit";
 import { fileExists, relativeDir, isRelativePathRoot } from "src/utils/files";
 import { Utils as uriUtils } from "vscode-uri";
@@ -211,6 +212,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         return await this.deleteIntegrationRequest(msg.content);
       case WebviewToHostMessageType.CLEAR_ALL_INTEGRATION_REQUESTS:
         return await this.clearAllIntegrationRequests();
+      case WebviewToHostMessageType.RENDER_CONTENT:
+        return await this.renderContent();
       default:
         window.showErrorMessage(
           `Internal Error: onConduitMessage unhandled msg: ${JSON.stringify(msg)}`,
@@ -228,6 +231,32 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
   private async copySystemInfo() {
     return await commands.executeCommand(Commands.HomeView.CopySystemInfo);
+  }
+
+  private async renderContent() {
+    let projectDir: string;
+    let sourceEntrypoint: string;
+    let renderedEntrypoint: string;
+    const activeConfig = await this.state.getSelectedConfiguration();
+
+    if (activeConfig === undefined) {
+      console.error("homeView::renderContent: No active configuration.");
+      return;
+    }
+
+    if (activeConfig && !isConfigurationError(activeConfig)) {
+      projectDir = activeConfig.projectDir;
+      sourceEntrypoint = activeConfig.configuration.source || "";
+      renderedEntrypoint = activeConfig.configuration.entrypoint || "";
+    } else {
+      window.showErrorMessage(
+        "Failed to render Quarto content. Deployment configuration is in error.",
+      );
+      return;
+    }
+
+    // Currently we only support rendering content with Quarto
+    renderQuartoContent(projectDir, sourceEntrypoint, renderedEntrypoint);
   }
 
   private async updateSelectionCredentialState(state: string) {
