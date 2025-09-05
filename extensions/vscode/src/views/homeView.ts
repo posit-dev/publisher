@@ -2183,19 +2183,16 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         },
       }),
     );
+    
+    commands.registerCommand(
+      Commands.HomeView.AddIntegrationRequest,
+      this.addIntegrationRequest,
+      this,
+    );
 
     this.state.getSelectedContentRecord().then(() => {
       this.context.subscriptions.push(
-        commands.registerCommand(
-          Commands.HomeView.AddIntegrationRequest,
-          () => this.showIntegrationQuickPick,
-          this,
-        ),
-        commands.registerCommand(
-          Commands.HomeView.DeleteIntegrationRequest,
-          () => this.deleteIntegrationRequest,
-          this,
-        ),
+        
       );
     });
 
