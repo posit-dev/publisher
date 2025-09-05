@@ -3,6 +3,7 @@
 import { describe, expect, beforeEach, test, vi } from "vitest";
 import { window, ProgressLocation } from "vscode";
 import { HostToWebviewMessageType } from "src/types/messages/hostToWebviewMessages";
+import { WebviewConduit } from "src/utils/webviewConduit";
 import {
   ErrorNoQuarto,
   ErrorQuartoRender,
@@ -77,6 +78,7 @@ describe("renderQuartoContent", () => {
 
   test("calls to render with progress notification and emits webview render message", async () => {
     await renderQuartoContent(
+      new WebviewConduit(),
       "project-dir",
       "index.qmd",
       "output_dir/index.html",
@@ -101,6 +103,7 @@ describe("renderQuartoContent", () => {
     test("any error emits webview render failure message", async () => {
       quartoHelperRenderSpy.mockRejectedValueOnce("unknown rejection");
       await renderQuartoContent(
+        new WebviewConduit(),
         "project-dir",
         "index.qmd",
         "output_dir/index.html",
@@ -119,6 +122,7 @@ describe("renderQuartoContent", () => {
     test("ErrorNoQuarto", async () => {
       quartoHelperRenderSpy.mockRejectedValueOnce(new ErrorNoQuarto());
       await renderQuartoContent(
+        new WebviewConduit(),
         "project-dir",
         "index.qmd",
         "output_dir/index.html",
@@ -137,6 +141,7 @@ describe("renderQuartoContent", () => {
     test("ErrorQuartoRender", async () => {
       quartoHelperRenderSpy.mockRejectedValueOnce(new ErrorQuartoRender());
       await renderQuartoContent(
+        new WebviewConduit(),
         "project-dir",
         "index.qmd",
         "output_dir/index.html",
@@ -155,6 +160,7 @@ describe("renderQuartoContent", () => {
     test("Unknown Error", async () => {
       quartoHelperRenderSpy.mockRejectedValueOnce(new Error("system is down"));
       await renderQuartoContent(
+        new WebviewConduit(),
         "project-dir",
         "index.qmd",
         "output_dir/index.html",
