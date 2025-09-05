@@ -25,13 +25,17 @@ func GetIntegrationRequestsFuncHandler(base util.AbsolutePath, log logging.Logge
 		}
 		configPath := config.GetConfigPath(projectDir, name)
 		cfg, err := config.FromFile(configPath)
-		if err != nil && errors.Is(err, fs.ErrNotExist) {
-			http.NotFound(w, req)
+		if err != nil {
+			if errors.Is(err, fs.ErrNotExist) {
+				http.NotFound(w, req)
+			} else {
+				InternalError(w, req, log, err)
+			}
 			return
 		}
 
 		w.Header().Set("content-type", "application/json")
-		w.WriteHeader(http.StatusCreated)
+		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(cfg.IntegrationRequests)
 	}
 }

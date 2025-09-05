@@ -125,3 +125,46 @@ func (s *PostIntegrationRequestTestSuite) TestPostIntegrationRequestAlreadyExist
 	s.Len(updatedConfig.IntegrationRequests, 1, "Should still have one integration request")
 	s.Equal("existing-integration", updatedConfig.IntegrationRequests[0].Name)
 }
+
+func (s *PostIntegrationRequestTestSuite) TestPostIntegrationRequestConfigNotFound() {
+	log := logging.New()
+	configName := "missingConfig" // no file created
+
+	body := PostIntegrationRequestRequest{
+		Name: "new-ir",
+	}
+	data, err := json.Marshal(body)
+	s.NoError(err)
+
+	req, err := http.NewRequest("POST", "/api/configurations/"+configName+"/integration-requests", bytes.NewBuffer(data))
+	s.NoError(err)
+	rec := httptest.NewRecorder()
+	req = mux.SetURLVars(req, map[string]string{"name": configName})
+
+	h := PostIntegrationRequestFuncHandler(s.cwd, log)
+	h(rec, req)
+
+	s.Equal(http.StatusNotFound, rec.Result().StatusCode)
+}
+
+func (s *PostIntegrationRequestTestSuite) TestPostIntegrationRequestUnknownField() {
+	log := logging.New()
+	configName := "testConfigUF"
+	cfg := config.New()
+	cfg.ProductType = config.ProductTypeConnect
+	configPath := config.GetConfigPath(s.cwd, configName)
+	err := cfg.WriteFile(configPath)
+	s.NoError(err)
+
+	// include unknown field "unexpected"
+	payload := []byte(`{"name":"ir-uf","unexpected":"value"}`)
+	req, err := http.NewRequest("POST", "/api/configurations/"+configName+"/integration-requests", bytes.NewBuffer(payload))
+	s.NoError(err)
+	rec := httptest.NewRecorder()
+	req = mux.SetURLVars(req, map[string]string{"name": configName})
+
+	h := PostIntegrationRequestFuncHandler(s.cwd, log)
+	h(rec, req)
+
+	s.Equal(http.StatusInternalServerError, rec.Result().StatusCode)
+}
