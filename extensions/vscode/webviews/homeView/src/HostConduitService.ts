@@ -259,7 +259,7 @@ const onRefreshIntegrationRequestsMsg = (
   home.integrationRequests = msg.content.integrationRequests;
 };
 
- const onRefreshServerSettingsMsg = (msg: RefreshServerSettingsMsg) => {
+const onRefreshServerSettingsMsg = (msg: RefreshServerSettingsMsg) => {
   const home = useHomeStore();
   home.serverSettings = msg.content.serverSettings;
 };

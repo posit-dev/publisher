@@ -1,5 +1,7 @@
 package api
 
+// Copyright (C) 2025 by Posit Software, PBC.
+
 import (
 	"encoding/json"
 	"net/http"
