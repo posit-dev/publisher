@@ -85,6 +85,8 @@ export function isHostToWebviewMessage(msg: any): msg is HostToWebviewMessage {
     msg.kind === HostToWebviewMessageType.PUBLISH_START ||
     msg.kind === HostToWebviewMessageType.PUBLISH_FINISH_SUCCESS ||
     msg.kind === HostToWebviewMessageType.PUBLISH_FINISH_FAILURE ||
+    msg.kind === HostToWebviewMessageType.CONTENT_RENDER_FINISHED ||
+    msg.kind === HostToWebviewMessageType.CONTENT_RENDER_FAILURE ||
     msg.kind === HostToWebviewMessageType.UPDATE_CONTENTRECORD_SELECTION ||
     msg.kind === HostToWebviewMessageType.SAVE_SELECTION ||
     msg.kind === HostToWebviewMessageType.REFRESH_FILES ||

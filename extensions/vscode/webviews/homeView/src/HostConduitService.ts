@@ -79,9 +79,9 @@ const onMessageFromHost = (msg: HostToWebviewMessage): void => {
     case HostToWebviewMessageType.PUBLISH_FINISH_FAILURE:
       return onPublishFinishFailureMsg(msg);
     case HostToWebviewMessageType.CONTENT_RENDER_FINISHED:
-      return onContentRenderFinished();
+      return onContentRenderFinishedMsg();
     case HostToWebviewMessageType.CONTENT_RENDER_FAILURE:
-      return onContentRenderFailure();
+      return onContentRenderFailureMsg();
     case HostToWebviewMessageType.UPDATE_CONTENTRECORD_SELECTION:
       return onUpdateContentRecordSelectionMsg(msg);
     case HostToWebviewMessageType.SAVE_SELECTION:
@@ -204,13 +204,14 @@ const onPublishFinishFailureMsg = (msg: PublishFinishFailureMsg) => {
   home.lastContentRecordResult = `Last Deployment Failed`;
   home.lastContentRecordMsg = msg.content.data.message;
 };
-const onContentRenderFinished = () => {
+const onContentRenderFinishedMsg = () => {
   const home = useHomeStore();
   home.contentRenderInProgress = false;
+  console.log("MESSAGE RECEIVED, render in progress set to false");
 };
-const onContentRenderFailure = () => {
+const onContentRenderFailureMsg = () => {
   const home = useHomeStore();
-  home.contentRenderFailed = false;
+  home.contentRenderFailed = true;
 };
 const onUpdateContentRecordSelectionMsg = (
   msg: UpdateContentRecordSelectionMsg,

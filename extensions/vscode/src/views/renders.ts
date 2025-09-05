@@ -11,12 +11,11 @@ import {
 } from "src/utils/quartoProjectHelper";
 
 export const renderQuartoContent = async (
+  conduit: WebviewConduit,
   projectDir: string,
   sourceEntrypoint: string,
   renderedEntrypoint: string,
 ) => {
-  const webviewConduit = new WebviewConduit();
-
   try {
     await window.withProgress(
       {
@@ -35,11 +34,11 @@ export const renderQuartoContent = async (
       },
     );
     window.showInformationMessage("Finished rendering Quarto content.");
-    webviewConduit.sendMsg({
+    conduit.sendMsg({
       kind: HostToWebviewMessageType.CONTENT_RENDER_FINISHED,
     });
   } catch (err: unknown) {
-    webviewConduit.sendMsg({
+    conduit.sendMsg({
       kind: HostToWebviewMessageType.CONTENT_RENDER_FAILURE,
     });
     if (err instanceof ErrorNoQuarto) {

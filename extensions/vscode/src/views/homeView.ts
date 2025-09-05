@@ -256,7 +256,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
 
     // Currently we only support rendering content with Quarto
-    renderQuartoContent(projectDir, sourceEntrypoint, renderedEntrypoint);
+    renderQuartoContent(
+      this.webviewConduit,
+      projectDir,
+      sourceEntrypoint,
+      renderedEntrypoint,
+    );
   }
 
   private async updateSelectionCredentialState(state: string) {
