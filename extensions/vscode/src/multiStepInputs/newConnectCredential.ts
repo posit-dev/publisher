@@ -2,6 +2,7 @@
 
 import {
   AbortError,
+  InfoMessageParameters,
   InputStep,
   MultiStepInput,
   MultiStepState,
@@ -35,7 +36,10 @@ import { openConfigurationCommand } from "src/commands";
 import { extensionSettings } from "src/extension";
 import { formatURL } from "src/utils/url";
 import { checkSyntaxApiKey } from "src/utils/apiKeys";
-import { ConnectAuthTokenActivator } from "src/auth/ConnectAuthTokenActivator";
+import {
+  ConnectAuthTokenActivator,
+  TokenAuthResult,
+} from "src/auth/ConnectAuthTokenActivator";
 
 enum AuthMethod {
   API_KEY = "apiKey",
@@ -343,7 +347,7 @@ export async function newConnectCredential(
   // ***************************************************************
   // Step: Generate and claim token (Connect only)
   // ***************************************************************
-  async function inputToken(_input: MultiStepInput, state: MultiStepState) {
+  async function inputToken(input: MultiStepInput, state: MultiStepState) {
     // url should always be defined by the time we get to this step
     const serverUrl = typeof state.data.url === "string" ? state.data.url : "";
 
@@ -352,12 +356,34 @@ export async function newConnectCredential(
       const tokenActivator = new ConnectAuthTokenActivator(serverUrl, viewId);
       await tokenActivator.initialize();
 
-      // Activate the token
-      const result = await tokenActivator.activateToken();
+      const resp = await input.showInfoMessage<
+        TokenAuthResult,
+        InfoMessageParameters<TokenAuthResult>
+      >({
+        title: state.title,
+        step: 0,
+        totalSteps: 0,
+        enabled: false,
+        busy: true,
+        value: `Authenticating on ${state.data.url}`,
+        valueSelection: [0, 0],
+        validationMessage: {
+          message:
+            "Please follow the next steps in the external browser or 'Escape' to abort",
+          severity: InputBoxValidationSeverity.Info,
+        },
+        prompt: "",
+        shouldResume: () => Promise.resolve(false),
+        ignoreFocusOut: true,
+        apiFunction: async () => ({
+          data: await tokenActivator.activateToken(),
+          intervalAdjustment: 0,
+        }),
+      });
 
       // Store token and private key in state
-      state.data.token = result.token;
-      state.data.privateKey = result.privateKey;
+      state.data.token = resp.data?.token;
+      state.data.privateKey = resp.data?.privateKey;
     } catch (_e) {
       // Error handling is done within the ConnectAuthTokenActivator
       return;
