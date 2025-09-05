@@ -153,6 +153,6 @@ describe("IntegrationRequests Section", () => {
     // eslint-disable-next-line cypress/no-unnecessary-waiting
     cy.wait(500);
 
-    cy.publisherWebview().findByText("IntegrationRequests").should("not.exist");
+    cy.publisherWebview().findByText("Integration Requests").should("not.exist");
   });
 });
