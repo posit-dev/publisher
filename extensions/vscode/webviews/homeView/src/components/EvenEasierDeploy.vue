@@ -123,6 +123,8 @@
         >.
       </p>
 
+      <RenderButton v-if="isRenderableContent" class="w-full render-btn" />
+
       <DeployButton class="w-full" />
     </template>
     <div v-else class="deployment-control" v-on="{ click: onSelectDeployment }">
@@ -272,6 +274,7 @@ import { useHomeStore } from "src/stores/home";
 import QuickPickItem, { IconDetail } from "src/components/QuickPickItem.vue";
 import ActionToolbar from "src/components/ActionToolbar.vue";
 import DeployButton from "src/components/DeployButton.vue";
+import RenderButton from "src/components/RenderButton.vue";
 import TextStringWithAnchor from "./TextStringWithAnchor.vue";
 import {
   AgentError,
@@ -489,6 +492,14 @@ const isDismissedContentRecord = computed(() => {
   return Boolean(home.selectedContentRecord?.dismissedAt);
 });
 
+const isRenderableContent = computed(() => {
+  return Boolean(
+    home.selectedConfiguration &&
+      !isConfigurationError(home.selectedConfiguration) &&
+      home.selectedConfiguration.configuration.source,
+  );
+});
+
 const toolTipText = computed(() => {
   let entrypoint = "unknown";
   if (
@@ -667,6 +678,10 @@ const viewContent = () => {
 
 :deep(.action-item) {
   margin-right: 4px;
+}
+
+.render-btn {
+  margin-bottom: 0.5rem;
 }
 
 .add-deployment-btn {
