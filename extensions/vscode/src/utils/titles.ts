@@ -15,10 +15,12 @@ export const calculateTitle = (
   title: string;
   problem: boolean;
 } => {
+  let configCode = (config?.configurationName || "").split("-").at(-1);
+  configCode = configCode ? ` (${configCode})` : "";
   let title =
     config && isConfigurationError(config)
       ? undefined
-      : config?.configuration.title;
+      : `${config?.configuration.title}${configCode}`;
   if (title) {
     return {
       title,
