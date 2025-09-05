@@ -4,13 +4,15 @@ on:
     secrets:
       CONNECT_LICENSE:
         required: true
+      WORKBENCH_LICENSE:
+        required: true
 
 jobs:
   cypress:
     name: e2e tests (cypress)
     runs-on: ubuntu-latest
     env:
-      DEBUG_CYPRESS: "false" # Set to true to enable extra logging and video recording replays
+      DEBUG_CYPRESS: "true" # Set to true to enable extra logging and video recording replays
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -58,11 +60,21 @@ jobs:
         env:
           CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
 
+      - name: Write Workbench license file
+        if: env.WORKBENCH_LICENSE != ''
+        run: |
+          mkdir -p ./test/e2e/licenses
+          echo "$WORKBENCH_LICENSE" > ./test/e2e/licenses/workbench-license.lic
+        env:
+          WORKBENCH_LICENSE: ${{ secrets.WORKBENCH_LICENSE }}
+
       - name: Build Docker images
         working-directory: test/e2e
         run: |
           docker build --build-arg GH_DOWNLOAD_TOKEN=${{ secrets.GH_DOWNLOAD_TOKEN }} -f Dockerfile.base -t e2ebase --platform linux/amd64 .
           docker compose build connect-publisher-e2e code-server
+          just build-workbench "release"
+
         env:
           CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
 
@@ -83,6 +95,7 @@ jobs:
         run: |
           just start "connect-publisher-e2e"
           just start "code-server"
+          just start-workbench "release"
 
       - name: Wait for Connect server to be ready
         run: |
@@ -145,6 +158,11 @@ jobs:
             sleep 2
           done
 
+      - name: Install Workbench Positron extension
+        working-directory: test/e2e
+        run: |
+          just install-workbench-extension "release"
+
       - name: "[DEBUG] Print workspace file ownership before tests"
         if: always() && (env.DEBUG_CYPRESS == 'true' || runner.debug)
         run: |
@@ -158,7 +176,7 @@ jobs:
 
       - name: Run Cypress tests
         working-directory: test/e2e
-        run: npx cypress run
+        run: npx cypress run --spec "tests/workbench/**/*"
         env:
           CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
           CONNECT_CLOUD_ENV: ${{ env.CONNECT_CLOUD_ENV }} # defaults to staging

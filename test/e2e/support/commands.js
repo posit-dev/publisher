@@ -1,9 +1,11 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import "@testing-library/cypress/add-commands";
+import "cypress-wait-until";
 import { parse, stringify } from "smol-toml";
 import "./selectors";
 import "./sequences";
+import "./workbench";
 
 const connectManagerServer = Cypress.env("CONNECT_MANAGER_URL");
 
