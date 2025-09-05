@@ -341,6 +341,7 @@ export async function newConnectCredential(
     return {
       name: step.INPUT_TOKEN,
       step: (input: MultiStepInput) => steps[step.INPUT_TOKEN](input, state),
+      skipStepHistory: true,
     };
   }
 
@@ -379,6 +380,7 @@ export async function newConnectCredential(
           data: await tokenActivator.activateToken(),
           intervalAdjustment: 0,
         }),
+        exitPollingCondition: (r) => Boolean(r.data),
       });
 
       // Store token and private key in state
