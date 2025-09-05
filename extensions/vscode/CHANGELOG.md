@@ -6,6 +6,13 @@ file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Added the ability to toggle between the summary view (tree) and the raw view (text)
+  for the Publisher logs (#3017)
+
 ## [1.20.0]
 
 ### Fixed
