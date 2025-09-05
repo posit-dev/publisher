@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Added support for managing OAuth Integration requirements directly from the "Integration Requests" pane in the Publisher UI.
+- Added support for managing OAuth Integration content requirements directly from the "Integration Requests" pane in the Publisher UI.
 
 ## [1.20.0]
 

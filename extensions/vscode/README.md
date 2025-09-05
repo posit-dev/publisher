@@ -94,7 +94,7 @@ Logs are organized to easily identify what went wrong.
 
 ### Manage OAuth Integrations
 
-Specify OAuth Integrations requirements directly in the "Integration Requests" pane in the Publisher UI to automatically associate required integrations at deployment.
+Specify OAuth Integrations requirements directly in the "Integration Requests" pane in the Publisher UI to automatically associate required integrations for your content at deployment.
 
 ## Help and feedback
 
