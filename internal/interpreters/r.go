@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/afero"
 
 	"github.com/posit-dev/publisher/internal/executor"
+
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"

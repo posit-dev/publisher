@@ -7,16 +7,15 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"path/filepath"
 	"strings"
 	"testing"
 
-	"github.com/posit-dev/publisher/internal/executor"
-	"github.com/posit-dev/publisher/internal/interpreters"
+	"github.com/posit-dev/publisher/internal/inspect/dependencies/renv"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
 	"github.com/spf13/afero"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -34,7 +33,7 @@ func (s *PostPackagesRScanSuite) SetupTest() {
 func (s *PostPackagesRScanSuite) TestNewPostPackagesRScanHandler() {
 	base := util.NewAbsolutePath("/project", nil)
 	log := logging.New()
-	h := NewPostPackagesRScanHandler(base, log, nil)
+	h := NewPostPackagesRScanHandler(base, log)
 	s.Equal(base, h.base)
 	s.Equal(log, h.log)
 }
@@ -50,25 +49,15 @@ func (s *PostPackagesRScanSuite) TestServeHTTP() {
 	err = base.MkdirAll(0777)
 	s.NoError(err)
 
-	lockFilePath := base.Join("renv.lock")
+	lockfilePath := base.Join("renv.lock")
 
 	log := logging.New()
 
-	setupMockRInterpreter := func(
-		base util.AbsolutePath,
-		rExecutableParam util.Path,
-		log logging.Logger,
-		cmdExecutorOverride executor.Executor,
-		pathLookerOverride util.PathLooker,
-		existsFuncOverride util.ExistsFunc,
-	) (interpreters.RInterpreter, error) {
-		i := interpreters.NewMockRInterpreter()
-		i.On("Init").Return(nil)
-		i.On("CreateLockfile", lockFilePath).Return(nil)
-		return i, nil
-	}
+	mockScanner := renv.NewMockRDependencyScanner()
+	mockScanner.On("SetupRenvInDir", base.String(), "renv.lock", "/opt/R/bin/R").Return(lockfilePath, nil)
 
-	h := NewPostPackagesRScanHandler(base, log, setupMockRInterpreter)
+	h := NewPostPackagesRScanHandler(base, log)
+	h.rDependencyScanner = mockScanner
 
 	h.ServeHTTP(rec, req)
 	s.Equal(http.StatusNoContent, rec.Result().StatusCode)
@@ -86,20 +75,14 @@ func (s *PostPackagesRScanSuite) TestServeHTTPEmptyBody() {
 
 	log := logging.New()
 
-	setupMockRInterpreter := func(
-		base util.AbsolutePath,
-		rExecutableParam util.Path,
-		log logging.Logger,
-		cmdExecutorOverride executor.Executor,
-		pathLookerOverride util.PathLooker,
-		existsFuncOverride util.ExistsFunc,
-	) (interpreters.RInterpreter, error) {
-		i := interpreters.NewMockRInterpreter()
-		i.On("CreateLockfile", mock.Anything).Return(nil)
-		return i, nil
-	}
+	// Defaults to default lockfile name when none provided.
+	lockfilePath := base.Join("renv.lock")
 
-	h := NewPostPackagesRScanHandler(base, log, setupMockRInterpreter)
+	mockScanner := renv.NewMockRDependencyScanner()
+	mockScanner.On("SetupRenvInDir", base.String(), "renv.lock", "").Return(lockfilePath, nil)
+
+	h := NewPostPackagesRScanHandler(base, log)
+	h.rDependencyScanner = mockScanner
 
 	h.ServeHTTP(rec, req)
 	s.Equal(http.StatusNoContent, rec.Result().StatusCode)
@@ -119,20 +102,11 @@ func (s *PostPackagesRScanSuite) TestServeHTTPWithSaveName() {
 
 	log := logging.New()
 
-	setupMockRInterpreter := func(
-		base util.AbsolutePath,
-		rExecutableParam util.Path,
-		log logging.Logger,
-		cmdExecutorOverride executor.Executor,
-		pathLookerOverride util.PathLooker,
-		existsFuncOverride util.ExistsFunc,
-	) (interpreters.RInterpreter, error) {
-		i := interpreters.NewMockRInterpreter()
-		i.On("CreateLockfile", util.NewAbsolutePath(destPath.String(), fs)).Return(nil)
-		return i, nil
-	}
+	mockScanner := renv.NewMockRDependencyScanner()
+	mockScanner.On("SetupRenvInDir", base.String(), "my_renv.lock", "").Return(destPath, nil)
 
-	h := NewPostPackagesRScanHandler(base, log, setupMockRInterpreter)
+	h := NewPostPackagesRScanHandler(base, log)
+	h.rDependencyScanner = mockScanner
 
 	h.ServeHTTP(rec, req)
 	s.Equal(http.StatusNoContent, rec.Result().StatusCode)
@@ -148,24 +122,17 @@ func (s *PostPackagesRScanSuite) TestServeHTTPWithSaveNameInSubdir() {
 	base := util.NewAbsolutePath("/project", fs)
 	err = base.MkdirAll(0777)
 	s.NoError(err)
+
+	saveName := filepath.FromSlash(".renv/profiles/staging/renv.lock")
 	destPath := base.Join(".renv", "profiles", "staging", "renv.lock")
 
 	log := logging.New()
 
-	setupMockRInterpreter := func(
-		base util.AbsolutePath,
-		rExecutableParam util.Path,
-		log logging.Logger,
-		cmdExecutorOverride executor.Executor,
-		pathLookerOverride util.PathLooker,
-		existsFuncOverride util.ExistsFunc,
-	) (interpreters.RInterpreter, error) {
-		i := interpreters.NewMockRInterpreter()
-		i.On("CreateLockfile", destPath).Return(nil)
-		return i, nil
-	}
+	mockScanner := renv.NewMockRDependencyScanner()
+	mockScanner.On("SetupRenvInDir", base.String(), saveName, "").Return(destPath, nil)
 
-	h := NewPostPackagesRScanHandler(base, log, setupMockRInterpreter)
+	h := NewPostPackagesRScanHandler(base, log)
+	h.rDependencyScanner = mockScanner
 
 	h.ServeHTTP(rec, req)
 	s.Equal(http.StatusNoContent, rec.Result().StatusCode)
@@ -180,25 +147,15 @@ func (s *PostPackagesRScanSuite) TestServeHTTPErr() {
 	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
 	err = base.MkdirAll(0777)
 	s.NoError(err)
-	destPath := base.Join("renv.lock")
 	log := logging.New()
 
 	testError := errors.New("test error from ScanRequirements")
-	setupMockRInterpreter := func(
-		base util.AbsolutePath,
-		rExecutableParam util.Path,
-		log logging.Logger,
-		cmdExecutorOverride executor.Executor,
-		pathLookerOverride util.PathLooker,
-		existsFuncOverride util.ExistsFunc,
-	) (interpreters.RInterpreter, error) {
-		i := interpreters.NewMockRInterpreter()
-		i.On("Init").Return(nil)
-		i.On("CreateLockfile", destPath).Return(testError)
-		return i, nil
-	}
 
-	h := NewPostPackagesRScanHandler(base, log, setupMockRInterpreter)
+	mockScanner := renv.NewMockRDependencyScanner()
+	mockScanner.On("SetupRenvInDir", base.String(), "renv.lock", "").Return(util.AbsolutePath{}, testError)
+
+	h := NewPostPackagesRScanHandler(base, log)
+	h.rDependencyScanner = mockScanner
 
 	h.ServeHTTP(rec, req)
 	s.Equal(http.StatusInternalServerError, rec.Result().StatusCode)
@@ -222,21 +179,11 @@ func (s *PostPackagesRScanSuite) TestServeHTTPSubdir() {
 	req, err := http.NewRequest("POST", "/api/packages/r/scan?dir="+dirParam, body)
 	s.NoError(err)
 
-	setupMockRInterpreter := func(
-		base util.AbsolutePath,
-		rExecutableParam util.Path,
-		log logging.Logger,
-		cmdExecutorOverride executor.Executor,
-		pathLookerOverride util.PathLooker,
-		existsFuncOverride util.ExistsFunc,
-	) (interpreters.RInterpreter, error) {
-		i := interpreters.NewMockRInterpreter()
-		i.On("Init").Return(nil)
-		i.On("CreateLockfile", destPath).Return(nil)
-		return i, nil
-	}
+	mockScanner := renv.NewMockRDependencyScanner()
+	mockScanner.On("SetupRenvInDir", projectDir.String(), "renv.lock", "").Return(destPath, nil)
 
-	h := NewPostPackagesRScanHandler(base, logging.New(), setupMockRInterpreter)
+	h := NewPostPackagesRScanHandler(base, logging.New())
+	h.rDependencyScanner = mockScanner
 
 	h.ServeHTTP(rec, req)
 	s.Equal(http.StatusNoContent, rec.Result().StatusCode)

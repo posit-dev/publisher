@@ -107,7 +107,7 @@ func (i *defaultPythonInspector) InspectPython() (*config.Python, error) {
 	return &config.Python{
 		Version:               version,
 		PackageFile:           reqFile.String(),
-		PackageManager:        "pip",
+		PackageManager:        i.pythonInterpreter.GetPackageManager(),
 		RequiresPythonVersion: python_requires,
 	}, nil
 }

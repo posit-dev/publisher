@@ -32,8 +32,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - R manifest package generation now uses only `renv.lock` file by default. To use the
-  local `renv` library instead, set `[r].packages_from_library = true` in the
+  local `renv` library instead, set `r.packages_from_library = true` in the
   configuration.
+- Setting `python.package_manager=pip` will now force pip as the package manager
+  enven when the server default is `uv`.
 
 ## [1.19.0]
 

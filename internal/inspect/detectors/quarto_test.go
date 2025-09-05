@@ -5,6 +5,7 @@ package detectors
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"runtime"
 	"strings"
@@ -30,7 +31,7 @@ func TestQuartoDetectorSuite(t *testing.T) {
 	suite.Run(t, new(QuartoDetectorSuite))
 }
 
-func (s *QuartoDetectorSuite) runInferType(testName string) []*config.Config {
+func (s *QuartoDetectorSuite) runInferType(testName string, withError error) []*config.Config {
 	realCwd, err := util.Getwd(nil)
 	s.NoError(err)
 
@@ -55,7 +56,7 @@ func (s *QuartoDetectorSuite) runInferType(testName string) []*config.Config {
 		dirOutput, err := dirOutputPath.ReadFile()
 		s.NoError(err)
 		dirOutput = bytes.ReplaceAll(dirOutput, placeholder, baseDir)
-		executor.On("RunCommand", "quarto", []string{"inspect", base.String()}, mock.Anything, mock.Anything).Return(dirOutput, nil, nil)
+		executor.On("RunCommand", "quarto", []string{"inspect", base.String()}, mock.Anything, mock.Anything).Return(dirOutput, nil, withError)
 	}
 
 	files, err := detector.findEntrypoints(base)
@@ -67,7 +68,7 @@ func (s *QuartoDetectorSuite) runInferType(testName string) []*config.Config {
 		fileOutput, err := outputPath.ReadFile()
 		s.NoError(err)
 		fileOutput = bytes.ReplaceAll(fileOutput, placeholder, baseDir)
-		executor.On("RunCommand", "quarto", []string{"inspect", filename.String()}, mock.Anything, mock.Anything).Return(fileOutput, nil, nil)
+		executor.On("RunCommand", "quarto", []string{"inspect", filename.String()}, mock.Anything, mock.Anything).Return(fileOutput, nil, withError)
 	}
 
 	configs, err := detector.InferType(base, util.RelativePath{})
@@ -79,7 +80,7 @@ func (s *QuartoDetectorSuite) TestInferTypeMarkdownDoc() {
 	if runtime.GOOS == "windows" {
 		s.T().Skip("This test does not run on Windows")
 	}
-	configs := s.runInferType("quarto-doc-none")
+	configs := s.runInferType("quarto-doc-none", nil)
 	s.Len(configs, 1)
 	validate := true
 	s.Equal(&config.Config{
@@ -117,7 +118,7 @@ func (s *QuartoDetectorSuite) TestInferTypeMarkdownProject() {
 	if runtime.GOOS == "windows" {
 		s.T().Skip("This test does not run on Windows")
 	}
-	configs := s.runInferType("quarto-proj-none")
+	configs := s.runInferType("quarto-proj-none", nil)
 	s.Len(configs, 1)
 	validate := true
 	s.Equal(&config.Config{
@@ -151,7 +152,7 @@ func (s *QuartoDetectorSuite) TestInferTypeMarkdownProjectWindows() {
 	if runtime.GOOS != "windows" {
 		s.T().Skip("This test only runs on Windows")
 	}
-	configs := s.runInferType("quarto-proj-none-windows")
+	configs := s.runInferType("quarto-proj-none-windows", nil)
 	s.Len(configs, 1)
 	validate := true
 	s.Equal(&config.Config{
@@ -185,7 +186,7 @@ func (s *QuartoDetectorSuite) TestInferTypePythonProject() {
 	if runtime.GOOS == "windows" {
 		s.T().Skip("This test does not run on Windows")
 	}
-	configs := s.runInferType("quarto-proj-py")
+	configs := s.runInferType("quarto-proj-py", nil)
 	s.Len(configs, 1)
 	validate := true
 	s.Equal(&config.Config{
@@ -220,7 +221,7 @@ func (s *QuartoDetectorSuite) TestInferTypeRProject() {
 	if runtime.GOOS == "windows" {
 		s.T().Skip("This test does not run on Windows")
 	}
-	configs := s.runInferType("quarto-proj-r")
+	configs := s.runInferType("quarto-proj-r", nil)
 	s.Len(configs, 1)
 	validate := true
 	s.Equal(&config.Config{
@@ -255,7 +256,7 @@ func (s *QuartoDetectorSuite) TestInferTypeRAndPythonProject() {
 	if runtime.GOOS == "windows" {
 		s.T().Skip("This test does not run on Windows")
 	}
-	configs := s.runInferType("quarto-proj-r-py")
+	configs := s.runInferType("quarto-proj-r-py", nil)
 	s.Len(configs, 1)
 	validate := true
 	s.Equal(&config.Config{
@@ -291,7 +292,7 @@ func (s *QuartoDetectorSuite) TestInferTypeRShinyProject() {
 	if runtime.GOOS == "windows" {
 		s.T().Skip("This test does not run on Windows")
 	}
-	configs := s.runInferType("quarto-proj-r-shiny")
+	configs := s.runInferType("quarto-proj-r-shiny", nil)
 	s.Len(configs, 1)
 	validate := true
 	s.Equal(&config.Config{
@@ -313,7 +314,7 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoWebsite() {
 	if runtime.GOOS == "windows" {
 		s.T().Skip("This test does not run on Windows")
 	}
-	configs := s.runInferType("quarto-website-none")
+	configs := s.runInferType("quarto-website-none", nil)
 	s.Len(configs, 2)
 	validate := true
 	s.Equal(&config.Config{
@@ -377,7 +378,6 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoWebsite_viaQuartoYml() {
 	if runtime.GOOS == "windows" {
 		s.T().Skip("This test does not run on Windows")
 	}
-	// configs := s.runInferType("quarto-website-none")
 	realCwd, err := util.Getwd(nil)
 	s.NoError(err)
 
@@ -451,7 +451,7 @@ func (s *QuartoDetectorSuite) TestInferTypeRMarkdownDoc() {
 	if runtime.GOOS == "windows" {
 		s.T().Skip("This test does not run on Windows")
 	}
-	configs := s.runInferType("rmd-static-1")
+	configs := s.runInferType("rmd-static-1", nil)
 	s.Len(configs, 1)
 	validate := true
 	s.Equal(&config.Config{
@@ -488,7 +488,7 @@ func (s *QuartoDetectorSuite) TestInferTypeMultidocProject() {
 	if runtime.GOOS == "windows" {
 		s.T().Skip("This test does not run on Windows")
 	}
-	configs := s.runInferType("quarto-multidoc-proj-none")
+	configs := s.runInferType("quarto-multidoc-proj-none", nil)
 	s.Len(configs, 2)
 	validate := true
 	s.Equal(&config.Config{
@@ -553,7 +553,7 @@ func (s *QuartoDetectorSuite) TestInferTypeNotebook() {
 	if runtime.GOOS == "windows" {
 		s.T().Skip("This test does not run on Windows")
 	}
-	configs := s.runInferType("stock-report-jupyter")
+	configs := s.runInferType("stock-report-jupyter", nil)
 	s.Len(configs, 1)
 	validate := true
 	s.Equal(&config.Config{
@@ -588,7 +588,7 @@ func (s *QuartoDetectorSuite) TestInferTypeRevalJSQuartoShiny() {
 	if runtime.GOOS == "windows" {
 		s.T().Skip("This test does not run on Windows")
 	}
-	configs := s.runInferType("dashboard")
+	configs := s.runInferType("dashboard", nil)
 	s.Len(configs, 1)
 	validate := true
 	s.Equal(&config.Config{
@@ -610,7 +610,7 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoScriptPy() {
 	if runtime.GOOS == "windows" {
 		s.T().Skip("This test does not run on Windows")
 	}
-	configs := s.runInferType("quarto-script-py")
+	configs := s.runInferType("quarto-script-py", nil)
 	s.Len(configs, 1)
 	validate := true
 	s.Equal(&config.Config{
@@ -632,7 +632,7 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoScriptR() {
 	if runtime.GOOS == "windows" {
 		s.T().Skip("This test does not run on Windows")
 	}
-	configs := s.runInferType("quarto-script-r")
+	configs := s.runInferType("quarto-script-r", nil)
 	s.Len(configs, 1)
 	validate := true
 	s.Equal(&config.Config{
@@ -648,4 +648,82 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoScriptR() {
 		},
 		R: &config.R{},
 	}, configs[0])
+}
+
+func (s *QuartoDetectorSuite) TestInferIncludeExtensionsDir() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip("This test does not run on Windows")
+	}
+	configs := s.runInferType("quarto-proj-r-with-extensions", nil)
+	s.Len(configs, 1)
+	validate := true
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       contenttypes.ContentTypeQuarto,
+		Entrypoint: "quarto-proj-r.qmd",
+		Title:      "quarto-proj-r",
+		Validate:   &validate,
+		Files: []string{
+			"/quarto-proj-r.qmd",
+			"/_quarto.yml",
+			"/_extensions",
+		},
+		R: &config.R{},
+		Quarto: &config.Quarto{
+			Version: "1.4.553",
+			Engines: []string{"knitr"},
+		},
+		Alternatives: []config.Config{
+			{
+				Schema:     schema.ConfigSchemaURL,
+				Type:       contenttypes.ContentTypeHTML,
+				Entrypoint: "quarto-proj-r.html",
+				Source:     "quarto-proj-r.qmd",
+				Title:      "quarto-proj-r",
+				Validate:   &validate,
+				Files: []string{
+					"/quarto-proj-r.html",
+				},
+			},
+		},
+	}, configs[0])
+}
+
+func (s *QuartoDetectorSuite) TestInferType_NoBinary_SimpleConfig() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip("This test does not run on Windows")
+	}
+	configs := s.runInferType("quarto-website-none", errors.New("executable file not found in $PATH"))
+	s.Len(configs, 2)
+	validate := true
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       contenttypes.ContentTypeQuarto,
+		Entrypoint: "about.qmd",
+		Title:      "",
+		Validate:   &validate,
+		Files: []string{
+			"/about.qmd",
+			"/index.qmd",
+			"/_quarto.yml",
+		},
+		Quarto: &config.Quarto{
+			Version: "1.7.34",
+		},
+	}, configs[0])
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       contenttypes.ContentTypeQuarto,
+		Entrypoint: "index.qmd",
+		Title:      "",
+		Validate:   &validate,
+		Files: []string{
+			"/about.qmd",
+			"/index.qmd",
+			"/_quarto.yml",
+		},
+		Quarto: &config.Quarto{
+			Version: "1.7.34",
+		},
+	}, configs[1])
 }
