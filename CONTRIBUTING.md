@@ -166,7 +166,7 @@ Run the following commands from the `test/e2e` subdirectory:
 source .venv/bin/activate
 ```
 
-To access the test user credentials for PCC, you must authenticate with the 1Password CLI before running E2E tests. Request access to the 1Password Publisher vault if needed. A direct link to the vault is available in the #Publisher Slack channel bookmarks.
+To access the test user credentials for PCC, you must authenticate with the 1Password CLI before running E2E tests. Request access to the 1Password Publisher vault if needed. A direct link to the vault is available in the #publisher-dev Slack channel bookmarks.
 
 If you have the 1Password CLI (`op`) installed globally (in your PATH), run:
 
