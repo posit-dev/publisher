@@ -803,8 +803,14 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
     const api = await useApi();
     const result = await api.connectServer.getServerSettings(credential.name);
-    console.log("This is a test 🔥");
     console.log(result.data);
+
+    this.webviewConduit.sendMsg({
+      kind: HostToWebviewMessageType.REFRESH_SERVER_SETTINGS,
+      content: {
+        serverSettings: result.data,
+      },
+    });
   }
 
   private async onRelativeOpenVSCode(msg: VSCodeOpenRelativeMsg) {

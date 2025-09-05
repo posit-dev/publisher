@@ -15,6 +15,7 @@ import {
 import {
   IntegrationRequest,
   isConfigurationError,
+  ServerSettings,
 } from "../../../../src/api/types/configurations";
 import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
 import { RPackage } from "../../../../src/api/types/packages";
@@ -42,28 +43,12 @@ export const useHomeStore = defineStore("home", () => {
     return credentials.value.sort((a, b) => a.name.localeCompare(b.name));
   });
 
+  const serverSettings = ref<ServerSettings | undefined>(undefined);
+
   const serverSecrets = ref<Set<string>>(new Set());
   const secrets = ref(new Map<string, string | undefined>());
 
   const integrationRequests = ref<IntegrationRequest[]>([]);
-
-  // const integrationRequests = computed({
-  //   get: (): IntegrationRequest[] => {
-  //     const config = selectedConfiguration.value;
-  //     if (config === undefined || isConfigurationError(config)) {
-  //       return [];
-  //     }
-
-  //     return config.configuration.integrationRequests || [];
-  //   },
-  //   set: (requests: IntegrationRequest[]) => {
-  //     const config = selectedConfiguration.value;
-
-  //     if (config !== undefined && !isConfigurationError(config)) {
-  //       config.configuration.integrationRequests = requests;
-  //     }
-  //   }
-  // });
 
   const environment = computed((): Map<string, string> => {
     const result = new Map<string, string>();
@@ -500,6 +485,7 @@ export const useHomeStore = defineStore("home", () => {
     configurationsInError,
     credentials,
     sortedCredentials,
+    serverSettings,
     serverSecrets,
     secrets,
     integrationRequests,
