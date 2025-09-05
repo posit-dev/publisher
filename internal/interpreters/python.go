@@ -245,7 +245,7 @@ func (i *defaultPythonInterpreter) IsPythonExecutableValid() bool {
 }
 
 func (i *defaultPythonInterpreter) GetPackageManager() string {
-	return "pip"
+	return "auto"
 }
 
 func (i *defaultPythonInterpreter) GetPreferredPath() string {
