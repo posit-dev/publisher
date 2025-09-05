@@ -116,3 +116,8 @@ func (m *MockClient) GetIntegrations(log logging.Logger) ([]Integration, error) 
 	args := m.Called(log)
 	return args.Get(0).([]Integration), args.Error(1)
 }
+
+func (m *MockClient) GetServerSettings(log logging.Logger) (*ServerSettings, error) {
+	args := m.Called(log)
+	return args.Get(0).(*ServerSettings), args.Error(1)
+}

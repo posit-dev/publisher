@@ -67,6 +67,10 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	r.Handle(ToPath("accounts", "{name}", "integrations"), GetIntegrationsHandlerFunc(lister, log)).
 		Methods(http.MethodGet)
 
+	// GET /api/accounts/{name}/server-settings
+	r.Handle(ToPath("accounts", "{name}", "server-settings"), GetServerSettingsHandlerFunc(lister, log)).
+		Methods(http.MethodGet)
+
 	// GET /api/events
 	r.HandleFunc(ToPath("events"), eventServer.ServeHTTP)
 

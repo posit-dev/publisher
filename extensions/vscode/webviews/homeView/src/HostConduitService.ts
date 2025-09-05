@@ -253,8 +253,5 @@ const onRefreshIntegrationRequestsMsg = (
   msg: RefreshIntegrationRequestsMsg,
 ) => {
   const home = useHomeStore();
-  console.log(
-    `onRefreshIntegrationRequestsMsg: ${JSON.stringify(home.integrationRequests)}`,
-  );
   home.integrationRequests = msg.content.integrationRequests;
 };
