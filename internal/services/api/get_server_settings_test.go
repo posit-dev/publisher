@@ -57,25 +57,28 @@ func (s *GetServerSettingsSuite) TestGetServerSettingsSuccess() {
 	lister.On("GetAccountByName", "myAccount").Return(acct, nil)
 
 	mockClient := &connect.MockClient{}
-	expected := map[string]any{
-		"version": "2025.09.0",
-		"license": "enhanced",
+	expected := &connect.ServerSettings{
+		License: connect.LicenseInfo{
+			OAuthIntegrations: true,
+		},
+		OAuthIntegrationsEnabled: true,
 	}
+	mockClient.On("GetServerSettings", mock.Anything).Return(expected, nil)
 
 	connectClientFactory = func(account *accounts.Account, timeout time.Duration, emitter events.Emitter, log logging.Logger) (connect.APIClient, error) {
 		return mockClient, nil
 	}
 
 	h := GetServerSettingsHandlerFunc(lister, s.log)
-	rec, req := s.newRequest("")
+	rec, req := s.newRequest("myAccount")
 	h(rec, req)
 
 	s.Equal(http.StatusOK, rec.Result().StatusCode)
 	body, _ := io.ReadAll(rec.Body)
-	got := map[string]any{}
+	var got connect.ServerSettings
 	s.NoError(json.Unmarshal(body, &got))
-	s.Equal(expected["version"], got["version"])
-	s.Equal(expected["license"], got["license"])
+	s.Equal(expected.OAuthIntegrationsEnabled, got.OAuthIntegrationsEnabled)
+	s.Equal(expected.License.OAuthIntegrations, got.License.OAuthIntegrations)
 }
 
 func (s *GetServerSettingsSuite) TestGetServerSettingsAccountNotFound() {

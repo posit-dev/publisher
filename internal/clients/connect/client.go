@@ -38,25 +38,12 @@ type Integration struct {
 // repository for the full set of fields.
 
 type LicenseInfo struct {
-	// Status indicates the license state. One of "evaluation",
-	// "activated" or "expired"
-	Status string `json:"status"`
-
-	// Tier indicates the selected product package (basic, enhanced,
-	// advanced). Set only for 2024+ licenses.
-	Tier string `json:"tier"`
-
 	// OAuthIntegrations specifies if an installation is allowed to use
 	// OAuth integrations to support viewer-based auth.
 	OAuthIntegrations bool `json:"oauth-integrations"`
 }
 
 type ServerSettings struct {
-	// Version indicates the Posit Connect product version.
-	//
-	// Shared only for logged-in users and when not Server.HideVersion.
-	Version string `json:"version"`
-
 	// License contains information about the capabilities allowed by the
 	// in-use product license.
 	License LicenseInfo `json:"license"`

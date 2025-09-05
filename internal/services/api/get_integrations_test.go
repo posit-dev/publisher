@@ -54,9 +54,9 @@ func (s *GetIntegrationsSuite) TestGetIntegrationsSuccess() {
 	lister.On("GetAccountByName", "acct1").Return(acct, nil)
 
 	mockClient := &connect.MockClient{}
-	expected := []map[string]any{
-		{"name": "github", "enabled": true},
-		{"name": "azure", "enabled": false},
+	expected := []connect.Integration{
+		{Name: "github"},
+		{Name: "azure"},
 	}
 	mockClient.On("GetIntegrations", mock.Anything).Return(expected, nil)
 
