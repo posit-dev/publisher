@@ -31,14 +31,6 @@ type defaultRDependencyScanner struct {
 	log       logging.Logger
 }
 
-type RDependencyScannerFactory func(log logging.Logger) RDependencyScanner
-
-func NewRDependencyScannerFactory() RDependencyScannerFactory {
-	return func(log logging.Logger) RDependencyScanner {
-		return NewRDependencyScanner(log)
-	}
-}
-
 func NewRDependencyScanner(log logging.Logger) *defaultRDependencyScanner {
 	return &defaultRDependencyScanner{
 		rExecutor: executor.NewExecutor(),

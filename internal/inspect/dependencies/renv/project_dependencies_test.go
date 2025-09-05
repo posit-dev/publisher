@@ -114,15 +114,6 @@ func (s *RDependencyScannerSuite) TestScanDependenciesInDir() {
 	s.exec.AssertExpectations(s.T())
 }
 
-func (s *RDependencyScannerSuite) TestRDependencyScannerFactory() {
-	factory := NewRDependencyScannerFactory()
-	scanner := factory(s.log)
-	concreteScanner, ok := scanner.(*defaultRDependencyScanner)
-	s.True(ok, "Factory should return a *defaultRDependencyScanner")
-	s.NotNil(concreteScanner.rExecutor, "Scanner should have a non-nil executor")
-	s.Equal(s.log, concreteScanner.log)
-}
-
 func (s *RDependencyScannerSuite) TestErrWhenLockfileNotCreated() {
 	// Simulate script success but do NOT create lockfile
 	s.exec.On(

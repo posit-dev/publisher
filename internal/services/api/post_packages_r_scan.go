@@ -21,20 +21,19 @@ type PostPackagesRScanRequest struct {
 }
 
 type PostPackagesRScanHandler struct {
-	base                      util.AbsolutePath
-	log                       logging.Logger
-	rDependencyScannerFactory renv.RDependencyScannerFactory
+	base               util.AbsolutePath
+	log                logging.Logger
+	rDependencyScanner renv.RDependencyScanner
 }
 
 func NewPostPackagesRScanHandler(
 	base util.AbsolutePath,
 	log logging.Logger,
-	rDependencyScannerFactory renv.RDependencyScannerFactory,
 ) *PostPackagesRScanHandler {
 	return &PostPackagesRScanHandler{
-		base:                      base,
-		log:                       log,
-		rDependencyScannerFactory: rDependencyScannerFactory,
+		base:               base,
+		log:                log,
+		rDependencyScanner: renv.NewRDependencyScanner(log),
 	}
 }
 
@@ -63,8 +62,7 @@ func (h *PostPackagesRScanHandler) ServeHTTP(w http.ResponseWriter, req *http.Re
 		BadRequest(w, req, h.log, err)
 		return
 	}
-	dependencyScanner := h.rDependencyScannerFactory(h.log)
-	_, err = dependencyScanner.SetupRenvInDir(projectDir.String(), lockfileRelPath.String(), b.R)
+	_, err = h.rDependencyScanner.SetupRenvInDir(projectDir.String(), lockfileRelPath.String(), b.R)
 	if err != nil {
 		InternalError(w, req, h.log, err)
 		return
