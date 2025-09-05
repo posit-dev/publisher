@@ -1,9 +1,7 @@
 <template>
   <vscode-button
     :data-automation="`deploy-button`"
-    :disabled="
-      !haveResources || home.publishInProgress || home.publishInitiated
-    "
+    :disabled="disableDeploy"
     @click="deploy"
   >
     Deploy Your Project
@@ -28,6 +26,14 @@ const haveResources = computed(
     Boolean(home.serverCredential),
 );
 
+const disableDeploy = computed(
+  () =>
+    !haveResources.value ||
+    home.publishInProgress ||
+    home.publishInitiated ||
+    home.contentRenderInProgress,
+);
+
 const deploy = () => {
   if (
     !home.selectedContentRecord ||
@@ -39,6 +45,9 @@ const deploy = () => {
     );
     return;
   }
+
+  // If there is any render error message, clear that up
+  home.contentRenderFailed = false;
 
   // stop the user from double clicking the deploy button by mistake
   home.publishInitiated = true;
