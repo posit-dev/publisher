@@ -207,7 +207,6 @@ const onPublishFinishFailureMsg = (msg: PublishFinishFailureMsg) => {
 const onContentRenderFinishedMsg = () => {
   const home = useHomeStore();
   home.contentRenderInProgress = false;
-  console.log("MESSAGE RECEIVED, render in progress set to false");
 };
 const onContentRenderFailureMsg = () => {
   const home = useHomeStore();
