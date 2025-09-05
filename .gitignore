@@ -11,6 +11,7 @@ node_modules
 .DS_Store
 
 *renv/
+!internal/inspect/dependencies/renv/
 *.venv/
 .envrc
 
