@@ -32,6 +32,7 @@ export enum WebviewToHostMessageType {
   UPDATE_SELECTION_IS_PRE_CONTENT_RECORD = "UpdateSelectionIsPreContentRecordMsg",
   UPDATE_SELECTION_IS_CONNECT_CONTENT_RECORD = "UpdateSelectionIsConnectContentRecordMsg",
   COPY_SYSTEM_INFO = "copySystemInfo",
+  RENDER_CONTENT = "renderContent",
 }
 
 export type AnyWebviewToHostMessage<
@@ -72,7 +73,8 @@ export type WebviewToHostMessage =
   | UpdateSelectionCredentialStateMsg
   | UpdateSelectionIsPreContentRecordMsg
   | UpdateSelectionIsConnectContentRecordMsg
-  | CopySystemInfoMsg;
+  | CopySystemInfoMsg
+  | RenderContentMsg;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
@@ -106,7 +108,8 @@ export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
       WebviewToHostMessageType.UPDATE_SELECTION_IS_PRE_CONTENT_RECORD ||
     msg.kind ===
       WebviewToHostMessageType.UPDATE_SELECTION_IS_CONNECT_CONTENT_RECORD ||
-    msg.kind === WebviewToHostMessageType.COPY_SYSTEM_INFO
+    msg.kind === WebviewToHostMessageType.COPY_SYSTEM_INFO ||
+    msg.kind === WebviewToHostMessageType.RENDER_CONTENT
   );
 }
 
@@ -259,3 +262,6 @@ export type UpdateSelectionIsConnectContentRecordMsg = AnyWebviewToHostMessage<
 
 export type CopySystemInfoMsg =
   AnyWebviewToHostMessage<WebviewToHostMessageType.COPY_SYSTEM_INFO>;
+
+export type RenderContentMsg =
+  AnyWebviewToHostMessage<WebviewToHostMessageType.RENDER_CONTENT>;
