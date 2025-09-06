@@ -4,6 +4,7 @@ import {
   Configuration,
   ConfigurationError,
   ContentRecord,
+  Integration,
   PreContentRecordWithConfig,
 } from "src/api";
 import { QuickPickItem } from "vscode";
@@ -13,4 +14,8 @@ export interface DeploymentQuickPick extends QuickPickItem {
   config?: Configuration | ConfigurationError;
   credentialName?: string;
   lastMatch?: boolean;
+}
+
+export interface IntegrationQuickPick extends QuickPickItem {
+  integration: Integration;
 }

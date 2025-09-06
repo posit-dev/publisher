@@ -11,8 +11,12 @@ import {
   ConfigurationError,
   isPreContentRecord,
   ServerType,
+  ServerSettings,
 } from "../../../../src/api";
-import { isConfigurationError } from "../../../../src/api/types/configurations";
+import {
+  IntegrationRequest,
+  isConfigurationError,
+} from "../../../../src/api/types/configurations";
 import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
 import { RPackage } from "../../../../src/api/types/packages";
 import { DeploymentSelector } from "../../../../src/types/shared";
@@ -39,8 +43,12 @@ export const useHomeStore = defineStore("home", () => {
     return credentials.value.sort((a, b) => a.name.localeCompare(b.name));
   });
 
+  const serverSettings = ref<ServerSettings | undefined>(undefined);
+
   const serverSecrets = ref<Set<string>>(new Set());
   const secrets = ref(new Map<string, string | undefined>());
+
+  const integrationRequests = ref<IntegrationRequest[]>([]);
 
   const environment = computed((): Map<string, string> => {
     const result = new Map<string, string>();
@@ -378,6 +386,13 @@ export const useHomeStore = defineStore("home", () => {
     },
   };
 
+  const isConnectCloud = computed((): boolean => {
+    const serverType =
+      selectedContentRecord.value?.serverType || ServerType.CONNECT;
+    const productType = getProductType(serverType);
+    return isConnectCloudProduct(productType);
+  });
+
   const anyActiveAlerts = computed(() => {
     return (
       !config.active.isAlertActive.value &&
@@ -470,13 +485,16 @@ export const useHomeStore = defineStore("home", () => {
     configurationsInError,
     credentials,
     sortedCredentials,
+    serverSettings,
     serverSecrets,
     secrets,
+    integrationRequests,
     environment,
     duplicatedEnvironmentVariables,
     selectedContentRecord,
     selectedConfiguration,
     serverCredential,
+    isConnectCloud,
     initializingRequestComplete,
     lastContentRecordResult,
     lastContentRecordMsg,

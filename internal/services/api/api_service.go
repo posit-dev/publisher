@@ -63,6 +63,14 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	r.Handle(ToPath("accounts", "{name}", "verify"), PostAccountVerifyHandlerFunc(lister, log)).
 		Methods(http.MethodPost)
 
+	// POST /api/accounts/{name}/integrations
+	r.Handle(ToPath("accounts", "{name}", "integrations"), GetIntegrationsHandlerFunc(lister, log)).
+		Methods(http.MethodGet)
+
+	// GET /api/accounts/{name}/server-settings
+	r.Handle(ToPath("accounts", "{name}", "server-settings"), GetServerSettingsHandlerFunc(lister, log)).
+		Methods(http.MethodGet)
+
 	// GET /api/events
 	r.HandleFunc(ToPath("events"), eventServer.ServeHTTP)
 
@@ -143,6 +151,18 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	// GET /api/configurations/$NAME/packages/r
 	r.Handle(ToPath("configurations", "{name}", "packages", "r"), NewGetConfigRPackagesHandler(base, log)).
 		Methods(http.MethodGet)
+
+	// GET /api/configurations/$NAME/integration-requests
+	r.Handle(ToPath("configurations", "{name}", "integration-requests"), GetIntegrationRequestsFuncHandler(base, log)).
+		Methods(http.MethodGet)
+
+	// POST /api/configurations/$NAME/integration-requests
+	r.Handle(ToPath("configurations", "{name}", "integration-requests"), PostIntegrationRequestFuncHandler(base, log)).
+		Methods(http.MethodPost)
+
+	// DELETE /api/configurations/$NAME/integration-requests
+	r.Handle(ToPath("configurations", "{name}", "integration-requests"), DeleteIntegrationRequestFuncHandler(base, log)).
+		Methods(http.MethodDelete)
 
 	// GET /api/deployments
 	r.Handle(ToPath("deployments"), GetDeploymentsHandlerFunc(base, log)).

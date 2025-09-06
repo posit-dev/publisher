@@ -13,6 +13,8 @@ import { EntryPoints } from "./resources/Entrypoints";
 import { SnowflakeConnections } from "./resources/SnowflakeConnections";
 import * as Entities from "entities";
 import { ConnectCloud } from "./resources/ConnectCloud";
+import { IntegrationRequests } from "./resources/IntegrationRequests";
+import { ConnectServer } from "./resources/ConnectServer";
 
 class PublishingClientApi {
   private client;
@@ -24,10 +26,12 @@ class PublishingClientApi {
   files: Files;
   packages: Packages;
   secrets: Secrets;
+  integrationRequests: IntegrationRequests;
   apiServiceIsUp: Promise<boolean>;
   entrypoints: EntryPoints;
   snowflakeConnections: SnowflakeConnections;
   connectCloud: ConnectCloud;
+  connectServer: ConnectServer;
 
   constructor(apiBaseUrl: string, apiServiceIsUp: Promise<boolean>) {
     this.client = axios.create({
@@ -61,9 +65,11 @@ class PublishingClientApi {
     this.interpreters = new Interpreters(this.client);
     this.packages = new Packages(this.client);
     this.secrets = new Secrets(this.client);
+    this.integrationRequests = new IntegrationRequests(this.client);
     this.entrypoints = new EntryPoints(this.client);
     this.snowflakeConnections = new SnowflakeConnections(this.client);
     this.connectCloud = new ConnectCloud(this.client);
+    this.connectServer = new ConnectServer(this.client);
   }
 
   logDuration(response: AxiosResponse<unknown, unknown>) {

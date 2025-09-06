@@ -562,3 +562,21 @@ func (c *ConnectClient) GetCurrentUser(log logging.Logger) (*User, error) {
 	// Convert from UserDTO to User
 	return connectUser.toUser(), nil
 }
+
+func (c *ConnectClient) GetIntegrations(log logging.Logger) ([]Integration, error) {
+	var integrations []Integration
+	err := c.client.Get("/__api__/v1/oauth/integrations", &integrations, log)
+	if err != nil {
+		return nil, err
+	}
+	return integrations, nil
+}
+
+func (c *ConnectClient) GetServerSettings(log logging.Logger) (*ServerSettings, error) {
+	var settings ServerSettings
+	err := c.client.Get("/__api__/server_settings", &settings, log)
+	if err != nil {
+		return nil, err
+	}
+	return &settings, nil
+}

@@ -12,6 +12,7 @@
       >
         <ProjectFiles v-model:expanded="projectFilesExpanded" />
         <Secrets />
+        <IntegrationRequests v-if="!home.isConnectCloud" />
         <PythonPackages />
         <RPackages />
       </template>
@@ -28,6 +29,7 @@ import OverlayableView from "src/components/OverlayableView.vue";
 import EvenEasierDeploy from "src/components/EvenEasierDeploy.vue";
 import ProjectFiles from "src/components/views/projectFiles/ProjectFiles.vue";
 import Secrets from "src/components/views/secrets/Secrets.vue";
+import IntegrationRequests from "src/components/views/IntegrationRequests.vue";
 import PythonPackages from "src/components/views/PythonPackages.vue";
 import RPackages from "src/components/views/RPackages.vue";
 import Credentials from "src/components/views/Credentials.vue";

@@ -3,6 +3,7 @@ vendor
 # VSCode Extension
 extensions/vscode/out
 test/sample-content
+extensions/vscode/.vscode-test
 
 # webdriver.io service
 extensions/vscode/dist
