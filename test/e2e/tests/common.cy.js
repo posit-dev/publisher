@@ -3,14 +3,12 @@
 describe("Common", () => {
   beforeEach(() => {
     cy.visit("/");
+    cy.getPublisherSidebarIcon().click();
+    cy.waitForPublisherIframe();
+    cy.debugIframes();
   });
 
   it("Publisher extension can be selected and initial state", () => {
-    cy.getPublisherSidebarIcon()
-      .should("be.visible", { timeout: 10000 })
-      .click();
-    cy.waitForPublisherIframe(); // Wait after triggering extension
-    cy.debugIframes();
     cy.retryWithBackoff(
       () => cy.findByText("Posit Publisher: Home"),
       5,
