@@ -43,7 +43,10 @@ const baseContexts = {
 const logsCommands = {
   Visit: "posit.publisher.logs.visit",
   // Added automatically by VSCode with view registration
-  Focus: "posit.publisher.logs.focus",
+  Tree: "posit.publisher.logs.tree",
+  Webview: "posit.publisher.logs.webview",
+  TreeFocus: "posit.publisher.logs.focus",
+  WebviewFocus: "posit.publisher.rawlogs.focus",
   ToggleVisibility: "posit.publisher.logs.toggleVisibility",
 } as const;
 
@@ -124,6 +127,7 @@ export const enum Views {
   Project = "posit.publisher.project",
   HomeView = "posit.publisher.homeView",
   Logs = "posit.publisher.logs",
+  RawLogs = "posit.publisher.rawlogs",
 }
 
 export const DebounceDelaysMS = {

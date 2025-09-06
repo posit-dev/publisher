@@ -36,3 +36,12 @@ export function formatTimeString(
 export function sortByDateString(a: string, b: string) {
   return Date.parse(a) > Date.parse(b) ? -1 : 1;
 }
+
+export function formatTimestampString(dateString: string) {
+  // get the timestamp offset
+  const offset = dateString.slice(-6);
+  // break off the time minus the milliseconds and offset
+  const parts = dateString.split(".");
+  // compose the time w/o milliseconds and add the offset
+  return `${parts[0]}${offset}`;
+}
