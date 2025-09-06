@@ -3,15 +3,13 @@
 // NOTE:: The error cases are created here by using pre-created files.
 // Because of this, they are not suitable for deployment (due to their hard-coded values)
 
-describe("Detect error in config", () => {
+describe("Detect errors in config", () => {
   beforeEach(() => {
     cy.resetConnect();
     cy.setAdminCredentials();
     cy.visit("/").debug();
     // Select the publisher extension
-    cy.getPublisherSidebarIcon()
-      .should("be.visible", { timeout: 10000 })
-      .click();
+    cy.getPublisherSidebarIcon().should("be.visible").click();
   });
 
   it("Show errors when Config is invalid", () => {

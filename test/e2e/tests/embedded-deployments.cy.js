@@ -1,7 +1,7 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
 // Skipping in CI only because of unresolved permissions issues
-Cypress.skipCI(describe)("Create Deployments", () => {
+Cypress.skipCI(describe)("Create PCS Deployments", () => {
   // eslint-disable-next-line mocha/no-top-level-hooks
   beforeEach(() => {
     cy.resetConnect();
@@ -15,10 +15,10 @@ Cypress.skipCI(describe)("Create Deployments", () => {
     cy.clearupDeployments("fastapi-simple");
   });
 
-  it("fastapi at top of workspace", () => {
+  it("PCS fastapi at top of workspace", () => {
     cy.waitForPublisherIframe(); // Wait after triggering extension
     cy.debugIframes();
-    cy.createDeployment(
+    cy.createPCSDeployment(
       ".",
       "simple.py",
       "fastapi-base-directory",
@@ -59,10 +59,10 @@ Cypress.skipCI(describe)("Create Deployments", () => {
     ).should("exist");
   });
 
-  it("fastAPI in subdirectory of workspace", () => {
+  it("PCS fastAPI in subdirectory of workspace", () => {
     cy.waitForPublisherIframe(); // Wait after triggering extension
     cy.debugIframes();
-    cy.createDeployment(
+    cy.createPCSDeployment(
       "fastapi-simple",
       "fastapi-main.py",
       "fastapi-sub-directory",

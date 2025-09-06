@@ -7,10 +7,12 @@ describe("Credentials Section", () => {
     cy.visit("/");
   });
 
-  it("New Connect Server Credential", () => {
-    cy.getPublisherSidebarIcon()
-      .should("be.visible", { timeout: 10000 })
-      .click();
+  afterEach(() => {
+    cy.resetCredentials();
+  });
+
+  it("New PCS Credential", () => {
+    cy.getPublisherSidebarIcon().should("be.visible").click();
     cy.waitForPublisherIframe(); // Wait after triggering extension
     cy.debugIframes();
 
@@ -48,7 +50,7 @@ describe("Credentials Section", () => {
       `http://connect-publisher-e2e:3939{enter}`,
     );
 
-    cy.get(".quick-input-and-message input", { timeout: 10000 }).should(
+    cy.get(".quick-input-and-message input").should(
       "have.attr",
       "placeholder",
       "Select authentication method",
@@ -56,7 +58,7 @@ describe("Credentials Section", () => {
 
     cy.get(".quick-input-list .monaco-list-row").eq(1).click();
 
-    cy.get(".quick-input-message", { timeout: 10000 }).should(
+    cy.get(".quick-input-message").should(
       "include.text",
       "The API key to be used to authenticate with Posit Connect.",
     );
@@ -82,7 +84,7 @@ describe("Credentials Section", () => {
       .should("have.text", "admin-code-server");
   });
 
-  it("New Connect Cloud Credential - OAuth Device Code", () => {
+  it("New PCC Credential - OAuth Device Code", () => {
     const user = Cypress.env("pccConfig").pcc_user_ccqa3;
     cy.getPublisherSidebarIcon()
       .should("be.visible", { timeout: 10000 })
@@ -204,9 +206,7 @@ describe("Credentials Section", () => {
 
   it("Existing Credentials Load", () => {
     cy.setDummyCredentials();
-    cy.getPublisherSidebarIcon()
-      .should("be.visible", { timeout: 10000 })
-      .click();
+    cy.getPublisherSidebarIcon().should("be.visible").click();
     cy.waitForPublisherIframe(); // Wait after triggering extension
     cy.debugIframes();
 
@@ -217,21 +217,19 @@ describe("Credentials Section", () => {
       .should("not.exist");
 
     cy.findInPublisherWebview('[data-automation="dummy-credential-one-list"]')
-      .find(".tree-item-title", { timeout: 10000 })
+      .find(".tree-item-title")
       .should("exist")
       .and("have.text", "dummy-credential-one");
 
     cy.findInPublisherWebview('[data-automation="dummy-credential-two-list"]')
-      .find(".tree-item-title", { timeout: 10000 })
+      .find(".tree-item-title")
       .should("exist")
       .and("have.text", "dummy-credential-two");
   });
 
   it("Delete Credential", () => {
     cy.setDummyCredentials();
-    cy.getPublisherSidebarIcon()
-      .should("be.visible", { timeout: 10000 })
-      .click();
+    cy.getPublisherSidebarIcon().should("be.visible").click();
     cy.waitForPublisherIframe(); // Wait after triggering extension
     cy.debugIframes();
 

@@ -1,7 +1,7 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import "@testing-library/cypress/add-commands";
-import { parse, stringify } from "smol-toml";
+import { parse } from "smol-toml";
 import "./selectors";
 import "./sequences";
 
@@ -156,17 +156,16 @@ Cypress.Commands.add("getPublisherTomlFilePaths", (projectDir) => {
   let contentRecordFileName = "";
   let contentRecordFilePath = "";
 
-  cy.expandWildcardFile(configTargetDir, "*.toml")
+  return cy
+    .expandWildcardFile(configTargetDir, "*.toml")
     .then((configFile) => {
       configFileName = configFile;
       configFilePath = `${configTargetDir}/${configFile}`;
+      return cy.expandWildcardFile(contentRecordTargetDir, "*.toml");
     })
-    .expandWildcardFile(contentRecordTargetDir, "*.toml")
     .then((contentRecordFile) => {
       contentRecordFileName = contentRecordFile;
       contentRecordFilePath = `${contentRecordTargetDir}/${contentRecordFile}`;
-    })
-    .then(() => {
       return {
         config: {
           name: configFileName,
@@ -181,40 +180,77 @@ Cypress.Commands.add("getPublisherTomlFilePaths", (projectDir) => {
 });
 
 Cypress.Commands.add("expandWildcardFile", (targetDir, wildCardPath) => {
-  return cy
-    .exec("pwd")
-    .then((result) => {
-      return cy.log("CWD", result.stdout);
-    })
-    .then(() => {
-      const cmd = `cd ${targetDir} && file=$(echo ${wildCardPath}) && echo $file`;
-      return cy.exec(cmd);
-    })
-    .then((result) => {
-      if (result.code === 0 && result.stdout) {
-        return result.stdout;
-      }
-      throw new Error(`Could not expandWildcardFile. ${result.stderr}`);
-    });
+  const cmd = `cd ${targetDir} && ls -t ${wildCardPath} | head -1`;
+  return cy.exec(cmd).then((result) => {
+    if (result.code === 0 && result.stdout) {
+      return result.stdout.trim();
+    }
+    throw new Error(`Could not expandWildcardFile. ${result.stderr}`);
+  });
 });
 
 Cypress.Commands.add("savePublisherFile", (filePath, jsonObject) => {
+  // First check if file exists and get its permissions
   return cy
-    .exec("pwd")
-    .then((result) => {
+    .exec(`ls -la "${filePath}"`, { failOnNonZeroExit: false })
+    .then((lsResult) => {
+      cy.log(`File permissions: ${lsResult.stdout}`);
+
+      // Check if we can write to the directory
+      const dirPath = filePath.substring(0, filePath.lastIndexOf("/"));
       return cy
-        .log("savePublisherFile CWD", result.stdout)
-        .log("filePath", filePath);
+        .exec(`test -w "${dirPath}"`, { failOnNonZeroExit: false })
+        .then((dirResult) => {
+          cy.log(`Directory writable: ${dirResult.code === 0}`);
+
+          // Check if file is writable
+          return cy
+            .exec(`test -w "${filePath}"`, { failOnNonZeroExit: false })
+            .then((fileResult) => {
+              cy.log(`File writable: ${fileResult.code === 0}`);
+
+              if (fileResult.code !== 0) {
+                // Try to make it writable
+                cy.log(`Attempting to make file writable...`);
+                return cy
+                  .exec(`chmod 644 "${filePath}"`, { failOnNonZeroExit: false })
+                  .then(() => {
+                    return cy.readFile(filePath, { encoding: "utf8" });
+                  });
+              } else {
+                return cy.readFile(filePath, { encoding: "utf8" });
+              }
+            });
+        });
     })
-    .then(() => {
-      const tomlString = stringify(jsonObject);
-      return cy.writeFile(filePath, tomlString);
+    .then((originalContent) => {
+      let modifiedContent = originalContent;
+
+      if (jsonObject.connect_cloud) {
+        const connectCloudSection = "\n[connect_cloud]\n";
+        const accessControlSection = `[connect_cloud.access_control]\npublic_access = ${jsonObject.connect_cloud.access_control.public_access}\n`;
+
+        if (!modifiedContent.includes("[connect_cloud]")) {
+          modifiedContent =
+            modifiedContent.trim() +
+            "\n\n" +
+            connectCloudSection +
+            accessControlSection;
+        } else {
+          const connectCloudRegex = /\[connect_cloud\][\s\S]*?(?=\n\[|\n\n|$)/;
+          modifiedContent = modifiedContent.replace(
+            connectCloudRegex,
+            connectCloudSection + accessControlSection,
+          );
+        }
+      }
+
+      return cy.writeFile(filePath, modifiedContent);
     });
 });
 
 Cypress.Commands.add("loadTomlFile", (filePath) => {
   return cy
-    .log("filePath", filePath)
     .exec(`cat ${filePath}`, { failOnNonZeroExit: false })
     .then((result) => {
       if (result.code === 0 && result.stdout) {
@@ -236,6 +272,7 @@ Cypress.Commands.add("resetConnect", () => {
 
 // Add a global afterEach to log iframes if a test fails (for CI reliability)
 if (typeof afterEach === "function") {
+  /* eslint-disable-next-line mocha/no-top-level-hooks */
   afterEach(function () {
     if (this.currentTest.state === "failed") {
       cy.debugIframes();
@@ -269,7 +306,7 @@ Cypress.Commands.add("waitForPublisherIframe", (timeout = 60000) => {
 // Debug: Waits for all iframes to exist (helps with timing issues in CI).
 // If DEBUG_CYPRESS is "true", also logs iframe attributes for debugging.
 Cypress.Commands.add("debugIframes", () => {
-  cy.get("iframe", { timeout: 20000 }).each(($el, idx) => {
+  cy.get("iframe", { timeout: 30000 }).each(($el, idx) => {
     // Always wait for iframes, but only print if debugging is enabled
     if (Cypress.env("DEBUG_CYPRESS") === "true") {
       cy.wrap($el)
@@ -391,6 +428,154 @@ Cypress.Commands.add(
 
       // Return the single element
       return cy.wrap(elements);
+    });
+  },
+);
+
+Cypress.Commands.add(
+  "addPCCCredential",
+  (user, nickname = "connect-cloud-credential") => {
+    cy.getPublisherSidebarIcon().should("be.visible").click();
+
+    cy.toggleCredentialsSection();
+    cy.publisherWebview()
+      .findByText("No credentials have been added yet.")
+      .should("be.visible");
+
+    cy.clickSectionAction("New Credential");
+    cy.get(".quick-input-widget").should("be.visible");
+
+    cy.get(".quick-input-titlebar")
+      .should("have.text", "Create a New Credential")
+      .click();
+
+    cy.get(
+      'input[aria-label*="Please select the platform for the new credential."]',
+    ).should(
+      "have.attr",
+      "placeholder",
+      "Please select the platform for the new credential.",
+    );
+
+    cy.get(".quick-input-list-row")
+      .contains("Posit Connect Cloud")
+      .should("be.visible")
+      .click();
+
+    // Wait for the dialog box to appear and be visible
+    cy.get(".monaco-dialog-box")
+      .should("be.visible")
+      .should("have.attr", "aria-modal", "true");
+
+    // Handle the OAuth popup window BEFORE clicking Open
+    cy.window().then((win) => {
+      cy.stub(win, "open")
+        .callsFake((url) => {
+          win.oauthUrl = url;
+          const mockWindow = {
+            closed: false,
+            close: function () {
+              this.closed = true;
+              setTimeout(() => {
+                win.dispatchEvent(new Event("focus"));
+              }, 100);
+            },
+            focus: () => {},
+            postMessage: () => {},
+          };
+          win.mockOAuthWindow = mockWindow;
+          return mockWindow;
+        })
+        .as("windowOpen");
+    });
+
+    // Click the "Open" button to start the OAuth flow
+    cy.get(".monaco-dialog-box .dialog-buttons a.monaco-button")
+      .contains("Open")
+      .should("be.visible")
+      .click();
+
+    // Wait for window.open to be called
+    cy.get("@windowOpen").should("have.been.called");
+
+    // Run the OAuth task with VS Code's captured URL and loaded user credentials
+    cy.window().then((win) => {
+      cy.task(
+        "authenticateOAuthDevice",
+        {
+          email: user.email,
+          password: user.auth.password,
+          oauthUrl: win.oauthUrl,
+        },
+        { timeout: 60000 },
+      );
+    });
+
+    // Wait for OAuth completion and VS Code to detect it
+    cy.get(".monaco-dialog-box").should("not.exist", { timeout: 30000 });
+
+    // Wait for the nickname input field to appear
+    cy.get(".quick-input-message", { timeout: 15000 }).should(
+      "include.text",
+      "Enter a unique nickname for this account.",
+    );
+
+    // Continue with credential creation after OAuth success
+    cy.get(".quick-input-and-message input")
+      .should("exist")
+      .should("be.visible");
+
+    cy.get(".quick-input-widget").type(`${nickname}{enter}`);
+    // No assertion here; do it in the test.
+  },
+);
+
+Cypress.Commands.add(
+  "setPCCCredential",
+  (user, nickname = "pcc-credential") => {
+    cy.task(
+      "runDeviceWorkflow",
+      {
+        email: user.email,
+        password: user.auth.password,
+        env: Cypress.env("PCC_ENV") || "staging",
+      },
+      { timeout: 90000 },
+    ).then((oauthResult) => {
+      cy.getPublisherSidebarIcon()
+        .should("be.visible", { timeout: 15000 })
+        .click({ force: true });
+      const guid = user.guid || "57413399-c622-4806-806a-2e18cb32d550";
+      const version = 3;
+      const server_type = "connect_cloud";
+      const url =
+        Cypress.env("PCC_URL") || "https://staging.connect.posit.cloud";
+      const cloud_environment = Cypress.env("PCC_ENV") || "staging";
+      const refresh_token = oauthResult.refresh_token;
+      const access_token = oauthResult.access_token;
+      const account_id = user.account_id;
+      const account_name = user.account_name;
+      if (!oauthResult || !oauthResult.success) {
+        throw new Error(
+          `Device OAuth failed: ${oauthResult && oauthResult.error}`,
+        );
+      }
+      if (!refresh_token || !access_token || !account_id || !account_name) {
+        throw new Error("Missing required PCC credential fields");
+      }
+      const toml = `
+[credentials.${nickname}]
+guid = '${guid}'
+version = ${version}
+server_type = '${server_type}'
+url = '${url}'
+account_id = '${account_id}'
+account_name = '${account_name}'
+refresh_token = '${refresh_token}'
+access_token = '${access_token}'
+cloud_environment = '${cloud_environment}'
+`;
+      cy.writeFile("e2e-test.connect-credentials", toml);
     });
   },
 );

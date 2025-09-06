@@ -39,6 +39,10 @@ jobs:
         working-directory: test/e2e
         run: npm ci
 
+      - name: Install Playwright browsers
+        working-directory: test/e2e
+        run: npx playwright install --with-deps
+
       - uses: extractions/setup-just@v3
 
       - name: Build publisher binary
@@ -65,15 +69,6 @@ jobs:
           docker compose build connect-publisher-e2e code-server
         env:
           CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
-
-      - name: "[DEBUG] Print host user and group info"
-        if: always() && (env.DEBUG_CYPRESS == 'true' || runner.debug)
-        run: |
-          echo "USER: $(whoami)"
-          echo "UID: $(id -u)"
-          echo "GID: $(id -g)"
-          id
-          ls -ld .
 
       - name: Ensure content-workspace exists
         run: mkdir -p ./test/e2e/content-workspace
@@ -131,7 +126,10 @@ jobs:
           VSIX_FILENAME=$(ls -Art ../../dist | grep linux-amd64 | tail -n 1)
           docker compose exec code-server code-server --install-extension "/home/coder/vsix/${VSIX_FILENAME}"
 
-          # Wait for the extension to be installed (more reliable than process grep)
+          # Set proper ownership for workspace files before tests
+          docker exec publisher-e2e.code-server chown -R coder:coder /home/coder/workspace || true
+
+          # Wait for the extension to be installed
           echo "Waiting for Publisher extension to be installed..."
           for i in {1..60}; do
             if docker compose exec code-server code-server --list-extensions | grep -q posit.publisher; then
@@ -144,11 +142,6 @@ jobs:
             echo "Waiting for extension installation (attempt $i/60)..."
             sleep 2
           done
-
-      - name: "[DEBUG] Print workspace file ownership before tests"
-        if: always() && (env.DEBUG_CYPRESS == 'true' || runner.debug)
-        run: |
-          docker exec publisher-e2e.code-server ls -lR /home/coder/workspace || true
 
       - name: Prepare test environment
         working-directory: test/e2e
@@ -164,7 +157,7 @@ jobs:
           CONNECT_CLOUD_ENV: ${{ env.CONNECT_CLOUD_ENV }} # defaults to staging
           CI: true
           DEBUG_CYPRESS: ${{ env.DEBUG_CYPRESS }}
-          ACTIONS_STEP_DEBUG: ${{ runner.debug && 'true' || 'false' }}
+          ACTIONS_STEP_DEBUG: ${{ env.DEBUG_CYPRESS }}
           PCC_USER_CCQA3: ${{ secrets.PCC_USER_CCQA3 }}
 
       - name: Upload Cypress screenshots on failure
@@ -177,7 +170,7 @@ jobs:
 
       - name: "[DEBUG] Upload Cypress videos"
         uses: actions/upload-artifact@v4
-        if: always() && (env.DEBUG_CYPRESS == 'true' || runner.debug)
+        if: always() && env.DEBUG_CYPRESS == 'true'
         with:
           name: cypress-videos
           path: test/e2e/cypress/videos
@@ -217,13 +210,9 @@ jobs:
           echo "======================================="
 
       - name: "[DEBUG] Print code-server container logs"
-        if: always() && (env.DEBUG_CYPRESS == 'true' || runner.debug)
+        if: always() && env.DEBUG_CYPRESS == 'true'
         working-directory: test/e2e
         run: docker compose logs code-server || true
-
-      - name: "[DEBUG] List /home/coder directory contents"
-        if: always() && (env.DEBUG_CYPRESS == 'true' || runner.debug)
-        run: docker exec publisher-e2e.code-server ls -lR /home/coder || true
 
       - name: Stop containers
         if: always()
