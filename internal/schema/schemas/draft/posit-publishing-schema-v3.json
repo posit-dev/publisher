@@ -599,7 +599,7 @@
             "type": "string",
             "description": "Description of the integration request"
           },
-          "auth_type": {
+          "authType": {
             "type": "string",
             "description": "Authentication type for the integration request"
           },

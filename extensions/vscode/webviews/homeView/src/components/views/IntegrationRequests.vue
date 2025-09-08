@@ -22,7 +22,7 @@
       :title="integrationRequest.displayName ?? ''"
       :description="integrationRequest.displayDescription ?? ''"
       :data-automation="`integration-request-${integrationRequest.name || ''}-list`"
-      codicon="posit-publisher-icons-posit-logo-2"
+      codicon="posit-publisher-icons-posit-logo"
       :actions="[
         {
           label: 'Delete Integration Request',

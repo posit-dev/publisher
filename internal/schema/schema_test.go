@@ -121,6 +121,24 @@ func (s *SchemaSuite) TestValidateConfig() {
 				"connect_cloud": map[string]any{},
 			},
 		},
+		{
+			title: "connect config with integration_requests",
+			data: map[string]any{
+				"$schema":      ConfigSchemaURL,
+				"product_type": "connect",
+				"type":         "python-dash",
+				"entrypoint":   "app.py",
+				"python": map[string]any{
+					"requires_python": ">=3.8",
+				},
+				"connect": map[string]any{},
+				"integration_requests": []any{
+					map[string]any{
+						"guid": "12345678-1234-1234-1234-1234567890ab",
+					},
+				},
+			},
+		},
 	}
 
 	for _, testCase := range cases {
@@ -171,7 +189,20 @@ func (s *SchemaSuite) TestDisallowedProperties() {
 			propValue:   "value",
 			message:     "garbage: not allowed.",
 		},
-
+		{
+			productType: "connect",
+			basePath:    []string{},
+			propName:    "integration_requests",
+			propValue:   "string-instead-of-array",
+			message:     "integration_requests: expected array, but got string.",
+		},
+		{
+			productType: "connect",
+			basePath:    []string{},
+			propName:    "integration_requests",
+			propValue:   []any{"string-instead-of-object"},
+			message:     "integration_requests.0: expected object, but got string.",
+		},
 		// Connect product_type invalid properties
 		{
 			productType: "connect",
