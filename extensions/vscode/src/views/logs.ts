@@ -170,7 +170,7 @@ const stages = new Map([
 
 export class LogsViewProvider implements WebviewViewProvider, Disposable {
   private disposables: Disposable[] = [];
-  private events: EventStreamMessage[] = [];
+  private static events: EventStreamMessage[] = [];
   private extensionUri: Uri;
   public static currentView: WebviewView | undefined = undefined;
 
@@ -181,30 +181,29 @@ export class LogsViewProvider implements WebviewViewProvider, Disposable {
     this.extensionUri = this.context.extensionUri;
   }
 
-  private static getLogsHTML(events: EventStreamMessage[]) {
-    return events
-      .map((e) => `${formatTimestampString(e.time)} ${e.data.message}`)
-      .join("<br />")
-      .trim();
+  private static getLogs() {
+    return LogsViewProvider.events.map(
+      (e) => `${formatTimestampString(e.time)} ${e.data.message}`,
+    );
   }
 
-  private static getLogsText(html: unknown) {
-    return String(html)
-      .replaceAll("<br>", "\n")
-      .replaceAll("<br/>", "\n")
-      .replaceAll("<br />", "\n")
-      .trim();
+  private static getLogsHTML() {
+    return LogsViewProvider.getLogs().join("<br />").trim();
+  }
+
+  private static getLogsText() {
+    return LogsViewProvider.getLogs().join("\n").trim();
   }
 
   private static getLogsFilename() {
     return `publisher-logs-${new Date().toISOString().split(".").at(0)}.txt`;
   }
 
-  public static refreshContent(events: EventStreamMessage[]) {
+  public static refreshContent() {
     if (LogsViewProvider.currentView) {
       LogsViewProvider.currentView.webview.postMessage({
         command: "refresh",
-        data: LogsViewProvider.getLogsHTML(events),
+        data: LogsViewProvider.getLogsHTML(),
       });
     }
   }
@@ -212,16 +211,16 @@ export class LogsViewProvider implements WebviewViewProvider, Disposable {
   public register() {
     this.stream.register("publish/start", (_: EventStreamMessage) => {
       // reset the events
-      this.events = [];
-      LogsViewProvider.refreshContent(this.events);
+      LogsViewProvider.events = [];
+      LogsViewProvider.refreshContent();
     });
 
     Array.from(stages.keys()).forEach((stageName) => {
       this.stream.register(`${stageName}/log`, (msg: EventStreamMessage) => {
         const stage = stages.get(stageName);
         if (stage && msg.data.level !== "DEBUG") {
-          this.events.unshift(msg);
-          LogsViewProvider.refreshContent(this.events);
+          LogsViewProvider.events.unshift(msg);
+          LogsViewProvider.refreshContent();
         }
       });
     });
@@ -239,7 +238,7 @@ export class LogsViewProvider implements WebviewViewProvider, Disposable {
     Disposable.from(...this.disposables).dispose();
   }
 
-  private async writeAndOpenLogsFile(content: unknown) {
+  public static async writeAndOpenLogsFile() {
     const fileName = LogsViewProvider.getLogsFilename();
     const workspaceFolders = workspace.workspaceFolders;
     if (!workspaceFolders) {
@@ -252,7 +251,7 @@ export class LogsViewProvider implements WebviewViewProvider, Disposable {
     const filePath = Uri.file(path.join(workspaceUri.fsPath, fileName));
     const fileUri = Uri.joinPath(workspaceUri, fileName);
     const fileContent = new TextEncoder().encode(
-      LogsViewProvider.getLogsText(content),
+      LogsViewProvider.getLogsText(),
     );
 
     try {
@@ -269,6 +268,11 @@ export class LogsViewProvider implements WebviewViewProvider, Disposable {
       const summary = getSummaryStringFromError("failed to write file", err);
       window.showErrorMessage(summary);
     }
+  }
+
+  public static copyLogs() {
+    env.clipboard.writeText(LogsViewProvider.getLogsText());
+    window.showInformationMessage("Logs copied to clipboard!");
   }
 
   public resolveWebviewView(webviewView: WebviewView) {
@@ -291,19 +295,6 @@ export class LogsViewProvider implements WebviewViewProvider, Disposable {
       webviewView.webview,
       this.extensionUri,
     );
-
-    webviewView.webview.onDidReceiveMessage(async (message) => {
-      const { command, content } = message;
-      switch (command) {
-        case "copy":
-          env.clipboard.writeText(LogsViewProvider.getLogsText(content));
-          window.showInformationMessage("Logs copied to clipboard!");
-          return;
-        case "save":
-          await this.writeAndOpenLogsFile(content);
-          break;
-      }
-    });
   }
 
   private _getHtmlForWebview(webview: Webview, extensionUri: Uri): string {
@@ -323,9 +314,6 @@ export class LogsViewProvider implements WebviewViewProvider, Disposable {
 
     const nonce = getNonce();
 
-    const btnStyle =
-      "display:flex;align-items:center;border-radius:0.25rem;border:none;padding:0.25rem 0.5rem;cursor:pointer;";
-
     return /*html*/ `
     <!DOCTYPE html>
       <html lang="en">
@@ -337,36 +325,13 @@ export class LogsViewProvider implements WebviewViewProvider, Disposable {
           <title>Raw Logs</title>
       </head>
       <body>
-        <div style="display:flex;gap:1rem;">
-          <button id="copyButton" style="${btnStyle}">
-            <span class="codicon codicon-copy" style="margin-right:0.25rem;"></span>
-            Copy
-          </button>
-          <button id="saveButton" style="${btnStyle}">
-            <span class="codicon codicon-save" style="margin-right:0.25rem;"></span>
-            Save
-          </button>
-        </div>
-        <pre id="content">${LogsViewProvider.getLogsHTML(this.events)}</pre>
+        <pre id="content">${LogsViewProvider.getLogsHTML()}</pre>
         <script nonce="${nonce}">
-            const vscode = acquireVsCodeApi();
             window.addEventListener('message', event => {
               const message = event.data;
               if (message.command === 'refresh') {
                 document.getElementById('content').innerHTML = message.data;
               }
-            });
-            document.getElementById('copyButton').addEventListener('click', () => {
-              vscode.postMessage({
-                command: 'copy',
-                content: document.querySelector('#content').innerHTML,
-              });
-            });
-            document.getElementById('saveButton').addEventListener('click', () => {
-              vscode.postMessage({
-                command: 'save',
-                content: document.querySelector('#content').innerHTML,
-              });
             });
         </script>
       </body>

@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added the ability to toggle between the summary view (tree) and the raw view (text)
-  for the Publisher logs (#3017)
+  for the Publisher logs along with copy and save logs functionality (#3017)
 
 ## [1.20.0]
 

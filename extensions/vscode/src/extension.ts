@@ -180,8 +180,13 @@ async function initializeExtension(context: ExtensionContext) {
   };
 
   context.subscriptions.push(
-    commands.registerCommand(Commands.Logs.Tree, toggleLogsViewModeHandler),
+    commands.registerCommand(Commands.Logs.Treeview, toggleLogsViewModeHandler),
     commands.registerCommand(Commands.Logs.Webview, toggleLogsViewModeHandler),
+    commands.registerCommand(Commands.Logs.Copy, LogsViewProvider.copyLogs),
+    commands.registerCommand(
+      Commands.Logs.Save,
+      LogsViewProvider.writeAndOpenLogsFile,
+    ),
     commands.registerCommand(Commands.InitProject, async (viewId: string) => {
       setInitializationInProgressContext(InitializationInProgress.true);
       await homeViewProvider.showNewDeploymentMultiStep(viewId);

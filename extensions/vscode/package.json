@@ -68,14 +68,24 @@
     ],
     "commands": [
       {
-        "command": "posit.publisher.logs.tree",
-        "title": "Open Raw Logs",
+        "command": "posit.publisher.logs.treeview",
+        "title": "See Raw Logs",
         "icon": "$(list-unordered)"
       },
       {
         "command": "posit.publisher.logs.webview",
-        "title": "Open Summarized Logs",
+        "title": "See Summarized Logs",
         "icon": "$(list-tree)"
+      },
+      {
+        "command": "posit.publisher.logs.copy",
+        "title": "Copy Logs",
+        "icon": "$(copy)"
+      },
+      {
+        "command": "posit.publisher.logs.save",
+        "title": "Save & Open Logs",
+        "icon": "$(save)"
       },
       {
         "command": "posit.publisher.init-project",
@@ -263,13 +273,23 @@
       ],
       "view/title": [
         {
-          "command": "posit.publisher.logs.tree",
+          "command": "posit.publisher.logs.treeview",
           "when": "view == posit.publisher.logs",
-          "group": "navigation@1"
+          "group": "navigation@3"
         },
         {
           "command": "posit.publisher.logs.webview",
           "when": "view == posit.publisher.rawlogs",
+          "group": "navigation@3"
+        },
+        {
+          "command": "posit.publisher.logs.copy",
+          "when": "view == posit.publisher.logs || view == posit.publisher.rawlogs",
+          "group": "navigation@2"
+        },
+        {
+          "command": "posit.publisher.logs.save",
+          "when": "view == posit.publisher.logs || view == posit.publisher.rawlogs",
           "group": "navigation@1"
         },
         {
