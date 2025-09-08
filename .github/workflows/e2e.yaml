@@ -39,6 +39,18 @@ jobs:
         working-directory: test/e2e
         run: npm ci
 
+      - name: Cache Cypress binary
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/Cypress
+          key: ${{ runner.os }}-cypress-${{ hashFiles('test/e2e/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-cypress-
+
+      - name: Install Cypress
+        working-directory: test/e2e
+        run: npx cypress install
+
       - name: Cache Playwright browsers
         uses: actions/cache@v3
         with:
@@ -52,9 +64,6 @@ jobs:
         run: npx playwright install chromium
 
       - uses: extractions/setup-just@v3
-
-      - name: Build publisher binary
-        run: just build
 
       - name: Download VSIX artifact
         uses: actions/download-artifact@v5
@@ -161,7 +170,7 @@ jobs:
 
       - name: Run Cypress tests
         working-directory: test/e2e
-        run: npx cypress run
+        run: npx cypress run --headless --browser chrome
         env:
           CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
           CONNECT_CLOUD_ENV: ${{ env.CONNECT_CLOUD_ENV }} # defaults to staging
@@ -169,6 +178,7 @@ jobs:
           DEBUG_CYPRESS: ${{ env.DEBUG_CYPRESS }}
           ACTIONS_STEP_DEBUG: ${{ env.DEBUG_CYPRESS }}
           PCC_USER_CCQA3: ${{ secrets.PCC_USER_CCQA3 }}
+          CYPRESS_CACHE_FOLDER: ~/.cache/Cypress
 
       - name: Upload Cypress screenshots on failure
         uses: actions/upload-artifact@v4
