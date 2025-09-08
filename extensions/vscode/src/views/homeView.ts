@@ -217,6 +217,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         return await this.addIntegrationRequest();
       case WebviewToHostMessageType.DELETE_INTEGRATION_REQUEST:
         return await this.deleteIntegrationRequest(msg.content);
+      case WebviewToHostMessageType.CLEAR_ALL_INTEGRATION_REQUESTS:
+        return await this.clearAllIntegrationRequests();
       default:
         window.showErrorMessage(
           `Internal Error: onConduitMessage unhandled msg: ${JSON.stringify(msg)}`,
@@ -1366,6 +1368,52 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       );
       window.showInformationMessage(
         `Failed to remove integration request from configuration. ${summary}`,
+      );
+    }
+  };
+
+  public clearAllIntegrationRequests = async () => {
+    const activeConfig = await this.state.getSelectedConfiguration();
+    if (activeConfig === undefined) {
+      console.error(
+        "homeView::clearAllIntegrationRequests: No active configuration.",
+      );
+      return;
+    }
+    if (isConfigurationError(activeConfig)) {
+      console.error(
+        "homeView::clearAllIntegrationRequests: Unable to delete integration request from a configuration with error.",
+      );
+      return;
+    }
+
+    try {
+      await showProgress(
+        "Clearing Integration Requests",
+        Views.HomeView,
+        async () => {
+          const api = await useApi();
+          const response = await api.integrationRequests.list(
+            activeConfig.configurationName,
+            activeConfig.projectDir,
+          );
+          const reqs = response.data;
+          for (const ir of reqs) {
+            await api.integrationRequests.delete(
+              activeConfig.configurationName,
+              activeConfig.projectDir,
+              {
+                guid: ir.guid,
+              },
+            );
+          }
+        },
+      );
+      await this.refreshIntegrationRequests();
+    } catch (error: unknown) {
+      console.error("Failed to clear all integration requests:", error);
+      window.showInformationMessage(
+        `Failed to clear all integration requests. ${error}`,
       );
     }
   };

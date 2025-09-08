@@ -21,6 +21,7 @@ export enum WebviewToHostMessageType {
   GET_INTEGRATIONS = "getIntegrations",
   ADD_INTEGRATION_REQUEST = "addIntegrationRequest",
   DELETE_INTEGRATION_REQUEST = "deleteIntegrationRequest",
+  CLEAR_ALL_INTEGRATION_REQUESTS = "clearAllIntegrationRequests",
   REFRESH_PYTHON_PACKAGES = "RefreshPythonPackagesMsg",
   SCAN_PYTHON_PACKAGE_REQUIREMENTS = "ScanPythonPackageRequirementsMsg",
   REFRESH_R_PACKAGES = "RefreshRPackagesMsg",
@@ -78,7 +79,8 @@ export type WebviewToHostMessage =
   | UpdateSelectionIsConnectContentRecordMsg
   | CopySystemInfoMsg
   | AddIntegrationRequestMsg
-  | DeleteIntegrationRequestMsg;
+  | DeleteIntegrationRequestMsg
+  | ClearAllIntegrationRequestsMsg;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
@@ -115,6 +117,7 @@ export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
     msg.kind === WebviewToHostMessageType.COPY_SYSTEM_INFO ||
     msg.kind === WebviewToHostMessageType.ADD_INTEGRATION_REQUEST ||
     msg.kind === WebviewToHostMessageType.DELETE_INTEGRATION_REQUEST ||
+    msg.kind === WebviewToHostMessageType.CLEAR_ALL_INTEGRATION_REQUESTS ||
     msg.kind === WebviewToHostMessageType.GET_INTEGRATIONS
   );
 }
@@ -209,6 +212,9 @@ export type DeleteIntegrationRequestMsg = AnyWebviewToHostMessage<
     request: IntegrationRequest;
   }
 >;
+
+export type ClearAllIntegrationRequestsMsg =
+  AnyWebviewToHostMessage<WebviewToHostMessageType.CLEAR_ALL_INTEGRATION_REQUESTS>;
 
 export type RefreshPythonPackagesMsg =
   AnyWebviewToHostMessage<WebviewToHostMessageType.REFRESH_PYTHON_PACKAGES>;

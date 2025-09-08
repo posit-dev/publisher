@@ -14,14 +14,7 @@ import (
 	"github.com/posit-dev/publisher/internal/util"
 )
 
-type DeleteIntegrationRequestRequest struct {
-	Guid            string         `json:"guid,omitempty"`
-	Name            string         `json:"name,omitempty"`
-	Description     string         `json:"description,omitempty"`
-	AuthType        string         `json:"auth_type,omitempty"`
-	IntegrationType string         `json:"type,omitempty"`
-	Config          map[string]any `json:"config,omitempty"`
-}
+type DeleteIntegrationRequestRequest = config.IntegrationRequest
 
 func DeleteIntegrationRequestFuncHandler(base util.AbsolutePath, log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
@@ -43,24 +36,14 @@ func DeleteIntegrationRequestFuncHandler(base util.AbsolutePath, log logging.Log
 
 		dec := json.NewDecoder(req.Body)
 		dec.DisallowUnknownFields()
-		var body DeleteIntegrationRequestRequest
-		err = dec.Decode(&body)
+		var request DeleteIntegrationRequestRequest
+		err = dec.Decode(&request)
 		if err != nil {
 			InternalError(w, req, log, err)
 			return
 		}
 
-		// create a target integration request from the request body
-		targetIr := config.IntegrationRequest{
-			Guid:            body.Guid,
-			Name:            body.Name,
-			Description:     body.Description,
-			AuthType:        body.AuthType,
-			IntegrationType: body.IntegrationType,
-			Config:          body.Config,
-		}
-
-		err = cfg.RemoveIntegrationRequest(targetIr)
+		err = cfg.RemoveIntegrationRequest(request)
 		if err != nil {
 			InternalError(w, req, log, err)
 			return

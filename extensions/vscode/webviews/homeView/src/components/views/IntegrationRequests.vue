@@ -51,6 +51,7 @@ import { useHomeStore } from "src/stores/home";
 import { useHostConduitService } from "src/HostConduitService";
 
 import { WebviewToHostMessageType } from "../../../../../src/types/messages/webviewToHostMessages";
+import { send } from "vite";
 
 const { sendMsg } = useHostConduitService();
 const home = useHomeStore();
@@ -67,8 +68,7 @@ const sectionActions = computed(() => {
   if (!isOAuthIntegrationsSupported.value) {
     return [];
   }
-
-  return [
+  const result = [
     {
       label: "Add Integration Request",
       codicon: "codicon-add",
@@ -79,5 +79,18 @@ const sectionActions = computed(() => {
       },
     },
   ];
+
+  if (home.integrationRequests.length > 0) {
+    result.push({
+      label: "Clear all Integration Request Values",
+      codicon: "codicon-clear-all",
+      fn: () => {
+        sendMsg({
+          kind: WebviewToHostMessageType.CLEAR_ALL_INTEGRATION_REQUESTS,
+        });
+      },
+    });
+  }
+  return result;
 });
 </script>
