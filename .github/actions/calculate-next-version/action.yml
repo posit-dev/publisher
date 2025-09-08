@@ -2,9 +2,9 @@ name: "Calculate Next Version"
 description: "Calculate the next version based on VSCode extension versioning guidelines"
 inputs:
   release-type:
-    description: 'Type of release to generate ("release" or "pre-release")'
+    description: 'Semantic version type to increment: "major", "minor", "patch", "premajor", "preminor", "prepatch"'
     required: true
-    default: "pre-release"
+    default: "prepatch"
   all-tags:
     description: "Comma-separated list of all version tags in the repository (from get-tags action)"
     required: true
@@ -23,8 +23,8 @@ outputs:
     description: "The latest version overall (regardless of type)"
 
 runs:
-  # Node 22 is the current Active LTS version as of September 2025
+  # Node 24 is the current Active LTS version as of September 2025
   # See: https://nodejs.org/en/about/previous-releases
-  # GitHub Actions currently only supports specific version identifiers
-  using: "node22"
+  # GitHub Actions currently only supports specific version identifiers (node16, node20, node24)
+  using: "node24"
   main: "index.js"

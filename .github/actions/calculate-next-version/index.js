@@ -8,9 +8,17 @@ try {
   const maxTagsStr = core.getInput("max-tags", { required: false }) || "10";
 
   // Validate release type
-  if (releaseType !== "release" && releaseType !== "pre-release") {
+  const validReleaseTypes = [
+    "major",
+    "minor",
+    "patch",
+    "premajor",
+    "preminor",
+    "prepatch",
+  ];
+  if (!validReleaseTypes.includes(releaseType)) {
     core.setFailed(
-      `Invalid release-type: '${releaseType}'. Must be either 'release' or 'pre-release'.`,
+      `Invalid release-type: '${releaseType}'. Must be one of: ${validReleaseTypes.join(", ")}`,
     );
     return;
   }
@@ -112,21 +120,13 @@ try {
 
   // Tags are already sorted by semver rules (newest first)
 
-  // Check that we have at least one tag
-  if (validTagValues.length === 0) {
-    core.setFailed(
-      "No valid semver tags found. At least one valid semver tag is required.",
-    );
-    return;
-  }
-
   core.endGroup();
 
-  // Find latest versions by type
+  // Find latest versions by type (release vs prerelease)
   core.startGroup("Finding latest versions");
 
-  let latestRelease = null;
-  let latestPrerelease = null;
+  let latestRelease = null; // Latest version with even minor number (release)
+  let latestPrerelease = null; // Latest version with odd minor number (prerelease)
   let latestVersion = validTagValues[0]; // First item is the latest since we sorted already
 
   // Find latest by type (even/odd minor)
@@ -162,10 +162,12 @@ try {
 
   core.endGroup();
 
-  // Calculate next version
+  // Calculate next version using semver types mapped to VSCode's even/odd versioning scheme
   core.startGroup("Calculating next version");
 
-  core.info("Using semver to calculate next version");
+  core.info(
+    "Calculating next version based on VSCode extension versioning guidelines",
+  );
 
   // Parse latest version
   const parsed = semver.parse(latestVersion);
@@ -177,46 +179,76 @@ try {
 
   let nextVersion;
 
-  if (releaseType === "release") {
-    // Release - use even minor numbers
-    if (isEven) {
-      // Already a release version - increment patch
-      nextVersion = semver.inc(latestVersion, "patch");
+  switch (releaseType) {
+    case "major":
+      // Always increment major, set minor to 0 (even/stable), set patch to 0
+      nextVersion = `${parsed.major + 1}.0.0`;
       core.info(
-        `Latest is already a release version - incrementing patch: ${nextVersion}`,
+        `Incrementing major version: ${latestVersion} → ${nextVersion}`,
       );
-    } else {
-      // Current latest is prerelease - switch to next even minor
-      let nextMinor = parsed.minor + 1;
-      // Ensure minor is even
-      if (nextMinor % 2 !== 0) {
-        nextMinor++;
+      break;
+
+    case "minor":
+      // Always move to next even minor, set patch to 0
+      let nextEvenMinor = parsed.minor + 1;
+      if (nextEvenMinor % 2 !== 0) nextEvenMinor++; // Ensure even
+      nextVersion = `${parsed.major}.${nextEvenMinor}.0`;
+      core.info(
+        `Incrementing to next stable (even) minor: ${latestVersion} → ${nextVersion}`,
+      );
+      break;
+
+    case "patch":
+      if (isEven) {
+        // Already on stable release, just increment patch
+        nextVersion = semver.inc(latestVersion, "patch");
+        core.info(
+          `Incrementing patch on stable version: ${latestVersion} → ${nextVersion}`,
+        );
+      } else {
+        // On prerelease, move to next stable
+        let nextEvenMinor = parsed.minor + 1;
+        if (nextEvenMinor % 2 !== 0) nextEvenMinor++; // Ensure even
+        nextVersion = `${parsed.major}.${nextEvenMinor}.0`;
+        core.info(
+          `Moving from prerelease to stable: ${latestVersion} → ${nextVersion}`,
+        );
       }
-      nextVersion = `${parsed.major}.${nextMinor}.0`;
+      break;
+
+    case "premajor":
+      // Always increment major, set minor to 1 (odd/pre-release), set patch to 0
+      nextVersion = `${parsed.major + 1}.1.0`;
       core.info(
-        `Latest is a prerelease - creating new release with even minor: ${nextVersion}`,
+        `Creating new major prerelease: ${latestVersion} → ${nextVersion}`,
       );
-    }
-  } else {
-    // Prerelease - use odd minor numbers
-    if (isEven) {
-      // Current latest is a release - switch to next odd minor
-      let nextMinor = parsed.minor + 1;
-      // Ensure minor is odd
-      if (nextMinor % 2 === 0) {
-        nextMinor++;
+      break;
+
+    case "preminor":
+      // Always move to next odd minor, set patch to 0
+      let nextOddMinor = parsed.minor + 1;
+      if (nextOddMinor % 2 === 0) nextOddMinor++; // Ensure odd
+      nextVersion = `${parsed.major}.${nextOddMinor}.0`;
+      core.info(
+        `Creating new prerelease (odd) minor: ${latestVersion} → ${nextVersion}`,
+      );
+      break;
+
+    case "prepatch":
+      if (isEven) {
+        // On stable, move to next prerelease (odd)
+        nextVersion = `${parsed.major}.${parsed.minor + 1}.0`;
+        core.info(
+          `Moving from stable to prerelease: ${latestVersion} → ${nextVersion}`,
+        );
+      } else {
+        // Already on prerelease, increment patch
+        nextVersion = semver.inc(latestVersion, "patch");
+        core.info(
+          `Incrementing patch on prerelease: ${latestVersion} → ${nextVersion}`,
+        );
       }
-      nextVersion = `${parsed.major}.${nextMinor}.0`;
-      core.info(
-        `Latest is a release - creating new prerelease with odd minor: ${nextVersion}`,
-      );
-    } else {
-      // Already a prerelease version - increment patch
-      nextVersion = semver.inc(latestVersion, "patch");
-      core.info(
-        `Latest is already a prerelease - incrementing patch: ${nextVersion}`,
-      );
-    }
+      break;
   }
 
   // Validate the calculated next version

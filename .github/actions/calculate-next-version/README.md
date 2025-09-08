@@ -9,6 +9,28 @@ The VSCode extension versioning follows these guidelines:
 - **Release versions** use `major.EVEN_NUMBER.patch` (e.g., `1.0.0`, `1.2.0`)
 - **Pre-release versions** use `major.ODD_NUMBER.patch` (e.g., `1.1.0`, `1.3.0`)
 
+This action uses standard semantic versioning terminology (`major`, `minor`, `patch`, `premajor`, `preminor`, `prepatch`) mapped to VSCode's even/odd versioning scheme:
+
+- **Release types** (`major`, `minor`, `patch`) always produce versions with even minor numbers
+- **Prerelease types** (`premajor`, `preminor`, `prepatch`) always produce versions with odd minor numbers
+
+#### Version Calculation Chart
+
+| Current Version | Release Type | Next Version | Description                       |
+| --------------- | ------------ | ------------ | --------------------------------- |
+| 1.4.0 (stable)  | major        | 2.0.0        | New major release version         |
+| 1.4.0 (stable)  | minor        | 1.6.0        | Next even minor release           |
+| 1.4.0 (stable)  | patch        | 1.4.1        | Increment patch on stable version |
+| 1.4.0 (stable)  | premajor     | 2.1.0        | New major prerelease version      |
+| 1.4.0 (stable)  | preminor     | 1.5.0        | Next odd minor prerelease         |
+| 1.4.0 (stable)  | prepatch     | 1.5.0        | Move to prerelease state          |
+| 1.5.0 (pre)     | major        | 2.0.0        | New major release version         |
+| 1.5.0 (pre)     | minor        | 1.6.0        | Next even minor release           |
+| 1.5.0 (pre)     | patch        | 1.6.0        | Move to next stable version       |
+| 1.5.0 (pre)     | premajor     | 2.1.0        | New major prerelease version      |
+| 1.5.0 (pre)     | preminor     | 1.7.0        | Next odd minor prerelease         |
+| 1.5.0 (pre)     | prepatch     | 1.5.1        | Increment patch on prerelease     |
+
 ## Usage
 
 ```yaml
@@ -23,18 +45,18 @@ The VSCode extension versioning follows these guidelines:
   id: calculate-version
   uses: ./.github/actions/calculate-next-version
   with:
-    release-type: "release" # or 'pre-release'
+    release-type: "prepatch" # Options: "major", "minor", "patch", "premajor", "preminor", "prepatch"
     all-tags: ${{ steps.get-tags.outputs.all-tags }}
     max-tags: "10" # Optional, defaults to 10
 ```
 
 ## Inputs
 
-| Input          | Description                                                                            | Required | Default       |
-| -------------- | -------------------------------------------------------------------------------------- | -------- | ------------- |
-| `release-type` | Type of release to generate (must be either "release" or "pre-release")                | Yes      | `pre-release` |
-| `all-tags`     | Comma-separated list of all version tags in the repository (from get-tags action)      | Yes      | -             |
-| `max-tags`     | Maximum number of recent tags to consider (to avoid issues with older non-SemVer tags) | No       | `10`          |
+| Input          | Description                                                                                       | Required | Default    |
+| -------------- | ------------------------------------------------------------------------------------------------- | -------- | ---------- |
+| `release-type` | Semantic version type to increment: `major`, `minor`, `patch`, `premajor`, `preminor`, `prepatch` | Yes      | `prepatch` |
+| `all-tags`     | Comma-separated list of all version tags in the repository (from get-tags action)                 | Yes      | -          |
+| `max-tags`     | Maximum number of recent tags to consider (to avoid issues with older non-SemVer tags)            | No       | `10`       |
 
 ## Outputs
 
@@ -45,25 +67,6 @@ The VSCode extension versioning follows these guidelines:
 | `current-prerelease` | The current prerelease version (odd minor)                 |
 | `latest-version`     | The latest version overall (regardless of type)            |
 
-## Algorithm
-
-1. Processes the provided version tags:
-   - Reverses the input list to start with newest tags
-   - Takes only the most recent tags up to `max-tags` (default 10)
-   - Validates each tag using strict semver rules
-   - Fails immediately if any tag is not a valid semantic version
-   - Sorts valid tags by semantic version (newest first)
-2. Works with the filtered list of valid tags
-3. Finds the latest release and pre-release versions
-4. Based on the requested release type:
-   - For `release`:
-     - If latest version has an even minor, increments patch
-     - If latest version has an odd minor, switches to next even minor
-   - For `pre-release`:
-     - If latest version has an even minor, switches to next odd minor
-     - If latest version has an odd minor, increments patch
-5. Returns the calculated next version and related information
-
 The `max-tags` parameter focuses on recent history:
 
 By limiting to only the most recent tags, the action ensures that version calculations are based on your project's current versioning practices rather than potentially different historical practices.
@@ -72,9 +75,9 @@ By limiting to only the most recent tags, the action ensures that version calcul
 
 ## Requirements
 
-- Node.js 22.x (Current Active LTS version as of September 2025)
+- Node.js 24.x
 
-> **Note**: GitHub Actions only supports explicit Node.js version specifications (`node20`, `node22`, etc.), not dynamic LTS specifications. We've chosen Node 22 as it's the current Active LTS version.
+> **Note**: GitHub Actions only supports explicit Node.js version specifications (`node16`, `node20`, `node24`), not dynamic LTS specifications. We've chosen Node 24 as it's the current Active LTS version that is supported by GitHub Actions.
 
 ## Testing
 
@@ -92,11 +95,11 @@ These tests:
 
 Test coverage includes:
 
-1. Version calculation logic for both release and prerelease types
-2. Handling tags with or without v prefixes
-3. Proper sorting of semver tags
-4. Error handling for invalid inputs
-5. Real-world version tag scenarios
-6. Alpha/beta/development version tags
+1. Version calculation for all supported types (`major`, `minor`, `patch`, `premajor`, `preminor`, `prepatch`)
+2. Testing both stable (even minor) and prerelease (odd minor) starting versions
+3. Handling tags with v prefixes
+4. Proper sorting of semver tags
+5. Error handling for invalid inputs
+6. Real-world version tag scenarios
 
 All tests are designed to run without external dependencies, making them easy to execute locally.

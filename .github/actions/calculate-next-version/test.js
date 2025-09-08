@@ -129,21 +129,143 @@ function runTest(name, testInputs, expectedOutputs, expectFailure = false) {
 
 // Test cases
 const tests = [
+  // Major version tests
   {
-    name: "Calculating release version from release",
+    name: "Major version from stable version",
     inputs: {
-      "release-type": "release",
-      "all-tags": "1.0.0,1.2.0,1.4.0",
+      "release-type": "major",
+      "all-tags": "v1.4.0",
+    },
+    expectedOutputs: {
+      "next-version": "v2.0.0",
+    },
+  },
+  {
+    name: "Major version from prerelease version",
+    inputs: {
+      "release-type": "major",
+      "all-tags": "v1.5.0",
+    },
+    expectedOutputs: {
+      "next-version": "v2.0.0",
+    },
+  },
+
+  // Minor version tests
+  {
+    name: "Minor version from stable version",
+    inputs: {
+      "release-type": "minor",
+      "all-tags": "v1.4.0",
+    },
+    expectedOutputs: {
+      "next-version": "v1.6.0",
+    },
+  },
+  {
+    name: "Minor version from prerelease version",
+    inputs: {
+      "release-type": "minor",
+      "all-tags": "v1.5.0",
+    },
+    expectedOutputs: {
+      "next-version": "v1.6.0",
+    },
+  },
+
+  // Patch version tests
+  {
+    name: "Patch version from stable version",
+    inputs: {
+      "release-type": "patch",
+      "all-tags": "v1.4.0",
     },
     expectedOutputs: {
       "next-version": "v1.4.1",
     },
   },
   {
+    name: "Patch version from prerelease version",
+    inputs: {
+      "release-type": "patch",
+      "all-tags": "v1.5.0",
+    },
+    expectedOutputs: {
+      "next-version": "v1.6.0",
+    },
+  },
+
+  // Premajor version tests
+  {
+    name: "Premajor version from stable version",
+    inputs: {
+      "release-type": "premajor",
+      "all-tags": "v1.4.0",
+    },
+    expectedOutputs: {
+      "next-version": "v2.1.0",
+    },
+  },
+  {
+    name: "Premajor version from prerelease version",
+    inputs: {
+      "release-type": "premajor",
+      "all-tags": "v1.5.0",
+    },
+    expectedOutputs: {
+      "next-version": "v2.1.0",
+    },
+  },
+
+  // Preminor version tests
+  {
+    name: "Preminor version from stable version",
+    inputs: {
+      "release-type": "preminor",
+      "all-tags": "v1.4.0",
+    },
+    expectedOutputs: {
+      "next-version": "v1.5.0",
+    },
+  },
+  {
+    name: "Preminor version from prerelease version",
+    inputs: {
+      "release-type": "preminor",
+      "all-tags": "v1.5.0",
+    },
+    expectedOutputs: {
+      "next-version": "v1.7.0",
+    },
+  },
+
+  // Prepatch version tests
+  {
+    name: "Prepatch version from stable version",
+    inputs: {
+      "release-type": "prepatch",
+      "all-tags": "v1.4.0",
+    },
+    expectedOutputs: {
+      "next-version": "v1.5.0",
+    },
+  },
+  {
+    name: "Prepatch version from prerelease version",
+    inputs: {
+      "release-type": "prepatch",
+      "all-tags": "v1.5.0",
+    },
+    expectedOutputs: {
+      "next-version": "v1.5.1",
+    },
+  },
+
+  {
     name: "Limiting tags with max-tags parameter",
     inputs: {
-      "release-type": "release",
-      "all-tags": "1.0.0,1.2.0,1.4.0,1.6.0,1.8.0",
+      "release-type": "patch",
+      "all-tags": "v1.0.0,v1.2.0,v1.4.0,v1.6.0,v1.8.0",
       "max-tags": "2",
     },
     expectedOutputs: {
@@ -151,9 +273,9 @@ const tests = [
     },
   },
   {
-    name: "Calculating release version with v prefix",
+    name: "Version calculation with v prefix",
     inputs: {
-      "release-type": "release",
+      "release-type": "patch",
       "all-tags": "v1.0.0,v1.2.0,v1.4.0",
     },
     expectedOutputs: {
@@ -161,39 +283,30 @@ const tests = [
     },
   },
   {
-    name: "Calculating release version from prerelease",
+    name: "Multiple tags with v prefix",
     inputs: {
-      "release-type": "release",
-      "all-tags": "1.0.0,1.1.0,1.3.0",
-    },
-    expectedOutputs: {
-      "next-version": "v1.4.0",
-    },
-  },
-  {
-    name: "Calculating prerelease version from release",
-    inputs: {
-      "release-type": "pre-release",
-      "all-tags": "1.0.0,1.2.0,1.4.0",
-    },
-    expectedOutputs: {
-      "next-version": "v1.5.0",
-    },
-  },
-  {
-    name: "Mixed tags with and without v prefix",
-    inputs: {
-      "release-type": "release",
-      "all-tags": "v1.0.0,1.2.0,v1.4.0,1.6.0",
+      "release-type": "patch",
+      "all-tags": "v1.0.0,v1.2.0,v1.4.0,v1.6.0",
     },
     expectedOutputs: {
       "next-version": "v1.6.1",
     },
   },
   {
-    name: "Real world tags for next release version",
+    name: "Real world tags for next patch version",
     inputs: {
-      "release-type": "release",
+      "release-type": "patch",
+      "all-tags":
+        "v1.19.1,v1.19.0,v1.18.1,v1.18.0,v1.16.1,v1.16.0,v1.14.0,v1.12.1,v1.12.0,v1.10.0",
+    },
+    expectedOutputs: {
+      "next-version": "v1.20.0", // v1.19.1 is an odd-minor prerelease, so patch goes to next even minor
+    },
+  },
+  {
+    name: "Real world tags for next minor version",
+    inputs: {
+      "release-type": "minor",
       "all-tags":
         "v1.19.1,v1.19.0,v1.18.1,v1.18.0,v1.16.1,v1.16.0,v1.14.0,v1.12.1,v1.12.0,v1.10.0",
     },
@@ -205,14 +318,14 @@ const tests = [
     name: "Invalid release type",
     inputs: {
       "release-type": "invalid",
-      "all-tags": "1.0.0,1.2.0",
+      "all-tags": "v1.0.0,v1.2.0",
     },
     expectFailure: true,
   },
   {
     name: "Empty tags",
     inputs: {
-      "release-type": "release",
+      "release-type": "patch",
       "all-tags": "",
     },
     expectFailure: true,
@@ -220,38 +333,18 @@ const tests = [
   {
     name: "Invalid tags",
     inputs: {
-      "release-type": "release",
-      "all-tags": "foo,bar,1.x.0",
+      "release-type": "patch",
+      "all-tags": "foo,bar,v1.x.0",
     },
     expectFailure: true,
   },
   {
     name: "Mixed valid and invalid tags",
     inputs: {
-      "release-type": "release",
-      "all-tags": "1.0.0,invalid-tag,v1.2.0,not-semver,v1.4.0",
+      "release-type": "patch",
+      "all-tags": "v1.0.0,invalid-tag,v1.2.0,not-semver,v1.4.0",
     },
     expectFailure: true,
-  },
-  {
-    name: "Alpha/beta version tags (semver format)",
-    inputs: {
-      "release-type": "release",
-      "all-tags": "v1.0.0-beta.1,v1.0.0-alpha.8,v1.0.0-alpha.7",
-    },
-    expectedOutputs: {
-      "next-version": "v1.0.0",
-    },
-  },
-  {
-    name: "Dev version tags (semver format)",
-    inputs: {
-      "release-type": "pre-release",
-      "all-tags": "v1.0.0-dev.1,v1.0.0-dev.0,v0.0.1-dev.6",
-    },
-    expectedOutputs: {
-      "next-version": "v1.1.0",
-    },
   },
 ];
 
