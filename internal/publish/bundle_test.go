@@ -24,10 +24,10 @@ import (
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/logging/loggingtest"
 	"github.com/posit-dev/publisher/internal/publish/publishhelper"
-	"github.com/posit-dev/publisher/internal/util/dcf"
 	"github.com/posit-dev/publisher/internal/server_type"
 	"github.com/posit-dev/publisher/internal/state"
 	"github.com/posit-dev/publisher/internal/util"
+	"github.com/posit-dev/publisher/internal/util/dcf"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
 )
 
@@ -231,127 +231,127 @@ func (s *BundleSuite) TestCreateBundle() {
 }
 
 func (s *BundleSuite) TestCreateBundle_IncludesRenvLock_WhenWildcardAndLockExists() {
-    // Ensure wildcard includes renv.lock
-    s.stateStore.Config.Files = []string{"*"}
-    // Simulate earlier detection setting PackageFile
-    if s.stateStore.Config.R == nil {
-        s.stateStore.Config.R = &config.R{}
-    }
-    s.stateStore.Config.R.PackageFile = "renv.lock"
+	// Ensure wildcard includes renv.lock
+	s.stateStore.Config.Files = []string{"*"}
+	// Simulate earlier detection setting PackageFile
+	if s.stateStore.Config.R == nil {
+		s.stateStore.Config.R = &config.R{}
+	}
+	s.stateStore.Config.R.PackageFile = "renv.lock"
 
-    publisher := s.createPublisher()
-    manifest, err := publisher.createManifest()
-    s.NoError(err)
+	publisher := s.createPublisher()
+	manifest, err := publisher.createManifest()
+	s.NoError(err)
 
-    bundleFile, err := publisher.createBundle(manifest)
-    s.NoError(err)
-    defer bundleFile.Close()
-    defer os.Remove(bundleFile.Name())
+	bundleFile, err := publisher.createBundle(manifest)
+	s.NoError(err)
+	defer bundleFile.Close()
+	defer os.Remove(bundleFile.Name())
 
-    files := s.readBundleContents(bundleFile)
-    s.Contains(files, "renv.lock")
+	files := s.readBundleContents(bundleFile)
+	s.Contains(files, "renv.lock")
 }
 
 func (s *BundleSuite) TestCreateBundle_ExcludesRenvLock_WhenMissingAndWildcard() {
-    // Build an isolated temp project without renv.lock
-    tmp, err := os.MkdirTemp("", "bundle_test_no_lock_*")
-    s.Require().NoError(err)
-    defer os.RemoveAll(tmp)
+	// Build an isolated temp project without renv.lock
+	tmp, err := os.MkdirTemp("", "bundle_test_no_lock_*")
+	s.Require().NoError(err)
+	defer os.RemoveAll(tmp)
 
-    fs := afero.NewOsFs()
-    dir := util.AbsolutePath{Path: util.NewPath(tmp, fs)}
+	fs := afero.NewOsFs()
+	dir := util.AbsolutePath{Path: util.NewPath(tmp, fs)}
 
-    // Minimal app structure
-    _ = dir.Join("app.R").WriteFile([]byte("print('hi')\n"), 0644)
-    _ = dir.Join("data").MkdirAll(0755)
-    _ = dir.Join("data", "test.csv").WriteFile([]byte("x\ny\n"), 0644)
+	// Minimal app structure
+	_ = dir.Join("app.R").WriteFile([]byte("print('hi')\n"), 0644)
+	_ = dir.Join("data").MkdirAll(0755)
+	_ = dir.Join("data", "test.csv").WriteFile([]byte("x\ny\n"), 0644)
 
-    // Prepare state with wildcard and empty PackageFile
-    cfg := &config.Config{
-        Type:       contenttypes.ContentTypeRShiny,
-        Entrypoint: "app.R",
-        Files:      []string{"*"},
-        R:          &config.R{Version: "4.2.0", PackageFile: ""},
-    }
+	// Prepare state with wildcard and empty PackageFile
+	cfg := &config.Config{
+		Type:       contenttypes.ContentTypeRShiny,
+		Entrypoint: "app.R",
+		Files:      []string{"*"},
+		R:          &config.R{Version: "4.2.0", PackageFile: ""},
+	}
 
-    st := &state.State{Dir: dir, Config: cfg}
-    helper := publishhelper.NewPublishHelper(st, logging.NewDiscardLogger())
+	st := &state.State{Dir: dir, Config: cfg}
+	helper := publishhelper.NewPublishHelper(st, logging.NewDiscardLogger())
 
-    // Mock mapper to return a generated lockfile and non-empty packages on scan
-    mockPM := &bundleMockPackageMapper{}
-    generated := dir.Join("generated.lock")
-    mockPM.On("ScanDependencies", []string{dir.String()}, mock.Anything).Return(generated, nil)
-    pkgs := bundles.PackageMap{"R6": {Description: dcf.Record{"Package": "R6", "Version": "2.5.1"}}}
-    mockPM.On("GetManifestPackages", dir, generated, mock.Anything).Return(pkgs, nil)
+	// Mock mapper to return a generated lockfile and non-empty packages on scan
+	mockPM := &bundleMockPackageMapper{}
+	generated := dir.Join("generated.lock")
+	mockPM.On("ScanDependencies", []string{dir.String()}, mock.Anything).Return(generated, nil)
+	pkgs := bundles.PackageMap{"R6": {Description: dcf.Record{"Package": "R6", "Version": "2.5.1"}}}
+	mockPM.On("GetManifestPackages", dir, generated, mock.Anything).Return(pkgs, nil)
 
-    pub := &defaultPublisher{
-        log:            logging.NewDiscardLogger(),
-        emitter:        events.NewNullEmitter(),
-        rPackageMapper: mockPM,
-        r:              util.NewPath("R", fs),
-        python:         util.NewPath("python", fs),
-        PublishHelper:  helper,
-    }
+	pub := &defaultPublisher{
+		log:            logging.NewDiscardLogger(),
+		emitter:        events.NewNullEmitter(),
+		rPackageMapper: mockPM,
+		r:              util.NewPath("R", fs),
+		python:         util.NewPath("python", fs),
+		PublishHelper:  helper,
+	}
 
-    manifest, err := pub.createManifest()
-    s.NoError(err)
-    s.NotEmpty(manifest.Packages)
-    // Config.R.PackageFile remains empty
-    s.Equal("", pub.Config.R.PackageFile)
+	manifest, err := pub.createManifest()
+	s.NoError(err)
+	s.NotEmpty(manifest.Packages)
+	// Config.R.PackageFile remains empty
+	s.Equal("", pub.Config.R.PackageFile)
 
-    bundleFile, err := pub.createBundle(manifest)
-    s.NoError(err)
-    defer bundleFile.Close()
-    defer os.Remove(bundleFile.Name())
+	bundleFile, err := pub.createBundle(manifest)
+	s.NoError(err)
+	defer bundleFile.Close()
+	defer os.Remove(bundleFile.Name())
 
-    files := s.readBundleContents(bundleFile)
-    // No renv.lock present in project, so it must not appear
-    s.NotContains(files, "renv.lock")
+	files := s.readBundleContents(bundleFile)
+	// No renv.lock present in project, so it must not appear
+	s.NotContains(files, "renv.lock")
 }
 
 func (s *BundleSuite) TestFullFlow_WithConfiguredLockfile_UsesItAndBundlesIt() {
-    // Local state with wildcard so lockfile is bundled; configure R.PackageFile explicitly
-    cfg := &config.Config{
-        Type:       contenttypes.ContentTypeRShiny,
-        Entrypoint: "app.R",
-        Files:      []string{"*"},
-        R:          &config.R{Version: "4.2.0", PackageFile: "renv.lock"},
-    }
+	// Local state with wildcard so lockfile is bundled; configure R.PackageFile explicitly
+	cfg := &config.Config{
+		Type:       contenttypes.ContentTypeRShiny,
+		Entrypoint: "app.R",
+		Files:      []string{"*"},
+		R:          &config.R{Version: "4.2.0", PackageFile: "renv.lock"},
+	}
 
-    st := &state.State{Dir: s.dir, Config: cfg}
-    helper := publishhelper.NewPublishHelper(st, logging.NewDiscardLogger())
+	st := &state.State{Dir: s.dir, Config: cfg}
+	helper := publishhelper.NewPublishHelper(st, logging.NewDiscardLogger())
 
-    // Expect to read packages from configured renv.lock without scanning
-    lockfile := s.dir.Join("renv.lock")
-    expected := bundles.PackageMap{
-        "R6": {Description: dcf.Record{"Package": "R6", "Version": "2.5.1"}},
-    }
-    mockPM := &bundleMockPackageMapper{}
-    mockPM.On("GetManifestPackages", s.dir, lockfile, mock.Anything).Return(expected, nil)
+	// Expect to read packages from configured renv.lock without scanning
+	lockfile := s.dir.Join("renv.lock")
+	expected := bundles.PackageMap{
+		"R6": {Description: dcf.Record{"Package": "R6", "Version": "2.5.1"}},
+	}
+	mockPM := &bundleMockPackageMapper{}
+	mockPM.On("GetManifestPackages", s.dir, lockfile, mock.Anything).Return(expected, nil)
 
-    pub := &defaultPublisher{
-        log:            logging.NewDiscardLogger(),
-        emitter:        events.NewNullEmitter(),
-        rPackageMapper: mockPM,
-        r:              util.NewPath("R", s.fs),
-        python:         util.NewPath("python", s.fs),
-        PublishHelper:  helper,
-    }
+	pub := &defaultPublisher{
+		log:            logging.NewDiscardLogger(),
+		emitter:        events.NewNullEmitter(),
+		rPackageMapper: mockPM,
+		r:              util.NewPath("R", s.fs),
+		python:         util.NewPath("python", s.fs),
+		PublishHelper:  helper,
+	}
 
-    manifest, err := pub.createManifest()
-    s.NoError(err)
+	manifest, err := pub.createManifest()
+	s.NoError(err)
 
-    // Packages should be what the mapper returned (no scanning)
-    s.Equal(expected, manifest.Packages)
-    mockPM.AssertNotCalled(s.T(), "ScanDependencies", mock.Anything, mock.Anything)
+	// Packages should be what the mapper returned (no scanning)
+	s.Equal(expected, manifest.Packages)
+	mockPM.AssertNotCalled(s.T(), "ScanDependencies", mock.Anything, mock.Anything)
 
-    // Bundle should include the lockfile
-    bundleFile, err := pub.createBundle(manifest)
-    s.NoError(err)
-    defer bundleFile.Close()
-    defer os.Remove(bundleFile.Name())
-    files := s.readBundleContents(bundleFile)
-    s.Contains(files, "renv.lock")
+	// Bundle should include the lockfile
+	bundleFile, err := pub.createBundle(manifest)
+	s.NoError(err)
+	defer bundleFile.Close()
+	defer os.Remove(bundleFile.Name())
+	files := s.readBundleContents(bundleFile)
+	s.Contains(files, "renv.lock")
 }
 
 func (s *BundleSuite) readBundleContents(bundleFile *os.File) []string {
