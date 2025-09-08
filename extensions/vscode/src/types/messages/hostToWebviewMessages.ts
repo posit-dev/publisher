@@ -142,8 +142,12 @@ export type PublishFinishFailureMsg = AnyHostToWebviewMessage<
 >;
 export type ContentRenderFinishedMsg =
   AnyHostToWebviewMessage<HostToWebviewMessageType.CONTENT_RENDER_FINISHED>;
-export type ContentRenderFailureMsg =
-  AnyHostToWebviewMessage<HostToWebviewMessageType.CONTENT_RENDER_FAILURE>;
+export type ContentRenderFailureMsg = AnyHostToWebviewMessage<
+  HostToWebviewMessageType.CONTENT_RENDER_FAILURE,
+  {
+    error: string;
+  }
+>;
 export type UpdateContentRecordSelectionMsg = AnyHostToWebviewMessage<
   HostToWebviewMessageType.UPDATE_CONTENTRECORD_SELECTION,
   {

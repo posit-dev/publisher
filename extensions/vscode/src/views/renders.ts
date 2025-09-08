@@ -38,23 +38,21 @@ export const renderQuartoContent = async (
       kind: HostToWebviewMessageType.CONTENT_RENDER_FINISHED,
     });
   } catch (err: unknown) {
+    let errMsg = "Unknown error trying to render Quarto content.";
+    if (err instanceof ErrorNoQuarto) {
+      errMsg =
+        "Cannot render Quarto content. Quarto is not available on the system.";
+    } else if (err instanceof ErrorQuartoRender) {
+      errMsg = err.message;
+    } else if (err instanceof Error) {
+      errMsg = `Unknown error trying to render Quarto content. Error: ${err.message}`;
+    }
+    window.showErrorMessage(errMsg);
     conduit.sendMsg({
       kind: HostToWebviewMessageType.CONTENT_RENDER_FAILURE,
+      content: {
+        error: errMsg,
+      },
     });
-    if (err instanceof ErrorNoQuarto) {
-      window.showErrorMessage(
-        "Cannot render Quarto content. Quarto is not available on the system.",
-      );
-    } else if (err instanceof ErrorQuartoRender) {
-      window.showErrorMessage(
-        `Failed to render Quarto content. Error: ${err.message}`,
-      );
-    } else if (err instanceof Error) {
-      window.showErrorMessage(
-        `Unknown error trying to render Quarto content. Error: ${err.message}`,
-      );
-    } else {
-      window.showErrorMessage("Unknown error trying to render Quarto content.");
-    }
   }
 };
