@@ -1,0 +1,118 @@
+name: Nightly Pre-release
+
+on:
+  # IMPORTANT: This workflow is for testing purposes only and should NOT be scheduled
+  # schedule:
+  #   # DO NOT UNCOMMENT unless explicitly ready for production
+  #   - cron: "0 07 * * *" # Run at 7 AM UTC daily
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: "Display mode only - for testing the version calculation action (no tags will be created)"
+        required: false
+        default: true
+        type: boolean
+
+jobs:
+  check:
+    name: Check current commit tags
+    runs-on: ubuntu-latest
+    outputs:
+      ref-has-tag: ${{ steps.get-version-tags.outputs.has-tag }}
+      ref-sha: ${{ steps.get-version-tags.outputs.current-sha }}
+      all-tags: ${{ steps.get-version-tags.outputs.all-tags }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-tags: true
+          ref: main
+
+      - name: Get version tags
+        id: get-version-tags
+        uses: ./.github/actions/get-tags
+        with:
+          ref: main
+          pattern: '^v[0-9]+\.[0-9]+\.[0-9]+$'
+
+      - name: Display tags info
+        id: display-tags-info
+        run: |
+          echo "ℹ️ All version tags in repository: ${{ steps.get-version-tags.outputs.all-tags }}"
+          echo ""
+
+          if [[ "${{ steps.get-version-tags.outputs.has-tag }}" == "true" ]]; then
+            echo "ℹ️ Current commit on the specified ref (main) already has tags:"
+            echo "${{ steps.get-version-tags.outputs.tags }}"
+          else
+            echo "ℹ️ Current commit on the specified ref (main) has no version tags - will proceed with versioning"
+          fi
+
+  version:
+    name: Calculate next version
+    needs: check
+    if: needs.check.outputs.ref-has-tag == 'false'
+    runs-on: ubuntu-latest
+    outputs:
+      next-version: ${{ steps.calculate-version.outputs.next-version }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-tags: true
+          ref: main
+
+      - name: Calculate version
+        id: calculate-version
+        uses: ./.github/actions/calculate-next-version
+        with:
+          release-type: "prepatch"
+          all-tags: ${{ needs.check.outputs.all-tags }}
+
+      - name: Display results
+        id: display-results
+        run: |
+          # Console output
+          echo "✅ Version calculation complete"
+          echo "Next version: ${{ steps.calculate-version.outputs.next-version }}"
+          echo "Based on:"
+          echo "- Latest version: ${{ steps.calculate-version.outputs.latest-version }}"
+          echo "- Latest release: ${{ steps.calculate-version.outputs.current-release }}"
+          echo "- Latest pre-release: ${{ steps.calculate-version.outputs.current-prerelease }}"
+
+          # Add to GitHub job summary for better visibility in UI
+          echo "## 🔍 Version Calculation Results" >> $GITHUB_STEP_SUMMARY
+          echo "**Next calculated version:** \`${{ steps.calculate-version.outputs.next-version }}\`" >> $GITHUB_STEP_SUMMARY
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Type | Version |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|---------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Latest Overall | \`${{ steps.calculate-version.outputs.latest-version }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Latest Release | \`${{ steps.calculate-version.outputs.current-release }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Latest Pre-release | \`${{ steps.calculate-version.outputs.current-prerelease }}\` |" >> $GITHUB_STEP_SUMMARY
+
+  tag:
+    name: Create tag
+    needs: [check, version]
+    # Will only run whenever there's no existing tag on the ref
+    if: needs.check.outputs.ref-has-tag == 'false'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Display tag information
+        env:
+          NEXT_VERSION: ${{ needs.version.outputs.next-version }}
+        run: |
+          echo "⚠️ TEST MODE ONLY - NO TAGS CREATED ⚠️"
+          echo "---------------------------------------"
+          echo "✓ Would create tag: $NEXT_VERSION"
+          echo "✓ Would push tag to: origin"
+          echo "✓ Tag message would be: Nightly pre-release $NEXT_VERSION"
+          echo "---------------------------------------"
+          echo "❌ NO ACTUAL TAG WAS CREATED"
+          echo "❌ NO ACTUAL TAG WAS PUSHED"
+          echo "---------------------------------------"
+
+          # Add information to the job summary for better visibility in GitHub UI
+          echo "## ⚠️ TEST MODE - Tag Simulation" >> $GITHUB_STEP_SUMMARY
+          echo "**Next version calculated:** \`$NEXT_VERSION\`" >> $GITHUB_STEP_SUMMARY
+          echo "**NO TAG WAS CREATED - This is a simulation only**" >> $GITHUB_STEP_SUMMARY
