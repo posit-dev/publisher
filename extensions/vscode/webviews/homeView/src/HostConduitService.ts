@@ -6,6 +6,7 @@ import {
   HostToWebviewMessage,
   HostToWebviewMessageType,
   PublishFinishFailureMsg,
+  ContentRenderFailureMsg,
   RefreshConfigDataMsg,
   RefreshCredentialDataMsg,
   RefreshContentRecordDataMsg,
@@ -81,7 +82,7 @@ const onMessageFromHost = (msg: HostToWebviewMessage): void => {
     case HostToWebviewMessageType.CONTENT_RENDER_FINISHED:
       return onContentRenderFinishedMsg();
     case HostToWebviewMessageType.CONTENT_RENDER_FAILURE:
-      return onContentRenderFailureMsg();
+      return onContentRenderFailureMsg(msg);
     case HostToWebviewMessageType.UPDATE_CONTENTRECORD_SELECTION:
       return onUpdateContentRecordSelectionMsg(msg);
     case HostToWebviewMessageType.SAVE_SELECTION:
@@ -206,11 +207,13 @@ const onPublishFinishFailureMsg = (msg: PublishFinishFailureMsg) => {
 };
 const onContentRenderFinishedMsg = () => {
   const home = useHomeStore();
+  home.contentRenderFinished = true;
   home.contentRenderInProgress = false;
 };
-const onContentRenderFailureMsg = () => {
+const onContentRenderFailureMsg = (msg: ContentRenderFailureMsg) => {
   const home = useHomeStore();
-  home.contentRenderFailed = true;
+  home.contentRenderError = msg.content.error;
+  home.contentRenderInProgress = false;
 };
 const onUpdateContentRecordSelectionMsg = (
   msg: UpdateContentRecordSelectionMsg,
