@@ -179,8 +179,8 @@ func (r *R) FillDefaults(
 			}
 		}
 		if r.PackageFile == "" {
-			rLockFile, _, rLockFileError := rLang.GetLockFilePath()
-			if rLockFileError == nil {
+			rLockFile, rLockFileExists, _ := rLang.GetLockFilePath()
+			if rLockFileExists {
 				r.PackageFile = rLockFile.String()
 			}
 		}

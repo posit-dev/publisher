@@ -25,11 +25,8 @@ func (p *defaultPublisher) addInterpreterDetailsToTarget() error {
 		p.Target.Requirements = requirements
 	}
 
-	if p.Config.R != nil {
+	if p.Config.R != nil && p.Config.R.PackageFile != "" {
 		filename := p.Config.R.PackageFile
-		if filename == "" {
-			filename = interpreters.DefaultRenvLockfile
-		}
 		p.log.Debug("R configuration present", "filename", filename)
 		lockfile, err := renv.ReadLockfile(p.Dir.Join(filename))
 		if err != nil {

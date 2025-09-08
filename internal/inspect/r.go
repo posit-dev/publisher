@@ -74,9 +74,13 @@ func (i *defaultRInspector) InspectR() (*config.R, error) {
 	}
 	// GetLockFilePath will handle if there is no RVersion available. It defaults to `renv.lock`
 	// and checks for the presence of it.
-	packageFile, _, err := i.rInterpreter.GetLockFilePath()
+	packageFile, lockFileExists, err := i.rInterpreter.GetLockFilePath()
 	if err != nil {
 		i.log.Debug("Error retrieving R package lock file", "error", err)
+	}
+	if !lockFileExists {
+		i.log.Debug("No renv.lock file found")
+		packageFile = util.NewRelativePath("", i.base.Fs())
 	}
 
 	rProjectRequires := interpreters.NewRProjectRRequires(i.base)
