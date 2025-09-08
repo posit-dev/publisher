@@ -799,16 +799,28 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
 
-    const api = await useApi();
-    const result = await api.connectServer.getServerSettings(credential.name);
-    console.log(result.data);
+    const activeConfig = await this.state.getSelectedConfiguration();
 
-    this.webviewConduit.sendMsg({
-      kind: HostToWebviewMessageType.REFRESH_SERVER_SETTINGS,
-      content: {
-        serverSettings: result.data,
-      },
-    });
+    if (activeConfig && !isConfigurationError(activeConfig)) {
+      try {
+        const api = await useApi();
+        const result = await api.connectServer.getServerSettings(
+          credential.name,
+        );
+        console.log(result.data);
+
+        this.webviewConduit.sendMsg({
+          kind: HostToWebviewMessageType.REFRESH_SERVER_SETTINGS,
+          content: {
+            serverSettings: result.data,
+          },
+        });
+      } catch (_: unknown) {
+        console.error(
+          `Failed to fetch server-settings for [${credential.name}]`,
+        );
+      }
+    }
   }
 
   private async onRelativeOpenVSCode(msg: VSCodeOpenRelativeMsg) {
@@ -1306,20 +1318,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       // Refresh integration requests to show the newly added one in the UI
       await this.refreshIntegrationRequests(credential.name);
     } catch (error: unknown) {
-      // Safely get error summary without risking HTML decoding issues
-      let errorMessage = "Unknown error";
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      } else if (
-        isAxiosError(error) &&
-        typeof error.response?.data === "string"
-      ) {
-        errorMessage = error.response.data;
-      }
-
       console.error("Failed to add integration request:", error);
       window.showInformationMessage(
-        `Failed to add integration request to configuration. ${errorMessage}`,
+        `Failed to add integration request to configuration. ${error}`,
       );
     }
   };

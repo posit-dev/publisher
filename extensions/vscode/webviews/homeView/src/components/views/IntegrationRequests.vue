@@ -4,7 +4,9 @@
     data-automation="publisher-integrationRequests-section"
     :actions="sectionActions"
   >
-    <WelcomeView v-if="!isOAuthIntegrationsSupported">
+    <WelcomeView
+      v-if="home.serverSettings !== undefined && !isOAuthIntegrationsSupported"
+    >
       <p>
         OAuth Integrations are not supported with your current server
         configuration or license. Please contact your server administrator for
