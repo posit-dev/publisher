@@ -29,3 +29,13 @@ vanity_name = "sales-report"
 [connect_cloud.access_control]
 public_access = true
 organization_access = "viewer"
+
+[connect.runtime]
+connection_timeout = 5
+read_timeout = 30
+init_timeout = 60
+idle_timeout = 120
+max_processes = 5
+min_processes = 1
+max_conns_per_process = 50
+load_factor = 0.5
