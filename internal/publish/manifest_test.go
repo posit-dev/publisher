@@ -133,15 +133,14 @@ func (s *ManifestSuite) TestCreateManifest_WithLockfile_UsesLockfile() {
 	packageMapper.AssertNotCalled(s.T(), "ScanDependencies", mock.Anything, mock.Anything)
 }
 
-func (s *ManifestSuite) TestCreateManifest_EmptyPackageFile_WithDetectedLockfile() {
+func (s *ManifestSuite) TestCreateManifest_EmptyPackageFile_IgnoresUnconfiguredLockfile_ScansDependencies() {
 	log := logging.New()
 	emitter := events.NewNullEmitter()
 	packageMapper := &mockManifestPackageMapper{}
 
-	// packageFile empty: createManifest should detect the lockfile path.
-	cfg := &config.Config{
-		R: &config.R{PackageFile: ""},
-	}
+	// packageFile empty: createManifest should try to be smart and detect lockfile; it should scan.
+	// If lockfile detection has to happen, it should happen before the manifest is created.
+	cfg := &config.Config{R: &config.R{PackageFile: ""}}
 
 	stateStore := &state.State{Config: cfg}
 	helper := publishhelper.NewPublishHelper(stateStore, log)
@@ -157,22 +156,23 @@ func (s *ManifestSuite) TestCreateManifest_EmptyPackageFile_WithDetectedLockfile
 	_ = dir.MkdirAll(0o777)
 	stateStore.Dir = dir
 
-	lockfile := dir.Join("renv.lock")
-	_ = lockfile.WriteFile([]byte("{}"), 0o644)
+	// Create a lockfile on disk, but since packageFile is not configured,
+	// the implementation should still scan rather than using it.
+	_ = dir.Join("renv.lock").WriteFile([]byte("{}"), 0o644)
 
 	expectedPackages := bundles.PackageMap{
 		"testpkg": bundles.Package{Description: dcf.Record{"Package": "testpkg", "Version": "1.0.0"}},
 	}
-
-	// Expect: use detected lockfile path; do not scan.
-	packageMapper.On("GetManifestPackages", dir, lockfile, mock.Anything).Return(expectedPackages, nil)
+	generated := dir.Join("scanned.lock")
+	packageMapper.On("ScanDependencies", []string{dir.String()}, mock.Anything).Return(generated, nil)
+	packageMapper.On("GetManifestPackages", dir, generated, mock.Anything).Return(expectedPackages, nil)
 
 	manifest, err := publisher.createManifest()
 
 	s.NoError(err)
 	s.NotNil(manifest)
 	s.Equal(expectedPackages, manifest.Packages)
-	packageMapper.AssertNotCalled(s.T(), "ScanDependencies", mock.Anything, mock.Anything)
+	packageMapper.AssertCalled(s.T(), "ScanDependencies", []string{dir.String()}, mock.Anything)
 }
 
 func (s *ManifestSuite) TestCreateManifest_EmptyPackageFile_NoLockfile_ScansDependencies() {

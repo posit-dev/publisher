@@ -114,11 +114,12 @@ func (s *RSuite) TestInspectWithNoRFound() {
 	i, err := NewRInspector(s.cwd, util.Path{}, log, setupMockRInterpreter, nil)
 	s.NoError(err)
 
-	inspect, err := i.InspectR()
-	s.NoError(err)
-	s.Equal("renv", inspect.PackageManager)
-	s.Equal("", inspect.Version)
-	s.Equal(s.cwd.Join("renv_2222.lock").String(), inspect.PackageFile)
+    inspect, err := i.InspectR()
+    s.NoError(err)
+    s.Equal("renv", inspect.PackageManager)
+    s.Equal("", inspect.Version)
+    // When no lockfile exists, PackageFile should be empty
+    s.Equal("", inspect.PackageFile)
 }
 
 func (s *RSuite) TestRequiresRWithEmptyCfgAndLockfileExists() {
