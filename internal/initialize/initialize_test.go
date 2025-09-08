@@ -184,8 +184,44 @@ func (s *InitializeSuite) TestGetPossibleRConfig() {
 	s.Len(configs, 1)
 	s.Equal(contenttypes.ContentTypeRShiny, configs[0].Type)
 	s.Equal("app.R", configs[0].Entrypoint)
-	s.Equal([]string{"/app.R", "/renv.lock"}, configs[0].Files)
+	// renv.lock should not be added by default if it doesn't exist
+	s.Equal([]string{"/app.R"}, configs[0].Files)
 	s.Equal(emptyRConfig, configs[0].R)
+}
+
+func (s *InitializeSuite) TestGetPossibleRConfig_WithLockfile() {
+    log := logging.New()
+    // Create entrypoint
+    appR := s.createAppR()
+    exist, err := appR.Exists()
+    s.NoError(err)
+    s.Equal(true, exist)
+
+    // Create renv.lock in the project root
+    lock := s.cwd.Join("renv.lock")
+    err = lock.WriteFile([]byte(`{}`), 0666)
+    s.NoError(err)
+    exist, err = lock.Exists()
+    s.NoError(err)
+    s.Equal(true, exist)
+
+    i := NewInitialize(
+        detectors.NewContentTypeDetector,
+        setupMockPythonInspector(false, nil),
+        setupNewPythonInterpreterMock,
+        setupMockRInspector(true, nil),
+        setupNewRInterpreterMock,
+    )
+
+    configs, err := i.GetPossibleConfigs(s.cwd, util.Path{}, util.Path{}, util.RelativePath{}, log)
+    s.NoError(err)
+
+    s.Len(configs, 1)
+    s.Equal(contenttypes.ContentTypeRShiny, configs[0].Type)
+    s.Equal("app.R", configs[0].Entrypoint)
+    // renv.lock should be included when it exists
+    s.Equal([]string{"/app.R", "/renv.lock"}, configs[0].Files)
+    s.Equal(emptyRConfig, configs[0].R)
 }
 
 func (s *InitializeSuite) TestGetPossiblePythonConfig() {

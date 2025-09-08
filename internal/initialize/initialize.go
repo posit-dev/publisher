@@ -148,7 +148,17 @@ func (i *defaultInitialize) normalizeConfig(
 			log.Debug("Error while inspecting to generate an R based configuration", "error", err.Error())
 			return err
 		}
-		cfg.Files = append(cfg.Files, fmt.Sprint("/", rConfig.PackageFile))
+		// Only include the R lockfile in defaults if it actually exists.
+		if rConfig.PackageFile != "" {
+			lockfilePath := base.Join(rConfig.PackageFile)
+			exists, err := lockfilePath.Exists()
+			if err != nil {
+				log.Debug("Error checking existence of R lockfile", "path", lockfilePath.String(), "error", err.Error())
+			} else if exists {
+				log.Debug("Including R lockfile in configuration", "path", lockfilePath.String())
+				cfg.Files = append(cfg.Files, fmt.Sprint("/", rConfig.PackageFile))
+			}
+		}
 	}
 	cfg.Comments = strings.Split(initialComment, "\n")
 
