@@ -196,7 +196,7 @@ async function initializeExtension(context: ExtensionContext) {
       service.showOutputChannel(),
     ),
     commands.registerCommand(Commands.ShowPublishingLog, () => {
-      commands.executeCommand(Commands.Logs.TreeFocus);
+      commands.executeCommand(Commands.Logs.TreeviewFocus);
       commands.executeCommand(Commands.Logs.WebviewFocus);
     }),
     commands.registerCommand(Commands.HomeView.CopySystemInfo, () =>

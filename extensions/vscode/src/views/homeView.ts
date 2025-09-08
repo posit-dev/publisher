@@ -1183,7 +1183,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   };
 
   private async showPublishingLog() {
-    await commands.executeCommand(Commands.Logs.TreeFocus);
+    await commands.executeCommand(Commands.Logs.TreeviewFocus);
     return await commands.executeCommand(Commands.Logs.WebviewFocus);
   }
 

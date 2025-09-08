@@ -430,7 +430,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
           stage.status === LogStageStatus.failed &&
           extensionSettings.autoOpenLogsOnFailure()
         ) {
-          commands.executeCommand(Commands.Logs.TreeFocus);
+          commands.executeCommand(Commands.Logs.TreeviewFocus);
           commands.executeCommand(Commands.Logs.WebviewFocus);
         }
       });
@@ -463,7 +463,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
         );
       }
       if (selection === showLogsOption) {
-        await commands.executeCommand(Commands.Logs.TreeFocus);
+        await commands.executeCommand(Commands.Logs.TreeviewFocus);
         await commands.executeCommand(Commands.Logs.WebviewFocus);
       } else if (selection === enhancedError?.buttonStr) {
         if (

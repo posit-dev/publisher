@@ -47,7 +47,7 @@ const logsCommands = {
   Webview: "posit.publisher.logs.webview",
   Copy: "posit.publisher.logs.copy",
   Save: "posit.publisher.logs.save",
-  TreeFocus: "posit.publisher.logs.focus",
+  TreeviewFocus: "posit.publisher.logs.focus",
   WebviewFocus: "posit.publisher.rawlogs.focus",
   ToggleVisibility: "posit.publisher.logs.toggleVisibility",
 } as const;
