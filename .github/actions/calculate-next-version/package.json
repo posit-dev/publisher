@@ -1,0 +1,14 @@
+{
+  "name": "calculate-next-version",
+  "version": "1.0.0",
+  "description": "Calculate next version based on VSCode extension versioning guidelines",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test.js"
+  },
+  "dependencies": {
+    "@actions/core": "^1.10.1",
+    "semver": "^7.5.4"
+  },
+  "devDependencies": {}
+}
