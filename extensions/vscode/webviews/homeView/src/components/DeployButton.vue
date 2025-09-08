@@ -46,11 +46,12 @@ const deploy = () => {
     return;
   }
 
-  // If there is any render error message, clear that up
-  home.contentRenderFailed = false;
-
   // stop the user from double clicking the deploy button by mistake
   home.publishInitiated = true;
+
+  // If there is any render process flags, clear that up
+  home.contentRenderFinished = false;
+  home.contentRenderError = undefined;
 
   // Only send up secrets that have values
   const secrets: Record<string, string> = {};
