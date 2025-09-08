@@ -116,3 +116,24 @@ jobs:
           echo "## ⚠️ TEST MODE - Tag Simulation" >> $GITHUB_STEP_SUMMARY
           echo "**Next version calculated:** \`$NEXT_VERSION\`" >> $GITHUB_STEP_SUMMARY
           echo "**NO TAG WAS CREATED - This is a simulation only**" >> $GITHUB_STEP_SUMMARY
+
+      - name: Check tag permissions
+        env:
+          # gh cli requires GH_TOKEN not GITHUB_TOKEN
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Checking tag creation permissions..."
+          # Use gh api to check repository permissions
+          if gh api repos/$GITHUB_REPOSITORY --silent; then
+            echo "✅ Permission check passed: Token has repository read access"
+            
+            # Check if token has push access by checking permissions
+            PERMISSION=$(gh api repos/$GITHUB_REPOSITORY/collaborators/$GITHUB_ACTOR/permission --jq '.permission')
+            if [[ "$PERMISSION" == "admin" || "$PERMISSION" == "write" ]]; then
+              echo "✅ Permission check passed: Token has write access (permission: $PERMISSION)"
+            else
+              echo "⚠️ Token may have limited access (permission: $PERMISSION)"
+            fi
+          else
+            echo "❌ Permission check failed: Token lacks basic repository access"
+          fi
