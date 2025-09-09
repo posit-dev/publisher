@@ -25,12 +25,12 @@ outputs:
 runs:
   using: "composite"
   steps:
-    # Set default value for vscode_changelog_updated
     - name: Initialize outputs
       id: init
       shell: bash
       run: |
         echo "vscode_changelog_updated=false" >> $GITHUB_OUTPUT
+        echo "changes_made=false" >> $GITHUB_OUTPUT
 
     - name: Update main changelog
       id: update_main
@@ -46,18 +46,10 @@ runs:
           exit 1
         fi
 
-        # Check if there's an [Unreleased] section in the file
+        # Check if there's an [Unreleased] section in the file - do this first before any other operations
         if ! grep -q '\[Unreleased\]' "$CHANGELOG_PATH"; then
-          echo "::notice::No [Unreleased] section found in $CHANGELOG_PATH. Creating one."
-          
-          # Make a backup of the original file
-          cp "$CHANGELOG_PATH" "${CHANGELOG_PATH}.bak"
-          
-          # Add [Unreleased] section after the Changelog header
-          awk '/^# Changelog/ { print; print ""; print "## [Unreleased]"; print ""; next } { print }' "${CHANGELOG_PATH}.bak" > "${CHANGELOG_PATH}.new"
-          mv "${CHANGELOG_PATH}.new" "$CHANGELOG_PATH"
-          
-          echo "::notice::Added [Unreleased] section to changelog"
+          echo "::error::No [Unreleased] section found in $CHANGELOG_PATH. Please add an [Unreleased] section manually before running this action."
+          exit 1
         fi
 
         VERSION="${{ inputs.version }}"
@@ -81,88 +73,30 @@ runs:
           echo "::notice::Non-standard version format, using as-is: $DISPLAY_VERSION"
         fi
 
-        # Create updated changelog content
-        # 1. Replace [Unreleased] with the version number
-        # 2. Add a new [Unreleased] section at the top
+        # Create backup
+        cp "$CHANGELOG_PATH" "${CHANGELOG_PATH}.bak"
 
-        # Make a backup of the original file if we haven't already
-        if [ ! -f "${CHANGELOG_PATH}.bak" ]; then
-          cp "$CHANGELOG_PATH" "${CHANGELOG_PATH}.bak"
-        fi
+        # Replace [Unreleased] with new version and add new [Unreleased] section above it
+        sed "s/## \[Unreleased\]/## [Unreleased]\n\n## [$DISPLAY_VERSION]/" "$CHANGELOG_PATH" > "${CHANGELOG_PATH}.new"
 
-        # Replace [Unreleased] with the version (no date)
-        # Extract the description content (between "# Changelog" and the first version or Unreleased heading)
-        DESCRIPTION=$(awk '
-          BEGIN { print_lines = 0; description = "" }
-          /^# Changelog/ { print_lines = 1; next }
-          /^## \\[/ { print_lines = 0; next }
-          print_lines == 1 { description = description $0 "\n" }
-          END { print description }
-        ' "$CHANGELOG_PATH")
-
-        # Save the existing versions content (everything from first version heading to end)
-        VERSIONS=$(awk '
-          BEGIN { found=0 }
-          /^## \\[[0-9]/ { found=1 }
-          found { print }
-        ' "$CHANGELOG_PATH")
-
-        # Create a new changelog structure with:
-        # 1. Changelog title
-        # 2. Description
-        # 3. Unreleased section
-        # 4. New version section
-        # 5. All existing versions
-        {
-          echo "# Changelog"
-          echo -n "$DESCRIPTION"
-          echo ""
-          echo "## [Unreleased]"
-          echo ""
-          echo "## [$DISPLAY_VERSION]"
-          echo ""
-          echo "$VERSIONS"
-        } > "${CHANGELOG_PATH}.new"
-
-        # Extract the description content that should remain at the top
-        DESCRIPTION=$(awk '
-          BEGIN { print_lines = 0; description = "" }
-          /^# Changelog/ { print_lines = 1; next }
-          /^## \[/ { print_lines = 0; next }
-          print_lines == 1 { description = description $0 "\n" }
-          END { print description }
-        ' "${CHANGELOG_PATH}.bak")
-
-        # Create a new changelog with proper structure
-        {
-          echo "# Changelog"
-          echo ""
-          echo "$DESCRIPTION"
-          echo "## [Unreleased]"
-          echo ""
-          # Skip the title and description, start from the first version section (which is now our new version)
-          awk 'BEGIN { found=0 } 
-            /^## \[[0-9]/ { found=1 } 
-            found { print }' "$CHANGELOG_PATH"
-        } > "${CHANGELOG_PATH}.new"
+        # Move the processed file back
+        mv "${CHANGELOG_PATH}.new" "$CHANGELOG_PATH"
 
         # Ensure we've successfully updated the file
-        if ! grep -q "## \[$VERSION\]" "${CHANGELOG_PATH}.new" || ! grep -q "## \[Unreleased\]" "${CHANGELOG_PATH}.new"; then
+        if ! grep -q "## \[$VERSION\]" "$CHANGELOG_PATH" || ! grep -q "## \[Unreleased\]" "$CHANGELOG_PATH"; then
           echo "::error::Failed to update $CHANGELOG_PATH with new version and unreleased section"
-          cat "${CHANGELOG_PATH}.new"
           exit 1
         else
-          mv "${CHANGELOG_PATH}.new" "$CHANGELOG_PATH"
           echo "Successfully updated main CHANGELOG.md"
           echo "::notice::Updated [Unreleased] to version [$VERSION] in main CHANGELOG.md"
         fi
 
         # Clean up all temporary files
-        rm -f "${CHANGELOG_PATH}.bak" "${CHANGELOG_PATH}.new.tmp" "${CHANGELOG_PATH}.*-e"
+        rm -f "${CHANGELOG_PATH}.new" "${CHANGELOG_PATH}.*-e"
         echo "::endgroup::"
 
         # Output whether we found changes to make
-        if git diff --quiet "$CHANGELOG_PATH"; then
+        if git diff --quiet "$CHANGELOG_PATH" "${CHANGELOG_PATH}.bak"; then
           echo "changes_made=false" >> $GITHUB_OUTPUT
           echo "::notice::No changes were needed in main CHANGELOG.md"
         else
@@ -171,11 +105,14 @@ runs:
           
           # Show changes for debugging
           echo "::group::Main CHANGELOG.md changes"
-          git diff --color=always "$CHANGELOG_PATH" | cat
+          git diff --color=always "${CHANGELOG_PATH}.bak" "$CHANGELOG_PATH" | cat
           echo "::endgroup::"
         fi
 
-    - name: Copy to VS Code extension changelog
+        # Remove backup file
+        rm -f "${CHANGELOG_PATH}.bak"
+
+    - name: Update VS Code extension changelog
       id: update_vscode
       if: steps.update_main.outputs.changes_made == 'true'
       shell: bash
@@ -185,85 +122,38 @@ runs:
         MAIN_CHANGELOG="${{ inputs.main_changelog_path }}"
         VSCODE_CHANGELOG="${{ inputs.vscode_changelog_path }}"
         VERSION="${{ inputs.version }}"
-        DATE=$(date +"%Y-%m-%d")
 
-        # Detect if this is a prerelease based on odd minor version number
-        if [[ $VERSION =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
-          MINOR="${BASH_REMATCH[2]}"
-          if (( MINOR % 2 == 1 )); then
-            # Odd minor version number means prerelease
-            DISPLAY_VERSION="$VERSION prerelease"
-            echo "::notice::Detected odd minor version ($MINOR), using prerelease formatting: $DISPLAY_VERSION"
-          else
-            # Even minor version number means stable release
-            DISPLAY_VERSION="$VERSION"
-            echo "::notice::Detected even minor version ($MINOR), using standard formatting: $DISPLAY_VERSION"
-          fi
+        # Make backup of VS Code changelog if it exists
+        if [ -f "$VSCODE_CHANGELOG" ]; then
+          cp "$VSCODE_CHANGELOG" "${VSCODE_CHANGELOG}.bak"
+          echo "::notice::VS Code changelog found, updating with content from main changelog"
         else
-          # For non-standard version formats, don't add prerelease suffix
-          DISPLAY_VERSION="$VERSION"
-          echo "::notice::Non-standard version format, using as-is: $DISPLAY_VERSION"
-        fi
-
-        if [ ! -f "$VSCODE_CHANGELOG" ]; then
-          echo "::notice::VS Code changelog not found at $VSCODE_CHANGELOG, creating it with basic structure"
+          echo "::notice::VS Code changelog not found, creating with main changelog content"
           mkdir -p "$(dirname "$VSCODE_CHANGELOG")"
-          echo "# Changelog\n\nAll notable changes to the VS Code extension will be documented in this file.\n" > "$VSCODE_CHANGELOG"
         fi
 
-        # Check if the VS Code changelog already has the version we're adding
-        if grep -q "## \[$DISPLAY_VERSION\]" "$VSCODE_CHANGELOG"; then
-          echo "::notice::Version [$DISPLAY_VERSION] already exists in VS Code changelog, will update content"
-        fi
+        # Simply copy the main changelog to the VS Code changelog
+        cp "$MAIN_CHANGELOG" "$VSCODE_CHANGELOG"
+        echo "::notice::Copied main changelog to VS Code changelog"
 
-        # Create a backup
-        cp "$VSCODE_CHANGELOG" "${VSCODE_CHANGELOG}.bak"
-
-        # Extract description content from VS Code changelog
-        VSCODE_DESCRIPTION=$(awk '
-          BEGIN { print_lines = 0; description = "" }
-          /^# Changelog/ { print_lines = 1; next }
-          /^## \\[/ { print_lines = 0; next }
-          print_lines == 1 { description = description $0 "\\n" }
-          END { print description }
-        ' "$VSCODE_CHANGELOG")
-
-        # Save existing versions content from VS Code changelog
-        VSCODE_VERSIONS=$(awk '
-          BEGIN { found=0 }
-          /^## \\[[0-9]/ { found=1 }
-          found { print }
-        ' "$VSCODE_CHANGELOG")
-
-        # Create VS Code changelog with same structure
-        {
-          echo "# Changelog"
-          echo -n "$VSCODE_DESCRIPTION"
-          echo ""
-          echo "## [Unreleased]"
-          echo ""
-          echo "## [$DISPLAY_VERSION]"
-          echo ""
-          echo "$VSCODE_VERSIONS"
-        } > "${VSCODE_CHANGELOG}.new"
-
-        mv "${VSCODE_CHANGELOG}.new" "$VSCODE_CHANGELOG"
-
-        # VS Code changelog is now fully updated with proper format
-
-        echo "::notice::Updated VS Code extension CHANGELOG.md with version [$VERSION]"
+        echo "::notice::Updated VS Code extension CHANGELOG.md with content from main changelog"
         echo "::endgroup::"
 
         # Output whether we found changes to make
-        if git diff --quiet "$VSCODE_CHANGELOG"; then
+        if [ -f "${VSCODE_CHANGELOG}.bak" ] && git diff --quiet "$VSCODE_CHANGELOG" "${VSCODE_CHANGELOG}.bak"; then
           echo "changes_made=false" >> $GITHUB_OUTPUT
           echo "::notice::No changes were needed in VS Code extension CHANGELOG.md"
         else
           echo "changes_made=true" >> $GITHUB_OUTPUT
           echo "::notice::Changes made to VS Code extension CHANGELOG.md"
           
-          # Show changes for debugging
-          echo "::group::VS Code CHANGELOG.md changes"
-          git diff --color=always "$VSCODE_CHANGELOG" | cat
-          echo "::endgroup::"
+          # Show changes for debugging if backup exists
+          if [ -f "${VSCODE_CHANGELOG}.bak" ]; then
+            echo "::group::VS Code CHANGELOG.md changes"
+            git diff --color=always "${VSCODE_CHANGELOG}.bak" "$VSCODE_CHANGELOG" | cat
+            echo "::endgroup::"
+          fi
         fi
+
+        # Remove backup file
+        rm -f "${VSCODE_CHANGELOG}.bak" "${VSCODE_CHANGELOG}.tmp" "${VSCODE_CHANGELOG}.*-e"
