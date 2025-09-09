@@ -40,7 +40,7 @@ func (p *defaultPublisher) createBundle(manifest *bundles.Manifest) (*os.File, e
 					return nil, types.OperationError(op, err)
 				}
 			}
-			filesPatterns = append(filesPatterns, "!renv.lock", ".posit/publish/renv.lock")
+			filesPatterns = append(filesPatterns, "!renv.lock", ".posit/publish/deployments/renv.lock")
 		}
 	}
 

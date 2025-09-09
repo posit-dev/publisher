@@ -205,7 +205,7 @@ func (b *bundle) walkFunc(path util.AbsolutePath, info fs.FileInfo, err error) e
 		// Manifest filenames are always Posix paths, not Windows paths
 		// Special-case the staged renv.lock to appear at bundle root
 		archiveName := relSlash
-		if relSlash == ".posit/publish/renv.lock" {
+		if relSlash == ".posit/publish/deployments/renv.lock" {
 			archiveName = "renv.lock"
 		}
 		err = writeHeaderToTar(info, archiveName, b.archive)

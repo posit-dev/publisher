@@ -252,7 +252,7 @@ func (s *BundleSuite) TestBundle_IncludesExistingRenvLockAsIs() {
 
 	files := s.readBundleContents(bundleFile)
 	s.Contains(files, "renv.lock")
-	s.NotContains(files, ".posit/publish/renv.lock")
+	s.NotContains(files, ".posit/publish/deployments/renv.lock")
 
 	// Target file list should include renv.lock at root
 	s.Contains(publisher.Target.Files, "renv.lock")
@@ -284,7 +284,7 @@ func (s *BundleSuite) TestBundle_StagesAndIncludesRenvLockWhenGenerated() {
 	// Ensure file patterns include typical app files (no renv.lock present)
 	publisher := s.createPublisher()
 
-	// createManifest should stage .posit/publish/renv.lock and set PackageFile accordingly
+	// createManifest should stage .posit/publish/deployments/renv.lock and set PackageFile accordingly
 	manifest, err := publisher.createManifest()
 	s.NoError(err)
 	s.Require().NotNil(manifest)
@@ -298,7 +298,7 @@ func (s *BundleSuite) TestBundle_StagesAndIncludesRenvLockWhenGenerated() {
 	files := s.readBundleContents(bundleFile)
 	// Bundler should re-root staged lockfile to archive root as renv.lock
 	s.Contains(files, "renv.lock")
-	s.NotContains(files, ".posit/publish/renv.lock")
+	s.NotContains(files, ".posit/publish/deployments/renv.lock")
 	s.Contains(publisher.Target.Files, "renv.lock")
 }
 

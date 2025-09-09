@@ -100,11 +100,11 @@ func (p *defaultPublisher) getRPackagesWithPath(scanDependencies bool) (bundles.
 	return rPackages, lockfilePath, nil
 }
 
-// copyLockfileToPositDir copies a lockfile into .posit/publish within the
+// copyLockfileToPositDir copies a lockfile into .posit/publish/deployments within the
 // project directory. Returns the path relative to the project root.
 func (p *defaultPublisher) copyLockfileToPositDir(lockfilePath util.Path, log logging.Logger) (util.RelativePath, error) {
 	// Ensure destination directory exists
-	targetDir := p.Dir.Join(".posit", "publish")
+	targetDir := p.Dir.Join(".posit", "publish", "deployments")
 	if err := targetDir.MkdirAll(0777); err != nil {
 		return util.RelativePath{}, err
 	}
@@ -115,7 +115,7 @@ func (p *defaultPublisher) copyLockfileToPositDir(lockfilePath util.Path, log lo
 	}
 	defer src.Close()
 
-	// Always stage as renv.lock regardless of source filename
+	// Always stage as renv.lock regardless of source filename (future: add hash naming)
 	targetPath := targetDir.Join("renv.lock")
 	dst, err := targetPath.Create()
 	if err != nil {
