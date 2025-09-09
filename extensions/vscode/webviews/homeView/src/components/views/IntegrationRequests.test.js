@@ -65,7 +65,11 @@ describe("IntegrationRequests", () => {
 
   it("renders integration requests and handles delete action via props", () => {
     const requests = [
-      { name: "req1", displayName: "Request One", displayDescription: "First" },
+      {
+        name: "req1",
+        displayName: "Request One",
+        displayDescription: "First",
+      },
       {
         name: "req2",
         displayName: "Request Two",
@@ -95,6 +99,44 @@ describe("IntegrationRequests", () => {
     expect(sendMsg).toHaveBeenLastCalledWith({
       kind: WebviewToHostMessageType.DELETE_INTEGRATION_REQUEST,
       content: { request: requests[0] },
+    });
+  });
+
+  it("renders integration requests and handles clear all action via props", () => {
+    const requests = [
+      {
+        name: "req1",
+        displayName: "Request One",
+        displayDescription: "First",
+      },
+      {
+        name: "req2",
+        displayName: "Request Two",
+        displayDescription: "Second",
+      },
+    ];
+    setHomeState({
+      serverSettings: {
+        license: { "oauth-integrations": true },
+        oauth_integrations_enabled: true,
+      },
+      integrationRequests: requests,
+    });
+
+    const wrapper = mountComponent();
+
+    const section = wrapper.findComponent({ name: "TreeSection" });
+    const actions = section.props("actions");
+
+    expect(actions.length).toBe(2);
+    expect(actions[0].label).toBe("Add Integration Request");
+    expect(actions[1].label).toBe("Clear all Integration Request Values");
+
+    // test the clear all action
+    actions[1].fn();
+    expect(sendMsg).toHaveBeenCalledTimes(1);
+    expect(sendMsg).toHaveBeenLastCalledWith({
+      kind: WebviewToHostMessageType.CLEAR_ALL_INTEGRATION_REQUESTS,
     });
   });
 });

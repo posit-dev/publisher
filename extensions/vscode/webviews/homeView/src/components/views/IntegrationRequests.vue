@@ -51,7 +51,6 @@ import { useHomeStore } from "src/stores/home";
 import { useHostConduitService } from "src/HostConduitService";
 
 import { WebviewToHostMessageType } from "../../../../../src/types/messages/webviewToHostMessages";
-import { send } from "vite";
 
 const { sendMsg } = useHostConduitService();
 const home = useHomeStore();
@@ -82,7 +81,7 @@ const sectionActions = computed(() => {
 
   if (home.integrationRequests.length > 0) {
     result.push({
-      label: "Clear all Integration Request Values",
+      label: "Clear all Integration Requests",
       codicon: "codicon-clear-all",
       fn: () => {
         sendMsg({
