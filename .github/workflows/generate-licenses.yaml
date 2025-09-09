@@ -1,4 +1,8 @@
 name: Generate Licenses
+# This workflow is fully self-contained and handles all required setup:
+# - Uses setup-node to ensure Node.js is available
+# - Runs go mod vendor to update the vendor directory
+# - Runs just extensions/vscode deps to install the extension node_modules
 on:
   workflow_call:
     inputs:
@@ -31,6 +35,13 @@ jobs:
           fetch-depth: 0
 
       - uses: ./.github/actions/setup
+
+      # Setup Node.js (required for VSCode extension dependencies)
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "lts/*"
+          cache: npm
 
       # We need to prepare the environment for license generation to ensure all required license directories exist
       # Create vendor directory with Go dependencies
