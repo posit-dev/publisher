@@ -152,7 +152,7 @@ Cypress.Commands.add("getPublisherSidebarIcon", () => {
   function waitForExtensionStability(attempt = 1) {
     cy.log(`Checking extension stability (attempt ${attempt}/${maxAttempts})`);
 
-    return cy.get("body", { timeout: 2000 }).then(($body) => {
+    return cy.get("body").then(($body) => {
       const bodyText = $body.text();
       const isLoading =
         bodyText.includes("starting posit publisher") ||
@@ -239,7 +239,7 @@ Cypress.Commands.add("getPublisherSidebarIcon", () => {
     return trySelectors();
   }
 
-  return waitForExtensionStability();
+  return waitForExtensionStability().should("be.visible");
 });
 
 Cypress.Commands.add("toggleCredentialsSection", () => {
@@ -252,6 +252,20 @@ Cypress.Commands.add("toggleCredentialsSection", () => {
       expect(Cypress.$(section).find(".title").text()).to.equal("Credentials");
       Cypress.$(section).find(".title").trigger("click");
     });
+});
+
+Cypress.Commands.add("refreshCredentials", () => {
+  cy.publisherWebview()
+    .findByTestId("publisher-credentials-section")
+    .trigger("mouseover");
+  cy.publisherWebview()
+    .find('a[aria-label="Refresh Credentials"]')
+    .click({ force: true });
+
+  // Clear the cached webview since content will change
+  cy.window().then((win) => {
+    delete win.cachedPublisherWebview;
+  });
 });
 
 Cypress.Commands.add("toggleHelpSection", () => {

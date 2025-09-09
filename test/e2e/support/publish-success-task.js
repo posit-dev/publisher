@@ -1,32 +1,23 @@
-const { chromium } = require("playwright");
 const { getPlaywrightTimeout } = require("./playwright-utils");
 
-function getPlaywrightHeadless() {
-  if (process.env.CI === "true") return true;
-  if (process.env.PLAYWRIGHT_HEADLESS === "true") return true;
-  if (process.env.PLAYWRIGHT_HEADLESS === "false") return false;
-  return false;
-}
+// Import shared browser context from shared-browser utility
+const { getSharedBrowserContext } = require("./shared-browser");
 
 async function confirmPCCPublishSuccess({ publishedUrl, expectedTitle }) {
-  let browser;
+  let page;
   try {
-    console.log(
-      "Playwright confirmPCCPublishSuccess called with:",
-      publishedUrl,
-      expectedTitle,
+    console.log(`🔍 Verifying published app at: ${publishedUrl}`);
+
+    // Use shared browser context for better performance
+    const { context } = await getSharedBrowserContext();
+    page = await context.newPage();
+
+    // Block Google analytics and tracking requests to improve speed and reliability
+    await page.route("**/*google-analytics.com*", (route) => route.abort());
+    await page.route("**/*googletagmanager.com*", (route) => route.abort());
+    await page.route("**/*android.clients.google.com*", (route) =>
+      route.abort(),
     );
-    const isHeadless = getPlaywrightHeadless();
-    browser = await chromium.launch({
-      headless: isHeadless,
-      slowMo: 500,
-      args: [
-        "--disable-blink-features=AutomationControlled",
-        "--window-size=1280,800",
-      ],
-    });
-    const context = await browser.newContext();
-    const page = await context.newPage();
 
     const maxAttempts = 5; // 5 attempts * 2s = 10 seconds max
     const delay = 2000;
@@ -74,10 +65,8 @@ async function confirmPCCPublishSuccess({ publishedUrl, expectedTitle }) {
               content.substring(0, 500),
             );
             if (h1Text && h1Text.trim() === expectedTitle) {
-              await browser.close();
               return { success: true };
             } else if (content.includes(expectedTitle)) {
-              await browser.close();
               return {
                 success: true,
                 warning: `Title '${expectedTitle}' found in page content but not in .navbar-static-top h1`,
@@ -87,7 +76,6 @@ async function confirmPCCPublishSuccess({ publishedUrl, expectedTitle }) {
             }
           }
         } else if (response && response.status() === 404) {
-          await browser.close();
           return {
             success: false,
             error: `HTTP 404: Page not found at ${publishedUrl}`,
@@ -101,15 +89,19 @@ async function confirmPCCPublishSuccess({ publishedUrl, expectedTitle }) {
       }
       await new Promise((res) => setTimeout(res, delay));
     }
-    await browser.close();
     return {
       success: false,
       error: lastError || "Publish confirmation failed",
     };
   } catch (err) {
-    if (browser) await browser.close();
     console.error("Playwright task error:", err);
     return { success: false, error: err.message || String(err) };
+  } finally {
+    try {
+      if (page) await page.close();
+    } catch (cleanupErr) {
+      console.log("[Playwright] Cleanup error:", cleanupErr.message);
+    }
   }
 }
 

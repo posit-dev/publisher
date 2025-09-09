@@ -4,17 +4,21 @@
 // Because of this, they are not suitable for deployment (due to their hard-coded values)
 
 describe("Detect errors in config", () => {
-  beforeEach(() => {
+  // Global setup - run once for entire test suite
+  before(() => {
     cy.resetConnect();
     cy.setAdminCredentials();
-    cy.visit("/").debug();
-    // Select the publisher extension
-    cy.getPublisherSidebarIcon().should("be.visible").click();
+  });
+
+  beforeEach(() => {
+    // Light navigation only
+    cy.visit("/");
+    cy.getPublisherSidebarIcon().click();
+    cy.waitForPublisherIframe();
+    cy.debugIframes();
   });
 
   it("Show errors when Config is invalid", () => {
-    cy.waitForPublisherIframe();
-    cy.debugIframes();
     // click on the select deployment button
     cy.publisherWebview()
       .findByTestId("select-deployment")
@@ -61,8 +65,6 @@ describe("Detect errors in config", () => {
   });
 
   it("Show errors when Config is missing", () => {
-    cy.waitForPublisherIframe();
-    cy.debugIframes();
     // click on the select deployment button
     cy.publisherWebview()
       .findByTestId("select-deployment")

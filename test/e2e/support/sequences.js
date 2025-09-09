@@ -52,7 +52,7 @@ Cypress.Commands.add(
       .should("be.visible");
 
     // activate the publisher extension
-    cy.getPublisherSidebarIcon().should("be.visible").click();
+    cy.getPublisherSidebarIcon().click();
     cy.publisherWebview()
       .findByTestId("select-deployment")
       .should("be.visible");
@@ -76,9 +76,7 @@ Cypress.Commands.add(
 
     // Create a new deployment
     cy.get(".quick-input-list")
-      .find(
-        '[aria-label="Create a New Deployment, (or pick one of the existing deployments below), New"]',
-      )
+      .find('[aria-label*="Create a New Deployment"]')
       .should("be.visible")
       .click();
 
@@ -181,7 +179,7 @@ Cypress.Commands.add(
       .should("be.visible");
 
     // activate the publisher extension
-    cy.getPublisherSidebarIcon().should("be.visible").click();
+    cy.getPublisherSidebarIcon().click();
     cy.publisherWebview()
       .findByTestId("select-deployment")
       .should("be.visible");
@@ -197,9 +195,7 @@ Cypress.Commands.add(
     cy.get(".quick-input-widget").should("be.visible");
     cy.get(".quick-input-titlebar").should("have.text", "Select Deployment");
     cy.get(".quick-input-list")
-      .find(
-        '[aria-label="Create a New Deployment, (or pick one of the existing deployments below), New"]',
-      )
+      .find('[aria-label*="Create a New Deployment"]')
       .should("be.visible")
       .click();
 
@@ -314,5 +310,6 @@ Cypress.Commands.add("deployCurrentlySelected", () => {
 
   cy.findByText("Deployment was successful", { timeout: 60000 }).should(
     "be.visible",
+    { message: "Deployment didn't succeed within 60 seconds." },
   );
 });

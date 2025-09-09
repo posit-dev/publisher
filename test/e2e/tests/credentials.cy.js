@@ -1,21 +1,22 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
 describe("Credentials Section", () => {
-  beforeEach(() => {
+  // Global setup - run once for entire test suite
+  before(() => {
     cy.resetConnect();
-    cy.resetCredentials();
-    cy.visit("/");
+    cy.setAdminCredentials(); // Set up admin credential once
   });
 
-  afterEach(() => {
+  beforeEach(() => {
+    // Reset credentials for clean slate, but skip heavy Connect reset
     cy.resetCredentials();
+    cy.visit("/");
+    cy.getPublisherSidebarIcon().click();
+    cy.waitForPublisherIframe();
+    cy.debugIframes();
   });
 
   it("New PCS Credential", () => {
-    cy.getPublisherSidebarIcon().should("be.visible").click();
-    cy.waitForPublisherIframe(); // Wait after triggering extension
-    cy.debugIframes();
-
     cy.toggleCredentialsSection();
     cy.debugIframes();
     cy.publisherWebview()
@@ -72,7 +73,7 @@ describe("Credentials Section", () => {
       "Successfully connected to http://connect-publisher-e2e:3939 🎉",
     );
 
-    cy.get(".quick-input-message", { timeout: 10000 }).should(
+    cy.get(".quick-input-message").should(
       "include.text",
       "Enter a unique nickname for this server.",
     );
@@ -86,10 +87,6 @@ describe("Credentials Section", () => {
 
   it("New PCC Credential - OAuth Device Code", () => {
     const user = Cypress.env("pccConfig").pcc_user_ccqa3;
-    cy.getPublisherSidebarIcon()
-      .should("be.visible", { timeout: 10000 })
-      .click();
-
     cy.toggleCredentialsSection();
     cy.publisherWebview()
       .findByText("No credentials have been added yet.")
@@ -116,7 +113,7 @@ describe("Credentials Section", () => {
       .click();
 
     // Wait for the dialog box to appear and be visible
-    cy.get(".monaco-dialog-box", { timeout: 10000 })
+    cy.get(".monaco-dialog-box")
       .should("be.visible")
       .should("have.attr", "aria-modal", "true");
 
@@ -191,7 +188,7 @@ describe("Credentials Section", () => {
     );
 
     // Continue with credential creation after OAuth success
-    cy.get(".quick-input-and-message input", { timeout: 5000 })
+    cy.get(".quick-input-and-message input")
       .should("exist")
       .should("be.visible");
 
@@ -206,12 +203,9 @@ describe("Credentials Section", () => {
 
   it("Existing Credentials Load", () => {
     cy.setDummyCredentials();
-    cy.getPublisherSidebarIcon().should("be.visible").click();
-    cy.waitForPublisherIframe(); // Wait after triggering extension
-    cy.debugIframes();
-
     cy.toggleCredentialsSection();
-    cy.debugIframes();
+    cy.refreshCredentials();
+
     cy.publisherWebview()
       .findByText("No credentials have been added yet.")
       .should("not.exist");
@@ -229,11 +223,9 @@ describe("Credentials Section", () => {
 
   it("Delete Credential", () => {
     cy.setDummyCredentials();
-    cy.getPublisherSidebarIcon().should("be.visible").click();
-    cy.waitForPublisherIframe(); // Wait after triggering extension
-    cy.debugIframes();
-
     cy.toggleCredentialsSection();
+    cy.refreshCredentials();
+
     cy.publisherWebview();
     cy.retryWithBackoff(() =>
       cy.findUniqueInPublisherWebview(

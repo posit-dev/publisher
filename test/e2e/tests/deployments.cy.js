@@ -1,20 +1,27 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
 describe("Deployments Section", () => {
+  // Global setup for all deployment tests
+  before(() => {
+    cy.resetConnect();
+    cy.clearupDeployments();
+    cy.setAdminCredentials();
+  });
+
   describe("Connect Server Deployments", () => {
     beforeEach(() => {
-      cy.resetConnect();
-      cy.setAdminCredentials();
+      // Only light reset operations
       cy.visit("/");
+      cy.getPublisherSidebarIcon().click();
+      cy.waitForPublisherIframe();
+      cy.debugIframes();
     });
 
     afterEach(() => {
-      cy.clearupDeployments("static");
+      cy.clearupDeployments();
     });
 
     it("PCS Static Content Deployment", () => {
-      cy.waitForPublisherIframe(); // Wait after triggering extension
-      cy.debugIframes();
       cy.createPCSDeployment("static", "index.html", "static", (tomlFiles) => {
         const config = tomlFiles.config.contents;
         expect(config.title).to.equal("static");
@@ -45,8 +52,6 @@ describe("Deployments Section", () => {
     // extra bit of work when we want to change that version around to different
     // ones.
     it.skip("PCS ShinyApp Content Deployment", () => {
-      cy.waitForPublisherIframe(); // Wait after triggering extension
-      cy.debugIframes();
       cy.createPCSDeployment("shinyapp", "app.R", "ShinyApp", (tomlFiles) => {
         const config = tomlFiles.config.contents;
         expect(config.title).to.equal("ShinyApp");
@@ -75,8 +80,7 @@ describe("Deployments Section", () => {
   describe("Connect Cloud Deployments", () => {
     beforeEach(() => {
       cy.resetCredentials();
-      // Clean up any existing deployment files before starting
-      cy.clearupDeployments("examples-shiny-python");
+      cy.clearupDeployments();
       cy.visit("/");
       const user = Cypress.env("pccConfig").pcc_user_ccqa3;
       cy.log("PCC user for setPCCCredential: " + JSON.stringify(user));
@@ -89,13 +93,11 @@ describe("Deployments Section", () => {
     });
 
     afterEach(() => {
-      cy.clearupDeployments("examples-shiny-python");
+      cy.clearupDeployments();
       cy.resetCredentials();
     });
 
     it("PCC Shiny Python Deployment", () => {
-      cy.waitForPublisherIframe(); // Wait after triggering extension
-      cy.debugIframes();
       // Select files to include in deployment
       const filesToSelect = ["data", "README.md", "styles.css"];
       cy.createPCCDeployment(
@@ -124,21 +126,10 @@ describe("Deployments Section", () => {
             config.connect_cloud = config.connect_cloud || {};
             config.connect_cloud.access_control = { public_access: true };
 
-            // Use Docker exec to append the connect_cloud section to the file
-            const dockerPath = filePaths.config.path.replace(
-              "content-workspace/",
-              "/home/coder/workspace/",
+            cy.writeTomlFile(
+              filePaths.config.path,
+              "[connect_cloud]\n[connect_cloud.access_control]\npublic_access = true",
             );
-
-            cy.exec(
-              `docker exec publisher-e2e.code-server bash -c "echo -e '\\n[connect_cloud]\\n[connect_cloud.access_control]\\npublic_access = true' >> '${dockerPath}'"`,
-            ).then((result) => {
-              if (result.code !== 0) {
-                throw new Error(
-                  `Failed to append to config via Docker: ${result.stderr}`,
-                );
-              }
-            });
           });
         },
       );

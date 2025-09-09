@@ -38,7 +38,7 @@ module.exports = defineConfig({
     supportFile: "support/index.js",
     specPattern: "tests/**/*.cy.{js,jsx,ts,tsx}",
     retries: {
-      runMode: 3, // Retry failed tests in run mode (CI)
+      runMode: 2, // Retry failed tests in run mode (CI)
       openMode: 0,
     },
     defaultCommandTimeout: isCI
@@ -51,6 +51,13 @@ module.exports = defineConfig({
       preserve: /_xsrf|session|connect\.sid|auth|oauth/,
     },
     experimentalOriginDependencies: true,
+    blockHosts: [
+      "*.google-analytics.com",
+      "*.googletagmanager.com",
+      "*.open-vsx.org",
+      "*.android.clients.google.com",
+    ],
+    modifyObstructiveThirdPartyCode: true,
     // eslint-disable-next-line no-unused-vars
     setupNodeEvents(on, config) {
       // Install cypress-terminal-report for enhanced logging in headless mode
@@ -62,7 +69,16 @@ module.exports = defineConfig({
       });
 
       on("task", {
-        authenticateOAuthDevice,
+        authenticateOAuthDevice: async (args) => {
+          console.log(
+            "[Cypress] Starting Playwright authenticateOAuthDevice task",
+          );
+          const result = await authenticateOAuthDevice(args);
+          console.log(
+            "[Cypress] Playwright authenticateOAuthDevice task finished",
+          );
+          return result;
+        },
         print(message) {
           if (typeof message !== "undefined") {
             console.log(message);
@@ -70,7 +86,10 @@ module.exports = defineConfig({
           return null;
         },
         async runDeviceWorkflow({ email, password, env = "staging" }) {
-          return await runDeviceWorkflow({ email, password, env });
+          console.log("[Cypress] Starting Playwright runDeviceWorkflow task");
+          const result = await runDeviceWorkflow({ email, password, env });
+          console.log("[Cypress] Playwright runDeviceWorkflow task finished");
+          return result;
         },
         confirmPCCPublishSuccess,
       });

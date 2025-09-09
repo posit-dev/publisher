@@ -39,14 +39,31 @@ jobs:
         working-directory: test/e2e
         run: npm ci
 
+      - name: Cache Cypress binary
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/Cypress
+          key: ${{ runner.os }}-cypress-${{ hashFiles('test/e2e/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-cypress-
+
+      - name: Install Cypress
+        working-directory: test/e2e
+        run: npx cypress install
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-chromium-${{ hashFiles('test/e2e/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-chromium-
+
       - name: Install Playwright browsers
         working-directory: test/e2e
-        run: npx playwright install --with-deps
+        run: npx playwright install chromium
 
       - uses: extractions/setup-just@v3
-
-      - name: Build publisher binary
-        run: just build
 
       - name: Download VSIX artifact
         uses: actions/download-artifact@v5
@@ -65,93 +82,92 @@ jobs:
       - name: Build Docker images
         working-directory: test/e2e
         run: |
-          docker build --build-arg GH_DOWNLOAD_TOKEN=${{ secrets.GH_DOWNLOAD_TOKEN }} -f Dockerfile.base -t e2ebase --platform linux/amd64 .
-          docker compose build connect-publisher-e2e code-server
+          # Use buildkit for better caching and parallel builds
+          export DOCKER_BUILDKIT=1
+          export COMPOSE_DOCKER_CLI_BUILD=1
+
+          docker build --build-arg BUILDKIT_INLINE_CACHE=1 \
+            --build-arg GH_DOWNLOAD_TOKEN=${{ secrets.GH_DOWNLOAD_TOKEN }} \
+            -f Dockerfile.base -t e2ebase --platform linux/amd64 . &
+
+          # Build compose services in parallel after base is ready
+          wait
+          docker compose build --parallel connect-publisher-e2e code-server
         env:
           CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
 
-      - name: Ensure content-workspace exists
-        run: mkdir -p ./test/e2e/content-workspace
-
       - name: Start containers
         working-directory: test/e2e
-        run: |
-          just start "connect-publisher-e2e"
-          just start "code-server"
+        run: docker compose up -d connect-publisher-e2e code-server
 
-      - name: Wait for Connect server to be ready
+      - name: Wait for services to be ready
         run: |
-          echo "Waiting for Connect server to be ready..."
-          for i in {1..30}; do
-            if curl -sf http://localhost:3939/__ping__ > /dev/null; then
-              echo "Connect server is ready!"
-              break
-            fi
-            if [ $i -eq 30 ]; then
-              echo "WARNING: Timeout waiting for Connect server to be ready"
-              # Continue anyway, don't exit with error
-            fi
-            echo "Waiting for Connect server (attempt $i/30)..."
-            sleep 2
-          done
+          echo "Waiting for services to be ready..."
+          (
+            echo "Checking Connect server..."
+            for i in {1..20}; do
+              if curl -sf http://localhost:3939/__ping__ > /dev/null; then
+                echo "Connect server is ready!"
+                exit 0
+              fi
+              sleep 1
+            done
+            echo "WARNING: Timeout waiting for Connect server"
+          ) &
 
-      - name: Stop any processes using port 8080
-        run: |
-          PID=$(docker exec publisher-e2e.code-server sh -c "lsof -ti :8080 || netstat -tulnp 2>/dev/null | grep ':8080' | awk '{print \$7}' | cut -d'/' -f1 | head -n1" || true)
-          if [ -n "$PID" ]; then
-            echo "Killing process $PID using port 8080"
-            docker exec publisher-e2e.code-server kill -9 $PID || true
-          else
-            echo "No process using port 8080"
-          fi
+          (
+            echo "Checking code-server..."
+            for i in {1..20}; do
+              if curl -sf http://localhost:8080 > /dev/null; then
+                echo "code-server is ready!"
+                exit 0
+              fi
+              sleep 1
+            done
+            echo "code-server did not become ready in time"
+            exit 1
+          ) &
 
-      - name: Wait for code-server to be ready
-        run: |
-          for i in {1..30}; do
-            if curl -sf http://localhost:8080 > /dev/null; then
-              echo "code-server is ready!"
-              break
-            fi
-            if [ $i -eq 30 ]; then
-              echo "code-server did not become ready in time"
-              exit 1
-            fi
-            sleep 2
-          done
+          wait
 
       - name: Install and wait for VS Code extension to be ready
         working-directory: test/e2e
         run: |
-          # Install the Publisher extension
+          # Install the Publisher extension and set ownership in parallel
           VSIX_FILENAME=$(ls -Art ../../dist | grep linux-amd64 | tail -n 1)
-          docker compose exec code-server code-server --install-extension "/home/coder/vsix/${VSIX_FILENAME}"
+          docker compose exec code-server code-server --install-extension "/home/coder/vsix/${VSIX_FILENAME}" &
 
-          # Set proper ownership for workspace files before tests
-          docker exec publisher-e2e.code-server chown -R coder:coder /home/coder/workspace || true
+          # Set proper ownership for workspace files while extension installs
+          docker exec publisher-e2e.code-server chown -R coder:coder /home/coder/workspace &
 
-          # Wait for the extension to be installed
+          wait
+
+          # Wait for the extension to be installed (reduced timeout)
           echo "Waiting for Publisher extension to be installed..."
-          for i in {1..60}; do
+          for i in {1..30}; do
             if docker compose exec code-server code-server --list-extensions | grep -q posit.publisher; then
               echo "Publisher extension appears to be installed!"
               break
             fi
-            if [ $i -eq 60 ]; then
+            if [ $i -eq 30 ]; then
               echo "WARNING: Timeout waiting for Publisher extension to be installed"
             fi
-            echo "Waiting for extension installation (attempt $i/60)..."
-            sleep 2
+            echo "Waiting for extension installation (attempt $i/30)..."
+            sleep 1
           done
 
       - name: Prepare test environment
         working-directory: test/e2e
         run: |
+          # Ensure content-workspace directory exists
+          mkdir -p ./content-workspace
+
           # Clean up any static TOML files before tests
           docker exec publisher-e2e.code-server rm -f /home/coder/workspace/static*.toml || true
 
       - name: Run Cypress tests
         working-directory: test/e2e
-        run: npx cypress run
+        run: npx cypress run --headless --browser chrome
         env:
           CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
           CONNECT_CLOUD_ENV: ${{ env.CONNECT_CLOUD_ENV }} # defaults to staging
@@ -159,6 +175,7 @@ jobs:
           DEBUG_CYPRESS: ${{ env.DEBUG_CYPRESS }}
           ACTIONS_STEP_DEBUG: ${{ env.DEBUG_CYPRESS }}
           PCC_USER_CCQA3: ${{ secrets.PCC_USER_CCQA3 }}
+          CYPRESS_CACHE_FOLDER: ~/.cache/Cypress
 
       - name: Upload Cypress screenshots on failure
         uses: actions/upload-artifact@v4
