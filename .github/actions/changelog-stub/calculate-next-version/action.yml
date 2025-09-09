@@ -1,0 +1,56 @@
+name: "Calculate Next Version Stub - FOR TESTING ONLY"
+description: "[TEMPORARY TESTING ONLY] Returns hardcoded version data for testing. Will be replaced in production with real action from PR #3031."
+inputs:
+  # Testing-only parameter - REQUIRED
+  latest-version-override:
+    description: "[TESTING ONLY] Version to use for changelog update (required in stub)"
+    required: true
+
+outputs:
+  # PR #3031 compatible outputs
+  next-version:
+    description: "Calculated next version with v prefix"
+    value: ${{ steps.stub.outputs.next_version }}
+  current-release:
+    description: "Current release version (even minor)"
+    value: ${{ steps.stub.outputs.current_release }}
+  current-prerelease:
+    description: "Current prerelease version (odd minor)"
+    value: ${{ steps.stub.outputs.current_prerelease }}
+  latest-version:
+    description: "Latest version overall"
+    value: ${{ steps.stub.outputs.latest_version }}
+
+runs:
+  using: "composite"
+  steps:
+    # TEMPORARY TESTING IMPLEMENTATION ONLY - WILL BE REPLACED
+    - name: Return stub version data (FOR TESTING ONLY)
+      id: stub
+      shell: bash
+      run: |
+        echo "::group::Calculate Next Version Stub"
+
+        # Use provided version directly
+        NEXT_VERSION="${{ inputs.latest-version-override }}"
+        echo "Using version: $NEXT_VERSION"
+
+        # Simple check for prerelease based on odd/even minor
+        if [[ $NEXT_VERSION =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+          MINOR="${BASH_REMATCH[2]}"
+          if (( MINOR % 2 == 1 )); then
+            echo "Version has odd minor number ($MINOR), treating as prerelease"
+          else
+            echo "Version has even minor number ($MINOR), treating as stable release"
+          fi
+        else
+          echo "Warning: Non-standard version format: $NEXT_VERSION"
+        fi
+
+        # Set outputs in PR #3031 format - using the input version for everything
+        echo "next_version=v$NEXT_VERSION" >> $GITHUB_OUTPUT
+        echo "current_release=v$NEXT_VERSION" >> $GITHUB_OUTPUT
+        echo "current_prerelease=v$NEXT_VERSION" >> $GITHUB_OUTPUT
+        echo "latest_version=v$NEXT_VERSION" >> $GITHUB_OUTPUT
+
+        echo "::endgroup::"

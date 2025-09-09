@@ -1,0 +1,182 @@
+name: Nightly Pre-release Changelog Update
+
+permissions:
+  contents: write # Needed to push changelog changes
+  pull-requests: read # Basic read access for PR info
+
+# =============================================================================
+# IMPORTANT: This workflow contains elements for manual testing only.
+# The workflow_dispatch trigger and its inputs are temporary, allowing the
+# changelog functionality to be tested independently of other PRs.
+#
+# IN PRODUCTION:
+# - All version calculation will come from PR #3031 actions
+# - The stub actions (changelog-stub/*) will be removed
+# - Manual overrides will be removed or adapted
+# =============================================================================
+
+on:
+  # IMPORTANT: This workflow is for testing purposes only and should NOT be scheduled
+  # schedule:
+  # DO NOT UNCOMMENT unless explicitly ready for production
+  # - cron: "0 7 * * *"
+
+  # TESTING ONLY: Manual trigger for independent testing
+  # Will be integrated with other automation in production
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "[TESTING ONLY] Version to use for changelog update (e.g., 1.21.0, 2.12.4)"
+        required: true
+        type: string
+      dry_run:
+        description: "[TESTING ONLY] Display mode only - for testing (no changes will be committed)"
+        required: false
+        default: true
+        type: boolean
+
+jobs:
+  # First job: Calculate version (name matches PR #3031)
+  version:
+    name: Calculate next version
+    runs-on: ubuntu-latest
+    outputs:
+      next-version-tag: ${{ steps.calculate-version.outputs.next-version }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      # TESTING ONLY: These stub actions will be replaced with real actions from PR #3031
+      # ========================================================================
+      # These stub actions contain hardcoded data for testing purposes.
+      # In production, they will be replaced with the real versioning actions.
+      # ========================================================================
+
+      # TESTING ONLY: Provides hardcoded tag data (unused)
+      - name: Get tags (stub - FOR TESTING ONLY)
+        id: get-tags
+        uses: ./.github/actions/changelog-stub/get-tags
+
+      # TESTING ONLY: Outputs whatever version is input via the version input for the workflow_dispatch event
+      - name: Calculate next version (stub - FOR TESTING ONLY)
+        id: calculate-version
+        uses: ./.github/actions/changelog-stub/calculate-next-version
+        with:
+          # Only parameter - allows manual testing with specific versions
+          latest-version-override: ${{ github.event.inputs.version }}
+
+  update-changelog:
+    name: Update Changelog Files
+    needs: version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      # Extract version without v prefix for changelog update
+      - name: Extract version without prefix
+        id: extract-version
+        run: |
+          VERSION="${{ needs.version.outputs.next-version-tag }}"
+          VERSION="${VERSION#v}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Update changelog files
+        id: update_changelog
+        uses: ./.github/actions/update-changelog
+        with:
+          version: ${{ steps.extract-version.outputs.version }}
+          main_changelog_path: CHANGELOG.md
+          vscode_changelog_path: extensions/vscode/CHANGELOG.md
+
+      # SAFETY CHECK: This step will only run if:
+      # 1. Changes were detected in both changelog files
+      # 2. Dry run is explicitly set to false (default is true)
+      - name: Commit and push changes
+        id: commit_changes
+        if: >-
+          (steps.update_changelog.outputs.main_changelog_updated == 'true' && 
+          steps.update_changelog.outputs.vscode_changelog_updated == 'true') && 
+          github.event.inputs.dry_run == 'false'
+        run: |
+          VERSION="${{ steps.extract-version.outputs.version }}"
+          BRANCH_NAME=$(git branch --show-current)
+          COMMIT_MESSAGE="Update changelog for pre-release version $VERSION [skip ci] [TEST ONLY]"
+
+          # Log warning that we're about to commit changes
+          echo "::warning::COMMITTING CHANGES TO BRANCH $BRANCH_NAME"
+
+          # Identify files to commit
+          files_to_commit=""
+          if [ "${{ steps.update_changelog.outputs.main_changelog_updated }}" == "true" ]; then
+            files_to_commit="$files_to_commit CHANGELOG.md"
+          fi
+
+          if [ "${{ steps.update_changelog.outputs.vscode_changelog_updated }}" == "true" ]; then
+            files_to_commit="$files_to_commit extensions/vscode/CHANGELOG.md"
+          fi
+
+          # Show summary of what we're about to commit
+          echo "Files to be committed:"
+          for file in $files_to_commit; do
+            echo "  - $file"
+          done
+
+          # Set up Git user for commit
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+
+          # Add files to staging
+          for file in $files_to_commit; do
+            git add "$file"
+            echo "::notice::Staged $file for commit"
+          done
+
+          # Commit and push changes
+          git commit -m "$COMMIT_MESSAGE"
+          git push origin "$BRANCH_NAME"
+
+          echo "::notice::Committed and pushed changelog updates for version $VERSION"
+
+          echo "commit_created=true" >> $GITHUB_OUTPUT
+
+      - name: Changelog update summary
+        if: always()
+        run: |
+          echo "## Changelog Update Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Show current branch and version
+          echo "**Branch:** ${GITHUB_REF#refs/heads/}" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ steps.extract-version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Show changelog update results
+          echo "### Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ steps.update_changelog.outputs.main_changelog_updated }}" == "true" ]; then
+            echo "✅ Updated main CHANGELOG.md" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ No changes needed in main CHANGELOG.md" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "${{ steps.update_changelog.outputs.vscode_changelog_updated }}" == "true" ]; then
+            echo "✅ Updated VS Code extension CHANGELOG.md" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ No changes needed in VS Code extension CHANGELOG.md" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Add commit status information
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.commit_changes.outputs.commit_created }}" == "true" ]; then
+            echo "✅ **Changes were committed to branch ${GITHUB_REF#refs/heads/}**" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ github.event.inputs.dry_run }}" == "true" ]; then
+            echo "ℹ️ **Dry run mode - no changes committed**" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ steps.update_changelog.outputs.main_changelog_updated }}" == "true" && "${{ steps.update_changelog.outputs.vscode_changelog_updated }}" == "true" ]; then
+            echo "⚠️ **Changes were detected but not committed due to an error**" >> $GITHUB_STEP_SUMMARY
+          fi

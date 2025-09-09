@@ -1,0 +1,28 @@
+name: "Get Tags Stub - FOR TESTING ONLY"
+description: "[TEMPORARY TESTING ONLY] Returns hardcoded tag data for testing. Will be replaced in production with real action from PR #3031."
+
+outputs:
+  # PR #3031 compatible output
+  all-tags:
+    description: "Comma-separated list of all version tags"
+    value: ${{ steps.stub.outputs.all_tags }}
+
+runs:
+  using: "composite"
+  steps:
+    # TEMPORARY TESTING IMPLEMENTATION ONLY - WILL BE REPLACED
+    - name: Return stub tags data (FOR TESTING ONLY)
+      id: stub
+      shell: bash
+      run: |
+        echo "::group::Get Tags Stub"
+
+        # Hardcoded test data - sample tags
+        TAGS="v1.20.0,v1.19.1,v1.19.0,v1.18.1,v1.18.0,v1.16.1,v1.16.0"
+
+        echo "Using stub tags data: $TAGS"
+
+        # Set output
+        echo "all_tags=$TAGS" >> $GITHUB_OUTPUT
+
+        echo "::endgroup::"
