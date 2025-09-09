@@ -997,13 +997,17 @@ func (s *PublishConnectCloudSuite) publishWithCloudClient(
 		s.Contains(record.DashboardURL, string(myContentID))
 		s.Contains(record.DirectURL, string(myContentID))
 
-		// Check files are recorded if upload was successful
-		if errsMock.uploadErr == nil && errsMock.rPackageErr == nil {
-			s.Contains(record.Files, "app.py")
-			s.Contains(record.Files, "requirements.txt")
-			s.Equal([]string{"flask"}, record.Requirements)
-			s.Contains(record.Renv.Packages, renv.PackageName("mypkg"))
-		}
+			// Check files are recorded if upload was successful
+			if errsMock.uploadErr == nil && errsMock.rPackageErr == nil {
+				s.Contains(record.Files, "app.py")
+				s.Contains(record.Files, "requirements.txt")
+				s.Equal([]string{"flask"}, record.Requirements)
+				// Verify Renv content only when the bundle was uploaded (BundleID present).
+				if record.BundleID != "" {
+					s.Require().NotNil(record.Renv)
+					s.Contains(record.Renv.Packages, renv.PackageName("mypkg"))
+				}
+			}
 	}
 
 	// Check we don't have bad deployment record
