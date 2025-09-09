@@ -130,7 +130,7 @@ describe("IntegrationRequests", () => {
 
     expect(actions.length).toBe(2);
     expect(actions[0].label).toBe("Add Integration Request");
-    expect(actions[1].label).toBe("Clear all Integration Request Values");
+    expect(actions[1].label).toBe("Clear all Integration Requests");
 
     // test the clear all action
     actions[1].fn();
