@@ -51,25 +51,25 @@ func (p *defaultPublisher) getRPackagesWithPath(scanDependencies bool) (bundles.
 			scanPaths = []string{p.Dir.String()}
 		}
 		// Ask the mapper to scan dependencies and return a generated lockfile
-        generated, err := p.rPackageMapper.ScanDependencies(scanPaths, log)
-        if err != nil {
-            // If error is already an agent error, return as-is
-            if aerr, isAgentErr := types.IsAgentError(err); isAgentErr {
-                return nil, util.AbsolutePath{}, aerr
-            }
-            agentErr := types.NewAgentError(types.ErrorRenvLockPackagesReading, err, lockfileErrDetails{Lockfile: p.Dir.String()})
-            agentErr.Message = fmt.Sprintf("Could not scan R packages from project: %s", err.Error())
-            return nil, util.AbsolutePath{}, agentErr
-        }
-        lockfilePath = generated
-        lockfileString = generated.String()
-    } else {
-        lockfileString = p.Config.R.PackageFile
-        if lockfileString == "" {
-            lockfileString = interpreters.DefaultRenvLockfile
-        }
-        lockfilePath = p.Dir.Join(lockfileString)
-    }
+		generated, err := p.rPackageMapper.ScanDependencies(scanPaths, log)
+		if err != nil {
+			// If error is already an agent error, return as-is
+			if aerr, isAgentErr := types.IsAgentError(err); isAgentErr {
+				return nil, util.AbsolutePath{}, aerr
+			}
+			agentErr := types.NewAgentError(types.ErrorRenvLockPackagesReading, err, lockfileErrDetails{Lockfile: p.Dir.String()})
+			agentErr.Message = fmt.Sprintf("Could not scan R packages from project: %s", err.Error())
+			return nil, util.AbsolutePath{}, agentErr
+		}
+		lockfilePath = generated
+		lockfileString = generated.String()
+	} else {
+		lockfileString = p.Config.R.PackageFile
+		if lockfileString == "" {
+			lockfileString = interpreters.DefaultRenvLockfile
+		}
+		lockfilePath = p.Dir.Join(lockfileString)
+	}
 
 	// Detect mapper type to decide which message to emit
 	if _, isLock := p.rPackageMapper.(*renv.LockfilePackageMapper); isLock {
@@ -79,20 +79,20 @@ func (p *defaultPublisher) getRPackagesWithPath(scanDependencies bool) (bundles.
 	}
 	log.Debug("Collecting manifest R packages", "lockfile", lockfilePath)
 
-    rPackages, err := p.rPackageMapper.GetManifestPackages(p.Dir, lockfilePath, log)
-    if err != nil {
-        // If error is an already well detailed agent error, pass it along
-        if aerr, isAgentErr := types.IsAgentError(err); isAgentErr {
-            return nil, util.AbsolutePath{}, aerr
-        }
-        agentErr := types.NewAgentError(types.ErrorRenvLockPackagesReading, err, lockfileErrDetails{Lockfile: lockfilePath.String()})
-        agentErr.Message = fmt.Sprintf("Could not scan R packages from lockfile: %s, %s", lockfileString, err.Error())
-        return nil, util.AbsolutePath{}, agentErr
-    }
-    log.Info("Done collecting R package descriptions")
-    p.emitter.Emit(events.New(op, events.SuccessPhase, events.NoError, getRPackageDescriptionsSuccessData{}))
+	rPackages, err := p.rPackageMapper.GetManifestPackages(p.Dir, lockfilePath, log)
+	if err != nil {
+		// If error is an already well detailed agent error, pass it along
+		if aerr, isAgentErr := types.IsAgentError(err); isAgentErr {
+			return nil, util.AbsolutePath{}, aerr
+		}
+		agentErr := types.NewAgentError(types.ErrorRenvLockPackagesReading, err, lockfileErrDetails{Lockfile: lockfilePath.String()})
+		agentErr.Message = fmt.Sprintf("Could not scan R packages from lockfile: %s, %s", lockfileString, err.Error())
+		return nil, util.AbsolutePath{}, agentErr
+	}
+	log.Info("Done collecting R package descriptions")
+	p.emitter.Emit(events.New(op, events.SuccessPhase, events.NoError, getRPackageDescriptionsSuccessData{}))
 
-    return rPackages, lockfilePath, nil
+	return rPackages, lockfilePath, nil
 }
 
 // copyLockfileToPositDir copies a lockfile into .posit/publish within the
@@ -104,14 +104,14 @@ func (p *defaultPublisher) copyLockfileToPositDir(lockfilePath util.Path, log lo
 		return util.RelativePath{}, err
 	}
 
-    src, err := lockfilePath.Open()
+	src, err := lockfilePath.Open()
 	if err != nil {
 		return util.RelativePath{}, err
 	}
 	defer src.Close()
 
-    // Always stage as renv.lock regardless of source filename
-    targetPath := targetDir.Join("renv.lock")
+	// Always stage as renv.lock regardless of source filename
+	targetPath := targetDir.Join("renv.lock")
 	dst, err := targetPath.Create()
 	if err != nil {
 		return util.RelativePath{}, err

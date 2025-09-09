@@ -23,7 +23,7 @@ import (
 	"github.com/posit-dev/publisher/internal/util/utiltest"
 )
 
-type InterpretersSuite struct {
+type DeployDependenciesSuite struct {
 	utiltest.Suite
 	log        logging.Logger
 	emitter    events.Emitter
@@ -32,11 +32,11 @@ type InterpretersSuite struct {
 	dir        util.AbsolutePath
 }
 
-func TestInterpretersSuite(t *testing.T) {
-	suite.Run(t, new(InterpretersSuite))
+func TestDeployDependenciesSuite(t *testing.T) {
+	suite.Run(t, new(DeployDependenciesSuite))
 }
 
-func (s *InterpretersSuite) SetupTest() {
+func (s *DeployDependenciesSuite) SetupTest() {
 	// Create a filesystem for testing
 	s.fs = afero.NewMemMapFs()
 	s.dir = util.NewAbsolutePath("/test/dir", s.fs)
@@ -63,11 +63,11 @@ func (s *InterpretersSuite) SetupTest() {
 	}
 }
 
-func (s *InterpretersSuite) TearDownTest() {
+func (s *DeployDependenciesSuite) TearDownTest() {
 	// Clean up test directory if needed
 }
 
-func (s *InterpretersSuite) createPublisher() *defaultPublisher {
+func (s *DeployDependenciesSuite) createPublisher() *defaultPublisher {
 	helper := publishhelper.NewPublishHelper(s.stateStore, s.log)
 	return &defaultPublisher{
 		log:           s.log,
@@ -78,7 +78,7 @@ func (s *InterpretersSuite) createPublisher() *defaultPublisher {
 	}
 }
 
-func (s *InterpretersSuite) TestConfigureInterpretersPython() {
+func (s *DeployDependenciesSuite) TestConfigureDependenciesPython() {
 	// Create a requirements.txt file
 	requirementsTxt := `
 # Comment line
@@ -101,7 +101,7 @@ flask==2.0.1
 
 	// Create and run the publisher
 	publisher := s.createPublisher()
-	err = publisher.addInterpreterDetailsToTarget()
+	err = publisher.addDependenciesToTarget(nil)
 	s.NoError(err)
 
 	// Check that the requirements were extracted correctly
@@ -118,7 +118,7 @@ flask==2.0.1
 	s.Nil(publisher.Target.Renv) // No R environment should be configured
 }
 
-func (s *InterpretersSuite) TestConfigureInterpretersR() {
+func (s *DeployDependenciesSuite) TestConfigureDependenciesR() {
 	// Create an renv.lock file
 	renvLockContent := `{
   "R": {
@@ -163,7 +163,7 @@ func (s *InterpretersSuite) TestConfigureInterpretersR() {
 
 	// Create and run the publisher
 	publisher := s.createPublisher()
-	err = publisher.addInterpreterDetailsToTarget()
+	err = publisher.addDependenciesToTarget(nil)
 	s.NoError(err)
 
 	// Check that the R environment was extracted correctly
@@ -190,7 +190,7 @@ func (s *InterpretersSuite) TestConfigureInterpretersR() {
 	s.Empty(publisher.Target.Requirements) // No Python requirements should be set
 }
 
-func (s *InterpretersSuite) TestConfigureInterpretersBoth() {
+func (s *DeployDependenciesSuite) TestConfigureDependenciesBoth() {
 	// Create a requirements.txt file
 	requirementsTxt := `
 flask==2.0.1
@@ -239,7 +239,7 @@ numpy==1.22.0
 
 	// Create and run the publisher
 	publisher := s.createPublisher()
-	err = publisher.addInterpreterDetailsToTarget()
+	err = publisher.addDependenciesToTarget(nil)
 	s.NoError(err)
 
 	// Check that the Python requirements were extracted correctly
@@ -263,7 +263,7 @@ numpy==1.22.0
 	s.Equal(renv.RepoURL("CRAN"), shiny.Repository)
 }
 
-func (s *InterpretersSuite) TestConfigureInterpretersCustomFilenames() {
+func (s *DeployDependenciesSuite) TestConfigureDependenciesCustomFilenames() {
 	// Create a custom requirements file
 	requirementsTxt := "tensorflow==2.9.0"
 	customRequirementsPath := s.dir.Join("custom-requirements.txt")
@@ -312,7 +312,7 @@ func (s *InterpretersSuite) TestConfigureInterpretersCustomFilenames() {
 
 	// Create and run the publisher
 	publisher := s.createPublisher()
-	err = publisher.addInterpreterDetailsToTarget()
+	err = publisher.addDependenciesToTarget(nil)
 	s.NoError(err)
 
 	// Check Python requirements
@@ -325,7 +325,7 @@ func (s *InterpretersSuite) TestConfigureInterpretersCustomFilenames() {
 	s.Contains(publisher.Target.Renv.Packages, renv.PackageName("tidyverse"))
 }
 
-func (s *InterpretersSuite) TestConfigureInterpretersMissingFiles() {
+func (s *DeployDependenciesSuite) TestConfigureDependenciesMissingFiles() {
 	// Configure the publisher with both R and Python settings,
 	// but don't create the corresponding files
 	s.stateStore.Config = &config.Config{
@@ -339,7 +339,7 @@ func (s *InterpretersSuite) TestConfigureInterpretersMissingFiles() {
 
 	// Create and run the publisher
 	publisher := s.createPublisher()
-	err := publisher.addInterpreterDetailsToTarget()
+	err := publisher.addDependenciesToTarget(nil)
 	s.Error(err) // We expect an error since the files don't exist
 
 	// The Target properties should remain nil

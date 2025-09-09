@@ -36,7 +36,7 @@ func (p *defaultPublisher) createBundle(manifest *bundles.Manifest) (*os.File, e
 		}
 	}
 
-	err := p.addInterpreterDetailsToTarget()
+	err := p.addDependenciesToTarget(manifest)
 	if err != nil {
 		return nil, err
 	}
