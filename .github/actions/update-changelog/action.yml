@@ -123,21 +123,15 @@ runs:
         VSCODE_CHANGELOG="${{ inputs.vscode_changelog_path }}"
         VERSION="${{ inputs.version }}"
 
-        # Make backup of VS Code changelog if it exists
-        if [ -f "$VSCODE_CHANGELOG" ]; then
-          cp "$VSCODE_CHANGELOG" "${VSCODE_CHANGELOG}.bak"
-          echo "::notice::VS Code changelog found, updating with content from main changelog"
-        else
-          echo "::notice::VS Code changelog not found, creating with main changelog content"
-          mkdir -p "$(dirname "$VSCODE_CHANGELOG")"
-        fi
+        # Create backup of VS Code changelog
+        cp "$VSCODE_CHANGELOG" "${VSCODE_CHANGELOG}.bak"
+        echo "::notice::Creating backup of VS Code changelog before updating"
 
         # Copy the main changelog to the VS Code changelog
         cp "$MAIN_CHANGELOG" "$VSCODE_CHANGELOG"
 
-        # Customize the VS Code changelog description
-        sed -i.bak "s/All notable changes to this project will be documented in this file./All notable changes to the Posit Publisher extension are documented in this\nfile./" "$VSCODE_CHANGELOG"
-        rm -f "${VSCODE_CHANGELOG}.bak"
+        # Customize the VS Code changelog description for the extension
+        sed -i.tmp "s/All notable changes to this project will be documented in this file./All notable changes to the Posit Publisher extension are documented in this\nfile./" "$VSCODE_CHANGELOG"
 
         echo "::notice::Copied and customized main changelog for VS Code extension"
 
@@ -145,20 +139,18 @@ runs:
         echo "::endgroup::"
 
         # Output whether we found changes to make
-        if [ -f "${VSCODE_CHANGELOG}.bak" ] && git diff --quiet "$VSCODE_CHANGELOG" "${VSCODE_CHANGELOG}.bak"; then
+        if git diff --quiet "$VSCODE_CHANGELOG" "${VSCODE_CHANGELOG}.bak"; then
           echo "changes_made=false" >> $GITHUB_OUTPUT
           echo "::notice::No changes were needed in VS Code extension CHANGELOG.md"
         else
           echo "changes_made=true" >> $GITHUB_OUTPUT
           echo "::notice::Changes made to VS Code extension CHANGELOG.md"
           
-          # Show changes for debugging if backup exists
-          if [ -f "${VSCODE_CHANGELOG}.bak" ]; then
-            echo "::group::VS Code CHANGELOG.md changes"
-            git diff --color=always "${VSCODE_CHANGELOG}.bak" "$VSCODE_CHANGELOG" | cat
-            echo "::endgroup::"
-          fi
+          # Show changes for debugging
+          echo "::group::VS Code CHANGELOG.md changes"
+          git diff --color=always "${VSCODE_CHANGELOG}.bak" "$VSCODE_CHANGELOG" | cat
+          echo "::endgroup::"
         fi
 
-        # Remove backup file
-        rm -f "${VSCODE_CHANGELOG}.bak" "${VSCODE_CHANGELOG}.tmp" "${VSCODE_CHANGELOG}.*-e"
+        # Clean up temporary sed backup files (keep .bak files)
+        rm -f "${VSCODE_CHANGELOG}.tmp" "${VSCODE_CHANGELOG}.*-e" "${VSCODE_CHANGELOG}.*tmp*"
