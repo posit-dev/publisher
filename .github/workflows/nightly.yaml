@@ -19,6 +19,10 @@ jobs:
   package:
     needs: build
     uses: ./.github/workflows/package.yaml
+  e2e:
+    needs: [package]
+    uses: ./.github/workflows/e2e.yaml
+    secrets: inherit
   contract-deps:
     secrets: inherit
     uses: ./.github/workflows/contract-deps.yaml
