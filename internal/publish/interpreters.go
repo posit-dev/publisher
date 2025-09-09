@@ -3,12 +3,14 @@ package publish
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import (
+	"fmt"
+	"path/filepath"
+
 	"github.com/posit-dev/publisher/internal/bundles"
 	"github.com/posit-dev/publisher/internal/inspect/dependencies/pydeps"
 	"github.com/posit-dev/publisher/internal/inspect/dependencies/renv"
 	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/util"
-	"path/filepath"
 )
 
 // addDependenciesToTarget reads dependency files and updates the Target

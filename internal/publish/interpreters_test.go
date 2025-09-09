@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/posit-dev/publisher/internal/accounts"
+	"github.com/posit-dev/publisher/internal/bundles"
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/events"
@@ -99,7 +100,7 @@ flask==2.0.1
 		},
 	}
 
-	// Create and run the publisher
+	// Create and run the publisher (Python only; no manifest needed)
 	publisher := s.createPublisher()
 	err = publisher.addDependenciesToTarget(nil)
 	s.NoError(err)
@@ -161,9 +162,11 @@ func (s *DeployDependenciesSuite) TestConfigureDependenciesR() {
 		},
 	}
 
-	// Create and run the publisher
+	// Create and run the publisher with manifest carrying dependency source
+	manifest := bundles.NewManifest()
+	manifest.DependenciesSource = renvPath.Path
 	publisher := s.createPublisher()
-	err = publisher.addDependenciesToTarget(nil)
+	err = publisher.addDependenciesToTarget(manifest)
 	s.NoError(err)
 
 	// Check that the R environment was extracted correctly
@@ -237,9 +240,11 @@ numpy==1.22.0
 		},
 	}
 
-	// Create and run the publisher
+	// Create and run the publisher with manifest carrying dependency source path
+	manifest := bundles.NewManifest()
+	manifest.DependenciesSource = renvPath.Path
 	publisher := s.createPublisher()
-	err = publisher.addDependenciesToTarget(nil)
+	err = publisher.addDependenciesToTarget(manifest)
 	s.NoError(err)
 
 	// Check that the Python requirements were extracted correctly
@@ -310,9 +315,11 @@ func (s *DeployDependenciesSuite) TestConfigureDependenciesCustomFilenames() {
 		},
 	}
 
-	// Create and run the publisher
+	// Create and run the publisher supplying manifest with DependenciesSource
+	manifest := bundles.NewManifest()
+	manifest.DependenciesSource = customRenvPath.Path
 	publisher := s.createPublisher()
-	err = publisher.addDependenciesToTarget(nil)
+	err = publisher.addDependenciesToTarget(manifest)
 	s.NoError(err)
 
 	// Check Python requirements
