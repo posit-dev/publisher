@@ -9,6 +9,7 @@ jobs:
   # Linting and formatting
   lint:
     uses: ./.github/workflows/lint.yaml
+
   # Unit Tests
   home-view-unit-tests:
     uses: ./.github/workflows/home-view-unit-test.yaml
@@ -16,6 +17,7 @@ jobs:
     uses: ./.github/workflows/agent.yaml
   vscode:
     uses: ./.github/workflows/vscode.yaml
+
   # E2E Tests
   e2e:
     needs: [home-view-unit-tests, agent, vscode, package]
@@ -37,3 +39,11 @@ jobs:
       - package
     uses: ./.github/workflows/upload.yaml
     secrets: inherit
+
+  # License generation
+  generate-licenses:
+    uses: ./.github/workflows/generate-licenses.yaml
+    with:
+      # Do not commit license changes or fail on forbidden licenses for now (live testing)
+      commit_changes: false
+      fail_on_forbidden: false
