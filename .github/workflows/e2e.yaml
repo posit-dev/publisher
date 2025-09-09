@@ -96,12 +96,9 @@ jobs:
         env:
           CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
 
-      - name: Start containers in parallel
+      - name: Start containers
         working-directory: test/e2e
-        run: |
-          just start "connect-publisher-e2e" &
-          just start "code-server" &
-          wait
+        run: docker compose up -d connect-publisher-e2e code-server
 
       - name: Wait for services to be ready
         run: |
