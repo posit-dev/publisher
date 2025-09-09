@@ -129,20 +129,6 @@ func (b *bundler) makeBundle(dest io.Writer) (*Manifest, error) {
 		}
 	}
 
-	// If a staged renv.lock exists under .posit/publish, ensure it is included
-	// in the bundle at the root as renv.lock even if not matched by file patterns.
-	stagedLock := b.baseDir.Join(".posit", "publish", "renv.lock")
-	if ok, _ := stagedLock.Exists(); ok {
-		if _, present := bundle.manifest.Files["renv.lock"]; !present {
-			data, err := stagedLock.ReadFile()
-			if err != nil {
-				return nil, err
-			}
-			if err := bundle.addFile("renv.lock", data); err != nil {
-				return nil, err
-			}
-		}
-	}
 	if dest != nil {
 		err = bundle.addManifest()
 		if err != nil {

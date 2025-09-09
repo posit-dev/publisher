@@ -65,32 +65,32 @@ func (p *defaultPublisher) createBundle(manifest *bundles.Manifest) (*os.File, e
 		Filename: bundleFile.Name(),
 	}))
 
-    // Update deployment record with new information
-    p.Target.Files = manifest.GetFilenames()
-    if len(p.Target.Files) == 0 {
-        // Fallback: record common files if matcher configuration produced an
-        // empty file set. This ensures deployment records remain useful.
-        files := []string{}
-        if p.Config != nil {
-            if p.Config.Entrypoint != "" {
-                if ok, _ := p.Dir.Join(p.Config.Entrypoint).Exists(); ok {
-                    files = append(files, p.Config.Entrypoint)
-                }
-            }
-            if p.Config.Python != nil {
-                req := p.Config.Python.PackageFile
-                if req == "" {
-                    req = bundles.PythonRequirementsFilename
-                }
-                if ok, _ := p.Dir.Join(req).Exists(); ok {
-                    files = append(files, req)
-                }
-            }
-        }
-        if len(files) > 0 {
-            p.Target.Files = files
-        }
-    }
+	// Update deployment record with new information
+	p.Target.Files = manifest.GetFilenames()
+	if len(p.Target.Files) == 0 {
+		// Fallback: record common files if matcher configuration produced an
+		// empty file set. This ensures deployment records remain useful.
+		files := []string{}
+		if p.Config != nil {
+			if p.Config.Entrypoint != "" {
+				if ok, _ := p.Dir.Join(p.Config.Entrypoint).Exists(); ok {
+					files = append(files, p.Config.Entrypoint)
+				}
+			}
+			if p.Config.Python != nil {
+				req := p.Config.Python.PackageFile
+				if req == "" {
+					req = bundles.PythonRequirementsFilename
+				}
+				if ok, _ := p.Dir.Join(req).Exists(); ok {
+					files = append(files, req)
+				}
+			}
+		}
+		if len(files) > 0 {
+			p.Target.Files = files
+		}
+	}
 
 	return bundleFile, nil
 }
