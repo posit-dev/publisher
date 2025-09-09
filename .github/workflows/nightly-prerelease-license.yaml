@@ -1,0 +1,29 @@
+name: Nightly Prerelease License
+on:
+  # IMPORTANT: This workflow is for testing purposes only and should NOT be scheduled
+  # schedule:
+  # DO NOT UNCOMMENT unless explicitly ready for production
+  # - cron: "0 7 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "[TESTING ONLY] Display mode only - for testing (no changes will be committed)"
+        required: false
+        default: true
+        type: boolean
+
+jobs:
+  build:
+    uses: ./.github/workflows/build.yaml
+
+  package:
+    needs: build
+    uses: ./.github/workflows/package.yaml
+
+  licenses:
+    needs:
+      - build
+      - package
+    uses: ./.github/workflows/generate-licenses.yaml
+    with:
+      commit_changes: ${{ github.event.inputs.dry_run != 'true' }}
