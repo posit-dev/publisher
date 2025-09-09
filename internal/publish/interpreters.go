@@ -31,39 +31,19 @@ func (p *defaultPublisher) addDependenciesToTarget(manifest *bundles.Manifest) e
 	}
 
 	if p.Config.R != nil {
-		filename := p.Config.R.PackageFile
-		if filename == "" {
-			filename = interpreters.DefaultRenvLockfile
+		// Manifest should always provide the dependency source that was actually used
+		// to construct the manifest (either the existing renv.lock or the auto-generated one).
+		if manifest == nil || manifest.DependenciesSource.String() == "" {
+			return fmt.Errorf("manifest missing DependenciesSource for R dependencies")
 		}
-		p.log.Debug("R configuration present", "filename", filename)
-
-		// Resolve lockfile location. Prefer manifest dependency source when provided,
-		// but fall back to configured/default lockfile if it doesn't exist.
+		src := manifest.DependenciesSource.String()
 		var lockfileAbs util.AbsolutePath
-		var candidates []util.AbsolutePath
-		if manifest != nil && manifest.DependenciesSource.String() != "" {
-			src := manifest.DependenciesSource.String()
-			if filepath.IsAbs(src) {
-				candidates = append(candidates, util.NewAbsolutePath(src, manifest.DependenciesSource.Fs()))
-			} else {
-				candidates = append(candidates, p.Dir.Join(src))
-			}
+		if filepath.IsAbs(src) {
+			lockfileAbs = util.NewAbsolutePath(src, manifest.DependenciesSource.Fs())
+		} else {
+			lockfileAbs = p.Dir.Join(src)
 		}
-		// Configured/default lockfile at project root
-		candidates = append(candidates, p.Dir.Join(filename))
-		// Staged lockfile (used when we scan and stage into .posit/publish)
-		candidates = append(candidates, p.Dir.Join(".posit", "publish", interpreters.DefaultRenvLockfile))
-
-		for _, c := range candidates {
-			if ok, _ := c.Exists(); ok {
-				lockfileAbs = c
-				break
-			}
-		}
-		if lockfileAbs.String() == "" {
-			// None of the candidates exist; return an error from ReadLockfile
-			lockfileAbs = candidates[0]
-		}
+		p.log.Debug("R configuration present", "lockfile", lockfileAbs.String())
 
 		lockfile, err := renv.ReadLockfile(lockfileAbs)
 		if err != nil {

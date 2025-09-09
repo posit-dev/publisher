@@ -194,12 +194,12 @@ func (b *bundle) walkFunc(path util.AbsolutePath, info fs.FileInfo, err error) e
 		"size", info.Size(),
 	)
 	relSlash := relPath.ToSlash()
-    if info.IsDir() {
-        // Manifest filenames are always Posix paths, not Windows paths
-        err = writeHeaderToTar(info, relSlash, b.archive)
-        if err != nil {
-            return err
-        }
+	if info.IsDir() {
+		// Manifest filenames are always Posix paths, not Windows paths
+		err = writeHeaderToTar(info, relSlash, b.archive)
+		if err != nil {
+			return err
+		}
 	} else if info.Mode().IsRegular() {
 		pathLogger.Debug("Adding file")
 		// Manifest filenames are always Posix paths, not Windows paths
