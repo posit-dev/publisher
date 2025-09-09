@@ -43,6 +43,16 @@ func (h *PostPackagesRScanHandler) ServeHTTP(w http.ResponseWriter, req *http.Re
 		// Response already returned by ProjectDirFromRequest
 		return
 	}
+	rInterpreter, _, err := InterpretersFromRequest(projectDir, w, req, h.log)
+	if err != nil {
+		// Response already returned by InterpretersFromRequest
+		return
+	}
+	rExecutablePath, err := rInterpreter.GetRExecutable()
+	if err != nil {
+		InternalError(w, req, h.log, err)
+		return
+	}
 	dec := json.NewDecoder(req.Body)
 	dec.DisallowUnknownFields()
 	var b PostPackagesRScanRequest
@@ -62,7 +72,7 @@ func (h *PostPackagesRScanHandler) ServeHTTP(w http.ResponseWriter, req *http.Re
 		BadRequest(w, req, h.log, err)
 		return
 	}
-	_, err = h.rDependencyScanner.SetupRenvInDir(projectDir.String(), lockfileRelPath.String(), b.R)
+	_, err = h.rDependencyScanner.SetupRenvInDir(projectDir.String(), lockfileRelPath.String(), rExecutablePath.String())
 	if err != nil {
 		InternalError(w, req, h.log, err)
 		return

@@ -15,6 +15,7 @@
             See the renv documentation for more details.</a
           >
         </p>
+        <vscode-button @click="onSetupRenv()"> Set up renv </vscode-button>
       </template>
       <template v-if="!home.r.active.isInProject">
         <p data-automation="r-not-configured">
@@ -57,6 +58,12 @@ const hostConduit = useHostConduitService();
 const onRefresh = () => {
   hostConduit.sendMsg({
     kind: WebviewToHostMessageType.REFRESH_R_PACKAGES,
+  });
+};
+
+const onSetupRenv = () => {
+  hostConduit.sendMsg({
+    kind: WebviewToHostMessageType.SCAN_R_PACKAGE_REQUIREMENTS,
   });
 };
 
