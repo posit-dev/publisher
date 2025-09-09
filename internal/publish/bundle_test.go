@@ -160,7 +160,7 @@ func (s *BundleSuite) createTestFiles() {
 
 func (s *BundleSuite) createPublisher() *defaultPublisher {
 	helper := publishhelper.NewPublishHelper(s.stateStore, s.log)
-	return &defaultPublisher{
+	pub := &defaultPublisher{
 		log:            s.log,
 		emitter:        s.emitter,
 		rPackageMapper: s.packageMapper,
@@ -168,6 +168,9 @@ func (s *BundleSuite) createPublisher() *defaultPublisher {
 		python:         util.NewPath("python", s.fs),
 		PublishHelper:  helper,
 	}
+	// Tests call createBundle directly; ensure we have a deployment record to attach details to.
+	pub.Target = deployment.New()
+	return pub
 }
 
 func (s *BundleSuite) TearDownTest() {
@@ -177,20 +180,26 @@ func (s *BundleSuite) TearDownTest() {
 
 func (s *BundleSuite) TestCreateBundle() {
 
-    // Create publisher
-    publisher := s.createPublisher()
+	// Create publisher
+	publisher := s.createPublisher()
 
-    // When no explicit R.PackageFile is configured, manifest generation will
-    // scan dependencies. Provide a mock for ScanDependencies to return a
-    // generated lockfile path so the test doesn't panic on an unexpected call.
-    generated := s.dir.Join("generated.lock")
-    s.packageMapper.On("ScanDependencies", mock.Anything, mock.Anything).Return(generated, nil)
+	// Explicitly set a lockfile so Renv is populated in the deployment record
+	if publisher.Config.R == nil {
+		publisher.Config.R = &config.R{}
+	}
+	publisher.Config.R.PackageFile = "renv.lock"
 
-    // No need to mock log calls with discard logger
+	// When no explicit R.PackageFile is configured, manifest generation will
+	// scan dependencies. Provide a mock for ScanDependencies to return a
+	// generated lockfile path so the test doesn't panic on an unexpected call.
+	generated := s.dir.Join("generated.lock")
+	s.packageMapper.On("ScanDependencies", mock.Anything, mock.Anything).Return(generated, nil)
 
-    // Create the manifest
-    manifest, err := publisher.createManifest()
-    s.NoError(err)
+	// No need to mock log calls with discard logger
+
+	// Create the manifest
+	manifest, err := publisher.createManifest()
+	s.NoError(err)
 
 	// Call createBundle
 	bundleFile, err := publisher.createBundle(manifest)
@@ -299,6 +308,9 @@ func (s *BundleSuite) TestCreateBundle_ExcludesRenvLock_WhenMissingAndWildcard()
 		PublishHelper:  helper,
 	}
 
+	// Ensure deployment record exists to avoid nil-target errors during bundling
+	pub.Target = deployment.New()
+
 	manifest, err := pub.createManifest()
 	s.NoError(err)
 	s.NotEmpty(manifest.Packages)
@@ -343,6 +355,9 @@ func (s *BundleSuite) TestFullFlow_WithConfiguredLockfile_UsesItAndBundlesIt() {
 		python:         util.NewPath("python", s.fs),
 		PublishHelper:  helper,
 	}
+
+	// Ensure deployment record exists to avoid nil-target errors during bundling
+	pub.Target = deployment.New()
 
 	manifest, err := pub.createManifest()
 	s.NoError(err)

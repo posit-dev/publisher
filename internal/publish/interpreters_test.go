@@ -69,15 +69,16 @@ func (s *InterpretersSuite) TearDownTest() {
 
 func (s *InterpretersSuite) createPublisher() *defaultPublisher {
 	helper := publishhelper.NewPublishHelper(s.stateStore, s.log)
-	publisher := defaultPublisher{
+	pub := &defaultPublisher{
 		log:           s.log,
 		emitter:       s.emitter,
 		r:             util.NewPath("R", s.fs),
 		python:        util.NewPath("python", s.fs),
 		PublishHelper: helper,
 	}
-	publisher.CreateDeploymentRecord()
-	return &publisher
+	// Avoid dependence on serverPublisher in tests; just provide a minimal record.
+	pub.Target = deployment.New()
+	return pub
 }
 
 func (s *InterpretersSuite) TestConfigureInterpretersPython() {
@@ -156,10 +157,11 @@ func (s *InterpretersSuite) TestConfigureInterpretersR() {
 	err := renvPath.WriteFile([]byte(renvLockContent), 0644)
 	s.NoError(err)
 
-	// Configure the publisher with R settings
+	// Configure the publisher with R settings and an explicit lockfile
 	s.stateStore.Config = &config.Config{
 		R: &config.R{
-			Version: "4.2.0",
+			Version:     "4.2.0",
+			PackageFile: interpreters.DefaultRenvLockfile,
 		},
 	}
 
@@ -229,10 +231,11 @@ numpy==1.22.0
 	err = renvPath.WriteFile([]byte(renvLockContent), 0644)
 	s.NoError(err)
 
-	// Configure the publisher with both R and Python settings
+	// Configure the publisher with both R and Python settings; set R package file
 	s.stateStore.Config = &config.Config{
 		R: &config.R{
-			Version: "4.2.0",
+			Version:     "4.2.0",
+			PackageFile: interpreters.DefaultRenvLockfile,
 		},
 		Python: &config.Python{
 			Version: "3.9",
