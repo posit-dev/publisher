@@ -21,9 +21,6 @@ jobs:
     uses: ./.github/workflows/package.yaml
 
   licenses:
-    needs:
-      - build
-      - package
     uses: ./.github/workflows/generate-licenses.yaml
     with:
       # Commit changes based on dry_run parameter
