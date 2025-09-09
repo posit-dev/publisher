@@ -46,12 +46,17 @@ func (p *defaultPublisher) createManifest() (*bundles.Manifest, error) {
 			log.Info("No renv.lock found; automatically scanning for dependencies.")
 		}
 
-		rPackages, err := p.getRPackages(scanDependencies)
-		if err != nil {
-			return nil, err
-		}
-		manifest.Packages = rPackages
-	}
+        rPackages, lockfilePath, err := p.getRPackagesWithPath(scanDependencies)
+        if err != nil {
+            return nil, err
+        }
+        manifest.Packages = rPackages
+        // Record the dependency source path (absolute or relative) so bundling
+        // can ensure it is included regardless of configured file patterns.
+        if lockfilePath.String() != "" {
+            manifest.DependenciesSource = lockfilePath.Path
+        }
+    }
 
 	p.log.Debug("Generated manifest:", manifest)
 	return manifest, nil

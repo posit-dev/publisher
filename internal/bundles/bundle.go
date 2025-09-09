@@ -128,6 +128,21 @@ func (b *bundler) makeBundle(dest io.Writer) (*Manifest, error) {
 			}
 		}
 	}
+
+	// If a staged renv.lock exists under .posit/publish, ensure it is included
+	// in the bundle at the root as renv.lock even if not matched by file patterns.
+	stagedLock := b.baseDir.Join(".posit", "publish", "renv.lock")
+	if ok, _ := stagedLock.Exists(); ok {
+		if _, present := bundle.manifest.Files["renv.lock"]; !present {
+			data, err := stagedLock.ReadFile()
+			if err != nil {
+				return nil, err
+			}
+			if err := bundle.addFile("renv.lock", data); err != nil {
+				return nil, err
+			}
+		}
+	}
 	if dest != nil {
 		err = bundle.addManifest()
 		if err != nil {
@@ -192,16 +207,27 @@ func (b *bundle) walkFunc(path util.AbsolutePath, info fs.FileInfo, err error) e
 		"path", relPath,
 		"size", info.Size(),
 	)
+	relSlash := relPath.ToSlash()
 	if info.IsDir() {
+		// Skip adding .posit and .posit/publish directories explicitly to keep
+		// the archive tidy; files within will be added as needed.
+		if relSlash == ".posit" || relSlash == ".posit/publish" {
+			return nil
+		}
 		// Manifest filenames are always Posix paths, not Windows paths
-		err = writeHeaderToTar(info, relPath.ToSlash(), b.archive)
+		err = writeHeaderToTar(info, relSlash, b.archive)
 		if err != nil {
 			return err
 		}
 	} else if info.Mode().IsRegular() {
 		pathLogger.Debug("Adding file")
 		// Manifest filenames are always Posix paths, not Windows paths
-		err = writeHeaderToTar(info, relPath.ToSlash(), b.archive)
+		// Special-case the staged renv.lock to appear at bundle root
+		archiveName := relSlash
+		if relSlash == ".posit/publish/renv.lock" {
+			archiveName = "renv.lock"
+		}
+		err = writeHeaderToTar(info, archiveName, b.archive)
 		if err != nil {
 			return err
 		}
@@ -214,7 +240,7 @@ func (b *bundle) walkFunc(path util.AbsolutePath, info fs.FileInfo, err error) e
 		if err != nil {
 			return err
 		}
-		b.manifest.AddFile(relPath.ToSlash(), fileMD5)
+		b.manifest.AddFile(archiveName, fileMD5)
 		b.numFiles++
 		b.size += info.Size()
 	} else {

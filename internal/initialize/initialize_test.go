@@ -184,7 +184,7 @@ func (s *InitializeSuite) TestGetPossibleRConfig() {
 	s.Len(configs, 1)
 	s.Equal(contenttypes.ContentTypeRShiny, configs[0].Type)
 	s.Equal("app.R", configs[0].Entrypoint)
-	s.Equal([]string{"/app.R", "/renv.lock"}, configs[0].Files)
+	s.Equal([]string{"/app.R"}, configs[0].Files)
 	s.Equal(emptyRConfig, configs[0].R)
 }
 
