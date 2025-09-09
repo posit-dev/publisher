@@ -32,14 +32,6 @@ func (p *defaultPublisher) createBundle(manifest *bundles.Manifest) (*os.File, e
 					return nil, types.OperationError(op, err)
 				}
 			}
-			// Also write a copy at project root for matchers that might expect it.
-			staged := p.Dir.Join(".posit", "publish", "renv.lock")
-			rootLock := p.Dir.Join("renv.lock")
-			if ok, _ := rootLock.Exists(); !ok {
-				if data, err := staged.ReadFile(); err == nil {
-					_ = rootLock.WriteFile(data, 0666)
-				}
-			}
 			filesPatterns = append(filesPatterns, "!renv.lock", ".posit/publish/renv.lock")
 		}
 	}
