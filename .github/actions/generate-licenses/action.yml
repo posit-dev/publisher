@@ -1,0 +1,30 @@
+name: "Generate Licenses"
+description: "Generate license documentation and check for forbidden licenses"
+
+outputs:
+  has-changes:
+    description: "Whether license changes were detected"
+    value: ${{ steps.check-changes.outputs.has_changes }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Generate licenses
+      shell: bash
+      run: just docs/licenses
+      # Note: The script will automatically:
+      # - Fail if required directories are missing
+      # - Fail if forbidden licenses are found
+
+    - name: Format licenses file
+      shell: bash
+      run: just format
+
+    - name: Check if changes exist
+      id: check-changes
+      shell: bash
+      run: |
+        git add docs/licenses.md
+        if ! git diff --staged --quiet; then
+          echo "has_changes=true" >> $GITHUB_OUTPUT
+        fi
