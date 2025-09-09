@@ -9,7 +9,6 @@ import (
 	"github.com/posit-dev/publisher/internal/bundles"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/inspect/dependencies/renv"
-	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
@@ -65,10 +64,16 @@ func (p *defaultPublisher) getRPackagesWithPath(scanDependencies bool) (bundles.
 		lockfileString = generated.String()
 	} else {
 		lockfileString = p.Config.R.PackageFile
-		if lockfileString == "" {
-			lockfileString = interpreters.DefaultRenvLockfile
-		}
 		lockfilePath = p.Dir.Join(lockfileString)
+		if ok, err := lockfilePath.Exists(); err != nil || !ok {
+			agentErr := types.NewAgentError(
+				types.ErrorRenvLockPackagesReading,
+				fmt.Errorf("configured lockfile %s doesn't exist", lockfileString),
+				lockfileErrDetails{Lockfile: lockfileString},
+			)
+			agentErr.Message = fmt.Sprintf("configured lockfile %q doesn't exist", lockfileString)
+			return nil, util.AbsolutePath{}, agentErr
+		}
 	}
 
 	// Detect mapper type to decide which message to emit

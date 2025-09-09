@@ -5,7 +5,6 @@ package publish
 import (
 	"github.com/posit-dev/publisher/internal/bundles"
 	"github.com/posit-dev/publisher/internal/events"
-	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
 )
 
@@ -25,18 +24,7 @@ func (p *defaultPublisher) createManifest() (*bundles.Manifest, error) {
 				p.log.Debug("Error checking existence of configured R lockfile", "lockfile", p.Config.R.PackageFile, "error", err)
 			}
 		} else {
-			rInterp, err := interpreters.NewRInterpreter(p.Dir, p.r, p.log, nil, nil, nil)
-			if err != nil {
-				// If interpreter initialization fails, default to scanning.
-				// And report an error to user, it's probably not a good thing
-				// if their configured interpreter doesn't work.
-				scanDependencies = true
-				p.log.WithArgs(logging.LogKeyOp, events.PublishGetRPackageDescriptionsOp).
-					Error("Error initializing R interpreter for lockfile detection", "error", err)
-			} else {
-				_, exists, err := rInterp.GetLockFilePath()
-				scanDependencies = (err != nil) || !exists
-			}
+			scanDependencies = true
 		}
 
 		if scanDependencies {

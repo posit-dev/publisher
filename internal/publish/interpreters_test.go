@@ -158,7 +158,8 @@ func (s *DeployDependenciesSuite) TestConfigureDependenciesR() {
 	// Configure the publisher with R settings
 	s.stateStore.Config = &config.Config{
 		R: &config.R{
-			Version: "4.2.0",
+			Version:     "4.2.0",
+			PackageFile: interpreters.DefaultRenvLockfile,
 		},
 	}
 
@@ -233,7 +234,8 @@ numpy==1.22.0
 	// Configure the publisher with both R and Python settings
 	s.stateStore.Config = &config.Config{
 		R: &config.R{
-			Version: "4.2.0",
+			Version:     "4.2.0",
+			PackageFile: interpreters.DefaultRenvLockfile,
 		},
 		Python: &config.Python{
 			Version: "3.9",

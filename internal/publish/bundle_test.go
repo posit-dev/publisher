@@ -175,6 +175,8 @@ func (s *BundleSuite) TearDownTest() {
 }
 
 func (s *BundleSuite) TestCreateBundle() {
+	// Explicitly configure lockfile for this test since SetupTest no longer sets it.
+	s.stateStore.Config.R.PackageFile = "renv.lock"
 
 	// Create publisher
 	publisher := s.createPublisher()
@@ -237,6 +239,8 @@ func (s *BundleSuite) TestBundle_IncludesExistingRenvLockAsIs() {
 
 	// Include renv.lock in configured file patterns (as real config would)
 	s.stateStore.Config.Files = append(s.stateStore.Config.Files, "renv.lock")
+	// Explicitly assert PackageFile is set so createManifest will not scan
+	s.stateStore.Config.R.PackageFile = "renv.lock"
 	publisher := s.createPublisher()
 	manifest, err := publisher.createManifest()
 	s.NoError(err)
