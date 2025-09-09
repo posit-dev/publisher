@@ -138,7 +138,7 @@ func (s *ManifestSuite) TestCreateManifest_EmptyPackageFile_IgnoresUnconfiguredL
 	emitter := events.NewNullEmitter()
 	packageMapper := &mockManifestPackageMapper{}
 
-	// packageFile empty: createManifest should try to be smart and detect lockfile; it should scan.
+	// packageFile empty: createManifest should NOT try to be smart and detect lockfile; it should scan.
 	// If lockfile detection has to happen, it should happen before the manifest is created.
 	cfg := &config.Config{R: &config.R{PackageFile: ""}}
 

@@ -3,6 +3,8 @@ package publish
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import (
+	"fmt"
+
 	"github.com/posit-dev/publisher/internal/inspect/dependencies/pydeps"
 	"github.com/posit-dev/publisher/internal/inspect/dependencies/renv"
 	"github.com/posit-dev/publisher/internal/interpreters"
@@ -10,6 +12,11 @@ import (
 
 // addInterpreterDetailsToTarget reads interpreter-specific dependency files and updates the Target deployment record for recordkeeping.
 func (p *defaultPublisher) addInterpreterDetailsToTarget() error {
+	// Ensure we have a deployment record to attach details to.
+	if p.Target == nil {
+		return fmt.Errorf("no deployment record available")
+	}
+
 	if p.Config.Python != nil {
 		filename := p.Config.Python.PackageFile
 		if filename == "" {

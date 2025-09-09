@@ -69,13 +69,15 @@ func (s *InterpretersSuite) TearDownTest() {
 
 func (s *InterpretersSuite) createPublisher() *defaultPublisher {
 	helper := publishhelper.NewPublishHelper(s.stateStore, s.log)
-	return &defaultPublisher{
+	publisher := defaultPublisher{
 		log:           s.log,
 		emitter:       s.emitter,
 		r:             util.NewPath("R", s.fs),
 		python:        util.NewPath("python", s.fs),
 		PublishHelper: helper,
 	}
+	publisher.CreateDeploymentRecord()
+	return &publisher
 }
 
 func (s *InterpretersSuite) TestConfigureInterpretersPython() {

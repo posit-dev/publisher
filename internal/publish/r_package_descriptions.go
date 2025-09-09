@@ -36,11 +36,14 @@ func (p *defaultPublisher) getRPackages(scanDependencies bool) (bundles.PackageM
 		if p.Config != nil && len(p.Config.Files) > 0 {
 			scanPaths = make([]string, 0, len(p.Config.Files))
 			for _, f := range p.Config.Files {
+				if f == "*" {
+					scanPaths = append(scanPaths, p.Dir.String())
+					continue
+				}
 				scanPaths = append(scanPaths, p.Dir.Join(f).String())
 			}
 		} else {
-			// No files were selected, in this case we mimic NewBundler
-			// which implies the project directory itself.
+			// No files were selected, mimic NewBundler (project root)
 			scanPaths = []string{p.Dir.String()}
 		}
 		// Ask the mapper to scan dependencies and return a generated lockfile
