@@ -30,10 +30,17 @@ func NewPublishHelper(state *state.State, log logging.Logger) *PublishHelper {
 }
 
 func (h *PublishHelper) WriteDeploymentRecord() (*deployment.Deployment, error) {
-	now := time.Now().Format(time.RFC3339)
-	h.Target.DeployedAt = now
-	h.Target.ConfigName = h.ConfigName
-	h.Target.Configuration = h.Config
+    now := time.Now().Format(time.RFC3339)
+    h.Target.DeployedAt = now
+    h.Target.ConfigName = h.ConfigName
+    // Always persist a schema-compliant configuration snapshot.
+    if h.Config != nil {
+        cfg := *h.Config
+        cfg.ForceProductTypeCompliance()
+        h.Target.Configuration = &cfg
+    } else {
+        h.Target.Configuration = nil
+    }
 
 	recordPath := deployment.GetDeploymentPath(h.Dir, h.SaveName)
 	localID := string(h.State.LocalID)

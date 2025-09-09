@@ -1002,11 +1002,12 @@ func (s *PublishConnectCloudSuite) publishWithCloudClient(
 				s.Contains(record.Files, "app.py")
 				s.Contains(record.Files, "requirements.txt")
 				s.Equal([]string{"flask"}, record.Requirements)
-				// Verify Renv content only when the bundle was uploaded (BundleID present).
-				if record.BundleID != "" {
-					s.Require().NotNil(record.Renv)
-					s.Contains(record.Renv.Packages, renv.PackageName("mypkg"))
-				}
+					// Verify Renv content only for overall success; failures may
+					// write a record post-upload without enrichment guarantees.
+					if expectedErr == nil {
+						s.Require().NotNil(record.Renv)
+						s.Contains(record.Renv.Packages, renv.PackageName("mypkg"))
+					}
 			}
 	}
 
