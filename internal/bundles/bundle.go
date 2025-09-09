@@ -208,17 +208,12 @@ func (b *bundle) walkFunc(path util.AbsolutePath, info fs.FileInfo, err error) e
 		"size", info.Size(),
 	)
 	relSlash := relPath.ToSlash()
-	if info.IsDir() {
-		// Skip adding .posit and .posit/publish directories explicitly to keep
-		// the archive tidy; files within will be added as needed.
-		if relSlash == ".posit" || relSlash == ".posit/publish" {
-			return nil
-		}
-		// Manifest filenames are always Posix paths, not Windows paths
-		err = writeHeaderToTar(info, relSlash, b.archive)
-		if err != nil {
-			return err
-		}
+    if info.IsDir() {
+        // Manifest filenames are always Posix paths, not Windows paths
+        err = writeHeaderToTar(info, relSlash, b.archive)
+        if err != nil {
+            return err
+        }
 	} else if info.Mode().IsRegular() {
 		pathLogger.Debug("Adding file")
 		// Manifest filenames are always Posix paths, not Windows paths
