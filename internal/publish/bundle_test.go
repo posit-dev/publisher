@@ -177,14 +177,20 @@ func (s *BundleSuite) TearDownTest() {
 
 func (s *BundleSuite) TestCreateBundle() {
 
-	// Create publisher
-	publisher := s.createPublisher()
+    // Create publisher
+    publisher := s.createPublisher()
 
-	// No need to mock log calls with discard logger
+    // When no explicit R.PackageFile is configured, manifest generation will
+    // scan dependencies. Provide a mock for ScanDependencies to return a
+    // generated lockfile path so the test doesn't panic on an unexpected call.
+    generated := s.dir.Join("generated.lock")
+    s.packageMapper.On("ScanDependencies", mock.Anything, mock.Anything).Return(generated, nil)
 
-	// Create the manifest
-	manifest, err := publisher.createManifest()
-	s.NoError(err)
+    // No need to mock log calls with discard logger
+
+    // Create the manifest
+    manifest, err := publisher.createManifest()
+    s.NoError(err)
 
 	// Call createBundle
 	bundleFile, err := publisher.createBundle(manifest)
