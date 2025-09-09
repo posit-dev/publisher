@@ -132,9 +132,14 @@ runs:
           mkdir -p "$(dirname "$VSCODE_CHANGELOG")"
         fi
 
-        # Simply copy the main changelog to the VS Code changelog
+        # Copy the main changelog to the VS Code changelog
         cp "$MAIN_CHANGELOG" "$VSCODE_CHANGELOG"
-        echo "::notice::Copied main changelog to VS Code changelog"
+
+        # Customize the VS Code changelog description
+        sed -i.bak "s/All notable changes to this project will be documented in this file./All notable changes to the Posit Publisher extension are documented in this\nfile./" "$VSCODE_CHANGELOG"
+        rm -f "${VSCODE_CHANGELOG}.bak"
+
+        echo "::notice::Copied and customized main changelog for VS Code extension"
 
         echo "::notice::Updated VS Code extension CHANGELOG.md with content from main changelog"
         echo "::endgroup::"
