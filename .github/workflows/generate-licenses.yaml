@@ -7,6 +7,11 @@ on:
         required: false
         default: false
         type: boolean
+      fail_on_forbidden:
+        description: "Whether to fail if forbidden licenses are found"
+        required: false
+        default: true
+        type: boolean
     outputs:
       has-changes:
         description: "Whether license changes were detected"
@@ -38,7 +43,15 @@ jobs:
       - name: Generate licenses
         id: generate-licenses
         shell: bash
-        run: just docs/licenses
+        # This will fail if forbidden licenses are found (if fail_on_forbidden is true)
+        # or if required directories are missing
+        run: |
+          if [[ "${{ inputs.fail_on_forbidden }}" == "true" ]]; then
+            just docs/licenses
+          else
+            just docs/licenses || echo "WARNING: License issues found but continuing due to fail_on_forbidden=false"
+            exit 0
+          fi
         # Note: The script will automatically:
         # - Fail if required directories are missing
         # - Fail if forbidden licenses are found

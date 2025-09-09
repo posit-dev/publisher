@@ -26,4 +26,8 @@ jobs:
       - package
     uses: ./.github/workflows/generate-licenses.yaml
     with:
+      # Commit changes based on dry_run parameter
       commit_changes: ${{ github.event.inputs.dry_run != 'true' }}
+      # This workflow SHOULD fail if license generation fails
+      # since its primary purpose is license checking
+      fail_on_forbidden: true
