@@ -39,8 +39,8 @@ body:
     attributes:
       label: Connect Cloud Account Name (if applicable)
       description: |
-        Find this in Connect Cloud: Top right user menu.
-      placeholder: "e.g., My Account"
+        Find this in Connect Cloud in the URL: connect.posit.cloud/my-account
+      placeholder: "e.g., my-account"
     validations:
       required: false
 
