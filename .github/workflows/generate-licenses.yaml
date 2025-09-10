@@ -43,6 +43,9 @@ jobs:
           node-version: "lts/*"
           cache: npm
 
+      # Install root npm dependencies needed for formatting                                                                                               │ │
+      - run: just npm-install
+
       # We need to prepare the environment for license generation to ensure all required license directories exist
       # Create vendor directory with Go dependencies
       - run: go mod vendor
