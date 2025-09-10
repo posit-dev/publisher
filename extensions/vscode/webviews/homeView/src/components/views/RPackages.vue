@@ -15,7 +15,9 @@
             See the renv documentation for more details.</a
           >
         </p>
-        <vscode-button @click="onSetupRenv()"> Set up renv </vscode-button>
+        <vscode-button @click="onSetupRenv()" :disabled="isSettingUpRenv">
+          Set up renv
+        </vscode-button>
       </template>
       <template v-if="!home.r.active.isInProject">
         <p data-automation="r-not-configured">
@@ -43,7 +45,7 @@ import TreeItem from "src/components/tree/TreeItem.vue";
 import TreeSection from "src/components/tree/TreeSection.vue";
 import WelcomeView from "src/components/WelcomeView.vue";
 
-import { computed } from "vue";
+import { computed, ref } from "vue";
 
 import { useHomeStore } from "src/stores/home";
 import { useHostConduitService } from "src/HostConduitService";
@@ -55,6 +57,8 @@ const home = useHomeStore();
 
 const hostConduit = useHostConduitService();
 
+const isSettingUpRenv = ref(false);
+
 const onRefresh = () => {
   hostConduit.sendMsg({
     kind: WebviewToHostMessageType.REFRESH_R_PACKAGES,
@@ -62,6 +66,7 @@ const onRefresh = () => {
 };
 
 const onSetupRenv = () => {
+  isSettingUpRenv.value = true;
   hostConduit.sendMsg({
     kind: WebviewToHostMessageType.SCAN_R_PACKAGE_REQUIREMENTS,
   });
