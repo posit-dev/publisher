@@ -531,7 +531,7 @@
     },
     "connect": {
       "type": "object",
-      "description": "Settings to configure Posit Connect.",
+      "description": "Settings for Posit Connect applications.",
       "properties": {
         "runtime": {
           "type": "object",
