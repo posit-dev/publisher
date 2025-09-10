@@ -66,14 +66,26 @@ jobs:
             just docs/licenses || echo "WARNING: License issues found but continuing due to fail_on_forbidden=false"
             exit 0
           fi
-        # Note: The script will automatically:
-        # - Fail if required directories are missing
-        # - Fail if forbidden licenses are found
+
+      # Save unformatted license file for comparison
+      - name: Save unformatted license file
+        shell: bash
+        run: cp docs/licenses.md /tmp/licenses-unformatted.md
 
       # Format the licenses file for consistency
       - name: Format licenses file
         shell: bash
         run: just format
+
+      # Upload unformatted and formatted license files as artifacts for comparison
+      - name: Upload license files for comparison
+        uses: actions/upload-artifact@v4
+        with:
+          name: license-comparison
+          path: |
+            /tmp/licenses-unformatted.md
+            docs/licenses.md
+          retention-days: 5
 
       # Check if changes were made to the licenses file
       - name: Check if changes exist
