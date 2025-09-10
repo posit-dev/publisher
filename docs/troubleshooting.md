@@ -134,6 +134,10 @@ If you're still having trouble with Posit Publisher or have any questions,
 please reach out to us using a new
 [GitHub discussion](https://github.com/posit-dev/publisher/discussions).
 
+You may also want to check out the [Posit Connect Cloud docs](https://docs.posit.co/connect-cloud/),
+or the [FAQs](https://docs.posit.co/connect-cloud/user/support/02-faqs.html)
+and [known issues](https://docs.posit.co/connect-cloud/user/support/01-known-issues.html).
+
 If you think you've found a bug or have a feature request,
 please open a
 [GitHub Issue](https://github.com/posit-dev/publisher/issues).
