@@ -20,6 +20,13 @@ jobs:
   archive:
     needs: build
     uses: ./.github/workflows/archive.yaml
+
+  # E2E Tests
+  e2e:
+    needs: [package, agent, vscode]
+    uses: ./.github/workflows/e2e.yaml
+    secrets: inherit
+
   upload:
     needs:
       - archive
