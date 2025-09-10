@@ -3,20 +3,22 @@
 // NOTE:: The error cases are created here by using pre-created files.
 // Because of this, they are not suitable for deployment (due to their hard-coded values)
 
-describe("Detect error in config", () => {
-  beforeEach(() => {
+describe("Detect errors in config", () => {
+  // Global setup - run once for entire test suite
+  before(() => {
     cy.resetConnect();
     cy.setAdminCredentials();
-    cy.visit("/").debug();
-    // Select the publisher extension
-    cy.getPublisherSidebarIcon()
-      .should("be.visible", { timeout: 10000 })
-      .click();
+  });
+
+  beforeEach(() => {
+    // Light navigation only
+    cy.visit("/");
+    cy.getPublisherSidebarIcon().click();
+    cy.waitForPublisherIframe();
+    cy.debugIframes();
   });
 
   it("Show errors when Config is invalid", () => {
-    cy.waitForPublisherIframe();
-    cy.debugIframes();
     // click on the select deployment button
     cy.publisherWebview()
       .findByTestId("select-deployment")
@@ -63,8 +65,6 @@ describe("Detect error in config", () => {
   });
 
   it("Show errors when Config is missing", () => {
-    cy.waitForPublisherIframe();
-    cy.debugIframes();
     // click on the select deployment button
     cy.publisherWebview()
       .findByTestId("select-deployment")

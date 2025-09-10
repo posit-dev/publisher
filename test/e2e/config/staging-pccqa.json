@@ -1,6 +1,7 @@
 {
   "pcc_user_ccqa3": {
     "account_id": "0198c510-2929-1001-3f4f-3f001a720823",
+    "account_name": "connect-cloud-qa-3",
     "auth": {
       "password": "UPDATE"
     },

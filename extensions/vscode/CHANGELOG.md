@@ -6,6 +6,16 @@ file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [1.21.0]
+
+### Added
+
+- Added the configuration TOML file code to the displayed deployment name (#3018)
+- Added the ability to toggle between the summary view (tree) and the raw view (text)
+  for the Publisher logs along with copy and save logs functionality (#3017)
+
 ## [1.20.0]
 
 ### Fixed

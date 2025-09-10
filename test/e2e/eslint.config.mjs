@@ -30,6 +30,14 @@ export default [
       semi: "error",
       "mocha/no-mocha-arrows": "off",
       "mocha/no-exclusive-tests": "error",
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "CallExpression[callee.object.name='cy'][callee.property.name='pause']",
+          message: "cy.pause() should not be used in committed code",
+        },
+      ],
     },
   },
   eslintConfigPrettier,
