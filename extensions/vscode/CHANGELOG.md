@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added the ability to associate a Connect Cloud deployment to another Connect Cloud
+  deployment for the same account (#3067)
+
 ## [1.21.0]
 
 ### Added
