@@ -1,6 +1,6 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
-import config from "src/config";
+import config from "../../src/config";
 import { extractGUID } from "./guid";
 
 export const formatURL = (input: string): string => {
