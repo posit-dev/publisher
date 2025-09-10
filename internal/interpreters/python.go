@@ -18,6 +18,8 @@ import (
 var MissingPythonError = types.NewAgentError(types.ErrorPythonExecNotFound, errors.New("unable to detect any Python interpreters"), nil)
 var pythonVersionCache = make(map[string]string)
 
+var userHomeDir = os.UserHomeDir
+
 type PythonInterpreter interface {
 	IsPythonExecutableValid() bool
 	GetPythonExecutable() (util.AbsolutePath, error)
@@ -136,6 +138,9 @@ func (i *defaultPythonInterpreter) init() error {
 func (i *defaultPythonInterpreter) resolvePythonExecutable() error {
 	executableNames := []string{"python3", "python"}
 
+	// Important to normalize the preferredPath before we use it
+	i.normalizeExecutable()
+
 	rawPath := i.preferredPath.String()
 	pythonPath := ""
 	version := ""
@@ -191,6 +196,21 @@ func (i *defaultPythonInterpreter) resolvePythonExecutable() error {
 	}
 	i.log.Debug("Python executable not found, proceeding without working Python environment.")
 	return types.NewAgentError(types.ErrorPythonExecNotFound, err, nil)
+}
+
+// Normalize the preferredPath by expanding ~ to home directory
+func (i *defaultPythonInterpreter) normalizeExecutable() error {
+	// Paths like ~/bin/python should be expanded to /home/user/bin/python
+	// before we try to use them.
+	// This to solve some issues for inconsistent shell behavior.
+	if strings.Contains(i.preferredPath.String(), "~") {
+		homeDir, err := userHomeDir()
+		if err != nil {
+			return fmt.Errorf("error getting home directory to normalize python preferred path: '%s': %w", i.preferredPath.String(), err)
+		}
+		i.preferredPath = util.NewPath(strings.Replace(i.preferredPath.String(), "~", homeDir, 1), i.fs)
+	}
+	return nil
 }
 
 func (i *defaultPythonInterpreter) validatePythonExecutable(pythonExecutable string) (string, error) {

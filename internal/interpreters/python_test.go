@@ -36,6 +36,11 @@ func MockExistsError(_ util.Path) (bool, error) {
 	return false, errors.New("Error running Exist functionality")
 }
 
+func MockUserHomeDir() (string, error) {
+	homeDir := util.NewAbsolutePath("home", nil).Join("mockuser")
+	return homeDir.String(), nil
+}
+
 func TestPythonSuite(t *testing.T) {
 	suite.Run(t, new(PythonSuite))
 }
@@ -49,6 +54,11 @@ func (s *PythonSuite) SetupTest() {
 	s.NoError(err)
 
 	pythonVersionCache = make(map[string]string)
+	userHomeDir = MockUserHomeDir
+}
+
+func (s *PythonSuite) TearDownTest() {
+	userHomeDir = os.UserHomeDir
 }
 
 func (s *PythonSuite) TestGetPythonVersionFromExecutable() {
@@ -169,4 +179,25 @@ func (s *PythonSuite) TestGetPythonExecutableNoRunnablePython() {
 	s.Equal(isAerr, true)
 	s.Contains(aerr.Message, "Unable to detect any Python interpreters.")
 	s.Equal("", v)
+}
+
+func (s *PythonSuite) TestPythonExectuableIsNormalized() {
+	fs := afero.NewMemMapFs()
+	log := logging.New()
+
+	expectedPythonPathToFind := util.NewAbsolutePath("home", fs).Join("mockuser", "bin", "python")
+	expectedPythonPathToFind.Dir().MkdirAll(0777)
+	expectedPythonPathToFind.WriteFile(nil, 0777)
+
+	preferredPythonPath := util.NewPath("~", fs).Join("bin", "python")
+
+	pathLooker := util.NewMockPathLooker()
+	pathLooker.On("LookPath", expectedPythonPathToFind.String()).Return("/some/python", nil)
+
+	executor := executortest.NewMockExecutor()
+	executor.On("RunCommand", expectedPythonPathToFind.String(), mock.Anything, mock.Anything, mock.Anything).Return([]byte("3.10.4"), nil, nil)
+
+	i, err := NewPythonInterpreter(s.cwd, preferredPythonPath, log, executor, pathLooker, MockExistsTrue)
+	s.NoError(err)
+	s.Equal(expectedPythonPathToFind.String(), i.GetPreferredPath())
 }
