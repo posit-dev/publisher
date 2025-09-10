@@ -30,7 +30,7 @@ allowed_license_types = [
     "BSD-3-Clause",
     "BSD-2-Clause",
     # Used by jackspeak, path-scurry, package-json-from-dist
-    "Blue Oak Model License"
+    # "Blue Oak Model License"
 ]
 
 license_names = [
