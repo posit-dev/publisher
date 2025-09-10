@@ -111,18 +111,7 @@
           "additionalProperties": false,
           "description": "Setting specific to Posit Connect deployments.",
           "properties": {
-            "runtime": {
-              "properties": {
-                "connection_timeout": {},
-                "read_timeout": {},
-                "init_timeout": {},
-                "idle_timeout": {},
-                "max_processes": {},
-                "min_processes": {},
-                "max_conns_per_process": {},
-                "load_factor": {}
-              }
-            },
+            "runtime": {},
             "kubernetes": {
               "type": "object",
               "additionalProperties": false,
@@ -396,18 +385,7 @@
       "connect": {
         "additionalProperties": false,
         "properties": {
-          "runtime": {
-            "properties": {
-              "connection_timeout": {},
-              "read_timeout": {},
-              "init_timeout": {},
-              "idle_timeout": {},
-              "max_processes": {},
-              "min_processes": {},
-              "max_conns_per_process": {},
-              "load_factor": {}
-            }
-          }
+          "runtime": {}
         }
       }
     }
