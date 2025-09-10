@@ -15,8 +15,16 @@
             See the renv documentation for more details.</a
           >
         </p>
-        <vscode-button @click="onSetupRenv()" :disabled="isSettingUpRenv">
-          Set up renv
+        <p>
+          Set up renv to initialize the environment, install dependencies, and
+          create a lockfile.
+        </p>
+        <vscode-button
+          @click="onSetupRenv()"
+          :disabled="isSettingUpRenv"
+          aria-label="Set Up renv"
+        >
+          Set Up renv
         </vscode-button>
       </template>
       <template v-if="!home.r.active.isInProject">
