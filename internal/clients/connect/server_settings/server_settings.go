@@ -58,7 +58,7 @@ type ServerSettings struct {
 	DefaultPyEnvironmentManagement        bool `json:"default_py_environment_management"`
 	// NewParameterizationEnabled            bool                   `json:"new_parameterization_enabled"`
 	// UseWindowLocation                     bool                   `json:"use_window_location"`
-	// OAuth integrations enabled field - matches connect.ServerSettings.OAuthIntegrationsEnabled
+	// OAuth integrations enabled
 	OAuthIntegrationsEnabled bool `json:"oauth_integrations_enabled"`
 }
 

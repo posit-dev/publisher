@@ -31,12 +31,6 @@ type Integration struct {
 	CreatedTime time.Time      `json:"created_time"`
 }
 
-// LicenseInfo and ServerSettings represent the currently relevant
-// subset of the information returned by the Connect server settings API.
-// Additional fields may be added in the future as needed. See
-// src/connect/api/serversettings/serversettings.go in the Connect source
-// repository for the full set of fields.
-
 type APIClient interface {
 	TestAuthentication(logging.Logger) (*User, error)
 	ContentDetails(contentID types.ContentID, body *ConnectContent, log logging.Logger) error
