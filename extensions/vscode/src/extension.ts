@@ -49,13 +49,6 @@ export enum SelectionIsPreContentRecord {
   false = "false",
 }
 
-const SELECTION_IS_CONNECT_CONTENT_RECORD_CONTEXT =
-  "posit.publish.selection.isConnectContentRecord";
-export enum SelectionIsConnectContentRecord {
-  true = "true",
-  false = "false",
-}
-
 const LOGS_VIEWMODE_CONTEXT = "posit.publish.logs.viewMode";
 enum LogsViewMode {
   tree = "tree",
@@ -89,16 +82,6 @@ export function setSelectionIsPreContentRecord(
   commands.executeCommand(
     "setContext",
     SELECTION_IS_PRE_CONTENT_RECORD_CONTEXT,
-    context,
-  );
-}
-
-export function setSelectionIsConnectContentRecord(
-  context: SelectionIsConnectContentRecord,
-) {
-  commands.executeCommand(
-    "setContext",
-    SELECTION_IS_CONNECT_CONTENT_RECORD_CONTEXT,
     context,
   );
 }

@@ -215,10 +215,9 @@ export const useHomeStore = defineStore("home", () => {
     });
   };
 
-  watch([selectedContentRecord], () => {
-    updateSelectionIsPreContentRecordState();
-    updateSelectionIsConnectContentRecordState();
-  });
+  watch([selectedContentRecord], () =>
+    updateSelectionIsPreContentRecordState(),
+  );
 
   const updateSelectionIsPreContentRecordState = () => {
     const hostConduit = useHostConduitService();
@@ -228,19 +227,6 @@ export const useHomeStore = defineStore("home", () => {
         state: isPreContentRecord(selectedContentRecord.value)
           ? "true"
           : "false",
-      },
-    });
-  };
-
-  const updateSelectionIsConnectContentRecordState = () => {
-    const hostConduit = useHostConduitService();
-    const serverType =
-      selectedContentRecord.value?.serverType || ServerType.CONNECT;
-    const productType = getProductType(serverType);
-    hostConduit.sendMsg({
-      kind: WebviewToHostMessageType.UPDATE_SELECTION_IS_CONNECT_CONTENT_RECORD,
-      content: {
-        state: isConnectProduct(productType) ? "true" : "false",
       },
     });
   };

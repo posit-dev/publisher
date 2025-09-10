@@ -30,7 +30,6 @@ export enum WebviewToHostMessageType {
   SHOW_ASSOCIATE_GUID = "ShowAssociateGUID",
   UPDATE_SELECTION_CREDENTIAL_STATE = "UpdateSelectionCredentialStateMsg",
   UPDATE_SELECTION_IS_PRE_CONTENT_RECORD = "UpdateSelectionIsPreContentRecordMsg",
-  UPDATE_SELECTION_IS_CONNECT_CONTENT_RECORD = "UpdateSelectionIsConnectContentRecordMsg",
   COPY_SYSTEM_INFO = "copySystemInfo",
 }
 
@@ -71,7 +70,6 @@ export type WebviewToHostMessage =
   | ShowAssociateGUIDMsg
   | UpdateSelectionCredentialStateMsg
   | UpdateSelectionIsPreContentRecordMsg
-  | UpdateSelectionIsConnectContentRecordMsg
   | CopySystemInfoMsg;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -104,8 +102,6 @@ export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
     msg.kind === WebviewToHostMessageType.UPDATE_SELECTION_CREDENTIAL_STATE ||
     msg.kind ===
       WebviewToHostMessageType.UPDATE_SELECTION_IS_PRE_CONTENT_RECORD ||
-    msg.kind ===
-      WebviewToHostMessageType.UPDATE_SELECTION_IS_CONNECT_CONTENT_RECORD ||
     msg.kind === WebviewToHostMessageType.COPY_SYSTEM_INFO
   );
 }
@@ -245,13 +241,6 @@ export type UpdateSelectionCredentialStateMsg = AnyWebviewToHostMessage<
 
 export type UpdateSelectionIsPreContentRecordMsg = AnyWebviewToHostMessage<
   WebviewToHostMessageType.UPDATE_SELECTION_IS_PRE_CONTENT_RECORD,
-  {
-    state: string;
-  }
->;
-
-export type UpdateSelectionIsConnectContentRecordMsg = AnyWebviewToHostMessage<
-  WebviewToHostMessageType.UPDATE_SELECTION_IS_CONNECT_CONTENT_RECORD,
   {
     state: string;
   }
