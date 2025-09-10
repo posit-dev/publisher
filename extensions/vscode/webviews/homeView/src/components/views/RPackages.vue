@@ -15,6 +15,17 @@
             See the renv documentation for more details.</a
           >
         </p>
+        <p>
+          Set up renv to initialize the environment, install dependencies, and
+          create a lockfile.
+        </p>
+        <vscode-button
+          @click="onSetupRenv()"
+          :disabled="isSettingUpRenv"
+          aria-label="Set Up renv"
+        >
+          Set Up renv
+        </vscode-button>
       </template>
       <template v-if="!home.r.active.isInProject">
         <p data-automation="r-not-configured">
@@ -42,7 +53,7 @@ import TreeItem from "src/components/tree/TreeItem.vue";
 import TreeSection from "src/components/tree/TreeSection.vue";
 import WelcomeView from "src/components/WelcomeView.vue";
 
-import { computed } from "vue";
+import { computed, ref } from "vue";
 
 import { useHomeStore } from "src/stores/home";
 import { useHostConduitService } from "src/HostConduitService";
@@ -54,9 +65,18 @@ const home = useHomeStore();
 
 const hostConduit = useHostConduitService();
 
+const isSettingUpRenv = ref(false);
+
 const onRefresh = () => {
   hostConduit.sendMsg({
     kind: WebviewToHostMessageType.REFRESH_R_PACKAGES,
+  });
+};
+
+const onSetupRenv = () => {
+  isSettingUpRenv.value = true;
+  hostConduit.sendMsg({
+    kind: WebviewToHostMessageType.SCAN_R_PACKAGE_REQUIREMENTS,
   });
 };
 

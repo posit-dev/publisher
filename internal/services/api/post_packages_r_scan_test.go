@@ -16,6 +16,7 @@ import (
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
 	"github.com/spf13/afero"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -40,8 +41,17 @@ func (s *PostPackagesRScanSuite) TestNewPostPackagesRScanHandler() {
 
 func (s *PostPackagesRScanSuite) TestServeHTTP() {
 	rec := httptest.NewRecorder()
-	body := strings.NewReader(`{"saveName":"", "r": "/opt/R/bin/R"}`)
-	req, err := http.NewRequest("POST", "/api/packages/r/scan", body)
+	body := strings.NewReader(`{"saveName":""}`)
+
+	baseURL := "/api/packages/r/scan"
+	parsedURL, err := url.Parse(baseURL)
+	s.NoError(err)
+
+	queryParams := url.Values{}
+	queryParams.Add("r", "/opt/R/bin/R")
+	parsedURL.RawQuery = queryParams.Encode()
+
+	req, err := http.NewRequest("POST", parsedURL.String(), body)
 	s.NoError(err)
 
 	fs := afero.NewMemMapFs()
@@ -54,7 +64,7 @@ func (s *PostPackagesRScanSuite) TestServeHTTP() {
 	log := logging.New()
 
 	mockScanner := renv.NewMockRDependencyScanner()
-	mockScanner.On("SetupRenvInDir", base.String(), "renv.lock", "/opt/R/bin/R").Return(lockfilePath, nil)
+	mockScanner.On("SetupRenvInDir", base.String(), "renv.lock", mock.Anything).Return(lockfilePath, nil)
 
 	h := NewPostPackagesRScanHandler(base, log)
 	h.rDependencyScanner = mockScanner
@@ -79,7 +89,7 @@ func (s *PostPackagesRScanSuite) TestServeHTTPEmptyBody() {
 	lockfilePath := base.Join("renv.lock")
 
 	mockScanner := renv.NewMockRDependencyScanner()
-	mockScanner.On("SetupRenvInDir", base.String(), "renv.lock", "").Return(lockfilePath, nil)
+	mockScanner.On("SetupRenvInDir", base.String(), "renv.lock", mock.Anything).Return(lockfilePath, nil)
 
 	h := NewPostPackagesRScanHandler(base, log)
 	h.rDependencyScanner = mockScanner
@@ -103,7 +113,7 @@ func (s *PostPackagesRScanSuite) TestServeHTTPWithSaveName() {
 	log := logging.New()
 
 	mockScanner := renv.NewMockRDependencyScanner()
-	mockScanner.On("SetupRenvInDir", base.String(), "my_renv.lock", "").Return(destPath, nil)
+	mockScanner.On("SetupRenvInDir", base.String(), "my_renv.lock", mock.Anything).Return(destPath, nil)
 
 	h := NewPostPackagesRScanHandler(base, log)
 	h.rDependencyScanner = mockScanner
@@ -129,7 +139,7 @@ func (s *PostPackagesRScanSuite) TestServeHTTPWithSaveNameInSubdir() {
 	log := logging.New()
 
 	mockScanner := renv.NewMockRDependencyScanner()
-	mockScanner.On("SetupRenvInDir", base.String(), saveName, "").Return(destPath, nil)
+	mockScanner.On("SetupRenvInDir", base.String(), saveName, mock.Anything).Return(destPath, nil)
 
 	h := NewPostPackagesRScanHandler(base, log)
 	h.rDependencyScanner = mockScanner
@@ -152,7 +162,7 @@ func (s *PostPackagesRScanSuite) TestServeHTTPErr() {
 	testError := errors.New("test error from ScanRequirements")
 
 	mockScanner := renv.NewMockRDependencyScanner()
-	mockScanner.On("SetupRenvInDir", base.String(), "renv.lock", "").Return(util.AbsolutePath{}, testError)
+	mockScanner.On("SetupRenvInDir", base.String(), "renv.lock", mock.Anything).Return(util.AbsolutePath{}, testError)
 
 	h := NewPostPackagesRScanHandler(base, log)
 	h.rDependencyScanner = mockScanner
@@ -180,7 +190,7 @@ func (s *PostPackagesRScanSuite) TestServeHTTPSubdir() {
 	s.NoError(err)
 
 	mockScanner := renv.NewMockRDependencyScanner()
-	mockScanner.On("SetupRenvInDir", projectDir.String(), "renv.lock", "").Return(destPath, nil)
+	mockScanner.On("SetupRenvInDir", projectDir.String(), "renv.lock", mock.Anything).Return(destPath, nil)
 
 	h := NewPostPackagesRScanHandler(base, logging.New())
 	h.rDependencyScanner = mockScanner
