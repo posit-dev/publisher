@@ -46,12 +46,13 @@ export const isConnectCloudContentURL = (input: string) => {
 //   "https://connect.my_sub.company.com/connect/#/apps/adffa505-08c7-450f-88d0-f42957f56eff";
 //   "https://connect.another.deep_sub.domain_name.org/connect/#/apps/adffa505-08c7-450f-88d0-f42957f56eff";
 //   "https://connect.only-one.co/connect/#/apps/adffa505-08c7-450f-88d0-f42957f56eff";
+//   "https://company.co/data-science/2025/staging-server/#/apps/adffa505-08c7-450f-88d0-f42957f56eff";
 // All the following inputs will return "false":
-//   "https://connect.company.co/wrong/path/connect/#/apps/adffa505-08c7-450f-88d0-f42957f56eff"; // wrong path
+//   "https://connect.company.co/wrong/connect/#/path/apps/adffa505-08c7-450f-88d0-f42957f56eff"; // wrong path
 //   "https://connect.company.co/connect/#apps/adffa505-08c7-450f-88d0-f42957f56eff"; // missing slash
-//   "https://connect.inv@lid.com/connect/#/apps/adffa505-08c7-450f-88d0-f42957f56eff"; // invalid character
+//   "https://connect.invalid.com/connect/#/@pps/adffa505-08c7-450f-88d0-f42957f56eff"; // invalid character
 export const isConnectContentURL = (input: string) => {
-  const regex = /^https:\/\/connect\.([\w-]+\.)+[\w-]+\/connect\/#\/apps\/$/;
+  const regex = /^http(s?):\/\/.+\/#\/apps\/$/;
   return isMatchingURL(input, regex);
 };
 
