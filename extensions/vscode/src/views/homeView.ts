@@ -809,7 +809,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         const result = await api.connectServer.getServerSettings(
           credential.name,
         );
-        console.log(result.data);
 
         this.webviewConduit.sendMsg({
           kind: HostToWebviewMessageType.REFRESH_SERVER_SETTINGS,
@@ -1234,13 +1233,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         `Failed to remove secret from configuration. ${summary}`,
       );
     }
-  };
-
-  public getIntegrations = async (accountName: string) => {
-    const api = await useApi();
-    const response = await api.connectServer.getIntegrations(accountName);
-    console.log("Fetched integrations");
-    console.log(response.data);
   };
 
   public addIntegrationRequest = async () => {

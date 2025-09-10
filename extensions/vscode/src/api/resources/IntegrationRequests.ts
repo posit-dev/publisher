@@ -36,14 +36,6 @@ export class IntegrationRequests {
   }
 
   // Returns:
-  // 200 - accepted
-  // 404 - not found
-  // 500 - internal server error
-  // get(guid: string) {
-  //   return this.client.get<Credential>(`credentials/${guid}`);
-  // }
-
-  // Returns:
   // 204 - no content
   // 404 - not found
   // 500 - internal server error

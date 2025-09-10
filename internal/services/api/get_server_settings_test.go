@@ -18,6 +18,7 @@ import (
 
 	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/clients/connect"
+	"github.com/posit-dev/publisher/internal/clients/connect/server_settings"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/server_type"
@@ -57,13 +58,15 @@ func (s *GetServerSettingsSuite) TestGetServerSettingsSuccess() {
 	lister.On("GetAccountByName", "myAccount").Return(acct, nil)
 
 	mockClient := &connect.MockClient{}
-	expected := &connect.ServerSettings{
-		License: connect.LicenseInfo{
-			OAuthIntegrations: true,
+	expectedSettings := &connect.AllSettings{
+		General: server_settings.ServerSettings{
+			License: server_settings.LicenseStatus{
+				OAuthIntegrations: true,
+			},
+			OAuthIntegrationsEnabled: true,
 		},
-		OAuthIntegrationsEnabled: true,
 	}
-	mockClient.On("GetServerSettings", mock.Anything).Return(expected, nil)
+	mockClient.On("GetSettings", mock.Anything, mock.Anything, mock.Anything).Return(expectedSettings, nil)
 
 	connectClientFactory = func(account *accounts.Account, timeout time.Duration, emitter events.Emitter, log logging.Logger) (connect.APIClient, error) {
 		return mockClient, nil
@@ -75,10 +78,10 @@ func (s *GetServerSettingsSuite) TestGetServerSettingsSuccess() {
 
 	s.Equal(http.StatusOK, rec.Result().StatusCode)
 	body, _ := io.ReadAll(rec.Body)
-	var got connect.ServerSettings
+	var got server_settings.ServerSettings
 	s.NoError(json.Unmarshal(body, &got))
-	s.Equal(expected.OAuthIntegrationsEnabled, got.OAuthIntegrationsEnabled)
-	s.Equal(expected.License.OAuthIntegrations, got.License.OAuthIntegrations)
+	s.Equal(expectedSettings.General.OAuthIntegrationsEnabled, got.OAuthIntegrationsEnabled)
+	s.Equal(expectedSettings.General.License.OAuthIntegrations, got.License.OAuthIntegrations)
 }
 
 func (s *GetServerSettingsSuite) TestGetServerSettingsAccountNotFound() {
@@ -113,7 +116,7 @@ func (s *GetServerSettingsSuite) TestGetServerSettingsGetSettingsError() {
 	lister.On("GetAccountByName", "errAccount").Return(acct, nil)
 
 	mockClient := &connect.MockClient{}
-	mockClient.On("GetServerSettings", mock.Anything).Return(nil, errors.New("settings error"))
+	mockClient.On("GetSettings", mock.Anything, mock.Anything, mock.Anything).Return(nil, errors.New("settings error"))
 	connectClientFactory = func(account *accounts.Account, timeout time.Duration, emitter events.Emitter, log logging.Logger) (connect.APIClient, error) {
 		return mockClient, nil
 	}

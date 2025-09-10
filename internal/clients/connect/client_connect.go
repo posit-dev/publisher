@@ -572,11 +572,3 @@ func (c *ConnectClient) GetIntegrations(log logging.Logger) ([]Integration, erro
 	return integrations, nil
 }
 
-func (c *ConnectClient) GetServerSettings(log logging.Logger) (*ServerSettings, error) {
-	var settings ServerSettings
-	err := c.client.Get("/__api__/server_settings", &settings, log)
-	if err != nil {
-		return nil, err
-	}
-	return &settings, nil
-}

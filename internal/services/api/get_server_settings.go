@@ -12,8 +12,10 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/posit-dev/publisher/internal/accounts"
+	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/util"
 )
 
 func GetServerSettingsHandlerFunc(lister accounts.AccountList, log logging.Logger) http.HandlerFunc {
@@ -34,7 +36,10 @@ func GetServerSettingsHandlerFunc(lister accounts.AccountList, log logging.Logge
 			return
 		}
 
-		settings, err := client.GetServerSettings(log)
+		base := util.NewAbsolutePath("/", nil)
+		cfg := config.New()
+
+		settings, err := client.GetSettings(base, cfg, log)
 		if err != nil {
 			fmt.Printf("Error getting server settings: %v\n", err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -43,6 +48,6 @@ func GetServerSettingsHandlerFunc(lister accounts.AccountList, log logging.Logge
 		}
 
 		w.Header().Set("content-type", "application/json")
-		json.NewEncoder(w).Encode(settings)
+		json.NewEncoder(w).Encode(settings.General)
 	}
 }

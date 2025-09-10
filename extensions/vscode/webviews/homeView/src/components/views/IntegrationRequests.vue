@@ -23,19 +23,7 @@
       :description="integrationRequest.displayDescription ?? ''"
       :data-automation="`integration-request-${integrationRequest.name || ''}-list`"
       codicon="posit-publisher-icons-posit-logo"
-      :actions="[
-        {
-          label: 'Delete Integration Request',
-          codicon: 'codicon-trash',
-          fn: () =>
-            sendMsg({
-              kind: WebviewToHostMessageType.DELETE_INTEGRATION_REQUEST,
-              content: {
-                request: integrationRequest,
-              },
-            }),
-        },
-      ]"
+      :actions="getIntegrationRequestActions(integrationRequest)"
       align-icon-with-twisty
     />
   </TreeSection>
@@ -51,6 +39,7 @@ import { useHomeStore } from "src/stores/home";
 import { useHostConduitService } from "src/HostConduitService";
 
 import { WebviewToHostMessageType } from "../../../../../src/types/messages/webviewToHostMessages";
+import { IntegrationRequest } from "../../../../../src/api";
 
 const { sendMsg } = useHostConduitService();
 const home = useHomeStore();
@@ -92,4 +81,20 @@ const sectionActions = computed(() => {
   }
   return result;
 });
+
+const getIntegrationRequestActions = (
+  integrationRequest: IntegrationRequest,
+) => [
+  {
+    label: "Delete Integration Request",
+    codicon: "codicon-trash",
+    fn: () =>
+      sendMsg({
+        kind: WebviewToHostMessageType.DELETE_INTEGRATION_REQUEST,
+        content: {
+          request: integrationRequest,
+        },
+      }),
+  },
+];
 </script>

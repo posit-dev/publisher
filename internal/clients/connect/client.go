@@ -37,21 +37,6 @@ type Integration struct {
 // src/connect/api/serversettings/serversettings.go in the Connect source
 // repository for the full set of fields.
 
-type LicenseInfo struct {
-	// OAuthIntegrations specifies if an installation is allowed to use
-	// OAuth integrations to support viewer-based auth.
-	OAuthIntegrations bool `json:"oauth-integrations"`
-}
-
-type ServerSettings struct {
-	// License contains information about the capabilities allowed by the
-	// in-use product license.
-	License LicenseInfo `json:"license"`
-
-	// OAuthIntegrationsEnabled indicates whether the ability to include oAuth integrations is enabled.
-	OAuthIntegrationsEnabled bool `json:"oauth_integrations_enabled"`
-}
-
 type APIClient interface {
 	TestAuthentication(logging.Logger) (*User, error)
 	ContentDetails(contentID types.ContentID, body *ConnectContent, log logging.Logger) error
@@ -66,5 +51,5 @@ type APIClient interface {
 	CheckCapabilities(util.AbsolutePath, *config.Config, *types.ContentID, logging.Logger) error
 	GetCurrentUser(logging.Logger) (*User, error)
 	GetIntegrations(logging.Logger) ([]Integration, error)
-	GetServerSettings(logging.Logger) (*ServerSettings, error)
+	GetSettings(util.AbsolutePath, *config.Config, logging.Logger) (*AllSettings, error)
 }
