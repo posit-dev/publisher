@@ -128,6 +128,7 @@ func (b *bundler) makeBundle(dest io.Writer) (*Manifest, error) {
 			}
 		}
 	}
+
 	if dest != nil {
 		err = bundle.addManifest()
 		if err != nil {
@@ -192,16 +193,22 @@ func (b *bundle) walkFunc(path util.AbsolutePath, info fs.FileInfo, err error) e
 		"path", relPath,
 		"size", info.Size(),
 	)
+	relSlash := relPath.ToSlash()
 	if info.IsDir() {
 		// Manifest filenames are always Posix paths, not Windows paths
-		err = writeHeaderToTar(info, relPath.ToSlash(), b.archive)
+		err = writeHeaderToTar(info, relSlash, b.archive)
 		if err != nil {
 			return err
 		}
 	} else if info.Mode().IsRegular() {
 		pathLogger.Debug("Adding file")
 		// Manifest filenames are always Posix paths, not Windows paths
-		err = writeHeaderToTar(info, relPath.ToSlash(), b.archive)
+		// Special-case the staged renv.lock to appear at bundle root
+		archiveName := relSlash
+		if relSlash == ".posit/publish/deployments/renv.lock" {
+			archiveName = "renv.lock"
+		}
+		err = writeHeaderToTar(info, archiveName, b.archive)
 		if err != nil {
 			return err
 		}
@@ -214,7 +221,7 @@ func (b *bundle) walkFunc(path util.AbsolutePath, info fs.FileInfo, err error) e
 		if err != nil {
 			return err
 		}
-		b.manifest.AddFile(relPath.ToSlash(), fileMD5)
+		b.manifest.AddFile(archiveName, fileMD5)
 		b.numFiles++
 		b.size += info.Size()
 	} else {

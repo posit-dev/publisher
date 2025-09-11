@@ -158,13 +158,29 @@ func (c *ServerPublisher) getContentRequestBase(isFirstDeploy bool) (*types.Cont
 		return nil, err
 	}
 
+	var connectOptions *types.ConnectOptions
+	if c.Config.Connect != nil && c.Config.Connect.Runtime != nil {
+		runtime := c.Config.Connect.Runtime
+		connectOptions = &types.ConnectOptions{
+			ConnTimeout:     runtime.ConnectionTimeout,
+			ReadTimeout:     runtime.ReadTimeout,
+			InitTimeout:     runtime.InitTimeout,
+			IdleTimeout:     runtime.IdleTimeout,
+			SchedMaxProc:    runtime.MaxProcesses,
+			SchedMinProc:    runtime.MinProcesses,
+			SchedMaxConns:   runtime.MaxConnsPerProcess,
+			SchedLoadFactor: runtime.LoadFactor,
+		}
+	}
+
 	revision := types.RequestRevision{
-		SourceType:    "bundle",
-		RVersion:      rVersion,
-		PythonVersion: pythonVersion,
-		ContentType:   cloudContentType,
-		AppMode:       appMode,
-		PrimaryFile:   c.Config.Entrypoint,
+		SourceType:     "bundle",
+		RVersion:       rVersion,
+		PythonVersion:  pythonVersion,
+		ContentType:    cloudContentType,
+		AppMode:        appMode,
+		PrimaryFile:    c.Config.Entrypoint,
+		ConnectOptions: connectOptions,
 	}
 	base := &types.ContentRequestBase{
 		Title:       title,

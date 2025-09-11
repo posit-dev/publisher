@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added "Set Up renv" button to initialize the environment, install
+  dependencies, and create a lockfile when no valid R lockfile file is present.
+
+### Fixed
+
+- Fixed an issue where the preferred Python path was incorrectly not found when deploying #2742
+- Fixed Python dependencies scanning not respecting the active Python session #2825
+- Fixed messaging about setting up renv (#3029)
+
 ## [1.21.0]
 
 ### Added
@@ -20,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fixed an issue deploying content to free Posit Connect Cloud accounts with incorrect  
+- Fixed an issue deploying content to free Posit Connect Cloud accounts with incorrect
   access settings. (#3005)
 
 ## [1.19.1]

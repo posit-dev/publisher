@@ -223,9 +223,9 @@ engines = ["knitr"]
 
 ## Connect-specific settings
 
-_Only valid when `product_type` is `connect`_
-
 ### Access settings
+
+_Only valid when `product_type` is `connect`_
 
 #### run_as
 
@@ -244,6 +244,8 @@ run_as_current_user = true
 ```
 
 ### Kubernetes settings
+
+_Only valid when `product_type` is `connect`_
 
 Settings used with Posit Connect's off-host execution feature, where content is run in Kubernetes.
 
@@ -304,6 +306,8 @@ service_account_name = "posit-connect-content"
 ```
 
 ### Runtime settings
+
+_Valid when `product_type` is `connect` or `connect_cloud`_
 
 Runtime settings for application content types
 

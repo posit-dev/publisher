@@ -334,12 +334,10 @@ func (a *AllSettings) checkConfig(cfg *config.Config) error {
 			return err
 		}
 	}
-	if cfg.R != nil {
-		err = a.checkFileExists(cfg.R.PackageFile, "r.package-file")
-		if err != nil {
-			return err
-		}
-	}
+
+	// For R we no longer require a pre-existing lockfile on disk at capability-check time.
+	// The lockfile may be auto-generated into the bundle later; skip existence check.
+
 	if cfg.Connect != nil {
 		err = a.checkAccess(cfg)
 		if err != nil {

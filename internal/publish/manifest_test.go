@@ -133,15 +133,13 @@ func (s *ManifestSuite) TestCreateManifest_WithLockfile_UsesLockfile() {
 	packageMapper.AssertNotCalled(s.T(), "ScanDependencies", mock.Anything, mock.Anything)
 }
 
-func (s *ManifestSuite) TestCreateManifest_EmptyPackageFile_WithDetectedLockfile() {
+func (s *ManifestSuite) TestCreateManifest_ConfiguredPackageFile_WithExistingLockfile_NoScan() {
 	log := logging.New()
 	emitter := events.NewNullEmitter()
 	packageMapper := &mockManifestPackageMapper{}
 
-	// packageFile empty: createManifest should detect the lockfile path.
-	cfg := &config.Config{
-		R: &config.R{PackageFile: ""},
-	}
+	// Explicitly configure package file so createManifest uses it and does not scan.
+	cfg := &config.Config{R: &config.R{PackageFile: "renv.lock"}}
 
 	stateStore := &state.State{Config: cfg}
 	helper := publishhelper.NewPublishHelper(stateStore, log)
@@ -164,7 +162,7 @@ func (s *ManifestSuite) TestCreateManifest_EmptyPackageFile_WithDetectedLockfile
 		"testpkg": bundles.Package{Description: dcf.Record{"Package": "testpkg", "Version": "1.0.0"}},
 	}
 
-	// Expect: use detected lockfile path; do not scan.
+	// Expect: use configured lockfile path; do not scan.
 	packageMapper.On("GetManifestPackages", dir, lockfile, mock.Anything).Return(expectedPackages, nil)
 
 	manifest, err := publisher.createManifest()

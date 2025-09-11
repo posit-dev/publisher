@@ -148,7 +148,12 @@ func (i *defaultInitialize) normalizeConfig(
 			log.Debug("Error while inspecting to generate an R based configuration", "error", err.Error())
 			return err
 		}
-		cfg.Files = append(cfg.Files, fmt.Sprint("/", rConfig.PackageFile))
+		// Only add package file if it exists
+		if rConfig.PackageFile != "" {
+			if ok, _ := base.Join(rConfig.PackageFile).Exists(); ok {
+				cfg.Files = append(cfg.Files, fmt.Sprint("/", rConfig.PackageFile))
+			}
+		}
 	}
 	cfg.Comments = strings.Split(initialComment, "\n")
 

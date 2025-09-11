@@ -282,3 +282,67 @@ func (s *PostPackagesPythonScanSuite) TestServeHTTPNoPythonErr() {
 	s.Contains(string(resp), "{\"code\":\"pythonExecNotFound\"}")
 	s.Equal(http.StatusUnprocessableEntity, rec.Result().StatusCode)
 }
+
+func (s *PostPackagesPythonScanSuite) TestServeHTTPWithPreferredInterpreter() {
+	// Create a url.URL struct
+	parsedURL, err := url.Parse("/api/packages/python/scan")
+	s.NoError(err)
+
+	// Create a url.Values to hold query parameters
+	params := url.Values{}
+	params.Add("python", "/custom/bin/python3")
+
+	// Encode query parameters and set them to the URL
+	parsedURL.RawQuery = params.Encode()
+
+	rec := httptest.NewRecorder()
+	body := strings.NewReader(`{"saveName":""}`)
+	req, err := http.NewRequest("POST", parsedURL.String(), body)
+	s.NoError(err)
+
+	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
+	err = base.MkdirAll(0777)
+	s.NoError(err)
+	destPath := base.Join("requirements.txt")
+
+	log := logging.New()
+	h := NewPostPackagesPythonScanHandler(base, log)
+
+	mockPythonInterpreter := interpreters.NewMockPythonInterpreter()
+	mockPythonInterpreter.On("Init").Return(nil)
+	mockPythonInterpreter.On("GetPythonExecutable").Return(util.NewAbsolutePath("/custom/bin/python3", nil), nil)
+
+	i := inspect.NewMockPythonInspector()
+	pkgs := []string{
+		"numpy==1.22.3",
+		"pandas",
+	}
+	incomplete := []string{
+		"pandas",
+	}
+	i.On("ScanRequirements", mock.Anything).Return(pkgs, incomplete, "/custom/bin/python3", nil)
+	i.On("WriteRequirementsFile", destPath, mock.Anything).Return(nil)
+	i.On("GetPythonInterpreter").Return(mockPythonInterpreter)
+	inspectorFactory = func(
+		base util.AbsolutePath,
+		pypath util.Path,
+		lgr logging.Logger,
+		intFactory interpreters.PythonInterpreterFactory,
+		exec executor.Executor,
+	) (inspect.PythonInspector, error) {
+		s.Equal("/custom/bin/python3", pypath.String())
+		return i, nil
+	}
+
+	h.ServeHTTP(rec, req)
+
+	s.Equal(http.StatusOK, rec.Result().StatusCode)
+
+	var res PostPackagesPythonScanResponse
+	dec := json.NewDecoder(rec.Body)
+	s.NoError(dec.Decode(&res))
+
+	s.Equal(pkgs, res.Requirements)
+	s.Equal(incomplete, res.Incomplete)
+	s.Equal("/custom/bin/python3", res.Python)
+}

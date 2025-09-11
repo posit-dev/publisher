@@ -925,8 +925,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
 
-    // Project is not configured for R so cannot scan
-    // Scan button is not visible when this is the case
+    // Project is not configured for R so cannot scan.
+    // "Set up renv" button is not visible when this is the case.
     if (!activeConfiguration.configuration.r) {
       return;
     }

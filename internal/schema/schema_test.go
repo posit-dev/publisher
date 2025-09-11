@@ -368,13 +368,15 @@ func (s *SchemaSuite) TestDisallowedProperties() {
 			message:     "has_parameters: not allowed.",
 		},
 
-		// Connect properties shouldn't be allowed with connect_cloud product_type
+		// Certain Connect properties shouldn't be allowed with connect_cloud product_type
 		{
 			productType: "connect_cloud",
 			basePath:    []string{},
 			propName:    "connect",
-			propValue:   map[string]any{},
-			message:     "connect: not allowed.",
+			propValue: map[string]any{
+				"kubernetes": map[string]any{},
+			},
+			message: "connect: additionalProperties 'kubernetes' not allowed.",
 		},
 
 		// Connect_cloud properties shouldn't be allowed with connect product_type
