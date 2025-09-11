@@ -88,7 +88,7 @@ jobs:
           LATEST_VERSION="${{ needs.check.outputs.latest-tag }}"
 
           # Use semver clean to properly handle the version string
-          LATEST_VERSION_CLEAN=$(semver clean "$LATEST_VERSION")
+          LATEST_VERSION_CLEAN=$(node -p "require('semver').clean('$LATEST_VERSION')")
 
           echo "Latest version found: ${LATEST_VERSION} (clean: ${LATEST_VERSION_CLEAN})"
 
@@ -101,10 +101,10 @@ jobs:
             
             if [ $((MINOR % 2)) -eq 0 ]; then
               # Latest is a release (even minor), create a prerelease with odd minor
-              NEXT_VERSION=$(semver inc minor "$LATEST_VERSION")
+              NEXT_VERSION=$(node -p "require('semver').inc('$LATEST_VERSION', 'minor')")
             else
               # Latest is already a prerelease (odd minor), increment the patch
-              NEXT_VERSION=$(semver inc patch "$LATEST_VERSION")
+              NEXT_VERSION=$(node -p "require('semver').inc('$LATEST_VERSION', 'patch')")
             fi
           else
             # No versions found, start at 1.1.0
@@ -112,7 +112,7 @@ jobs:
           fi
 
           # Remove any v prefix semver might have added back
-          NEXT_VERSION_CLEAN=$(semver clean "$NEXT_VERSION")
+          NEXT_VERSION_CLEAN=$(node -p "require('semver').clean('$NEXT_VERSION')")
           echo "Next pre-release version: v$NEXT_VERSION_CLEAN"
           echo "version=v$NEXT_VERSION_CLEAN" >> "$GITHUB_OUTPUT"
 
