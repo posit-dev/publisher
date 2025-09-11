@@ -25,62 +25,51 @@ export class ErrorQuartoRender extends Error {
 
 export class QuartoProjectHelper {
   readonly filesApi: FilesApi;
-  readonly entrypoint: string;
+  readonly source: string;
   readonly renderedEntrypoint: string;
   readonly projectDir: string;
 
   constructor(
     filesApi: FilesApi,
-    entrypoint: string,
+    source: string,
     renderedEntrypoint: string,
     projectDir: string,
   ) {
     this.filesApi = filesApi;
-    this.entrypoint = entrypoint;
+    this.source = source;
     this.renderedEntrypoint = renderedEntrypoint;
     this.projectDir = projectDir;
   }
 
-  async verifyRenderedOutput() {
-    const filesResponse = await this.filesApi.get();
-    const renderingExists = this.renderedEntrypointExists(
-      filesResponse.data.files,
-    );
-    if (!renderingExists) {
-      // No renderings, we'll help out rendering, if possible
-      return this.render();
-    }
-  }
-
   async render() {
-    const quartoAvaliable = await this.isQuartoAvailable();
+    const quartoAvaliable = await this.isQuartoBinAvailable();
     if (!quartoAvaliable) {
       // Quarto is not available on the system,
       // just return and let the user continue, nothing we can do
       return Promise.reject(new ErrorNoQuarto());
     }
 
+    const isProject = await this.isQuartoYmlPresent();
     try {
-      // If project rendering succeeds, stop and continue
-      await this.renderProject();
-      return;
+      if (isProject) {
+        await this.renderProject();
+      } else {
+        await this.renderDocument();
+      }
     } catch {
-      // Rendering the project failed, could possibly be that this is not a project,
-      // meaning a _quarto.yml configuration missing.
-    }
-
-    try {
-      // The user might have standalone .qmd document that can be rendered,
-      // we'll try that out.
-      await this.renderDocument();
-    } catch {
-      // Definitely could not render.
-      // Surface the first encountered error as it may provide better details.
       return Promise.reject(new ErrorQuartoRender());
     }
   }
 
-  async isQuartoAvailable(): Promise<boolean> {
+  async isQuartoYmlPresent() {
+    if (this.source.includes("_quarto.yml")) {
+      return true;
+    }
+    const filesResponse = await this.filesApi.get();
+    return this.fileExistsInProjectDir(filesResponse.data.files, "_quarto.yml");
+  }
+
+  async isQuartoBinAvailable(): Promise<boolean> {
     try {
       await runTerminalCommand("quarto --version");
       return Promise.resolve(true);
@@ -89,10 +78,13 @@ export class QuartoProjectHelper {
     }
   }
 
-  renderedEntrypointExists(files: ContentRecordFile[]): boolean {
-    let fullEntryPath = this.renderedEntrypoint;
+  fileExistsInProjectDir(
+    files: ContentRecordFile[],
+    filename: string,
+  ): boolean {
+    let fullEntryPath = filename;
     if (this.projectDir !== ".") {
-      fullEntryPath = path.join(this.projectDir, this.renderedEntrypoint);
+      fullEntryPath = path.join(this.projectDir, filename);
     }
 
     // Split the full rendered entrypoint path to lookup for the rendering
@@ -133,7 +125,7 @@ export class QuartoProjectHelper {
   }
 
   renderDocument() {
-    const fullEntryPath = path.join(this.projectDir, this.entrypoint);
+    const fullEntryPath = path.join(this.projectDir, this.source);
     const command = `quarto render ${fullEntryPath} --to html`;
     return runTerminalCommand(command);
   }
