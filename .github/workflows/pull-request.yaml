@@ -44,7 +44,6 @@ jobs:
   generate-licenses:
     uses: ./.github/workflows/generate-licenses.yaml
     with:
-      commit_changes: true
-      pr_changes: false
+      pr_changes: false # No PRs on PRs, infinite loop
       fail_on_forbidden: true
     secrets: inherit

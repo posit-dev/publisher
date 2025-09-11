@@ -38,7 +38,6 @@ jobs:
   generate-licenses:
     uses: ./.github/workflows/generate-licenses.yaml
     with:
-      commit_changes: false
       pr_changes: true
       fail_on_forbidden: true
     secrets: inherit
