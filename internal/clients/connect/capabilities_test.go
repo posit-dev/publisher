@@ -23,7 +23,7 @@ func TestCapabilitiesSuite(t *testing.T) {
 }
 
 func (s *CapabilitiesSuite) TestEmptyConfig() {
-	a := allSettings{}
+	a := AllSettings{}
 	cfg := &config.Config{}
 	s.NoError(a.checkConfig(cfg))
 }
@@ -37,7 +37,7 @@ func makePythonConfig(version string) *config.Config {
 }
 
 func (s *CapabilitiesSuite) TestCheckMatchingPython() {
-	a := allSettings{
+	a := AllSettings{
 		python: server_settings.PyInfo{
 			Installations: []server_settings.PyInstallation{
 				{Version: "3.10.1"},
@@ -65,7 +65,7 @@ func makeMinMaxProcs(min, max int32) *config.Config {
 }
 
 func (s *CapabilitiesSuite) TestMinMaxProcs() {
-	a := allSettings{
+	a := AllSettings{
 		scheduler: server_settings.SchedulerSettings{
 			MinProcesses:      0,
 			MaxProcesses:      3,
@@ -88,17 +88,17 @@ func (s *CapabilitiesSuite) TestRuntimeNonWorker() {
 			Runtime: &config.ConnectRuntime{},
 		},
 	}
-	a := allSettings{}
+	a := AllSettings{}
 	s.ErrorIs(a.checkConfig(cfg), errRuntimeSettingsForStaticContent)
 }
 
 func (s *CapabilitiesSuite) TestRunAs() {
-	adminSettings := allSettings{
+	adminSettings := AllSettings{
 		user: UserDTO{
 			UserRole: AuthRoleAdmin,
 		},
 	}
-	publisherSettings := allSettings{
+	publisherSettings := AllSettings{
 		user: UserDTO{
 			UserRole: AuthRolePublisher,
 		},
@@ -115,11 +115,11 @@ func (s *CapabilitiesSuite) TestRunAs() {
 }
 
 func (s *CapabilitiesSuite) TestRunAsCurrentUser() {
-	goodSettings := allSettings{
+	goodSettings := AllSettings{
 		user: UserDTO{
 			UserRole: AuthRoleAdmin,
 		},
-		general: server_settings.ServerSettings{
+		General: server_settings.ServerSettings{
 			License: server_settings.LicenseStatus{
 				CurrentUserExecution: true,
 			},
@@ -140,7 +140,7 @@ func (s *CapabilitiesSuite) TestRunAsCurrentUser() {
 	s.NoError(goodSettings.checkConfig(&cfg))
 
 	noLicense := goodSettings
-	noLicense.general.License.CurrentUserExecution = false
+	noLicense.General.License.CurrentUserExecution = false
 	s.ErrorIs(noLicense.checkConfig(&cfg), errCurrentUserExecutionNotLicensed)
 
 	noConfig := goodSettings
@@ -157,21 +157,21 @@ func (s *CapabilitiesSuite) TestRunAsCurrentUser() {
 }
 
 func (s *CapabilitiesSuite) TestAPILicense() {
-	allowed := allSettings{
-		general: server_settings.ServerSettings{
+	allowed := AllSettings{
+		General: server_settings.ServerSettings{
 			License: server_settings.LicenseStatus{
 				AllowAPIs: true,
 			},
 		},
 	}
-	notAllowed := allSettings{
-		general: server_settings.ServerSettings{
+	notAllowed := AllSettings{
+		General: server_settings.ServerSettings{
 			License: server_settings.LicenseStatus{
 				AllowAPIs: false,
 			},
 		},
 	}
-	missing := allSettings{}
+	missing := AllSettings{}
 	cfg := &config.Config{
 		Type: contenttypes.ContentTypePythonFlask,
 	}
@@ -181,7 +181,7 @@ func (s *CapabilitiesSuite) TestAPILicense() {
 }
 
 func (s *CapabilitiesSuite) TestFieldLengths() {
-	a := allSettings{}
+	a := AllSettings{}
 	tooLong := strings.Repeat("spam", 10000)
 	cfg := &config.Config{
 		Description: tooLong,
@@ -190,11 +190,11 @@ func (s *CapabilitiesSuite) TestFieldLengths() {
 }
 
 func (s *CapabilitiesSuite) TestKubernetesEnablement() {
-	goodSettings := allSettings{
+	goodSettings := AllSettings{
 		user: UserDTO{
 			UserRole: AuthRoleAdmin,
 		},
-		general: server_settings.ServerSettings{
+		General: server_settings.ServerSettings{
 			ExecutionType:                server_settings.ExecutionTypeKubernetes,
 			DefaultImageSelectionEnabled: true,
 			License: server_settings.LicenseStatus{
@@ -214,15 +214,15 @@ func (s *CapabilitiesSuite) TestKubernetesEnablement() {
 	s.NoError(goodSettings.checkConfig(&cfg))
 
 	noLicense := goodSettings
-	noLicense.general.License.LauncherEnabled = false
+	noLicense.General.License.LauncherEnabled = false
 	s.ErrorIs(noLicense.checkConfig(&cfg), errKubernetesNotLicensed)
 
 	noConfig := goodSettings
-	noConfig.general.ExecutionType = server_settings.ExecutionTypeLocal
+	noConfig.General.ExecutionType = server_settings.ExecutionTypeLocal
 	s.ErrorIs(noConfig.checkConfig(&cfg), errKubernetesNotConfigured)
 
 	noImageSelection := goodSettings
-	noImageSelection.general.DefaultImageSelectionEnabled = false
+	noImageSelection.General.DefaultImageSelectionEnabled = false
 	s.ErrorIs(noImageSelection.checkConfig(&cfg), errImageSelectionNotEnabled)
 
 	noAdmin := goodSettings
@@ -263,8 +263,8 @@ func makeGPURequest(amd, nvidia int64) *config.Config {
 	}
 }
 
-var kubernetesEnabledSettings = allSettings{
-	general: server_settings.ServerSettings{
+var kubernetesEnabledSettings = AllSettings{
+	General: server_settings.ServerSettings{
 		ExecutionType: server_settings.ExecutionTypeKubernetes,
 		License: server_settings.LicenseStatus{
 			LauncherEnabled: true,

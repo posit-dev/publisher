@@ -32,16 +32,17 @@ const PythonRequirementsFilename = "requirements.txt"
 // The manifest describes the type of content (its dependencies, how its
 // environment can be recreated (if needed) and how it is served/executed).
 type Manifest struct {
-	Version     int             `json:"version"`                             // Manifest version (always 1)
-	Locale      string          `json:"locale,omitempty"`                    // User's locale. Currently unused.
-	Platform    string          `json:"platform,omitempty" name:"r-version"` // Client R version
-	Metadata    Metadata        `json:"metadata"`                            // Properties about this deployment. Ignored by shinyapps.io
-	Python      *Python         `json:"python,omitempty"`                    // If non-null, specifies the Python version and dependencies
-	Jupyter     *Jupyter        `json:"jupyter,omitempty"`                   // If non-null, specifies the Jupyter options
-	Quarto      *Quarto         `json:"quarto,omitempty"`                    // If non-null, specifies the Quarto version and engines
-	Environment *Environment    `json:"environment,omitempty"`               // Information about the execution environment
-	Packages    PackageMap      `json:"packages"`                            // Map of R package name to package details
-	Files       ManifestFileMap `json:"files"`                               // List of file paths contained in the bundle
+	Version             int                  `json:"version"`                             // Manifest version (always 1)
+	Locale              string               `json:"locale,omitempty"`                    // User's locale. Currently unused.
+	Platform            string               `json:"platform,omitempty" name:"r-version"` // Client R version
+	Metadata            Metadata             `json:"metadata"`                            // Properties about this deployment. Ignored by shinyapps.io
+	Python              *Python              `json:"python,omitempty"`                    // If non-null, specifies the Python version and dependencies
+	Jupyter             *Jupyter             `json:"jupyter,omitempty"`                   // If non-null, specifies the Jupyter options
+	Quarto              *Quarto              `json:"quarto,omitempty"`                    // If non-null, specifies the Quarto version and engines
+	Environment         *Environment         `json:"environment,omitempty"`               // Information about the execution environment
+	Packages            PackageMap           `json:"packages"`                            // Map of R package name to package details
+	Files               ManifestFileMap      `json:"files"`                               // List of file paths contained in the bundle
+	IntegrationRequests []IntegrationRequest `json:"integration_requests,omitempty"`      // List of integration requests to auto-associate with content
 	// DependenciesSource is not serialized; it records which dependency lockfile
 	// (e.g., renv.lock) was used to build this manifest so the bundler can include it.
 	DependenciesSource util.Path `json:"-"`
@@ -105,6 +106,19 @@ type Package struct {
 }
 
 type ManifestFileMap map[string]ManifestFile
+
+type IntegrationRequest struct {
+	Guid            string         `json:"guid,omitempty"`
+	Name            string         `json:"name,omitempty"`
+	Description     string         `json:"description,omitempty"`
+	AuthType        string         `json:"auth_type,omitempty"`
+	IntegrationType string         `json:"type,omitempty"`
+	Config          map[string]any `json:"config,omitempty"`
+}
+
+func NewManifestFileMap() ManifestFileMap {
+	return ManifestFileMap{}
+}
 
 type ManifestFile struct {
 	Checksum string `json:"checksum"`
@@ -239,6 +253,20 @@ func NewManifestFromConfig(cfg *config.Config) *Manifest {
 	}
 
 	m.Metadata.HasParameters = cfg.GetHasParameters()
+
+	if cfg.IntegrationRequests != nil {
+		m.IntegrationRequests = make([]IntegrationRequest, 0, len(cfg.IntegrationRequests))
+		for _, r := range cfg.IntegrationRequests {
+			m.IntegrationRequests = append(m.IntegrationRequests, IntegrationRequest{
+				Guid:            r.Guid,
+				Name:            r.Name,
+				Description:     r.Description,
+				AuthType:        r.AuthType,
+				IntegrationType: r.IntegrationType,
+				Config:          r.Config,
+			})
+		}
+	}
 	return m
 }
 

@@ -58,6 +58,8 @@ type ServerSettings struct {
 	DefaultPyEnvironmentManagement        bool `json:"default_py_environment_management"`
 	// NewParameterizationEnabled            bool                   `json:"new_parameterization_enabled"`
 	// UseWindowLocation                     bool                   `json:"use_window_location"`
+	// OAuth integrations enabled
+	OAuthIntegrationsEnabled bool `json:"oauth_integrations_enabled"`
 }
 
 const ExecutionTypeNative = "native"
@@ -180,6 +182,8 @@ type LicenseStatus struct {
 	// AnonymousServers     bool    `json:"anonymous-servers"`
 	// AnonymousBranding    bool    `json:"anonymous-branding"`
 	LauncherEnabled FlexiBool `json:"enable-launcher"`
+	// OAuth integrations
+	OAuthIntegrations bool `json:"oauth-integrations"`
 }
 
 type UserInfoEditableBy UserInfoEditableType

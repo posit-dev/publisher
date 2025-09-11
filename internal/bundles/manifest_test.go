@@ -288,3 +288,46 @@ func (s *ManifestSuite) TestNewManifestFromConfig_PythonPackageManagerVariants_J
 		}
 	}
 }
+
+func (s *ManifestSuite) TestNewManifestFromConfigWithIntegrationRequests() {
+	cfg := &config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       "python-fastapi",
+		Entrypoint: "app:app",
+		Title:      "Test App",
+		IntegrationRequests: []config.IntegrationRequest{
+			{
+				Guid:            "123456789abcdef",
+				Name:            "my-integration",
+				Description:     "Vertex AI OAuth integration",
+				AuthType:        "Viewer",
+				IntegrationType: "vertex-ai",
+				Config: map[string]any{
+					"auth_mode": "Confidential",
+				},
+			},
+		},
+	}
+	m := NewManifestFromConfig(cfg)
+	s.Equal(&Manifest{
+		Version: 1,
+		Metadata: Metadata{
+			AppMode:    "python-fastapi",
+			Entrypoint: "app:app",
+		},
+		IntegrationRequests: []IntegrationRequest{
+			{
+				Guid:            "123456789abcdef",
+				Name:            "my-integration",
+				Description:     "Vertex AI OAuth integration",
+				AuthType:        "Viewer",
+				IntegrationType: "vertex-ai",
+				Config: map[string]any{
+					"auth_mode": "Confidential",
+				},
+			},
+		},
+		Packages: map[string]Package{},
+		Files:    map[string]ManifestFile{},
+	}, m)
+}

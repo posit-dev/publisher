@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added the configuration TOML file code to the displayed deployment name (#3018)
 - Added the ability to toggle between the summary view (tree) and the raw view (text)
   for the Publisher logs along with copy and save logs functionality (#3017)
+- Added support for managing OAuth Integration content requirements directly from the "Integration Requests" pane in the Publisher UI.
 
 ## [1.20.0]
 
