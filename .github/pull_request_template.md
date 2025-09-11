@@ -44,4 +44,4 @@
 <!--- Go over all the following points, and put an `x` in all the boxes that apply: -->
 <!--- If you need clarification on any of these, feel free to ask. We're here to help! -->
 
-- [ ] I have updated [CHANGELOG.md](../CHANGELOG.md) to cover notable changes.
+- [ ] I have updated the _root_ [CHANGELOG.md](../CHANGELOG.md) to cover notable changes.
