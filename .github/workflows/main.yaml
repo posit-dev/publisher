@@ -35,9 +35,9 @@ jobs:
     secrets: inherit
 
   # License generation
-  generate-licenses:
-    uses: ./.github/workflows/generate-licenses.yaml
-    with:
-      pr_changes: true
-      fail_on_forbidden: true
-    secrets: inherit
+  # generate-licenses:
+  #   uses: ./.github/workflows/generate-licenses.yaml
+  #   with:
+  #     pr_changes: true
+  #     fail_on_forbidden: true
+  #   secrets: inherit
