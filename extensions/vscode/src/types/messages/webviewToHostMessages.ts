@@ -35,7 +35,6 @@ export enum WebviewToHostMessageType {
   SHOW_ASSOCIATE_GUID = "ShowAssociateGUID",
   UPDATE_SELECTION_CREDENTIAL_STATE = "UpdateSelectionCredentialStateMsg",
   UPDATE_SELECTION_IS_PRE_CONTENT_RECORD = "UpdateSelectionIsPreContentRecordMsg",
-  UPDATE_SELECTION_IS_CONNECT_CONTENT_RECORD = "UpdateSelectionIsConnectContentRecordMsg",
   COPY_SYSTEM_INFO = "copySystemInfo",
 }
 
@@ -76,7 +75,6 @@ export type WebviewToHostMessage =
   | ShowAssociateGUIDMsg
   | UpdateSelectionCredentialStateMsg
   | UpdateSelectionIsPreContentRecordMsg
-  | UpdateSelectionIsConnectContentRecordMsg
   | CopySystemInfoMsg
   | AddIntegrationRequestMsg
   | DeleteIntegrationRequestMsg
@@ -112,8 +110,6 @@ export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
     msg.kind === WebviewToHostMessageType.UPDATE_SELECTION_CREDENTIAL_STATE ||
     msg.kind ===
       WebviewToHostMessageType.UPDATE_SELECTION_IS_PRE_CONTENT_RECORD ||
-    msg.kind ===
-      WebviewToHostMessageType.UPDATE_SELECTION_IS_CONNECT_CONTENT_RECORD ||
     msg.kind === WebviewToHostMessageType.COPY_SYSTEM_INFO ||
     msg.kind === WebviewToHostMessageType.ADD_INTEGRATION_REQUEST ||
     msg.kind === WebviewToHostMessageType.DELETE_INTEGRATION_REQUEST ||
@@ -270,13 +266,6 @@ export type UpdateSelectionCredentialStateMsg = AnyWebviewToHostMessage<
 
 export type UpdateSelectionIsPreContentRecordMsg = AnyWebviewToHostMessage<
   WebviewToHostMessageType.UPDATE_SELECTION_IS_PRE_CONTENT_RECORD,
-  {
-    state: string;
-  }
->;
-
-export type UpdateSelectionIsConnectContentRecordMsg = AnyWebviewToHostMessage<
-  WebviewToHostMessageType.UPDATE_SELECTION_IS_CONNECT_CONTENT_RECORD,
   {
     state: string;
   }

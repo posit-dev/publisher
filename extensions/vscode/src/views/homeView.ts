@@ -92,11 +92,7 @@ import { newCredential } from "src/multiStepInputs/newCredential";
 import { PublisherState } from "src/state";
 import { throttleWithLastPending } from "src/utils/throttle";
 import { showAssociateGUID } from "src/actions/showAssociateGUID";
-import {
-  extensionSettings,
-  SelectionIsConnectContentRecord,
-  setSelectionIsConnectContentRecord,
-} from "src/extension";
+import { extensionSettings } from "src/extension";
 import { openFileInEditor } from "src/commands";
 import { showImmediateDeploymentFailureMessage } from "./publishFailures";
 import {
@@ -207,10 +203,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         return this.updateSelectionCredentialState(msg.content.state);
       case WebviewToHostMessageType.UPDATE_SELECTION_IS_PRE_CONTENT_RECORD:
         return this.updateSelectionIsPreContentRecordState(msg.content.state);
-      case WebviewToHostMessageType.UPDATE_SELECTION_IS_CONNECT_CONTENT_RECORD:
-        return this.updateSelectionIsConnectContentRecordState(
-          msg.content.state,
-        );
       case WebviewToHostMessageType.COPY_SYSTEM_INFO:
         return await this.copySystemInfo();
       case WebviewToHostMessageType.ADD_INTEGRATION_REQUEST:
@@ -252,14 +244,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         ? SelectionIsPreContentRecord.true
         : SelectionIsPreContentRecord.false;
     return await setSelectionIsPreContentRecord(match);
-  }
-
-  private async updateSelectionIsConnectContentRecordState(state: string) {
-    const match =
-      state === SelectionIsConnectContentRecord.true
-        ? SelectionIsConnectContentRecord.true
-        : SelectionIsConnectContentRecord.false;
-    return await setSelectionIsConnectContentRecord(match);
   }
 
   private async initiateDeployment(
