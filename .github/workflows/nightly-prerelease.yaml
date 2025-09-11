@@ -95,7 +95,9 @@ jobs:
           # Calculate next version
           if [ -n "$LATEST_VERSION" ]; then
             # Get minor version number to check if odd/even
-            MINOR=$(semver minor "$LATEST_VERSION")
+            MINOR=$(node -p "require('semver').minor('$LATEST_VERSION')")
+            
+            echo "Extracted MINOR version number: ${MINOR}"
             
             if [ $((MINOR % 2)) -eq 0 ]; then
               # Latest is a release (even minor), create a prerelease with odd minor
