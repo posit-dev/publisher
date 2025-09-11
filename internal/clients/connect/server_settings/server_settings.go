@@ -12,7 +12,7 @@ import (
 
 type ServerSettings struct {
 	// NodeName                              string                 `json:"hostname"`
-	// Version                               string                 `json:"version"`
+	Version string `json:"version"`
 	// Build                                 string                 `json:"build"`
 	// About                                 string                 `json:"about"`
 	// Authentication                        AuthenticationSettings `json:"authentication"`

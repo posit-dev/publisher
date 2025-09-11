@@ -8,7 +8,7 @@
       v-if="home.serverSettings !== undefined && !isOAuthIntegrationsSupported"
     >
       <p>
-        OAuth Integrations are not supported with your current server
+        OAuth Integrations are not supported with your current server version,
         configuration or license. Please contact your server administrator for
         more information.
       </p>
@@ -45,11 +45,20 @@ const { sendMsg } = useHostConduitService();
 const home = useHomeStore();
 
 const isOAuthIntegrationsSupported = computed(() => {
+  if (!home.serverSettings) {
+    return false;
+  }
+  // if settings has version set, then parse it, otherwise ignore that value
+  const serverVersion = home.serverSettings?.version ?? "0.0.0";
+  const [major, minor] = serverVersion.split(".").map((v) => parseInt(v, 10));
+
+  // OAuth Integrations are supported starting in version 2025.09
+  const validVersion = major > 2025 && minor > 9;
   const validLicense =
     home.serverSettings?.license?.["oauth-integrations"] ?? false;
   const oauthIntegrationsEnabled =
     home.serverSettings?.oauth_integrations_enabled ?? false;
-  return validLicense && oauthIntegrationsEnabled;
+  return validVersion && validLicense && oauthIntegrationsEnabled;
 });
 
 const sectionActions = computed(() => {

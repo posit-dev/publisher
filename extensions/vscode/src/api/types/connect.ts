@@ -42,6 +42,7 @@ export type LicenseInfo = {
 // See types in internal/clients/connect/client.go
 // for more information or to add more.
 export type ServerSettings = {
+  version?: string;
   license?: LicenseInfo;
   oauth_integrations_enabled?: boolean;
 };
