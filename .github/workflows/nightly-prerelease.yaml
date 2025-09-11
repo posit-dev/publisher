@@ -138,14 +138,21 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-          # Use a PAT to ensure the tag push triggers the release workflow
-          # GITHUB_TOKEN doesn't trigger other workflows by default
-          token: ${{ secrets.RELEASE_PAT || secrets.GITHUB_TOKEN }}
           ref: main
+
+      - name: Generate token for GitHub App
+        id: generate-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.POSIT_CONNECT_PROJECTS_APP_ID }}
+          private-key: ${{ secrets.POSIT_CONNECT_PROJECTS_PEM }}
+          # Tags are part of repository contents, so we need this permission
+          permission-contents: write
 
       - name: Create tag
         env:
           NEXT_VERSION: ${{ needs.version.outputs.next-version }}
+          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
         run: |
           # Configure git
           git config user.name "github-actions[bot]"
@@ -154,8 +161,8 @@ jobs:
           # Create the tag
           git tag -a "$NEXT_VERSION" -m "Nightly pre-release $NEXT_VERSION"
 
-          # Push the tag (this will trigger the release workflow)
-          git push origin "$NEXT_VERSION"
+          # Use the token for authentication when pushing
+          git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}" "$NEXT_VERSION"
 
           echo "✅ Created and pushed tag: $NEXT_VERSION"
 
