@@ -7,17 +7,13 @@
   >
     <WelcomeView v-if="showWelcomeView">
       <template v-if="missingOrInvalidPackageFile">
+        <p>Dependencies will be detected automatically.</p>
         <p>
-          To deploy R content, you need a package file listing any package
-          dependencies, but the file ({{ rPackageFile }}) is missing, empty or
-          invalid.
-          <a class="webview-link" role="button" @click="onViewRenvDoc">
-            See the renv documentation for more details.</a
+          Alternatively, set up renv to use an isolated library and create a
+          lockfile.
+          <a class="webview-link" role="button" @click="onViewRenvDoc"
+            >See the renv documentation for more details.</a
           >
-        </p>
-        <p>
-          Set up renv to initialize the environment, install dependencies, and
-          create a lockfile.
         </p>
         <vscode-button
           @click="onSetupRenv()"
