@@ -21,6 +21,11 @@ on:
         required: false
         default: true
         type: boolean
+    secrets:
+      POSIT_CONNECT_PROJECTS_APP_ID:
+        required: true
+      POSIT_CONNECT_PROJECTS_PEM:
+        required: true
     outputs:
       has-changes:
         description: "Whether license changes were detected"

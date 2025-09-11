@@ -47,3 +47,4 @@ jobs:
       commit_changes: true
       pr_changes: false
       fail_on_forbidden: true
+    secrets: inherit
