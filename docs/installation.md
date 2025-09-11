@@ -1,71 +1,24 @@
 This page walks you through installation options for Posit Publisher.
 
-## Installation for VS Code
+## Installation for Positron and VS Code
 
 [Install via the Visual Studio Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Posit.publisher)
 
-or searching "Posit Publisher" in the VS Code Extensions view and clicking
-Install.
+Or open the VS Code Extensions view and search for "Posit Publisher" and then click "Install".
 
-### Manual Installation
+## Installation of the pre-release version
 
-Download and install the VS Code extension.
+If a pre-release version is available, you can install it by following the same steps as above and then after installation click "Switch to Pre-release Version".
 
-- For Arm MacOS: [publisher-1.21.0-darwin-arm64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.21.0/publisher-1.21.0-darwin-arm64.vsix)
-- For Intel MacOS: [publisher-1.21.0-darwin-amd64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.21.0/publisher-1.21.0-darwin-amd64.vsix)
-- For Windows: [publisher-1.21.0-windows-amd64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.21.0/publisher-1.21.0-windows-amd64.vsix)
-- For Arm Linux: [publisher-1.21.0-linux-arm64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.21.0/publisher-1.21.0-linux-arm64.vsix)
-- For Intel Linux: [publisher-1.21.0-linux-amd64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.21.0/publisher-1.21.0-linux-amd64.vsix)
+If the "Switch to Pre-release Version" button is not available there is currently no pre-release version available or you are already on a pre-release version.
 
-To learn how to install a `.vsix` file, see the [Install from a
-VSIX](https://code.visualstudio.com/docs/editor/extension-marketplace#_install-from-a-vsix)
-guide from Visual Studio Code.
+## Installation using the Open VSX Registry
 
-### Quick install and updates
+[Open the Publisher extension page on Open VSX Registry](https://open-vsx.org/extension/posit/publisher)
 
-We have updates scripts for macOS and linux to download and install the latest version of the publisher:
+On the extension's page, click the "Download" button to download the extension as a .vsix file.
 
-#### Setup (one time)
-
-First, [download the update script](https://raw.githubusercontent.com/posit-dev/publisher/main/install-publisher.bash) you will also have to mark it executable:
-
-```bash
-
-chmod u+x install-publisher.bash
-```
-
-You can put the script somewhere on your `$PATH` so you can run it from any directory, or add it to your `.bashrc` or `.zshrc`.
-
-#### Usage
-
-Run the script as follows:
-
-```bash
-./install-publisher.bash
-```
-
-Which will install the most recent release of the publisher.
-
-You can also install nightlies with:
-
-```bash
-./install-publisher.bash nightly
-```
-
-Or install a specific version with:
-
-```bash
-./install-publisher.bash 1.0.beta1
-```
-
-> [!WARNING]
->
-> [VSCode uses inotify](https://github.com/microsoft/vscode/wiki/File-Watcher-Issues) on Linux installations. If file changes aren't updating the Publisher extension, ensure you have `inotify` installed.
-> To install `inotify` on Debian, use the following command:<br />
->
-> ```
-> apt install inotify-tools
-> ```
+Open your IDE extension manager and look for an option to install from a .vsix file. Select the downloaded .vsix file to install the extension.
 
 ## Optional: Install Quarto
 

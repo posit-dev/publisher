@@ -15,10 +15,10 @@ import (
 	"github.com/posit-dev/publisher/internal/util"
 )
 
-type allSettings struct {
+type AllSettings struct {
 	base        util.AbsolutePath
 	user        UserDTO
-	general     server_settings.ServerSettings
+	General     server_settings.ServerSettings
 	application server_settings.ApplicationSettings
 	scheduler   server_settings.SchedulerSettings
 	python      server_settings.PyInfo
@@ -72,15 +72,15 @@ func (c *ConnectClient) CheckCapabilities(base util.AbsolutePath, cfg *config.Co
 			return err
 		}
 	}
-	settings, err := c.getSettings(base, cfg, log)
+	settings, err := c.GetSettings(base, cfg, log)
 	if err != nil {
 		return err
 	}
 	return settings.checkConfig(cfg)
 }
 
-func (c *ConnectClient) getSettings(base util.AbsolutePath, cfg *config.Config, log logging.Logger) (*allSettings, error) {
-	settings := &allSettings{
+func (c *ConnectClient) GetSettings(base util.AbsolutePath, cfg *config.Config, log logging.Logger) (*AllSettings, error) {
+	settings := &AllSettings{
 		base: base,
 	}
 
@@ -88,7 +88,7 @@ func (c *ConnectClient) getSettings(base util.AbsolutePath, cfg *config.Config, 
 	if err != nil {
 		return nil, err
 	}
-	err = c.client.Get("/__api__/server_settings", &settings.general, log)
+	err = c.client.Get("/__api__/server_settings", &settings.General, log)
 	if err != nil {
 		return nil, err
 	}
@@ -172,7 +172,7 @@ func (e *pythonNotAvailableErr) Error() string {
 	return fmt.Sprintf(pythonNotAvailableMsgSingle, e.Requested, e.Available[0])
 }
 
-func (a *allSettings) checkMatchingPython(version string) error {
+func (a *AllSettings) checkMatchingPython(version string) error {
 	if version == "" {
 		// This is prevented by version being mandatory in the schema.
 		return nil
@@ -187,19 +187,19 @@ func (a *allSettings) checkMatchingPython(version string) error {
 		newPythonNotAvailableErr(requested, a.python.Installations), nil)
 }
 
-func (a *allSettings) checkKubernetes(cfg *config.Config) error {
+func (a *AllSettings) checkKubernetes(cfg *config.Config) error {
 	k := cfg.Connect.Kubernetes
 	if k == nil {
 		// No kubernetes config present
 		return nil
 	}
-	if !a.general.License.LauncherEnabled {
+	if !a.General.License.LauncherEnabled {
 		return errKubernetesNotLicensed
 	}
-	if a.general.ExecutionType != server_settings.ExecutionTypeKubernetes {
+	if a.General.ExecutionType != server_settings.ExecutionTypeKubernetes {
 		return errKubernetesNotConfigured
 	}
-	if k.DefaultImageName != "" && !a.general.DefaultImageSelectionEnabled {
+	if k.DefaultImageName != "" && !a.General.DefaultImageSelectionEnabled {
 		return errImageSelectionNotEnabled
 	}
 	if k.ServiceAccountName != "" && !a.user.CanAdmin() {
@@ -242,7 +242,7 @@ func (a *allSettings) checkKubernetes(cfg *config.Config) error {
 	return nil
 }
 
-func (a *allSettings) checkRuntime(cfg *config.Config) error {
+func (a *AllSettings) checkRuntime(cfg *config.Config) error {
 	r := cfg.Connect.Runtime
 	if r == nil {
 		// No runtime configuration present
@@ -270,14 +270,14 @@ func (a *allSettings) checkRuntime(cfg *config.Config) error {
 	return nil
 }
 
-func (a *allSettings) checkAccess(cfg *config.Config) error {
+func (a *AllSettings) checkAccess(cfg *config.Config) error {
 	if cfg.Connect.Access == nil {
 		// No access configuration present
 		return nil
 	}
 	racu := cfg.Connect.Access.RunAsCurrentUser
 	if racu != nil && *racu {
-		if !a.general.License.CurrentUserExecution {
+		if !a.General.License.CurrentUserExecution {
 			return errCurrentUserExecutionNotLicensed
 		}
 		if !a.application.RunAsCurrentUser {
@@ -297,7 +297,7 @@ func (a *allSettings) checkAccess(cfg *config.Config) error {
 	return nil
 }
 
-func (a *allSettings) checkFileExists(filename string, attr string) error {
+func (a *AllSettings) checkFileExists(filename string, attr string) error {
 	if filename == "" {
 		return nil
 	}
@@ -312,10 +312,10 @@ func (a *allSettings) checkFileExists(filename string, attr string) error {
 	return nil
 }
 
-func (a *allSettings) checkConfig(cfg *config.Config) error {
+func (a *AllSettings) checkConfig(cfg *config.Config) error {
 	var err error
 	if cfg.Type.IsAPIContent() {
-		if !a.general.License.AllowAPIs {
+		if !a.General.License.AllowAPIs {
 			return errAPIsNotLicensed
 		}
 	}
@@ -334,12 +334,10 @@ func (a *allSettings) checkConfig(cfg *config.Config) error {
 			return err
 		}
 	}
-	if cfg.R != nil {
-		err = a.checkFileExists(cfg.R.PackageFile, "r.package-file")
-		if err != nil {
-			return err
-		}
-	}
+
+	// For R we no longer require a pre-existing lockfile on disk at capability-check time.
+	// The lockfile may be auto-generated into the bundle later; skip existence check.
+
 	if cfg.Connect != nil {
 		err = a.checkAccess(cfg)
 		if err != nil {

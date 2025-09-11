@@ -1,5 +1,6 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
+import { IntegrationRequest } from "../../api";
 import { DeploymentSelector } from "../shared";
 
 export enum WebviewToHostMessageType {
@@ -17,6 +18,10 @@ export enum WebviewToHostMessageType {
   REQUEST_CREDENTIALS = "requestCredentials",
   VSCODE_OPEN_RELATIVE = "VSCodeOpenRelativeMsg",
   ADD_SECRET = "addSecret",
+  GET_INTEGRATIONS = "getIntegrations",
+  ADD_INTEGRATION_REQUEST = "addIntegrationRequest",
+  DELETE_INTEGRATION_REQUEST = "deleteIntegrationRequest",
+  CLEAR_ALL_INTEGRATION_REQUESTS = "clearAllIntegrationRequests",
   REFRESH_PYTHON_PACKAGES = "RefreshPythonPackagesMsg",
   SCAN_PYTHON_PACKAGE_REQUIREMENTS = "ScanPythonPackageRequirementsMsg",
   REFRESH_R_PACKAGES = "RefreshRPackagesMsg",
@@ -70,7 +75,10 @@ export type WebviewToHostMessage =
   | ShowAssociateGUIDMsg
   | UpdateSelectionCredentialStateMsg
   | UpdateSelectionIsPreContentRecordMsg
-  | CopySystemInfoMsg;
+  | CopySystemInfoMsg
+  | AddIntegrationRequestMsg
+  | DeleteIntegrationRequestMsg
+  | ClearAllIntegrationRequestsMsg;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
@@ -102,7 +110,11 @@ export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
     msg.kind === WebviewToHostMessageType.UPDATE_SELECTION_CREDENTIAL_STATE ||
     msg.kind ===
       WebviewToHostMessageType.UPDATE_SELECTION_IS_PRE_CONTENT_RECORD ||
-    msg.kind === WebviewToHostMessageType.COPY_SYSTEM_INFO
+    msg.kind === WebviewToHostMessageType.COPY_SYSTEM_INFO ||
+    msg.kind === WebviewToHostMessageType.ADD_INTEGRATION_REQUEST ||
+    msg.kind === WebviewToHostMessageType.DELETE_INTEGRATION_REQUEST ||
+    msg.kind === WebviewToHostMessageType.CLEAR_ALL_INTEGRATION_REQUESTS ||
+    msg.kind === WebviewToHostMessageType.GET_INTEGRATIONS
   );
 }
 
@@ -186,6 +198,19 @@ export type RequestCredentialsMsg =
 
 export type AddSecretMsg =
   AnyWebviewToHostMessage<WebviewToHostMessageType.ADD_SECRET>;
+
+export type AddIntegrationRequestMsg =
+  AnyWebviewToHostMessage<WebviewToHostMessageType.ADD_INTEGRATION_REQUEST>;
+
+export type DeleteIntegrationRequestMsg = AnyWebviewToHostMessage<
+  WebviewToHostMessageType.DELETE_INTEGRATION_REQUEST,
+  {
+    request: IntegrationRequest;
+  }
+>;
+
+export type ClearAllIntegrationRequestsMsg =
+  AnyWebviewToHostMessage<WebviewToHostMessageType.CLEAR_ALL_INTEGRATION_REQUESTS>;
 
 export type RefreshPythonPackagesMsg =
   AnyWebviewToHostMessage<WebviewToHostMessageType.REFRESH_PYTHON_PACKAGES>;

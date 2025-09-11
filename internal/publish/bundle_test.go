@@ -175,6 +175,8 @@ func (s *BundleSuite) TearDownTest() {
 }
 
 func (s *BundleSuite) TestCreateBundle() {
+	// Explicitly configure lockfile for this test since SetupTest no longer sets it.
+	s.stateStore.Config.R.PackageFile = "renv.lock"
 
 	// Create publisher
 	publisher := s.createPublisher()
@@ -219,7 +221,7 @@ func (s *BundleSuite) TestCreateBundle() {
 	}
 	s.ElementsMatch(expectedTargetFiles, publisher.Target.Files)
 
-	// Verify interpreter details were read and set in Target
+	// Verify dependencies were read and set in Target
 	s.Equal(publisher.Target.Renv.R.Version, "4.3.0")
 	s.Equal(len(publisher.Target.Renv.R.Repositories), 1)
 	s.Equal(publisher.Target.Renv.R.Repositories[0].Name, "CRAN")
@@ -227,6 +229,77 @@ func (s *BundleSuite) TestCreateBundle() {
 	s.Equal(publisher.Target.Renv.Packages["R6"].Package, renv.PackageName("R6"))
 
 	// Using discard logger - no assertions needed
+}
+
+func (s *BundleSuite) TestBundle_IncludesExistingRenvLockAsIs() {
+	// Ensure renv.lock exists from setup
+	exists, err := s.dir.Join("renv.lock").Exists()
+	s.Require().NoError(err)
+	s.Require().True(exists)
+
+	// Include renv.lock in configured file patterns (as real config would)
+	s.stateStore.Config.Files = append(s.stateStore.Config.Files, "renv.lock")
+	// Explicitly assert PackageFile is set so createManifest will not scan
+	s.stateStore.Config.R.PackageFile = "renv.lock"
+	publisher := s.createPublisher()
+	manifest, err := publisher.createManifest()
+	s.NoError(err)
+
+	bundleFile, err := publisher.createBundle(manifest)
+	s.NoError(err)
+	defer bundleFile.Close()
+	defer os.Remove(bundleFile.Name())
+
+	files := s.readBundleContents(bundleFile)
+	s.Contains(files, "renv.lock")
+	s.NotContains(files, ".posit/publish/deployments/renv.lock")
+
+	// Target file list should include renv.lock at root
+	s.Contains(publisher.Target.Files, "renv.lock")
+}
+
+func (s *BundleSuite) TestBundle_StagesAndIncludesRenvLockWhenGenerated() {
+	// Remove existing renv.lock to force scanning/staging
+	_ = s.dir.Join("renv.lock").Remove()
+
+	// Prepare a generated lockfile that ScanDependencies will return
+	generated := s.dir.Join("gen.lock")
+	stagedLock := `{
+  "R": {
+    "Version": "4.3.0",
+    "Repositories": [
+      { "Name": "CRAN", "URL": "https://cloud.r-project.org" }
+    ]
+  },
+  "Packages": {}
+}`
+	_ = generated.WriteFile([]byte(stagedLock), 0644)
+
+	// Mock mapper to return generated path and empty package map
+	mockPM := &bundleMockPackageMapper{}
+	mockPM.On("ScanDependencies", mock.Anything, mock.Anything).Return(generated, nil)
+	mockPM.On("GetManifestPackages", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(bundles.PackageMap{}, nil)
+	s.packageMapper = mockPM
+
+	// Ensure file patterns include typical app files (no renv.lock present)
+	publisher := s.createPublisher()
+
+	// createManifest should stage .posit/publish/deployments/renv.lock and set PackageFile accordingly
+	manifest, err := publisher.createManifest()
+	s.NoError(err)
+	s.Require().NotNil(manifest)
+	s.NotEqual("", manifest.DependenciesSource.String())
+
+	bundleFile, err := publisher.createBundle(manifest)
+	s.NoError(err)
+	defer bundleFile.Close()
+	defer os.Remove(bundleFile.Name())
+
+	files := s.readBundleContents(bundleFile)
+	// Bundler should re-root staged lockfile to archive root as renv.lock
+	s.Contains(files, "renv.lock")
+	s.NotContains(files, ".posit/publish/deployments/renv.lock")
+	s.Contains(publisher.Target.Files, "renv.lock")
 }
 
 func (s *BundleSuite) readBundleContents(bundleFile *os.File) []string {

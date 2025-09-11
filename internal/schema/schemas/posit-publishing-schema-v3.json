@@ -111,66 +111,7 @@
           "additionalProperties": false,
           "description": "Setting specific to Posit Connect deployments.",
           "properties": {
-            "runtime": {
-              "type": "object",
-              "additionalProperties": false,
-              "description": "Runtime settings for application content types.",
-              "properties": {
-                "connection_timeout": {
-                  "type": "integer",
-                  "minimum": 0,
-                  "maximum": 2592000,
-                  "description": "Maximum number of seconds allowed without data sent or received across a client connection. A value of `0` means connections will never time-out (not recommended).",
-                  "examples": [5]
-                },
-                "read_timeout": {
-                  "type": "integer",
-                  "minimum": 0,
-                  "maximum": 2592000,
-                  "description": "Maximum number of seconds allowed without data received from a client connection. A value of `0` means a lack of client (browser) interaction never causes the connection to close.",
-                  "examples": [30]
-                },
-                "init_timeout": {
-                  "type": "integer",
-                  "minimum": 0,
-                  "maximum": 2592000,
-                  "description": "The maximum number of seconds allowed for an interactive application to start. Posit Connect must be able to connect to a newly launched application before this threshold has elapsed.",
-                  "examples": [60]
-                },
-                "idle_timeout": {
-                  "type": "integer",
-                  "minimum": 0,
-                  "maximum": 2592000,
-                  "description": "The maximum number of seconds a worker process for an interactive application to remain alive after it goes idle (no active connections).",
-                  "examples": [120]
-                },
-                "max_processes": {
-                  "type": "integer",
-                  "minimum": 1,
-                  "description": "Specifies the total number of concurrent processes allowed for a single interactive application.",
-                  "examples": [5]
-                },
-                "min_processes": {
-                  "type": "integer",
-                  "minimum": 0,
-                  "description": "Specifies the minimum number of concurrent processes allowed for a single interactive application.",
-                  "examples": [1]
-                },
-                "max_conns_per_process": {
-                  "type": "integer",
-                  "minimum": 1,
-                  "description": "Specifies the maximum number of client connections allowed to an individual process. Incoming connections which will exceed this limit are routed to a new process or rejected.",
-                  "examples": [50]
-                },
-                "load_factor": {
-                  "type": "number",
-                  "minimum": 0,
-                  "maximum": 1,
-                  "description": "Controls how aggressively new processes are spawned. The valid range is between 0.0 and 1.0.",
-                  "examples": [0.5]
-                }
-              }
-            },
+            "runtime": {},
             "kubernetes": {
               "type": "object",
               "additionalProperties": false,
@@ -339,6 +280,12 @@
               }
             }
           }
+        },
+        "connect": {
+          "additionalProperties": false,
+          "properties": {
+            "runtime": {}
+          }
         }
       }
     }
@@ -469,6 +416,106 @@
       },
       "description": "Names of secrets required by the application. Injected as environment variables.",
       "examples": ["API_KEY", "DATABASE_PASSWORD"]
+    },
+    "integration_requests": {
+      "type": "array",
+      "description": "Integration requests associated with this configuration",
+      "items": {
+        "type": "object",
+        "properties": {
+          "guid": {
+            "type": "string",
+            "description": "Unique identifier for the integration request"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the integration request"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of the integration request"
+          },
+          "authType": {
+            "type": "string",
+            "description": "Authentication type for the integration request"
+          },
+          "type": {
+            "type": "string",
+            "description": "Integration type"
+          },
+          "config": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Configuration for the integration request"
+          }
+        }
+      }
+    },
+    "connect": {
+      "type": "object",
+      "description": "Settings for Posit Connect applications.",
+      "properties": {
+        "runtime": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Runtime settings for application content types.",
+          "properties": {
+            "connection_timeout": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2592000,
+              "description": "Maximum number of seconds allowed without data sent or received across a client connection. A value of `0` means connections will never time-out (not recommended).",
+              "examples": [5]
+            },
+            "read_timeout": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2592000,
+              "description": "Maximum number of seconds allowed without data received from a client connection. A value of `0` means a lack of client (browser) interaction never causes the connection to close.",
+              "examples": [30]
+            },
+            "init_timeout": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2592000,
+              "description": "The maximum number of seconds allowed for an interactive application to start. Posit Connect must be able to connect to a newly launched application before this threshold has elapsed.",
+              "examples": [60]
+            },
+            "idle_timeout": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2592000,
+              "description": "The maximum number of seconds a worker process for an interactive application to remain alive after it goes idle (no active connections).",
+              "examples": [120]
+            },
+            "max_processes": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Specifies the total number of concurrent processes allowed for a single interactive application.",
+              "examples": [5]
+            },
+            "min_processes": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Specifies the minimum number of concurrent processes allowed for a single interactive application.",
+              "examples": [1]
+            },
+            "max_conns_per_process": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Specifies the maximum number of client connections allowed to an individual process. Incoming connections which will exceed this limit are routed to a new process or rejected.",
+              "examples": [50]
+            },
+            "load_factor": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Controls how aggressively new processes are spawned. The valid range is between 0.0 and 1.0.",
+              "examples": [0.5]
+            }
+          }
+        }
+      }
     }
   },
   "required": ["$schema", "type", "entrypoint"],

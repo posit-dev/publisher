@@ -261,6 +261,12 @@
         "title": "Copy System Info",
         "icon": "$(copy)",
         "category": "Posit Publisher"
+      },
+      {
+        "command": "posit.publisher.homeView.addIntegrationRequest",
+        "title": "Add Integration Request",
+        "icon": "$(add)",
+        "category": "Posit Publisher"
       }
     ],
     "menus": {
@@ -398,6 +404,10 @@
         {
           "command": "posit.publisher.homeView.copySystemInfo",
           "when": "posit.publish.state == 'initialized' && isWorkspaceTrusted"
+        },
+        {
+          "command": "posit.publisher.homeView.addIntegrationRequest",
+          "when": "posit.publish.state == 'initialized' && isWorkspaceTrusted && posit.publish.selection.isConnectContentRecord == 'true'"
         }
       ],
       "webview/context": [

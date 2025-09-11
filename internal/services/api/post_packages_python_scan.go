@@ -17,7 +17,6 @@ import (
 )
 
 type PostPackagesPythonScanRequest struct {
-	Python   string `json:"python"`
 	SaveName string `json:"saveName"`
 }
 
@@ -58,8 +57,12 @@ func (h *PostPackagesPythonScanHandler) ServeHTTP(w http.ResponseWriter, req *ht
 	if b.SaveName == "" {
 		b.SaveName = interpreters.PythonRequirementsFilename
 	}
-	python := util.NewPath(b.Python, nil)
-	inspector, err := inspectorFactory(projectDir, python, h.log, nil, nil)
+
+	pythonParam := req.URL.Query().Get("python")
+	pythonPath := util.NewPath(pythonParam, nil)
+	h.log.Debug("Python path from request", "path", pythonPath.String())
+
+	inspector, err := inspectorFactory(projectDir, pythonPath, h.log, nil, nil)
 	if err != nil {
 		InternalError(w, req, h.log, err)
 		return
@@ -82,13 +85,13 @@ func (h *PostPackagesPythonScanHandler) ServeHTTP(w http.ResponseWriter, req *ht
 		return
 	}
 	pythonInterpreter := inspector.GetPythonInterpreter()
-	pythonPath, err := pythonInterpreter.GetPythonExecutable()
+	pythonExecutable, err := pythonInterpreter.GetPythonExecutable()
 	if err != nil {
 		InternalError(w, req, h.log, err)
 		return
 	}
 	dest := projectDir.Join(b.SaveName)
-	err = pydeps.WriteRequirementsFile(dest, reqs, pythonPath)
+	err = pydeps.WriteRequirementsFile(dest, reqs, pythonExecutable)
 	if err != nil {
 		InternalError(w, req, h.log, err)
 		return

@@ -82,12 +82,9 @@ func (s *RPackageDescSuite) TestGetRPackages() {
 
 	expectedLockfilePath := s.dirPath.Join("renv.lock")
 
-	// With EMPTY package file
-	s.stateStore.Config = &config.Config{
-		R: &config.R{
-			PackageFile: "",
-		},
-	}
+	// Explicitly set package file so non-scan path is used; create lockfile
+	_ = expectedLockfilePath.WriteFile([]byte(`{}`), 0644)
+	s.stateStore.Config = &config.Config{R: &config.R{PackageFile: "renv.lock"}}
 
 	s.packageMapper.On("GetManifestPackages", s.dirPath, expectedLockfilePath).Return(s.successPackageMap, nil)
 
@@ -105,12 +102,9 @@ func (s *RPackageDescSuite) TestGetRPackages_PackageFilePresent() {
 
 	expectedLockfilePath := s.dirPath.Join("custom.lock")
 
-	// With a package file
-	s.stateStore.Config = &config.Config{
-		R: &config.R{
-			PackageFile: "custom.lock",
-		},
-	}
+	// With a package file; create it so existence check passes
+	_ = expectedLockfilePath.WriteFile([]byte(`{}`), 0644)
+	s.stateStore.Config = &config.Config{R: &config.R{PackageFile: "custom.lock"}}
 
 	s.packageMapper.On("GetManifestPackages", s.dirPath, expectedLockfilePath).Return(s.successPackageMap, nil)
 
@@ -125,12 +119,9 @@ func (s *RPackageDescSuite) TestGetRPackages_ScanPackagesError() {
 	expectedLockfilePath := s.dirPath.Join("custom.lock")
 	expectedPkgsErr := errors.New("chair is required to reach the top shelf")
 
-	// With a package file
-	s.stateStore.Config = &config.Config{
-		R: &config.R{
-			PackageFile: "custom.lock",
-		},
-	}
+	// With a package file that exists
+	_ = expectedLockfilePath.WriteFile([]byte(`{}`), 0644)
+	s.stateStore.Config = &config.Config{R: &config.R{PackageFile: "custom.lock"}}
 
 	s.packageMapper.On("GetManifestPackages", s.dirPath, expectedLockfilePath).Return(bundles.PackageMap{}, expectedPkgsErr)
 
@@ -149,12 +140,9 @@ func (s *RPackageDescSuite) TestGetRPackages_ScanPackagesKnownAgentError() {
 		errors.New("bad package version, this is a known failure"),
 		nil)
 
-	// With a package file
-	s.stateStore.Config = &config.Config{
-		R: &config.R{
-			PackageFile: "custom.lock",
-		},
-	}
+	// With a package file that exists
+	_ = expectedLockfilePath.WriteFile([]byte(`{}`), 0644)
+	s.stateStore.Config = &config.Config{R: &config.R{PackageFile: "custom.lock"}}
 
 	s.packageMapper.On("GetManifestPackages", s.dirPath, expectedLockfilePath).Return(bundles.PackageMap{}, expectedPkgsAgentErr)
 
@@ -241,7 +229,8 @@ func (s *RPackageDescSuite) TestGetRPackages_LogsLibraryWhenPackagesFromLibraryT
 
 	// Set packages_from_library=true in config (2 lines, no helper)
 	t := true
-	s.stateStore.Config = &config.Config{R: &config.R{PackagesFromLibrary: &t}}
+	_ = s.dirPath.Join("renv.lock").WriteFile([]byte(`{}`), 0644)
+	s.stateStore.Config = &config.Config{R: &config.R{PackagesFromLibrary: &t, PackageFile: "renv.lock"}}
 
 	expectedLockfilePath := s.dirPath.Join("renv.lock")
 	s.packageMapper.On("GetManifestPackages", s.dirPath, expectedLockfilePath).Return(s.successPackageMap, nil)
@@ -274,7 +263,8 @@ func (s *RPackageDescSuite) TestGetRPackages_LogsLockfileWhenPackagesFromLibrary
 }`), 0644)
 
 	f := false
-	s.stateStore.Config = &config.Config{R: &config.R{PackagesFromLibrary: &f}}
+	// Configured to use existing lockfile with packages
+	s.stateStore.Config = &config.Config{R: &config.R{PackagesFromLibrary: &f, PackageFile: "renv.lock"}}
 
 	// Swap in a real lockfile mapper to exercise the lockfile branch
 	helper := publishhelper.NewPublishHelper(s.stateStore, s.log)
@@ -312,7 +302,8 @@ func (s *RPackageDescSuite) TestGetRPackages_LogsLockfileWhenPackagesFromLibrary
   }
 }`), 0644)
 
-	s.stateStore.Config = &config.Config{R: &config.R{PackagesFromLibrary: nil}}
+	// Configured to use existing lockfile with packages
+	s.stateStore.Config = &config.Config{R: &config.R{PackagesFromLibrary: nil, PackageFile: "renv.lock"}}
 
 	helper := publishhelper.NewPublishHelper(s.stateStore, s.log)
 	publisher := &defaultPublisher{

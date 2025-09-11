@@ -18,13 +18,39 @@ func (p *defaultPublisher) createBundle(manifest *bundles.Manifest) (*os.File, e
 	p.emitter.Emit(events.New(op, events.StartPhase, events.NoError, createBundleStartData{}))
 	prepareLog.Info("Preparing files")
 
-	err := p.addInterpreterDetailsToTarget()
+	filesPatterns := make([]string, len(p.Config.Files))
+	copy(filesPatterns, p.Config.Files)
+
+	// If user didn't specify file patterns, start from wildcard before adding
+	// dependency-source related inclusions/exclusions so we don't end up with
+	// only the staged lockfile patterns and accidentally exclude application files.
+	if len(filesPatterns) == 0 {
+		filesPatterns = append(filesPatterns, "*")
+	}
+
+	// If a dependency source (e.g., renv.lock) was used to build the manifest,
+	// stage it under .posit/publish to ensure it is included in the bundle.
+	if manifest != nil && manifest.DependenciesSource.String() != "" {
+		src := manifest.DependenciesSource
+		// If the source is not the project root renv.lock, stage a copy and
+		// prefer the staged copy by excluding root renv.lock from walking.
+		if src.String() != p.Dir.Join("renv.lock").String() {
+			if ok, _ := src.Exists(); ok {
+				if _, err := p.copyLockfileToPositDir(src, p.log); err != nil {
+					return nil, types.OperationError(op, err)
+				}
+			}
+			filesPatterns = append(filesPatterns, "!renv.lock", ".posit/publish/deployments/renv.lock")
+		}
+	}
+
+	err := p.addDependenciesToTarget(manifest)
 	if err != nil {
 		return nil, err
 	}
 
 	// Create Bundle step
-	bundler, err := bundles.NewBundler(p.Dir, manifest, p.Config.Files, p.log)
+	bundler, err := bundles.NewBundler(p.Dir, manifest, filesPatterns, p.log)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +73,7 @@ func (p *defaultPublisher) createBundle(manifest *bundles.Manifest) (*os.File, e
 		Filename: bundleFile.Name(),
 	}))
 
-	// Update deployment record with new information
+	// Update deployment record with files actually included in manifest
 	p.Target.Files = manifest.GetFilenames()
 
 	return bundleFile, nil
