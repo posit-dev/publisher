@@ -17,7 +17,6 @@ import (
 )
 
 type PostPackagesPythonScanRequest struct {
-	Python   string `json:"python"`
 	SaveName string `json:"saveName"`
 }
 
