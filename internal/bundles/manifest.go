@@ -42,6 +42,9 @@ type Manifest struct {
 	Environment *Environment    `json:"environment,omitempty"`               // Information about the execution environment
 	Packages    PackageMap      `json:"packages"`                            // Map of R package name to package details
 	Files       ManifestFileMap `json:"files"`                               // List of file paths contained in the bundle
+	// DependenciesSource is not serialized; it records which dependency lockfile
+	// (e.g., renv.lock) was used to build this manifest so the bundler can include it.
+	DependenciesSource util.Path `json:"-"`
 }
 
 // Metadata contains details about this deployment (type, etc).
