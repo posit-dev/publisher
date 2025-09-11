@@ -38,6 +38,6 @@ jobs:
   generate-licenses:
     uses: ./.github/workflows/generate-licenses.yaml
     with:
-      # Do not commit license changes or fail on forbidden licenses for now (live testing)
       commit_changes: false
-      fail_on_forbidden: false
+      pr_changes: true
+      fail_on_forbidden: true
