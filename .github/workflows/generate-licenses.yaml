@@ -30,7 +30,18 @@ permissions:
   contents: write
 
 jobs:
+  validate-inputs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for potential infinite loop
+        if: github.event_name == 'pull_request' && inputs.pr_changes == true
+        run: |
+          echo "ERROR: Attempting to create a PR from within a PR workflow!" 
+          echo "This would cause an infinite loop. Set pr_changes: false for workflows triggered by pull_request events."
+          exit 1
+
   license-check:
+    needs: validate-inputs
     runs-on: ubuntu-latest
     outputs:
       has-changes: ${{ steps.check-changes.outputs.has_changes }}
