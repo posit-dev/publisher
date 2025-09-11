@@ -89,14 +89,31 @@ const (
 	PublishResultFailure PublishResult = "failure"
 )
 
+type ConnectOptions struct {
+	ClientReconnectTimeout    *int32   `json:"client_reconnect_timeout,omitempty"`
+	ConnTimeout               *int32   `json:"conn_timeout,omitempty"`
+	DisconnectDelay           *int32   `json:"disconnect_delay,omitempty"`
+	HeartbeatDelay            *int32   `json:"heartbeat_delay,omitempty"`
+	IdleTimeout               *int32   `json:"idle_timeout,omitempty"`
+	InitTimeout               *int32   `json:"init_timeout,omitempty"`
+	ReadTimeout               *int32   `json:"read_timeout,omitempty"`
+	SchedLoadFactor           *float64 `json:"sched_load_factor,omitempty"`
+	SchedMaxConns             *int32   `json:"sched_max_conns,omitempty"`
+	SchedMaxProc              *int32   `json:"sched_max_proc,omitempty"`
+	SchedMinProc              *int32   `json:"sched_min_proc,omitempty"`
+	ShinyIsolation            *bool    `json:"shiny_isolation,omitempty"`
+	ShinyStaleWorkerRedirects *bool    `json:"shiny_stale_worker_redirects,omitempty"`
+}
+
 // RequestRevision represents the configuration for the next content revision.
 type RequestRevision struct {
-	SourceType    string      `json:"source_type"`
-	RVersion      string      `json:"r_version,omitempty"`
-	PythonVersion string      `json:"python_version,omitempty"`
-	ContentType   ContentType `json:"content_type,omitempty"`
-	AppMode       AppMode     `json:"app_mode,omitempty"`
-	PrimaryFile   string      `json:"primary_file,omitempty"`
+	SourceType     string          `json:"source_type"`
+	RVersion       string          `json:"r_version,omitempty"`
+	PythonVersion  string          `json:"python_version,omitempty"`
+	ContentType    ContentType     `json:"content_type,omitempty"`
+	AppMode        AppMode         `json:"app_mode,omitempty"`
+	PrimaryFile    string          `json:"primary_file,omitempty"`
+	ConnectOptions *ConnectOptions `json:"connect_options,omitempty"`
 }
 
 // ContentRequestBase contains common fields for content creation and update requests.

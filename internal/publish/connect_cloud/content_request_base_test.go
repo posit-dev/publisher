@@ -141,6 +141,10 @@ func (s *ContentRequestSuite) TestGetContentRequestBaseNoTitle() {
 	s.Equal("test-save-name", base.Title)
 }
 
+func asPointer[T any](v T) *T {
+	return &v
+}
+
 func (s *ContentRequestSuite) TestGetContentRequestBaseRevisionOverrides() {
 	// Setup publisher with a configuration that has all fields populated
 	s.publisher.Config = &config.Config{
@@ -153,6 +157,18 @@ func (s *ContentRequestSuite) TestGetContentRequestBaseRevisionOverrides() {
 		},
 		Python: &config.Python{
 			Version: "3.10.0",
+		},
+		Connect: &config.Connect{
+			Runtime: &config.ConnectRuntime{
+				ConnectionTimeout:  asPointer(int32(1)),
+				ReadTimeout:        asPointer(int32(2)),
+				InitTimeout:        asPointer(int32(3)),
+				IdleTimeout:        asPointer(int32(4)),
+				MaxProcesses:       asPointer(int32(5)),
+				MinProcesses:       asPointer(int32(6)),
+				MaxConnsPerProcess: asPointer(int32(7)),
+				LoadFactor:         asPointer(float64(8.0)),
+			},
 		},
 	}
 	s.publisher.SaveName = "test-save-name"
@@ -175,6 +191,15 @@ func (s *ContentRequestSuite) TestGetContentRequestBaseRevisionOverrides() {
 	s.Equal(clienttypes.ContentTypeDash, base.RevisionOverrides.ContentType)
 	s.Equal(clienttypes.PythonDashMode, base.RevisionOverrides.AppMode)
 	s.Equal("app.py", base.RevisionOverrides.PrimaryFile)
+
+	s.Equal(int32(1), *base.RevisionOverrides.ConnectOptions.ConnTimeout)
+	s.Equal(int32(2), *base.RevisionOverrides.ConnectOptions.ReadTimeout)
+	s.Equal(int32(3), *base.RevisionOverrides.ConnectOptions.InitTimeout)
+	s.Equal(int32(4), *base.RevisionOverrides.ConnectOptions.IdleTimeout)
+	s.Equal(int32(5), *base.RevisionOverrides.ConnectOptions.SchedMaxProc)
+	s.Equal(int32(6), *base.RevisionOverrides.ConnectOptions.SchedMinProc)
+	s.Equal(int32(7), *base.RevisionOverrides.ConnectOptions.SchedMaxConns)
+	s.Equal(float64(8.0), *base.RevisionOverrides.ConnectOptions.SchedLoadFactor)
 }
 
 func (s *ContentRequestSuite) TestGetContentRequestBaseUnsupportedType() {
