@@ -20,11 +20,24 @@ jobs:
     outputs:
       skip: ${{ steps.check-tag.outputs.skip }}
       current-sha: ${{ steps.check-tag.outputs.sha }}
+      latest-tag: ${{ steps.fetch-tag.outputs.latest_tag }}
     steps:
       - uses: actions/checkout@v5
         with:
-          fetch-depth: 0
+          fetch-depth: 500
           ref: main
+
+      # We can't do `fetch-tags: true` when `fetch-depth > 0`
+      # https://github.com/actions/checkout/issues/1662
+      # So fetch the most recent tag in a separate step
+      - name: Fetch most recent tag
+        run: |
+          # This uses git ls-remote to find tags, sorted by semver, and keeps the highest version
+          tag=$(git -c 'versionsort.suffix=-' ls-remote --exit-code --refs --sort='version:refname' --tags origin 'v*.*.*' | tail --lines=1 | sed -e 's@.*refs/tags/@@')
+          echo "Found latest tag: $tag"
+          git fetch --no-tags origin tag $tag
+          echo "latest_tag=$tag" >> "$GITHUB_OUTPUT"
+        id: fetch-tag
 
       - name: Check existing tags
         id: check-tag
@@ -71,58 +84,35 @@ jobs:
           # Install semver globally for easy CLI usage
           npm install -g semver
 
-          # Get all version tags and filter by odd/even minor versions
-          TAGS=$(git tag -l 'v*.*.*' | sed 's/^v//')
+          # Use the latest tag we fetched in the check job
+          LATEST_VERSION="${{ needs.check.outputs.latest-tag }}"
 
-          # Find latest release (even minor) and latest pre-release (odd minor)
-          LATEST_RELEASE=""
-          LATEST_PRERELEASE=""
+          # Use semver clean to properly handle the version string
+          LATEST_VERSION_CLEAN=$(semver clean "$LATEST_VERSION")
 
-          for TAG in $TAGS; do
-            MINOR=$(echo "$TAG" | cut -d. -f2)
-            if [ $((MINOR % 2)) -eq 0 ]; then
-              # Even minor = release
-              if [ -z "$LATEST_RELEASE" ] || [ "$(semver "$TAG" -r ">$LATEST_RELEASE")" = "$TAG" ]; then
-                LATEST_RELEASE="$TAG"
-              fi
-            else
-              # Odd minor = pre-release
-              if [ -z "$LATEST_PRERELEASE" ] || [ "$(semver "$TAG" -r ">$LATEST_PRERELEASE")" = "$TAG" ]; then
-                LATEST_PRERELEASE="$TAG"
-              fi
-            fi
-          done
-
-          echo "Latest release: ${LATEST_RELEASE:-none}"
-          echo "Latest pre-release: ${LATEST_PRERELEASE:-none}"
+          echo "Latest version found: ${LATEST_VERSION} (clean: ${LATEST_VERSION_CLEAN})"
 
           # Calculate next version
-          if [ -n "$LATEST_RELEASE" ]; then
-            # Get the pre-release minor (next odd number after release minor)
-            RELEASE_MINOR=$(echo "$LATEST_RELEASE" | cut -d. -f2)
-            PRERELEASE_MINOR=$((RELEASE_MINOR + 1))
+          if [ -n "$LATEST_VERSION" ]; then
+            # Get minor version number to check if odd/even
+            MINOR=$(semver minor "$LATEST_VERSION")
             
-            # Check if we need to start a new series or increment existing
-            if [ -n "$LATEST_PRERELEASE" ]; then
-              PR_MINOR=$(echo "$LATEST_PRERELEASE" | cut -d. -f2)
-              if [ "$PR_MINOR" = "$PRERELEASE_MINOR" ]; then
-                # Increment patch in current pre-release series
-                NEXT_VERSION=$(semver -i patch "$LATEST_PRERELEASE")
-              else
-                # Start new pre-release series
-                NEXT_VERSION=$(semver -i minor "$LATEST_RELEASE")
-              fi
+            if [ $((MINOR % 2)) -eq 0 ]; then
+              # Latest is a release (even minor), create a prerelease with odd minor
+              NEXT_VERSION=$(semver inc minor "$LATEST_VERSION")
             else
-              # No pre-release exists, start new series
-              NEXT_VERSION=$(semver -i minor "$LATEST_RELEASE")
+              # Latest is already a prerelease (odd minor), increment the patch
+              NEXT_VERSION=$(semver inc patch "$LATEST_VERSION")
             fi
           else
-            # No releases found, start at 1.1.0
+            # No versions found, start at 1.1.0
             NEXT_VERSION="1.1.0"
           fi
 
-          echo "Next pre-release version: v$NEXT_VERSION"
-          echo "version=v$NEXT_VERSION" >> "$GITHUB_OUTPUT"
+          # Remove any v prefix semver might have added back
+          NEXT_VERSION_CLEAN=$(semver clean "$NEXT_VERSION")
+          echo "Next pre-release version: v$NEXT_VERSION_CLEAN"
+          echo "version=v$NEXT_VERSION_CLEAN" >> "$GITHUB_OUTPUT"
 
           # Add job summary
           if [ "${{ github.event.inputs.dry-run }}" = "true" ]; then
@@ -137,8 +127,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Type | Version |" >> $GITHUB_STEP_SUMMARY
           echo "|------|---------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Latest Release | \`${LATEST_RELEASE:-none}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| Latest Pre-release | \`${LATEST_PRERELEASE:-none}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Latest Version | \`${LATEST_VERSION}\` |" >> $GITHUB_STEP_SUMMARY
 
   tag:
     name: Create tag
