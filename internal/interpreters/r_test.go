@@ -5,6 +5,7 @@ package interpreters
 import (
 	"errors"
 	"fmt"
+	"os"
 	"runtime"
 	"strings"
 	"testing"
@@ -37,6 +38,12 @@ func (s *RSuite) SetupTest() {
 	s.cwd = cwd
 	err = cwd.MkdirAll(0700)
 	s.NoError(err)
+
+	userHomeDir = MockUserHomeDir
+}
+
+func (s *RSuite) TearDownTest() {
+	userHomeDir = os.UserHomeDir
 }
 
 func (s *RSuite) TestNewRInterpreter() {
@@ -713,4 +720,22 @@ func (s *RSuite) TestRenvEnvironmentErrorCheck_unknownRenvStatus() {
 	s.Equal(err.Data["Action"], "renvstatus")
 	s.Equal(err.Data["ActionLabel"], "Run and show renv::status()")
 	s.Contains(err.Data["Command"], "renv::status()")
+}
+
+func (s *RSuite) TestRExectuableIsNormalized() {
+	fs := afero.NewMemMapFs()
+	log := logging.New()
+
+	expectedRPathToFind := util.NewAbsolutePath("home", fs).Join("mockuser", "bin", "R")
+	expectedRPathToFind.Dir().MkdirAll(0777)
+	expectedRPathToFind.WriteFile(nil, 0777)
+
+	preferredRPath := util.NewPath("~", fs).Join("bin", "R")
+
+	executor := executortest.NewMockExecutor()
+	executor.On("RunCommand", mock.Anything, []string{"--version"}, mock.Anything, mock.Anything).Return([]byte("R version 4.3.0 (2023-04-21)"), nil, nil)
+
+	i, err := NewRInterpreter(s.cwd, preferredRPath, log, executor, nil, nil)
+	s.NoError(err)
+	s.Equal(expectedRPathToFind.String(), i.GetPreferredPath())
 }

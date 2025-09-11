@@ -5,11 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Added "Set Up renv" button to initialize the environment, install
+  dependencies, and create a lockfile when no valid R lockfile file is present.
+
+### Fixed
+
+- Fixed an issue where the preferred Python path was incorrectly not found when deploying #2742
+- Fixed Python dependencies scanning not respecting the active Python session #2825
+
+## [1.21.0]
+
+### Added
+
+- Added the configuration TOML file code to the displayed deployment name (#3018)
+- Added the ability to toggle between the summary view (tree) and the raw view (text)
+  for the Publisher logs along with copy and save logs functionality (#3017)
+
 ## [1.20.0]
 
 ### Fixed
 
-- Fixed an issue deploying content to free Posit Connect Cloud accounts with incorrect  
+- Fixed an issue deploying content to free Posit Connect Cloud accounts with incorrect
   access settings. (#3005)
 
 ## [1.19.1]
@@ -32,8 +52,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - R manifest package generation now uses only `renv.lock` file by default. To use the
-  local `renv` library instead, set `[r].packages_from_library = true` in the
+  local `renv` library instead, set `r.packages_from_library = true` in the
   configuration.
+- Setting `python.package_manager=pip` will now force pip as the package manager
+  enven when the server default is `uv`.
 
 ## [1.19.0]
 
@@ -72,6 +94,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   similar to other inputs. (#2780)
 - Publish failure logs and deployment validation failure logs link to the logs
   view directly in Posit Connect and Posit Connect Cloud when available (#2859)
+- If the agent process crashes or is killed, the extension will now restart it. (#2961)
 
 ## [1.18.1]
 

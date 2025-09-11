@@ -1,6 +1,7 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
 import {
+  Disposable,
   Event,
   EventEmitter,
   ExtensionContext,
@@ -12,9 +13,13 @@ import {
   TreeItemCollapsibleState,
   TreeView,
   Uri,
+  Webview,
+  WebviewView,
+  WebviewViewProvider,
   commands,
   env,
   window,
+  workspace,
 } from "vscode";
 
 import { EventStream, displayEventStreamMessage } from "src/events";
@@ -39,6 +44,11 @@ import {
 import { extensionSettings } from "src/extension";
 import { showErrorMessageWithTroubleshoot } from "src/utils/window";
 import { DeploymentFailureRenvHandler } from "src/views/deployHandlers";
+import { getUri } from "src/utils/getUri";
+import { getNonce } from "src/utils/getNonce";
+import { formatTimestampString } from "src/utils/date";
+import path from "path";
+import { getSummaryStringFromError } from "src/utils/errors";
 
 enum LogStageStatus {
   notStarted,
@@ -88,6 +98,248 @@ const createLogStage = (
 
 const RestoringEnvironmentLabel = "Restoring Environment";
 
+const stages = new Map([
+  [
+    "publish/getRPackageDescriptions",
+    createLogStage("Get Package Descriptions", "Getting Package Descriptions", [
+      ProductType.CONNECT,
+      ProductType.CONNECT_CLOUD,
+    ]),
+  ],
+  [
+    "publish/checkCapabilities",
+    createLogStage("Check Capabilities", "Checking Capabilities", [
+      ProductType.CONNECT,
+    ]),
+  ],
+  [
+    "publish/createBundle",
+    createLogStage("Create Bundle", "Creating Bundle", [
+      ProductType.CONNECT,
+      ProductType.CONNECT_CLOUD,
+    ]),
+  ],
+  [
+    "publish/updateContent",
+    createLogStage("Update Content", "Updating Content", [
+      ProductType.CONNECT_CLOUD,
+    ]),
+  ],
+  [
+    "publish/uploadBundle",
+    createLogStage("Upload Bundle", "Uploading Bundle", [
+      ProductType.CONNECT,
+      ProductType.CONNECT_CLOUD,
+    ]),
+  ],
+  [
+    "publish/createDeployment",
+    createLogStage("Create Deployment Record", "Creating Deployment Record", [
+      ProductType.CONNECT,
+    ]),
+  ],
+  [
+    "publish/deployContent",
+    createLogStage("Deploy Content", "Deploying Content", [
+      ProductType.CONNECT_CLOUD,
+    ]),
+  ],
+  [
+    "publish/deployBundle",
+    createLogStage("Deploy Bundle", "Deploying Bundle", [ProductType.CONNECT]),
+  ],
+  [
+    "publish/restoreEnv",
+    createLogStage("Restore Environment", RestoringEnvironmentLabel, [
+      ProductType.CONNECT,
+    ]),
+  ],
+  [
+    "publish/runContent",
+    createLogStage("Run Content", "Running Content", [ProductType.CONNECT]),
+  ],
+  [
+    "publish/validateDeployment",
+    createLogStage(
+      "Validate Deployment Record",
+      "Validating Deployment Record",
+      [ProductType.CONNECT],
+    ),
+  ],
+]);
+
+export class LogsViewProvider implements WebviewViewProvider, Disposable {
+  private disposables: Disposable[] = [];
+  private static events: EventStreamMessage[] = [];
+  private extensionUri: Uri;
+  public static currentView: WebviewView | undefined = undefined;
+
+  constructor(
+    private readonly context: ExtensionContext,
+    private readonly stream: EventStream,
+  ) {
+    this.extensionUri = this.context.extensionUri;
+  }
+
+  private static getLogs() {
+    return LogsViewProvider.events.map(
+      (e) => `${formatTimestampString(e.time)} ${e.data.message}`,
+    );
+  }
+
+  private static getLogsHTML() {
+    return LogsViewProvider.getLogs().join("<br />").trim();
+  }
+
+  private static getLogsText() {
+    return LogsViewProvider.getLogs().join("\n").trim();
+  }
+
+  private static getLogsFilename() {
+    return `publisher-logs-${new Date().toISOString().split(".").at(0)}.txt`;
+  }
+
+  public static refreshContent() {
+    if (LogsViewProvider.currentView) {
+      LogsViewProvider.currentView.webview.postMessage({
+        command: "refresh",
+        data: LogsViewProvider.getLogsHTML(),
+      });
+    }
+  }
+
+  public register() {
+    this.stream.register("publish/start", (_: EventStreamMessage) => {
+      // reset the events
+      LogsViewProvider.events = [];
+      LogsViewProvider.refreshContent();
+    });
+
+    Array.from(stages.keys()).forEach((stageName) => {
+      this.stream.register(`${stageName}/log`, (msg: EventStreamMessage) => {
+        const stage = stages.get(stageName);
+        if (stage && msg.data.level !== "DEBUG") {
+          LogsViewProvider.events.unshift(msg);
+          LogsViewProvider.refreshContent();
+        }
+      });
+    });
+
+    this.context.subscriptions.push(
+      window.registerWebviewViewProvider(Views.RawLogs, this, {
+        webviewOptions: {
+          retainContextWhenHidden: true,
+        },
+      }),
+    );
+  }
+
+  public dispose() {
+    Disposable.from(...this.disposables).dispose();
+  }
+
+  public static async writeAndOpenLogsFile() {
+    const fileName = LogsViewProvider.getLogsFilename();
+    const workspaceFolders = workspace.workspaceFolders;
+    if (!workspaceFolders) {
+      window.showErrorMessage("No workspace open to save the file.");
+      return;
+    }
+    // use the first workspace folder
+    const workspaceUri = workspaceFolders[0].uri;
+    // determine the path to save the file (e.g., in the root of the first workspace folder)
+    const filePath = Uri.file(path.join(workspaceUri.fsPath, fileName));
+    const fileUri = Uri.joinPath(workspaceUri, fileName);
+    const fileContent = new TextEncoder().encode(
+      LogsViewProvider.getLogsText(),
+    );
+
+    try {
+      // save the file
+      await workspace.fs.writeFile(filePath, fileContent);
+      // open the file in the editor
+      const document = await workspace.openTextDocument(fileUri);
+      await window.showTextDocument(document);
+
+      window.showInformationMessage(
+        `File '${fileName}' created and opened successfully.`,
+      );
+    } catch (err: unknown) {
+      const summary = getSummaryStringFromError("failed to write file", err);
+      window.showErrorMessage(summary);
+    }
+  }
+
+  public static copyLogs() {
+    env.clipboard.writeText(LogsViewProvider.getLogsText());
+    window.showInformationMessage("Logs copied to clipboard!");
+  }
+
+  public resolveWebviewView(webviewView: WebviewView) {
+    LogsViewProvider.currentView = webviewView;
+
+    webviewView.webview.options = {
+      enableScripts: true,
+      localResourceRoots: [
+        Uri.joinPath(
+          this.extensionUri,
+          "node_modules",
+          "@vscode",
+          "codicons",
+          "dist",
+        ),
+      ],
+    };
+
+    webviewView.webview.html = this._getHtmlForWebview(
+      webviewView.webview,
+      this.extensionUri,
+    );
+  }
+
+  private _getHtmlForWebview(webview: Webview, extensionUri: Uri): string {
+    // The codicon css (and related tff file) are needing to be loaded for icons
+    const codiconsUri = getUri(webview, extensionUri, [
+      "node_modules",
+      "@vscode",
+      "codicons",
+      "dist",
+      "codicon.css",
+    ]);
+    // Custom Posit Publisher font
+    const positPublisherFontCssUri = getUri(webview, extensionUri, [
+      "dist",
+      "posit-publisher-icons.css",
+    ]);
+
+    const nonce = getNonce();
+
+    return /*html*/ `
+    <!DOCTYPE html>
+      <html lang="en">
+      <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <link rel="stylesheet" type="text/css" href="${codiconsUri}">
+          <link rel="stylesheet" type="text/css" href="${positPublisherFontCssUri}">
+          <title>Raw Logs</title>
+      </head>
+      <body>
+        <pre id="content">${LogsViewProvider.getLogsHTML()}</pre>
+        <script nonce="${nonce}">
+            window.addEventListener('message', event => {
+              const message = event.data;
+              if (message.command === 'refresh') {
+                document.getElementById('content').innerHTML = message.data;
+              }
+            });
+        </script>
+      </body>
+      </html>
+    `;
+  }
+}
+
 /**
  * Tree data provider for the Logs view.
  */
@@ -114,80 +366,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
   ) {}
 
   private resetStages() {
-    this.stages = new Map([
-      [
-        "publish/getRPackageDescriptions",
-        createLogStage(
-          "Get Package Descriptions",
-          "Getting Package Descriptions",
-          [ProductType.CONNECT, ProductType.CONNECT_CLOUD],
-        ),
-      ],
-      [
-        "publish/checkCapabilities",
-        createLogStage("Check Capabilities", "Checking Capabilities", [
-          ProductType.CONNECT,
-        ]),
-      ],
-      [
-        "publish/createBundle",
-        createLogStage("Create Bundle", "Creating Bundle", [
-          ProductType.CONNECT,
-          ProductType.CONNECT_CLOUD,
-        ]),
-      ],
-      [
-        "publish/updateContent",
-        createLogStage("Update Content", "Updating Content", [
-          ProductType.CONNECT_CLOUD,
-        ]),
-      ],
-      [
-        "publish/uploadBundle",
-        createLogStage("Upload Bundle", "Uploading Bundle", [
-          ProductType.CONNECT,
-          ProductType.CONNECT_CLOUD,
-        ]),
-      ],
-      [
-        "publish/createDeployment",
-        createLogStage(
-          "Create Deployment Record",
-          "Creating Deployment Record",
-          [ProductType.CONNECT],
-        ),
-      ],
-      [
-        "publish/deployContent",
-        createLogStage("Deploy Content", "Deploying Content", [
-          ProductType.CONNECT_CLOUD,
-        ]),
-      ],
-      [
-        "publish/deployBundle",
-        createLogStage("Deploy Bundle", "Deploying Bundle", [
-          ProductType.CONNECT,
-        ]),
-      ],
-      [
-        "publish/restoreEnv",
-        createLogStage("Restore Environment", RestoringEnvironmentLabel, [
-          ProductType.CONNECT,
-        ]),
-      ],
-      [
-        "publish/runContent",
-        createLogStage("Run Content", "Running Content", [ProductType.CONNECT]),
-      ],
-      [
-        "publish/validateDeployment",
-        createLogStage(
-          "Validate Deployment Record",
-          "Validating Deployment Record",
-          [ProductType.CONNECT],
-        ),
-      ],
-    ]);
+    this.stages = stages;
 
     this.publishingStage = createLogStage(
       "Publishing",
@@ -251,7 +430,8 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
           stage.status === LogStageStatus.failed &&
           extensionSettings.autoOpenLogsOnFailure()
         ) {
-          commands.executeCommand(Commands.Logs.Focus);
+          commands.executeCommand(Commands.Logs.TreeviewFocus);
+          commands.executeCommand(Commands.Logs.WebviewFocus);
         }
       });
 
@@ -283,7 +463,8 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
         );
       }
       if (selection === showLogsOption) {
-        await commands.executeCommand(Commands.Logs.Focus);
+        await commands.executeCommand(Commands.Logs.TreeviewFocus);
+        await commands.executeCommand(Commands.Logs.WebviewFocus);
       } else if (selection === enhancedError?.buttonStr) {
         if (
           enhancedError?.actionId === ErrorMessageActionIds.EditConfiguration

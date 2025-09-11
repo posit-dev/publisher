@@ -195,7 +195,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       case WebviewToHostMessageType.DELETE_CREDENTIAL:
         return this.deleteCredential(msg.content);
       case WebviewToHostMessageType.VIEW_PUBLISHING_LOG:
-        return this.showPublishingLog();
+        return await this.showPublishingLog();
       case WebviewToHostMessageType.SHOW_ASSOCIATE_GUID:
         return showAssociateGUID(this.state);
       case WebviewToHostMessageType.UPDATE_SELECTION_CREDENTIAL_STATE:
@@ -808,8 +808,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
 
-    // Project is not configured for R so cannot scan
-    // Scan button is not visible when this is the case
+    // Project is not configured for R so cannot scan.
+    // "Set up renv" button is not visible when this is the case.
     if (!activeConfiguration.configuration.r) {
       return;
     }
@@ -1182,8 +1182,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     this.refreshCredentials();
   };
 
-  private showPublishingLog() {
-    return commands.executeCommand(Commands.Logs.Focus);
+  private async showPublishingLog() {
+    await commands.executeCommand(Commands.Logs.TreeviewFocus);
+    return await commands.executeCommand(Commands.Logs.WebviewFocus);
   }
 
   private async showDeploymentQuickPick(

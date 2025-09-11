@@ -307,6 +307,9 @@ func (i *defaultRInterpreter) cannotVerifyRenvErr(err error) *types.AgentError {
 func (i *defaultRInterpreter) resolveRExecutable() error {
 	var rExecutable = util.AbsolutePath{}
 
+	// Important to normalize the preferredPath before we use it
+	i.normalizeExecutable()
+
 	// Passed in path to executable
 	if i.preferredPath.String() != "" {
 		// User-provided R executable
@@ -374,6 +377,21 @@ func (i *defaultRInterpreter) resolveRExecutable() error {
 	// all is good!
 	i.rExecutable = util.NewAbsolutePath(rExecutable.String(), i.fs)
 	i.version = version
+	return nil
+}
+
+// Normalize the preferredPath by expanding ~ to home directory
+func (i *defaultRInterpreter) normalizeExecutable() error {
+	// Paths like ~/bin/R should be expanded to /home/user/bin/R
+	// before we try to use them.
+	// This to solve some issues for inconsistent shell behavior.
+	if strings.Contains(i.preferredPath.String(), "~") {
+		homeDir, err := userHomeDir()
+		if err != nil {
+			return fmt.Errorf("error getting home directory to normalize python preferred path: '%s': %w", i.preferredPath.String(), err)
+		}
+		i.preferredPath = util.NewPath(strings.Replace(i.preferredPath.String(), "~", homeDir, 1), i.fs)
+	}
 	return nil
 }
 

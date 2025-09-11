@@ -124,7 +124,13 @@ File containing package dependencies. The file must exist and be listed under 'f
 
 _Only valid when `product_type` is `connect`_
 
-Package manager that will install the dependencies. Supported values are `pip` and `none`. If package-manager is `none`, dependencies will not be installed.
+Package manager that will install the dependencies.
+Supported values are `pip`, `uv` and `none`.
+
+- Omitting the value will let the server decide.
+- If package_manager is `uv`, dependencies will be installed using `uv pip`
+- If package_manager is `pip`, dependencies will be installed using `pip`
+- If package_manager is `none`, dependencies will not be installed.
 
 #### version
 
@@ -217,9 +223,9 @@ engines = ["knitr"]
 
 ## Connect-specific settings
 
-_Only valid when `product_type` is `connect`_
-
 ### Access settings
+
+_Only valid when `product_type` is `connect`_
 
 #### run_as
 
@@ -238,6 +244,8 @@ run_as_current_user = true
 ```
 
 ### Kubernetes settings
+
+_Only valid when `product_type` is `connect`_
 
 Settings used with Posit Connect's off-host execution feature, where content is run in Kubernetes.
 
@@ -298,6 +306,8 @@ service_account_name = "posit-connect-content"
 ```
 
 ### Runtime settings
+
+_Valid when `product_type` is `connect` or `connect_cloud`_
 
 Runtime settings for application content types
 
