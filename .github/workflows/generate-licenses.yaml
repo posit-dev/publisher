@@ -124,8 +124,13 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Commit the changes
-          git commit -m "Update licenses" docs/licenses.md
+          # Commit only the licenses file specifically
+          # First unstage any other changes that might have been staged
+          git reset HEAD
+
+          # Only stage and commit the licenses file
+          git add docs/licenses.md
+          git commit -m "Update licenses" --only docs/licenses.md
 
           # Get current branch name
           BRANCH_NAME=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
