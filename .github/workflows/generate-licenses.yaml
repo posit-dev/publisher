@@ -51,6 +51,15 @@ jobs:
     outputs:
       has-changes: ${{ steps.check-changes.outputs.has_changes }}
     steps:
+      - name: Generate token for GitHub App
+        id: generate-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.POSIT_CONNECT_PROJECTS_APP_ID }}
+          private-key: ${{ secrets.POSIT_CONNECT_PROJECTS_PEM }}
+          permission-contents: write
+          permission-pull-requests: write
+
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
@@ -110,15 +119,6 @@ jobs:
       - name: Report no changes
         if: success() && steps.check-changes.outputs.has_changes != 'true'
         run: echo "No changes detected in licenses file. Nothing to commit."
-
-      - name: Generate token for GitHub App
-        id: generate-token
-        uses: actions/create-github-app-token@v2
-        with:
-          app-id: ${{ secrets.POSIT_CONNECT_PROJECTS_APP_ID }}
-          private-key: ${{ secrets.POSIT_CONNECT_PROJECTS_PEM }}
-          permission-contents: write
-          permission-pull-requests: write
 
       - name: Commit license changes
         if: success() && steps.check-changes.outputs.has_changes == 'true' && inputs.commit_changes == true
