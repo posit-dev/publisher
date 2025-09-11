@@ -1,0 +1,28 @@
+name: Test Generate Licenses
+
+# This workflow is intended to manually test the generate-licenses workflow
+# It can be triggered manually and will run the generate-licenses workflow with the specified inputs
+# It WILL generate a PR if license changes are found and we've setup permissions correctly in generate-licenses.yaml
+on:
+  workflow_dispatch:
+    inputs:
+      pr_changes:
+        description: "Whether to create a PR for license changes if found"
+        required: false
+        default: true
+        type: boolean
+      fail_on_forbidden:
+        description: "Whether to fail if forbidden licenses are found"
+        required: false
+        default: true
+        type: boolean
+
+jobs:
+  test:
+    uses: ./.github/workflows/generate-licenses.yaml
+    with:
+      pr_changes: ${{ inputs.pr_changes }}
+      fail_on_forbidden: ${{ inputs.fail_on_forbidden }}
+    secrets:
+      POSIT_CONNECT_PROJECTS_APP_ID: ${{ secrets.POSIT_CONNECT_PROJECTS_APP_ID }}
+      POSIT_CONNECT_PROJECTS_PEM: ${{ secrets.POSIT_CONNECT_PROJECTS_PEM }}
