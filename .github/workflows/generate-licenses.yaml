@@ -106,18 +106,39 @@ jobs:
         if: success() && steps.check-changes.outputs.has_changes != 'true'
         run: echo "No changes detected in licenses file. Nothing to commit."
 
+      - name: Generate token for GitHub App
+        id: generate-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.POSIT_CONNECT_PROJECTS_APP_ID }}
+          private-key: ${{ secrets.POSIT_CONNECT_PROJECTS_PEM }}
+          permission-contents: write
+          permission-pull-requests: write
+
       - name: Commit license changes
         if: success() && steps.check-changes.outputs.has_changes == 'true' && inputs.commit_changes == true
-        uses: stefanzweifel/git-auto-commit-action@v6
-        with:
-          commit_message: "Update licenses"
-          file_pattern: "docs/licenses.md"
+        env:
+          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
+        run: |
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Commit the changes
+          git commit -m "Update licenses" docs/licenses.md
+
+          # Get current branch name
+          BRANCH_NAME=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
+          echo "Pushing to branch: $BRANCH_NAME"
+
+          # Push using the token for authentication
+          git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:${BRANCH_NAME}
 
       - name: Create PR for license changes
         if: success() && steps.check-changes.outputs.has_changes == 'true' && inputs.pr_changes == true
         uses: peter-evans/create-pull-request@v7
         with:
-          token: ${{ github.token }}
+          token: ${{ steps.generate-token.outputs.token }}
           base: main
           commit-message: "Update licenses"
           title: "chore: Update licenses"
