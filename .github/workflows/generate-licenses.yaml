@@ -105,7 +105,26 @@ jobs:
         if: success() && steps.check-changes.outputs.has_changes == 'true'
         run: |
           echo "License changes detected:"
+          echo "\n===== STAGED CHANGES (git diff --staged) ====="
           git diff --staged
+
+          echo "\n===== STAGED FILES (git diff --staged --name-only) ====="
+          git diff --staged --name-only
+
+          echo "\n===== GIT STATUS ====="
+          git status
+
+          echo "\n===== GIT STATUS (PORCELAIN) ====="
+          git status --porcelain
+
+          echo "\n===== ALL MODIFIED FILES ====="
+          git ls-files -m
+
+          echo "\n===== REPO CONFIGURATION ====="
+          git config --list
+
+          echo "\n===== REMOTE URLS ====="
+          git remote -v
 
       - name: Report no changes
         if: success() && steps.check-changes.outputs.has_changes != 'true'
@@ -133,13 +152,27 @@ jobs:
           # First unstage any other changes that might have been staged
           git reset HEAD
 
+          echo "\n===== GIT STATUS AFTER RESET ====="
+          git status
+
           # Only stage and commit the licenses file
           git add docs/licenses.md
+
+          echo "\n===== STAGED FILES BEFORE COMMIT ====="
+          git diff --staged --name-only
+
           git commit -m "Update licenses" --only docs/licenses.md
+
+          echo "\n===== COMMIT DETAILS ====="
+          git log -1 --stat
 
           # Get current branch name
           BRANCH_NAME=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
           echo "Pushing to branch: $BRANCH_NAME"
+
+          echo "\n===== BEFORE PUSH: VALIDATING WHAT'S BEING PUSHED ====="
+          # Show what would be pushed
+          git log origin/${BRANCH_NAME}..HEAD --oneline --stat
 
           # Push using the token for authentication
           git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:${BRANCH_NAME}
