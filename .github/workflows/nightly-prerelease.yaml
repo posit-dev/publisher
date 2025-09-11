@@ -8,132 +8,171 @@ on:
   workflow_dispatch:
     inputs:
       dry-run:
-        description: "Display mode only - for testing the version calculation action (no tags will be created)"
+        description: "Display mode only - for testing the version calculation (no tags will be created)"
         required: false
         default: true
         type: boolean
 
 jobs:
   check:
-    name: Check current commit tags
+    name: Check if release needed
     runs-on: ubuntu-latest
     outputs:
-      ref-has-tag: ${{ steps.get-version-tags.outputs.has-tag }}
-      ref-sha: ${{ steps.get-version-tags.outputs.current-sha }}
-      all-tags: ${{ steps.get-version-tags.outputs.all-tags }}
+      skip: ${{ steps.check-tag.outputs.skip }}
+      current-sha: ${{ steps.check-tag.outputs.sha }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
+      - uses: actions/checkout@v5
         with:
-          fetch-tags: true
+          fetch-depth: 0
           ref: main
 
-      - name: Get version tags
-        id: get-version-tags
-        uses: ./.github/actions/get-tags
-        with:
-          ref: main
-          pattern: '^v[0-9]+\.[0-9]+\.[0-9]+$'
-
-      - name: Display tags info
-        id: display-tags-info
+      - name: Check existing tags
+        id: check-tag
         run: |
-          echo "ℹ️ All version tags in repository: ${{ steps.get-version-tags.outputs.all-tags }}"
-          echo ""
-
-          if [[ "${{ steps.get-version-tags.outputs.has-tag }}" == "true" ]]; then
-            echo "ℹ️ Current commit on the specified ref (main) already has tags:"
-            echo "${{ steps.get-version-tags.outputs.tags }}"
+          # Check if any version tags point to the current commit on main
+          EXISTING_TAGS=$(git tag --points-at main | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' || true)
+          if [ -n "$EXISTING_TAGS" ]; then
+            echo "Current commit on main is already tagged: $EXISTING_TAGS"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            
+            # Add job summary
+            echo "## ⏭️ Pre-release Skipped" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "The current commit on \`main\` is already tagged:" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo "$EXISTING_TAGS" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           else
-            echo "ℹ️ Current commit on the specified ref (main) has no version tags - will proceed with versioning"
+            echo "Current commit on main is not tagged"
+            echo "skip=false" >> "$GITHUB_OUTPUT"
           fi
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
   version:
     name: Calculate next version
     needs: check
-    if: needs.check.outputs.ref-has-tag == 'false'
+    if: needs.check.outputs.skip == 'false'
     runs-on: ubuntu-latest
     outputs:
-      next-version: ${{ steps.calculate-version.outputs.next-version }}
+      next-version: ${{ steps.calculate.outputs.version }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
+      - uses: actions/checkout@v5
         with:
-          fetch-tags: true
+          fetch-depth: 0
           ref: main
 
-      - name: Calculate version
-        id: calculate-version
-        uses: ./.github/actions/calculate-next-version
+      - uses: actions/setup-node@v4
         with:
-          release-type: "prepatch"
-          all-tags: ${{ needs.check.outputs.all-tags }}
+          node-version: "lts/*"
 
-      - name: Display results
-        id: display-results
+      - name: Calculate version
+        id: calculate
         run: |
-          # Console output
-          echo "✅ Version calculation complete"
-          echo "Next version: ${{ steps.calculate-version.outputs.next-version }}"
-          echo "Based on:"
-          echo "- Latest version: ${{ steps.calculate-version.outputs.latest-version }}"
-          echo "- Latest release: ${{ steps.calculate-version.outputs.current-release }}"
-          echo "- Latest pre-release: ${{ steps.calculate-version.outputs.current-prerelease }}"
+          # Install semver globally for easy CLI usage
+          npm install -g semver
 
-          # Add to GitHub job summary for better visibility in UI
-          echo "## 🔍 Version Calculation Results" >> $GITHUB_STEP_SUMMARY
-          echo "**Next calculated version:** \`${{ steps.calculate-version.outputs.next-version }}\`" >> $GITHUB_STEP_SUMMARY
+          # Get all version tags and filter by odd/even minor versions
+          TAGS=$(git tag -l 'v*.*.*' | sed 's/^v//')
 
+          # Find latest release (even minor) and latest pre-release (odd minor)
+          LATEST_RELEASE=""
+          LATEST_PRERELEASE=""
+
+          for TAG in $TAGS; do
+            MINOR=$(echo "$TAG" | cut -d. -f2)
+            if [ $((MINOR % 2)) -eq 0 ]; then
+              # Even minor = release
+              if [ -z "$LATEST_RELEASE" ] || [ "$(semver "$TAG" -r ">$LATEST_RELEASE")" = "$TAG" ]; then
+                LATEST_RELEASE="$TAG"
+              fi
+            else
+              # Odd minor = pre-release
+              if [ -z "$LATEST_PRERELEASE" ] || [ "$(semver "$TAG" -r ">$LATEST_PRERELEASE")" = "$TAG" ]; then
+                LATEST_PRERELEASE="$TAG"
+              fi
+            fi
+          done
+
+          echo "Latest release: ${LATEST_RELEASE:-none}"
+          echo "Latest pre-release: ${LATEST_PRERELEASE:-none}"
+
+          # Calculate next version
+          if [ -n "$LATEST_RELEASE" ]; then
+            # Get the pre-release minor (next odd number after release minor)
+            RELEASE_MINOR=$(echo "$LATEST_RELEASE" | cut -d. -f2)
+            PRERELEASE_MINOR=$((RELEASE_MINOR + 1))
+            
+            # Check if we need to start a new series or increment existing
+            if [ -n "$LATEST_PRERELEASE" ]; then
+              PR_MINOR=$(echo "$LATEST_PRERELEASE" | cut -d. -f2)
+              if [ "$PR_MINOR" = "$PRERELEASE_MINOR" ]; then
+                # Increment patch in current pre-release series
+                NEXT_VERSION=$(semver -i patch "$LATEST_PRERELEASE")
+              else
+                # Start new pre-release series
+                NEXT_VERSION=$(semver -i minor "$LATEST_RELEASE")
+              fi
+            else
+              # No pre-release exists, start new series
+              NEXT_VERSION=$(semver -i minor "$LATEST_RELEASE")
+            fi
+          else
+            # No releases found, start at 1.1.0
+            NEXT_VERSION="1.1.0"
+          fi
+
+          echo "Next pre-release version: v$NEXT_VERSION"
+          echo "version=v$NEXT_VERSION" >> "$GITHUB_OUTPUT"
+
+          # Add job summary
+          if [ "${{ github.event.inputs.dry-run }}" = "true" ]; then
+            echo "## 🔍 Dry Run Mode" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Would create tag:** \`v$NEXT_VERSION\`" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## 📦 Pre-release Version" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Next version:** \`v$NEXT_VERSION\`" >> $GITHUB_STEP_SUMMARY
+          fi
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Type | Version |" >> $GITHUB_STEP_SUMMARY
           echo "|------|---------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Latest Overall | \`${{ steps.calculate-version.outputs.latest-version }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| Latest Release | \`${{ steps.calculate-version.outputs.current-release }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| Latest Pre-release | \`${{ steps.calculate-version.outputs.current-prerelease }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Latest Release | \`${LATEST_RELEASE:-none}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Latest Pre-release | \`${LATEST_PRERELEASE:-none}\` |" >> $GITHUB_STEP_SUMMARY
 
   tag:
     name: Create tag
     needs: [check, version]
-    # Will only run whenever there's no existing tag on the ref
-    if: needs.check.outputs.ref-has-tag == 'false'
+    if: needs.check.outputs.skip == 'false' && github.event.inputs.dry-run != 'true'
     runs-on: ubuntu-latest
     steps:
-      - name: Display tag information
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          # Use a PAT to ensure the tag push triggers the release workflow
+          # GITHUB_TOKEN doesn't trigger other workflows by default
+          token: ${{ secrets.RELEASE_PAT || secrets.GITHUB_TOKEN }}
+          ref: main
+
+      - name: Create tag
         env:
           NEXT_VERSION: ${{ needs.version.outputs.next-version }}
         run: |
-          echo "⚠️ TEST MODE ONLY - NO TAGS CREATED ⚠️"
-          echo "---------------------------------------"
-          echo "✓ Would create tag: $NEXT_VERSION"
-          echo "✓ Would push tag to: origin"
-          echo "✓ Tag message would be: Nightly pre-release $NEXT_VERSION"
-          echo "---------------------------------------"
-          echo "❌ NO ACTUAL TAG WAS CREATED"
-          echo "❌ NO ACTUAL TAG WAS PUSHED"
-          echo "---------------------------------------"
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Add information to the job summary for better visibility in GitHub UI
-          echo "## ⚠️ TEST MODE - Tag Simulation" >> $GITHUB_STEP_SUMMARY
-          echo "**Next version calculated:** \`$NEXT_VERSION\`" >> $GITHUB_STEP_SUMMARY
-          echo "**NO TAG WAS CREATED - This is a simulation only**" >> $GITHUB_STEP_SUMMARY
+          # Create the tag
+          git tag -a "$NEXT_VERSION" -m "Nightly pre-release $NEXT_VERSION"
 
-      - name: Check tag permissions
-        env:
-          # gh cli requires GH_TOKEN not GITHUB_TOKEN
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo "Checking tag creation permissions..."
-          # Use gh api to check repository permissions
-          if gh api repos/$GITHUB_REPOSITORY --silent; then
-            echo "✅ Permission check passed: Token has repository read access"
-            
-            # Check if token has push access by checking permissions
-            PERMISSION=$(gh api repos/$GITHUB_REPOSITORY/collaborators/$GITHUB_ACTOR/permission --jq '.permission')
-            if [[ "$PERMISSION" == "admin" || "$PERMISSION" == "write" ]]; then
-              echo "✅ Permission check passed: Token has write access (permission: $PERMISSION)"
-            else
-              echo "⚠️ Token may have limited access (permission: $PERMISSION)"
-            fi
-          else
-            echo "❌ Permission check failed: Token lacks basic repository access"
-          fi
+          # Push the tag (this will trigger the release workflow)
+          git push origin "$NEXT_VERSION"
+
+          echo "✅ Created and pushed tag: $NEXT_VERSION"
+
+          # Add job summary
+          echo "## ✅ Tag Created" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Successfully created and pushed tag: \`$NEXT_VERSION\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The release workflow should now be triggered automatically." >> $GITHUB_STEP_SUMMARY
