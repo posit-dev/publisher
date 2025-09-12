@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added the ability to associate a Connect Cloud deployment to another Connect Cloud
   deployment for the same account (#3067)
+- Added support for managing OAuth integration content requirements directly from the "Integration Requests" pane in the Publisher UI. Auto-association of OAuth integrations is supported when deploying to Posit Connect 2025.09.0 or later with a license that includes OAuth integrations. (#3016)
 
 ## [1.21.0]
 

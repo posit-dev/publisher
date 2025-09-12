@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added "Set Up renv" button to initialize the environment, install
   dependencies, and create a lockfile when no valid R lockfile file is present.
-- Added support for managing OAuth integration content requirements directly from the "Integration Requests" pane in the Publisher UI. Auto-association of OAuth integrations is supported when deploying to Posit Connect 2025.09.0 or later with a license that includes OAuth integrations.
+- Added support for managing OAuth integration content requirements directly from the "Integration Requests" pane in the Publisher UI. Auto-association of OAuth integrations is supported when deploying to Posit Connect 2025.09.0 or later with a license that includes OAuth integrations. (#3016)
 
 ### Fixed
 
