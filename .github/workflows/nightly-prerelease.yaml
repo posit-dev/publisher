@@ -81,8 +81,9 @@ jobs:
       - name: Calculate version
         id: calculate
         run: |
-          # Install semver globally for easy CLI usage
-          npm install -g semver
+          # Install semver locally so it's available in require path
+          npm init -y > /dev/null
+          npm install semver
 
           # Use the latest tag we fetched in the check job
           LATEST_VERSION="${{ needs.check.outputs.latest-tag }}"
