@@ -1,17 +1,9 @@
 name: Nightly Pre-release
 
 on:
-  # IMPORTANT: This workflow is for testing purposes only and should NOT be scheduled
-  # schedule:
-  #   # DO NOT UNCOMMENT unless explicitly ready for production
-  #   - cron: "0 07 * * *" # Run at 7 AM UTC daily
+  schedule:
+    - cron: "0 07 * * *" # Run at 7 AM UTC daily
   workflow_dispatch:
-    inputs:
-      dry-run:
-        description: "Display mode only - for testing the version calculation (no tags will be created)"
-        required: false
-        default: true
-        type: boolean
 
 jobs:
   check:
@@ -118,15 +110,9 @@ jobs:
           echo "version=v$NEXT_VERSION_CLEAN" >> "$GITHUB_OUTPUT"
 
           # Add job summary
-          if [ "${{ github.event.inputs.dry-run }}" = "true" ]; then
-            echo "## 🔍 Dry Run Mode" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "**Would create tag:** \`v$NEXT_VERSION\`" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "## 📦 Pre-release Version" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "**Next version:** \`v$NEXT_VERSION\`" >> $GITHUB_STEP_SUMMARY
-          fi
+          echo "## 📦 Pre-release Version" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Next version:** \`v$NEXT_VERSION\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Type | Version |" >> $GITHUB_STEP_SUMMARY
           echo "|------|---------|" >> $GITHUB_STEP_SUMMARY
@@ -135,7 +121,7 @@ jobs:
   tag:
     name: Create tag
     needs: [check, version]
-    if: needs.check.outputs.skip == 'false' && github.event.inputs.dry-run != 'true'
+    if: needs.check.outputs.skip == 'false'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
