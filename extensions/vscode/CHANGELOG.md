@@ -12,11 +12,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed an issue where the preferred Python path was incorrectly not found when deploying #2742
 - Fixed Python dependencies scanning not respecting the active Python session #2825
+- Fixed messaging about setting up renv (#3029)
 
 ### Added
 
 - Added the ability to associate a Connect Cloud deployment to another Connect Cloud
   deployment for the same account (#3067)
+- Added support for managing OAuth integration content requirements directly from the "Integration Requests" pane in the Publisher UI. Auto-association of OAuth integrations is supported when deploying to Posit Connect 2025.09.0 or later with a license that includes OAuth integrations. (#3016)
+- Added a "Render Your Project" button that shows up for HTML project deployments rendered by Quarto
+  to easily update and publish the rendered output #2948
 
 ## [1.21.0]
 
