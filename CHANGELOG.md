@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.22.0]
+
 ### Added
 
 - Added "Set Up renv" button to initialize the environment, install
