@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.22.0]
+
 ### Fixed
 
 - Fixed an issue where the preferred Python path was incorrectly not found when deploying #2742
