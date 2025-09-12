@@ -2,11 +2,8 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
-import { ServerType, isPreContentRecord } from "../../../../src/api";
-import {
-  getProductType,
-  isConnectProduct,
-} from "../../../../src/utils/multiStepHelpers";
+import { isPreContentRecord } from "../../../../src/api";
+import { isAgentErrorDeployedContentNotRunning } from "../../../../src/api/types/error";
 import { ErrorMessageSplitOptions } from "../../../../src/utils/errorEnhancer";
 import { useHomeStore } from "src/stores/home";
 import { formatDateString } from "src/utils/date";
@@ -38,18 +35,35 @@ const isPreContentRecordWithoutID = computed(() => {
   );
 });
 
-const isConnectPreContentRecord = computed(() => {
-  const serverType =
-    home.selectedContentRecord?.serverType || ServerType.CONNECT;
-  const productType = getProductType(serverType);
-  return isConnectProduct(productType);
+const showContentButton = computed(() => {
+  const record = home.selectedContentRecord;
+  if (!record || contentRenderProcessed.value) {
+    return;
+  }
+  return (
+    record?.dashboardUrl || (!isPreContentRecord(record) && record.logsUrl)
+  );
+});
+
+const isDeployedContentOnError = computed((): boolean => {
+  const deploymentError = home.selectedContentRecord?.deploymentError;
+  return Boolean(
+    deploymentError && isAgentErrorDeployedContentNotRunning(deploymentError),
+  );
+});
+
+const deployedContentButtonLabel = computed((): string => {
+  if (isDeployedContentOnError.value) {
+    return "View Deployment Logs";
+  }
+  return "View Content";
 });
 
 const lastStatusDescription = computed(() => {
   if (home.contentRenderError) {
     return "Content Render Failed";
   }
-  if (home.contentRenderFinished) {
+  if (home.contentRenderSuccess) {
     return "Content Render Finished";
   }
   if (!home.selectedContentRecord) {
@@ -76,6 +90,13 @@ const successfulRenderMsg = computed(() => {
   return "Successfully rendered with Quarto";
 });
 
+const contentRenderProcessed = computed(() => {
+  return (
+    home.contentRenderSuccess !== undefined ||
+    home.contentRenderError !== undefined
+  );
+});
+
 const contextMenuVSCodeContext = computed((): string => {
   return home.publishInProgress ||
     isPreContentRecord(home.selectedContentRecord)
@@ -90,13 +111,13 @@ const contextMenuVSCodeContext = computed((): string => {
       {{ lastStatusDescription }}
     </h4>
     <ActionToolbar
-      v-if="!home.contentRenderFinished"
+      v-if="!contentRenderProcessed"
       title="Logs"
       :actions="[]"
       :context-menu="contextMenuVSCodeContext"
     />
   </div>
-  <template v-if="home.contentRenderFinished">
+  <template v-if="home.contentRenderSuccess">
     <div>
       {{ successfulRenderMsg }}
     </div>
@@ -153,6 +174,15 @@ const contextMenuVSCodeContext = computed((): string => {
       />
     </div>
   </template>
+  <div v-if="showContentButton" class="view-content-button">
+    <vscode-button
+      appearance="secondary"
+      class="w-full"
+      @click="emit('viewContent')"
+    >
+      {{ deployedContentButtonLabel }}
+    </vscode-button>
+  </div>
 </template>
 
 <style lang="scss" scoped>
@@ -189,5 +219,9 @@ const contextMenuVSCodeContext = computed((): string => {
 
 .date-time {
   margin-bottom: 20px;
+}
+
+.view-content-button {
+  margin-top: 10px;
 }
 </style>

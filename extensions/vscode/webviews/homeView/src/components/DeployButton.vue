@@ -50,7 +50,7 @@ const deploy = () => {
   home.publishInitiated = true;
 
   // If there is any render process flags, clear that up
-  home.contentRenderFinished = false;
+  home.contentRenderSuccess = undefined;
   home.contentRenderError = undefined;
 
   // Only send up secrets that have values

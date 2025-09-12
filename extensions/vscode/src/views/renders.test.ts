@@ -95,7 +95,7 @@ describe("renderQuartoContent", () => {
       "Finished rendering Quarto content.",
     );
     expect(conduitSendMsgSpy).toHaveBeenCalledWith({
-      kind: HostToWebviewMessageType.CONTENT_RENDER_FINISHED,
+      kind: HostToWebviewMessageType.CONTENT_RENDER_SUCCESS,
     });
   });
 

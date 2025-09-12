@@ -35,7 +35,7 @@ export const useHomeStore = defineStore("home", () => {
   const publishInProgress = ref(false);
   const publishInitiated = ref(false);
   const contentRenderInProgress = ref(false);
-  const contentRenderFinished = ref(false);
+  const contentRenderSuccess = ref<boolean | undefined>(undefined);
   const contentRenderError = ref<string | undefined>(undefined);
 
   const contentRecords = ref<(ContentRecord | PreContentRecord)[]>([]);
@@ -470,7 +470,7 @@ export const useHomeStore = defineStore("home", () => {
     publishInProgress,
     publishInitiated,
     contentRenderInProgress,
-    contentRenderFinished,
+    contentRenderSuccess,
     contentRenderError,
     contentRecords,
     configurations,

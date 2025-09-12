@@ -35,7 +35,7 @@ export const renderQuartoContent = async (
     );
     window.showInformationMessage("Finished rendering Quarto content.");
     conduit.sendMsg({
-      kind: HostToWebviewMessageType.CONTENT_RENDER_FINISHED,
+      kind: HostToWebviewMessageType.CONTENT_RENDER_SUCCESS,
     });
   } catch (err: unknown) {
     let errMsg = "Unknown error trying to render Quarto content.";
