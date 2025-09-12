@@ -211,7 +211,9 @@ Cypress.Commands.add("startWorkbenchPositronSession", () => {
   // Wait for the session to start, a new session usually takes ~30s
   cy.contains(/Welcome.*Positron/i, { timeout: 60_000 }).should("be.visible");
 
-  cy.get("[id='rstudio.rstudio-workbench']").should("be.visible");
+  cy.get("[id='rstudio.rstudio-workbench']", { timeout: 60_000 }).should(
+    "be.visible",
+  );
 
   // Do not wait for additional extensions or interpreter at this point, we will do that after opening a project
 
@@ -240,6 +242,7 @@ Cypress.Commands.add("waitForExtensionsAndInterpreter", () => {
   cy.get("[id='rstudio.rstudio-workbench']").should("be.visible");
 
   // Just check if interpreter is ready, but don't fail if it's not
+  // TODO Implement proper interpreter selection, likely just latest Py or R
   cy.isInterpreterReady().then((ready) => {
     if (!ready) {
       cy.log("No interpreter is ready yet, but continuing without one");
@@ -256,19 +259,11 @@ Cypress.Commands.add("waitForExtensionsAndInterpreter", () => {
 Cypress.Commands.add("isInterpreterReady", () => {
   cy.log("Checking if interpreter is ready");
 
-  // Return a chainable boolean indicating if the interpreter is ready
   return cy.document({ log: false }).then(($document) => {
     const loadedSelector = $document.querySelector(
       '[aria-label="Select Interpreter Session"]',
     );
-
-    if (loadedSelector) {
-      cy.log("Interpreter is already loaded");
-      return true;
-    } else {
-      cy.log("Interpreter is not loaded yet");
-      return false;
-    }
+    return loadedSelector !== null;
   });
 });
 
