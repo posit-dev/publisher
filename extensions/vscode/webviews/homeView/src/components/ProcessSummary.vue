@@ -117,8 +117,8 @@ const contextMenuVSCodeContext = computed((): string => {
     </div>
   </template>
   <template v-else>
-    <div v-if="isPreContentRecordWithoutID && isConnectPreContentRecord">
-      Is this already deployed to a Connect server? You can
+    <div v-if="isPreContentRecordWithoutID">
+      Is this already deployed to a server? You can
       <a class="webview-link" role="button" @click="emit('associateDeployment')"
         >update that previous deployment</a
       >.
