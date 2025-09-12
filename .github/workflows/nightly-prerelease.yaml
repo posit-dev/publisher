@@ -137,6 +137,8 @@ jobs:
           private-key: ${{ secrets.POSIT_CONNECT_PROJECTS_PEM }}
           # Tags are part of repository contents, so we need this permission
           permission-contents: write
+          # Add workflow permission to allow triggering other workflows
+          permission-workflows: write
 
       - name: Create tag
         env:
