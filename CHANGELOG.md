@@ -23,8 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Update installation.md to include directions for Positron, pre-release, and Open VSX installations
-- Remove install-publisher.bash script and references
+- Update installation.md to include directions for Positron, pre-release, and Open VSX installations (#3066)
+- Remove install-publisher.bash script and references (#3066)
 
 ## [1.21.0]
 
