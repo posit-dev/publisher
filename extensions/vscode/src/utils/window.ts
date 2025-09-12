@@ -46,28 +46,28 @@ export function taskWithProgressMsg(
   );
 }
 
-export function runTerminalCommand(
-  cmd: string,
-  show: boolean = false,
-): Promise<void> {
+// Run command and open the terminal
+export function openTerminalCommand(cmd: string) {
   const term = window.createTerminal();
-  term.sendText(cmd);
+  term.sendText(`${cmd};`);
+  term.show();
+}
 
-  // If terminal is shown, there is no need to track exit status for it
-  // everything will be visible on it.
-  if (show) {
-    term.show();
-    return Promise.resolve();
-  }
+// Runs the command on the terminal, terminal process is closed automatically after the command finishes.
+// Promise resolves for successful exit code 0
+// Promise rejects for exit code > 0
+export function runTerminalCommand(cmd: string): Promise<number | undefined> {
+  const term = window.createTerminal();
+  term.sendText(`${cmd}; exit $?`);
 
   return new Promise((resolve, reject) => {
     const disposeToken = window.onDidCloseTerminal((closedTerminal) => {
       if (closedTerminal === term) {
         disposeToken.dispose();
         if (term.exitStatus && term.exitStatus.code === 0) {
-          resolve();
+          resolve(term.exitStatus.code);
         } else {
-          reject();
+          reject(term.exitStatus?.code);
         }
       }
     });

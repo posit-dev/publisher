@@ -10,6 +10,7 @@ import {
 import {
   showErrorMessageWithTroubleshoot,
   showInformationMsg,
+  openTerminalCommand,
   runTerminalCommand,
   taskWithProgressMsg,
 } from "src/utils/window";
@@ -52,12 +53,15 @@ export class DeploymentFailureRenvHandler implements DeploymentFailureHandler {
 
     // If renv status is the action, then run the command and open the terminal
     if (action === "renvstatus") {
-      return runTerminalCommand(`${command};`, true);
+      return openTerminalCommand(command);
     }
 
     try {
-      await taskWithProgressMsg("Setting up renv for this project...", () =>
-        runTerminalCommand(`${command}; exit $?`),
+      await taskWithProgressMsg(
+        "Setting up renv for this project...",
+        async () => {
+          await runTerminalCommand(command);
+        },
       );
       showInformationMsg("Finished setting up renv.");
     } catch (_) {
