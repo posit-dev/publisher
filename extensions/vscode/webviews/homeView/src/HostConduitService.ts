@@ -6,6 +6,7 @@ import {
   HostToWebviewMessage,
   HostToWebviewMessageType,
   PublishFinishFailureMsg,
+  ContentRenderFailureMsg,
   RefreshConfigDataMsg,
   RefreshCredentialDataMsg,
   RefreshContentRecordDataMsg,
@@ -78,10 +79,10 @@ const onMessageFromHost = (msg: HostToWebviewMessage): void => {
       return onPublishFinishSuccessMsg();
     case HostToWebviewMessageType.PUBLISH_FINISH_FAILURE:
       return onPublishFinishFailureMsg(msg);
-    case HostToWebviewMessageType.CONTENT_RENDER_FINISHED:
-      return onContentRenderFinishedMsg();
+    case HostToWebviewMessageType.CONTENT_RENDER_SUCCESS:
+      return onContentRenderSuccessMsg();
     case HostToWebviewMessageType.CONTENT_RENDER_FAILURE:
-      return onContentRenderFailureMsg();
+      return onContentRenderFailureMsg(msg);
     case HostToWebviewMessageType.UPDATE_CONTENTRECORD_SELECTION:
       return onUpdateContentRecordSelectionMsg(msg);
     case HostToWebviewMessageType.SAVE_SELECTION:
@@ -204,13 +205,17 @@ const onPublishFinishFailureMsg = (msg: PublishFinishFailureMsg) => {
   home.lastContentRecordResult = `Last Deployment Failed`;
   home.lastContentRecordMsg = msg.content.data.message;
 };
-const onContentRenderFinishedMsg = () => {
+const onContentRenderSuccessMsg = () => {
   const home = useHomeStore();
+  home.contentRenderError = undefined;
+  home.contentRenderSuccess = true;
   home.contentRenderInProgress = false;
 };
-const onContentRenderFailureMsg = () => {
+const onContentRenderFailureMsg = (msg: ContentRenderFailureMsg) => {
   const home = useHomeStore();
-  home.contentRenderFailed = true;
+  home.contentRenderError = msg.content.error;
+  home.contentRenderSuccess = false;
+  home.contentRenderInProgress = false;
 };
 const onUpdateContentRecordSelectionMsg = (
   msg: UpdateContentRecordSelectionMsg,

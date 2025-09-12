@@ -95,7 +95,7 @@ describe("renderQuartoContent", () => {
       "Finished rendering Quarto content.",
     );
     expect(conduitSendMsgSpy).toHaveBeenCalledWith({
-      kind: HostToWebviewMessageType.CONTENT_RENDER_FINISHED,
+      kind: HostToWebviewMessageType.CONTENT_RENDER_SUCCESS,
     });
   });
 
@@ -116,6 +116,9 @@ describe("renderQuartoContent", () => {
       );
       expect(conduitSendMsgSpy).toHaveBeenCalledWith({
         kind: HostToWebviewMessageType.CONTENT_RENDER_FAILURE,
+        content: {
+          error: "Unknown error trying to render Quarto content.",
+        },
       });
     });
 
@@ -135,6 +138,10 @@ describe("renderQuartoContent", () => {
       );
       expect(conduitSendMsgSpy).toHaveBeenCalledWith({
         kind: HostToWebviewMessageType.CONTENT_RENDER_FAILURE,
+        content: {
+          error:
+            "Cannot render Quarto content. Quarto is not available on the system.",
+        },
       });
     });
 
@@ -150,10 +157,13 @@ describe("renderQuartoContent", () => {
       expect(quartoHelperRenderSpy).toHaveBeenCalled();
       expect(window.showInformationMessage).not.toHaveBeenCalled();
       expect(window.showErrorMessage).toHaveBeenCalledWith(
-        "Failed to render Quarto content. Error: Could not render Quarto project.",
+        "Could not render Quarto project.",
       );
       expect(conduitSendMsgSpy).toHaveBeenCalledWith({
         kind: HostToWebviewMessageType.CONTENT_RENDER_FAILURE,
+        content: {
+          error: "Could not render Quarto project.",
+        },
       });
     });
 
@@ -173,6 +183,10 @@ describe("renderQuartoContent", () => {
       );
       expect(conduitSendMsgSpy).toHaveBeenCalledWith({
         kind: HostToWebviewMessageType.CONTENT_RENDER_FAILURE,
+        content: {
+          error:
+            "Unknown error trying to render Quarto content. Error: system is down",
+        },
       });
     });
   });

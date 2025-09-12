@@ -143,99 +143,17 @@
     >
       <vscode-divider class="home-view-divider" />
 
-      <div
-        v-if="home.publishInProgress"
-        class="deployment-in-progress-container"
-      >
-        <vscode-progress-ring class="progress-ring" />
-        <div class="flex-grow">
-          <div class="deployment-summary-container">
-            <div class="progress-container">
-              <div class="progress-desc">
-                <h4
-                  data-automation="deployment-progress"
-                  class="deployment-summary-title"
-                >
-                  Deployment in Progress...
-                </h4>
-              </div>
-            </div>
-            <ActionToolbar
-              title="Logs"
-              :actions="[]"
-              :context-menu="contextMenuVSCodeContext"
-            />
-          </div>
-          <p class="progress-log-anchor">
-            <a class="webview-link" role="button" @click="onViewPublishingLog">
-              View Publishing Log
-            </a>
-          </p>
-        </div>
-      </div>
-      <div v-else>
-        <div
-          class="deployment-summary-container"
-          data-automation="deploy-status"
-        >
-          <h4 class="deployment-summary-title">
-            {{ lastStatusDescription }}
-          </h4>
-          <ActionToolbar
-            title="Logs"
-            :actions="[]"
-            :context-menu="contextMenuVSCodeContext"
-          />
-        </div>
-        <template v-if="isDismissedContentRecord">
-          <div class="date-time">
-            {{ formatDateString(home.selectedContentRecord.dismissedAt) }}
-          </div>
-        </template>
-        <template v-else>
-          <div v-if="isPreContentRecordWithoutID">
-            Is this already deployed to a server? You can
-            <a class="webview-link" role="button" @click="onAssociateDeployment"
-              >update that previous deployment</a
-            >.
-          </div>
-          <div v-if="isPreContentRecordWithID">
-            <a class="webview-link" role="button" @click="viewContent"
-              >This deployment</a
-            >
-            will be updated when deployed.
-          </div>
-          <div
-            v-if="!isPreContentRecord(home.selectedContentRecord)"
-            class="date-time"
-          >
-            {{ formatDateString(home.selectedContentRecord.deployedAt) }}
-          </div>
-          <div
-            v-if="home.selectedContentRecord.deploymentError"
-            class="last-deployment-details last-deployment-error"
-          >
-            <div class="alert-border border-warning text-warning">
-              <span class="codicon codicon-alert" />
-            </div>
-            <TextStringWithAnchor
-              :message="home.selectedContentRecord?.deploymentError?.msg"
-              :splitOptions="ErrorMessageSplitOptions"
-              class="error-message text-description"
-              @click="onErrorMessageAnchorClick"
-            />
-          </div>
-        </template>
-        <div v-if="showContentButton" class="last-deployment-details">
-          <vscode-button
-            appearance="secondary"
-            @click="viewContent"
-            class="w-full"
-          >
-            {{ deployedContentButtonLabel }}
-          </vscode-button>
-        </div>
-      </div>
+      <ProcessProgress
+        v-if="showProgressStatus"
+        @view-log="onViewPublishingLog"
+      />
+
+      <ProcessSummary
+        v-else
+        @associate-deployment="onAssociateDeployment"
+        @view-content="viewContent"
+        @error-link-click="onErrorMessageAnchorClick"
+      />
     </template>
   </div>
   <div v-else>
@@ -265,7 +183,6 @@ import {
   WebviewToHostMessageType,
 } from "../../../../src/types/messages/webviewToHostMessages";
 import { calculateTitle } from "../../../../src/utils/titles";
-import { formatDateString } from "src/utils/date";
 import { filterConfigurationsToValidAndType } from "../../../../src/utils/filters";
 
 import { useHostConduitService } from "src/HostConduitService";
@@ -275,7 +192,9 @@ import QuickPickItem, { IconDetail } from "src/components/QuickPickItem.vue";
 import ActionToolbar from "src/components/ActionToolbar.vue";
 import DeployButton from "src/components/DeployButton.vue";
 import RenderButton from "src/components/RenderButton.vue";
-import TextStringWithAnchor from "./TextStringWithAnchor.vue";
+import ProcessProgress from "src/components/ProcessProgress.vue";
+import ProcessSummary from "src/components/ProcessSummary.vue";
+
 import {
   AgentError,
   isAgentErrorInvalidTOML,
@@ -373,13 +292,6 @@ const promptForConfigSelection = computed((): string => {
     : "Create a Configuration";
 });
 
-const contextMenuVSCodeContext = computed((): string => {
-  return home.publishInProgress ||
-    isPreContentRecord(home.selectedContentRecord)
-    ? "homeview-active-contentRecord-more-menu"
-    : "homeview-last-contentRecord-more-menu";
-});
-
 const deploymentTitle = computed(() => {
   if (!home.selectedContentRecord) {
     // no title if there is no selected contentRecord
@@ -456,40 +368,8 @@ const selectConfiguration = () => {
   });
 };
 
-const lastStatusDescription = computed(() => {
-  if (!home.selectedContentRecord) {
-    return undefined;
-  }
-  if (isDismissedContentRecord.value) {
-    return "Last Deployment Dismissed";
-  }
-  if (home.selectedContentRecord.deploymentError) {
-    return "Last Deployment Failed";
-  }
-  if (isPreContentRecord(home.selectedContentRecord)) {
-    return isPreContentRecordWithID.value
-      ? "Not Yet Updated"
-      : "Not Yet Deployed";
-  }
-  return "Last Deployment Successful";
-});
-
-const isPreContentRecordWithID = computed(() => {
-  return (
-    isPreContentRecord(home.selectedContentRecord) &&
-    Boolean(home.selectedContentRecord.id)
-  );
-});
-
-const isPreContentRecordWithoutID = computed(() => {
-  return (
-    isPreContentRecord(home.selectedContentRecord) &&
-    !isPreContentRecordWithID.value
-  );
-});
-
-const isDismissedContentRecord = computed(() => {
-  return Boolean(home.selectedContentRecord?.dismissedAt);
+const showProgressStatus = computed(() => {
+  return home.publishInProgress || home.contentRenderInProgress;
 });
 
 const isRenderableContent = computed(() => {
@@ -542,13 +422,6 @@ const isDeployedContentOnError = computed((): boolean => {
   return Boolean(
     deploymentError && isAgentErrorDeployedContentNotRunning(deploymentError),
   );
-});
-
-const deployedContentButtonLabel = computed((): string => {
-  if (isDeployedContentOnError.value) {
-    return "View Deployment Logs";
-  }
-  return "View Content";
 });
 
 const onEditConfigurationWithTOMLError = () => {
@@ -604,16 +477,6 @@ const onAssociateDeployment = () => {
   });
 };
 
-const showContentButton = computed(() => {
-  const record = home.selectedContentRecord;
-  if (!record) {
-    return;
-  }
-  return (
-    record?.dashboardUrl || (!isPreContentRecord(record) && record.logsUrl)
-  );
-});
-
 const viewContent = () => {
   const record = home.selectedContentRecord;
   if (!record) {
@@ -634,16 +497,6 @@ const viewContent = () => {
   flex-direction: row;
   flex-wrap: nowrap;
   align-items: center;
-}
-
-.deployment-in-progress-container {
-  display: flex;
-}
-
-.deployment-summary-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
 }
 
 .deployment-control {
@@ -692,62 +545,15 @@ const viewContent = () => {
   margin-top: 1.33em;
 }
 
-.deployment-summary-title {
-  margin-block-start: 1.33em;
-  margin-bottom: 5px;
-}
-
-.date-time {
-  margin-bottom: 20px;
-}
-
-.last-deployment-details {
-  margin-top: 10px;
-}
-
-.last-deployment-error {
-  display: flex;
-  align-items: stretch;
-
-  .alert-border {
-    display: flex;
-    align-items: center;
-    border-right-width: 1px;
-    border-right-style: solid;
-    padding-right: 5px;
-    margin-right: 7px;
-  }
-}
-
-.error-icon {
-  flex: 0;
-}
-
-.error-message {
-  min-width: 0;
-  word-wrap: break-word;
-}
-
 .progress-container {
   display: flex;
   flex-direction: row;
   align-items: center;
 }
 
-.progress-ring {
-  flex-grow: 0;
-  margin-top: 1.33em;
-  margin-right: 10px;
-}
-
 .progress-desc {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-}
-
-.progress-log-anchor {
-  margin-top: 0;
-  margin-bottom: 0;
 }
 </style>
