@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed an issue where the preferred Python path was incorrectly not found when deploying #2742
 - Fixed Python dependencies scanning not respecting the active Python session #2825
+- Fixed messaging about setting up renv (#3029)
 
 ### Added
 
