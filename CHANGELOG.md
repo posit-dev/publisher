@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added "Set Up renv" button to initialize the environment, install
   dependencies, and create a lockfile when no valid R lockfile file is present.
+- Improved visuals for waiting on Connect on-prem token to be claimed (#2900)
 
 ### Fixed
 
