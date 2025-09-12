@@ -208,12 +208,11 @@ Cypress.Commands.add("startWorkbenchPositronSession", () => {
   cy.get("button").contains("Positron").click();
   cy.get("button").contains("Start Session").click();
 
-  // Wait for the session to start, a new session usually takes ~30s
-  cy.contains(/Welcome.*Positron/i, { timeout: 60_000 }).should("be.visible");
+  // Wait for the Workbench UI to load
+  cy.waitForWorkbenchToLoad();
 
-  cy.get("[id='rstudio.rstudio-workbench']", { timeout: 60_000 }).should(
-    "be.visible",
-  );
+  // Wait for the session to start, a new session usually takes ~30s
+  cy.contains(/Welcome.*Positron/i).should("be.visible");
 
   // Do not wait for additional extensions or interpreter at this point, we will do that after opening a project
 
@@ -228,18 +227,7 @@ Cypress.Commands.add("startWorkbenchPositronSession", () => {
 Cypress.Commands.add("waitForExtensionsAndInterpreter", () => {
   cy.log("Waiting for extensions to be activated");
 
-  // First wait for the "Activating Extensions..." indicator to appear
-  cy.get('[aria-label="Activating Extensions..."]', {
-    timeout: 30_000,
-  }).should("be.visible");
-
-  // Then wait for it to disappear, indicating extensions are loaded
-  cy.get('[aria-label="Activating Extensions..."]', {
-    timeout: 30_000,
-  }).should("not.exist");
-
-  // Workbench indicator in bottom status bar
-  cy.get("[id='rstudio.rstudio-workbench']").should("be.visible");
+  cy.waitForWorkbenchToLoad();
 
   // Just check if interpreter is ready, but don't fail if it's not
   // TODO Implement proper interpreter selection, likely just latest Py or R
@@ -250,6 +238,21 @@ Cypress.Commands.add("waitForExtensionsAndInterpreter", () => {
   });
 
   cy.log("Extensions activated");
+});
+
+/**
+ * Waits for the Workbench UI to load by checking for the presence of the workbench indicator
+ *
+ * @example
+ *    cy.waitForWorkbenchToLoad()
+ */
+Cypress.Commands.add("waitForWorkbenchToLoad", () => {
+  cy.log("Waiting for Workbench UI to load");
+  // Workbench indicator in bottom status bar, uses a longer timeout to accommodate slow loads
+  cy.get("[id='rstudio.rstudio-workbench']", { timeout: 60_000 }).should(
+    "be.visible",
+  );
+  cy.log("Workbench UI loaded");
 });
 
 /**
@@ -397,7 +400,8 @@ Cypress.Commands.add(
       .find(`[aria-label="${entrypointFile}"]`)
       .should("be.visible");
 
-    cy.waitForExtensionsAndInterpreter();
+    cy.waitForWorkbenchToLoad();
+    // TODO choose an interpreter, if needed
 
     // Activate the publisher extension
     // In Workbench the viewport size causes Publisher to be in the "..." menu
