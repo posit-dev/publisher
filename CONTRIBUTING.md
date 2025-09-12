@@ -306,13 +306,7 @@ minor version number is odd.
   - the [CHANGELOG.md](CHANGELOG.md) for the repository
   - the [VSCode Extension CHANGELOG.md](extensions/vscode/CHANGELOG.md)
     that is bundled with the extension
-- Update the license docs in case any new dependencies have been added, by running
-
-```
-just docs/licenses
-```
-
-and committing any changes.
+- Merge any "Update licenses" PRs to main
 
 ### Instructions
 
