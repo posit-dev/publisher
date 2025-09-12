@@ -17,8 +17,8 @@ const home = useHomeStore();
 const hostConduit = useHostConduitService();
 const render = () => {
   home.contentRenderError = undefined;
+  home.contentRenderSuccess = undefined;
   home.contentRenderInProgress = true;
-  home.contentRenderFinished = false;
   hostConduit.sendMsg({ kind: WebviewToHostMessageType.RENDER_CONTENT });
 };
 </script>

@@ -25,7 +25,7 @@ const renderInProgressMsg = computed(() => {
   // We currently only render content with Quarto
   // but if we get to a point of rendering with Rmd or by other means
   // Here is a good place to identify the "source" and use an appropriate label
-  return "Quarto is running to output your content";
+  return "Quarto is running to generate your content";
 });
 
 const contextMenuVSCodeContext = computed((): string => {
