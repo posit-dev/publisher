@@ -211,7 +211,9 @@ Cypress.Commands.add("startWorkbenchPositronSession", () => {
   // Wait for the session to start, a new session usually takes ~30s
   cy.contains(/Welcome.*Positron/i, { timeout: 60_000 }).should("be.visible");
 
-  cy.waitForExtensionsAndInterpreter();
+  cy.get("[id='rstudio.rstudio-workbench']").should("be.visible");
+
+  // Do not wait for additional extensions or interpreter at this point, we will do that after opening a project
 
   cy.log("Positron session started and ready");
 });
