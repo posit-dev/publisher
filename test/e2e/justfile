@@ -54,6 +54,7 @@ e2e:
     just install
     just start "connect-publisher-e2e"
     just start "code-server"
+    just start-workbench "release"
 
     # Install the Publisher extension
     VSIX_FILENAME=$(ls -Art ../../dist | grep linux-amd64 | tail -n 1)
