@@ -14,20 +14,12 @@ describe("Workbench > Positron", { baseUrl: WORKBENCH_BASE_URL }, () => {
     cy.visitAndLoginToWorkbench();
     cy.startWorkbenchPositronSession();
 
+    // TODO do we need this?
     cy.debugIframes();
   });
 
   context("Connect", () => {
-    // Each test must set this var to enable project-specific cleanup in afterEach
-    let projectDir;
-
-    afterEach(() => {
-      cy.cleanupWorkbenchData(projectDir);
-    });
-
     it("Static Content Deployment", () => {
-      projectDir = "static";
-
       cy.createPositronDeployment(
         "static",
         "index.html",
@@ -50,8 +42,6 @@ describe("Workbench > Positron", { baseUrl: WORKBENCH_BASE_URL }, () => {
     });
 
     it("ShinyApp Content Deployment", () => {
-      projectDir = "shinyapp";
-
       cy.createPositronDeployment(
         "shinyapp",
         "app.R",
