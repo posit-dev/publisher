@@ -31,8 +31,9 @@ Cypress.Commands.add(
 
 /**
  * Clean up Workbench data files and directories to ensure a fresh state
- * This does not restart the Workbench container, so any existing sessions will still be visible in the Workbench UI but
- * all deployment data is removed
+ * This does not restart the Workbench container, so any existing sessions would still be visible in the Workbench UI
+ * but all deployment data is removed. This is necessary to ensure a clean state between tests since we bind mount the
+ * workspace directory into the container and data would otherwise persist between tests.
  * @param {string} projectDir - The project directory (optional). If provided, will also clean up project-specific data
  */
 Cypress.Commands.add("cleanupWorkbenchData", (projectDir) => {
@@ -220,27 +221,6 @@ Cypress.Commands.add("startWorkbenchPositronSession", () => {
 });
 
 /**
- * Waits for Workbench extensions to be activated
- *
- * TODO: Implement proper interpreter selection when needed for future tests
- */
-Cypress.Commands.add("waitForExtensionsAndInterpreter", () => {
-  cy.log("Waiting for extensions to be activated");
-
-  cy.waitForWorkbenchToLoad();
-
-  // Just check if interpreter is ready, but don't fail if it's not
-  // TODO Implement proper interpreter selection, likely just latest Py or R
-  cy.isInterpreterReady().then((ready) => {
-    if (!ready) {
-      cy.log("No interpreter is ready yet, but continuing without one");
-    }
-  });
-
-  cy.log("Extensions activated");
-});
-
-/**
  * Waits for the Workbench UI to load by checking for the presence of the workbench indicator
  *
  * @example
@@ -271,81 +251,18 @@ Cypress.Commands.add("isInterpreterReady", () => {
 });
 
 /**
- * Ensures an interpreter is ready - this is now just a placeholder that logs a message
- *
- * TODO: Implement proper interpreter selection when needed for future tests
+ * Waits for the interpreter to be ready, with a maximum timeout of 30 seconds
+ * Uses isInterpreterReady internally and will fail the test if timeout is reached
+ * @returns {Cypress.Chainable<boolean>} - Returns a chainable boolean that will be true when interpreter is ready
  */
-Cypress.Commands.add("ensureInterpreterReady", () => {
-  cy.log(
-    "ensureInterpreterReady is now just checking interpreter status without setup",
-  );
+Cypress.Commands.add("waitForInterpreterReady", () => {
+  cy.log("Waiting for interpreter to be ready");
 
-  cy.isInterpreterReady().then((ready) => {
-    if (!ready) {
-      cy.log("No interpreter is ready, but continuing anyway");
-      // TODO: Implement proper interpreter selection when needed for future tests
-    }
+  return cy.waitUntil(() => cy.isInterpreterReady().then((ready) => ready), {
+    timeout: 30_000,
+    interval: 1_000,
+    errorMsg: "Interpreter was not ready within 30 seconds",
   });
-});
-
-/**
- * Starts a Positron session in Workbench and creates a new Python project
- * This includes waiting for all necessary UI elements and session initialization
- *
- * @returns {string} The name of the created Python project
- */
-Cypress.Commands.add("startWorkbenchPositronPythonProject", () => {
-  cy.log("Starting Workbench Positron session and creating Python project");
-
-  // Start a Positron session
-  cy.startWorkbenchPositronSession();
-
-  // Start a new Python project
-  cy.get("button").contains("New").click();
-  cy.get("li").contains("New Project...").focus();
-  cy.get("li").contains("New Project...").click();
-  cy.contains("Create New Project").should("be.visible");
-  cy.get("label").contains("Python Project").click();
-  cy.get("button").contains("Next").click();
-
-  // Set a randomized project name
-  cy.contains("Set project name").should("be.visible");
-  const projectName = `${Cypress.env("WORKBENCH_PROJECT_PREFIX")}${Math.random().toString(36).slice(2, 10)}`;
-  cy.contains("span", "Enter a name for your new Python Project")
-    .parent("label")
-    .find("input")
-    .clear();
-  cy.contains("span", "Enter a name for your new Python Project")
-    .parent("label")
-    .find("input")
-    .type(projectName);
-  cy.get("button").contains("Next").click();
-
-  // Set up the Python environment
-  cy.contains("Set up Python").should("be.visible");
-  // Wait for the environment providers to load
-  cy.get(".positron-button.drop-down-list-box", { timeout: 10_000 })
-    .should("be.enabled")
-    .should("contain", "Venv")
-    .find(".dropdown-entry-title")
-    .should("contain", "Venv")
-    .and("be.visible");
-  cy.get(".ok-cancel-back-action-bar")
-    .find("button")
-    .contains("Create")
-    .click();
-  cy.contains("Where would you like to").should("be.visible");
-  cy.get("button").contains("Current Window").click();
-
-  // Wait for the project to open
-  cy.get(`[aria-label="Explorer Section: ${projectName}"]`).should(
-    "be.visible",
-  );
-
-  // Wait for extensions to be activated and interpreter to be ready
-  cy.waitForExtensionsAndInterpreter();
-
-  cy.log(`Successfully created Python project: ${projectName}`);
 });
 
 /**
@@ -368,6 +285,7 @@ Cypress.Commands.add("startWorkbenchPositronPythonProject", () => {
  * @returns {Cypress.Chainable} - Chain that can be extended with additional deployment actions
  */
 Cypress.Commands.add(
+  // TODO rename this to createPWBDeployment
   "createPositronDeployment",
   (
     projectDir,
@@ -376,16 +294,22 @@ Cypress.Commands.add(
     verifyTomlCallback,
     platformType = "Connect",
   ) => {
+    cy.log("Creating Positron deployment in Workbench");
+
     // Temporarily ignore uncaught exception due to a vscode worker being cancelled at some point
     cy.on("uncaught:exception", () => false);
 
     // Open the entrypoint ahead of time for easier selection later
-    // Uses the Workbench-specific file open flow
+    // Uses the Workbench-specific open folder flow
     // Note this deviates from the VS Code logic and does not currently handle projectDir = "."
     cy.get("button").contains("Open Folder...").click();
     cy.get(".quick-input-widget").within(() => {
       cy.get(".quick-input-box input").should("be.visible");
-      cy.get('.monaco-list-row[aria-label="static"]').click();
+      cy.get(`.monaco-list-row[aria-label="${projectDir}"]`).click();
+      // Need to pace the test slightly to allow the selection to register or clicking "OK" sometimes does not work
+      cy.get(`.monaco-list-row[aria-label="${projectDir}"]`).should(
+        "not.exist",
+      );
       cy.get(".quick-input-header a[role='button']").contains("OK").click();
     });
 
@@ -401,7 +325,10 @@ Cypress.Commands.add(
       .should("be.visible");
 
     cy.waitForWorkbenchToLoad();
-    // TODO choose an interpreter, if needed
+    // Workbench should automatically spin up an appropriate interpreter based on the project that has been opened
+    if (projectDir !== "static") {
+      cy.waitForInterpreterReady();
+    }
 
     // Activate the publisher extension
     // In Workbench the viewport size causes Publisher to be in the "..." menu
@@ -422,7 +349,7 @@ Cypress.Commands.add(
 
     // Small wait to allow the UI to settle in CI before proceeding
     // eslint-disable-next-line cypress/no-unnecessary-waiting
-    cy.wait(1000);
+    cy.wait(1_000);
 
     // Create a new deployment via the select-deployment button
     cy.publisherWebview()
