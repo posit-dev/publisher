@@ -2,6 +2,7 @@
 
 import "@testing-library/cypress/add-commands";
 import "cypress-wait-until";
+import "cypress-network-idle";
 import { parse } from "smol-toml";
 import "./selectors";
 import "./sequences";
