@@ -232,6 +232,11 @@ Cypress.Commands.add("waitForWorkbenchToLoad", () => {
   cy.get("[id='rstudio.rstudio-workbench']", { timeout: 60_000 }).should(
     "be.visible",
   );
+
+  // Instead of waiting for additional UI elements wait for specific network activity to finish
+  // /vscode-remote-resource seems to be the last batch of API calls made before everything is ready
+  cy.waitForNetworkIdle("GET", "/vscode-remote-resource", 2_000);
+
   cy.log("Workbench UI loaded");
 });
 
@@ -285,8 +290,7 @@ Cypress.Commands.add("waitForInterpreterReady", () => {
  * @returns {Cypress.Chainable} - Chain that can be extended with additional deployment actions
  */
 Cypress.Commands.add(
-  // TODO rename this to createPWBDeployment
-  "createPositronDeployment",
+  "createPWBDeployment",
   (
     projectDir,
     entrypointFile,
@@ -338,12 +342,15 @@ Cypress.Commands.add(
         timeout: 30_000,
       },
     ).click();
+
     // Wait for popup menu that contains Publisher to appear
     cy.get('.monaco-menu .actions-container[role="menu"]')
       .should("be.visible")
       .within(() => {
-        // Finally, double-click the Posit Publisher menu item, single click often fails to open it
-        // TODO sometimes Publisher does not open, unclear why. Likely needs some additional waiting on IDE readiness
+        // Even a double-click the Posit Publisher menu item sometimes fails to open it for some reason
+        // eslint-disable-next-line cypress/no-unnecessary-waiting
+        cy.wait(1000); // Small wait to allow the menu to fully render, unsure what else to do here
+
         cy.findByLabelText("Posit Publisher").dblclick();
       });
 
