@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added more prominent status messages when rendering Quarto documents. #2940
 
+### Fixed
+
+- The "R Packages" section no longer shows you an alert if you aren't using renv. (3095)
+
 ## [1.22.0]
 
 ### Added

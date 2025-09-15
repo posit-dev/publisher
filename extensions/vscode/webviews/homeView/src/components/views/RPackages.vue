@@ -3,7 +3,6 @@
     title="R Packages"
     data-automation="r-packages"
     :actions="rPackageActions"
-    :codicon="home.r.active.isAlertActive ? `codicon-alert` : ``"
   >
     <WelcomeView v-if="showWelcomeView">
       <template v-if="missingOrInvalidPackageFile">
