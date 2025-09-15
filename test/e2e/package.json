@@ -17,6 +17,8 @@
     "cypress": "^14.0.1",
     "cypress-network-idle": "^1.15.0",
     "cypress-terminal-report": "^6.2.0",
+    "cypress-timestamps": "^1.2.3",
+    "cypress-terminal-report": "^6.2.0",
     "cypress-wait-until": "^3.0.2",
     "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.1.8",
