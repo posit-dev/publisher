@@ -20,7 +20,7 @@ describe("Workbench > Positron", { baseUrl: WORKBENCH_BASE_URL }, () => {
 
   context("Connect", () => {
     it("Static Content Deployment", () => {
-      cy.createPositronDeployment(
+      cy.createPWBDeployment(
         "static",
         "index.html",
         "static",
@@ -42,25 +42,20 @@ describe("Workbench > Positron", { baseUrl: WORKBENCH_BASE_URL }, () => {
     });
 
     it("ShinyApp Content Deployment", () => {
-      cy.createPositronDeployment(
-        "shinyapp",
-        "app.R",
-        "ShinyApp",
-        (tomlFiles) => {
-          const config = tomlFiles.config.contents;
-          expect(config.title).to.equal("ShinyApp");
-          expect(config.type).to.equal("r-shiny");
-          expect(config.entrypoint).to.equal("app.R");
-          expect(config.files[0]).to.equal("/app.R");
-          expect(config.files[1]).to.equal("/renv.lock");
-          expect(config.files[2]).to.equal(
-            `/.posit/publish/${tomlFiles.config.name}`,
-          );
-          expect(config.files[3]).to.equal(
-            `/.posit/publish/deployments/${tomlFiles.contentRecord.name}`,
-          );
-        },
-      ).deployCurrentlySelected();
+      cy.createPWBDeployment("shinyapp", "app.R", "ShinyApp", (tomlFiles) => {
+        const config = tomlFiles.config.contents;
+        expect(config.title).to.equal("ShinyApp");
+        expect(config.type).to.equal("r-shiny");
+        expect(config.entrypoint).to.equal("app.R");
+        expect(config.files[0]).to.equal("/app.R");
+        expect(config.files[1]).to.equal("/renv.lock");
+        expect(config.files[2]).to.equal(
+          `/.posit/publish/${tomlFiles.config.name}`,
+        );
+        expect(config.files[3]).to.equal(
+          `/.posit/publish/deployments/${tomlFiles.contentRecord.name}`,
+        );
+      }).deployCurrentlySelected();
       cy.retryWithBackoff(
         () =>
           cy.findUniqueInPublisherWebview(
