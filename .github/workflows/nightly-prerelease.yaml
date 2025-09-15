@@ -137,6 +137,7 @@ jobs:
         with:
           fetch-depth: 0
           ref: main
+          token: ${{ steps.generate-token.outputs.token }}
 
       - name: Create tag
         env:
