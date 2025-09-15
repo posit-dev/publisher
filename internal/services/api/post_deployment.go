@@ -12,6 +12,7 @@ import (
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/events"
+	"github.com/posit-dev/publisher/internal/inspect/dependencies/renv"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/publish"
 	"github.com/posit-dev/publisher/internal/state"
@@ -26,6 +27,16 @@ type PostDeploymentRequestBody struct {
 	Insecure    bool              `json:"insecure"`
 	R           string            `json:"r"`
 	Python      string            `json:"python"`
+	Positron    *positronSettings `json:"positron,omitempty"`
+}
+
+type positronSettings struct {
+	R *positronRSettings `json:"r,omitempty"`
+}
+
+type positronRSettings struct {
+	DefaultRepositories      string `json:"defaultRepositories"`
+	PackageManagerRepository string `json:"packageManagerRepository,omitempty"`
 }
 
 type PostDeploymentsReponse struct {
@@ -67,7 +78,16 @@ func PostDeploymentHandlerFunc(
 			InternalError(w, req, log, err)
 			return
 		}
-		newState, err := stateFactory(projectDir, b.AccountName, b.ConfigName, name, "", accountList, b.Secrets, b.Insecure, rInterpreter, pythonInterpreter, log)
+		// Convert optional Positron settings to RepoOptions for downstream scanning
+		var repoOpts *renv.RepoOptions
+		if b.Positron != nil && b.Positron.R != nil {
+			repoOpts = &renv.RepoOptions{
+				DefaultRepositories:      b.Positron.R.DefaultRepositories,
+				PackageManagerRepository: b.Positron.R.PackageManagerRepository,
+			}
+		}
+
+		newState, err := stateFactory(projectDir, b.AccountName, b.ConfigName, name, "", accountList, b.Secrets, b.Insecure, rInterpreter, pythonInterpreter, log, repoOpts)
 		if err != nil {
 			if errors.Is(err, accounts.ErrAccountNotFound) {
 				log.Error("Deployment initialization failure - account not found", "error", err.Error())

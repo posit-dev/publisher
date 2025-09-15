@@ -3,14 +3,14 @@ package renv
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import (
-	"fmt"
-	"path/filepath"
-	"strings"
+    "fmt"
+    "path/filepath"
+    "strings"
 
-	"github.com/posit-dev/publisher/internal/executor"
-	"github.com/posit-dev/publisher/internal/interpreters"
-	"github.com/posit-dev/publisher/internal/logging"
-	"github.com/posit-dev/publisher/internal/util"
+    "github.com/posit-dev/publisher/internal/executor"
+    "github.com/posit-dev/publisher/internal/interpreters"
+    "github.com/posit-dev/publisher/internal/logging"
+    "github.com/posit-dev/publisher/internal/util"
 )
 
 // RDependencyScanner generates a temporary renv.lock by invoking R
@@ -29,12 +29,17 @@ type RDependencyScanner interface {
 type defaultRDependencyScanner struct {
 	rExecutor executor.Executor
 	log       logging.Logger
+	repoOpts  *RepoOptions
 }
 
-func NewRDependencyScanner(log logging.Logger) *defaultRDependencyScanner {
+// NewRDependencyScanner creates a dependency scanner. If repoOpts is provided,
+// it is used to generate repository configuration in the R script; otherwise
+// the scanner may fallback to environment variables for compatibility.
+func NewRDependencyScanner(log logging.Logger, repoOpts *RepoOptions) *defaultRDependencyScanner {
 	return &defaultRDependencyScanner{
 		rExecutor: executor.NewExecutor(),
 		log:       log,
+		repoOpts:  repoOpts,
 	}
 }
 
@@ -73,8 +78,12 @@ func (s *defaultRDependencyScanner) ScanDependenciesInDir(paths []string, target
 		lockfile = interpreters.DefaultRenvLockfile
 	}
 	lockfile = filepath.ToSlash(lockfile) // Lockfile may in fact contain slashes.
+	// Generate repository setup snippet (may be empty)
+	setReposCode := generateRepoSetupCode(s.repoOpts)
+
 	script := fmt.Sprintf(`(function(){
 	options(renv.consent = TRUE)
+	%s
 	rPathsVec <- %s
 	deps <- tryCatch({
 		d <- renv::dependencies(path = rPathsVec, progress = FALSE)
@@ -87,7 +96,7 @@ func (s *defaultRDependencyScanner) ScanDependenciesInDir(paths []string, target
 	lockfile <- file.path(targetPath, "%s")
 	renv::snapshot(project = targetPath, lockfile = lockfile, prompt = FALSE, type = "all")
 	invisible()
-})()`, rPathsVec, normalizedProjectPath, lockfile)
+})()`, setReposCode, rPathsVec, normalizedProjectPath, lockfile)
 
 	// Run the script (use the temporary project as the working directory)
 	// Ensure working directory is provided as an AbsolutePath
@@ -129,4 +138,82 @@ func (s *defaultRDependencyScanner) toRPathsVector(paths []string) (string, erro
 		quoted = append(quoted, "\""+norm+"\"")
 	}
 	return "c(" + strings.Join(quoted, ", ") + ")", nil
+}
+
+// RepoOptions defines how to set R repositories during dependency scanning.
+// Values mirror VS Code setting `positron.r.defaultRepositories`.
+type RepoOptions struct {
+	// One of: "auto", "rstudio", "posit-ppm", "none", or a full http(s) URL.
+	DefaultRepositories string
+	// Optional custom PPM repo. Used when DefaultRepositories == "auto".
+	PackageManagerRepository string
+}
+
+func repoURLFrom(mode, ppm string) string {
+	switch mode {
+	case "auto":
+		if ppm != "" {
+			return strings.TrimRight(ppm, "/")
+		}
+		return "https://cloud.r-project.org"
+	case "posit-ppm":
+		return "https://packagemanager.posit.co/cran/latest"
+	case "rstudio":
+		return "https://cran.rstudio.com"
+	case "none":
+		return ""
+	default:
+		if strings.HasPrefix(mode, "http://") || strings.HasPrefix(mode, "https://") {
+			return strings.TrimRight(mode, "/")
+		}
+		return ""
+	}
+}
+
+func repoURLFromOptions(opts *RepoOptions) string {
+    if opts == nil {
+        // Unconfigured defaults to CRAN via "auto" mode
+        return repoURLFrom("auto", "")
+    }
+    mode := strings.ToLower(strings.TrimSpace(opts.DefaultRepositories))
+    if mode == "" {
+        mode = "auto"
+    }
+    return repoURLFrom(mode, strings.TrimSpace(opts.PackageManagerRepository))
+}
+
+// generateRepoSetupCode inspects provided options to produce an R snippet
+// that configures options(repos=...) consistent with (a subset of) Positron IDE
+// behavior. Keeping this separate from ScanDependenciesInDir keeps dependency
+// scanning logic focused.
+// Returns empty string if no explicit repos config should be applied.
+func generateRepoSetupCode(opts *RepoOptions) string {
+	repoURL := repoURLFromOptions(opts)
+	if repoURL == "" {
+		return ""
+	}
+	return fmt.Sprintf(`
+	try({
+		.publisher.apply_repo_defaults <- function(defaults = c(CRAN = "%s")) {
+			repos <- getOption("repos")
+			if (is.null(repos) || !is.character(repos)) {
+				repos <- defaults
+			} else {
+				if ("CRAN" %%in%% names(repos) && "CRAN" %%in%% names(defaults)) {
+					if (identical(repos[["CRAN"]], "@CRAN@")) {
+						repos[["CRAN"]] <- defaults[["CRAN"]]
+						attr(repos, "IDE") <- TRUE
+					}
+				}
+				for (name in names(defaults)) {
+					if (!(name %%in%% names(repos))) {
+						repos[[name]] <- defaults[[name]]
+					}
+				}
+			}
+			options(repos = repos)
+		}
+		.publisher.apply_repo_defaults()
+	}, silent = TRUE)
+	`, repoURL)
 }

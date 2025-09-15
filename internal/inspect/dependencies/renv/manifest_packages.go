@@ -38,7 +38,7 @@ type defaultPackageMapper struct {
 	scanner             RDependencyScanner
 }
 
-func NewPackageMapper(base util.AbsolutePath, rExecutable util.Path, log logging.Logger, lockfileOnly bool) (PackageMapper, error) {
+func NewPackageMapper(base util.AbsolutePath, rExecutable util.Path, log logging.Logger, lockfileOnly bool, repoOpts *RepoOptions) (PackageMapper, error) {
 	if lockfileOnly {
 		return NewLockfilePackageMapper(base, rExecutable, log), nil
 	}
@@ -51,7 +51,7 @@ func NewPackageMapper(base util.AbsolutePath, rExecutable util.Path, log logging
 		},
 		rExecutable: rExecutable,
 		lister:      lister,
-		scanner:     NewRDependencyScanner(log),
+		scanner:     NewRDependencyScanner(log, repoOpts),
 	}, err
 }
 

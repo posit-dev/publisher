@@ -16,8 +16,18 @@ import (
 )
 
 type PostPackagesRScanRequest struct {
-	R        string `json:"r"`
-	SaveName string `json:"saveName"`
+	R        string             `json:"r"`
+	SaveName string             `json:"saveName"`
+	Positron *positronSettings `json:"positron,omitempty"`
+}
+
+type positronSettings struct {
+	R *positronRSettings `json:"r,omitempty"`
+}
+
+type positronRSettings struct {
+	DefaultRepositories      string `json:"defaultRepositories"`
+	PackageManagerRepository string `json:"packageManagerRepository,omitempty"`
 }
 
 type PostPackagesRScanHandler struct {
@@ -33,7 +43,7 @@ func NewPostPackagesRScanHandler(
 	return &PostPackagesRScanHandler{
 		base:               base,
 		log:                log,
-		rDependencyScanner: renv.NewRDependencyScanner(log),
+		rDependencyScanner: renv.NewRDependencyScanner(log, nil),
 	}
 }
 
@@ -72,7 +82,17 @@ func (h *PostPackagesRScanHandler) ServeHTTP(w http.ResponseWriter, req *http.Re
 		BadRequest(w, req, h.log, err)
 		return
 	}
-	_, err = h.rDependencyScanner.SetupRenvInDir(projectDir.String(), lockfileRelPath.String(), rExecutablePath.String())
+	// Choose scanner: if Positron settings were provided, build a scanner with options;
+	// otherwise use the handler's default (for testability and backward-compat).
+	scanner := h.rDependencyScanner
+	if b.Positron != nil && b.Positron.R != nil {
+		scanner = renv.NewRDependencyScanner(h.log, &renv.RepoOptions{
+			DefaultRepositories:      b.Positron.R.DefaultRepositories,
+			PackageManagerRepository: b.Positron.R.PackageManagerRepository,
+		})
+	}
+
+	_, err = scanner.SetupRenvInDir(projectDir.String(), lockfileRelPath.String(), rExecutablePath.String())
 	if err != nil {
 		InternalError(w, req, h.log, err)
 		return

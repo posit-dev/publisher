@@ -292,6 +292,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       const r = await getRInterpreterPath();
       const python = await getPythonInterpreterPath();
 
+      // Collect IDE-controlled repo settings
+      const cfg = workspace.getConfiguration("positron.r");
+      const defaultRepos = cfg.get<string>("defaultRepositories") || "auto";
+      const ppmRepo = cfg.get<string>("packageManagerRepository");
+
       const response = await api.contentRecords.publish(
         deploymentName,
         credentialName,
@@ -301,6 +306,15 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         r,
         python,
         secrets,
+        {
+          r: {
+            defaultRepositories: defaultRepos,
+            // only attach ppm if defined
+            ...(defaultRepos === "auto" && ppmRepo
+              ? { packageManagerRepository: ppmRepo }
+              : {}),
+          },
+        },
       );
       deployProject(
         deploymentName,
@@ -974,10 +988,23 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           const api = await useApi();
           const r = await getRInterpreterPath();
 
+          // Collect IDE-controlled repo settings
+          const cfg = workspace.getConfiguration("positron.r");
+          const defaultRepos = cfg.get<string>("defaultRepositories") || "auto";
+          const ppmRepo = cfg.get<string>("packageManagerRepository");
+
           return await api.packages.createRRequirementsFile(
             activeConfiguration.projectDir,
             r,
             relPathPackageFile,
+            {
+              r: {
+                defaultRepositories: defaultRepos,
+                ...(defaultRepos === "auto" && ppmRepo
+                  ? { packageManagerRepository: ppmRepo }
+                  : {}),
+              },
+            },
           );
         },
       );
