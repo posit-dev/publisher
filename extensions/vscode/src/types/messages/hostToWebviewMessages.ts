@@ -24,7 +24,7 @@ export enum HostToWebviewMessageType {
   PUBLISH_START = "publishStart",
   PUBLISH_FINISH_SUCCESS = "publishFinishSuccess",
   PUBLISH_FINISH_FAILURE = "publishFinishFailure",
-  CONTENT_RENDER_FINISHED = "contentRenderFinished",
+  CONTENT_RENDER_SUCCESS = "contentRenderSuccess",
   CONTENT_RENDER_FAILURE = "contentRenderFailure",
   UPDATE_CONTENTRECORD_SELECTION = "updateContentRecordSelection",
   SAVE_SELECTION = "saveSelection",
@@ -59,7 +59,7 @@ export type HostToWebviewMessage =
   | PublishStartMsg
   | PublishFinishSuccessMsg
   | PublishFinishFailureMsg
-  | ContentRenderFinishedMsg
+  | ContentRenderSuccessMsg
   | ContentRenderFailureMsg
   | UpdateContentRecordSelectionMsg
   | SaveSelectionMsg
@@ -85,7 +85,7 @@ export function isHostToWebviewMessage(msg: any): msg is HostToWebviewMessage {
     msg.kind === HostToWebviewMessageType.PUBLISH_START ||
     msg.kind === HostToWebviewMessageType.PUBLISH_FINISH_SUCCESS ||
     msg.kind === HostToWebviewMessageType.PUBLISH_FINISH_FAILURE ||
-    msg.kind === HostToWebviewMessageType.CONTENT_RENDER_FINISHED ||
+    msg.kind === HostToWebviewMessageType.CONTENT_RENDER_SUCCESS ||
     msg.kind === HostToWebviewMessageType.CONTENT_RENDER_FAILURE ||
     msg.kind === HostToWebviewMessageType.UPDATE_CONTENTRECORD_SELECTION ||
     msg.kind === HostToWebviewMessageType.SAVE_SELECTION ||
@@ -140,10 +140,14 @@ export type PublishFinishFailureMsg = AnyHostToWebviewMessage<
     };
   }
 >;
-export type ContentRenderFinishedMsg =
-  AnyHostToWebviewMessage<HostToWebviewMessageType.CONTENT_RENDER_FINISHED>;
-export type ContentRenderFailureMsg =
-  AnyHostToWebviewMessage<HostToWebviewMessageType.CONTENT_RENDER_FAILURE>;
+export type ContentRenderSuccessMsg =
+  AnyHostToWebviewMessage<HostToWebviewMessageType.CONTENT_RENDER_SUCCESS>;
+export type ContentRenderFailureMsg = AnyHostToWebviewMessage<
+  HostToWebviewMessageType.CONTENT_RENDER_FAILURE,
+  {
+    error: string;
+  }
+>;
 export type UpdateContentRecordSelectionMsg = AnyHostToWebviewMessage<
   HostToWebviewMessageType.UPDATE_CONTENTRECORD_SELECTION,
   {

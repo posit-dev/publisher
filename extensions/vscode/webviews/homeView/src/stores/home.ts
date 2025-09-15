@@ -35,7 +35,8 @@ export const useHomeStore = defineStore("home", () => {
   const publishInProgress = ref(false);
   const publishInitiated = ref(false);
   const contentRenderInProgress = ref(false);
-  const contentRenderFailed = ref(false);
+  const contentRenderSuccess = ref<boolean | undefined>(undefined);
+  const contentRenderError = ref<string | undefined>(undefined);
 
   const contentRecords = ref<(ContentRecord | PreContentRecord)[]>([]);
   const configurations = ref<Configuration[]>([]);
@@ -345,13 +346,6 @@ export const useHomeStore = defineStore("home", () => {
         );
       }),
 
-      isAlertActive: computed((): boolean => {
-        return (
-          r.active.isMissingPackageFile.value ||
-          r.active.isEmptyRequirements.value
-        );
-      }),
-
       isInProject: computed(() => {
         return rProject.value;
       }),
@@ -385,7 +379,6 @@ export const useHomeStore = defineStore("home", () => {
     return (
       !config.active.isAlertActive.value &&
       (credential.active.isAlertActive.value ||
-        r.active.isAlertActive.value ||
         python.active.isAlertActive.value)
     );
   });
@@ -469,7 +462,8 @@ export const useHomeStore = defineStore("home", () => {
     publishInProgress,
     publishInitiated,
     contentRenderInProgress,
-    contentRenderFailed,
+    contentRenderSuccess,
+    contentRenderError,
     contentRecords,
     configurations,
     configurationsInError,
