@@ -213,9 +213,9 @@ Cypress.Commands.add("startWorkbenchPositronSession", () => {
   cy.log("Starting Workbench Positron session");
 
   // Start a Positron session
-  cy.get("#newSessionBtn").click();
+  cy.get("button").contains("New Session").click();
   cy.get("button").contains("Positron").click();
-  cy.get("button").contains("Start Session").click();
+  cy.get("button").contains("Launch").click();
 
   // Wait for the Workbench UI to load
   cy.waitForWorkbenchToLoad();
