@@ -31,29 +31,54 @@ Cypress.Commands.add(
 
 /**
  * Clean up Workbench data files and directories to ensure a fresh state
- * This does not restart the Workbench container, so any existing sessions would still be visible in the Workbench UI
- * but all deployment data is removed. This is necessary to ensure a clean state between tests since we bind mount the
- * workspace directory into the container and data would otherwise persist between tests
- * @param {string} projectDir - The project directory (optional). If provided, will also clean up project-specific data
+ * Uses Docker exec to run the cleanup inside the container so the container must be running this ensures proper
+ * permissions regardless of local or CI environment
  */
 Cypress.Commands.add("cleanupWorkbenchData", () => {
   cy.log("Cleaning up Workbench data");
 
-  // Define paths to clean up
-  const cleanupPaths = [
-    "content-workspace/.cache",
-    "content-workspace/.duckdb",
-    "content-workspace/.ipython",
-    "content-workspace/.local",
-    "content-workspace/.positron-server",
-    "content-workspace/.connect-credentials",
-  ];
+  // First check if the container is running
+  cy.exec(
+    "docker ps | grep publisher-e2e.workbench-release || echo 'not-running'",
+    {
+      failOnNonZeroExit: false,
+    },
+  ).then((result) => {
+    if (result.stdout.includes("not-running")) {
+      // Container is not running, fail with a clear error message
+      throw new Error(
+        "Cannot clean up Workbench data - container 'publisher-e2e.workbench-release' is not running. " +
+          "This command requires a running container to execute properly.",
+      );
+    }
 
-  cy.exec(`rm -rf ${cleanupPaths.join(" ")}`, {
-    failOnNonZeroExit: false,
-  }).then((result) => {
-    cy.log(`Cleanup directories result: exit code ${result.code}`);
-    if (result.stderr) cy.log(`Cleanup stderr: ${result.stderr}`);
+    // Define paths to clean up - use paths relative to /home/rstudio in container
+    const cleanupPaths = [
+      ".cache",
+      ".duckdb",
+      ".ipython",
+      ".local",
+      ".positron-server",
+      ".connect-credentials",
+    ];
+
+    // Container is running, proceed with docker exec cleanup
+    cy.exec(
+      `docker exec publisher-e2e.workbench-release bash -c "cd /home/rstudio && rm -rf ${cleanupPaths.join(" ")}"`,
+      {
+        failOnNonZeroExit: false,
+      },
+    ).then((result) => {
+      cy.log(`Cleanup directories result: exit code ${result.code}`);
+      if (result.stderr) cy.log(`Cleanup stderr: ${result.stderr}`);
+
+      // Fail if the docker exec command itself failed (distinct from the rm command inside)
+      if (result.code !== 0) {
+        throw new Error(
+          `Failed to execute cleanup in container: ${result.stderr}`,
+        );
+      }
+    });
   });
 });
 
@@ -62,9 +87,11 @@ Cypress.Commands.add("cleanupWorkbenchData", () => {
  * This function stops the current container, removes any test data, and starts a fresh container
  * with clean state. It handles container lifecycle operations using the justfile commands
  *
- * @param {string} projectDir - Optional project directory to clean up specific project data
  */
-Cypress.Commands.add("cleanupAndRestartWorkbench", (projectDir) => {
+Cypress.Commands.add("cleanupAndRestartWorkbench", () => {
+  // Cleanup the data while the container is still running
+  cy.cleanupWorkbenchData();
+
   // Stop and remove the container
   cy.log("Stopping and removing Workbench container");
   cy.exec(`just remove-workbench release`, {
@@ -87,9 +114,6 @@ Cypress.Commands.add("cleanupAndRestartWorkbench", (projectDir) => {
       );
     }
   });
-
-  // Clean up the workspace data
-  cy.cleanupWorkbenchData(projectDir);
 
   // Start a fresh container, the justfile command includes a health check wait
   cy.log("Starting fresh Workbench container");
