@@ -16,7 +16,8 @@ import { WebviewToHostMessageType } from "../../../../src/types/messages/webview
 const home = useHomeStore();
 const hostConduit = useHostConduitService();
 const render = () => {
-  home.contentRenderFailed = false;
+  home.contentRenderError = undefined;
+  home.contentRenderSuccess = undefined;
   home.contentRenderInProgress = true;
   hostConduit.sendMsg({ kind: WebviewToHostMessageType.RENDER_CONTENT });
 };
