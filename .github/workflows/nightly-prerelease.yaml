@@ -132,8 +132,6 @@ jobs:
           private-key: ${{ secrets.POSIT_CONNECT_PROJECTS_PEM }}
           # Tags are part of repository contents, so we need this permission
           permission-contents: write
-          # Add workflow permission to allow triggering other workflows
-          permission-workflows: write
 
       - uses: actions/checkout@v5
         with:
@@ -146,14 +144,14 @@ jobs:
           GH_TOKEN: ${{ steps.generate-token.outputs.token }}
         run: |
           # Configure git
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
 
           # Create the tag
           git tag -a "$NEXT_VERSION" -m "Nightly pre-release $NEXT_VERSION"
 
           # Use the token for authentication when pushing
-          git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}" "$NEXT_VERSION"
+          git push origin "$NEXT_VERSION"
 
           echo "✅ Created and pushed tag: $NEXT_VERSION"
 
