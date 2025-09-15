@@ -93,6 +93,7 @@ const homeViewCommands = {
   AddCredential: "posit.publisher.homeView.addCredential",
   DeleteCredential: "posit.publisher.homeView.deleteCredential",
   RefreshCredentials: "posit.publisher.homeView.refreshCredentials",
+  AddIntegrationRequest: "posit.publisher.homeView.addIntegrationRequest",
   RemoveSecret: "posit.publisher.homeView.removeSecret",
   EditCurrentConfiguration: "posit.publisher.homeView.edit.Configuration",
   CopySystemInfo: "posit.publisher.homeView.copySystemInfo",

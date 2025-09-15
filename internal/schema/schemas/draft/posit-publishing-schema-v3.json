@@ -529,6 +529,40 @@
       "description": "Names of secrets required by the application. Injected as environment variables.",
       "examples": ["API_KEY", "DATABASE_PASSWORD"]
     },
+    "integration_requests": {
+      "type": "array",
+      "description": "Integration requests associated with this configuration",
+      "items": {
+        "type": "object",
+        "properties": {
+          "guid": {
+            "type": "string",
+            "description": "Unique identifier for the integration request"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the integration request"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of the integration request"
+          },
+          "authType": {
+            "type": "string",
+            "description": "Authentication type for the integration request"
+          },
+          "type": {
+            "type": "string",
+            "description": "Integration type"
+          },
+          "config": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Configuration for the integration request"
+          }
+        }
+      }
+    },
     "connect": {
       "type": "object",
       "description": "Settings for Posit Connect applications.",

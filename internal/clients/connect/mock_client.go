@@ -111,3 +111,20 @@ func (m *MockClient) GetCurrentUser(log logging.Logger) (*User, error) {
 		return user.(*User), args.Error(1)
 	}
 }
+
+func (m *MockClient) GetIntegrations(log logging.Logger) ([]Integration, error) {
+	args := m.Called(log)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]Integration), args.Error(1)
+}
+
+func (m *MockClient) GetSettings(base util.AbsolutePath, cfg *config.Config, log logging.Logger) (*AllSettings, error) {
+	args := m.Called(base, cfg, log)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*AllSettings), args.Error(1)
+}
+

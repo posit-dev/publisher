@@ -1,0 +1,164 @@
+name: Nightly Pre-release
+
+on:
+  # schedule:
+  #   - cron: "0 07 * * *" # Run at 7 AM UTC daily
+  workflow_dispatch:
+
+jobs:
+  check:
+    name: Check if release needed
+    runs-on: ubuntu-latest
+    outputs:
+      skip: ${{ steps.check-tag.outputs.skip }}
+      current-sha: ${{ steps.check-tag.outputs.sha }}
+      latest-tag: ${{ steps.fetch-tag.outputs.latest_tag }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 500
+          ref: main
+
+      # We can't do `fetch-tags: true` when `fetch-depth > 0`
+      # https://github.com/actions/checkout/issues/1662
+      # So fetch the most recent tag in a separate step
+      - name: Fetch most recent tag
+        run: |
+          # This uses git ls-remote to find tags, sorted by semver, and keeps the highest version
+          tag=$(git -c 'versionsort.suffix=-' ls-remote --exit-code --refs --sort='version:refname' --tags origin 'v*.*.*' | tail --lines=1 | sed -e 's@.*refs/tags/@@')
+          echo "Found latest tag: $tag"
+          git fetch --no-tags origin tag $tag
+          echo "latest_tag=$tag" >> "$GITHUB_OUTPUT"
+        id: fetch-tag
+
+      - name: Check existing tags
+        id: check-tag
+        run: |
+          # Check if any version tags point to the current commit on main
+          EXISTING_TAGS=$(git tag --points-at main | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' || true)
+          if [ -n "$EXISTING_TAGS" ]; then
+            echo "Current commit on main is already tagged: $EXISTING_TAGS"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            
+            # Add job summary
+            echo "## ⏭️ Pre-release Skipped" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "The current commit on \`main\` is already tagged:" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo "$EXISTING_TAGS" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "Current commit on main is not tagged"
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  version:
+    name: Calculate next version
+    needs: check
+    if: needs.check.outputs.skip == 'false'
+    runs-on: ubuntu-latest
+    outputs:
+      next-version: ${{ steps.calculate.outputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "lts/*"
+
+      - name: Calculate version
+        id: calculate
+        run: |
+          # Install semver locally so it's available in require path
+          npm init -y > /dev/null
+          npm install semver
+
+          # Use the latest tag we fetched in the check job
+          LATEST_VERSION="${{ needs.check.outputs.latest-tag }}"
+
+          # Use semver clean to properly handle the version string
+          LATEST_VERSION_CLEAN=$(node -p "require('semver').clean('$LATEST_VERSION')")
+
+          echo "Latest version found: ${LATEST_VERSION} (clean: ${LATEST_VERSION_CLEAN})"
+
+          # Calculate next version
+          if [ -n "$LATEST_VERSION" ]; then
+            # Get minor version number to check if odd/even
+            MINOR=$(node -p "require('semver').minor('$LATEST_VERSION')")
+            
+            echo "Extracted MINOR version number: ${MINOR}"
+            
+            if [ $((MINOR % 2)) -eq 0 ]; then
+              # Latest is a release (even minor), create a prerelease with odd minor
+              NEXT_VERSION=$(node -p "require('semver').inc('$LATEST_VERSION', 'minor')")
+            else
+              # Latest is already a prerelease (odd minor), increment the patch
+              NEXT_VERSION=$(node -p "require('semver').inc('$LATEST_VERSION', 'patch')")
+            fi
+          else
+            # No versions found, start at 1.1.0
+            NEXT_VERSION="1.1.0"
+          fi
+
+          # Remove any v prefix semver might have added back
+          NEXT_VERSION_CLEAN=$(node -p "require('semver').clean('$NEXT_VERSION')")
+          echo "Next pre-release version: v$NEXT_VERSION_CLEAN"
+          echo "version=v$NEXT_VERSION_CLEAN" >> "$GITHUB_OUTPUT"
+
+          # Add job summary
+          echo "## 📦 Pre-release Version" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Next version:** \`v$NEXT_VERSION\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Type | Version |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|---------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Latest Version | \`${LATEST_VERSION}\` |" >> $GITHUB_STEP_SUMMARY
+
+  tag:
+    name: Create tag
+    needs: [check, version]
+    if: needs.check.outputs.skip == 'false'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate token for GitHub App
+        id: generate-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.POSIT_CONNECT_PROJECTS_APP_ID }}
+          private-key: ${{ secrets.POSIT_CONNECT_PROJECTS_PEM }}
+          # Tags are part of repository contents, so we need this permission
+          permission-contents: write
+
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          ref: main
+          token: ${{ steps.generate-token.outputs.token }}
+
+      - name: Create tag
+        env:
+          NEXT_VERSION: ${{ needs.version.outputs.next-version }}
+          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
+        run: |
+          # Configure git
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+
+          # Create the tag
+          git tag -a "$NEXT_VERSION" -m "Nightly pre-release $NEXT_VERSION"
+
+          # Use the token for authentication when pushing
+          git push origin "$NEXT_VERSION"
+
+          echo "✅ Created and pushed tag: $NEXT_VERSION"
+
+          # Add job summary
+          echo "## ✅ Tag Created" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Successfully created and pushed tag: \`$NEXT_VERSION\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The release workflow should now be triggered automatically." >> $GITHUB_STEP_SUMMARY

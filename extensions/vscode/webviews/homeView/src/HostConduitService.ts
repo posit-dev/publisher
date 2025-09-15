@@ -15,6 +15,8 @@ import {
   RefreshFilesMsg,
   SetPathSeparatorMsg,
   UpdateServerEnvironmentMsg,
+  RefreshIntegrationRequestsMsg,
+  RefreshServerSettingsMsg,
 } from "../../../src/types/messages/hostToWebviewMessages";
 import {
   WebviewToHostMessage,
@@ -76,6 +78,10 @@ const onMessageFromHost = (msg: HostToWebviewMessage): void => {
       return onPublishFinishSuccessMsg();
     case HostToWebviewMessageType.PUBLISH_FINISH_FAILURE:
       return onPublishFinishFailureMsg(msg);
+    case HostToWebviewMessageType.CONTENT_RENDER_FINISHED:
+      return onContentRenderFinishedMsg();
+    case HostToWebviewMessageType.CONTENT_RENDER_FAILURE:
+      return onContentRenderFailureMsg();
     case HostToWebviewMessageType.UPDATE_CONTENTRECORD_SELECTION:
       return onUpdateContentRecordSelectionMsg(msg);
     case HostToWebviewMessageType.SAVE_SELECTION:
@@ -94,6 +100,10 @@ const onMessageFromHost = (msg: HostToWebviewMessage): void => {
       return onSetPathSeparatorMsg(msg);
     case HostToWebviewMessageType.UPDATE_SERVER_ENVIRONMENT:
       return onUpdateServerEnvironmentMsg(msg);
+    case HostToWebviewMessageType.REFRESH_INTEGRATION_REQUESTS:
+      return onRefreshIntegrationRequestsMsg(msg);
+    case HostToWebviewMessageType.REFRESH_SERVER_SETTINGS:
+      return onRefreshServerSettingsMsg(msg);
     default:
       console.warn(`unexpected command: ${JSON.stringify(msg)}`);
   }
@@ -194,6 +204,14 @@ const onPublishFinishFailureMsg = (msg: PublishFinishFailureMsg) => {
   home.lastContentRecordResult = `Last Deployment Failed`;
   home.lastContentRecordMsg = msg.content.data.message;
 };
+const onContentRenderFinishedMsg = () => {
+  const home = useHomeStore();
+  home.contentRenderInProgress = false;
+};
+const onContentRenderFailureMsg = () => {
+  const home = useHomeStore();
+  home.contentRenderFailed = true;
+};
 const onUpdateContentRecordSelectionMsg = (
   msg: UpdateContentRecordSelectionMsg,
 ) => {
@@ -244,4 +262,16 @@ const onUpdateRPackages = (msg: UpdateRPackages) => {
 const onUpdateServerEnvironmentMsg = (msg: UpdateServerEnvironmentMsg) => {
   const home = useHomeStore();
   home.serverSecrets = new Set(msg.content.environment);
+};
+
+const onRefreshIntegrationRequestsMsg = (
+  msg: RefreshIntegrationRequestsMsg,
+) => {
+  const home = useHomeStore();
+  home.integrationRequests = msg.content.integrationRequests;
+};
+
+const onRefreshServerSettingsMsg = (msg: RefreshServerSettingsMsg) => {
+  const home = useHomeStore();
+  home.serverSettings = msg.content.serverSettings;
 };

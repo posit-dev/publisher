@@ -7,16 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.22.0]
+
 ### Added
 
 - Added "Set Up renv" button to initialize the environment, install
-  dependencies, and create a lockfile when no valid R lockfile file is present.
+  dependencies, and create a lockfile when no valid R lockfile file is present (#3000, #3048)
+- Added support for managing OAuth integration content requirements directly from the "Integration Requests" pane in the Publisher UI. Auto-association of OAuth integrations is supported when deploying to Posit Connect 2025.09.0 or later with a license that includes OAuth integrations. (#3016)
+- Added a "Render Your Project" button that shows up for HTML project deployments rendered by Quarto
+  to easily update and publish the rendered output (#2948)
 - Improved visuals for waiting on Connect on-prem token to be claimed (#2900)
 
 ### Fixed
 
-- Fixed an issue where the preferred Python path was incorrectly not found when deploying #2742
-- Fixed Python dependencies scanning not respecting the active Python session #2825
+- Fixed an issue where the preferred Python path was incorrectly not found when deploying (#2742)
+- Fixed Python dependencies scanning not respecting the active Python session (#2825)
+- Fixed messaging about setting up renv (#3029)
+
+### Changed
+
+- Update installation.md to include directions for Positron, pre-release, and Open VSX installations (#3066)
+- Remove install-publisher.bash script and references (#3066)
 
 ## [1.21.0]
 
