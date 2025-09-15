@@ -1,8 +1,8 @@
 name: Nightly Pre-release
 
 on:
-  # schedule:
-  #   - cron: "0 07 * * *" # Run at 7 AM UTC daily
+  schedule:
+    - cron: "0 07 * * *" # Run at 7 AM UTC daily
   workflow_dispatch:
 
 jobs:
@@ -138,11 +138,6 @@ jobs:
           fetch-depth: 0
           ref: main
           token: ${{ steps.generate-token.outputs.token }}
-
-      - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-          ref: main
 
       - name: Create tag
         env:
