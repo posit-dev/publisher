@@ -346,13 +346,6 @@ export const useHomeStore = defineStore("home", () => {
         );
       }),
 
-      isAlertActive: computed((): boolean => {
-        return (
-          r.active.isMissingPackageFile.value ||
-          r.active.isEmptyRequirements.value
-        );
-      }),
-
       isInProject: computed(() => {
         return rProject.value;
       }),
@@ -386,7 +379,6 @@ export const useHomeStore = defineStore("home", () => {
     return (
       !config.active.isAlertActive.value &&
       (credential.active.isAlertActive.value ||
-        r.active.isAlertActive.value ||
         python.active.isAlertActive.value)
     );
   });
