@@ -33,10 +33,10 @@ Cypress.Commands.add(
  * Clean up Workbench data files and directories to ensure a fresh state
  * This does not restart the Workbench container, so any existing sessions would still be visible in the Workbench UI
  * but all deployment data is removed. This is necessary to ensure a clean state between tests since we bind mount the
- * workspace directory into the container and data would otherwise persist between tests.
+ * workspace directory into the container and data would otherwise persist between tests
  * @param {string} projectDir - The project directory (optional). If provided, will also clean up project-specific data
  */
-Cypress.Commands.add("cleanupWorkbenchData", (projectDir) => {
+Cypress.Commands.add("cleanupWorkbenchData", () => {
   cy.log("Cleaning up Workbench data");
 
   // Define paths to clean up
@@ -49,27 +49,11 @@ Cypress.Commands.add("cleanupWorkbenchData", (projectDir) => {
     "content-workspace/.connect-credentials",
   ];
 
-  // Only add project-specific path if a projectDir was provided
-  if (projectDir) {
-    cleanupPaths.push(`content-workspace/${projectDir}/.posit`);
-  }
-
   cy.exec(`rm -rf ${cleanupPaths.join(" ")}`, {
     failOnNonZeroExit: false,
   }).then((result) => {
     cy.log(`Cleanup directories result: exit code ${result.code}`);
     if (result.stderr) cy.log(`Cleanup stderr: ${result.stderr}`);
-  });
-
-  // Remove workbench e2e projects
-  cy.exec(
-    `for dir in content-workspace/${Cypress.env("WORKBENCH_PROJECT_PREFIX")}*; do rm -rf "$dir" 2>/dev/null || true; done`,
-    {
-      failOnNonZeroExit: false,
-    },
-  ).then((result) => {
-    cy.log(`Cleanup projects result: code ${result.code}`);
-    if (result.stderr) cy.log(`Cleanup projects stderr: ${result.stderr}`);
   });
 });
 
@@ -305,7 +289,7 @@ Cypress.Commands.add(
 
     // Open the entrypoint ahead of time for easier selection later
     // Uses the Workbench-specific open folder flow
-    // Note this deviates from the VS Code logic and does not currently handle projectDir = "."
+    // Note this deviates from VS Code logic as it does not handle 'projectDir = "."' but that might not be needed here
     cy.get("button").contains("Open Folder...").click();
     cy.get(".quick-input-widget").within(() => {
       cy.get(".quick-input-box input").should("be.visible");
@@ -329,13 +313,13 @@ Cypress.Commands.add(
       .should("be.visible");
 
     cy.waitForWorkbenchToLoad();
-    // Workbench should automatically spin up an appropriate interpreter based on the project that has been opened
+    // Workbench automatically selects an interpreter based on the project that has been opened, skip for "static"
     if (projectDir !== "static") {
       cy.waitForInterpreterReady();
     }
 
     // Activate the publisher extension
-    // In Workbench the viewport size causes Publisher to be in the "..." menu
+    // Note in Workbench the viewport size causes Publisher item to be hidden in the "..." menu
     cy.get(
       '[id="workbench.parts.activitybar"] .action-item[role="button"][aria-label="Additional Views"]',
       {
@@ -348,15 +332,19 @@ Cypress.Commands.add(
       .should("be.visible")
       .within(() => {
         // Even a double-click the Posit Publisher menu item sometimes fails to open it for some reason
+        // TODO try to determine some other way to make this more reliable than a hardcoded wait
         // eslint-disable-next-line cypress/no-unnecessary-waiting
-        cy.wait(1000); // Small wait to allow the menu to fully render, unsure what else to do here
+        cy.wait(1_000);
 
         cy.findByLabelText("Posit Publisher").dblclick();
       });
 
     // Small wait to allow the UI to settle in CI before proceeding
+    // TODO try to determine some other way to make this more reliable than a hardcoded wait
     // eslint-disable-next-line cypress/no-unnecessary-waiting
     cy.wait(1_000);
+
+    cy.debugIframes();
 
     // Create a new deployment via the select-deployment button
     cy.publisherWebview()
