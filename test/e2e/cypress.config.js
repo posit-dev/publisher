@@ -86,7 +86,6 @@ module.exports = defineConfig({
     CONNECT_MANAGER_URL: "http://localhost:4723",
     CONNECT_CLOUD_ENV: process.env.CONNECT_CLOUD_ENV || "staging",
     WORKBENCH_URL: "http://localhost:8787",
-    WORKBENCH_PROJECT_PREFIX: "workbench-e2e-",
     pccConfig,
   },
   chromeWebSecurity: false,
