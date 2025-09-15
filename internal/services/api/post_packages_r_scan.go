@@ -21,15 +21,6 @@ type PostPackagesRScanRequest struct {
 	Positron *positronSettings `json:"positron,omitempty"`
 }
 
-type positronSettings struct {
-	R *positronRSettings `json:"r,omitempty"`
-}
-
-type positronRSettings struct {
-	DefaultRepositories      string `json:"defaultRepositories"`
-	PackageManagerRepository string `json:"packageManagerRepository,omitempty"`
-}
-
 type PostPackagesRScanHandler struct {
 	base               util.AbsolutePath
 	log                logging.Logger
