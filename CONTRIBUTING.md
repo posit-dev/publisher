@@ -307,6 +307,8 @@ minor version number is odd.
   - the [VSCode Extension CHANGELOG.md](extensions/vscode/CHANGELOG.md)
     that is bundled with the extension
 - Merge any "Update licenses" PRs to main
+- Merge any release preparation PRs to main
+- Wait for the `main.yaml` workflows to complete before creating a release tag
 
 ### Instructions
 
