@@ -229,15 +229,13 @@ Cypress.Commands.add("startWorkbenchPositronSession", () => {
 });
 
 /**
- * Waits for the Workbench UI to load by checking for the presence of the workbench indicator
- *
- * @example
- *    cy.waitForWorkbenchToLoad()
+ * Waits for the Workbench UI to load by checking for the presence of the workbench indicator and network idle
  */
 Cypress.Commands.add("waitForWorkbenchToLoad", () => {
   cy.log("Waiting for Workbench UI to load");
   // Workbench indicator in bottom status bar, uses a longer timeout to accommodate slow loads
-  cy.get("[id='rstudio.rstudio-workbench']", { timeout: 60_000 }).should(
+  // Takes about 10 seconds when using the container manually, but about 75 seconds when running with Cypress
+  cy.get("[id='rstudio.rstudio-workbench']", { timeout: 120_000 }).should(
     "be.visible",
   );
 
