@@ -368,7 +368,7 @@ License: GPL-2 | GPL-3
 	defer os.Setenv("R_LIBS", origLibs)
 
 	// Legacy path
-	legacyMapper, err := NewPackageMapper(base, util.Path{}, s.log, false)
+legacyMapper, err := NewPackageMapper(base, util.Path{}, s.log, false, nil)
 	s.NoError(err)
 
 	legacyPkgs, err := legacyMapper.GetManifestPackages(base, lockfilePath, s.log)
@@ -400,7 +400,7 @@ func (s *LockfilePackageMapperSuite) TestBioconductor_LockfileCompatibility() {
 	defer os.Setenv("R_LIBS", origLibs)
 
 	// Legacy path
-	legacyMapper, err := NewPackageMapper(base, util.Path{}, s.log, false)
+legacyMapper, err := NewPackageMapper(base, util.Path{}, s.log, false, nil)
 	s.NoError(err)
 
 	// If Bioconductor repos are not resolvable in this environment, skip

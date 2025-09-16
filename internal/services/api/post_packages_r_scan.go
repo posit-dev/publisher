@@ -31,11 +31,11 @@ func NewPostPackagesRScanHandler(
 	base util.AbsolutePath,
 	log logging.Logger,
 ) *PostPackagesRScanHandler {
-	return &PostPackagesRScanHandler{
-		base:               base,
-		log:                log,
-		rDependencyScanner: renv.NewRDependencyScanner(log, nil),
-	}
+    return &PostPackagesRScanHandler{
+        base:               base,
+        log:                log,
+        rDependencyScanner: renv.NewRDependencyScanner(log, nil),
+    }
 }
 
 func (h *PostPackagesRScanHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
@@ -75,13 +75,13 @@ func (h *PostPackagesRScanHandler) ServeHTTP(w http.ResponseWriter, req *http.Re
 	}
 	// Choose scanner: if Positron settings were provided, build a scanner with options;
 	// otherwise use the handler's default (for testability and backward-compat).
-	scanner := h.rDependencyScanner
-	if b.Positron != nil && b.Positron.R != nil {
-		scanner = renv.NewRDependencyScanner(h.log, &renv.RepoOptions{
-			DefaultRepositories:      b.Positron.R.DefaultRepositories,
-			PackageManagerRepository: b.Positron.R.PackageManagerRepository,
-		})
-	}
+    scanner := h.rDependencyScanner
+    if b.Positron != nil && b.Positron.R != nil {
+        scanner = renv.NewRDependencyScanner(h.log, &renv.RepoOptions{
+            DefaultRepositories:      b.Positron.R.DefaultRepositories,
+            PackageManagerRepository: b.Positron.R.PackageManagerRepository,
+        })
+    }
 
 	_, err = scanner.SetupRenvInDir(projectDir.String(), lockfileRelPath.String(), rExecutablePath.String())
 	if err != nil {

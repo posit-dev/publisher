@@ -3,9 +3,13 @@ package publish
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import (
-	"github.com/posit-dev/publisher/internal/bundles"
-	"github.com/posit-dev/publisher/internal/events"
-	"github.com/posit-dev/publisher/internal/logging"
+    "fmt"
+    "strings"
+
+    "github.com/posit-dev/publisher/internal/bundles"
+    "github.com/posit-dev/publisher/internal/events"
+    "github.com/posit-dev/publisher/internal/inspect/dependencies/renv"
+    "github.com/posit-dev/publisher/internal/logging"
 )
 
 func (p *defaultPublisher) createManifest() (*bundles.Manifest, error) {
@@ -29,9 +33,15 @@ func (p *defaultPublisher) createManifest() (*bundles.Manifest, error) {
 
 		if scanDependencies {
 			// Displays a log message under the package collection activity
-			// So that the user knows we automatically detected dependencies.
-			log := p.log.WithArgs(logging.LogKeyOp, events.PublishGetRPackageDescriptionsOp)
-			log.Info("No renv.lock found; automatically scanning for dependencies.")
+			// so that the user knows we automatically detected dependencies
+			// and which default repository is being used.
+            log := p.log.WithArgs(logging.LogKeyOp, events.PublishGetRPackageDescriptionsOp)
+            repoURL := defaultRepoURLFromOptions(p.RepoOptions)
+            repoText := repoURL
+            if repoText == "" {
+                repoText = "none"
+            }
+            log.Info(fmt.Sprintf("No renv.lock found; automatically scanning for dependencies. Default repo: %s", repoText))
 		}
 
 		rPackages, lockfilePath, err := p.getRPackagesWithPath(scanDependencies)
@@ -48,4 +58,34 @@ func (p *defaultPublisher) createManifest() (*bundles.Manifest, error) {
 
 	p.log.Debug("Generated manifest:", manifest)
 	return manifest, nil
+}
+
+// defaultRepoURLFromOptions mirrors the repository selection used during scanning
+// to provide accurate logging for which default repository is in use.
+func defaultRepoURLFromOptions(opts *renv.RepoOptions) string {
+	if opts == nil {
+		return "https://cloud.r-project.org"
+	}
+	mode := strings.ToLower(strings.TrimSpace(opts.DefaultRepositories))
+	ppm := strings.TrimRight(strings.TrimSpace(opts.PackageManagerRepository), "/")
+	if mode == "" || mode == "auto" {
+		if ppm != "" {
+			return ppm
+		}
+		return "https://cloud.r-project.org"
+	}
+	switch mode {
+	case "posit-ppm":
+		return "https://packagemanager.posit.co/cran/latest"
+	case "rstudio":
+		return "https://cran.rstudio.com"
+	case "none":
+		return ""
+	default:
+		// Allow custom URLs
+		if strings.HasPrefix(mode, "http://") || strings.HasPrefix(mode, "https://") {
+			return strings.TrimRight(opts.DefaultRepositories, "/")
+		}
+		return "https://cloud.r-project.org"
+	}
 }

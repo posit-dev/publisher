@@ -76,7 +76,7 @@ func (s *ManifestPackagesSuite) TestCRAN() {
 	libPath := base.Join("renv_library")
 	otherlibPath := util.NewAbsolutePath("/nonexistent", afero.NewMemMapFs())
 
-	mapper, err := NewPackageMapper(base, util.Path{}, s.log, false)
+mapper, err := NewPackageMapper(base, util.Path{}, s.log, false, nil)
 	s.NoError(err)
 
 	lister := &mockPackageLister{}
@@ -115,7 +115,7 @@ func (s *ManifestPackagesSuite) TestBioconductor() {
 	libPath := base.Join("renv_library")
 	otherlibPath := util.NewAbsolutePath("/nonexistent", afero.NewMemMapFs())
 
-	mapper, err := NewPackageMapper(base, util.Path{}, s.log, false)
+mapper, err := NewPackageMapper(base, util.Path{}, s.log, false, nil)
 	s.NoError(err)
 
 	lister := &mockPackageLister{}
@@ -180,7 +180,7 @@ func (s *ManifestPackagesSuite) TestVersionMismatch() {
 	lockfilePath := base.Join("renv.lock")
 	libPath := base.Join("renv_library")
 
-	mapper, err := NewPackageMapper(base, util.Path{}, s.log, false)
+mapper, err := NewPackageMapper(base, util.Path{}, s.log, false, nil)
 	s.NoError(err)
 
 	lister := &mockPackageLister{}
@@ -210,7 +210,7 @@ func (s *ManifestPackagesSuite) TestDevVersion() {
 	lockfilePath := base.Join("renv.lock")
 	libPath := base.Join("renv_library")
 
-	mapper, err := NewPackageMapper(base, util.Path{}, s.log, false)
+mapper, err := NewPackageMapper(base, util.Path{}, s.log, false, nil)
 	s.NoError(err)
 
 	lister := &mockPackageLister{}
@@ -239,7 +239,7 @@ func (s *ManifestPackagesSuite) TestMissingDescriptionFile() {
 	base := s.testdata.Join("cran_project")
 	lockfilePath := base.Join("renv.lock")
 
-	mapper, err := NewPackageMapper(base, util.Path{}, s.log, false)
+mapper, err := NewPackageMapper(base, util.Path{}, s.log, false, nil)
 	s.NoError(err)
 
 	lister := &mockPackageLister{}
@@ -264,7 +264,7 @@ func (s *ManifestPackagesSuite) TestMissingLockfile_BubblesUpRenvError() {
 	base := s.testdata.Join("cran_project")
 	lockfilePath := base.Join("does-not-exist.lock")
 
-	mapper, err := NewPackageMapper(base, util.Path{}, s.log, false)
+mapper, err := NewPackageMapper(base, util.Path{}, s.log, false, nil)
 	s.NoError(err)
 
 	// Override interpeter factory to use a mock
@@ -304,7 +304,7 @@ func (s *ManifestPackagesSuite) TestLockFile_CreateFromScanner() {
 	base := s.testdata.Join("cran_project")
 	// Generate a lockfile via the scanner and ensure we use it.
 
-	mapper, err := NewPackageMapper(base, util.Path{}, s.log, false)
+mapper, err := NewPackageMapper(base, util.Path{}, s.log, false, nil)
 	s.NoError(err)
 
 	// Override scanner to return the known renv.lock in cran_project

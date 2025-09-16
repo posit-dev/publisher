@@ -35,12 +35,13 @@ type defaultRDependencyScanner struct {
 // NewRDependencyScanner creates a dependency scanner. If repoOpts is provided,
 // it is used to generate repository configuration in the R script; otherwise
 // the scanner may fallback to environment variables for compatibility.
+// NewRDependencyScanner constructs a scanner with explicit options.
 func NewRDependencyScanner(log logging.Logger, repoOpts *RepoOptions) *defaultRDependencyScanner {
-	return &defaultRDependencyScanner{
-		rExecutor: executor.NewExecutor(),
-		log:       log,
-		repoOpts:  repoOpts,
-	}
+    return &defaultRDependencyScanner{
+        rExecutor: executor.NewExecutor(),
+        log:       log,
+        repoOpts:  repoOpts,
+    }
 }
 
 func (s *defaultRDependencyScanner) ScanDependencies(paths []string, rExecutable string) (util.AbsolutePath, error) {

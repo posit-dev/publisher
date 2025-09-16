@@ -145,7 +145,7 @@ func (s *BasePublishSuite) TearDownTest() {
 	cloudClientFactory = connect_cloud.NewConnectCloudClientWithAuth
 	connect_cloud2.UploadAPIClientFactory = connect_cloud_upload.NewConnectCloudUploadClient
 	connect_cloud2.LogsClientFactory = connect_cloud_logs.NewConnectCloudLogsClient
-	rPackageMapperFactory = renv.NewPackageMapper
+    rPackageMapperFactory = renv.NewPackageMapper
 }
 
 func (s *PublishConnectSuite) TestNewFromState() {
@@ -413,9 +413,9 @@ func (s *PublishConnectSuite) publishWithClient(
 		rPackageMapper.On("GetManifestPackages", mock.Anything, mock.Anything).Return(pkgMap, nil)
 	}
 
-	rPackageMapperFactory = func(base util.AbsolutePath, rExecutable util.Path, log logging.Logger, lockfileOnly bool) (renv.PackageMapper, error) {
-		return rPackageMapper, nil
-	}
+    rPackageMapperFactory = func(base util.AbsolutePath, rExecutable util.Path, log logging.Logger, lockfileOnly bool, _ *renv.RepoOptions) (renv.PackageMapper, error) {
+        return rPackageMapper, nil
+    }
 
 	publisher, err := NewFromState(stateStore, mockRIntr, mockPyIntr, emitter, s.log)
 	s.NoError(err)
@@ -910,9 +910,9 @@ func (s *PublishConnectCloudSuite) publishWithCloudClient(
 	}
 
 	// Replace factory function
-	rPackageMapperFactory = func(base util.AbsolutePath, rExecutable util.Path, log logging.Logger, lockfileOnly bool) (renv.PackageMapper, error) {
-		return rPackageMapper, nil
-	}
+    rPackageMapperFactory = func(base util.AbsolutePath, rExecutable util.Path, log logging.Logger, lockfileOnly bool, _ *renv.RepoOptions) (renv.PackageMapper, error) {
+        return rPackageMapper, nil
+    }
 
 	// Create config
 	cfg := config.New()

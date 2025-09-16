@@ -38,21 +38,22 @@ type defaultPackageMapper struct {
 	scanner             RDependencyScanner
 }
 
+// NewPackageMapper allows passing repository options used during dependency scanning.
 func NewPackageMapper(base util.AbsolutePath, rExecutable util.Path, log logging.Logger, lockfileOnly bool, repoOpts *RepoOptions) (PackageMapper, error) {
-	if lockfileOnly {
-		return NewLockfilePackageMapper(base, rExecutable, log), nil
-	}
+    if lockfileOnly {
+        return NewLockfilePackageMapper(base, rExecutable, log), nil
+    }
 
 	lister, err := NewAvailablePackageLister(base, rExecutable, log, nil, nil)
 
-	return &defaultPackageMapper{
-		rInterpreterFactory: func() (interpreters.RInterpreter, error) {
-			return interpreters.NewRInterpreter(base, rExecutable, log, nil, nil, nil)
-		},
-		rExecutable: rExecutable,
-		lister:      lister,
-		scanner:     NewRDependencyScanner(log, repoOpts),
-	}, err
+    return &defaultPackageMapper{
+        rInterpreterFactory: func() (interpreters.RInterpreter, error) {
+            return interpreters.NewRInterpreter(base, rExecutable, log, nil, nil, nil)
+        },
+        rExecutable: rExecutable,
+        lister:      lister,
+        scanner:     NewRDependencyScanner(log, repoOpts),
+    }, err
 }
 
 func findAvailableVersion(pkgName PackageName, availablePackages []AvailablePackage) string {

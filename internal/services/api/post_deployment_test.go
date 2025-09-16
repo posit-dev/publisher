@@ -3,13 +3,13 @@ package api
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"errors"
-	"io"
-	"net/http"
-	"net/http/httptest"
-	"net/url"
-	"strings"
-	"testing"
+    "errors"
+    "io"
+    "net/http"
+    "net/http/httptest"
+    "net/url"
+    "strings"
+    "testing"
 
 	"github.com/gorilla/mux"
 	"github.com/spf13/afero"
@@ -20,8 +20,9 @@ import (
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/deployment"
-	"github.com/posit-dev/publisher/internal/events"
-	"github.com/posit-dev/publisher/internal/interpreters"
+    "github.com/posit-dev/publisher/internal/events"
+    "github.com/posit-dev/publisher/internal/inspect/dependencies/renv"
+    "github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/publish"
 	"github.com/posit-dev/publisher/internal/state"
@@ -108,16 +109,17 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFunc() {
 		s.Equal("/bin/my_python", pythonInterpreter.GetPreferredPath())
 		return publisher, nil
 	}
-	stateFactory = func(
-		path util.AbsolutePath,
-		accountName, configName, targetName, saveName string,
-		accountList accounts.AccountList,
-		secrets map[string]string,
-		insecure bool,
-		rInterpreter interpreters.RInterpreter,
-		pythonInterpreter interpreters.PythonInterpreter,
-		log logging.Logger,
-	) (*state.State, error) {
+    stateFactory = func(
+        path util.AbsolutePath,
+        accountName, configName, targetName, saveName string,
+        accountList accounts.AccountList,
+        secrets map[string]string,
+        insecure bool,
+        rInterpreter interpreters.RInterpreter,
+        pythonInterpreter interpreters.PythonInterpreter,
+        log logging.Logger,
+        repoOpts *renv.RepoOptions,
+    ) (*state.State, error) {
 
 		s.Equal(s.cwd, path)
 		s.Equal("myTargetName", targetName)
@@ -162,18 +164,19 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFuncStateErr()
 	s.NoError(err)
 	req.Body = io.NopCloser(strings.NewReader("{}"))
 
-	stateFactory = func(
-		path util.AbsolutePath,
-		accountName, configName, targetName, saveName string,
-		accountList accounts.AccountList,
-		secrets map[string]string,
-		insecure bool,
-		rInterpreter interpreters.RInterpreter,
-		pythonInterpreter interpreters.PythonInterpreter,
-		log logging.Logger,
-	) (*state.State, error) {
-		return nil, errors.New("test error from state factory")
-	}
+    stateFactory = func(
+        path util.AbsolutePath,
+        accountName, configName, targetName, saveName string,
+        accountList accounts.AccountList,
+        secrets map[string]string,
+        insecure bool,
+        rInterpreter interpreters.RInterpreter,
+        pythonInterpreter interpreters.PythonInterpreter,
+        log logging.Logger,
+        repoOpts *renv.RepoOptions,
+    ) (*state.State, error) {
+        return nil, errors.New("test error from state factory")
+    }
 
 	handler := PostDeploymentHandlerFunc(s.cwd, log, nil, events.NewNullEmitter())
 	handler(rec, req)
@@ -233,16 +236,17 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFuncPublishErr
 	lister := &accounts.MockAccountList{}
 	req.Body = io.NopCloser(strings.NewReader(`{"account": "local", "config": "default", "insecure": false}`))
 
-	stateFactory = func(
-		path util.AbsolutePath,
-		accountName, configName, targetName, saveName string,
-		accountList accounts.AccountList,
-		secrets map[string]string,
-		insecure bool,
-		rInterpreter interpreters.RInterpreter,
-		pythonInterpreter interpreters.PythonInterpreter,
-		log logging.Logger,
-	) (*state.State, error) {
+    stateFactory = func(
+        path util.AbsolutePath,
+        accountName, configName, targetName, saveName string,
+        accountList accounts.AccountList,
+        secrets map[string]string,
+        insecure bool,
+        rInterpreter interpreters.RInterpreter,
+        pythonInterpreter interpreters.PythonInterpreter,
+        log logging.Logger,
+        repoOpts *renv.RepoOptions,
+    ) (*state.State, error) {
 
 		st := state.Empty()
 		st.Account = &accounts.Account{}
@@ -292,16 +296,17 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentSubdir() {
 	publisherFactory = func(*state.State, interpreters.RInterpreter, interpreters.PythonInterpreter, events.Emitter, logging.Logger) (publish.Publisher, error) {
 		return publisher, nil
 	}
-	stateFactory = func(
-		path util.AbsolutePath,
-		accountName, configName, targetName, saveName string,
-		accountList accounts.AccountList,
-		secrets map[string]string,
-		insecure bool,
-		rInterpreter interpreters.RInterpreter,
-		pythonInterpreter interpreters.PythonInterpreter,
-		log logging.Logger,
-	) (*state.State, error) {
+    stateFactory = func(
+        path util.AbsolutePath,
+        accountName, configName, targetName, saveName string,
+        accountList accounts.AccountList,
+        secrets map[string]string,
+        insecure bool,
+        rInterpreter interpreters.RInterpreter,
+        pythonInterpreter interpreters.PythonInterpreter,
+        log logging.Logger,
+        repoOpts *renv.RepoOptions,
+    ) (*state.State, error) {
 
 		s.Equal(s.cwd, path)
 		s.Equal("myTargetName", targetName)
@@ -346,16 +351,17 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFuncWithSecret
 		return publisher, nil
 	}
 
-	stateFactory = func(
-		path util.AbsolutePath,
-		accountName, configName, targetName, saveName string,
-		accountList accounts.AccountList,
-		secrets map[string]string,
-		insecure bool,
-		rInterpreter interpreters.RInterpreter,
-		pythonInterpreter interpreters.PythonInterpreter,
-		log logging.Logger,
-	) (*state.State, error) {
+    stateFactory = func(
+        path util.AbsolutePath,
+        accountName, configName, targetName, saveName string,
+        accountList accounts.AccountList,
+        secrets map[string]string,
+        insecure bool,
+        rInterpreter interpreters.RInterpreter,
+        pythonInterpreter interpreters.PythonInterpreter,
+        log logging.Logger,
+        repoOpts *renv.RepoOptions,
+    ) (*state.State, error) {
 
 		s.Equal(s.cwd, path)
 		s.Equal("myTargetName", targetName)
