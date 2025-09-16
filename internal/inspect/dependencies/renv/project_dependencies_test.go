@@ -68,7 +68,7 @@ func (s *RDependencyScannerSuite) TestScanDependencies() {
 		}
 	})
 
-scanner := NewRDependencyScanner(s.log, nil)
+	scanner := NewRDependencyScanner(s.log, nil)
 	scanner.rExecutor = s.exec
 
 	lockfilePath, err := scanner.ScanDependencies([]string{s.cwd.String()}, s.rExecPath)
@@ -100,7 +100,7 @@ func (s *RDependencyScannerSuite) TestScanDependenciesInDir() {
 		_ = lock.WriteFile([]byte("{}"), 0666)
 	})
 
-scanner := NewRDependencyScanner(s.log, nil)
+	scanner := NewRDependencyScanner(s.log, nil)
 	scanner.rExecutor = s.exec
 
 	// Test with a different lockfile name
@@ -125,7 +125,7 @@ func (s *RDependencyScannerSuite) TestErrWhenLockfileNotCreated() {
 		mock.Anything,
 	).Return([]byte("ok"), []byte(""), nil)
 
-scanner := NewRDependencyScanner(s.log, nil)
+	scanner := NewRDependencyScanner(s.log, nil)
 	scanner.rExecutor = s.exec
 
 	_, err := scanner.ScanDependencies([]string{s.cwd.String()}, s.rExecPath)
@@ -184,7 +184,7 @@ func (s *RDependencyScannerFunctionalSuite) TestScanDependenciesFunctional() {
 	s.NoError(err)
 	s.NotEmpty(rExec.String())
 
-scanner := NewRDependencyScanner(s.log, nil)
+	scanner := NewRDependencyScanner(s.log, nil)
 	lockfilePath, err := scanner.ScanDependencies([]string{base.String()}, rExec.String())
 	s.NoError(err)
 
@@ -238,7 +238,7 @@ func (s *RDependencyScannerFunctionalSuite) TestFunctional_NoMirror() {
 	s.NoError(err)
 	s.NotEmpty(rExec.String())
 
-scanner := NewRDependencyScanner(s.log, nil)
+	scanner := NewRDependencyScanner(s.log, nil)
 	lockfilePath, err := scanner.ScanDependencies([]string{base.String()}, rExec.String())
 	s.NoError(err)
 	exists, e2 := lockfilePath.Exists()
@@ -269,7 +269,7 @@ func (s *RDependencyScannerFunctionalSuite) TestFunctional_PathsFilter() {
 	s.NoError(err)
 	s.NotEmpty(rExec.String())
 
-scanner := NewRDependencyScanner(s.log, nil)
+	scanner := NewRDependencyScanner(s.log, nil)
 	lockfilePath, err := scanner.ScanDependencies([]string{included.String()}, rExec.String())
 	s.NoError(err)
 
@@ -321,7 +321,7 @@ func (s *RDependencyScannerFunctionalSuite) TestScanDependenciesInDirFunctional(
 	s.NoError(err)
 	s.NotEmpty(rExec.String())
 
-scanner := NewRDependencyScanner(s.log, nil)
+	scanner := NewRDependencyScanner(s.log, nil)
 	lockfilePath, err := scanner.ScanDependenciesInDir([]string{base.String()}, base.Path, "different.lockfile", rExec.String())
 	s.NoError(err)
 
@@ -374,7 +374,7 @@ func (s *RDependencyScannerFunctionalSuite) TestSetupRenvInDirWithExistingInfraF
 	s.NoError(err)
 	s.NotEmpty(rExec.String())
 
-scanner := NewRDependencyScanner(s.log, nil)
+	scanner := NewRDependencyScanner(s.log, nil)
 	lockfilePath, err := scanner.SetupRenvInDir(base.String(), "", rExec.String())
 	s.NoError(err)
 
@@ -468,7 +468,7 @@ func (s *RDependencyScannerFunctionalSuite) TestSetupRenvWithSubdirLockfileInfra
 
 	lockfileName := filepath.Join("nested", "different.lockfile")
 
-scanner := NewRDependencyScanner(s.log, nil)
+	scanner := NewRDependencyScanner(s.log, nil)
 	lockfilePath, err := scanner.SetupRenvInDir(base.String(), lockfileName, rExec.String())
 	s.NoError(err)
 

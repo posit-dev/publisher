@@ -27,12 +27,12 @@ type LockfilePackageMapper struct {
 }
 
 func NewLockfilePackageMapper(base util.AbsolutePath, rExecutable util.Path, log logging.Logger) *LockfilePackageMapper {
-    return &LockfilePackageMapper{
-        base:        base,
-        rExecutable: rExecutable,
-        log:         log,
-        scanner:     NewRDependencyScanner(log, nil),
-    }
+	return &LockfilePackageMapper{
+		base:        base,
+		rExecutable: rExecutable,
+		log:         log,
+		scanner:     NewRDependencyScanner(log, nil),
+	}
 }
 
 // GetManifestPackages implements the PackageMapper interface for LockfilePackageMapper.

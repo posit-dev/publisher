@@ -3,13 +3,13 @@ package publish
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import (
-    "fmt"
-    "strings"
+	"fmt"
+	"strings"
 
-    "github.com/posit-dev/publisher/internal/bundles"
-    "github.com/posit-dev/publisher/internal/events"
-    "github.com/posit-dev/publisher/internal/inspect/dependencies/renv"
-    "github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/bundles"
+	"github.com/posit-dev/publisher/internal/events"
+	"github.com/posit-dev/publisher/internal/inspect/dependencies/renv"
+	"github.com/posit-dev/publisher/internal/logging"
 )
 
 func (p *defaultPublisher) createManifest() (*bundles.Manifest, error) {
@@ -35,13 +35,13 @@ func (p *defaultPublisher) createManifest() (*bundles.Manifest, error) {
 			// Displays a log message under the package collection activity
 			// so that the user knows we automatically detected dependencies
 			// and which default repository is being used.
-            log := p.log.WithArgs(logging.LogKeyOp, events.PublishGetRPackageDescriptionsOp)
-            repoURL := defaultRepoURLFromOptions(p.RepoOptions)
-            repoText := repoURL
-            if repoText == "" {
-                repoText = "none"
-            }
-            log.Info(fmt.Sprintf("No renv.lock found; automatically scanning for dependencies. Default repo: %s", repoText))
+			log := p.log.WithArgs(logging.LogKeyOp, events.PublishGetRPackageDescriptionsOp)
+			repoURL := defaultRepoURLFromOptions(p.RepoOptions)
+			repoText := repoURL
+			if repoText == "" {
+				repoText = "none"
+			}
+			log.Info(fmt.Sprintf("No renv.lock found; automatically scanning for dependencies. Default repo: %s", repoText))
 		}
 
 		rPackages, lockfilePath, err := p.getRPackagesWithPath(scanDependencies)

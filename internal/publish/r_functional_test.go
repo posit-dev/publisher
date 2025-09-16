@@ -128,7 +128,7 @@ func (s *RPublishFunctionalSuite) TestGetRPackagesFunctional() {
 		s.Run(tc.name, func() {
 			s.T().Logf("Testing %s: %s", tc.name, tc.description)
 
-            mapper, err := renv.NewPackageMapper(s.testProjectDir, util.Path{}, s.log, tc.lockfileOnly, nil)
+			mapper, err := renv.NewPackageMapper(s.testProjectDir, util.Path{}, s.log, tc.lockfileOnly, nil)
 			s.Require().NoError(err)
 
 			publisher := &defaultPublisher{

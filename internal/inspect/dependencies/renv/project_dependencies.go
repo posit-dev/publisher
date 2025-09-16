@@ -3,14 +3,14 @@ package renv
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import (
-    "fmt"
-    "path/filepath"
-    "strings"
+	"fmt"
+	"path/filepath"
+	"strings"
 
-    "github.com/posit-dev/publisher/internal/executor"
-    "github.com/posit-dev/publisher/internal/interpreters"
-    "github.com/posit-dev/publisher/internal/logging"
-    "github.com/posit-dev/publisher/internal/util"
+	"github.com/posit-dev/publisher/internal/executor"
+	"github.com/posit-dev/publisher/internal/interpreters"
+	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/util"
 )
 
 // RDependencyScanner generates a temporary renv.lock by invoking R
@@ -37,11 +37,11 @@ type defaultRDependencyScanner struct {
 // the scanner may fallback to environment variables for compatibility.
 // NewRDependencyScanner constructs a scanner with explicit options.
 func NewRDependencyScanner(log logging.Logger, repoOpts *RepoOptions) *defaultRDependencyScanner {
-    return &defaultRDependencyScanner{
-        rExecutor: executor.NewExecutor(),
-        log:       log,
-        repoOpts:  repoOpts,
-    }
+	return &defaultRDependencyScanner{
+		rExecutor: executor.NewExecutor(),
+		log:       log,
+		repoOpts:  repoOpts,
+	}
 }
 
 func (s *defaultRDependencyScanner) ScanDependencies(paths []string, rExecutable string) (util.AbsolutePath, error) {
@@ -172,15 +172,15 @@ func repoURLFrom(mode, ppm string) string {
 }
 
 func repoURLFromOptions(opts *RepoOptions) string {
-    if opts == nil {
-        // Unconfigured defaults to CRAN via "auto" mode
-        return repoURLFrom("auto", "")
-    }
-    mode := strings.ToLower(strings.TrimSpace(opts.DefaultRepositories))
-    if mode == "" {
-        mode = "auto"
-    }
-    return repoURLFrom(mode, strings.TrimSpace(opts.PackageManagerRepository))
+	if opts == nil {
+		// Unconfigured defaults to CRAN via "auto" mode
+		return repoURLFrom("auto", "")
+	}
+	mode := strings.ToLower(strings.TrimSpace(opts.DefaultRepositories))
+	if mode == "" {
+		mode = "auto"
+	}
+	return repoURLFrom(mode, strings.TrimSpace(opts.PackageManagerRepository))
 }
 
 // generateRepoSetupCode inspects provided options to produce an R snippet
