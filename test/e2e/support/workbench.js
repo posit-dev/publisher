@@ -234,8 +234,9 @@ Cypress.Commands.add("startWorkbenchPositronSession", () => {
 Cypress.Commands.add("waitForWorkbenchToLoad", () => {
   cy.log("Waiting for Workbench UI to load");
   // Workbench indicator in bottom status bar, uses a longer timeout to accommodate slow loads
-  // Takes about 10 seconds when using the container manually, but about 75 seconds when running with Cypress
-  cy.get("[id='rstudio.rstudio-workbench']", { timeout: 120_000 }).should(
+  // TODO Takes about 10 seconds when using the container manually, but about 75 seconds when running with Cypress
+  // locally and... even longer in CI, possiblely due to resource constraints?
+  cy.get("[id='rstudio.rstudio-workbench']", { timeout: 480_000 }).should(
     "be.visible",
   );
 
