@@ -12,7 +12,6 @@ import (
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/events"
-	"github.com/posit-dev/publisher/internal/inspect/dependencies/renv"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/publish"
 	"github.com/posit-dev/publisher/internal/state"
@@ -79,13 +78,7 @@ func PostDeploymentHandlerFunc(
 			return
 		}
 		// Convert optional Positron settings to RepoOptions for downstream scanning
-		var repoOpts *renv.RepoOptions
-		if b.Positron != nil && b.Positron.R != nil {
-			repoOpts = &renv.RepoOptions{
-				DefaultRepositories:      b.Positron.R.DefaultRepositories,
-				PackageManagerRepository: b.Positron.R.PackageManagerRepository,
-			}
-		}
+		repoOpts := repoOptsFromPositron(b.Positron)
 
 		newState, err := stateFactory(projectDir, b.AccountName, b.ConfigName, name, "", accountList, b.Secrets, b.Insecure, rInterpreter, pythonInterpreter, log, repoOpts)
 		if err != nil {

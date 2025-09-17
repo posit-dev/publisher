@@ -32,9 +32,8 @@ type defaultRDependencyScanner struct {
 	repoOpts  *RepoOptions
 }
 
-// NewRDependencyScanner creates a dependency scanner. If repoOpts is provided,
-// it is used to generate repository configuration in the R script; otherwise
-// NewRDependencyScanner creates a dependency scanner.
+// NewRDependencyScanner creates a dependency scanner. If repoOpts is non-nil,
+// the scanner configures R repositories accordingly.
 func NewRDependencyScanner(log logging.Logger, repoOpts *RepoOptions) *defaultRDependencyScanner {
 	return &defaultRDependencyScanner{
 		rExecutor: executor.NewExecutor(),
@@ -143,10 +142,11 @@ func (s *defaultRDependencyScanner) toRPathsVector(paths []string) (string, erro
 // RepoOptions defines how to set R repositories during dependency scanning.
 // Values mirror VS Code setting `positron.r.defaultRepositories`.
 type RepoOptions struct {
+	// RDefaultRepositories selects which R repository set to prefer.
 	// One of: "auto", "rstudio", "posit-ppm", "none", or a full http(s) URL.
-	DefaultRepositories string
-	// Optional custom PPM repo. Used when DefaultRepositories == "auto".
-	PackageManagerRepository string
+	RDefaultRepositories string
+	// RPackageManagerRepository is an optional custom PPM base URL, used when RDefaultRepositories == "auto".
+	RPackageManagerRepository string
 }
 
 func repoURLFrom(mode, ppm string) string {
@@ -175,11 +175,11 @@ func RepoURLFromOptions(opts *RepoOptions) string {
 		// Unconfigured defaults to CRAN via "auto" mode
 		return repoURLFrom("auto", "")
 	}
-	mode := strings.ToLower(strings.TrimSpace(opts.DefaultRepositories))
+	mode := strings.ToLower(strings.TrimSpace(opts.RDefaultRepositories))
 	if mode == "" {
 		mode = "auto"
 	}
-	return repoURLFrom(mode, strings.TrimSpace(opts.PackageManagerRepository))
+	return repoURLFrom(mode, strings.TrimSpace(opts.RPackageManagerRepository))
 }
 
 // generateRepoSetupCode inspects provided options to produce an R snippet
