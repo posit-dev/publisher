@@ -10,7 +10,7 @@ on:
 jobs:
   cypress:
     name: e2e tests (cypress)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-8x
     env:
       # MANUAL DEBUG OVERRIDE: Change to "true" to force debug (videos, extra logs)
       DEBUG_CYPRESS: "true"
@@ -223,6 +223,7 @@ jobs:
           directories"
 
       - name: Run Cypress tests
+        id: run_tests
         working-directory: test/e2e
         run: npx cypress run --spec "tests/workbench/**/*" --headless --browser chrome
         env:
@@ -288,6 +289,20 @@ jobs:
         if: always() && (env.DEBUG_CYPRESS == 'true' || env.VARS_DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true')
         working-directory: test/e2e
         run: docker compose logs code-server || true
+
+      - name: Change log permissions for artifact upload
+        if: failure() && steps.run_tests.outcome == 'failure'
+        run: |
+          sudo chown -R $USER:$USER test/e2e/logs
+
+      - name: Save Workbench logs as artifacts
+        uses: actions/upload-artifact@v4
+        if: failure() && steps.run_tests.outcome == 'failure'
+        with:
+          name: workbench-logs
+          path: test/e2e/logs/workbench-*
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Stop containers
         if: always()
