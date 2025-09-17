@@ -330,7 +330,7 @@ func (s *StateSuite) TestNew() {
 	mockRInterpreter := s.createMockRInterpreter()
 	mockPythonInterpreter := s.createMockPythonInterpreter()
 
-    state, err := New(s.cwd, "", "", "", "", accts, nil, false, mockRInterpreter, mockPythonInterpreter, s.log, nil)
+	state, err := New(s.cwd, "", "", "", "", accts, nil, false, mockRInterpreter, mockPythonInterpreter, s.log, nil)
 	s.NoError(err)
 	s.NotNil(state)
 	s.Equal(state.AccountName, "")
@@ -365,7 +365,7 @@ func (s *StateSuite) TestNewNonDefaultConfig() {
 	mockRInterpreter := s.createMockRInterpreter()
 	mockPythonInterpreter := s.createMockPythonInterpreter()
 
-    state, err := New(s.cwd, "", configName, "", "", accts, nil, insecure, mockRInterpreter, mockPythonInterpreter, s.log, nil)
+	state, err := New(s.cwd, "", configName, "", "", accts, nil, insecure, mockRInterpreter, mockPythonInterpreter, s.log, nil)
 	s.NoError(err)
 	s.NotNil(state)
 	s.Equal("", state.AccountName)
@@ -386,7 +386,7 @@ func (s *StateSuite) TestNewConfigErr() {
 	mockRInterpreter := s.createMockRInterpreter()
 	mockPythonInterpreter := s.createMockPythonInterpreter()
 
-state, err := New(s.cwd, "", "", "", "", accts, nil, false, mockRInterpreter, mockPythonInterpreter, s.log, nil)
+	state, err := New(s.cwd, "", "", "", "", accts, nil, false, mockRInterpreter, mockPythonInterpreter, s.log, nil)
 	s.NotNil(err)
 	s.ErrorContains(err, "couldn't load configuration")
 	s.Nil(state)
@@ -435,7 +435,7 @@ func (s *StateSuite) TestNewWithTarget() {
 	mockRInterpreter := s.createMockRInterpreter()
 	mockPythonInterpreter := s.createMockPythonInterpreter()
 
-state, err := New(s.cwd, "", "", "myTargetName", "", accts, nil, false, mockRInterpreter, mockPythonInterpreter, s.log, nil)
+	state, err := New(s.cwd, "", "", "myTargetName", "", accts, nil, false, mockRInterpreter, mockPythonInterpreter, s.log, nil)
 	s.NoError(err)
 	s.NotNil(state)
 	s.Equal("acct1", state.AccountName)
@@ -487,7 +487,7 @@ func (s *StateSuite) TestNewWithTargetAndAccount() {
 	mockRInterpreter := s.createMockRInterpreter()
 	mockPythonInterpreter := s.createMockPythonInterpreter()
 
-state, err := New(s.cwd, "acct2", "", "myTargetName", "mySaveName", accts, nil, false, mockRInterpreter, mockPythonInterpreter, s.log, nil)
+	state, err := New(s.cwd, "acct2", "", "myTargetName", "mySaveName", accts, nil, false, mockRInterpreter, mockPythonInterpreter, s.log, nil)
 	s.NoError(err)
 	s.NotNil(state)
 	s.Equal("acct2", state.AccountName)
@@ -512,7 +512,7 @@ func (s *StateSuite) TestNewWithSecrets() {
 	mockRInterpreter := s.createMockRInterpreter()
 	mockPythonInterpreter := s.createMockPythonInterpreter()
 
-state, err := New(s.cwd, "", "", "", "", accts, secrets, false, mockRInterpreter, mockPythonInterpreter, s.log, nil)
+	state, err := New(s.cwd, "", "", "", "", accts, secrets, false, mockRInterpreter, mockPythonInterpreter, s.log, nil)
 	s.NoError(err)
 	s.NotNil(state)
 	s.Equal(secrets, state.Secrets)
@@ -539,7 +539,7 @@ func (s *StateSuite) TestNewWithInvalidSecret() {
 	mockRInterpreter := s.createMockRInterpreter()
 	mockPythonInterpreter := s.createMockPythonInterpreter()
 
-state, err := New(s.cwd, "", "", "", "", accts, secrets, false, mockRInterpreter, mockPythonInterpreter, s.log, nil)
+	state, err := New(s.cwd, "", "", "", "", accts, secrets, false, mockRInterpreter, mockPythonInterpreter, s.log, nil)
 	s.NotNil(err)
 	s.ErrorContains(err, "secret 'INVALID_SECRET' is not in the configuration")
 	s.Nil(state)
@@ -620,7 +620,7 @@ func (s *StateSuite) TestNewWithInterpreterDefaultFillsNotNeeded() {
 	rInterpreter := s.createMockRInterpreter()
 	pythonInterpreter := s.createMockPythonInterpreter()
 
-    state, err := New(s.cwd, "", configName, "", "", accts, nil, insecure, rInterpreter, pythonInterpreter, s.log, nil)
+	state, err := New(s.cwd, "", configName, "", "", accts, nil, insecure, rInterpreter, pythonInterpreter, s.log, nil)
 	s.NoError(err)
 	s.NotNil(state)
 	s.Equal("", state.AccountName)
@@ -655,7 +655,7 @@ func (s *StateSuite) TestNewWithInterpreterDefaultFillsNeeded() {
 	cfg.R.FillDefaults(rInterpreter)
 	cfg.Python.FillDefaults(pythonInterpreter)
 
-    state, err := New(s.cwd, "", configName, "", "", accts, nil, insecure, rInterpreter, pythonInterpreter, s.log, nil)
+	state, err := New(s.cwd, "", configName, "", "", accts, nil, insecure, rInterpreter, pythonInterpreter, s.log, nil)
 	s.NoError(err)
 	s.NotNil(state)
 	s.Equal("", state.AccountName)
@@ -686,7 +686,7 @@ func (s *StateSuite) TestNewWithInterpreterDefaultFillsNeededButNoInterpreters()
 	rInterpreter := s.createMockRMissingInterpreter()
 	pythonInterpreter := s.createMockPythonMissingInterpreter()
 
-    state, err := New(s.cwd, "", configName, "", "", accts, nil, insecure, rInterpreter, pythonInterpreter, s.log, nil)
+	state, err := New(s.cwd, "", configName, "", "", accts, nil, insecure, rInterpreter, pythonInterpreter, s.log, nil)
 	s.NoError(err)
 	s.NotNil(state)
 	s.Equal("", state.AccountName)
@@ -717,7 +717,7 @@ func (s *StateSuite) TestNewWithInterpreterNoInterpreterSections() {
 	rInterpreter := s.createMockRInterpreter()
 	pythonInterpreter := s.createMockPythonInterpreter()
 
-state, err := New(s.cwd, "", configName, "", "", accts, nil, insecure, rInterpreter, pythonInterpreter, s.log, nil)
+	state, err := New(s.cwd, "", configName, "", "", accts, nil, insecure, rInterpreter, pythonInterpreter, s.log, nil)
 	s.NoError(err)
 	s.NotNil(state)
 	s.Equal("", state.AccountName)

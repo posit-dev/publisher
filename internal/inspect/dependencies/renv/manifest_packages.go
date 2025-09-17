@@ -38,7 +38,6 @@ type defaultPackageMapper struct {
 	scanner             RDependencyScanner
 }
 
-// NewPackageMapper allows passing repository options used during dependency scanning.
 func NewPackageMapper(base util.AbsolutePath, rExecutable util.Path, log logging.Logger, lockfileOnly bool, repoOpts *RepoOptions) (PackageMapper, error) {
 	if lockfileOnly {
 		return NewLockfilePackageMapper(base, rExecutable, log), nil

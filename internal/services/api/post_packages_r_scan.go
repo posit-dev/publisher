@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"path/filepath"
+	"strings"
 
 	"github.com/posit-dev/publisher/internal/inspect/dependencies/renv"
 	"github.com/posit-dev/publisher/internal/interpreters"
@@ -73,14 +74,10 @@ func (h *PostPackagesRScanHandler) ServeHTTP(w http.ResponseWriter, req *http.Re
 		BadRequest(w, req, h.log, err)
 		return
 	}
-	// Choose scanner: if Positron settings were provided, build a scanner with options;
-	// otherwise use the handler's default (for testability and backward-compat).
+	// Choose scanner based on Positron settings (nil → defaults)
 	scanner := h.rDependencyScanner
-	if b.Positron != nil && b.Positron.R != nil {
-		scanner = renv.NewRDependencyScanner(h.log, &renv.RepoOptions{
-			DefaultRepositories:      b.Positron.R.DefaultRepositories,
-			PackageManagerRepository: b.Positron.R.PackageManagerRepository,
-		})
+	if opts := repoOptsFromPositron(b.Positron); opts != nil {
+		scanner = renv.NewRDependencyScanner(h.log, opts)
 	}
 
 	_, err = scanner.SetupRenvInDir(projectDir.String(), lockfileRelPath.String(), rExecutablePath.String())
@@ -90,4 +87,18 @@ func (h *PostPackagesRScanHandler) ServeHTTP(w http.ResponseWriter, req *http.Re
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// repoOptsFromPositron converts inbound Positron settings to renv.RepoOptions.
+// Returns nil if no Positron R settings were provided.
+func repoOptsFromPositron(ps *positronSettings) *renv.RepoOptions {
+	if ps == nil || ps.R == nil {
+		return nil
+	}
+	mode := strings.TrimSpace(ps.R.DefaultRepositories)
+	ppm := strings.TrimSpace(ps.R.PackageManagerRepository)
+	return &renv.RepoOptions{
+		DefaultRepositories:      mode,
+		PackageManagerRepository: ppm,
+	}
 }

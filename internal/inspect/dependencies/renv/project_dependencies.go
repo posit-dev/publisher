@@ -34,8 +34,7 @@ type defaultRDependencyScanner struct {
 
 // NewRDependencyScanner creates a dependency scanner. If repoOpts is provided,
 // it is used to generate repository configuration in the R script; otherwise
-// the scanner may fallback to environment variables for compatibility.
-// NewRDependencyScanner constructs a scanner with explicit options.
+// NewRDependencyScanner creates a dependency scanner.
 func NewRDependencyScanner(log logging.Logger, repoOpts *RepoOptions) *defaultRDependencyScanner {
 	return &defaultRDependencyScanner{
 		rExecutor: executor.NewExecutor(),
@@ -181,6 +180,12 @@ func repoURLFromOptions(opts *RepoOptions) string {
 		mode = "auto"
 	}
 	return repoURLFrom(mode, strings.TrimSpace(opts.PackageManagerRepository))
+}
+
+// RepoURLFromOptions returns the repository URL to use for dependency scanning
+// given the provided options. When opts is nil, it returns the default CRAN URL.
+func RepoURLFromOptions(opts *RepoOptions) string {
+	return repoURLFromOptions(opts)
 }
 
 // generateRepoSetupCode inspects provided options to produce an R snippet

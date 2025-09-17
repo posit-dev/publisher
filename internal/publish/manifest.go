@@ -4,7 +4,6 @@ package publish
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/posit-dev/publisher/internal/bundles"
 	"github.com/posit-dev/publisher/internal/events"
@@ -36,7 +35,7 @@ func (p *defaultPublisher) createManifest() (*bundles.Manifest, error) {
 			// so that the user knows we automatically detected dependencies
 			// and which default repository is being used.
 			log := p.log.WithArgs(logging.LogKeyOp, events.PublishGetRPackageDescriptionsOp)
-			repoURL := defaultRepoURLFromOptions(p.RepoOptions)
+			repoURL := renv.RepoURLFromOptions(p.RepoOptions)
 			repoText := repoURL
 			if repoText == "" {
 				repoText = "none"
@@ -62,30 +61,4 @@ func (p *defaultPublisher) createManifest() (*bundles.Manifest, error) {
 
 // defaultRepoURLFromOptions mirrors the repository selection used during scanning
 // to provide accurate logging for which default repository is in use.
-func defaultRepoURLFromOptions(opts *renv.RepoOptions) string {
-	if opts == nil {
-		return "https://cloud.r-project.org"
-	}
-	mode := strings.ToLower(strings.TrimSpace(opts.DefaultRepositories))
-	ppm := strings.TrimRight(strings.TrimSpace(opts.PackageManagerRepository), "/")
-	if mode == "" || mode == "auto" {
-		if ppm != "" {
-			return ppm
-		}
-		return "https://cloud.r-project.org"
-	}
-	switch mode {
-	case "posit-ppm":
-		return "https://packagemanager.posit.co/cran/latest"
-	case "rstudio":
-		return "https://cran.rstudio.com"
-	case "none":
-		return ""
-	default:
-		// Allow custom URLs
-		if strings.HasPrefix(mode, "http://") || strings.HasPrefix(mode, "https://") {
-			return strings.TrimRight(opts.DefaultRepositories, "/")
-		}
-		return "https://cloud.r-project.org"
-	}
-}
+// removed duplicate repo selection logic; logging now uses renv.RepoURLFromOptions
