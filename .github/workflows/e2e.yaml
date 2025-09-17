@@ -10,7 +10,7 @@ on:
 jobs:
   cypress:
     name: e2e tests (cypress)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-8x
     env:
       DEBUG_CYPRESS: "true" # Set to true to enable extra logging and video recording replays
     steps:
@@ -218,6 +218,7 @@ jobs:
           directories"
 
       - name: Run Cypress tests
+        id: run_tests
         working-directory: test/e2e
         run: npx cypress run --spec "tests/workbench/**/*" --headless --browser chrome
         env:
@@ -282,6 +283,20 @@ jobs:
         if: always() && env.DEBUG_CYPRESS == 'true'
         working-directory: test/e2e
         run: docker compose logs code-server || true
+
+      - name: Change log permissions for artifact upload
+        if: failure() && steps.run_tests.outcome == 'failure'
+        run: |
+          sudo chown -R $USER:$USER test/e2e/logs
+
+      - name: Save Workbench logs as artifacts
+        uses: actions/upload-artifact@v4
+        if: failure() && steps.run_tests.outcome == 'failure'
+        with:
+          name: workbench-logs
+          path: test/e2e/logs/workbench-*
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Stop containers
         if: always()
