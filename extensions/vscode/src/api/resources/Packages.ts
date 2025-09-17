@@ -74,11 +74,13 @@ export class Packages {
     dir: string,
     r: RExecutable | undefined,
     saveName?: string,
+    positron?: import("../types/positron").PositronSettings,
   ) {
     return this.client.post<void>(
       "packages/r/scan",
       {
         saveName,
+        positron,
       },
       {
         params: {

@@ -16,8 +16,9 @@ import (
 )
 
 type PostPackagesRScanRequest struct {
-	R        string `json:"r"`
-	SaveName string `json:"saveName"`
+	R        string            `json:"r"`
+	SaveName string            `json:"saveName"`
+	Positron *positronSettings `json:"positron,omitempty"`
 }
 
 type PostPackagesRScanHandler struct {
@@ -33,7 +34,7 @@ func NewPostPackagesRScanHandler(
 	return &PostPackagesRScanHandler{
 		base:               base,
 		log:                log,
-		rDependencyScanner: renv.NewRDependencyScanner(log),
+		rDependencyScanner: renv.NewRDependencyScanner(log, nil),
 	}
 }
 
@@ -72,7 +73,13 @@ func (h *PostPackagesRScanHandler) ServeHTTP(w http.ResponseWriter, req *http.Re
 		BadRequest(w, req, h.log, err)
 		return
 	}
-	_, err = h.rDependencyScanner.SetupRenvInDir(projectDir.String(), lockfileRelPath.String(), rExecutablePath.String())
+	// Choose scanner based on Positron settings (nil → defaults)
+	scanner := h.rDependencyScanner
+	if opts := repoOptsFromPositron(b.Positron); opts != nil {
+		scanner = renv.NewRDependencyScanner(h.log, opts)
+	}
+
+	_, err = scanner.SetupRenvInDir(projectDir.String(), lockfileRelPath.String(), rExecutablePath.String())
 	if err != nil {
 		InternalError(w, req, h.log, err)
 		return

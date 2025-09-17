@@ -26,6 +26,7 @@ type PostDeploymentRequestBody struct {
 	Insecure    bool              `json:"insecure"`
 	R           string            `json:"r"`
 	Python      string            `json:"python"`
+	Positron    *positronSettings `json:"positron,omitempty"`
 }
 
 type PostDeploymentsReponse struct {
@@ -67,7 +68,10 @@ func PostDeploymentHandlerFunc(
 			InternalError(w, req, log, err)
 			return
 		}
-		newState, err := stateFactory(projectDir, b.AccountName, b.ConfigName, name, "", accountList, b.Secrets, b.Insecure, rInterpreter, pythonInterpreter, log)
+		// Convert optional Positron settings to RepoOptions for downstream scanning
+		repoOpts := repoOptsFromPositron(b.Positron)
+
+		newState, err := stateFactory(projectDir, b.AccountName, b.ConfigName, name, "", accountList, b.Secrets, b.Insecure, rInterpreter, pythonInterpreter, log, repoOpts)
 		if err != nil {
 			if errors.Is(err, accounts.ErrAccountNotFound) {
 				log.Error("Deployment initialization failure - account not found", "error", err.Error())

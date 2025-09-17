@@ -19,6 +19,7 @@ import {
   window,
   workspace,
 } from "vscode";
+import { getPositronRepoSettings } from "src/utils/positronSettings";
 import { isAxiosError } from "axios";
 import { Mutex } from "async-mutex";
 
@@ -292,6 +293,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       const r = await getRInterpreterPath();
       const python = await getPythonInterpreterPath();
 
+      // Collect IDE-controlled repo settings
+      const positron = getPositronRepoSettings();
+
       const response = await api.contentRecords.publish(
         deploymentName,
         credentialName,
@@ -301,6 +305,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         r,
         python,
         secrets,
+        positron,
       );
       deployProject(
         deploymentName,
@@ -974,10 +979,14 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           const api = await useApi();
           const r = await getRInterpreterPath();
 
+          // Collect IDE-controlled repo settings
+          const positron = getPositronRepoSettings();
+
           return await api.packages.createRRequirementsFile(
             activeConfiguration.projectDir,
             r,
             relPathPackageFile,
+            positron,
           );
         },
       );

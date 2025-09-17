@@ -571,4 +571,3 @@ func (c *ConnectClient) GetIntegrations(log logging.Logger) ([]Integration, erro
 	}
 	return integrations, nil
 }
-

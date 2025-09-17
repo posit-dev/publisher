@@ -106,7 +106,7 @@ func NewFromState(
 		packagesFromLibrary = *s.Config.R.PackagesFromLibrary
 	}
 	lockfileOnly := !packagesFromLibrary
-	packageManager, err := rPackageMapperFactory(s.Dir, rexec.Path, log, lockfileOnly)
+	packageManager, err := rPackageMapperFactory(s.Dir, rexec.Path, log, lockfileOnly, s.RepoOptions)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create R package mapper: %w", err)
 	}
