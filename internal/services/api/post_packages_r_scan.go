@@ -87,6 +87,3 @@ func (h *PostPackagesRScanHandler) ServeHTTP(w http.ResponseWriter, req *http.Re
 
 	w.WriteHeader(http.StatusNoContent)
 }
-
-// repoOptsFromPositron converts inbound Positron settings to renv.RepoOptions.
-// Returns nil if no Positron R settings were provided.
