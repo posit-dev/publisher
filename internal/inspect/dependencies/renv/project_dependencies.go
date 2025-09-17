@@ -77,11 +77,13 @@ func (s *defaultRDependencyScanner) ScanDependenciesInDir(paths []string, target
 		lockfile = interpreters.DefaultRenvLockfile
 	}
 	lockfile = filepath.ToSlash(lockfile) // Lockfile may in fact contain slashes.
-	// Compute repository URL once; the R code will apply it if non-empty.
+	// Compute repository URL once; the R code will apply it via options(repos=...).
 	repoURL := RepoURLFromOptions(s.repoOpts)
 
 	script := fmt.Sprintf(`(function(){
 	options(renv.consent = TRUE)
+	repoUrl <- "%s"
+	if (nzchar(repoUrl)) options(repos = c(CRAN = repoUrl))
 	rPathsVec <- %s
 	deps <- tryCatch({
 		d <- renv::dependencies(path = rPathsVec, progress = FALSE)
@@ -90,13 +92,11 @@ func (s *defaultRDependencyScanner) ScanDependenciesInDir(paths []string, target
 	deps <- setdiff(deps, c("renv"))
 	targetPath <- "%s"
 	try(renv::init(project = targetPath, bare = TRUE, force = TRUE), silent = TRUE)
-	repoUrl <- "%s"
-	if (nzchar(repoUrl)) try(renv::settings$repos(c(CRAN = repoUrl), project = targetPath), silent = TRUE)
 	try(renv::install(deps, project = targetPath), silent = TRUE)
 	lockfile <- file.path(targetPath, "%s")
 	renv::snapshot(project = targetPath, lockfile = lockfile, prompt = FALSE, type = "all")
 	invisible()
-})()`, rPathsVec, normalizedProjectPath, repoURL, lockfile)
+})()`, repoURL, rPathsVec, normalizedProjectPath, lockfile)
 
 	// Run the script (use the temporary project as the working directory)
 	// Ensure working directory is provided as an AbsolutePath
