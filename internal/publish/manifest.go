@@ -58,7 +58,3 @@ func (p *defaultPublisher) createManifest() (*bundles.Manifest, error) {
 	p.log.Debug("Generated manifest:", manifest)
 	return manifest, nil
 }
-
-// defaultRepoURLFromOptions mirrors the repository selection used during scanning
-// to provide accurate logging for which default repository is in use.
-// removed duplicate repo selection logic; logging now uses renv.RepoURLFromOptions

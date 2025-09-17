@@ -170,7 +170,7 @@ func repoURLFrom(mode, ppm string) string {
 	}
 }
 
-func repoURLFromOptions(opts *RepoOptions) string {
+func RepoURLFromOptions(opts *RepoOptions) string {
 	if opts == nil {
 		// Unconfigured defaults to CRAN via "auto" mode
 		return repoURLFrom("auto", "")
@@ -182,19 +182,13 @@ func repoURLFromOptions(opts *RepoOptions) string {
 	return repoURLFrom(mode, strings.TrimSpace(opts.PackageManagerRepository))
 }
 
-// RepoURLFromOptions returns the repository URL to use for dependency scanning
-// given the provided options. When opts is nil, it returns the default CRAN URL.
-func RepoURLFromOptions(opts *RepoOptions) string {
-	return repoURLFromOptions(opts)
-}
-
 // generateRepoSetupCode inspects provided options to produce an R snippet
 // that configures options(repos=...) consistent with (a subset of) Positron IDE
 // behavior. Keeping this separate from ScanDependenciesInDir keeps dependency
 // scanning logic focused.
 // Returns empty string if no explicit repos config should be applied.
 func generateRepoSetupCode(opts *RepoOptions) string {
-	repoURL := repoURLFromOptions(opts)
+	repoURL := RepoURLFromOptions(opts)
 	if repoURL == "" {
 		return ""
 	}
