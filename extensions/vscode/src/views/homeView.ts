@@ -19,6 +19,7 @@ import {
   window,
   workspace,
 } from "vscode";
+import { getPositronRepoSettings } from "src/utils/positronSettings";
 import { isAxiosError } from "axios";
 import { Mutex } from "async-mutex";
 
@@ -293,9 +294,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       const python = await getPythonInterpreterPath();
 
       // Collect IDE-controlled repo settings
-      const { getPositronRepoSettings } = await import(
-        "src/utils/positronSettings"
-      );
       const positron = getPositronRepoSettings();
 
       const response = await api.contentRecords.publish(
@@ -982,9 +980,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           const r = await getRInterpreterPath();
 
           // Collect IDE-controlled repo settings
-          const { getPositronRepoSettings } = await import(
-            "src/utils/positronSettings"
-          );
           const positron = getPositronRepoSettings();
 
           return await api.packages.createRRequirementsFile(
