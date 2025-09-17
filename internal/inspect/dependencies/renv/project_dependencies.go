@@ -77,12 +77,11 @@ func (s *defaultRDependencyScanner) ScanDependenciesInDir(paths []string, target
 		lockfile = interpreters.DefaultRenvLockfile
 	}
 	lockfile = filepath.ToSlash(lockfile) // Lockfile may in fact contain slashes.
-	// Generate repository setup snippet (may be empty)
-	setReposCode := generateRepoSetupCode(s.repoOpts)
+	// Compute repository URL once; the R code will apply it if non-empty.
+	repoURL := RepoURLFromOptions(s.repoOpts)
 
 	script := fmt.Sprintf(`(function(){
 	options(renv.consent = TRUE)
-	%s
 	rPathsVec <- %s
 	deps <- tryCatch({
 		d <- renv::dependencies(path = rPathsVec, progress = FALSE)
@@ -91,11 +90,13 @@ func (s *defaultRDependencyScanner) ScanDependenciesInDir(paths []string, target
 	deps <- setdiff(deps, c("renv"))
 	targetPath <- "%s"
 	try(renv::init(project = targetPath, bare = TRUE, force = TRUE), silent = TRUE)
+	repoUrl <- "%s"
+	if (nzchar(repoUrl)) try(renv::settings$repos(c(CRAN = repoUrl), project = targetPath), silent = TRUE)
 	try(renv::install(deps, project = targetPath), silent = TRUE)
 	lockfile <- file.path(targetPath, "%s")
 	renv::snapshot(project = targetPath, lockfile = lockfile, prompt = FALSE, type = "all")
 	invisible()
-})()`, setReposCode, rPathsVec, normalizedProjectPath, lockfile)
+})()`, rPathsVec, normalizedProjectPath, repoURL, lockfile)
 
 	// Run the script (use the temporary project as the working directory)
 	// Ensure working directory is provided as an AbsolutePath
@@ -180,40 +181,4 @@ func RepoURLFromOptions(opts *RepoOptions) string {
 		mode = "auto"
 	}
 	return repoURLFrom(mode, strings.TrimSpace(opts.RPackageManagerRepository))
-}
-
-// generateRepoSetupCode inspects provided options to produce an R snippet
-// that configures options(repos=...) consistent with (a subset of) Positron IDE
-// behavior. Keeping this separate from ScanDependenciesInDir keeps dependency
-// scanning logic focused.
-// Returns empty string if no explicit repos config should be applied.
-func generateRepoSetupCode(opts *RepoOptions) string {
-	repoURL := RepoURLFromOptions(opts)
-	if repoURL == "" {
-		return ""
-	}
-	return fmt.Sprintf(`
-	try({
-		.publisher.apply_repo_defaults <- function(defaults = c(CRAN = "%s")) {
-			repos <- getOption("repos")
-			if (is.null(repos) || !is.character(repos)) {
-				repos <- defaults
-			} else {
-				if ("CRAN" %%in%% names(repos) && "CRAN" %%in%% names(defaults)) {
-					if (identical(repos[["CRAN"]], "@CRAN@")) {
-						repos[["CRAN"]] <- defaults[["CRAN"]]
-						attr(repos, "IDE") <- TRUE
-					}
-				}
-				for (name in names(defaults)) {
-					if (!(name %%in%% names(repos))) {
-						repos[[name]] <- defaults[[name]]
-					}
-				}
-			}
-			options(repos = repos)
-		}
-		.publisher.apply_repo_defaults()
-	}, silent = TRUE)
-	`, repoURL)
 }
