@@ -5,6 +5,8 @@ const { get1PasswordSecret } = require("./support/op-utils");
 const {
   authenticateOAuthDevice,
   runDeviceWorkflow,
+  closeOAuthWindow,
+  cleanupSharedBrowser,
 } = require("./support/oauth-task");
 const { confirmPCCPublishSuccess } = require("./support/publish-success-task");
 
@@ -73,11 +75,25 @@ module.exports = defineConfig({
           console.log(
             "[Cypress] Starting Playwright authenticateOAuthDevice task",
           );
+          // Pass PCC config to Playwright task
+          process.env.PCC_CONFIG = JSON.stringify(pccConfig);
           const result = await authenticateOAuthDevice(args);
           console.log(
             "[Cypress] Playwright authenticateOAuthDevice task finished",
           );
           return result;
+        },
+        closeOAuthWindow: async () => {
+          console.log("[Cypress] Starting Playwright closeOAuthWindow task");
+          const result = await closeOAuthWindow();
+          console.log("[Cypress] Playwright closeOAuthWindow task finished");
+          return result;
+        },
+        cleanupPlaywrightBrowser: async () => {
+          console.log("[Cypress] Cleaning up Playwright browser");
+          await cleanupSharedBrowser();
+          console.log("[Cypress] Playwright browser cleanup finished");
+          return null;
         },
         print(message) {
           if (typeof message !== "undefined") {

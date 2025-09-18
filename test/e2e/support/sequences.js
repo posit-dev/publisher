@@ -313,3 +313,162 @@ Cypress.Commands.add("deployCurrentlySelected", () => {
     { message: "Deployment didn't succeed within 60 seconds." },
   );
 });
+
+// Negative workflow sequences
+Cypress.Commands.add("startDeploymentCreationFlow", (entrypointFile) => {
+  // Open the Explorer if not already open
+  cy.get("body").then(($body) => {
+    if ($body.find(".explorer-viewlet:visible").length === 0) {
+      cy.get("a.codicon-explorer-view-icon").first().click();
+      cy.get(".explorer-viewlet").should("be.visible");
+    }
+  });
+
+  // Open the entrypoint file
+  cy.get(".explorer-viewlet")
+    .find(`[aria-label="${entrypointFile}"]`)
+    .should("be.visible")
+    .dblclick();
+
+  // Confirm the file is opened in a tab
+  cy.get(".tabs-container")
+    .find(`[aria-label="${entrypointFile}"]`)
+    .should("be.visible");
+
+  // Activate the publisher extension
+  cy.getPublisherSidebarIcon().click();
+
+  // Wait for the select-deployment button to be visible
+  cy.publisherWebview().findByTestId("select-deployment").should("be.visible");
+  cy.log("DEBUG: select-deployment button is visible, UI should be ready");
+
+  // Click the select-deployment button
+  cy.publisherWebview()
+    .findByTestId("select-deployment")
+    .then((dplyPicker) => {
+      Cypress.$(dplyPicker).trigger("click");
+    });
+
+  // Wait for quick input widget
+  cy.get(".quick-input-widget").should("be.visible");
+  cy.get(".quick-input-titlebar").should("have.text", "Select Deployment");
+
+  // Click to create a new deployment
+  cy.get(".quick-input-list")
+    .find('[aria-label*="Create a New Deployment"]')
+    .should("be.visible")
+    .click();
+
+  // Select entrypoint
+  cy.get(".quick-input-widget")
+    .find(`[aria-label="${entrypointFile}, Open Files"]`)
+    .should("be.visible")
+    .click();
+});
+
+Cypress.Commands.add("startCredentialCreationFlow", (platform = "server") => {
+  // Check if we're already in the publisher webview
+  cy.get("body").then(($body) => {
+    const iframes = $body.find("iframe.webview.ready");
+    const publisherIframe = iframes.filter(
+      (i, el) => el.src && el.src.includes("posit.publisher"),
+    );
+
+    if (publisherIframe.length === 0) {
+      // Not in publisher webview yet, need to click the icon
+      cy.log("Not in publisher webview, clicking publisher icon");
+      cy.getPublisherSidebarIcon().click();
+    } else {
+      cy.log("Already in publisher webview, skipping icon click");
+    }
+  });
+
+  cy.waitForPublisherIframe();
+  cy.debugIframes();
+
+  // Check if credentials section is already showing the empty message before toggling
+  cy.publisherWebview().then(($webview) => {
+    const hasEmptyMessage =
+      Cypress.$($webview).find(
+        ':contains("No credentials have been added yet.")',
+      ).length > 0;
+
+    if (!hasEmptyMessage) {
+      cy.log("Credentials section appears collapsed, expanding it");
+      cy.toggleCredentialsSection();
+    } else {
+      cy.log(
+        "Credentials section already expanded with empty message, skipping toggle",
+      );
+    }
+  });
+
+  cy.publisherWebview()
+    .findByText("No credentials have been added yet.")
+    .should("be.visible");
+
+  cy.clickSectionAction("New Credential");
+  cy.get(".quick-input-widget").should("be.visible");
+
+  cy.get(".quick-input-titlebar").should(
+    "have.text",
+    "Create a New Credential",
+  );
+
+  // Select platform - use the exact same pattern as working tests
+  if (platform === "Posit Connect Cloud") {
+    cy.get(".quick-input-list-row")
+      .contains("Posit Connect Cloud")
+      .should("be.visible")
+      .click();
+  } else {
+    cy.get(".quick-input-list-row").contains(platform).click();
+  }
+});
+
+Cypress.Commands.add("startPCCOAuthFlow", () => {
+  cy.startCredentialCreationFlow("Posit Connect Cloud");
+
+  // Wait for OAuth dialog
+  cy.get(".monaco-dialog-box")
+    .should("be.visible")
+    .should("have.attr", "aria-modal", "true");
+
+  // Handle the OAuth popup window BEFORE clicking Open
+  cy.window().then((win) => {
+    // Override window.open to simulate the popup behavior
+    cy.stub(win, "open")
+      .callsFake((url) => {
+        // Store the OAuth URL for later use
+        win.oauthUrl = url;
+        console.log("OAuth URL captured:", url);
+
+        // Create a mock window object that will simulate closing after OAuth
+        const mockWindow = {
+          closed: false,
+          close: function () {
+            this.closed = true;
+            // Notify the extension that the popup has closed (OAuth completed)
+            setTimeout(() => {
+              win.dispatchEvent(new Event("focus"));
+              console.log(
+                "OAuth popup closed - extension should check for completion",
+              );
+            }, 100);
+          },
+          focus: () => {},
+          postMessage: () => {},
+        };
+
+        // Store the mock window for later use
+        win.mockOAuthWindow = mockWindow;
+
+        return mockWindow;
+      })
+      .as("windowOpen");
+  });
+});
+
+Cypress.Commands.add("expectInitialPublisherState", () => {
+  cy.publisherWebview().findByTestId("select-deployment").should("be.visible");
+});

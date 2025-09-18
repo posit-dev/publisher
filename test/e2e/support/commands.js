@@ -299,6 +299,9 @@ if (typeof afterEach === "function") {
         cy.task("print", $body.html().substring(0, 1000));
       });
     }
+
+    // Clean up Playwright browser after each test
+    cy.task("cleanupPlaywrightBrowser", null, { timeout: 10000 });
   });
 }
 
@@ -626,6 +629,29 @@ Cypress.Commands.add("writeTomlFile", (filePath, tomlContent) => {
         );
       }
     });
+});
+
+Cypress.Commands.add("cancelQuickInput", () => {
+  cy.get(".quick-input-widget").type("{esc}");
+  cy.get(".quick-input-widget").should("not.be.visible");
+});
+
+Cypress.Commands.add("expectPollingDialogGone", () => {
+  // Simply ensure the quick input widget is not visible - this covers the polling dialog
+  cy.get(".quick-input-widget").should("not.be.visible");
+});
+
+Cypress.Commands.add("expectCredentialsSectionEmpty", () => {
+  // Refresh the credentials section
+  cy.refreshCredentials();
+
+  // Now explicitly toggle/expand the credentials section
+  cy.toggleCredentialsSection();
+
+  // Check for empty state message
+  cy.publisherWebview()
+    .findByText("No credentials have been added yet.")
+    .should("be.visible");
 });
 
 Cypress.on("uncaught:exception", () => {

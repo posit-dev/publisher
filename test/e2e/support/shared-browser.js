@@ -66,14 +66,21 @@ async function getSharedBrowserContext(forceRefresh = false) {
 // Clean up shared browser resources
 async function cleanupSharedBrowser() {
   try {
+    console.log("🧹 Starting shared browser cleanup...");
+
     if (sharedContext && !sharedContext.isClosed) {
+      console.log("🧹 Closing shared context...");
       await sharedContext.close();
       sharedContext = null;
     }
+
     if (sharedBrowser && sharedBrowser.isConnected()) {
+      console.log("🧹 Closing shared browser...");
       await sharedBrowser.close();
       sharedBrowser = null;
     }
+
+    console.log("🧹 Shared browser cleanup completed");
   } catch (cleanupErr) {
     console.log("[Playwright] Shared cleanup error:", cleanupErr.message);
   }

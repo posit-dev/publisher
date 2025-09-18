@@ -1,4 +1,5 @@
 // OAuth Device Flow Task - Automates OAuth completion for VS Code extension and supports programmatic device workflow
+
 const axios = require("axios");
 const { getPlaywrightTimeout } = require("./playwright-utils");
 const {
@@ -6,7 +7,11 @@ const {
   cleanupSharedBrowser,
 } = require("./shared-browser");
 
-// Shared Playwright browser automation for device code verification
+/**
+ * Automates the OAuth device code flow in a browser using Playwright.
+ * Navigates to the verification URL, logs in with the provided credentials,
+ * and completes the device authorization.
+ */
 async function authorizeDeviceWithBrowser(verificationUrl, email, password) {
   let page;
   try {
@@ -156,7 +161,11 @@ async function authorizeDeviceWithBrowser(verificationUrl, email, password) {
   }
 }
 
-// UI-captured URL flow (for VS Code extension)
+/**
+ * Completes the OAuth device flow for a given user and OAuth URL.
+ * Used for positive-path automation (successfully authenticates).
+ * Returns a result object indicating success or mock tokens for fallback.
+ */
 async function authenticateOAuthDevice(credentials) {
   const { email, password, oauthUrl } = credentials;
   try {
@@ -185,7 +194,13 @@ async function authenticateOAuthDevice(credentials) {
   }
 }
 
-// Fully programmatic device workflow (API + browser)
+/**
+ * Runs the full device workflow programmatically (API + browser).
+ * 1. Requests a device code from the OAuth server.
+ * 2. Polls for the token (should be pending).
+ * 3. Automates browser login and device authorization.
+ * 4. Polls for the access token and returns it.
+ */
 async function runDeviceWorkflow({ email, password, env = "staging" }) {
   try {
     // Use login.<env>.posit.cloud for device code and token endpoints
@@ -254,9 +269,40 @@ async function runDeviceWorkflow({ email, password, env = "staging" }) {
   // No cleanup needed - shared browser handles its own lifecycle
 }
 
+/**
+ * Closes any open OAuth window in the shared Playwright browser context.
+ * Used to simulate user cancellation of the OAuth flow.
+ */
+async function closeOAuthWindow() {
+  try {
+    console.log(`🚪 Closing OAuth window without completing authentication...`);
+
+    const { context } = await getSharedBrowserContext(false);
+    const pages = context.pages();
+
+    // Find the OAuth page
+    const oauthPage = pages.find((page) =>
+      page.url().includes("login.staging.posit.cloud/oauth/device"),
+    );
+
+    if (oauthPage) {
+      await oauthPage.close();
+      console.log(`✅ OAuth window closed without completing authentication`);
+      return { success: true, message: "OAuth window closed" };
+    } else {
+      console.log(`⚠️ No OAuth window found to close`);
+      return { success: false, message: "No OAuth window found" };
+    }
+  } catch (error) {
+    console.error(`❌ Error closing OAuth window:`, error);
+    return { success: false, error: error.message };
+  }
+}
+
 module.exports = {
   authenticateOAuthDevice,
   runDeviceWorkflow,
+  closeOAuthWindow,
   cleanupSharedBrowser,
 };
 
