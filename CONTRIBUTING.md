@@ -393,11 +393,9 @@ Updates to dependencies should be done in a separate PR.
 
 1. Run `go get <dependency>@<version>` to update the dependency. This will
    update the `go.mod` file with the new version.
-
    - `go get` has a `-u` option that will update all child dependencies as well.
      This is generally not recommended as it can cause unexpected problems. Use
      it with caution. `go get` will do the right thing on its own without `-u`.
-
    - It is best to specify the version with the `@<version>` suffix. This may be
      a semver string, a branch name, or a commit hash.
 
