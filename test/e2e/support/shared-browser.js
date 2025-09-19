@@ -1,5 +1,8 @@
-// Shared browser context utility for all Playwright tasks
-
+// Purpose: Provide a shared Playwright browser and context across Cypress tasks.
+// - Reduces overhead vs launching a new browser per task.
+// - getSharedBrowserContext(forceRefresh) returns a stable context (new one if forced).
+// - cleanupSharedBrowser runs on process exit signals.
+// Headless behavior: auto-enabled in CI or via PLAYWRIGHT_HEADLESS env.
 const { chromium } = require("playwright");
 
 // Global browser context cache for reuse within the same test run

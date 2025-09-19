@@ -1,5 +1,9 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
+// Purpose: Positive-path deployment creation for PCS and PCC.
+// - PCS Static: creates a static content deployment and validates TOML contents.
+// - PCC Shiny Python: creates a PCC deployment, selects additional files,
+//   modifies TOML for public access, deploys, and confirms published app via Playwright.
 describe("Deployments Section", () => {
   // Global setup for all deployment tests
   before(() => {
@@ -22,19 +26,29 @@ describe("Deployments Section", () => {
     });
 
     it("PCS Static Content Deployment", () => {
+      // Uses createPCSDeployment + deployCurrentlySelected.
+      // Asserts config fields and files are present (order-agnostic).
+
+      // Ensure Publisher is in the expected initial state
+      cy.expectInitialPublisherState();
+
       cy.createPCSDeployment("static", "index.html", "static", (tomlFiles) => {
-        const config = tomlFiles.config.contents;
+        const { contents: config } = tomlFiles.config;
+        const { name: cfgName } = tomlFiles.config;
+        const { name: recName } = tomlFiles.contentRecord;
+
         expect(config.title).to.equal("static");
         expect(config.type).to.equal("html");
         expect(config.entrypoint).to.equal("index.html");
-        expect(config.files[0]).to.equal("/index.html");
-        expect(config.files[1]).to.equal(
-          `/.posit/publish/${tomlFiles.config.name}`,
-        );
-        expect(config.files[2]).to.equal(
-          `/.posit/publish/deployments/${tomlFiles.contentRecord.name}`,
-        );
+
+        // Assert required files without relying on order
+        expect(config.files).to.include.members([
+          "/index.html",
+          `/.posit/publish/${cfgName}`,
+          `/.posit/publish/deployments/${recName}`,
+        ]);
       }).deployCurrentlySelected();
+
       cy.retryWithBackoff(
         () =>
           cy.findUniqueInPublisherWebview(
@@ -85,6 +99,7 @@ describe("Deployments Section", () => {
       const user = Cypress.env("pccConfig").pcc_user_ccqa3;
       cy.log("PCC user for setPCCCredential: " + JSON.stringify(user));
       cy.setPCCCredential(user, "pcc-deploy-credential");
+      cy.toggleCredentialsSection();
       cy.findInPublisherWebview(
         '[data-automation="pcc-deploy-credential-list"]',
       )
@@ -98,6 +113,12 @@ describe("Deployments Section", () => {
     });
 
     it("PCC Shiny Python Deployment", () => {
+      // Uses createPCCDeployment, then savePublisherFile to set public access,
+      // deploys, and confirms live app title with Playwright.
+
+      // Ensure Publisher is in the expected initial state
+      cy.expectInitialPublisherState();
+
       // Select files to include in deployment
       const filesToSelect = ["data", "README.md", "styles.css"];
       cy.createPCCDeployment(
@@ -113,28 +134,21 @@ describe("Deployments Section", () => {
           ["/app.py", "/data", "/README.md", "/styles.css"].forEach((file) => {
             expect(config.files).to.include(file);
           });
-          // Don't save here - files haven't been selected yet!
         },
         filesToSelect,
       );
 
-      // NOW add public access and save AFTER file selections are complete
+      // Set public access via helper and then deploy
       cy.getPublisherTomlFilePaths("examples-shiny-python").then(
-        (filePaths) => {
-          cy.loadTomlFile(filePaths.config.path).then((config) => {
-            // Add public access to the config TOML before deploy
-            config.connect_cloud = config.connect_cloud || {};
-            config.connect_cloud.access_control = { public_access: true };
-
-            cy.writeTomlFile(
-              filePaths.config.path,
-              "[connect_cloud]\n[connect_cloud.access_control]\npublic_access = true",
-            );
+        ({ config }) => {
+          return cy.savePublisherFile(config.path, {
+            connect_cloud: { access_control: { public_access: true } },
           });
         },
       );
 
       cy.deployCurrentlySelected();
+
       cy.retryWithBackoff(
         () =>
           cy.findUniqueInPublisherWebview(
@@ -143,19 +157,14 @@ describe("Deployments Section", () => {
         5,
         500,
       ).should("exist");
-      // Load the deployment TOML to get the published URL
+
+      // Load the deployment TOML to get the published URL and verify app
       cy.getPublisherTomlFilePaths("examples-shiny-python").then(
         (filePaths) => {
           cy.loadTomlFile(filePaths.contentRecord.path).then(
             (contentRecord) => {
               const publishedUrl = contentRecord.direct_url;
-              const expectedTitle = "Restaurant tipping"; // Use the actual app title
-              cy.log(
-                "About to call confirmPCCPublishSuccess with URL: " +
-                  publishedUrl +
-                  " and title: " +
-                  expectedTitle,
-              );
+              const expectedTitle = "Restaurant tipping";
               cy.task("confirmPCCPublishSuccess", {
                 publishedUrl,
                 expectedTitle,

@@ -15,13 +15,19 @@
 // })
 
 // Connect Server deployment sequence
+// createPCSDeployment
+// Purpose: Positive-path helper to create a new Connect Server (PCS) deployment via UI.
+// - Navigates Explorer, opens entrypoint, launches Publisher, walks through "Select Deployment" flow.
+// - Selects "Create a New Deployment", picks entrypoint, sets title, selects PCS credential.
+// - Returns TOML paths and parsed contents so tests can assert config.
+// When to use: Any test that needs a full, stable PCS deployment configuration ready to deploy.
 Cypress.Commands.add(
   "createPCSDeployment",
   (
-    projectDir, // string
-    entrypointFile, // string
-    title, // string
-    verifyTomlCallback, // func({config: { filename: string, contents: {},}, contentRecord: { filename: string, contents: {}})
+    projectDir, // relative path inside content-workspace (e.g. ".", "static", "fastapi-simple")
+    entrypointFile, // entrypoint file for the deployment (e.g. "index.html", "app.py")
+    title, // deployment title typed into quick input
+    verifyTomlCallback, // callback(tomlFiles) => assertions on parsed TOML prior to deployment
   ) => {
     // Temporarily ignore uncaught exception due to a vscode worker being cancelled at some point.
     cy.on("uncaught:exception", () => false);
@@ -146,15 +152,21 @@ Cypress.Commands.add(
 );
 
 // Connect Cloud deployment sequence
+// createPCCDeployment
+// Purpose: Positive-path helper to create a new Connect Cloud (PCC) deployment via UI.
+// - Same flow as createPCSDeployment but also selects a PCC credential by nickname.
+// - Waits for project files tree to load; optionally selects additional files.
+// - Returns TOML paths and parsed contents for assertions.
+// When to use: PCC deployments that need stable, repeatable UI steps with TOML verification.
 Cypress.Commands.add(
   "createPCCDeployment",
   (
-    projectDir, // string
-    entrypointFile, // string
-    title, // string
-    verifyTomlCallback, // func
-    filesToSelect = [], // array of file/dir names to select in the file selection pane (optional)
-    credentialName = "pcc-deploy-credential", // string - name of the credential to select (optional)
+    projectDir,
+    entrypointFile,
+    title,
+    verifyTomlCallback,
+    filesToSelect = [],
+    credentialName = "pcc-deploy-credential", // PCC credential nickname to select
   ) => {
     cy.on("uncaught:exception", () => false);
 
@@ -295,6 +307,9 @@ Cypress.Commands.add(
   },
 );
 
+// deployCurrentlySelected
+// Purpose: Click the Deploy button, wait for toasts to clear, and confirm success.
+// When to use: Immediately after createPCSDeployment/createPCCDeployment when deployment should succeed.
 Cypress.Commands.add("deployCurrentlySelected", () => {
   cy.publisherWebview()
     .findByTestId("deploy-button")
@@ -315,6 +330,10 @@ Cypress.Commands.add("deployCurrentlySelected", () => {
 });
 
 // Negative workflow sequences
+// startDeploymentCreationFlow
+// Purpose: Minimal flow to open the "Select Deployment" wizard and choose an entrypoint,
+// without completing or committing to a deployment.
+// When to use: Negative/cancellation or partial-input scenarios (e.g., pressing ESC).
 Cypress.Commands.add("startDeploymentCreationFlow", (entrypointFile) => {
   // Open the Explorer if not already open
   cy.get("body").then(($body) => {
@@ -366,6 +385,11 @@ Cypress.Commands.add("startDeploymentCreationFlow", (entrypointFile) => {
     .click();
 });
 
+// startCredentialCreationFlow
+// Purpose: Open the Credentials section, click "New Credential", and select a platform.
+// - Ensures the credentials section is expanded (idempotent).
+// - Accepts "server" or "Posit Connect Cloud" for platform.
+// When to use: To standardize starting credential creation via UI in tests (PCS or PCC).
 Cypress.Commands.add("startCredentialCreationFlow", (platform = "server") => {
   // Check if we're already in the publisher webview
   cy.get("body").then(($body) => {
@@ -386,23 +410,46 @@ Cypress.Commands.add("startCredentialCreationFlow", (platform = "server") => {
   cy.waitForPublisherIframe();
   cy.debugIframes();
 
-  // Check if credentials section is already showing the empty message before toggling
-  cy.publisherWebview().then(($webview) => {
-    const hasEmptyMessage =
-      Cypress.$($webview).find(
-        ':contains("No credentials have been added yet.")',
-      ).length > 0;
-
-    if (!hasEmptyMessage) {
-      cy.log("Credentials section appears collapsed, expanding it");
-      cy.toggleCredentialsSection();
-    } else {
-      cy.log(
-        "Credentials section already expanded with empty message, skipping toggle",
-      );
+  // Ensure the Credentials section is expanded (visibility-based check with retry)
+  const ensureCredentialsSectionExpanded = (attempt = 0) => {
+    if (attempt > 3) {
+      cy.log("Max attempts reached ensuring credentials section expansion");
+      return;
     }
-  });
+    cy.publisherWebview()
+      .findByTestId("publisher-credentials-section")
+      .then(($section) => {
+        const $sec = Cypress.$($section);
+        const isVisibleEmpty =
+          $sec
+            .find(':contains("No credentials have been added yet.")')
+            .filter(":visible").length > 0;
+        const hasVisibleBody =
+          $sec.find(".pane-body:visible").length > 0 ||
+          $sec.find(".tree:visible").length > 0;
 
+        const expanded = isVisibleEmpty || hasVisibleBody;
+
+        if (!expanded) {
+          cy.log(
+            `Credentials section appears collapsed, expanding (attempt ${
+              attempt + 1
+            })`,
+          );
+          $sec.find(".title").trigger("click");
+          // eslint-disable-next-line cypress/no-unnecessary-waiting
+          cy.wait(200).then(() =>
+            ensureCredentialsSectionExpanded(attempt + 1),
+          );
+        } else {
+          cy.log("Credentials section expanded");
+        }
+      });
+  };
+
+  ensureCredentialsSectionExpanded();
+
+  // After ensuring expansion, proceed
   cy.publisherWebview()
     .findByText("No credentials have been added yet.")
     .should("be.visible");
@@ -426,6 +473,11 @@ Cypress.Commands.add("startCredentialCreationFlow", (platform = "server") => {
   }
 });
 
+// startPCCOAuthFlow
+// Purpose: Specialized flow to start PCC OAuth UI and stub window.open for the device flow.
+// - Calls startCredentialCreationFlow("Posit Connect Cloud").
+// - Waits for the modal and stubs window.open before the "Open" click.
+// When to use: Tests that exercise real OAuth device flow via the Playwright task.
 Cypress.Commands.add("startPCCOAuthFlow", () => {
   cy.startCredentialCreationFlow("Posit Connect Cloud");
 
@@ -469,6 +521,10 @@ Cypress.Commands.add("startPCCOAuthFlow", () => {
   });
 });
 
+// expectInitialPublisherState
+// Purpose: Quick assertion that the Publisher webview loaded and is interactive
+// by checking "select-deployment" is visible.
+// When to use: At the start of tests to reduce flakiness before interacting with UI.
 Cypress.Commands.add("expectInitialPublisherState", () => {
   cy.publisherWebview().findByTestId("select-deployment").should("be.visible");
 });

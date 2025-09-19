@@ -1,5 +1,10 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
+// Purpose: Validate credential creation, listing, and deletion flows for PCS and PCC.
+// - New PCS Credential: full guided UI flow using API key.
+// - New PCC Credential: OAuth Device Code flow with Playwright automation.
+// - Existing Credentials Load: ensure listing reflects existing file-managed records.
+// - Delete Credential: verify deletion from UI with hover-only button.
 describe("Credentials Section", () => {
   // Global setup - run once for entire test suite
   before(() => {
@@ -17,31 +22,16 @@ describe("Credentials Section", () => {
   });
 
   it("New PCS Credential", () => {
-    cy.toggleCredentialsSection();
-    cy.debugIframes();
-    cy.publisherWebview()
-      .findByText("No credentials have been added yet.")
-      .should("be.visible");
+    // Starts via startCredentialCreationFlow("server") and completes setup with API key.
+    // Asserts successful connection and nickname presence in the credentials tree
 
-    cy.clickSectionAction("New Credential");
-    cy.get(".quick-input-widget").should("be.visible");
+    // Ensure the credentials section is expanded and empty
+    cy.expectCredentialsSectionEmpty();
 
-    cy.get(".quick-input-titlebar").should(
-      "have.text",
-      "Create a New Credential",
-    );
+    // Start the flow and select the 'server' platform via helper
+    cy.startCredentialCreationFlow("server");
 
-    cy.get(
-      'input[aria-label*="Please select the platform for the new credential."]',
-    ).should(
-      "have.attr",
-      "placeholder",
-      "Please select the platform for the new credential.",
-    );
-
-    // Explicitly select the 'server' option by label
-    cy.get(".quick-input-list-row").contains("server").click();
-
+    // Continue with server URL and API key inputs
     cy.get(".quick-input-message").should(
       "include.text",
       "Please provide the Posit Connect server's URL",
@@ -87,69 +77,11 @@ describe("Credentials Section", () => {
 
   it("New PCC Credential - OAuth Device Code", () => {
     const user = Cypress.env("pccConfig").pcc_user_ccqa3;
-    cy.toggleCredentialsSection();
-    cy.publisherWebview()
-      .findByText("No credentials have been added yet.")
-      .should("be.visible");
+    // Starts the PCC OAuth modal and stubs window.open, then runs Playwright device flow.
+    // Asserts successful connection, then saves a nickname and verifies it in the tree.
 
-    cy.clickSectionAction("New Credential");
-    cy.get(".quick-input-widget").should("be.visible");
-
-    cy.get(".quick-input-titlebar")
-      .should("have.text", "Create a New Credential")
-      .click();
-
-    cy.get(
-      'input[aria-label*="Please select the platform for the new credential."]',
-    ).should(
-      "have.attr",
-      "placeholder",
-      "Please select the platform for the new credential.",
-    );
-
-    cy.get(".quick-input-list-row")
-      .contains("Posit Connect Cloud")
-      .should("be.visible")
-      .click();
-
-    // Wait for the dialog box to appear and be visible
-    cy.get(".monaco-dialog-box")
-      .should("be.visible")
-      .should("have.attr", "aria-modal", "true");
-
-    // Handle the OAuth popup window BEFORE clicking Open
-    cy.window().then((win) => {
-      // Override window.open to simulate the popup behavior
-      cy.stub(win, "open")
-        .callsFake((url) => {
-          // Store the OAuth URL for later use
-          win.oauthUrl = url;
-          console.log("OAuth URL captured:", url);
-
-          // Create a mock window object that will simulate closing after OAuth
-          const mockWindow = {
-            closed: false,
-            close: function () {
-              this.closed = true;
-              // Notify the extension that the popup has closed (OAuth completed)
-              setTimeout(() => {
-                win.dispatchEvent(new Event("focus"));
-                console.log(
-                  "OAuth popup closed - extension should check for completion",
-                );
-              }, 100);
-            },
-            focus: () => {},
-            postMessage: () => {},
-          };
-
-          // Store the mock window for later use
-          win.mockOAuthWindow = mockWindow;
-
-          return mockWindow;
-        })
-        .as("windowOpen");
-    });
+    // Use helper to expand section, start flow, select PCC, show OAuth dialog, and stub window.open
+    cy.startPCCOAuthFlow();
 
     // Click the "Open" button to start the OAuth flow
     cy.get(".monaco-dialog-box .dialog-buttons a.monaco-button")
@@ -157,17 +89,17 @@ describe("Credentials Section", () => {
       .should("be.visible")
       .click();
 
-    // Wait for window.open to be called
+    // Ensure window.open was called
     cy.get("@windowOpen").should("have.been.called");
 
-    // Run the OAuth task with VS Code's captured URL and loaded user credentials
+    // Authenticate via Playwright using the captured VS Code OAuth URL
     cy.window().then((win) => {
       cy.task(
         "authenticateOAuthDevice",
         {
           email: user.email,
           password: user.auth.password,
-          oauthUrl: win.oauthUrl, // Pass VS Code's OAuth URL to Playwright
+          oauthUrl: win.oauthUrl,
         },
         { timeout: 60000 },
       );
@@ -191,7 +123,6 @@ describe("Credentials Section", () => {
     cy.get(".quick-input-and-message input")
       .should("exist")
       .should("be.visible");
-
     cy.get(".quick-input-widget").type("connect-cloud-credential{enter}");
 
     cy.findInPublisherWebview(
@@ -202,6 +133,9 @@ describe("Credentials Section", () => {
   });
 
   it("Existing Credentials Load", () => {
+    // Seeds two dummy credentials and validates they render correctly in the list.
+    // Uses retryWithBackoff + findUnique to reduce flakiness.
+
     cy.setDummyCredentials();
     cy.toggleCredentialsSection();
     cy.refreshCredentials();
@@ -210,34 +144,54 @@ describe("Credentials Section", () => {
       .findByText("No credentials have been added yet.")
       .should("not.exist");
 
-    cy.findInPublisherWebview('[data-automation="dummy-credential-one-list"]')
+    // Use consistent helpers with backoff for stability
+    cy.retryWithBackoff(
+      () =>
+        cy.findUniqueInPublisherWebview(
+          '[data-automation="dummy-credential-one-list"]',
+        ),
+      5,
+      500,
+    )
       .find(".tree-item-title")
       .should("exist")
       .and("have.text", "dummy-credential-one");
 
-    cy.findInPublisherWebview('[data-automation="dummy-credential-two-list"]')
+    cy.retryWithBackoff(
+      () =>
+        cy.findUniqueInPublisherWebview(
+          '[data-automation="dummy-credential-two-list"]',
+        ),
+      5,
+      500,
+    )
       .find(".tree-item-title")
       .should("exist")
       .and("have.text", "dummy-credential-two");
   });
 
   it("Delete Credential", () => {
+    // Hovers to reveal delete action, confirms, and asserts removal from the list.
+
     cy.setDummyCredentials();
     cy.toggleCredentialsSection();
     cy.refreshCredentials();
 
     cy.publisherWebview();
-    cy.retryWithBackoff(() =>
-      cy.findUniqueInPublisherWebview(
-        '[data-automation="dummy-credential-one-list"]',
-      ),
+    cy.retryWithBackoff(
+      () =>
+        cy.findUniqueInPublisherWebview(
+          '[data-automation="dummy-credential-one-list"]',
+        ),
+      5,
+      500,
     ).then(($credRecord) => {
       cy.wrap($credRecord).should("be.visible").trigger("mouseover");
       cy.wrap($credRecord)
         .find('[aria-label="Delete Credential"]')
-        // Required to click the delete button that's shown only via hover
         .click({ force: true });
     });
+
     cy.get(".dialog-buttons").findByText("Delete").should("be.visible").click();
     cy.get('[data-automation="dummy-credential-one-list"]').should("not.exist");
   });

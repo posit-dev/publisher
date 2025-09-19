@@ -1,3 +1,7 @@
+// Purpose: Confirm a PCC deployment is live by loading the published URL with Playwright.
+// - Retries navigation, checks for 404 UI, then inspects .navbar-static-top h1 for expected title.
+// - Returns { success, warning? } to the Cypress test for assertion/logging.
+// Notes: Reuses a shared browser context to speed up repeated checks.
 const { getPlaywrightTimeout } = require("./playwright-utils");
 
 // Import shared browser context from shared-browser utility

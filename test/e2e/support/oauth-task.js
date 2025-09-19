@@ -1,3 +1,8 @@
+// OAuth Device Flow helpers used by Cypress tasks:
+// - authenticateOAuthDevice: runs Playwright to complete Device Code flow started by VS Code (window.open URL).
+// - runDeviceWorkflow: fully programmatic device flow (no VS Code UI), returns tokens for setPCCCredential.
+// - closeOAuthWindow: closes an open OAuth page for cancellation tests.
+// Notes: Uses a shared Playwright browser/context for performance across tests.
 // OAuth Device Flow Task - Automates OAuth completion for VS Code extension and supports programmatic device workflow
 
 const axios = require("axios");
