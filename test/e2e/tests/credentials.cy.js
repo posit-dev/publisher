@@ -77,53 +77,12 @@ describe("Credentials Section", () => {
 
   it("New PCC Credential - OAuth Device Code", () => {
     const user = Cypress.env("pccConfig").pcc_user_ccqa3;
-    // Starts the PCC OAuth modal and stubs window.open, then runs Playwright device flow.
-    // Asserts successful connection, then saves a nickname and verifies it in the tree.
+    // Drive full OAuth UI flow and nickname entry via helper
+    cy.addPCCCredential(user, "connect-cloud-credential");
 
-    // Use helper to expand section, start flow, select PCC, show OAuth dialog, and stub window.open
-    cy.startPCCOAuthFlow();
-
-    // Click the "Open" button to start the OAuth flow
-    cy.get(".monaco-dialog-box .dialog-buttons a.monaco-button")
-      .contains("Open")
-      .should("be.visible")
-      .click();
-
-    // Ensure window.open was called
-    cy.get("@windowOpen").should("have.been.called");
-
-    // Authenticate via Playwright using the captured VS Code OAuth URL
-    cy.window().then((win) => {
-      cy.task(
-        "authenticateOAuthDevice",
-        {
-          email: user.email,
-          password: user.auth.password,
-          oauthUrl: win.oauthUrl,
-        },
-        { timeout: 60000 },
-      );
-    });
-
-    // Wait for OAuth completion and VS Code to detect it
-    cy.get(".monaco-dialog-box").should("not.exist", { timeout: 30000 });
-
-    cy.get(".quick-input-message", { timeout: 15000 }).should(
-      "include.text",
-      "Successfully connected to Connect Cloud 🎉",
-    );
-
-    // Wait for the nickname input field to appear
-    cy.get(".quick-input-message", { timeout: 15000 }).should(
-      "include.text",
-      "Enter a unique nickname for this account.",
-    );
-
-    // Continue with credential creation after OAuth success
-    cy.get(".quick-input-and-message input")
-      .should("exist")
-      .should("be.visible");
-    cy.get(".quick-input-widget").type("connect-cloud-credential{enter}");
+    // Verify the credential appears in the list
+    cy.toggleCredentialsSection();
+    cy.refreshCredentials();
 
     cy.findInPublisherWebview(
       '[data-automation="connect-cloud-credential-list"]',

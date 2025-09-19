@@ -23,12 +23,7 @@
 // When to use: Any test that needs a full, stable PCS deployment configuration ready to deploy.
 Cypress.Commands.add(
   "createPCSDeployment",
-  (
-    projectDir, // relative path inside content-workspace (e.g. ".", "static", "fastapi-simple")
-    entrypointFile, // entrypoint file for the deployment (e.g. "index.html", "app.py")
-    title, // deployment title typed into quick input
-    verifyTomlCallback, // callback(tomlFiles) => assertions on parsed TOML prior to deployment
-  ) => {
+  (projectDir, entrypointFile, title, verifyTomlCallback) => {
     // Temporarily ignore uncaught exception due to a vscode worker being cancelled at some point.
     cy.on("uncaught:exception", () => false);
 
@@ -101,19 +96,30 @@ Cypress.Commands.add(
 
     cy.get(".quick-input-widget")
       .find(`[aria-label="${targetLabel}"]`)
-      .should("be.visible")
-      .click();
+      .then(($el) => {
+        cy.wrap($el).scrollIntoView();
+        cy.wrap($el).click({ force: true });
+      });
 
+    // Ensure title enters reliably, then submit with Enter
+    cy.get(".quick-input-widget").find(".quick-input-filter input").type(title);
     cy.get(".quick-input-widget")
       .find(".quick-input-filter input")
-      .type(`${title}{enter}`);
+      .should("have.value", title)
+      .type("{enter}");
 
-    cy.get(".quick-input-widget")
-      .find(
-        '[aria-label="admin-code-server, http://connect-publisher-e2e:3939"]',
-      )
-      .should("be.visible")
-      .click();
+    // Robust credential selection by row content (avoids hidden/virtualized anchors)
+    cy.retryWithBackoff(
+      () =>
+        cy
+          .get(".quick-input-widget")
+          .contains(".quick-input-list-row", "admin-code-server"),
+      8,
+      700,
+    ).then(($row) => {
+      cy.wrap($row).scrollIntoView();
+      cy.wrap($row).click({ force: true });
+    });
 
     return cy
       .getPublisherTomlFilePaths(projectDir)
@@ -166,7 +172,7 @@ Cypress.Commands.add(
     title,
     verifyTomlCallback,
     filesToSelect = [],
-    credentialName = "pcc-deploy-credential", // PCC credential nickname to select
+    credentialName = "pcc-deploy-credential",
   ) => {
     cy.on("uncaught:exception", () => false);
 
@@ -218,8 +224,12 @@ Cypress.Commands.add(
 
     cy.get(".quick-input-widget")
       .find(`[aria-label="${targetLabel}"]`)
-      .should("be.visible")
-      .click();
+      // .should("be.visible")
+      // .click();
+      .then(($el) => {
+        cy.wrap($el).scrollIntoView();
+        cy.wrap($el).click({ force: true });
+      });
 
     cy.get(".quick-input-widget").find(".quick-input-filter input").type(title);
 
@@ -228,11 +238,23 @@ Cypress.Commands.add(
       .should("have.value", title)
       .type("{enter}");
 
-    cy.get(".quick-input-widget")
-      .find(".quick-input-list-row")
-      .contains(credentialName)
-      .should("be.visible")
-      .click();
+    // Robust credential selection (avoid relying on anchor visibility)
+    // cy.get(".quick-input-widget")
+    //   .find(".quick-input-list-row")
+    //   .contains(credentialName)
+    //   .should("be.visible")
+    //   .click();
+    cy.retryWithBackoff(
+      () =>
+        cy
+          .get(".quick-input-widget")
+          .contains(".quick-input-list-row", credentialName),
+      6,
+      700,
+    ).then(($row) => {
+      cy.wrap($row).scrollIntoView();
+      cy.wrap($row).click({ force: true });
+    });
 
     // Wait for the deployment configuration to load instead of waiting for quick-input to disappear
     cy.publisherWebview()
@@ -523,6 +545,11 @@ Cypress.Commands.add("startPCCOAuthFlow", () => {
 
 // expectInitialPublisherState
 // Purpose: Quick assertion that the Publisher webview loaded and is interactive
+// by checking "select-deployment" is visible.
+// When to use: At the start of tests to reduce flakiness before interacting with UI.
+Cypress.Commands.add("expectInitialPublisherState", () => {
+  cy.publisherWebview().findByTestId("select-deployment").should("be.visible");
+});
 // by checking "select-deployment" is visible.
 // When to use: At the start of tests to reduce flakiness before interacting with UI.
 Cypress.Commands.add("expectInitialPublisherState", () => {

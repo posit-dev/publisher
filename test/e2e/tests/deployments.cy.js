@@ -100,6 +100,7 @@ describe("Deployments Section", () => {
       cy.log("PCC user for setPCCCredential: " + JSON.stringify(user));
       cy.setPCCCredential(user, "pcc-deploy-credential");
       cy.toggleCredentialsSection();
+      cy.refreshCredentials();
       cy.findInPublisherWebview(
         '[data-automation="pcc-deploy-credential-list"]',
       )
@@ -141,9 +142,13 @@ describe("Deployments Section", () => {
       // Set public access via helper and then deploy
       cy.getPublisherTomlFilePaths("examples-shiny-python").then(
         ({ config }) => {
-          return cy.savePublisherFile(config.path, {
-            connect_cloud: { access_control: { public_access: true } },
-          });
+          // return cy.savePublisherFile(config.path, {
+          //   connect_cloud: { access_control: { public_access: true } },
+          // });
+          return cy.writeTomlFile(
+            config.path,
+            "[connect_cloud]\n[connect_cloud.access_control]\npublic_access = true",
+          );
         },
       );
 

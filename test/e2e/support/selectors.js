@@ -264,7 +264,7 @@ Cypress.Commands.add("toggleCredentialsSection", () => {
   // Due to Cypress + iframes limited support,
   // clicking the section title needs to be done with jQuery elements
   // Cypress chained click() method will fail in this case.
-  cy.refreshCredentials();
+
   cy.publisherWebview()
     .findByTestId("publisher-credentials-section")
     .should((section) => {
@@ -274,12 +274,28 @@ Cypress.Commands.add("toggleCredentialsSection", () => {
 });
 
 Cypress.Commands.add("refreshCredentials", () => {
-  cy.publisherWebview()
-    .findByTestId("publisher-credentials-section")
-    .trigger("mouseover");
-  cy.publisherWebview()
-    .find('a[aria-label="Refresh Credentials"]')
-    .click({ force: true });
+  // Robustly locate the credentials section inside the webview before interacting
+  cy.retryWithBackoff(
+    () =>
+      cy.publisherWebview().then((body) => {
+        const $body = Cypress.$(body);
+        return $body.find('[data-automation="publisher-credentials-section"]');
+      }),
+    8,
+    500,
+  ).then(($section) => {
+    // Mouseover section to reveal the refresh action and click it
+    Cypress.$($section).trigger("mouseover");
+    const $btn = Cypress.$($section).find(
+      'a[aria-label="Refresh Credentials"]',
+    );
+    // Force click via vanilla JS for reliability
+    if ($btn.length && $btn[0]) {
+      $btn[0].click();
+    } else {
+      throw new Error("Refresh Credentials button not found");
+    }
+  });
 });
 
 Cypress.Commands.add("toggleHelpSection", () => {

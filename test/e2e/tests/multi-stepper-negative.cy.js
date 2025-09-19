@@ -82,8 +82,17 @@ describe("Multi-Stepper Negative Cases", () => {
       // User hits ESC to cancel the ongoing OAuth polling in VS Code
       cy.get("body").type("{esc}");
 
-      // Verify original credential exists and no new one was added
-      cy.findInPublisherWebview('[data-automation="pcc-credential-list"]')
+      // Ensure credentials list reflects the pre-existing PCC credential
+      cy.refreshCredentials();
+      cy.toggleCredentialsSection();
+      cy.retryWithBackoff(
+        () =>
+          cy.findUniqueInPublisherWebview(
+            '[data-automation="pcc-credential-list"]',
+          ),
+        5,
+        500,
+      )
         .find(".tree-item-title")
         .should("have.text", "pcc-credential");
 

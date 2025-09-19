@@ -41,9 +41,17 @@ describe("Detect errors in config", () => {
     cy.get(".quick-input-titlebar").should("have.text", "Select Deployment");
 
     // select our error case. This confirms that we have it.
-    cy.get(".quick-input-widget")
-      .contains("Unknown Title • Error in quarto-project-8G2B")
-      .click();
+    // cy.get(".quick-input-widget")
+    //   .contains("Unknown Title • Error in quarto-project-8G2B")
+    //   .click();
+    cy.retryWithBackoff(
+      () =>
+        cy
+          .get(".quick-input-widget")
+          .contains("Unknown Title • Error in quarto-project-8G2B"),
+      6,
+      700,
+    ).click();
 
     // confirm that the selector shows the error (compact, order-agnostic)
     cy.retryWithBackoff(
@@ -84,9 +92,17 @@ describe("Detect errors in config", () => {
     cy.get(".quick-input-titlebar").should("have.text", "Select Deployment");
 
     // select our error case. This confirms that we have it.
-    cy.get(".quick-input-widget")
-      .contains("Unknown Title Due to Missing Config fastapi-simple-DHJL")
-      .click();
+    // cy.get(".quick-input-widget")
+    //   .contains("Unknown Title Due to Missing Config fastapi-simple-DHJL")
+    //   .click();
+    cy.retryWithBackoff(
+      () =>
+        cy
+          .get(".quick-input-widget")
+          .contains("Unknown Title Due to Missing Config fastapi-simple-DHJL"),
+      6,
+      700,
+    ).click();
 
     // confirm that the selector shows the error (compact, order-agnostic)
     cy.retryWithBackoff(

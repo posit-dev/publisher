@@ -29,7 +29,7 @@ if (typeof afterEach === "function") {
     }
 
     // Clean up Playwright browser after each test
-    cy.task("cleanupPlaywrightBrowser", null, { timeout: 10000 });
+    cy.task("cleanupPlaywrightBrowser", null, { timeout: 20000 });
   });
 }
 
@@ -249,45 +249,31 @@ Cypress.Commands.add("expandWildcardFile", (targetDir, wildCardPath) => {
 
 // savePublisherFile
 // Purpose: Mutate a Publisher TOML (e.g., set connect_cloud.access_control.public_access).
-// - Preserves file permissions and updates or injects sections.
+// - Container-safe: reads and writes via docker exec to avoid CI permissions issues.
 // When to use: After createPCCDeployment but before deploy.
 Cypress.Commands.add("savePublisherFile", (filePath, jsonObject) => {
-  // First check if file exists and get its permissions
+  // Map host path to container path
+  const dockerPath = filePath.replace(
+    "content-workspace/",
+    "/home/coder/workspace/",
+  );
+
+  // Read the file content from inside the container
   return cy
-    .exec(`ls -la "${filePath}"`, { failOnNonZeroExit: false })
-    .then((lsResult) => {
-      cy.log(`File permissions: ${lsResult.stdout}`);
+    .exec(
+      `docker exec publisher-e2e.code-server bash -c "cat '${dockerPath}'"`,
+      { failOnNonZeroExit: false },
+    )
+    .then((readResult) => {
+      if (readResult.code !== 0 || !readResult.stdout) {
+        throw new Error(
+          `Failed to read TOML via Docker: ${readResult.stderr || "no stdout"}`,
+        );
+      }
 
-      // Check if we can write to the directory
-      const dirPath = filePath.substring(0, filePath.lastIndexOf("/"));
-      return cy
-        .exec(`test -w "${dirPath}"`, { failOnNonZeroExit: false })
-        .then((dirResult) => {
-          cy.log(`Directory writable: ${dirResult.code === 0}`);
+      let modifiedContent = readResult.stdout;
 
-          // Check if file is writable
-          return cy
-            .exec(`test -w "${filePath}"`, { failOnNonZeroExit: false })
-            .then((fileResult) => {
-              cy.log(`File writable: ${fileResult.code === 0}`);
-
-              if (fileResult.code !== 0) {
-                // Try to make it writable
-                cy.log(`Attempting to make file writable...`);
-                return cy
-                  .exec(`chmod 644 "${filePath}"`, { failOnNonZeroExit: false })
-                  .then(() => {
-                    return cy.readFile(filePath, { encoding: "utf8" });
-                  });
-              } else {
-                return cy.readFile(filePath, { encoding: "utf8" });
-              }
-            });
-        });
-    })
-    .then((originalContent) => {
-      let modifiedContent = originalContent;
-
+      // Minimal mutation support for connect_cloud.access_control.public_access
       if (jsonObject.connect_cloud) {
         const connectCloudSection = "\n[connect_cloud]\n";
         const accessControlSection = `[connect_cloud.access_control]\npublic_access = ${jsonObject.connect_cloud.access_control.public_access}\n`;
@@ -307,7 +293,13 @@ Cypress.Commands.add("savePublisherFile", (filePath, jsonObject) => {
         }
       }
 
-      return cy.writeFile(filePath, modifiedContent);
+      // Overwrite the file inside the container
+      const escaped = modifiedContent
+        .replace(/\\/g, "\\\\")
+        .replace(/'/g, "'\"'\"'");
+      return cy.exec(
+        `docker exec publisher-e2e.code-server bash -c "cat <<'EOF' > '${dockerPath}'\n${escaped}\nEOF"`,
+      );
     });
 });
 
@@ -368,26 +360,36 @@ Cypress.Commands.add("debugIframes", () => {
 // - Skips caching in credential-centric tests where content changes frequently.
 Cypress.Commands.add("findInPublisherWebview", (selector) => {
   // Only use caching for tests that don't refresh content
-  const testTitle = Cypress.currentTest.title;
-  const skipCaching =
-    testTitle.includes("Credential") ||
-    testTitle.includes("Delete") ||
-    testTitle.includes("Load");
+  const testTitle = Cypress.currentTest.title || "";
+  // Broaden skip conditions to include OAuth/Negative flows
+  const titleIndicatesVolatile = /Credential|Delete|Load|OAuth|Negative/i.test(
+    testTitle,
+  );
 
-  if (skipCaching) {
-    // No caching for credential tests that change webview content
-    return cy.publisherWebview().then((webview) => {
-      return cy.wrap(webview).find(selector);
-    });
+  if (titleIndicatesVolatile) {
+    return cy
+      .publisherWebview()
+      .then((webview) => cy.wrap(webview).find(selector));
   }
 
-  // Use caching for deployment and static tests
-  return cy.window().then((win) => {
-    if (!win.cachedPublisherWebview) {
-      win.cachedPublisherWebview = cy.publisherWebview();
-    }
-    return win.cachedPublisherWebview.then((webview) => {
+  // If volatile UI elements are visible, bypass cache
+  return cy.publisherWebview().then((webview) => {
+    const $webview = Cypress.$(webview);
+    const hasVolatileUI =
+      $webview.find(".quick-input-widget:visible, .monaco-dialog-box:visible")
+        .length > 0;
+    if (hasVolatileUI) {
       return cy.wrap(webview).find(selector);
+    }
+
+    // Use caching for stable deployment/static tests
+    return cy.window().then((win) => {
+      if (!win.cachedPublisherWebview) {
+        win.cachedPublisherWebview = cy.publisherWebview();
+      }
+      return win.cachedPublisherWebview.then((cached) =>
+        cy.wrap(cached).find(selector),
+      );
     });
   });
 });
@@ -470,7 +472,7 @@ Cypress.Commands.add(
 Cypress.Commands.add(
   "addPCCCredential",
   (user, nickname = "connect-cloud-credential") => {
-    cy.getPublisherSidebarIcon().click();
+    cy.expectInitialPublisherState();
 
     cy.toggleCredentialsSection();
     cy.publisherWebview()
