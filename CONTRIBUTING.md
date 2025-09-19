@@ -308,6 +308,7 @@ minor version number is odd.
     that is bundled with the extension
 - Merge any "Update licenses" PRs to main
 - Merge any release preparation PRs to main
+- Merge any Dependabot PRs to main
 - Wait for the `main.yaml` workflows to complete before creating a release tag
 
 ### Instructions
@@ -350,9 +351,34 @@ It may take some time after the action completes for the new version to show up.
 
 ## Updating Dependencies
 
-After a release has gone out we take the opportunity to update dependencies.
+Dependencies can be updated through two approaches:
 
-Dependencies can be adjusted at any time; the process of updating after a
+1. **Automated (Preferred)**: Via Dependabot PRs that are automatically created
+2. **Manual**: For cases where Dependabot cannot handle the update or special handling is needed
+
+### Dependabot automated dependency updates
+
+Dependabot is GitHub's automated dependency management tool that helps keep your project's dependencies up to date. It scans your repository for
+dependency files and automatically creates pull requests when newer versions of your dependencies are available.
+
+Each PR includes release notes, changelog entries, and compatibility information to help you assess the impact of the update.
+
+After review and approval, Dependabot PRs can be merged like regular code changes.
+
+#### Dependabot Configuration
+
+- Configuration is maintained in `.github/dependabot.yml`
+- Multiple ecosystems are monitored:
+  - npm packages (root, VSCode extension, and test directories)
+  - Go modules
+  - Python dependencies
+  - Docker images
+  - GitHub Actions
+  - Test data dependencies
+
+### Manual dependency updates
+
+Dependencies can be manually adjusted at any time; the process of updating after a
 release keeps us proactive.
 
 This includes our JavaScript packages, Go version/packages, and tooling
@@ -370,7 +396,6 @@ Updates to dependencies should be done in a separate PR.
    - `go get` has a `-u` option that will update all child dependencies as well.
      This is generally not recommended as it can cause unexpected problems. Use
      it with caution. `go get` will do the right thing on its own without `-u`.
-
    - It is best to specify the version with the `@<version>` suffix. This may be
      a semver string, a branch name, or a commit hash.
 

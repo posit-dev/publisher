@@ -1,0 +1,131 @@
+# To get started with Dependabot version updates, you'll need to specify which
+# package ecosystems to update and where the package manifests are located.
+# Please see the documentation for all configuration options:
+# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  # npm
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "npm"
+    directory: "/extensions/vscode"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "npm"
+    directory: "/extensions/vscode/webviews/homeView"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "npm"
+    directory: "/test/e2e"
+    schedule:
+      interval: "weekly"
+
+  # go
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  # python
+  - package-ecosystem: "pip"
+    directory: "/test/e2e"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "pip"
+    directory: "/test/setup"
+    schedule:
+      interval: "weekly"
+
+  # Test data Python dependencies
+  # Currently configured as a group which will roll them all into a single PR
+  - package-ecosystem: "pip"
+    directory: "/test/e2e/content-workspace"
+    schedule:
+      interval: "monthly"
+    groups:
+      test-data-dependencies:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "pip"
+    directory: "/test/e2e/content-workspace/config-errors"
+    schedule:
+      interval: "monthly"
+    groups:
+      test-data-dependencies:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "pip"
+    directory: "/test/e2e/content-workspace/examples-shiny-python"
+    schedule:
+      interval: "monthly"
+    groups:
+      test-data-dependencies:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "pip"
+    directory: "/test/e2e/content-workspace/fastapi-simple"
+    schedule:
+      interval: "monthly"
+    groups:
+      test-data-dependencies:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "pip"
+    directory: "/test/sample-content/fastapi-simple"
+    schedule:
+      interval: "monthly"
+    groups:
+      test-data-dependencies:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "pip"
+    directory: "/test/sample-content/gradio"
+    schedule:
+      interval: "monthly"
+    groups:
+      test-data-dependencies:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "pip"
+    directory: "/internal/clients/connect/testdata/python-bundle"
+    schedule:
+      interval: "monthly"
+    groups:
+      test-data-dependencies:
+        patterns:
+          - "*"
+
+  # docker
+  - package-ecosystem: "docker"
+    directory: "/test"
+    schedule:
+      interval: "monthly"
+
+  - package-ecosystem: "docker"
+    directory: "/build"
+    schedule:
+      interval: "monthly"
+
+  - package-ecosystem: "docker"
+    directory: "/test/e2e"
+    schedule:
+      interval: "monthly"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
