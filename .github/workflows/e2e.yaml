@@ -13,7 +13,7 @@ jobs:
       DEBUG_CYPRESS: "false" # Set to true to enable extra logging and video recording replays
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
