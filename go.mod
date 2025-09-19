@@ -20,11 +20,11 @@ require (
 
 require gopkg.in/ini.v1 v1.67.0
 
+require al.essio.dev/pkg/shellescape v1.5.1 // indirect
+
 require (
-	github.com/alessio/shellescape v1.4.2 // indirect
 	github.com/danieljoos/wincred v1.2.2 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
-	google.golang.org/protobuf v1.36.1 // indirect  DON'T REMOVE, this is here to force a more recent version
 )
 
 require (
@@ -33,7 +33,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rogpeppe/go-internal v1.8.0 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
-	github.com/zalando/go-keyring v0.2.5
+	github.com/zalando/go-keyring v0.2.6
 	golang.org/x/sys v0.32.0 // indirect
 	golang.org/x/text v0.24.0 // indirect
 	gopkg.in/cenkalti/backoff.v1 v1.1.0 // indirect
