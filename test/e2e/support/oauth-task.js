@@ -11,6 +11,8 @@ const {
   getSharedBrowserContext,
   cleanupSharedBrowser,
 } = require("./shared-browser");
+// Include publish confirmation task so config can register all tasks via one helper
+const { confirmPCCPublishSuccess } = require("./publish-success-task");
 
 /**
  * Automates the OAuth device code flow in a browser using Playwright.
@@ -304,11 +306,34 @@ async function closeOAuthWindow() {
   }
 }
 
+// Bundle Cypress tasks to simplify cypress.config.js
+function buildCypressTasks(pccConfig) {
+  return {
+    authenticateOAuthDevice: async (args) => {
+      // Pass PCC config to Playwright task
+      process.env.PCC_CONFIG = JSON.stringify(pccConfig);
+      return authenticateOAuthDevice(args);
+    },
+    runDeviceWorkflow: async ({ email, password, env = "staging" }) => {
+      return runDeviceWorkflow({ email, password, env });
+    },
+    closeOAuthWindow: async () => {
+      return closeOAuthWindow();
+    },
+    cleanupPlaywrightBrowser: async () => {
+      await cleanupSharedBrowser();
+      return null;
+    },
+    confirmPCCPublishSuccess, // { publishedUrl, expectedTitle } => { success, error?, warning? }
+  };
+}
+
 module.exports = {
   authenticateOAuthDevice,
   runDeviceWorkflow,
   closeOAuthWindow,
   cleanupSharedBrowser,
+  buildCypressTasks,
 };
 
 // Clean up shared browser on process exit

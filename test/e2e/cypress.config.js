@@ -2,13 +2,7 @@ const { defineConfig } = require("cypress");
 const fs = require("fs");
 const path = require("path");
 const { get1PasswordSecret } = require("./support/op-utils");
-const {
-  authenticateOAuthDevice,
-  runDeviceWorkflow,
-  closeOAuthWindow,
-  cleanupSharedBrowser,
-} = require("./support/oauth-task");
-const { confirmPCCPublishSuccess } = require("./support/publish-success-task");
+const { buildCypressTasks } = require("./support/oauth-task");
 
 // Load shared E2E config (timeouts, etc.)
 const e2eConfig = require("./config/e2e.json");
@@ -70,44 +64,16 @@ module.exports = defineConfig({
         compactLogs: 1,
       });
 
+      // Register consolidated tasks
+      const taskHandlers = buildCypressTasks(pccConfig);
       on("task", {
-        authenticateOAuthDevice: async (args) => {
-          console.log(
-            "[Cypress] Starting Playwright authenticateOAuthDevice task",
-          );
-          // Pass PCC config to Playwright task
-          process.env.PCC_CONFIG = JSON.stringify(pccConfig);
-          const result = await authenticateOAuthDevice(args);
-          console.log(
-            "[Cypress] Playwright authenticateOAuthDevice task finished",
-          );
-          return result;
-        },
-        closeOAuthWindow: async () => {
-          console.log("[Cypress] Starting Playwright closeOAuthWindow task");
-          const result = await closeOAuthWindow();
-          console.log("[Cypress] Playwright closeOAuthWindow task finished");
-          return result;
-        },
-        cleanupPlaywrightBrowser: async () => {
-          console.log("[Cypress] Cleaning up Playwright browser");
-          await cleanupSharedBrowser();
-          console.log("[Cypress] Playwright browser cleanup finished");
-          return null;
-        },
+        ...taskHandlers,
         print(message) {
           if (typeof message !== "undefined") {
             console.log(message);
           }
           return null;
         },
-        async runDeviceWorkflow({ email, password, env = "staging" }) {
-          console.log("[Cypress] Starting Playwright runDeviceWorkflow task");
-          const result = await runDeviceWorkflow({ email, password, env });
-          console.log("[Cypress] Playwright runDeviceWorkflow task finished");
-          return result;
-        },
-        confirmPCCPublishSuccess,
       });
     },
   },
