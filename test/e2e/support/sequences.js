@@ -101,12 +101,33 @@ Cypress.Commands.add(
         cy.wrap($el).click({ force: true });
       });
 
-    // Ensure title enters reliably, then submit with Enter
-    cy.get(".quick-input-widget").find(".quick-input-filter input").type(title);
+    // Wait for "enter title" step explicitly (avoid typing into filter step)
+    cy.retryWithBackoff(
+      () =>
+        cy
+          .get(".quick-input-widget")
+          .find(".quick-input-message")
+          .then(($m) => {
+            const txt = ($m.text() || "").toLowerCase();
+            return /title|name/.test(txt) ? $m : Cypress.$();
+          }),
+      10,
+      700,
+    );
+
+    // Robustly set the title value and submit (prevents partial keystrokes in CI)
     cy.get(".quick-input-widget")
       .find(".quick-input-filter input")
-      .should("have.value", title)
-      .type("{enter}");
+      .then(($input) => {
+        const el = $input[0];
+        el.value = ""; // clear
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+        el.value = title; // set
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+        el.dispatchEvent(new Event("change", { bubbles: true }));
+        cy.wrap($input).should("have.value", title).focus();
+      });
+    cy.get(".quick-input-widget").type("{enter}");
 
     // Robust credential selection by row content (avoids hidden/virtualized anchors)
     cy.retryWithBackoff(
@@ -224,26 +245,40 @@ Cypress.Commands.add(
 
     cy.get(".quick-input-widget")
       .find(`[aria-label="${targetLabel}"]`)
-      // .should("be.visible")
-      // .click();
       .then(($el) => {
         cy.wrap($el).scrollIntoView();
         cy.wrap($el).click({ force: true });
       });
 
-    cy.get(".quick-input-widget").find(".quick-input-filter input").type(title);
+    // Wait for "enter title" step explicitly (avoid typing into filter step)
+    cy.retryWithBackoff(
+      () =>
+        cy
+          .get(".quick-input-widget")
+          .find(".quick-input-message")
+          .then(($m) => {
+            const txt = ($m.text() || "").toLowerCase();
+            return /title|name/.test(txt) ? $m : Cypress.$();
+          }),
+      10,
+      700,
+    );
 
+    // Robustly set the title value and submit (prevents partial keystrokes in CI)
     cy.get(".quick-input-widget")
       .find(".quick-input-filter input")
-      .should("have.value", title)
-      .type("{enter}");
+      .then(($input) => {
+        const el = $input[0];
+        el.value = ""; // clear
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+        el.value = title; // set
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+        el.dispatchEvent(new Event("change", { bubbles: true }));
+        cy.wrap($input).should("have.value", title).focus();
+      });
+    cy.get(".quick-input-widget").type("{enter}");
 
     // Robust credential selection (avoid relying on anchor visibility)
-    // cy.get(".quick-input-widget")
-    //   .find(".quick-input-list-row")
-    //   .contains(credentialName)
-    //   .should("be.visible")
-    //   .click();
     cy.retryWithBackoff(
       () =>
         cy
