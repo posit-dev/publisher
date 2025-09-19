@@ -109,6 +109,8 @@ describe("Deployments Section", () => {
     });
 
     afterEach(() => {
+      // Delete any published PCC content created by this suite (if present)
+      cy.deletePCCContent();
       cy.clearupDeployments();
       cy.resetCredentials();
     });
@@ -169,6 +171,17 @@ describe("Deployments Section", () => {
           cy.loadTomlFile(filePaths.contentRecord.path).then(
             (contentRecord) => {
               const publishedUrl = contentRecord.direct_url;
+
+              // Store contentId (UUID-like prefix of the share hostname) for cleanup
+              try {
+                const hostPart = new URL(publishedUrl).hostname.split(".")[0];
+                if (hostPart && /^[0-9a-f-]{8,}$/i.test(hostPart)) {
+                  Cypress.env("LAST_PCC_CONTENT_ID", hostPart);
+                }
+              } catch {
+                // ignore parse errors
+              }
+
               const expectedTitle = "Restaurant tipping";
               cy.task("confirmPCCPublishSuccess", {
                 publishedUrl,

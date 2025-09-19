@@ -563,7 +563,10 @@ Cypress.Commands.add(
       .should("be.visible");
 
     cy.get(".quick-input-widget").type(`${nickname}{enter}`);
-    // No assertion here; do it in the test.
+
+    // Ensure the UI updates: wait for quick-input to close, then refresh credentials
+    cy.get(".quick-input-widget").should("not.be.visible");
+    cy.refreshCredentials();
   },
 );
 
@@ -602,6 +605,10 @@ Cypress.Commands.add(
       if (!refresh_token || !access_token || !account_id || !account_name) {
         throw new Error("Missing required PCC credential fields");
       }
+
+      // Persist token securely in memory for cleanup; never log this
+      Cypress.env("PCC_ACCESS_TOKEN", access_token);
+
       const toml = `
 [credentials.${nickname}]
 guid = '${guid}'
@@ -693,6 +700,41 @@ Cypress.Commands.add("expectCredentialsSectionEmpty", () => {
   cy.publisherWebview()
     .findByText("No credentials have been added yet.")
     .should("be.visible");
+});
+
+// deletePCCContent
+// Purpose: Minimal PCC cleanup using in-memory values captured during the test.
+// - Requires Cypress.env("PCC_ACCESS_TOKEN") set by setPCCCredential()
+// - Requires Cypress.env("LAST_PCC_CONTENT_ID") set by the test after reading direct_url
+Cypress.Commands.add("deletePCCContent", () => {
+  const contentId = Cypress.env("LAST_PCC_CONTENT_ID");
+  const token = Cypress.env("PCC_ACCESS_TOKEN");
+  const env = Cypress.env("CONNECT_CLOUD_ENV") || "staging";
+
+  // Mask token in any logging
+  const mask = (t) => (t ? `${t.slice(0, 4)}***${t.slice(-4)}` : "(none)");
+
+  if (!contentId || !token) {
+    cy.task(
+      "print",
+      `[PCC-DELETE] Skipping: contentId=${contentId || "(none)"} token=${mask(token)}`,
+    );
+    return;
+  }
+
+  const url = `https://api.${env}.connect.posit.cloud/v1/contents/${contentId}`;
+  cy.task("print", `[PCC-DELETE] DELETE ${url}`);
+
+  cy.request({
+    method: "DELETE",
+    url,
+    headers: { Authorization: `Bearer ${token}` },
+    failOnStatusCode: false,
+  }).then((resp) => {
+    cy.task("print", `[PCC-DELETE] status=${resp.status}`);
+    // Clear stored id to avoid leakage across tests
+    Cypress.env("LAST_PCC_CONTENT_ID", null);
+  });
 });
 
 Cypress.on("uncaught:exception", () => {
