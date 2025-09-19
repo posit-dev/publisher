@@ -5,7 +5,7 @@ go 1.23.3
 require (
 	github.com/PuerkitoBio/purell v1.2.1
 	github.com/alecthomas/kong v0.9.0
-	github.com/golang-jwt/jwt/v5 v5.2.2
+	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
 	github.com/mitchellh/mapstructure v1.5.0
@@ -24,7 +24,6 @@ require (
 	github.com/alessio/shellescape v1.4.2 // indirect
 	github.com/danieljoos/wincred v1.2.2 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
-	google.golang.org/protobuf v1.36.1 // indirect  DON'T REMOVE, this is here to force a more recent version
 )
 
 require (
