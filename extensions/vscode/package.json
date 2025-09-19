@@ -664,7 +664,7 @@
     "debounce": "^2.1.0",
     "entities": "^6.0.0",
     "eventsource": "^2.0.2",
-    "filenamify": "^6.0.0",
+    "filenamify": "^7.0.0",
     "get-port": "^7.1.0",
     "mutexify": "^1.4.0",
     "retry": "^0.13.1",
