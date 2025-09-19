@@ -34,6 +34,7 @@ jobs:
     needs: build
     uses: ./.github/workflows/archive.yaml
   upload:
+    if: ${{ github.actor != 'dependabot[bot]' }}
     needs:
       - archive
       - package
