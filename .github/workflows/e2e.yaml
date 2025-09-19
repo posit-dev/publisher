@@ -10,7 +10,12 @@ jobs:
     name: e2e tests (cypress)
     runs-on: ubuntu-latest
     env:
-      DEBUG_CYPRESS: "false" # Set to true to enable extra logging and video recording replays
+      # MANUAL DEBUG OVERRIDE: Change to "true" to force debug (videos, extra logs)
+      DEBUG_CYPRESS: "false"
+      # Repo-level variable override (Settings > Actions > Variables > DEBUG_CYPRESS=true)
+      VARS_DEBUG_CYPRESS: ${{ vars.DEBUG_CYPRESS }}
+      # Set by GitHub only when re-running a job with "Enable debug logging" checked
+      ACTIONS_STEP_DEBUG: ${{ secrets.ACTIONS_STEP_DEBUG }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -172,8 +177,9 @@ jobs:
           CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
           CONNECT_CLOUD_ENV: ${{ env.CONNECT_CLOUD_ENV }} # defaults to staging
           CI: true
-          DEBUG_CYPRESS: ${{ env.DEBUG_CYPRESS }}
-          ACTIONS_STEP_DEBUG: ${{ env.DEBUG_CYPRESS }}
+          # Combine manual, repo var, and rerun-with-debug into one flag for Cypress
+          DEBUG_CYPRESS: ${{ (env.DEBUG_CYPRESS == 'true' || env.VARS_DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true') && 'true' || 'false' }}
+          ACTIONS_STEP_DEBUG: ${{ env.ACTIONS_STEP_DEBUG == 'true' && 'true' || 'false' }}
           PCC_USER_CCQA3: ${{ secrets.PCC_USER_CCQA3 }}
           CYPRESS_CACHE_FOLDER: ~/.cache/Cypress
 
@@ -187,19 +193,19 @@ jobs:
 
       - name: "[DEBUG] Upload Cypress videos"
         uses: actions/upload-artifact@v4
-        if: always() && env.DEBUG_CYPRESS == 'true'
+        if: always() && (env.DEBUG_CYPRESS == 'true' || env.VARS_DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true')
         with:
           name: cypress-videos
           path: test/e2e/cypress/videos
           if-no-files-found: ignore
 
       - name: "[DEBUG] List installed VS Code extensions"
-        if: always() && (env.DEBUG_CYPRESS == 'true' || runner.debug)
+        if: always() && (env.DEBUG_CYPRESS == 'true' || env.VARS_DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true')
         working-directory: test/e2e
         run: docker compose exec code-server code-server --list-extensions --show-versions || true
 
       - name: "[DEBUG] Display test/e2e directory tree"
-        if: always() && (env.DEBUG_CYPRESS == 'true' || runner.debug)
+        if: always() && (env.DEBUG_CYPRESS == 'true' || env.VARS_DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true')
         run: |
           echo "Directory tree for test/e2e:"
           if command -v tree > /dev/null; then
@@ -209,7 +215,7 @@ jobs:
           fi
 
       - name: "[DEBUG] Print code-server logs"
-        if: always() && (env.DEBUG_CYPRESS == 'true' || runner.debug)
+        if: always() && (env.DEBUG_CYPRESS == 'true' || env.VARS_DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true')
         run: |
           echo "=== Code Server Log Files ==="
           docker exec publisher-e2e.code-server bash -c 'find /root/.local -type f -name "*.log" 2>/dev/null | while read -r file; do echo "FILE: $file"; done'
@@ -219,7 +225,7 @@ jobs:
           docker exec publisher-e2e.code-server bash -c 'find /root/.local -name "remoteexthost.log" -type f 2>/dev/null | head -n 1 | xargs cat | tail -n 50 || echo "No logs found"'
 
       - name: "[DEBUG] Print Publisher extension logs"
-        if: always() && (env.DEBUG_CYPRESS == 'true' || runner.debug)
+        if: always() && (env.DEBUG_CYPRESS == 'true' || env.VARS_DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true')
         run: |
           echo "=== Finding Publisher logs ==="
           docker exec publisher-e2e.code-server bash -c 'find /root -type f -name "*.log" 2>/dev/null | grep -i "posit\|publisher" || echo "No publisher logs found"'
@@ -227,7 +233,7 @@ jobs:
           echo "======================================="
 
       - name: "[DEBUG] Print code-server container logs"
-        if: always() && env.DEBUG_CYPRESS == 'true'
+        if: always() && (env.DEBUG_CYPRESS == 'true' || env.VARS_DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true')
         working-directory: test/e2e
         run: docker compose logs code-server || true
 

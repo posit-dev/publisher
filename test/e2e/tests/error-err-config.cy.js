@@ -1,8 +1,13 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
+// Purpose: Validate error rendering for pre-baked misconfigured deployments.
+// - "Config is invalid": shows a specific validation error message.
+// - "Config is missing": shows a specific "not found" message.
+
 // NOTE:: The error cases are created here by using pre-created files.
 // Because of this, they are not suitable for deployment (due to their hard-coded values)
 
+// Uses text-scoped queries with retry to avoid brittle DOM chains.
 describe("Detect errors in config", () => {
   // Global setup - run once for entire test suite
   before(() => {
@@ -19,6 +24,12 @@ describe("Detect errors in config", () => {
   });
 
   it("Show errors when Config is invalid", () => {
+    // Selects error deployment and asserts the quick-pick label appears,
+    // then verifies the detailed error paragraph is present.
+
+    // Ensure Publisher is in the expected initial state
+    cy.expectInitialPublisherState();
+
     // click on the select deployment button
     cy.publisherWebview()
       .findByTestId("select-deployment")
@@ -27,44 +38,49 @@ describe("Detect errors in config", () => {
       });
 
     cy.get(".quick-input-widget").should("be.visible");
-
     cy.get(".quick-input-titlebar").should("have.text", "Select Deployment");
 
     // select our error case. This confirms that we have it.
-    cy.get(".quick-input-widget")
-      .contains("Unknown Title • Error in quarto-project-8G2B")
-      .click();
+    // cy.get(".quick-input-widget")
+    //   .contains("Unknown Title • Error in quarto-project-8G2B")
+    //   .click();
+    cy.retryWithBackoff(
+      () =>
+        cy
+          .get(".quick-input-widget")
+          .contains("Unknown Title • Error in quarto-project-8G2B"),
+      6,
+      700,
+    ).click();
 
-    // confirm that the selector shows the error
+    // confirm that the selector shows the error (compact, order-agnostic)
     cy.retryWithBackoff(
       () =>
         cy.findUniqueInPublisherWebview(
-          '[data-automation="publisher-deployment-section"]',
+          '[data-automation="publisher-deployment-section"] .quick-pick-label:contains("Unknown Title • Error in quarto-project-8G2B")',
         ),
       5,
       500,
-    )
-      .find(".deployment-control")
-      .find(".quick-pick-option")
-      .find(".quick-pick-row")
-      .find(".quick-pick-label-container")
-      .find(".quick-pick-label")
-      .should("have.text", "Unknown Title • Error in quarto-project-8G2B");
+    ).should("be.visible");
 
     // confirm that we also have an error section
     cy.retryWithBackoff(
       () =>
         cy.findUniqueInPublisherWebview(
-          '[data-automation="publisher-deployment-section"]',
+          '[data-automation="publisher-deployment-section"] p:contains("The selected Configuration has an error: invalidParam: not allowed.")',
         ),
       5,
       500,
-    ).find(
-      'p:contains("The selected Configuration has an error: invalidParam: not allowed.")',
-    );
+    ).should("exist");
   });
 
   it("Show errors when Config is missing", () => {
+    // Selects missing-config deployment and asserts the quick-pick label appears,
+    // then verifies the detailed "not found" error paragraph is present.
+
+    // Ensure Publisher is in the expected initial state
+    cy.expectInitialPublisherState();
+
     // click on the select deployment button
     cy.publisherWebview()
       .findByTestId("select-deployment")
@@ -73,43 +89,39 @@ describe("Detect errors in config", () => {
       });
 
     cy.get(".quick-input-widget").should("be.visible");
-
     cy.get(".quick-input-titlebar").should("have.text", "Select Deployment");
 
     // select our error case. This confirms that we have it.
-    cy.get(".quick-input-widget")
-      .contains("Unknown Title Due to Missing Config fastapi-simple-DHJL")
-      .click();
+    // cy.get(".quick-input-widget")
+    //   .contains("Unknown Title Due to Missing Config fastapi-simple-DHJL")
+    //   .click();
+    cy.retryWithBackoff(
+      () =>
+        cy
+          .get(".quick-input-widget")
+          .contains("Unknown Title Due to Missing Config fastapi-simple-DHJL"),
+      6,
+      700,
+    ).click();
 
-    // confirm that the selector shows the error
+    // confirm that the selector shows the error (compact, order-agnostic)
     cy.retryWithBackoff(
       () =>
         cy.findUniqueInPublisherWebview(
-          '[data-automation="publisher-deployment-section"]',
+          '[data-automation="publisher-deployment-section"] .quick-pick-label:contains("Unknown Title Due to Missing Config fastapi-simple-DHJL")',
         ),
       5,
       500,
-    )
-      .find(".deployment-control")
-      .find(".quick-pick-option")
-      .find(".quick-pick-row")
-      .find(".quick-pick-label-container")
-      .find(".quick-pick-label")
-      .should(
-        "have.text",
-        "Unknown Title Due to Missing Config fastapi-simple-DHJL",
-      );
+    ).should("be.visible");
 
     // confirm that we also have an error section
     cy.retryWithBackoff(
       () =>
         cy.findUniqueInPublisherWebview(
-          '[data-automation="publisher-deployment-section"]',
+          '[data-automation="publisher-deployment-section"] p:contains("The last Configuration used for this Deployment was not found.")',
         ),
       5,
       500,
-    ).find(
-      'p:contains("The last Configuration used for this Deployment was not found.")',
-    );
+    ).should("exist");
   });
 });

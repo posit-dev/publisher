@@ -1,3 +1,4 @@
+// Purpose: Centralize Playwright timeout selection so it mirrors Cypress timeouts in CI vs local.
 // Playwright utility functions for E2E tests
 const path = require("path");
 const e2eConfig = require(path.resolve(__dirname, "../config/e2e.json"));
