@@ -41,12 +41,12 @@ services:
     ports:
       - "8787:8787"
     volumes:
-      - ./licenses/workbench-license.lic:/etc/rstudio-server/license.lic
+      - ./licenses/workbench-license.lic:/var/lib/rstudio-server/license.lic
       - ./logs/workbench-preview:/var/log/rstudio/rstudio-server
       - ./config/workbench-logging.conf:/etc/rstudio/logging.conf
-      - ./content-workspace:/home/rstudio
+      - ./content-workspace:/content-workspace
       - ./workbench-entrypoint.sh:/workbench-entrypoint.sh
-      - ../../dist:/home/rstudio/vsix
+      - ../../dist:/vsix-tmp
     entrypoint: ["/workbench-entrypoint.sh"]
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:8787/health-check"]
@@ -61,12 +61,12 @@ services:
     ports:
       - "8787:8787"
     volumes:
-      - ./licenses/workbench-license.lic:/etc/rstudio-server/license.lic
+      - ./licenses/workbench-license.lic:/var/lib/rstudio-server/license.lic
       - ./logs/workbench-release:/var/log/rstudio/rstudio-server
       - ./config/workbench-logging.conf:/etc/rstudio/logging.conf
-      - ./content-workspace:/home/rstudio
+      - ./content-workspace:/content-workspace
       - ./workbench-entrypoint.sh:/workbench-entrypoint.sh
-      - ../../dist:/home/rstudio/vsix
+      - ../../dist:/vsix-tmp
     entrypoint: ["/workbench-entrypoint.sh"]
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:8787/health-check"]
