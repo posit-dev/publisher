@@ -22,9 +22,9 @@ on:
       POSIT_CONNECT_PROJECTS_PEM:
         required: false
     outputs:
-      has-changes:
+      has_changes:
         description: "Whether license changes were detected"
-        value: ${{ jobs.license-check.outputs.has-changes }}
+        value: ${{ jobs.license-check.outputs.has_changes }}
 
 permissions:
   contents: write
@@ -33,7 +33,7 @@ jobs:
   license-check:
     runs-on: ubuntu-latest
     outputs:
-      has-changes: ${{ steps.check-changes.outputs.has_changes }}
+      has_changes: ${{ steps.check-changes.outputs.has_changes }}
     steps:
       - name: Check for potential infinite loop
         if: ${{ github.event_name == 'pull_request' && inputs.pr_changes == true }}
