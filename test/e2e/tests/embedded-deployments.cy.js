@@ -1,5 +1,8 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
+// Purpose: Exercise embedded PCS deployments (FastAPI) from workspace root and subdirectory.
+// - Validates TOML fields (title, type, entrypoint) and required files (order-agnostic).
+// - Demonstrates writing additional TOML content (Python version) pre-deploy.
 describe("Embedded Deployments Section", () => {
   // Global setup - run once for entire test suite
   before(() => {
@@ -22,33 +25,37 @@ describe("Embedded Deployments Section", () => {
     });
 
     it("PCS fastapi at top of workspace", () => {
+      // Ensure Publisher is in the expected initial state
+      cy.expectInitialPublisherState();
+
       cy.createPCSDeployment(
         ".",
         "simple.py",
         "fastapi-base-directory",
         (tomlFiles) => {
-          const config = tomlFiles.config.contents;
+          const { contents: config } = tomlFiles.config;
+          const { name: cfgName } = tomlFiles.config;
+          const { name: recName } = tomlFiles.contentRecord;
+
           expect(config.title).to.equal("fastapi-base-directory");
           expect(config.type).to.equal("python-fastapi");
           expect(config.entrypoint).to.equal("simple.py");
-          expect(config.files[0]).to.equal("/simple.py");
-          expect(config.files[1]).to.equal("/requirements.txt");
-          expect(config.files[2]).to.equal(
-            `/.posit/publish/${tomlFiles.config.name}`,
-          );
-          expect(config.files[3]).to.equal(
-            `/.posit/publish/deployments/${tomlFiles.contentRecord.name}`,
-          );
+
+          // Assert required files without relying on order
+          expect(config.files).to.include.members([
+            "/simple.py",
+            "/requirements.txt",
+            `/.posit/publish/${cfgName}`,
+            `/.posit/publish/deployments/${recName}`,
+          ]);
           return tomlFiles;
         },
       )
         .then((tomlFiles) => {
           return cy.writeTomlFile(tomlFiles.config.path, "version = '3.11.3'");
         })
-        .then(() => {
-          return cy.log("File saved.");
-        })
         .deployCurrentlySelected();
+
       cy.retryWithBackoff(
         () =>
           cy.findUniqueInPublisherWebview(
@@ -60,33 +67,37 @@ describe("Embedded Deployments Section", () => {
     });
 
     it("PCS fastAPI in subdirectory of workspace", () => {
+      // Ensure Publisher is in the expected initial state
+      cy.expectInitialPublisherState();
+
       cy.createPCSDeployment(
         "fastapi-simple",
         "fastapi-main.py",
         "fastapi-sub-directory",
         (tomlFiles) => {
-          const config = tomlFiles.config.contents;
+          const { contents: config } = tomlFiles.config;
+          const { name: cfgName } = tomlFiles.config;
+          const { name: recName } = tomlFiles.contentRecord;
+
           expect(config.title).to.equal("fastapi-sub-directory");
           expect(config.type).to.equal("python-fastapi");
           expect(config.entrypoint).to.equal("fastapi-main.py");
-          expect(config.files[0]).to.equal("/fastapi-main.py");
-          expect(config.files[1]).to.equal("/requirements.txt");
-          expect(config.files[2]).to.equal(
-            `/.posit/publish/${tomlFiles.config.name}`,
-          );
-          expect(config.files[3]).to.equal(
-            `/.posit/publish/deployments/${tomlFiles.contentRecord.name}`,
-          );
+
+          // Order-agnostic required files
+          expect(config.files).to.include.members([
+            "/fastapi-main.py",
+            "/requirements.txt",
+            `/.posit/publish/${cfgName}`,
+            `/.posit/publish/deployments/${recName}`,
+          ]);
           return tomlFiles;
         },
       )
         .then((tomlFiles) => {
           return cy.writeTomlFile(tomlFiles.config.path, "version = '3.11.3'");
         })
-        .then(() => {
-          return cy.log("File saved.");
-        })
         .deployCurrentlySelected();
+
       cy.retryWithBackoff(
         () =>
           cy.findUniqueInPublisherWebview(

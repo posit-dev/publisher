@@ -1,7 +1,15 @@
-// Commands to serve as utility selectors
-// mainly to help through Cypress + iframes limitations.
+// Commands to serve as utility selectors to tame Cypress + iframes limitations.
+// Guidance:
+// - publisherWebview: primary entry to the extension's inner DOM (waits and validates).
+// - publisherWebviewExtreme: last-resort iframe locator (slower).
+// - getPublisherSidebarIcon: finds the activity bar icon with stability checks.
+// - findInPublisherWebview: query inside the webview content (optionally cached).
+// - toggle/refresh section helpers: interact with collapsing panels reliably.
 
-// Get the main webview iframe of the Publisher extension.
+// publisherWebview
+// Purpose: Resolve the Publisher extension's nested iframe and return its inner body.
+// - Retries, reloads once, and verifies content presence for robustness.
+// When to use: Before any .findByTestId() inside the extension.
 Cypress.Commands.add("publisherWebview", () => {
   // Wait up to 60 seconds (30 retries x 2s) for the publisher iframe, then reload once and try 10 more times.
   // If still not found, log a clear error and fail the test.
@@ -109,7 +117,10 @@ Cypress.Commands.add("publisherWebview", () => {
     });
 });
 
-// Backup publisherWebview command using extreme iframe finder
+// publisherWebviewExtreme
+// Purpose: Extreme/last-resort iframe finder when publisherWebview cannot resolve.
+// - Uses broader heuristics and logs details for debugging.
+// When to use: Rare; typically only in debugging or CI recovery scenarios.
 Cypress.Commands.add("publisherWebviewExtreme", () => {
   return cy
     .findPublisherIframeExtreme()
@@ -144,6 +155,10 @@ Cypress.Commands.add("publisherWebviewExtreme", () => {
     .then(cy.wrap);
 });
 
+// getPublisherSidebarIcon
+// Purpose: Locate the "Posit Publisher" activity bar icon with multiple selectors
+// and ensure the UI is stable before clicking.
+// When to use: Before opening the Publisher webview from VS Code UI.
 Cypress.Commands.add("getPublisherSidebarIcon", () => {
   // Advanced Publisher icon finder that waits for extension stability
   const maxAttempts = 30;
@@ -242,10 +257,14 @@ Cypress.Commands.add("getPublisherSidebarIcon", () => {
   return waitForExtensionStability().should("be.visible");
 });
 
+// toggleCredentialsSection / refreshCredentials / toggleHelpSection
+// Purpose: Interact with collapsible sections reliably via jQuery events.
+// When to use: Manipulate sections within the webview where Cypress click() can be flaky.
 Cypress.Commands.add("toggleCredentialsSection", () => {
   // Due to Cypress + iframes limited support,
   // clicking the section title needs to be done with jQuery elements
   // Cypress chained click() method will fail in this case.
+
   cy.publisherWebview()
     .findByTestId("publisher-credentials-section")
     .should((section) => {
@@ -255,16 +274,27 @@ Cypress.Commands.add("toggleCredentialsSection", () => {
 });
 
 Cypress.Commands.add("refreshCredentials", () => {
-  cy.publisherWebview()
-    .findByTestId("publisher-credentials-section")
-    .trigger("mouseover");
-  cy.publisherWebview()
-    .find('a[aria-label="Refresh Credentials"]')
-    .click({ force: true });
-
-  // Clear the cached webview since content will change
-  cy.window().then((win) => {
-    delete win.cachedPublisherWebview;
+  // Robustly locate the credentials section inside the webview before interacting
+  cy.retryWithBackoff(
+    () =>
+      cy.publisherWebview().then((body) => {
+        const $body = Cypress.$(body);
+        return $body.find('[data-automation="publisher-credentials-section"]');
+      }),
+    8,
+    500,
+  ).then(($section) => {
+    // Mouseover section to reveal the refresh action and click it
+    Cypress.$($section).trigger("mouseover");
+    const $btn = Cypress.$($section).find(
+      'a[aria-label="Refresh Credentials"]',
+    );
+    // Force click via vanilla JS for reliability
+    if ($btn.length && $btn[0]) {
+      $btn[0].click();
+    } else {
+      throw new Error("Refresh Credentials button not found");
+    }
   });
 });
 
@@ -282,14 +312,17 @@ Cypress.Commands.add("toggleHelpSection", () => {
     });
 });
 
+// clickSectionAction
+// Purpose: Click header action buttons (e.g., "New Credential", "Refresh") that need vanilla click().
+// When to use: Trigger actions in section headers where Cypress/jQuery clicks are unreliable.
 Cypress.Commands.add("clickSectionAction", (actionLabel) => {
   // Due to Cypress + iframes limited support,
   // clicking section actions needs to be done with jQuery elements
   // Cypress chained methods will fail in this case.
 
-  // In addition, there is something with the actions that aparrently
-  // the only way to trigger clicks on them is to use vanilla JS click method.
-  // Nor Cypress nor jQuery methods succeed in this space.
+  // In addition, there is something with the actions where the
+  // only way to trigger clicks on them is to use vanilla JS click method.
+  // Cypress nor jQuery methods succeed in this space.
   cy.publisherWebview()
     .findByTestId("publisher-credentials-section")
     .then((section) => {
@@ -298,6 +331,10 @@ Cypress.Commands.add("clickSectionAction", (actionLabel) => {
     });
 });
 
+// findInPublisherWebview
+// Purpose: Query inside the webview DOM, bypassing Cypress iframe pitfalls.
+// - Used by many helpers to avoid "scrollY" errors.
+// When to use: Anytime you need a raw CSS selector search inside the webview.
 Cypress.Commands.add("findInPublisherWebview", (selector) => {
   // Method to solve a common error while traversing or finding DOM elements within Cypress,
   // due to Cypress + iframes limited support.
@@ -307,6 +344,9 @@ Cypress.Commands.add("findInPublisherWebview", (selector) => {
   });
 });
 
+// findPublisherIframeExtreme
+// Purpose: Broad, multi-attempt scan for any iframe that looks like the Publisher webview.
+// When to use: Troubleshooting only (invoked internally as a last resort).
 Cypress.Commands.add(
   "findPublisherIframeExtreme",
   { prevSubject: false },

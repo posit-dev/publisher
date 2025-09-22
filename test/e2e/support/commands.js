@@ -7,6 +7,35 @@ import "./sequences";
 
 const connectManagerServer = Cypress.env("CONNECT_MANAGER_URL");
 
+// Performs the full set of reset commands we typically use before executing our tests
+Cypress.Commands.add("resetConnect", () => {
+  cy.clearupDeployments();
+  cy.stopConnect();
+  cy.resetConnectSettings();
+  cy.resetConnectData();
+  cy.startConnect();
+  cy.bootstrapAdmin();
+});
+
+// Add a global afterEach to log iframes if a test fails (for CI reliability)
+if (typeof afterEach === "function") {
+  /* eslint-disable-next-line mocha/no-top-level-hooks */
+  afterEach(function () {
+    if (this.currentTest.state === "failed") {
+      cy.debugIframes();
+      cy.get("body").then(($body) => {
+        cy.task("print", $body.html().substring(0, 1000));
+      });
+    }
+
+    // Clean up Playwright browser after each test
+    cy.task("cleanupPlaywrightBrowser", null, { timeout: 20000 });
+  });
+}
+
+// startConnect/stopConnect/resetConnectData/updateConnectSettings/resetConnectSettings
+// Purpose: Control the local Connect server via the manager service for test isolation.
+// When to use: Suite-level or targeted setup/teardown between tests.
 Cypress.Commands.add("startConnect", () => {
   cy.request({
     method: "POST",
@@ -74,6 +103,8 @@ Cypress.Commands.add("resetConnectSettings", () => {
   });
 });
 
+// bootstrapAdmin
+// Purpose: Generate an admin API key (BOOTSTRAP_ADMIN_API_KEY) for PCS tests.
 Cypress.Commands.add("bootstrapAdmin", () => {
   cy.exec(
     `rsconnect bootstrap --raw --jwt-keypath ${Cypress.env("BOOTSTRAP_SECRET_KEY")} --server ${Cypress.env("CONNECT_SERVER_URL")}`,
@@ -84,6 +115,11 @@ Cypress.Commands.add("bootstrapAdmin", () => {
   });
 });
 
+// resetCredentials/setAdminCredentials/setDummyCredentials
+// Purpose: Manage the e2e-test.connect-credentials file directly for speed and determinism.
+// - setAdminCredentials: PCS admin API key-based credential.
+// - setDummyCredentials: Fake records for UI-only tests.
+// When to use: Before tests that need known credentials present without UI interaction.
 Cypress.Commands.add("resetCredentials", () => {
   cy.exec(
     `cat <<EOF > e2e-test.connect-credentials
@@ -95,16 +131,17 @@ EOF`,
 
 Cypress.Commands.add("setAdminCredentials", () => {
   if (Cypress.env("BOOTSTRAP_ADMIN_API_KEY") !== "") {
-    cy.exec(
-      `cat <<EOF > e2e-test.connect-credentials
-[credentials]
+    // Append only the nested table to avoid duplicating [credentials] header
+    const toml = `
 [credentials.admin-code-server]
 guid = '9ba2033b-f69e-4da8-8c85-48c1f605d433'
 version = 0
 url = 'http://connect-publisher-e2e:3939'
 api_key = '${Cypress.env("BOOTSTRAP_ADMIN_API_KEY")}'
-
-EOF`,
+`;
+    // Append to file (creates if missing)
+    cy.exec(
+      `bash -lc "cat <<'EOF' >> e2e-test.connect-credentials\n${toml}\nEOF"`,
     );
   } else {
     throw new Error(
@@ -138,6 +175,8 @@ EOF`,
   });
 });
 
+// clearupDeployments
+// Purpose: Remove .posit metadata to reset deployments per test or per subdir, with exclusions.
 Cypress.Commands.add(
   "clearupDeployments",
   (subdir, excludeDirs = ["config-errors"]) => {
@@ -208,43 +247,33 @@ Cypress.Commands.add("expandWildcardFile", (targetDir, wildCardPath) => {
   });
 });
 
+// savePublisherFile
+// Purpose: Mutate a Publisher TOML (e.g., set connect_cloud.access_control.public_access).
+// - Container-safe: reads and writes via docker exec to avoid CI permissions issues.
+// When to use: After createPCCDeployment but before deploy.
 Cypress.Commands.add("savePublisherFile", (filePath, jsonObject) => {
-  // First check if file exists and get its permissions
+  // Map host path to container path
+  const dockerPath = filePath.replace(
+    "content-workspace/",
+    "/home/coder/workspace/",
+  );
+
+  // Read the file content from inside the container
   return cy
-    .exec(`ls -la "${filePath}"`, { failOnNonZeroExit: false })
-    .then((lsResult) => {
-      cy.log(`File permissions: ${lsResult.stdout}`);
+    .exec(
+      `docker exec publisher-e2e.code-server bash -c "cat '${dockerPath}'"`,
+      { failOnNonZeroExit: false },
+    )
+    .then((readResult) => {
+      if (readResult.code !== 0 || !readResult.stdout) {
+        throw new Error(
+          `Failed to read TOML via Docker: ${readResult.stderr || "no stdout"}`,
+        );
+      }
 
-      // Check if we can write to the directory
-      const dirPath = filePath.substring(0, filePath.lastIndexOf("/"));
-      return cy
-        .exec(`test -w "${dirPath}"`, { failOnNonZeroExit: false })
-        .then((dirResult) => {
-          cy.log(`Directory writable: ${dirResult.code === 0}`);
+      let modifiedContent = readResult.stdout;
 
-          // Check if file is writable
-          return cy
-            .exec(`test -w "${filePath}"`, { failOnNonZeroExit: false })
-            .then((fileResult) => {
-              cy.log(`File writable: ${fileResult.code === 0}`);
-
-              if (fileResult.code !== 0) {
-                // Try to make it writable
-                cy.log(`Attempting to make file writable...`);
-                return cy
-                  .exec(`chmod 644 "${filePath}"`, { failOnNonZeroExit: false })
-                  .then(() => {
-                    return cy.readFile(filePath, { encoding: "utf8" });
-                  });
-              } else {
-                return cy.readFile(filePath, { encoding: "utf8" });
-              }
-            });
-        });
-    })
-    .then((originalContent) => {
-      let modifiedContent = originalContent;
-
+      // Minimal mutation support for connect_cloud.access_control.public_access
       if (jsonObject.connect_cloud) {
         const connectCloudSection = "\n[connect_cloud]\n";
         const accessControlSection = `[connect_cloud.access_control]\npublic_access = ${jsonObject.connect_cloud.access_control.public_access}\n`;
@@ -264,10 +293,18 @@ Cypress.Commands.add("savePublisherFile", (filePath, jsonObject) => {
         }
       }
 
-      return cy.writeFile(filePath, modifiedContent);
+      // Overwrite the file inside the container
+      const escaped = modifiedContent
+        .replace(/\\/g, "\\\\")
+        .replace(/'/g, "'\"'\"'");
+      return cy.exec(
+        `docker exec publisher-e2e.code-server bash -c "cat <<'EOF' > '${dockerPath}'\n${escaped}\nEOF"`,
+      );
     });
 });
 
+// loadTomlFile
+// Purpose: Read and parse TOML into JSON for assertions.
 Cypress.Commands.add("loadTomlFile", (filePath) => {
   return cy
     .exec(`cat ${filePath}`, { failOnNonZeroExit: false })
@@ -278,29 +315,6 @@ Cypress.Commands.add("loadTomlFile", (filePath) => {
       throw new Error(`Could not load project configuration. ${result.stderr}`);
     });
 });
-
-// Performs the full set of reset commands we typically use before executing our tests
-Cypress.Commands.add("resetConnect", () => {
-  cy.clearupDeployments();
-  cy.stopConnect();
-  cy.resetConnectSettings();
-  cy.resetConnectData();
-  cy.startConnect();
-  cy.bootstrapAdmin();
-});
-
-// Add a global afterEach to log iframes if a test fails (for CI reliability)
-if (typeof afterEach === "function") {
-  /* eslint-disable-next-line mocha/no-top-level-hooks */
-  afterEach(function () {
-    if (this.currentTest.state === "failed") {
-      cy.debugIframes();
-      cy.get("body").then(($body) => {
-        cy.task("print", $body.html().substring(0, 1000));
-      });
-    }
-  });
-}
 
 // Update waitForPublisherIframe to use a longer default timeout for CI reliability
 Cypress.Commands.add("waitForPublisherIframe", (timeout = 60000) => {
@@ -341,32 +355,47 @@ Cypress.Commands.add("debugIframes", () => {
   });
 });
 
+// findInPublisherWebview (cached variant)
+// Purpose: Cached version for deployments/static tests to speed repeated queries.
+// - Skips caching in credential-centric tests where content changes frequently.
 Cypress.Commands.add("findInPublisherWebview", (selector) => {
   // Only use caching for tests that don't refresh content
-  const testTitle = Cypress.currentTest.title;
-  const skipCaching =
-    testTitle.includes("Credential") ||
-    testTitle.includes("Delete") ||
-    testTitle.includes("Load");
+  const testTitle = Cypress.currentTest.title || "";
+  // Broaden skip conditions to include OAuth/Negative flows
+  const titleIndicatesVolatile = /Credential|Delete|Load|OAuth|Negative/i.test(
+    testTitle,
+  );
 
-  if (skipCaching) {
-    // No caching for credential tests that change webview content
-    return cy.publisherWebview().then((webview) => {
-      return cy.wrap(webview).find(selector);
-    });
+  if (titleIndicatesVolatile) {
+    return cy
+      .publisherWebview()
+      .then((webview) => cy.wrap(webview).find(selector));
   }
 
-  // Use caching for deployment and static tests
-  return cy.window().then((win) => {
-    if (!win.cachedPublisherWebview) {
-      win.cachedPublisherWebview = cy.publisherWebview();
-    }
-    return win.cachedPublisherWebview.then((webview) => {
+  // If volatile UI elements are visible, bypass cache
+  return cy.publisherWebview().then((webview) => {
+    const $webview = Cypress.$(webview);
+    const hasVolatileUI =
+      $webview.find(".quick-input-widget:visible, .monaco-dialog-box:visible")
+        .length > 0;
+    if (hasVolatileUI) {
       return cy.wrap(webview).find(selector);
+    }
+
+    // Use caching for stable deployment/static tests
+    return cy.window().then((win) => {
+      if (!win.cachedPublisherWebview) {
+        win.cachedPublisherWebview = cy.publisherWebview();
+      }
+      return win.cachedPublisherWebview.then((cached) =>
+        cy.wrap(cached).find(selector),
+      );
     });
   });
 });
 
+// retryWithBackoff/findUnique/findUniqueInPublisherWebview
+// Purpose: Common primitives to make flaky UI queries reliable and enforce uniqueness.
 Cypress.Commands.add(
   "retryWithBackoff",
   (fn, maxAttempts = 5, initialDelay = 500) => {
@@ -437,10 +466,13 @@ Cypress.Commands.add(
   },
 );
 
+// addPCCCredential
+// Purpose: Drive the PCC OAuth flow entirely via UI (stubs window.open) and save a nickname.
+// When to use: UI-driven PCC credential creation tests (slower than setPCCCredential).
 Cypress.Commands.add(
   "addPCCCredential",
   (user, nickname = "connect-cloud-credential") => {
-    cy.getPublisherSidebarIcon().click();
+    cy.expectInitialPublisherState();
 
     cy.toggleCredentialsSection();
     cy.publisherWebview()
@@ -531,10 +563,17 @@ Cypress.Commands.add(
       .should("be.visible");
 
     cy.get(".quick-input-widget").type(`${nickname}{enter}`);
-    // No assertion here; do it in the test.
+
+    // Ensure the UI updates: wait for quick-input to close, then refresh credentials
+    cy.get(".quick-input-widget").should("not.be.visible");
+    cy.refreshCredentials();
   },
 );
 
+// setPCCCredential
+// Purpose: Programmatic PCC credential creation via Device Flow (Playwright).
+// - Avoids UI; writes credential directly to e2e-test.connect-credentials.
+// When to use: Faster setup for tests that need a PCC credential present.
 Cypress.Commands.add(
   "setPCCCredential",
   (user, nickname = "pcc-credential") => {
@@ -566,6 +605,10 @@ Cypress.Commands.add(
       if (!refresh_token || !access_token || !account_id || !account_name) {
         throw new Error("Missing required PCC credential fields");
       }
+
+      // Persist token securely in memory for cleanup; never log this
+      Cypress.env("PCC_ACCESS_TOKEN", access_token);
+
       const toml = `
 [credentials.${nickname}]
 guid = '${guid}'
@@ -578,11 +621,17 @@ refresh_token = '${refresh_token}'
 access_token = '${access_token}'
 cloud_environment = '${cloud_environment}'
 `;
-      cy.writeFile("e2e-test.connect-credentials", toml);
+      // Append to the credentials file instead of overwriting
+      cy.exec(
+        `bash -lc "cat <<'EOF' >> e2e-test.connect-credentials\n${toml}\nEOF"`,
+      );
     });
   },
 );
 
+// writeTomlFile
+// Purpose: Append content to a TOML file inside the code-server container (single or batch mode).
+// When to use: Tests that need to tweak TOML after create*Deployment (e.g., version, access settings).
 Cypress.Commands.add("writeTomlFile", (filePath, tomlContent) => {
   // filePath: relative to project root (e.g. content-workspace/...)
   // tomlContent: string to append (should include section header if needed)
@@ -626,6 +675,66 @@ Cypress.Commands.add("writeTomlFile", (filePath, tomlContent) => {
         );
       }
     });
+});
+
+// cancelQuickInput/expectPollingDialogGone/expectCredentialsSectionEmpty
+// Purpose: Small convenience helpers used in negative and credentials tests.
+Cypress.Commands.add("cancelQuickInput", () => {
+  cy.get(".quick-input-widget").type("{esc}");
+  cy.get(".quick-input-widget").should("not.be.visible");
+});
+
+Cypress.Commands.add("expectPollingDialogGone", () => {
+  // Simply ensure the quick input widget is not visible - this covers the polling dialog
+  cy.get(".quick-input-widget").should("not.be.visible");
+});
+
+Cypress.Commands.add("expectCredentialsSectionEmpty", () => {
+  // Refresh the credentials section
+  cy.refreshCredentials();
+
+  // Now explicitly toggle/expand the credentials section
+  cy.toggleCredentialsSection();
+
+  // Check for empty state message
+  cy.publisherWebview()
+    .findByText("No credentials have been added yet.")
+    .should("be.visible");
+});
+
+// deletePCCContent
+// Purpose: Minimal PCC cleanup using in-memory values captured during the test.
+// - Requires Cypress.env("PCC_ACCESS_TOKEN") set by setPCCCredential()
+// - Requires Cypress.env("LAST_PCC_CONTENT_ID") set by the test after reading direct_url
+Cypress.Commands.add("deletePCCContent", () => {
+  const contentId = Cypress.env("LAST_PCC_CONTENT_ID");
+  const token = Cypress.env("PCC_ACCESS_TOKEN");
+  const env = Cypress.env("CONNECT_CLOUD_ENV") || "staging";
+
+  // Mask token in any logging
+  const mask = (t) => (t ? `${t.slice(0, 4)}***${t.slice(-4)}` : "(none)");
+
+  if (!contentId || !token) {
+    cy.task(
+      "print",
+      `[PCC-DELETE] Skipping: contentId=${contentId || "(none)"} token=${mask(token)}`,
+    );
+    return;
+  }
+
+  const url = `https://api.${env}.connect.posit.cloud/v1/contents/${contentId}`;
+  cy.task("print", `[PCC-DELETE] DELETE ${url}`);
+
+  cy.request({
+    method: "DELETE",
+    url,
+    headers: { Authorization: `Bearer ${token}` },
+    failOnStatusCode: false,
+  }).then((resp) => {
+    cy.task("print", `[PCC-DELETE] status=${resp.status}`);
+    // Clear stored id to avoid leakage across tests
+    Cypress.env("LAST_PCC_CONTENT_ID", null);
+  });
 });
 
 Cypress.on("uncaught:exception", () => {
