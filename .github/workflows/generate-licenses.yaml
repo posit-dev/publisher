@@ -18,9 +18,9 @@ on:
         type: boolean
     secrets:
       POSIT_CONNECT_PROJECTS_APP_ID:
-        required: true
+        required: false
       POSIT_CONNECT_PROJECTS_PEM:
-        required: true
+        required: false
     outputs:
       has-changes:
         description: "Whether license changes were detected"
@@ -36,13 +36,25 @@ jobs:
       has-changes: ${{ steps.check-changes.outputs.has_changes }}
     steps:
       - name: Check for potential infinite loop
-        if: github.event_name == 'pull_request' && inputs.pr_changes == true
+        if: ${{ github.event_name == 'pull_request' && inputs.pr_changes == true }}
         run: |
-          echo "ERROR: Attempting to create a PR from within a PR workflow!" 
+          echo "ERROR: Attempting to create a PR from within a PR workflow!"
           echo "This would cause an infinite loop. Set pr_changes: false for workflows triggered by pull_request events."
           exit 1
+
+      # Fails the workflow if secrets are not provided when PR creation is requested
+      - name: Check for secret availability
+        if: ${{ inputs.pr_changes == true }}
+        run: |
+          if [ -z "${{ secrets.POSIT_CONNECT_PROJECTS_APP_ID }}" ] || [ -z "${{ secrets.POSIT_CONNECT_PROJECTS_PEM }}" ]; then
+            echo "ERROR: PR creation requested but required secrets not provided"
+            echo "Secrets POSIT_CONNECT_PROJECTS_APP_ID and POSIT_CONNECT_PROJECTS_PEM are required to create PRs"
+            exit 1
+          fi
+
       - name: Generate token for GitHub App
         id: generate-token
+        if: ${{ inputs.pr_changes == true }}
         uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ secrets.POSIT_CONNECT_PROJECTS_APP_ID }}
@@ -101,17 +113,17 @@ jobs:
           fi
 
       - name: Show changes
-        if: success() && steps.check-changes.outputs.has_changes == 'true'
+        if: ${{ success() && steps.check-changes.outputs.has_changes == 'true' }}
         run: |
           echo "License changes detected:"
           git diff --staged
 
       - name: Report no changes
-        if: success() && steps.check-changes.outputs.has_changes != 'true'
+        if: ${{ success() && steps.check-changes.outputs.has_changes != 'true' }}
         run: echo "No changes detected in licenses file. Nothing to commit."
 
       - name: Create PR for license changes
-        if: success() && steps.check-changes.outputs.has_changes == 'true' && inputs.pr_changes == true
+        if: ${{ success() && steps.check-changes.outputs.has_changes == 'true' && inputs.pr_changes == true }}
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ steps.generate-token.outputs.token }}
