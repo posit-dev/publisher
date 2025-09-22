@@ -5,6 +5,34 @@
  */
 
 /**
+ * Check if the Publisher extension is installed in the workbench container
+ * This command ensures tests fail quickly if the extension isn't properly installed
+ */
+Cypress.Commands.add("checkPublisherExtension", () => {
+  // Get the project root directory so we can run justfile commands
+  const e2eDir = Cypress.config("fileServerFolder");
+
+  cy.log("Checking if Publisher extension is installed...");
+
+  cy.exec(`cd "${e2eDir}" && just check-extension`, {
+    failOnNonZeroExit: false,
+    timeout: 20_000,
+  }).then((result) => {
+    cy.log(`Check extension result: exit code ${result.code}`);
+    cy.log(result.stdout);
+
+    if (result.stderr) {
+      cy.log(`Error output: ${result.stderr}`);
+    }
+
+    expect(
+      result.code,
+      "Extension check failed - publisher extension not installed",
+    ).to.equal(0);
+  });
+});
+
+/**
  * Logs into Workbench using default credentials and waits for the UI to load
  * Uses the default Workbench username/password as documented here: https://hub.docker.com/r/rstudio/rstudio-workbench
  * @param {string} username - The username to login with (defaults to "rstudio")
@@ -30,69 +58,12 @@ Cypress.Commands.add(
 );
 
 /**
- * Clean up Workbench data files and directories to ensure a fresh state
- * Uses Docker exec to run the cleanup inside the container so the container must be running this ensures proper
- * permissions regardless of local or CI environment
- */
-Cypress.Commands.add("cleanupWorkbenchData", () => {
-  cy.log("Cleaning up Workbench data");
-
-  // First check if the container is running
-  cy.exec(
-    "docker ps | grep publisher-e2e.workbench-release || echo 'not-running'",
-    {
-      failOnNonZeroExit: false,
-    },
-  ).then((result) => {
-    if (result.stdout.includes("not-running")) {
-      // Container is not running, fail with a clear error message
-      throw new Error(
-        "Cannot clean up Workbench data - container 'publisher-e2e.workbench-release' is not running. " +
-          "This command requires a running container to execute properly.",
-      );
-    }
-
-    // Define paths to clean up - use paths relative to /home/rstudio in container
-    const cleanupPaths = [
-      ".cache",
-      ".duckdb",
-      ".ipython",
-      ".local",
-      ".positron-server",
-      ".connect-credentials",
-    ];
-
-    // Container is running, proceed with docker exec cleanup
-    cy.exec(
-      `docker exec publisher-e2e.workbench-release bash -c "cd /home/rstudio && rm -rf ${cleanupPaths.join(" ")}"`,
-      {
-        failOnNonZeroExit: false,
-      },
-    ).then((result) => {
-      cy.log(`Cleanup directories result: exit code ${result.code}`);
-      if (result.stderr) cy.log(`Cleanup stderr: ${result.stderr}`);
-
-      // Fail if the docker exec command itself failed (distinct from the rm command inside)
-      if (result.code !== 0) {
-        throw new Error(
-          `Failed to execute cleanup in container: ${result.stderr}`,
-        );
-      }
-    });
-  });
-});
-
-/**
  * Cleans up and restarts the Workbench container to ensure a fresh state
  * This function stops the current container, removes any test data, and starts a fresh container
  * with clean state. It handles container lifecycle operations using the justfile commands
  *
  */
-Cypress.Commands.add("cleanupAndRestartWorkbench", () => {
-  // Cleanup the data while the container is still running
-  cy.cleanupWorkbenchData();
-
-  // Stop and remove the container
+Cypress.Commands.add("restartWorkbench", () => {
   cy.log("Stopping and removing Workbench container");
   cy.exec(`just remove-workbench release`, {
     failOnNonZeroExit: false,
@@ -235,7 +206,7 @@ Cypress.Commands.add("waitForWorkbenchToLoad", () => {
   cy.log("Waiting for Workbench UI to load");
   // Workbench indicator in bottom status bar, uses a longer timeout to accommodate slow loads
   // TODO Takes about 10 seconds when using the container manually, but about 75 seconds when running with Cypress
-  // locally and... even longer in CI, possiblely due to resource constraints?
+  // locally and... even longer in CI, possibly due to resource constraints?
   cy.get("[id='rstudio.rstudio-workbench']", { timeout: 480_000 }).should(
     "be.visible",
   );
@@ -316,7 +287,14 @@ Cypress.Commands.add(
     cy.get("button").contains("Open Folder...").click();
     cy.get(".quick-input-widget").within(() => {
       cy.get(".quick-input-box input").should("be.visible");
-      cy.get(`.monaco-list-row[aria-label="${projectDir}"]`).click();
+      cy.get('.monaco-list-row[aria-label=".positron-server"]').should(
+        "be.visible",
+      );
+      // Open the project from within the content-workspace directory using the full path
+      cy.get(".quick-input-box input").type("{selectall}" + "{del}");
+      cy.get(".quick-input-box input").type(
+        `/content-workspace/` + `${projectDir}` + "{enter}",
+      );
       // Need to pace the test slightly to allow the selection to register or clicking "OK" sometimes does not work
       cy.get(`.monaco-list-row[aria-label="${projectDir}"]`).should(
         "not.exist",

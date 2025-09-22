@@ -10,7 +10,8 @@ describe("Workbench > Positron", { baseUrl: WORKBENCH_BASE_URL }, () => {
 
   beforeEach(() => {
     // Reset and restart the Workbench container before each test to ensure a clean state
-    cy.cleanupAndRestartWorkbench();
+    cy.restartWorkbench();
+    cy.checkPublisherExtension();
     cy.visitAndLoginToWorkbench();
     cy.startWorkbenchPositronSession();
   });
