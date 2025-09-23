@@ -1,9 +1,15 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
+export type RPackageRepository =
+  | "auto"
+  | "rstudio"
+  | "posit-ppm"
+  | "none"
+  | string;
+
 export type PositronRSettings = {
   // One of: 'auto' | 'rstudio' | 'posit-ppm' | 'none'
-  // Future-proof: allow custom URL string type too
-  defaultRepositories: string;
+  defaultRepositories: RPackageRepository;
   packageManagerRepository?: string;
 };
 

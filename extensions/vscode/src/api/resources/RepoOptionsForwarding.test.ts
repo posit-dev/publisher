@@ -4,6 +4,7 @@ import { describe, test, expect, vi, beforeEach } from "vitest";
 import { AxiosInstance } from "axios";
 import { Packages } from "./Packages";
 import { ContentRecords } from "./ContentRecords";
+import type { PositronSettings } from "../types/positron";
 
 describe("Repo options forwarding to API requests", () => {
   beforeEach(() => vi.clearAllMocks());
@@ -18,7 +19,9 @@ describe("Repo options forwarding to API requests", () => {
       rPath: "/usr/bin/R",
     } as unknown as import("../../types/shared").RExecutable;
     const saveName = "renv.lock";
-    const positron = { r: { defaultRepositories: "posit-ppm" } };
+    const positron: PositronSettings = {
+      r: { defaultRepositories: "posit-ppm" },
+    };
 
     mockPost.mockResolvedValue({ status: 200, data: {} });
     await api.createRRequirementsFile(dir, r, saveName, positron);
@@ -47,7 +50,7 @@ describe("Repo options forwarding to API requests", () => {
       pythonPath: "/usr/bin/python",
     } as unknown as import("../../types/shared").PythonExecutable;
     const secrets = { token: "xyz" };
-    const positron = {
+    const positron: PositronSettings = {
       r: {
         defaultRepositories: "auto",
         packageManagerRepository: "https://example/cran",
