@@ -8,6 +8,7 @@ import {
   ContentRecord,
   Environment,
 } from "../types/contentRecords";
+import type { PositronSettings } from "../types/positron";
 import { PythonExecutable, RExecutable } from "../../types/shared";
 
 export class ContentRecords {
@@ -78,7 +79,7 @@ export class ContentRecords {
     r: RExecutable | undefined,
     python: PythonExecutable | undefined,
     secrets?: Record<string, string>,
-    positron?: import("../types/positron").PositronSettings,
+    positron?: PositronSettings,
   ) {
     const data = {
       account: accountName,

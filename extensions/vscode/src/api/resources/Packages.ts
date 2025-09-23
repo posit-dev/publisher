@@ -6,6 +6,7 @@ import {
   PythonPackagesResponse,
   ScanPythonPackagesResponse,
 } from "../types/packages";
+import type { PositronSettings } from "../types/positron";
 import { PythonExecutable, RExecutable } from "../../types/shared";
 
 export class Packages {
@@ -74,7 +75,7 @@ export class Packages {
     dir: string,
     r: RExecutable | undefined,
     saveName?: string,
-    positron?: import("../types/positron").PositronSettings,
+    positron?: PositronSettings,
   ) {
     return this.client.post<void>(
       "packages/r/scan",
