@@ -3,6 +3,7 @@ package detectors
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import (
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -37,6 +38,10 @@ func (s *ResourceFinderSuite) assertResources(expectedPaths []string, inResource
 }
 
 func (s *ResourceFinderSuite) TestDetect_MarkdownSyntaxTest() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip()
+	}
+
 	realCwd, err := util.Getwd(nil)
 	s.NoError(err)
 
@@ -59,6 +64,10 @@ func (s *ResourceFinderSuite) TestDetect_MarkdownSyntaxTest() {
 }
 
 func (s *ResourceFinderSuite) TestDetect_HTMLTest() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip()
+	}
+
 	realCwd, err := util.Getwd(nil)
 	s.NoError(err)
 
