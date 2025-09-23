@@ -529,6 +529,55 @@ func (s *LockfilePackageMapperSuite) TestRSPMRepositoryHandling_MissingRemoteRep
 	s.Equal("https://packagemanager.rstudio.com/all/latest", renvPkg.Repository)
 }
 
+func (s *LockfilePackageMapperSuite) TestGitRemoteFieldsPreserved() {
+	lockfileContent := `{
+		"R": {
+			"Version": "4.3.3",
+			"Repositories": []
+		},
+		"Packages": {
+			"mypkg": {
+				"Package": "mypkg",
+				"Version": "1.2.3",
+				"Source": "GitHub",
+				"RemoteType": "github",
+				"RemoteHost": "api.github.com",
+				"RemoteRepo": "mypkg",
+				"RemoteUsername": "posit-dev",
+				"RemoteRef": "main",
+				"RemoteSha": "abcdef1234567890",
+				"RemoteUrl": "https://api.github.com/repos/posit-dev/mypkg",
+					"Requirements": [],
+					"Hash": "0123456789abcdef"
+				}
+			}
+		}`
+
+	tempDirPath := s.T().TempDir()
+	tempDir := util.NewAbsolutePath(tempDirPath, nil)
+	lockfilePath := tempDir.Join("git_remote_renv.lock")
+	err := lockfilePath.WriteFile([]byte(lockfileContent), 0644)
+	s.NoError(err)
+
+	mapper := NewLockfilePackageMapper(tempDir, util.Path{}, s.log)
+	manifestPackages, err := mapper.GetManifestPackagesFromLockfile(lockfilePath)
+	s.NoError(err)
+
+	s.Contains(manifestPackages, "mypkg")
+	pkg := manifestPackages["mypkg"]
+
+	s.Equal("github", pkg.Source)
+	s.Equal("https://github.com/posit-dev/mypkg", pkg.Repository)
+
+	desc := pkg.Description
+	s.Equal("posit-dev/mypkg", desc["RemotePkgRef"])
+	s.Equal("api.github.com", desc["RemoteHost"])
+	s.Equal("mypkg", desc["RemoteRepo"])
+	s.Equal("posit-dev", desc["RemoteUsername"])
+	s.Equal("https://api.github.com/repos/posit-dev/mypkg", desc["RemoteUrl"])
+	s.Equal("abcdef1234567890", desc["RemoteSha"])
+}
+
 func (s *LockfilePackageMapperSuite) TestHashingFields_FromLockfile() {
 	// Verifies that Description contains Package, Version, Depends, Imports, Suggests, LinkingTo
 	// when provided in renv.lock, with list fields joined by commas.
