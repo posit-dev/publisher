@@ -45,7 +45,7 @@ github.com/pmezard/go-difflib/difflib
 github.com/r3labs/sse/v2
 # github.com/rogpeppe/go-internal v1.8.0
 ## explicit; go 1.11
-# github.com/rs/cors v1.11.0
+# github.com/rs/cors v1.11.1
 ## explicit; go 1.13
 github.com/rs/cors
 github.com/rs/cors/internal
@@ -86,8 +86,6 @@ golang.org/x/text/transform
 golang.org/x/text/unicode/bidi
 golang.org/x/text/unicode/norm
 golang.org/x/text/width
-# google.golang.org/protobuf v1.36.1
-## explicit
 # gopkg.in/cenkalti/backoff.v1 v1.1.0
 ## explicit
 gopkg.in/cenkalti/backoff.v1
