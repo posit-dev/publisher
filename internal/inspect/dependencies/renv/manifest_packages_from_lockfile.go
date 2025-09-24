@@ -76,12 +76,13 @@ func (m *LockfilePackageMapper) GetManifestPackagesFromLockfile(
 		// Determine the repository identifier from various possible sources
 		// Prioritize RemoteRepos over Repository when it exists since it's more specific
 		repoIdentifier := firstNonEmpty(pkg.RemoteRepos, string(pkg.Repository))
+		remotePkgRef := remotePkgRefOrDerived(pkg)
 
 		if repoIdentifier == "" && pkg.RemoteType != "" {
 			// Git-hosted packages (GitHub, GitLab, etc.) need special URL construction
 			// because they don't follow standard repository conventions.
 			manifestPkg.Source = pkg.RemoteType
-			manifestPkg.Repository = remoteRepoURL(pkg.RemoteType, pkg.RemotePkgRef)
+			manifestPkg.Repository = firstNonEmpty(remoteRepoURL(pkg.RemoteType, remotePkgRef), pkg.RemoteUrl)
 		} else if repoIdentifier != "" || pkg.Source == "Bioconductor" {
 			// All repository-based packages use the same resolution logic:
 			// - CRAN packages with Repository="CRAN"
@@ -155,6 +156,12 @@ func copyAllFieldsToDesc(pkg Package, manifestPkg *bundles.Package) {
 	setIf(desc, "RemoteReposName", pkg.RemoteReposName)
 	setIf(desc, "RemotePkgPlatform", pkg.RemotePkgPlatform)
 	setIf(desc, "RemoteSha", pkg.RemoteSha)
+	setIf(desc, "RemoteHost", pkg.RemoteHost)
+	setIf(desc, "RemoteRepo", pkg.RemoteRepo)
+	setIf(desc, "RemoteUsername", pkg.RemoteUsername)
+	setIf(desc, "RemoteSubdir", pkg.RemoteSubdir)
+	setIf(desc, "RemoteUrl", pkg.RemoteUrl)
+	desc["RemotePkgRef"] = firstNonEmpty(desc["RemotePkgRef"], remotePkgRefOrDerived(pkg))
 
 	// URLs: GitHub packages need special URL construction because they follow
 	// different conventions than traditional R repositories, and deployment
@@ -195,6 +202,16 @@ func firstNonEmpty(a, b string) string {
 		return a
 	}
 	return b
+}
+
+func remotePkgRefOrDerived(pkg Package) string {
+	if pkg.RemotePkgRef != "" {
+		return pkg.RemotePkgRef
+	}
+	if pkg.RemoteUsername != "" && pkg.RemoteRepo != "" {
+		return pkg.RemoteUsername + "/" + pkg.RemoteRepo
+	}
+	return ""
 }
 
 // remoteRepoURL builds a repository URL for known remote types.

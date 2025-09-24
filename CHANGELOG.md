@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - The "R Packages" section no longer shows you an alert if you aren't using renv. (3095)
+- When `renv.lock` contains packages installed from GitHub or Bitbucket the deploy
+  process should respect `RemoteHost`, `RemoteRepo`, `RemoteUsername` and
+  `RemoteUrl` and `RemoteSubdir` fields (#3147)
 
 ## [1.22.0]
 

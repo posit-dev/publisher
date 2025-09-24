@@ -147,6 +147,9 @@ func toManifestPackage(pkg *Package, repos []Repository, availablePackages, bioc
 		}
 	case "Bitbucket", "GitHub", "GitLab":
 		out.Source = strings.ToLower(pkg.Source)
+		if repo := remotePkgRefOrDerived(*pkg); repo != "" {
+			out.Repository = firstNonEmpty(remoteRepoURL(out.Source, repo), pkg.RemoteUrl)
+		}
 	case "Local", "unknown":
 		out.Source = ""
 		out.Repository = ""
