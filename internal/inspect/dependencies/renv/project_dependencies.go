@@ -29,12 +29,16 @@ type RDependencyScanner interface {
 type defaultRDependencyScanner struct {
 	rExecutor executor.Executor
 	log       logging.Logger
+	repoOpts  *RepoOptions
 }
 
-func NewRDependencyScanner(log logging.Logger) *defaultRDependencyScanner {
+// NewRDependencyScanner creates a dependency scanner. If repoOpts is non-nil,
+// the scanner configures R repositories accordingly.
+func NewRDependencyScanner(log logging.Logger, repoOpts *RepoOptions) *defaultRDependencyScanner {
 	return &defaultRDependencyScanner{
 		rExecutor: executor.NewExecutor(),
 		log:       log,
+		repoOpts:  repoOpts,
 	}
 }
 
@@ -73,8 +77,13 @@ func (s *defaultRDependencyScanner) ScanDependenciesInDir(paths []string, target
 		lockfile = interpreters.DefaultRenvLockfile
 	}
 	lockfile = filepath.ToSlash(lockfile) // Lockfile may in fact contain slashes.
+	// Compute repository URL once; the R code will apply it via options(repos=...).
+	repoURL := RepoURLFromOptions(s.repoOpts)
+
 	script := fmt.Sprintf(`(function(){
 	options(renv.consent = TRUE)
+	repoUrl <- "%s"
+	if (nzchar(repoUrl)) options(repos = c(CRAN = repoUrl))
 	rPathsVec <- %s
 	deps <- tryCatch({
 		d <- renv::dependencies(path = rPathsVec, progress = FALSE)
@@ -87,7 +96,7 @@ func (s *defaultRDependencyScanner) ScanDependenciesInDir(paths []string, target
 	lockfile <- file.path(targetPath, "%s")
 	renv::snapshot(project = targetPath, lockfile = lockfile, prompt = FALSE, type = "all")
 	invisible()
-})()`, rPathsVec, normalizedProjectPath, lockfile)
+})()`, repoURL, rPathsVec, normalizedProjectPath, lockfile)
 
 	// Run the script (use the temporary project as the working directory)
 	// Ensure working directory is provided as an AbsolutePath
@@ -129,4 +138,47 @@ func (s *defaultRDependencyScanner) toRPathsVector(paths []string) (string, erro
 		quoted = append(quoted, "\""+norm+"\"")
 	}
 	return "c(" + strings.Join(quoted, ", ") + ")", nil
+}
+
+// RepoOptions defines how to set R repositories during dependency scanning.
+// Values mirror VS Code setting `positron.r.defaultRepositories`.
+type RepoOptions struct {
+	// RDefaultRepositories selects which R repository set to prefer.
+	// One of: "auto", "rstudio", "posit-ppm", "none", or a full http(s) URL.
+	RDefaultRepositories string
+	// RPackageManagerRepository is an optional custom PPM base URL, used when RDefaultRepositories == "auto".
+	RPackageManagerRepository string
+}
+
+func repoURLFrom(mode, ppm string) string {
+	switch mode {
+	case "auto":
+		if ppm != "" {
+			return strings.TrimRight(ppm, "/")
+		}
+		return "https://cloud.r-project.org"
+	case "posit-ppm":
+		return "https://packagemanager.posit.co/cran/latest"
+	case "rstudio":
+		return "https://cran.rstudio.com"
+	case "none":
+		return ""
+	default:
+		if strings.HasPrefix(mode, "http://") || strings.HasPrefix(mode, "https://") {
+			return strings.TrimRight(mode, "/")
+		}
+		return ""
+	}
+}
+
+func RepoURLFromOptions(opts *RepoOptions) string {
+	if opts == nil {
+		// Unconfigured defaults to CRAN via "auto" mode
+		return repoURLFrom("auto", "")
+	}
+	mode := strings.ToLower(strings.TrimSpace(opts.RDefaultRepositories))
+	if mode == "" {
+		mode = "auto"
+	}
+	return repoURLFrom(mode, strings.TrimSpace(opts.RPackageManagerRepository))
 }

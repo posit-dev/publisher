@@ -8,6 +8,7 @@ import {
   ContentRecord,
   Environment,
 } from "../types/contentRecords";
+import type { PositronSettings } from "../types/positron";
 import { PythonExecutable, RExecutable } from "../../types/shared";
 
 export class ContentRecords {
@@ -78,12 +79,14 @@ export class ContentRecords {
     r: RExecutable | undefined,
     python: PythonExecutable | undefined,
     secrets?: Record<string, string>,
+    positron?: PositronSettings,
   ) {
     const data = {
       account: accountName,
       config: configName,
       secrets: secrets,
       insecure: insecure,
+      positron,
     };
     const encodedTarget = encodeURIComponent(targetName);
     return this.client.post<{ localId: string }>(

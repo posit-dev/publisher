@@ -10,6 +10,7 @@ import (
 	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/deployment"
+	"github.com/posit-dev/publisher/internal/inspect/dependencies/renv"
 	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
@@ -26,6 +27,8 @@ type State struct {
 	Target      *deployment.Deployment
 	LocalID     LocalDeploymentID
 	Secrets     map[string]string
+	// RepoOptions carries IDE-controlled repository defaults (e.g. CRAN/PPM) for R.
+	RepoOptions *renv.RepoOptions
 }
 
 func loadConfig(path util.AbsolutePath, configName string) (*config.Config, error) {
@@ -104,6 +107,7 @@ func New(
 	rInterpreter interpreters.RInterpreter,
 	pythonInterpreter interpreters.PythonInterpreter,
 	log logging.Logger,
+	repoOpts *renv.RepoOptions,
 ) (*State, error) {
 	var target *deployment.Deployment
 	var account *accounts.Account
@@ -186,6 +190,7 @@ func New(
 		Config:      cfg,
 		Target:      target,
 		Secrets:     secrets,
+		RepoOptions: repoOpts,
 	}, nil
 }
 

@@ -31,7 +31,7 @@ func NewLockfilePackageMapper(base util.AbsolutePath, rExecutable util.Path, log
 		base:        base,
 		rExecutable: rExecutable,
 		log:         log,
-		scanner:     NewRDependencyScanner(log),
+		scanner:     NewRDependencyScanner(log, nil),
 	}
 }
 

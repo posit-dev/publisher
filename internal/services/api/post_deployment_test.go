@@ -21,6 +21,7 @@ import (
 	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/events"
+	"github.com/posit-dev/publisher/internal/inspect/dependencies/renv"
 	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/publish"
@@ -117,6 +118,7 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFunc() {
 		rInterpreter interpreters.RInterpreter,
 		pythonInterpreter interpreters.PythonInterpreter,
 		log logging.Logger,
+		repoOpts *renv.RepoOptions,
 	) (*state.State, error) {
 
 		s.Equal(s.cwd, path)
@@ -171,6 +173,7 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFuncStateErr()
 		rInterpreter interpreters.RInterpreter,
 		pythonInterpreter interpreters.PythonInterpreter,
 		log logging.Logger,
+		repoOpts *renv.RepoOptions,
 	) (*state.State, error) {
 		return nil, errors.New("test error from state factory")
 	}
@@ -242,6 +245,7 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFuncPublishErr
 		rInterpreter interpreters.RInterpreter,
 		pythonInterpreter interpreters.PythonInterpreter,
 		log logging.Logger,
+		repoOpts *renv.RepoOptions,
 	) (*state.State, error) {
 
 		st := state.Empty()
@@ -301,6 +305,7 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentSubdir() {
 		rInterpreter interpreters.RInterpreter,
 		pythonInterpreter interpreters.PythonInterpreter,
 		log logging.Logger,
+		repoOpts *renv.RepoOptions,
 	) (*state.State, error) {
 
 		s.Equal(s.cwd, path)
@@ -355,6 +360,7 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFuncWithSecret
 		rInterpreter interpreters.RInterpreter,
 		pythonInterpreter interpreters.PythonInterpreter,
 		log logging.Logger,
+		repoOpts *renv.RepoOptions,
 	) (*state.State, error) {
 
 		s.Equal(s.cwd, path)

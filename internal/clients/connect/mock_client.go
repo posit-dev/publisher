@@ -127,4 +127,3 @@ func (m *MockClient) GetSettings(base util.AbsolutePath, cfg *config.Config, log
 	}
 	return args.Get(0).(*AllSettings), args.Error(1)
 }
-
