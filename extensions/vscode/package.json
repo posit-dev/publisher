@@ -622,6 +622,25 @@
           }
         ]
       }
+    ],
+    "languageModelTools": [
+      {
+        "name": "publish-content_troubleshootDeploymentFailure",
+        "tags": [
+          "posit",
+          "publisher",
+          "positron-assistant"
+        ],
+        "toolReferenceName": "troubleshootDeploymentFailure",
+        "displayName": "Troubleshoot Deployment Failure",
+        "modelDescription": "When the user asks about a deployment failure to Connect or Connect Cloud (e.g., \"why did my deployment fail?\", \"troubleshoot deployment error\", or similar), use this tool proactively to retrieve and analyze the latest deployment logs, even if the user does not tell you to use it explicitly. Use the log data to provide a targeted diagnosis and troubleshooting steps, even if the user does not explicitly mention the tool.",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(search-sparkle)",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        }
+      }
     ]
   },
   "scripts": {

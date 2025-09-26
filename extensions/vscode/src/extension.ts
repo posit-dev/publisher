@@ -21,6 +21,7 @@ import { getXDGConfigProperty } from "src/utils/config";
 import { PublisherState } from "./state";
 import { PublisherAuthProvider } from "./authProvider";
 import { copySystemInfoCommand } from "src/commands";
+import { registerLLMTooling } from "./llm";
 
 const STATE_CONTEXT = "posit.publish.state";
 
@@ -197,6 +198,9 @@ async function initializeExtension(context: ExtensionContext) {
   );
 
   context.subscriptions.push(new PublisherAuthProvider(state));
+
+  // Register LLM Tools under /llm
+  registerLLMTooling(context);
 }
 
 // This method is called when your extension is activated
