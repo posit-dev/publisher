@@ -30,7 +30,6 @@ test/e2e/content-workspace/.local/
 test/e2e/content-workspace/.positron-server/
 test/e2e/content-workspace/.vscode-server/
 test/e2e/content-workspace/.connect-credentials
-test/e2e/**/content-workspace/test-*
 
 # Local History for Visual Studio Code
 .history/
