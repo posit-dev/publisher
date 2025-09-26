@@ -58,12 +58,70 @@ Cypress.Commands.add(
 );
 
 /**
+ * Clean up Workbench data files and directories to ensure a fresh state
+ * Uses Docker exec to run the cleanup inside the container so the container must be running this ensures proper
+ * permissions regardless of local or CI environment
+ */
+Cypress.Commands.add("cleanupWorkbenchData", () => {
+  cy.log("Cleaning up Workbench data");
+
+  // First check if the container is running
+  cy.exec(
+    "docker ps | grep publisher-e2e.workbench-release || echo 'not-running'",
+    {
+      failOnNonZeroExit: false,
+    },
+  ).then((result) => {
+    if (result.stdout.includes("not-running")) {
+      // Container is not running, fail with a clear error message
+      throw new Error(
+        "Cannot clean up Workbench data - container 'publisher-e2e.workbench-release' is not running. " +
+          "This command requires a running container to execute properly.",
+      );
+    }
+
+    // Define paths to clean up
+    const cleanupPaths = [
+      ".cache",
+      ".config",
+      ".connect-credentials",
+      ".duckdb",
+      ".ipython",
+      ".local",
+      ".positron-server",
+      ".vscode",
+    ];
+
+    cy.exec(
+      `docker exec publisher-e2e.workbench-release bash -c "cd /content-workspace && rm -rf ${cleanupPaths.join(" ")}"`,
+      {
+        failOnNonZeroExit: false,
+      },
+    ).then((result) => {
+      cy.log(`Cleanup directories result: exit code ${result.code}`);
+      if (result.stderr) cy.log(`Cleanup stderr: ${result.stderr}`);
+
+      // Fail if the docker exec command itself fails, which would indicate a problem with Docker or the container
+      // not with the file operations inside the container
+      if (result.code !== 0) {
+        throw new Error(
+          `Failed to execute cleanup in container: ${result.stderr}`,
+        );
+      }
+    });
+  });
+});
+
+/**
  * Cleans up and restarts the Workbench container to ensure a fresh state
  * This function stops the current container, removes any test data, and starts a fresh container
  * with clean state. It handles container lifecycle operations using the justfile commands
  *
  */
 Cypress.Commands.add("restartWorkbench", () => {
+  // Cleanup the data while the container is still running
+  cy.cleanupWorkbenchData();
+
   cy.log("Stopping and removing Workbench container");
   cy.exec(`just remove-workbench release`, {
     failOnNonZeroExit: false,
