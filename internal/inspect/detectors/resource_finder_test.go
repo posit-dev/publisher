@@ -48,7 +48,7 @@ func (s *ResourceFinderSuite) TestDetect_MarkdownSyntaxTest() {
 	base := realCwd.Join("testdata", "resource-finder")
 	rmdTestTarget := base.Join("index.rmd")
 
-	resourceFinder, err := NewResourceFinder(logging.New(), rmdTestTarget)
+	resourceFinder, err := NewResourceFinder(logging.New(), base, rmdTestTarget)
 	s.Nil(err)
 
 	resources, err := resourceFinder.FindResources()
@@ -74,7 +74,7 @@ func (s *ResourceFinderSuite) TestDetect_HTMLTest() {
 	base := realCwd.Join("testdata", "resource-finder")
 	rmdTestTarget := base.Join("index.html")
 
-	resourceFinder, err := NewResourceFinder(logging.New(), rmdTestTarget)
+	resourceFinder, err := NewResourceFinder(logging.New(), base, rmdTestTarget)
 	s.Nil(err)
 
 	resources, err := resourceFinder.FindResources()
@@ -87,6 +87,32 @@ func (s *ResourceFinderSuite) TestDetect_HTMLTest() {
 		"images/logo.svg",
 		"assets/blank_video.mp4",
 		"assets/no_audio.mp3",
+		"pizza-icon.png",
+	}, resources)
+}
+
+func (s *ResourceFinderSuite) TestDetect_ProjectRootReferencePathsTest() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip()
+	}
+
+	realCwd, err := util.Getwd(nil)
+	s.NoError(err)
+
+	base := realCwd.Join("testdata", "resource-finder")
+	rmdTestTarget := base.Join("subdir", "second-page.rmd")
+
+	resourceFinder, err := NewResourceFinder(logging.New(), base, rmdTestTarget)
+	s.Nil(err)
+
+	resources, err := resourceFinder.FindResources()
+	s.Nil(err)
+	s.assertResources([]string{
+		"styles/custom.css",
+		"styles/Lato-Regular.ttf",
+		"styles/themes/default.css",
+		"posit-logo.svg",
+		"subdir/pizza-copy.png",
 		"pizza-icon.png",
 	}, resources)
 }

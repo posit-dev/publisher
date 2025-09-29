@@ -4,7 +4,6 @@ package detectors
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -258,6 +257,11 @@ func (d *QuartoDetector) includeProjectFilesConfig(base util.AbsolutePath, cfg *
 		} else {
 			relPath = inputFile
 		}
+		// We skip direct references to files within the _extensions directory.
+		// The entire _extensions directory is included as a special case below.
+		if strings.HasPrefix(relPath, "_extensions") {
+			continue
+		}
 		cfg.Files = append(cfg.Files, fmt.Sprint("/", relPath))
 	}
 
@@ -300,10 +304,11 @@ func (d *QuartoDetector) findAndIncludeAssets(base util.AbsolutePath, cfg *confi
 	for _, rsrc := range resources {
 		// Do not include assets that are nested in an already included directory.
 		// e.g. if /index_files is included, do not include /index_files/custom.css
-		rsrcRoot := strings.Split(rsrc.Path, string(os.PathSeparator))[0]
+		rsrcRoot := strings.Split(rsrc.Path, "/")[0]
+		rsrcStringToAdd := fmt.Sprint("/", rsrc.Path)
 		rsrcDirIncluded := slices.Contains(cfg.Files, fmt.Sprint("/", rsrcRoot))
-		if !rsrcDirIncluded && !slices.Contains(cfg.Files, rsrc.Path) {
-			cfg.Files = append(cfg.Files, fmt.Sprint("/", rsrc.Path))
+		if !rsrcDirIncluded && !slices.Contains(cfg.Files, rsrcStringToAdd) {
+			cfg.Files = append(cfg.Files, rsrcStringToAdd)
 		}
 	}
 }

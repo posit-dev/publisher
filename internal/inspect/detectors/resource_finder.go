@@ -27,6 +27,7 @@ type ExternalResource struct {
 
 type resourceFinder struct {
 	log          logging.Logger
+	base         util.AbsolutePath
 	InputDir     util.AbsolutePath
 	InputFile    util.AbsolutePath
 	InputFileExt string
@@ -42,7 +43,7 @@ func NewMultiResourceFinder(log logging.Logger, base util.AbsolutePath, filesFro
 	var finders []ResourceFinder
 	for _, file := range filesFromConfig {
 		absPath := base.Join(file)
-		rf, err := NewResourceFinder(log, absPath)
+		rf, err := NewResourceFinder(log, base, absPath)
 		if err != nil {
 			// Files incompatible with resource finder, we just skip them
 			log.Debug("Cannot build resource finder for file", "file", file, "error", err.Error())
@@ -73,7 +74,7 @@ func (rf *multiResourceFinder) FindResources() ([]ExternalResource, error) {
 	return resources, nil
 }
 
-func NewResourceFinder(log logging.Logger, inputFile util.AbsolutePath) (*resourceFinder, error) {
+func NewResourceFinder(log logging.Logger, base util.AbsolutePath, inputFile util.AbsolutePath) (*resourceFinder, error) {
 	// Validate file type
 	ext := strings.ToLower(inputFile.Ext())
 	supportedExtensions := map[string]bool{
@@ -92,6 +93,7 @@ func NewResourceFinder(log logging.Logger, inputFile util.AbsolutePath) (*resour
 
 	return &resourceFinder{
 		log:          log,
+		base:         base,
 		InputDir:     inputFile.Dir(),
 		InputFile:    inputFile,
 		InputFileExt: ext,
@@ -132,9 +134,16 @@ func (rf *resourceFinder) FindResources() ([]ExternalResource, error) {
 
 // Add a resource to the finder if it exists on disk
 func (rf *resourceFinder) addResource(relpath string, explicit bool) bool {
+	var abspath util.AbsolutePath
 	rf.log.Debug("Found resource, validating...", "resource", relpath)
 
-	abspath := rf.InputDir.Join(relpath)
+	// Resources that start with / are relative to the project's base directory
+	hasLeadingSlash := strings.HasPrefix(relpath, "/")
+	if hasLeadingSlash {
+		abspath = rf.base.Join(relpath)
+	} else {
+		abspath = rf.InputDir.Join(relpath)
+	}
 
 	// Check if path exists on disk
 	if _, err := abspath.Stat(); os.IsNotExist(err) {
@@ -156,12 +165,20 @@ func (rf *resourceFinder) addResource(relpath string, explicit bool) bool {
 		}
 	}
 
+	relToBase, err := abspath.Rel(rf.base)
+	if err != nil {
+		// Ignoring error here, issues making a relative path should not stop discovery
+		return false
+	}
+
 	// If not already tracked, or if this is an explicit reference to something
 	// that was previously discovered implicitly, add/update it
-	if _, exists := rf.Resources[relpath]; !exists {
-		rf.log.Debug("Including resource", "resource", relpath)
-		rf.Resources[relpath] = ExternalResource{
-			Path: relpath,
+	relPathString := relToBase.String()
+	if _, exists := rf.Resources[relPathString]; !exists {
+		rf.log.Debug("Including resource", "resource", relPathString)
+		rf.Resources[relPathString] = ExternalResource{
+			// Be consistent with list items, always return relative paths without leading slash
+			Path: strings.TrimPrefix(relPathString, "/"),
 		}
 	}
 
@@ -183,8 +200,8 @@ func (rf *resourceFinder) processResourceMatches(matches [][]string, branchedFro
 	for _, match := range matches {
 		if len(match) > 1 {
 			path := match[1]
-			if rf.isURL(path) {
-				// Skip URLs, we only want local resources
+			if rf.isFullURL(path) {
+				// Skip web URLs, we only want to add local resources
 				continue
 			}
 			if branchedFrom != nil {
@@ -402,7 +419,7 @@ func (rf *resourceFinder) parseYAMLResourceFiles(yamlContent string) {
 				path = path[1 : len(path)-1]
 			}
 
-			if path != "" && !rf.isURL(path) {
+			if path != "" && !rf.isFullURL(path) {
 				// Handle wildcards and directories
 				if strings.Contains(path, "*") {
 					// For wildcards, use filepath.Glob to find matching files
@@ -440,7 +457,7 @@ func (rf *resourceFinder) parseYAMLResourceFiles(yamlContent string) {
 	}
 }
 
-func (rf *resourceFinder) isURL(path string) bool {
-	_, err := url.ParseRequestURI(path)
-	return err == nil
+func (rf *resourceFinder) isFullURL(path string) bool {
+	u, err := url.ParseRequestURI(path)
+	return err == nil && u.Scheme != "" && u.Host != ""
 }
