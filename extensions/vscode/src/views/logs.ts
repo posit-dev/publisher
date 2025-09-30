@@ -191,12 +191,12 @@ export class LogsViewProvider implements WebviewViewProvider, Disposable {
     return LogsViewProvider.getLogs().join("<br />").trim();
   }
 
-  private static getLogsText() {
-    return LogsViewProvider.getLogs().join("\n").trim();
-  }
-
   private static getLogsFilename() {
     return `publisher-logs-${new Date().toISOString().split(".").at(0)}.txt`;
+  }
+
+  public static getLogsText() {
+    return LogsViewProvider.getLogs().join("\n").trim();
   }
 
   public static refreshContent() {
