@@ -43,10 +43,8 @@ const baseContexts = {
 const logsCommands = {
   Visit: "posit.publisher.logs.visit",
   // Added automatically by VSCode with view registration
-  Treeview: "posit.publisher.logs.treeview",
-  Webview: "posit.publisher.logs.webview",
+  Fileview: "posit.publisher.logs.fileview",
   Copy: "posit.publisher.logs.copy",
-  Save: "posit.publisher.logs.save",
   TreeviewFocus: "posit.publisher.logs.focus",
   WebviewFocus: "posit.publisher.rawlogs.focus",
   ToggleVisibility: "posit.publisher.logs.toggleVisibility",

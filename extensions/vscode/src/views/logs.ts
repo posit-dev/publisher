@@ -6,6 +6,7 @@ import {
   EventEmitter,
   ExtensionContext,
   ProviderResult,
+  Range,
   ThemeColor,
   ThemeIcon,
   TreeDataProvider,
@@ -47,8 +48,6 @@ import { DeploymentFailureRenvHandler } from "src/views/deployHandlers";
 import { getUri } from "src/utils/getUri";
 import { getNonce } from "src/utils/getNonce";
 import { formatTimestampString } from "src/utils/date";
-import path from "path";
-import { getSummaryStringFromError } from "src/utils/errors";
 
 enum LogStageStatus {
   notStarted,
@@ -168,9 +167,52 @@ const stages = new Map([
   ],
 ]);
 
+type onPushCb = (ev: EventStreamMessage, parsedEvent: string) => void;
+
+class EventStreamRepository {
+  private events: EventStreamMessage[];
+  private streaming: boolean;
+  private pushCallback: onPushCb;
+
+  constructor() {
+    this.events = [];
+    this.streaming = false;
+    this.pushCallback = () => {};
+  }
+
+  reset() {
+    this.events = [];
+  }
+
+  parseEvent(ev: EventStreamMessage) {
+    return `${formatTimestampString(ev.time)} ${ev.data.message}`;
+  }
+
+  getEvents() {
+    return this.events.map(this.parseEvent);
+  }
+
+  onPush(cb: onPushCb) {
+    this.pushCallback = cb;
+  }
+
+  push(ev: EventStreamMessage) {
+    this.events.push(ev);
+    this.pushCallback(ev, this.parseEvent(ev));
+  }
+
+  streamInProgress(flag?: boolean): boolean {
+    if (flag !== undefined) {
+      this.streaming = flag;
+    }
+    return this.streaming;
+  }
+}
+
 export class LogsViewProvider implements WebviewViewProvider, Disposable {
   private disposables: Disposable[] = [];
-  private static events: EventStreamMessage[] = [];
+  private static eventsRepository: EventStreamRepository =
+    new EventStreamRepository();
   private extensionUri: Uri;
   public static currentView: WebviewView | undefined = undefined;
 
@@ -181,22 +223,12 @@ export class LogsViewProvider implements WebviewViewProvider, Disposable {
     this.extensionUri = this.context.extensionUri;
   }
 
-  private static getLogs() {
-    return LogsViewProvider.events.map(
-      (e) => `${formatTimestampString(e.time)} ${e.data.message}`,
-    );
-  }
-
   private static getLogsHTML() {
-    return LogsViewProvider.getLogs().join("<br />").trim();
-  }
-
-  private static getLogsFilename() {
-    return `publisher-logs-${new Date().toISOString().split(".").at(0)}.txt`;
+    return LogsViewProvider.eventsRepository.getEvents().join("<br />").trim();
   }
 
   public static getLogsText() {
-    return LogsViewProvider.getLogs().join("\n").trim();
+    return LogsViewProvider.eventsRepository.getEvents().join("\n").trim();
   }
 
   public static refreshContent() {
@@ -211,7 +243,8 @@ export class LogsViewProvider implements WebviewViewProvider, Disposable {
   public register() {
     this.stream.register("publish/start", (_: EventStreamMessage) => {
       // reset the events
-      LogsViewProvider.events = [];
+      LogsViewProvider.eventsRepository.reset();
+      LogsViewProvider.eventsRepository.streamInProgress(true);
       LogsViewProvider.refreshContent();
     });
 
@@ -219,10 +252,18 @@ export class LogsViewProvider implements WebviewViewProvider, Disposable {
       this.stream.register(`${stageName}/log`, (msg: EventStreamMessage) => {
         const stage = stages.get(stageName);
         if (stage && msg.data.level !== "DEBUG") {
-          LogsViewProvider.events.unshift(msg);
+          LogsViewProvider.eventsRepository.push(msg);
           LogsViewProvider.refreshContent();
         }
       });
+    });
+
+    this.stream.register("publish/success", (_: EventStreamMessage) => {
+      LogsViewProvider.eventsRepository.streamInProgress(false);
+    });
+
+    this.stream.register("publish/failure", (_: EventStreamMessage) => {
+      LogsViewProvider.eventsRepository.streamInProgress(false);
     });
 
     this.context.subscriptions.push(
@@ -238,36 +279,21 @@ export class LogsViewProvider implements WebviewViewProvider, Disposable {
     Disposable.from(...this.disposables).dispose();
   }
 
-  public static async writeAndOpenLogsFile() {
-    const fileName = LogsViewProvider.getLogsFilename();
-    const workspaceFolders = workspace.workspaceFolders;
-    if (!workspaceFolders) {
-      window.showErrorMessage("No workspace open to save the file.");
+  public static async openRawLogFileView() {
+    const content = LogsViewProvider.getLogsText();
+    const document = await workspace.openTextDocument({ content });
+    const editor = await window.showTextDocument(document);
+    if (!LogsViewProvider.eventsRepository.streamInProgress()) {
       return;
     }
-    // use the first workspace folder
-    const workspaceUri = workspaceFolders[0].uri;
-    // determine the path to save the file (e.g., in the root of the first workspace folder)
-    const filePath = Uri.file(path.join(workspaceUri.fsPath, fileName));
-    const fileUri = Uri.joinPath(workspaceUri, fileName);
-    const fileContent = new TextEncoder().encode(
-      LogsViewProvider.getLogsText(),
-    );
-
-    try {
-      // save the file
-      await workspace.fs.writeFile(filePath, fileContent);
-      // open the file in the editor
-      const document = await workspace.openTextDocument(fileUri);
-      await window.showTextDocument(document);
-
-      window.showInformationMessage(
-        `File '${fileName}' created and opened successfully.`,
-      );
-    } catch (err: unknown) {
-      const summary = getSummaryStringFromError("failed to write file", err);
-      window.showErrorMessage(summary);
-    }
+    LogsViewProvider.eventsRepository.onPush((_, parsedEvent) => {
+      const lastLine = document.lineAt(document.lineCount - 1);
+      const range = new Range(lastLine.range.end, lastLine.range.end);
+      editor.edit((editBuilder) => {
+        editBuilder.insert(range.end, `\n${parsedEvent}`);
+        editor.revealRange(range);
+      });
+    });
   }
 
   public static copyLogs() {
