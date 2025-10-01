@@ -144,33 +144,12 @@ async function initializeExtension(context: ExtensionContext) {
     LogsViewMode.tree,
   );
 
-  // Handler function to toggle the logs view mode
-  const toggleLogsViewModeHandler = () => {
-    // Get the current logs view mode from the context
-    const currentMode = context.globalState.get(
-      LOGS_VIEWMODE_CONTEXT,
-      LogsViewMode.tree,
-    );
-    const newMode =
-      currentMode === LogsViewMode.tree
-        ? LogsViewMode.webview
-        : LogsViewMode.tree;
-
-    // Update the context key, which automatically toggles the logs view's visibility
-    commands.executeCommand("setContext", LOGS_VIEWMODE_CONTEXT, newMode);
-
-    // Save the setting for persistence
-    context.globalState.update(LOGS_VIEWMODE_CONTEXT, newMode);
-  };
-
   context.subscriptions.push(
-    commands.registerCommand(Commands.Logs.Treeview, toggleLogsViewModeHandler),
-    commands.registerCommand(Commands.Logs.Webview, toggleLogsViewModeHandler),
-    commands.registerCommand(Commands.Logs.Copy, LogsViewProvider.copyLogs),
     commands.registerCommand(
-      Commands.Logs.Save,
-      LogsViewProvider.writeAndOpenLogsFile,
+      Commands.Logs.Fileview,
+      LogsViewProvider.openRawLogFileView,
     ),
+    commands.registerCommand(Commands.Logs.Copy, LogsViewProvider.copyLogs),
     commands.registerCommand(Commands.InitProject, async (viewId: string) => {
       setInitializationInProgressContext(InitializationInProgress.true);
       await homeViewProvider.showNewDeploymentMultiStep(viewId);
