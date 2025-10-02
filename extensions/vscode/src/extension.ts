@@ -164,7 +164,7 @@ async function initializeExtension(context: ExtensionContext) {
   context.subscriptions.push(new PublisherAuthProvider(state));
 
   // Register LLM Tools under /llm
-  registerLLMTooling(context);
+  registerLLMTooling(context, state);
 }
 
 // This method is called when your extension is activated
