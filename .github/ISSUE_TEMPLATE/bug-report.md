@@ -10,7 +10,6 @@ labels: ["bug"]
 
 <!-- Describe the problem you are experiencing: -->
 
-
 ## Steps to reproduce
 
 <!-- List the steps to reproduce the behavior: -->
@@ -23,17 +22,15 @@ labels: ["bug"]
 
 **Actual behavior:** <!-- What actually happened? -->
 
-
 ## System Details
 
 <!-- Click Copy System Info under Help and Feedback in the sidebar to copy system info to your clipboard, and paste it here: -->
-
 
 ## Publishing information
 
 - **Content type:** <!-- e.g., FastAPI app, Shiny app, Quarto document -->
 
-<!-- 
+<!--
 If applicable: find this in Connect on System → Info tab → under System Info. See https://docs.posit.co/connect/admin/server-management/#determine-version-installed.
 
 **Connect version:** e.g., 2025.09.0
@@ -44,7 +41,6 @@ If applicable: find this in Connect Cloud at https://connect.posit.cloud/my-acco
 
 **Connect Cloud account name:** e.g., my-account
 -->
-
 
 ## Publisher output and logs
 
