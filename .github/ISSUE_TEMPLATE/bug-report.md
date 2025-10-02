@@ -1,6 +1,6 @@
 ---
 name: Report a bug
-description: Found something? Thank you for telling us!
+about: Found something? Thank you for telling us!
 labels: ["bug"]
 ---
 
