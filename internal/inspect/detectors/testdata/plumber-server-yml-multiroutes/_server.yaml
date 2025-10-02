@@ -1,0 +1,7 @@
+engine: plumber2
+routes:
+  - app/one.R
+  - app/two.R
+  - app/three.R
+constructor: ~
+options: {}
