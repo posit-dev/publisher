@@ -83,7 +83,7 @@ func (s *PlumberSuite) TestInferTypeNone() {
 	s.Nil(t)
 }
 
-func (s *PlumberSuite) TestInferTypeFromServerYml() {
+func (s *PlumberSuite) TestInferTypeWithServerYml() {
 	s.projectSetup("plumber-server-yml")
 	entrypoint := util.NewRelativePath("app.R", nil)
 
@@ -107,7 +107,7 @@ func (s *PlumberSuite) TestInferTypeFromServerYml() {
 	}, configs[0])
 }
 
-func (s *PlumberSuite) TestInferTypeFromServerYml_MultiRoutes() {
+func (s *PlumberSuite) TestInferTypeWithServerYml_MultiRoutes() {
 	// Also using "yaml" extension here to test that case.
 	s.projectSetup("plumber-server-yml-multiroutes")
 	entrypoint := util.NewRelativePath("app.R", nil)
@@ -123,6 +123,33 @@ func (s *PlumberSuite) TestInferTypeFromServerYml_MultiRoutes() {
 		Type:       contenttypes.ContentTypeRPlumber,
 		Title:      "",
 		Entrypoint: "app.R",
+		Validate:   &validate,
+		Files: []string{
+			"/_server.yaml",
+			"/app/one.R",
+			"/app/two.R",
+			"/app/three.R",
+		},
+		R: &config.R{},
+	}, configs[0])
+}
+
+func (s *PlumberSuite) TestInferTypeServerYmlAsEntrypoint() {
+	// Also using "yaml" extension here to test that case.
+	s.projectSetup("plumber-server-yml-multiroutes")
+	entrypoint := util.NewRelativePath("_server.yaml", nil)
+
+	detector := NewPlumberDetector(logging.New())
+	configs, err := detector.InferType(s.testdataBase, entrypoint)
+	s.NoError(err)
+	s.Len(configs, 1)
+
+	validate := true
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       contenttypes.ContentTypeRPlumber,
+		Title:      "",
+		Entrypoint: "_server.yaml",
 		Validate:   &validate,
 		Files: []string{
 			"/_server.yaml",
