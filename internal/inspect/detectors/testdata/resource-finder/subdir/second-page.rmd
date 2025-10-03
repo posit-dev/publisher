@@ -1,0 +1,22 @@
+---
+title: "My Report - Subpage"
+author: "John Doe"
+date: "September 15, 2025"
+output: html_document
+resource_files:
+  - /styles/custom.css
+---
+
+# Report For My Boss
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc ultrices mi ac orci interdum, non euismod turpis hendrerit.
+Sed ornare non neque in pharetra. Integer egestas augue lobortis leo lobortis, nec ultrices orci fermentum. Praesent eget dolor aliquam,
+vehicula erat sit amet, suscipit justo. Sed placerat non tellus non lacinia. Quisque convallis dolor eros, tincidunt vehicula tortor convallis id.
+In condimentum, sapien laoreet scelerisque maximus, sem augue finibus tellus, a condimentum purus mauris id purus.
+Sed faucibus libero sit amet vestibulum faucibus. Nunc nec tincidunt libero, eget tempor libero. Fusce tincidunt blandit cursus. 
+
+![Here is an image](/posit-logo.svg)
+
+![A same level image](pizza-copy.png)
+
+<img src="/pizza-icon.png" />

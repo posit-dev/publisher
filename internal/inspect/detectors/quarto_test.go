@@ -41,6 +41,14 @@ func (s *QuartoDetectorSuite) runInferType(testName string, withError error) []*
 	executor := executortest.NewMockExecutor()
 	detector.executor = executor
 
+	rsrcFinderMock := &resourceFinderMock{
+		resources: []ExternalResource{
+			{Path: "found-a-logo-somewhere.png"},
+			{Path: "and-some-graph-too.svg"},
+		},
+	}
+	detector.resourceFinderFactory = makeResourceFinderFactoryMock(rsrcFinderMock, nil)
+
 	dirOutputPath := base.Join("inspect.json")
 	exists, err := dirOutputPath.Exists()
 	s.NoError(err)
@@ -92,6 +100,8 @@ func (s *QuartoDetectorSuite) TestInferTypeMarkdownDoc() {
 		Files: []string{
 			"/quarto-doc-none.qmd",
 			"/subdir/subpage.qmd",
+			"/found-a-logo-somewhere.png",
+			"/and-some-graph-too.svg",
 		},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
@@ -108,6 +118,8 @@ func (s *QuartoDetectorSuite) TestInferTypeMarkdownDoc() {
 				Files: []string{
 					"/quarto-doc-none.html",
 					"/subdir/subpage.html",
+					"/found-a-logo-somewhere.png",
+					"/and-some-graph-too.svg",
 				},
 			},
 		},
@@ -127,7 +139,12 @@ func (s *QuartoDetectorSuite) TestInferTypeMarkdownProject() {
 		Entrypoint: "quarto-proj-none.qmd",
 		Title:      "quarto-proj-none",
 		Validate:   &validate,
-		Files:      []string{"/quarto-proj-none.qmd", "/_quarto.yml"},
+		Files: []string{
+			"/quarto-proj-none.qmd",
+			"/_quarto.yml",
+			"/found-a-logo-somewhere.png",
+			"/and-some-graph-too.svg",
+		},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
 			Engines: []string{"markdown"},
@@ -142,6 +159,8 @@ func (s *QuartoDetectorSuite) TestInferTypeMarkdownProject() {
 				Validate:   &validate,
 				Files: []string{
 					"/quarto-proj-none.html",
+					"/found-a-logo-somewhere.png",
+					"/and-some-graph-too.svg",
 				},
 			},
 		},
@@ -161,7 +180,12 @@ func (s *QuartoDetectorSuite) TestInferTypeMarkdownProjectWindows() {
 		Entrypoint: "quarto-proj-none.qmd",
 		Title:      "quarto-proj-none",
 		Validate:   &validate,
-		Files:      []string{"/quarto-proj-none.qmd", "/_quarto.yml"},
+		Files: []string{
+			"/quarto-proj-none.qmd",
+			"/_quarto.yml",
+			"/found-a-logo-somewhere.png",
+			"/and-some-graph-too.svg",
+		},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
 			Engines: []string{"markdown"},
@@ -176,6 +200,8 @@ func (s *QuartoDetectorSuite) TestInferTypeMarkdownProjectWindows() {
 				Validate:   &validate,
 				Files: []string{
 					"/quarto-proj-none.html",
+					"/found-a-logo-somewhere.png",
+					"/and-some-graph-too.svg",
 				},
 			},
 		},
@@ -195,8 +221,13 @@ func (s *QuartoDetectorSuite) TestInferTypePythonProject() {
 		Entrypoint: "quarto-proj-py.qmd",
 		Title:      "quarto-proj-py",
 		Validate:   &validate,
-		Files:      []string{"/quarto-proj-py.qmd", "/_quarto.yml"},
-		Python:     &config.Python{},
+		Files: []string{
+			"/quarto-proj-py.qmd",
+			"/_quarto.yml",
+			"/found-a-logo-somewhere.png",
+			"/and-some-graph-too.svg",
+		},
+		Python: &config.Python{},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
 			Engines: []string{"jupyter"},
@@ -211,6 +242,8 @@ func (s *QuartoDetectorSuite) TestInferTypePythonProject() {
 				Validate:   &validate,
 				Files: []string{
 					"/quarto-proj-py.html",
+					"/found-a-logo-somewhere.png",
+					"/and-some-graph-too.svg",
 				},
 			},
 		},
@@ -230,8 +263,13 @@ func (s *QuartoDetectorSuite) TestInferTypeRProject() {
 		Entrypoint: "quarto-proj-r.qmd",
 		Title:      "quarto-proj-r",
 		Validate:   &validate,
-		Files:      []string{"/quarto-proj-r.qmd", "/_quarto.yml"},
-		R:          &config.R{},
+		Files: []string{
+			"/quarto-proj-r.qmd",
+			"/_quarto.yml",
+			"/found-a-logo-somewhere.png",
+			"/and-some-graph-too.svg",
+		},
+		R: &config.R{},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
 			Engines: []string{"knitr"},
@@ -246,6 +284,8 @@ func (s *QuartoDetectorSuite) TestInferTypeRProject() {
 				Validate:   &validate,
 				Files: []string{
 					"/quarto-proj-r.html",
+					"/found-a-logo-somewhere.png",
+					"/and-some-graph-too.svg",
 				},
 			},
 		},
@@ -265,9 +305,14 @@ func (s *QuartoDetectorSuite) TestInferTypeRAndPythonProject() {
 		Entrypoint: "quarto-proj-r-py.qmd",
 		Title:      "quarto-proj-r-py",
 		Validate:   &validate,
-		Files:      []string{"/quarto-proj-r-py.qmd", "/_quarto.yml"},
-		Python:     &config.Python{},
-		R:          &config.R{},
+		Files: []string{
+			"/quarto-proj-r-py.qmd",
+			"/_quarto.yml",
+			"/found-a-logo-somewhere.png",
+			"/and-some-graph-too.svg",
+		},
+		Python: &config.Python{},
+		R:      &config.R{},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
 			Engines: []string{"jupyter", "knitr"},
@@ -282,6 +327,8 @@ func (s *QuartoDetectorSuite) TestInferTypeRAndPythonProject() {
 				Validate:   &validate,
 				Files: []string{
 					"/quarto-proj-r-py.html",
+					"/found-a-logo-somewhere.png",
+					"/and-some-graph-too.svg",
 				},
 			},
 		},
@@ -301,8 +348,13 @@ func (s *QuartoDetectorSuite) TestInferTypeRShinyProject() {
 		Entrypoint: "quarto-proj-r-shiny.qmd",
 		Title:      "quarto-proj-r-shiny",
 		Validate:   &validate,
-		Files:      []string{"/quarto-proj-r-shiny.qmd", "/_quarto.yml"},
-		R:          &config.R{},
+		Files: []string{
+			"/quarto-proj-r-shiny.qmd",
+			"/_quarto.yml",
+			"/found-a-logo-somewhere.png",
+			"/and-some-graph-too.svg",
+		},
+		R: &config.R{},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
 			Engines: []string{"knitr"},
@@ -323,7 +375,13 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoWebsite() {
 		Entrypoint: "about.qmd",
 		Title:      "About",
 		Validate:   &validate,
-		Files:      []string{"/index.qmd", "/about.qmd", "/_quarto.yml"},
+		Files: []string{
+			"/index.qmd",
+			"/about.qmd",
+			"/_quarto.yml",
+			"/found-a-logo-somewhere.png",
+			"/and-some-graph-too.svg",
+		},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
 			Engines: []string{"markdown"},
@@ -353,6 +411,8 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoWebsite() {
 			"/about.qmd",
 			"/styles.css",
 			"/_quarto.yml",
+			"/found-a-logo-somewhere.png",
+			"/and-some-graph-too.svg",
 		},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
@@ -386,6 +446,14 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoWebsite_viaQuartoYml() {
 	detector := NewQuartoDetector(logging.New())
 	executor := executortest.NewMockExecutor()
 	detector.executor = executor
+
+	rsrcFinderMock := &resourceFinderMock{
+		resources: []ExternalResource{
+			{Path: "found-a-logo-somewhere.png"},
+			{Path: "and-some-graph-too.svg"},
+		},
+	}
+	detector.resourceFinderFactory = makeResourceFinderFactoryMock(rsrcFinderMock, nil)
 
 	dirOutputPath := base.Join("inspect.json")
 	exists, err := dirOutputPath.Exists()
@@ -425,6 +493,8 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoWebsite_viaQuartoYml() {
 			"/finally.py",
 			"/_quarto.yml",
 			"/_brand.yml",
+			"/found-a-logo-somewhere.png",
+			"/and-some-graph-too.svg",
 		},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
@@ -462,6 +532,8 @@ func (s *QuartoDetectorSuite) TestInferTypeRMarkdownDoc() {
 		Validate:   &validate,
 		Files: []string{
 			"/static.Rmd",
+			"/found-a-logo-somewhere.png",
+			"/and-some-graph-too.svg",
 		},
 		R: &config.R{},
 		Quarto: &config.Quarto{
@@ -478,6 +550,8 @@ func (s *QuartoDetectorSuite) TestInferTypeRMarkdownDoc() {
 				Validate:   &validate,
 				Files: []string{
 					"/static.html",
+					"/found-a-logo-somewhere.png",
+					"/and-some-graph-too.svg",
 				},
 			},
 		},
@@ -497,7 +571,13 @@ func (s *QuartoDetectorSuite) TestInferTypeMultidocProject() {
 		Entrypoint: "document1.qmd",
 		Title:      "quarto-proj-none-multidocument",
 		Validate:   &validate,
-		Files:      []string{"/document1.qmd", "/document2.qmd", "/_quarto.yml"},
+		Files: []string{
+			"/document1.qmd",
+			"/document2.qmd",
+			"/_quarto.yml",
+			"/found-a-logo-somewhere.png",
+			"/and-some-graph-too.svg",
+		},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
 			Engines: []string{"markdown"},
@@ -515,6 +595,8 @@ func (s *QuartoDetectorSuite) TestInferTypeMultidocProject() {
 					"/document1_files",
 					"/document2.html",
 					"/document2_files",
+					"/found-a-logo-somewhere.png",
+					"/and-some-graph-too.svg",
 				},
 			},
 		},
@@ -525,7 +607,13 @@ func (s *QuartoDetectorSuite) TestInferTypeMultidocProject() {
 		Entrypoint: "document2.qmd",
 		Title:      "quarto-proj-none-multidocument",
 		Validate:   &validate,
-		Files:      []string{"/document1.qmd", "/document2.qmd", "/_quarto.yml"},
+		Files: []string{
+			"/document1.qmd",
+			"/document2.qmd",
+			"/_quarto.yml",
+			"/found-a-logo-somewhere.png",
+			"/and-some-graph-too.svg",
+		},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
 			Engines: []string{"markdown"},
@@ -543,6 +631,8 @@ func (s *QuartoDetectorSuite) TestInferTypeMultidocProject() {
 					"/document1_files",
 					"/document2.html",
 					"/document2_files",
+					"/found-a-logo-somewhere.png",
+					"/and-some-graph-too.svg",
 				},
 			},
 		},
@@ -562,8 +652,12 @@ func (s *QuartoDetectorSuite) TestInferTypeNotebook() {
 		Entrypoint: "stock-report-jupyter.ipynb",
 		Title:      "Stock Report: TSLA",
 		Validate:   &validate,
-		Files:      []string{"/stock-report-jupyter.ipynb"},
-		Python:     &config.Python{},
+		Files: []string{
+			"/stock-report-jupyter.ipynb",
+			"/found-a-logo-somewhere.png",
+			"/and-some-graph-too.svg",
+		},
+		Python: &config.Python{},
 		Quarto: &config.Quarto{
 			Version: "1.5.54",
 			Engines: []string{"jupyter"},
@@ -578,6 +672,8 @@ func (s *QuartoDetectorSuite) TestInferTypeNotebook() {
 				Validate:   &validate,
 				Files: []string{
 					"/stock-report-jupyter.html",
+					"/found-a-logo-somewhere.png",
+					"/and-some-graph-too.svg",
 				},
 			},
 		},
@@ -597,7 +693,11 @@ func (s *QuartoDetectorSuite) TestInferTypeRevalJSQuartoShiny() {
 		Entrypoint: "dashboard.qmd",
 		Title:      "posit::conf(2024)",
 		Validate:   &validate,
-		Files:      []string{"/dashboard.qmd"},
+		Files: []string{
+			"/dashboard.qmd",
+			"/found-a-logo-somewhere.png",
+			"/and-some-graph-too.svg",
+		},
 		Quarto: &config.Quarto{
 			Version: "1.5.54",
 			Engines: []string{"knitr"},
@@ -619,8 +719,13 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoScriptPy() {
 		Entrypoint: "script.py",
 		Title:      "Penguin data transformations",
 		Validate:   &validate,
-		Files:      []string{"/script.py", "/_quarto.yml"},
-		Python:     &config.Python{},
+		Files: []string{
+			"/script.py",
+			"/_quarto.yml",
+			"/found-a-logo-somewhere.png",
+			"/and-some-graph-too.svg",
+		},
+		Python: &config.Python{},
 		Quarto: &config.Quarto{
 			Version: "1.5.54",
 			Engines: []string{"jupyter"},
@@ -641,7 +746,12 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoScriptR() {
 		Entrypoint: "script.R",
 		Title:      "Penguin data transformations",
 		Validate:   &validate,
-		Files:      []string{"/script.R", "/_quarto.yml"},
+		Files: []string{
+			"/script.R",
+			"/_quarto.yml",
+			"/found-a-logo-somewhere.png",
+			"/and-some-graph-too.svg",
+		},
 		Quarto: &config.Quarto{
 			Version: "1.5.54",
 			Engines: []string{"knitr"},
@@ -667,6 +777,8 @@ func (s *QuartoDetectorSuite) TestInferIncludeExtensionsDir() {
 			"/quarto-proj-r.qmd",
 			"/_quarto.yml",
 			"/_extensions",
+			"/found-a-logo-somewhere.png",
+			"/and-some-graph-too.svg",
 		},
 		R: &config.R{},
 		Quarto: &config.Quarto{
@@ -683,6 +795,8 @@ func (s *QuartoDetectorSuite) TestInferIncludeExtensionsDir() {
 				Validate:   &validate,
 				Files: []string{
 					"/quarto-proj-r.html",
+					"/found-a-logo-somewhere.png",
+					"/and-some-graph-too.svg",
 				},
 			},
 		},
@@ -706,6 +820,8 @@ func (s *QuartoDetectorSuite) TestInferType_NoBinary_SimpleConfig() {
 			"/about.qmd",
 			"/index.qmd",
 			"/_quarto.yml",
+			"/found-a-logo-somewhere.png",
+			"/and-some-graph-too.svg",
 		},
 		Quarto: &config.Quarto{
 			Version: "1.7.34",
@@ -721,6 +837,8 @@ func (s *QuartoDetectorSuite) TestInferType_NoBinary_SimpleConfig() {
 			"/about.qmd",
 			"/index.qmd",
 			"/_quarto.yml",
+			"/found-a-logo-somewhere.png",
+			"/and-some-graph-too.svg",
 		},
 		Quarto: &config.Quarto{
 			Version: "1.7.34",

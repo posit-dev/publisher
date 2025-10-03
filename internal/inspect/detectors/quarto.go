@@ -34,15 +34,21 @@ var defaultQuartoVersion = "1.7.34"
 
 type QuartoDetector struct {
 	inferenceHelper
-	executor executor.Executor
-	log      logging.Logger
+	resourceFinderFactory multiResourceFinderFactory
+	executor              executor.Executor
+	log                   logging.Logger
 }
 
 func NewQuartoDetector(log logging.Logger) *QuartoDetector {
+	rfFactory := func(log logging.Logger, base util.AbsolutePath, filesFromConfig []string) (ResourceFinder, error) {
+		return NewMultiResourceFinder(log, base, filesFromConfig)
+	}
+
 	return &QuartoDetector{
-		inferenceHelper: defaultInferenceHelper{},
-		executor:        executor.NewExecutor(),
-		log:             log,
+		inferenceHelper:       defaultInferenceHelper{},
+		resourceFinderFactory: rfFactory,
+		executor:              executor.NewExecutor(),
+		log:                   log,
 	}
 }
 
@@ -251,6 +257,11 @@ func (d *QuartoDetector) includeProjectFilesConfig(base util.AbsolutePath, cfg *
 		} else {
 			relPath = inputFile
 		}
+		// We skip direct references to files within the _extensions directory.
+		// The entire _extensions directory is included as a special case below.
+		if strings.HasPrefix(relPath, "_extensions") {
+			continue
+		}
 		cfg.Files = append(cfg.Files, fmt.Sprint("/", relPath))
 	}
 
@@ -271,8 +282,35 @@ func (d *QuartoDetector) includeProjectFilesConfig(base util.AbsolutePath, cfg *
 	}
 
 	d.includeExtensionsDirIfAny(base, cfg)
+	d.findAndIncludeAssets(base, cfg)
 
 	return nil
+}
+
+// Use resource finder to identify additional resources for the static configuration.
+// Additional static assets can be scattered alongside files.
+// For static projects where there is no output-dir, additional static resources can be scattered alongside HTML files.
+func (d *QuartoDetector) findAndIncludeAssets(base util.AbsolutePath, cfg *config.Config) {
+	rFinder, err := d.resourceFinderFactory(d.log, base, cfg.Files)
+	if err != nil {
+		d.log.Error("Error creating resource finder for Quarto project", "error", err)
+		return
+	}
+	resources, err := rFinder.FindResources()
+	if err != nil {
+		d.log.Error("Error finding resources for Quarto project", "error", err)
+		return
+	}
+	for _, rsrc := range resources {
+		// Do not include assets that are nested in an already included directory.
+		// e.g. if /index_files is included, do not include /index_files/custom.css
+		rsrcRoot := strings.Split(rsrc.Path, "/")[0]
+		rsrcStringToAdd := fmt.Sprint("/", rsrc.Path)
+		rsrcDirIncluded := slices.Contains(cfg.Files, fmt.Sprint("/", rsrcRoot))
+		if !rsrcDirIncluded && !slices.Contains(cfg.Files, rsrcStringToAdd) {
+			cfg.Files = append(cfg.Files, rsrcStringToAdd)
+		}
+	}
 }
 
 func (d *QuartoDetector) includeExtensionsDirIfAny(base util.AbsolutePath, cfg *config.Config) {
@@ -318,6 +356,7 @@ func (d *QuartoDetector) includeStaticConfig(base util.AbsolutePath, cfg *config
 	// (If there is a render list, files.input is already filtered down to the applicable files.)
 	staticCfg := d.staticConfigFromFilesLookup(base, cfg, inspectOutput)
 	if staticCfg != nil {
+		d.findAndIncludeAssets(base, staticCfg)
 		cfg.Alternatives = append(cfg.Alternatives, *staticCfg)
 	}
 }
@@ -471,6 +510,8 @@ func (d *QuartoDetector) genNonInspectConfig(base util.AbsolutePath, entrypointP
 			}
 		}
 	}
+
+	d.findAndIncludeAssets(base, cfg)
 
 	return cfg, nil
 }
