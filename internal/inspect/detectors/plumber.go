@@ -40,12 +40,16 @@ func NewPlumberDetector(log logging.Logger) *PlumberDetector {
 	}
 }
 
+func (d *PlumberDetector) isSupportedEntrypoint(entrypoint util.RelativePath) bool {
+	return entrypoint.Ext() == ".R" || entrypoint.Ext() == ".yml" || entrypoint.Ext() == ".yaml"
+}
+
 func (d *PlumberDetector) InferType(base util.AbsolutePath, entrypoint util.RelativePath) ([]*config.Config, error) {
 	requiredEntrypoint := entrypoint.String()
 	if requiredEntrypoint != "" {
 		// Optimization: skip inspection if there's a specified entrypoint
 		// and it's not one of ours.
-		if entrypoint.Ext() != ".R" {
+		if !d.isSupportedEntrypoint(entrypoint) {
 			return nil, nil
 		}
 	}
