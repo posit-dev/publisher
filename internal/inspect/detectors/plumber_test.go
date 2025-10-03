@@ -5,11 +5,11 @@ package detectors
 import (
 	"testing"
 
-	"github.com/spf13/afero"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/contenttypes"
+	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/schema"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
@@ -17,24 +17,26 @@ import (
 
 type PlumberSuite struct {
 	utiltest.Suite
+	testdataBase util.AbsolutePath
 }
 
 func TestPlumberSuite(t *testing.T) {
 	suite.Run(t, new(PlumberSuite))
 }
 
-func (s *PlumberSuite) TestInferTypePlumberR() {
-	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
-	err := base.MkdirAll(0777)
+func (s *PlumberSuite) projectSetup(pdir string) {
+	realCwd, err := util.Getwd(nil)
 	s.NoError(err)
 
-	filename := "plumber.R"
-	path := base.Join(filename)
-	err = path.WriteFile(nil, 0600)
-	s.Nil(err)
+	s.testdataBase = realCwd.Join("testdata", pdir)
+}
 
-	detector := NewPlumberDetector()
-	configs, err := detector.InferType(base, util.RelativePath{})
+func (s *PlumberSuite) TestInferTypePlumberR() {
+	s.projectSetup("plumber-r")
+	entrypoint := util.NewRelativePath("plumber.R", nil)
+
+	detector := NewPlumberDetector(logging.New())
+	configs, err := detector.InferType(s.testdataBase, entrypoint)
 	s.Nil(err)
 	s.Len(configs, 1)
 
@@ -43,25 +45,19 @@ func (s *PlumberSuite) TestInferTypePlumberR() {
 		Schema:     schema.ConfigSchemaURL,
 		Type:       contenttypes.ContentTypeRPlumber,
 		Title:      "",
-		Entrypoint: filename,
+		Entrypoint: "plumber.R",
 		Validate:   &validate,
-		Files:      []string{},
+		Files:      []string{"/plumber.R"},
 		R:          &config.R{},
 	}, configs[0])
 }
 
 func (s *PlumberSuite) TestInferTypeEntrypointR() {
-	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
-	err := base.MkdirAll(0777)
-	s.NoError(err)
+	s.projectSetup("plumber-entrypoint-r")
+	entrypoint := util.NewRelativePath("entrypoint.R", nil)
 
-	filename := "entrypoint.R"
-	path := base.Join(filename)
-	err = path.WriteFile(nil, 0600)
-	s.Nil(err)
-
-	detector := NewPlumberDetector()
-	configs, err := detector.InferType(base, util.RelativePath{})
+	detector := NewPlumberDetector(logging.New())
+	configs, err := detector.InferType(s.testdataBase, entrypoint)
 	s.Nil(err)
 	s.Len(configs, 1)
 
@@ -70,41 +66,30 @@ func (s *PlumberSuite) TestInferTypeEntrypointR() {
 		Schema:     schema.ConfigSchemaURL,
 		Type:       contenttypes.ContentTypeRPlumber,
 		Title:      "",
-		Entrypoint: filename,
+		Entrypoint: "entrypoint.R",
 		Validate:   &validate,
-		Files:      []string{},
+		Files:      []string{"/entrypoint.R"},
 		R:          &config.R{},
 	}, configs[0])
 }
 
 func (s *PlumberSuite) TestInferTypeNone() {
-	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
-	err := base.MkdirAll(0777)
-	s.NoError(err)
+	s.projectSetup("rmd-static-1")
+	entrypoint := util.NewRelativePath("static.Rmd", nil)
 
-	detector := NewPlumberDetector()
-	t, err := detector.InferType(base, util.RelativePath{})
+	detector := NewPlumberDetector(logging.New())
+	t, err := detector.InferType(s.testdataBase, entrypoint)
 	s.Nil(err)
 	s.Nil(t)
 }
 
-func (s *PlumberSuite) TestInferTypeWithEntrypoint() {
-	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
-	err := base.MkdirAll(0777)
+func (s *PlumberSuite) TestInferTypeWithServerYml() {
+	s.projectSetup("plumber-server-yml")
+	entrypoint := util.NewRelativePath("app.R", nil)
+
+	detector := NewPlumberDetector(logging.New())
+	configs, err := detector.InferType(s.testdataBase, entrypoint)
 	s.NoError(err)
-
-	filename := "entrypoint.R"
-	err = base.Join(filename).WriteFile(nil, 0600)
-	s.Nil(err)
-
-	otherFilename := "plumber.R"
-	err = base.Join(otherFilename).WriteFile(nil, 0600)
-	s.Nil(err)
-
-	detector := NewPlumberDetector()
-	entrypoint := util.NewRelativePath(filename, base.Fs())
-	configs, err := detector.InferType(base, entrypoint)
-	s.Nil(err)
 	s.Len(configs, 1)
 
 	validate := true
@@ -112,9 +97,66 @@ func (s *PlumberSuite) TestInferTypeWithEntrypoint() {
 		Schema:     schema.ConfigSchemaURL,
 		Type:       contenttypes.ContentTypeRPlumber,
 		Title:      "",
-		Entrypoint: filename,
+		Entrypoint: "app.R",
 		Validate:   &validate,
-		Files:      []string{},
-		R:          &config.R{},
+		Files: []string{
+			"/_server.yml",
+			"/app/plumber.R",
+		},
+		R: &config.R{},
+	}, configs[0])
+}
+
+func (s *PlumberSuite) TestInferTypeWithServerYml_MultiRoutes() {
+	// Also using "yaml" extension here to test that case.
+	s.projectSetup("plumber-server-yml-multiroutes")
+	entrypoint := util.NewRelativePath("app.R", nil)
+
+	detector := NewPlumberDetector(logging.New())
+	configs, err := detector.InferType(s.testdataBase, entrypoint)
+	s.NoError(err)
+	s.Len(configs, 1)
+
+	validate := true
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       contenttypes.ContentTypeRPlumber,
+		Title:      "",
+		Entrypoint: "app.R",
+		Validate:   &validate,
+		Files: []string{
+			"/_server.yaml",
+			"/app/one.R",
+			"/app/two.R",
+			"/app/three.R",
+		},
+		R: &config.R{},
+	}, configs[0])
+}
+
+func (s *PlumberSuite) TestInferTypeServerYmlAsEntrypoint() {
+	// Also using "yaml" extension here to test that case.
+	s.projectSetup("plumber-server-yml-multiroutes")
+	entrypoint := util.NewRelativePath("_server.yaml", nil)
+
+	detector := NewPlumberDetector(logging.New())
+	configs, err := detector.InferType(s.testdataBase, entrypoint)
+	s.NoError(err)
+	s.Len(configs, 1)
+
+	validate := true
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       contenttypes.ContentTypeRPlumber,
+		Title:      "",
+		Entrypoint: "_server.yaml",
+		Validate:   &validate,
+		Files: []string{
+			"/_server.yaml",
+			"/app/one.R",
+			"/app/two.R",
+			"/app/three.R",
+		},
+		R: &config.R{},
 	}, configs[0])
 }

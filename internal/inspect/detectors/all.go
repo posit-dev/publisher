@@ -29,7 +29,7 @@ func NewContentTypeDetector(log logging.Logger) *ContentTypeDetector {
 			// ContentType will determine the result
 			// for CLI `init`. For the UI, we show all of the
 			// detected content types.
-			NewPlumberDetector(),
+			NewPlumberDetector(log),
 			NewRMarkdownDetector(log),
 			NewNotebookDetector(),
 			NewQuartoDetector(log),
