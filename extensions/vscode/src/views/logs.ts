@@ -1,7 +1,6 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
 import {
-  Disposable,
   Event,
   EventEmitter,
   ExtensionContext,
@@ -14,9 +13,7 @@ import {
   TreeItemCollapsibleState,
   TreeView,
   Uri,
-  Webview,
   WebviewView,
-  WebviewViewProvider,
   commands,
   env,
   window,
@@ -45,8 +42,6 @@ import {
 import { extensionSettings } from "src/extension";
 import { showErrorMessageWithTroubleshoot } from "src/utils/window";
 import { DeploymentFailureRenvHandler } from "src/views/deployHandlers";
-import { getUri } from "src/utils/getUri";
-import { getNonce } from "src/utils/getNonce";
 import { formatTimestampString } from "src/utils/date";
 
 enum LogStageStatus {
@@ -167,17 +162,13 @@ const stages = new Map([
   ],
 ]);
 
-type onPushCb = (ev: EventStreamMessage, parsedEvent: string) => void;
-
 class EventStreamRepository {
   private events: EventStreamMessage[];
   private streaming: boolean;
-  private pushCallback: onPushCb;
 
   constructor() {
     this.events = [];
     this.streaming = false;
-    this.pushCallback = () => {};
   }
 
   reset() {
@@ -188,17 +179,16 @@ class EventStreamRepository {
     return `${formatTimestampString(ev.time)} ${ev.data.message}`;
   }
 
-  getEvents() {
-    return this.events.map(this.parseEvent);
+  logsText() {
+    return this.events.map(this.parseEvent).join("\n").trim();
   }
 
-  onPush(cb: onPushCb) {
-    this.pushCallback = cb;
+  count() {
+    return this.events.length;
   }
 
   push(ev: EventStreamMessage) {
     this.events.push(ev);
-    this.pushCallback(ev, this.parseEvent(ev));
   }
 
   streamInProgress(flag?: boolean): boolean {
@@ -207,37 +197,42 @@ class EventStreamRepository {
     }
     return this.streaming;
   }
+
+  async openDocumentLog() {
+    let evCountTracker = this.count();
+    const content = this.logsText();
+    const document = await workspace.openTextDocument({ content });
+    const editor = await window.showTextDocument(document);
+
+    // Stream will proceed until incoming events stop or events to print out are still pending
+    while (this.streamInProgress() || this.count() > evCountTracker) {
+      const ev = this.events[evCountTracker];
+      if (!ev) {
+        // Wait a bit if we are at the tip of the stream
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        continue;
+      }
+      const lastLine = document.lineAt(document.lineCount - 1);
+      const range = new Range(lastLine.range.end, lastLine.range.end);
+      const parsedEv = this.parseEvent(ev);
+      await editor.edit((editBuilder) => {
+        editBuilder.insert(range.end, `\n${parsedEv}`);
+        editor.revealRange(range);
+      });
+      evCountTracker++;
+    }
+  }
 }
 
-export class LogsViewProvider implements WebviewViewProvider, Disposable {
-  private disposables: Disposable[] = [];
+export class LogsViewProvider {
   private static eventsRepository: EventStreamRepository =
     new EventStreamRepository();
-  private extensionUri: Uri;
   public static currentView: WebviewView | undefined = undefined;
 
-  constructor(
-    private readonly context: ExtensionContext,
-    private readonly stream: EventStream,
-  ) {
-    this.extensionUri = this.context.extensionUri;
-  }
-
-  private static getLogsHTML() {
-    return LogsViewProvider.eventsRepository.getEvents().join("<br />").trim();
-  }
+  constructor(private readonly stream: EventStream) {}
 
   public static getLogsText() {
-    return LogsViewProvider.eventsRepository.getEvents().join("\n").trim();
-  }
-
-  public static refreshContent() {
-    if (LogsViewProvider.currentView) {
-      LogsViewProvider.currentView.webview.postMessage({
-        command: "refresh",
-        data: LogsViewProvider.getLogsHTML(),
-      });
-    }
+    return LogsViewProvider.eventsRepository.logsText();
   }
 
   public register() {
@@ -245,7 +240,6 @@ export class LogsViewProvider implements WebviewViewProvider, Disposable {
       // reset the events
       LogsViewProvider.eventsRepository.reset();
       LogsViewProvider.eventsRepository.streamInProgress(true);
-      LogsViewProvider.refreshContent();
     });
 
     Array.from(stages.keys()).forEach((stageName) => {
@@ -253,7 +247,6 @@ export class LogsViewProvider implements WebviewViewProvider, Disposable {
         const stage = stages.get(stageName);
         if (stage && msg.data.level !== "DEBUG") {
           LogsViewProvider.eventsRepository.push(msg);
-          LogsViewProvider.refreshContent();
         }
       });
     });
@@ -265,104 +258,15 @@ export class LogsViewProvider implements WebviewViewProvider, Disposable {
     this.stream.register("publish/failure", (_: EventStreamMessage) => {
       LogsViewProvider.eventsRepository.streamInProgress(false);
     });
-
-    this.context.subscriptions.push(
-      window.registerWebviewViewProvider(Views.RawLogs, this, {
-        webviewOptions: {
-          retainContextWhenHidden: true,
-        },
-      }),
-    );
   }
 
-  public dispose() {
-    Disposable.from(...this.disposables).dispose();
-  }
-
-  public static async openRawLogFileView() {
-    const content = LogsViewProvider.getLogsText();
-    const document = await workspace.openTextDocument({ content });
-    const editor = await window.showTextDocument(document);
-    if (!LogsViewProvider.eventsRepository.streamInProgress()) {
-      return;
-    }
-    LogsViewProvider.eventsRepository.onPush((_, parsedEvent) => {
-      const lastLine = document.lineAt(document.lineCount - 1);
-      const range = new Range(lastLine.range.end, lastLine.range.end);
-      editor.edit((editBuilder) => {
-        editBuilder.insert(range.end, `\n${parsedEvent}`);
-        editor.revealRange(range);
-      });
-    });
+  public static openRawLogFileView() {
+    return LogsViewProvider.eventsRepository.openDocumentLog();
   }
 
   public static copyLogs() {
     env.clipboard.writeText(LogsViewProvider.getLogsText());
     window.showInformationMessage("Logs copied to clipboard!");
-  }
-
-  public resolveWebviewView(webviewView: WebviewView) {
-    LogsViewProvider.currentView = webviewView;
-
-    webviewView.webview.options = {
-      enableScripts: true,
-      localResourceRoots: [
-        Uri.joinPath(
-          this.extensionUri,
-          "node_modules",
-          "@vscode",
-          "codicons",
-          "dist",
-        ),
-      ],
-    };
-
-    webviewView.webview.html = this._getHtmlForWebview(
-      webviewView.webview,
-      this.extensionUri,
-    );
-  }
-
-  private _getHtmlForWebview(webview: Webview, extensionUri: Uri): string {
-    // The codicon css (and related tff file) are needing to be loaded for icons
-    const codiconsUri = getUri(webview, extensionUri, [
-      "node_modules",
-      "@vscode",
-      "codicons",
-      "dist",
-      "codicon.css",
-    ]);
-    // Custom Posit Publisher font
-    const positPublisherFontCssUri = getUri(webview, extensionUri, [
-      "dist",
-      "posit-publisher-icons.css",
-    ]);
-
-    const nonce = getNonce();
-
-    return /*html*/ `
-    <!DOCTYPE html>
-      <html lang="en">
-      <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <link rel="stylesheet" type="text/css" href="${codiconsUri}">
-          <link rel="stylesheet" type="text/css" href="${positPublisherFontCssUri}">
-          <title>Raw Logs</title>
-      </head>
-      <body>
-        <pre id="content">${LogsViewProvider.getLogsHTML()}</pre>
-        <script nonce="${nonce}">
-            window.addEventListener('message', event => {
-              const message = event.data;
-              if (message.command === 'refresh') {
-                document.getElementById('content').innerHTML = message.data;
-              }
-            });
-        </script>
-      </body>
-      </html>
-    `;
   }
 }
 
@@ -456,8 +360,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
           stage.status === LogStageStatus.failed &&
           extensionSettings.autoOpenLogsOnFailure()
         ) {
-          commands.executeCommand(Commands.Logs.TreeviewFocus);
-          commands.executeCommand(Commands.Logs.WebviewFocus);
+          commands.executeCommand(Commands.Logs.Focus);
         }
       });
 
@@ -489,8 +392,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
         );
       }
       if (selection === showLogsOption) {
-        await commands.executeCommand(Commands.Logs.TreeviewFocus);
-        await commands.executeCommand(Commands.Logs.WebviewFocus);
+        await commands.executeCommand(Commands.Logs.Focus);
       } else if (selection === enhancedError?.buttonStr) {
         if (
           enhancedError?.actionId === ErrorMessageActionIds.EditConfiguration

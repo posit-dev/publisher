@@ -45,8 +45,7 @@ const logsCommands = {
   // Added automatically by VSCode with view registration
   Fileview: "posit.publisher.logs.fileview",
   Copy: "posit.publisher.logs.copy",
-  TreeviewFocus: "posit.publisher.logs.focus",
-  WebviewFocus: "posit.publisher.rawlogs.focus",
+  Focus: "posit.publisher.logs.focus",
   ToggleVisibility: "posit.publisher.logs.toggleVisibility",
 } as const;
 

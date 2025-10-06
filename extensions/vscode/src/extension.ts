@@ -50,12 +50,6 @@ export enum SelectionIsPreContentRecord {
   false = "false",
 }
 
-const LOGS_VIEWMODE_CONTEXT = "posit.publish.logs.viewMode";
-enum LogsViewMode {
-  tree = "tree",
-  webview = "webview",
-}
-
 // Once the extension is activate, hang on to the service so that we can stop it on deactivation.
 let service: Service;
 
@@ -128,21 +122,13 @@ async function initializeExtension(context: ExtensionContext) {
   context.subscriptions.push(homeViewProvider);
 
   // Logs web view
-  const logsViewProvider = new LogsViewProvider(context, stream);
-  context.subscriptions.push(logsViewProvider);
+  const logsViewProvider = new LogsViewProvider(stream);
 
   // Then the registration of the data providers with the VSCode framework
   projectTreeDataProvider.register();
   logsTreeDataProvider.register();
   homeViewProvider.register(watchers);
   logsViewProvider.register();
-
-  // Set the initial logs view mode to 'tree'
-  commands.executeCommand(
-    "setContext",
-    LOGS_VIEWMODE_CONTEXT,
-    LogsViewMode.tree,
-  );
 
   context.subscriptions.push(
     commands.registerCommand(
@@ -159,8 +145,7 @@ async function initializeExtension(context: ExtensionContext) {
       service.showOutputChannel(),
     ),
     commands.registerCommand(Commands.ShowPublishingLog, () => {
-      commands.executeCommand(Commands.Logs.TreeviewFocus);
-      commands.executeCommand(Commands.Logs.WebviewFocus);
+      commands.executeCommand(Commands.Logs.Focus);
     }),
     commands.registerCommand(Commands.HomeView.CopySystemInfo, () =>
       copySystemInfoCommand(context),

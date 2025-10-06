@@ -69,7 +69,7 @@
     "commands": [
       {
         "command": "posit.publisher.logs.fileview",
-        "title": "See Raw Logs",
+        "title": "Open Raw Logs",
         "icon": "$(list-flat)"
       },
       {
@@ -271,12 +271,12 @@
         {
           "command": "posit.publisher.logs.fileview",
           "when": "view == posit.publisher.logs",
-          "group": "navigation@3"
+          "group": "navigation@2"
         },
         {
           "command": "posit.publisher.logs.copy",
           "when": "view == posit.publisher.logs || view == posit.publisher.rawlogs",
-          "group": "navigation@2"
+          "group": "navigation@1"
         },
         {
           "command": "posit.publisher.files.refresh",
@@ -506,15 +506,7 @@
           "name": "Log",
           "contextualTitle": "Log",
           "icon": "$(output)",
-          "when": "workbenchState == folder && posit.publish.state == 'initialized' && posit.publisher.homeView.userHasInitiatedDeploymentOperation == 'true' && isWorkspaceTrusted && posit.publish.logs.viewMode == 'tree'"
-        },
-        {
-          "id": "posit.publisher.rawlogs",
-          "name": "Raw Log",
-          "type": "webview",
-          "contextualTitle": "Log",
-          "icon": "$(output)",
-          "when": "workbenchState == folder && posit.publish.state == 'initialized' && posit.publisher.homeView.userHasInitiatedDeploymentOperation == 'true' && isWorkspaceTrusted && posit.publish.logs.viewMode == 'webview'"
+          "when": "workbenchState == folder && posit.publish.state == 'initialized' && posit.publisher.homeView.userHasInitiatedDeploymentOperation == 'true' && isWorkspaceTrusted"
         }
       ]
     },

@@ -198,7 +198,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       case WebviewToHostMessageType.DELETE_CREDENTIAL:
         return this.deleteCredential(msg.content);
       case WebviewToHostMessageType.VIEW_PUBLISHING_LOG:
-        return await this.showPublishingLog();
+        return this.showPublishingLog();
       case WebviewToHostMessageType.SHOW_ASSOCIATE_GUID:
         return showAssociateGUID(this.state);
       case WebviewToHostMessageType.UPDATE_SELECTION_CREDENTIAL_STATE:
@@ -1501,9 +1501,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     this.refreshCredentials();
   };
 
-  private async showPublishingLog() {
-    await commands.executeCommand(Commands.Logs.TreeviewFocus);
-    return await commands.executeCommand(Commands.Logs.WebviewFocus);
+  private showPublishingLog() {
+    return commands.executeCommand(Commands.Logs.Focus);
   }
 
   private async showIntegrationQuickPick(
