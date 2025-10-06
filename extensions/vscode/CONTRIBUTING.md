@@ -6,6 +6,7 @@ Before you begin, make sure you have the following installed:
 
 - [Visual Studio Code](https://code.visualstudio.com/download)
   - The [`connor4312.esbuild-problem-matchers`](https://marketplace.visualstudio.com/items?itemName=connor4312.esbuild-problem-matchers) extension.
+  - The `code` CLI should be installed and on your PATH. On Linux this should happen automatically; on macOS follow [these instructions](https://code.visualstudio.com/docs/setup/mac#_configure-the-path-with-vs-code).
 - [Node.js](https://nodejs.org/en)
 - [Just](https://just.systems)
 
