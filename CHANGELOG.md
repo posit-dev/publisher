@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added more prominent status messages when rendering Quarto documents. (#2940)
 - Improved visuals for waiting on Connect on-prem token to be claimed (#2900)
 - Added automatic discovery of static assets for Quarto projects (#2594)
+- Added LLM tooling for LLM assistants to be able to help out with deployment failures and configuration errors(#2690)
 
 ### Fixed
 
