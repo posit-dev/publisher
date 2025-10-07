@@ -50,12 +50,6 @@ export enum SelectionIsPreContentRecord {
   false = "false",
 }
 
-const LOGS_VIEWMODE_CONTEXT = "posit.publish.logs.viewMode";
-enum LogsViewMode {
-  tree = "tree",
-  webview = "webview",
-}
-
 // Once the extension is activate, hang on to the service so that we can stop it on deactivation.
 let service: Service;
 
@@ -128,8 +122,7 @@ async function initializeExtension(context: ExtensionContext) {
   context.subscriptions.push(homeViewProvider);
 
   // Logs web view
-  const logsViewProvider = new LogsViewProvider(context, stream);
-  context.subscriptions.push(logsViewProvider);
+  const logsViewProvider = new LogsViewProvider(stream);
 
   // Then the registration of the data providers with the VSCode framework
   projectTreeDataProvider.register();
@@ -137,40 +130,12 @@ async function initializeExtension(context: ExtensionContext) {
   homeViewProvider.register(watchers);
   logsViewProvider.register();
 
-  // Set the initial logs view mode to 'tree'
-  commands.executeCommand(
-    "setContext",
-    LOGS_VIEWMODE_CONTEXT,
-    LogsViewMode.tree,
-  );
-
-  // Handler function to toggle the logs view mode
-  const toggleLogsViewModeHandler = () => {
-    // Get the current logs view mode from the context
-    const currentMode = context.globalState.get(
-      LOGS_VIEWMODE_CONTEXT,
-      LogsViewMode.tree,
-    );
-    const newMode =
-      currentMode === LogsViewMode.tree
-        ? LogsViewMode.webview
-        : LogsViewMode.tree;
-
-    // Update the context key, which automatically toggles the logs view's visibility
-    commands.executeCommand("setContext", LOGS_VIEWMODE_CONTEXT, newMode);
-
-    // Save the setting for persistence
-    context.globalState.update(LOGS_VIEWMODE_CONTEXT, newMode);
-  };
-
   context.subscriptions.push(
-    commands.registerCommand(Commands.Logs.Treeview, toggleLogsViewModeHandler),
-    commands.registerCommand(Commands.Logs.Webview, toggleLogsViewModeHandler),
-    commands.registerCommand(Commands.Logs.Copy, LogsViewProvider.copyLogs),
     commands.registerCommand(
-      Commands.Logs.Save,
-      LogsViewProvider.writeAndOpenLogsFile,
+      Commands.Logs.Fileview,
+      LogsViewProvider.openRawLogFileView,
     ),
+    commands.registerCommand(Commands.Logs.Copy, LogsViewProvider.copyLogs),
     commands.registerCommand(Commands.InitProject, async (viewId: string) => {
       setInitializationInProgressContext(InitializationInProgress.true);
       await homeViewProvider.showNewDeploymentMultiStep(viewId);
@@ -180,8 +145,7 @@ async function initializeExtension(context: ExtensionContext) {
       service.showOutputChannel(),
     ),
     commands.registerCommand(Commands.ShowPublishingLog, () => {
-      commands.executeCommand(Commands.Logs.TreeviewFocus);
-      commands.executeCommand(Commands.Logs.WebviewFocus);
+      commands.executeCommand(Commands.Logs.Focus);
     }),
     commands.registerCommand(Commands.HomeView.CopySystemInfo, () =>
       copySystemInfoCommand(context),

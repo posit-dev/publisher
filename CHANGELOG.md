@@ -20,6 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   process should respect `RemoteHost`, `RemoteRepo`, `RemoteUsername` and
   `RemoteUrl` and `RemoteSubdir` fields (#3147)
 
+# Changed
+
+- When opening the full deployment log record, it opens as a new unsaved file. (#2996)
+
 ## [1.22.0]
 
 ### Added
