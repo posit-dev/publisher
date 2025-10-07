@@ -13,7 +13,7 @@ require (
 	github.com/r3labs/sse/v2 v2.10.0
 	github.com/rs/cors v1.11.0
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1
-	github.com/spf13/afero v1.12.0
+	github.com/spf13/afero v1.15.0
 	github.com/stretchr/testify v1.9.0
 	golang.org/x/net v0.39.0
 )
@@ -24,7 +24,6 @@ require (
 	github.com/alessio/shellescape v1.4.2 // indirect
 	github.com/danieljoos/wincred v1.2.2 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
-	google.golang.org/protobuf v1.36.1 // indirect  DON'T REMOVE, this is here to force a more recent version
 )
 
 require (
@@ -35,7 +34,7 @@ require (
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/zalando/go-keyring v0.2.5
 	golang.org/x/sys v0.32.0 // indirect
-	golang.org/x/text v0.24.0 // indirect
+	golang.org/x/text v0.28.0 // indirect
 	gopkg.in/cenkalti/backoff.v1 v1.1.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/yaml.v3 v3.0.1
