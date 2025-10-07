@@ -127,7 +127,6 @@ export const enum Views {
   Project = "posit.publisher.project",
   HomeView = "posit.publisher.homeView",
   Logs = "posit.publisher.logs",
-  RawLogs = "posit.publisher.rawlogs",
 }
 
 export const DebounceDelaysMS = {
