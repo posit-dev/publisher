@@ -612,6 +612,23 @@
           "type": "object",
           "properties": {}
         }
+      },
+      {
+        "name": "publish-content_troubleshootConfigurationError",
+        "tags": [
+          "posit",
+          "publisher",
+          "positron-assistant"
+        ],
+        "toolReferenceName": "troubleshootConfigurationError",
+        "displayName": "Troubleshoot Deployment Configuration Error",
+        "modelDescription": "When the user asks about deployment configuration errors (e.g., \"can you help to fix my deployment configuration?\", \"what is wrong with my configuration?\", \"what is a proper content type for my deployment configuration?\", or similar), use this tool proactively to gather information in order to provide a solution, even if the user does not explicitly mention the tool.",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(search-sparkle)",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        }
       }
     ]
   },
