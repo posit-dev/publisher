@@ -23,9 +23,8 @@ import (
 type WalkerSuite struct {
 	utiltest.Suite
 
-	fs     afero.Fs
-	cwd    util.AbsolutePath
-	subdir util.AbsolutePath
+	fs  afero.Fs
+	cwd util.AbsolutePath
 }
 
 func TestWalkerSuite(t *testing.T) {
