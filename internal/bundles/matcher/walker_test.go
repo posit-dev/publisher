@@ -7,22 +7,25 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
+
+	"github.com/spf13/afero"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/suite"
 
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/logging/loggingtest"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
-	"github.com/spf13/afero"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/suite"
 )
 
 type WalkerSuite struct {
 	utiltest.Suite
 
-	fs  afero.Fs
-	cwd util.AbsolutePath
+	fs     afero.Fs
+	cwd    util.AbsolutePath
+	subdir util.AbsolutePath
 }
 
 func TestWalkerSuite(t *testing.T) {
@@ -64,7 +67,7 @@ func (s *WalkerSuite) TestWalk() {
 	s.NoError(err)
 
 	includedFile := includedDir.Join("includeme")
-	err = includedFile.WriteFile([]byte("this is an included file"), 0600)
+	err = includedFile.WriteFile([]byte("this is an included subdir"), 0600)
 	s.NoError(err)
 
 	// This will be excluded by default
@@ -122,6 +125,39 @@ func (s *WalkerSuite) TestWalkPermissionErr() {
 	fileInfo, err := s.cwd.Stat()
 	s.NoError(err)
 	afs.On("Stat", baseDir.String()).Return(fileInfo, nil)
+
+	w, err := NewMatchingWalker([]string{"*"}, s.cwd, logging.New())
+	s.NoError(err)
+	s.NotNil(w)
+
+	seen := []string{}
+	err = w.Walk(baseDir, func(path util.AbsolutePath, info fs.FileInfo, err error) error {
+		s.NoError(err)
+		relPath, err := path.Rel(s.cwd)
+		s.NoError(err)
+		seen = append(seen, relPath.String())
+		return nil
+	})
+	s.NoError(err)
+	s.Equal([]string{"."}, seen)
+}
+
+type StatPermissionErrFs struct {
+	afero.Fs
+}
+
+func (m StatPermissionErrFs) Stat(name string) (os.FileInfo, error) {
+	if strings.HasSuffix(name, "foobar") {
+		return nil, fs.ErrPermission
+	}
+	return m.Fs.Stat(name)
+}
+
+func (s *WalkerSuite) TestWalkStatPermissionErr() {
+	afs := StatPermissionErrFs{Fs: s.fs}
+
+	baseDir := s.cwd.WithFs(afs)
+	s.cwd.Join("foobar").Mkdir(0777)
 
 	w, err := NewMatchingWalker([]string{"*"}, s.cwd, logging.New())
 	s.NoError(err)
