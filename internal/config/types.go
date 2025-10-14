@@ -39,6 +39,7 @@ type Config struct {
 	Connect             *Connect             `toml:"connect,omitempty" json:"connect,omitempty"`
 	ConnectCloud        *ConnectCloud        `toml:"connect_cloud,omitempty" json:"connectCloud,omitempty"`
 	IntegrationRequests []IntegrationRequest `toml:"integration_requests,omitempty,inline,multiline" json:"integration_requests,omitempty"`
+	ApiEngine           string               `toml:"_" json:"apiEngine,omitempty"`
 }
 
 func (c *Config) PopulateDefaults() {

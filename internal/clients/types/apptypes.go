@@ -270,7 +270,6 @@ var connectContentTypeMap = map[contenttypes.ContentType]AppMode{
 	contenttypes.ContentTypeQuartoDeprecated: StaticQuartoMode,
 	contenttypes.ContentTypeQuarto:           StaticQuartoMode,
 	contenttypes.ContentTypeRPlumber:         PlumberAPIMode,
-	contenttypes.ContentTypeRPlumber2:        PlumberAPIMode,
 	contenttypes.ContentTypeRShiny:           ShinyMode,
 	contenttypes.ContentTypeRMarkdownShiny:   ShinyRmdMode,
 	contenttypes.ContentTypeRMarkdown:        StaticRmdMode,
