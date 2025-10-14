@@ -22,6 +22,8 @@ export const ENTRYPOINT_FILE_EXTENSIONS = [
   ".qmd",
   ".r",
   ".rmd",
+  ".yml",
+  ".yaml",
 ];
 
 export enum BooleanContextValues {
