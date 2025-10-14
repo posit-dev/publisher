@@ -19,6 +19,7 @@ const (
 	ContentTypeQuartoDeprecated ContentType = "quarto"
 	ContentTypeQuarto           ContentType = "quarto-static"
 	ContentTypeRPlumber         ContentType = "r-plumber"
+	ContentTypeRPlumber2        ContentType = "r-plumber2"
 	ContentTypeRShiny           ContentType = "r-shiny"
 	ContentTypeRMarkdownShiny   ContentType = "rmd-shiny"
 	ContentTypeRMarkdown        ContentType = "rmd"
@@ -63,4 +64,30 @@ func (t ContentType) IsAppContent() bool {
 		return true
 	}
 	return false
+}
+
+// Return a list of extra dependencies that should be included in the bundle
+// for content types that sometimes do not include direct calls to dependency packages
+// in user code (e.g. shiny apps that do not explicitly call library("shiny")).
+func (t ContentType) ExtraDependencies(hasParameters bool) []string {
+	extraDeps := []string{}
+	switch t {
+	case ContentTypeRMarkdownShiny,
+		ContentTypeQuartoShiny:
+		extraDeps = append(extraDeps, "shiny", "rmarkdown")
+	case ContentTypeQuarto,
+		ContentTypeQuartoDeprecated,
+		ContentTypeRMarkdown:
+		extraDeps = append(extraDeps, "rmarkdown")
+		if hasParameters {
+			extraDeps = append(extraDeps, "shiny")
+		}
+	case ContentTypeRShiny:
+		extraDeps = append(extraDeps, "shiny")
+	case ContentTypeRPlumber2:
+		extraDeps = append(extraDeps, "plumber2")
+	case ContentTypeRPlumber:
+		extraDeps = append(extraDeps, "plumber")
+	}
+	return extraDeps
 }
