@@ -64,27 +64,3 @@ func (t ContentType) IsAppContent() bool {
 	}
 	return false
 }
-
-// Return a list of extra dependencies that should be included in the bundle
-// for content types that sometimes do not include direct calls to dependency packages
-// in user code (e.g. shiny apps that do not explicitly call library("shiny")).
-func (t ContentType) ExtraDependencies(hasParameters bool, apiEngine string) []string {
-	extraDeps := []string{}
-	switch t {
-	case ContentTypeRMarkdownShiny,
-		ContentTypeQuartoShiny:
-		extraDeps = append(extraDeps, "shiny", "rmarkdown")
-	case ContentTypeQuarto,
-		ContentTypeQuartoDeprecated,
-		ContentTypeRMarkdown:
-		extraDeps = append(extraDeps, "rmarkdown")
-		if hasParameters {
-			extraDeps = append(extraDeps, "shiny")
-		}
-	case ContentTypeRShiny:
-		extraDeps = append(extraDeps, "shiny")
-	case ContentTypeRPlumber:
-		extraDeps = append(extraDeps, apiEngine)
-	}
-	return extraDeps
-}
