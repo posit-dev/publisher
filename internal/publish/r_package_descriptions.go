@@ -7,8 +7,10 @@ import (
 	"io"
 
 	"github.com/posit-dev/publisher/internal/bundles"
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/inspect/dependencies/renv"
+	"github.com/posit-dev/publisher/internal/inspect/detectors"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
@@ -24,6 +26,68 @@ type lockfileErrDetails struct {
 func (p *defaultPublisher) getRPackages(scanDependencies bool) (bundles.PackageMap, error) {
 	pkgs, _, err := p.getRPackagesWithPath(scanDependencies)
 	return pkgs, err
+}
+
+// As done in rsconnect. Return a list of extra dependencies that should be included in the bundle
+// for content types that sometimes do not include direct calls to dependency packages
+// in user code (e.g. shiny apps that do not explicitly call library("shiny")).
+func (p *defaultPublisher) findExtraDependencies() []string {
+	p.log.Debug("Looking up for extra dependencies for content", "type", p.Config.Type)
+
+	extraDeps := []string{}
+	switch p.Config.Type {
+	case contenttypes.ContentTypeRMarkdownShiny,
+		contenttypes.ContentTypeQuartoShiny:
+		extraDeps = append(extraDeps, "shiny", "rmarkdown")
+	case contenttypes.ContentTypeQuarto,
+		contenttypes.ContentTypeQuartoDeprecated,
+		contenttypes.ContentTypeRMarkdown:
+		extraDeps = append(extraDeps, "rmarkdown")
+		if p.Config.HasParameters != nil && *p.Config.HasParameters {
+			extraDeps = append(extraDeps, "shiny")
+		}
+	case contenttypes.ContentTypeRShiny:
+		extraDeps = append(extraDeps, "shiny")
+	}
+
+	if p.Config.Type == contenttypes.ContentTypeRPlumber {
+		p.log.Debug("Looking up metadata for Plumber content", "project_dir", p.State.Dir.String())
+
+		serverFileChecker := detectors.NewPlumberServerFileChecker(p.log, p.State.Dir)
+		serverFile, metadata := serverFileChecker.Find()
+		if metadata != nil {
+			p.log.Debug("Found Plumber content metadata", "engine", metadata.Engine, "server_file", serverFile)
+			extraDeps = append(extraDeps, metadata.Engine)
+		}
+	}
+
+	return extraDeps
+}
+
+// Inject temporary __publisher_deps.R with dependencies not discoverable by renv in common workflows.
+func (p *defaultPublisher) recordExtraDependencies() (*util.AbsolutePath, error) {
+	extraDeps := p.findExtraDependencies()
+	if len(extraDeps) == 0 {
+		p.log.Debug("No extra dependencies found to be included")
+		return nil, nil
+	}
+
+	// Create the file
+	depsPath := p.State.Dir.Join("__publisher_deps.R")
+	depsFile, err := depsPath.Create()
+	if err != nil {
+		return nil, err
+	}
+	p.log.Debug("Recording extra dependencies file", "file", depsPath.String(), "dependencies", extraDeps)
+	defer depsFile.Close()
+
+	for _, dep := range extraDeps {
+		if _, err := depsFile.WriteString(fmt.Sprintf(`library("%s")`+"\n", dep)); err != nil {
+			return nil, err
+		}
+	}
+
+	return &depsPath, nil
 }
 
 // getRPackagesWithPath returns packages and the absolute lockfile path used.
@@ -49,6 +113,19 @@ func (p *defaultPublisher) getRPackagesWithPath(scanDependencies bool) (bundles.
 			// which implies the project directory itself.
 			scanPaths = []string{p.Dir.String()}
 		}
+
+		extraDepsPath, err := p.recordExtraDependencies()
+		if err != nil {
+			agentErr := types.NewAgentError(types.ErrorRenvLockPackagesReading, err, lockfileErrDetails{Lockfile: p.Dir.String()})
+			agentErr.Message = fmt.Sprintf("Could not scan R packages from project: %s", err.Error())
+			return nil, util.AbsolutePath{}, agentErr
+		}
+		if extraDepsPath != nil {
+			log.Debug("Including extra dependencies file for scanning", "file", extraDepsPath.String())
+			scanPaths = append(scanPaths, extraDepsPath.String())
+			defer extraDepsPath.Remove()
+		}
+
 		// Ask the mapper to scan dependencies and return a generated lockfile
 		generated, err := p.rPackageMapper.ScanDependencies(scanPaths, log)
 		if err != nil {
