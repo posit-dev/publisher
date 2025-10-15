@@ -55,6 +55,6 @@ func (p *defaultPublisher) createManifest() (*bundles.Manifest, error) {
 		}
 	}
 
-	p.log.Debug("Generated manifest:", manifest)
+	p.log.Debug("Generated manifest:", "manifest", manifest)
 	return manifest, nil
 }
