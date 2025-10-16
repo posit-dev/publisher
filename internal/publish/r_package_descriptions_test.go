@@ -6,14 +6,14 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/posit-dev/publisher/internal/publish/publishhelper"
-
 	"github.com/posit-dev/publisher/internal/bundles"
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/inspect/dependencies/renv"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/logging/loggingtest"
+	"github.com/posit-dev/publisher/internal/publish/publishhelper"
 	"github.com/posit-dev/publisher/internal/state"
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
@@ -157,6 +157,8 @@ func (s *RPackageDescSuite) TestGetRPackages_ScanPackagesKnownAgentError() {
 func (s *RPackageDescSuite) TestGetRPackages_ScanDependenciesTrue_UsesScannerLockfile() {
 	// Emitted when scanDependencies=true
 	s.log.On("Info", "Detect dependencies from project").Return()
+	s.log.On("Debug", "Looking up for extra dependencies for content", "type", mock.Anything).Return()
+	s.log.On("Debug", "No extra dependencies found to be included").Return()
 	s.log.On("Info", "Loading packages from local R library").Return()
 	s.log.On("Info", "Done collecting R package descriptions").Return()
 
@@ -183,6 +185,8 @@ func (s *RPackageDescSuite) TestGetRPackages_ScanDependenciesTrue_UsesScannerLoc
 func (s *RPackageDescSuite) TestGetRPackages_ScanDependencies_UsesOnlyConfigFiles() {
 	// Emitted when scanDependencies=true
 	s.log.On("Info", "Detect dependencies from project").Return()
+	s.log.On("Debug", "Looking up for extra dependencies for content", "type", mock.Anything).Return()
+	s.log.On("Debug", "No extra dependencies found to be included").Return()
 	s.log.On("Info", "Loading packages from local R library").Return()
 	s.log.On("Info", "Done collecting R package descriptions").Return()
 
@@ -317,5 +321,42 @@ func (s *RPackageDescSuite) TestGetRPackages_LogsLockfileWhenPackagesFromLibrary
 	s.NoError(err)
 	s.NotNil(packageMap)
 	s.Contains(packageMap, "R6")
+	s.log.AssertExpectations(s.T())
+}
+
+func (s *RPackageDescSuite) TestGetRPackages_IncludesIndirectExtraDependencies() {
+	expectedExtraDepsPath := s.dirPath.Join(".posit", "__publisher_deps.R").String()
+	expectedExtraDeps := []string{"shiny", "rmarkdown"}
+
+	s.log.On("Info", "Detect dependencies from project").Return()
+	s.log.On("Debug", "Looking up for extra dependencies for content", "type", mock.Anything).Return()
+	s.log.On("Debug", "Recording extra dependencies file", "file", expectedExtraDepsPath, "dependencies", expectedExtraDeps).Return()
+	s.log.On("Debug", "Including extra dependencies file for scanning", "file", expectedExtraDepsPath).Return()
+	s.log.On("Info", "Loading packages from local R library").Return()
+	s.log.On("Info", "Done collecting R package descriptions").Return()
+
+	// Configure a specific package file, so we can check that it is not used.
+	s.stateStore.Config = &config.Config{
+		Type: contenttypes.ContentTypeRMarkdownShiny,
+		R: &config.R{
+			PackageFile: "renv_default.lock",
+		},
+		Files: []string{"report.Rmd"},
+	}
+
+	// Scanner returns a fake lockfile path
+	generated := s.dirPath.Join("scanned.lock")
+	expectedPathsToScan := []string{
+		s.dirPath.Join("report.Rmd").String(),
+		expectedExtraDepsPath, // Extra "".../.posit/__publisher_deps.R" deps file must be included for R scanning to pick up indirect deps
+	}
+	s.packageMapper.On("ScanDependencies", expectedPathsToScan, mock.Anything).Return(generated, nil)
+	// Ensure GetManifestPackages is called with the generated lockfile, not the default
+	s.packageMapper.On("GetManifestPackages", s.dirPath, generated).Return(s.successPackageMap, nil)
+
+	publisher := s.makePublisher()
+	packageMap, err := publisher.getRPackages(true)
+	s.NoError(err)
+	s.Equal(s.successPackageMap, packageMap)
 	s.log.AssertExpectations(s.T())
 }

@@ -72,8 +72,9 @@ func (p *defaultPublisher) recordExtraDependencies() (*util.AbsolutePath, error)
 		return nil, nil
 	}
 
-	// Create the file
-	depsPath := p.State.Dir.Join("__publisher_deps.R")
+	// Create the file __publisher_deps.R under .posit dir
+	// so it does not make the files tree list to jump or blink while deploying.
+	depsPath := p.State.Dir.Join(".posit", "__publisher_deps.R")
 	depsFile, err := depsPath.Create()
 	if err != nil {
 		return nil, err
@@ -116,9 +117,7 @@ func (p *defaultPublisher) getRPackagesWithPath(scanDependencies bool) (bundles.
 
 		extraDepsPath, err := p.recordExtraDependencies()
 		if err != nil {
-			agentErr := types.NewAgentError(types.ErrorRenvLockPackagesReading, err, lockfileErrDetails{Lockfile: p.Dir.String()})
-			agentErr.Message = fmt.Sprintf("Could not scan R packages from project: %s", err.Error())
-			return nil, util.AbsolutePath{}, agentErr
+			log.Error("Could not record extra dependencies file", "error", err.Error())
 		}
 		if extraDepsPath != nil {
 			log.Debug("Including extra dependencies file for scanning", "file", extraDepsPath.String())
