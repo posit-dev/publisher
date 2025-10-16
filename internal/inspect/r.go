@@ -82,7 +82,7 @@ func (i *defaultRInspector) InspectR() (*config.R, error) {
 	rProjectRequires := interpreters.NewRProjectRRequires(i.base)
 	rRequires, err := rProjectRequires.GetRVersionRequirement()
 	if err != nil {
-		i.log.Warn("Error retrieving required R version", err)
+		i.log.Warn("Error retrieving required R version", "error", err.Error())
 		rRequires = ""
 	}
 
