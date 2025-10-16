@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved visuals for waiting on Connect on-prem token to be claimed (#2900)
 - Added automatic discovery of static assets for Quarto projects (#2594)
 - Added LLM tooling for LLM assistants to be able to help out with deployment failures and configuration errors(#2690)
+- When creating a Connect credential, the server automatically discovers the correct
+  URL even when extra paths are provided (e.g., `/connect` or `/server/connect`).
+  This works for both API key and token authentication methods. (#2999)
 
 ### Fixed
 

@@ -51,26 +51,14 @@ func PostTestCredentialsHandlerFunc(log logging.Logger) http.HandlerFunc {
 			return
 		}
 
-		// create a list of URLs to attempt
-		possibleURLs, err := util.GetListOfPossibleURLs(b.URL)
-		if err != nil {
-			BadRequest(w, req, log, err)
-			return
-		}
-
-		var urlToBeTested string
-		var lastTestError error
 		var user *connect.User
+		var lastTestError error
 
-		// walk the possible URL list backwards
-		// This prioritizes the full URL with all path segments over
-		// the URL with all path segments removed.
-		for i := len(possibleURLs) - 1; i >= 0; i-- {
-			urlToBeTested = possibleURLs[i]
-
+		// Create a tester function that attempts authentication for each URL
+		tester := func(urlToTest string) error {
 			acct := &accounts.Account{
 				ServerType: serverType,
-				URL:        urlToBeTested,
+				URL:        urlToTest,
 				Insecure:   b.Insecure,
 				ApiKey:     b.ApiKey,
 			}
@@ -78,24 +66,27 @@ func PostTestCredentialsHandlerFunc(log logging.Logger) http.HandlerFunc {
 			timeout := time.Duration(max(b.Timeout, 30) * 1e9)
 			client, err := connectClientFactory(acct, timeout, nil, log)
 			if err != nil {
-				InternalError(w, req, log, err)
-				return
+				return err
 			}
 
 			user, lastTestError = client.TestAuthentication(log)
-			if lastTestError == nil {
-				// If we succeeded, pass back what URL succeeded
-				response := &PostTestCredentialsResponseBody{
-					User:       user,
-					Error:      nil,
-					URL:        urlToBeTested,
-					ServerType: serverType,
-				}
-				w.Header().Set("content-type", "application/json")
-				w.WriteHeader(http.StatusOK)
-				json.NewEncoder(w).Encode(response)
-				return
+			return lastTestError
+		}
+
+		// Use the reusable URL discovery function
+		discoveredURL, err := util.DiscoverServerURL(b.URL, tester)
+		if err == nil {
+			// If we succeeded, pass back what URL succeeded
+			response := &PostTestCredentialsResponseBody{
+				User:       user,
+				Error:      nil,
+				URL:        discoveredURL,
+				ServerType: serverType,
 			}
+			w.Header().Set("content-type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(response)
+			return
 		}
 
 		// failure after all attempts, return last error
