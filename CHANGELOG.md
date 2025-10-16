@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- When creating a Connect credential, the server automatically discovers the correct
+  URL even when extra paths are provided (e.g., `/connect` or `/server/connect`).
+  This works for both API key and token authentication methods. (#2999)
+
 ## [1.24.0]
 
 ### Added
@@ -69,11 +73,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed an issue deploying content to free Posit Connect Cloud accounts with incorrect
   access settings. (#3005)
-
-### Added
-
-- When creating a Connect credential provided server URLs are accepted even when
-  they contain extra paths (#2999)
 
 ## [1.19.1]
 

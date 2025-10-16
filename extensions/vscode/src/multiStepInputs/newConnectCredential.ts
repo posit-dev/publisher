@@ -34,7 +34,7 @@ import {
 import { isConnect, isSnowflake } from "../utils/multiStepHelpers";
 import { openConfigurationCommand } from "src/commands";
 import { extensionSettings } from "src/extension";
-import { normalizeConnectURL } from "src/utils/url";
+import { formatURL } from "src/utils/url";
 import { checkSyntaxApiKey } from "src/utils/apiKeys";
 import {
   ConnectAuthTokenActivator,
@@ -217,7 +217,7 @@ export async function newConnectCredential(
         return Promise.resolve(undefined);
       },
       finalValidation: async (input: string) => {
-        input = normalizeConnectURL(input);
+        input = formatURL(input);
         try {
           // will validate that this is a valid URL
           new URL(input);
@@ -284,7 +284,7 @@ export async function newConnectCredential(
       ignoreFocusOut: true,
     });
 
-    state.data.url = normalizeConnectURL(resp.trim());
+    state.data.url = formatURL(resp.trim());
 
     if (isSnowflake(serverType)) {
       return {
@@ -386,6 +386,11 @@ export async function newConnectCredential(
       // Store token and private key in state
       state.data.token = resp.data?.token;
       state.data.privateKey = resp.data?.privateKey;
+
+      // Update the server URL if a different one was discovered
+      if (resp.data?.serverUrl) {
+        state.data.url = resp.data.serverUrl;
+      }
     } catch (_e) {
       // Error handling is done within the ConnectAuthTokenActivator
       return;
