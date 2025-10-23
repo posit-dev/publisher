@@ -37,7 +37,7 @@ jobs:
         run: rig add release
       - name: Install renv package
         run: Rscript -e "install.packages('renv')"
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
       # Run tests without `-short` to run functional tests
