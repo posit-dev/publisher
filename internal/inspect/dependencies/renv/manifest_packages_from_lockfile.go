@@ -160,6 +160,7 @@ func copyAllFieldsToDesc(pkg Package, manifestPkg *bundles.Package) {
 	setIf(desc, "RemoteRepo", pkg.RemoteRepo)
 	setIf(desc, "RemoteUsername", pkg.RemoteUsername)
 	setIf(desc, "RemoteSubdir", pkg.RemoteSubdir)
+	setIf(desc, "GithubSubdir", pkg.RemoteSubdir)
 	setIf(desc, "RemoteUrl", pkg.RemoteUrl)
 	desc["RemotePkgRef"] = firstNonEmpty(desc["RemotePkgRef"], remotePkgRefOrDerived(pkg))
 

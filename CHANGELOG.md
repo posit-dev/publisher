@@ -21,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - When `renv.lock` contains packages installed from GitHub or Bitbucket the deploy
   process should respect `RemoteHost`, `RemoteRepo`, `RemoteUsername` and
   `RemoteUrl` and `RemoteSubdir` fields (#3147)
+- When a package has a present `RemoteSubdir`, the field `GithubSubdir` is added too
+  to avoid issues with previous versions of Packrat not considering `RemoteSubdir` for
+  packages hosted in Github. (#3194)
 
 # Changed
 
