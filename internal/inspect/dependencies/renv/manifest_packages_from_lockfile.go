@@ -68,6 +68,8 @@ func (m *LockfilePackageMapper) GetManifestPackagesFromLockfile(
 	// and defaultPackageMapper produce identical normalization (URLs converted to repository names).
 
 	for pkgName, pkg := range lockfile.Packages {
+		m.log.Debug("Package to manifest", "package", pkgName, "source", pkg.Source, "repository", pkg.Repository)
+
 		manifestPkg := &bundles.Package{
 			Source:     pkg.Source,
 			Repository: string(pkg.Repository),

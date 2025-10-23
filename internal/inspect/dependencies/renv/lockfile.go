@@ -107,7 +107,7 @@ func ValidateModernLockfile(lockfile *Lockfile) error {
 // and LockfilePackageMapper (lockfile-only approach) must produce identical output formats regardless
 // of whether packages reference repositories by name ("CRAN") or URL ("https://cloud.r-project.org").
 func isURL(s string) bool {
-	return len(s) > 0 && (s[0:4] == "http" || s[0:3] == "ftp") && strings.Contains(s, "://")
+	return len(s) > 0 && strings.Contains(s, "://") && (s[0:3] == "ftp" || s[0:4] == "http")
 }
 
 // Example package installed from CRAN
