@@ -81,6 +81,7 @@ export async function newConnectCredential(
     INPUT_SERVER_URL = "inputServerUrl",
     INPUT_API_KEY = "inputAPIKey",
     INPUT_SNOWFLAKE_CONN = "inputSnowflakeConnection",
+    INPUT_SNOWFLAKE_API_KEY = "inputSnowflakeAPIKey",
     INPUT_CRED_NAME = "inputCredentialName",
     INPUT_AUTH_METHOD = "inputAuthMethod",
     INPUT_TOKEN = "inputToken",
@@ -93,6 +94,7 @@ export async function newConnectCredential(
     [step.INPUT_SERVER_URL]: inputServerUrl,
     [step.INPUT_API_KEY]: inputAPIKey,
     [step.INPUT_SNOWFLAKE_CONN]: inputSnowflakeConnection,
+    [step.INPUT_SNOWFLAKE_API_KEY]: inputSnowflakeAPIKey,
     [step.INPUT_CRED_NAME]: inputCredentialName,
     [step.INPUT_AUTH_METHOD]: inputAuthMethod,
     [step.INPUT_TOKEN]: inputToken,
@@ -126,8 +128,12 @@ export async function newConnectCredential(
   };
 
   const isValidSnowflakeAuth = () => {
-    // for Snowflake, require snowflakeConnection
-    return isSnowflake(serverType) && isString(state.data.snowflakeConnection);
+    // for Snowflake SPCS with OIDC, require both snowflakeConnection and apiKey
+    return (
+      isSnowflake(serverType) &&
+      isString(state.data.snowflakeConnection) &&
+      isString(state.data.apiKey)
+    );
   };
 
   // ***************************************************************
@@ -521,6 +527,57 @@ export async function newConnectCredential(
 
     state.data.snowflakeConnection = connections[pick.index].name;
     state.data.url = connections[pick.index].serverUrl;
+
+    return {
+      name: step.INPUT_SNOWFLAKE_API_KEY,
+      step: (input: MultiStepInput) =>
+        steps[step.INPUT_SNOWFLAKE_API_KEY](input, state),
+    };
+  }
+
+  // ***************************************************************
+  // Step: Enter the API Key for Snowflake SPCS (Snowflake only)
+  // ***************************************************************
+  async function inputSnowflakeAPIKey(
+    input: MultiStepInput,
+    state: MultiStepState,
+  ) {
+    const currentAPIKey =
+      typeof state.data.apiKey === "string" ? state.data.apiKey : "";
+
+    const resp = await input.showInputBox({
+      title: state.title,
+      step: 0,
+      totalSteps: 0,
+      password: true,
+      value: currentAPIKey,
+      prompt: `The Posit Connect API key for Snowflake SPCS OIDC authentication.
+        This is required in addition to the Snowflake connection for authentication with Connect deployed in Snowflake SPCS.`,
+      validate: (input: string) => {
+        if (input.includes(" ")) {
+          return Promise.resolve({
+            message: "Error: Invalid API Key (spaces are not allowed).",
+            severity: InputBoxValidationSeverity.Error,
+          });
+        }
+        return Promise.resolve(undefined);
+      },
+      finalValidation: (input: string) => {
+        // validate that the API key is formed correctly
+        const errorMsg = checkSyntaxApiKey(input);
+        if (errorMsg) {
+          return Promise.resolve({
+            message: `Error: Invalid API Key (${errorMsg}).`,
+            severity: InputBoxValidationSeverity.Error,
+          });
+        }
+        return Promise.resolve(undefined);
+      },
+      shouldResume: () => Promise.resolve(false),
+      ignoreFocusOut: true,
+    });
+
+    state.data.apiKey = resp.trim();
 
     return {
       name: step.INPUT_CRED_NAME,
