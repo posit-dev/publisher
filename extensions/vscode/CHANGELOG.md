@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Snowflake SPCS (Snowpark Container Services) authentication now properly handles OIDC
+  by requiring both a Snowflake connection name and a Connect API key. This aligns with
+  changes in Snowflake SPCS where proxied authentication headers no longer carry sufficient
+  user identification information.
+
 ## [1.22.0]
 
 ### Fixed
