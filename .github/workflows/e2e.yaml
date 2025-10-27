@@ -184,7 +184,7 @@ jobs:
           CYPRESS_CACHE_FOLDER: ~/.cache/Cypress
 
       - name: Upload Cypress screenshots on failure
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: failure()
         with:
           name: cypress-screenshots
@@ -192,7 +192,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: "[DEBUG] Upload Cypress videos"
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: always() && (env.DEBUG_CYPRESS == 'true' || env.VARS_DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true')
         with:
           name: cypress-videos
