@@ -53,6 +53,7 @@ type Package struct {
 	RemoteRepo        string        `toml:"remote_repo,omitempty" json:"remoteRepo,omitempty"`
 	RemoteUsername    string        `toml:"remote_username,omitempty" json:"remoteUsername,omitempty"`
 	RemoteSubdir      string        `toml:"remote_subdir,omitempty" json:"remoteSubdir,omitempty"`
+	GithubSubdir      string        `toml:"github_subdir,omitempty" json:"githubSubdir,omitempty"`
 	RemoteUrl         string        `toml:"remote_url,omitempty" json:"remoteUrl,omitempty"`
 
 	// Additional fields from renv.lock that we want to copy to the manifest
