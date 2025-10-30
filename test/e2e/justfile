@@ -54,10 +54,12 @@ e2e:
     just install
     just start "connect-publisher-e2e"
     just start "code-server"
+    just start-workbench "release"
 
     # Install the Publisher extension
     VSIX_FILENAME=$(ls -Art ../../dist | grep linux-amd64 | tail -n 1)
     docker compose exec code-server code-server --install-extension "/home/coder/vsix/${VSIX_FILENAME}"
+    just install-workbench-extension "release"
 
     npm run cypress:open
 
@@ -69,6 +71,7 @@ build-images:
     docker build -f Dockerfile.base --tag e2ebase --platform linux/amd64 .
     just build "connect-publisher-e2e"
     just build "code-server"
+    just build-workbench "release"
 
 build-publisher:
     USE_PLATFORM="linux/amd64" just ../../build
@@ -92,6 +95,7 @@ old-dev:
     just start "connect-publisher-e2e"
     just start "code-server"
     npm run cypress:open
+
 
 # =====================================================================
 # Workbench-specific commands
@@ -153,7 +157,7 @@ start-workbench service:
     # Docker compose has built-in healthcheck support
     
     # Simple approach: Loop with a counter, no external tools needed
-    MAX_ATTEMPTS=120  # 60 seconds (120 * 0.5s)
+    MAX_ATTEMPTS=180  # 90 seconds (180 * 0.5s) 
     attempts=0
     
     while [ $attempts -lt $MAX_ATTEMPTS ]; do
@@ -237,58 +241,115 @@ install-workbench-extension service:
         echo "Container publisher-e2e.workbench-{{ service }} is not running."
         echo "Please start it first with: just start-workbench {{ service }}"
         exit 1
-    fi
+    fi   
     
-    # Check if dist directory exists and is not empty
-    if [ ! -d "../../dist" ] || [ -z "$(ls -A ../../dist 2>/dev/null)" ]; then
-        echo "ERROR: Publisher VSIX directory (../../dist) does not exist or is empty."
-        echo ""
-        echo "Please build the extension first with:"
-        echo "just build-publisher"
-        exit 1
-    fi
-    
-    # Find the latest built VSIX for Publisher (linux-amd64 version)
-    VSIX_FILENAME=$(ls -Art ../../dist | grep linux-amd64 | tail -n 1)
+    # Find the VSIX file directly from the mounted volume
+    echo "Looking for VSIX file in container..."
+    VSIX_FILENAME=$(docker exec publisher-e2e.workbench-{{ service }} bash -c "ls -Art /vsix-tmp | grep linux-amd64 | tail -n 1")
+
     if [ -z "$VSIX_FILENAME" ]; then
-        echo "ERROR: No linux-amd64 Publisher VSIX found in ../../dist directory."
-        echo ""
-        echo "Please build the extension first with:"
-        echo "just build-publisher"
+        echo "ERROR: No linux-amd64 Publisher VSIX found in container."
+        echo "Contents of /vsix-tmp:"
+        docker exec publisher-e2e.workbench-{{ service }} bash -c "ls -la /vsix-tmp"
         exit 1
     fi
     
     echo "Using VSIX: $VSIX_FILENAME"
     
-    # Create a directory in the user home folder to copy the VSIX
-    docker exec publisher-e2e.workbench-{{ service }} bash -c "mkdir -p /home/rstudio/vsix"
+    # Set proper ownership for the VSIX directory and files
+    docker exec publisher-e2e.workbench-{{ service }} bash -c "chown -R rstudio:rstudio /vsix-tmp"
     
-    # Copy the VSIX file to the container
-    docker cp "../../dist/$VSIX_FILENAME" "publisher-e2e.workbench-{{ service }}:/home/rstudio/vsix/$VSIX_FILENAME"
+    # Create the .positron-server directory with proper permissions
+    echo "Creating .positron-server directory with proper permissions..."
+    docker exec publisher-e2e.workbench-{{ service }} bash -c "mkdir -p /home/rstudio/.positron-server && chown -R rstudio:rstudio /home/rstudio/.positron-server"
     
-    # Set proper ownership for the VSIX file
-    docker exec publisher-e2e.workbench-{{ service }} bash -c "chown -R rstudio:rstudio /home/rstudio/vsix"
-    
+    # Create logs directory with workbench prefix
+    mkdir -p ./logs/workbench-extension
+    INSTALL_LOG="./logs/workbench-extension/workbench-extension-installation.log"
+
     # Run installation command as the rstudio user to ensure proper permissions
-    docker exec -u rstudio publisher-e2e.workbench-{{ service }} bash -c "cd /usr/lib/rstudio-server/bin/positron-server && ./bin/positron-server --install-extension /home/rstudio/vsix/$VSIX_FILENAME --force"
+    echo "Running installation command..." | tee "$INSTALL_LOG"
+    docker exec -u rstudio publisher-e2e.workbench-{{ service }} bash -c "cd /usr/lib/rstudio-server/bin/positron-server && ./bin/positron-server --install-extension /vsix-tmp/$VSIX_FILENAME --force" | tee -a "$INSTALL_LOG" || {
+        echo "Installation command failed" | tee -a "$INSTALL_LOG"
+        exit 2
+    }
     
-    # Show the installed extension with detailed information
-    echo "Verifying installation..."
-    echo "Available Publisher extension directories:"
-    docker exec publisher-e2e.workbench-{{ service }} bash -c "ls -la /home/rstudio/.positron-server/extensions/ | grep -i publisher"
-    
-    echo ""
-    echo "Installed extension metadata:"
-    docker exec publisher-e2e.workbench-{{ service }} bash -c "find /home/rstudio/.positron-server/extensions -path '*publisher*' -name package.json | xargs grep -A 2 version"
-    
-    echo ""
-    echo "Extension timestamp information:"
-    docker exec publisher-e2e.workbench-{{ service }} bash -c "stat -c '%n was last modified %y' /home/rstudio/.positron-server/extensions/*/package.json | grep publisher"
-    
-    # Clean up
-    docker exec publisher-e2e.workbench-{{ service }} rm -rf /home/rstudio/vsix
-    
-    # Summary message
-    echo ""
-    echo "✅ Publisher extension successfully installed!"
+    # Verify the extension is installed
+    echo "Verifying installation..." | tee -a "$INSTALL_LOG"
+
+    MAX_ATTEMPTS=5
+
+    for i in $(seq 1 $MAX_ATTEMPTS); do
+        echo "Verification attempt $i/$MAX_ATTEMPTS..." | tee -a "$INSTALL_LOG"
+
+        # Check specifically for version 99.0.0
+        EXPECTED_DIR=$(docker exec -u rstudio publisher-e2e.workbench-{{ service }} bash -c "find /home/rstudio/.positron-server/extensions -name 'posit.publisher-99.0.0' -type d" 2>/dev/null || echo "")
+
+        if [ -n "$EXPECTED_DIR" ]; then
+            echo "✅ Publisher extension version 99.0.0 successfully installed!" | tee -a "$INSTALL_LOG"
+            echo "Found at: $EXPECTED_DIR" | tee -a "$INSTALL_LOG"
+            exit 0
+        fi
+
+        # If we reach the last attempt, show error and exit
+        if [ $i -eq $MAX_ATTEMPTS ]; then
+            echo "ERROR: Failed to verify extension installation with version 99.0.0" | tee -a "$INSTALL_LOG"
+            echo "Available Publisher versions:" | tee -a "$INSTALL_LOG"
+            docker exec -u rstudio publisher-e2e.workbench-{{ service }} bash -c "find /home/rstudio/.positron-server/extensions -name 'posit.publisher-*' -type d" | tee -a "$INSTALL_LOG" || echo "No Publisher versions found" | tee -a "$INSTALL_LOG"
+            exit 1
+        fi
+
+        echo "Version 99.0.0 not found yet, waiting..." | tee -a "$INSTALL_LOG"
+        sleep 2
+    done
+
+    # This should not be reached due to the exit statements above
+    echo "ERROR: Unexpected end of verification loop" | tee -a "$INSTALL_LOG"
+    exit 1
     echo "Note: You may need to restart existing Positron sessions for the changes to take effect."
+
+# Check if publisher extension is installed in workbench-release
+# This command is designed to work from any directory (Cypress or command line)
+check-extension:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    # Set expected version
+    EXPECTED_VERSION="99.0.0"
+    mkdir -p ./logs/workbench-extension
+    INSTALL_LOG="./logs/workbench-extension/workbench-extension-check.log"
+
+    echo "Checking for publisher extension..." | tee "$INSTALL_LOG"
+    docker ps | tee -a "$INSTALL_LOG"
+
+    if ! docker ps | grep "workbench" | grep -q "release"; then
+        echo "Container with 'workbench' and 'release' in name is not running" | tee -a "$INSTALL_LOG"
+        exit 1
+    fi
+
+    EXTENSION_FOUND=$(docker exec -u rstudio publisher-e2e.workbench-release bash -c "find /home/rstudio/.positron-server/extensions -path '*publisher*' -name package.json" 2>/dev/null | grep -c package.json || echo "0")
+
+    echo "Available extension directories:" | tee -a "$INSTALL_LOG"
+    docker exec -u rstudio publisher-e2e.workbench-release bash -c "find /home/rstudio/.positron-server/extensions -type d -maxdepth 2" | tee -a "$INSTALL_LOG" || echo "No extensions directory found" | tee -a "$INSTALL_LOG"
+
+    if [ "$EXTENSION_FOUND" -gt "0" ]; then
+        echo "Publisher extension is installed, checking version..." | tee -a "$INSTALL_LOG"
+
+        EXPECTED_VERSION_DIR=$(docker exec -u rstudio publisher-e2e.workbench-release bash -c "find /home/rstudio/.positron-server/extensions -name 'posit.publisher-$EXPECTED_VERSION' -type d" 2>/dev/null || echo "")
+
+        echo "Checking for version directory: posit.publisher-$EXPECTED_VERSION" | tee -a "$INSTALL_LOG"
+
+        if [ -n "$EXPECTED_VERSION_DIR" ]; then
+            echo "✅ Correct Publisher extension version $EXPECTED_VERSION is installed" | tee -a "$INSTALL_LOG"
+            echo "Found at: $EXPECTED_VERSION_DIR" | tee -a "$INSTALL_LOG"
+            exit 0
+        else
+            echo "❌ Expected Publisher extension version $EXPECTED_VERSION not found" | tee -a "$INSTALL_LOG"
+            echo "Available Publisher versions:" | tee -a "$INSTALL_LOG"
+            docker exec -u rstudio publisher-e2e.workbench-release bash -c "find /home/rstudio/.positron-server/extensions -name 'posit.publisher-*' -type d" | tee -a "$INSTALL_LOG" || echo "No Publisher versions found" | tee -a "$INSTALL_LOG"
+            exit 1
+        fi
+    else
+        echo "❌ Publisher extension is NOT installed" | tee -a "$INSTALL_LOG"
+        exit 1
+    fi
