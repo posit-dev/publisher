@@ -427,8 +427,9 @@ func (s *LockfilePackageMapperSuite) TestBioconductor_LockfileCompatibility() {
 }
 
 func (s *LockfilePackageMapperSuite) TestRSPMRepositoryHandling() {
-	// Test that RSPM repository references are properly handled when not in repositories section
-	// but available through RemoteRepos fields
+	// Test repository references available through RemoteRepos fields:
+	// - RSPM properly handled when not in repositories section
+	// - Fictional turbopackages as RemoteRepos by name, URL infered from Repositories
 	lockfileContent := `{
 		"R": {
 			"Version": "4.3.3",
@@ -436,6 +437,10 @@ func (s *LockfilePackageMapperSuite) TestRSPMRepositoryHandling() {
 				{
 					"Name": "CRAN",
 					"URL": "https://cloud.r-project.org"
+				},
+				{
+					"Name": "turbopackages",
+					"URL": "https://turbopackages.org/latest"
 				}
 			]
 		},
@@ -456,6 +461,22 @@ func (s *LockfilePackageMapperSuite) TestRSPMRepositoryHandling() {
 					"R"
 				],
 				"Hash": "470851b6d5d0ac559e9d01bb352b4021"
+			},
+			"turbobear": {
+				"Package": "turbobear",
+				"Version": "99.99.99",
+				"Source": "Repository",
+				"RemoteType": "standard",
+				"RemotePkgRef": "turbobear",
+				"RemoteRef": "turbobear",
+				"RemoteRepos": "turbopackages",
+				"RemoteReposName": "turbopackages",
+				"RemotePkgPlatform": "x86_64-apple-darwin20",
+				"RemoteSha": "99.99.99",
+				"Requirements": [
+					"R"
+				],
+				"Hash": "990851b6d5d0ac559e9d01bb352b4021"
 			}
 		}
 	}`
@@ -480,6 +501,17 @@ func (s *LockfilePackageMapperSuite) TestRSPMRepositoryHandling() {
 	s.Equal("RSPM", r6Pkg.Source)
 	// Check version from description
 	s.Equal("2.5.1", r6Pkg.Description["Version"])
+
+	// Verify that the turbobear package was processed successfully
+	s.Contains(manifestPackages, "turbobear")
+	turbobearPkg := manifestPackages["turbobear"]
+
+	// turbopackages should be resolved through the RemoteRepos field
+	s.Equal("https://turbopackages.org/latest", turbobearPkg.Repository)
+	s.Equal("turbopackages", turbobearPkg.Source)
+
+	// Check version from description
+	s.Equal("99.99.99", turbobearPkg.Description["Version"])
 }
 
 func (s *LockfilePackageMapperSuite) TestRSPMRepositoryHandling_MissingRemoteRepos() {

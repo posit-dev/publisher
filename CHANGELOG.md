@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - When a package has a present `RemoteSubdir`, the field `GithubSubdir` is added too
   to avoid issues with previous versions of Packrat not considering `RemoteSubdir` for
   packages hosted in Github. (#3194)
+- Projects referencing packages with RemoteRepos by name and not URL do not hang when deploying. (#3209)
 
 # Changed
 
