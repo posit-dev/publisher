@@ -144,12 +144,10 @@ describe("Deployments Section", () => {
       // Set public access via helper and then deploy
       cy.getPublisherTomlFilePaths("examples-shiny-python").then(
         ({ config }) => {
-          // return cy.savePublisherFile(config.path, {
-          //   connect_cloud: { access_control: { public_access: true } },
-          // });
+          // Write both Python version and public access in one operation
           return cy.writeTomlFile(
             config.path,
-            "[connect_cloud]\n[connect_cloud.access_control]\npublic_access = true",
+            "version = '3.11'\n[connect_cloud]\n[connect_cloud.access_control]\npublic_access = true",
           );
         },
       );

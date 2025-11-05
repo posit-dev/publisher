@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # MANUAL DEBUG OVERRIDE: Change to "true" to force debug (videos, extra logs)
-      DEBUG_CYPRESS: "false"
+      DEBUG_CYPRESS: "true"
       # Repo-level variable override (Settings > Actions > Variables > DEBUG_CYPRESS=true)
       VARS_DEBUG_CYPRESS: ${{ vars.DEBUG_CYPRESS }}
       # Set by GitHub only when re-running a job with "Enable debug logging" checked
@@ -45,7 +45,7 @@ jobs:
         run: npm ci
 
       - name: Cache Cypress binary
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.cache/Cypress
           key: ${{ runner.os }}-cypress-${{ hashFiles('test/e2e/package-lock.json') }}
@@ -57,7 +57,7 @@ jobs:
         run: npx cypress install
 
       - name: Cache Playwright browsers
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-chromium-${{ hashFiles('test/e2e/package-lock.json') }}
