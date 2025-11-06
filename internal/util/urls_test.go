@@ -2,6 +2,7 @@ package util
 
 // Copyright (C) 2023 by Posit Software, PBC.
 import (
+	"errors"
 	"testing"
 
 	"github.com/posit-dev/publisher/internal/util/utiltest"
@@ -83,4 +84,65 @@ func (u *UrlsSuite) TestGetListOfPossibleURLs() {
 	u.Equal(len(l), 6)
 	u.Equal(l, results)
 
+}
+
+func (u *UrlsSuite) TestDiscoverServerURL() {
+	// Test successful discovery - returns first working URL
+	tester := func(url string) error {
+		if url == "https://connect.dev.com/server" {
+			return nil
+		}
+		return errors.New("not found")
+	}
+
+	discovered, err := DiscoverServerURL("https://connect.dev.com/server/connect/#/apps", tester)
+	u.Nil(err)
+	u.Equal("https://connect.dev.com/server", discovered)
+
+	// Test when no URL works - returns original URL and error
+	testerAlwaysFails := func(url string) error {
+		return errors.New("always fails")
+	}
+
+	discovered, err = DiscoverServerURL("https://connect.dev.com/path", testerAlwaysFails)
+	u.NotNil(err)
+	u.Equal("https://connect.dev.com/path", discovered)
+	u.Equal("always fails", err.Error())
+
+	// Test when base URL works (no path)
+	testerBaseOnly := func(url string) error {
+		if url == "https://connect.dev.com" {
+			return nil
+		}
+		return errors.New("not base")
+	}
+
+	discovered, err = DiscoverServerURL("https://connect.dev.com/connect/#/welcome", testerBaseOnly)
+	u.Nil(err)
+	u.Equal("https://connect.dev.com", discovered)
+
+	// Test priority - full URL tested before stripped versions
+	callOrder := []string{}
+	testerTracking := func(url string) error {
+		callOrder = append(callOrder, url)
+		if url == "https://connect.dev.com/a" {
+			return nil
+		}
+		return errors.New("not found")
+	}
+
+	discovered, err = DiscoverServerURL("https://connect.dev.com/a/b/c", testerTracking)
+	u.Nil(err)
+	u.Equal("https://connect.dev.com/a", discovered)
+	// Verify it tested in reverse order (full path first)
+	u.Equal([]string{
+		"https://connect.dev.com/a/b/c",
+		"https://connect.dev.com/a/b",
+		"https://connect.dev.com/a",
+	}, callOrder)
+
+	// Test with invalid URL
+	discovered, err = DiscoverServerURL(" http://invalid url", tester)
+	u.NotNil(err)
+	u.Equal(" http://invalid url", discovered)
 }

@@ -83,6 +83,7 @@ describe("ConnectAuthTokenActivator", () => {
         token: "test-token-123",
         claimUrl: "https://connect.example.com/claim/123",
         privateKey: "test-private-key-123",
+        serverUrl: "https://connect.example.com",
       },
     });
 
@@ -113,6 +114,42 @@ describe("ConnectAuthTokenActivator", () => {
       token: "test-token-123",
       privateKey: "test-private-key-123",
       userName: "testuser",
+      serverUrl: "https://connect.example.com",
+    });
+  });
+
+  test("activateToken() handles discovered server URL", async () => {
+    // Setup mocks with discovered URL
+    mockApi.credentials.generateToken.mockResolvedValue({
+      data: {
+        token: "test-token-123",
+        claimUrl: "https://connect.example.com/claim/123",
+        privateKey: "test-private-key-123",
+        serverUrl: "https://connect.example.com",
+      },
+    });
+
+    mockApi.credentials.verifyToken.mockResolvedValue({
+      status: 200,
+      data: { username: "testuser" },
+    });
+
+    // Initialize and run
+    await activator.initialize();
+    const result = await activator.activateToken();
+
+    // Verify the discovered URL is used for verification
+    expect(mockApi.credentials.verifyToken).toHaveBeenCalledWith(
+      "https://connect.example.com",
+      "test-token-123",
+      "test-private-key-123",
+    );
+
+    expect(result).toEqual({
+      token: "test-token-123",
+      privateKey: "test-private-key-123",
+      userName: "testuser",
+      serverUrl: "https://connect.example.com",
     });
   });
 
@@ -123,6 +160,7 @@ describe("ConnectAuthTokenActivator", () => {
         token: "test-token-123",
         claimUrl: "https://connect.example.com/claim/123",
         privateKey: "test-private-key-123",
+        serverUrl: "https://connect.example.com",
       },
     });
 
@@ -173,6 +211,7 @@ describe("ConnectAuthTokenActivator", () => {
         token: "test-token-123",
         claimUrl: "https://connect.example.com/claim/123",
         privateKey: "test-private-key-123",
+        serverUrl: "https://connect.example.com",
       },
     });
 

@@ -9,6 +9,7 @@ export interface TokenAuthResult {
   token: string;
   privateKey: string;
   userName: string;
+  serverUrl: string;
 }
 
 export interface TokenAuthError {
@@ -63,15 +64,20 @@ export class ConnectAuthTokenActivator {
   async activateToken(): Promise<TokenAuthResult> {
     try {
       // Step 1: Generate token
-      const { token, claimUrl, privateKey } = await this.generateToken();
+      const { token, claimUrl, privateKey, serverUrl } =
+        await this.generateToken();
 
       // Step 2: Open browser for token claim
       await this.openTokenClaimUrl(claimUrl);
 
-      // Step 3: Poll for token verification
-      const userName = await this.pollForTokenClaim(token, privateKey);
+      // Step 3: Poll for token verification using discovered URL
+      const userName = await this.pollForTokenClaim(
+        token,
+        privateKey,
+        serverUrl,
+      );
 
-      return { token, privateKey, userName };
+      return { token, privateKey, userName, serverUrl };
     } catch (error) {
       this.handleError(error);
       throw error;
@@ -82,6 +88,7 @@ export class ConnectAuthTokenActivator {
     token: string;
     claimUrl: string;
     privateKey: string;
+    serverUrl: string;
   }> {
     this.ensureInitialized();
     return await showProgress(
@@ -103,6 +110,7 @@ export class ConnectAuthTokenActivator {
   private async pollForTokenClaim(
     token: string,
     privateKey: string,
+    serverUrl: string,
   ): Promise<string> {
     this.ensureInitialized();
     return await showProgress(
@@ -117,7 +125,7 @@ export class ConnectAuthTokenActivator {
         while (!isClaimed && attempt < maxAttempts) {
           try {
             const response = await this.api!.credentials.verifyToken(
-              this.serverUrl,
+              serverUrl,
               token,
               privateKey,
             );

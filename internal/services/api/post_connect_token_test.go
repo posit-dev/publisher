@@ -46,6 +46,78 @@ func TestPostConnectTokenHandler(t *testing.T) {
 	assert.Equal(t, http.StatusInternalServerError, recorder.Code)
 }
 
+func TestPostConnectTokenHandlerWithExtraPaths(t *testing.T) {
+	// Test that URL discovery works with extra paths in the server URL
+	// This mirrors TestPostTestCredentialsHandlerFuncWithExtraPaths for API key auth
+
+	logger := loggingtest.NewMockLogger()
+	logger.On("Enabled", mock.Anything, mock.Anything).Return(false)
+	logger.On("Error", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
+	logger.On("Info", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
+
+	// Track which URLs are called
+	callCount := 0
+	var serverURL string
+
+	// Create a mock Connect server that responds to token creation
+	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		if r.URL.Path == "/__api__/tokens" ||
+			r.URL.Path == "/pass/__api__/tokens" ||
+			r.URL.Path == "/pass/fail/__api__/tokens" ||
+			r.URL.Path == "/pass/fail/fail/__api__/tokens" {
+			callCount++
+
+			// Fail the first two requests (longest paths), succeed on the third
+			if callCount <= 2 {
+				w.WriteHeader(http.StatusNotFound)
+				return
+			}
+
+			// Third request succeeds - return a valid token response
+			w.WriteHeader(http.StatusCreated)
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"token_claim_url": serverURL + "/connect/#/claim/abc123",
+			})
+		} else {
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	defer mockServer.Close()
+	serverURL = mockServer.URL
+
+	handler := PostConnectTokenHandlerFunc(logger)
+
+	// Create request with extra paths that will be stripped during discovery
+	// Format: base/path1/path2/path3?query=param
+	requestBody, err := json.Marshal(PostConnectTokenRequest{
+		ServerURL: mockServer.URL + "/pass/fail/fail?abc=123",
+	})
+	assert.NoError(t, err)
+
+	req := httptest.NewRequest("POST", "/api/connect/token", bytes.NewReader(requestBody))
+	req.Header.Set("Content-Type", "application/json")
+
+	recorder := httptest.NewRecorder()
+	handler(recorder, req)
+
+	// Should succeed with URL discovery
+	assert.Equal(t, http.StatusCreated, recorder.Code)
+
+	var response PostConnectTokenResponse
+	err = json.Unmarshal(recorder.Body.Bytes(), &response)
+	assert.NoError(t, err)
+
+	// Verify the response includes the discovered URL (without the extra paths)
+	assert.Equal(t, mockServer.URL+"/pass", response.ServerURL)
+	assert.NotEmpty(t, response.Token)
+	assert.NotEmpty(t, response.ClaimURL)
+	assert.NotEmpty(t, response.PrivateKey)
+
+	// Verify we made 3 attempts (fail, fail, succeed)
+	assert.Equal(t, 3, callCount)
+}
+
 func TestPostConnectTokenUserHandler(t *testing.T) {
 	// This test is minimal because we can't easily mock the Connect server interaction
 	// We'll just verify that the handler correctly parses the request and returns a response
