@@ -75,7 +75,7 @@ type URLTester func(url string) error
 
 // DiscoverServerURL attempts to find the correct server URL by testing
 // a list of possible URLs derived from the provided URL.
-// It walks the possible URL list backwards, prioritizing the full URL 
+// It walks the possible URL list backwards, prioritizing the full URL
 // with all path segments over the URL with all path segments removed.
 // Returns the first URL that passes the test, or the original URL if none pass.
 func DiscoverServerURL(providedURL string, tester URLTester) (string, error) {
@@ -92,7 +92,7 @@ func DiscoverServerURL(providedURL string, tester URLTester) (string, error) {
 	// the URL with all path segments removed.
 	for i := len(possibleURLs) - 1; i >= 0; i-- {
 		urlToTest := possibleURLs[i]
-		
+
 		testErr := tester(urlToTest)
 		if testErr == nil {
 			// Success! Return the working URL

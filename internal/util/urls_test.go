@@ -94,7 +94,7 @@ func (u *UrlsSuite) TestDiscoverServerURL() {
 		}
 		return errors.New("not found")
 	}
-	
+
 	discovered, err := DiscoverServerURL("https://connect.dev.com/server/connect/#/apps", tester)
 	u.Nil(err)
 	u.Equal("https://connect.dev.com/server", discovered)
@@ -103,7 +103,7 @@ func (u *UrlsSuite) TestDiscoverServerURL() {
 	testerAlwaysFails := func(url string) error {
 		return errors.New("always fails")
 	}
-	
+
 	discovered, err = DiscoverServerURL("https://connect.dev.com/path", testerAlwaysFails)
 	u.NotNil(err)
 	u.Equal("https://connect.dev.com/path", discovered)
@@ -116,7 +116,7 @@ func (u *UrlsSuite) TestDiscoverServerURL() {
 		}
 		return errors.New("not base")
 	}
-	
+
 	discovered, err = DiscoverServerURL("https://connect.dev.com/connect/#/welcome", testerBaseOnly)
 	u.Nil(err)
 	u.Equal("https://connect.dev.com", discovered)
@@ -130,7 +130,7 @@ func (u *UrlsSuite) TestDiscoverServerURL() {
 		}
 		return errors.New("not found")
 	}
-	
+
 	discovered, err = DiscoverServerURL("https://connect.dev.com/a/b/c", testerTracking)
 	u.Nil(err)
 	u.Equal("https://connect.dev.com/a", discovered)

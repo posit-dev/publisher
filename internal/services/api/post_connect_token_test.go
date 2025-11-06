@@ -63,9 +63,9 @@ func TestPostConnectTokenHandlerWithExtraPaths(t *testing.T) {
 	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		if r.URL.Path == "/__api__/tokens" ||
-		   r.URL.Path == "/pass/__api__/tokens" ||
-		   r.URL.Path == "/pass/fail/__api__/tokens" ||
-		   r.URL.Path == "/pass/fail/fail/__api__/tokens" {
+			r.URL.Path == "/pass/__api__/tokens" ||
+			r.URL.Path == "/pass/fail/__api__/tokens" ||
+			r.URL.Path == "/pass/fail/fail/__api__/tokens" {
 			callCount++
 
 			// Fail the first two requests (longest paths), succeed on the third

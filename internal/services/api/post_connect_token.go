@@ -51,7 +51,7 @@ func PostConnectTokenHandlerFunc(log logging.Logger) http.HandlerFunc {
 		// Create a tester function that attempts to create a token for each URL
 		var tokenResponse map[string]interface{}
 		var claimURL string
-		
+
 		tester := func(urlToTest string) error {
 			// Create an HTTP client for API calls with the test URL
 			httpClient := http_client.NewBasicHTTPClient(urlToTest, DefaultTimeout)
@@ -74,7 +74,7 @@ func PostConnectTokenHandlerFunc(log logging.Logger) http.HandlerFunc {
 			if !ok {
 				return types.NewAgentError(types.ErrorUnknown, nil, nil)
 			}
-			
+
 			return nil
 		}
 
