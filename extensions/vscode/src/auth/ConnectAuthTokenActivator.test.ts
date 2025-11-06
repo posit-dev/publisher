@@ -83,6 +83,7 @@ describe("ConnectAuthTokenActivator", () => {
         token: "test-token-123",
         claimUrl: "https://connect.example.com/claim/123",
         privateKey: "test-private-key-123",
+        serverUrl: "https://connect.example.com",
       },
     });
 
@@ -113,7 +114,7 @@ describe("ConnectAuthTokenActivator", () => {
       token: "test-token-123",
       privateKey: "test-private-key-123",
       userName: "testuser",
-      serverUrl: undefined,
+      serverUrl: "https://connect.example.com",
     });
   });
 
@@ -124,7 +125,7 @@ describe("ConnectAuthTokenActivator", () => {
         token: "test-token-123",
         claimUrl: "https://connect.example.com/claim/123",
         privateKey: "test-private-key-123",
-        serverUrl: "https://connect.example.com/server", // Discovered URL
+        serverUrl: "https://connect.example.com",
       },
     });
 
@@ -139,17 +140,16 @@ describe("ConnectAuthTokenActivator", () => {
 
     // Verify the discovered URL is used for verification
     expect(mockApi.credentials.verifyToken).toHaveBeenCalledWith(
-      "https://connect.example.com/server", // Should use discovered URL
+      "https://connect.example.com",
       "test-token-123",
       "test-private-key-123",
     );
 
-    // Verify result includes discovered URL
     expect(result).toEqual({
       token: "test-token-123",
       privateKey: "test-private-key-123",
       userName: "testuser",
-      serverUrl: "https://connect.example.com/server",
+      serverUrl: "https://connect.example.com",
     });
   });
 
@@ -160,6 +160,7 @@ describe("ConnectAuthTokenActivator", () => {
         token: "test-token-123",
         claimUrl: "https://connect.example.com/claim/123",
         privateKey: "test-private-key-123",
+        serverUrl: "https://connect.example.com",
       },
     });
 
@@ -210,6 +211,7 @@ describe("ConnectAuthTokenActivator", () => {
         token: "test-token-123",
         claimUrl: "https://connect.example.com/claim/123",
         privateKey: "test-private-key-123",
+        serverUrl: "https://connect.example.com",
       },
     });
 

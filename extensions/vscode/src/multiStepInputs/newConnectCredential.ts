@@ -387,10 +387,8 @@ export async function newConnectCredential(
       state.data.token = resp.data?.token;
       state.data.privateKey = resp.data?.privateKey;
 
-      // Update the server URL if a different one was discovered
-      if (resp.data?.serverUrl) {
-        state.data.url = resp.data.serverUrl;
-      }
+      // Update the server URL
+      state.data.url = resp.data?.serverUrl;
     } catch (_e) {
       // Error handling is done within the ConnectAuthTokenActivator
       return;

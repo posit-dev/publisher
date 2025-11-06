@@ -118,7 +118,7 @@ export class Credentials {
       token: string;
       claimUrl: string;
       privateKey: string;
-      serverUrl?: string;
+      serverUrl: string;
     }>(`connect/token`, {
       serverUrl,
     });

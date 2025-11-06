@@ -9,7 +9,7 @@ export interface TokenAuthResult {
   token: string;
   privateKey: string;
   userName: string;
-  serverUrl?: string;
+  serverUrl: string;
 }
 
 export interface TokenAuthError {
@@ -70,12 +70,11 @@ export class ConnectAuthTokenActivator {
       // Step 2: Open browser for token claim
       await this.openTokenClaimUrl(claimUrl);
 
-      // Step 3: Poll for token verification (use discovered URL if available)
-      const effectiveServerUrl = serverUrl || this.serverUrl;
+      // Step 3: Poll for token verification using discovered URL
       const userName = await this.pollForTokenClaim(
         token,
         privateKey,
-        effectiveServerUrl,
+        serverUrl,
       );
 
       return { token, privateKey, userName, serverUrl };
@@ -89,7 +88,7 @@ export class ConnectAuthTokenActivator {
     token: string;
     claimUrl: string;
     privateKey: string;
-    serverUrl?: string;
+    serverUrl: string;
   }> {
     this.ensureInitialized();
     return await showProgress(
