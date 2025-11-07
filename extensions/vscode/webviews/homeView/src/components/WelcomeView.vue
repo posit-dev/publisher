@@ -11,7 +11,6 @@
   display: flex;
   color: var(--vscode-foreground);
   line-height: 1.4em;
-  align-items: center;
   flex-direction: column;
   padding: 0 20px 1em;
 
@@ -23,8 +22,8 @@
   }
 
   vscode-button {
+    align-self: center;
     width: 100%;
-    max-width: 300px;
   }
 }
 </style>
