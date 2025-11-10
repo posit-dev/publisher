@@ -12,7 +12,7 @@
   "license": "UNLICENSED",
   "private": true,
   "devDependencies": {
-    "@testing-library/cypress": "^10.0.3",
+    "@testing-library/cypress": "^10.1.0",
     "axios": "^1.6.0",
     "cypress": "^14.0.1",
     "cypress-wait-until": "^3.0.2",
