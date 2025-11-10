@@ -644,7 +644,7 @@
     "test-unit": "vitest run"
   },
   "devDependencies": {
-    "@eslint/js": "^9.38.0",
+    "@eslint/js": "^9.39.1",
     "@twbs/fantasticon": "^3.0.0",
     "@types/eventsource": "^1.1.15",
     "@types/mocha": "^10.0.2",
