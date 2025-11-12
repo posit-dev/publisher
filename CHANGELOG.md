@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (e.g., `/connect`). (#2999)
 - Fixed text and button alignment in webview (#3071)
 
+### Added
+
+- Added support for deploying Quarto Shiny content to Connect Cloud (#3265)
+
 ## [1.24.0]
 
 ### Added

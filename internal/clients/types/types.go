@@ -174,7 +174,7 @@ func CloudContentTypeFromPublisherType(contentType contenttypes.ContentType) (Co
 		return ContentTypeShiny, nil
 	case contenttypes.ContentTypePythonStreamlit:
 		return ContentTypeStreamlit, nil
-	case contenttypes.ContentTypeQuartoDeprecated, contenttypes.ContentTypeQuarto:
+	case contenttypes.ContentTypeQuartoDeprecated, contenttypes.ContentTypeQuarto, contenttypes.ContentTypeQuartoShiny:
 		return ContentTypeQuarto, nil
 	case contenttypes.ContentTypeRMarkdown:
 		return ContentTypeRMarkdown, nil
