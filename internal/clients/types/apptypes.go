@@ -278,7 +278,7 @@ var connectContentTypeMap = map[contenttypes.ContentType]AppMode{
 func AppModeFromType(t contenttypes.ContentType) AppMode {
 	mode, ok := connectContentTypeMap[t]
 	if !ok {
-		mode = UnknownMode
+		return AppMode(t)
 	}
 	return mode
 }
