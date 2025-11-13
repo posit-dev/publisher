@@ -65,13 +65,13 @@ export const platformList: QuickPickItem[] = [
 ];
 
 // Fetch the list of all available snowflake connections
-export const fetchSnowflakeConnections = async (serverUrl: string) => {
+export const fetchSnowflakeConnections = async (serverUrl: string, apiKey?: string) => {
   let connections: SnowflakeConnection[] = [];
   let connectionQuickPicks: QuickPickItemWithIndex[];
 
   try {
     const api = await useApi();
-    const connsResponse = await api.snowflakeConnections.list(serverUrl);
+    const connsResponse = await api.snowflakeConnections.list(serverUrl, apiKey);
     connections = connsResponse.data;
     connectionQuickPicks = connections.map((connection, i) => ({
       label: connection.name,

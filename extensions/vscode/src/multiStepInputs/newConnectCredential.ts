@@ -260,8 +260,21 @@ export async function newConnectCredential(
               severity: InputBoxValidationSeverity.Error,
             });
           }
+          // Check and set serverType first, even if there's an error
+          // This is important for Snowflake URLs where auth will fail
+          // without credentials, but we still need to detect the server type
+          if (testResult.data.serverType) {
+            serverType = testResult.data.serverType;
+          }
+
           const err = testResult.data.error;
           if (err) {
+            // For Snowflake, we expect auth to fail without credentials
+            // So we allow the flow to continue to prompt for credentials
+            if (isSnowflake(serverType)) {
+              return Promise.resolve(undefined);
+            }
+
             if (err.code === "errorCertificateVerification") {
               return Promise.resolve({
                 message: `Error: URL Not Accessible - ${err.msg}. If applicable, consider disabling [Verify TLS Certificates](${openConfigurationCommand}).`,
@@ -272,11 +285,6 @@ export async function newConnectCredential(
               message: `Error: Invalid URL (unable to validate connectivity with Server URL - ${getMessageFromError(err)}).`,
               severity: InputBoxValidationSeverity.Error,
             });
-          }
-
-          if (testResult.data.serverType) {
-            // serverType will be overwritten if it is snowflake
-            serverType = testResult.data.serverType;
           }
         } catch (e) {
           return Promise.resolve({
@@ -293,10 +301,12 @@ export async function newConnectCredential(
     state.data.url = formatURL(resp.trim());
 
     if (isSnowflake(serverType)) {
+      // For Snowflake SPCS with OIDC, ask for API key first
+      // Then we can test connections with both credentials
       return {
-        name: step.INPUT_SNOWFLAKE_CONN,
+        name: step.INPUT_SNOWFLAKE_API_KEY,
         step: (input: MultiStepInput) =>
-          steps[step.INPUT_SNOWFLAKE_CONN](input, state),
+          steps[step.INPUT_SNOWFLAKE_API_KEY](input, state),
       };
     }
 
@@ -493,15 +503,16 @@ export async function newConnectCredential(
     input: MultiStepInput,
     state: MultiStepState,
   ) {
-    // url should always be defined by the time we get to this step
-    // but we have to type guard it for the API
+    // url and apiKey should always be defined by the time we get to this step
+    // but we have to type guard them for the API
     const serverUrl = typeof state.data.url === "string" ? state.data.url : "";
+    const apiKey = typeof state.data.apiKey === "string" ? state.data.apiKey : "";
     let connections: SnowflakeConnection[] = [];
     let connectionQuickPicks: QuickPickItemWithIndex[] = [];
 
     try {
-      await showProgress("Reading Snowflake connections", viewId, async () => {
-        const resp = await fetchSnowflakeConnections(serverUrl);
+      await showProgress("Testing Snowflake connections", viewId, async () => {
+        const resp = await fetchSnowflakeConnections(serverUrl, apiKey);
         connections = resp.connections;
         connectionQuickPicks = resp.connectionQuickPicks;
       });
@@ -529,9 +540,9 @@ export async function newConnectCredential(
     state.data.url = connections[pick.index].serverUrl;
 
     return {
-      name: step.INPUT_SNOWFLAKE_API_KEY,
+      name: step.INPUT_CRED_NAME,
       step: (input: MultiStepInput) =>
-        steps[step.INPUT_SNOWFLAKE_API_KEY](input, state),
+        steps[step.INPUT_CRED_NAME](input, state),
     };
   }
 
@@ -579,10 +590,12 @@ export async function newConnectCredential(
 
     state.data.apiKey = resp.trim();
 
+    // Now that we have the API key, fetch Snowflake connections
+    // and test them with both the Snowflake token and API key
     return {
-      name: step.INPUT_CRED_NAME,
+      name: step.INPUT_SNOWFLAKE_CONN,
       step: (input: MultiStepInput) =>
-        steps[step.INPUT_CRED_NAME](input, state),
+        steps[step.INPUT_SNOWFLAKE_CONN](input, state),
     };
   }
 
