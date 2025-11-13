@@ -506,7 +506,8 @@ export async function newConnectCredential(
     // url and apiKey should always be defined by the time we get to this step
     // but we have to type guard them for the API
     const serverUrl = typeof state.data.url === "string" ? state.data.url : "";
-    const apiKey = typeof state.data.apiKey === "string" ? state.data.apiKey : "";
+    const apiKey =
+      typeof state.data.apiKey === "string" ? state.data.apiKey : "";
     let connections: SnowflakeConnection[] = [];
     let connectionQuickPicks: QuickPickItemWithIndex[] = [];
 
