@@ -6,7 +6,30 @@ file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.24.0]
+
+### Added
+
+- Added more prominent status messages when rendering Quarto documents. (#2940)
+- Improved visuals for waiting on Connect on-prem token to be claimed (#2900)
+- Added automatic discovery of static assets for Quarto projects (#2594)
+- Added LLM tooling for LLM assistants to be able to help out with deployment failures and configuration errors(#2690)
+- Added detection support for Plumber2 projects. (#3150)
+
+### Fixed
+
+- The "R Packages" section no longer shows you an alert if you aren't using renv. (#3095)
+- When `renv.lock` contains packages installed from GitHub or Bitbucket the deploy
+  process should respect `RemoteHost`, `RemoteRepo`, `RemoteUsername` and
+  `RemoteUrl` and `RemoteSubdir` fields (#3147)
+- When a package has a present `RemoteSubdir`, the field `GithubSubdir` is added too
+  to avoid issues with previous versions of Packrat not considering `RemoteSubdir` for
+  packages hosted in Github. (#3194)
+- Projects referencing packages with RemoteRepos by name and not URL do not hang when deploying. (#3209)
+
+# Changed
+
+- When opening the full deployment log record, it opens as a new unsaved file. (#2996)
 
 ### Fixed
 

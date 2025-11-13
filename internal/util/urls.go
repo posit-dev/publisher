@@ -68,3 +68,39 @@ func GetListOfPossibleURLs(accountURL string) ([]string, error) {
 
 	return urls, nil
 }
+
+// URLTester is a function type that tests if a URL is valid/accessible
+// Returns nil if the URL is valid, or an error if not
+type URLTester func(url string) error
+
+// DiscoverServerURL attempts to find the correct server URL by testing
+// a list of possible URLs derived from the provided URL.
+// It walks the possible URL list backwards, prioritizing the full URL
+// with all path segments over the URL with all path segments removed.
+// Returns the first URL that passes the test, or the original URL if none pass.
+func DiscoverServerURL(providedURL string, tester URLTester) (string, error) {
+	// Create a list of URLs to attempt
+	possibleURLs, err := GetListOfPossibleURLs(providedURL)
+	if err != nil {
+		return providedURL, err
+	}
+
+	var lastTestError error
+
+	// Walk the possible URL list backwards
+	// This prioritizes the full URL with all path segments over
+	// the URL with all path segments removed.
+	for i := len(possibleURLs) - 1; i >= 0; i-- {
+		urlToTest := possibleURLs[i]
+
+		testErr := tester(urlToTest)
+		if testErr == nil {
+			// Success! Return the working URL
+			return urlToTest, nil
+		}
+		lastTestError = testErr
+	}
+
+	// If no URL worked, return the original URL and the last error
+	return providedURL, lastTestError
+}

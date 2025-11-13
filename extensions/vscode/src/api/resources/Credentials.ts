@@ -112,12 +112,13 @@ export class Credentials {
   }
 
   // Generates a new token for Connect authentication
-  // Returns token ID, claim URL, and private key
+  // Returns token ID, claim URL, private key, and discovered server URL
   generateToken(serverUrl: string) {
     return this.client.post<{
       token: string;
       claimUrl: string;
       privateKey: string;
+      serverUrl: string;
     }>(`connect/token`, {
       serverUrl,
     });

@@ -9,13 +9,13 @@ jobs:
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v6
         with:
           name: bin
           path: bin
       - run: chmod -R +x ./bin
       - run: just package
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         id: upload
         with:
           name: dist

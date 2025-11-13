@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- When creating a Connect credential using token authentication or an API key
+  the server URL is automatically discovered even when extra paths are provided
+  (e.g., `/connect`). (#2999)
+- Fixed text and button alignment in webview (#3071)
+
+## [1.24.0]
+
 ### Added
 
 - Added more prominent status messages when rendering Quarto documents. (#2940)
@@ -25,6 +32,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - When `renv.lock` contains packages installed from GitHub or Bitbucket the deploy
   process should respect `RemoteHost`, `RemoteRepo`, `RemoteUsername` and
   `RemoteUrl` and `RemoteSubdir` fields (#3147)
+- When a package has a present `RemoteSubdir`, the field `GithubSubdir` is added too
+  to avoid issues with previous versions of Packrat not considering `RemoteSubdir` for
+  packages hosted in Github. (#3194)
+- Projects referencing packages with RemoteRepos by name and not URL do not hang when deploying. (#3209)
 
 # Changed
 

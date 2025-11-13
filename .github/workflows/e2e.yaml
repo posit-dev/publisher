@@ -11,14 +11,14 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # MANUAL DEBUG OVERRIDE: Change to "true" to force debug (videos, extra logs)
-      DEBUG_CYPRESS: "false"
+      DEBUG_CYPRESS: "true"
       # Repo-level variable override (Settings > Actions > Variables > DEBUG_CYPRESS=true)
       VARS_DEBUG_CYPRESS: ${{ vars.DEBUG_CYPRESS }}
       # Set by GitHub only when re-running a job with "Enable debug logging" checked
       ACTIONS_STEP_DEBUG: ${{ secrets.ACTIONS_STEP_DEBUG }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -45,7 +45,7 @@ jobs:
         run: npm ci
 
       - name: Cache Cypress binary
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.cache/Cypress
           key: ${{ runner.os }}-cypress-${{ hashFiles('test/e2e/package-lock.json') }}
@@ -57,7 +57,7 @@ jobs:
         run: npx cypress install
 
       - name: Cache Playwright browsers
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-chromium-${{ hashFiles('test/e2e/package-lock.json') }}
@@ -71,7 +71,7 @@ jobs:
       - uses: extractions/setup-just@v3
 
       - name: Download VSIX artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: dist
           path: dist
@@ -184,7 +184,7 @@ jobs:
           CYPRESS_CACHE_FOLDER: ~/.cache/Cypress
 
       - name: Upload Cypress screenshots on failure
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: failure()
         with:
           name: cypress-screenshots
@@ -192,7 +192,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: "[DEBUG] Upload Cypress videos"
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: always() && (env.DEBUG_CYPRESS == 'true' || env.VARS_DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true')
         with:
           name: cypress-videos

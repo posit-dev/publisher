@@ -53,6 +53,7 @@ type Package struct {
 	RemoteRepo        string        `toml:"remote_repo,omitempty" json:"remoteRepo,omitempty"`
 	RemoteUsername    string        `toml:"remote_username,omitempty" json:"remoteUsername,omitempty"`
 	RemoteSubdir      string        `toml:"remote_subdir,omitempty" json:"remoteSubdir,omitempty"`
+	GithubSubdir      string        `toml:"github_subdir,omitempty" json:"githubSubdir,omitempty"`
 	RemoteUrl         string        `toml:"remote_url,omitempty" json:"remoteUrl,omitempty"`
 
 	// Additional fields from renv.lock that we want to copy to the manifest
@@ -106,7 +107,7 @@ func ValidateModernLockfile(lockfile *Lockfile) error {
 // and LockfilePackageMapper (lockfile-only approach) must produce identical output formats regardless
 // of whether packages reference repositories by name ("CRAN") or URL ("https://cloud.r-project.org").
 func isURL(s string) bool {
-	return len(s) > 0 && (s[0:4] == "http" || s[0:3] == "ftp") && strings.Contains(s, "://")
+	return len(s) > 0 && strings.Contains(s, "://") && (s[0:3] == "ftp" || s[0:4] == "http")
 }
 
 // Example package installed from CRAN
