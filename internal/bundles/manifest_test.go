@@ -331,3 +331,22 @@ func (s *ManifestSuite) TestNewManifestFromConfigWithIntegrationRequests() {
 		Files:    map[string]ManifestFile{},
 	}, m)
 }
+
+func (s *ManifestSuite) TestNewManifestFromConfigWithUnrecognizedType() {
+	cfg := &config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       "new-content-type",
+		Entrypoint: "main.py",
+		Title:      "Test App",
+	}
+	m := NewManifestFromConfig(cfg)
+	s.Equal(&Manifest{
+		Version: 1,
+		Metadata: Metadata{
+			AppMode:    "new-content-type",
+			Entrypoint: "main.py",
+		},
+		Packages: map[string]Package{},
+		Files:    map[string]ManifestFile{},
+	}, m)
+}
