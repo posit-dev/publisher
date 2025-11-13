@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (e.g., `/connect`). (#2999)
 - Fixed text and button alignment in webview (#3071)
 - When a content type isn't mapped to the `connectContentTypeMap`, the `appMode`
-  is no longer an empty string
+  is no longer an empty string (#2542)
 
 ## [1.24.0]
 
