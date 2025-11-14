@@ -2,7 +2,8 @@
   "compilerOptions": {
     "baseUrl": ".",
     "esModuleInterop": true,
-    "module": "commonjs",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
     "target": "ES2022",
     "outDir": "out",
     "lib": ["ES2022", "DOM"],
@@ -15,9 +16,7 @@
     "noFallthroughCasesInSwitch": true,
     "noImplicitReturns": true,
     "paths": {
-      "src/*": ["./src/*"],
-      // workaround for: https://github.com/rollup/rollup/issues/5199
-      "rollup/parseAst": ["./node_modules/rollup/dist/parseAst"]
+      "src/*": ["./src/*"]
     }
   },
   "exclude": ["node_modules", "webviews", "vitest.config.ts"]
