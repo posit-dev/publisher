@@ -651,7 +651,7 @@
     "@types/mutexify": "^1.2.3",
     "@types/node": "^22.0.0",
     "@types/retry": "^0.12.5",
-    "@types/vscode": "^1.106.0",
+    "@types/vscode": "^1.87.0",
     "@types/wait-on": "^5.3.3",
     "@vscode/test-electron": "^2.3.8",
     "esbuild": "^0.27.0",
