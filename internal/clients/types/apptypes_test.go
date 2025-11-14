@@ -529,3 +529,15 @@ func (s *AppTypesSuite) TestDescription() {
 		s.Equal(each.Description, each.Mode.Description(), comment)
 	}
 }
+
+func (s *AppTypesSuite) TestAppModeFromType() {
+	s.Equal(PythonDashMode, AppModeFromType("python-dash"))
+	s.Equal(ShinyMode, AppModeFromType("r-shiny"))
+	s.Equal(StaticJupyterMode, AppModeFromType("jupyter-notebook"))
+}
+
+func (s *AppTypesSuite) TestAppModeFromTypeUnrecognized() {
+	result := AppModeFromType("new-content-type")
+	s.Equal(AppMode("new-content-type"), result)
+	s.NotEqual(UnknownMode, result)
+}

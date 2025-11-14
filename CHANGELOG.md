@@ -7,9 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
 - When creating a Connect credential using token authentication or an API key
   the server URL is automatically discovered even when extra paths are provided
   (e.g., `/connect`). (#2999)
+- Fixed text and button alignment in webview (#3071)
+- When a deployment configuration content type isn't recognized as a known type,
+  the resulting type in the manifest is no longer an empty string (#2542)
 
 ## [1.24.0]
 
