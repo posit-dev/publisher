@@ -3401,7 +3401,7 @@ SOFTWARE.
 
 ```
 
-### @tsconfig/node20
+### @tsconfig/node22
 
 ```
 MIT License
