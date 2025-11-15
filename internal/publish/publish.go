@@ -264,15 +264,8 @@ func (p *defaultPublisher) doPublish() error {
 
 	if wasPreviouslyDeployed {
 		p.log.Info("Updating deployment", "content_id", contentID)
-	} else {
-		// Create a new deployment; we will update it with details later.
-		contentID, err = p.serverPublisher.CreateDeployment()
-		if err != nil {
-			return err
-		}
+		p.setContentInfo(p.serverPublisher.GetContentInfo(contentID))
 	}
-
-	p.setContentInfo(p.serverPublisher.GetContentInfo(contentID))
 
 	manifest, err := p.createManifest()
 	if err != nil {
@@ -282,6 +275,15 @@ func (p *defaultPublisher) doPublish() error {
 	err = p.serverPublisher.PreFlightChecks()
 	if err != nil {
 		return err
+	}
+
+	if !wasPreviouslyDeployed {
+		// Create a new deployment; we will update it with details later.
+		contentID, err = p.serverPublisher.CreateDeployment()
+		if err != nil {
+			return err
+		}
+		p.setContentInfo(p.serverPublisher.GetContentInfo(contentID))
 	}
 
 	bundleFile, err := p.createBundle(manifest)
