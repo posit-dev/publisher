@@ -654,7 +654,7 @@
     "@types/vscode": "^1.87.0",
     "@types/wait-on": "^5.3.3",
     "@vscode/test-electron": "^2.3.8",
-    "esbuild": "^0.25.11",
+    "esbuild": "^0.27.0",
     "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.0.1",
     "fishery": "^2.2.2",
@@ -662,11 +662,11 @@
     "globals": "^16.5.0",
     "mocha": "^11.1.0",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.15.0",
+    "typescript-eslint": "^8.46.4",
     "vitest": "^3.0.4"
   },
   "dependencies": {
-    "@vscode/codicons": "^0.0.36",
+    "@vscode/codicons": "^0.0.42",
     "async-mutex": "^0.5.0",
     "axios": "^1.11.0",
     "debounce": "^2.1.0",
