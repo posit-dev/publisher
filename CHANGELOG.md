@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.26.0]
+
 ### Added
 
 - Added support for deploying Holoviz Panel applications with the `python-panel` content type.
