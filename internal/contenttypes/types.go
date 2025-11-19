@@ -15,6 +15,7 @@ const (
 	ContentTypePythonShiny      ContentType = "python-shiny"
 	ContentTypePythonStreamlit  ContentType = "python-streamlit"
 	ContentTypePythonGradio     ContentType = "python-gradio"
+	ContentTypePythonPanel      ContentType = "python-panel"
 	ContentTypeQuartoShiny      ContentType = "quarto-shiny"
 	ContentTypeQuartoDeprecated ContentType = "quarto"
 	ContentTypeQuarto           ContentType = "quarto-static"
@@ -35,6 +36,7 @@ func (t ContentType) IsPythonContent() bool {
 		ContentTypePythonFastAPI,
 		ContentTypePythonFlask,
 		ContentTypePythonGradio,
+		ContentTypePythonPanel,
 		ContentTypePythonShiny,
 		ContentTypePythonStreamlit:
 		return true
@@ -59,6 +61,7 @@ func (t ContentType) IsAppContent() bool {
 		ContentTypePythonBokeh,
 		ContentTypePythonDash,
 		ContentTypePythonGradio,
+		ContentTypePythonPanel,
 		ContentTypePythonStreamlit:
 		return true
 	}

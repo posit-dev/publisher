@@ -20,6 +20,7 @@ Indicates the type of content being deployed. Valid values are:
 - `python-fastapi`
 - `python-flask`
 - `python-gradio`
+- `python-panel`
 - `python-shiny`
 - `python-streamlit`
 - `quarto-shiny`

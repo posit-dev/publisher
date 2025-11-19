@@ -199,3 +199,28 @@ func (s *PythonSuite) TestInferTypeGradio() {
 		Python:     &config.Python{},
 	}, configs[0])
 }
+
+func (s *PythonSuite) TestInferTypePanel() {
+	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
+	err := base.MkdirAll(0777)
+	s.NoError(err)
+
+	filename := "app.py"
+	err = base.Join(filename).WriteFile([]byte("import panel\n"), 0600)
+	s.Nil(err)
+
+	detector := NewPanelDetector()
+	configs, err := detector.InferType(base, util.RelativePath{})
+	s.Nil(err)
+	s.Len(configs, 1)
+
+	validate := true
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       contenttypes.ContentTypePythonPanel,
+		Entrypoint: filename,
+		Validate:   &validate,
+		Files:      []string{},
+		Python:     &config.Python{},
+	}, configs[0])
+}

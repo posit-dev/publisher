@@ -55,6 +55,12 @@ func NewGradioDetector() *PythonAppDetector {
 	})
 }
 
+func NewPanelDetector() *PythonAppDetector {
+	return NewPythonAppDetector(contenttypes.ContentTypePythonPanel, []string{
+		"panel",
+	})
+}
+
 func NewStreamlitDetector() *PythonAppDetector {
 	return NewPythonAppDetector(contenttypes.ContentTypePythonStreamlit, []string{
 		"streamlit",
