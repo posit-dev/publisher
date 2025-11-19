@@ -658,7 +658,7 @@
     "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.0.1",
     "fishery": "^2.2.2",
-    "glob": "^11.0.0",
+    "glob": "^11.1.0",
     "globals": "^16.5.0",
     "mocha": "^11.1.0",
     "typescript": "^5.9.3",
