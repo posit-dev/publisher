@@ -666,7 +666,7 @@
     "vitest": "^3.0.4"
   },
   "dependencies": {
-    "@vscode/codicons": "^0.0.42",
+    "@vscode/codicons": "^0.0.43",
     "async-mutex": "^0.5.0",
     "axios": "^1.13.2",
     "debounce": "^2.1.0",
