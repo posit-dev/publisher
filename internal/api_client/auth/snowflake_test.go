@@ -33,7 +33,7 @@ func (s *SnowflakeAuthSuite) TestNewSnowflakeAuthenticator() {
 	connections := &snowflake.MockConnections{}
 	connections.On("Get", ":name:").Return(&snowflake.Connection{}, errors.New("connection error")).Once()
 
-	_, err := NewSnowflakeAuthenticator(connections, ":name:")
+	_, err := NewSnowflakeAuthenticator(connections, ":name:", "test-api-key")
 	s.ErrorContains(err, "connection error")
 
 	// unsupported authenticator type
@@ -41,7 +41,7 @@ func (s *SnowflakeAuthSuite) TestNewSnowflakeAuthenticator() {
 		Authenticator: "fake",
 	}, nil).Once()
 
-	_, err = NewSnowflakeAuthenticator(connections, ":name:")
+	_, err = NewSnowflakeAuthenticator(connections, ":name:", "test-api-key")
 	s.EqualError(err, "unsupported authenticator type: fake")
 
 	// errors from implementation are bubbled up
@@ -50,7 +50,7 @@ func (s *SnowflakeAuthSuite) TestNewSnowflakeAuthenticator() {
 		Authenticator:  "snowflake_jwt",
 	}, nil).Once()
 
-	_, err = NewSnowflakeAuthenticator(connections, ":name:")
+	_, err = NewSnowflakeAuthenticator(connections, ":name:", "test-api-key")
 	s.ErrorContains(err, "error loading private key file: ")
 
 	// JWT token provider
@@ -61,12 +61,13 @@ func (s *SnowflakeAuthSuite) TestNewSnowflakeAuthenticator() {
 		Authenticator:  "snowflake_jwt",
 	}, nil).Once()
 
-	auth, err := NewSnowflakeAuthenticator(connections, ":name:")
+	auth, err := NewSnowflakeAuthenticator(connections, ":name:", "test-api-key")
 	s.NoError(err)
 	sfauth, ok := auth.(*snowflakeAuthenticator)
 	s.True(ok)
 	s.NotNil(sfauth.tokenProvider)
 	s.IsType(&snowflake.JWTTokenProvider{}, sfauth.tokenProvider)
+	s.Equal("test-api-key", sfauth.apiKey)
 
 	// oauth token provider
 	connections.On("Get", ":name:").Return(&snowflake.Connection{
@@ -75,12 +76,13 @@ func (s *SnowflakeAuthSuite) TestNewSnowflakeAuthenticator() {
 		Authenticator: "oauth",
 	}, nil).Once()
 
-	auth, err = NewSnowflakeAuthenticator(connections, ":name:")
+	auth, err = NewSnowflakeAuthenticator(connections, ":name:", "test-api-key")
 	s.NoError(err)
 	sfauth, ok = auth.(*snowflakeAuthenticator)
 	s.True(ok)
 	s.NotNil(sfauth.tokenProvider)
 	s.IsType(&snowflake.OAuthTokenProvider{}, sfauth.tokenProvider)
+	s.Equal("test-api-key", sfauth.apiKey)
 }
 
 func (s *SnowflakeAuthSuite) TestAddAuthHeaders() {
@@ -89,6 +91,7 @@ func (s *SnowflakeAuthSuite) TestAddAuthHeaders() {
 
 	auth := &snowflakeAuthenticator{
 		tokenProvider: tokenProvider,
+		apiKey:        "test-api-key",
 	}
 
 	req, err := http.NewRequest("GET", "https://example.snowflakecomputing.app/connect/#/content", nil)
@@ -103,5 +106,27 @@ func (s *SnowflakeAuthSuite) TestAddAuthHeaders() {
 		"Authorization": []string{
 			"Snowflake Token=\":atoken:\"",
 		},
+		"X-Rsc-Authorization": []string{
+			"Key test-api-key",
+		},
 	}, req.Header)
+
+	// Test without API key
+	tokenProvider.On("GetToken", "example.snowflakecomputing.app").Return(":atoken:", nil).Once()
+	authNoKey := &snowflakeAuthenticator{
+		tokenProvider: tokenProvider,
+		apiKey:        "",
+	}
+
+	req2, err := http.NewRequest("GET", "https://example.snowflakecomputing.app/connect/#/content", nil)
+	s.NoError(err)
+
+	err = authNoKey.AddAuthHeaders(req2)
+	s.NoError(err)
+
+	s.Equal(http.Header{
+		"Authorization": []string{
+			"Snowflake Token=\":atoken:\"",
+		},
+	}, req2.Header)
 }
