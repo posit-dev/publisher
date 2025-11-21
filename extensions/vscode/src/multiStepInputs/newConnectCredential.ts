@@ -522,8 +522,11 @@ export async function newConnectCredential(
       return;
     }
 
-    state.data.snowflakeConnection = connections[pick.index].name;
-    state.data.url = connections[pick.index].serverUrl;
+    const selectedConnection = connections[pick.index];
+    if (selectedConnection) {
+      state.data.snowflakeConnection = selectedConnection.name;
+      state.data.url = selectedConnection.serverUrl;
+    }
 
     return {
       name: step.INPUT_CRED_NAME,

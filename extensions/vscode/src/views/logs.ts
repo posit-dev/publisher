@@ -366,7 +366,8 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
 
       const showLogsOption = "View Publishing Log";
       const options = [showLogsOption];
-      const enhancedError = findErrorMessageSplitOption(msg.data.message);
+      const messageText = msg.data.message ?? "";
+      const enhancedError = findErrorMessageSplitOption(messageText);
       if (enhancedError && enhancedError.buttonStr) {
         options.push(enhancedError.buttonStr);
       }
@@ -376,8 +377,8 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
       } else {
         errorMessage =
           msg.data.canceled === "true"
-            ? msg.data.message
-            : `Deployment failed: ${msg.data.message}`;
+            ? messageText
+            : `Deployment failed: ${messageText}`;
       }
       let selection: string | undefined;
       if (msg.data.canceled === "true") {
@@ -544,9 +545,10 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
       ) {
         const stageItem = new LogsTreeStageItem(stage, root);
 
-        if (stage.events.length) {
-          const lastEventIndex = stage.events.length - 1;
-          const lastEvent = stage.events[lastEventIndex];
+        const lastEventIndex = stage.events.length - 1;
+        const lastEvent = stage.events[lastEventIndex];
+
+        if (stage.events.length && lastEvent) {
           return new LogsTreeLogItem(
             {
               msg: lastEvent,

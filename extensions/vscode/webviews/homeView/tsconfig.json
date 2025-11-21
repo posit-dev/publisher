@@ -5,11 +5,12 @@
   ],
   "include": ["src/**/*", "src/**/*.vue"],
   "compilerOptions": {
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "baseUrl": ".",
     "paths": {
       "src/*": ["./src/*"]
     },
     "verbatimModuleSyntax": false,
-    "types": ["@types/vscode-webview"]
+    "types": ["@types/vscode-webview", "@types/node"]
   }
 }

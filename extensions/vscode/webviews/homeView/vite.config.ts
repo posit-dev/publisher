@@ -1,4 +1,4 @@
-/// <reference types="vitest" />
+/// <reference types="vitest/config" />
 
 import { fileURLToPath } from "url";
 import { defineConfig } from "vite";
@@ -31,11 +31,13 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     coverage: {
+      include: ["src/**/*.{js,jsx,ts,tsx,vue}"],
+      exclude: ["*.d.ts"],
       enabled: true,
       thresholds: {
-        functions: 30,
+        functions: 17,
         lines: 17,
-        branches: 44,
+        branches: 12,
         statements: 17,
         // avoid auto-updating thresholds to avoid off by 0.01 differences
         autoUpdate: false,

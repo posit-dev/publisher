@@ -344,8 +344,8 @@ export async function selectNewOrExistingConfig(
       state.data.entryPoint &&
       isQuickPickItemWithIndex(state.data.entryPoint)
     ) {
-      const detail =
-        inspectionResults[state.data.entryPoint.index].configuration.title;
+      const inspectionResult = inspectionResults[state.data.entryPoint.index];
+      const detail = inspectionResult?.configuration.title;
       if (detail) {
         initialValue = detail;
       }

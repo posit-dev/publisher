@@ -254,7 +254,11 @@ export class MultiStepInput {
               input.title = origTitle;
             }
           }),
-          input.onDidChangeSelection((items) => resolve(items[0])),
+          input.onDidChangeSelection((items) => {
+            if (items[0] !== undefined) {
+              resolve(items[0]);
+            }
+          }),
           input.onDidHide(() => {
             (async () => {
               reject(

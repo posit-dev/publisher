@@ -24,6 +24,7 @@ import {
 import {
   areInspectionResultsSimilarEnough,
   Configuration,
+  ConfigurationDetails,
   ConfigurationInspectionResult,
   ContentType,
   contentTypeStrings,
@@ -152,9 +153,11 @@ export async function newDeployment(
     insRes: ConfigurationInspectionResult,
   ): ConfigurationInspectionResult => {
     // At the moment the only alternative we handle is the rendered version alternative
+    const alternative = insRes.configuration!
+      .alternatives![0] as ConfigurationDetails;
     return {
       projectDir: insRes.projectDir,
-      configuration: insRes.configuration!.alternatives![0],
+      configuration: alternative,
     };
   };
 
@@ -164,7 +167,10 @@ export async function newDeployment(
       insRes?.configuration?.alternatives &&
       insRes?.configuration?.alternatives.length
     ) {
-      insRes.configuration = insRes.configuration.alternatives[0];
+      const alternative = insRes.configuration.alternatives[0];
+      if (alternative) {
+        insRes.configuration = alternative;
+      }
     }
   };
 
@@ -454,7 +460,7 @@ export async function newDeployment(
       if (pick.label === browseForEntrypointLabel) {
         let baseUri = Uri.parse(".");
         const workspaceFolders = workspace.workspaceFolders;
-        if (workspaceFolders !== undefined) {
+        if (workspaceFolders !== undefined && workspaceFolders[0]) {
           baseUri = workspaceFolders[0].uri;
         }
         selectedEntrypointFile = undefined;
@@ -522,7 +528,7 @@ export async function newDeployment(
 
     // if there is only one choice, set it as the inspection result
     // account for the existence of config alternatives too.
-    if (inspectionQuickPicks.length === 1) {
+    if (inspectionQuickPicks.length === 1 && inspectionQuickPicks[0]) {
       newDeploymentData.entrypoint.inspectionResult =
         inspectionQuickPicks[0].inspectionResult;
       // If applicable, the user has to pick a config alternative
