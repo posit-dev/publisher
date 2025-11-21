@@ -1,4 +1,4 @@
-/// <reference types="vitest" />
+/// <reference types="vitest/config" />
 
 import { fileURLToPath } from "url";
 import { defineConfig } from "vite";
