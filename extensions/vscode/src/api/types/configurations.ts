@@ -202,7 +202,10 @@ export function UpdateAllConfigsWithDefaults(
   defaults: InterpreterDefaults,
 ) {
   for (let i = 0; i < configs.length; i++) {
-    configs[i] = UpdateConfigWithDefaults(configs[i], defaults);
+    const config = configs[i];
+    if (config !== undefined) {
+      configs[i] = UpdateConfigWithDefaults(config, defaults);
+    }
   }
   return configs;
 }
