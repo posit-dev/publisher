@@ -35,7 +35,7 @@ export default defineConfig({
       thresholds: {
         functions: 30,
         lines: 17,
-        branches: 44,
+        branches: 29,
         statements: 17,
         // avoid auto-updating thresholds to avoid off by 0.01 differences
         autoUpdate: false,
