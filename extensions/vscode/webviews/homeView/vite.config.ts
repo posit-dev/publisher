@@ -31,6 +31,8 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     coverage: {
+      include: ["src/**/*.{js,jsx,ts,tsx,vue}"],
+      exclude: ["*.d.ts"],
       enabled: true,
       thresholds: {
         functions: 30,
