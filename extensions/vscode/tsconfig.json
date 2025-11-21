@@ -14,6 +14,7 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitReturns": true,
+    "noUncheckedIndexedAccess": true,
     "paths": {
       "src/*": ["./src/*"],
       // workaround for: https://github.com/rollup/rollup/issues/5199
