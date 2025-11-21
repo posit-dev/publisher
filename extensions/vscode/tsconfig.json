@@ -18,7 +18,10 @@
     "paths": {
       "src/*": ["./src/*"],
       // workaround for: https://github.com/rollup/rollup/issues/5199
-      "rollup/parseAst": ["./node_modules/rollup/dist/parseAst"]
+      "rollup/parseAst": ["./node_modules/rollup/dist/parseAst"],
+      // workarounds for vitest/vite module resolution with commonjs
+      "@vitest/utils/display": ["./node_modules/@vitest/utils/dist/display"],
+      "#types/*": ["./node_modules/vite/types/*"]
     }
   },
   "exclude": ["node_modules", "webviews", "vitest.config.ts"]
