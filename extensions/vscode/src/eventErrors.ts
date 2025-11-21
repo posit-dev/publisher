@@ -110,8 +110,8 @@ export const handleEventCodedError = (
   emsg: EventStreamMessageErrorCoded,
 ): string => {
   if (useEvtErrKnownMessage(emsg)) {
-    return emsg.data.message;
+    return emsg.data.message ?? "";
   }
 
-  return emsg.data.error || emsg.data.message;
+  return emsg.data.error ?? emsg.data.message ?? "";
 };
