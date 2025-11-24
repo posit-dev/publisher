@@ -14,6 +14,7 @@ const headerName = "Authorization"
 
 type snowflakeAuthenticator struct {
 	tokenProvider snowflake.TokenProvider
+	apiKey        string
 }
 
 var _ AuthMethod = &snowflakeAuthenticator{}
@@ -22,6 +23,10 @@ var _ AuthMethod = &snowflakeAuthenticator{}
 // from the system Snowflake configuration and returns an authenticator that
 // will add auth headers to requests.
 //
+// For Snowflake SPCS with OIDC, this sets both:
+// - Authorization header with the Snowflake token (for proxied auth)
+// - X-RSC-Authorization header with the Connect API key (for Connect authentication)
+//
 // Only supports keypair authentication.
 //
 // Errs if the named connection cannot be found, or if the connection does not
@@ -29,6 +34,7 @@ var _ AuthMethod = &snowflakeAuthenticator{}
 func NewSnowflakeAuthenticator(
 	connections snowflake.Connections,
 	connectionName string,
+	apiKey string,
 ) (AuthMethod, error) {
 	conn, err := connections.Get(connectionName)
 	if err != nil {
@@ -59,6 +65,7 @@ func NewSnowflakeAuthenticator(
 
 	return &snowflakeAuthenticator{
 		tokenProvider: tokenProvider,
+		apiKey:        apiKey,
 	}, nil
 }
 
@@ -68,7 +75,14 @@ func (a *snowflakeAuthenticator) AddAuthHeaders(req *http.Request) error {
 	if err != nil {
 		return err
 	}
+	// Set Authorization header with Snowflake token for proxied authentication
 	header := fmt.Sprintf(`Snowflake Token="%s"`, token)
 	req.Header.Set(headerName, header)
+
+	// Set X-RSC-Authorization header with Connect API key for OIDC authentication
+	if a.apiKey != "" {
+		apiKeyHeader := fmt.Sprintf("Key %s", a.apiKey)
+		req.Header.Set("X-RSC-Authorization", apiKeyHeader)
+	}
 	return nil
 }
