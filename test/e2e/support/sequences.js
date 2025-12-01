@@ -383,7 +383,6 @@ Cypress.Commands.add("deployCurrentlySelected", () => {
   // Increased timeout because Shiny apps can take a while
   cy.findByText("Deployment was successful", { timeout: 240_000 }).should(
     "be.visible",
-    { message: "Deployment didn't succeed within 100 seconds." },
   );
 });
 
