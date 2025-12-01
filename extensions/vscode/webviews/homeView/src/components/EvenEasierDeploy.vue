@@ -375,8 +375,8 @@ const showProgressStatus = computed(() => {
 const isRenderableContent = computed(() => {
   return Boolean(
     home.selectedConfiguration &&
-      !isConfigurationError(home.selectedConfiguration) &&
-      home.selectedConfiguration.configuration.source,
+    !isConfigurationError(home.selectedConfiguration) &&
+    home.selectedConfiguration.configuration.source,
   );
 });
 

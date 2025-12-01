@@ -3,8 +3,9 @@
 import { EventStreamMessage } from "./api/types/events";
 import { ErrorCode } from "./utils/errorTypes";
 
-export interface EventStreamMessageErrorCoded<T = Record<string, string>>
-  extends EventStreamMessage<T> {
+export interface EventStreamMessageErrorCoded<
+  T = Record<string, string>,
+> extends EventStreamMessage<T> {
   errCode: ErrorCode;
 }
 
