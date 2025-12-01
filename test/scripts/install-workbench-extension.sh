@@ -3,16 +3,8 @@ set -euo pipefail
 
 # Install Publisher extension in a running Workbench container
 # Usage: install-workbench-extension.sh <service>
-#   service: Either 'preview' or 'release'
 
-SERVICE="${1:-}"
-
-# Validate service name
-if [[ "$SERVICE" != "preview" && "$SERVICE" != "release" ]]; then
-    echo "Invalid service: $SERVICE"
-    echo "Must be either 'preview' or 'release'"
-    exit 1
-fi
+SERVICE="${1:-release}"
 
 echo "Installing Publisher extension in Workbench $SERVICE container..."
 

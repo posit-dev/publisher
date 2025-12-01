@@ -105,37 +105,14 @@ old-dev:
 # =====================================================================
 
 # Pull the Workbench container image
-pull-workbench service="all":
-    #!/usr/bin/env bash
-    set -euo pipefail
-
-    if [ "{{ service }}" = "all" ]; then
-        echo "Pulling all Workbench container images..."
-        # Use docker compose pull for both services
-        docker compose pull workbench-preview workbench-release
-        echo "All Workbench images pulled!"
-    elif [[ "{{ service }}" = "preview" || "{{ service }}" = "release" ]]; then
-        echo "Pulling Workbench {{ service }} container image..."
-        docker compose pull workbench-{{ service }}
-        echo "Workbench {{ service }} image pulled!"
-    else
-        echo "Invalid service: {{ service }}"
-        echo "Must be either 'preview', 'release', or 'all'"
-        exit 1
-    fi
+pull-workbench service="release":
+    docker compose pull workbench-{{ service }}
 
 # Start a Workbench container
-start-workbench service:
+start-workbench service="release":
     #!/usr/bin/env bash
     set -euo pipefail
 
-    # Validate service name
-    if [[ "{{ service }}" != "preview" && "{{ service }}" != "release" ]]; then
-        echo "Invalid service: {{ service }}"
-        echo "Must be either 'preview' or 'release'"
-        exit 1
-    fi
-    
     # Create directories for volumes if they do not exist
     mkdir -p ./logs/workbench-{{ service }}
     mkdir -p ./licenses
@@ -180,48 +157,22 @@ start-workbench service:
     echo "Access Workbench at: http://localhost:8787"
 
 # Stop a Workbench container
-stop-workbench service="all":
+stop-workbench service="release":
+    docker compose stop workbench-{{ service }}
+
+# Remove Workbench containers
+remove-workbench service="release":
     #!/usr/bin/env bash
     set -euo pipefail
 
-    if [ "{{ service }}" = "all" ]; then
-        echo "Stopping all Workbench containers..."
-        docker compose stop workbench-preview workbench-release 2>/dev/null || true
-        echo "All Workbench containers stopped!"
-    elif [[ "{{ service }}" = "preview" || "{{ service }}" = "release" ]]; then
-        echo "Stopping Workbench {{ service }} container..."
-        docker compose stop workbench-{{ service }} 2>/dev/null || true
-        echo "Workbench {{ service }} stopped!"
-    else
-        echo "Invalid service: {{ service }}"
-        echo "Must be either 'preview', 'release', or 'all'"
-        exit 1
-    fi
-
-# Remove Workbench containers to ensure clean builds
-remove-workbench service="all":
-    #!/usr/bin/env bash
-    set -euo pipefail
-
-    # First stop the containers
+    # First stop the container
     just stop-workbench "{{ service }}"
-    
-    if [ "{{ service }}" = "all" ]; then
-        echo "Removing all Workbench containers..."
-        docker compose rm -f workbench-preview workbench-release 2>/dev/null || true
-        echo "All Workbench containers removed!"
-    elif [[ "{{ service }}" = "preview" || "{{ service }}" = "release" ]]; then
-        echo "Removing Workbench {{ service }} container..."
-        docker compose rm -f workbench-{{ service }} 2>/dev/null || true
-        echo "Workbench {{ service }} container removed!"
-    else
-        echo "Invalid service: {{ service }}"
-        echo "Must be either 'preview', 'release', or 'all'"
-        exit 1
-    fi
+
+    # Remove the container
+    docker compose rm -f workbench-{{ service }}
 
 # Install Publisher extension in a running Workbench container
-install-workbench-extension service:
+install-workbench-extension service="release":
     ../scripts/install-workbench-extension.sh "{{ service }}"
 
 # Check if publisher extension is installed in workbench-release
