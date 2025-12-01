@@ -662,8 +662,8 @@
     "globals": "^16.5.0",
     "mocha": "^11.1.0",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.46.4",
-    "vitest": "^4.0.13"
+    "typescript-eslint": "^8.48.0",
+    "vitest": "^4.0.14"
   },
   "dependencies": {
     "@vscode/codicons": "^0.0.43",
