@@ -22,6 +22,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - When a deployment configuration content type isn't recognized as a known type,
   the resulting type in the manifest is no longer an empty string (#2542)
 
+### Added
+
+- Added support for deploying Quarto Shiny content to Connect Cloud (#3265)
+
 ## [1.24.0]
 
 ### Added
