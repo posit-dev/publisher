@@ -29,7 +29,10 @@ fi
 echo "Using VSIX: $VSIX_FILENAME"
 
 # Set proper ownership for the VSIX directory and files
-docker exec publisher-e2e.workbench-$SERVICE bash -c "chown -R rstudio:rstudio /vsix-tmp"
+docker exec publisher-e2e.workbench-$SERVICE bash -c "chown -R rstudio:rstudio /vsix-tmp" || {
+    echo "ERROR: Failed to set ownership on /vsix-tmp"
+    exit 1
+}
 
 # Create the .positron-server directory with proper permissions
 echo "Creating .positron-server directory with proper permissions..."

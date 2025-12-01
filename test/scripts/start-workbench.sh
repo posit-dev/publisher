@@ -11,7 +11,7 @@ mkdir -p ./logs/workbench-$SERVICE
 mkdir -p ./licenses
 
 # Check if license file exists and is valid (not just a placeholder)
-if [ ! -s ./licenses/workbench-license.lic ] || [ "$(cat ./licenses/workbench-license.lic | wc -l)" -lt 2 ]; then
+if [ ! -s ./licenses/workbench-license.lic ] || [ "$(wc -l < ./licenses/workbench-license.lic)" -lt 2 ]; then
     echo "WARNING: Valid Workbench license file not found at ./licenses/workbench-license.lic"
     echo "You must have a valid Workbench license file to use the containers without license errors."
     echo "Please add a valid license file before starting the container."
@@ -44,6 +44,7 @@ if [ $attempts -eq $MAX_ATTEMPTS ]; then
     echo ""
     echo "⚠️ Timed out waiting for container to become healthy"
     echo "Check container logs with: docker logs publisher-e2e.workbench-$SERVICE"
+    exit 1
 fi
 echo ""
 
