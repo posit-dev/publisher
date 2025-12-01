@@ -139,11 +139,6 @@ jobs:
           ref: main
           token: ${{ steps.generate-token.outputs.token }}
 
-      - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-          ref: main
-
       - name: Create tag
         env:
           NEXT_VERSION: ${{ needs.version.outputs.next-version }}
