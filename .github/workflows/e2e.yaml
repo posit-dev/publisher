@@ -295,12 +295,12 @@ jobs:
         run: |
           sudo chown -R $USER:$USER test/e2e/logs
 
-      - name: Save Workbench logs as artifacts
+      - name: Save test logs as artifacts
         uses: actions/upload-artifact@v4
         if: failure() && steps.run_tests.outcome == 'failure'
         with:
-          name: workbench-logs
-          path: test/e2e/logs/workbench-*
+          name: e2e-logs
+          path: test/e2e/logs/
           if-no-files-found: ignore
           retention-days: 7
 
