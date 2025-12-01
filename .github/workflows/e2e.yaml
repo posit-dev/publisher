@@ -108,7 +108,7 @@ jobs:
           # Build compose services in parallel after base is ready
           wait
           docker compose build --parallel connect-publisher-e2e code-server
-          just build-workbench "release"
+          just pull-workbench "release"
 
         env:
           CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}

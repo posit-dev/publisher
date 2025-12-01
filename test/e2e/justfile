@@ -71,7 +71,7 @@ build-images:
     docker build -f Dockerfile.base --tag e2ebase --platform linux/amd64 .
     just build "connect-publisher-e2e"
     just build "code-server"
-    just build-workbench "release"
+    just pull-workbench "release"
 
 build-publisher:
     USE_PLATFORM="linux/amd64" just ../../build
@@ -100,16 +100,14 @@ old-dev:
 # =====================================================================
 # Workbench-specific commands
 # These commands use the Workbench services defined in docker-compose.yml
-# The Workbench images include the default user: rstudio/rstudio
+# The Workbench images include the default user: rstudio/rstudio 
+# as documented here: https://hub.docker.com/r/rstudio/rstudio-workbench
 # =====================================================================
 
 # Pull the Workbench container image
-build-workbench service="all":
+pull-workbench service="all":
     #!/usr/bin/env bash
     set -euo pipefail
-
-    # Always remove existing containers first for clean builds
-    just remove-workbench "{{ service }}"
 
     if [ "{{ service }}" = "all" ]; then
         echo "Pulling all Workbench container images..."

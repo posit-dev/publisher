@@ -228,7 +228,7 @@ For manual testing in Workbench:
 
 ```bash
 cd test/e2e
-just build-workbench release
+just pull-workbench release
 just start-workbench release
 just install-workbench-extension release
 ```
