@@ -541,8 +541,11 @@ export function deployProject(
               visitOption,
             );
             if (selection === visitOption) {
-              const uri = Uri.parse(msg.data.dashboardUrl, true);
-              await env.openExternal(uri);
+              const dashboardUrl = msg.data.dashboardUrl;
+              if (dashboardUrl) {
+                const uri = Uri.parse(dashboardUrl, true);
+                await env.openExternal(uri);
+              }
             }
           }
         }),

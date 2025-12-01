@@ -177,16 +177,18 @@ export function pathSort(paths: string[], sep: string): string[] {
 export function pathSorter(a: string[], b: string[]): number {
   const l = Math.max(a.length, b.length);
   for (let i = 0; i < l; i += 1) {
-    if (!(i in a)) {
+    const aItem = a[i];
+    const bItem = b[i];
+    if (aItem === undefined) {
       return -1;
     }
-    if (!(i in b)) {
+    if (bItem === undefined) {
       return +1;
     }
-    if (a[i].toUpperCase() > b[i].toUpperCase()) {
+    if (aItem.toUpperCase() > bItem.toUpperCase()) {
       return +1;
     }
-    if (a[i].toUpperCase() < b[i].toUpperCase()) {
+    if (aItem.toUpperCase() < bItem.toUpperCase()) {
       return -1;
     }
     if (a.length < b.length) {

@@ -55,14 +55,16 @@ export function substituteVariables(s: string, recursive: boolean = false) {
     if (m === null) {
       return "";
     }
-    return process.env[m[1]] || "";
+    const envVar = m[1];
+    return (envVar ? process.env[envVar] : undefined) || "";
   });
   s = s.replace(/\${config:(.*?)}/g, function (variable) {
     const m = variable.match(/\${config:(.*?)}/);
     if (m === null) {
       return "";
     }
-    return workspace.getConfiguration().get(m[1], "");
+    const configKey = m[1];
+    return configKey ? workspace.getConfiguration().get(configKey, "") : "";
   });
 
   if (

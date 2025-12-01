@@ -22,7 +22,7 @@ export const normalizeURL = (input: string): string => {
 
 const isMatchingURL = (input: string, regex: RegExp) => {
   const guid = extractGUID(input)?.at(0);
-  const guidlessInput = guid ? input.split(guid)[0] : "";
+  const guidlessInput = guid ? (input.split(guid)[0] ?? "") : "";
   return regex.test(guidlessInput);
 };
 
