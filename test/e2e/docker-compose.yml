@@ -43,7 +43,6 @@ services:
     volumes:
       - ./licenses/workbench-license.lic:/var/lib/rstudio-server/license.lic
       - ./logs/workbench-preview:/var/log/rstudio/rstudio-server
-      - ./logs/positron-preview:/home/rstudio/.local/state/positron/logs
       - ./config/workbench-logging.conf:/etc/rstudio/logging.conf
       - ./content-workspace:/content-workspace
       - ./workbench-entrypoint.sh:/workbench-entrypoint.sh
@@ -64,7 +63,6 @@ services:
     volumes:
       - ./licenses/workbench-license.lic:/var/lib/rstudio-server/license.lic
       - ./logs/workbench-release:/var/log/rstudio/rstudio-server
-      - ./logs/positron-release:/home/rstudio/.local/state/positron/logs
       - ./config/workbench-logging.conf:/etc/rstudio/logging.conf
       - ./content-workspace:/content-workspace
       - ./workbench-entrypoint.sh:/workbench-entrypoint.sh

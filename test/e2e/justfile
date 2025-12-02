@@ -135,3 +135,7 @@ install-workbench-extension service="release":
 # This command is designed to work from any directory (Cypress or command line)
 check-extension:
     ../scripts/check-workbench-extension.sh
+
+# Extract Positron logs from Workbench container
+extract-positron-logs service="release":
+    ../scripts/extract-positron-logs.sh "{{ service }}"

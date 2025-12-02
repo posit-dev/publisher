@@ -290,6 +290,11 @@ jobs:
         working-directory: test/e2e
         run: docker compose logs code-server || true
 
+      - name: Extract Positron logs from Workbench container
+        if: failure() && steps.run_tests.outcome == 'failure'
+        working-directory: test/e2e
+        run: just extract-positron-logs release
+
       - name: Change log permissions for artifact upload
         if: failure() && steps.run_tests.outcome == 'failure'
         run: |
