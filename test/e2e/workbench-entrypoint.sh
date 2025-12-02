@@ -22,9 +22,10 @@ EOF
 echo "Global Positron settings configured successfully."
 
 # Add to the beginning of workbench-entrypoint.sh (before starting the service)
-echo "Setting permissions to make content-workspace and immediate subdirectories writable for all users"
-chmod 777 /content-workspace
-find /content-workspace -maxdepth 1 -type d -exec chmod 777 {} \;
+# Set ownership to rstudio user (UID 10000, created by supervisord)
+# Using UID because user doesn't exist yet at entrypoint time
+echo "Setting ownership of content-workspace to rstudio user (UID 10000)"
+chown -R 10000:10000 /content-workspace
 
 # Start Posit Workbench using supervisord (the default command for the image)
 echo "Starting Posit Workbench..."
