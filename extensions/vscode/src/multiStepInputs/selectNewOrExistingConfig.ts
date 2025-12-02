@@ -75,9 +75,9 @@ export async function selectNewOrExistingConfig(
     }
     return Boolean(
       state.data.existingConfigurationName &&
-        isQuickPickItem(state.data.existingConfigurationName) &&
-        state.data.existingConfigurationName.label ===
-          createNewConfigurationLabel,
+      isQuickPickItem(state.data.existingConfigurationName) &&
+      state.data.existingConfigurationName.label ===
+        createNewConfigurationLabel,
     );
   };
 

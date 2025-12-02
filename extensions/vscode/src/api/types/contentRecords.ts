@@ -138,8 +138,8 @@ export function isPreContentRecordWithConfig(
 ): d is PreContentRecordWithConfig {
   return Boolean(
     d &&
-      d.state === ContentRecordState.NEW &&
-      (d as PreContentRecordWithConfig).configurationName !== undefined,
+    d.state === ContentRecordState.NEW &&
+    (d as PreContentRecordWithConfig).configurationName !== undefined,
   );
 }
 
