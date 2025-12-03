@@ -5,8 +5,9 @@
     "esModuleInterop": true,
     "module": "preserve",
     "moduleResolution": "bundler",
+    "target": "ES2023",
     "outDir": "out",
-    "lib": ["ES2022", "DOM"],
+    "lib": ["ES2023", "DOM"],
     "sourceMap": true,
     "rootDir": "src",
     /* Linting */
