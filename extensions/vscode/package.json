@@ -640,7 +640,6 @@
     "tsc-watch": "tsc --noEmit --watch --project tsconfig.json",
     "build-font": "fantasticon",
     "lint": "eslint src --max-warnings 0 && eslint webviews/homeView/src --max-warnings 0",
-    "compile": "tsc -p ./",
     "esbuild-tests": "node ./esbuild.tests.mjs",
     "pretest": "npm run esbuild-tests && npm run esbuild-base",
     "test": "vscode-test",
