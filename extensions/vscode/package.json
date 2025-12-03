@@ -641,7 +641,9 @@
     "build-font": "fantasticon",
     "lint": "eslint src --max-warnings 0 && eslint webviews/homeView/src --max-warnings 0",
     "compile": "tsc -p ./",
-    "test": "npm run compile && node ./out/test/runTest.js",
+    "esbuild-tests": "node ./esbuild.tests.mjs",
+    "pretest": "npm run esbuild-tests && npm run esbuild-base",
+    "test": "vscode-test",
     "test-unit": "vitest run"
   },
   "devDependencies": {
