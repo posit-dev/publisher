@@ -637,6 +637,7 @@
     "esbuild-base": "tsc --noEmit && esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
     "esbuild": "npm run esbuild-base -- --sourcemap",
     "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
+    "tsc-watch": "tsc --noEmit --watch --project tsconfig.json",
     "build-font": "fantasticon",
     "lint": "eslint src --max-warnings 0 && eslint webviews/homeView/src --max-warnings 0",
     "compile": "tsc -p ./",
