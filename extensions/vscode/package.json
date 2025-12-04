@@ -634,13 +634,15 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run --prefix webviews/homeView build && npm run esbuild-base -- --minify && npm run build-font",
-    "esbuild-base": "tsc --noEmit && esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
+    "esbuild-base": "tsc --noEmit --project tsconfig.json && esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
     "esbuild": "npm run esbuild-base -- --sourcemap",
     "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
+    "tsc-watch": "tsc --noEmit --watch --project tsconfig.json",
     "build-font": "fantasticon",
     "lint": "eslint src --max-warnings 0 && eslint webviews/homeView/src --max-warnings 0",
-    "compile": "tsc -p ./",
-    "test": "npm run compile && node ./out/test/runTest.js",
+    "esbuild-tests": "node ./esbuild.tests.mjs",
+    "pretest": "npm run esbuild-tests && npm run esbuild-base",
+    "test": "vscode-test",
     "test-unit": "vitest run"
   },
   "devDependencies": {
@@ -653,6 +655,7 @@
     "@types/retry": "^0.12.5",
     "@types/vscode": "^1.87.0",
     "@types/wait-on": "^5.3.3",
+    "@vscode/test-cli": "^0.0.12",
     "@vscode/test-electron": "^2.3.8",
     "esbuild": "^0.27.0",
     "eslint": "^9.39.1",
