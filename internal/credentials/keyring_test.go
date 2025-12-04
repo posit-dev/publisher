@@ -171,13 +171,13 @@ func (s *KeyringCredentialsTestSuite) TestSet() {
 		ServerType:          server_type.ServerTypeSnowflake,
 		Name:                "sfexample",
 		URL:                 "https://example.snowflakecomputing.app",
-		ApiKey:              "",
+		ApiKey:              "test-snowflake-api-key",
 		SnowflakeConnection: "snow"})
 	s.NoError(err)
 	s.NotNil(cred.GUID)
 	s.Equal(cred.Name, "sfexample")
 	s.Equal(cred.URL, "https://example.snowflakecomputing.app")
-	s.Equal(cred.ApiKey, "")
+	s.Equal(cred.ApiKey, "test-snowflake-api-key")
 	s.Equal(cred.SnowflakeConnection, "snow")
 
 	cred, err = cs.Set(CreateCredentialDetails{
