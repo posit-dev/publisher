@@ -673,7 +673,7 @@
     "async-mutex": "^0.5.0",
     "axios": "^1.13.2",
     "debounce": "^2.1.0",
-    "entities": "^6.0.0",
+    "entities": "^7.0.0",
     "eventsource": "^2.0.2",
     "filenamify": "^7.0.1",
     "get-port": "^7.1.0",
