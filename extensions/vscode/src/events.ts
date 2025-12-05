@@ -2,7 +2,7 @@
 
 import { Disposable, env } from "vscode";
 
-import EventSource from "eventsource";
+import { EventSource } from "eventsource";
 import { Readable } from "stream";
 
 import { Events, EventStreamMessage, ProductType } from "src/api";
