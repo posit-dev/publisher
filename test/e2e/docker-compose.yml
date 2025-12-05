@@ -38,6 +38,7 @@ services:
   workbench-preview:
     container_name: publisher-e2e.workbench-preview
     image: rstudio/rstudio-workbench-preview:ubuntu2204-preview
+    platform: linux/amd64
     ports:
       - "8787:8787"
     volumes:
@@ -58,6 +59,7 @@ services:
   workbench-release:
     container_name: publisher-e2e.workbench-release
     image: rstudio/rstudio-workbench:ubuntu2204
+    platform: linux/amd64
     ports:
       - "8787:8787"
     volumes:
