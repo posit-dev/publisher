@@ -10,7 +10,7 @@ on:
 jobs:
   cypress:
     name: e2e tests (cypress)
-    runs-on: ubuntu-latest-8x
+    runs-on: ubuntu-latest
     env:
       # MANUAL DEBUG OVERRIDE: Change to "true" to force debug (videos, extra logs)
       DEBUG_CYPRESS: "true"
