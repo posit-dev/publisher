@@ -673,7 +673,7 @@
     "axios": "^1.13.2",
     "debounce": "^3.0.0",
     "entities": "^7.0.0",
-    "eventsource": "^2.0.2",
+    "eventsource": "^4.1.0",
     "filenamify": "^7.0.1",
     "get-port": "^7.1.0",
     "mutexify": "^1.4.0",
