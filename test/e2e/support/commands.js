@@ -606,8 +606,9 @@ Cypress.Commands.add(
         throw new Error("Missing required PCC credential fields");
       }
 
-      // Persist token securely in memory for cleanup; never log this
+      // Persist token and account ID in memory for cleanup; never log these
       Cypress.env("PCC_ACCESS_TOKEN", access_token);
+      Cypress.env("PCC_ACCOUNT_ID", account_id);
 
       const toml = `
 [credentials.${nickname}]
@@ -703,37 +704,97 @@ Cypress.Commands.add("expectCredentialsSectionEmpty", () => {
 });
 
 // deletePCCContent
-// Purpose: Minimal PCC cleanup using in-memory values captured during the test.
+// Purpose: Delete ALL PCC content for the test account to ensure clean state.
 // - Requires Cypress.env("PCC_ACCESS_TOKEN") set by setPCCCredential()
-// - Requires Cypress.env("LAST_PCC_CONTENT_ID") set by the test after reading direct_url
+// - Requires Cypress.env("PCC_ACCOUNT_ID") set by setPCCCredential()
 Cypress.Commands.add("deletePCCContent", () => {
-  const contentId = Cypress.env("LAST_PCC_CONTENT_ID");
   const token = Cypress.env("PCC_ACCESS_TOKEN");
+  const accountId = Cypress.env("PCC_ACCOUNT_ID");
   const env = Cypress.env("CONNECT_CLOUD_ENV") || "staging";
 
   // Mask token in any logging
   const mask = (t) => (t ? `${t.slice(0, 4)}***${t.slice(-4)}` : "(none)");
 
-  if (!contentId || !token) {
+  if (!token || !accountId) {
     cy.task(
       "print",
-      `[PCC-DELETE] Skipping: contentId=${contentId || "(none)"} token=${mask(token)}`,
+      `[PCC-DELETE] Skipping: accountId=${accountId || "(none)"} token=${mask(token)}`,
     );
     return;
   }
 
-  const url = `https://api.${env}.connect.posit.cloud/v1/contents/${contentId}`;
-  cy.task("print", `[PCC-DELETE] DELETE ${url}`);
+  // List and delete first batch of content for this account
+  const limit = 25; // Delete up to 25 items per test run
+  const listUrl = `https://api.${env}.connect.posit.cloud/v1/contents?account_id=${accountId}&include_total=true&limit=${limit}&offset=0&state=active`;
 
   cy.request({
-    method: "DELETE",
-    url,
+    method: "GET",
+    url: listUrl,
     headers: { Authorization: `Bearer ${token}` },
     failOnStatusCode: false,
-  }).then((resp) => {
-    cy.task("print", `[PCC-DELETE] status=${resp.status}`);
-    // Clear stored id to avoid leakage across tests
-    Cypress.env("LAST_PCC_CONTENT_ID", null);
+  }).then((listResp) => {
+    if (listResp.status !== 200) {
+      cy.task(
+        "print",
+        `[PCC-DELETE] List failed with status=${listResp.status}`,
+      );
+      return;
+    }
+
+    const responseData = listResp.body;
+    const contents = responseData.data || responseData.contents || [];
+    const total = responseData.total || 0;
+
+    cy.task(
+      "print",
+      `[PCC-DELETE] Found ${total} total items, deleting first ${contents.length}`,
+    );
+
+    if (contents.length === 0) {
+      cy.task("print", `[PCC-DELETE] No content to delete`);
+      return;
+    }
+
+    // Helper to delete items sequentially
+    function deleteItems(items, index = 0, deletedCount = 0) {
+      if (index >= items.length) {
+        cy.task(
+          "print",
+          `[PCC-DELETE] Deleted ${deletedCount} of ${items.length} items`,
+        );
+        return;
+      }
+
+      const content = items[index];
+      const deleteUrl = `https://api.${env}.connect.posit.cloud/v1/contents/${content.id}`;
+
+      cy.request({
+        method: "DELETE",
+        url: deleteUrl,
+        headers: { Authorization: `Bearer ${token}` },
+        failOnStatusCode: false,
+      }).then((deleteResp) => {
+        const newDeletedCount =
+          deleteResp.status === 204 || deleteResp.status === 200
+            ? deletedCount + 1
+            : deletedCount;
+
+        if (deleteResp.status === 204 || deleteResp.status === 200) {
+          cy.task("print", `[PCC-DELETE] ✓ ${content.title || content.id}`);
+        } else {
+          cy.task(
+            "print",
+            `[PCC-DELETE] ✗ ${content.title || content.id} status=${deleteResp.status}`,
+          );
+        }
+
+        // Delete next item
+        deleteItems(items, index + 1, newDeletedCount);
+      });
+    }
+
+    // Start deleting items
+    deleteItems(contents);
   });
 });
 

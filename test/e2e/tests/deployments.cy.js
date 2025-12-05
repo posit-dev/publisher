@@ -170,39 +170,6 @@ describe("Deployments Section", () => {
             (contentRecord) => {
               const publishedUrl = contentRecord.direct_url;
 
-              // Store contentId for cleanup with multiple derivation strategies (CI-safe)
-              let stored = false;
-              const idFromRecord =
-                contentRecord.content_id || contentRecord.guid;
-              if (idFromRecord) {
-                Cypress.env("LAST_PCC_CONTENT_ID", idFromRecord);
-                stored = true;
-              }
-              if (!stored) {
-                try {
-                  const u = new URL(publishedUrl);
-                  // Prefer share subdomain prefix if present
-                  const hostPart = (u.hostname || "").split(".")[0];
-                  const uuidish = /^[0-9a-f-]{8,}$/i.test(hostPart)
-                    ? hostPart
-                    : null;
-                  if (uuidish) {
-                    Cypress.env("LAST_PCC_CONTENT_ID", uuidish);
-                    stored = true;
-                  } else {
-                    // Fallback: last non-empty path segment
-                    const segs = u.pathname.split("/").filter(Boolean);
-                    const tail = segs[segs.length - 1];
-                    if (tail && /^[0-9a-f-]{8,}$/i.test(tail)) {
-                      Cypress.env("LAST_PCC_CONTENT_ID", tail);
-                      stored = true;
-                    }
-                  }
-                } catch {
-                  // ignore parse errors
-                }
-              }
-
               const expectedTitle = "Restaurant tipping";
               cy.task("confirmPCCPublishSuccess", {
                 publishedUrl,
