@@ -125,8 +125,13 @@ Cypress.Commands.add(
         el.value = title; // set
         el.dispatchEvent(new Event("input", { bubbles: true }));
         el.dispatchEvent(new Event("change", { bubbles: true }));
-        cy.wrap($input).should("have.value", title).focus();
       });
+
+    // Verify title is set before submitting to advance to credential selection
+    cy.get(".quick-input-widget")
+      .find(".quick-input-filter input")
+      .should("have.value", title);
+
     cy.get(".quick-input-widget").type("{enter}");
 
     // Robust credential selection by row content (avoids hidden/virtualized anchors)
