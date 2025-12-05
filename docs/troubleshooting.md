@@ -2,6 +2,8 @@
 
 This document contains some common issues and solutions for Posit Publisher.
 
+Note that in addition to the Publisher output panel, there is extra detailed logging available in Visual Studio Code the Posit Publisher Deployment section of the output panel.
+
 ## The Configuration has a schema error
 
 If deploying results in the following error:
