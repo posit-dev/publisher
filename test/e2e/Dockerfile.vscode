@@ -26,12 +26,8 @@ RUN mkdir -p /root/.local/share/code-server/User \
     && printf '{\n\t"security.workspace.trust.enabled": false,\n\t"security.workspace.trust.banner": "never",\n\t"security.workspace.trust.startupPrompt": "never"\n}' \
     > /root/.local/share/code-server/User/settings.json
 
-# Install jq for use in entrypoint scripts to safely merge settings
+# Install jq for use in entrypoint scripts
 RUN apt-get update && apt-get install -y jq
-
-# Copy enable-pcc-flag.sh into the image and make it executable
-COPY test/scripts/enable-pcc-flag.sh /usr/local/bin/enable-pcc-flag.sh
-RUN chmod +x /usr/local/bin/enable-pcc-flag.sh
 
 # Expose port
 EXPOSE 8080
