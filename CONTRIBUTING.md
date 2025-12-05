@@ -230,7 +230,7 @@ For manual testing in Workbench:
 cd test/e2e
 just pull-workbench release
 just start-workbench release
-just install-workbench-extension release
+just install-positron-extension release
 ```
 
 Login with username/password: rstudio/rstudio

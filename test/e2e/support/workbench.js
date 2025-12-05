@@ -5,16 +5,16 @@
  */
 
 /**
- * Check if the Publisher extension is installed in the workbench container
+ * Check if the Publisher extension is installed in Positron
  * This command ensures tests fail quickly if the extension isn't properly installed
  */
-Cypress.Commands.add("checkPublisherExtension", () => {
+Cypress.Commands.add("checkPositronExtension", () => {
   // Get the project root directory so we can run justfile commands
   const e2eDir = Cypress.config("fileServerFolder");
 
   cy.log("Checking if Publisher extension is installed...");
 
-  cy.exec(`cd "${e2eDir}" && just check-extension`, {
+  cy.exec(`cd "${e2eDir}" && just check-positron-extension`, {
     failOnNonZeroExit: false,
     timeout: 20_000,
   }).then((result) => {
@@ -209,7 +209,7 @@ Cypress.Commands.add("restartWorkbench", () => {
 
   // Install the Publisher extension
   cy.log("Installing Publisher extension in Workbench");
-  cy.exec(`just install-workbench-extension release`, {
+  cy.exec(`just install-positron-extension release`, {
     failOnNonZeroExit: false,
     timeout: 30_000,
   }).then((result) => {
@@ -238,8 +238,8 @@ Cypress.Commands.add("restartWorkbench", () => {
  * Starts a Positron session in Workbench and waits for it to be ready
  * This includes waiting for all necessary UI elements and session initialization
  */
-Cypress.Commands.add("startWorkbenchPositronSession", () => {
-  cy.log("Starting Workbench Positron session");
+Cypress.Commands.add("startPositronSession", () => {
+  cy.log("Starting Positron session");
 
   // Start a Positron session
   // TODO remove this workaround for "All types of sessions are disabled" error after Workbench 2025.12.0 is released

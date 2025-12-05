@@ -12,9 +12,9 @@ describe("Workbench > Positron", { baseUrl: WORKBENCH_BASE_URL }, () => {
     cy.clearupDeployments();
     // Reset and restart the Workbench container before each test to ensure a clean state
     cy.restartWorkbench();
-    cy.checkPublisherExtension();
+    cy.checkPositronExtension();
     cy.visitAndLoginToWorkbench();
-    cy.startWorkbenchPositronSession();
+    cy.startPositronSession();
   });
 
   context("Connect", () => {

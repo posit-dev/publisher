@@ -178,7 +178,7 @@ jobs:
       - name: Install Workbench Positron extension
         working-directory: test/e2e
         run: |
-          just install-workbench-extension "release"
+          just install-positron-extension "release"
 
       - name: Prepare test environment
         working-directory: test/e2e

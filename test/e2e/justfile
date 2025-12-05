@@ -59,7 +59,7 @@ e2e:
     # Install the Publisher extension
     VSIX_FILENAME=$(ls -Art ../../dist | grep linux-amd64 | tail -n 1)
     docker compose exec code-server code-server --install-extension "/home/coder/vsix/${VSIX_FILENAME}"
-    just install-workbench-extension "release"
+    just install-positron-extension "release"
 
     npm run cypress:open
 
@@ -128,13 +128,13 @@ remove-workbench service="release":
     docker compose rm -f workbench-{{ service }}
 
 # Install Publisher extension in a running Workbench container
-install-workbench-extension service="release":
-    ../scripts/install-workbench-extension.sh "{{ service }}"
+install-positron-extension service="release":
+    ../scripts/install-positron-extension.sh "{{ service }}"
 
-# Check if publisher extension is installed in workbench-release
+# Check if publisher extension is installed in Positron
 # This command is designed to work from any directory (Cypress or command line)
-check-extension:
-    ../scripts/check-workbench-extension.sh
+check-positron-extension:
+    ../scripts/check-positron-extension.sh
 
 # Extract Positron logs from Workbench container
 extract-positron-logs service="release":
