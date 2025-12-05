@@ -358,8 +358,12 @@ Cypress.Commands.add(
       // Open the project from within the content-workspace directory using the full path
       cy.get(".quick-input-box input").type("{selectall}" + "{del}");
       cy.get(".quick-input-box input").type(
-        `/content-workspace/` + `${projectDir}` + "{enter}",
+        `/content-workspace/` + `${projectDir}`,
       );
+      // Need to pace the test slightly to allow the selection to register or clicking "OK" sometimes does not work
+      cy.get(`.monaco-list-row[aria-label="${projectDir}"]`)
+        .should("be.visible")
+        .click();
       // Need to pace the test slightly to allow the selection to register or clicking "OK" sometimes does not work
       cy.get(`.monaco-list-row[aria-label="${projectDir}"]`).should(
         "not.exist",
