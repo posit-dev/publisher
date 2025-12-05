@@ -380,8 +380,7 @@ Cypress.Commands.add("deployCurrentlySelected", () => {
     .findByText("Deploying your project: Starting to Deploy...")
     .should("not.exist");
 
-  // Increased timeout because Shiny apps can take a while
-  cy.findByText("Deployment was successful", { timeout: 240_000 }).should(
+  cy.findByText("Deployment was successful", { timeout: 60_000 }).should(
     "be.visible",
   );
 });
