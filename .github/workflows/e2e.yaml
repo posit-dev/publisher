@@ -189,39 +189,6 @@ jobs:
           # Clean up any static TOML files before tests
           docker exec publisher-e2e.code-server rm -f /home/coder/workspace/static*.toml || true
 
-      - name: "[DEBUG] Print system and container resource usage"
-        run: |
-          echo "=== SYSTEM RESOURCES ==="
-          free -h
-          uptime
-
-          # Disk space - this is safe
-          df -h
-
-          # Container resource limits - use grep instead of jq since jq might not be installed
-          echo "=== CONTAINER RESOURCE LIMITS ==="
-          docker inspect publisher-e2e.workbench-release 2>/dev/null | grep -E 'NanoCpus|Memory\"' || echo "Could not inspect container"
-
-          # Get safe subset of container processes
-          echo "=== PROCESSES IN WORKBENCH CONTAINER ==="
-          docker top publisher-e2e.workbench-release 2>/dev/null || echo "Could not get container processes"
-
-          # Check process count inside container (no detailed output that might fail)
-          echo "=== CONTAINER PROCESS COUNT ==="
-          docker exec publisher-e2e.workbench-release bash -c 'ps aux | wc -l' 2>/dev/null || echo "Could not count processes"
-
-          # Check CPU cores and memory inside container with fallbacks
-          echo "=== CONTAINER INTERNAL RESOURCES ==="
-          docker exec publisher-e2e.workbench-release bash -c 'echo "Memory:"; free -h 2>/dev/null || echo "free command not available"' 2>/dev/null || echo "Could not 
-          check container memory"
-          docker exec publisher-e2e.workbench-release bash -c 'echo "CPU cores:"; nproc 2>/dev/null || grep -c processor /proc/cpuinfo 2>/dev/null || echo "Could not 
-          determine CPU count"' 2>/dev/null || echo "Could not check container CPUs"
-
-          # List key directories (safer than trying to find logs)
-          echo "=== KEY DIRECTORIES ==="
-          docker exec publisher-e2e.workbench-release bash -c 'ls -la /var/log/rstudio 2>/dev/null || echo "Directory not found"' 2>/dev/null || echo "Could not list 
-          directories"
-
       - name: Run Cypress tests
         id: run_tests
         working-directory: test/e2e
