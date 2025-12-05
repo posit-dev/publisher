@@ -606,8 +606,9 @@ Cypress.Commands.add(
         throw new Error("Missing required PCC credential fields");
       }
 
-      // Persist token securely in memory for cleanup; never log this
+      // Persist token and account ID in memory for cleanup; never log these
       Cypress.env("PCC_ACCESS_TOKEN", access_token);
+      Cypress.env("PCC_ACCOUNT_ID", account_id);
 
       const toml = `
 [credentials.${nickname}]
@@ -705,12 +706,11 @@ Cypress.Commands.add("expectCredentialsSectionEmpty", () => {
 // deletePCCContent
 // Purpose: Delete ALL PCC content for the test account to ensure clean state.
 // - Requires Cypress.env("PCC_ACCESS_TOKEN") set by setPCCCredential()
-// - Requires account_id from pccConfig
+// - Requires Cypress.env("PCC_ACCOUNT_ID") set by setPCCCredential()
 Cypress.Commands.add("deletePCCContent", () => {
   const token = Cypress.env("PCC_ACCESS_TOKEN");
+  const accountId = Cypress.env("PCC_ACCOUNT_ID");
   const env = Cypress.env("CONNECT_CLOUD_ENV") || "staging";
-  const pccConfig = Cypress.env("pccConfig");
-  const accountId = pccConfig?.pcc_user_ccqa3?.account_id;
 
   // Mask token in any logging
   const mask = (t) => (t ? `${t.slice(0, 4)}***${t.slice(-4)}` : "(none)");
@@ -752,7 +752,6 @@ Cypress.Commands.add("deletePCCContent", () => {
 
     if (contents.length === 0) {
       cy.task("print", `[PCC-DELETE] No content to delete`);
-      Cypress.env("LAST_PCC_CONTENT_ID", null);
       return;
     }
 
@@ -763,7 +762,6 @@ Cypress.Commands.add("deletePCCContent", () => {
           "print",
           `[PCC-DELETE] Deleted ${deletedCount} of ${items.length} items`,
         );
-        Cypress.env("LAST_PCC_CONTENT_ID", null);
         return;
       }
 
