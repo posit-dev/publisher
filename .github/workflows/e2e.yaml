@@ -4,6 +4,8 @@ on:
     secrets:
       CONNECT_LICENSE:
         required: true
+      WORKBENCH_LICENSE:
+        required: true
 
 jobs:
   cypress:
@@ -21,7 +23,8 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
-
+      - name: Tidy CI environment
+        run: ./test/scripts/tidy-github-actions-runner.sh
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
@@ -84,6 +87,14 @@ jobs:
         env:
           CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
 
+      - name: Write Workbench license file
+        if: env.WORKBENCH_LICENSE != ''
+        run: |
+          mkdir -p ./test/e2e/licenses
+          echo "$WORKBENCH_LICENSE" > ./test/e2e/licenses/workbench-license.lic
+        env:
+          WORKBENCH_LICENSE: ${{ secrets.WORKBENCH_LICENSE }}
+
       - name: Build Docker images
         working-directory: test/e2e
         run: |
@@ -98,12 +109,16 @@ jobs:
           # Build compose services in parallel after base is ready
           wait
           docker compose build --parallel connect-publisher-e2e code-server
+          just pull-workbench "release"
+
         env:
           CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
 
       - name: Start containers
         working-directory: test/e2e
-        run: docker compose up -d connect-publisher-e2e code-server
+        run: |
+          docker compose up -d connect-publisher-e2e code-server
+          just start-workbench "release"
 
       - name: Wait for services to be ready
         run: |
@@ -161,6 +176,11 @@ jobs:
             sleep 1
           done
 
+      - name: Install Workbench Positron extension
+        working-directory: test/e2e
+        run: |
+          just install-positron-extension "release"
+
       - name: Prepare test environment
         working-directory: test/e2e
         run: |
@@ -171,6 +191,7 @@ jobs:
           docker exec publisher-e2e.code-server rm -f /home/coder/workspace/static*.toml || true
 
       - name: Run Cypress tests
+        id: run_tests
         working-directory: test/e2e
         run: npx cypress run --headless --browser chrome
         env:
@@ -236,6 +257,25 @@ jobs:
         if: always() && (env.DEBUG_CYPRESS == 'true' || env.VARS_DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true')
         working-directory: test/e2e
         run: docker compose logs code-server || true
+
+      - name: Extract Positron logs from Workbench container
+        if: failure() && steps.run_tests.outcome == 'failure'
+        working-directory: test/e2e
+        run: just extract-positron-logs release
+
+      - name: Change log permissions for artifact upload
+        if: failure() && steps.run_tests.outcome == 'failure'
+        run: |
+          sudo chown -R $USER:$USER test/e2e/logs
+
+      - name: Save test logs as artifacts
+        uses: actions/upload-artifact@v4
+        if: failure() && steps.run_tests.outcome == 'failure'
+        with:
+          name: e2e-logs
+          path: test/e2e/logs/
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Stop containers
         if: always()
