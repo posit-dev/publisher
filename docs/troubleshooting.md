@@ -14,7 +14,7 @@ by saving it into a file and attaching it to the issue.
 
 ![](https://cdn.posit.co/publisher/assets/img/save-output.png)
 
-### Detailed Output 
+### Detailed Output 
 
 In addition to the key information supplied in the Publisher output panel, detailed logging from the publisher is available in Visual Studio Code using the Posit Publisher Deployment section of the output panel.
 
