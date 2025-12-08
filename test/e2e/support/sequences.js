@@ -380,14 +380,13 @@ Cypress.Commands.add("deployCurrentlySelected", () => {
       Cypress.$(dplyBtn).trigger("click");
     });
   // Wait for deploying message to finish
-  cy.get(".notifications-toasts", { timeout: 30000 })
+  cy.get(".notifications-toasts", { timeout: 30_000 })
     .should("be.visible")
     .findByText("Deploying your project: Starting to Deploy...")
     .should("not.exist");
 
-  cy.findByText("Deployment was successful", { timeout: 60000 }).should(
+  cy.findByText("Deployment was successful", { timeout: 60_000 }).should(
     "be.visible",
-    { message: "Deployment didn't succeed within 60 seconds." },
   );
 });
 
