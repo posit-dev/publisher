@@ -124,10 +124,6 @@ func (c *ServerPublisher) getContentRequestBase(isFirstDeploy bool) (*types.Cont
 		title = c.SaveName
 	}
 
-	rVersion := ""
-	if c.Config.R != nil {
-		rVersion = c.Config.R.Version
-	}
 	pythonVersion := ""
 	if c.Config.Python != nil {
 		pythonVersion = c.Config.Python.Version
@@ -137,8 +133,6 @@ func (c *ServerPublisher) getContentRequestBase(isFirstDeploy bool) (*types.Cont
 	if err != nil {
 		return nil, err
 	}
-
-	appMode := types.AppModeFromType(c.Config.Type)
 
 	combinedEnv := make(map[string]string)
 	maps.Copy(combinedEnv, c.Config.Environment)
@@ -175,10 +169,8 @@ func (c *ServerPublisher) getContentRequestBase(isFirstDeploy bool) (*types.Cont
 
 	revision := types.RequestRevision{
 		SourceType:     "bundle",
-		RVersion:       rVersion,
 		PythonVersion:  pythonVersion,
 		ContentType:    cloudContentType,
-		AppMode:        appMode,
 		PrimaryFile:    c.Config.Entrypoint,
 		ConnectOptions: connectOptions,
 	}
@@ -186,7 +178,6 @@ func (c *ServerPublisher) getContentRequestBase(isFirstDeploy bool) (*types.Cont
 		Title:       title,
 		Description: c.Config.Description,
 		Access:      access,
-		AppMode:     types.AppModeFromType(c.Config.Type),
 		Secrets:     secrets,
 	}
 	if isFirstDeploy {
