@@ -16,7 +16,6 @@ import {
 import {
   extractConnectCloudAccount,
   isConnectCloudContentURL,
-  isConnectContentURL,
 } from "src/utils/url";
 import config from "src/config";
 
@@ -43,17 +42,8 @@ export function validateGuidInput(
       severity: InputBoxValidationSeverity.Error,
     };
   }
-  // check the provided URL matches the expected server's URL format
-  if (
-    (isConnectProduct(productType) && !isConnectContentURL(text)) ||
-    (isConnectCloudProduct(productType) && !isConnectCloudContentURL(text))
-  ) {
-    return {
-      message: `Unexpected URL format for a ${productName} Content URL. Confirm the URL loads content from the ${productName} server.`,
-      severity: InputBoxValidationSeverity.Error,
-    };
-  }
-  // check the account matches for Connect Cloud
+
+  // For Connect Cloud, check the account matches if a URL was provided (not just a plain GUID)
   if (isConnectCloudProduct(productType) && isConnectCloudContentURL(text)) {
     const extractedAccount = extractConnectCloudAccount(text);
     if (extractedAccount !== accountName) {
