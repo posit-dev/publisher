@@ -74,7 +74,7 @@ jobs:
       - uses: extractions/setup-just@v3
 
       - name: Download VSIX artifact
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: dist
           path: dist
