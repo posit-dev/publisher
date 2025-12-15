@@ -646,7 +646,7 @@
     "test-unit": "vitest run"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.1",
+    "@eslint/js": "^9.39.2",
     "@twbs/fantasticon": "^3.0.0",
     "@types/mocha": "^10.0.2",
     "@types/mutexify": "^1.2.3",
@@ -657,17 +657,17 @@
     "@vscode/test-cli": "^0.0.12",
     "@vscode/test-electron": "^2.3.8",
     "esbuild": "^0.27.0",
-    "eslint": "^9.39.1",
+    "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.0.1",
-    "fishery": "^2.2.2",
+    "fishery": "^2.4.0",
     "globals": "^16.5.0",
     "mocha": "^11.1.0",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.48.0",
+    "typescript-eslint": "^8.50.0",
     "vitest": "^4.0.14"
   },
   "dependencies": {
-    "@vscode/codicons": "^0.0.43",
+    "@vscode/codicons": "^0.0.44",
     "async-mutex": "^0.5.0",
     "axios": "^1.13.2",
     "debounce": "^3.0.0",
