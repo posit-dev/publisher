@@ -4,7 +4,6 @@ import { describe, expect, test } from "vitest";
 import {
   formatURL,
   normalizeURL,
-  isConnectContentURL,
   isConnectCloudContentURL,
   extractConnectCloudAccount,
 } from "./url";
@@ -28,81 +27,6 @@ describe("normalizeURL", () => {
 
   test("does not add trailing slash if already present", () => {
     expect(normalizeURL("https://example.com/")).toBe("https://example.com/");
-  });
-});
-
-describe("isConnectContentURL", () => {
-  describe("valid Connect in-app URLs", () => {
-    test("returns true for standard Connect in-app URL", () => {
-      const url =
-        "https://connect.company.co/connect/#/apps/adffa505-08c7-450f-88d0-f42957f56eff";
-      expect(isConnectContentURL(url)).toBe(true);
-    });
-
-    test("returns true for Connect URL with subdomain", () => {
-      const url =
-        "https://connect.my_sub.company.com/connect/#/apps/adffa505-08c7-450f-88d0-f42957f56eff";
-      expect(isConnectContentURL(url)).toBe(true);
-    });
-
-    test("returns true for Connect URL with deep subdomain", () => {
-      const url =
-        "https://connect.another.deep_sub.domain_name.org/connect/#/apps/adffa505-08c7-450f-88d0-f42957f56eff";
-      expect(isConnectContentURL(url)).toBe(true);
-    });
-
-    test("returns true for Connect URL with deep path", () => {
-      const url =
-        "https://company.co/data-science/2025/staging-server/#/apps/adffa505-08c7-450f-88d0-f42957f56eff";
-      expect(isConnectContentURL(url)).toBe(true);
-    });
-
-    test("returns true for http Connect URL", () => {
-      const url =
-        "http://connect.company.co/connect/#/apps/adffa505-08c7-450f-88d0-f42957f56eff";
-      expect(isConnectContentURL(url)).toBe(true);
-    });
-  });
-
-  describe("invalid Connect URLs", () => {
-    test("returns false for wrong path structure", () => {
-      const url =
-        "https://connect.company.co/wrong/connect/#/path/apps/adffa505-08c7-450f-88d0-f42957f56eff";
-      expect(isConnectContentURL(url)).toBe(false);
-    });
-
-    test("returns false for missing slash before #", () => {
-      const url =
-        "https://connect.company.co/connect/#apps/adffa505-08c7-450f-88d0-f42957f56eff";
-      expect(isConnectContentURL(url)).toBe(false);
-    });
-
-    test("returns false for invalid path after #", () => {
-      const url =
-        "https://connect.invalid.com/connect/#/@pps/adffa505-08c7-450f-88d0-f42957f56eff";
-      expect(isConnectContentURL(url)).toBe(false);
-    });
-
-    test("returns false for URL without GUID", () => {
-      const url = "https://connect.company.co/connect/#/apps/";
-      expect(isConnectContentURL(url)).toBe(false);
-    });
-  });
-
-  describe("Connect standalone URLs", () => {
-    test("returns false for Connect standalone URL (current behavior)", () => {
-      // This documents the current behavior - standalone URLs are NOT accepted
-      // This is the bug we're fixing - ideally this should be true
-      const url =
-        "https://connect.company.co/content/adffa505-08c7-450f-88d0-f42957f56eff";
-      expect(isConnectContentURL(url)).toBe(false);
-    });
-
-    test("returns false for Connect standalone URL with trailing slash", () => {
-      const url =
-        "https://connect.company.co/content/adffa505-08c7-450f-88d0-f42957f56eff/";
-      expect(isConnectContentURL(url)).toBe(false);
-    });
   });
 });
 

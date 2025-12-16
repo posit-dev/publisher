@@ -44,13 +44,21 @@ export function validateGuidInput(
   }
 
   // For Connect Cloud, check the account matches if a URL was provided (not just a plain GUID)
-  if (isConnectCloudProduct(productType) && isConnectCloudContentURL(text)) {
-    const extractedAccount = extractConnectCloudAccount(text);
-    if (extractedAccount !== accountName) {
+  if (isConnectCloudProduct(productType)) {
+    if (!isConnectCloudContentURL(text)) {
+      // We have the wrong URL format here, we need to reject before we possibly send folks to the UI with a bad URL
       return {
-        message: `Account mismatch for ${productName} Content URL. Please try again with published content for account: ${accountName}.`,
+        message: `Unexpected URL format for a ${productName} Content URL. Confirm the URL loads content from the ${productName} server.`,
         severity: InputBoxValidationSeverity.Error,
       };
+    } else {
+      const extractedAccount = extractConnectCloudAccount(text);
+      if (extractedAccount !== accountName) {
+        return {
+          message: `Account mismatch for ${productName} Content URL. Please try again with published content for account: ${accountName}.`,
+          severity: InputBoxValidationSeverity.Error,
+        };
+      }
     }
   }
 

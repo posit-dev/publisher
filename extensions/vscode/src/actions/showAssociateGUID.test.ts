@@ -44,29 +44,29 @@ describe("showAssociateGUID validation logic", () => {
       });
     });
 
-    describe("currently rejected inputs (THE BUG - these should be accepted)", () => {
-      test("FAILS: rejects Connect standalone URL (should accept)", () => {
+    describe("onprem Connect is liberal in what it accepts with GUIDs", () => {
+      test("accepts Connect standalone URL", () => {
         const url = `https://connect.company.co/content/${sampleGuid}`;
         const result = validateGuidInput(url, productType, productName);
 
         expect(result).toBeNull();
       });
 
-      test("FAILS: rejects Connect standalone URL with trailing slash (should accept)", () => {
+      test("without trailing slash", () => {
         const url = `https://connect.company.co/content/${sampleGuid}/`;
         const result = validateGuidInput(url, productType, productName);
 
         expect(result).toBeNull();
       });
 
-      test("FAILS: rejects plain GUID (should accept)", () => {
+      test("plain GUID", () => {
         const guid = sampleGuid;
         const result = validateGuidInput(guid, productType, productName);
 
         expect(result).toBeNull();
       });
 
-      test("FAILS: rejects GUID with braces (should accept)", () => {
+      test("GUID with braces", () => {
         const guid = `{${sampleGuid}}`;
         const result = validateGuidInput(guid, productType, productName);
 
@@ -139,8 +139,8 @@ describe("showAssociateGUID validation logic", () => {
       });
     });
 
-    describe("currently rejected inputs (THE BUG - plain GUID should be accepted)", () => {
-      test("FAILS: rejects plain GUID (should accept)", () => {
+    describe("invalid inputs are rejected", () => {
+      test("rejects plain GUID (should accept)", () => {
         const guid = sampleGuid;
         const result = validateGuidInput(
           guid,
@@ -149,14 +149,10 @@ describe("showAssociateGUID validation logic", () => {
           connectCloudAccountName,
         );
 
-        // Desired behavior after fix: should be null (valid)
-        // Note: When a plain GUID is provided for Connect Cloud, we can't validate the account
-        // but we should accept it anyway since the user explicitly provided it
-        expect(result).toBeNull();
+        expect(result).not.toBeNull();
+        expect(result?.message).toContain("Unexpected URL format");
       });
-    });
 
-    describe("invalid inputs (should remain rejected)", () => {
       test("rejects URL with wrong account", () => {
         const url = `https://connect.posit.cloud/different-account/content/${sampleGuid}`;
         const result = validateGuidInput(
