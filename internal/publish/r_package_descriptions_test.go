@@ -344,6 +344,9 @@ func (s *RPackageDescSuite) TestGetRPackages_IncludesIndirectExtraDependencies()
 		Files: []string{"report.Rmd"},
 	}
 
+	// Create the report.Rmd file so it exists
+	_ = s.dirPath.Join("report.Rmd").WriteFile([]byte("---\ntitle: Report\n---\n"), 0644)
+
 	// Scanner returns a fake lockfile path
 	generated := s.dirPath.Join("scanned.lock")
 	expectedPathsToScan := []string{
@@ -352,6 +355,79 @@ func (s *RPackageDescSuite) TestGetRPackages_IncludesIndirectExtraDependencies()
 	}
 	s.packageMapper.On("ScanDependencies", expectedPathsToScan, mock.Anything).Return(generated, nil)
 	// Ensure GetManifestPackages is called with the generated lockfile, not the default
+	s.packageMapper.On("GetManifestPackages", s.dirPath, generated).Return(s.successPackageMap, nil)
+
+	publisher := s.makePublisher()
+	packageMap, err := publisher.getRPackages(true)
+	s.NoError(err)
+	s.Equal(s.successPackageMap, packageMap)
+	s.log.AssertExpectations(s.T())
+}
+
+// Test for issue #3089: When a file is listed in Config.Files but doesn't exist,
+// it should not be passed to ScanDependencies.
+func (s *RPackageDescSuite) TestGetRPackages_ScanDependencies_SkipsMissingConfigFiles() {
+	s.log.On("Info", "Detect dependencies from project").Return()
+	s.log.On("Debug", "Looking up for extra dependencies for content", "type", mock.Anything).Return()
+	s.log.On("Debug", "No extra dependencies found to be included").Return()
+	s.log.On("Info", "Loading packages from local R library").Return()
+	s.log.On("Info", "Done collecting R package descriptions").Return()
+
+	// Configure files where some exist and some don't (simulating deleted renv.lock)
+	s.stateStore.Config = &config.Config{
+		Files: []string{"app.R", "renv.lock", "helpers.R"},
+		R: &config.R{
+			PackageFile: "ignored-when-scan.lock",
+		},
+	}
+
+	// Create only some of the configured files (renv.lock is intentionally missing)
+	_ = s.dirPath.Join("app.R").WriteFile([]byte("library(shiny)"), 0644)
+	_ = s.dirPath.Join("helpers.R").WriteFile([]byte("helper_func <- function() {}"), 0644)
+	// renv.lock is NOT created - simulating it being deleted after being added to config
+
+	// Only the existing files should be passed to ScanDependencies
+	expectedPaths := []string{
+		s.dirPath.Join("app.R").String(),
+		s.dirPath.Join("helpers.R").String(),
+		// renv.lock should NOT be in this list
+	}
+
+	generated := s.dirPath.Join("scanned.lock")
+	s.packageMapper.On("ScanDependencies", expectedPaths, mock.Anything).Return(generated, nil)
+	s.packageMapper.On("GetManifestPackages", s.dirPath, generated).Return(s.successPackageMap, nil)
+
+	publisher := s.makePublisher()
+	packageMap, err := publisher.getRPackages(true)
+	s.NoError(err)
+	s.Equal(s.successPackageMap, packageMap)
+	s.log.AssertExpectations(s.T())
+}
+
+// Test for issue #3089: When ALL files in Config.Files don't exist,
+// it should fall back to scanning the directory.
+func (s *RPackageDescSuite) TestGetRPackages_ScanDependencies_FallsBackToDirWhenAllConfigFilesMissing() {
+	s.log.On("Info", "Detect dependencies from project").Return()
+	s.log.On("Debug", "Looking up for extra dependencies for content", "type", mock.Anything).Return()
+	s.log.On("Debug", "No extra dependencies found to be included").Return()
+	s.log.On("Info", "Loading packages from local R library").Return()
+	s.log.On("Info", "Done collecting R package descriptions").Return()
+
+	// Configure files that don't exist
+	s.stateStore.Config = &config.Config{
+		Files: []string{"deleted.R", "renv.lock", "also-deleted.R"},
+		R: &config.R{
+			PackageFile: "ignored-when-scan.lock",
+		},
+	}
+
+	// Don't create any of the configured files - all are missing
+
+	// When all config files are missing, should fall back to scanning the directory
+	expectedPaths := []string{s.dirPath.String()}
+
+	generated := s.dirPath.Join("scanned.lock")
+	s.packageMapper.On("ScanDependencies", expectedPaths, mock.Anything).Return(generated, nil)
 	s.packageMapper.On("GetManifestPackages", s.dirPath, generated).Return(s.successPackageMap, nil)
 
 	publisher := s.makePublisher()
