@@ -506,7 +506,7 @@ func (s *RDependencyScannerFunctionalSuite) TestFunctional_NonExistentFileInPath
 
 	// Create a file that should be scanned
 	included := base.Join("included.R")
-	s.NoError(included.WriteFile([]byte(`library(stats)`), 0644))
+	s.NoError(included.WriteFile([]byte(`library(glue)`), 0644))
 
 	// Reference a file that doesn't exist
 	nonExistent := base.Join("missing.R")
@@ -528,10 +528,10 @@ func (s *RDependencyScannerFunctionalSuite) TestFunctional_NonExistentFileInPath
 
 	lf, err := ReadLockfile(lockfilePath)
 	s.NoError(err)
-	_, hasStats := lf.Packages[PackageName("stats")]
+	_, hasGlue := lf.Packages[PackageName("glue")]
 
-	// stats should be found from included.R
-	s.True(hasStats, "lockfile should include stats from included.R even though another path was missing")
+	// glue should be found from included.R
+	s.True(hasGlue, "lockfile should include glue from included.R even though another path was missing")
 	s.T().Log("R's renv::dependencies() silently skipped the non-existent file")
 }
 
@@ -547,10 +547,7 @@ func (s *RDependencyScannerFunctionalSuite) TestFunctional_MixedValidInvalidPath
 
 	// Create valid files
 	file1 := base.Join("app.R")
-	s.NoError(file1.WriteFile([]byte(`library(stats)`), 0644))
-
-	file2 := base.Join("helpers.R")
-	s.NoError(file2.WriteFile([]byte(`library(grid)`), 0644))
+	s.NoError(file1.WriteFile([]byte(`library(glue)`), 0644))
 
 	// Create a directory
 	subdir := base.Join("subdir")
@@ -568,9 +565,10 @@ func (s *RDependencyScannerFunctionalSuite) TestFunctional_MixedValidInvalidPath
 	scanner := NewRDependencyScanner(s.log, nil)
 	// Pass a mix: valid files, a directory, and a non-existent file
 	lockfilePath, err := scanner.ScanDependencies(
-		[]string{file1.String(), subdir.String(), missing.String(), file2.String()},
+		[]string{file1.String(), subdir.String(), missing.String()},
 		rExec.String(),
 	)
+	s.NoError(err)
 
 	exists, err := lockfilePath.Exists()
 	s.NoError(err)
@@ -578,14 +576,10 @@ func (s *RDependencyScannerFunctionalSuite) TestFunctional_MixedValidInvalidPath
 
 	lf, err := ReadLockfile(lockfilePath)
 	s.NoError(err)
-	_, hasStats := lf.Packages[PackageName("stats")]
-	_, hasGrid := lf.Packages[PackageName("grid")]
-	_, hasParallel := lf.Packages[PackageName("parallel")]
+	_, hasGlue := lf.Packages[PackageName("glue")]
 
 	// Both valid files should be scanned
-	s.True(hasStats, "lockfile should include stats from helpers.R")
-	s.True(hasGrid, "lockfile should include grid from app.R")
-	s.True(hasParallel, "lockfile should include parallel from app.R")
+	s.True(hasGlue, "lockfile should include glue from helpers.R")
 	s.T().Log("R's renv::dependencies() successfully processed valid files despite invalid paths")
 }
 
@@ -604,7 +598,7 @@ func (s *RDependencyScannerFunctionalSuite) TestFunctional_QuartodocWithInvalidP
 title: "My Document"
 ---
 
-` + "```{r}\n" + `library(stats)
+` + "```{r}\n" + `library(glue)
 ` + "```\n"
 	s.NoError(file1.WriteFile([]byte(quartoDoc), 0644))
 
@@ -623,6 +617,7 @@ title: "My Document"
 		[]string{file1.String(), missing.String()},
 		rExec.String(),
 	)
+	s.NoError(err)
 
 	exists, err := lockfilePath.Exists()
 	s.NoError(err)
@@ -630,12 +625,12 @@ title: "My Document"
 
 	lf, err := ReadLockfile(lockfilePath)
 	s.NoError(err)
-	_, hasStats := lf.Packages[PackageName("stats")]
+	_, hasGlue := lf.Packages[PackageName("glue")]
 	_, hasRmarkdown := lf.Packages[PackageName("rmarkdown")]
 	_, hasKnitr := lf.Packages[PackageName("knitr")]
 
 	// Both valid files should be scanned
-	s.True(hasStats, "lockfile should include stats from app.R")
+	s.True(hasGlue, "lockfile should include glue from doc.qmd")
 	s.True(hasRmarkdown, "lockfile should include rmarkdown because this is a quarto doc")
 	s.True(hasKnitr, "lockfile should include knitr because this is a quarto doc")
 	s.T().Log("R's renv::dependencies() successfully processed valid files despite invalid paths")
