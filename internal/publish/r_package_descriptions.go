@@ -107,7 +107,15 @@ func (p *defaultPublisher) getRPackagesWithPath(scanDependencies bool) (bundles.
 		if p.Config != nil && len(p.Config.Files) > 0 {
 			scanPaths = make([]string, 0, len(p.Config.Files))
 			for _, f := range p.Config.Files {
-				scanPaths = append(scanPaths, p.Dir.Join(f).String())
+				fullPath := p.Dir.Join(f)
+				// Only include files that actually exist (issue #3089)
+				if exists, _ := fullPath.Exists(); exists {
+					scanPaths = append(scanPaths, fullPath.String())
+				}
+			}
+			// If all configured files are missing, fall back to scanning the directory
+			if len(scanPaths) == 0 {
+				scanPaths = []string{p.Dir.String()}
 			}
 		} else {
 			// No files were selected, in this case we mimic NewBundler
