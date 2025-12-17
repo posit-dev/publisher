@@ -520,6 +520,7 @@ func (s *RDependencyScannerFunctionalSuite) TestFunctional_NonExistentFileInPath
 	scanner := NewRDependencyScanner(s.log, nil)
 	// Pass both a real file and a non-existent file
 	lockfilePath, err := scanner.ScanDependencies([]string{included.String(), nonExistent.String()}, rExec.String())
+	s.NoError(err)
 
 	// If no error, check what was scanned
 	exists, err := lockfilePath.Exists()

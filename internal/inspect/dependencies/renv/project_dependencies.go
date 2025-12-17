@@ -85,10 +85,16 @@ func (s *defaultRDependencyScanner) ScanDependenciesInDir(paths []string, target
 	repoUrl <- "%s"
 	if (nzchar(repoUrl)) options(repos = c(CRAN = repoUrl))
 	rPathsVec <- %s
-	deps <- tryCatch({
-		d <- renv::dependencies(path = rPathsVec, progress = FALSE)
-		d$Package[!is.na(d$Package)]
-	}, error = function(e) character())
+	deps <- character()
+	for (path in rPathsVec) {
+		tryCatch({
+			d <- renv::dependencies(path = path, progress = FALSE)
+			deps <- c(deps, d$Package[!is.na(d$Package)])
+		}, error = function(e) {
+			# Silently skip paths that cause errors (e.g., non-existent files, directories)
+			invisible()
+		})
+	}
 	deps <- setdiff(deps, c("renv"))
 	targetPath <- "%s"
 	try(renv::init(project = targetPath, bare = TRUE, force = TRUE), silent = TRUE)
