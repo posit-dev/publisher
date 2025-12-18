@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- For Connect: the input for referencing a previous deployment is once again more lax in
+- For Connect: the input for referencing a previous deployment is once again more relaxed in
   its validation: So long as there is a GUID in the string, it will be attempted. This
   means that one can use the in-app URL, the standalone URL, or simply the GUID again. (#3341)
 

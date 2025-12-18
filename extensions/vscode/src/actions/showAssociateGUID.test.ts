@@ -24,7 +24,7 @@ describe("showAssociateGUID validation logic", () => {
     const productType = ProductType.CONNECT;
     const productName = ProductName.CONNECT;
 
-    describe("currently accepted inputs (should remain valid)", () => {
+    describe("currently accepted inputs", () => {
       test("accepts Connect in-app URL", () => {
         const url = `https://connect.company.co/connect/#/apps/${sampleGuid}`;
         const result = validateGuidInput(url, productType, productName);
@@ -74,7 +74,7 @@ describe("showAssociateGUID validation logic", () => {
       });
     });
 
-    describe("invalid inputs (should remain rejected)", () => {
+    describe("invalid inputs", () => {
       test("rejects URL without GUID", () => {
         const url = "https://connect.company.co/connect/#/apps/";
         const result = validateGuidInput(url, productType, productName);
@@ -114,7 +114,7 @@ describe("showAssociateGUID validation logic", () => {
     const productType = ProductType.CONNECT_CLOUD;
     const productName = ProductName.CONNECT_CLOUD;
 
-    describe("currently accepted inputs (should remain valid)", () => {
+    describe("currently accepted inputs", () => {
       test("accepts Connect Cloud URL with correct account", () => {
         const url = `https://connect.posit.cloud/${connectCloudAccountName}/content/${sampleGuid}`;
         const result = validateGuidInput(
@@ -140,7 +140,7 @@ describe("showAssociateGUID validation logic", () => {
     });
 
     describe("invalid inputs are rejected", () => {
-      test("rejects plain GUID (should accept)", () => {
+      test("rejects plain GUID", () => {
         const guid = sampleGuid;
         const result = validateGuidInput(
           guid,
