@@ -51,14 +51,14 @@ export function validateGuidInput(
         message: `Unexpected URL format for a ${productName} Content URL. Confirm the URL loads content from the ${productName} server.`,
         severity: InputBoxValidationSeverity.Error,
       };
-    } else {
-      const extractedAccount = extractConnectCloudAccount(text);
-      if (extractedAccount !== accountName) {
-        return {
-          message: `Account mismatch for ${productName} Content URL. Please try again with published content for account: ${accountName}.`,
-          severity: InputBoxValidationSeverity.Error,
-        };
-      }
+    }
+
+    const extractedAccount = extractConnectCloudAccount(text);
+    if (extractedAccount !== accountName) {
+      return {
+        message: `Account mismatch for ${productName} Content URL. Please try again with published content for account: ${accountName}.`,
+        severity: InputBoxValidationSeverity.Error,
+      };
     }
   }
 
