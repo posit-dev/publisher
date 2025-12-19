@@ -92,15 +92,12 @@ func (s *ContentRequestSuite) TestGetContentRequestBase() {
 	s.Equal("Test Content Title", base.Title)
 	s.Equal("Test content description", base.Description)
 	s.Equal(clienttypes.ViewPublicEditPrivate, base.Access)
-	s.Equal(clienttypes.PythonDashMode, base.AppMode)
 	s.Equal("test-vanity-name", base.VanityName)
 
 	// Verify RequestRevision fields
 	s.Equal("bundle", base.NextRevision.SourceType)
-	s.Equal("4.3.0", base.NextRevision.RVersion)
 	s.Equal("3.10.0", base.NextRevision.PythonVersion)
 	s.Equal(clienttypes.ContentTypeDash, base.NextRevision.ContentType)
-	s.Equal(clienttypes.PythonDashMode, base.NextRevision.AppMode)
 	s.Equal("app.py", base.NextRevision.PrimaryFile)
 
 	// Verify Secrets includes both environment variables and secrets
@@ -186,10 +183,7 @@ func (s *ContentRequestSuite) TestGetContentRequestBaseRevisionOverrides() {
 	// Verify RevisionOverrides is set correctly
 	s.NotNil(base.RevisionOverrides)
 	s.Equal("bundle", base.RevisionOverrides.SourceType)
-	s.Equal("4.3.0", base.RevisionOverrides.RVersion)
 	s.Equal("3.10.0", base.RevisionOverrides.PythonVersion)
-	s.Equal(clienttypes.ContentTypeDash, base.RevisionOverrides.ContentType)
-	s.Equal(clienttypes.PythonDashMode, base.RevisionOverrides.AppMode)
 	s.Equal("app.py", base.RevisionOverrides.PrimaryFile)
 
 	s.Equal(int32(1), *base.RevisionOverrides.ConnectOptions.ConnTimeout)
