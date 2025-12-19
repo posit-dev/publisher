@@ -20,14 +20,14 @@ func (p *defaultPublisher) createManifest() (*bundles.Manifest, error) {
 
 		// Prefer a configured package file when present; otherwise
 		// use the interpreter's discovery (which falls back to renv.lock).
-		if p.Config.R.PackageFile != "" {
-			lockExists, err := p.Dir.Join(p.Config.R.PackageFile).Exists()
-			scanDependencies = (err != nil) || !lockExists
-			if err != nil {
-				p.log.Debug("Error checking existence of configured R lockfile", "lockfile", p.Config.R.PackageFile, "error", err)
-			}
-		} else {
-			scanDependencies = true
+		lockExists, err := p.Dir.Join(p.Config.R.GetPackageFile()).Exists()
+		scanDependencies = (err != nil) || !lockExists
+		if err != nil {
+			p.log.Debug("Error checking existence of configured R lockfile", "lockfile", p.Config.R.GetPackageFile(), "error", err)
+		}
+
+		if lockExists {
+			p.log.Debug("Using existing R lockfile for package descriptions", "lockfile", p.Config.R.GetPackageFile())
 		}
 
 		if scanDependencies {

@@ -139,7 +139,7 @@ func (p *defaultPublisher) getRPackagesWithPath(scanDependencies bool) (bundles.
 		lockfilePath = generated
 		lockfileString = generated.String()
 	} else {
-		lockfileString = p.Config.R.PackageFile
+		lockfileString = p.Config.R.GetPackageFile()
 		lockfilePath = p.Dir.Join(lockfileString)
 		if ok, err := lockfilePath.Exists(); err != nil || !ok {
 			agentErr := types.NewAgentError(
