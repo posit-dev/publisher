@@ -23,11 +23,11 @@ func (p *defaultPublisher) createManifest() (*bundles.Manifest, error) {
 		lockExists, err := p.Dir.Join(p.Config.R.GetPackageFile()).Exists()
 		scanDependencies = (err != nil) || !lockExists
 		if err != nil {
-			p.log.Debug("Error checking existence of configured R lockfile", "lockfile", p.Config.R.GetPackageFile(), "error", err)
+			p.log.Error("Error checking existence of configured R lockfile", "lockfile", p.Config.R.GetPackageFile(), "error", err)
 		}
 
 		if lockExists {
-			p.log.Debug("Using existing R lockfile for package descriptions", "lockfile", p.Config.R.GetPackageFile())
+			p.log.Info("Using existing R lockfile for package descriptions", "lockfile", p.Config.R.GetPackageFile())
 		}
 
 		if scanDependencies {
