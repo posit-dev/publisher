@@ -656,7 +656,7 @@
     "@types/wait-on": "^5.3.3",
     "@vscode/test-cli": "^0.0.12",
     "@vscode/test-electron": "^2.3.8",
-    "esbuild": "^0.27.0",
+    "esbuild": "^0.27.2",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.0.1",
     "fishery": "^2.4.0",
@@ -664,7 +664,7 @@
     "mocha": "^11.1.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.50.0",
-    "vitest": "^4.0.14"
+    "vitest": "^4.0.16"
   },
   "dependencies": {
     "@vscode/codicons": "^0.0.44",
