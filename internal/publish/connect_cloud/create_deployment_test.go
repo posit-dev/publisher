@@ -123,7 +123,6 @@ func (s *CreateDeploymentSuite) TestCreateDeployment() {
 			request.Title == s.title &&
 			request.Description == s.description &&
 			request.NextRevision.PrimaryFile == s.entrypoint &&
-			request.NextRevision.RVersion == s.rVersion &&
 			request.NextRevision.PythonVersion == s.pythonVersion
 	})).Return(expectedResponse, nil)
 

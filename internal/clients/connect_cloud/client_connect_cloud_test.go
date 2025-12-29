@@ -62,7 +62,6 @@ func (s *ConnectCloudClientSuite) TestCreateContent() {
 			Description: "Don't you just love my piece of content?",
 			NextRevision: &clienttypes.RequestRevision{
 				SourceType:    "bundle",
-				RVersion:      "4.0.0",
 				PythonVersion: "3.11.0",
 			},
 			Access: clienttypes.ViewPrivateEditPrivate,
@@ -72,9 +71,7 @@ func (s *ConnectCloudClientSuite) TestCreateContent() {
 					Value: "go away",
 				},
 			},
-			VanityName:  "my-cool-content",
-			AppMode:     clienttypes.PythonBokehMode,
-			ContentType: clienttypes.ContentTypeBokeh,
+			VanityName: "my-cool-content",
 		},
 		AccountID: "449e7a5c-69d3-4b8a-aaaf-5c9b713ebc65",
 	}
@@ -116,7 +113,6 @@ func (s *ConnectCloudClientSuite) TestUpdateContent() {
 			Description: "This content was updated",
 			NextRevision: &clienttypes.RequestRevision{
 				SourceType:    "bundle",
-				RVersion:      "4.2.0",
 				PythonVersion: "3.12.0",
 			},
 			Access: clienttypes.ViewTeamEditPrivate,
@@ -127,7 +123,6 @@ func (s *ConnectCloudClientSuite) TestUpdateContent() {
 				},
 			},
 			VanityName:  "my-updated-content",
-			AppMode:     clienttypes.PythonBokehMode,
 			ContentType: clienttypes.ContentTypeBokeh,
 		},
 		ContentID: contentID,
