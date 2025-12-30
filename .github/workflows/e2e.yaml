@@ -179,7 +179,7 @@ jobs:
 
       - name: Run Cypress tests with Connect ${{ matrix.connect-version }}
         id: run_tests
-        uses: posit-dev/with-connect@v1
+        uses: posit-dev/with-connect@main
         with:
           version: ${{ matrix.connect-version }}
           license: ${{ secrets.CONNECT_LICENSE }}
