@@ -271,3 +271,22 @@ func (s *ConfigFillDefaultsSuite) TestFillDefaultsPython_NoInterpreter() {
 	expectedPython = &Python{}
 	s.Equal(expectedPython, p)
 }
+
+func (s *ConfigFillDefaultsSuite) TestGetPackageFile_WithConfiguredValue() {
+	r := &R{
+		PackageFile: "custom.lock",
+	}
+	s.Equal("custom.lock", r.GetPackageFile())
+}
+
+func (s *ConfigFillDefaultsSuite) TestGetPackageFile_EmptyDefaultsToRenvLock() {
+	r := &R{
+		PackageFile: "",
+	}
+	s.Equal("renv.lock", r.GetPackageFile())
+}
+
+func (s *ConfigFillDefaultsSuite) TestGetPackageFile_NilRConfigDefaultsToRenvLock() {
+	r := &R{}
+	s.Equal("renv.lock", r.GetPackageFile())
+}

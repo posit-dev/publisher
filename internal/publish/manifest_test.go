@@ -207,3 +207,44 @@ func (s *ManifestSuite) TestCreateManifest_EmptyPackageFile_NoLockfile_ScansDepe
 	s.NotNil(manifest)
 	s.Equal(expectedPackages, manifest.Packages)
 }
+
+func (s *ManifestSuite) TestCreateManifest_EmptyPackageFile_WithRenvLock_UsesExistingLockfile() {
+	log := logging.New()
+	emitter := events.NewNullEmitter()
+	packageMapper := &mockManifestPackageMapper{}
+
+	// PackageFile is empty (Cloud scenario after ForceProductTypeCompliance)
+	cfg := &config.Config{R: &config.R{PackageFile: ""}}
+	stateStore := &state.State{Config: cfg}
+	helper := publishhelper.NewPublishHelper(stateStore, log)
+
+	publisher := &defaultPublisher{
+		log:            log,
+		emitter:        emitter,
+		rPackageMapper: packageMapper,
+		PublishHelper:  helper,
+	}
+
+	dir := util.NewAbsolutePath("/mem/manifest-cloud-renv", afero.NewMemMapFs())
+	_ = dir.MkdirAll(0o777)
+	stateStore.Dir = dir
+
+	// Create an existing renv.lock file
+	lockfile := dir.Join("renv.lock")
+	_ = lockfile.WriteFile([]byte("{}"), 0o644)
+
+	expectedPackages := bundles.PackageMap{
+		"testpkg": bundles.Package{Description: dcf.Record{"Package": "testpkg", "Version": "1.0.0"}},
+	}
+
+	// Expect: GetPackageFile() returns "renv.lock", which exists, so use it
+	packageMapper.On("GetManifestPackages", dir, lockfile, mock.Anything).Return(expectedPackages, nil)
+
+	manifest, err := publisher.createManifest()
+
+	s.NoError(err)
+	s.NotNil(manifest)
+	s.Equal(expectedPackages, manifest.Packages)
+	// Verify scanning was NOT called since the lockfile exists
+	packageMapper.AssertNotCalled(s.T(), "ScanDependencies", mock.Anything, mock.Anything)
+}
