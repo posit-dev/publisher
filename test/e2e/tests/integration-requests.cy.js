@@ -6,13 +6,12 @@
 describe("IntegrationRequests Section", () => {
   before(() => {
     // Set up both credentials once for speed and determinism
-    cy.resetConnect();
+    cy.initializeConnect();
     cy.resetCredentials();
 
     cy.visit("/");
 
     const user = Cypress.env("pccConfig").pcc_user_ccqa3;
-    cy.setAdminCredentials();
     cy.setPCCCredential(user, "connect-cloud-deployment-test");
   });
 

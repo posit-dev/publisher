@@ -6,9 +6,7 @@
 describe("Embedded Deployments Section", () => {
   // Global setup - run once for entire test suite
   before(() => {
-    cy.resetConnect();
-    cy.clearupDeployments();
-    cy.setAdminCredentials(); // Set up admin credential once
+    cy.initializeConnect();
   });
 
   beforeEach(() => {

@@ -78,12 +78,11 @@ module.exports = defineConfig({
     },
   },
   env: {
-    BOOTSTRAP_ADMIN_API_KEY: "", // To be updated by Cypress when spinning up
-    BOOTSTRAP_SECRET_KEY: "bootstrap-secret.key", // To be updated by Cypress when spinning up
+    // API key is passed from with-connect via CYPRESS_BOOTSTRAP_ADMIN_API_KEY env var
+    BOOTSTRAP_ADMIN_API_KEY: process.env.CYPRESS_BOOTSTRAP_ADMIN_API_KEY || "",
     CI: process.env.CI === true || process.env.CI === "true" ? "true" : "false",
     DEBUG_CYPRESS: process.env.DEBUG_CYPRESS || "false",
     CONNECT_SERVER_URL: "http://localhost:3939",
-    CONNECT_MANAGER_URL: "http://localhost:4723",
     CONNECT_CLOUD_ENV: process.env.CONNECT_CLOUD_ENV || "staging",
     WORKBENCH_URL: "http://localhost:8787",
     pccConfig,

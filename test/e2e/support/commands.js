@@ -8,16 +8,12 @@ import "./selectors";
 import "./sequences";
 import "./workbench";
 
-const connectManagerServer = Cypress.env("CONNECT_MANAGER_URL");
-
-// Performs the full set of reset commands we typically use before executing our tests
-Cypress.Commands.add("resetConnect", () => {
+// initializeConnect: Simple initialization for use with with-connect action
+// The API key is passed via CYPRESS_BOOTSTRAP_ADMIN_API_KEY environment variable
+// from the with-connect GitHub Action, which handles Connect startup and bootstrapping.
+Cypress.Commands.add("initializeConnect", () => {
   cy.clearupDeployments();
-  cy.stopConnect();
-  cy.resetConnectSettings();
-  cy.resetConnectData();
-  cy.startConnect();
-  cy.bootstrapAdmin();
+  cy.setAdminCredentials();
 });
 
 // Add a global afterEach to log iframes if a test fails (for CI reliability)
@@ -35,88 +31,6 @@ if (typeof afterEach === "function") {
     cy.task("cleanupPlaywrightBrowser", null, { timeout: 20000 });
   });
 }
-
-// startConnect/stopConnect/resetConnectData/updateConnectSettings/resetConnectSettings
-// Purpose: Control the local Connect server via the manager service for test isolation.
-// When to use: Suite-level or targeted setup/teardown between tests.
-Cypress.Commands.add("startConnect", () => {
-  cy.request({
-    method: "POST",
-    url: `${connectManagerServer}/connect/start`,
-  });
-
-  cy.exec(
-    `npx wait-on -c config/waiton.js ${Cypress.env("CONNECT_SERVER_URL")}/__ping__`,
-  );
-});
-
-Cypress.Commands.add("stopConnect", () => {
-  cy.request({
-    method: "POST",
-    url: `${connectManagerServer}/connect/stop`,
-  });
-});
-
-// resetConnectData will clear the database and data directory for the Connect server
-Cypress.Commands.add("resetConnectData", () => {
-  cy.request({
-    method: "POST",
-    url: `${connectManagerServer}/connect/clear`,
-  });
-});
-
-// updateConnectSettings will change the Connect server settings and restart the server
-Cypress.Commands.add("updateConnectSettings", (settings) => {
-  cy.stopConnect();
-
-  cy.request({
-    method: "GET",
-    url: `${connectManagerServer}/connect/settings`,
-  }).then((response) => {
-    const { config } = response.body;
-
-    cy.request({
-      method: "PATCH",
-      url: `${connectManagerServer}/connect/settings`,
-      body: {
-        config,
-        config_blobs: [settings],
-      },
-    });
-  });
-
-  cy.startConnect();
-});
-
-// resetConnectSettings will return the Connect settings to the original config
-Cypress.Commands.add("resetConnectSettings", () => {
-  cy.request({
-    method: "GET",
-    url: `${connectManagerServer}/connect/settings`,
-  }).then((response) => {
-    const { config } = response.body;
-
-    cy.request({
-      method: "PATCH",
-      url: `${connectManagerServer}/connect/settings`,
-      body: {
-        config: [config[0]],
-      },
-    });
-  });
-});
-
-// bootstrapAdmin
-// Purpose: Generate an admin API key (BOOTSTRAP_ADMIN_API_KEY) for PCS tests.
-Cypress.Commands.add("bootstrapAdmin", () => {
-  cy.exec(
-    `rsconnect bootstrap --raw --jwt-keypath ${Cypress.env("BOOTSTRAP_SECRET_KEY")} --server ${Cypress.env("CONNECT_SERVER_URL")}`,
-  ).then((apiKey) => {
-    if (apiKey && apiKey.stdout) {
-      Cypress.env("BOOTSTRAP_ADMIN_API_KEY", apiKey.stdout);
-    }
-  });
-});
 
 // resetCredentials/setAdminCredentials/setDummyCredentials
 // Purpose: Manage the e2e-test.connect-credentials file directly for speed and determinism.
