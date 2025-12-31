@@ -8,7 +8,7 @@ describe("IntegrationRequests Section", () => {
     // Set up both credentials once for speed and determinism
     cy.initializeConnect();
     cy.resetCredentials();
-
+    cy.setAdminCredentials();
     cy.visit("/");
 
     const user = Cypress.env("pccConfig").pcc_user_ccqa3;
