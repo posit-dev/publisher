@@ -50,7 +50,10 @@ describe("Embedded Deployments Section", () => {
         },
       )
         .then((tomlFiles) => {
-          return cy.writeTomlFile(tomlFiles.config.path, "version = '3.11.3'");
+          return cy.writeTomlFile(
+            tomlFiles.config.path,
+            "version = '>=3.11.3'",
+          );
         })
         .deployCurrentlySelected();
 
@@ -92,7 +95,10 @@ describe("Embedded Deployments Section", () => {
         },
       )
         .then((tomlFiles) => {
-          return cy.writeTomlFile(tomlFiles.config.path, "version = '3.11.3'");
+          return cy.writeTomlFile(
+            tomlFiles.config.path,
+            "version = '>=3.11.3'",
+          );
         })
         .deployCurrentlySelected();
 
