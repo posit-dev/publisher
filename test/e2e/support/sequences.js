@@ -589,8 +589,3 @@ Cypress.Commands.add("startPCCOAuthFlow", () => {
 Cypress.Commands.add("expectInitialPublisherState", () => {
   cy.publisherWebview().findByTestId("select-deployment").should("be.visible");
 });
-// by checking "select-deployment" is visible.
-// When to use: At the start of tests to reduce flakiness before interacting with UI.
-Cypress.Commands.add("expectInitialPublisherState", () => {
-  cy.publisherWebview().findByTestId("select-deployment").should("be.visible");
-});
