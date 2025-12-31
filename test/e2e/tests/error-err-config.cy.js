@@ -11,6 +11,7 @@
 describe("Detect errors in config", () => {
   // Global setup - run once for entire test suite
   before(() => {
+    cy.clearupDeployments();
     cy.setAdminCredentials();
   });
 
