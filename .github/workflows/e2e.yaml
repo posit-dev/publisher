@@ -182,6 +182,7 @@ jobs:
         uses: posit-dev/with-connect@main
         with:
           version: ${{ matrix.connect-version }}
+          license: ${{ secrets.CONNECT_LICENSE_FILE }}
           port: 3939
           command: |
             cd test/e2e
