@@ -35,6 +35,21 @@ describe("Embedded Deployments Section", () => {
           const { name: cfgName } = tomlFiles.config;
           const { name: recName } = tomlFiles.contentRecord;
 
+          // Debug: Log Python configuration
+          cy.log("DEBUG: Full config TOML contents:");
+          cy.log(JSON.stringify(config, null, 2));
+          if (config.python) {
+            cy.log(`DEBUG: Python version: ${config.python.version}`);
+            cy.log(
+              `DEBUG: Python requires_python: ${config.python.requires_python}`,
+            );
+            cy.log(
+              `DEBUG: Full python config: ${JSON.stringify(config.python)}`,
+            );
+          } else {
+            cy.log("DEBUG: No python config found in TOML!");
+          }
+
           expect(config.title).to.equal("fastapi-base-directory");
           expect(config.type).to.equal("python-fastapi");
           expect(config.entrypoint).to.equal("simple.py");
