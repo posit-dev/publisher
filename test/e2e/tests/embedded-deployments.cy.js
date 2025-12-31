@@ -48,14 +48,7 @@ describe("Embedded Deployments Section", () => {
           ]);
           return tomlFiles;
         },
-      )
-        .then((tomlFiles) => {
-          return cy.writeTomlFile(
-            tomlFiles.config.path,
-            "requires_python = '>=3.11.3'",
-          );
-        })
-        .deployCurrentlySelected();
+      ).deployCurrentlySelected();
 
       cy.retryWithBackoff(
         () =>
@@ -93,14 +86,7 @@ describe("Embedded Deployments Section", () => {
           ]);
           return tomlFiles;
         },
-      )
-        .then((tomlFiles) => {
-          return cy.writeTomlFile(
-            tomlFiles.config.path,
-            "requires_python = '>=3.11.3'",
-          );
-        })
-        .deployCurrentlySelected();
+      ).deployCurrentlySelected();
 
       cy.retryWithBackoff(
         () =>
