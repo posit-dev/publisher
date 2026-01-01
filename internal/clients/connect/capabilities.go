@@ -139,7 +139,6 @@ func adminError(attr string) error {
 	return fmt.Errorf("%s requires administrator privileges", attr)
 }
 
-
 func (a *AllSettings) checkKubernetes(cfg *config.Config) error {
 	k := cfg.Connect.Kubernetes
 	if k == nil {
