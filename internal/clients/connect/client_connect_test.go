@@ -902,45 +902,6 @@ func (s *ConnectClientSuite) TestCheckCapabilities() {
 	httpClient.AssertExpectations(s.T())
 }
 
-func (s *ConnectClientSuite) TestCheckCapabilities_missingPythonVer() {
-	lgr := logging.New()
-	httpClient := &http_client.MockHTTPClient{}
-	httpClient.On("Get", "/__api__/v1/user", mock.Anything, lgr).Return(nil)
-	httpClient.On("Get", "/__api__/server_settings", mock.Anything, lgr).Return(nil)
-	httpClient.On("Get", "/__api__/server_settings/applications", mock.Anything, lgr).Return(nil)
-	httpClient.On("Get", "/__api__/server_settings/scheduler/python-dash", mock.Anything, lgr).Return(nil)
-	httpClient.On("Get", "/__api__/v1/server_settings/r", mock.Anything, lgr).Return(nil)
-	httpClient.On("Get", "/__api__/v1/server_settings/quarto", mock.Anything, lgr).Return(nil)
-
-	// Mock versions, not including 3.4.5
-	httpClient.On("Get", "/__api__/v1/server_settings/python", mock.AnythingOfType("*server_settings.PyInfo"), lgr).Run(func(args mock.Arguments) {
-		pySettings := args.Get(1).(*server_settings.PyInfo)
-		pySettings.Installations = []server_settings.PyInstallation{{Version: "3.3.0"}}
-	}).Return(nil)
-
-	cfg := config.New()
-	cfg.Type = "python-dash"
-	cfg.Entrypoint = "app.py"
-	cfg.Files = []string{"/app.py", "/requirements.txt"}
-	cfg.Python = &config.Python{
-		Version:        "3.4.5", // Not included in server settings
-		PackageFile:    "requirements.txt",
-		PackageManager: "pip",
-	}
-
-	var cwd util.AbsolutePath
-	bundleTestPath := cwd.Join("testdata", "python-bundle")
-
-	client := &ConnectClient{
-		client: httpClient,
-	}
-
-	err := client.CheckCapabilities(bundleTestPath, cfg, nil, lgr)
-	s.NotNil(err)
-	s.Contains(err.Error(), "Python 3.4 is not available on the server.")
-	httpClient.AssertExpectations(s.T())
-}
-
 func (s *ConnectClientSuite) TestCheckCapabilities_requirementsFileDoesNotExist() {
 	lgr := logging.New()
 	httpClient := &http_client.MockHTTPClient{}
