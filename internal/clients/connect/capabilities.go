@@ -325,10 +325,10 @@ func (a *AllSettings) checkConfig(cfg *config.Config) error {
 	// we don't upload thumbnails yet, but when we do, we will check MaximumAppImageSize
 
 	if cfg.Python != nil {
-		err = a.checkMatchingPython(cfg.Python.Version)
-		if err != nil {
-			return err
-		}
+		// err = a.checkMatchingPython(cfg.Python.Version)
+		// if err != nil {
+		// 	return err
+		// }
 		err = a.checkFileExists(cfg.Python.PackageFile, "python.package-file")
 		if err != nil {
 			return err

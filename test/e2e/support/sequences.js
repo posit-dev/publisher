@@ -134,18 +134,11 @@ Cypress.Commands.add(
 
     cy.get(".quick-input-widget").type("{enter}");
 
-    // Robust credential selection by row content (avoids hidden/virtualized anchors)
-    cy.retryWithBackoff(
-      () =>
-        cy
-          .get(".quick-input-widget")
-          .contains(".quick-input-list-row", "admin-code-server"),
-      8,
-      700,
-    ).then(($row) => {
-      cy.wrap($row).scrollIntoView();
-      cy.wrap($row).click({ force: true });
-    });
+    // Robust credential selection - find and click in one operation to avoid stale references
+    cy.contains(
+      ".quick-input-widget .quick-input-list-row",
+      "admin-code-server",
+    ).click({ force: true });
 
     return cy
       .getPublisherTomlFilePaths(projectDir)
@@ -283,18 +276,11 @@ Cypress.Commands.add(
       });
     cy.get(".quick-input-widget").type("{enter}");
 
-    // Robust credential selection (avoid relying on anchor visibility)
-    cy.retryWithBackoff(
-      () =>
-        cy
-          .get(".quick-input-widget")
-          .contains(".quick-input-list-row", credentialName),
-      6,
-      700,
-    ).then(($row) => {
-      cy.wrap($row).scrollIntoView();
-      cy.wrap($row).click({ force: true });
-    });
+    // Robust credential selection - find and click in one operation to avoid stale references
+    cy.contains(
+      ".quick-input-widget .quick-input-list-row",
+      credentialName,
+    ).click({ force: true });
 
     // Wait for the deployment configuration to load instead of waiting for quick-input to disappear
     cy.publisherWebview()
@@ -584,11 +570,6 @@ Cypress.Commands.add("startPCCOAuthFlow", () => {
 
 // expectInitialPublisherState
 // Purpose: Quick assertion that the Publisher webview loaded and is interactive
-// by checking "select-deployment" is visible.
-// When to use: At the start of tests to reduce flakiness before interacting with UI.
-Cypress.Commands.add("expectInitialPublisherState", () => {
-  cy.publisherWebview().findByTestId("select-deployment").should("be.visible");
-});
 // by checking "select-deployment" is visible.
 // When to use: At the start of tests to reduce flakiness before interacting with UI.
 Cypress.Commands.add("expectInitialPublisherState", () => {

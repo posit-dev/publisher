@@ -7,9 +7,7 @@
 describe("Deployments Section", () => {
   // Global setup for all deployment tests
   before(() => {
-    cy.resetConnect();
-    cy.clearupDeployments();
-    cy.setAdminCredentials();
+    cy.initializeConnect();
   });
 
   describe("Connect Server Deployments", () => {

@@ -8,8 +8,7 @@
 describe("Credentials Section", () => {
   // Global setup - run once for entire test suite
   before(() => {
-    cy.resetConnect();
-    cy.setAdminCredentials(); // Set up admin credential once
+    cy.initializeConnect();
   });
 
   beforeEach(() => {
