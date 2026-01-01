@@ -16,6 +16,77 @@ Cypress.Commands.add("initializeConnect", () => {
   cy.setAdminCredentials();
 });
 
+// getConnectVersion
+// Purpose: Fetch the Connect server version from the server_settings API.
+// Returns: A promise that resolves with the version string (e.g., "2025.03.0")
+Cypress.Commands.add("getConnectVersion", () => {
+  const connectUrl =
+    Cypress.env("CONNECT_SERVER_URL") || "http://localhost:3939";
+  const apiKey = Cypress.env("BOOTSTRAP_ADMIN_API_KEY");
+
+  return cy
+    .request({
+      method: "GET",
+      url: `${connectUrl}/__api__/server_settings`,
+      headers: {
+        Authorization: `Key ${apiKey}`,
+      },
+      failOnStatusCode: false,
+    })
+    .then((response) => {
+      if (response.status === 200 && response.body.version) {
+        return response.body.version;
+      }
+      throw new Error(
+        `Failed to get Connect version: status=${response.status}`,
+      );
+    });
+});
+
+// isConnectVersionBefore
+// Purpose: Check if the current Connect server version is before a given version.
+// Parameters:
+//   - targetVersion: Version string to compare against (e.g., "2025.03" or "2025.03.0")
+// Returns: A promise that resolves with true if Connect version < targetVersion
+Cypress.Commands.add("isConnectVersionBefore", (targetVersion) => {
+  return cy.getConnectVersion().then((currentVersion) => {
+    // Parse versions into comparable parts (e.g., "2025.03.0" -> [2025, 3, 0])
+    const parseParts = (v) =>
+      v.split(".").map((p) => parseInt(p.replace(/^0+/, "") || "0", 10));
+    const current = parseParts(currentVersion);
+    const target = parseParts(targetVersion);
+
+    // Compare version parts
+    for (let i = 0; i < Math.max(current.length, target.length); i++) {
+      const c = current[i] || 0;
+      const t = target[i] || 0;
+      if (c < t) return true;
+      if (c > t) return false;
+    }
+    return false; // versions are equal
+  });
+});
+
+// skipIfConnectVersionBefore
+// Purpose: Skip the current test if Connect version is before the specified version.
+// Parameters:
+//   - targetVersion: Version string to compare against (e.g., "2025.03")
+//   - reason: Optional reason for skipping (displayed in test output)
+Cypress.Commands.add("skipIfConnectVersionBefore", (targetVersion, reason) => {
+  return cy.isConnectVersionBefore(targetVersion).then((isBefore) => {
+    if (isBefore) {
+      const message = reason || `Skipping: Connect version < ${targetVersion}`;
+      cy.log(message);
+      // Use Cypress's built-in skip by throwing a special error
+      // that Mocha recognizes as a skip
+      const test = cy.state("runnable");
+      if (test) {
+        test.skip();
+      }
+    }
+  });
+});
+
 // Add a global afterEach to log iframes if a test fails (for CI reliability)
 if (typeof afterEach === "function") {
   /* eslint-disable-next-line mocha/no-top-level-hooks */

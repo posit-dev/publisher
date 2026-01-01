@@ -23,6 +23,12 @@ describe("Embedded Deployments Section", () => {
     });
 
     it("PCS fastapi at top of workspace", () => {
+      // We use `requires-python` to support multiple versions,
+      // which was added in 2025.03. We can test this before, but
+      // we need to match the version of python exactly then with
+      // what's in the image.
+      cy.skipIfConnectVersionBefore("2025.03");
+
       // Ensure Publisher is in the expected initial state
       cy.expectInitialPublisherState();
 
@@ -61,6 +67,12 @@ describe("Embedded Deployments Section", () => {
     });
 
     it("PCS fastAPI in subdirectory of workspace", () => {
+      // We use `requires-python` to support multiple versions,
+      // which was added in 2025.03. We can test this before, but
+      // we need to match the version of python exactly then with
+      // what's in the image.
+      cy.skipIfConnectVersionBefore("2025.03");
+
       // Ensure Publisher is in the expected initial state
       cy.expectInitialPublisherState();
 
