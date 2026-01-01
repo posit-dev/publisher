@@ -35,16 +35,6 @@ describe("Embedded Deployments Section", () => {
           const { name: cfgName } = tomlFiles.config;
           const { name: recName } = tomlFiles.contentRecord;
 
-          // Debug: Write Python configuration to a file for inspection
-          const debugInfo = {
-            fullConfig: config,
-            pythonConfig: config.python || "NO PYTHON CONFIG FOUND",
-          };
-          cy.writeFile(
-            "cypress/screenshots/debug-python-config.json",
-            JSON.stringify(debugInfo, null, 2),
-          );
-
           expect(config.title).to.equal("fastapi-base-directory");
           expect(config.type).to.equal("python-fastapi");
           expect(config.entrypoint).to.equal("simple.py");
