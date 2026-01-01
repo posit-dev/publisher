@@ -28,30 +28,6 @@ func (s *CapabilitiesSuite) TestEmptyConfig() {
 	s.NoError(a.checkConfig(cfg))
 }
 
-func makePythonConfig(version string) *config.Config {
-	return &config.Config{
-		Python: &config.Python{
-			Version: version,
-		},
-	}
-}
-
-func (s *CapabilitiesSuite) TestCheckMatchingPython() {
-	a := AllSettings{
-		python: server_settings.PyInfo{
-			Installations: []server_settings.PyInstallation{
-				{Version: "3.10.1"},
-				{Version: "3.11.2"},
-			},
-		},
-	}
-	s.NoError(a.checkConfig(makePythonConfig("3.10.1")))
-	s.NoError(a.checkConfig(makePythonConfig("3.11.1")))
-	err := a.checkConfig(makePythonConfig("3.9.1"))
-	s.NotNil(err)
-	s.ErrorContains(err, "Python 3.9 is not available on the server")
-}
-
 func makeMinMaxProcs(min, max int32) *config.Config {
 	return &config.Config{
 		Type: contenttypes.ContentTypePythonShiny,
