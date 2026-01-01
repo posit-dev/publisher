@@ -236,22 +236,22 @@ jobs:
           echo "=== Extension Host Logs (sample) ==="
           docker exec publisher-e2e.code-server bash -c 'find /root/.local -name "remoteexthost.log" -type f 2>/dev/null | head -n 1 | xargs cat | tail -n 50 || echo "No logs found"'
 
-      - name: Extract Publisher extension logs
-        if: failure() && steps.run_tests.outcome == 'failure'
+      - name: "[DEBUG] Extract Publisher extension logs"
+        if: always() && (env.DEBUG_CYPRESS == 'true' || env.VARS_DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true')
         run: |
           mkdir -p test/e2e/logs/publisher
           echo "=== Finding and extracting Publisher logs ==="
           # Find and copy publisher/posit related logs, preserving folder structure
+          # Strip /root/.local or /home/coder/.local prefix for cleaner paths
           docker exec publisher-e2e.code-server bash -c 'find /root -type f -name "*.log" 2>/dev/null | grep -i "posit\|publisher"' | while read -r logpath; do
-            # Create the same directory structure under test/e2e/logs/publisher
-            relpath="${logpath#/root/}"
+            relpath="${logpath#/root/.local/}"
             destdir="test/e2e/logs/publisher/$(dirname "$relpath")"
             mkdir -p "$destdir"
             echo "Extracting: $logpath -> $destdir/"
             docker cp "publisher-e2e.code-server:$logpath" "$destdir/" || true
           done
           docker exec publisher-e2e.code-server bash -c 'find /home -type f -name "*.log" 2>/dev/null | grep -i "posit\|publisher"' | while read -r logpath; do
-            relpath="${logpath#/home/}"
+            relpath="${logpath#/home/coder/.local/}"
             destdir="test/e2e/logs/publisher/$(dirname "$relpath")"
             mkdir -p "$destdir"
             echo "Extracting: $logpath -> $destdir/"
@@ -259,7 +259,7 @@ jobs:
           done
           # Also grab the extension host logs which may contain publisher output
           docker exec publisher-e2e.code-server bash -c 'find /root/.local -name "exthost*.log" -type f 2>/dev/null' | while read -r logpath; do
-            relpath="${logpath#/root/}"
+            relpath="${logpath#/root/.local/}"
             destdir="test/e2e/logs/publisher/$(dirname "$relpath")"
             mkdir -p "$destdir"
             echo "Extracting extension host log: $logpath -> $destdir/"
