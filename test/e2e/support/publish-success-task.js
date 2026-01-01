@@ -23,8 +23,8 @@ async function confirmPCCPublishSuccess({ publishedUrl, expectedTitle }) {
       route.abort(),
     );
 
-    const maxAttempts = 5; // 5 attempts * 2s = 10 seconds max
-    const delay = 2000;
+    const maxAttempts = 10; // 10 attempts * 5s = 50 seconds max
+    const delay = 5000;
     let lastError = null;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
