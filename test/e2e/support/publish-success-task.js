@@ -80,10 +80,11 @@ async function confirmPCCPublishSuccess({ publishedUrl, expectedTitle }) {
             }
           }
         } else if (response && response.status() === 404) {
-          return {
-            success: false,
-            error: `HTTP 404: Page not found at ${publishedUrl}`,
-          };
+          // Don't immediately fail on 404 - the content may not have propagated yet
+          lastError = `HTTP 404: Page not found at ${publishedUrl}`;
+          console.log(
+            `[Playwright] Attempt ${attempt}: Got 404, content may not have propagated yet`,
+          );
         } else {
           lastError = `Status: ${response && response.status()}`;
         }
