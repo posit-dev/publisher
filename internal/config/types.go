@@ -194,6 +194,15 @@ func (r *R) FillDefaults(
 	}
 }
 
+// If PackageFile is not set (Cloud), defaults to "renv.lock" so callers
+// don't need to handle the empty case for users with an existing lock file.
+func (r *R) GetPackageFile() string {
+	if r.PackageFile != "" {
+		return r.PackageFile
+	}
+	return interpreters.DefaultRenvLockfile
+}
+
 type Jupyter struct {
 	HideAllInput    bool `toml:"hide_all_input,omitempty" json:"hideAllInput,omitempty"`
 	HideTaggedInput bool `toml:"hide_tagged_input,omitempty" json:"hideTaggedInput,omitempty"`

@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - R dependency detection succeeds even if non-existent files are included in the configuration. (#3089)
 
+- Existing `renv.lock` files are respected and used to track dependencies when publishing to Connect Cloud. (#3356)
+
 ## [1.26.0]
 
 ### Added
