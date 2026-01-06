@@ -7,14 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.28.0]
+
 ### Fixed
 
 - For Connect: the input for referencing a previous deployment is once again more relaxed in
   its validation: So long as there is a GUID in the string, it will be attempted. This
   means that one can use the in-app URL, the standalone URL, or simply the GUID again. (#3341)
-
 - R dependency detection succeeds even if non-existent files are included in the configuration. (#3089)
-
 - Existing `renv.lock` files are respected and used to track dependencies when publishing to Connect Cloud. (#3356)
 
 ## [1.26.0]
