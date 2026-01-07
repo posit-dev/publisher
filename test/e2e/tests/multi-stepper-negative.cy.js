@@ -3,8 +3,7 @@
 describe("Multi-Stepper Negative Cases", () => {
   // Global setup - run once for entire test suite
   before(() => {
-    cy.resetConnect();
-    cy.clearupDeployments();
+    cy.initializeConnect();
     cy.visit("/");
     cy.getPublisherSidebarIcon().click();
     cy.waitForPublisherIframe();
