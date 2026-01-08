@@ -23,6 +23,7 @@ import { PublisherState } from "./state";
 import { PublisherAuthProvider, authLogger } from "./authProvider";
 import { copySystemInfoCommand } from "src/commands";
 import { registerLLMTooling } from "./llm";
+import { handleConnectUri, setOpenConnectState } from "./open_connect";
 
 const STATE_CONTEXT = "posit.publish.state";
 
@@ -53,71 +54,6 @@ export enum SelectionIsPreContentRecord {
 
 // Once the extension is activate, hang on to the service so that we can stop it on deactivation.
 let service: Service;
-let publisherState: PublisherState | undefined;
-let pendingUri: Uri | undefined;
-
-function normalizeServerUrl(value: string): string | undefined {
-  try {
-    return new URL(value).origin;
-  } catch {
-    return undefined;
-  }
-}
-
-function hasCredentialForServer(server: string, state: PublisherState) {
-  return state.credentials.some(
-    (credential) =>
-      (normalizeServerUrl(credential.url) ?? credential.url) === server,
-  );
-}
-
-async function handleConnectUri(uri: Uri) {
-  if (uri.path !== "/connect") {
-    authLogger.info(`Ignoring unsupported URI: ${uri.toString()}`);
-    return;
-  }
-  const params = new URLSearchParams(uri.query);
-  const server = params.get("server") ?? "";
-  const content = params.get("content") ?? "";
-  if (!server || !content) {
-    authLogger.info(`Missing server/content in URI: ${uri.toString()}`);
-    return;
-  }
-  const normalizedServer = normalizeServerUrl(server);
-  if (!normalizedServer) {
-    authLogger.info(`Invalid server URL in URI: ${server}`);
-    return;
-  }
-  if (!publisherState) {
-    pendingUri = uri;
-    authLogger.info(`Deferring URI handling until extension is initialized.`);
-    return;
-  }
-  await publisherState.refreshCredentials();
-  if (hasCredentialForServer(normalizedServer, publisherState)) {
-    authLogger.info(
-      `Found valid credentials for ${normalizedServer} (content ${content}).`,
-    );
-    return;
-  }
-  authLogger.info(
-    `No credentials for ${normalizedServer}. Opening credential flow.`,
-  );
-  await commands.executeCommand(
-    Commands.HomeView.AddCredential,
-    normalizedServer,
-  );
-  await publisherState.refreshCredentials();
-  if (hasCredentialForServer(normalizedServer, publisherState)) {
-    authLogger.info(
-      `Valid credentials now available for ${normalizedServer} (content ${content}).`,
-    );
-    return;
-  }
-  authLogger.info(
-    `No valid credentials available for ${normalizedServer} (content ${content}).`,
-  );
-}
 
 function setStateContext(context: PositPublishState) {
   commands.executeCommand("setContext", STATE_CONTEXT, context);
@@ -177,7 +113,7 @@ async function initializeExtension(context: ExtensionContext) {
   context.subscriptions.push(watchers);
 
   const state = new PublisherState(context);
-  publisherState = state;
+  setOpenConnectState(state);
 
   // First the construction of the data providers
   const projectTreeDataProvider = new ProjectTreeDataProvider(context);
@@ -233,11 +169,6 @@ async function initializeExtension(context: ExtensionContext) {
   // Register LLM Tools under /llm
   registerLLMTooling(context, state);
 
-  if (pendingUri) {
-    const uri = pendingUri;
-    pendingUri = undefined;
-    handleConnectUri(uri);
-  }
 }
 
 // This method is called when your extension is activated
