@@ -206,6 +206,26 @@ func (c *ConnectClient) ContentDetails(contentID types.ContentID, body *ConnectC
 	return c.client.Get(url, body, log)
 }
 
+// Find the ID of the latest bundle for the selected content.
+func (c *ConnectClient) LatestBundleID(contentID types.ContentID, log logging.Logger) (types.BundleID, error) {
+	url := fmt.Sprintf("/__api__/v1/content/%s", contentID)
+	content := connectGetContentDTO{}
+	if err := c.client.Get(url, &content, log); err != nil {
+		return "", err
+	}
+	bundleID, ok := content.BundleId.Get()
+	if !ok || bundleID == "" {
+		return "", fmt.Errorf("content has no bundle id")
+	}
+	return types.BundleID(bundleID), nil
+}
+
+// Fetch the bundle archive for the selected content bundle.
+func (c *ConnectClient) DownloadBundle(contentID types.ContentID, bundleID types.BundleID, log logging.Logger) ([]byte, error) {
+	url := fmt.Sprintf("/__api__/v1/content/%s/bundles/%s/download", contentID, bundleID)
+	return c.client.GetRaw(url, log)
+}
+
 func (c *ConnectClient) CreateDeployment(body *ConnectContent, log logging.Logger) (types.ContentID, error) {
 	content := connectGetContentDTO{}
 	err := c.client.Post("/__api__/v1/content", body, &content, log)

@@ -2,6 +2,7 @@
 
 import { Uri, commands } from "vscode";
 import { Commands } from "src/constants";
+import { useApi } from "./api";
 import { authLogger } from "./authProvider";
 import { PublisherState } from "./state";
 
@@ -67,6 +68,7 @@ export async function handleConnectUri(uri: Uri) {
     authLogger.info(
       `Found valid credentials for ${normalizedServer} (content ${content}).`,
     );
+    await openConnectContent(normalizedServer, content);
     return;
   }
   authLogger.info(
@@ -81,9 +83,32 @@ export async function handleConnectUri(uri: Uri) {
     authLogger.info(
       `Valid credentials now available for ${normalizedServer} (content ${content}).`,
     );
+    await openConnectContent(normalizedServer, content);
     return;
   }
   authLogger.info(
     `No valid credentials available for ${normalizedServer} (content ${content}).`,
   );
+}
+
+// Continue the workflow by fetching and opening the Connect content locally.
+async function openConnectContent(serverUrl: string, contentGuid: string) {
+  try {
+    const response = await (await useApi()).openConnectContent.openConnectContent(
+      serverUrl,
+      contentGuid,
+    );
+    await commands.executeCommand(
+      "vscode.openFolder",
+      Uri.file(response.data.workspacePath),
+      { forceReuseWindow: true },
+    );
+    authLogger.info(
+      `Opened Connect content ${contentGuid} from ${serverUrl} at ${response.data.workspacePath}.`,
+    );
+  } catch (error) {
+    authLogger.error(
+      `Failed to open Connect content ${contentGuid} from ${serverUrl}: ${error}`,
+    );
+  }
 }
