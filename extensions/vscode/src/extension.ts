@@ -168,7 +168,6 @@ async function initializeExtension(context: ExtensionContext) {
 
   // Register LLM Tools under /llm
   registerLLMTooling(context, state);
-
 }
 
 // This method is called when your extension is activated

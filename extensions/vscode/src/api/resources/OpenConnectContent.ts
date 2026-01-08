@@ -16,9 +16,12 @@ export class OpenConnectContent {
 
   // Trigger the connect open-content flow and return the prepared workspace path.
   openConnectContent(serverUrl: string, contentGuid: string) {
-    return this.client.post<OpenConnectContentResponse>("connect/open-content", {
-      serverUrl,
-      contentGuid,
-    });
+    return this.client.post<OpenConnectContentResponse>(
+      "connect/open-content",
+      {
+        serverUrl,
+        contentGuid,
+      },
+    );
   }
 }
