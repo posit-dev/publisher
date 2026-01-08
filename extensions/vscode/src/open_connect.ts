@@ -94,10 +94,9 @@ export async function handleConnectUri(uri: Uri) {
 // Continue the workflow by fetching and opening the Connect content locally.
 async function openConnectContent(serverUrl: string, contentGuid: string) {
   try {
-    const response = await (await useApi()).openConnectContent.openConnectContent(
-      serverUrl,
-      contentGuid,
-    );
+    const response = await (
+      await useApi()
+    ).openConnectContent.openConnectContent(serverUrl, contentGuid);
     await commands.executeCommand(
       "vscode.openFolder",
       Uri.file(response.data.workspacePath),
