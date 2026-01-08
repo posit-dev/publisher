@@ -23,7 +23,7 @@ import { PublisherState } from "./state";
 import { PublisherAuthProvider, authLogger } from "./authProvider";
 import { copySystemInfoCommand } from "src/commands";
 import { registerLLMTooling } from "./llm";
-import { handleConnectUri, setOpenConnectState } from "./open_connect";
+import { handleConnectUri, handleDeferredConnectUri } from "./open_connect";
 
 const STATE_CONTEXT = "posit.publish.state";
 
@@ -113,7 +113,7 @@ async function initializeExtension(context: ExtensionContext) {
   context.subscriptions.push(watchers);
 
   const state = new PublisherState(context);
-  setOpenConnectState(state);
+  handleDeferredConnectUri(state);
 
   // First the construction of the data providers
   const projectTreeDataProvider = new ProjectTreeDataProvider(context);
