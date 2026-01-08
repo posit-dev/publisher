@@ -5,6 +5,7 @@ import {
   ExtensionMode,
   Uri,
   commands,
+  window,
   workspace,
 } from "vscode";
 
@@ -19,7 +20,7 @@ import { Commands } from "src/constants";
 import { DocumentTracker } from "./entrypointTracker";
 import { getXDGConfigProperty } from "src/utils/config";
 import { PublisherState } from "./state";
-import { PublisherAuthProvider } from "./authProvider";
+import { PublisherAuthProvider, authLogger } from "./authProvider";
 import { copySystemInfoCommand } from "src/commands";
 import { registerLLMTooling } from "./llm";
 
@@ -172,6 +173,30 @@ async function initializeExtension(context: ExtensionContext) {
 export function activate(context: ExtensionContext) {
   const now = new Date();
   console.log("Posit Publisher extension activated at %s", now.toString());
+  context.subscriptions.push(
+    window.registerUriHandler({
+      handleUri(uri: Uri) {
+        authLogger.info(`Handling URI: ${uri.toString()}`);
+        if (uri.path !== "/connect") {
+          authLogger.info(`Ignoring unsupported URI: ${uri.toString()}`);
+          return;
+        }
+        const params = new URLSearchParams(uri.query);
+        const server = params.get("server") ?? "";
+        const content = params.get("content") ?? "";
+        if (!server || !content) {
+          authLogger.info(`Missing server/content in URI: ${uri.toString()}`);
+          return;
+        }
+        window.showInformationMessage(
+          `Posit Publisher open request: server=${server} content=${content}`,
+        );
+        authLogger.info(
+          `Posit Publisher open request: server=${server} content=${content}`,
+        );
+      },
+    }),
+  );
   // Is our workspace trusted?
   if (workspace.isTrusted) {
     console.log("initializing extension within a trusted workspace");
