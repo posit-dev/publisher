@@ -8,6 +8,7 @@ import { PublisherState } from "./state";
 let publisherState: PublisherState | undefined;
 let pendingUri: Uri | undefined;
 
+// Canonicalize server URLs so credential matches are consistent.
 function normalizeServerUrl(value: string): string | undefined {
   try {
     return new URL(value).origin;
@@ -16,6 +17,7 @@ function normalizeServerUrl(value: string): string | undefined {
   }
 }
 
+// Determine whether the current credential cache already covers a server.
 function hasCredentialForServer(server: string, state: PublisherState) {
   return state.credentials.some(
     (credential) =>
@@ -23,7 +25,13 @@ function hasCredentialForServer(server: string, state: PublisherState) {
   );
 }
 
-export function setOpenConnectState(state: PublisherState) {
+// Attach the initialized state so URI handling can access credentials, and replay
+// a URI that arrived before initialization completed.
+//
+// handleConnectUri can fire before the extension has finished initializing.
+// In that case handleConnectUri defers processing until handleDeferredConnectUri is called
+// by initializeExtension with the initialized PublisherState.
+export function handleDeferredConnectUri(state: PublisherState) {
   publisherState = state;
   if (pendingUri) {
     handleConnectUri(pendingUri);
@@ -31,6 +39,7 @@ export function setOpenConnectState(state: PublisherState) {
   }
 }
 
+// Validate a connect URI and drive the credential acquisition flow.
 export async function handleConnectUri(uri: Uri) {
   if (uri.path !== "/connect") {
     authLogger.info(`Ignoring unsupported URI: ${uri.toString()}`);
@@ -50,7 +59,7 @@ export async function handleConnectUri(uri: Uri) {
   }
   if (!publisherState) {
     pendingUri = uri;
-    authLogger.info(`Deferring URI handling until extension is initialized.`);
+    authLogger.debug(`Deferring URI handling until extension is initialized.`);
     return;
   }
   await publisherState.refreshCredentials();
