@@ -393,6 +393,10 @@
         {
           "command": "posit.publisher.homeView.addIntegrationRequest",
           "when": "posit.publish.state == 'initialized' && isWorkspaceTrusted && posit.publish.selection.isConnectContentRecord == 'true'"
+        },
+        {
+          "command": "posit.publisher.openConnectContent",
+          "when": "isWorkspaceTrusted"
         }
       ],
       "webview/context": [
