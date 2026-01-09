@@ -28,9 +28,7 @@ describe("Open Connect Content", () => {
 
     cy.getPublisherTomlFilePaths("static").then((filePaths) => {
       cy.loadTomlFile(filePaths.contentRecord.path).then((contentRecord) => {
-        cy.runCommandPaletteCommand(
-          "Posit Publisher: Open Connect Content",
-        );
+        cy.runCommandPaletteCommand("Posit Publisher: Open Connect Content");
         cy.quickInputType("Connect server URL", contentRecord.server_url);
         cy.quickInputType("Connect content GUID", contentRecord.id);
       });
