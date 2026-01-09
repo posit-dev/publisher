@@ -23,7 +23,11 @@ import { PublisherState } from "./state";
 import { PublisherAuthProvider, authLogger } from "./authProvider";
 import { copySystemInfoCommand } from "src/commands";
 import { registerLLMTooling } from "./llm";
-import { handleConnectUri, handleDeferredConnectUri } from "./open_connect";
+import {
+  handleConnectUri,
+  handleDeferredConnectUri,
+  promptOpenConnectContent,
+} from "./open_connect";
 
 const STATE_CONTEXT = "posit.publish.state";
 
@@ -150,6 +154,9 @@ async function initializeExtension(context: ExtensionContext) {
     commands.registerCommand(Commands.ShowPublishingLog, () => {
       commands.executeCommand(Commands.Logs.Focus);
     }),
+    commands.registerCommand(Commands.OpenConnectContent, () =>
+      promptOpenConnectContent(),
+    ),
     commands.registerCommand(Commands.HomeView.CopySystemInfo, () =>
       copySystemInfoCommand(context),
     ),
