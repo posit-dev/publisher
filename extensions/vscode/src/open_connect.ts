@@ -1,6 +1,6 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
-import { Uri, commands } from "vscode";
+import { Uri, commands, window } from "vscode";
 import { Commands } from "src/constants";
 import { useApi } from "./api";
 import { authLogger } from "./authProvider";
@@ -38,6 +38,32 @@ export function handleDeferredConnectUri(state: PublisherState) {
     handleConnectUri(pendingUri);
     pendingUri = undefined;
   }
+}
+
+// Provide a UI entrypoint to open Connect content by server URL and GUID.
+export async function promptOpenConnectContent() {
+  const serverUrl = await window.showInputBox({
+    prompt: "Connect server URL",
+    ignoreFocusOut: true,
+  });
+  if (!serverUrl) {
+    return;
+  }
+  const contentGuid = await window.showInputBox({
+    prompt: "Connect content GUID",
+    ignoreFocusOut: true,
+  });
+  if (!contentGuid) {
+    return;
+  }
+  await handleConnectUri(
+    Uri.from({
+      scheme: "vscode",
+      authority: "posit.publisher",
+      path: "/connect",
+      query: `server=${encodeURIComponent(serverUrl)}&content=${encodeURIComponent(contentGuid)}`,
+    }),
+  );
 }
 
 // Validate a connect URI and drive the credential acquisition flow.
