@@ -324,7 +324,7 @@ Cypress.Commands.add("loadTomlFile", (filePath) => {
 Cypress.Commands.add("runCommandPaletteCommand", (commandLabel) => {
   cy.get("body").type("{ctrl}{shift}p");
   cy.get(".quick-input-widget").should("be.visible");
-  cy.get(".quick-input-widget input").clear().type(commandLabel);
+  cy.get(".quick-input-widget input").clear().type(`>${commandLabel}`);
   cy.get(".quick-input-list-row").then(($rows) => {
     const fallbackLabel = commandLabel.includes(":")
       ? commandLabel.split(":").slice(1).join(":").trim()
