@@ -94,10 +94,7 @@ Cypress.Commands.add(
     // cy.get(".quick-input-widget").type("{enter}")
 
     // prompt for select entrypoint
-    let targetLabel = `${projectDir}/${entrypointFile}, Open Files`;
-    if (projectDir === ".") {
-      targetLabel = `${entrypointFile}, Open Files`;
-    }
+    const targetLabel = `${entrypointFile}, Open Files`;
 
     cy.get(".quick-input-widget")
       .find(`[aria-label="${targetLabel}"]`)
