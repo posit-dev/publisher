@@ -257,6 +257,11 @@
         "title": "Add Integration Request",
         "icon": "$(add)",
         "category": "Posit Publisher"
+      },
+      {
+        "command": "posit.publisher.openConnectContent",
+        "title": "Open Connect Content",
+        "category": "Posit Publisher"
       }
     ],
     "menus": {

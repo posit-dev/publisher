@@ -112,6 +112,10 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	r.Handle(ToPath("test-credentials"), PostTestCredentialsHandlerFunc(log)).
 		Methods(http.MethodPost)
 
+	// POST /api/connect/open-content
+	r.Handle(ToPath("connect", "open-content"), PostOpenConnectContentHandlerFunc(lister, log, emitter)).
+		Methods(http.MethodPost)
+
 	// GET /api/configurations
 	r.Handle(ToPath("configurations"), GetConfigurationsHandlerFunc(base, log)).
 		Methods(http.MethodGet)

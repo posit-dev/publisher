@@ -25,7 +25,7 @@ const CONNECT_AUTH_PROVIDER_ID = "posit-connect";
 const CONNECT_AUTH_PROVIDER_LABEL = "Posit Connect";
 
 // A dedicated output channel for debugging auth-related state changes.
-const authLogger = window.createOutputChannel(
+export const authLogger = window.createOutputChannel(
   "Posit Publisher Authentication",
   { log: true },
 );

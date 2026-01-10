@@ -5,6 +5,7 @@ import {
   ExtensionMode,
   Uri,
   commands,
+  window,
   workspace,
 } from "vscode";
 
@@ -19,9 +20,14 @@ import { Commands } from "src/constants";
 import { DocumentTracker } from "./entrypointTracker";
 import { getXDGConfigProperty } from "src/utils/config";
 import { PublisherState } from "./state";
-import { PublisherAuthProvider } from "./authProvider";
+import { PublisherAuthProvider, authLogger } from "./authProvider";
 import { copySystemInfoCommand } from "src/commands";
 import { registerLLMTooling } from "./llm";
+import {
+  handleConnectUri,
+  handleDeferredConnectUri,
+  promptOpenConnectContent,
+} from "./open_connect";
 
 const STATE_CONTEXT = "posit.publish.state";
 
@@ -111,6 +117,7 @@ async function initializeExtension(context: ExtensionContext) {
   context.subscriptions.push(watchers);
 
   const state = new PublisherState(context);
+  handleDeferredConnectUri(state);
 
   // First the construction of the data providers
   const projectTreeDataProvider = new ProjectTreeDataProvider(context);
@@ -147,6 +154,9 @@ async function initializeExtension(context: ExtensionContext) {
     commands.registerCommand(Commands.ShowPublishingLog, () => {
       commands.executeCommand(Commands.Logs.Focus);
     }),
+    commands.registerCommand(Commands.OpenConnectContent, () =>
+      promptOpenConnectContent(),
+    ),
     commands.registerCommand(Commands.HomeView.CopySystemInfo, () =>
       copySystemInfoCommand(context),
     ),
@@ -172,6 +182,14 @@ async function initializeExtension(context: ExtensionContext) {
 export function activate(context: ExtensionContext) {
   const now = new Date();
   console.log("Posit Publisher extension activated at %s", now.toString());
+  context.subscriptions.push(
+    window.registerUriHandler({
+      handleUri(uri: Uri) {
+        authLogger.info(`Handling URI: ${uri.toString()}`);
+        handleConnectUri(uri);
+      },
+    }),
+  );
   // Is our workspace trusted?
   if (workspace.isTrusted) {
     console.log("initializing extension within a trusted workspace");

@@ -319,6 +319,35 @@ Cypress.Commands.add("loadTomlFile", (filePath) => {
     });
 });
 
+// runCommandPaletteCommand
+// Purpose: Invoke a command by label through the VS Code command palette.
+Cypress.Commands.add("runCommandPaletteCommand", (commandLabel) => {
+  cy.get("body").type("{ctrl}{shift}p");
+  cy.get(".quick-input-widget").should("be.visible");
+  cy.get(".quick-input-widget input").clear().type(`> ${commandLabel}`);
+  cy.get(".quick-input-list-row").then(($rows) => {
+    const fallbackLabel = commandLabel.includes(":")
+      ? commandLabel.split(":").slice(1).join(":").trim()
+      : commandLabel;
+    const match =
+      $rows.toArray().find((row) => row.textContent?.includes(commandLabel)) ||
+      $rows.toArray().find((row) => row.textContent?.includes(fallbackLabel));
+    if (!match) {
+      throw new Error(
+        `Command not found in palette: "${commandLabel}" (fallback "${fallbackLabel}")`,
+      );
+    }
+    cy.wrap(Cypress.$(match)).should("be.visible").click();
+  });
+});
+
+// quickInputType
+// Purpose: Fill a quick input prompt and submit the value.
+Cypress.Commands.add("quickInputType", (promptText, value) => {
+  cy.get(".quick-input-message").should("contain.text", promptText);
+  cy.get(".quick-input-widget input").clear().type(`${value}{enter}`);
+});
+
 // Update waitForPublisherIframe to use a longer default timeout for CI reliability
 Cypress.Commands.add("waitForPublisherIframe", (timeout = 60000) => {
   return cy
