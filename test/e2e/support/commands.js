@@ -324,7 +324,7 @@ Cypress.Commands.add("loadTomlFile", (filePath) => {
 Cypress.Commands.add("runCommandPaletteCommand", (commandLabel) => {
   cy.get("body").type("{ctrl}{shift}p");
   cy.get(".quick-input-widget").should("be.visible");
-  cy.get(".quick-input-widget input").clear().type(`>${commandLabel}`);
+  cy.get(".quick-input-widget input").clear().type(`> ${commandLabel}`);
   cy.get(".quick-input-list-row").then(($rows) => {
     const fallbackLabel = commandLabel.includes(":")
       ? commandLabel.split(":").slice(1).join(":").trim()
@@ -337,7 +337,7 @@ Cypress.Commands.add("runCommandPaletteCommand", (commandLabel) => {
         `Command not found in palette: "${commandLabel}" (fallback "${fallbackLabel}")`,
       );
     }
-    cy.wrap(match).should("be.visible").click();
+    cy.wrap(Cypress.$(match)).should("be.visible").click();
   });
 });
 
