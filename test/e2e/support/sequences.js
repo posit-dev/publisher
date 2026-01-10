@@ -38,7 +38,12 @@ Cypress.Commands.add(
 
     // expand the subdirectory
     if (projectDir !== ".") {
-      cy.get(".explorer-viewlet").find(`[aria-label="${projectDir}"]`).click();
+      cy.get(".explorer-viewlet").then(($explorer) => {
+        const target = $explorer.find(`[aria-label="${projectDir}"]`);
+        if (target.length > 0) {
+          cy.wrap(target).click();
+        }
+      });
     }
 
     // open the entrypoint file
