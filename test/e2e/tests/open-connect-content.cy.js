@@ -41,14 +41,33 @@ describe("Open Connect Content", () => {
       }
     });
 
-    cy.get(".explorer-viewlet", { timeout: 60000 })
-      .find(".tree-item-title")
-      .contains("manifest.json", { timeout: 60000 })
-      .should("be.visible");
-
     cy.get(".explorer-viewlet")
-      .find(".tree-item-title")
-      .contains("index.html", { timeout: 60000 })
-      .should("be.visible");
+      .find('.monaco-list-row[aria-level="1"]')
+      .first()
+      .then(($row) => {
+        if ($row.attr("aria-expanded") === "false") {
+          cy.wrap($row).click();
+        }
+      });
+
+    cy.retryWithBackoff(
+      () =>
+        cy
+          .get(".explorer-viewlet")
+          .find(".tree-item-title")
+          .filter((_, el) => (el.textContent || "").includes("manifest.json")),
+      10,
+      1000,
+    ).should("be.visible");
+
+    cy.retryWithBackoff(
+      () =>
+        cy
+          .get(".explorer-viewlet")
+          .find(".tree-item-title")
+          .filter((_, el) => (el.textContent || "").includes("index.html")),
+      10,
+      1000,
+    ).should("be.visible");
   });
 });
