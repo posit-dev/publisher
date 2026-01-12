@@ -94,19 +94,13 @@ Cypress.Commands.add(
     // cy.get(".quick-input-widget").type("{enter}")
 
     // prompt for select entrypoint
-    const fullLabel = `${projectDir}/${entrypointFile}, Open Files`;
-    const shortLabel = `${entrypointFile}, Open Files`;
-
     cy.retryWithBackoff(
       () =>
-        cy.get(".quick-input-widget").then(($widget) => {
-          const targetLabel =
-            projectDir !== "." &&
-            $widget.find(`[aria-label="${fullLabel}"]`).length > 0
-              ? fullLabel
-              : shortLabel;
-          return cy.wrap($widget).find(`[aria-label="${targetLabel}"]`);
-        }),
+        cy
+          .get(".quick-input-widget")
+          .find(
+            `[aria-label="${projectDir}/${entrypointFile}, Open Files"], [aria-label="${entrypointFile}, Open Files"]`,
+          ),
       10,
       700,
     ).then(($el) => {
