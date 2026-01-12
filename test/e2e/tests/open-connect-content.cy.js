@@ -53,8 +53,7 @@ describe("Open Connect Content", () => {
     cy.retryWithBackoff(
       () =>
         cy
-          .get(".explorer-viewlet")
-          .find(".tree-item-title")
+          .get(".explorer-viewlet .explorer-item a > span")
           .filter((_, el) => (el.textContent || "").includes("manifest.json")),
       10,
       1000,
@@ -63,8 +62,7 @@ describe("Open Connect Content", () => {
     cy.retryWithBackoff(
       () =>
         cy
-          .get(".explorer-viewlet")
-          .find(".tree-item-title")
+          .get(".explorer-viewlet .explorer-item a > span")
           .filter((_, el) => (el.textContent || "").includes("index.html")),
       10,
       1000,
