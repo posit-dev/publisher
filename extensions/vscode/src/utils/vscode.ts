@@ -127,14 +127,93 @@ export async function getPythonInterpreterPath(): Promise<
   return python;
 }
 
+/**
+ * Gets the platform-specific OS type key used by the R extension configuration.
+ */
+function getRPathConfigKey(): string {
+  const platform = process.platform;
+  switch (platform) {
+    case "win32":
+      return "windows";
+    case "darwin":
+      return "mac";
+    default:
+      return "linux";
+  }
+}
+
+/**
+ * Attempts to get the R interpreter path from VS Code's R extension configuration.
+ * The R extension stores platform-specific paths under r.rpath.{windows,mac,linux}.
+ */
+async function getRInterpreterFromVSCode(): Promise<string | undefined> {
+  const osType = getRPathConfigKey();
+  const rPath = workspace.getConfiguration("r.rpath").get<string>(osType);
+
+  if (rPath === undefined || rPath === "") {
+    return undefined;
+  }
+
+  const rUri = Uri.file(rPath);
+  if (await fileExists(rUri)) {
+    console.log("R interpreter from vscode r.rpath config:", rPath);
+    return rPath;
+  }
+
+  console.log("R path from config does not exist:", rPath);
+  return undefined;
+}
+
+/**
+ * Attempts to find R in the system PATH environment variable.
+ */
+async function getRInterpreterFromPath(): Promise<string | undefined> {
+  const platform = process.platform;
+  const splitChr = platform === "win32" ? ";" : ":";
+  const rBin = platform === "win32" ? "R.exe" : "R";
+
+  const pathEnv = process.env.PATH;
+  if (!pathEnv) {
+    return undefined;
+  }
+
+  for (const envPath of pathEnv.split(splitChr)) {
+    if (!envPath) {
+      continue;
+    }
+    const rBinUri = Uri.joinPath(Uri.file(envPath), rBin);
+    if (await fileExists(rBinUri)) {
+      console.log("R interpreter from PATH:", rBinUri.fsPath);
+      return rBinUri.fsPath;
+    }
+  }
+
+  return undefined;
+}
+
 export async function getRInterpreterPath(): Promise<RExecutable | undefined> {
-  const r = await getPreferredRuntimeFromPositron("r");
+  let r: string | undefined;
+
+  r = await getPreferredRuntimeFromPositron("r");
   if (r !== undefined) {
-    console.log("Using selected R interpreter", r);
+    console.log("Using selected R interpreter from Positron", r);
     return new RExecutable(r);
   }
+
+  r = await getRInterpreterFromVSCode();
+  if (r !== undefined) {
+    console.log("Using R from VSCode config", r);
+    return new RExecutable(r);
+  }
+
+  r = await getRInterpreterFromPath();
+  if (r !== undefined) {
+    console.log("Using R from PATH", r);
+    return new RExecutable(r);
+  }
+
   // We don't know the interpreter path.
   // The backend will run R from PATH.
   console.log("R interpreter discovery unsuccessful.");
-  return r;
+  return undefined;
 }
