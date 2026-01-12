@@ -89,10 +89,11 @@ describe("Interpreter Detection", () => {
           "/home/user/project/.venv",
         );
         vi.mocked(isDir).mockResolvedValue(true);
-        vi.mocked(fileExists).mockImplementation(async (uri) => {
-          // Only bin/python exists (exact match, not bin/python3)
-          return (uri as { fsPath: string }).fsPath.endsWith("bin/python");
-        });
+        vi.mocked(fileExists).mockImplementation((uri) =>
+          Promise.resolve(
+            (uri as { fsPath: string }).fsPath.endsWith("bin/python"),
+          ),
+        );
 
         const result = await getPythonInterpreterPath();
 
@@ -105,9 +106,11 @@ describe("Interpreter Detection", () => {
           "/home/user/project/.venv",
         );
         vi.mocked(isDir).mockResolvedValue(true);
-        vi.mocked(fileExists).mockImplementation(async (uri) => {
-          return (uri as { fsPath: string }).fsPath.endsWith("bin/python3");
-        });
+        vi.mocked(fileExists).mockImplementation((uri) =>
+          Promise.resolve(
+            (uri as { fsPath: string }).fsPath.endsWith("bin/python3"),
+          ),
+        );
 
         const result = await getPythonInterpreterPath();
 
@@ -120,11 +123,11 @@ describe("Interpreter Detection", () => {
           "C:\\Users\\user\\project\\.venv",
         );
         vi.mocked(isDir).mockResolvedValue(true);
-        vi.mocked(fileExists).mockImplementation(async (uri) => {
-          return (uri as { fsPath: string }).fsPath.endsWith(
-            "Scripts/python.exe",
-          );
-        });
+        vi.mocked(fileExists).mockImplementation((uri) =>
+          Promise.resolve(
+            (uri as { fsPath: string }).fsPath.endsWith("Scripts/python.exe"),
+          ),
+        );
 
         const result = await getPythonInterpreterPath();
 
@@ -276,9 +279,11 @@ describe("Interpreter Detection", () => {
         } as unknown as ReturnType<typeof workspace.getConfiguration>);
 
         // R exists in /usr/local/bin
-        vi.mocked(fileExists).mockImplementation(async (uri) => {
-          return (uri as { fsPath: string }).fsPath === "/usr/local/bin/R";
-        });
+        vi.mocked(fileExists).mockImplementation((uri) =>
+          Promise.resolve(
+            (uri as { fsPath: string }).fsPath === "/usr/local/bin/R",
+          ),
+        );
 
         const result = await getRInterpreterPath();
 
@@ -303,9 +308,11 @@ describe("Interpreter Detection", () => {
         } as unknown as ReturnType<typeof workspace.getConfiguration>);
 
         // R.exe exists in R bin directory
-        vi.mocked(fileExists).mockImplementation(async (uri) => {
-          return (uri as { fsPath: string }).fsPath.includes("R-4.3.0");
-        });
+        vi.mocked(fileExists).mockImplementation((uri) =>
+          Promise.resolve(
+            (uri as { fsPath: string }).fsPath.includes("R-4.3.0"),
+          ),
+        );
 
         const result = await getRInterpreterPath();
 
