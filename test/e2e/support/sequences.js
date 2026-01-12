@@ -101,7 +101,8 @@ Cypress.Commands.add(
       () =>
         cy.get(".quick-input-widget").then(($widget) => {
           const targetLabel =
-            projectDir !== "." && $widget.find(`[aria-label="${fullLabel}"]`).length > 0
+            projectDir !== "." &&
+            $widget.find(`[aria-label="${fullLabel}"]`).length > 0
               ? fullLabel
               : shortLabel;
           return cy.wrap($widget).find(`[aria-label="${targetLabel}"]`);
