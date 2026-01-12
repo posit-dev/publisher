@@ -69,6 +69,12 @@ vi.mock("src/utils/connectCloudHelpers", () => ({
   ),
 }));
 
+// Mock the utils/vscode module since state.ts imports interpreter functions from it
+vi.mock("src/utils/vscode", () => ({
+  getPythonInterpreterPath: vi.fn(),
+  getRInterpreterPath: vi.fn(),
+}));
+
 vi.mock("vscode", () => {
   // mock Disposable
   const disposableMock = vi.fn();

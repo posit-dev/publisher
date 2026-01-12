@@ -18,7 +18,7 @@ vi.mock("./throttle", () => ({
   delay: vi.fn(() => Promise.resolve()),
 }));
 
-// Mock vscode module - all mock functions must be defined inline
+// Mock vscode module
 vi.mock("vscode", () => {
   const uriMock = {
     file: vi.fn((path: string) => ({
