@@ -38,11 +38,19 @@ describe("Open Connect Content", () => {
       () =>
         cy.get("body").then(($body) => {
           if ($body.find(".explorer-viewlet:visible").length === 0) {
-            cy.get("a.codicon-explorer-view-icon").first().click();
+            const explorerButton =
+              $body
+                .find(
+                  '[id="workbench.parts.activitybar"] .action-item[role="button"][aria-label="Explorer"]',
+                )
+                .get(0) || $body.find("a.codicon-explorer-view-icon").get(0);
+            if (explorerButton) {
+              explorerButton.click();
+            }
           }
           return cy.get(".explorer-viewlet:visible");
         }),
-      10,
+      12,
       1000,
     ).should("be.visible");
 

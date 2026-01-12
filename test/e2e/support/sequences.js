@@ -94,17 +94,24 @@ Cypress.Commands.add(
     // cy.get(".quick-input-widget").type("{enter}")
 
     // prompt for select entrypoint
-    let targetLabel = `${projectDir}/${entrypointFile}, Open Files`;
-    if (projectDir === ".") {
-      targetLabel = `${entrypointFile}, Open Files`;
-    }
+    const fullLabel = `${projectDir}/${entrypointFile}, Open Files`;
+    const shortLabel = `${entrypointFile}, Open Files`;
 
-    cy.get(".quick-input-widget")
-      .find(`[aria-label="${targetLabel}"]`)
-      .then(($el) => {
-        cy.wrap($el).scrollIntoView();
-        cy.wrap($el).click({ force: true });
-      });
+    cy.retryWithBackoff(
+      () =>
+        cy.get(".quick-input-widget").then(($widget) => {
+          const targetLabel =
+            projectDir !== "." && $widget.find(`[aria-label="${fullLabel}"]`).length > 0
+              ? fullLabel
+              : shortLabel;
+          return cy.wrap($widget).find(`[aria-label="${targetLabel}"]`);
+        }),
+      10,
+      700,
+    ).then(($el) => {
+      cy.wrap($el).scrollIntoView();
+      cy.wrap($el).click({ force: true });
+    });
 
     // Wait for "enter title" step explicitly (avoid typing into filter step)
     cy.retryWithBackoff(
