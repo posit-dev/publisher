@@ -34,12 +34,23 @@ describe("Open Connect Content", () => {
       });
     });
 
-    cy.get("body").then(($body) => {
-      if ($body.find(".explorer-viewlet:visible").length === 0) {
-        cy.get("a.codicon-explorer-view-icon").first().click();
-        cy.get(".explorer-viewlet").should("be.visible");
-      }
-    });
+    cy.retryWithBackoff(
+      () =>
+        cy.get("body").then(($body) => {
+          if ($body.find(".explorer-viewlet:visible").length === 0) {
+            cy.get("a.codicon-explorer-view-icon").first().click();
+          }
+          return cy.get(".explorer-viewlet:visible");
+        }),
+      10,
+      1000,
+    ).should("be.visible");
+
+    cy.retryWithBackoff(
+      () => cy.get(".explorer-viewlet .explorer-item"),
+      10,
+      1000,
+    ).should("exist");
 
     cy.get(".explorer-viewlet")
       .find('.monaco-list-row[aria-level="1"]')
