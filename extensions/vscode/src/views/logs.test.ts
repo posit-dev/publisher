@@ -205,6 +205,46 @@ function createPublishSuccessMessage(dashboardUrl: string): EventStreamMessage {
   };
 }
 
+/**
+ * Helper to create a stage start event message
+ */
+function createStageStartMessage(stageName: string): EventStreamMessage {
+  return {
+    type: `${stageName}/start` as EventStreamMessage["type"],
+    time: new Date().toISOString(),
+    data: {},
+  };
+}
+
+/**
+ * Helper to create a stage success event message
+ */
+function createStageSuccessMessage(stageName: string): EventStreamMessage {
+  return {
+    type: `${stageName}/success` as EventStreamMessage["type"],
+    time: new Date().toISOString(),
+    data: {},
+  };
+}
+
+/**
+ * Helper to create a stage failure event message
+ */
+function createStageFailureMessage(
+  stageName: string,
+  message: string = "Stage failed",
+  canceled: boolean = false,
+): EventStreamMessage {
+  return {
+    type: `${stageName}/failure` as EventStreamMessage["type"],
+    time: new Date().toISOString(),
+    data: {
+      message,
+      canceled: canceled ? "true" : "false",
+    },
+  };
+}
+
 describe("LogsTreeDataProvider", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -351,6 +391,143 @@ describe("LogsTreeDataProvider", () => {
 
       // Verify subsequent handlers were still called
       expect(subsequentHandlerCalled).toBe(true);
+    });
+  });
+
+  describe("stage collapsible state behavior", () => {
+    test("should expand stage when it starts running (inProgress)", () => {
+      const { stream, emit } = createMockEventStream();
+      const context = createMockContext();
+
+      const provider = new LogsTreeDataProvider(context, stream);
+      provider.register();
+
+      // Start a deployment
+      emit("publish/start", createPublishStartMessage("App1", "server1.com"));
+
+      // Start the createBundle stage
+      emit(
+        "publish/createBundle/start",
+        createStageStartMessage("publish/createBundle"),
+      );
+
+      // Get the tree and find the createBundle stage
+      const children = provider.getChildren(undefined) as LogsTreeStageItem[];
+      const root = children[0]!;
+      const stages = provider.getChildren(root) as LogsTreeStageItem[];
+      const createBundleStage = stages.find(
+        (s) => s.stage.inactiveLabel === "Create Bundle",
+      );
+
+      expect(createBundleStage).toBeDefined();
+      // TreeItemCollapsibleState.Expanded = 2
+      expect(createBundleStage!.collapsibleState).toBe(2);
+    });
+
+    test("should collapse stage when it completes successfully", () => {
+      const { stream, emit } = createMockEventStream();
+      const context = createMockContext();
+
+      const provider = new LogsTreeDataProvider(context, stream);
+      provider.register();
+
+      // Start a deployment
+      emit("publish/start", createPublishStartMessage("App1", "server1.com"));
+
+      // Start and complete the createBundle stage
+      emit(
+        "publish/createBundle/start",
+        createStageStartMessage("publish/createBundle"),
+      );
+      emit(
+        "publish/createBundle/success",
+        createStageSuccessMessage("publish/createBundle"),
+      );
+
+      // Get the tree and find the createBundle stage
+      const children = provider.getChildren(undefined) as LogsTreeStageItem[];
+      const root = children[0]!;
+      const stages = provider.getChildren(root) as LogsTreeStageItem[];
+      const createBundleStage = stages.find(
+        (s) => s.stage.inactiveLabel === "Create Bundle",
+      );
+
+      expect(createBundleStage).toBeDefined();
+      // TreeItemCollapsibleState.Collapsed = 1
+      expect(createBundleStage!.collapsibleState).toBe(1);
+    });
+
+    test("should expand stage when it fails", () => {
+      const { stream, emit } = createMockEventStream();
+      const context = createMockContext();
+
+      const provider = new LogsTreeDataProvider(context, stream);
+      provider.register();
+
+      // Start a deployment
+      emit("publish/start", createPublishStartMessage("App1", "server1.com"));
+
+      // Start and fail the createBundle stage
+      emit(
+        "publish/createBundle/start",
+        createStageStartMessage("publish/createBundle"),
+      );
+      emit(
+        "publish/createBundle/failure",
+        createStageFailureMessage(
+          "publish/createBundle",
+          "Bundle creation failed",
+        ),
+      );
+
+      // Get the tree and find the createBundle stage
+      const children = provider.getChildren(undefined) as LogsTreeStageItem[];
+      const root = children[0]!;
+      const stages = provider.getChildren(root) as LogsTreeStageItem[];
+      const createBundleStage = stages.find(
+        (s) => s.stage.inactiveLabel === "Create Bundle",
+      );
+
+      expect(createBundleStage).toBeDefined();
+      // TreeItemCollapsibleState.Expanded = 2
+      expect(createBundleStage!.collapsibleState).toBe(2);
+    });
+
+    test("should expand stage when it is canceled", () => {
+      const { stream, emit } = createMockEventStream();
+      const context = createMockContext();
+
+      const provider = new LogsTreeDataProvider(context, stream);
+      provider.register();
+
+      // Start a deployment
+      emit("publish/start", createPublishStartMessage("App1", "server1.com"));
+
+      // Start and cancel the createBundle stage
+      emit(
+        "publish/createBundle/start",
+        createStageStartMessage("publish/createBundle"),
+      );
+      emit(
+        "publish/createBundle/failure",
+        createStageFailureMessage(
+          "publish/createBundle",
+          "Canceled by user",
+          true,
+        ),
+      );
+
+      // Get the tree and find the createBundle stage
+      const children = provider.getChildren(undefined) as LogsTreeStageItem[];
+      const root = children[0]!;
+      const stages = provider.getChildren(root) as LogsTreeStageItem[];
+      const createBundleStage = stages.find(
+        (s) => s.stage.inactiveLabel === "Create Bundle",
+      );
+
+      expect(createBundleStage).toBeDefined();
+      // TreeItemCollapsibleState.Expanded = 2
+      expect(createBundleStage!.collapsibleState).toBe(2);
     });
   });
 });

@@ -698,6 +698,7 @@ export class LogsTreeStageItem extends TreeItem {
       case LogStageStatus.inProgress:
         this.label = this.stage.activeLabel;
         this.iconPath = new ThemeIcon("loading~spin");
+        this.collapsibleState = TreeItemCollapsibleState.Expanded;
         break;
       case LogStageStatus.completed:
         this.label = this.stage.inactiveLabel;
@@ -705,6 +706,7 @@ export class LogsTreeStageItem extends TreeItem {
           "check",
           new ThemeColor("testing.iconPassed"),
         );
+        this.collapsibleState = TreeItemCollapsibleState.Collapsed;
         break;
       case LogStageStatus.failed:
         this.label = this.stage.inactiveLabel;
