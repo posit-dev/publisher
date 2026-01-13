@@ -92,75 +92,81 @@ const createLogStage = (
 
 const RestoringEnvironmentLabel = "Restoring Environment";
 
-const stages = new Map([
-  [
-    "publish/getRPackageDescriptions",
-    createLogStage("Get Package Descriptions", "Getting Package Descriptions", [
-      ProductType.CONNECT,
-      ProductType.CONNECT_CLOUD,
-    ]),
-  ],
-  [
-    "publish/checkCapabilities",
-    createLogStage("Check Capabilities", "Checking Capabilities", [
-      ProductType.CONNECT,
-    ]),
-  ],
-  [
-    "publish/createBundle",
-    createLogStage("Create Bundle", "Creating Bundle", [
-      ProductType.CONNECT,
-      ProductType.CONNECT_CLOUD,
-    ]),
-  ],
-  [
-    "publish/updateContent",
-    createLogStage("Update Content", "Updating Content", [
-      ProductType.CONNECT_CLOUD,
-    ]),
-  ],
-  [
-    "publish/uploadBundle",
-    createLogStage("Upload Bundle", "Uploading Bundle", [
-      ProductType.CONNECT,
-      ProductType.CONNECT_CLOUD,
-    ]),
-  ],
-  [
-    "publish/createDeployment",
-    createLogStage("Create Deployment Record", "Creating Deployment Record", [
-      ProductType.CONNECT,
-    ]),
-  ],
-  [
-    "publish/deployContent",
-    createLogStage("Deploy Content", "Deploying Content", [
-      ProductType.CONNECT_CLOUD,
-    ]),
-  ],
-  [
-    "publish/deployBundle",
-    createLogStage("Deploy Bundle", "Deploying Bundle", [ProductType.CONNECT]),
-  ],
-  [
-    "publish/restoreEnv",
-    createLogStage("Restore Environment", RestoringEnvironmentLabel, [
-      ProductType.CONNECT,
-    ]),
-  ],
-  [
-    "publish/runContent",
-    createLogStage("Run Content", "Running Content", [ProductType.CONNECT]),
-  ],
-  [
-    "publish/validateDeployment",
-    createLogStage(
-      "Validate Deployment Record",
-      "Validating Deployment Record",
-      [ProductType.CONNECT],
-    ),
-  ],
-]);
+// Factory function to create fresh stage objects on each call.
+// This prevents event accumulation across deployments.
+const createStagesMap = (): Map<string, LogStage> =>
+  new Map([
+    [
+      "publish/getRPackageDescriptions",
+      createLogStage(
+        "Get Package Descriptions",
+        "Getting Package Descriptions",
+        [ProductType.CONNECT, ProductType.CONNECT_CLOUD],
+      ),
+    ],
+    [
+      "publish/checkCapabilities",
+      createLogStage("Check Capabilities", "Checking Capabilities", [
+        ProductType.CONNECT,
+      ]),
+    ],
+    [
+      "publish/createBundle",
+      createLogStage("Create Bundle", "Creating Bundle", [
+        ProductType.CONNECT,
+        ProductType.CONNECT_CLOUD,
+      ]),
+    ],
+    [
+      "publish/updateContent",
+      createLogStage("Update Content", "Updating Content", [
+        ProductType.CONNECT_CLOUD,
+      ]),
+    ],
+    [
+      "publish/uploadBundle",
+      createLogStage("Upload Bundle", "Uploading Bundle", [
+        ProductType.CONNECT,
+        ProductType.CONNECT_CLOUD,
+      ]),
+    ],
+    [
+      "publish/createDeployment",
+      createLogStage("Create Deployment Record", "Creating Deployment Record", [
+        ProductType.CONNECT,
+      ]),
+    ],
+    [
+      "publish/deployContent",
+      createLogStage("Deploy Content", "Deploying Content", [
+        ProductType.CONNECT_CLOUD,
+      ]),
+    ],
+    [
+      "publish/deployBundle",
+      createLogStage("Deploy Bundle", "Deploying Bundle", [
+        ProductType.CONNECT,
+      ]),
+    ],
+    [
+      "publish/restoreEnv",
+      createLogStage("Restore Environment", RestoringEnvironmentLabel, [
+        ProductType.CONNECT,
+      ]),
+    ],
+    [
+      "publish/runContent",
+      createLogStage("Run Content", "Running Content", [ProductType.CONNECT]),
+    ],
+    [
+      "publish/validateDeployment",
+      createLogStage(
+        "Validate Deployment Record",
+        "Validating Deployment Record",
+        [ProductType.CONNECT],
+      ),
+    ],
+  ]);
 
 class EventStreamRepository {
   private events: EventStreamMessage[];
@@ -242,9 +248,11 @@ export class LogsViewProvider {
       LogsViewProvider.eventsRepository.streamInProgress(true);
     });
 
-    Array.from(stages.keys()).forEach((stageName) => {
+    // Get stage names from a fresh stages map for event registration
+    const stagesMap = createStagesMap();
+    Array.from(stagesMap.keys()).forEach((stageName) => {
       this.stream.register(`${stageName}/log`, (msg: EventStreamMessage) => {
-        const stage = stages.get(stageName);
+        const stage = stagesMap.get(stageName);
         if (stage && msg.data.level !== "DEBUG") {
           LogsViewProvider.eventsRepository.push(msg);
         }
@@ -296,7 +304,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
   ) {}
 
   private resetStages() {
-    this.stages = stages;
+    this.stages = createStagesMap();
 
     this.publishingStage = createLogStage(
       "Publishing",
