@@ -15,6 +15,9 @@ func (p *defaultPublisher) createManifest() (*bundles.Manifest, error) {
 	manifest := bundles.NewManifestFromConfig(p.Config)
 	p.log.Debug("Built manifest from config", "config", p.ConfigName)
 
+	log := p.log.WithArgs(logging.LogKeyOp, events.PublishGetRPackageDescriptionsOp)
+	p.logDeploymentVersions(log, manifest)
+
 	if p.Config.R != nil {
 		scanDependencies := false
 
