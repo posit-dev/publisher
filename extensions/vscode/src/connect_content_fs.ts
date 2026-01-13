@@ -42,7 +42,10 @@ export async function setConnectContentBundle(
 }
 
 // Drop any cached bundle so reopening always fetches fresh content.
-export function clearConnectContentBundle(serverUrl: string, contentGuid: string) {
+export function clearConnectContentBundle(
+  serverUrl: string,
+  contentGuid: string,
+) {
   contentRoots.delete(connectContentUri(serverUrl, contentGuid).toString());
 }
 
@@ -165,42 +168,45 @@ async function extractBundleTree(bundleBytes: Uint8Array) {
   // Materialize the bundle so the file system can serve reads without touching disk.
   const root = createDirectoryEntry();
   const extract = tar.extract();
-  extract.on("entry", (header, stream, next) => {
-    const parts = normalizeEntryPath(header.name);
-    if (parts.length === 0) {
-      stream.resume();
-      next();
-      return;
-    }
-    if (header.type === "directory") {
-      ensureDirectory(root, parts, header.mtime);
-      stream.resume();
-      next();
-      return;
-    }
-    if (header.type !== "file") {
-      stream.resume();
-      next();
-      return;
-    }
-    const buffers: Uint8Array[] = [];
-    stream.on("data", (chunk: Uint8Array) => {
-      buffers.push(chunk);
-    });
-    stream.on("end", () => {
-      const fileEntry = createFileEntry(Buffer.concat(buffers), header.mtime);
-      const name = parts.at(-1);
-      if (!name) {
+  extract.on(
+    "entry",
+    (header: tar.Headers, stream: NodeJS.ReadableStream, next: () => void) => {
+      const parts = normalizeEntryPath(header.name);
+      if (parts.length === 0) {
+        stream.resume();
         next();
         return;
       }
-      ensureDirectory(root, parts.slice(0, -1), header.mtime).children?.set(
-        name,
-        fileEntry,
-      );
-      next();
-    });
-  });
+      if (header.type === "directory") {
+        ensureDirectory(root, parts, header.mtime);
+        stream.resume();
+        next();
+        return;
+      }
+      if (header.type !== "file") {
+        stream.resume();
+        next();
+        return;
+      }
+      const buffers: Uint8Array[] = [];
+      stream.on("data", (chunk: Uint8Array) => {
+        buffers.push(chunk);
+      });
+      stream.on("end", () => {
+        const fileEntry = createFileEntry(Buffer.concat(buffers), header.mtime);
+        const name = parts.at(-1);
+        if (!name) {
+          next();
+          return;
+        }
+        ensureDirectory(root, parts.slice(0, -1), header.mtime).children?.set(
+          name,
+          fileEntry,
+        );
+        next();
+      });
+    },
+  );
   await pipeline(Readable.from(bundleBytes), createGunzip(), extract);
   return root;
 }
