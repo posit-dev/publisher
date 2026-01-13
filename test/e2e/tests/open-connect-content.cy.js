@@ -7,19 +7,17 @@ describe("Open Connect Content", () => {
     cy.setAdminCredentials();
   });
 
-  beforeEach(() => {
-    cy.visit("/");
-    cy.getPublisherSidebarIcon().click();
-    cy.waitForPublisherIframe();
-    cy.debugIframes();
-  });
-
   afterEach(() => {
     cy.clearupDeployments();
   });
 
   it("opens deployed content in the explorer tree", () => {
     cy.on("uncaught:exception", () => false);
+    cy.clearupDeployments("static");
+    cy.visit("/?folder=/home/coder/workspace");
+    cy.getPublisherSidebarIcon().click();
+    cy.waitForPublisherIframe();
+    cy.debugIframes();
     cy.expectInitialPublisherState();
 
     cy.createPCSDeployment("static", "index.html", "static", () => {
