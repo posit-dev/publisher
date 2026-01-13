@@ -130,9 +130,7 @@ async function openConnectContent(serverUrl: string, contentGuid: string) {
       connectContentUri(serverUrl, contentGuid),
       { forceReuseWindow: true },
     );
-    authLogger.info(
-      `Opened Connect content ${contentGuid} from ${serverUrl}.`,
-    );
+    authLogger.info(`Opened Connect content ${contentGuid} from ${serverUrl}.`);
   } catch (error) {
     authLogger.error(
       `Failed to open Connect content ${contentGuid} from ${serverUrl}: ${error}`,

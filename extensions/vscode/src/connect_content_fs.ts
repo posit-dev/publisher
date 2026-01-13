@@ -23,7 +23,10 @@ export function setConnectContentRoot(
   contentGuid: string,
   localPath: string,
 ) {
-  contentRoots.set(`${connectContentAuthority(serverUrl)}/${contentGuid}`, localPath);
+  contentRoots.set(
+    `${connectContentAuthority(serverUrl)}/${contentGuid}`,
+    localPath,
+  );
 }
 
 // Construct the Connect content URI that the extension opens in VS Code.
