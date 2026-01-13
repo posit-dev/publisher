@@ -678,6 +678,69 @@ func (s *PublishConnectSuite) TestServerUnavailableShowsHelpfulError() {
 	})
 }
 
+func (s *PublishConnectSuite) TestLogDeploymentVersions() {
+	// Test with all versions present
+	manifest := &bundles.Manifest{
+		Platform: "4.3.2",
+		Python: &bundles.Python{
+			Version: "3.11.0",
+		},
+		Quarto: &bundles.Quarto{
+			Version: "1.4.0",
+		},
+	}
+
+	logBuffer := new(bytes.Buffer)
+	opts := &slog.HandlerOptions{Level: slog.LevelInfo}
+	stdLogger := slog.New(slog.NewTextHandler(logBuffer, opts))
+	log := logging.FromStdLogger(stdLogger)
+
+	publisher := &defaultPublisher{}
+	publisher.logDeploymentVersions(log, manifest)
+
+	logs := logBuffer.String()
+	s.Contains(logs, "Deployment using interpreters")
+	s.Contains(logs, "r=4.3.2")
+	s.Contains(logs, "python=3.11.0")
+	s.Contains(logs, "quarto=1.4.0")
+}
+
+func (s *PublishConnectSuite) TestLogDeploymentVersionsOnlyR() {
+	manifest := &bundles.Manifest{
+		Platform: "4.3.2",
+	}
+
+	logBuffer := new(bytes.Buffer)
+	opts := &slog.HandlerOptions{Level: slog.LevelInfo}
+	stdLogger := slog.New(slog.NewTextHandler(logBuffer, opts))
+	log := logging.FromStdLogger(stdLogger)
+
+	publisher := &defaultPublisher{}
+	publisher.logDeploymentVersions(log, manifest)
+
+	logs := logBuffer.String()
+	s.Contains(logs, "Deployment using interpreters")
+	s.Contains(logs, "r=4.3.2")
+	s.NotContains(logs, "python=")
+	s.NotContains(logs, "quarto=")
+}
+
+func (s *PublishConnectSuite) TestLogDeploymentVersionsEmpty() {
+	manifest := &bundles.Manifest{}
+
+	logBuffer := new(bytes.Buffer)
+	opts := &slog.HandlerOptions{Level: slog.LevelInfo}
+	stdLogger := slog.New(slog.NewTextHandler(logBuffer, opts))
+	log := logging.FromStdLogger(stdLogger)
+
+	publisher := &defaultPublisher{}
+	publisher.logDeploymentVersions(log, manifest)
+
+	logs := logBuffer.String()
+	// Should not log anything when no versions are present
+	s.NotContains(logs, "Deployment using interpreters")
+}
+
 type PublishConnectCloudSuite struct {
 	BasePublishSuite
 }
