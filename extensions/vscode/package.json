@@ -29,7 +29,9 @@
     "Other"
   ],
   "activationEvents": [
-    "workspaceContains:/"
+    "workspaceContains:/",
+    "onUri:posit.publisher",
+    "onFileSystem:connect-content"
   ],
   "main": "./dist/extension.js",
   "contributes": {

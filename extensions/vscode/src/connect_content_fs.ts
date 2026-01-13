@@ -15,6 +15,8 @@ import { pipeline } from "node:stream/promises";
 import { Readable } from "node:stream";
 import { createGunzip } from "node:zlib";
 import tar from "tar-stream";
+import { useApi } from "./api";
+import { authLogger } from "./authProvider";
 
 type ConnectContentEntry = {
   type: FileType;
@@ -28,25 +30,17 @@ type ConnectContentEntry = {
 const CONNECT_CONTENT_SCHEME = "connect-content";
 const contentRoots = new Map<string, ConnectContentEntry>();
 const fileChangeEmitter = new EventEmitter<FileChangeEvent[]>();
+const bundleFetches = new Map<string, Promise<void>>();
 
 // Track which bundle contents back a Connect content URI.
-export async function setConnectContentBundle(
-  serverUrl: string,
-  contentGuid: string,
-  bundleBytes: Uint8Array,
-) {
-  contentRoots.set(
-    connectContentUri(serverUrl, contentGuid).toString(),
-    await extractBundleTree(bundleBytes),
-  );
-}
-
 // Drop any cached bundle so reopening always fetches fresh content.
 export function clearConnectContentBundle(
   serverUrl: string,
   contentGuid: string,
 ) {
+  authLogger.info(`Clearing cached bundle ${contentGuid} for ${serverUrl}`);
   contentRoots.delete(connectContentUri(serverUrl, contentGuid).toString());
+  bundleFetches.delete(connectContentUri(serverUrl, contentGuid).toString());
 }
 
 // Clear cached bundles when a connect-content workspace folder is removed.
@@ -54,20 +48,28 @@ export function clearConnectContentBundleForUri(uri: Uri) {
   if (uri.scheme !== CONNECT_CONTENT_SCHEME) {
     return;
   }
+  authLogger.info(
+    `Clearing bundle cache for removed workspace ${uri.toString()}`,
+  );
   contentRoots.delete(uri.toString());
+  bundleFetches.delete(uri.toString());
 }
 
 // Construct the Connect content URI that the extension opens in VS Code.
 export function connectContentUri(serverUrl: string, contentGuid: string) {
+  const query = new URLSearchParams({ serverUrl }).toString();
+  const authority = tryGetHost(serverUrl);
   return Uri.from({
     scheme: CONNECT_CONTENT_SCHEME,
-    authority: connectContentAuthority(serverUrl),
+    authority,
     path: `/${contentGuid}`,
+    query,
   });
 }
 
 // Register a read-only file system so VS Code can browse Connect content.
 export function registerConnectContentFileSystem(): Disposable {
+  authLogger.info("Registering connect-content file system provider");
   return workspace.registerFileSystemProvider(
     CONNECT_CONTENT_SCHEME,
     new ConnectContentFileSystemProvider(),
@@ -82,20 +84,25 @@ class ConnectContentFileSystemProvider implements FileSystemProvider {
     return new Disposable(() => undefined);
   }
 
-  stat(uri: Uri): Thenable<FileStat> {
-    return Promise.resolve(statFromEntry(resolveEntry(uri)));
+  async stat(uri: Uri): Promise<FileStat> {
+    authLogger.info(`connect-content stat ${uri.toString()}`);
+    const entry = await resolveEntry(uri);
+    return statFromEntry(entry);
   }
 
-  readDirectory(uri: Uri): Thenable<[string, FileType][]> {
-    return Promise.resolve(listDirectory(resolveEntry(uri)));
+  async readDirectory(uri: Uri): Promise<[string, FileType][]> {
+    authLogger.info(`connect-content readDirectory ${uri.toString()}`);
+    const entry = await resolveEntry(uri);
+    return listDirectory(entry);
   }
 
-  readFile(uri: Uri): Thenable<Uint8Array> {
-    const entry = resolveEntry(uri);
+  async readFile(uri: Uri): Promise<Uint8Array> {
+    authLogger.info(`connect-content readFile ${uri.toString()}`);
+    const entry = await resolveEntry(uri);
     if (entry.type !== FileType.File) {
       throw FileSystemError.FileIsADirectory(uri);
     }
-    return Promise.resolve(entry.data ?? new Uint8Array());
+    return entry.data ?? new Uint8Array();
   }
 
   createDirectory(): void {
@@ -115,7 +122,8 @@ class ConnectContentFileSystemProvider implements FileSystemProvider {
   }
 }
 
-function resolveEntry(uri: Uri): ConnectContentEntry {
+async function resolveEntry(uri: Uri): Promise<ConnectContentEntry> {
+  await ensureBundleForUri(uri);
   const trimmedPath = uri.path.replace(/^\/+/, "");
   const [contentGuid, ...rest] = trimmedPath.split("/");
   if (!contentGuid) {
@@ -126,8 +134,14 @@ function resolveEntry(uri: Uri): ConnectContentEntry {
     uri.with({ path: `/${contentGuid}` }).toString(),
   );
   if (!root) {
+    authLogger.error(`No cached bundle for ${uri.toString()}`);
     throw FileSystemError.FileNotFound(uri);
   }
+  authLogger.info(
+    `Resolved connect-content entry for ${uri.toString()} ${
+      rest.length ? `(descended ${rest.length} segments)` : "(root)"
+    }`,
+  );
   if (rest.length === 0) {
     return root;
   }
@@ -164,13 +178,104 @@ function statFromEntry(entry: ConnectContentEntry): FileStat {
   };
 }
 
+function parseConnectContentUri(uri: Uri) {
+  if (uri.scheme !== CONNECT_CONTENT_SCHEME) {
+    return null;
+  }
+  const params = new URLSearchParams(uri.query);
+  const serverUrl = params.get("serverUrl");
+  if (!serverUrl) {
+    return null;
+  }
+  const trimmedPath = uri.path.replace(/^\/+/, "");
+  const [contentGuid] = trimmedPath.split("/");
+  if (!contentGuid) {
+    return null;
+  }
+  if (!isValidOrigin(serverUrl)) {
+    return null;
+  }
+  return { serverUrl, contentGuid };
+}
+
+function tryGetHost(serverUrl: string) {
+  try {
+    return new URL(serverUrl).host;
+  } catch {
+    return "";
+  }
+}
+
+function isValidOrigin(serverUrl: string) {
+  try {
+    new URL(serverUrl);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function ensureBundleForUri(uri: Uri): Promise<void> {
+  const parsed = parseConnectContentUri(uri);
+  if (!parsed) {
+    throw FileSystemError.FileNotFound(uri);
+  }
+  const rootKey = uri.with({ path: `/${parsed.contentGuid}` }).toString();
+  if (contentRoots.has(rootKey)) {
+    return;
+  }
+  let pending = bundleFetches.get(rootKey);
+  if (!pending) {
+    pending = fetchAndCacheBundle(
+      parsed.serverUrl,
+      parsed.contentGuid,
+      rootKey,
+    );
+    bundleFetches.set(rootKey, pending);
+  }
+  try {
+    await pending;
+  } finally {
+    bundleFetches.delete(rootKey);
+  }
+}
+
+async function fetchAndCacheBundle(
+  serverUrl: string,
+  contentGuid: string,
+  rootKey: string,
+) {
+  const api = await useApi();
+  const response = await api.openConnectContent.openConnectContent(
+    serverUrl,
+    contentGuid,
+  );
+  const bundleBytes = new Uint8Array(response.data);
+  const root = await extractBundleTree(bundleBytes);
+  contentRoots.set(rootKey, root);
+  authLogger.info(
+    `Fetched bundle ${contentGuid} for ${serverUrl} and cached for ${rootKey}`,
+  );
+}
+
 async function extractBundleTree(bundleBytes: Uint8Array) {
   // Materialize the bundle so the file system can serve reads without touching disk.
   const root = createDirectoryEntry();
   const extract = tar.extract();
+  const signature = Array.from(bundleBytes.slice(0, 4))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join(" ");
+  const looksLikeGzip =
+    bundleBytes.length >= 2 &&
+    bundleBytes[0] === 0x1f &&
+    bundleBytes[1] === 0x8b;
+  authLogger.info(`Bundle signature: ${signature} (gzip? ${looksLikeGzip})`);
   extract.on(
     "entry",
     (header: tar.Headers, stream: NodeJS.ReadableStream, next: () => void) => {
+      authLogger.info(
+        `Processing TAR entry ${header.name} (type=${header.type})`,
+      );
       const parts = normalizeEntryPath(header.name);
       if (parts.length === 0) {
         stream.resume();
@@ -193,6 +298,7 @@ async function extractBundleTree(bundleBytes: Uint8Array) {
         buffers.push(chunk);
       });
       stream.on("end", () => {
+        authLogger.info(`Finished reading file entry ${header.name}`);
         const fileEntry = createFileEntry(Buffer.concat(buffers), header.mtime);
         const name = parts.at(-1);
         if (!name) {
@@ -205,9 +311,59 @@ async function extractBundleTree(bundleBytes: Uint8Array) {
         );
         next();
       });
+      stream.on("error", (err) => {
+        authLogger.error(
+          `Error while reading stream for entry ${header.name}: ${err}`,
+        );
+        next();
+      });
     },
   );
-  await pipeline(Readable.from(bundleBytes), createGunzip(), extract);
+  extract.on("finish", () => {
+    authLogger.info(
+      `Finished processing all TAR entries (${bundleBytes.length} bytes)`,
+    );
+  });
+  extract.on("error", (err) => {
+    authLogger.error(`Error during TAR extraction: ${err}`);
+  });
+  try {
+    authLogger.info(
+      `Starting pipeline to extract bundle (${bundleBytes.length} bytes)`,
+    );
+    const sourceBuffer = Buffer.from(bundleBytes);
+    const source = Readable.from([sourceBuffer]);
+    authLogger.info(
+      `bundle source chunk planned (${sourceBuffer.length} bytes)`,
+    );
+    source.on("data", (chunk: Buffer) => {
+      authLogger.info(`bundle source chunk emitted (${chunk.length} bytes)`);
+    });
+    source.on("end", () => {
+      authLogger.info("bundle source stream ended");
+    });
+    if (looksLikeGzip) {
+      const gunzip = createGunzip();
+      gunzip.on("error", (err) => {
+        authLogger.error(`gunzip error: ${err}`);
+      });
+      gunzip.on("data", (chunk: Buffer) => {
+        authLogger.info(`gunzip chunk (${chunk.length} bytes)`);
+      });
+      authLogger.info("Piping bundle through gunzip");
+      await pipeline(source, gunzip, extract);
+    } else {
+      authLogger.info("Skipping gunzip because bundle does not look gzipped");
+      await pipeline(source, extract);
+    }
+    const rootEntries = root.children?.size ?? 0;
+    authLogger.info(
+      `Extracted bundle tree (${bundleBytes.length} bytes) with ${rootEntries} root entries`,
+    );
+  } catch (error) {
+    authLogger.error(`bundle extraction failed: ${error}`);
+    throw error;
+  }
   return root;
 }
 
@@ -260,8 +416,4 @@ function normalizeEntryPath(name: string) {
     .replace(/\\/g, "/")
     .split("/")
     .filter((part) => part && part !== "." && part !== "..");
-}
-
-function connectContentAuthority(serverUrl: string) {
-  return new URL(serverUrl).host;
 }

@@ -1,13 +1,11 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
-import { Uri, commands, window } from "vscode";
+import { Uri, commands, window, workspace } from "vscode";
 import { Commands } from "src/constants";
-import { useApi } from "./api";
 import { authLogger } from "./authProvider";
 import {
   clearConnectContentBundle,
   connectContentUri,
-  setConnectContentBundle,
 } from "./connect_content_fs";
 import { PublisherState } from "./state";
 
@@ -73,6 +71,7 @@ export async function promptOpenConnectContent() {
 
 // Validate a connect URI and drive the credential acquisition flow.
 export async function handleConnectUri(uri: Uri) {
+  authLogger.info(`handleConnectUri start for ${uri.toString()}`);
   if (uri.path !== "/connect") {
     authLogger.info(`Ignoring unsupported URI: ${uri.toString()}`);
     return;
@@ -90,10 +89,15 @@ export async function handleConnectUri(uri: Uri) {
     return;
   }
   if (!publisherState) {
+    authLogger.debug(
+      `Extension not initialized yet. Deferring URI ${uri.toString()}`,
+    );
     pendingUri = uri;
     authLogger.debug(`Deferring URI handling until extension is initialized.`);
     return;
   }
+  authLogger.info(`Refreshing credentials before opening content.`);
+  authLogger.info(`Refreshing credentials (first attempt).`);
   await publisherState.refreshCredentials();
   if (hasCredentialForServer(normalizedServer, publisherState)) {
     authLogger.info(
@@ -109,6 +113,7 @@ export async function handleConnectUri(uri: Uri) {
     Commands.HomeView.AddCredential,
     normalizedServer,
   );
+  authLogger.info(`Refreshing credentials after credential flow.`);
   await publisherState.refreshCredentials();
   if (hasCredentialForServer(normalizedServer, publisherState)) {
     authLogger.info(
@@ -125,25 +130,53 @@ export async function handleConnectUri(uri: Uri) {
 // Continue the workflow by fetching and opening the Connect content locally.
 async function openConnectContent(serverUrl: string, contentGuid: string) {
   try {
-    // Always refresh bundles so reopening gets the latest published content.
-    clearConnectContentBundle(serverUrl, contentGuid);
-    const response = await (
-      await useApi()
-    ).openConnectContent.openConnectContent(serverUrl, contentGuid);
-    await setConnectContentBundle(
-      serverUrl,
-      contentGuid,
-      new Uint8Array(response.data),
+    authLogger.info(
+      `Opening Connect content ${contentGuid} on ${serverUrl}. Clearing any cached bundle.`,
     );
-    await commands.executeCommand(
-      "vscode.openFolder",
-      connectContentUri(serverUrl, contentGuid),
-      { forceReuseWindow: true },
+    clearConnectContentBundle(serverUrl, contentGuid);
+    authLogger.info(
+      `Executing open for connect-content workspace (server=${serverUrl} content=${contentGuid}).`,
+    );
+    const workspaceUri = connectContentUri(serverUrl, contentGuid);
+    await openConnectContentInCurrentWindow(workspaceUri);
+    authLogger.info(
+      `Requested open folder for ${workspaceUri.toString()} and command resolved`,
     );
     authLogger.info(`Opened Connect content ${contentGuid} from ${serverUrl}.`);
   } catch (error) {
     authLogger.error(
       `Failed to open Connect content ${contentGuid} from ${serverUrl}: ${error}`,
     );
+  }
+}
+
+async function openConnectContentInCurrentWindow(uri: Uri) {
+  const workspaceFolders = workspace.workspaceFolders ?? [];
+  if (workspaceFolders.length === 0) {
+    authLogger.info(
+      "No workspace folders open; falling back to vscode.openFolder",
+    );
+    await commands.executeCommand("vscode.openFolder", uri, {
+      forceReuseWindow: true,
+      forceNewWindow: false,
+    });
+    return;
+  }
+  authLogger.info(
+    "Replacing current workspace folders with connect-content workspace",
+  );
+  const replacements = workspace.updateWorkspaceFolders(
+    0,
+    workspaceFolders.length,
+    { uri },
+  );
+  if (!replacements) {
+    authLogger.info(
+      "updateWorkspaceFolders failed; falling back to vscode.openFolder",
+    );
+    await commands.executeCommand("vscode.openFolder", uri, {
+      forceReuseWindow: true,
+      forceNewWindow: false,
+    });
   }
 }
