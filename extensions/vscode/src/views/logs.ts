@@ -320,98 +320,121 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
   private registerEvents() {
     // Reset events when a new publish starts
     this.stream.register("publish/start", (msg: EventStreamMessage) => {
-      this.resetStages();
-      this.stages.forEach((stage) => {
-        if (!stage.productType.includes(msg.data.productType as ProductType)) {
-          stage.status = LogStageStatus.notApplicable;
-        }
-      });
-      this.publishingStage.inactiveLabel = `Publish "${msg.data.title}" to ${msg.data.server}`;
-      this.publishingStage.activeLabel = `Publishing "${msg.data.title}" to ${msg.data.server}`;
-      this.publishingStage.status = LogStageStatus.inProgress;
-      this.refresh();
+      try {
+        this.resetStages();
+        this.stages.forEach((stage) => {
+          if (
+            !stage.productType.includes(msg.data.productType as ProductType)
+          ) {
+            stage.status = LogStageStatus.notApplicable;
+          }
+        });
+        this.publishingStage.inactiveLabel = `Publish "${msg.data.title}" to ${msg.data.server}`;
+        this.publishingStage.activeLabel = `Publishing "${msg.data.title}" to ${msg.data.server}`;
+        this.publishingStage.status = LogStageStatus.inProgress;
+        this.refresh();
+      } catch (error) {
+        console.error(
+          "LogsTreeDataProvider publish/start handler error:",
+          error,
+        );
+      }
     });
 
     this.stream.register("publish/success", (msg: EventStreamMessage) => {
-      this.publishingStage.status = LogStageStatus.completed;
-      this.publishingStage.events.push(msg);
+      try {
+        this.publishingStage.status = LogStageStatus.completed;
+        this.publishingStage.events.push(msg);
 
-      this.stages.forEach((stage) => {
-        if (stage.status === LogStageStatus.notStarted) {
-          stage.status = LogStageStatus.skipped;
-        }
-      });
+        this.stages.forEach((stage) => {
+          if (stage.status === LogStageStatus.notStarted) {
+            stage.status = LogStageStatus.skipped;
+          }
+        });
 
-      this.refresh();
+        this.refresh();
+      } catch (error) {
+        console.error(
+          "LogsTreeDataProvider publish/success handler error:",
+          error,
+        );
+      }
     });
 
     this.stream.register("publish/failure", async (msg: EventStreamMessage) => {
-      const deploymentFailureRenvHandler = new DeploymentFailureRenvHandler();
-      if (deploymentFailureRenvHandler.shouldHandleEventMsg(msg)) {
-        return deploymentFailureRenvHandler.handle(msg).then(this.refresh);
-      }
-
-      const failedOrCanceledStatus = msg.data.canceled
-        ? LogStageStatus.canceled
-        : LogStageStatus.failed;
-      this.publishingStage.status = failedOrCanceledStatus;
-      this.publishingStage.events.push(msg);
-
-      this.stages.forEach((stage) => {
-        if (stage.status === LogStageStatus.notStarted) {
-          stage.status = LogStageStatus.neverStarted;
-        } else if (stage.status === LogStageStatus.inProgress) {
-          stage.status = failedOrCanceledStatus;
+      try {
+        const deploymentFailureRenvHandler = new DeploymentFailureRenvHandler();
+        if (deploymentFailureRenvHandler.shouldHandleEventMsg(msg)) {
+          return deploymentFailureRenvHandler.handle(msg).then(this.refresh);
         }
 
-        if (
-          stage.status === LogStageStatus.failed &&
-          extensionSettings.autoOpenLogsOnFailure()
-        ) {
-          commands.executeCommand(Commands.Logs.Focus);
-        }
-      });
+        const failedOrCanceledStatus = msg.data.canceled
+          ? LogStageStatus.canceled
+          : LogStageStatus.failed;
+        this.publishingStage.status = failedOrCanceledStatus;
+        this.publishingStage.events.push(msg);
 
-      const showLogsOption = "View Publishing Log";
-      const options = [showLogsOption];
-      const messageText = msg.data.message ?? "";
-      const enhancedError = findErrorMessageSplitOption(messageText);
-      if (enhancedError && enhancedError.buttonStr) {
-        options.push(enhancedError.buttonStr);
-      }
-      let errorMessage = "";
-      if (isCodedEventErrorMessage(msg)) {
-        errorMessage = handleEventCodedError(msg);
-      } else {
-        errorMessage =
-          msg.data.canceled === "true"
-            ? messageText
-            : `Deployment failed: ${messageText}`;
-      }
-      let selection: string | undefined;
-      if (msg.data.canceled === "true") {
-        selection = await window.showInformationMessage(
-          errorMessage,
-          ...options,
-        );
-      } else {
-        selection = await showErrorMessageWithTroubleshoot(
-          errorMessage,
-          ...options,
-        );
-      }
-      if (selection === showLogsOption) {
-        await commands.executeCommand(Commands.Logs.Focus);
-      } else if (selection === enhancedError?.buttonStr) {
-        if (
-          enhancedError?.actionId === ErrorMessageActionIds.EditConfiguration
-        ) {
-          await commands.executeCommand(
-            Commands.HomeView.EditCurrentConfiguration,
+        this.stages.forEach((stage) => {
+          if (stage.status === LogStageStatus.notStarted) {
+            stage.status = LogStageStatus.neverStarted;
+          } else if (stage.status === LogStageStatus.inProgress) {
+            stage.status = failedOrCanceledStatus;
+          }
+
+          if (
+            stage.status === LogStageStatus.failed &&
+            extensionSettings.autoOpenLogsOnFailure()
+          ) {
+            commands.executeCommand(Commands.Logs.Focus);
+          }
+        });
+
+        const showLogsOption = "View Publishing Log";
+        const options = [showLogsOption];
+        const messageText = msg.data.message ?? "";
+        const enhancedError = findErrorMessageSplitOption(messageText);
+        if (enhancedError && enhancedError.buttonStr) {
+          options.push(enhancedError.buttonStr);
+        }
+        let errorMessage = "";
+        if (isCodedEventErrorMessage(msg)) {
+          errorMessage = handleEventCodedError(msg);
+        } else {
+          errorMessage =
+            msg.data.canceled === "true"
+              ? messageText
+              : `Deployment failed: ${messageText}`;
+        }
+        let selection: string | undefined;
+        if (msg.data.canceled === "true") {
+          selection = await window.showInformationMessage(
+            errorMessage,
+            ...options,
+          );
+        } else {
+          selection = await showErrorMessageWithTroubleshoot(
+            errorMessage,
+            ...options,
           );
         }
+        if (selection === showLogsOption) {
+          await commands.executeCommand(Commands.Logs.Focus);
+        } else if (selection === enhancedError?.buttonStr) {
+          if (
+            enhancedError?.actionId === ErrorMessageActionIds.EditConfiguration
+          ) {
+            await commands.executeCommand(
+              Commands.HomeView.EditCurrentConfiguration,
+            );
+          }
+        }
+        this.refresh();
+      } catch (error) {
+        console.error(
+          "LogsTreeDataProvider publish/failure handler error:",
+          error,
+        );
       }
-      this.refresh();
     });
 
     Array.from(this.stages.keys()).forEach((stageName) => {

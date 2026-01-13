@@ -192,6 +192,19 @@ function createStageLogMessage(
   };
 }
 
+/**
+ * Helper to create a publish/success event message
+ */
+function createPublishSuccessMessage(dashboardUrl: string): EventStreamMessage {
+  return {
+    type: "publish/success",
+    time: new Date().toISOString(),
+    data: {
+      dashboardUrl,
+    },
+  };
+}
+
 describe("LogsTreeDataProvider", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -285,6 +298,59 @@ describe("LogsTreeDataProvider", () => {
         (e) => e.data.message?.includes("First deployment"),
       );
       expect(hasFirstDeploymentEvent).toBe(false);
+    });
+  });
+
+  describe("event handler error isolation", () => {
+    test("publish/success handler should not throw exceptions that block other handlers", () => {
+      const { stream, emit } = createMockEventStream();
+      const context = createMockContext();
+
+      const provider = new LogsTreeDataProvider(context, stream);
+      provider.register();
+
+      // Track if subsequent handlers are called
+      let subsequentHandlerCalled = false;
+      stream.register("publish/success", () => {
+        subsequentHandlerCalled = true;
+      });
+
+      // Start a deployment first to initialize state
+      emit("publish/start", createPublishStartMessage("App1", "server1.com"));
+
+      // Emit publish/success - even if LogsTreeDataProvider's handler had an issue,
+      // it should not throw and block subsequent handlers
+      expect(() => {
+        emit(
+          "publish/success",
+          createPublishSuccessMessage("https://example.com"),
+        );
+      }).not.toThrow();
+
+      // Verify subsequent handlers were still called
+      expect(subsequentHandlerCalled).toBe(true);
+    });
+
+    test("publish/start handler should not throw exceptions that block other handlers", () => {
+      const { stream, emit } = createMockEventStream();
+      const context = createMockContext();
+
+      const provider = new LogsTreeDataProvider(context, stream);
+      provider.register();
+
+      // Track if subsequent handlers are called
+      let subsequentHandlerCalled = false;
+      stream.register("publish/start", () => {
+        subsequentHandlerCalled = true;
+      });
+
+      // Emit publish/start - should not throw
+      expect(() => {
+        emit("publish/start", createPublishStartMessage("App1", "server1.com"));
+      }).not.toThrow();
+
+      // Verify subsequent handlers were still called
+      expect(subsequentHandlerCalled).toBe(true);
     });
   });
 });
