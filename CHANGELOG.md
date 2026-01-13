@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added support finding R executables in VSCode using `Rpath` settings in the R extension. (#3378)
 
+### Fixed
+
+- Log messages in the Publisher Logs panel are no longer duplicated when multiple deployments are made. (#3069)
+
 ## [1.28.0]
 
 ### Fixed
