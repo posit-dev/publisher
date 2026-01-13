@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added support finding R executables in VSCode using `Rpath` settings in the R extension. (#3378)
+
 ## [1.28.0]
 
 ### Fixed
