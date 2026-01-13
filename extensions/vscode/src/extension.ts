@@ -23,6 +23,7 @@ import { PublisherState } from "./state";
 import { PublisherAuthProvider, authLogger } from "./authProvider";
 import { copySystemInfoCommand } from "src/commands";
 import { registerLLMTooling } from "./llm";
+import { registerConnectContentFileSystem } from "./connect_content_fs";
 import {
   handleConnectUri,
   handleDeferredConnectUri,
@@ -117,7 +118,7 @@ async function initializeExtension(context: ExtensionContext) {
   context.subscriptions.push(watchers);
 
   const state = new PublisherState(context);
-  handleDeferredConnectUri(state);
+  context.subscriptions.push(registerConnectContentFileSystem());
 
   // First the construction of the data providers
   const projectTreeDataProvider = new ProjectTreeDataProvider(context);
@@ -172,6 +173,7 @@ async function initializeExtension(context: ExtensionContext) {
   );
 
   context.subscriptions.push(new PublisherAuthProvider(state));
+  handleDeferredConnectUri(state);
 
   // Register LLM Tools under /llm
   registerLLMTooling(context, state);

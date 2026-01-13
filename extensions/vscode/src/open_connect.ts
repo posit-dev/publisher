@@ -4,6 +4,7 @@ import { Uri, commands, window } from "vscode";
 import { Commands } from "src/constants";
 import { useApi } from "./api";
 import { authLogger } from "./authProvider";
+import { connectContentUri, setConnectContentRoot } from "./connect_content_fs";
 import { PublisherState } from "./state";
 
 let publisherState: PublisherState | undefined;
@@ -123,13 +124,14 @@ async function openConnectContent(serverUrl: string, contentGuid: string) {
     const response = await (
       await useApi()
     ).openConnectContent.openConnectContent(serverUrl, contentGuid);
+    setConnectContentRoot(serverUrl, contentGuid, response.data.workspacePath);
     await commands.executeCommand(
       "vscode.openFolder",
-      Uri.file(response.data.workspacePath),
+      connectContentUri(serverUrl, contentGuid),
       { forceReuseWindow: true },
     );
     authLogger.info(
-      `Opened Connect content ${contentGuid} from ${serverUrl} at ${response.data.workspacePath}.`,
+      `Opened Connect content ${contentGuid} from ${serverUrl}.`,
     );
   } catch (error) {
     authLogger.error(
