@@ -4,7 +4,11 @@ import { Uri, commands, window } from "vscode";
 import { Commands } from "src/constants";
 import { useApi } from "./api";
 import { authLogger } from "./authProvider";
-import { connectContentUri, setConnectContentRoot } from "./connect_content_fs";
+import {
+  clearConnectContentBundle,
+  connectContentUri,
+  setConnectContentBundle,
+} from "./connect_content_fs";
 import { PublisherState } from "./state";
 
 let publisherState: PublisherState | undefined;
@@ -121,10 +125,16 @@ export async function handleConnectUri(uri: Uri) {
 // Continue the workflow by fetching and opening the Connect content locally.
 async function openConnectContent(serverUrl: string, contentGuid: string) {
   try {
+    // Always refresh bundles so reopening gets the latest published content.
+    clearConnectContentBundle(serverUrl, contentGuid);
     const response = await (
       await useApi()
     ).openConnectContent.openConnectContent(serverUrl, contentGuid);
-    setConnectContentRoot(serverUrl, contentGuid, response.data.workspacePath);
+    await setConnectContentBundle(
+      serverUrl,
+      contentGuid,
+      new Uint8Array(response.data),
+    );
     await commands.executeCommand(
       "vscode.openFolder",
       connectContentUri(serverUrl, contentGuid),

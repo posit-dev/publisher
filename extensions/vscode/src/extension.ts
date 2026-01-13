@@ -23,7 +23,10 @@ import { PublisherState } from "./state";
 import { PublisherAuthProvider, authLogger } from "./authProvider";
 import { copySystemInfoCommand } from "src/commands";
 import { registerLLMTooling } from "./llm";
-import { registerConnectContentFileSystem } from "./connect_content_fs";
+import {
+  clearConnectContentBundleForUri,
+  registerConnectContentFileSystem,
+} from "./connect_content_fs";
 import {
   handleConnectUri,
   handleDeferredConnectUri,
@@ -174,6 +177,14 @@ async function initializeExtension(context: ExtensionContext) {
 
   context.subscriptions.push(new PublisherAuthProvider(state));
   handleDeferredConnectUri(state);
+
+  context.subscriptions.push(
+    workspace.onDidChangeWorkspaceFolders((event) => {
+      event.removed.forEach((folder) => {
+        clearConnectContentBundleForUri(folder.uri);
+      });
+    }),
+  );
 
   // Register LLM Tools under /llm
   registerLLMTooling(context, state);

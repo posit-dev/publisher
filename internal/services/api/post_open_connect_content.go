@@ -3,15 +3,10 @@ package api
 // Copyright (C) 2026 by Posit Software, PBC.
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
-	"net/url"
-	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/clients/connect"
@@ -24,10 +19,6 @@ import (
 type PostOpenConnectContentRequestBody struct {
 	ServerURL   string `json:"serverUrl"`
 	ContentGUID string `json:"contentGuid"`
-}
-
-type PostOpenConnectContentResponseBody struct {
-	WorkspacePath string `json:"workspacePath"`
 }
 
 var connectOpenClientFactory = connect.NewConnectClient
@@ -80,26 +71,11 @@ func PostOpenConnectContentHandlerFunc(lister accounts.AccountList, log logging.
 			InternalError(w, req, log, err)
 			return
 		}
-		destDir, err := connectWorkspacePath(normalizedURL, body.ContentGUID)
-		if err != nil {
-			InternalError(w, req, log, err)
-			return
+		w.Header().Set("Content-Type", "application/gzip")
+		w.WriteHeader(http.StatusOK)
+		if _, err := w.Write(bundleBytes); err != nil {
+			log.Error("Failed to write connect bundle response", "error", err)
 		}
-		if err := os.RemoveAll(destDir); err != nil {
-			InternalError(w, req, log, err)
-			return
-		}
-		if err := os.MkdirAll(destDir, 0o755); err != nil {
-			InternalError(w, req, log, err)
-			return
-		}
-		if err := util.ExtractTarGz(bytes.NewReader(bundleBytes), destDir); err != nil {
-			InternalError(w, req, log, err)
-			return
-		}
-		JsonResult(w, http.StatusOK, PostOpenConnectContentResponseBody{
-			WorkspacePath: destDir,
-		})
 	}
 }
 
@@ -119,14 +95,4 @@ func findAccountByURL(lister accounts.AccountList, serverURL string) (*accounts.
 		}
 	}
 	return nil, fmt.Errorf("there is no account for the server '%s'", serverURL)
-}
-
-// Build the temp workspace location for the fetched content bundle.
-func connectWorkspacePath(serverURL string, contentGUID string) (string, error) {
-	parsed, err := url.Parse(serverURL)
-	if err != nil {
-		return "", err
-	}
-	host := strings.ReplaceAll(parsed.Host, ":", "-")
-	return filepath.Join(os.TempDir(), "connect-"+host, contentGUID), nil
 }
