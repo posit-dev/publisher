@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/clients/connect"
@@ -63,11 +64,17 @@ func PostOpenConnectContentHandlerFunc(lister accounts.AccountList, log logging.
 		}
 		bundleID, err := connectClient.LatestBundleID(types.ContentID(body.ContentGUID), log)
 		if err != nil {
+			if handleConnectAPIError(w, log, err, normalizedURL, body.ContentGUID) {
+				return
+			}
 			InternalError(w, req, log, err)
 			return
 		}
 		bundleBytes, err := connectClient.DownloadBundle(types.ContentID(body.ContentGUID), bundleID, log)
 		if err != nil {
+			if handleConnectAPIError(w, log, err, normalizedURL, body.ContentGUID) {
+				return
+			}
 			InternalError(w, req, log, err)
 			return
 		}
@@ -95,4 +102,46 @@ func findAccountByURL(lister accounts.AccountList, serverURL string) (*accounts.
 		}
 	}
 	return nil, fmt.Errorf("there is no account for the server '%s'", serverURL)
+}
+
+func handleConnectAPIError(
+	w http.ResponseWriter,
+	log logging.Logger,
+	err error,
+	serverURL, contentGUID string,
+) bool {
+	agentErr, ok := types.IsAgentError(err)
+	if !ok {
+		return false
+	}
+	message := connectAgentErrorMessage(agentErr)
+	log.Error(
+		"Connect API rejected the open content request",
+		"server", serverURL,
+		"content", contentGUID,
+		"error", err,
+	)
+	switch agentErr.Code {
+	case events.AuthenticationFailedCode:
+		http.Error(w, message, http.StatusUnauthorized)
+		return true
+	case events.PermissionsCode:
+		http.Error(w, message, http.StatusForbidden)
+		return true
+	default:
+		return false
+	}
+}
+
+func connectAgentErrorMessage(agentErr *types.AgentError) string {
+	if errMsg, ok := agentErr.Data["error"].(string); ok && strings.TrimSpace(errMsg) != "" {
+		return errMsg
+	}
+	if agentErr.Err != nil {
+		return agentErr.Err.Error()
+	}
+	if agentErr.Message != "" {
+		return agentErr.Message
+	}
+	return "unexpected response from Connect server"
 }

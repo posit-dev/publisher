@@ -9,6 +9,7 @@ import {
   FileSystemProvider,
   FileType,
   Uri,
+  window,
   workspace,
 } from "vscode";
 import { pipeline } from "node:stream/promises";
@@ -17,6 +18,7 @@ import { createGunzip } from "node:zlib";
 import tar from "tar-stream";
 import { useApi } from "./api";
 import { authLogger } from "./authProvider";
+import { isAxiosError } from "axios";
 
 type ConnectContentEntry = {
   type: FileType;
@@ -246,16 +248,34 @@ async function fetchAndCacheBundle(
   rootKey: string,
 ) {
   const api = await useApi();
-  const response = await api.openConnectContent.openConnectContent(
-    serverUrl,
-    contentGuid,
-  );
-  const bundleBytes = new Uint8Array(response.data);
-  const root = await extractBundleTree(bundleBytes);
-  contentRoots.set(rootKey, root);
-  authLogger.info(
-    `Fetched bundle ${contentGuid} for ${serverUrl} and cached for ${rootKey}`,
-  );
+  try {
+    const response = await api.openConnectContent.openConnectContent(
+      serverUrl,
+      contentGuid,
+    );
+    const bundleBytes = new Uint8Array(response.data);
+    const root = await extractBundleTree(bundleBytes);
+    contentRoots.set(rootKey, root);
+    authLogger.info(
+      `Fetched bundle ${contentGuid} for ${serverUrl} and cached for ${rootKey}`,
+    );
+  } catch (error) {
+    const message =
+      isAxiosError(error) && error.response?.data
+        ? error.response.data instanceof ArrayBuffer
+          ? new TextDecoder().decode(new Uint8Array(error.response.data))
+          : String(error.response.data)
+        : error instanceof Error
+          ? error.message
+          : "Unable to open Connect content bundle";
+    authLogger.error(
+      `Unable to fetch bundle ${contentGuid} for ${serverUrl}: ${message}`,
+    );
+    await window.showErrorMessage(
+      `Unable to open Connect content ${contentGuid}: ${message}`,
+    );
+    throw error;
+  }
 }
 
 async function extractBundleTree(bundleBytes: Uint8Array) {
