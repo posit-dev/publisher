@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The Publisher logs view automatically opens when a deployment starts. (#3235)
 - The Publisher logs automatically scroll to follow new log entries during deployment. (#2997)
 - Publisher Log stages automatically expand when running and collapse when completed. (#2998)
-- Added R, Python, and Quarto interpreter version to the logs.
+- Added R, Python, and Quarto interpreter version to the logs. (#2532)
 
 ### Fixed
 
