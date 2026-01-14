@@ -92,75 +92,81 @@ const createLogStage = (
 
 const RestoringEnvironmentLabel = "Restoring Environment";
 
-const stages = new Map([
-  [
-    "publish/getRPackageDescriptions",
-    createLogStage("Get Package Descriptions", "Getting Package Descriptions", [
-      ProductType.CONNECT,
-      ProductType.CONNECT_CLOUD,
-    ]),
-  ],
-  [
-    "publish/checkCapabilities",
-    createLogStage("Check Capabilities", "Checking Capabilities", [
-      ProductType.CONNECT,
-    ]),
-  ],
-  [
-    "publish/createBundle",
-    createLogStage("Create Bundle", "Creating Bundle", [
-      ProductType.CONNECT,
-      ProductType.CONNECT_CLOUD,
-    ]),
-  ],
-  [
-    "publish/updateContent",
-    createLogStage("Update Content", "Updating Content", [
-      ProductType.CONNECT_CLOUD,
-    ]),
-  ],
-  [
-    "publish/uploadBundle",
-    createLogStage("Upload Bundle", "Uploading Bundle", [
-      ProductType.CONNECT,
-      ProductType.CONNECT_CLOUD,
-    ]),
-  ],
-  [
-    "publish/createDeployment",
-    createLogStage("Create Deployment Record", "Creating Deployment Record", [
-      ProductType.CONNECT,
-    ]),
-  ],
-  [
-    "publish/deployContent",
-    createLogStage("Deploy Content", "Deploying Content", [
-      ProductType.CONNECT_CLOUD,
-    ]),
-  ],
-  [
-    "publish/deployBundle",
-    createLogStage("Deploy Bundle", "Deploying Bundle", [ProductType.CONNECT]),
-  ],
-  [
-    "publish/restoreEnv",
-    createLogStage("Restore Environment", RestoringEnvironmentLabel, [
-      ProductType.CONNECT,
-    ]),
-  ],
-  [
-    "publish/runContent",
-    createLogStage("Run Content", "Running Content", [ProductType.CONNECT]),
-  ],
-  [
-    "publish/validateDeployment",
-    createLogStage(
-      "Validate Deployment Record",
-      "Validating Deployment Record",
-      [ProductType.CONNECT],
-    ),
-  ],
-]);
+// Factory function to create fresh stage objects on each call.
+// This prevents event accumulation across deployments.
+const createStagesMap = (): Map<string, LogStage> =>
+  new Map([
+    [
+      "publish/getRPackageDescriptions",
+      createLogStage(
+        "Get Package Descriptions",
+        "Getting Package Descriptions",
+        [ProductType.CONNECT, ProductType.CONNECT_CLOUD],
+      ),
+    ],
+    [
+      "publish/checkCapabilities",
+      createLogStage("Check Capabilities", "Checking Capabilities", [
+        ProductType.CONNECT,
+      ]),
+    ],
+    [
+      "publish/createBundle",
+      createLogStage("Create Bundle", "Creating Bundle", [
+        ProductType.CONNECT,
+        ProductType.CONNECT_CLOUD,
+      ]),
+    ],
+    [
+      "publish/updateContent",
+      createLogStage("Update Content", "Updating Content", [
+        ProductType.CONNECT_CLOUD,
+      ]),
+    ],
+    [
+      "publish/uploadBundle",
+      createLogStage("Upload Bundle", "Uploading Bundle", [
+        ProductType.CONNECT,
+        ProductType.CONNECT_CLOUD,
+      ]),
+    ],
+    [
+      "publish/createDeployment",
+      createLogStage("Create Deployment Record", "Creating Deployment Record", [
+        ProductType.CONNECT,
+      ]),
+    ],
+    [
+      "publish/deployContent",
+      createLogStage("Deploy Content", "Deploying Content", [
+        ProductType.CONNECT_CLOUD,
+      ]),
+    ],
+    [
+      "publish/deployBundle",
+      createLogStage("Deploy Bundle", "Deploying Bundle", [
+        ProductType.CONNECT,
+      ]),
+    ],
+    [
+      "publish/restoreEnv",
+      createLogStage("Restore Environment", RestoringEnvironmentLabel, [
+        ProductType.CONNECT,
+      ]),
+    ],
+    [
+      "publish/runContent",
+      createLogStage("Run Content", "Running Content", [ProductType.CONNECT]),
+    ],
+    [
+      "publish/validateDeployment",
+      createLogStage(
+        "Validate Deployment Record",
+        "Validating Deployment Record",
+        [ProductType.CONNECT],
+      ),
+    ],
+  ]);
 
 class EventStreamRepository {
   private events: EventStreamMessage[];
@@ -242,9 +248,11 @@ export class LogsViewProvider {
       LogsViewProvider.eventsRepository.streamInProgress(true);
     });
 
-    Array.from(stages.keys()).forEach((stageName) => {
+    // Get stage names from a fresh stages map for event registration
+    const stagesMap = createStagesMap();
+    Array.from(stagesMap.keys()).forEach((stageName) => {
       this.stream.register(`${stageName}/log`, (msg: EventStreamMessage) => {
-        const stage = stages.get(stageName);
+        const stage = stagesMap.get(stageName);
         if (stage && msg.data.level !== "DEBUG") {
           LogsViewProvider.eventsRepository.push(msg);
         }
@@ -296,7 +304,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
   ) {}
 
   private resetStages() {
-    this.stages = stages;
+    this.stages = createStagesMap();
 
     this.publishingStage = createLogStage(
       "Publishing",
@@ -312,98 +320,121 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
   private registerEvents() {
     // Reset events when a new publish starts
     this.stream.register("publish/start", (msg: EventStreamMessage) => {
-      this.resetStages();
-      this.stages.forEach((stage) => {
-        if (!stage.productType.includes(msg.data.productType as ProductType)) {
-          stage.status = LogStageStatus.notApplicable;
-        }
-      });
-      this.publishingStage.inactiveLabel = `Publish "${msg.data.title}" to ${msg.data.server}`;
-      this.publishingStage.activeLabel = `Publishing "${msg.data.title}" to ${msg.data.server}`;
-      this.publishingStage.status = LogStageStatus.inProgress;
-      this.refresh();
+      try {
+        this.resetStages();
+        this.stages.forEach((stage) => {
+          if (
+            !stage.productType.includes(msg.data.productType as ProductType)
+          ) {
+            stage.status = LogStageStatus.notApplicable;
+          }
+        });
+        this.publishingStage.inactiveLabel = `Publish "${msg.data.title}" to ${msg.data.server}`;
+        this.publishingStage.activeLabel = `Publishing "${msg.data.title}" to ${msg.data.server}`;
+        this.publishingStage.status = LogStageStatus.inProgress;
+        this.refresh();
+      } catch (error) {
+        console.error(
+          "LogsTreeDataProvider publish/start handler error:",
+          error,
+        );
+      }
     });
 
     this.stream.register("publish/success", (msg: EventStreamMessage) => {
-      this.publishingStage.status = LogStageStatus.completed;
-      this.publishingStage.events.push(msg);
+      try {
+        this.publishingStage.status = LogStageStatus.completed;
+        this.publishingStage.events.push(msg);
 
-      this.stages.forEach((stage) => {
-        if (stage.status === LogStageStatus.notStarted) {
-          stage.status = LogStageStatus.skipped;
-        }
-      });
+        this.stages.forEach((stage) => {
+          if (stage.status === LogStageStatus.notStarted) {
+            stage.status = LogStageStatus.skipped;
+          }
+        });
 
-      this.refresh();
+        this.refresh();
+      } catch (error) {
+        console.error(
+          "LogsTreeDataProvider publish/success handler error:",
+          error,
+        );
+      }
     });
 
     this.stream.register("publish/failure", async (msg: EventStreamMessage) => {
-      const deploymentFailureRenvHandler = new DeploymentFailureRenvHandler();
-      if (deploymentFailureRenvHandler.shouldHandleEventMsg(msg)) {
-        return deploymentFailureRenvHandler.handle(msg).then(this.refresh);
-      }
-
-      const failedOrCanceledStatus = msg.data.canceled
-        ? LogStageStatus.canceled
-        : LogStageStatus.failed;
-      this.publishingStage.status = failedOrCanceledStatus;
-      this.publishingStage.events.push(msg);
-
-      this.stages.forEach((stage) => {
-        if (stage.status === LogStageStatus.notStarted) {
-          stage.status = LogStageStatus.neverStarted;
-        } else if (stage.status === LogStageStatus.inProgress) {
-          stage.status = failedOrCanceledStatus;
+      try {
+        const deploymentFailureRenvHandler = new DeploymentFailureRenvHandler();
+        if (deploymentFailureRenvHandler.shouldHandleEventMsg(msg)) {
+          return deploymentFailureRenvHandler.handle(msg).then(this.refresh);
         }
 
-        if (
-          stage.status === LogStageStatus.failed &&
-          extensionSettings.autoOpenLogsOnFailure()
-        ) {
-          commands.executeCommand(Commands.Logs.Focus);
-        }
-      });
+        const failedOrCanceledStatus = msg.data.canceled
+          ? LogStageStatus.canceled
+          : LogStageStatus.failed;
+        this.publishingStage.status = failedOrCanceledStatus;
+        this.publishingStage.events.push(msg);
 
-      const showLogsOption = "View Publishing Log";
-      const options = [showLogsOption];
-      const messageText = msg.data.message ?? "";
-      const enhancedError = findErrorMessageSplitOption(messageText);
-      if (enhancedError && enhancedError.buttonStr) {
-        options.push(enhancedError.buttonStr);
-      }
-      let errorMessage = "";
-      if (isCodedEventErrorMessage(msg)) {
-        errorMessage = handleEventCodedError(msg);
-      } else {
-        errorMessage =
-          msg.data.canceled === "true"
-            ? messageText
-            : `Deployment failed: ${messageText}`;
-      }
-      let selection: string | undefined;
-      if (msg.data.canceled === "true") {
-        selection = await window.showInformationMessage(
-          errorMessage,
-          ...options,
-        );
-      } else {
-        selection = await showErrorMessageWithTroubleshoot(
-          errorMessage,
-          ...options,
-        );
-      }
-      if (selection === showLogsOption) {
-        await commands.executeCommand(Commands.Logs.Focus);
-      } else if (selection === enhancedError?.buttonStr) {
-        if (
-          enhancedError?.actionId === ErrorMessageActionIds.EditConfiguration
-        ) {
-          await commands.executeCommand(
-            Commands.HomeView.EditCurrentConfiguration,
+        this.stages.forEach((stage) => {
+          if (stage.status === LogStageStatus.notStarted) {
+            stage.status = LogStageStatus.neverStarted;
+          } else if (stage.status === LogStageStatus.inProgress) {
+            stage.status = failedOrCanceledStatus;
+          }
+
+          if (
+            stage.status === LogStageStatus.failed &&
+            extensionSettings.autoOpenLogsOnFailure()
+          ) {
+            commands.executeCommand(Commands.Logs.Focus);
+          }
+        });
+
+        const showLogsOption = "View Publishing Log";
+        const options = [showLogsOption];
+        const messageText = msg.data.message ?? "";
+        const enhancedError = findErrorMessageSplitOption(messageText);
+        if (enhancedError && enhancedError.buttonStr) {
+          options.push(enhancedError.buttonStr);
+        }
+        let errorMessage = "";
+        if (isCodedEventErrorMessage(msg)) {
+          errorMessage = handleEventCodedError(msg);
+        } else {
+          errorMessage =
+            msg.data.canceled === "true"
+              ? messageText
+              : `Deployment failed: ${messageText}`;
+        }
+        let selection: string | undefined;
+        if (msg.data.canceled === "true") {
+          selection = await window.showInformationMessage(
+            errorMessage,
+            ...options,
+          );
+        } else {
+          selection = await showErrorMessageWithTroubleshoot(
+            errorMessage,
+            ...options,
           );
         }
+        if (selection === showLogsOption) {
+          await commands.executeCommand(Commands.Logs.Focus);
+        } else if (selection === enhancedError?.buttonStr) {
+          if (
+            enhancedError?.actionId === ErrorMessageActionIds.EditConfiguration
+          ) {
+            await commands.executeCommand(
+              Commands.HomeView.EditCurrentConfiguration,
+            );
+          }
+        }
+        this.refresh();
+      } catch (error) {
+        console.error(
+          "LogsTreeDataProvider publish/failure handler error:",
+          error,
+        );
       }
-      this.refresh();
     });
 
     Array.from(this.stages.keys()).forEach((stageName) => {
@@ -667,6 +698,7 @@ export class LogsTreeStageItem extends TreeItem {
       case LogStageStatus.inProgress:
         this.label = this.stage.activeLabel;
         this.iconPath = new ThemeIcon("loading~spin");
+        this.collapsibleState = TreeItemCollapsibleState.Expanded;
         break;
       case LogStageStatus.completed:
         this.label = this.stage.inactiveLabel;
@@ -674,6 +706,7 @@ export class LogsTreeStageItem extends TreeItem {
           "check",
           new ThemeColor("testing.iconPassed"),
         );
+        this.collapsibleState = TreeItemCollapsibleState.Collapsed;
         break;
       case LogStageStatus.failed:
         this.label = this.stage.inactiveLabel;
