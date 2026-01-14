@@ -287,6 +287,20 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
   private treeView?: TreeView<LogsTreeItem>;
 
   /**
+   * Reveal helper that checks visibility immediately before calling reveal.
+   * This prevents race conditions where the view is closed between the start
+   * of a reveal method and the actual reveal() call.
+   */
+  private safeReveal(
+    ...args: Parameters<TreeView<LogsTreeItem>["reveal"]>
+  ): void {
+    if (!this.treeView?.visible) {
+      return;
+    }
+    this.treeView.reveal(...args);
+  }
+
+  /**
    * Event emitter for when the tree data of the Logs view changes.
    * @private
    */
@@ -612,7 +626,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
     const revealItem = this.getFailureItem();
 
     if (revealItem) {
-      this.treeView.reveal(revealItem, {
+      this.safeReveal(revealItem, {
         select: true,
         focus: true,
       });
@@ -636,7 +650,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
     const root = new LogsTreeStageItem(this.publishingStage);
     const stageItem = new LogsTreeStageItem(stage, root);
 
-    this.treeView.reveal(stageItem, { expand: true });
+    this.safeReveal(stageItem, { expand: true });
   }
 
   /**
@@ -680,7 +694,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
       TreeItemCollapsibleState.None,
     );
 
-    this.treeView.reveal(logItem);
+    this.safeReveal(logItem);
   }
 
   /**
