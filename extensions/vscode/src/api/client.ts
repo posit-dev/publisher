@@ -50,11 +50,16 @@ class PublishingClientApi {
         return response;
       },
       (error) => {
-        // Decode data returned for 500 errors
-        if (error.response.status === 500) {
+        // Decode data returned for 500 errors when the payload is readable text.
+        if (
+          error.response?.status === 500 &&
+          typeof error.response.data === "string"
+        ) {
           error.response.data = Entities.decodeHTML5(error.response.data);
         }
-        this.logDuration(error.response);
+        if (error.response) {
+          this.logDuration(error.response);
+        }
         return Promise.reject(error);
       },
     );
