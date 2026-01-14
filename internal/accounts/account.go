@@ -29,11 +29,12 @@ type Account struct {
 // AuthType returns the detected AccountAuthType based on the properties of the
 // Account.
 func (acct *Account) AuthType() AccountAuthType {
-	// An account should have one of: API key, Snowflake connection name, or token+private key
-	if acct.ApiKey != "" {
-		return AuthTypeAPIKey
-	} else if acct.SnowflakeConnection != "" {
+	// Snowflake SPCS with OIDC requires both SnowflakeConnection AND ApiKey
+	// Check for Snowflake first since it's the most specific case
+	if acct.SnowflakeConnection != "" {
 		return AuthTypeSnowflake
+	} else if acct.ApiKey != "" {
+		return AuthTypeAPIKey
 	} else if acct.Token != "" && acct.PrivateKey != "" {
 		return AuthTypeToken
 	}
