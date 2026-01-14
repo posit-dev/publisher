@@ -310,22 +310,16 @@ func (p *defaultPublisher) setContentInfo(info publishhelper.ContentInfo) {
 }
 
 func (p *defaultPublisher) logDeploymentVersions(log logging.Logger, manifest *bundles.Manifest) {
-	var versions []interface{}
+	if manifest.Quarto != nil && manifest.Quarto.Version != "" {
+		log.Info("Local Quarto version " + manifest.Quarto.Version)
+	}
 
 	if manifest.Platform != "" {
-		versions = append(versions, "r", manifest.Platform)
+		log.Info("Local R version " + manifest.Platform)
 	}
 
 	if manifest.Python != nil && manifest.Python.Version != "" {
-		versions = append(versions, "python", manifest.Python.Version)
-	}
-
-	if manifest.Quarto != nil && manifest.Quarto.Version != "" {
-		versions = append(versions, "quarto", manifest.Quarto.Version)
-	}
-
-	if len(versions) > 0 {
-		log.Info("Deploying interpreter version", versions...)
+		log.Info("Local Python version " + manifest.Python.Version)
 	}
 }
 

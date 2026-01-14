@@ -699,10 +699,9 @@ func (s *PublishConnectSuite) TestLogDeploymentVersions() {
 	publisher.logDeploymentVersions(log, manifest)
 
 	logs := logBuffer.String()
-	s.Contains(logs, "Deploying interpreter version")
-	s.Contains(logs, "r=4.3.2")
-	s.Contains(logs, "python=3.11.0")
-	s.Contains(logs, "quarto=1.4.0")
+	s.Contains(logs, "Local Quarto version 1.4.0")
+	s.Contains(logs, "Local R version 4.3.2")
+	s.Contains(logs, "Local Python version 3.11.0")
 }
 
 func (s *PublishConnectSuite) TestLogDeploymentVersionsOnlyR() {
@@ -719,10 +718,9 @@ func (s *PublishConnectSuite) TestLogDeploymentVersionsOnlyR() {
 	publisher.logDeploymentVersions(log, manifest)
 
 	logs := logBuffer.String()
-	s.Contains(logs, "Deploying interpreter version")
-	s.Contains(logs, "r=4.3.2")
-	s.NotContains(logs, "python=")
-	s.NotContains(logs, "quarto=")
+	s.Contains(logs, "Local R version 4.3.2")
+	s.NotContains(logs, "Local Python version")
+	s.NotContains(logs, "Local Quarto version")
 }
 
 func (s *PublishConnectSuite) TestLogDeploymentVersionsEmpty() {
@@ -738,7 +736,9 @@ func (s *PublishConnectSuite) TestLogDeploymentVersionsEmpty() {
 
 	logs := logBuffer.String()
 	// Should not log anything when no versions are present
-	s.NotContains(logs, "Deploying interpreter version")
+	s.NotContains(logs, "Target R version")
+	s.NotContains(logs, "Target Python version")
+	s.NotContains(logs, "Target Quarto version")
 }
 
 type PublishConnectCloudSuite struct {
