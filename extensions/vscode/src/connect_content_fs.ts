@@ -279,7 +279,7 @@ async function fetchAndCacheBundle(
     await window.showErrorMessage(
       `Unable to open Connect content ${contentGuid}: ${message}`,
     );
-    // Cache an empty root so VS Code stops retrying the same bundle after a
+    // Cache an empty root so VS Code stops retrying the same bundle after a
     // failed fetch; this keeps the file system in a consistent state until the
     // user explicitly retries and clears the cache.
     contentRoots.set(rootKey, createDirectoryEntry());
