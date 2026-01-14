@@ -774,5 +774,78 @@ describe("LogsTreeDataProvider", () => {
       // Verify reveal was NOT called (view not visible)
       expect(mockTreeView.reveal).not.toHaveBeenCalled();
     });
+
+    test("should reveal failure line when stage fails", () => {
+      const { stream, emit } = createMockEventStream();
+      const context = createMockContext();
+
+      const provider = new LogsTreeDataProvider(context, stream);
+      provider.register();
+
+      // Get the mock treeView
+      const mockTreeView = (window.createTreeView as ReturnType<typeof vi.fn>)
+        .mock.results[0]?.value;
+
+      // Start a deployment
+      emit("publish/start", createPublishStartMessage("App1", "server1.com"));
+
+      // Start a stage
+      emit(
+        "publish/createBundle/start",
+        createStageStartMessage("publish/createBundle"),
+      );
+
+      // Clear reveal calls from previous events
+      mockTreeView.reveal.mockClear();
+
+      // Emit a failure event
+      emit(
+        "publish/createBundle/failure",
+        createStageFailureMessage(
+          "publish/createBundle",
+          "Bundle creation failed",
+        ),
+      );
+
+      // Verify reveal was called to show the failure line
+      expect(mockTreeView.reveal).toHaveBeenCalled();
+    });
+
+    test("should not reveal failure line when view is not visible", () => {
+      const { stream, emit } = createMockEventStream();
+      const context = createMockContext();
+
+      const provider = new LogsTreeDataProvider(context, stream);
+      provider.register();
+
+      // Get the mock treeView and set visible to false
+      const mockTreeView = (window.createTreeView as ReturnType<typeof vi.fn>)
+        .mock.results[0]?.value;
+      mockTreeView.visible = false;
+
+      // Start a deployment
+      emit("publish/start", createPublishStartMessage("App1", "server1.com"));
+
+      // Start a stage
+      emit(
+        "publish/createBundle/start",
+        createStageStartMessage("publish/createBundle"),
+      );
+
+      // Clear reveal calls
+      mockTreeView.reveal.mockClear();
+
+      // Emit a failure event
+      emit(
+        "publish/createBundle/failure",
+        createStageFailureMessage(
+          "publish/createBundle",
+          "Bundle creation failed",
+        ),
+      );
+
+      // Verify reveal was NOT called (view not visible)
+      expect(mockTreeView.reveal).not.toHaveBeenCalled();
+    });
   });
 });
