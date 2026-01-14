@@ -261,6 +261,11 @@ async function fetchAndCacheBundle(
     );
   } catch (error) {
     const message =
+      // The internal API asks Axios for binary data, so on failure it may still
+      // return an ArrayBuffer; decode that into a string so the error dialog can
+      // show the server-provided message. When decoding fails or the response
+      // already looks like another Axios error we fall back to the Error message
+      // or a conservative generic description.
       isAxiosError(error) && error.response?.data
         ? error.response.data instanceof ArrayBuffer
           ? new TextDecoder().decode(new Uint8Array(error.response.data))
@@ -274,6 +279,10 @@ async function fetchAndCacheBundle(
     await window.showErrorMessage(
       `Unable to open Connect content ${contentGuid}: ${message}`,
     );
+    // Cache an empty root so VS Code stops retrying the same bundle after a
+    // failed fetch; this keeps the file system in a consistent state until the
+    // user explicitly retries and clears the cache.
+    contentRoots.set(rootKey, createDirectoryEntry());
     throw error;
   }
 }
