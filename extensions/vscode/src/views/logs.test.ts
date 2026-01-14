@@ -812,6 +812,12 @@ describe("LogsTreeDataProvider", () => {
     });
 
     test("should not reveal failure line when view is not visible", () => {
+      // The extension setting `autoOpenLogsOnFailure` determines if the logs
+      // view is opened when any failure comes through.
+      // This test tests that when the view is not visible, the reveal is not
+      // called avoiding opening the logs view if the user has closed it or
+      // the `autoOpenLogsOnFailure` setting is false.
+
       const { stream, emit } = createMockEventStream();
       const context = createMockContext();
 
