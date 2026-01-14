@@ -1,10 +1,10 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { EventStreamMessage, ProductType } from "src/api";
 import { EventStream, UnregisterCallback } from "src/events";
 import { LogsTreeDataProvider, LogsTreeStageItem } from "./logs";
-import { ExtensionContext } from "vscode";
+import { ExtensionContext, TreeItemCollapsibleState, window } from "vscode";
 
 // Mock vscode module
 vi.mock("vscode", () => {
@@ -55,6 +55,7 @@ vi.mock("vscode", () => {
       createTreeView: vi.fn().mockReturnValue({
         onDidChangeVisibility: vi.fn(),
         reveal: vi.fn(),
+        visible: true,
       }),
       showInformationMessage: vi.fn(),
       showErrorMessage: vi.fn(),
@@ -250,6 +251,15 @@ describe("LogsTreeDataProvider", () => {
     vi.clearAllMocks();
   });
 
+  afterEach(() => {
+    // Reset treeView visibility to true for test isolation
+    const mockTreeView = (window.createTreeView as ReturnType<typeof vi.fn>)
+      .mock.results[0]?.value;
+    if (mockTreeView) {
+      mockTreeView.visible = true;
+    }
+  });
+
   describe("resetStages on multiple deployments", () => {
     test("should clear events from previous deployment when a new publish/start occurs", () => {
       const { stream, emit } = createMockEventStream();
@@ -420,8 +430,9 @@ describe("LogsTreeDataProvider", () => {
       );
 
       expect(createBundleStage).toBeDefined();
-      // TreeItemCollapsibleState.Expanded = 2
-      expect(createBundleStage!.collapsibleState).toBe(2);
+      expect(createBundleStage!.collapsibleState).toBe(
+        TreeItemCollapsibleState.Expanded,
+      );
     });
 
     test("should collapse stage when it completes successfully", () => {
@@ -453,8 +464,9 @@ describe("LogsTreeDataProvider", () => {
       );
 
       expect(createBundleStage).toBeDefined();
-      // TreeItemCollapsibleState.Collapsed = 1
-      expect(createBundleStage!.collapsibleState).toBe(1);
+      expect(createBundleStage!.collapsibleState).toBe(
+        TreeItemCollapsibleState.Collapsed,
+      );
     });
 
     test("should expand stage when it fails", () => {
@@ -489,8 +501,9 @@ describe("LogsTreeDataProvider", () => {
       );
 
       expect(createBundleStage).toBeDefined();
-      // TreeItemCollapsibleState.Expanded = 2
-      expect(createBundleStage!.collapsibleState).toBe(2);
+      expect(createBundleStage!.collapsibleState).toBe(
+        TreeItemCollapsibleState.Expanded,
+      );
     });
 
     test("should expand stage when it is canceled", () => {
@@ -526,8 +539,240 @@ describe("LogsTreeDataProvider", () => {
       );
 
       expect(createBundleStage).toBeDefined();
-      // TreeItemCollapsibleState.Expanded = 2
-      expect(createBundleStage!.collapsibleState).toBe(2);
+      expect(createBundleStage!.collapsibleState).toBe(
+        TreeItemCollapsibleState.Expanded,
+      );
+    });
+
+    test("completed leaf stage should have modified ID to force VSCode to respect collapsibleState", () => {
+      const { stream, emit } = createMockEventStream();
+      const context = createMockContext();
+
+      const provider = new LogsTreeDataProvider(context, stream);
+      provider.register();
+
+      // Start a deployment
+      emit("publish/start", createPublishStartMessage("App1", "server1.com"));
+
+      // Start and complete the createBundle stage
+      emit(
+        "publish/createBundle/start",
+        createStageStartMessage("publish/createBundle"),
+      );
+      emit(
+        "publish/createBundle/success",
+        createStageSuccessMessage("publish/createBundle"),
+      );
+
+      // Get the tree and find the createBundle stage
+      const children = provider.getChildren(undefined) as LogsTreeStageItem[];
+      const root = children[0]!;
+      const stages = provider.getChildren(root) as LogsTreeStageItem[];
+      const createBundleStage = stages.find(
+        (s) => s.stage.inactiveLabel === "Create Bundle",
+      );
+
+      expect(createBundleStage).toBeDefined();
+      // Completed leaf stages should have -completed suffix in ID
+      expect(createBundleStage!.id).toBe("Create Bundle-completed");
+    });
+
+    test("in-progress leaf stage should have original ID", () => {
+      const { stream, emit } = createMockEventStream();
+      const context = createMockContext();
+
+      const provider = new LogsTreeDataProvider(context, stream);
+      provider.register();
+
+      // Start a deployment
+      emit("publish/start", createPublishStartMessage("App1", "server1.com"));
+
+      // Start the createBundle stage (but don't complete it)
+      emit(
+        "publish/createBundle/start",
+        createStageStartMessage("publish/createBundle"),
+      );
+
+      // Get the tree and find the createBundle stage
+      const children = provider.getChildren(undefined) as LogsTreeStageItem[];
+      const root = children[0]!;
+      const stages = provider.getChildren(root) as LogsTreeStageItem[];
+      const createBundleStage = stages.find(
+        (s) => s.stage.inactiveLabel === "Create Bundle",
+      );
+
+      expect(createBundleStage).toBeDefined();
+      // In-progress stages should have original ID (no suffix)
+      expect(createBundleStage!.id).toBe("Create Bundle");
+    });
+
+    test("root publishing stage should keep original ID when completed", () => {
+      const { stream, emit } = createMockEventStream();
+      const context = createMockContext();
+
+      const provider = new LogsTreeDataProvider(context, stream);
+      provider.register();
+
+      // Start and complete a deployment
+      emit("publish/start", createPublishStartMessage("App1", "server1.com"));
+      emit(
+        "publish/success",
+        createPublishSuccessMessage("https://example.com/dashboard"),
+      );
+
+      // Get the root stage
+      const children = provider.getChildren(undefined) as LogsTreeStageItem[];
+      const root = children[0]!;
+
+      // Root stage (which has child stages) should NOT have -completed suffix
+      // to prevent it from collapsing and hiding all child stages
+      expect(root.id).not.toContain("-completed");
+    });
+  });
+
+  describe("logs view visibility behavior", () => {
+    test("should open logs view when deployment starts", () => {
+      const { stream, emit } = createMockEventStream();
+      const context = createMockContext();
+
+      const provider = new LogsTreeDataProvider(context, stream);
+      provider.register();
+
+      // Get the mock treeView
+      const mockTreeView = (window.createTreeView as ReturnType<typeof vi.fn>)
+        .mock.results[0]?.value;
+
+      // Clear any previous reveal calls
+      mockTreeView.reveal.mockClear();
+
+      // Start a deployment
+      emit("publish/start", createPublishStartMessage("App1", "server1.com"));
+
+      // Verify reveal was called to open the logs view
+      expect(mockTreeView.reveal).toHaveBeenCalled();
+    });
+
+    test("should open logs view when deployment starts even if view was closed", () => {
+      const { stream, emit } = createMockEventStream();
+      const context = createMockContext();
+
+      const provider = new LogsTreeDataProvider(context, stream);
+      provider.register();
+
+      // Get the mock treeView and set visible to false (simulating closed view)
+      const mockTreeView = (window.createTreeView as ReturnType<typeof vi.fn>)
+        .mock.results[0]?.value;
+      mockTreeView.visible = false;
+      mockTreeView.reveal.mockClear();
+
+      // Start a deployment
+      emit("publish/start", createPublishStartMessage("App1", "server1.com"));
+
+      // Verify reveal was still called (unconditionally opens logs view)
+      expect(mockTreeView.reveal).toHaveBeenCalled();
+    });
+
+    test("should not expand stage when view is not visible", () => {
+      const { stream, emit } = createMockEventStream();
+      const context = createMockContext();
+
+      const provider = new LogsTreeDataProvider(context, stream);
+      provider.register();
+
+      // Get the mock treeView
+      const mockTreeView = (window.createTreeView as ReturnType<typeof vi.fn>)
+        .mock.results[0]?.value;
+
+      // Start a deployment (this opens the view)
+      emit("publish/start", createPublishStartMessage("App1", "server1.com"));
+
+      // Now set visible to false (user closed the view)
+      mockTreeView.visible = false;
+      mockTreeView.reveal.mockClear();
+
+      // Start a stage
+      emit(
+        "publish/createBundle/start",
+        createStageStartMessage("publish/createBundle"),
+      );
+
+      // Verify reveal was NOT called (view not visible)
+      expect(mockTreeView.reveal).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("auto-scroll behavior", () => {
+    test("should reveal latest log item when log event is received and view is visible", () => {
+      const { stream, emit } = createMockEventStream();
+      const context = createMockContext();
+
+      const provider = new LogsTreeDataProvider(context, stream);
+      provider.register();
+
+      // Get the mock treeView
+      const mockTreeView = (window.createTreeView as ReturnType<typeof vi.fn>)
+        .mock.results[0]?.value;
+
+      // Clear any previous reveal calls
+      mockTreeView.reveal.mockClear();
+
+      // Start a deployment
+      emit("publish/start", createPublishStartMessage("App1", "server1.com"));
+
+      // Start a stage
+      emit(
+        "publish/createBundle/start",
+        createStageStartMessage("publish/createBundle"),
+      );
+
+      // Clear reveal calls from stage start
+      mockTreeView.reveal.mockClear();
+
+      // Emit a log event
+      emit(
+        "publish/createBundle/log",
+        createStageLogMessage("publish/createBundle", "Building bundle..."),
+      );
+
+      // Verify reveal was called (auto-scroll)
+      expect(mockTreeView.reveal).toHaveBeenCalled();
+    });
+
+    test("should not reveal when view is not visible", () => {
+      const { stream, emit } = createMockEventStream();
+      const context = createMockContext();
+
+      const provider = new LogsTreeDataProvider(context, stream);
+      provider.register();
+
+      // Get the mock treeView and set visible to false
+      const mockTreeView = (window.createTreeView as ReturnType<typeof vi.fn>)
+        .mock.results[0]?.value;
+      mockTreeView.visible = false;
+
+      // Clear any previous reveal calls
+      mockTreeView.reveal.mockClear();
+
+      // Start a deployment
+      emit("publish/start", createPublishStartMessage("App1", "server1.com"));
+
+      // Start a stage
+      emit(
+        "publish/createBundle/start",
+        createStageStartMessage("publish/createBundle"),
+      );
+
+      // Clear reveal calls from stage start
+      mockTreeView.reveal.mockClear();
+
+      // Emit a log event
+      emit(
+        "publish/createBundle/log",
+        createStageLogMessage("publish/createBundle", "Building bundle..."),
+      );
+
+      // Verify reveal was NOT called (view not visible)
+      expect(mockTreeView.reveal).not.toHaveBeenCalled();
     });
   });
 });
