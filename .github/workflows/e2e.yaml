@@ -205,7 +205,7 @@ jobs:
               CYPRESS_BOOTSTRAP_ADMIN_API_KEY=$CONNECT_API_KEY npx cypress run --headless --browser chrome
             else
               # Exclude @pcc cloud tests for non-release versions
-              CYPRESS_BOOTSTRAP_ADMIN_API_KEY=$CONNECT_API_KEY npx cypress run --headless --browser chrome --env grepTags=@pcc,grepInvert=true
+              CYPRESS_BOOTSTRAP_ADMIN_API_KEY=$CONNECT_API_KEY npx cypress run --headless --browser chrome --env grepFilterSpecs=true,grepOmitFiltered=true,grepTags=-@pcc
             fi
         env:
           CONNECT_CLOUD_ENV: staging
