@@ -699,7 +699,7 @@ func (s *PublishConnectSuite) TestLogDeploymentVersions() {
 	publisher.logDeploymentVersions(log, manifest)
 
 	logs := logBuffer.String()
-	s.Contains(logs, "Deployment using interpreters")
+	s.Contains(logs, "Deploying interpreter version")
 	s.Contains(logs, "r=4.3.2")
 	s.Contains(logs, "python=3.11.0")
 	s.Contains(logs, "quarto=1.4.0")
@@ -719,7 +719,7 @@ func (s *PublishConnectSuite) TestLogDeploymentVersionsOnlyR() {
 	publisher.logDeploymentVersions(log, manifest)
 
 	logs := logBuffer.String()
-	s.Contains(logs, "Deployment using interpreters")
+	s.Contains(logs, "Deploying interpreter version")
 	s.Contains(logs, "r=4.3.2")
 	s.NotContains(logs, "python=")
 	s.NotContains(logs, "quarto=")
@@ -738,7 +738,7 @@ func (s *PublishConnectSuite) TestLogDeploymentVersionsEmpty() {
 
 	logs := logBuffer.String()
 	// Should not log anything when no versions are present
-	s.NotContains(logs, "Deployment using interpreters")
+	s.NotContains(logs, "Deploying interpreter version")
 }
 
 type PublishConnectCloudSuite struct {

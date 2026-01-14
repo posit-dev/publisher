@@ -325,7 +325,7 @@ func (p *defaultPublisher) logDeploymentVersions(log logging.Logger, manifest *b
 	}
 
 	if len(versions) > 0 {
-		log.Info("Deployment using interpreters", versions...)
+		log.Info("Deploying interpreter version", versions...)
 	}
 }
 
