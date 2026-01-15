@@ -719,8 +719,53 @@ func (s *PublishConnectSuite) TestLogDeploymentVersionsOnlyR() {
 
 	logs := logBuffer.String()
 	s.Contains(logs, "Local R version 4.3.2")
-	s.NotContains(logs, "Local Python version")
-	s.NotContains(logs, "Local Quarto version")
+	s.Contains(logs, "Local Python not in use")
+	s.Contains(logs, "Local Quarto not in use")
+}
+
+func (s *PublishConnectSuite) TestLogDeploymentVersionsOnlyPython() {
+	manifest := &bundles.Manifest{
+		Python: &bundles.Python{
+			Version: "3.11.0",
+		},
+	}
+
+	logBuffer := new(bytes.Buffer)
+	opts := &slog.HandlerOptions{Level: slog.LevelInfo}
+	stdLogger := slog.New(slog.NewTextHandler(logBuffer, opts))
+	log := logging.FromStdLogger(stdLogger)
+
+	publisher := &defaultPublisher{}
+	publisher.logDeploymentVersions(log, manifest)
+
+	logs := logBuffer.String()
+	s.Contains(logs, "Local Python version 3.11.0")
+	s.Contains(logs, "Local R not in use")
+	s.Contains(logs, "Local Quarto not in use")
+}
+
+func (s *PublishConnectSuite) TestLogDeploymentVersionsOnlyQuartoAndPython() {
+	manifest := &bundles.Manifest{
+		Quarto: &bundles.Quarto{
+			Version: "1.4.0",
+		},
+		Python: &bundles.Python{
+			Version: "3.11.0",
+		},
+	}
+
+	logBuffer := new(bytes.Buffer)
+	opts := &slog.HandlerOptions{Level: slog.LevelInfo}
+	stdLogger := slog.New(slog.NewTextHandler(logBuffer, opts))
+	log := logging.FromStdLogger(stdLogger)
+
+	publisher := &defaultPublisher{}
+	publisher.logDeploymentVersions(log, manifest)
+
+	logs := logBuffer.String()
+	s.Contains(logs, "Local Quarto version 1.4.0")
+	s.Contains(logs, "Local R not in use")
+	s.Contains(logs, "Local Python version 3.11.0")
 }
 
 func (s *PublishConnectSuite) TestLogDeploymentVersionsEmpty() {
@@ -735,10 +780,9 @@ func (s *PublishConnectSuite) TestLogDeploymentVersionsEmpty() {
 	publisher.logDeploymentVersions(log, manifest)
 
 	logs := logBuffer.String()
-	// Should not log anything when no versions are present
-	s.NotContains(logs, "Target R version")
-	s.NotContains(logs, "Target Python version")
-	s.NotContains(logs, "Target Quarto version")
+	s.Contains(logs, "Local R not in use")
+	s.Contains(logs, "Local Python not in use")
+	s.Contains(logs, "Local Quarto not in use")
 }
 
 type PublishConnectCloudSuite struct {
