@@ -485,6 +485,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
             stage.events.push(msg);
           }
           this.refresh();
+          this.revealFailure();
         },
       );
 
@@ -564,13 +565,11 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
   }
 
   /**
-   * Returns either
-   * the first LogsTreeStageItem with `LogStageStatus.failed` or
-   * the last LogsTreeLogItem of that stage if the stage has events
-   *
-   * Returns `undefined` if no LogsTreeStageItems have `LogStageStatus.failed`
+   * Returns the failure log item (last event) from the first failed or canceled stage.
+   * If the failed stage has no events, returns the stage item itself.
+   * Returns `undefined` if no stages have failed or been canceled.
    */
-  private getFailedStageItem(): LogsTreeItem | undefined {
+  private getFailureItem(): LogsTreeItem | undefined {
     const root = new LogsTreeStageItem(this.publishingStage);
 
     for (const stage of this.publishingStage.stages) {
@@ -602,14 +601,18 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
   }
 
   /**
-   * Reveals the first failing LogsTreeStageItem in the tree view or the last
-   * event of that stage if it has events.
+   * Reveals the failure log item from the first failed or canceled stage.
+   * Only reveals if the tree view is visible.
    */
-  public revealFailingState(treeView: TreeView<LogsTreeItem>): void {
-    const revealItem = this.getFailedStageItem();
+  private revealFailure(): void {
+    if (!this.treeView?.visible) {
+      return;
+    }
+
+    const revealItem = this.getFailureItem();
 
     if (revealItem) {
-      treeView.reveal(revealItem, {
+      this.treeView.reveal(revealItem, {
         select: true,
         focus: true,
       });
@@ -701,7 +704,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
       treeView,
       treeView.onDidChangeVisibility((e) => {
         if (e.visible) {
-          this.revealFailingState(treeView);
+          this.revealFailure();
         }
       }),
       commands.registerCommand(
