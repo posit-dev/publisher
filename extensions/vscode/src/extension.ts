@@ -121,7 +121,6 @@ async function initializeExtension(context: ExtensionContext) {
   context.subscriptions.push(watchers);
 
   const state = new PublisherState(context);
-  context.subscriptions.push(registerConnectContentFileSystem());
 
   // First the construction of the data providers
   const projectTreeDataProvider = new ProjectTreeDataProvider(context);
@@ -195,6 +194,7 @@ async function initializeExtension(context: ExtensionContext) {
 export function activate(context: ExtensionContext) {
   const now = new Date();
   console.log("Posit Publisher extension activated at %s", now.toString());
+  context.subscriptions.push(registerConnectContentFileSystem());
   context.subscriptions.push(
     window.registerUriHandler({
       handleUri(uri: Uri) {
@@ -203,6 +203,7 @@ export function activate(context: ExtensionContext) {
       },
     }),
   );
+
   // Is our workspace trusted?
   if (workspace.isTrusted) {
     console.log("initializing extension within a trusted workspace");
