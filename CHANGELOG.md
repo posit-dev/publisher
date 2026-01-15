@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Log messages in the Publisher Logs panel are no longer duplicated when multiple deployments are made. (#3069)
+- Fix creating deployments of R Markdown documents that include parameters on Connect Cloud. (#3388)
 
 ## [1.28.0]
 
