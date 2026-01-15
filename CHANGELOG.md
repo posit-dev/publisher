@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The Publisher logs automatically scroll to follow new log entries during deployment. (#2997)
 - Publisher Log stages automatically expand when running and collapse when completed. (#2998)
 - Publisher logs automatically scroll to reveal the failure line when a deployment fails. (#3236)
+- Added R, Python, and Quarto interpreter version to the logs. (#2532)
 
 ### Fixed
 

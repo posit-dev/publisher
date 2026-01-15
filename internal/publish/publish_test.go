@@ -678,6 +678,113 @@ func (s *PublishConnectSuite) TestServerUnavailableShowsHelpfulError() {
 	})
 }
 
+func (s *PublishConnectSuite) TestLogDeploymentVersions() {
+	// Test with all versions present
+	manifest := &bundles.Manifest{
+		Platform: "4.3.2",
+		Python: &bundles.Python{
+			Version: "3.11.0",
+		},
+		Quarto: &bundles.Quarto{
+			Version: "1.4.0",
+		},
+	}
+
+	logBuffer := new(bytes.Buffer)
+	opts := &slog.HandlerOptions{Level: slog.LevelInfo}
+	stdLogger := slog.New(slog.NewTextHandler(logBuffer, opts))
+	log := logging.FromStdLogger(stdLogger)
+
+	publisher := &defaultPublisher{}
+	publisher.logDeploymentVersions(log, manifest)
+
+	logs := logBuffer.String()
+	s.Contains(logs, "Local Quarto version 1.4.0")
+	s.Contains(logs, "Local R version 4.3.2")
+	s.Contains(logs, "Local Python version 3.11.0")
+}
+
+func (s *PublishConnectSuite) TestLogDeploymentVersionsOnlyR() {
+	manifest := &bundles.Manifest{
+		Platform: "4.3.2",
+	}
+
+	logBuffer := new(bytes.Buffer)
+	opts := &slog.HandlerOptions{Level: slog.LevelInfo}
+	stdLogger := slog.New(slog.NewTextHandler(logBuffer, opts))
+	log := logging.FromStdLogger(stdLogger)
+
+	publisher := &defaultPublisher{}
+	publisher.logDeploymentVersions(log, manifest)
+
+	logs := logBuffer.String()
+	s.Contains(logs, "Local R version 4.3.2")
+	s.Contains(logs, "Local Python not in use")
+	s.Contains(logs, "Local Quarto not in use")
+}
+
+func (s *PublishConnectSuite) TestLogDeploymentVersionsOnlyPython() {
+	manifest := &bundles.Manifest{
+		Python: &bundles.Python{
+			Version: "3.11.0",
+		},
+	}
+
+	logBuffer := new(bytes.Buffer)
+	opts := &slog.HandlerOptions{Level: slog.LevelInfo}
+	stdLogger := slog.New(slog.NewTextHandler(logBuffer, opts))
+	log := logging.FromStdLogger(stdLogger)
+
+	publisher := &defaultPublisher{}
+	publisher.logDeploymentVersions(log, manifest)
+
+	logs := logBuffer.String()
+	s.Contains(logs, "Local Python version 3.11.0")
+	s.Contains(logs, "Local R not in use")
+	s.Contains(logs, "Local Quarto not in use")
+}
+
+func (s *PublishConnectSuite) TestLogDeploymentVersionsOnlyQuartoAndPython() {
+	manifest := &bundles.Manifest{
+		Quarto: &bundles.Quarto{
+			Version: "1.4.0",
+		},
+		Python: &bundles.Python{
+			Version: "3.11.0",
+		},
+	}
+
+	logBuffer := new(bytes.Buffer)
+	opts := &slog.HandlerOptions{Level: slog.LevelInfo}
+	stdLogger := slog.New(slog.NewTextHandler(logBuffer, opts))
+	log := logging.FromStdLogger(stdLogger)
+
+	publisher := &defaultPublisher{}
+	publisher.logDeploymentVersions(log, manifest)
+
+	logs := logBuffer.String()
+	s.Contains(logs, "Local Quarto version 1.4.0")
+	s.Contains(logs, "Local R not in use")
+	s.Contains(logs, "Local Python version 3.11.0")
+}
+
+func (s *PublishConnectSuite) TestLogDeploymentVersionsEmpty() {
+	manifest := &bundles.Manifest{}
+
+	logBuffer := new(bytes.Buffer)
+	opts := &slog.HandlerOptions{Level: slog.LevelInfo}
+	stdLogger := slog.New(slog.NewTextHandler(logBuffer, opts))
+	log := logging.FromStdLogger(stdLogger)
+
+	publisher := &defaultPublisher{}
+	publisher.logDeploymentVersions(log, manifest)
+
+	logs := logBuffer.String()
+	s.Contains(logs, "Local R not in use")
+	s.Contains(logs, "Local Python not in use")
+	s.Contains(logs, "Local Quarto not in use")
+}
+
 type PublishConnectCloudSuite struct {
 	BasePublishSuite
 }

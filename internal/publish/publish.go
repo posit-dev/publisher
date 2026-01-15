@@ -11,6 +11,7 @@ import (
 
 	"github.com/mitchellh/mapstructure"
 
+	"github.com/posit-dev/publisher/internal/bundles"
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/deployment"
@@ -306,6 +307,26 @@ func (p *defaultPublisher) setContentInfo(info publishhelper.ContentInfo) {
 	p.Target.DashboardURL = info.DashboardURL
 	p.Target.DirectURL = info.DirectURL
 	p.Target.LogsURL = info.LogsURL
+}
+
+func (p *defaultPublisher) logDeploymentVersions(log logging.Logger, manifest *bundles.Manifest) {
+	if manifest.Quarto != nil && manifest.Quarto.Version != "" {
+		log.Info("Local Quarto version " + manifest.Quarto.Version)
+	} else {
+		log.Info("Local Quarto not in use")
+	}
+
+	if manifest.Platform != "" {
+		log.Info("Local R version " + manifest.Platform)
+	} else {
+		log.Info("Local R not in use")
+	}
+
+	if manifest.Python != nil && manifest.Python.Version != "" {
+		log.Info("Local Python version " + manifest.Python.Version)
+	} else {
+		log.Info("Local Python not in use")
+	}
 }
 
 func (p *defaultPublisher) CreateDeploymentRecord() {
