@@ -26,12 +26,9 @@ import { registerLLMTooling } from "./llm";
 import {
   clearConnectContentBundleForUri,
   registerConnectContentFileSystem,
+  setPublisherState,
 } from "./connect_content_fs";
-import {
-  handleConnectUri,
-  handleDeferredConnectUri,
-  promptOpenConnectContent,
-} from "./open_connect";
+import { handleConnectUri, promptOpenConnectContent } from "./open_connect";
 
 const STATE_CONTEXT = "posit.publish.state";
 
@@ -121,6 +118,7 @@ async function initializeExtension(context: ExtensionContext) {
   context.subscriptions.push(watchers);
 
   const state = new PublisherState(context);
+  setPublisherState(state);
 
   // First the construction of the data providers
   const projectTreeDataProvider = new ProjectTreeDataProvider(context);
@@ -175,8 +173,6 @@ async function initializeExtension(context: ExtensionContext) {
   );
 
   context.subscriptions.push(new PublisherAuthProvider(state));
-  handleDeferredConnectUri(state);
-
   context.subscriptions.push(
     workspace.onDidChangeWorkspaceFolders((event) => {
       event.removed.forEach((folder) => {

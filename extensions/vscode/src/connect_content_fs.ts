@@ -9,6 +9,7 @@ import {
   FileSystemProvider,
   FileType,
   Uri,
+  commands,
   window,
   workspace,
 } from "vscode";
@@ -19,6 +20,8 @@ import tar from "tar-stream";
 import { useApi } from "./api";
 import { authLogger } from "./authProvider";
 import { isAxiosError } from "axios";
+import { Commands } from "src/constants";
+import { PublisherState } from "./state";
 
 type ConnectContentEntry = {
   type: FileType;
@@ -33,6 +36,31 @@ const CONNECT_CONTENT_SCHEME = "connect-content";
 const contentRoots = new Map<string, ConnectContentEntry>();
 const fileChangeEmitter = new EventEmitter<FileChangeEvent[]>();
 const bundleFetches = new Map<string, Promise<void>>();
+
+let publisherState: PublisherState | undefined;
+let publisherStateReadyResolve: (() => void) | undefined;
+const publisherStateReady = new Promise<void>((resolve) => {
+  publisherStateReadyResolve = resolve;
+});
+
+export function setPublisherState(state: PublisherState) {
+  publisherState = state;
+  if (publisherStateReadyResolve) {
+    publisherStateReadyResolve();
+    publisherStateReadyResolve = undefined;
+  }
+}
+
+export function normalizeServerUrl(value: string): string {
+  if (!value) {
+    return "";
+  }
+  try {
+    return new URL(value).origin;
+  } catch {
+    return "";
+  }
+}
 
 // Track which bundle contents back a Connect content URI.
 // Drop any cached bundle so reopening always fetches fresh content.
@@ -210,6 +238,46 @@ function parseConnectContentUri(uri: Uri) {
   return { serverUrl, contentGuid };
 }
 
+function hasCredentialForServer(server: string, state: PublisherState) {
+  return state.credentials.some(
+    (credential) =>
+      normalizeServerUrl(credential.url) === server ||
+      credential.url === server,
+  );
+}
+
+async function waitForPublisherState() {
+  await publisherStateReady;
+  if (!publisherState) {
+    throw new Error("Publisher state is not initialized");
+  }
+  return publisherState;
+}
+
+async function ensureCredentialsForServer(serverUrl: string) {
+  const state = await waitForPublisherState();
+  const normalizedServer = normalizeServerUrl(serverUrl);
+  if (!normalizedServer) {
+    throw new Error(`Invalid server URL ${serverUrl}`);
+  }
+  await state.refreshCredentials();
+  if (hasCredentialForServer(normalizedServer, state)) {
+    return normalizedServer;
+  }
+  authLogger.warn(
+    `No credentials for ${normalizedServer}. Opening credential flow.`,
+  );
+  await commands.executeCommand(
+    Commands.HomeView.AddCredential,
+    normalizedServer,
+  );
+  await state.refreshCredentials();
+  if (hasCredentialForServer(normalizedServer, state)) {
+    return normalizedServer;
+  }
+  throw new Error(`No valid credentials available for ${normalizedServer}`);
+}
+
 function tryGetHost(serverUrl: string) {
   try {
     return new URL(serverUrl).host;
@@ -257,17 +325,19 @@ async function fetchAndCacheBundle(
   contentGuid: string,
   rootKey: string,
 ) {
-  const api = await useApi();
+  let normalizedServerUrl = serverUrl;
   try {
+    normalizedServerUrl = await ensureCredentialsForServer(serverUrl);
+    const api = await useApi();
     const response = await api.openConnectContent.openConnectContent(
-      serverUrl,
+      normalizedServerUrl,
       contentGuid,
     );
     const bundleBytes = new Uint8Array(response.data);
     const root = await extractBundleTree(bundleBytes);
     contentRoots.set(rootKey, root);
     authLogger.info(
-      `Fetched bundle ${contentGuid} for ${serverUrl} and cached for ${rootKey}`,
+      `Fetched bundle ${contentGuid} for ${normalizedServerUrl} and cached for ${rootKey}`,
     );
   } catch (error) {
     const message =
@@ -284,7 +354,7 @@ async function fetchAndCacheBundle(
           ? error.message
           : "Unable to open Connect content bundle";
     authLogger.error(
-      `Unable to fetch bundle ${contentGuid} for ${serverUrl}: ${message}`,
+      `Unable to fetch bundle ${contentGuid} for ${normalizedServerUrl}: ${message}`,
     );
     await window.showErrorMessage(
       `Unable to open Connect content ${contentGuid}: ${message}`,
