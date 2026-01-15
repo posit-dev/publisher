@@ -4,24 +4,21 @@ import * as net from "net";
 import * as retry from "retry";
 
 import { ChildProcessWithoutNullStreams, spawn } from "node:child_process";
-import { OutputChannel, Disposable, window, ExtensionContext } from "vscode";
+import { Disposable, ExtensionContext, window } from "vscode";
 
 import { HOST } from "src";
 import * as commands from "src/commands";
 import * as workspaces from "src/workspaces";
+import { logger, logAgentOutput } from "src/logging";
 
 export class Server implements Disposable {
   readonly port: number;
-  readonly outputChannel: OutputChannel;
   readonly useKeyChain: boolean;
 
   process: ChildProcessWithoutNullStreams | undefined = undefined;
 
   constructor(port: number, useKeyChain: boolean) {
     this.port = port;
-    this.outputChannel = window.createOutputChannel(
-      `Posit Publisher Deployment`,
-    );
     this.useKeyChain = useKeyChain;
   }
 
@@ -52,14 +49,28 @@ export class Server implements Disposable {
       const doStart = async () => {
         // Spawn child process
         this.process = spawn(command, args);
-        // Handle error output
+
+        // Buffer for incomplete lines from stderr
+        let stderrBuffer = "";
+
+        // Handle stderr output - parse slog format and log with appropriate level
         this.process.stderr.on("data", (data) => {
-          // Write stderr to output channel
-          this.outputChannel.append(data.toString());
+          stderrBuffer += data.toString();
+          const lines = stderrBuffer.split("\n");
+          // Keep the last incomplete line in the buffer
+          stderrBuffer = lines.pop() ?? "";
+          // Log each complete line
+          for (const line of lines) {
+            logAgentOutput(line);
+          }
         });
 
         this.process.on("close", (code) => {
-          console.log(`Agent process exited with code ${code}; restarting...`);
+          // Flush any remaining buffer content
+          if (stderrBuffer.trim()) {
+            logAgentOutput(stderrBuffer);
+          }
+          logger.info(`Agent process exited with code ${code}; restarting...`);
           doStart();
         });
 
@@ -126,7 +137,9 @@ export class Server implements Disposable {
         } catch (error) {
           // Check if the error is an instance of Error and if retry is possible
           if (error instanceof Error && operation.retry(error)) {
-            console.error(`Attempt ${attempt} failed. Retrying...`);
+            logger.debug(
+              `Server startup check attempt ${attempt} failed. Retrying...`,
+            );
             return;
           }
           // Reject the Promise with the main error of the retry operation
@@ -175,7 +188,9 @@ export class Server implements Disposable {
 
             // If retry is possible, log the attempt and continue
             if (operation.retry(error)) {
-              console.error(`Attempt ${attempt} failed. Retrying...`);
+              logger.debug(
+                `Server shutdown check attempt ${attempt} failed. Retrying...`,
+              );
               return;
             }
           }

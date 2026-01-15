@@ -4,6 +4,7 @@ import { ExtensionContext, Disposable } from "vscode";
 
 import { HOST } from "src";
 import { initApi } from "src/api";
+import { logger } from "src/logging";
 import { Server } from "src/servers";
 
 export class Service implements Disposable {
@@ -50,8 +51,6 @@ export class Service implements Disposable {
   }
 
   showOutputChannel() {
-    if (this.server) {
-      this.server.outputChannel.show();
-    }
+    logger.show();
   }
 }

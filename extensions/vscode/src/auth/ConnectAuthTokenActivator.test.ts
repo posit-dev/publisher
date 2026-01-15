@@ -34,6 +34,15 @@ vi.mock("src/utils/errors", () => ({
   getMessageFromError: vi.fn((error) => error?.message || "Unknown error"),
 }));
 
+vi.mock("src/logging", () => ({
+  logger: {
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  },
+}));
+
 // Type guards for mocked functions
 const mockUseApi = vi.mocked(useApi);
 const mockShowErrorMessage = vi.mocked(window.showErrorMessage);
