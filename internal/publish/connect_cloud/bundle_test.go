@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
@@ -19,6 +20,7 @@ import (
 	"github.com/posit-dev/publisher/internal/publish/publishhelper"
 	"github.com/posit-dev/publisher/internal/state"
 	"github.com/posit-dev/publisher/internal/types"
+	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
 )
 
@@ -29,6 +31,10 @@ type CloudSuite struct {
 	originalFactory  func(string, logging.Logger, time.Duration) connect_cloud_upload.UploadAPIClient
 	emitter          *events.CapturingEmitter
 	publisher        *ServerPublisher
+
+	// Filesystem for test isolation
+	fs  afero.Fs
+	dir util.AbsolutePath
 
 	// Test constants
 	contentID  types.ContentID
@@ -44,6 +50,11 @@ func TestCloudSuite(t *testing.T) {
 func (s *CloudSuite) SetupTest() {
 	// Save original factory
 	s.originalFactory = UploadAPIClientFactory
+
+	// Set up in-memory filesystem for test isolation
+	s.fs = afero.NewMemMapFs()
+	s.dir = util.NewAbsolutePath("/test/dir", s.fs)
+	s.dir.MkdirAll(0755)
 
 	// Set up test constants
 	s.contentID = types.ContentID("test-content-id")
@@ -66,9 +77,12 @@ func (s *CloudSuite) SetupTest() {
 	// Set up capturing emitter to verify events
 	s.emitter = events.NewCapturingEmitter()
 
-	// Create a minimal state with required fields
+	// Create state with required fields including Dir and SaveName
 	state := &state.State{
-		Target: &deployment.Deployment{},
+		Dir:      s.dir,
+		SaveName: "test-save",
+		Target:   &deployment.Deployment{},
+		LocalID:  "test-local-id",
 	}
 
 	// Create a publisher helper
