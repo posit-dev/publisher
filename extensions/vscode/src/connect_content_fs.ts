@@ -185,9 +185,19 @@ function parseConnectContentUri(uri: Uri) {
     return null;
   }
   const params = new URLSearchParams(uri.query);
-  const serverUrl = params.get("serverUrl");
+  let serverUrl = params.get("serverUrl");
   if (!serverUrl) {
-    return null;
+    const authority = uri.authority ?? "";
+    if (!authority) {
+      return null;
+    }
+    if (authority.startsWith("https@")) {
+      serverUrl = authority.replace("https@", "https://");
+    } else if (authority.startsWith("http@")) {
+      serverUrl = authority.replace("http@", "http://");
+    } else {
+      serverUrl = `https://${authority}`;
+    }
   }
   const trimmedPath = uri.path.replace(/^\/+/, "");
   const [contentGuid] = trimmedPath.split("/");
