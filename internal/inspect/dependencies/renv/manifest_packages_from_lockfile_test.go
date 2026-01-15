@@ -307,6 +307,10 @@ func (s *LockfilePackageMapperSuite) TestBioconductor_Functional() {
 // --- Compatibility tests ensuring lockfile-only path matches legacy path on core fields ---
 
 func (s *LockfilePackageMapperSuite) TestCRAN_LockfileCompatibility() {
+	if testing.Short() {
+		s.T().Skip("skipping compatibility test in short mode")
+	}
+
 	// Create a temporary renv.lock with real CRAN packages for compatibility testing
 	lockfileContent := `{
 		"R": {
@@ -390,6 +394,10 @@ License: GPL-2 | GPL-3
 }
 
 func (s *LockfilePackageMapperSuite) TestBioconductor_LockfileCompatibility() {
+	if testing.Short() {
+		s.T().Skip("skipping compatibility test in short mode")
+	}
+
 	base := s.testdata.Join("bioc_project")
 	lockfilePath := base.Join("renv.lock")
 	libPath := base.Join("renv_library")
