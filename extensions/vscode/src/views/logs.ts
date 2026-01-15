@@ -284,6 +284,7 @@ export class LogsViewProvider {
 export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
   private stages!: Map<string, LogStage>;
   private publishingStage!: LogStage;
+  private treeView?: TreeView<LogsTreeItem>;
 
   /**
    * Event emitter for when the tree data of the Logs view changes.
@@ -333,6 +334,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
         this.publishingStage.activeLabel = `Publishing "${msg.data.title}" to ${msg.data.server}`;
         this.publishingStage.status = LogStageStatus.inProgress;
         this.refresh();
+        this.openLogsView();
       } catch (error) {
         console.error(
           "LogsTreeDataProvider publish/start handler error:",
@@ -446,6 +448,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
             stage.status = LogStageStatus.inProgress;
           }
           this.refresh();
+          this.expandStage(stageName);
         },
       );
 
@@ -455,6 +458,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
           stage.events.push(msg);
         }
         this.refresh();
+        this.revealLatestLog(stageName);
       });
 
       this.stream.register(
@@ -481,6 +485,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
             stage.events.push(msg);
           }
           this.refresh();
+          this.revealFailure();
         },
       );
 
@@ -560,13 +565,11 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
   }
 
   /**
-   * Returns either
-   * the first LogsTreeStageItem with `LogStageStatus.failed` or
-   * the last LogsTreeLogItem of that stage if the stage has events
-   *
-   * Returns `undefined` if no LogsTreeStageItems have `LogsStateStatus.failed`
+   * Returns the failure log item (last event) from the first failed or canceled stage.
+   * If the failed stage has no events, returns the stage item itself.
+   * Returns `undefined` if no stages have failed or been canceled.
    */
-  private getTreeItemToReveal(): LogsTreeItem | undefined {
+  private getFailureItem(): LogsTreeItem | undefined {
     const root = new LogsTreeStageItem(this.publishingStage);
 
     for (const stage of this.publishingStage.stages) {
@@ -598,18 +601,86 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
   }
 
   /**
-   * Reveals the first failing LogsTreeStageItem in the tree view or the last
-   * event of that stage if it has events.
+   * Reveals the failure log item from the first failed or canceled stage.
+   * Only reveals if the tree view is visible.
    */
-  public revealFailingState(treeView: TreeView<LogsTreeItem>): void {
-    const revealItem = this.getTreeItemToReveal();
+  private revealFailure(): void {
+    if (!this.treeView?.visible) {
+      return;
+    }
+
+    const revealItem = this.getFailureItem();
 
     if (revealItem) {
-      treeView.reveal(revealItem, {
+      this.treeView.reveal(revealItem, {
         select: true,
         focus: true,
       });
     }
+  }
+
+  /**
+   * Expands a stage in the tree view by name.
+   * Used to auto-expand stages when they start running.
+   * Only expands if the tree view is visible to avoid reopening
+   * the logs view if the user closed it during deployment.
+   */
+  private expandStage(stageName: string): void {
+    if (!this.treeView?.visible) {
+      return;
+    }
+
+    const stage = this.stages.get(stageName);
+    if (!stage) return;
+
+    const root = new LogsTreeStageItem(this.publishingStage);
+    const stageItem = new LogsTreeStageItem(stage, root);
+
+    this.treeView.reveal(stageItem, { expand: true });
+  }
+
+  /**
+   * Opens the logs view and reveals the root publishing stage.
+   * Called when a deployment starts to show the logs view.
+   */
+  private openLogsView(): void {
+    if (!this.treeView) {
+      return;
+    }
+
+    const root = new LogsTreeStageItem(this.publishingStage);
+    this.treeView.reveal(root, { expand: true });
+  }
+
+  /**
+   * Reveals the latest log item in a stage to auto-scroll to the bottom.
+   * Only reveals if the tree view is currently visible.
+   */
+  private revealLatestLog(stageName: string): void {
+    if (!this.treeView?.visible) {
+      return;
+    }
+
+    const stage = this.stages.get(stageName);
+    if (!stage || stage.events.length === 0) return;
+
+    const root = new LogsTreeStageItem(this.publishingStage);
+    const stageItem = new LogsTreeStageItem(stage, root);
+
+    const lastEventIndex = stage.events.length - 1;
+    const lastEvent = stage.events[lastEventIndex];
+    if (!lastEvent) return;
+
+    const logItem = new LogsTreeLogItem(
+      {
+        msg: lastEvent,
+        id: `${stageItem.id}/${lastEventIndex}`,
+        parent: stageItem,
+      },
+      TreeItemCollapsibleState.None,
+    );
+
+    this.treeView.reveal(logItem);
   }
 
   /**
@@ -627,12 +698,13 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
     const treeView = window.createTreeView(Views.Logs, {
       treeDataProvider: this,
     });
+    this.treeView = treeView;
 
     this.context.subscriptions.push(
       treeView,
       treeView.onDidChangeVisibility((e) => {
         if (e.visible) {
-          this.revealFailingState(treeView);
+          this.revealFailure();
         }
       }),
       commands.registerCommand(
@@ -663,7 +735,15 @@ export class LogsTreeStageItem extends TreeItem {
     }
 
     super(stage.inactiveLabel, collapsibleState);
-    this.id = stage.inactiveLabel;
+    // Include status in ID for completed leaf stages so VSCode treats them as new
+    // items and respects the collapsibleState (Collapsed) we set. Without this,
+    // VSCode preserves the expanded state from when the stage was in progress.
+    // Exclude parent stages (like the root "Publishing" stage) which have child stages.
+    const isLeafStage = stage.stages.length === 0;
+    this.id =
+      isLeafStage && stage.status === LogStageStatus.completed
+        ? `${stage.inactiveLabel}-completed`
+        : stage.inactiveLabel;
     this.stage = stage;
     this.parent = parent;
 
