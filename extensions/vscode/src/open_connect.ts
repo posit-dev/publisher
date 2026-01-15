@@ -13,11 +13,14 @@ let publisherState: PublisherState | undefined;
 let pendingUri: Uri | undefined;
 
 // Canonicalize server URLs so credential matches are consistent.
-function normalizeServerUrl(value: string): string | undefined {
+function normalizeServerUrl(value: string): string {
+  if (!value) {
+    return "";
+  }
   try {
     return new URL(value).origin;
   } catch {
-    return undefined;
+    return "";
   }
 }
 
@@ -79,13 +82,11 @@ export async function handleConnectUri(uri: Uri) {
   const params = new URLSearchParams(uri.query);
   const server = params.get("server") ?? "";
   const content = params.get("content") ?? "";
-  if (!server || !content) {
-    authLogger.info(`Missing server/content in URI: ${uri.toString()}`);
-    return;
-  }
   const normalizedServer = normalizeServerUrl(server);
-  if (!normalizedServer) {
-    authLogger.info(`Invalid server URL in URI: ${server}`);
+  if (!server || !content || !normalizedServer) {
+    authLogger.error(
+      `Missing or invalid server/content in URI: ${uri.toString()}`,
+    );
     return;
   }
   if (!publisherState) {
@@ -96,8 +97,6 @@ export async function handleConnectUri(uri: Uri) {
     authLogger.debug(`Deferring URI handling until extension is initialized.`);
     return;
   }
-  authLogger.info(`Refreshing credentials before opening content.`);
-  authLogger.info(`Refreshing credentials (first attempt).`);
   await publisherState.refreshCredentials();
   if (hasCredentialForServer(normalizedServer, publisherState)) {
     authLogger.info(
@@ -106,14 +105,13 @@ export async function handleConnectUri(uri: Uri) {
     await openConnectContent(normalizedServer, content);
     return;
   }
-  authLogger.info(
+  authLogger.warn(
     `No credentials for ${normalizedServer}. Opening credential flow.`,
   );
   await commands.executeCommand(
     Commands.HomeView.AddCredential,
     normalizedServer,
   );
-  authLogger.info(`Refreshing credentials after credential flow.`);
   await publisherState.refreshCredentials();
   if (hasCredentialForServer(normalizedServer, publisherState)) {
     authLogger.info(
@@ -122,7 +120,7 @@ export async function handleConnectUri(uri: Uri) {
     await openConnectContent(normalizedServer, content);
     return;
   }
-  authLogger.info(
+  authLogger.warn(
     `No valid credentials available for ${normalizedServer} (content ${content}).`,
   );
 }
