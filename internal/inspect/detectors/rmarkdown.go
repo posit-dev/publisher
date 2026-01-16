@@ -20,13 +20,19 @@ import (
 
 type RMarkdownDetector struct {
 	inferenceHelper
-	executor executor.Executor
-	log      logging.Logger
+	resourceFinderFactory multiResourceFinderFactory
+	executor              executor.Executor
+	log                   logging.Logger
 }
 
 func NewRMarkdownDetector(log logging.Logger) *RMarkdownDetector {
+	rfFactory := func(log logging.Logger, base util.AbsolutePath, filesFromConfig []string) (ResourceFinder, error)  {
+		return NewMultiResourceFinder(log, base, filesFromConfig)
+	}
+
 	return &RMarkdownDetector{
 		inferenceHelper: defaultInferenceHelper{},
+		resourceFinderFactory: rfFactory,
 		executor:        executor.NewExecutor(),
 		log:             log,
 	}
@@ -115,6 +121,31 @@ func (d *RMarkdownDetector) lookForSiteMetadata(base util.AbsolutePath) (*RMarkd
 	return nil, ""
 }
 
+// Use resource finder to identify additional resources for the configuration.
+// Additional static assets can be scattered alongside files.
+func (d *RMarkdownDetector) findAndIncludeAssets(base util.AbsolutePath, cfg *config.Config) {
+	rFinder, err := d.resourceFinderFactory(d.log, base, cfg.Files)
+	if err != nil {
+		d.log.Error("Error creating resource finder for RMarkdown project", "error", err)
+		return
+	}
+	resources, err := rFinder.FindResources()
+	if err != nil {
+		d.log.Error("Error finding resources for RMarkdown project", "error", err)
+		return
+	}
+	for _, rsrc := range resources {
+		// Do not include assets that are nested in an already included directory.
+		// e.g. if /index_files is included, do not include /index_files/custom.css
+		rsrcRoot := strings.Split(rsrc.Path, "/")[0]
+		rsrcStringToAdd := fmt.Sprint("/", rsrc.Path)
+		rsrcDirIncluded := slices.Contains(cfg.Files, fmt.Sprint("/", rsrcRoot))
+		if !rsrcDirIncluded && !slices.Contains(cfg.Files, rsrcStringToAdd) {
+			cfg.Files = append(cfg.Files, rsrcStringToAdd)
+		}
+	}
+}
+
 func (d *RMarkdownDetector) configFromFileInspect(base util.AbsolutePath, entrypointPath util.AbsolutePath) (*config.Config, error) {
 	relEntrypoint, err := entrypointPath.Rel(base)
 	if err != nil {
@@ -154,6 +185,10 @@ func (d *RMarkdownDetector) configFromFileInspect(base util.AbsolutePath, entryp
 		if !slices.Contains(cfg.Files, entrypointBase) {
 			cfg.Files = append(cfg.Files, entrypointBase)
 		}
+	} else {
+		// For non-site Rmds, add the entrypoint to cfg.Files so the resource finder can scan it.
+		// This is similar to includeProjectFilesConfig and genNonInspectConfig funcs in quarto.go
+		cfg.Files = append(cfg.Files, fmt.Sprint("/", relEntrypoint.String()))
 	}
 
 	if metadata != nil {
@@ -181,6 +216,7 @@ func (d *RMarkdownDetector) configFromFileInspect(base util.AbsolutePath, entryp
 		d.log.Info("RMarkdown: detected Python code; configuration will include Python")
 		cfg.Python = &config.Python{}
 	}
+	d.findAndIncludeAssets(base, cfg)
 	return cfg, nil
 }
 

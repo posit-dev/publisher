@@ -62,7 +62,7 @@ func (s *RMarkdownSuite) TestInferType() {
 		Title:      "Special Report",
 		Entrypoint: filename,
 		Validate:   &validate,
-		Files:      []string{},
+		Files:      []string{"/report.Rmd"},
 		R:          &config.R{},
 	}, configs[0])
 }
@@ -99,7 +99,7 @@ func (s *RMarkdownSuite) TestInferTypeWithPython() {
 		Title:      "Special Report",
 		Entrypoint: filename,
 		Validate:   &validate,
-		Files:      []string{},
+		Files:      []string{"/report.Rmd"},
 		Python:     &config.Python{},
 	}, configs[0])
 }
@@ -150,7 +150,7 @@ func (s *RMarkdownSuite) TestInferTypeParameterized() {
 		Entrypoint:    filename,
 		Validate:      &validate,
 		HasParameters: &hasParams,
-		Files:         []string{},
+		Files:         []string{"/report.Rmd"},
 		R:             &config.R{},
 	}, configs[0])
 }
@@ -189,7 +189,7 @@ func (s *RMarkdownSuite) TestInferTypeShinyRmdRuntime() {
 		Title:      "Interactive Report",
 		Entrypoint: filename,
 		Validate:   &validate,
-		Files:      []string{},
+		Files:      []string{"/report.Rmd"},
 		R:          &config.R{},
 	}, configs[0])
 }
@@ -228,7 +228,7 @@ func (s *RMarkdownSuite) TestInferTypeShinyRmdServer() {
 		Title:      "Interactive Report",
 		Entrypoint: filename,
 		Validate:   &validate,
-		Files:      []string{},
+		Files:      []string{"/report.Rmd"},
 		R:          &config.R{},
 	}, configs[0])
 }
@@ -268,7 +268,7 @@ func (s *RMarkdownSuite) TestInferTypeShinyRmdServerType() {
 		Title:      "Interactive Report",
 		Entrypoint: filename,
 		Validate:   &validate,
-		Files:      []string{},
+		Files:      []string{"/report.Rmd"},
 		R:          &config.R{},
 	}, configs[0])
 }
@@ -303,7 +303,7 @@ func (s *RMarkdownSuite) TestInferTypeNoMetadata() {
 		Title:      "",
 		Entrypoint: filename,
 		Validate:   &validate,
-		Files:      []string{},
+		Files:      []string{"/report.Rmd"},
 		R:          &config.R{},
 	}, configs[0])
 }
@@ -334,7 +334,7 @@ func (s *RMarkdownSuite) TestInferTypeWithEntrypoint() {
 		Title:      "Special Report",
 		Entrypoint: filename,
 		Validate:   &validate,
-		Files:      []string{},
+		Files:      []string{"/report.Rmd"},
 		R:          &config.R{},
 	}, configs[0])
 }
@@ -501,4 +501,64 @@ func (s *RMarkdownSuite) TestInferTypeRmdSite_FromBookdownYml() {
 		},
 		R: &config.R{},
 	}, configs[0])
+}
+
+func (s *RMarkdownSuite) TestInferTypeStaticRmdWithAssets() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip("This test does not run on Windows")
+	}
+
+	realCwd, err := util.Getwd(nil)
+	s.NoError(err)
+
+	base := realCwd.Join("testdata", "rmd-static-with-assets")
+
+	detector := NewRMarkdownDetector(logging.New())
+
+	configs, err := detector.InferType(base, util.NewRelativePath("static-with-assets.Rmd", nil))
+	s.Nil(err)
+
+	s.Len(configs, 1)
+	validate := true
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       contenttypes.ContentTypeRMarkdown,
+		Entrypoint: "static-with-assets.Rmd",
+		Title:      "Static R Markdown with Image",
+		Validate:   &validate,
+		Files: []string{
+			"/static-with-assets.Rmd",
+			"/assets/bear.jpg",
+		},
+		R: &config.R{},
+	}, configs[0])
+}
+
+func (s *RMarkdownSuite) TestFindAndIncludeAssets_NestedDirectoryDeduplication() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip("This test does not run on Windows")
+	}
+
+	realCwd, err := util.Getwd(nil)
+	s.NoError(err)
+
+	base := realCwd.Join("testdata", "rmd-nested-assets")
+
+	detector := NewRMarkdownDetector(logging.New())
+
+
+	cfg := config.New()
+	cfg.Entrypoint = "rmd-nested-assets.Rmd"
+	cfg.Files = []string{
+		"/rmd-nested-assets.Rmd",
+		"/assets", // Parent directory is already added
+	}
+
+	detector.findAndIncludeAssets(base, cfg)
+
+	// Nested files should not added since parent directory is included
+	s.Equal([]string{
+		"/rmd-nested-assets.Rmd",
+		"/assets",
+	}, cfg.Files)
 }
