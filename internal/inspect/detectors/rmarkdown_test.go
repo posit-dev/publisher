@@ -546,7 +546,6 @@ func (s *RMarkdownSuite) TestFindAndIncludeAssets_NestedDirectoryDeduplication()
 
 	detector := NewRMarkdownDetector(logging.New())
 
-
 	cfg := config.New()
 	cfg.Entrypoint = "rmd-nested-assets.Rmd"
 	cfg.Files = []string{

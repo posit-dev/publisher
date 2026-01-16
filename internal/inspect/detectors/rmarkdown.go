@@ -26,15 +26,15 @@ type RMarkdownDetector struct {
 }
 
 func NewRMarkdownDetector(log logging.Logger) *RMarkdownDetector {
-	rfFactory := func(log logging.Logger, base util.AbsolutePath, filesFromConfig []string) (ResourceFinder, error)  {
+	rfFactory := func(log logging.Logger, base util.AbsolutePath, filesFromConfig []string) (ResourceFinder, error) {
 		return NewMultiResourceFinder(log, base, filesFromConfig)
 	}
 
 	return &RMarkdownDetector{
-		inferenceHelper: defaultInferenceHelper{},
+		inferenceHelper:       defaultInferenceHelper{},
 		resourceFinderFactory: rfFactory,
-		executor:        executor.NewExecutor(),
-		log:             log,
+		executor:              executor.NewExecutor(),
+		log:                   log,
 	}
 }
 
