@@ -1,7 +1,7 @@
 # Defines an image that has the basis for Connect or a User
 # Multiple versions of R, Python and Quarto are installed.
 
-FROM ubuntu:22.04 AS base
+FROM ubuntu:24.04 AS base
 
 # Configure apt-get to use the mirror in us-east-1 instead of the Docker default of archive.ubuntu.com
 RUN sed -i "s/archive.ubuntu.com/us-east-1.ec2.archive.ubuntu.com/g" /etc/apt/sources.list
