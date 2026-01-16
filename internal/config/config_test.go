@@ -280,6 +280,7 @@ func (s *ConfigSuite) TestForceProductTypeComplianceNonCloud() {
 
 func (s *ConfigSuite) TestForceProductTypeComplianceCloud() {
 	// Test that fields are unset for Cloud product type
+	hasParameters := true
 	cfg := &Config{
 		ProductType: ProductTypeConnectCloud,
 		Python: &Python{
@@ -294,6 +295,7 @@ func (s *ConfigSuite) TestForceProductTypeComplianceCloud() {
 			PackageFile:      "renv.lock",
 			RequiresRVersion: ">=4.0",
 		},
+		HasParameters: &hasParameters,
 	}
 
 	// Call ForceProductTypeCompliance
@@ -310,6 +312,8 @@ func (s *ConfigSuite) TestForceProductTypeComplianceCloud() {
 	s.Equal("", cfg.R.PackageManager, "R package manager should be unset")
 	s.Equal("", cfg.R.PackageFile, "R package file should be unset")
 	s.Equal("", cfg.R.RequiresRVersion, "R requires version should be unset")
+
+	s.Nil(cfg.HasParameters, "HasParameters should be unset")
 }
 
 func (s *ConfigSuite) TestForceProductTypeCompliancePythonVersionFormats() {

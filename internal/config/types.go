@@ -86,6 +86,7 @@ func (c *Config) ForceProductTypeCompliance() {
 		}
 		c.Quarto = nil
 		c.Jupyter = nil
+		c.HasParameters = nil
 	} else if c.ProductType.IsConnect() {
 		// object-reference-style entrypoint is only allowed by Connect
 		if c.EntrypointObjectRef != "" {
