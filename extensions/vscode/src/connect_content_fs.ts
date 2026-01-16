@@ -37,20 +37,6 @@ const contentRoots = new Map<string, ConnectContentEntry>();
 const fileChangeEmitter = new EventEmitter<FileChangeEvent[]>();
 const bundleFetches = new Map<string, Promise<void>>();
 
-let publisherState: PublisherState | undefined;
-let publisherStateReadyResolve: (() => void) | undefined;
-const publisherStateReady = new Promise<void>((resolve) => {
-  publisherStateReadyResolve = resolve;
-});
-
-export function setPublisherState(state: PublisherState) {
-  publisherState = state;
-  if (publisherStateReadyResolve) {
-    publisherStateReadyResolve();
-    publisherStateReadyResolve = undefined;
-  }
-}
-
 export function normalizeServerUrl(value: string): string {
   if (!value) {
     return "";
@@ -98,11 +84,14 @@ export function connectContentUri(serverUrl: string, contentGuid: string) {
 }
 
 // Register a read-only file system so VS Code can browse Connect content.
-export function registerConnectContentFileSystem(): Disposable {
+export function registerConnectContentFileSystem(
+  publisherStateReadyPromise: Promise<PublisherState>,
+): Disposable {
   authLogger.info("Registering connect-content file system provider");
+  const provider = new ConnectContentFileSystemProvider(publisherStateReadyPromise);
   return workspace.registerFileSystemProvider(
     CONNECT_CONTENT_SCHEME,
-    new ConnectContentFileSystemProvider(),
+    provider,
     { isReadonly: true },
   );
 }
@@ -114,21 +103,28 @@ class ConnectContentFileSystemProvider implements FileSystemProvider {
     return new Disposable(() => undefined);
   }
 
+  private readonly publisherStateReady: Promise<PublisherState>;
+  private cachedPublisherState?: PublisherState;
+
+  constructor(publisherStateReadyPromise: Promise<PublisherState>) {
+    this.publisherStateReady = publisherStateReadyPromise;
+  }
+
   async stat(uri: Uri): Promise<FileStat> {
     authLogger.info(`connect-content stat ${uri.toString()}`);
-    const entry = await resolveEntry(uri);
+    const entry = await this.resolveEntry(uri);
     return statFromEntry(entry);
   }
 
   async readDirectory(uri: Uri): Promise<[string, FileType][]> {
     authLogger.info(`connect-content readDirectory ${uri.toString()}`);
-    const entry = await resolveEntry(uri);
+    const entry = await this.resolveEntry(uri);
     return listDirectory(entry);
   }
 
   async readFile(uri: Uri): Promise<Uint8Array> {
     authLogger.info(`connect-content readFile ${uri.toString()}`);
-    const entry = await resolveEntry(uri);
+    const entry = await this.resolveEntry(uri);
     if (entry.type !== FileType.File) {
       throw FileSystemError.FileIsADirectory(uri);
     }
@@ -150,43 +146,144 @@ class ConnectContentFileSystemProvider implements FileSystemProvider {
   rename(): void {
     throw FileSystemError.NoPermissions("connect-content is read-only");
   }
-}
 
-async function resolveEntry(uri: Uri): Promise<ConnectContentEntry> {
-  await ensureBundleForUri(uri);
-  const trimmedPath = uri.path.replace(/^\/+/, "");
-  const [contentGuid, ...rest] = trimmedPath.split("/");
-  if (!contentGuid) {
-    throw FileSystemError.FileNotFound(uri);
+  private async waitForPublisherState(): Promise<PublisherState> {
+    if (this.cachedPublisherState) {
+      return this.cachedPublisherState;
+    }
+    const state = await this.publisherStateReady;
+    this.cachedPublisherState = state;
+    return state;
   }
-  const root = contentRoots.get(
-    // Resolve the workspace root URI so every file path maps to the same bundle cache.
-    uri.with({ path: `/${contentGuid}` }).toString(),
-  );
-  if (!root) {
-    authLogger.error(`No cached bundle for ${uri.toString()}`);
-    throw FileSystemError.FileNotFound(uri);
+
+  private async ensureCredentialsForServer(serverUrl: string) {
+    const state = await this.waitForPublisherState();
+    const normalizedServer = normalizeServerUrl(serverUrl);
+    if (!normalizedServer) {
+      throw new Error(`Invalid server URL ${serverUrl}`);
+    }
+    await state.refreshCredentials();
+    if (hasCredentialForServer(normalizedServer, state)) {
+      return normalizedServer;
+    }
+    authLogger.warn(
+      `No credentials for ${normalizedServer}. Opening credential flow.`,
+    );
+    await commands.executeCommand(
+      Commands.HomeView.AddCredential,
+      normalizedServer,
+    );
+    await state.refreshCredentials();
+    if (hasCredentialForServer(normalizedServer, state)) {
+      return normalizedServer;
+    }
+    throw new Error(`No valid credentials available for ${normalizedServer}`);
   }
-  authLogger.info(
-    `Resolved connect-content entry for ${uri.toString()} ${
-      rest.length ? `(descended ${rest.length} segments)` : "(root)"
-    }`,
-  );
-  if (rest.length === 0) {
-    return root;
-  }
-  let current = root;
-  for (const segment of rest) {
-    if (!current.children) {
+
+  private async ensureBundleForUri(uri: Uri): Promise<void> {
+    const parsed = parseConnectContentUri(uri);
+    if (!parsed) {
       throw FileSystemError.FileNotFound(uri);
     }
-    const next = current.children.get(segment);
-    if (!next) {
+    const rootKey = uri.with({ path: `/${parsed.contentGuid}` }).toString();
+    if (contentRoots.has(rootKey)) {
+      return;
+    }
+    let pending = bundleFetches.get(rootKey);
+    if (!pending) {
+      pending = this.fetchAndCacheBundle(
+        parsed.serverUrl,
+        parsed.contentGuid,
+        rootKey,
+      );
+      bundleFetches.set(rootKey, pending);
+    }
+    try {
+      await pending;
+    } finally {
+      bundleFetches.delete(rootKey);
+    }
+  }
+
+  private async fetchAndCacheBundle(
+    serverUrl: string,
+    contentGuid: string,
+    rootKey: string,
+  ) {
+    let normalizedServerUrl = serverUrl;
+    try {
+      normalizedServerUrl = await this.ensureCredentialsForServer(serverUrl);
+      const api = await useApi();
+      const response = await api.openConnectContent.openConnectContent(
+        normalizedServerUrl,
+        contentGuid,
+      );
+      const bundleBytes = new Uint8Array(response.data);
+      const root = await extractBundleTree(bundleBytes);
+      contentRoots.set(rootKey, root);
+      authLogger.info(
+        `Fetched bundle ${contentGuid} for ${normalizedServerUrl} and cached for ${rootKey}`,
+      );
+    } catch (error) {
+      const message =
+        // The internal API asks Axios for binary data, so on failure it may still
+        // return an ArrayBuffer; decode that into a string so the error dialog can
+        // show the server-provided message. When decoding fails or the response
+        // already looks like another Axios error we fall back to the Error message
+        // or a conservative generic description.
+        isAxiosError(error) && error.response?.data
+          ? error.response.data instanceof ArrayBuffer
+            ? new TextDecoder().decode(new Uint8Array(error.response.data))
+            : String(error.response.data)
+          : error instanceof Error
+            ? error.message
+            : "Unable to open Connect content bundle";
+      authLogger.error(
+        `Unable to fetch bundle ${contentGuid} for ${normalizedServerUrl}: ${message}`,
+      );
+      await window.showErrorMessage(
+        `Unable to open Connect content ${contentGuid}: ${message}`,
+      );
+      contentRoots.set(rootKey, createDirectoryEntry());
+      return;
+    }
+  }
+
+  private async resolveEntry(uri: Uri): Promise<ConnectContentEntry> {
+    await this.ensureBundleForUri(uri);
+    const trimmedPath = uri.path.replace(/^\/+/, "");
+    const [contentGuid, ...rest] = trimmedPath.split("/");
+    if (!contentGuid) {
       throw FileSystemError.FileNotFound(uri);
     }
-    current = next;
+    const root = contentRoots.get(
+      uri.with({ path: `/${contentGuid}` }).toString(),
+    );
+    if (!root) {
+      authLogger.error(`No cached bundle for ${uri.toString()}`);
+      throw FileSystemError.FileNotFound(uri);
+    }
+    authLogger.info(
+      `Resolved connect-content entry for ${uri.toString()} ${
+        rest.length ? `(descended ${rest.length} segments)` : "(root)"
+      }`,
+    );
+    if (rest.length === 0) {
+      return root;
+    }
+    let current = root;
+    for (const segment of rest) {
+      if (!current.children) {
+        throw FileSystemError.FileNotFound(uri);
+      }
+      const next = current.children.get(segment);
+      if (!next) {
+        throw FileSystemError.FileNotFound(uri);
+      }
+      current = next;
+    }
+    return current;
   }
-  return current;
 }
 
 function listDirectory(entry: ConnectContentEntry): [string, FileType][] {
@@ -246,38 +343,6 @@ function hasCredentialForServer(server: string, state: PublisherState) {
   );
 }
 
-async function waitForPublisherState() {
-  await publisherStateReady;
-  if (!publisherState) {
-    throw new Error("Publisher state is not initialized");
-  }
-  return publisherState;
-}
-
-async function ensureCredentialsForServer(serverUrl: string) {
-  const state = await waitForPublisherState();
-  const normalizedServer = normalizeServerUrl(serverUrl);
-  if (!normalizedServer) {
-    throw new Error(`Invalid server URL ${serverUrl}`);
-  }
-  await state.refreshCredentials();
-  if (hasCredentialForServer(normalizedServer, state)) {
-    return normalizedServer;
-  }
-  authLogger.warn(
-    `No credentials for ${normalizedServer}. Opening credential flow.`,
-  );
-  await commands.executeCommand(
-    Commands.HomeView.AddCredential,
-    normalizedServer,
-  );
-  await state.refreshCredentials();
-  if (hasCredentialForServer(normalizedServer, state)) {
-    return normalizedServer;
-  }
-  throw new Error(`No valid credentials available for ${normalizedServer}`);
-}
-
 function tryGetHost(serverUrl: string) {
   try {
     return new URL(serverUrl).host;
@@ -292,78 +357,6 @@ function isValidOrigin(serverUrl: string) {
     return true;
   } catch {
     return false;
-  }
-}
-
-async function ensureBundleForUri(uri: Uri): Promise<void> {
-  const parsed = parseConnectContentUri(uri);
-  if (!parsed) {
-    throw FileSystemError.FileNotFound(uri);
-  }
-  const rootKey = uri.with({ path: `/${parsed.contentGuid}` }).toString();
-  if (contentRoots.has(rootKey)) {
-    return;
-  }
-  let pending = bundleFetches.get(rootKey);
-  if (!pending) {
-    pending = fetchAndCacheBundle(
-      parsed.serverUrl,
-      parsed.contentGuid,
-      rootKey,
-    );
-    bundleFetches.set(rootKey, pending);
-  }
-  try {
-    await pending;
-  } finally {
-    bundleFetches.delete(rootKey);
-  }
-}
-
-async function fetchAndCacheBundle(
-  serverUrl: string,
-  contentGuid: string,
-  rootKey: string,
-) {
-  let normalizedServerUrl = serverUrl;
-  try {
-    normalizedServerUrl = await ensureCredentialsForServer(serverUrl);
-    const api = await useApi();
-    const response = await api.openConnectContent.openConnectContent(
-      normalizedServerUrl,
-      contentGuid,
-    );
-    const bundleBytes = new Uint8Array(response.data);
-    const root = await extractBundleTree(bundleBytes);
-    contentRoots.set(rootKey, root);
-    authLogger.info(
-      `Fetched bundle ${contentGuid} for ${normalizedServerUrl} and cached for ${rootKey}`,
-    );
-  } catch (error) {
-    const message =
-      // The internal API asks Axios for binary data, so on failure it may still
-      // return an ArrayBuffer; decode that into a string so the error dialog can
-      // show the server-provided message. When decoding fails or the response
-      // already looks like another Axios error we fall back to the Error message
-      // or a conservative generic description.
-      isAxiosError(error) && error.response?.data
-        ? error.response.data instanceof ArrayBuffer
-          ? new TextDecoder().decode(new Uint8Array(error.response.data))
-          : String(error.response.data)
-        : error instanceof Error
-          ? error.message
-          : "Unable to open Connect content bundle";
-    authLogger.error(
-      `Unable to fetch bundle ${contentGuid} for ${normalizedServerUrl}: ${message}`,
-    );
-    await window.showErrorMessage(
-      `Unable to open Connect content ${contentGuid}: ${message}`,
-    );
-    // Cache an empty root so VS Code stops retrying the same bundle after a
-    // failed fetch; this keeps the file system in a consistent state until the
-    // user explicitly retries and clears the cache.
-    contentRoots.set(rootKey, createDirectoryEntry());
-    return;
   }
 }
 
