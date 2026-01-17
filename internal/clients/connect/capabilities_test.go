@@ -11,6 +11,7 @@ import (
 	"github.com/posit-dev/publisher/internal/clients/connect/server_settings"
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/contenttypes"
+	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
 )
 
@@ -306,4 +307,45 @@ func (s *CapabilitiesSuite) TestKubernetesGPULimits() {
 	s.NoError(a.checkConfig(makeGPURequest(1, 1)))
 	s.ErrorContains(a.checkConfig(makeGPURequest(5, 0)), "amd_gpu_limit value of 5 is higher than configured maximum of 1 on this server")
 	s.ErrorContains(a.checkConfig(makeGPURequest(0, 5)), "nvidia_gpu_limit value of 5 is higher than configured maximum of 2 on this server")
+}
+
+func (s *CapabilitiesSuite) TestCheckEntrypointNotFound() {
+	base := util.NewAbsolutePath(s.T().TempDir(), nil)
+	cfg := &config.Config{
+		Entrypoint: "nonexistent.py",
+	}
+	err := checkEntrypoint(base, cfg)
+	s.Error(err)
+	s.ErrorContains(err, "entrypoint file 'nonexistent.py' does not exist")
+}
+
+func (s *CapabilitiesSuite) TestCheckEntrypointExists() {
+	base := util.NewAbsolutePath(s.T().TempDir(), nil)
+	// Create a temporary file to test against
+	entrypointFile := base.Join("app.py")
+	err := entrypointFile.WriteFile([]byte("# test app"), 0644)
+	s.NoError(err)
+
+	cfg := &config.Config{
+		Entrypoint: "app.py",
+	}
+	err = checkEntrypoint(base, cfg)
+	s.NoError(err)
+}
+
+func (s *CapabilitiesSuite) TestCheckEntrypointModuleReference() {
+	base := util.NewAbsolutePath(s.T().TempDir(), nil)
+	// Module references like "app:myapp" or "shiny.express.app:app_2e_py"
+	// should not be validated as file paths
+	cfg := &config.Config{
+		Entrypoint: "shiny.express.app:app_2e_py",
+	}
+	err := checkEntrypoint(base, cfg)
+	s.NoError(err)
+
+	cfg2 := &config.Config{
+		Entrypoint: "app:myapp",
+	}
+	err = checkEntrypoint(base, cfg2)
+	s.NoError(err)
 }

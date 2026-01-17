@@ -38,6 +38,7 @@ const (
 	ErrorDeviceAuthSlowDown           ErrorCode = "deviceAuthSlowDown"
 	ErrorDeviceAuthAccessDenied       ErrorCode = "deviceAuthAccessDenied"
 	ErrorDeviceAuthExpiredToken       ErrorCode = "deviceAuthExpiredToken"
+	ErrorEntrypointNotFound           ErrorCode = "entrypointNotFound"
 )
 
 type EventableError interface {
