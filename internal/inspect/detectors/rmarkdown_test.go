@@ -367,6 +367,7 @@ func (s *RMarkdownSuite) TestInferTypeRmdSite() {
 		Files: []string{
 			"/_site.yml",
 			"/index.Rmd",
+			"/images/mario-jump.gif",
 		},
 		R: &config.R{},
 	}, configs[0])
@@ -400,9 +401,44 @@ func (s *RMarkdownSuite) TestInferTypeRmdSite_FromSiteYml() {
 		Files: []string{
 			"/_site.yml",
 			"/index.Rmd",
+			"/images/mario-jump.gif",
 		},
 		R: &config.R{},
 	}, configs[0])
+}
+
+func (s *RMarkdownSuite) TestInferTypeRmdSite_WithAssets() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip("This test does not run on Windows")
+	}
+
+	realCwd, err := util.Getwd(nil)
+	s.NoError(err)
+
+	base := realCwd.Join("testdata", "rmd-site")
+
+	detector := NewRMarkdownDetector(logging.New())
+	executor := executortest.NewMockExecutor()
+	detector.executor = executor
+
+	configs, err := detector.InferType(base, util.NewRelativePath("index.Rmd", nil))
+	s.Nil(err)
+
+	s.Len(configs, 1)
+	cfg := configs[0]
+
+	validate := true
+	s.Equal(schema.ConfigSchemaURL, cfg.Schema)
+	s.Equal(contenttypes.ContentTypeRMarkdown, cfg.Type)
+	s.Equal("index.Rmd", cfg.Entrypoint)
+	s.Equal("Testing RMD Site", cfg.Title)
+	s.Equal(&validate, cfg.Validate)
+
+	// Verify that asset discovery works for site projects
+	s.Contains(cfg.Files, "/_site.yml")
+	s.Contains(cfg.Files, "/index.Rmd")
+	s.Contains(cfg.Files, "/images/mario-jump.gif")
+	s.Equal(&config.R{}, cfg.R)
 }
 
 func (s *RMarkdownSuite) TestInferTypeRmdSite_FromSiteYml_NoMeta() {

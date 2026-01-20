@@ -159,15 +159,12 @@ func (d *RMarkdownDetector) configFromFileInspect(base util.AbsolutePath, entryp
 		if indexFile != "" {
 			cfg.Files = append(cfg.Files, fmt.Sprint("/", indexFile))
 		}
+	}
 
-		entrypointBase := fmt.Sprint("/", entrypointPath.Base())
-		if !slices.Contains(cfg.Files, entrypointBase) {
-			cfg.Files = append(cfg.Files, entrypointBase)
-		}
-	} else {
-		// For non-site Rmds, add the entrypoint to cfg.Files so the resource finder can scan it.
-		// This is similar to includeProjectFilesConfig and genNonInspectConfig funcs in quarto.go
-		cfg.Files = append(cfg.Files, fmt.Sprint("/", relEntrypoint.String()))
+	// Add the entrypoint to cfg.Files so the resource finder can scan it for assets.
+	entrypointFile := fmt.Sprint("/", relEntrypoint.String())
+	if !slices.Contains(cfg.Files, entrypointFile) {
+		cfg.Files = append(cfg.Files, entrypointFile)
 	}
 
 	if metadata != nil {
