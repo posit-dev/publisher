@@ -118,10 +118,10 @@ error, your best option is to create and deploy a new deployment.
 
 ## Publisher Output
 
-Publisher output may help to track down problems, it is located in the "Output" window under the "Posit Publisher Deployment" option.
+Publisher output may help to track down problems, it is located in the "Output" window under the "Posit Publisher" option.
 
 The Output Panel in VSCode or Positron can be opened with the command palette `> Output: Show Output Channels...`
-selecting the "Posit Publisher Deployment" option.
+selecting the "Posit Publisher" option.
 
 When opening an issue it is okay to copy and paste the output as is, you can also provide this output
 by saving it into a file and attaching it to the issue.

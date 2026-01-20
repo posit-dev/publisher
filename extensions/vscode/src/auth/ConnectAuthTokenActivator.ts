@@ -2,6 +2,7 @@
 
 import { window, Uri, env } from "vscode";
 import { useApi } from "src/api";
+import { logger } from "src/logging";
 import { getMessageFromError } from "src/utils/errors";
 import { showProgress } from "src/utils/progress";
 
@@ -17,17 +18,9 @@ export interface TokenAuthError {
   error: unknown;
 }
 
-export interface TokenActivationLogger {
-  debug(message: string): void;
-  info(message: string): void;
-  warn(message: string): void;
-  error(message: string): void;
-}
-
 export class ConnectAuthTokenActivator {
   private readonly serverUrl: string;
   private readonly viewId: string;
-  private readonly log: TokenActivationLogger;
   private readonly maxAttempts: number;
   private api: Awaited<ReturnType<typeof useApi>> | null = null;
 
@@ -36,7 +29,6 @@ export class ConnectAuthTokenActivator {
     this.viewId = viewId;
     // default: 60 = 30 seconds with 500ms between attempts
     this.maxAttempts = maxAttempts;
-    this.log = this.makeLogger();
   }
 
   async initialize(): Promise<void> {
@@ -49,16 +41,6 @@ export class ConnectAuthTokenActivator {
         "ConnectAuthTokenActivator must be initialized before use",
       );
     }
-  }
-
-  private makeLogger(): TokenActivationLogger {
-    const outputChannel = window.createOutputChannel("Token Authentication");
-    return {
-      debug: (message: string) => outputChannel.appendLine(`DEBUG: ${message}`),
-      info: (message: string) => outputChannel.appendLine(`INFO: ${message}`),
-      warn: (message: string) => outputChannel.appendLine(`WARN: ${message}`),
-      error: (message: string) => outputChannel.appendLine(`ERROR: ${message}`),
-    };
   }
 
   async activateToken(): Promise<TokenAuthResult> {
@@ -138,9 +120,9 @@ export class ConnectAuthTokenActivator {
             ) {
               userName = response.data.username;
               isClaimed = true;
-              this.log.info(`Token claimed by user: ${userName}`);
+              logger.info(`Token claimed by user: ${userName}`);
             } else {
-              this.log.debug(
+              logger.debug(
                 `Token verification response without username: ${JSON.stringify(response.data)}`,
               );
               // Continue polling if username is missing - don't set isClaimed to true
@@ -148,7 +130,7 @@ export class ConnectAuthTokenActivator {
           } catch (e) {
             // Only log the error if it's not a 401 (which is expected when token isn't claimed yet)
             if (!this.isUnauthorizedError(e)) {
-              this.log.debug(
+              logger.debug(
                 `Error during token verification: ${getMessageFromError(e)}`,
               );
             }
@@ -186,7 +168,7 @@ export class ConnectAuthTokenActivator {
 
   private handleError(error: unknown): void {
     const message = `Failed to complete token authentication: ${getMessageFromError(error)}`;
-    this.log.error(message);
+    logger.error(message);
     window.showErrorMessage(message);
   }
 }

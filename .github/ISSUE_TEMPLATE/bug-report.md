@@ -44,4 +44,4 @@ If applicable: find this in Connect Cloud at https://connect.posit.cloud/my-acco
 
 ## Publisher output and logs
 
-<!-- Publisher output helps us to identify the problem, find it in the "Output" window → "Posit Publisher Deployment" option (see https://github.com/posit-dev/publisher/blob/main/docs/troubleshooting.md#publisher-output). Paste Publisher output here: -->
+<!-- Publisher output helps us to identify the problem, find it in the "Output" window → "Posit Publisher" option (see https://github.com/posit-dev/publisher/blob/main/docs/troubleshooting.md#publisher-output). Paste Publisher output here: -->
