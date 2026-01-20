@@ -136,10 +136,11 @@ func (s *ResourceFinderSuite) TestFindAndIncludeAssets_AddsNewResources() {
 
 	// Create a config with an initial file that references resources
 	cfg := config.New()
+	cfg.Type = "test-project"
 	cfg.Files = []string{"/index.rmd"}
 
 	// Call the function
-	findAndIncludeAssets(log, rfFactory, base, cfg, "TestProject")
+	findAndIncludeAssets(log, rfFactory, base, cfg)
 
 	// Verify that resources were added
 	expectedResources := []string{
@@ -175,12 +176,13 @@ func (s *ResourceFinderSuite) TestFindAndIncludeAssets_SkipsDuplicates() {
 
 	// Create a config with files that already includes some resources
 	cfg := config.New()
+	cfg.Type = "test-project"
 	cfg.Files = []string{"/index.rmd", "/pizza-icon.png"}
 
 	initialFileCount := len(cfg.Files)
 
 	// Call the function
-	findAndIncludeAssets(log, rfFactory, base, cfg, "TestProject")
+	findAndIncludeAssets(log, rfFactory, base, cfg)
 
 	// Verify that pizza-icon.png wasn't added again
 	count := 0
@@ -212,10 +214,11 @@ func (s *ResourceFinderSuite) TestFindAndIncludeAssets_SkipsNestedResources() {
 
 	// Create a config that already includes the entire styles directory
 	cfg := config.New()
+	cfg.Type = "test-project"
 	cfg.Files = []string{"/index.rmd", "/styles"}
 
 	// Call the function
-	findAndIncludeAssets(log, rfFactory, base, cfg, "TestProject")
+	findAndIncludeAssets(log, rfFactory, base, cfg)
 
 	// Verify that nested files in /styles directory were not added individually
 	for _, file := range cfg.Files {
@@ -242,10 +245,11 @@ func (s *ResourceFinderSuite) TestFindAndIncludeAssets_HandlesMultipleInputFiles
 
 	// Create a config with multiple input files
 	cfg := config.New()
+	cfg.Type = "test-project"
 	cfg.Files = []string{"/index.rmd", "/index.html"}
 
 	// Call the function
-	findAndIncludeAssets(log, rfFactory, base, cfg, "TestProject")
+	findAndIncludeAssets(log, rfFactory, base, cfg)
 
 	// Verify that resources from both files were discovered
 	// index.html references assets/bundle.js which index.rmd doesn't

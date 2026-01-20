@@ -288,7 +288,7 @@ func (d *QuartoDetector) includeProjectFilesConfig(base util.AbsolutePath, cfg *
 }
 
 func (d *QuartoDetector) findAndIncludeAssets(base util.AbsolutePath, cfg *config.Config) {
-	findAndIncludeAssets(d.log, d.resourceFinderFactory, base, cfg, "Quarto")
+	findAndIncludeAssets(d.log, d.resourceFinderFactory, base, cfg)
 }
 
 func (d *QuartoDetector) includeExtensionsDirIfAny(base util.AbsolutePath, cfg *config.Config) {

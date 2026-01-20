@@ -122,7 +122,7 @@ func (d *RMarkdownDetector) lookForSiteMetadata(base util.AbsolutePath) (*RMarkd
 }
 
 func (d *RMarkdownDetector) findAndIncludeAssets(base util.AbsolutePath, cfg *config.Config) {
-	findAndIncludeAssets(d.log, d.resourceFinderFactory, base, cfg, "RMarkdown")
+	findAndIncludeAssets(d.log, d.resourceFinderFactory, base, cfg)
 }
 
 func (d *RMarkdownDetector) configFromFileInspect(base util.AbsolutePath, entrypointPath util.AbsolutePath) (*config.Config, error) {

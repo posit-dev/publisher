@@ -466,22 +466,20 @@ func (rf *resourceFinder) isFullURL(path string) bool {
 
 // Use resource finder to identify additional resources for the configuration.
 // Additional static assets can be scattered alongside files.
-// projectType can be Quarto, R Markdown, etc.
 func findAndIncludeAssets(
 	log logging.Logger,
 	rfFactory multiResourceFinderFactory,
 	base util.AbsolutePath,
 	cfg *config.Config,
-	projectType string,
 ) {
 	rFinder, err := rfFactory(log, base, cfg.Files)
 	if err != nil {
-		log.Error(fmt.Sprintf("Error creating resource finder for %s project", projectType), "error", err)
+		log.Error(fmt.Sprintf("Error creating resource finder for %s project", cfg.Type), "error", err)
 		return
 	}
 	resources, err := rFinder.FindResources()
 	if err != nil {
-		log.Error(fmt.Sprintf("Error finding resources for %s project", projectType), "error", err)
+		log.Error(fmt.Sprintf("Error finding resources for %s project", cfg.Type), "error", err)
 		return
 	}
 	for _, rsrc := range resources {
