@@ -1,7 +1,7 @@
 ---
 title: "R Markdown Nested Assets Test"
 resource_files:
-  - style.css
+  - assets/style.css
   - assets/script.js
   - assets/script-two.js
   - assets/script-three.js

@@ -561,3 +561,37 @@ func (s *RMarkdownSuite) TestFindAndIncludeAssets_NestedDirectoryDeduplication()
 		"/assets",
 	}, cfg.Files)
 }
+
+func (s *RMarkdownSuite) TestInferTypeRmdWithResourceFiles() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip("This test does not run on Windows")
+	}
+
+	realCwd, err := util.Getwd(nil)
+	s.NoError(err)
+
+	base := realCwd.Join("testdata", "rmd-nested-assets")
+
+	detector := NewRMarkdownDetector(logging.New())
+
+	configs, err := detector.InferType(base, util.NewRelativePath("rmd-nested-assets.Rmd", nil))
+	s.Nil(err)
+
+	s.Len(configs, 1)
+	cfg := configs[0]
+
+	validate := true
+	s.Equal(schema.ConfigSchemaURL, cfg.Schema)
+	s.Equal(contenttypes.ContentTypeRMarkdown, cfg.Type)
+	s.Equal("rmd-nested-assets.Rmd", cfg.Entrypoint)
+	s.Equal("R Markdown Nested Assets Test", cfg.Title)
+	s.Equal(&validate, cfg.Validate)
+
+	// The entrypoint and resource_files from the YAML frontmatter should be discovered and included
+	s.Contains(cfg.Files, "/rmd-nested-assets.Rmd")
+	s.Contains(cfg.Files, "/assets/style.css")
+	s.Contains(cfg.Files, "/assets/script.js")
+	s.Contains(cfg.Files, "/assets/script-two.js")
+	s.Contains(cfg.Files, "/assets/script-three.js")
+	s.Len(cfg.Files, 5)
+}
