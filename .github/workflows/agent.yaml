@@ -43,3 +43,14 @@ jobs:
       # Run tests without `-short` to run functional tests
       # TODO: https://github.com/posit-dev/publisher/issues/2649
       - run: just test ./...
+
+      # TODO: REMOVE WHEN FINISHED TESTING
+      - name: Upload renv.lock files
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: renv-lock-files-${{ matrix.runner }}
+          path: |
+            **/renv.lock
+            **/.posit/publish/deployments/renv.lock
+          if-no-files-found: warn
