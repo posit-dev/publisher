@@ -341,7 +341,8 @@ func (s *ManifestPackagesSuite) TestRSPM_PackageNotInAvailablePackages() {
 	// Test RSPM package when the package is NOT found in available.packages().
 	// This simulates what happens in CI when renv::init() records Repository: RSPM
 	// (from the DESCRIPTION file of a P3M-installed package), but the package
-	// lookup fails.
+	// lookup fails. Without isCRANLike handling, this results in Source: ""
+	// which triggers the renvPackageSourceMissing error.
 	base := s.testdata.Join("rspm_project")
 	libPath := base.Join("renv_library")
 	otherlibPath := util.NewAbsolutePath("/nonexistent", afero.NewMemMapFs())
@@ -384,4 +385,18 @@ func (s *ManifestPackagesSuite) TestRSPM_PackageNotInAvailablePackages() {
 
 	pkg := manifestPackages["mypkg"]
 	s.Equal("RSPM", pkg.Source)
+}
+
+func (s *ManifestPackagesSuite) TestIsCRANLike() {
+	// CRAN and Posit Package Manager variants should all be recognized
+	s.True(isCRANLike("CRAN"))
+	s.True(isCRANLike("RSPM"))
+	s.True(isCRANLike("PPM"))
+	s.True(isCRANLike("P3M"))
+
+	// Other repositories should not be recognized as CRAN-like
+	s.False(isCRANLike("Bioconductor"))
+	s.False(isCRANLike("GitHub"))
+	s.False(isCRANLike("custom-repo"))
+	s.False(isCRANLike(""))
 }
