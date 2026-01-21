@@ -336,3 +336,52 @@ func (s *ManifestPackagesSuite) TestLockFile_CreateFromScanner() {
 	// Ensure the scanner was indeed invoked
 	mm.AssertExpectations(s.T())
 }
+
+func (s *ManifestPackagesSuite) TestRSPM_PackageNotInAvailablePackages() {
+	// Test RSPM package when the package is NOT found in available.packages().
+	// This simulates what happens in CI when renv::init() records Repository: RSPM
+	// (from the DESCRIPTION file of a P3M-installed package), but the package
+	// lookup fails.
+	base := s.testdata.Join("rspm_project")
+	libPath := base.Join("renv_library")
+	otherlibPath := util.NewAbsolutePath("/nonexistent", afero.NewMemMapFs())
+
+	// Create a lockfile with RSPM package
+	lockfileContent := `{
+		"R": {
+			"Version": "4.3.0",
+			"Repositories": [
+				{"Name": "CRAN", "URL": "https://cloud.r-project.org"}
+			]
+		},
+		"Packages": {
+			"mypkg": {
+				"Package": "mypkg",
+				"Version": "1.2.3",
+				"Source": "Repository",
+				"Repository": "RSPM",
+				"Hash": "470851b6d5d0ac559e9d01bb352b4021"
+			}
+		}
+	}`
+	lockfilePath := base.Join("renv_rspm_not_found.lock")
+	err := lockfilePath.WriteFile([]byte(lockfileContent), 0644)
+	s.Require().NoError(err)
+	defer lockfilePath.Remove()
+
+	mapper, err := NewPackageMapper(base, util.Path{}, s.log, false, nil)
+	s.NoError(err)
+
+	lister := &mockPackageLister{}
+	lister.On("GetLibPaths", mock.Anything).Return([]util.AbsolutePath{otherlibPath, libPath}, nil)
+	lister.On("GetBioconductorRepos", mock.Anything, mock.Anything).Return(nil, nil)
+	lister.On("ListAvailablePackages", mock.Anything, mock.Anything).Return([]AvailablePackage{}, nil)
+	mapper.(*defaultPackageMapper).lister = lister
+
+	manifestPackages, err := mapper.GetManifestPackages(base, lockfilePath, logging.New())
+	s.NoError(err)
+	s.NotNil(manifestPackages)
+
+	pkg := manifestPackages["mypkg"]
+	s.Equal("RSPM", pkg.Source)
+}
