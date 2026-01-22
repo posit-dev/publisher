@@ -367,23 +367,15 @@ function isValidOrigin(serverUrl: string) {
 }
 
 async function extractBundleTree(bundleBytes: Uint8Array) {
-  // Materialize the bundle so the file system can serve reads without touching disk.
   const root = createDirectoryEntry();
   const extract = tar.extract();
-  const signature = Array.from(bundleBytes.slice(0, 4))
-    .map((byte) => byte.toString(16).padStart(2, "0"))
-    .join(" ");
   const looksLikeGzip =
     bundleBytes.length >= 2 &&
     bundleBytes[0] === 0x1f &&
     bundleBytes[1] === 0x8b;
-  authLogger.info(`Bundle signature: ${signature} (gzip? ${looksLikeGzip})`);
   extract.on(
     "entry",
     (header: tar.Headers, stream: NodeJS.ReadableStream, next: () => void) => {
-      authLogger.info(
-        `Processing TAR entry ${header.name} (type=${header.type})`,
-      );
       const parts = normalizeEntryPath(header.name);
       if (parts.length === 0) {
         stream.resume();
@@ -406,7 +398,6 @@ async function extractBundleTree(bundleBytes: Uint8Array) {
         buffers.push(chunk);
       });
       stream.on("end", () => {
-        authLogger.info(`Finished reading file entry ${header.name}`);
         const fileEntry = createFileEntry(Buffer.concat(buffers), header.mtime);
         const name = parts.at(-1);
         if (!name) {
@@ -420,56 +411,30 @@ async function extractBundleTree(bundleBytes: Uint8Array) {
         next();
       });
       stream.on("error", (err) => {
-        authLogger.error(
-          `Error while reading stream for entry ${header.name}: ${err}`,
-        );
+        authLogger.error(`Error reading tar entry ${header.name}: ${err}`);
         next();
       });
     },
   );
-  extract.on("finish", () => {
-    authLogger.info(
-      `Finished processing all TAR entries (${bundleBytes.length} bytes)`,
-    );
-  });
   extract.on("error", (err) => {
-    authLogger.error(`Error during TAR extraction: ${err}`);
+    authLogger.error(`Tar extraction error: ${err}`);
   });
   try {
-    authLogger.info(
-      `Starting pipeline to extract bundle (${bundleBytes.length} bytes)`,
-    );
-    const sourceBuffer = Buffer.from(bundleBytes);
-    const source = Readable.from([sourceBuffer]);
-    authLogger.info(
-      `bundle source chunk planned (${sourceBuffer.length} bytes)`,
-    );
-    source.on("data", (chunk: Buffer) => {
-      authLogger.info(`bundle source chunk emitted (${chunk.length} bytes)`);
-    });
-    source.on("end", () => {
-      authLogger.info("bundle source stream ended");
-    });
+    const source = Readable.from([Buffer.from(bundleBytes)]);
     if (looksLikeGzip) {
       const gunzip = createGunzip();
       gunzip.on("error", (err) => {
-        authLogger.error(`gunzip error: ${err}`);
+        authLogger.error(`Gunzip error: ${err}`);
       });
-      gunzip.on("data", (chunk: Buffer) => {
-        authLogger.info(`gunzip chunk (${chunk.length} bytes)`);
-      });
-      authLogger.info("Piping bundle through gunzip");
       await pipeline(source, gunzip, extract);
     } else {
-      authLogger.info("Skipping gunzip because bundle does not look gzipped");
       await pipeline(source, extract);
     }
-    const rootEntries = root.children?.size ?? 0;
     authLogger.info(
-      `Extracted bundle tree (${bundleBytes.length} bytes) with ${rootEntries} root entries`,
+      `Extracted bundle (${bundleBytes.length} bytes, ${root.children?.size ?? 0} root entries)`,
     );
   } catch (error) {
-    authLogger.error(`bundle extraction failed: ${error}`);
+    authLogger.error(`Bundle extraction failed: ${error}`);
     throw error;
   }
   return root;
