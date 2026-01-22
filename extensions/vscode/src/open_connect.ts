@@ -39,7 +39,7 @@ export async function promptOpenConnectContent() {
   );
 }
 
-// Validate a connect URI and drive the credential acquisition flow.
+// Validate a connect URI and open the content in the current window.
 export async function handleConnectUri(uri: Uri) {
   authLogger.info(`handleConnectUri start for ${uri.toString()}`);
   if (uri.path !== "/connect") {
@@ -56,59 +56,46 @@ export async function handleConnectUri(uri: Uri) {
     );
     return;
   }
-  await openConnectContent(normalizedServer, content);
-}
 
-// Continue the workflow by fetching and opening the Connect content locally.
-async function openConnectContent(serverUrl: string, contentGuid: string) {
   try {
     authLogger.info(
-      `Opening Connect content ${contentGuid} on ${serverUrl}. Clearing any cached bundle.`,
+      `Opening Connect content ${content} on ${normalizedServer}. Clearing any cached bundle.`,
     );
-    clearConnectContentBundle(serverUrl, contentGuid);
+    clearConnectContentBundle(normalizedServer, content);
+    const workspaceUri = connectContentUri(normalizedServer, content);
+
+    const workspaceFolders = workspace.workspaceFolders ?? [];
+    if (workspaceFolders.length === 0) {
+      authLogger.info("No workspace folders open; using vscode.openFolder");
+      await commands.executeCommand("vscode.openFolder", workspaceUri, {
+        forceReuseWindow: true,
+        forceNewWindow: false,
+      });
+    } else {
+      authLogger.info(
+        "Replacing current workspace folders with connect-content workspace",
+      );
+      const success = workspace.updateWorkspaceFolders(
+        0,
+        workspaceFolders.length,
+        { uri: workspaceUri },
+      );
+      if (!success) {
+        authLogger.info(
+          "updateWorkspaceFolders failed; falling back to vscode.openFolder",
+        );
+        await commands.executeCommand("vscode.openFolder", workspaceUri, {
+          forceReuseWindow: true,
+          forceNewWindow: false,
+        });
+      }
+    }
     authLogger.info(
-      `Executing open for connect-content workspace (server=${serverUrl} content=${contentGuid}).`,
+      `Opened Connect content ${content} from ${normalizedServer}.`,
     );
-    const workspaceUri = connectContentUri(serverUrl, contentGuid);
-    await openConnectContentInCurrentWindow(workspaceUri);
-    authLogger.info(
-      `Requested open folder for ${workspaceUri.toString()} and command resolved`,
-    );
-    authLogger.info(`Opened Connect content ${contentGuid} from ${serverUrl}.`);
   } catch (error) {
     authLogger.error(
-      `Failed to open Connect content ${contentGuid} from ${serverUrl}: ${error}`,
+      `Failed to open Connect content ${content} from ${normalizedServer}: ${error}`,
     );
-  }
-}
-
-async function openConnectContentInCurrentWindow(uri: Uri) {
-  const workspaceFolders = workspace.workspaceFolders ?? [];
-  if (workspaceFolders.length === 0) {
-    authLogger.info(
-      "No workspace folders open; falling back to vscode.openFolder",
-    );
-    await commands.executeCommand("vscode.openFolder", uri, {
-      forceReuseWindow: true,
-      forceNewWindow: false,
-    });
-    return;
-  }
-  authLogger.info(
-    "Replacing current workspace folders with connect-content workspace",
-  );
-  const replacements = workspace.updateWorkspaceFolders(
-    0,
-    workspaceFolders.length,
-    { uri },
-  );
-  if (!replacements) {
-    authLogger.info(
-      "updateWorkspaceFolders failed; falling back to vscode.openFolder",
-    );
-    await commands.executeCommand("vscode.openFolder", uri, {
-      forceReuseWindow: true,
-      forceNewWindow: false,
-    });
   }
 }
