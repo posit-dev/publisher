@@ -59,6 +59,37 @@ func checkRequirementsFile(base util.AbsolutePath, cfg *config.Config) error {
 	return nil
 }
 
+const entrypointFileMissing = `entrypoint file '%s' does not exist`
+
+type entrypointErrDetails struct {
+	Entrypoint string `json:"entrypoint"`
+}
+
+func checkEntrypoint(base util.AbsolutePath, cfg *config.Config) error {
+	// Module references (e.g., "app:myapp", "shiny.express.app:app_2e_py")
+	// are not file paths and should not be validated as files.
+	// Module references are currently constructed by reading the file so we
+	// already know the file exists at this point.
+	if strings.Contains(cfg.Entrypoint, ":") {
+		return nil
+	}
+
+	entrypointPath := base.Join(cfg.Entrypoint)
+	exists, err := entrypointPath.Exists()
+	if err != nil {
+		return err
+	}
+
+	if !exists {
+		return types.NewAgentError(
+			types.ErrorEntrypointNotFound,
+			fmt.Errorf(entrypointFileMissing, cfg.Entrypoint),
+			entrypointErrDetails{Entrypoint: cfg.Entrypoint},
+		)
+	}
+	return nil
+}
+
 func (c *ConnectClient) CheckCapabilities(base util.AbsolutePath, cfg *config.Config, contentID *types.ContentID, log logging.Logger) error {
 	if contentID != nil && *contentID != "" {
 		err := c.ValidateDeploymentTarget(*contentID, cfg, log)
@@ -71,6 +102,10 @@ func (c *ConnectClient) CheckCapabilities(base util.AbsolutePath, cfg *config.Co
 		if err != nil {
 			return err
 		}
+	}
+	err := checkEntrypoint(base, cfg)
+	if err != nil {
+		return err
 	}
 	settings, err := c.GetSettings(base, cfg, log)
 	if err != nil {
