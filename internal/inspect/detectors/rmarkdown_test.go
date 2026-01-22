@@ -632,3 +632,49 @@ func (s *RMarkdownSuite) TestInferTypeRmdWithResourceFiles() {
 	s.Contains(cfg.Files, "/assets/script-three.js")
 	s.Len(cfg.Files, 5)
 }
+
+// rmdWithHorizontalRuleContent reproduces the issue from GitHub #3409
+// where a horizontal rule (---) in the document body is incorrectly
+// included in the YAML front matter extraction.
+var rmdWithHorizontalRuleContent = fmt.Sprintf(`---
+title: Test Report
+author: Test Author
+---
+
+%s{r}
+mean(1:5)
+%s
+
+Some text here.
+
+---
+
+More text after the horizontal rule.
+`, backticks, backticks)
+
+func (s *RMarkdownSuite) TestInferTypeWithHorizontalRule() {
+	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
+	err := base.MkdirAll(0777)
+	s.NoError(err)
+
+	filename := "report.Rmd"
+	path := base.Join(filename)
+	err = path.WriteFile([]byte(rmdWithHorizontalRuleContent), 0600)
+	s.Nil(err)
+
+	detector := NewRMarkdownDetector(logging.New())
+	configs, err := detector.InferType(base, util.RelativePath{})
+	s.Nil(err)
+	s.Len(configs, 1)
+
+	validate := true
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       contenttypes.ContentTypeRMarkdown,
+		Title:      "Test Report",
+		Entrypoint: filename,
+		Validate:   &validate,
+		Files:      []string{"/report.Rmd"},
+		R:          &config.R{},
+	}, configs[0])
+}
