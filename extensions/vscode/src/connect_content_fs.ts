@@ -72,14 +72,12 @@ export function clearConnectContentBundleForUri(uri: Uri) {
 }
 
 // Construct the Connect content URI that the extension opens in VS Code.
+// The server URL is encoded in the authority using the format: protocol@host:port
 export function connectContentUri(serverUrl: string, contentGuid: string) {
-  const query = new URLSearchParams({ serverUrl }).toString();
-  const authority = tryGetHost(serverUrl);
   return Uri.from({
     scheme: CONNECT_CONTENT_SCHEME,
-    authority,
+    authority: encodeServerUrlAsAuthority(serverUrl),
     path: `/${contentGuid}`,
-    query,
   });
 }
 
@@ -307,24 +305,38 @@ function statFromEntry(entry: ConnectContentEntry): FileStat {
   };
 }
 
+// Encode a server URL into a URI authority component using the format: protocol@host:port
+function encodeServerUrlAsAuthority(serverUrl: string): string {
+  try {
+    const parsed = new URL(serverUrl);
+    // Encode as protocol@host (port is included in host if non-default)
+    return `${parsed.protocol.replace(":", "")}@${parsed.host}`;
+  } catch {
+    return "";
+  }
+}
+
+// Decode a URI authority component back into a server URL
+function decodeAuthorityAsServerUrl(authority: string): string | null {
+  if (!authority) {
+    return null;
+  }
+  if (authority.startsWith("https@")) {
+    return authority.replace("https@", "https://");
+  }
+  if (authority.startsWith("http@")) {
+    return authority.replace("http@", "http://");
+  }
+  return `https://${authority}`;
+}
+
 function parseConnectContentUri(uri: Uri) {
   if (uri.scheme !== CONNECT_CONTENT_SCHEME) {
     return null;
   }
-  const params = new URLSearchParams(uri.query);
-  let serverUrl = params.get("serverUrl");
+  const serverUrl = decodeAuthorityAsServerUrl(uri.authority);
   if (!serverUrl) {
-    const authority = uri.authority ?? "";
-    if (!authority) {
-      return null;
-    }
-    if (authority.startsWith("https@")) {
-      serverUrl = authority.replace("https@", "https://");
-    } else if (authority.startsWith("http@")) {
-      serverUrl = authority.replace("http@", "http://");
-    } else {
-      serverUrl = `https://${authority}`;
-    }
+    return null;
   }
   const trimmedPath = uri.path.replace(/^\/+/, "");
   const [contentGuid] = trimmedPath.split("/");
@@ -343,14 +355,6 @@ function hasCredentialForServer(server: string, state: PublisherState) {
       normalizeServerUrl(credential.url) === server ||
       credential.url === server,
   );
-}
-
-function tryGetHost(serverUrl: string) {
-  try {
-    return new URL(serverUrl).host;
-  } catch {
-    return "";
-  }
 }
 
 function isValidOrigin(serverUrl: string) {
