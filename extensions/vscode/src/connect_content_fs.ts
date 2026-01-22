@@ -88,7 +88,9 @@ export function registerConnectContentFileSystem(
   publisherStateReadyPromise: Promise<PublisherState>,
 ): Disposable {
   authLogger.info("Registering connect-content file system provider");
-  const provider = new ConnectContentFileSystemProvider(publisherStateReadyPromise);
+  const provider = new ConnectContentFileSystemProvider(
+    publisherStateReadyPromise,
+  );
   return workspace.registerFileSystemProvider(
     CONNECT_CONTENT_SCHEME,
     provider,

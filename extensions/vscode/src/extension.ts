@@ -197,7 +197,9 @@ async function initializeExtension(context: ExtensionContext) {
 export function activate(context: ExtensionContext) {
   const now = new Date();
   console.log("Posit Publisher extension activated at %s", now.toString());
-  context.subscriptions.push(registerConnectContentFileSystem(publisherStateReady));
+  context.subscriptions.push(
+    registerConnectContentFileSystem(publisherStateReady),
+  );
   context.subscriptions.push(
     window.registerUriHandler({
       handleUri(uri: Uri) {
