@@ -287,30 +287,8 @@ func (d *QuartoDetector) includeProjectFilesConfig(base util.AbsolutePath, cfg *
 	return nil
 }
 
-// Use resource finder to identify additional resources for the static configuration.
-// Additional static assets can be scattered alongside files.
-// For static projects where there is no output-dir, additional static resources can be scattered alongside HTML files.
 func (d *QuartoDetector) findAndIncludeAssets(base util.AbsolutePath, cfg *config.Config) {
-	rFinder, err := d.resourceFinderFactory(d.log, base, cfg.Files)
-	if err != nil {
-		d.log.Error("Error creating resource finder for Quarto project", "error", err)
-		return
-	}
-	resources, err := rFinder.FindResources()
-	if err != nil {
-		d.log.Error("Error finding resources for Quarto project", "error", err)
-		return
-	}
-	for _, rsrc := range resources {
-		// Do not include assets that are nested in an already included directory.
-		// e.g. if /index_files is included, do not include /index_files/custom.css
-		rsrcRoot := strings.Split(rsrc.Path, "/")[0]
-		rsrcStringToAdd := fmt.Sprint("/", rsrc.Path)
-		rsrcDirIncluded := slices.Contains(cfg.Files, fmt.Sprint("/", rsrcRoot))
-		if !rsrcDirIncluded && !slices.Contains(cfg.Files, rsrcStringToAdd) {
-			cfg.Files = append(cfg.Files, rsrcStringToAdd)
-		}
-	}
+	findAndIncludeAssets(d.log, d.resourceFinderFactory, base, cfg)
 }
 
 func (d *QuartoDetector) includeExtensionsDirIfAny(base util.AbsolutePath, cfg *config.Config) {

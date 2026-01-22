@@ -20,15 +20,21 @@ import (
 
 type RMarkdownDetector struct {
 	inferenceHelper
-	executor executor.Executor
-	log      logging.Logger
+	resourceFinderFactory multiResourceFinderFactory
+	executor              executor.Executor
+	log                   logging.Logger
 }
 
 func NewRMarkdownDetector(log logging.Logger) *RMarkdownDetector {
+	rfFactory := func(log logging.Logger, base util.AbsolutePath, filesFromConfig []string) (ResourceFinder, error) {
+		return NewMultiResourceFinder(log, base, filesFromConfig)
+	}
+
 	return &RMarkdownDetector{
-		inferenceHelper: defaultInferenceHelper{},
-		executor:        executor.NewExecutor(),
-		log:             log,
+		inferenceHelper:       defaultInferenceHelper{},
+		resourceFinderFactory: rfFactory,
+		executor:              executor.NewExecutor(),
+		log:                   log,
 	}
 }
 
@@ -115,6 +121,10 @@ func (d *RMarkdownDetector) lookForSiteMetadata(base util.AbsolutePath) (*RMarkd
 	return nil, ""
 }
 
+func (d *RMarkdownDetector) findAndIncludeAssets(base util.AbsolutePath, cfg *config.Config) {
+	findAndIncludeAssets(d.log, d.resourceFinderFactory, base, cfg)
+}
+
 func (d *RMarkdownDetector) configFromFileInspect(base util.AbsolutePath, entrypointPath util.AbsolutePath) (*config.Config, error) {
 	relEntrypoint, err := entrypointPath.Rel(base)
 	if err != nil {
@@ -149,11 +159,12 @@ func (d *RMarkdownDetector) configFromFileInspect(base util.AbsolutePath, entryp
 		if indexFile != "" {
 			cfg.Files = append(cfg.Files, fmt.Sprint("/", indexFile))
 		}
+	}
 
-		entrypointBase := fmt.Sprint("/", entrypointPath.Base())
-		if !slices.Contains(cfg.Files, entrypointBase) {
-			cfg.Files = append(cfg.Files, entrypointBase)
-		}
+	// Add the entrypoint to cfg.Files so the resource finder can scan it for assets.
+	entrypointFile := fmt.Sprint("/", relEntrypoint.String())
+	if !slices.Contains(cfg.Files, entrypointFile) {
+		cfg.Files = append(cfg.Files, entrypointFile)
 	}
 
 	if metadata != nil {
@@ -181,6 +192,7 @@ func (d *RMarkdownDetector) configFromFileInspect(base util.AbsolutePath, entryp
 		d.log.Info("RMarkdown: detected Python code; configuration will include Python")
 		cfg.Python = &config.Python{}
 	}
+	d.findAndIncludeAssets(base, cfg)
 	return cfg, nil
 }
 

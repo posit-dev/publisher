@@ -9,8 +9,10 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"slices"
 	"strings"
 
+	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
 )
@@ -460,4 +462,34 @@ func (rf *resourceFinder) parseYAMLResourceFiles(yamlContent string) {
 func (rf *resourceFinder) isFullURL(path string) bool {
 	u, err := url.ParseRequestURI(path)
 	return err == nil && u.Scheme != "" && u.Host != ""
+}
+
+// Use resource finder to identify additional resources for the configuration.
+// Additional static assets can be scattered alongside files.
+func findAndIncludeAssets(
+	log logging.Logger,
+	rfFactory multiResourceFinderFactory,
+	base util.AbsolutePath,
+	cfg *config.Config,
+) {
+	rFinder, err := rfFactory(log, base, cfg.Files)
+	if err != nil {
+		log.Error(fmt.Sprintf("Error creating resource finder for %s project", cfg.Type), "error", err)
+		return
+	}
+	resources, err := rFinder.FindResources()
+	if err != nil {
+		log.Error(fmt.Sprintf("Error finding resources for %s project", cfg.Type), "error", err)
+		return
+	}
+	for _, rsrc := range resources {
+		// Do not include assets that are nested in an already included directory.
+		// e.g. if /index_files is included, do not include /index_files/custom.css
+		rsrcRoot := strings.Split(rsrc.Path, "/")[0]
+		rsrcStringToAdd := fmt.Sprint("/", rsrc.Path)
+		rsrcDirIncluded := slices.Contains(cfg.Files, fmt.Sprint("/", rsrcRoot))
+		if !rsrcDirIncluded && !slices.Contains(cfg.Files, rsrcStringToAdd) {
+			cfg.Files = append(cfg.Files, rsrcStringToAdd)
+		}
+	}
 }
