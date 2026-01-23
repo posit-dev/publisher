@@ -242,4 +242,10 @@ export const extensionSettings = {
     );
     return value !== undefined ? value : true;
   },
+  enableConnectCloud(): boolean {
+    const configuration = workspace.getConfiguration("positPublisher");
+    const value: boolean | undefined =
+      configuration.get<boolean>("enableConnectCloud");
+    return value !== undefined ? value : true;
+  },
 };

@@ -62,6 +62,11 @@
             "markdownDescription": "Opens Publisher logs automatically on a failed deploy",
             "type": "boolean",
             "default": true
+          },
+          "positPublisher.enableConnectCloud": {
+            "markdownDescription": "Controls whether Posit Connect Cloud is available as a publishing destination.",
+            "type": "boolean",
+            "default": true
           }
         }
       }

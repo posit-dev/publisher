@@ -17,6 +17,7 @@ import {
   ThemeIcon,
   window,
 } from "vscode";
+import { extensionSettings } from "src/extension";
 import {
   ApiResponse,
   MultiStepInput,
@@ -48,21 +49,28 @@ export function findExistingCredentialByURL(
   });
 }
 
-// List of all available platforms
-export const platformList: QuickPickItem[] = [
-  {
-    iconPath: new ThemeIcon("posit-publisher-posit-logo"),
-    label: ProductName.CONNECT_CLOUD,
-    description: "",
-    detail: ProductDescription.CONNECT_CLOUD,
-  },
-  {
+// Returns the list of available platforms based on settings
+export const getPlatformList = (): QuickPickItem[] => {
+  const list: QuickPickItem[] = [];
+
+  if (extensionSettings.enableConnectCloud()) {
+    list.push({
+      iconPath: new ThemeIcon("posit-publisher-posit-logo"),
+      label: ProductName.CONNECT_CLOUD,
+      description: "",
+      detail: ProductDescription.CONNECT_CLOUD,
+    });
+  }
+
+  list.push({
     iconPath: new ThemeIcon("posit-publisher-posit-logo"),
     label: ProductName.CONNECT,
     description: "",
     detail: ProductDescription.CONNECT,
-  },
-];
+  });
+
+  return list;
+};
 
 // Fetch the list of all available snowflake connections
 export const fetchSnowflakeConnections = async (serverUrl: string) => {
