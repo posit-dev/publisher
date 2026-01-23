@@ -7,8 +7,6 @@ FROM ubuntu:22.04 AS base
 RUN sed -i "s/archive.ubuntu.com/us-east-1.ec2.archive.ubuntu.com/g" /etc/apt/sources.list
 
 ARG DEBIAN_FRONTEND=noninteractive
-ARG CONNECT_MANAGER_VERSION=0.5.1
-ARG CONNECT_OS=ubuntu22
 ARG OS_IDENTIFIER=ubuntu-2204
 RUN export TZ=America/New_York
 
