@@ -45,8 +45,12 @@ func CreateFile(root util.AbsolutePath, path util.AbsolutePath, match *matcher.P
 		}
 	}
 
-	filetype, err := getFileType(path.String(), info)
+	filetype, err := getFileType(info)
 	if err != nil {
+		if errors.Is(err, ErrUnsupportedFileType) {
+			// Skip unsupported file types (sockets, pipes, devices, etc.)
+			return nil, nil
+		}
 		return nil, err
 	}
 
