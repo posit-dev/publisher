@@ -64,7 +64,7 @@
             "default": true
           },
           "positPublisher.enableConnectCloud": {
-            "markdownDescription": "Enable publishing to Posit Connect Cloud.",
+            "markdownDescription": "Controls whether Posit Connect Cloud is available as a publishing destination.",
             "type": "boolean",
             "default": true
           }
