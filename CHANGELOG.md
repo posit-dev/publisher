@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Publisher logs automatically scroll to reveal the failure line when a deployment fails. (#3236)
 - Added R, Python, and Quarto interpreter version to the logs. (#2532)
 - Added automatic discovery of static assets for R Markdown projects. (#3233)
-- Added automatic discovery for HTML assets. (#3234)
+- Added automatic discovery for HTML and its resources in Quarto and R Markdown projects. (#3234)
 
 ### Fixed
 
