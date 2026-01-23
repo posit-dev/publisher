@@ -5,3 +5,5 @@ resource_files:
 ---
 
 This is a Quarto website with HTML assets. Here's a link to the [flowers](flowers.html) page.
+
+This is a [link](https://cuberule.com/) to an external site.

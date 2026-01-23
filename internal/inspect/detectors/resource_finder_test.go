@@ -259,3 +259,136 @@ func (s *ResourceFinderSuite) TestFindAndIncludeAssets_HandlesMultipleInputFiles
 	// index.rmd references data/dataset.rds which index.html doesn't
 	s.Contains(cfg.Files, "/data/dataset.rds", "Expected to find resource from index.rmd")
 }
+
+func (s *ResourceFinderSuite) TestProcessHTMLLinkMatches() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip()
+	}
+
+	realCwd, err := util.Getwd(nil)
+	s.NoError(err)
+
+	base := realCwd.Join("testdata", "quarto-website-with-html")
+	inputFile := base.Join("index.qmd")
+
+	// Create a resource finder instance
+	rf, err := NewResourceFinder(logging.New(), base, inputFile)
+	s.NoError(err)
+
+	// Should match the markdown link syntax [text](path)
+	// Format: [][]string where each inner slice is [fullMatch, capturedPath]
+	matches := [][]string{
+		{"[flowers](flowers.html)", "flowers.html"},                // Should be included
+		{"[link](https://cuberule.com/)", "https://cuberule.com/"}, // Should NOT be included (full URL)
+		{"[script](assets/script.js)", "assets/script.js"},         // Should NOT be included (not HTML)
+	}
+
+	rf.processHTMLLinkMatches(matches)
+	s.Contains(rf.Resources, "flowers.html", "Expected flowers.html to be included")
+
+	// flowers.html gets recursively processed, so its assets should be included
+	s.Contains(rf.Resources, "assets/script.js", "Expected assets/script.js from flowers.html to be included")
+	s.Contains(rf.Resources, "assets/styles.css", "Expected assets/styles.css from flowers.html to be included")
+	s.Contains(rf.Resources, "images/dandelion.jpg", "Expected images/dandelion.jpg from flowers.html to be included")
+	s.Contains(rf.Resources, "images/lilac.jpg", "Expected images/lilac.jpg from flowers.html to be included")
+
+	// Should NOT include full URLs
+	for path := range rf.Resources {
+		s.NotContains(path, "https://", "Expected full URLs to NOT be included")
+		s.NotContains(path, "cuberule.com", "Expected full URLs to NOT be included")
+	}
+}
+
+func (s *ResourceFinderSuite) TestDiscoverMarkdownResources_HTMLLinks() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip()
+	}
+
+	realCwd, err := util.Getwd(nil)
+	s.NoError(err)
+
+	base := realCwd.Join("testdata", "quarto-website-with-html")
+	inputFile := base.Join("index.qmd")
+
+	rf, err := NewResourceFinder(logging.New(), base, inputFile)
+	s.NoError(err)
+
+	err = rf.discoverMarkdownResources(inputFile)
+	s.NoError(err)
+
+	// Verify that flowers.html was discovered from the markdown link
+	s.Contains(rf.Resources, "flowers.html", "Expected to discover flowers.html from markdown link")
+}
+
+func (s *ResourceFinderSuite) TestRecursiveHTMLDiscovery() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip()
+	}
+
+	realCwd, err := util.Getwd(nil)
+	s.NoError(err)
+
+	base := realCwd.Join("testdata", "quarto-website-with-html")
+	inputFile := base.Join("index.qmd")
+
+	rf, err := NewResourceFinder(logging.New(), base, inputFile)
+	s.NoError(err)
+
+	resources, err := rf.FindResources()
+	s.NoError(err)
+
+	// Verify that resources from both index.qmd and flowers.html were discovered
+	s.assertResources([]string{
+		"flowers.html",
+		"assets/styles.css",
+		"assets/script.js",
+		"images/dandelion.jpg",
+		"images/lilac.jpg",
+	}, resources)
+}
+
+func (s *ResourceFinderSuite) TestQuartoWebsiteWithHTML_Integration() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip()
+	}
+
+	realCwd, err := util.Getwd(nil)
+	s.NoError(err)
+
+	base := realCwd.Join("testdata", "quarto-website-with-html")
+	log := logging.New()
+
+	rfFactory := func(log logging.Logger, base util.AbsolutePath, filesFromConfig []string) (ResourceFinder, error) {
+		return NewMultiResourceFinder(log, base, filesFromConfig)
+	}
+
+	// Simulate a config with index.qmd that already has flowers.html in resource_files
+	cfg := config.New()
+	cfg.Type = "quarto-website"
+	cfg.Files = []string{"/index.qmd", "/flowers.html"}
+
+	findAndIncludeAssets(log, rfFactory, base, cfg)
+
+	// Verify that all assets were discovered:
+	// - From index.qmd: flowers.html link
+	// - From flowers.html: images, CSS, JS
+	expectedFiles := []string{
+		"/index.qmd",
+		"/flowers.html",
+		"/assets/styles.css",
+		"/assets/script.js",
+		"/images/dandelion.jpg",
+		"/images/lilac.jpg",
+	}
+
+	for _, expected := range expectedFiles {
+		s.Contains(cfg.Files, expected, "Expected to find %s in cfg.Files", expected)
+	}
+
+	// Verify external URLs are not included
+	for _, file := range cfg.Files {
+		s.NotContains(file, "https://", "Expected no external URLs in cfg.Files")
+		s.NotContains(file, "cuberule.com", "Expected no external URLs in cfg.Files")
+		s.NotContains(file, "wikipedia.org", "Expected no external URLs in cfg.Files")
+	}
+}
