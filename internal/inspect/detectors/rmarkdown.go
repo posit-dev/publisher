@@ -40,7 +40,10 @@ func NewRMarkdownDetector(log logging.Logger) *RMarkdownDetector {
 
 // Rmd metadata is a YAML block delimited by lines containing only ---
 // (this pattern allows it to be followed by optional whitespace)
-var rmdMetaRE = regexp.MustCompile(`(?s)^---\s*\n(.*\n)---\s*\n`)
+// The .*? is non-greedy to stop at the first closing --- rather than
+// matching until a possible later --- (e.g., a horizontal rule in the
+// document body).
+var rmdMetaRE = regexp.MustCompile(`(?s)^---\s*\n(.*?\n)---\s*\n`)
 
 type RMarkdownMetadata struct {
 	// Only	the	fields we need are defined here
