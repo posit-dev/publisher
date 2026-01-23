@@ -7,7 +7,7 @@ import {
   MultiStepState,
 } from "./multiStepHelper";
 import { Credential, ServerType, ProductName } from "src/api";
-import { platformList } from "src/multiStepInputs/common";
+import { getPlatformList } from "src/multiStepInputs/common";
 import { getServerType, isConnectCloud } from "../utils/multiStepHelpers";
 import { newConnectCredential } from "./newConnectCredential";
 import { newConnectCloudCredential } from "./newConnectCloudCredential";
@@ -93,6 +93,26 @@ export async function newCredential(
   // ***************************************************************
   async function inputPlatform(input: MultiStepInput, state: MultiStepState) {
     stepHistoryFlush(step.INPUT_PLATFORM);
+
+    const platformList = getPlatformList();
+
+    // If only one platform is available (Connect Cloud disabled), skip the picker
+    // and go directly to Connect credential flow
+    if (platformList.length === 1) {
+      serverType = ServerType.CONNECT;
+      const prevSteps = [...(previousSteps || []), ...stepHistory];
+      try {
+        credential = await newConnectCredential(
+          viewId,
+          state.title,
+          startingServerUrl,
+          prevSteps,
+        );
+      } catch {
+        /* the user dismissed this flow, do nothing more */
+      }
+      return;
+    }
 
     const pick = await input.showQuickPick({
       title: state.title,
