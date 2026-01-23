@@ -37,7 +37,7 @@ func (s filesService) GetFile(p util.AbsolutePath, matchList matcher.MatchList) 
 	p = p.Clean()
 	m := matchList.Match(p)
 
-	file, err := CreateFile(p, p, m)
+	file, err := CreateFile(p, p, m, s.log)
 	if err != nil || file == nil {
 		return nil, err
 	}
@@ -76,14 +76,14 @@ func (s filesService) GetFile(p util.AbsolutePath, matchList matcher.MatchList) 
 					Source:  matcher.MatchSourcePermissionsError,
 					Exclude: true,
 				}
-				_, err = file.insert(p, path, match)
+				_, err = file.insert(p, path, match, s.log)
 				if err != nil {
 					return err
 				}
 				return filepath.SkipDir
 			}
 		}
-		_, err = file.insert(p, path, match)
+		_, err = file.insert(p, path, match, s.log)
 		return err
 	})
 

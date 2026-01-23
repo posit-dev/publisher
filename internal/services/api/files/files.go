@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/posit-dev/publisher/internal/bundles/matcher"
+	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
 )
 
@@ -30,7 +31,7 @@ type File struct {
 	AllExcluded      bool             `json:"allExcluded"`      // Are all nodes under this one excluded?
 }
 
-func CreateFile(root util.AbsolutePath, path util.AbsolutePath, match *matcher.Pattern) (*File, error) {
+func CreateFile(root util.AbsolutePath, path util.AbsolutePath, match *matcher.Pattern, log logging.Logger) (*File, error) {
 	rel, err := path.Rel(root)
 	if err != nil {
 		return nil, err
@@ -48,7 +49,7 @@ func CreateFile(root util.AbsolutePath, path util.AbsolutePath, match *matcher.P
 	filetype, err := getFileType(info)
 	if err != nil {
 		if errors.Is(err, ErrUnsupportedFileType) {
-			// Skip unsupported file types (sockets, pipes, devices, etc.)
+			log.Debug("Skipping unsupported file type", "path", path.String())
 			return nil, nil
 		}
 		return nil, err
@@ -104,7 +105,7 @@ func (f *File) CalculateInclusions() {
 	}
 }
 
-func (f *File) insert(root util.AbsolutePath, path util.AbsolutePath, match *matcher.Pattern) (*File, error) {
+func (f *File) insert(root util.AbsolutePath, path util.AbsolutePath, match *matcher.Pattern, log logging.Logger) (*File, error) {
 
 	// if the path is the same as the file's absolute path
 	if f.Abs == path.String() {
@@ -125,7 +126,7 @@ func (f *File) insert(root util.AbsolutePath, path util.AbsolutePath, match *mat
 		}
 
 		// otherwise, create it
-		child, err := CreateFile(root, path, match)
+		child, err := CreateFile(root, path, match, log)
 		if err != nil || child == nil {
 			return nil, err
 		}
@@ -136,11 +137,11 @@ func (f *File) insert(root util.AbsolutePath, path util.AbsolutePath, match *mat
 	}
 
 	// otherwise, create the parent file
-	parent, err := f.insert(root, pathdir, match)
+	parent, err := f.insert(root, pathdir, match, log)
 	if err != nil || parent == nil {
 		return nil, err
 	}
 
 	// then insert this into the parent
-	return parent.insert(root, path, match)
+	return parent.insert(root, path, match, log)
 }
