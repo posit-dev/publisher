@@ -1,0 +1,7 @@
+---
+title: "quarto-website-with-html"
+resource_files:
+  - flowers.html
+---
+
+This is a Quarto website with HTML assets. Here's a link to the [flowers](flowers.html) page.
