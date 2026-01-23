@@ -42,7 +42,7 @@ func NewContentTypeDetector(log logging.Logger) *ContentTypeDetector {
 			NewPanelDetector(),
 			NewStreamlitDetector(),
 			NewBokehDetector(),
-			NewStaticHTMLDetector(),
+			NewStaticHTMLDetector(log),
 		},
 	}
 }
