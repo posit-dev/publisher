@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added support for opening remote Connect content via the command menu. (#3377)
 - Added support finding R executables in VSCode using `Rpath` settings in the R extension. (#3378)
 - The Publisher logs view automatically opens when a deployment starts. (#3235)
 - The Publisher logs automatically scroll to follow new log entries during deployment. (#2997)
