@@ -69,7 +69,7 @@ func (n *Node) Leaf() bool {
 // Find a command/argument/flag by pointer to its field.
 //
 // Returns nil if not found. Panics if ptr is not a pointer.
-func (n *Node) Find(ptr interface{}) *Node {
+func (n *Node) Find(ptr any) *Node {
 	key := reflect.ValueOf(ptr)
 	if key.Kind() != reflect.Ptr {
 		panic("expected a pointer")
@@ -167,6 +167,9 @@ func (n *Node) Summary() string {
 		allFlags = append(allFlags, n.Parent.Flags...)
 	}
 	for _, flag := range allFlags {
+		if _, ok := flag.Target.Interface().(helpFlag); ok {
+			continue
+		}
 		if !flag.Required {
 			summary += " [flags]"
 			break
@@ -239,23 +242,24 @@ func (n *Node) ClosestGroup() *Group {
 
 // A Value is either a flag or a variable positional argument.
 type Value struct {
-	Flag         *Flag // Nil if positional argument.
-	Name         string
-	Help         string
-	OrigHelp     string // Original help string, without interpolated variables.
-	HasDefault   bool
-	Default      string
-	DefaultValue reflect.Value
-	Enum         string
-	Mapper       Mapper
-	Tag          *Tag
-	Target       reflect.Value
-	Required     bool
-	Set          bool   // Set to true when this value is set through some mechanism.
-	Format       string // Formatting directive, if applicable.
-	Position     int    // Position (for positional arguments).
-	Passthrough  bool   // Set to true to stop flag parsing when encountered.
-	Active       bool   // Denotes the value is part of an active branch in the CLI.
+	Flag            *Flag // Nil if positional argument.
+	Name            string
+	Help            string
+	OrigHelp        string // Original help string, without interpolated variables.
+	HasDefault      bool
+	Default         string
+	DefaultValue    reflect.Value
+	Enum            string
+	Mapper          Mapper
+	Tag             *Tag
+	Target          reflect.Value
+	Required        bool
+	Set             bool            // Set to true when this value is set through some mechanism.
+	Format          string          // Formatting directive, if applicable.
+	Position        int             // Position (for positional arguments).
+	Passthrough     bool            // Deprecated: Use PassthroughMode instead. Set to true to stop flag parsing when encountered.
+	PassthroughMode PassthroughMode //
+	Active          bool            // Denotes the value is part of an active branch in the CLI.
 }
 
 // EnumMap returns a map of the enums in this value.
@@ -405,6 +409,7 @@ type Flag struct {
 	*Value
 	Group       *Group // Logical grouping when displaying. May also be used by configuration loaders to group options logically.
 	Xor         []string
+	And         []string
 	PlaceHolder string
 	Envs        []string
 	Aliases     []string
@@ -431,7 +436,7 @@ func (f *Flag) FormatPlaceHolder() string {
 		return placeholderHelper.PlaceHolder(f)
 	}
 	tail := ""
-	if f.Value.IsSlice() && f.Value.Tag.Sep != -1 {
+	if f.Value.IsSlice() && f.Value.Tag.Sep != -1 && f.Tag.Type == "" {
 		tail += string(f.Value.Tag.Sep) + "..."
 	}
 	if f.PlaceHolder != "" {
@@ -444,7 +449,7 @@ func (f *Flag) FormatPlaceHolder() string {
 		return f.Default + tail
 	}
 	if f.Value.IsMap() {
-		if f.Value.Tag.MapSep != -1 {
+		if f.Value.Tag.MapSep != -1 && f.Tag.Type == "" {
 			tail = string(f.Value.Tag.MapSep) + "..."
 		}
 		return "KEY=VALUE" + tail
