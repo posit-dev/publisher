@@ -64,9 +64,7 @@ export function clearConnectContentBundleForUri(uri: Uri) {
   if (uri.scheme !== CONNECT_CONTENT_SCHEME) {
     return;
   }
-  logger.info(
-    `Clearing bundle cache for removed workspace ${uri.toString()}`,
-  );
+  logger.info(`Clearing bundle cache for removed workspace ${uri.toString()}`);
   contentRoots.delete(uri.toString());
   bundleFetches.delete(uri.toString());
 }

@@ -51,9 +51,7 @@ export async function handleConnectUri(uri: Uri) {
   const content = params.get("content") ?? "";
   const normalizedServer = normalizeServerUrl(server);
   if (!server || !content || !normalizedServer) {
-    logger.error(
-      `Missing or invalid server/content in URI: ${uri.toString()}`,
-    );
+    logger.error(`Missing or invalid server/content in URI: ${uri.toString()}`);
     return;
   }
 
@@ -90,9 +88,7 @@ export async function handleConnectUri(uri: Uri) {
         });
       }
     }
-    logger.info(
-      `Opened Connect content ${content} from ${normalizedServer}.`,
-    );
+    logger.info(`Opened Connect content ${content} from ${normalizedServer}.`);
   } catch (error) {
     logger.error(
       `Failed to open Connect content ${content} from ${normalizedServer}: ${error}`,
