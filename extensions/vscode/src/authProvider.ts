@@ -25,12 +25,6 @@ import { getSummaryStringFromError } from "./utils/errors";
 const CONNECT_AUTH_PROVIDER_ID = "posit-connect";
 const CONNECT_AUTH_PROVIDER_LABEL = "Posit Connect";
 
-// A dedicated output channel for debugging auth-related state changes.
-export const authLogger = window.createOutputChannel(
-  "Posit Publisher Authentication",
-  { log: true },
-);
-
 class ConnectAuthSession implements AuthenticationSession {
   readonly id: string;
   readonly account: AuthenticationSessionAccountInformation;

@@ -20,7 +20,8 @@ import { Commands } from "src/constants";
 import { DocumentTracker } from "./entrypointTracker";
 import { getXDGConfigProperty } from "src/utils/config";
 import { PublisherState } from "./state";
-import { PublisherAuthProvider, authLogger } from "./authProvider";
+import { PublisherAuthProvider } from "./authProvider";
+import { logger } from "./logging";
 import { copySystemInfoCommand } from "src/commands";
 import { registerLLMTooling } from "./llm";
 import {
@@ -203,7 +204,7 @@ export function activate(context: ExtensionContext) {
   context.subscriptions.push(
     window.registerUriHandler({
       handleUri(uri: Uri) {
-        authLogger.info(`Handling URI: ${uri.toString()}`);
+        logger.info(`Handling URI: ${uri.toString()}`);
         handleConnectUri(uri);
       },
     }),

@@ -1,7 +1,7 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
 import { Uri, commands, window, workspace } from "vscode";
-import { authLogger } from "./authProvider";
+import { logger } from "./logging";
 import {
   clearConnectContentBundle,
   connectContentUri,
@@ -19,7 +19,7 @@ export async function promptOpenConnectContent() {
   }
   const serverUrl = normalizeServerUrl(serverUrlInput);
   if (!serverUrl) {
-    authLogger.error(`Invalid server URL: ${serverUrlInput}`);
+    logger.error(`Invalid server URL: ${serverUrlInput}`);
     return;
   }
   const contentGuid = await window.showInputBox({
@@ -41,9 +41,9 @@ export async function promptOpenConnectContent() {
 
 // Validate a connect URI and open the content in the current window.
 export async function handleConnectUri(uri: Uri) {
-  authLogger.info(`handleConnectUri start for ${uri.toString()}`);
+  logger.info(`handleConnectUri start for ${uri.toString()}`);
   if (uri.path !== "/connect") {
-    authLogger.info(`Ignoring unsupported URI: ${uri.toString()}`);
+    logger.info(`Ignoring unsupported URI: ${uri.toString()}`);
     return;
   }
   const params = new URLSearchParams(uri.query);
@@ -51,14 +51,14 @@ export async function handleConnectUri(uri: Uri) {
   const content = params.get("content") ?? "";
   const normalizedServer = normalizeServerUrl(server);
   if (!server || !content || !normalizedServer) {
-    authLogger.error(
+    logger.error(
       `Missing or invalid server/content in URI: ${uri.toString()}`,
     );
     return;
   }
 
   try {
-    authLogger.info(
+    logger.info(
       `Opening Connect content ${content} on ${normalizedServer}. Clearing any cached bundle.`,
     );
     clearConnectContentBundle(normalizedServer, content);
@@ -66,13 +66,13 @@ export async function handleConnectUri(uri: Uri) {
 
     const workspaceFolders = workspace.workspaceFolders ?? [];
     if (workspaceFolders.length === 0) {
-      authLogger.info("No workspace folders open; using vscode.openFolder");
+      logger.info("No workspace folders open; using vscode.openFolder");
       await commands.executeCommand("vscode.openFolder", workspaceUri, {
         forceReuseWindow: true,
         forceNewWindow: false,
       });
     } else {
-      authLogger.info(
+      logger.info(
         "Replacing current workspace folders with connect-content workspace",
       );
       const success = workspace.updateWorkspaceFolders(
@@ -81,7 +81,7 @@ export async function handleConnectUri(uri: Uri) {
         { uri: workspaceUri },
       );
       if (!success) {
-        authLogger.info(
+        logger.info(
           "updateWorkspaceFolders failed; falling back to vscode.openFolder",
         );
         await commands.executeCommand("vscode.openFolder", workspaceUri, {
@@ -90,11 +90,11 @@ export async function handleConnectUri(uri: Uri) {
         });
       }
     }
-    authLogger.info(
+    logger.info(
       `Opened Connect content ${content} from ${normalizedServer}.`,
     );
   } catch (error) {
-    authLogger.error(
+    logger.error(
       `Failed to open Connect content ${content} from ${normalizedServer}: ${error}`,
     );
   }

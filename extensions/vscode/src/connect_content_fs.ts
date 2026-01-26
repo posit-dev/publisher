@@ -18,7 +18,7 @@ import { Readable } from "node:stream";
 import { createGunzip } from "node:zlib";
 import tar from "tar-stream";
 import { useApi } from "./api";
-import { authLogger } from "./authProvider";
+import { logger } from "./logging";
 import { isAxiosError } from "axios";
 import { Commands } from "src/constants";
 import { PublisherState } from "./state";
@@ -54,7 +54,7 @@ export function clearConnectContentBundle(
   serverUrl: string,
   contentGuid: string,
 ) {
-  authLogger.info(`Clearing cached bundle ${contentGuid} for ${serverUrl}`);
+  logger.info(`Clearing cached bundle ${contentGuid} for ${serverUrl}`);
   contentRoots.delete(connectContentUri(serverUrl, contentGuid).toString());
   bundleFetches.delete(connectContentUri(serverUrl, contentGuid).toString());
 }
@@ -64,7 +64,7 @@ export function clearConnectContentBundleForUri(uri: Uri) {
   if (uri.scheme !== CONNECT_CONTENT_SCHEME) {
     return;
   }
-  authLogger.info(
+  logger.info(
     `Clearing bundle cache for removed workspace ${uri.toString()}`,
   );
   contentRoots.delete(uri.toString());
@@ -85,7 +85,7 @@ export function connectContentUri(serverUrl: string, contentGuid: string) {
 export function registerConnectContentFileSystem(
   publisherStateReadyPromise: Promise<PublisherState>,
 ): Disposable {
-  authLogger.info("Registering connect-content file system provider");
+  logger.info("Registering connect-content file system provider");
   const provider = new ConnectContentFileSystemProvider(
     publisherStateReadyPromise,
   );
@@ -111,19 +111,19 @@ class ConnectContentFileSystemProvider implements FileSystemProvider {
   }
 
   async stat(uri: Uri): Promise<FileStat> {
-    authLogger.info(`connect-content stat ${uri.toString()}`);
+    logger.info(`connect-content stat ${uri.toString()}`);
     const entry = await this.resolveEntry(uri);
     return statFromEntry(entry);
   }
 
   async readDirectory(uri: Uri): Promise<[string, FileType][]> {
-    authLogger.info(`connect-content readDirectory ${uri.toString()}`);
+    logger.info(`connect-content readDirectory ${uri.toString()}`);
     const entry = await this.resolveEntry(uri);
     return listDirectory(entry);
   }
 
   async readFile(uri: Uri): Promise<Uint8Array> {
-    authLogger.info(`connect-content readFile ${uri.toString()}`);
+    logger.info(`connect-content readFile ${uri.toString()}`);
     const entry = await this.resolveEntry(uri);
     if (entry.type !== FileType.File) {
       throw FileSystemError.FileIsADirectory(uri);
@@ -166,7 +166,7 @@ class ConnectContentFileSystemProvider implements FileSystemProvider {
     if (hasCredentialForServer(normalizedServer, state)) {
       return normalizedServer;
     }
-    authLogger.warn(
+    logger.warn(
       `No credentials for ${normalizedServer}. Opening credential flow.`,
     );
     await commands.executeCommand(
@@ -221,7 +221,7 @@ class ConnectContentFileSystemProvider implements FileSystemProvider {
       const bundleBytes = new Uint8Array(response.data);
       const root = await extractBundleTree(bundleBytes);
       contentRoots.set(rootKey, root);
-      authLogger.info(
+      logger.info(
         `Fetched bundle ${contentGuid} for ${normalizedServerUrl} and cached for ${rootKey}`,
       );
     } catch (error) {
@@ -238,7 +238,7 @@ class ConnectContentFileSystemProvider implements FileSystemProvider {
           : error instanceof Error
             ? error.message
             : "Unable to open Connect content bundle";
-      authLogger.error(
+      logger.error(
         `Unable to fetch bundle ${contentGuid} for ${normalizedServerUrl}: ${message}`,
       );
       await window.showErrorMessage(
@@ -260,10 +260,10 @@ class ConnectContentFileSystemProvider implements FileSystemProvider {
       uri.with({ path: `/${contentGuid}` }).toString(),
     );
     if (!root) {
-      authLogger.error(`No cached bundle for ${uri.toString()}`);
+      logger.error(`No cached bundle for ${uri.toString()}`);
       throw FileSystemError.FileNotFound(uri);
     }
-    authLogger.info(
+    logger.info(
       `Resolved connect-content entry for ${uri.toString()} ${
         rest.length ? `(descended ${rest.length} segments)` : "(root)"
       }`,
@@ -411,30 +411,30 @@ async function extractBundleTree(bundleBytes: Uint8Array) {
         next();
       });
       stream.on("error", (err) => {
-        authLogger.error(`Error reading tar entry ${header.name}: ${err}`);
+        logger.error(`Error reading tar entry ${header.name}: ${err}`);
         next();
       });
     },
   );
   extract.on("error", (err) => {
-    authLogger.error(`Tar extraction error: ${err}`);
+    logger.error(`Tar extraction error: ${err}`);
   });
   try {
     const source = Readable.from([Buffer.from(bundleBytes)]);
     if (looksLikeGzip) {
       const gunzip = createGunzip();
       gunzip.on("error", (err) => {
-        authLogger.error(`Gunzip error: ${err}`);
+        logger.error(`Gunzip error: ${err}`);
       });
       await pipeline(source, gunzip, extract);
     } else {
       await pipeline(source, extract);
     }
-    authLogger.info(
+    logger.info(
       `Extracted bundle (${bundleBytes.length} bytes, ${root.children?.size ?? 0} root entries)`,
     );
   } catch (error) {
-    authLogger.error(`Bundle extraction failed: ${error}`);
+    logger.error(`Bundle extraction failed: ${error}`);
     throw error;
   }
   return root;
