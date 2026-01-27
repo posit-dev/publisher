@@ -34,7 +34,6 @@ type ConnectContentEntry = {
 
 const CONNECT_CONTENT_SCHEME = "connect-content";
 const contentRoots = new Map<string, ConnectContentEntry>();
-const fileChangeEmitter = new EventEmitter<FileChangeEvent[]>();
 const bundleFetches = new Map<string, Promise<void>>();
 
 export function normalizeServerUrl(value: string): string {
@@ -94,8 +93,9 @@ export function registerConnectContentFileSystem(
   );
 }
 
-class ConnectContentFileSystemProvider implements FileSystemProvider {
-  onDidChangeFile = fileChangeEmitter.event;
+export class ConnectContentFileSystemProvider implements FileSystemProvider {
+  private fileChangeEmitter = new EventEmitter<FileChangeEvent[]>();
+  onDidChangeFile = this.fileChangeEmitter.event;
 
   watch(): Disposable {
     return new Disposable(() => undefined);
