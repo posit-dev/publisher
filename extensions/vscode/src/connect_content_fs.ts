@@ -102,7 +102,6 @@ export class ConnectContentFileSystemProvider implements FileSystemProvider {
   }
 
   private readonly publisherStateReady: Promise<PublisherState>;
-  private cachedPublisherState?: PublisherState;
 
   constructor(publisherStateReadyPromise: Promise<PublisherState>) {
     this.publisherStateReady = publisherStateReadyPromise;
@@ -145,17 +144,8 @@ export class ConnectContentFileSystemProvider implements FileSystemProvider {
     throw FileSystemError.NoPermissions("connect-content is read-only");
   }
 
-  private async waitForPublisherState(): Promise<PublisherState> {
-    if (this.cachedPublisherState) {
-      return this.cachedPublisherState;
-    }
-    const state = await this.publisherStateReady;
-    this.cachedPublisherState = state;
-    return state;
-  }
-
   private async ensureCredentialsForServer(serverUrl: string) {
-    const state = await this.waitForPublisherState();
+    const state = await this.publisherStateReady;
     const normalizedServer = normalizeServerUrl(serverUrl);
     if (!normalizedServer) {
       throw new Error(`Invalid server URL ${serverUrl}`);

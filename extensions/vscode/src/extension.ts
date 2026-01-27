@@ -57,12 +57,12 @@ export enum SelectionIsPreContentRecord {
   false = "false",
 }
 
-let publisherStateResolve: ((state: PublisherState) => void) | undefined;
+let resolvePublisherState: (state: PublisherState) => void;
 const publisherStateReady = new Promise<PublisherState>((resolve) => {
-  publisherStateResolve = resolve;
+  resolvePublisherState = resolve;
 });
 
-// Once the extension is activate, hang on to the service so that we can stop it on deactivation.
+// Once the extension is activated, hang on to the service so that we can stop it on deactivation.
 let service: Service;
 
 function setStateContext(context: PositPublishState) {
@@ -123,10 +123,7 @@ async function initializeExtension(context: ExtensionContext) {
   context.subscriptions.push(watchers);
 
   const state = new PublisherState(context);
-  if (publisherStateResolve) {
-    publisherStateResolve(state);
-    publisherStateResolve = undefined;
-  }
+  resolvePublisherState(state);
 
   // First the construction of the data providers
   const projectTreeDataProvider = new ProjectTreeDataProvider(context);
