@@ -15,6 +15,7 @@ import * as Entities from "entities";
 import { ConnectCloud } from "./resources/ConnectCloud";
 import { IntegrationRequests } from "./resources/IntegrationRequests";
 import { ConnectServer } from "./resources/ConnectServer";
+import { OpenConnectContent } from "./resources/OpenConnectContent";
 
 class PublishingClientApi {
   private client;
@@ -32,6 +33,7 @@ class PublishingClientApi {
   snowflakeConnections: SnowflakeConnections;
   connectCloud: ConnectCloud;
   connectServer: ConnectServer;
+  openConnectContent: OpenConnectContent;
 
   constructor(apiBaseUrl: string, apiServiceIsUp: Promise<boolean>) {
     this.client = axios.create({
@@ -48,11 +50,16 @@ class PublishingClientApi {
         return response;
       },
       (error) => {
-        // Decode data returned for 500 errors
-        if (error.response.status === 500) {
+        // Decode data returned for 500 errors when the payload is readable text.
+        if (
+          error.response?.status === 500 &&
+          typeof error.response.data === "string"
+        ) {
           error.response.data = Entities.decodeHTML5(error.response.data);
         }
-        this.logDuration(error.response);
+        if (error.response) {
+          this.logDuration(error.response);
+        }
         return Promise.reject(error);
       },
     );
@@ -70,6 +77,7 @@ class PublishingClientApi {
     this.snowflakeConnections = new SnowflakeConnections(this.client);
     this.connectCloud = new ConnectCloud(this.client);
     this.connectServer = new ConnectServer(this.client);
+    this.openConnectContent = new OpenConnectContent(this.client);
   }
 
   logDuration(response: AxiosResponse<unknown, unknown>) {

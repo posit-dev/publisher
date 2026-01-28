@@ -18,6 +18,9 @@ function findOpInPath() {
 }
 
 function get1PasswordSecret(item, field, vault) {
+  if (process.env.SKIP_1PASSWORD) {
+    return "PLACEHOLDER_PASSWORD";
+  }
   try {
     const localOp = path.resolve(
       __dirname,

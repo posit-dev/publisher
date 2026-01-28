@@ -29,7 +29,9 @@
     "Other"
   ],
   "activationEvents": [
-    "workspaceContains:/"
+    "workspaceContains:/",
+    "onUri:posit.publisher",
+    "onFileSystem:connect-content"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -261,6 +263,11 @@
         "command": "posit.publisher.homeView.addIntegrationRequest",
         "title": "Add Integration Request",
         "icon": "$(add)",
+        "category": "Posit Publisher"
+      },
+      {
+        "command": "posit.publisher.openConnectContent",
+        "title": "Open Connect Content",
         "category": "Posit Publisher"
       }
     ],
@@ -657,6 +664,7 @@
     "@types/mutexify": "^1.2.3",
     "@types/node": "^22.0.0",
     "@types/retry": "^0.12.5",
+    "@types/tar-stream": "^3.1.4",
     "@types/vscode": "^1.87.0",
     "@types/wait-on": "^5.3.3",
     "@vscode/test-cli": "^0.0.12",
@@ -682,6 +690,7 @@
     "get-port": "^7.1.0",
     "mutexify": "^1.4.0",
     "retry": "^0.13.1",
+    "tar-stream": "^3.1.7",
     "vscode-uri": "^3.0.8"
   }
 }

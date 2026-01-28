@@ -36,6 +36,7 @@ const baseCommands = {
   ShowOutputChannel: "posit.publisher.showOutputChannel",
   ShowPublishingLog: "posit.publisher.showPublishingLog",
   DeployWithEntrypoint: "posit.publisher.deployWithEntrypoint",
+  OpenConnectContent: "posit.publisher.openConnectContent",
 } as const;
 
 const baseContexts = {
