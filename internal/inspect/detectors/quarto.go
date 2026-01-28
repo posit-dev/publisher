@@ -433,7 +433,7 @@ func (d *QuartoDetector) staticConfigFromFilesLookup(base util.AbsolutePath, cfg
 }
 
 // When "quarto inspect" fails, it very likely means that the system does not have a Quarto binary.
-// If files are noticed that match Quarto files - .qmd - we generate a basic non-inspect configuration.
+// If files are noticed that match Quarto files - .qmd or .ipynb - we generate a basic non-inspect configuration.
 func (d *QuartoDetector) genNonInspectConfig(base util.AbsolutePath, entrypointPath util.AbsolutePath) (*config.Config, error) {
 	quartoYmlPath := base.Join("_quarto.yml")
 	quartoYmlExists, err := quartoYmlPath.Exists()
@@ -441,9 +441,10 @@ func (d *QuartoDetector) genNonInspectConfig(base util.AbsolutePath, entrypointP
 		return nil, err
 	}
 
-	// If entrypoint is not a .qmd file, nor a quarto yml configuration file
+	// If entrypoint is not a .qmd file, .ipynb file, nor a quarto yml configuration file
 	// we don't generate a configuration.
-	if !quartoYmlExists && entrypointPath.Ext() != ".qmd" {
+	ext := entrypointPath.Ext()
+	if !quartoYmlExists && ext != ".qmd" && ext != ".ipynb" {
 		return nil, nil
 	}
 
@@ -457,6 +458,15 @@ func (d *QuartoDetector) genNonInspectConfig(base util.AbsolutePath, entrypointP
 	cfg.Entrypoint = relEntrypoint.String()
 	cfg.Quarto = &config.Quarto{
 		Version: defaultQuartoVersion,
+	}
+
+	// Standalone Jupyter notebooks need Python and the jupyter engine
+	if ext == ".ipynb" {
+		cfg.Python = &config.Python{}
+		cfg.Quarto.Engines = []string{"jupyter"}
+		cfg.Files = append(cfg.Files, fmt.Sprint("/", relEntrypoint.String()))
+		d.findAndIncludeAssets(base, cfg)
+		return cfg, nil
 	}
 
 	// We will attempt to include any files that are common in Quarto projects.
