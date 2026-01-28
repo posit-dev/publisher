@@ -57,12 +57,7 @@ func PostOpenConnectContentHandlerFunc(lister accounts.AccountList, log logging.
 			InternalError(w, req, log, err)
 			return
 		}
-		connectClient, ok := client.(*connect.ConnectClient)
-		if !ok {
-			InternalError(w, req, log, errors.New("unexpected connect client type"))
-			return
-		}
-		bundleID, err := connectClient.LatestBundleID(types.ContentID(body.ContentGUID), log)
+		bundleID, err := client.LatestBundleID(types.ContentID(body.ContentGUID), log)
 		if err != nil {
 			if handleConnectAPIError(w, log, err, normalizedURL, body.ContentGUID) {
 				return
@@ -70,7 +65,7 @@ func PostOpenConnectContentHandlerFunc(lister accounts.AccountList, log logging.
 			InternalError(w, req, log, err)
 			return
 		}
-		bundleBytes, err := connectClient.DownloadBundle(types.ContentID(body.ContentGUID), bundleID, log)
+		bundleBytes, err := client.DownloadBundle(types.ContentID(body.ContentGUID), bundleID, log)
 		if err != nil {
 			if handleConnectAPIError(w, log, err, normalizedURL, body.ContentGUID) {
 				return
