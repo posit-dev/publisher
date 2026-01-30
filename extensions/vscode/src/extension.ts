@@ -5,6 +5,7 @@ import {
   ExtensionMode,
   Uri,
   commands,
+  window,
   workspace,
 } from "vscode";
 
@@ -20,8 +21,14 @@ import { DocumentTracker } from "./entrypointTracker";
 import { getXDGConfigProperty } from "src/utils/config";
 import { PublisherState } from "./state";
 import { PublisherAuthProvider } from "./authProvider";
+import { logger } from "./logging";
 import { copySystemInfoCommand } from "src/commands";
 import { registerLLMTooling } from "./llm";
+import {
+  clearConnectContentBundleForUri,
+  registerConnectContentFileSystem,
+} from "./connect_content_fs";
+import { handleConnectUri, promptOpenConnectContent } from "./open_connect";
 
 const STATE_CONTEXT = "posit.publish.state";
 
@@ -50,7 +57,12 @@ export enum SelectionIsPreContentRecord {
   false = "false",
 }
 
-// Once the extension is activate, hang on to the service so that we can stop it on deactivation.
+let resolvePublisherState: (state: PublisherState) => void;
+const publisherStateReady = new Promise<PublisherState>((resolve) => {
+  resolvePublisherState = resolve;
+});
+
+// Once the extension is activated, hang on to the service so that we can stop it on deactivation.
 let service: Service;
 
 function setStateContext(context: PositPublishState) {
@@ -111,6 +123,7 @@ async function initializeExtension(context: ExtensionContext) {
   context.subscriptions.push(watchers);
 
   const state = new PublisherState(context);
+  resolvePublisherState(state);
 
   // First the construction of the data providers
   const projectTreeDataProvider = new ProjectTreeDataProvider(context);
@@ -147,6 +160,9 @@ async function initializeExtension(context: ExtensionContext) {
     commands.registerCommand(Commands.ShowPublishingLog, () => {
       commands.executeCommand(Commands.Logs.Focus);
     }),
+    commands.registerCommand(Commands.OpenConnectContent, () =>
+      promptOpenConnectContent(),
+    ),
     commands.registerCommand(Commands.HomeView.CopySystemInfo, () =>
       copySystemInfoCommand(context),
     ),
@@ -162,6 +178,13 @@ async function initializeExtension(context: ExtensionContext) {
   );
 
   context.subscriptions.push(new PublisherAuthProvider(state));
+  context.subscriptions.push(
+    workspace.onDidChangeWorkspaceFolders((event) => {
+      event.removed.forEach((folder) => {
+        clearConnectContentBundleForUri(folder.uri);
+      });
+    }),
+  );
 
   // Register LLM Tools under /llm
   registerLLMTooling(context, state);
@@ -172,6 +195,18 @@ async function initializeExtension(context: ExtensionContext) {
 export function activate(context: ExtensionContext) {
   const now = new Date();
   console.log("Posit Publisher extension activated at %s", now.toString());
+  context.subscriptions.push(
+    registerConnectContentFileSystem(publisherStateReady),
+  );
+  context.subscriptions.push(
+    window.registerUriHandler({
+      handleUri(uri: Uri) {
+        logger.info(`Handling URI: ${uri.toString()}`);
+        handleConnectUri(uri);
+      },
+    }),
+  );
+
   // Is our workspace trusted?
   if (workspace.isTrusted) {
     console.log("initializing extension within a trusted workspace");
@@ -240,6 +275,12 @@ export const extensionSettings = {
     const value: boolean | undefined = configuration.get<boolean>(
       "autoOpenLogsOnFailure",
     );
+    return value !== undefined ? value : true;
+  },
+  enableConnectCloud(): boolean {
+    const configuration = workspace.getConfiguration("positPublisher");
+    const value: boolean | undefined =
+      configuration.get<boolean>("enableConnectCloud");
     return value !== undefined ? value : true;
   },
 };

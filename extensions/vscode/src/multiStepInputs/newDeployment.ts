@@ -58,6 +58,7 @@ import {
   isConnectCloud,
   getProductType,
 } from "src/utils/multiStepHelpers";
+import { extensionSettings } from "src/extension";
 import { recordAddConnectCloudUrlParams } from "src/utils/connectCloudHelpers";
 
 const viewTitle = "Create a New Deployment";
@@ -230,7 +231,16 @@ export async function newDeployment(
   const getCredentials = async (): Promise<void> => {
     try {
       const response = await api.credentials.list();
-      credentials = response.data;
+      let credentialsList = response.data;
+
+      // Filter out Connect Cloud credentials if disabled
+      if (!extensionSettings.enableConnectCloud()) {
+        credentialsList = credentialsList.filter(
+          (credential) => !isConnectCloud(credential.serverType),
+        );
+      }
+
+      credentials = credentialsList;
       credentialListItems = credentials.map((credential) => ({
         iconPath: new ThemeIcon("posit-publisher-posit-logo"),
         label: credential.name,

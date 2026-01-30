@@ -29,7 +29,9 @@
     "Other"
   ],
   "activationEvents": [
-    "workspaceContains:/"
+    "workspaceContains:/",
+    "onUri:posit.publisher",
+    "onFileSystem:connect-content"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -60,6 +62,11 @@
           },
           "positPublisher.autoOpenLogsOnFailure": {
             "markdownDescription": "Opens Publisher logs automatically on a failed deploy",
+            "type": "boolean",
+            "default": true
+          },
+          "positPublisher.enableConnectCloud": {
+            "markdownDescription": "Controls whether Posit Connect Cloud is available as a publishing destination.",
             "type": "boolean",
             "default": true
           }
@@ -256,6 +263,11 @@
         "command": "posit.publisher.homeView.addIntegrationRequest",
         "title": "Add Integration Request",
         "icon": "$(add)",
+        "category": "Posit Publisher"
+      },
+      {
+        "command": "posit.publisher.openConnectContent",
+        "title": "Open Connect Content",
         "category": "Posit Publisher"
       }
     ],
@@ -652,6 +664,7 @@
     "@types/mutexify": "^1.2.3",
     "@types/node": "^22.0.0",
     "@types/retry": "^0.12.5",
+    "@types/tar-stream": "^3.1.4",
     "@types/vscode": "^1.87.0",
     "@types/wait-on": "^5.3.3",
     "@vscode/test-cli": "^0.0.12",
@@ -660,23 +673,24 @@
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.0.1",
     "fishery": "^2.4.0",
-    "globals": "^17.0.0",
+    "globals": "^17.1.0",
     "mocha": "^11.1.0",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.53.0",
-    "vitest": "^4.0.17"
+    "typescript-eslint": "^8.53.1",
+    "vitest": "^4.0.18"
   },
   "dependencies": {
     "@vscode/codicons": "^0.0.44",
     "async-mutex": "^0.5.0",
-    "axios": "^1.13.2",
+    "axios": "^1.13.3",
     "debounce": "^3.0.0",
-    "entities": "^7.0.0",
+    "entities": "^7.0.1",
     "eventsource": "^4.1.0",
     "filenamify": "^7.0.1",
     "get-port": "^7.1.0",
     "mutexify": "^1.4.0",
     "retry": "^0.13.1",
+    "tar-stream": "^3.1.7",
     "vscode-uri": "^3.0.8"
   }
 }

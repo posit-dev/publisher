@@ -46,4 +46,6 @@ type APIClient interface {
 	GetCurrentUser(logging.Logger) (*User, error)
 	GetIntegrations(logging.Logger) ([]Integration, error)
 	GetSettings(util.AbsolutePath, *config.Config, logging.Logger) (*AllSettings, error)
+	LatestBundleID(types.ContentID, logging.Logger) (types.BundleID, error)
+	DownloadBundle(types.ContentID, types.BundleID, logging.Logger) ([]byte, error)
 }

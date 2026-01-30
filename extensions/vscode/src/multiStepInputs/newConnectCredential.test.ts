@@ -71,6 +71,11 @@ vi.mock("vscode", () => {
       t: (message: string, ..._args: unknown[]) => message,
       uri: { scheme: "l10n", path: "", query: "" },
     },
+    EventEmitter: class EventEmitter {
+      event = vi.fn();
+      fire = vi.fn();
+      dispose = vi.fn();
+    },
   };
 });
 

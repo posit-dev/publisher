@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added support for opening remote Connect content via the command menu. (#3377)
 - Added support finding R executables in VSCode using `Rpath` settings in the R extension. (#3378)
 - The Publisher logs view automatically opens when a deployment starts. (#3235)
 - The Publisher logs automatically scroll to follow new log entries during deployment. (#2997)
@@ -16,10 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Publisher logs automatically scroll to reveal the failure line when a deployment fails. (#3236)
 - Added R, Python, and Quarto interpreter version to the logs. (#2532)
 - Added automatic discovery of static assets for R Markdown projects. (#3233)
-- Added automatic discovery for HTML and its resources in Quarto and R Markdown projects. (#3234)
+- Added `positPublisher.enableConnectCloud` setting to disable publishing to Posit Connect Cloud. When set to `false`, Connect Cloud is hidden from the platform picker when creating new credentials, and existing Connect Cloud credentials are filtered from the deployment credential list. Existing Connect Cloud deployments remain accessible. (#3411)
 
 ### Fixed
 
+- Publisher no longer fails to list project files when the directory contains special file types (e.g. Unix socket files). (#3403)
 - Log messages in the Publisher Logs panel are no longer duplicated when multiple deployments are made. (#3069)
 - Fix creating deployments of R Markdown documents that include parameters on Connect Cloud. (#3388)
 - The Publisher outputs (detailed logs) have been consolidated into one channel called "Posit Publisher". (#3168)
