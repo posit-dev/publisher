@@ -388,7 +388,7 @@ func (rf *resourceFinder) discoverHTMLResources(fpath util.AbsolutePath) error {
 	// Apply each pattern to the content
 	for _, pattern := range patterns {
 		matches := pattern.FindAllSubmatch(content, -1)
-		rf.processResourceByteMatches(matches, nil)
+		rf.processResourceByteMatches(matches, &fpath)
 	}
 
 	return nil
