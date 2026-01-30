@@ -138,3 +138,21 @@ func (s *AllSuite) TestInferAllIndeterminate() {
 	s.Len(configs, 1)
 	s.Equal(contenttypes.ContentTypeUnknown, configs[0].Type)
 }
+
+func (s *AllSuite) TestContentTypePriority_QuartoBeforeJupyter() {
+	// Verify that Quarto is preferred over jupyter-notebook for the same entrypoint
+	s.Less(
+		getContentTypePriority(contenttypes.ContentTypeQuarto),
+		getContentTypePriority(contenttypes.ContentTypeJupyterNotebook),
+		"Quarto should have higher priority (lower number) than jupyter-notebook",
+	)
+}
+
+func (s *AllSuite) TestContentTypePriority_QuartoBeforeRMarkdown() {
+	// Verify that Quarto is preferred over RMarkdown for the same entrypoint
+	s.Less(
+		getContentTypePriority(contenttypes.ContentTypeQuarto),
+		getContentTypePriority(contenttypes.ContentTypeRMarkdown),
+		"Quarto should have higher priority (lower number) than RMarkdown",
+	)
+}
