@@ -11,6 +11,7 @@ import (
 
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/contenttypes"
+	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/schema"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
@@ -39,7 +40,7 @@ func (s *StaticHTMLDetectorSuite) TestInferType() {
 	err = otherPath.WriteFile([]byte("<html></html>\n"), 0600)
 	s.Nil(err)
 
-	detector := NewStaticHTMLDetector()
+	detector := NewStaticHTMLDetector(logging.New())
 	configs, err := detector.InferType(base, util.RelativePath{})
 	s.Nil(err)
 	s.Len(configs, 2)
@@ -76,7 +77,7 @@ func (s *StaticHTMLDetectorSuite) TestInferTypeWithEntrypoint() {
 	err = otherPath.WriteFile([]byte("<html></html>\n"), 0600)
 	s.Nil(err)
 
-	detector := NewStaticHTMLDetector()
+	detector := NewStaticHTMLDetector(logging.New())
 	entrypoint := util.NewRelativePath(otherFilename, base.Fs())
 	configs, err := detector.InferType(base, entrypoint)
 	s.Nil(err)
