@@ -1,0 +1,11 @@
+---
+title: "quarto-website-with-html"
+resource_files:
+  - flowers.html
+---
+
+This is a Quarto website with HTML assets. Here's a link to the [flowers](flowers.html) page.
+
+This is a [link](https://cuberule.com/) to an external site.
+
+Here's a link to the [nested page](subdir/nested.html).
