@@ -8,7 +8,7 @@
     "test": "TZ=UTC vitest"
   },
   "dependencies": {
-    "axios": "^1.13.3",
+    "axios": "^1.13.4",
     "eventsource": "^4.1.0",
     "pinia": "^3.0.4",
     "vue": "^3.5.27",
@@ -18,7 +18,7 @@
     "@tsconfig/node22": "^22.0.5",
     "@types/node": "^22.0.0",
     "@types/vscode-webview": "^1.57.5",
-    "@vitejs/plugin-vue": "^6.0.3",
+    "@vitejs/plugin-vue": "^6.0.4",
     "@vitest/coverage-v8": "^4.0.18",
     "@vscode/webview-ui-toolkit": "^1.4.0",
     "@vue/test-utils": "^2.4.6",
