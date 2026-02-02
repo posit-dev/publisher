@@ -38,8 +38,14 @@
         class="tree-item-checkbox"
         @changed="checked ? $emit('uncheck') : $emit('check')"
       >
-        <span class="tree-item-title">{{ title }}</span>
-        <span v-if="description" class="tree-item-description">
+        <span class="tree-item-title" @click.stop="handleTitleClick">{{
+          title
+        }}</span>
+        <span
+          v-if="description"
+          class="tree-item-description"
+          @click.stop="handleTitleClick"
+        >
           {{ description }}
         </span>
       </CodeCheckbox>
@@ -95,11 +101,18 @@ const slots = defineSlots<{
   postDecor?(): any;
 }>();
 
-const emits = defineEmits(["check", "uncheck", "expand", "collapse"]);
+const emits = defineEmits(["check", "uncheck", "expand", "collapse", "click"]);
 
 const toggleExpanded = () => {
   expanded.value = !expanded.value;
   emits(expanded.value ? "expand" : "collapse");
+};
+
+const handleTitleClick = () => {
+  if (isExpandable.value) {
+    toggleExpanded();
+  }
+  emits("click");
 };
 
 const isExpandable = computed((): Boolean => {

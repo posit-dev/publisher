@@ -14,6 +14,7 @@
     @uncheck="fileStore.excludeFile(file)"
     @expand="fileStore.expandDir(file)"
     @collapse="fileStore.collapseDir(file)"
+    @click="openFile"
   >
     <template #postDecor>
       <PostDecor
@@ -142,4 +143,10 @@ const actions = computed((): ActionButton[] => {
 
   return actions;
 });
+
+const openFile = () => {
+  if (props.file.isFile) {
+    fileStore.openFile(props.file);
+  }
+};
 </script>
