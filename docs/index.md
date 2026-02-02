@@ -34,7 +34,6 @@ What's not supported yet but is on our to-do list:
 
 - Deploy to servers other than Connect
 - Show more information in the UI such as changes since last deployment
-- Inject secrets as environment variables
 - More metadata such as tags, thumbnail image, etc
 - Configure permissions for sharing
 - Option to export a `manifest.json` for compatibility with prior tool
