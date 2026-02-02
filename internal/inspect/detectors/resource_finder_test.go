@@ -337,13 +337,15 @@ func (s *ResourceFinderSuite) TestRecursiveHTMLDiscovery() {
 	resources, err := rf.FindResources()
 	s.NoError(err)
 
-	// Verify that resources from both index.qmd and flowers.html were discovered
+	// Verify that resources from index.qmd, flowers.html, and nested.html were discovered
 	s.assertResources([]string{
 		"flowers.html",
 		"assets/styles.css",
 		"assets/script.js",
 		"images/dandelion.jpg",
 		"images/lilac.jpg",
+		"subdir/nested.html",
+		"subdir/images/nested-photo.png",
 	}, resources)
 }
 
@@ -370,8 +372,9 @@ func (s *ResourceFinderSuite) TestQuartoWebsiteWithHTML_Integration() {
 	findAndIncludeAssets(log, rfFactory, base, cfg)
 
 	// Verify that all assets were discovered:
-	// - From index.qmd: flowers.html link
+	// - From index.qmd: flowers.html link, subdir/nested.html link
 	// - From flowers.html: images, CSS, JS
+	// - From subdir/nested.html: subdir/images/nested-photo.png
 	expectedFiles := []string{
 		"/index.qmd",
 		"/flowers.html",
@@ -379,6 +382,8 @@ func (s *ResourceFinderSuite) TestQuartoWebsiteWithHTML_Integration() {
 		"/assets/script.js",
 		"/images/dandelion.jpg",
 		"/images/lilac.jpg",
+		"/subdir/nested.html",
+		"/subdir/images/nested-photo.png",
 	}
 
 	for _, expected := range expectedFiles {
@@ -391,4 +396,32 @@ func (s *ResourceFinderSuite) TestQuartoWebsiteWithHTML_Integration() {
 		s.NotContains(file, "cuberule.com", "Expected no external URLs in cfg.Files")
 		s.NotContains(file, "wikipedia.org", "Expected no external URLs in cfg.Files")
 	}
+}
+
+func (s *ResourceFinderSuite) TestRecursiveHTMLDiscovery_NestedPathResolution() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip()
+	}
+
+	realCwd, err := util.Getwd(nil)
+	s.NoError(err)
+
+	base := realCwd.Join("testdata", "quarto-website-with-html")
+	inputFile := base.Join("index.qmd")
+
+	rf, err := NewResourceFinder(logging.New(), base, inputFile)
+	s.NoError(err)
+
+	resources, err := rf.FindResources()
+	s.NoError(err)
+
+	s.assertResources([]string{
+		"flowers.html",
+		"assets/styles.css",
+		"assets/script.js",
+		"images/dandelion.jpg",
+		"images/lilac.jpg",
+		"subdir/nested.html",
+		"subdir/images/nested-photo.png",
+	}, resources)
 }
