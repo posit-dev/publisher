@@ -13,19 +13,19 @@
   "private": true,
   "devDependencies": {
     "@testing-library/cypress": "^10.1.0",
-    "axios": "^1.6.0",
+    "axios": "^1.13.4",
     "cypress": "^14.0.1",
     "cypress-network-idle": "^1.15.0",
     "cypress-terminal-report": "^6.2.0",
     "cypress-wait-until": "^3.0.2",
-    "eslint": "^9.39.1",
+    "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-cypress": "^4.1.0",
     "eslint-plugin-mocha": "^10.5.0",
-    "lint-staged": "^16.2.6",
-    "playwright": "^1.56.1",
-    "prettier": "^3.6.2",
-    "smol-toml": "^1.5.2",
+    "lint-staged": "^16.2.7",
+    "playwright": "^1.58.1",
+    "prettier": "^3.8.1",
+    "smol-toml": "^1.6.0",
     "wait-on": "^9.0.3"
   }
 }
