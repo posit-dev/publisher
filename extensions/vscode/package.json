@@ -659,7 +659,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
-    "@twbs/fantasticon": "^3.0.0",
     "@types/mocha": "^10.0.2",
     "@types/mutexify": "^1.2.3",
     "@types/node": "^22.0.0",
@@ -672,6 +671,7 @@
     "esbuild": "^0.27.2",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.0.1",
+    "fantasticon": "^4.1.0",
     "fishery": "^2.4.0",
     "globals": "^17.3.0",
     "mocha": "^11.1.0",
