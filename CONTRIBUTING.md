@@ -335,10 +335,10 @@ minor version number is odd.
 
 ### Before Releasing
 
-- Ensure that all relevant changes are documented in:
-  - the [CHANGELOG.md](CHANGELOG.md) for the repository
-  - the [VSCode Extension CHANGELOG.md](extensions/vscode/CHANGELOG.md)
-    that is bundled with the extension
+- Prep the [CHANGELOG.md](CHANGELOG.md): ensure all relevant changes are documented in `CHANGELOG.md` for the repository, and the [VSCode Extension CHANGELOG.md](extensions/vscode/CHANGELOG.md) that is bundled with the extension. To do this:
+  1. Diff `main` against the last release, and compare with what's in `CHANGELOG.md`. Generally these should be the same, but sometimes things get missed.
+  2. In `CHANGELOG.md` add the new version section under `[Unreleased]` (keep `[Unreleased]` for next time), and copy the changes to `extensions/vscode/CHANGELOG.md`
+  3. Open a PR to update the `CHANGELOG.md`s. [Here's](https://github.com/posit-dev/publisher/pull/3373) an example.
 - Merge any "Update licenses" PRs to main
 - Merge any release preparation PRs to main
 - Merge any Dependabot PRs to main
