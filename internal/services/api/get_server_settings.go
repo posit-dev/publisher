@@ -13,6 +13,7 @@ import (
 
 	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
@@ -36,8 +37,16 @@ func GetServerSettingsHandlerFunc(lister accounts.AccountList, log logging.Logge
 			return
 		}
 
+		// Read content type from query parameter
+		contentTypeStr := req.URL.Query().Get("type")
+		contentType := contenttypes.ContentTypeUnknown
+		if contentTypeStr != "" {
+			contentType = contenttypes.ContentType(contentTypeStr)
+		}
+
 		base := util.NewAbsolutePath("/", nil)
 		cfg := config.New()
+		cfg.Type = contentType
 
 		settings, err := client.GetSettings(base, cfg, log)
 		if err != nil {
