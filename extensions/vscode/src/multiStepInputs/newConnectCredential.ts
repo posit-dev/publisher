@@ -248,6 +248,12 @@ export async function newConnectCredential(
             input,
             !extensionSettings.verifyCertificates(), // insecure = !verifyCertificates
           );
+          if (!testResult) {
+            return Promise.resolve({
+              message: `No response from Publisher agent trying to reach out to Connect: ${input}`,
+              severity: InputBoxValidationSeverity.Error,
+            });
+          }
           if (testResult.status !== 200) {
             return Promise.resolve({
               message: `Error: Invalid URL (unable to validate connectivity with Server URL - API Call result: ${testResult.status} - ${testResult.statusText}).`,
@@ -445,6 +451,12 @@ export async function newConnectCredential(
             !extensionSettings.verifyCertificates(), // insecure = !verifyCertificates
             input,
           );
+          if (!testResult) {
+            return Promise.resolve({
+              message: `No response from Publisher agent trying to test Connect credentials: ${input}`,
+              severity: InputBoxValidationSeverity.Error,
+            });
+          }
           if (testResult.status !== 200) {
             return Promise.resolve({
               message: `Error: Invalid API Key (unable to validate API Key - API Call result: ${testResult.status} - ${testResult.statusText}).`,
