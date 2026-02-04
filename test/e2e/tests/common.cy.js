@@ -87,6 +87,14 @@ describe("Common", () => {
 
       cy.publisherWebview()
         .find('[data-automation="project-files"]')
+        .contains(".tree-item-title", "README.md")
+        .parents(".tree-item")
+        .first()
+        .find('input[type="checkbox"]')
+        .should("not.be.checked");
+
+      cy.publisherWebview()
+        .find('[data-automation="project-files"]')
         .contains(".tree-item-title", "data")
         .parents(".tree-item")
         .first()
@@ -105,6 +113,14 @@ describe("Common", () => {
         .first()
         .find(".codicon")
         .should("have.class", "codicon-chevron-down");
+
+      cy.publisherWebview()
+        .find('[data-automation="project-files"]')
+        .contains(".tree-item-title", "data")
+        .parents(".tree-item")
+        .first()
+        .find('input[type="checkbox"]')
+        .should("not.be.checked");
     });
   });
 });
