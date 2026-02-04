@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix creating deployments of R Markdown documents that include parameters on Connect Cloud. (#3388)
 - The Publisher outputs (detailed logs) have been consolidated into one channel called "Posit Publisher". (#3168)
 - RMarkdown parsing no longer errors if there is a later horizontal rule (`---`) in the document body. (#3409)
+- Connect Cloud users who have permissions to publish to multiple accounts are able to create credentials again. (#3446)
 
 ## [1.28.0]
 
