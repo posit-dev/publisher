@@ -60,6 +60,26 @@ var preferredNames = []string{
 	"streamlit_app",
 }
 
+// contentTypePriority defines explicit ordering for content types.
+// Lower values are preferred (sorted first). Types not in this map
+// fall back to alphabetical ordering.
+var contentTypePriority = map[contenttypes.ContentType]int{
+	// Prefer Quarto over jupyter-notebook for .ipynb files
+	contenttypes.ContentTypeQuarto:          1,
+	contenttypes.ContentTypeJupyterNotebook: 2,
+	// Prefer Quarto over RMarkdown for .Rmd files
+	contenttypes.ContentTypeRMarkdown: 3,
+}
+
+func getContentTypePriority(t contenttypes.ContentType) int {
+	if priority, ok := contentTypePriority[t]; ok {
+		return priority
+	}
+	// Types with the same priority number are sorted alphabetically.
+	// Set an arbitrarily high priority number for any types not in the map so they sort at the end.
+	return 100
+}
+
 func filenameStem(filename string) string {
 	ext := filepath.Ext(filename)
 	return strings.TrimSuffix(filename, ext)
@@ -101,6 +121,12 @@ func (t *ContentTypeDetector) InferType(base util.AbsolutePath, entrypoint util.
 			return 1
 		} else {
 			if entrypointA == entrypointB {
+				// Use explicit priority for content types, falling back to alphabetical
+				priorityA := getContentTypePriority(a.Type)
+				priorityB := getContentTypePriority(b.Type)
+				if priorityA != priorityB {
+					return priorityA - priorityB
+				}
 				return strings.Compare(string(a.Type), string(b.Type))
 			} else {
 				return strings.Compare(entrypointA, entrypointB)

@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added R, Python, and Quarto interpreter version to the logs. (#2532)
 - Added automatic discovery of static assets for R Markdown projects. (#3233)
 - Added `positPublisher.enableConnectCloud` setting to disable publishing to Posit Connect Cloud. When set to `false`, Connect Cloud is hidden from the platform picker when creating new credentials, and existing Connect Cloud credentials are filtered from the deployment credential list. Existing Connect Cloud deployments remain accessible. (#3411)
+- Python notebooks now default to Quarto rendering on Connect, additionally, quarto is not required to be installed locally when sending notebooks to render on Connect with quarto. (#3423)
+- Quarto is now the preferred renderer for Jupyter notebooks as well as Rmarkdown and of course Quarto docs. (#3423)
 
 ### Fixed
 
