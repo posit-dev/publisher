@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed server settings fetch failing, which caused the "Add Integration Request" action to be hidden. (#3444)
 - Publisher no longer fails to list project files when the directory contains special file types (e.g. Unix socket files). (#3403)
 - Log messages in the Publisher Logs panel are no longer duplicated when multiple deployments are made. (#3069)
 - Fix creating deployments of R Markdown documents that include parameters on Connect Cloud. (#3388)
