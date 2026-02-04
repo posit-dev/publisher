@@ -75,7 +75,8 @@ func getContentTypePriority(t contenttypes.ContentType) int {
 	if priority, ok := contentTypePriority[t]; ok {
 		return priority
 	}
-	// Types not in the map get a high priority number, then sort alphabetically
+	// Types with the same priority number are sorted alphabetically.
+	// Set an arbitrarily high priority number for any types not in the map so they sort at the end.
 	return 100
 }
 
