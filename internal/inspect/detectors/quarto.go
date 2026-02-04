@@ -433,7 +433,7 @@ func (d *QuartoDetector) staticConfigFromFilesLookup(base util.AbsolutePath, cfg
 }
 
 // When "quarto inspect" fails, it very likely means that the system does not have a Quarto binary.
-// If files are noticed that match Quarto files - .qmd or .ipynb - we generate a basic non-inspect configuration.
+// If files are noticed that match Quarto files - .qmd, .ipynb, or .Rmd - we generate a basic non-inspect configuration.
 func (d *QuartoDetector) genNonInspectConfig(base util.AbsolutePath, entrypointPath util.AbsolutePath) (*config.Config, error) {
 	quartoYmlPath := base.Join("_quarto.yml")
 	quartoYmlExists, err := quartoYmlPath.Exists()
@@ -441,10 +441,10 @@ func (d *QuartoDetector) genNonInspectConfig(base util.AbsolutePath, entrypointP
 		return nil, err
 	}
 
-	// If entrypoint is not a .qmd file, .ipynb file, nor a quarto yml configuration file
+	// If entrypoint is not a .qmd file, .ipynb file, .Rmd file, nor a quarto yml configuration file
 	// we don't generate a configuration.
 	ext := entrypointPath.Ext()
-	if !quartoYmlExists && ext != ".qmd" && ext != ".ipynb" {
+	if !quartoYmlExists && ext != ".qmd" && ext != ".ipynb" && ext != ".Rmd" {
 		return nil, nil
 	}
 
@@ -464,6 +464,15 @@ func (d *QuartoDetector) genNonInspectConfig(base util.AbsolutePath, entrypointP
 	if ext == ".ipynb" {
 		cfg.Python = &config.Python{}
 		cfg.Quarto.Engines = []string{"jupyter"}
+		cfg.Files = append(cfg.Files, fmt.Sprint("/", relEntrypoint.String()))
+		d.findAndIncludeAssets(base, cfg)
+		return cfg, nil
+	}
+
+	// Standalone RMarkdown files need R and the knitr engine
+	if ext == ".Rmd" {
+		cfg.R = &config.R{}
+		cfg.Quarto.Engines = []string{"knitr"}
 		cfg.Files = append(cfg.Files, fmt.Sprint("/", relEntrypoint.String()))
 		d.findAndIncludeAssets(base, cfg)
 		return cfg, nil

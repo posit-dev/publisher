@@ -872,3 +872,30 @@ func (s *QuartoDetectorSuite) TestInferType_NoBinary_Notebook() {
 		},
 	}, configs[0])
 }
+
+func (s *QuartoDetectorSuite) TestInferType_NoBinary_RMarkdown() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip("This test does not run on Windows")
+	}
+	// Test that standalone RMarkdown files get a Quarto config even when quarto inspect fails
+	configs := s.runInferType("rmd-static-1", errors.New("executable file not found in $PATH"))
+	s.Len(configs, 1)
+	validate := true
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       contenttypes.ContentTypeQuarto,
+		Entrypoint: "static.Rmd",
+		Title:      "",
+		Validate:   &validate,
+		Files: []string{
+			"/static.Rmd",
+			"/found-a-logo-somewhere.png",
+			"/and-some-graph-too.svg",
+		},
+		R: &config.R{},
+		Quarto: &config.Quarto{
+			Version: "1.7.34",
+			Engines: []string{"knitr"},
+		},
+	}, configs[0])
+}
