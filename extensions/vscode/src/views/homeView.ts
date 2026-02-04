@@ -834,6 +834,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         const api = await useApi();
         const result = await api.connectServer.getServerSettings(
           credential.name,
+          activeConfig.configuration.type,
         );
 
         this.webviewConduit.sendMsg({

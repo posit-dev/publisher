@@ -585,3 +585,18 @@ func (s *AppTypesSuite) TestAppModeFromTypeUnrecognized() {
 	s.Equal(AppMode("new-content-type"), result)
 	s.NotEqual(UnknownMode, result)
 }
+
+func (s *AppTypesSuite) TestAppModeIsKnown() {
+	// Known modes (mapped in contentTypeConnectMap)
+	s.True(ShinyMode.IsKnown())
+	s.True(StaticRmdMode.IsKnown())
+	s.True(PythonFastAPIMode.IsKnown())
+	s.True(StaticMode.IsKnown())
+	s.True(StaticJupyterMode.IsKnown())
+	s.True(StaticQuartoMode.IsKnown())
+
+	// Unknown modes (not in contentTypeConnectMap)
+	s.False(UnknownMode.IsKnown())
+	s.False(AppMode("unknown").IsKnown())
+	s.False(AppMode("custom-type").IsKnown())
+}
