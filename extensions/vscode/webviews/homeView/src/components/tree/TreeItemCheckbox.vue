@@ -35,7 +35,7 @@
         :checked="checked"
         :disabled="disabled"
         :disable-opacity="disableOpacity"
-        :has-text-click="true"
+        variant="has-text-click"
         class="tree-item-checkbox"
         @changed="checked ? $emit('uncheck') : $emit('check')"
         @text-click="handleTitleClick"

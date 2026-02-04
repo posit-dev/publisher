@@ -32,7 +32,6 @@
 import { computed } from "vue";
 
 import TreeItemCheckbox from "src/components/tree/TreeItemCheckbox.vue";
-import { ActionButton } from "src/components/ActionToolbar.vue";
 import { useHomeStore } from "src/stores/home";
 import { useFileStore } from "src/stores/file";
 import { FlatFile } from "src/utils/files";

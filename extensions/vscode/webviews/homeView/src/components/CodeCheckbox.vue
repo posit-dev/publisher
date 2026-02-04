@@ -11,21 +11,29 @@
         <i class="codicon codicon-check icon-checked"></i>
         <i class="codicon codicon-chrome-minimize icon-indeterminate"></i>
       </span>
-      <span v-if="!hasTextClick" class="text"><slot /></span>
+      <span v-if="variant !== 'has-text-click'" class="text"><slot /></span>
     </label>
-    <span v-if="hasTextClick" class="text" @click="handleTextClick">
+    <span
+      v-if="variant === 'has-text-click'"
+      class="text clickable"
+      @click="emit('textClick')"
+    >
       <slot />
     </span>
   </div>
 </template>
 
 <script setup lang="ts">
-defineProps<{
+interface Props {
   checked: boolean;
   disabled?: boolean;
   disableOpacity?: boolean;
-  hasTextClick?: boolean;
-}>();
+  variant?: "default" | "has-text-click";
+}
+
+withDefaults(defineProps<Props>(), {
+  variant: "default",
+});
 
 const emit = defineEmits<{
   changed: [checked: boolean];
@@ -35,10 +43,6 @@ const emit = defineEmits<{
 const handleChange = (event: Event) => {
   const checked = (event.target as HTMLInputElement).checked;
   emit("changed", checked);
-};
-
-const handleTextClick = () => {
-  emit("textClick");
 };
 </script>
 
@@ -126,6 +130,10 @@ const handleTextClick = () => {
     flex-grow: 1;
     opacity: 0.9;
     padding-inline-start: calc(var(--design-unit) * 2px + 2px);
+
+    &.clickable {
+      cursor: pointer;
+    }
   }
 }
 </style>
