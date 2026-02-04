@@ -11,8 +11,11 @@
         <i class="codicon codicon-check icon-checked"></i>
         <i class="codicon codicon-chrome-minimize icon-indeterminate"></i>
       </span>
+      <span v-if="!hasTextClick" class="text"><slot /></span>
     </label>
-    <span class="text" @click="handleTextClick"><slot /></span>
+    <span v-if="hasTextClick" class="text" @click="handleTextClick">
+      <slot />
+    </span>
   </div>
 </template>
 
@@ -21,6 +24,7 @@ defineProps<{
   checked: boolean;
   disabled?: boolean;
   disableOpacity?: boolean;
+  hasTextClick?: boolean;
 }>();
 
 const emit = defineEmits<{
