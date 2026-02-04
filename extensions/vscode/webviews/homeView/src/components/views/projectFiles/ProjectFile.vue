@@ -8,7 +8,6 @@
     :indent-level="file.indent + 1"
     :expandable="file.isDir"
     :tooltip="tooltip"
-    :actions="actions"
     :virtualized="true"
     @check="fileStore.includeFile(file)"
     @uncheck="fileStore.excludeFile(file)"
@@ -126,22 +125,6 @@ const tooltip = computed((): string => {
         isPackageFile: isPackageFile.value,
       })
     : excludedFileTooltip(props.file);
-});
-
-const actions = computed((): ActionButton[] => {
-  let actions: ActionButton[] = [];
-
-  if (props.file.isFile) {
-    actions.push({
-      label: "Open file",
-      codicon: "codicon-link-external",
-      fn: () => {
-        fileStore.openFile(props.file);
-      },
-    });
-  }
-
-  return actions;
 });
 
 const openFile = () => {

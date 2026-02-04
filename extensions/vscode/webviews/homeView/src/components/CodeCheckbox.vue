@@ -1,6 +1,6 @@
 <template>
   <div class="vscode-checkbox" :class="{ disabled: disabled }">
-    <label>
+    <label class="checkbox-control">
       <input
         :checked="checked"
         :disabled="disabled"
@@ -11,8 +11,8 @@
         <i class="codicon codicon-check icon-checked"></i>
         <i class="codicon codicon-chrome-minimize icon-indeterminate"></i>
       </span>
-      <span class="text"><slot /></span>
     </label>
+    <span class="text" @click="handleTextClick"><slot /></span>
   </div>
 </template>
 
@@ -25,11 +25,16 @@ defineProps<{
 
 const emit = defineEmits<{
   changed: [checked: boolean];
+  textClick: [];
 }>();
 
 const handleChange = (event: Event) => {
   const checked = (event.target as HTMLInputElement).checked;
   emit("changed", checked);
+};
+
+const handleTextClick = () => {
+  emit("textClick");
 };
 </script>
 

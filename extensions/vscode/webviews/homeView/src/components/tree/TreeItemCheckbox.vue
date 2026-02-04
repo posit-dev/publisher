@@ -37,15 +37,10 @@
         :disable-opacity="disableOpacity"
         class="tree-item-checkbox"
         @changed="checked ? $emit('uncheck') : $emit('check')"
+        @text-click="handleTitleClick"
       >
-        <span class="tree-item-title" @click.stop="handleTitleClick">{{
-          title
-        }}</span>
-        <span
-          v-if="description"
-          class="tree-item-description"
-          @click.stop="handleTitleClick"
-        >
+        <span class="tree-item-title">{{ title }}</span>
+        <span v-if="description" class="tree-item-description">
           {{ description }}
         </span>
       </CodeCheckbox>
