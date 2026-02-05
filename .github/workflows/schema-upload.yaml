@@ -1,0 +1,37 @@
+name: Schema Upload
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'internal/schema/schemas/*.json'
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  upload-schemas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: us-east-1
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+
+      - name: Upload schemas to S3
+        run: |
+          aws s3 cp internal/schema/schemas/posit-publishing-schema-v3.json \
+            s3://posit-publisher/publisher/schemas/posit-publishing-schema-v3.json
+          aws s3 cp internal/schema/schemas/posit-publishing-record-schema-v3.json \
+            s3://posit-publisher/publisher/schemas/posit-publishing-record-schema-v3.json
+
+      - name: Verify upload
+        run: |
+          echo "Schemas uploaded. CDN URLs (may take time to propagate due to caching):"
+          echo "  https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json"
+          echo "  https://cdn.posit.co/publisher/schemas/posit-publishing-record-schema-v3.json"
