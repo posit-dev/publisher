@@ -34,6 +34,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - RMarkdown parsing no longer errors if there is a later horizontal rule (`---`) in the document body. (#3409)
 - Removed the requirement that the local python version exist on the server when deploying (#3368)
 
+# Changed
+
+- Files in the Project Files view now open the file when clicking the file name. Directories expand or collapse. (#3187)
+
 ## [1.28.0]
 
 ### Fixed
