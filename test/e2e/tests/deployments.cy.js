@@ -59,6 +59,57 @@ describe("Deployments Section", () => {
       ).should("exist");
     });
 
+    it("Last selected deployment loads on initialization", () => {
+      // Regression test for https://github.com/posit-dev/publisher/issues/2473
+      // Verifies that the last selected deployment is restored after reload.
+
+      const deploymentTitle = "last-selection-test";
+
+      // Ensure Publisher is in the expected initial state
+      cy.expectInitialPublisherState();
+
+      // Create a deployment (this also selects it)
+      cy.createPCSDeployment(
+        "static",
+        "index.html",
+        deploymentTitle,
+        (tomlFiles) => {
+          const { contents: config } = tomlFiles.config;
+          expect(config.title).to.equal(deploymentTitle);
+        },
+      );
+
+      // Verify deployment is currently selected (entrypoint-label visible, not select-deployment)
+      cy.retryWithBackoff(
+        () => cy.findInPublisherWebview('[data-automation="entrypoint-label"]'),
+        5,
+        500,
+      ).should("exist");
+
+      // Reload the page to simulate VS Code restart
+      cy.reload();
+
+      // Re-open the Publisher sidebar
+      cy.getPublisherSidebarIcon().click();
+      cy.waitForPublisherIframe();
+
+      // Verify the last selected deployment is automatically loaded
+      // If working correctly: entrypoint-label should show with the deployment title
+      // If broken: select-deployment would show with "Select..." instead
+      cy.retryWithBackoff(
+        () => cy.findInPublisherWebview('[data-automation="entrypoint-label"]'),
+        10,
+        1000,
+      )
+        .should("exist")
+        .and("contain.text", deploymentTitle);
+
+      // Also verify the deployment section is present
+      cy.findInPublisherWebview(
+        '[data-automation="publisher-deployment-section"]',
+      ).should("exist");
+    });
+
     // Unable to run this,
     // as we will need to install the renv package - install.packages("renv")
     // as well as call renv::restore(), before we can deploy. This will use
