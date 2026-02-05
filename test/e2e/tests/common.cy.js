@@ -63,6 +63,10 @@ describe("Common", () => {
       cy.debugIframes();
     });
 
+    afterEach(() => {
+      cy.clearupDeployments("static");
+    });
+
     it("Clicking on a file name opens the file or opens directory", () => {
       cy.expectInitialPublisherState();
       cy.createPCSDeployment(
