@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'internal/schema/schemas/*.json'
+      - "internal/schema/schemas/*.json"
   workflow_dispatch:
 
 permissions:
