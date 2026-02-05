@@ -8,8 +8,7 @@
 describe("Credentials Section", () => {
   // Global setup - run once for entire test suite
   before(() => {
-    cy.resetConnect();
-    cy.setAdminCredentials(); // Set up admin credential once
+    cy.initializeConnect();
   });
 
   beforeEach(() => {
@@ -75,7 +74,7 @@ describe("Credentials Section", () => {
       .should("have.text", "admin-code-server");
   });
 
-  it("New PCC Credential - OAuth Device Code", () => {
+  it("New PCC Credential - OAuth Device Code @pcc", () => {
     const user = Cypress.env("pccConfig").pcc_user_ccqa3;
     // Drive full OAuth UI flow and nickname entry via helper
     cy.addPCCCredential(user, "connect-cloud-credential");
