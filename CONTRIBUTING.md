@@ -346,29 +346,32 @@ minor version number is odd.
 
 ### Instructions
 
-**Step 1**
-
-Create a proper SemVer and extension version compatible tag using the guidelines
-above.
+#### Step 1: Create a proper SemVer and extension version compatible tag
 
 Use an even minor version for releases, or an odd minor version for
-pre-releases.
+pre-releases. The example commands here use `v1.1.0`, replace this with the version you are releasing.
 
-_For this example, we will use the tag `v1.1.0` to create a pre-release. This
-tag already exists, so you will not be able run the following commands
-verbatim._
+Make sure you are on `main` and up to date:
 
-`git tag v1.1.0`
+```sh
+git switch main
+git pull
+```
 
-**Step 2**
+and then create the tag: 
+```sh
+git tag v1.1.0
+```
 
-Push the tag GitHub.
+#### Step 2: Push the tag GitHub
 
-`git push origin v1.1.0`
+```sh
+git push origin v1.1.0
+```
 
 This command will trigger the [Release GitHub Action](https://github.com/rstudio/publishing-client/actions/workflows/release.yaml).
 
-**Step 3**
+#### Step 3: Confirm the release
 
 Once the action has completed, the release will be available on the
 [Releases page](https://github.com/rstudio/publishing-client/releases), and
