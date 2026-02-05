@@ -64,7 +64,7 @@ describe("Common", () => {
     });
 
     afterEach(() => {
-      cy.clearupDeployments("static");
+      cy.clearupDeployments();
     });
 
     it("Clicking on a file name opens the file or opens directory", () => {
