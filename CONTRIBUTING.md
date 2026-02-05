@@ -303,7 +303,7 @@ To update the schema:
 - Verify that the unit tests pass. They load the example files and validate them against the schemas.
 - The `draft` folder contains schemas that are a superset of the main schemas, and have ideas for the other settings we have considered adding. Usually we have added any new fields to those schemas and example files as well.
 
-As Pull Requests are merged into main, we update (or create in the case of a new schema) the file on the CDN (in S3). Currently, this is a manual process requiring write access to our S3 bucket.
+When Pull Requests that modify schema files are merged into main, a GitHub Actions workflow automatically uploads the updated schemas to S3, making them available on the CDN.
 
 #### Force Even Better TOML to update
 
