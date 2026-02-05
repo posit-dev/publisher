@@ -25,13 +25,13 @@ jobs:
 
       - name: Upload schemas to S3
         run: |
-          aws s3 cp internal/schema/schemas/posit-publishing-schema-v3.json \
-            s3://posit-publisher/publisher/schemas/posit-publishing-schema-v3.json
-          aws s3 cp internal/schema/schemas/posit-publishing-record-schema-v3.json \
-            s3://posit-publisher/publisher/schemas/posit-publishing-record-schema-v3.json
+          aws s3 sync internal/schema/schemas/ s3://posit-publisher/publisher/schemas/ \
+            --exclude "*" \
+            --include "posit-publishing-*.json"
 
       - name: Verify upload
         run: |
-          echo "Schemas uploaded. CDN URLs (may take time to propagate due to caching):"
-          echo "  https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json"
-          echo "  https://cdn.posit.co/publisher/schemas/posit-publishing-record-schema-v3.json"
+          echo "Schemas uploaded to S3. Listing uploaded files:"
+          aws s3 ls s3://posit-publisher/publisher/schemas/ | grep "posit-publishing-"
+          echo ""
+          echo "CDN base URL: https://cdn.posit.co/publisher/schemas/"
