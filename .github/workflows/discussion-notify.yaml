@@ -1,0 +1,28 @@
+name: Discussion Notifications
+
+on:
+  discussion:
+    types: [created]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Slack notification
+        uses: slackapi/slack-github-action@v2.0.0
+        with:
+          webhook: ${{ secrets.SLACK_DISCUSSION_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            {
+              "text": "New discussion in Publisher: ${{ github.event.discussion.title }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*New Discussion:* <${{ github.event.discussion.html_url }}|${{ github.event.discussion.title }}>\n*Category:* ${{ github.event.discussion.category.name }}\n*Author:* ${{ github.event.discussion.user.login }}"
+                  }
+                }
+              ]
+            }
