@@ -108,6 +108,9 @@ describe("Deployments Section", () => {
       cy.findInPublisherWebview(
         '[data-automation="publisher-deployment-section"]',
       ).should("exist");
+
+      // Explicit cleanup to ensure other tests aren't affected
+      cy.clearupDeployments("static");
     });
 
     // Unable to run this,
