@@ -103,6 +103,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   rendered by Quarto to easily update and publish the rendered output (#2948)
 - Added support for Positron repositories configuration when detecting dependencies,
   allowing dependencies to be installed with the configured CRAN repository.
+- Added the ability to associate a Connect Cloud deployment to another Connect Cloud
+  deployment for the same account (#3067)
 
 ### Fixed
 
