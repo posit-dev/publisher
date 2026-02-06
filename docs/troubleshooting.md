@@ -2,6 +2,18 @@
 
 This document contains some common issues and solutions for Posit Publisher.
 
+## Publisher Output
+
+Publisher output may help to track down problems, it is located in the "Output" window under the "Posit Publisher" option.
+
+The Output Panel in VSCode or Positron can be opened with the command palette `> Output: Show Output Channels...`
+selecting the "Posit Publisher" option.
+
+When opening an issue it is okay to copy and paste the output as is, you can also provide this output
+by saving it into a file and attaching it to the issue.
+
+![](https://cdn.posit.co/publisher/assets/img/save-output.png)
+
 ## The Configuration has a schema error
 
 If deploying results in the following error:
@@ -115,18 +127,6 @@ be displayed:
 
 Posit Connect does not allow the content type of a deployment to be changed. If you encounter this
 error, your best option is to create and deploy a new deployment.
-
-## Publisher Output
-
-Publisher output may help to track down problems, it is located in the "Output" window under the "Posit Publisher" option.
-
-The Output Panel in VSCode or Positron can be opened with the command palette `> Output: Show Output Channels...`
-selecting the "Posit Publisher" option.
-
-When opening an issue it is okay to copy and paste the output as is, you can also provide this output
-by saving it into a file and attaching it to the issue.
-
-![](https://cdn.posit.co/publisher/assets/img/save-output.png)
 
 ## Still having trouble?
 
