@@ -1004,13 +1004,13 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
   }
 
-  private propagateDeploymentSelection(
+  private async propagateDeploymentSelection(
     deploymentSelector: DeploymentSelector | null,
   ) {
     // We have to break our protocol and go ahead and write this into storage,
     // in case this multi-stepper is actually running ahead of the webview
     // being brought up.
-    this.saveSelectionState(deploymentSelector);
+    await this.saveSelectionState(deploymentSelector);
     // Now push down into the webview
     this.updateWebViewViewCredentials();
     this.updateWebViewViewConfigurations();
@@ -1057,7 +1057,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           deploymentName: targetContentRecord.saveName,
           projectDir: targetContentRecord.projectDir,
         };
-        this.propagateDeploymentSelection(deploymentSelector);
+        await this.propagateDeploymentSelection(deploymentSelector);
 
         const credential =
           this.state.findCredentialForContentRecord(targetContentRecord);
@@ -1143,7 +1143,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           projectDir: contentRecord.projectDir,
         };
 
-        this.propagateDeploymentSelection(deploymentSelector);
+        await this.propagateDeploymentSelection(deploymentSelector);
         // Credentials aren't auto-refreshed, so we have to trigger it ourselves.
         if (refreshCredentials) {
           this.refreshCredentials();
