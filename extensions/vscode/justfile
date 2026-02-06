@@ -108,16 +108,42 @@ set-version:
     echo "info: version $version"
     python3 ./scripts/set-version.py $version
 
-# Syncs the root CHANGELOG.md to extensions/vscode/CHANGELOG.md, stripping the [Unreleased] section
+# Syncs release entries from root CHANGELOG.md to extensions/vscode/CHANGELOG.md
+# - Preserves the VSCode extension-specific header
+# - Strips the [Unreleased] section
+# - Only includes releases from 1.1.3 onwards (when the VSCode extension was first released)
 sync-changelog:
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
 
     echo "info: syncing CHANGELOG.md from root to extensions/vscode..." 1>&2
-    # Copy the root changelog, removing the [Unreleased] section (everything between
-    # "## [Unreleased]" and the next versioned heading "## [x.y.z]")
-    awk 'BEGIN{skip=0} /^## \[Unreleased\]/{skip=1; next} /^## \[[0-9]/{skip=0} skip==0{print}' ../../CHANGELOG.md > ./CHANGELOG.md
+
+    # Write the VSCode extension-specific header
+    printf '%s\n' \
+        "# Changelog" \
+        "" \
+        "All notable changes to the Posit Publisher extension are documented in this" \
+        "file." \
+        "" \
+        "The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)," \
+        "and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html)." \
+        "" > ./CHANGELOG.md
+
+    # Extract release entries from root changelog:
+    # - Skip the [Unreleased] section
+    # - Stop before pre-extension versions (anything before 1.1.3, which was the initial beta release)
+    awk '
+        BEGIN { skip=0; stop=0 }
+        /^## \[Unreleased\]/ { skip=1; next }
+        /^## \[1\.1\.2\]/ { stop=1 }
+        /^## \[1\.1\.1\]/ { stop=1 }
+        /^## \[1\.1\.0\]/ { stop=1 }
+        /^## \[1\.0\./ { stop=1 }
+        /^## \[[0-9]/ { skip=0 }
+        stop==0 && skip==0 && !/^# Changelog/ && !/^All notable changes/ && !/^The format is based on/ && !/^and this project adheres/ { print }
+    ' ../../CHANGELOG.md | sed '/./,$!d' >> ./CHANGELOG.md
+
     echo "info: CHANGELOG.md synced successfully" 1>&2
 
 # Installs the packaged extension on your configured editor using the editor's CLI. The editor CLI defaults to 'code'. Modify this value via the EDITOR environment variable.

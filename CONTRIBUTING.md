@@ -335,10 +335,16 @@ minor version number is odd.
 
 ### Before Releasing
 
-- Ensure that all relevant changes are documented in:
-  - the [CHANGELOG.md](CHANGELOG.md) for the repository
-  - the [VSCode Extension CHANGELOG.md](extensions/vscode/CHANGELOG.md)
-    that is bundled with the extension
+- Ensure that all relevant changes are documented in the root [CHANGELOG.md](CHANGELOG.md).
+  The VSCode extension changelog is automatically synced from the root changelog
+  during the build process (`just configure` runs `just sync-changelog`).
+
+  **Note:** The sync script:
+  - Preserves the VSCode extension-specific header
+  - Strips the `[Unreleased]` section
+  - Only includes releases from 1.1.3 onwards (the initial VSCode extension release)
+  - Pre-extension releases (1.1.2 and earlier) are excluded from the VSCode changelog
+
 - Merge any "Update licenses" PRs to main
 - Merge any release preparation PRs to main
 - Merge any Dependabot PRs to main
