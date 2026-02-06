@@ -27,5 +27,8 @@ export type TestResult = {
   user: CredentialUser | null;
   url: string | null;
   serverType: ServerType | null;
+  // When true, Snowflake connections are configured on the system and Token
+  // Authentication should be hidden (it won't work from within Snowflake).
+  hasSnowflakeConnections: boolean;
   error: AgentError | null;
 };
