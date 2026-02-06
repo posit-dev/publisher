@@ -69,18 +69,26 @@ describe("Open Connect Content", () => {
 
     cy.retryWithBackoff(
       () =>
-        cy
-          .get(".explorer-viewlet .explorer-item a > span")
-          .filter((_, el) => (el.textContent || "").includes("manifest.json")),
+        cy.get(".explorer-viewlet .explorer-item a > span").then(($spans) => {
+          return cy.wrap(
+            $spans.filter((_, el) =>
+              (el.textContent || "").includes("manifest.json"),
+            ),
+          );
+        }),
       10,
       1000,
     ).should("be.visible");
 
     cy.retryWithBackoff(
       () =>
-        cy
-          .get(".explorer-viewlet .explorer-item a > span")
-          .filter((_, el) => (el.textContent || "").includes("index.html")),
+        cy.get(".explorer-viewlet .explorer-item a > span").then(($spans) => {
+          return cy.wrap(
+            $spans.filter((_, el) =>
+              (el.textContent || "").includes("index.html"),
+            ),
+          );
+        }),
       10,
       1000,
     ).should("be.visible");
