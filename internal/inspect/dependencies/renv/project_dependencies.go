@@ -65,44 +65,21 @@ func (i *defaultRDependencyScanner) SetupRenvInDir(targetPath string, lockfile s
 
 // ScanDependenciesInDir uses renv to scan the provided paths and create set up
 func (s *defaultRDependencyScanner) ScanDependenciesInDir(paths []string, targetDir util.Path, lockfile string, rExecutable string) (util.AbsolutePath, error) {
+	// Build R script: ensure non-interactive renv, detect deps from the base project (working dir),
+	// regardless of the destination targetPath for the lockfile.
+	// initialize a temporary renv project in tmpDir, install deps into it, then snapshot its lockfile.
+	normalizedProjectPath := filepath.ToSlash(targetDir.String()) // Use forward-slash for compatibility across platforms.
+	rPathsVec, err := s.toRPathsVector(paths)
+	if err != nil {
+		return util.AbsolutePath{}, err
+	}
 	if lockfile == "" {
 		lockfile = interpreters.DefaultRenvLockfile
 	}
-
-	// detect dependencies from the provided paths
-	deps, err := s.detectDependencies(paths, rExecutable, targetDir)
-	if err != nil {
-		return util.AbsolutePath{}, err
-	}
-
-	// attempt to snapshot from existing installed packages
-	err = s.snapshotFromExisting(deps, targetDir, lockfile, rExecutable)
-	if err == nil {
-		s.log.Info("Created lockfile from installed packages")
-		lockfilePath := targetDir.Join(lockfile)
-		return util.NewAbsolutePath(lockfilePath.String(), nil), nil
-	}
-
-	// if not all packages are already available, install fresh then snapshot
-	s.log.Info("Installing packages to create lockfile", "reason", err.Error())
-	err = s.installThenSnapshot(deps, targetDir, lockfile, rExecutable)
-	if err != nil {
-		return util.AbsolutePath{}, err
-	}
-
-	lockfilePath := targetDir.Join(lockfile)
-	return util.NewAbsolutePath(lockfilePath.String(), nil), nil
-}
-
-// detectDependencies runs renv::dependencies on the provided paths and returns
-// a deduplicated list of package names (excluding renv itself).
-func (s *defaultRDependencyScanner) detectDependencies(paths []string, rExecutable string, workDir util.Path) ([]string, error) {
-	rPathsVec, err := s.toRPathsVector(paths)
-	if err != nil {
-		return nil, err
-	}
-
+	lockfile = filepath.ToSlash(lockfile) // Lockfile may in fact contain slashes.
+	// Compute repository URL once; the R code will apply it via options(repos=...).
 	repoURL := RepoURLFromOptions(s.repoOpts)
+
 	script := fmt.Sprintf(`(function(){
 	options(renv.consent = TRUE)
 	repoUrl <- "%s"
@@ -118,129 +95,34 @@ func (s *defaultRDependencyScanner) detectDependencies(paths []string, rExecutab
 			invisible()
 		})
 	}
-	deps <- unique(setdiff(deps, c("renv")))
-	cat(paste(deps, collapse = "\n"))
-})()`, repoURL, rPathsVec)
-
-	absWorkDir := util.NewAbsolutePath(workDir.String(), nil)
-	stdout, stderr, err := s.rExecutor.RunScript(rExecutable, []string{"-s"}, script, absWorkDir, s.log)
-	s.log.Debug("RDependencyScanner detect dependencies", "stdout", string(stdout), "stderr", string(stderr))
-	if err != nil {
-		return nil, err
-	}
-
-	// Parse the output - one package per line
-	output := strings.TrimSpace(string(stdout))
-	if output == "" {
-		return []string{}, nil
-	}
-	deps := strings.Split(output, "\n")
-	return deps, nil
-}
-
-// snapshotFromExisting attempts to create a lockfile by snapshotting from the user's
-// existing installed packages. Returns an error if the snapshot fails.
-func (s *defaultRDependencyScanner) snapshotFromExisting(deps []string, targetDir util.Path, lockfile string, rExecutable string) error {
-	normalizedProjectPath := filepath.ToSlash(targetDir.String())
-	lockfile = filepath.ToSlash(lockfile)
-	repoURL := RepoURLFromOptions(s.repoOpts)
-
-	// Convert deps to R vector
-	depsVec := "c()"
-	if len(deps) > 0 {
-		quoted := make([]string, len(deps))
-		for i, dep := range deps {
-			quoted[i] = "\"" + dep + "\""
-		}
-		depsVec = "c(" + strings.Join(quoted, ", ") + ")"
-	}
-
-	script := fmt.Sprintf(`(function(){
-	options(renv.consent = TRUE)
-	repoUrl <- "%s"
-	if (nzchar(repoUrl)) options(repos = c(CRAN = repoUrl))
-	deps <- %s
+	deps <- setdiff(deps, c("renv"))
 	targetPath <- "%s"
+	try(renv::init(project = targetPath, bare = TRUE, force = TRUE), silent = TRUE)
+	try(renv::install(deps, project = targetPath), silent = TRUE)
 	lockfile <- file.path(targetPath, "%s")
-
-	renv::snapshot(
-		project = targetPath,
-		packages = deps,
-		lockfile = lockfile,
-		prompt = FALSE
-	)
-	message("publisher: created lockfile from installed packages")
-})()`, repoURL, depsVec, normalizedProjectPath, lockfile)
-
-	absTarget := util.NewAbsolutePath(targetDir.String(), nil)
-	stdout, stderr, err := s.rExecutor.RunScript(rExecutable, []string{"-s"}, script, absTarget, s.log)
-	s.log.Debug("RDependencyScanner snapshot from existing", "stdout", string(stdout), "stderr", string(stderr))
-	if err != nil {
-		return fmt.Errorf("snapshot from existing failed: %w", err)
-	}
-
-	// Verify the lockfile was created
-	lockfilePath := targetDir.Join(lockfile)
-	exists, err := lockfilePath.Exists()
-	if err != nil {
-		return fmt.Errorf("failed to check lockfile existence: %w", err)
-	}
-	if !exists {
-		return fmt.Errorf("lockfile was not created")
-	}
-
-	return nil
-}
-
-// installThenSnapshot creates a lockfile by initializing an renv project,
-// installing the required packages, and then snapshotting.
-func (s *defaultRDependencyScanner) installThenSnapshot(deps []string, targetDir util.Path, lockfile string, rExecutable string) error {
-	normalizedProjectPath := filepath.ToSlash(targetDir.String())
-	lockfile = filepath.ToSlash(lockfile)
-	repoURL := RepoURLFromOptions(s.repoOpts)
-
-	// Convert deps to R vector
-	depsVec := "c()"
-	if len(deps) > 0 {
-		quoted := make([]string, len(deps))
-		for i, dep := range deps {
-			quoted[i] = "\"" + dep + "\""
-		}
-		depsVec = "c(" + strings.Join(quoted, ", ") + ")"
-	}
-
-	script := fmt.Sprintf(`(function(){
-	options(renv.consent = TRUE)
-	repoUrl <- "%s"
-	if (nzchar(repoUrl)) options(repos = c(CRAN = repoUrl))
-	deps <- %s
-	targetPath <- "%s"
-	lockfile <- file.path(targetPath, "%s")
-
-	renv::init(project = targetPath, bare = TRUE, force = TRUE)
-	renv::install(deps, project = targetPath)
 	renv::snapshot(project = targetPath, lockfile = lockfile, prompt = FALSE, type = "all")
-	message("publisher: installing packages to create lockfile")
-})()`, repoURL, depsVec, normalizedProjectPath, lockfile)
+	invisible()
+})()`, repoURL, rPathsVec, normalizedProjectPath, lockfile)
 
+	// Run the script (use the temporary project as the working directory)
+	// Ensure working directory is provided as an AbsolutePath
 	absTarget := util.NewAbsolutePath(targetDir.String(), nil)
 	stdout, stderr, err := s.rExecutor.RunScript(rExecutable, []string{"-s"}, script, absTarget, s.log)
-	s.log.Debug("RDependencyScanner install then snapshot", "stdout", string(stdout), "stderr", string(stderr))
+	s.log.Debug("RDependencyScanner renv scan", "stdout", string(stdout), "stderr", string(stderr))
 	if err != nil {
-		return fmt.Errorf("install then snapshot failed: %w", err)
+		return util.AbsolutePath{}, err
 	}
 
-	// Verify the lockfile was created
+	// Ensure the lockfile was created
 	lockfilePath := targetDir.Join(lockfile)
 	exists, err := lockfilePath.Exists()
 	if err != nil {
-		return fmt.Errorf("failed to check lockfile existence: %w", err)
+		return util.AbsolutePath{}, err
 	}
 	if !exists {
-		return fmt.Errorf("renv could not create lockfile: %s", lockfilePath.String())
+		return util.AbsolutePath{}, fmt.Errorf("renv could not create lockfile: %s", lockfilePath.String())
 	}
-
-	return nil
+	return util.NewAbsolutePath(lockfilePath.String(), nil), nil
 }
 
 // toRPathsVector converts a slice of filesystem paths/globs into an R c("a", "b") vector string.
