@@ -43,30 +43,44 @@ func (s *RDependencyScannerSuite) SetupTest() {
 }
 
 func (s *RDependencyScannerSuite) TestScanDependencies() {
-	// Expect a RunScript call that includes renv::dependencies and renv::snapshot
+	var tmpDir string
+
+	// Mock 1: detectDependencies call
 	s.exec.On(
 		"RunScript",
 		s.rExecPath,
 		[]string{"-s"},
 		mock.MatchedBy(func(script string) bool {
-			return strings.Contains(script, "renv::dependencies(") && strings.Contains(script, "renv::snapshot(")
+			return strings.Contains(script, "renv::dependencies(") && strings.Contains(script, "cat(paste(deps")
 		}),
-		mock.Anything, // working dir is the temporary project now
 		mock.Anything,
-	).Return([]byte("ok"), []byte(""), nil).Run(func(args mock.Arguments) {
-		// Extract targetPath from the script and create targetPath/renv.lock
+		mock.Anything,
+	).Return([]byte("glue\ncli"), []byte(""), nil).Once()
+
+	// Mock 2: snapshotFromExisting call - simulate success
+	s.exec.On(
+		"RunScript",
+		s.rExecPath,
+		[]string{"-s"},
+		mock.MatchedBy(func(script string) bool {
+			return strings.Contains(script, "renv::snapshot(") && !strings.Contains(script, "renv::init(")
+		}),
+		mock.Anything,
+		mock.Anything,
+	).Return([]byte("publisher: created lockfile from installed packages"), []byte(""), nil).Run(func(args mock.Arguments) {
+		// Extract targetPath and create the lockfile
 		script := args.Get(2).(string)
 		start := strings.Index(script, "targetPath <- \"")
 		if start >= 0 {
 			start += len("targetPath <- \"")
 			end := strings.Index(script[start:], "\"")
 			if end > 0 {
-				proj := script[start : start+end]
-				lock := util.NewAbsolutePath(filepath.Join(proj, "renv.lock"), nil)
+				tmpDir = script[start : start+end]
+				lock := util.NewAbsolutePath(filepath.Join(tmpDir, "renv.lock"), nil)
 				_ = lock.WriteFile([]byte("{}"), 0666)
 			}
 		}
-	})
+	}).Once()
 
 	scanner := NewRDependencyScanner(s.log, nil)
 	scanner.rExecutor = s.exec
@@ -85,20 +99,32 @@ func (s *RDependencyScannerSuite) TestScanDependenciesInDir() {
 	s.NoError(err)
 	defer func() { _ = tmpTarget.RemoveAll() }()
 
-	// Expect a RunScript call that includes renv::dependencies and renv::snapshot
+	// Mock 1: detectDependencies call
 	s.exec.On(
 		"RunScript",
 		s.rExecPath,
 		[]string{"-s"},
 		mock.MatchedBy(func(script string) bool {
-			return strings.Contains(script, "renv::dependencies(") && strings.Contains(script, "renv::snapshot(")
+			return strings.Contains(script, "renv::dependencies(") && strings.Contains(script, "cat(paste(deps")
+		}),
+		mock.Anything,
+		mock.Anything,
+	).Return([]byte("glue"), []byte(""), nil).Once()
+
+	// Mock 2: snapshotFromExisting call - simulate success
+	s.exec.On(
+		"RunScript",
+		s.rExecPath,
+		[]string{"-s"},
+		mock.MatchedBy(func(script string) bool {
+			return strings.Contains(script, "renv::snapshot(") && !strings.Contains(script, "renv::init(")
 		}),
 		mock.Anything,
 		mock.Anything,
 	).Return([]byte("ok"), []byte(""), nil).Run(func(args mock.Arguments) {
 		lock := util.NewAbsolutePath(filepath.Join(tmpTarget.String(), "renv.lock"), nil)
 		_ = lock.WriteFile([]byte("{}"), 0666)
-	})
+	}).Once()
 
 	scanner := NewRDependencyScanner(s.log, nil)
 	scanner.rExecutor = s.exec
@@ -115,21 +141,206 @@ func (s *RDependencyScannerSuite) TestScanDependenciesInDir() {
 }
 
 func (s *RDependencyScannerSuite) TestErrWhenLockfileNotCreated() {
-	// Simulate script success but do NOT create lockfile
+	// Mock 1: detectDependencies call
 	s.exec.On(
 		"RunScript",
 		s.rExecPath,
 		[]string{"-s"},
+		mock.MatchedBy(func(script string) bool {
+			return strings.Contains(script, "renv::dependencies(") && strings.Contains(script, "cat(paste(deps")
+		}),
 		mock.Anything,
 		mock.Anything,
+	).Return([]byte("glue"), []byte(""), nil).Once()
+
+	// Mock 2: snapshotFromExisting call - simulate failure (no lockfile created)
+	s.exec.On(
+		"RunScript",
+		s.rExecPath,
+		[]string{"-s"},
+		mock.MatchedBy(func(script string) bool {
+			return strings.Contains(script, "renv::snapshot(") && !strings.Contains(script, "renv::init(")
+		}),
 		mock.Anything,
-	).Return([]byte("ok"), []byte(""), nil)
+		mock.Anything,
+	).Return([]byte("ok"), []byte(""), nil).Once() // Don't create lockfile
+
+	// Mock 3: installThenSnapshot call - also don't create lockfile to trigger error
+	s.exec.On(
+		"RunScript",
+		s.rExecPath,
+		[]string{"-s"},
+		mock.MatchedBy(func(script string) bool {
+			return strings.Contains(script, "renv::init(") && strings.Contains(script, "renv::install(")
+		}),
+		mock.Anything,
+		mock.Anything,
+	).Return([]byte("ok"), []byte(""), nil).Once() // Don't create lockfile
 
 	scanner := NewRDependencyScanner(s.log, nil)
 	scanner.rExecutor = s.exec
 
 	_, err := scanner.ScanDependencies([]string{s.cwd.String()}, s.rExecPath)
 	s.Error(err)
+	s.Contains(err.Error(), "renv could not create lockfile")
+	s.exec.AssertExpectations(s.T())
+}
+
+func (s *RDependencyScannerSuite) TestSnapshotFromExistingSuccess() {
+	// Test that when snapshotFromExisting succeeds, installThenSnapshot is NOT called
+	tmpRoot := util.NewPath("", nil)
+	tmpTarget, err := tmpRoot.TempDir("publisher-renv-test")
+	s.NoError(err)
+	defer func() { _ = tmpTarget.RemoveAll() }()
+
+	// Mock 1: detectDependencies returns some packages
+	s.exec.On(
+		"RunScript",
+		s.rExecPath,
+		[]string{"-s"},
+		mock.MatchedBy(func(script string) bool {
+			return strings.Contains(script, "renv::dependencies(") && strings.Contains(script, "cat(paste(deps")
+		}),
+		mock.Anything,
+		mock.Anything,
+	).Return([]byte("glue\ncli"), []byte(""), nil).Once()
+
+	// Mock 2: snapshotFromExisting succeeds - create lockfile
+	s.exec.On(
+		"RunScript",
+		s.rExecPath,
+		[]string{"-s"},
+		mock.MatchedBy(func(script string) bool {
+			// Snapshot from existing: has snapshot but NOT init/install
+			return strings.Contains(script, "renv::snapshot(") &&
+				!strings.Contains(script, "renv::init(") &&
+				!strings.Contains(script, "renv::install(")
+		}),
+		mock.Anything,
+		mock.Anything,
+	).Return([]byte("ok"), []byte(""), nil).Run(func(args mock.Arguments) {
+		lock := util.NewAbsolutePath(filepath.Join(tmpTarget.String(), "renv.lock"), nil)
+		_ = lock.WriteFile([]byte("{}"), 0666)
+	}).Once()
+
+	// NOTE: No mock for installThenSnapshot - it should NOT be called
+
+	scanner := NewRDependencyScanner(s.log, nil)
+	scanner.rExecutor = s.exec
+
+	lockfilePath, err := scanner.ScanDependenciesInDir([]string{s.cwd.String()}, tmpTarget, "", s.rExecPath)
+	s.NoError(err)
+	s.True(filepath.IsAbs(lockfilePath.String()))
+	s.Equal("renv.lock", filepath.Base(lockfilePath.String()))
+
+	// Verify installThenSnapshot was NOT called (AssertExpectations checks this)
+	s.exec.AssertExpectations(s.T())
+}
+
+func (s *RDependencyScannerSuite) TestInstallThenSnapshotFallback() {
+	// Test that when snapshotFromExisting fails, installThenSnapshot IS called
+	tmpRoot := util.NewPath("", nil)
+	tmpTarget, err := tmpRoot.TempDir("publisher-renv-test")
+	s.NoError(err)
+	defer func() { _ = tmpTarget.RemoveAll() }()
+
+	// Mock 1: detectDependencies returns some packages
+	s.exec.On(
+		"RunScript",
+		s.rExecPath,
+		[]string{"-s"},
+		mock.MatchedBy(func(script string) bool {
+			return strings.Contains(script, "renv::dependencies(") && strings.Contains(script, "cat(paste(deps")
+		}),
+		mock.Anything,
+		mock.Anything,
+	).Return([]byte("ggplot2"), []byte(""), nil).Once()
+
+	// Mock 2: snapshotFromExisting fails - DON'T create lockfile
+	s.exec.On(
+		"RunScript",
+		s.rExecPath,
+		[]string{"-s"},
+		mock.MatchedBy(func(script string) bool {
+			return strings.Contains(script, "renv::snapshot(") &&
+				!strings.Contains(script, "renv::init(") &&
+				!strings.Contains(script, "renv::install(")
+		}),
+		mock.Anything,
+		mock.Anything,
+	).Return([]byte(""), []byte(""), nil).Once() // No lockfile created = snapshot from existing fails
+
+	// Mock 3: installThenSnapshot is called and succeeds
+	s.exec.On(
+		"RunScript",
+		s.rExecPath,
+		[]string{"-s"},
+		mock.MatchedBy(func(script string) bool {
+			// Install then snapshot: has init, install, AND snapshot
+			return strings.Contains(script, "renv::init(") &&
+				strings.Contains(script, "renv::install(") &&
+				strings.Contains(script, "renv::snapshot(")
+		}),
+		mock.Anything,
+		mock.Anything,
+	).Return([]byte("ok"), []byte(""), nil).Run(func(args mock.Arguments) {
+		lock := util.NewAbsolutePath(filepath.Join(tmpTarget.String(), "renv.lock"), nil)
+		_ = lock.WriteFile([]byte("{}"), 0666)
+	}).Once()
+
+	scanner := NewRDependencyScanner(s.log, nil)
+	scanner.rExecutor = s.exec
+
+	lockfilePath, err := scanner.ScanDependenciesInDir([]string{s.cwd.String()}, tmpTarget, "", s.rExecPath)
+	s.NoError(err)
+	s.True(filepath.IsAbs(lockfilePath.String()))
+	s.Equal("renv.lock", filepath.Base(lockfilePath.String()))
+
+	// Verify all three calls happened (detect, snapshot from existing attempt, install then snapshot fallback)
+	s.exec.AssertExpectations(s.T())
+}
+
+func (s *RDependencyScannerSuite) TestDetectDependenciesWithNoDeps() {
+	// Test that when no dependencies are detected, we still proceed correctly
+	tmpRoot := util.NewPath("", nil)
+	tmpTarget, err := tmpRoot.TempDir("publisher-renv-test")
+	s.NoError(err)
+	defer func() { _ = tmpTarget.RemoveAll() }()
+
+	// Mock 1: detectDependencies returns empty
+	s.exec.On(
+		"RunScript",
+		s.rExecPath,
+		[]string{"-s"},
+		mock.MatchedBy(func(script string) bool {
+			return strings.Contains(script, "renv::dependencies(") && strings.Contains(script, "cat(paste(deps")
+		}),
+		mock.Anything,
+		mock.Anything,
+	).Return([]byte(""), []byte(""), nil).Once()
+
+	// Mock 2: snapshotFromExisting with empty deps
+	s.exec.On(
+		"RunScript",
+		s.rExecPath,
+		[]string{"-s"},
+		mock.MatchedBy(func(script string) bool {
+			return strings.Contains(script, "deps <- c()") && strings.Contains(script, "renv::snapshot(")
+		}),
+		mock.Anything,
+		mock.Anything,
+	).Return([]byte("ok"), []byte(""), nil).Run(func(args mock.Arguments) {
+		lock := util.NewAbsolutePath(filepath.Join(tmpTarget.String(), "renv.lock"), nil)
+		_ = lock.WriteFile([]byte("{}"), 0666)
+	}).Once()
+
+	scanner := NewRDependencyScanner(s.log, nil)
+	scanner.rExecutor = s.exec
+
+	lockfilePath, err := scanner.ScanDependenciesInDir([]string{s.cwd.String()}, tmpTarget, "", s.rExecPath)
+	s.NoError(err)
+	s.True(filepath.IsAbs(lockfilePath.String()))
+
 	s.exec.AssertExpectations(s.T())
 }
 
