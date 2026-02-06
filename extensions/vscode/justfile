@@ -97,6 +97,7 @@ configure os="$(just ../../os)" arch="$(just ../../arch)":
     cp "$binary_executable" ./bin/$(basename -- "$binary_executable")
     just assert-binary-executable-exists
     just set-version
+    just sync-changelog
 
 set-version:
     #!/usr/bin/env bash
@@ -106,6 +107,18 @@ set-version:
     version=$(just ../../version)
     echo "info: version $version"
     python3 ./scripts/set-version.py $version
+
+# Syncs the root CHANGELOG.md to extensions/vscode/CHANGELOG.md, stripping the [Unreleased] section
+sync-changelog:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    echo "info: syncing CHANGELOG.md from root to extensions/vscode..." 1>&2
+    # Copy the root changelog, removing the [Unreleased] section (everything between
+    # "## [Unreleased]" and the next versioned heading "## [x.y.z]")
+    awk 'BEGIN{skip=0} /^## \[Unreleased\]/{skip=1; next} /^## \[[0-9]/{skip=0} skip==0{print}' ../../CHANGELOG.md > ./CHANGELOG.md
+    echo "info: CHANGELOG.md synced successfully" 1>&2
 
 # Installs the packaged extension on your configured editor using the editor's CLI. The editor CLI defaults to 'code'. Modify this value via the EDITOR environment variable.
 install os="$(just ../../os)" arch="$(just ../../arch)" editor="code":
