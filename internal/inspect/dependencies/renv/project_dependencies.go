@@ -97,8 +97,8 @@ func (s *defaultRDependencyScanner) ScanDependenciesInDir(paths []string, target
 	}
 	deps <- setdiff(deps, c("renv"))
 	targetPath <- "%s"
-	try(renv::init(project = targetPath, bare = TRUE, force = TRUE), silent = TRUE)
-	try(renv::install(deps, project = targetPath), silent = TRUE)
+	renv::init(project = targetPath, bare = TRUE, force = TRUE)
+	renv::hydrate(packages = deps, project = targetPath, prompt = FALSE)
 	lockfile <- file.path(targetPath, "%s")
 	renv::snapshot(project = targetPath, lockfile = lockfile, prompt = FALSE, type = "all")
 	invisible()
