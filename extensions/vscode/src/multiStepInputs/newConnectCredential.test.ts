@@ -2,7 +2,12 @@
 
 import { describe, expect, test, vi, beforeEach, afterEach } from "vitest";
 import { ServerType } from "src/api/types/contentRecords";
-import { newConnectCredential } from "./newConnectCredential";
+import {
+  newConnectCredential,
+  getAuthMethod,
+  AuthMethod,
+  AuthMethodName,
+} from "./newConnectCredential";
 
 // Mock the MultiStepInput module
 vi.mock("./multiStepHelper", () => {
@@ -198,5 +203,37 @@ describe("newConnectCredential API calls", () => {
       "",
       ServerType.CONNECT,
     );
+  });
+});
+
+describe("getAuthMethod", () => {
+  test("returns API_KEY for AuthMethodName.API_KEY", () => {
+    expect(getAuthMethod(AuthMethodName.API_KEY)).toBe(AuthMethod.API_KEY);
+  });
+
+  test("returns TOKEN for AuthMethodName.TOKEN", () => {
+    expect(getAuthMethod(AuthMethodName.TOKEN)).toBe(AuthMethod.TOKEN);
+  });
+
+  test("returns SNOWFLAKE_CONN for AuthMethodName.SNOWFLAKE_CONN", () => {
+    expect(getAuthMethod(AuthMethodName.SNOWFLAKE_CONN)).toBe(
+      AuthMethod.SNOWFLAKE_CONN,
+    );
+  });
+});
+
+describe("AuthMethod enum", () => {
+  test("has correct values", () => {
+    expect(AuthMethod.API_KEY).toBe("apiKey");
+    expect(AuthMethod.TOKEN).toBe("token");
+    expect(AuthMethod.SNOWFLAKE_CONN).toBe("snowflakeConnection");
+  });
+});
+
+describe("AuthMethodName enum", () => {
+  test("has correct display names", () => {
+    expect(AuthMethodName.API_KEY).toBe("API Key");
+    expect(AuthMethodName.TOKEN).toBe("Token Authentication");
+    expect(AuthMethodName.SNOWFLAKE_CONN).toBe("Snowflake Connection");
   });
 });

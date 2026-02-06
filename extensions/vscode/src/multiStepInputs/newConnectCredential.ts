@@ -41,19 +41,19 @@ import {
   TokenAuthResult,
 } from "src/auth/ConnectAuthTokenActivator";
 
-enum AuthMethod {
+export enum AuthMethod {
   API_KEY = "apiKey",
   TOKEN = "token",
   SNOWFLAKE_CONN = "snowflakeConnection",
 }
 
-enum AuthMethodName {
+export enum AuthMethodName {
   API_KEY = "API Key",
   TOKEN = "Token Authentication",
   SNOWFLAKE_CONN = "Snowflake Connection",
 }
 
-const getAuthMethod = (authMethodName: AuthMethodName) => {
+export const getAuthMethod = (authMethodName: AuthMethodName) => {
   switch (authMethodName) {
     case AuthMethodName.API_KEY:
       return AuthMethod.API_KEY;
