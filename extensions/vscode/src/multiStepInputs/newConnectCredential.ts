@@ -44,11 +44,13 @@ import {
 enum AuthMethod {
   API_KEY = "apiKey",
   TOKEN = "token",
+  SNOWFLAKE_CONN = "snowflakeConnection",
 }
 
 enum AuthMethodName {
   API_KEY = "API Key",
   TOKEN = "Token Authentication",
+  SNOWFLAKE_CONN = "Snowflake Connection",
 }
 
 const getAuthMethod = (authMethodName: AuthMethodName) => {
@@ -57,6 +59,8 @@ const getAuthMethod = (authMethodName: AuthMethodName) => {
       return AuthMethod.API_KEY;
     case AuthMethodName.TOKEN:
       return AuthMethod.TOKEN;
+    case AuthMethodName.SNOWFLAKE_CONN:
+      return AuthMethod.SNOWFLAKE_CONN;
   }
 };
 
@@ -106,6 +110,10 @@ export async function newConnectCredential(
     return authMethod === AuthMethod.API_KEY;
   };
 
+  const isSnowflakeConn = (authMethod: AuthMethod) => {
+    return authMethod === AuthMethod.SNOWFLAKE_CONN;
+  };
+
   const isValidTokenAuth = () => {
     // for token authentication, require token and privateKey
     return (
@@ -117,17 +125,17 @@ export async function newConnectCredential(
   };
 
   const isValidApiKeyAuth = () => {
-    // for API key authentication, require apiKey
-    return (
-      isConnect(serverType) &&
-      isApiKey(authMethod) &&
-      isString(state.data.apiKey)
-    );
+    // for API key authentication, require apiKey (works for both Connect and Snowflake)
+    return isApiKey(authMethod) && isString(state.data.apiKey);
   };
 
   const isValidSnowflakeAuth = () => {
-    // for Snowflake, require snowflakeConnection
-    return isSnowflake(serverType) && isString(state.data.snowflakeConnection);
+    // for Snowflake Connection authentication, require snowflakeConnection
+    return (
+      isSnowflake(serverType) &&
+      isSnowflakeConn(authMethod) &&
+      isString(state.data.snowflakeConnection)
+    );
   };
 
   // ***************************************************************
@@ -286,14 +294,6 @@ export async function newConnectCredential(
 
     state.data.url = formatURL(resp.trim());
 
-    if (isSnowflake(serverType)) {
-      return {
-        name: step.INPUT_SNOWFLAKE_CONN,
-        step: (input: MultiStepInput) =>
-          steps[step.INPUT_SNOWFLAKE_CONN](input, state),
-      };
-    }
-
     return {
       name: step.INPUT_AUTH_METHOD,
       step: (input: MultiStepInput) =>
@@ -302,19 +302,32 @@ export async function newConnectCredential(
   }
 
   // ***************************************************************
-  // Step: Select authentication method (Connect only)
+  // Step: Select authentication method
+  // For Connect: Token Authentication (Recommended) or API Key
+  // For Snowflake: Snowflake Connection or API Key (no Token Auth)
   // ***************************************************************
   async function inputAuthMethod(input: MultiStepInput, state: MultiStepState) {
-    const authMethods = [
-      {
-        label: AuthMethodName.TOKEN,
-        description: "Recommended - one click connection",
-      },
-      {
-        label: AuthMethodName.API_KEY,
-        description: "Manually enter an API key",
-      },
-    ];
+    const authMethods = isSnowflake(serverType)
+      ? [
+          {
+            label: AuthMethodName.SNOWFLAKE_CONN,
+            description: "Use Snowflake connection for authentication",
+          },
+          {
+            label: AuthMethodName.API_KEY,
+            description: "Manually enter an API key",
+          },
+        ]
+      : [
+          {
+            label: AuthMethodName.TOKEN,
+            description: "Recommended - one click connection",
+          },
+          {
+            label: AuthMethodName.API_KEY,
+            description: "Manually enter an API key",
+          },
+        ];
 
     const pick = await input.showQuickPick({
       title: state.title,
@@ -322,13 +335,21 @@ export async function newConnectCredential(
       totalSteps: 0,
       placeholder: "Select authentication method",
       items: authMethods,
-      activeItem: authMethods[0], // Token authentication is default
+      activeItem: authMethods[0],
       buttons: [],
       shouldResume: () => Promise.resolve(false),
       ignoreFocusOut: true,
     });
 
     authMethod = getAuthMethod(pick.label as AuthMethodName);
+
+    if (isSnowflakeConn(authMethod)) {
+      return {
+        name: step.INPUT_SNOWFLAKE_CONN,
+        step: (input: MultiStepInput) =>
+          steps[step.INPUT_SNOWFLAKE_CONN](input, state),
+      };
+    }
 
     if (isApiKey(authMethod)) {
       return {
