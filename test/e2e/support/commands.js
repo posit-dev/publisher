@@ -1,4 +1,5 @@
-// Copyright (C) 2025 by Posit Software, PBC.
+/* eslint-disable cypress/unsafe-to-chain-command */
+// Copyright (C) 2026 by Posit Software, PBC.
 
 import "@testing-library/cypress/add-commands";
 import "cypress-wait-until";
@@ -180,6 +181,7 @@ EOF`,
 
 // clearupDeployments
 // Purpose: Remove .posit metadata to reset deployments per test or per subdir, with exclusions.
+// - Container-safe: runs deletion inside the Docker container to avoid permission issues in CqI.
 Cypress.Commands.add(
   "clearupDeployments",
   (subdir, excludeDirs = ["config-errors"]) => {
@@ -188,14 +190,24 @@ Cypress.Commands.add(
       // If subdir is in the exclude list, skip deletion
       if (excludeDirs.includes(subdir)) return;
       const target = `content-workspace/${subdir}/.posit`;
-      cy.exec(`rm -rf ${target}`, { failOnNonZeroExit: false });
+      const dockerPath = target.replace(
+        "content-workspace/",
+        "/home/coder/workspace/",
+      );
+      cy.exec(
+        `docker exec publisher-e2e.code-server bash -c "rm -rf '${dockerPath}'"`,
+        { failOnNonZeroExit: false },
+      );
     } else {
       // Build a list of all .posit directories except excluded ones
       const excludePatterns = excludeDirs
         .map((dir) => `-not -path "*/${dir}/*"`)
         .join(" ");
-      const findCmd = `find content-workspace -type d -name ".posit" ${excludePatterns}`;
-      cy.exec(`${findCmd} -exec rm -rf {} +`, { failOnNonZeroExit: false });
+      const findCmd = `find /home/coder/workspace -type d -name ".posit" ${excludePatterns}`;
+      cy.exec(
+        `docker exec publisher-e2e.code-server bash -c "${findCmd} -exec rm -rf {} +"`,
+        { failOnNonZeroExit: false },
+      );
     }
   },
 );
@@ -862,3 +874,5 @@ Cypress.on("uncaught:exception", () => {
   // Prevent CI from failing on harmless errors
   return false;
 });
+
+/* eslint-enable cypress/unsafe-to-chain-command */
