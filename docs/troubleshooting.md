@@ -12,7 +12,7 @@ selecting the "Posit Publisher" option.
 When opening an issue it is okay to copy and paste the output as is, you can also provide this output
 by saving it into a file and attaching it to the issue.
 
-![](https://cdn.posit.co/publisher/assets/img/save-output.png)
+![](https://cdn.posit.co/publisher/assets/img/publisher-output.png)
 
 ## The Configuration has a schema error
 
