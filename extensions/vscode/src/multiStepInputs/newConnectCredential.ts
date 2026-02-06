@@ -80,6 +80,9 @@ export async function newConnectCredential(
   let serverType: ServerType = ServerType.CONNECT;
   const productName: ProductName = ProductName.CONNECT;
   let authMethod: AuthMethod = AuthMethod.TOKEN;
+  // When true, Snowflake connections are available on the system (we're inside Snowflake)
+  // and Token Authentication should be hidden (browser can't reach internal URLs).
+  let hasSnowflakeConnections: boolean = false;
 
   enum step {
     INPUT_SERVER_URL = "inputServerUrl",
@@ -280,6 +283,8 @@ export async function newConnectCredential(
             // serverType will be overwritten if it is snowflake
             serverType = testResult.data.serverType;
           }
+          // Capture whether we're inside a Snowflake environment
+          hasSnowflakeConnections = testResult.data.hasSnowflakeConnections;
         } catch (e) {
           return Promise.resolve({
             message: `Error: Invalid URL (unable to validate connectivity with Server URL - ${getMessageFromError(e)}).`,
@@ -303,11 +308,18 @@ export async function newConnectCredential(
 
   // ***************************************************************
   // Step: Select authentication method
-  // For Connect: Token Authentication (Recommended) or API Key
-  // For Snowflake: Snowflake Connection or API Key (no Token Auth)
+  // For Connect (not in Snowflake): Token Authentication (Recommended) or API Key
+  // For Snowflake (detected by URL or by hasSnowflakeConnections): Snowflake Connection or API Key (no Token Auth)
   // ***************************************************************
   async function inputAuthMethod(input: MultiStepInput, state: MultiStepState) {
-    const authMethods = isSnowflake(serverType)
+    // Hide Token Auth when:
+    // - URL is detected as Snowflake (isSnowflake(serverType))
+    // - OR Snowflake connections are available on the system (hasSnowflakeConnections)
+    //   This handles the case where user enters internal URL like https://connect/
+    const shouldHideTokenAuth =
+      isSnowflake(serverType) || hasSnowflakeConnections;
+
+    const authMethods = shouldHideTokenAuth
       ? [
           {
             label: AuthMethodName.SNOWFLAKE_CONN,

@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/posit-dev/publisher/internal/accounts"
+	"github.com/posit-dev/publisher/internal/api_client/auth/snowflake"
 	"github.com/posit-dev/publisher/internal/clients/connect"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/logging"
@@ -31,6 +32,22 @@ func TestPostTestCredentialsHandlerSuite(t *testing.T) {
 
 func (s *PostTestCredentialsHandlerSuite) SetupTest() {
 	connectClientFactory = connect.NewConnectClient
+}
+
+// mockNoSnowflakeConnections returns a mock that simulates no Snowflake connections
+func mockNoSnowflakeConnections() *snowflake.MockConnections {
+	connections := &snowflake.MockConnections{}
+	connections.On("List").Return(map[string]*snowflake.Connection{}, nil)
+	return connections
+}
+
+// mockWithSnowflakeConnections returns a mock that simulates Snowflake connections present
+func mockWithSnowflakeConnections() *snowflake.MockConnections {
+	connections := &snowflake.MockConnections{}
+	connections.On("List").Return(map[string]*snowflake.Connection{
+		"default": {},
+	}, nil)
+	return connections
 }
 
 func (s *PostTestCredentialsHandlerSuite) TestPostTestCredentialsHandlerFunc() {
@@ -54,7 +71,7 @@ func (s *PostTestCredentialsHandlerSuite) TestPostTestCredentialsHandlerFunc() {
 	connectClientFactory = func(account *accounts.Account, timeout time.Duration, emitter events.Emitter, log logging.Logger) (connect.APIClient, error) {
 		return client, nil
 	}
-	handler := PostTestCredentialsHandlerFunc(log)
+	handler := PostTestCredentialsHandlerFunc(log, mockNoSnowflakeConnections())
 	handler(rec, req)
 
 	s.Equal(http.StatusOK, rec.Result().StatusCode)
@@ -65,6 +82,7 @@ func (s *PostTestCredentialsHandlerSuite) TestPostTestCredentialsHandlerFunc() {
 	s.Equal(user, response.User)
 	s.Equal("https://connect.example.com", response.URL)
 	s.Nil(response.Error)
+	s.False(response.HasSnowflakeConnections)
 }
 
 func (s *PostTestCredentialsHandlerSuite) TestPostTestCredentialsHandlerFuncWithConnectCopiedURL() {
@@ -93,7 +111,7 @@ func (s *PostTestCredentialsHandlerSuite) TestPostTestCredentialsHandlerFuncWith
 	connectClientFactory = func(account *accounts.Account, timeout time.Duration, emitter events.Emitter, log logging.Logger) (connect.APIClient, error) {
 		return client, nil
 	}
-	handler := PostTestCredentialsHandlerFunc(log)
+	handler := PostTestCredentialsHandlerFunc(log, mockNoSnowflakeConnections())
 	handler(rec, req)
 
 	s.Equal(http.StatusOK, rec.Result().StatusCode)
@@ -133,7 +151,7 @@ func (s *PostTestCredentialsHandlerSuite) TestPostTestCredentialsHandlerFuncWith
 	connectClientFactory = func(account *accounts.Account, timeout time.Duration, emitter events.Emitter, log logging.Logger) (connect.APIClient, error) {
 		return client, nil
 	}
-	handler := PostTestCredentialsHandlerFunc(log)
+	handler := PostTestCredentialsHandlerFunc(log, mockNoSnowflakeConnections())
 	handler(rec, req)
 
 	s.Equal(http.StatusOK, rec.Result().StatusCode)
@@ -163,7 +181,7 @@ func (s *PostTestCredentialsHandlerSuite) TestPostTestCredentialsHandlerFuncNoAp
 	connectClientFactory = func(account *accounts.Account, timeout time.Duration, emitter events.Emitter, log logging.Logger) (connect.APIClient, error) {
 		return client, nil
 	}
-	handler := PostTestCredentialsHandlerFunc(log)
+	handler := PostTestCredentialsHandlerFunc(log, mockNoSnowflakeConnections())
 	handler(rec, req)
 
 	s.Equal(http.StatusOK, rec.Result().StatusCode)
@@ -194,7 +212,7 @@ func (s *PostTestCredentialsHandlerSuite) TestPostTestCredentialsHandlerFuncBadA
 	connectClientFactory = func(account *accounts.Account, timeout time.Duration, emitter events.Emitter, log logging.Logger) (connect.APIClient, error) {
 		return client, nil
 	}
-	handler := PostTestCredentialsHandlerFunc(log)
+	handler := PostTestCredentialsHandlerFunc(log, mockNoSnowflakeConnections())
 	handler(rec, req)
 
 	s.Equal(http.StatusOK, rec.Result().StatusCode)
@@ -205,4 +223,41 @@ func (s *PostTestCredentialsHandlerSuite) TestPostTestCredentialsHandlerFuncBadA
 	s.Nil(response.User)
 	s.NotNil(response.Error)
 	s.Equal("Test error from TestAuthentication.", response.Error.Message)
+}
+
+func (s *PostTestCredentialsHandlerSuite) TestPostTestCredentialsHandlerFuncWithSnowflakeConnections() {
+	log := logging.New()
+
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest("POST", "/api/test-credentials", nil)
+	s.NoError(err)
+
+	// Test with internal URL (like https://connect/) - should still return hasSnowflakeConnections=true
+	req.Body = io.NopCloser(strings.NewReader(
+		`{
+			"url": "https://connect.example.com",
+			"apiKey": "0123456789abcdef0123456789abcdef"
+		}`))
+
+	client := connect.NewMockClient()
+	user := &connect.User{
+		Email: "user@example.com",
+	}
+	client.On("TestAuthentication", mock.Anything).Return(user, nil)
+	connectClientFactory = func(account *accounts.Account, timeout time.Duration, emitter events.Emitter, log logging.Logger) (connect.APIClient, error) {
+		return client, nil
+	}
+	// Use mock with Snowflake connections present
+	handler := PostTestCredentialsHandlerFunc(log, mockWithSnowflakeConnections())
+	handler(rec, req)
+
+	s.Equal(http.StatusOK, rec.Result().StatusCode)
+
+	var response PostTestCredentialsResponseBody
+	err = json.Unmarshal(rec.Body.Bytes(), &response)
+	s.NoError(err)
+	s.Equal(user, response.User)
+	s.Equal("https://connect.example.com", response.URL)
+	s.Nil(response.Error)
+	s.True(response.HasSnowflakeConnections)
 }

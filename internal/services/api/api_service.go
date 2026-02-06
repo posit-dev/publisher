@@ -109,7 +109,7 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	})).Methods(http.MethodDelete)
 
 	// POST /api/test-credentials
-	r.Handle(ToPath("test-credentials"), PostTestCredentialsHandlerFunc(log)).
+	r.Handle(ToPath("test-credentials"), PostTestCredentialsHandlerFunc(log, snowflake.NewConnections())).
 		Methods(http.MethodPost)
 
 	// POST /api/connect/open-content
