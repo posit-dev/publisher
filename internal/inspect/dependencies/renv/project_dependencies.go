@@ -97,6 +97,8 @@ func (s *defaultRDependencyScanner) ScanDependenciesInDir(paths []string, target
 	}
 	deps <- setdiff(deps, c("renv"))
 	targetPath <- "%s"
+        # initialize project with bare = TRUE to avoid polluting user's project
+        # then hydrate() manually to copy installed packages over
 	renv::init(project = targetPath, bare = TRUE, force = TRUE)
 	renv::hydrate(packages = deps, project = targetPath, prompt = FALSE)
 	lockfile <- file.path(targetPath, "%s")
