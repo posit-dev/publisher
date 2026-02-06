@@ -6,6 +6,7 @@ import (
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/executor"
+	"github.com/posit-dev/publisher/internal/inspect/dependencies/pydeps"
 	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/types"
@@ -109,6 +110,18 @@ func (i *defaultRInspector) RequiresR(cfg *config.Config) (bool, error) {
 			return false, err
 		}
 		return exists, nil
+	}
+	if cfg.Type.IsPythonContent() {
+		// Check if the Python project uses rpy2, which requires R at runtime
+		hasRpy2, err := pydeps.HasRpy2Dependency(i.base)
+		if err != nil {
+			i.log.Debug("Error checking for rpy2 dependency", "error", err)
+			return false, nil
+		}
+		if hasRpy2 {
+			i.log.Info("Detected rpy2 dependency, R is required")
+			return true, nil
+		}
 	}
 	return false, nil
 }
