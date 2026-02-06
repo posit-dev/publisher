@@ -2,7 +2,7 @@
 
 This document contains some common issues and solutions for Posit Publisher.
 
-## Publisher Output
+## Output -> Posit Publisher
 
 Publisher output may help to track down problems, it is located in the "Output" window under the "Posit Publisher" option.
 
