@@ -138,6 +138,19 @@ func (s *defaultRDependencyScanner) detectDependencies(paths []string, rExecutab
 	return deps, nil
 }
 
+// depsToRVector converts a slice of package names into an R vector string like c("pkg1", "pkg2").
+// Returns "c()" for empty slices.
+func (s *defaultRDependencyScanner) depsToRVector(deps []string) string {
+	if len(deps) == 0 {
+		return "c()"
+	}
+	quoted := make([]string, len(deps))
+	for i, dep := range deps {
+		quoted[i] = "\"" + dep + "\""
+	}
+	return "c(" + strings.Join(quoted, ", ") + ")"
+}
+
 // snapshotFromExisting attempts to create a lockfile by snapshotting from the user's
 // existing installed packages. Returns an error if the snapshot fails.
 func (s *defaultRDependencyScanner) snapshotFromExisting(deps []string, targetDir util.Path, lockfile string, rExecutable string) error {
@@ -145,15 +158,7 @@ func (s *defaultRDependencyScanner) snapshotFromExisting(deps []string, targetDi
 	lockfile = filepath.ToSlash(lockfile)
 	repoURL := RepoURLFromOptions(s.repoOpts)
 
-	// Convert deps to R vector
-	depsVec := "c()"
-	if len(deps) > 0 {
-		quoted := make([]string, len(deps))
-		for i, dep := range deps {
-			quoted[i] = "\"" + dep + "\""
-		}
-		depsVec = "c(" + strings.Join(quoted, ", ") + ")"
-	}
+	depsVec := s.depsToRVector(deps)
 
 	script := fmt.Sprintf(`(function(){
 	options(renv.consent = TRUE)
@@ -199,15 +204,7 @@ func (s *defaultRDependencyScanner) installThenSnapshot(deps []string, targetDir
 	lockfile = filepath.ToSlash(lockfile)
 	repoURL := RepoURLFromOptions(s.repoOpts)
 
-	// Convert deps to R vector
-	depsVec := "c()"
-	if len(deps) > 0 {
-		quoted := make([]string, len(deps))
-		for i, dep := range deps {
-			quoted[i] = "\"" + dep + "\""
-		}
-		depsVec = "c(" + strings.Join(quoted, ", ") + ")"
-	}
+	depsVec := s.depsToRVector(deps)
 
 	script := fmt.Sprintf(`(function(){
 	options(renv.consent = TRUE)
