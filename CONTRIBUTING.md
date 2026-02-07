@@ -182,22 +182,20 @@ Run the following commands from the `test/e2e` subdirectory:
 source .venv/bin/activate
 ```
 
-Build the publisher and start the Cypress interactive test runner:
+Build the publisher and start the Cypress tests headlessly:
 
 ```bash
 just build-images
 just dev
 ```
 
-This will start the Cypress test runner, which will open a browser window and allow you to run the end-to-end tests against the Posit Publisher VSCode extension.
-
-Use VSCode to modify the tests in the `test/e2e/tests` directory. Saving changes will automatically re-run the tests in the Cypress test runner.
-
-Tests can also be run in headless mode with:
+To run the interactive test runner, which will open a browser window and allow you to run the end-to-end tests against the Posit Publisher VSCode extension, use:
 
 ```bash
-npx cypress run
+npm run cypress:open
 ```
+
+Saving changes to test files in `test/e2e/tests` will automatically re-run the tests in the Cypress test runner.
 
 When done, you can deactivate the virtual environment with:
 
@@ -303,7 +301,7 @@ To update the schema:
 - Verify that the unit tests pass. They load the example files and validate them against the schemas.
 - The `draft` folder contains schemas that are a superset of the main schemas, and have ideas for the other settings we have considered adding. Usually we have added any new fields to those schemas and example files as well.
 
-As Pull Requests are merged into main, we update (or create in the case of a new schema) the file on the CDN (in S3). Currently, this is a manual process requiring write access to our S3 bucket.
+When Pull Requests that modify schema files are merged into main, a GitHub Actions workflow automatically uploads the updated schemas to S3, making them available on the CDN.
 
 #### Force Even Better TOML to update
 
@@ -335,10 +333,18 @@ minor version number is odd.
 
 ### Before Releasing
 
-- Prep the [CHANGELOG.md](CHANGELOG.md): ensure all relevant changes are documented in `CHANGELOG.md` for the repository, and the [VSCode Extension CHANGELOG.md](extensions/vscode/CHANGELOG.md) that is bundled with the extension. To do this:
-  1. Diff `main` against the last release, and compare with what's in `CHANGELOG.md`. Generally these should be the same, but sometimes things get missed.
-  2. In `CHANGELOG.md` add the new version section under `[Unreleased]` (keep `[Unreleased]` for next time), and copy the changes to `extensions/vscode/CHANGELOG.md`
-  3. Open a PR to update the `CHANGELOG.md`s. [Here's](https://github.com/posit-dev/publisher/pull/3373) an example.
+
+- Ensure that all relevant changes are documented in the root [CHANGELOG.md](CHANGELOG.md): diff `main` against the last release, and compare with what's in `CHANGELOG.md`. 
+  Generally these should be the same, but sometimes things get missed.
+  The VSCode extension changelog is automatically synced from the root changelog
+  during the build process (`just configure` runs `just sync-changelog`).
+
+  **Note:** The sync script:
+  - Preserves the VSCode extension-specific header
+  - Strips the `[Unreleased]` section
+  - Only includes releases from 1.1.3 onwards (the initial VSCode extension release)
+  - Pre-extension releases (1.1.2 and earlier) are excluded from the VSCode changelog
+
 - Merge any "Update licenses" PRs to main
 - Merge any release preparation PRs to main
 - Merge any Dependabot PRs to main

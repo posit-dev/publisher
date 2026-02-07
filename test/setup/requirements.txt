@@ -1,3 +1,0 @@
-requests
-fuzzbucket-client<=0.13.0
-rsconnect-python
