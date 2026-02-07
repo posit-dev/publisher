@@ -182,22 +182,20 @@ Run the following commands from the `test/e2e` subdirectory:
 source .venv/bin/activate
 ```
 
-Build the publisher and start the Cypress interactive test runner:
+Build the publisher and start the Cypress tests headlessly:
 
 ```bash
 just build-images
 just dev
 ```
 
-This will start the Cypress test runner, which will open a browser window and allow you to run the end-to-end tests against the Posit Publisher VSCode extension.
-
-Use VSCode to modify the tests in the `test/e2e/tests` directory. Saving changes will automatically re-run the tests in the Cypress test runner.
-
-Tests can also be run in headless mode with:
+To run the interactive test runner, which will open a browser window and allow you to run the end-to-end tests against the Posit Publisher VSCode extension, use:
 
 ```bash
-npx cypress run
+npm run cypress:open
 ```
+
+Saving changes to test files in `test/e2e/tests` will automatically re-run the tests in the Cypress test runner.
 
 When done, you can deactivate the virtual environment with:
 
