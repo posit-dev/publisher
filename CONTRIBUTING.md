@@ -335,7 +335,7 @@ minor version number is odd.
 
 
 - Ensure that all relevant changes are documented in [CHANGELOG.md](CHANGELOG.md): diff `main` against the last release, and compare with what's in `CHANGELOG.md`. 
-  Generally these should be the same, but sometimes things get missed. Open a PR to update `CHANGELOG.md` if anything is missing.
+  Generally these will be the same, but sometimes things get missed. Open a PR to update `CHANGELOG.md` if anything is missing.
 
   Building and packaging the VSCode extension for release will [automatically sync](./extensions/vscode/justfile#L115) the VSCode changelog from the root `CHANGELOG.md`.
 
