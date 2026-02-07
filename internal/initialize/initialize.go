@@ -148,6 +148,11 @@ func (i *defaultInitialize) normalizeConfig(
 			log.Debug("Error while inspecting to generate an R based configuration", "error", err.Error())
 			return err
 		}
+		// Set empty R placeholder if not already set by detector.
+		// FillDefaults will populate version info when config is loaded for deployment.
+		if cfg.R == nil {
+			cfg.R = &config.R{}
+		}
 		// Only add package file if it exists
 		if rConfig.PackageFile != "" {
 			if ok, _ := base.Join(rConfig.PackageFile).Exists(); ok {

@@ -213,6 +213,33 @@ func (s *InitializeSuite) TestGetPossiblePythonConfig() {
 	s.Equal(emptyPyConfig, configs[0].Python)
 }
 
+func (s *InitializeSuite) TestGetPossiblePythonConfigWithRpy2() {
+	// Test that Python projects with rpy2 get an R section added
+	log := logging.New()
+	appPy := s.createAppPy()
+	exist, err := appPy.Exists()
+	s.NoError(err)
+	s.Equal(true, exist)
+
+	i := NewInitialize(
+		detectors.NewContentTypeDetector,
+		setupMockPythonInspector(true, nil),
+		setupNewPythonInterpreterMock,
+		setupMockRInspector(true, nil), // R is required (rpy2 detected)
+		setupNewRInterpreterMock,
+	)
+
+	configs, err := i.GetPossibleConfigs(s.cwd, util.Path{}, util.Path{}, util.RelativePath{}, log)
+	s.NoError(err)
+
+	s.Len(configs, 1)
+	s.Equal(contenttypes.ContentTypePythonFlask, configs[0].Type)
+	s.Equal("app.py", configs[0].Entrypoint)
+	s.Equal(emptyPyConfig, configs[0].Python)
+	// R section should be added for Python projects that use rpy2
+	s.Equal(emptyRConfig, configs[0].R)
+}
+
 func (s *InitializeSuite) TestGetPossibleHTMLConfig() {
 	log := logging.New()
 	err := s.cwd.Join("index.html").WriteFile([]byte(`<html></html>`), 0666)
