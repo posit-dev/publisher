@@ -49,7 +49,7 @@ jobs:
 
       - name: Lint e2e tests
         working-directory: test/e2e
-        run: just lint
+        run: npm run lint
 
       - name: Cache Cypress binary
         uses: actions/cache@v5
