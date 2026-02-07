@@ -352,7 +352,8 @@ Cypress.Commands.add("runCommandPaletteCommand", (commandLabel) => {
     8,
     750,
   ).should("be.visible");
-  cy.get(".quick-input-widget input").clear().type(`> ${commandLabel}`);
+  cy.get(".quick-input-widget input").clear();
+  cy.get(".quick-input-widget input").type(`> ${commandLabel}`);
   cy.get(".quick-input-list-row").then(($rows) => {
     const fallbackLabel = commandLabel.includes(":")
       ? commandLabel.split(":").slice(1).join(":").trim()
@@ -373,7 +374,8 @@ Cypress.Commands.add("runCommandPaletteCommand", (commandLabel) => {
 // Purpose: Fill a quick input prompt and submit the value.
 Cypress.Commands.add("quickInputType", (promptText, value) => {
   cy.get(".quick-input-message").should("contain.text", promptText);
-  cy.get(".quick-input-widget input").clear().type(`${value}{enter}`);
+  cy.get(".quick-input-widget input").clear();
+  cy.get(".quick-input-widget input").type(`${value}{enter}`);
 });
 
 // Update waitForPublisherIframe to use a longer default timeout for CI reliability
