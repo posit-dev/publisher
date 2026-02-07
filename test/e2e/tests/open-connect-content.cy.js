@@ -81,7 +81,10 @@ describe("Open Connect Content", () => {
 
     cy.retryWithBackoff(
       () =>
-        cy.contains(".explorer-viewlet .explorer-item a > span", "manifest.json"),
+        cy.contains(
+          ".explorer-viewlet .explorer-item a > span",
+          "manifest.json",
+        ),
       10,
       1000,
     ).should("be.visible");
