@@ -347,7 +347,7 @@ func (m *LockfilePackageMapper) findAllRepositories(lockfile *Lockfile) map[stri
 	// Initialize with standard repositories as defaults
 	repoNameToURL := map[string]string{
 		"CRAN": "https://cloud.r-project.org",
-		"RSPM": "https://packagemanager.rstudio.com/all/latest",
+		"RSPM": "https://packagemanager.posit.co/cran/latest",
 	}
 
 	// Add Bioconductor repositories default if version is available
