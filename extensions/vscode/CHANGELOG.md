@@ -662,4 +662,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Split extension publishing CI in to two separate jobs to facilitate reruns (#1898)
-
