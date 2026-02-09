@@ -89,12 +89,14 @@ describe("Server", () => {
   });
 
   describe("stop", () => {
-    test("does nothing if server is already down", async () => {
+    test("sets stopping flag but does nothing else if server is already down", async () => {
       // Mock isDown to return true (server is down)
       vi.spyOn(server, "isDown").mockResolvedValue(true);
 
       await server.stop();
 
+      // stopping flag is set immediately, even if server is already down
+      expect((server as unknown as ServerInternal).stopping).toBe(true);
       expect(mockProcess.kill).not.toHaveBeenCalled();
       expect(window.setStatusBarMessage).not.toHaveBeenCalled();
     });

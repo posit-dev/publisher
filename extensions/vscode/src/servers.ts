@@ -104,14 +104,14 @@ export class Server implements Disposable {
    * @returns {Promise<void>} A Promise that resolves when the server stops.
    */
   async stop(): Promise<void> {
+    // Set stopping flag immediately to prevent auto-restart race conditions
+    this.stopping = true;
+
     // Check if server is down
     if (await this.isDown()) {
       // Do nothing if server is already down
       return;
     }
-
-    // Set stopping flag to prevent auto-restart
-    this.stopping = true;
 
     // Display status message to user
     // Guard against VS Code shutdown - API may be unavailable
