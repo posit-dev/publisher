@@ -13,7 +13,7 @@
   "private": true,
   "devDependencies": {
     "@testing-library/cypress": "^10.1.0",
-    "axios": "^1.6.0",
+    "axios": "^1.13.5",
     "cypress": "^14.5.4",
     "cypress-network-idle": "^1.15.0",
     "cypress-terminal-report": "^6.2.0",
