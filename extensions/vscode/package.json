@@ -669,7 +669,7 @@
     "@vscode/test-cli": "^0.0.12",
     "@vscode/test-electron": "^2.3.8",
     "esbuild": "^0.27.2",
-    "eslint": "^9.39.2",
+    "eslint": "^10.0.0",
     "eslint-config-prettier": "^10.0.1",
     "fantasticon": "^4.1.0",
     "fishery": "^2.4.0",
