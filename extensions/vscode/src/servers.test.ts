@@ -16,26 +16,6 @@ vi.mock("node:child_process", () => ({
   spawn: vi.fn(() => mockProcess),
 }));
 
-// Mock net (needed for module loading, but we'll mock isDown/isUp directly)
-vi.mock("net", () => ({
-  Socket: vi.fn(() => ({
-    setTimeout: vi.fn(),
-    on: vi.fn(),
-    end: vi.fn(),
-    destroy: vi.fn(),
-    connect: vi.fn(),
-  })),
-}));
-
-// Mock retry (needed for module loading)
-vi.mock("retry", () => ({
-  operation: vi.fn(() => ({
-    attempt: vi.fn(),
-    retry: vi.fn(),
-    mainError: vi.fn(),
-  })),
-}));
-
 // Mock vscode
 const mockStatusBarMessage = {
   dispose: vi.fn(),
@@ -48,10 +28,6 @@ vi.mock("vscode", () => ({
 }));
 
 // Mock src modules
-vi.mock("src", () => ({
-  HOST: "127.0.0.1",
-}));
-
 vi.mock("src/commands", () => ({
   create: vi.fn(() => Promise.resolve(["/path/to/binary", ["arg1", "arg2"]])),
 }));
