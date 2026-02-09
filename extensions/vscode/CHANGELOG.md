@@ -25,7 +25,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fixed the agent process auto-restarting during intentional shutdown (e.g., when VS Code closes). (#3195)
 - Fixed server settings fetch failing, which caused the "Add Integration Request" action to be hidden. (#3444)
 - Publisher no longer fails to list project files when the directory contains special file types (e.g. Unix socket files). (#3403)
 - Log messages in the Publisher Logs panel are no longer duplicated when multiple deployments are made. (#3069)
@@ -663,3 +662,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Split extension publishing CI in to two separate jobs to facilitate reruns (#1898)
+
