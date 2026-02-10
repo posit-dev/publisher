@@ -91,6 +91,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - When opening the full deployment log record, it opens as a new unsaved file. (#2996)
 
+### Fixed
+
+- Snowflake SPCS (Snowpark Container Services) authentication now properly handles OIDC
+  by requiring both a Snowflake connection name and a Connect API key. This aligns with
+  changes in Snowflake SPCS where proxied authentication headers no longer carry sufficient
+  user identification information.
+
 ## [1.22.0]
 
 ### Added

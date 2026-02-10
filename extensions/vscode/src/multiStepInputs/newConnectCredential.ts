@@ -81,6 +81,7 @@ export async function newConnectCredential(
     INPUT_SERVER_URL = "inputServerUrl",
     INPUT_API_KEY = "inputAPIKey",
     INPUT_SNOWFLAKE_CONN = "inputSnowflakeConnection",
+    INPUT_SNOWFLAKE_API_KEY = "inputSnowflakeAPIKey",
     INPUT_CRED_NAME = "inputCredentialName",
     INPUT_AUTH_METHOD = "inputAuthMethod",
     INPUT_TOKEN = "inputToken",
@@ -93,6 +94,7 @@ export async function newConnectCredential(
     [step.INPUT_SERVER_URL]: inputServerUrl,
     [step.INPUT_API_KEY]: inputAPIKey,
     [step.INPUT_SNOWFLAKE_CONN]: inputSnowflakeConnection,
+    [step.INPUT_SNOWFLAKE_API_KEY]: inputSnowflakeAPIKey,
     [step.INPUT_CRED_NAME]: inputCredentialName,
     [step.INPUT_AUTH_METHOD]: inputAuthMethod,
     [step.INPUT_TOKEN]: inputToken,
@@ -126,8 +128,12 @@ export async function newConnectCredential(
   };
 
   const isValidSnowflakeAuth = () => {
-    // for Snowflake, require snowflakeConnection
-    return isSnowflake(serverType) && isString(state.data.snowflakeConnection);
+    // for Snowflake SPCS with OIDC, require both snowflakeConnection and apiKey
+    return (
+      isSnowflake(serverType) &&
+      isString(state.data.snowflakeConnection) &&
+      isString(state.data.apiKey)
+    );
   };
 
   // ***************************************************************
@@ -254,8 +260,21 @@ export async function newConnectCredential(
               severity: InputBoxValidationSeverity.Error,
             });
           }
+          // Check and set serverType first, even if there's an error
+          // This is important for Snowflake URLs where auth will fail
+          // without credentials, but we still need to detect the server type
+          if (testResult.data.serverType) {
+            serverType = testResult.data.serverType;
+          }
+
           const err = testResult.data.error;
           if (err) {
+            // For Snowflake, we expect auth to fail without credentials
+            // So we allow the flow to continue to prompt for credentials
+            if (isSnowflake(serverType)) {
+              return Promise.resolve(undefined);
+            }
+
             if (err.code === "errorCertificateVerification") {
               return Promise.resolve({
                 message: `Error: URL Not Accessible - ${err.msg}. If applicable, consider disabling [Verify TLS Certificates](${openConfigurationCommand}).`,
@@ -266,11 +285,6 @@ export async function newConnectCredential(
               message: `Error: Invalid URL (unable to validate connectivity with Server URL - ${getMessageFromError(err)}).`,
               severity: InputBoxValidationSeverity.Error,
             });
-          }
-
-          if (testResult.data.serverType) {
-            // serverType will be overwritten if it is snowflake
-            serverType = testResult.data.serverType;
           }
         } catch (e) {
           return Promise.resolve({
@@ -287,10 +301,12 @@ export async function newConnectCredential(
     state.data.url = formatURL(resp.trim());
 
     if (isSnowflake(serverType)) {
+      // For Snowflake SPCS with OIDC, ask for API key first
+      // Then we can test connections with both credentials
       return {
-        name: step.INPUT_SNOWFLAKE_CONN,
+        name: step.INPUT_SNOWFLAKE_API_KEY,
         step: (input: MultiStepInput) =>
-          steps[step.INPUT_SNOWFLAKE_CONN](input, state),
+          steps[step.INPUT_SNOWFLAKE_API_KEY](input, state),
       };
     }
 
@@ -490,15 +506,17 @@ export async function newConnectCredential(
     input: MultiStepInput,
     state: MultiStepState,
   ) {
-    // url should always be defined by the time we get to this step
-    // but we have to type guard it for the API
+    // url and apiKey should always be defined by the time we get to this step
+    // but we have to type guard them for the API
     const serverUrl = typeof state.data.url === "string" ? state.data.url : "";
+    const apiKey =
+      typeof state.data.apiKey === "string" ? state.data.apiKey : "";
     let connections: SnowflakeConnection[] = [];
     let connectionQuickPicks: QuickPickItemWithIndex[] = [];
 
     try {
-      await showProgress("Reading Snowflake connections", viewId, async () => {
-        const resp = await fetchSnowflakeConnections(serverUrl);
+      await showProgress("Testing Snowflake connections", viewId, async () => {
+        const resp = await fetchSnowflakeConnections(serverUrl, apiKey);
         connections = resp.connections;
         connectionQuickPicks = resp.connectionQuickPicks;
       });
@@ -532,6 +550,59 @@ export async function newConnectCredential(
       name: step.INPUT_CRED_NAME,
       step: (input: MultiStepInput) =>
         steps[step.INPUT_CRED_NAME](input, state),
+    };
+  }
+
+  // ***************************************************************
+  // Step: Enter the API Key for Snowflake SPCS (Snowflake only)
+  // ***************************************************************
+  async function inputSnowflakeAPIKey(
+    input: MultiStepInput,
+    state: MultiStepState,
+  ) {
+    const currentAPIKey =
+      typeof state.data.apiKey === "string" ? state.data.apiKey : "";
+
+    const resp = await input.showInputBox({
+      title: state.title,
+      step: 0,
+      totalSteps: 0,
+      password: true,
+      value: currentAPIKey,
+      prompt: `The Posit Connect API key for Snowflake SPCS OIDC authentication.
+        This is required in addition to the Snowflake connection for authentication with Connect deployed in Snowflake SPCS.`,
+      validate: (input: string) => {
+        if (input.includes(" ")) {
+          return Promise.resolve({
+            message: "Error: Invalid API Key (spaces are not allowed).",
+            severity: InputBoxValidationSeverity.Error,
+          });
+        }
+        return Promise.resolve(undefined);
+      },
+      finalValidation: (input: string) => {
+        // validate that the API key is formed correctly
+        const errorMsg = checkSyntaxApiKey(input);
+        if (errorMsg) {
+          return Promise.resolve({
+            message: `Error: Invalid API Key (${errorMsg}).`,
+            severity: InputBoxValidationSeverity.Error,
+          });
+        }
+        return Promise.resolve(undefined);
+      },
+      shouldResume: () => Promise.resolve(false),
+      ignoreFocusOut: true,
+    });
+
+    state.data.apiKey = resp.trim();
+
+    // Now that we have the API key, fetch Snowflake connections
+    // and test them with both the Snowflake token and API key
+    return {
+      name: step.INPUT_SNOWFLAKE_CONN,
+      step: (input: MultiStepInput) =>
+        steps[step.INPUT_SNOWFLAKE_CONN](input, state),
     };
   }
 

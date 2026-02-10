@@ -87,6 +87,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Snowflake SPCS (Snowpark Container Services) authentication now properly handles OIDC
+  by requiring both a Snowflake connection name and a Connect API key. The Connect API
+  key is sent via the X-RSC-Authorization header while the Snowflake token is sent via
+  the Authorization header for proxied authentication.
 - The "R Packages" section no longer shows you an alert if you aren't using renv. (#3095)
 - When `renv.lock` contains packages installed from GitHub or Bitbucket the deploy
   process should respect `RemoteHost`, `RemoteRepo`, `RemoteUsername` and

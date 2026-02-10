@@ -15,13 +15,17 @@ export class SnowflakeConnections {
   // Returned connections include the validated server URL they were
   // successfully tested against.
   //
+  // If apiKey is provided, connections will be tested with both the
+  // Snowflake token and the Connect API key for SPCS OIDC authentication.
+  //
   // Returns:
   // 200 - ok
   // 500 - internal server error
-  list(serverUrl: string) {
+  list(serverUrl: string, apiKey?: string) {
     return this.client.get<SnowflakeConnection[]>(`snowflake-connections`, {
       params: {
         serverUrl,
+        apiKey,
       },
     });
   }
