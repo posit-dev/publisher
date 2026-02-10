@@ -190,24 +190,14 @@ Cypress.Commands.add(
       // If subdir is in the exclude list, skip deletion
       if (excludeDirs.includes(subdir)) return;
       const target = `content-workspace/${subdir}/.posit`;
-      const dockerPath = target.replace(
-        "content-workspace/",
-        "/home/coder/workspace/",
-      );
-      cy.exec(
-        `docker exec publisher-e2e.code-server bash -c "rm -rf '${dockerPath}'"`,
-        { failOnNonZeroExit: false },
-      );
+      cy.exec(`rm -rf ${target}`, { failOnNonZeroExit: false });
     } else {
       // Build a list of all .posit directories except excluded ones
       const excludePatterns = excludeDirs
         .map((dir) => `-not -path "*/${dir}/*"`)
         .join(" ");
-      const findCmd = `find /home/coder/workspace -type d -name ".posit" ${excludePatterns}`;
-      cy.exec(
-        `docker exec publisher-e2e.code-server bash -c "${findCmd} -exec rm -rf {} +"`,
-        { failOnNonZeroExit: false },
-      );
+      const findCmd = `find content-workspace -type d -name ".posit" ${excludePatterns}`;
+      cy.exec(`${findCmd} -exec rm -rf {} +`, { failOnNonZeroExit: false });
     }
   },
 );
