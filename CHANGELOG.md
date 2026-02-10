@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Improved performance of generating manifests for projects that do not already have an renv.lock file. (#3442)
 
+### Fixed
+
+- Fixed the agent process auto-restarting during intentional shutdown (e.g., when VS Code closes). (#3195)
+
 ## [1.30.0]
 
 ### Added
