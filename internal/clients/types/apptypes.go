@@ -192,6 +192,13 @@ func (t AppMode) IsStaticContent() bool {
 	return t == StaticMode
 }
 
+// IsKnown returns true if this AppMode is a recognized, mapped content type.
+// Returns false for unmapped content types that would create invalid API paths.
+func (mode AppMode) IsKnown() bool {
+	_, ok := contentTypeConnectMap[mode]
+	return ok
+}
+
 // IsRContent returns true if R is the primary interpreter for this content
 // type.
 func (t AppMode) IsRContent() bool {

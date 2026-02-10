@@ -1,0 +1,37 @@
+name: Schema Upload
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "internal/schema/schemas/*.json"
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  upload-schemas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-region: us-east-1
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+
+      - name: Upload schemas to S3
+        run: |
+          aws s3 sync internal/schema/schemas/ s3://posit-publisher/publisher/schemas/ \
+            --exclude "*" \
+            --include "posit-publishing-*.json"
+
+      - name: Verify upload
+        run: |
+          echo "Schemas uploaded to S3. Listing uploaded files:"
+          aws s3 ls s3://posit-publisher/publisher/schemas/ | grep "posit-publishing-"
+          echo ""
+          echo "CDN base URL: https://cdn.posit.co/publisher/schemas/"

@@ -182,22 +182,20 @@ Run the following commands from the `test/e2e` subdirectory:
 source .venv/bin/activate
 ```
 
-Build the publisher and start the Cypress interactive test runner:
+Build the publisher and start the Cypress tests headlessly:
 
 ```bash
 just build-images
 just dev
 ```
 
-This will start the Cypress test runner, which will open a browser window and allow you to run the end-to-end tests against the Posit Publisher VSCode extension.
-
-Use VSCode to modify the tests in the `test/e2e/tests` directory. Saving changes will automatically re-run the tests in the Cypress test runner.
-
-Tests can also be run in headless mode with:
+To run the interactive test runner, which will open a browser window and allow you to run the end-to-end tests against the Posit Publisher VSCode extension, use:
 
 ```bash
-npx cypress run
+npm run cypress:open
 ```
+
+Saving changes to test files in `test/e2e/tests` will automatically re-run the tests in the Cypress test runner.
 
 When done, you can deactivate the virtual environment with:
 
@@ -303,7 +301,7 @@ To update the schema:
 - Verify that the unit tests pass. They load the example files and validate them against the schemas.
 - The `draft` folder contains schemas that are a superset of the main schemas, and have ideas for the other settings we have considered adding. Usually we have added any new fields to those schemas and example files as well.
 
-As Pull Requests are merged into main, we update (or create in the case of a new schema) the file on the CDN (in S3). Currently, this is a manual process requiring write access to our S3 bucket.
+When Pull Requests that modify schema files are merged into main, a GitHub Actions workflow automatically uploads the updated schemas to S3, making them available on the CDN.
 
 #### Force Even Better TOML to update
 
@@ -335,40 +333,45 @@ minor version number is odd.
 
 ### Before Releasing
 
-- Ensure that all relevant changes are documented in:
-  - the [CHANGELOG.md](CHANGELOG.md) for the repository
-  - the [VSCode Extension CHANGELOG.md](extensions/vscode/CHANGELOG.md)
-    that is bundled with the extension
-- Merge any "Update licenses" PRs to main
-- Merge any release preparation PRs to main
-- Merge any Dependabot PRs to main
+- Ensure that all relevant changes are documented in [CHANGELOG.md](CHANGELOG.md): diff `main` against the last release, and compare with what's in `CHANGELOG.md`.
+  Generally these will be the same, but sometimes things get missed. Open a PR to update `CHANGELOG.md` if anything is missing.
+
+  Building and packaging the VSCode extension for release will [automatically sync](./extensions/vscode/justfile#L115) the VSCode changelog from the root `CHANGELOG.md`.
+
+- Merge any "Update licenses" PRs to `main`
+- Merge any release preparation PRs to `main`, e.g. any updates to `CHANGELOG.md`
+- Merge any Dependabot PRs to `main`
 - Wait for the `main.yaml` workflows to complete before creating a release tag
 
 ### Instructions
 
-**Step 1**
-
-Create a proper SemVer and extension version compatible tag using the guidelines
-above.
+#### Step 1: Create a proper SemVer and extension version compatible tag
 
 Use an even minor version for releases, or an odd minor version for
-pre-releases.
+pre-releases. The example commands here use `v1.1.0`, replace this with the version you are releasing.
 
-_For this example, we will use the tag `v1.1.0` to create a pre-release. This
-tag already exists, so you will not be able run the following commands
-verbatim._
+Make sure you are on `main` and up to date:
 
-`git tag v1.1.0`
+```sh
+git switch main
+git pull
+```
 
-**Step 2**
+and then create the tag:
 
-Push the tag GitHub.
+```sh
+git tag v1.1.0
+```
 
-`git push origin v1.1.0`
+#### Step 2: Push the tag GitHub
+
+```sh
+git push origin v1.1.0
+```
 
 This command will trigger the [Release GitHub Action](https://github.com/rstudio/publishing-client/actions/workflows/release.yaml).
 
-**Step 3**
+#### Step 3: Confirm the release
 
 Once the action has completed, the release will be available on the
 [Releases page](https://github.com/rstudio/publishing-client/releases), and

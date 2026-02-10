@@ -99,9 +99,10 @@ func (c *ConnectClient) GetSettings(base util.AbsolutePath, cfg *config.Config, 
 
 	schedulerPath := ""
 	appMode := clienttypes.AppModeFromType(cfg.Type)
-	if !appMode.IsStaticContent() {
-		// Scheduler settings don't apply to static content,
-		// and the API will err if you try.
+	if !appMode.IsStaticContent() && appMode.IsKnown() {
+		// Scheduler settings don't apply to static content, and the API will err if you try.
+		// Only use app-specific scheduler path for known/mapped content types,
+		// as unknown content types would create invalid API paths and return errors.
 		schedulerPath = "/" + string(appMode)
 	}
 	err = c.client.Get("/__api__/server_settings/scheduler"+schedulerPath, &settings.scheduler, log)

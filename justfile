@@ -83,14 +83,6 @@ archive:
 
     ./scripts/archive.bash {{ _cmd }}
 
-# Executes commands in ./test/bats/justfile. Equivalent to `just test/bats/`.
-bats *args:
-    #!/usr/bin/env bash
-    set -eou pipefail
-    {{ _with_debug }}
-
-    just test/bats/{{ args }}
-
 # Compiles the application using Go. Executables are written to `./bin`. If invoked with `env CI=true` then executables for all supported architectures using the Go toolchain.
 build:
     #!/usr/bin/env bash
