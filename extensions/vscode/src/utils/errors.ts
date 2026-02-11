@@ -33,12 +33,23 @@ export const getCodeStringFromError = (error: unknown): string | undefined => {
   return undefined;
 };
 
+export const isConnectionRefusedError = (error: unknown): boolean => {
+  if (axios.isAxiosError(error) && error.code === "ECONNREFUSED") {
+    return true;
+  }
+  return false;
+};
+
 export const getMessageFromError = (error: unknown): string => {
   try {
     if (isAxiosErrorWithJson(error)) {
       return resolveAgentJsonErrorMsg(error);
     }
     if (axios.isAxiosError(error)) {
+      // Handle connection refused errors with a descriptive message
+      if (error.code === "ECONNREFUSED") {
+        return "Publisher backend unavailable";
+      }
       return error.response?.data || error.message;
     }
     if (isAgentError(error)) {
