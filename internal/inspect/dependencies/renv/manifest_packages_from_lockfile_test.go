@@ -461,7 +461,7 @@ func (s *LockfilePackageMapperSuite) TestRSPMRepositoryHandling() {
 				"RemoteType": "standard",
 				"RemotePkgRef": "R6",
 				"RemoteRef": "R6",
-				"RemoteRepos": "https://packagemanager.posit.co/cran/latest",
+				"RemoteRepos": "https://packagemanager.rstudio.com/all/latest",
 				"RemoteReposName": "CRAN",
 				"RemotePkgPlatform": "x86_64-apple-darwin20",
 				"RemoteSha": "2.5.1",
@@ -505,7 +505,7 @@ func (s *LockfilePackageMapperSuite) TestRSPMRepositoryHandling() {
 	r6Pkg := manifestPackages["R6"]
 
 	// RSPM should be resolved through the RemoteRepos field
-	s.Equal("https://packagemanager.posit.co/cran/latest", r6Pkg.Repository)
+	s.Equal("https://packagemanager.rstudio.com/all/latest", r6Pkg.Repository)
 	s.Equal("RSPM", r6Pkg.Source)
 	// Check version from description
 	s.Equal("2.5.1", r6Pkg.Description["Version"])
@@ -566,7 +566,7 @@ func (s *LockfilePackageMapperSuite) TestRSPMRepositoryHandling_MissingRemoteRep
 	renvPkg := manifestPackages["renv"]
 	// Should resolve to standard RSPM repository when no RemoteRepos is provided
 	s.Equal("RSPM", renvPkg.Source)
-	s.Equal("https://packagemanager.rstudio.com/all/latest", renvPkg.Repository)
+	s.Equal("https://packagemanager.posit.co/cran/latest", renvPkg.Repository)
 }
 
 func (s *LockfilePackageMapperSuite) TestGitRemoteFieldsPreserved() {
