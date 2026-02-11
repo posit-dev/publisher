@@ -461,7 +461,7 @@ Cypress.Commands.add("startDeploymentCreationFlow", (entrypointFile) => {
 Cypress.Commands.add("startCredentialCreationFlow", (platform = "server") => {
   // Check if we're already in the publisher webview
   cy.get("body").then(($body) => {
-    const iframes = $body.find("iframe.webview.ready");
+    const iframes = $body.find("iframe.webview.ready, iframe.webview");
     const publisherIframe = iframes.filter(
       (i, el) => el.src && el.src.includes("posit.publisher"),
     );

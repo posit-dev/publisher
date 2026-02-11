@@ -381,7 +381,7 @@ Cypress.Commands.add("quickInputType", (promptText, value) => {
 // Update waitForPublisherIframe to use a longer default timeout for CI reliability
 Cypress.Commands.add("waitForPublisherIframe", (timeout = 60000) => {
   return cy
-    .get("iframe.webview.ready", { timeout })
+    .get("iframe.webview.ready, iframe.webview", { timeout })
     .should("exist")
     .then(($iframes) => {
       // Try to find the publisher iframe by extensionId
@@ -392,8 +392,8 @@ Cypress.Commands.add("waitForPublisherIframe", (timeout = 60000) => {
         cy.log("Found publisher iframe by extensionId");
         return cy.wrap($publisherIframe[0]);
       }
-      // Fallback: use the first .webview.ready iframe
-      cy.log("Falling back to first .webview.ready iframe");
+      // Fallback: use the first webview iframe
+      cy.log("Falling back to first webview iframe");
       return cy.wrap($iframes[0]);
     });
 });
