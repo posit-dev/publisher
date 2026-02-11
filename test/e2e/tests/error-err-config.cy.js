@@ -30,13 +30,6 @@ describe("Detect errors in config", () => {
     // Ensure Publisher is in the expected initial state
     cy.expectInitialPublisherState();
 
-    // Wait for deployments to be fully loaded by checking for the deployment section
-    // This ensures the recursive deployment scan has completed and found all deployments
-    // including those in the config-errors subdirectory
-    cy.publisherWebview()
-      .findByTestId("publisher-deployment-section")
-      .should("be.visible", { timeout: 15000 });
-
     // click on the select deployment button
     cy.publisherWebview()
       .findByTestId("select-deployment")
@@ -47,15 +40,17 @@ describe("Detect errors in config", () => {
     cy.get(".quick-input-widget").should("be.visible");
     cy.get(".quick-input-titlebar").should("have.text", "Select Deployment");
 
-    // Wait for deployments to populate in the dropdown
-    // Use a longer timeout and more retries for the config-errors deployments
+    // select our error case. This confirms that we have it.
+    // cy.get(".quick-input-widget")
+    //   .contains("Unknown Title • Error in quarto-project-8G2B")
+    //   .click();
     cy.retryWithBackoff(
       () =>
         cy
           .get(".quick-input-widget")
           .contains("Unknown Title • Error in quarto-project-8G2B"),
-      10,
-      1000,
+      6,
+      700,
     ).click();
 
     // confirm that the selector shows the error (compact, order-agnostic)
@@ -86,13 +81,6 @@ describe("Detect errors in config", () => {
     // Ensure Publisher is in the expected initial state
     cy.expectInitialPublisherState();
 
-    // Wait for deployments to be fully loaded by checking for the deployment section
-    // This ensures the recursive deployment scan has completed and found all deployments
-    // including those in the config-errors subdirectory
-    cy.publisherWebview()
-      .findByTestId("publisher-deployment-section")
-      .should("be.visible", { timeout: 15000 });
-
     // click on the select deployment button
     cy.publisherWebview()
       .findByTestId("select-deployment")
@@ -103,15 +91,17 @@ describe("Detect errors in config", () => {
     cy.get(".quick-input-widget").should("be.visible");
     cy.get(".quick-input-titlebar").should("have.text", "Select Deployment");
 
-    // Wait for deployments to populate in the dropdown
-    // Use a longer timeout and more retries for the config-errors deployments
+    // select our error case. This confirms that we have it.
+    // cy.get(".quick-input-widget")
+    //   .contains("Unknown Title Due to Missing Config fastapi-simple-DHJL")
+    //   .click();
     cy.retryWithBackoff(
       () =>
         cy
           .get(".quick-input-widget")
           .contains("Unknown Title Due to Missing Config fastapi-simple-DHJL"),
-      10,
-      1000,
+      6,
+      700,
     ).click();
 
     // confirm that the selector shows the error (compact, order-agnostic)
