@@ -15,7 +15,7 @@ Cypress.Commands.add("publisherWebview", () => {
   // If still not found, log a clear error and fail the test.
   function findPublisherIframe(retries = 30, hasReloaded = false) {
     return cy
-      .get("iframe.webview.ready, iframe.webview", { timeout: 30000 })
+      .get("iframe.webview.ready", { timeout: 30000 })
       .then(($iframes) => {
         if (Cypress.env("DEBUG_CYPRESS") === "true") {
           cy.task("print", `Found ${$iframes.length} webview.ready iframes`);
