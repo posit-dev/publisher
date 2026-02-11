@@ -2,9 +2,7 @@
 
 describe("Open Connect Content", () => {
   before(() => {
-    cy.resetConnect();
-    cy.clearupDeployments();
-    cy.setAdminCredentials();
+    cy.initializeConnect();
   });
 
   afterEach(() => {
