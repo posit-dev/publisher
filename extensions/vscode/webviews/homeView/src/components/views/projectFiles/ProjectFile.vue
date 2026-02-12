@@ -8,12 +8,12 @@
     :indent-level="file.indent + 1"
     :expandable="file.isDir"
     :tooltip="tooltip"
-    :actions="actions"
     :virtualized="true"
     @check="fileStore.includeFile(file)"
     @uncheck="fileStore.excludeFile(file)"
     @expand="fileStore.expandDir(file)"
     @collapse="fileStore.collapseDir(file)"
+    @click="openFile"
   >
     <template #postDecor>
       <PostDecor
@@ -32,7 +32,6 @@
 import { computed } from "vue";
 
 import TreeItemCheckbox from "src/components/tree/TreeItemCheckbox.vue";
-import { ActionButton } from "src/components/ActionToolbar.vue";
 import { useHomeStore } from "src/stores/home";
 import { useFileStore } from "src/stores/file";
 import { FlatFile } from "src/utils/files";
@@ -127,19 +126,9 @@ const tooltip = computed((): string => {
     : excludedFileTooltip(props.file);
 });
 
-const actions = computed((): ActionButton[] => {
-  let actions: ActionButton[] = [];
-
+const openFile = () => {
   if (props.file.isFile) {
-    actions.push({
-      label: "Open file",
-      codicon: "codicon-link-external",
-      fn: () => {
-        fileStore.openFile(props.file);
-      },
-    });
+    fileStore.openFile(props.file);
   }
-
-  return actions;
-});
+};
 </script>

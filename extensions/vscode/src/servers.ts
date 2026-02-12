@@ -17,6 +17,9 @@ export class Server implements Disposable {
 
   process: ChildProcessWithoutNullStreams | undefined = undefined;
 
+  // Flag to track intentional shutdown and prevent auto-restart
+  private stopping: boolean = false;
+
   constructor(port: number, useKeyChain: boolean) {
     this.port = port;
     this.useKeyChain = useKeyChain;
@@ -30,6 +33,9 @@ export class Server implements Disposable {
    * @returns {Promise<void>} A Promise that resolves when the server starts.
    */
   async start(context: ExtensionContext): Promise<void> {
+    // Reset stopping flag when starting
+    this.stopping = false;
+
     // Check if the server is stopped
     if (await this.isDown()) {
       // Display status message to user
@@ -70,6 +76,11 @@ export class Server implements Disposable {
           if (stderrBuffer.trim()) {
             logAgentOutput(stderrBuffer);
           }
+          // Don't restart if we're intentionally stopping
+          if (this.stopping) {
+            logger.info(`Agent process exited with code ${code}`);
+            return;
+          }
           logger.info(`Agent process exited with code ${code}; restarting...`);
           doStart();
         });
@@ -93,27 +104,40 @@ export class Server implements Disposable {
    * @returns {Promise<void>} A Promise that resolves when the server stops.
    */
   async stop(): Promise<void> {
+    // Set stopping flag immediately to prevent auto-restart race conditions
+    this.stopping = true;
+
     // Check if server is down
     if (await this.isDown()) {
       // Do nothing if server is already down
       return;
     }
+
     // Display status message to user
-    const message = window.setStatusBarMessage(
-      "Stopping Posit Publisher. Please wait...",
-    );
+    // Guard against VS Code shutdown - API may be unavailable
+    let message: Disposable | undefined;
+    try {
+      message = window.setStatusBarMessage(
+        "Stopping Posit Publisher. Please wait...",
+      );
+    } catch {
+      // VS Code may be shutting down
+    }
+
     // Send interrupt signal to terminal
     this.process?.kill("SIGINT");
     // Wait for server to stop
     await this.isDown();
     // Dispose of status message
-    message.dispose();
+    message?.dispose();
   }
 
   /**
    * Disposes of the resources associated with the server.
    */
   dispose() {
+    // Set stopping flag to prevent auto-restart
+    this.stopping = true;
     this.process?.kill("SIGINT");
   }
 

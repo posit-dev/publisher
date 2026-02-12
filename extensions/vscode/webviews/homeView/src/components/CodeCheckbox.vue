@@ -1,6 +1,6 @@
 <template>
   <div class="vscode-checkbox" :class="{ disabled: disabled }">
-    <label>
+    <label class="checkbox-control">
       <input
         :checked="checked"
         :disabled="disabled"
@@ -11,20 +11,33 @@
         <i class="codicon codicon-check icon-checked"></i>
         <i class="codicon codicon-chrome-minimize icon-indeterminate"></i>
       </span>
-      <span class="text"><slot /></span>
+      <span v-if="variant !== 'has-text-click'" class="text"><slot /></span>
     </label>
+    <span
+      v-if="variant === 'has-text-click'"
+      class="text clickable"
+      @click="emit('textClick')"
+    >
+      <slot />
+    </span>
   </div>
 </template>
 
 <script setup lang="ts">
-defineProps<{
+interface Props {
   checked: boolean;
   disabled?: boolean;
   disableOpacity?: boolean;
-}>();
+  variant?: "default" | "has-text-click";
+}
+
+withDefaults(defineProps<Props>(), {
+  variant: "default",
+});
 
 const emit = defineEmits<{
   changed: [checked: boolean];
+  textClick: [];
 }>();
 
 const handleChange = (event: Event) => {
@@ -117,6 +130,10 @@ const handleChange = (event: Event) => {
     flex-grow: 1;
     opacity: 0.9;
     padding-inline-start: calc(var(--design-unit) * 2px + 2px);
+
+    &.clickable {
+      cursor: pointer;
+    }
   }
 }
 </style>

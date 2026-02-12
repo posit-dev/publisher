@@ -3,14 +3,6 @@ on:
   schedule:
     - cron: "0 06 * * *"
   workflow_dispatch:
-    inputs:
-      job:
-        description: "Select the job to run in contract.yaml"
-        required: true
-        default: "all"
-        type: choice
-        options:
-          - all
 jobs:
   agent:
     uses: ./.github/workflows/agent.yaml
@@ -23,22 +15,6 @@ jobs:
     needs: [package]
     uses: ./.github/workflows/e2e.yaml
     secrets: inherit
-  contract-deps:
-    secrets: inherit
-    uses: ./.github/workflows/contract-deps.yaml
-  nightly:
-    needs:
-      - build
-      - contract-deps
-      - package
-    secrets: inherit
-    uses: ./.github/workflows/contract.yaml
-    with:
-      job: ${{ github.event.inputs.job || 'all' }}
-  cleanup:
-    needs: nightly
-    secrets: inherit
-    uses: ./.github/workflows/cleanup.yaml
 
   # Extensions
   vscode:

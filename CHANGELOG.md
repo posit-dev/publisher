@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Improved performance of generating manifests for projects that do not already have an renv.lock file. (#3442)
+
+### Fixed
+
+- Fixed unhelpful "Unknown Error" popup appearing on every file open/save when the Publisher backend is unavailable during startup or shutdown. (#3452)
+- Fixed the agent process auto-restarting during intentional shutdown (e.g., when VS Code closes). (#3195)
+
 ## [1.30.0]
 
 ### Added
@@ -33,6 +42,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The Publisher outputs (detailed logs) have been consolidated into one channel called "Posit Publisher". (#3168)
 - RMarkdown parsing no longer errors if there is a later horizontal rule (`---`) in the document body. (#3409)
 - Removed the requirement that the local python version exist on the server when deploying (#3368)
+
+# Changed
+
+- Files in the Project Files view now open the file when clicking the file name. Directories expand or collapse. (#3187)
 
 ## [1.28.0]
 
@@ -99,6 +112,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   rendered by Quarto to easily update and publish the rendered output (#2948)
 - Added support for Positron repositories configuration when detecting dependencies,
   allowing dependencies to be installed with the configured CRAN repository.
+- Added the ability to associate a Connect Cloud deployment to another Connect Cloud
+  deployment for the same account (#3067)
 
 ### Fixed
 

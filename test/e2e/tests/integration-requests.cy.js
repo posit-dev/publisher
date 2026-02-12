@@ -4,61 +4,68 @@
 // Rationale: Ensures PCC hides server-only features while PCS shows them.
 
 describe("IntegrationRequests Section", () => {
-  before(() => {
-    // Set up both credentials once for speed and determinism
-    cy.resetConnect();
-    cy.resetCredentials();
+  describe("Connect Server", () => {
+    before(() => {
+      cy.initializeConnect();
+      cy.resetCredentials();
+      cy.setAdminCredentials();
+    });
 
-    cy.visit("/");
+    beforeEach(() => {
+      cy.visit("/");
+      cy.getPublisherSidebarIcon().click();
+      cy.waitForPublisherIframe();
+      cy.debugIframes();
+    });
 
-    const user = Cypress.env("pccConfig").pcc_user_ccqa3;
-    cy.setAdminCredentials();
-    cy.setPCCCredential(user, "connect-cloud-deployment-test");
+    afterEach(() => {
+      cy.clearupDeployments("static");
+    });
+
+    it("PCS deployment shows Integration Requests Section", () => {
+      cy.expectInitialPublisherState();
+
+      cy.createPCSDeployment(
+        "static",
+        "index.html",
+        "static-pcs",
+        (tomlFiles) => tomlFiles,
+      );
+
+      cy.publisherWebview().findByText("Integration Requests").should("exist");
+    });
   });
 
-  beforeEach(() => {
-    // Light navigation + webview readiness only
-    cy.visit("/");
-    cy.getPublisherSidebarIcon().click();
-    cy.waitForPublisherIframe();
-    cy.debugIframes();
-  });
+  describe("Connect Cloud", () => {
+    it("PCC deployment hides Integration Requests Section @pcc", () => {
+      // Setup - moved from before/beforeEach to avoid running when @pcc tests are filtered
+      cy.initializeConnect();
+      cy.resetCredentials();
+      cy.setAdminCredentials();
+      cy.visit("/");
 
-  afterEach(() => {
-    cy.clearupDeployments("static");
-  });
+      const user = Cypress.env("pccConfig").pcc_user_ccqa3;
+      cy.setPCCCredential(user, "connect-cloud-deployment-test");
 
-  it("PCS deployment shows Integration Requests Section", () => {
-    // Ensure UI is ready
-    cy.expectInitialPublisherState();
+      cy.visit("/");
+      cy.getPublisherSidebarIcon().click();
+      cy.waitForPublisherIframe();
+      cy.debugIframes();
 
-    // 1) Create a PCS deployment, then assert Integration Requests IS visible
-    cy.createPCSDeployment(
-      "static",
-      "index.html",
-      "static-pcs",
-      (tomlFiles) => tomlFiles,
-    );
+      cy.expectInitialPublisherState();
 
-    cy.publisherWebview().findByText("Integration Requests").should("exist");
-  });
+      cy.createPCCDeployment(
+        "static",
+        "index.html",
+        "static-pcc",
+        (tomlFiles) => tomlFiles,
+        [],
+        "connect-cloud-deployment-test",
+      );
 
-  it("PCC deployment hides Integration Requests Section", () => {
-    // Ensure UI is ready
-    cy.expectInitialPublisherState();
-
-    // 2) Create a PCC deployment using the PCC credential, then assert Integration Requests is NOT visible
-    cy.createPCCDeployment(
-      "static",
-      "index.html",
-      "static-pcc",
-      (tomlFiles) => tomlFiles,
-      [],
-      "connect-cloud-deployment-test",
-    );
-
-    cy.publisherWebview()
-      .findByText("Integration Requests")
-      .should("not.exist");
+      cy.publisherWebview()
+        .findByText("Integration Requests")
+        .should("not.exist");
+    });
   });
 });
