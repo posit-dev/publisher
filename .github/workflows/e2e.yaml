@@ -112,6 +112,11 @@ jobs:
           wait
           docker compose build code-server
 
+      - name: Free up disk space after Docker builds
+        run: |
+          docker builder prune -af
+          df -h /
+
       - name: Pull and start Workbench (Connect Server tests only)
         working-directory: test/e2e
         run: just pull-workbench "release"
