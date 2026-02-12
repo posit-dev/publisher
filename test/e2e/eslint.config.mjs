@@ -1,24 +1,14 @@
 import globals from "globals";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { defineConfig } from "eslint/config";
 import js from "@eslint/js";
-import { FlatCompat } from "@eslint/eslintrc";
+import pluginCypress from "eslint-plugin-cypress";
+import pluginMocha from "eslint-plugin-mocha";
 import eslintConfigPrettier from "eslint-config-prettier";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-  recommendedConfig: js.configs.recommended,
-  allConfig: js.configs.all,
-});
-
-export default [
-  ...compat.extends(
-    "eslint:recommended",
-    "plugin:cypress/recommended",
-    "plugin:mocha/recommended",
-  ),
+export default defineConfig([
+  js.configs.recommended,
+  pluginMocha.configs.recommended,
+  pluginCypress.configs.recommended,
   { files: ["**/*.{js,mjs,cjs,ts}"] },
   {
     languageOptions: {
@@ -41,4 +31,4 @@ export default [
     },
   },
   eslintConfigPrettier,
-];
+]);

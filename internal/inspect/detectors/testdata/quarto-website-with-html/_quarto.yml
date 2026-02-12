@@ -1,0 +1,23 @@
+project:
+  type: website
+
+website:
+  title: "quarto-website-with-html"
+  navbar:
+    background: primary
+    left:
+      - href: index.qmd
+        text: Welcome
+      - href: flowers.html
+        text: Flowers
+
+format:
+  html:
+    theme: cosmo
+    css: assets/styles.css
+    js: assets/script.js
+    resources:
+      - images/dandelion.jpg
+      - images/lilac.jpg
+
+editor: visual

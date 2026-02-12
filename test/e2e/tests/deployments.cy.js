@@ -7,9 +7,7 @@
 describe("Deployments Section", () => {
   // Global setup for all deployment tests
   before(() => {
-    cy.resetConnect();
-    cy.clearupDeployments();
-    cy.setAdminCredentials();
+    cy.initializeConnect();
   });
 
   describe("Connect Server Deployments", () => {
@@ -49,13 +47,8 @@ describe("Deployments Section", () => {
         ]);
       }).deployCurrentlySelected();
 
-      cy.retryWithBackoff(
-        () =>
-          cy.findUniqueInPublisherWebview(
-            '[data-automation="publisher-deployment-section"]',
-          ),
-        5,
-        500,
+      cy.findUniqueInPublisherWebview(
+        '[data-automation="publisher-deployment-section"]',
       ).should("exist");
     });
 
@@ -80,19 +73,16 @@ describe("Deployments Section", () => {
           `/.posit/publish/deployments/${tomlFiles.contentRecord.name}`,
         );
       }).deployCurrentlySelected();
-      cy.retryWithBackoff(
-        () =>
-          cy.findUniqueInPublisherWebview(
-            '[data-automation="publisher-deployment-section"]',
-          ),
-        5,
-        500,
+
+      cy.findUniqueInPublisherWebview(
+        '[data-automation="publisher-deployment-section"]',
       ).should("exist");
     });
   });
 
   describe("Connect Cloud Deployments", () => {
-    beforeEach(() => {
+    it("PCC Shiny Python Deployment @pcc", () => {
+      // Setup - moved from beforeEach to avoid running when @pcc tests are filtered
       cy.resetCredentials();
       cy.clearupDeployments();
       cy.visit("/");
@@ -106,18 +96,6 @@ describe("Deployments Section", () => {
       )
         .find(".tree-item-title")
         .should("have.text", "pcc-deploy-credential");
-    });
-
-    afterEach(() => {
-      // Delete any published PCC content created by this suite (if present)
-      cy.deletePCCContent();
-      cy.clearupDeployments();
-      cy.resetCredentials();
-    });
-
-    it("PCC Shiny Python Deployment", () => {
-      // Uses createPCCDeployment, then savePublisherFile to set public access,
-      // deploys, and confirms live app title with Playwright.
 
       // Ensure Publisher is in the expected initial state
       cy.expectInitialPublisherState();
@@ -154,13 +132,8 @@ describe("Deployments Section", () => {
 
       cy.deployCurrentlySelected();
 
-      cy.retryWithBackoff(
-        () =>
-          cy.findUniqueInPublisherWebview(
-            '[data-automation="publisher-deployment-section"]',
-          ),
-        5,
-        500,
+      cy.findUniqueInPublisherWebview(
+        '[data-automation="publisher-deployment-section"]',
       ).should("exist");
 
       // Load the deployment TOML to get the published URL and verify app

@@ -2,9 +2,7 @@
 
 describe("Open Connect Content", () => {
   before(() => {
-    cy.resetConnect();
-    cy.clearupDeployments();
-    cy.setAdminCredentials();
+    cy.initializeConnect();
   });
 
   afterEach(() => {
@@ -29,6 +27,18 @@ describe("Open Connect Content", () => {
         cy.runCommandPaletteCommand("Posit Publisher: Open Connect Content");
         cy.quickInputType("Connect server URL", contentRecord.server_url);
         cy.quickInputType("Connect content GUID", contentRecord.id);
+
+        // Wait for the workspace to reload with the Connect content
+        // The GUID appears in the explorer as a root folder after the workspace switch
+        cy.retryWithBackoff(
+          () =>
+            cy.contains(
+              ".explorer-viewlet .monaco-list-row[aria-level='1']",
+              contentRecord.id,
+            ),
+          15,
+          1000,
+        ).should("exist");
       });
     });
 
@@ -69,18 +79,17 @@ describe("Open Connect Content", () => {
 
     cy.retryWithBackoff(
       () =>
-        cy
-          .get(".explorer-viewlet .explorer-item a > span")
-          .filter((_, el) => (el.textContent || "").includes("manifest.json")),
+        cy.contains(
+          ".explorer-viewlet .explorer-item a > span",
+          "manifest.json",
+        ),
       10,
       1000,
     ).should("be.visible");
 
     cy.retryWithBackoff(
       () =>
-        cy
-          .get(".explorer-viewlet .explorer-item a > span")
-          .filter((_, el) => (el.textContent || "").includes("index.html")),
+        cy.contains(".explorer-viewlet .explorer-item a > span", "index.html"),
       10,
       1000,
     ).should("be.visible");

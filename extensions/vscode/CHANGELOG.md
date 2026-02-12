@@ -6,6 +6,37 @@ file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.30.0]
+
+### Added
+
+- Added support for opening remote Connect content via the command menu. (#3377)
+- Added support finding R executables in VSCode using `Rpath` settings in the R extension. (#3378)
+- The Publisher logs view automatically opens when a deployment starts. (#3235)
+- The Publisher logs automatically scroll to follow new log entries during deployment. (#2997)
+- Publisher Log stages automatically expand when running and collapse when completed. (#2998)
+- Publisher logs automatically scroll to reveal the failure line when a deployment fails. (#3236)
+- Added R, Python, and Quarto interpreter version to the logs. (#2532)
+- Added automatic discovery of static assets for R Markdown projects. (#3233)
+- Added automatic discovery of static assets for HTML projects. (#3234)
+- Added `positPublisher.enableConnectCloud` setting to disable publishing to Posit Connect Cloud. When set to `false`, Connect Cloud is hidden from the platform picker when creating new credentials, and existing Connect Cloud credentials are filtered from the deployment credential list. Existing Connect Cloud deployments remain accessible. (#3411)
+- Python notebooks now default to Quarto rendering on Connect, additionally, quarto is not required to be installed locally when sending notebooks to render on Connect with quarto. (#3423)
+- Quarto is now the preferred renderer for Jupyter notebooks as well as Rmarkdown and of course Quarto docs. (#3423)
+
+### Fixed
+
+- Fixed server settings fetch failing, which caused the "Add Integration Request" action to be hidden. (#3444)
+- Publisher no longer fails to list project files when the directory contains special file types (e.g. Unix socket files). (#3403)
+- Log messages in the Publisher Logs panel are no longer duplicated when multiple deployments are made. (#3069)
+- Fix creating deployments of R Markdown documents that include parameters on Connect Cloud. (#3388)
+- The Publisher outputs (detailed logs) have been consolidated into one channel called "Posit Publisher". (#3168)
+- RMarkdown parsing no longer errors if there is a later horizontal rule (`---`) in the document body. (#3409)
+- Removed the requirement that the local python version exist on the server when deploying (#3368)
+
+# Changed
+
+- Files in the Project Files view now open the file when clicking the file name. Directories expand or collapse. (#3187)
+
 ## [1.28.0]
 
 ### Fixed
@@ -30,6 +61,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed text and button alignment in webview (#3071)
 - When a deployment configuration content type isn't recognized as a known type,
   the resulting type in the manifest is no longer an empty string (#2542)
+
+### Added
+
+- Added support for deploying Quarto Shiny content to Connect Cloud (#3265)
 
 ## [1.24.0]
 
@@ -58,19 +93,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.22.0]
 
-### Fixed
-
-- Fixed an issue where the preferred Python path was incorrectly not found when deploying #2742
-- Fixed Python dependencies scanning not respecting the active Python session #2825
-- Fixed messaging about setting up renv (#3029)
-
 ### Added
 
+- Added "Set Up renv" button to initialize the environment, install
+  dependencies, and create a lockfile when no valid R lockfile file is present (#3000, #3048)
+- Added support for managing OAuth integration content requirements directly from the "Integration Requests" pane in the Publisher UI. Auto-association of OAuth integrations is supported when deploying to Posit Connect 2025.09.0 or later with a license that includes OAuth integrations. (#3016)
+- Added a "Render Your Project" button that shows up for HTML project deployments
+  rendered by Quarto to easily update and publish the rendered output (#2948)
+- Added support for Positron repositories configuration when detecting dependencies,
+  allowing dependencies to be installed with the configured CRAN repository.
 - Added the ability to associate a Connect Cloud deployment to another Connect Cloud
   deployment for the same account (#3067)
-- Added support for managing OAuth integration content requirements directly from the "Integration Requests" pane in the Publisher UI. Auto-association of OAuth integrations is supported when deploying to Posit Connect 2025.09.0 or later with a license that includes OAuth integrations. (#3016)
-- Added a "Render Your Project" button that shows up for HTML project deployments rendered by Quarto
-  to easily update and publish the rendered output #2948
+
+### Fixed
+
+- Fixed an issue where the preferred Python path was incorrectly not found when deploying (#2742)
+- Fixed Python dependencies scanning not respecting the active Python session (#2825)
+- Fixed messaging about setting up renv (#3029)
+
+### Changed
+
+- Update installation.md to include directions for Positron, pre-release, and Open VSX installations (#3066)
+- Remove install-publisher.bash script and references (#3066)
 
 ## [1.21.0]
 
@@ -84,7 +128,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fixed an issue deploying content to free Posit Connect Cloud accounts with incorrect  
+- Fixed an issue deploying content to free Posit Connect Cloud accounts with incorrect
   access settings. (#3005)
 
 ## [1.19.1]
@@ -100,12 +144,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added UTM parameters for Connect Cloud links to see who is coming from
   Publisher (#2969)
+- R dependencies are automatically detected when a project does not include an
+  `renv.lock` file.
+- Added a celebratory message when credential token is connected (#2901)
 
 ### Changed
 
 - R manifest package generation now uses only `renv.lock` file by default. To use the
-  local `renv` library instead, set `[r].packages_from_library = true` in the
+  local `renv` library instead, set `r.packages_from_library = true` in the
   configuration.
+- Setting `python.package_manager=pip` will now force pip as the package manager
+  enven when the server default is `uv`.
 
 ## [1.19.0]
 
@@ -144,6 +193,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   similar to other inputs. (#2780)
 - Publish failure logs and deployment validation failure logs link to the logs
   view directly in Posit Connect and Posit Connect Cloud when available (#2859)
+- If the agent process crashes or is killed, the extension will now restart it. (#2961)
 
 ## [1.18.1]
 
@@ -165,6 +215,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Improved support for Posit Connect deployments hosted in Snowpark Container
   Services. (#2687, #2691)
+- Added internal API endpoint to list Connect Cloud accounts. (#2695)
 
 ### Changed
 
@@ -205,6 +256,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Fix missing platform build in OpenVSX due to outage.
+
+### Changed
+
+- Updated `record.toml` to correspond with updated schema change in v1.12
 
 ## [1.12.0]
 
@@ -249,6 +304,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The Publisher Log Panel has now been renamed to "Publisher" and now will
   stay hidden until the user initiates a deployment operation from within the
   extension. It remains visible until the VSCode window is restarted. (#2596)
+- End-to-end tests environment refactored (#2508, #2588 & #2589 - Project)
+- Legacy CLI code removed (#2521 - Project)
 
 ## [1.10.0]
 
@@ -484,6 +541,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   for package requirements (#2113)
 - Added a link to edit the configuration file in relevant error messages when we
   fail to deploy (#2047)
+- Added attributes to the Files API responses if all nested files are included
+  or excluded based on the configuration (#2147)
 
 ### Changed
 
@@ -596,4 +655,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.3]
 
-- Initial beta release
+### Added
+
+- Added links to marketplaces in extension README (#1899)
+
+### Changed
+
+- Split extension publishing CI in to two separate jobs to facilitate reruns (#1898)

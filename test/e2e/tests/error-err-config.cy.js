@@ -11,7 +11,7 @@
 describe("Detect errors in config", () => {
   // Global setup - run once for entire test suite
   before(() => {
-    cy.resetConnect();
+    cy.clearupDeployments();
     cy.setAdminCredentials();
   });
 
@@ -40,37 +40,19 @@ describe("Detect errors in config", () => {
     cy.get(".quick-input-widget").should("be.visible");
     cy.get(".quick-input-titlebar").should("have.text", "Select Deployment");
 
-    // select our error case. This confirms that we have it.
-    // cy.get(".quick-input-widget")
-    //   .contains("Unknown Title • Error in quarto-project-8G2B")
-    //   .click();
-    cy.retryWithBackoff(
-      () =>
-        cy
-          .get(".quick-input-widget")
-          .contains("Unknown Title • Error in quarto-project-8G2B"),
-      6,
-      700,
-    ).click();
+    // select our error case
+    cy.get(".quick-input-widget")
+      .contains("Unknown Title • Error in quarto-project-8G2B")
+      .click();
 
-    // confirm that the selector shows the error (compact, order-agnostic)
-    cy.retryWithBackoff(
-      () =>
-        cy.findUniqueInPublisherWebview(
-          '[data-automation="publisher-deployment-section"] .quick-pick-label:contains("Unknown Title • Error in quarto-project-8G2B")',
-        ),
-      5,
-      500,
+    // confirm that the selector shows the error
+    cy.findUniqueInPublisherWebview(
+      '[data-automation="publisher-deployment-section"] .quick-pick-label:contains("Unknown Title • Error in quarto-project-8G2B")',
     ).should("be.visible");
 
     // confirm that we also have an error section
-    cy.retryWithBackoff(
-      () =>
-        cy.findUniqueInPublisherWebview(
-          '[data-automation="publisher-deployment-section"] p:contains("The selected Configuration has an error: invalidParam: not allowed.")',
-        ),
-      5,
-      500,
+    cy.findUniqueInPublisherWebview(
+      '[data-automation="publisher-deployment-section"] p:contains("The selected Configuration has an error: invalidParam: not allowed.")',
     ).should("exist");
   });
 
@@ -91,37 +73,19 @@ describe("Detect errors in config", () => {
     cy.get(".quick-input-widget").should("be.visible");
     cy.get(".quick-input-titlebar").should("have.text", "Select Deployment");
 
-    // select our error case. This confirms that we have it.
-    // cy.get(".quick-input-widget")
-    //   .contains("Unknown Title Due to Missing Config fastapi-simple-DHJL")
-    //   .click();
-    cy.retryWithBackoff(
-      () =>
-        cy
-          .get(".quick-input-widget")
-          .contains("Unknown Title Due to Missing Config fastapi-simple-DHJL"),
-      6,
-      700,
-    ).click();
+    // select our error case
+    cy.get(".quick-input-widget")
+      .contains("Unknown Title Due to Missing Config fastapi-simple-DHJL")
+      .click();
 
-    // confirm that the selector shows the error (compact, order-agnostic)
-    cy.retryWithBackoff(
-      () =>
-        cy.findUniqueInPublisherWebview(
-          '[data-automation="publisher-deployment-section"] .quick-pick-label:contains("Unknown Title Due to Missing Config fastapi-simple-DHJL")',
-        ),
-      5,
-      500,
+    // confirm that the selector shows the error
+    cy.findUniqueInPublisherWebview(
+      '[data-automation="publisher-deployment-section"] .quick-pick-label:contains("Unknown Title Due to Missing Config fastapi-simple-DHJL")',
     ).should("be.visible");
 
     // confirm that we also have an error section
-    cy.retryWithBackoff(
-      () =>
-        cy.findUniqueInPublisherWebview(
-          '[data-automation="publisher-deployment-section"] p:contains("The last Configuration used for this Deployment was not found.")',
-        ),
-      5,
-      500,
+    cy.findUniqueInPublisherWebview(
+      '[data-automation="publisher-deployment-section"] p:contains("The last Configuration used for this Deployment was not found.")',
     ).should("exist");
   });
 });

@@ -28,6 +28,16 @@ describe("ConnectServer API client", () => {
     mockGet.mockResolvedValue({ data: { license: {} } });
     const accountName = "acct_demo";
     await api.getServerSettings(accountName);
-    expect(mockGet).toHaveBeenCalledWith("accounts/acct_demo/server-settings");
+    expect(mockGet).toHaveBeenCalledWith("accounts/acct_demo/server-settings", {
+      params: undefined,
+    });
+  });
+
+  test("getServerSettings passes content type as query param", async () => {
+    mockGet.mockResolvedValue({ data: { license: {} } });
+    await api.getServerSettings("acct_demo", "python-fastapi");
+    expect(mockGet).toHaveBeenCalledWith("accounts/acct_demo/server-settings", {
+      params: { type: "python-fastapi" },
+    });
   });
 });

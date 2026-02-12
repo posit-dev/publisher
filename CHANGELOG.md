@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Improved performance of generating manifests for projects that do not already have an renv.lock file. (#3442)
+
+### Fixed
+
+- Fixed unhelpful "Unknown Error" popup appearing on every file open/save when the Publisher backend is unavailable during startup or shutdown. (#3452)
+- Fixed the agent process auto-restarting during intentional shutdown (e.g., when VS Code closes). (#3195)
+
+## [1.30.0]
+
+### Added
+
 - Added support for opening remote Connect content via the command menu. (#3377)
 - Added support finding R executables in VSCode using `Rpath` settings in the R extension. (#3378)
 - The Publisher logs view automatically opens when a deployment starts. (#3235)
@@ -17,15 +28,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Publisher logs automatically scroll to reveal the failure line when a deployment fails. (#3236)
 - Added R, Python, and Quarto interpreter version to the logs. (#2532)
 - Added automatic discovery of static assets for R Markdown projects. (#3233)
+- Added automatic discovery of static assets for HTML projects. (#3234)
 - Added `positPublisher.enableConnectCloud` setting to disable publishing to Posit Connect Cloud. When set to `false`, Connect Cloud is hidden from the platform picker when creating new credentials, and existing Connect Cloud credentials are filtered from the deployment credential list. Existing Connect Cloud deployments remain accessible. (#3411)
+- Python notebooks now default to Quarto rendering on Connect, additionally, quarto is not required to be installed locally when sending notebooks to render on Connect with quarto. (#3423)
+- Quarto is now the preferred renderer for Jupyter notebooks as well as Rmarkdown and of course Quarto docs. (#3423)
 
 ### Fixed
 
+- Fixed server settings fetch failing, which caused the "Add Integration Request" action to be hidden. (#3444)
 - Publisher no longer fails to list project files when the directory contains special file types (e.g. Unix socket files). (#3403)
 - Log messages in the Publisher Logs panel are no longer duplicated when multiple deployments are made. (#3069)
 - Fix creating deployments of R Markdown documents that include parameters on Connect Cloud. (#3388)
 - The Publisher outputs (detailed logs) have been consolidated into one channel called "Posit Publisher". (#3168)
 - RMarkdown parsing no longer errors if there is a later horizontal rule (`---`) in the document body. (#3409)
+- Removed the requirement that the local python version exist on the server when deploying (#3368)
+
+# Changed
+
+- Files in the Project Files view now open the file when clicking the file name. Directories expand or collapse. (#3187)
 
 ## [1.28.0]
 
@@ -92,6 +112,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   rendered by Quarto to easily update and publish the rendered output (#2948)
 - Added support for Positron repositories configuration when detecting dependencies,
   allowing dependencies to be installed with the configured CRAN repository.
+- Added the ability to associate a Connect Cloud deployment to another Connect Cloud
+  deployment for the same account (#3067)
 
 ### Fixed
 
