@@ -80,6 +80,9 @@ just e2e-open
 
 # Build publisher and run tests
 just dev
+
+# Stop containers when done
+just stop
 ```
 
 ## Architecture
