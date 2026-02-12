@@ -47,13 +47,8 @@ describe("Deployments Section", () => {
         ]);
       }).deployCurrentlySelected();
 
-      cy.retryWithBackoff(
-        () =>
-          cy.findUniqueInPublisherWebview(
-            '[data-automation="publisher-deployment-section"]',
-          ),
-        5,
-        500,
+      cy.findUniqueInPublisherWebview(
+        '[data-automation="publisher-deployment-section"]',
       ).should("exist");
     });
 
@@ -78,13 +73,9 @@ describe("Deployments Section", () => {
           `/.posit/publish/deployments/${tomlFiles.contentRecord.name}`,
         );
       }).deployCurrentlySelected();
-      cy.retryWithBackoff(
-        () =>
-          cy.findUniqueInPublisherWebview(
-            '[data-automation="publisher-deployment-section"]',
-          ),
-        5,
-        500,
+
+      cy.findUniqueInPublisherWebview(
+        '[data-automation="publisher-deployment-section"]',
       ).should("exist");
     });
   });
@@ -141,13 +132,8 @@ describe("Deployments Section", () => {
 
       cy.deployCurrentlySelected();
 
-      cy.retryWithBackoff(
-        () =>
-          cy.findUniqueInPublisherWebview(
-            '[data-automation="publisher-deployment-section"]',
-          ),
-        5,
-        500,
+      cy.findUniqueInPublisherWebview(
+        '[data-automation="publisher-deployment-section"]',
       ).should("exist");
 
       // Load the deployment TOML to get the published URL and verify app
