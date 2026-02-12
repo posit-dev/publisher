@@ -1,6 +1,17 @@
 name: E2E Tests
 on:
+  workflow_dispatch:
+    inputs:
+      debug_cypress:
+        description: "Enable Cypress debug mode (videos, extra logs)"
+        type: boolean
+        default: false
   workflow_call:
+    inputs:
+      debug_cypress:
+        description: "Enable Cypress debug mode (videos, extra logs)"
+        type: boolean
+        default: false
     secrets:
       CONNECT_LICENSE:
         required: true
@@ -29,8 +40,8 @@ jobs:
           - "2022.10.0" # bionic (the oldest we can test using with-connect)
 
     env:
-      # MANUAL DEBUG OVERRIDE: Change to "true" to force debug (videos, extra logs)
-      DEBUG_CYPRESS: "false"
+      # Debug mode input from workflow_dispatch or workflow_call
+      DEBUG_CYPRESS: ${{ inputs.debug_cypress && 'true' || 'false' }}
       # Repo-level variable override (Settings > Actions > Variables > DEBUG_CYPRESS=true)
       VARS_DEBUG_CYPRESS: ${{ vars.DEBUG_CYPRESS }}
       # Set by GitHub only when re-running a job with "Enable debug logging" checked
