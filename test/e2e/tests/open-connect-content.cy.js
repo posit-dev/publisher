@@ -47,7 +47,7 @@ describe("Open Connect Content", () => {
               );
               return row.length > 0 ? cy.wrap(row) : Cypress.$();
             }),
-          20, // More attempts to handle workspace reload + bundle fetch
+          20,
           1500, // Slightly longer delays
         ).should("exist");
       });
