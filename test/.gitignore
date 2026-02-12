@@ -3,6 +3,5 @@ go_coverage.html
 
 # uv files
 uv.lock
-pyproject.toml
 .python-version
 .venv

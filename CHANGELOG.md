@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed unhelpful "Unknown Error" popup appearing on every file open/save when the Publisher backend is unavailable during startup or shutdown. (#3452)
 - Fixed the agent process auto-restarting during intentional shutdown (e.g., when VS Code closes). (#3195)
 
 ## [1.30.0]

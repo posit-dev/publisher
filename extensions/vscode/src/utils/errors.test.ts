@@ -2,7 +2,11 @@
 
 import { describe, expect, test } from "vitest";
 import { AxiosError, AxiosHeaders } from "axios";
-import { getSummaryStringFromError } from "./errors";
+import {
+  getSummaryStringFromError,
+  getMessageFromError,
+  isConnectionRefusedError,
+} from "./errors";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const mkAxiosJsonErr = (data: Record<PropertyKey, any>) => {
@@ -114,5 +118,66 @@ describe("Unknown errors", () => {
       data: "stuff",
     });
     expect(summary).toBe("Unknown Error");
+  });
+});
+
+describe("isConnectionRefusedError", () => {
+  test("returns true for ECONNREFUSED axios error", () => {
+    const error = new AxiosError(
+      "connect ECONNREFUSED 127.0.0.1:9001",
+      "ECONNREFUSED",
+    );
+    expect(isConnectionRefusedError(error)).toBe(true);
+  });
+
+  test("returns false for other axios error codes", () => {
+    const error = new AxiosError("Request timeout", "ETIMEDOUT");
+    expect(isConnectionRefusedError(error)).toBe(false);
+  });
+
+  test("returns false for axios error without code", () => {
+    const error = new AxiosError("Some error");
+    expect(isConnectionRefusedError(error)).toBe(false);
+  });
+
+  test("returns false for non-axios errors", () => {
+    expect(isConnectionRefusedError(new Error("ECONNREFUSED"))).toBe(false);
+    expect(isConnectionRefusedError("ECONNREFUSED")).toBe(false);
+    expect(isConnectionRefusedError(null)).toBe(false);
+    expect(isConnectionRefusedError(undefined)).toBe(false);
+  });
+});
+
+describe("getMessageFromError", () => {
+  describe("connection refused errors", () => {
+    test("returns descriptive message for ECONNREFUSED", () => {
+      const error = new AxiosError(
+        "connect ECONNREFUSED 127.0.0.1:9001",
+        "ECONNREFUSED",
+      );
+      expect(getMessageFromError(error)).toBe("Publisher backend unavailable");
+    });
+
+    test("returns response data for other axios errors", () => {
+      const error = new AxiosError(
+        "Request failed",
+        "ERR_BAD_REQUEST",
+        undefined,
+        undefined,
+        {
+          status: 400,
+          statusText: "Bad Request",
+          headers: new AxiosHeaders(),
+          config: { headers: new AxiosHeaders() },
+          data: "Invalid request body",
+        },
+      );
+      expect(getMessageFromError(error)).toBe("Invalid request body");
+    });
+
+    test("returns error message when no response data", () => {
+      const error = new AxiosError("Network Error", "ERR_NETWORK");
+      expect(getMessageFromError(error)).toBe("Network Error");
+    });
   });
 });
