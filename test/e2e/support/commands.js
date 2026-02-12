@@ -1,4 +1,5 @@
-// Copyright (C) 2025 by Posit Software, PBC.
+/* eslint-disable cypress/unsafe-to-chain-command */
+// Copyright (C) 2026 by Posit Software, PBC.
 
 import "@testing-library/cypress/add-commands";
 import "cypress-wait-until";
@@ -165,6 +166,7 @@ EOF`,
 
 // clearupDeployments
 // Purpose: Remove .posit metadata to reset deployments per test or per subdir, with exclusions.
+// - Container-safe: runs deletion inside the Docker container to avoid permission issues in CqI.
 Cypress.Commands.add(
   "clearupDeployments",
   (subdir, excludeDirs = ["config-errors"]) => {
@@ -849,3 +851,5 @@ Cypress.on("uncaught:exception", () => {
   // Prevent CI from failing on harmless errors
   return false;
 });
+
+/* eslint-enable cypress/unsafe-to-chain-command */
