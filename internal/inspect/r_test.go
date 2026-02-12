@@ -247,3 +247,24 @@ func (s *RSuite) TestRequiresRPythonWithoutRpy2() {
 	s.NoError(err)
 	s.False(require, "Python content without rpy2 dependency should not require R")
 }
+
+func (s *RSuite) TestRequiresRPythonRpy2CheckError() {
+	log := logging.New()
+	i, err := NewRInspector(s.cwd, util.Path{}, log, nil, nil)
+	s.NoError(err)
+
+	// Inject a mock rpy2 checker that returns an error
+	testErr := errors.New("failed to read requirements.txt")
+	inspector := i.(*defaultRInspector)
+	inspector.rpy2Checker = func(base util.AbsolutePath) (bool, error) {
+		return false, testErr
+	}
+
+	cfg := &config.Config{
+		Type: contenttypes.ContentTypePythonFastAPI,
+	}
+	require, err := i.RequiresR(cfg)
+	s.ErrorIs(err, testErr, "RequiresR should propagate error from rpy2 check")
+	s.False(require)
+}
+
