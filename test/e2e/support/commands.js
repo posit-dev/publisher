@@ -845,7 +845,5 @@ Cypress.Commands.add("deletePCCContent", () => {
   });
 });
 
-Cypress.on("uncaught:exception", () => {
-  // Prevent CI from failing on harmless errors
-  return false;
-});
+// NOTE: Specific exception handling is done in support/index.js
+// Do not add a catch-all here as it masks real errors.
