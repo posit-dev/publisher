@@ -28,16 +28,27 @@ describe("Open Connect Content", () => {
         cy.quickInputType("Connect server URL", contentRecord.server_url);
         cy.quickInputType("Connect content GUID", contentRecord.id);
 
-        // Wait for the workspace to reload with the Connect content
-        // The GUID appears in the explorer as a root folder after the workspace switch
+        // Wait for the quick input to close, indicating the command has been submitted
+        cy.get(".quick-input-widget").should("not.be.visible");
+
+        // Wait for the workspace to reload with the Connect content.
+        // The GUID appears in the explorer as a root folder after the workspace switch.
+        // Use { timeout: 0 } in the inner cy.contains() so retryWithBackoff controls
+        // the retry timing rather than cy.contains() blocking on its own timeout.
         cy.retryWithBackoff(
           () =>
-            cy.contains(
-              ".explorer-viewlet .monaco-list-row[aria-level='1']",
-              contentRecord.id,
-            ),
-          15,
-          1000,
+            cy.get("body", { timeout: 0 }).then(($body) => {
+              const explorer = $body.find(".explorer-viewlet");
+              if (explorer.length === 0) {
+                return Cypress.$(); // Explorer not yet rendered, return empty to retry
+              }
+              const row = explorer.find(
+                `.monaco-list-row[aria-level='1']:contains("${contentRecord.id}")`,
+              );
+              return row.length > 0 ? cy.wrap(row) : Cypress.$();
+            }),
+          20, // More attempts to handle workspace reload + bundle fetch
+          1500, // Slightly longer delays
         ).should("exist");
       });
     });
@@ -63,7 +74,11 @@ describe("Open Connect Content", () => {
     ).should("be.visible");
 
     cy.retryWithBackoff(
-      () => cy.get(".explorer-viewlet .explorer-item"),
+      () =>
+        cy.get("body", { timeout: 0 }).then(($body) => {
+          const items = $body.find(".explorer-viewlet .explorer-item");
+          return items.length > 0 ? cy.wrap(items) : Cypress.$();
+        }),
       10,
       1000,
     ).should("exist");
@@ -79,17 +94,24 @@ describe("Open Connect Content", () => {
 
     cy.retryWithBackoff(
       () =>
-        cy.contains(
-          ".explorer-viewlet .explorer-item a > span",
-          "manifest.json",
-        ),
+        cy.get("body", { timeout: 0 }).then(($body) => {
+          const match = $body.find(
+            '.explorer-viewlet .explorer-item a > span:contains("manifest.json")',
+          );
+          return match.length > 0 ? cy.wrap(match) : Cypress.$();
+        }),
       10,
       1000,
     ).should("be.visible");
 
     cy.retryWithBackoff(
       () =>
-        cy.contains(".explorer-viewlet .explorer-item a > span", "index.html"),
+        cy.get("body", { timeout: 0 }).then(($body) => {
+          const match = $body.find(
+            '.explorer-viewlet .explorer-item a > span:contains("index.html")',
+          );
+          return match.length > 0 ? cy.wrap(match) : Cypress.$();
+        }),
       10,
       1000,
     ).should("be.visible");
