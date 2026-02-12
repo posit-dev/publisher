@@ -48,7 +48,7 @@ describe("Open Connect Content", () => {
               return row.length > 0 ? cy.wrap(row) : Cypress.$();
             }),
           20,
-          1500, // Slightly longer delays
+          1500,
         ).should("exist");
       });
     });
