@@ -23,8 +23,8 @@ async function confirmPCCPublishSuccess({ publishedUrl, expectedTitle }) {
       route.abort(),
     );
 
-    const maxAttempts = 5; // 5 attempts * 2s = 10 seconds max
-    const delay = 2000;
+    const maxAttempts = 10; // 10 attempts * 5s = 50 seconds max
+    const delay = 5000;
     let lastError = null;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -80,10 +80,11 @@ async function confirmPCCPublishSuccess({ publishedUrl, expectedTitle }) {
             }
           }
         } else if (response && response.status() === 404) {
-          return {
-            success: false,
-            error: `HTTP 404: Page not found at ${publishedUrl}`,
-          };
+          // Don't immediately fail on 404 - the content may not have propagated yet
+          lastError = `HTTP 404: Page not found at ${publishedUrl}`;
+          console.log(
+            `[Playwright] Attempt ${attempt}: Got 404, content may not have propagated yet`,
+          );
         } else {
           lastError = `Status: ${response && response.status()}`;
         }
