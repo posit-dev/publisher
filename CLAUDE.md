@@ -135,6 +135,10 @@ npm install
 npm install --prefix="test/e2e"
 ```
 
+# Git Workflow
+
+**Never push directly to main.** All changes must go through pull requests.
+
 # Schema Updates
 
 Schemas in `internal/schema/schemas/`:
