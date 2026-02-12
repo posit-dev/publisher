@@ -32,7 +32,7 @@ func (s *FilesSuite) TestCreateFile() {
 	err = path.MkdirAll(0777)
 	s.NoError(err)
 
-	file, err := CreateFile(path, path, nil)
+	file, err := CreateFile(path, path, nil, s.log)
 	s.NoError(err)
 	s.NotNil(file)
 	s.Equal(file.Id, ".")

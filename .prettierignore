@@ -4,6 +4,7 @@ vendor
 extensions/vscode/out
 test/sample-content
 extensions/vscode/.vscode-test
+test/e2e/logs
 
 # webdriver.io service
 extensions/vscode/dist

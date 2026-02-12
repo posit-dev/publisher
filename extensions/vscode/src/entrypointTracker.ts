@@ -20,7 +20,10 @@ import {
 } from "src/utils/vscode";
 import { isActiveDocument, relativeDir } from "src/utils/files";
 import { hasKnownContentType } from "src/utils/inspect";
-import { getSummaryStringFromError } from "src/utils/errors";
+import {
+  getSummaryStringFromError,
+  isConnectionRefusedError,
+} from "src/utils/errors";
 
 function isTextEditor(
   editor: TextEditor | NotebookEditor,
@@ -58,7 +61,11 @@ async function isDocumentEntrypoint(
       "entrypointTracker::isDocumentEntrypoint",
       error,
     );
-    window.showInformationMessage(summary);
+    // Don't show popup for connection errors - this is a transient state
+    // that occurs during backend startup/shutdown. Just log to console.
+    if (!isConnectionRefusedError(error)) {
+      window.showErrorMessage(summary);
+    }
     return false;
   }
 }

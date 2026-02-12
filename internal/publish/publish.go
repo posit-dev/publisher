@@ -11,6 +11,7 @@ import (
 
 	"github.com/mitchellh/mapstructure"
 
+	"github.com/posit-dev/publisher/internal/bundles"
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/deployment"
@@ -264,15 +265,8 @@ func (p *defaultPublisher) doPublish() error {
 
 	if wasPreviouslyDeployed {
 		p.log.Info("Updating deployment", "content_id", contentID)
-	} else {
-		// Create a new deployment; we will update it with details later.
-		contentID, err = p.serverPublisher.CreateDeployment()
-		if err != nil {
-			return err
-		}
+		p.setContentInfo(p.serverPublisher.GetContentInfo(contentID))
 	}
-
-	p.setContentInfo(p.serverPublisher.GetContentInfo(contentID))
 
 	manifest, err := p.createManifest()
 	if err != nil {
@@ -282,6 +276,15 @@ func (p *defaultPublisher) doPublish() error {
 	err = p.serverPublisher.PreFlightChecks()
 	if err != nil {
 		return err
+	}
+
+	if !wasPreviouslyDeployed {
+		// Create a new deployment; we will update it with details later.
+		contentID, err = p.serverPublisher.CreateDeployment()
+		if err != nil {
+			return err
+		}
+		p.setContentInfo(p.serverPublisher.GetContentInfo(contentID))
 	}
 
 	bundleFile, err := p.createBundle(manifest)
@@ -304,6 +307,26 @@ func (p *defaultPublisher) setContentInfo(info publishhelper.ContentInfo) {
 	p.Target.DashboardURL = info.DashboardURL
 	p.Target.DirectURL = info.DirectURL
 	p.Target.LogsURL = info.LogsURL
+}
+
+func (p *defaultPublisher) logDeploymentVersions(log logging.Logger, manifest *bundles.Manifest) {
+	if manifest.Quarto != nil && manifest.Quarto.Version != "" {
+		log.Info("Local Quarto version " + manifest.Quarto.Version)
+	} else {
+		log.Info("Local Quarto not in use")
+	}
+
+	if manifest.Platform != "" {
+		log.Info("Local R version " + manifest.Platform)
+	} else {
+		log.Info("Local R not in use")
+	}
+
+	if manifest.Python != nil && manifest.Python.Version != "" {
+		log.Info("Local Python version " + manifest.Python.Version)
+	} else {
+		log.Info("Local Python not in use")
+	}
 }
 
 func (p *defaultPublisher) CreateDeploymentRecord() {

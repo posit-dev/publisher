@@ -127,3 +127,16 @@ func (m *MockClient) GetSettings(base util.AbsolutePath, cfg *config.Config, log
 	}
 	return args.Get(0).(*AllSettings), args.Error(1)
 }
+
+func (m *MockClient) LatestBundleID(contentID types.ContentID, log logging.Logger) (types.BundleID, error) {
+	args := m.Called(contentID, log)
+	return args.Get(0).(types.BundleID), args.Error(1)
+}
+
+func (m *MockClient) DownloadBundle(contentID types.ContentID, bundleID types.BundleID, log logging.Logger) ([]byte, error) {
+	args := m.Called(contentID, bundleID, log)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]byte), args.Error(1)
+}

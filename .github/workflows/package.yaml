@@ -5,17 +5,17 @@ jobs:
   vscode:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup
-      - uses: actions/download-artifact@v6
+      - uses: actions/download-artifact@v7
         with:
           name: bin
           path: bin
       - run: chmod -R +x ./bin
       - run: just package
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         id: upload
         with:
           name: dist

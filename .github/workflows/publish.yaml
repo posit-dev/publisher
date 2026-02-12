@@ -25,12 +25,12 @@ jobs:
           - linux-arm64
           - windows-amd64
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: extractions/setup-just@v3
       - uses: actions/setup-node@v6
         with:
           node-version: "22"
-      - uses: actions/download-artifact@v6
+      - uses: actions/download-artifact@v7
         with:
           name: dist
           path: dist
@@ -39,7 +39,7 @@ jobs:
         run: echo "extension_path=dist/$(just name)-$(just version)-${{ matrix.target }}.vsix" >> "$GITHUB_OUTPUT"
 
       - name: Publish to Visual Studio Marketplace
-        uses: HaaLeo/publish-vscode-extension@v1
+        uses: HaaLeo/publish-vscode-extension@v2
         with:
           registryUrl: https://marketplace.visualstudio.com
           pat: ${{ secrets.VSCE_PAT }}
@@ -60,12 +60,12 @@ jobs:
           - linux-arm64
           - windows-amd64
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: extractions/setup-just@v3
       - uses: actions/setup-node@v6
         with:
           node-version: "22"
-      - uses: actions/download-artifact@v6
+      - uses: actions/download-artifact@v7
         with:
           name: dist
           path: dist
@@ -74,7 +74,7 @@ jobs:
         run: echo "extension_path=dist/$(just name)-$(just version)-${{ matrix.target }}.vsix" >> "$GITHUB_OUTPUT"
 
       - name: Publish to Open VSX Registry
-        uses: HaaLeo/publish-vscode-extension@v1
+        uses: HaaLeo/publish-vscode-extension@v2
         with:
           pat: ${{ secrets.OPEN_VSX_TOKEN }}
           extensionFile: ${{ steps.get-extension-path.outputs.extension_path }}

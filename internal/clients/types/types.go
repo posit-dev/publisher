@@ -108,10 +108,8 @@ type ConnectOptions struct {
 // RequestRevision represents the configuration for the next content revision.
 type RequestRevision struct {
 	SourceType     string          `json:"source_type"`
-	RVersion       string          `json:"r_version,omitempty"`
 	PythonVersion  string          `json:"python_version,omitempty"`
 	ContentType    ContentType     `json:"content_type,omitempty"`
-	AppMode        AppMode         `json:"app_mode,omitempty"`
 	PrimaryFile    string          `json:"primary_file,omitempty"`
 	ConnectOptions *ConnectOptions `json:"connect_options,omitempty"`
 }
@@ -125,7 +123,6 @@ type ContentRequestBase struct {
 	Access            ContentAccess    `json:"access,omitempty"`
 	Secrets           []Secret         `json:"secrets,omitempty"`
 	VanityName        string           `json:"vanity_name,omitempty"`
-	AppMode           AppMode          `json:"app_mode"`
 	ContentType       ContentType      `json:"content_type"`
 }
 
@@ -174,7 +171,7 @@ func CloudContentTypeFromPublisherType(contentType contenttypes.ContentType) (Co
 		return ContentTypeShiny, nil
 	case contenttypes.ContentTypePythonStreamlit:
 		return ContentTypeStreamlit, nil
-	case contenttypes.ContentTypeQuartoDeprecated, contenttypes.ContentTypeQuarto:
+	case contenttypes.ContentTypeQuartoDeprecated, contenttypes.ContentTypeQuarto, contenttypes.ContentTypeQuartoShiny:
 		return ContentTypeQuarto, nil
 	case contenttypes.ContentTypeRMarkdown:
 		return ContentTypeRMarkdown, nil

@@ -12,12 +12,6 @@
     - [Unit Tests](#unit-tests)
       - [Coverage Reporting](#coverage-reporting)
     - [End-to-End Tests](#end-to-end-tests)
-      - [Requirements](#requirements)
-        - [Docker Desktop](#docker-desktop)
-        - [Connect Server License](#connect-server-license)
-      - [E2E Test Setup](#e2e-test-setup)
-      - [Running E2E Tests](#running-e2e-tests)
-      - [Repeat Tests Headless Script](#repeat-tests-headless-script)
   - [Development](#development)
     - [Build Tools](#build-tools)
     - [Environment Variables](#environment-variables)
@@ -94,121 +88,9 @@ Once complete, a coverage report will open in your default browser.
 
 ### End-to-End Tests
 
-End-to-end tests are written in JavaScript and utilize Cypress for testing the Posit Publisher VSCode extension.
+End-to-end tests use Cypress to test the Publisher extension in a real VS Code environment with a Posit Connect server. Tests run automatically in GitHub Actions CI after unit tests pass.
 
-These tests can be run locally to verify that the extension works as expected in a Connect environment.
-
-These tests also run automatically in the GitHub Actions CI pipeline for pull requests after the unit tests have passed. The workflow uses the `CONNECT_LICENSE` secret stored in the repository settings to authenticate with Connect during testing. Results, including screenshots of failed tests of test runs, are uploaded as artifacts for troubleshooting. (Video replays can be optionally enabled by setting local environment variable `DEBUG_CYPRESS` or `ACTIONS_STEP_DEBUG` to true).
-
-#### Requirements
-
-##### Docker Desktop
-
-To run the end-to-end tests, you will need to have Docker Desktop installed and running on your machine. (We have had issues with running
-alternatives to Docker Desktop, such as Podman, so we recommend using Docker Desktop.)
-
-The images used for the end-to-end tests are built using Dockerfiles located in the `test/e2e` directory and are currently built for
-an AMD64 architecture. If you are running on an ARM64 architecture (such as Apple Silicon), you will need to ensure that your Docker installation's Virtual Machine Settings are set to:
-
-- use the `Apple Virtualization framework` for the `Virtualization Framework` option
-- the `Use Rosetta for x86_64/amd64 emulation on Apple Silicon` option is enabled.
-
-##### Connect Server License
-
-To run the end-to-end tests, you will need a valid Posit Connect server license.
-Set the `CONNECT_LICENSE` environment variable.
-
-```bash
-export CONNECT_LICENSE="your-connect-license-key"
-```
-
-If you have to diagnose issues with the connect license, you can check the license status as reported by the Connect server by running the
-following command within the e2e-connect-publisher-e2e Docker container: `cat /var/log/rstudio/rstudio-connect/rstudio-connect.log`.
-Typically there will be a line which indicates a licensing failure, if that is the case.
-
-#### E2E Test Setup
-
-To run the end-to-end tests, you should first create a virtual environment and install the necessary dependencies.
-
-This can be done by running the following command from the `test/e2e` subdirectory of the repository:
-
-```bash
-cd test/e2e
-python3 -m venv .venv
-```
-
-Activate the virtual environment and install the dependencies:
-
-```bash
-source .venv/bin/activate
-pip install -r requirements.txt
-```
-
-Build the e2e images:
-
-```bash
-just build-images
-```
-
-When done, you can deactivate the virtual environment with:
-
-```bash
-deactivate
-```
-
-#### Running E2E Tests
-
-Running end to end tests locally requires credentials for Posit Connect Cloud and licenses for a Connect server. You can either rely on github CI to run these, or contact a member of the team to help get these set up.
-
-** NOTE: ** The instructions below assume that your terminal has the `test/e2e` directory as the current working directory. If you are not in that directory, you will need to adjust the commands accordingly.
-
-Activate your virtual environment if it is not already active.
-
-Run the following commands from the `test/e2e` subdirectory:
-
-```bash
-source .venv/bin/activate
-```
-
-Build the publisher and start the Cypress interactive test runner:
-
-```bash
-just build-images
-just dev
-```
-
-This will start the Cypress test runner, which will open a browser window and allow you to run the end-to-end tests against the Posit Publisher VSCode extension.
-
-Use VSCode to modify the tests in the `test/e2e/tests` directory. Saving changes will automatically re-run the tests in the Cypress test runner.
-
-Tests can also be run in headless mode with:
-
-```bash
-npx cypress run
-```
-
-When done, you can deactivate the virtual environment with:
-
-```bash
-deactivate
-```
-
-And detach the Docker containers with:
-
-```bash
-just stop
-```
-
-**NOTE: ** If you are updating the images in any way, where you need to rebuild the images with `just build-images`,
-you will need to run the `just stop` command to remove the existing containers before running `just dev`.
-
-#### Repeat Tests Headless Script
-
-Allows you to run your Cypress E2E tests multiple times in headless mode, either for all tests or for specific test files. It is useful for detecting flaky tests and verifying test suite stability.
-
-```bash
-./repeat-cypress-headless.sh [REPEAT=N] [spec1] [spec2] [...]
-```
+See the **[E2E Testing Guide](./test/e2e/CONTRIBUTING.md)** for setup and usage instructions.
 
 ## Development
 
@@ -270,7 +152,7 @@ To update the schema:
 - Verify that the unit tests pass. They load the example files and validate them against the schemas.
 - The `draft` folder contains schemas that are a superset of the main schemas, and have ideas for the other settings we have considered adding. Usually we have added any new fields to those schemas and example files as well.
 
-As Pull Requests are merged into main, we update (or create in the case of a new schema) the file on the CDN (in S3). Currently, this is a manual process requiring write access to our S3 bucket.
+When Pull Requests that modify schema files are merged into main, a GitHub Actions workflow automatically uploads the updated schemas to S3, making them available on the CDN.
 
 #### Force Even Better TOML to update
 
@@ -302,40 +184,45 @@ minor version number is odd.
 
 ### Before Releasing
 
-- Ensure that all relevant changes are documented in:
-  - the [CHANGELOG.md](CHANGELOG.md) for the repository
-  - the [VSCode Extension CHANGELOG.md](extensions/vscode/CHANGELOG.md)
-    that is bundled with the extension
-- Merge any "Update licenses" PRs to main
-- Merge any release preparation PRs to main
-- Merge any Dependabot PRs to main
+- Ensure that all relevant changes are documented in [CHANGELOG.md](CHANGELOG.md): diff `main` against the last release, and compare with what's in `CHANGELOG.md`.
+  Generally these will be the same, but sometimes things get missed. Open a PR to update `CHANGELOG.md` if anything is missing.
+
+  Building and packaging the VSCode extension for release will [automatically sync](./extensions/vscode/justfile#L115) the VSCode changelog from the root `CHANGELOG.md`.
+
+- Merge any "Update licenses" PRs to `main`
+- Merge any release preparation PRs to `main`, e.g. any updates to `CHANGELOG.md`
+- Merge any Dependabot PRs to `main`
 - Wait for the `main.yaml` workflows to complete before creating a release tag
 
 ### Instructions
 
-**Step 1**
-
-Create a proper SemVer and extension version compatible tag using the guidelines
-above.
+#### Step 1: Create a proper SemVer and extension version compatible tag
 
 Use an even minor version for releases, or an odd minor version for
-pre-releases.
+pre-releases. The example commands here use `v1.1.0`, replace this with the version you are releasing.
 
-_For this example, we will use the tag `v1.1.0` to create a pre-release. This
-tag already exists, so you will not be able run the following commands
-verbatim._
+Make sure you are on `main` and up to date:
 
-`git tag v1.1.0`
+```sh
+git switch main
+git pull
+```
 
-**Step 2**
+and then create the tag:
 
-Push the tag GitHub.
+```sh
+git tag v1.1.0
+```
 
-`git push origin v1.1.0`
+#### Step 2: Push the tag GitHub
+
+```sh
+git push origin v1.1.0
+```
 
 This command will trigger the [Release GitHub Action](https://github.com/rstudio/publishing-client/actions/workflows/release.yaml).
 
-**Step 3**
+#### Step 3: Confirm the release
 
 Once the action has completed, the release will be available on the
 [Releases page](https://github.com/rstudio/publishing-client/releases), and

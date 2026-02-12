@@ -20,8 +20,5 @@ cat <<EOF > /home/coder/.local/share/code-server/User/settings.json
 
 EOF
 
-# Ensure the workspace settings enable Connect Cloud, preserving other settings
-/usr/local/bin/enable-pcc-flag.sh
-
 # Code server entrypoint that starts the service
 exec /usr/bin/code-server --disable-workspace-trust --auth none --bind-addr 0.0.0.0:8080 .

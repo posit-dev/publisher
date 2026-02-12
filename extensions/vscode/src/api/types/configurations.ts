@@ -56,6 +56,7 @@ export enum ContentType {
   PYTHON_SHINY = "python-shiny",
   PYTHON_STREAMLIT = "python-streamlit",
   PYTHON_GRADIO = "python-gradio",
+  PYTHON_PANEL = "python-panel",
   QUARTO_SHINY = "quarto-shiny",
   QUARTO = "quarto",
   QUARTO_STATIC = "quarto-static",
@@ -77,6 +78,7 @@ export const allValidContentTypes: ContentType[] = [
   ContentType.PYTHON_SHINY,
   ContentType.PYTHON_STREAMLIT,
   ContentType.PYTHON_GRADIO,
+  ContentType.PYTHON_PANEL,
   ContentType.QUARTO_SHINY,
   ContentType.QUARTO,
   ContentType.QUARTO_STATIC,
@@ -97,6 +99,7 @@ export const contentTypeStrings = {
   [ContentType.PYTHON_SHINY]: "run with Shiny for Python",
   [ContentType.PYTHON_STREAMLIT]: "run with Streamlit",
   [ContentType.PYTHON_GRADIO]: "run with Gradio",
+  [ContentType.PYTHON_PANEL]: "run with Panel",
   [ContentType.QUARTO_SHINY]: "render with Quarto and run embedded Shiny app",
   [ContentType.QUARTO]: "render with Quarto",
   [ContentType.QUARTO_STATIC]: "render with Quarto",
@@ -199,7 +202,10 @@ export function UpdateAllConfigsWithDefaults(
   defaults: InterpreterDefaults,
 ) {
   for (let i = 0; i < configs.length; i++) {
-    configs[i] = UpdateConfigWithDefaults(configs[i], defaults);
+    const config = configs[i];
+    if (config !== undefined) {
+      configs[i] = UpdateConfigWithDefaults(config, defaults);
+    }
   }
   return configs;
 }

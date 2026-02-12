@@ -8,8 +8,7 @@
 describe("Credentials Section", () => {
   // Global setup - run once for entire test suite
   before(() => {
-    cy.resetConnect();
-    cy.setAdminCredentials(); // Set up admin credential once
+    cy.initializeConnect();
   });
 
   beforeEach(() => {
@@ -75,7 +74,7 @@ describe("Credentials Section", () => {
       .should("have.text", "admin-code-server");
   });
 
-  it("New PCC Credential - OAuth Device Code", () => {
+  it("New PCC Credential - OAuth Device Code @pcc", () => {
     const user = Cypress.env("pccConfig").pcc_user_ccqa3;
     // Drive full OAuth UI flow and nickname entry via helper
     cy.addPCCCredential(user, "connect-cloud-credential");
@@ -93,8 +92,6 @@ describe("Credentials Section", () => {
 
   it("Existing Credentials Load", () => {
     // Seeds two dummy credentials and validates they render correctly in the list.
-    // Uses retryWithBackoff + findUnique to reduce flakiness.
-
     cy.setDummyCredentials();
     cy.toggleCredentialsSection();
     cy.refreshCredentials();
@@ -103,26 +100,15 @@ describe("Credentials Section", () => {
       .findByText("No credentials have been added yet.")
       .should("not.exist");
 
-    // Use consistent helpers with backoff for stability
-    cy.retryWithBackoff(
-      () =>
-        cy.findUniqueInPublisherWebview(
-          '[data-automation="dummy-credential-one-list"]',
-        ),
-      5,
-      500,
+    cy.findUniqueInPublisherWebview(
+      '[data-automation="dummy-credential-one-list"]',
     )
       .find(".tree-item-title")
       .should("exist")
       .and("have.text", "dummy-credential-one");
 
-    cy.retryWithBackoff(
-      () =>
-        cy.findUniqueInPublisherWebview(
-          '[data-automation="dummy-credential-two-list"]',
-        ),
-      5,
-      500,
+    cy.findUniqueInPublisherWebview(
+      '[data-automation="dummy-credential-two-list"]',
     )
       .find(".tree-item-title")
       .should("exist")
@@ -131,19 +117,12 @@ describe("Credentials Section", () => {
 
   it("Delete Credential", () => {
     // Hovers to reveal delete action, confirms, and asserts removal from the list.
-
     cy.setDummyCredentials();
     cy.toggleCredentialsSection();
     cy.refreshCredentials();
 
-    cy.publisherWebview();
-    cy.retryWithBackoff(
-      () =>
-        cy.findUniqueInPublisherWebview(
-          '[data-automation="dummy-credential-one-list"]',
-        ),
-      5,
-      500,
+    cy.findUniqueInPublisherWebview(
+      '[data-automation="dummy-credential-one-list"]',
     ).then(($credRecord) => {
       cy.wrap($credRecord).should("be.visible").trigger("mouseover");
       cy.wrap($credRecord)

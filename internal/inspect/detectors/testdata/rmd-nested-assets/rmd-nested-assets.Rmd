@@ -1,0 +1,13 @@
+---
+title: "R Markdown Nested Assets Test"
+resource_files:
+  - assets/style.css
+  - assets/script.js
+  - assets/script-two.js
+  - assets/script-three.js
+---
+
+# R Markdown Nested Assets Page
+
+This is the index page. This page has mystery scripts and CSS file too.
+This is a link to a [mysterious place](https://cuberule.com/).

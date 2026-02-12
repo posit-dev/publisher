@@ -493,3 +493,146 @@ func (s *RDependencyScannerFunctionalSuite) TestSetupRenvWithSubdirLockfileInfra
 	s.True(hasCli, "lockfile should include cli package entry")
 	s.True(hasJsonlite, "lockfile should now include jsonlite from nested file")
 }
+
+// Test for issue #3089: When a non-existent file path is passed to ScanDependencies,
+// verify how R's renv::dependencies() handles it
+func (s *RDependencyScannerFunctionalSuite) TestFunctional_NonExistentFileInPaths() {
+	if testing.Short() {
+		s.T().Skip("skipping functional test in short mode")
+	}
+
+	dir := s.T().TempDir()
+	base := util.NewAbsolutePath(dir, nil)
+
+	// Create a file that should be scanned
+	included := base.Join("included.R")
+	s.NoError(included.WriteFile([]byte(`library(glue)`), 0644))
+
+	// Reference a file that doesn't exist
+	nonExistent := base.Join("missing.R")
+
+	interp, err := interpreters.NewRInterpreter(base, util.Path{}, s.log, nil, nil, nil)
+	s.NoError(err)
+	rExec, err := interp.GetRExecutable()
+	s.NoError(err)
+	s.NotEmpty(rExec.String())
+
+	scanner := NewRDependencyScanner(s.log, nil)
+	// Pass both a real file and a non-existent file
+	lockfilePath, err := scanner.ScanDependencies([]string{included.String(), nonExistent.String()}, rExec.String())
+	s.NoError(err)
+
+	// If no error, check what was scanned
+	exists, err := lockfilePath.Exists()
+	s.NoError(err)
+	s.True(exists)
+
+	lf, err := ReadLockfile(lockfilePath)
+	s.NoError(err)
+	_, hasGlue := lf.Packages[PackageName("glue")]
+
+	// glue should be found from included.R
+	s.True(hasGlue, "lockfile should include glue from included.R even though another path was missing")
+	s.T().Log("R's renv::dependencies() silently skipped the non-existent file")
+}
+
+// Test for issue #3089: When both a directory and non-existent file are in the paths,
+// along with valid files
+func (s *RDependencyScannerFunctionalSuite) TestFunctional_MixedValidInvalidPaths() {
+	if testing.Short() {
+		s.T().Skip("skipping functional test in short mode")
+	}
+
+	dir := s.T().TempDir()
+	base := util.NewAbsolutePath(dir, nil)
+
+	// Create valid files
+	file1 := base.Join("app.R")
+	s.NoError(file1.WriteFile([]byte(`library(glue)`), 0644))
+
+	// Create a directory
+	subdir := base.Join("subdir")
+	s.NoError(subdir.MkdirAll(0777))
+
+	// Reference a non-existent file
+	missing := base.Join("missing.R")
+
+	interp, err := interpreters.NewRInterpreter(base, util.Path{}, s.log, nil, nil, nil)
+	s.NoError(err)
+	rExec, err := interp.GetRExecutable()
+	s.NoError(err)
+	s.NotEmpty(rExec.String())
+
+	scanner := NewRDependencyScanner(s.log, nil)
+	// Pass a mix: valid files, a directory, and a non-existent file
+	lockfilePath, err := scanner.ScanDependencies(
+		[]string{file1.String(), subdir.String(), missing.String()},
+		rExec.String(),
+	)
+	s.NoError(err)
+
+	exists, err := lockfilePath.Exists()
+	s.NoError(err)
+	s.True(exists)
+
+	lf, err := ReadLockfile(lockfilePath)
+	s.NoError(err)
+	_, hasGlue := lf.Packages[PackageName("glue")]
+
+	// Both valid files should be scanned
+	s.True(hasGlue, "lockfile should include glue from helpers.R")
+	s.T().Log("R's renv::dependencies() successfully processed valid files despite invalid paths")
+}
+
+// Test for issue #3089: A quarto document has rmarkdown and knitr as dependencies
+func (s *RDependencyScannerFunctionalSuite) TestFunctional_QuartodocWithInvalidPaths() {
+	if testing.Short() {
+		s.T().Skip("skipping functional test in short mode")
+	}
+
+	dir := s.T().TempDir()
+	base := util.NewAbsolutePath(dir, nil)
+
+	// Create valid files
+	file1 := base.Join("doc.qmd")
+	quartoDoc := `---
+title: "My Document"
+---
+
+` + "```{r}\n" + `library(glue)
+` + "```\n"
+	s.NoError(file1.WriteFile([]byte(quartoDoc), 0644))
+
+	// Reference a non-existent file
+	missing := base.Join("renv.lock")
+
+	interp, err := interpreters.NewRInterpreter(base, util.Path{}, s.log, nil, nil, nil)
+	s.NoError(err)
+	rExec, err := interp.GetRExecutable()
+	s.NoError(err)
+	s.NotEmpty(rExec.String())
+
+	scanner := NewRDependencyScanner(s.log, nil)
+	// Pass a mix: valid files, a directory, and a non-existent file
+	lockfilePath, err := scanner.ScanDependencies(
+		[]string{file1.String(), missing.String()},
+		rExec.String(),
+	)
+	s.NoError(err)
+
+	exists, err := lockfilePath.Exists()
+	s.NoError(err)
+	s.True(exists)
+
+	lf, err := ReadLockfile(lockfilePath)
+	s.NoError(err)
+	_, hasGlue := lf.Packages[PackageName("glue")]
+	_, hasRmarkdown := lf.Packages[PackageName("rmarkdown")]
+	_, hasKnitr := lf.Packages[PackageName("knitr")]
+
+	// Both valid files should be scanned
+	s.True(hasGlue, "lockfile should include glue from doc.qmd")
+	s.True(hasRmarkdown, "lockfile should include rmarkdown because this is a quarto doc")
+	s.True(hasKnitr, "lockfile should include knitr because this is a quarto doc")
+	s.T().Log("R's renv::dependencies() successfully processed valid files despite invalid paths")
+}

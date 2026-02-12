@@ -6,6 +6,8 @@ title: "Testing RMD Site"
 
 This is the index page. It has a link to [article](article.html) and [another](another.html).
 
+![Mario Jump](images/mario-jump.gif)
+
 ### A huge plot (scatter plot matrix)
 
 One disadvantage of `recordPlot()` is that it may not be able to record huge plots due to memory limits, e.g. a scatter plot matrix of tens of thousands of points:

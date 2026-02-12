@@ -13,6 +13,7 @@ import {
   window,
 } from "vscode";
 import { Credential, useApi } from "./api";
+import { logger } from "./logging";
 import { PublisherState } from "./state";
 import { getSummaryStringFromError } from "./utils/errors";
 
@@ -23,12 +24,6 @@ import { getSummaryStringFromError } from "./utils/errors";
 // Note: must be kept in sync with contributes.authentication in package.json.
 const CONNECT_AUTH_PROVIDER_ID = "posit-connect";
 const CONNECT_AUTH_PROVIDER_LABEL = "Posit Connect";
-
-// A dedicated output channel for debugging auth-related state changes.
-const authLogger = window.createOutputChannel(
-  "Posit Publisher Authentication",
-  { log: true },
-);
 
 class ConnectAuthSession implements AuthenticationSession {
   readonly id: string;
@@ -63,7 +58,7 @@ export class PublisherAuthProvider
       ),
       state.onDidRefreshCredentials((e) => this.onRefresh(e.oldCredentials)),
     );
-    authLogger.info(
+    logger.info(
       `Declared authentication provider "${CONNECT_AUTH_PROVIDER_ID}"`,
     );
   }
@@ -89,7 +84,7 @@ export class PublisherAuthProvider
     if (options?.account) {
       creds = creds.filter((x) => x.url === options?.account?.id);
     }
-    authLogger.debug(
+    logger.debug(
       `Got a request for Connect auth sessions, count=${creds.length} url=${options?.account?.id ?? "<any>"}`,
     );
     return Promise.resolve(creds.map((x) => new ConnectAuthSession(x)));
@@ -111,7 +106,7 @@ export class PublisherAuthProvider
   async removeSession(sessionId: string): Promise<void> {
     const cred = this.state.credentials.find((x) => x.guid === sessionId);
     if (!cred) {
-      authLogger.warn(
+      logger.warn(
         `Aborted removing non-existent Connect auth session, id=${sessionId}`,
       );
       throw new Error("No session to remove");
@@ -126,7 +121,7 @@ export class PublisherAuthProvider
       window.showInformationMessage(
         getSummaryStringFromError("credential::delete", error),
       );
-      authLogger.error(
+      logger.error(
         `Failed to remove Connect auth session, name=${cred.name} url=${cred.url} error="${error}"`,
       );
       throw error;
@@ -143,7 +138,7 @@ export class PublisherAuthProvider
     for (const prev of oldCredentials) {
       if (!this.state.credentials.find((x) => x.guid === prev.guid)) {
         removed.push(new ConnectAuthSession(prev));
-        authLogger.info(
+        logger.info(
           `Removed Connect auth session, name=${prev.name} url=${prev.url}`,
         );
       }
@@ -154,7 +149,7 @@ export class PublisherAuthProvider
       const prev = oldCredentials.find((x) => x.guid === cred.guid);
       if (!prev) {
         added.push(new ConnectAuthSession(cred));
-        authLogger.info(
+        logger.info(
           `Added Connect auth session, name=${cred.name} url=${cred.url}`,
         );
       } else if (
@@ -164,7 +159,7 @@ export class PublisherAuthProvider
         prev.apiKey !== cred.apiKey
       ) {
         changed.push(new ConnectAuthSession(cred));
-        authLogger.info(
+        logger.info(
           `Updated Connect auth session, name=${cred.name} url=${cred.url}`,
         );
       }

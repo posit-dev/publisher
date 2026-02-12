@@ -1,20 +1,90 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import "@testing-library/cypress/add-commands";
+import "cypress-wait-until";
+import "cypress-network-idle";
 import { parse } from "smol-toml";
 import "./selectors";
 import "./sequences";
+import "./workbench";
 
-const connectManagerServer = Cypress.env("CONNECT_MANAGER_URL");
-
-// Performs the full set of reset commands we typically use before executing our tests
-Cypress.Commands.add("resetConnect", () => {
+// initializeConnect: Simple initialization for use with with-connect action
+// The API key is passed via CYPRESS_BOOTSTRAP_ADMIN_API_KEY environment variable
+// from the with-connect GitHub Action, which handles Connect startup and bootstrapping.
+Cypress.Commands.add("initializeConnect", () => {
   cy.clearupDeployments();
-  cy.stopConnect();
-  cy.resetConnectSettings();
-  cy.resetConnectData();
-  cy.startConnect();
-  cy.bootstrapAdmin();
+  cy.setAdminCredentials();
+});
+
+// getConnectVersion
+// Purpose: Fetch the Connect server version from the server_settings API.
+// Returns: A promise that resolves with the version string (e.g., "2025.03.0")
+Cypress.Commands.add("getConnectVersion", () => {
+  const connectUrl =
+    Cypress.env("CONNECT_SERVER_URL") || "http://localhost:3939";
+  const apiKey = Cypress.env("BOOTSTRAP_ADMIN_API_KEY");
+
+  return cy
+    .request({
+      method: "GET",
+      url: `${connectUrl}/__api__/server_settings`,
+      headers: {
+        Authorization: `Key ${apiKey}`,
+      },
+      failOnStatusCode: false,
+    })
+    .then((response) => {
+      if (response.status === 200 && response.body.version) {
+        return response.body.version;
+      }
+      throw new Error(
+        `Failed to get Connect version: status=${response.status}`,
+      );
+    });
+});
+
+// isConnectVersionBefore
+// Purpose: Check if the current Connect server version is before a given version.
+// Parameters:
+//   - targetVersion: Version string to compare against (e.g., "2025.03" or "2025.03.0")
+// Returns: A promise that resolves with true if Connect version < targetVersion
+Cypress.Commands.add("isConnectVersionBefore", (targetVersion) => {
+  return cy.getConnectVersion().then((currentVersion) => {
+    // Parse versions into comparable parts (e.g., "2025.03.0" -> [2025, 3, 0])
+    const parseParts = (v) =>
+      v.split(".").map((p) => parseInt(p.replace(/^0+/, "") || "0", 10));
+    const current = parseParts(currentVersion);
+    const target = parseParts(targetVersion);
+
+    // Compare version parts
+    for (let i = 0; i < Math.max(current.length, target.length); i++) {
+      const c = current[i] || 0;
+      const t = target[i] || 0;
+      if (c < t) return true;
+      if (c > t) return false;
+    }
+    return false; // versions are equal
+  });
+});
+
+// skipIfConnectVersionBefore
+// Purpose: Skip the current test if Connect version is before the specified version.
+// Parameters:
+//   - targetVersion: Version string to compare against (e.g., "2025.03")
+//   - reason: Optional reason for skipping (displayed in test output)
+Cypress.Commands.add("skipIfConnectVersionBefore", (targetVersion, reason) => {
+  return cy.isConnectVersionBefore(targetVersion).then((isBefore) => {
+    if (isBefore) {
+      const message = reason || `Skipping: Connect version < ${targetVersion}`;
+      cy.log(message);
+      // Use Cypress's built-in skip by throwing a special error
+      // that Mocha recognizes as a skip
+      const test = cy.state("runnable");
+      if (test) {
+        test.skip();
+      }
+    }
+  });
 });
 
 // Add a global afterEach to log iframes if a test fails (for CI reliability)
@@ -32,88 +102,6 @@ if (typeof afterEach === "function") {
     cy.task("cleanupPlaywrightBrowser", null, { timeout: 20000 });
   });
 }
-
-// startConnect/stopConnect/resetConnectData/updateConnectSettings/resetConnectSettings
-// Purpose: Control the local Connect server via the manager service for test isolation.
-// When to use: Suite-level or targeted setup/teardown between tests.
-Cypress.Commands.add("startConnect", () => {
-  cy.request({
-    method: "POST",
-    url: `${connectManagerServer}/connect/start`,
-  });
-
-  cy.exec(
-    `npx wait-on -c config/waiton.js ${Cypress.env("CONNECT_SERVER_URL")}/__ping__`,
-  );
-});
-
-Cypress.Commands.add("stopConnect", () => {
-  cy.request({
-    method: "POST",
-    url: `${connectManagerServer}/connect/stop`,
-  });
-});
-
-// resetConnectData will clear the database and data directory for the Connect server
-Cypress.Commands.add("resetConnectData", () => {
-  cy.request({
-    method: "POST",
-    url: `${connectManagerServer}/connect/clear`,
-  });
-});
-
-// updateConnectSettings will change the Connect server settings and restart the server
-Cypress.Commands.add("updateConnectSettings", (settings) => {
-  cy.stopConnect();
-
-  cy.request({
-    method: "GET",
-    url: `${connectManagerServer}/connect/settings`,
-  }).then((response) => {
-    const { config } = response.body;
-
-    cy.request({
-      method: "PATCH",
-      url: `${connectManagerServer}/connect/settings`,
-      body: {
-        config,
-        config_blobs: [settings],
-      },
-    });
-  });
-
-  cy.startConnect();
-});
-
-// resetConnectSettings will return the Connect settings to the original config
-Cypress.Commands.add("resetConnectSettings", () => {
-  cy.request({
-    method: "GET",
-    url: `${connectManagerServer}/connect/settings`,
-  }).then((response) => {
-    const { config } = response.body;
-
-    cy.request({
-      method: "PATCH",
-      url: `${connectManagerServer}/connect/settings`,
-      body: {
-        config: [config[0]],
-      },
-    });
-  });
-});
-
-// bootstrapAdmin
-// Purpose: Generate an admin API key (BOOTSTRAP_ADMIN_API_KEY) for PCS tests.
-Cypress.Commands.add("bootstrapAdmin", () => {
-  cy.exec(
-    `rsconnect bootstrap --raw --jwt-keypath ${Cypress.env("BOOTSTRAP_SECRET_KEY")} --server ${Cypress.env("CONNECT_SERVER_URL")}`,
-  ).then((apiKey) => {
-    if (apiKey && apiKey.stdout) {
-      Cypress.env("BOOTSTRAP_ADMIN_API_KEY", apiKey.stdout);
-    }
-  });
-});
 
 // resetCredentials/setAdminCredentials/setDummyCredentials
 // Purpose: Manage the e2e-test.connect-credentials file directly for speed and determinism.
@@ -314,6 +302,65 @@ Cypress.Commands.add("loadTomlFile", (filePath) => {
       }
       throw new Error(`Could not load project configuration. ${result.stderr}`);
     });
+});
+
+// runCommandPaletteCommand
+// Purpose: Invoke a command by label through the VS Code command palette.
+Cypress.Commands.add("runCommandPaletteCommand", (commandLabel) => {
+  cy.retryWithBackoff(
+    () =>
+      cy
+        .get("body")
+        .then(($body) => {
+          if ($body.find(".quick-input-widget:visible").length > 0) {
+            return;
+          }
+          if ($body.find(".command-center-center").length > 0) {
+            $body.find(".command-center-center").get(0).click();
+            return;
+          }
+          if ($body.find('[aria-label="Application Menu"]').length > 0) {
+            $body.find('[aria-label="Application Menu"]').get(0).click();
+            cy.contains(".monaco-menu", "Command Palette").click({
+              force: true,
+            });
+            return;
+          }
+          if ($body.find('[aria-label="Menu"]').length > 0) {
+            $body.find('[aria-label="Menu"]').get(0).click();
+            cy.contains(".monaco-menu", "Command Palette").click({
+              force: true,
+            });
+          }
+        })
+        .then(() => cy.get(".quick-input-widget:visible")),
+    8,
+    750,
+  ).should("be.visible");
+  cy.get(".quick-input-widget input").clear();
+  cy.get(".quick-input-widget input").type(`> ${commandLabel}`);
+  cy.get(".quick-input-list-row").then(($rows) => {
+    const fallbackLabel = commandLabel.includes(":")
+      ? commandLabel.split(":").slice(1).join(":").trim()
+      : commandLabel;
+    const match =
+      $rows.toArray().find((row) => row.textContent?.includes(commandLabel)) ||
+      $rows.toArray().find((row) => row.textContent?.includes(fallbackLabel));
+    if (!match) {
+      throw new Error(
+        `Command not found in palette: "${commandLabel}" (fallback "${fallbackLabel}")`,
+      );
+    }
+    cy.wrap(Cypress.$(match)).should("be.visible").click();
+  });
+});
+
+// quickInputType
+// Purpose: Fill a quick input prompt and submit the value.
+Cypress.Commands.add("quickInputType", (promptText, value) => {
+  cy.get(".quick-input-message").should("contain.text", promptText);
+  cy.get(".quick-input-widget input").clear();
+  cy.get(".quick-input-widget input").type(`${value}{enter}`);
 });
 
 // Update waitForPublisherIframe to use a longer default timeout for CI reliability
@@ -606,8 +653,9 @@ Cypress.Commands.add(
         throw new Error("Missing required PCC credential fields");
       }
 
-      // Persist token securely in memory for cleanup; never log this
+      // Persist token and account ID in memory for cleanup; never log these
       Cypress.env("PCC_ACCESS_TOKEN", access_token);
+      Cypress.env("PCC_ACCOUNT_ID", account_id);
 
       const toml = `
 [credentials.${nickname}]
@@ -703,41 +751,99 @@ Cypress.Commands.add("expectCredentialsSectionEmpty", () => {
 });
 
 // deletePCCContent
-// Purpose: Minimal PCC cleanup using in-memory values captured during the test.
+// Purpose: Delete ALL PCC content for the test account to ensure clean state.
 // - Requires Cypress.env("PCC_ACCESS_TOKEN") set by setPCCCredential()
-// - Requires Cypress.env("LAST_PCC_CONTENT_ID") set by the test after reading direct_url
+// - Requires Cypress.env("PCC_ACCOUNT_ID") set by setPCCCredential()
 Cypress.Commands.add("deletePCCContent", () => {
-  const contentId = Cypress.env("LAST_PCC_CONTENT_ID");
   const token = Cypress.env("PCC_ACCESS_TOKEN");
+  const accountId = Cypress.env("PCC_ACCOUNT_ID");
   const env = Cypress.env("CONNECT_CLOUD_ENV") || "staging";
 
   // Mask token in any logging
   const mask = (t) => (t ? `${t.slice(0, 4)}***${t.slice(-4)}` : "(none)");
 
-  if (!contentId || !token) {
+  if (!token || !accountId) {
     cy.task(
       "print",
-      `[PCC-DELETE] Skipping: contentId=${contentId || "(none)"} token=${mask(token)}`,
+      `[PCC-DELETE] Skipping: accountId=${accountId || "(none)"} token=${mask(token)}`,
     );
     return;
   }
 
-  const url = `https://api.${env}.connect.posit.cloud/v1/contents/${contentId}`;
-  cy.task("print", `[PCC-DELETE] DELETE ${url}`);
+  // List and delete first batch of content for this account
+  const limit = 25; // Delete up to 25 items per test run
+  const listUrl = `https://api.${env}.connect.posit.cloud/v1/contents?account_id=${accountId}&include_total=true&limit=${limit}&offset=0&state=active`;
 
   cy.request({
-    method: "DELETE",
-    url,
+    method: "GET",
+    url: listUrl,
     headers: { Authorization: `Bearer ${token}` },
     failOnStatusCode: false,
-  }).then((resp) => {
-    cy.task("print", `[PCC-DELETE] status=${resp.status}`);
-    // Clear stored id to avoid leakage across tests
-    Cypress.env("LAST_PCC_CONTENT_ID", null);
+  }).then((listResp) => {
+    if (listResp.status !== 200) {
+      cy.task(
+        "print",
+        `[PCC-DELETE] List failed with status=${listResp.status}`,
+      );
+      return;
+    }
+
+    const responseData = listResp.body;
+    const contents = responseData.data || responseData.contents || [];
+    const total = responseData.total || 0;
+
+    cy.task(
+      "print",
+      `[PCC-DELETE] Found ${total} total items, deleting first ${contents.length}`,
+    );
+
+    if (contents.length === 0) {
+      cy.task("print", `[PCC-DELETE] No content to delete`);
+      return;
+    }
+
+    // Helper to delete items sequentially
+    function deleteItems(items, index = 0, deletedCount = 0) {
+      if (index >= items.length) {
+        cy.task(
+          "print",
+          `[PCC-DELETE] Deleted ${deletedCount} of ${items.length} items`,
+        );
+        return;
+      }
+
+      const content = items[index];
+      const deleteUrl = `https://api.${env}.connect.posit.cloud/v1/contents/${content.id}`;
+
+      cy.request({
+        method: "DELETE",
+        url: deleteUrl,
+        headers: { Authorization: `Bearer ${token}` },
+        failOnStatusCode: false,
+      }).then((deleteResp) => {
+        const newDeletedCount =
+          deleteResp.status === 204 || deleteResp.status === 200
+            ? deletedCount + 1
+            : deletedCount;
+
+        if (deleteResp.status === 204 || deleteResp.status === 200) {
+          cy.task("print", `[PCC-DELETE] ✓ ${content.title || content.id}`);
+        } else {
+          cy.task(
+            "print",
+            `[PCC-DELETE] ✗ ${content.title || content.id} status=${deleteResp.status}`,
+          );
+        }
+
+        // Delete next item
+        deleteItems(items, index + 1, newDeletedCount);
+      });
+    }
+
+    // Start deleting items
+    deleteItems(contents);
   });
 });
 
-Cypress.on("uncaught:exception", () => {
-  // Prevent CI from failing on harmless errors
-  return false;
-});
+// NOTE: Specific exception handling is done in support/index.js
+// Do not add a catch-all here as it masks real errors.

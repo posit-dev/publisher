@@ -59,7 +59,11 @@ const multiLevelProj = () => [
 
 const multiLevelProjWithQuartoYml = () => {
   const tree = multiLevelProj();
-  tree[2].files[1].files!.push({ id: "_quarto.yml", files: [] });
+  const level2 = tree[2];
+  const level3 = level2?.files?.[1];
+  if (level3?.files) {
+    level3.files.push({ id: "_quarto.yml", files: [] });
+  }
   return tree;
 };
 

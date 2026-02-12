@@ -340,9 +340,9 @@ export const useHomeStore = defineStore("home", () => {
       isEmptyRequirements: computed(() => {
         return Boolean(
           rProject.value &&
-            rPackageFile.value &&
-            rPackages.value &&
-            rPackages.value.length === 0,
+          rPackageFile.value &&
+          rPackages.value &&
+          rPackages.value.length === 0,
         );
       }),
 
@@ -388,42 +388,42 @@ export const useHomeStore = defineStore("home", () => {
       isEntryMissing: computed(() => {
         return Boolean(
           selectedContentRecord.value &&
-            !selectedContentRecord.value.configurationName,
+          !selectedContentRecord.value.configurationName,
         );
       }),
 
       isMissing: computed((): boolean => {
         return Boolean(
           selectedContentRecord.value &&
-            !selectedConfiguration.value &&
-            !config.active.isInErrorList(
-              selectedContentRecord.value?.configurationName,
-            ) &&
-            !config.active.isEntryMissing.value,
+          !selectedConfiguration.value &&
+          !config.active.isInErrorList(
+            selectedContentRecord.value?.configurationName,
+          ) &&
+          !config.active.isEntryMissing.value,
         );
       }),
 
       isTOMLError: computed((): boolean => {
         return Boolean(
           selectedConfiguration.value &&
-            isConfigurationError(selectedConfiguration.value) &&
-            isAgentErrorInvalidTOML(selectedConfiguration.value.error),
+          isConfigurationError(selectedConfiguration.value) &&
+          isAgentErrorInvalidTOML(selectedConfiguration.value.error),
         );
       }),
 
       isUnknownType: computed((): boolean => {
         return Boolean(
           selectedConfiguration.value &&
-            !isConfigurationError(selectedConfiguration.value) &&
-            selectedConfiguration.value.configuration.type === "unknown",
+          !isConfigurationError(selectedConfiguration.value) &&
+          selectedConfiguration.value.configuration.type === "unknown",
         );
       }),
 
       isUnknownError: computed((): boolean => {
         return Boolean(
           selectedConfiguration.value &&
-            isConfigurationError(selectedConfiguration.value) &&
-            isAgentErrorTypeUnknown(selectedConfiguration.value.error),
+          isConfigurationError(selectedConfiguration.value) &&
+          isAgentErrorTypeUnknown(selectedConfiguration.value.error),
         );
       }),
 

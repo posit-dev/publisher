@@ -9,8 +9,10 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"slices"
 	"strings"
 
+	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
 )
@@ -182,14 +184,16 @@ func (rf *resourceFinder) addResource(relpath string, explicit bool) bool {
 		}
 	}
 
-	// If this is an R or CSS file, process it recursively
+	// If this is an R, CSS, or HTML file, process it recursively
 	ext := strings.ToLower(abspath.Ext())
-	if ext == ".r" || ext == ".css" {
+	if ext == ".r" || ext == ".css" || ext == ".html" || ext == ".htm" {
 		switch ext {
 		case ".r":
 			rf.discoverRResources(abspath)
 		case ".css":
 			rf.discoverCSSResources(abspath)
+		case ".html", ".htm":
+			rf.discoverHTMLResources(abspath)
 		}
 	}
 
@@ -232,6 +236,23 @@ func (rf *resourceFinder) processResourceByteMatches(matches [][][]byte, branche
 	rf.processResourceMatches(stringMatches, branchedFrom)
 }
 
+// Process markdown link matches and add only HTML files as resources
+func (rf *resourceFinder) processHTMLLinkMatches(matches [][]string) {
+	for _, match := range matches {
+		if len(match) > 1 {
+			path := match[1]
+			if rf.isFullURL(path) {
+				// Skip web URLs, we only want to add local resources
+				continue
+			}
+			// Only include HTML files
+			if strings.HasSuffix(strings.ToLower(path), ".html") || strings.HasSuffix(strings.ToLower(path), ".htm") {
+				rf.addResource(path, false)
+			}
+		}
+	}
+}
+
 // Discover resources in Markdown, R Markdown, and Quarto files
 func (rf *resourceFinder) discoverMarkdownResources(fpath util.AbsolutePath) error {
 	file, err := fpath.Open()
@@ -246,6 +267,10 @@ func (rf *resourceFinder) discoverMarkdownResources(fpath util.AbsolutePath) err
 
 	// Regular expression for Markdown image syntax: ![alt](path)
 	imgRegex := regexp.MustCompile(`!\[.*?\]\((.*?)(?:\s+["'].*?["'])?\)`)
+
+	// Regular expression for Markdown link syntax: [text](path)
+	// This will also match images, but we filter for .html/.htm in processing
+	linkRegex := regexp.MustCompile(`\[.*?\]\((.*?)(?:\s+["'].*?["'])?\)`)
 
 	// Regular expression for inline HTML image tags: <img src="path" ...>
 	htmlImgRegex := regexp.MustCompile(`<img\s+[^>]*src=["'](.*?)["'][^>]*>`)
@@ -280,6 +305,10 @@ func (rf *resourceFinder) discoverMarkdownResources(fpath util.AbsolutePath) err
 		// Find Markdown image references
 		matches := imgRegex.FindAllStringSubmatch(line, -1)
 		rf.processResourceMatches(matches, nil)
+
+		// Find Markdown links to HTML files
+		linkMatches := linkRegex.FindAllStringSubmatch(line, -1)
+		rf.processHTMLLinkMatches(linkMatches)
 
 		// Find HTML image tags
 		htmlMatches := htmlImgRegex.FindAllStringSubmatch(line, -1)
@@ -359,7 +388,7 @@ func (rf *resourceFinder) discoverHTMLResources(fpath util.AbsolutePath) error {
 	// Apply each pattern to the content
 	for _, pattern := range patterns {
 		matches := pattern.FindAllSubmatch(content, -1)
-		rf.processResourceByteMatches(matches, nil)
+		rf.processResourceByteMatches(matches, &fpath)
 	}
 
 	return nil
@@ -460,4 +489,34 @@ func (rf *resourceFinder) parseYAMLResourceFiles(yamlContent string) {
 func (rf *resourceFinder) isFullURL(path string) bool {
 	u, err := url.ParseRequestURI(path)
 	return err == nil && u.Scheme != "" && u.Host != ""
+}
+
+// Use resource finder to identify additional resources for the configuration.
+// Additional static assets can be scattered alongside files.
+func findAndIncludeAssets(
+	log logging.Logger,
+	rfFactory multiResourceFinderFactory,
+	base util.AbsolutePath,
+	cfg *config.Config,
+) {
+	rFinder, err := rfFactory(log, base, cfg.Files)
+	if err != nil {
+		log.Error(fmt.Sprintf("Error creating resource finder for %s project", cfg.Type), "error", err)
+		return
+	}
+	resources, err := rFinder.FindResources()
+	if err != nil {
+		log.Error(fmt.Sprintf("Error finding resources for %s project", cfg.Type), "error", err)
+		return
+	}
+	for _, rsrc := range resources {
+		// Do not include assets that are nested in an already included directory.
+		// e.g. if /index_files is included, do not include /index_files/custom.css
+		rsrcRoot := strings.Split(rsrc.Path, "/")[0]
+		rsrcStringToAdd := fmt.Sprint("/", rsrc.Path)
+		rsrcDirIncluded := slices.Contains(cfg.Files, fmt.Sprint("/", rsrcRoot))
+		if !rsrcDirIncluded && !slices.Contains(cfg.Files, rsrcStringToAdd) {
+			cfg.Files = append(cfg.Files, rsrcStringToAdd)
+		}
+	}
 }

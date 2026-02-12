@@ -287,30 +287,8 @@ func (d *QuartoDetector) includeProjectFilesConfig(base util.AbsolutePath, cfg *
 	return nil
 }
 
-// Use resource finder to identify additional resources for the static configuration.
-// Additional static assets can be scattered alongside files.
-// For static projects where there is no output-dir, additional static resources can be scattered alongside HTML files.
 func (d *QuartoDetector) findAndIncludeAssets(base util.AbsolutePath, cfg *config.Config) {
-	rFinder, err := d.resourceFinderFactory(d.log, base, cfg.Files)
-	if err != nil {
-		d.log.Error("Error creating resource finder for Quarto project", "error", err)
-		return
-	}
-	resources, err := rFinder.FindResources()
-	if err != nil {
-		d.log.Error("Error finding resources for Quarto project", "error", err)
-		return
-	}
-	for _, rsrc := range resources {
-		// Do not include assets that are nested in an already included directory.
-		// e.g. if /index_files is included, do not include /index_files/custom.css
-		rsrcRoot := strings.Split(rsrc.Path, "/")[0]
-		rsrcStringToAdd := fmt.Sprint("/", rsrc.Path)
-		rsrcDirIncluded := slices.Contains(cfg.Files, fmt.Sprint("/", rsrcRoot))
-		if !rsrcDirIncluded && !slices.Contains(cfg.Files, rsrcStringToAdd) {
-			cfg.Files = append(cfg.Files, rsrcStringToAdd)
-		}
-	}
+	findAndIncludeAssets(d.log, d.resourceFinderFactory, base, cfg)
 }
 
 func (d *QuartoDetector) includeExtensionsDirIfAny(base util.AbsolutePath, cfg *config.Config) {
@@ -455,7 +433,7 @@ func (d *QuartoDetector) staticConfigFromFilesLookup(base util.AbsolutePath, cfg
 }
 
 // When "quarto inspect" fails, it very likely means that the system does not have a Quarto binary.
-// If files are noticed that match Quarto files - .qmd - we generate a basic non-inspect configuration.
+// If files are noticed that match Quarto files - .qmd, .ipynb, or .Rmd - we generate a basic non-inspect configuration.
 func (d *QuartoDetector) genNonInspectConfig(base util.AbsolutePath, entrypointPath util.AbsolutePath) (*config.Config, error) {
 	quartoYmlPath := base.Join("_quarto.yml")
 	quartoYmlExists, err := quartoYmlPath.Exists()
@@ -463,9 +441,10 @@ func (d *QuartoDetector) genNonInspectConfig(base util.AbsolutePath, entrypointP
 		return nil, err
 	}
 
-	// If entrypoint is not a .qmd file, nor a quarto yml configuration file
+	// If entrypoint is not a .qmd file, .ipynb file, .Rmd file, nor a quarto yml configuration file
 	// we don't generate a configuration.
-	if !quartoYmlExists && entrypointPath.Ext() != ".qmd" {
+	ext := entrypointPath.Ext()
+	if !quartoYmlExists && ext != ".qmd" && ext != ".ipynb" && ext != ".Rmd" {
 		return nil, nil
 	}
 
@@ -479,6 +458,24 @@ func (d *QuartoDetector) genNonInspectConfig(base util.AbsolutePath, entrypointP
 	cfg.Entrypoint = relEntrypoint.String()
 	cfg.Quarto = &config.Quarto{
 		Version: defaultQuartoVersion,
+	}
+
+	// Standalone Jupyter notebooks need Python and the jupyter engine
+	if ext == ".ipynb" {
+		cfg.Python = &config.Python{}
+		cfg.Quarto.Engines = []string{"jupyter"}
+		cfg.Files = append(cfg.Files, fmt.Sprint("/", relEntrypoint.String()))
+		d.findAndIncludeAssets(base, cfg)
+		return cfg, nil
+	}
+
+	// Standalone RMarkdown files need R and the knitr engine
+	if ext == ".Rmd" {
+		cfg.R = &config.R{}
+		cfg.Quarto.Engines = []string{"knitr"}
+		cfg.Files = append(cfg.Files, fmt.Sprint("/", relEntrypoint.String()))
+		d.findAndIncludeAssets(base, cfg)
+		return cfg, nil
 	}
 
 	// We will attempt to include any files that are common in Quarto projects.

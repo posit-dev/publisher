@@ -38,6 +38,7 @@ func (s *AppTypesSuite) TestAppMode() {
 		BokehApp      bool
 		FastAPIApp    bool
 		GradioApp     bool
+		PanelApp      bool
 		PyShinyApp    bool
 		VoilaApp      bool
 		StaticRmd     bool
@@ -61,6 +62,7 @@ func (s *AppTypesSuite) TestAppMode() {
 			BokehApp:      false,
 			FastAPIApp:    false,
 			GradioApp:     false,
+			PanelApp:      false,
 			PyShinyApp:    false,
 			VoilaApp:      false,
 			StaticRmd:     false,
@@ -83,6 +85,7 @@ func (s *AppTypesSuite) TestAppMode() {
 			BokehApp:      false,
 			FastAPIApp:    false,
 			GradioApp:     false,
+			PanelApp:      false,
 			PyShinyApp:    false,
 			VoilaApp:      false,
 			StaticRmd:     false,
@@ -105,6 +108,7 @@ func (s *AppTypesSuite) TestAppMode() {
 			BokehApp:      false,
 			FastAPIApp:    false,
 			GradioApp:     false,
+			PanelApp:      false,
 			PyShinyApp:    false,
 			VoilaApp:      false,
 			StaticRmd:     false,
@@ -127,6 +131,7 @@ func (s *AppTypesSuite) TestAppMode() {
 			BokehApp:      false,
 			FastAPIApp:    false,
 			GradioApp:     false,
+			PanelApp:      false,
 			PyShinyApp:    false,
 			VoilaApp:      false,
 			StaticRmd:     true,
@@ -149,6 +154,7 @@ func (s *AppTypesSuite) TestAppMode() {
 			BokehApp:      false,
 			FastAPIApp:    false,
 			GradioApp:     false,
+			PanelApp:      false,
 			PyShinyApp:    false,
 			VoilaApp:      false,
 			StaticRmd:     false,
@@ -171,6 +177,7 @@ func (s *AppTypesSuite) TestAppMode() {
 			BokehApp:      false,
 			FastAPIApp:    false,
 			GradioApp:     false,
+			PanelApp:      false,
 			PyShinyApp:    false,
 			VoilaApp:      false,
 			StaticRmd:     false,
@@ -193,6 +200,7 @@ func (s *AppTypesSuite) TestAppMode() {
 			BokehApp:      false,
 			FastAPIApp:    false,
 			GradioApp:     false,
+			PanelApp:      false,
 			PyShinyApp:    false,
 			VoilaApp:      false,
 			StaticRmd:     false,
@@ -215,6 +223,7 @@ func (s *AppTypesSuite) TestAppMode() {
 			BokehApp:      false,
 			FastAPIApp:    false,
 			GradioApp:     false,
+			PanelApp:      false,
 			PyShinyApp:    false,
 			VoilaApp:      false,
 			StaticRmd:     false,
@@ -237,6 +246,7 @@ func (s *AppTypesSuite) TestAppMode() {
 			BokehApp:      false,
 			FastAPIApp:    false,
 			GradioApp:     false,
+			PanelApp:      false,
 			PyShinyApp:    false,
 			VoilaApp:      false,
 			StaticRmd:     false,
@@ -259,6 +269,7 @@ func (s *AppTypesSuite) TestAppMode() {
 			BokehApp:      false,
 			FastAPIApp:    false,
 			GradioApp:     false,
+			PanelApp:      false,
 			PyShinyApp:    false,
 			VoilaApp:      false,
 			StaticRmd:     false,
@@ -281,6 +292,7 @@ func (s *AppTypesSuite) TestAppMode() {
 			BokehApp:      true,
 			FastAPIApp:    false,
 			GradioApp:     false,
+			PanelApp:      false,
 			PyShinyApp:    false,
 			VoilaApp:      false,
 			StaticRmd:     false,
@@ -303,6 +315,7 @@ func (s *AppTypesSuite) TestAppMode() {
 			BokehApp:      false,
 			FastAPIApp:    true,
 			GradioApp:     false,
+			PanelApp:      false,
 			PyShinyApp:    false,
 			VoilaApp:      false,
 			StaticRmd:     false,
@@ -325,6 +338,30 @@ func (s *AppTypesSuite) TestAppMode() {
 			BokehApp:      false,
 			FastAPIApp:    false,
 			GradioApp:     true,
+			PanelApp:      false,
+			PyShinyApp:    false,
+			VoilaApp:      false,
+			StaticRmd:     false,
+			StaticJupyter: false,
+			StaticReport:  false,
+			StaticContent: false,
+		}, {
+			Mode:          PythonPanelMode,
+			RContent:      false,
+			PythonContent: true,
+			QuartoContent: false,
+			WorkerApp:     true,
+			APIApp:        false,
+			PlumberAPI:    false,
+			PythonAPI:     false,
+			PythonApp:     true,
+			ShinyApp:      false,
+			DashApp:       false,
+			StreamlitApp:  false,
+			BokehApp:      false,
+			FastAPIApp:    false,
+			GradioApp:     false,
+			PanelApp:      true,
 			PyShinyApp:    false,
 			VoilaApp:      false,
 			StaticRmd:     false,
@@ -347,6 +384,7 @@ func (s *AppTypesSuite) TestAppMode() {
 			BokehApp:      false,
 			FastAPIApp:    false,
 			GradioApp:     false,
+			PanelApp:      false,
 			PyShinyApp:    false,
 			VoilaApp:      false,
 			StaticRmd:     false,
@@ -369,6 +407,7 @@ func (s *AppTypesSuite) TestAppMode() {
 			BokehApp:      false,
 			FastAPIApp:    false,
 			GradioApp:     false,
+			PanelApp:      false,
 			PyShinyApp:    false,
 			VoilaApp:      false,
 			StaticRmd:     false,
@@ -391,6 +430,7 @@ func (s *AppTypesSuite) TestAppMode() {
 			BokehApp:      false,
 			FastAPIApp:    false,
 			GradioApp:     false,
+			PanelApp:      false,
 			PyShinyApp:    true,
 			VoilaApp:      false,
 			StaticRmd:     false,
@@ -413,6 +453,7 @@ func (s *AppTypesSuite) TestAppMode() {
 			BokehApp:      false,
 			FastAPIApp:    false,
 			GradioApp:     false,
+			PanelApp:      false,
 			PyShinyApp:    false,
 			VoilaApp:      true,
 			StaticRmd:     false,
@@ -437,6 +478,7 @@ func (s *AppTypesSuite) TestAppMode() {
 		s.Equal(each.BokehApp, each.Mode.IsBokehApp(), comment)
 		s.Equal(each.FastAPIApp, each.Mode.IsFastAPIApp(), comment)
 		s.Equal(each.GradioApp, each.Mode.IsGradioApp(), comment)
+		s.Equal(each.PanelApp, each.Mode.IsPanelApp(), comment)
 		s.Equal(each.PyShinyApp, each.Mode.IsPyShinyApp(), comment)
 		s.Equal(each.VoilaApp, each.Mode.IsVoilaApp(), comment)
 		s.Equal(each.StaticRmd, each.Mode.IsStaticRmd(), comment)
@@ -464,6 +506,7 @@ func (s *AppTypesSuite) TestAppModeStrings() {
 		{PythonBokehMode, "python-bokeh"},
 		{PythonFastAPIMode, "python-fastapi"},
 		{PythonGradioMode, "python-gradio"},
+		{PythonPanelMode, "python-panel"},
 		{ShinyQuartoMode, "quarto-shiny"},
 		{StaticQuartoMode, "quarto-static"},
 		{PythonShinyMode, "python-shiny"},
@@ -519,6 +562,7 @@ func (s *AppTypesSuite) TestDescription() {
 		{PythonBokehMode, "Bokeh application"},
 		{PythonFastAPIMode, "FastAPI application"},
 		{PythonGradioMode, "Gradio application"},
+		{PythonPanelMode, "Panel application"},
 		{ShinyQuartoMode, "Shiny Quarto document"},
 		{StaticQuartoMode, "Quarto document"},
 		{PythonShinyMode, "Shiny for Python application"},
@@ -540,4 +584,19 @@ func (s *AppTypesSuite) TestAppModeFromTypeUnrecognized() {
 	result := AppModeFromType("new-content-type")
 	s.Equal(AppMode("new-content-type"), result)
 	s.NotEqual(UnknownMode, result)
+}
+
+func (s *AppTypesSuite) TestAppModeIsKnown() {
+	// Known modes (mapped in contentTypeConnectMap)
+	s.True(ShinyMode.IsKnown())
+	s.True(StaticRmdMode.IsKnown())
+	s.True(PythonFastAPIMode.IsKnown())
+	s.True(StaticMode.IsKnown())
+	s.True(StaticJupyterMode.IsKnown())
+	s.True(StaticQuartoMode.IsKnown())
+
+	// Unknown modes (not in contentTypeConnectMap)
+	s.False(UnknownMode.IsKnown())
+	s.False(AppMode("unknown").IsKnown())
+	s.False(AppMode("custom-type").IsKnown())
 }

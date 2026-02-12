@@ -99,9 +99,10 @@ func (c *ConnectClient) GetSettings(base util.AbsolutePath, cfg *config.Config, 
 
 	schedulerPath := ""
 	appMode := clienttypes.AppModeFromType(cfg.Type)
-	if !appMode.IsStaticContent() {
-		// Scheduler settings don't apply to static content,
-		// and the API will err if you try.
+	if !appMode.IsStaticContent() && appMode.IsKnown() {
+		// Scheduler settings don't apply to static content, and the API will err if you try.
+		// Only use app-specific scheduler path for known/mapped content types,
+		// as unknown content types would create invalid API paths and return errors.
 		schedulerPath = "/" + string(appMode)
 	}
 	err = c.client.Get("/__api__/server_settings/scheduler"+schedulerPath, &settings.scheduler, log)
@@ -137,54 +138,6 @@ var (
 
 func adminError(attr string) error {
 	return fmt.Errorf("%s requires administrator privileges", attr)
-}
-
-func majorMinorVersion(version string) string {
-	return strings.Join(strings.Split(version, ".")[:2], ".")
-}
-
-type pythonNotAvailableErr struct {
-	Requested string
-	Available []string
-}
-
-func newPythonNotAvailableErr(requested string, installations []server_settings.PyInstallation) *pythonNotAvailableErr {
-	available := make([]string, 0, len(installations))
-	for _, inst := range installations {
-		available = append(available, inst.Version)
-	}
-	return &pythonNotAvailableErr{
-		Requested: requested,
-		Available: available,
-	}
-}
-
-const pythonNotAvailableCode types.ErrorCode = "pythonNotAvailable"
-const pythonNotAvailableMsgSingle = `Python %s is not available on the server.
-Consider editing your configuration to use version %s.`
-const pythonNotAvailableMsgMultiple = `Python %s is not available on the server.
-Consider editing your configuration to use one of the available versions: %s.`
-
-func (e *pythonNotAvailableErr) Error() string {
-	if len(e.Available) > 1 {
-		return fmt.Sprintf(pythonNotAvailableMsgMultiple, e.Requested, strings.Join(e.Available, ", "))
-	}
-	return fmt.Sprintf(pythonNotAvailableMsgSingle, e.Requested, e.Available[0])
-}
-
-func (a *AllSettings) checkMatchingPython(version string) error {
-	if version == "" {
-		// This is prevented by version being mandatory in the schema.
-		return nil
-	}
-	requested := majorMinorVersion(version)
-	for _, inst := range a.python.Installations {
-		if majorMinorVersion(inst.Version) == requested {
-			return nil
-		}
-	}
-	return types.NewAgentError(pythonNotAvailableCode,
-		newPythonNotAvailableErr(requested, a.python.Installations), nil)
 }
 
 func (a *AllSettings) checkKubernetes(cfg *config.Config) error {
@@ -325,10 +278,6 @@ func (a *AllSettings) checkConfig(cfg *config.Config) error {
 	// we don't upload thumbnails yet, but when we do, we will check MaximumAppImageSize
 
 	if cfg.Python != nil {
-		err = a.checkMatchingPython(cfg.Python.Version)
-		if err != nil {
-			return err
-		}
 		err = a.checkFileExists(cfg.Python.PackageFile, "python.package-file")
 		if err != nil {
 			return err

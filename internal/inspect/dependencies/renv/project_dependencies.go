@@ -85,14 +85,22 @@ func (s *defaultRDependencyScanner) ScanDependenciesInDir(paths []string, target
 	repoUrl <- "%s"
 	if (nzchar(repoUrl)) options(repos = c(CRAN = repoUrl))
 	rPathsVec <- %s
-	deps <- tryCatch({
-		d <- renv::dependencies(path = rPathsVec, progress = FALSE)
-		d$Package[!is.na(d$Package)]
-	}, error = function(e) character())
+	deps <- character()
+	for (path in rPathsVec) {
+		tryCatch({
+			d <- renv::dependencies(path = path, progress = FALSE)
+			deps <- c(deps, d$Package[!is.na(d$Package)])
+		}, error = function(e) {
+			# Silently skip paths that cause errors (e.g., non-existent files, directories)
+			invisible()
+		})
+	}
 	deps <- setdiff(deps, c("renv"))
 	targetPath <- "%s"
-	try(renv::init(project = targetPath, bare = TRUE, force = TRUE), silent = TRUE)
-	try(renv::install(deps, project = targetPath), silent = TRUE)
+	# initialize project with bare = TRUE to avoid polluting user's project
+	# then hydrate() manually to copy installed packages over
+	renv::init(project = targetPath, bare = TRUE, force = TRUE)
+	renv::hydrate(packages = deps, project = targetPath, prompt = FALSE)
 	lockfile <- file.path(targetPath, "%s")
 	renv::snapshot(project = targetPath, lockfile = lockfile, prompt = FALSE, type = "all")
 	invisible()

@@ -7,9 +7,7 @@
 describe("Deployments Section", () => {
   // Global setup for all deployment tests
   before(() => {
-    cy.resetConnect();
-    cy.clearupDeployments();
-    cy.setAdminCredentials();
+    cy.initializeConnect();
   });
 
   describe("Connect Server Deployments", () => {
@@ -49,13 +47,8 @@ describe("Deployments Section", () => {
         ]);
       }).deployCurrentlySelected();
 
-      cy.retryWithBackoff(
-        () =>
-          cy.findUniqueInPublisherWebview(
-            '[data-automation="publisher-deployment-section"]',
-          ),
-        5,
-        500,
+      cy.findUniqueInPublisherWebview(
+        '[data-automation="publisher-deployment-section"]',
       ).should("exist");
     });
 
@@ -80,19 +73,16 @@ describe("Deployments Section", () => {
           `/.posit/publish/deployments/${tomlFiles.contentRecord.name}`,
         );
       }).deployCurrentlySelected();
-      cy.retryWithBackoff(
-        () =>
-          cy.findUniqueInPublisherWebview(
-            '[data-automation="publisher-deployment-section"]',
-          ),
-        5,
-        500,
+
+      cy.findUniqueInPublisherWebview(
+        '[data-automation="publisher-deployment-section"]',
       ).should("exist");
     });
   });
 
   describe("Connect Cloud Deployments", () => {
-    beforeEach(() => {
+    it("PCC Shiny Python Deployment @pcc", () => {
+      // Setup - moved from beforeEach to avoid running when @pcc tests are filtered
       cy.resetCredentials();
       cy.clearupDeployments();
       cy.visit("/");
@@ -106,18 +96,6 @@ describe("Deployments Section", () => {
       )
         .find(".tree-item-title")
         .should("have.text", "pcc-deploy-credential");
-    });
-
-    afterEach(() => {
-      // Delete any published PCC content created by this suite (if present)
-      cy.deletePCCContent();
-      cy.clearupDeployments();
-      cy.resetCredentials();
-    });
-
-    it("PCC Shiny Python Deployment", () => {
-      // Uses createPCCDeployment, then savePublisherFile to set public access,
-      // deploys, and confirms live app title with Playwright.
 
       // Ensure Publisher is in the expected initial state
       cy.expectInitialPublisherState();
@@ -154,13 +132,8 @@ describe("Deployments Section", () => {
 
       cy.deployCurrentlySelected();
 
-      cy.retryWithBackoff(
-        () =>
-          cy.findUniqueInPublisherWebview(
-            '[data-automation="publisher-deployment-section"]',
-          ),
-        5,
-        500,
+      cy.findUniqueInPublisherWebview(
+        '[data-automation="publisher-deployment-section"]',
       ).should("exist");
 
       // Load the deployment TOML to get the published URL and verify app
@@ -169,39 +142,6 @@ describe("Deployments Section", () => {
           cy.loadTomlFile(filePaths.contentRecord.path).then(
             (contentRecord) => {
               const publishedUrl = contentRecord.direct_url;
-
-              // Store contentId for cleanup with multiple derivation strategies (CI-safe)
-              let stored = false;
-              const idFromRecord =
-                contentRecord.content_id || contentRecord.guid;
-              if (idFromRecord) {
-                Cypress.env("LAST_PCC_CONTENT_ID", idFromRecord);
-                stored = true;
-              }
-              if (!stored) {
-                try {
-                  const u = new URL(publishedUrl);
-                  // Prefer share subdomain prefix if present
-                  const hostPart = (u.hostname || "").split(".")[0];
-                  const uuidish = /^[0-9a-f-]{8,}$/i.test(hostPart)
-                    ? hostPart
-                    : null;
-                  if (uuidish) {
-                    Cypress.env("LAST_PCC_CONTENT_ID", uuidish);
-                    stored = true;
-                  } else {
-                    // Fallback: last non-empty path segment
-                    const segs = u.pathname.split("/").filter(Boolean);
-                    const tail = segs[segs.length - 1];
-                    if (tail && /^[0-9a-f-]{8,}$/i.test(tail)) {
-                      Cypress.env("LAST_PCC_CONTENT_ID", tail);
-                      stored = true;
-                    }
-                  }
-                } catch {
-                  // ignore parse errors
-                }
-              }
 
               const expectedTitle = "Restaurant tipping";
               cy.task("confirmPCCPublishSuccess", {

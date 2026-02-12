@@ -307,6 +307,10 @@ func (s *LockfilePackageMapperSuite) TestBioconductor_Functional() {
 // --- Compatibility tests ensuring lockfile-only path matches legacy path on core fields ---
 
 func (s *LockfilePackageMapperSuite) TestCRAN_LockfileCompatibility() {
+	if testing.Short() {
+		s.T().Skip("skipping compatibility test in short mode")
+	}
+
 	// Create a temporary renv.lock with real CRAN packages for compatibility testing
 	lockfileContent := `{
 		"R": {
@@ -390,6 +394,10 @@ License: GPL-2 | GPL-3
 }
 
 func (s *LockfilePackageMapperSuite) TestBioconductor_LockfileCompatibility() {
+	if testing.Short() {
+		s.T().Skip("skipping compatibility test in short mode")
+	}
+
 	base := s.testdata.Join("bioc_project")
 	lockfilePath := base.Join("renv.lock")
 	libPath := base.Join("renv_library")
@@ -453,7 +461,7 @@ func (s *LockfilePackageMapperSuite) TestRSPMRepositoryHandling() {
 				"RemoteType": "standard",
 				"RemotePkgRef": "R6",
 				"RemoteRef": "R6",
-				"RemoteRepos": "https://packagemanager.posit.co/cran/latest",
+				"RemoteRepos": "https://packagemanager.rstudio.com/all/latest",
 				"RemoteReposName": "CRAN",
 				"RemotePkgPlatform": "x86_64-apple-darwin20",
 				"RemoteSha": "2.5.1",
@@ -497,7 +505,7 @@ func (s *LockfilePackageMapperSuite) TestRSPMRepositoryHandling() {
 	r6Pkg := manifestPackages["R6"]
 
 	// RSPM should be resolved through the RemoteRepos field
-	s.Equal("https://packagemanager.posit.co/cran/latest", r6Pkg.Repository)
+	s.Equal("https://packagemanager.rstudio.com/all/latest", r6Pkg.Repository)
 	s.Equal("RSPM", r6Pkg.Source)
 	// Check version from description
 	s.Equal("2.5.1", r6Pkg.Description["Version"])
@@ -558,7 +566,7 @@ func (s *LockfilePackageMapperSuite) TestRSPMRepositoryHandling_MissingRemoteRep
 	renvPkg := manifestPackages["renv"]
 	// Should resolve to standard RSPM repository when no RemoteRepos is provided
 	s.Equal("RSPM", renvPkg.Source)
-	s.Equal("https://packagemanager.rstudio.com/all/latest", renvPkg.Repository)
+	s.Equal("https://packagemanager.posit.co/cran/latest", renvPkg.Repository)
 }
 
 func (s *LockfilePackageMapperSuite) TestGitRemoteFieldsPreserved() {

@@ -38,7 +38,12 @@ Cypress.Commands.add(
 
     // expand the subdirectory
     if (projectDir !== ".") {
-      cy.get(".explorer-viewlet").find(`[aria-label="${projectDir}"]`).click();
+      cy.get(".explorer-viewlet").then(($explorer) => {
+        const target = $explorer.find(`[aria-label="${projectDir}"]`);
+        if (target.length > 0) {
+          cy.wrap(target).click();
+        }
+      });
     }
 
     // open the entrypoint file
@@ -89,17 +94,19 @@ Cypress.Commands.add(
     // cy.get(".quick-input-widget").type("{enter}")
 
     // prompt for select entrypoint
-    let targetLabel = `${projectDir}/${entrypointFile}, Open Files`;
-    if (projectDir === ".") {
-      targetLabel = `${entrypointFile}, Open Files`;
-    }
-
-    cy.get(".quick-input-widget")
-      .find(`[aria-label="${targetLabel}"]`)
-      .then(($el) => {
-        cy.wrap($el).scrollIntoView();
-        cy.wrap($el).click({ force: true });
-      });
+    cy.retryWithBackoff(
+      () =>
+        cy
+          .get(".quick-input-widget")
+          .find(
+            `[aria-label="${projectDir}/${entrypointFile}, Open Files"], [aria-label="${entrypointFile}, Open Files"]`,
+          ),
+      10,
+      700,
+    ).then(($el) => {
+      cy.wrap($el).scrollIntoView();
+      cy.wrap($el).click({ force: true });
+    });
 
     // Wait for "enter title" step explicitly (avoid typing into filter step)
     cy.retryWithBackoff(
@@ -125,22 +132,21 @@ Cypress.Commands.add(
         el.value = title; // set
         el.dispatchEvent(new Event("input", { bubbles: true }));
         el.dispatchEvent(new Event("change", { bubbles: true }));
-        cy.wrap($input).should("have.value", title).focus();
       });
+
+    // Verify title is set before submitting to advance to credential selection
+    cy.get(".quick-input-widget")
+      .find(".quick-input-filter input")
+      .should("have.value", title);
+
     cy.get(".quick-input-widget").type("{enter}");
 
-    // Robust credential selection by row content (avoids hidden/virtualized anchors)
-    cy.retryWithBackoff(
-      () =>
-        cy
-          .get(".quick-input-widget")
-          .contains(".quick-input-list-row", "admin-code-server"),
-      8,
-      700,
-    ).then(($row) => {
-      cy.wrap($row).scrollIntoView();
-      cy.wrap($row).click({ force: true });
-    });
+    // Robust credential selection - use aria-label on .monaco-list-row for reliable row identification
+    cy.get(
+      '.quick-input-widget .monaco-list-row[aria-label*="admin-code-server"]',
+    )
+      .first()
+      .click({ force: true });
 
     return cy
       .getPublisherTomlFilePaths(projectDir)
@@ -278,18 +284,12 @@ Cypress.Commands.add(
       });
     cy.get(".quick-input-widget").type("{enter}");
 
-    // Robust credential selection (avoid relying on anchor visibility)
-    cy.retryWithBackoff(
-      () =>
-        cy
-          .get(".quick-input-widget")
-          .contains(".quick-input-list-row", credentialName),
-      6,
-      700,
-    ).then(($row) => {
-      cy.wrap($row).scrollIntoView();
-      cy.wrap($row).click({ force: true });
-    });
+    // Robust credential selection - use aria-label on .monaco-list-row for reliable row identification
+    cy.get(
+      `.quick-input-widget .monaco-list-row[aria-label*="${credentialName}"]`,
+    )
+      .first()
+      .click({ force: true });
 
     // Wait for the deployment configuration to load instead of waiting for quick-input to disappear
     cy.publisherWebview()
@@ -375,14 +375,13 @@ Cypress.Commands.add("deployCurrentlySelected", () => {
       Cypress.$(dplyBtn).trigger("click");
     });
   // Wait for deploying message to finish
-  cy.get(".notifications-toasts", { timeout: 30000 })
+  cy.get(".notifications-toasts", { timeout: 30_000 })
     .should("be.visible")
     .findByText("Deploying your project: Starting to Deploy...")
     .should("not.exist");
 
-  cy.findByText("Deployment was successful", { timeout: 60000 }).should(
+  cy.findByText("Deployment was successful", { timeout: 60_000 }).should(
     "be.visible",
-    { message: "Deployment didn't succeed within 60 seconds." },
   );
 });
 
@@ -580,11 +579,6 @@ Cypress.Commands.add("startPCCOAuthFlow", () => {
 
 // expectInitialPublisherState
 // Purpose: Quick assertion that the Publisher webview loaded and is interactive
-// by checking "select-deployment" is visible.
-// When to use: At the start of tests to reduce flakiness before interacting with UI.
-Cypress.Commands.add("expectInitialPublisherState", () => {
-  cy.publisherWebview().findByTestId("select-deployment").should("be.visible");
-});
 // by checking "select-deployment" is visible.
 // When to use: At the start of tests to reduce flakiness before interacting with UI.
 Cypress.Commands.add("expectInitialPublisherState", () => {

@@ -845,3 +845,57 @@ func (s *QuartoDetectorSuite) TestInferType_NoBinary_SimpleConfig() {
 		},
 	}, configs[1])
 }
+
+func (s *QuartoDetectorSuite) TestInferType_NoBinary_Notebook() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip("This test does not run on Windows")
+	}
+	// Test that standalone notebooks get a Quarto config even when quarto inspect fails
+	configs := s.runInferType("stock-report-jupyter", errors.New("executable file not found in $PATH"))
+	s.Len(configs, 1)
+	validate := true
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       contenttypes.ContentTypeQuarto,
+		Entrypoint: "stock-report-jupyter.ipynb",
+		Title:      "",
+		Validate:   &validate,
+		Files: []string{
+			"/stock-report-jupyter.ipynb",
+			"/found-a-logo-somewhere.png",
+			"/and-some-graph-too.svg",
+		},
+		Python: &config.Python{},
+		Quarto: &config.Quarto{
+			Version: "1.7.34",
+			Engines: []string{"jupyter"},
+		},
+	}, configs[0])
+}
+
+func (s *QuartoDetectorSuite) TestInferType_NoBinary_RMarkdown() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip("This test does not run on Windows")
+	}
+	// Test that standalone RMarkdown files get a Quarto config even when quarto inspect fails
+	configs := s.runInferType("rmd-static-1", errors.New("executable file not found in $PATH"))
+	s.Len(configs, 1)
+	validate := true
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       contenttypes.ContentTypeQuarto,
+		Entrypoint: "static.Rmd",
+		Title:      "",
+		Validate:   &validate,
+		Files: []string{
+			"/static.Rmd",
+			"/found-a-logo-somewhere.png",
+			"/and-some-graph-too.svg",
+		},
+		R: &config.R{},
+		Quarto: &config.Quarto{
+			Version: "1.7.34",
+			Engines: []string{"knitr"},
+		},
+	}, configs[0])
+}

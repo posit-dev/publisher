@@ -3,8 +3,9 @@
 import { EventStreamMessage } from "./api/types/events";
 import { ErrorCode } from "./utils/errorTypes";
 
-export interface EventStreamMessageErrorCoded<T = Record<string, string>>
-  extends EventStreamMessage<T> {
+export interface EventStreamMessageErrorCoded<
+  T = Record<string, string>,
+> extends EventStreamMessage<T> {
   errCode: ErrorCode;
 }
 
@@ -110,8 +111,8 @@ export const handleEventCodedError = (
   emsg: EventStreamMessageErrorCoded,
 ): string => {
   if (useEvtErrKnownMessage(emsg)) {
-    return emsg.data.message;
+    return emsg.data.message ?? "";
   }
 
-  return emsg.data.error || emsg.data.message;
+  return emsg.data.error ?? emsg.data.message ?? "";
 };

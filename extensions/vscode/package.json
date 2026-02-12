@@ -29,7 +29,9 @@
     "Other"
   ],
   "activationEvents": [
-    "workspaceContains:/"
+    "workspaceContains:/",
+    "onUri:posit.publisher",
+    "onFileSystem:connect-content"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -60,6 +62,11 @@
           },
           "positPublisher.autoOpenLogsOnFailure": {
             "markdownDescription": "Opens Publisher logs automatically on a failed deploy",
+            "type": "boolean",
+            "default": true
+          },
+          "positPublisher.enableConnectCloud": {
+            "markdownDescription": "Controls whether Posit Connect Cloud is available as a publishing destination.",
             "type": "boolean",
             "default": true
           }
@@ -256,6 +263,11 @@
         "command": "posit.publisher.homeView.addIntegrationRequest",
         "title": "Add Integration Request",
         "icon": "$(add)",
+        "category": "Posit Publisher"
+      },
+      {
+        "command": "posit.publisher.openConnectContent",
+        "title": "Open Connect Content",
         "category": "Posit Publisher"
       }
     ],
@@ -634,48 +646,51 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run --prefix webviews/homeView build && npm run esbuild-base -- --minify && npm run build-font",
-    "esbuild-base": "tsc --noEmit && esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
+    "esbuild-base": "tsc --noEmit --project tsconfig.json && esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
     "esbuild": "npm run esbuild-base -- --sourcemap",
     "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
+    "tsc-watch": "tsc --noEmit --watch --project tsconfig.json",
     "build-font": "fantasticon",
     "lint": "eslint src --max-warnings 0 && eslint webviews/homeView/src --max-warnings 0",
-    "compile": "tsc -p ./",
-    "test": "npm run compile && node ./out/test/runTest.js",
+    "esbuild-tests": "node ./esbuild.tests.mjs",
+    "pretest": "npm run esbuild-tests && npm run esbuild-base",
+    "test": "vscode-test",
     "test-unit": "vitest run"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.1",
-    "@twbs/fantasticon": "^3.0.0",
-    "@types/eventsource": "^1.1.15",
+    "@eslint/js": "^9.39.2",
     "@types/mocha": "^10.0.2",
     "@types/mutexify": "^1.2.3",
     "@types/node": "^22.0.0",
     "@types/retry": "^0.12.5",
+    "@types/tar-stream": "^3.1.4",
     "@types/vscode": "^1.87.0",
     "@types/wait-on": "^5.3.3",
+    "@vscode/test-cli": "^0.0.12",
     "@vscode/test-electron": "^2.3.8",
-    "esbuild": "^0.25.11",
-    "eslint": "^9.39.1",
+    "esbuild": "^0.27.2",
+    "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.0.1",
-    "fishery": "^2.2.2",
-    "glob": "^11.0.0",
-    "globals": "^16.5.0",
+    "fantasticon": "^4.1.0",
+    "fishery": "^2.4.0",
+    "globals": "^17.3.0",
     "mocha": "^11.1.0",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.15.0",
-    "vitest": "^3.0.4"
+    "typescript-eslint": "^8.54.0",
+    "vitest": "^4.0.18"
   },
   "dependencies": {
-    "@vscode/codicons": "^0.0.36",
+    "@vscode/codicons": "^0.0.44",
     "async-mutex": "^0.5.0",
-    "axios": "^1.11.0",
-    "debounce": "^2.1.0",
-    "entities": "^6.0.0",
-    "eventsource": "^2.0.2",
+    "axios": "^1.13.4",
+    "debounce": "^3.0.0",
+    "entities": "^7.0.1",
+    "eventsource": "^4.1.0",
     "filenamify": "^7.0.1",
     "get-port": "^7.1.0",
     "mutexify": "^1.4.0",
     "retry": "^0.13.1",
+    "tar-stream": "^3.1.7",
     "vscode-uri": "^3.0.8"
   }
 }

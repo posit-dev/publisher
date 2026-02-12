@@ -24,6 +24,7 @@ import {
 import {
   areInspectionResultsSimilarEnough,
   Configuration,
+  ConfigurationDetails,
   ConfigurationInspectionResult,
   ContentType,
   contentTypeStrings,
@@ -57,6 +58,7 @@ import {
   isConnectCloud,
   getProductType,
 } from "src/utils/multiStepHelpers";
+import { extensionSettings } from "src/extension";
 import { recordAddConnectCloudUrlParams } from "src/utils/connectCloudHelpers";
 
 const viewTitle = "Create a New Deployment";
@@ -152,9 +154,11 @@ export async function newDeployment(
     insRes: ConfigurationInspectionResult,
   ): ConfigurationInspectionResult => {
     // At the moment the only alternative we handle is the rendered version alternative
+    const alternative = insRes.configuration!
+      .alternatives![0] as ConfigurationDetails;
     return {
       projectDir: insRes.projectDir,
-      configuration: insRes.configuration!.alternatives![0],
+      configuration: alternative,
     };
   };
 
@@ -164,7 +168,10 @@ export async function newDeployment(
       insRes?.configuration?.alternatives &&
       insRes?.configuration?.alternatives.length
     ) {
-      insRes.configuration = insRes.configuration.alternatives[0];
+      const alternative = insRes.configuration.alternatives[0];
+      if (alternative) {
+        insRes.configuration = alternative;
+      }
     }
   };
 
@@ -224,7 +231,16 @@ export async function newDeployment(
   const getCredentials = async (): Promise<void> => {
     try {
       const response = await api.credentials.list();
-      credentials = response.data;
+      let credentialsList = response.data;
+
+      // Filter out Connect Cloud credentials if disabled
+      if (!extensionSettings.enableConnectCloud()) {
+        credentialsList = credentialsList.filter(
+          (credential) => !isConnectCloud(credential.serverType),
+        );
+      }
+
+      credentials = credentialsList;
       credentialListItems = credentials.map((credential) => ({
         iconPath: new ThemeIcon("posit-publisher-posit-logo"),
         label: credential.name,
@@ -454,7 +470,7 @@ export async function newDeployment(
       if (pick.label === browseForEntrypointLabel) {
         let baseUri = Uri.parse(".");
         const workspaceFolders = workspace.workspaceFolders;
-        if (workspaceFolders !== undefined) {
+        if (workspaceFolders !== undefined && workspaceFolders[0]) {
           baseUri = workspaceFolders[0].uri;
         }
         selectedEntrypointFile = undefined;
@@ -522,7 +538,7 @@ export async function newDeployment(
 
     // if there is only one choice, set it as the inspection result
     // account for the existence of config alternatives too.
-    if (inspectionQuickPicks.length === 1) {
+    if (inspectionQuickPicks.length === 1 && inspectionQuickPicks[0]) {
       newDeploymentData.entrypoint.inspectionResult =
         inspectionQuickPicks[0].inspectionResult;
       // If applicable, the user has to pick a config alternative

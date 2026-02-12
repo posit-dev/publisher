@@ -30,28 +30,41 @@ func (m *mockFileInfo) Mode() fs.FileMode {
 }
 
 func (s *FileTypesSuite) TestMode0() {
-	var path string = "path"
 	info := new(mockFileInfo)
 	info.On("Mode").Return((fs.FileMode)(0))
-	ft, err := getFileType(path, info)
+	ft, err := getFileType(info)
 	s.Nil(err)
 	s.Equal(Regular, ft)
 }
 
 func (s *FileTypesSuite) TestModeDir() {
-	var path string = "path"
 	info := new(mockFileInfo)
 	info.On("Mode").Return(fs.ModeDir)
-	ft, err := getFileType(path, info)
+	ft, err := getFileType(info)
 	s.Nil(err)
 	s.Equal(Directory, ft)
 }
 
 func (s *FileTypesSuite) TestModeIrregular() {
-	var path string = "path"
 	info := new(mockFileInfo)
 	info.On("Mode").Return(fs.ModeIrregular)
-	ft, err := getFileType(path, info)
-	s.Error(err)
+	ft, err := getFileType(info)
+	s.ErrorIs(err, ErrUnsupportedFileType)
+	s.Equal(fileType(""), ft)
+}
+
+func (s *FileTypesSuite) TestModeSocket() {
+	info := new(mockFileInfo)
+	info.On("Mode").Return(fs.ModeSocket)
+	ft, err := getFileType(info)
+	s.ErrorIs(err, ErrUnsupportedFileType)
+	s.Equal(fileType(""), ft)
+}
+
+func (s *FileTypesSuite) TestModeNamedPipe() {
+	info := new(mockFileInfo)
+	info.On("Mode").Return(fs.ModeNamedPipe)
+	ft, err := getFileType(info)
+	s.ErrorIs(err, ErrUnsupportedFileType)
 	s.Equal(fileType(""), ft)
 }

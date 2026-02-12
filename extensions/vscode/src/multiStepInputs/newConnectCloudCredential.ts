@@ -384,7 +384,7 @@ export async function newConnectCloudCredential(
     let stepFunc: (input: MultiStepInput) => Thenable<InputStep | void>;
     let skipStepHistory: boolean | undefined;
 
-    if (accounts.length === 1) {
+    if (accounts.length === 1 && accounts[0]) {
       // case 1: there is only one publishable account, use it and create the credential
       name = step.INPUT_CRED_NAME;
       stepFunc = (input: MultiStepInput) =>
@@ -443,10 +443,16 @@ export async function newConnectCloudCredential(
     });
 
     const account = accounts.find((a) => a.displayName === pick.label);
+
     // fallback to the first publishable account if the selected account is ever not found
-    state.data.accountId = account?.id || accounts[0].id;
-    state.data.accountName = account?.name || accounts[0].name;
-    state.data.displayName = account?.displayName || accounts[0].displayName;
+    if (
+      (!account?.id || !account?.name || !account?.displayName) &&
+      accounts[0]
+    ) {
+      state.data.accountId = accounts[0].id;
+      state.data.accountName = accounts[0].name;
+      state.data.displayName = accounts[0].displayName;
+    }
 
     return {
       name: step.INPUT_CRED_NAME,

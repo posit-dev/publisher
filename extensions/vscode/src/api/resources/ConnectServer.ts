@@ -22,9 +22,11 @@ export class ConnectServer {
   // Returns:
   // 200 - accepted
   // 500 - internal server error
-  getServerSettings(accountName: string) {
+  getServerSettings(accountName: string, contentType?: string) {
+    const params = contentType ? { type: contentType } : undefined;
     return this.client.get<ServerSettings>(
       `accounts/${accountName}/server-settings`,
+      { params },
     );
   }
 }

@@ -62,7 +62,7 @@ func (s *RMarkdownSuite) TestInferType() {
 		Title:      "Special Report",
 		Entrypoint: filename,
 		Validate:   &validate,
-		Files:      []string{},
+		Files:      []string{"/report.Rmd"},
 		R:          &config.R{},
 	}, configs[0])
 }
@@ -99,7 +99,7 @@ func (s *RMarkdownSuite) TestInferTypeWithPython() {
 		Title:      "Special Report",
 		Entrypoint: filename,
 		Validate:   &validate,
-		Files:      []string{},
+		Files:      []string{"/report.Rmd"},
 		Python:     &config.Python{},
 	}, configs[0])
 }
@@ -150,7 +150,7 @@ func (s *RMarkdownSuite) TestInferTypeParameterized() {
 		Entrypoint:    filename,
 		Validate:      &validate,
 		HasParameters: &hasParams,
-		Files:         []string{},
+		Files:         []string{"/report.Rmd"},
 		R:             &config.R{},
 	}, configs[0])
 }
@@ -189,7 +189,7 @@ func (s *RMarkdownSuite) TestInferTypeShinyRmdRuntime() {
 		Title:      "Interactive Report",
 		Entrypoint: filename,
 		Validate:   &validate,
-		Files:      []string{},
+		Files:      []string{"/report.Rmd"},
 		R:          &config.R{},
 	}, configs[0])
 }
@@ -228,7 +228,7 @@ func (s *RMarkdownSuite) TestInferTypeShinyRmdServer() {
 		Title:      "Interactive Report",
 		Entrypoint: filename,
 		Validate:   &validate,
-		Files:      []string{},
+		Files:      []string{"/report.Rmd"},
 		R:          &config.R{},
 	}, configs[0])
 }
@@ -268,7 +268,7 @@ func (s *RMarkdownSuite) TestInferTypeShinyRmdServerType() {
 		Title:      "Interactive Report",
 		Entrypoint: filename,
 		Validate:   &validate,
-		Files:      []string{},
+		Files:      []string{"/report.Rmd"},
 		R:          &config.R{},
 	}, configs[0])
 }
@@ -303,7 +303,7 @@ func (s *RMarkdownSuite) TestInferTypeNoMetadata() {
 		Title:      "",
 		Entrypoint: filename,
 		Validate:   &validate,
-		Files:      []string{},
+		Files:      []string{"/report.Rmd"},
 		R:          &config.R{},
 	}, configs[0])
 }
@@ -334,7 +334,7 @@ func (s *RMarkdownSuite) TestInferTypeWithEntrypoint() {
 		Title:      "Special Report",
 		Entrypoint: filename,
 		Validate:   &validate,
-		Files:      []string{},
+		Files:      []string{"/report.Rmd"},
 		R:          &config.R{},
 	}, configs[0])
 }
@@ -367,6 +367,7 @@ func (s *RMarkdownSuite) TestInferTypeRmdSite() {
 		Files: []string{
 			"/_site.yml",
 			"/index.Rmd",
+			"/images/mario-jump.gif",
 		},
 		R: &config.R{},
 	}, configs[0])
@@ -400,9 +401,44 @@ func (s *RMarkdownSuite) TestInferTypeRmdSite_FromSiteYml() {
 		Files: []string{
 			"/_site.yml",
 			"/index.Rmd",
+			"/images/mario-jump.gif",
 		},
 		R: &config.R{},
 	}, configs[0])
+}
+
+func (s *RMarkdownSuite) TestInferTypeRmdSite_WithAssets() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip("This test does not run on Windows")
+	}
+
+	realCwd, err := util.Getwd(nil)
+	s.NoError(err)
+
+	base := realCwd.Join("testdata", "rmd-site")
+
+	detector := NewRMarkdownDetector(logging.New())
+	executor := executortest.NewMockExecutor()
+	detector.executor = executor
+
+	configs, err := detector.InferType(base, util.NewRelativePath("index.Rmd", nil))
+	s.Nil(err)
+
+	s.Len(configs, 1)
+	cfg := configs[0]
+
+	validate := true
+	s.Equal(schema.ConfigSchemaURL, cfg.Schema)
+	s.Equal(contenttypes.ContentTypeRMarkdown, cfg.Type)
+	s.Equal("index.Rmd", cfg.Entrypoint)
+	s.Equal("Testing RMD Site", cfg.Title)
+	s.Equal(&validate, cfg.Validate)
+
+	// Verify that asset discovery works for site projects
+	s.Contains(cfg.Files, "/_site.yml")
+	s.Contains(cfg.Files, "/index.Rmd")
+	s.Contains(cfg.Files, "/images/mario-jump.gif")
+	s.Equal(&config.R{}, cfg.R)
 }
 
 func (s *RMarkdownSuite) TestInferTypeRmdSite_FromSiteYml_NoMeta() {
@@ -500,5 +536,145 @@ func (s *RMarkdownSuite) TestInferTypeRmdSite_FromBookdownYml() {
 			"/index.Rmd",
 		},
 		R: &config.R{},
+	}, configs[0])
+}
+
+func (s *RMarkdownSuite) TestInferTypeStaticRmdWithAssets() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip("This test does not run on Windows")
+	}
+
+	realCwd, err := util.Getwd(nil)
+	s.NoError(err)
+
+	base := realCwd.Join("testdata", "rmd-static-with-assets")
+
+	detector := NewRMarkdownDetector(logging.New())
+
+	configs, err := detector.InferType(base, util.NewRelativePath("static-with-assets.Rmd", nil))
+	s.Nil(err)
+
+	s.Len(configs, 1)
+	validate := true
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       contenttypes.ContentTypeRMarkdown,
+		Entrypoint: "static-with-assets.Rmd",
+		Title:      "Static R Markdown with Image",
+		Validate:   &validate,
+		Files: []string{
+			"/static-with-assets.Rmd",
+			"/assets/bear.jpg",
+		},
+		R: &config.R{},
+	}, configs[0])
+}
+
+func (s *RMarkdownSuite) TestFindAndIncludeAssets_NestedDirectoryDeduplication() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip("This test does not run on Windows")
+	}
+
+	realCwd, err := util.Getwd(nil)
+	s.NoError(err)
+
+	base := realCwd.Join("testdata", "rmd-nested-assets")
+
+	detector := NewRMarkdownDetector(logging.New())
+
+	cfg := config.New()
+	cfg.Type = contenttypes.ContentTypeRMarkdown
+	cfg.Entrypoint = "rmd-nested-assets.Rmd"
+	cfg.Files = []string{
+		"/rmd-nested-assets.Rmd",
+		"/assets", // Parent directory is already added
+	}
+
+	detector.findAndIncludeAssets(base, cfg)
+
+	// Nested files should not added since parent directory is included
+	s.Equal([]string{
+		"/rmd-nested-assets.Rmd",
+		"/assets",
+	}, cfg.Files)
+}
+
+func (s *RMarkdownSuite) TestInferTypeRmdWithResourceFiles() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip("This test does not run on Windows")
+	}
+
+	realCwd, err := util.Getwd(nil)
+	s.NoError(err)
+
+	base := realCwd.Join("testdata", "rmd-nested-assets")
+
+	detector := NewRMarkdownDetector(logging.New())
+
+	configs, err := detector.InferType(base, util.NewRelativePath("rmd-nested-assets.Rmd", nil))
+	s.Nil(err)
+
+	s.Len(configs, 1)
+	cfg := configs[0]
+
+	validate := true
+	s.Equal(schema.ConfigSchemaURL, cfg.Schema)
+	s.Equal(contenttypes.ContentTypeRMarkdown, cfg.Type)
+	s.Equal("rmd-nested-assets.Rmd", cfg.Entrypoint)
+	s.Equal("R Markdown Nested Assets Test", cfg.Title)
+	s.Equal(&validate, cfg.Validate)
+
+	// The entrypoint and resource_files from the YAML frontmatter should be discovered and included
+	s.Contains(cfg.Files, "/rmd-nested-assets.Rmd")
+	s.Contains(cfg.Files, "/assets/style.css")
+	s.Contains(cfg.Files, "/assets/script.js")
+	s.Contains(cfg.Files, "/assets/script-two.js")
+	s.Contains(cfg.Files, "/assets/script-three.js")
+	s.Len(cfg.Files, 5)
+}
+
+// rmdWithHorizontalRuleContent reproduces the issue from GitHub #3409
+// where a horizontal rule (---) in the document body is incorrectly
+// included in the YAML front matter extraction.
+var rmdWithHorizontalRuleContent = fmt.Sprintf(`---
+title: Test Report
+author: Test Author
+---
+
+%s{r}
+mean(1:5)
+%s
+
+Some text here.
+
+---
+
+More text after the horizontal rule.
+`, backticks, backticks)
+
+func (s *RMarkdownSuite) TestInferTypeWithHorizontalRule() {
+	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
+	err := base.MkdirAll(0777)
+	s.NoError(err)
+
+	filename := "report.Rmd"
+	path := base.Join(filename)
+	err = path.WriteFile([]byte(rmdWithHorizontalRuleContent), 0600)
+	s.Nil(err)
+
+	detector := NewRMarkdownDetector(logging.New())
+	configs, err := detector.InferType(base, util.RelativePath{})
+	s.Nil(err)
+	s.Len(configs, 1)
+
+	validate := true
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       contenttypes.ContentTypeRMarkdown,
+		Title:      "Test Report",
+		Entrypoint: filename,
+		Validate:   &validate,
+		Files:      []string{"/report.Rmd"},
+		R:          &config.R{},
 	}, configs[0])
 }

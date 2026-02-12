@@ -1,14 +1,20 @@
 # Build and run all tests against in development
 default: dev
 
+# License file path for Connect (override with LICENSE=path)
+LICENSE := env_var_or_default("CONNECT_LICENSE_FILE", env_var("HOME") + "/connect-license.lic")
+
 # Install Cypress dependencies using npm
 install:
     npm install
 
-# Build the specified docker image using docker compose
-build service:
-    docker build -f Dockerfile.base --tag e2ebase --platform linux/amd64 .
+# Build a docker image using docker compose
+build-image service:
     docker compose build "{{service}}"
+
+# Build the base image (only needed on first setup)
+build-base:
+    docker build -f Dockerfile.base --tag e2ebase --platform linux/amd64 .
 
 start service:
     docker compose up -d "{{service}}"
@@ -29,21 +35,33 @@ clear-credentials:
 
     EOF
 
-dev: 
+# Build publisher and run e2e tests (requires with-connect CLI and license file)
+dev:
     #!/usr/bin/env bash
     set -euo pipefail
-    
-    # check to see if rsconnect-python is available, because if it is not, then the tests fail in weird ways....
-    rsconnect version || {
-        echo "rsconnect-python is not installed. Did you forget to start your virtual environment in which it is installed?"
-        exit 1
-    }
+
     just build-publisher
     just e2e
 
-e2e:
+# Run e2e tests with Connect managed by with-connect
+# Requires: with-connect CLI (uv tool install git+https://github.com/posit-dev/with-connect.git)
+# Set LICENSE env var or CONNECT_LICENSE_FILE to specify license path
+e2e *cypress_args:
     #!/usr/bin/env bash
     set -euo pipefail
+
+    # Check for with-connect
+    command -v with-connect >/dev/null 2>&1 || {
+        echo "Error: with-connect CLI not found. Install with: uv tool install git+https://github.com/posit-dev/with-connect.git"
+        exit 1
+    }
+
+    # Check for license file
+    if [[ ! -f "{{LICENSE}}" ]]; then
+        echo "Error: License file not found at {{LICENSE}}"
+        echo "Set CONNECT_LICENSE_FILE env var or LICENSE=path when running just"
+        exit 1
+    fi
 
     function cleanup() {
         just clear-credentials
@@ -52,243 +70,92 @@ e2e:
 
     just clear-credentials
     just install
-    just start "connect-publisher-e2e"
     just start "code-server"
 
     # Install the Publisher extension
     VSIX_FILENAME=$(ls -Art ../../dist | grep linux-amd64 | tail -n 1)
     docker compose exec code-server code-server --install-extension "/home/coder/vsix/${VSIX_FILENAME}"
 
-    npm run cypress:open
+    # Run tests with Connect managed by with-connect
+    # On macOS, DOCKER_HOST may need to be set: export DOCKER_HOST=unix://$HOME/.docker/run/docker.sock
+    with-connect --license "{{LICENSE}}" -- \
+        bash -c 'CYPRESS_BOOTSTRAP_ADMIN_API_KEY=$CONNECT_API_KEY npx cypress run {{cypress_args}}'
 
-# This will build all of the images, but you can also force a rebuild for one of them
-# using the command `docker compose build --no-cache <service-name>` where <service-name> is 
-# listed in the docker-compose.yml file ( code-server & connect-publisher-e2e)
-# NOTE: `docker compose` will build an image if it is needed and will use the cache, so no real reason to normally do this.`
-build-images:
-    docker build -f Dockerfile.base --tag e2ebase --platform linux/amd64 .
-    just build "connect-publisher-e2e"
-    just build "code-server"
-
-build-publisher:
-    USE_PLATFORM="linux/amd64" just ../../build
-    USE_PLATFORM="linux/amd64" just ../../package
-
-old-dev:
+# Run Cypress in interactive mode with Connect
+e2e-open:
     #!/usr/bin/env bash
     set -euo pipefail
 
-    function cleanup() {
-        just clear-credentials
+    command -v with-connect >/dev/null 2>&1 || {
+        echo "Error: with-connect CLI not found. Install with: uv tool install git+https://github.com/posit-dev/with-connect.git"
+        exit 1
     }
-    trap cleanup EXIT
 
-    USE_PLATFORM="linux/amd64" just ../../build
-    USE_PLATFORM="linux/amd64" just ../../package
-    just clear-credentials
-    just install
-    just build "connect-publisher-e2e"
-    just build "code-server"
-    just start "connect-publisher-e2e"
+    if [[ ! -f "{{LICENSE}}" ]]; then
+        echo "Error: License file not found at {{LICENSE}}"
+        exit 1
+    fi
+
     just start "code-server"
-    npm run cypress:open
+
+    # Install the Publisher extension
+    VSIX_FILENAME=$(ls -Art ../../dist | grep linux-amd64 | tail -n 1)
+    docker compose exec code-server code-server --install-extension "/home/coder/vsix/${VSIX_FILENAME}"
+
+    with-connect --license "{{LICENSE}}" -- \
+        bash -c 'CYPRESS_BOOTSTRAP_ADMIN_API_KEY=$CONNECT_API_KEY npx cypress open'
+
+# Build all required Docker images
+# Note: build-base only needed on first setup or when Dockerfile.base changes
+build-images:
+    docker build -f Dockerfile.base --tag e2ebase --platform linux/amd64 .
+    docker compose build code-server
+    just pull-workbench "release"
+
+build-publisher:
+    USE_PLATFORM="linux/amd64" just ../../
+
+
 
 # =====================================================================
 # Workbench-specific commands
 # These commands use the Workbench services defined in docker-compose.yml
-# The Workbench images include the default user: rstudio/rstudio
+# The Workbench images include the default user: rstudio/rstudio 
+# as documented here: https://hub.docker.com/r/rstudio/rstudio-workbench
 # =====================================================================
 
 # Pull the Workbench container image
-build-workbench service="all":
-    #!/usr/bin/env bash
-    set -euo pipefail
-
-    # Always remove existing containers first for clean builds
-    just remove-workbench "{{ service }}"
-
-    if [ "{{ service }}" = "all" ]; then
-        echo "Pulling all Workbench container images..."
-        # Use docker compose pull for both services
-        docker compose pull workbench-preview workbench-release
-        echo "All Workbench images pulled!"
-    elif [[ "{{ service }}" = "preview" || "{{ service }}" = "release" ]]; then
-        echo "Pulling Workbench {{ service }} container image..."
-        docker compose pull workbench-{{ service }}
-        echo "Workbench {{ service }} image pulled!"
-    else
-        echo "Invalid service: {{ service }}"
-        echo "Must be either 'preview', 'release', or 'all'"
-        exit 1
-    fi
+pull-workbench service="release":
+    docker compose pull workbench-{{ service }}
 
 # Start a Workbench container
-start-workbench service:
-    #!/usr/bin/env bash
-    set -euo pipefail
-
-    # Validate service name
-    if [[ "{{ service }}" != "preview" && "{{ service }}" != "release" ]]; then
-        echo "Invalid service: {{ service }}"
-        echo "Must be either 'preview' or 'release'"
-        exit 1
-    fi
-    
-    # Create directories for volumes if they do not exist
-    mkdir -p ./logs/workbench-{{ service }}
-    mkdir -p ./licenses
-    
-    # Check if license file exists and is valid (not just a placeholder)
-    if [ ! -s ./licenses/workbench-license.lic ] || [ "$(cat ./licenses/workbench-license.lic | wc -l)" -lt 2 ]; then
-        echo "WARNING: Valid Workbench license file not found at ./licenses/workbench-license.lic"
-        echo "You must have a valid Workbench license file to use the containers without license errors."
-        echo "Please add a valid license file before starting the container."
-        echo ""
-    fi
-
-    echo "Starting Workbench {{ service }} container..."
-    docker compose up -d workbench-{{ service }}
-    
-    echo "Waiting for container to become healthy..."
-    # Docker compose has built-in healthcheck support
-    
-    # Simple approach: Loop with a counter, no external tools needed
-    MAX_ATTEMPTS=120  # 60 seconds (120 * 0.5s)
-    attempts=0
-    
-    while [ $attempts -lt $MAX_ATTEMPTS ]; do
-        if docker compose ps | grep "workbench-{{ service }}" | grep -q "healthy"; then
-            echo ""
-            echo "✅ Workbench {{ service }} is healthy and ready!"
-            break
-        fi
-        echo -n "."
-        sleep 0.5
-        attempts=$((attempts + 1))
-    done
-    
-    # Check if we timed out
-    if [ $attempts -eq $MAX_ATTEMPTS ]; then
-        echo ""
-        echo "⚠️ Timed out waiting for container to become healthy"
-        echo "Check container logs with: docker logs publisher-e2e.workbench-{{ service }}"
-    fi
-    echo ""
-    
-    echo "Access Workbench at: http://localhost:8787"
+start-workbench service="release":
+    ../scripts/start-workbench.sh "{{ service }}"
 
 # Stop a Workbench container
-stop-workbench service="all":
+stop-workbench service="release":
+    docker compose stop workbench-{{ service }}
+
+# Remove Workbench containers
+remove-workbench service="release":
     #!/usr/bin/env bash
     set -euo pipefail
 
-    if [ "{{ service }}" = "all" ]; then
-        echo "Stopping all Workbench containers..."
-        docker compose stop workbench-preview workbench-release 2>/dev/null || true
-        echo "All Workbench containers stopped!"
-    elif [[ "{{ service }}" = "preview" || "{{ service }}" = "release" ]]; then
-        echo "Stopping Workbench {{ service }} container..."
-        docker compose stop workbench-{{ service }} 2>/dev/null || true
-        echo "Workbench {{ service }} stopped!"
-    else
-        echo "Invalid service: {{ service }}"
-        echo "Must be either 'preview', 'release', or 'all'"
-        exit 1
-    fi
-
-# Remove Workbench containers to ensure clean builds
-remove-workbench service="all":
-    #!/usr/bin/env bash
-    set -euo pipefail
-
-    # First stop the containers
+    # First stop the container
     just stop-workbench "{{ service }}"
-    
-    if [ "{{ service }}" = "all" ]; then
-        echo "Removing all Workbench containers..."
-        docker compose rm -f workbench-preview workbench-release 2>/dev/null || true
-        echo "All Workbench containers removed!"
-    elif [[ "{{ service }}" = "preview" || "{{ service }}" = "release" ]]; then
-        echo "Removing Workbench {{ service }} container..."
-        docker compose rm -f workbench-{{ service }} 2>/dev/null || true
-        echo "Workbench {{ service }} container removed!"
-    else
-        echo "Invalid service: {{ service }}"
-        echo "Must be either 'preview', 'release', or 'all'"
-        exit 1
-    fi
+
+    # Remove the container
+    docker compose rm -f workbench-{{ service }}
 
 # Install Publisher extension in a running Workbench container
-install-workbench-extension service:
-    #!/usr/bin/env bash
-    set -euo pipefail
+install-positron-extension service="release":
+    ../scripts/install-positron-extension.sh "{{ service }}"
 
-    # Validate service name
-    if [[ "{{ service }}" != "preview" && "{{ service }}" != "release" ]]; then
-        echo "Invalid service: {{ service }}"
-        echo "Must be either 'preview' or 'release'"
-        exit 1
-    fi
+# Check if publisher extension is installed in Positron
+# This command is designed to work from any directory (Cypress or command line)
+check-positron-extension:
+    ../scripts/check-positron-extension.sh
 
-    echo "Installing Publisher extension in Workbench {{ service }} container..."
-    
-    # Check if container is running
-    if ! docker ps | grep "publisher-e2e.workbench-{{ service }}" | grep -q "Up"; then
-        echo "Container publisher-e2e.workbench-{{ service }} is not running."
-        echo "Please start it first with: just start-workbench {{ service }}"
-        exit 1
-    fi
-    
-    # Check if dist directory exists and is not empty
-    if [ ! -d "../../dist" ] || [ -z "$(ls -A ../../dist 2>/dev/null)" ]; then
-        echo "ERROR: Publisher VSIX directory (../../dist) does not exist or is empty."
-        echo ""
-        echo "Please build the extension first with:"
-        echo "just build-publisher"
-        exit 1
-    fi
-    
-    # Find the latest built VSIX for Publisher (linux-amd64 version)
-    VSIX_FILENAME=$(ls -Art ../../dist | grep linux-amd64 | tail -n 1)
-    if [ -z "$VSIX_FILENAME" ]; then
-        echo "ERROR: No linux-amd64 Publisher VSIX found in ../../dist directory."
-        echo ""
-        echo "Please build the extension first with:"
-        echo "just build-publisher"
-        exit 1
-    fi
-    
-    echo "Using VSIX: $VSIX_FILENAME"
-    
-    # Create a directory in the user home folder to copy the VSIX
-    docker exec publisher-e2e.workbench-{{ service }} bash -c "mkdir -p /home/rstudio/vsix"
-    
-    # Copy the VSIX file to the container
-    docker cp "../../dist/$VSIX_FILENAME" "publisher-e2e.workbench-{{ service }}:/home/rstudio/vsix/$VSIX_FILENAME"
-    
-    # Set proper ownership for the VSIX file
-    docker exec publisher-e2e.workbench-{{ service }} bash -c "chown -R rstudio:rstudio /home/rstudio/vsix"
-    
-    # Run installation command as the rstudio user to ensure proper permissions
-    docker exec -u rstudio publisher-e2e.workbench-{{ service }} bash -c "cd /usr/lib/rstudio-server/bin/positron-server && ./bin/positron-server --install-extension /home/rstudio/vsix/$VSIX_FILENAME --force"
-    
-    # Show the installed extension with detailed information
-    echo "Verifying installation..."
-    echo "Available Publisher extension directories:"
-    docker exec publisher-e2e.workbench-{{ service }} bash -c "ls -la /home/rstudio/.positron-server/extensions/ | grep -i publisher"
-    
-    echo ""
-    echo "Installed extension metadata:"
-    docker exec publisher-e2e.workbench-{{ service }} bash -c "find /home/rstudio/.positron-server/extensions -path '*publisher*' -name package.json | xargs grep -A 2 version"
-    
-    echo ""
-    echo "Extension timestamp information:"
-    docker exec publisher-e2e.workbench-{{ service }} bash -c "stat -c '%n was last modified %y' /home/rstudio/.positron-server/extensions/*/package.json | grep publisher"
-    
-    # Clean up
-    docker exec publisher-e2e.workbench-{{ service }} rm -rf /home/rstudio/vsix
-    
-    # Summary message
-    echo ""
-    echo "✅ Publisher extension successfully installed!"
-    echo "Note: You may need to restart existing Positron sessions for the changes to take effect."
+# Extract Positron logs from Workbench container
+extract-positron-logs service="release":
+    ../scripts/extract-positron-logs.sh "{{ service }}"

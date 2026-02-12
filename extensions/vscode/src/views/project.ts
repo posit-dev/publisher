@@ -10,9 +10,7 @@ import {
 
 import { Views } from "src/constants";
 
-export class ProjectTreeDataProvider
-  implements TreeDataProvider<ProjectTreeItem>
-{
+export class ProjectTreeDataProvider implements TreeDataProvider<ProjectTreeItem> {
   constructor(private readonly _context: ExtensionContext) {}
 
   getTreeItem(element: ProjectTreeItem): TreeItem | Thenable<TreeItem> {

@@ -5,7 +5,7 @@ import { extractGUID } from "src/utils/guid";
 import { PublisherState } from "src/state";
 import { showProgress } from "src/utils/progress";
 import { Views } from "src/constants";
-import { ServerType, useApi } from "src/api";
+import { ServerType, useApi, ProductType } from "src/api";
 import { getSummaryStringFromError } from "src/utils/errors";
 import {
   getProductName,
@@ -16,9 +16,56 @@ import {
 import {
   extractConnectCloudAccount,
   isConnectCloudContentURL,
-  isConnectContentURL,
 } from "src/utils/url";
 import config from "src/config";
+
+/**
+ * Validates a GUID or URL input for associating with existing content.
+ * Exported for testing purposes.
+ *
+ * @param text - The input text (URL or GUID)
+ * @param productType - The product type (Connect or Connect Cloud)
+ * @param productName - The product name for error messages
+ * @param accountName - The Connect Cloud account name (optional, only for Connect Cloud)
+ * @returns null if valid, or a validation message object if invalid
+ */
+export function validateGuidInput(
+  text: string,
+  productType: ProductType,
+  productName: string,
+  accountName?: string,
+): { message: string; severity: InputBoxValidationSeverity } | null {
+  const guid = extractGUID(text);
+  if (guid === null) {
+    return {
+      message: `Unexpected format for a ${productName} Content URL. Confirm the URL loads content from the server and contains a content GUID.`,
+      severity: InputBoxValidationSeverity.Error,
+    };
+  }
+
+  // For Connect Cloud, check the account matches if a URL was provided (not just a plain GUID)
+  if (isConnectCloudProduct(productType)) {
+    if (!isConnectCloudContentURL(text)) {
+      // We have the wrong URL format here, we need to reject before we possibly send folks to the UI with a bad URL
+      return {
+        message: `Unexpected URL format for a ${productName} Content URL. Confirm the URL loads content from the ${productName} server.`,
+        severity: InputBoxValidationSeverity.Error,
+      };
+    }
+
+    const extractedAccount = extractConnectCloudAccount(text);
+    if (extractedAccount !== accountName) {
+      return {
+        message: `Account mismatch for ${productName} Content URL. Please try again with published content for account: ${accountName}.`,
+        severity: InputBoxValidationSeverity.Error,
+      };
+    }
+  }
+
+  // If we successfully extracted a GUID, accept the input
+  // This allows: in-app URLs, standalone URLs, and plain GUIDs
+  return null;
+}
 
 export async function showAssociateGUID(state: PublisherState) {
   const targetContentRecord = await state.getSelectedContentRecord();
@@ -36,34 +83,13 @@ export async function showAssociateGUID(state: PublisherState) {
     value: urlOrGuid,
     placeHolder,
     validateInput: (text) => {
-      const guid = extractGUID(text);
-      if (guid === null) {
-        return Promise.resolve({
-          message: `Unexpected format for a ${productName} Content URL. Confirm the URL loads content from the server and contains a content GUID.`,
-          severity: InputBoxValidationSeverity.Error,
-        });
-      }
-      // check the provided URL matches the expected server's URL format
-      if (
-        (isConnectProduct(productType) && !isConnectContentURL(text)) ||
-        (isConnectCloudProduct(productType) && !isConnectCloudContentURL(text))
-      ) {
-        return Promise.resolve({
-          message: `Unexpected URL format for a ${productName} Content URL. Confirm the URL loads content from the ${productName} server.`,
-          severity: InputBoxValidationSeverity.Error,
-        });
-      }
-      // check the account matches for Connect Cloud
-      if (
-        isConnectCloudProduct(productType) &&
-        extractConnectCloudAccount(text) !== accountName
-      ) {
-        return Promise.resolve({
-          message: `Account mismatch for ${productName} Content URL. Please try again with published content for account: ${accountName}.`,
-          severity: InputBoxValidationSeverity.Error,
-        });
-      }
-      return null;
+      const validation = validateGuidInput(
+        text,
+        productType,
+        productName,
+        accountName,
+      );
+      return validation ? Promise.resolve(validation) : null;
     },
     ignoreFocusOut: true,
   });

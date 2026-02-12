@@ -22,7 +22,7 @@ export const normalizeURL = (input: string): string => {
 
 const isMatchingURL = (input: string, regex: RegExp) => {
   const guid = extractGUID(input)?.at(0);
-  const guidlessInput = guid ? input.split(guid)[0] : "";
+  const guidlessInput = guid ? (input.split(guid)[0] ?? "") : "";
   return regex.test(guidlessInput);
 };
 
@@ -38,21 +38,6 @@ export const isConnectCloudContentURL = (input: string) => {
   const regex = new RegExp(
     `^${config.connectCloudURL}/[a-zA-Z0-9-]+/content/$`,
   );
-  return isMatchingURL(input, regex);
-};
-
-// All the following inputs will return "true":
-//   "https://connect.company.co/connect/#/apps/adffa505-08c7-450f-88d0-f42957f56eff";
-//   "https://connect.my_sub.company.com/connect/#/apps/adffa505-08c7-450f-88d0-f42957f56eff";
-//   "https://connect.another.deep_sub.domain_name.org/connect/#/apps/adffa505-08c7-450f-88d0-f42957f56eff";
-//   "https://connect.only-one.co/connect/#/apps/adffa505-08c7-450f-88d0-f42957f56eff";
-//   "https://company.co/data-science/2025/staging-server/#/apps/adffa505-08c7-450f-88d0-f42957f56eff";
-// All the following inputs will return "false":
-//   "https://connect.company.co/wrong/connect/#/path/apps/adffa505-08c7-450f-88d0-f42957f56eff"; // wrong path
-//   "https://connect.company.co/connect/#apps/adffa505-08c7-450f-88d0-f42957f56eff"; // missing slash
-//   "https://connect.invalid.com/connect/#/@pps/adffa505-08c7-450f-88d0-f42957f56eff"; // invalid character
-export const isConnectContentURL = (input: string) => {
-  const regex = /^http(s?):\/\/.+\/#\/apps\/$/;
   return isMatchingURL(input, regex);
 };
 

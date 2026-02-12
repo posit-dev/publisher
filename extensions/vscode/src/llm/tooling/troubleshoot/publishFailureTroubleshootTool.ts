@@ -9,9 +9,7 @@ import {
 } from "vscode";
 import { LogsViewProvider } from "../../../views/logs";
 
-export class PublishFailureTroubleshootTool
-  implements LanguageModelTool<never>
-{
+export class PublishFailureTroubleshootTool implements LanguageModelTool<never> {
   invoke(
     _options: LanguageModelToolInvocationOptions<never>,
     _token: CancellationToken,

@@ -471,7 +471,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       kind: HostToWebviewMessageType.PUBLISH_FINISH_FAILURE,
       content: {
         data: {
-          message: msg.data.message,
+          message: msg.data.message ?? "",
         },
       },
     });
@@ -769,9 +769,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           );
 
           packages = [];
-          Object.keys(response.data.packages).forEach((key: string) =>
-            packages.push(response.data.packages[key]),
-          );
+          Object.keys(response.data.packages).forEach((key: string) => {
+            const pkg = response.data.packages[key];
+            if (pkg) {
+              packages.push(pkg);
+            }
+          });
           rVersionConfig = response.data.r;
         } catch (error: unknown) {
           if (isAxiosError(error) && error.response?.status === 404) {
@@ -831,6 +834,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         const api = await useApi();
         const result = await api.connectServer.getServerSettings(
           credential.name,
+          activeConfig.configuration.type,
         );
 
         this.webviewConduit.sendMsg({
@@ -2127,7 +2131,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return selected;
     }
     // only one deployment, just select it
-    if (compatibleContentRecords.length === 1) {
+    if (compatibleContentRecords.length === 1 && compatibleContentRecords[0]) {
       const contentRecord = compatibleContentRecords[0];
       const deploymentSelector: DeploymentSelector = {
         deploymentPath: contentRecord.deploymentPath,

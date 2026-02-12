@@ -9,7 +9,7 @@ jobs:
         runner: [macos-latest, windows-latest, ubuntu-latest]
     runs-on: ${{ matrix.runner }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - uses: extractions/setup-just@v3
@@ -35,8 +35,8 @@ jobs:
 
       - name: Install R with rig
         run: rig add release
-      - name: Install renv package
-        run: Rscript -e "install.packages('renv')"
+      - name: Install R packages
+        run: Rscript -e "install.packages(c('renv', 'glue'))"
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod

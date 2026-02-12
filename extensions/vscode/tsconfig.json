@@ -1,11 +1,13 @@
 {
   "compilerOptions": {
     "baseUrl": ".",
+    "isolatedModules": true,
     "esModuleInterop": true,
-    "module": "commonjs",
-    "target": "ES2022",
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "target": "ES2023",
     "outDir": "out",
-    "lib": ["ES2022", "DOM"],
+    "lib": ["ES2023", "DOM"],
     "sourceMap": true,
     "rootDir": "src",
     /* Linting */
@@ -14,10 +16,9 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitReturns": true,
+    "noUncheckedIndexedAccess": true,
     "paths": {
-      "src/*": ["./src/*"],
-      // workaround for: https://github.com/rollup/rollup/issues/5199
-      "rollup/parseAst": ["./node_modules/rollup/dist/parseAst"]
+      "src/*": ["./src/*"]
     }
   },
   "exclude": ["node_modules", "webviews", "vitest.config.ts"]

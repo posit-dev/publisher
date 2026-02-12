@@ -175,12 +175,16 @@ func (s *PublishConnectSuite) TestPublishWithClientNewUpdate() {
 
 func (s *PublishConnectSuite) TestPublishWithClientNewFailAuth() {
 	authErr := errors.New("error from TestAuthentication")
-	s.publishWithClient(nil, &publishErrsMock{authErr: authErr}, authErr)
+	s.publishWithClient(nil, &publishErrsMock{authErr: authErr}, authErr, func(options *publishTestOptions) {
+		options.expectContentID = false
+	})
 }
 
 func (s *PublishConnectSuite) TestPublishWithClientNewFailCapabilities() {
 	capabilitiesErr := errors.New("error from CheckCapabilities")
-	s.publishWithClient(nil, &publishErrsMock{capabilitiesErr: capabilitiesErr}, capabilitiesErr)
+	s.publishWithClient(nil, &publishErrsMock{capabilitiesErr: capabilitiesErr}, capabilitiesErr, func(options *publishTestOptions) {
+		options.expectContentID = false
+	})
 }
 
 func (s *PublishConnectSuite) TestPublishWithClientNewFailCreate() {
@@ -217,7 +221,9 @@ func (s *PublishConnectSuite) TestPublishWithClientNewFailValidation() {
 
 func (s *PublishConnectSuite) TestPublishWithClientNewRPackages() {
 	rPackageErr := errors.New("error from GetManifestPackages")
-	s.publishWithClient(nil, &publishErrsMock{rPackageErr: rPackageErr}, rPackageErr)
+	s.publishWithClient(nil, &publishErrsMock{rPackageErr: rPackageErr}, rPackageErr, func(options *publishTestOptions) {
+		options.expectContentID = false
+	})
 }
 
 func (s *PublishConnectSuite) TestPublishWithClientRedeployFailAuth() {
@@ -661,6 +667,124 @@ func (s *PublishConnectSuite) TestLogAppInfoErrNoContentID() {
 	s.Equal("", buf.String())
 }
 
+// TestServerUnavailableShowsHelpfulError verifies that when the server is unavailable,
+// users see the helpful error message from TestAuthentication instead of a generic HTTP
+// error from CreateDeployment.
+func (s *PublishConnectSuite) TestServerUnavailableShowsHelpfulError() {
+	helpfulErr := errors.New("could not access the server; check the server URL and try again")
+
+	s.publishWithClient(nil, &publishErrsMock{authErr: helpfulErr}, helpfulErr, func(options *publishTestOptions) {
+		options.expectContentID = false // No content created since pre-flight checks failed
+	})
+}
+
+func (s *PublishConnectSuite) TestLogDeploymentVersions() {
+	// Test with all versions present
+	manifest := &bundles.Manifest{
+		Platform: "4.3.2",
+		Python: &bundles.Python{
+			Version: "3.11.0",
+		},
+		Quarto: &bundles.Quarto{
+			Version: "1.4.0",
+		},
+	}
+
+	logBuffer := new(bytes.Buffer)
+	opts := &slog.HandlerOptions{Level: slog.LevelInfo}
+	stdLogger := slog.New(slog.NewTextHandler(logBuffer, opts))
+	log := logging.FromStdLogger(stdLogger)
+
+	publisher := &defaultPublisher{}
+	publisher.logDeploymentVersions(log, manifest)
+
+	logs := logBuffer.String()
+	s.Contains(logs, "Local Quarto version 1.4.0")
+	s.Contains(logs, "Local R version 4.3.2")
+	s.Contains(logs, "Local Python version 3.11.0")
+}
+
+func (s *PublishConnectSuite) TestLogDeploymentVersionsOnlyR() {
+	manifest := &bundles.Manifest{
+		Platform: "4.3.2",
+	}
+
+	logBuffer := new(bytes.Buffer)
+	opts := &slog.HandlerOptions{Level: slog.LevelInfo}
+	stdLogger := slog.New(slog.NewTextHandler(logBuffer, opts))
+	log := logging.FromStdLogger(stdLogger)
+
+	publisher := &defaultPublisher{}
+	publisher.logDeploymentVersions(log, manifest)
+
+	logs := logBuffer.String()
+	s.Contains(logs, "Local R version 4.3.2")
+	s.Contains(logs, "Local Python not in use")
+	s.Contains(logs, "Local Quarto not in use")
+}
+
+func (s *PublishConnectSuite) TestLogDeploymentVersionsOnlyPython() {
+	manifest := &bundles.Manifest{
+		Python: &bundles.Python{
+			Version: "3.11.0",
+		},
+	}
+
+	logBuffer := new(bytes.Buffer)
+	opts := &slog.HandlerOptions{Level: slog.LevelInfo}
+	stdLogger := slog.New(slog.NewTextHandler(logBuffer, opts))
+	log := logging.FromStdLogger(stdLogger)
+
+	publisher := &defaultPublisher{}
+	publisher.logDeploymentVersions(log, manifest)
+
+	logs := logBuffer.String()
+	s.Contains(logs, "Local Python version 3.11.0")
+	s.Contains(logs, "Local R not in use")
+	s.Contains(logs, "Local Quarto not in use")
+}
+
+func (s *PublishConnectSuite) TestLogDeploymentVersionsOnlyQuartoAndPython() {
+	manifest := &bundles.Manifest{
+		Quarto: &bundles.Quarto{
+			Version: "1.4.0",
+		},
+		Python: &bundles.Python{
+			Version: "3.11.0",
+		},
+	}
+
+	logBuffer := new(bytes.Buffer)
+	opts := &slog.HandlerOptions{Level: slog.LevelInfo}
+	stdLogger := slog.New(slog.NewTextHandler(logBuffer, opts))
+	log := logging.FromStdLogger(stdLogger)
+
+	publisher := &defaultPublisher{}
+	publisher.logDeploymentVersions(log, manifest)
+
+	logs := logBuffer.String()
+	s.Contains(logs, "Local Quarto version 1.4.0")
+	s.Contains(logs, "Local R not in use")
+	s.Contains(logs, "Local Python version 3.11.0")
+}
+
+func (s *PublishConnectSuite) TestLogDeploymentVersionsEmpty() {
+	manifest := &bundles.Manifest{}
+
+	logBuffer := new(bytes.Buffer)
+	opts := &slog.HandlerOptions{Level: slog.LevelInfo}
+	stdLogger := slog.New(slog.NewTextHandler(logBuffer, opts))
+	log := logging.FromStdLogger(stdLogger)
+
+	publisher := &defaultPublisher{}
+	publisher.logDeploymentVersions(log, manifest)
+
+	logs := logBuffer.String()
+	s.Contains(logs, "Local R not in use")
+	s.Contains(logs, "Local Python not in use")
+	s.Contains(logs, "Local Quarto not in use")
+}
+
 type PublishConnectCloudSuite struct {
 	BasePublishSuite
 }
@@ -719,7 +843,9 @@ func (s *PublishConnectCloudSuite) TestPublishWithClientNewFailPublishContent() 
 
 func (s *PublishConnectCloudSuite) TestPublishWithClientNewFailRPackages() {
 	rPackageErr := errors.New("error from GetManifestPackages")
-	s.publishWithCloudClient(nil, &mockCloudError{rPackageErr: rPackageErr}, rPackageErr)
+	s.publishWithCloudClient(nil, &mockCloudError{rPackageErr: rPackageErr}, rPackageErr, func(options *cloudPublishTestOptions) {
+		options.expectContentID = false
+	})
 }
 
 func (s *PublishConnectCloudSuite) TestPublishWithClientNewFailGetContent() {
@@ -976,10 +1102,10 @@ func (s *PublishConnectCloudSuite) publishWithCloudClient(
 
 		s.Equal(12, len(emitter.Events))
 		s.Equal("publish/start", emitter.Events[0].Type)
-		s.Equal("publish/createNewDeployment/start", emitter.Events[1].Type)
-		s.Equal("publish/createNewDeployment/success", emitter.Events[2].Type)
-		s.Equal("publish/getRPackageDescriptions/start", emitter.Events[3].Type)
-		s.Equal("publish/getRPackageDescriptions/success", emitter.Events[4].Type)
+		s.Equal("publish/getRPackageDescriptions/start", emitter.Events[1].Type)
+		s.Equal("publish/getRPackageDescriptions/success", emitter.Events[2].Type)
+		s.Equal("publish/createNewDeployment/start", emitter.Events[3].Type)
+		s.Equal("publish/createNewDeployment/success", emitter.Events[4].Type)
 		s.Equal("publish/createBundle/start", emitter.Events[5].Type)
 		s.Equal("publish/createBundle/success", emitter.Events[6].Type)
 		s.Equal("publish/deployContent/start", emitter.Events[7].Type)

@@ -1,27 +1,12 @@
 services:
-  # Starts a container that mounts Connect and other dependencies
-  connect-publisher-e2e:
-    container_name: publisher-e2e.connect
-    build:
-      context: ../..
-      dockerfile: test/e2e/Dockerfile.connect
-      args:
-        IMAGE_OS: ${IMAGE_OS:-rstudio/connect:ubuntu22}
-    privileged: true
-    environment:
-      - CONNECT_LICENSE
-      - CONNECT_CLOUD_ENV=${CONNECT_CLOUD_ENV:-staging}
-    ports:
-      - "3232:3232"
-      - "3939:3939"
-      - "4723:4723"
-
   # A VS Code server accessible through browser
   code-server:
     container_name: publisher-e2e.code-server
     build:
       context: ../..
       dockerfile: test/e2e/Dockerfile.vscode
+    extra_hosts:
+      - "connect-publisher-e2e:host-gateway"
     environment:
       - DOCKER_USER=publisher
       - PASSWORD=password
@@ -38,12 +23,19 @@ services:
   workbench-preview:
     container_name: publisher-e2e.workbench-preview
     image: rstudio/rstudio-workbench-preview:ubuntu2204-preview
+    platform: linux/amd64
+    extra_hosts:
+      - "connect-publisher-e2e:host-gateway"
     ports:
       - "8787:8787"
     volumes:
-      - ./licenses/workbench-license.lic:/etc/rstudio-server/license.lic
+      - ./licenses/workbench-license.lic:/var/lib/rstudio-server/license.lic
       - ./logs/workbench-preview:/var/log/rstudio/rstudio-server
       - ./config/workbench-logging.conf:/etc/rstudio/logging.conf
+      - ./content-workspace:/content-workspace
+      - ./workbench-entrypoint.sh:/workbench-entrypoint.sh
+      - ../../dist:/vsix-tmp
+    entrypoint: ["/workbench-entrypoint.sh"]
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:8787/health-check"]
       interval: 2s
@@ -54,12 +46,19 @@ services:
   workbench-release:
     container_name: publisher-e2e.workbench-release
     image: rstudio/rstudio-workbench:ubuntu2204
+    platform: linux/amd64
+    extra_hosts:
+      - "connect-publisher-e2e:host-gateway"
     ports:
       - "8787:8787"
     volumes:
-      - ./licenses/workbench-license.lic:/etc/rstudio-server/license.lic
+      - ./licenses/workbench-license.lic:/var/lib/rstudio-server/license.lic
       - ./logs/workbench-release:/var/log/rstudio/rstudio-server
       - ./config/workbench-logging.conf:/etc/rstudio/logging.conf
+      - ./content-workspace:/content-workspace
+      - ./workbench-entrypoint.sh:/workbench-entrypoint.sh
+      - ../../dist:/vsix-tmp
+    entrypoint: ["/workbench-entrypoint.sh"]
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:8787/health-check"]
       interval: 2s

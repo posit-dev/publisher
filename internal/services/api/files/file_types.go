@@ -3,7 +3,7 @@ package files
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"fmt"
+	"errors"
 	"io/fs"
 )
 
@@ -14,7 +14,11 @@ const (
 	Directory fileType = "DIR"
 )
 
-func getFileType(path string, info fs.FileInfo) (fileType, error) {
+// ErrUnsupportedFileType is returned when encountering a file type that is not
+// a regular file or directory (e.g., Unix sockets, named pipes, device files).
+var ErrUnsupportedFileType = errors.New("unsupported file type")
+
+func getFileType(info fs.FileInfo) (fileType, error) {
 	if info.Mode().IsRegular() {
 		return Regular, nil
 	}
@@ -23,5 +27,5 @@ func getFileType(path string, info fs.FileInfo) (fileType, error) {
 		return Directory, nil
 	}
 
-	return "", fmt.Errorf("the file type for file %s is not supported", path)
+	return "", ErrUnsupportedFileType
 }

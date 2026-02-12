@@ -64,6 +64,18 @@ func findAvailableVersion(pkgName PackageName, availablePackages []AvailablePack
 	return ""
 }
 
+// isCRANLike returns true if the repository name is CRAN or a Posit Package
+// Manager variant (RSPM, PPM, P3M). These are all CRAN mirrors and should be
+// treated equivalently for source validation purposes.
+func isCRANLike(repo RepoURL) bool {
+	switch repo {
+	case "CRAN", "RSPM", "PPM", "P3M":
+		return true
+	default:
+		return false
+	}
+}
+
 func package_version(vs string) []int {
 	// https://www.rdocumentation.org/packages/base/versions/3.6.2/topics/numeric_version
 	// "Numeric versions are sequences of one or more non-negative integers,
@@ -125,12 +137,16 @@ func toManifestPackage(pkg *Package, repos []Repository, availablePackages, bioc
 
 	switch source {
 	case "Repository":
-		if pkg.Repository == "CRAN" {
+		// Handle CRAN and Posit Package Manager variants (RSPM, PPM,
+		// P3M) specially. These are all CRAN or CRAN-like and should be
+		// treated equivalently. See renv's lockfile-write.R which
+		// treats changes between these as spurious.
+		if isCRANLike(pkg.Repository) {
 			if isDevVersion(pkg, availablePackages) {
 				out.Source = ""
 				out.Repository = ""
 			} else {
-				out.Source = "CRAN"
+				out.Source = string(pkg.Repository)
 				out.Repository = findRepoUrl(pkg.Package, availablePackages)
 			}
 		} else {

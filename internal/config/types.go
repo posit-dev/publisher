@@ -86,6 +86,7 @@ func (c *Config) ForceProductTypeCompliance() {
 		}
 		c.Quarto = nil
 		c.Jupyter = nil
+		c.HasParameters = nil
 	} else if c.ProductType.IsConnect() {
 		// object-reference-style entrypoint is only allowed by Connect
 		if c.EntrypointObjectRef != "" {
@@ -192,6 +193,15 @@ func (r *R) FillDefaults(
 			r.RequiresRVersion = rLang.GetRRequires()
 		}
 	}
+}
+
+// If PackageFile is not set (Cloud), defaults to "renv.lock" so callers
+// don't need to handle the empty case for users with an existing lock file.
+func (r *R) GetPackageFile() string {
+	if r.PackageFile != "" {
+		return r.PackageFile
+	}
+	return interpreters.DefaultRenvLockfile
 }
 
 type Jupyter struct {
