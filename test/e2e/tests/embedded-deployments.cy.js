@@ -56,13 +56,8 @@ describe("Embedded Deployments Section", () => {
         },
       ).deployCurrentlySelected();
 
-      cy.retryWithBackoff(
-        () =>
-          cy.findUniqueInPublisherWebview(
-            '[data-automation="publisher-deployment-section"]',
-          ),
-        5,
-        500,
+      cy.findUniqueInPublisherWebview(
+        '[data-automation="publisher-deployment-section"]',
       ).should("exist");
     });
 
@@ -100,13 +95,8 @@ describe("Embedded Deployments Section", () => {
         },
       ).deployCurrentlySelected();
 
-      cy.retryWithBackoff(
-        () =>
-          cy.findUniqueInPublisherWebview(
-            '[data-automation="publisher-deployment-section"]',
-          ),
-        5,
-        500,
+      cy.findUniqueInPublisherWebview(
+        '[data-automation="publisher-deployment-section"]',
       ).should("exist");
     });
   });
