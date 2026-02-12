@@ -267,4 +267,3 @@ func (s *RSuite) TestRequiresRPythonRpy2CheckError() {
 	s.ErrorIs(err, testErr, "RequiresR should propagate error from rpy2 check")
 	s.False(require)
 }
-

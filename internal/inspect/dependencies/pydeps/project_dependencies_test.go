@@ -145,4 +145,3 @@ func (s *ProjectDependenciesSuite) TestHasRpy2Dependency_Rpy2Arrow() {
 	s.NoError(err)
 	s.True(hasRpy2)
 }
-
