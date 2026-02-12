@@ -15,7 +15,7 @@
     "@cypress/grep": "^4.1.0",
     "@testing-library/cypress": "^10.1.0",
     "axios": "^1.6.0",
-    "cypress": "^14.5.4",
+    "cypress": "^15.10.0",
     "cypress-network-idle": "^1.15.0",
     "cypress-terminal-report": "^7.3.3",
     "cypress-wait-until": "^3.0.2",
