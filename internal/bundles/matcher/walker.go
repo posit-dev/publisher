@@ -62,6 +62,14 @@ type matchingWalker struct {
 // for every file and directory that matches the match list.
 func (i *matchingWalker) Walk(base util.AbsolutePath, fn util.AbsoluteWalkFunc) error {
 	return base.Walk(func(path util.AbsolutePath, info fs.FileInfo, err error) error {
+		if errors.Is(err, os.ErrPermission) {
+			i.log.Warn("permission error; skipping", "path", path)
+			return nil
+		}
+		if err != nil {
+			i.log.Warn("Unknown error while accessing file", "path", path, "error", err.Error())
+			return nil
+		}
 		if path != base {
 			m := i.matchList.Match(path)
 			if info.IsDir() {
@@ -83,14 +91,6 @@ func (i *matchingWalker) Walk(base util.AbsolutePath, fn util.AbsoluteWalkFunc) 
 					return nil
 				}
 			}
-		}
-		if errors.Is(err, os.ErrPermission) {
-			i.log.Warn("permission error; skipping", "path", path)
-			return nil
-		}
-		if err != nil {
-			i.log.Warn("Unknown error while accessing file", "path", path, "error", err.Error())
-			return nil
 		}
 		return fn(path, info, err)
 	})
