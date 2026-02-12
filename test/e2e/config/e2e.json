@@ -1,8 +1,6 @@
 {
   "timeouts": {
-    "defaultCommandTimeout": 10000,
-    "ciDefaultCommandTimeout": 30000,
-    "pageLoadTimeout": 30000,
-    "ciPageLoadTimeout": 60000
+    "defaultCommandTimeout": 20000,
+    "pageLoadTimeout": 45000
   }
 }

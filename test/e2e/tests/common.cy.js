@@ -13,37 +13,18 @@ describe("Common", () => {
 
   it("Publisher extension can be selected and initial state", () => {
     // Validates basic webview readiness and presence of core sections.
-    // expectInitialPublisherState ensures the main call-to-action is present.
-    // The retry checks reduce flakiness on CI cold starts.
     cy.expectInitialPublisherState();
 
-    cy.retryWithBackoff(
-      () =>
-        cy.findUniqueInPublisherWebview(
-          '[data-automation="publisher-deployment-section"]',
-        ),
-      5,
-      500,
+    cy.findUniqueInPublisherWebview(
+      '[data-automation="publisher-deployment-section"]',
     ).should("exist");
-    cy.retryWithBackoff(
-      () =>
-        cy.findUniqueInPublisherWebview(
-          '[data-automation="publisher-credentials-section"]',
-        ),
-      5,
-      500,
+
+    cy.findUniqueInPublisherWebview(
+      '[data-automation="publisher-credentials-section"]',
     ).should("exist");
-    cy.debugIframes();
-    cy.publisherWebview().then((body) => {
-      cy.task("print", body.innerHTML);
-    });
-    cy.retryWithBackoff(
-      () =>
-        cy.findUniqueInPublisherWebview(
-          '[data-automation="publisher-help-section"]',
-        ),
-      5,
-      500,
+
+    cy.findUniqueInPublisherWebview(
+      '[data-automation="publisher-help-section"]',
     ).should("exist");
   });
 });
