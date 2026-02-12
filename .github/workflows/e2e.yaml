@@ -30,7 +30,7 @@ jobs:
 
     env:
       # MANUAL DEBUG OVERRIDE: Change to "true" to force debug (videos, extra logs)
-      DEBUG_CYPRESS: "true"
+      DEBUG_CYPRESS: "false"
       # Repo-level variable override (Settings > Actions > Variables > DEBUG_CYPRESS=true)
       VARS_DEBUG_CYPRESS: ${{ vars.DEBUG_CYPRESS }}
       # Set by GitHub only when re-running a job with "Enable debug logging" checked
