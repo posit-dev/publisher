@@ -46,6 +46,23 @@ describe("Credentials Section", () => {
       "Select authentication method",
     );
 
+    // Verify auth method options for Connect server:
+    // - First option should be Token Authentication (Recommended)
+    // - Second option should be API Key
+    // Note: Snowflake endpoints show different options (Snowflake Connection + API Key, no Token Auth)
+    // but we cannot E2E test that without Snowflake infrastructure
+    cy.get(".quick-input-list .monaco-list-row").should("have.length", 2);
+
+    cy.get(".quick-input-list .monaco-list-row")
+      .eq(0)
+      .should("contain.text", "Token Authentication")
+      .and("contain.text", "Recommended");
+
+    cy.get(".quick-input-list .monaco-list-row")
+      .eq(1)
+      .should("contain.text", "API Key");
+
+    // Select API Key option to continue with the flow
     cy.get(".quick-input-list .monaco-list-row").eq(1).click();
 
     cy.get(".quick-input-message").should(
