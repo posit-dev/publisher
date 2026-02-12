@@ -4,8 +4,7 @@ const WORKBENCH_BASE_URL = Cypress.env("WORKBENCH_URL");
 
 describe("Workbench > Positron", { baseUrl: WORKBENCH_BASE_URL }, () => {
   before(() => {
-    cy.resetConnect();
-    cy.setAdminCredentials();
+    cy.initializeConnect();
   });
 
   beforeEach(() => {
@@ -66,13 +65,9 @@ describe("Workbench > Positron", { baseUrl: WORKBENCH_BASE_URL }, () => {
           `/.posit/publish/deployments/${tomlFiles.contentRecord.name}`,
         );
       }).deployCurrentlySelected();
-      cy.retryWithBackoff(
-        () =>
-          cy.findUniqueInPublisherWebview(
-            '[data-automation="publisher-deployment-section"]',
-          ),
-        5,
-        500,
+
+      cy.findUniqueInPublisherWebview(
+        '[data-automation="publisher-deployment-section"]',
       ).should("exist");
     });
   });

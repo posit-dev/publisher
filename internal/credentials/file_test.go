@@ -657,9 +657,9 @@ func (s *FileCredentialsServiceSuite) TestSet_BlankDataErr() {
 	}
 
 	testCases := map[string]CreateCredentialDetails{
-		"empty credential": CreateCredentialDetails{URL: "https://b2.connect-server:3939/connect", ApiKey: "abcdeC2aqbh7dg8TO43XPu7r56YDh002"},
-		"empty URL":        CreateCredentialDetails{Name: "newcred", ApiKey: "abcdeC2aqbh7dg8TO43XPu7r56YDh002"},
-		"empty creds":      CreateCredentialDetails{Name: "newcred", URL: "https://b2.connect-server:3939/connect"},
+		"empty credential": {URL: "https://b2.connect-server:3939/connect", ApiKey: "abcdeC2aqbh7dg8TO43XPu7r56YDh002"},
+		"empty URL":        {Name: "newcred", ApiKey: "abcdeC2aqbh7dg8TO43XPu7r56YDh002"},
+		"empty creds":      {Name: "newcred", URL: "https://b2.connect-server:3939/connect"},
 	}
 
 	for _, createCredDetails := range testCases {

@@ -9,8 +9,6 @@ const e2eConfig = require("./config/e2e.json");
 
 const DEBUG_CYPRESS = process.env.DEBUG_CYPRESS === "true";
 const ACTIONS_STEP_DEBUG = process.env.ACTIONS_STEP_DEBUG === "true";
-// Use robust logic to detect CI in both local and CI environments (handles boolean or string)
-const isCI = process.env.CI === true || process.env.CI === "true";
 
 // Load PCC config and inject into Cypress env
 const configPath = path.resolve(__dirname, "config/staging-pccqa.json");
@@ -37,12 +35,8 @@ module.exports = defineConfig({
       runMode: 2, // Retry failed tests in run mode (CI)
       openMode: 0,
     },
-    defaultCommandTimeout: isCI
-      ? e2eConfig.timeouts.ciDefaultCommandTimeout
-      : e2eConfig.timeouts.defaultCommandTimeout,
-    pageLoadTimeout: isCI
-      ? e2eConfig.timeouts.ciPageLoadTimeout
-      : e2eConfig.timeouts.pageLoadTimeout,
+    defaultCommandTimeout: e2eConfig.timeouts.defaultCommandTimeout,
+    pageLoadTimeout: e2eConfig.timeouts.pageLoadTimeout,
     cookies: {
       preserve: /_xsrf|session|connect\.sid|auth|oauth/,
     },
@@ -54,7 +48,6 @@ module.exports = defineConfig({
       "*.android.clients.google.com",
     ],
     modifyObstructiveThirdPartyCode: true,
-    // eslint-disable-next-line no-unused-vars
     setupNodeEvents(on, config) {
       // Install cypress-terminal-report for enhanced logging in headless mode
       require("cypress-terminal-report/src/installLogsPrinter")(on, {
@@ -63,6 +56,9 @@ module.exports = defineConfig({
         commandTrimLength: 800,
         compactLogs: 1,
       });
+
+      // Register @cypress/grep for test filtering by tags
+      config = require("@cypress/grep/src/plugin")(config);
 
       // Register consolidated tasks
       const taskHandlers = buildCypressTasks(pccConfig);
@@ -75,20 +71,22 @@ module.exports = defineConfig({
           return null;
         },
       });
+
+      return config;
     },
   },
   env: {
-    BOOTSTRAP_ADMIN_API_KEY: "", // To be updated by Cypress when spinning up
-    BOOTSTRAP_SECRET_KEY: "bootstrap-secret.key", // To be updated by Cypress when spinning up
-    CI: process.env.CI === true || process.env.CI === "true" ? "true" : "false",
+    // API key is passed from with-connect via CYPRESS_BOOTSTRAP_ADMIN_API_KEY env var
+    BOOTSTRAP_ADMIN_API_KEY: process.env.CYPRESS_BOOTSTRAP_ADMIN_API_KEY || "",
+    CI: process.env.CI === "true" ? "true" : "false",
     DEBUG_CYPRESS: process.env.DEBUG_CYPRESS || "false",
     CONNECT_SERVER_URL: "http://localhost:3939",
-    CONNECT_MANAGER_URL: "http://localhost:4723",
     CONNECT_CLOUD_ENV: process.env.CONNECT_CLOUD_ENV || "staging",
     WORKBENCH_URL: "http://localhost:8787",
     pccConfig,
   },
   chromeWebSecurity: false,
   video: DEBUG_CYPRESS || ACTIONS_STEP_DEBUG,
-  numTestsKeptInMemory: isCI ? 0 : 50,
+  // Keep memory usage low - tests shouldn't rely on cross-test state
+  numTestsKeptInMemory: 0,
 });

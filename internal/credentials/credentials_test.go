@@ -414,16 +414,16 @@ func (s *CreateCredentialDetailsTestSuite) TestToCredential_InvalidTokenAuth() {
 
 func (s *CreateCredentialDetailsTestSuite) TestToCredential_BlankDataErr() {
 	testCases := map[string]CreateCredentialDetails{
-		"empty credential":             CreateCredentialDetails{URL: "https://b2.connect-server:3939/connect", ApiKey: "abcdeC2aqbh7dg8TO43XPu7r56YDh002"},
-		"empty URL":                    CreateCredentialDetails{Name: "newcred", ApiKey: "abcdeC2aqbh7dg8TO43XPu7r56YDh002"},
-		"empty creds":                  CreateCredentialDetails{Name: "newcred", URL: "https://b2.connect-server:3939/connect"},
-		"partial Connect Cloud cred 1": CreateCredentialDetails{Name: "newcred", URL: "https://b2.connect-server:3939/connect", AccountName: "friedtofu"},
-		"partial Connect Cloud cred 2": CreateCredentialDetails{Name: "newcred", URL: "https://b2.connect-server:3939/connect", AccountID: "1234"},
-		"partial Connect Cloud cred 3": CreateCredentialDetails{Name: "newcred", URL: "https://b2.connect-server:3939/connect", AccessToken: "abcdeC2aqbh7dg8TO43XPu7r56YDh002"},
-		"partial Connect Cloud cred 4": CreateCredentialDetails{Name: "newcred", URL: "https://b2.connect-server:3939/connect", RefreshToken: "abcdeC2aqbh7dg8TO43XPu7r56YDh002"},
-		"partial Token cred 1":         CreateCredentialDetails{Name: "newcred", URL: "https://b2.connect-server:3939/connect", Token: "T12345abcdef"},
-		"partial Token cred 2":         CreateCredentialDetails{Name: "newcred", URL: "https://b2.connect-server:3939/connect", PrivateKey: "base64-encoded-private-key"},
-		"both API Key and Token":       CreateCredentialDetails{Name: "newcred", URL: "https://b2.connect-server:3939/connect", ApiKey: "abcdeC2aqbh7dg8TO43XPu7r56YDh002", Token: "T12345abcdef", PrivateKey: "base64-encoded-private-key"},
+		"empty credential":             {URL: "https://b2.connect-server:3939/connect", ApiKey: "abcdeC2aqbh7dg8TO43XPu7r56YDh002"},
+		"empty URL":                    {Name: "newcred", ApiKey: "abcdeC2aqbh7dg8TO43XPu7r56YDh002"},
+		"empty creds":                  {Name: "newcred", URL: "https://b2.connect-server:3939/connect"},
+		"partial Connect Cloud cred 1": {Name: "newcred", URL: "https://b2.connect-server:3939/connect", AccountName: "friedtofu"},
+		"partial Connect Cloud cred 2": {Name: "newcred", URL: "https://b2.connect-server:3939/connect", AccountID: "1234"},
+		"partial Connect Cloud cred 3": {Name: "newcred", URL: "https://b2.connect-server:3939/connect", AccessToken: "abcdeC2aqbh7dg8TO43XPu7r56YDh002"},
+		"partial Connect Cloud cred 4": {Name: "newcred", URL: "https://b2.connect-server:3939/connect", RefreshToken: "abcdeC2aqbh7dg8TO43XPu7r56YDh002"},
+		"partial Token cred 1":         {Name: "newcred", URL: "https://b2.connect-server:3939/connect", Token: "T12345abcdef"},
+		"partial Token cred 2":         {Name: "newcred", URL: "https://b2.connect-server:3939/connect", PrivateKey: "base64-encoded-private-key"},
+		"both API Key and Token":       {Name: "newcred", URL: "https://b2.connect-server:3939/connect", ApiKey: "abcdeC2aqbh7dg8TO43XPu7r56YDh002", Token: "T12345abcdef", PrivateKey: "base64-encoded-private-key"},
 	}
 
 	for _, createCredDetails := range testCases {
