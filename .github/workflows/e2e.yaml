@@ -30,7 +30,7 @@ jobs:
 
     env:
       # MANUAL DEBUG OVERRIDE: Change to "true" to force debug (videos, extra logs)
-      DEBUG_CYPRESS: "true"
+      DEBUG_CYPRESS: "false"
       # Repo-level variable override (Settings > Actions > Variables > DEBUG_CYPRESS=true)
       VARS_DEBUG_CYPRESS: ${{ vars.DEBUG_CYPRESS }}
       # Set by GitHub only when re-running a job with "Enable debug logging" checked
@@ -111,6 +111,11 @@ jobs:
           # Build compose services in parallel after base is ready
           wait
           docker compose build code-server
+
+      - name: Free up disk space after Docker builds
+        run: |
+          docker builder prune -af
+          df -h /
 
       - name: Pull and start Workbench (Connect Server tests only)
         working-directory: test/e2e

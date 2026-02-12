@@ -67,7 +67,8 @@ timed_removal() {
 
 # Default folders to remove if TIDY_FOLDERS is not set
 # Sorted by typical size on GitHub-hosted runners, largest first
-DEFAULT_FOLDERS="/usr/local/.ghcup /usr/share/swift /opt/hostedtoolcache/CodeQL /usr/local/share/powershell /usr/lib/jvm /usr/local/julia* /usr/local/share/chromium"
+# See https://github.com/actions/runner-images for runner image contents
+DEFAULT_FOLDERS="/usr/local/lib/android /usr/share/dotnet /usr/local/.ghcup /usr/share/swift /opt/hostedtoolcache/CodeQL /usr/local/share/powershell /usr/lib/jvm /usr/local/julia* /usr/local/share/chromium /opt/ghc"
 
 # Use TIDY_FOLDERS environment variable if set, ot`herwise use defaults
 FOLDERS_TO_REMOVE=${TIDY_FOLDERS:-$DEFAULT_FOLDERS}
