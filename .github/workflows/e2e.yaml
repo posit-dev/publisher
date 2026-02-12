@@ -15,22 +15,16 @@ jobs:
       fail-fast: false
       matrix:
         # Connect Server versions - tests exclude @pcc tags
+        # Simplified to reduce CI time: preview, release, one recent, one old
         connect-version:
-          - "preview" # Nightly builds of Connect
-          - "release" # always points to the latest Connect release Connect Cloud tests will also run
-          - "2025.09.0" # jammy
-          - "2025.03.0" # jammy (every 6 months, just bc every release would be overkill)
-          - "2024.09.0" # jammy
-          # These versions use R 4.2 and seem to take forever to install R dependencies
-          # - "2024.03.0" # jammy
-          # - "2023.09.0" # jammy
-          # These also use R 4.2 but seem fine, maybe because they are bionic?
-          - "2023.03.0" # bionic
-          - "2022.10.0" # bionic (the oldest we can test using with-connect)
+          - "preview" # Nightly builds of Connect - catch regressions early
+          - "release" # Latest stable release + PCC cloud tests
+          - "2025.03.0" # Recent stable version
+          - "2023.03.0" # Oldest supported version
 
     env:
       # MANUAL DEBUG OVERRIDE: Change to "true" to force debug (videos, extra logs)
-      DEBUG_CYPRESS: "true"
+      DEBUG_CYPRESS: "false"
       # Repo-level variable override (Settings > Actions > Variables > DEBUG_CYPRESS=true)
       VARS_DEBUG_CYPRESS: ${{ vars.DEBUG_CYPRESS }}
       # Set by GitHub only when re-running a job with "Enable debug logging" checked
