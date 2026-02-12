@@ -4,6 +4,10 @@ import { configure } from "@testing-library/cypress";
 // Import cypress-terminal-report for browser log collection
 import "cypress-terminal-report/src/installLogsCollector";
 
+// Import @cypress/grep for test filtering by tags (@pcc, etc.)
+import registerCypressGrep from "@cypress/grep";
+registerCypressGrep();
+
 // Combined uncaught:exception handler for all known issues
 Cypress.on("uncaught:exception", (err) => {
   // Ignore the Quarto extension error

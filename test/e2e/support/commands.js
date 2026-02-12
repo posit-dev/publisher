@@ -8,16 +8,83 @@ import "./selectors";
 import "./sequences";
 import "./workbench";
 
-const connectManagerServer = Cypress.env("CONNECT_MANAGER_URL");
-
-// Performs the full set of reset commands we typically use before executing our tests
-Cypress.Commands.add("resetConnect", () => {
+// initializeConnect: Simple initialization for use with with-connect action
+// The API key is passed via CYPRESS_BOOTSTRAP_ADMIN_API_KEY environment variable
+// from the with-connect GitHub Action, which handles Connect startup and bootstrapping.
+Cypress.Commands.add("initializeConnect", () => {
   cy.clearupDeployments();
-  cy.stopConnect();
-  cy.resetConnectSettings();
-  cy.resetConnectData();
-  cy.startConnect();
-  cy.bootstrapAdmin();
+  cy.setAdminCredentials();
+});
+
+// getConnectVersion
+// Purpose: Fetch the Connect server version from the server_settings API.
+// Returns: A promise that resolves with the version string (e.g., "2025.03.0")
+Cypress.Commands.add("getConnectVersion", () => {
+  const connectUrl =
+    Cypress.env("CONNECT_SERVER_URL") || "http://localhost:3939";
+  const apiKey = Cypress.env("BOOTSTRAP_ADMIN_API_KEY");
+
+  return cy
+    .request({
+      method: "GET",
+      url: `${connectUrl}/__api__/server_settings`,
+      headers: {
+        Authorization: `Key ${apiKey}`,
+      },
+      failOnStatusCode: false,
+    })
+    .then((response) => {
+      if (response.status === 200 && response.body.version) {
+        return response.body.version;
+      }
+      throw new Error(
+        `Failed to get Connect version: status=${response.status}`,
+      );
+    });
+});
+
+// isConnectVersionBefore
+// Purpose: Check if the current Connect server version is before a given version.
+// Parameters:
+//   - targetVersion: Version string to compare against (e.g., "2025.03" or "2025.03.0")
+// Returns: A promise that resolves with true if Connect version < targetVersion
+Cypress.Commands.add("isConnectVersionBefore", (targetVersion) => {
+  return cy.getConnectVersion().then((currentVersion) => {
+    // Parse versions into comparable parts (e.g., "2025.03.0" -> [2025, 3, 0])
+    const parseParts = (v) =>
+      v.split(".").map((p) => parseInt(p.replace(/^0+/, "") || "0", 10));
+    const current = parseParts(currentVersion);
+    const target = parseParts(targetVersion);
+
+    // Compare version parts
+    for (let i = 0; i < Math.max(current.length, target.length); i++) {
+      const c = current[i] || 0;
+      const t = target[i] || 0;
+      if (c < t) return true;
+      if (c > t) return false;
+    }
+    return false; // versions are equal
+  });
+});
+
+// skipIfConnectVersionBefore
+// Purpose: Skip the current test if Connect version is before the specified version.
+// Parameters:
+//   - targetVersion: Version string to compare against (e.g., "2025.03")
+//   - reason: Optional reason for skipping (displayed in test output)
+Cypress.Commands.add("skipIfConnectVersionBefore", (targetVersion, reason) => {
+  return cy.isConnectVersionBefore(targetVersion).then((isBefore) => {
+    if (isBefore) {
+      const message = reason || `Skipping: Connect version < ${targetVersion}`;
+      cy.log(message);
+      // Use Cypress's built-in skip by throwing a special error
+      // that Mocha recognizes as a skip
+      const test = cy.state("runnable");
+      if (test) {
+        test.skip();
+      }
+    }
+  });
 });
 
 // Add a global afterEach to log iframes if a test fails (for CI reliability)
@@ -35,88 +102,6 @@ if (typeof afterEach === "function") {
     cy.task("cleanupPlaywrightBrowser", null, { timeout: 20000 });
   });
 }
-
-// startConnect/stopConnect/resetConnectData/updateConnectSettings/resetConnectSettings
-// Purpose: Control the local Connect server via the manager service for test isolation.
-// When to use: Suite-level or targeted setup/teardown between tests.
-Cypress.Commands.add("startConnect", () => {
-  cy.request({
-    method: "POST",
-    url: `${connectManagerServer}/connect/start`,
-  });
-
-  cy.exec(
-    `npx wait-on -c config/waiton.js ${Cypress.env("CONNECT_SERVER_URL")}/__ping__`,
-  );
-});
-
-Cypress.Commands.add("stopConnect", () => {
-  cy.request({
-    method: "POST",
-    url: `${connectManagerServer}/connect/stop`,
-  });
-});
-
-// resetConnectData will clear the database and data directory for the Connect server
-Cypress.Commands.add("resetConnectData", () => {
-  cy.request({
-    method: "POST",
-    url: `${connectManagerServer}/connect/clear`,
-  });
-});
-
-// updateConnectSettings will change the Connect server settings and restart the server
-Cypress.Commands.add("updateConnectSettings", (settings) => {
-  cy.stopConnect();
-
-  cy.request({
-    method: "GET",
-    url: `${connectManagerServer}/connect/settings`,
-  }).then((response) => {
-    const { config } = response.body;
-
-    cy.request({
-      method: "PATCH",
-      url: `${connectManagerServer}/connect/settings`,
-      body: {
-        config,
-        config_blobs: [settings],
-      },
-    });
-  });
-
-  cy.startConnect();
-});
-
-// resetConnectSettings will return the Connect settings to the original config
-Cypress.Commands.add("resetConnectSettings", () => {
-  cy.request({
-    method: "GET",
-    url: `${connectManagerServer}/connect/settings`,
-  }).then((response) => {
-    const { config } = response.body;
-
-    cy.request({
-      method: "PATCH",
-      url: `${connectManagerServer}/connect/settings`,
-      body: {
-        config: [config[0]],
-      },
-    });
-  });
-});
-
-// bootstrapAdmin
-// Purpose: Generate an admin API key (BOOTSTRAP_ADMIN_API_KEY) for PCS tests.
-Cypress.Commands.add("bootstrapAdmin", () => {
-  cy.exec(
-    `rsconnect bootstrap --raw --jwt-keypath ${Cypress.env("BOOTSTRAP_SECRET_KEY")} --server ${Cypress.env("CONNECT_SERVER_URL")}`,
-  ).then((apiKey) => {
-    if (apiKey && apiKey.stdout) {
-      Cypress.env("BOOTSTRAP_ADMIN_API_KEY", apiKey.stdout);
-    }
-  });
-});
 
 // resetCredentials/setAdminCredentials/setDummyCredentials
 // Purpose: Manage the e2e-test.connect-credentials file directly for speed and determinism.
