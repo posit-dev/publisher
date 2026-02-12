@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Improved performance of generating manifests for projects that do not already have an renv.lock file. (#3442)
 
+### Fixed
+
+- Python projects using rpy2 now correctly include an [r] section in the configuration since R is required at runtime. (#3425)
+
 ## [1.30.0]
 
 ### Added
