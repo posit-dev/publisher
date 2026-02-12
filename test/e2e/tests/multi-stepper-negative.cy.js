@@ -84,14 +84,7 @@ describe("Multi-Stepper Negative Cases", () => {
       // Ensure credentials list reflects the pre-existing PCC credential
       cy.refreshCredentials();
       cy.toggleCredentialsSection();
-      cy.retryWithBackoff(
-        () =>
-          cy.findUniqueInPublisherWebview(
-            '[data-automation="pcc-credential-list"]',
-          ),
-        5,
-        500,
-      )
+      cy.findUniqueInPublisherWebview('[data-automation="pcc-credential-list"]')
         .find(".tree-item-title")
         .should("have.text", "pcc-credential");
 

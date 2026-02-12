@@ -331,18 +331,8 @@ Cypress.Commands.add("clickSectionAction", (actionLabel) => {
     });
 });
 
-// findInPublisherWebview
-// Purpose: Query inside the webview DOM, bypassing Cypress iframe pitfalls.
-// - Used by many helpers to avoid "scrollY" errors.
-// When to use: Anytime you need a raw CSS selector search inside the webview.
-Cypress.Commands.add("findInPublisherWebview", (selector) => {
-  // Method to solve a common error while traversing or finding DOM elements within Cypress,
-  // due to Cypress + iframes limited support.
-  // "TypeError: Timed out retrying after 4000ms: Cannot read properties of undefined (reading 'scrollY')"
-  cy.publisherWebview().then((webview) => {
-    return Cypress.$(webview).find(selector);
-  });
-});
+// NOTE: findInPublisherWebview is defined in commands.js with caching logic.
+// Do not duplicate here.
 
 // findPublisherIframeExtreme
 // Purpose: Broad, multi-attempt scan for any iframe that looks like the Publisher webview.
