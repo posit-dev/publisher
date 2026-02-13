@@ -211,3 +211,59 @@ func (s *RSuite) TestRequiresRNoRButWithTypeEqualContentTypeHTML() {
 	s.NoError(err)
 	s.Equal(false, require)
 }
+
+func (s *RSuite) TestRequiresRPythonWithRpy2() {
+	// Create requirements.txt with rpy2
+	reqFile := s.cwd.Join("requirements.txt")
+	err := reqFile.WriteFile([]byte("numpy==1.26.1\nrpy2==3.5.0\npandas\n"), 0644)
+	s.NoError(err)
+
+	log := logging.New()
+	i, err := NewRInspector(s.cwd, util.Path{}, log, nil, nil)
+	s.NoError(err)
+
+	cfg := &config.Config{
+		Type: contenttypes.ContentTypePythonFastAPI,
+	}
+	require, err := i.RequiresR(cfg)
+	s.NoError(err)
+	s.True(require, "Python content with rpy2 dependency should require R")
+}
+
+func (s *RSuite) TestRequiresRPythonWithoutRpy2() {
+	// Create requirements.txt without rpy2
+	reqFile := s.cwd.Join("requirements.txt")
+	err := reqFile.WriteFile([]byte("numpy==1.26.1\npandas\n"), 0644)
+	s.NoError(err)
+
+	log := logging.New()
+	i, err := NewRInspector(s.cwd, util.Path{}, log, nil, nil)
+	s.NoError(err)
+
+	cfg := &config.Config{
+		Type: contenttypes.ContentTypePythonFastAPI,
+	}
+	require, err := i.RequiresR(cfg)
+	s.NoError(err)
+	s.False(require, "Python content without rpy2 dependency should not require R")
+}
+
+func (s *RSuite) TestRequiresRPythonRpy2CheckError() {
+	log := logging.New()
+	i, err := NewRInspector(s.cwd, util.Path{}, log, nil, nil)
+	s.NoError(err)
+
+	// Inject a mock rpy2 checker that returns an error
+	testErr := errors.New("failed to read requirements.txt")
+	inspector := i.(*defaultRInspector)
+	inspector.rpy2Checker = func(base util.AbsolutePath) (bool, error) {
+		return false, testErr
+	}
+
+	cfg := &config.Config{
+		Type: contenttypes.ContentTypePythonFastAPI,
+	}
+	require, err := i.RequiresR(cfg)
+	s.ErrorIs(err, testErr, "RequiresR should propagate error from rpy2 check")
+	s.False(require)
+}

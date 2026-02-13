@@ -453,7 +453,8 @@ Cypress.Commands.add(
         if (result && result.length) {
           return result;
         } else if (attempt < maxAttempts) {
-          const delay = initialDelay * Math.pow(2, attempt - 1);
+          // Cap max delay at 5 seconds to prevent exponential backoff from causing very long waits
+          const delay = Math.min(initialDelay * Math.pow(2, attempt - 1), 5000);
           cy.wait(delay);
           return tryFn();
         } else {

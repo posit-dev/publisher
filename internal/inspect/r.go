@@ -6,6 +6,7 @@ import (
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/executor"
+	"github.com/posit-dev/publisher/internal/inspect/dependencies/pydeps"
 	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/types"
@@ -17,12 +18,17 @@ type RInspector interface {
 	RequiresR(*config.Config) (bool, error)
 }
 
+// Rpy2Checker is a function type for checking if a project has rpy2 as a dependency.
+// This allows for dependency injection in tests.
+type Rpy2Checker func(base util.AbsolutePath) (bool, error)
+
 type defaultRInspector struct {
 	base         util.AbsolutePath
 	executor     executor.Executor
 	pathLooker   util.PathLooker
 	rInterpreter interpreters.RInterpreter
 	log          logging.Logger
+	rpy2Checker  Rpy2Checker // optional override for testing
 }
 
 var _ RInspector = &defaultRInspector{}
@@ -109,6 +115,21 @@ func (i *defaultRInspector) RequiresR(cfg *config.Config) (bool, error) {
 			return false, err
 		}
 		return exists, nil
+	}
+	if cfg.Type.IsPythonContent() {
+		// Check if the Python project uses rpy2, which requires R at runtime
+		checker := pydeps.HasRpy2Dependency
+		if i.rpy2Checker != nil {
+			checker = i.rpy2Checker
+		}
+		hasRpy2, err := checker(i.base)
+		if err != nil {
+			return false, err
+		}
+		if hasRpy2 {
+			i.log.Info("Detected rpy2 dependency, R is required")
+			return true, nil
+		}
 	}
 	return false, nil
 }
