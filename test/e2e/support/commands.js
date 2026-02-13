@@ -375,10 +375,13 @@ Cypress.Commands.add("waitForPublisherIframe", (timeout = 60000) => {
       });
       if ($publisherIframe.length > 0) {
         cy.log("Found publisher iframe by extensionId");
+        // Wait for network to settle after iframe is found
+        cy.waitForNetworkIdle(500);
         return cy.wrap($publisherIframe[0]);
       }
       // Fallback: use the first .webview.ready iframe
       cy.log("Falling back to first .webview.ready iframe");
+      cy.waitForNetworkIdle(500);
       return cy.wrap($iframes[0]);
     });
 });
