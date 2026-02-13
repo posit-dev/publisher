@@ -88,6 +88,9 @@ jobs:
 
       - uses: extractions/setup-just@v3
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Download VSIX artifact
         uses: actions/download-artifact@v7
         with:
@@ -102,20 +105,23 @@ jobs:
         env:
           WORKBENCH_LICENSE: ${{ secrets.WORKBENCH_LICENSE }}
 
-      - name: Build Docker images
+      - name: Build e2e base Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: test/e2e
+          file: test/e2e/Dockerfile.base
+          platforms: linux/amd64
+          push: false
+          load: true
+          tags: e2ebase:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            GH_DOWNLOAD_TOKEN=${{ secrets.GH_DOWNLOAD_TOKEN }}
+
+      - name: Build code-server Docker image
         working-directory: test/e2e
-        run: |
-          # Use buildkit for better caching and parallel builds
-          export DOCKER_BUILDKIT=1
-          export COMPOSE_DOCKER_CLI_BUILD=1
-
-          docker build --build-arg BUILDKIT_INLINE_CACHE=1 \
-            --build-arg GH_DOWNLOAD_TOKEN=${{ secrets.GH_DOWNLOAD_TOKEN }} \
-            -f Dockerfile.base -t e2ebase --platform linux/amd64 . &
-
-          # Build compose services in parallel after base is ready
-          wait
-          docker compose build code-server
+        run: docker compose build code-server
 
       - name: Free up disk space after Docker builds
         run: |
