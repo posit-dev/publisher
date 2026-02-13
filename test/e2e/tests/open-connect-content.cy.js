@@ -55,7 +55,7 @@ describe("Open Connect Content", () => {
 
     cy.retryWithBackoff(
       () =>
-        cy.get("body").then(($body) => {
+        cy.get("body", { timeout: 0 }).then(($body) => {
           if ($body.find(".explorer-viewlet:visible").length === 0) {
             const explorerButton =
               $body
@@ -66,8 +66,10 @@ describe("Open Connect Content", () => {
             if (explorerButton) {
               explorerButton.click();
             }
+            return Cypress.$(); // Return empty to retry after clicking
           }
-          return cy.get(".explorer-viewlet:visible");
+          const explorer = $body.find(".explorer-viewlet:visible");
+          return explorer.length > 0 ? cy.wrap(explorer) : Cypress.$();
         }),
       12,
       1000,

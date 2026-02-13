@@ -449,30 +449,17 @@ Cypress.Commands.add(
     let attempt = 0;
     function tryFn() {
       attempt++;
-      return fn().then(
-        (result) => {
-          if (result && result.length) {
-            return result;
-          } else if (attempt < maxAttempts) {
-            const delay = initialDelay * Math.pow(2, attempt - 1);
-            cy.wait(delay);
-            return tryFn();
-          } else {
-            throw new Error("Element not found after retries with backoff");
-          }
-        },
-        (error) => {
-          // Catch exceptions from the function (e.g., cy.contains timeout)
-          // and retry if we haven't exhausted attempts
-          if (attempt < maxAttempts) {
-            const delay = initialDelay * Math.pow(2, attempt - 1);
-            cy.wait(delay);
-            return tryFn();
-          } else {
-            throw error;
-          }
-        },
-      );
+      return fn().then((result) => {
+        if (result && result.length) {
+          return result;
+        } else if (attempt < maxAttempts) {
+          const delay = initialDelay * Math.pow(2, attempt - 1);
+          cy.wait(delay);
+          return tryFn();
+        } else {
+          throw new Error("Element not found after retries with backoff");
+        }
+      });
     }
     return tryFn();
   },
