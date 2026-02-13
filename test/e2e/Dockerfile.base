@@ -7,15 +7,12 @@
 
 FROM ubuntu:22.04 AS base
 
-# Configure apt-get to use the mirror in us-east-1 instead of the Docker default of archive.ubuntu.com
-RUN sed -i "s/archive.ubuntu.com/us-east-1.ec2.archive.ubuntu.com/g" /etc/apt/sources.list
-
 ARG DEBIAN_FRONTEND=noninteractive
 ARG OS_IDENTIFIER=ubuntu-2204
-RUN export TZ=America/New_York
 
-# Install prerequisites
-RUN export DEBIAN_FRONTEND=noninteractive && \
+# Configure apt-get mirror and install prerequisites in single layer
+RUN sed -i "s/archive.ubuntu.com/us-east-1.ec2.archive.ubuntu.com/g" /etc/apt/sources.list && \
+    export TZ=America/New_York && \
     apt-get update && \
     apt-get install -y \
     build-essential \
@@ -59,7 +56,8 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     wget \
     xz-utils \
     zip \
-    zlib1g-dev
+    zlib1g-dev && \
+    rm -rf /var/lib/apt/lists/* /var/cache/apt/*
 
 #
 # Install Python versions in parallel
@@ -71,7 +69,8 @@ RUN curl -fsSL -O https://cdn.rstudio.com/python/${OS_IDENTIFIER}/pkgs/python-${
     && export DEBIAN_FRONTEND=noninteractive \
     && apt-get install -f -y ./python-${PYTHON_VERSION}_1_amd64.deb \
     && rm python-${PYTHON_VERSION}_1_amd64.deb \
-    && /opt/python/${PYTHON_VERSION}/bin/pip install --upgrade pip setuptools wheel
+    && /opt/python/${PYTHON_VERSION}/bin/pip install --no-cache-dir --upgrade pip setuptools wheel \
+    && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
 
 FROM base AS python-3.12.9
 ARG PYTHON_VERSION=3.12.9
@@ -79,7 +78,8 @@ RUN curl -fsSL -O https://cdn.rstudio.com/python/${OS_IDENTIFIER}/pkgs/python-${
     && export DEBIAN_FRONTEND=noninteractive \
     && apt-get install -f -y ./python-${PYTHON_VERSION}_1_amd64.deb \
     && rm python-${PYTHON_VERSION}_1_amd64.deb \
-    && /opt/python/${PYTHON_VERSION}/bin/pip install --upgrade pip setuptools wheel
+    && /opt/python/${PYTHON_VERSION}/bin/pip install --no-cache-dir --upgrade pip setuptools wheel \
+    && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
 
 #
 # Install R versions in parallel
@@ -89,13 +89,15 @@ FROM base AS r-4.3.3
 ARG R_VERSION=4.3.3
 RUN curl -O https://cdn.rstudio.com/r/${OS_IDENTIFIER}/pkgs/r-${R_VERSION}_1_amd64.deb \
     && apt-get install -y ./r-${R_VERSION}_1_amd64.deb \
-    && rm ./r-${R_VERSION}_1_amd64.deb
+    && rm ./r-${R_VERSION}_1_amd64.deb \
+    && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
 
 FROM base AS r-4.4.2
 ARG R_VERSION=4.4.2
 RUN curl -O https://cdn.rstudio.com/r/${OS_IDENTIFIER}/pkgs/r-${R_VERSION}_1_amd64.deb \
     && apt-get install -y ./r-${R_VERSION}_1_amd64.deb \
-    && rm ./r-${R_VERSION}_1_amd64.deb
+    && rm ./r-${R_VERSION}_1_amd64.deb \
+    && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
 
 #
 # Install Quarto versions in parallel
@@ -126,21 +128,17 @@ FROM base AS final-stage
 # Copy in our installed Python versions
 COPY --from=python-3.11.11 /opt/python/3.11.11 /opt/python/3.11.11
 COPY --from=python-3.12.9 /opt/python/3.12.9 /opt/python/3.12.9
-# Use Python 3.11 as the default
-RUN ln -s /opt/python/3.11.11/bin/python /usr/local/bin/python3
 
 # Copy in our installed R versions
 COPY --from=r-4.3.3 /opt/R/4.3.3 /opt/R/4.3.3
 COPY --from=r-4.4.2 /opt/R/4.4.2 /opt/R/4.4.2
-# Use R 4.4 as the default
-RUN ln -s /opt/R/4.4.2/bin/R /usr/local/bin/R \
-    && ln -s /opt/R/4.4.2/bin/Rscript /usr/local/bin/Rscript
 
 # Copy in our installed Quarto versions
 COPY --from=quarto-1.6.42 /opt/quarto/1.6.42 /opt/quarto/1.6.42
 COPY --from=quarto-1.7.6 /opt/quarto/1.7.6 /opt/quarto/1.7.6
-# Use Quarto 1.6 as the default
-RUN ln -s /opt/quarto/1.6.42/bin/quarto /usr/bin/quarto
 
-# clean up from our apt-update
-RUN rm -rf /var/lib/apt/lists/*
+# Create symlinks for default versions
+RUN ln -s /opt/python/3.11.11/bin/python /usr/local/bin/python3 \
+    && ln -s /opt/R/4.4.2/bin/R /usr/local/bin/R \
+    && ln -s /opt/R/4.4.2/bin/Rscript /usr/local/bin/Rscript \
+    && ln -s /opt/quarto/1.6.42/bin/quarto /usr/bin/quarto
