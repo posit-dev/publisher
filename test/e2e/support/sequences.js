@@ -319,9 +319,7 @@ Cypress.Commands.add(
             const isChecked = $checkbox.prop("checked");
             if (!isChecked) {
               cy.wrap($checkbox).click({ force: true });
-              // eslint-disable-next-line cypress/no-unnecessary-waiting
-              cy.wait(500); // Small wait after click
-              // Verify the click worked
+              // Verify the click worked - Cypress will retry until checked
               cy.wrap($checkbox).should("be.checked");
             }
           });
@@ -466,44 +464,42 @@ Cypress.Commands.add("startCredentialCreationFlow", (platform = "server") => {
   cy.waitForPublisherIframe();
   cy.debugIframes();
 
-  // Ensure the Credentials section is expanded (visibility-based check with retry)
-  const ensureCredentialsSectionExpanded = (attempt = 0) => {
-    if (attempt > 3) {
-      cy.log("Max attempts reached ensuring credentials section expansion");
-      return;
-    }
-    cy.publisherWebview()
-      .findByTestId("publisher-credentials-section")
-      .then(($section) => {
-        const $sec = Cypress.$($section);
-        const isVisibleEmpty =
-          $sec
-            .find(':contains("No credentials have been added yet.")')
-            .filter(":visible").length > 0;
-        const hasVisibleBody =
-          $sec.find(".pane-body:visible").length > 0 ||
-          $sec.find(".tree:visible").length > 0;
+  // Ensure the Credentials section is expanded using Cypress retry assertions
+  cy.publisherWebview()
+    .findByTestId("publisher-credentials-section")
+    .then(($section) => {
+      const $sec = Cypress.$($section);
+      const isVisibleEmpty =
+        $sec
+          .find(':contains("No credentials have been added yet.")')
+          .filter(":visible").length > 0;
+      const hasVisibleBody =
+        $sec.find(".pane-body:visible").length > 0 ||
+        $sec.find(".tree:visible").length > 0;
 
-        const expanded = isVisibleEmpty || hasVisibleBody;
+      const expanded = isVisibleEmpty || hasVisibleBody;
 
-        if (!expanded) {
-          cy.log(
-            `Credentials section appears collapsed, expanding (attempt ${
-              attempt + 1
-            })`,
-          );
-          $sec.find(".title").trigger("click");
-          // eslint-disable-next-line cypress/no-unnecessary-waiting
-          cy.wait(200).then(() =>
-            ensureCredentialsSectionExpanded(attempt + 1),
-          );
-        } else {
-          cy.log("Credentials section expanded");
-        }
-      });
-  };
+      if (!expanded) {
+        cy.log("Credentials section appears collapsed, expanding");
+        $sec.find(".title").trigger("click");
+      }
+    });
 
-  ensureCredentialsSectionExpanded();
+  // Wait for section to be expanded by asserting content is visible
+  cy.publisherWebview()
+    .findByTestId("publisher-credentials-section")
+    .should(($section) => {
+      const $sec = Cypress.$($section);
+      const isVisibleEmpty =
+        $sec
+          .find(':contains("No credentials have been added yet.")')
+          .filter(":visible").length > 0;
+      const hasVisibleBody =
+        $sec.find(".pane-body:visible").length > 0 ||
+        $sec.find(".tree:visible").length > 0;
+      expect(isVisibleEmpty || hasVisibleBody, "Credentials section expanded")
+        .to.be.true;
+    });
 
   // After ensuring expansion, proceed
   cy.publisherWebview()

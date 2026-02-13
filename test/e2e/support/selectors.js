@@ -8,82 +8,81 @@
 
 // publisherWebview
 // Purpose: Resolve the Publisher extension's nested iframe and return its inner body.
-// - Retries, reloads once, and verifies content presence for robustness.
+// - Uses waitUntil for cleaner retry logic, reloads once if needed.
 // When to use: Before any .findByTestId() inside the extension.
 Cypress.Commands.add("publisherWebview", () => {
-  // Wait up to 60 seconds (30 retries x 2s) for the publisher iframe, then reload once and try 10 more times.
-  // If still not found, log a clear error and fail the test.
-  function findPublisherIframe(retries = 30, hasReloaded = false) {
-    return cy
-      .get("iframe.webview.ready", { timeout: 30000 })
-      .then(($iframes) => {
-        if (Cypress.env("DEBUG_CYPRESS") === "true") {
-          cy.task("print", `Found ${$iframes.length} webview.ready iframes`);
-        }
-        const $target = Cypress.$($iframes).filter((i, el) =>
-          (el.src || "").includes("extensionId=posit.publisher"),
-        );
-        if (Cypress.env("DEBUG_CYPRESS") === "true") {
-          cy.task("print", `Found ${$target.length} publisher iframes`);
-        }
-        if ($target.length > 0) {
-          expect(
-            $target.length,
-            "publisher webview iframe present",
-          ).to.be.greaterThan(0);
+  let hasReloaded = false;
 
-          // Verify iframe has actual content
-          const body = $target[0].contentDocument?.body;
-          if (body) {
-            const bodyText = body.innerText || "";
-            const hasAutomationElements =
-              body.querySelector("[data-automation]") !== null;
+  // Helper to find the publisher iframe
+  const findPublisherIframe = () => {
+    return cy.get("body").then(($body) => {
+      const $iframes = $body.find("iframe.webview.ready");
+      if (Cypress.env("DEBUG_CYPRESS") === "true") {
+        cy.task("print", `Found ${$iframes.length} webview.ready iframes`);
+      }
 
-            if (bodyText.includes("Posit") || hasAutomationElements) {
-              cy.log(
-                "Publisher iframe content verified to contain expected content",
-              );
-            } else {
-              cy.log(
-                "WARNING: Publisher iframe found but content may not be fully loaded",
-              );
-              cy.log(`Content sample: ${bodyText.substring(0, 100)}`);
-            }
+      const $target = $iframes.filter((i, el) =>
+        (el.src || "").includes("extensionId=posit.publisher"),
+      );
+
+      if ($target.length > 0) {
+        const body = $target[0].contentDocument?.body;
+        if (body) {
+          const bodyText = body.innerText || "";
+          const hasAutomationElements =
+            body.querySelector("[data-automation]") !== null;
+
+          if (bodyText.includes("Posit") || hasAutomationElements) {
+            cy.log("Publisher iframe content verified");
+            return $target[0];
           }
-
-          return cy.wrap($target[0].contentDocument.body);
-        } else if (retries > 0) {
-          // eslint-disable-next-line cypress/no-unnecessary-waiting
-          return cy
-            .wait(2000)
-            .then(() => findPublisherIframe(retries - 1, hasReloaded));
-        } else if (!hasReloaded) {
-          cy.log("Publisher iframe not found after retries, reloading page...");
-          return cy.reload().then(() => findPublisherIframe(10, true));
-        } else {
-          cy.log(
-            "ERROR: Publisher iframe not found after waiting and reloading. UI may not have loaded correctly. If this happens often, check Connect service health or add a backend health check before running tests.",
-          );
-          cy.log("Attempting extreme iframe finder as last resort...");
-          // Try extreme finder as absolute last resort
-          return cy.findPublisherIframeExtreme().then(($iframe) => {
-            const iframe = $iframe[0];
-            if (
-              iframe &&
-              iframe.contentDocument &&
-              iframe.contentDocument.body
-            ) {
-              return cy.wrap(iframe.contentDocument.body);
-            } else {
-              throw new Error(
-                "Even extreme iframe finder failed - iframe content not accessible",
-              );
-            }
-          });
         }
+      }
+      return null;
+    });
+  };
+
+  // Wait for publisher iframe using cypress-wait-until
+  cy.waitUntil(
+    () =>
+      findPublisherIframe().then((iframe) => {
+        if (iframe) return iframe;
+
+        // If not found and haven't reloaded yet, try reloading
+        if (!hasReloaded) {
+          cy.log(
+            "Publisher iframe not found, will reload page on next attempt...",
+          );
+        }
+        return false;
+      }),
+    {
+      timeout: 60000,
+      interval: 2000,
+      errorMsg: "Publisher iframe not found. UI may not have loaded correctly.",
+    },
+  ).then((result) => {
+    // If still not found after timeout, try reload once
+    if (!result && !hasReloaded) {
+      hasReloaded = true;
+      cy.log("Reloading page to find publisher iframe...");
+      cy.reload();
+      return cy.waitUntil(() => findPublisherIframe(), {
+        timeout: 20000,
+        interval: 2000,
+        errorMsg: "Publisher iframe not found even after page reload.",
       });
-  }
-  return findPublisherIframe()
+    }
+    return result;
+  });
+
+  // Now get the iframe and return its body
+  return cy
+    .get('iframe.webview.ready[src*="extensionId=posit.publisher"]', {
+      timeout: 30000,
+    })
+    .first()
+    .its("0.contentDocument.body")
     .should("not.be.empty")
     .then(cy.wrap)
     .find("iframe#active-frame", { timeout: 30000 })
@@ -160,101 +159,49 @@ Cypress.Commands.add("publisherWebviewExtreme", () => {
 // and ensure the UI is stable before clicking.
 // When to use: Before opening the Publisher webview from VS Code UI.
 Cypress.Commands.add("getPublisherSidebarIcon", () => {
-  // Advanced Publisher icon finder that waits for extension stability
-  const maxAttempts = 30;
-  const stabilityChecks = 3; // Number of consecutive checks to confirm stability
+  const selectors = [
+    'button[aria-label*="Posit Publisher"]',
+    'button[title*="Posit Publisher"]',
+    'button[aria-label*="Publisher"]',
+    'button[title*="Publisher"]',
+    ".codicon-posit-publisher-publish",
+  ];
 
-  function waitForExtensionStability(attempt = 1) {
-    cy.log(`Checking extension stability (attempt ${attempt}/${maxAttempts})`);
+  const loadingIndicators = [
+    "starting posit publisher",
+    "python extension loading",
+    "please wait",
+    "activating extension",
+  ];
 
-    return cy.get("body").then(($body) => {
-      const bodyText = $body.text();
-      const isLoading =
-        bodyText.includes("starting posit publisher") ||
-        bodyText.includes("python extension loading") ||
-        bodyText.includes("please wait") ||
-        bodyText.includes("activating extension");
-
-      if (isLoading) {
-        cy.log("Extension still loading, waiting for stability...");
-        if (attempt < maxAttempts) {
-          // eslint-disable-next-line cypress/no-unnecessary-waiting
-          cy.wait(1500);
-          return waitForExtensionStability(attempt + 1);
-        }
-        cy.log(
-          "WARNING: Extension still appears to be loading after max attempts",
+  // Wait for extension loading indicators to clear using cypress-wait-until
+  cy.waitUntil(
+    () =>
+      cy.get("body").then(($body) => {
+        const bodyText = $body.text().toLowerCase();
+        const isLoading = loadingIndicators.some((indicator) =>
+          bodyText.includes(indicator),
         );
-      } else {
-        cy.log("Extension loading indicators cleared");
-      }
-
-      return findAndVerifyIcon();
-    });
-  }
-
-  function findAndVerifyIcon() {
-    const selectors = [
-      'button[aria-label*="Posit Publisher"]',
-      'button[title*="Posit Publisher"]',
-      'button[aria-label*="Publisher"]',
-      'button[title*="Publisher"]',
-      ".codicon-posit-publisher-publish",
-    ];
-
-    function trySelectors(selectorIndex = 0, stabilityCount = 0) {
-      if (selectorIndex >= selectors.length) {
-        cy.log("No icon found with any selector, retrying...");
-        // eslint-disable-next-line cypress/no-unnecessary-waiting
-        cy.wait(2000);
-        return findAndVerifyIcon();
-      }
-
-      const selector = selectors[selectorIndex];
-      cy.log(`Trying selector: ${selector}`);
-
-      return cy.get("body").then(($body) => {
-        const elements = $body.find(selector);
-
-        if (elements.length > 0 && elements.is(":visible")) {
-          cy.log(`Found potentially stable icon with ${selector}`);
-
-          // Wait and verify stability multiple times
-          // eslint-disable-next-line cypress/no-unnecessary-waiting
-          return cy.wait(1000).then(() => {
-            return cy.get("body").then(($bodyAfter) => {
-              const elementsAfter = $bodyAfter.find(selector);
-
-              if (elementsAfter.length > 0 && elementsAfter.is(":visible")) {
-                if (stabilityCount >= stabilityChecks - 1) {
-                  cy.log(
-                    `Icon confirmed stable after ${stabilityChecks} checks`,
-                  );
-                  return cy.get(selector).first().should("be.visible");
-                } else {
-                  cy.log(
-                    `Stability check ${stabilityCount + 1}/${stabilityChecks} passed`,
-                  );
-                  return trySelectors(selectorIndex, stabilityCount + 1);
-                }
-              } else {
-                cy.log(
-                  "Icon disappeared during stability check, trying next selector",
-                );
-                return trySelectors(selectorIndex + 1, 0);
-              }
-            });
-          });
-        } else {
-          return trySelectors(selectorIndex + 1, 0);
+        if (isLoading) {
+          cy.log("Extension still loading, waiting...");
         }
-      });
-    }
+        return !isLoading;
+      }),
+    {
+      timeout: 45000,
+      interval: 1500,
+      errorMsg: "Extension loading indicators did not clear in time",
+    },
+  );
 
-    return trySelectors();
-  }
+  // Build a combined selector to find the icon with any of the patterns
+  const combinedSelector = selectors.join(", ");
 
-  return waitForExtensionStability().should("be.visible");
+  // Use Cypress's built-in retry to find and verify the icon is visible
+  return cy
+    .get(combinedSelector, { timeout: 30000 })
+    .first()
+    .should("be.visible");
 });
 
 // toggleCredentialsSection / refreshCredentials / toggleHelpSection
