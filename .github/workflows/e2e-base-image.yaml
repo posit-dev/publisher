@@ -1,0 +1,69 @@
+name: E2E Base Image
+
+# Build and push the e2ebase Docker image to GHCR
+# This image contains Python, R, and Quarto and rarely changes
+# Triggered on changes to Dockerfile.base or manually
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "test/e2e/Dockerfile.base"
+  workflow_dispatch:
+    inputs:
+      force_rebuild:
+        description: "Force rebuild even if no changes"
+        type: boolean
+        default: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/e2ebase
+
+jobs:
+  build-and-push:
+    name: Build and push e2ebase
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Tidy CI environment
+        run: ./test/scripts/tidy-github-actions-runner.sh
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest
+            type=sha,prefix=
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: test/e2e
+          file: test/e2e/Dockerfile.base
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            GH_DOWNLOAD_TOKEN=${{ secrets.GH_DOWNLOAD_TOKEN }}
