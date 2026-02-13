@@ -59,6 +59,8 @@ Cypress.Commands.add(
 
     // activate the publisher extension
     cy.getPublisherSidebarIcon().click();
+    // Wait for extension to fully initialize
+    cy.waitForNetworkIdle(500);
     cy.publisherWebview()
       .findByTestId("select-deployment")
       .should("be.visible");
@@ -225,6 +227,8 @@ Cypress.Commands.add(
 
     // activate the publisher extension
     cy.getPublisherSidebarIcon().click();
+    // Wait for extension to fully initialize
+    cy.waitForNetworkIdle(500);
     cy.publisherWebview()
       .findByTestId("select-deployment")
       .should("be.visible");
@@ -366,6 +370,9 @@ Cypress.Commands.add(
 // Purpose: Click the Deploy button, wait for toasts to clear, and confirm success.
 // When to use: Immediately after createPCSDeployment/createPCCDeployment when deployment should succeed.
 Cypress.Commands.add("deployCurrentlySelected", () => {
+  // Wait for any pending network activity to settle before deploying
+  cy.waitForNetworkIdle(500);
+
   cy.publisherWebview()
     .findByTestId("deploy-button")
     .should("be.visible")

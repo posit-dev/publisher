@@ -243,6 +243,9 @@ Cypress.Commands.add("refreshCredentials", () => {
       throw new Error("Refresh Credentials button not found");
     }
   });
+
+  // Wait for credential refresh API call to complete
+  cy.waitForNetworkIdle(500);
 });
 
 Cypress.Commands.add("toggleHelpSection", () => {
