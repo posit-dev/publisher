@@ -13,28 +13,30 @@
 Cypress.Commands.add("publisherWebview", () => {
   let hasReloaded = false;
 
-  // Helper to find the publisher iframe
-  const findPublisherIframe = () => {
+  // Helper to find the publisher iframe and return its body
+  const findPublisherIframeBody = () => {
     return cy.get("body").then(($body) => {
       const $iframes = $body.find("iframe.webview.ready");
       if (Cypress.env("DEBUG_CYPRESS") === "true") {
         cy.task("print", `Found ${$iframes.length} webview.ready iframes`);
       }
 
+      // Filter to find the publisher iframe using JavaScript (not CSS selector)
+      // because the src URL contains encoded characters
       const $target = $iframes.filter((i, el) =>
         (el.src || "").includes("extensionId=posit.publisher"),
       );
 
       if ($target.length > 0) {
-        const body = $target[0].contentDocument?.body;
-        if (body) {
-          const bodyText = body.innerText || "";
+        const outerBody = $target[0].contentDocument?.body;
+        if (outerBody) {
+          const bodyText = outerBody.innerText || "";
           const hasAutomationElements =
-            body.querySelector("[data-automation]") !== null;
+            outerBody.querySelector("[data-automation]") !== null;
 
           if (bodyText.includes("Posit") || hasAutomationElements) {
             cy.log("Publisher iframe content verified");
-            return $target[0];
+            return outerBody;
           }
         }
       }
@@ -43,51 +45,49 @@ Cypress.Commands.add("publisherWebview", () => {
   };
 
   // Wait for publisher iframe using cypress-wait-until
-  cy.waitUntil(
-    () =>
-      findPublisherIframe().then((iframe) => {
-        if (iframe) return iframe;
-
-        // If not found and haven't reloaded yet, try reloading
-        if (!hasReloaded) {
-          cy.log(
-            "Publisher iframe not found, will reload page on next attempt...",
-          );
-        }
-        return false;
-      }),
-    {
-      timeout: 60000,
-      interval: 2000,
-      errorMsg: "Publisher iframe not found. UI may not have loaded correctly.",
-    },
-  ).then((result) => {
-    // If still not found after timeout, try reload once
-    if (!result && !hasReloaded) {
-      hasReloaded = true;
-      cy.log("Reloading page to find publisher iframe...");
-      cy.reload();
-      return cy.waitUntil(() => findPublisherIframe(), {
-        timeout: 20000,
-        interval: 2000,
-        errorMsg: "Publisher iframe not found even after page reload.",
-      });
-    }
-    return result;
-  });
-
-  // Now get the iframe and return its body
   return cy
-    .get('iframe.webview.ready[src*="extensionId=posit.publisher"]', {
-      timeout: 30000,
+    .waitUntil(
+      () =>
+        findPublisherIframeBody().then((body) => {
+          if (body) return body;
+
+          // If not found and haven't reloaded yet, log it
+          if (!hasReloaded) {
+            cy.log(
+              "Publisher iframe not found, will reload page on next attempt...",
+            );
+          }
+          return false;
+        }),
+      {
+        timeout: 60000,
+        interval: 2000,
+        errorMsg:
+          "Publisher iframe not found. UI may not have loaded correctly.",
+      },
+    )
+    .then((outerBody) => {
+      // If still not found after timeout, try reload once
+      if (!outerBody && !hasReloaded) {
+        hasReloaded = true;
+        cy.log("Reloading page to find publisher iframe...");
+        cy.reload();
+        return cy.waitUntil(() => findPublisherIframeBody(), {
+          timeout: 20000,
+          interval: 2000,
+          errorMsg: "Publisher iframe not found even after page reload.",
+        });
+      }
+      return outerBody;
     })
-    .first()
-    .its("0.contentDocument.body")
-    .should("not.be.empty")
-    .then(cy.wrap)
-    .find("iframe#active-frame", { timeout: 30000 })
-    .its("0.contentDocument.body")
-    .should("not.be.empty")
+    .then((outerBody) => {
+      // Now find the inner active-frame iframe
+      return cy
+        .wrap(outerBody)
+        .find("iframe#active-frame", { timeout: 30000 })
+        .its("0.contentDocument.body")
+        .should("not.be.empty");
+    })
     .then((body) => {
       // We need to wrap in jQuery to use html() and text()
       const $body = Cypress.$(body);
