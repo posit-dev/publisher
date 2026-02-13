@@ -27,11 +27,15 @@ jobs:
   # Build
   build:
     uses: ./.github/workflows/build.yaml
-  package:
+  sign:
     needs: build
+    uses: ./.github/workflows/sign.yaml
+    secrets: inherit
+  package:
+    needs: sign
     uses: ./.github/workflows/package.yaml
   archive:
-    needs: build
+    needs: sign
     uses: ./.github/workflows/archive.yaml
   upload:
     if: ${{ github.actor != 'dependabot[bot]' }}
