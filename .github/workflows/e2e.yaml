@@ -19,6 +19,7 @@ on:
         required: true
 
 jobs:
+  # Main Cypress tests (code-server based, excludes Workbench tests)
   cypress:
     name: e2e (${{ matrix.name || matrix.connect-version }})
     runs-on: ubuntu-latest
@@ -94,14 +95,6 @@ jobs:
           name: dist
           path: dist
 
-      - name: Write Workbench license file
-        if: env.WORKBENCH_LICENSE != ''
-        run: |
-          mkdir -p ./test/e2e/licenses
-          echo "$WORKBENCH_LICENSE" > ./test/e2e/licenses/workbench-license.lic
-        env:
-          WORKBENCH_LICENSE: ${{ secrets.WORKBENCH_LICENSE }}
-
       - name: Build Docker images
         working-directory: test/e2e
         run: |
@@ -122,17 +115,9 @@ jobs:
           docker builder prune -af
           df -h /
 
-      - name: Pull and start Workbench (Connect Server tests only)
-        working-directory: test/e2e
-        run: just pull-workbench "release"
-
       - name: Start code-server container
         working-directory: test/e2e
         run: docker compose up -d code-server
-
-      - name: Start Workbench (Connect Server tests only)
-        working-directory: test/e2e
-        run: just start-workbench "release"
 
       - name: Wait for code-server to be ready
         run: |
@@ -173,11 +158,6 @@ jobs:
             sleep 1
           done
 
-      - name: Install Workbench Positron extension
-        working-directory: test/e2e
-        run: |
-          just install-positron-extension "release"
-
       - name: Prepare test environment
         working-directory: test/e2e
         run: |
@@ -187,7 +167,7 @@ jobs:
           # Clean up any static TOML files before tests
           docker exec publisher-e2e.code-server rm -f /home/coder/workspace/static*.toml || true
 
-      # Run Cypress tests
+      # Run Cypress tests (excluding Workbench tests)
       # - For "release": run ALL tests (including @pcc cloud tests)
       # - For other versions: exclude @pcc tests (cloud tests only run once on release)
       - name: Run Cypress tests (${{ matrix.connect-version }})
@@ -200,11 +180,11 @@ jobs:
           command: |
             cd test/e2e
             if [ "${{ matrix.connect-version }}" = "release" ]; then
-              # Run all tests (including @pcc cloud tests)
-              CYPRESS_BOOTSTRAP_ADMIN_API_KEY=$CONNECT_API_KEY npx cypress run --headless --browser chrome
+              # Run all tests except Workbench (including @pcc cloud tests)
+              CYPRESS_BOOTSTRAP_ADMIN_API_KEY=$CONNECT_API_KEY npx cypress run --headless --browser chrome --spec "tests/*.cy.js"
             else
-              # Exclude @pcc cloud tests for non-release versions
-              CYPRESS_BOOTSTRAP_ADMIN_API_KEY=$CONNECT_API_KEY npx cypress run --headless --browser chrome --env grepFilterSpecs=true,grepOmitFiltered=true,grepTags=-@pcc
+              # Exclude @pcc cloud tests and Workbench tests for non-release versions
+              CYPRESS_BOOTSTRAP_ADMIN_API_KEY=$CONNECT_API_KEY npx cypress run --headless --browser chrome --spec "tests/*.cy.js" --env grepFilterSpecs=true,grepOmitFiltered=true,grepTags=-@pcc
             fi
         env:
           CONNECT_CLOUD_ENV: staging
@@ -292,6 +272,176 @@ jobs:
         working-directory: test/e2e
         run: docker compose logs code-server || true
 
+      - name: Save test logs as artifacts
+        uses: actions/upload-artifact@v6
+        if: failure() && steps.run_tests.outcome == 'failure'
+        with:
+          name: e2e-logs-${{ matrix.name || matrix.connect-version }}
+          path: test/e2e/logs/
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Stop containers
+        if: always()
+        working-directory: test/e2e
+        run: just stop
+
+  # Workbench/Positron tests (runs separately, only on release version)
+  cypress-workbench:
+    name: e2e (workbench)
+    runs-on: ubuntu-latest
+    env:
+      DEBUG_CYPRESS: ${{ inputs.debug_cypress && 'true' || 'false' }}
+      VARS_DEBUG_CYPRESS: ${{ vars.DEBUG_CYPRESS }}
+      ACTIONS_STEP_DEBUG: ${{ secrets.ACTIONS_STEP_DEBUG }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Tidy CI environment
+        run: ./test/scripts/tidy-github-actions-runner.sh
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: test/e2e/package-lock.json
+
+      - name: Install npm dependencies
+        working-directory: test/e2e
+        run: npm ci
+
+      - name: Cache Cypress binary
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/Cypress
+          key: ${{ runner.os }}-cypress-${{ hashFiles('test/e2e/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-cypress-
+
+      - name: Install Cypress
+        working-directory: test/e2e
+        run: npx cypress install
+
+      - uses: extractions/setup-just@v3
+
+      - name: Download VSIX artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: dist
+          path: dist
+
+      - name: Write Workbench license file
+        if: env.WORKBENCH_LICENSE != ''
+        run: |
+          mkdir -p ./test/e2e/licenses
+          echo "$WORKBENCH_LICENSE" > ./test/e2e/licenses/workbench-license.lic
+        env:
+          WORKBENCH_LICENSE: ${{ secrets.WORKBENCH_LICENSE }}
+
+      - name: Build Docker images
+        working-directory: test/e2e
+        run: |
+          export DOCKER_BUILDKIT=1
+          export COMPOSE_DOCKER_CLI_BUILD=1
+
+          docker build --build-arg BUILDKIT_INLINE_CACHE=1 \
+            --build-arg GH_DOWNLOAD_TOKEN=${{ secrets.GH_DOWNLOAD_TOKEN }} \
+            -f Dockerfile.base -t e2ebase --platform linux/amd64 . &
+
+          wait
+          docker compose build code-server
+
+      - name: Free up disk space after Docker builds
+        run: |
+          docker builder prune -af
+          df -h /
+
+      - name: Pull Workbench image
+        working-directory: test/e2e
+        run: just pull-workbench "release"
+
+      - name: Start code-server container
+        working-directory: test/e2e
+        run: docker compose up -d code-server
+
+      - name: Start Workbench
+        working-directory: test/e2e
+        run: just start-workbench "release"
+
+      - name: Wait for code-server to be ready
+        run: |
+          echo "Checking code-server..."
+          for i in {1..20}; do
+            if curl -sf http://localhost:8080 > /dev/null; then
+              echo "code-server is ready!"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "code-server did not become ready in time"
+          exit 1
+
+      - name: Install VS Code extension
+        working-directory: test/e2e
+        run: |
+          VSIX_FILENAME=$(ls -Art ../../dist | grep linux-amd64 | tail -n 1)
+          docker compose exec code-server code-server --install-extension "/home/coder/vsix/${VSIX_FILENAME}"
+          docker exec publisher-e2e.code-server chown -R coder:coder /home/coder/workspace
+
+          echo "Waiting for Publisher extension to be installed..."
+          for i in {1..30}; do
+            if docker compose exec code-server code-server --list-extensions | grep -q posit.publisher; then
+              echo "Publisher extension installed!"
+              break
+            fi
+            sleep 1
+          done
+
+      - name: Install Workbench Positron extension
+        working-directory: test/e2e
+        run: just install-positron-extension "release"
+
+      - name: Prepare test environment
+        working-directory: test/e2e
+        run: mkdir -p ./content-workspace
+
+      # Run Workbench tests only (using release version of Connect)
+      - name: Run Workbench Cypress tests
+        id: run_tests
+        uses: posit-dev/with-connect@main
+        with:
+          version: release
+          license: ${{ secrets.CONNECT_LICENSE_FILE }}
+          port: 3939
+          command: |
+            cd test/e2e
+            CYPRESS_BOOTSTRAP_ADMIN_API_KEY=$CONNECT_API_KEY npx cypress run --headless --browser chrome --spec "tests/workbench/**/*.cy.js"
+        env:
+          CONNECT_CLOUD_ENV: staging
+          CI: true
+          DEBUG_CYPRESS: ${{ (env.DEBUG_CYPRESS == 'true' || env.VARS_DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true') && 'true' || 'false' }}
+          CYPRESS_CACHE_FOLDER: ~/.cache/Cypress
+
+      - name: Upload Cypress screenshots on failure
+        uses: actions/upload-artifact@v6
+        if: failure()
+        with:
+          name: cypress-screenshots-workbench
+          path: test/e2e/cypress/screenshots
+          if-no-files-found: ignore
+
+      - name: "[DEBUG] Upload Cypress videos"
+        uses: actions/upload-artifact@v6
+        if: always() && (env.DEBUG_CYPRESS == 'true' || env.VARS_DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true')
+        with:
+          name: cypress-videos-workbench
+          path: test/e2e/cypress/videos
+          if-no-files-found: ignore
+
       - name: Extract Positron logs from Workbench container
         if: failure() && steps.run_tests.outcome == 'failure'
         working-directory: test/e2e
@@ -299,14 +449,13 @@ jobs:
 
       - name: Change log permissions for artifact upload
         if: failure() && steps.run_tests.outcome == 'failure'
-        run: |
-          sudo chown -R $USER:$USER test/e2e/logs
+        run: sudo chown -R $USER:$USER test/e2e/logs
 
       - name: Save test logs as artifacts
         uses: actions/upload-artifact@v6
         if: failure() && steps.run_tests.outcome == 'failure'
         with:
-          name: e2e-logs-${{ matrix.name || matrix.connect-version }}
+          name: e2e-logs-workbench
           path: test/e2e/logs/
           if-no-files-found: ignore
           retention-days: 7
