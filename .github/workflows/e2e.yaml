@@ -90,9 +90,8 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-        with:
-          # Use docker driver to keep images in local daemon where docker compose can access them
-          driver: docker
+        # Uses docker-container driver by default which supports GHA caching
+        # The build step uses load: true to make the image available to docker compose
 
       - name: Download VSIX artifact
         uses: actions/download-artifact@v7
