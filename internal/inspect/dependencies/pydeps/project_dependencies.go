@@ -93,3 +93,30 @@ func WriteRequirementsFile(dest util.AbsolutePath, reqs []string, pythonExecutab
 	}
 	return nil
 }
+
+// HasRpy2Dependency checks if the project has rpy2 as a dependency in requirements.txt.
+// rpy2 is a Python library that provides an interface to R, meaning the project
+// requires R to be available at runtime.
+func HasRpy2Dependency(base util.AbsolutePath) (bool, error) {
+	reqFile, exists, err := DoesDefaultRequirementsExist(base)
+	if err != nil {
+		return false, err
+	}
+	if !exists {
+		return false, nil
+	}
+	reqPath := base.Join(reqFile.String())
+	lines, err := ReadRequirementsFile(reqPath)
+	if err != nil {
+		return false, err
+	}
+	// Check if any line starts with "rpy2" (handles rpy2, rpy2==version, rpy2>=version, etc.)
+	rpy2RE := regexp.MustCompile(`^rpy2([^a-zA-Z0-9]|$)`)
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if rpy2RE.MatchString(line) {
+			return true, nil
+		}
+	}
+	return false, nil
+}

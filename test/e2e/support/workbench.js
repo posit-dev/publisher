@@ -18,7 +18,7 @@ Cypress.Commands.add("checkPositronExtension", () => {
     failOnNonZeroExit: false,
     timeout: 20_000,
   }).then((result) => {
-    cy.log(`Check extension result: exit code ${result.code}`);
+    cy.log(`Check extension result: exit code ${result.exitCode}`);
     cy.log(result.stdout);
 
     if (result.stderr) {
@@ -26,7 +26,7 @@ Cypress.Commands.add("checkPositronExtension", () => {
     }
 
     expect(
-      result.code,
+      result.exitCode,
       "Extension check failed - publisher extension not installed",
     ).to.equal(0);
   });
@@ -98,12 +98,12 @@ Cypress.Commands.add("cleanupWorkbenchData", () => {
         failOnNonZeroExit: false,
       },
     ).then((result) => {
-      cy.log(`Cleanup directories result: exit code ${result.code}`);
+      cy.log(`Cleanup directories result: exit code ${result.exitCode}`);
       if (result.stderr) cy.log(`Cleanup stderr: ${result.stderr}`);
 
       // Fail if the docker exec command itself fails, which would indicate a problem with Docker or the container
       // not with the file operations inside the container
-      if (result.code !== 0) {
+      if (result.exitCode !== 0) {
         throw new Error(
           `Failed to execute cleanup in container: ${result.stderr}`,
         );
@@ -127,7 +127,7 @@ Cypress.Commands.add("restartWorkbench", () => {
     failOnNonZeroExit: false,
     timeout: 10_000,
   }).then((result) => {
-    cy.log(`Remove workbench result: exit code ${result.code}`);
+    cy.log(`Remove workbench result: exit code ${result.exitCode}`);
     cy.log(
       `Remove workbench stdout: ${result.stdout.substring(0, 1000)}${result.stdout.length > 1000 ? "..." : ""}`,
     );
@@ -137,9 +137,9 @@ Cypress.Commands.add("restartWorkbench", () => {
 
     // For container removal, we don't need to fail the test if it returns non-zero
     // since the container might not exist yet, just log the result
-    if (result.code !== 0) {
+    if (result.exitCode !== 0) {
       cy.log(
-        `Warning: remove-workbench command returned non-zero exit code: ${result.code}`,
+        `Warning: remove-workbench command returned non-zero exit code: ${result.exitCode}`,
       );
     }
   });
@@ -190,7 +190,7 @@ Cypress.Commands.add("restartWorkbench", () => {
 
     // Always log output regardless of success/failure
     cy.log(
-      `Start workbench result: exit code ${result.code} (took ${(Date.now() - startTime) / 1000}s)`,
+      `Start workbench result: exit code ${result.exitCode} (took ${(Date.now() - startTime) / 1000}s)`,
     );
     cy.log(
       `Start workbench stdout: ${result.stdout.substring(0, 1000)}${result.stdout.length > 1000 ? "..." : ""}`,
@@ -200,9 +200,9 @@ Cypress.Commands.add("restartWorkbench", () => {
     }
 
     // Fail the test with a more descriptive message if the command failed
-    if (result.code !== 0) {
+    if (result.exitCode !== 0) {
       throw new Error(
-        `Failed to start Workbench container. Exit code: ${result.code}. See logs above for details.`,
+        `Failed to start Workbench container. Exit code: ${result.exitCode}. See logs above for details.`,
       );
     }
   });
@@ -213,7 +213,7 @@ Cypress.Commands.add("restartWorkbench", () => {
     failOnNonZeroExit: false,
     timeout: 30_000,
   }).then((result) => {
-    cy.log(`Install extension result: exit code ${result.code}`);
+    cy.log(`Install extension result: exit code ${result.exitCode}`);
     cy.log(
       `Install extension stdout: ${result.stdout.substring(0, 1000)}${result.stdout.length > 1000 ? "..." : ""}`,
     );
@@ -222,9 +222,9 @@ Cypress.Commands.add("restartWorkbench", () => {
     }
 
     // Fail the test with a more descriptive message if the command failed
-    if (result.code !== 0) {
+    if (result.exitCode !== 0) {
       throw new Error(
-        `Failed to install Workbench extension. Exit code: ${result.code}. See logs above for details.`,
+        `Failed to install Workbench extension. Exit code: ${result.exitCode}. See logs above for details.`,
       );
     }
   });
