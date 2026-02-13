@@ -82,18 +82,38 @@ describe("Deployments Section", () => {
       // Reload the page to simulate VS Code restart
       cy.reload();
 
-      // Re-open the Publisher sidebar
+      // Re-open the Publisher sidebar (matching beforeEach pattern)
       cy.getPublisherSidebarIcon().click();
       cy.waitForPublisherIframe();
+      cy.debugIframes();
 
-      // Verify the last selected deployment is automatically loaded
+      // Wait for the Publisher webview to fully initialize after reload.
+      // The extension needs time to: load saved state, restore last selection.
+      // Use a longer retry with more attempts to handle slow CI environments.
+      cy.retryWithBackoff(
+        () =>
+          cy.publisherWebview().then(($webview) => {
+            // Check if either entrypoint-label OR select-deployment is visible
+            // This tells us the webview has finished initializing
+            const entrypoint = $webview.find(
+              '[data-automation="entrypoint-label"]',
+            );
+            const selectBtn = $webview.find(
+              '[data-automation="select-deployment"]',
+            );
+            if (entrypoint.length > 0 || selectBtn.length > 0) {
+              return cy.wrap($webview);
+            }
+            return Cypress.$();
+          }),
+        15,
+        1000,
+      ).should("exist");
+
+      // Now verify the last selected deployment is automatically loaded
       // If working correctly: entrypoint-label should show with the deployment title
       // If broken: select-deployment would show with "Select..." instead
-      cy.retryWithBackoff(
-        () => cy.findInPublisherWebview('[data-automation="entrypoint-label"]'),
-        10,
-        1000,
-      )
+      cy.findInPublisherWebview('[data-automation="entrypoint-label"]')
         .should("exist")
         .and("contain.text", deploymentTitle);
 
