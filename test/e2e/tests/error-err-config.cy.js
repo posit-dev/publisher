@@ -40,10 +40,18 @@ describe("Detect errors in config", () => {
     cy.get(".quick-input-widget").should("be.visible");
     cy.get(".quick-input-titlebar").should("have.text", "Select Deployment");
 
-    // select our error case
-    cy.get(".quick-input-widget")
-      .contains("Unknown Title • Error in quarto-project-8G2B")
-      .click();
+    // select our error case (retry to allow list to populate)
+    cy.retryWithBackoff(
+      () =>
+        cy.get("body", { timeout: 0 }).then(($body) => {
+          const match = $body.find(
+            '.quick-input-widget .monaco-list-row:contains("Unknown Title • Error in quarto-project-8G2B")',
+          );
+          return match.length > 0 ? cy.wrap(match) : Cypress.$();
+        }),
+      10,
+      500,
+    ).click();
 
     // confirm that the selector shows the error
     cy.findUniqueInPublisherWebview(
@@ -73,10 +81,18 @@ describe("Detect errors in config", () => {
     cy.get(".quick-input-widget").should("be.visible");
     cy.get(".quick-input-titlebar").should("have.text", "Select Deployment");
 
-    // select our error case
-    cy.get(".quick-input-widget")
-      .contains("Unknown Title Due to Missing Config fastapi-simple-DHJL")
-      .click();
+    // select our error case (retry to allow list to populate)
+    cy.retryWithBackoff(
+      () =>
+        cy.get("body", { timeout: 0 }).then(($body) => {
+          const match = $body.find(
+            '.quick-input-widget .monaco-list-row:contains("Unknown Title Due to Missing Config fastapi-simple-DHJL")',
+          );
+          return match.length > 0 ? cy.wrap(match) : Cypress.$();
+        }),
+      10,
+      500,
+    ).click();
 
     // confirm that the selector shows the error
     cy.findUniqueInPublisherWebview(
