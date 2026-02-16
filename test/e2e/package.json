@@ -12,7 +12,7 @@
   "license": "UNLICENSED",
   "private": true,
   "devDependencies": {
-    "@cypress/grep": "^4.1.0",
+    "@cypress/grep": "^6.0.0",
     "@testing-library/cypress": "^10.1.0",
     "axios": "^1.13.5",
     "cypress": "^15.10.0",
