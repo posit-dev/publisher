@@ -5,7 +5,7 @@ import { configure } from "@testing-library/cypress";
 import "cypress-terminal-report/src/installLogsCollector";
 
 // Import @cypress/grep for test filtering by tags (@pcc, etc.)
-import registerCypressGrep from "@cypress/grep";
+import { register as registerCypressGrep } from "@cypress/grep";
 registerCypressGrep();
 
 // Combined uncaught:exception handler for all known issues

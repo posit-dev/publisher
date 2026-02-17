@@ -228,7 +228,7 @@ Cypress.Commands.add("getPublisherTomlFilePaths", (projectDir) => {
 Cypress.Commands.add("expandWildcardFile", (targetDir, wildCardPath) => {
   const cmd = `cd ${targetDir} && ls -t ${wildCardPath} | head -1`;
   return cy.exec(cmd).then((result) => {
-    if (result.code === 0 && result.stdout) {
+    if (result.exitCode === 0 && result.stdout) {
       return result.stdout.trim();
     }
     throw new Error(`Could not expandWildcardFile. ${result.stderr}`);
@@ -297,7 +297,7 @@ Cypress.Commands.add("loadTomlFile", (filePath) => {
   return cy
     .exec(`cat ${filePath}`, { failOnNonZeroExit: false })
     .then((result) => {
-      if (result.code === 0 && result.stdout) {
+      if (result.exitCode === 0 && result.stdout) {
         return parse(result.stdout);
       }
       throw new Error(`Could not load project configuration. ${result.stderr}`);
@@ -375,10 +375,13 @@ Cypress.Commands.add("waitForPublisherIframe", (timeout = 60000) => {
       });
       if ($publisherIframe.length > 0) {
         cy.log("Found publisher iframe by extensionId");
+        // Wait for network to settle after iframe is found
+        cy.waitForNetworkIdle(500);
         return cy.wrap($publisherIframe[0]);
       }
       // Fallback: use the first .webview.ready iframe
       cy.log("Falling back to first .webview.ready iframe");
+      cy.waitForNetworkIdle(500);
       return cy.wrap($iframes[0]);
     });
 });
@@ -718,7 +721,7 @@ Cypress.Commands.add("writeTomlFile", (filePath, tomlContent) => {
       `docker exec publisher-e2e.code-server bash -c "cat <<EOF >> '${dockerPath}'\n${tomlContent}\nEOF"`,
     )
     .then((result) => {
-      if (result.code !== 0) {
+      if (result.exitCode !== 0) {
         throw new Error(
           `Failed to append to TOML via Docker: ${result.stderr}`,
         );
