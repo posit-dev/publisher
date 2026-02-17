@@ -51,8 +51,8 @@ func (s pathsService) isSymlink(p util.AbsolutePath) (bool, error) {
 		// if an error occurs and lstat is called, check if the error op is lstat
 		if ok {
 			perr, pok := err.(*os.PathError)
-			// if cast is ok and err op is lstat, return (false, nil) since it is not a symlink
-			if pok && (perr.Op == "lstat" || perr.Op == "CreateFile") {
+			// if cast is ok and err op is lstat (or Windows equivalents), return (false, nil) since it is not a symlink
+			if pok && (perr.Op == "lstat" || perr.Op == "CreateFile" || perr.Op == "GetFileAttributesEx") {
 				return false, nil
 			}
 		}
