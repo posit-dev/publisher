@@ -150,7 +150,7 @@ install:
     {{ _with_debug }}
 
     if [ ! `which staticcheck` ]; then
-        go install honnef.co/go/tools/cmd/staticcheck@v0.6.0
+        go install honnef.co/go/tools/cmd/staticcheck@latest
         if [ ! `which staticcheck` ]; then
             echo "error: \`staticcheck\` not found. Is '\$GOPATH/bin' in your '\$PATH'?" 1>&2
             exit 1
