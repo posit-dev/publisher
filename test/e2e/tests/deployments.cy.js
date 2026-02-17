@@ -52,6 +52,80 @@ describe("Deployments Section", () => {
       ).should("exist");
     });
 
+    it("Last selected deployment loads on initialization", () => {
+      // Regression test for https://github.com/posit-dev/publisher/issues/2473
+      // Verifies that the last selected deployment is restored after reload.
+
+      const deploymentTitle = "last-selection-test";
+
+      // Ensure Publisher is in the expected initial state
+      cy.expectInitialPublisherState();
+
+      // Create a deployment (this also selects it)
+      cy.createPCSDeployment(
+        "static",
+        "index.html",
+        deploymentTitle,
+        (tomlFiles) => {
+          const { contents: config } = tomlFiles.config;
+          expect(config.title).to.equal(deploymentTitle);
+        },
+      );
+
+      // Verify deployment is currently selected (entrypoint-label visible, not select-deployment)
+      cy.retryWithBackoff(
+        () => cy.findInPublisherWebview('[data-automation="entrypoint-label"]'),
+        5,
+        500,
+      ).should("exist");
+
+      // Reload the page to simulate VS Code restart
+      cy.reload();
+
+      // Re-open the Publisher sidebar (matching beforeEach pattern)
+      cy.getPublisherSidebarIcon().click();
+      cy.waitForPublisherIframe();
+      cy.debugIframes();
+
+      // Wait for the Publisher webview to fully initialize after reload.
+      // The extension needs time to: load saved state, restore last selection.
+      // Use a longer retry with more attempts to handle slow CI environments.
+      cy.retryWithBackoff(
+        () =>
+          cy.publisherWebview().then(($webview) => {
+            // Check if either entrypoint-label OR select-deployment is visible
+            // This tells us the webview has finished initializing
+            const entrypoint = $webview.find(
+              '[data-automation="entrypoint-label"]',
+            );
+            const selectBtn = $webview.find(
+              '[data-automation="select-deployment"]',
+            );
+            if (entrypoint.length > 0 || selectBtn.length > 0) {
+              return cy.wrap($webview);
+            }
+            return Cypress.$();
+          }),
+        15,
+        1000,
+      ).should("exist");
+
+      // Now verify the last selected deployment is automatically loaded
+      // If working correctly: entrypoint-label should show with the deployment title
+      // If broken: select-deployment would show with "Select..." instead
+      cy.findInPublisherWebview('[data-automation="entrypoint-label"]')
+        .should("exist")
+        .and("contain.text", deploymentTitle);
+
+      // Also verify the deployment section is present
+      cy.findInPublisherWebview(
+        '[data-automation="publisher-deployment-section"]',
+      ).should("exist");
+
+      // Explicit cleanup to ensure other tests aren't affected
+      cy.clearupDeployments("static");
+    });
+
     // Unable to run this,
     // as we will need to install the renv package - install.packages("renv")
     // as well as call renv::restore(), before we can deploy. This will use
