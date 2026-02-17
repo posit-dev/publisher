@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Updated Go from 1.24 to 1.25. (#3520)
+
 ### Added
 
 - Improved performance of generating manifests for projects that do not already have an renv.lock file. (#3442)
