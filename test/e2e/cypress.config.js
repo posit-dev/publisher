@@ -58,7 +58,8 @@ module.exports = defineConfig({
       });
 
       // Register @cypress/grep for test filtering by tags
-      config = require("@cypress/grep/plugin")(config);
+      const { plugin: grepPlugin } = require("@cypress/grep/plugin");
+      config = grepPlugin(config);
 
       // Register consolidated tasks
       const taskHandlers = buildCypressTasks(pccConfig);
