@@ -24,32 +24,40 @@ describe("Open Connect Content", () => {
 
     cy.getPublisherTomlFilePaths("static").then((filePaths) => {
       cy.loadTomlFile(filePaths.contentRecord.path).then((contentRecord) => {
-        cy.runCommandPaletteCommand("Posit Publisher: Open Connect Content");
-        cy.quickInputType("Connect server URL", contentRecord.server_url);
-        cy.quickInputType("Connect content GUID", contentRecord.id);
+        // Capture the current URL before running the command
+        cy.url().then((originalUrl) => {
+          cy.runCommandPaletteCommand("Posit Publisher: Open Connect Content");
+          cy.quickInputType("Connect server URL", contentRecord.server_url);
+          cy.quickInputType("Connect content GUID", contentRecord.id);
 
-        // Wait for the quick input to close, indicating the command has been submitted
-        cy.get(".quick-input-widget").should("not.be.visible");
+          // Wait for the quick input to close, indicating the command has been submitted
+          cy.get(".quick-input-widget").should("not.be.visible");
 
-        // Wait for the workspace to reload with the Connect content.
-        // The GUID appears in the explorer as a root folder after the workspace switch.
-        // Use { timeout: 0 } in the inner cy.contains() so retryWithBackoff controls
-        // the retry timing rather than cy.contains() blocking on its own timeout.
-        cy.retryWithBackoff(
-          () =>
-            cy.get("body", { timeout: 0 }).then(($body) => {
-              const explorer = $body.find(".explorer-viewlet");
-              if (explorer.length === 0) {
-                return Cypress.$(); // Explorer not yet rendered, return empty to retry
-              }
-              const row = explorer.find(
-                `.monaco-list-row[aria-level='1']:contains("${contentRecord.id}")`,
-              );
-              return row.length > 0 ? cy.wrap(row) : Cypress.$();
-            }),
-          20,
-          1500,
-        ).should("exist");
+          // Wait for the workspace to actually start reloading by detecting URL change.
+          // This prevents the race condition where retries run against the old workspace
+          // before VS Code has started loading the new one.
+          cy.url({ timeout: 30000 }).should("not.eq", originalUrl);
+
+          // Wait for the workspace to reload with the Connect content.
+          // The GUID appears in the explorer as a root folder after the workspace switch.
+          // Use { timeout: 0 } in the inner cy.contains() so retryWithBackoff controls
+          // the retry timing rather than cy.contains() blocking on its own timeout.
+          cy.retryWithBackoff(
+            () =>
+              cy.get("body", { timeout: 0 }).then(($body) => {
+                const explorer = $body.find(".explorer-viewlet");
+                if (explorer.length === 0) {
+                  return Cypress.$(); // Explorer not yet rendered, return empty to retry
+                }
+                const row = explorer.find(
+                  `.monaco-list-row[aria-level='1']:contains("${contentRecord.id}")`,
+                );
+                return row.length > 0 ? cy.wrap(row) : Cypress.$();
+              }),
+            20,
+            1500,
+          ).should("exist");
+        });
       });
     });
 
