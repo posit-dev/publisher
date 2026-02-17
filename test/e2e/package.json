@@ -27,6 +27,6 @@
     "playwright": "^1.56.1",
     "prettier": "^3.6.2",
     "smol-toml": "^1.5.2",
-    "wait-on": "^9.0.3"
+    "wait-on": "^9.0.4"
   }
 }
