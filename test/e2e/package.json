@@ -5,6 +5,9 @@
   "scripts": {
     "cypress": "cypress run",
     "cypress:open": "cypress open --e2e",
+    "playwright": "playwright test",
+    "playwright:ui": "playwright test --ui",
+    "playwright:debug": "playwright test --debug",
     "lint": "eslint . --fix",
     "format": "prettier --write .",
     "postinstall": "node ../../test/scripts/install-op-cli.cjs"
@@ -26,7 +29,7 @@
     "eslint-plugin-cypress": "^5.3.0",
     "eslint-plugin-mocha": "^11.2.0",
     "lint-staged": "^16.2.6",
-    "playwright": "^1.56.1",
+    "@playwright/test": "^1.56.1",
     "prettier": "^3.6.2",
     "smol-toml": "^1.5.2",
     "wait-on": "^9.0.4"
