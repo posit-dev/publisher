@@ -243,13 +243,13 @@ Cypress.Commands.add("startPositronSession", () => {
 
   // Start a Positron session
   // TODO remove this workaround for "All types of sessions are disabled" error after Workbench 2025.12.0 is released
+  // Wait for network to be idle before clicking to ensure backend is ready
+  cy.waitForNetworkIdle(500);
   cy.get("button")
     .contains("New Session")
     .should("be.visible")
-    .and("be.enabled");
-  // eslint-disable-next-line cypress/no-unnecessary-waiting
-  cy.wait(500);
-  cy.get("button").contains("New Session").click();
+    .and("be.enabled")
+    .click();
   cy.get("button").contains("Positron").click();
   cy.get("button").contains("Launch").click();
 
@@ -401,18 +401,15 @@ Cypress.Commands.add(
     cy.get('.monaco-menu .actions-container[role="menu"]')
       .should("be.visible")
       .within(() => {
-        // Even a double-click the Posit Publisher menu item sometimes fails to open it for some reason
-        // TODO try to determine some other way to make this more reliable than a hardcoded wait
-        // eslint-disable-next-line cypress/no-unnecessary-waiting
-        cy.wait(1_000);
-
-        cy.findByLabelText("Posit Publisher").dblclick();
+        // Wait for the menu item to be fully rendered and actionable before clicking
+        cy.findByLabelText("Posit Publisher")
+          .should("be.visible")
+          .and("not.have.attr", "aria-disabled", "true")
+          .dblclick();
       });
 
-    // Small wait to allow the UI to settle in CI before proceeding
-    // TODO try to determine some other way to make this more reliable than a hardcoded wait
-    // eslint-disable-next-line cypress/no-unnecessary-waiting
-    cy.wait(1_000);
+    // Wait for menu to close before proceeding
+    cy.get('.monaco-menu .actions-container[role="menu"]').should("not.exist");
 
     cy.debugIframes();
 
