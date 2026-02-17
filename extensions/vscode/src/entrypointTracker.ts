@@ -6,6 +6,7 @@ import {
   NotebookEditor,
   TextDocument,
   TextEditor,
+  Uri,
   commands,
   window,
   workspace,
@@ -24,6 +25,7 @@ import {
   getSummaryStringFromError,
   isConnectionRefusedError,
 } from "src/utils/errors";
+import { getFileUriFromTab } from "src/utils/getUri";
 
 function isTextEditor(
   editor: TextEditor | NotebookEditor,
@@ -32,15 +34,13 @@ function isTextEditor(
 }
 
 /**
- * Determines if a text document is an entrypoint file.
+ * Determines if a URI points to an entrypoint file.
  *
- * @param document The text document to inspect
- * @returns If the text document is an entrypoint
+ * @param uri The URI to inspect
+ * @returns Whether the URI is an entrypoint
  */
-async function isDocumentEntrypoint(
-  document: TextDocument | NotebookDocument,
-): Promise<boolean> {
-  const dir = relativeDir(document.uri);
+async function isEntrypoint(uri: Uri): Promise<boolean> {
+  const dir = relativeDir(uri);
   // If the file is outside the workspace, it cannot be an entrypoint
   if (dir === undefined) {
     return false;
@@ -52,19 +52,20 @@ async function isDocumentEntrypoint(
     const r = await getRInterpreterPath();
 
     const response = await api.configurations.inspect(dir, python, r, {
-      entrypoint: uriUtils.basename(document.uri),
+      entrypoint: uriUtils.basename(uri),
     });
 
     return hasKnownContentType(response.data);
   } catch (error: unknown) {
-    const summary = getSummaryStringFromError(
-      "entrypointTracker::isDocumentEntrypoint",
-      error,
-    );
-    // Don't show popup for connection errors - this is a transient state
-    // that occurs during backend startup/shutdown. Just log to console.
+    // Don't show error popups for background entrypoint detection.
+    // This can fail transiently (e.g., during backend startup/shutdown,
+    // when files/directories are deleted) and shouldn't interrupt the user.
     if (!isConnectionRefusedError(error)) {
-      window.showErrorMessage(summary);
+      const summary = getSummaryStringFromError(
+        "entrypointTracker::isEntrypoint",
+        error,
+      );
+      console.warn(summary);
     }
     return false;
   }
@@ -88,8 +89,8 @@ export class TrackedEntrypointDocument {
   }
 
   static async create(document: TextDocument | NotebookDocument) {
-    const isEntrypoint = await isDocumentEntrypoint(document);
-    return new TrackedEntrypointDocument(document, isEntrypoint);
+    const entrypoint = await isEntrypoint(document.uri);
+    return new TrackedEntrypointDocument(document, entrypoint);
   }
 
   /**
@@ -124,7 +125,7 @@ export class TrackedEntrypointDocument {
    */
   private async update() {
     this.requiresUpdate = false;
-    this.isEntrypoint = await isDocumentEntrypoint(this.document);
+    this.isEntrypoint = await isEntrypoint(this.document.uri);
   }
 }
 
@@ -139,6 +140,10 @@ export class DocumentTracker implements Disposable {
     TrackedEntrypointDocument
   >();
 
+  // Tracks URIs currently being processed to prevent duplicate API calls
+  // when multiple event handlers fire for the same file
+  private readonly processingUris = new Set<string>();
+
   constructor() {
     this.disposable = Disposable.from(
       // Track text editors
@@ -150,6 +155,9 @@ export class DocumentTracker implements Disposable {
       window.onDidChangeActiveNotebookEditor(this.onActiveEditorChanged, this),
       workspace.onDidCloseNotebookDocument(this.onDocumentClosed, this),
       workspace.onDidSaveNotebookDocument(this.onDocumentSaved, this),
+
+      // Track custom editors (Quarto visual mode, diff views, etc.)
+      window.tabGroups.onDidChangeTabGroups(this.onActiveTabChanged, this),
     );
 
     // activate the initial active file
@@ -190,11 +198,13 @@ export class DocumentTracker implements Disposable {
    */
   async onActiveEditorChanged(editor: TextEditor | NotebookEditor | undefined) {
     if (editor === undefined) {
-      commands.executeCommand(
-        "setContext",
-        Contexts.ActiveFileEntrypoint,
-        undefined,
-      );
+      // Only clear context if NO editor is active.
+      // When switching between text and notebook editors, one event fires with
+      // undefined before the other fires with the new editor.
+      if (!window.activeTextEditor && !window.activeNotebookEditor) {
+        // Might be a custom editor (Quarto visual mode, diff view) - try tab detection
+        this.onActiveTabChanged();
+      }
       return;
     }
 
@@ -207,6 +217,65 @@ export class DocumentTracker implements Disposable {
     }
 
     tracked.activate();
+  }
+
+  /**
+   * Fallback handler for custom editors (Quarto visual mode, diff views).
+   * Only used when no standard text/notebook editor is active.
+   */
+  private async onActiveTabChanged() {
+    // Skip if we have an active text/notebook editor - those are handled by
+    // onActiveEditorChanged which is more reliable
+    if (window.activeTextEditor || window.activeNotebookEditor) {
+      return;
+    }
+
+    const activeTab = window.tabGroups.activeTabGroup?.activeTab;
+    if (!activeTab) {
+      commands.executeCommand(
+        "setContext",
+        Contexts.ActiveFileEntrypoint,
+        undefined,
+      );
+      return;
+    }
+
+    const fileUri = getFileUriFromTab(activeTab);
+    if (!fileUri) {
+      commands.executeCommand(
+        "setContext",
+        Contexts.ActiveFileEntrypoint,
+        undefined,
+      );
+      return;
+    }
+
+    // Prevent duplicate API calls when multiple events fire for the same file
+    const fsPath = fileUri.fsPath;
+    if (this.processingUris.has(fsPath)) {
+      return;
+    }
+
+    this.processingUris.add(fsPath);
+    try {
+      const entrypoint = await isEntrypoint(fileUri);
+
+      // Verify file is still active after async operation (prevents race condition
+      // when user switches tabs rapidly)
+      const currentTab = window.tabGroups.activeTabGroup?.activeTab;
+      const currentUri = currentTab ? getFileUriFromTab(currentTab) : undefined;
+      if (currentUri?.fsPath !== fsPath) {
+        return;
+      }
+
+      commands.executeCommand(
+        "setContext",
+        Contexts.ActiveFileEntrypoint,
+        entrypoint,
+      );
+    } finally {
+      this.processingUris.delete(fsPath);
+    }
   }
 
   /**
