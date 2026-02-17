@@ -109,7 +109,7 @@ jobs:
           WORKBENCH_LICENSE: ${{ secrets.WORKBENCH_LICENSE }}
 
       - name: Build e2e base Docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: test/e2e
           file: test/e2e/Dockerfile.base
