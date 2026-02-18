@@ -25,13 +25,13 @@ type PythonInspector interface {
 type ReticulateChecker func(base util.AbsolutePath) (bool, error)
 
 type defaultPythonInspector struct {
-	base               util.AbsolutePath
-	executor           executor.Executor
-	pathLooker         util.PathLooker
-	scanner            pydeps.DependencyScanner
-	pythonInterpreter  interpreters.PythonInterpreter
-	log                logging.Logger
-	reticulateChecker  ReticulateChecker // optional override for testing
+	base              util.AbsolutePath
+	executor          executor.Executor
+	pathLooker        util.PathLooker
+	scanner           pydeps.DependencyScanner
+	pythonInterpreter interpreters.PythonInterpreter
+	log               logging.Logger
+	reticulateChecker ReticulateChecker // optional override for testing
 }
 
 var _ PythonInspector = &defaultPythonInspector{}
