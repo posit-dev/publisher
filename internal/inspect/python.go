@@ -6,6 +6,7 @@ import (
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/executor"
 	"github.com/posit-dev/publisher/internal/inspect/dependencies/pydeps"
+	"github.com/posit-dev/publisher/internal/inspect/dependencies/renv"
 	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/types"
@@ -19,13 +20,18 @@ type PythonInspector interface {
 	GetPythonInterpreter() interpreters.PythonInterpreter
 }
 
+// ReticulateChecker is a function type for checking if a project has reticulate as a dependency.
+// This allows for dependency injection in tests.
+type ReticulateChecker func(base util.AbsolutePath) (bool, error)
+
 type defaultPythonInspector struct {
-	base              util.AbsolutePath
-	executor          executor.Executor
-	pathLooker        util.PathLooker
-	scanner           pydeps.DependencyScanner
-	pythonInterpreter interpreters.PythonInterpreter
-	log               logging.Logger
+	base               util.AbsolutePath
+	executor           executor.Executor
+	pathLooker         util.PathLooker
+	scanner            pydeps.DependencyScanner
+	pythonInterpreter  interpreters.PythonInterpreter
+	log                logging.Logger
+	reticulateChecker  ReticulateChecker // optional override for testing
 }
 
 var _ PythonInspector = &defaultPythonInspector{}
@@ -151,5 +157,23 @@ func (i *defaultPythonInspector) RequiresPython(cfg *config.Config) (bool, error
 	if err != nil {
 		return false, err
 	}
-	return exists, nil
+	if exists {
+		return true, nil
+	}
+	// Check if the R project uses reticulate, which requires Python at runtime
+	if cfg.Type.IsRContent() {
+		checker := renv.HasReticulateDependency
+		if i.reticulateChecker != nil {
+			checker = i.reticulateChecker
+		}
+		hasReticulate, err := checker(i.base)
+		if err != nil {
+			return false, err
+		}
+		if hasReticulate {
+			i.log.Info("Detected reticulate dependency, Python is required")
+			return true, nil
+		}
+	}
+	return false, nil
 }

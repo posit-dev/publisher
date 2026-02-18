@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/contenttypes"
 	"github.com/posit-dev/publisher/internal/executor"
 	"github.com/posit-dev/publisher/internal/inspect/dependencies/pydeps"
 	"github.com/posit-dev/publisher/internal/interpreters"
@@ -187,4 +188,68 @@ func (s *PythonSuite) TestRequiresPython() {
 	result, err = i.RequiresPython(noPythonSection)
 	s.NoError(err)
 	s.Equal(true, result)
+}
+
+func (s *PythonSuite) TestRequiresPython_WithReticulate() {
+	pythonPath := s.cwd.Join("bin", "python3")
+	pythonPath.Dir().MkdirAll(0777)
+	pythonPath.WriteFile(nil, 0777)
+	log := logging.New()
+
+	setupMockPythonInterpreter := func(
+		base util.AbsolutePath,
+		pythonExecutableParam util.Path,
+		log logging.Logger,
+		cmdExecutorOverride executor.Executor,
+		pathLookerOverride util.PathLooker,
+		existsFuncOverride util.ExistsFunc,
+	) (interpreters.PythonInterpreter, error) {
+		i := interpreters.NewMockPythonInterpreter()
+		i.On("IsPythonExecutableValid").Return(true)
+		i.On("GetPythonExecutable").Return(pythonPath, nil)
+		i.On("GetPythonVersion").Return("1.2.3", nil)
+		return i, nil
+	}
+
+	i, err := NewPythonInspector(s.cwd, pythonPath.Path, log, setupMockPythonInterpreter, nil)
+	s.NoError(err)
+	inspector := i.(*defaultPythonInspector)
+
+	// Test: R content with reticulate dependency should require Python
+	rContentConfig := &config.Config{
+		Type: contenttypes.ContentTypeRShiny,
+	}
+
+	// Mock reticulate checker to return true
+	inspector.reticulateChecker = func(base util.AbsolutePath) (bool, error) {
+		return true, nil
+	}
+
+	result, err := inspector.RequiresPython(rContentConfig)
+	s.NoError(err)
+	s.True(result, "R content with reticulate dependency should require Python")
+
+	// Test: R content without reticulate dependency should not require Python
+	inspector.reticulateChecker = func(base util.AbsolutePath) (bool, error) {
+		return false, nil
+	}
+
+	result, err = inspector.RequiresPython(rContentConfig)
+	s.NoError(err)
+	s.False(result, "R content without reticulate dependency should not require Python")
+
+	// Test: Non-R content should not check for reticulate
+	htmlConfig := &config.Config{
+		Type: contenttypes.ContentTypeHTML,
+	}
+	checkerCalled := false
+	inspector.reticulateChecker = func(base util.AbsolutePath) (bool, error) {
+		checkerCalled = true
+		return true, nil
+	}
+
+	result, err = inspector.RequiresPython(htmlConfig)
+	s.NoError(err)
+	s.False(result, "HTML content should not require Python")
+	s.False(checkerCalled, "Reticulate checker should not be called for non-R content")
 }
