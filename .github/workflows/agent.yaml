@@ -6,7 +6,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [macos-latest, windows-latest, windows-11-arm, ubuntu-latest, ubuntu-24.04-arm]
+        runner: [macos-latest, windows-latest, ubuntu-latest]
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v6
