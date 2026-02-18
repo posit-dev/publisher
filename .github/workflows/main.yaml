@@ -41,3 +41,23 @@ jobs:
       pr_changes: true
       fail_on_forbidden: true
     secrets: inherit
+
+  # Slack notification on failure
+  slack-notification:
+    needs:
+      [agent, vscode, build, package, archive, e2e, upload, generate-licenses]
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Slack of CI failure
+        uses: slackapi/slack-github-action@v2.0.0
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK }}
+          webhook-type: incoming-webhook
+          payload: |
+            text: ":x: CI failed on main branch"
+            blocks:
+              - type: section
+                text:
+                  type: mrkdwn
+                  text: ":x: *CI Failed on Main Branch*\n\n*Repository:* ${{ github.repository }}\n*Commit:* <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>\n*Workflow:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"

@@ -19,3 +19,22 @@ jobs:
   # Extensions
   vscode:
     uses: ./.github/workflows/vscode.yaml
+
+  # Slack notification on failure
+  slack-notification:
+    needs: [agent, build, package, e2e, vscode]
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Slack of nightly test failure
+        uses: slackapi/slack-github-action@v2.0.0
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK }}
+          webhook-type: incoming-webhook
+          payload: |
+            text: ":warning: Nightly tests failed"
+            blocks:
+              - type: section
+                text:
+                  type: mrkdwn
+                  text: ":warning: *Nightly Tests Failed*\n\n*Repository:* ${{ github.repository }}\n*Workflow:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"
