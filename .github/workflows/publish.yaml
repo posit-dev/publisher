@@ -24,6 +24,7 @@ jobs:
           - linux-amd64
           - linux-arm64
           - windows-amd64
+          - windows-arm64
     steps:
       - uses: actions/checkout@v6
       - uses: extractions/setup-just@v3
@@ -59,6 +60,7 @@ jobs:
           - linux-amd64
           - linux-arm64
           - windows-amd64
+          - windows-arm64
     steps:
       - uses: actions/checkout@v6
       - uses: extractions/setup-just@v3
