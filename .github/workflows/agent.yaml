@@ -48,7 +48,7 @@ jobs:
       - name: Install R with rig
         run: rig add release
       - name: Install R packages
-        run: Rscript -e "install.packages(c('renv', 'glue'))"
+        run: Rscript -e "install.packages(c('renv', 'glue'), repos = 'https://cloud.r-project.org')"
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
