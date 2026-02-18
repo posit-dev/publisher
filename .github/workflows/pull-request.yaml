@@ -21,7 +21,7 @@ jobs:
           predicate-quantifier: every
           filters: |
             docs-only:
-              - '**.md'
+              - '**/*.md'
               - 'LICENSE'
               - '.gitignore'
               - '.gitattributes'
