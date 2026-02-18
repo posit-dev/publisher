@@ -102,6 +102,26 @@ func ValidateModernLockfile(lockfile *Lockfile) error {
 	return nil
 }
 
+// HasReticulateDependency checks if the project has reticulate as a dependency in renv.lock.
+// reticulate is an R package that provides an interface to Python, meaning the project
+// requires Python to be available at runtime.
+func HasReticulateDependency(base util.AbsolutePath) (bool, error) {
+	lockfilePath := base.Join("renv.lock")
+	exists, err := lockfilePath.Exists()
+	if err != nil {
+		return false, err
+	}
+	if !exists {
+		return false, nil
+	}
+	lockfile, err := ReadLockfile(lockfilePath)
+	if err != nil {
+		return false, err
+	}
+	_, hasReticulate := lockfile.Packages["reticulate"]
+	return hasReticulate, nil
+}
+
 // isURL detects URLs to distinguish between repository names and repository URLs in renv.lock.
 // This distinction is critical because the defaultPackageMapper (legacy approach using installed R libraries)
 // and LockfilePackageMapper (lockfile-only approach) must produce identical output formats regardless

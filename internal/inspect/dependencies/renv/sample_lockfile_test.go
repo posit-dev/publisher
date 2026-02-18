@@ -19,6 +19,7 @@ import (
 type SampleLockfileSuite struct {
 	utiltest.Suite
 	log logging.Logger
+	cwd util.AbsolutePath
 }
 
 func TestSampleLockfileSuite(t *testing.T) {
@@ -27,6 +28,9 @@ func TestSampleLockfileSuite(t *testing.T) {
 
 func (s *SampleLockfileSuite) SetupTest() {
 	s.log = logging.New()
+	cwd, err := util.Getwd(nil)
+	s.NoError(err)
+	s.cwd = cwd
 }
 
 func (s *SampleLockfileSuite) TestSample() {
@@ -166,4 +170,48 @@ func (s *SampleLockfileSuite) TestSample() {
 	// Note: We are NOT checking that all packages from lockfile are in the manifest.
 	// This is because the lockfile may contain packages that are not directly referenced
 	// in the manifest.json, such as system packages or tools like renv, packrat, etc.
+}
+
+func (s *SampleLockfileSuite) TestHasReticulateDependency_WithReticulate() {
+	// Create a temporary directory with a lockfile containing reticulate
+	tempDir := s.cwd.Join("testdata", "reticulate-test")
+	err := tempDir.MkdirAll(0755)
+	s.NoError(err)
+	defer tempDir.RemoveAll()
+
+	// Create a minimal renv.lock with reticulate as a package
+	lockfileContent := `{
+  "R": {
+    "Version": "4.3.3",
+    "Repositories": [
+      {"Name": "CRAN", "URL": "https://cloud.r-project.org"}
+    ]
+  },
+  "Packages": {
+    "reticulate": {
+      "Package": "reticulate",
+      "Version": "1.34.0",
+      "Source": "Repository",
+      "Repository": "CRAN"
+    }
+  }
+}`
+	lockfilePath := tempDir.Join("renv.lock")
+	err = lockfilePath.WriteFile([]byte(lockfileContent), 0644)
+	s.NoError(err)
+
+	hasReticulate, err := HasReticulateDependency(tempDir)
+	s.NoError(err)
+	s.True(hasReticulate, "Lockfile with reticulate package should have reticulate dependency")
+}
+
+func (s *SampleLockfileSuite) TestHasReticulateDependency_NoLockfile() {
+	// Get the current directory
+	cwd, err := util.Getwd(nil)
+	s.NoError(err)
+
+	// A directory without renv.lock should return false
+	hasReticulate, err := HasReticulateDependency(cwd)
+	s.NoError(err)
+	s.False(hasReticulate, "Directory without renv.lock should not have reticulate dependency")
 }
