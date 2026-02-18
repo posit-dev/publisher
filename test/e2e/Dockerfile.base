@@ -5,20 +5,20 @@
 # - R: 4.3, 4.4
 # - Quarto: 1.6, 1.7
 
-FROM ubuntu:22.04 AS base
+FROM ubuntu:24.04 AS base
 
 ARG DEBIAN_FRONTEND=noninteractive
-ARG OS_IDENTIFIER=ubuntu-2204
+ARG OS_IDENTIFIER=ubuntu-2404
 
 # Configure apt-get mirror and install prerequisites in single layer
-RUN sed -i "s/archive.ubuntu.com/us-east-1.ec2.archive.ubuntu.com/g" /etc/apt/sources.list && \
+# Ubuntu 24.04 uses DEB822 format in /etc/apt/sources.list.d/ubuntu.sources
+RUN sed -i "s|URIs: http://archive.ubuntu.com|URIs: http://us-east-1.ec2.archive.ubuntu.com|g" /etc/apt/sources.list.d/ubuntu.sources && \
     export TZ=America/New_York && \
     apt-get update && \
     apt-get install -y \
     build-essential \
     curl \
     dnsutils \
-    dpkg-sig \
     gawk \
     gfortran \
     git \
@@ -38,7 +38,7 @@ RUN sed -i "s/archive.ubuntu.com/us-east-1.ec2.archive.ubuntu.com/g" /etc/apt/so
     libsodium-dev \
     libsqlite3-dev \
     libssl-dev \
-    libtinfo5 \
+    libtinfo6 \
     libxml2-dev \
     libzmq3-dev \
     llvm \
