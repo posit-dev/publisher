@@ -1,6 +1,17 @@
 name: E2E Tests
 on:
+  workflow_dispatch:
+    inputs:
+      debug_cypress:
+        description: "Enable Cypress debug mode (videos, extra logs)"
+        type: boolean
+        default: false
   workflow_call:
+    inputs:
+      debug_cypress:
+        description: "Enable Cypress debug mode (videos, extra logs)"
+        type: boolean
+        default: false
     secrets:
       CONNECT_LICENSE:
         required: true
@@ -15,22 +26,16 @@ jobs:
       fail-fast: false
       matrix:
         # Connect Server versions - tests exclude @pcc tags
+        # Simplified to reduce CI time: preview, release, one recent, one old
         connect-version:
-          - "preview" # Nightly builds of Connect
-          - "release" # always points to the latest Connect release Connect Cloud tests will also run
-          - "2025.09.0" # jammy
-          - "2025.03.0" # jammy (every 6 months, just bc every release would be overkill)
-          - "2024.09.0" # jammy
-          # These versions use R 4.2 and seem to take forever to install R dependencies
-          # - "2024.03.0" # jammy
-          # - "2023.09.0" # jammy
-          # These also use R 4.2 but seem fine, maybe because they are bionic?
-          - "2023.03.0" # bionic
-          - "2022.10.0" # bionic (the oldest we can test using with-connect)
+          - "preview" # Nightly builds of Connect - catch regressions early
+          - "release" # Latest stable release + PCC cloud tests
+          - "2025.03.0" # Recent stable version
+          - "2023.03.0" # Oldest supported version
 
     env:
-      # MANUAL DEBUG OVERRIDE: Change to "true" to force debug (videos, extra logs)
-      DEBUG_CYPRESS: "false"
+      # Debug mode input from workflow_dispatch or workflow_call
+      DEBUG_CYPRESS: ${{ inputs.debug_cypress && 'true' || 'false' }}
       # Repo-level variable override (Settings > Actions > Variables > DEBUG_CYPRESS=true)
       VARS_DEBUG_CYPRESS: ${{ vars.DEBUG_CYPRESS }}
       # Set by GitHub only when re-running a job with "Enable debug logging" checked
@@ -83,6 +88,12 @@ jobs:
 
       - uses: extractions/setup-just@v3
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          # Use docker driver to keep images in local daemon where docker compose can access them
+          driver: docker
+
       - name: Download VSIX artifact
         uses: actions/download-artifact@v7
         with:
@@ -97,20 +108,23 @@ jobs:
         env:
           WORKBENCH_LICENSE: ${{ secrets.WORKBENCH_LICENSE }}
 
-      - name: Build Docker images
+      - name: Build e2e base Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: test/e2e
+          file: test/e2e/Dockerfile.base
+          platforms: linux/amd64
+          push: false
+          load: true
+          tags: e2ebase:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            GH_DOWNLOAD_TOKEN=${{ secrets.GH_DOWNLOAD_TOKEN }}
+
+      - name: Build code-server Docker image
         working-directory: test/e2e
-        run: |
-          # Use buildkit for better caching and parallel builds
-          export DOCKER_BUILDKIT=1
-          export COMPOSE_DOCKER_CLI_BUILD=1
-
-          docker build --build-arg BUILDKIT_INLINE_CACHE=1 \
-            --build-arg GH_DOWNLOAD_TOKEN=${{ secrets.GH_DOWNLOAD_TOKEN }} \
-            -f Dockerfile.base -t e2ebase --platform linux/amd64 . &
-
-          # Build compose services in parallel after base is ready
-          wait
-          docker compose build code-server
+        run: docker compose build code-server
 
       - name: Free up disk space after Docker builds
         run: |

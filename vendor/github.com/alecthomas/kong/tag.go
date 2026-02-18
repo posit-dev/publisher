@@ -9,36 +9,51 @@ import (
 	"unicode/utf8"
 )
 
+// PassthroughMode indicates how parameters are passed through when "passthrough" is set.
+type PassthroughMode int
+
+const (
+	// PassThroughModeNone indicates passthrough mode is disabled.
+	PassThroughModeNone PassthroughMode = iota
+	// PassThroughModeAll indicates that all parameters, including flags, are passed through. It is the default.
+	PassThroughModeAll
+	// PassThroughModePartial will validate flags until the first positional argument is encountered, then pass through all remaining positional arguments.
+	PassThroughModePartial
+)
+
 // Tag represents the parsed state of Kong tags in a struct field tag.
 type Tag struct {
-	Ignored     bool // Field is ignored by Kong. ie. kong:"-"
-	Cmd         bool
-	Arg         bool
-	Required    bool
-	Optional    bool
-	Name        string
-	Help        string
-	Type        string
-	TypeName    string
-	HasDefault  bool
-	Default     string
-	Format      string
-	PlaceHolder string
-	Envs        []string
-	Short       rune
-	Hidden      bool
-	Sep         rune
-	MapSep      rune
-	Enum        string
-	Group       string
-	Xor         []string
-	Vars        Vars
-	Prefix      string // Optional prefix on anonymous structs. All sub-flags will have this prefix.
-	EnvPrefix   string
-	Embed       bool
-	Aliases     []string
-	Negatable   bool
-	Passthrough bool
+	Ignored         bool // Field is ignored by Kong. ie. kong:"-"
+	Cmd             bool
+	Arg             bool
+	Required        bool
+	Optional        bool
+	Name            string
+	Help            string
+	Type            string
+	TypeName        string
+	HasDefault      bool
+	Default         string
+	Format          string
+	PlaceHolder     string
+	Envs            []string
+	Short           rune
+	Hidden          bool
+	Sep             rune
+	MapSep          rune
+	Enum            string
+	Group           string
+	Xor             []string
+	And             []string
+	Vars            Vars
+	Prefix          string // Optional prefix on anonymous structs. All sub-flags will have this prefix.
+	EnvPrefix       string
+	XorPrefix       string // Optional prefix on XOR/AND groups.
+	Embed           bool
+	Aliases         []string
+	Negatable       string
+	Passthrough     bool // Deprecated: use PassthroughMode instead.
+	PassthroughMode PassthroughMode
 
 	// Storage for all tag keys for arbitrary lookups.
 	items map[string][]string
@@ -151,13 +166,13 @@ func parseTagItems(tagString string, chr tagChars) (map[string][]string, error) 
 	return d, nil
 }
 
-func getTagInfo(ft reflect.StructField) (string, tagChars) {
-	s, ok := ft.Tag.Lookup("kong")
+func getTagInfo(tag reflect.StructTag) (string, tagChars) {
+	s, ok := tag.Lookup("kong")
 	if ok {
 		return s, kongChars
 	}
 
-	return string(ft.Tag), bareChars
+	return string(tag), bareChars
 }
 
 func newEmptyTag() *Tag {
@@ -189,10 +204,26 @@ func parseTag(parent reflect.Value, ft reflect.StructField) (*Tag, error) {
 		t.Ignored = true
 		return t, nil
 	}
-	items, err := parseTagItems(getTagInfo(ft))
+	items := map[string][]string{}
+	// First use a [Signature] if present
+	signatureTag, ok := maybeGetSignature(ft.Type)
+	if ok {
+		signatureItems, err := parseTagItems(getTagInfo(signatureTag))
+		if err != nil {
+			return nil, err
+		}
+		items = signatureItems
+	}
+	// Next overlay the field's tags.
+	fieldItems, err := parseTagItems(getTagInfo(ft.Tag))
 	if err != nil {
 		return nil, err
 	}
+	for key, value := range fieldItems {
+		// Prepend field tag values
+		items[key] = append(value, items[key]...)
+	}
+
 	t := &Tag{
 		items: items,
 	}
@@ -249,14 +280,23 @@ func hydrateTag(t *Tag, typ reflect.Type) error { //nolint: gocyclo
 	for _, xor := range t.GetAll("xor") {
 		t.Xor = append(t.Xor, strings.FieldsFunc(xor, tagSplitFn)...)
 	}
+	for _, and := range t.GetAll("and") {
+		t.And = append(t.And, strings.FieldsFunc(and, tagSplitFn)...)
+	}
 	t.Prefix = t.Get("prefix")
 	t.EnvPrefix = t.Get("envprefix")
+	t.XorPrefix = t.Get("xorprefix")
 	t.Embed = t.Has("embed")
-	negatable := t.Has("negatable")
-	if negatable && !isBool && !isBoolPtr {
-		return fmt.Errorf("negatable can only be set on booleans")
+	if t.Has("negatable") {
+		if !isBool && !isBoolPtr {
+			return fmt.Errorf("negatable can only be set on booleans")
+		}
+		negatable := t.Get("negatable")
+		if negatable == "" {
+			negatable = negatableDefault // placeholder for default negation of --no-<flag>
+		}
+		t.Negatable = negatable
 	}
-	t.Negatable = negatable
 	aliases := t.Get("aliases")
 	if len(aliases) > 0 {
 		t.Aliases = append(t.Aliases, strings.FieldsFunc(aliases, tagSplitFn)...)
@@ -280,6 +320,17 @@ func hydrateTag(t *Tag, typ reflect.Type) error { //nolint: gocyclo
 		return fmt.Errorf("passthrough only makes sense for positional arguments or commands")
 	}
 	t.Passthrough = passthrough
+	if t.Passthrough {
+		passthroughMode := t.Get("passthrough")
+		switch passthroughMode {
+		case "partial":
+			t.PassthroughMode = PassThroughModePartial
+		case "all", "":
+			t.PassthroughMode = PassThroughModeAll
+		default:
+			return fmt.Errorf("invalid passthrough mode %q, must be one of 'partial' or 'all'", passthroughMode)
+		}
+	}
 	return nil
 }
 
@@ -348,4 +399,35 @@ func (t *Tag) GetSep(k string, dflt rune) (rune, error) {
 		return r, fmt.Errorf(`%v:"%v" is more than a single rune`, k, tv)
 	}
 	return r, nil
+}
+
+// Signature allows flags, args and commands to supply a default set of tags,
+// that can be overridden by the field itself.
+type Signature interface {
+	// Signature returns default tags for the flag, arg or command.
+	//
+	// eg. `name:"migrate" help:"Run migrations" aliases:"mig,mg"`.
+	Signature() string
+}
+
+var signatureOverrideType = reflect.TypeOf((*Signature)(nil)).Elem()
+
+func maybeGetSignature(t reflect.Type) (reflect.StructTag, bool) {
+	ut := t
+	if ut.Kind() == reflect.Pointer {
+		ut = ut.Elem()
+	}
+	ptr := reflect.New(ut)
+	var sig string
+	for _, v := range []reflect.Value{ptr, ptr.Elem()} {
+		if v.Type().Implements(signatureOverrideType) {
+			sig = v.Interface().(Signature).Signature() //nolint:forcetypeassert
+			break
+		}
+	}
+	sig = strings.TrimSpace(sig)
+	if sig == "" {
+		return "", false
+	}
+	return reflect.StructTag(sig), true
 }

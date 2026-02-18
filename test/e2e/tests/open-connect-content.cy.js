@@ -24,27 +24,46 @@ describe("Open Connect Content", () => {
 
     cy.getPublisherTomlFilePaths("static").then((filePaths) => {
       cy.loadTomlFile(filePaths.contentRecord.path).then((contentRecord) => {
-        cy.runCommandPaletteCommand("Posit Publisher: Open Connect Content");
-        cy.quickInputType("Connect server URL", contentRecord.server_url);
-        cy.quickInputType("Connect content GUID", contentRecord.id);
+        // Capture the current URL before running the command
+        cy.url().then((originalUrl) => {
+          cy.runCommandPaletteCommand("Posit Publisher: Open Connect Content");
+          cy.quickInputType("Connect server URL", contentRecord.server_url);
+          cy.quickInputType("Connect content GUID", contentRecord.id);
 
-        // Wait for the workspace to reload with the Connect content
-        // The GUID appears in the explorer as a root folder after the workspace switch
-        cy.retryWithBackoff(
-          () =>
-            cy.contains(
-              ".explorer-viewlet .monaco-list-row[aria-level='1']",
-              contentRecord.id,
-            ),
-          15,
-          1000,
-        ).should("exist");
+          // Wait for the quick input to close, indicating the command has been submitted
+          cy.get(".quick-input-widget").should("not.be.visible");
+
+          // Wait for the workspace to actually start reloading by detecting URL change.
+          // This prevents the race condition where retries run against the old workspace
+          // before VS Code has started loading the new one.
+          cy.url({ timeout: 30000 }).should("not.eq", originalUrl);
+
+          // Wait for the workspace to reload with the Connect content.
+          // The GUID appears in the explorer as a root folder after the workspace switch.
+          // Use { timeout: 0 } in the inner cy.contains() so retryWithBackoff controls
+          // the retry timing rather than cy.contains() blocking on its own timeout.
+          cy.retryWithBackoff(
+            () =>
+              cy.get("body", { timeout: 0 }).then(($body) => {
+                const explorer = $body.find(".explorer-viewlet");
+                if (explorer.length === 0) {
+                  return Cypress.$(); // Explorer not yet rendered, return empty to retry
+                }
+                const row = explorer.find(
+                  `.monaco-list-row[aria-level='1']:contains("${contentRecord.id}")`,
+                );
+                return row.length > 0 ? cy.wrap(row) : Cypress.$();
+              }),
+            20,
+            1500,
+          ).should("exist");
+        });
       });
     });
 
     cy.retryWithBackoff(
       () =>
-        cy.get("body").then(($body) => {
+        cy.get("body", { timeout: 0 }).then(($body) => {
           if ($body.find(".explorer-viewlet:visible").length === 0) {
             const explorerButton =
               $body
@@ -55,15 +74,21 @@ describe("Open Connect Content", () => {
             if (explorerButton) {
               explorerButton.click();
             }
+            return Cypress.$(); // Return empty to retry after clicking
           }
-          return cy.get(".explorer-viewlet:visible");
+          const explorer = $body.find(".explorer-viewlet:visible");
+          return explorer.length > 0 ? cy.wrap(explorer) : Cypress.$();
         }),
       12,
       1000,
     ).should("be.visible");
 
     cy.retryWithBackoff(
-      () => cy.get(".explorer-viewlet .explorer-item"),
+      () =>
+        cy.get("body", { timeout: 0 }).then(($body) => {
+          const items = $body.find(".explorer-viewlet .explorer-item");
+          return items.length > 0 ? cy.wrap(items) : Cypress.$();
+        }),
       10,
       1000,
     ).should("exist");
@@ -79,17 +104,24 @@ describe("Open Connect Content", () => {
 
     cy.retryWithBackoff(
       () =>
-        cy.contains(
-          ".explorer-viewlet .explorer-item a > span",
-          "manifest.json",
-        ),
+        cy.get("body", { timeout: 0 }).then(($body) => {
+          const match = $body.find(
+            '.explorer-viewlet .explorer-item a > span:contains("manifest.json")',
+          );
+          return match.length > 0 ? cy.wrap(match) : Cypress.$();
+        }),
       10,
       1000,
     ).should("be.visible");
 
     cy.retryWithBackoff(
       () =>
-        cy.contains(".explorer-viewlet .explorer-item a > span", "index.html"),
+        cy.get("body", { timeout: 0 }).then(($body) => {
+          const match = $body.find(
+            '.explorer-viewlet .explorer-item a > span:contains("index.html")',
+          );
+          return match.length > 0 ? cy.wrap(match) : Cypress.$();
+        }),
       10,
       1000,
     ).should("be.visible");

@@ -18,6 +18,12 @@ services:
       - ../../dist:/home/coder/vsix
     ports:
       - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8080"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
 
   # Workbench Preview Container
   workbench-preview:
@@ -38,9 +44,10 @@ services:
     entrypoint: ["/workbench-entrypoint.sh"]
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:8787/health-check"]
-      interval: 2s
-      timeout: 1s
-      retries: 30
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 15s
 
   # Workbench Release Container
   workbench-release:
@@ -61,6 +68,7 @@ services:
     entrypoint: ["/workbench-entrypoint.sh"]
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:8787/health-check"]
-      interval: 2s
-      timeout: 1s
-      retries: 30
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 15s

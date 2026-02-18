@@ -83,3 +83,65 @@ func (s *ProjectDependenciesSuite) TestWriteRequirementsFile() {
 
 	s.Equal(contents, fileContents)
 }
+
+func (s *ProjectDependenciesSuite) TestHasRpy2Dependency_WithRpy2() {
+	filePath := s.cwd.Join("requirements.txt")
+	filePath.WriteFile([]byte("numpy==1.26.1\nrpy2==3.5.0\npandas\n"), 0777)
+
+	hasRpy2, err := HasRpy2Dependency(s.cwd)
+	s.NoError(err)
+	s.True(hasRpy2)
+}
+
+func (s *ProjectDependenciesSuite) TestHasRpy2Dependency_WithRpy2NoVersion() {
+	filePath := s.cwd.Join("requirements.txt")
+	filePath.WriteFile([]byte("numpy==1.26.1\nrpy2\npandas\n"), 0777)
+
+	hasRpy2, err := HasRpy2Dependency(s.cwd)
+	s.NoError(err)
+	s.True(hasRpy2)
+}
+
+func (s *ProjectDependenciesSuite) TestHasRpy2Dependency_WithRpy2VersionRange() {
+	filePath := s.cwd.Join("requirements.txt")
+	filePath.WriteFile([]byte("numpy==1.26.1\nrpy2>=3.5.0\npandas\n"), 0777)
+
+	hasRpy2, err := HasRpy2Dependency(s.cwd)
+	s.NoError(err)
+	s.True(hasRpy2)
+}
+
+func (s *ProjectDependenciesSuite) TestHasRpy2Dependency_WithoutRpy2() {
+	filePath := s.cwd.Join("requirements.txt")
+	filePath.WriteFile([]byte("numpy==1.26.1\npandas\n"), 0777)
+
+	hasRpy2, err := HasRpy2Dependency(s.cwd)
+	s.NoError(err)
+	s.False(hasRpy2)
+}
+
+func (s *ProjectDependenciesSuite) TestHasRpy2Dependency_NoRequirementsFile() {
+	hasRpy2, err := HasRpy2Dependency(s.cwd)
+	s.NoError(err)
+	s.False(hasRpy2)
+}
+
+func (s *ProjectDependenciesSuite) TestHasRpy2Dependency_SimilarPackageName() {
+	// Make sure we don't match packages that just contain "rpy2" as a substring
+	filePath := s.cwd.Join("requirements.txt")
+	filePath.WriteFile([]byte("numpy==1.26.1\nmyrpy2wrapper\npandas\n"), 0777)
+
+	hasRpy2, err := HasRpy2Dependency(s.cwd)
+	s.NoError(err)
+	s.False(hasRpy2)
+}
+
+func (s *ProjectDependenciesSuite) TestHasRpy2Dependency_Rpy2Arrow() {
+	// rpy2-arrow is part of the rpy2 ecosystem and also requires R
+	filePath := s.cwd.Join("requirements.txt")
+	filePath.WriteFile([]byte("numpy==1.26.1\nrpy2-arrow==0.0.8\npandas\n"), 0777)
+
+	hasRpy2, err := HasRpy2Dependency(s.cwd)
+	s.NoError(err)
+	s.True(hasRpy2)
+}

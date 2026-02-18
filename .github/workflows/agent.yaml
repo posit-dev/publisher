@@ -6,13 +6,25 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [macos-latest, windows-latest, ubuntu-latest]
+        runner:
+          [
+            macos-latest,
+            windows-latest,
+            windows-11-arm,
+            ubuntu-latest,
+            ubuntu-24.04-arm,
+          ]
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+      # setup-just doesn't support Windows ARM64, so install via cargo
+      - name: Install just via cargo (Windows ARM64)
+        if: runner.os == 'Windows' && runner.arch == 'ARM64'
+        run: cargo install just
       - uses: extractions/setup-just@v3
+        if: runner.os != 'Windows' || runner.arch != 'ARM64'
 
       # Install R with rig for our funcitonal tests to ensure we are compatible with it.
       # We aren't used r-lib/actions here becuase rig, especially on windows, installs in
@@ -36,7 +48,7 @@ jobs:
       - name: Install R with rig
         run: rig add release
       - name: Install R packages
-        run: Rscript -e "install.packages(c('renv', 'glue'))"
+        run: Rscript -e "install.packages(c('renv', 'glue'), repos = 'https://cloud.r-project.org')"
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod

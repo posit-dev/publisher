@@ -7,12 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Updated Go from 1.24 to 1.25. (#3520)
+
 ### Added
 
 - Improved performance of generating manifests for projects that do not already have an renv.lock file. (#3442)
 
 ### Fixed
 
+- Python projects using rpy2 now correctly include an [r] section in the configuration since R is required at runtime. (#3425)
+- Fixed deploy button not appearing for Jupyter notebooks, Quarto visual mode, and diff viewers. (#2785, #3146, #3469)
 - Fixed unhelpful "Unknown Error" popup appearing on every file open/save when the Publisher backend is unavailable during startup or shutdown. (#3452)
 - Fixed the agent process auto-restarting during intentional shutdown (e.g., when VS Code closes). (#3195)
 

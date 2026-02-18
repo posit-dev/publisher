@@ -12,21 +12,21 @@
   "license": "UNLICENSED",
   "private": true,
   "devDependencies": {
-    "@cypress/grep": "^4.1.0",
+    "@cypress/grep": "^6.0.0",
+    "@eslint/js": "^10.0.0",
+    "globals": "^16.0.0",
     "@testing-library/cypress": "^10.1.0",
-    "axios": "^1.6.0",
-    "cypress": "^14.5.4",
+    "axios": "^1.13.5",
+    "cypress": "^15.10.0",
     "cypress-network-idle": "^1.15.0",
-    "cypress-terminal-report": "^6.2.0",
+    "cypress-terminal-report": "^7.3.3",
     "cypress-wait-until": "^3.0.2",
-    "eslint": "^9.39.1",
+    "eslint": "^10.0.0",
     "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-cypress": "^5.2.1",
+    "eslint-plugin-cypress": "^5.3.0",
     "eslint-plugin-mocha": "^11.2.0",
-    "lint-staged": "^16.2.6",
     "playwright": "^1.56.1",
     "prettier": "^3.6.2",
-    "smol-toml": "^1.5.2",
-    "wait-on": "^9.0.3"
+    "smol-toml": "^1.5.2"
   }
 }
