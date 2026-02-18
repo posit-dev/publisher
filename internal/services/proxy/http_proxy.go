@@ -42,6 +42,7 @@ func NewProxy(
 
 func (p *proxy) asReverseProxy() *httputil.ReverseProxy {
 	proxy := *p.baseProxy
+	//lint:ignore SA1019 Director deprecated in Go 1.26, migration to Rewrite tracked separately
 	proxy.Director = p.director
 	proxy.ModifyResponse = p.modifyResponse
 	proxy.ErrorHandler = p.handleError
@@ -70,6 +71,7 @@ func (p *proxy) proxyURL(sourceURL string) (string, error) {
 		return "", err
 	}
 	p.stripSourcePrefix(tempRequest)
+	//lint:ignore SA1019 Director deprecated in Go 1.26, migration to Rewrite tracked separately
 	p.baseProxy.Director(tempRequest)
 	return tempRequest.URL.String(), nil
 }
@@ -77,6 +79,7 @@ func (p *proxy) proxyURL(sourceURL string) (string, error) {
 func (p *proxy) director(req *http.Request) {
 	p.logRequest("Proxy request in", req)
 	p.stripSourcePrefix(req)
+	//lint:ignore SA1019 Director deprecated in Go 1.26, migration to Rewrite tracked separately
 	p.baseProxy.Director(req)
 	p.fixReferer(req)
 	req.Host = req.URL.Host
