@@ -37,10 +37,27 @@ Ask the user which mode they need:
    - PRs missing from CHANGELOG that likely need entries (user-facing changes)
    - PRs that can be skipped (chore/ci/docs/deps)
 
-6. **Suggest entries**: For missing PRs that need documentation, suggest CHANGELOG entries following the existing format:
-   - Brief description of the change from a user's perspective
-   - PR number in parentheses: `(#1234)`
-   - Place under the appropriate section: Added, Changed, Fixed, Deprecated, Removed, or Security
+6. **Analyze missing PRs with subagents**: For each missing PR that likely needs documentation, spawn a subagent using the Task tool with `subagent_type=general-purpose` to analyze the PR in depth. The subagent prompt should:
+
+   ```
+   Analyze PR #<number> in posit-dev/publisher and suggest a CHANGELOG entry.
+
+   1. Get PR details: `gh pr view <number> --json title,body,files`
+   2. Review the changed files to understand what was actually modified
+   3. Determine the user-facing impact of the changes
+   4. Categorize: Added, Changed, Fixed, Deprecated, Removed, or Security
+   5. Write a concise changelog entry from the user's perspective
+
+   Return in this format:
+   - **PR**: #<number> - <title>
+   - **Category**: <Added|Changed|Fixed|etc.>
+   - **Suggested Entry**: <one-sentence description from user perspective>. (#<number>)
+   - **Reasoning**: <brief explanation of why this category and wording>
+   ```
+
+   Run subagents in parallel (up to 5 at a time) for efficiency.
+
+7. **Compile suggestions**: Collect all subagent responses and present the suggested entries grouped by category (Added, Changed, Fixed, etc.) so they can be easily added to the CHANGELOG
 
 ## CHANGELOG Format
 
@@ -70,9 +87,22 @@ The CHANGELOG follows [Keep a Changelog](https://keepachangelog.com/) format:
 ### Already Documented
 - #3520: Updated Go from 1.24 to 1.25 ✓
 
-### Missing Entries (Need Documentation)
-- #3512: fix: detect entrypoints in custom editors
-  Suggested entry (Fixed): Fixed entrypoint detection in custom editors. (#3512)
+### Missing Entries (Analyzing with subagents...)
+
+[Spawning 3 subagents to analyze PRs #3512, #3515, #3518...]
+
+### Subagent Analysis Results
+
+#### Fixed
+- Fixed entrypoint detection failing for files opened in custom editors. (#3512)
+  *Reasoning: The PR modifies detect.go to handle custom editor file types - directly impacts user experience*
+
+- Fixed deployment preview not updating after configuration changes. (#3515)
+  *Reasoning: Bug fix that was causing stale UI state after config edits*
+
+#### Added
+- Added support for deploying Shiny Express applications. (#3518)
+  *Reasoning: New feature enabling a previously unsupported content type*
 
 ### Skipped (Infrastructure/Deps)
 - #3538: ci: skip tests for docs-only PRs
@@ -118,7 +148,7 @@ Help draft a changelog entry for the work on the current branch.
    - Include placeholder for PR number: `(#XXXX)`
    - Specify which section it belongs in (Added/Changed/Fixed/etc.)
 
-6. **Offer to add it**: Ask if the user wants you to add the entry to CHANGELOG.md in the `[Unreleased]` section.
+6. **Offer to add it**: Ask if the user wants you to add the entry to the root `CHANGELOG.md` file in the `[Unreleased]` section.
 
 ### Example Output
 
