@@ -38,6 +38,8 @@ RUN sed -i "s|URIs: http://archive.ubuntu.com|URIs: http://us-east-1.ec2.archive
     libsqlite3-dev \
     libssl-dev \
     libtinfo6 \
+    libtirpc-dev \
+    libxt6t64 \
     libxml2-dev \
     libzmq3-dev \
     llvm \
