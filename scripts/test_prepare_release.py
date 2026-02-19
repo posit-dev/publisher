@@ -263,38 +263,6 @@ class TestSyncVscodeChangelog(unittest.TestCase):
             self.assertEqual(content.count("# Changelog"), 1)
 
 
-class TestSyncOnlyMode(unittest.TestCase):
-    """Tests for --sync-only command line mode."""
-
-    def test_sync_only_flag(self):
-        """--sync-only should only sync VSCode changelog without version."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            # Create directory structure
-            root_changelog = Path(tmpdir) / "CHANGELOG.md"
-            vscode_dir = Path(tmpdir) / "extensions" / "vscode"
-            vscode_dir.mkdir(parents=True)
-            vscode_changelog = vscode_dir / "CHANGELOG.md"
-
-            root_changelog.write_text(SAMPLE_ROOT_CHANGELOG)
-            vscode_changelog.write_text("")  # Empty file
-
-            # Run the script with --sync-only
-            result = subprocess.run(
-                ["python3", str(Path(__file__).parent / "prepare-release.py"), "--sync-only"],
-                cwd=tmpdir,
-                capture_output=True,
-                text=True,
-            )
-
-            self.assertEqual(result.returncode, 0)
-            self.assertIn("synced successfully", result.stderr)
-
-            # Check VSCode changelog was created correctly
-            content = vscode_changelog.read_text()
-            self.assertIn("## [1.32.0]", content)
-            self.assertNotIn("[Unreleased]", content)
-
-
 class TestFullReleasePreparation(unittest.TestCase):
     """Tests for full release preparation flow."""
 

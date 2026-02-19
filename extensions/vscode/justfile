@@ -97,7 +97,6 @@ configure os="$(just ../../os)" arch="$(just ../../arch)":
     cp "$binary_executable" ./bin/$(basename -- "$binary_executable")
     just assert-binary-executable-exists
     just set-version
-    just sync-changelog
 
 set-version:
     #!/usr/bin/env bash
@@ -107,18 +106,6 @@ set-version:
     version=$(just ../../version)
     echo "info: version $version"
     python3 ./scripts/set-version.py $version
-
-# Syncs release entries from root CHANGELOG.md to extensions/vscode/CHANGELOG.md
-# - Preserves the VSCode extension-specific header
-# - Strips the [Unreleased] section
-# - Only includes releases from 1.1.3 onwards (when the VSCode extension was first released)
-sync-changelog:
-    #!/usr/bin/env bash
-    set -eou pipefail
-    {{ _with_debug }}
-
-    # Delegate to Python script (run from repo root)
-    cd ../.. && python3 scripts/prepare-release.py --sync-only
 
 # Installs the packaged extension on your configured editor using the editor's CLI. The editor CLI defaults to 'code'. Modify this value via the EDITOR environment variable.
 install os="$(just ../../os)" arch="$(just ../../arch)" editor="code":

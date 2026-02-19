@@ -2,13 +2,9 @@
 """
 Prepares a release by updating CHANGELOG files.
 
-Usage:
-  ./scripts/prepare-release.py <version>     # Full release preparation
-  ./scripts/prepare-release.py --sync-only   # Only sync VSCode changelog from root
+Usage: ./scripts/prepare-release.py <version>
 
-Examples:
-  ./scripts/prepare-release.py 1.34.0
-  ./scripts/prepare-release.py --sync-only
+Example: ./scripts/prepare-release.py 1.34.0
 """
 
 import re
@@ -168,27 +164,10 @@ def sync_vscode_changelog(root_changelog: Path, vscode_changelog: Path) -> None:
 
 
 def main() -> None:
-    # Handle --sync-only flag
-    if len(sys.argv) == 2 and sys.argv[1] == "--sync-only":
-        root_changelog = Path("CHANGELOG.md")
-        vscode_changelog = Path("extensions/vscode/CHANGELOG.md")
-
-        if not root_changelog.exists():
-            error(f"Root CHANGELOG not found: {root_changelog}")
-
-        print("info: syncing CHANGELOG.md from root to extensions/vscode...", file=sys.stderr)
-        sync_vscode_changelog(root_changelog, vscode_changelog)
-        print("info: CHANGELOG.md synced successfully", file=sys.stderr)
-        return
-
-    # Check arguments for release preparation
+    # Check arguments
     if len(sys.argv) != 2:
         print("Usage: prepare-release.py <version>")
-        print("       prepare-release.py --sync-only")
-        print()
-        print("Examples:")
-        print("  prepare-release.py 1.34.0      # Full release preparation")
-        print("  prepare-release.py --sync-only # Only sync VSCode changelog")
+        print("Example: prepare-release.py 1.34.0")
         sys.exit(1)
 
     version_arg = sys.argv[1]
