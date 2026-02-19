@@ -106,31 +106,10 @@ awk -v version="$VERSION" '
 
 mv "${ROOT_CHANGELOG}.tmp" "$ROOT_CHANGELOG"
 
-# Update VSCode CHANGELOG.md
-# The VSCode changelog doesn't have [Unreleased], just add new version at top after header
-info "Updating $VSCODE_CHANGELOG"
-
-# Find the line number of the first version header
-FIRST_VERSION_LINE=$(grep -n "^## \[" "$VSCODE_CHANGELOG" | head -1 | cut -d: -f1)
-
-if [ -z "$FIRST_VERSION_LINE" ]; then
-    error "Could not find version header in $VSCODE_CHANGELOG"
-fi
-
-# Create new VSCode changelog with version section inserted
-{
-    # Print header lines (before first version)
-    head -n $((FIRST_VERSION_LINE - 1)) "$VSCODE_CHANGELOG"
-
-    # Print new version section
-    echo "## [$VERSION]"
-    echo "$UNRELEASED_CONTENT"
-
-    # Print rest of file (from first version onward)
-    tail -n +$FIRST_VERSION_LINE "$VSCODE_CHANGELOG"
-} > "${VSCODE_CHANGELOG}.tmp"
-
-mv "${VSCODE_CHANGELOG}.tmp" "$VSCODE_CHANGELOG"
+# Sync VSCode CHANGELOG from root (uses the justfile sync-changelog target)
+# This regenerates the VSCode changelog from the root changelog, which now has the new version
+info "Syncing $VSCODE_CHANGELOG from root"
+just extensions/vscode/sync-changelog
 
 info "Release v$VERSION prepared successfully!"
 echo ""
