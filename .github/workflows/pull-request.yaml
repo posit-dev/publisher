@@ -7,67 +7,69 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Detect if only documentation files changed
+  # Detect if any code files changed (to skip CI for docs-only PRs)
   detect-changes:
     runs-on: ubuntu-latest
     outputs:
-      docs-only: ${{ steps.filter.outputs.docs-only }}
+      # has-code is true if ANY non-doc file changed
+      has-code: ${{ steps.filter.outputs.code }}
     steps:
       - uses: actions/checkout@v6
       - uses: dorny/paths-filter@v3
         id: filter
         with:
-          # docs-only is true when ALL changed files match these patterns
-          predicate-quantifier: every
+          # Detect code changes - if none, we can skip tests
+          # Using negated patterns: match anything NOT in the docs list
           filters: |
-            docs-only:
-              - '**/*.md'
-              - 'LICENSE'
-              - '.gitignore'
-              - '.gitattributes'
+            code:
+              - '**'
+              - '!**/*.md'
+              - '!LICENSE'
+              - '!.gitignore'
+              - '!.gitattributes'
 
   # Linting and formatting - always runs
   lint:
     uses: ./.github/workflows/lint.yaml
 
-  # Unit Tests - skip if docs-only changes
+  # Unit Tests - skip if no code changes
   home-view-unit-tests:
     needs: detect-changes
-    if: needs.detect-changes.outputs.docs-only != 'true'
+    if: needs.detect-changes.outputs.has-code == 'true'
     uses: ./.github/workflows/home-view-unit-test.yaml
 
   agent:
     needs: detect-changes
-    if: needs.detect-changes.outputs.docs-only != 'true'
+    if: needs.detect-changes.outputs.has-code == 'true'
     uses: ./.github/workflows/agent.yaml
 
   vscode:
     needs: detect-changes
-    if: needs.detect-changes.outputs.docs-only != 'true'
+    if: needs.detect-changes.outputs.has-code == 'true'
     uses: ./.github/workflows/vscode.yaml
 
-  # Build - skip if docs-only changes
+  # Build - skip if no code changes
   build:
     needs: detect-changes
-    if: needs.detect-changes.outputs.docs-only != 'true'
+    if: needs.detect-changes.outputs.has-code == 'true'
     uses: ./.github/workflows/build.yaml
 
   package:
     needs: [detect-changes, build]
-    if: needs.detect-changes.outputs.docs-only != 'true'
+    if: needs.detect-changes.outputs.has-code == 'true'
     uses: ./.github/workflows/package.yaml
 
   archive:
     needs: [detect-changes, build]
-    if: needs.detect-changes.outputs.docs-only != 'true'
+    if: needs.detect-changes.outputs.has-code == 'true'
     uses: ./.github/workflows/archive.yaml
 
-  # E2E Tests - skip if docs-only changes
+  # E2E Tests - skip if no code changes
   e2e:
     needs: [detect-changes, home-view-unit-tests, agent, vscode, package]
     if: |
       always() &&
-      needs.detect-changes.outputs.docs-only != 'true' &&
+      needs.detect-changes.outputs.has-code == 'true' &&
       !contains(needs.*.result, 'failure') &&
       !contains(needs.*.result, 'cancelled')
     uses: ./.github/workflows/e2e.yaml
@@ -78,16 +80,16 @@ jobs:
     if: |
       always() &&
       github.actor != 'dependabot[bot]' &&
-      needs.detect-changes.outputs.docs-only != 'true' &&
+      needs.detect-changes.outputs.has-code == 'true' &&
       !contains(needs.*.result, 'failure') &&
       !contains(needs.*.result, 'cancelled')
     uses: ./.github/workflows/upload.yaml
     secrets: inherit
 
-  # License generation - skip if docs-only changes
+  # License generation - skip if no code changes
   generate-licenses:
     needs: detect-changes
-    if: needs.detect-changes.outputs.docs-only != 'true'
+    if: needs.detect-changes.outputs.has-code == 'true'
     uses: ./.github/workflows/generate-licenses.yaml
     with:
       pr_changes: false # No PRs on PRs, infinite loop
