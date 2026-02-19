@@ -77,7 +77,7 @@ If they prefer to do it locally:
 1. **Run the prepare script**:
 
    ```bash
-   ./scripts/prepare-release.bash <version>
+   python3 ./scripts/prepare-release.py <version>
    ```
 
 2. **Review changes**:
