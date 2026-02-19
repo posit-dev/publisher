@@ -85,6 +85,10 @@ jobs:
       # Create VSCode extension's node_modules directories
       - run: just extensions/vscode deps
 
+      # Run license script tests
+      - name: Run license script tests
+        run: just test-scripts
+
       # Generate licenses and check for forbidden licenses
       - name: Generate licenses
         id: generate-licenses
