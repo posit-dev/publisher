@@ -69,8 +69,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - uses: extractions/setup-just@v3
-
       - name: Run prepare-release script
         run: |
           # Run non-interactively by providing 'y' to any prompts
