@@ -8,7 +8,7 @@ This skill guides you through the release process:
 
 1. Determine the next version number
 2. Verify changelog entries are complete
-3. Prepare the release (locally or via GitHub workflow)
+3. Trigger the release workflow
 
 ## Versioning Convention
 
@@ -53,13 +53,9 @@ Before releasing, ensure the CHANGELOG is complete:
 
 ---
 
-## Step 3: Prepare the Release
+## Step 3: Trigger the Release Workflow
 
-Ask the user how they want to proceed:
-
-### Option A: Use GitHub Workflow (Recommended)
-
-Guide them to trigger the workflow:
+Guide the user to trigger the GitHub Actions workflow:
 
 1. Go to **Actions** → **Prepare Release** → **Run workflow**
 2. Enter the version number (e.g., `1.34.0`)
@@ -70,35 +66,7 @@ Guide them to trigger the workflow:
 
 When the PR is merged, the tag is created automatically.
 
-### Option B: Prepare Locally
-
-If they prefer to do it locally:
-
-1. **Run the prepare script**:
-
-   ```bash
-   python3 ./scripts/prepare-release.py <version>
-   ```
-
-2. **Review changes**:
-
-   ```bash
-   git diff CHANGELOG.md extensions/vscode/CHANGELOG.md
-   ```
-
-3. **Create branch and commit**:
-
-   ```bash
-   git checkout -b release/v<version>
-   git add CHANGELOG.md extensions/vscode/CHANGELOG.md
-   git commit -m "Prepare release v<version>"
-   git push -u origin release/v<version>
-   ```
-
-4. **Create PR**:
-   ```bash
-   gh pr create --title "Release v<version>" --body "Release preparation for v<version>"
-   ```
+**Direct link**: https://github.com/posit-dev/publisher/actions/workflows/prepare-release.yaml
 
 ---
 
@@ -160,13 +128,8 @@ Claude: Let me check the changelog entries for this release...
 - 2 entries in Fixed
 - 1 entry in Changed
 
-These look good. How would you like to proceed?
-1. **GitHub Workflow** (Recommended) - I'll guide you to trigger it
-2. **Local preparation** - I'll run the scripts here
+These look good. To trigger the release:
 
-User: 1
-
-Claude: To trigger the release workflow:
 1. Go to: https://github.com/posit-dev/publisher/actions/workflows/prepare-release.yaml
 2. Click "Run workflow"
 3. Enter version: 1.34.0
