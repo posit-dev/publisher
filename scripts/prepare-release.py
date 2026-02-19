@@ -2,13 +2,16 @@
 """
 Prepares a release by updating CHANGELOG files.
 
-Usage: ./scripts/prepare-release.py <version>
+Usage:
+  ./scripts/prepare-release.py <version>     # Full release preparation
+  ./scripts/prepare-release.py --sync-only   # Only sync VSCode changelog from root
 
-Example: ./scripts/prepare-release.py 1.34.0
+Examples:
+  ./scripts/prepare-release.py 1.34.0
+  ./scripts/prepare-release.py --sync-only
 """
 
 import re
-import subprocess
 import sys
 from pathlib import Path
 
@@ -17,6 +20,20 @@ RED = "\033[0;31m"
 GREEN = "\033[0;32m"
 YELLOW = "\033[1;33m"
 NC = "\033[0m"  # No Color
+
+# VSCode changelog header
+VSCODE_CHANGELOG_HEADER = """# Changelog
+
+All notable changes to the Posit Publisher extension are documented in this
+file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+"""
+
+# Versions before the VSCode extension was released (1.1.3 was initial beta)
+PRE_EXTENSION_VERSIONS = {"1.1.2", "1.1.1", "1.1.0"}
 
 
 def error(msg: str) -> None:
@@ -83,22 +100,95 @@ def update_root_changelog(changelog_path: Path, version: str) -> None:
     changelog_path.write_text("\n".join(output_lines))
 
 
-def sync_vscode_changelog() -> None:
-    """Sync VSCode CHANGELOG from root using justfile target."""
-    result = subprocess.run(
-        ["just", "extensions/vscode/sync-changelog"],
-        capture_output=True,
-        text=True,
-    )
-    if result.returncode != 0:
-        error(f"Failed to sync VSCode changelog: {result.stderr}")
+def sync_vscode_changelog(root_changelog: Path, vscode_changelog: Path) -> None:
+    """
+    Sync VSCode CHANGELOG from root changelog.
+
+    - Writes the VSCode extension-specific header
+    - Strips the [Unreleased] section
+    - Excludes pre-extension versions (before 1.1.3)
+    - Excludes the root changelog header lines
+    """
+    content = root_changelog.read_text()
+    lines = content.split("\n")
+
+    release_lines = []
+
+    skip_unreleased = False
+    stop_processing = False
+
+    # Lines to skip from root changelog header
+    header_patterns = [
+        r"^# Changelog",
+        r"^All notable changes",
+        r"^The format is based on",
+        r"^and this project adheres",
+    ]
+
+    for line in lines:
+        # Check for pre-extension versions - stop processing
+        version_match = re.match(r"^## \[(\d+\.\d+\.\d+)\]", line)
+        if version_match:
+            version = version_match.group(1)
+            # Check for pre-extension versions or 1.0.x versions
+            if version in PRE_EXTENSION_VERSIONS or version.startswith("1.0."):
+                stop_processing = True
+
+        if stop_processing:
+            break
+
+        # Skip [Unreleased] section
+        if re.match(r"^## \[Unreleased\]", line):
+            skip_unreleased = True
+            continue
+
+        # Stop skipping when we hit a version header
+        if skip_unreleased and re.match(r"^## \[", line):
+            skip_unreleased = False
+
+        if skip_unreleased:
+            continue
+
+        # Skip header lines from root
+        if any(re.match(pattern, line) for pattern in header_patterns):
+            continue
+
+        release_lines.append(line)
+
+    # Remove leading/trailing empty lines from release content
+    while release_lines and release_lines[0] == "":
+        release_lines.pop(0)
+    while release_lines and release_lines[-1] == "":
+        release_lines.pop()
+
+    # Combine header with release content
+    output = VSCODE_CHANGELOG_HEADER + "\n".join(release_lines) + "\n"
+
+    vscode_changelog.write_text(output)
 
 
 def main() -> None:
-    # Check arguments
+    # Handle --sync-only flag
+    if len(sys.argv) == 2 and sys.argv[1] == "--sync-only":
+        root_changelog = Path("CHANGELOG.md")
+        vscode_changelog = Path("extensions/vscode/CHANGELOG.md")
+
+        if not root_changelog.exists():
+            error(f"Root CHANGELOG not found: {root_changelog}")
+
+        print("info: syncing CHANGELOG.md from root to extensions/vscode...", file=sys.stderr)
+        sync_vscode_changelog(root_changelog, vscode_changelog)
+        print("info: CHANGELOG.md synced successfully", file=sys.stderr)
+        return
+
+    # Check arguments for release preparation
     if len(sys.argv) != 2:
         print("Usage: prepare-release.py <version>")
-        print("Example: prepare-release.py 1.34.0")
+        print("       prepare-release.py --sync-only")
+        print()
+        print("Examples:")
+        print("  prepare-release.py 1.34.0      # Full release preparation")
+        print("  prepare-release.py --sync-only # Only sync VSCode changelog")
         sys.exit(1)
 
     version_arg = sys.argv[1]
@@ -146,7 +236,7 @@ def main() -> None:
 
     # Sync VSCode CHANGELOG from root
     info(f"Syncing {vscode_changelog} from root")
-    sync_vscode_changelog()
+    sync_vscode_changelog(root_changelog, vscode_changelog)
 
     info(f"Release v{version} prepared successfully!")
     print()
