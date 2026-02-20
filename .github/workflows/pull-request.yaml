@@ -12,21 +12,49 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       # has-code is true if ANY non-doc file changed
-      has-code: ${{ steps.filter.outputs.code }}
+      has-code: ${{ steps.check.outputs.has-code }}
     steps:
       - uses: actions/checkout@v6
       - uses: dorny/paths-filter@v3
         id: filter
         with:
-          # Detect code changes - if none, we can skip tests
-          # Using negated patterns: match anything NOT in the docs list
+          # Enable file list output for comparison
+          list-files: json
+          # Detect docs-only changes
+          # Note: paths-filter doesn't support negation patterns correctly
+          # (each pattern is evaluated independently with some() logic)
+          # So we detect docs explicitly and check if ONLY docs changed
           filters: |
-            code:
+            docs:
+              - '**/*.md'
+              - 'LICENSE'
+              - '.gitignore'
+              - '.gitattributes'
+            all:
               - '**'
-              - '!**/*.md'
-              - '!LICENSE'
-              - '!.gitignore'
-              - '!.gitattributes'
+      - name: Check for code changes
+        id: check
+        run: |
+          # has-code is true if any file changed that wasn't matched by docs filter
+          # i.e., if 'all' matched but the changed files aren't all docs
+          if [[ "${{ steps.filter.outputs.all }}" == "true" && "${{ steps.filter.outputs.docs }}" == "true" ]]; then
+            # Both matched - check if docs_files equals all_files
+            docs_files='${{ steps.filter.outputs.docs_files }}'
+            all_files='${{ steps.filter.outputs.all_files }}'
+            if [[ "$docs_files" == "$all_files" ]]; then
+              echo "has-code=false" >> $GITHUB_OUTPUT
+              echo "Only documentation files changed"
+            else
+              echo "has-code=true" >> $GITHUB_OUTPUT
+              echo "Code files changed (not just docs)"
+            fi
+          elif [[ "${{ steps.filter.outputs.all }}" == "true" ]]; then
+            echo "has-code=true" >> $GITHUB_OUTPUT
+            echo "Code files changed (no docs)"
+          else
+            echo "has-code=false" >> $GITHUB_OUTPUT
+            echo "No files changed"
+          fi
 
   # Linting and formatting - always runs
   lint:
