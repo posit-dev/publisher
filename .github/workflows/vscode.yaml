@@ -1,6 +1,8 @@
 name: VSCode
 on:
   workflow_call:
+permissions:
+  contents: read
 env:
   VSCODE_VERSION: stable
 jobs:
