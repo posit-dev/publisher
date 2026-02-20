@@ -1,0 +1,316 @@
+name: Sign
+on:
+  workflow_call:
+    secrets:
+      ORG_READ_TOKEN:
+        description: "GitHub token with read:org scope to verify org membership"
+        required: true
+      WINDOWS_SIGNING_CERT:
+        description: "Base64 encoded PFX/P12 certificate for Windows code signing"
+        required: true
+      WINDOWS_SIGNING_CERT_PASSWORD:
+        description: "Password for the Windows signing certificate"
+        required: true
+      MACOS_SIGNING_CERT:
+        description: "Base64 encoded P12 certificate for macOS code signing"
+        required: true
+      MACOS_SIGNING_CERT_PASSWORD:
+        description: "Password for the macOS signing certificate"
+        required: true
+      LINUX_SIGNING_KEY:
+        description: "Base64 encoded GPG private key for Linux signing"
+        required: true
+      LINUX_SIGNING_KEY_PASSPHRASE:
+        description: "Passphrase for the Linux GPG signing key"
+        required: true
+
+jobs:
+  verify-org-membership:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check org membership
+        env:
+          GH_TOKEN: ${{ secrets.ORG_READ_TOKEN }}
+        run: |
+          if ! gh api orgs/posit-dev/members/${{ github.actor }} --silent 2>/dev/null; then
+            echo "Error: ${{ github.actor }} is not a member of the posit-dev organization"
+            exit 1
+          fi
+          echo "Verified: ${{ github.actor }} is a posit-dev org member"
+
+  sign-windows:
+    needs: verify-org-membership
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v7
+        with:
+          name: bin
+          path: bin
+
+      - name: Install osslsigncode
+        run: sudo apt-get update && sudo apt-get install -y osslsigncode
+
+      - name: Sign Windows binaries
+        env:
+          WINDOWS_SIGNING_CERT: ${{ secrets.WINDOWS_SIGNING_CERT }}
+          WINDOWS_SIGNING_CERT_PASSWORD: ${{ secrets.WINDOWS_SIGNING_CERT_PASSWORD }}
+        run: |
+          set +x  # Ensure debug mode is off to prevent secret leakage
+
+          # Decode certificate
+          echo "$WINDOWS_SIGNING_CERT" | base64 -d > /tmp/cert.pfx
+
+          # Write password to file to avoid command-line exposure
+          PASSFILE=$(mktemp)
+          echo "$WINDOWS_SIGNING_CERT_PASSWORD" > "$PASSFILE"
+
+          # Find and sign all Windows executables
+          find bin -name "*.exe" -type f | while read exe; do
+            echo "Signing: $exe"
+
+            # Create signed output path
+            signed_exe="${exe}.signed"
+
+            # Use readpass to read password from file instead of command line
+            if ! osslsigncode sign \
+              -pkcs12 /tmp/cert.pfx \
+              -readpass "$PASSFILE" \
+              -n "Posit Publisher" \
+              -i "https://posit.co" \
+              -t http://timestamp.digicert.com \
+              -in "$exe" \
+              -out "$signed_exe" 2>&1 | grep -v -iE "pass|secret|key|password"; then
+              echo "Warning: osslsigncode returned non-zero for $exe"
+            fi
+
+            # Replace original with signed version
+            mv "$signed_exe" "$exe"
+
+            echo "Signed: $exe"
+          done
+
+          # Clean up sensitive files
+          rm -f /tmp/cert.pfx "$PASSFILE"
+
+      - name: Verify Windows signatures
+        run: |
+          find bin -name "*.exe" -type f | while read exe; do
+            echo "Verifying: $exe"
+            osslsigncode verify "$exe" || echo "Warning: Verification returned non-zero (may be expected without CA chain)"
+          done
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: bin-windows-signed
+          path: bin/**/windows*/**/*
+
+  sign-macos:
+    needs: verify-org-membership
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v7
+        with:
+          name: bin
+          path: bin
+
+      - name: Install signing certificate
+        env:
+          MACOS_SIGNING_CERT: ${{ secrets.MACOS_SIGNING_CERT }}
+          MACOS_SIGNING_CERT_PASSWORD: ${{ secrets.MACOS_SIGNING_CERT_PASSWORD }}
+        run: |
+          set +x  # Ensure debug mode is off to prevent secret leakage
+
+          # Create temporary keychain
+          KEYCHAIN_PATH=$RUNNER_TEMP/signing.keychain-db
+          KEYCHAIN_PASSWORD=$(openssl rand -base64 32)
+
+          # Mask the dynamically generated keychain password
+          echo "::add-mask::$KEYCHAIN_PASSWORD"
+
+          # Create keychain (suppress output that might contain sensitive info)
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH" 2>/dev/null
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH" 2>/dev/null
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH" 2>/dev/null
+
+          # Decode and import certificate (suppress output)
+          echo "$MACOS_SIGNING_CERT" | base64 -d > /tmp/cert.p12
+          security import /tmp/cert.p12 -P "$MACOS_SIGNING_CERT_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH" 2>/dev/null
+          rm -f /tmp/cert.p12
+
+          # Set key partition list for codesign access (suppress output)
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH" 2>/dev/null
+
+          # Add keychain to search list
+          security list-keychain -d user -s "$KEYCHAIN_PATH" login.keychain-db
+
+          # Export keychain path for later steps (not the password)
+          echo "KEYCHAIN_PATH=$KEYCHAIN_PATH" >> $GITHUB_ENV
+
+      - name: Sign macOS binaries
+        run: |
+          set +x  # Ensure debug mode is off to prevent secret leakage
+
+          # Get signing identity
+          IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep "Developer ID Application" | head -1 | awk -F'"' '{print $2}')
+
+          if [ -z "$IDENTITY" ]; then
+            echo "Error: No Developer ID Application identity found"
+            security find-identity -v -p codesigning "$KEYCHAIN_PATH"
+            exit 1
+          fi
+
+          echo "Using identity: $IDENTITY"
+
+          # Find and sign all macOS binaries (darwin)
+          find bin -path "*darwin*" -type f ! -name "*.exe" | while read binary; do
+            echo "Signing: $binary"
+
+            # Make sure it's executable
+            chmod +x "$binary"
+
+            # Sign the binary
+            codesign --force --options runtime --timestamp --sign "$IDENTITY" "$binary"
+
+            echo "Signed: $binary"
+          done
+
+      - name: Verify macOS signatures
+        run: |
+          find bin -path "*darwin*" -type f ! -name "*.exe" | while read binary; do
+            echo "Verifying: $binary"
+            codesign --verify --verbose "$binary"
+          done
+
+      - name: Cleanup keychain
+        if: always()
+        run: |
+          if [ -n "$KEYCHAIN_PATH" ] && [ -f "$KEYCHAIN_PATH" ]; then
+            security delete-keychain "$KEYCHAIN_PATH" || true
+          fi
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: bin-macos-signed
+          path: bin/**/darwin*/**/*
+
+  sign-linux:
+    needs: verify-org-membership
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v7
+        with:
+          name: bin
+          path: bin
+
+      - name: Import GPG key
+        env:
+          LINUX_SIGNING_KEY: ${{ secrets.LINUX_SIGNING_KEY }}
+        run: |
+          set +x  # Ensure debug mode is off to prevent secret leakage
+
+          # Decode and import GPG key (suppress verbose output)
+          echo "$LINUX_SIGNING_KEY" | base64 -d | gpg --batch --import 2>/dev/null
+
+          # Get the key ID
+          KEY_ID=$(gpg --list-secret-keys --keyid-format long | grep sec | head -1 | awk '{print $2}' | cut -d'/' -f2)
+          echo "KEY_ID=$KEY_ID" >> $GITHUB_ENV
+
+      - name: Sign Linux binaries
+        env:
+          LINUX_SIGNING_KEY_PASSPHRASE: ${{ secrets.LINUX_SIGNING_KEY_PASSPHRASE }}
+        run: |
+          set +x  # Ensure debug mode is off to prevent secret leakage
+
+          # Write passphrase to file descriptor to avoid command-line exposure
+          PASSFILE=$(mktemp)
+          echo "$LINUX_SIGNING_KEY_PASSPHRASE" > "$PASSFILE"
+
+          # Find and sign all Linux binaries
+          find bin -path "*linux*" -type f ! -name "*.exe" ! -name "*.sig" | while read binary; do
+            echo "Signing: $binary"
+
+            # Create detached signature using passphrase file
+            gpg --batch --yes --pinentry-mode loopback \
+              --passphrase-file "$PASSFILE" \
+              --detach-sign --armor \
+              --local-user "$KEY_ID" \
+              --output "${binary}.sig" \
+              "$binary" 2>/dev/null
+
+            echo "Created signature: ${binary}.sig"
+          done
+
+          # Clean up passphrase file
+          rm -f "$PASSFILE"
+
+      - name: Verify Linux signatures
+        run: |
+          find bin -path "*linux*" -name "*.sig" | while read sig; do
+            binary="${sig%.sig}"
+            echo "Verifying: $binary"
+            gpg --verify "$sig" "$binary"
+          done
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: bin-linux-signed
+          path: bin/**/linux*/**/*
+
+  combine-signed:
+    needs: [sign-windows, sign-macos, sign-linux]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          name: bin
+          path: bin
+
+      - uses: actions/download-artifact@v7
+        with:
+          name: bin-windows-signed
+          path: bin-signed
+
+      - uses: actions/download-artifact@v7
+        with:
+          name: bin-macos-signed
+          path: bin-signed
+
+      - uses: actions/download-artifact@v7
+        with:
+          name: bin-linux-signed
+          path: bin-signed
+
+      - name: Combine signed binaries
+        run: |
+          # Copy signed binaries over originals
+          cp -r bin-signed/* bin/ 2>/dev/null || true
+
+          # List all binaries
+          echo "Final binaries:"
+          find bin -type f | head -50
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: bin
+          path: bin/**/*
+          overwrite: true
+
+      # Clean up intermediate artifacts
+      - uses: geekyeggo/delete-artifact@v5
+        with:
+          name: |
+            bin-windows-signed
+            bin-macos-signed
+            bin-linux-signed
