@@ -27,14 +27,20 @@ jobs:
   e2e:
     needs: [package, agent, vscode]
     uses: ./.github/workflows/e2e.yaml
-    secrets: inherit
+    secrets:
+      CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
+      CONNECT_LICENSE_FILE: ${{ secrets.CONNECT_LICENSE_FILE }}
+      WORKBENCH_LICENSE: ${{ secrets.WORKBENCH_LICENSE }}
+      GH_DOWNLOAD_TOKEN: ${{ secrets.GH_DOWNLOAD_TOKEN }}
+      PCC_USER_CCQA3: ${{ secrets.PCC_USER_CCQA3 }}
 
   upload:
     needs:
       - archive
       - package
     uses: ./.github/workflows/upload.yaml
-    secrets: inherit
+    secrets:
+      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
 
   # License generation
   generate-licenses:
@@ -42,7 +48,9 @@ jobs:
     with:
       pr_changes: true
       fail_on_forbidden: true
-    secrets: inherit
+    secrets:
+      POSIT_CONNECT_PROJECTS_APP_ID: ${{ secrets.POSIT_CONNECT_PROJECTS_APP_ID }}
+      POSIT_CONNECT_PROJECTS_PEM: ${{ secrets.POSIT_CONNECT_PROJECTS_PEM }}
 
   # Slack notification on failure
   slack-notification:
