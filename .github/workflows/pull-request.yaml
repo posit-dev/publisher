@@ -14,7 +14,7 @@ jobs:
       # has-code is true if ANY non-doc file changed
       has-code: ${{ steps.filter.outputs.code }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       - uses: dorny/paths-filter@v3
         id: filter
         with:

@@ -42,7 +42,7 @@ jobs:
       ACTIONS_STEP_DEBUG: ${{ secrets.ACTIONS_STEP_DEBUG }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 0
       - name: Tidy CI environment
@@ -102,7 +102,7 @@ jobs:
           driver: docker
 
       - name: Download VSIX artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
         with:
           name: dist
           path: dist
@@ -231,7 +231,7 @@ jobs:
           CYPRESS_CACHE_FOLDER: ~/.cache/Cypress
 
       - name: Upload Cypress screenshots on failure
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         if: failure()
         with:
           name: cypress-screenshots-${{ matrix.name || matrix.connect-version }}
@@ -239,7 +239,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: "[DEBUG] Upload Cypress videos"
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         if: always() && (env.DEBUG_CYPRESS == 'true' || env.VARS_DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true')
         with:
           name: cypress-videos-${{ matrix.name || matrix.connect-version }}
@@ -319,7 +319,7 @@ jobs:
           sudo chown -R $USER:$USER test/e2e/logs
 
       - name: Save test logs as artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         if: failure() && steps.run_tests.outcome == 'failure'
         with:
           name: e2e-logs-${{ matrix.name || matrix.connect-version }}
