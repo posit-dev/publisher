@@ -6,6 +6,16 @@ file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.34.0]
+
+### Changed
+
+- Updated Go from 1.25 to 1.26. (#3554)
+
+### Fixed
+
+- Fixed credential operations failing silently when the Publisher agent is unreachable or doesn't respond. The extension now shows warning messages when the agent is unavailable during credential listing, server URL validation, or API key validation. (#3396)
+
 ## [1.32.0]
 
 ### Changed
