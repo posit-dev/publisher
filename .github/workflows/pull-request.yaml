@@ -67,21 +67,24 @@ jobs:
     if: needs.detect-changes.outputs.has-code == 'true'
     uses: ./.github/workflows/archive.yaml
 
-  # E2E Tests - skip if no code changes
+  # E2E Tests - skip if no code changes or if PR is from a fork
   e2e:
     needs: [detect-changes, home-view-unit-tests, agent, vscode, package]
     if: |
       always() &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
       needs.detect-changes.outputs.has-code == 'true' &&
       !contains(needs.*.result, 'failure') &&
       !contains(needs.*.result, 'cancelled')
     uses: ./.github/workflows/e2e.yaml
     secrets: inherit
 
+  # Upload artifacts - skip for fork PRs (no secret access) and dependabot
   upload:
     needs: [detect-changes, archive, package]
     if: |
       always() &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
       github.actor != 'dependabot[bot]' &&
       needs.detect-changes.outputs.has-code == 'true' &&
       !contains(needs.*.result, 'failure') &&
