@@ -75,6 +75,7 @@ jobs:
     uses: ./.github/workflows/e2e.yaml
     secrets:
       CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
+      CONNECT_LICENSE_FILE: ${{ secrets.CONNECT_LICENSE_FILE }}
       WORKBENCH_LICENSE: ${{ secrets.WORKBENCH_LICENSE }}
 
   # Upload PR artifacts to S3 for testing
