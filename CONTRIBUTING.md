@@ -172,8 +172,8 @@ rm /Users/$USERNAME/Library/Application\ Support/Code/User/globalStorage/tamasfe
 The Posit Publisher VSCode extension releases follow guidelines from the
 [VSCode Publishing Extensions docs](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#prerelease-extensions).
 
-[SemVer versioning](https://semver.org/spec/v2.0.0.html) is used , but the
-VSCode Marketplace will only support `major.minor.patch` for extension versions,
+[SemVer versioning](https://semver.org/spec/v2.0.0.html) is used, but the
+VSCode Marketplace only supports `major.minor.patch` for extension versions;
 semver pre-release tags are not supported.
 
 The recommendation is releases use `major.EVEN_NUMBER.patch` for release
@@ -184,57 +184,55 @@ minor version number is odd.
 
 ### Before Releasing
 
-- Ensure that all relevant changes are documented in [CHANGELOG.md](CHANGELOG.md): diff `main` against the last release, and compare with what's in `CHANGELOG.md`.
-  Generally these will be the same, but sometimes things get missed. Open a PR to update `CHANGELOG.md` if anything is missing.
-
-  Building and packaging the VSCode extension for release will [automatically sync](./extensions/vscode/justfile#L115) the VSCode changelog from the root `CHANGELOG.md`.
-
 - Merge any "Update licenses" PRs to `main`
-- Merge any release preparation PRs to `main`, e.g. any updates to `CHANGELOG.md`
 - Merge any Dependabot PRs to `main`
-- Wait for the `main.yaml` workflows to complete before creating a release tag
+- Wait for the `main.yaml` workflows to complete
 
 ### Instructions
 
-#### Step 1: Create a proper SemVer and extension version compatible tag
+The release process is automated via GitHub Actions workflows.
 
-Use an even minor version for releases, or an odd minor version for
-pre-releases. The example commands here use `v1.1.0`, replace this with the version you are releasing.
+#### Step 1: Run the Prepare Release workflow
 
-Make sure you are on `main` and up to date:
+1. Go to [Actions > Prepare Release](https://github.com/posit-dev/publisher/actions/workflows/prepare-release.yaml)
+2. Click "Run workflow"
+3. Enter the version number (e.g., `1.34.0`)
+   - Must use even minor version for production releases
+   - Do not include the `v` prefix
+4. Click "Run workflow"
 
-```sh
-git switch main
-git pull
-```
+This workflow will:
 
-and then create the tag:
+- Create a `release/v{version}` branch
+- Run the prepare-release script to update changelog files
+- Create a pull request for review
 
-```sh
-git tag v1.1.0
-```
+#### Step 2: Review and merge the release PR
 
-#### Step 2: Push the tag GitHub
+1. Review the PR to verify changelog entries are complete and accurate
+2. Ensure all PRs since the last release are documented
+3. Merge the PR when ready
 
-```sh
-git push origin v1.1.0
-```
+#### Step 3: Automatic tag creation and release
 
-This command will trigger the [Release GitHub Action](https://github.com/rstudio/publishing-client/actions/workflows/release.yaml).
+When the release PR is merged, automation takes over:
 
-#### Step 3: Confirm the release
+1. The `tag-on-release-merge` workflow automatically creates the version tag
+2. The tag triggers the `release` workflow which:
+   - Builds release artifacts for all platforms
+   - Creates a GitHub release
+   - Publishes to VS Code Marketplace and Open VSX
+   - Sends a Slack notification to announce the release
 
-Once the action has completed, the release will be available on the
-[Releases page](https://github.com/rstudio/publishing-client/releases), and
-published to the VSCode Marketplace.
+#### Step 4: Confirm the release
 
-Confirm that the new version shows up in the [Visual
-Studio](https://marketplace.visualstudio.com/items?itemName=Posit.publisher)
-and [Open VSX](https://open-vsx.org/extension/posit/publisher) registries, and
-that all expected target platforms are supported (Linux x64, Linux ARM64,
-Windows x64, macOS Intel, macOS Apple Silicon).
+Once the workflows complete, verify:
 
-It may take some time after the action completes for the new version to show up.
+- The release appears on the [Releases page](https://github.com/posit-dev/publisher/releases)
+- The new version shows up in [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=Posit.publisher) and [Open VSX](https://open-vsx.org/extension/posit/publisher)
+- All expected target platforms are supported (Linux x64, Linux ARM64, Windows x64, macOS Intel, macOS Apple Silicon)
+
+It may take some time after the workflows complete for the new version to appear in the marketplaces.
 
 ## Updating Dependencies
 
