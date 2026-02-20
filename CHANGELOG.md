@@ -10,7 +10,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Updated Go from 1.25 to 1.26. (#3554)
-- (Test entry - delete me) Testing docs-only CI detection.
 
 ### Fixed
 
