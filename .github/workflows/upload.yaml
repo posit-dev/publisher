@@ -7,6 +7,10 @@ on:
         required: false
         default: false
         type: boolean
+    secrets:
+      AWS_ROLE_TO_ASSUME:
+        description: "AWS IAM role ARN for OIDC authentication"
+        required: true
 permissions:
   id-token: write # This is required for requesting the JWT
   contents: read # This is required for actions/checkout
