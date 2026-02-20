@@ -77,7 +77,12 @@ jobs:
       !contains(needs.*.result, 'failure') &&
       !contains(needs.*.result, 'cancelled')
     uses: ./.github/workflows/e2e.yaml
-    secrets: inherit
+    secrets:
+      CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
+      CONNECT_LICENSE_FILE: ${{ secrets.CONNECT_LICENSE_FILE }}
+      WORKBENCH_LICENSE: ${{ secrets.WORKBENCH_LICENSE }}
+      GH_DOWNLOAD_TOKEN: ${{ secrets.GH_DOWNLOAD_TOKEN }}
+      PCC_USER_CCQA3: ${{ secrets.PCC_USER_CCQA3 }}
 
   # Upload artifacts - skip for fork PRs (no secret access) and dependabot
   upload:
@@ -90,9 +95,11 @@ jobs:
       !contains(needs.*.result, 'failure') &&
       !contains(needs.*.result, 'cancelled')
     uses: ./.github/workflows/upload.yaml
-    secrets: inherit
+    secrets:
+      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
 
   # License generation - skip if no code changes
+  # Note: pr_changes=false means no secrets are needed (no PR will be created)
   generate-licenses:
     needs: detect-changes
     if: needs.detect-changes.outputs.has-code == 'true'
@@ -100,4 +107,3 @@ jobs:
     with:
       pr_changes: false # No PRs on PRs, infinite loop
       fail_on_forbidden: true
-    secrets: inherit
