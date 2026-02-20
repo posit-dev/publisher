@@ -4,6 +4,8 @@ on:
     tags:
       - "v*.*.*"
   workflow_dispatch: # TODO: testing
+permissions:
+  contents: read
 jobs:
   build:
     uses: ./.github/workflows/build.yaml

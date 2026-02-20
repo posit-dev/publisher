@@ -1,6 +1,8 @@
 name: Agent
 on:
   workflow_call:
+permissions:
+  contents: read
 jobs:
   native:
     strategy:

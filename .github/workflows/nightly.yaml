@@ -3,6 +3,8 @@ on:
   schedule:
     - cron: "0 06 * * *"
   workflow_dispatch:
+permissions:
+  contents: read
 jobs:
   agent:
     uses: ./.github/workflows/agent.yaml

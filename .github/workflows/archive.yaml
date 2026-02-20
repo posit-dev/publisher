@@ -1,6 +1,8 @@
 name: Archive
 on:
   workflow_call:
+permissions:
+  contents: read
 jobs:
   archive:
     runs-on: ubuntu-latest

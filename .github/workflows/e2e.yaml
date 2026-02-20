@@ -17,7 +17,8 @@ on:
         required: true
       WORKBENCH_LICENSE:
         required: true
-
+permissions:
+  contents: read
 jobs:
   cypress:
     name: e2e (${{ matrix.name || matrix.connect-version }})
