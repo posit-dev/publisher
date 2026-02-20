@@ -220,14 +220,20 @@ export const getExistingCredentials = async (viewId: string) => {
     await showProgress("Initializing::newCredential", viewId, async () => {
       const api = await useApi();
       const response = await api.credentials.list();
-      credentials = response.data;
+      if (response) {
+        credentials = response.data;
+      } else {
+        window.showWarningMessage(
+          "No response from Publisher agent when querying credentials",
+        );
+      }
     });
   } catch (error: unknown) {
     const summary = getSummaryStringFromError(
       "newCredentials, credentials.list",
       error,
     );
-    window.showInformationMessage(
+    window.showWarningMessage(
       `Unable to query existing credentials. ${summary}`,
     );
   }
