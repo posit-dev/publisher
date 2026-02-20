@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Updated Go from 1.25 to 1.26. (#3554)
+
 ### Fixed
 
 - Fixed credential operations failing silently when the Publisher agent is unreachable or doesn't respond. The extension now shows warning messages when the agent is unavailable during credential listing, server URL validation, or API key validation. (#3396)
