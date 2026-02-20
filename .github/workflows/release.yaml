@@ -6,7 +6,24 @@ on:
 permissions:
   contents: write # Required to create GitHub releases
 jobs:
+  # Security: Verify the tag points to a commit on main branch
+  verify-tag:
+    name: Verify tag is on main branch
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Verify tag points to commit on main
+        run: |
+          git fetch origin main
+          if ! git merge-base --is-ancestor ${{ github.sha }} origin/main; then
+            echo "::error::Tag must point to a commit on the main branch. This tag points to a commit not reachable from main."
+            exit 1
+          fi
+          echo "✅ Verified: Tag points to commit on main branch"
   build:
+    needs: verify-tag
     uses: ./.github/workflows/build.yaml
   package:
     needs:
