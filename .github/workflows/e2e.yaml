@@ -23,7 +23,8 @@ on:
         required: false
       PCC_USER_CCQA3:
         required: false
-
+permissions:
+  contents: read
 jobs:
   cypress:
     name: e2e (${{ matrix.name || matrix.connect-version }})

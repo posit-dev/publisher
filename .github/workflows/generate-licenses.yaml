@@ -27,7 +27,7 @@ on:
         value: ${{ jobs.license-check.outputs.has_changes }}
 
 permissions:
-  contents: write
+  contents: read # PR creation uses GitHub App token, not workflow token
 
 jobs:
   license-check:

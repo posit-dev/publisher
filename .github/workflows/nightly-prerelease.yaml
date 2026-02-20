@@ -5,6 +5,9 @@ on:
     - cron: "0 07 * * *" # Run at 7 AM UTC daily
   workflow_dispatch:
 
+permissions:
+  contents: read # Tag creation uses GitHub App token, not workflow token
+
 jobs:
   check:
     name: Check if release needed
