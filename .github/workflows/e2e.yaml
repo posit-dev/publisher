@@ -15,8 +15,14 @@ on:
     secrets:
       CONNECT_LICENSE:
         required: true
+      CONNECT_LICENSE_FILE:
+        required: true
       WORKBENCH_LICENSE:
         required: true
+      GH_DOWNLOAD_TOKEN:
+        required: false
+      PCC_USER_CCQA3:
+        required: false
 permissions:
   contents: read
 jobs:
