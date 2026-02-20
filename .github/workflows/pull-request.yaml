@@ -77,6 +77,8 @@ jobs:
       CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
       CONNECT_LICENSE_FILE: ${{ secrets.CONNECT_LICENSE_FILE }}
       WORKBENCH_LICENSE: ${{ secrets.WORKBENCH_LICENSE }}
+      GH_DOWNLOAD_TOKEN: ${{ secrets.GH_DOWNLOAD_TOKEN }}
+      PCC_USER_CCQA3: ${{ secrets.PCC_USER_CCQA3 }}
 
   # Upload PR artifacts to S3 for testing
   # Security: Only runs for non-fork PRs (fork PRs don't have secret access anyway)
