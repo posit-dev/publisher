@@ -2,6 +2,9 @@ name: Sign
 on:
   workflow_call:
     secrets:
+      ORG_READ_TOKEN:
+        description: "GitHub token with read:org scope to verify org membership"
+        required: true
       WINDOWS_SIGNING_CERT:
         description: "Base64 encoded PFX/P12 certificate for Windows code signing"
         required: true
@@ -22,7 +25,21 @@ on:
         required: true
 
 jobs:
+  verify-org-membership:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check org membership
+        env:
+          GH_TOKEN: ${{ secrets.ORG_READ_TOKEN }}
+        run: |
+          if ! gh api orgs/posit-dev/members/${{ github.actor }} --silent 2>/dev/null; then
+            echo "Error: ${{ github.actor }} is not a member of the posit-dev organization"
+            exit 1
+          fi
+          echo "Verified: ${{ github.actor }} is a posit-dev org member"
+
   sign-windows:
+    needs: verify-org-membership
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -83,6 +100,7 @@ jobs:
           path: bin/**/windows*/**/*
 
   sign-macos:
+    needs: verify-org-membership
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v6
@@ -168,6 +186,7 @@ jobs:
           path: bin/**/darwin*/**/*
 
   sign-linux:
+    needs: verify-org-membership
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
