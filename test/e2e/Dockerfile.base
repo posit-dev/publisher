@@ -68,6 +68,7 @@ FROM base AS python-3.11.11
 ARG PYTHON_VERSION=3.11.11
 RUN curl -fsSL -O https://cdn.rstudio.com/python/${OS_IDENTIFIER}/pkgs/python-${PYTHON_VERSION}_1_amd64.deb \
     && export DEBIAN_FRONTEND=noninteractive \
+    && apt-get update \
     && apt-get install -f -y ./python-${PYTHON_VERSION}_1_amd64.deb \
     && rm python-${PYTHON_VERSION}_1_amd64.deb \
     && /opt/python/${PYTHON_VERSION}/bin/pip install --no-cache-dir --upgrade pip setuptools wheel \
@@ -77,6 +78,7 @@ FROM base AS python-3.12.9
 ARG PYTHON_VERSION=3.12.9
 RUN curl -fsSL -O https://cdn.rstudio.com/python/${OS_IDENTIFIER}/pkgs/python-${PYTHON_VERSION}_1_amd64.deb \
     && export DEBIAN_FRONTEND=noninteractive \
+    && apt-get update \
     && apt-get install -f -y ./python-${PYTHON_VERSION}_1_amd64.deb \
     && rm python-${PYTHON_VERSION}_1_amd64.deb \
     && /opt/python/${PYTHON_VERSION}/bin/pip install --no-cache-dir --upgrade pip setuptools wheel \
@@ -89,6 +91,7 @@ RUN curl -fsSL -O https://cdn.rstudio.com/python/${OS_IDENTIFIER}/pkgs/python-${
 FROM base AS r-4.3.3
 ARG R_VERSION=4.3.3
 RUN curl -O https://cdn.rstudio.com/r/${OS_IDENTIFIER}/pkgs/r-${R_VERSION}_1_amd64.deb \
+    && apt-get update \
     && apt-get install -y ./r-${R_VERSION}_1_amd64.deb \
     && rm ./r-${R_VERSION}_1_amd64.deb \
     && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
@@ -96,6 +99,7 @@ RUN curl -O https://cdn.rstudio.com/r/${OS_IDENTIFIER}/pkgs/r-${R_VERSION}_1_amd
 FROM base AS r-4.4.2
 ARG R_VERSION=4.4.2
 RUN curl -O https://cdn.rstudio.com/r/${OS_IDENTIFIER}/pkgs/r-${R_VERSION}_1_amd64.deb \
+    && apt-get update \
     && apt-get install -y ./r-${R_VERSION}_1_amd64.deb \
     && rm ./r-${R_VERSION}_1_amd64.deb \
     && rm -rf /var/lib/apt/lists/* /var/cache/apt/*

@@ -149,12 +149,12 @@ install:
     set -eou pipefail
     {{ _with_debug }}
 
+    # Always reinstall staticcheck to ensure it matches current Go version
+    # Use GOTOOLCHAIN to prevent automatic toolchain switching
+    GOTOOLCHAIN="go$(go env GOVERSION | sed 's/^go//')" go install honnef.co/go/tools/cmd/staticcheck@latest
     if [ ! `which staticcheck` ]; then
-        go install honnef.co/go/tools/cmd/staticcheck@latest
-        if [ ! `which staticcheck` ]; then
-            echo "error: \`staticcheck\` not found. Is '\$GOPATH/bin' in your '\$PATH'?" 1>&2
-            exit 1
-        fi
+        echo "error: \`staticcheck\` not found. Is '\$GOPATH/bin' in your '\$PATH'?" 1>&2
+        exit 1
     fi
 
 npm-install:
