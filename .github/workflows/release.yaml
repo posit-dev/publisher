@@ -47,3 +47,55 @@ jobs:
           files: |
             archives/**/*
             dist/**/*
+  notify-slack:
+    runs-on: ubuntu-latest
+    needs:
+      - release
+    if: success()
+    steps:
+      - name: Notify Slack
+        uses: slackapi/slack-github-action@v2.0.0
+        with:
+          webhook: ${{ secrets.SLACK_RELEASE_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "Posit Publisher ${{ github.ref_name }} Released",
+                    "emoji": true
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "A new version of Posit Publisher has been released."
+                  }
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Release"
+                      },
+                      "url": "https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}"
+                    },
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Changelog"
+                      },
+                      "url": "https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md"
+                    }
+                  ]
+                }
+              ]
+            }

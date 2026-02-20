@@ -1,0 +1,82 @@
+name: Tag Release on Merge
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+jobs:
+  tag:
+    name: Create release tag
+    # Only run if:
+    # 1. PR was merged (not just closed)
+    # 2. Branch name starts with 'release/v'
+    if: |
+      github.event.pull_request.merged == true &&
+      startsWith(github.event.pull_request.head.ref, 'release/v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate token for GitHub App
+        id: generate-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.POSIT_CONNECT_PROJECTS_APP_ID }}
+          private-key: ${{ secrets.POSIT_CONNECT_PROJECTS_PEM }}
+          permission-contents: write
+
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ steps.generate-token.outputs.token }}
+
+      - name: Extract version from branch name
+        id: extract-version
+        run: |
+          BRANCH="${{ github.event.pull_request.head.ref }}"
+          # Extract version from 'release/v1.34.0' -> 'v1.34.0'
+          VERSION="${BRANCH#release/}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Extracted version: $VERSION"
+
+      - name: Validate version tag doesn't exist
+        run: |
+          VERSION="${{ steps.extract-version.outputs.version }}"
+          if git tag -l "$VERSION" | grep -q "$VERSION"; then
+            echo "::error::Tag $VERSION already exists!"
+            exit 1
+          fi
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create and push tag
+        env:
+          VERSION: ${{ steps.extract-version.outputs.version }}
+        run: |
+          git tag -a "$VERSION" -m "Release $VERSION"
+          git push origin "$VERSION"
+          echo "✅ Created and pushed tag: $VERSION"
+
+      - name: Delete release branch
+        env:
+          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
+        run: |
+          BRANCH="${{ github.event.pull_request.head.ref }}"
+          git push origin --delete "$BRANCH" || echo "Branch already deleted or doesn't exist"
+          echo "🗑️ Deleted branch: $BRANCH"
+
+      - name: Add summary
+        env:
+          VERSION: ${{ steps.extract-version.outputs.version }}
+        run: |
+          echo "## 🏷️ Release Tag Created" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Tag:** \`$VERSION\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The release workflow should now be triggered automatically to:" >> $GITHUB_STEP_SUMMARY
+          echo "- Build release artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "- Create GitHub release" >> $GITHUB_STEP_SUMMARY
+          echo "- Publish to VS Code Marketplace" >> $GITHUB_STEP_SUMMARY
+          echo "- Publish to Open VSX" >> $GITHUB_STEP_SUMMARY
