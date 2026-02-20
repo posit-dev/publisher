@@ -6,16 +6,28 @@ set -euo pipefail
 
 SERVICE="${1:-release}"
 
-# Read expected version from package.json, with fallback
+# Determine the expected installed version
+# The build process (set-version.py) only updates package.json for exact semver versions (X.Y.Z).
+# For non-release versions (e.g., 1.31.7-7-gabcdef), it leaves package.json at 99.0.0.
+# We need to match this logic to know what version the extension will actually install as.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PACKAGE_JSON="$SCRIPT_DIR/../../extensions/vscode/package.json"
+REPO_ROOT="$SCRIPT_DIR/../.."
 
-if [ -f "$PACKAGE_JSON" ]; then
-    EXPECTED_VERSION=$(grep -o '"version": *"[^"]*"' "$PACKAGE_JSON" | cut -d'"' -f4)
+# Get the git-derived version (same as build process)
+GIT_VERSION=$(cd "$REPO_ROOT" && git describe --tags 2>/dev/null | sed 's/^v//')
+
+if [ -z "$GIT_VERSION" ]; then
+    echo "Warning: Could not determine version from git tags, falling back to 99.0.0"
+    EXPECTED_VERSION="99.0.0"
+elif [[ "$GIT_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    # Exact semver version (e.g., 1.32.0) - set-version.py will update package.json
+    EXPECTED_VERSION="$GIT_VERSION"
 else
-    echo "Warning: package.json not found at $PACKAGE_JSON, falling back to hardcoded version"
+    # Non-release version (e.g., 1.31.7-7-gabcdef) - set-version.py skips, stays at 99.0.0
     EXPECTED_VERSION="99.0.0"
 fi
+
+echo "Git version: $GIT_VERSION, Expected installed version: $EXPECTED_VERSION"
 
 echo "Installing Publisher extension in Workbench $SERVICE container..."
 
