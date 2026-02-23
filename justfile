@@ -234,13 +234,22 @@ test *args=("-short ./..."):
 
     go test {{ args }} -covermode set -coverprofile=cover.out
 
-# Execute Python script tests (e.g., license generation)
+# Execute Python script tests (e.g., license generation, security audit)
 test-scripts:
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
 
     python3 scripts/test_licenses.py
+    cd scripts && python3 -m unittest test_audit_gha_security -v
+
+# Audit GitHub Actions workflows for security best practices
+audit-gha-security:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    python3 scripts/audit_gha_security.py
 
 # Uploads distributions to object storage. If invoked with `env CI=true` then all architectures supported by the Go toolchain are uploaded.
 upload *args:
