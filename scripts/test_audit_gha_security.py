@@ -3,16 +3,19 @@
 Tests for the GitHub Actions Security Audit Script.
 
 Run with: python scripts/test_audit_gha_security.py
+Or: cd scripts && python -m unittest test_audit_gha_security -v
 """
 
+import io
 import sys
 import tempfile
 import unittest
-from io import StringIO
 from pathlib import Path
 
 from audit_gha_security import (
     AuditResult,
+    Output,
+    Finding,
     check_explicit_permissions,
     check_secrets_inherit,
     check_fork_pr_protection,
@@ -30,6 +33,11 @@ def create_workflow(directory: Path, name: str, content: str) -> Path:
     filepath = directory / name
     filepath.write_text(content)
     return filepath
+
+
+def create_silent_output() -> Output:
+    """Create an Output instance that doesn't print to stdout."""
+    return Output(github_actions=False, use_colors=False)
 
 
 class TestGetWorkflowFiles(unittest.TestCase):
@@ -57,6 +65,49 @@ class TestGetWorkflowFiles(unittest.TestCase):
             self.assertEqual(files[0].name, "test.yaml")
 
 
+class TestFinding(unittest.TestCase):
+    def test_finding_creation(self):
+        finding = Finding(
+            level="error",
+            check="test-check",
+            file="test.yaml",
+            message="Test message",
+            line=10,
+            suggestion="Fix it",
+        )
+        self.assertEqual(finding.level, "error")
+        self.assertEqual(finding.check, "test-check")
+        self.assertEqual(finding.file, "test.yaml")
+        self.assertEqual(finding.message, "Test message")
+        self.assertEqual(finding.line, 10)
+        self.assertEqual(finding.suggestion, "Fix it")
+
+
+class TestAuditResult(unittest.TestCase):
+    def test_empty_result(self):
+        result = AuditResult()
+        self.assertEqual(result.error_count, 0)
+        self.assertEqual(result.warning_count, 0)
+        self.assertFalse(result.has_errors)
+        self.assertFalse(result.has_warnings)
+
+    def test_with_errors(self):
+        result = AuditResult()
+        result.errors.append(
+            Finding(level="error", check="test", file="test.yaml", message="error")
+        )
+        self.assertEqual(result.error_count, 1)
+        self.assertTrue(result.has_errors)
+
+    def test_with_warnings(self):
+        result = AuditResult()
+        result.warnings.append(
+            Finding(level="warning", check="test", file="test.yaml", message="warning")
+        )
+        self.assertEqual(result.warning_count, 1)
+        self.assertTrue(result.has_warnings)
+
+
 class TestExplicitPermissions(unittest.TestCase):
     def test_passes_with_permissions(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -72,15 +123,15 @@ jobs:
 """,
             )
             result = AuditResult()
+            out = create_silent_output()
 
-            # Capture stdout
-            captured = StringIO()
-            sys.stdout = captured
-            check_explicit_permissions([workflow], result)
+            sys.stdout = io.StringIO()
+            check_explicit_permissions([workflow], result, out)
+            output = sys.stdout.getvalue()
             sys.stdout = sys.__stdout__
 
             self.assertEqual(len(result.errors), 0)
-            self.assertIn("Has explicit permissions", captured.getvalue())
+            self.assertIn("Has explicit permissions", output)
 
     def test_fails_without_permissions(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -94,14 +145,14 @@ jobs:
 """,
             )
             result = AuditResult()
+            out = create_silent_output()
 
-            # Capture stdout
-            sys.stdout = StringIO()
-            check_explicit_permissions([workflow], result)
+            sys.stdout = io.StringIO()
+            check_explicit_permissions([workflow], result, out)
             sys.stdout = sys.__stdout__
 
             self.assertEqual(len(result.errors), 1)
-            self.assertIn("Missing top-level 'permissions:' block", result.errors[0])
+            self.assertIn("permissions", result.errors[0].message)
 
 
 class TestSecretsInherit(unittest.TestCase):
@@ -119,14 +170,15 @@ jobs:
 """,
             )
             result = AuditResult()
+            out = create_silent_output()
 
-            captured = StringIO()
-            sys.stdout = captured
-            check_secrets_inherit([workflow], result)
+            sys.stdout = io.StringIO()
+            check_secrets_inherit([workflow], result, out)
+            output = sys.stdout.getvalue()
             sys.stdout = sys.__stdout__
 
             self.assertEqual(len(result.errors), 0)
-            self.assertIn("No workflows use 'secrets: inherit'", captured.getvalue())
+            self.assertIn("No workflows use 'secrets: inherit'", output)
 
     def test_fails_with_inherit(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -141,13 +193,14 @@ jobs:
 """,
             )
             result = AuditResult()
+            out = create_silent_output()
 
-            sys.stdout = StringIO()
-            check_secrets_inherit([workflow], result)
+            sys.stdout = io.StringIO()
+            check_secrets_inherit([workflow], result, out)
             sys.stdout = sys.__stdout__
 
             self.assertEqual(len(result.errors), 1)
-            self.assertIn("secrets: inherit", result.errors[0])
+            self.assertIn("secrets: inherit", result.errors[0].message)
 
 
 class TestForkPRProtection(unittest.TestCase):
@@ -168,9 +221,10 @@ jobs:
 """,
             )
             result = AuditResult()
+            out = create_silent_output()
 
-            sys.stdout = StringIO()
-            check_fork_pr_protection([workflow], result)
+            sys.stdout = io.StringIO()
+            check_fork_pr_protection([workflow], result, out)
             sys.stdout = sys.__stdout__
 
             self.assertEqual(len(result.warnings), 0)
@@ -191,13 +245,14 @@ jobs:
 """,
             )
             result = AuditResult()
+            out = create_silent_output()
 
-            sys.stdout = StringIO()
-            check_fork_pr_protection([workflow], result)
+            sys.stdout = io.StringIO()
+            check_fork_pr_protection([workflow], result, out)
             sys.stdout = sys.__stdout__
 
             self.assertEqual(len(result.warnings), 1)
-            self.assertIn("fork PR protection", result.warnings[0])
+            self.assertIn("fork PR protection", result.warnings[0].message)
 
     def test_ignores_workflow_without_secrets(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -215,9 +270,10 @@ jobs:
 """,
             )
             result = AuditResult()
+            out = create_silent_output()
 
-            sys.stdout = StringIO()
-            check_fork_pr_protection([workflow], result)
+            sys.stdout = io.StringIO()
+            check_fork_pr_protection([workflow], result, out)
             sys.stdout = sys.__stdout__
 
             self.assertEqual(len(result.warnings), 0)
@@ -241,14 +297,15 @@ jobs:
 """,
             )
             result = AuditResult()
+            out = create_silent_output()
 
-            captured = StringIO()
-            sys.stdout = captured
-            check_tag_ancestry_verification([workflow], result)
+            sys.stdout = io.StringIO()
+            check_tag_ancestry_verification([workflow], result, out)
+            output = sys.stdout.getvalue()
             sys.stdout = sys.__stdout__
 
             self.assertEqual(len(result.warnings), 0)
-            self.assertIn("has ancestry verification", captured.getvalue())
+            self.assertIn("has ancestry verification", output)
 
     def test_passes_with_composite_action(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -267,9 +324,10 @@ jobs:
 """,
             )
             result = AuditResult()
+            out = create_silent_output()
 
-            sys.stdout = StringIO()
-            check_tag_ancestry_verification([workflow], result)
+            sys.stdout = io.StringIO()
+            check_tag_ancestry_verification([workflow], result, out)
             sys.stdout = sys.__stdout__
 
             self.assertEqual(len(result.warnings), 0)
@@ -290,13 +348,14 @@ jobs:
 """,
             )
             result = AuditResult()
+            out = create_silent_output()
 
-            sys.stdout = StringIO()
-            check_tag_ancestry_verification([workflow], result)
+            sys.stdout = io.StringIO()
+            check_tag_ancestry_verification([workflow], result, out)
             sys.stdout = sys.__stdout__
 
             self.assertEqual(len(result.warnings), 1)
-            self.assertIn("ancestry verification", result.warnings[0])
+            self.assertIn("ancestry verification", result.warnings[0].message)
 
     def test_ignores_non_tag_workflows(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -314,9 +373,10 @@ jobs:
 """,
             )
             result = AuditResult()
+            out = create_silent_output()
 
-            sys.stdout = StringIO()
-            check_tag_ancestry_verification([workflow], result)
+            sys.stdout = io.StringIO()
+            check_tag_ancestry_verification([workflow], result, out)
             sys.stdout = sys.__stdout__
 
             self.assertEqual(len(result.warnings), 0)
@@ -339,14 +399,15 @@ jobs:
 """,
             )
             result = AuditResult()
+            out = create_silent_output()
 
-            captured = StringIO()
-            sys.stdout = captured
-            check_workflow_dispatch_protection([workflow], result)
+            sys.stdout = io.StringIO()
+            check_workflow_dispatch_protection([workflow], result, out)
+            output = sys.stdout.getvalue()
             sys.stdout = sys.__stdout__
 
             self.assertEqual(len(result.warnings), 0)
-            self.assertIn("No workflow_dispatch", captured.getvalue())
+            self.assertIn("No workflow_dispatch", output)
 
     def test_passes_with_environment_protection(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -363,14 +424,15 @@ jobs:
 """,
             )
             result = AuditResult()
+            out = create_silent_output()
 
-            captured = StringIO()
-            sys.stdout = captured
-            check_workflow_dispatch_protection([workflow], result)
+            sys.stdout = io.StringIO()
+            check_workflow_dispatch_protection([workflow], result, out)
+            output = sys.stdout.getvalue()
             sys.stdout = sys.__stdout__
 
             self.assertEqual(len(result.warnings), 0)
-            self.assertIn("with protection", captured.getvalue())
+            self.assertIn("with protection", output)
 
     def test_warns_without_protection(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -386,13 +448,14 @@ jobs:
 """,
             )
             result = AuditResult()
+            out = create_silent_output()
 
-            sys.stdout = StringIO()
-            check_workflow_dispatch_protection([workflow], result)
+            sys.stdout = io.StringIO()
+            check_workflow_dispatch_protection([workflow], result, out)
             sys.stdout = sys.__stdout__
 
             self.assertEqual(len(result.warnings), 1)
-            self.assertIn("without visible protection", result.warnings[0])
+            self.assertIn("without visible protection", result.warnings[0].message)
 
     def test_ignores_non_sensitive_workflows(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -408,12 +471,12 @@ jobs:
 """,
             )
             result = AuditResult()
+            out = create_silent_output()
 
-            sys.stdout = StringIO()
-            check_workflow_dispatch_protection([workflow], result)
+            sys.stdout = io.StringIO()
+            check_workflow_dispatch_protection([workflow], result, out)
             sys.stdout = sys.__stdout__
 
-            # Should not warn for non-publish/release workflows
             self.assertEqual(len(result.warnings), 0)
 
 
@@ -431,13 +494,14 @@ jobs:
 """,
             )
             result = AuditResult()
+            out = create_silent_output()
 
-            sys.stdout = StringIO()
-            check_overly_permissive([workflow], result)
+            sys.stdout = io.StringIO()
+            check_overly_permissive([workflow], result, out)
             sys.stdout = sys.__stdout__
 
             self.assertEqual(len(result.errors), 1)
-            self.assertIn("write-all", result.errors[0])
+            self.assertIn("write-all", result.errors[0].message)
 
     def test_warns_contents_write_on_ci(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -453,13 +517,14 @@ jobs:
 """,
             )
             result = AuditResult()
+            out = create_silent_output()
 
-            sys.stdout = StringIO()
-            check_overly_permissive([workflow], result)
+            sys.stdout = io.StringIO()
+            check_overly_permissive([workflow], result, out)
             sys.stdout = sys.__stdout__
 
             self.assertEqual(len(result.warnings), 1)
-            self.assertIn("contents: write", result.warnings[0])
+            self.assertIn("contents: write", result.warnings[0].message)
 
     def test_allows_contents_write_on_release(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -475,12 +540,12 @@ jobs:
 """,
             )
             result = AuditResult()
+            out = create_silent_output()
 
-            sys.stdout = StringIO()
-            check_overly_permissive([workflow], result)
+            sys.stdout = io.StringIO()
+            check_overly_permissive([workflow], result, out)
             sys.stdout = sys.__stdout__
 
-            # Should not warn for release workflows
             self.assertEqual(len(result.warnings), 0)
             self.assertEqual(len(result.errors), 0)
 
@@ -500,13 +565,14 @@ jobs:
 """,
             )
             result = AuditResult()
+            out = create_silent_output()
 
-            sys.stdout = StringIO()
-            check_unpinned_actions([workflow], result)
+            sys.stdout = io.StringIO()
+            check_unpinned_actions([workflow], result, out)
             sys.stdout = sys.__stdout__
 
             self.assertEqual(len(result.warnings), 1)
-            self.assertIn("master/main branch", result.warnings[0])
+            self.assertIn("main", result.warnings[0].message)
 
     def test_warns_on_master_branch(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -522,9 +588,10 @@ jobs:
 """,
             )
             result = AuditResult()
+            out = create_silent_output()
 
-            sys.stdout = StringIO()
-            check_unpinned_actions([workflow], result)
+            sys.stdout = io.StringIO()
+            check_unpinned_actions([workflow], result, out)
             sys.stdout = sys.__stdout__
 
             self.assertEqual(len(result.warnings), 1)
@@ -544,14 +611,15 @@ jobs:
 """,
             )
             result = AuditResult()
+            out = create_silent_output()
 
-            captured = StringIO()
-            sys.stdout = captured
-            check_unpinned_actions([workflow], result)
+            sys.stdout = io.StringIO()
+            check_unpinned_actions([workflow], result, out)
+            output = sys.stdout.getvalue()
             sys.stdout = sys.__stdout__
 
             self.assertEqual(len(result.warnings), 0)
-            self.assertIn("No actions pinned to master/main", captured.getvalue())
+            self.assertIn("No actions pinned to master/main", output)
 
 
 class TestDangerousPatterns(unittest.TestCase):
@@ -571,13 +639,14 @@ jobs:
 """,
             )
             result = AuditResult()
+            out = create_silent_output()
 
-            sys.stdout = StringIO()
-            check_dangerous_patterns([workflow], result)
+            sys.stdout = io.StringIO()
+            check_dangerous_patterns([workflow], result, out)
             sys.stdout = sys.__stdout__
 
             self.assertEqual(len(result.errors), 1)
-            self.assertIn("untrusted input", result.errors[0])
+            self.assertIn("untrusted input", result.errors[0].message)
 
     def test_fails_on_pr_title_injection(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -595,9 +664,10 @@ jobs:
 """,
             )
             result = AuditResult()
+            out = create_silent_output()
 
-            sys.stdout = StringIO()
-            check_dangerous_patterns([workflow], result)
+            sys.stdout = io.StringIO()
+            check_dangerous_patterns([workflow], result, out)
             sys.stdout = sys.__stdout__
 
             self.assertEqual(len(result.errors), 1)
@@ -618,13 +688,14 @@ jobs:
 """,
             )
             result = AuditResult()
+            out = create_silent_output()
 
-            sys.stdout = StringIO()
-            check_dangerous_patterns([workflow], result)
+            sys.stdout = io.StringIO()
+            check_dangerous_patterns([workflow], result, out)
             sys.stdout = sys.__stdout__
 
             self.assertEqual(len(result.warnings), 1)
-            self.assertIn("pull_request_target", result.warnings[0])
+            self.assertIn("pull_request_target", result.warnings[0].message)
 
     def test_fails_on_dangerous_pr_target_checkout(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -644,13 +715,14 @@ jobs:
 """,
             )
             result = AuditResult()
+            out = create_silent_output()
 
-            sys.stdout = StringIO()
-            check_dangerous_patterns([workflow], result)
+            sys.stdout = io.StringIO()
+            check_dangerous_patterns([workflow], result, out)
             sys.stdout = sys.__stdout__
 
             self.assertEqual(len(result.errors), 1)
-            self.assertIn("high risk", result.errors[0])
+            self.assertIn("high risk", result.errors[0].message)
 
     def test_passes_safe_workflow(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -669,15 +741,38 @@ jobs:
 """,
             )
             result = AuditResult()
+            out = create_silent_output()
 
-            captured = StringIO()
-            sys.stdout = captured
-            check_dangerous_patterns([workflow], result)
+            sys.stdout = io.StringIO()
+            check_dangerous_patterns([workflow], result, out)
+            output = sys.stdout.getvalue()
             sys.stdout = sys.__stdout__
 
             self.assertEqual(len(result.errors), 0)
             self.assertEqual(len(result.warnings), 0)
-            self.assertIn("No obviously dangerous patterns", captured.getvalue())
+            self.assertIn("No obviously dangerous patterns", output)
+
+
+class TestGitHubActionsOutput(unittest.TestCase):
+    def test_error_annotation_format(self):
+        out = Output(github_actions=True, use_colors=False)
+
+        sys.stdout = io.StringIO()
+        out.error("Test error", file="test.yaml", line=10)
+        output = sys.stdout.getvalue()
+        sys.stdout = sys.__stdout__
+
+        self.assertIn("::error file=.github/workflows/test.yaml,line=10::Test error", output)
+
+    def test_warning_annotation_format(self):
+        out = Output(github_actions=True, use_colors=False)
+
+        sys.stdout = io.StringIO()
+        out.warning("Test warning", file="test.yaml")
+        output = sys.stdout.getvalue()
+        sys.stdout = sys.__stdout__
+
+        self.assertIn("::warning file=.github/workflows/test.yaml::Test warning", output)
 
 
 if __name__ == "__main__":
