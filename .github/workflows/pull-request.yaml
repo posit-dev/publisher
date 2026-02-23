@@ -67,11 +67,12 @@ jobs:
     if: needs.detect-changes.outputs.has-code == 'true'
     uses: ./.github/workflows/archive.yaml
 
-  # E2E Tests - skip if no code changes
+  # E2E Tests - skip if no code changes or if PR is from a fork
   e2e:
     needs: [detect-changes, home-view-unit-tests, agent, vscode, package]
     if: |
       always() &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
       needs.detect-changes.outputs.has-code == 'true' &&
       !contains(needs.*.result, 'failure') &&
       !contains(needs.*.result, 'cancelled')
@@ -83,8 +84,7 @@ jobs:
       GH_DOWNLOAD_TOKEN: ${{ secrets.GH_DOWNLOAD_TOKEN }}
       PCC_USER_CCQA3: ${{ secrets.PCC_USER_CCQA3 }}
 
-  # Upload PR artifacts to S3 for testing
-  # Security: Only runs for non-fork PRs (fork PRs don't have secret access anyway)
+  # Upload artifacts - skip for fork PRs (no secret access) and dependabot
   upload:
     needs: [detect-changes, archive, package]
     if: |
