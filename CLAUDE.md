@@ -139,6 +139,16 @@ npm install --prefix="test/e2e"
 
 **Never push directly to main.** All changes must go through pull requests.
 
+# CHANGELOG Conventions
+
+When adding entries to CHANGELOG.md:
+
+- **Reference issue numbers, not PR numbers.** Issues represent the user-facing problem or feature request. Use `(#1234)` format where `1234` is the GitHub issue number.
+- If no issue exists for the change, create one or reference the PR number as a fallback.
+- Follow [Keep a Changelog](https://keepachangelog.com/) format with sections: Added, Changed, Fixed, Deprecated, Removed, Security.
+- Write entries from the user's perspective, focusing on what changed for them.
+- Use the `/changelog` skill to help draft entries.
+
 # Schema Updates
 
 Schemas in `internal/schema/schemas/`:

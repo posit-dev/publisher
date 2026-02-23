@@ -189,6 +189,37 @@ minor version number is odd.
 
   Building and packaging the VSCode extension for release will [automatically sync](./extensions/vscode/justfile#L115) the VSCode changelog from the root `CHANGELOG.md`.
 
+### CHANGELOG Entry Format
+
+The CHANGELOG follows [Keep a Changelog](https://keepachangelog.com/) format. When adding entries:
+
+**Reference issue numbers, not PR numbers.** Issues represent the user-facing problem or feature request that readers care about. Use `(#1234)` format where `1234` is the GitHub issue number.
+
+```markdown
+## [Unreleased]
+
+### Added
+
+- New feature description from user's perspective. (#1234)
+
+### Changed
+
+- Change description from user's perspective. (#1235)
+
+### Fixed
+
+- Fixed bug description from user's perspective. (#1236)
+```
+
+**Guidelines:**
+
+- Write entries from the user's perspective (what they'll notice or benefit from)
+- Use past tense for Fixed entries ("Fixed..."), present tense for Added/Changed
+- Keep entries concise (one sentence when possible)
+- If no issue exists, create one or use the PR number as a fallback
+- Skip infrastructure changes (CI, tests, docs) unless they affect users
+- Use the `/changelog` skill to help draft entries
+
 - Merge any "Update licenses" PRs to `main`
 - Merge any release preparation PRs to `main`, e.g. any updates to `CHANGELOG.md`
 - Merge any Dependabot PRs to `main`
