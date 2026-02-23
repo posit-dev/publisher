@@ -65,12 +65,12 @@ func (s *ConnectCloudLogsClientSuite) TestWatchLogsWithSSEServer() {
 	mockLogLogger := loggingtest.NewMockLogger()
 	mockLogLogger.On("Info", "Test build info message").Once()
 	mockLogLogger.On("Error", "Test build error message").Once()
-	// For the last expected call, we'll signal the processed channel to indicate that all logs were processed
-	mockLogLogger.On("Debug", "Test build debug message").Once().Run(func(args mock.Arguments) {
+	mockLogLogger.On("Debug", "Test build debug message").Once()
+	// Signal on the LAST expected call to ensure all messages are processed before assertions
+	mockLogLogger.On("Info", "Test runtime message").Once().Run(func(args mock.Arguments) {
 		// Signal that all messages have been processed
 		close(processed)
 	})
-	mockLogLogger.On("Info", "Test runtime message").Once()
 
 	// Create our logs client with the SSE client
 	logsClient := &ConnectCloudLogsClient{
