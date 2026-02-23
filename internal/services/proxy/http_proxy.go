@@ -16,9 +16,8 @@ import (
 )
 
 type proxy struct {
-	targetURL  string
+	targetURL  *url.URL
 	sourcePath string
-	baseProxy  *httputil.ReverseProxy
 	log        logging.Logger
 }
 
@@ -32,21 +31,19 @@ func NewProxy(
 	log logging.Logger) *httputil.ReverseProxy {
 
 	p := proxy{
-		targetURL:  targetURL.String(),
+		targetURL:  targetURL,
 		sourcePath: sourcePath,
-		baseProxy:  httputil.NewSingleHostReverseProxy(targetURL),
 		log:        log,
 	}
 	return p.asReverseProxy()
 }
 
 func (p *proxy) asReverseProxy() *httputil.ReverseProxy {
-	proxy := *p.baseProxy
-	//lint:ignore SA1019 Director deprecated in Go 1.26, migration to Rewrite tracked separately
-	proxy.Director = p.director
-	proxy.ModifyResponse = p.modifyResponse
-	proxy.ErrorHandler = p.handleError
-	return &proxy
+	return &httputil.ReverseProxy{
+		Rewrite:        p.rewrite,
+		ModifyResponse: p.modifyResponse,
+		ErrorHandler:   p.handleError,
+	}
 }
 
 // fixReferer rewrites the referer to be on the Connect server.
@@ -63,40 +60,62 @@ func (p *proxy) fixReferer(req *http.Request) error {
 	return nil
 }
 
-// proxyURL uses the base proxy director to map an
-// URL to the target server.
+// proxyURL maps a URL to the target server.
 func (p *proxy) proxyURL(sourceURL string) (string, error) {
-	tempRequest, err := http.NewRequest("GET", sourceURL, nil)
+	parsed, err := url.Parse(sourceURL)
 	if err != nil {
 		return "", err
 	}
-	p.stripSourcePrefix(tempRequest)
-	//lint:ignore SA1019 Director deprecated in Go 1.26, migration to Rewrite tracked separately
-	p.baseProxy.Director(tempRequest)
-	return tempRequest.URL.String(), nil
+
+	// Strip source prefix from path
+	path := strings.TrimPrefix(parsed.Path, p.sourcePath)
+	if path == "" {
+		path = "/"
+	}
+
+	// Build target URL
+	result := *p.targetURL
+	result.Path = path
+	result.RawQuery = parsed.RawQuery
+	return result.String(), nil
 }
 
-func (p *proxy) director(req *http.Request) {
-	p.logRequest("Proxy request in", req)
-	p.stripSourcePrefix(req)
-	//lint:ignore SA1019 Director deprecated in Go 1.26, migration to Rewrite tracked separately
-	p.baseProxy.Director(req)
-	p.fixReferer(req)
-	req.Host = req.URL.Host
-	req.Header.Set("Host", req.Host)
+func (p *proxy) rewrite(pr *httputil.ProxyRequest) {
+	p.logRequest("Proxy request in", pr.In)
+
+	// Set the target URL (scheme and host)
+	pr.SetURL(p.targetURL)
+
+	// Strip source prefix from path
+	path := strings.TrimPrefix(pr.In.URL.Path, p.sourcePath)
+	if path == "" {
+		path = "/"
+	}
+	pr.Out.URL.Path = path
+
+	// Preserve query string
+	pr.Out.URL.RawQuery = pr.In.URL.RawQuery
+
+	// Fix referer header
+	p.fixReferer(pr.Out)
+
+	// Set host headers
+	pr.Out.Host = pr.Out.URL.Host
+	pr.Out.Header.Set("Host", pr.Out.Host)
 
 	// Don't pass through cookies, since we only load
 	// unauthenticated resources (the publishing UI)
 	// from the target server.
-	req.Header.Del("Cookie")
-	p.logRequest("Proxy request out", req)
+	pr.Out.Header.Del("Cookie")
+	p.logRequest("Proxy request out", pr.Out)
 }
 
 func (p *proxy) modifyResponse(resp *http.Response) error {
 	// Rewrite outbound absolute redirects
 	location := resp.Header.Get("Location")
-	if strings.HasPrefix(location, p.targetURL) {
-		relativePath := strings.TrimPrefix(location, p.targetURL)
+	targetURLStr := p.targetURL.String()
+	if strings.HasPrefix(location, targetURLStr) {
+		relativePath := strings.TrimPrefix(location, targetURLStr)
 		newLocation, err := url.JoinPath(p.sourcePath, relativePath)
 		if err != nil {
 			return err
@@ -110,14 +129,6 @@ func (p *proxy) modifyResponse(resp *http.Response) error {
 func (p *proxy) handleError(w http.ResponseWriter, req *http.Request, err error) {
 	p.log.Error("Proxy error", "url", req.URL, "error", err)
 	w.WriteHeader(http.StatusBadGateway)
-}
-
-func (p *proxy) stripSourcePrefix(req *http.Request) {
-	path := strings.TrimPrefix(req.URL.Path, p.sourcePath)
-	if path == "" {
-		path = "/"
-	}
-	req.URL.Path = path
 }
 
 func (p *proxy) logRequest(msg string, req *http.Request) {
