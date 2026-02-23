@@ -210,7 +210,7 @@ This workflow will:
 #### Step 2: Review and merge the release PR
 
 1. Review the PR to verify changelog entries are complete and accurate
-2. Ensure all PRs since the last release are documented
+2. Ensure all PRs with user-facing changes since the last release have changelog entries
 3. Merge the PR when ready
 
 #### Step 3: Automatic tag creation and release
