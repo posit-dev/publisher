@@ -19,8 +19,6 @@ Usage:
 
     # Explicit GitHub Actions mode
     python scripts/audit_gha_security.py --github-actions
-
-Based on security hardening applied to posit-dev/publisher
 """
 
 import argparse
