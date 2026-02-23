@@ -8,6 +8,7 @@
     - [Prerequisites](#prerequisites)
     - [Setup](#setup)
     - [Committing Changes to the repo](#committing-changes-to-the-repo)
+    - [Pull Request Requirements](#pull-request-requirements)
   - [Testing](#testing)
     - [Unit Tests](#unit-tests)
       - [Coverage Reporting](#coverage-reporting)
@@ -63,6 +64,52 @@ To commit one or more files, you must have first installed the npm package depen
 npm install
 npm install --prefix="test/e2e"
 ```
+
+### Pull Request Requirements
+
+#### Changelog Entries
+
+PRs with user-facing changes must include a changelog entry in `CHANGELOG.md`. User-facing changes include:
+
+- New features or enhancements
+- Bug fixes that affect user behavior
+- Changes to the UI or UX
+- Performance improvements
+- Breaking changes or deprecations
+
+Changelog entries are **not required** for:
+
+- Internal refactoring with no user-visible impact
+- Documentation updates
+- Test-only changes
+- CI/build infrastructure changes
+- Dependency updates (unless they have notable user impact)
+
+The changelog follows [Keep a Changelog](https://keepachangelog.com/) format. Add your entry under the `[Unreleased]` section in the appropriate category:
+
+- **Added** - New features (`feat:` or `feature:` commits)
+- **Changed** - Changes to existing functionality
+- **Fixed** - Bug fixes (`fix:` commits)
+- **Deprecated** - Features that will be removed in future versions
+- **Removed** - Features that have been removed
+- **Security** - Security-related changes
+
+Example entry:
+
+```markdown
+## [Unreleased]
+
+### Fixed
+
+- Fixed entrypoint detection failing for files opened in custom editors. (#1234)
+```
+
+Guidelines:
+
+- Write from the user's perspective (what they'll notice or benefit from)
+- Keep entries concise (one sentence when possible)
+- Include the PR number at the end: `(#1234)`
+- Use past tense for Fixed entries, present tense for Added/Changed
 
 ## Testing
 
