@@ -216,7 +216,7 @@ The CHANGELOG follows [Keep a Changelog](https://keepachangelog.com/) format. Wh
 - Write entries from the user's perspective (what they'll notice or benefit from)
 - Use past tense for Fixed entries ("Fixed..."), present tense for Added/Changed
 - Keep entries concise (one sentence when possible)
-- If no issue exists, create one or use the PR number as a fallback
+- If no issue exists, create one before adding the changelog entry
 - Skip infrastructure changes (CI, tests, docs) unless they affect users
 - Use the `/changelog` skill to help draft entries
 

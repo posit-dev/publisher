@@ -47,14 +47,16 @@ Ask the user which mode they need:
    3. Determine the user-facing impact of the changes
    4. Categorize: Added, Changed, Fixed, Deprecated, Removed, or Security
    5. Write a concise changelog entry from the user's perspective
-   6. IMPORTANT: Reference the linked issue number, not the PR number. If closingIssuesReferences contains an issue, use that number. Only use the PR number if no issue is linked.
+   6. IMPORTANT: Reference the linked issue number, not the PR number. If closingIssuesReferences contains an issue, use that number.
+   7. If NO linked issue exists, flag this PR as needing an issue to be created before the changelog entry can be added.
 
    Return in this format:
    - **PR**: #<number> - <title>
-   - **Linked Issue**: #<issue-number> (or "None" if no linked issue)
+   - **Linked Issue**: #<issue-number> (or "⚠️ MISSING - issue must be created")
    - **Category**: <Added|Changed|Fixed|etc.>
-   - **Suggested Entry**: <one-sentence description from user perspective>. (#<issue-or-pr-number>)
+   - **Suggested Entry**: <one-sentence description from user perspective>. (#<issue-number>)
    - **Reasoning**: <brief explanation of why this category and wording>
+   - **Action Required**: (only if no linked issue) "Create an issue for this change before adding to CHANGELOG"
    ```
 
    Run subagents in parallel (up to 5 at a time) for efficiency.
@@ -89,7 +91,8 @@ The CHANGELOG follows [Keep a Changelog](https://keepachangelog.com/) format:
 - Issues are more meaningful to users reading the changelog
 - Multiple PRs may address a single issue, so issues are the stable reference
 - If analyzing a PR, look up its linked issue(s) using `gh pr view <number> --json closingIssuesReferences`
-- If no issue exists for a change, the PR number can be used as a fallback
+- If no issue exists for a change, **create one before adding the changelog entry**
+- Never use PR numbers in changelog entries
 
 ## Example Output
 
@@ -162,14 +165,14 @@ Help draft a changelog entry for the work on the current branch.
    gh pr view --json number,closingIssuesReferences
    ```
 
-   Use the linked issue number in the changelog entry. If no issue exists, use the PR number as a fallback.
+   Use the linked issue number in the changelog entry. If no issue exists, one must be created.
 
 6. **Draft the entry**: If an entry is warranted:
    - Write from the user's perspective (what they'll notice/benefit from)
    - Use past tense for Fixed, present tense for Added/Changed
    - Keep it concise (one sentence when possible)
    - **Reference the linked issue number**, not the PR number: `(#<issue-number>)`
-   - If no issue exists yet, use placeholder `(#XXXX)` and note that an issue should be created or PR number used
+   - If no issue exists yet, prompt the user to create one before adding the changelog entry
    - Specify which section it belongs in (Added/Changed/Fixed/etc.)
 
 7. **Offer to add it**: Ask if the user wants you to add the entry to the root `CHANGELOG.md` file in the `[Unreleased]` section.
@@ -204,4 +207,4 @@ Would you like me to add this entry to the CHANGELOG.md?
 - Keep descriptions concise and written from the user's perspective
 - Use past tense for Fixed entries, present tense for Added/Changed
 - Multiple related PRs can sometimes be combined into a single entry
-- For current work, use `(#XXXX)` as placeholder until PR is created
+- Every changelog entry must reference an issue number - create an issue if one doesn't exist
