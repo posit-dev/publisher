@@ -137,7 +137,16 @@ npm install --prefix="test/e2e"
 
 # Git Workflow
 
-**Never push directly to main.** All changes must go through pull requests.
+**CRITICAL: Never push directly to main.** All changes must go through pull requests.
+
+Even for "quick fixes" or "urgent hotfixes":
+
+1. Create a new branch from main
+2. Make your changes on the branch
+3. Push the branch and open a PR
+4. Wait for review/approval before merging
+
+Do NOT use `git push origin main` under any circumstances. If you find yourself about to push to main, stop and create a branch instead.
 
 # CHANGELOG Conventions
 
