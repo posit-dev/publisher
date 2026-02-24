@@ -4,6 +4,9 @@ on:
     branches:
       - main
   workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write # Required for upload.yaml AWS OIDC authentication
 jobs:
   # Unit Tests
   agent:
@@ -25,14 +28,20 @@ jobs:
   e2e:
     needs: [package, agent, vscode]
     uses: ./.github/workflows/e2e.yaml
-    secrets: inherit
+    secrets:
+      CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
+      CONNECT_LICENSE_FILE: ${{ secrets.CONNECT_LICENSE_FILE }}
+      WORKBENCH_LICENSE: ${{ secrets.WORKBENCH_LICENSE }}
+      GH_DOWNLOAD_TOKEN: ${{ secrets.GH_DOWNLOAD_TOKEN }}
+      PCC_USER_CCQA3: ${{ secrets.PCC_USER_CCQA3 }}
 
   upload:
     needs:
       - archive
       - package
     uses: ./.github/workflows/upload.yaml
-    secrets: inherit
+    secrets:
+      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
 
   # License generation
   generate-licenses:
@@ -40,4 +49,26 @@ jobs:
     with:
       pr_changes: true
       fail_on_forbidden: true
-    secrets: inherit
+    secrets:
+      POSIT_CONNECT_PROJECTS_APP_ID: ${{ secrets.POSIT_CONNECT_PROJECTS_APP_ID }}
+      POSIT_CONNECT_PROJECTS_PEM: ${{ secrets.POSIT_CONNECT_PROJECTS_PEM }}
+
+  # Slack notification on failure
+  slack-notification:
+    needs:
+      [agent, vscode, build, package, archive, e2e, upload, generate-licenses]
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Slack of CI failure
+        uses: slackapi/slack-github-action@v2.1.1
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK }}
+          webhook-type: incoming-webhook
+          payload: |
+            text: ":x: CI failed on ${{ github.ref_name }}"
+            blocks:
+              - type: section
+                text:
+                  type: mrkdwn
+                  text: ":x: *CI Failed on ${{ github.ref_name }}*\n\n*Repository:* ${{ github.repository }}\n*Branch:* `${{ github.ref_name }}`\n*Commit:* <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>\n*Workflow:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"

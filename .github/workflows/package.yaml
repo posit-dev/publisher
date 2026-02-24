@@ -1,6 +1,8 @@
 name: Package
 on:
   workflow_call:
+permissions:
+  contents: read
 jobs:
   vscode:
     runs-on: ubuntu-latest

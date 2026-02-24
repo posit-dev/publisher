@@ -38,6 +38,13 @@ describe("Open Connect Content", () => {
           // before VS Code has started loading the new one.
           cy.url({ timeout: 30000 }).should("not.eq", originalUrl);
 
+          // Wait for VS Code to fully reload after the workspace switch.
+          // The workbench needs time to initialize with the new workspace.
+          cy.get(".monaco-workbench", { timeout: 60000 }).should("be.visible");
+
+          // Additional wait for the explorer to be ready
+          cy.get(".explorer-viewlet", { timeout: 30000 }).should("exist");
+
           // Wait for the workspace to reload with the Connect content.
           // The GUID appears in the explorer as a root folder after the workspace switch.
           // Use { timeout: 0 } in the inner cy.contains() so retryWithBackoff controls

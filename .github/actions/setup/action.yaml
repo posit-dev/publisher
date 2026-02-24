@@ -3,7 +3,13 @@ description: "Sets up the workflow"
 runs:
   using: "composite"
   steps:
+    # setup-just doesn't support Windows ARM64, so install via cargo
+    - name: Install just via cargo (Windows ARM64)
+      if: runner.os == 'Windows' && runner.arch == 'ARM64'
+      shell: bash
+      run: cargo install just
     - uses: extractions/setup-just@v3
+      if: runner.os != 'Windows' || runner.arch != 'ARM64'
     - uses: actions/setup-go@v5
       with:
         go-version-file: go.mod

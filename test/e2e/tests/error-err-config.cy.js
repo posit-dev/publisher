@@ -40,6 +40,9 @@ describe("Detect errors in config", () => {
     cy.get(".quick-input-widget").should("be.visible");
     cy.get(".quick-input-titlebar").should("have.text", "Select Deployment");
 
+    // Wait for deployment list to populate before searching for specific item
+    cy.get(".quick-input-widget .quick-input-list-row").should("exist");
+
     // select our error case
     cy.get(".quick-input-widget")
       .contains("Unknown Title • Error in quarto-project-8G2B")
@@ -72,6 +75,9 @@ describe("Detect errors in config", () => {
 
     cy.get(".quick-input-widget").should("be.visible");
     cy.get(".quick-input-titlebar").should("have.text", "Select Deployment");
+
+    // Wait for deployment list to populate before searching for specific item
+    cy.get(".quick-input-widget .quick-input-list-row").should("exist");
 
     // select our error case
     cy.get(".quick-input-widget")

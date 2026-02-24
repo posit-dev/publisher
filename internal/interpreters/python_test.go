@@ -5,6 +5,7 @@ package interpreters
 import (
 	"errors"
 	"os"
+	"path/filepath"
 	"runtime"
 	"testing"
 
@@ -132,19 +133,16 @@ func (s *PythonSuite) TestGetPythonExecutableFallbackPython() {
 	i, err := NewPythonInterpreter(s.cwd, util.NewPath("", s.fs), log, executor, pathLooker, MockExistsTrue)
 	s.NoError(err)
 	defaultPython := i.(*defaultPythonInterpreter)
+	// On Windows, /some/python gets converted to an absolute path with the current drive letter
+	expectedPath := "/some/python"
 	if runtime.GOOS == "windows" {
-		s.Equal("D:\\some\\python", defaultPython.pythonExecutable.String())
-	} else {
-		s.Equal("/some/python", defaultPython.pythonExecutable.String())
+		expectedPath, _ = filepath.Abs("/some/python")
 	}
+	s.Equal(expectedPath, defaultPython.pythonExecutable.String())
 
 	p, err := i.GetPythonExecutable()
 	s.Nil(err)
-	if runtime.GOOS == "windows" {
-		s.Equal("D:\\some\\python", p.String())
-	} else {
-		s.Equal("/some/python", p.String())
-	}
+	s.Equal(expectedPath, p.String())
 	v, err := i.GetPythonVersion()
 	s.Nil(err)
 	s.Equal("3.10.4", v)

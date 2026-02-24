@@ -1,6 +1,6 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
-import axios, { AxiosResponse } from "axios";
+import axios from "axios";
 
 import { Credentials } from "./resources/Credentials";
 import { ContentRecords } from "./resources/ContentRecords";
@@ -39,26 +39,16 @@ class PublishingClientApi {
     this.client = axios.create({
       baseURL: apiBaseUrl,
     });
-    this.client.interceptors.request.use((request) => {
-      request.ts = performance.now();
-      return request;
-    });
 
     this.client.interceptors.response.use(
-      (response) => {
-        this.logDuration(response);
-        return response;
-      },
+      (response) => response,
       (error) => {
         // Decode data returned for 500 errors when the payload is readable text.
         if (
           error.response?.status === 500 &&
-          typeof error.response.data === "string"
+          typeof error.response?.data === "string"
         ) {
           error.response.data = Entities.decodeHTML5(error.response.data);
-        }
-        if (error.response) {
-          this.logDuration(error.response);
         }
         return Promise.reject(error);
       },
@@ -78,16 +68,6 @@ class PublishingClientApi {
     this.connectCloud = new ConnectCloud(this.client);
     this.connectServer = new ConnectServer(this.client);
     this.openConnectContent = new OpenConnectContent(this.client);
-  }
-
-  logDuration(response: AxiosResponse<unknown, unknown>) {
-    const timestamp = response.config.ts;
-    if (timestamp) {
-      const request = response.request;
-      const duration = Math.round(Number(performance.now() - timestamp));
-      console.log(`Request: ${request.path} took ${duration}ms`);
-    }
-    return response;
   }
 
   setBaseUrl(url: string) {

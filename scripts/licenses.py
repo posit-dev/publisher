@@ -43,7 +43,7 @@ licenses = {}
 
 for base in search_dirs:
     for dirpath, dirnames, filenames in os.walk(base):
-        for filename in filenames:
+        for filename in sorted(filenames):
             if any(fnmatch.fnmatch(filename, license_name) for license_name in license_names):
                 relPath = os.path.relpath(dirpath, base)
                 name = relPath.removeprefix("./")

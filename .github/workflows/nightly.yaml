@@ -3,6 +3,8 @@ on:
   schedule:
     - cron: "0 06 * * *"
   workflow_dispatch:
+permissions:
+  contents: read
 jobs:
   agent:
     uses: ./.github/workflows/agent.yaml
@@ -14,8 +16,32 @@ jobs:
   e2e:
     needs: [package]
     uses: ./.github/workflows/e2e.yaml
-    secrets: inherit
+    secrets:
+      CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
+      CONNECT_LICENSE_FILE: ${{ secrets.CONNECT_LICENSE_FILE }}
+      WORKBENCH_LICENSE: ${{ secrets.WORKBENCH_LICENSE }}
+      GH_DOWNLOAD_TOKEN: ${{ secrets.GH_DOWNLOAD_TOKEN }}
+      PCC_USER_CCQA3: ${{ secrets.PCC_USER_CCQA3 }}
 
   # Extensions
   vscode:
     uses: ./.github/workflows/vscode.yaml
+
+  # Slack notification on failure
+  slack-notification:
+    needs: [agent, build, package, e2e, vscode]
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Slack of nightly test failure
+        uses: slackapi/slack-github-action@v2.1.1
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK }}
+          webhook-type: incoming-webhook
+          payload: |
+            text: ":warning: Nightly tests failed"
+            blocks:
+              - type: section
+                text:
+                  type: mrkdwn
+                  text: ":warning: *Nightly Tests Failed*\n\n*Repository:* ${{ github.repository }}\n*Workflow:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"

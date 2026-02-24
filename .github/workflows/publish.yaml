@@ -3,9 +3,17 @@ on:
   push:
     tags:
       - "v*.*.*"
-  workflow_dispatch: # TODO: testing
+permissions:
+  contents: read
 jobs:
+  # Security: Verify the tag points to a commit on main branch
+  verify-tag:
+    name: Verify tag is on main branch
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ./.github/actions/verify-tag-ancestry
   build:
+    needs: verify-tag
     uses: ./.github/workflows/build.yaml
   package:
     needs:
@@ -24,6 +32,7 @@ jobs:
           - linux-amd64
           - linux-arm64
           - windows-amd64
+          - windows-arm64
     steps:
       - uses: actions/checkout@v6
       - uses: extractions/setup-just@v3
@@ -59,6 +68,7 @@ jobs:
           - linux-amd64
           - linux-arm64
           - windows-amd64
+          - windows-arm64
     steps:
       - uses: actions/checkout@v6
       - uses: extractions/setup-just@v3

@@ -149,12 +149,12 @@ install:
     set -eou pipefail
     {{ _with_debug }}
 
+    # Always reinstall staticcheck to ensure it matches current Go version
+    # Use GOTOOLCHAIN to prevent automatic toolchain switching
+    GOTOOLCHAIN="go$(go env GOVERSION | sed 's/^go//')" go install honnef.co/go/tools/cmd/staticcheck@latest
     if [ ! `which staticcheck` ]; then
-        go install honnef.co/go/tools/cmd/staticcheck@latest
-        if [ ! `which staticcheck` ]; then
-            echo "error: \`staticcheck\` not found. Is '\$GOPATH/bin' in your '\$PATH'?" 1>&2
-            exit 1
-        fi
+        echo "error: \`staticcheck\` not found. Is '\$GOPATH/bin' in your '\$PATH'?" 1>&2
+        exit 1
     fi
 
 npm-install:
@@ -233,6 +233,15 @@ test *args=("-short ./..."):
     {{ _with_debug }}
 
     go test {{ args }} -covermode set -coverprofile=cover.out
+
+# Execute Python script tests (licenses, prepare-release, etc.)
+test-scripts:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    python3 scripts/test_licenses.py
+    python3 scripts/test_prepare_release.py
 
 # Uploads distributions to object storage. If invoked with `env CI=true` then all architectures supported by the Go toolchain are uploaded.
 upload *args:
