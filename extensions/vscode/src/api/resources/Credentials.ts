@@ -1,22 +1,47 @@
 // Copyright (C) 2023 by Posit Software, PBC.
 
-import { AxiosInstance } from "axios";
+import { AxiosInstance, AxiosResponse } from "axios";
 import { Credential, TestResult } from "../types/credentials";
 import { ServerType } from "../types/contentRecords";
 import { CONNECT_CLOUD_ENV_HEADER } from "../../constants";
 import { StateData } from "../../multiStepInputs/multiStepHelper";
+import type { CredentialsService } from "../../services/credentials";
 
 export class Credentials {
   private client: AxiosInstance;
+  private nativeServicePromise?: Promise<CredentialsService | undefined>;
 
-  constructor(client: AxiosInstance) {
+  constructor(
+    client: AxiosInstance,
+    nativeServicePromise?: Promise<CredentialsService | undefined>,
+  ) {
     this.client = client;
+    this.nativeServicePromise = nativeServicePromise;
   }
 
   // Returns:
   // 200 - accepted
   // 500 - internal server error
-  list() {
+  async list(): Promise<AxiosResponse<Credential[]>> {
+    // Try native TypeScript service (file-based storage)
+    if (this.nativeServicePromise) {
+      const nativeService = await this.nativeServicePromise;
+      if (nativeService) {
+        const credentials = await nativeService.list();
+        // Use native service if it has credentials
+        if (credentials.length > 0) {
+          return {
+            data: credentials,
+            status: 200,
+            statusText: "OK",
+            headers: {},
+            config: { headers: {} },
+          } as AxiosResponse<Credential[]>;
+        }
+        // Fall back to Go API if file storage is empty
+        // (credentials may be in system keyring)
+      }
+    }
     return this.client.get<Credential[]>(`credentials`);
   }
 

@@ -16,6 +16,7 @@ import { ConnectCloud } from "./resources/ConnectCloud";
 import { IntegrationRequests } from "./resources/IntegrationRequests";
 import { ConnectServer } from "./resources/ConnectServer";
 import { OpenConnectContent } from "./resources/OpenConnectContent";
+import type { CredentialsService } from "../services/credentials";
 
 class PublishingClientApi {
   private client;
@@ -35,7 +36,11 @@ class PublishingClientApi {
   connectServer: ConnectServer;
   openConnectContent: OpenConnectContent;
 
-  constructor(apiBaseUrl: string, apiServiceIsUp: Promise<boolean>) {
+  constructor(
+    apiBaseUrl: string,
+    apiServiceIsUp: Promise<boolean>,
+    credentialsServicePromise?: Promise<CredentialsService | undefined>,
+  ) {
     this.client = axios.create({
       baseURL: apiBaseUrl,
     });
@@ -66,7 +71,7 @@ class PublishingClientApi {
     this.apiServiceIsUp = apiServiceIsUp;
 
     this.configurations = new Configurations(this.client);
-    this.credentials = new Credentials(this.client);
+    this.credentials = new Credentials(this.client, credentialsServicePromise);
     this.contentRecords = new ContentRecords(this.client);
     this.files = new Files(this.client);
     this.interpreters = new Interpreters(this.client);
@@ -102,8 +107,13 @@ let api: PublishingClientApi | undefined = undefined;
 export const initApi = (
   apiServiceIsUp: Promise<boolean>,
   apiBaseUrl: string = "/api",
+  credentialsServicePromise?: Promise<CredentialsService | undefined>,
 ) => {
-  api = new PublishingClientApi(apiBaseUrl, apiServiceIsUp);
+  api = new PublishingClientApi(
+    apiBaseUrl,
+    apiServiceIsUp,
+    credentialsServicePromise,
+  );
 };
 
 // NOTE: initApi(...) must be called ahead of the first time

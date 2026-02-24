@@ -6,6 +6,7 @@ import { HOST } from "src";
 import { initApi } from "src/api";
 import { logger } from "src/logging";
 import { Server } from "src/servers";
+import { createCredentialsService } from "src/services/credentials";
 
 export class Service implements Disposable {
   private context: ExtensionContext;
@@ -26,7 +27,23 @@ export class Service implements Disposable {
 
     this.agentURL = `http://${HOST}:${port}/api`;
     this.server = new Server(port, this.useKeyChain);
-    initApi(this.isUp(), this.agentURL);
+
+    // Create a promise for the native credentials service
+    // This is resolved lazily when credentials.list() is called
+    const credentialsServicePromise = createCredentialsService(
+      context.secrets,
+      useKeyChain,
+    )
+      .then((service) => {
+        logger.info("Native credentials service initialized");
+        return service;
+      })
+      .catch((error) => {
+        logger.warn("Failed to initialize native credentials service", error);
+        return undefined;
+      });
+
+    initApi(this.isUp(), this.agentURL, credentialsServicePromise);
   }
 
   start = async () => {
