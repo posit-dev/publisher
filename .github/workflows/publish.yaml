@@ -11,6 +11,7 @@ jobs:
     name: Verify tag is on main branch
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/verify-tag-ancestry
   build:
     needs: verify-tag
