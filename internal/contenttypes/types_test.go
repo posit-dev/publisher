@@ -1,6 +1,6 @@
-package contenttypes
-
 // Copyright (C) 2025 by Posit Software, PBC.
+
+package contenttypes
 
 import (
 	"testing"

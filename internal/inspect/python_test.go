@@ -3,6 +3,7 @@ package inspect
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/posit-dev/publisher/internal/config"
@@ -252,4 +253,43 @@ func (s *PythonSuite) TestRequiresPython_WithReticulate() {
 	s.NoError(err)
 	s.False(result, "HTML content should not require Python")
 	s.False(checkerCalled, "Reticulate checker should not be called for non-R content")
+}
+
+func (s *PythonSuite) TestRequiresPython_ReticulateCheckError() {
+	pythonPath := s.cwd.Join("bin", "python3")
+	pythonPath.Dir().MkdirAll(0777)
+	pythonPath.WriteFile(nil, 0777)
+	log := logging.New()
+
+	setupMockPythonInterpreter := func(
+		base util.AbsolutePath,
+		pythonExecutableParam util.Path,
+		log logging.Logger,
+		cmdExecutorOverride executor.Executor,
+		pathLookerOverride util.PathLooker,
+		existsFuncOverride util.ExistsFunc,
+	) (interpreters.PythonInterpreter, error) {
+		i := interpreters.NewMockPythonInterpreter()
+		i.On("IsPythonExecutableValid").Return(true)
+		i.On("GetPythonExecutable").Return(pythonPath, nil)
+		i.On("GetPythonVersion").Return("1.2.3", nil)
+		return i, nil
+	}
+
+	i, err := NewPythonInspector(s.cwd, pythonPath.Path, log, setupMockPythonInterpreter, nil)
+	s.NoError(err)
+	inspector := i.(*defaultPythonInspector)
+
+	// Inject a mock reticulate checker that returns an error
+	testErr := errors.New("failed to read renv.lock")
+	inspector.reticulateChecker = func(base util.AbsolutePath) (bool, error) {
+		return false, testErr
+	}
+
+	cfg := &config.Config{
+		Type: contenttypes.ContentTypeRShiny,
+	}
+	result, err := inspector.RequiresPython(cfg)
+	s.ErrorIs(err, testErr, "RequiresPython should propagate error from reticulate check")
+	s.False(result)
 }

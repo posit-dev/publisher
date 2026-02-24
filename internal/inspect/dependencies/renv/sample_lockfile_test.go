@@ -215,3 +215,42 @@ func (s *SampleLockfileSuite) TestHasReticulateDependency_NoLockfile() {
 	s.NoError(err)
 	s.False(hasReticulate, "Directory without renv.lock should not have reticulate dependency")
 }
+
+func (s *SampleLockfileSuite) TestHasReticulateDependency_WithoutReticulate() {
+	// Create a temporary directory with a lockfile that does NOT contain reticulate
+	tempDir := s.cwd.Join("testdata", "no-reticulate-test")
+	err := tempDir.MkdirAll(0755)
+	s.NoError(err)
+	defer tempDir.RemoveAll()
+
+	// Create a minimal renv.lock without reticulate
+	lockfileContent := `{
+  "R": {
+    "Version": "4.3.3",
+    "Repositories": [
+      {"Name": "CRAN", "URL": "https://cloud.r-project.org"}
+    ]
+  },
+  "Packages": {
+    "ggplot2": {
+      "Package": "ggplot2",
+      "Version": "3.4.0",
+      "Source": "Repository",
+      "Repository": "CRAN"
+    },
+    "dplyr": {
+      "Package": "dplyr",
+      "Version": "1.1.0",
+      "Source": "Repository",
+      "Repository": "CRAN"
+    }
+  }
+}`
+	lockfilePath := tempDir.Join("renv.lock")
+	err = lockfilePath.WriteFile([]byte(lockfileContent), 0644)
+	s.NoError(err)
+
+	hasReticulate, err := HasReticulateDependency(tempDir)
+	s.NoError(err)
+	s.False(hasReticulate, "Lockfile without reticulate package should not have reticulate dependency")
+}
