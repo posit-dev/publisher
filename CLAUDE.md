@@ -166,3 +166,38 @@ Schemas in `internal/schema/schemas/`:
 - `posit-publishing-record-schema-v3.json` - Deployment record schema
 
 Non-breaking changes don't require version bumps. Update the schema file, corresponding example file, and verify unit tests pass.
+
+# TypeScript Core Migration
+
+This project is being migrated from a Go REST API backend to an in-process
+TypeScript core package using hexagonal architecture (ports and adapters).
+
+- **Plan document:** `TS_MIGRATION_PLAN.md` — records inventory, decisions,
+  port interface designs, and migration progress.
+- **Reference implementation:** https://github.com/christierney/hexatype
+  demonstrates the pattern at small scale. See its `DESIGN.md` for the
+  architectural principles and `PLAN.md` for the migration playbook.
+
+## Hexagonal Architecture Summary
+
+- **Core package** (`packages/core/`): Domain types, port interfaces, use
+  cases. No dependencies on Node.js APIs, VS Code APIs, or HTTP libraries.
+- **Driven ports**: Interfaces the core uses to access external resources
+  (Connect API, file system, credentials, interpreters).
+- **Driven adapters**: Implementations of ports (in the extension, not the
+  core). Each adapter translates between infrastructure and domain types.
+- **Driving adapters**: The VS Code extension (and potentially a CLI) that
+  calls use cases.
+- **Test through ports**: Use fakes implementing port interfaces. No mocking
+  frameworks required for core tests.
+
+## Key Patterns (from hexatype reference)
+
+- Port interfaces use TypeScript `interface`, not abstract classes
+- Use cases receive ports via constructor injection or method parameters
+- Domain errors are specific types; adapters translate infrastructure errors
+- Adapters are thin — they translate types and delegate, no business logic
+- The core has zero external dependencies
+- Tests use `node:test` + `node:assert` (no test framework dependency)
+- The adapter-level `HttpClient` interface is a port *at the adapter level*,
+  not a core port — this keeps HTTP concerns fully outside the core
