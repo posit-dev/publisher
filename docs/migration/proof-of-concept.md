@@ -1,8 +1,9 @@
 # Proof of Concept: Configuration Domain
 
-This document explains the proof-of-concept implementation in `packages/core/`
-and `packages/adapters/`, and how it demonstrates the hexagonal architecture
-migration plan described in `TS_MIGRATION_PLAN.md`.
+This document explains the proof-of-concept implementation in `packages/core/`,
+`packages/adapters/`, and the Go API migration adapter in
+`extensions/vscode/src/adapters/`, and how they demonstrate the hexagonal
+architecture migration plan described in `TS_MIGRATION_PLAN.md`.
 
 ## What this proves
 
@@ -38,6 +39,19 @@ migration plan described in `TS_MIGRATION_PLAN.md`.
    lives in `packages/adapters/`, not in the extension. A CLI could use the
    same adapter without depending on VS Code APIs.
 
+8. **The migration can be incremental.** `GoApiConfigurationStore` implements
+   the same `ConfigurationStore` port by delegating to the existing Go backend
+   REST API. The extension can be wired through the port interface *today*,
+   while still using the Go backend. When the Go backend is decommissioned,
+   the adapter is deleted and replaced by `FsConfigurationStore` — no other
+   code changes required.
+
+9. **Type translation between old and new is contained in the adapter.** The
+   Go API adapter handles the mismatch between the extension's existing enum
+   types and the core's string union types, optional-vs-required field
+   differences, and axios error mapping. These translation costs are isolated
+   in one file and disappear when the adapter is deleted.
+
 ## File layout
 
 ```
@@ -68,6 +82,9 @@ packages/adapters/                                # Has dependencies (smol-toml)
 │   └── key-transform.ts                          # snake_case ↔ camelCase
 └── test/
     └── fs-configuration-store.test.ts            # 13 tests against real temp dirs
+
+extensions/vscode/src/adapters/                   # Migration adapter (temporary)
+└── goApiConfigurationStore.ts                    # ConfigurationStore → Go REST API
 ```
 
 ## How it maps to the hexagonal architecture
@@ -106,6 +123,27 @@ reading/writing TOML files in `.posit/publish/`. It handles:
 
 The adapter is tested against real temporary directories (not mocks),
 verifying actual file I/O behavior including round-trip fidelity.
+
+### Migration adapter (`extensions/vscode/src/adapters/`)
+
+`GoApiConfigurationStore` implements the same `ConfigurationStore` port, but
+delegates to the existing Go backend REST API instead of the filesystem. It
+demonstrates the incremental migration strategy:
+
+- **Type translation** — The Go API response types use TypeScript enums
+  (`ContentType.HTML`, `ProductType.CONNECT`) and required fields, while the
+  core uses string unions (`"html"`, `"connect"`) and optional fields. The
+  adapter handles these mismatches with explicit casts and defaults.
+- **Error translation** — Axios errors (404, network failures) are mapped to
+  domain errors (`ConfigurationNotFoundError`, `ConfigurationReadError`).
+- **Envelope unwrapping** — The Go API wraps config details in a location
+  envelope (`configurationName`, `configurationPath`, `projectDir`). The
+  adapter extracts the details for the core domain type.
+
+This adapter lives in the extension (not in `packages/adapters/`) because it
+depends on the extension's axios-based API client. It is explicitly temporary
+— once the Go backend is decommissioned, this file is deleted and the
+extension switches to `FsConfigurationStore`.
 
 ### Driving adapter (the extension)
 
@@ -170,6 +208,30 @@ on the core, never the reverse.
   needed because the extension never runs the packages directly — it bundles
   them.
 
+### The migration adapter enables incremental switchover
+
+Rather than a big-bang replacement of the Go backend, the migration can
+proceed one use case at a time:
+
+1. Wire the extension to call a core use case through `GoApiConfigurationStore`
+2. Verify behavior is unchanged (the Go backend still does the actual work)
+3. Swap `GoApiConfigurationStore` for `FsConfigurationStore`
+4. Remove the Go API call site
+
+Because both adapters implement the same port interface, step 3 is a
+one-line change at the wiring site. The core use cases, domain logic, and
+UI code are unaffected.
+
+### Extension types consolidate during migration
+
+The extension currently has its own types (`ContentType` enum,
+`ConfigurationDetails`, `ScheduleConfig`, etc.) that mirror the Go API
+response shapes. During migration, extension code that calls core use cases
+receives core domain types directly. As each call site migrates, the Go API
+types become unused and can be deleted. By the end of the migration, the
+extension uses core domain types everywhere — no translation layer, no
+duplicate type definitions.
+
 ### Tests use inline fakes (core) and real I/O (adapters)
 
 Core tests use fakes that implement the port interface — fast, deterministic,
@@ -203,8 +265,10 @@ npm run esbuild
 See `TS_MIGRATION_PLAN.md` for the full migration plan. The next steps after
 this PoC are:
 
-1. Resolve remaining open questions (SSE, credential storage, migration
-   approach)
-2. Wire the extension to call the core use cases through the adapter for
-   one real operation (replacing the equivalent Go API call)
-3. Expand to the next domain: deployment records
+1. Resolve remaining open questions (SSE, credential storage)
+2. Wire the extension to call a core use case through
+   `GoApiConfigurationStore` for one real operation (e.g., listing
+   configurations in the sidebar), verifying identical behavior
+3. Swap `GoApiConfigurationStore` for `FsConfigurationStore` for that
+   operation, removing the Go API call
+4. Expand to the next domain: deployment records
