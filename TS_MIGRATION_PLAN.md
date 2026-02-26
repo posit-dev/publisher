@@ -302,29 +302,48 @@ These tests serve as a behavioral specification for the TypeScript core.
 
 ---
 
-## Phase 2: Workspace Structure (Planned)
+## Phase 2: Workspace Structure
 
 ```
 publisher/
 ├── packages/
-│   └── core/
-│       ├── package.json        # "@publisher/core"
-│       ├── tsconfig.json       # tsc → ES modules + .d.ts
-│       └── src/
-│           ├── core/           # Domain types, errors, port interfaces
-│           ├── use-cases/      # Use case classes
-│           └── index.ts        # Public API barrel
+│   ├── core/
+│   │   ├── package.json        # "@publisher/core" — zero dependencies
+│   │   ├── tsconfig.json       # tsc → ES modules + .d.ts
+│   │   └── src/
+│   │       ├── core/           # Domain types, errors, port interfaces
+│   │       ├── use-cases/      # Use case classes
+│   │       └── index.ts        # Public API barrel
+│   └── adapters/
+│       ├── package.json        # "@publisher/adapters" — may have deps (TOML, etc.)
+│       ├── tsconfig.json
+│       └── src/                # Platform-independent driven adapter implementations
 ├── extensions/
 │   └── vscode/
-│       ├── package.json        # depends on "@publisher/core"
+│       ├── package.json
 │       ├── src/
-│       │   ├── adapters/       # Driven adapters (Connect client, FS, credentials, etc.)
+│       │   ├── adapters/       # VS Code-specific adapters only (SecretStorage, etc.)
 │       │   ├── api/            # Legacy Go API client (shrinks as migration progresses)
 │       │   └── ...existing code
 │       └── ...
-├── package.json                # workspaces: ["packages/*", "extensions/*"]
-└── tsconfig.json               # shared base (optional)
+└── package.json                # No npm workspaces (vsce compatibility)
 ```
+
+### Key decisions
+
+- **No npm workspaces.** The extension references `@publisher/core` and
+  `@publisher/adapters` via TypeScript `paths` mappings. esbuild follows
+  the paths when bundling. This avoids `vsce` packaging issues.
+
+- **`packages/adapters/` is separate from `packages/core/`.** Driven adapters
+  like the TOML-based `ConfigurationStore` are platform-independent — any
+  driving adapter (VS Code extension, CLI) can use them. Keeping adapters in
+  their own package means the core stays dependency-free while adapters can
+  take dependencies (TOML library, HTTP client, etc.).
+
+- **VS Code-specific adapters stay in the extension.** Adapters that depend on
+  VS Code APIs (e.g. `SecretStorage` for credentials) live in
+  `extensions/vscode/src/adapters/` since they can't be shared with a CLI.
 
 ---
 
