@@ -19,7 +19,8 @@
     "noUncheckedIndexedAccess": true,
     "paths": {
       "src/*": ["./src/*"],
-      "@publisher/core": ["../../packages/core/src/index.ts"]
+      "@publisher/core": ["../../packages/core/src/index.ts"],
+      "@publisher/adapters": ["../../packages/adapters/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "webviews", "vitest.config.ts"]
