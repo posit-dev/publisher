@@ -1,6 +1,6 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
-import type { Configuration } from "./types.js";
+import type { Configuration, ConfigurationSummary } from "./types.js";
 
 /**
  * Driven (secondary) port — the core's interface for reading and writing
@@ -11,16 +11,17 @@ import type { Configuration } from "./types.js";
  * domain types.
  *
  * Errors:
- * - `list` returns config names; it should not throw if individual files
- *    are unreadable (that's handled at the `read` level).
+ * - `list` returns summaries (parsed configs or error messages) for all
+ *    configurations in a project directory. Individual parse failures are
+ *    represented as error entries, not thrown exceptions.
  * - `read` throws `ConfigurationNotFoundError` if the name doesn't exist,
  *    or `ConfigurationReadError` if the file exists but can't be parsed.
  * - `write` creates the file (and parent directories) if needed.
  * - `remove` throws `ConfigurationNotFoundError` if the name doesn't exist.
  */
 export interface ConfigurationStore {
-  /** List configuration names for a project directory. */
-  list(projectDir: string): Promise<string[]>;
+  /** List all configurations for a project directory with parsed details. */
+  list(projectDir: string): Promise<ConfigurationSummary[]>;
 
   /** Read and parse a single configuration by name. */
   read(projectDir: string, name: string): Promise<Configuration>;

@@ -2,6 +2,7 @@
 
 import {
   type Configuration as CoreConfiguration,
+  type ConfigurationSummary,
   type ConfigurationStore,
   ConfigurationNotFoundError,
   ConfigurationReadError,
@@ -33,10 +34,25 @@ import type { ProductType as ApiProductType } from "src/api/types/contentRecords
  * - Axios errors → domain errors
  */
 export class GoApiConfigurationStore implements ConfigurationStore {
-  async list(projectDir: string): Promise<string[]> {
+  async list(projectDir: string): Promise<ConfigurationSummary[]> {
     const api = await useApi();
     const response = await api.configurations.getAll(projectDir);
-    return response.data.map((entry) => entry.configurationName);
+
+    return response.data.map((entry) => {
+      if (isConfigurationError(entry)) {
+        return {
+          name: entry.configurationName,
+          projectDir: entry.projectDir,
+          error: entry.error.msg,
+        };
+      }
+
+      return {
+        name: entry.configurationName,
+        projectDir: entry.projectDir,
+        configuration: toCoreDomain(entry),
+      };
+    });
   }
 
   async read(

@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 
 import { SaveConfiguration } from "../../src/use-cases/save-configuration.js";
 import { ConfigurationNotFoundError } from "../../src/core/errors.js";
-import type { Configuration } from "../../src/core/types.js";
+import type { Configuration, ConfigurationSummary } from "../../src/core/types.js";
 import type { ConfigurationStore } from "../../src/core/ports.js";
 
 // --- Fakes ---
@@ -16,7 +16,7 @@ import type { ConfigurationStore } from "../../src/core/ports.js";
 class RecordingConfigurationStore implements ConfigurationStore {
   written: { projectDir: string; name: string; config: Configuration }[] = [];
 
-  async list(): Promise<string[]> {
+  async list(): Promise<ConfigurationSummary[]> {
     return [];
   }
 

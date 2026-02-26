@@ -78,21 +78,33 @@ describe("FsConfigurationStore", () => {
   });
 
   describe("list", () => {
-    it("returns config names from .posit/publish/", async () => {
+    it("returns configuration summaries from .posit/publish/", async () => {
       await writeConfigFile(tmpDir, "dash-app", dashAppToml);
       await writeConfigFile(tmpDir, "quarto-doc", quartoToml);
 
       const store = new FsConfigurationStore();
-      const names = await store.list(tmpDir);
+      const summaries = await store.list(tmpDir);
 
-      assert.deepStrictEqual(names.sort(), ["dash-app", "quarto-doc"]);
+      assert.equal(summaries.length, 2);
+
+      const sorted = [...summaries].sort((a, b) =>
+        a.name.localeCompare(b.name),
+      );
+      assert.equal(sorted[0].name, "dash-app");
+      assert.ok("configuration" in sorted[0]);
+      assert.equal(sorted[0].configuration.type, "python-dash");
+      assert.equal(sorted[0].projectDir, tmpDir);
+
+      assert.equal(sorted[1].name, "quarto-doc");
+      assert.ok("configuration" in sorted[1]);
+      assert.equal(sorted[1].configuration.type, "quarto");
     });
 
     it("returns empty array when .posit/publish/ does not exist", async () => {
       const store = new FsConfigurationStore();
-      const names = await store.list(tmpDir);
+      const summaries = await store.list(tmpDir);
 
-      assert.deepStrictEqual(names, []);
+      assert.deepStrictEqual(summaries, []);
     });
 
     it("ignores non-TOML files", async () => {
@@ -106,9 +118,30 @@ describe("FsConfigurationStore", () => {
       );
 
       const store = new FsConfigurationStore();
-      const names = await store.list(tmpDir);
+      const summaries = await store.list(tmpDir);
 
-      assert.deepStrictEqual(names, ["good"]);
+      assert.equal(summaries.length, 1);
+      assert.equal(summaries[0].name, "good");
+      assert.ok("configuration" in summaries[0]);
+    });
+
+    it("returns error entry for broken TOML file", async () => {
+      await writeConfigFile(tmpDir, "good", quartoToml);
+      await writeConfigFile(tmpDir, "broken", "this is not valid [ toml");
+
+      const store = new FsConfigurationStore();
+      const summaries = await store.list(tmpDir);
+
+      assert.equal(summaries.length, 2);
+
+      const broken = summaries.find((s) => s.name === "broken");
+      assert.ok(broken);
+      assert.ok("error" in broken);
+      assert.match(broken.error, /invalid TOML/);
+
+      const good = summaries.find((s) => s.name === "good");
+      assert.ok(good);
+      assert.ok("configuration" in good);
     });
   });
 
@@ -246,8 +279,8 @@ describe("FsConfigurationStore", () => {
       const store = new FsConfigurationStore();
       await store.remove(tmpDir, "to-delete");
 
-      const names = await store.list(tmpDir);
-      assert.ok(!names.includes("to-delete"));
+      const summaries = await store.list(tmpDir);
+      assert.ok(!summaries.some((s) => s.name === "to-delete"));
     });
 
     it("throws ConfigurationNotFoundError for missing files", async () => {

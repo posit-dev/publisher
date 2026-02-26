@@ -8,7 +8,10 @@ import {
   ConfigurationNotFoundError,
   ConfigurationReadError,
 } from "../../src/core/errors.js";
-import type { Configuration } from "../../src/core/types.js";
+import type {
+  Configuration,
+  ConfigurationSummary,
+} from "../../src/core/types.js";
 import type { ConfigurationStore } from "../../src/core/ports.js";
 
 // --- Fakes ---
@@ -16,10 +19,13 @@ import type { ConfigurationStore } from "../../src/core/ports.js";
 /**
  * Fake ConfigurationStore backed by an in-memory map.
  * Allows seeding configs and injecting read errors for specific names.
+ *
+ * `list()` returns ConfigurationSummary[] built from seeded data,
+ * including error entries for names with seeded read errors.
  */
 class FakeConfigurationStore implements ConfigurationStore {
   private configs = new Map<string, Map<string, Configuration>>();
-  private readErrors = new Map<string, Error>();
+  private readErrors = new Map<string, ConfigurationReadError>();
 
   /** Seed a configuration into the store. */
   seed(projectDir: string, name: string, config: Configuration): void {
@@ -29,23 +35,28 @@ class FakeConfigurationStore implements ConfigurationStore {
     this.configs.get(projectDir)!.set(name, config);
   }
 
-  /** Make `read` throw for a specific name (simulates a broken config file). */
-  seedReadError(name: string, error: Error): void {
+  /** Make `list` include an error entry for a specific name. */
+  seedReadError(name: string, error: ConfigurationReadError): void {
     this.readErrors.set(name, error);
   }
 
-  async list(projectDir: string): Promise<string[]> {
-    const projectConfigs = this.configs.get(projectDir);
-    const names = [...(projectConfigs?.keys() ?? [])];
+  async list(projectDir: string): Promise<ConfigurationSummary[]> {
+    const results: ConfigurationSummary[] = [];
 
-    // Include names that have read errors too (file exists but is broken).
-    for (const name of this.readErrors.keys()) {
-      if (!names.includes(name)) {
-        names.push(name);
+    // Add successfully parsed configs
+    const projectConfigs = this.configs.get(projectDir);
+    if (projectConfigs) {
+      for (const [name, configuration] of projectConfigs) {
+        results.push({ name, projectDir, configuration });
       }
     }
 
-    return names;
+    // Add error entries for names with seeded read errors
+    for (const [name, error] of this.readErrors) {
+      results.push({ name, projectDir, error: error.message });
+    }
+
+    return results;
   }
 
   async read(projectDir: string, name: string): Promise<Configuration> {
@@ -147,21 +158,5 @@ describe("ListConfigurations", () => {
     assert.ok(broken);
     assert.ok("error" in broken);
     assert.match(broken.error, /invalid TOML/);
-  });
-
-  it("propagates unexpected errors", async () => {
-    const store = new FakeConfigurationStore();
-    store.seedReadError("bad", new Error("disk on fire"));
-
-    const useCase = new ListConfigurations();
-
-    await assert.rejects(
-      () => useCase.execute(store, projectDir),
-      (thrown) => {
-        assert.ok(thrown instanceof Error);
-        assert.equal(thrown.message, "disk on fire");
-        return true;
-      },
-    );
   });
 });

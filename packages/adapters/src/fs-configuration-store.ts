@@ -4,7 +4,11 @@ import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import * as TOML from "smol-toml";
 
-import type { Configuration, ConfigurationStore } from "@publisher/core";
+import type {
+  Configuration,
+  ConfigurationSummary,
+  ConfigurationStore,
+} from "@publisher/core";
 import {
   ConfigurationNotFoundError,
   ConfigurationReadError,
@@ -28,7 +32,7 @@ const CONFIG_DIR = path.join(".posit", "publish");
  * - Filesystem error translation to domain errors
  */
 export class FsConfigurationStore implements ConfigurationStore {
-  async list(projectDir: string): Promise<string[]> {
+  async list(projectDir: string): Promise<ConfigurationSummary[]> {
     const configDir = path.join(projectDir, CONFIG_DIR);
 
     let entries: string[];
@@ -42,9 +46,25 @@ export class FsConfigurationStore implements ConfigurationStore {
       throw error;
     }
 
-    return entries
+    const names = entries
       .filter((entry) => entry.endsWith(".toml"))
       .map((entry) => entry.replace(/\.toml$/, ""));
+
+    const results: ConfigurationSummary[] = [];
+    for (const name of names) {
+      try {
+        const configuration = await this.read(projectDir, name);
+        results.push({ name, projectDir, configuration });
+      } catch (error) {
+        if (error instanceof ConfigurationReadError) {
+          results.push({ name, projectDir, error: error.message });
+        } else {
+          throw error;
+        }
+      }
+    }
+
+    return results;
   }
 
   async read(projectDir: string, name: string): Promise<Configuration> {
