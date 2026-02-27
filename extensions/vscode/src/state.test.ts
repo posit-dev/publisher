@@ -13,7 +13,13 @@ import {
 import { mkExtensionContextStateMock } from "src/test/unit-test-utils/vscode-mocks";
 import { LocalState } from "./constants";
 import { PublisherState } from "./state";
-import { AllContentRecordTypes, PreContentRecord } from "src/api";
+import {
+  AllContentRecordTypes,
+  Configuration,
+  ConfigurationError,
+  PreContentRecord,
+} from "src/api";
+import { ConfigurationStore } from "src/core/ports";
 
 class mockApiClient {
   readonly contentRecords = {
@@ -74,6 +80,22 @@ vi.mock("src/utils/vscode", () => ({
   getPythonInterpreterPath: vi.fn(),
   getRInterpreterPath: vi.fn(),
 }));
+
+vi.mock("./workspaces", () => ({
+  path: vi.fn(() => "/workspace"),
+}));
+
+class MockConfigStore implements ConfigurationStore {
+  get =
+    vi.fn<
+      (
+        configName: string,
+        projectDir: string,
+      ) => Promise<Configuration | ConfigurationError>
+    >();
+}
+
+const mockConfigStore = new MockConfigStore();
 
 vi.mock("vscode", () => {
   // mock Disposable
@@ -285,13 +307,13 @@ describe("PublisherState", () => {
         selectionStateFactory.build();
 
       const { mockContext, mockWorkspace } = mkExtensionContextStateMock({});
-      const publisherState = new PublisherState(mockContext);
+      const publisherState = new PublisherState(mockContext, mockConfigStore);
 
       // No config get due to no content record set
       let currentConfig = await publisherState.getSelectedConfiguration();
       expect(mockWorkspace.get).toHaveBeenCalled();
       expect(currentConfig).toEqual(undefined);
-      expect(mockClient.configurations.get).not.toHaveBeenCalled();
+      expect(mockConfigStore.get).not.toHaveBeenCalled();
 
       // setup existing content record in cache
       const contentRecord = preContentRecordFactory.build({
@@ -299,22 +321,20 @@ describe("PublisherState", () => {
       });
       publisherState.contentRecords.push(contentRecord);
 
-      // setup fake config API response,
+      // setup fake config store response,
       // config name and project dir must be the same between content record and config
       const config = configurationFactory.build({
         configurationName: contentRecord.configurationName,
         projectDir: contentRecord.projectDir,
       });
-      mockClient.configurations.get.mockResolvedValue({
-        data: config,
-      });
+      mockConfigStore.get.mockResolvedValue(config);
 
       // selection has something now
       await publisherState.updateSelection(contentRecordState);
 
       currentConfig = await publisherState.getSelectedConfiguration();
-      expect(mockClient.configurations.get).toHaveBeenCalledTimes(1);
-      expect(mockClient.configurations.get).toHaveBeenCalledWith(
+      expect(mockConfigStore.get).toHaveBeenCalledTimes(1);
+      expect(mockConfigStore.get).toHaveBeenCalledWith(
         contentRecord.configurationName,
         contentRecord.projectDir,
       );
@@ -325,11 +345,11 @@ describe("PublisherState", () => {
       currentConfig = await publisherState.getSelectedConfiguration();
 
       // Only the previous call is registered
-      expect(mockClient.configurations.get).toHaveBeenCalledTimes(1);
+      expect(mockConfigStore.get).toHaveBeenCalledTimes(1);
       expect(currentConfig).toEqual(config);
       expect(publisherState.configurations).toEqual([config]);
 
-      // setup a second content record in cache and it's respective config API response
+      // setup a second content record in cache and it's respective config store response
       const secondContentRecordState: DeploymentSelectorState =
         selectionStateFactory.build();
       const secondContentRecord = preContentRecordFactory.build({
@@ -341,9 +361,7 @@ describe("PublisherState", () => {
         configurationName: secondContentRecord.configurationName,
         projectDir: secondContentRecord.projectDir,
       });
-      mockClient.configurations.get.mockResolvedValue({
-        data: secondConfig,
-      });
+      mockConfigStore.get.mockResolvedValue(secondConfig);
 
       // selection has something different this time
       await publisherState.updateSelection(secondContentRecordState);
@@ -351,13 +369,13 @@ describe("PublisherState", () => {
       // third time will get a new configuration
       currentConfig = await publisherState.getSelectedConfiguration();
 
-      // Two API calls were triggered, each for every different
-      expect(mockClient.configurations.get).toHaveBeenCalledTimes(2);
+      // Two config store calls were triggered, each for every different
+      expect(mockConfigStore.get).toHaveBeenCalledTimes(2);
       expect(currentConfig).toEqual(secondConfig);
       expect(publisherState.configurations).toEqual([config, secondConfig]);
     });
 
-    describe("error responses from API", () => {
+    describe("error responses from config store", () => {
       let publisherState: PublisherState;
       let contentRecordState: DeploymentSelectorState;
       let contentRecord: PreContentRecord;
@@ -366,7 +384,7 @@ describe("PublisherState", () => {
         contentRecordState = selectionStateFactory.build();
 
         const { mockContext } = mkExtensionContextStateMock({});
-        publisherState = new PublisherState(mockContext);
+        publisherState = new PublisherState(mockContext, mockConfigStore);
 
         // setup existing content record in cache
         contentRecord = preContentRecordFactory.build({
@@ -374,12 +392,34 @@ describe("PublisherState", () => {
         });
         publisherState.contentRecords.push(contentRecord);
 
-        // set an initial state so it tries to pull from API
+        // set an initial state so it tries to pull from config store
         return publisherState.updateSelection(contentRecordState);
       });
 
-      test("404", async () => {
-        // setup fake 404 error from api client
+      test("ENOENT (file not found)", async () => {
+        // setup fake ENOENT error from config store
+        const enoentErr = Object.assign(new Error("ENOENT: no such file"), {
+          code: "ENOENT",
+        });
+        mockConfigStore.get.mockRejectedValue(enoentErr);
+
+        const currentConfig = await publisherState.getSelectedConfiguration();
+        expect(mockConfigStore.get).toHaveBeenCalledTimes(1);
+
+        // ENOENT errors are just ignored
+        expect(currentConfig).toEqual(undefined);
+        expect(publisherState.configurations).toEqual([]);
+        expect(window.showInformationMessage).not.toHaveBeenCalled();
+      });
+
+      test("404 from interpreters API", async () => {
+        // Config loads fine, but interpreters returns 404
+        const config = configurationFactory.build({
+          configurationName: contentRecord.configurationName,
+          projectDir: contentRecord.projectDir,
+        });
+        mockConfigStore.get.mockResolvedValue(config);
+
         const axiosErr = new AxiosError();
         axiosErr.response = {
           data: "",
@@ -388,39 +428,23 @@ describe("PublisherState", () => {
           headers: {},
           config: { headers: new AxiosHeaders() },
         };
-        mockClient.configurations.get.mockRejectedValue(axiosErr);
+        mockClient.interpreters.get.mockRejectedValueOnce(axiosErr);
 
         const currentConfig = await publisherState.getSelectedConfiguration();
-        expect(mockClient.configurations.get).toHaveBeenCalledTimes(1);
-        expect(mockClient.configurations.get).toHaveBeenCalledWith(
-          contentRecord.configurationName,
-          contentRecord.projectDir,
-        );
 
-        // 404 errors are just ignored
+        // 404 errors are silently ignored
         expect(currentConfig).toEqual(undefined);
         expect(publisherState.configurations).toEqual([]);
         expect(window.showInformationMessage).not.toHaveBeenCalled();
       });
 
-      test("Other than 404", async () => {
-        // NOT 404 errors are shown
-        const axiosErr = new AxiosError();
-        axiosErr.response = {
-          data: "custom test error",
-          status: 401,
-          statusText: "401",
-          headers: {},
-          config: { headers: new AxiosHeaders() },
-        };
-        mockClient.configurations.get.mockRejectedValue(axiosErr);
+      test("Other errors are shown", async () => {
+        // Non-ENOENT errors are shown to the user
+        const err = new Error("custom test error");
+        mockConfigStore.get.mockRejectedValue(err);
 
         const currentConfig = await publisherState.getSelectedConfiguration();
-        expect(mockClient.configurations.get).toHaveBeenCalledTimes(1);
-        expect(mockClient.configurations.get).toHaveBeenCalledWith(
-          contentRecord.configurationName,
-          contentRecord.projectDir,
-        );
+        expect(mockConfigStore.get).toHaveBeenCalledTimes(1);
 
         // This error is propagated up now
         expect(currentConfig).toEqual(undefined);

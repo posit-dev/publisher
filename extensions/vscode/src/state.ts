@@ -36,6 +36,17 @@ import {
   isConnectCloudProduct,
 } from "./utils/multiStepHelpers";
 import { recordAddConnectCloudUrlParams } from "./utils/connectCloudHelpers";
+import { ConfigurationStore } from "src/core/ports";
+import { FSConfigurationStore } from "src/adapters/fs-configuration-store";
+import * as workspaces from "./workspaces";
+
+function getDefaultConfigStore(): ConfigurationStore {
+  const root = workspaces.path();
+  if (!root) {
+    throw new Error("No workspace folder open");
+  }
+  return new FSConfigurationStore(root);
+}
 
 function findContentRecord<
   T extends ContentRecord | PreContentRecord | PreContentRecordWithConfig,
@@ -100,6 +111,7 @@ export interface CredentialRefreshEvent {
 
 export class PublisherState implements Disposable {
   private readonly context: extensionContext;
+  private readonly configStore: ConfigurationStore;
   private credentialRefresh = new EventEmitter<CredentialRefreshEvent>();
 
   contentRecords: Array<
@@ -108,8 +120,9 @@ export class PublisherState implements Disposable {
   configurations: Array<Configuration | ConfigurationError> = [];
   credentials: Credential[] = [];
 
-  constructor(context: extensionContext) {
+  constructor(context: extensionContext, configStore?: ConfigurationStore) {
     this.context = context;
+    this.configStore = configStore ?? getDefaultConfigStore();
   }
 
   dispose() {
@@ -213,46 +226,52 @@ export class PublisherState implements Disposable {
     if (!contentRecord) {
       return undefined;
     }
-    const cfg = this.findValidConfig(
+    const cachedCfg = this.findValidConfig(
       contentRecord.configurationName,
       contentRecord.projectDir,
     );
-    if (cfg) {
-      return cfg;
+    if (cachedCfg) {
+      return cachedCfg;
     }
-    // if not found, then retrieve it and add it to our cache.
+    // if not found, then retrieve it from disk and add it to our cache.
     try {
-      const api = await useApi();
-      const python = await getPythonInterpreterPath();
-      const r = await getRInterpreterPath();
-
-      const response = await api.configurations.get(
+      const configResult = await this.configStore.get(
         contentRecord.configurationName,
         contentRecord.projectDir,
       );
+
+      // Apply interpreter defaults from Go API
+      const api = await useApi();
+      const python = await getPythonInterpreterPath();
+      const r = await getRInterpreterPath();
       const defaults = await api.interpreters.get(
         contentRecord.projectDir,
         r,
         python,
       );
-      const cfg = UpdateConfigWithDefaults(response.data, defaults.data);
+      const cfg = UpdateConfigWithDefaults(configResult, defaults.data);
       // its not foolproof, but it may help
       if (!this.findConfig(cfg.configurationName, cfg.projectDir)) {
         this.configurations.push(cfg);
       }
       return cfg;
     } catch (error: unknown) {
-      const code = getStatusFromError(error);
-      if (code !== 404) {
-        // 400 is expected when doesn't exist on disk
-        const summary = getSummaryStringFromError(
-          "getSelectedConfiguration, contentRecords.get",
-          error,
-        );
-        window.showInformationMessage(
-          `Unable to retrieve deployment configuration: ${summary}`,
-        );
+      if (isEnoent(error)) {
+        // File not found is expected when config doesn't exist on disk
+        return undefined;
       }
+      const code = getStatusFromError(error);
+      if (code === 404) {
+        // 404 from interpreters API when project dir doesn't exist
+        return undefined;
+      }
+      const summary = getSummaryStringFromError(
+        "getSelectedConfiguration, configStore.get",
+        error,
+      );
+      window.showInformationMessage(
+        `Unable to retrieve deployment configuration: ${summary}`,
+      );
       return undefined;
     }
   }
@@ -397,4 +416,13 @@ export class PublisherState implements Disposable {
   ) {
     return findCredentialForContentRecord(contentRecord, this.credentials);
   }
+}
+
+function isEnoent(error: unknown): boolean {
+  return (
+    error !== null &&
+    typeof error === "object" &&
+    "code" in error &&
+    (error as { code: unknown }).code === "ENOENT"
+  );
 }

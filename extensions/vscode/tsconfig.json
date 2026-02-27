@@ -11,6 +11,7 @@
     "sourceMap": true,
     "rootDir": "src",
     /* Linting */
+    "resolveJsonModule": true,
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
