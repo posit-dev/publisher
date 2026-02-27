@@ -2,7 +2,6 @@
 
 import path from "path";
 import { promises as fs } from "fs";
-import { workspace } from "vscode";
 
 import {
   Configuration,
@@ -19,23 +18,6 @@ import {
 } from "./tomlConfig";
 
 /**
- * Resolves a directory parameter (which may be relative, e.g. ".") to an
- * absolute filesystem path using the first workspace folder as the base.
- */
-function resolveDir(dir: string): string {
-  if (path.isAbsolute(dir)) {
-    return dir;
-  }
-  const workspaceRoot = workspace.workspaceFolders?.at(0)?.uri.fsPath;
-  if (!workspaceRoot) {
-    throw new Error(
-      "No workspace folder found. Cannot resolve relative directory.",
-    );
-  }
-  return path.resolve(workspaceRoot, dir);
-}
-
-/**
  * Extracts the configuration name from a TOML file path (filename without .toml extension).
  */
 function configNameFromPath(filePath: string): string {
@@ -43,44 +25,61 @@ function configNameFromPath(filePath: string): string {
 }
 
 /**
- * Builds configuration location metadata from a base directory and config name.
- */
-function buildConfigLocation(
-  absoluteDir: string,
-  configName: string,
-  configPath: string,
-): {
-  configurationName: string;
-  configurationPath: string;
-  configurationRelPath: string;
-  projectDir: string;
-} {
-  const workspaceRoot = workspace.workspaceFolders?.at(0)?.uri.fsPath || "";
-  const relPath = workspaceRoot
-    ? path.relative(workspaceRoot, configPath)
-    : configPath;
-  const projectDir = workspaceRoot
-    ? path.relative(workspaceRoot, absoluteDir) || "."
-    : absoluteDir;
-
-  return {
-    configurationName: configName,
-    configurationPath: configPath,
-    configurationRelPath: relPath,
-    projectDir,
-  };
-}
-
-/**
  * TypeScript-native implementation of the Configuration service.
  * Reads and writes `.posit/publish/*.toml` files directly on disk.
+ *
+ * This class has no dependency on the `vscode` module. The workspace root
+ * is injected via the constructor, keeping the implementation portable
+ * and testable without VSCode mocks.
  */
 export class TypeScriptConfigurationService implements IConfigurationService {
+  private workspaceRoot: string;
+
+  constructor(workspaceRoot: string) {
+    this.workspaceRoot = workspaceRoot;
+  }
+
+  /**
+   * Resolves a directory parameter (which may be relative, e.g. ".") to an
+   * absolute filesystem path using the injected workspace root.
+   */
+  private resolveDir(dir: string): string {
+    if (path.isAbsolute(dir)) {
+      return dir;
+    }
+    return path.resolve(this.workspaceRoot, dir);
+  }
+
+  /**
+   * Builds configuration location metadata from a base directory and config name.
+   */
+  private buildConfigLocation(
+    absoluteDir: string,
+    configName: string,
+    configPath: string,
+  ): {
+    configurationName: string;
+    configurationPath: string;
+    configurationRelPath: string;
+    projectDir: string;
+  } {
+    const relPath = path.relative(this.workspaceRoot, configPath);
+    const projectDir =
+      path.relative(this.workspaceRoot, absoluteDir) || ".";
+
+    return {
+      configurationName: configName,
+      configurationPath: configPath,
+      configurationRelPath: relPath,
+      projectDir,
+    };
+  }
+
   async getAll(
     dir: string,
     params?: { entrypoint?: string; recursive?: boolean },
   ): Promise<Array<Configuration | ConfigurationError>> {
-    const absoluteDir = resolveDir(dir);
+    const absoluteDir = this.resolveDir(dir);
     const results: Array<Configuration | ConfigurationError> = [];
 
     if (params?.recursive) {
@@ -90,7 +89,11 @@ export class TypeScriptConfigurationService implements IConfigurationService {
       const files = await listConfigFiles(absoluteDir);
       for (const filePath of files) {
         const configName = configNameFromPath(filePath);
-        const location = buildConfigLocation(absoluteDir, configName, filePath);
+        const location = this.buildConfigLocation(
+          absoluteDir,
+          configName,
+          filePath,
+        );
         try {
           const { config } = await readConfig(filePath);
           results.push({ ...location, configuration: config });
@@ -115,9 +118,13 @@ export class TypeScriptConfigurationService implements IConfigurationService {
     configName: string,
     dir: string,
   ): Promise<Configuration | ConfigurationError> {
-    const absoluteDir = resolveDir(dir);
+    const absoluteDir = this.resolveDir(dir);
     const configPath = getConfigPath(absoluteDir, configName);
-    const location = buildConfigLocation(absoluteDir, configName, configPath);
+    const location = this.buildConfigLocation(
+      absoluteDir,
+      configName,
+      configPath,
+    );
 
     try {
       const { config } = await readConfig(configPath);
@@ -140,7 +147,7 @@ export class TypeScriptConfigurationService implements IConfigurationService {
     cfg: ConfigurationDetails,
     dir: string,
   ): Promise<Configuration> {
-    const absoluteDir = resolveDir(dir);
+    const absoluteDir = this.resolveDir(dir);
     const configPath = getConfigPath(absoluteDir, configName);
 
     // Try to preserve existing leading comments
@@ -154,18 +161,22 @@ export class TypeScriptConfigurationService implements IConfigurationService {
 
     await writeConfig(configPath, cfg, comments);
 
-    const location = buildConfigLocation(absoluteDir, configName, configPath);
+    const location = this.buildConfigLocation(
+      absoluteDir,
+      configName,
+      configPath,
+    );
     return { ...location, configuration: cfg };
   }
 
   async delete(configName: string, dir: string): Promise<void> {
-    const absoluteDir = resolveDir(dir);
+    const absoluteDir = this.resolveDir(dir);
     const configPath = getConfigPath(absoluteDir, configName);
     await fs.unlink(configPath);
   }
 
   async getSecrets(configName: string, dir: string): Promise<string[]> {
-    const absoluteDir = resolveDir(dir);
+    const absoluteDir = this.resolveDir(dir);
     const configPath = getConfigPath(absoluteDir, configName);
     const { config } = await readConfig(configPath);
     return config.secrets ?? [];
@@ -176,7 +187,7 @@ export class TypeScriptConfigurationService implements IConfigurationService {
     secretName: string,
     dir: string,
   ): Promise<Configuration> {
-    const absoluteDir = resolveDir(dir);
+    const absoluteDir = this.resolveDir(dir);
     const configPath = getConfigPath(absoluteDir, configName);
     const { config, comments } = await readConfig(configPath);
 
@@ -189,7 +200,11 @@ export class TypeScriptConfigurationService implements IConfigurationService {
 
     await writeConfig(configPath, config, comments);
 
-    const location = buildConfigLocation(absoluteDir, configName, configPath);
+    const location = this.buildConfigLocation(
+      absoluteDir,
+      configName,
+      configPath,
+    );
     return { ...location, configuration: config };
   }
 
@@ -198,7 +213,7 @@ export class TypeScriptConfigurationService implements IConfigurationService {
     secretName: string,
     dir: string,
   ): Promise<Configuration> {
-    const absoluteDir = resolveDir(dir);
+    const absoluteDir = this.resolveDir(dir);
     const configPath = getConfigPath(absoluteDir, configName);
     const { config, comments } = await readConfig(configPath);
 
@@ -208,7 +223,11 @@ export class TypeScriptConfigurationService implements IConfigurationService {
 
     await writeConfig(configPath, config, comments);
 
-    const location = buildConfigLocation(absoluteDir, configName, configPath);
+    const location = this.buildConfigLocation(
+      absoluteDir,
+      configName,
+      configPath,
+    );
     return { ...location, configuration: config };
   }
 
@@ -227,7 +246,11 @@ export class TypeScriptConfigurationService implements IConfigurationService {
       const files = await listConfigFiles(searchDir);
       for (const filePath of files) {
         const configName = configNameFromPath(filePath);
-        const location = buildConfigLocation(searchDir, configName, filePath);
+        const location = this.buildConfigLocation(
+          searchDir,
+          configName,
+          filePath,
+        );
         try {
           const { config } = await readConfig(filePath);
           results.push({ ...location, configuration: config });

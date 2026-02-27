@@ -1,51 +1,26 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
-import { describe, expect, test, beforeEach, afterEach, vi } from "vitest";
+import { describe, expect, test, beforeEach, afterEach } from "vitest";
 import { promises as fs } from "fs";
 import path from "path";
 import os from "os";
 
 import { ConfigurationDetails } from "src/api/types/configurations";
-import { getConfigDir } from "./tomlConfig";
+import { TypeScriptConfigurationService } from "./ConfigurationService";
+import { getConfigDir, writeConfig } from "./tomlConfig";
 
 let tmpDir: string;
 
-const testGlobals = globalThis as unknown as Record<string, string>;
-
-// Mock vscode with workspace.workspaceFolders pointing to our temp dir
-vi.mock("vscode", () => ({
-  workspace: {
-    workspaceFolders: [
-      {
-        uri: {
-          get fsPath() {
-            // Lazily resolve tmpDir - it's set before each test
-            return testGlobals.__testWorkspaceRoot ?? "/tmp";
-          },
-        },
-      },
-    ],
-  },
-}));
-
 beforeEach(async () => {
   tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "configservice-test-"));
-  testGlobals.__testWorkspaceRoot = tmpDir;
 });
 
 afterEach(async () => {
   await fs.rm(tmpDir, { recursive: true, force: true });
-  delete testGlobals.__testWorkspaceRoot;
 });
 
-// Import after mock setup
-const { TypeScriptConfigurationService } = await import(
-  "./ConfigurationService"
-);
-const { writeConfig } = await import("./tomlConfig");
-
 function makeService() {
-  return new TypeScriptConfigurationService();
+  return new TypeScriptConfigurationService(tmpDir);
 }
 
 async function writeTestConfig(
@@ -310,7 +285,8 @@ describe("TypeScriptConfigurationService", () => {
       const titles = result
         .filter((r) => "configuration" in r)
         .map(
-          (r) => (r as { configuration: ConfigurationDetails }).configuration.title,
+          (r) =>
+            (r as { configuration: ConfigurationDetails }).configuration.title,
         )
         .sort();
       expect(titles).toEqual(["Root", "Sub"]);

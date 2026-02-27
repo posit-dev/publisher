@@ -1,5 +1,7 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
+import { workspace } from "vscode";
+
 import { IConfigurationService } from "./interfaces";
 import { getMigrationFlags } from "./featureFlags";
 import { GoConfigurationService } from "./goBackend/GoConfigurationService";
@@ -16,8 +18,9 @@ let services: Services | undefined;
  * Initialize the service layer. Reads migration feature flags and
  * instantiates the appropriate implementation for each service.
  *
- * The Go backend adapter uses useApi() internally, so no client
- * parameter is needed here.
+ * VSCode-specific concerns (workspace root, settings) are resolved here
+ * in the router and injected into implementations, keeping the service
+ * implementations themselves decoupled from VSCode.
  */
 export function initServices(): void {
   const flags = getMigrationFlags();
@@ -25,10 +28,16 @@ export function initServices(): void {
   let configurations: IConfigurationService;
 
   if (flags.useTypeScriptConfigurations) {
+    const workspaceRoot = workspace.workspaceFolders?.at(0)?.uri.fsPath;
+    if (!workspaceRoot) {
+      throw new Error(
+        "initServices: No workspace folder found for TypeScript configuration service",
+      );
+    }
     console.log(
       "Migration: Using TypeScript configuration service implementation",
     );
-    configurations = new TypeScriptConfigurationService();
+    configurations = new TypeScriptConfigurationService(workspaceRoot);
   } else {
     console.log("Migration: Using Go backend configuration service");
     configurations = new GoConfigurationService();
