@@ -36,7 +36,9 @@ import type { ProductType as ApiProductType } from "src/api/types/contentRecords
 export class GoApiConfigurationStore implements ConfigurationStore {
   async list(projectDir: string): Promise<ConfigurationSummary[]> {
     const api = await useApi();
-    const response = await api.configurations.getAll(projectDir);
+    const response = await api.configurations.getAll(projectDir, {
+      recursive: true,
+    });
 
     return response.data.map((entry) => {
       if (isConfigurationError(entry)) {

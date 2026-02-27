@@ -8,7 +8,8 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "baseUrl": ".",
     "paths": {
-      "src/*": ["./src/*"]
+      "src/*": ["./src/*"],
+      "@publisher/core": ["../../../../packages/core/src/index.ts"]
     },
     "verbatimModuleSyntax": false,
     "types": ["@types/vscode-webview", "@types/node"]

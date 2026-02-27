@@ -1,8 +1,7 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
+import type { ConfigurationSummary } from "@publisher/core";
 import {
-  Configuration,
-  ConfigurationError,
   ContentRecord,
   Integration,
   PreContentRecordWithConfig,
@@ -11,7 +10,7 @@ import { QuickPickItem } from "vscode";
 
 export interface DeploymentQuickPick extends QuickPickItem {
   contentRecord?: ContentRecord | PreContentRecordWithConfig;
-  config?: Configuration | ConfigurationError;
+  config?: ConfigurationSummary;
   credentialName?: string;
   lastMatch?: boolean;
 }

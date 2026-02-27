@@ -2,20 +2,20 @@
 
 import { Disposable, env, Event, EventEmitter, Memento, window } from "vscode";
 
+import type { ConfigurationSummary } from "@publisher/core";
+import { ConfigurationNotFoundError, ListConfigurations } from "@publisher/core";
+
 import {
-  Configuration,
-  ConfigurationError,
   ContentRecord,
   Credential,
-  isConfigurationError,
   isContentRecordError,
   PreContentRecord,
   PreContentRecordWithConfig,
   ServerType,
-  UpdateAllConfigsWithDefaults,
-  UpdateConfigWithDefaults,
   useApi,
 } from "src/api";
+import { GoApiConfigurationStore } from "src/adapters/goApiConfigurationStore";
+import { applyDefaults, applyDefaultsAll } from "src/utils/interpreterDefaults";
 import { normalizeURL } from "src/utils/url";
 import { showProgress } from "src/utils/progress";
 import {
@@ -51,13 +51,13 @@ function findContentRecordByPath<
   return records.find((r) => r.deploymentPath === path);
 }
 
-function findConfiguration<T extends Configuration | ConfigurationError>(
+function findConfigurationSummary(
   name: string,
   projectDir: string,
-  configs: Array<T>,
-): T | undefined {
+  configs: ConfigurationSummary[],
+): ConfigurationSummary | undefined {
   return configs.find(
-    (cfg) => cfg.configurationName === name && cfg.projectDir === projectDir,
+    (cfg) => cfg.name === name && cfg.projectDir === projectDir,
   );
 }
 
@@ -105,7 +105,7 @@ export class PublisherState implements Disposable {
   contentRecords: Array<
     ContentRecord | PreContentRecord | PreContentRecordWithConfig
   > = [];
-  configurations: Array<Configuration | ConfigurationError> = [];
+  configurations: ConfigurationSummary[] = [];
   credentials: Credential[] = [];
 
   constructor(context: extensionContext) {
@@ -208,7 +208,7 @@ export class PublisherState implements Disposable {
     }
   }
 
-  async getSelectedConfiguration() {
+  async getSelectedConfiguration(): Promise<ConfigurationSummary | undefined> {
     const contentRecord = await this.getSelectedContentRecord();
     if (!contentRecord) {
       return undefined;
@@ -222,37 +222,48 @@ export class PublisherState implements Disposable {
     }
     // if not found, then retrieve it and add it to our cache.
     try {
-      const api = await useApi();
+      const store = new GoApiConfigurationStore();
       const python = await getPythonInterpreterPath();
       const r = await getRInterpreterPath();
 
-      const response = await api.configurations.get(
-        contentRecord.configurationName,
+      const config = await store.read(
         contentRecord.projectDir,
+        contentRecord.configurationName,
       );
+      const api = await useApi();
       const defaults = await api.interpreters.get(
         contentRecord.projectDir,
         r,
         python,
       );
-      const cfg = UpdateConfigWithDefaults(response.data, defaults.data);
+      const summary: ConfigurationSummary = {
+        name: contentRecord.configurationName,
+        projectDir: contentRecord.projectDir,
+        configuration: config,
+      };
+      const withDefaults = applyDefaults(summary, defaults.data);
       // its not foolproof, but it may help
-      if (!this.findConfig(cfg.configurationName, cfg.projectDir)) {
-        this.configurations.push(cfg);
+      if (
+        !this.findConfig(
+          contentRecord.configurationName,
+          contentRecord.projectDir,
+        )
+      ) {
+        this.configurations.push(withDefaults);
       }
-      return cfg;
+      return withDefaults;
     } catch (error: unknown) {
-      const code = getStatusFromError(error);
-      if (code !== 404) {
-        // 400 is expected when doesn't exist on disk
-        const summary = getSummaryStringFromError(
-          "getSelectedConfiguration, contentRecords.get",
-          error,
-        );
-        window.showInformationMessage(
-          `Unable to retrieve deployment configuration: ${summary}`,
-        );
+      if (error instanceof ConfigurationNotFoundError) {
+        // Not found is expected when config doesn't exist on disk
+        return undefined;
       }
+      const summary = getSummaryStringFromError(
+        "getSelectedConfiguration, contentRecords.get",
+        error,
+      );
+      window.showInformationMessage(
+        `Unable to retrieve deployment configuration: ${summary}`,
+      );
       return undefined;
     }
   }
@@ -297,18 +308,14 @@ export class PublisherState implements Disposable {
         "Refreshing Configurations",
         Views.HomeView,
         async () => {
-          const api = await useApi();
+          const store = new GoApiConfigurationStore();
           const python = await getPythonInterpreterPath();
           const r = await getRInterpreterPath();
 
-          const response = await api.configurations.getAll(".", {
-            recursive: true,
-          });
+          const summaries = await new ListConfigurations().execute(store, ".");
+          const api = await useApi();
           const defaults = await api.interpreters.get(".", r, python);
-          this.configurations = UpdateAllConfigsWithDefaults(
-            response.data,
-            defaults.data,
-          );
+          this.configurations = applyDefaultsAll(summaries, defaults.data);
         },
       );
     } catch (error: unknown) {
@@ -317,26 +324,24 @@ export class PublisherState implements Disposable {
     }
   }
 
-  get validConfigs(): Configuration[] {
-    return this.configurations.filter(
-      (cfg): cfg is Configuration => !isConfigurationError(cfg),
-    );
+  get validConfigs(): ConfigurationSummary[] {
+    return this.configurations.filter((s) => "configuration" in s);
   }
 
-  get configsInError(): ConfigurationError[] {
-    return this.configurations.filter(isConfigurationError);
+  get configsInError(): ConfigurationSummary[] {
+    return this.configurations.filter((s) => "error" in s);
   }
 
   findConfig(name: string, projectDir: string) {
-    return findConfiguration(name, projectDir, this.configurations);
+    return findConfigurationSummary(name, projectDir, this.configurations);
   }
 
   findValidConfig(name: string, projectDir: string) {
-    return findConfiguration(name, projectDir, this.validConfigs);
+    return findConfigurationSummary(name, projectDir, this.validConfigs);
   }
 
   findConfigInError(name: string, projectDir: string) {
-    return findConfiguration(name, projectDir, this.configsInError);
+    return findConfigurationSummary(name, projectDir, this.configsInError);
   }
 
   get onDidRefreshCredentials(): Event<CredentialRefreshEvent> {

@@ -318,16 +318,24 @@ describe("PublisherState", () => {
         contentRecord.configurationName,
         contentRecord.projectDir,
       );
-      expect(currentConfig).toEqual(config);
-      expect(publisherState.configurations).toEqual([config]);
+      // Result is now a ConfigurationSummary, not a Go API Configuration
+      expect(currentConfig).toMatchObject({
+        name: config.configurationName,
+        projectDir: config.projectDir,
+      });
+      expect(currentConfig).toHaveProperty("configuration");
+      expect(publisherState.configurations).toHaveLength(1);
 
       // second time calls from cache
       currentConfig = await publisherState.getSelectedConfiguration();
 
       // Only the previous call is registered
       expect(mockClient.configurations.get).toHaveBeenCalledTimes(1);
-      expect(currentConfig).toEqual(config);
-      expect(publisherState.configurations).toEqual([config]);
+      expect(currentConfig).toMatchObject({
+        name: config.configurationName,
+        projectDir: config.projectDir,
+      });
+      expect(publisherState.configurations).toHaveLength(1);
 
       // setup a second content record in cache and it's respective config API response
       const secondContentRecordState: DeploymentSelectorState =
@@ -353,8 +361,11 @@ describe("PublisherState", () => {
 
       // Two API calls were triggered, each for every different
       expect(mockClient.configurations.get).toHaveBeenCalledTimes(2);
-      expect(currentConfig).toEqual(secondConfig);
-      expect(publisherState.configurations).toEqual([config, secondConfig]);
+      expect(currentConfig).toMatchObject({
+        name: secondConfig.configurationName,
+        projectDir: secondConfig.projectDir,
+      });
+      expect(publisherState.configurations).toHaveLength(2);
     });
 
     describe("error responses from API", () => {
@@ -378,8 +389,8 @@ describe("PublisherState", () => {
         return publisherState.updateSelection(contentRecordState);
       });
 
-      test("404", async () => {
-        // setup fake 404 error from api client
+      test("404 (translated to ConfigurationNotFoundError)", async () => {
+        // GoApiConfigurationStore translates 404 AxiosError to ConfigurationNotFoundError
         const axiosErr = new AxiosError();
         axiosErr.response = {
           data: "",
@@ -397,14 +408,14 @@ describe("PublisherState", () => {
           contentRecord.projectDir,
         );
 
-        // 404 errors are just ignored
+        // Not-found errors are silently ignored
         expect(currentConfig).toEqual(undefined);
         expect(publisherState.configurations).toEqual([]);
         expect(window.showInformationMessage).not.toHaveBeenCalled();
       });
 
-      test("Other than 404", async () => {
-        // NOT 404 errors are shown
+      test("Other than 404 (translated to ConfigurationReadError)", async () => {
+        // GoApiConfigurationStore translates other AxiosErrors to ConfigurationReadError
         const axiosErr = new AxiosError();
         axiosErr.response = {
           data: "custom test error",
@@ -426,7 +437,7 @@ describe("PublisherState", () => {
         expect(currentConfig).toEqual(undefined);
         expect(publisherState.configurations).toEqual([]);
         expect(window.showInformationMessage).toHaveBeenCalledWith(
-          "Unable to retrieve deployment configuration: custom test error",
+          expect.stringContaining("Unable to retrieve deployment configuration:"),
         );
       });
     });

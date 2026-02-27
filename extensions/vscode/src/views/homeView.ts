@@ -23,9 +23,9 @@ import { getPositronRepoSettings } from "src/utils/positronSettings";
 import { isAxiosError } from "axios";
 import { Mutex } from "async-mutex";
 
+import type { ConfigurationSummary } from "@publisher/core";
 import {
   Configuration,
-  ConfigurationError,
   ContentRecord,
   EventStreamMessage,
   FileAction,
@@ -43,6 +43,13 @@ import {
   IntegrationRequest,
   Integration,
 } from "src/api";
+import { configurationPath } from "src/utils/configPath";
+import {
+  toApiValidConfigs,
+  toApiConfigsInError,
+  toApiConfiguration,
+  fromApiToSummary,
+} from "src/utils/configTransform";
 import { EventStream } from "src/events";
 import { getPythonInterpreterPath, getRInterpreterPath } from "../utils/vscode";
 import { getSummaryStringFromError } from "src/utils/errors";
@@ -245,7 +252,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
 
-    if (activeConfig && !isConfigurationError(activeConfig)) {
+    if (activeConfig && !("error" in activeConfig)) {
       projectDir = activeConfig.projectDir;
       sourceEntrypoint = activeConfig.configuration.source || "";
       renderedEntrypoint = activeConfig.configuration.entrypoint || "";
@@ -413,7 +420,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       console.error("homeView::updateFileList: No active configuration.");
       return;
     }
-    if (isConfigurationError(activeConfig)) {
+    if ("error" in activeConfig) {
       console.error(
         "homeView::updateFileList: Skipping - error in active configuration.",
       );
@@ -423,7 +430,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       await showProgress("Updating File List", Views.HomeView, async () => {
         const api = await useApi();
         await api.files.updateFileList(
-          activeConfig.configurationName,
+          activeConfig.name,
           `/${uri}`,
           action,
           activeConfig.projectDir,
@@ -481,7 +488,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     await this.state.refreshCredentials();
   }
 
-  private async refreshActiveConfig(cfg?: Configuration | ConfigurationError) {
+  private async refreshActiveConfig(cfg?: ConfigurationSummary) {
     if (!cfg) {
       cfg = await this.state.getSelectedConfiguration();
     }
@@ -494,7 +501,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     this.refreshConnectServerSettings();
 
     this.configWatchers?.dispose();
-    if (cfg && isConfigurationError(cfg)) {
+    if (cfg && "error" in cfg) {
       return;
     }
     this.configWatchers = new ConfigWatcherManager(cfg);
@@ -564,8 +571,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     this.webviewConduit.sendMsg({
       kind: HostToWebviewMessageType.REFRESH_CONFIG_DATA,
       content: {
-        configurations: this.state.validConfigs,
-        configurationsInError: this.state.configsInError,
+        configurations: toApiValidConfigs(this.state.validConfigs),
+        configurationsInError: toApiConfigsInError(this.state.configsInError),
       },
     });
   }
@@ -621,7 +628,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
     const api = await useApi();
 
-    if (activeConfiguration && !isConfigurationError(activeConfiguration)) {
+    if (activeConfiguration && !("error" in activeConfiguration)) {
       const pythonSection = activeConfiguration.configuration.python;
       if (!pythonSection) {
         pythonProject = false;
@@ -635,7 +642,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
             Views.HomeView,
             async () => {
               return await api.packages.getPythonPackages(
-                activeConfiguration.configurationName,
+                activeConfiguration.name,
                 activeConfiguration.projectDir,
               );
             },
@@ -697,11 +704,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
 
     const activeConfig = await this.state.getSelectedConfiguration();
-    if (activeConfig && !isConfigurationError(activeConfig)) {
+    if (activeConfig && !("error" in activeConfig)) {
       try {
         const api = await useApi();
         let response = await api.integrationRequests.list(
-          activeConfig.configurationName,
+          activeConfig.name,
           activeConfig.projectDir,
         );
         const integrationRequests = response.data ?? [];
@@ -749,7 +756,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
     const api = await useApi();
 
-    if (activeConfiguration && !isConfigurationError(activeConfiguration)) {
+    if (activeConfiguration && !("error" in activeConfiguration)) {
       const rSection = activeConfiguration.configuration.r;
       if (!rSection) {
         rProject = false;
@@ -763,7 +770,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
             Views.HomeView,
             async () =>
               await api.packages.getRPackages(
-                activeConfiguration.configurationName,
+                activeConfiguration.name,
                 activeConfiguration.projectDir,
               ),
           );
@@ -829,7 +836,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
     const activeConfig = await this.state.getSelectedConfiguration();
 
-    if (activeConfig && !isConfigurationError(activeConfig)) {
+    if (activeConfig && !("error" in activeConfig)) {
       try {
         const api = await useApi();
         const result = await api.connectServer.getServerSettings(
@@ -876,7 +883,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const activeConfiguration = await this.state.getSelectedConfiguration();
     if (
       activeConfiguration === undefined ||
-      isConfigurationError(activeConfiguration)
+      "error" in activeConfiguration
     ) {
       // Cannot scan if there is no active configuration.
       return;
@@ -890,6 +897,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
     const relPathPackageFile =
       activeConfiguration.configuration.python.packageFile;
+    if (!relPathPackageFile) {
+      return;
+    }
 
     const fileUri = Uri.joinPath(
       this.root.uri,
@@ -946,7 +956,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const activeConfiguration = await this.state.getSelectedConfiguration();
     if (
       activeConfiguration === undefined ||
-      isConfigurationError(activeConfiguration)
+      "error" in activeConfiguration
     ) {
       // Cannot scan if there is no active configuration.
       return;
@@ -959,6 +969,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
 
     const relPathPackageFile = activeConfiguration.configuration.r.packageFile;
+    if (!relPathPackageFile) {
+      return;
+    }
 
     const fileUri = Uri.joinPath(
       this.root.uri,
@@ -1034,10 +1047,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       this.webviewConduit.sendMsg({
         kind: HostToWebviewMessageType.SHOW_DISABLE_OVERLAY,
       });
+      const selectedSummary = await this.state.getSelectedConfiguration();
       const config = await selectNewOrExistingConfig(
         targetContentRecord,
         Views.HomeView,
-        await this.state.getSelectedConfiguration(),
+        selectedSummary ? toApiConfiguration(selectedSummary) : undefined,
       );
       if (config) {
         await showProgress("Updating Config", Views.HomeView, async () => {
@@ -1131,7 +1145,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
             configuration.projectDir,
           )
         ) {
-          this.state.configurations.push(configuration);
+          this.state.configurations.push(fromApiToSummary(configuration));
         }
         if (!this.state.findCredential(credential.name)) {
           this.state.credentials.push(credential);
@@ -1204,7 +1218,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       console.error("homeView::addSecret: No active configuration.");
       return;
     }
-    if (isConfigurationError(activeConfig)) {
+    if ("error" in activeConfig) {
       console.error(
         "homeView::addSecret: Unable to add secret into a configuration with error.",
       );
@@ -1223,7 +1237,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       await showProgress("Adding Secret", Views.HomeView, async () => {
         const api = await useApi();
         await api.secrets.add(
-          activeConfig.configurationName,
+          activeConfig.name,
           name,
           activeConfig.projectDir,
         );
@@ -1242,7 +1256,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       console.error("homeView::removeSecret: No active configuration.");
       return;
     }
-    if (isConfigurationError(activeConfig)) {
+    if ("error" in activeConfig) {
       console.error(
         "homeView::removeSecret: Unable to remove secret from a configuration with error.",
       );
@@ -1253,7 +1267,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       await showProgress("Removing Secret", Views.HomeView, async () => {
         const api = await useApi();
         await api.secrets.remove(
-          activeConfig.configurationName,
+          activeConfig.name,
           context.name,
           activeConfig.projectDir,
         );
@@ -1273,7 +1287,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       console.error("homeView::addIntegration: No active configuration.");
       return;
     }
-    if (isConfigurationError(activeConfig)) {
+    if ("error" in activeConfig) {
       console.error(
         "homeView::addIntegration: Unable to add integration into a configuration with error.",
       );
@@ -1326,7 +1340,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         Views.HomeView,
         async () => {
           await api.integrationRequests.add(
-            activeConfig.configurationName,
+            activeConfig.name,
             activeConfig.projectDir,
             {
               guid: integration.guid,
@@ -1360,7 +1374,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       );
       return;
     }
-    if (isConfigurationError(activeConfig)) {
+    if ("error" in activeConfig) {
       console.error(
         "homeView::deleteIntegrationRequest: Unable to delete integration request from a configuration with error.",
       );
@@ -1374,7 +1388,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         async () => {
           const api = await useApi();
           await api.integrationRequests.delete(
-            activeConfig.configurationName,
+            activeConfig.name,
             activeConfig.projectDir,
             {
               guid: context.request.guid,
@@ -1403,7 +1417,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       );
       return;
     }
-    if (isConfigurationError(activeConfig)) {
+    if ("error" in activeConfig) {
       console.error(
         "homeView::clearAllIntegrationRequests: Unable to delete integration request from a configuration with error.",
       );
@@ -1417,13 +1431,13 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         async () => {
           const api = await useApi();
           const response = await api.integrationRequests.list(
-            activeConfig.configurationName,
+            activeConfig.name,
             activeConfig.projectDir,
           );
           const reqs = response.data;
           for (const ir of reqs) {
             await api.integrationRequests.delete(
-              activeConfig.configurationName,
+              activeConfig.name,
               activeConfig.projectDir,
               {
                 guid: ir.guid,
@@ -1613,7 +1627,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           return;
         }
 
-        let config: Configuration | ConfigurationError | undefined;
+        let config: ConfigurationSummary | undefined;
         if (contentRecord.configurationName) {
           config = this.state.findValidConfig(
             contentRecord.configurationName,
@@ -1634,7 +1648,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         const title = result.title;
         let problem = result.problem;
 
-        let configName = config?.configurationName;
+        let configName = config?.name;
         if (!configName) {
           configName = contentRecord.configurationName
             ? `Missing Configuration ${contentRecord.configurationName}`
@@ -1659,11 +1673,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         }
 
         if (isRelativePathRoot(contentRecord.projectDir)) {
-          if (config && !isConfigurationError(config)) {
+          if (config && !("error" in config)) {
             details.push(config.configuration.entrypoint);
           }
         } else {
-          if (config && !isConfigurationError(config)) {
+          if (config && !("error" in config)) {
             details.push(
               `${contentRecord.projectDir}${path.sep}${config.configuration.entrypoint}`,
             );
@@ -1949,7 +1963,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
   public sendRefreshedFilesLists = async () => {
     const activeConfig = await this.state.getSelectedConfiguration();
-    if (activeConfig && !isConfigurationError(activeConfig)) {
+    if (activeConfig && !("error" in activeConfig)) {
       try {
         const response = await showProgress(
           "Refreshing Files",
@@ -1957,7 +1971,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           async () => {
             const api = await useApi();
             return await api.files.getByConfiguration(
-              activeConfig.configurationName,
+              activeConfig.name,
               activeConfig.projectDir,
             );
           },
@@ -2320,10 +2334,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         Commands.HomeView.EditCurrentConfiguration,
         async () => {
           const config = await this.state.getSelectedConfiguration();
-          if (config) {
+          if (config && this.root) {
+            const cfgPath = configurationPath(config.projectDir, config.name);
             return await commands.executeCommand(
               "vscode.open",
-              Uri.file(config.configurationPath),
+              Uri.joinPath(this.root.uri, cfgPath),
             );
           }
           console.error(
@@ -2344,7 +2359,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
             return;
           }
           const cfg = await this.state.getSelectedConfiguration();
-          if (!cfg || isConfigurationError(cfg)) {
+          if (!cfg || "error" in cfg) {
             return;
           }
           const packageFile = cfg.configuration.python?.packageFile;
@@ -2373,7 +2388,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
             return;
           }
           const cfg = await this.state.getSelectedConfiguration();
-          if (!cfg || isConfigurationError(cfg)) {
+          if (!cfg || "error" in cfg) {
             return;
           }
           const packageFile = cfg.configuration.r?.packageFile;
