@@ -53,6 +53,20 @@ vi.mock("src/api", async (importOriginal) => {
   };
 });
 
+const mockConfigurationService = {
+  get: vi.fn(),
+  getAll: vi.fn(),
+  createOrUpdate: vi.fn(),
+  delete: vi.fn(),
+  getSecrets: vi.fn(),
+  addSecret: vi.fn(),
+  removeSecret: vi.fn(),
+};
+
+vi.mock("src/serviceLayer", () => ({
+  useConfigurations: () => mockConfigurationService,
+}));
+
 vi.mock("src/utils/progress", () => {
   return {
     showProgress: vi.fn((_title, _view: string, until: () => Promise<void>) => {
@@ -299,22 +313,20 @@ describe("PublisherState", () => {
       });
       publisherState.contentRecords.push(contentRecord);
 
-      // setup fake config API response,
+      // setup fake config API response via useConfigurations(),
       // config name and project dir must be the same between content record and config
       const config = configurationFactory.build({
         configurationName: contentRecord.configurationName,
         projectDir: contentRecord.projectDir,
       });
-      mockClient.configurations.get.mockResolvedValue({
-        data: config,
-      });
+      mockConfigurationService.get.mockResolvedValue(config);
 
       // selection has something now
       await publisherState.updateSelection(contentRecordState);
 
       currentConfig = await publisherState.getSelectedConfiguration();
-      expect(mockClient.configurations.get).toHaveBeenCalledTimes(1);
-      expect(mockClient.configurations.get).toHaveBeenCalledWith(
+      expect(mockConfigurationService.get).toHaveBeenCalledTimes(1);
+      expect(mockConfigurationService.get).toHaveBeenCalledWith(
         contentRecord.configurationName,
         contentRecord.projectDir,
       );
@@ -325,7 +337,7 @@ describe("PublisherState", () => {
       currentConfig = await publisherState.getSelectedConfiguration();
 
       // Only the previous call is registered
-      expect(mockClient.configurations.get).toHaveBeenCalledTimes(1);
+      expect(mockConfigurationService.get).toHaveBeenCalledTimes(1);
       expect(currentConfig).toEqual(config);
       expect(publisherState.configurations).toEqual([config]);
 
@@ -341,9 +353,7 @@ describe("PublisherState", () => {
         configurationName: secondContentRecord.configurationName,
         projectDir: secondContentRecord.projectDir,
       });
-      mockClient.configurations.get.mockResolvedValue({
-        data: secondConfig,
-      });
+      mockConfigurationService.get.mockResolvedValue(secondConfig);
 
       // selection has something different this time
       await publisherState.updateSelection(secondContentRecordState);
@@ -352,7 +362,7 @@ describe("PublisherState", () => {
       currentConfig = await publisherState.getSelectedConfiguration();
 
       // Two API calls were triggered, each for every different
-      expect(mockClient.configurations.get).toHaveBeenCalledTimes(2);
+      expect(mockConfigurationService.get).toHaveBeenCalledTimes(2);
       expect(currentConfig).toEqual(secondConfig);
       expect(publisherState.configurations).toEqual([config, secondConfig]);
     });
@@ -379,7 +389,7 @@ describe("PublisherState", () => {
       });
 
       test("404", async () => {
-        // setup fake 404 error from api client
+        // setup fake 404 error from useConfigurations()
         const axiosErr = new AxiosError();
         axiosErr.response = {
           data: "",
@@ -388,11 +398,11 @@ describe("PublisherState", () => {
           headers: {},
           config: { headers: new AxiosHeaders() },
         };
-        mockClient.configurations.get.mockRejectedValue(axiosErr);
+        mockConfigurationService.get.mockRejectedValue(axiosErr);
 
         const currentConfig = await publisherState.getSelectedConfiguration();
-        expect(mockClient.configurations.get).toHaveBeenCalledTimes(1);
-        expect(mockClient.configurations.get).toHaveBeenCalledWith(
+        expect(mockConfigurationService.get).toHaveBeenCalledTimes(1);
+        expect(mockConfigurationService.get).toHaveBeenCalledWith(
           contentRecord.configurationName,
           contentRecord.projectDir,
         );
@@ -413,11 +423,11 @@ describe("PublisherState", () => {
           headers: {},
           config: { headers: new AxiosHeaders() },
         };
-        mockClient.configurations.get.mockRejectedValue(axiosErr);
+        mockConfigurationService.get.mockRejectedValue(axiosErr);
 
         const currentConfig = await publisherState.getSelectedConfiguration();
-        expect(mockClient.configurations.get).toHaveBeenCalledTimes(1);
-        expect(mockClient.configurations.get).toHaveBeenCalledWith(
+        expect(mockConfigurationService.get).toHaveBeenCalledTimes(1);
+        expect(mockConfigurationService.get).toHaveBeenCalledWith(
           contentRecord.configurationName,
           contentRecord.projectDir,
         );

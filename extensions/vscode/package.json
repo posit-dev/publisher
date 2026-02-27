@@ -69,6 +69,11 @@
             "markdownDescription": "Controls whether Posit Connect Cloud is available as a publishing destination.",
             "type": "boolean",
             "default": true
+          },
+          "positPublisher.migration.useTypeScriptConfigurations": {
+            "markdownDescription": "Use TypeScript configuration implementation instead of the Go backend (experimental)",
+            "type": "boolean",
+            "default": false
           }
         }
       }
@@ -688,6 +693,7 @@
     "filenamify": "^7.0.1",
     "get-port": "^7.1.0",
     "retry": "^0.13.1",
+    "smol-toml": "^1.6.0",
     "tar-stream": "^3.1.7",
     "vscode-uri": "^3.0.8"
   }

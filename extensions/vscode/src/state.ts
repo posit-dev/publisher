@@ -29,6 +29,7 @@ import {
   errCannotBackupCredentialsFileMessage,
 } from "src/utils/errorTypes";
 import { DeploymentSelector, SelectionState } from "src/types/shared";
+import { useConfigurations } from "src/serviceLayer";
 import { LocalState, Views } from "./constants";
 import { getPythonInterpreterPath, getRInterpreterPath } from "./utils/vscode";
 import {
@@ -226,7 +227,7 @@ export class PublisherState implements Disposable {
       const python = await getPythonInterpreterPath();
       const r = await getRInterpreterPath();
 
-      const response = await api.configurations.get(
+      const configResult = await useConfigurations().get(
         contentRecord.configurationName,
         contentRecord.projectDir,
       );
@@ -235,7 +236,7 @@ export class PublisherState implements Disposable {
         r,
         python,
       );
-      const cfg = UpdateConfigWithDefaults(response.data, defaults.data);
+      const cfg = UpdateConfigWithDefaults(configResult, defaults.data);
       // its not foolproof, but it may help
       if (!this.findConfig(cfg.configurationName, cfg.projectDir)) {
         this.configurations.push(cfg);
@@ -301,12 +302,12 @@ export class PublisherState implements Disposable {
           const python = await getPythonInterpreterPath();
           const r = await getRInterpreterPath();
 
-          const response = await api.configurations.getAll(".", {
+          const configs = await useConfigurations().getAll(".", {
             recursive: true,
           });
           const defaults = await api.interpreters.get(".", r, python);
           this.configurations = UpdateAllConfigsWithDefaults(
-            response.data,
+            configs,
             defaults.data,
           );
         },

@@ -27,6 +27,7 @@ import {
   getPythonInterpreterPath,
   getRInterpreterPath,
 } from "src/utils/vscode";
+import { useConfigurations } from "src/serviceLayer";
 import { getSummaryStringFromError } from "src/utils/errors";
 import {
   MultiStepInput,
@@ -103,10 +104,9 @@ export async function selectNewOrExistingConfig(
   const getConfigurations = async () => {
     try {
       // get all configurations
-      const response = await api.configurations.getAll(
+      const rawConfigs = await useConfigurations().getAll(
         activeDeployment.projectDir,
       );
-      const rawConfigs = response.data;
       // remove the errors
       configurations = configurations.filter(
         (cfg): cfg is Configuration => !isConfigurationError(cfg),
@@ -444,21 +444,20 @@ export async function selectNewOrExistingConfig(
       }
 
       const existingNames = (
-        await api.configurations.getAll(selectedInspectionResult.projectDir)
-      ).data.map((config) => config.configurationName);
+        await useConfigurations().getAll(selectedInspectionResult.projectDir)
+      ).map((config) => config.configurationName);
 
       const configName = newConfigFileNameFromTitle(
         state.data.title,
         existingNames,
       );
       selectedInspectionResult.configuration.title = state.data.title;
-      const createResponse = await api.configurations.createOrUpdate(
+      const newConfig = await useConfigurations().createOrUpdate(
         configName,
         selectedInspectionResult.configuration,
         selectedInspectionResult.projectDir,
       );
-      const fileUri = Uri.file(createResponse.data.configurationPath);
-      const newConfig = createResponse.data;
+      const fileUri = Uri.file(newConfig.configurationPath);
       await commands.executeCommand("vscode.open", fileUri);
       return newConfig;
     } catch (error: unknown) {

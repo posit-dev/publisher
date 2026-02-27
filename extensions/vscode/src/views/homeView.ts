@@ -43,6 +43,7 @@ import {
   IntegrationRequest,
   Integration,
 } from "src/api";
+import { useConfigurations } from "src/serviceLayer";
 import { EventStream } from "src/events";
 import { getPythonInterpreterPath, getRInterpreterPath } from "../utils/vscode";
 import { getSummaryStringFromError } from "src/utils/errors";
@@ -1221,8 +1222,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
     try {
       await showProgress("Adding Secret", Views.HomeView, async () => {
-        const api = await useApi();
-        await api.secrets.add(
+        await useConfigurations().addSecret(
           activeConfig.configurationName,
           name,
           activeConfig.projectDir,
@@ -1251,8 +1251,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
     try {
       await showProgress("Removing Secret", Views.HomeView, async () => {
-        const api = await useApi();
-        await api.secrets.remove(
+        await useConfigurations().removeSecret(
           activeConfig.configurationName,
           context.name,
           activeConfig.projectDir,
@@ -2075,11 +2074,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const configMap = new Map<string, Configuration>();
     const getConfigurations = async () => {
       try {
-        const response = await api.configurations.getAll(entrypointDir, {
+        const rawConfigs = await useConfigurations().getAll(entrypointDir, {
           entrypoint: entrypointFile,
           recursive: false,
         });
-        const rawConfigs = response.data;
         rawConfigs.forEach((cfg) => {
           if (!isConfigurationError(cfg)) {
             configMap.set(cfg.configurationName, cfg);

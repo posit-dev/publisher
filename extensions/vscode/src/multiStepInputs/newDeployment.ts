@@ -39,6 +39,7 @@ import {
   getPythonInterpreterPath,
   getRInterpreterPath,
 } from "src/utils/vscode";
+import { useConfigurations } from "src/serviceLayer";
 import { getSummaryStringFromError } from "src/utils/errors";
 import { isAxiosErrorWithJson } from "src/utils/errorTypes";
 import { newConfigFileNameFromTitle, newDeploymentName } from "src/utils/names";
@@ -844,10 +845,10 @@ export async function newDeployment(
 
   try {
     const existingNames = (
-      await api.configurations.getAll(
+      await useConfigurations().getAll(
         newDeploymentData.entrypoint.inspectionResult.projectDir,
       )
-    ).data.map((config) => config.configurationName);
+    ).map((config) => config.configurationName);
 
     configName = newConfigFileNameFromTitle(
       newDeploymentData.title,
@@ -857,13 +858,11 @@ export async function newDeployment(
     newDeploymentData.entrypoint.inspectionResult.configuration.productType =
       getProductType(newOrSelectedCredential.serverType);
 
-    configCreateResponse = (
-      await api.configurations.createOrUpdate(
-        configName,
-        newDeploymentData.entrypoint.inspectionResult.configuration,
-        newDeploymentData.entrypoint.inspectionResult.projectDir,
-      )
-    ).data;
+    configCreateResponse = await useConfigurations().createOrUpdate(
+      configName,
+      newDeploymentData.entrypoint.inspectionResult.configuration,
+      newDeploymentData.entrypoint.inspectionResult.projectDir,
+    );
     const fileUri = Uri.file(configCreateResponse.configurationPath);
     newConfig = configCreateResponse;
     await commands.executeCommand("vscode.open", fileUri);

@@ -24,6 +24,7 @@ import { PublisherAuthProvider } from "./authProvider";
 import { logger } from "./logging";
 import { copySystemInfoCommand } from "src/commands";
 import { registerLLMTooling } from "./llm";
+import { initServices } from "./serviceLayer";
 import {
   clearConnectContentBundleForUri,
   registerConnectContentFileSystem,
@@ -118,6 +119,10 @@ async function initializeExtension(context: ExtensionContext) {
 
   service = new Service(context, port, useExternalAgent, useKeyChain);
   service.start();
+
+  // Initialize the service layer (routes to Go backend or TypeScript
+  // implementations based on migration feature flags)
+  initServices();
 
   const watchers = new WatcherManager();
   context.subscriptions.push(watchers);
