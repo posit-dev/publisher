@@ -29,7 +29,7 @@ import {
   errCannotBackupCredentialsFileMessage,
 } from "src/utils/errorTypes";
 import { DeploymentSelector, SelectionState } from "src/types/shared";
-import { useConfigurations } from "src/serviceLayer";
+import { useConfigurations, isConfigServiceError } from "src/serviceLayer";
 import { LocalState, Views } from "./constants";
 import { getPythonInterpreterPath, getRInterpreterPath } from "./utils/vscode";
 import {
@@ -243,9 +243,9 @@ export class PublisherState implements Disposable {
       }
       return cfg;
     } catch (error: unknown) {
-      const code = getStatusFromError(error);
-      if (code !== 404) {
-        // 400 is expected when doesn't exist on disk
+      const isNotFound =
+        isConfigServiceError(error) && error.code === "not-found";
+      if (!isNotFound) {
         const summary = getSummaryStringFromError(
           "getSelectedConfiguration, contentRecords.get",
           error,

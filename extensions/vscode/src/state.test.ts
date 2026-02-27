@@ -3,6 +3,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { window } from "vscode";
 import { AxiosError, AxiosHeaders } from "axios";
+import { ConfigServiceError } from "src/serviceLayer";
 import { DeploymentSelectorState } from "src/types/shared";
 import {
   selectionStateFactory,
@@ -63,7 +64,8 @@ const mockConfigurationService = {
   removeSecret: vi.fn(),
 };
 
-vi.mock("src/serviceLayer", () => ({
+vi.mock("src/serviceLayer", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("src/serviceLayer")>()),
   useConfigurations: () => mockConfigurationService,
 }));
 
@@ -388,17 +390,12 @@ describe("PublisherState", () => {
         return publisherState.updateSelection(contentRecordState);
       });
 
-      test("404", async () => {
-        // setup fake 404 error from useConfigurations()
-        const axiosErr = new AxiosError();
-        axiosErr.response = {
-          data: "",
-          status: 404,
-          statusText: "404",
-          headers: {},
-          config: { headers: new AxiosHeaders() },
-        };
-        mockConfigurationService.get.mockRejectedValue(axiosErr);
+      test("not-found errors are silently ignored", async () => {
+        const notFoundErr = new ConfigServiceError(
+          "not-found",
+          "Configuration not found",
+        );
+        mockConfigurationService.get.mockRejectedValue(notFoundErr);
 
         const currentConfig = await publisherState.getSelectedConfiguration();
         expect(mockConfigurationService.get).toHaveBeenCalledTimes(1);
@@ -407,23 +404,18 @@ describe("PublisherState", () => {
           contentRecord.projectDir,
         );
 
-        // 404 errors are just ignored
+        // not-found errors are just ignored
         expect(currentConfig).toEqual(undefined);
         expect(publisherState.configurations).toEqual([]);
         expect(window.showInformationMessage).not.toHaveBeenCalled();
       });
 
-      test("Other than 404", async () => {
-        // NOT 404 errors are shown
-        const axiosErr = new AxiosError();
-        axiosErr.response = {
-          data: "custom test error",
-          status: 401,
-          statusText: "401",
-          headers: {},
-          config: { headers: new AxiosHeaders() },
-        };
-        mockConfigurationService.get.mockRejectedValue(axiosErr);
+      test("other errors are shown to user", async () => {
+        const unknownErr = new ConfigServiceError(
+          "unknown",
+          "custom test error",
+        );
+        mockConfigurationService.get.mockRejectedValue(unknownErr);
 
         const currentConfig = await publisherState.getSelectedConfiguration();
         expect(mockConfigurationService.get).toHaveBeenCalledTimes(1);

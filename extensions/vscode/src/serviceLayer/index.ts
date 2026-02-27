@@ -65,5 +65,6 @@ export function useConfigurations(): IConfigurationService {
   return useServices().configurations;
 }
 
-export type { IConfigurationService } from "./interfaces";
+export type { IConfigurationService, ConfigServiceErrorCode } from "./interfaces";
+export { ConfigServiceError, isConfigServiceError } from "./interfaces";
 export { getMigrationFlags, setMigrationFlagOverrides } from "./featureFlags";

@@ -7,8 +7,46 @@ import {
 } from "src/api/types/configurations";
 
 /**
+ * Transport-agnostic error codes for configuration service operations.
+ * These replace HTTP status codes as the error discrimination mechanism,
+ * so call sites don't need to know whether the service is backed by
+ * an HTTP API or direct filesystem access.
+ */
+export type ConfigServiceErrorCode =
+  | "not-found"
+  | "invalid-toml"
+  | "unknown";
+
+/**
+ * Service-level error thrown by both Go backend adapter and TypeScript
+ * implementation. Call sites should catch this instead of AxiosError.
+ */
+export class ConfigServiceError extends Error {
+  readonly code: ConfigServiceErrorCode;
+  readonly cause?: unknown;
+
+  constructor(
+    code: ConfigServiceErrorCode,
+    message: string,
+    cause?: unknown,
+  ) {
+    super(message);
+    this.name = "ConfigServiceError";
+    this.code = code;
+    this.cause = cause;
+  }
+}
+
+export function isConfigServiceError(err: unknown): err is ConfigServiceError {
+  return err instanceof ConfigServiceError;
+}
+
+/**
  * Service contract for configuration CRUD operations.
  * Both the Go backend adapter and TypeScript implementation must satisfy this interface.
+ *
+ * Methods that can fail due to missing configs should throw ConfigServiceError
+ * with code "not-found" rather than letting transport-specific errors propagate.
  */
 export interface IConfigurationService {
   getAll(

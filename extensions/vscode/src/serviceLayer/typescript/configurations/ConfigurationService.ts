@@ -8,7 +8,7 @@ import {
   ConfigurationDetails,
   ConfigurationError,
 } from "src/api/types/configurations";
-import { IConfigurationService } from "../../interfaces";
+import { IConfigurationService, ConfigServiceError } from "../../interfaces";
 import {
   getConfigDir,
   getConfigPath,
@@ -16,6 +16,23 @@ import {
   readConfig,
   writeConfig,
 } from "./tomlConfig";
+
+/**
+ * Translates a filesystem or TOML parse error into a ConfigServiceError.
+ */
+function translateError(err: unknown): never {
+  if (err instanceof ConfigServiceError) {
+    throw err;
+  }
+  const nodeErr = err as NodeJS.ErrnoException;
+  if (nodeErr.code === "ENOENT") {
+    throw new ConfigServiceError("not-found", nodeErr.message, err);
+  }
+  if (err instanceof Error) {
+    throw new ConfigServiceError("unknown", err.message, err);
+  }
+  throw new ConfigServiceError("unknown", String(err), err);
+}
 
 /**
  * Extracts the configuration name from a TOML file path (filename without .toml extension).
@@ -170,16 +187,24 @@ export class TypeScriptConfigurationService implements IConfigurationService {
   }
 
   async delete(configName: string, dir: string): Promise<void> {
-    const absoluteDir = this.resolveDir(dir);
-    const configPath = getConfigPath(absoluteDir, configName);
-    await fs.unlink(configPath);
+    try {
+      const absoluteDir = this.resolveDir(dir);
+      const configPath = getConfigPath(absoluteDir, configName);
+      await fs.unlink(configPath);
+    } catch (err) {
+      translateError(err);
+    }
   }
 
   async getSecrets(configName: string, dir: string): Promise<string[]> {
-    const absoluteDir = this.resolveDir(dir);
-    const configPath = getConfigPath(absoluteDir, configName);
-    const { config } = await readConfig(configPath);
-    return config.secrets ?? [];
+    try {
+      const absoluteDir = this.resolveDir(dir);
+      const configPath = getConfigPath(absoluteDir, configName);
+      const { config } = await readConfig(configPath);
+      return config.secrets ?? [];
+    } catch (err) {
+      translateError(err);
+    }
   }
 
   async addSecret(
@@ -187,25 +212,29 @@ export class TypeScriptConfigurationService implements IConfigurationService {
     secretName: string,
     dir: string,
   ): Promise<Configuration> {
-    const absoluteDir = this.resolveDir(dir);
-    const configPath = getConfigPath(absoluteDir, configName);
-    const { config, comments } = await readConfig(configPath);
+    try {
+      const absoluteDir = this.resolveDir(dir);
+      const configPath = getConfigPath(absoluteDir, configName);
+      const { config, comments } = await readConfig(configPath);
 
-    if (!config.secrets) {
-      config.secrets = [];
+      if (!config.secrets) {
+        config.secrets = [];
+      }
+      if (!config.secrets.includes(secretName)) {
+        config.secrets.push(secretName);
+      }
+
+      await writeConfig(configPath, config, comments);
+
+      const location = this.buildConfigLocation(
+        absoluteDir,
+        configName,
+        configPath,
+      );
+      return { ...location, configuration: config };
+    } catch (err) {
+      translateError(err);
     }
-    if (!config.secrets.includes(secretName)) {
-      config.secrets.push(secretName);
-    }
-
-    await writeConfig(configPath, config, comments);
-
-    const location = this.buildConfigLocation(
-      absoluteDir,
-      configName,
-      configPath,
-    );
-    return { ...location, configuration: config };
   }
 
   async removeSecret(
@@ -213,22 +242,26 @@ export class TypeScriptConfigurationService implements IConfigurationService {
     secretName: string,
     dir: string,
   ): Promise<Configuration> {
-    const absoluteDir = this.resolveDir(dir);
-    const configPath = getConfigPath(absoluteDir, configName);
-    const { config, comments } = await readConfig(configPath);
+    try {
+      const absoluteDir = this.resolveDir(dir);
+      const configPath = getConfigPath(absoluteDir, configName);
+      const { config, comments } = await readConfig(configPath);
 
-    if (config.secrets) {
-      config.secrets = config.secrets.filter((s) => s !== secretName);
+      if (config.secrets) {
+        config.secrets = config.secrets.filter((s) => s !== secretName);
+      }
+
+      await writeConfig(configPath, config, comments);
+
+      const location = this.buildConfigLocation(
+        absoluteDir,
+        configName,
+        configPath,
+      );
+      return { ...location, configuration: config };
+    } catch (err) {
+      translateError(err);
     }
-
-    await writeConfig(configPath, config, comments);
-
-    const location = this.buildConfigLocation(
-      absoluteDir,
-      configName,
-      configPath,
-    );
-    return { ...location, configuration: config };
   }
 
   /**
