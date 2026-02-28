@@ -67,3 +67,14 @@ func (t ContentType) IsAppContent() bool {
 	}
 	return false
 }
+
+func (t ContentType) IsRContent() bool {
+	switch t {
+	case ContentTypeRPlumber,
+		ContentTypeRShiny,
+		ContentTypeRMarkdownShiny,
+		ContentTypeRMarkdown:
+		return true
+	}
+	return false
+}
