@@ -141,6 +141,91 @@ describe("PublisherState", () => {
     });
   });
 
+  // Regression test for https://github.com/posit-dev/publisher/issues/2459
+  // Verifies that the last selected deployment is loaded on initialization
+  // when reopening VS Code with a previously saved selection.
+  test("last selection is loaded on initialization", () => {
+    const savedSelection: DeploymentSelectorState =
+      selectionStateFactory.build();
+
+    // Initialize with a pre-existing selection in workspace state
+    // This simulates reopening VS Code after a deployment was previously selected
+    const { mockWorkspace, mockContext } = mkExtensionContextStateMock({
+      [LocalState.LastSelectionState]: savedSelection,
+    });
+    const publisherState = new PublisherState(mockContext);
+
+    // Verify the saved selection is retrieved from workspace state
+    const currentSelection = publisherState.getSelection();
+    expect(mockWorkspace.get).toHaveBeenCalledWith(
+      LocalState.LastSelectionState,
+      null,
+    );
+
+    // The selection should match the saved state
+    expect(currentSelection).toEqual({
+      projectDir: savedSelection.projectDir,
+      deploymentName: savedSelection.deploymentName,
+      deploymentPath: savedSelection.deploymentPath,
+    });
+  });
+
+  // Regression test for https://github.com/posit-dev/publisher/issues/2459
+  // Verifies that after initialization with a saved selection, the content record
+  // and configuration can be fetched correctly. This tests the full initialization
+  // flow that was broken in the original bug.
+  test("saved selection enables fetching content record and config on init", async () => {
+    const savedSelection: DeploymentSelectorState =
+      selectionStateFactory.build();
+
+    // Setup content record that matches the saved selection
+    const contentRecord: PreContentRecord = preContentRecordFactory.build({
+      deploymentPath: savedSelection.deploymentPath,
+      deploymentName: savedSelection.deploymentName,
+      projectDir: savedSelection.projectDir,
+    });
+    mockClient.contentRecords.get.mockResolvedValue({
+      data: contentRecord,
+    });
+
+    // Setup configuration that matches the content record
+    const config = configurationFactory.build({
+      configurationName: contentRecord.configurationName,
+      projectDir: contentRecord.projectDir,
+    });
+    mockClient.configurations.get.mockResolvedValue({
+      data: config,
+    });
+
+    // Initialize with a pre-existing selection (simulates VS Code reopen)
+    const { mockContext } = mkExtensionContextStateMock({
+      [LocalState.LastSelectionState]: savedSelection,
+    });
+    const publisherState = new PublisherState(mockContext);
+
+    // Verify selection is available immediately
+    const selection = publisherState.getSelection();
+    expect(selection).toBeDefined();
+    expect(selection?.deploymentPath).toEqual(savedSelection.deploymentPath);
+
+    // Fetch the content record for the saved selection
+    const fetchedContentRecord =
+      await publisherState.getSelectedContentRecord();
+    expect(mockClient.contentRecords.get).toHaveBeenCalledWith(
+      savedSelection.deploymentName,
+      savedSelection.projectDir,
+    );
+    expect(fetchedContentRecord).toEqual(contentRecord);
+
+    // Fetch the configuration for the saved selection
+    const fetchedConfig = await publisherState.getSelectedConfiguration();
+    expect(mockClient.configurations.get).toHaveBeenCalledWith(
+      contentRecord.configurationName,
+      contentRecord.projectDir,
+    );
+    expect(fetchedConfig).toEqual(config);
+  });
+
   describe("getSelectedContentRecord", () => {
     test("finding records and cache handling", async () => {
       const initialState: DeploymentSelectorState =
