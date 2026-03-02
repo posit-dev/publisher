@@ -8,10 +8,9 @@ import type {
   ConfigurationError,
 } from "../../../../src/api/types/configurations";
 import { ContentType } from "../../../../src/api/types/configurations";
-import type {
-  PreContentRecord,
-  Credential,
-} from "../../../../src/api/types/contentRecords";
+import { ProductType } from "../../../../src/api/types/contentRecords";
+import type { PreContentRecord } from "../../../../src/api/types/contentRecords";
+import type { Credential } from "../../../../src/api/types/credentials";
 import {
   ContentRecordState,
   ServerType,
@@ -55,7 +54,7 @@ function makeContentRecord(
 
 // Helper to create a valid Configuration
 function makeConfiguration(
-  overrides: Partial<Configuration> & {
+  overrides: Omit<Partial<Configuration>, "configuration"> & {
     configuration?: Partial<ConfigurationDetails>;
   } = {},
 ): Configuration {
@@ -67,13 +66,14 @@ function makeConfiguration(
     projectDir: ".",
     configuration: {
       $schema: "",
+      productType: ProductType.CONNECT,
       type: ContentType.HTML,
       entrypoint: "index.html",
       title: "My App",
       files: ["/index.html"],
       validate: true,
       ...configOverrides,
-    } as ConfigurationDetails,
+    },
     ...rest,
   };
 }
