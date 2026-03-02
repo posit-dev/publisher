@@ -167,7 +167,7 @@ EOF`,
 // Purpose: Remove .posit metadata to reset deployments per test or per subdir, with exclusions.
 Cypress.Commands.add(
   "clearupDeployments",
-  (subdir, excludeDirs = ["config-errors"]) => {
+  (subdir, excludeDirs = []) => {
     // If subdir is provided, only target that directory
     if (subdir) {
       // If subdir is in the exclude list, skip deletion

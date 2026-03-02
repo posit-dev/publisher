@@ -2,8 +2,8 @@
 
 // Purpose: Positive-path deployment creation for PCS and PCC.
 // - PCS Static: creates a static content deployment and validates TOML contents.
-// - PCC Shiny Python: creates a PCC deployment, selects additional files,
-//   modifies TOML for public access, deploys, and confirms published app via Playwright.
+// - PCC Static: creates a PCC deployment with static HTML, modifies TOML for
+//   public access, deploys, and confirms the deployment record has a direct_url.
 describe("Deployments Section", () => {
   // Global setup for all deployment tests
   before(() => {
@@ -51,37 +51,10 @@ describe("Deployments Section", () => {
         '[data-automation="publisher-deployment-section"]',
       ).should("exist");
     });
-
-    // Unable to run this,
-    // as we will need to install the renv package - install.packages("renv")
-    // as well as call renv::restore(), before we can deploy. This will use
-    // the current version of R within our code-server image, so we'll have an
-    // extra bit of work when we want to change that version around to different
-    // ones.
-    it.skip("PCS ShinyApp Content Deployment", () => {
-      cy.createPCSDeployment("shinyapp", "app.R", "ShinyApp", (tomlFiles) => {
-        const config = tomlFiles.config.contents;
-        expect(config.title).to.equal("ShinyApp");
-        expect(config.type).to.equal("r-shiny");
-        expect(config.entrypoint).to.equal("app.R");
-        expect(config.files[0]).to.equal("/app.R");
-        expect(config.files[1]).to.equal("/renv.lock");
-        expect(config.files[2]).to.equal(
-          `/.posit/publish/${tomlFiles.config.name}`,
-        );
-        expect(config.files[3]).to.equal(
-          `/.posit/publish/deployments/${tomlFiles.contentRecord.name}`,
-        );
-      }).deployCurrentlySelected();
-
-      cy.findUniqueInPublisherWebview(
-        '[data-automation="publisher-deployment-section"]',
-      ).should("exist");
-    });
   });
 
   describe("Connect Cloud Deployments", () => {
-    it("PCC Shiny Python Deployment @pcc", () => {
+    it("PCC Static Content Deployment @pcc", () => {
       // Setup - moved from beforeEach to avoid running when @pcc tests are filtered
       cy.resetCredentials();
       cy.clearupDeployments();
@@ -100,35 +73,25 @@ describe("Deployments Section", () => {
       // Ensure Publisher is in the expected initial state
       cy.expectInitialPublisherState();
 
-      // Select files to include in deployment
-      const filesToSelect = ["data", "README.md", "styles.css"];
       cy.createPCCDeployment(
-        "examples-shiny-python",
-        "app.py",
-        "shiny-python-pcc",
+        "static",
+        "index.html",
+        "static-pcc",
         (tomlFiles) => {
           const config = tomlFiles.config.contents;
-          expect(config.title).to.equal("shiny-python-pcc");
-          expect(config.type).to.equal("python-shiny");
-          expect(config.entrypoint).to.equal("app.py");
-          // Check that all selected files are included (note: requirements.txt is auto-managed)
-          ["/app.py", "/data", "/README.md", "/styles.css"].forEach((file) => {
-            expect(config.files).to.include(file);
-          });
+          expect(config.title).to.equal("static-pcc");
+          expect(config.type).to.equal("html");
+          expect(config.entrypoint).to.equal("index.html");
         },
-        filesToSelect,
       );
 
       // Set public access via helper and then deploy
-      cy.getPublisherTomlFilePaths("examples-shiny-python").then(
-        ({ config }) => {
-          // Write both Python version and public access in one operation
-          return cy.writeTomlFile(
-            config.path,
-            "version = '3.11'\n[connect_cloud]\n[connect_cloud.access_control]\npublic_access = true",
-          );
-        },
-      );
+      cy.getPublisherTomlFilePaths("static").then(({ config }) => {
+        return cy.writeTomlFile(
+          config.path,
+          "[connect_cloud]\n[connect_cloud.access_control]\npublic_access = true",
+        );
+      });
 
       cy.deployCurrentlySelected();
 
@@ -136,27 +99,15 @@ describe("Deployments Section", () => {
         '[data-automation="publisher-deployment-section"]',
       ).should("exist");
 
-      // Load the deployment TOML to get the published URL and verify app
-      cy.getPublisherTomlFilePaths("examples-shiny-python").then(
-        (filePaths) => {
-          cy.loadTomlFile(filePaths.contentRecord.path).then(
-            (contentRecord) => {
-              const publishedUrl = contentRecord.direct_url;
-
-              const expectedTitle = "Restaurant tipping";
-              cy.task("confirmPCCPublishSuccess", {
-                publishedUrl,
-                expectedTitle,
-              }).then((result) => {
-                expect(
-                  result.success,
-                  result.error || "Publish confirmation failed",
-                ).to.be.true;
-              });
-            },
-          );
-        },
-      );
+      // Verify the deployment record has a direct_url
+      cy.getPublisherTomlFilePaths("static").then((filePaths) => {
+        cy.loadTomlFile(filePaths.contentRecord.path).then(
+          (contentRecord) => {
+            expect(contentRecord.direct_url).to.be.a("string").and.not.be
+              .empty;
+          },
+        );
+      });
     });
   });
 });

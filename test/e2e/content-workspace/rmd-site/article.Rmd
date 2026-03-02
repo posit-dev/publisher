@@ -1,3 +1,0 @@
-# Article
-
-This is an article. It has a link to [index](index.html) and [another](another.html).
