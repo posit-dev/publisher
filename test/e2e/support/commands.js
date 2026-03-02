@@ -165,25 +165,22 @@ EOF`,
 
 // clearupDeployments
 // Purpose: Remove .posit metadata to reset deployments per test or per subdir, with exclusions.
-Cypress.Commands.add(
-  "clearupDeployments",
-  (subdir, excludeDirs = []) => {
-    // If subdir is provided, only target that directory
-    if (subdir) {
-      // If subdir is in the exclude list, skip deletion
-      if (excludeDirs.includes(subdir)) return;
-      const target = `content-workspace/${subdir}/.posit`;
-      cy.exec(`rm -rf ${target}`, { failOnNonZeroExit: false });
-    } else {
-      // Build a list of all .posit directories except excluded ones
-      const excludePatterns = excludeDirs
-        .map((dir) => `-not -path "*/${dir}/*"`)
-        .join(" ");
-      const findCmd = `find content-workspace -type d -name ".posit" ${excludePatterns}`;
-      cy.exec(`${findCmd} -exec rm -rf {} +`, { failOnNonZeroExit: false });
-    }
-  },
-);
+Cypress.Commands.add("clearupDeployments", (subdir, excludeDirs = []) => {
+  // If subdir is provided, only target that directory
+  if (subdir) {
+    // If subdir is in the exclude list, skip deletion
+    if (excludeDirs.includes(subdir)) return;
+    const target = `content-workspace/${subdir}/.posit`;
+    cy.exec(`rm -rf ${target}`, { failOnNonZeroExit: false });
+  } else {
+    // Build a list of all .posit directories except excluded ones
+    const excludePatterns = excludeDirs
+      .map((dir) => `-not -path "*/${dir}/*"`)
+      .join(" ");
+    const findCmd = `find content-workspace -type d -name ".posit" ${excludePatterns}`;
+    cy.exec(`${findCmd} -exec rm -rf {} +`, { failOnNonZeroExit: false });
+  }
+});
 
 // returns
 // config: {

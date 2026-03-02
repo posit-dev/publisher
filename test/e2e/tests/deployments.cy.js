@@ -101,12 +101,9 @@ describe("Deployments Section", () => {
 
       // Verify the deployment record has a direct_url
       cy.getPublisherTomlFilePaths("static").then((filePaths) => {
-        cy.loadTomlFile(filePaths.contentRecord.path).then(
-          (contentRecord) => {
-            expect(contentRecord.direct_url).to.be.a("string").and.not.be
-              .empty;
-          },
-        );
+        cy.loadTomlFile(filePaths.contentRecord.path).then((contentRecord) => {
+          expect(contentRecord.direct_url).to.be.a("string").and.not.be.empty;
+        });
       });
     });
   });
