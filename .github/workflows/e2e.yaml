@@ -238,7 +238,7 @@ jobs:
           CYPRESS_CACHE_FOLDER: ~/.cache/Cypress
 
       - name: Upload Cypress screenshots on failure
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: cypress-screenshots-${{ matrix.name || matrix.connect-version }}
@@ -246,7 +246,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: "[DEBUG] Upload Cypress videos"
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: always() && (env.DEBUG_CYPRESS == 'true' || env.VARS_DEBUG_CYPRESS == 'true' || env.ACTIONS_STEP_DEBUG == 'true')
         with:
           name: cypress-videos-${{ matrix.name || matrix.connect-version }}
@@ -326,7 +326,7 @@ jobs:
           sudo chown -R $USER:$USER test/e2e/logs
 
       - name: Save test logs as artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: failure() && steps.run_tests.outcome == 'failure'
         with:
           name: e2e-logs-${{ matrix.name || matrix.connect-version }}
