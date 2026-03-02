@@ -135,7 +135,7 @@ describe("Multi-Stepper Negative Cases", () => {
       // - Cancels via ESC key
       // - Verifies return to initial publisher state with no artifacts
 
-      cy.startDeploymentCreationFlow("simple.py");
+      cy.startDeploymentCreationFlow("index.html");
 
       // Start typing title but then cancel
       cy.get(".quick-input-widget")

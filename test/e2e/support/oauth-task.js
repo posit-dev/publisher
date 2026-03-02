@@ -11,8 +11,6 @@ const {
   getSharedBrowserContext,
   cleanupSharedBrowser,
 } = require("./shared-browser");
-// Include publish confirmation task so config can register all tasks via one helper
-const { confirmPCCPublishSuccess } = require("./publish-success-task");
 
 /**
  * Automates the OAuth device code flow in a browser using Playwright.
@@ -324,7 +322,6 @@ function buildCypressTasks(pccConfig) {
       await cleanupSharedBrowser();
       return null;
     },
-    confirmPCCPublishSuccess, // { publishedUrl, expectedTitle } => { success, error?, warning? }
   };
 }
 
