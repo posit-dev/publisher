@@ -69,6 +69,75 @@ func (s *ConfigSuite) TestGetConfigPathEmpty() {
 	s.Equal(path, s.cwd.Join(".posit", "publish", "default.toml"))
 }
 
+func (s *ConfigSuite) TestGetConfigPathSubdirectory() {
+	// When the project is in a subdirectory, .posit/publish/ should be
+	// created within that subdirectory, not at the workspace root.
+	subdir := s.cwd.Join("myproject")
+	err := subdir.MkdirAll(0700)
+	s.NoError(err)
+
+	path := GetConfigPath(subdir, "myConfig")
+	s.Equal(path, subdir.Join(".posit", "publish", "myConfig.toml"))
+	// Verify the path is under the subdirectory
+	s.True(strings.HasPrefix(path.String(), subdir.String()))
+}
+
+func (s *ConfigSuite) TestWriteAndReadConfigInSubdirectory() {
+	// Verify config files can be created and read from a subdirectory project.
+	subdir := s.cwd.Join("myproject")
+	err := subdir.MkdirAll(0700)
+	s.NoError(err)
+
+	configFile := GetConfigPath(subdir, "myConfig")
+	cfg := New()
+	cfg.ProductType = "connect"
+	cfg.Type = contenttypes.ContentTypeHTML
+	cfg.Entrypoint = "index.html"
+	cfg.Files = []string{"/index.html"}
+	err = cfg.WriteFile(configFile)
+	s.NoError(err)
+
+	// Verify config dir was created under the subdirectory
+	configDir := GetConfigDir(subdir)
+	exists, err := configDir.Exists()
+	s.NoError(err)
+	s.True(exists)
+
+	// Read back and verify
+	readCfg, err := FromFile(configFile)
+	s.NoError(err)
+	s.Equal(contenttypes.ContentTypeHTML, readCfg.Type)
+	s.Equal("index.html", readCfg.Entrypoint)
+	s.Equal([]string{"/index.html"}, readCfg.Files)
+}
+
+func (s *ConfigSuite) TestListConfigFilesSubdirectory() {
+	// Verify listing config files scoped to a subdirectory
+	subdir := s.cwd.Join("myproject")
+
+	// Create configs in the subdirectory
+	cfg := New()
+	cfg.ProductType = "connect"
+	cfg.Type = contenttypes.ContentTypeHTML
+	cfg.Entrypoint = "index.html"
+	err := cfg.WriteFile(GetConfigPath(subdir, "config1"))
+	s.NoError(err)
+	err = cfg.WriteFile(GetConfigPath(subdir, "config2"))
+	s.NoError(err)
+
+	// Create a config at the root (should not appear)
+	err = cfg.WriteFile(GetConfigPath(s.cwd, "rootConfig"))
+	s.NoError(err)
+
+	// List should only return configs from the subdirectory
+	files, err := ListConfigFiles(subdir)
+	s.NoError(err)
+	s.Len(files, 2)
+	for _, f := range files {
+		s.True(strings.HasPrefix(f.String(), subdir.String()))
+	}
+}
+
 func (s *ConfigSuite) TestFromFile() {
 	s.createConfigFile("myConfig")
 	path := GetConfigPath(s.cwd, "myConfig")

@@ -348,6 +348,105 @@ func (s *BundlerSuite) TestMultipleCallsFromDirectory() {
 	}, s.getTarFileNames(dest))
 }
 
+func (s *BundlerSuite) TestCreateBundleFromSubdirectory() {
+	// Simulate a project in a subdirectory of the workspace.
+	// The bundler should only include files from the subdirectory
+	// with paths relative to that subdirectory.
+	// Uses real OS directories because CreateBundle calls os.Chdir.
+	osFs := afero.NewOsFs()
+	tempDir, err := os.MkdirTemp("", "bundle_subdir_test_*")
+	s.Nil(err)
+	defer os.RemoveAll(tempDir)
+
+	workspace := util.AbsolutePath{Path: util.NewPath(tempDir, osFs)}
+	subdir := workspace.Join("myproject")
+	err = subdir.MkdirAll(0700)
+	s.Nil(err)
+
+	// Create files in the subdirectory
+	appPath := subdir.Join("app.py")
+	err = appPath.WriteFile([]byte("import flask"), 0600)
+	s.Nil(err)
+
+	dataDir := subdir.Join("data")
+	err = dataDir.MkdirAll(0700)
+	s.Nil(err)
+	dataFile := dataDir.Join("input.csv")
+	err = dataFile.WriteFile([]byte("x,y\n1,2"), 0600)
+	s.Nil(err)
+
+	// Create a file in the parent (workspace root) that should NOT be included
+	rootFile := workspace.Join("unrelated.txt")
+	err = rootFile.WriteFile([]byte("should not appear"), 0600)
+	s.Nil(err)
+
+	dest := new(bytes.Buffer)
+	log := logging.New()
+
+	// Bundle from the subdirectory, not the workspace root
+	bundler, err := NewBundler(subdir, NewManifest(), nil, log)
+	s.Nil(err)
+	manifest, err := bundler.CreateBundle(dest)
+	s.Nil(err)
+	s.NotNil(manifest)
+
+	filenames := manifest.GetFilenames()
+	// Files should be relative to the subdirectory
+	s.Contains(filenames, "app.py")
+	s.Contains(filenames, "data/input.csv")
+	// Workspace root files should not be included
+	for _, f := range filenames {
+		s.NotContains(f, "unrelated.txt")
+		// Paths should not contain the subdirectory name as a prefix
+		s.False(strings.HasPrefix(f, "myproject/"), "file path should be relative to subdirectory, not workspace root")
+	}
+
+	tarFiles := s.getTarFileNames(dest)
+	s.Contains(tarFiles, "app.py")
+	s.Contains(tarFiles, "data/")
+	s.Contains(tarFiles, "data/input.csv")
+	s.Contains(tarFiles, "manifest.json")
+	// Workspace root file should not be in the tar
+	s.NotContains(tarFiles, "unrelated.txt")
+}
+
+func (s *BundlerSuite) TestCreateBundleFromSubdirectoryWithFileTarget() {
+	// When given a specific file in a subdirectory, the bundler
+	// should use the file's parent as baseDir and include the file.
+	// Uses real OS directories because CreateBundle calls os.Chdir.
+	osFs := afero.NewOsFs()
+	tempDir, err := os.MkdirTemp("", "bundle_subdir_file_test_*")
+	s.Nil(err)
+	defer os.RemoveAll(tempDir)
+
+	subdir := util.AbsolutePath{Path: util.NewPath(filepath.Join(tempDir, "myproject"), osFs)}
+	err = subdir.MkdirAll(0700)
+	s.Nil(err)
+
+	appPath := subdir.Join("app.py")
+	err = appPath.WriteFile([]byte("import flask"), 0600)
+	s.Nil(err)
+
+	helperPath := subdir.Join("helpers.py")
+	err = helperPath.WriteFile([]byte("def helper(): pass"), 0600)
+	s.Nil(err)
+
+	dest := new(bytes.Buffer)
+	log := logging.New()
+
+	// Bundle from a specific file in the subdirectory
+	bundler, err := NewBundler(appPath, NewManifest(), nil, log)
+	s.Nil(err)
+	s.Equal(subdir.String(), bundler.baseDir.String())
+	s.Equal("app.py", bundler.filename)
+
+	manifest, err := bundler.CreateBundle(dest)
+	s.Nil(err)
+	filenames := manifest.GetFilenames()
+	s.Contains(filenames, "app.py")
+	s.Contains(filenames, "helpers.py")
+}
+
 func (s *BundlerSuite) TestNewBundleFromDirectorySymlinks() {
 	if runtime.GOOS == "windows" {
 		s.T().Skip()

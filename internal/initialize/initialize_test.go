@@ -335,6 +335,71 @@ func (s *InitializeSuite) TestGetPossibleConfigsWithMissingEntrypoint() {
 	s.Nil(configs[0].Python)
 }
 
+func (s *InitializeSuite) TestGetPossibleHTMLConfigInSubdirectory() {
+	log := logging.New()
+
+	// Create a subdirectory to simulate a project in workspace/static/
+	subdir := s.cwd.Join("static")
+	err := subdir.MkdirAll(0700)
+	s.NoError(err)
+	err = subdir.Join("index.html").WriteFile([]byte(`<html><body>Hello</body></html>`), 0666)
+	s.NoError(err)
+
+	i := NewInitialize(
+		detectors.NewContentTypeDetector,
+		setupMockPythonInspector(false, nil),
+		setupNewPythonInterpreterMock,
+		setupMockRInspector(false, nil),
+		setupNewRInterpreterMock,
+	)
+
+	// Pass subdir as the base, simulating deployment from a subdirectory
+	configs, err := i.GetPossibleConfigs(subdir, util.Path{}, util.Path{}, util.RelativePath{}, log)
+	s.NoError(err)
+
+	s.Len(configs, 1)
+	s.Equal(contenttypes.ContentTypeHTML, configs[0].Type)
+	s.Equal("index.html", configs[0].Entrypoint)
+	// Files should be relative to the subdirectory, not the workspace root
+	s.Equal([]string{"/index.html"}, configs[0].Files)
+	// Title defaults to the subdirectory name
+	s.Equal("static", configs[0].Title)
+}
+
+func (s *InitializeSuite) TestGetPossiblePythonConfigInSubdirectory() {
+	log := logging.New()
+
+	// Create a subdirectory to simulate a project in workspace/fastapi-simple/
+	subdir := s.cwd.Join("fastapi-simple")
+	err := subdir.MkdirAll(0700)
+	s.NoError(err)
+	err = subdir.Join("main.py").WriteFile([]byte(`
+		from fastapi import FastAPI
+		app = FastAPI()
+	`), 0666)
+	s.NoError(err)
+
+	i := NewInitialize(
+		detectors.NewContentTypeDetector,
+		setupMockPythonInspector(true, nil),
+		setupNewPythonInterpreterMock,
+		setupMockRInspector(false, nil),
+		setupNewRInterpreterMock,
+	)
+
+	// Pass subdir as the base
+	configs, err := i.GetPossibleConfigs(subdir, util.Path{}, util.Path{}, util.RelativePath{}, log)
+	s.NoError(err)
+
+	s.Len(configs, 1)
+	s.Equal("main.py", configs[0].Entrypoint)
+	// Files should be relative to the subdirectory
+	s.Contains(configs[0].Files, "/main.py")
+	s.Contains(configs[0].Files, "/requirements.txt")
+	// Title defaults to the subdirectory name
+	s.Equal("fastapi-simple", configs[0].Title)
+}
+
 func (s *InitializeSuite) TestNormalizeConfigHandlesUnknownConfigs() {
 	log := logging.New()
 
