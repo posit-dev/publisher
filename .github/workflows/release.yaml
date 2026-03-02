@@ -41,11 +41,11 @@ jobs:
         with:
           fetch-depth: 0
       - uses: extractions/setup-just@v3
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: archives
           path: archives
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: dist
           path: dist
