@@ -4,13 +4,23 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 import { useHomeStore } from "src/stores/home";
 import type {
   Configuration,
+  ConfigurationDetails,
   ConfigurationError,
 } from "../../../../src/api/types/configurations";
-import type { PreContentRecord } from "../../../../src/api/types/contentRecords";
+import { ContentType } from "../../../../src/api/types/configurations";
+import type {
+  PreContentRecord,
+  Credential,
+} from "../../../../src/api/types/contentRecords";
 import {
   ContentRecordState,
   ServerType,
 } from "../../../../src/api/types/contentRecords";
+import type {
+  AgentErrorInvalidTOML,
+  AgentErrorTypeUnknown,
+} from "../../../../src/api/types/error";
+import type { ErrorCode } from "../../../../src/utils/errorTypes";
 
 vi.mock("src/vscode", () => {
   const postMessage = vi.fn();
@@ -25,14 +35,14 @@ function makeContentRecord(
   overrides: Partial<PreContentRecord> = {},
 ): PreContentRecord {
   return {
-    $schema: "" as any,
+    $schema: "",
     serverType: ServerType.CONNECT,
     serverUrl: "https://connect.example.com",
     saveName: "test-deployment",
     createdAt: "",
     dismissedAt: "",
     configurationName: "default",
-    type: "html" as any,
+    type: ContentType.HTML,
     deploymentError: null,
     connectCloud: null,
     deploymentName: "test-deployment",
@@ -45,23 +55,26 @@ function makeContentRecord(
 
 // Helper to create a valid Configuration
 function makeConfiguration(
-  overrides: Partial<Configuration> = {},
+  overrides: Partial<Configuration> & {
+    configuration?: Partial<ConfigurationDetails>;
+  } = {},
 ): Configuration {
+  const { configuration: configOverrides, ...rest } = overrides;
   return {
     configurationName: "default",
     configurationPath: "/path/to/config.toml",
     configurationRelPath: ".posit/publish/default.toml",
     projectDir: ".",
     configuration: {
-      $schema: "" as any,
-      type: "html" as any,
+      $schema: "",
+      type: ContentType.HTML,
       entrypoint: "index.html",
       title: "My App",
       files: ["/index.html"],
       validate: true,
-      ...overrides.configuration,
-    } as any,
-    ...overrides,
+      ...configOverrides,
+    } as ConfigurationDetails,
+    ...rest,
   };
 }
 
@@ -75,7 +88,7 @@ function makeConfigurationError(
     configurationRelPath: ".posit/publish/default.toml",
     projectDir: ".",
     error: {
-      code: "unknown" as any,
+      code: "unknown" as ErrorCode,
       msg: "some error",
       operation: "read",
       data: {},
@@ -136,20 +149,21 @@ describe("Home Store", () => {
       home.selectedContentRecord = contentRecord;
 
       // Add a configuration error with invalidTOML code
+      const error: AgentErrorInvalidTOML = {
+        code: "invalidTOML" as ErrorCode,
+        msg: "invalid TOML syntax",
+        operation: "read",
+        data: {
+          problem: "unexpected character",
+          file: "default.toml",
+          line: 5,
+          column: 10,
+        },
+      };
       home.configurationsInError.push(
         makeConfigurationError({
           configurationName: "broken-config",
-          error: {
-            code: "invalidTOML" as any,
-            msg: "invalid TOML syntax",
-            operation: "read",
-            data: {
-              problem: "unexpected character",
-              file: "default.toml",
-              line: 5,
-              column: 10,
-            },
-          },
+          error,
         }),
       );
 
@@ -166,20 +180,21 @@ describe("Home Store", () => {
       home.contentRecords.push(contentRecord);
       home.selectedContentRecord = contentRecord;
 
+      const error: AgentErrorInvalidTOML = {
+        code: "unknownTOMLKey" as ErrorCode,
+        msg: "invalidParam: not allowed",
+        operation: "read",
+        data: {
+          problem: "invalidParam: not allowed",
+          file: "default.toml",
+          line: 3,
+          column: 1,
+        },
+      };
       home.configurationsInError.push(
         makeConfigurationError({
           configurationName: "broken-config",
-          error: {
-            code: "unknownTOMLKey" as any,
-            msg: "invalidParam: not allowed",
-            operation: "read",
-            data: {
-              problem: "invalidParam: not allowed",
-              file: "default.toml",
-              line: 3,
-              column: 1,
-            },
-          },
+          error,
         }),
       );
 
@@ -195,15 +210,16 @@ describe("Home Store", () => {
       home.contentRecords.push(contentRecord);
       home.selectedContentRecord = contentRecord;
 
+      const error: AgentErrorTypeUnknown = {
+        code: "unknown" as ErrorCode,
+        msg: "something went wrong",
+        operation: "validate",
+        data: { detail: "unexpected" },
+      };
       home.configurationsInError.push(
         makeConfigurationError({
           configurationName: "error-config",
-          error: {
-            code: "unknown" as any,
-            msg: "something went wrong",
-            operation: "validate",
-            data: { detail: "unexpected" },
-          },
+          error,
         }),
       );
 
@@ -225,10 +241,10 @@ describe("Home Store", () => {
         makeConfiguration({
           configurationName: "unknown-type",
           configuration: {
-            type: "unknown" as any,
+            type: ContentType.UNKNOWN,
             entrypoint: "unknown",
             title: "Unknown",
-          } as any,
+          },
         }),
       );
 
@@ -258,9 +274,16 @@ describe("Home Store", () => {
 
       // Add a credential so isCredentialMissing is also false
       home.credentials.push({
+        guid: "",
         name: "test-cred",
         url: "https://connect.example.com",
-      } as any);
+        apiKey: "",
+        accountId: "",
+        accountName: "",
+        refreshToken: "",
+        accessToken: "",
+        serverType: ServerType.CONNECT,
+      } as Credential);
 
       expect(home.config.active.isMissing).toBe(false);
       expect(home.config.active.isTOMLError).toBe(false);
