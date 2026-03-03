@@ -4,7 +4,6 @@ package accounts
 
 import (
 	"errors"
-	"github.com/posit-dev/publisher/internal/server_type"
 	"testing"
 
 	"github.com/posit-dev/publisher/internal/logging"
@@ -107,44 +106,4 @@ func (s *AccountListSuite) TestGetAccountByNameNotFound() {
 	account, err := accountList.GetAccountByName("myAcct")
 	s.ErrorIs(err, ErrAccountNotFound)
 	s.Nil(account)
-}
-
-func (s *AccountListSuite) TestGetAccountsByServerType() {
-	log := logging.New()
-
-	account := Account{Name: "name", ServerType: server_type.ServerTypeConnect}
-	accounts := []Account{account}
-	provider := new(MockAccountProvider)
-	provider.On("Load").Return(accounts, nil)
-
-	providers := []AccountProvider{provider}
-
-	accountList := defaultAccountList{
-		providers: providers,
-		log:       log,
-	}
-
-	res, err := accountList.GetAccountsByServerType(server_type.ServerTypeConnect)
-	s.Nil(err)
-	s.Equal(account, res[0])
-}
-
-func (s *AccountListSuite) TestGetAccountsByServerType_Empty() {
-	log := logging.New()
-
-	account := Account{Name: "name", ServerType: server_type.ServerTypeConnect}
-	accounts := []Account{account}
-	provider := new(MockAccountProvider)
-	provider.On("Load").Return(accounts, nil)
-
-	providers := []AccountProvider{provider}
-
-	accountList := defaultAccountList{
-		providers: providers,
-		log:       log,
-	}
-
-	res, err := accountList.GetAccountsByServerType(server_type.ServerTypeConnectCloud)
-	s.Nil(err)
-	s.Empty(res)
 }

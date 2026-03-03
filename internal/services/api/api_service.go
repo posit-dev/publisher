@@ -51,18 +51,6 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	pathsService := paths.CreatePathsService(base, log)
 
 	r := mux.NewRouter()
-	// GET /api/accounts
-	r.Handle(ToPath("accounts"), GetAccountsHandlerFunc(lister, log)).
-		Methods(http.MethodGet)
-
-	// GET /api/accounts/{name}
-	r.Handle(ToPath("accounts", "{name}"), GetAccountHandlerFunc(lister, log)).
-		Methods(http.MethodGet)
-
-	// POST /api/accounts/{name}/verify
-	r.Handle(ToPath("accounts", "{name}", "verify"), PostAccountVerifyHandlerFunc(lister, log)).
-		Methods(http.MethodPost)
-
 	// POST /api/accounts/{name}/integrations
 	r.Handle(ToPath("accounts", "{name}", "integrations"), GetIntegrationsHandlerFunc(lister, log)).
 		Methods(http.MethodGet)

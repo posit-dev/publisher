@@ -24,7 +24,7 @@ type getInterpreterResponse struct {
 	PreferredRPath      string         `json:"preferredRPath,omitempty"`
 }
 
-// toGetAccountResponse converts an internal Account object
+// toGetInterpreterResponse converts interpreter objects
 // to the DTO type we return from the API.
 func toGetInterpreterResponse(rInterpreter interpreters.RInterpreter, pythonInterpreter interpreters.PythonInterpreter) getInterpreterResponse {
 
