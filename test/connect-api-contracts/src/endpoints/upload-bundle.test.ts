@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { getClient, getMockConnectUrl, clearMockRequests } from "../helpers";
 
-describe.skip("ContentDetails", () => {
+describe.skip("UploadBundle", () => {
   const apiKey = "test-api-key-12345";
   const contentId = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
 
@@ -10,20 +10,22 @@ describe.skip("ContentDetails", () => {
   });
 
   describe("request correctness", () => {
-    it("sends GET to /__api__/v1/content/:id", async () => {
+    it("sends POST to /__api__/v1/content/:id/bundles", async () => {
       const client = getClient();
       const connectUrl = getMockConnectUrl();
 
-      const result = await client.contentDetails({
+      const bundleData = new Uint8Array([0x1f, 0x8b]);
+      const result = await client.uploadBundle({
         connectUrl,
         apiKey,
         contentId,
+        bundleData,
       });
 
       expect(result.capturedRequest).not.toBeNull();
-      expect(result.capturedRequest!.method).toBe("GET");
+      expect(result.capturedRequest!.method).toBe("POST");
       expect(result.capturedRequest!.path).toBe(
-        `/__api__/v1/content/${contentId}`,
+        `/__api__/v1/content/${contentId}/bundles`,
       );
     });
 
@@ -31,15 +33,35 @@ describe.skip("ContentDetails", () => {
       const client = getClient();
       const connectUrl = getMockConnectUrl();
 
-      const result = await client.contentDetails({
+      const bundleData = new Uint8Array([0x1f, 0x8b]);
+      const result = await client.uploadBundle({
         connectUrl,
         apiKey,
         contentId,
+        bundleData,
       });
 
       expect(result.capturedRequest).not.toBeNull();
       expect(result.capturedRequest!.headers["authorization"]).toBe(
         `Key ${apiKey}`,
+      );
+    });
+
+    it("sends Content-Type application/gzip", async () => {
+      const client = getClient();
+      const connectUrl = getMockConnectUrl();
+
+      const bundleData = new Uint8Array([0x1f, 0x8b]);
+      const result = await client.uploadBundle({
+        connectUrl,
+        apiKey,
+        contentId,
+        bundleData,
+      });
+
+      expect(result.capturedRequest).not.toBeNull();
+      expect(result.capturedRequest!.headers["content-type"]).toBe(
+        "application/gzip",
       );
     });
   });
@@ -49,30 +71,31 @@ describe.skip("ContentDetails", () => {
       const client = getClient();
       const connectUrl = getMockConnectUrl();
 
-      const result = await client.contentDetails({
+      const bundleData = new Uint8Array([0x1f, 0x8b]);
+      const result = await client.uploadBundle({
         connectUrl,
         apiKey,
         contentId,
+        bundleData,
       });
 
       expect(result.status).toBe("success");
     });
 
-    it("parses ConnectContent fields from response", async () => {
+    it("parses bundle ID from response", async () => {
       const client = getClient();
       const connectUrl = getMockConnectUrl();
 
-      const result = await client.contentDetails({
+      const bundleData = new Uint8Array([0x1f, 0x8b]);
+      const result = await client.uploadBundle({
         connectUrl,
         apiKey,
         contentId,
+        bundleData,
       });
-      const body = result.result as Record<string, unknown>;
+      const body = result.result as { bundleId: string };
 
-      expect(body.guid).toBe(contentId);
-      expect(body.name).toBe("my-fastapi-app");
-      expect(body.app_mode).toBe("python-fastapi");
-      expect(body.py_version).toBe("3.11.6");
+      expect(body.bundleId).toBe("201");
     });
   });
 });

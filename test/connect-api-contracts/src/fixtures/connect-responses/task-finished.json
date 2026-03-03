@@ -1,0 +1,9 @@
+{
+  "id": "task-abc123-def456",
+  "output": ["Building Python application...", "Bundle requested Python version 3.11.6", "Launching application...", "Application successfully deployed"],
+  "result": null,
+  "finished": true,
+  "code": 0,
+  "error": "",
+  "last": 4
+}

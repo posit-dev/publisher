@@ -1,41 +1,30 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { getClient, getMockConnectUrl, clearMockRequests } from "../helpers";
 
-describe.skip("ContentDetails", () => {
+describe.skip("GetCurrentUser", () => {
   const apiKey = "test-api-key-12345";
-  const contentId = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
 
   beforeEach(async () => {
     await clearMockRequests();
   });
 
   describe("request correctness", () => {
-    it("sends GET to /__api__/v1/content/:id", async () => {
+    it("sends GET to /__api__/v1/user", async () => {
       const client = getClient();
       const connectUrl = getMockConnectUrl();
 
-      const result = await client.contentDetails({
-        connectUrl,
-        apiKey,
-        contentId,
-      });
+      const result = await client.getCurrentUser({ connectUrl, apiKey });
 
       expect(result.capturedRequest).not.toBeNull();
       expect(result.capturedRequest!.method).toBe("GET");
-      expect(result.capturedRequest!.path).toBe(
-        `/__api__/v1/content/${contentId}`,
-      );
+      expect(result.capturedRequest!.path).toBe("/__api__/v1/user");
     });
 
     it("sends Authorization header with Key prefix", async () => {
       const client = getClient();
       const connectUrl = getMockConnectUrl();
 
-      const result = await client.contentDetails({
-        connectUrl,
-        apiKey,
-        contentId,
-      });
+      const result = await client.getCurrentUser({ connectUrl, apiKey });
 
       expect(result.capturedRequest).not.toBeNull();
       expect(result.capturedRequest!.headers["authorization"]).toBe(
@@ -49,30 +38,31 @@ describe.skip("ContentDetails", () => {
       const client = getClient();
       const connectUrl = getMockConnectUrl();
 
-      const result = await client.contentDetails({
-        connectUrl,
-        apiKey,
-        contentId,
-      });
+      const result = await client.getCurrentUser({ connectUrl, apiKey });
 
       expect(result.status).toBe("success");
     });
 
-    it("parses ConnectContent fields from response", async () => {
+    it("parses User fields from Connect UserDTO", async () => {
       const client = getClient();
       const connectUrl = getMockConnectUrl();
 
-      const result = await client.contentDetails({
-        connectUrl,
-        apiKey,
-        contentId,
-      });
-      const body = result.result as Record<string, unknown>;
+      const result = await client.getCurrentUser({ connectUrl, apiKey });
+      const user = result.result as {
+        id: string;
+        username: string;
+        first_name: string;
+        last_name: string;
+        email: string;
+      };
 
-      expect(body.guid).toBe(contentId);
-      expect(body.name).toBe("my-fastapi-app");
-      expect(body.app_mode).toBe("python-fastapi");
-      expect(body.py_version).toBe("3.11.6");
+      expect(user).toEqual({
+        id: "40d1c1dc-d554-4905-99f1-359517e1a7c0",
+        username: "bob",
+        first_name: "Bob",
+        last_name: "Bobberson",
+        email: "bob@example.com",
+      });
     });
   });
 });

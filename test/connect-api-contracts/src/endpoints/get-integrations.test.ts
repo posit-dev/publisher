@@ -1,29 +1,24 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { getClient, getMockConnectUrl, clearMockRequests } from "../helpers";
 
-describe.skip("ContentDetails", () => {
+describe.skip("GetIntegrations", () => {
   const apiKey = "test-api-key-12345";
-  const contentId = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
 
   beforeEach(async () => {
     await clearMockRequests();
   });
 
   describe("request correctness", () => {
-    it("sends GET to /__api__/v1/content/:id", async () => {
+    it("sends GET to /__api__/v1/oauth/integrations", async () => {
       const client = getClient();
       const connectUrl = getMockConnectUrl();
 
-      const result = await client.contentDetails({
-        connectUrl,
-        apiKey,
-        contentId,
-      });
+      const result = await client.getIntegrations({ connectUrl, apiKey });
 
       expect(result.capturedRequest).not.toBeNull();
       expect(result.capturedRequest!.method).toBe("GET");
       expect(result.capturedRequest!.path).toBe(
-        `/__api__/v1/content/${contentId}`,
+        "/__api__/v1/oauth/integrations",
       );
     });
 
@@ -31,11 +26,7 @@ describe.skip("ContentDetails", () => {
       const client = getClient();
       const connectUrl = getMockConnectUrl();
 
-      const result = await client.contentDetails({
-        connectUrl,
-        apiKey,
-        contentId,
-      });
+      const result = await client.getIntegrations({ connectUrl, apiKey });
 
       expect(result.capturedRequest).not.toBeNull();
       expect(result.capturedRequest!.headers["authorization"]).toBe(
@@ -49,30 +40,33 @@ describe.skip("ContentDetails", () => {
       const client = getClient();
       const connectUrl = getMockConnectUrl();
 
-      const result = await client.contentDetails({
-        connectUrl,
-        apiKey,
-        contentId,
-      });
+      const result = await client.getIntegrations({ connectUrl, apiKey });
 
       expect(result.status).toBe("success");
     });
 
-    it("parses ConnectContent fields from response", async () => {
+    it("parses Integration array with expected fields", async () => {
       const client = getClient();
       const connectUrl = getMockConnectUrl();
 
-      const result = await client.contentDetails({
-        connectUrl,
-        apiKey,
-        contentId,
-      });
-      const body = result.result as Record<string, unknown>;
+      const result = await client.getIntegrations({ connectUrl, apiKey });
+      const integrations = result.result as Array<{
+        guid: string;
+        name: string;
+        description: string;
+        auth_type: string;
+        template: string;
+        config: Record<string, unknown>;
+        created_time: string;
+      }>;
 
-      expect(body.guid).toBe(contentId);
-      expect(body.name).toBe("my-fastapi-app");
-      expect(body.app_mode).toBe("python-fastapi");
-      expect(body.py_version).toBe("3.11.6");
+      expect(integrations).toBeInstanceOf(Array);
+      expect(integrations.length).toBe(1);
+      expect(integrations[0].guid).toBe(
+        "int-guid-1234-5678-abcd-ef0123456789",
+      );
+      expect(integrations[0].name).toBe("My OAuth Integration");
+      expect(integrations[0].auth_type).toBe("OAuth2");
     });
   });
 });

@@ -23,11 +23,27 @@ The mock exposes control endpoints for tests:
 
 ## What's tested
 
-| Endpoint | Status | Notes |
-|----------|--------|-------|
-| `TestAuthentication` (`GET /__api__/v1/user`) | Active (8 tests) | Triggered via `POST /api/test-credentials` on Publisher |
-| `CreateDeployment` (`POST /__api__/v1/content`) | Skipped | No standalone Publisher API endpoint to trigger it |
-| `ContentDetails` (`GET /__api__/v1/content/:id`) | Skipped | No standalone Publisher API endpoint to trigger it |
+All 15 methods on the Go `APIClient` interface have corresponding test files, mock routes, and fixtures. Only `TestAuthentication` is currently active (triggerable via the Go path); all others are `describe.skip` until the TS ConnectClient is implemented.
+
+| Endpoint | Connect Path | Status |
+|----------|-------------|--------|
+| `TestAuthentication` | `GET /__api__/v1/user` | **Active** (8 tests) |
+| `GetCurrentUser` | `GET /__api__/v1/user` | Skipped |
+| `ContentDetails` | `GET /__api__/v1/content/:id` | Skipped |
+| `CreateDeployment` | `POST /__api__/v1/content` | Skipped |
+| `UpdateDeployment` | `PATCH /__api__/v1/content/:id` | Skipped |
+| `GetEnvVars` | `GET /__api__/v1/content/:id/environment` | Skipped |
+| `SetEnvVars` | `PATCH /__api__/v1/content/:id/environment` | Skipped |
+| `UploadBundle` | `POST /__api__/v1/content/:id/bundles` | Skipped |
+| `DeployBundle` | `POST /__api__/v1/content/:id/deploy` | Skipped |
+| `WaitForTask` | `GET /__api__/v1/tasks/:id?first=N` | Skipped |
+| `ValidateDeployment` | `GET /content/:id/` | Skipped |
+| `GetIntegrations` | `GET /__api__/v1/oauth/integrations` | Skipped |
+| `GetSettings` | 7 endpoints (see below) | Skipped |
+| `LatestBundleID` | `GET /__api__/v1/content/:id` | Skipped |
+| `DownloadBundle` | `GET /__api__/v1/content/:id/bundles/:bid/download` | Skipped |
+
+`GetSettings` calls 7 endpoints in sequence: `/__api__/v1/user`, `/__api__/server_settings`, `/__api__/server_settings/applications`, `/__api__/server_settings/scheduler[/{appMode}]`, `/__api__/v1/server_settings/python`, `/__api__/v1/server_settings/r`, `/__api__/v1/server_settings/quarto`.
 
 Each test validates both:
 - **Request correctness** — method, path, `Authorization: Key <apiKey>` header
@@ -75,6 +91,5 @@ cd test/connect-api-contracts && npx vitest run --update
 
 When the TS ConnectClient is built:
 1. Implement `ts-direct-client.ts` to call the TS client directly against the mock
-2. Un-skip `create-deployment.test.ts` and `content-details.test.ts`
-3. Add more Connect endpoints (UploadBundle, DeployBundle, SetEnvVars, etc.)
-4. Both Go and TS paths validate against the same snapshots and request expectations
+2. Un-skip all test files — fixtures, mock routes, and test assertions are already in place
+3. Both Go and TS paths validate against the same snapshots and request expectations

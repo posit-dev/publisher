@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { getClient, getMockConnectUrl, clearMockRequests } from "../helpers";
 
-describe.skip("ContentDetails", () => {
+describe.skip("LatestBundleID", () => {
   const apiKey = "test-api-key-12345";
   const contentId = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
 
@@ -14,7 +14,7 @@ describe.skip("ContentDetails", () => {
       const client = getClient();
       const connectUrl = getMockConnectUrl();
 
-      const result = await client.contentDetails({
+      const result = await client.latestBundleId({
         connectUrl,
         apiKey,
         contentId,
@@ -31,7 +31,7 @@ describe.skip("ContentDetails", () => {
       const client = getClient();
       const connectUrl = getMockConnectUrl();
 
-      const result = await client.contentDetails({
+      const result = await client.latestBundleId({
         connectUrl,
         apiKey,
         contentId,
@@ -49,7 +49,7 @@ describe.skip("ContentDetails", () => {
       const client = getClient();
       const connectUrl = getMockConnectUrl();
 
-      const result = await client.contentDetails({
+      const result = await client.latestBundleId({
         connectUrl,
         apiKey,
         contentId,
@@ -58,21 +58,19 @@ describe.skip("ContentDetails", () => {
       expect(result.status).toBe("success");
     });
 
-    it("parses ConnectContent fields from response", async () => {
+    it("extracts bundle_id from content DTO", async () => {
       const client = getClient();
       const connectUrl = getMockConnectUrl();
 
-      const result = await client.contentDetails({
+      const result = await client.latestBundleId({
         connectUrl,
         apiKey,
         contentId,
       });
-      const body = result.result as Record<string, unknown>;
+      const body = result.result as { bundleId: string };
 
-      expect(body.guid).toBe(contentId);
-      expect(body.name).toBe("my-fastapi-app");
-      expect(body.app_mode).toBe("python-fastapi");
-      expect(body.py_version).toBe("3.11.6");
+      // content-details.json has bundle_id: "101"
+      expect(body.bundleId).toBe("101");
     });
   });
 });

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { getClient, getMockConnectUrl, clearMockRequests } from "../helpers";
 
-describe.skip("ContentDetails", () => {
+describe.skip("ValidateDeployment", () => {
   const apiKey = "test-api-key-12345";
   const contentId = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
 
@@ -10,11 +10,11 @@ describe.skip("ContentDetails", () => {
   });
 
   describe("request correctness", () => {
-    it("sends GET to /__api__/v1/content/:id", async () => {
+    it("sends GET to /content/:id/ (non-API path)", async () => {
       const client = getClient();
       const connectUrl = getMockConnectUrl();
 
-      const result = await client.contentDetails({
+      const result = await client.validateDeployment({
         connectUrl,
         apiKey,
         contentId,
@@ -22,16 +22,14 @@ describe.skip("ContentDetails", () => {
 
       expect(result.capturedRequest).not.toBeNull();
       expect(result.capturedRequest!.method).toBe("GET");
-      expect(result.capturedRequest!.path).toBe(
-        `/__api__/v1/content/${contentId}`,
-      );
+      expect(result.capturedRequest!.path).toBe(`/content/${contentId}/`);
     });
 
     it("sends Authorization header with Key prefix", async () => {
       const client = getClient();
       const connectUrl = getMockConnectUrl();
 
-      const result = await client.contentDetails({
+      const result = await client.validateDeployment({
         connectUrl,
         apiKey,
         contentId,
@@ -45,34 +43,17 @@ describe.skip("ContentDetails", () => {
   });
 
   describe("response parsing", () => {
-    it("returns success status", async () => {
+    it("returns success status for 200 response", async () => {
       const client = getClient();
       const connectUrl = getMockConnectUrl();
 
-      const result = await client.contentDetails({
+      const result = await client.validateDeployment({
         connectUrl,
         apiKey,
         contentId,
       });
 
       expect(result.status).toBe("success");
-    });
-
-    it("parses ConnectContent fields from response", async () => {
-      const client = getClient();
-      const connectUrl = getMockConnectUrl();
-
-      const result = await client.contentDetails({
-        connectUrl,
-        apiKey,
-        contentId,
-      });
-      const body = result.result as Record<string, unknown>;
-
-      expect(body.guid).toBe(contentId);
-      expect(body.name).toBe("my-fastapi-app");
-      expect(body.app_mode).toBe("python-fastapi");
-      expect(body.py_version).toBe("3.11.6");
     });
   });
 });

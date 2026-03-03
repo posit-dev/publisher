@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { getClient, getMockConnectUrl, clearMockRequests } from "../helpers";
 
-describe.skip("ContentDetails", () => {
+describe.skip("GetEnvVars", () => {
   const apiKey = "test-api-key-12345";
   const contentId = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
 
@@ -10,11 +10,11 @@ describe.skip("ContentDetails", () => {
   });
 
   describe("request correctness", () => {
-    it("sends GET to /__api__/v1/content/:id", async () => {
+    it("sends GET to /__api__/v1/content/:id/environment", async () => {
       const client = getClient();
       const connectUrl = getMockConnectUrl();
 
-      const result = await client.contentDetails({
+      const result = await client.getEnvVars({
         connectUrl,
         apiKey,
         contentId,
@@ -23,7 +23,7 @@ describe.skip("ContentDetails", () => {
       expect(result.capturedRequest).not.toBeNull();
       expect(result.capturedRequest!.method).toBe("GET");
       expect(result.capturedRequest!.path).toBe(
-        `/__api__/v1/content/${contentId}`,
+        `/__api__/v1/content/${contentId}/environment`,
       );
     });
 
@@ -31,7 +31,7 @@ describe.skip("ContentDetails", () => {
       const client = getClient();
       const connectUrl = getMockConnectUrl();
 
-      const result = await client.contentDetails({
+      const result = await client.getEnvVars({
         connectUrl,
         apiKey,
         contentId,
@@ -49,7 +49,7 @@ describe.skip("ContentDetails", () => {
       const client = getClient();
       const connectUrl = getMockConnectUrl();
 
-      const result = await client.contentDetails({
+      const result = await client.getEnvVars({
         connectUrl,
         apiKey,
         contentId,
@@ -58,21 +58,18 @@ describe.skip("ContentDetails", () => {
       expect(result.status).toBe("success");
     });
 
-    it("parses ConnectContent fields from response", async () => {
+    it("parses environment variable name list", async () => {
       const client = getClient();
       const connectUrl = getMockConnectUrl();
 
-      const result = await client.contentDetails({
+      const result = await client.getEnvVars({
         connectUrl,
         apiKey,
         contentId,
       });
-      const body = result.result as Record<string, unknown>;
+      const envVars = result.result as string[];
 
-      expect(body.guid).toBe(contentId);
-      expect(body.name).toBe("my-fastapi-app");
-      expect(body.app_mode).toBe("python-fastapi");
-      expect(body.py_version).toBe("3.11.6");
+      expect(envVars).toEqual(["DATABASE_URL", "SECRET_KEY", "API_TOKEN"]);
     });
   });
 });

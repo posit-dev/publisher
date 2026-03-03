@@ -13,7 +13,8 @@ interface RouteHandler {
   method: string;
   pattern: RegExp;
   status: number;
-  response: unknown;
+  response: unknown; // JSON object, string, Buffer, or null (for no-body responses)
+  contentType?: string; // defaults to "application/json"
 }
 
 const FIXTURES_DIR = resolve(__dirname, "fixtures", "connect-responses");
@@ -22,6 +23,12 @@ function loadFixture(name: string): unknown {
   const content = readFileSync(resolve(FIXTURES_DIR, name), "utf-8");
   return JSON.parse(content);
 }
+
+// Minimal valid gzip stream (empty gzip file)
+const DUMMY_GZIP_BYTES = Buffer.from([
+  0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03,
+  0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+]);
 
 export class MockConnectServer {
   private server: ReturnType<typeof createServer> | null = null;
@@ -42,12 +49,69 @@ export class MockConnectServer {
   }
 
   private registerDefaultRoutes(): void {
-    // GET /__api__/v1/user — TestAuthentication
+    // Routes are matched by first match, so more specific patterns must come first.
+
+    // --- Authentication & User ---
+
+    // GET /__api__/v1/user — TestAuthentication, GetCurrentUser
     this.routes.push({
       method: "GET",
       pattern: /^\/__api__\/v1\/user$/,
       status: 200,
       response: loadFixture("user.json"),
+    });
+
+    // --- OAuth Integrations ---
+
+    // GET /__api__/v1/oauth/integrations — GetIntegrations
+    this.routes.push({
+      method: "GET",
+      pattern: /^\/__api__\/v1\/oauth\/integrations$/,
+      status: 200,
+      response: loadFixture("integrations.json"),
+    });
+
+    // --- Content (specific sub-resources first, then generic) ---
+
+    // GET /__api__/v1/content/:id/bundles/:bid/download — DownloadBundle
+    this.routes.push({
+      method: "GET",
+      pattern: /^\/__api__\/v1\/content\/[^/]+\/bundles\/[^/]+\/download$/,
+      status: 200,
+      response: DUMMY_GZIP_BYTES,
+      contentType: "application/gzip",
+    });
+
+    // POST /__api__/v1/content/:id/bundles — UploadBundle
+    this.routes.push({
+      method: "POST",
+      pattern: /^\/__api__\/v1\/content\/[^/]+\/bundles$/,
+      status: 200,
+      response: loadFixture("bundle-upload.json"),
+    });
+
+    // GET /__api__/v1/content/:id/environment — GetEnvVars
+    this.routes.push({
+      method: "GET",
+      pattern: /^\/__api__\/v1\/content\/[^/]+\/environment$/,
+      status: 200,
+      response: loadFixture("environment.json"),
+    });
+
+    // PATCH /__api__/v1/content/:id/environment — SetEnvVars
+    this.routes.push({
+      method: "PATCH",
+      pattern: /^\/__api__\/v1\/content\/[^/]+\/environment$/,
+      status: 204,
+      response: null,
+    });
+
+    // POST /__api__/v1/content/:id/deploy — DeployBundle
+    this.routes.push({
+      method: "POST",
+      pattern: /^\/__api__\/v1\/content\/[^/]+\/deploy$/,
+      status: 200,
+      response: loadFixture("deploy.json"),
     });
 
     // POST /__api__/v1/content — CreateDeployment
@@ -58,12 +122,91 @@ export class MockConnectServer {
       response: loadFixture("content-create.json"),
     });
 
-    // GET /__api__/v1/content/:id — ContentDetails
+    // PATCH /__api__/v1/content/:id — UpdateDeployment
+    this.routes.push({
+      method: "PATCH",
+      pattern: /^\/__api__\/v1\/content\/[^/]+$/,
+      status: 204,
+      response: null,
+    });
+
+    // GET /__api__/v1/content/:id — ContentDetails, LatestBundleID
     this.routes.push({
       method: "GET",
       pattern: /^\/__api__\/v1\/content\/[^/]+$/,
       status: 200,
       response: loadFixture("content-details.json"),
+    });
+
+    // --- Tasks ---
+
+    // GET /__api__/v1/tasks/:id — WaitForTask (always returns finished)
+    this.routes.push({
+      method: "GET",
+      pattern: /^\/__api__\/v1\/tasks\/[^?]+/,
+      status: 200,
+      response: loadFixture("task-finished.json"),
+    });
+
+    // --- Server Settings ---
+
+    // GET /__api__/server_settings/applications — GetSettings (applications)
+    this.routes.push({
+      method: "GET",
+      pattern: /^\/__api__\/server_settings\/applications$/,
+      status: 200,
+      response: loadFixture("server-settings-applications.json"),
+    });
+
+    // GET /__api__/server_settings/scheduler[/{appMode}] — GetSettings (scheduler)
+    this.routes.push({
+      method: "GET",
+      pattern: /^\/__api__\/server_settings\/scheduler/,
+      status: 200,
+      response: loadFixture("server-settings-scheduler.json"),
+    });
+
+    // GET /__api__/server_settings — GetSettings (general)
+    this.routes.push({
+      method: "GET",
+      pattern: /^\/__api__\/server_settings$/,
+      status: 200,
+      response: loadFixture("server-settings.json"),
+    });
+
+    // GET /__api__/v1/server_settings/python — GetSettings (python)
+    this.routes.push({
+      method: "GET",
+      pattern: /^\/__api__\/v1\/server_settings\/python$/,
+      status: 200,
+      response: loadFixture("server-settings-python.json"),
+    });
+
+    // GET /__api__/v1/server_settings/r — GetSettings (r)
+    this.routes.push({
+      method: "GET",
+      pattern: /^\/__api__\/v1\/server_settings\/r$/,
+      status: 200,
+      response: loadFixture("server-settings-r.json"),
+    });
+
+    // GET /__api__/v1/server_settings/quarto — GetSettings (quarto)
+    this.routes.push({
+      method: "GET",
+      pattern: /^\/__api__\/v1\/server_settings\/quarto$/,
+      status: 200,
+      response: loadFixture("server-settings-quarto.json"),
+    });
+
+    // --- Content Validation (non-API path) ---
+
+    // GET /content/:id/ — ValidateDeployment
+    this.routes.push({
+      method: "GET",
+      pattern: /^\/content\/[^/]+\/$/,
+      status: 200,
+      response: "<html>OK</html>",
+      contentType: "text/html",
     });
   }
 
@@ -135,8 +278,22 @@ export class MockConnectServer {
       );
 
       if (route) {
-        res.writeHead(route.status, { "Content-Type": "application/json" });
-        res.end(JSON.stringify(route.response));
+        const contentType = route.contentType ?? "application/json";
+
+        if (route.response === null || route.response === undefined) {
+          // No-body response (e.g. 204)
+          res.writeHead(route.status);
+          res.end();
+        } else if (Buffer.isBuffer(route.response)) {
+          res.writeHead(route.status, { "Content-Type": contentType });
+          res.end(route.response);
+        } else if (typeof route.response === "string") {
+          res.writeHead(route.status, { "Content-Type": contentType });
+          res.end(route.response);
+        } else {
+          res.writeHead(route.status, { "Content-Type": contentType });
+          res.end(JSON.stringify(route.response));
+        }
       } else {
         res.writeHead(404, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ error: "Not found" }));

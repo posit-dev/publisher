@@ -30,10 +30,8 @@ export class GoPublisherClient implements ConnectContractClient {
     connectUrl: string;
     apiKey: string;
   }): Promise<ConnectContractResult> {
-    // Clear any previously captured requests
     await this.clearMockRequests();
 
-    // Call Publisher's POST /api/test-credentials endpoint
     const res = await fetch(`${this.apiBase}/api/test-credentials`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -47,7 +45,6 @@ export class GoPublisherClient implements ConnectContractClient {
 
     const body = await res.json();
 
-    // Fetch the captured request that Publisher sent to mock Connect
     const captured = await this.getCapturedRequests("/__api__/v1/user");
     const capturedRequest = captured.length > 0 ? captured[0] : null;
 
@@ -56,6 +53,15 @@ export class GoPublisherClient implements ConnectContractClient {
       result: body,
       capturedRequest,
     };
+  }
+
+  async getCurrentUser(_params: {
+    connectUrl: string;
+    apiKey: string;
+  }): Promise<ConnectContractResult> {
+    throw new Error(
+      "Not implemented — no standalone Publisher API endpoint triggers GetCurrentUser",
+    );
   }
 
   async createDeployment(_params: {
@@ -75,6 +81,119 @@ export class GoPublisherClient implements ConnectContractClient {
   }): Promise<ConnectContractResult> {
     throw new Error(
       "Not implemented — no standalone Publisher API endpoint triggers ContentDetails",
+    );
+  }
+
+  async updateDeployment(_params: {
+    connectUrl: string;
+    apiKey: string;
+    contentId: string;
+    body: unknown;
+  }): Promise<ConnectContractResult> {
+    throw new Error(
+      "Not implemented — no standalone Publisher API endpoint triggers UpdateDeployment",
+    );
+  }
+
+  async getEnvVars(_params: {
+    connectUrl: string;
+    apiKey: string;
+    contentId: string;
+  }): Promise<ConnectContractResult> {
+    throw new Error(
+      "Not implemented — no standalone Publisher API endpoint triggers GetEnvVars",
+    );
+  }
+
+  async setEnvVars(_params: {
+    connectUrl: string;
+    apiKey: string;
+    contentId: string;
+    env: Record<string, string>;
+  }): Promise<ConnectContractResult> {
+    throw new Error(
+      "Not implemented — no standalone Publisher API endpoint triggers SetEnvVars",
+    );
+  }
+
+  async uploadBundle(_params: {
+    connectUrl: string;
+    apiKey: string;
+    contentId: string;
+    bundleData: Uint8Array;
+  }): Promise<ConnectContractResult> {
+    throw new Error(
+      "Not implemented — no standalone Publisher API endpoint triggers UploadBundle",
+    );
+  }
+
+  async deployBundle(_params: {
+    connectUrl: string;
+    apiKey: string;
+    contentId: string;
+    bundleId: string;
+  }): Promise<ConnectContractResult> {
+    throw new Error(
+      "Not implemented — no standalone Publisher API endpoint triggers DeployBundle",
+    );
+  }
+
+  async waitForTask(_params: {
+    connectUrl: string;
+    apiKey: string;
+    taskId: string;
+  }): Promise<ConnectContractResult> {
+    throw new Error(
+      "Not implemented — no standalone Publisher API endpoint triggers WaitForTask",
+    );
+  }
+
+  async validateDeployment(_params: {
+    connectUrl: string;
+    apiKey: string;
+    contentId: string;
+  }): Promise<ConnectContractResult> {
+    throw new Error(
+      "Not implemented — no standalone Publisher API endpoint triggers ValidateDeployment",
+    );
+  }
+
+  async getIntegrations(_params: {
+    connectUrl: string;
+    apiKey: string;
+  }): Promise<ConnectContractResult> {
+    throw new Error(
+      "Not implemented — no standalone Publisher API endpoint triggers GetIntegrations",
+    );
+  }
+
+  async getSettings(_params: {
+    connectUrl: string;
+    apiKey: string;
+  }): Promise<ConnectContractResult> {
+    throw new Error(
+      "Not implemented — no standalone Publisher API endpoint triggers GetSettings",
+    );
+  }
+
+  async latestBundleId(_params: {
+    connectUrl: string;
+    apiKey: string;
+    contentId: string;
+  }): Promise<ConnectContractResult> {
+    throw new Error(
+      "Not implemented — no standalone Publisher API endpoint triggers LatestBundleID",
+    );
+  }
+
+  async downloadBundle(_params: {
+    connectUrl: string;
+    apiKey: string;
+    contentId: string;
+    bundleId: string;
+  }): Promise<ConnectContractResult> {
+    throw new Error(
+      "Not implemented — no standalone Publisher API endpoint triggers DownloadBundle",
     );
   }
 }

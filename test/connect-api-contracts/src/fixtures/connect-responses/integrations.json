@@ -1,0 +1,11 @@
+[
+  {
+    "guid": "int-guid-1234-5678-abcd-ef0123456789",
+    "name": "My OAuth Integration",
+    "description": "OAuth integration for external service",
+    "auth_type": "OAuth2",
+    "template": "custom",
+    "config": {},
+    "created_time": "2023-06-01T09:00:00Z"
+  }
+]
