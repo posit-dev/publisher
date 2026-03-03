@@ -1,11 +1,18 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { getClient, getMockConnectUrl, clearMockRequests } from "../helpers";
+import {
+  getClient,
+  getMockConnectUrl,
+  clearMockRequests,
+  clearMockOverrides,
+  setMockResponse,
+} from "../helpers";
 
 describe.skip("WaitForTask", () => {
   const apiKey = "test-api-key-12345";
   const taskId = "task-abc123-def456";
 
   beforeEach(async () => {
+    await clearMockOverrides();
     await clearMockRequests();
   });
 
@@ -86,6 +93,40 @@ describe.skip("WaitForTask", () => {
       expect(task.finished).toBe(true);
       expect(task.output).toBeInstanceOf(Array);
       expect(task.output.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe("error handling", () => {
+    it("returns error when task finishes with non-zero exit code", async () => {
+      const client = getClient();
+      const connectUrl = getMockConnectUrl();
+
+      await setMockResponse({
+        method: "GET",
+        pathPattern: "^/__api__/v1/tasks/",
+        status: 200,
+        body: {
+          id: "task-abc123-def456",
+          output: [
+            "Building Python application...",
+            "Bundle requested Python version 3.11.6",
+            "Error code: python-package-install-failed",
+          ],
+          result: null,
+          finished: true,
+          code: 1,
+          error: "Error code: python-package-install-failed",
+          last: 3,
+        },
+      });
+
+      const result = await client.waitForTask({
+        connectUrl,
+        apiKey,
+        taskId,
+      });
+
+      expect(result.status).toBe("error");
     });
   });
 });

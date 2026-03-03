@@ -34,6 +34,7 @@ export class MockConnectServer {
   private server: ReturnType<typeof createServer> | null = null;
   private captured: CapturedRequest[] = [];
   private routes: RouteHandler[] = [];
+  private overrides: RouteHandler[] = [];
   private _port = 0;
 
   constructor() {
@@ -253,6 +254,33 @@ export class MockConnectServer {
       return;
     }
 
+    // Control endpoint: register a response override
+    if (method === "POST" && path === "/__test__/response-override") {
+      const chunks: Buffer[] = [];
+      req.on("data", (chunk: Buffer) => chunks.push(chunk));
+      req.on("end", () => {
+        const body = JSON.parse(Buffer.concat(chunks).toString("utf-8"));
+        this.overrides.push({
+          method: body.method,
+          pattern: new RegExp(body.pathPattern),
+          status: body.status,
+          response: body.body ?? null,
+          contentType: body.contentType,
+        });
+        res.writeHead(204);
+        res.end();
+      });
+      return;
+    }
+
+    // Control endpoint: clear all response overrides
+    if (method === "DELETE" && path === "/__test__/response-overrides") {
+      this.overrides = [];
+      res.writeHead(204);
+      res.end();
+      return;
+    }
+
     // Collect request body, then capture and route
     const chunks: Buffer[] = [];
     req.on("data", (chunk: Buffer) => chunks.push(chunk));
@@ -272,10 +300,14 @@ export class MockConnectServer {
       // Capture the request
       this.captured.push({ method, path, headers, body: bodyStr });
 
-      // Find matching route
-      const route = this.routes.find(
-        (r) => r.method === method && r.pattern.test(path),
-      );
+      // Find matching route (overrides take priority over default routes)
+      const route =
+        this.overrides.find(
+          (r) => r.method === method && r.pattern.test(path),
+        ) ??
+        this.routes.find(
+          (r) => r.method === method && r.pattern.test(path),
+        );
 
       if (route) {
         const contentType = route.contentType ?? "application/json";

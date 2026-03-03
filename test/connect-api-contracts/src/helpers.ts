@@ -38,6 +38,26 @@ export async function clearMockRequests(): Promise<void> {
   await fetch(`${mockUrl}/__test__/requests`, { method: "DELETE" });
 }
 
+export async function setMockResponse(override: {
+  method: string;
+  pathPattern: string;
+  status: number;
+  body?: unknown;
+  contentType?: string;
+}): Promise<void> {
+  const mockUrl = getMockConnectUrl();
+  await fetch(`${mockUrl}/__test__/response-override`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(override),
+  });
+}
+
+export async function clearMockOverrides(): Promise<void> {
+  const mockUrl = getMockConnectUrl();
+  await fetch(`${mockUrl}/__test__/response-overrides`, { method: "DELETE" });
+}
+
 export async function getMockRequests(
   pathFilter?: string,
 ): Promise<CapturedRequest[]> {

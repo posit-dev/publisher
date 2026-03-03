@@ -1,0 +1,17 @@
+{
+  "configurationName": "my-app",
+  "configurationPath": "/workspace/.posit/publish/my-app.toml",
+  "configurationRelPath": ".posit/publish/my-app.toml",
+  "projectDir": "/workspace",
+  "configuration": {
+    "$schema": "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json",
+    "type": "python-fastapi",
+    "entrypoint": "app.py",
+    "files": ["app.py", "requirements.txt"],
+    "python": {
+      "version": "3.11.3",
+      "packageFile": "requirements.txt",
+      "packageManager": "pip"
+    }
+  }
+}

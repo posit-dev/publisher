@@ -1,10 +1,17 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { getClient, getMockConnectUrl, clearMockRequests } from "../helpers";
+import {
+  getClient,
+  getMockConnectUrl,
+  clearMockRequests,
+  clearMockOverrides,
+  setMockResponse,
+} from "../helpers";
 
 describe("TestAuthentication", () => {
   const apiKey = "test-api-key-12345";
 
   beforeEach(async () => {
+    await clearMockOverrides();
     await clearMockRequests();
   });
 
@@ -96,6 +103,135 @@ describe("TestAuthentication", () => {
       const body = result.result as { error: unknown };
 
       expect(body.error).toBeNull();
+    });
+  });
+
+  describe("error handling", () => {
+    it("returns error for 401 unauthorized response", async () => {
+      const client = getClient();
+      const connectUrl = getMockConnectUrl();
+
+      await setMockResponse({
+        method: "GET",
+        pathPattern: "^/__api__/v1/user$",
+        status: 401,
+        body: { code: 3, error: "Key is not valid" },
+      });
+
+      const result = await client.testAuthentication({ connectUrl, apiKey });
+      const body = result.result as {
+        user: unknown;
+        error: { msg: string } | null;
+      };
+
+      expect(result.status).toBe("error");
+      expect(body.error).not.toBeNull();
+      expect(body.user).toBeNull();
+    });
+
+    it("returns error for locked user account", async () => {
+      const client = getClient();
+      const connectUrl = getMockConnectUrl();
+
+      await setMockResponse({
+        method: "GET",
+        pathPattern: "^/__api__/v1/user$",
+        status: 200,
+        body: {
+          email: "bob@example.com",
+          username: "bob",
+          first_name: "Bob",
+          last_name: "Bobberson",
+          user_role: "publisher",
+          created_time: "2023-01-01T00:00:00Z",
+          updated_time: "2023-01-01T00:00:00Z",
+          active_time: null,
+          confirmed: true,
+          locked: true,
+          guid: "40d1c1dc-d554-4905-99f1-359517e1a7c0",
+        },
+      });
+
+      const result = await client.testAuthentication({ connectUrl, apiKey });
+      const body = result.result as {
+        user: unknown;
+        error: { msg: string } | null;
+      };
+
+      expect(result.status).toBe("error");
+      expect(body.error).not.toBeNull();
+      expect(body.error!.msg.toLowerCase()).toContain("locked");
+      expect(body.user).toBeNull();
+    });
+
+    it("returns error for unconfirmed user account", async () => {
+      const client = getClient();
+      const connectUrl = getMockConnectUrl();
+
+      await setMockResponse({
+        method: "GET",
+        pathPattern: "^/__api__/v1/user$",
+        status: 200,
+        body: {
+          email: "bob@example.com",
+          username: "bob",
+          first_name: "Bob",
+          last_name: "Bobberson",
+          user_role: "publisher",
+          created_time: "2023-01-01T00:00:00Z",
+          updated_time: "2023-01-01T00:00:00Z",
+          active_time: null,
+          confirmed: false,
+          locked: false,
+          guid: "40d1c1dc-d554-4905-99f1-359517e1a7c0",
+        },
+      });
+
+      const result = await client.testAuthentication({ connectUrl, apiKey });
+      const body = result.result as {
+        user: unknown;
+        error: { msg: string } | null;
+      };
+
+      expect(result.status).toBe("error");
+      expect(body.error).not.toBeNull();
+      expect(body.error!.msg.toLowerCase()).toContain("not confirmed");
+      expect(body.user).toBeNull();
+    });
+
+    it("returns error for viewer role user", async () => {
+      const client = getClient();
+      const connectUrl = getMockConnectUrl();
+
+      await setMockResponse({
+        method: "GET",
+        pathPattern: "^/__api__/v1/user$",
+        status: 200,
+        body: {
+          email: "bob@example.com",
+          username: "bob",
+          first_name: "Bob",
+          last_name: "Bobberson",
+          user_role: "viewer",
+          created_time: "2023-01-01T00:00:00Z",
+          updated_time: "2023-01-01T00:00:00Z",
+          active_time: null,
+          confirmed: true,
+          locked: false,
+          guid: "40d1c1dc-d554-4905-99f1-359517e1a7c0",
+        },
+      });
+
+      const result = await client.testAuthentication({ connectUrl, apiKey });
+      const body = result.result as {
+        user: unknown;
+        error: { msg: string } | null;
+      };
+
+      expect(result.status).toBe("error");
+      expect(body.error).not.toBeNull();
+      expect(body.error!.msg.toLowerCase()).toContain("permission");
+      expect(body.user).toBeNull();
     });
   });
 
