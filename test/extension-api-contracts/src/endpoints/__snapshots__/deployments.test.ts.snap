@@ -1,0 +1,87 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Deployments > createDeployment (POST /deployments) > snapshot > matches expected response shape 1`] = `
+{
+  "bundleId": "",
+  "configurationName": "my-app",
+  "configurationPath": "/workspace/.posit/publish/my-app.toml",
+  "createdAt": "2024-01-15T10:00:00Z",
+  "dashboardUrl": "",
+  "deployedAt": "",
+  "deploymentName": "new-deployment",
+  "deploymentPath": "/workspace/.posit/publish/deployments/new-deployment.toml",
+  "directUrl": "",
+  "id": "",
+  "logsUrl": "",
+  "projectDir": "/workspace",
+  "saveName": "new-deployment",
+  "serverType": "connect",
+  "serverUrl": "https://connect.example.com",
+  "state": "new",
+}
+`;
+
+exports[`Deployments > getDeployment (GET /deployments/:id) > snapshot > matches expected response shape 1`] = `
+{
+  "bundleId": "bundle-456",
+  "configurationName": "my-app",
+  "configurationPath": "/workspace/.posit/publish/my-app.toml",
+  "createdAt": "2024-01-01T00:00:00Z",
+  "dashboardUrl": "https://connect.example.com/connect/#/apps/content-id-123",
+  "deployedAt": "2024-01-02T12:00:00Z",
+  "deploymentName": "my-deployment",
+  "deploymentPath": "/workspace/.posit/publish/deployments/my-deployment.toml",
+  "directUrl": "https://connect.example.com/content/content-id-123/",
+  "id": "content-id-123",
+  "logsUrl": "https://connect.example.com/connect/#/apps/content-id-123/logs",
+  "projectDir": "/workspace",
+  "saveName": "my-deployment",
+  "serverType": "connect",
+  "serverUrl": "https://connect.example.com",
+  "state": "deployed",
+}
+`;
+
+exports[`Deployments > getDeployments (GET /deployments) > snapshot > matches expected response shape 1`] = `
+[
+  {
+    "bundleId": "bundle-456",
+    "configurationName": "my-app",
+    "configurationPath": "/workspace/.posit/publish/my-app.toml",
+    "createdAt": "2024-01-01T00:00:00Z",
+    "dashboardUrl": "https://connect.example.com/connect/#/apps/content-id-123",
+    "deployedAt": "2024-01-02T12:00:00Z",
+    "deploymentName": "my-deployment",
+    "deploymentPath": "/workspace/.posit/publish/deployments/my-deployment.toml",
+    "directUrl": "https://connect.example.com/content/content-id-123/",
+    "id": "content-id-123",
+    "logsUrl": "https://connect.example.com/connect/#/apps/content-id-123/logs",
+    "projectDir": "/workspace",
+    "saveName": "my-deployment",
+    "serverType": "connect",
+    "serverUrl": "https://connect.example.com",
+    "state": "deployed",
+  },
+]
+`;
+
+exports[`Deployments > patchDeployment (PATCH /deployments/:name) > snapshot > matches expected response shape 1`] = `
+{
+  "bundleId": "bundle-456",
+  "configurationName": "updated-config",
+  "configurationPath": "/workspace/.posit/publish/updated-config.toml",
+  "createdAt": "2024-01-01T00:00:00Z",
+  "dashboardUrl": "https://connect.example.com/connect/#/apps/content-id-123",
+  "deployedAt": "2024-01-02T12:00:00Z",
+  "deploymentName": "my-deployment",
+  "deploymentPath": "/workspace/.posit/publish/deployments/my-deployment.toml",
+  "directUrl": "https://connect.example.com/content/content-id-123/",
+  "id": "content-id-123",
+  "logsUrl": "https://connect.example.com/connect/#/apps/content-id-123/logs",
+  "projectDir": "/workspace",
+  "saveName": "my-deployment",
+  "serverType": "connect",
+  "serverUrl": "https://connect.example.com",
+  "state": "deployed",
+}
+`;

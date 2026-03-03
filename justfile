@@ -234,6 +234,14 @@ test *args=("-short ./..."):
 
     go test {{ args }} -covermode set -coverprofile=cover.out
 
+# Run extension API contract tests (no Go binary needed — uses mock server)
+test-extension-contracts:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    cd test/extension-api-contracts && npx vitest run
+
 # Execute Python script tests (licenses, prepare-release, etc.)
 test-scripts:
     #!/usr/bin/env bash

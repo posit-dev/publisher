@@ -1,0 +1,18 @@
+{
+  "deploymentName": "new-deployment",
+  "deploymentPath": "/workspace/.posit/publish/deployments/new-deployment.toml",
+  "projectDir": "/workspace",
+  "configurationPath": "/workspace/.posit/publish/my-app.toml",
+  "saveName": "new-deployment",
+  "state": "new",
+  "serverUrl": "https://connect.example.com",
+  "serverType": "connect",
+  "id": "",
+  "dashboardUrl": "",
+  "directUrl": "",
+  "logsUrl": "",
+  "createdAt": "2024-01-15T10:00:00Z",
+  "deployedAt": "",
+  "bundleId": "",
+  "configurationName": "my-app"
+}
