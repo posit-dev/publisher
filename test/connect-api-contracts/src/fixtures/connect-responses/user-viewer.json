@@ -1,0 +1,13 @@
+{
+  "email": "bob@example.com",
+  "username": "bob",
+  "first_name": "Bob",
+  "last_name": "Bobberson",
+  "user_role": "viewer",
+  "created_time": "2023-01-01T00:00:00Z",
+  "updated_time": "2023-01-01T00:00:00Z",
+  "active_time": null,
+  "confirmed": true,
+  "locked": false,
+  "guid": "40d1c1dc-d554-4905-99f1-359517e1a7c0"
+}
