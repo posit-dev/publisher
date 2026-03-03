@@ -242,6 +242,14 @@ test-contracts:
 
     cd test/api-contracts && npx vitest run
 
+# Run Connect API contract tests against the Go binary (requires `just build` first)
+test-connect-contracts:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    cd test/connect-api-contracts && npx vitest run
+
 # Execute Python script tests (licenses, prepare-release, etc.)
 test-scripts:
     #!/usr/bin/env bash
