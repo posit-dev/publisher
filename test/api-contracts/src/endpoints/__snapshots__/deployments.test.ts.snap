@@ -1,0 +1,50 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`GET /api/deployments > returns deployments array with pre-seeded deployment 1`] = `
+{
+  "$schema": "https://cdn.posit.co/publisher/schemas/posit-publishing-record-schema-v3.json",
+  "bundleId": Any<String>,
+  "bundleUrl": "",
+  "configuration": {
+    "$schema": "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json",
+    "entrypoint": "fastapi-simple/app.py",
+    "files": [
+      "fastapi-simple/app.py",
+      "fastapi-simple/requirements.txt",
+    ],
+    "productType": "connect",
+    "python": {
+      "packageFile": "fastapi-simple/requirements.txt",
+      "packageManager": "pip",
+      "version": "3.11.3",
+    },
+    "type": "python-fastapi",
+    "validate": true,
+  },
+  "configurationName": Any<String>,
+  "configurationPath": Any<String>,
+  "connectCloud": null,
+  "createdAt": Any<String>,
+  "dashboardUrl": Any<String>,
+  "deployedAt": Any<String>,
+  "deploymentError": null,
+  "deploymentName": Any<String>,
+  "deploymentPath": Any<String>,
+  "directUrl": Any<String>,
+  "dismissedAt": "",
+  "files": [
+    "fastapi-simple/app.py",
+    "fastapi-simple/requirements.txt",
+  ],
+  "id": Any<String>,
+  "logsUrl": Any<String>,
+  "projectDir": Any<String>,
+  "renv": null,
+  "requirements": null,
+  "saveName": Any<String>,
+  "serverType": "connect",
+  "serverUrl": Any<String>,
+  "state": "deployed",
+  "type": "python-fastapi",
+}
+`;

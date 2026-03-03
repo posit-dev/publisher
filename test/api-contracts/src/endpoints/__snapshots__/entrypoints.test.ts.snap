@@ -1,0 +1,18 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`POST /api/entrypoints > returns entrypoints for a specific subdirectory 1`] = `
+[
+  "app.py",
+]
+`;
+
+exports[`POST /api/entrypoints > returns entrypoints for the root workspace 1`] = `
+[
+  "fastapi-simple/app.py",
+  "jupyter-nb/notebook.ipynb",
+  "quarto-doc/index.qmd",
+  "rmd-static/report.Rmd",
+  "shiny-python/app.py",
+  "static/index.html",
+]
+`;
