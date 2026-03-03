@@ -6,8 +6,7 @@ const client = getClient();
 describe("GET /api/configurations", () => {
   it("returns configurations array with pre-seeded config", async () => {
     const res = await client.getConfigurations();
-    expect(res.status).toBe(200);
-    expect(res.contentType).toBe("application/json");
+    expect(res.status).toBe("ok");
 
     const body = res.body as any[];
     expect(body).toBeInstanceOf(Array);
@@ -34,7 +33,7 @@ describe("GET /api/configurations", () => {
 
   it("returns empty array for directory with no configs", async () => {
     const res = await client.getConfigurations({ dir: "static" });
-    expect(res.status).toBe(200);
+    expect(res.status).toBe("ok");
     expect(res.body).toEqual([]);
   });
 });
@@ -42,8 +41,7 @@ describe("GET /api/configurations", () => {
 describe("GET /api/configurations/{name}", () => {
   it("returns a single configuration by name", async () => {
     const res = await client.getConfiguration("test-config");
-    expect(res.status).toBe(200);
-    expect(res.contentType).toBe("application/json");
+    expect(res.status).toBe("ok");
 
     const body = res.body as any;
     expect(body.configurationName).toBe("test-config");
@@ -65,7 +63,7 @@ describe("GET /api/configurations/{name}", () => {
 
   it("returns 404 for non-existent configuration", async () => {
     const res = await client.getConfiguration("does-not-exist");
-    expect(res.status).toBe(404);
+    expect(res.status).toBe("not_found");
   });
 });
 
@@ -90,8 +88,7 @@ describe("PUT /api/configurations/{name}", () => {
     };
 
     const res = await client.putConfiguration(testName, newConfig);
-    expect(res.status).toBe(200);
-    expect(res.contentType).toBe("application/json");
+    expect(res.status).toBe("ok");
 
     const body = res.body as any;
     expect(body.configurationName).toBe(testName);
@@ -102,7 +99,7 @@ describe("PUT /api/configurations/{name}", () => {
 
   it("can read back the created configuration", async () => {
     const res = await client.getConfiguration(testName);
-    expect(res.status).toBe(200);
+    expect(res.status).toBe("ok");
 
     const body = res.body as any;
     expect(body.configurationName).toBe(testName);
@@ -130,19 +127,19 @@ package_manager = "pip"
 
     // Verify it exists
     const getRes = await client.getConfiguration(testName);
-    expect(getRes.status).toBe(200);
+    expect(getRes.status).toBe("ok");
 
     // Delete it
     const deleteRes = await client.deleteConfiguration(testName);
-    expect(deleteRes.status).toBe(204);
+    expect(deleteRes.status).toBe("no_content");
 
     // Verify it's gone
     const afterRes = await client.getConfiguration(testName);
-    expect(afterRes.status).toBe(404);
+    expect(afterRes.status).toBe("not_found");
   });
 
   it("returns 404 when deleting non-existent configuration", async () => {
     const res = await client.deleteConfiguration("does-not-exist");
-    expect(res.status).toBe(404);
+    expect(res.status).toBe("not_found");
   });
 });

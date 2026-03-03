@@ -6,8 +6,7 @@ const client = getClient();
 describe("GET /api/deployments", () => {
   it("returns deployments array with pre-seeded deployment", async () => {
     const res = await client.getDeployments();
-    expect(res.status).toBe(200);
-    expect(res.contentType).toBe("application/json");
+    expect(res.status).toBe("ok");
 
     const body = res.body as any[];
     expect(body).toBeInstanceOf(Array);
@@ -42,7 +41,7 @@ describe("GET /api/deployments", () => {
 
   it("returns empty array for directory with no deployments", async () => {
     const res = await client.getDeployments({ dir: "static" });
-    expect(res.status).toBe(200);
+    expect(res.status).toBe("ok");
     expect(res.body).toEqual([]);
   });
 });
@@ -50,8 +49,7 @@ describe("GET /api/deployments", () => {
 describe("GET /api/deployments/{name}", () => {
   it("returns a single deployment by name", async () => {
     const res = await client.getDeployment("test-deployment");
-    expect(res.status).toBe(200);
-    expect(res.contentType).toBe("application/json");
+    expect(res.status).toBe("ok");
 
     const body = res.body as any;
     expect(body.deploymentName).toBe("test-deployment");
@@ -61,7 +59,7 @@ describe("GET /api/deployments/{name}", () => {
 
   it("returns 404 for non-existent deployment", async () => {
     const res = await client.getDeployment("does-not-exist");
-    expect(res.status).toBe(404);
+    expect(res.status).toBe("not_found");
   });
 });
 
@@ -96,8 +94,7 @@ describe("POST /api/deployments (create deployment record)", () => {
       config: "test-config",
       saveName: deployName,
     });
-    expect(res.status).toBe(200);
-    expect(res.contentType).toBe("application/json");
+    expect(res.status).toBe("ok");
 
     const body = res.body as any;
     expect(body.deploymentName).toBe(deployName);
@@ -112,7 +109,7 @@ describe("POST /api/deployments (create deployment record)", () => {
       config: "test-config",
       saveName: deployName,
     });
-    expect(res.status).toBe(409);
+    expect(res.status).toBe("conflict");
   });
 });
 
@@ -121,8 +118,7 @@ describe("PATCH /api/deployments/{name}", () => {
     const res = await client.patchDeployment("test-deployment", {
       configurationName: "test-config",
     });
-    expect(res.status).toBe(200);
-    expect(res.contentType).toBe("application/json");
+    expect(res.status).toBe("ok");
 
     const body = res.body as any;
     expect(body.configurationName).toBe("test-config");
@@ -132,7 +128,7 @@ describe("PATCH /api/deployments/{name}", () => {
     const res = await client.patchDeployment("does-not-exist", {
       configurationName: "test-config",
     });
-    expect(res.status).toBe(404);
+    expect(res.status).toBe("not_found");
   });
 });
 
@@ -157,15 +153,15 @@ describe("DELETE /api/deployments/{name}", () => {
 
     // Verify it exists
     const getRes = await client.getDeployment(deleteName);
-    expect(getRes.status).toBe(200);
+    expect(getRes.status).toBe("ok");
 
     // Delete it
     const deleteRes = await client.deleteDeployment(deleteName);
-    expect(deleteRes.status).toBe(204);
+    expect(deleteRes.status).toBe("no_content");
 
     // Verify it's gone
     const afterRes = await client.getDeployment(deleteName);
-    expect(afterRes.status).toBe(404);
+    expect(afterRes.status).toBe("not_found");
 
     // Clean up credential
     await client.deleteCredential(cred.guid);
@@ -173,6 +169,6 @@ describe("DELETE /api/deployments/{name}", () => {
 
   it("returns 404 when deleting non-existent deployment", async () => {
     const res = await client.deleteDeployment("does-not-exist");
-    expect(res.status).toBe(404);
+    expect(res.status).toBe("not_found");
   });
 });

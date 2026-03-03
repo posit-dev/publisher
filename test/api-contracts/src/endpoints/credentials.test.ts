@@ -6,8 +6,7 @@ const client = getClient();
 describe("GET /api/credentials", () => {
   it("returns credentials array (initially empty)", async () => {
     const res = await client.getCredentials();
-    expect(res.status).toBe(200);
-    expect(res.contentType).toBe("application/json");
+    expect(res.status).toBe("ok");
 
     expect(res.body).toBeInstanceOf(Array);
   });
@@ -25,8 +24,7 @@ describe("POST /api/credentials", () => {
     };
 
     const res = await client.postCredential(newCred);
-    expect(res.status).toBe(201);
-    expect(res.contentType).toContain("application/json");
+    expect(res.status).toBe("created");
 
     const body = res.body as any;
     expect(body.guid).toBeDefined();
@@ -47,7 +45,7 @@ describe("POST /api/credentials", () => {
 
   it("credential appears in list after creation", async () => {
     const res = await client.getCredentials();
-    expect(res.status).toBe(200);
+    expect(res.status).toBe("ok");
 
     const body = res.body as any[];
     const found = body.find((c: any) => c.guid === createdGuid);
@@ -64,7 +62,7 @@ describe("POST /api/credentials", () => {
     };
 
     const res = await client.postCredential(dupCred);
-    expect(res.status).toBe(409);
+    expect(res.status).toBe("conflict");
   });
 });
 
@@ -78,12 +76,12 @@ describe("DELETE /api/credentials/{guid}", () => {
       apiKey: "delete-me-key",
     };
     const createRes = await client.postCredential(cred);
-    expect(createRes.status).toBe(201);
+    expect(createRes.status).toBe("created");
     const { guid } = createRes.body as any;
 
     // Delete it
     const deleteRes = await client.deleteCredential(guid);
-    expect(deleteRes.status).toBe(204);
+    expect(deleteRes.status).toBe("no_content");
 
     // Verify it's gone from the list
     const listRes = await client.getCredentials();
@@ -109,7 +107,7 @@ describe("DELETE /api/credentials (reset)", () => {
 
     // Reset
     const res = await client.resetCredentials();
-    expect(res.status).toBe(200);
+    expect(res.status).toBe("ok");
 
     // Verify empty
     const listAfter = await client.getCredentials();

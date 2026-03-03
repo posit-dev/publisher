@@ -1,4 +1,21 @@
-import type { BackendClient, ContractResult } from "../client";
+import type { BackendClient, ContractResult, ResultStatus } from "../client";
+
+function mapStatus(httpStatus: number): ResultStatus {
+  switch (httpStatus) {
+    case 200:
+      return "ok";
+    case 201:
+      return "created";
+    case 204:
+      return "no_content";
+    case 404:
+      return "not_found";
+    case 409:
+      return "conflict";
+    default:
+      throw new Error(`Unexpected HTTP status: ${httpStatus}`);
+  }
+}
 
 async function toContractResult(res: Response): Promise<ContractResult> {
   const contentType = res.headers.get("content-type") ?? "";
@@ -8,7 +25,7 @@ async function toContractResult(res: Response): Promise<ContractResult> {
     body = await res.json();
   }
 
-  return { status: res.status, contentType, body };
+  return { status: mapStatus(res.status), body };
 }
 
 export class GoHttpClient implements BackendClient {

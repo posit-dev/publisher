@@ -1,7 +1,13 @@
+export type ResultStatus =
+  | "ok"
+  | "created"
+  | "no_content"
+  | "not_found"
+  | "conflict";
+
 export interface ContractResult<T = unknown> {
-  status: number; // 200, 201, 204, 404, 409, etc.
-  contentType: string; // "application/json" or ""
-  body: T; // parsed JSON body, or null for 204
+  status: ResultStatus;
+  body: T; // parsed response body, or null for no_content
 }
 
 export interface BackendClient {
