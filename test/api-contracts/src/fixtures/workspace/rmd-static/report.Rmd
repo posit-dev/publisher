@@ -1,0 +1,12 @@
+---
+title: "Report"
+output: html_document
+---
+
+## Introduction
+
+This is a minimal R Markdown document for testing content type detection.
+
+```{r}
+summary(cars)
+```

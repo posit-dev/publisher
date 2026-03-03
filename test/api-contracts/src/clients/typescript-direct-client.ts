@@ -75,4 +75,22 @@ export class TypeScriptDirectClient implements BackendClient {
   async deleteDeployment(_name: string): Promise<ContractResult> {
     throw new Error("Not implemented yet");
   }
+
+  // Inspection
+
+  async postInspect(_params: {
+    dir?: string;
+    entrypoint?: string;
+    recursive?: string;
+  }): Promise<ContractResult> {
+    throw new Error("Not implemented yet");
+  }
+
+  // Entrypoints
+
+  async postEntrypoints(
+    _params?: { dir?: string },
+  ): Promise<ContractResult> {
+    throw new Error("Not implemented yet");
+  }
 }

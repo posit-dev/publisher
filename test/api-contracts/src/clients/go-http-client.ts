@@ -154,4 +154,36 @@ export class GoHttpClient implements BackendClient {
     );
     return toContractResult(res);
   }
+
+  // Inspection
+
+  async postInspect(params: {
+    dir?: string;
+    entrypoint?: string;
+    recursive?: string;
+  }): Promise<ContractResult> {
+    const qs = new URLSearchParams();
+    if (params.dir) qs.set("dir", params.dir);
+    if (params.entrypoint) qs.set("entrypoint", params.entrypoint);
+    if (params.recursive) qs.set("recursive", params.recursive);
+    const query = qs.toString() ? `?${qs.toString()}` : "";
+    const res = await fetch(
+      `${this.apiBase}/api/inspect${query}`,
+      { method: "POST" },
+    );
+    return toContractResult(res);
+  }
+
+  // Entrypoints
+
+  async postEntrypoints(
+    params?: { dir?: string },
+  ): Promise<ContractResult> {
+    const query = params?.dir ? `?dir=${params.dir}` : "";
+    const res = await fetch(
+      `${this.apiBase}/api/entrypoints${query}`,
+      { method: "POST" },
+    );
+    return toContractResult(res);
+  }
 }

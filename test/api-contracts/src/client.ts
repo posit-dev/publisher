@@ -29,4 +29,14 @@ export interface BackendClient {
   postDeployment(body: unknown): Promise<ContractResult>;
   patchDeployment(name: string, body: unknown): Promise<ContractResult>;
   deleteDeployment(name: string): Promise<ContractResult>;
+
+  // Inspection
+  postInspect(params: {
+    dir?: string;
+    entrypoint?: string;
+    recursive?: string;
+  }): Promise<ContractResult>;
+
+  // Entrypoints
+  postEntrypoints(params?: { dir?: string }): Promise<ContractResult>;
 }
