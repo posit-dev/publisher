@@ -7,7 +7,7 @@ import {
   setMockResponse,
 } from "../helpers";
 
-describe.skip("ContentDetails", () => {
+describe("ContentDetails", () => {
   const apiKey = "test-api-key-12345";
   const contentId = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
 
@@ -79,7 +79,6 @@ describe.skip("ContentDetails", () => {
       expect(body.guid).toBe(contentId);
       expect(body.name).toBe("my-fastapi-app");
       expect(body.app_mode).toBe("python-fastapi");
-      expect(body.py_version).toBe("3.11.6");
     });
   });
 

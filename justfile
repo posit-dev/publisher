@@ -234,7 +234,11 @@ test *args=("-short ./..."):
 
     go test {{ args }} -covermode set -coverprofile=cover.out
 
-# Run Connect API contract tests against the Go binary (requires `just build` first)
+# Build the Connect API contract test harness binary
+build-connect-harness:
+    go build -o test/connect-api-contracts/harness/harness ./test/connect-api-contracts/harness/
+
+# Run Connect API contract tests (builds harness automatically via setup.ts)
 test-connect-contracts:
     #!/usr/bin/env bash
     set -eou pipefail

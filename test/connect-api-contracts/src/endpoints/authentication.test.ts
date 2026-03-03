@@ -75,26 +75,6 @@ describe("TestAuthentication", () => {
       });
     });
 
-    it("returns serverType as connect", async () => {
-      const client = getClient();
-      const connectUrl = getMockConnectUrl();
-
-      const result = await client.testAuthentication({ connectUrl, apiKey });
-      const body = result.result as { serverType: string };
-
-      expect(body.serverType).toBe("connect");
-    });
-
-    it("returns the mock Connect URL", async () => {
-      const client = getClient();
-      const connectUrl = getMockConnectUrl();
-
-      const result = await client.testAuthentication({ connectUrl, apiKey });
-      const body = result.result as { url: string };
-
-      expect(body.url).toBe(connectUrl);
-    });
-
     it("returns null error on success", async () => {
       const client = getClient();
       const connectUrl = getMockConnectUrl();
@@ -242,15 +222,9 @@ describe("TestAuthentication", () => {
 
       const result = await client.testAuthentication({ connectUrl, apiKey });
 
-      // Mask dynamic URL for snapshot stability
-      const body = result.result as Record<string, unknown>;
-      const snapshot = { ...body, url: "{{MOCK_CONNECT_URL}}" };
-
-      expect(snapshot).toMatchInlineSnapshot(`
+      expect(result.result).toMatchInlineSnapshot(`
         {
           "error": null,
-          "serverType": "connect",
-          "url": "{{MOCK_CONNECT_URL}}",
           "user": {
             "email": "bob@example.com",
             "first_name": "Bob",

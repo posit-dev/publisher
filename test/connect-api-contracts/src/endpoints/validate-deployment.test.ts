@@ -7,7 +7,7 @@ import {
   setMockResponse,
 } from "../helpers";
 
-describe.skip("ValidateDeployment", () => {
+describe("ValidateDeployment", () => {
   const apiKey = "test-api-key-12345";
   const contentId = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
 

@@ -1,46 +1,25 @@
 import { execSync, spawn, type ChildProcess } from "node:child_process";
-import { cpSync, mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { resolve } from "node:path";
 import type { GlobalSetupContext } from "vitest/node";
 import { MockConnectServer } from "./mock-connect-server";
 
 const REPO_ROOT = resolve(__dirname, "..", "..", "..");
-const FIXTURES_DIR = resolve(__dirname, "fixtures", "workspace");
+const HARNESS_DIR = resolve(__dirname, "..", "harness");
 
-let serverProcess: ChildProcess | null = null;
+let harnessProcess: ChildProcess | null = null;
 let mockServer: MockConnectServer | null = null;
-let tempDir: string | null = null;
 
-function getExecutablePath(): string {
-  const result = execSync("just executable-path", {
-    cwd: REPO_ROOT,
-    encoding: "utf-8",
-  }).trim();
-  return resolve(REPO_ROOT, result);
-}
-
-function waitForReady(apiBase: string, timeoutMs = 30_000): Promise<void> {
-  const start = Date.now();
-  return new Promise((resolve, reject) => {
-    const poll = async () => {
-      if (Date.now() - start > timeoutMs) {
-        reject(new Error(`Server did not become ready within ${timeoutMs}ms`));
-        return;
-      }
-      try {
-        const res = await fetch(`${apiBase}/api/configurations`);
-        if (res.ok) {
-          resolve();
-          return;
-        }
-      } catch {
-        // Not ready yet
-      }
-      setTimeout(poll, 200);
-    };
-    poll();
-  });
+function buildHarness(): string {
+  const binaryPath = resolve(HARNESS_DIR, "harness");
+  execSync(
+    `go build -o ${binaryPath} ./test/connect-api-contracts/harness/`,
+    {
+      cwd: REPO_ROOT,
+      encoding: "utf-8",
+      stdio: ["ignore", "pipe", "pipe"],
+    },
+  );
+  return binaryPath;
 }
 
 export async function setup({ provide }: GlobalSetupContext) {
@@ -51,39 +30,27 @@ export async function setup({ provide }: GlobalSetupContext) {
 
   console.log(`[setup] Mock Connect server running at ${mockServer.url}`);
 
-  // 2. Copy fixture workspace to temp directory
-  tempDir = mkdtempSync(join(tmpdir(), "publisher-connect-contract-"));
-  cpSync(FIXTURES_DIR, tempDir, { recursive: true });
-  process.env.WORKSPACE_DIR = tempDir;
-
   const backend = process.env.API_BACKEND ?? "go";
 
   if (backend === "go") {
-    // 3. Find the Go binary
-    const binaryPath = getExecutablePath();
+    // 2. Build the harness binary
+    console.log("[setup] Building harness binary...");
+    const binaryPath = buildHarness();
+    console.log(`[setup] Harness built at ${binaryPath}`);
 
-    // 4. Spawn the Publisher server
-    serverProcess = spawn(
-      binaryPath,
-      ["ui", tempDir, "--listen", "localhost:0", "--use-keychain=false"],
-      {
-        stdio: ["ignore", "pipe", "pipe"],
-        env: {
-          ...process.env,
-          HOME: tempDir,
-          USERPROFILE: tempDir,
-        },
-      },
-    );
+    // 3. Spawn the harness
+    harnessProcess = spawn(binaryPath, ["--listen", "localhost:0"], {
+      stdio: ["ignore", "pipe", "pipe"],
+    });
 
-    // 5. Capture the URL from stdout
+    // 4. Capture the URL from stdout
     const apiBase = await new Promise<string>((resolve, reject) => {
       const timeout = setTimeout(() => {
-        reject(new Error("Timed out waiting for server URL on stdout"));
+        reject(new Error("Timed out waiting for harness URL on stdout"));
       }, 15_000);
 
       let buffer = "";
-      serverProcess!.stdout!.on("data", (chunk: Buffer) => {
+      harnessProcess!.stdout!.on("data", (chunk: Buffer) => {
         buffer += chunk.toString();
         const lines = buffer.split("\n");
         for (const line of lines) {
@@ -96,52 +63,47 @@ export async function setup({ provide }: GlobalSetupContext) {
         }
       });
 
-      serverProcess!.stderr!.on("data", (chunk: Buffer) => {
-        process.stderr.write(`[publisher stderr] ${chunk.toString()}`);
+      harnessProcess!.stderr!.on("data", (chunk: Buffer) => {
+        process.stderr.write(`[harness stderr] ${chunk.toString()}`);
       });
 
-      serverProcess!.on("error", (err) => {
+      harnessProcess!.on("error", (err) => {
         clearTimeout(timeout);
-        reject(new Error(`Failed to spawn publisher: ${err.message}`));
+        reject(new Error(`Failed to spawn harness: ${err.message}`));
       });
 
-      serverProcess!.on("exit", (code) => {
+      harnessProcess!.on("exit", (code) => {
         clearTimeout(timeout);
         if (code !== null && code !== 0) {
-          reject(new Error(`Publisher exited with code ${code}`));
+          reject(new Error(`Harness exited with code ${code}`));
         }
       });
     });
 
-    // 6. Wait for the server to be ready
-    await waitForReady(apiBase);
-
     process.env.API_BASE = apiBase;
     process.env.__CLIENT_TYPE = "go";
 
-    console.log(`[setup] Publisher server running at ${apiBase}`);
+    console.log(`[setup] Harness running at ${apiBase}`);
   } else {
     process.env.__CLIENT_TYPE = "typescript";
     console.log(`[setup] Using TypeScript direct client`);
   }
-
-  console.log(`[setup] Workspace at ${tempDir}`);
 }
 
 export async function teardown() {
-  if (serverProcess) {
-    serverProcess.kill("SIGTERM");
+  if (harnessProcess) {
+    harnessProcess.kill("SIGTERM");
     await new Promise<void>((resolve) => {
       const timeout = setTimeout(() => {
-        serverProcess?.kill("SIGKILL");
+        harnessProcess?.kill("SIGKILL");
         resolve();
       }, 5_000);
-      serverProcess!.on("exit", () => {
+      harnessProcess!.on("exit", () => {
         clearTimeout(timeout);
         resolve();
       });
     });
-    serverProcess = null;
+    harnessProcess = null;
   }
 
   if (mockServer) {
@@ -149,10 +111,5 @@ export async function teardown() {
     mockServer = null;
   }
 
-  if (tempDir) {
-    rmSync(tempDir, { recursive: true, force: true });
-    tempDir = null;
-  }
-
-  console.log("[teardown] Servers stopped and workspace cleaned up");
+  console.log("[teardown] Servers stopped");
 }

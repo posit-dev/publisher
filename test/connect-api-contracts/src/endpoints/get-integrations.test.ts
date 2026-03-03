@@ -1,10 +1,11 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { getClient, getMockConnectUrl, clearMockRequests } from "../helpers";
+import { getClient, getMockConnectUrl, clearMockRequests, clearMockOverrides } from "../helpers";
 
-describe.skip("GetIntegrations", () => {
+describe("GetIntegrations", () => {
   const apiKey = "test-api-key-12345";
 
   beforeEach(async () => {
+    await clearMockOverrides();
     await clearMockRequests();
   });
 

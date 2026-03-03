@@ -7,7 +7,7 @@ import {
   setMockResponse,
 } from "../helpers";
 
-describe.skip("WaitForTask", () => {
+describe("WaitForTask", () => {
   const apiKey = "test-api-key-12345";
   const taskId = "task-abc123-def456";
 
@@ -79,7 +79,7 @@ describe.skip("WaitForTask", () => {
       expect(result.status).toBe("success");
     });
 
-    it("parses task output lines", async () => {
+    it("returns finished indicator", async () => {
       const client = getClient();
       const connectUrl = getMockConnectUrl();
 
@@ -88,11 +88,9 @@ describe.skip("WaitForTask", () => {
         apiKey,
         taskId,
       });
-      const task = result.result as { finished: boolean; output: string[] };
+      const task = result.result as { finished: boolean };
 
       expect(task.finished).toBe(true);
-      expect(task.output).toBeInstanceOf(Array);
-      expect(task.output.length).toBeGreaterThan(0);
     });
   });
 

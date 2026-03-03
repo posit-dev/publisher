@@ -26,174 +26,313 @@ export class GoPublisherClient implements ConnectContractClient {
     return requests.filter((r) => r.path.includes(pathFilter));
   }
 
-  async testAuthentication(params: {
-    connectUrl: string;
-    apiKey: string;
-  }): Promise<ConnectContractResult> {
+  private async callHarness(
+    endpoint: string,
+    body: Record<string, unknown>,
+    pathFilter: string,
+  ): Promise<ConnectContractResult> {
     await this.clearMockRequests();
 
-    const res = await fetch(`${this.apiBase}/api/test-credentials`, {
+    const res = await fetch(`${this.apiBase}${endpoint}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        url: params.connectUrl,
-        apiKey: params.apiKey,
-        insecure: false,
-        timeout: 30,
-      }),
+      body: JSON.stringify(body),
     });
 
-    const body = await res.json();
+    const harnessResult = (await res.json()) as {
+      status: string;
+      result: unknown;
+      error?: string;
+    };
 
-    const captured = await this.getCapturedRequests("/__api__/v1/user");
+    const captured = await this.getCapturedRequests(pathFilter);
     const capturedRequest = captured.length > 0 ? captured[0] : null;
 
     return {
-      status: body.error ? "error" : "success",
-      result: body,
+      status: harnessResult.status as "success" | "error",
+      result: harnessResult.result,
       capturedRequest,
     };
   }
 
-  async getCurrentUser(_params: {
+  async testAuthentication(params: {
     connectUrl: string;
     apiKey: string;
   }): Promise<ConnectContractResult> {
-    throw new Error(
-      "Not implemented — no standalone Publisher API endpoint triggers GetCurrentUser",
+    return this.callHarness(
+      "/test-authentication",
+      { connectUrl: params.connectUrl, apiKey: params.apiKey },
+      "/__api__/v1/user",
     );
   }
 
-  async createDeployment(_params: {
+  async getCurrentUser(params: {
+    connectUrl: string;
+    apiKey: string;
+  }): Promise<ConnectContractResult> {
+    return this.callHarness(
+      "/get-current-user",
+      { connectUrl: params.connectUrl, apiKey: params.apiKey },
+      "/__api__/v1/user",
+    );
+  }
+
+  async createDeployment(params: {
     connectUrl: string;
     apiKey: string;
     body: unknown;
   }): Promise<ConnectContractResult> {
-    throw new Error(
-      "Not implemented — no standalone Publisher API endpoint triggers CreateDeployment",
+    return this.callHarness(
+      "/create-deployment",
+      {
+        connectUrl: params.connectUrl,
+        apiKey: params.apiKey,
+        body: params.body,
+      },
+      "/__api__/v1/content",
     );
   }
 
-  async contentDetails(_params: {
+  async contentDetails(params: {
     connectUrl: string;
     apiKey: string;
     contentId: string;
   }): Promise<ConnectContractResult> {
-    throw new Error(
-      "Not implemented — no standalone Publisher API endpoint triggers ContentDetails",
+    return this.callHarness(
+      "/content-details",
+      {
+        connectUrl: params.connectUrl,
+        apiKey: params.apiKey,
+        contentId: params.contentId,
+      },
+      `/__api__/v1/content/${params.contentId}`,
     );
   }
 
-  async updateDeployment(_params: {
+  async updateDeployment(params: {
     connectUrl: string;
     apiKey: string;
     contentId: string;
     body: unknown;
   }): Promise<ConnectContractResult> {
-    throw new Error(
-      "Not implemented — no standalone Publisher API endpoint triggers UpdateDeployment",
+    return this.callHarness(
+      "/update-deployment",
+      {
+        connectUrl: params.connectUrl,
+        apiKey: params.apiKey,
+        contentId: params.contentId,
+        body: params.body,
+      },
+      `/__api__/v1/content/${params.contentId}`,
     );
   }
 
-  async getEnvVars(_params: {
+  async getEnvVars(params: {
     connectUrl: string;
     apiKey: string;
     contentId: string;
   }): Promise<ConnectContractResult> {
-    throw new Error(
-      "Not implemented — no standalone Publisher API endpoint triggers GetEnvVars",
+    return this.callHarness(
+      "/get-env-vars",
+      {
+        connectUrl: params.connectUrl,
+        apiKey: params.apiKey,
+        contentId: params.contentId,
+      },
+      `/__api__/v1/content/${params.contentId}/environment`,
     );
   }
 
-  async setEnvVars(_params: {
+  async setEnvVars(params: {
     connectUrl: string;
     apiKey: string;
     contentId: string;
     env: Record<string, string>;
   }): Promise<ConnectContractResult> {
-    throw new Error(
-      "Not implemented — no standalone Publisher API endpoint triggers SetEnvVars",
+    return this.callHarness(
+      "/set-env-vars",
+      {
+        connectUrl: params.connectUrl,
+        apiKey: params.apiKey,
+        contentId: params.contentId,
+        env: params.env,
+      },
+      `/__api__/v1/content/${params.contentId}/environment`,
     );
   }
 
-  async uploadBundle(_params: {
+  async uploadBundle(params: {
     connectUrl: string;
     apiKey: string;
     contentId: string;
     bundleData: Uint8Array;
   }): Promise<ConnectContractResult> {
-    throw new Error(
-      "Not implemented — no standalone Publisher API endpoint triggers UploadBundle",
+    // Encode bundle data as base64 for JSON transport
+    const base64Data = Buffer.from(params.bundleData).toString("base64");
+    return this.callHarness(
+      "/upload-bundle",
+      {
+        connectUrl: params.connectUrl,
+        apiKey: params.apiKey,
+        contentId: params.contentId,
+        bundleData: base64Data,
+      },
+      `/__api__/v1/content/${params.contentId}/bundles`,
     );
   }
 
-  async deployBundle(_params: {
+  async deployBundle(params: {
     connectUrl: string;
     apiKey: string;
     contentId: string;
     bundleId: string;
   }): Promise<ConnectContractResult> {
-    throw new Error(
-      "Not implemented — no standalone Publisher API endpoint triggers DeployBundle",
+    return this.callHarness(
+      "/deploy-bundle",
+      {
+        connectUrl: params.connectUrl,
+        apiKey: params.apiKey,
+        contentId: params.contentId,
+        bundleId: params.bundleId,
+      },
+      `/__api__/v1/content/${params.contentId}/deploy`,
     );
   }
 
-  async waitForTask(_params: {
+  async waitForTask(params: {
     connectUrl: string;
     apiKey: string;
     taskId: string;
   }): Promise<ConnectContractResult> {
-    throw new Error(
-      "Not implemented — no standalone Publisher API endpoint triggers WaitForTask",
+    return this.callHarness(
+      "/wait-for-task",
+      {
+        connectUrl: params.connectUrl,
+        apiKey: params.apiKey,
+        taskId: params.taskId,
+      },
+      "/__api__/v1/tasks/",
     );
   }
 
-  async validateDeployment(_params: {
+  async validateDeployment(params: {
     connectUrl: string;
     apiKey: string;
     contentId: string;
   }): Promise<ConnectContractResult> {
-    throw new Error(
-      "Not implemented — no standalone Publisher API endpoint triggers ValidateDeployment",
+    return this.callHarness(
+      "/validate-deployment",
+      {
+        connectUrl: params.connectUrl,
+        apiKey: params.apiKey,
+        contentId: params.contentId,
+      },
+      `/content/${params.contentId}/`,
     );
   }
 
-  async getIntegrations(_params: {
+  async getIntegrations(params: {
     connectUrl: string;
     apiKey: string;
   }): Promise<ConnectContractResult> {
-    throw new Error(
-      "Not implemented — no standalone Publisher API endpoint triggers GetIntegrations",
+    return this.callHarness(
+      "/get-integrations",
+      { connectUrl: params.connectUrl, apiKey: params.apiKey },
+      "/__api__/v1/oauth/integrations",
     );
   }
 
-  async getSettings(_params: {
+  async getSettings(params: {
     connectUrl: string;
     apiKey: string;
   }): Promise<ConnectContractResult> {
-    throw new Error(
-      "Not implemented — no standalone Publisher API endpoint triggers GetSettings",
-    );
+    // GetSettings makes 7 requests; don't filter to a single path
+    await this.clearMockRequests();
+
+    const res = await fetch(`${this.apiBase}/get-settings`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        connectUrl: params.connectUrl,
+        apiKey: params.apiKey,
+      }),
+    });
+
+    const harnessResult = (await res.json()) as {
+      status: string;
+      result: unknown;
+      error?: string;
+    };
+
+    // No single capturedRequest — tests use getMockRequests() directly
+    return {
+      status: harnessResult.status as "success" | "error",
+      result: harnessResult.result,
+      capturedRequest: null,
+    };
   }
 
-  async latestBundleId(_params: {
+  async latestBundleId(params: {
     connectUrl: string;
     apiKey: string;
     contentId: string;
   }): Promise<ConnectContractResult> {
-    throw new Error(
-      "Not implemented — no standalone Publisher API endpoint triggers LatestBundleID",
+    return this.callHarness(
+      "/latest-bundle-id",
+      {
+        connectUrl: params.connectUrl,
+        apiKey: params.apiKey,
+        contentId: params.contentId,
+      },
+      `/__api__/v1/content/${params.contentId}`,
     );
   }
 
-  async downloadBundle(_params: {
+  async downloadBundle(params: {
     connectUrl: string;
     apiKey: string;
     contentId: string;
     bundleId: string;
   }): Promise<ConnectContractResult> {
-    throw new Error(
-      "Not implemented — no standalone Publisher API endpoint triggers DownloadBundle",
+    await this.clearMockRequests();
+
+    const res = await fetch(`${this.apiBase}/download-bundle`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        connectUrl: params.connectUrl,
+        apiKey: params.apiKey,
+        contentId: params.contentId,
+        bundleId: params.bundleId,
+      }),
+    });
+
+    const harnessResult = (await res.json()) as {
+      status: string;
+      result: string; // base64 encoded
+      error?: string;
+    };
+
+    const captured = await this.getCapturedRequests(
+      `/__api__/v1/content/${params.contentId}/bundles/${params.bundleId}/download`,
     );
+    const capturedRequest = captured.length > 0 ? captured[0] : null;
+
+    // Decode the base64 result back to Uint8Array
+    let result: unknown = harnessResult.result;
+    if (
+      harnessResult.status === "success" &&
+      typeof harnessResult.result === "string"
+    ) {
+      result = new Uint8Array(
+        Buffer.from(harnessResult.result, "base64"),
+      );
+    }
+
+    return {
+      status: harnessResult.status as "success" | "error",
+      result,
+      capturedRequest,
+    };
   }
 }

@@ -3,13 +3,15 @@ import {
   getClient,
   getMockConnectUrl,
   clearMockRequests,
+  clearMockOverrides,
   getMockRequests,
 } from "../helpers";
 
-describe.skip("GetSettings", () => {
+describe("GetSettings", () => {
   const apiKey = "test-api-key-12345";
 
   beforeEach(async () => {
+    await clearMockOverrides();
     await clearMockRequests();
   });
 
