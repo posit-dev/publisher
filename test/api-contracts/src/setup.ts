@@ -45,73 +45,82 @@ export async function setup({ provide }: GlobalSetupContext) {
   // 1. Copy fixture workspace to temp directory
   tempDir = mkdtempSync(join(tmpdir(), "publisher-contract-"));
   cpSync(FIXTURES_DIR, tempDir, { recursive: true });
-
-  // 2. Find the Go binary
-  const binaryPath = getExecutablePath();
-
-  // 3. Spawn the server
-  serverProcess = spawn(
-    binaryPath,
-    ["ui", tempDir, "--listen", "localhost:0", "--use-keychain=false"],
-    {
-      stdio: ["ignore", "pipe", "pipe"],
-      env: {
-        ...process.env,
-        // Use a temp home directory so credential files don't pollute user's home
-        HOME: tempDir,
-        USERPROFILE: tempDir,
-      },
-    },
-  );
-
-  // 4. Capture the URL from stdout
-  const apiBase = await new Promise<string>((resolve, reject) => {
-    const timeout = setTimeout(() => {
-      reject(new Error("Timed out waiting for server URL on stdout"));
-    }, 15_000);
-
-    let buffer = "";
-    serverProcess!.stdout!.on("data", (chunk: Buffer) => {
-      buffer += chunk.toString();
-      const lines = buffer.split("\n");
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (trimmed.startsWith("http://")) {
-          clearTimeout(timeout);
-          // Remove trailing slash
-          resolve(trimmed.replace(/\/$/, ""));
-          return;
-        }
-      }
-    });
-
-    serverProcess!.stderr!.on("data", (chunk: Buffer) => {
-      // Log stderr for debugging
-      process.stderr.write(`[publisher stderr] ${chunk.toString()}`);
-    });
-
-    serverProcess!.on("error", (err) => {
-      clearTimeout(timeout);
-      reject(new Error(`Failed to spawn publisher: ${err.message}`));
-    });
-
-    serverProcess!.on("exit", (code) => {
-      clearTimeout(timeout);
-      if (code !== null && code !== 0) {
-        reject(new Error(`Publisher exited with code ${code}`));
-      }
-    });
-  });
-
-  // 5. Wait for the server to be ready
-  await waitForReady(apiBase);
-
-  // 6. Provide the URL and temp dir to tests via env vars
-  // Vitest globalSetup `provide` is for typed injection, but we use env vars for simplicity
-  process.env.API_BASE = apiBase;
   process.env.WORKSPACE_DIR = tempDir;
 
-  console.log(`[setup] Server running at ${apiBase}`);
+  const backend = process.env.API_BACKEND ?? "go";
+
+  if (backend === "go") {
+    // 2. Find the Go binary
+    const binaryPath = getExecutablePath();
+
+    // 3. Spawn the server
+    serverProcess = spawn(
+      binaryPath,
+      ["ui", tempDir, "--listen", "localhost:0", "--use-keychain=false"],
+      {
+        stdio: ["ignore", "pipe", "pipe"],
+        env: {
+          ...process.env,
+          // Use a temp home directory so credential files don't pollute user's home
+          HOME: tempDir,
+          USERPROFILE: tempDir,
+        },
+      },
+    );
+
+    // 4. Capture the URL from stdout
+    const apiBase = await new Promise<string>((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error("Timed out waiting for server URL on stdout"));
+      }, 15_000);
+
+      let buffer = "";
+      serverProcess!.stdout!.on("data", (chunk: Buffer) => {
+        buffer += chunk.toString();
+        const lines = buffer.split("\n");
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (trimmed.startsWith("http://")) {
+            clearTimeout(timeout);
+            // Remove trailing slash
+            resolve(trimmed.replace(/\/$/, ""));
+            return;
+          }
+        }
+      });
+
+      serverProcess!.stderr!.on("data", (chunk: Buffer) => {
+        // Log stderr for debugging
+        process.stderr.write(`[publisher stderr] ${chunk.toString()}`);
+      });
+
+      serverProcess!.on("error", (err) => {
+        clearTimeout(timeout);
+        reject(new Error(`Failed to spawn publisher: ${err.message}`));
+      });
+
+      serverProcess!.on("exit", (code) => {
+        clearTimeout(timeout);
+        if (code !== null && code !== 0) {
+          reject(new Error(`Publisher exited with code ${code}`));
+        }
+      });
+    });
+
+    // 5. Wait for the server to be ready
+    await waitForReady(apiBase);
+
+    process.env.API_BASE = apiBase;
+    process.env.__CLIENT_TYPE = "go";
+
+    console.log(`[setup] Server running at ${apiBase}`);
+  } else {
+    // TypeScript backend — no subprocess needed
+    process.env.__CLIENT_TYPE = "typescript";
+
+    console.log(`[setup] Using TypeScript direct client`);
+  }
+
   console.log(`[setup] Workspace at ${tempDir}`);
 }
 

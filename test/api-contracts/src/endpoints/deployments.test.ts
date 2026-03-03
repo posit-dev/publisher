@@ -1,19 +1,15 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import {
-  apiGet,
-  apiPost,
-  apiPatch,
-  apiDelete,
-  removeDeploymentFile,
-} from "../helpers";
+import { getClient, removeDeploymentFile } from "../helpers";
+
+const client = getClient();
 
 describe("GET /api/deployments", () => {
   it("returns deployments array with pre-seeded deployment", async () => {
-    const res = await apiGet("/api/deployments");
+    const res = await client.getDeployments();
     expect(res.status).toBe(200);
-    expect(res.headers.get("content-type")).toBe("application/json");
+    expect(res.contentType).toBe("application/json");
 
-    const body = await res.json();
+    const body = res.body as any[];
     expect(body).toBeInstanceOf(Array);
     expect(body.length).toBeGreaterThan(0);
 
@@ -45,27 +41,26 @@ describe("GET /api/deployments", () => {
   });
 
   it("returns empty array for directory with no deployments", async () => {
-    const res = await apiGet("/api/deployments?dir=static");
+    const res = await client.getDeployments({ dir: "static" });
     expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body).toEqual([]);
+    expect(res.body).toEqual([]);
   });
 });
 
 describe("GET /api/deployments/{name}", () => {
   it("returns a single deployment by name", async () => {
-    const res = await apiGet("/api/deployments/test-deployment");
+    const res = await client.getDeployment("test-deployment");
     expect(res.status).toBe(200);
-    expect(res.headers.get("content-type")).toBe("application/json");
+    expect(res.contentType).toBe("application/json");
 
-    const body = await res.json();
+    const body = res.body as any;
     expect(body.deploymentName).toBe("test-deployment");
     expect(body.state).toBe("deployed");
     expect(body.serverType).toBe("connect");
   });
 
   it("returns 404 for non-existent deployment", async () => {
-    const res = await apiGet("/api/deployments/does-not-exist");
+    const res = await client.getDeployment("does-not-exist");
     expect(res.status).toBe(404);
   });
 });
@@ -76,7 +71,7 @@ describe("POST /api/deployments (create deployment record)", () => {
 
   beforeAll(async () => {
     // Create a credential so we have an account to reference
-    await apiPost("/api/credentials", {
+    await client.postCredential({
       name: credName,
       url: "https://deploy-test.example.com",
       serverType: "connect",
@@ -87,23 +82,24 @@ describe("POST /api/deployments (create deployment record)", () => {
   afterAll(async () => {
     removeDeploymentFile(deployName);
     // Clean up credential
-    const creds = await (await apiGet("/api/credentials")).json();
-    const cred = creds.find((c: any) => c.name === credName);
+    const creds = await client.getCredentials();
+    const credList = creds.body as any[];
+    const cred = credList.find((c: any) => c.name === credName);
     if (cred) {
-      await apiDelete(`/api/credentials/${cred.guid}`);
+      await client.deleteCredential(cred.guid);
     }
   });
 
   it("creates a new deployment record", async () => {
-    const res = await apiPost("/api/deployments", {
+    const res = await client.postDeployment({
       account: credName,
       config: "test-config",
       saveName: deployName,
     });
     expect(res.status).toBe(200);
-    expect(res.headers.get("content-type")).toBe("application/json");
+    expect(res.contentType).toBe("application/json");
 
-    const body = await res.json();
+    const body = res.body as any;
     expect(body.deploymentName).toBe(deployName);
     expect(body.state).toBe("new");
     expect(body.configurationName).toBe("test-config");
@@ -111,7 +107,7 @@ describe("POST /api/deployments (create deployment record)", () => {
   });
 
   it("returns 409 when deployment already exists", async () => {
-    const res = await apiPost("/api/deployments", {
+    const res = await client.postDeployment({
       account: credName,
       config: "test-config",
       saveName: deployName,
@@ -122,18 +118,18 @@ describe("POST /api/deployments (create deployment record)", () => {
 
 describe("PATCH /api/deployments/{name}", () => {
   it("updates configuration name on existing deployment", async () => {
-    const res = await apiPatch("/api/deployments/test-deployment", {
+    const res = await client.patchDeployment("test-deployment", {
       configurationName: "test-config",
     });
     expect(res.status).toBe(200);
-    expect(res.headers.get("content-type")).toBe("application/json");
+    expect(res.contentType).toBe("application/json");
 
-    const body = await res.json();
+    const body = res.body as any;
     expect(body.configurationName).toBe("test-config");
   });
 
   it("returns 404 for non-existent deployment", async () => {
-    const res = await apiPatch("/api/deployments/does-not-exist", {
+    const res = await client.patchDeployment("does-not-exist", {
       configurationName: "test-config",
     });
     expect(res.status).toBe(404);
@@ -145,38 +141,38 @@ describe("DELETE /api/deployments/{name}", () => {
 
   it("deletes an existing deployment", async () => {
     // First, create a credential and deployment to delete
-    const credRes = await apiPost("/api/credentials", {
+    const credRes = await client.postCredential({
       name: "delete-deploy-server",
       url: "https://delete-deploy.example.com",
       serverType: "connect",
       apiKey: "delete-deploy-key",
     });
-    const cred = await credRes.json();
+    const cred = credRes.body as any;
 
-    await apiPost("/api/deployments", {
+    await client.postDeployment({
       account: "delete-deploy-server",
       config: "test-config",
       saveName: deleteName,
     });
 
     // Verify it exists
-    const getRes = await apiGet(`/api/deployments/${deleteName}`);
+    const getRes = await client.getDeployment(deleteName);
     expect(getRes.status).toBe(200);
 
     // Delete it
-    const deleteRes = await apiDelete(`/api/deployments/${deleteName}`);
+    const deleteRes = await client.deleteDeployment(deleteName);
     expect(deleteRes.status).toBe(204);
 
     // Verify it's gone
-    const afterRes = await apiGet(`/api/deployments/${deleteName}`);
+    const afterRes = await client.getDeployment(deleteName);
     expect(afterRes.status).toBe(404);
 
     // Clean up credential
-    await apiDelete(`/api/credentials/${cred.guid}`);
+    await client.deleteCredential(cred.guid);
   });
 
   it("returns 404 when deleting non-existent deployment", async () => {
-    const res = await apiDelete("/api/deployments/does-not-exist");
+    const res = await client.deleteDeployment("does-not-exist");
     expect(res.status).toBe(404);
   });
 });

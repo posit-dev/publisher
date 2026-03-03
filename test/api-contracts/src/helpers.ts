@@ -1,14 +1,35 @@
 import { mkdirSync, writeFileSync, rmSync, existsSync } from "node:fs";
 import { join } from "node:path";
+import type { BackendClient } from "./client";
+import { GoHttpClient } from "./clients/go-http-client";
+import { TypeScriptDirectClient } from "./clients/typescript-direct-client";
 
-export function getApiBase(): string {
-  const base = process.env.API_BASE;
-  if (!base) {
-    throw new Error(
-      "API_BASE not set. Is the global setup running correctly?",
-    );
+// --- Client accessor ---
+
+let _client: BackendClient | null = null;
+
+export function getClient(): BackendClient {
+  if (_client) return _client;
+
+  const clientType = process.env.__CLIENT_TYPE ?? "go";
+  if (clientType === "go") {
+    const base = process.env.API_BASE;
+    if (!base) {
+      throw new Error(
+        "API_BASE not set. Is the global setup running correctly?",
+      );
+    }
+    _client = new GoHttpClient(base);
+  } else {
+    const dir = process.env.WORKSPACE_DIR;
+    if (!dir) {
+      throw new Error(
+        "WORKSPACE_DIR not set. Is the global setup running correctly?",
+      );
+    }
+    _client = new TypeScriptDirectClient(dir);
   }
-  return base;
+  return _client;
 }
 
 export function getWorkspaceDir(): string {
@@ -19,48 +40,6 @@ export function getWorkspaceDir(): string {
     );
   }
   return dir;
-}
-
-// --- Fetch wrappers ---
-
-export async function apiGet(path: string): Promise<Response> {
-  return fetch(`${getApiBase()}${path}`);
-}
-
-export async function apiPost(
-  path: string,
-  body?: unknown,
-): Promise<Response> {
-  return fetch(`${getApiBase()}${path}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
-}
-
-export async function apiPut(path: string, body?: unknown): Promise<Response> {
-  return fetch(`${getApiBase()}${path}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
-}
-
-export async function apiPatch(
-  path: string,
-  body?: unknown,
-): Promise<Response> {
-  return fetch(`${getApiBase()}${path}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
-}
-
-export async function apiDelete(path: string): Promise<Response> {
-  return fetch(`${getApiBase()}${path}`, {
-    method: "DELETE",
-  });
 }
 
 // --- Workspace manipulation ---

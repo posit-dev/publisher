@@ -1,14 +1,15 @@
 import { describe, it, expect } from "vitest";
-import { apiGet, apiPost, apiDelete } from "../helpers";
+import { getClient } from "../helpers";
+
+const client = getClient();
 
 describe("GET /api/credentials", () => {
   it("returns credentials array (initially empty)", async () => {
-    const res = await apiGet("/api/credentials");
+    const res = await client.getCredentials();
     expect(res.status).toBe(200);
-    expect(res.headers.get("content-type")).toBe("application/json");
+    expect(res.contentType).toBe("application/json");
 
-    const body = await res.json();
-    expect(body).toBeInstanceOf(Array);
+    expect(res.body).toBeInstanceOf(Array);
   });
 });
 
@@ -23,11 +24,11 @@ describe("POST /api/credentials", () => {
       apiKey: "test-api-key-12345",
     };
 
-    const res = await apiPost("/api/credentials", newCred);
+    const res = await client.postCredential(newCred);
     expect(res.status).toBe(201);
-    expect(res.headers.get("content-type")).toContain("application/json");
+    expect(res.contentType).toContain("application/json");
 
-    const body = await res.json();
+    const body = res.body as any;
     expect(body.guid).toBeDefined();
     expect(body.name).toBe("test-connect-server");
     expect(body.url).toBe("https://connect.example.com");
@@ -45,10 +46,10 @@ describe("POST /api/credentials", () => {
   });
 
   it("credential appears in list after creation", async () => {
-    const res = await apiGet("/api/credentials");
+    const res = await client.getCredentials();
     expect(res.status).toBe(200);
 
-    const body = await res.json();
+    const body = res.body as any[];
     const found = body.find((c: any) => c.guid === createdGuid);
     expect(found).toBeDefined();
     expect(found.name).toBe("test-connect-server");
@@ -62,7 +63,7 @@ describe("POST /api/credentials", () => {
       apiKey: "another-api-key",
     };
 
-    const res = await apiPost("/api/credentials", dupCred);
+    const res = await client.postCredential(dupCred);
     expect(res.status).toBe(409);
   });
 });
@@ -76,17 +77,17 @@ describe("DELETE /api/credentials/{guid}", () => {
       serverType: "connect",
       apiKey: "delete-me-key",
     };
-    const createRes = await apiPost("/api/credentials", cred);
+    const createRes = await client.postCredential(cred);
     expect(createRes.status).toBe(201);
-    const { guid } = await createRes.json();
+    const { guid } = createRes.body as any;
 
     // Delete it
-    const deleteRes = await apiDelete(`/api/credentials/${guid}`);
+    const deleteRes = await client.deleteCredential(guid);
     expect(deleteRes.status).toBe(204);
 
     // Verify it's gone from the list
-    const listRes = await apiGet("/api/credentials");
-    const list = await listRes.json();
+    const listRes = await client.getCredentials();
+    const list = listRes.body as any[];
     const found = list.find((c: any) => c.guid === guid);
     expect(found).toBeUndefined();
   });
@@ -95,10 +96,10 @@ describe("DELETE /api/credentials/{guid}", () => {
 describe("DELETE /api/credentials (reset)", () => {
   it("resets all credentials", async () => {
     // Ensure we have at least one credential
-    const listBefore = await apiGet("/api/credentials");
-    const before = await listBefore.json();
+    const listBefore = await client.getCredentials();
+    const before = listBefore.body as any[];
     if (before.length === 0) {
-      await apiPost("/api/credentials", {
+      await client.postCredential({
         name: "reset-test-server",
         url: "https://reset-test.example.com",
         serverType: "connect",
@@ -107,12 +108,12 @@ describe("DELETE /api/credentials (reset)", () => {
     }
 
     // Reset
-    const res = await apiDelete("/api/credentials");
+    const res = await client.resetCredentials();
     expect(res.status).toBe(200);
 
     // Verify empty
-    const listAfter = await apiGet("/api/credentials");
-    const after = await listAfter.json();
+    const listAfter = await client.getCredentials();
+    const after = listAfter.body as any[];
     expect(after).toEqual([]);
   });
 });

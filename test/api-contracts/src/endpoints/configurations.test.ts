@@ -1,19 +1,15 @@
 import { describe, it, expect, afterAll } from "vitest";
-import {
-  apiGet,
-  apiPut,
-  apiDelete,
-  seedConfigFile,
-  removeConfigFile,
-} from "../helpers";
+import { getClient, seedConfigFile, removeConfigFile } from "../helpers";
+
+const client = getClient();
 
 describe("GET /api/configurations", () => {
   it("returns configurations array with pre-seeded config", async () => {
-    const res = await apiGet("/api/configurations");
+    const res = await client.getConfigurations();
     expect(res.status).toBe(200);
-    expect(res.headers.get("content-type")).toBe("application/json");
+    expect(res.contentType).toBe("application/json");
 
-    const body = await res.json();
+    const body = res.body as any[];
     expect(body).toBeInstanceOf(Array);
     expect(body.length).toBeGreaterThan(0);
 
@@ -37,20 +33,19 @@ describe("GET /api/configurations", () => {
   });
 
   it("returns empty array for directory with no configs", async () => {
-    const res = await apiGet("/api/configurations?dir=static");
+    const res = await client.getConfigurations({ dir: "static" });
     expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body).toEqual([]);
+    expect(res.body).toEqual([]);
   });
 });
 
 describe("GET /api/configurations/{name}", () => {
   it("returns a single configuration by name", async () => {
-    const res = await apiGet("/api/configurations/test-config");
+    const res = await client.getConfiguration("test-config");
     expect(res.status).toBe(200);
-    expect(res.headers.get("content-type")).toBe("application/json");
+    expect(res.contentType).toBe("application/json");
 
-    const body = await res.json();
+    const body = res.body as any;
     expect(body.configurationName).toBe("test-config");
     expect(body.configuration).toBeDefined();
     expect(body.configuration.type).toBe("python-fastapi");
@@ -69,7 +64,7 @@ describe("GET /api/configurations/{name}", () => {
   });
 
   it("returns 404 for non-existent configuration", async () => {
-    const res = await apiGet("/api/configurations/does-not-exist");
+    const res = await client.getConfiguration("does-not-exist");
     expect(res.status).toBe(404);
   });
 });
@@ -94,11 +89,11 @@ describe("PUT /api/configurations/{name}", () => {
       },
     };
 
-    const res = await apiPut(`/api/configurations/${testName}`, newConfig);
+    const res = await client.putConfiguration(testName, newConfig);
     expect(res.status).toBe(200);
-    expect(res.headers.get("content-type")).toBe("application/json");
+    expect(res.contentType).toBe("application/json");
 
-    const body = await res.json();
+    const body = res.body as any;
     expect(body.configurationName).toBe(testName);
     expect(body.configuration).toBeDefined();
     expect(body.configuration.type).toBe("python-fastapi");
@@ -106,10 +101,10 @@ describe("PUT /api/configurations/{name}", () => {
   });
 
   it("can read back the created configuration", async () => {
-    const res = await apiGet(`/api/configurations/${testName}`);
+    const res = await client.getConfiguration(testName);
     expect(res.status).toBe(200);
 
-    const body = await res.json();
+    const body = res.body as any;
     expect(body.configurationName).toBe(testName);
     expect(body.configuration.type).toBe("python-fastapi");
   });
@@ -134,20 +129,20 @@ package_manager = "pip"
     );
 
     // Verify it exists
-    const getRes = await apiGet(`/api/configurations/${testName}`);
+    const getRes = await client.getConfiguration(testName);
     expect(getRes.status).toBe(200);
 
     // Delete it
-    const deleteRes = await apiDelete(`/api/configurations/${testName}`);
+    const deleteRes = await client.deleteConfiguration(testName);
     expect(deleteRes.status).toBe(204);
 
     // Verify it's gone
-    const afterRes = await apiGet(`/api/configurations/${testName}`);
+    const afterRes = await client.getConfiguration(testName);
     expect(afterRes.status).toBe(404);
   });
 
   it("returns 404 when deleting non-existent configuration", async () => {
-    const res = await apiDelete("/api/configurations/does-not-exist");
+    const res = await client.deleteConfiguration("does-not-exist");
     expect(res.status).toBe(404);
   });
 });
