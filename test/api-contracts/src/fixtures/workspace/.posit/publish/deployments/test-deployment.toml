@@ -1,0 +1,33 @@
+"$schema" = "https://cdn.posit.co/publisher/schemas/posit-publishing-record-schema-v3.json"
+server_type = "connect"
+server_url = "https://connect.example.com"
+id = "de2e7bdb-b085-401e-a65c-443e40009749"
+client_version = "1.0.0"
+type = "python-fastapi"
+created_at = "2024-01-19T09:33:33-05:00"
+configuration_name = "test-config"
+deployed_at = "2024-01-19T09:33:33-05:00"
+bundle_id = "100"
+dashboard_url = "https://connect.example.com/connect/#/apps/de2e7bdb-b085-401e-a65c-443e40009749"
+direct_url = "https://connect.example.com/content/de2e7bdb-b085-401e-a65c-443e40009749/"
+logs_url = "https://connect.example.com/connect/#/apps/de2e7bdb-b085-401e-a65c-443e40009749/logs"
+
+files = [
+    "fastapi-simple/app.py",
+    "fastapi-simple/requirements.txt",
+]
+
+[configuration]
+"$schema" = "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json"
+type = "python-fastapi"
+entrypoint = "fastapi-simple/app.py"
+validate = true
+files = [
+    "fastapi-simple/app.py",
+    "fastapi-simple/requirements.txt",
+]
+
+[configuration.python]
+version = "3.11.3"
+package_file = "fastapi-simple/requirements.txt"
+package_manager = "pip"

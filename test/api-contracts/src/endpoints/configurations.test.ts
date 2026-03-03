@@ -1,0 +1,153 @@
+import { describe, it, expect, afterAll } from "vitest";
+import {
+  apiGet,
+  apiPut,
+  apiDelete,
+  seedConfigFile,
+  removeConfigFile,
+} from "../helpers";
+
+describe("GET /api/configurations", () => {
+  it("returns configurations array with pre-seeded config", async () => {
+    const res = await apiGet("/api/configurations");
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toBe("application/json");
+
+    const body = await res.json();
+    expect(body).toBeInstanceOf(Array);
+    expect(body.length).toBeGreaterThan(0);
+
+    // Find our pre-seeded config
+    const testConfig = body.find(
+      (c: any) => c.configurationName === "test-config",
+    );
+    expect(testConfig).toBeDefined();
+    expect(testConfig).toMatchSnapshot({
+      configurationName: expect.any(String),
+      configurationPath: expect.any(String),
+      configurationRelPath: expect.any(String),
+      projectDir: expect.any(String),
+      configuration: expect.objectContaining({
+        "$schema": expect.any(String),
+        type: "python-fastapi",
+        entrypoint: "fastapi-simple/app.py",
+        files: expect.any(Array),
+      }),
+    });
+  });
+
+  it("returns empty array for directory with no configs", async () => {
+    const res = await apiGet("/api/configurations?dir=static");
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body).toEqual([]);
+  });
+});
+
+describe("GET /api/configurations/{name}", () => {
+  it("returns a single configuration by name", async () => {
+    const res = await apiGet("/api/configurations/test-config");
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toBe("application/json");
+
+    const body = await res.json();
+    expect(body.configurationName).toBe("test-config");
+    expect(body.configuration).toBeDefined();
+    expect(body.configuration.type).toBe("python-fastapi");
+    expect(body.configuration.entrypoint).toBe("fastapi-simple/app.py");
+    expect(body).toMatchSnapshot({
+      configurationName: expect.any(String),
+      configurationPath: expect.any(String),
+      configurationRelPath: expect.any(String),
+      projectDir: expect.any(String),
+      configuration: expect.objectContaining({
+        "$schema": expect.any(String),
+        type: expect.any(String),
+        entrypoint: expect.any(String),
+      }),
+    });
+  });
+
+  it("returns 404 for non-existent configuration", async () => {
+    const res = await apiGet("/api/configurations/does-not-exist");
+    expect(res.status).toBe(404);
+  });
+});
+
+describe("PUT /api/configurations/{name}", () => {
+  const testName = "put-test-config";
+
+  afterAll(async () => {
+    removeConfigFile(testName);
+  });
+
+  it("creates a new configuration", async () => {
+    const newConfig = {
+      productType: "connect",
+      type: "python-fastapi",
+      entrypoint: "fastapi-simple/app.py",
+      files: ["fastapi-simple/app.py", "fastapi-simple/requirements.txt"],
+      python: {
+        version: "3.11.3",
+        packageFile: "fastapi-simple/requirements.txt",
+        packageManager: "pip",
+      },
+    };
+
+    const res = await apiPut(`/api/configurations/${testName}`, newConfig);
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toBe("application/json");
+
+    const body = await res.json();
+    expect(body.configurationName).toBe(testName);
+    expect(body.configuration).toBeDefined();
+    expect(body.configuration.type).toBe("python-fastapi");
+    expect(body.configuration.entrypoint).toBe("fastapi-simple/app.py");
+  });
+
+  it("can read back the created configuration", async () => {
+    const res = await apiGet(`/api/configurations/${testName}`);
+    expect(res.status).toBe(200);
+
+    const body = await res.json();
+    expect(body.configurationName).toBe(testName);
+    expect(body.configuration.type).toBe("python-fastapi");
+  });
+});
+
+describe("DELETE /api/configurations/{name}", () => {
+  const testName = "delete-test-config";
+
+  it("deletes an existing configuration", async () => {
+    // First create a config to delete
+    seedConfigFile(
+      testName,
+      `"$schema" = "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json"
+type = "python-fastapi"
+entrypoint = "fastapi-simple/app.py"
+files = ["fastapi-simple/app.py"]
+
+[python]
+version = "3.11.3"
+package_manager = "pip"
+`,
+    );
+
+    // Verify it exists
+    const getRes = await apiGet(`/api/configurations/${testName}`);
+    expect(getRes.status).toBe(200);
+
+    // Delete it
+    const deleteRes = await apiDelete(`/api/configurations/${testName}`);
+    expect(deleteRes.status).toBe(204);
+
+    // Verify it's gone
+    const afterRes = await apiGet(`/api/configurations/${testName}`);
+    expect(afterRes.status).toBe(404);
+  });
+
+  it("returns 404 when deleting non-existent configuration", async () => {
+    const res = await apiDelete("/api/configurations/does-not-exist");
+    expect(res.status).toBe(404);
+  });
+});

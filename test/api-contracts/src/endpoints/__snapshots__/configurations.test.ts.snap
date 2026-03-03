@@ -1,0 +1,30 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`GET /api/configurations > returns configurations array with pre-seeded config 1`] = `
+{
+  "configuration": ObjectContaining {
+    "$schema": Any<String>,
+    "entrypoint": "fastapi-simple/app.py",
+    "files": Any<Array>,
+    "type": "python-fastapi",
+  },
+  "configurationName": Any<String>,
+  "configurationPath": Any<String>,
+  "configurationRelPath": Any<String>,
+  "projectDir": Any<String>,
+}
+`;
+
+exports[`GET /api/configurations/{name} > returns a single configuration by name 1`] = `
+{
+  "configuration": ObjectContaining {
+    "$schema": Any<String>,
+    "entrypoint": Any<String>,
+    "type": Any<String>,
+  },
+  "configurationName": Any<String>,
+  "configurationPath": Any<String>,
+  "configurationRelPath": Any<String>,
+  "projectDir": Any<String>,
+}
+`;
