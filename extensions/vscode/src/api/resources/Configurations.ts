@@ -63,17 +63,6 @@ export class Configurations {
     );
   }
 
-  // Returns:
-  // 204 - success (no response)
-  // 404 - not found
-  // 500 - internal server error
-  delete(configName: string, dir: string) {
-    const encodedName = encodeURIComponent(configName);
-    return this.client.delete(`configurations/${encodedName}`, {
-      params: { dir },
-    });
-  }
-
   // Inspect the project, returning all possible (detected) configurations
   // Returns:
   // 200 - success

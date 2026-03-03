@@ -9,7 +9,6 @@ import { Files } from "./resources/Files";
 import { Interpreters } from "./resources/Interpreters";
 import { Packages } from "./resources/Packages";
 import { Secrets } from "./resources/Secrets";
-import { EntryPoints } from "./resources/Entrypoints";
 import { SnowflakeConnections } from "./resources/SnowflakeConnections";
 import * as Entities from "entities";
 import { ConnectCloud } from "./resources/ConnectCloud";
@@ -29,7 +28,6 @@ class PublishingClientApi {
   secrets: Secrets;
   integrationRequests: IntegrationRequests;
   apiServiceIsUp: Promise<boolean>;
-  entrypoints: EntryPoints;
   snowflakeConnections: SnowflakeConnections;
   connectCloud: ConnectCloud;
   connectServer: ConnectServer;
@@ -63,7 +61,6 @@ class PublishingClientApi {
     this.packages = new Packages(this.client);
     this.secrets = new Secrets(this.client);
     this.integrationRequests = new IntegrationRequests(this.client);
-    this.entrypoints = new EntryPoints(this.client);
     this.snowflakeConnections = new SnowflakeConnections(this.client);
     this.connectCloud = new ConnectCloud(this.client);
     this.connectServer = new ConnectServer(this.client);

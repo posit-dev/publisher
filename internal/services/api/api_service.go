@@ -66,10 +66,6 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	r.Handle(ToPath("files"), GetFileHandlerFunc(base, filesService, pathsService, log)).
 		Methods(http.MethodGet)
 
-	// POST /api/entrypoints
-	r.Handle(ToPath("entrypoints"), GetEntrypointsHandlerFunc(base, log)).
-		Methods(http.MethodPost)
-
 	// POST /api/inspect
 	r.Handle(ToPath("inspect"), PostInspectHandlerFunc(base, log)).
 		Methods(http.MethodPost)
@@ -78,10 +74,6 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	r.Handle(ToPath("credentials"), GetCredentialsHandlerFunc(log, func(log logging.Logger) (credentials.CredentialsService, error) {
 		return credentials.NewCredentialsService(log)
 	})).Methods(http.MethodGet)
-
-	// GET /api/credentials/$GUID
-	r.Handle(ToPath("credentials", "{guid}"), GetCredentialHandlerFunc(log)).
-		Methods(http.MethodGet)
 
 	// POST /api/credentials
 	r.Handle(ToPath("credentials"), PostCredentialFuncHandler(log)).
@@ -116,10 +108,6 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	r.Handle(ToPath("configurations", "{name}"), PutConfigurationHandlerFunc(base, log)).
 		Methods(http.MethodPut)
 
-	// DELETE /api/configurations/$NAME
-	r.Handle(ToPath("configurations", "{name}"), DeleteConfigurationHandlerFunc(base, log)).
-		Methods(http.MethodDelete)
-
 	// GET /api/configurations/$NAME/files
 	r.Handle(ToPath("configurations", "{name}", "files"), GetConfigFilesHandlerFunc(base, filesService, log)).
 		Methods(http.MethodGet)
@@ -127,10 +115,6 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	// POST /api/configurations/$NAME/files
 	r.Handle(ToPath("configurations", "{name}", "files"), PostConfigFilesHandlerFunc(base, log)).
 		Methods(http.MethodPost)
-
-	// GET /api/configurations/$NAME/secrets
-	r.Handle(ToPath("configurations", "{name}", "secrets"), GetConfigSecretsHandlerFunc(base, log)).
-		Methods(http.MethodGet)
 
 	// POST /api/configurations/$NAME/secrets
 	r.Handle(ToPath("configurations", "{name}", "secrets"), PostConfigSecretsHandlerFunc(base, log)).
@@ -179,10 +163,6 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	// POST /api/deployments/$NAME/cancel/$LOCALID cancels a deployment
 	r.Handle(ToPath("deployments", "{name}", "cancel", "{localid}"), PostDeploymentCancelHandlerFunc(base, log)).
 		Methods(http.MethodPost)
-
-	// DELETE /api/deployments/$NAME
-	r.Handle(ToPath("deployments", "{name}"), DeleteDeploymentHandlerFunc(base, log)).
-		Methods(http.MethodDelete)
 
 	// GET /api/deployments/$NAME/environment
 	r.Handle(ToPath("deployments", "{name}", "environment"), GetDeploymentEnvironmentHandlerFunc(base, log, lister)).
