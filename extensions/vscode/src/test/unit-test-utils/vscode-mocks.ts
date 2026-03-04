@@ -52,11 +52,41 @@ export class mockWorkspaceState {
  * Very likely you'll be better of with the factory function `mkExtensionContextStateMock`
  * to get a vscode mock instance of ExtensionContext.
  */
+/**
+ * Mock class to be used as vscode SecretStorage.
+ * Uses an in-memory Map for storage.
+ */
+export class mockSecretStorage {
+  private storage = new Map<string, string>();
+
+  readonly get = vi.fn((key: string): Promise<string | undefined> => {
+    return Promise.resolve(this.storage.get(key));
+  });
+
+  readonly store = vi.fn((key: string, value: string): Promise<void> => {
+    this.storage.set(key, value);
+    return Promise.resolve();
+  });
+
+  readonly delete = vi.fn((key: string): Promise<void> => {
+    this.storage.delete(key);
+    return Promise.resolve();
+  });
+
+  readonly keys = vi.fn((): Promise<string[]> => {
+    return Promise.resolve(Array.from(this.storage.keys()));
+  });
+
+  readonly onDidChange = vi.fn();
+}
+
 export class mockExtensionContext {
   readonly workspaceState: mockWorkspaceState;
+  readonly secrets: mockSecretStorage;
 
-  constructor(workspaceState: mockWorkspaceState) {
+  constructor(workspaceState: mockWorkspaceState, secrets: mockSecretStorage) {
     this.workspaceState = workspaceState;
+    this.secrets = secrets;
   }
 }
 
@@ -75,9 +105,11 @@ export const mkExtensionContextStateMock = (
   initState: Record<PropertyKey, string>,
 ) => {
   const mockWorkspace = new mockWorkspaceState(initState);
-  const mockContext = new mockExtensionContext(mockWorkspace);
+  const mockSecrets = new mockSecretStorage();
+  const mockContext = new mockExtensionContext(mockWorkspace, mockSecrets);
   return {
     mockWorkspace,
+    mockSecrets,
     mockContext,
   };
 };

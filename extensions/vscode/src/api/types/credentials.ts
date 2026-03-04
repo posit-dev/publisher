@@ -8,10 +8,14 @@ export type Credential = {
   name: string;
   url: string;
   apiKey: string;
+  snowflakeConnection: string;
   accountId: string;
   accountName: string;
   refreshToken: string;
   accessToken: string;
+  cloudEnvironment: string;
+  token: string;
+  privateKey: string;
   serverType: ServerType;
 };
 
