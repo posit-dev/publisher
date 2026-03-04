@@ -104,17 +104,6 @@ export class ContentRecords {
 
   // Returns:
   // 204 - no content
-  // 404 - not found
-  // 500 - internal server error
-  delete(saveName: string, dir: string) {
-    const encodedSaveName = encodeURIComponent(saveName);
-    return this.client.delete(`deployments/${encodedSaveName}`, {
-      params: { dir },
-    });
-  }
-
-  // Returns:
-  // 204 - no content
   // 404 - contentRecord or config file not found
   // 500 - internal server error
   patch(

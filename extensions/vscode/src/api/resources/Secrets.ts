@@ -12,18 +12,6 @@ export class Secrets {
     this.client = client;
   }
 
-  // Returns:
-  // 200 - success
-  // 400 - bad request
-  // 404 - not found
-  // 500 - internal server error
-  get(configName: string, dir: string) {
-    const encodedName = encodeURIComponent(configName);
-    return this.client.get<string[]>(`/configurations/${encodedName}/secrets`, {
-      params: { dir },
-    });
-  }
-
   add(configName: string, secretName: string, dir: string) {
     return this.update(configName, SecretAction.ADD, secretName, dir);
   }
