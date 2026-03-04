@@ -157,6 +157,7 @@ exports[`POST /api/inspect (per-directory) > inspects rmd-static/ — detects as
       "entrypoint": "report.Rmd",
       "files": [
         "/report.Rmd",
+        "/renv.lock",
       ],
       "quarto": {
         "engines": [
@@ -182,6 +183,7 @@ exports[`POST /api/inspect (per-directory) > inspects rmd-static/ — detects as
       "entrypoint": "report.Rmd",
       "files": [
         "/report.Rmd",
+        "/renv.lock",
       ],
       "r": {},
       "title": "Report",
@@ -383,6 +385,7 @@ exports[`POST /api/inspect (recursive) > inspects root workspace recursively —
       "entrypoint": "report.Rmd",
       "files": [
         "/report.Rmd",
+        "/renv.lock",
       ],
       "quarto": {
         "engines": [
@@ -408,6 +411,7 @@ exports[`POST /api/inspect (recursive) > inspects root workspace recursively —
       "entrypoint": "report.Rmd",
       "files": [
         "/report.Rmd",
+        "/renv.lock",
       ],
       "r": {},
       "title": "Report",

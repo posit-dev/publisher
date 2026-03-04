@@ -1,0 +1,14 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Accounts > GET /api/accounts/{name} returns a single account after credential creation 1`] = `
+{
+  "accountName": Any<String>,
+  "authType": Any<String>,
+  "caCert": Any<String>,
+  "insecure": Any<Boolean>,
+  "name": Any<String>,
+  "source": Any<String>,
+  "type": Any<String>,
+  "url": Any<String>,
+}
+`;

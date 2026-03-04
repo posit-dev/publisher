@@ -91,6 +91,26 @@ export function removeDeploymentFile(name: string): void {
 }
 
 /**
+ * Write an arbitrary file to the workspace at the given relative path.
+ */
+export function seedWorkspaceFile(relativePath: string, content: string): void {
+  const filePath = join(getWorkspaceDir(), relativePath);
+  const dir = join(filePath, "..");
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(filePath, content, "utf-8");
+}
+
+/**
+ * Remove an arbitrary file from the workspace.
+ */
+export function removeWorkspaceFile(relativePath: string): void {
+  const filePath = join(getWorkspaceDir(), relativePath);
+  if (existsSync(filePath)) {
+    rmSync(filePath);
+  }
+}
+
+/**
  * Remove the entire .posit/publish directory and re-create it empty.
  */
 export function resetDotPosit(): void {

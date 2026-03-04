@@ -10,6 +10,8 @@ function mapStatus(httpStatus: number): ResultStatus {
       return "no_content";
     case 404:
       return "not_found";
+    case 400:
+      return "bad_request";
     case 409:
       return "conflict";
     default:
@@ -21,8 +23,21 @@ async function toContractResult(res: Response): Promise<ContractResult> {
   const contentType = res.headers.get("content-type") ?? "";
   let body: unknown = null;
 
-  if (res.status !== 204 && contentType.includes("application/json")) {
-    body = await res.json();
+  if (res.status !== 204) {
+    if (contentType.includes("application/json")) {
+      body = await res.json();
+    } else {
+      // Some Go handlers call WriteHeader before setting Content-Type,
+      // so the header may be missing. Try parsing as JSON anyway.
+      const text = await res.text();
+      if (text) {
+        try {
+          body = JSON.parse(text);
+        } catch {
+          // Not JSON — leave body as null
+        }
+      }
+    }
   }
 
   return { status: mapStatus(res.status), body };
@@ -183,6 +198,172 @@ export class GoHttpClient implements BackendClient {
     const res = await fetch(
       `${this.apiBase}/api/entrypoints${query}`,
       { method: "POST" },
+    );
+    return toContractResult(res);
+  }
+
+  // Files
+
+  async getFiles(
+    params?: { pathname?: string },
+  ): Promise<ContractResult> {
+    const query = params?.pathname
+      ? `?pathname=${encodeURIComponent(params.pathname)}`
+      : "";
+    const res = await fetch(
+      `${this.apiBase}/api/files${query}`,
+    );
+    return toContractResult(res);
+  }
+
+  // Configuration sub-resources
+
+  async getConfigFiles(
+    configName: string,
+    params?: { dir?: string },
+  ): Promise<ContractResult> {
+    const query = params?.dir ? `?dir=${params.dir}` : "";
+    const res = await fetch(
+      `${this.apiBase}/api/configurations/${configName}/files${query}`,
+    );
+    return toContractResult(res);
+  }
+
+  async postConfigFiles(
+    configName: string,
+    body: unknown,
+  ): Promise<ContractResult> {
+    const res = await fetch(
+      `${this.apiBase}/api/configurations/${configName}/files`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      },
+    );
+    return toContractResult(res);
+  }
+
+  async getConfigSecrets(
+    configName: string,
+    params?: { dir?: string },
+  ): Promise<ContractResult> {
+    const query = params?.dir ? `?dir=${params.dir}` : "";
+    const res = await fetch(
+      `${this.apiBase}/api/configurations/${configName}/secrets${query}`,
+    );
+    return toContractResult(res);
+  }
+
+  async postConfigSecrets(
+    configName: string,
+    body: unknown,
+  ): Promise<ContractResult> {
+    const res = await fetch(
+      `${this.apiBase}/api/configurations/${configName}/secrets`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      },
+    );
+    return toContractResult(res);
+  }
+
+  async getConfigPythonPackages(
+    configName: string,
+    params?: { dir?: string },
+  ): Promise<ContractResult> {
+    const query = params?.dir ? `?dir=${params.dir}` : "";
+    const res = await fetch(
+      `${this.apiBase}/api/configurations/${configName}/packages/python${query}`,
+    );
+    return toContractResult(res);
+  }
+
+  async getConfigRPackages(
+    configName: string,
+    params?: { dir?: string },
+  ): Promise<ContractResult> {
+    const query = params?.dir ? `?dir=${params.dir}` : "";
+    const res = await fetch(
+      `${this.apiBase}/api/configurations/${configName}/packages/r${query}`,
+    );
+    return toContractResult(res);
+  }
+
+  async getIntegrationRequests(
+    configName: string,
+    params?: { dir?: string },
+  ): Promise<ContractResult> {
+    const query = params?.dir ? `?dir=${params.dir}` : "";
+    const res = await fetch(
+      `${this.apiBase}/api/configurations/${configName}/integration-requests${query}`,
+    );
+    return toContractResult(res);
+  }
+
+  async postIntegrationRequest(
+    configName: string,
+    body: unknown,
+  ): Promise<ContractResult> {
+    const res = await fetch(
+      `${this.apiBase}/api/configurations/${configName}/integration-requests`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      },
+    );
+    return toContractResult(res);
+  }
+
+  async deleteIntegrationRequest(
+    configName: string,
+    body: unknown,
+  ): Promise<ContractResult> {
+    const res = await fetch(
+      `${this.apiBase}/api/configurations/${configName}/integration-requests`,
+      {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      },
+    );
+    return toContractResult(res);
+  }
+
+  // Credentials (by GUID)
+
+  async getCredential(guid: string): Promise<ContractResult> {
+    const res = await fetch(
+      `${this.apiBase}/api/credentials/${guid}`,
+    );
+    return toContractResult(res);
+  }
+
+  // Interpreters
+
+  async getInterpreters(
+    params?: { dir?: string },
+  ): Promise<ContractResult> {
+    const query = params?.dir ? `?dir=${params.dir}` : "";
+    const res = await fetch(
+      `${this.apiBase}/api/interpreters${query}`,
+    );
+    return toContractResult(res);
+  }
+
+  // Accounts
+
+  async getAccounts(): Promise<ContractResult> {
+    const res = await fetch(`${this.apiBase}/api/accounts`);
+    return toContractResult(res);
+  }
+
+  async getAccount(name: string): Promise<ContractResult> {
+    const res = await fetch(
+      `${this.apiBase}/api/accounts/${name}`,
     );
     return toContractResult(res);
   }

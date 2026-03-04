@@ -93,4 +93,101 @@ export class TypeScriptDirectClient implements BackendClient {
   ): Promise<ContractResult> {
     throw new Error("Not implemented yet");
   }
+
+  // Files
+
+  async getFiles(
+    _params?: { pathname?: string },
+  ): Promise<ContractResult> {
+    throw new Error("Not implemented yet");
+  }
+
+  // Configuration sub-resources
+
+  async getConfigFiles(
+    _configName: string,
+    _params?: { dir?: string },
+  ): Promise<ContractResult> {
+    throw new Error("Not implemented yet");
+  }
+
+  async postConfigFiles(
+    _configName: string,
+    _body: unknown,
+  ): Promise<ContractResult> {
+    throw new Error("Not implemented yet");
+  }
+
+  async getConfigSecrets(
+    _configName: string,
+    _params?: { dir?: string },
+  ): Promise<ContractResult> {
+    throw new Error("Not implemented yet");
+  }
+
+  async postConfigSecrets(
+    _configName: string,
+    _body: unknown,
+  ): Promise<ContractResult> {
+    throw new Error("Not implemented yet");
+  }
+
+  async getConfigPythonPackages(
+    _configName: string,
+    _params?: { dir?: string },
+  ): Promise<ContractResult> {
+    throw new Error("Not implemented yet");
+  }
+
+  async getConfigRPackages(
+    _configName: string,
+    _params?: { dir?: string },
+  ): Promise<ContractResult> {
+    throw new Error("Not implemented yet");
+  }
+
+  async getIntegrationRequests(
+    _configName: string,
+    _params?: { dir?: string },
+  ): Promise<ContractResult> {
+    throw new Error("Not implemented yet");
+  }
+
+  async postIntegrationRequest(
+    _configName: string,
+    _body: unknown,
+  ): Promise<ContractResult> {
+    throw new Error("Not implemented yet");
+  }
+
+  async deleteIntegrationRequest(
+    _configName: string,
+    _body: unknown,
+  ): Promise<ContractResult> {
+    throw new Error("Not implemented yet");
+  }
+
+  // Credentials (by GUID)
+
+  async getCredential(_guid: string): Promise<ContractResult> {
+    throw new Error("Not implemented yet");
+  }
+
+  // Interpreters
+
+  async getInterpreters(
+    _params?: { dir?: string },
+  ): Promise<ContractResult> {
+    throw new Error("Not implemented yet");
+  }
+
+  // Accounts
+
+  async getAccounts(): Promise<ContractResult> {
+    throw new Error("Not implemented yet");
+  }
+
+  async getAccount(_name: string): Promise<ContractResult> {
+    throw new Error("Not implemented yet");
+  }
 }
