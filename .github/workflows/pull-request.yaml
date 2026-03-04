@@ -89,6 +89,11 @@ jobs:
     if: needs.detect-changes.outputs.has-code == 'true'
     uses: ./.github/workflows/vscode.yaml
 
+  connect-contract-tests:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.has-code == 'true'
+    uses: ./.github/workflows/connect-contract-tests.yaml
+
   # Build - skip if no code changes
   build:
     needs: detect-changes

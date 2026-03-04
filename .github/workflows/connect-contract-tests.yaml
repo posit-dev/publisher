@@ -1,0 +1,33 @@
+name: Connect Contract Tests
+on:
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  contract-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: "test/connect-api-contracts/package-lock.json"
+      - run: npm ci
+        working-directory: test/connect-api-contracts
+      - run: just test-connect-contracts
+
+  validate-fixtures:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: extractions/setup-just@v3
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: "test/connect-api-contracts/package-lock.json"
+      - run: npm ci
+        working-directory: test/connect-api-contracts
+      - run: just validate-fixtures
