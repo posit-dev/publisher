@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { Method } from "../client";
 import { setupContractTest, TEST_CONTENT_ID } from "../helpers";
 
 describe("DownloadBundle", () => {
@@ -7,7 +8,7 @@ describe("DownloadBundle", () => {
 
   describe("request correctness", () => {
     it("sends GET to /__api__/v1/content/:id/bundles/:bid/download", async () => {
-      const result = await client.call("DownloadBundle", {
+      const result = await client.call(Method.DownloadBundle, {
         contentId: TEST_CONTENT_ID,
         bundleId,
       });
@@ -22,7 +23,7 @@ describe("DownloadBundle", () => {
 
   describe("response parsing", () => {
     it("returns success status", async () => {
-      const result = await client.call("DownloadBundle", {
+      const result = await client.call(Method.DownloadBundle, {
         contentId: TEST_CONTENT_ID,
         bundleId,
       });
@@ -31,7 +32,7 @@ describe("DownloadBundle", () => {
     });
 
     it("returns raw bytes from response", async () => {
-      const result = await client.call("DownloadBundle", {
+      const result = await client.call(Method.DownloadBundle, {
         contentId: TEST_CONTENT_ID,
         bundleId,
       });

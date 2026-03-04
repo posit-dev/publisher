@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { Method } from "../client";
 import { setupContractTest, TEST_CONTENT_ID, TEST_BUNDLE_ID } from "../helpers";
 
 describe("UploadBundle", () => {
@@ -7,7 +8,7 @@ describe("UploadBundle", () => {
 
   describe("request correctness", () => {
     it("sends POST to /__api__/v1/content/:id/bundles", async () => {
-      const result = await client.call("UploadBundle", {
+      const result = await client.call(Method.UploadBundle, {
         contentId: TEST_CONTENT_ID,
         bundleData,
       });
@@ -20,7 +21,7 @@ describe("UploadBundle", () => {
     });
 
     it("sends Content-Type application/gzip", async () => {
-      const result = await client.call("UploadBundle", {
+      const result = await client.call(Method.UploadBundle, {
         contentId: TEST_CONTENT_ID,
         bundleData,
       });
@@ -34,7 +35,7 @@ describe("UploadBundle", () => {
 
   describe("response parsing", () => {
     it("returns success status", async () => {
-      const result = await client.call("UploadBundle", {
+      const result = await client.call(Method.UploadBundle, {
         contentId: TEST_CONTENT_ID,
         bundleData,
       });
@@ -43,7 +44,7 @@ describe("UploadBundle", () => {
     });
 
     it("parses bundle ID from response", async () => {
-      const result = await client.call("UploadBundle", {
+      const result = await client.call(Method.UploadBundle, {
         contentId: TEST_CONTENT_ID,
         bundleData,
       });

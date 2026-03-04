@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { Method } from "../client";
 import { setupContractTest, setMockResponse, TEST_API_KEY } from "../helpers";
 
 describe("TestAuthentication", () => {
@@ -6,7 +7,7 @@ describe("TestAuthentication", () => {
 
   describe("request correctness", () => {
     it("sends GET to /__api__/v1/user", async () => {
-      const result = await client.call("TestAuthentication");
+      const result = await client.call(Method.TestAuthentication);
 
       expect(result.capturedRequest).not.toBeNull();
       expect(result.capturedRequest!.method).toBe("GET");
@@ -14,7 +15,7 @@ describe("TestAuthentication", () => {
     });
 
     it("sends Authorization header with Key prefix", async () => {
-      const result = await client.call("TestAuthentication");
+      const result = await client.call(Method.TestAuthentication);
 
       expect(result.capturedRequest).not.toBeNull();
       expect(result.capturedRequest!.headers["authorization"]).toBe(
@@ -25,13 +26,13 @@ describe("TestAuthentication", () => {
 
   describe("response parsing", () => {
     it("returns success status", async () => {
-      const result = await client.call("TestAuthentication");
+      const result = await client.call(Method.TestAuthentication);
 
       expect(result.status).toBe("success");
     });
 
     it("parses user fields from Connect UserDTO", async () => {
-      const result = await client.call("TestAuthentication");
+      const result = await client.call(Method.TestAuthentication);
       const body = result.result as {
         user: {
           id: string;
@@ -53,7 +54,7 @@ describe("TestAuthentication", () => {
     });
 
     it("returns null error on success", async () => {
-      const result = await client.call("TestAuthentication");
+      const result = await client.call(Method.TestAuthentication);
       const body = result.result as { error: unknown };
 
       expect(body.error).toBeNull();
@@ -69,7 +70,7 @@ describe("TestAuthentication", () => {
         body: { code: 3, error: "Key is not valid" },
       });
 
-      const result = await client.call("TestAuthentication");
+      const result = await client.call(Method.TestAuthentication);
       const body = result.result as {
         user: unknown;
         error: { msg: string } | null;
@@ -100,7 +101,7 @@ describe("TestAuthentication", () => {
         },
       });
 
-      const result = await client.call("TestAuthentication");
+      const result = await client.call(Method.TestAuthentication);
       const body = result.result as {
         user: unknown;
         error: { msg: string } | null;
@@ -132,7 +133,7 @@ describe("TestAuthentication", () => {
         },
       });
 
-      const result = await client.call("TestAuthentication");
+      const result = await client.call(Method.TestAuthentication);
       const body = result.result as {
         user: unknown;
         error: { msg: string } | null;
@@ -164,7 +165,7 @@ describe("TestAuthentication", () => {
         },
       });
 
-      const result = await client.call("TestAuthentication");
+      const result = await client.call(Method.TestAuthentication);
       const body = result.result as {
         user: unknown;
         error: { msg: string } | null;
@@ -179,7 +180,7 @@ describe("TestAuthentication", () => {
 
   describe("snapshot", () => {
     it("matches expected response shape", async () => {
-      const result = await client.call("TestAuthentication");
+      const result = await client.call(Method.TestAuthentication);
 
       expect(result.result).toMatchInlineSnapshot(`
         {

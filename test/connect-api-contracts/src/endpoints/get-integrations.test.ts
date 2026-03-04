@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { Method } from "../client";
 import { setupContractTest } from "../helpers";
 
 describe("GetIntegrations", () => {
@@ -6,7 +7,7 @@ describe("GetIntegrations", () => {
 
   describe("request correctness", () => {
     it("sends GET to /__api__/v1/oauth/integrations", async () => {
-      const result = await client.call("GetIntegrations");
+      const result = await client.call(Method.GetIntegrations);
 
       expect(result.capturedRequest).not.toBeNull();
       expect(result.capturedRequest!.method).toBe("GET");
@@ -18,13 +19,13 @@ describe("GetIntegrations", () => {
 
   describe("response parsing", () => {
     it("returns success status", async () => {
-      const result = await client.call("GetIntegrations");
+      const result = await client.call(Method.GetIntegrations);
 
       expect(result.status).toBe("success");
     });
 
     it("parses Integration array with expected fields", async () => {
-      const result = await client.call("GetIntegrations");
+      const result = await client.call(Method.GetIntegrations);
       const integrations = result.result as Array<{
         guid: string;
         name: string;

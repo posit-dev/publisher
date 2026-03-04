@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { Method } from "../client";
 import { setupContractTest, TEST_API_KEY } from "../helpers";
 import type { CapturedRequest } from "../mock-connect-server";
 
@@ -6,7 +7,7 @@ describe("GetSettings", () => {
   const { client } = setupContractTest();
 
   async function callAndCapture() {
-    const result = await client.call("GetSettings");
+    const result = await client.call(Method.GetSettings);
     const all = (result.capturedRequests ?? []) as CapturedRequest[];
     return { result, all };
   }

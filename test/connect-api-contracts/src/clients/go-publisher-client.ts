@@ -1,4 +1,4 @@
-import type { ConnectContractClient, ConnectContractResult } from "../client";
+import type { ConnectContractClient, ConnectContractResult, MethodName } from "../client";
 
 interface HarnessResponse {
   status: "success" | "error";
@@ -20,7 +20,7 @@ export class GoPublisherClient implements ConnectContractClient {
   ) {}
 
   async call(
-    method: string,
+    method: MethodName,
     params?: Record<string, unknown>,
   ): Promise<ConnectContractResult> {
     const payload: Record<string, unknown> = {

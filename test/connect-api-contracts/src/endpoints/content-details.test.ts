@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { Method } from "../client";
 import { setupContractTest, setMockResponse, TEST_CONTENT_ID } from "../helpers";
 
 describe("ContentDetails", () => {
@@ -6,7 +7,7 @@ describe("ContentDetails", () => {
 
   describe("request correctness", () => {
     it("sends GET to /__api__/v1/content/:id", async () => {
-      const result = await client.call("ContentDetails", { contentId: TEST_CONTENT_ID });
+      const result = await client.call(Method.ContentDetails, { contentId: TEST_CONTENT_ID });
 
       expect(result.capturedRequest).not.toBeNull();
       expect(result.capturedRequest!.method).toBe("GET");
@@ -18,13 +19,13 @@ describe("ContentDetails", () => {
 
   describe("response parsing", () => {
     it("returns success status", async () => {
-      const result = await client.call("ContentDetails", { contentId: TEST_CONTENT_ID });
+      const result = await client.call(Method.ContentDetails, { contentId: TEST_CONTENT_ID });
 
       expect(result.status).toBe("success");
     });
 
     it("parses ConnectContent fields from response", async () => {
-      const result = await client.call("ContentDetails", { contentId: TEST_CONTENT_ID });
+      const result = await client.call(Method.ContentDetails, { contentId: TEST_CONTENT_ID });
       const body = result.result as Record<string, unknown>;
 
       expect(body.guid).toBe(TEST_CONTENT_ID);
@@ -42,7 +43,7 @@ describe("ContentDetails", () => {
         body: { code: 3, error: "Key is not valid" },
       });
 
-      const result = await client.call("ContentDetails", { contentId: TEST_CONTENT_ID });
+      const result = await client.call(Method.ContentDetails, { contentId: TEST_CONTENT_ID });
 
       expect(result.status).toBe("error");
     });
@@ -58,7 +59,7 @@ describe("ContentDetails", () => {
         },
       });
 
-      const result = await client.call("ContentDetails", { contentId: TEST_CONTENT_ID });
+      const result = await client.call(Method.ContentDetails, { contentId: TEST_CONTENT_ID });
 
       expect(result.status).toBe("error");
     });
@@ -71,7 +72,7 @@ describe("ContentDetails", () => {
         body: { code: 4, error: "Content not found" },
       });
 
-      const result = await client.call("ContentDetails", { contentId: TEST_CONTENT_ID });
+      const result = await client.call(Method.ContentDetails, { contentId: TEST_CONTENT_ID });
 
       expect(result.status).toBe("error");
     });

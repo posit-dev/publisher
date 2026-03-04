@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { Method } from "../client";
 import { setupContractTest, setMockResponse, TEST_TASK_ID } from "../helpers";
 
 describe("WaitForTask", () => {
@@ -6,7 +7,7 @@ describe("WaitForTask", () => {
 
   describe("request correctness", () => {
     it("sends GET to /__api__/v1/tasks/:id", async () => {
-      const result = await client.call("WaitForTask", { taskId: TEST_TASK_ID });
+      const result = await client.call(Method.WaitForTask, { taskId: TEST_TASK_ID });
 
       expect(result.capturedRequest).not.toBeNull();
       expect(result.capturedRequest!.method).toBe("GET");
@@ -16,7 +17,7 @@ describe("WaitForTask", () => {
     });
 
     it("includes first query parameter for pagination", async () => {
-      const result = await client.call("WaitForTask", { taskId: TEST_TASK_ID });
+      const result = await client.call(Method.WaitForTask, { taskId: TEST_TASK_ID });
 
       expect(result.capturedRequest).not.toBeNull();
       expect(result.capturedRequest!.path).toContain("first=");
@@ -25,13 +26,13 @@ describe("WaitForTask", () => {
 
   describe("response parsing", () => {
     it("returns success status when task finishes with code 0", async () => {
-      const result = await client.call("WaitForTask", { taskId: TEST_TASK_ID });
+      const result = await client.call(Method.WaitForTask, { taskId: TEST_TASK_ID });
 
       expect(result.status).toBe("success");
     });
 
     it("returns finished indicator", async () => {
-      const result = await client.call("WaitForTask", { taskId: TEST_TASK_ID });
+      const result = await client.call(Method.WaitForTask, { taskId: TEST_TASK_ID });
       const task = result.result as { finished: boolean };
 
       expect(task.finished).toBe(true);
@@ -59,7 +60,7 @@ describe("WaitForTask", () => {
         },
       });
 
-      const result = await client.call("WaitForTask", { taskId: TEST_TASK_ID });
+      const result = await client.call(Method.WaitForTask, { taskId: TEST_TASK_ID });
 
       expect(result.status).toBe("error");
     });

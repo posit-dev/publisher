@@ -1,4 +1,4 @@
-import type { ConnectContractClient, ConnectContractResult } from "../client";
+import type { ConnectContractClient, ConnectContractResult, MethodName } from "../client";
 
 /**
  * Stub client for the future TypeScript ConnectClient implementation.
@@ -6,7 +6,7 @@ import type { ConnectContractClient, ConnectContractResult } from "../client";
  */
 export class TypeScriptDirectClient implements ConnectContractClient {
   async call(
-    _method: string,
+    _method: MethodName,
     _params?: Record<string, unknown>,
   ): Promise<ConnectContractResult> {
     throw new Error("Not implemented yet");

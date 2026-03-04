@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { Method } from "../client";
 import { setupContractTest, TEST_CONTENT_ID } from "../helpers";
 
 describe("SetEnvVars", () => {
@@ -6,7 +7,7 @@ describe("SetEnvVars", () => {
 
   describe("request correctness", () => {
     it("sends PATCH to /__api__/v1/content/:id/environment", async () => {
-      const result = await client.call("SetEnvVars", {
+      const result = await client.call(Method.SetEnvVars, {
         contentId: TEST_CONTENT_ID,
         env: { DATABASE_URL: "postgres://localhost/db" },
       });
@@ -19,7 +20,7 @@ describe("SetEnvVars", () => {
     });
 
     it("sends env vars as [{name, value}] array body", async () => {
-      const result = await client.call("SetEnvVars", {
+      const result = await client.call(Method.SetEnvVars, {
         contentId: TEST_CONTENT_ID,
         env: { DATABASE_URL: "postgres://localhost/db", SECRET: "abc" },
       });
@@ -37,7 +38,7 @@ describe("SetEnvVars", () => {
 
   describe("response parsing", () => {
     it("returns success status for 204 no-body response", async () => {
-      const result = await client.call("SetEnvVars", {
+      const result = await client.call(Method.SetEnvVars, {
         contentId: TEST_CONTENT_ID,
         env: { DATABASE_URL: "postgres://localhost/db" },
       });

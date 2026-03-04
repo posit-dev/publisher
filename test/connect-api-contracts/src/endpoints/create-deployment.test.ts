@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { Method } from "../client";
 import { setupContractTest, TEST_CONTENT_ID } from "../helpers";
 
 describe("CreateDeployment", () => {
@@ -6,7 +7,7 @@ describe("CreateDeployment", () => {
 
   describe("request correctness", () => {
     it("sends POST to /__api__/v1/content", async () => {
-      const result = await client.call("CreateDeployment", { body: {} });
+      const result = await client.call(Method.CreateDeployment, { body: {} });
 
       expect(result.capturedRequest).not.toBeNull();
       expect(result.capturedRequest!.method).toBe("POST");
@@ -15,7 +16,7 @@ describe("CreateDeployment", () => {
 
     it("sends ConnectContent body as JSON", async () => {
       const body = { name: "my-app", title: "My App" };
-      const result = await client.call("CreateDeployment", { body });
+      const result = await client.call(Method.CreateDeployment, { body });
 
       expect(result.capturedRequest).not.toBeNull();
       expect(result.capturedRequest!.headers["content-type"]).toContain(
@@ -26,13 +27,13 @@ describe("CreateDeployment", () => {
 
   describe("response parsing", () => {
     it("returns success status", async () => {
-      const result = await client.call("CreateDeployment", { body: {} });
+      const result = await client.call(Method.CreateDeployment, { body: {} });
 
       expect(result.status).toBe("success");
     });
 
     it("parses content GUID from response", async () => {
-      const result = await client.call("CreateDeployment", { body: {} });
+      const result = await client.call(Method.CreateDeployment, { body: {} });
       const body = result.result as { contentId: string };
 
       expect(body.contentId).toBe(TEST_CONTENT_ID);

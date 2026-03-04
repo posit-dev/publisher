@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { Method } from "../client";
 import { setupContractTest, TEST_CONTENT_ID } from "../helpers";
 
 describe("UpdateDeployment", () => {
@@ -6,7 +7,7 @@ describe("UpdateDeployment", () => {
 
   describe("request correctness", () => {
     it("sends PATCH to /__api__/v1/content/:id", async () => {
-      const result = await client.call("UpdateDeployment", {
+      const result = await client.call(Method.UpdateDeployment, {
         contentId: TEST_CONTENT_ID,
         body: { title: "Updated Title" },
       });
@@ -20,7 +21,7 @@ describe("UpdateDeployment", () => {
 
     it("sends ConnectContent body as JSON", async () => {
       const body = { title: "Updated Title", description: "New description" };
-      const result = await client.call("UpdateDeployment", {
+      const result = await client.call(Method.UpdateDeployment, {
         contentId: TEST_CONTENT_ID,
         body,
       });
@@ -34,7 +35,7 @@ describe("UpdateDeployment", () => {
 
   describe("response parsing", () => {
     it("returns success status for 204 no-body response", async () => {
-      const result = await client.call("UpdateDeployment", {
+      const result = await client.call(Method.UpdateDeployment, {
         contentId: TEST_CONTENT_ID,
         body: { title: "Updated Title" },
       });

@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { Method } from "../client";
 import { setupContractTest, TEST_CONTENT_ID, TEST_BUNDLE_ID, TEST_TASK_ID } from "../helpers";
 
 describe("DeployBundle", () => {
@@ -6,7 +7,7 @@ describe("DeployBundle", () => {
 
   describe("request correctness", () => {
     it("sends POST to /__api__/v1/content/:id/deploy", async () => {
-      const result = await client.call("DeployBundle", {
+      const result = await client.call(Method.DeployBundle, {
         contentId: TEST_CONTENT_ID,
         bundleId: TEST_BUNDLE_ID,
       });
@@ -19,7 +20,7 @@ describe("DeployBundle", () => {
     });
 
     it("sends bundle_id in request body", async () => {
-      const result = await client.call("DeployBundle", {
+      const result = await client.call(Method.DeployBundle, {
         contentId: TEST_CONTENT_ID,
         bundleId: TEST_BUNDLE_ID,
       });
@@ -32,7 +33,7 @@ describe("DeployBundle", () => {
 
   describe("response parsing", () => {
     it("returns success status", async () => {
-      const result = await client.call("DeployBundle", {
+      const result = await client.call(Method.DeployBundle, {
         contentId: TEST_CONTENT_ID,
         bundleId: TEST_BUNDLE_ID,
       });
@@ -41,7 +42,7 @@ describe("DeployBundle", () => {
     });
 
     it("parses task ID from response", async () => {
-      const result = await client.call("DeployBundle", {
+      const result = await client.call(Method.DeployBundle, {
         contentId: TEST_CONTENT_ID,
         bundleId: TEST_BUNDLE_ID,
       });

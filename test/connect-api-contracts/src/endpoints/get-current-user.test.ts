@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { Method } from "../client";
 import { setupContractTest } from "../helpers";
 
 describe("GetCurrentUser", () => {
@@ -6,7 +7,7 @@ describe("GetCurrentUser", () => {
 
   describe("request correctness", () => {
     it("sends GET to /__api__/v1/user", async () => {
-      const result = await client.call("GetCurrentUser");
+      const result = await client.call(Method.GetCurrentUser);
 
       expect(result.capturedRequest).not.toBeNull();
       expect(result.capturedRequest!.method).toBe("GET");
@@ -16,13 +17,13 @@ describe("GetCurrentUser", () => {
 
   describe("response parsing", () => {
     it("returns success status", async () => {
-      const result = await client.call("GetCurrentUser");
+      const result = await client.call(Method.GetCurrentUser);
 
       expect(result.status).toBe("success");
     });
 
     it("parses User fields from Connect UserDTO", async () => {
-      const result = await client.call("GetCurrentUser");
+      const result = await client.call(Method.GetCurrentUser);
       const user = result.result as {
         id: string;
         username: string;
