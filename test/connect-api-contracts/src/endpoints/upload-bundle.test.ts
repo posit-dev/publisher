@@ -1,24 +1,14 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import { getClient, getMockConnectUrl, clearMockRequests, clearMockOverrides } from "../helpers";
+import { describe, it, expect } from "vitest";
+import { setupContractTest } from "../helpers";
 
 describe("UploadBundle", () => {
-  const apiKey = "test-api-key-12345";
+  const { client, apiKey } = setupContractTest();
   const contentId = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
-
-  beforeEach(async () => {
-    await clearMockOverrides();
-    await clearMockRequests();
-  });
 
   describe("request correctness", () => {
     it("sends POST to /__api__/v1/content/:id/bundles", async () => {
-      const client = getClient();
-      const connectUrl = getMockConnectUrl();
-
       const bundleData = new Uint8Array([0x1f, 0x8b]);
-      const result = await client.uploadBundle({
-        connectUrl,
-        apiKey,
+      const result = await client.call("UploadBundle", {
         contentId,
         bundleData,
       });
@@ -31,13 +21,8 @@ describe("UploadBundle", () => {
     });
 
     it("sends Authorization header with Key prefix", async () => {
-      const client = getClient();
-      const connectUrl = getMockConnectUrl();
-
       const bundleData = new Uint8Array([0x1f, 0x8b]);
-      const result = await client.uploadBundle({
-        connectUrl,
-        apiKey,
+      const result = await client.call("UploadBundle", {
         contentId,
         bundleData,
       });
@@ -49,13 +34,8 @@ describe("UploadBundle", () => {
     });
 
     it("sends Content-Type application/gzip", async () => {
-      const client = getClient();
-      const connectUrl = getMockConnectUrl();
-
       const bundleData = new Uint8Array([0x1f, 0x8b]);
-      const result = await client.uploadBundle({
-        connectUrl,
-        apiKey,
+      const result = await client.call("UploadBundle", {
         contentId,
         bundleData,
       });
@@ -69,13 +49,8 @@ describe("UploadBundle", () => {
 
   describe("response parsing", () => {
     it("returns success status", async () => {
-      const client = getClient();
-      const connectUrl = getMockConnectUrl();
-
       const bundleData = new Uint8Array([0x1f, 0x8b]);
-      const result = await client.uploadBundle({
-        connectUrl,
-        apiKey,
+      const result = await client.call("UploadBundle", {
         contentId,
         bundleData,
       });
@@ -84,13 +59,8 @@ describe("UploadBundle", () => {
     });
 
     it("parses bundle ID from response", async () => {
-      const client = getClient();
-      const connectUrl = getMockConnectUrl();
-
       const bundleData = new Uint8Array([0x1f, 0x8b]);
-      const result = await client.uploadBundle({
-        connectUrl,
-        apiKey,
+      const result = await client.call("UploadBundle", {
         contentId,
         bundleData,
       });

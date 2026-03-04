@@ -1,7 +1,10 @@
+import { beforeEach } from "vitest";
 import type { ConnectContractClient } from "./client";
 import type { CapturedRequest } from "./mock-connect-server";
 import { GoPublisherClient } from "./clients/go-publisher-client";
 import { TypeScriptDirectClient } from "./clients/ts-direct-client";
+
+export const TEST_API_KEY = "test-api-key-12345";
 
 let _client: ConnectContractClient | null = null;
 
@@ -16,7 +19,8 @@ export function getClient(): ConnectContractClient {
         "API_BASE not set. Is the global setup running correctly?",
       );
     }
-    _client = new GoPublisherClient(apiBase);
+    const connectUrl = getMockConnectUrl();
+    _client = new GoPublisherClient(apiBase, connectUrl, TEST_API_KEY);
   } else {
     _client = new TypeScriptDirectClient();
   }
@@ -68,4 +72,15 @@ export async function getMockRequests(
     return requests.filter((r) => r.path.includes(pathFilter));
   }
   return requests;
+}
+
+export function setupContractTest() {
+  const client = getClient();
+
+  beforeEach(async () => {
+    await clearMockOverrides();
+    await clearMockRequests();
+  });
+
+  return { client, apiKey: TEST_API_KEY };
 }

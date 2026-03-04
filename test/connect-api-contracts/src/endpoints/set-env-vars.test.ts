@@ -1,23 +1,13 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import { getClient, getMockConnectUrl, clearMockRequests, clearMockOverrides } from "../helpers";
+import { describe, it, expect } from "vitest";
+import { setupContractTest } from "../helpers";
 
 describe("SetEnvVars", () => {
-  const apiKey = "test-api-key-12345";
+  const { client, apiKey } = setupContractTest();
   const contentId = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
-
-  beforeEach(async () => {
-    await clearMockOverrides();
-    await clearMockRequests();
-  });
 
   describe("request correctness", () => {
     it("sends PATCH to /__api__/v1/content/:id/environment", async () => {
-      const client = getClient();
-      const connectUrl = getMockConnectUrl();
-
-      const result = await client.setEnvVars({
-        connectUrl,
-        apiKey,
+      const result = await client.call("SetEnvVars", {
         contentId,
         env: { DATABASE_URL: "postgres://localhost/db" },
       });
@@ -30,12 +20,7 @@ describe("SetEnvVars", () => {
     });
 
     it("sends Authorization header with Key prefix", async () => {
-      const client = getClient();
-      const connectUrl = getMockConnectUrl();
-
-      const result = await client.setEnvVars({
-        connectUrl,
-        apiKey,
+      const result = await client.call("SetEnvVars", {
         contentId,
         env: { DATABASE_URL: "postgres://localhost/db" },
       });
@@ -47,12 +32,7 @@ describe("SetEnvVars", () => {
     });
 
     it("sends env vars as [{name, value}] array body", async () => {
-      const client = getClient();
-      const connectUrl = getMockConnectUrl();
-
-      const result = await client.setEnvVars({
-        connectUrl,
-        apiKey,
+      const result = await client.call("SetEnvVars", {
         contentId,
         env: { DATABASE_URL: "postgres://localhost/db", SECRET: "abc" },
       });
@@ -70,12 +50,7 @@ describe("SetEnvVars", () => {
 
   describe("response parsing", () => {
     it("returns success status for 204 no-body response", async () => {
-      const client = getClient();
-      const connectUrl = getMockConnectUrl();
-
-      const result = await client.setEnvVars({
-        connectUrl,
-        apiKey,
+      const result = await client.call("SetEnvVars", {
         contentId,
         env: { DATABASE_URL: "postgres://localhost/db" },
       });

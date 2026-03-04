@@ -1,20 +1,12 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import { getClient, getMockConnectUrl, clearMockRequests, clearMockOverrides } from "../helpers";
+import { describe, it, expect } from "vitest";
+import { setupContractTest } from "../helpers";
 
 describe("GetCurrentUser", () => {
-  const apiKey = "test-api-key-12345";
-
-  beforeEach(async () => {
-    await clearMockOverrides();
-    await clearMockRequests();
-  });
+  const { client, apiKey } = setupContractTest();
 
   describe("request correctness", () => {
     it("sends GET to /__api__/v1/user", async () => {
-      const client = getClient();
-      const connectUrl = getMockConnectUrl();
-
-      const result = await client.getCurrentUser({ connectUrl, apiKey });
+      const result = await client.call("GetCurrentUser");
 
       expect(result.capturedRequest).not.toBeNull();
       expect(result.capturedRequest!.method).toBe("GET");
@@ -22,10 +14,7 @@ describe("GetCurrentUser", () => {
     });
 
     it("sends Authorization header with Key prefix", async () => {
-      const client = getClient();
-      const connectUrl = getMockConnectUrl();
-
-      const result = await client.getCurrentUser({ connectUrl, apiKey });
+      const result = await client.call("GetCurrentUser");
 
       expect(result.capturedRequest).not.toBeNull();
       expect(result.capturedRequest!.headers["authorization"]).toBe(
@@ -36,19 +25,13 @@ describe("GetCurrentUser", () => {
 
   describe("response parsing", () => {
     it("returns success status", async () => {
-      const client = getClient();
-      const connectUrl = getMockConnectUrl();
-
-      const result = await client.getCurrentUser({ connectUrl, apiKey });
+      const result = await client.call("GetCurrentUser");
 
       expect(result.status).toBe("success");
     });
 
     it("parses User fields from Connect UserDTO", async () => {
-      const client = getClient();
-      const connectUrl = getMockConnectUrl();
-
-      const result = await client.getCurrentUser({ connectUrl, apiKey });
+      const result = await client.call("GetCurrentUser");
       const user = result.result as {
         id: string;
         username: string;

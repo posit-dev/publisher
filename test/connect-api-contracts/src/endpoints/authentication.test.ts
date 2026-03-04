@@ -1,26 +1,12 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import {
-  getClient,
-  getMockConnectUrl,
-  clearMockRequests,
-  clearMockOverrides,
-  setMockResponse,
-} from "../helpers";
+import { describe, it, expect } from "vitest";
+import { setupContractTest, setMockResponse } from "../helpers";
 
 describe("TestAuthentication", () => {
-  const apiKey = "test-api-key-12345";
-
-  beforeEach(async () => {
-    await clearMockOverrides();
-    await clearMockRequests();
-  });
+  const { client, apiKey } = setupContractTest();
 
   describe("request correctness", () => {
     it("sends GET to /__api__/v1/user", async () => {
-      const client = getClient();
-      const connectUrl = getMockConnectUrl();
-
-      const result = await client.testAuthentication({ connectUrl, apiKey });
+      const result = await client.call("TestAuthentication");
 
       expect(result.capturedRequest).not.toBeNull();
       expect(result.capturedRequest!.method).toBe("GET");
@@ -28,10 +14,7 @@ describe("TestAuthentication", () => {
     });
 
     it("sends Authorization header with Key prefix", async () => {
-      const client = getClient();
-      const connectUrl = getMockConnectUrl();
-
-      const result = await client.testAuthentication({ connectUrl, apiKey });
+      const result = await client.call("TestAuthentication");
 
       expect(result.capturedRequest).not.toBeNull();
       expect(result.capturedRequest!.headers["authorization"]).toBe(
@@ -42,19 +25,13 @@ describe("TestAuthentication", () => {
 
   describe("response parsing", () => {
     it("returns success status", async () => {
-      const client = getClient();
-      const connectUrl = getMockConnectUrl();
-
-      const result = await client.testAuthentication({ connectUrl, apiKey });
+      const result = await client.call("TestAuthentication");
 
       expect(result.status).toBe("success");
     });
 
     it("parses user fields from Connect UserDTO", async () => {
-      const client = getClient();
-      const connectUrl = getMockConnectUrl();
-
-      const result = await client.testAuthentication({ connectUrl, apiKey });
+      const result = await client.call("TestAuthentication");
       const body = result.result as {
         user: {
           id: string;
@@ -76,10 +53,7 @@ describe("TestAuthentication", () => {
     });
 
     it("returns null error on success", async () => {
-      const client = getClient();
-      const connectUrl = getMockConnectUrl();
-
-      const result = await client.testAuthentication({ connectUrl, apiKey });
+      const result = await client.call("TestAuthentication");
       const body = result.result as { error: unknown };
 
       expect(body.error).toBeNull();
@@ -88,9 +62,6 @@ describe("TestAuthentication", () => {
 
   describe("error handling", () => {
     it("returns error for 401 unauthorized response", async () => {
-      const client = getClient();
-      const connectUrl = getMockConnectUrl();
-
       await setMockResponse({
         method: "GET",
         pathPattern: "^/__api__/v1/user$",
@@ -98,7 +69,7 @@ describe("TestAuthentication", () => {
         body: { code: 3, error: "Key is not valid" },
       });
 
-      const result = await client.testAuthentication({ connectUrl, apiKey });
+      const result = await client.call("TestAuthentication");
       const body = result.result as {
         user: unknown;
         error: { msg: string } | null;
@@ -110,9 +81,6 @@ describe("TestAuthentication", () => {
     });
 
     it("returns error for locked user account", async () => {
-      const client = getClient();
-      const connectUrl = getMockConnectUrl();
-
       await setMockResponse({
         method: "GET",
         pathPattern: "^/__api__/v1/user$",
@@ -132,7 +100,7 @@ describe("TestAuthentication", () => {
         },
       });
 
-      const result = await client.testAuthentication({ connectUrl, apiKey });
+      const result = await client.call("TestAuthentication");
       const body = result.result as {
         user: unknown;
         error: { msg: string } | null;
@@ -145,9 +113,6 @@ describe("TestAuthentication", () => {
     });
 
     it("returns error for unconfirmed user account", async () => {
-      const client = getClient();
-      const connectUrl = getMockConnectUrl();
-
       await setMockResponse({
         method: "GET",
         pathPattern: "^/__api__/v1/user$",
@@ -167,7 +132,7 @@ describe("TestAuthentication", () => {
         },
       });
 
-      const result = await client.testAuthentication({ connectUrl, apiKey });
+      const result = await client.call("TestAuthentication");
       const body = result.result as {
         user: unknown;
         error: { msg: string } | null;
@@ -180,9 +145,6 @@ describe("TestAuthentication", () => {
     });
 
     it("returns error for viewer role user", async () => {
-      const client = getClient();
-      const connectUrl = getMockConnectUrl();
-
       await setMockResponse({
         method: "GET",
         pathPattern: "^/__api__/v1/user$",
@@ -202,7 +164,7 @@ describe("TestAuthentication", () => {
         },
       });
 
-      const result = await client.testAuthentication({ connectUrl, apiKey });
+      const result = await client.call("TestAuthentication");
       const body = result.result as {
         user: unknown;
         error: { msg: string } | null;
@@ -217,10 +179,7 @@ describe("TestAuthentication", () => {
 
   describe("snapshot", () => {
     it("matches expected response shape", async () => {
-      const client = getClient();
-      const connectUrl = getMockConnectUrl();
-
-      const result = await client.testAuthentication({ connectUrl, apiKey });
+      const result = await client.call("TestAuthentication");
 
       expect(result.result).toMatchInlineSnapshot(`
         {

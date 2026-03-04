@@ -1,31 +1,13 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import {
-  getClient,
-  getMockConnectUrl,
-  clearMockRequests,
-  clearMockOverrides,
-  setMockResponse,
-} from "../helpers";
+import { describe, it, expect } from "vitest";
+import { setupContractTest, setMockResponse } from "../helpers";
 
 describe("WaitForTask", () => {
-  const apiKey = "test-api-key-12345";
+  const { client, apiKey } = setupContractTest();
   const taskId = "task-abc123-def456";
-
-  beforeEach(async () => {
-    await clearMockOverrides();
-    await clearMockRequests();
-  });
 
   describe("request correctness", () => {
     it("sends GET to /__api__/v1/tasks/:id", async () => {
-      const client = getClient();
-      const connectUrl = getMockConnectUrl();
-
-      const result = await client.waitForTask({
-        connectUrl,
-        apiKey,
-        taskId,
-      });
+      const result = await client.call("WaitForTask", { taskId });
 
       expect(result.capturedRequest).not.toBeNull();
       expect(result.capturedRequest!.method).toBe("GET");
@@ -35,28 +17,14 @@ describe("WaitForTask", () => {
     });
 
     it("includes first query parameter for pagination", async () => {
-      const client = getClient();
-      const connectUrl = getMockConnectUrl();
-
-      const result = await client.waitForTask({
-        connectUrl,
-        apiKey,
-        taskId,
-      });
+      const result = await client.call("WaitForTask", { taskId });
 
       expect(result.capturedRequest).not.toBeNull();
       expect(result.capturedRequest!.path).toContain("first=");
     });
 
     it("sends Authorization header with Key prefix", async () => {
-      const client = getClient();
-      const connectUrl = getMockConnectUrl();
-
-      const result = await client.waitForTask({
-        connectUrl,
-        apiKey,
-        taskId,
-      });
+      const result = await client.call("WaitForTask", { taskId });
 
       expect(result.capturedRequest).not.toBeNull();
       expect(result.capturedRequest!.headers["authorization"]).toBe(
@@ -67,27 +35,13 @@ describe("WaitForTask", () => {
 
   describe("response parsing", () => {
     it("returns success status when task finishes with code 0", async () => {
-      const client = getClient();
-      const connectUrl = getMockConnectUrl();
-
-      const result = await client.waitForTask({
-        connectUrl,
-        apiKey,
-        taskId,
-      });
+      const result = await client.call("WaitForTask", { taskId });
 
       expect(result.status).toBe("success");
     });
 
     it("returns finished indicator", async () => {
-      const client = getClient();
-      const connectUrl = getMockConnectUrl();
-
-      const result = await client.waitForTask({
-        connectUrl,
-        apiKey,
-        taskId,
-      });
+      const result = await client.call("WaitForTask", { taskId });
       const task = result.result as { finished: boolean };
 
       expect(task.finished).toBe(true);
@@ -96,9 +50,6 @@ describe("WaitForTask", () => {
 
   describe("error handling", () => {
     it("returns error when task finishes with non-zero exit code", async () => {
-      const client = getClient();
-      const connectUrl = getMockConnectUrl();
-
       await setMockResponse({
         method: "GET",
         pathPattern: "^/__api__/v1/tasks/",
@@ -118,11 +69,7 @@ describe("WaitForTask", () => {
         },
       });
 
-      const result = await client.waitForTask({
-        connectUrl,
-        apiKey,
-        taskId,
-      });
+      const result = await client.call("WaitForTask", { taskId });
 
       expect(result.status).toBe("error");
     });

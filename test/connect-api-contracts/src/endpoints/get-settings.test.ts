@@ -1,25 +1,12 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import {
-  getClient,
-  getMockConnectUrl,
-  clearMockRequests,
-  clearMockOverrides,
-} from "../helpers";
+import { describe, it, expect } from "vitest";
+import { setupContractTest } from "../helpers";
 import type { CapturedRequest } from "../mock-connect-server";
 
 describe("GetSettings", () => {
-  const apiKey = "test-api-key-12345";
+  const { client, apiKey } = setupContractTest();
 
-  beforeEach(async () => {
-    await clearMockOverrides();
-    await clearMockRequests();
-  });
-
-  // Helper: call getSettings and return all captured requests.
   async function callAndCapture() {
-    const client = getClient();
-    const connectUrl = getMockConnectUrl();
-    const result = await client.getSettings({ connectUrl, apiKey });
+    const result = await client.call("GetSettings");
     const all = (result.capturedRequests ?? []) as CapturedRequest[];
     return { result, all };
   }

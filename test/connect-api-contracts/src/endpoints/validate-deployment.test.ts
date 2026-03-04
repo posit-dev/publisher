@@ -1,31 +1,13 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import {
-  getClient,
-  getMockConnectUrl,
-  clearMockRequests,
-  clearMockOverrides,
-  setMockResponse,
-} from "../helpers";
+import { describe, it, expect } from "vitest";
+import { setupContractTest, setMockResponse } from "../helpers";
 
 describe("ValidateDeployment", () => {
-  const apiKey = "test-api-key-12345";
+  const { client, apiKey } = setupContractTest();
   const contentId = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
-
-  beforeEach(async () => {
-    await clearMockOverrides();
-    await clearMockRequests();
-  });
 
   describe("request correctness", () => {
     it("sends GET to /content/:id/ (non-API path)", async () => {
-      const client = getClient();
-      const connectUrl = getMockConnectUrl();
-
-      const result = await client.validateDeployment({
-        connectUrl,
-        apiKey,
-        contentId,
-      });
+      const result = await client.call("ValidateDeployment", { contentId });
 
       expect(result.capturedRequest).not.toBeNull();
       expect(result.capturedRequest!.method).toBe("GET");
@@ -33,14 +15,7 @@ describe("ValidateDeployment", () => {
     });
 
     it("sends Authorization header with Key prefix", async () => {
-      const client = getClient();
-      const connectUrl = getMockConnectUrl();
-
-      const result = await client.validateDeployment({
-        connectUrl,
-        apiKey,
-        contentId,
-      });
+      const result = await client.call("ValidateDeployment", { contentId });
 
       expect(result.capturedRequest).not.toBeNull();
       expect(result.capturedRequest!.headers["authorization"]).toBe(
@@ -51,14 +26,7 @@ describe("ValidateDeployment", () => {
 
   describe("response parsing", () => {
     it("returns success status for 200 response", async () => {
-      const client = getClient();
-      const connectUrl = getMockConnectUrl();
-
-      const result = await client.validateDeployment({
-        connectUrl,
-        apiKey,
-        contentId,
-      });
+      const result = await client.call("ValidateDeployment", { contentId });
 
       expect(result.status).toBe("success");
     });
@@ -66,9 +34,6 @@ describe("ValidateDeployment", () => {
 
   describe("error handling", () => {
     it("returns error when content responds with 500", async () => {
-      const client = getClient();
-      const connectUrl = getMockConnectUrl();
-
       await setMockResponse({
         method: "GET",
         pathPattern: "^/content/[^/]+/$",
@@ -77,19 +42,12 @@ describe("ValidateDeployment", () => {
         contentType: "text/html",
       });
 
-      const result = await client.validateDeployment({
-        connectUrl,
-        apiKey,
-        contentId,
-      });
+      const result = await client.call("ValidateDeployment", { contentId });
 
       expect(result.status).toBe("error");
     });
 
     it("returns success when content responds with 404", async () => {
-      const client = getClient();
-      const connectUrl = getMockConnectUrl();
-
       await setMockResponse({
         method: "GET",
         pathPattern: "^/content/[^/]+/$",
@@ -98,11 +56,7 @@ describe("ValidateDeployment", () => {
         contentType: "text/html",
       });
 
-      const result = await client.validateDeployment({
-        connectUrl,
-        apiKey,
-        contentId,
-      });
+      const result = await client.call("ValidateDeployment", { contentId });
 
       // 404 is acceptable — content may not be running yet
       expect(result.status).toBe("success");

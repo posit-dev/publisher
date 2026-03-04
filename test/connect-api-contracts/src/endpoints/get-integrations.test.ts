@@ -1,20 +1,12 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import { getClient, getMockConnectUrl, clearMockRequests, clearMockOverrides } from "../helpers";
+import { describe, it, expect } from "vitest";
+import { setupContractTest } from "../helpers";
 
 describe("GetIntegrations", () => {
-  const apiKey = "test-api-key-12345";
-
-  beforeEach(async () => {
-    await clearMockOverrides();
-    await clearMockRequests();
-  });
+  const { client, apiKey } = setupContractTest();
 
   describe("request correctness", () => {
     it("sends GET to /__api__/v1/oauth/integrations", async () => {
-      const client = getClient();
-      const connectUrl = getMockConnectUrl();
-
-      const result = await client.getIntegrations({ connectUrl, apiKey });
+      const result = await client.call("GetIntegrations");
 
       expect(result.capturedRequest).not.toBeNull();
       expect(result.capturedRequest!.method).toBe("GET");
@@ -24,10 +16,7 @@ describe("GetIntegrations", () => {
     });
 
     it("sends Authorization header with Key prefix", async () => {
-      const client = getClient();
-      const connectUrl = getMockConnectUrl();
-
-      const result = await client.getIntegrations({ connectUrl, apiKey });
+      const result = await client.call("GetIntegrations");
 
       expect(result.capturedRequest).not.toBeNull();
       expect(result.capturedRequest!.headers["authorization"]).toBe(
@@ -38,19 +27,13 @@ describe("GetIntegrations", () => {
 
   describe("response parsing", () => {
     it("returns success status", async () => {
-      const client = getClient();
-      const connectUrl = getMockConnectUrl();
-
-      const result = await client.getIntegrations({ connectUrl, apiKey });
+      const result = await client.call("GetIntegrations");
 
       expect(result.status).toBe("success");
     });
 
     it("parses Integration array with expected fields", async () => {
-      const client = getClient();
-      const connectUrl = getMockConnectUrl();
-
-      const result = await client.getIntegrations({ connectUrl, apiKey });
+      const result = await client.call("GetIntegrations");
       const integrations = result.result as Array<{
         guid: string;
         name: string;

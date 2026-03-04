@@ -1,24 +1,14 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import { getClient, getMockConnectUrl, clearMockRequests, clearMockOverrides } from "../helpers";
+import { describe, it, expect } from "vitest";
+import { setupContractTest } from "../helpers";
 
 describe("DownloadBundle", () => {
-  const apiKey = "test-api-key-12345";
+  const { client, apiKey } = setupContractTest();
   const contentId = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
   const bundleId = "101";
 
-  beforeEach(async () => {
-    await clearMockOverrides();
-    await clearMockRequests();
-  });
-
   describe("request correctness", () => {
     it("sends GET to /__api__/v1/content/:id/bundles/:bid/download", async () => {
-      const client = getClient();
-      const connectUrl = getMockConnectUrl();
-
-      const result = await client.downloadBundle({
-        connectUrl,
-        apiKey,
+      const result = await client.call("DownloadBundle", {
         contentId,
         bundleId,
       });
@@ -31,12 +21,7 @@ describe("DownloadBundle", () => {
     });
 
     it("sends Authorization header with Key prefix", async () => {
-      const client = getClient();
-      const connectUrl = getMockConnectUrl();
-
-      const result = await client.downloadBundle({
-        connectUrl,
-        apiKey,
+      const result = await client.call("DownloadBundle", {
         contentId,
         bundleId,
       });
@@ -50,12 +35,7 @@ describe("DownloadBundle", () => {
 
   describe("response parsing", () => {
     it("returns success status", async () => {
-      const client = getClient();
-      const connectUrl = getMockConnectUrl();
-
-      const result = await client.downloadBundle({
-        connectUrl,
-        apiKey,
+      const result = await client.call("DownloadBundle", {
         contentId,
         bundleId,
       });
@@ -64,12 +44,7 @@ describe("DownloadBundle", () => {
     });
 
     it("returns raw bytes from response", async () => {
-      const client = getClient();
-      const connectUrl = getMockConnectUrl();
-
-      const result = await client.downloadBundle({
-        connectUrl,
-        apiKey,
+      const result = await client.call("DownloadBundle", {
         contentId,
         bundleId,
       });
