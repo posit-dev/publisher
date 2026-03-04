@@ -234,7 +234,7 @@ test *args=("-short ./..."):
 
     go test {{ args }} -covermode set -coverprofile=cover.out
 
-# Run extension API contract tests (no Go binary needed — uses mock server)
+# Run extension API contract tests (validates vscode/positron API usage)
 test-extension-contracts:
     #!/usr/bin/env bash
     set -eou pipefail

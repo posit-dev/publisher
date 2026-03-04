@@ -1,14 +1,19 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "ESNext",
+    "baseUrl": ".",
+    "target": "ES2023",
+    "module": "preserve",
     "moduleResolution": "bundler",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "outDir": "dist",
-    "rootDir": "src",
-    "types": ["vitest/globals"]
+    "lib": ["ES2023", "DOM"],
+    "paths": {
+      "vscode": ["./src/mocks/vscode.ts"],
+      "positron": ["./src/mocks/positron.ts"],
+      "src/*": ["../../extensions/vscode/src/*"]
+    }
   },
   "include": ["src/**/*.ts"]
 }

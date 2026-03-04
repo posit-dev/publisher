@@ -1,11 +1,15 @@
 import { defineConfig } from "vitest/config";
+import path from "path";
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      vscode: path.resolve(__dirname, "src/mocks/vscode.ts"),
+      positron: path.resolve(__dirname, "src/mocks/positron.ts"),
+      src: path.resolve(__dirname, "../../extensions/vscode/src"),
+    },
+  },
   test: {
-    globalSetup: ["src/setup.ts"],
-    testTimeout: 30_000,
-    hookTimeout: 60_000,
-    include: ["src/endpoints/**/*.test.ts"],
-    fileParallelism: false,
+    include: ["src/contracts/**/*.test.ts"],
   },
 });

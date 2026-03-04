@@ -1,71 +1,47 @@
 # Extension API Contract Tests
 
-Contract tests that validate how the **extension's HTTP client** constructs requests to Publisher's API and parses responses. While the [Publisher API contract tests](../api-contracts/) validate the server's behavior with a real Go binary, these tests validate the **client side** — ensuring the Axios-based extension correctly builds URLs, query params, headers, and request bodies.
-
-This is the complement of the [Publisher API contract tests](../api-contracts/), not a replacement. Together they form a complete contract: one side verifies the server, the other verifies the client.
+Contract tests that validate which **VSCode and Positron APIs** the extension calls, with what arguments, and what it expects back. These tests mock the `vscode` and `positron` modules, import actual extension code against those mocks, and assert API interactions.
 
 ## Architecture
 
 ```
-Test code  →  Axios client (mirrors extension)  →  Mock Publisher server (Node.js)
-               GET /configurations?dir=...           canned JSON response
-               (same paths, params, body shapes)     (matches Go backend shapes)
+Test code  →  Import real extension module  →  Mock vscode/positron APIs
+               (e.g., src/dialogs.ts)           (vi.fn() spies record calls)
 ```
 
-A single mock server is involved:
-
-1. **Mock Publisher server** — A Node.js HTTP server that returns canned JSON responses matching the shapes the Go backend produces, and captures all incoming requests for assertion.
-
-The mock exposes control endpoints for tests:
-- `GET /__test__/requests` — Read all captured requests
-- `DELETE /__test__/requests` — Clear captured requests
-
-Unlike the other contract test suites, no Go binary or temp workspace is needed — the mock server handles everything.
+No Go binary, no HTTP server, no network. Tests run entirely in-process using Vitest with module aliasing to intercept `vscode` and `positron` imports.
 
 ## What's tested
 
-The Axios client mirrors the exact HTTP calls made by the extension's resource classes (`extensions/vscode/src/api/resources/`):
+Each test file captures the contract between extension code and the VSCode/Positron API surface:
 
-| Client Method | Extension Class | HTTP Request |
-|--------------|----------------|--------------|
-| `getConfigurations` | `Configurations.getAll` | `GET /configurations?dir=...` |
-| `getConfiguration` | `Configurations.get` | `GET /configurations/:name?dir=...` |
-| `createOrUpdateConfiguration` | `Configurations.createOrUpdate` | `PUT /configurations/:name?dir=...` |
-| `deleteConfiguration` | `Configurations.delete` | `DELETE /configurations/:name?dir=...` |
-| `listCredentials` | `Credentials.list` | `GET /credentials` |
-| `createCredential` | `Credentials.connectCreate` | `POST /credentials` |
-| `getCredential` | `Credentials.get` | `GET /credentials/:guid` |
-| `deleteCredential` | `Credentials.delete` | `DELETE /credentials/:guid` |
-| `resetCredentials` | `Credentials.reset` | `DELETE /credentials` |
-| `testCredentials` | `Credentials.test` | `POST /test-credentials` |
-| `getDeployments` | `ContentRecords.getAll` | `GET /deployments?dir=...` |
-| `getDeployment` | `ContentRecords.get` | `GET /deployments/:id?dir=...` |
-| `createDeployment` | `ContentRecords.createNew` | `POST /deployments?dir=...` |
-| `deleteDeployment` | `ContentRecords.delete` | `DELETE /deployments/:name?dir=...` |
-| `patchDeployment` | `ContentRecords.patch` | `PATCH /deployments/:name?dir=...` |
+| Test File | Extension Source | APIs Validated |
+|-----------|-----------------|----------------|
+| `positron-settings` | `utils/positronSettings.ts` | `workspace.getConfiguration("positron.r")` |
+| `extension-settings` | `extension.ts` | `workspace.getConfiguration("positPublisher")` |
+| `dialogs` | `dialogs.ts` | `window.showInformationMessage` (modal), `l10n.t` |
+| `window-utils` | `utils/window.ts` | `window.showErrorMessage`, `withProgress`, `createTerminal` |
+| `interpreter-discovery` | `utils/vscode.ts` | `commands.executeCommand`, `workspace.getConfiguration`, Positron runtime |
+| `file-watchers` | `watchers.ts` | `workspace.createFileSystemWatcher`, `RelativePattern` |
+| `llm-tools` | `llm/index.ts` | `lm.registerTool` |
+| `open-connect` | `open_connect.ts` | `window.showInputBox`, `workspace.updateWorkspaceFolders` |
+| `auth-provider` | `authProvider.ts` | `authentication.registerAuthenticationProvider` |
+| `connect-filesystem` | `connect_content_fs.ts` | `workspace.registerFileSystemProvider`, `FileSystemError` |
+| `document-tracker` | `entrypointTracker.ts` | Editor/document change events, `commands.executeCommand("setContext")` |
+| `activation` | `extension.ts` | `activate()` wiring: trust, URI handler, commands, contexts |
 
-Each test validates:
-- **Request correctness** — method, path, query params, headers, body
-- **Response parsing** — client returns correctly shaped data with correct status
-- **Snapshot** — response shape stability
+## Mock design
 
-## URL path note
+### `src/mocks/vscode.ts`
+Comprehensive mock of the `vscode` module with `vi.fn()` spies for all APIs the extension uses. Includes constructors (`Disposable`, `EventEmitter`, `Uri`, `RelativePattern`, etc.), enums (`FileType`, `ProgressLocation`, etc.), and namespace objects (`commands`, `window`, `workspace`, `authentication`, `lm`, `l10n`).
 
-The extension resource classes have an inconsistency: some use leading `/` (e.g., `"/configurations"`) and others don't (e.g., `"credentials"`). With Axios, a leading `/` resolves relative to the origin, bypassing any path component in `baseURL`. The mock server registers routes without any `/api` prefix to match the actual resolved paths.
-
-## Client implementations
-
-| Client | Description |
-|--------|-------------|
-| `AxiosExtensionClient` | Axios-based client mirroring the real extension's HTTP calls |
-| `FetchReferenceClient` | Stub for future Positron/fetch-based client (all methods throw) |
-
-Set `API_BACKEND=fetch` to run against the fetch client once implemented.
+### `src/mocks/positron.ts`
+Mock of the `positron` module providing `acquirePositronApi()` and the `LanguageRuntimeMetadata` type.
 
 ## Running
 
 ```bash
-# Install dependencies
+# Install dependencies (first time)
 cd test/extension-api-contracts && npm install
 
 # Run tests
@@ -74,26 +50,19 @@ just test-extension-contracts
 # Or directly
 cd test/extension-api-contracts && npx vitest run
 
-# Update snapshots
-cd test/extension-api-contracts && npx vitest run --update
-
 # Watch mode
 cd test/extension-api-contracts && npx vitest
 ```
 
-## Adding tests
+## Adding a new contract test
 
-1. Add a method to the `ExtensionContractClient` interface in `src/client.ts`
-2. Implement it in both `src/clients/axios-extension-client.ts` and `src/clients/fetch-reference-client.ts`
-3. Add a route handler in `src/mock-publisher-server.ts` with a canned response fixture
-4. Create or update a test file in `src/endpoints/`
-5. Use `getClient()` from `src/helpers.ts` to get the appropriate client
-
-## Fixture files
-
-- `src/fixtures/publisher-responses/` — Canned JSON responses matching the shapes the Go backend returns
+1. Create a new file in `src/contracts/` following the naming convention: `<feature>.test.ts`
+2. Import `vi` from `vitest` and the relevant `vscode` APIs from the mock
+3. Mock any internal dependencies with `vi.mock("src/...")`
+4. Import the extension module under test with `await import("src/...")`
+5. Write tests that call extension functions and assert which VSCode APIs were invoked
 
 ## Related test suites
 
-- [Publisher API contract tests](../api-contracts/) — Tests Publisher's server side (real Go binary + raw fetch client)
-- [Connect API contract tests](../connect-api-contracts/) — Tests Publisher as a client of Connect (Go binary + mock Connect server)
+- Extension unit tests (`extensions/vscode/src/**/*.test.ts`) — Test internal logic
+- E2E tests (`test/e2e/`) — Full integration with Docker

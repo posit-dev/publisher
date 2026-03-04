@@ -4,11 +4,7 @@
   "type": "module",
   "scripts": {
     "test": "vitest run",
-    "test:watch": "vitest",
-    "test:update": "vitest run --update"
-  },
-  "dependencies": {
-    "axios": "^1.7.0"
+    "test:watch": "vitest"
   },
   "devDependencies": {
     "typescript": "^5.7.0",
