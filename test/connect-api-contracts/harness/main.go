@@ -1,5 +1,7 @@
 package main
 
+// Copyright (C) 2026 by Posit Software, PBC.
+
 import (
 	"bytes"
 	"encoding/base64"
@@ -29,15 +31,15 @@ var log = logging.NewDiscardLogger()
 
 // callRequest is the single request body for POST /call.
 type callRequest struct {
-	Method    string            `json:"method"`
-	ConnectURL string           `json:"connectUrl"`
-	ApiKey    string            `json:"apiKey"`
-	ContentID string            `json:"contentId,omitempty"`
-	BundleID  string            `json:"bundleId,omitempty"`
-	TaskID    string            `json:"taskId,omitempty"`
-	Body      json.RawMessage   `json:"body,omitempty"`
-	Env       map[string]string `json:"env,omitempty"`
-	BundleData string           `json:"bundleData,omitempty"` // base64
+	Method     string            `json:"method"`
+	ConnectURL string            `json:"connectUrl"`
+	ApiKey     string            `json:"apiKey"`
+	ContentID  string            `json:"contentId,omitempty"`
+	BundleID   string            `json:"bundleId,omitempty"`
+	TaskID     string            `json:"taskId,omitempty"`
+	Body       json.RawMessage   `json:"body,omitempty"`
+	Env        map[string]string `json:"env,omitempty"`
+	BundleData string            `json:"bundleData,omitempty"` // base64
 }
 
 // callResponse is returned by every harness call.
