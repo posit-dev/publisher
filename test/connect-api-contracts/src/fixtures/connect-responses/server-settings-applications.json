@@ -1,0 +1,6 @@
+{
+  "access_types": ["acl", "logged_in", "all"],
+  "run_as": "rstudio-connect",
+  "run_as_group": "",
+  "run_as_current_user": false
+}

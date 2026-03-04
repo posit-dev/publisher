@@ -1,0 +1,9 @@
+{
+  "id": "task-abc123-def456",
+  "output": ["Building Python application...", "Bundle requested Python version 3.11.6", "Error code: python-package-install-failed"],
+  "result": null,
+  "finished": true,
+  "code": 1,
+  "error": "Error code: python-package-install-failed",
+  "last": 3
+}
