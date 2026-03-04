@@ -60,7 +60,7 @@ Each test validates both:
 | `GoPublisherClient`      | Calls the Go harness `POST /call`, which internally calls mock Connect   |
 | `TypeScriptDirectClient` | Stub for future TS ConnectClient (`call()` throws "Not implemented yet") |
 
-Both implement a single `call(method, params?)` interface. The `connectUrl` and `apiKey` are injected at construction time, so tests only pass method-specific params.
+Both implement a single `call(method, params?)` interface. The `connectUrl` and `apiKey` are injected at construction time, so tests only pass method-specific params. Method names are typed via the `Method` constant and `MethodName` type exported from `src/client.ts` (e.g. `Method.CreateDeployment` instead of a raw string).
 
 Set `API_BACKEND=typescript` to run against the TS client once implemented.
 
@@ -78,7 +78,24 @@ just build-connect-harness
 
 # Update snapshots
 cd test/connect-api-contracts && npx vitest run --update
+
+# Validate fixtures against the Connect Swagger spec
+just validate-fixtures
 ```
+
+## Swagger spec validation
+
+Fixture files are validated against the [Connect public Swagger spec](https://docs.posit.co/connect/api/swagger.json) to ensure they match the real API schemas. This catches drift between our test fixtures and the actual Connect API.
+
+The validation suite:
+
+- Fetches the Swagger spec (cached locally for 24 hours in `.cache/`)
+- Resolves `$ref` pointers and transforms `x-nullable` to JSON Schema nullable types
+- Validates each fixture against its corresponding endpoint's response schema using AJV
+- Warns about extra fields in fixtures that aren't in the spec (non-failing)
+- Skips fixtures for undocumented internal endpoints (e.g. `server_settings`, `server_settings/applications`)
+
+Fixture-to-endpoint mappings are defined in `src/validation/fixture-map.ts`. When adding a new fixture, add a corresponding entry there.
 
 ## Adding tests
 
@@ -89,21 +106,30 @@ cd test/connect-api-contracts && npx vitest run --update
 ```ts
 import { describe, it, expect } from "vitest";
 import { setupContractTest } from "../helpers";
+import { Method } from "../client";
 
 describe("NewMethod", () => {
   const { client } = setupContractTest();
 
   it("sends correct request", async () => {
-    const result = await client.call("NewMethod", { contentId: "abc" });
+    const result = await client.call(Method.NewMethod, { contentId: "abc" });
     expect(result.capturedRequest!.method).toBe("GET");
   });
 });
 ```
 
-## Fixture files
+4. Add a fixture mapping in `src/validation/fixture-map.ts` for Swagger validation
 
+## Project structure
+
+- `src/client.ts` — `Method` constants, `MethodName` type, and `ConnectContractClient` interface
+- `src/mock-connect-server.ts` — `MockConnectServer` class with route-based dispatch and test control endpoints
+- `src/helpers.ts` — `setupContractTest()` helper for test setup/teardown
+- `src/endpoints/` — One test file per `APIClient` method
 - `src/fixtures/connect-responses/` — Canned JSON responses for Connect API endpoints
 - `src/fixtures/workspace/` — Minimal project files (used by GetSettings for config)
+- `src/validation/` — Swagger spec validation for fixtures
+- `harness/main.go` — Go test harness binary
 
 ## Future expansion
 
