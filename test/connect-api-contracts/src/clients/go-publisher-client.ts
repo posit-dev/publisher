@@ -1,4 +1,8 @@
-import type { ConnectContractClient, ConnectContractResult, MethodName } from "../client";
+import type {
+  ConnectContractClient,
+  ConnectContractResult,
+  MethodName,
+} from "../client";
 
 interface HarnessResponse {
   status: "success" | "error";

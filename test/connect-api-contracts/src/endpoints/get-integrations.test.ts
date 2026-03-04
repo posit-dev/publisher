@@ -38,9 +38,7 @@ describe("GetIntegrations", () => {
 
       expect(integrations).toBeInstanceOf(Array);
       expect(integrations.length).toBe(1);
-      expect(integrations[0].guid).toBe(
-        "1a2b3c4d-5e6f-7890-abcd-ef0123456789",
-      );
+      expect(integrations[0].guid).toBe("1a2b3c4d-5e6f-7890-abcd-ef0123456789");
       expect(integrations[0].name).toBe("My OAuth Integration");
       expect(integrations[0].auth_type).toBe("OAuth2");
     });

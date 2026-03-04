@@ -18,6 +18,7 @@ Two servers are involved:
 2. **Go harness** — A thin HTTP server with a single `POST /call` endpoint that dispatches to `APIClient` methods by name. Each request creates a fresh `ConnectClient` pointed at the mock, calls the target method, and returns the result plus captured requests as JSON.
 
 The mock exposes control endpoints for tests:
+
 - `GET /__test__/requests` — Read all captured requests
 - `DELETE /__test__/requests` — Clear captured requests
 - `POST /__test__/response-override` — Set a response override
@@ -27,35 +28,36 @@ The mock exposes control endpoints for tests:
 
 All 15 methods on the Go `APIClient` interface have corresponding test files, mock routes, and fixtures.
 
-| Method | Connect Path |
-|--------|-------------|
-| `TestAuthentication` | `GET /__api__/v1/user` |
-| `GetCurrentUser` | `GET /__api__/v1/user` |
-| `ContentDetails` | `GET /__api__/v1/content/:id` |
-| `CreateDeployment` | `POST /__api__/v1/content` |
-| `UpdateDeployment` | `PATCH /__api__/v1/content/:id` |
-| `GetEnvVars` | `GET /__api__/v1/content/:id/environment` |
-| `SetEnvVars` | `PATCH /__api__/v1/content/:id/environment` |
-| `UploadBundle` | `POST /__api__/v1/content/:id/bundles` |
-| `DeployBundle` | `POST /__api__/v1/content/:id/deploy` |
-| `WaitForTask` | `GET /__api__/v1/tasks/:id?first=N` |
-| `ValidateDeployment` | `GET /content/:id/` |
-| `GetIntegrations` | `GET /__api__/v1/oauth/integrations` |
-| `GetSettings` | 7 endpoints (see below) |
-| `LatestBundleID` | `GET /__api__/v1/content/:id` |
-| `DownloadBundle` | `GET /__api__/v1/content/:id/bundles/:bid/download` |
+| Method               | Connect Path                                        |
+| -------------------- | --------------------------------------------------- |
+| `TestAuthentication` | `GET /__api__/v1/user`                              |
+| `GetCurrentUser`     | `GET /__api__/v1/user`                              |
+| `ContentDetails`     | `GET /__api__/v1/content/:id`                       |
+| `CreateDeployment`   | `POST /__api__/v1/content`                          |
+| `UpdateDeployment`   | `PATCH /__api__/v1/content/:id`                     |
+| `GetEnvVars`         | `GET /__api__/v1/content/:id/environment`           |
+| `SetEnvVars`         | `PATCH /__api__/v1/content/:id/environment`         |
+| `UploadBundle`       | `POST /__api__/v1/content/:id/bundles`              |
+| `DeployBundle`       | `POST /__api__/v1/content/:id/deploy`               |
+| `WaitForTask`        | `GET /__api__/v1/tasks/:id?first=N`                 |
+| `ValidateDeployment` | `GET /content/:id/`                                 |
+| `GetIntegrations`    | `GET /__api__/v1/oauth/integrations`                |
+| `GetSettings`        | 7 endpoints (see below)                             |
+| `LatestBundleID`     | `GET /__api__/v1/content/:id`                       |
+| `DownloadBundle`     | `GET /__api__/v1/content/:id/bundles/:bid/download` |
 
 `GetSettings` calls 7 endpoints in sequence: `/__api__/v1/user`, `/__api__/server_settings`, `/__api__/server_settings/applications`, `/__api__/server_settings/scheduler[/{appMode}]`, `/__api__/v1/server_settings/python`, `/__api__/v1/server_settings/r`, `/__api__/v1/server_settings/quarto`.
 
 Each test validates both:
+
 - **Request correctness** — method, path, `Authorization: Key <apiKey>` header
 - **Response parsing** — Publisher correctly transforms Connect's DTO into its internal types
 
 ## Client implementations
 
-| Client | Description |
-|--------|-------------|
-| `GoPublisherClient` | Calls the Go harness `POST /call`, which internally calls mock Connect |
+| Client                   | Description                                                              |
+| ------------------------ | ------------------------------------------------------------------------ |
+| `GoPublisherClient`      | Calls the Go harness `POST /call`, which internally calls mock Connect   |
 | `TypeScriptDirectClient` | Stub for future TS ConnectClient (`call()` throws "Not implemented yet") |
 
 Both implement a single `call(method, params?)` interface. The `connectUrl` and `apiKey` are injected at construction time, so tests only pass method-specific params.
@@ -106,5 +108,6 @@ describe("NewMethod", () => {
 ## Future expansion
 
 When the TS ConnectClient is built:
+
 1. Implement the `call()` dispatcher in `ts-direct-client.ts` to route methods to the TS client
 2. Both Go and TS paths validate against the same snapshots and request expectations

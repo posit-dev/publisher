@@ -26,16 +26,17 @@ describe("GetSettings", () => {
 
     it("sends GET to /__api__/server_settings", async () => {
       const { all } = await callAndCapture();
-      const generalReq = all.find(
-        (r) => r.path === "/__api__/server_settings",
-      );
+      const generalReq = all.find((r) => r.path === "/__api__/server_settings");
       expect(generalReq).toBeDefined();
       expect(generalReq!.method).toBe("GET");
     });
 
     it("sends GET to /__api__/server_settings/applications", async () => {
       const { all } = await callAndCapture();
-      const matched = filterByPath(all, "/__api__/server_settings/applications");
+      const matched = filterByPath(
+        all,
+        "/__api__/server_settings/applications",
+      );
       expect(matched.length).toBeGreaterThanOrEqual(1);
       expect(matched[0].method).toBe("GET");
     });

@@ -1,13 +1,19 @@
 import { describe, it, expect } from "vitest";
 import { Method } from "../client";
-import { setupContractTest, setMockResponse, TEST_CONTENT_ID } from "../helpers";
+import {
+  setupContractTest,
+  setMockResponse,
+  TEST_CONTENT_ID,
+} from "../helpers";
 
 describe("ValidateDeployment", () => {
   const { client } = setupContractTest();
 
   describe("request correctness", () => {
     it("sends GET to /content/:id/ (non-API path)", async () => {
-      const result = await client.call(Method.ValidateDeployment, { contentId: TEST_CONTENT_ID });
+      const result = await client.call(Method.ValidateDeployment, {
+        contentId: TEST_CONTENT_ID,
+      });
 
       expect(result.capturedRequest).not.toBeNull();
       expect(result.capturedRequest!.method).toBe("GET");
@@ -17,7 +23,9 @@ describe("ValidateDeployment", () => {
 
   describe("response parsing", () => {
     it("returns success status for 200 response", async () => {
-      const result = await client.call(Method.ValidateDeployment, { contentId: TEST_CONTENT_ID });
+      const result = await client.call(Method.ValidateDeployment, {
+        contentId: TEST_CONTENT_ID,
+      });
 
       expect(result.status).toBe("success");
     });
@@ -33,7 +41,9 @@ describe("ValidateDeployment", () => {
         contentType: "text/html",
       });
 
-      const result = await client.call(Method.ValidateDeployment, { contentId: TEST_CONTENT_ID });
+      const result = await client.call(Method.ValidateDeployment, {
+        contentId: TEST_CONTENT_ID,
+      });
 
       expect(result.status).toBe("error");
     });
@@ -47,7 +57,9 @@ describe("ValidateDeployment", () => {
         contentType: "text/html",
       });
 
-      const result = await client.call(Method.ValidateDeployment, { contentId: TEST_CONTENT_ID });
+      const result = await client.call(Method.ValidateDeployment, {
+        contentId: TEST_CONTENT_ID,
+      });
 
       // 404 is acceptable — content may not be running yet
       expect(result.status).toBe("success");

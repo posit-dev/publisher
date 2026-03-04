@@ -1,6 +1,12 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
-import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "fs";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  statSync,
+  writeFileSync,
+} from "fs";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 
@@ -62,7 +68,9 @@ export async function getSwaggerSpec(): Promise<SwaggerSpec> {
 
   const res = await fetch(SWAGGER_URL);
   if (!res.ok) {
-    throw new Error(`Failed to fetch Swagger spec: ${res.status} ${res.statusText}`);
+    throw new Error(
+      `Failed to fetch Swagger spec: ${res.status} ${res.statusText}`,
+    );
   }
 
   const text = await res.text();
@@ -114,7 +122,11 @@ export function dereferenceSchema(
   }
 
   if (resolved.items) {
-    resolved.items = dereferenceSchema(resolved.items, definitions, new Set(seen));
+    resolved.items = dereferenceSchema(
+      resolved.items,
+      definitions,
+      new Set(seen),
+    );
   }
 
   if (resolved.allOf) {
@@ -123,7 +135,10 @@ export function dereferenceSchema(
     );
   }
 
-  if (resolved.additionalProperties && typeof resolved.additionalProperties === "object") {
+  if (
+    resolved.additionalProperties &&
+    typeof resolved.additionalProperties === "object"
+  ) {
     resolved.additionalProperties = dereferenceSchema(
       resolved.additionalProperties as JsonSchema,
       definitions,
@@ -164,7 +179,10 @@ export function transformNullable(schema: JsonSchema): JsonSchema {
     result.allOf = result.allOf.map(transformNullable);
   }
 
-  if (result.additionalProperties && typeof result.additionalProperties === "object") {
+  if (
+    result.additionalProperties &&
+    typeof result.additionalProperties === "object"
+  ) {
     result.additionalProperties = transformNullable(
       result.additionalProperties as JsonSchema,
     );

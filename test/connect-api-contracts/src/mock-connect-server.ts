@@ -1,4 +1,8 @@
-import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
+import {
+  createServer,
+  type IncomingMessage,
+  type ServerResponse,
+} from "node:http";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -26,8 +30,8 @@ function loadFixture(name: string): unknown {
 
 // Minimal valid gzip stream (empty gzip file)
 const DUMMY_GZIP_BYTES = Buffer.from([
-  0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03,
-  0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x03, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 ]);
 
 export class MockConnectServer {
@@ -54,30 +58,101 @@ export class MockConnectServer {
     // Each entry: [method, pattern, status, fixture-or-response, contentType?]
     const routes: Array<[string, RegExp, number, unknown, string?]> = [
       // Authentication & User
-      ["GET",   /^\/__api__\/v1\/user$/,                                       200, loadFixture("user.json")],
+      ["GET", /^\/__api__\/v1\/user$/, 200, loadFixture("user.json")],
       // OAuth Integrations
-      ["GET",   /^\/__api__\/v1\/oauth\/integrations$/,                        200, loadFixture("integrations.json")],
+      [
+        "GET",
+        /^\/__api__\/v1\/oauth\/integrations$/,
+        200,
+        loadFixture("integrations.json"),
+      ],
       // Content sub-resources (specific before generic)
-      ["GET",   /^\/__api__\/v1\/content\/[^/]+\/bundles\/[^/]+\/download$/,   200, DUMMY_GZIP_BYTES, "application/gzip"],
-      ["POST",  /^\/__api__\/v1\/content\/[^/]+\/bundles$/,                    200, loadFixture("bundle-upload.json")],
-      ["GET",   /^\/__api__\/v1\/content\/[^/]+\/environment$/,                200, loadFixture("environment.json")],
-      ["PATCH", /^\/__api__\/v1\/content\/[^/]+\/environment$/,                204, null],
-      ["POST",  /^\/__api__\/v1\/content\/[^/]+\/deploy$/,                     200, loadFixture("deploy.json")],
+      [
+        "GET",
+        /^\/__api__\/v1\/content\/[^/]+\/bundles\/[^/]+\/download$/,
+        200,
+        DUMMY_GZIP_BYTES,
+        "application/gzip",
+      ],
+      [
+        "POST",
+        /^\/__api__\/v1\/content\/[^/]+\/bundles$/,
+        200,
+        loadFixture("bundle-upload.json"),
+      ],
+      [
+        "GET",
+        /^\/__api__\/v1\/content\/[^/]+\/environment$/,
+        200,
+        loadFixture("environment.json"),
+      ],
+      ["PATCH", /^\/__api__\/v1\/content\/[^/]+\/environment$/, 204, null],
+      [
+        "POST",
+        /^\/__api__\/v1\/content\/[^/]+\/deploy$/,
+        200,
+        loadFixture("deploy.json"),
+      ],
       // Content CRUD
-      ["POST",  /^\/__api__\/v1\/content$/,                                    200, loadFixture("content-create.json")],
-      ["PATCH", /^\/__api__\/v1\/content\/[^/]+$/,                             204, null],
-      ["GET",   /^\/__api__\/v1\/content\/[^/]+$/,                             200, loadFixture("content-details.json")],
+      [
+        "POST",
+        /^\/__api__\/v1\/content$/,
+        200,
+        loadFixture("content-create.json"),
+      ],
+      ["PATCH", /^\/__api__\/v1\/content\/[^/]+$/, 204, null],
+      [
+        "GET",
+        /^\/__api__\/v1\/content\/[^/]+$/,
+        200,
+        loadFixture("content-details.json"),
+      ],
       // Tasks
-      ["GET",   /^\/__api__\/v1\/tasks\/[^?]+/,                               200, loadFixture("task-finished.json")],
+      [
+        "GET",
+        /^\/__api__\/v1\/tasks\/[^?]+/,
+        200,
+        loadFixture("task-finished.json"),
+      ],
       // Server Settings
-      ["GET",   /^\/__api__\/server_settings\/applications$/,                  200, loadFixture("server-settings-applications.json")],
-      ["GET",   /^\/__api__\/server_settings\/scheduler/,                      200, loadFixture("server-settings-scheduler.json")],
-      ["GET",   /^\/__api__\/server_settings$/,                                200, loadFixture("server-settings.json")],
-      ["GET",   /^\/__api__\/v1\/server_settings\/python$/,                    200, loadFixture("server-settings-python.json")],
-      ["GET",   /^\/__api__\/v1\/server_settings\/r$/,                         200, loadFixture("server-settings-r.json")],
-      ["GET",   /^\/__api__\/v1\/server_settings\/quarto$/,                    200, loadFixture("server-settings-quarto.json")],
+      [
+        "GET",
+        /^\/__api__\/server_settings\/applications$/,
+        200,
+        loadFixture("server-settings-applications.json"),
+      ],
+      [
+        "GET",
+        /^\/__api__\/server_settings\/scheduler/,
+        200,
+        loadFixture("server-settings-scheduler.json"),
+      ],
+      [
+        "GET",
+        /^\/__api__\/server_settings$/,
+        200,
+        loadFixture("server-settings.json"),
+      ],
+      [
+        "GET",
+        /^\/__api__\/v1\/server_settings\/python$/,
+        200,
+        loadFixture("server-settings-python.json"),
+      ],
+      [
+        "GET",
+        /^\/__api__\/v1\/server_settings\/r$/,
+        200,
+        loadFixture("server-settings-r.json"),
+      ],
+      [
+        "GET",
+        /^\/__api__\/v1\/server_settings\/quarto$/,
+        200,
+        loadFixture("server-settings-quarto.json"),
+      ],
       // Content Validation (non-API path)
-      ["GET",   /^\/content\/[^/]+\/$/,                                        200, "<html>OK</html>", "text/html"],
+      ["GET", /^\/content\/[^/]+\/$/, 200, "<html>OK</html>", "text/html"],
     ];
 
     for (const [method, pattern, status, response, contentType] of routes) {
@@ -159,7 +234,8 @@ export class MockConnectServer {
     const chunks: Buffer[] = [];
     req.on("data", (chunk: Buffer) => chunks.push(chunk));
     req.on("end", () => {
-      const bodyStr = chunks.length > 0 ? Buffer.concat(chunks).toString("utf-8") : null;
+      const bodyStr =
+        chunks.length > 0 ? Buffer.concat(chunks).toString("utf-8") : null;
 
       // Flatten headers to Record<string, string>
       const headers: Record<string, string> = {};
@@ -179,9 +255,7 @@ export class MockConnectServer {
         this.overrides.find(
           (r) => r.method === method && r.pattern.test(path),
         ) ??
-        this.routes.find(
-          (r) => r.method === method && r.pattern.test(path),
-        );
+        this.routes.find((r) => r.method === method && r.pattern.test(path));
 
       if (route) {
         const contentType = route.contentType ?? "application/json";

@@ -11,14 +11,11 @@ let mockServer: MockConnectServer | null = null;
 
 function buildHarness(): string {
   const binaryPath = resolve(HARNESS_DIR, "harness");
-  execSync(
-    `go build -o ${binaryPath} ./test/connect-api-contracts/harness/`,
-    {
-      cwd: REPO_ROOT,
-      encoding: "utf-8",
-      stdio: ["ignore", "pipe", "pipe"],
-    },
-  );
+  execSync(`go build -o ${binaryPath} ./test/connect-api-contracts/harness/`, {
+    cwd: REPO_ROOT,
+    encoding: "utf-8",
+    stdio: ["ignore", "pipe", "pipe"],
+  });
   return binaryPath;
 }
 

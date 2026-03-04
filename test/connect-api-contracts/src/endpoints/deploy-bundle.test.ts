@@ -1,6 +1,11 @@
 import { describe, it, expect } from "vitest";
 import { Method } from "../client";
-import { setupContractTest, TEST_CONTENT_ID, TEST_BUNDLE_ID, TEST_TASK_ID } from "../helpers";
+import {
+  setupContractTest,
+  TEST_CONTENT_ID,
+  TEST_BUNDLE_ID,
+  TEST_TASK_ID,
+} from "../helpers";
 
 describe("DeployBundle", () => {
   const { client } = setupContractTest();
