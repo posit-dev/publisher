@@ -246,6 +246,14 @@ test-connect-contracts:
 
     cd test/connect-api-contracts && npx vitest run
 
+# Validate Connect API fixtures against the public Swagger spec
+validate-fixtures:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    cd test/connect-api-contracts && npm run validate-fixtures
+
 # Execute Python script tests (licenses, prepare-release, etc.)
 test-scripts:
     #!/usr/bin/env bash

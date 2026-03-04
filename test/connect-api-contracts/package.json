@@ -5,9 +5,12 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:update": "vitest run --update"
+    "test:update": "vitest run --update",
+    "validate-fixtures": "vitest run --config vitest.validate.config.ts"
   },
   "devDependencies": {
+    "ajv": "^8.18.0",
+    "ajv-formats": "^3.0.1",
     "typescript": "^5.7.0",
     "vitest": "^3.0.0"
   }

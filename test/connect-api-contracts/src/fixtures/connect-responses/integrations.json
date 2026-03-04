@@ -1,6 +1,6 @@
 [
   {
-    "guid": "int-guid-1234-5678-abcd-ef0123456789",
+    "guid": "1a2b3c4d-5e6f-7890-abcd-ef0123456789",
     "name": "My OAuth Integration",
     "description": "OAuth integration for external service",
     "auth_type": "OAuth2",
