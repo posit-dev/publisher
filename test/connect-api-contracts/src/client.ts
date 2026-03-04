@@ -6,6 +6,7 @@ export interface ConnectContractResult<T = unknown> {
   status: ConnectContractStatus;
   result: T;
   capturedRequest: CapturedRequest | null;
+  capturedRequests?: CapturedRequest[];
 }
 
 export interface ConnectContractClient {
