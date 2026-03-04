@@ -1,6 +1,6 @@
-package main
-
 // Copyright (C) 2026 by Posit Software, PBC.
+
+package main
 
 import (
 	"bytes"
@@ -29,6 +29,17 @@ import (
 var log = logging.NewDiscardLogger()
 
 // callRequest is the single request body for POST /call.
+//
+// Fields used per method:
+//
+//	Method, ConnectURL, ApiKey        — always required
+//	Body                              — CreateDeployment, UpdateDeployment
+//	ContentID                         — ContentDetails, UpdateDeployment, GetEnvVars, SetEnvVars,
+//	                                    UploadBundle, DeployBundle, ValidateDeployment, LatestBundleID, DownloadBundle
+//	BundleID                          — DeployBundle, DownloadBundle
+//	TaskID                            — WaitForTask
+//	Env                               — SetEnvVars
+//	BundleData (base64)               — UploadBundle
 type callRequest struct {
 	Method     string            `json:"method"`
 	ConnectURL string            `json:"connectUrl"`
@@ -38,7 +49,7 @@ type callRequest struct {
 	TaskID     string            `json:"taskId,omitempty"`
 	Body       json.RawMessage   `json:"body,omitempty"`
 	Env        map[string]string `json:"env,omitempty"`
-	BundleData string            `json:"bundleData,omitempty"` // base64
+	BundleData string            `json:"bundleData,omitempty"`
 }
 
 // callResponse is returned by every harness call.
@@ -56,6 +67,27 @@ func newClient(connectURL, apiKey string) (connect.APIClient, error) {
 		ServerType: server_type.ServerTypeConnect,
 	}
 	return connect.NewConnectClient(account, 30*time.Second, events.NewNullEmitter(), log)
+}
+
+// unmarshalBody decodes req.Body into target if present.
+func unmarshalBody(raw json.RawMessage, target any) error {
+	if raw != nil {
+		return json.Unmarshal(raw, target)
+	}
+	return nil
+}
+
+// newTempSettings creates the temporary directory and config needed by GetSettings.
+// The caller must call the returned cleanup function when done.
+func newTempSettings() (util.AbsolutePath, *config.Config, func(), error) {
+	tmpDir, err := os.MkdirTemp("", "harness-settings-")
+	if err != nil {
+		return util.AbsolutePath{}, nil, nil, err
+	}
+	cleanup := func() { os.RemoveAll(tmpDir) }
+	cfg := &config.Config{Type: contenttypes.ContentType("python-fastapi")}
+	base := util.NewAbsolutePath(tmpDir, afero.NewOsFs())
+	return base, cfg, cleanup, nil
 }
 
 // clearMockRequests tells the mock server to forget all captured requests.
@@ -89,22 +121,25 @@ func fetchCapturedRequests(mockURL string) ([]any, error) {
 // dispatch calls the appropriate APIClient method and returns the result.
 func dispatch(client connect.APIClient, req *callRequest) (any, error) {
 	switch req.Method {
-	case "TestAuthentication":
+
+	// --- Authentication & User ---
+
+	case "TestAuthentication": // no extra fields
 		user, err := client.TestAuthentication(log)
 		if err != nil {
 			return map[string]any{"user": nil, "error": map[string]string{"msg": err.Error()}}, err
 		}
 		return map[string]any{"user": user, "error": nil}, nil
 
-	case "GetCurrentUser":
+	case "GetCurrentUser": // no extra fields
 		return client.GetCurrentUser(log)
 
-	case "CreateDeployment":
+	// --- Content CRUD ---
+
+	case "CreateDeployment": // body
 		var body connect.ConnectContent
-		if req.Body != nil {
-			if err := json.Unmarshal(req.Body, &body); err != nil {
-				return nil, err
-			}
+		if err := unmarshalBody(req.Body, &body); err != nil {
+			return nil, err
 		}
 		id, err := client.CreateDeployment(&body, log)
 		if err != nil {
@@ -112,7 +147,7 @@ func dispatch(client connect.APIClient, req *callRequest) (any, error) {
 		}
 		return map[string]any{"contentId": id}, nil
 
-	case "ContentDetails":
+	case "ContentDetails": // contentId
 		var body connect.ConnectContent
 		err := client.ContentDetails(types.ContentID(req.ContentID), &body, log)
 		if err != nil {
@@ -120,22 +155,24 @@ func dispatch(client connect.APIClient, req *callRequest) (any, error) {
 		}
 		return body, nil
 
-	case "UpdateDeployment":
+	case "UpdateDeployment": // contentId, body
 		var body connect.ConnectContent
-		if req.Body != nil {
-			if err := json.Unmarshal(req.Body, &body); err != nil {
-				return nil, err
-			}
+		if err := unmarshalBody(req.Body, &body); err != nil {
+			return nil, err
 		}
 		return nil, client.UpdateDeployment(types.ContentID(req.ContentID), &body, log)
 
-	case "GetEnvVars":
+	// --- Environment Variables ---
+
+	case "GetEnvVars": // contentId
 		return client.GetEnvVars(types.ContentID(req.ContentID), log)
 
-	case "SetEnvVars":
+	case "SetEnvVars": // contentId, env
 		return nil, client.SetEnvVars(types.ContentID(req.ContentID), config.Environment(req.Env), log)
 
-	case "UploadBundle":
+	// --- Bundles ---
+
+	case "UploadBundle": // contentId, bundleData (base64)
 		data, err := base64.StdEncoding.DecodeString(req.BundleData)
 		if err != nil {
 			return nil, err
@@ -146,48 +183,50 @@ func dispatch(client connect.APIClient, req *callRequest) (any, error) {
 		}
 		return map[string]any{"bundleId": id}, nil
 
-	case "DeployBundle":
-		id, err := client.DeployBundle(types.ContentID(req.ContentID), types.BundleID(req.BundleID), log)
-		if err != nil {
-			return nil, err
-		}
-		return map[string]any{"taskId": id}, nil
-
-	case "WaitForTask":
-		if err := client.WaitForTask(types.TaskID(req.TaskID), log); err != nil {
-			return nil, err
-		}
-		return map[string]any{"finished": true}, nil
-
-	case "ValidateDeployment":
-		return nil, client.ValidateDeployment(types.ContentID(req.ContentID), log)
-
-	case "GetIntegrations":
-		return client.GetIntegrations(log)
-
-	case "GetSettings":
-		tmpDir, err := os.MkdirTemp("", "harness-settings-")
-		if err != nil {
-			return nil, err
-		}
-		defer os.RemoveAll(tmpDir)
-		cfg := &config.Config{Type: contenttypes.ContentType("python-fastapi")}
-		base := util.NewAbsolutePath(tmpDir, afero.NewOsFs())
-		return client.GetSettings(base, cfg, log)
-
-	case "LatestBundleID":
+	case "LatestBundleID": // contentId
 		id, err := client.LatestBundleID(types.ContentID(req.ContentID), log)
 		if err != nil {
 			return nil, err
 		}
 		return map[string]any{"bundleId": id}, nil
 
-	case "DownloadBundle":
+	case "DownloadBundle": // contentId, bundleId
 		data, err := client.DownloadBundle(types.ContentID(req.ContentID), types.BundleID(req.BundleID), log)
 		if err != nil {
 			return nil, err
 		}
 		return base64.StdEncoding.EncodeToString(data), nil
+
+	// --- Deployment & Tasks ---
+
+	case "DeployBundle": // contentId, bundleId
+		id, err := client.DeployBundle(types.ContentID(req.ContentID), types.BundleID(req.BundleID), log)
+		if err != nil {
+			return nil, err
+		}
+		return map[string]any{"taskId": id}, nil
+
+	case "WaitForTask": // taskId
+		if err := client.WaitForTask(types.TaskID(req.TaskID), log); err != nil {
+			return nil, err
+		}
+		return map[string]any{"finished": true}, nil
+
+	case "ValidateDeployment": // contentId
+		return nil, client.ValidateDeployment(types.ContentID(req.ContentID), log)
+
+	// --- Server Info ---
+
+	case "GetIntegrations": // no extra fields
+		return client.GetIntegrations(log)
+
+	case "GetSettings": // no extra fields (uses temp dir internally)
+		base, cfg, cleanup, err := newTempSettings()
+		if err != nil {
+			return nil, err
+		}
+		defer cleanup()
+		return client.GetSettings(base, cfg, log)
 
 	default:
 		return nil, fmt.Errorf("unknown method: %s", req.Method)
@@ -216,7 +255,10 @@ func handleCall(w http.ResponseWriter, r *http.Request) {
 	result, err := dispatch(client, &req)
 
 	// Fetch captured requests from the mock after the call.
-	captured, _ := fetchCapturedRequests(req.ConnectURL)
+	captured, captureErr := fetchCapturedRequests(req.ConnectURL)
+	if captureErr != nil {
+		fmt.Fprintf(os.Stderr, "warning: failed to fetch captured requests: %v\n", captureErr)
+	}
 
 	resp := callResponse{
 		Status:           "success",
@@ -228,6 +270,11 @@ func handleCall(w http.ResponseWriter, r *http.Request) {
 		resp.Error = err.Error()
 	}
 	writeResponse(w, resp)
+}
+
+func handleHealth(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(`{"status":"ok"}`))
 }
 
 func writeResponse(w http.ResponseWriter, resp callResponse) {
@@ -243,6 +290,7 @@ func main() {
 	flag.Parse()
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /health", handleHealth)
 	mux.HandleFunc("POST /call", handleCall)
 
 	ln, err := net.Listen("tcp", *listen)
