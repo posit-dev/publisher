@@ -1,34 +1,21 @@
 import { describe, it, expect } from "vitest";
-import { setupContractTest } from "../helpers";
+import { setupContractTest, TEST_CONTENT_ID } from "../helpers";
 
 describe("DownloadBundle", () => {
-  const { client, apiKey } = setupContractTest();
-  const contentId = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
+  const { client } = setupContractTest();
   const bundleId = "101";
 
   describe("request correctness", () => {
     it("sends GET to /__api__/v1/content/:id/bundles/:bid/download", async () => {
       const result = await client.call("DownloadBundle", {
-        contentId,
+        contentId: TEST_CONTENT_ID,
         bundleId,
       });
 
       expect(result.capturedRequest).not.toBeNull();
       expect(result.capturedRequest!.method).toBe("GET");
       expect(result.capturedRequest!.path).toBe(
-        `/__api__/v1/content/${contentId}/bundles/${bundleId}/download`,
-      );
-    });
-
-    it("sends Authorization header with Key prefix", async () => {
-      const result = await client.call("DownloadBundle", {
-        contentId,
-        bundleId,
-      });
-
-      expect(result.capturedRequest).not.toBeNull();
-      expect(result.capturedRequest!.headers["authorization"]).toBe(
-        `Key ${apiKey}`,
+        `/__api__/v1/content/${TEST_CONTENT_ID}/bundles/${bundleId}/download`,
       );
     });
   });
@@ -36,7 +23,7 @@ describe("DownloadBundle", () => {
   describe("response parsing", () => {
     it("returns success status", async () => {
       const result = await client.call("DownloadBundle", {
-        contentId,
+        contentId: TEST_CONTENT_ID,
         bundleId,
       });
 
@@ -45,7 +32,7 @@ describe("DownloadBundle", () => {
 
     it("returns raw bytes from response", async () => {
       const result = await client.call("DownloadBundle", {
-        contentId,
+        contentId: TEST_CONTENT_ID,
         bundleId,
       });
       const data = result.result as Uint8Array;

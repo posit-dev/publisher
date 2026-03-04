@@ -1,13 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { setupContractTest, setMockResponse } from "../helpers";
+import { setupContractTest, setMockResponse, TEST_TASK_ID } from "../helpers";
 
 describe("WaitForTask", () => {
-  const { client, apiKey } = setupContractTest();
-  const taskId = "task-abc123-def456";
+  const { client } = setupContractTest();
 
   describe("request correctness", () => {
     it("sends GET to /__api__/v1/tasks/:id", async () => {
-      const result = await client.call("WaitForTask", { taskId });
+      const result = await client.call("WaitForTask", { taskId: TEST_TASK_ID });
 
       expect(result.capturedRequest).not.toBeNull();
       expect(result.capturedRequest!.method).toBe("GET");
@@ -17,31 +16,22 @@ describe("WaitForTask", () => {
     });
 
     it("includes first query parameter for pagination", async () => {
-      const result = await client.call("WaitForTask", { taskId });
+      const result = await client.call("WaitForTask", { taskId: TEST_TASK_ID });
 
       expect(result.capturedRequest).not.toBeNull();
       expect(result.capturedRequest!.path).toContain("first=");
-    });
-
-    it("sends Authorization header with Key prefix", async () => {
-      const result = await client.call("WaitForTask", { taskId });
-
-      expect(result.capturedRequest).not.toBeNull();
-      expect(result.capturedRequest!.headers["authorization"]).toBe(
-        `Key ${apiKey}`,
-      );
     });
   });
 
   describe("response parsing", () => {
     it("returns success status when task finishes with code 0", async () => {
-      const result = await client.call("WaitForTask", { taskId });
+      const result = await client.call("WaitForTask", { taskId: TEST_TASK_ID });
 
       expect(result.status).toBe("success");
     });
 
     it("returns finished indicator", async () => {
-      const result = await client.call("WaitForTask", { taskId });
+      const result = await client.call("WaitForTask", { taskId: TEST_TASK_ID });
       const task = result.result as { finished: boolean };
 
       expect(task.finished).toBe(true);
@@ -55,7 +45,7 @@ describe("WaitForTask", () => {
         pathPattern: "^/__api__/v1/tasks/",
         status: 200,
         body: {
-          id: "task-abc123-def456",
+          id: TEST_TASK_ID,
           output: [
             "Building Python application...",
             "Bundle requested Python version 3.11.6",
@@ -69,7 +59,7 @@ describe("WaitForTask", () => {
         },
       });
 
-      const result = await client.call("WaitForTask", { taskId });
+      const result = await client.call("WaitForTask", { taskId: TEST_TASK_ID });
 
       expect(result.status).toBe("error");
     });

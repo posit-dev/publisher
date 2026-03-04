@@ -50,165 +50,39 @@ export class MockConnectServer {
   }
 
   private registerDefaultRoutes(): void {
-    // Routes are matched by first match, so more specific patterns must come first.
+    // Routes are matched first-match, so more specific patterns must come first.
+    // Each entry: [method, pattern, status, fixture-or-response, contentType?]
+    const routes: Array<[string, RegExp, number, unknown, string?]> = [
+      // Authentication & User
+      ["GET",   /^\/__api__\/v1\/user$/,                                       200, loadFixture("user.json")],
+      // OAuth Integrations
+      ["GET",   /^\/__api__\/v1\/oauth\/integrations$/,                        200, loadFixture("integrations.json")],
+      // Content sub-resources (specific before generic)
+      ["GET",   /^\/__api__\/v1\/content\/[^/]+\/bundles\/[^/]+\/download$/,   200, DUMMY_GZIP_BYTES, "application/gzip"],
+      ["POST",  /^\/__api__\/v1\/content\/[^/]+\/bundles$/,                    200, loadFixture("bundle-upload.json")],
+      ["GET",   /^\/__api__\/v1\/content\/[^/]+\/environment$/,                200, loadFixture("environment.json")],
+      ["PATCH", /^\/__api__\/v1\/content\/[^/]+\/environment$/,                204, null],
+      ["POST",  /^\/__api__\/v1\/content\/[^/]+\/deploy$/,                     200, loadFixture("deploy.json")],
+      // Content CRUD
+      ["POST",  /^\/__api__\/v1\/content$/,                                    200, loadFixture("content-create.json")],
+      ["PATCH", /^\/__api__\/v1\/content\/[^/]+$/,                             204, null],
+      ["GET",   /^\/__api__\/v1\/content\/[^/]+$/,                             200, loadFixture("content-details.json")],
+      // Tasks
+      ["GET",   /^\/__api__\/v1\/tasks\/[^?]+/,                               200, loadFixture("task-finished.json")],
+      // Server Settings
+      ["GET",   /^\/__api__\/server_settings\/applications$/,                  200, loadFixture("server-settings-applications.json")],
+      ["GET",   /^\/__api__\/server_settings\/scheduler/,                      200, loadFixture("server-settings-scheduler.json")],
+      ["GET",   /^\/__api__\/server_settings$/,                                200, loadFixture("server-settings.json")],
+      ["GET",   /^\/__api__\/v1\/server_settings\/python$/,                    200, loadFixture("server-settings-python.json")],
+      ["GET",   /^\/__api__\/v1\/server_settings\/r$/,                         200, loadFixture("server-settings-r.json")],
+      ["GET",   /^\/__api__\/v1\/server_settings\/quarto$/,                    200, loadFixture("server-settings-quarto.json")],
+      // Content Validation (non-API path)
+      ["GET",   /^\/content\/[^/]+\/$/,                                        200, "<html>OK</html>", "text/html"],
+    ];
 
-    // --- Authentication & User ---
-
-    // GET /__api__/v1/user — TestAuthentication, GetCurrentUser
-    this.routes.push({
-      method: "GET",
-      pattern: /^\/__api__\/v1\/user$/,
-      status: 200,
-      response: loadFixture("user.json"),
-    });
-
-    // --- OAuth Integrations ---
-
-    // GET /__api__/v1/oauth/integrations — GetIntegrations
-    this.routes.push({
-      method: "GET",
-      pattern: /^\/__api__\/v1\/oauth\/integrations$/,
-      status: 200,
-      response: loadFixture("integrations.json"),
-    });
-
-    // --- Content (specific sub-resources first, then generic) ---
-
-    // GET /__api__/v1/content/:id/bundles/:bid/download — DownloadBundle
-    this.routes.push({
-      method: "GET",
-      pattern: /^\/__api__\/v1\/content\/[^/]+\/bundles\/[^/]+\/download$/,
-      status: 200,
-      response: DUMMY_GZIP_BYTES,
-      contentType: "application/gzip",
-    });
-
-    // POST /__api__/v1/content/:id/bundles — UploadBundle
-    this.routes.push({
-      method: "POST",
-      pattern: /^\/__api__\/v1\/content\/[^/]+\/bundles$/,
-      status: 200,
-      response: loadFixture("bundle-upload.json"),
-    });
-
-    // GET /__api__/v1/content/:id/environment — GetEnvVars
-    this.routes.push({
-      method: "GET",
-      pattern: /^\/__api__\/v1\/content\/[^/]+\/environment$/,
-      status: 200,
-      response: loadFixture("environment.json"),
-    });
-
-    // PATCH /__api__/v1/content/:id/environment — SetEnvVars
-    this.routes.push({
-      method: "PATCH",
-      pattern: /^\/__api__\/v1\/content\/[^/]+\/environment$/,
-      status: 204,
-      response: null,
-    });
-
-    // POST /__api__/v1/content/:id/deploy — DeployBundle
-    this.routes.push({
-      method: "POST",
-      pattern: /^\/__api__\/v1\/content\/[^/]+\/deploy$/,
-      status: 200,
-      response: loadFixture("deploy.json"),
-    });
-
-    // POST /__api__/v1/content — CreateDeployment
-    this.routes.push({
-      method: "POST",
-      pattern: /^\/__api__\/v1\/content$/,
-      status: 200,
-      response: loadFixture("content-create.json"),
-    });
-
-    // PATCH /__api__/v1/content/:id — UpdateDeployment
-    this.routes.push({
-      method: "PATCH",
-      pattern: /^\/__api__\/v1\/content\/[^/]+$/,
-      status: 204,
-      response: null,
-    });
-
-    // GET /__api__/v1/content/:id — ContentDetails, LatestBundleID
-    this.routes.push({
-      method: "GET",
-      pattern: /^\/__api__\/v1\/content\/[^/]+$/,
-      status: 200,
-      response: loadFixture("content-details.json"),
-    });
-
-    // --- Tasks ---
-
-    // GET /__api__/v1/tasks/:id — WaitForTask (always returns finished)
-    this.routes.push({
-      method: "GET",
-      pattern: /^\/__api__\/v1\/tasks\/[^?]+/,
-      status: 200,
-      response: loadFixture("task-finished.json"),
-    });
-
-    // --- Server Settings ---
-
-    // GET /__api__/server_settings/applications — GetSettings (applications)
-    this.routes.push({
-      method: "GET",
-      pattern: /^\/__api__\/server_settings\/applications$/,
-      status: 200,
-      response: loadFixture("server-settings-applications.json"),
-    });
-
-    // GET /__api__/server_settings/scheduler[/{appMode}] — GetSettings (scheduler)
-    this.routes.push({
-      method: "GET",
-      pattern: /^\/__api__\/server_settings\/scheduler/,
-      status: 200,
-      response: loadFixture("server-settings-scheduler.json"),
-    });
-
-    // GET /__api__/server_settings — GetSettings (general)
-    this.routes.push({
-      method: "GET",
-      pattern: /^\/__api__\/server_settings$/,
-      status: 200,
-      response: loadFixture("server-settings.json"),
-    });
-
-    // GET /__api__/v1/server_settings/python — GetSettings (python)
-    this.routes.push({
-      method: "GET",
-      pattern: /^\/__api__\/v1\/server_settings\/python$/,
-      status: 200,
-      response: loadFixture("server-settings-python.json"),
-    });
-
-    // GET /__api__/v1/server_settings/r — GetSettings (r)
-    this.routes.push({
-      method: "GET",
-      pattern: /^\/__api__\/v1\/server_settings\/r$/,
-      status: 200,
-      response: loadFixture("server-settings-r.json"),
-    });
-
-    // GET /__api__/v1/server_settings/quarto — GetSettings (quarto)
-    this.routes.push({
-      method: "GET",
-      pattern: /^\/__api__\/v1\/server_settings\/quarto$/,
-      status: 200,
-      response: loadFixture("server-settings-quarto.json"),
-    });
-
-    // --- Content Validation (non-API path) ---
-
-    // GET /content/:id/ — ValidateDeployment
-    this.routes.push({
-      method: "GET",
-      pattern: /^\/content\/[^/]+\/$/,
-      status: 200,
-      response: "<html>OK</html>",
-      contentType: "text/html",
-    });
+    for (const [method, pattern, status, response, contentType] of routes) {
+      this.routes.push({ method, pattern, status, response, contentType });
+    }
   }
 
   async start(): Promise<void> {

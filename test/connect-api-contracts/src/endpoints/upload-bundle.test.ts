@@ -1,42 +1,27 @@
 import { describe, it, expect } from "vitest";
-import { setupContractTest } from "../helpers";
+import { setupContractTest, TEST_CONTENT_ID, TEST_BUNDLE_ID } from "../helpers";
 
 describe("UploadBundle", () => {
-  const { client, apiKey } = setupContractTest();
-  const contentId = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
+  const { client } = setupContractTest();
+  const bundleData = new Uint8Array([0x1f, 0x8b]);
 
   describe("request correctness", () => {
     it("sends POST to /__api__/v1/content/:id/bundles", async () => {
-      const bundleData = new Uint8Array([0x1f, 0x8b]);
       const result = await client.call("UploadBundle", {
-        contentId,
+        contentId: TEST_CONTENT_ID,
         bundleData,
       });
 
       expect(result.capturedRequest).not.toBeNull();
       expect(result.capturedRequest!.method).toBe("POST");
       expect(result.capturedRequest!.path).toBe(
-        `/__api__/v1/content/${contentId}/bundles`,
-      );
-    });
-
-    it("sends Authorization header with Key prefix", async () => {
-      const bundleData = new Uint8Array([0x1f, 0x8b]);
-      const result = await client.call("UploadBundle", {
-        contentId,
-        bundleData,
-      });
-
-      expect(result.capturedRequest).not.toBeNull();
-      expect(result.capturedRequest!.headers["authorization"]).toBe(
-        `Key ${apiKey}`,
+        `/__api__/v1/content/${TEST_CONTENT_ID}/bundles`,
       );
     });
 
     it("sends Content-Type application/gzip", async () => {
-      const bundleData = new Uint8Array([0x1f, 0x8b]);
       const result = await client.call("UploadBundle", {
-        contentId,
+        contentId: TEST_CONTENT_ID,
         bundleData,
       });
 
@@ -49,9 +34,8 @@ describe("UploadBundle", () => {
 
   describe("response parsing", () => {
     it("returns success status", async () => {
-      const bundleData = new Uint8Array([0x1f, 0x8b]);
       const result = await client.call("UploadBundle", {
-        contentId,
+        contentId: TEST_CONTENT_ID,
         bundleData,
       });
 
@@ -59,14 +43,13 @@ describe("UploadBundle", () => {
     });
 
     it("parses bundle ID from response", async () => {
-      const bundleData = new Uint8Array([0x1f, 0x8b]);
       const result = await client.call("UploadBundle", {
-        contentId,
+        contentId: TEST_CONTENT_ID,
         bundleData,
       });
       const body = result.result as { bundleId: string };
 
-      expect(body.bundleId).toBe("201");
+      expect(body.bundleId).toBe(TEST_BUNDLE_ID);
     });
   });
 });

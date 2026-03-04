@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { setupContractTest } from "../helpers";
 
 describe("GetCurrentUser", () => {
-  const { client, apiKey } = setupContractTest();
+  const { client } = setupContractTest();
 
   describe("request correctness", () => {
     it("sends GET to /__api__/v1/user", async () => {
@@ -11,15 +11,6 @@ describe("GetCurrentUser", () => {
       expect(result.capturedRequest).not.toBeNull();
       expect(result.capturedRequest!.method).toBe("GET");
       expect(result.capturedRequest!.path).toBe("/__api__/v1/user");
-    });
-
-    it("sends Authorization header with Key prefix", async () => {
-      const result = await client.call("GetCurrentUser");
-
-      expect(result.capturedRequest).not.toBeNull();
-      expect(result.capturedRequest!.headers["authorization"]).toBe(
-        `Key ${apiKey}`,
-      );
     });
   });
 

@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { setupContractTest, setMockResponse } from "../helpers";
+import { setupContractTest, setMockResponse, TEST_API_KEY } from "../helpers";
 
 describe("TestAuthentication", () => {
-  const { client, apiKey } = setupContractTest();
+  const { client } = setupContractTest();
 
   describe("request correctness", () => {
     it("sends GET to /__api__/v1/user", async () => {
@@ -18,7 +18,7 @@ describe("TestAuthentication", () => {
 
       expect(result.capturedRequest).not.toBeNull();
       expect(result.capturedRequest!.headers["authorization"]).toBe(
-        `Key ${apiKey}`,
+        `Key ${TEST_API_KEY}`,
       );
     });
   });

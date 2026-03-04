@@ -1,43 +1,33 @@
 import { describe, it, expect } from "vitest";
-import { setupContractTest, setMockResponse } from "../helpers";
+import { setupContractTest, setMockResponse, TEST_CONTENT_ID } from "../helpers";
 
 describe("ContentDetails", () => {
-  const { client, apiKey } = setupContractTest();
-  const contentId = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
+  const { client } = setupContractTest();
 
   describe("request correctness", () => {
     it("sends GET to /__api__/v1/content/:id", async () => {
-      const result = await client.call("ContentDetails", { contentId });
+      const result = await client.call("ContentDetails", { contentId: TEST_CONTENT_ID });
 
       expect(result.capturedRequest).not.toBeNull();
       expect(result.capturedRequest!.method).toBe("GET");
       expect(result.capturedRequest!.path).toBe(
-        `/__api__/v1/content/${contentId}`,
-      );
-    });
-
-    it("sends Authorization header with Key prefix", async () => {
-      const result = await client.call("ContentDetails", { contentId });
-
-      expect(result.capturedRequest).not.toBeNull();
-      expect(result.capturedRequest!.headers["authorization"]).toBe(
-        `Key ${apiKey}`,
+        `/__api__/v1/content/${TEST_CONTENT_ID}`,
       );
     });
   });
 
   describe("response parsing", () => {
     it("returns success status", async () => {
-      const result = await client.call("ContentDetails", { contentId });
+      const result = await client.call("ContentDetails", { contentId: TEST_CONTENT_ID });
 
       expect(result.status).toBe("success");
     });
 
     it("parses ConnectContent fields from response", async () => {
-      const result = await client.call("ContentDetails", { contentId });
+      const result = await client.call("ContentDetails", { contentId: TEST_CONTENT_ID });
       const body = result.result as Record<string, unknown>;
 
-      expect(body.guid).toBe(contentId);
+      expect(body.guid).toBe(TEST_CONTENT_ID);
       expect(body.name).toBe("my-fastapi-app");
       expect(body.app_mode).toBe("python-fastapi");
     });
@@ -52,7 +42,7 @@ describe("ContentDetails", () => {
         body: { code: 3, error: "Key is not valid" },
       });
 
-      const result = await client.call("ContentDetails", { contentId });
+      const result = await client.call("ContentDetails", { contentId: TEST_CONTENT_ID });
 
       expect(result.status).toBe("error");
     });
@@ -68,7 +58,7 @@ describe("ContentDetails", () => {
         },
       });
 
-      const result = await client.call("ContentDetails", { contentId });
+      const result = await client.call("ContentDetails", { contentId: TEST_CONTENT_ID });
 
       expect(result.status).toBe("error");
     });
@@ -81,7 +71,7 @@ describe("ContentDetails", () => {
         body: { code: 4, error: "Content not found" },
       });
 
-      const result = await client.call("ContentDetails", { contentId });
+      const result = await client.call("ContentDetails", { contentId: TEST_CONTENT_ID });
 
       expect(result.status).toBe("error");
     });

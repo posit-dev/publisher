@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { setupContractTest } from "../helpers";
+import { setupContractTest, TEST_API_KEY } from "../helpers";
 import type { CapturedRequest } from "../mock-connect-server";
 
 describe("GetSettings", () => {
-  const { client, apiKey } = setupContractTest();
+  const { client } = setupContractTest();
 
   async function callAndCapture() {
     const result = await client.call("GetSettings");
@@ -72,7 +72,7 @@ describe("GetSettings", () => {
       expect(all.length).toBeGreaterThanOrEqual(7);
 
       for (const req of all) {
-        expect(req.headers["authorization"]).toBe(`Key ${apiKey}`);
+        expect(req.headers["authorization"]).toBe(`Key ${TEST_API_KEY}`);
       }
     });
   });

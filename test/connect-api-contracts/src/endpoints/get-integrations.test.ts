@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { setupContractTest } from "../helpers";
 
 describe("GetIntegrations", () => {
-  const { client, apiKey } = setupContractTest();
+  const { client } = setupContractTest();
 
   describe("request correctness", () => {
     it("sends GET to /__api__/v1/oauth/integrations", async () => {
@@ -12,15 +12,6 @@ describe("GetIntegrations", () => {
       expect(result.capturedRequest!.method).toBe("GET");
       expect(result.capturedRequest!.path).toBe(
         "/__api__/v1/oauth/integrations",
-      );
-    });
-
-    it("sends Authorization header with Key prefix", async () => {
-      const result = await client.call("GetIntegrations");
-
-      expect(result.capturedRequest).not.toBeNull();
-      expect(result.capturedRequest!.headers["authorization"]).toBe(
-        `Key ${apiKey}`,
       );
     });
   });
