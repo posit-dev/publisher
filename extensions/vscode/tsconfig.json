@@ -8,6 +8,7 @@
     "target": "ES2023",
     "outDir": "out",
     "lib": ["ES2023", "DOM"],
+    "resolveJsonModule": true,
     "sourceMap": true,
     "rootDir": "src",
     /* Linting */
