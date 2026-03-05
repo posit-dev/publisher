@@ -1,5 +1,16 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
+// Harness is a lightweight HTTP server that wraps Publisher's internal Go
+// Connect API client so that the TypeScript contract tests can exercise it.
+// The contract tests send JSON requests to POST /call, specifying a method
+// name and parameters; the harness delegates to the real Go client code and
+// returns the result along with any HTTP requests captured by the mock
+// Connect server. This lets us verify that the Go client produces the
+// correct HTTP requests (method, path, headers, body) for every Connect API
+// operation without running a real Connect instance.
+//
+// This harness exists only to support the connect-api-contracts test suite
+// and will be removed once the Go API client is deprecated and replaced.
 package main
 
 import (
