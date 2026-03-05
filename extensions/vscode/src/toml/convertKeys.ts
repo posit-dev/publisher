@@ -28,7 +28,7 @@ export function convertKeysToCamelCase(
 
   if (obj !== null && typeof obj === "object") {
     const result: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+    for (const [key, value] of Object.entries(obj)) {
       const camelKey = snakeToCamel(key);
 
       if (PRESERVE_KEYS_PATHS.has(key) || PRESERVE_KEYS_PATHS.has(camelKey)) {
