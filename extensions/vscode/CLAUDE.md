@@ -121,6 +121,18 @@ Extension-webview communication uses typed messages:
 - `src/types/messages/hostToWebviewMessages.ts` - Extension → Webview
 - `src/types/messages/webviewToHostMessages.ts` - Webview → Extension
 
+# TypeScript Conventions
+
+## Avoid Type Assertions
+
+Do not use TypeScript [type assertions](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#type-assertions) (`as Type`) unless there is no alternative. Type assertions bypass the compiler's type checking and can hide bugs. Instead, prefer:
+
+- **Type guards** (`if ('prop' in obj)`, `instanceof`, or custom type guard functions) to narrow types safely
+- **Type annotations** on variables and parameters to declare types upfront
+- **Generic type parameters** to propagate types through functions and APIs
+
+If a type assertion is truly unavoidable (e.g., working around a third-party API with incomplete types), add a comment explaining why.
+
 # Debugging
 
 - "Run Extension" - Debug extension only (auto-launches Go binary)
