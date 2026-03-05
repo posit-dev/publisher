@@ -9,7 +9,6 @@ import { ProductType } from "./contentRecords";
 export type ConfigurationLocation = {
   configurationName: string;
   configurationPath: string;
-  configurationRelPath: string;
   projectDir: string;
 };
 
@@ -114,6 +113,7 @@ export const contentTypeStrings = {
 
 export type ConfigurationDetails = {
   $schema: SchemaURL;
+  comments?: string[];
   alternatives?: ConfigurationDetails[];
   productType: ProductType;
   type: ContentType;
@@ -121,19 +121,18 @@ export type ConfigurationDetails = {
   source?: string;
   title?: string;
   description?: string;
-  thumbnail?: string;
-  tags?: string[];
+  hasParameters?: boolean;
   python?: PythonConfig;
   r?: RConfig;
   quarto?: QuartoConfig;
+  jupyter?: JupyterConfig;
   environment?: EnvironmentConfig;
   validate: boolean;
   files?: string[];
   secrets?: string[];
   integrationRequests?: IntegrationRequest[];
-  schedules?: ScheduleConfig[];
-  access?: AccessConfig;
   connect?: ConnectConfig;
+  connectCloud?: ConnectCloudConfig;
 };
 
 export type IntegrationRequest = {
@@ -151,12 +150,15 @@ export type PythonConfig = {
   version: string;
   packageFile: string;
   packageManager: string;
+  requiresPython?: string;
 };
 
 export type RConfig = {
   version: string;
   packageFile: string;
   packageManager: string;
+  requiresR?: string;
+  packagesFromLibrary?: boolean;
 };
 
 export type QuartoConfig = {
@@ -166,35 +168,19 @@ export type QuartoConfig = {
 
 export type EnvironmentConfig = Record<string, string>;
 
-export type ScheduleConfig = {
-  start: string;
-  recurrence: string;
+export type JupyterConfig = {
+  hideAllInput?: boolean;
+  hideTaggedInput?: boolean;
 };
 
-export enum AccessType {
-  ANONYMOUS = "all",
-  LOGGED_IN = "logged-in",
-  ACL = "acl",
-}
-
-export type AccessConfig = {
-  type: AccessType;
-  users?: User[];
-  groups?: Group[];
+export type ConnectCloudConfig = {
+  vanityName?: string;
+  accessControl?: ConnectCloudAccessControl;
 };
 
-export type User = {
-  id?: string;
-  guid?: string;
-  name?: string;
-  permissions: string;
-};
-
-export type Group = {
-  id?: string;
-  guid?: string;
-  name?: string;
-  permissions: string;
+export type ConnectCloudAccessControl = {
+  publicAccess?: boolean;
+  organizationAccess?: string;
 };
 
 export function UpdateAllConfigsWithDefaults(
