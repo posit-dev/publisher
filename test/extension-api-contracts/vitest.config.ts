@@ -1,3 +1,5 @@
+// Copyright (C) 2026 by Posit Software, PBC.
+
 import { defineConfig } from "vitest/config";
 import path from "path";
 
