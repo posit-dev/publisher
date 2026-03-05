@@ -35,7 +35,6 @@ export const configurationFactory = Factory.define<Configuration>(
     projectDir: `report-GUD${sequence}`,
     configurationName: `configuration-GUD${sequence}`,
     configurationPath: `report/path/configuration-${sequence}`,
-    configurationRelPath: `report/path/configuration-${sequence}`,
   }),
 );
 
@@ -107,7 +106,6 @@ export const contentRecordFactory = Factory.define<ContentRecord>(
       projectDir: "",
     },
     configurationPath: `report/path/configuration-${sequence}`,
-    configurationRelPath: `report/path/configuration-${sequence}`,
     connectCloud: { accountName: "" },
   }),
 );
