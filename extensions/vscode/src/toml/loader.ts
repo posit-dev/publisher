@@ -89,7 +89,9 @@ export async function loadConfigFromFile(
   // TOML strips comments during parsing, so we read them from the raw text.
   const comments = readLeadingComments(content);
 
-  // Convert keys to camelCase and apply defaults to match Go's New() + PopulateDefaults()
+  // Convert keys to camelCase and apply defaults to match Go's New() + PopulateDefaults().
+  // The assertion is justified: the JSON schema validation above confirmed the object
+  // structure, and convertKeysToCamelCase only renames keys without changing the shape.
   const converted = convertKeysToCamelCase(parsed) as ConfigurationDetails;
   converted.comments = comments;
 
