@@ -47,82 +47,31 @@ describe("dialogs contract", () => {
     });
   });
 
-  describe("confirmOK", () => {
-    it("calls window.showInformationMessage with modal option and OK item", async () => {
-      const result = await dialogs.confirmOK("Are you sure?");
+  it.each([
+    ["confirmOK", "OK"],
+    ["confirmYes", "Yes"],
+    ["confirmDelete", "Delete"],
+    ["confirmForget", "Forget"],
+    ["confirmReplace", "Replace"],
+    ["confirmOverwrite", "Overwrite"],
+  ] as const)(
+    "%s calls showInformationMessage with modal option and %s item",
+    async (fnName, title) => {
+      const fn = dialogs[fnName] as (msg: string) => Promise<boolean>;
+      const result = await fn("Test message");
       expect(window.showInformationMessage).toHaveBeenCalledWith(
-        "Are you sure?",
+        "Test message",
         { modal: true },
-        { title: "OK" },
+        { title },
       );
       expect(result).toBe(true);
-    });
+    },
+  );
 
-    it("returns false when user cancels", async () => {
-      vi.mocked(window.showInformationMessage).mockResolvedValue(undefined);
-      const result = await dialogs.confirmOK("Are you sure?");
-      expect(result).toBe(false);
-    });
-  });
-
-  describe("confirmYes", () => {
-    it("calls with Yes item", async () => {
-      const result = await dialogs.confirmYes("Continue?");
-      expect(window.showInformationMessage).toHaveBeenCalledWith(
-        "Continue?",
-        { modal: true },
-        { title: "Yes" },
-      );
-      expect(result).toBe(true);
-    });
-  });
-
-  describe("confirmDelete", () => {
-    it("calls with Delete item", async () => {
-      const result = await dialogs.confirmDelete("Delete this?");
-      expect(window.showInformationMessage).toHaveBeenCalledWith(
-        "Delete this?",
-        { modal: true },
-        { title: "Delete" },
-      );
-      expect(result).toBe(true);
-    });
-  });
-
-  describe("confirmForget", () => {
-    it("calls with Forget item", async () => {
-      const result = await dialogs.confirmForget("Forget this?");
-      expect(window.showInformationMessage).toHaveBeenCalledWith(
-        "Forget this?",
-        { modal: true },
-        { title: "Forget" },
-      );
-      expect(result).toBe(true);
-    });
-  });
-
-  describe("confirmReplace", () => {
-    it("calls with Replace item", async () => {
-      const result = await dialogs.confirmReplace("Replace existing?");
-      expect(window.showInformationMessage).toHaveBeenCalledWith(
-        "Replace existing?",
-        { modal: true },
-        { title: "Replace" },
-      );
-      expect(result).toBe(true);
-    });
-  });
-
-  describe("confirmOverwrite", () => {
-    it("calls with Overwrite item", async () => {
-      const result = await dialogs.confirmOverwrite("Overwrite file?");
-      expect(window.showInformationMessage).toHaveBeenCalledWith(
-        "Overwrite file?",
-        { modal: true },
-        { title: "Overwrite" },
-      );
-      expect(result).toBe(true);
-    });
+  it("returns false when user cancels a confirm dialog", async () => {
+    vi.mocked(window.showInformationMessage).mockResolvedValue(undefined);
+    const result = await dialogs.confirmOK("Are you sure?");
+    expect(result).toBe(false);
   });
 
   describe("alert", () => {

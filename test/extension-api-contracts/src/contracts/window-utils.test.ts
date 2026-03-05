@@ -12,6 +12,17 @@ import {
   runTerminalCommand,
 } from "src/utils/window";
 
+function createMockTerminal() {
+  const terminal = {
+    sendText: vi.fn(),
+    show: vi.fn(),
+    exitStatus: { code: 0 },
+    dispose: vi.fn(),
+  };
+  vi.mocked(window.createTerminal).mockReturnValue(terminal as any);
+  return terminal;
+}
+
 describe("window-utils contract", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -88,46 +99,24 @@ describe("window-utils contract", () => {
 
   describe("openTerminalCommand", () => {
     it("creates a terminal, sends command, and shows it", () => {
-      const mockTerminal = {
-        sendText: vi.fn(),
-        show: vi.fn(),
-        exitStatus: { code: 0 },
-        dispose: vi.fn(),
-      };
-      vi.mocked(window.createTerminal).mockReturnValue(mockTerminal as any);
+      const terminal = createMockTerminal();
       openTerminalCommand("echo hello");
       expect(window.createTerminal).toHaveBeenCalledTimes(1);
-      expect(mockTerminal.sendText).toHaveBeenCalledWith("echo hello;");
-      expect(mockTerminal.show).toHaveBeenCalledTimes(1);
+      expect(terminal.sendText).toHaveBeenCalledWith("echo hello;");
+      expect(terminal.show).toHaveBeenCalledTimes(1);
     });
   });
 
   describe("runTerminalCommand", () => {
     it("creates a terminal and sends command with exit", () => {
-      const mockTerminal = {
-        sendText: vi.fn(),
-        show: vi.fn(),
-        exitStatus: { code: 0 },
-        dispose: vi.fn(),
-      };
-      vi.mocked(window.createTerminal).mockReturnValue(mockTerminal as any);
-
-      // Start the command (don't await yet)
+      const terminal = createMockTerminal();
       runTerminalCommand("npm test");
-
       expect(window.createTerminal).toHaveBeenCalledTimes(1);
-      expect(mockTerminal.sendText).toHaveBeenCalledWith("npm test; exit $?");
+      expect(terminal.sendText).toHaveBeenCalledWith("npm test; exit $?");
     });
 
     it("listens to window.onDidCloseTerminal for terminal exit", () => {
-      const mockTerminal = {
-        sendText: vi.fn(),
-        show: vi.fn(),
-        exitStatus: { code: 0 },
-        dispose: vi.fn(),
-      };
-      vi.mocked(window.createTerminal).mockReturnValue(mockTerminal as any);
-
+      createMockTerminal();
       runTerminalCommand("test");
       expect(window.onDidCloseTerminal).toHaveBeenCalledTimes(1);
     });

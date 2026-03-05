@@ -38,6 +38,23 @@ vi.mock("src/connect_content_fs", () => ({
 const { promptOpenConnectContent, handleConnectUri } =
   await import("src/open_connect");
 
+function makeConnectUri(
+  path = "/connect",
+  query = "server=https%3A%2F%2Fconnect.example.com&content=test-guid",
+) {
+  return {
+    path,
+    query,
+    scheme: "vscode",
+    authority: "posit.publisher",
+    fsPath: path,
+    fragment: "",
+    with: vi.fn(),
+    toString: () =>
+      `vscode://posit.publisher${path}${query ? "?" + query : ""}`,
+  };
+}
+
 describe("open-connect contract", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -91,21 +108,9 @@ describe("open-connect contract", () => {
 
   describe("handleConnectUri", () => {
     it("uses workspace.updateWorkspaceFolders when workspace folders exist", async () => {
-      const uri = {
-        path: "/connect",
-        query: "server=https%3A%2F%2Fconnect.example.com&content=test-guid",
-        scheme: "vscode",
-        authority: "posit.publisher",
-        fsPath: "/connect",
-        fragment: "",
-        with: vi.fn(),
-        toString: () =>
-          "vscode://posit.publisher/connect?server=https%3A%2F%2Fconnect.example.com&content=test-guid",
-      };
-
       vi.mocked(workspace.updateWorkspaceFolders).mockReturnValue(true);
 
-      await handleConnectUri(uri as any);
+      await handleConnectUri(makeConnectUri() as any);
 
       expect(workspace.updateWorkspaceFolders).toHaveBeenCalledWith(
         0,
@@ -118,19 +123,7 @@ describe("open-connect contract", () => {
       const origFolders = workspace.workspaceFolders;
       workspace.workspaceFolders = [];
 
-      const uri = {
-        path: "/connect",
-        query: "server=https%3A%2F%2Fconnect.example.com&content=test-guid",
-        scheme: "vscode",
-        authority: "posit.publisher",
-        fsPath: "/connect",
-        fragment: "",
-        with: vi.fn(),
-        toString: () =>
-          "vscode://posit.publisher/connect?server=https%3A%2F%2Fconnect.example.com&content=test-guid",
-      };
-
-      await handleConnectUri(uri as any);
+      await handleConnectUri(makeConnectUri() as any);
 
       expect(commands.executeCommand).toHaveBeenCalledWith(
         "vscode.openFolder",
@@ -144,19 +137,7 @@ describe("open-connect contract", () => {
     it("falls back to vscode.openFolder when updateWorkspaceFolders fails", async () => {
       vi.mocked(workspace.updateWorkspaceFolders).mockReturnValue(false);
 
-      const uri = {
-        path: "/connect",
-        query: "server=https%3A%2F%2Fconnect.example.com&content=test-guid",
-        scheme: "vscode",
-        authority: "posit.publisher",
-        fsPath: "/connect",
-        fragment: "",
-        with: vi.fn(),
-        toString: () =>
-          "vscode://posit.publisher/connect?server=https%3A%2F%2Fconnect.example.com&content=test-guid",
-      };
-
-      await handleConnectUri(uri as any);
+      await handleConnectUri(makeConnectUri() as any);
 
       expect(commands.executeCommand).toHaveBeenCalledWith(
         "vscode.openFolder",
@@ -166,18 +147,7 @@ describe("open-connect contract", () => {
     });
 
     it("ignores URIs that are not /connect", async () => {
-      const uri = {
-        path: "/something-else",
-        query: "",
-        scheme: "vscode",
-        authority: "posit.publisher",
-        fsPath: "/something-else",
-        fragment: "",
-        with: vi.fn(),
-        toString: () => "vscode://posit.publisher/something-else",
-      };
-
-      await handleConnectUri(uri as any);
+      await handleConnectUri(makeConnectUri("/something-else", "") as any);
 
       expect(workspace.updateWorkspaceFolders).not.toHaveBeenCalled();
       expect(commands.executeCommand).not.toHaveBeenCalled();

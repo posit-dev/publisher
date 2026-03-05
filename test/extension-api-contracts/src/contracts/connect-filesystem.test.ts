@@ -96,45 +96,18 @@ describe("connect-filesystem contract", () => {
       expect(disposable).toHaveProperty("dispose");
     });
 
-    it("createDirectory throws FileSystemError.NoPermissions", () => {
-      const provider = new ConnectContentFileSystemProvider(
-        Promise.resolve({} as any),
-      );
-      expect(() => provider.createDirectory()).toThrow();
-      expect(FileSystemError.NoPermissions).toHaveBeenCalledWith(
-        "connect-content is read-only",
-      );
-    });
-
-    it("writeFile throws FileSystemError.NoPermissions", () => {
-      const provider = new ConnectContentFileSystemProvider(
-        Promise.resolve({} as any),
-      );
-      expect(() => provider.writeFile()).toThrow();
-      expect(FileSystemError.NoPermissions).toHaveBeenCalledWith(
-        "connect-content is read-only",
-      );
-    });
-
-    it("delete throws FileSystemError.NoPermissions", () => {
-      const provider = new ConnectContentFileSystemProvider(
-        Promise.resolve({} as any),
-      );
-      expect(() => provider.delete()).toThrow();
-      expect(FileSystemError.NoPermissions).toHaveBeenCalledWith(
-        "connect-content is read-only",
-      );
-    });
-
-    it("rename throws FileSystemError.NoPermissions", () => {
-      const provider = new ConnectContentFileSystemProvider(
-        Promise.resolve({} as any),
-      );
-      expect(() => provider.rename()).toThrow();
-      expect(FileSystemError.NoPermissions).toHaveBeenCalledWith(
-        "connect-content is read-only",
-      );
-    });
+    it.each(["createDirectory", "writeFile", "delete", "rename"])(
+      "%s throws FileSystemError.NoPermissions",
+      (method) => {
+        const provider = new ConnectContentFileSystemProvider(
+          Promise.resolve({} as any),
+        );
+        expect(() => (provider as any)[method]()).toThrow();
+        expect(FileSystemError.NoPermissions).toHaveBeenCalledWith(
+          "connect-content is read-only",
+        );
+      },
+    );
   });
 
   describe("connectContentUri", () => {

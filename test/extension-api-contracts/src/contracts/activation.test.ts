@@ -3,118 +3,10 @@
 // Contract: extension.ts activate() → trust checks, URI handler, command registration, setContext
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { commands, workspace, window } from "vscode";
+import { commands, workspace, window, ExtensionMode } from "vscode";
 
-// ---------------------------------------------------------------------------
-// Mock every internal dependency that extension.ts imports
-// ---------------------------------------------------------------------------
-
-vi.mock("src/ports", () => ({
-  acquire: vi.fn(() => Promise.resolve(9999)),
-}));
-
-vi.mock("src/services", () => ({
-  Service: vi.fn(() => ({
-    start: vi.fn(),
-    stop: vi.fn(() => Promise.resolve()),
-    showOutputChannel: vi.fn(),
-  })),
-}));
-
-vi.mock("src/views/project", () => ({
-  ProjectTreeDataProvider: vi.fn(() => ({
-    register: vi.fn(),
-  })),
-}));
-
-vi.mock("src/views/logs", () => ({
-  LogsTreeDataProvider: vi.fn(() => ({
-    register: vi.fn(),
-  })),
-  LogsViewProvider: Object.assign(
-    vi.fn(() => ({
-      register: vi.fn(),
-    })),
-    {
-      openRawLogFileView: vi.fn(),
-      copyLogs: vi.fn(),
-    },
-  ),
-}));
-
-vi.mock("src/events", () => ({
-  EventStream: vi.fn(() => ({
-    dispose: vi.fn(),
-  })),
-}));
-
-vi.mock("src/views/homeView", () => ({
-  HomeViewProvider: vi.fn(() => ({
-    register: vi.fn(),
-    showNewDeploymentMultiStep: vi.fn(() => Promise.resolve()),
-    handleFileInitiatedDeploymentSelection: vi.fn(),
-    dispose: vi.fn(),
-  })),
-}));
-
-vi.mock("src/watchers", () => ({
-  WatcherManager: vi.fn(() => ({
-    dispose: vi.fn(),
-  })),
-}));
-
-vi.mock("src/entrypointTracker", () => ({
-  DocumentTracker: vi.fn(() => ({
-    dispose: vi.fn(),
-  })),
-}));
-
-vi.mock("src/utils/config", () => ({
-  getXDGConfigProperty: vi.fn(() => Promise.resolve(null)),
-}));
-
-vi.mock("src/state", () => ({
-  PublisherState: vi.fn(() => ({
-    credentials: [],
-    refreshCredentials: vi.fn(() => Promise.resolve()),
-    onDidRefreshCredentials: vi.fn(() => ({ dispose: vi.fn() })),
-  })),
-}));
-
-vi.mock("src/authProvider", () => ({
-  PublisherAuthProvider: vi.fn(() => ({
-    dispose: vi.fn(),
-  })),
-}));
-
-vi.mock("src/logging", () => ({
-  logger: {
-    info: vi.fn(),
-    error: vi.fn(),
-    warn: vi.fn(),
-    debug: vi.fn(),
-  },
-}));
-
-vi.mock("src/commands", () => ({
-  copySystemInfoCommand: vi.fn(() => Promise.resolve()),
-}));
-
-vi.mock("src/llm", () => ({
-  registerLLMTooling: vi.fn(),
-}));
-
-vi.mock("src/connect_content_fs", () => ({
-  clearConnectContentBundleForUri: vi.fn(),
-  registerConnectContentFileSystem: vi.fn(() => ({
-    dispose: vi.fn(),
-  })),
-}));
-
-vi.mock("src/open_connect", () => ({
-  handleConnectUri: vi.fn(),
-  promptOpenConnectContent: vi.fn(() => Promise.resolve()),
-}));
+// Mock all transitive dependencies of src/extension.ts
+import "../helpers/extension-mocks";
 
 const { activate, deactivate } = await import("src/extension");
 
@@ -122,7 +14,7 @@ describe("activation contract", () => {
   function createMockContext() {
     return {
       subscriptions: [] as any[],
-      extensionMode: 1, // Production
+      extensionMode: ExtensionMode.Production,
       extensionUri: { fsPath: "/ext", path: "/ext" },
       extensionPath: "/ext",
       globalState: {
