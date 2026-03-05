@@ -1,3 +1,5 @@
+// Copyright (C) 2026 by Posit Software, PBC.
+
 import type {
   ConnectContractClient,
   ConnectContractResult,

@@ -1,3 +1,5 @@
+// Copyright (C) 2026 by Posit Software, PBC.
+
 import { describe, it, expect } from "vitest";
 import { Method } from "../client";
 import { setupContractTest, TEST_API_KEY } from "../helpers";

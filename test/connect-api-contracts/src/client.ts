@@ -1,3 +1,5 @@
+// Copyright (C) 2026 by Posit Software, PBC.
+
 import type { CapturedRequest } from "./mock-connect-server";
 
 export const Method = {

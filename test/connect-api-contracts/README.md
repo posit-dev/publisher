@@ -2,8 +2,6 @@
 
 Contract tests that validate the HTTP requests Publisher sends **to Posit Connect** and how it parses Connect's responses. These ensure a future TypeScript ConnectClient produces identical behavior to the Go implementation.
 
-This is fundamentally different from the [Publisher API contract tests](../api-contracts/) — those test Publisher's own API surface, while these test Publisher's role as a **client** of Connect's API.
-
 ## Architecture
 
 ```
@@ -76,7 +74,7 @@ cd test/connect-api-contracts && npx vitest run
 # Build the harness binary manually
 just build-connect-harness
 
-# Update snapshots
+# Update snapshots (currently only one inline snapshot in authentication.test.ts)
 cd test/connect-api-contracts && npx vitest run --update
 
 # Validate fixtures against the Connect Swagger spec

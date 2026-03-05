@@ -1,3 +1,5 @@
+// Copyright (C) 2026 by Posit Software, PBC.
+
 import { beforeEach } from "vitest";
 import type { ConnectContractClient } from "./client";
 import { GoPublisherClient } from "./clients/go-publisher-client";
