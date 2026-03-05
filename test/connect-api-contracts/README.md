@@ -69,13 +69,13 @@ Set `API_BACKEND=typescript` to run against the TS client once implemented.
 just test-connect-contracts
 
 # Or directly
-cd test/connect-api-contracts && npx vitest run
+cd test/connect-api-contracts && npm test
 
 # Build the harness binary manually
 just build-connect-harness
 
 # Update snapshots (currently only one inline snapshot in authentication.test.ts)
-cd test/connect-api-contracts && npx vitest run --update
+cd test/connect-api-contracts && npm run test:update
 
 # Validate fixtures against the Connect Swagger spec
 just validate-fixtures
