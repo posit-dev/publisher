@@ -9,7 +9,6 @@ import addFormats from "ajv-formats";
 import {
   Configuration,
   ConfigurationDetails,
-  ConfigurationError,
   ConfigurationLocation,
   ContentType,
 } from "../api/types/configurations";
@@ -19,6 +18,7 @@ import {
   createInvalidTOMLError,
   createSchemaValidationError,
   createConfigurationError,
+  ConfigurationLoadError,
 } from "./errors";
 import schema from "./schemas/posit-publishing-schema-v3.json";
 
@@ -28,14 +28,15 @@ const validate = ajv.compile(schema);
 
 /**
  * Load a TOML configuration file, validate it against the JSON schema,
- * and return a Configuration or ConfigurationError.
+ * and return a Configuration.
  *
- * Throws on ENOENT (file not found). Callers should catch this.
+ * Throws ConfigurationLoadError for invalid TOML or schema/business validation failures.
+ * Throws raw errors for I/O failures (ENOENT etc.).
  */
 export async function loadConfigFromFile(
   configPath: string,
   projectDir: string,
-): Promise<Configuration | ConfigurationError> {
+): Promise<Configuration> {
   const configName = path.basename(configPath, ".toml");
 
   const location: ConfigurationLocation = {
@@ -55,14 +56,18 @@ export async function loadConfigFromFile(
     if (err instanceof TomlError) {
       const line = err.line ?? 0;
       const column = err.column ?? 0;
-      return createConfigurationError(
-        createInvalidTOMLError(configPath, err.message, line, column),
-        location,
+      throw new ConfigurationLoadError(
+        createConfigurationError(
+          createInvalidTOMLError(configPath, err.message, line, column),
+          location,
+        ),
       );
     }
-    return createConfigurationError(
-      createInvalidTOMLError(configPath, String(err), 0, 0),
-      location,
+    throw new ConfigurationLoadError(
+      createConfigurationError(
+        createInvalidTOMLError(configPath, String(err), 0, 0),
+        location,
+      ),
     );
   }
 
@@ -72,9 +77,11 @@ export async function loadConfigFromFile(
     const messages = (validate.errors ?? [])
       .map((e) => `${e.instancePath} ${e.message ?? ""}`.trim())
       .join("; ");
-    return createConfigurationError(
-      createSchemaValidationError(configPath, messages),
-      location,
+    throw new ConfigurationLoadError(
+      createConfigurationError(
+        createSchemaValidationError(configPath, messages),
+        location,
+      ),
     );
   }
 
@@ -101,12 +108,14 @@ export async function loadConfigFromFile(
   // now we match Go's FromFile behavior which rejects at load time.
   if (converted.productType === ProductType.CONNECT_CLOUD) {
     if (!connectCloudSupportedTypes.has(converted.type)) {
-      return createConfigurationError(
-        createSchemaValidationError(
-          configPath,
-          `content type '${converted.type}' is not supported by Connect Cloud`,
+      throw new ConfigurationLoadError(
+        createConfigurationError(
+          createSchemaValidationError(
+            configPath,
+            `content type '${converted.type}' is not supported by Connect Cloud`,
+          ),
+          location,
         ),
-        location,
       );
     }
   }
