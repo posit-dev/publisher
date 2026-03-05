@@ -40,7 +40,10 @@ import type * as mock from "./vscode";
 type _Commands = Pick<typeof vscode.commands, keyof typeof mock.commands>;
 type _Window = Pick<typeof vscode.window, keyof typeof mock.window>;
 type _Workspace = Pick<typeof vscode.workspace, keyof typeof mock.workspace>;
-type _Auth = Pick<typeof vscode.authentication, keyof typeof mock.authentication>;
+type _Auth = Pick<
+  typeof vscode.authentication,
+  keyof typeof mock.authentication
+>;
 type _Env = Pick<typeof vscode.env, keyof typeof mock.env>;
 type _Lm = Pick<typeof vscode.lm, keyof typeof mock.lm>;
 type _L10n = Pick<typeof vscode.l10n, keyof typeof mock.l10n>;
@@ -50,9 +53,18 @@ type _L10n = Pick<typeof vscode.l10n, keyof typeof mock.l10n>;
 // ---------------------------------------------------------------------------
 // For mock objects with nested structure, verify the inner keys too.
 
-type _WorkspaceFs = Pick<typeof vscode.workspace.fs, keyof typeof mock.workspace.fs>;
-type _EnvClipboard = Pick<typeof vscode.env.clipboard, keyof typeof mock.env.clipboard>;
-type _TabGroups = Pick<typeof vscode.window.tabGroups, keyof typeof mock.window.tabGroups>;
+type _WorkspaceFs = Pick<
+  typeof vscode.workspace.fs,
+  keyof typeof mock.workspace.fs
+>;
+type _EnvClipboard = Pick<
+  typeof vscode.env.clipboard,
+  keyof typeof mock.env.clipboard
+>;
+type _TabGroups = Pick<
+  typeof vscode.window.tabGroups,
+  keyof typeof mock.window.tabGroups
+>;
 
 // ---------------------------------------------------------------------------
 // Static method / factory key checks
@@ -61,7 +73,10 @@ type _TabGroups = Pick<typeof vscode.window.tabGroups, keyof typeof mock.window.
 // Our mock replicates the static surface as plain objects.
 
 type _Uri = Pick<typeof vscode.Uri, keyof typeof mock.Uri>;
-type _FsError = Pick<typeof vscode.FileSystemError, keyof typeof mock.FileSystemError>;
+type _FsError = Pick<
+  typeof vscode.FileSystemError,
+  keyof typeof mock.FileSystemError
+>;
 
 // ---------------------------------------------------------------------------
 // Enum member checks
@@ -77,7 +92,10 @@ type _ProgressLoc = Pick<
   typeof vscode.ProgressLocation,
   keyof typeof mock.ProgressLocation
 >;
-type _ExtMode = Pick<typeof vscode.ExtensionMode, keyof typeof mock.ExtensionMode>;
+type _ExtMode = Pick<
+  typeof vscode.ExtensionMode,
+  keyof typeof mock.ExtensionMode
+>;
 type _QuickInputBtns = Pick<
   typeof vscode.QuickInputButtons,
   keyof typeof mock.QuickInputButtons

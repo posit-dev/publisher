@@ -139,10 +139,7 @@ describe("connect-filesystem contract", () => {
 
   describe("connectContentUri", () => {
     it("creates a URI with connect-content scheme", () => {
-      const uri = connectContentUri(
-        "https://connect.example.com",
-        "test-guid",
-      );
+      const uri = connectContentUri("https://connect.example.com", "test-guid");
       expect(Uri.from).toHaveBeenCalledWith({
         scheme: "connect-content",
         authority: expect.any(String),

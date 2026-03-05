@@ -40,9 +40,7 @@ describe("positron-settings contract", () => {
     });
     const result = getPositronRepoSettings();
     expect(mockGet).toHaveBeenCalledWith("packageManagerRepository");
-    expect(result.r?.packageManagerRepository).toBe(
-      "https://ppm.example.com",
-    );
+    expect(result.r?.packageManagerRepository).toBe("https://ppm.example.com");
   });
 
   it("excludes packageManagerRepository when defaultRepositories is not 'auto'", () => {

@@ -35,9 +35,8 @@ vi.mock("src/connect_content_fs", () => ({
   }),
 }));
 
-const { promptOpenConnectContent, handleConnectUri } = await import(
-  "src/open_connect"
-);
+const { promptOpenConnectContent, handleConnectUri } =
+  await import("src/open_connect");
 
 describe("open-connect contract", () => {
   beforeEach(() => {

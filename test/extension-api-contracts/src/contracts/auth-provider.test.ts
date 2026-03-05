@@ -27,9 +27,7 @@ vi.mock("src/logging", () => ({
 }));
 
 vi.mock("src/utils/errors", () => ({
-  getSummaryStringFromError: vi.fn(
-    (loc: string, err: any) => `${loc}: ${err}`,
-  ),
+  getSummaryStringFromError: vi.fn((loc: string, err: any) => `${loc}: ${err}`),
 }));
 
 const { PublisherAuthProvider } = await import("src/authProvider");
@@ -39,7 +37,9 @@ describe("auth-provider contract", () => {
     const emitter = new EventEmitter<any>();
     return {
       credentials,
-      onDidRefreshCredentials: vi.fn((listener: any) => emitter.event(listener)),
+      onDidRefreshCredentials: vi.fn((listener: any) =>
+        emitter.event(listener),
+      ),
       refreshCredentials: vi.fn(() => Promise.resolve()),
       _fireRefresh: (e: any) => emitter.fire(e),
     };
@@ -65,9 +65,8 @@ describe("auth-provider contract", () => {
     const state = createMockState();
     new PublisherAuthProvider(state as any);
 
-    const [id, label] = vi.mocked(
-      authentication.registerAuthenticationProvider,
-    ).mock.calls[0];
+    const [id, label] = vi.mocked(authentication.registerAuthenticationProvider)
+      .mock.calls[0];
     expect(id).toBe("posit-connect");
     expect(label).toBe("Posit Connect");
   });
@@ -86,16 +85,20 @@ describe("auth-provider contract", () => {
     const state = createMockState();
     new PublisherAuthProvider(state as any);
 
-    const options = vi.mocked(
-      authentication.registerAuthenticationProvider,
-    ).mock.calls[0][3];
+    const options = vi.mocked(authentication.registerAuthenticationProvider)
+      .mock.calls[0][3];
     expect(options).toEqual({ supportsMultipleAccounts: true });
   });
 
   describe("AuthenticationProvider interface", () => {
     it("implements getSessions that returns sessions from state credentials", async () => {
       const credentials = [
-        { guid: "1", url: "https://connect.example.com", name: "Test", apiKey: "key1" },
+        {
+          guid: "1",
+          url: "https://connect.example.com",
+          name: "Test",
+          apiKey: "key1",
+        },
       ];
       const state = createMockState(credentials);
       const provider = new PublisherAuthProvider(state as any);

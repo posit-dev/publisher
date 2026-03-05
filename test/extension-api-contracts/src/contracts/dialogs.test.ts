@@ -6,13 +6,13 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { window, l10n } from "vscode";
 
 // Capture l10n.t call history at module load time (before clearAllMocks)
-const l10nCallsAtLoad = [...(l10n.t as any).mock?.calls ?? []];
+const l10nCallsAtLoad = [...((l10n.t as any).mock?.calls ?? [])];
 
 // Import after vscode mock is in place
 const dialogs = await import("src/dialogs");
 
 // Record l10n.t calls that happened during module load
-const l10nCallsAfterImport = [...(l10n.t as any).mock?.calls ?? []];
+const l10nCallsAfterImport = [...((l10n.t as any).mock?.calls ?? [])];
 
 describe("dialogs contract", () => {
   beforeEach(() => {

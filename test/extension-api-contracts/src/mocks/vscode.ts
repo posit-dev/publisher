@@ -215,10 +215,7 @@ export class RelativePattern {
 export class TreeItem {
   label?: string;
   collapsibleState?: TreeItemCollapsibleState;
-  constructor(
-    label: string,
-    collapsibleState?: TreeItemCollapsibleState,
-  ) {
+  constructor(label: string, collapsibleState?: TreeItemCollapsibleState) {
     this.label = label;
     this.collapsibleState = collapsibleState;
   }
@@ -308,8 +305,8 @@ export const window = {
   // Dialog methods — default to resolving undefined (user dismissed the dialog).
   // Tests override via mockReturnValue/mockResolvedValue to simulate button clicks.
   showErrorMessage: vi.fn((..._args: any[]) => Promise.resolve(undefined)),
-  showInformationMessage: vi.fn(
-    (..._args: any[]) => Promise.resolve(undefined),
+  showInformationMessage: vi.fn((..._args: any[]) =>
+    Promise.resolve(undefined),
   ),
   showWarningMessage: vi.fn((..._args: any[]) => Promise.resolve(undefined)),
   // Text input — used by open_connect.ts to prompt for a Connect server URL.
@@ -430,9 +427,7 @@ export const workspace = {
   ),
   // Returns true (success) by default. Used by open_connect.ts to add a
   // Connect server's content as a virtual workspace folder.
-  updateWorkspaceFolders: vi.fn(
-    (..._args: any[]) => true,
-  ),
+  updateWorkspaceFolders: vi.fn((..._args: any[]) => true),
   // Creates a file watcher — the extension watches .posit/publish/*.toml and
   // deployment record files for changes.
   createFileSystemWatcher: vi.fn((..._args: any[]) => mockFileSystemWatcher()),
@@ -445,14 +440,10 @@ export const workspace = {
   // Document lifecycle events — the extension uses these to track which
   // documents are open/saved to keep the entrypoint tracker in sync.
   onDidCloseTextDocument: vi.fn((listener: any, thisArg?: any) =>
-    _onDidCloseTextDocument.event(
-      thisArg ? listener.bind(thisArg) : listener,
-    ),
+    _onDidCloseTextDocument.event(thisArg ? listener.bind(thisArg) : listener),
   ),
   onDidSaveTextDocument: vi.fn((listener: any, thisArg?: any) =>
-    _onDidSaveTextDocument.event(
-      thisArg ? listener.bind(thisArg) : listener,
-    ),
+    _onDidSaveTextDocument.event(thisArg ? listener.bind(thisArg) : listener),
   ),
   onDidCloseNotebookDocument: vi.fn((listener: any, thisArg?: any) =>
     _onDidCloseNotebookDocument.event(

@@ -139,7 +139,12 @@ describe("activation contract", () => {
       globalStorageUri: { fsPath: "/storage" },
       storageUri: { fsPath: "/ws-storage" },
       logUri: { fsPath: "/logs" },
-      secrets: { get: vi.fn(), store: vi.fn(), delete: vi.fn(), onDidChange: vi.fn() },
+      secrets: {
+        get: vi.fn(),
+        store: vi.fn(),
+        delete: vi.fn(),
+        onDidChange: vi.fn(),
+      },
     } as any;
   }
 
@@ -177,9 +182,7 @@ describe("activation contract", () => {
       // registerCommand should NOT have been called for internal commands
       // (only registerConnectContentFileSystem and registerUriHandler run immediately)
       const registerCalls = vi.mocked(commands.registerCommand).mock.calls;
-      const internalCommands = registerCalls.filter(
-        (c) => c[0] !== undefined,
-      );
+      const internalCommands = registerCalls.filter((c) => c[0] !== undefined);
       // No commands should be registered yet (they happen in initializeExtension)
       expect(internalCommands).toHaveLength(0);
     });
@@ -210,9 +213,8 @@ describe("activation contract", () => {
 
   describe("connect-content filesystem", () => {
     it("registers the connect-content file system on activation", async () => {
-      const { registerConnectContentFileSystem } = await import(
-        "src/connect_content_fs"
-      );
+      const { registerConnectContentFileSystem } =
+        await import("src/connect_content_fs");
       const context = createMockContext();
       activate(context);
 
@@ -241,9 +243,7 @@ describe("activation contract", () => {
       expect(registeredIds).toContain(
         "posit.publisher.homeView.copySystemInfo",
       );
-      expect(registeredIds).toContain(
-        "posit.publisher.deployWithEntrypoint",
-      );
+      expect(registeredIds).toContain("posit.publisher.deployWithEntrypoint");
     });
   });
 

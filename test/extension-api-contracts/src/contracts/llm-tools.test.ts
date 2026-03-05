@@ -10,12 +10,9 @@ vi.mock("src/llm/tooling/troubleshoot/publishFailureTroubleshootTool", () => ({
   PublishFailureTroubleshootTool: vi.fn(() => ({ name: "publish-failure" })),
 }));
 
-vi.mock(
-  "src/llm/tooling/troubleshoot/configurationTroubleshootTool",
-  () => ({
-    ConfigurationTroubleshootTool: vi.fn(() => ({ name: "config-error" })),
-  }),
-);
+vi.mock("src/llm/tooling/troubleshoot/configurationTroubleshootTool", () => ({
+  ConfigurationTroubleshootTool: vi.fn(() => ({ name: "config-error" })),
+}));
 
 const { registerLLMTooling } = await import("src/llm/index");
 

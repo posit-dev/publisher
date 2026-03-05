@@ -104,9 +104,7 @@ describe("interpreter-discovery contract", () => {
       // Should not call executeCommand when no workspace
       const pythonCalls = vi
         .mocked(commands.executeCommand)
-        .mock.calls.filter(
-          (call) => call[0] === "python.interpreterPath",
-        );
+        .mock.calls.filter((call) => call[0] === "python.interpreterPath");
       expect(pythonCalls).toHaveLength(0);
 
       workspace.workspaceFolders = origFolders;
@@ -158,9 +156,7 @@ describe("interpreter-discovery contract", () => {
       // Should not fall through to VSCode command
       const pythonCalls = vi
         .mocked(commands.executeCommand)
-        .mock.calls.filter(
-          (call) => call[0] === "python.interpreterPath",
-        );
+        .mock.calls.filter((call) => call[0] === "python.interpreterPath");
       expect(pythonCalls).toHaveLength(0);
     });
 

@@ -66,8 +66,7 @@ describe("file-watchers contract", () => {
       new WatcherManager();
       const calls = vi.mocked(workspace.createFileSystemWatcher).mock.calls;
       const configCall = calls.find(
-        (c) =>
-          (c[0] as RelativePattern).pattern === "**/.posit/publish/*.toml",
+        (c) => (c[0] as RelativePattern).pattern === "**/.posit/publish/*.toml",
       );
       expect(configCall).toBeDefined();
       // No ignoreCreate/ignoreChange/ignoreDelete args (watches all events)
@@ -79,8 +78,7 @@ describe("file-watchers contract", () => {
       const calls = vi.mocked(workspace.createFileSystemWatcher).mock.calls;
       const deploymentsDir = calls.find(
         (c) =>
-          (c[0] as RelativePattern).pattern ===
-          "**/.posit/publish/deployments",
+          (c[0] as RelativePattern).pattern === "**/.posit/publish/deployments",
       );
       expect(deploymentsDir).toBeDefined();
       expect(deploymentsDir![1]).toBe(true);

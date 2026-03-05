@@ -15,27 +15,29 @@ No Go binary, no HTTP server, no network. Tests run entirely in-process using Vi
 
 Each test file captures the contract between extension code and the VSCode/Positron API surface:
 
-| Test File | Extension Source | APIs Validated |
-|-----------|-----------------|----------------|
-| `positron-settings` | `utils/positronSettings.ts` | `workspace.getConfiguration("positron.r")` |
-| `extension-settings` | `extension.ts` | `workspace.getConfiguration("positPublisher")` |
-| `dialogs` | `dialogs.ts` | `window.showInformationMessage` (modal), `l10n.t` |
-| `window-utils` | `utils/window.ts` | `window.showErrorMessage`, `withProgress`, `createTerminal` |
-| `interpreter-discovery` | `utils/vscode.ts` | `commands.executeCommand`, `workspace.getConfiguration`, Positron runtime |
-| `file-watchers` | `watchers.ts` | `workspace.createFileSystemWatcher`, `RelativePattern` |
-| `llm-tools` | `llm/index.ts` | `lm.registerTool` |
-| `open-connect` | `open_connect.ts` | `window.showInputBox`, `workspace.updateWorkspaceFolders` |
-| `auth-provider` | `authProvider.ts` | `authentication.registerAuthenticationProvider` |
-| `connect-filesystem` | `connect_content_fs.ts` | `workspace.registerFileSystemProvider`, `FileSystemError` |
-| `document-tracker` | `entrypointTracker.ts` | Editor/document change events, `commands.executeCommand("setContext")` |
-| `activation` | `extension.ts` | `activate()` wiring: trust, URI handler, commands, contexts |
+| Test File               | Extension Source            | APIs Validated                                                            |
+| ----------------------- | --------------------------- | ------------------------------------------------------------------------- |
+| `positron-settings`     | `utils/positronSettings.ts` | `workspace.getConfiguration("positron.r")`                                |
+| `extension-settings`    | `extension.ts`              | `workspace.getConfiguration("positPublisher")`                            |
+| `dialogs`               | `dialogs.ts`                | `window.showInformationMessage` (modal), `l10n.t`                         |
+| `window-utils`          | `utils/window.ts`           | `window.showErrorMessage`, `withProgress`, `createTerminal`               |
+| `interpreter-discovery` | `utils/vscode.ts`           | `commands.executeCommand`, `workspace.getConfiguration`, Positron runtime |
+| `file-watchers`         | `watchers.ts`               | `workspace.createFileSystemWatcher`, `RelativePattern`                    |
+| `llm-tools`             | `llm/index.ts`              | `lm.registerTool`                                                         |
+| `open-connect`          | `open_connect.ts`           | `window.showInputBox`, `workspace.updateWorkspaceFolders`                 |
+| `auth-provider`         | `authProvider.ts`           | `authentication.registerAuthenticationProvider`                           |
+| `connect-filesystem`    | `connect_content_fs.ts`     | `workspace.registerFileSystemProvider`, `FileSystemError`                 |
+| `document-tracker`      | `entrypointTracker.ts`      | Editor/document change events, `commands.executeCommand("setContext")`    |
+| `activation`            | `extension.ts`              | `activate()` wiring: trust, URI handler, commands, contexts               |
 
 ## Mock design
 
 ### `src/mocks/vscode.ts`
+
 Comprehensive mock of the `vscode` module with `vi.fn()` spies for all APIs the extension uses. Includes constructors (`Disposable`, `EventEmitter`, `Uri`, `RelativePattern`, etc.), enums (`FileType`, `ProgressLocation`, etc.), and namespace objects (`commands`, `window`, `workspace`, `authentication`, `lm`, `l10n`).
 
 ### `src/mocks/positron.ts`
+
 Mock of the `positron` module providing `acquirePositronApi()` and the `LanguageRuntimeMetadata` type.
 
 ## Running
