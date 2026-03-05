@@ -89,6 +89,11 @@ jobs:
     if: needs.detect-changes.outputs.has-code == 'true'
     uses: ./.github/workflows/vscode.yaml
 
+  extension-api-contracts:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.has-code == 'true'
+    uses: ./.github/workflows/extension-api-contracts.yaml
+
   # Build - skip if no code changes
   build:
     needs: detect-changes
@@ -107,7 +112,7 @@ jobs:
 
   # E2E Tests - skip if no code changes or if PR is from a fork
   e2e:
-    needs: [detect-changes, home-view-unit-tests, agent, vscode, package]
+    needs: [detect-changes, home-view-unit-tests, agent, vscode, extension-api-contracts, package]
     if: |
       always() &&
       github.event.pull_request.head.repo.full_name == github.repository &&
