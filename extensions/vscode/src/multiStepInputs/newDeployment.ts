@@ -29,7 +29,6 @@ import {
   ContentType,
   contentTypeStrings,
   Credential,
-  EntryPointPath,
   FileAction,
   PreContentRecord,
   ProductName,
@@ -176,7 +175,7 @@ export async function newDeployment(
   };
 
   const getConfigurationInspectionQuickPicks = async (
-    relEntryPoint: EntryPointPath,
+    relEntryPoint: string,
   ): Promise<QuickPickItemWithInspectionResult[]> => {
     const inspectionListItems: QuickPickItemWithInspectionResult[] = [];
 

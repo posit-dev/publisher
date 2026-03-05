@@ -5,7 +5,6 @@ package accounts
 import (
 	"errors"
 	"fmt"
-	"github.com/posit-dev/publisher/internal/server_type"
 
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/spf13/afero"
@@ -18,7 +17,6 @@ type AccountProvider interface {
 type AccountList interface {
 	GetAllAccounts() ([]Account, error)
 	GetAccountByName(name string) (*Account, error)
-	GetAccountsByServerType(_ server_type.ServerType) ([]Account, error)
 	GetAccountByServerURL(url string) (*Account, error)
 }
 
@@ -79,19 +77,4 @@ func (l *defaultAccountList) GetAccountByServerURL(url string) (*Account, error)
 		}
 	}
 	return nil, fmt.Errorf("there is no account for the server '%s'", url)
-}
-
-func (l *defaultAccountList) GetAccountsByServerType(serverType server_type.ServerType) (accounts []Account, err error) {
-	all, err := l.GetAllAccounts()
-	if err != nil {
-		return nil, err
-	}
-
-	for _, account := range all {
-		if account.ServerType == serverType {
-			accounts = append(accounts, account)
-		}
-	}
-
-	return accounts, nil
 }
