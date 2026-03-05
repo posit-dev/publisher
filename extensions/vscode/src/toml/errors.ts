@@ -6,6 +6,18 @@ import {
   ConfigurationLocation,
 } from "../api/types/configurations";
 
+/**
+ * Error thrown by the loader when a config file has invalid TOML or
+ * fails schema/business validation. Carries the structured
+ * ConfigurationError so discovery functions can collect it.
+ */
+export class ConfigurationLoadError extends Error {
+  constructor(public readonly configurationError: ConfigurationError) {
+    super(configurationError.error.msg);
+    this.name = "ConfigurationLoadError";
+  }
+}
+
 export function createInvalidTOMLError(
   file: string,
   problem: string,

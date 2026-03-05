@@ -5,14 +5,8 @@ import * as os from "os";
 import * as path from "path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { loadConfigFromFile } from "./loader";
-import {
-  Configuration,
-  ConfigurationError,
-  isConfigurationError,
-  UpdateConfigWithDefaults,
-} from "../api/types/configurations";
-import { filterConfigurationsToValidAndType } from "../utils/filters";
-import { ContentType } from "../api/types/configurations";
+import { UpdateConfigWithDefaults } from "../api/types/configurations";
+import { ConfigurationLoadError } from "./errors";
 import { interpreterDefaultsFactory } from "../test/unit-test-utils/factories";
 
 let tmpDir: string;
@@ -81,9 +75,7 @@ default_py_environment_management = false
 `,
     );
 
-    const result = await loadConfigFromFile(configPath, tmpDir);
-    expect(isConfigurationError(result)).toBe(false);
-    const cfg = result as Configuration;
+    const cfg = await loadConfigFromFile(configPath, tmpDir);
 
     expect(cfg.configuration.$schema).toBe(
       "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json",
@@ -136,14 +128,10 @@ default_py_environment_management = false
   });
 
   it("loads the example config.toml", async () => {
-    // Mirrors Go's TestFromExampleFile — loads the real example config
-    // to catch drift between the schema and the example file.
     const examplePath = path.resolve(__dirname, "schemas/example-config.toml");
     const projectDir = path.dirname(examplePath);
 
-    const result = await loadConfigFromFile(examplePath, projectDir);
-    expect(isConfigurationError(result)).toBe(false);
-    const cfg = result as Configuration;
+    const cfg = await loadConfigFromFile(examplePath, projectDir);
 
     expect(cfg.configuration.type).toBe("quarto-static");
     expect(cfg.configuration.entrypoint).toBe("report.qmd");
@@ -178,9 +166,7 @@ ANOTHER_KEY = "another_value"
 `,
     );
 
-    const result = await loadConfigFromFile(configPath, tmpDir);
-    expect(isConfigurationError(result)).toBe(false);
-    const cfg = result as Configuration;
+    const cfg = await loadConfigFromFile(configPath, tmpDir);
 
     expect(cfg.configuration.integrationRequests).toHaveLength(1);
     const ir = cfg.configuration.integrationRequests![0]!;
@@ -189,7 +175,6 @@ ANOTHER_KEY = "another_value"
     expect(ir.description).toBe("A test integration");
     expect(ir.authType).toBe("oauth");
     expect(ir.type).toBe("databricks");
-    // Config keys should be preserved as-is (user-defined)
     expect(ir.config).toEqual({
       custom_key: "custom_value",
       ANOTHER_KEY: "another_value",
@@ -217,9 +202,7 @@ organization_access = "viewer"
 `,
     );
 
-    const result = await loadConfigFromFile(configPath, tmpDir);
-    expect(isConfigurationError(result)).toBe(false);
-    const cfg = result as Configuration;
+    const cfg = await loadConfigFromFile(configPath, tmpDir);
 
     expect(cfg.configuration.productType).toBe("connect_cloud");
     expect(cfg.configuration.connectCloud?.vanityName).toBe("my-app");
@@ -231,34 +214,36 @@ organization_access = "viewer"
     ).toBe("viewer");
   });
 
-  it("returns ConfigurationError for invalid TOML syntax", async () => {
-    const configPath = writeConfig(
-      "bad-toml",
-      `
-this is not valid toml [[[
-`,
-    );
+  it("throws ConfigurationLoadError for invalid TOML syntax", async () => {
+    const configPath = writeConfig("bad-toml", "this is not valid toml [[[");
 
-    const result = await loadConfigFromFile(configPath, tmpDir);
-    expect(isConfigurationError(result)).toBe(true);
-    const err = result as ConfigurationError;
-    expect(err.error.code).toBe("invalidTOML");
-    expect(err.configurationName).toBe("bad-toml");
+    try {
+      await loadConfigFromFile(configPath, tmpDir);
+      expect.fail("should have thrown");
+    } catch (error) {
+      expect(error).toBeInstanceOf(ConfigurationLoadError);
+      const loadError = error as ConfigurationLoadError;
+      expect(loadError.configurationError.error.code).toBe("invalidTOML");
+      expect(loadError.configurationError.configurationName).toBe("bad-toml");
+    }
   });
 
-  it("returns ConfigurationError for schema validation failure", async () => {
-    // Missing required fields ($schema, type, entrypoint)
+  it("throws ConfigurationLoadError for schema validation failure", async () => {
     const configPath = writeConfig(
       "invalid-schema",
-      `
-title = "Missing required fields"
-`,
+      'title = "Missing required fields"',
     );
 
-    const result = await loadConfigFromFile(configPath, tmpDir);
-    expect(isConfigurationError(result)).toBe(true);
-    const err = result as ConfigurationError;
-    expect(err.error.code).toBe("tomlValidationError");
+    try {
+      await loadConfigFromFile(configPath, tmpDir);
+      expect.fail("should have thrown");
+    } catch (error) {
+      expect(error).toBeInstanceOf(ConfigurationLoadError);
+      const loadError = error as ConfigurationLoadError;
+      expect(loadError.configurationError.error.code).toBe(
+        "tomlValidationError",
+      );
+    }
   });
 
   it("throws ENOENT for missing file", async () => {
@@ -266,6 +251,16 @@ title = "Missing required fields"
     await expect(loadConfigFromFile(missingPath, tmpDir)).rejects.toThrow(
       /ENOENT/,
     );
+  });
+
+  it("ENOENT is not a ConfigurationLoadError", async () => {
+    const missingPath = path.join(tmpDir, ".posit", "publish", "nope.toml");
+    try {
+      await loadConfigFromFile(missingPath, tmpDir);
+      expect.fail("should have thrown");
+    } catch (error) {
+      expect(error).not.toBeInstanceOf(ConfigurationLoadError);
+    }
   });
 
   it("sets correct location metadata", async () => {
@@ -278,10 +273,10 @@ entrypoint = "index.html"
 `,
     );
 
-    const result = await loadConfigFromFile(configPath, tmpDir);
-    expect(result.configurationName).toBe("location-test");
-    expect(result.configurationPath).toBe(configPath);
-    expect(result.projectDir).toBe(tmpDir);
+    const cfg = await loadConfigFromFile(configPath, tmpDir);
+    expect(cfg.configurationName).toBe("location-test");
+    expect(cfg.configurationPath).toBe(configPath);
+    expect(cfg.projectDir).toBe(tmpDir);
   });
 
   it("reads leading comments from the file", async () => {
@@ -295,9 +290,7 @@ entrypoint = "index.html"
 `,
     );
 
-    const result = await loadConfigFromFile(configPath, tmpDir);
-    expect(isConfigurationError(result)).toBe(false);
-    const cfg = result as Configuration;
+    const cfg = await loadConfigFromFile(configPath, tmpDir);
     expect(cfg.configuration.comments).toEqual([
       " This is a comment",
       " Another comment line",
@@ -313,9 +306,7 @@ entrypoint = "index.html"
 `,
     );
 
-    const result = await loadConfigFromFile(configPath, tmpDir);
-    expect(isConfigurationError(result)).toBe(false);
-    const cfg = result as Configuration;
+    const cfg = await loadConfigFromFile(configPath, tmpDir);
     expect(cfg.configuration.comments).toEqual([]);
   });
 
@@ -330,9 +321,7 @@ entrypoint = "index.html"
 `,
     );
 
-    const result = await loadConfigFromFile(configPath, tmpDir);
-    expect(isConfigurationError(result)).toBe(false);
-    const cfg = result as Configuration;
+    const cfg = await loadConfigFromFile(configPath, tmpDir);
     expect(cfg.configuration.comments).toEqual([" Leading comment"]);
   });
 
@@ -346,9 +335,7 @@ entrypoint = "index.html"
 `,
     );
 
-    const result = await loadConfigFromFile(configPath, tmpDir);
-    expect(isConfigurationError(result)).toBe(false);
-    const cfg = result as Configuration;
+    const cfg = await loadConfigFromFile(configPath, tmpDir);
     expect(cfg.configuration.productType).toBe("connect");
   });
 
@@ -362,17 +349,12 @@ entrypoint = "index.html"
 `,
     );
 
-    const result = await loadConfigFromFile(configPath, tmpDir);
-    expect(isConfigurationError(result)).toBe(false);
-    const cfg = result as Configuration;
-
-    // validate defaults to true (matches Go New())
+    const cfg = await loadConfigFromFile(configPath, tmpDir);
     expect(cfg.configuration.validate).toBe(true);
-    // files defaults to empty array (matches Go New())
     expect(cfg.configuration.files).toEqual([]);
   });
 
-  it("rejects Connect Cloud config with unsupported content type", async () => {
+  it("throws for Connect Cloud config with unsupported content type", async () => {
     const configPath = writeConfig(
       "cloud-flask",
       `
@@ -386,12 +368,18 @@ version = "3.11"
 `,
     );
 
-    const result = await loadConfigFromFile(configPath, tmpDir);
-    expect(isConfigurationError(result)).toBe(true);
-    const err = result as ConfigurationError;
-    expect(err.error.code).toBe("tomlValidationError");
-    expect(err.error.msg).toContain("python-flask");
-    expect(err.error.msg).toContain("not supported by Connect Cloud");
+    try {
+      await loadConfigFromFile(configPath, tmpDir);
+      expect.fail("should have thrown");
+    } catch (error) {
+      expect(error).toBeInstanceOf(ConfigurationLoadError);
+      const loadError = error as ConfigurationLoadError;
+      expect(loadError.configurationError.error.code).toBe(
+        "tomlValidationError",
+      );
+      expect(loadError.message).toContain("python-flask");
+      expect(loadError.message).toContain("not supported by Connect Cloud");
+    }
   });
 
   it("accepts Connect Cloud config with supported content type", async () => {
@@ -408,9 +396,7 @@ version = "3.11"
 `,
     );
 
-    const result = await loadConfigFromFile(configPath, tmpDir);
-    expect(isConfigurationError(result)).toBe(false);
-    const cfg = result as Configuration;
+    const cfg = await loadConfigFromFile(configPath, tmpDir);
     expect(cfg.configuration.type).toBe("python-dash");
     expect(cfg.configuration.productType).toBe("connect_cloud");
   });
@@ -426,9 +412,7 @@ validate = false
 `,
     );
 
-    const result = await loadConfigFromFile(configPath, tmpDir);
-    expect(isConfigurationError(result)).toBe(false);
-    const cfg = result as Configuration;
+    const cfg = await loadConfigFromFile(configPath, tmpDir);
     expect(cfg.configuration.validate).toBe(false);
   });
 });
@@ -447,80 +431,32 @@ version = "3.11"
 `,
     );
 
-    const result = await loadConfigFromFile(configPath, tmpDir);
-    expect(isConfigurationError(result)).toBe(false);
+    const cfg = await loadConfigFromFile(configPath, tmpDir);
 
     const defaults = interpreterDefaultsFactory.build();
-    const updated = UpdateConfigWithDefaults(result as Configuration, defaults);
+    const updated = UpdateConfigWithDefaults(cfg, defaults);
 
-    const cfg = updated as Configuration;
-    // Python version was set in the TOML, so it shouldn't be overwritten by defaults
-    expect(cfg.configuration.python?.version).toBe("3.11");
-    // packageFile and packageManager were not set, so they should be filled from defaults
-    expect(cfg.configuration.python?.packageFile).toBe(
+    expect(updated.configuration.python?.version).toBe("3.11");
+    expect(updated.configuration.python?.packageFile).toBe(
       defaults.python.packageFile,
     );
-    expect(cfg.configuration.python?.packageManager).toBe(
+    expect(updated.configuration.python?.packageManager).toBe(
       defaults.python.packageManager,
     );
   });
 
-  it("isConfigurationError works on both valid and error results", async () => {
-    const validPath = writeConfig(
-      "valid",
-      `
-"$schema" = "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json"
-type = "html"
-entrypoint = "index.html"
-`,
-    );
-    const badPath = writeConfig("bad", "not valid toml [[[");
+  it("ConfigurationLoadError carries location metadata", async () => {
+    const configPath = writeConfig("meta-test", "not valid toml [[[");
 
-    const valid = await loadConfigFromFile(validPath, tmpDir);
-    const bad = await loadConfigFromFile(badPath, tmpDir);
-
-    expect(isConfigurationError(valid)).toBe(false);
-    expect(isConfigurationError(bad)).toBe(true);
-  });
-
-  it("filterConfigurationsToValidAndType works with loader output", async () => {
-    const htmlPath = writeConfig(
-      "html-cfg",
-      `
-"$schema" = "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json"
-type = "html"
-entrypoint = "index.html"
-`,
-    );
-    const badPath = writeConfig("bad-cfg", "not valid [[[");
-
-    const configs = await Promise.all([
-      loadConfigFromFile(htmlPath, tmpDir),
-      loadConfigFromFile(badPath, tmpDir),
-    ]);
-
-    const valid = filterConfigurationsToValidAndType(configs, ContentType.HTML);
-    expect(valid).toHaveLength(1);
-    expect(valid[0]!.configuration.type).toBe("html");
-  });
-
-  it(".configurationName is accessible on both valid and error results", async () => {
-    const validPath = writeConfig(
-      "accessible-valid",
-      `
-"$schema" = "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json"
-type = "html"
-entrypoint = "index.html"
-`,
-    );
-    const badPath = writeConfig("accessible-bad", "not valid [[[");
-
-    const results = await Promise.all([
-      loadConfigFromFile(validPath, tmpDir),
-      loadConfigFromFile(badPath, tmpDir),
-    ]);
-
-    const names = results.map((c) => c.configurationName);
-    expect(names).toEqual(["accessible-valid", "accessible-bad"]);
+    try {
+      await loadConfigFromFile(configPath, tmpDir);
+      expect.fail("should have thrown");
+    } catch (error) {
+      expect(error).toBeInstanceOf(ConfigurationLoadError);
+      const loadError = error as ConfigurationLoadError;
+      expect(loadError.configurationError.configurationName).toBe("meta-test");
+      expect(loadError.configurationError.configurationPath).toBe(configPath);
+      expect(loadError.configurationError.projectDir).toBe(tmpDir);
+    }
   });
 });
