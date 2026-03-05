@@ -48,9 +48,9 @@ export async function loadConfigFromFile(
   const content = await fs.readFile(configPath, "utf-8");
 
   // Parse TOML
-  let parsed: Record<string, unknown>;
+  let parsed;
   try {
-    parsed = parseTOML(content) as Record<string, unknown>;
+    parsed = parseTOML(content);
   } catch (err: unknown) {
     if (err instanceof TomlError) {
       const line = err.line ?? 0;
