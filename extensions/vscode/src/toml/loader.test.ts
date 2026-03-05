@@ -5,7 +5,10 @@ import * as os from "os";
 import * as path from "path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { loadConfigFromFile } from "./loader";
-import { UpdateConfigWithDefaults } from "../api/types/configurations";
+import {
+  isConfigurationError,
+  UpdateConfigWithDefaults,
+} from "../api/types/configurations";
 import { ConfigurationLoadError } from "./errors";
 import { interpreterDefaultsFactory } from "../test/unit-test-utils/factories";
 
@@ -222,9 +225,10 @@ organization_access = "viewer"
       expect.fail("should have thrown");
     } catch (error) {
       expect(error).toBeInstanceOf(ConfigurationLoadError);
-      const loadError = error as ConfigurationLoadError;
-      expect(loadError.configurationError.error.code).toBe("invalidTOML");
-      expect(loadError.configurationError.configurationName).toBe("bad-toml");
+      if (error instanceof ConfigurationLoadError) {
+        expect(error.configurationError.error.code).toBe("invalidTOML");
+        expect(error.configurationError.configurationName).toBe("bad-toml");
+      }
     }
   });
 
@@ -239,10 +243,9 @@ organization_access = "viewer"
       expect.fail("should have thrown");
     } catch (error) {
       expect(error).toBeInstanceOf(ConfigurationLoadError);
-      const loadError = error as ConfigurationLoadError;
-      expect(loadError.configurationError.error.code).toBe(
-        "tomlValidationError",
-      );
+      if (error instanceof ConfigurationLoadError) {
+        expect(error.configurationError.error.code).toBe("tomlValidationError");
+      }
     }
   });
 
@@ -373,12 +376,11 @@ version = "3.11"
       expect.fail("should have thrown");
     } catch (error) {
       expect(error).toBeInstanceOf(ConfigurationLoadError);
-      const loadError = error as ConfigurationLoadError;
-      expect(loadError.configurationError.error.code).toBe(
-        "tomlValidationError",
-      );
-      expect(loadError.message).toContain("python-flask");
-      expect(loadError.message).toContain("not supported by Connect Cloud");
+      if (error instanceof ConfigurationLoadError) {
+        expect(error.configurationError.error.code).toBe("tomlValidationError");
+        expect(error.message).toContain("python-flask");
+        expect(error.message).toContain("not supported by Connect Cloud");
+      }
     }
   });
 
@@ -436,13 +438,16 @@ version = "3.11"
     const defaults = interpreterDefaultsFactory.build();
     const updated = UpdateConfigWithDefaults(cfg, defaults);
 
-    expect(updated.configuration.python?.version).toBe("3.11");
-    expect(updated.configuration.python?.packageFile).toBe(
-      defaults.python.packageFile,
-    );
-    expect(updated.configuration.python?.packageManager).toBe(
-      defaults.python.packageManager,
-    );
+    expect(isConfigurationError(updated)).toBe(false);
+    if (!isConfigurationError(updated)) {
+      expect(updated.configuration.python?.version).toBe("3.11");
+      expect(updated.configuration.python?.packageFile).toBe(
+        defaults.python.packageFile,
+      );
+      expect(updated.configuration.python?.packageManager).toBe(
+        defaults.python.packageManager,
+      );
+    }
   });
 
   it("ConfigurationLoadError carries location metadata", async () => {
@@ -453,10 +458,11 @@ version = "3.11"
       expect.fail("should have thrown");
     } catch (error) {
       expect(error).toBeInstanceOf(ConfigurationLoadError);
-      const loadError = error as ConfigurationLoadError;
-      expect(loadError.configurationError.configurationName).toBe("meta-test");
-      expect(loadError.configurationError.configurationPath).toBe(configPath);
-      expect(loadError.configurationError.projectDir).toBe(tmpDir);
+      if (error instanceof ConfigurationLoadError) {
+        expect(error.configurationError.configurationName).toBe("meta-test");
+        expect(error.configurationError.configurationPath).toBe(configPath);
+        expect(error.configurationError.projectDir).toBe(tmpDir);
+      }
     }
   });
 });
