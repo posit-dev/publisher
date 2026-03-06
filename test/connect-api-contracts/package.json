@@ -6,7 +6,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:update": "vitest run --update",
-    "validate-fixtures": "vitest run --config vitest.validate.config.ts"
+    "validate-fixtures": "vitest run --config vitest.validate.config.ts",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "ajv": "^8.18.0",
