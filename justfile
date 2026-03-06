@@ -240,7 +240,7 @@ test-extension-contracts:
     set -eou pipefail
     {{ _with_debug }}
 
-    cd test/extension-api-contracts && npx vitest run
+    cd test/extension-api-contracts && npm test
 
 # Check that vscode/positron mocks conform to real API type definitions
 check-mock-conformance:

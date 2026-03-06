@@ -6,7 +6,7 @@
 // produce a compile error on the corresponding Pick<> line.
 //
 // Run:  npm run check:conformance
-//   or: npx tsc --noEmit -p tsconfig.conformance.json
+//   or: cd test/extension-api-contracts && npm run check:conformance
 //
 // This uses a separate tsconfig (tsconfig.conformance.json) that does NOT alias
 // "vscode" to our mock, so `import type * as vscode from "vscode"` resolves to

@@ -24,7 +24,7 @@ Each test file captures the contract between extension code and the VSCode/Posit
 | `interpreter-discovery` | `utils/vscode.ts`           | `commands.executeCommand`, `workspace.getConfiguration`, Positron runtime |
 | `file-watchers`         | `watchers.ts`               | `workspace.createFileSystemWatcher`, `RelativePattern`                    |
 | `llm-tools`             | `llm/index.ts`              | `lm.registerTool`                                                         |
-| `open-connect`          | `open_connect.ts`           | `window.showInputBox`, `workspace.updateWorkspaceFolders`                 |
+| `open-connect`          | `open_connect.ts`           | `window.showInputBox`, `workspace.updateWorkspaceFolders`, `commands.executeCommand` |
 | `auth-provider`         | `authProvider.ts`           | `authentication.registerAuthenticationProvider`                           |
 | `connect-filesystem`    | `connect_content_fs.ts`     | `workspace.registerFileSystemProvider`, `FileSystemError`                 |
 | `document-tracker`      | `entrypointTracker.ts`      | Editor/document change events, `commands.executeCommand("setContext")`    |
@@ -40,6 +40,14 @@ Comprehensive mock of the `vscode` module with `vi.fn()` spies for all APIs the 
 
 Mock of the `positron` module providing `acquirePositronApi()` and the `LanguageRuntimeMetadata` type.
 
+### Conformance checks
+
+`src/mocks/vscode.conformance.ts` and `src/mocks/positron.conformance.ts` are compile-time checks that verify every property in our mocks also exists in the real API types. If a mock includes a misspelled or removed API, `tsc` will produce a compile error. Run with `npm run check:conformance`.
+
+### `src/helpers/`
+
+Shared mock setup used by tests that import modules with many transitive dependencies (e.g., `extension.ts`). Imported via `import "../helpers/extension-mocks"`.
+
 ## Running
 
 ```bash
@@ -50,10 +58,16 @@ cd test/extension-api-contracts && npm install
 just test-extension-contracts
 
 # Or directly
-cd test/extension-api-contracts && npx vitest run
+cd test/extension-api-contracts && npm test
 
 # Watch mode
-cd test/extension-api-contracts && npx vitest
+cd test/extension-api-contracts && npm run test:watch
+
+# Run conformance checks (verify mocks match real API types)
+just check-mock-conformance
+
+# Or directly
+cd test/extension-api-contracts && npm run check:conformance
 ```
 
 ## Adding a new contract test

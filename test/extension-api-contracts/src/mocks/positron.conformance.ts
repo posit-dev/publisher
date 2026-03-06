@@ -4,7 +4,7 @@
 // match the real Positron type declarations from extensions/vscode/src/@types/.
 //
 // Run:  npm run check:conformance
-//   or: npx tsc --noEmit -p tsconfig.conformance.json
+//   or: cd test/extension-api-contracts && npm run check:conformance
 //
 // The real Positron types come from the ambient module declaration at
 // extensions/vscode/src/@types/positron.d.ts, which is included in
