@@ -75,6 +75,11 @@ vi.mock("src/utils/vscode", () => ({
   getRInterpreterPath: vi.fn(),
 }));
 
+const mockSyncAllCredentials = vi.fn();
+vi.mock("src/credentialSecretStorage", () => ({
+  syncAllCredentials: (...args: unknown[]) => mockSyncAllCredentials(...args),
+}));
+
 vi.mock("vscode", () => {
   // mock Disposable
   const disposableMock = vi.fn();
@@ -99,6 +104,7 @@ vi.mock("vscode", () => {
     env: {
       appName: "",
     },
+    SecretStorage: vi.fn(),
   };
 });
 
@@ -450,6 +456,22 @@ describe("PublisherState", () => {
       expect(publisherState.credentials).toEqual(fakeCredsFetch);
     });
 
+    test("syncs credentials to SecretStorage after refresh", async () => {
+      const fakeCredsFetch = credentialFactory.buildList(2);
+      mockClient.credentials.list.mockResolvedValue({
+        data: fakeCredsFetch,
+      });
+
+      const { mockContext } = mkExtensionContextStateMock({});
+      const publisherState = new PublisherState(mockContext);
+
+      await publisherState.refreshCredentials();
+      expect(mockSyncAllCredentials).toHaveBeenCalledWith(
+        mockContext.secrets,
+        fakeCredsFetch,
+      );
+    });
+
     describe("errors", () => {
       test("api error - not corrupted data", async () => {
         const axiosErr = new AxiosError();
@@ -529,6 +551,23 @@ describe("PublisherState", () => {
       // Warning message is called
       expect(window.showWarningMessage).toHaveBeenCalledWith(
         "Unrecognizable credentials for Posit Publisher were found and removed. Credentials may need to be recreated. Previous credentials data backed up at backup-file",
+      );
+    });
+
+    test("syncs credentials to SecretStorage after reset", async () => {
+      const freshCreds = credentialFactory.buildList(1);
+      mockClient.credentials.reset.mockImplementation(() => {
+        mockClient.credentials.list.mockResolvedValue({ data: freshCreds });
+        return { data: { backupFile: "backup-file" } };
+      });
+
+      const { mockContext } = mkExtensionContextStateMock({});
+      const publisherState = new PublisherState(mockContext);
+
+      await publisherState.resetCredentials();
+      expect(mockSyncAllCredentials).toHaveBeenCalledWith(
+        mockContext.secrets,
+        freshCreds,
       );
     });
 

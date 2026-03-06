@@ -3,15 +3,21 @@
 import { AgentError } from "./error";
 import { ServerType } from "./contentRecords";
 
+// NOTE: If you add or remove fields here, also update
+// REQUIRED_CREDENTIAL_FIELDS in credentialSecretStorage.ts.
 export type Credential = {
   guid: string;
   name: string;
   url: string;
   apiKey: string;
+  snowflakeConnection: string;
   accountId: string;
   accountName: string;
   refreshToken: string;
   accessToken: string;
+  cloudEnvironment: string;
+  token: string;
+  privateKey: string;
   serverType: ServerType;
 };
 

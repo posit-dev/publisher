@@ -1,6 +1,14 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
-import { Disposable, env, Event, EventEmitter, Memento, window } from "vscode";
+import {
+  Disposable,
+  env,
+  Event,
+  EventEmitter,
+  Memento,
+  SecretStorage,
+  window,
+} from "vscode";
 
 import {
   Configuration,
@@ -36,6 +44,7 @@ import {
   isConnectCloudProduct,
 } from "./utils/multiStepHelpers";
 import { recordAddConnectCloudUrlParams } from "./utils/connectCloudHelpers";
+import { syncAllCredentials } from "./credentialSecretStorage";
 
 function findContentRecord<
   T extends ContentRecord | PreContentRecord | PreContentRecordWithConfig,
@@ -92,6 +101,8 @@ function findCredentialForContentRecord(
 interface extensionContext {
   // A memento object that stores state in the context
   readonly workspaceState: Memento;
+  // Secret storage for credential migration
+  readonly secrets: SecretStorage;
 }
 
 export interface CredentialRefreshEvent {
@@ -351,6 +362,7 @@ export class PublisherState implements Disposable {
         const response = await api.credentials.list();
         this.credentials = response.data;
       });
+      await syncAllCredentials(this.context.secrets, this.credentials);
       this.credentialRefresh.fire({ oldCredentials: oldCredentials });
     } catch (error: unknown) {
       if (isErrCredentialsCorrupted(error)) {
@@ -374,6 +386,7 @@ export class PublisherState implements Disposable {
 
       const listResponse = await api.credentials.list();
       this.credentials = listResponse.data;
+      await syncAllCredentials(this.context.secrets, this.credentials);
       this.credentialRefresh.fire({ oldCredentials: oldCredentials });
     } catch (err: unknown) {
       if (isErrCannotBackupCredentialsFile(err)) {
