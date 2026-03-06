@@ -2,7 +2,6 @@
 
 import { execSync, spawn, type ChildProcess } from "node:child_process";
 import { resolve } from "node:path";
-import type { GlobalSetupContext } from "vitest/node";
 import { MockConnectServer } from "./mock-connect-server";
 
 const REPO_ROOT = resolve(__dirname, "..", "..", "..");
@@ -21,7 +20,7 @@ function buildHarness(): string {
   return binaryPath;
 }
 
-export async function setup({ provide }: GlobalSetupContext) {
+export async function setup() {
   // 1. Start mock Connect server
   mockServer = new MockConnectServer();
   await mockServer.start();
