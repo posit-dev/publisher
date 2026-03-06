@@ -43,6 +43,12 @@ import {
 import { showProgress } from "src/utils/progress";
 import { isRelativePathRoot } from "src/utils/files";
 import { newConfigFileNameFromTitle } from "src/utils/names";
+import {
+  loadAllConfigurations,
+  writeConfigToFile,
+  getConfigPath,
+} from "src/toml";
+import * as workspaces from "src/workspaces";
 
 export async function selectNewOrExistingConfig(
   activeDeployment: ContentRecord | PreContentRecord,
@@ -102,15 +108,9 @@ export async function selectNewOrExistingConfig(
 
   const getConfigurations = async () => {
     try {
-      // get all configurations
-      const response = await api.configurations.getAll(
-        activeDeployment.projectDir,
-      );
-      const rawConfigs = response.data;
-      // remove the errors
-      configurations = configurations.filter(
-        (cfg): cfg is Configuration => !isConfigurationError(cfg),
-      );
+      const root = workspaces.path()!;
+      const absDir = path.resolve(root, activeDeployment.projectDir);
+      const rawConfigs = await loadAllConfigurations(absDir);
       // Filter down configs to same content type as active deployment,
       // but also allowing configs if active Deployment is a preDeployment
       // or if the deployment file has no content type assigned yet.
@@ -443,22 +443,25 @@ export async function selectNewOrExistingConfig(
         return;
       }
 
-      const existingNames = (
-        await api.configurations.getAll(selectedInspectionResult.projectDir)
-      ).data.map((config) => config.configurationName);
+      const root = workspaces.path()!;
+      const absDir = path.resolve(root, selectedInspectionResult.projectDir);
+      const allConfigs = await loadAllConfigurations(absDir);
+      const existingNames = allConfigs.map(
+        (config) => config.configurationName,
+      );
 
       const configName = newConfigFileNameFromTitle(
         state.data.title,
         existingNames,
       );
       selectedInspectionResult.configuration.title = state.data.title;
-      const createResponse = await api.configurations.createOrUpdate(
-        configName,
+      const configFilePath = getConfigPath(absDir, configName);
+      const newConfig = await writeConfigToFile(
+        configFilePath,
+        absDir,
         selectedInspectionResult.configuration,
-        selectedInspectionResult.projectDir,
       );
-      const fileUri = Uri.file(createResponse.data.configurationPath);
-      const newConfig = createResponse.data;
+      const fileUri = Uri.file(newConfig.configurationPath);
       await commands.executeCommand("vscode.open", fileUri);
       return newConfig;
     } catch (error: unknown) {
