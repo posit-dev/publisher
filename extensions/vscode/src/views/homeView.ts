@@ -43,6 +43,8 @@ import {
   IntegrationRequest,
   Integration,
 } from "src/api";
+import { loadAllConfigurations } from "src/toml";
+import * as workspaces from "src/workspaces";
 import { EventStream } from "src/events";
 import { getPythonInterpreterPath, getRInterpreterPath } from "../utils/vscode";
 import { getSummaryStringFromError } from "src/utils/errors";
@@ -2075,24 +2077,22 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const configMap = new Map<string, Configuration>();
     const getConfigurations = async () => {
       try {
-        const response = await api.configurations.getAll(entrypointDir, {
-          entrypoint: entrypointFile,
-          recursive: false,
-        });
-        const rawConfigs = response.data;
-        rawConfigs.forEach((cfg) => {
-          if (!isConfigurationError(cfg)) {
+        const root = workspaces.path()!;
+        const allConfigs = await loadAllConfigurations(entrypointDir, root);
+        allConfigs.forEach((cfg) => {
+          if (
+            !isConfigurationError(cfg) &&
+            cfg.configuration.entrypoint === entrypointFile
+          ) {
             configMap.set(cfg.configurationName, cfg);
           }
         });
       } catch (error: unknown) {
         const summary = getSummaryStringFromError(
-          "handleFileInitiatedDeploymentSelection, configurations.getAll",
+          "handleFileInitiatedDeploymentSelection, loadAllConfigurations",
           error,
         );
-        window.showErrorMessage(
-          `Unable to continue with API Error: ${summary}`,
-        );
+        window.showErrorMessage(`Unable to load configurations: ${summary}`);
         throw error;
       }
     };

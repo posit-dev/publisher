@@ -64,10 +64,6 @@ func ConnectContentFromConfig(cfg *config.Config) *ConnectContent {
 		Description: cfg.Description,
 	}
 	if cfg.Connect != nil {
-		if cfg.Connect.AccessControl != nil {
-			// access types map directly to Connect
-			c.AccessType = string(cfg.Connect.AccessControl.Type)
-		}
 		if cfg.Connect.Runtime != nil {
 			c.ConnectionTimeout = copy(cfg.Connect.Runtime.ConnectionTimeout)
 			c.ReadTimeout = copy(cfg.Connect.Runtime.ReadTimeout)

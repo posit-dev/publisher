@@ -41,6 +41,8 @@ import {
 import { getSummaryStringFromError } from "src/utils/errors";
 import { isAxiosErrorWithJson } from "src/utils/errorTypes";
 import { newConfigFileNameFromTitle, newDeploymentName } from "src/utils/names";
+import { loadAllConfigurations, writeConfigToFile } from "src/toml";
+import * as workspaces from "src/workspaces";
 import { DeploymentObjects } from "src/types/shared";
 import { showProgress } from "src/utils/progress";
 import {
@@ -842,11 +844,12 @@ export async function newDeployment(
     newDeploymentData.title;
 
   try {
-    const existingNames = (
-      await api.configurations.getAll(
-        newDeploymentData.entrypoint.inspectionResult.projectDir,
-      )
-    ).data.map((config) => config.configurationName);
+    const root = workspaces.path()!;
+    const relProjectDir =
+      newDeploymentData.entrypoint.inspectionResult.projectDir;
+
+    const allConfigs = await loadAllConfigurations(relProjectDir, root);
+    const existingNames = allConfigs.map((config) => config.configurationName);
 
     configName = newConfigFileNameFromTitle(
       newDeploymentData.title,
@@ -856,19 +859,18 @@ export async function newDeployment(
     newDeploymentData.entrypoint.inspectionResult.configuration.productType =
       getProductType(newOrSelectedCredential.serverType);
 
-    configCreateResponse = (
-      await api.configurations.createOrUpdate(
-        configName,
-        newDeploymentData.entrypoint.inspectionResult.configuration,
-        newDeploymentData.entrypoint.inspectionResult.projectDir,
-      )
-    ).data;
+    configCreateResponse = await writeConfigToFile(
+      configName,
+      relProjectDir,
+      root,
+      newDeploymentData.entrypoint.inspectionResult.configuration,
+    );
     const fileUri = Uri.file(configCreateResponse.configurationPath);
     newConfig = configCreateResponse;
     await commands.executeCommand("vscode.open", fileUri);
   } catch (error: unknown) {
     const summary = getSummaryStringFromError(
-      "newDeployment, configurations.createOrUpdate",
+      "newDeployment, writeConfigToFile",
       error,
     );
     window.showErrorMessage(`Failed to create config file. ${summary}`);
