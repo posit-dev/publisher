@@ -142,11 +142,14 @@ export async function writeConfigToFile(
 }
 
 /**
- * Recursively strip empty values from an object to match Go's omitempty TOML
- * encoding behavior. Removes keys whose values are:
+ * Recursively strip empty leaf values from an object to match Go's omitempty
+ * TOML encoding behavior. Removes keys whose values are:
  * - undefined or null
  * - empty strings ("")
- * - empty objects ({})
+ *
+ * Does NOT remove empty objects — Go's TOML encoder writes section headers
+ * (e.g., `[r]`) even when all fields are omitted via omitempty, and the
+ * JSON schema conditionally requires these sections to exist.
  *
  * Mutates the object in place.
  */
@@ -157,15 +160,7 @@ function stripEmpty(obj: Record<string, unknown>): void {
     } else if (typeof value === "string" && value === "") {
       delete obj[key];
     } else if (isRecord(value)) {
-      if (Object.keys(value).length === 0) {
-        delete obj[key];
-      } else {
-        stripEmpty(value);
-        // Re-check if it became empty after stripping children
-        if (Object.keys(value).length === 0) {
-          delete obj[key];
-        }
-      }
+      stripEmpty(value);
     }
   }
 }
