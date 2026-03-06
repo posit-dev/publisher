@@ -1,0 +1,14 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`GET /api/interpreters > returns interpreter information 1`] = `
+{
+  "python": ObjectContaining {
+    "packageManager": Any<String>,
+    "version": Any<String>,
+  },
+  "r": ObjectContaining {
+    "packageManager": Any<String>,
+    "version": Any<String>,
+  },
+}
+`;

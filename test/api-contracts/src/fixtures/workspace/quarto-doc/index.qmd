@@ -1,0 +1,8 @@
+---
+title: "Quarto Document"
+format: html
+---
+
+## Introduction
+
+This is a minimal Quarto document for testing content type detection.

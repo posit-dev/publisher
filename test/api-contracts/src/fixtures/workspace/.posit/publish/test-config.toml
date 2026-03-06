@@ -1,0 +1,13 @@
+"$schema" = "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json"
+type = "python-fastapi"
+entrypoint = "fastapi-simple/app.py"
+validate = true
+files = [
+    "fastapi-simple/app.py",
+    "fastapi-simple/requirements.txt",
+]
+
+[python]
+version = "3.11.3"
+package_file = "fastapi-simple/requirements.txt"
+package_manager = "pip"
