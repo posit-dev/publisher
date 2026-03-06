@@ -444,11 +444,12 @@ export async function newConnectCloudCredential(
 
     const account = accounts.find((a) => a.displayName === pick.label);
 
-    // fallback to the first publishable account if the selected account is ever not found
-    if (
-      (!account?.id || !account?.name || !account?.displayName) &&
-      accounts[0]
-    ) {
+    if (account?.id && account?.name && account?.displayName) {
+      state.data.accountId = account.id;
+      state.data.accountName = account.name;
+      state.data.displayName = account.displayName;
+    } else if (accounts[0]) {
+      // fallback to the first publishable account if the selected account is ever not found
       state.data.accountId = accounts[0].id;
       state.data.accountName = accounts[0].name;
       state.data.displayName = accounts[0].displayName;
