@@ -244,7 +244,7 @@ test-connect-contracts:
     set -eou pipefail
     {{ _with_debug }}
 
-    cd test/connect-api-contracts && npx vitest run
+    cd test/connect-api-contracts && npm test
 
 # Validate Connect API fixtures against the public Swagger spec
 validate-fixtures:
