@@ -1,0 +1,7 @@
+{
+  "installations": [
+    { "version": "3.11.6", "cluster_name": "", "image_name": "" },
+    { "version": "3.10.12", "cluster_name": "", "image_name": "" }
+  ],
+  "api_enabled": true
+}
