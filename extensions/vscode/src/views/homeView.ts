@@ -2078,8 +2078,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const getConfigurations = async () => {
       try {
         const root = workspaces.path()!;
-        const absDir = path.resolve(root, entrypointDir);
-        const allConfigs = await loadAllConfigurations(absDir);
+        const allConfigs = await loadAllConfigurations(entrypointDir, root);
         allConfigs.forEach((cfg) => {
           if (
             !isConfigurationError(cfg) &&

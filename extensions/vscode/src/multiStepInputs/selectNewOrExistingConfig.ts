@@ -109,8 +109,10 @@ export async function selectNewOrExistingConfig(
   const getConfigurations = async () => {
     try {
       const root = workspaces.path()!;
-      const absDir = path.resolve(root, activeDeployment.projectDir);
-      const rawConfigs = await loadAllConfigurations(absDir);
+      const rawConfigs = await loadAllConfigurations(
+        activeDeployment.projectDir,
+        root,
+      );
       // Filter down configs to same content type as active deployment,
       // but also allowing configs if active Deployment is a preDeployment
       // or if the deployment file has no content type assigned yet.
@@ -445,7 +447,10 @@ export async function selectNewOrExistingConfig(
 
       const root = workspaces.path()!;
       const absDir = path.resolve(root, selectedInspectionResult.projectDir);
-      const allConfigs = await loadAllConfigurations(absDir);
+      const allConfigs = await loadAllConfigurations(
+        selectedInspectionResult.projectDir,
+        root,
+      );
       const existingNames = allConfigs.map(
         (config) => config.configurationName,
       );
@@ -458,7 +463,7 @@ export async function selectNewOrExistingConfig(
       const configFilePath = getConfigPath(absDir, configName);
       const newConfig = await writeConfigToFile(
         configFilePath,
-        absDir,
+        selectedInspectionResult.projectDir,
         selectedInspectionResult.configuration,
       );
       const fileUri = Uri.file(newConfig.configurationPath);

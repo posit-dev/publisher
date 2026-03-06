@@ -92,16 +92,32 @@ describe("loadConfiguration", () => {
   it("loads a valid config by name", async () => {
     writeConfig(tmpDir, "myapp", validConfig);
 
-    const cfg = await loadConfiguration("myapp", tmpDir);
+    const cfg = await loadConfiguration("myapp", ".", tmpDir);
     expect(cfg.configurationName).toBe("myapp");
     expect(cfg.configuration.type).toBe("html");
+  });
+
+  it("stores relative projectDir", async () => {
+    writeConfig(tmpDir, "myapp", validConfig);
+
+    const cfg = await loadConfiguration("myapp", ".", tmpDir);
+    expect(cfg.projectDir).toBe(".");
+  });
+
+  it("stores relative projectDir for subdirectory", async () => {
+    const subDir = path.join(tmpDir, "sub");
+    fs.mkdirSync(subDir);
+    writeConfig(subDir, "myapp", validConfig);
+
+    const cfg = await loadConfiguration("myapp", "sub", tmpDir);
+    expect(cfg.projectDir).toBe("sub");
   });
 
   it("throws ConfigurationLoadError for invalid config", async () => {
     writeConfig(tmpDir, "bad", invalidConfig);
 
     try {
-      await loadConfiguration("bad", tmpDir);
+      await loadConfiguration("bad", ".", tmpDir);
       expect.fail("should have thrown");
     } catch (error) {
       expect(error).toBeInstanceOf(ConfigurationLoadError);
@@ -109,13 +125,15 @@ describe("loadConfiguration", () => {
   });
 
   it("throws ENOENT for missing config", async () => {
-    await expect(loadConfiguration("nope", tmpDir)).rejects.toThrow(/ENOENT/);
+    await expect(loadConfiguration("nope", ".", tmpDir)).rejects.toThrow(
+      /ENOENT/,
+    );
   });
 });
 
 describe("loadAllConfigurations", () => {
   it("returns empty array when no configs exist", async () => {
-    const results = await loadAllConfigurations(tmpDir);
+    const results = await loadAllConfigurations(".", tmpDir);
     expect(results).toEqual([]);
   });
 
@@ -123,16 +141,26 @@ describe("loadAllConfigurations", () => {
     writeConfig(tmpDir, "alpha", validConfig);
     writeConfig(tmpDir, "beta", validConfig);
 
-    const results = await loadAllConfigurations(tmpDir);
+    const results = await loadAllConfigurations(".", tmpDir);
     expect(results).toHaveLength(2);
     expect(results.every((r) => !isConfigurationError(r))).toBe(true);
+  });
+
+  it("stores relative projectDir on loaded configs", async () => {
+    writeConfig(tmpDir, "alpha", validConfig);
+
+    const results = await loadAllConfigurations(".", tmpDir);
+    expect(results).toHaveLength(1);
+    expect(!isConfigurationError(results[0]!) && results[0]!.projectDir).toBe(
+      ".",
+    );
   });
 
   it("collects errors for invalid configs alongside valid ones", async () => {
     writeConfig(tmpDir, "good", validConfig);
     writeConfig(tmpDir, "bad", invalidConfig);
 
-    const results = await loadAllConfigurations(tmpDir);
+    const results = await loadAllConfigurations(".", tmpDir);
     expect(results).toHaveLength(2);
 
     const valid = results.filter((r) => !isConfigurationError(r));
@@ -160,6 +188,28 @@ describe("loadAllConfigurationsRecursive", () => {
 
     const results = await loadAllConfigurationsRecursive(tmpDir);
     expect(results).toHaveLength(1);
+  });
+
+  it("stores relative projectDir for root configs as '.'", async () => {
+    writeConfig(tmpDir, "root-app", validConfig);
+
+    const results = await loadAllConfigurationsRecursive(tmpDir);
+    expect(results).toHaveLength(1);
+    expect(!isConfigurationError(results[0]!) && results[0]!.projectDir).toBe(
+      ".",
+    );
+  });
+
+  it("stores relative projectDir for subdirectory configs", async () => {
+    const subDir = path.join(tmpDir, "subproject");
+    fs.mkdirSync(subDir);
+    writeConfig(subDir, "sub-app", validConfig);
+
+    const results = await loadAllConfigurationsRecursive(tmpDir);
+    expect(results).toHaveLength(1);
+    expect(!isConfigurationError(results[0]!) && results[0]!.projectDir).toBe(
+      "subproject",
+    );
   });
 
   it("finds configs at multiple levels", async () => {

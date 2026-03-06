@@ -853,7 +853,7 @@ export async function newDeployment(
       newDeploymentData.entrypoint.inspectionResult.projectDir;
     const absDir = path.resolve(root, relProjectDir);
 
-    const allConfigs = await loadAllConfigurations(absDir);
+    const allConfigs = await loadAllConfigurations(relProjectDir, root);
     const existingNames = allConfigs.map((config) => config.configurationName);
 
     configName = newConfigFileNameFromTitle(
@@ -867,7 +867,7 @@ export async function newDeployment(
     const configFilePath = getConfigPath(absDir, configName);
     configCreateResponse = await writeConfigToFile(
       configFilePath,
-      absDir,
+      relProjectDir,
       newDeploymentData.entrypoint.inspectionResult.configuration,
     );
     const fileUri = Uri.file(configCreateResponse.configurationPath);

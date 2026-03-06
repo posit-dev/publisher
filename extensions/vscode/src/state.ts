@@ -10,8 +10,6 @@ import {
   window,
 } from "vscode";
 
-import path from "path";
-
 import {
   Configuration,
   ConfigurationError,
@@ -245,10 +243,10 @@ export class PublisherState implements Disposable {
       if (!root) {
         return undefined;
       }
-      const absDir = path.resolve(root, contentRecord.projectDir);
       const cfg = await loadConfiguration(
         contentRecord.configurationName,
-        absDir,
+        contentRecord.projectDir,
+        root,
       );
 
       const api = await useApi();
