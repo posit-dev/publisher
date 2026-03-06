@@ -16,6 +16,8 @@ jobs:
           cache-dependency-path: "test/connect-api-contracts/package-lock.json"
       - run: npm ci
         working-directory: test/connect-api-contracts
+      - run: npm run typecheck
+        working-directory: test/connect-api-contracts
       - run: just test-connect-contracts
 
   validate-fixtures:
