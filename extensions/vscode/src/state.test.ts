@@ -590,13 +590,13 @@ describe("PublisherState", () => {
     });
   });
 
-  test.todo("getSelectedConfiguration", () => { });
+  test.todo("getSelectedConfiguration", () => {});
 
-  test.todo("refreshContentRecords", () => { });
+  test.todo("refreshContentRecords", () => {});
 
-  test.todo("refreshConfigurations", () => { });
+  test.todo("refreshConfigurations", () => {});
 
-  test.todo("validConfigs", () => { });
+  test.todo("validConfigs", () => {});
 
-  test.todo("configsInError", () => { });
+  test.todo("configsInError", () => {});
 });
