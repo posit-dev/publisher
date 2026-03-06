@@ -133,6 +133,28 @@ describe("writeConfigToFile", () => {
     expect(content).not.toContain("description");
   });
 
+  it("preserves empty section objects required by schema", async () => {
+    await writeConfigToFile(
+      "empty-r",
+      ".",
+      tmpDir,
+      makeConfig({
+        type: ContentType.R_SHINY,
+        entrypoint: "app.R",
+        r: {
+          version: "",
+          packageFile: "",
+          packageManager: "",
+        },
+      }),
+    );
+
+    const content = fs.readFileSync(configPath("empty-r"), "utf-8");
+    // The [r] section must be present even with all fields stripped,
+    // because the schema conditionally requires it for R content types
+    expect(content).toContain("[r]");
+  });
+
   it("applies Connect Cloud compliance", async () => {
     await writeConfigToFile(
       "cloud",
