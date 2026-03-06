@@ -8,7 +8,9 @@ import {
   Uri,
 } from "vscode";
 
-import { Configuration, ContentRecordLocation } from "src/api";
+import type { ConfigurationSummary } from "@publisher/core";
+import { ContentRecordLocation } from "src/api";
+import { configurationPath } from "src/utils/configPath";
 import {
   PUBLISH_DEPLOYMENTS_FOLDER,
   POSIT_FOLDER,
@@ -116,14 +118,17 @@ export class ConfigWatcherManager implements Disposable {
   pythonPackageFile: FileSystemWatcher | undefined;
   rPackageFile: FileSystemWatcher | undefined;
 
-  constructor(cfg?: Configuration) {
+  constructor(cfg?: ConfigurationSummary) {
     const root = workspace.workspaceFolders?.[0];
-    if (root === undefined || cfg === undefined) {
+    if (root === undefined || cfg === undefined || "error" in cfg) {
       return;
     }
 
     this.configFile = workspace.createFileSystemWatcher(
-      new RelativePattern(root, cfg.configurationPath),
+      new RelativePattern(
+        root,
+        configurationPath(cfg.projectDir, cfg.name),
+      ),
     );
 
     this.pythonPackageFile = workspace.createFileSystemWatcher(

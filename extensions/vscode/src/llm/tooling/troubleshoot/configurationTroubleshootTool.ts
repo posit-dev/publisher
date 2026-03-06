@@ -7,17 +7,14 @@ import {
   LanguageModelToolResult,
   LanguageModelTextPart,
 } from "vscode";
-import {
-  Configuration,
-  ConfigurationError,
-  isConfigurationError,
-} from "../../../api";
+import type { ConfigurationSummary, Configuration } from "@publisher/core";
 import { PublisherState } from "../../../state";
 import {
   ContentType,
   allValidContentTypes,
   contentTypeStrings,
 } from "../../../api/types/configurations";
+import { configurationPath } from "../../../utils/configPath";
 
 export class ConfigurationTroubleshootTool implements LanguageModelTool<never> {
   state: PublisherState;
@@ -36,7 +33,7 @@ export class ConfigurationTroubleshootTool implements LanguageModelTool<never> {
       return this.noopToolResult();
     }
 
-    if (isConfigurationError(config)) {
+    if ("error" in config) {
       // Help with current configuration error
       return this.helpWithConfigErrorToolResult(config);
     }
@@ -53,7 +50,7 @@ export class ConfigurationTroubleshootTool implements LanguageModelTool<never> {
     ]);
   }
 
-  private isUnknownSet(config: Configuration) {
+  private isUnknownSet(config: ConfigurationSummary & { configuration: Configuration }) {
     return config.configuration.type === ContentType.UNKNOWN;
   }
 
@@ -65,10 +62,10 @@ or the user should start a new deployment first, and in case of configuration er
     return new LanguageModelToolResult([new LanguageModelTextPart(noopMsg)]);
   }
 
-  private helpWithConfigErrorToolResult(config: ConfigurationError) {
-    const { error, configurationPath } = config;
+  private helpWithConfigErrorToolResult(config: ConfigurationSummary & { error: string }) {
+    const cfgPath = configurationPath(config.projectDir, config.name);
     const toolInstruction = `The current deployment configuration file has the following error
-"${error.msg}", read the deployment configuration file at ${configurationPath} to find possible solutions
+"${config.error}", read the deployment configuration file at ${cfgPath} to find possible solutions
 that help the user get past this error. Offer the user help to edit the deployment configuration file,
 present the possible changes and ask for permission to do it.`;
     return new LanguageModelToolResult([
@@ -76,11 +73,11 @@ present the possible changes and ask for permission to do it.`;
     ]);
   }
 
-  private helpWithUnknownToolResult(config: Configuration) {
-    const { projectDir, configurationPath } = config;
-    const readProjectDirInstruction = `Take a look to the files under ${projectDir} to see 
+  private helpWithUnknownToolResult(config: ConfigurationSummary & { configuration: Configuration }) {
+    const cfgPath = configurationPath(config.projectDir, config.name);
+    const readProjectDirInstruction = `Take a look to the files under ${config.projectDir} to see
 if you can help the user find a proper content type to be used that is not "unknown".
-Offer the user help to edit the deployment configuration file at ${configurationPath},
+Offer the user help to edit the deployment configuration file at ${cfgPath},
 present the possible changes and ask for permission to do it.
 It is important, that if the type field changes from "unknown" to a proper content type,
 the configuration file may require one or more additional TOML sections if not present:
@@ -98,7 +95,7 @@ If the "[quarto]" section is added:
 
     return new LanguageModelToolResult([
       new LanguageModelTextPart(
-        this.contentTypesInstructions(configurationPath),
+        this.contentTypesInstructions(cfgPath),
       ),
       new LanguageModelTextPart(readProjectDirInstruction),
     ]);

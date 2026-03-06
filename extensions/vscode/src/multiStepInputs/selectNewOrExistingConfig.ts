@@ -36,6 +36,7 @@ import {
   isQuickPickItemWithIndex,
 } from "src/multiStepInputs/multiStepHelper";
 import { calculateTitle } from "src/utils/titles";
+import { fromApiToSummary } from "src/utils/configTransform";
 import {
   filterInspectionResultsToType,
   filterConfigurationsToValidAndType,
@@ -144,7 +145,10 @@ export async function selectNewOrExistingConfig(
       }
       const existingConfigFileListItems: QuickPickItem[] = [];
       configurations.forEach((config) => {
-        const { title, problem } = calculateTitle(activeDeployment, config);
+        const { title, problem } = calculateTitle(
+          activeDeployment,
+          fromApiToSummary(config),
+        );
         if (problem) {
           return;
         }

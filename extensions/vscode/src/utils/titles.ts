@@ -1,26 +1,21 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import {
-  Configuration,
-  ConfigurationError,
-  ContentRecord,
-  isConfigurationError,
-  PreContentRecord,
-} from "../api";
+import type { ConfigurationSummary } from "@publisher/core";
+import { ContentRecord, PreContentRecord } from "../api";
 
 export const calculateTitle = (
   contentRecord: ContentRecord | PreContentRecord,
-  config?: Configuration | ConfigurationError,
+  config?: ConfigurationSummary,
 ): {
   title: string;
   problem: boolean;
 } => {
   let title =
-    config && isConfigurationError(config)
+    config && "error" in config
       ? undefined
       : config?.configuration.title;
   if (title) {
-    let configCode = (config?.configurationName || "").split("-").at(-1);
+    let configCode = (config?.name || "").split("-").at(-1);
     configCode = configCode ? ` (${configCode})` : "";
     title += configCode;
     return {
@@ -44,14 +39,14 @@ export const calculateTitle = (
     };
   }
 
-  if (isConfigurationError(config)) {
+  if ("error" in config) {
     return {
-      title: `Unknown Title • Error in ${config.configurationName}`,
+      title: `Unknown Title • Error in ${config.name}`,
       problem: true,
     };
   }
 
-  let configName = config.configurationName;
+  let configName = config.name;
   if (!configName) {
     // we're guaranteed to have a value because of the check above
     configName = contentRecord.configurationName;

@@ -9,7 +9,10 @@
     "outDir": "out",
     "lib": ["ES2023", "DOM"],
     "sourceMap": true,
-    "rootDir": "src",
+    // Note: rootDir is intentionally omitted. The extension uses tsc only for
+    // type checking (--noEmit) and esbuild for bundling, so rootDir has no
+    // functional effect. Omitting it allows TypeScript to follow paths mappings
+    // into packages/core/ and packages/adapters/ without TS6059 errors.
     /* Linting */
     "strict": true,
     "noUnusedLocals": true,
@@ -18,7 +21,9 @@
     "noImplicitReturns": true,
     "noUncheckedIndexedAccess": true,
     "paths": {
-      "src/*": ["./src/*"]
+      "src/*": ["./src/*"],
+      "@publisher/core": ["../../packages/core/src/index.ts"],
+      "@publisher/adapters": ["../../packages/adapters/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "webviews", "vitest.config.ts"]
