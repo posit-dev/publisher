@@ -7,7 +7,6 @@ export { convertKeysToCamelCase, convertKeysToSnakeCase } from "./convertKeys";
 export { ConfigurationLoadError } from "./errors";
 export {
   getConfigDir,
-  getConfigPath,
   listConfigFiles,
   loadConfiguration,
   loadAllConfigurations,

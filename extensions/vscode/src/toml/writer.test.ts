@@ -45,32 +45,29 @@ function makeConfig(
 
 describe("writeConfigToFile", () => {
   it("writes a valid config and returns Configuration", async () => {
-    const fp = configPath("myapp");
-    const cfg = await writeConfigToFile(fp, tmpDir, makeConfig());
+    const cfg = await writeConfigToFile("myapp", ".", tmpDir, makeConfig());
 
     expect(cfg.configurationName).toBe("myapp");
-    expect(cfg.configurationPath).toBe(fp);
-    expect(cfg.projectDir).toBe(tmpDir);
+    expect(cfg.configurationPath).toBe(configPath("myapp"));
+    expect(cfg.projectDir).toBe(".");
     expect(cfg.configuration.type).toBe(ContentType.PYTHON_DASH);
 
     // Verify the file was created
-    const content = fs.readFileSync(fp, "utf-8");
+    const content = fs.readFileSync(configPath("myapp"), "utf-8");
     expect(content).toContain('type = "python-dash"');
     expect(content).toContain('entrypoint = "app.py"');
   });
 
   it("creates directory if it does not exist", async () => {
-    const fp = configPath("newdir-test");
+    await writeConfigToFile("newdir-test", ".", tmpDir, makeConfig());
 
-    await writeConfigToFile(fp, tmpDir, makeConfig());
-
-    expect(fs.existsSync(fp)).toBe(true);
+    expect(fs.existsSync(configPath("newdir-test"))).toBe(true);
   });
 
   it("writes TOML with snake_case keys", async () => {
-    const fp = configPath("snake");
     await writeConfigToFile(
-      fp,
+      "snake",
+      ".",
       tmpDir,
       makeConfig({
         python: {
@@ -82,7 +79,7 @@ describe("writeConfigToFile", () => {
       }),
     );
 
-    const content = fs.readFileSync(fp, "utf-8");
+    const content = fs.readFileSync(configPath("snake"), "utf-8");
     expect(content).toContain("package_file");
     expect(content).toContain("package_manager");
     expect(content).toContain("requires_python");
@@ -93,21 +90,19 @@ describe("writeConfigToFile", () => {
   });
 
   it("writes leading comments", async () => {
-    const fp = configPath("comments");
     const cfg = makeConfig({
       comments: [" This is a comment", " Another line"],
     });
 
-    await writeConfigToFile(fp, tmpDir, cfg);
+    await writeConfigToFile("comments", ".", tmpDir, cfg);
 
-    const content = fs.readFileSync(fp, "utf-8");
+    const content = fs.readFileSync(configPath("comments"), "utf-8");
     expect(content.startsWith("# This is a comment\n# Another line\n")).toBe(
       true,
     );
   });
 
   it("does not mutate the input config", async () => {
-    const fp = configPath("no-mutate");
     const original = makeConfig({
       comments: [" comment"],
       alternatives: [makeConfig()],
@@ -115,7 +110,7 @@ describe("writeConfigToFile", () => {
     const originalType = original.type;
     const originalComments = [...original.comments!];
 
-    await writeConfigToFile(fp, tmpDir, original);
+    await writeConfigToFile("no-mutate", ".", tmpDir, original);
 
     expect(original.type).toBe(originalType);
     expect(original.comments).toEqual(originalComments);
@@ -123,9 +118,9 @@ describe("writeConfigToFile", () => {
   });
 
   it("strips empty strings from optional fields", async () => {
-    const fp = configPath("strip-empty");
     await writeConfigToFile(
-      fp,
+      "strip-empty",
+      ".",
       tmpDir,
       makeConfig({
         title: "",
@@ -133,15 +128,15 @@ describe("writeConfigToFile", () => {
       }),
     );
 
-    const content = fs.readFileSync(fp, "utf-8");
+    const content = fs.readFileSync(configPath("strip-empty"), "utf-8");
     expect(content).not.toContain("title");
     expect(content).not.toContain("description");
   });
 
   it("applies Connect Cloud compliance", async () => {
-    const fp = configPath("cloud");
     await writeConfigToFile(
-      fp,
+      "cloud",
+      ".",
       tmpDir,
       makeConfig({
         productType: ProductType.CONNECT_CLOUD,
@@ -154,7 +149,7 @@ describe("writeConfigToFile", () => {
       }),
     );
 
-    const content = fs.readFileSync(fp, "utf-8");
+    const content = fs.readFileSync(configPath("cloud"), "utf-8");
     // Version truncated to X.Y
     expect(content).toContain('version = "3.11"');
     // Disallowed fields stripped
@@ -164,9 +159,9 @@ describe("writeConfigToFile", () => {
   });
 
   it("handles type unknown by substituting for validation", async () => {
-    const fp = configPath("unknown-type");
     const cfg = await writeConfigToFile(
-      fp,
+      "unknown-type",
+      ".",
       tmpDir,
       makeConfig({ type: ContentType.UNKNOWN }),
     );
@@ -175,14 +170,14 @@ describe("writeConfigToFile", () => {
     expect(cfg.configuration.type).toBe(ContentType.UNKNOWN);
 
     // The file contains "unknown"
-    const content = fs.readFileSync(fp, "utf-8");
+    const content = fs.readFileSync(configPath("unknown-type"), "utf-8");
     expect(content).toContain('type = "unknown"');
   });
 
   it("preserves environment keys as-is", async () => {
-    const fp = configPath("env");
     await writeConfigToFile(
-      fp,
+      "env",
+      ".",
       tmpDir,
       makeConfig({
         environment: {
@@ -192,13 +187,12 @@ describe("writeConfigToFile", () => {
       }),
     );
 
-    const content = fs.readFileSync(fp, "utf-8");
+    const content = fs.readFileSync(configPath("env"), "utf-8");
     expect(content).toContain("MY_API_KEY");
     expect(content).toContain("DATABASE_URL");
   });
 
   it("throws ConfigurationLoadError for invalid config", async () => {
-    const fp = configPath("invalid");
     // Deliberately incomplete config to test schema validation —
     // assertion needed because we're intentionally violating the type contract
     const badConfig = {
@@ -209,7 +203,7 @@ describe("writeConfigToFile", () => {
     } as ConfigurationDetails;
 
     try {
-      await writeConfigToFile(fp, tmpDir, badConfig);
+      await writeConfigToFile("invalid", ".", tmpDir, badConfig);
       expect.fail("should have thrown");
     } catch (error) {
       expect(error).toBeInstanceOf(ConfigurationLoadError);
@@ -220,32 +214,35 @@ describe("writeConfigToFile", () => {
   });
 
   it("file ends with newline", async () => {
-    const fp = configPath("newline");
-    await writeConfigToFile(fp, tmpDir, makeConfig());
+    await writeConfigToFile("newline", ".", tmpDir, makeConfig());
 
-    const content = fs.readFileSync(fp, "utf-8");
+    const content = fs.readFileSync(configPath("newline"), "utf-8");
     expect(content.endsWith("\n")).toBe(true);
   });
 
   it("strips alternatives from written file", async () => {
-    const fp = configPath("no-alternatives");
     await writeConfigToFile(
-      fp,
+      "no-alternatives",
+      ".",
       tmpDir,
       makeConfig({
         alternatives: [makeConfig({ type: ContentType.HTML })],
       }),
     );
 
-    const content = fs.readFileSync(fp, "utf-8");
+    const content = fs.readFileSync(configPath("no-alternatives"), "utf-8");
     expect(content).not.toContain("alternatives");
   });
 
   it("strips comments field from TOML body", async () => {
-    const fp = configPath("no-comments-field");
-    await writeConfigToFile(fp, tmpDir, makeConfig({ comments: [] }));
+    await writeConfigToFile(
+      "no-comments-field",
+      ".",
+      tmpDir,
+      makeConfig({ comments: [] }),
+    );
 
-    const content = fs.readFileSync(fp, "utf-8");
+    const content = fs.readFileSync(configPath("no-comments-field"), "utf-8");
     // "comments" should not appear as a TOML key
     expect(content).not.toMatch(/^comments\s*=/m);
   });

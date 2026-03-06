@@ -36,14 +36,26 @@ const validate = ajv.compile(schema);
  * 6. Write comment lines + TOML content
  * 7. Return the written Configuration with location metadata
  *
+ * @param configName - Name of the configuration (without .toml extension)
+ * @param projectDir - Relative project directory (e.g., "." or "subdir")
+ * @param rootDir - Absolute workspace root directory
+ * @param config - The configuration details to write
+ *
  * Throws ConfigurationLoadError for validation failures.
  */
 export async function writeConfigToFile(
-  configPath: string,
+  configName: string,
   projectDir: string,
+  rootDir: string,
   config: ConfigurationDetails,
 ): Promise<Configuration> {
-  const configName = path.basename(configPath, ".toml");
+  const absDir = path.resolve(rootDir, projectDir);
+  const configPath = path.join(
+    absDir,
+    ".posit",
+    "publish",
+    `${configName}.toml`,
+  );
 
   const location: ConfigurationLocation = {
     configurationName: configName,
