@@ -36,31 +36,53 @@ export async function listConfigFiles(projectDir: string): Promise<string[]> {
 }
 
 /**
+ * Compute a relative projectDir from an absolute path, using "." for the root.
+ * Matches Go's convention where projectDir is relative to the workspace root.
+ */
+function relativeProjectDir(absDir: string, rootDir: string): string {
+  const rel = path.relative(rootDir, absDir);
+  return rel === "" ? "." : rel;
+}
+
+/**
  * Load a single configuration by name from a project directory.
+ *
+ * @param configName - Name of the configuration (without .toml extension)
+ * @param projectDir - Relative project directory (e.g., "." or "subdir")
+ * @param rootDir - Absolute workspace root directory
+ *
  * Throws ConfigurationLoadError for invalid configs, or raw errors for I/O failures.
  */
 export function loadConfiguration(
   configName: string,
   projectDir: string,
+  rootDir: string,
 ): Promise<Configuration> {
-  const configPath = getConfigPath(projectDir, configName);
-  return loadConfigFromFile(configPath, projectDir);
+  const absDir = path.resolve(rootDir, projectDir);
+  const configPath = getConfigPath(absDir, configName);
+  return loadConfigFromFile(configPath, relativeProjectDir(absDir, rootDir));
 }
 
 /**
  * Load all configurations from a project's .posit/publish/ directory.
  * Returns a mix of Configuration (valid) and ConfigurationError (invalid) objects.
  * I/O errors other than invalid configs are propagated.
+ *
+ * @param projectDir - Relative project directory (e.g., "." or "subdir")
+ * @param rootDir - Absolute workspace root directory
  */
 export async function loadAllConfigurations(
   projectDir: string,
+  rootDir: string,
 ): Promise<(Configuration | ConfigurationError)[]> {
-  const configPaths = await listConfigFiles(projectDir);
+  const absDir = path.resolve(rootDir, projectDir);
+  const relDir = relativeProjectDir(absDir, rootDir);
+  const configPaths = await listConfigFiles(absDir);
   const results: (Configuration | ConfigurationError)[] = [];
 
   for (const configPath of configPaths) {
     try {
-      results.push(await loadConfigFromFile(configPath, projectDir));
+      results.push(await loadConfigFromFile(configPath, relDir));
     } catch (error) {
       if (error instanceof ConfigurationLoadError) {
         results.push(error.configurationError);
@@ -77,6 +99,9 @@ export async function loadAllConfigurations(
  * Walk a directory tree and load all configurations from every .posit/publish/
  * directory found. Returns a flat array of Configuration and ConfigurationError objects.
  *
+ * @param rootDir - Absolute workspace root directory. All Configuration.projectDir
+ *                  values will be relative to this root.
+ *
  * Skips:
  * - Dot-directories (except .posit itself)
  * - node_modules
@@ -86,12 +111,13 @@ export async function loadAllConfigurationsRecursive(
   rootDir: string,
 ): Promise<(Configuration | ConfigurationError)[]> {
   const results: (Configuration | ConfigurationError)[] = [];
-  await walkForConfigs(rootDir, results);
+  await walkForConfigs(rootDir, rootDir, results);
   return results;
 }
 
 async function walkForConfigs(
   dir: string,
+  rootDir: string,
   results: (Configuration | ConfigurationError)[],
 ): Promise<void> {
   let entries;
@@ -113,7 +139,8 @@ async function walkForConfigs(
   }
 
   if (hasPublishDir) {
-    const configs = await loadAllConfigurations(dir);
+    const relDir = relativeProjectDir(dir, rootDir);
+    const configs = await loadAllConfigurations(relDir, rootDir);
     results.push(...configs);
   }
 
@@ -127,6 +154,6 @@ async function walkForConfigs(
     // Skip node_modules
     if (name === "node_modules") continue;
 
-    await walkForConfigs(path.join(dir, name), results);
+    await walkForConfigs(path.join(dir, name), rootDir, results);
   }
 }
