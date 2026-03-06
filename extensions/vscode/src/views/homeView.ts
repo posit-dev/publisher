@@ -2089,12 +2089,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         });
       } catch (error: unknown) {
         const summary = getSummaryStringFromError(
-          "handleFileInitiatedDeploymentSelection, configurations.getAll",
+          "handleFileInitiatedDeploymentSelection, loadAllConfigurations",
           error,
         );
-        window.showErrorMessage(
-          `Unable to continue with API Error: ${summary}`,
-        );
+        window.showErrorMessage(`Unable to load configurations: ${summary}`);
         throw error;
       }
     };

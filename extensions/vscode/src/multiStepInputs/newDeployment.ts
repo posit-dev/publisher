@@ -870,7 +870,7 @@ export async function newDeployment(
     await commands.executeCommand("vscode.open", fileUri);
   } catch (error: unknown) {
     const summary = getSummaryStringFromError(
-      "newDeployment, configurations.createOrUpdate",
+      "newDeployment, writeConfigToFile",
       error,
     );
     window.showErrorMessage(`Failed to create config file. ${summary}`);
