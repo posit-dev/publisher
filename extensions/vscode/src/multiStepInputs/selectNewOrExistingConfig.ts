@@ -43,11 +43,7 @@ import {
 import { showProgress } from "src/utils/progress";
 import { isRelativePathRoot } from "src/utils/files";
 import { newConfigFileNameFromTitle } from "src/utils/names";
-import {
-  loadAllConfigurations,
-  writeConfigToFile,
-  getConfigPath,
-} from "src/toml";
+import { loadAllConfigurations, writeConfigToFile } from "src/toml";
 import * as workspaces from "src/workspaces";
 
 export async function selectNewOrExistingConfig(
@@ -446,7 +442,6 @@ export async function selectNewOrExistingConfig(
       }
 
       const root = workspaces.path()!;
-      const absDir = path.resolve(root, selectedInspectionResult.projectDir);
       const allConfigs = await loadAllConfigurations(
         selectedInspectionResult.projectDir,
         root,
@@ -460,10 +455,10 @@ export async function selectNewOrExistingConfig(
         existingNames,
       );
       selectedInspectionResult.configuration.title = state.data.title;
-      const configFilePath = getConfigPath(absDir, configName);
       const newConfig = await writeConfigToFile(
-        configFilePath,
+        configName,
         selectedInspectionResult.projectDir,
+        root,
         selectedInspectionResult.configuration,
       );
       const fileUri = Uri.file(newConfig.configurationPath);

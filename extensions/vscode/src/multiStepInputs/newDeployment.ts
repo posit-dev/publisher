@@ -41,11 +41,7 @@ import {
 import { getSummaryStringFromError } from "src/utils/errors";
 import { isAxiosErrorWithJson } from "src/utils/errorTypes";
 import { newConfigFileNameFromTitle, newDeploymentName } from "src/utils/names";
-import {
-  loadAllConfigurations,
-  writeConfigToFile,
-  getConfigPath,
-} from "src/toml";
+import { loadAllConfigurations, writeConfigToFile } from "src/toml";
 import * as workspaces from "src/workspaces";
 import { DeploymentObjects } from "src/types/shared";
 import { showProgress } from "src/utils/progress";
@@ -851,7 +847,6 @@ export async function newDeployment(
     const root = workspaces.path()!;
     const relProjectDir =
       newDeploymentData.entrypoint.inspectionResult.projectDir;
-    const absDir = path.resolve(root, relProjectDir);
 
     const allConfigs = await loadAllConfigurations(relProjectDir, root);
     const existingNames = allConfigs.map((config) => config.configurationName);
@@ -864,10 +859,10 @@ export async function newDeployment(
     newDeploymentData.entrypoint.inspectionResult.configuration.productType =
       getProductType(newOrSelectedCredential.serverType);
 
-    const configFilePath = getConfigPath(absDir, configName);
     configCreateResponse = await writeConfigToFile(
-      configFilePath,
+      configName,
       relProjectDir,
+      root,
       newDeploymentData.entrypoint.inspectionResult.configuration,
     );
     const fileUri = Uri.file(configCreateResponse.configurationPath);
