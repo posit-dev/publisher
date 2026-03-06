@@ -13,6 +13,8 @@ jobs:
     uses: ./.github/workflows/agent.yaml
   vscode:
     uses: ./.github/workflows/vscode.yaml
+  extension-api-contracts:
+    uses: ./.github/workflows/extension-api-contracts.yaml
 
   # Build
   build:
@@ -56,7 +58,17 @@ jobs:
   # Slack notification on failure
   slack-notification:
     needs:
-      [agent, vscode, build, package, archive, e2e, upload, generate-licenses]
+      [
+        agent,
+        vscode,
+        extension-api-contracts,
+        build,
+        package,
+        archive,
+        e2e,
+        upload,
+        generate-licenses,
+      ]
     if: failure()
     runs-on: ubuntu-latest
     steps:
@@ -76,7 +88,17 @@ jobs:
   # Slack notification when CI recovers from failure
   slack-notification-resolved:
     needs:
-      [agent, vscode, build, package, archive, e2e, upload, generate-licenses]
+      [
+        agent,
+        vscode,
+        extension-api-contracts,
+        build,
+        package,
+        archive,
+        e2e,
+        upload,
+        generate-licenses,
+      ]
     if: success()
     runs-on: ubuntu-latest
     steps:

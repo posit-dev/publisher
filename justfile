@@ -234,6 +234,22 @@ test *args=("-short ./..."):
 
     go test {{ args }} -covermode set -coverprofile=cover.out
 
+# Run extension API contract tests (validates vscode/positron API usage)
+test-extension-contracts:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    cd test/extension-api-contracts && npm test
+
+# Check that vscode/positron mocks conform to real API type definitions
+check-mock-conformance:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    cd test/extension-api-contracts && npm run check:conformance
+
 # Execute Python script tests (licenses, prepare-release, etc.)
 test-scripts:
     #!/usr/bin/env bash

@@ -26,10 +26,12 @@ jobs:
   # Extensions
   vscode:
     uses: ./.github/workflows/vscode.yaml
+  extension-api-contracts:
+    uses: ./.github/workflows/extension-api-contracts.yaml
 
   # Slack notification on failure
   slack-notification:
-    needs: [agent, build, package, e2e, vscode]
+    needs: [agent, build, package, e2e, vscode, extension-api-contracts]
     if: failure()
     runs-on: ubuntu-latest
     steps:
@@ -48,7 +50,7 @@ jobs:
 
   # Slack notification when nightly tests recover from failure
   slack-notification-resolved:
-    needs: [agent, build, package, e2e, vscode]
+    needs: [agent, build, package, e2e, vscode, extension-api-contracts]
     if: success()
     runs-on: ubuntu-latest
     steps:

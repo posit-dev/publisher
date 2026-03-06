@@ -89,6 +89,11 @@ jobs:
     if: needs.detect-changes.outputs.has-code == 'true'
     uses: ./.github/workflows/vscode.yaml
 
+  extension-api-contracts:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.has-code == 'true'
+    uses: ./.github/workflows/extension-api-contracts.yaml
+
   # Build - skip if no code changes
   build:
     needs: detect-changes
