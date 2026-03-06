@@ -163,7 +163,7 @@ export async function selectNewOrExistingConfig(
       );
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
-        "selectNewOrExistingConfig, configurations.getAll",
+        "selectNewOrExistingConfig, loadAllConfigurations",
         error,
       );
       window.showInformationMessage(
@@ -466,7 +466,7 @@ export async function selectNewOrExistingConfig(
       return newConfig;
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
-        "selectNewOrExistingConfig, configurations.createOrUpdate",
+        "selectNewOrExistingConfig, writeConfigToFile",
         error,
       );
       window.showErrorMessage(`Failed to create config file. ${summary}`);
