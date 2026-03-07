@@ -28,23 +28,12 @@ fi
 
 echo "Using VSIX: $VSIX_FILENAME"
 
-# Determine the expected installed version from the VSIX filename.
-# The build process (set-version.py) only updates package.json for exact semver versions (X.Y.Z).
-# For non-release versions (e.g., 1.31.7-7-gabcdef), it leaves package.json at 99.0.0.
-# We derive the version from the VSIX filename (which reflects the actual build) rather than
-# git describe (which can race with tag creation from other workflows).
-# VSIX filename format: publisher-<VERSION>-linux-amd64.vsix
-VSIX_VERSION=$(echo "$VSIX_FILENAME" | sed 's/^publisher-//' | sed 's/-linux-amd64\.vsix$//')
+# Read the expected version directly from package.json
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$SCRIPT_DIR/../.."
+EXPECTED_VERSION=$(node -p "require('$REPO_ROOT/extensions/vscode/package.json').version")
 
-if [[ "$VSIX_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-    # Exact semver version (e.g., 1.32.0) - set-version.py will have updated package.json
-    EXPECTED_VERSION="$VSIX_VERSION"
-else
-    # Non-release version (e.g., 1.31.7-7-gabcdef) - set-version.py skips, stays at 99.0.0
-    EXPECTED_VERSION="99.0.0"
-fi
-
-echo "VSIX version: $VSIX_VERSION, Expected installed version: $EXPECTED_VERSION"
+echo "Expected installed version: $EXPECTED_VERSION"
 
 # Set proper ownership for the VSIX directory and files
 docker exec publisher-e2e.workbench-$SERVICE bash -c "chown -R rstudio:rstudio /vsix-tmp" || {
