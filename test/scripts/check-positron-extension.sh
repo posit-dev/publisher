@@ -4,28 +4,12 @@ set -euo pipefail
 # Check if publisher extension is installed in workbench-release
 # This command is designed to work from any directory (Cypress or command line)
 
-# Determine the expected installed version
-# The build process (set-version.py) only updates package.json for exact semver versions (X.Y.Z).
-# For non-release versions (e.g., 1.31.7-7-gabcdef), it leaves package.json at 99.0.0.
-# We need to match this logic to know what version the extension will actually install as.
+# Read the expected version directly from package.json
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$SCRIPT_DIR/../.."
+EXPECTED_VERSION=$(node -p "require('$REPO_ROOT/extensions/vscode/package.json').version")
 
-# Get the git-derived version (same as build process)
-GIT_VERSION=$(cd "$REPO_ROOT" && git describe --tags 2>/dev/null | sed 's/^v//')
-
-if [ -z "$GIT_VERSION" ]; then
-    echo "Warning: Could not determine version from git tags, falling back to 99.0.0"
-    EXPECTED_VERSION="99.0.0"
-elif [[ "$GIT_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-    # Exact semver version (e.g., 1.32.0) - set-version.py will update package.json
-    EXPECTED_VERSION="$GIT_VERSION"
-else
-    # Non-release version (e.g., 1.31.7-7-gabcdef) - set-version.py skips, stays at 99.0.0
-    EXPECTED_VERSION="99.0.0"
-fi
-
-echo "Git version: $GIT_VERSION, Expected installed version: $EXPECTED_VERSION"
+echo "Expected installed version: $EXPECTED_VERSION"
 mkdir -p ./logs/workbench-extension
 INSTALL_LOG="./logs/workbench-extension/workbench-extension-check.log"
 

@@ -69,10 +69,17 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "lts/*"
+
       - name: Run prepare-release script
         run: |
           # Run non-interactively by providing 'y' to any prompts
           yes | python3 ./scripts/prepare-release.py "$VERSION" || true
+
+      - name: Install dependencies and sync lockfile
+        run: npm install --prefix extensions/vscode
 
       - name: Check for changes
         id: check-changes
@@ -87,7 +94,7 @@ jobs:
       - name: Commit changes
         if: steps.check-changes.outputs.has_changes == 'true'
         run: |
-          git add CHANGELOG.md extensions/vscode/CHANGELOG.md
+          git add CHANGELOG.md extensions/vscode/CHANGELOG.md extensions/vscode/package.json extensions/vscode/package-lock.json
           git commit -m "Prepare release v$VERSION"
 
       - name: Push branch
