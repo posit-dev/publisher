@@ -860,9 +860,7 @@ Cypress.Commands.add("modifyFileInContainer", (containerPath, content) => {
     )
     .then((result) => {
       if (result.exitCode !== 0) {
-        throw new Error(
-          `Failed to modify file in container: ${result.stderr}`,
-        );
+        throw new Error(`Failed to modify file in container: ${result.stderr}`);
       }
     });
 });

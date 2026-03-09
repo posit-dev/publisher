@@ -46,9 +46,7 @@ describe("Deployment Status Section", () => {
     );
 
     // Verify "View Content" button is visible
-    cy.publisherWebview()
-      .findByText("View Content")
-      .should("be.visible");
+    cy.publisherWebview().findByText("View Content").should("be.visible");
 
     // Verify deployment record has expected fields
     cy.getPublisherTomlFilePaths(projectDir).then((filePaths) => {
