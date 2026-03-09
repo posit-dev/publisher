@@ -36,15 +36,6 @@ export async function listConfigFiles(projectDir: string): Promise<string[]> {
 }
 
 /**
- * Compute a relative projectDir from an absolute path, using "." for the root.
- * Matches Go's convention where projectDir is relative to the workspace root.
- */
-function relativeProjectDir(absDir: string, rootDir: string): string {
-  const rel = path.relative(rootDir, absDir);
-  return rel === "" ? "." : rel;
-}
-
-/**
  * Load a single configuration by name from a project directory.
  *
  * @param configName - Name of the configuration (without .toml extension)
@@ -81,6 +72,35 @@ export async function loadAllConfigurations(
   return loadConfigsFromPaths(configPaths, relDir);
 }
 
+/**
+ * Walk a directory tree and load all configurations from every .posit/publish/
+ * directory found. Returns a flat array of Configuration and ConfigurationError objects.
+ *
+ * @param rootDir - Absolute workspace root directory. All Configuration.projectDir
+ *                  values will be relative to this root.
+ *
+ * Skips:
+ * - Dot-directories (except .posit itself)
+ * - node_modules, __pycache__, renv, packrat
+ * - The walk does not descend into .posit directories (configs are loaded, not walked further)
+ */
+export async function loadAllConfigurationsRecursive(
+  rootDir: string,
+): Promise<(Configuration | ConfigurationError)[]> {
+  return walkForConfigs(rootDir, rootDir);
+}
+
+// --- Private helpers ---
+
+/**
+ * Compute a relative projectDir from an absolute path, using "." for the root.
+ * Matches Go's convention where projectDir is relative to the workspace root.
+ */
+function relativeProjectDir(absDir: string, rootDir: string): string {
+  const rel = path.relative(rootDir, absDir);
+  return rel === "" ? "." : rel;
+}
+
 async function loadConfigsFromPaths(
   configPaths: string[],
   relDir: string,
@@ -99,24 +119,6 @@ async function loadConfigsFromPaths(
     }
   }
   return results;
-}
-
-/**
- * Walk a directory tree and load all configurations from every .posit/publish/
- * directory found. Returns a flat array of Configuration and ConfigurationError objects.
- *
- * @param rootDir - Absolute workspace root directory. All Configuration.projectDir
- *                  values will be relative to this root.
- *
- * Skips:
- * - Dot-directories (except .posit itself)
- * - node_modules, __pycache__, renv, packrat
- * - The walk does not descend into .posit directories (configs are loaded, not walked further)
- */
-export async function loadAllConfigurationsRecursive(
-  rootDir: string,
-): Promise<(Configuration | ConfigurationError)[]> {
-  return walkForConfigs(rootDir, rootDir);
 }
 
 async function walkForConfigs(
