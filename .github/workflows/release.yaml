@@ -60,6 +60,82 @@ jobs:
           files: |
             archives/**/*
             dist/**/*
+  # Slack notification on failure
+  slack-notification:
+    needs:
+      [
+        verify-tag,
+        build,
+        package,
+        archive,
+        upload,
+        release,
+      ]
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Slack of Release failure
+        uses: slackapi/slack-github-action@v2.1.1
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK }}
+          webhook-type: incoming-webhook
+          payload: |
+            text: ":x: Release failed for ${{ github.ref_name }}"
+            blocks:
+              - type: section
+                text:
+                  type: mrkdwn
+                  text: ":x: *Release Failed for ${{ github.ref_name }}*\n\n*Repository:* ${{ github.repository }}\n*Tag:* `${{ github.ref_name }}`\n*Commit:* <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>\n*Workflow:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"
+
+  # Slack notification when Release recovers from failure
+  slack-notification-resolved:
+    needs:
+      [
+        verify-tag,
+        build,
+        package,
+        archive,
+        upload,
+        release,
+      ]
+    if: success()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if previous run failed
+        id: check-previous
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const runs = await github.rest.actions.listWorkflowRuns({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'release.yaml',
+              per_page: 2,
+              exclude_pull_requests: true
+            });
+            // Get the previous run (skip current run)
+            const previousRuns = runs.data.workflow_runs.filter(run => run.id !== context.runId);
+            if (previousRuns.length > 0) {
+              const previousRun = previousRuns[0];
+              console.log(`Previous run conclusion: ${previousRun.conclusion}`);
+              return previousRun.conclusion === 'failure';
+            }
+            return false;
+          result-encoding: string
+      - name: Notify Slack of Release recovery
+        if: steps.check-previous.outputs.result == 'true'
+        uses: slackapi/slack-github-action@v2.1.1
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK }}
+          webhook-type: incoming-webhook
+          payload: |
+            text: ":white_check_mark: Release recovered for ${{ github.ref_name }}"
+            blocks:
+              - type: section
+                text:
+                  type: mrkdwn
+                  text: ":white_check_mark: *Release Recovered for ${{ github.ref_name }}*\n\n*Repository:* ${{ github.repository }}\n*Tag:* `${{ github.ref_name }}`\n*Commit:* <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>\n*Workflow:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"
+
   notify-slack:
     runs-on: ubuntu-latest
     needs:
