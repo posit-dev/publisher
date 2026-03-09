@@ -104,7 +104,7 @@ export async function loadAllConfigurations(
  *
  * Skips:
  * - Dot-directories (except .posit itself)
- * - node_modules
+ * - node_modules, __pycache__, renv, packrat
  * - The walk does not descend into .posit directories (configs are loaded, not walked further)
  */
 export async function loadAllConfigurationsRecursive(
@@ -151,8 +151,15 @@ async function walkForConfigs(
 
     // Skip dot-directories (except we already handled .posit above)
     if (name.startsWith(".")) continue;
-    // Skip node_modules
-    if (name === "node_modules") continue;
+    // Skip directories that are large, never contain configs, and slow down the walk
+    if (
+      name === "node_modules" ||
+      name === "__pycache__" ||
+      name === "renv" ||
+      name === "packrat"
+    ) {
+      continue;
+    }
 
     await walkForConfigs(path.join(dir, name), rootDir, results);
   }
