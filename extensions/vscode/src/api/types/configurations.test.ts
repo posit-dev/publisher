@@ -5,8 +5,12 @@ import {
   RConfig,
   PythonConfig,
   Configuration,
+  ContentType,
   UpdateConfigWithDefaults,
   UpdateAllConfigsWithDefaults,
+  isPythonContent,
+  isAPIContent,
+  isAppContent,
 } from "./configurations";
 import { InterpreterDefaults } from "./interpreters";
 import {
@@ -96,6 +100,82 @@ describe("Configurations Types", () => {
         expect(config.configuration.python).toEqual(expectedPythonConf);
       },
     );
+  });
+
+  describe("isPythonContent", () => {
+    test.each([
+      ContentType.JUPYTER_NOTEBOOK,
+      ContentType.JUPYTER_VOILA,
+      ContentType.PYTHON_BOKEH,
+      ContentType.PYTHON_DASH,
+      ContentType.PYTHON_FASTAPI,
+      ContentType.PYTHON_FLASK,
+      ContentType.PYTHON_GRADIO,
+      ContentType.PYTHON_PANEL,
+      ContentType.PYTHON_SHINY,
+      ContentType.PYTHON_STREAMLIT,
+    ])("returns true for %s", (type) => {
+      expect(isPythonContent(type)).toBe(true);
+    });
+
+    test.each([
+      ContentType.HTML,
+      ContentType.QUARTO,
+      ContentType.QUARTO_STATIC,
+      ContentType.QUARTO_SHINY,
+      ContentType.R_PLUMBER,
+      ContentType.R_SHINY,
+      ContentType.RMD,
+      ContentType.RMD_SHINY,
+      ContentType.UNKNOWN,
+    ])("returns false for %s", (type) => {
+      expect(isPythonContent(type)).toBe(false);
+    });
+  });
+
+  describe("isAPIContent", () => {
+    test.each([
+      ContentType.PYTHON_FLASK,
+      ContentType.PYTHON_FASTAPI,
+      ContentType.R_PLUMBER,
+    ])("returns true for %s", (type) => {
+      expect(isAPIContent(type)).toBe(true);
+    });
+
+    test.each([
+      ContentType.HTML,
+      ContentType.PYTHON_SHINY,
+      ContentType.R_SHINY,
+      ContentType.QUARTO,
+      ContentType.UNKNOWN,
+    ])("returns false for %s", (type) => {
+      expect(isAPIContent(type)).toBe(false);
+    });
+  });
+
+  describe("isAppContent", () => {
+    test.each([
+      ContentType.PYTHON_SHINY,
+      ContentType.R_SHINY,
+      ContentType.PYTHON_BOKEH,
+      ContentType.PYTHON_DASH,
+      ContentType.PYTHON_GRADIO,
+      ContentType.PYTHON_PANEL,
+      ContentType.PYTHON_STREAMLIT,
+    ])("returns true for %s", (type) => {
+      expect(isAppContent(type)).toBe(true);
+    });
+
+    test.each([
+      ContentType.HTML,
+      ContentType.PYTHON_FLASK,
+      ContentType.PYTHON_FASTAPI,
+      ContentType.R_PLUMBER,
+      ContentType.QUARTO,
+      ContentType.UNKNOWN,
+    ])("returns false for %s", (type) => {
+      expect(isAppContent(type)).toBe(false);
+    });
   });
 
   describe("UpdateAllConfigsWithDefaults", () => {
