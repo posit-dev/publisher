@@ -78,20 +78,26 @@ export async function loadAllConfigurations(
   const absDir = path.resolve(rootDir, projectDir);
   const relDir = relativeProjectDir(absDir, rootDir);
   const configPaths = await listConfigFiles(absDir);
-  const results: (Configuration | ConfigurationError)[] = [];
+  return loadConfigsFromPaths(configPaths, relDir);
+}
 
-  for (const configPath of configPaths) {
-    try {
-      results.push(await loadConfigFromFile(configPath, relDir));
-    } catch (error) {
-      if (error instanceof ConfigurationLoadError) {
-        results.push(error.configurationError);
-      } else {
-        throw error;
-      }
+async function loadConfigsFromPaths(
+  configPaths: string[],
+  relDir: string,
+): Promise<(Configuration | ConfigurationError)[]> {
+  const settled = await Promise.allSettled(
+    configPaths.map((p) => loadConfigFromFile(p, relDir)),
+  );
+  const results: (Configuration | ConfigurationError)[] = [];
+  for (const result of settled) {
+    if (result.status === "fulfilled") {
+      results.push(result.value);
+    } else if (result.reason instanceof ConfigurationLoadError) {
+      results.push(result.reason.configurationError);
+    } else {
+      throw result.reason;
     }
   }
-
   return results;
 }
 
@@ -110,37 +116,34 @@ export async function loadAllConfigurations(
 export async function loadAllConfigurationsRecursive(
   rootDir: string,
 ): Promise<(Configuration | ConfigurationError)[]> {
-  const results: (Configuration | ConfigurationError)[] = [];
-  await walkForConfigs(rootDir, rootDir, results);
-  return results;
+  return walkForConfigs(rootDir, rootDir);
 }
 
 async function walkForConfigs(
   dir: string,
   rootDir: string,
-  results: (Configuration | ConfigurationError)[],
-): Promise<void> {
+  depth: number = 20,
+): Promise<(Configuration | ConfigurationError)[]> {
+  if (depth <= 0) return [];
+
   let entries;
   try {
     entries = await fs.readdir(dir, { withFileTypes: true });
   } catch {
-    return;
+    return [];
   }
 
-  // Check if this directory has a .posit/publish/ with configs
-  const positDir = path.join(dir, ".posit");
-  const publishDir = path.join(positDir, "publish");
-  let hasPublishDir = false;
-  try {
-    const stat = await fs.stat(publishDir);
-    hasPublishDir = stat.isDirectory();
-  } catch {
-    // doesn't exist
-  }
+  const results: (Configuration | ConfigurationError)[] = [];
 
-  if (hasPublishDir) {
+  // Check if this directory has a .posit directory (avoids a separate fs.stat call)
+  const hasPositDir = entries.some(
+    (e) => e.isDirectory() && e.name === ".posit",
+  );
+
+  if (hasPositDir) {
     const relDir = relativeProjectDir(dir, rootDir);
-    const configs = await loadAllConfigurations(relDir, rootDir);
+    const configPaths = await listConfigFiles(dir);
+    const configs = await loadConfigsFromPaths(configPaths, relDir);
     results.push(...configs);
   }
 
@@ -161,6 +164,13 @@ async function walkForConfigs(
       continue;
     }
 
-    await walkForConfigs(path.join(dir, name), rootDir, results);
+    const childResults = await walkForConfigs(
+      path.join(dir, name),
+      rootDir,
+      depth - 1,
+    );
+    results.push(...childResults);
   }
+
+  return results;
 }
