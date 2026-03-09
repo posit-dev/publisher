@@ -13,6 +13,7 @@ import "./workbench";
 // from the with-connect GitHub Action, which handles Connect startup and bootstrapping.
 Cypress.Commands.add("initializeConnect", () => {
   cy.clearupDeployments();
+  cy.resetCredentials();
   cy.setAdminCredentials();
 });
 
