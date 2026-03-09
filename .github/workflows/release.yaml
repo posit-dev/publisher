@@ -5,6 +5,7 @@ on:
       - "v*.*.*"
 permissions:
   contents: write # Required to create GitHub releases
+  id-token: write # Required for AWS OIDC authentication in upload workflow
 jobs:
   # Security: Verify the tag points to a commit on main branch
   verify-tag:
