@@ -87,7 +87,7 @@ export async function loadAllConfigurations(
 export async function loadAllConfigurationsRecursive(
   rootDir: string,
 ): Promise<(Configuration | ConfigurationError)[]> {
-  return walkForConfigs(rootDir, rootDir);
+  return await walkForConfigs(rootDir, rootDir);
 }
 
 // --- Private helpers ---
