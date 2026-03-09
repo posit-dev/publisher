@@ -64,12 +64,14 @@ vi.mock("src/utils/vscode", () => ({
 }));
 
 vi.mock("src/interpreters", () => ({
-  getInterpreterDefaults: vi.fn(() => Promise.resolve({
-    python: { version: "", packageFile: "", packageManager: "" },
-    preferredPythonPath: "",
-    r: { version: "", packageFile: "", packageManager: "" },
-    preferredRPath: "",
-  })),
+  getInterpreterDefaults: vi.fn(() =>
+    Promise.resolve({
+      python: { version: "", packageFile: "", packageManager: "" },
+      preferredPythonPath: "",
+      r: { version: "", packageFile: "", packageManager: "" },
+      preferredRPath: "",
+    }),
+  ),
 }));
 
 const mockSyncAllCredentials = vi.fn();
