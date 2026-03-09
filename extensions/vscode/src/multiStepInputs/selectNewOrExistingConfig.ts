@@ -104,7 +104,10 @@ export async function selectNewOrExistingConfig(
 
   const getConfigurations = async () => {
     try {
-      const root = workspaces.path()!;
+      const root = workspaces.path();
+      if (!root) {
+        return;
+      }
       const rawConfigs = await loadAllConfigurations(
         activeDeployment.projectDir,
         root,
@@ -441,7 +444,10 @@ export async function selectNewOrExistingConfig(
         return;
       }
 
-      const root = workspaces.path()!;
+      const root = workspaces.path();
+      if (!root) {
+        return;
+      }
       const allConfigs = await loadAllConfigurations(
         selectedInspectionResult.projectDir,
         root,

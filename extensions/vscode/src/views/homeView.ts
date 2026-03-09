@@ -2077,7 +2077,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const configMap = new Map<string, Configuration>();
     const getConfigurations = async () => {
       try {
-        const root = workspaces.path()!;
+        const root = workspaces.path();
+        if (!root) {
+          return;
+        }
         const allConfigs = await loadAllConfigurations(entrypointDir, root);
         allConfigs.forEach((cfg) => {
           if (

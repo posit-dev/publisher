@@ -844,7 +844,10 @@ export async function newDeployment(
     newDeploymentData.title;
 
   try {
-    const root = workspaces.path()!;
+    const root = workspaces.path();
+    if (!root) {
+      return getDeploymentObjects();
+    }
     const relProjectDir =
       newDeploymentData.entrypoint.inspectionResult.projectDir;
 
