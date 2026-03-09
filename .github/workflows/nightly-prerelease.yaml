@@ -142,16 +142,47 @@ jobs:
           ref: main
           token: ${{ steps.generate-token.outputs.token }}
 
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "lts/*"
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+
+      - name: Update package.json version
+        env:
+          NEXT_VERSION: ${{ needs.version.outputs.next-version }}
+        run: |
+          # Strip 'v' prefix for package.json
+          VERSION="${NEXT_VERSION#v}"
+          cd extensions/vscode
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            pkg.version = '$VERSION';
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+          "
+          npm install
+
+      - name: Commit version bump
+        env:
+          NEXT_VERSION: ${{ needs.version.outputs.next-version }}
+        run: |
+          git add extensions/vscode/package.json extensions/vscode/package-lock.json
+          # Only commit if there are actual changes (skip if version already matches)
+          if ! git diff --cached --quiet; then
+            git commit -m "Bump version to $NEXT_VERSION"
+            git push origin main
+          fi
+
       - name: Create tag
         env:
           NEXT_VERSION: ${{ needs.version.outputs.next-version }}
           GH_TOKEN: ${{ steps.generate-token.outputs.token }}
         run: |
-          # Configure git
-          git config user.name "github-actions"
-          git config user.email "github-actions@users.noreply.github.com"
-
-          # Create the tag
+          # Create the tag on the current HEAD (which includes the version bump)
           git tag -a "$NEXT_VERSION" -m "Nightly pre-release $NEXT_VERSION"
 
           # Use the token for authentication when pushing

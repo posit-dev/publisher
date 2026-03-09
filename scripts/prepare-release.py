@@ -7,6 +7,7 @@ Usage: ./scripts/prepare-release.py <version>
 Example: ./scripts/prepare-release.py 1.34.0
 """
 
+import json
 import re
 import sys
 from pathlib import Path
@@ -163,6 +164,13 @@ def sync_vscode_changelog(root_changelog: Path, vscode_changelog: Path) -> None:
     vscode_changelog.write_text(output)
 
 
+def update_package_version(package_json: Path, version: str) -> None:
+    """Update version in package.json."""
+    data = json.loads(package_json.read_text())
+    data["version"] = version
+    package_json.write_text(json.dumps(data, indent=2) + "\n")
+
+
 def main() -> None:
     # Check arguments
     if len(sys.argv) != 2:
@@ -188,12 +196,15 @@ def main() -> None:
     # Paths
     root_changelog = Path("CHANGELOG.md")
     vscode_changelog = Path("extensions/vscode/CHANGELOG.md")
+    package_json = Path("extensions/vscode/package.json")
 
     # Check files exist
     if not root_changelog.exists():
         error(f"Root CHANGELOG not found: {root_changelog}")
     if not vscode_changelog.exists():
         error(f"VSCode CHANGELOG not found: {vscode_changelog}")
+    if not package_json.exists():
+        error(f"package.json not found: {package_json}")
 
     # Extract unreleased content and check if empty
     unreleased_content = extract_unreleased_content(root_changelog)
@@ -217,11 +228,16 @@ def main() -> None:
     info(f"Syncing {vscode_changelog} from root")
     sync_vscode_changelog(root_changelog, vscode_changelog)
 
+    # Update package.json version
+    info(f"Updating {package_json} version to {version}")
+    update_package_version(package_json, version)
+
     info(f"Release v{version} prepared successfully!")
     print()
     print("Updated files:")
     print(f"  - {root_changelog}")
     print(f"  - {vscode_changelog}")
+    print(f"  - {package_json}")
     print()
     print("Next steps:")
     print("  1. Review the changes: git diff")

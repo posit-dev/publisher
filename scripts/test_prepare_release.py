@@ -4,6 +4,7 @@
 Run with: python3 scripts/test_prepare_release.py
 """
 
+import json
 import subprocess
 import tempfile
 import unittest
@@ -274,8 +275,11 @@ class TestFullReleasePreparation(unittest.TestCase):
             vscode_dir.mkdir(parents=True)
             vscode_changelog = vscode_dir / "CHANGELOG.md"
 
+            package_json = vscode_dir / "package.json"
+
             root_changelog.write_text(SAMPLE_ROOT_CHANGELOG)
             vscode_changelog.write_text(SAMPLE_VSCODE_CHANGELOG)
+            package_json.write_text('{\n  "version": "1.32.0"\n}\n')
 
             result = subprocess.run(
                 ["python3", str(Path(__file__).parent / "prepare-release.py"), "1.33.0"],
@@ -295,8 +299,11 @@ class TestFullReleasePreparation(unittest.TestCase):
             vscode_dir.mkdir(parents=True)
             vscode_changelog = vscode_dir / "CHANGELOG.md"
 
+            package_json = vscode_dir / "package.json"
+
             root_changelog.write_text(SAMPLE_ROOT_CHANGELOG)
             vscode_changelog.write_text(SAMPLE_VSCODE_CHANGELOG)
+            package_json.write_text('{\n  "version": "1.33.7"\n}\n')
 
             # Provide 'y' to empty changelog prompt (won't be needed since we have content)
             result = subprocess.run(
@@ -318,6 +325,10 @@ class TestFullReleasePreparation(unittest.TestCase):
             vscode_content = vscode_changelog.read_text()
             self.assertIn("## [1.34.0]", vscode_content)
             self.assertNotIn("[Unreleased]", vscode_content)
+
+            # Check package.json has new version
+            pkg_data = json.loads(package_json.read_text())
+            self.assertEqual(pkg_data["version"], "1.34.0")
 
 
 if __name__ == "__main__":
