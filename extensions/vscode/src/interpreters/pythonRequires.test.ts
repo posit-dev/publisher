@@ -88,11 +88,7 @@ describe("getPythonRequires", () => {
     });
 
     test("returns empty string when requires-python is absent", async () => {
-      setFile(
-        "/project",
-        "pyproject.toml",
-        '[project]\nname = "myproject"\n',
-      );
+      setFile("/project", "pyproject.toml", '[project]\nname = "myproject"\n');
       const result = await getPythonRequires("/project");
       expect(result).toBe("");
     });
@@ -103,11 +99,7 @@ describe("getPythonRequires", () => {
         "pyproject.toml",
         '[project]\nrequires-python = ">=3.9"',
       );
-      setFile(
-        "/project",
-        "setup.cfg",
-        "[options]\npython_requires = >=3.7\n",
-      );
+      setFile("/project", "setup.cfg", "[options]\npython_requires = >=3.7\n");
       const result = await getPythonRequires("/project");
       expect(result).toBe(">=3.9");
     });
@@ -115,21 +107,13 @@ describe("getPythonRequires", () => {
 
   describe("setup.cfg", () => {
     test("reads python_requires from [options] section", async () => {
-      setFile(
-        "/project",
-        "setup.cfg",
-        "[options]\npython_requires = >=3.9\n",
-      );
+      setFile("/project", "setup.cfg", "[options]\npython_requires = >=3.9\n");
       const result = await getPythonRequires("/project");
       expect(result).toBe(">=3.9");
     });
 
     test("ignores python_requires in wrong section", async () => {
-      setFile(
-        "/project",
-        "setup.cfg",
-        "[metadata]\npython_requires = >=3.9\n",
-      );
+      setFile("/project", "setup.cfg", "[metadata]\npython_requires = >=3.9\n");
       const result = await getPythonRequires("/project");
       expect(result).toBe("");
     });

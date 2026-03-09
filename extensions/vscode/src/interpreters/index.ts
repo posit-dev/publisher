@@ -21,12 +21,18 @@ export async function getInterpreterDefaults(
   const python =
     pythonResult.status === "fulfilled"
       ? pythonResult.value
-      : { config: { version: "", packageFile: "", packageManager: "" }, preferredPath: pythonPath || "" };
+      : {
+          config: { version: "", packageFile: "", packageManager: "" },
+          preferredPath: pythonPath || "",
+        };
 
   const r =
     rResult.status === "fulfilled"
       ? rResult.value
-      : { config: { version: "", packageFile: "", packageManager: "" }, preferredPath: rPath || "" };
+      : {
+          config: { version: "", packageFile: "", packageManager: "" },
+          preferredPath: rPath || "",
+        };
 
   return {
     python: python.config,

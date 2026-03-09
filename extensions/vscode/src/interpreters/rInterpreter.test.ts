@@ -3,10 +3,12 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { detectRInterpreter } from "./rInterpreter";
 
-const mockExecFile = vi.fn();
+const { mockExecFile } = vi.hoisted(() => ({
+  mockExecFile: vi.fn(),
+}));
 
 vi.mock("child_process", () => ({
-  execFile: (...args: unknown[]) => mockExecFile(...args),
+  execFile: mockExecFile,
 }));
 
 vi.mock("vscode", () => ({
@@ -74,11 +76,7 @@ describe("detectRInterpreter", () => {
           _opts: unknown,
           cb: (err: Error | null, stdout: string, stderr: string) => void,
         ) => {
-          cb(
-            null,
-            "R version 4.3.2 (2023-10-31) -- \"Eye Holes\"\n",
-            "",
-          );
+          cb(null, 'R version 4.3.2 (2023-10-31) -- "Eye Holes"\n', "");
         },
       )
       .mockImplementationOnce(
@@ -194,7 +192,7 @@ describe("detectRInterpreter", () => {
           cb(
             new Error("exit code 1"),
             "",
-            "R version 4.1.3 (2022-03-10) -- \"One Push-Up\"\n",
+            'R version 4.1.3 (2022-03-10) -- "One Push-Up"\n',
           );
         },
       )

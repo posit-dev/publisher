@@ -3,17 +3,17 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { getInterpreterDefaults } from "./index";
 
-const mockDetectPython = vi.fn();
-const mockDetectR = vi.fn();
+const { mockDetectPython, mockDetectR } = vi.hoisted(() => ({
+  mockDetectPython: vi.fn(),
+  mockDetectR: vi.fn(),
+}));
 
 vi.mock("./pythonInterpreter", () => ({
-  detectPythonInterpreter: (...args: unknown[]) =>
-    mockDetectPython(...args),
+  detectPythonInterpreter: mockDetectPython,
 }));
 
 vi.mock("./rInterpreter", () => ({
-  detectRInterpreter: (...args: unknown[]) =>
-    mockDetectR(...args),
+  detectRInterpreter: mockDetectR,
 }));
 
 describe("getInterpreterDefaults", () => {
@@ -24,15 +24,27 @@ describe("getInterpreterDefaults", () => {
 
   test("returns results when both detections succeed", async () => {
     mockDetectPython.mockResolvedValue({
-      config: { version: "3.11.5", packageFile: "requirements.txt", packageManager: "auto" },
+      config: {
+        version: "3.11.5",
+        packageFile: "requirements.txt",
+        packageManager: "auto",
+      },
       preferredPath: "/usr/bin/python3",
     });
     mockDetectR.mockResolvedValue({
-      config: { version: "4.3.2", packageFile: "renv.lock", packageManager: "renv" },
+      config: {
+        version: "4.3.2",
+        packageFile: "renv.lock",
+        packageManager: "renv",
+      },
       preferredPath: "/usr/bin/R",
     });
 
-    const result = await getInterpreterDefaults("/project", "/usr/bin/python3", "/usr/bin/R");
+    const result = await getInterpreterDefaults(
+      "/project",
+      "/usr/bin/python3",
+      "/usr/bin/R",
+    );
 
     expect(result.python).toEqual({
       version: "3.11.5",
@@ -51,11 +63,19 @@ describe("getInterpreterDefaults", () => {
   test("returns empty Python config when Python detection rejects", async () => {
     mockDetectPython.mockRejectedValue(new Error("python exploded"));
     mockDetectR.mockResolvedValue({
-      config: { version: "4.3.2", packageFile: "renv.lock", packageManager: "renv" },
+      config: {
+        version: "4.3.2",
+        packageFile: "renv.lock",
+        packageManager: "renv",
+      },
       preferredPath: "/usr/bin/R",
     });
 
-    const result = await getInterpreterDefaults("/project", "/usr/bin/python3", "/usr/bin/R");
+    const result = await getInterpreterDefaults(
+      "/project",
+      "/usr/bin/python3",
+      "/usr/bin/R",
+    );
 
     expect(result.python).toEqual({
       version: "",
@@ -69,12 +89,20 @@ describe("getInterpreterDefaults", () => {
 
   test("returns empty R config when R detection rejects", async () => {
     mockDetectPython.mockResolvedValue({
-      config: { version: "3.11.5", packageFile: "requirements.txt", packageManager: "auto" },
+      config: {
+        version: "3.11.5",
+        packageFile: "requirements.txt",
+        packageManager: "auto",
+      },
       preferredPath: "/usr/bin/python3",
     });
     mockDetectR.mockRejectedValue(new Error("R exploded"));
 
-    const result = await getInterpreterDefaults("/project", "/usr/bin/python3", "/usr/bin/R");
+    const result = await getInterpreterDefaults(
+      "/project",
+      "/usr/bin/python3",
+      "/usr/bin/R",
+    );
 
     // Python still succeeds
     expect(result.python.version).toBe("3.11.5");
@@ -90,7 +118,11 @@ describe("getInterpreterDefaults", () => {
     mockDetectPython.mockRejectedValue(new Error("python exploded"));
     mockDetectR.mockRejectedValue(new Error("R exploded"));
 
-    const result = await getInterpreterDefaults("/project", "/usr/bin/python3", "/usr/bin/R");
+    const result = await getInterpreterDefaults(
+      "/project",
+      "/usr/bin/python3",
+      "/usr/bin/R",
+    );
 
     expect(result.python).toEqual({
       version: "",

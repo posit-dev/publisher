@@ -72,8 +72,7 @@ async function readPythonVersionFile(
   return adapted.join(",") || undefined;
 }
 
-const requiresPythonRe =
-  /^\s*requires-python\s*=\s*["']([^"']+)["']\s*$/m;
+const requiresPythonRe = /^\s*requires-python\s*=\s*["']([^"']+)["']\s*$/m;
 
 /**
  * Read pyproject.toml and extract requires-python from [project] section.

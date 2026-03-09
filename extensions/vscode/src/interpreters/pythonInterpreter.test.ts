@@ -6,10 +6,12 @@ import {
   clearPythonVersionCache,
 } from "./pythonInterpreter";
 
-const mockExecFile = vi.fn();
+const { mockExecFile } = vi.hoisted(() => ({
+  mockExecFile: vi.fn(),
+}));
 
 vi.mock("child_process", () => ({
-  execFile: (...args: unknown[]) => mockExecFile(...args),
+  execFile: mockExecFile,
 }));
 
 vi.mock("vscode", () => ({

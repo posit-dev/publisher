@@ -96,11 +96,7 @@ describe("getRRequires", () => {
     });
 
     test("takes priority over renv.lock", async () => {
-      setFile(
-        "/project",
-        "DESCRIPTION",
-        "Depends: R (>= 4.0.0)",
-      );
+      setFile("/project", "DESCRIPTION", "Depends: R (>= 4.0.0)");
       setFile(
         "/project",
         "renv.lock",
