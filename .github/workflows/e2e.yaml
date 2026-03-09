@@ -103,7 +103,7 @@ jobs:
           sudo systemctl restart docker
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
         with:
           # Use docker driver to keep images in local daemon where docker compose can access them
           driver: docker
