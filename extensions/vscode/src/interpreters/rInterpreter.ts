@@ -1,4 +1,4 @@
-// Copyright (C) 2025 by Posit Software, PBC.
+// Copyright (C) 2026 by Posit Software, PBC.
 
 import { execFile } from "child_process";
 import { Uri } from "vscode";
