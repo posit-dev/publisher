@@ -25,6 +25,7 @@ import {
   useApi,
 } from "src/api";
 import { normalizeURL } from "src/utils/url";
+import { getInterpreterDefaults } from "src/interpreters";
 import { showProgress } from "src/utils/progress";
 import {
   getStatusFromError,
@@ -241,12 +242,12 @@ export class PublisherState implements Disposable {
         contentRecord.configurationName,
         contentRecord.projectDir,
       );
-      const defaults = await api.interpreters.get(
+      const defaults = await getInterpreterDefaults(
         contentRecord.projectDir,
-        r,
-        python,
+        python?.pythonPath,
+        r?.rPath,
       );
-      const cfg = UpdateConfigWithDefaults(response.data, defaults.data);
+      const cfg = UpdateConfigWithDefaults(response.data, defaults);
       // its not foolproof, but it may help
       if (!this.findConfig(cfg.configurationName, cfg.projectDir)) {
         this.configurations.push(cfg);
@@ -315,10 +316,14 @@ export class PublisherState implements Disposable {
           const response = await api.configurations.getAll(".", {
             recursive: true,
           });
-          const defaults = await api.interpreters.get(".", r, python);
+          const defaults = await getInterpreterDefaults(
+            ".",
+            python?.pythonPath,
+            r?.rPath,
+          );
           this.configurations = UpdateAllConfigsWithDefaults(
             response.data,
-            defaults.data,
+            defaults,
           );
         },
       );
