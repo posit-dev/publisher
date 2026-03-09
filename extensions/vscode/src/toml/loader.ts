@@ -3,9 +3,6 @@
 import * as fs from "fs/promises";
 import * as path from "path";
 import { parse as parseTOML, TomlError } from "smol-toml";
-import Ajv2020 from "ajv/dist/2020";
-import addFormats from "ajv-formats";
-
 import {
   Configuration,
   ConfigurationDetails,
@@ -21,11 +18,7 @@ import {
   ConfigurationLoadError,
   formatValidationErrors,
 } from "./errors";
-import schema from "./schemas/posit-publishing-schema-v3.json";
-
-const ajv = new Ajv2020({ strict: false, allErrors: true });
-addFormats(ajv);
-const validate = ajv.compile(schema);
+import { validate } from "./validate";
 
 /**
  * Load a TOML configuration file, validate it against the JSON schema,
