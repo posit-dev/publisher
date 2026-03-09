@@ -1,0 +1,16 @@
+---
+title: "Publisher E2E Test - Quarto Document"
+format: html
+---
+
+## Quarto Document
+
+This is a simple Quarto document used for E2E testing of Posit Publisher.
+
+The document uses **markdown only** (no Python or R engine) to keep dependencies minimal.
+
+### Sample Content
+
+- Item one
+- Item two
+- Item three
