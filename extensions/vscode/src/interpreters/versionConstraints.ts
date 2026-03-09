@@ -6,7 +6,7 @@ const validVersion = /^\d+(\.\d+)*(\.\*)?$/;
 /**
  * Adapts a raw Python version string from `.python-version` into a PEP 440
  * constraint suitable for deployment. Returns the adapted constraint string
- * or an empty string if the input is invalid.
+ * or null if the input is invalid.
  */
 export function adaptPythonRequires(raw: string): string | null {
   const constraint = raw.trim();
