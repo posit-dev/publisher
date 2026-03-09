@@ -133,6 +133,31 @@ describe("forceProductTypeCompliance", () => {
   });
 
   describe("Connect", () => {
+    it("copies entrypointObjectRef to entrypoint", () => {
+      const config = makeConfig({
+        productType: ProductType.CONNECT,
+        entrypoint: "app.py",
+        entrypointObjectRef: "shiny.express.app:app_2e_py",
+      });
+
+      forceProductTypeCompliance(config);
+
+      expect(config.entrypoint).toBe("shiny.express.app:app_2e_py");
+      expect(config.entrypointObjectRef).toBeUndefined();
+    });
+
+    it("preserves entrypoint when entrypointObjectRef is not set", () => {
+      const config = makeConfig({
+        productType: ProductType.CONNECT,
+        entrypoint: "app.py",
+      });
+
+      forceProductTypeCompliance(config);
+
+      expect(config.entrypoint).toBe("app.py");
+      expect(config.entrypointObjectRef).toBeUndefined();
+    });
+
     it("does not strip Python fields", () => {
       const config = makeConfig({
         productType: ProductType.CONNECT,
@@ -177,6 +202,20 @@ describe("forceProductTypeCompliance", () => {
       forceProductTypeCompliance(config);
 
       expect(config.alternatives).toBeUndefined();
+    });
+
+    it("clears entrypointObjectRef for Connect Cloud", () => {
+      const config = makeConfig({
+        productType: ProductType.CONNECT_CLOUD,
+        entrypoint: "app.py",
+        entrypointObjectRef: "shiny.express.app:app_2e_py",
+      });
+
+      forceProductTypeCompliance(config);
+
+      // Connect Cloud doesn't copy entrypointObjectRef to entrypoint
+      expect(config.entrypoint).toBe("app.py");
+      expect(config.entrypointObjectRef).toBeUndefined();
     });
   });
 });

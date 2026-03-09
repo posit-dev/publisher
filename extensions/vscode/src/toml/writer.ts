@@ -18,6 +18,7 @@ import {
   createSchemaValidationError,
   createConfigurationError,
   ConfigurationLoadError,
+  formatValidationErrors,
 } from "./errors";
 import schema from "./schemas/posit-publishing-schema-v3.json";
 
@@ -75,6 +76,7 @@ export async function writeConfigToFile(
   // Remove non-TOML fields
   delete cfg.comments;
   delete cfg.alternatives;
+  delete cfg.entrypointObjectRef;
 
   // Convert to snake_case for TOML
   const snakeResult = convertKeysToSnakeCase(cfg);
@@ -99,9 +101,7 @@ export async function writeConfigToFile(
   // Validate against JSON schema
   const valid = validate(snakeObj);
   if (!valid) {
-    const messages = (validate.errors ?? [])
-      .map((e) => `${e.instancePath} ${e.message ?? ""}`.trim())
-      .join("; ");
+    const messages = formatValidationErrors(validate.errors ?? []);
     throw new ConfigurationLoadError(
       createConfigurationError(
         createSchemaValidationError(configPath, messages),

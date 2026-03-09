@@ -10,7 +10,12 @@ import { ProductType } from "../api/types/contentRecords";
  * Ports Go's Config.ForceProductTypeCompliance() from internal/config/types.go.
  */
 export function forceProductTypeCompliance(config: ConfigurationDetails): void {
-  if (config.productType === ProductType.CONNECT_CLOUD) {
+  if (config.productType === ProductType.CONNECT) {
+    // Object-reference-style entrypoint is only allowed by Connect
+    if (config.entrypointObjectRef) {
+      config.entrypoint = config.entrypointObjectRef;
+    }
+  } else if (config.productType === ProductType.CONNECT_CLOUD) {
     // These fields are disallowed by the Connect Cloud schema
     if (config.python) {
       config.python.packageManager = "";
@@ -36,6 +41,7 @@ export function forceProductTypeCompliance(config: ConfigurationDetails): void {
     config.hasParameters = undefined;
   }
 
-  // Clear alternatives so it doesn't interfere with schema validation
+  // Clear non-TOML fields so they don't interfere with schema validation
+  config.entrypointObjectRef = undefined;
   config.alternatives = undefined;
 }

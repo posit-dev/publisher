@@ -118,6 +118,7 @@ export type ConfigurationDetails = {
   productType: ProductType;
   type: ContentType;
   entrypoint?: string;
+  entrypointObjectRef?: string;
   source?: string;
   title?: string;
   description?: string;
