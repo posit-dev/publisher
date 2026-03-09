@@ -9,8 +9,10 @@ import {
   ConfigurationLocation,
   ContentType,
 } from "../api/types/configurations";
+import { AgentError } from "../api/types/error";
 import { forceProductTypeCompliance } from "./compliance";
 import { convertKeysToSnakeCase } from "./convertKeys";
+import { getConfigPath } from "./discovery";
 import {
   createSchemaValidationError,
   createConfigurationError,
@@ -44,18 +46,16 @@ export async function writeConfigToFile(
   config: ConfigurationDetails,
 ): Promise<Configuration> {
   const absDir = path.resolve(rootDir, projectDir);
-  const configPath = path.join(
-    absDir,
-    ".posit",
-    "publish",
-    `${configName}.toml`,
-  );
+  const configPath = getConfigPath(absDir, configName);
 
   const location: ConfigurationLocation = {
     configurationName: configName,
     configurationPath: configPath,
     projectDir,
   };
+
+  const loadError = (error: AgentError) =>
+    new ConfigurationLoadError(createConfigurationError(error, location));
 
   // Clone so we don't mutate the caller's object
   const cfg = structuredClone(config);
@@ -95,12 +95,7 @@ export async function writeConfigToFile(
   const valid = validate(snakeObj);
   if (!valid) {
     const messages = formatValidationErrors(validate.errors ?? []);
-    throw new ConfigurationLoadError(
-      createConfigurationError(
-        createSchemaValidationError(configPath, messages),
-        location,
-      ),
-    );
+    throw loadError(createSchemaValidationError(configPath, messages));
   }
 
   // Restore original type after validation
