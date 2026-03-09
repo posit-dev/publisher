@@ -23,8 +23,6 @@ describe("Package Management Section", () => {
   });
 
   it("Python packages section shows detected packages", () => {
-    cy.skipIfConnectVersionBefore("2025.03");
-
     cy.expectInitialPublisherState();
 
     cy.createPCSDeployment(

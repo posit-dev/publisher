@@ -25,8 +25,6 @@ describe("File Include/Exclude Section", () => {
   });
 
   it("Toggle file inclusion via checkbox updates TOML config", () => {
-    cy.skipIfConnectVersionBefore("2025.03");
-
     cy.expectInitialPublisherState();
 
     cy.createPCSDeployment(

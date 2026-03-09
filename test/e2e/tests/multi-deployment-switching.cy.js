@@ -23,8 +23,6 @@ describe("Multi-Deployment Switching Section", () => {
   });
 
   it("Switch between two deployments via picker", () => {
-    cy.skipIfConnectVersionBefore("2025.03");
-
     cy.expectInitialPublisherState();
 
     // Step 1: Create first deployment (static)
