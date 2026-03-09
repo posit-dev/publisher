@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.36.0]
+
 ### Fixed
 
 - Connect Cloud users who have permissions to publish to multiple accounts are able to create credentials again. (#3446)
