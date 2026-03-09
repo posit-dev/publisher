@@ -174,9 +174,13 @@ export class ConnectClient {
     contentId: ContentID,
     body: ConnectContent,
   ): Promise<void> {
-    const resp = await this.request("PATCH", `/__api__/v1/content/${contentId}`, {
-      body,
-    });
+    const resp = await this.request(
+      "PATCH",
+      `/__api__/v1/content/${contentId}`,
+      {
+        body,
+      },
+    );
     if (!resp.ok) {
       const respBody = await resp.text();
       throw new ConnectRequestError(resp.status, resp.statusText, respBody);
@@ -321,10 +325,7 @@ export class ConnectClient {
    * mirroring the Go client's GetSettings behavior.
    */
   async getSettings(): Promise<AllSettings> {
-    const user = await this.requestJson<UserDTO>(
-      "GET",
-      "/__api__/v1/user",
-    );
+    const user = await this.requestJson<UserDTO>("GET", "/__api__/v1/user");
     const General = await this.requestJson<ServerSettings>(
       "GET",
       "/__api__/server_settings",
