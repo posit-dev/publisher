@@ -18,119 +18,84 @@ describe("Open Connect Content", () => {
     cy.debugIframes();
     cy.expectInitialPublisherState();
 
+    // Phase 2: Create and deploy static content
     cy.createPCSDeployment("static", "index.html", "static", () => {
       return;
     }).deployCurrentlySelected();
 
+    // Phase 3: Read the content record to get server_url and content GUID
     cy.getPublisherTomlFilePaths("static").then((filePaths) => {
       cy.loadTomlFile(filePaths.contentRecord.path).then((contentRecord) => {
-        // Capture the current URL before running the command
-        cy.url().then((originalUrl) => {
-          cy.runCommandPaletteCommand("Posit Publisher: Open Connect Content");
-          cy.quickInputType("Connect server URL", contentRecord.server_url);
-          cy.quickInputType("Connect content GUID", contentRecord.id);
+        // Stash values for use after the workspace switch
+        const serverUrl = contentRecord.server_url;
+        const contentGuid = contentRecord.id;
 
-          // Wait for the quick input to close, indicating the command has been submitted
-          cy.get(".quick-input-widget").should("not.be.visible");
+        // Phase 4: Run "Open Connect Content" via command palette
+        cy.runCommandPaletteCommand(
+          "Posit Publisher: Open Connect Content",
+        );
+        cy.quickInputType("Connect server URL", serverUrl);
+        cy.quickInputType("Connect content GUID", contentGuid);
 
-          // Wait for the workspace to actually start reloading by detecting URL change.
-          // This prevents the race condition where retries run against the old workspace
-          // before VS Code has started loading the new one.
-          cy.url({ timeout: 30000 }).should("not.eq", originalUrl);
+        // Wait for the quick input to close, confirming submission
+        cy.get(".quick-input-widget").should("not.be.visible");
 
-          // Wait for VS Code to fully reload after the workspace switch.
-          // The workbench needs time to initialize with the new workspace.
-          cy.get(".monaco-workbench", { timeout: 60000 }).should("be.visible");
+        // Phase 5: Wait for workspace switch to complete.
+        // The extension has two code paths: updateWorkspaceFolders (no reload)
+        // and openFolder (full page reload). We handle both by waiting for the
+        // workbench to be present, then polling the explorer for the content GUID.
+        cy.get(".monaco-workbench", { timeout: 120_000 }).should("be.visible");
 
-          // Additional wait for the explorer to be ready
-          cy.get(".explorer-viewlet", { timeout: 30000 }).should("exist");
+        cy.waitUntil(
+          () => {
+            try {
+              const $body = Cypress.$("body");
+              if ($body.length === 0) return false;
 
-          // Wait for the workspace to reload with the Connect content.
-          // The GUID appears in the explorer as a root folder after the workspace switch.
-          // Use { timeout: 0 } in the inner cy.contains() so retryWithBackoff controls
-          // the retry timing rather than cy.contains() blocking on its own timeout.
-          cy.retryWithBackoff(
-            () =>
-              cy.get("body", { timeout: 0 }).then(($body) => {
-                const explorer = $body.find(".explorer-viewlet");
-                if (explorer.length === 0) {
-                  return Cypress.$(); // Explorer not yet rendered, return empty to retry
-                }
-                const row = explorer.find(
-                  `.monaco-list-row[aria-level='1']:contains("${contentRecord.id}")`,
-                );
-                return row.length > 0 ? cy.wrap(row) : Cypress.$();
-              }),
-            20,
-            1500,
-          ).should("exist");
-        });
+              // Ensure the Explorer sidebar is visible; click its icon if not
+              if ($body.find(".explorer-viewlet:visible").length === 0) {
+                const explorerBtn =
+                  $body
+                    .find(
+                      '[id="workbench.parts.activitybar"] .action-item[role="button"][aria-label="Explorer"]',
+                    )
+                    .get(0) ||
+                  $body.find("a.codicon-explorer-view-icon").get(0);
+                if (explorerBtn) explorerBtn.click();
+                return false;
+              }
+
+              // Look for the content GUID as a root folder in the explorer
+              const guidRow = $body.find(
+                `.explorer-viewlet .monaco-list-row[aria-level='1']:contains("${contentGuid}")`,
+              );
+              return guidRow.length > 0;
+            } catch {
+              // DOM may be briefly invalid during a full page reload
+              return false;
+            }
+          },
+          {
+            timeout: 60_000,
+            interval: 1_500,
+            errorMsg: `Content GUID "${contentGuid}" did not appear in the explorer within 60 seconds`,
+          },
+        );
+
+        // Phase 6: Expand the GUID folder and verify expected files
+        cy.get(".explorer-viewlet")
+          .find('.monaco-list-row[aria-level="1"]')
+          .first()
+          .then(($row) => {
+            if ($row.attr("aria-expanded") === "false") {
+              cy.wrap($row).click();
+            }
+          });
+
+        cy.get(".explorer-viewlet", { timeout: 30_000 })
+          .should("contain", "manifest.json")
+          .and("contain", "index.html");
       });
     });
-
-    cy.retryWithBackoff(
-      () =>
-        cy.get("body", { timeout: 0 }).then(($body) => {
-          if ($body.find(".explorer-viewlet:visible").length === 0) {
-            const explorerButton =
-              $body
-                .find(
-                  '[id="workbench.parts.activitybar"] .action-item[role="button"][aria-label="Explorer"]',
-                )
-                .get(0) || $body.find("a.codicon-explorer-view-icon").get(0);
-            if (explorerButton) {
-              explorerButton.click();
-            }
-            return Cypress.$(); // Return empty to retry after clicking
-          }
-          const explorer = $body.find(".explorer-viewlet:visible");
-          return explorer.length > 0 ? cy.wrap(explorer) : Cypress.$();
-        }),
-      12,
-      1000,
-    ).should("be.visible");
-
-    cy.retryWithBackoff(
-      () =>
-        cy.get("body", { timeout: 0 }).then(($body) => {
-          const items = $body.find(".explorer-viewlet .explorer-item");
-          return items.length > 0 ? cy.wrap(items) : Cypress.$();
-        }),
-      10,
-      1000,
-    ).should("exist");
-
-    cy.get(".explorer-viewlet")
-      .find('.monaco-list-row[aria-level="1"]')
-      .first()
-      .then(($row) => {
-        if ($row.attr("aria-expanded") === "false") {
-          cy.wrap($row).click();
-        }
-      });
-
-    cy.retryWithBackoff(
-      () =>
-        cy.get("body", { timeout: 0 }).then(($body) => {
-          const match = $body.find(
-            '.explorer-viewlet .explorer-item a > span:contains("manifest.json")',
-          );
-          return match.length > 0 ? cy.wrap(match) : Cypress.$();
-        }),
-      10,
-      1000,
-    ).should("be.visible");
-
-    cy.retryWithBackoff(
-      () =>
-        cy.get("body", { timeout: 0 }).then(($body) => {
-          const match = $body.find(
-            '.explorer-viewlet .explorer-item a > span:contains("index.html")',
-          );
-          return match.length > 0 ? cy.wrap(match) : Cypress.$();
-        }),
-      10,
-      1000,
-    ).should("be.visible");
   });
 });
