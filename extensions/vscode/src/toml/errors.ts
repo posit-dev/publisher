@@ -38,7 +38,7 @@ export function createSchemaValidationError(
 ): AgentError {
   return {
     code: "tomlValidationError",
-    msg: `Schema validation failed for ${file}: ${message}`,
+    msg: message,
     operation: "config.loadFromFile",
     data: { file, message },
   };

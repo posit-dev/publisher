@@ -3,7 +3,7 @@
 import * as fs from "fs/promises";
 import * as path from "path";
 import { parse as parseTOML, TomlError } from "smol-toml";
-import Ajv2020 from "ajv/dist/2020";
+import Ajv2020, { ErrorObject } from "ajv/dist/2020";
 import addFormats from "ajv-formats";
 
 import {
@@ -74,9 +74,7 @@ export async function loadConfigFromFile(
   // Validate against JSON schema (schema uses snake_case keys, which is what TOML produces)
   const valid = validate(parsed);
   if (!valid) {
-    const messages = (validate.errors ?? [])
-      .map((e) => `${e.instancePath} ${e.message ?? ""}`.trim())
-      .join("; ");
+    const messages = formatValidationErrors(validate.errors ?? []);
     throw new ConfigurationLoadError(
       createConfigurationError(
         createSchemaValidationError(configPath, messages),
@@ -140,6 +138,40 @@ function readLeadingComments(content: string): string[] {
     comments.push(line.slice(1));
   }
   return comments;
+}
+
+/**
+ * Format ajv validation errors to match Go's schema validation output.
+ * Go format: "key: problem" (e.g., "invalidParam: not allowed.")
+ * For nested paths: "python.garbage: not allowed."
+ */
+function formatValidationErrors(errors: ErrorObject[]): string {
+  const formatted: string[] = [];
+  for (const e of errors) {
+    // Convert JSON pointer instancePath (e.g., "/python") to dotted key
+    const pathKey = e.instancePath.replace(/^\//, "").replace(/\//g, ".");
+
+    if (
+      e.keyword === "unevaluatedProperties" ||
+      e.keyword === "additionalProperties"
+    ) {
+      const prop =
+        e.params.unevaluatedProperty ?? e.params.additionalProperty ?? "";
+      const fullKey = pathKey ? `${pathKey}.${prop}` : prop;
+      formatted.push(`${fullKey}: not allowed.`);
+    } else if (e.keyword === "required") {
+      const prop = e.params.missingProperty ?? "";
+      const fullKey = pathKey ? `${pathKey}.${prop}` : prop;
+      formatted.push(`${fullKey}: missing property.`);
+    } else if (e.keyword === "if") {
+      // "if/then" errors are structural noise from conditional schemas — skip
+      continue;
+    } else {
+      const prefix = pathKey ? `${pathKey}: ` : "";
+      formatted.push(`${prefix}${e.message ?? "validation error"}.`);
+    }
+  }
+  return formatted.join("; ");
 }
 
 // Content types that have a mapping in Connect Cloud.
