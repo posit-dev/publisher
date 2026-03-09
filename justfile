@@ -234,6 +234,22 @@ test *args=("-short ./..."):
 
     go test {{ args }} -covermode set -coverprofile=cover.out
 
+# Run extension contract tests (validates vscode/positron API usage)
+test-extension-contracts:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    cd test/extension-contract-tests && npm test
+
+# Check that vscode/positron mocks conform to real API type definitions
+check-extension-contract-conformance:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    cd test/extension-contract-tests && npm run check:conformance
+
 # Build the Connect API contract test harness binary
 build-connect-harness:
     go build -o test/connect-api-contracts/harness/harness ./test/connect-api-contracts/harness/
