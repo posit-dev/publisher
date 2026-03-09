@@ -133,6 +133,44 @@ describe("detectPythonInterpreter", () => {
     expect(result.config.packageFile).toBe("");
   });
 
+  test("returns empty config when python outputs empty stdout", async () => {
+    mockExecFile.mockImplementation(
+      (
+        _cmd: string,
+        _args: string[],
+        _opts: unknown,
+        cb: (err: Error | null, stdout: string) => void,
+      ) => {
+        cb(null, "");
+      },
+    );
+
+    const result = await detectPythonInterpreter(
+      "/project",
+      "/usr/bin/python3",
+    );
+    expect(result.config.version).toBe("");
+  });
+
+  test("returns empty config when python outputs only whitespace", async () => {
+    mockExecFile.mockImplementation(
+      (
+        _cmd: string,
+        _args: string[],
+        _opts: unknown,
+        cb: (err: Error | null, stdout: string) => void,
+      ) => {
+        cb(null, "   \n  ");
+      },
+    );
+
+    const result = await detectPythonInterpreter(
+      "/project",
+      "/usr/bin/python3",
+    );
+    expect(result.config.version).toBe("");
+  });
+
   test("caches version for non-shim paths", async () => {
     let callCount = 0;
     mockExecFile.mockImplementation(

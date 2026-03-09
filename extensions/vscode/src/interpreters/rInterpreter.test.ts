@@ -181,6 +181,112 @@ describe("detectRInterpreter", () => {
     expect(result.config.packageFile).toBe("renv.lock");
   });
 
+  test("detects version when R --version returns non-zero exit with valid output", async () => {
+    mockExecFile
+      .mockImplementationOnce(
+        (
+          _cmd: string,
+          _args: string[],
+          _opts: unknown,
+          cb: (err: Error | null, stdout: string, stderr: string) => void,
+        ) => {
+          // Some platforms return non-zero but still output the version
+          cb(
+            new Error("exit code 1"),
+            "",
+            "R version 4.1.3 (2022-03-10) -- \"One Push-Up\"\n",
+          );
+        },
+      )
+      .mockImplementationOnce(
+        (
+          _cmd: string,
+          _args: string[],
+          _opts: unknown,
+          cb: (err: Error | null, stdout: string, stderr: string) => void,
+        ) => {
+          cb(new Error("renv not installed"), "", "");
+        },
+      );
+
+    const result = await detectRInterpreter("/project", "/usr/bin/R");
+    expect(result.config.version).toBe("4.1.3");
+  });
+
+  test("returns empty version when R output does not match version regex", async () => {
+    mockExecFile.mockImplementation(
+      (
+        _cmd: string,
+        _args: string[],
+        _opts: unknown,
+        cb: (err: Error | null, stdout: string, stderr: string) => void,
+      ) => {
+        cb(null, "some unexpected output\n", "");
+      },
+    );
+
+    const result = await detectRInterpreter("/project", "/usr/bin/R");
+    expect(result.config.version).toBe("");
+  });
+
+  test("returns absolute lockfile path when outside projectDir", async () => {
+    mockExecFile
+      .mockImplementationOnce(
+        (
+          _cmd: string,
+          _args: string[],
+          _opts: unknown,
+          cb: (err: Error | null, stdout: string, stderr: string) => void,
+        ) => {
+          cb(null, "R version 4.3.0 (2023-04-21)\n", "");
+        },
+      )
+      .mockImplementationOnce(
+        (
+          _cmd: string,
+          _args: string[],
+          _opts: unknown,
+          cb: (err: Error | null, stdout: string, stderr: string) => void,
+        ) => {
+          // renv returns a path outside the project directory
+          cb(null, '[1] "/other/location/renv.lock"\n', "");
+        },
+      );
+    mockFileExistsResult = true;
+
+    const result = await detectRInterpreter("/project", "/usr/bin/R");
+    expect(result.config.packageFile).toBe("/other/location/renv.lock");
+  });
+
+  test("falls back to default lockfile when renv output is unparseable", async () => {
+    mockExecFile
+      .mockImplementationOnce(
+        (
+          _cmd: string,
+          _args: string[],
+          _opts: unknown,
+          cb: (err: Error | null, stdout: string, stderr: string) => void,
+        ) => {
+          cb(null, "R version 4.3.0 (2023-04-21)\n", "");
+        },
+      )
+      .mockImplementationOnce(
+        (
+          _cmd: string,
+          _args: string[],
+          _opts: unknown,
+          cb: (err: Error | null, stdout: string, stderr: string) => void,
+        ) => {
+          // renv succeeds but output doesn't match expected format
+          cb(null, "Warning: some renv message\n", "");
+        },
+      );
+    mockFileExistsResult = true;
+
+    const result = await detectRInterpreter("/project", "/usr/bin/R");
+    expect(result.config.packageFile).toBe("renv.lock");
+  });
+
   test("returns empty packageFile when lockfile does not exist", async () => {
     mockExecFile
       .mockImplementationOnce(
