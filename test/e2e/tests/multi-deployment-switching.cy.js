@@ -1,4 +1,4 @@
-// Copyright (C) 2025 by Posit Software, PBC.
+// Copyright (C) 2026 by Posit Software, PBC.
 
 // Purpose: Verify switching between multiple deployments.
 // - Creates a deployment for static content.

@@ -1,4 +1,4 @@
-// Copyright (C) 2025 by Posit Software, PBC.
+// Copyright (C) 2026 by Posit Software, PBC.
 
 // Purpose: Verify file include/exclude toggling in the project files tree.
 // - Creates a PCS deployment for fastapi-simple.

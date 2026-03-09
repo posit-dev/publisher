@@ -1,4 +1,4 @@
-// Copyright (C) 2025 by Posit Software, PBC.
+// Copyright (C) 2026 by Posit Software, PBC.
 
 // Purpose: Verify Quarto document deployment via PCS.
 // - Creates a deployment for a markdown-only Quarto doc (no Python/R engine).

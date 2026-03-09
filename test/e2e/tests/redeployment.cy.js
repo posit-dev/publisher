@@ -1,4 +1,4 @@
-// Copyright (C) 2025 by Posit Software, PBC.
+// Copyright (C) 2026 by Posit Software, PBC.
 
 // Purpose: Verify redeployment workflow - deploy, modify content, redeploy.
 // - Deploys static content, captures initial bundle_id.

@@ -1,4 +1,4 @@
-// Copyright (C) 2025 by Posit Software, PBC.
+// Copyright (C) 2026 by Posit Software, PBC.
 
 // Purpose: Verify deployment status and post-deployment UI elements.
 // - Deploys static content.
