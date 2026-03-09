@@ -3,7 +3,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { detectRInterpreter } from "./rInterpreter";
 
-let mockExecFile: ReturnType<typeof vi.fn>;
+const mockExecFile = vi.fn();
 
 vi.mock("child_process", () => ({
   execFile: (...args: unknown[]) => mockExecFile(...args),
@@ -32,7 +32,7 @@ vi.mock("src/utils/files", () => ({
 describe("detectRInterpreter", () => {
   beforeEach(() => {
     mockFileExistsResult = false;
-    mockExecFile = vi.fn();
+    mockExecFile.mockReset();
   });
 
   afterEach(() => {

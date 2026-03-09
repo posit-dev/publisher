@@ -6,8 +6,7 @@ import {
   clearPythonVersionCache,
 } from "./pythonInterpreter";
 
-// Track calls to execFile
-let mockExecFile: ReturnType<typeof vi.fn>;
+const mockExecFile = vi.fn();
 
 vi.mock("child_process", () => ({
   execFile: (...args: unknown[]) => mockExecFile(...args),
@@ -38,7 +37,7 @@ describe("detectPythonInterpreter", () => {
   beforeEach(() => {
     clearPythonVersionCache();
     mockFileExistsResult = false;
-    mockExecFile = vi.fn();
+    mockExecFile.mockReset();
   });
 
   afterEach(() => {

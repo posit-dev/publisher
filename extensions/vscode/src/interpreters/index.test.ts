@@ -1,20 +1,27 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
-import { describe, expect, test, vi } from "vitest";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 import { getInterpreterDefaults } from "./index";
 
 const mockDetectPython = vi.fn();
 const mockDetectR = vi.fn();
 
 vi.mock("./pythonInterpreter", () => ({
-  detectPythonInterpreter: (...args: unknown[]) => mockDetectPython(...args),
+  detectPythonInterpreter: (...args: unknown[]) =>
+    mockDetectPython(...args),
 }));
 
 vi.mock("./rInterpreter", () => ({
-  detectRInterpreter: (...args: unknown[]) => mockDetectR(...args),
+  detectRInterpreter: (...args: unknown[]) =>
+    mockDetectR(...args),
 }));
 
 describe("getInterpreterDefaults", () => {
+  beforeEach(() => {
+    mockDetectPython.mockReset();
+    mockDetectR.mockReset();
+  });
+
   test("returns results when both detections succeed", async () => {
     mockDetectPython.mockResolvedValue({
       config: { version: "3.11.5", packageFile: "requirements.txt", packageManager: "auto" },
