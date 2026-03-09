@@ -62,15 +62,7 @@ jobs:
             dist/**/*
   # Slack notification on failure
   slack-notification:
-    needs:
-      [
-        verify-tag,
-        build,
-        package,
-        archive,
-        upload,
-        release,
-      ]
+    needs: [verify-tag, build, package, archive, upload, release]
     if: failure()
     runs-on: ubuntu-latest
     steps:
@@ -89,15 +81,7 @@ jobs:
 
   # Slack notification when Release recovers from failure
   slack-notification-resolved:
-    needs:
-      [
-        verify-tag,
-        build,
-        package,
-        archive,
-        upload,
-        release,
-      ]
+    needs: [verify-tag, build, package, archive, upload, release]
     if: success()
     runs-on: ubuntu-latest
     steps:
