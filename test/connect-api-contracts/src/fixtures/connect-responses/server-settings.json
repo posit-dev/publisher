@@ -1,0 +1,19 @@
+{
+  "license": {
+    "allow-apis": true,
+    "current-user-execution": false,
+    "enable-launcher": false,
+    "oauth-integrations": true
+  },
+  "runtimes": ["python", "r"],
+  "git_enabled": true,
+  "git_available": true,
+  "execution_type": "native",
+  "enable_runtime_constraints": false,
+  "enable_image_management": false,
+  "default_image_selection_enabled": false,
+  "default_environment_management_selection": true,
+  "default_r_environment_management": true,
+  "default_py_environment_management": true,
+  "oauth_integrations_enabled": true
+}
