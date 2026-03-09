@@ -64,7 +64,7 @@ vi.mock("src/utils/vscode", () => ({
 }));
 
 vi.mock("src/interpreters", () => ({
-  getInterpreterDefaults: vi.fn(async () => ({
+  getInterpreterDefaults: vi.fn(() => Promise.resolve({
     python: { version: "", packageFile: "", packageManager: "" },
     preferredPythonPath: "",
     r: { version: "", packageFile: "", packageManager: "" },
