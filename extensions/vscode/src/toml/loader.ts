@@ -10,6 +10,7 @@ import {
   ContentType,
 } from "../api/types/configurations";
 import { ProductType } from "../api/types/contentRecords";
+import { AgentError } from "../api/types/error";
 import { convertKeysToCamelCase } from "./convertKeys";
 import {
   createInvalidTOMLError,
@@ -39,6 +40,9 @@ export async function loadConfigFromFile(
     projectDir,
   };
 
+  const loadError = (error: AgentError) =>
+    new ConfigurationLoadError(createConfigurationError(error, location));
+
   // Read file — let ENOENT propagate
   const content = await fs.readFile(configPath, "utf-8");
 
@@ -50,31 +54,18 @@ export async function loadConfigFromFile(
     if (err instanceof TomlError) {
       const line = err.line ?? 0;
       const column = err.column ?? 0;
-      throw new ConfigurationLoadError(
-        createConfigurationError(
-          createInvalidTOMLError(configPath, err.message, line, column),
-          location,
-        ),
+      throw loadError(
+        createInvalidTOMLError(configPath, err.message, line, column),
       );
     }
-    throw new ConfigurationLoadError(
-      createConfigurationError(
-        createInvalidTOMLError(configPath, String(err), 0, 0),
-        location,
-      ),
-    );
+    throw loadError(createInvalidTOMLError(configPath, String(err), 0, 0));
   }
 
   // Validate against JSON schema (schema uses snake_case keys, which is what TOML produces)
   const valid = validate(parsed);
   if (!valid) {
     const messages = formatValidationErrors(validate.errors ?? []);
-    throw new ConfigurationLoadError(
-      createConfigurationError(
-        createSchemaValidationError(configPath, messages),
-        location,
-      ),
-    );
+    throw loadError(createSchemaValidationError(configPath, messages));
   }
 
   // Extract leading comments from the raw file content (matches Go's readLeadingComments).
@@ -102,13 +93,10 @@ export async function loadConfigFromFile(
   // now we match Go's FromFile behavior which rejects at load time.
   if (converted.productType === ProductType.CONNECT_CLOUD) {
     if (!connectCloudSupportedTypes.has(converted.type)) {
-      throw new ConfigurationLoadError(
-        createConfigurationError(
-          createSchemaValidationError(
-            configPath,
-            `content type '${converted.type}' is not supported by Connect Cloud`,
-          ),
-          location,
+      throw loadError(
+        createSchemaValidationError(
+          configPath,
+          `content type '${converted.type}' is not supported by Connect Cloud`,
         ),
       );
     }
