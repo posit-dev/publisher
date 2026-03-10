@@ -73,9 +73,11 @@ describe("Open Connect Content", () => {
                 return false;
               }
 
-              // Look for the content GUID as a root folder in the explorer
+              // Look for the content GUID anywhere in the explorer tree.
+              // In multi-root workspace mode (code-server), the folder may
+              // appear at aria-level 2 instead of 1.
               const guidRow = $body.find(
-                `.explorer-viewlet .monaco-list-row[aria-level='1']:contains("${contentGuid}")`,
+                `.explorer-viewlet .monaco-list-row:contains("${contentGuid}")`,
               );
               return guidRow.length > 0;
             } catch {
@@ -92,7 +94,7 @@ describe("Open Connect Content", () => {
 
         // Phase 6: Expand the GUID folder and verify expected files
         cy.get(".explorer-viewlet")
-          .find('.monaco-list-row[aria-level="1"]')
+          .find(`.monaco-list-row:contains("${contentGuid}")`)
           .first()
           .then(($row) => {
             if ($row.attr("aria-expanded") === "false") {
