@@ -842,44 +842,38 @@ describe("getSettings", () => {
     installations: [{ version: "1.4.0", cluster_name: "", image_name: "" }],
   };
 
+  const urlResponseMap: Record<string, unknown> = {
+    "/__api__/v1/user": userDTO,
+    "/__api__/server_settings": general,
+    "/__api__/server_settings/applications": application,
+    "/__api__/server_settings/scheduler": scheduler,
+    "/__api__/v1/server_settings/python": python,
+    "/__api__/v1/server_settings/r": r,
+    "/__api__/v1/server_settings/quarto": quarto,
+  };
+
+  function mockSettingsRoutes() {
+    mockRequest.mockImplementation((config: { url: string }) =>
+      Promise.resolve(jsonResponse(urlResponseMap[config.url])),
+    );
+  }
+
   it("makes 7 request calls to the correct URLs", async () => {
-    mockRequest
-      .mockResolvedValueOnce(jsonResponse(userDTO))
-      .mockResolvedValueOnce(jsonResponse(general))
-      .mockResolvedValueOnce(jsonResponse(application))
-      .mockResolvedValueOnce(jsonResponse(scheduler))
-      .mockResolvedValueOnce(jsonResponse(python))
-      .mockResolvedValueOnce(jsonResponse(r))
-      .mockResolvedValueOnce(jsonResponse(quarto));
+    mockSettingsRoutes();
 
     const client = createClient();
     await client.getSettings();
 
     expect(mockRequest).toHaveBeenCalledTimes(7);
 
-    const urls = mockRequest.mock.calls.map(
-      (call: unknown[]) => (call[0] as { url: string }).url,
-    );
-    expect(urls).toEqual([
-      "/__api__/v1/user",
-      "/__api__/server_settings",
-      "/__api__/server_settings/applications",
-      "/__api__/server_settings/scheduler",
-      "/__api__/v1/server_settings/python",
-      "/__api__/v1/server_settings/r",
-      "/__api__/v1/server_settings/quarto",
-    ]);
+    const urls = mockRequest.mock.calls
+      .map((call: unknown[]) => (call[0] as { url: string }).url)
+      .sort();
+    expect(urls).toEqual(Object.keys(urlResponseMap).sort());
   });
 
   it("returns an AllSettings composite object", async () => {
-    mockRequest
-      .mockResolvedValueOnce(jsonResponse(userDTO))
-      .mockResolvedValueOnce(jsonResponse(general))
-      .mockResolvedValueOnce(jsonResponse(application))
-      .mockResolvedValueOnce(jsonResponse(scheduler))
-      .mockResolvedValueOnce(jsonResponse(python))
-      .mockResolvedValueOnce(jsonResponse(r))
-      .mockResolvedValueOnce(jsonResponse(quarto));
+    mockSettingsRoutes();
 
     const client = createClient();
     const settings = await client.getSettings();

@@ -242,35 +242,44 @@ export class ConnectAPI {
    * mirroring the Go client's GetSettings behavior.
    */
   async getSettings(): Promise<AllSettings> {
-    const { data: user } = await this.client.request<UserDTO>({
-      method: "GET",
-      url: "/__api__/v1/user",
-    });
-    const { data: general } = await this.client.request<ServerSettings>({
-      method: "GET",
-      url: "/__api__/server_settings",
-    });
-    const { data: application } =
-      await this.client.request<ApplicationSettings>({
+    const [
+      { data: user },
+      { data: general },
+      { data: application },
+      { data: scheduler },
+      { data: python },
+      { data: r },
+      { data: quarto },
+    ] = await Promise.all([
+      this.client.request<UserDTO>({
+        method: "GET",
+        url: "/__api__/v1/user",
+      }),
+      this.client.request<ServerSettings>({
+        method: "GET",
+        url: "/__api__/server_settings",
+      }),
+      this.client.request<ApplicationSettings>({
         method: "GET",
         url: "/__api__/server_settings/applications",
-      });
-    const { data: scheduler } = await this.client.request<SchedulerSettings>({
-      method: "GET",
-      url: "/__api__/server_settings/scheduler",
-    });
-    const { data: python } = await this.client.request<PyInfo>({
-      method: "GET",
-      url: "/__api__/v1/server_settings/python",
-    });
-    const { data: r } = await this.client.request<RInfo>({
-      method: "GET",
-      url: "/__api__/v1/server_settings/r",
-    });
-    const { data: quarto } = await this.client.request<QuartoInfo>({
-      method: "GET",
-      url: "/__api__/v1/server_settings/quarto",
-    });
+      }),
+      this.client.request<SchedulerSettings>({
+        method: "GET",
+        url: "/__api__/server_settings/scheduler",
+      }),
+      this.client.request<PyInfo>({
+        method: "GET",
+        url: "/__api__/v1/server_settings/python",
+      }),
+      this.client.request<RInfo>({
+        method: "GET",
+        url: "/__api__/v1/server_settings/r",
+      }),
+      this.client.request<QuartoInfo>({
+        method: "GET",
+        url: "/__api__/v1/server_settings/quarto",
+      }),
+    ]);
 
     return { general, user, application, scheduler, python, r, quarto };
   }
