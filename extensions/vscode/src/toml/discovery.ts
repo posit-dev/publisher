@@ -101,6 +101,10 @@ function relativeProjectDir(absDir: string, rootDir: string): string {
   return rel === "" ? "." : rel;
 }
 
+// Load configs from a list of file paths, returning both valid configs and
+// per-file errors. Invalid TOML or schema violations produce a ConfigurationError
+// instead of throwing, so that one broken config file doesn't prevent the rest
+// from loading. Only unexpected errors (e.g. permission denied) propagate.
 async function loadConfigsFromPaths(
   configPaths: string[],
   relDir: string,
