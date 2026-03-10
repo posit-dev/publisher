@@ -1,15 +1,9 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
 describe("Multi-Stepper Negative Cases", () => {
-  // Global setup - run once for entire test suite
+  // Global setup - run once for entire test suite (no PCC/OAuth here)
   before(() => {
     cy.initializeConnect();
-    cy.visit("/");
-    cy.getPublisherSidebarIcon().click();
-    cy.waitForPublisherIframe();
-    const user = Cypress.env("pccConfig").pcc_user_ccqa3;
-    // Set up PCC credentials programmatically (no manual login)
-    cy.setPCCCredential(user);
   });
 
   beforeEach(() => {
@@ -19,8 +13,17 @@ describe("Multi-Stepper Negative Cases", () => {
     cy.debugIframes();
   });
 
-  describe("User Cancellation Cases", () => {
-    it("OAuth error handling and cancellation scenarios", () => {
+  describe("OAuth Cancellation Cases", () => {
+    before(() => {
+      cy.visit("/");
+      cy.getPublisherSidebarIcon().click();
+      cy.waitForPublisherIframe();
+      const user = Cypress.env("pccConfig").pcc_user_ccqa3;
+      // Set up PCC credentials programmatically (no manual login)
+      cy.setPCCCredential(user);
+    });
+
+    it("OAuth error handling and cancellation scenarios @pcc", () => {
       // Tests OAuth cancellation scenarios:
       // - OAuth cancellation when adding credential (with existing credentials)
       // - OAuth cancellation from clean slate (no existing credentials)
@@ -127,7 +130,9 @@ describe("Multi-Stepper Negative Cases", () => {
       cy.expectCredentialsSectionEmpty();
       cy.expectPollingDialogGone();
     });
+  });
 
+  describe("User Cancellation Cases", () => {
     it("Deployment creation cancellation with partial input", () => {
       // Tests cancellation during deployment creation workflow
       // - Starts deployment creation flow
