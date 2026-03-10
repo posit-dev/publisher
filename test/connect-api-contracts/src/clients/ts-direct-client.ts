@@ -2,9 +2,9 @@
 
 import {
   ConnectAPI,
-  type ContentID,
-  type BundleID,
-  type TaskID,
+  ContentID,
+  BundleID,
+  TaskID,
 } from "@posit-dev/connect-api";
 
 import type {
@@ -77,7 +77,7 @@ export class TypeScriptDirectClient implements ConnectContractClient {
         return c.getCurrentUser();
 
       case Method.ContentDetails:
-        return c.contentDetails(params.contentId as ContentID);
+        return c.contentDetails(ContentID(params.contentId as string));
 
       case Method.CreateDeployment: {
         const content = await c.createDeployment(
@@ -88,53 +88,55 @@ export class TypeScriptDirectClient implements ConnectContractClient {
 
       case Method.UpdateDeployment:
         await c.updateDeployment(
-          params.contentId as ContentID,
+          ContentID(params.contentId as string),
           (params.body as Record<string, unknown>) ?? {},
         );
         return undefined;
 
       case Method.GetEnvVars:
-        return c.getEnvVars(params.contentId as ContentID);
+        return c.getEnvVars(ContentID(params.contentId as string));
 
       case Method.SetEnvVars:
         await c.setEnvVars(
-          params.contentId as ContentID,
+          ContentID(params.contentId as string),
           params.env as Record<string, string>,
         );
         return undefined;
 
       case Method.UploadBundle: {
         const bundle = await c.uploadBundle(
-          params.contentId as ContentID,
+          ContentID(params.contentId as string),
           params.bundleData as Uint8Array,
         );
         return { bundleId: bundle.id };
       }
 
       case Method.LatestBundleID: {
-        const content = await c.latestBundleId(params.contentId as ContentID);
+        const content = await c.latestBundleId(
+          ContentID(params.contentId as string),
+        );
         return { bundleId: content.bundle_id };
       }
 
       case Method.DownloadBundle:
         return c.downloadBundle(
-          params.contentId as ContentID,
-          params.bundleId as BundleID,
+          ContentID(params.contentId as string),
+          BundleID(params.bundleId as string),
         );
 
       case Method.DeployBundle: {
         const deploy = await c.deployBundle(
-          params.contentId as ContentID,
-          params.bundleId as BundleID,
+          ContentID(params.contentId as string),
+          BundleID(params.bundleId as string),
         );
         return { taskId: deploy.task_id };
       }
 
       case Method.WaitForTask:
-        return c.waitForTask(params.taskId as TaskID, 0);
+        return c.waitForTask(TaskID(params.taskId as string), 0);
 
       case Method.ValidateDeployment:
-        await c.validateDeployment(params.contentId as ContentID);
+        await c.validateDeployment(ContentID(params.contentId as string));
         return undefined;
 
       case Method.GetIntegrations:

@@ -2,13 +2,8 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ConnectAPI } from "./client.js";
-import type {
-  BundleID,
-  ContentID,
-  TaskID,
-  UserDTO,
-  ContentDetailsDTO,
-} from "./types.js";
+import { ContentID, BundleID, TaskID } from "./types.js";
+import type { UserDTO, ContentDetailsDTO } from "./types.js";
 
 // ---------------------------------------------------------------------------
 // Mock axios — simulates real axios throw behavior on non-2xx
@@ -292,7 +287,7 @@ describe("getCurrentUser", () => {
 // ---------------------------------------------------------------------------
 
 describe("contentDetails", () => {
-  const contentId = "content-guid-abc" as ContentID;
+  const contentId = ContentID("content-guid-abc");
   const detailsDTO: ContentDetailsDTO = {
     guid: contentId,
     name: "my-app",
@@ -391,7 +386,7 @@ describe("createDeployment", () => {
 // ---------------------------------------------------------------------------
 
 describe("updateDeployment", () => {
-  const contentId = "content-123" as ContentID;
+  const contentId = ContentID("content-123");
 
   it("PATCHes the content and returns void", async () => {
     mockRequest.mockResolvedValue(jsonResponse({}, 200));
@@ -424,7 +419,7 @@ describe("updateDeployment", () => {
 // ---------------------------------------------------------------------------
 
 describe("getEnvVars", () => {
-  const contentId = "content-123" as ContentID;
+  const contentId = ContentID("content-123");
 
   it("returns an array of environment variable names", async () => {
     const envNames = ["DATABASE_URL", "SECRET_KEY"];
@@ -452,7 +447,7 @@ describe("getEnvVars", () => {
 // ---------------------------------------------------------------------------
 
 describe("setEnvVars", () => {
-  const contentId = "content-123" as ContentID;
+  const contentId = ContentID("content-123");
 
   it("converts Record to [{name,value}] array in the body", async () => {
     mockRequest.mockResolvedValue({
@@ -492,7 +487,7 @@ describe("setEnvVars", () => {
 // ---------------------------------------------------------------------------
 
 describe("uploadBundle", () => {
-  const contentId = "content-123" as ContentID;
+  const contentId = ContentID("content-123");
 
   it("sends application/gzip with raw bytes and returns full BundleDTO", async () => {
     const bundleResponse = {
@@ -531,7 +526,7 @@ describe("uploadBundle", () => {
 // ---------------------------------------------------------------------------
 
 describe("latestBundleId", () => {
-  const contentId = "content-123" as ContentID;
+  const contentId = ContentID("content-123");
 
   it("returns the full content details including bundle_id", async () => {
     const responseBody = {
@@ -554,8 +549,8 @@ describe("latestBundleId", () => {
 // ---------------------------------------------------------------------------
 
 describe("downloadBundle", () => {
-  const contentId = "content-123" as ContentID;
-  const bundleId = "bundle-42" as BundleID;
+  const contentId = ContentID("content-123");
+  const bundleId = BundleID("bundle-42");
 
   it("returns a Uint8Array of the bundle data", async () => {
     const data = new Uint8Array([1, 2, 3, 4, 5]);
@@ -592,8 +587,8 @@ describe("downloadBundle", () => {
 // ---------------------------------------------------------------------------
 
 describe("deployBundle", () => {
-  const contentId = "content-123" as ContentID;
-  const bundleId = "bundle-42" as BundleID;
+  const contentId = ContentID("content-123");
+  const bundleId = BundleID("bundle-42");
 
   it("POSTs {bundle_id} and returns the full deploy output", async () => {
     const deployResponse = { task_id: "task-99" };
@@ -624,7 +619,7 @@ describe("deployBundle", () => {
 // ---------------------------------------------------------------------------
 
 describe("waitForTask", () => {
-  const taskId = "task-99" as TaskID;
+  const taskId = TaskID("task-99");
 
   it("returns the full TaskDTO when task completes without error", async () => {
     const taskResponse = {
@@ -704,7 +699,7 @@ describe("waitForTask", () => {
 // ---------------------------------------------------------------------------
 
 describe("validateDeployment", () => {
-  const contentId = "content-123" as ContentID;
+  const contentId = ContentID("content-123");
 
   it("returns void on 200", async () => {
     mockRequest.mockResolvedValue(textResponse("OK", 200));

@@ -10,6 +10,12 @@ export type TaskID = string & { readonly __brand: "TaskID" };
 export type UserID = string & { readonly __brand: "UserID" };
 export type GUID = string & { readonly __brand: "GUID" };
 
+export const ContentID = (id: string) => id as ContentID;
+export const BundleID = (id: string) => id as BundleID;
+export const TaskID = (id: string) => id as TaskID;
+export const UserID = (id: string) => id as UserID;
+export const GUID = (id: string) => id as GUID;
+
 // ---------------------------------------------------------------------------
 // Client options
 // ---------------------------------------------------------------------------
