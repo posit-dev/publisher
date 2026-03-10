@@ -180,7 +180,8 @@ export class ConnectAPI {
 
     while (true) {
       const { data: task } = await this.client.get<TaskDTO>(
-        `/__api__/v1/tasks/${taskId}?first=${firstLine}`,
+        `/__api__/v1/tasks/${taskId}`,
+        { params: { first: firstLine } },
       );
 
       if (task.finished) {

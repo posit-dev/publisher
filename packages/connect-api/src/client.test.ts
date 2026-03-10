@@ -687,10 +687,12 @@ describe("waitForTask", () => {
     await client.waitForTask(taskId, 0);
 
     expect(mockRequest).toHaveBeenCalledTimes(2);
-    const url1 = mockRequest.mock.calls[0][0].url;
-    const url2 = mockRequest.mock.calls[1][0].url;
-    expect(url1).toBe(`/__api__/v1/tasks/${taskId}?first=0`);
-    expect(url2).toBe(`/__api__/v1/tasks/${taskId}?first=3`);
+    const call1 = mockRequest.mock.calls[0][0];
+    const call2 = mockRequest.mock.calls[1][0];
+    expect(call1.url).toBe(`/__api__/v1/tasks/${taskId}`);
+    expect(call1.params).toEqual({ first: 0 });
+    expect(call2.url).toBe(`/__api__/v1/tasks/${taskId}`);
+    expect(call2.params).toEqual({ first: 3 });
   });
 });
 
