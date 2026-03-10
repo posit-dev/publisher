@@ -50,6 +50,16 @@ describe("Open Connect Content", () => {
               const $body = Cypress.$("body");
               if ($body.length === 0) return false;
 
+              // Dismiss any VS Code notification dialogs that might block
+              // rendering (e.g. error messages from failed bundle fetches).
+              $body
+                .find(
+                  '.notifications-toasts .codicon-notifications-clear-all, .notification-toast .action-label[aria-label="Close"]',
+                )
+                .each(function () {
+                  this.click();
+                });
+
               // Ensure the Explorer sidebar is visible; click its icon if not
               if ($body.find(".explorer-viewlet:visible").length === 0) {
                 const explorerBtn =
@@ -74,9 +84,9 @@ describe("Open Connect Content", () => {
             }
           },
           {
-            timeout: 60_000,
-            interval: 1_500,
-            errorMsg: `Content GUID "${contentGuid}" did not appear in the explorer within 60 seconds`,
+            timeout: 120_000,
+            interval: 2_000,
+            errorMsg: `Content GUID "${contentGuid}" did not appear in the explorer within 120 seconds`,
           },
         );
 

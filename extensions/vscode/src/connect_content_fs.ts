@@ -157,14 +157,13 @@ export class ConnectContentFileSystemProvider implements FileSystemProvider {
     logger.warn(
       `No credentials for ${normalizedServer}. Opening credential flow.`,
     );
-    await commands.executeCommand(
+    // Launch the credential dialog without awaiting it. Blocking here would
+    // stall the filesystem provider's stat() call, preventing the explorer
+    // from rendering anything until the user completes the dialog.
+    void commands.executeCommand(
       Commands.HomeView.AddCredential,
       normalizedServer,
     );
-    await state.refreshCredentials();
-    if (hasCredentialForServer(normalizedServer, state)) {
-      return normalizedServer;
-    }
     throw new Error(`No valid credentials available for ${normalizedServer}`);
   }
 
@@ -229,10 +228,14 @@ export class ConnectContentFileSystemProvider implements FileSystemProvider {
       logger.error(
         `Unable to fetch bundle ${contentGuid} for ${normalizedServerUrl}: ${message}`,
       );
-      await window.showErrorMessage(
+      // Populate the cache with an empty directory BEFORE showing the error
+      // dialog. This unblocks the filesystem provider's stat() call so the
+      // explorer can render the (empty) folder immediately instead of hanging
+      // until the user dismisses the notification.
+      contentRoots.set(rootKey, createDirectoryEntry());
+      void window.showErrorMessage(
         `Unable to open Connect content ${contentGuid}: ${message}`,
       );
-      contentRoots.set(rootKey, createDirectoryEntry());
       return;
     }
   }

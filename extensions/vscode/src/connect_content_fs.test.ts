@@ -317,4 +317,26 @@ describe("ConnectContentFileSystemProvider", () => {
       expect(mockOpenConnectContent).toHaveBeenCalledTimes(1);
     });
   });
+
+  describe("error handling", () => {
+    test("stat resolves with empty directory when bundle fetch fails", async () => {
+      mockOpenConnectContent.mockRejectedValue(new Error("network error"));
+
+      const stat = await provider.stat(
+        makeUri(testAuthority, `/${testContentGuid}`),
+      );
+
+      expect(stat.type).toBe(DIRECTORY);
+    });
+
+    test("readDirectory returns empty list when bundle fetch fails", async () => {
+      mockOpenConnectContent.mockRejectedValue(new Error("network error"));
+
+      const entries = await provider.readDirectory(
+        makeUri(testAuthority, `/${testContentGuid}`),
+      );
+
+      expect(entries).toHaveLength(0);
+    });
+  });
 });
