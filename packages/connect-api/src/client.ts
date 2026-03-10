@@ -1,5 +1,8 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
+import axios from "axios";
+import type { AxiosInstance, AxiosResponse } from "axios";
+
 import type {
   AllSettings,
   ApplicationSettings,
@@ -31,16 +34,20 @@ import {
 /**
  * TypeScript client for the Posit Connect API.
  *
- * Uses native fetch with zero runtime dependencies.
+ * Uses axios for HTTP requests.
  * Property names use snake_case to match the Connect API JSON wire format.
  */
 export class ConnectAPI {
-  private readonly url: string;
-  private readonly apiKey: string;
+  private readonly client: AxiosInstance;
 
   constructor(options: ConnectAPIOptions) {
-    this.url = options.url;
-    this.apiKey = options.apiKey;
+    this.client = axios.create({
+      baseURL: options.url,
+      headers: {
+        Authorization: `Key ${options.apiKey}`,
+      },
+      validateStatus: () => true,
+    });
   }
 
   // ---------------------------------------------------------------------------
@@ -54,24 +61,28 @@ export class ConnectAPI {
       body?: unknown;
       contentType?: string;
       rawBody?: Uint8Array;
+      responseType?: "arraybuffer";
     },
-  ): Promise<Response> {
-    const url = `${this.url}${path}`;
-    const headers: Record<string, string> = {
-      Authorization: `Key ${this.apiKey}`,
-    };
+  ): Promise<AxiosResponse> {
+    const headers: Record<string, string> = {};
 
-    let body: BodyInit | undefined;
+    let data: unknown;
     if (options?.rawBody) {
       headers["Content-Type"] =
         options.contentType ?? "application/octet-stream";
-      body = Buffer.from(options.rawBody);
+      data = options.rawBody;
     } else if (options?.body !== undefined) {
       headers["Content-Type"] = options.contentType ?? "application/json";
-      body = JSON.stringify(options.body);
+      data = options.body;
     }
 
-    return fetch(url, { method, headers, body });
+    return this.client.request({
+      method,
+      url: path,
+      headers,
+      data,
+      responseType: options?.responseType,
+    });
   }
 
   private async requestJson<T>(
@@ -80,11 +91,14 @@ export class ConnectAPI {
     options?: { body?: unknown },
   ): Promise<T> {
     const resp = await this.request(method, path, options);
-    if (!resp.ok) {
-      const body = await resp.text();
+    if (resp.status < 200 || resp.status >= 300) {
+      const body =
+        typeof resp.data === "string"
+          ? resp.data
+          : JSON.stringify(resp.data ?? "");
       throw new ConnectRequestError(resp.status, resp.statusText, body);
     }
-    return resp.json() as Promise<T>;
+    return resp.data as T;
   }
 
   // ---------------------------------------------------------------------------
@@ -101,16 +115,13 @@ export class ConnectAPI {
   }> {
     const resp = await this.request("GET", "/__api__/v1/user");
 
-    if (!resp.ok) {
-      const errorBody = (await resp.json().catch(() => ({}))) as Record<
-        string,
-        unknown
-      >;
+    if (resp.status < 200 || resp.status >= 300) {
+      const errorBody = (resp.data ?? {}) as Record<string, unknown>;
       const msg = (errorBody.error as string) ?? `HTTP ${resp.status}`;
       throw new AuthenticationError(msg);
     }
 
-    const dto = (await resp.json()) as UserDTO;
+    const dto = resp.data as UserDTO;
 
     if (dto.locked) {
       const msg = `user account ${dto.username} is locked`;
@@ -181,8 +192,11 @@ export class ConnectAPI {
         body,
       },
     );
-    if (!resp.ok) {
-      const respBody = await resp.text();
+    if (resp.status < 200 || resp.status >= 300) {
+      const respBody =
+        typeof resp.data === "string"
+          ? resp.data
+          : JSON.stringify(resp.data ?? "");
       throw new ConnectRequestError(resp.status, resp.statusText, respBody);
     }
   }
@@ -206,8 +220,11 @@ export class ConnectAPI {
       `/__api__/v1/content/${contentId}/environment`,
       { body },
     );
-    if (!resp.ok) {
-      const respBody = await resp.text();
+    if (resp.status < 200 || resp.status >= 300) {
+      const respBody =
+        typeof resp.data === "string"
+          ? resp.data
+          : JSON.stringify(resp.data ?? "");
       throw new ConnectRequestError(resp.status, resp.statusText, respBody);
     }
   }
@@ -222,11 +239,14 @@ export class ConnectAPI {
       `/__api__/v1/content/${contentId}/bundles`,
       { rawBody: data, contentType: "application/gzip" },
     );
-    if (!resp.ok) {
-      const body = await resp.text();
+    if (resp.status < 200 || resp.status >= 300) {
+      const body =
+        typeof resp.data === "string"
+          ? resp.data
+          : JSON.stringify(resp.data ?? "");
       throw new ConnectRequestError(resp.status, resp.statusText, body);
     }
-    const bundle = (await resp.json()) as { id: string };
+    const bundle = resp.data as { id: string };
     return bundle.id as BundleID;
   }
 
@@ -247,13 +267,16 @@ export class ConnectAPI {
     const resp = await this.request(
       "GET",
       `/__api__/v1/content/${contentId}/bundles/${bundleId}/download`,
+      { responseType: "arraybuffer" },
     );
-    if (!resp.ok) {
-      const body = await resp.text();
+    if (resp.status < 200 || resp.status >= 300) {
+      const body =
+        typeof resp.data === "string"
+          ? resp.data
+          : JSON.stringify(resp.data ?? "");
       throw new ConnectRequestError(resp.status, resp.statusText, body);
     }
-    const buffer = await resp.arrayBuffer();
-    return new Uint8Array(buffer);
+    return new Uint8Array(resp.data as ArrayBuffer);
   }
 
   /** Initiates deployment of a specific bundle and returns the task ID. */
@@ -306,7 +329,6 @@ export class ConnectAPI {
    */
   async validateDeployment(contentId: ContentID): Promise<void> {
     const resp = await this.request("GET", `/content/${contentId}/`);
-    await resp.text(); // consume body
     if (resp.status >= 500) {
       throw new DeploymentValidationError(contentId, resp.status);
     }
