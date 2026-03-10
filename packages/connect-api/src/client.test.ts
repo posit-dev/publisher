@@ -33,6 +33,10 @@ vi.mock("axios", () => ({
         return resp;
       },
     })),
+    isAxiosError: (err: unknown): boolean =>
+      typeof err === "object" &&
+      err !== null &&
+      (err as Record<string, unknown>).isAxiosError === true,
   },
 }));
 
