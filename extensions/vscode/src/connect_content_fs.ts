@@ -4,6 +4,7 @@ import {
   Disposable,
   EventEmitter,
   FileChangeEvent,
+  FileChangeType,
   FileStat,
   FileSystemError,
   FileSystemProvider,
@@ -125,6 +126,20 @@ export class ConnectContentFileSystemProvider implements FileSystemProvider {
 
   async readDirectory(uri: Uri): Promise<[string, FileType][]> {
     logger.info(`connect-content readDirectory ${uri.toString()}`);
+    // For root URIs, return whatever is cached immediately. If the bundle
+    // hasn't been fetched yet, return an empty list and notify VS Code to
+    // refresh the tree once the fetch completes.
+    if (isRootContentUri(uri)) {
+      const cached = contentRoots.get(uri.toString());
+      if (cached) {
+        return listDirectory(cached);
+      }
+      // Bundle not ready yet — start fetching and notify when done
+      this.ensureBundleForUri(uri).then(() => {
+        this.fileChangeEmitter.fire([{ type: FileChangeType.Changed, uri }]);
+      });
+      return [];
+    }
     const entry = await this.resolveEntry(uri);
     return listDirectory(entry);
   }
