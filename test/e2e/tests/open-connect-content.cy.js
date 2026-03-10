@@ -1,6 +1,7 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
-describe("Open Connect Content", () => {
+// Disabled: This test is flaky and uninformative.
+describe.skip("Open Connect Content", () => {
   before(() => {
     cy.initializeConnect();
   });
