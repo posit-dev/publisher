@@ -1,7 +1,7 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
 import axios from "axios";
-import type { AxiosInstance } from "axios";
+import type { AxiosInstance, AxiosResponse } from "axios";
 
 import type {
   AllSettings,
@@ -80,26 +80,24 @@ export class ConnectAPI {
   }
 
   /** Retrieves the current authenticated user without validation checks. */
-  async getCurrentUser(): Promise<UserDTO> {
-    const { data } = await this.client.get<UserDTO>("/__api__/v1/user");
-    return data;
+  async getCurrentUser(): Promise<AxiosResponse<UserDTO>> {
+    return this.client.get<UserDTO>("/__api__/v1/user");
   }
 
   /** Fetches details for a content item by ID. */
-  async contentDetails(contentId: ContentID): Promise<ContentDetailsDTO> {
-    const { data } = await this.client.get<ContentDetailsDTO>(
+  async contentDetails(
+    contentId: ContentID,
+  ): Promise<AxiosResponse<ContentDetailsDTO>> {
+    return this.client.get<ContentDetailsDTO>(
       `/__api__/v1/content/${contentId}`,
     );
-    return data;
   }
 
   /** Creates a new content item and returns the full content details. */
-  async createDeployment(body: ConnectContent): Promise<ContentDetailsDTO> {
-    const { data } = await this.client.post<ContentDetailsDTO>(
-      "/__api__/v1/content",
-      body,
-    );
-    return data;
+  async createDeployment(
+    body: ConnectContent,
+  ): Promise<AxiosResponse<ContentDetailsDTO>> {
+    return this.client.post<ContentDetailsDTO>("/__api__/v1/content", body);
   }
 
   /** Updates an existing content item. */
@@ -111,11 +109,10 @@ export class ConnectAPI {
   }
 
   /** Retrieves environment variable names for a content item. */
-  async getEnvVars(contentId: ContentID): Promise<string[]> {
-    const { data } = await this.client.get<string[]>(
+  async getEnvVars(contentId: ContentID): Promise<AxiosResponse<string[]>> {
+    return this.client.get<string[]>(
       `/__api__/v1/content/${contentId}/environment`,
     );
-    return data;
   }
 
   /** Sets environment variables for a content item. */
@@ -133,17 +130,18 @@ export class ConnectAPI {
   async uploadBundle(
     contentId: ContentID,
     bundle: Uint8Array,
-  ): Promise<BundleDTO> {
-    const { data } = await this.client.post<BundleDTO>(
+  ): Promise<AxiosResponse<BundleDTO>> {
+    return this.client.post<BundleDTO>(
       `/__api__/v1/content/${contentId}/bundles`,
       bundle,
       { headers: { "Content-Type": "application/gzip" } },
     );
-    return data;
   }
 
   /** Retrieves content details (including bundle_id) for a content item. */
-  async latestBundleId(contentId: ContentID): Promise<ContentDetailsDTO> {
+  async latestBundleId(
+    contentId: ContentID,
+  ): Promise<AxiosResponse<ContentDetailsDTO>> {
     return this.contentDetails(contentId);
   }
 
@@ -163,12 +161,11 @@ export class ConnectAPI {
   async deployBundle(
     contentId: ContentID,
     bundleId: BundleID,
-  ): Promise<DeployOutput> {
-    const { data } = await this.client.post<DeployOutput>(
+  ): Promise<AxiosResponse<DeployOutput>> {
+    return this.client.post<DeployOutput>(
       `/__api__/v1/content/${contentId}/deploy`,
       { bundle_id: bundleId },
     );
-    return data;
   }
 
   /**
@@ -210,11 +207,8 @@ export class ConnectAPI {
   }
 
   /** Retrieves OAuth integrations from the server. */
-  async getIntegrations(): Promise<Integration[]> {
-    const { data } = await this.client.get<Integration[]>(
-      "/__api__/v1/oauth/integrations",
-    );
-    return data;
+  async getIntegrations(): Promise<AxiosResponse<Integration[]>> {
+    return this.client.get<Integration[]>("/__api__/v1/oauth/integrations");
   }
 
   /**

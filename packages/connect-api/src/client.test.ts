@@ -255,9 +255,9 @@ describe("getCurrentUser", () => {
     mockRequest.mockResolvedValue(jsonResponse(dto));
 
     const client = createClient();
-    const user = await client.getCurrentUser();
+    const { data } = await client.getCurrentUser();
 
-    expect(user).toEqual(dto);
+    expect(data).toEqual(dto);
   });
 
   it("throws on non-2xx", async () => {
@@ -327,9 +327,9 @@ describe("contentDetails", () => {
     mockRequest.mockResolvedValue(jsonResponse(detailsDTO));
 
     const client = createClient();
-    const result = await client.contentDetails(contentId);
+    const { data } = await client.contentDetails(contentId);
 
-    expect(result).toEqual(detailsDTO);
+    expect(data).toEqual(detailsDTO);
   });
 
   it("uses contentId in the URL path", async () => {
@@ -364,9 +364,9 @@ describe("createDeployment", () => {
     mockRequest.mockResolvedValue(jsonResponse(responseBody));
 
     const client = createClient();
-    const result = await client.createDeployment({ name: "my-app" });
+    const { data } = await client.createDeployment({ name: "my-app" });
 
-    expect(result).toEqual(responseBody);
+    expect(data).toEqual(responseBody);
     const call = mockRequest.mock.calls[0][0];
     expect(call.url).toBe("/__api__/v1/content");
     expect(call.method).toBe("POST");
@@ -426,9 +426,9 @@ describe("getEnvVars", () => {
     mockRequest.mockResolvedValue(jsonResponse(envNames));
 
     const client = createClient();
-    const result = await client.getEnvVars(contentId);
+    const { data } = await client.getEnvVars(contentId);
 
-    expect(result).toEqual(envNames);
+    expect(data).toEqual(envNames);
   });
 
   it("calls the correct URL", async () => {
@@ -498,11 +498,11 @@ describe("uploadBundle", () => {
     };
     mockRequest.mockResolvedValue(jsonResponse(bundleResponse));
 
-    const data = new Uint8Array([0x1f, 0x8b, 0x08]);
+    const bundle = new Uint8Array([0x1f, 0x8b, 0x08]);
     const client = createClient();
-    const result = await client.uploadBundle(contentId, data);
+    const { data } = await client.uploadBundle(contentId, bundle);
 
-    expect(result).toEqual(bundleResponse);
+    expect(data).toEqual(bundleResponse);
     const call = mockRequest.mock.calls[0][0];
     expect(call.url).toBe(`/__api__/v1/content/${contentId}/bundles`);
     expect(call.method).toBe("POST");
@@ -537,10 +537,10 @@ describe("latestBundleId", () => {
     mockRequest.mockResolvedValue(jsonResponse(responseBody));
 
     const client = createClient();
-    const result = await client.latestBundleId(contentId);
+    const { data } = await client.latestBundleId(contentId);
 
-    expect(result).toEqual(responseBody);
-    expect(result.bundle_id).toBe("latest-bundle");
+    expect(data).toEqual(responseBody);
+    expect(data.bundle_id).toBe("latest-bundle");
   });
 });
 
@@ -595,9 +595,9 @@ describe("deployBundle", () => {
     mockRequest.mockResolvedValue(jsonResponse(deployResponse));
 
     const client = createClient();
-    const result = await client.deployBundle(contentId, bundleId);
+    const { data } = await client.deployBundle(contentId, bundleId);
 
-    expect(result).toEqual(deployResponse);
+    expect(data).toEqual(deployResponse);
     const call = mockRequest.mock.calls[0][0];
     expect(call.url).toBe(`/__api__/v1/content/${contentId}/deploy`);
     expect(call.method).toBe("POST");
@@ -770,9 +770,9 @@ describe("getIntegrations", () => {
     mockRequest.mockResolvedValue(jsonResponse(integrations));
 
     const client = createClient();
-    const result = await client.getIntegrations();
+    const { data } = await client.getIntegrations();
 
-    expect(result).toEqual(integrations);
+    expect(data).toEqual(integrations);
   });
 
   it("calls GET /__api__/v1/oauth/integrations", async () => {

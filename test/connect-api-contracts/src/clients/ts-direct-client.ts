@@ -74,16 +74,17 @@ export class TypeScriptDirectClient implements ConnectContractClient {
         return c.testAuthentication();
 
       case Method.GetCurrentUser:
-        return c.getCurrentUser();
+        return (await c.getCurrentUser()).data;
 
       case Method.ContentDetails:
-        return c.contentDetails(ContentID(params.contentId as string));
+        return (await c.contentDetails(ContentID(params.contentId as string)))
+          .data;
 
       case Method.CreateDeployment: {
-        const content = await c.createDeployment(
+        const { data } = await c.createDeployment(
           (params.body as Record<string, unknown>) ?? {},
         );
-        return { contentId: content.guid };
+        return { contentId: data.guid };
       }
 
       case Method.UpdateDeployment:
@@ -94,7 +95,7 @@ export class TypeScriptDirectClient implements ConnectContractClient {
         return undefined;
 
       case Method.GetEnvVars:
-        return c.getEnvVars(ContentID(params.contentId as string));
+        return (await c.getEnvVars(ContentID(params.contentId as string))).data;
 
       case Method.SetEnvVars:
         await c.setEnvVars(
@@ -104,18 +105,18 @@ export class TypeScriptDirectClient implements ConnectContractClient {
         return undefined;
 
       case Method.UploadBundle: {
-        const bundle = await c.uploadBundle(
+        const { data } = await c.uploadBundle(
           ContentID(params.contentId as string),
           params.bundleData as Uint8Array,
         );
-        return { bundleId: bundle.id };
+        return { bundleId: data.id };
       }
 
       case Method.LatestBundleID: {
-        const content = await c.latestBundleId(
+        const { data } = await c.latestBundleId(
           ContentID(params.contentId as string),
         );
-        return { bundleId: content.bundle_id };
+        return { bundleId: data.bundle_id };
       }
 
       case Method.DownloadBundle:
@@ -125,11 +126,11 @@ export class TypeScriptDirectClient implements ConnectContractClient {
         );
 
       case Method.DeployBundle: {
-        const deploy = await c.deployBundle(
+        const { data } = await c.deployBundle(
           ContentID(params.contentId as string),
           BundleID(params.bundleId as string),
         );
-        return { taskId: deploy.task_id };
+        return { taskId: data.task_id };
       }
 
       case Method.WaitForTask:
@@ -140,7 +141,7 @@ export class TypeScriptDirectClient implements ConnectContractClient {
         return undefined;
 
       case Method.GetIntegrations:
-        return c.getIntegrations();
+        return (await c.getIntegrations()).data;
 
       case Method.GetSettings:
         return c.getSettings();
