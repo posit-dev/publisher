@@ -884,7 +884,7 @@ describe("getSettings", () => {
     const client = createClient();
     const settings = await client.getSettings();
 
-    expect(settings.General).toEqual(general);
+    expect(settings.general).toEqual(general);
     expect(settings.user).toEqual(userDTO);
     expect(settings.application).toEqual(application);
     expect(settings.scheduler).toEqual(scheduler);

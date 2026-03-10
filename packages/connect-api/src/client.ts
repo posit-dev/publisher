@@ -246,7 +246,7 @@ export class ConnectAPI {
       method: "GET",
       url: "/__api__/v1/user",
     });
-    const { data: General } = await this.client.request<ServerSettings>({
+    const { data: general } = await this.client.request<ServerSettings>({
       method: "GET",
       url: "/__api__/server_settings",
     });
@@ -272,6 +272,6 @@ export class ConnectAPI {
       url: "/__api__/v1/server_settings/quarto",
     });
 
-    return { General, user, application, scheduler, python, r, quarto };
+    return { general, user, application, scheduler, python, r, quarto };
   }
 }

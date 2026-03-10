@@ -265,7 +265,7 @@ export interface QuartoInfo {
 
 /** Composite settings from all 7 server endpoints. */
 export interface AllSettings {
-  General: ServerSettings;
+  general: ServerSettings;
   user: UserDTO;
   application: ApplicationSettings;
   scheduler: SchedulerSettings;
