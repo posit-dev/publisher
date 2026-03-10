@@ -534,17 +534,6 @@ describe("latestBundleId", () => {
     expect(result).toEqual(responseBody);
     expect(result.bundle_id).toBe("latest-bundle");
   });
-
-  it("calls GET on /__api__/v1/content/:id", async () => {
-    mockRequest.mockResolvedValue(jsonResponse({ bundle_id: "b1" }));
-
-    const client = createClient();
-    await client.latestBundleId(contentId);
-
-    const call = mockRequest.mock.calls[0][0];
-    expect(call.url).toBe(`/__api__/v1/content/${contentId}`);
-    expect(call.method).toBe("GET");
-  });
 });
 
 // ---------------------------------------------------------------------------

@@ -159,11 +159,7 @@ export class ConnectAPI {
 
   /** Retrieves content details (including bundle_id) for a content item. */
   async latestBundleId(contentId: ContentID): Promise<ContentDetailsDTO> {
-    const { data } = await this.client.request<ContentDetailsDTO>({
-      method: "GET",
-      url: `/__api__/v1/content/${contentId}`,
-    });
-    return data;
+    return this.contentDetails(contentId);
   }
 
   /** Downloads a bundle archive as raw bytes. */
