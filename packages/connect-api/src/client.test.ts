@@ -250,14 +250,20 @@ describe("testAuthentication", () => {
 // ---------------------------------------------------------------------------
 
 describe("getCurrentUser", () => {
-  it("returns the full UserDTO", async () => {
+  it("maps UserDTO to simplified User with id from guid", async () => {
     const dto = validUserDTO();
     mockRequest.mockResolvedValue(jsonResponse(dto));
 
     const client = createClient();
-    const { data } = await client.getCurrentUser();
+    const user = await client.getCurrentUser();
 
-    expect(data).toEqual(dto);
+    expect(user).toEqual({
+      id: dto.guid,
+      username: dto.username,
+      first_name: dto.first_name,
+      last_name: dto.last_name,
+      email: dto.email,
+    });
   });
 
   it("throws on non-2xx", async () => {

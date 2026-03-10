@@ -21,6 +21,7 @@ import type {
   ServerSettings,
   TaskDTO,
   TaskID,
+  User,
   UserDTO,
 } from "./types.js";
 
@@ -80,8 +81,15 @@ export class ConnectAPI {
   }
 
   /** Retrieves the current authenticated user without validation checks. */
-  async getCurrentUser(): Promise<AxiosResponse<UserDTO>> {
-    return this.client.get<UserDTO>("/__api__/v1/user");
+  async getCurrentUser(): Promise<User> {
+    const { data } = await this.client.get<UserDTO>("/__api__/v1/user");
+    return {
+      id: data.guid,
+      username: data.username,
+      first_name: data.first_name,
+      last_name: data.last_name,
+      email: data.email,
+    };
   }
 
   /** Fetches details for a content item by ID. */

@@ -29,6 +29,15 @@ export interface ConnectAPIOptions {
 // User types
 // ---------------------------------------------------------------------------
 
+/** Simplified user structure common to all servers. */
+export interface User {
+  id: string;
+  username: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+}
+
 /** User DTO from the Connect API. */
 export interface UserDTO {
   guid: string;

@@ -24,5 +24,6 @@ export type {
   SchedulerSettings,
   ServerSettings,
   TaskDTO,
+  User,
   UserDTO,
 } from "./types.js";

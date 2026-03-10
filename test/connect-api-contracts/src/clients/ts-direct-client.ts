@@ -74,7 +74,7 @@ export class TypeScriptDirectClient implements ConnectContractClient {
         return c.testAuthentication();
 
       case Method.GetCurrentUser:
-        return (await c.getCurrentUser()).data;
+        return c.getCurrentUser();
 
       case Method.ContentDetails:
         return (await c.contentDetails(ContentID(params.contentId as string)))
