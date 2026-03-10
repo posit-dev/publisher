@@ -5,7 +5,7 @@ import {
   type ContentID,
   type BundleID,
   type TaskID,
-} from "@posit-dev/connect-client";
+} from "@posit-dev/connect-api";
 
 import type {
   ConnectContractClient,

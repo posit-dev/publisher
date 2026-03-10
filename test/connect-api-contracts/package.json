@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@posit-dev/connect-client": "file:../../packages/connect-client"
+    "@posit-dev/connect-api": "file:../../packages/connect-api"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

@@ -93,7 +93,7 @@ export class ConnectClient {
 
   /**
    * Validates credentials and checks user state (locked, confirmed, role).
-   * Returns `{ user, error }` instead of throwing — matches Go harness contract.
+   * Returns `{ user, error: null }` on success; throws AuthenticationError otherwise.
    */
   async testAuthentication(): Promise<{
     user: User | null;
