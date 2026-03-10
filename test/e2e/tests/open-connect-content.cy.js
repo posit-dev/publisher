@@ -31,9 +31,7 @@ describe("Open Connect Content", () => {
         const contentGuid = contentRecord.id;
 
         // Phase 4: Run "Open Connect Content" via command palette
-        cy.runCommandPaletteCommand(
-          "Posit Publisher: Open Connect Content",
-        );
+        cy.runCommandPaletteCommand("Posit Publisher: Open Connect Content");
         cy.quickInputType("Connect server URL", serverUrl);
         cy.quickInputType("Connect content GUID", contentGuid);
 
