@@ -16,29 +16,42 @@ import type {
 
 const mockRequest = vi.fn();
 
-vi.mock("axios", () => ({
-  default: {
-    create: vi.fn(() => ({
-      request: async (config: Record<string, unknown>) => {
-        const resp = await mockRequest(config);
-        const validate =
-          (config.validateStatus as ((s: number) => boolean) | undefined) ??
-          ((s: number) => s >= 200 && s < 300);
-        if (!validate(resp.status as number)) {
-          throw Object.assign(
-            new Error(`Request failed with status code ${resp.status}`),
-            { isAxiosError: true, response: resp },
-          );
-        }
-        return resp;
-      },
-    })),
-    isAxiosError: (err: unknown): boolean =>
-      typeof err === "object" &&
-      err !== null &&
-      (err as Record<string, unknown>).isAxiosError === true,
-  },
-}));
+vi.mock("axios", () => {
+  async function request(config: Record<string, unknown>) {
+    const resp = await mockRequest(config);
+    const validate =
+      (config.validateStatus as ((s: number) => boolean) | undefined) ??
+      ((s: number) => s >= 200 && s < 300);
+    if (!validate(resp.status as number)) {
+      throw Object.assign(
+        new Error(`Request failed with status code ${resp.status}`),
+        { isAxiosError: true, response: resp },
+      );
+    }
+    return resp;
+  }
+
+  return {
+    default: {
+      create: vi.fn(() => ({
+        request,
+        get: (url: string, config?: Record<string, unknown>) =>
+          request({ method: "GET", url, ...config }),
+        post: (url: string, data?: unknown, config?: Record<string, unknown>) =>
+          request({ method: "POST", url, data, ...config }),
+        patch: (
+          url: string,
+          data?: unknown,
+          config?: Record<string, unknown>,
+        ) => request({ method: "PATCH", url, data, ...config }),
+      })),
+      isAxiosError: (err: unknown): boolean =>
+        typeof err === "object" &&
+        err !== null &&
+        (err as Record<string, unknown>).isAxiosError === true,
+    },
+  };
+});
 
 // Re-import axios so we can inspect axios.create calls
 import axios from "axios";

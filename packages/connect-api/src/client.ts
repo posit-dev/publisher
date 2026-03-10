@@ -49,10 +49,7 @@ export class ConnectAPI {
   async testAuthentication(): Promise<UserDTO> {
     let data: UserDTO;
     try {
-      ({ data } = await this.client.request<UserDTO>({
-        method: "GET",
-        url: "/__api__/v1/user",
-      }));
+      ({ data } = await this.client.get<UserDTO>("/__api__/v1/user"));
     } catch (err) {
       if (axios.isAxiosError(err)) {
         const errorBody = err.response?.data;
@@ -84,29 +81,24 @@ export class ConnectAPI {
 
   /** Retrieves the current authenticated user without validation checks. */
   async getCurrentUser(): Promise<UserDTO> {
-    const { data } = await this.client.request<UserDTO>({
-      method: "GET",
-      url: "/__api__/v1/user",
-    });
+    const { data } = await this.client.get<UserDTO>("/__api__/v1/user");
     return data;
   }
 
   /** Fetches details for a content item by ID. */
   async contentDetails(contentId: ContentID): Promise<ContentDetailsDTO> {
-    const { data } = await this.client.request<ContentDetailsDTO>({
-      method: "GET",
-      url: `/__api__/v1/content/${contentId}`,
-    });
+    const { data } = await this.client.get<ContentDetailsDTO>(
+      `/__api__/v1/content/${contentId}`,
+    );
     return data;
   }
 
   /** Creates a new content item and returns the full content details. */
   async createDeployment(body: ConnectContent): Promise<ContentDetailsDTO> {
-    const { data } = await this.client.request<ContentDetailsDTO>({
-      method: "POST",
-      url: "/__api__/v1/content",
-      data: body,
-    });
+    const { data } = await this.client.post<ContentDetailsDTO>(
+      "/__api__/v1/content",
+      body,
+    );
     return data;
   }
 
@@ -115,19 +107,14 @@ export class ConnectAPI {
     contentId: ContentID,
     body: ConnectContent,
   ): Promise<void> {
-    await this.client.request({
-      method: "PATCH",
-      url: `/__api__/v1/content/${contentId}`,
-      data: body,
-    });
+    await this.client.patch(`/__api__/v1/content/${contentId}`, body);
   }
 
   /** Retrieves environment variable names for a content item. */
   async getEnvVars(contentId: ContentID): Promise<string[]> {
-    const { data } = await this.client.request<string[]>({
-      method: "GET",
-      url: `/__api__/v1/content/${contentId}/environment`,
-    });
+    const { data } = await this.client.get<string[]>(
+      `/__api__/v1/content/${contentId}/environment`,
+    );
     return data;
   }
 
@@ -136,11 +123,10 @@ export class ConnectAPI {
     contentId: ContentID,
     env: Record<string, string>,
   ): Promise<void> {
-    await this.client.request({
-      method: "PATCH",
-      url: `/__api__/v1/content/${contentId}/environment`,
-      data: Object.entries(env).map(([name, value]) => ({ name, value })),
-    });
+    await this.client.patch(
+      `/__api__/v1/content/${contentId}/environment`,
+      Object.entries(env).map(([name, value]) => ({ name, value })),
+    );
   }
 
   /** Uploads a bundle archive (gzip) for a content item. */
@@ -148,12 +134,11 @@ export class ConnectAPI {
     contentId: ContentID,
     bundle: Uint8Array,
   ): Promise<BundleDTO> {
-    const { data } = await this.client.request<BundleDTO>({
-      method: "POST",
-      url: `/__api__/v1/content/${contentId}/bundles`,
-      data: bundle,
-      headers: { "Content-Type": "application/gzip" },
-    });
+    const { data } = await this.client.post<BundleDTO>(
+      `/__api__/v1/content/${contentId}/bundles`,
+      bundle,
+      { headers: { "Content-Type": "application/gzip" } },
+    );
     return data;
   }
 
@@ -167,11 +152,10 @@ export class ConnectAPI {
     contentId: ContentID,
     bundleId: BundleID,
   ): Promise<Uint8Array> {
-    const { data } = await this.client.request<ArrayBuffer>({
-      method: "GET",
-      url: `/__api__/v1/content/${contentId}/bundles/${bundleId}/download`,
-      responseType: "arraybuffer",
-    });
+    const { data } = await this.client.get<ArrayBuffer>(
+      `/__api__/v1/content/${contentId}/bundles/${bundleId}/download`,
+      { responseType: "arraybuffer" },
+    );
     return new Uint8Array(data);
   }
 
@@ -180,11 +164,10 @@ export class ConnectAPI {
     contentId: ContentID,
     bundleId: BundleID,
   ): Promise<DeployOutput> {
-    const { data } = await this.client.request<DeployOutput>({
-      method: "POST",
-      url: `/__api__/v1/content/${contentId}/deploy`,
-      data: { bundle_id: bundleId },
-    });
+    const { data } = await this.client.post<DeployOutput>(
+      `/__api__/v1/content/${contentId}/deploy`,
+      { bundle_id: bundleId },
+    );
     return data;
   }
 
@@ -196,10 +179,9 @@ export class ConnectAPI {
     let firstLine = 0;
 
     while (true) {
-      const { data: task } = await this.client.request<TaskDTO>({
-        method: "GET",
-        url: `/__api__/v1/tasks/${taskId}?first=${firstLine}`,
-      });
+      const { data: task } = await this.client.get<TaskDTO>(
+        `/__api__/v1/tasks/${taskId}?first=${firstLine}`,
+      );
 
       if (task.finished) {
         if (task.error) {
@@ -221,19 +203,16 @@ export class ConnectAPI {
    * Status >= 500 throws; 404 and other codes are acceptable.
    */
   async validateDeployment(contentId: ContentID): Promise<void> {
-    await this.client.request({
-      method: "GET",
-      url: `/content/${contentId}/`,
-      validateStatus: (status) => status < 500,
+    await this.client.get(`/content/${contentId}/`, {
+      validateStatus: (status: number) => status < 500,
     });
   }
 
   /** Retrieves OAuth integrations from the server. */
   async getIntegrations(): Promise<Integration[]> {
-    const { data } = await this.client.request<Integration[]>({
-      method: "GET",
-      url: "/__api__/v1/oauth/integrations",
-    });
+    const { data } = await this.client.get<Integration[]>(
+      "/__api__/v1/oauth/integrations",
+    );
     return data;
   }
 
@@ -251,34 +230,15 @@ export class ConnectAPI {
       { data: r },
       { data: quarto },
     ] = await Promise.all([
-      this.client.request<UserDTO>({
-        method: "GET",
-        url: "/__api__/v1/user",
-      }),
-      this.client.request<ServerSettings>({
-        method: "GET",
-        url: "/__api__/server_settings",
-      }),
-      this.client.request<ApplicationSettings>({
-        method: "GET",
-        url: "/__api__/server_settings/applications",
-      }),
-      this.client.request<SchedulerSettings>({
-        method: "GET",
-        url: "/__api__/server_settings/scheduler",
-      }),
-      this.client.request<PyInfo>({
-        method: "GET",
-        url: "/__api__/v1/server_settings/python",
-      }),
-      this.client.request<RInfo>({
-        method: "GET",
-        url: "/__api__/v1/server_settings/r",
-      }),
-      this.client.request<QuartoInfo>({
-        method: "GET",
-        url: "/__api__/v1/server_settings/quarto",
-      }),
+      this.client.get<UserDTO>("/__api__/v1/user"),
+      this.client.get<ServerSettings>("/__api__/server_settings"),
+      this.client.get<ApplicationSettings>(
+        "/__api__/server_settings/applications",
+      ),
+      this.client.get<SchedulerSettings>("/__api__/server_settings/scheduler"),
+      this.client.get<PyInfo>("/__api__/v1/server_settings/python"),
+      this.client.get<RInfo>("/__api__/v1/server_settings/r"),
+      this.client.get<QuartoInfo>("/__api__/v1/server_settings/quarto"),
     ]);
 
     return { general, user, application, scheduler, python, r, quarto };
