@@ -193,7 +193,7 @@ export class ConnectAPI {
   async waitForTask(taskId: TaskID, pollIntervalMs = 500): Promise<TaskDTO> {
     let firstLine = 0;
 
-    for (;;) {
+    while (true) {
       const { data: task } = await this.client.request<TaskDTO>({
         method: "GET",
         url: `/__api__/v1/tasks/${taskId}?first=${firstLine}`,
