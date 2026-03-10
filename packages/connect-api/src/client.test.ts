@@ -22,9 +22,7 @@ vi.mock("axios", () => ({
       request: async (config: Record<string, unknown>) => {
         const resp = await mockRequest(config);
         const validate =
-          (config.validateStatus as
-            | ((s: number) => boolean)
-            | undefined) ??
+          (config.validateStatus as ((s: number) => boolean) | undefined) ??
           ((s: number) => s >= 200 && s < 300);
         if (!validate(resp.status as number)) {
           throw Object.assign(
@@ -333,9 +331,7 @@ describe("contentDetails", () => {
   });
 
   it("throws on non-2xx", async () => {
-    mockRequest.mockResolvedValue(
-      textResponse("not found", 404, "Not Found"),
-    );
+    mockRequest.mockResolvedValue(textResponse("not found", 404, "Not Found"));
 
     const client = createClient();
     await expect(client.contentDetails(contentId)).rejects.toThrow();
@@ -366,9 +362,7 @@ describe("createDeployment", () => {
   });
 
   it("throws on non-2xx", async () => {
-    mockRequest.mockResolvedValue(
-      textResponse("conflict", 409, "Conflict"),
-    );
+    mockRequest.mockResolvedValue(textResponse("conflict", 409, "Conflict"));
 
     const client = createClient();
     await expect(client.createDeployment({ name: "dup" })).rejects.toThrow();
@@ -432,9 +426,7 @@ describe("getEnvVars", () => {
     await client.getEnvVars(contentId);
 
     const call = mockRequest.mock.calls[0][0];
-    expect(call.url).toBe(
-      `/__api__/v1/content/${contentId}/environment`,
-    );
+    expect(call.url).toBe(`/__api__/v1/content/${contentId}/environment`);
   });
 });
 
@@ -458,9 +450,7 @@ describe("setEnvVars", () => {
     await client.setEnvVars(contentId, { FOO: "bar", BAZ: "qux" });
 
     const call = mockRequest.mock.calls[0][0];
-    expect(call.url).toBe(
-      `/__api__/v1/content/${contentId}/environment`,
-    );
+    expect(call.url).toBe(`/__api__/v1/content/${contentId}/environment`);
     expect(call.method).toBe("PATCH");
     expect(call.data).toEqual([
       { name: "FOO", value: "bar" },
@@ -584,14 +574,10 @@ describe("downloadBundle", () => {
   });
 
   it("throws on non-2xx", async () => {
-    mockRequest.mockResolvedValue(
-      textResponse("not found", 404, "Not Found"),
-    );
+    mockRequest.mockResolvedValue(textResponse("not found", 404, "Not Found"));
 
     const client = createClient();
-    await expect(
-      client.downloadBundle(contentId, bundleId),
-    ).rejects.toThrow();
+    await expect(client.downloadBundle(contentId, bundleId)).rejects.toThrow();
   });
 });
 
@@ -623,9 +609,7 @@ describe("deployBundle", () => {
     );
 
     const client = createClient();
-    await expect(
-      client.deployBundle(contentId, bundleId),
-    ).rejects.toThrow();
+    await expect(client.deployBundle(contentId, bundleId)).rejects.toThrow();
   });
 });
 
@@ -726,9 +710,7 @@ describe("validateDeployment", () => {
   });
 
   it("returns void on 404 (acceptable)", async () => {
-    mockRequest.mockResolvedValue(
-      textResponse("not found", 404, "Not Found"),
-    );
+    mockRequest.mockResolvedValue(textResponse("not found", 404, "Not Found"));
 
     const client = createClient();
     const result = await client.validateDeployment(contentId);

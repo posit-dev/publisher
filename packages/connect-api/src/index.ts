@@ -1,6 +1,6 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
-export { ConnectAPI} from "./client.js";
+export { ConnectAPI } from "./client.js";
 
 export type {
   AllSettings,

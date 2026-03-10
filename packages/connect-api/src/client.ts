@@ -190,10 +190,7 @@ export class ConnectAPI {
    * Polls for task completion.
    * @param pollIntervalMs - milliseconds between polls (default 500, pass 0 for tests)
    */
-  async waitForTask(
-    taskId: TaskID,
-    pollIntervalMs = 500,
-  ): Promise<TaskDTO> {
+  async waitForTask(taskId: TaskID, pollIntervalMs = 500): Promise<TaskDTO> {
     let firstLine = 0;
 
     for (;;) {
@@ -256,11 +253,10 @@ export class ConnectAPI {
         method: "GET",
         url: "/__api__/server_settings/applications",
       });
-    const { data: scheduler } =
-      await this.client.request<SchedulerSettings>({
-        method: "GET",
-        url: "/__api__/server_settings/scheduler",
-      });
+    const { data: scheduler } = await this.client.request<SchedulerSettings>({
+      method: "GET",
+      url: "/__api__/server_settings/scheduler",
+    });
     const { data: python } = await this.client.request<PyInfo>({
       method: "GET",
       url: "/__api__/v1/server_settings/python",
