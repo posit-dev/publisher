@@ -44,6 +44,8 @@ describe("Open Connect Content", () => {
         // workbench to be present, then polling the explorer for the content GUID.
         cy.get(".monaco-workbench", { timeout: 120_000 }).should("be.visible");
 
+        // Track the last diagnostic snapshot for the error message
+        let lastDiag = "";
         cy.waitUntil(
           () => {
             try {
@@ -73,6 +75,16 @@ describe("Open Connect Content", () => {
                 return false;
               }
 
+              // Collect diagnostic info for debugging
+              const allRows = $body
+                .find(".explorer-viewlet .monaco-list-row")
+                .map(function () {
+                  const $el = Cypress.$(this);
+                  return `[level=${$el.attr("aria-level")}] "${$el.text().substring(0, 60)}"`;
+                })
+                .get();
+              lastDiag = `rows(${allRows.length}): ${allRows.slice(0, 10).join(" | ")}`;
+
               // Look for the content GUID anywhere in the explorer tree.
               // In multi-root workspace mode (code-server), the folder may
               // appear at aria-level 2 instead of 1.
@@ -88,7 +100,8 @@ describe("Open Connect Content", () => {
           {
             timeout: 120_000,
             interval: 2_000,
-            errorMsg: `Content GUID "${contentGuid}" did not appear in the explorer within 120 seconds`,
+            errorMsg: () =>
+              `Content GUID "${contentGuid}" did not appear in the explorer within 120 seconds. Explorer state: ${lastDiag}`,
           },
         );
 
