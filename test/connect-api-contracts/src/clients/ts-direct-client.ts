@@ -80,10 +80,10 @@ export class TypeScriptDirectClient implements ConnectContractClient {
         return c.contentDetails(params.contentId as ContentID);
 
       case Method.CreateDeployment: {
-        const contentId = await c.createDeployment(
+        const content = await c.createDeployment(
           (params.body as Record<string, unknown>) ?? {},
         );
-        return { contentId };
+        return { contentId: content.guid };
       }
 
       case Method.UpdateDeployment:
@@ -104,16 +104,16 @@ export class TypeScriptDirectClient implements ConnectContractClient {
         return undefined;
 
       case Method.UploadBundle: {
-        const bundleId = await c.uploadBundle(
+        const bundle = await c.uploadBundle(
           params.contentId as ContentID,
           params.bundleData as Uint8Array,
         );
-        return { bundleId };
+        return { bundleId: bundle.id };
       }
 
       case Method.LatestBundleID: {
-        const bundleId = await c.latestBundleId(params.contentId as ContentID);
-        return { bundleId };
+        const content = await c.latestBundleId(params.contentId as ContentID);
+        return { bundleId: content.bundle_id };
       }
 
       case Method.DownloadBundle:
@@ -123,11 +123,11 @@ export class TypeScriptDirectClient implements ConnectContractClient {
         );
 
       case Method.DeployBundle: {
-        const taskId = await c.deployBundle(
+        const deploy = await c.deployBundle(
           params.contentId as ContentID,
           params.bundleId as BundleID,
         );
-        return { taskId };
+        return { taskId: deploy.task_id };
       }
 
       case Method.WaitForTask:

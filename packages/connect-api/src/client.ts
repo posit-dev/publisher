@@ -6,6 +6,7 @@ import type { AxiosInstance, AxiosResponse } from "axios";
 import type {
   AllSettings,
   ApplicationSettings,
+  BundleDTO,
   BundleID,
   ConnectAPIOptions,
   ConnectContent,
@@ -20,7 +21,6 @@ import type {
   ServerSettings,
   TaskDTO,
   TaskID,
-  User,
   UserDTO,
 } from "./types.js";
 
@@ -107,12 +107,9 @@ export class ConnectAPI {
 
   /**
    * Validates credentials and checks user state (locked, confirmed, role).
-   * Returns `{ user, error: null }` on success; throws AuthenticationError otherwise.
+   * Returns the full UserDTO on success; throws AuthenticationError otherwise.
    */
-  async testAuthentication(): Promise<{
-    user: User | null;
-    error: { msg: string } | null;
-  }> {
+  async testAuthentication(): Promise<UserDTO> {
     const resp = await this.request("GET", "/__api__/v1/user");
 
     if (resp.status < 200 || resp.status >= 300) {
@@ -138,28 +135,12 @@ export class ConnectAPI {
       throw new AuthenticationError(msg);
     }
 
-    return {
-      user: {
-        id: dto.guid,
-        username: dto.username,
-        first_name: dto.first_name,
-        last_name: dto.last_name,
-        email: dto.email,
-      },
-      error: null,
-    };
+    return dto;
   }
 
   /** Retrieves the current authenticated user without validation checks. */
-  async getCurrentUser(): Promise<User> {
-    const dto = await this.requestJson<UserDTO>("GET", "/__api__/v1/user");
-    return {
-      id: dto.guid,
-      username: dto.username,
-      first_name: dto.first_name,
-      last_name: dto.last_name,
-      email: dto.email,
-    };
+  async getCurrentUser(): Promise<UserDTO> {
+    return this.requestJson<UserDTO>("GET", "/__api__/v1/user");
   }
 
   /** Fetches details for a content item by ID. */
@@ -170,14 +151,13 @@ export class ConnectAPI {
     );
   }
 
-  /** Creates a new content item and returns its GUID. */
-  async createDeployment(body: ConnectContent): Promise<ContentID> {
-    const content = await this.requestJson<{ guid: string }>(
+  /** Creates a new content item and returns the full content details. */
+  async createDeployment(body: ConnectContent): Promise<ContentDetailsDTO> {
+    return this.requestJson<ContentDetailsDTO>(
       "POST",
       "/__api__/v1/content",
       { body },
     );
-    return content.guid as ContentID;
   }
 
   /** Updates an existing content item. */
@@ -233,7 +213,7 @@ export class ConnectAPI {
   async uploadBundle(
     contentId: ContentID,
     data: Uint8Array,
-  ): Promise<BundleID> {
+  ): Promise<BundleDTO> {
     const resp = await this.request(
       "POST",
       `/__api__/v1/content/${contentId}/bundles`,
@@ -246,17 +226,15 @@ export class ConnectAPI {
           : JSON.stringify(resp.data ?? "");
       throw new ConnectRequestError(resp.status, resp.statusText, body);
     }
-    const bundle = resp.data as { id: string };
-    return bundle.id as BundleID;
+    return resp.data as BundleDTO;
   }
 
-  /** Retrieves the latest bundle ID from a content item's details. */
-  async latestBundleId(contentId: ContentID): Promise<BundleID> {
-    const content = await this.requestJson<{ bundle_id: string }>(
+  /** Retrieves content details (including bundle_id) for a content item. */
+  async latestBundleId(contentId: ContentID): Promise<ContentDetailsDTO> {
+    return this.requestJson<ContentDetailsDTO>(
       "GET",
       `/__api__/v1/content/${contentId}`,
     );
-    return content.bundle_id as BundleID;
   }
 
   /** Downloads a bundle archive as raw bytes. */
@@ -279,17 +257,16 @@ export class ConnectAPI {
     return new Uint8Array(resp.data as ArrayBuffer);
   }
 
-  /** Initiates deployment of a specific bundle and returns the task ID. */
+  /** Initiates deployment of a specific bundle. */
   async deployBundle(
     contentId: ContentID,
     bundleId: BundleID,
-  ): Promise<TaskID> {
-    const result = await this.requestJson<DeployOutput>(
+  ): Promise<DeployOutput> {
+    return this.requestJson<DeployOutput>(
       "POST",
       `/__api__/v1/content/${contentId}/deploy`,
       { body: { bundle_id: bundleId } },
     );
-    return result.task_id as TaskID;
   }
 
   /**
@@ -299,7 +276,7 @@ export class ConnectAPI {
   async waitForTask(
     taskId: TaskID,
     pollIntervalMs = 500,
-  ): Promise<{ finished: true }> {
+  ): Promise<TaskDTO> {
     let firstLine = 0;
 
     for (;;) {
@@ -312,7 +289,7 @@ export class ConnectAPI {
         if (task.error) {
           throw new TaskError(taskId, task.error, task.code);
         }
-        return { finished: true };
+        return task;
       }
 
       firstLine = task.last;

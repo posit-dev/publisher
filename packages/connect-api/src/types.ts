@@ -23,16 +23,7 @@ export interface ConnectAPIOptions {
 // User types
 // ---------------------------------------------------------------------------
 
-/** Mapped user returned by the client (guid → id). */
-export interface User {
-  id: string;
-  username: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-}
-
-/** Raw user DTO from the Connect API. */
+/** User DTO from the Connect API. */
 export interface UserDTO {
   guid: string;
   username: string;

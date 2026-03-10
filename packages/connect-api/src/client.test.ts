@@ -147,21 +147,14 @@ describe("Authorization header", () => {
 // ---------------------------------------------------------------------------
 
 describe("testAuthentication", () => {
-  it("returns user with guid mapped to id on success", async () => {
+  it("returns the full UserDTO on success", async () => {
     const dto = validUserDTO();
     mockRequest.mockResolvedValue(jsonResponse(dto));
 
     const client = createClient();
     const result = await client.testAuthentication();
 
-    expect(result.error).toBeNull();
-    expect(result.user).toEqual({
-      id: dto.guid,
-      username: dto.username,
-      first_name: dto.first_name,
-      last_name: dto.last_name,
-      email: dto.email,
-    });
+    expect(result).toEqual(dto);
   });
 
   it("throws AuthenticationError on 401", async () => {
@@ -211,8 +204,7 @@ describe("testAuthentication", () => {
 
     const client = createClient();
     const result = await client.testAuthentication();
-    expect(result.user).not.toBeNull();
-    expect(result.error).toBeNull();
+    expect(result).toEqual(dto);
   });
 
   it("throws AuthenticationError with generic message on non-JSON error body", async () => {
@@ -230,20 +222,14 @@ describe("testAuthentication", () => {
 // ---------------------------------------------------------------------------
 
 describe("getCurrentUser", () => {
-  it("maps guid to id and returns User", async () => {
+  it("returns the full UserDTO", async () => {
     const dto = validUserDTO();
     mockRequest.mockResolvedValue(jsonResponse(dto));
 
     const client = createClient();
     const user = await client.getCurrentUser();
 
-    expect(user).toEqual({
-      id: dto.guid,
-      username: dto.username,
-      first_name: dto.first_name,
-      last_name: dto.last_name,
-      email: dto.email,
-    });
+    expect(user).toEqual(dto);
   });
 
   it("throws ConnectRequestError on non-2xx", async () => {
@@ -345,15 +331,14 @@ describe("contentDetails", () => {
 // ---------------------------------------------------------------------------
 
 describe("createDeployment", () => {
-  it("POSTs the body and returns the guid as ContentID", async () => {
-    mockRequest.mockResolvedValue(
-      jsonResponse({ guid: "new-content-guid" }),
-    );
+  it("POSTs the body and returns the full content details", async () => {
+    const responseBody = { guid: "new-content-guid", name: "my-app", title: null };
+    mockRequest.mockResolvedValue(jsonResponse(responseBody));
 
     const client = createClient();
-    const id = await client.createDeployment({ name: "my-app" });
+    const result = await client.createDeployment({ name: "my-app" });
 
-    expect(id).toBe("new-content-guid");
+    expect(result).toEqual(responseBody);
     const call = mockRequest.mock.calls[0][0];
     expect(call.url).toBe("/__api__/v1/content");
     expect(call.method).toBe("POST");
@@ -484,14 +469,15 @@ describe("setEnvVars", () => {
 describe("uploadBundle", () => {
   const contentId = "content-123" as ContentID;
 
-  it("sends application/gzip with raw bytes and returns BundleID", async () => {
-    mockRequest.mockResolvedValue(jsonResponse({ id: "bundle-42" }));
+  it("sends application/gzip with raw bytes and returns full BundleDTO", async () => {
+    const bundleResponse = { id: "bundle-42", content_guid: contentId, active: true, size: 1024 };
+    mockRequest.mockResolvedValue(jsonResponse(bundleResponse));
 
     const data = new Uint8Array([0x1f, 0x8b, 0x08]);
     const client = createClient();
-    const bundleId = await client.uploadBundle(contentId, data);
+    const result = await client.uploadBundle(contentId, data);
 
-    expect(bundleId).toBe("bundle-42");
+    expect(result).toEqual(bundleResponse);
     const call = mockRequest.mock.calls[0][0];
     expect(call.url).toBe(`/__api__/v1/content/${contentId}/bundles`);
     expect(call.method).toBe("POST");
@@ -517,15 +503,15 @@ describe("uploadBundle", () => {
 describe("latestBundleId", () => {
   const contentId = "content-123" as ContentID;
 
-  it("returns bundle_id from content details", async () => {
-    mockRequest.mockResolvedValue(
-      jsonResponse({ bundle_id: "latest-bundle" }),
-    );
+  it("returns the full content details including bundle_id", async () => {
+    const responseBody = { guid: contentId, bundle_id: "latest-bundle", name: "my-app" };
+    mockRequest.mockResolvedValue(jsonResponse(responseBody));
 
     const client = createClient();
-    const bundleId = await client.latestBundleId(contentId);
+    const result = await client.latestBundleId(contentId);
 
-    expect(bundleId).toBe("latest-bundle");
+    expect(result).toEqual(responseBody);
+    expect(result.bundle_id).toBe("latest-bundle");
   });
 
   it("calls GET on /__api__/v1/content/:id", async () => {
@@ -590,13 +576,14 @@ describe("deployBundle", () => {
   const contentId = "content-123" as ContentID;
   const bundleId = "bundle-42" as BundleID;
 
-  it("POSTs {bundle_id} and returns task_id", async () => {
-    mockRequest.mockResolvedValue(jsonResponse({ task_id: "task-99" }));
+  it("POSTs {bundle_id} and returns the full deploy output", async () => {
+    const deployResponse = { task_id: "task-99" };
+    mockRequest.mockResolvedValue(jsonResponse(deployResponse));
 
     const client = createClient();
-    const taskId = await client.deployBundle(contentId, bundleId);
+    const result = await client.deployBundle(contentId, bundleId);
 
-    expect(taskId).toBe("task-99");
+    expect(result).toEqual(deployResponse);
     const call = mockRequest.mock.calls[0][0];
     expect(call.url).toBe(`/__api__/v1/content/${contentId}/deploy`);
     expect(call.method).toBe("POST");
@@ -622,23 +609,22 @@ describe("deployBundle", () => {
 describe("waitForTask", () => {
   const taskId = "task-99" as TaskID;
 
-  it("returns {finished: true} when task completes without error", async () => {
-    mockRequest.mockResolvedValue(
-      jsonResponse({
-        id: taskId,
-        output: ["line 1"],
-        result: null,
-        finished: true,
-        code: 0,
-        error: "",
-        last: 1,
-      }),
-    );
+  it("returns the full TaskDTO when task completes without error", async () => {
+    const taskResponse = {
+      id: taskId,
+      output: ["line 1"],
+      result: null,
+      finished: true,
+      code: 0,
+      error: "",
+      last: 1,
+    };
+    mockRequest.mockResolvedValue(jsonResponse(taskResponse));
 
     const client = createClient();
     const result = await client.waitForTask(taskId, 0);
 
-    expect(result).toEqual({ finished: true });
+    expect(result).toEqual(taskResponse);
   });
 
   it("throws TaskError when task finishes with an error", async () => {

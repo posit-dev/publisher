@@ -26,7 +26,6 @@ export type {
   ServerSettings,
   TaskDTO,
   TaskID,
-  User,
   UserDTO,
   UserID,
 } from "./types.js";
