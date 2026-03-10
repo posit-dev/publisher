@@ -40,6 +40,7 @@ import {
   filterInspectionResultsToType,
   filterConfigurationsToValidAndType,
 } from "src/utils/filters";
+import { getProductType } from "src/utils/multiStepHelpers";
 import { showProgress } from "src/utils/progress";
 import { isRelativePathRoot } from "src/utils/files";
 import { newConfigFileNameFromTitle } from "src/utils/names";
@@ -461,6 +462,9 @@ export async function selectNewOrExistingConfig(
         existingNames,
       );
       selectedInspectionResult.configuration.title = state.data.title;
+      selectedInspectionResult.configuration.productType = getProductType(
+        activeDeployment.serverType,
+      );
       const newConfig = await writeConfigToFile(
         configName,
         selectedInspectionResult.projectDir,
