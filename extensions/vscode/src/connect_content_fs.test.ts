@@ -307,7 +307,11 @@ describe("ConnectContentFileSystemProvider", () => {
       ]);
       mockOpenConnectContent.mockResolvedValue({ data: bundle.buffer });
 
-      await provider.stat(makeUri(testAuthority, `/${testContentGuid}`));
+      // readDirectory triggers the full fetch, unlike stat which returns
+      // immediately for root URIs.
+      await provider.readDirectory(
+        makeUri(testAuthority, `/${testContentGuid}`),
+      );
       expect(mockOpenConnectContent).toHaveBeenCalledTimes(1);
 
       await provider.stat(makeUri(testAuthority, `/${testContentGuid}`));

@@ -109,6 +109,16 @@ export class ConnectContentFileSystemProvider implements FileSystemProvider {
 
   async stat(uri: Uri): Promise<FileStat> {
     logger.info(`connect-content stat ${uri.toString()}`);
+    // For root connect-content URIs (e.g. /{guid}), return a directory stat
+    // immediately so that updateWorkspaceFolders / openFolder can validate the
+    // workspace folder without waiting for the (potentially slow) bundle fetch.
+    // The actual bundle is fetched lazily when readDirectory() is called.
+    if (isRootContentUri(uri)) {
+      // Kick off the bundle fetch in the background so readDirectory() is faster
+      void this.ensureBundleForUri(uri);
+      const cached = contentRoots.get(uri.toString());
+      return statFromEntry(cached ?? createDirectoryEntry());
+    }
     const entry = await this.resolveEntry(uri);
     return statFromEntry(entry);
   }
@@ -319,6 +329,14 @@ function decodeAuthorityAsServerUrl(authority: string): string | null {
     return authority.replace("http@", "http://");
   }
   return `https://${authority}`;
+}
+
+// Check whether a URI points to the root of a content GUID
+// (i.e. path is "/{guid}" with no sub-path segments).
+function isRootContentUri(uri: Uri): boolean {
+  const trimmed = uri.path.replace(/^\/+/, "").replace(/\/+$/, "");
+  // Root URIs have exactly one segment (the GUID) with no slashes
+  return trimmed.length > 0 && !trimmed.includes("/");
 }
 
 function parseConnectContentUri(uri: Uri) {

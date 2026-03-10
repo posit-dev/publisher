@@ -30,12 +30,6 @@ describe("Open Connect Content", () => {
         const serverUrl = contentRecord.server_url;
         const contentGuid = contentRecord.id;
 
-        cy.log(`**Content record server_url:** ${serverUrl}`);
-        cy.log(`**Content record id (GUID):** ${contentGuid}`);
-        cy.log(
-          `**Full content record:** ${JSON.stringify(contentRecord, null, 2)}`,
-        );
-
         // Phase 4: Run "Open Connect Content" via command palette
         cy.runCommandPaletteCommand("Posit Publisher: Open Connect Content");
         cy.quickInputType("Connect server URL", serverUrl);
@@ -44,50 +38,17 @@ describe("Open Connect Content", () => {
         // Wait for the quick input to close, confirming submission
         cy.get(".quick-input-widget").should("not.be.visible");
 
-        // Log URL after command completes to verify workspace switch
-        cy.window().then((win) => {
-          cy.log(`**URL after command:** ${win.location.href}`);
-        });
-
         // Phase 5: Wait for workspace switch to complete.
         // The extension has two code paths: updateWorkspaceFolders (no reload)
         // and openFolder (full page reload). We handle both by waiting for the
         // workbench to be present, then polling the explorer for the content GUID.
         cy.get(".monaco-workbench", { timeout: 120_000 }).should("be.visible");
 
-        let pollCount = 0;
         cy.waitUntil(
           () => {
             try {
-              pollCount++;
               const $body = Cypress.$("body");
               if ($body.length === 0) return false;
-
-              // Log diagnostics every 10 polls (~20 seconds)
-              if (pollCount % 10 === 1) {
-                const url = window.location.href;
-                const notifications = $body
-                  .find(".notification-toast .notification-list-item-message")
-                  .map(function () {
-                    return Cypress.$(this).text();
-                  })
-                  .get();
-                const explorerVisible =
-                  $body.find(".explorer-viewlet:visible").length > 0;
-                const explorerRows = $body
-                  .find(".explorer-viewlet .monaco-list-row[aria-level='1']")
-                  .map(function () {
-                    return Cypress.$(this).text().substring(0, 80);
-                  })
-                  .get();
-                const quickInputVisible =
-                  $body.find(".quick-input-widget:visible").length > 0;
-
-                Cypress.log({
-                  name: "poll-debug",
-                  message: `Poll #${pollCount} | URL: ${url} | Explorer visible: ${explorerVisible} | Quick input visible: ${quickInputVisible} | Root rows: [${explorerRows.join(", ")}] | Notifications: [${notifications.join("; ")}]`,
-                });
-              }
 
               // Dismiss any VS Code notification dialogs that might block
               // rendering (e.g. error messages from failed bundle fetches).
