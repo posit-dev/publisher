@@ -47,19 +47,17 @@ export class ConnectAPI {
    * Returns the full UserDTO on success; throws on HTTP errors or invalid state.
    */
   async testAuthentication(): Promise<UserDTO> {
-    const resp = await this.client.request({
+    const { data, status } = await this.client.request<UserDTO>({
       method: "GET",
       url: "/__api__/v1/user",
       validateStatus: () => true,
     });
 
-    if (resp.status < 200 || resp.status >= 300) {
-      const errorBody = (resp.data ?? {}) as Record<string, unknown>;
-      const msg = (errorBody.error as string) ?? `HTTP ${resp.status}`;
+    if (status < 200 || status >= 300) {
+      const errorBody = ((data as unknown) ?? {}) as Record<string, unknown>;
+      const msg = (errorBody.error as string) ?? `HTTP ${status}`;
       throw new Error(msg);
     }
-
-    const data = resp.data as UserDTO;
 
     if (data.locked) {
       throw new Error(`user account ${data.username} is locked`);
