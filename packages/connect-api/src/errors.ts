@@ -1,15 +1,15 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
 /** Base error class for all Connect client errors. */
-export class ConnectClientError extends Error {
+export class ConnectAPIError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = "ConnectClientError";
+    this.name = "ConnectAPIError";
   }
 }
 
 /** HTTP request returned a non-2xx status. */
-export class ConnectRequestError extends ConnectClientError {
+export class ConnectRequestError extends ConnectAPIError {
   constructor(
     public readonly status: number,
     public readonly statusText: string,
@@ -21,7 +21,7 @@ export class ConnectRequestError extends ConnectClientError {
 }
 
 /** User account is locked, unconfirmed, or has insufficient role. */
-export class AuthenticationError extends ConnectClientError {
+export class AuthenticationError extends ConnectAPIError {
   constructor(message: string) {
     super(message);
     this.name = "AuthenticationError";
@@ -29,7 +29,7 @@ export class AuthenticationError extends ConnectClientError {
 }
 
 /** Task finished with a non-zero exit code or error message. */
-export class TaskError extends ConnectClientError {
+export class TaskError extends ConnectAPIError {
   constructor(
     public readonly taskId: string,
     public readonly errorMessage: string,
@@ -41,7 +41,7 @@ export class TaskError extends ConnectClientError {
 }
 
 /** Deployed content URL returned a 5xx status. */
-export class DeploymentValidationError extends ConnectClientError {
+export class DeploymentValidationError extends ConnectAPIError {
   constructor(
     public readonly contentId: string,
     public readonly httpStatus: number,

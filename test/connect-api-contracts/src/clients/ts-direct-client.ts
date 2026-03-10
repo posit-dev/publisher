@@ -1,7 +1,7 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
 import {
-  ConnectClient,
+  ConnectAPI,
   type ContentID,
   type BundleID,
   type TaskID,
@@ -17,18 +17,18 @@ import { Method } from "../client";
 import type { CapturedRequest } from "../mock-connect-server";
 
 /**
- * Thin adapter that wraps the production ConnectClient for contract testing.
+ * Thin adapter that wraps the production ConnectAPI for contract testing.
  * Handles mock server request capture and maps return values to the
  * contract result shapes ({ contentId }, { bundleId }, etc.).
  */
 export class TypeScriptDirectClient implements ConnectContractClient {
-  private readonly connectClient: ConnectClient;
+  private readonly connectClient: ConnectAPI;
 
   constructor(
     private connectUrl: string,
     apiKey: string,
   ) {
-    this.connectClient = new ConnectClient({ url: connectUrl, apiKey });
+    this.connectClient = new ConnectAPI({ url: connectUrl, apiKey });
   }
 
   async call(

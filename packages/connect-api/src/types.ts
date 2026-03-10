@@ -14,7 +14,7 @@ export type GUID = string & { readonly __brand: "GUID" };
 // Client options
 // ---------------------------------------------------------------------------
 
-export interface ConnectClientOptions {
+export interface ConnectAPIOptions {
   url: string;
   apiKey: string;
 }

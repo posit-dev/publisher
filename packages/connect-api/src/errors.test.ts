@@ -3,25 +3,25 @@
 import { describe, expect, it } from "vitest";
 import {
   AuthenticationError,
-  ConnectClientError,
+  ConnectAPIError,
   ConnectRequestError,
   DeploymentValidationError,
   TaskError,
 } from "./errors.js";
 
-describe("ConnectClientError", () => {
+describe("ConnectAPIError", () => {
   it("is an instance of Error", () => {
-    const err = new ConnectClientError("base error");
+    const err = new ConnectAPIError("base error");
     expect(err).toBeInstanceOf(Error);
-    expect(err.name).toBe("ConnectClientError");
+    expect(err.name).toBe("ConnectAPIError");
     expect(err.message).toBe("base error");
   });
 });
 
 describe("ConnectRequestError", () => {
-  it("extends ConnectClientError", () => {
+  it("extends ConnectAPIError", () => {
     const err = new ConnectRequestError(404, "Not Found", "page missing");
-    expect(err).toBeInstanceOf(ConnectClientError);
+    expect(err).toBeInstanceOf(ConnectAPIError);
     expect(err).toBeInstanceOf(Error);
   });
 
@@ -36,9 +36,9 @@ describe("ConnectRequestError", () => {
 });
 
 describe("AuthenticationError", () => {
-  it("extends ConnectClientError", () => {
+  it("extends ConnectAPIError", () => {
     const err = new AuthenticationError("locked");
-    expect(err).toBeInstanceOf(ConnectClientError);
+    expect(err).toBeInstanceOf(ConnectAPIError);
     expect(err).toBeInstanceOf(Error);
   });
 
@@ -50,9 +50,9 @@ describe("AuthenticationError", () => {
 });
 
 describe("TaskError", () => {
-  it("extends ConnectClientError", () => {
+  it("extends ConnectAPIError", () => {
     const err = new TaskError("task-1", "failed to build", 1);
-    expect(err).toBeInstanceOf(ConnectClientError);
+    expect(err).toBeInstanceOf(ConnectAPIError);
     expect(err).toBeInstanceOf(Error);
   });
 
@@ -67,9 +67,9 @@ describe("TaskError", () => {
 });
 
 describe("DeploymentValidationError", () => {
-  it("extends ConnectClientError", () => {
+  it("extends ConnectAPIError", () => {
     const err = new DeploymentValidationError("content-1", 502);
-    expect(err).toBeInstanceOf(ConnectClientError);
+    expect(err).toBeInstanceOf(ConnectAPIError);
     expect(err).toBeInstanceOf(Error);
   });
 

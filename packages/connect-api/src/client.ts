@@ -4,7 +4,7 @@ import type {
   AllSettings,
   ApplicationSettings,
   BundleID,
-  ConnectClientOptions,
+  ConnectAPIOptions,
   ConnectContent,
   ContentDetailsDTO,
   ContentID,
@@ -34,11 +34,11 @@ import {
  * Uses native fetch with zero runtime dependencies.
  * Property names use snake_case to match the Connect API JSON wire format.
  */
-export class ConnectClient {
+export class ConnectAPI {
   private readonly url: string;
   private readonly apiKey: string;
 
-  constructor(options: ConnectClientOptions) {
+  constructor(options: ConnectAPIOptions) {
     this.url = options.url;
     this.apiKey = options.apiKey;
   }

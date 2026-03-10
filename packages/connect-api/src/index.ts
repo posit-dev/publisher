@@ -1,13 +1,13 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
-export { ConnectClient } from "./client.js";
+export { ConnectAPI} from "./client.js";
 
 export type {
   AllSettings,
   ApplicationSettings,
   BundleDTO,
   BundleID,
-  ConnectClientOptions,
+  ConnectAPIOptions,
   ConnectContent,
   ContentDetailsDTO,
   ContentID,
@@ -33,7 +33,7 @@ export type {
 
 export {
   AuthenticationError,
-  ConnectClientError,
+  ConnectAPIError,
   ConnectRequestError,
   DeploymentValidationError,
   TaskError,

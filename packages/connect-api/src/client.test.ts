@@ -1,7 +1,7 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ConnectClient } from "./client.js";
+import { ConnectAPI } from "./client.js";
 import {
   AuthenticationError,
   ConnectRequestError,
@@ -23,8 +23,8 @@ import type {
 const BASE_URL = "https://connect.example.com";
 const API_KEY = "test-api-key-123";
 
-function createClient(): ConnectClient {
-  return new ConnectClient({ url: BASE_URL, apiKey: API_KEY });
+function createClient(): ConnectAPI {
+  return new ConnectAPI({ url: BASE_URL, apiKey: API_KEY });
 }
 
 function jsonResponse(body: unknown, status = 200, statusText = "OK"): Response {
