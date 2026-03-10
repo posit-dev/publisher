@@ -24,17 +24,10 @@ import type {
   UserDTO,
 } from "./types.js";
 
-import {
-  AuthenticationError,
-  ConnectRequestError,
-  DeploymentValidationError,
-  TaskError,
-} from "./errors.js";
-
 /**
  * TypeScript client for the Posit Connect API.
  *
- * Uses axios for HTTP requests.
+ * Uses axios for HTTP requests. Non-2xx responses throw AxiosError by default.
  * Property names use snake_case to match the Connect API JSON wire format.
  */
 export class ConnectAPI {
@@ -46,7 +39,6 @@ export class ConnectAPI {
       headers: {
         Authorization: `Key ${options.apiKey}`,
       },
-      validateStatus: () => true,
     });
   }
 
@@ -62,6 +54,7 @@ export class ConnectAPI {
       contentType?: string;
       rawBody?: Uint8Array;
       responseType?: "arraybuffer";
+      validateStatus?: (status: number) => boolean;
     },
   ): Promise<AxiosResponse> {
     const headers: Record<string, string> = {};
@@ -82,6 +75,7 @@ export class ConnectAPI {
       headers,
       data,
       responseType: options?.responseType,
+      validateStatus: options?.validateStatus,
     });
   }
 
@@ -91,13 +85,6 @@ export class ConnectAPI {
     options?: { body?: unknown },
   ): Promise<T> {
     const resp = await this.request(method, path, options);
-    if (resp.status < 200 || resp.status >= 300) {
-      const body =
-        typeof resp.data === "string"
-          ? resp.data
-          : JSON.stringify(resp.data ?? "");
-      throw new ConnectRequestError(resp.status, resp.statusText, body);
-    }
     return resp.data as T;
   }
 
@@ -107,32 +94,33 @@ export class ConnectAPI {
 
   /**
    * Validates credentials and checks user state (locked, confirmed, role).
-   * Returns the full UserDTO on success; throws AuthenticationError otherwise.
+   * Returns the full UserDTO on success; throws on HTTP errors or invalid state.
    */
   async testAuthentication(): Promise<UserDTO> {
-    const resp = await this.request("GET", "/__api__/v1/user");
+    const resp = await this.request("GET", "/__api__/v1/user", {
+      validateStatus: () => true,
+    });
 
     if (resp.status < 200 || resp.status >= 300) {
       const errorBody = (resp.data ?? {}) as Record<string, unknown>;
       const msg = (errorBody.error as string) ?? `HTTP ${resp.status}`;
-      throw new AuthenticationError(msg);
+      throw new Error(msg);
     }
 
     const dto = resp.data as UserDTO;
 
     if (dto.locked) {
-      const msg = `user account ${dto.username} is locked`;
-      throw new AuthenticationError(msg);
+      throw new Error(`user account ${dto.username} is locked`);
     }
 
     if (!dto.confirmed) {
-      const msg = `user account ${dto.username} is not confirmed`;
-      throw new AuthenticationError(msg);
+      throw new Error(`user account ${dto.username} is not confirmed`);
     }
 
     if (dto.user_role !== "publisher" && dto.user_role !== "administrator") {
-      const msg = `user account ${dto.username} with role '${dto.user_role}' does not have permission to publish content`;
-      throw new AuthenticationError(msg);
+      throw new Error(
+        `user account ${dto.username} with role '${dto.user_role}' does not have permission to publish content`,
+      );
     }
 
     return dto;
@@ -165,20 +153,7 @@ export class ConnectAPI {
     contentId: ContentID,
     body: ConnectContent,
   ): Promise<void> {
-    const resp = await this.request(
-      "PATCH",
-      `/__api__/v1/content/${contentId}`,
-      {
-        body,
-      },
-    );
-    if (resp.status < 200 || resp.status >= 300) {
-      const respBody =
-        typeof resp.data === "string"
-          ? resp.data
-          : JSON.stringify(resp.data ?? "");
-      throw new ConnectRequestError(resp.status, resp.statusText, respBody);
-    }
+    await this.request("PATCH", `/__api__/v1/content/${contentId}`, { body });
   }
 
   /** Retrieves environment variable names for a content item. */
@@ -195,18 +170,11 @@ export class ConnectAPI {
     env: Record<string, string>,
   ): Promise<void> {
     const body = Object.entries(env).map(([name, value]) => ({ name, value }));
-    const resp = await this.request(
+    await this.request(
       "PATCH",
       `/__api__/v1/content/${contentId}/environment`,
       { body },
     );
-    if (resp.status < 200 || resp.status >= 300) {
-      const respBody =
-        typeof resp.data === "string"
-          ? resp.data
-          : JSON.stringify(resp.data ?? "");
-      throw new ConnectRequestError(resp.status, resp.statusText, respBody);
-    }
   }
 
   /** Uploads a bundle archive (gzip) for a content item. */
@@ -219,13 +187,6 @@ export class ConnectAPI {
       `/__api__/v1/content/${contentId}/bundles`,
       { rawBody: data, contentType: "application/gzip" },
     );
-    if (resp.status < 200 || resp.status >= 300) {
-      const body =
-        typeof resp.data === "string"
-          ? resp.data
-          : JSON.stringify(resp.data ?? "");
-      throw new ConnectRequestError(resp.status, resp.statusText, body);
-    }
     return resp.data as BundleDTO;
   }
 
@@ -247,13 +208,6 @@ export class ConnectAPI {
       `/__api__/v1/content/${contentId}/bundles/${bundleId}/download`,
       { responseType: "arraybuffer" },
     );
-    if (resp.status < 200 || resp.status >= 300) {
-      const body =
-        typeof resp.data === "string"
-          ? resp.data
-          : JSON.stringify(resp.data ?? "");
-      throw new ConnectRequestError(resp.status, resp.statusText, body);
-    }
     return new Uint8Array(resp.data as ArrayBuffer);
   }
 
@@ -287,7 +241,7 @@ export class ConnectAPI {
 
       if (task.finished) {
         if (task.error) {
-          throw new TaskError(taskId, task.error, task.code);
+          throw new Error(task.error);
         }
         return task;
       }
@@ -302,13 +256,12 @@ export class ConnectAPI {
 
   /**
    * Validates that deployed content is reachable by hitting its content URL.
-   * Status >= 500 is an error; 404 and other codes are acceptable.
+   * Status >= 500 throws; 404 and other codes are acceptable.
    */
   async validateDeployment(contentId: ContentID): Promise<void> {
-    const resp = await this.request("GET", `/content/${contentId}/`);
-    if (resp.status >= 500) {
-      throw new DeploymentValidationError(contentId, resp.status);
-    }
+    await this.request("GET", `/content/${contentId}/`, {
+      validateStatus: (status) => status < 500,
+    });
   }
 
   /** Retrieves OAuth integrations from the server. */

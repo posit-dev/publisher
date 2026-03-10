@@ -1,14 +1,7 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { Mock } from "vitest";
 import { ConnectAPI } from "./client.js";
-import {
-  AuthenticationError,
-  ConnectRequestError,
-  DeploymentValidationError,
-  TaskError,
-} from "./errors.js";
 import type {
   BundleID,
   ContentID,
@@ -18,20 +11,32 @@ import type {
 } from "./types.js";
 
 // ---------------------------------------------------------------------------
-// Mock axios
+// Mock axios — simulates real axios throw behavior on non-2xx
 // ---------------------------------------------------------------------------
 
 const mockRequest = vi.fn();
 
-vi.mock("axios", () => {
-  return {
-    default: {
-      create: vi.fn(() => ({
-        request: mockRequest,
-      })),
-    },
-  };
-});
+vi.mock("axios", () => ({
+  default: {
+    create: vi.fn(() => ({
+      request: async (config: Record<string, unknown>) => {
+        const resp = await mockRequest(config);
+        const validate =
+          (config.validateStatus as
+            | ((s: number) => boolean)
+            | undefined) ??
+          ((s: number) => s >= 200 && s < 300);
+        if (!validate(resp.status as number)) {
+          throw Object.assign(
+            new Error(`Request failed with status code ${resp.status}`),
+            { isAxiosError: true, response: resp },
+          );
+        }
+        return resp;
+      },
+    })),
+  },
+}));
 
 // Re-import axios so we can inspect axios.create calls
 import axios from "axios";
@@ -51,7 +56,13 @@ function jsonResponse(
   body: unknown,
   status = 200,
   statusText = "OK",
-): { status: number; statusText: string; data: unknown; headers: Record<string, string>; config: object } {
+): {
+  status: number;
+  statusText: string;
+  data: unknown;
+  headers: Record<string, string>;
+  config: object;
+} {
   return {
     status,
     statusText,
@@ -65,7 +76,13 @@ function textResponse(
   body: string,
   status = 200,
   statusText = "OK",
-): { status: number; statusText: string; data: string; headers: Record<string, string>; config: object } {
+): {
+  status: number;
+  statusText: string;
+  data: string;
+  headers: Record<string, string>;
+  config: object;
+} {
   return {
     status,
     statusText,
@@ -78,8 +95,13 @@ function textResponse(
 function binaryResponse(
   data: Uint8Array,
   status = 200,
-): { status: number; statusText: string; data: ArrayBuffer; headers: Record<string, string>; config: object } {
-  // Convert Uint8Array to ArrayBuffer (axios returns ArrayBuffer with responseType: "arraybuffer")
+): {
+  status: number;
+  statusText: string;
+  data: ArrayBuffer;
+  headers: Record<string, string>;
+  config: object;
+} {
   const buffer = data.buffer.slice(
     data.byteOffset,
     data.byteOffset + data.byteLength,
@@ -157,18 +179,16 @@ describe("testAuthentication", () => {
     expect(result).toEqual(dto);
   });
 
-  it("throws AuthenticationError on 401", async () => {
+  it("throws on 401", async () => {
     mockRequest.mockResolvedValue(
       jsonResponse({ error: "Unauthorized" }, 401, "Unauthorized"),
     );
 
     const client = createClient();
-    await expect(client.testAuthentication()).rejects.toThrow(
-      AuthenticationError,
-    );
+    await expect(client.testAuthentication()).rejects.toThrow("Unauthorized");
   });
 
-  it("throws AuthenticationError when user is locked", async () => {
+  it("throws when user is locked", async () => {
     const dto = validUserDTO({ locked: true });
     mockRequest.mockResolvedValue(jsonResponse(dto));
 
@@ -178,7 +198,7 @@ describe("testAuthentication", () => {
     );
   });
 
-  it("throws AuthenticationError when user is not confirmed", async () => {
+  it("throws when user is not confirmed", async () => {
     const dto = validUserDTO({ confirmed: false });
     mockRequest.mockResolvedValue(jsonResponse(dto));
 
@@ -188,7 +208,7 @@ describe("testAuthentication", () => {
     );
   });
 
-  it("throws AuthenticationError when user is a viewer", async () => {
+  it("throws when user is a viewer", async () => {
     const dto = validUserDTO({ user_role: "viewer" });
     mockRequest.mockResolvedValue(jsonResponse(dto));
 
@@ -207,13 +227,11 @@ describe("testAuthentication", () => {
     expect(result).toEqual(dto);
   });
 
-  it("throws AuthenticationError with generic message on non-JSON error body", async () => {
+  it("throws with generic message on non-JSON error body", async () => {
     mockRequest.mockResolvedValue(textResponse("not json", 403, "Forbidden"));
 
     const client = createClient();
-    await expect(client.testAuthentication()).rejects.toThrow(
-      AuthenticationError,
-    );
+    await expect(client.testAuthentication()).rejects.toThrow("HTTP 403");
   });
 });
 
@@ -232,13 +250,13 @@ describe("getCurrentUser", () => {
     expect(user).toEqual(dto);
   });
 
-  it("throws ConnectRequestError on non-2xx", async () => {
+  it("throws on non-2xx", async () => {
     mockRequest.mockResolvedValue(
       textResponse("err", 500, "Internal Server Error"),
     );
 
     const client = createClient();
-    await expect(client.getCurrentUser()).rejects.toThrow(ConnectRequestError);
+    await expect(client.getCurrentUser()).rejects.toThrow();
   });
 
   it("calls GET /__api__/v1/user", async () => {
@@ -314,15 +332,13 @@ describe("contentDetails", () => {
     expect(call.url).toBe(`/__api__/v1/content/${contentId}`);
   });
 
-  it("throws ConnectRequestError on non-2xx", async () => {
+  it("throws on non-2xx", async () => {
     mockRequest.mockResolvedValue(
       textResponse("not found", 404, "Not Found"),
     );
 
     const client = createClient();
-    await expect(client.contentDetails(contentId)).rejects.toThrow(
-      ConnectRequestError,
-    );
+    await expect(client.contentDetails(contentId)).rejects.toThrow();
   });
 });
 
@@ -332,7 +348,11 @@ describe("contentDetails", () => {
 
 describe("createDeployment", () => {
   it("POSTs the body and returns the full content details", async () => {
-    const responseBody = { guid: "new-content-guid", name: "my-app", title: null };
+    const responseBody = {
+      guid: "new-content-guid",
+      name: "my-app",
+      title: null,
+    };
     mockRequest.mockResolvedValue(jsonResponse(responseBody));
 
     const client = createClient();
@@ -345,15 +365,13 @@ describe("createDeployment", () => {
     expect(call.data).toEqual({ name: "my-app" });
   });
 
-  it("throws ConnectRequestError on non-2xx", async () => {
+  it("throws on non-2xx", async () => {
     mockRequest.mockResolvedValue(
       textResponse("conflict", 409, "Conflict"),
     );
 
     const client = createClient();
-    await expect(client.createDeployment({ name: "dup" })).rejects.toThrow(
-      ConnectRequestError,
-    );
+    await expect(client.createDeployment({ name: "dup" })).rejects.toThrow();
   });
 });
 
@@ -378,7 +396,7 @@ describe("updateDeployment", () => {
     expect(call.method).toBe("PATCH");
   });
 
-  it("throws ConnectRequestError on non-2xx", async () => {
+  it("throws on non-2xx", async () => {
     mockRequest.mockResolvedValue(
       textResponse("bad request", 400, "Bad Request"),
     );
@@ -386,7 +404,7 @@ describe("updateDeployment", () => {
     const client = createClient();
     await expect(
       client.updateDeployment(contentId, { title: "x" }),
-    ).rejects.toThrow(ConnectRequestError);
+    ).rejects.toThrow();
   });
 });
 
@@ -450,7 +468,7 @@ describe("setEnvVars", () => {
     ]);
   });
 
-  it("throws ConnectRequestError on non-2xx", async () => {
+  it("throws on non-2xx", async () => {
     mockRequest.mockResolvedValue(
       textResponse("error", 500, "Internal Server Error"),
     );
@@ -458,7 +476,7 @@ describe("setEnvVars", () => {
     const client = createClient();
     await expect(
       client.setEnvVars(contentId, { KEY: "val" }),
-    ).rejects.toThrow(ConnectRequestError);
+    ).rejects.toThrow();
   });
 });
 
@@ -470,7 +488,12 @@ describe("uploadBundle", () => {
   const contentId = "content-123" as ContentID;
 
   it("sends application/gzip with raw bytes and returns full BundleDTO", async () => {
-    const bundleResponse = { id: "bundle-42", content_guid: contentId, active: true, size: 1024 };
+    const bundleResponse = {
+      id: "bundle-42",
+      content_guid: contentId,
+      active: true,
+      size: 1024,
+    };
     mockRequest.mockResolvedValue(jsonResponse(bundleResponse));
 
     const data = new Uint8Array([0x1f, 0x8b, 0x08]);
@@ -484,7 +507,7 @@ describe("uploadBundle", () => {
     expect(call.headers["Content-Type"]).toBe("application/gzip");
   });
 
-  it("throws ConnectRequestError on non-2xx", async () => {
+  it("throws on non-2xx", async () => {
     mockRequest.mockResolvedValue(
       textResponse("too large", 413, "Payload Too Large"),
     );
@@ -492,7 +515,7 @@ describe("uploadBundle", () => {
     const client = createClient();
     await expect(
       client.uploadBundle(contentId, new Uint8Array([1])),
-    ).rejects.toThrow(ConnectRequestError);
+    ).rejects.toThrow();
   });
 });
 
@@ -504,7 +527,11 @@ describe("latestBundleId", () => {
   const contentId = "content-123" as ContentID;
 
   it("returns the full content details including bundle_id", async () => {
-    const responseBody = { guid: contentId, bundle_id: "latest-bundle", name: "my-app" };
+    const responseBody = {
+      guid: contentId,
+      bundle_id: "latest-bundle",
+      name: "my-app",
+    };
     mockRequest.mockResolvedValue(jsonResponse(responseBody));
 
     const client = createClient();
@@ -556,7 +583,7 @@ describe("downloadBundle", () => {
     );
   });
 
-  it("throws ConnectRequestError on non-2xx", async () => {
+  it("throws on non-2xx", async () => {
     mockRequest.mockResolvedValue(
       textResponse("not found", 404, "Not Found"),
     );
@@ -564,7 +591,7 @@ describe("downloadBundle", () => {
     const client = createClient();
     await expect(
       client.downloadBundle(contentId, bundleId),
-    ).rejects.toThrow(ConnectRequestError);
+    ).rejects.toThrow();
   });
 });
 
@@ -590,7 +617,7 @@ describe("deployBundle", () => {
     expect(call.data).toEqual({ bundle_id: bundleId });
   });
 
-  it("throws ConnectRequestError on non-2xx", async () => {
+  it("throws on non-2xx", async () => {
     mockRequest.mockResolvedValue(
       textResponse("err", 500, "Internal Server Error"),
     );
@@ -598,7 +625,7 @@ describe("deployBundle", () => {
     const client = createClient();
     await expect(
       client.deployBundle(contentId, bundleId),
-    ).rejects.toThrow(ConnectRequestError);
+    ).rejects.toThrow();
   });
 });
 
@@ -627,7 +654,7 @@ describe("waitForTask", () => {
     expect(result).toEqual(taskResponse);
   });
 
-  it("throws TaskError when task finishes with an error", async () => {
+  it("throws when task finishes with an error", async () => {
     mockRequest.mockResolvedValue(
       jsonResponse({
         id: taskId,
@@ -641,12 +668,9 @@ describe("waitForTask", () => {
     );
 
     const client = createClient();
-    const err = await client
-      .waitForTask(taskId, 0)
-      .catch((e: unknown) => e);
-    expect(err).toBeInstanceOf(TaskError);
-    expect((err as TaskError).message).toMatch(/deployment failed/);
-    expect((err as TaskError).code).toBe(1);
+    await expect(client.waitForTask(taskId, 0)).rejects.toThrow(
+      "deployment failed",
+    );
   });
 
   it("polls with first= query parameter and follows last cursor", async () => {
@@ -712,26 +736,22 @@ describe("validateDeployment", () => {
     expect(result).toBeUndefined();
   });
 
-  it("throws DeploymentValidationError on 500", async () => {
+  it("throws on 500", async () => {
     mockRequest.mockResolvedValue(
       textResponse("server error", 500, "Internal Server Error"),
     );
 
     const client = createClient();
-    await expect(client.validateDeployment(contentId)).rejects.toThrow(
-      DeploymentValidationError,
-    );
+    await expect(client.validateDeployment(contentId)).rejects.toThrow();
   });
 
-  it("throws DeploymentValidationError on 502", async () => {
+  it("throws on 502", async () => {
     mockRequest.mockResolvedValue(
       textResponse("bad gateway", 502, "Bad Gateway"),
     );
 
     const client = createClient();
-    await expect(client.validateDeployment(contentId)).rejects.toThrow(
-      DeploymentValidationError,
-    );
+    await expect(client.validateDeployment(contentId)).rejects.toThrow();
   });
 
   it("calls GET /content/:id/", async () => {

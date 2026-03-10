@@ -29,11 +29,3 @@ export type {
   UserDTO,
   UserID,
 } from "./types.js";
-
-export {
-  AuthenticationError,
-  ConnectAPIError,
-  ConnectRequestError,
-  DeploymentValidationError,
-  TaskError,
-} from "./errors.js";
