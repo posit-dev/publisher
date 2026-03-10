@@ -1,7 +1,7 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
 import axios from "axios";
-import type { AxiosInstance, AxiosResponse } from "axios";
+import type { AxiosInstance } from "axios";
 
 import type {
   AllSettings,
@@ -42,62 +42,14 @@ export class ConnectAPI {
     });
   }
 
-  // ---------------------------------------------------------------------------
-  // HTTP helpers
-  // ---------------------------------------------------------------------------
-
-  private async request(
-    method: string,
-    path: string,
-    options?: {
-      body?: unknown;
-      contentType?: string;
-      rawBody?: Uint8Array;
-      responseType?: "arraybuffer";
-      validateStatus?: (status: number) => boolean;
-    },
-  ): Promise<AxiosResponse> {
-    const headers: Record<string, string> = {};
-
-    let data: unknown;
-    if (options?.rawBody) {
-      headers["Content-Type"] =
-        options.contentType ?? "application/octet-stream";
-      data = options.rawBody;
-    } else if (options?.body !== undefined) {
-      headers["Content-Type"] = options.contentType ?? "application/json";
-      data = options.body;
-    }
-
-    return this.client.request({
-      method,
-      url: path,
-      headers,
-      data,
-      responseType: options?.responseType,
-      validateStatus: options?.validateStatus,
-    });
-  }
-
-  private async requestJson<T>(
-    method: string,
-    path: string,
-    options?: { body?: unknown },
-  ): Promise<T> {
-    const resp = await this.request(method, path, options);
-    return resp.data as T;
-  }
-
-  // ---------------------------------------------------------------------------
-  // API methods
-  // ---------------------------------------------------------------------------
-
   /**
    * Validates credentials and checks user state (locked, confirmed, role).
    * Returns the full UserDTO on success; throws on HTTP errors or invalid state.
    */
   async testAuthentication(): Promise<UserDTO> {
-    const resp = await this.request("GET", "/__api__/v1/user", {
+    const resp = await this.client.request({
+      method: "GET",
+      url: "/__api__/v1/user",
       validateStatus: () => true,
     });
 
@@ -107,45 +59,51 @@ export class ConnectAPI {
       throw new Error(msg);
     }
 
-    const dto = resp.data as UserDTO;
+    const data = resp.data as UserDTO;
 
-    if (dto.locked) {
-      throw new Error(`user account ${dto.username} is locked`);
+    if (data.locked) {
+      throw new Error(`user account ${data.username} is locked`);
     }
 
-    if (!dto.confirmed) {
-      throw new Error(`user account ${dto.username} is not confirmed`);
+    if (!data.confirmed) {
+      throw new Error(`user account ${data.username} is not confirmed`);
     }
 
-    if (dto.user_role !== "publisher" && dto.user_role !== "administrator") {
+    if (data.user_role !== "publisher" && data.user_role !== "administrator") {
       throw new Error(
-        `user account ${dto.username} with role '${dto.user_role}' does not have permission to publish content`,
+        `user account ${data.username} with role '${data.user_role}' does not have permission to publish content`,
       );
     }
 
-    return dto;
+    return data;
   }
 
   /** Retrieves the current authenticated user without validation checks. */
   async getCurrentUser(): Promise<UserDTO> {
-    return this.requestJson<UserDTO>("GET", "/__api__/v1/user");
+    const { data } = await this.client.request<UserDTO>({
+      method: "GET",
+      url: "/__api__/v1/user",
+    });
+    return data;
   }
 
   /** Fetches details for a content item by ID. */
   async contentDetails(contentId: ContentID): Promise<ContentDetailsDTO> {
-    return this.requestJson<ContentDetailsDTO>(
-      "GET",
-      `/__api__/v1/content/${contentId}`,
-    );
+    const { data } = await this.client.request<ContentDetailsDTO>({
+      method: "GET",
+      url: `/__api__/v1/content/${contentId}`,
+    });
+    return data;
   }
 
   /** Creates a new content item and returns the full content details. */
   async createDeployment(body: ConnectContent): Promise<ContentDetailsDTO> {
-    return this.requestJson<ContentDetailsDTO>(
-      "POST",
-      "/__api__/v1/content",
-      { body },
-    );
+    const { data } = await this.client.request<ContentDetailsDTO>({
+      method: "POST",
+      url: "/__api__/v1/content",
+      data: body,
+    });
+    return data;
   }
 
   /** Updates an existing content item. */
@@ -153,15 +111,20 @@ export class ConnectAPI {
     contentId: ContentID,
     body: ConnectContent,
   ): Promise<void> {
-    await this.request("PATCH", `/__api__/v1/content/${contentId}`, { body });
+    await this.client.request({
+      method: "PATCH",
+      url: `/__api__/v1/content/${contentId}`,
+      data: body,
+    });
   }
 
   /** Retrieves environment variable names for a content item. */
   async getEnvVars(contentId: ContentID): Promise<string[]> {
-    return this.requestJson<string[]>(
-      "GET",
-      `/__api__/v1/content/${contentId}/environment`,
-    );
+    const { data } = await this.client.request<string[]>({
+      method: "GET",
+      url: `/__api__/v1/content/${contentId}/environment`,
+    });
+    return data;
   }
 
   /** Sets environment variables for a content item. */
@@ -169,33 +132,34 @@ export class ConnectAPI {
     contentId: ContentID,
     env: Record<string, string>,
   ): Promise<void> {
-    const body = Object.entries(env).map(([name, value]) => ({ name, value }));
-    await this.request(
-      "PATCH",
-      `/__api__/v1/content/${contentId}/environment`,
-      { body },
-    );
+    await this.client.request({
+      method: "PATCH",
+      url: `/__api__/v1/content/${contentId}/environment`,
+      data: Object.entries(env).map(([name, value]) => ({ name, value })),
+    });
   }
 
   /** Uploads a bundle archive (gzip) for a content item. */
   async uploadBundle(
     contentId: ContentID,
-    data: Uint8Array,
+    bundle: Uint8Array,
   ): Promise<BundleDTO> {
-    const resp = await this.request(
-      "POST",
-      `/__api__/v1/content/${contentId}/bundles`,
-      { rawBody: data, contentType: "application/gzip" },
-    );
-    return resp.data as BundleDTO;
+    const { data } = await this.client.request<BundleDTO>({
+      method: "POST",
+      url: `/__api__/v1/content/${contentId}/bundles`,
+      data: bundle,
+      headers: { "Content-Type": "application/gzip" },
+    });
+    return data;
   }
 
   /** Retrieves content details (including bundle_id) for a content item. */
   async latestBundleId(contentId: ContentID): Promise<ContentDetailsDTO> {
-    return this.requestJson<ContentDetailsDTO>(
-      "GET",
-      `/__api__/v1/content/${contentId}`,
-    );
+    const { data } = await this.client.request<ContentDetailsDTO>({
+      method: "GET",
+      url: `/__api__/v1/content/${contentId}`,
+    });
+    return data;
   }
 
   /** Downloads a bundle archive as raw bytes. */
@@ -203,12 +167,12 @@ export class ConnectAPI {
     contentId: ContentID,
     bundleId: BundleID,
   ): Promise<Uint8Array> {
-    const resp = await this.request(
-      "GET",
-      `/__api__/v1/content/${contentId}/bundles/${bundleId}/download`,
-      { responseType: "arraybuffer" },
-    );
-    return new Uint8Array(resp.data as ArrayBuffer);
+    const { data } = await this.client.request<ArrayBuffer>({
+      method: "GET",
+      url: `/__api__/v1/content/${contentId}/bundles/${bundleId}/download`,
+      responseType: "arraybuffer",
+    });
+    return new Uint8Array(data);
   }
 
   /** Initiates deployment of a specific bundle. */
@@ -216,11 +180,12 @@ export class ConnectAPI {
     contentId: ContentID,
     bundleId: BundleID,
   ): Promise<DeployOutput> {
-    return this.requestJson<DeployOutput>(
-      "POST",
-      `/__api__/v1/content/${contentId}/deploy`,
-      { body: { bundle_id: bundleId } },
-    );
+    const { data } = await this.client.request<DeployOutput>({
+      method: "POST",
+      url: `/__api__/v1/content/${contentId}/deploy`,
+      data: { bundle_id: bundleId },
+    });
+    return data;
   }
 
   /**
@@ -234,10 +199,10 @@ export class ConnectAPI {
     let firstLine = 0;
 
     for (;;) {
-      const task = await this.requestJson<TaskDTO>(
-        "GET",
-        `/__api__/v1/tasks/${taskId}?first=${firstLine}`,
-      );
+      const { data: task } = await this.client.request<TaskDTO>({
+        method: "GET",
+        url: `/__api__/v1/tasks/${taskId}?first=${firstLine}`,
+      });
 
       if (task.finished) {
         if (task.error) {
@@ -259,17 +224,20 @@ export class ConnectAPI {
    * Status >= 500 throws; 404 and other codes are acceptable.
    */
   async validateDeployment(contentId: ContentID): Promise<void> {
-    await this.request("GET", `/content/${contentId}/`, {
+    await this.client.request({
+      method: "GET",
+      url: `/content/${contentId}/`,
       validateStatus: (status) => status < 500,
     });
   }
 
   /** Retrieves OAuth integrations from the server. */
   async getIntegrations(): Promise<Integration[]> {
-    return this.requestJson<Integration[]>(
-      "GET",
-      "/__api__/v1/oauth/integrations",
-    );
+    const { data } = await this.client.request<Integration[]>({
+      method: "GET",
+      url: "/__api__/v1/oauth/integrations",
+    });
+    return data;
   }
 
   /**
@@ -277,31 +245,36 @@ export class ConnectAPI {
    * mirroring the Go client's GetSettings behavior.
    */
   async getSettings(): Promise<AllSettings> {
-    const user = await this.requestJson<UserDTO>("GET", "/__api__/v1/user");
-    const General = await this.requestJson<ServerSettings>(
-      "GET",
-      "/__api__/server_settings",
-    );
-    const application = await this.requestJson<ApplicationSettings>(
-      "GET",
-      "/__api__/server_settings/applications",
-    );
-    const scheduler = await this.requestJson<SchedulerSettings>(
-      "GET",
-      "/__api__/server_settings/scheduler",
-    );
-    const python = await this.requestJson<PyInfo>(
-      "GET",
-      "/__api__/v1/server_settings/python",
-    );
-    const r = await this.requestJson<RInfo>(
-      "GET",
-      "/__api__/v1/server_settings/r",
-    );
-    const quarto = await this.requestJson<QuartoInfo>(
-      "GET",
-      "/__api__/v1/server_settings/quarto",
-    );
+    const { data: user } = await this.client.request<UserDTO>({
+      method: "GET",
+      url: "/__api__/v1/user",
+    });
+    const { data: General } = await this.client.request<ServerSettings>({
+      method: "GET",
+      url: "/__api__/server_settings",
+    });
+    const { data: application } =
+      await this.client.request<ApplicationSettings>({
+        method: "GET",
+        url: "/__api__/server_settings/applications",
+      });
+    const { data: scheduler } =
+      await this.client.request<SchedulerSettings>({
+        method: "GET",
+        url: "/__api__/server_settings/scheduler",
+      });
+    const { data: python } = await this.client.request<PyInfo>({
+      method: "GET",
+      url: "/__api__/v1/server_settings/python",
+    });
+    const { data: r } = await this.client.request<RInfo>({
+      method: "GET",
+      url: "/__api__/v1/server_settings/r",
+    });
+    const { data: quarto } = await this.client.request<QuartoInfo>({
+      method: "GET",
+      url: "/__api__/v1/server_settings/quarto",
+    });
 
     return { General, user, application, scheduler, python, r, quarto };
   }
