@@ -11,24 +11,18 @@ vi.mock("child_process", () => ({
   execFile: mockExecFile,
 }));
 
-vi.mock("vscode", () => ({
-  Uri: {
-    file: (path: string) => ({ fsPath: path, path }),
-    joinPath: (base: { path: string }, ...segments: string[]) => {
-      const joined = [base.path, ...segments].join("/");
-      return { fsPath: joined, path: joined };
-    },
-  },
-  workspace: {
-    fs: {
-      stat: vi.fn(),
-    },
-  },
+let mockFileExistsResult = false;
+vi.mock("node:fs/promises", () => ({
+  access: vi.fn(() =>
+    mockFileExistsResult
+      ? Promise.resolve()
+      : Promise.reject(new Error("ENOENT")),
+  ),
 }));
 
-let mockFileExistsResult = false;
-vi.mock("src/utils/files", () => ({
-  fileExists: vi.fn(() => Promise.resolve(mockFileExistsResult)),
+// Mock getRRequires so it doesn't try to read real files
+vi.mock("./rRequires", () => ({
+  getRRequires: vi.fn(() => Promise.resolve("")),
 }));
 
 describe("detectRInterpreter", () => {

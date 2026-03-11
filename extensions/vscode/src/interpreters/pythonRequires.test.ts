@@ -5,28 +5,15 @@ import { getPythonRequires } from "./pythonRequires";
 
 const mockFiles: Record<string, string> = {};
 
-vi.mock("vscode", () => {
-  return {
-    Uri: {
-      file: (path: string) => ({ fsPath: path, path }),
-      joinPath: (base: { path: string }, ...segments: string[]) => {
-        const joined = [base.path, ...segments].join("/");
-        return { fsPath: joined, path: joined };
-      },
-    },
-    workspace: {
-      fs: {
-        readFile: vi.fn((uri: { path: string }) => {
-          const content = mockFiles[uri.path];
-          if (content === undefined) {
-            throw new Error(`File not found: ${uri.path}`);
-          }
-          return new TextEncoder().encode(content);
-        }),
-      },
-    },
-  };
-});
+vi.mock("node:fs/promises", () => ({
+  readFile: vi.fn((filePath: string) => {
+    const content = mockFiles[filePath];
+    if (content === undefined) {
+      return Promise.reject(new Error(`ENOENT: ${filePath}`));
+    }
+    return Promise.resolve(content);
+  }),
+}));
 
 function setFile(projectDir: string, filename: string, content: string) {
   mockFiles[`${projectDir}/${filename}`] = content;

@@ -1,6 +1,7 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
-import { Uri, workspace } from "vscode";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { adaptToCompatibleConstraint } from "./versionConstraints";
 
 /**
@@ -11,14 +12,12 @@ import { adaptToCompatibleConstraint } from "./versionConstraints";
  * Returns the version specification, or empty string if not found.
  */
 export async function getRRequires(projectDir: string): Promise<string> {
-  const baseUri = Uri.file(projectDir);
-
-  const fromDescription = await readDescriptionFile(baseUri);
+  const fromDescription = await readDescriptionFile(projectDir);
   if (fromDescription) {
     return fromDescription;
   }
 
-  const fromRenvLock = await readRenvLock(baseUri);
+  const fromRenvLock = await readRenvLock(projectDir);
   if (fromRenvLock) {
     return fromRenvLock;
   }
@@ -26,10 +25,9 @@ export async function getRRequires(projectDir: string): Promise<string> {
   return "";
 }
 
-async function readFileText(uri: Uri): Promise<string | null> {
+async function readFileText(filePath: string): Promise<string | null> {
   try {
-    const data = await workspace.fs.readFile(uri);
-    return new TextDecoder().decode(data);
+    return await readFile(filePath, "utf-8");
   } catch {
     return null;
   }
@@ -39,9 +37,8 @@ async function readFileText(uri: Uri): Promise<string | null> {
  * Read DESCRIPTION file and look for R version in the Depends: section.
  * Matches patterns like "R (>= 3.5.0)".
  */
-async function readDescriptionFile(baseUri: Uri): Promise<string | undefined> {
-  const fileUri = Uri.joinPath(baseUri, "DESCRIPTION");
-  const content = await readFileText(fileUri);
+async function readDescriptionFile(projectDir: string): Promise<string | undefined> {
+  const content = await readFileText(path.join(projectDir, "DESCRIPTION"));
   if (content === null) {
     return undefined;
   }
@@ -75,9 +72,8 @@ async function readDescriptionFile(baseUri: Uri): Promise<string | undefined> {
  * Read renv.lock (JSON) and extract R.Version, converting it to a
  * compatible constraint via adaptToCompatibleConstraint.
  */
-async function readRenvLock(baseUri: Uri): Promise<string | undefined> {
-  const fileUri = Uri.joinPath(baseUri, "renv.lock");
-  const content = await readFileText(fileUri);
+async function readRenvLock(projectDir: string): Promise<string | undefined> {
+  const content = await readFileText(path.join(projectDir, "renv.lock"));
   if (content === null) {
     return undefined;
   }

@@ -1,6 +1,7 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
-import { Uri, workspace } from "vscode";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { adaptPythonRequires } from "./versionConstraints";
 
 /**
@@ -12,19 +13,17 @@ import { adaptPythonRequires } from "./versionConstraints";
  * Returns the PEP 440 version specification, or empty string if not found.
  */
 export async function getPythonRequires(projectDir: string): Promise<string> {
-  const baseUri = Uri.file(projectDir);
-
-  const fromVersionFile = await readPythonVersionFile(baseUri);
+  const fromVersionFile = await readPythonVersionFile(projectDir);
   if (fromVersionFile) {
     return fromVersionFile;
   }
 
-  const fromPyProject = await readPyProjectToml(baseUri);
+  const fromPyProject = await readPyProjectToml(projectDir);
   if (fromPyProject) {
     return fromPyProject;
   }
 
-  const fromSetupCfg = await readSetupCfg(baseUri);
+  const fromSetupCfg = await readSetupCfg(projectDir);
   if (fromSetupCfg) {
     return fromSetupCfg;
   }
@@ -32,10 +31,9 @@ export async function getPythonRequires(projectDir: string): Promise<string> {
   return "";
 }
 
-async function readFileText(uri: Uri): Promise<string | null> {
+async function readFileText(filePath: string): Promise<string | null> {
   try {
-    const data = await workspace.fs.readFile(uri);
-    return new TextDecoder().decode(data);
+    return await readFile(filePath, "utf-8");
   } catch {
     return null;
   }
@@ -46,10 +44,9 @@ async function readFileText(uri: Uri): Promise<string | null> {
  * Each part is adapted through adaptPythonRequires().
  */
 async function readPythonVersionFile(
-  baseUri: Uri,
+  projectDir: string,
 ): Promise<string | undefined> {
-  const fileUri = Uri.joinPath(baseUri, ".python-version");
-  const content = await readFileText(fileUri);
+  const content = await readFileText(path.join(projectDir, ".python-version"));
   if (content === null) {
     return undefined;
   }
@@ -78,9 +75,8 @@ const requiresPythonRe = /^\s*requires-python\s*=\s*["']([^"']+)["']\s*$/m;
  * Read pyproject.toml and extract requires-python from [project] section.
  * Uses regex extraction instead of a full TOML parser.
  */
-async function readPyProjectToml(baseUri: Uri): Promise<string | undefined> {
-  const fileUri = Uri.joinPath(baseUri, "pyproject.toml");
-  const content = await readFileText(fileUri);
+async function readPyProjectToml(projectDir: string): Promise<string | undefined> {
+  const content = await readFileText(path.join(projectDir, "pyproject.toml"));
   if (content === null) {
     return undefined;
   }
@@ -97,9 +93,8 @@ async function readPyProjectToml(baseUri: Uri): Promise<string | undefined> {
  * Read setup.cfg and extract python_requires from [options] section.
  * Simple line-by-line INI parsing.
  */
-async function readSetupCfg(baseUri: Uri): Promise<string | undefined> {
-  const fileUri = Uri.joinPath(baseUri, "setup.cfg");
-  const content = await readFileText(fileUri);
+async function readSetupCfg(projectDir: string): Promise<string | undefined> {
+  const content = await readFileText(path.join(projectDir, "setup.cfg"));
   if (content === null) {
     return undefined;
   }

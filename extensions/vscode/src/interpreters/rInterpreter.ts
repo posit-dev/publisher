@@ -1,9 +1,9 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
 import { execFile } from "child_process";
-import { Uri } from "vscode";
+import { access } from "node:fs/promises";
+import path from "node:path";
 import { RConfig } from "src/api/types/configurations";
-import { fileExists } from "src/utils/files";
 import { getRRequires } from "./rRequires";
 
 const DEFAULT_RENV_LOCKFILE = "renv.lock";
@@ -43,8 +43,9 @@ export async function detectRInterpreter(
 
   // Resolve the renv lockfile path
   const lockfilePath = await resolveRenvLockfile(preferredPath!, projectDir);
-  const lockfileUri = Uri.joinPath(Uri.file(projectDir), lockfilePath);
-  const lockfilePresent = await fileExists(lockfileUri);
+  const lockfilePresent = await fileExistsAt(
+    path.join(projectDir, lockfilePath),
+  );
   const packageFile = lockfilePresent ? lockfilePath : "";
 
   // Read R version requirements from project metadata
@@ -114,6 +115,15 @@ async function resolveRenvLockfile(
  * Get the renv lockfile path from R by running renv::paths$lockfile().
  * Returns the absolute path or empty string on failure.
  */
+async function fileExistsAt(filePath: string): Promise<boolean> {
+  try {
+    await access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function getRenvLockfileFromR(
   rPath: string,
   cwd: string,
