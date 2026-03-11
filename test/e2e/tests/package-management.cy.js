@@ -37,10 +37,12 @@ describe("Package Management Section", () => {
       },
     );
 
-    // Verify the Python Packages section exists
-    cy.findInPublisherWebview('[data-automation="python-packages"]').should(
-      "exist",
-    );
+    // Verify the Python Packages section exists (loads asynchronously)
+    cy.retryWithBackoff(
+      () => cy.publisherWebview().find('[data-automation="python-packages"]'),
+      10,
+      1000,
+    ).should("exist");
 
     // Verify fastapi appears in the package list
     cy.findInPublisherWebview('[data-automation="python-packages"]').should(

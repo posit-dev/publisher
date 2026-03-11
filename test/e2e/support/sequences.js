@@ -36,14 +36,29 @@ Cypress.Commands.add(
       }
     });
 
-    // expand the subdirectory
+    // expand the subdirectory and wait for contents to be visible
     if (projectDir !== ".") {
-      cy.get(".explorer-viewlet").then(($explorer) => {
-        const target = $explorer.find(`[aria-label="${projectDir}"]`);
-        if (target.length > 0) {
-          cy.wrap(target).click();
-        }
-      });
+      cy.retryWithBackoff(
+        () =>
+          cy.get(".explorer-viewlet").then(($explorer) => {
+            const target = $explorer.find(`[aria-label="${projectDir}"]`);
+            if (target.length > 0) {
+              // Click to expand if not already expanded
+              const isExpanded = target.attr("aria-expanded") === "true";
+              if (!isExpanded) {
+                cy.wrap(target).click();
+              }
+              // Check if the entrypoint file is now visible inside
+              const entrypoint = $explorer.find(
+                `[aria-label="${entrypointFile}"]`,
+              );
+              return entrypoint.length > 0 ? entrypoint : Cypress.$();
+            }
+            return Cypress.$();
+          }),
+        10,
+        700,
+      );
     }
 
     // open the entrypoint file
@@ -53,9 +68,11 @@ Cypress.Commands.add(
       .dblclick();
 
     // confirm that the file got opened in a tab
-    cy.get(".tabs-container")
-      .find(`[aria-label="${entrypointFile}"]`)
-      .should("be.visible");
+    cy.retryWithBackoff(
+      () => cy.get(".tabs-container").find(`[aria-label="${entrypointFile}"]`),
+      10,
+      700,
+    ).should("be.visible");
 
     // activate the publisher extension
     cy.getPublisherSidebarIcon().click();

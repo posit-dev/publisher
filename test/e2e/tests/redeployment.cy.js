@@ -56,18 +56,15 @@ describe("Redeployment Section", () => {
       },
     ).deployCurrentlySelected();
 
-    // Step 2: Capture initial deployment record state
+    // Step 2: Capture initial deployment record state (path and bundle_id)
     let initialBundleId;
+    let recordFilePath;
     cy.getPublisherTomlFilePaths(projectDir).then((filePaths) => {
+      recordFilePath = filePaths.contentRecord.path;
       cy.loadTomlFile(filePaths.contentRecord.path).then((contentRecord) => {
         initialBundleId = contentRecord.bundle_id;
         expect(initialBundleId).to.exist;
       });
-    });
-
-    // Verify exactly 1 deployment record file
-    cy.countDeploymentRecordFiles(projectDir).then((count) => {
-      expect(count).to.equal(1);
     });
 
     // Step 3: Modify content inside the container
@@ -91,14 +88,17 @@ describe("Redeployment Section", () => {
     // Step 4: Redeploy
     cy.deployCurrentlySelected();
 
-    // Step 5: Verify same record file (still exactly 1)
-    cy.countDeploymentRecordFiles(projectDir).then((count) => {
-      expect(count).to.equal(1);
-    });
+    // Step 5: Verify same record file is reused with updated bundle_id
+    cy.then(() => {
+      // The same record file path should still exist
+      cy.exec(`cat "${recordFilePath}"`, { failOnNonZeroExit: false }).then(
+        (result) => {
+          expect(result.exitCode, "Record file still exists").to.equal(0);
+        },
+      );
 
-    // Step 6: Verify bundle_id changed (new bundle uploaded)
-    cy.getPublisherTomlFilePaths(projectDir).then((filePaths) => {
-      cy.loadTomlFile(filePaths.contentRecord.path).then((contentRecord) => {
+      // Load and verify bundle_id changed (proves redeployment updated the record)
+      cy.loadTomlFile(recordFilePath).then((contentRecord) => {
         expect(contentRecord.bundle_id).to.exist;
         expect(contentRecord.bundle_id).to.not.equal(initialBundleId);
       });

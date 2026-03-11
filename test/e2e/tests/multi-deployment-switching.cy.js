@@ -54,10 +54,18 @@ describe("Multi-Deployment Switching Section", () => {
 
     cy.get(".quick-input-widget").should("be.visible");
     cy.get(".quick-input-titlebar").should("have.text", "Select Deployment");
-    cy.get(".quick-input-list")
-      .find('[aria-label*="Create a New Deployment"]')
-      .should("be.visible")
-      .click();
+
+    // Wait for list items to populate before clicking
+    cy.retryWithBackoff(
+      () =>
+        cy
+          .get(".quick-input-list")
+          .find('[aria-label*="Create a New Deployment"]'),
+      10,
+      700,
+    ).then(($el) => {
+      cy.wrap($el).should("be.visible").click();
+    });
 
     // Select entrypoint for second deployment
     cy.retryWithBackoff(
@@ -130,10 +138,14 @@ describe("Multi-Deployment Switching Section", () => {
     cy.get(".quick-input-titlebar").should("have.text", "Select Deployment");
 
     // Select the first deployment (static-multi-test)
-    cy.get(".quick-input-list")
-      .find('[aria-label*="static-multi-test"]')
-      .should("be.visible")
-      .click();
+    cy.retryWithBackoff(
+      () =>
+        cy.get(".quick-input-list").find('[aria-label*="static-multi-test"]'),
+      10,
+      700,
+    ).then(($el) => {
+      cy.wrap($el).should("be.visible").click();
+    });
 
     // Step 6: Verify first deployment is shown again
     cy.findInPublisherWebview('[data-automation="entrypoint-label"]').should(
