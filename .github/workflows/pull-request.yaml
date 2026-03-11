@@ -2,6 +2,11 @@ name: Pull Request
 on:
   pull_request:
   workflow_dispatch:
+    inputs:
+      debug_cypress:
+        description: "Enable Cypress debug mode (videos, extra logs)"
+        type: boolean
+        default: false
 permissions:
   contents: read
   id-token: write # Required for upload.yaml AWS OIDC authentication
@@ -120,6 +125,8 @@ jobs:
       !contains(needs.*.result, 'failure') &&
       !contains(needs.*.result, 'cancelled')
     uses: ./.github/workflows/e2e.yaml
+    with:
+      debug_cypress: ${{ inputs.debug_cypress || false }}
     secrets:
       CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
       CONNECT_LICENSE_FILE: ${{ secrets.CONNECT_LICENSE_FILE }}

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed configuration schema to use `auth_type` (snake_case) for integration requests, matching the format the extension actually produces. Added strict property validation to integration request items. (#3651)
+
 ## [1.36.0]
 
 ### Fixed

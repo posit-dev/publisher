@@ -36,6 +36,12 @@ import {
   isErrCannotBackupCredentialsFile,
   errCannotBackupCredentialsFileMessage,
 } from "src/utils/errorTypes";
+import {
+  loadConfiguration,
+  loadAllConfigurationsRecursive,
+  ConfigurationLoadError,
+} from "src/toml";
+import * as workspaces from "src/workspaces";
 import { DeploymentSelector, SelectionState } from "src/types/shared";
 import { LocalState, Views } from "./constants";
 import { getPythonInterpreterPath, getRInterpreterPath } from "./utils/vscode";
@@ -233,37 +239,50 @@ export class PublisherState implements Disposable {
     }
     // if not found, then retrieve it and add it to our cache.
     try {
+      const root = workspaces.path();
+      if (!root) {
+        return undefined;
+      }
+      const cfg = await loadConfiguration(
+        contentRecord.configurationName,
+        contentRecord.projectDir,
+        root,
+      );
+
       const api = await useApi();
       const python = await getPythonInterpreterPath();
       const r = await getRInterpreterPath();
-
-      const response = await api.configurations.get(
-        contentRecord.configurationName,
-        contentRecord.projectDir,
-      );
       const defaults = await api.interpreters.get(
         contentRecord.projectDir,
         r,
         python,
       );
-      const cfg = UpdateConfigWithDefaults(response.data, defaults.data);
+      const updated = UpdateConfigWithDefaults(cfg, defaults.data);
       // its not foolproof, but it may help
-      if (!this.findConfig(cfg.configurationName, cfg.projectDir)) {
-        this.configurations.push(cfg);
+      if (!this.findConfig(updated.configurationName, updated.projectDir)) {
+        this.configurations.push(updated);
       }
-      return cfg;
+      return updated;
     } catch (error: unknown) {
-      const code = getStatusFromError(error);
-      if (code !== 404) {
-        // 400 is expected when doesn't exist on disk
-        const summary = getSummaryStringFromError(
-          "getSelectedConfiguration, contentRecords.get",
-          error,
-        );
-        window.showInformationMessage(
-          `Unable to retrieve deployment configuration: ${summary}`,
-        );
+      // ENOENT is expected when file doesn't exist on disk
+      if (
+        error instanceof Error &&
+        "code" in error &&
+        error.code === "ENOENT"
+      ) {
+        return undefined;
       }
+      // ConfigurationLoadError means the file exists but is invalid
+      if (error instanceof ConfigurationLoadError) {
+        return undefined;
+      }
+      const summary = getSummaryStringFromError(
+        "getSelectedConfiguration",
+        error,
+      );
+      window.showInformationMessage(
+        `Unable to retrieve deployment configuration: ${summary}`,
+      );
       return undefined;
     }
   }
@@ -308,16 +327,19 @@ export class PublisherState implements Disposable {
         "Refreshing Configurations",
         Views.HomeView,
         async () => {
+          const root = workspaces.path();
+          if (!root) {
+            return;
+          }
+
           const api = await useApi();
           const python = await getPythonInterpreterPath();
           const r = await getRInterpreterPath();
 
-          const response = await api.configurations.getAll(".", {
-            recursive: true,
-          });
+          const configs = await loadAllConfigurationsRecursive(root);
           const defaults = await api.interpreters.get(".", r, python);
           this.configurations = UpdateAllConfigsWithDefaults(
-            response.data,
+            configs,
             defaults.data,
           );
         },

@@ -18,7 +18,7 @@ export type ConnectRuntime = {
   idleTimeout?: number;
   maxProcesses?: number;
   minProcesses?: number;
-  maxConnections?: number;
+  maxConnsPerProcess?: number;
   loadFactor?: number;
 };
 
@@ -30,7 +30,9 @@ export type ConnectKubernetes = {
   amdGpuLimit?: number;
   nvidiaGpuLimit?: number;
   serviceAccountName?: string;
-  imageName?: string;
+  defaultImageName?: string;
+  defaultREnvironmentManagement?: boolean;
+  defaultPyEnvironmentManagement?: boolean;
 };
 
 // See types in internal/clients/connect/client.go
