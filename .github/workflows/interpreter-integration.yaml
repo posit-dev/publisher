@@ -11,28 +11,28 @@ jobs:
           # Python-only configurations
           - runner: ubuntu-latest
             python-version: "3.9"
-            r-version: null
+            r-version: ""
           - runner: ubuntu-latest
             python-version: "3.10"
-            r-version: null
+            r-version: ""
           - runner: ubuntu-latest
             python-version: "3.11"
-            r-version: null
+            r-version: ""
           - runner: ubuntu-latest
             python-version: "3.12"
-            r-version: null
+            r-version: ""
           - runner: ubuntu-latest
             python-version: "3.13"
-            r-version: null
+            r-version: ""
           # R-only configurations
           - runner: ubuntu-latest
-            python-version: null
+            python-version: ""
             r-version: "4.1"
           - runner: ubuntu-latest
-            python-version: null
+            python-version: ""
             r-version: "4.3"
           - runner: ubuntu-latest
-            python-version: null
+            python-version: ""
             r-version: "4.4"
           # Combined Python + R
           - runner: ubuntu-latest
@@ -65,11 +65,11 @@ jobs:
           cache: "npm"
           cache-dependency-path: "**/package-lock.json"
       - uses: actions/setup-python@v5
-        if: matrix.python-version != null
+        if: matrix.python-version != ''
         with:
           python-version: ${{ matrix.python-version }}
       - uses: r-lib/actions/setup-r@v2
-        if: matrix.r-version != null
+        if: matrix.r-version != ''
         with:
           r-version: ${{ matrix.r-version }}
       - run: npm install
