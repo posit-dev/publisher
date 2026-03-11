@@ -4,6 +4,15 @@ Analyze the Go backend package dependency graph, compute migration tiers, check 
 
 This command scans the live codebase so results stay accurate as migration progresses. Re-run it anytime to get an updated view.
 
+## Verbosity
+
+Check the arguments: `$ARGUMENTS`
+
+- If the arguments contain `--verbose` or `verbose`, run in **verbose mode**: show detailed output for every step (Steps 1-5) as you go, then show the full Step 6 roadmap.
+- Otherwise, run in **default mode**: run all the data-gathering steps silently (do NOT print their intermediate tables/details to the user) and only present the final Step 6 Migration Roadmap output.
+
+In both modes, all steps must execute — the data from Steps 1-5 feeds into Step 6. The only difference is whether you display the intermediate results.
+
 ---
 
 ## Step 1: Extract Go Package Inventory
@@ -25,7 +34,9 @@ for pkg in internal/*/; do
 done
 ```
 
-Present the results as a table sorted by LOC descending. Note which packages are the largest (most effort to migrate) and which are smallest (quick wins).
+**Verbose mode**: Present the results as a table sorted by LOC descending. Note which packages are the largest (most effort to migrate) and which are smallest (quick wins).
+
+**Default mode**: Record the data internally for use in Step 6. Do not display the table.
 
 ---
 
@@ -56,16 +67,21 @@ for pkg in internal/*/; do
 done
 ```
 
-From this output, produce **two views**:
+**Verbose mode**: Produce **two views**:
 
 ### Top-Level Grouping
+
 Show each package and the top-level packages it depends on. For example:
+
 ```
 config -> [clients, contenttypes, interpreters, logging, schema, types, util]
 ```
 
 ### Subpackage-Level Detail
+
 Where a package imports a subpackage (e.g., `clients/types` rather than `clients` root), note this specifically. This matters because subpackages like `clients/types` can potentially be migrated independently of the full parent package.
+
+**Default mode**: Parse and record the dependency data internally. Do not display the graph.
 
 ---
 
@@ -129,11 +145,14 @@ else:
 
 **IMPORTANT**: You must fill in the `deps` dictionary with the actual data from Step 2 before running this script. Each key is a top-level package name, and each value is the set of top-level packages it imports (excluding itself).
 
-Present the tier results and explain:
+**Verbose mode**: Present the tier results and explain:
+
 - **Tier 0**: Leaf packages with no internal dependencies — migrate these first
 - **Tier 1**: Packages that only depend on Tier 0 packages
 - **Tier N**: Packages whose dependencies are all in tiers 0 through N-1
 - **Circular**: Packages in dependency cycles that need special handling (break the cycle by migrating subpackages first)
+
+**Default mode**: Record the tier assignments internally. Do not display tier details.
 
 ---
 
@@ -163,15 +182,21 @@ echo "--- Connect client ---"
 find extensions/vscode/src/api/ -name '*.ts' 2>/dev/null | sort
 ```
 
-For each Go package, note whether a TypeScript equivalent exists:
+For each Go package, determine whether a TypeScript equivalent exists:
+
 - **Full coverage**: A TypeScript module covers the same functionality
 - **Partial coverage**: Some types or functions exist but the package isn't fully ported
 - **No coverage**: No TypeScript equivalent found yet
 
 Read key TypeScript files to understand what types and interfaces are already defined. Pay attention to:
+
 - Type definitions that mirror Go structs
 - API client methods that mirror Go client functions
 - Enum definitions (e.g., `ServerType`, `ContentType`)
+
+**Verbose mode**: Display the coverage table with per-package details and notes on what TS files exist.
+
+**Default mode**: Record coverage status per package internally. Do not display.
 
 ---
 
@@ -203,14 +228,19 @@ for target in internal/*/; do
 done | sort -t'(' -k2 -rn
 ```
 
-Identify:
+**Verbose mode**: Display the full reverse dependency table and identify foundation/mid-tier/isolated packages:
+
 - **Foundation packages** (depended on by 5+ packages): Need very careful API design during migration since many consumers rely on them
 - **Mid-tier packages** (depended on by 2-4 packages): Moderate risk
 - **Isolated packages** (depended on by 0-1 packages): Low risk, can be migrated with minimal impact
 
+**Default mode**: Record reverse dependency counts internally. Do not display.
+
 ---
 
 ## Step 6: Generate Migration Roadmap
+
+**This step is always displayed in full, regardless of verbosity mode.**
 
 Compile all the analysis into a comprehensive report. Format it as follows:
 
@@ -238,6 +268,7 @@ Tier 2 (depends on Tier 0-1):
 ### Migration Tiers Detail
 
 For each tier, list the packages with:
+
 - Lines of code (from Step 1)
 - Number of subpackages
 - Internal dependencies
@@ -248,12 +279,14 @@ For each tier, list the packages with:
 ### Subpackage Extraction Opportunities
 
 Identify cases where a package imports only a subpackage of another package (from Step 2 subpackage-level detail). These represent opportunities to:
+
 - Migrate the subpackage independently
 - Break apparent cycles (e.g., if `config` imports `clients/types` but not the full `clients` package)
 
 ### Risk Assessment
 
 For each foundation package (high reverse dependency count):
+
 - List all consumers
 - Note API surface area (exported functions/types)
 - Flag if it's in a dependency cycle
@@ -262,10 +295,15 @@ For each foundation package (high reverse dependency count):
 ### Recommended Migration Order
 
 Provide a numbered list of packages in recommended migration order, considering:
+
 1. Tier assignment (lower tiers first)
 2. Within each tier: smallest LOC first
 3. Foundation packages may be prioritized despite size if they unblock many others
 4. Packages with existing TypeScript coverage can be prioritized as quick wins
+
+### Key Takeaways
+
+End with 4-6 bullet points summarizing the most important findings: critical cycle-breakers, foundation packages, largest efforts, and quick wins.
 
 ---
 
