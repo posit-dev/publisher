@@ -43,10 +43,10 @@ Cypress.Commands.add(
           cy.get(".explorer-viewlet").then(($explorer) => {
             const target = $explorer.find(`[aria-label="${projectDir}"]`);
             if (target.length > 0) {
-              // Click to expand if not already expanded
+              // Click to expand if not already expanded (use jQuery trigger to stay synchronous)
               const isExpanded = target.attr("aria-expanded") === "true";
               if (!isExpanded) {
-                cy.wrap(target).click();
+                Cypress.$(target).trigger("click");
               }
               // Check if the entrypoint file is now visible inside
               const entrypoint = $explorer.find(
