@@ -12,13 +12,6 @@ type Optional[T any] struct {
 	valid bool
 }
 
-func NewOptional[T any](value T) Optional[T] {
-	return Optional[T]{
-		value: value,
-		valid: true,
-	}
-}
-
 func (opt *Optional[T]) Get() (T, bool) {
 	return opt.value, opt.valid
 }
