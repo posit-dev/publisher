@@ -116,10 +116,6 @@ type IntegrationRequest struct {
 	Config          map[string]any `json:"config,omitempty"`
 }
 
-func NewManifestFileMap() ManifestFileMap {
-	return ManifestFileMap{}
-}
-
 type ManifestFile struct {
 	Checksum string `json:"checksum"`
 }
