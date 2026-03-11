@@ -155,10 +155,11 @@ These three communicate using different methods at runtime.
 │  Vue Webview (Sidebar UI)                                                    │
 │  `webviews/homeView/`                                                        │
 │                                                                              │
-│  Vue + Pinia app rendered in a VSCode webview iframe. Has no direct access   │
-│  to Node.js, the filesystem, the Go backend, or the VS Code API. Uses        │
-│  `postMessage` from VS Code's `WebviewApi` to communicate with the           │
-│  extension host.                                                             │
+│  Vue + Pinia app rendered in a VSCode webview iframe. A webview gives us     │
+│  full control over the UI beyond what the IDE's APIs provide. Has no         │
+│  direct access to Node.js, the filesystem, the Go backend, or the            │
+│  VS Code API. Uses `postMessage` from VS Code's `WebviewApi` to              │
+│  communicate with the extension host.                                        │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
