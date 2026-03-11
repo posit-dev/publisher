@@ -1,4 +1,5 @@
 {
+  "version": "2025.06.0",
   "license": {
     "allow-apis": true,
     "current-user-execution": false,

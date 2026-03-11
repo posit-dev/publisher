@@ -23,7 +23,8 @@ import {
   type ServerResponse,
 } from "node:http";
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 export interface CapturedRequest {
   method: string;
@@ -40,7 +41,11 @@ interface RouteHandler {
   contentType?: string; // defaults to "application/json"
 }
 
-const FIXTURES_DIR = resolve(__dirname, "fixtures", "connect-responses");
+const FIXTURES_DIR = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  "fixtures",
+  "connect-responses",
+);
 
 function loadFixture(name: string): unknown {
   const content = readFileSync(resolve(FIXTURES_DIR, name), "utf-8");
@@ -179,10 +184,10 @@ export class MockConnectServer {
     }
   }
 
-  async start(): Promise<void> {
+  async start(port = 0): Promise<void> {
     return new Promise((resolve, reject) => {
       this.server = createServer((req, res) => this.handleRequest(req, res));
-      this.server.listen(0, "localhost", () => {
+      this.server.listen(port, "0.0.0.0", () => {
         const addr = this.server!.address();
         if (addr && typeof addr === "object") {
           this._port = addr.port;

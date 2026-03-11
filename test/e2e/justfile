@@ -115,7 +115,105 @@ build-images:
 build-publisher:
     USE_PLATFORM="linux/amd64" just ../../
 
+# =====================================================================
+# Mock Connect server recipes
+# These use the MockConnectServer from test/connect-api-contracts
+# instead of a real Posit Connect instance, eliminating the need for
+# licenses, 1Password secrets, and with-connect.
+# =====================================================================
 
+# Start the mock Connect server on port 3939 in the background
+start-mock-connect:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    echo "Installing mock server dependencies..."
+    npm install --prefix ../connect-api-contracts
+
+    echo "Starting mock Connect server on port 3939..."
+    npm run serve --prefix ../connect-api-contracts &
+    MOCK_PID=$!
+    echo "$MOCK_PID" > /tmp/mock-connect.pid
+
+    # Wait for the server to be ready
+    for i in {1..30}; do
+        if curl -sf http://localhost:3939/__api__/v1/user > /dev/null 2>&1; then
+            echo "Mock Connect server is ready (PID $MOCK_PID)"
+            exit 0
+        fi
+        sleep 0.5
+    done
+    echo "Error: Mock Connect server did not start in time"
+    kill "$MOCK_PID" 2>/dev/null || true
+    exit 1
+
+# Stop the mock Connect server
+stop-mock-connect:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    if [[ -f /tmp/mock-connect.pid ]]; then
+        PID=$(cat /tmp/mock-connect.pid)
+        if kill -0 "$PID" 2>/dev/null; then
+            echo "Stopping mock Connect server (PID $PID)..."
+            kill "$PID"
+        fi
+        rm -f /tmp/mock-connect.pid
+    else
+        echo "No mock Connect server PID file found"
+    fi
+
+# Run e2e tests with mock Connect server (no license/secrets needed)
+e2e-mock *cypress_args:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    function cleanup() {
+        just clear-credentials
+        just stop-mock-connect
+    }
+    trap cleanup EXIT
+
+    just clear-credentials
+    just install
+    just start-mock-connect
+    just start "code-server"
+
+    # Install the Publisher extension
+    VSIX_FILENAME=$(ls -Art ../../dist | grep linux-amd64 | tail -n 1)
+    docker compose exec code-server code-server --install-extension "/home/coder/vsix/${VSIX_FILENAME}"
+
+    # Run Cypress excluding @pcc tests (which require real OAuth)
+    CYPRESS_MOCK_CONNECT=true \
+    CYPRESS_BOOTSTRAP_ADMIN_API_KEY=mock-api-key-for-e2e \
+        npx cypress run \
+        --env grepFilterSpecs=true,grepOmitFiltered=true,grepTags=-@pcc \
+        {{cypress_args}}
+
+# Run Cypress interactively with mock Connect server
+e2e-mock-open:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    just start-mock-connect
+    just start "code-server"
+
+    # Install the Publisher extension
+    VSIX_FILENAME=$(ls -Art ../../dist | grep linux-amd64 | tail -n 1)
+    docker compose exec code-server code-server --install-extension "/home/coder/vsix/${VSIX_FILENAME}"
+
+    CYPRESS_MOCK_CONNECT=true \
+    CYPRESS_BOOTSTRAP_ADMIN_API_KEY=mock-api-key-for-e2e \
+        npx cypress open \
+        --env grepFilterSpecs=true,grepOmitFiltered=true,grepTags=-@pcc
+
+# Build publisher and run mock e2e tests
+dev-mock:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    just build-publisher
+    just e2e-mock
 
 # =====================================================================
 # Workbench-specific commands
