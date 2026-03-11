@@ -12,6 +12,7 @@ import { afterAll, beforeAll, describe, expect, test } from "vitest";
 import { readFileText, fileExistsAt } from "./fsUtils";
 import { getPythonRequires } from "./pythonRequires";
 import { getRRequires } from "./rRequires";
+import { getInterpreterDefaults } from "./index";
 import { detectPythonInterpreter, clearPythonVersionCache } from "./pythonInterpreter";
 import { detectRInterpreter } from "./rInterpreter";
 
@@ -342,4 +343,282 @@ describe("detectRInterpreter (real interpreter)", async () => {
       await rm(dir, { recursive: true, force: true });
     }
   });
+});
+
+// ---------------------------------------------------------------------------
+// End-to-end: detectPythonInterpreter with project files + real interpreter
+// ---------------------------------------------------------------------------
+
+describe("detectPythonInterpreter end-to-end", async () => {
+  const python3Available = await isExecutableAvailable("python3");
+  const pythonAvailable =
+    python3Available || (await isExecutableAvailable("python"));
+  const pythonCmd = python3Available ? "python3" : "python";
+
+  test.skipIf(!pythonAvailable)(
+    "populates requiresPython from .python-version alongside real detection",
+    async () => {
+      clearPythonVersionCache();
+      const dir = await mkdtemp(path.join(os.tmpdir(), "publisher-pye2e-"));
+      try {
+        await writeFile(path.join(dir, ".python-version"), "3.11", "utf-8");
+        const result = await detectPythonInterpreter(dir, pythonCmd);
+        expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
+        expect(result.config.requiresPython).toBe("~=3.11.0");
+      } finally {
+        await rm(dir, { recursive: true, force: true });
+      }
+    },
+  );
+
+  test.skipIf(!pythonAvailable)(
+    "populates requiresPython from pyproject.toml",
+    async () => {
+      clearPythonVersionCache();
+      const dir = await mkdtemp(path.join(os.tmpdir(), "publisher-pye2e-"));
+      try {
+        await writeFile(
+          path.join(dir, "pyproject.toml"),
+          '[project]\nrequires-python = ">=3.9,<4"\n',
+          "utf-8",
+        );
+        const result = await detectPythonInterpreter(dir, pythonCmd);
+        expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
+        expect(result.config.requiresPython).toBe(">=3.9,<4");
+      } finally {
+        await rm(dir, { recursive: true, force: true });
+      }
+    },
+  );
+
+  test.skipIf(!pythonAvailable)(
+    "returns all fields together: version, packageFile, requiresPython",
+    async () => {
+      clearPythonVersionCache();
+      const dir = await mkdtemp(path.join(os.tmpdir(), "publisher-pyfull-"));
+      try {
+        await writeFile(
+          path.join(dir, "requirements.txt"),
+          "flask>=2.0\n",
+          "utf-8",
+        );
+        await writeFile(path.join(dir, ".python-version"), "3.10.5", "utf-8");
+        const result = await detectPythonInterpreter(dir, pythonCmd);
+        expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
+        expect(result.config.packageFile).toBe("requirements.txt");
+        expect(result.config.packageManager).toBe("auto");
+        expect(result.config.requiresPython).toBe("~=3.10.0");
+        expect(result.preferredPath).toBe(pythonCmd);
+      } finally {
+        await rm(dir, { recursive: true, force: true });
+      }
+    },
+  );
+
+  test.skipIf(!pythonAvailable)(
+    "omits requiresPython when no version constraint files exist",
+    async () => {
+      clearPythonVersionCache();
+      const dir = await mkdtemp(path.join(os.tmpdir(), "publisher-pynoreq-"));
+      try {
+        const result = await detectPythonInterpreter(dir, pythonCmd);
+        expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
+        expect(result.config.requiresPython).toBeUndefined();
+      } finally {
+        await rm(dir, { recursive: true, force: true });
+      }
+    },
+  );
+});
+
+// ---------------------------------------------------------------------------
+// End-to-end: detectRInterpreter with project files + real interpreter
+// ---------------------------------------------------------------------------
+
+describe("detectRInterpreter end-to-end", async () => {
+  const rAvailable = await isExecutableAvailable("R");
+
+  test.skipIf(!rAvailable)(
+    "populates requiresR from DESCRIPTION Depends",
+    async () => {
+      const dir = await mkdtemp(path.join(os.tmpdir(), "publisher-re2e-"));
+      try {
+        await writeFile(
+          path.join(dir, "DESCRIPTION"),
+          "Package: mypkg\nDepends: R (>= 4.1.0), utils\n",
+          "utf-8",
+        );
+        const result = await detectRInterpreter(dir, "R");
+        expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
+        expect(result.config.requiresR).toBe(">= 4.1.0");
+      } finally {
+        await rm(dir, { recursive: true, force: true });
+      }
+    },
+  );
+
+  test.skipIf(!rAvailable)(
+    "populates requiresR from renv.lock",
+    async () => {
+      const dir = await mkdtemp(path.join(os.tmpdir(), "publisher-re2e-"));
+      try {
+        await writeFile(
+          path.join(dir, "renv.lock"),
+          JSON.stringify({ R: { Version: "4.2.3" } }),
+          "utf-8",
+        );
+        const result = await detectRInterpreter(dir, "R");
+        expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
+        expect(result.config.requiresR).toBe("~=4.2.0");
+      } finally {
+        await rm(dir, { recursive: true, force: true });
+      }
+    },
+  );
+
+  test.skipIf(!rAvailable)(
+    "returns all fields together: version, packageFile, requiresR",
+    async () => {
+      const dir = await mkdtemp(path.join(os.tmpdir(), "publisher-rfull-"));
+      try {
+        await writeFile(
+          path.join(dir, "renv.lock"),
+          JSON.stringify({
+            R: { Version: "4.3.1" },
+            Packages: {},
+          }),
+          "utf-8",
+        );
+        await writeFile(
+          path.join(dir, "DESCRIPTION"),
+          "Package: mypkg\nDepends: R (>= 4.0.0)\n",
+          "utf-8",
+        );
+        const result = await detectRInterpreter(dir, "R");
+        expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
+        expect(result.config.packageManager).toBe("renv");
+        // DESCRIPTION takes priority over renv.lock for requiresR
+        expect(result.config.requiresR).toBe(">= 4.0.0");
+        expect(result.preferredPath).toBe("R");
+      } finally {
+        await rm(dir, { recursive: true, force: true });
+      }
+    },
+  );
+
+  test.skipIf(!rAvailable)(
+    "omits requiresR when no version constraint files exist",
+    async () => {
+      const dir = await mkdtemp(path.join(os.tmpdir(), "publisher-rnoreq-"));
+      try {
+        const result = await detectRInterpreter(dir, "R");
+        expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
+        expect(result.config.requiresR).toBeUndefined();
+      } finally {
+        await rm(dir, { recursive: true, force: true });
+      }
+    },
+  );
+});
+
+// ---------------------------------------------------------------------------
+// End-to-end: getInterpreterDefaults orchestrator
+// ---------------------------------------------------------------------------
+
+describe("getInterpreterDefaults end-to-end", async () => {
+  const python3Available = await isExecutableAvailable("python3");
+  const pythonAvailable =
+    python3Available || (await isExecutableAvailable("python"));
+  const pythonCmd = python3Available ? "python3" : "python";
+  const rAvailable = await isExecutableAvailable("R");
+
+  test.skipIf(!pythonAvailable || !rAvailable)(
+    "detects both Python and R in a mixed project",
+    async () => {
+      clearPythonVersionCache();
+      const dir = await mkdtemp(path.join(os.tmpdir(), "publisher-both-"));
+      try {
+        await writeFile(
+          path.join(dir, "requirements.txt"),
+          "numpy\n",
+          "utf-8",
+        );
+        await writeFile(path.join(dir, ".python-version"), "3.11", "utf-8");
+        await writeFile(
+          path.join(dir, "DESCRIPTION"),
+          "Package: mypkg\nDepends: R (>= 4.1.0)\n",
+          "utf-8",
+        );
+
+        const result = await getInterpreterDefaults(dir, pythonCmd, "R");
+
+        expect(result.python.version).toMatch(/^\d+\.\d+\.\d+$/);
+        expect(result.python.packageFile).toBe("requirements.txt");
+        expect(result.python.requiresPython).toBe("~=3.11.0");
+        expect(result.preferredPythonPath).toBe(pythonCmd);
+
+        expect(result.r.version).toMatch(/^\d+\.\d+\.\d+$/);
+        expect(result.r.requiresR).toBe(">= 4.1.0");
+        expect(result.preferredRPath).toBe("R");
+      } finally {
+        await rm(dir, { recursive: true, force: true });
+      }
+    },
+  );
+
+  test.skipIf(!pythonAvailable)(
+    "handles Python-only project gracefully",
+    async () => {
+      clearPythonVersionCache();
+      const dir = await mkdtemp(path.join(os.tmpdir(), "publisher-pyonly-"));
+      try {
+        await writeFile(
+          path.join(dir, "requirements.txt"),
+          "flask\n",
+          "utf-8",
+        );
+
+        const result = await getInterpreterDefaults(dir, pythonCmd);
+
+        expect(result.python.version).toMatch(/^\d+\.\d+\.\d+$/);
+        expect(result.python.packageFile).toBe("requirements.txt");
+        // R may still be detected via PATH fallback
+        if (rAvailable) {
+          expect(result.r.version).toMatch(/^\d+\.\d+\.\d+$/);
+        } else {
+          expect(result.r.version).toBe("");
+        }
+      } finally {
+        await rm(dir, { recursive: true, force: true });
+      }
+    },
+  );
+
+  test.skipIf(!rAvailable)(
+    "handles R-only project gracefully",
+    async () => {
+      clearPythonVersionCache();
+      const dir = await mkdtemp(path.join(os.tmpdir(), "publisher-ronly-"));
+      try {
+        await writeFile(
+          path.join(dir, "DESCRIPTION"),
+          "Package: mypkg\nDepends: R (>= 4.0.0)\n",
+          "utf-8",
+        );
+
+        const result = await getInterpreterDefaults(dir, undefined, "R");
+
+        expect(result.r.version).toMatch(/^\d+\.\d+\.\d+$/);
+        expect(result.r.requiresR).toBe(">= 4.0.0");
+        // Python may still be detected via PATH fallback
+        if (pythonAvailable) {
+          expect(result.python.version).toMatch(/^\d+\.\d+\.\d+$/);
+        } else {
+          expect(result.python.version).toBe("");
+        }
+      } finally {
+        await rm(dir, { recursive: true, force: true });
+      }
+    },
+  );
 });
