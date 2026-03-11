@@ -149,11 +149,16 @@ describe("Multi-Deployment Switching Section", () => {
       .first()
       .click({ force: true });
 
-    // Step 5: Verify second deployment is now selected
-    cy.findInPublisherWebview('[data-automation="entrypoint-label"]').should(
-      "contain.text",
-      "fastapi-multi-test",
-    );
+    // Step 5: Wait for deployment creation to complete and webview to update
+    cy.waitForNetworkIdle(1000);
+    cy.retryWithBackoff(
+      () =>
+        cy.publisherWebview().then(($body) => {
+          return $body.find('[data-automation="entrypoint-label"]');
+        }),
+      10,
+      1000,
+    ).should("contain.text", "fastapi-multi-test");
 
     // Step 6: Switch back to first deployment via picker
     cy.publisherWebview()
