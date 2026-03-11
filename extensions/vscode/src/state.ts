@@ -341,10 +341,7 @@ export class PublisherState implements Disposable {
             python?.pythonPath,
             r?.rPath,
           );
-          this.configurations = UpdateAllConfigsWithDefaults(
-            configs,
-            defaults,
-          );
+          this.configurations = UpdateAllConfigsWithDefaults(configs, defaults);
         },
       );
     } catch (error: unknown) {
