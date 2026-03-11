@@ -4,6 +4,7 @@ import { execFile } from "child_process";
 import { Uri } from "vscode";
 import { RConfig } from "src/api/types/configurations";
 import { fileExists } from "src/utils/files";
+import { getRRequires } from "./rRequires";
 
 const DEFAULT_RENV_LOCKFILE = "renv.lock";
 const R_VERSION_TIMEOUT = 15000;
@@ -46,11 +47,15 @@ export async function detectRInterpreter(
   const lockfilePresent = await fileExists(lockfileUri);
   const packageFile = lockfilePresent ? lockfilePath : "";
 
+  // Read R version requirements from project metadata
+  const requiresR = await getRRequires(projectDir);
+
   return {
     config: {
       version,
       packageFile,
       packageManager: "renv",
+      requiresR: requiresR || undefined,
     },
     preferredPath: preferredPath || "",
   };

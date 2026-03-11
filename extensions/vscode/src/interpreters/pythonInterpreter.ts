@@ -4,6 +4,7 @@ import { execFile } from "child_process";
 import { Uri } from "vscode";
 import { PythonConfig } from "src/api/types/configurations";
 import { fileExists } from "src/utils/files";
+import { getPythonRequires } from "./pythonRequires";
 
 const REQUIREMENTS_TXT = "requirements.txt";
 
@@ -42,11 +43,15 @@ export async function detectPythonInterpreter(
   const hasRequirements = await fileExists(reqUri);
   const packageFile = hasRequirements ? REQUIREMENTS_TXT : "";
 
+  // Read Python version requirements from project metadata
+  const requiresPython = await getPythonRequires(projectDir);
+
   return {
     config: {
       version,
       packageFile,
       packageManager: "auto",
+      requiresPython: requiresPython || undefined,
     },
     preferredPath: preferredPath || "",
   };

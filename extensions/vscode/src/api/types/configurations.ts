@@ -151,12 +151,14 @@ export type PythonConfig = {
   version: string;
   packageFile: string;
   packageManager: string;
+  requiresPython?: string;
 };
 
 export type RConfig = {
   version: string;
   packageFile: string;
   packageManager: string;
+  requiresR?: string;
 };
 
 export type QuartoConfig = {
@@ -230,6 +232,9 @@ export function UpdateConfigWithDefaults(
     if (!config.configuration.r.packageManager) {
       config.configuration.r.packageManager = defaults.r.packageManager;
     }
+    if (!config.configuration.r.requiresR) {
+      config.configuration.r.requiresR = defaults.r.requiresR;
+    }
   }
   if (config.configuration.python !== undefined) {
     if (!config.configuration.python.version) {
@@ -241,6 +246,10 @@ export function UpdateConfigWithDefaults(
     if (!config.configuration.python.packageManager) {
       config.configuration.python.packageManager =
         defaults.python.packageManager;
+    }
+    if (!config.configuration.python.requiresPython) {
+      config.configuration.python.requiresPython =
+        defaults.python.requiresPython;
     }
   }
   return config;
