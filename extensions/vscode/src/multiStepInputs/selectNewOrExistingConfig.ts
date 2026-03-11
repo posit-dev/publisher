@@ -40,9 +40,12 @@ import {
   filterInspectionResultsToType,
   filterConfigurationsToValidAndType,
 } from "src/utils/filters";
+import { getProductType } from "src/utils/multiStepHelpers";
 import { showProgress } from "src/utils/progress";
 import { isRelativePathRoot } from "src/utils/files";
 import { newConfigFileNameFromTitle } from "src/utils/names";
+import { loadAllConfigurations, writeConfigToFile } from "src/toml";
+import * as workspaces from "src/workspaces";
 
 export async function selectNewOrExistingConfig(
   activeDeployment: ContentRecord | PreContentRecord,
@@ -102,14 +105,13 @@ export async function selectNewOrExistingConfig(
 
   const getConfigurations = async () => {
     try {
-      // get all configurations
-      const response = await api.configurations.getAll(
+      const root = workspaces.path();
+      if (!root) {
+        return;
+      }
+      const rawConfigs = await loadAllConfigurations(
         activeDeployment.projectDir,
-      );
-      const rawConfigs = response.data;
-      // remove the errors
-      configurations = configurations.filter(
-        (cfg): cfg is Configuration => !isConfigurationError(cfg),
+        root,
       );
       // Filter down configs to same content type as active deployment,
       // but also allowing configs if active Deployment is a preDeployment
@@ -165,7 +167,7 @@ export async function selectNewOrExistingConfig(
       );
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
-        "selectNewOrExistingConfig, configurations.getAll",
+        "selectNewOrExistingConfig, loadAllConfigurations",
         error,
       );
       window.showInformationMessage(
@@ -443,27 +445,38 @@ export async function selectNewOrExistingConfig(
         return;
       }
 
-      const existingNames = (
-        await api.configurations.getAll(selectedInspectionResult.projectDir)
-      ).data.map((config) => config.configurationName);
+      const root = workspaces.path();
+      if (!root) {
+        return;
+      }
+      const allConfigs = await loadAllConfigurations(
+        selectedInspectionResult.projectDir,
+        root,
+      );
+      const existingNames = allConfigs.map(
+        (config) => config.configurationName,
+      );
 
       const configName = newConfigFileNameFromTitle(
         state.data.title,
         existingNames,
       );
       selectedInspectionResult.configuration.title = state.data.title;
-      const createResponse = await api.configurations.createOrUpdate(
-        configName,
-        selectedInspectionResult.configuration,
-        selectedInspectionResult.projectDir,
+      selectedInspectionResult.configuration.productType = getProductType(
+        activeDeployment.serverType,
       );
-      const fileUri = Uri.file(createResponse.data.configurationPath);
-      const newConfig = createResponse.data;
+      const newConfig = await writeConfigToFile(
+        configName,
+        selectedInspectionResult.projectDir,
+        root,
+        selectedInspectionResult.configuration,
+      );
+      const fileUri = Uri.file(newConfig.configurationPath);
       await commands.executeCommand("vscode.open", fileUri);
       return newConfig;
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
-        "selectNewOrExistingConfig, configurations.createOrUpdate",
+        "selectNewOrExistingConfig, writeConfigToFile",
         error,
       );
       window.showErrorMessage(`Failed to create config file. ${summary}`);

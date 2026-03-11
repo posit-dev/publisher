@@ -19,20 +19,6 @@ func TestOptionalSuite(t *testing.T) {
 	suite.Run(t, new(OptionalSuite))
 }
 
-func (s *OptionalSuite) TestNewOptional() {
-	var opt NullString = NewOptional[string]("abc")
-	value, ok := opt.Get()
-	s.True(ok)
-	s.Equal("abc", value)
-}
-
-func (s *OptionalSuite) TestNewOptionalEmptyString() {
-	var opt NullString = NewOptional[string]("")
-	value, ok := opt.Get()
-	s.True(ok)
-	s.Equal("", value)
-}
-
 func (s *OptionalSuite) TestOptionalZeroValue() {
 	var opt NullString
 	value, ok := opt.Get()
@@ -68,13 +54,13 @@ func (s *OptionalSuite) TestUnmarshalJSONNotNull() {
 	s.Nil(err)
 
 	s.Equal(data, optionalData{
-		S:      NewOptional[string]("abc"),
-		I32:    NewOptional[int32](123),
-		I64:    NewOptional[int64](456),
-		F64:    NewOptional[float64](3.14159),
-		Guid:   NewOptional[GUID]("a-bad-1dea"),
-		I64str: NewOptional[Int64Str]("8878273897198738917"),
-		T:      NewOptional[Time](ts),
+		S:      Optional[string]{value: "abc", valid: true},
+		I32:    Optional[int32]{value: 123, valid: true},
+		I64:    Optional[int64]{value: 456, valid: true},
+		F64:    Optional[float64]{value: 3.14159, valid: true},
+		Guid:   Optional[GUID]{value: "a-bad-1dea", valid: true},
+		I64str: Optional[Int64Str]{value: "8878273897198738917", valid: true},
+		T:      Optional[Time]{value: ts, valid: true},
 	})
 
 	str, ok := data.S.Get()
@@ -138,13 +124,13 @@ func (s *OptionalSuite) TestMarshalJSONNotNull() {
 	s.Nil(err)
 
 	data := optionalData{
-		S:      NewOptional[string]("abc"),
-		I32:    NewOptional[int32](123),
-		I64:    NewOptional[int64](456),
-		F64:    NewOptional[float64](3.14159),
-		Guid:   NewOptional[GUID]("a-bad-1dea"),
-		I64str: NewOptional[Int64Str]("8878273897198738917"),
-		T:      NewOptional[Time](ts),
+		S:      Optional[string]{value: "abc", valid: true},
+		I32:    Optional[int32]{value: 123, valid: true},
+		I64:    Optional[int64]{value: 456, valid: true},
+		F64:    Optional[float64]{value: 3.14159, valid: true},
+		Guid:   Optional[GUID]{value: "a-bad-1dea", valid: true},
+		I64str: Optional[Int64Str]{value: "8878273897198738917", valid: true},
+		T:      Optional[Time]{value: ts, valid: true},
 	}
 	jsonOutput, err := json.Marshal(&data)
 	s.Nil(err)
@@ -175,11 +161,11 @@ func (s *OptionalSuite) TestNotValid() {
 }
 
 func (s *OptionalSuite) TestValid() {
-	value := NewOptional("hi there")
+	value := Optional[string]{value: "hi there", valid: true}
 	s.Equal(value.Valid(), true)
 }
 
 func (s *OptionalSuite) TestValidEmpty() {
-	value := NewOptional("")
+	value := Optional[string]{value: "", valid: true}
 	s.Equal(value.Valid(), true)
 }

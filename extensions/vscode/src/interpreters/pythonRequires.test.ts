@@ -1,5 +1,6 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
+import path from "node:path";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { getPythonRequires } from "./pythonRequires";
 
@@ -16,7 +17,7 @@ vi.mock("./fsUtils", () => ({
 }));
 
 function setFile(projectDir: string, filename: string, content: string) {
-  mockFiles[`${projectDir}/${filename}`] = content;
+  mockFiles[path.join(projectDir, filename)] = content;
 }
 
 describe("getPythonRequires", () => {

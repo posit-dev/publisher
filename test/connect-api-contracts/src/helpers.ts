@@ -26,7 +26,8 @@ export function getClient(): ConnectContractClient {
     const connectUrl = getMockConnectUrl();
     _client = new GoPublisherClient(apiBase, connectUrl, TEST_API_KEY);
   } else {
-    _client = new TypeScriptDirectClient();
+    const connectUrl = getMockConnectUrl();
+    _client = new TypeScriptDirectClient(connectUrl, TEST_API_KEY);
   }
   return _client;
 }

@@ -535,6 +535,7 @@
       "description": "Integration requests associated with this configuration",
       "items": {
         "type": "object",
+        "additionalProperties": false,
         "properties": {
           "guid": {
             "type": "string",
@@ -548,7 +549,7 @@
             "type": "string",
             "description": "Description of the integration request"
           },
-          "authType": {
+          "auth_type": {
             "type": "string",
             "description": "Authentication type for the integration request"
           },

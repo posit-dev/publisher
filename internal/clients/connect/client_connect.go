@@ -83,10 +83,6 @@ func (u *UserDTO) CanAdmin() bool {
 	return u.UserRole == AuthRoleAdmin
 }
 
-func (u *UserDTO) CanPublish() bool {
-	return u.UserRole == AuthRoleAdmin || u.UserRole == AuthRolePublisher
-}
-
 var errInvalidServerOrCredentials = errors.New("could not validate credentials; check connectivity to the server, the URL, and authentication credentials")
 var errInvalidCredentials = errors.New("could not log in with the provided credentials")
 var errInvalidServer = errors.New("could not access the server; check the server URL and try again")
