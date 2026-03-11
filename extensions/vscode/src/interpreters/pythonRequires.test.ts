@@ -5,11 +5,11 @@ import { getPythonRequires } from "./pythonRequires";
 
 const mockFiles: Record<string, string> = {};
 
-vi.mock("node:fs/promises", () => ({
-  readFile: vi.fn((filePath: string) => {
+vi.mock("./fsUtils", () => ({
+  readFileText: vi.fn((filePath: string) => {
     const content = mockFiles[filePath];
     if (content === undefined) {
-      return Promise.reject(new Error(`ENOENT: ${filePath}`));
+      return Promise.resolve(null);
     }
     return Promise.resolve(content);
   }),

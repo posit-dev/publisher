@@ -1,7 +1,7 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
-import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { readFileText } from "./fsUtils";
 import { adaptPythonRequires } from "./versionConstraints";
 
 /**
@@ -29,14 +29,6 @@ export async function getPythonRequires(projectDir: string): Promise<string> {
   }
 
   return "";
-}
-
-async function readFileText(filePath: string): Promise<string | null> {
-  try {
-    return await readFile(filePath, "utf-8");
-  } catch {
-    return null;
-  }
 }
 
 /**

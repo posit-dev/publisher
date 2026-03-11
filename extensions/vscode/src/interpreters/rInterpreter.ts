@@ -1,9 +1,9 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
 import { execFile } from "child_process";
-import { access } from "node:fs/promises";
 import path from "node:path";
 import { RConfig } from "src/api/types/configurations";
+import { fileExistsAt } from "./fsUtils";
 import { getRRequires } from "./rRequires";
 
 const DEFAULT_RENV_LOCKFILE = "renv.lock";
@@ -115,15 +115,6 @@ async function resolveRenvLockfile(
  * Get the renv lockfile path from R by running renv::paths$lockfile().
  * Returns the absolute path or empty string on failure.
  */
-async function fileExistsAt(filePath: string): Promise<boolean> {
-  try {
-    await access(filePath);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 function getRenvLockfileFromR(
   rPath: string,
   cwd: string,

@@ -12,12 +12,8 @@ vi.mock("child_process", () => ({
 }));
 
 let mockFileExistsResult = false;
-vi.mock("node:fs/promises", () => ({
-  access: vi.fn(() =>
-    mockFileExistsResult
-      ? Promise.resolve()
-      : Promise.reject(new Error("ENOENT")),
-  ),
+vi.mock("./fsUtils", () => ({
+  fileExistsAt: vi.fn(() => Promise.resolve(mockFileExistsResult)),
 }));
 
 // Mock getRRequires so it doesn't try to read real files

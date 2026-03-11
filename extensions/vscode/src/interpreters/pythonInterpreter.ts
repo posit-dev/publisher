@@ -1,9 +1,9 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
 import { execFile } from "child_process";
-import { access } from "node:fs/promises";
 import path from "node:path";
 import { PythonConfig } from "src/api/types/configurations";
+import { fileExistsAt } from "./fsUtils";
 import { getPythonRequires } from "./pythonRequires";
 
 const REQUIREMENTS_TXT = "requirements.txt";
@@ -89,15 +89,6 @@ function getPythonVersionFromExecutable(
       resolve(version);
     });
   });
-}
-
-async function fileExistsAt(filePath: string): Promise<boolean> {
-  try {
-    await access(filePath);
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 // Exported for testing
