@@ -656,7 +656,7 @@
     "pretest": "npm run esbuild-tests && npm run esbuild-base",
     "test": "vscode-test",
     "test-unit": "vitest run",
-    "test-integration": "vitest run src/interpreters/integration.test.ts"
+    "test-integration-interpreters": "vitest run src/interpreters/integration.test.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
