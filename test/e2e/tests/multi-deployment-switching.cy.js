@@ -44,7 +44,41 @@ describe("Multi-Deployment Switching Section", () => {
       "static-multi-test",
     );
 
-    // Step 3: Create second deployment (fastapi-simple) via the deployment picker
+    // Step 3: Open fastapi-main.py so it appears in "Open Files" for entrypoint selection
+    cy.get("a.codicon-explorer-view-icon").first().click();
+    cy.get(".explorer-viewlet").should("be.visible");
+    cy.retryWithBackoff(
+      () =>
+        cy.get(".explorer-viewlet").then(($explorer) => {
+          const target = $explorer.find('[aria-label="fastapi-simple"]');
+          if (target.length > 0) {
+            const isExpanded = target.attr("aria-expanded") === "true";
+            if (!isExpanded) {
+              target[0].click();
+            }
+            const entrypoint = $explorer.find('[aria-label="fastapi-main.py"]');
+            return entrypoint.length > 0 ? entrypoint : Cypress.$();
+          }
+          return Cypress.$();
+        }),
+      10,
+      700,
+    );
+    cy.get(".explorer-viewlet")
+      .find('[aria-label="fastapi-main.py"]')
+      .should("be.visible")
+      .dblclick();
+    cy.retryWithBackoff(
+      () =>
+        cy.get(".tabs-container").then(($tabs) => {
+          return $tabs.find('[aria-label="fastapi-main.py"]');
+        }),
+      10,
+      700,
+    ).should("be.visible");
+
+    // Step 4: Create second deployment via the deployment picker
+    cy.getPublisherSidebarIcon().click();
     cy.publisherWebview()
       .find(".deployment-control")
       .first()
@@ -55,17 +89,12 @@ describe("Multi-Deployment Switching Section", () => {
     cy.get(".quick-input-widget").should("be.visible");
     cy.get(".quick-input-titlebar").should("have.text", "Select Deployment");
 
-    // Wait for list items to populate before clicking (use jQuery find to avoid Cypress throw)
-    cy.retryWithBackoff(
-      () =>
-        cy.get(".quick-input-list").then(($list) => {
-          return $list.find('[aria-label*="Create a New Deployment"]');
-        }),
-      10,
-      700,
-    ).then(($el) => {
-      cy.wrap($el).should("be.visible").click();
-    });
+    // Type "Create" in the filter to find the item (virtual scrolling may hide it)
+    cy.get(".quick-input-widget .quick-input-filter input").type("Create");
+    cy.get(".quick-input-list")
+      .find('[aria-label*="Create a New Deployment"]')
+      .should("be.visible")
+      .click();
 
     // Select entrypoint for second deployment
     cy.retryWithBackoff(
@@ -76,7 +105,7 @@ describe("Multi-Deployment Switching Section", () => {
           );
         }),
       10,
-      700,
+      1000,
     ).then(($el) => {
       cy.wrap($el).scrollIntoView();
       cy.wrap($el).click({ force: true });
@@ -120,13 +149,13 @@ describe("Multi-Deployment Switching Section", () => {
       .first()
       .click({ force: true });
 
-    // Step 4: Verify second deployment is now selected
+    // Step 5: Verify second deployment is now selected
     cy.findInPublisherWebview('[data-automation="entrypoint-label"]').should(
       "contain.text",
       "fastapi-multi-test",
     );
 
-    // Step 5: Switch back to first deployment via picker
+    // Step 6: Switch back to first deployment via picker
     cy.publisherWebview()
       .find(".deployment-control")
       .first()
@@ -137,19 +166,16 @@ describe("Multi-Deployment Switching Section", () => {
     cy.get(".quick-input-widget").should("be.visible");
     cy.get(".quick-input-titlebar").should("have.text", "Select Deployment");
 
-    // Select the first deployment (static-multi-test)
-    cy.retryWithBackoff(
-      () =>
-        cy.get(".quick-input-list").then(($list) => {
-          return $list.find('[aria-label*="static-multi-test"]');
-        }),
-      10,
-      700,
-    ).then(($el) => {
-      cy.wrap($el).should("be.visible").click();
-    });
+    // Select the first deployment (type in filter to handle virtual scrolling)
+    cy.get(".quick-input-widget .quick-input-filter input").type(
+      "static-multi-test",
+    );
+    cy.get(".quick-input-list")
+      .find('[aria-label*="static-multi-test"]')
+      .should("be.visible")
+      .click();
 
-    // Step 6: Verify first deployment is shown again
+    // Step 7: Verify first deployment is shown again
     cy.findInPublisherWebview('[data-automation="entrypoint-label"]').should(
       "contain.text",
       "static-multi-test",

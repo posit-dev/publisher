@@ -103,17 +103,23 @@ Cypress.Commands.add(
     cy.get(".quick-input-titlebar").should("have.text", "Select Deployment");
 
     // Create a new deployment
+    // Type "Create" in the filter to ensure the item is visible even when
+    // many existing deployments push it off-screen (virtual scrolling)
+    cy.get(".quick-input-widget .quick-input-filter input").type("Create");
     cy.get(".quick-input-list")
       .find('[aria-label*="Create a New Deployment"]')
       .should("be.visible")
       .click();
 
-    // TODO - Need to specifically select and press enter for creating a new deployment.
-    // cy.get(".quickInput_list").get("div").get("div.monaco-list-rows")
-    // cy.get(".quickInput_list").find('[aria-label="fastapi - base directory, Missing Credential for http://connect-publisher-e2e:3939 • simple.py, Existing"').click()
-    // cy.get(".quickInput_list").find('[aria-label="simple.py, Open Files"]').click()
-
-    // cy.get(".quick-input-widget").type("{enter}")
+    // Handle Quarto deployment type dialog for .qmd files
+    // (the extension asks "source code or rendered document?" before entrypoint selection)
+    if (entrypointFile.endsWith(".qmd")) {
+      cy.get('.quick-input-list .monaco-list-row[aria-label*="source code"]', {
+        timeout: 10000,
+      })
+        .should("be.visible")
+        .click();
+    }
 
     // prompt for select entrypoint
     cy.retryWithBackoff(
