@@ -80,13 +80,16 @@ These three communicate using different methods at runtime.
 │  Posit Connect Server               │  │  `.posit/publish/` (on disk)        │
 │  (or Connect Cloud)                 │  │                                     │
 │                                     │  │  `*.toml` — configurations          │
-│  Content management, bundle upload, │  │  `deployments/*.toml`               │
-│  deployment, task polling,          │  │    — deployment records             │
+│  Content management, bundle upload, │  │    How content should be deployed:  │
+│  deployment, task polling,          │  │    type, entrypoint, packages, etc. │
 │  authentication                     │  │                                     │
-│                                     │  │  Source of truth for what gets      │
-│                                     │  │  deployed and where. The extension  │
-│                                     │  │  watches these files and refreshes  │
-│                                     │  │  the webview when they change.      │
+│                                     │  │  `deployments/*.toml` — records     │
+│                                     │  │    Where content was deployed and   │
+│                                     │  │    how it was configured at the     │
+│                                     │  │    time of deployment.              │
+│                                     │  │                                     │
+│                                     │  │  The extension watches these files  │
+│                                     │  │  and refreshes the webview.         │
 └──────────────────┬──────────────────┘  └──────────────────┬──────────────────┘
                    │                                        │
              HTTPS │                                        │  reads/writes
