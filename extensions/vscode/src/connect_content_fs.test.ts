@@ -19,7 +19,9 @@ vi.mock("src/logging", () => ({
 vi.mock("vscode", () => ({
   EventEmitter: class {
     event = vi.fn();
+    fire = vi.fn();
   },
+  FileChangeType: { Changed: 1, Created: 2, Deleted: 3 },
   Disposable: class {
     constructor(fn?: () => void) {
       this.dispose = fn ?? (() => {});
@@ -187,6 +189,12 @@ describe("ConnectContentFileSystemProvider", () => {
       ]);
       mockOpenConnectContent.mockResolvedValue({ data: bundle.buffer });
 
+      // Populate the cache via a sub-path read (root readDirectory is
+      // non-blocking and returns [] when the cache is empty).
+      await provider.readFile(
+        makeUri(testAuthority, `/${testContentGuid}/manifest.json`),
+      );
+
       const entries = await provider.readDirectory(
         makeUri(testAuthority, `/${testContentGuid}`),
       );
@@ -307,7 +315,11 @@ describe("ConnectContentFileSystemProvider", () => {
       ]);
       mockOpenConnectContent.mockResolvedValue({ data: bundle.buffer });
 
-      await provider.stat(makeUri(testAuthority, `/${testContentGuid}`));
+      // readFile on a sub-path triggers the full synchronous fetch
+      // (unlike stat/readDirectory on root URIs which return immediately).
+      await provider.readFile(
+        makeUri(testAuthority, `/${testContentGuid}/file.txt`),
+      );
       expect(mockOpenConnectContent).toHaveBeenCalledTimes(1);
 
       await provider.stat(makeUri(testAuthority, `/${testContentGuid}`));
@@ -315,6 +327,28 @@ describe("ConnectContentFileSystemProvider", () => {
         makeUri(testAuthority, `/${testContentGuid}`),
       );
       expect(mockOpenConnectContent).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("error handling", () => {
+    test("stat resolves with empty directory when bundle fetch fails", async () => {
+      mockOpenConnectContent.mockRejectedValue(new Error("network error"));
+
+      const stat = await provider.stat(
+        makeUri(testAuthority, `/${testContentGuid}`),
+      );
+
+      expect(stat.type).toBe(DIRECTORY);
+    });
+
+    test("readDirectory returns empty list when bundle fetch fails", async () => {
+      mockOpenConnectContent.mockRejectedValue(new Error("network error"));
+
+      const entries = await provider.readDirectory(
+        makeUri(testAuthority, `/${testContentGuid}`),
+      );
+
+      expect(entries).toHaveLength(0);
     });
   });
 });
