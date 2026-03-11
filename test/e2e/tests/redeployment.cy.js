@@ -89,16 +89,13 @@ describe("Redeployment Section", () => {
     cy.deployCurrentlySelected();
 
     // Step 5: Verify same record file is reused with updated bundle_id
-    cy.then(() => {
-      // The same record file path should still exist
-      cy.exec(`cat "${recordFilePath}"`, { failOnNonZeroExit: false }).then(
-        (result) => {
-          expect(result.exitCode, "Record file still exists").to.equal(0);
-        },
-      );
-
-      // Load and verify bundle_id changed (proves redeployment updated the record)
-      cy.loadTomlFile(recordFilePath).then((contentRecord) => {
+    // Wait for bind-mount propagation from container to host filesystem
+    // eslint-disable-next-line cypress/no-unnecessary-waiting
+    cy.wait(2000);
+    cy.getPublisherTomlFilePaths(projectDir).then((filePaths) => {
+      // Verify the same record file is still used (redeployment reuses the record)
+      expect(filePaths.contentRecord.path).to.equal(recordFilePath);
+      cy.loadTomlFile(filePaths.contentRecord.path).then((contentRecord) => {
         expect(contentRecord.bundle_id).to.exist;
         expect(contentRecord.bundle_id).to.not.equal(initialBundleId);
       });

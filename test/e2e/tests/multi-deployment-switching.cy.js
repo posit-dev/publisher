@@ -55,12 +55,12 @@ describe("Multi-Deployment Switching Section", () => {
     cy.get(".quick-input-widget").should("be.visible");
     cy.get(".quick-input-titlebar").should("have.text", "Select Deployment");
 
-    // Wait for list items to populate before clicking
+    // Wait for list items to populate before clicking (use jQuery find to avoid Cypress throw)
     cy.retryWithBackoff(
       () =>
-        cy
-          .get(".quick-input-list")
-          .find('[aria-label*="Create a New Deployment"]'),
+        cy.get(".quick-input-list").then(($list) => {
+          return $list.find('[aria-label*="Create a New Deployment"]');
+        }),
       10,
       700,
     ).then(($el) => {
@@ -70,11 +70,11 @@ describe("Multi-Deployment Switching Section", () => {
     // Select entrypoint for second deployment
     cy.retryWithBackoff(
       () =>
-        cy
-          .get(".quick-input-widget")
-          .find(
+        cy.get(".quick-input-widget").then(($widget) => {
+          return $widget.find(
             '[aria-label="fastapi-simple/fastapi-main.py, Open Files"], [aria-label="fastapi-main.py, Open Files"]',
-          ),
+          );
+        }),
       10,
       700,
     ).then(($el) => {
@@ -140,7 +140,9 @@ describe("Multi-Deployment Switching Section", () => {
     // Select the first deployment (static-multi-test)
     cy.retryWithBackoff(
       () =>
-        cy.get(".quick-input-list").find('[aria-label*="static-multi-test"]'),
+        cy.get(".quick-input-list").then(($list) => {
+          return $list.find('[aria-label*="static-multi-test"]');
+        }),
       10,
       700,
     ).then(($el) => {

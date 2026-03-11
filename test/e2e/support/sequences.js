@@ -43,10 +43,10 @@ Cypress.Commands.add(
           cy.get(".explorer-viewlet").then(($explorer) => {
             const target = $explorer.find(`[aria-label="${projectDir}"]`);
             if (target.length > 0) {
-              // Click to expand if not already expanded (use jQuery trigger to stay synchronous)
+              // Click to expand if not already expanded (native DOM click for VSCode compatibility)
               const isExpanded = target.attr("aria-expanded") === "true";
               if (!isExpanded) {
-                Cypress.$(target).trigger("click");
+                target[0].click();
               }
               // Check if the entrypoint file is now visible inside
               const entrypoint = $explorer.find(
@@ -69,7 +69,10 @@ Cypress.Commands.add(
 
     // confirm that the file got opened in a tab
     cy.retryWithBackoff(
-      () => cy.get(".tabs-container").find(`[aria-label="${entrypointFile}"]`),
+      () =>
+        cy.get(".tabs-container").then(($tabs) => {
+          return $tabs.find(`[aria-label="${entrypointFile}"]`);
+        }),
       10,
       700,
     ).should("be.visible");
@@ -115,11 +118,11 @@ Cypress.Commands.add(
     // prompt for select entrypoint
     cy.retryWithBackoff(
       () =>
-        cy
-          .get(".quick-input-widget")
-          .find(
+        cy.get(".quick-input-widget").then(($widget) => {
+          return $widget.find(
             `[aria-label="${projectDir}/${entrypointFile}, Open Files"], [aria-label="${entrypointFile}, Open Files"]`,
-          ),
+          );
+        }),
       10,
       700,
     ).then(($el) => {
