@@ -148,6 +148,10 @@ Even for "quick fixes" or "urgent hotfixes":
 
 Do NOT use `git push origin main` under any circumstances. If you find yourself about to push to main, stop and create a branch instead.
 
+# Pre-Commit Checks
+
+**Always run linting before committing or pushing TypeScript changes.** When any TypeScript files have been modified (in `extensions/vscode/` or webviews), run `just lint` from the `extensions/vscode/` directory and fix all errors before committing or pushing.
+
 # CHANGELOG Conventions
 
 When adding entries to CHANGELOG.md:
