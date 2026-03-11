@@ -19,9 +19,10 @@ function camelToSnake(key: string): string {
 // Keys at these paths contain user-defined names that must not be converted.
 const PRESERVE_KEYS_PATHS = new Set(["environment"]);
 
-// Both camelCase and snake_case forms are checked because the parentKey
-// has already been transformed when recursing into camelCase, but not yet
-// when recursing into snake_case (and vice-versa). Checking both is harmless.
+// Parent keys that signal their child "config" object should be preserved
+// as-is (not key-converted), because its keys are user-defined.
+// Both forms are needed because parentKey is the already-transformed key,
+// which is camelCase or snake_case depending on the conversion direction.
 const INTEGRATION_REQUESTS_PARENTS = new Set([
   "integrationRequests",
   "integration_requests",

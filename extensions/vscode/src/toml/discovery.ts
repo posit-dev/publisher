@@ -125,6 +125,9 @@ async function loadConfigsFromPaths(
   return results;
 }
 
+// Directories that are large, never contain configs, and slow down the walk.
+const SKIP_DIRECTORIES = ["node_modules", "__pycache__", "renv", "packrat"];
+
 async function walkForConfigs(
   dir: string,
   rootDir: string,
@@ -160,13 +163,8 @@ async function walkForConfigs(
 
     // Skip dot-directories (except we already handled .posit above)
     if (name.startsWith(".")) continue;
-    // Skip directories that are large, never contain configs, and slow down the walk
-    if (
-      name === "node_modules" ||
-      name === "__pycache__" ||
-      name === "renv" ||
-      name === "packrat"
-    ) {
+    // Skip common large directories that (should) never contain configs
+    if (SKIP_DIRECTORIES.includes(name)) {
       continue;
     }
 
