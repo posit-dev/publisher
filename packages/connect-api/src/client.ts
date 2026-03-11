@@ -45,9 +45,9 @@ export class ConnectAPI {
 
   /**
    * Validates credentials and checks user state (locked, confirmed, role).
-   * Returns the full UserDTO on success; throws on HTTP errors or invalid state.
+   * Returns { user, error: null } on success; throws on HTTP errors or invalid state.
    */
-  async testAuthentication(): Promise<UserDTO> {
+  async testAuthentication(): Promise<{ user: User; error: null }> {
     let data: UserDTO;
     try {
       ({ data } = await this.client.get<UserDTO>("/__api__/v1/user"));
@@ -77,7 +77,16 @@ export class ConnectAPI {
       );
     }
 
-    return data;
+    return {
+      user: {
+        id: data.guid,
+        username: data.username,
+        first_name: data.first_name,
+        last_name: data.last_name,
+        email: data.email,
+      },
+      error: null,
+    };
   }
 
   /** Retrieves the current authenticated user without validation checks. */

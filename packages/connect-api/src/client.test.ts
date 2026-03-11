@@ -179,14 +179,23 @@ describe("Authorization header", () => {
 // ---------------------------------------------------------------------------
 
 describe("testAuthentication", () => {
-  it("returns the full UserDTO on success", async () => {
+  it("returns { user, error: null } with mapped User on success", async () => {
     const dto = validUserDTO();
     mockRequest.mockResolvedValue(jsonResponse(dto));
 
     const client = createClient();
     const result = await client.testAuthentication();
 
-    expect(result).toEqual(dto);
+    expect(result).toEqual({
+      user: {
+        id: dto.guid,
+        username: dto.username,
+        first_name: dto.first_name,
+        last_name: dto.last_name,
+        email: dto.email,
+      },
+      error: null,
+    });
   });
 
   it("throws on 401", async () => {
@@ -234,7 +243,8 @@ describe("testAuthentication", () => {
 
     const client = createClient();
     const result = await client.testAuthentication();
-    expect(result).toEqual(dto);
+    expect(result.user.id).toBe(dto.guid);
+    expect(result.error).toBeNull();
   });
 
   it("throws with generic message on non-JSON error body", async () => {
