@@ -35,12 +35,65 @@ describe("detectPythonInterpreter", () => {
     vi.clearAllMocks();
   });
 
-  test("returns empty config when no path provided", async () => {
+  test("returns empty config when no path provided and PATH lookup fails", async () => {
+    mockExecFile.mockImplementation(
+      (
+        _cmd: string,
+        _args: string[],
+        _opts: unknown,
+        cb: (err: Error | null, stdout: string) => void,
+      ) => {
+        cb(new Error("not found"), "");
+      },
+    );
+
     const result = await detectPythonInterpreter("/project");
     expect(result.config.version).toBe("");
     expect(result.config.packageFile).toBe("");
     expect(result.config.packageManager).toBe("");
     expect(result.preferredPath).toBe("");
+  });
+
+  test("falls back to python3 on PATH when no preferred path given", async () => {
+    mockExecFile.mockImplementation(
+      (
+        cmd: string,
+        _args: string[],
+        _opts: unknown,
+        cb: (err: Error | null, stdout: string) => void,
+      ) => {
+        if (cmd === "python3") {
+          cb(null, "3.12.0\n");
+        } else {
+          cb(new Error("not found"), "");
+        }
+      },
+    );
+
+    const result = await detectPythonInterpreter("/project");
+    expect(result.config.version).toBe("3.12.0");
+    expect(result.preferredPath).toBe("python3");
+  });
+
+  test("falls back to python on PATH when python3 is not found", async () => {
+    mockExecFile.mockImplementation(
+      (
+        cmd: string,
+        _args: string[],
+        _opts: unknown,
+        cb: (err: Error | null, stdout: string) => void,
+      ) => {
+        if (cmd === "python") {
+          cb(null, "3.9.7\n");
+        } else {
+          cb(new Error("not found"), "");
+        }
+      },
+    );
+
+    const result = await detectPythonInterpreter("/project");
+    expect(result.config.version).toBe("3.9.7");
+    expect(result.preferredPath).toBe("python");
   });
 
   test("returns empty config when python fails to execute", async () => {

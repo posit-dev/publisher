@@ -7,6 +7,7 @@ import { fileExistsAt } from "./fsUtils";
 import { getRRequires } from "./rRequires";
 
 const DEFAULT_RENV_LOCKFILE = "renv.lock";
+const R_PATH_FALLBACKS = ["R"];
 const R_VERSION_TIMEOUT = 15000;
 const RENV_LOCKFILE_TIMEOUT = 15000;
 
@@ -32,9 +33,22 @@ export async function detectRInterpreter(
     preferredPath: preferredPath || "",
   };
 
+  // Try preferred path first, then fall back to PATH lookup
+  let resolvedPath = preferredPath || "";
   let version = "";
+
   if (preferredPath) {
     version = await getRVersionFromExecutable(preferredPath);
+  }
+
+  if (!version) {
+    for (const candidate of R_PATH_FALLBACKS) {
+      version = await getRVersionFromExecutable(candidate);
+      if (version) {
+        resolvedPath = candidate;
+        break;
+      }
+    }
   }
 
   if (!version) {
@@ -42,7 +56,7 @@ export async function detectRInterpreter(
   }
 
   // Resolve the renv lockfile path
-  const lockfilePath = await resolveRenvLockfile(preferredPath!, projectDir);
+  const lockfilePath = await resolveRenvLockfile(resolvedPath, projectDir);
   const lockfilePresent = await fileExistsAt(
     path.join(projectDir, lockfilePath),
   );
@@ -58,7 +72,7 @@ export async function detectRInterpreter(
       packageManager: "renv",
       requiresR: requiresR || undefined,
     },
-    preferredPath: preferredPath || "",
+    preferredPath: resolvedPath,
   };
 }
 

@@ -31,12 +31,51 @@ describe("detectRInterpreter", () => {
     vi.clearAllMocks();
   });
 
-  test("returns empty config when no path provided", async () => {
+  test("returns empty config when no path provided and PATH lookup fails", async () => {
+    mockExecFile.mockImplementation(
+      (
+        _cmd: string,
+        _args: string[],
+        _opts: unknown,
+        cb: (err: Error | null, stdout: string, stderr: string) => void,
+      ) => {
+        cb(new Error("not found"), "", "");
+      },
+    );
+
     const result = await detectRInterpreter("/project");
     expect(result.config.version).toBe("");
     expect(result.config.packageFile).toBe("");
     expect(result.config.packageManager).toBe("");
     expect(result.preferredPath).toBe("");
+  });
+
+  test("falls back to R on PATH when no preferred path given", async () => {
+    mockExecFile
+      .mockImplementationOnce(
+        (
+          _cmd: string,
+          _args: string[],
+          _opts: unknown,
+          cb: (err: Error | null, stdout: string, stderr: string) => void,
+        ) => {
+          cb(null, "R version 4.3.2 (2023-10-31)\n", "");
+        },
+      )
+      .mockImplementationOnce(
+        (
+          _cmd: string,
+          _args: string[],
+          _opts: unknown,
+          cb: (err: Error | null, stdout: string, stderr: string) => void,
+        ) => {
+          cb(new Error("renv not installed"), "", "");
+        },
+      );
+
+    const result = await detectRInterpreter("/project");
+    expect(result.config.version).toBe("4.3.2");
+    expect(result.preferredPath).toBe("R");
   });
 
   test("returns empty config when R fails to execute", async () => {

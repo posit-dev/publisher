@@ -7,6 +7,7 @@ import { fileExistsAt } from "./fsUtils";
 import { getPythonRequires } from "./pythonRequires";
 
 const REQUIREMENTS_TXT = "requirements.txt";
+const PYTHON_PATH_FALLBACKS = ["python3", "python"];
 
 const pythonVersionCache = new Map<string, string>();
 
@@ -29,9 +30,22 @@ export async function detectPythonInterpreter(
     preferredPath: preferredPath || "",
   };
 
+  // Try preferred path first, then fall back to PATH lookup
+  let resolvedPath = preferredPath || "";
   let version = "";
+
   if (preferredPath) {
     version = await getPythonVersionFromExecutable(preferredPath, projectDir);
+  }
+
+  if (!version) {
+    for (const candidate of PYTHON_PATH_FALLBACKS) {
+      version = await getPythonVersionFromExecutable(candidate, projectDir);
+      if (version) {
+        resolvedPath = candidate;
+        break;
+      }
+    }
   }
 
   if (!version) {
@@ -54,7 +68,7 @@ export async function detectPythonInterpreter(
       packageManager: "auto",
       requiresPython: requiresPython || undefined,
     },
-    preferredPath: preferredPath || "",
+    preferredPath: resolvedPath,
   };
 }
 
