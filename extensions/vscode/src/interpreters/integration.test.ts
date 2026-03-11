@@ -13,7 +13,10 @@ import { readFileText, fileExistsAt } from "./fsUtils";
 import { getPythonRequires } from "./pythonRequires";
 import { getRRequires } from "./rRequires";
 import { getInterpreterDefaults } from "./index";
-import { detectPythonInterpreter, clearPythonVersionCache } from "./pythonInterpreter";
+import {
+  detectPythonInterpreter,
+  clearPythonVersionCache,
+} from "./pythonInterpreter";
 import { detectRInterpreter } from "./rInterpreter";
 
 const execFileAsync = promisify(execFile);
@@ -271,9 +274,7 @@ describe("detectPythonInterpreter (real interpreter)", async () => {
 
   test("falls back to PATH when preferred path is bogus", async () => {
     clearPythonVersionCache();
-    const dir = await mkdtemp(
-      path.join(os.tmpdir(), "publisher-pybogus-"),
-    );
+    const dir = await mkdtemp(path.join(os.tmpdir(), "publisher-pybogus-"));
     try {
       const result = await detectPythonInterpreter(
         dir,
@@ -457,24 +458,21 @@ describe("detectRInterpreter end-to-end", async () => {
     },
   );
 
-  test.skipIf(!rAvailable)(
-    "populates requiresR from renv.lock",
-    async () => {
-      const dir = await mkdtemp(path.join(os.tmpdir(), "publisher-re2e-"));
-      try {
-        await writeFile(
-          path.join(dir, "renv.lock"),
-          JSON.stringify({ R: { Version: "4.2.3" } }),
-          "utf-8",
-        );
-        const result = await detectRInterpreter(dir, "R");
-        expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
-        expect(result.config.requiresR).toBe("~=4.2.0");
-      } finally {
-        await rm(dir, { recursive: true, force: true });
-      }
-    },
-  );
+  test.skipIf(!rAvailable)("populates requiresR from renv.lock", async () => {
+    const dir = await mkdtemp(path.join(os.tmpdir(), "publisher-re2e-"));
+    try {
+      await writeFile(
+        path.join(dir, "renv.lock"),
+        JSON.stringify({ R: { Version: "4.2.3" } }),
+        "utf-8",
+      );
+      const result = await detectRInterpreter(dir, "R");
+      expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
+      expect(result.config.requiresR).toBe("~=4.2.0");
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
 
   test.skipIf(!rAvailable)(
     "returns all fields together: version, packageFile, requiresR",
@@ -538,11 +536,7 @@ describe("getInterpreterDefaults end-to-end", async () => {
       clearPythonVersionCache();
       const dir = await mkdtemp(path.join(os.tmpdir(), "publisher-both-"));
       try {
-        await writeFile(
-          path.join(dir, "requirements.txt"),
-          "numpy\n",
-          "utf-8",
-        );
+        await writeFile(path.join(dir, "requirements.txt"), "numpy\n", "utf-8");
         await writeFile(path.join(dir, ".python-version"), "3.11", "utf-8");
         await writeFile(
           path.join(dir, "DESCRIPTION"),
@@ -572,11 +566,7 @@ describe("getInterpreterDefaults end-to-end", async () => {
       clearPythonVersionCache();
       const dir = await mkdtemp(path.join(os.tmpdir(), "publisher-pyonly-"));
       try {
-        await writeFile(
-          path.join(dir, "requirements.txt"),
-          "flask\n",
-          "utf-8",
-        );
+        await writeFile(path.join(dir, "requirements.txt"), "flask\n", "utf-8");
 
         const result = await getInterpreterDefaults(dir, pythonCmd);
 
@@ -594,31 +584,28 @@ describe("getInterpreterDefaults end-to-end", async () => {
     },
   );
 
-  test.skipIf(!rAvailable)(
-    "handles R-only project gracefully",
-    async () => {
-      clearPythonVersionCache();
-      const dir = await mkdtemp(path.join(os.tmpdir(), "publisher-ronly-"));
-      try {
-        await writeFile(
-          path.join(dir, "DESCRIPTION"),
-          "Package: mypkg\nDepends: R (>= 4.0.0)\n",
-          "utf-8",
-        );
+  test.skipIf(!rAvailable)("handles R-only project gracefully", async () => {
+    clearPythonVersionCache();
+    const dir = await mkdtemp(path.join(os.tmpdir(), "publisher-ronly-"));
+    try {
+      await writeFile(
+        path.join(dir, "DESCRIPTION"),
+        "Package: mypkg\nDepends: R (>= 4.0.0)\n",
+        "utf-8",
+      );
 
-        const result = await getInterpreterDefaults(dir, undefined, "R");
+      const result = await getInterpreterDefaults(dir, undefined, "R");
 
-        expect(result.r.version).toMatch(/^\d+\.\d+\.\d+$/);
-        expect(result.r.requiresR).toBe(">= 4.0.0");
-        // Python may still be detected via PATH fallback
-        if (pythonAvailable) {
-          expect(result.python.version).toMatch(/^\d+\.\d+\.\d+$/);
-        } else {
-          expect(result.python.version).toBe("");
-        }
-      } finally {
-        await rm(dir, { recursive: true, force: true });
+      expect(result.r.version).toMatch(/^\d+\.\d+\.\d+$/);
+      expect(result.r.requiresR).toBe(">= 4.0.0");
+      // Python may still be detected via PATH fallback
+      if (pythonAvailable) {
+        expect(result.python.version).toMatch(/^\d+\.\d+\.\d+$/);
+      } else {
+        expect(result.python.version).toBe("");
       }
-    },
-  );
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
 });

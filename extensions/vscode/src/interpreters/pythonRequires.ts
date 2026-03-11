@@ -67,7 +67,9 @@ const requiresPythonRe = /^\s*requires-python\s*=\s*["']([^"']+)["']\s*$/m;
  * Read pyproject.toml and extract requires-python from [project] section.
  * Uses regex extraction instead of a full TOML parser.
  */
-async function readPyProjectToml(projectDir: string): Promise<string | undefined> {
+async function readPyProjectToml(
+  projectDir: string,
+): Promise<string | undefined> {
   const content = await readFileText(path.join(projectDir, "pyproject.toml"));
   if (content === null) {
     return undefined;

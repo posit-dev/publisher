@@ -29,7 +29,9 @@ export async function getRRequires(projectDir: string): Promise<string> {
  * Read DESCRIPTION file and look for R version in the Depends: section.
  * Matches patterns like "R (>= 3.5.0)".
  */
-async function readDescriptionFile(projectDir: string): Promise<string | undefined> {
+async function readDescriptionFile(
+  projectDir: string,
+): Promise<string | undefined> {
   const content = await readFileText(path.join(projectDir, "DESCRIPTION"));
   if (content === null) {
     return undefined;
