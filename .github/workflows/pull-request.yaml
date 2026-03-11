@@ -89,6 +89,11 @@ jobs:
     if: needs.detect-changes.outputs.has-code == 'true'
     uses: ./.github/workflows/vscode.yaml
 
+  interpreter-integration:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.has-code == 'true'
+    uses: ./.github/workflows/interpreter-integration.yaml
+
   connect-contract-tests:
     needs: detect-changes
     if: needs.detect-changes.outputs.has-code == 'true'
