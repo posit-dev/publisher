@@ -538,29 +538,6 @@ describe("uploadBundle", () => {
 });
 
 // ---------------------------------------------------------------------------
-// latestBundleId
-// ---------------------------------------------------------------------------
-
-describe("latestBundleId", () => {
-  const contentId = ContentID("content-123");
-
-  it("returns the full content details including bundle_id", async () => {
-    const responseBody = {
-      guid: contentId,
-      bundle_id: "latest-bundle",
-      name: "my-app",
-    };
-    mockRequest.mockResolvedValue(jsonResponse(responseBody));
-
-    const client = createClient();
-    const { data } = await client.latestBundleId(contentId);
-
-    expect(data).toEqual(responseBody);
-    expect(data.bundle_id).toBe("latest-bundle");
-  });
-});
-
-// ---------------------------------------------------------------------------
 // downloadBundle
 // ---------------------------------------------------------------------------
 

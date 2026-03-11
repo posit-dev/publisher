@@ -155,13 +155,6 @@ export class ConnectAPI {
     );
   }
 
-  /** Retrieves content details (including bundle_id) for a content item. */
-  async latestBundleId(
-    contentId: ContentID,
-  ): Promise<AxiosResponse<ContentDetailsDTO>> {
-    return this.contentDetails(contentId);
-  }
-
   /** Downloads a bundle archive as raw bytes. */
   async downloadBundle(
     contentId: ContentID,

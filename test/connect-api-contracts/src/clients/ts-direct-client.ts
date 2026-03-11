@@ -113,7 +113,7 @@ export class TypeScriptDirectClient implements ConnectContractClient {
       }
 
       case Method.LatestBundleID: {
-        const { data } = await c.latestBundleId(
+        const { data } = await c.contentDetails(
           ContentID(params.contentId as string),
         );
         return { bundleId: data.bundle_id };
