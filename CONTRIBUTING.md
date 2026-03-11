@@ -8,6 +8,7 @@
     - [Prerequisites](#prerequisites)
     - [Setup](#setup)
     - [Committing Changes to the repo](#committing-changes-to-the-repo)
+  - [Architecture](#architecture)
   - [Testing](#testing)
     - [Unit Tests](#unit-tests)
       - [Coverage Reporting](#coverage-reporting)
