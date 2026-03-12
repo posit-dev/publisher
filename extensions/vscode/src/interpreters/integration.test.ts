@@ -13,15 +13,6 @@
 // interpreter-integration.yaml workflow installs known Python and R versions
 // across a matrix of configurations to ensure full coverage.
 //
-// The tests are organized in layers from low-level to high-level:
-//   1. fsUtils          – filesystem helpers (readFileText, fileExistsAt)
-//   2. getPythonRequires – version constraint extraction from project files
-//   3. getRRequires      – version constraint extraction from R project files
-//   4. detectPythonInterpreter – full Python detection (exec + project files)
-//   5. detectRInterpreter      – full R detection (exec + project files)
-//   6. End-to-end tests  – detection + project files combined
-//   7. getInterpreterDefaults  – top-level orchestrator for both interpreters
-//
 // Run these tests with:
 //   npx vitest run src/interpreters/integration.test.ts
 //
@@ -60,7 +51,7 @@ async function isExecutableAvailable(name: string): Promise<boolean> {
 }
 
 // ---------------------------------------------------------------------------
-// Layer 1: fsUtils – verify basic file I/O helpers against real disk
+// fsUtils – verify basic file I/O helpers against real disk
 // ---------------------------------------------------------------------------
 
 describe("fsUtils (real filesystem)", () => {
@@ -108,8 +99,7 @@ describe("fsUtils (real filesystem)", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Layer 2: getPythonRequires – version constraint extraction from real files
-// Each test creates its own temp dir to avoid cross-test file interference.
+// getPythonRequires – version constraint extraction from real files
 // ---------------------------------------------------------------------------
 
 describe("getPythonRequires (real filesystem)", () => {
@@ -179,7 +169,7 @@ describe("getPythonRequires (real filesystem)", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Layer 3: getRRequires – R version constraint extraction from real files
+// getRRequires – R version constraint extraction from real files
 // ---------------------------------------------------------------------------
 
 describe("getRRequires (real filesystem)", () => {
@@ -241,9 +231,9 @@ describe("getRRequires (real filesystem)", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Layer 4: detectPythonInterpreter – runs a real Python executable to get its
-// version, and checks for requirements.txt on disk. Tests are skipped when
-// no Python interpreter is found on the PATH.
+// detectPythonInterpreter – runs a real Python executable to get its version,
+// and checks for requirements.txt on disk. Tests are skipped when no Python
+// interpreter is found on the PATH.
 // ---------------------------------------------------------------------------
 
 describe("detectPythonInterpreter (real interpreter)", async () => {
@@ -336,8 +326,8 @@ describe("detectPythonInterpreter (real interpreter)", async () => {
 });
 
 // ---------------------------------------------------------------------------
-// Layer 5: detectRInterpreter – runs a real R executable to get its version.
-// Tests are skipped when R is not found on the PATH.
+// detectRInterpreter – runs a real R executable to get its version. Tests are
+// skipped when R is not found on the PATH.
 // ---------------------------------------------------------------------------
 
 describe("detectRInterpreter (real interpreter)", async () => {
@@ -390,10 +380,10 @@ describe("detectRInterpreter (real interpreter)", async () => {
 });
 
 // ---------------------------------------------------------------------------
-// Layer 6a: End-to-end Python detection – combines a real interpreter with
-// project config files (.python-version, pyproject.toml, requirements.txt)
-// to verify that both the executable version and the project's version
-// constraints (requiresPython) are populated correctly together.
+// End-to-end Python detection – combines a real interpreter with project
+// config files (.python-version, pyproject.toml, requirements.txt) to verify
+// that both the executable version and the project's version constraints
+// (requiresPython) are populated correctly together.
 // ---------------------------------------------------------------------------
 
 describe("detectPythonInterpreter end-to-end", async () => {
@@ -479,9 +469,9 @@ describe("detectPythonInterpreter end-to-end", async () => {
 });
 
 // ---------------------------------------------------------------------------
-// Layer 6b: End-to-end R detection – combines a real R interpreter with
-// project config files (DESCRIPTION, renv.lock) to verify that the
-// executable version and requiresR constraint are populated together.
+// End-to-end R detection – combines a real R interpreter with project config
+// files (DESCRIPTION, renv.lock) to verify that the executable version and
+// requiresR constraint are populated together.
 // ---------------------------------------------------------------------------
 
 describe("detectRInterpreter end-to-end", async () => {
@@ -568,11 +558,11 @@ describe("detectRInterpreter end-to-end", async () => {
 });
 
 // ---------------------------------------------------------------------------
-// Layer 7: getInterpreterDefaults – the top-level orchestrator that state.ts
-// calls to get defaults for both Python and R in a single call. Verifies
-// that the full pipeline works for mixed-language, Python-only, and R-only
-// projects. When one interpreter is not explicitly provided, detection will
-// attempt to find it via PATH fallback, so expectations account for that.
+// getInterpreterDefaults – the top-level orchestrator that state.ts calls to
+// get defaults for both Python and R in a single call. Verifies that the full
+// pipeline works for mixed-language, Python-only, and R-only projects. When
+// one interpreter is not explicitly provided, detection will attempt to find
+// it via PATH fallback, so expectations account for that.
 // ---------------------------------------------------------------------------
 
 describe("getInterpreterDefaults end-to-end", async () => {
