@@ -163,7 +163,7 @@ describe("loadAllDeploymentsRecursive", () => {
     const subDir = makeProjectDir("subproject");
     writeDeployment(subDir, "sub-app", validDeployment);
 
-    const records = await loadAllDeploymentsRecursive(tmpDir);
+    const records = await loadAllDeploymentsRecursive(tmpDir, tmpDir);
     expect(records).toHaveLength(2);
 
     const names = records
@@ -188,7 +188,7 @@ describe("loadAllDeploymentsRecursive", () => {
     });
     writeDeployment(hiddenDir, "hidden-app", validDeployment);
 
-    const records = await loadAllDeploymentsRecursive(tmpDir);
+    const records = await loadAllDeploymentsRecursive(tmpDir, tmpDir);
     expect(records).toHaveLength(0);
   });
 
@@ -201,13 +201,13 @@ describe("loadAllDeploymentsRecursive", () => {
     });
     writeDeployment(nmDir, "nm-app", validDeployment);
 
-    const records = await loadAllDeploymentsRecursive(tmpDir);
+    const records = await loadAllDeploymentsRecursive(tmpDir, tmpDir);
     expect(records).toEqual([]);
   });
 
   it("returns empty array when no .posit directories found", async () => {
     fs.mkdirSync(path.join(tmpDir, "some-dir"), { recursive: true });
-    const records = await loadAllDeploymentsRecursive(tmpDir);
+    const records = await loadAllDeploymentsRecursive(tmpDir, tmpDir);
     expect(records).toEqual([]);
   });
 });
