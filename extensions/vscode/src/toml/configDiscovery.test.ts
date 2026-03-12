@@ -11,9 +11,9 @@ import {
   loadConfiguration,
   loadAllConfigurations,
   loadAllConfigurationsRecursive,
-} from "./discovery";
+} from "./configDiscovery";
 import { isConfigurationError } from "../api/types/configurations";
-import { ConfigurationLoadError } from "./errors";
+import { ConfigurationLoadError } from "./configErrors";
 
 let tmpDir: string;
 

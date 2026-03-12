@@ -4,8 +4,8 @@ import * as fs from "fs/promises";
 import * as path from "path";
 
 import { Configuration, ConfigurationError } from "../api/types/configurations";
-import { loadConfigFromFile } from "./loader";
-import { ConfigurationLoadError } from "./errors";
+import { loadConfigFromFile } from "./configLoader";
+import { ConfigurationLoadError } from "./configErrors";
 
 /** Standard path: <projectDir>/.posit/publish */
 export function getConfigDir(projectDir: string): string {

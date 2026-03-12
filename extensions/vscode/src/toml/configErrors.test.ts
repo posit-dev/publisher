@@ -7,7 +7,7 @@ import {
   createSchemaValidationError,
   createConfigurationError,
   formatValidationErrors,
-} from "./errors";
+} from "./configErrors";
 
 describe("error factories", () => {
   it("creates an invalidTOML error", () => {
