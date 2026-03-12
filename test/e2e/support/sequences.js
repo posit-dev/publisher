@@ -111,23 +111,23 @@ Cypress.Commands.add(
       .should("be.visible")
       .click();
 
-    // Handle Quarto deployment type dialog if present for .qmd files
-    // The extension may ask "source code or rendered document?" before entrypoint selection.
-    // This dialog appears inconsistently depending on Quarto install, so handle conditionally.
+    // Handle Quarto deployment type dialog for .qmd files
+    // The extension asks "Publish the source code or the rendered document?" for .qmd entrypoints.
+    // Wait for the dialog's list row and click it using the same pattern as other quick-pick clicks.
     if (entrypointFile.endsWith(".qmd")) {
-      // eslint-disable-next-line cypress/no-unnecessary-waiting
-      cy.wait(2000);
-      cy.get(".quick-input-widget").then(($widget) => {
-        const placeholder =
-          $widget.find(".quick-input-filter input").attr("placeholder") || "";
-        if (
-          placeholder.toLowerCase().includes("source code") ||
-          placeholder.toLowerCase().includes("rendered")
-        ) {
-          // Press Enter to select the first option (publish with source code)
-          cy.get(".quick-input-widget").type("{enter}");
-        }
-      });
+      cy.retryWithBackoff(
+        () =>
+          cy.get(".quick-input-widget").then(($widget) => {
+            return $widget.find(
+              '.monaco-list-row[aria-label*="source code"]',
+            );
+          }),
+        15,
+        1000,
+      );
+      cy.get('.quick-input-widget .monaco-list-row[aria-label*="source code"]')
+        .first()
+        .click({ force: true });
     }
 
     // prompt for select entrypoint
