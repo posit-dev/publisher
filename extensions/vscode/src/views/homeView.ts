@@ -43,7 +43,12 @@ import {
   IntegrationRequest,
   Integration,
 } from "src/api";
-import { loadAllConfigurations } from "src/toml";
+import {
+  loadAllConfigurations,
+  listIntegrationRequests,
+  addIntegrationRequest,
+  removeIntegrationRequest,
+} from "src/toml";
 import * as workspaces from "src/workspaces";
 import { EventStream } from "src/events";
 import { getPythonInterpreterPath, getRInterpreterPath } from "../utils/vscode";
@@ -701,14 +706,20 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const activeConfig = await this.state.getSelectedConfiguration();
     if (activeConfig && !isConfigurationError(activeConfig)) {
       try {
-        const api = await useApi();
-        let response = await api.integrationRequests.list(
+        const root = workspaces.path();
+        if (!root) {
+          return;
+        }
+        const integrationRequests = await listIntegrationRequests(
           activeConfig.configurationName,
           activeConfig.projectDir,
+          root,
         );
-        const integrationRequests = response.data ?? [];
 
-        response = await api.connectServer.getIntegrations(credentialName!);
+        const api = await useApi();
+        const response = await api.connectServer.getIntegrations(
+          credentialName!,
+        );
         const integrations = response.data ?? [];
         const requests = integrationRequests.map((ir) => {
           const matchingIntegration = integrations.find(
@@ -1269,7 +1280,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   };
 
   public addIntegrationRequest = async () => {
-    const api = await useApi();
     const activeConfig = await this.state.getSelectedConfiguration();
     if (activeConfig === undefined) {
       console.error("homeView::addIntegration: No active configuration.");
@@ -1279,6 +1289,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       console.error(
         "homeView::addIntegration: Unable to add integration into a configuration with error.",
       );
+      return;
+    }
+
+    const root = workspaces.path();
+    if (!root) {
       return;
     }
 
@@ -1302,6 +1317,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         "Retrieving Integrations from deployment server",
         Views.HomeView,
         async () => {
+          const api = await useApi();
           const response = await api.connectServer.getIntegrations(
             credential.name,
           );
@@ -1327,17 +1343,13 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         "Adding Integration Request",
         Views.HomeView,
         async () => {
-          await api.integrationRequests.add(
+          await addIntegrationRequest(
             activeConfig.configurationName,
             activeConfig.projectDir,
+            root,
             {
               guid: integration.guid,
-              // name: integration.name,
-              // description: integration.description,
-              // authType: integration.authType,
-              // type: integration.template,
-              // config: integration.config,
-            } as IntegrationRequest,
+            },
           );
         },
       );
@@ -1369,15 +1381,20 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
 
+    const root = workspaces.path();
+    if (!root) {
+      return;
+    }
+
     try {
       await showProgress(
         "Removing Integration Request",
         Views.HomeView,
         async () => {
-          const api = await useApi();
-          await api.integrationRequests.delete(
+          await removeIntegrationRequest(
             activeConfig.configurationName,
             activeConfig.projectDir,
+            root,
             {
               guid: context.request.guid,
             },
@@ -1412,21 +1429,26 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
 
+    const root = workspaces.path();
+    if (!root) {
+      return;
+    }
+
     try {
       await showProgress(
         "Clearing Integration Requests",
         Views.HomeView,
         async () => {
-          const api = await useApi();
-          const response = await api.integrationRequests.list(
+          const reqs = await listIntegrationRequests(
             activeConfig.configurationName,
             activeConfig.projectDir,
+            root,
           );
-          const reqs = response.data;
           for (const ir of reqs) {
-            await api.integrationRequests.delete(
+            await removeIntegrationRequest(
               activeConfig.configurationName,
               activeConfig.projectDir,
+              root,
               {
                 guid: ir.guid,
               },
