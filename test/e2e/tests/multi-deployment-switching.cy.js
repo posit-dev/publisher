@@ -181,10 +181,15 @@ describe("Multi-Deployment Switching Section", () => {
       .first()
       .click();
 
-    // Step 7: Verify first deployment is shown again
-    cy.findInPublisherWebview('[data-automation="entrypoint-label"]').should(
-      "contain.text",
-      "static-multi-test",
-    );
+    // Step 7: Verify first deployment is shown again (wait for webview update)
+    cy.waitForNetworkIdle(1000);
+    cy.retryWithBackoff(
+      () =>
+        cy.publisherWebview().then(($body) => {
+          return $body.find('[data-automation="entrypoint-label"]');
+        }),
+      10,
+      1000,
+    ).should("contain.text", "static-multi-test");
   });
 });

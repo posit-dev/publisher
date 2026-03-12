@@ -118,13 +118,20 @@ Cypress.Commands.add(
       () =>
         cy.get(".quick-input-widget").then(($widget) => {
           // Dismiss Quarto source/rendered dialog if present
+          // (detect by checking input placeholder for "source code" or "rendered")
           if (entrypointFile.endsWith(".qmd")) {
-            const quartoOption = $widget.find(
-              '.monaco-list-row[aria-label*="source code"]',
-            );
-            if (quartoOption.length > 0) {
-              quartoOption[0].click();
-              return Cypress.$(); // retry to reach entrypoint step
+            const placeholder =
+              $widget.find(".quick-input-filter input").attr("placeholder") ||
+              "";
+            if (
+              placeholder.toLowerCase().includes("source code") ||
+              placeholder.toLowerCase().includes("rendered")
+            ) {
+              const rows = $widget.find(".quick-input-list .monaco-list-row");
+              if (rows.length > 0) {
+                rows[0].click();
+                return Cypress.$(); // retry to reach entrypoint step
+              }
             }
           }
           // Look for entrypoint in the list
