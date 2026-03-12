@@ -87,6 +87,50 @@ export const allValidContentTypes: ContentType[] = [
   ContentType.RMD,
 ];
 
+export function isPythonContent(type: ContentType): boolean {
+  switch (type) {
+    case ContentType.JUPYTER_NOTEBOOK:
+    case ContentType.JUPYTER_VOILA:
+    case ContentType.PYTHON_BOKEH:
+    case ContentType.PYTHON_DASH:
+    case ContentType.PYTHON_FASTAPI:
+    case ContentType.PYTHON_FLASK:
+    case ContentType.PYTHON_GRADIO:
+    case ContentType.PYTHON_PANEL:
+    case ContentType.PYTHON_SHINY:
+    case ContentType.PYTHON_STREAMLIT:
+      return true;
+    default:
+      return false;
+  }
+}
+
+export function isAPIContent(type: ContentType): boolean {
+  switch (type) {
+    case ContentType.PYTHON_FLASK:
+    case ContentType.PYTHON_FASTAPI:
+    case ContentType.R_PLUMBER:
+      return true;
+    default:
+      return false;
+  }
+}
+
+export function isAppContent(type: ContentType): boolean {
+  switch (type) {
+    case ContentType.PYTHON_SHINY:
+    case ContentType.R_SHINY:
+    case ContentType.PYTHON_BOKEH:
+    case ContentType.PYTHON_DASH:
+    case ContentType.PYTHON_GRADIO:
+    case ContentType.PYTHON_PANEL:
+    case ContentType.PYTHON_STREAMLIT:
+      return true;
+    default:
+      return false;
+  }
+}
+
 export const contentTypeStrings = {
   [ContentType.HTML]: "serve pre-rendered HTML",
   [ContentType.JUPYTER_NOTEBOOK]: "render with Jupyter nbconvert",
