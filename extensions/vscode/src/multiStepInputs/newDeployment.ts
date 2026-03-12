@@ -922,10 +922,9 @@ export async function newDeployment(
       cloudAccountName: newOrSelectedCredential.accountName,
       clientVersion,
     });
-    newContentRecord = recordAddConnectCloudUrlParams(
-      newContentRecord,
-      env.appName,
-    );
+    // Mutates in place; return type is AllContentRecordTypes but input
+    // is PreContentRecord so the result is always PreContentRecord.
+    recordAddConnectCloudUrlParams(newContentRecord, env.appName);
   } catch (error: unknown) {
     const summary = getSummaryStringFromError(
       "newDeployment, createDeploymentRecord",

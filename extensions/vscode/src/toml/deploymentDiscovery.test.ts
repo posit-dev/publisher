@@ -168,12 +168,7 @@ describe("loadAllDeploymentsRecursive", () => {
 
     const names = records
       .filter((r) => !isContentRecordError(r))
-      .map((r) => {
-        if (r.state !== ContentRecordState.ERROR) {
-          return r.deploymentName;
-        }
-        return "";
-      })
+      .map((r) => r.deploymentName)
       .sort();
     expect(names).toEqual(["root-app", "sub-app"]);
   });
