@@ -25,6 +25,7 @@ import {
   useApi,
 } from "src/api";
 import { normalizeURL } from "src/utils/url";
+import { getInterpreterDefaults } from "src/interpreters";
 import { showProgress } from "src/utils/progress";
 import {
   getStatusFromError,
@@ -249,15 +250,14 @@ export class PublisherState implements Disposable {
         root,
       );
 
-      const api = await useApi();
       const python = await getPythonInterpreterPath();
       const r = await getRInterpreterPath();
-      const defaults = await api.interpreters.get(
+      const defaults = await getInterpreterDefaults(
         contentRecord.projectDir,
-        r,
-        python,
+        python?.pythonPath,
+        r?.rPath,
       );
-      const updated = UpdateConfigWithDefaults(cfg, defaults.data);
+      const updated = UpdateConfigWithDefaults(cfg, defaults);
       // its not foolproof, but it may help
       if (!this.findConfig(updated.configurationName, updated.projectDir)) {
         this.configurations.push(updated);
@@ -332,16 +332,16 @@ export class PublisherState implements Disposable {
             return;
           }
 
-          const api = await useApi();
           const python = await getPythonInterpreterPath();
           const r = await getRInterpreterPath();
 
           const configs = await loadAllConfigurationsRecursive(root);
-          const defaults = await api.interpreters.get(".", r, python);
-          this.configurations = UpdateAllConfigsWithDefaults(
-            configs,
-            defaults.data,
+          const defaults = await getInterpreterDefaults(
+            ".",
+            python?.pythonPath,
+            r?.rPath,
           );
+          this.configurations = UpdateAllConfigsWithDefaults(configs, defaults);
         },
       );
     } catch (error: unknown) {

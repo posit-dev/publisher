@@ -26,18 +26,6 @@ class mockApiClient {
     list: vi.fn(),
     reset: vi.fn(),
   };
-
-  readonly interpreters = {
-    get: vi.fn(() => {
-      return {
-        data: {
-          dir: "/usr/proj",
-          r: "/usr/bin/r",
-          python: "/usr/bin/python",
-        },
-      };
-    }),
-  };
 }
 
 const mockClient = new mockApiClient();
@@ -69,6 +57,17 @@ vi.mock("src/utils/connectCloudHelpers", () => ({
 vi.mock("src/utils/vscode", () => ({
   getPythonInterpreterPath: vi.fn(),
   getRInterpreterPath: vi.fn(),
+}));
+
+vi.mock("src/interpreters", () => ({
+  getInterpreterDefaults: vi.fn(() =>
+    Promise.resolve({
+      python: { version: "", packageFile: "", packageManager: "" },
+      preferredPythonPath: "",
+      r: { version: "", packageFile: "", packageManager: "" },
+      preferredRPath: "",
+    }),
+  ),
 }));
 
 const mockSyncAllCredentials = vi.fn();
