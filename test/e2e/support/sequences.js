@@ -111,30 +111,29 @@ Cypress.Commands.add(
       .should("be.visible")
       .click();
 
-    // Select entrypoint, handling possible Quarto deployment type dialog
-    // For .qmd files, the extension may show a "source code or rendered?" dialog
-    // before the entrypoint selection. This retryWithBackoff handles both cases.
+    // Handle Quarto deployment type dialog if present for .qmd files
+    // The extension may ask "source code or rendered document?" before entrypoint selection.
+    // This dialog appears inconsistently depending on Quarto install, so handle conditionally.
+    if (entrypointFile.endsWith(".qmd")) {
+      // eslint-disable-next-line cypress/no-unnecessary-waiting
+      cy.wait(2000);
+      cy.get(".quick-input-widget").then(($widget) => {
+        const placeholder =
+          $widget.find(".quick-input-filter input").attr("placeholder") || "";
+        if (
+          placeholder.toLowerCase().includes("source code") ||
+          placeholder.toLowerCase().includes("rendered")
+        ) {
+          // Press Enter to select the first option (publish with source code)
+          cy.get(".quick-input-widget").type("{enter}");
+        }
+      });
+    }
+
+    // prompt for select entrypoint
     cy.retryWithBackoff(
       () =>
         cy.get(".quick-input-widget").then(($widget) => {
-          // Dismiss Quarto source/rendered dialog if present
-          // (detect by checking input placeholder for "source code" or "rendered")
-          if (entrypointFile.endsWith(".qmd")) {
-            const placeholder =
-              $widget.find(".quick-input-filter input").attr("placeholder") ||
-              "";
-            if (
-              placeholder.toLowerCase().includes("source code") ||
-              placeholder.toLowerCase().includes("rendered")
-            ) {
-              const rows = $widget.find(".quick-input-list .monaco-list-row");
-              if (rows.length > 0) {
-                rows[0].click();
-                return Cypress.$(); // retry to reach entrypoint step
-              }
-            }
-          }
-          // Look for entrypoint in the list
           return $widget.find(
             `[aria-label="${projectDir}/${entrypointFile}, Open Files"], [aria-label="${entrypointFile}, Open Files"]`,
           );
