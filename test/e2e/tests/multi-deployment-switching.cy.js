@@ -178,6 +178,7 @@ describe("Multi-Deployment Switching Section", () => {
     cy.get(".quick-input-list")
       .find('[aria-label*="static-multi-test"]')
       .should("be.visible")
+      .first()
       .click();
 
     // Step 7: Verify first deployment is shown again

@@ -111,30 +111,28 @@ Cypress.Commands.add(
       .should("be.visible")
       .click();
 
-    // Handle Quarto deployment type dialog for .qmd files if it appears
-    // (the extension may ask "source code or rendered document?" depending on Quarto install)
-    if (entrypointFile.endsWith(".qmd")) {
-      // eslint-disable-next-line cypress/no-unnecessary-waiting
-      cy.wait(1000);
-      cy.get(".quick-input-widget").then(($widget) => {
-        const sourceOption = $widget.find(
-          '.monaco-list-row[aria-label*="source code"]',
-        );
-        if (sourceOption.length > 0) {
-          sourceOption[0].click();
-        }
-      });
-    }
-
-    // prompt for select entrypoint
+    // Select entrypoint, handling possible Quarto deployment type dialog
+    // For .qmd files, the extension may show a "source code or rendered?" dialog
+    // before the entrypoint selection. This retryWithBackoff handles both cases.
     cy.retryWithBackoff(
       () =>
         cy.get(".quick-input-widget").then(($widget) => {
+          // Dismiss Quarto source/rendered dialog if present
+          if (entrypointFile.endsWith(".qmd")) {
+            const quartoOption = $widget.find(
+              '.monaco-list-row[aria-label*="source code"]',
+            );
+            if (quartoOption.length > 0) {
+              quartoOption[0].click();
+              return Cypress.$(); // retry to reach entrypoint step
+            }
+          }
+          // Look for entrypoint in the list
           return $widget.find(
             `[aria-label="${projectDir}/${entrypointFile}, Open Files"], [aria-label="${entrypointFile}, Open Files"]`,
           );
         }),
-      10,
+      15,
       700,
     ).then(($el) => {
       cy.wrap($el).scrollIntoView();
