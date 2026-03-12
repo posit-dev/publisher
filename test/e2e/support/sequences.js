@@ -111,8 +111,23 @@ Cypress.Commands.add(
       .should("be.visible")
       .click();
 
-    // Handle Quarto deployment type dialog for .qmd files
-    // The extension asks "Publish the source code or the rendered document?" for .qmd entrypoints.
+    // prompt for select entrypoint
+    cy.retryWithBackoff(
+      () =>
+        cy.get(".quick-input-widget").then(($widget) => {
+          return $widget.find(
+            `[aria-label="${projectDir}/${entrypointFile}, Open Files"], [aria-label="${entrypointFile}, Open Files"]`,
+          );
+        }),
+      15,
+      700,
+    ).then(($el) => {
+      cy.wrap($el).scrollIntoView();
+      cy.wrap($el).click({ force: true });
+    });
+
+    // Handle Quarto deployment type dialog for .qmd files.
+    // The extension asks "source code or rendered document?" AFTER entrypoint selection for .qmd files.
     // Wait for the dialog's list row and click it using the same pattern as other quick-pick clicks.
     if (entrypointFile.endsWith(".qmd")) {
       cy.retryWithBackoff(
@@ -129,21 +144,6 @@ Cypress.Commands.add(
         .first()
         .click({ force: true });
     }
-
-    // prompt for select entrypoint
-    cy.retryWithBackoff(
-      () =>
-        cy.get(".quick-input-widget").then(($widget) => {
-          return $widget.find(
-            `[aria-label="${projectDir}/${entrypointFile}, Open Files"], [aria-label="${entrypointFile}, Open Files"]`,
-          );
-        }),
-      15,
-      700,
-    ).then(($el) => {
-      cy.wrap($el).scrollIntoView();
-      cy.wrap($el).click({ force: true });
-    });
 
     // Wait for "enter title" step explicitly (avoid typing into filter step)
     cy.retryWithBackoff(
