@@ -33,7 +33,7 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
-import { afterAll, beforeAll, describe, expect, test } from "vitest";
+import { describe, expect, test } from "vitest";
 import { readFileText, fileExistsAt } from "./fsUtils";
 import { getPythonRequires } from "./pythonRequires";
 import { getRRequires } from "./rRequires";
@@ -45,24 +45,6 @@ import {
 import { detectRInterpreter } from "./rInterpreter";
 
 const execFileAsync = promisify(execFile);
-
-// Shared temp directory for simple tests that don't need isolation.
-// Tests that verify priority ordering or need a clean project directory
-// create their own temp dirs to avoid file leakage between tests.
-let tmpDir: string;
-
-beforeAll(async () => {
-  tmpDir = await mkdtemp(path.join(os.tmpdir(), "publisher-test-"));
-});
-
-afterAll(async () => {
-  await rm(tmpDir, { recursive: true, force: true });
-});
-
-/** Write a file into the shared temp project directory. */
-async function writeProjectFile(filename: string, content: string) {
-  await writeFile(path.join(tmpDir, filename), content, "utf-8");
-}
 
 /**
  * Check if an executable is available on PATH by attempting to run it.
@@ -83,25 +65,45 @@ async function isExecutableAvailable(name: string): Promise<boolean> {
 
 describe("fsUtils (real filesystem)", () => {
   test("readFileText reads an existing file", async () => {
-    const filePath = path.join(tmpDir, "hello.txt");
-    await writeFile(filePath, "hello world", "utf-8");
-    const result = await readFileText(filePath);
-    expect(result).toBe("hello world");
+    const dir = await mkdtemp(path.join(os.tmpdir(), "publisher-fs-"));
+    try {
+      const filePath = path.join(dir, "hello.txt");
+      await writeFile(filePath, "hello world", "utf-8");
+      const result = await readFileText(filePath);
+      expect(result).toBe("hello world");
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 
   test("readFileText returns null for a missing file", async () => {
-    const result = await readFileText(path.join(tmpDir, "nonexistent.txt"));
-    expect(result).toBeNull();
+    const dir = await mkdtemp(path.join(os.tmpdir(), "publisher-fs-"));
+    try {
+      const result = await readFileText(path.join(dir, "nonexistent.txt"));
+      expect(result).toBeNull();
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 
   test("fileExistsAt returns true for an existing file", async () => {
-    const filePath = path.join(tmpDir, "exists.txt");
-    await writeFile(filePath, "", "utf-8");
-    expect(await fileExistsAt(filePath)).toBe(true);
+    const dir = await mkdtemp(path.join(os.tmpdir(), "publisher-fs-"));
+    try {
+      const filePath = path.join(dir, "exists.txt");
+      await writeFile(filePath, "", "utf-8");
+      expect(await fileExistsAt(filePath)).toBe(true);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 
   test("fileExistsAt returns false for a missing file", async () => {
-    expect(await fileExistsAt(path.join(tmpDir, "nope.txt"))).toBe(false);
+    const dir = await mkdtemp(path.join(os.tmpdir(), "publisher-fs-"));
+    try {
+      expect(await fileExistsAt(path.join(dir, "nope.txt"))).toBe(false);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 });
 
@@ -121,9 +123,14 @@ describe("getPythonRequires (real filesystem)", () => {
   });
 
   test("reads .python-version file", async () => {
-    await writeProjectFile(".python-version", "3.11.4");
-    const result = await getPythonRequires(tmpDir);
-    expect(result).toBe("~=3.11.0");
+    const dir = await mkdtemp(path.join(os.tmpdir(), "publisher-pyver-"));
+    try {
+      await writeFile(path.join(dir, ".python-version"), "3.11.4", "utf-8");
+      const result = await getPythonRequires(dir);
+      expect(result).toBe("~=3.11.0");
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 
   test("reads requires-python from pyproject.toml", async () => {
