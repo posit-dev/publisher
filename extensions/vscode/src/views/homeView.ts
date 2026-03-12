@@ -41,8 +41,9 @@ import {
   ProductName,
   ServerType,
   IntegrationRequest,
-  Integration,
 } from "src/api";
+import { ConnectAPI } from "@posit-dev/connect-api";
+import type { Integration } from "@posit-dev/connect-api";
 import {
   loadAllConfigurations,
   listIntegrationRequests,
@@ -716,11 +717,18 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           root,
         );
 
-        const api = await useApi();
-        const response = await api.connectServer.getIntegrations(
-          credentialName!,
-        );
-        const integrations = response.data ?? [];
+        const credential = credentialName
+          ? this.state.findCredential(credentialName)
+          : undefined;
+        let integrations: Integration[] = [];
+        if (credential?.url && credential?.apiKey) {
+          const connectApi = new ConnectAPI({
+            url: credential.url,
+            apiKey: credential.apiKey,
+          });
+          const response = await connectApi.getIntegrations();
+          integrations = response.data ?? [];
+        }
         const requests = integrationRequests.map((ir) => {
           const matchingIntegration = integrations.find(
             (integration) => integration.guid === ir.guid,
@@ -1317,10 +1325,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         "Retrieving Integrations from deployment server",
         Views.HomeView,
         async () => {
-          const api = await useApi();
-          const response = await api.connectServer.getIntegrations(
-            credential.name,
-          );
+          const connectApi = new ConnectAPI({
+            url: credential.url,
+            apiKey: credential.apiKey,
+          });
+          const response = await connectApi.getIntegrations();
           integrations = response.data;
         },
       );

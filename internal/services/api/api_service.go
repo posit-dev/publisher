@@ -51,10 +51,6 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	pathsService := paths.CreatePathsService(base, log)
 
 	r := mux.NewRouter()
-	// POST /api/accounts/{name}/integrations
-	r.Handle(ToPath("accounts", "{name}", "integrations"), GetIntegrationsHandlerFunc(lister, log)).
-		Methods(http.MethodGet)
-
 	// GET /api/accounts/{name}/server-settings
 	r.Handle(ToPath("accounts", "{name}", "server-settings"), GetServerSettingsHandlerFunc(lister, log)).
 		Methods(http.MethodGet)
