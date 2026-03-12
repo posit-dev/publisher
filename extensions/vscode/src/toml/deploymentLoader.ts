@@ -11,7 +11,7 @@ import {
   PreContentRecord,
 } from "../api/types/contentRecords";
 import { AgentError } from "../api/types/error";
-import { formatValidationErrors } from "./configErrors";
+import { formatValidationErrors } from "./tomlHelpers";
 import { convertKeysToCamelCase } from "./convertKeys";
 import {
   ContentRecordLoadError,

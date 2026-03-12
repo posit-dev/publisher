@@ -29,10 +29,7 @@ import {
 import { normalizeURL } from "src/utils/url";
 import { getInterpreterDefaults } from "src/interpreters";
 import { showProgress } from "src/utils/progress";
-import {
-  getStatusFromError,
-  getSummaryStringFromError,
-} from "src/utils/errors";
+import { getSummaryStringFromError } from "src/utils/errors";
 import {
   isErrCredentialsCorrupted,
   errCredentialsCorruptedMessage,
@@ -43,6 +40,8 @@ import {
   loadConfiguration,
   loadAllConfigurationsRecursive,
   ConfigurationLoadError,
+  loadDeployment,
+  loadAllDeploymentsRecursive,
 } from "src/toml";
 import * as workspaces from "src/workspaces";
 import { DeploymentSelector, SelectionState } from "src/types/shared";
@@ -177,13 +176,16 @@ export class PublisherState implements Disposable {
     }
     // if not found, then retrieve it and add it to our cache.
     try {
-      const api = await useApi();
-
-      const response = await api.contentRecords.get(
+      const root = workspaces.path();
+      if (!root) {
+        return undefined;
+      }
+      const loaded = await loadDeployment(
         selection.deploymentName,
         selection.projectDir,
+        root,
       );
-      const cr = recordAddConnectCloudUrlParams(response.data, env.appName);
+      const cr = recordAddConnectCloudUrlParams(loaded, env.appName);
       if (!isContentRecordError(cr)) {
         // its not foolproof, but it may help
         if (!this.findContentRecord(cr.saveName, cr.projectDir)) {
@@ -193,17 +195,21 @@ export class PublisherState implements Disposable {
       }
       return undefined;
     } catch (error: unknown) {
-      const code = getStatusFromError(error);
-      if (code !== 404) {
-        // 404 is expected when doesn't exist on disk
-        const summary = getSummaryStringFromError(
-          "getSelectedContentRecord, contentRecords.get",
-          error,
-        );
-        window.showInformationMessage(
-          `Unable to retrieve deployment record: ${summary}`,
-        );
+      // ENOENT is expected when file doesn't exist on disk
+      if (
+        error instanceof Error &&
+        "code" in error &&
+        (error as NodeJS.ErrnoException).code === "ENOENT"
+      ) {
+        return undefined;
       }
+      const summary = getSummaryStringFromError(
+        "getSelectedContentRecord, loadDeployment",
+        error,
+      );
+      window.showInformationMessage(
+        `Unable to retrieve deployment record: ${summary}`,
+      );
       return undefined;
     }
   }
@@ -292,11 +298,12 @@ export class PublisherState implements Disposable {
   async refreshContentRecords() {
     try {
       await showProgress("Refreshing Deployments", Views.HomeView, async () => {
-        const api = await useApi();
-        const response = await api.contentRecords.getAll(".", {
-          recursive: true,
-        });
-        const contentRecords = response.data.map((record) =>
+        const root = workspaces.path();
+        if (!root) {
+          return;
+        }
+        const allRecords = await loadAllDeploymentsRecursive(root, root);
+        const contentRecords = allRecords.map((record) =>
           recordAddConnectCloudUrlParams(record, env.appName),
         );
         // Currently we filter out any Content Records in error

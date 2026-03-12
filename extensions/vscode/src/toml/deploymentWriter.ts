@@ -11,10 +11,11 @@ import {
   PreContentRecord,
   ServerType,
 } from "../api/types/contentRecords";
+import { getConfigPath } from "./configDiscovery";
 import { convertKeysToSnakeCase } from "./convertKeys";
 import { getDeploymentPath } from "./deploymentDiscovery";
 import { loadDeploymentFromFile } from "./deploymentLoader";
-import { stripEmpty, isRecord } from "./tomlHelpers";
+import { stripEmpty, isRecord, relativeProjectDir } from "./tomlHelpers";
 import { getDashboardUrl, getDirectUrl, getLogsUrl } from "./urlHelpers";
 
 const DEPLOYMENT_SCHEMA_URL =
@@ -66,14 +67,8 @@ export async function createDeploymentRecord(
 
   // If configName provided, config must exist
   if (opts.configName) {
-    const configPath = path.join(
-      absDir,
-      ".posit",
-      "publish",
-      `${opts.configName}.toml`,
-    );
     try {
-      await fs.access(configPath);
+      await fs.access(getConfigPath(absDir, opts.configName));
     } catch {
       throw new Error(`configuration ${opts.configName} not found`);
     }
@@ -161,14 +156,8 @@ export async function patchDeploymentRecord(
   // Apply patches
   if (patch.configName !== undefined && patch.configName !== "") {
     // Config must exist
-    const configPath = path.join(
-      absDir,
-      ".posit",
-      "publish",
-      `${patch.configName}.toml`,
-    );
     try {
-      await fs.access(configPath);
+      await fs.access(getConfigPath(absDir, patch.configName));
     } catch {
       throw new Error(`configuration ${patch.configName} not found`);
     }
@@ -209,9 +198,4 @@ export async function patchDeploymentRecord(
 
   // Re-load to return the canonical representation
   return loadDeploymentFromFile(deploymentPath, relDir);
-}
-
-function relativeProjectDir(absDir: string, rootDir: string): string {
-  const rel = path.relative(rootDir, absDir);
-  return rel === "" ? "." : rel;
 }

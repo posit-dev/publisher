@@ -12,6 +12,7 @@ import {
 import {
   commands,
   env,
+  extensions,
   InputBoxValidationSeverity,
   QuickPickItem,
   QuickPickItemKind,
@@ -41,7 +42,12 @@ import {
 import { getSummaryStringFromError } from "src/utils/errors";
 import { isAxiosErrorWithJson } from "src/utils/errorTypes";
 import { newConfigFileNameFromTitle, newDeploymentName } from "src/utils/names";
-import { loadAllConfigurations, writeConfigToFile } from "src/toml";
+import {
+  createDeploymentRecord,
+  loadAllConfigurations,
+  loadAllDeploymentsRecursive,
+  writeConfigToFile,
+} from "src/toml";
 import * as workspaces from "src/workspaces";
 import { DeploymentObjects } from "src/types/shared";
 import { showProgress } from "src/utils/progress";
@@ -312,17 +318,14 @@ export async function newDeployment(
 
   const getContentRecords = async () => {
     try {
-      const response = await api.contentRecords.getAll(
-        projectDir ? projectDir : ".",
-        {
-          recursive: true,
-        },
-      );
-      const contentRecordList = response.data.map((record) =>
-        recordAddConnectCloudUrlParams(record, env.appName),
-      );
+      const root = workspaces.path();
+      if (!root) {
+        return;
+      }
+      const startDir = path.resolve(root, projectDir || ".");
+      const allRecords = await loadAllDeploymentsRecursive(startDir, root);
       // Note.. we want all of the contentRecord filenames regardless if they are valid or not.
-      contentRecordList.forEach((contentRecord) => {
+      allRecords.forEach((contentRecord) => {
         let existingList = contentRecordNames.get(contentRecord.projectDir);
         if (existingList === undefined) {
           existingList = [];
@@ -332,7 +335,7 @@ export async function newDeployment(
       });
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
-        "newContentRecord, contentRecords.getAll",
+        "newContentRecord, loadAllDeploymentsRecursive",
         error,
       );
       window.showInformationMessage(
@@ -843,11 +846,12 @@ export async function newDeployment(
   newDeploymentData.entrypoint.inspectionResult.configuration.title =
     newDeploymentData.title;
 
+  const root = workspaces.path();
+  if (!root) {
+    return getDeploymentObjects();
+  }
+
   try {
-    const root = workspaces.path();
-    if (!root) {
-      return getDeploymentObjects();
-    }
     const relProjectDir =
       newDeploymentData.entrypoint.inspectionResult.projectDir;
 
@@ -905,16 +909,26 @@ export async function newDeployment(
       existingNames = [];
     }
     const contentRecordName = newDeploymentName(existingNames);
-    const response = await api.contentRecords.createNew(
-      newDeploymentData.entrypoint.inspectionResult.projectDir,
-      newOrSelectedCredential.name,
+    const clientVersion =
+      extensions.getExtension("posit.publisher")?.packageJSON.version ||
+      "unknown";
+    newContentRecord = await createDeploymentRecord({
+      saveName: contentRecordName,
+      projectDir: newDeploymentData.entrypoint.inspectionResult.projectDir,
+      rootDir: root,
+      serverUrl: newOrSelectedCredential.url,
+      serverType: newOrSelectedCredential.serverType,
       configName,
-      contentRecordName,
+      cloudAccountName: newOrSelectedCredential.accountName,
+      clientVersion,
+    });
+    newContentRecord = recordAddConnectCloudUrlParams(
+      newContentRecord,
+      env.appName,
     );
-    newContentRecord = response.data;
   } catch (error: unknown) {
     const summary = getSummaryStringFromError(
-      "newDeployment, contentRecords.createNew",
+      "newDeployment, createDeploymentRecord",
       error,
     );
     window.showErrorMessage(

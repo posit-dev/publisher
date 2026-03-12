@@ -10,6 +10,7 @@ import {
 } from "../api/types/contentRecords";
 import { ContentRecordLoadError } from "./deploymentErrors";
 import { loadDeploymentFromFile } from "./deploymentLoader";
+import { relativeProjectDir } from "./tomlHelpers";
 
 /** Standard path: <projectDir>/.posit/publish/deployments */
 export function getDeploymentDir(projectDir: string): string {
@@ -86,21 +87,18 @@ export async function loadAllDeployments(
  * Walk a directory tree and load all deployments from every
  * .posit/publish/deployments/ directory found. Returns a flat array.
  *
+ * @param startDir - Absolute directory to start walking from.
  * @param rootDir - Absolute workspace root directory. All projectDir
  *                  values will be relative to this root.
  */
 export function loadAllDeploymentsRecursive(
+  startDir: string,
   rootDir: string,
 ): Promise<AllContentRecordTypes[]> {
-  return walkForDeployments(rootDir, rootDir);
+  return walkForDeployments(startDir, rootDir);
 }
 
 // --- Private helpers ---
-
-function relativeProjectDir(absDir: string, rootDir: string): string {
-  const rel = path.relative(rootDir, absDir);
-  return rel === "" ? "." : rel;
-}
 
 async function loadDeploymentsFromPaths(
   deploymentPaths: string[],

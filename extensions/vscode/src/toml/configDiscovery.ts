@@ -6,6 +6,7 @@ import * as path from "path";
 import { Configuration, ConfigurationError } from "../api/types/configurations";
 import { loadConfigFromFile } from "./configLoader";
 import { ConfigurationLoadError } from "./configErrors";
+import { relativeProjectDir } from "./tomlHelpers";
 
 /** Standard path: <projectDir>/.posit/publish */
 export function getConfigDir(projectDir: string): string {
@@ -91,15 +92,6 @@ export async function loadAllConfigurationsRecursive(
 }
 
 // --- Private helpers ---
-
-/**
- * Compute a relative projectDir from an absolute path, using "." for the root.
- * Matches Go's convention where projectDir is relative to the workspace root.
- */
-function relativeProjectDir(absDir: string, rootDir: string): string {
-  const rel = path.relative(rootDir, absDir);
-  return rel === "" ? "." : rel;
-}
 
 // Load configs from a list of file paths, returning both valid configs and
 // per-file errors. Invalid TOML or schema violations produce a ConfigurationError

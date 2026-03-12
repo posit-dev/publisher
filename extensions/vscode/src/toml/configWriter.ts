@@ -13,12 +13,11 @@ import { AgentError } from "../api/types/error";
 import { forceProductTypeCompliance } from "./configCompliance";
 import { convertKeysToSnakeCase } from "./convertKeys";
 import { getConfigPath } from "./configDiscovery";
-import { stripEmpty, isRecord } from "./tomlHelpers";
+import { stripEmpty, isRecord, formatValidationErrors } from "./tomlHelpers";
 import {
   createSchemaValidationError,
   createConfigurationError,
   ConfigurationLoadError,
-  formatValidationErrors,
 } from "./configErrors";
 import { validate } from "./configValidate";
 

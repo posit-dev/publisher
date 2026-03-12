@@ -12,13 +12,12 @@ import {
 import { ProductType } from "../api/types/contentRecords";
 import { AgentError } from "../api/types/error";
 import { convertKeysToCamelCase } from "./convertKeys";
-import { readLeadingComments } from "./tomlHelpers";
+import { readLeadingComments, formatValidationErrors } from "./tomlHelpers";
 import {
   createInvalidTOMLError,
   createSchemaValidationError,
   createConfigurationError,
   ConfigurationLoadError,
-  formatValidationErrors,
 } from "./configErrors";
 import { validate } from "./configValidate";
 
