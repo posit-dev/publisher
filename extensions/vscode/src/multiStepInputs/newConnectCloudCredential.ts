@@ -11,7 +11,7 @@ import {
 
 import { env, InputBoxValidationSeverity, window } from "vscode";
 
-import { useApi, Credential, ServerType, ProductName } from "src/api";
+import { Credential, ServerType, ProductName } from "src/api";
 import { getSummaryStringFromError } from "src/utils/errors";
 import {
   inputCredentialNameStep,
@@ -32,16 +32,14 @@ import {
 } from "src/constants";
 import { getPublishableAccounts } from "src/utils/multiStepHelpers";
 import { getConnectCloudTrafficParams } from "src/utils/connectCloudHelpers";
+import { CredentialsService } from "src/credentials/service";
 
 export async function newConnectCloudCredential(
   viewId: string,
   viewTitle: string,
+  credentialsService: CredentialsService,
   previousSteps?: InputStep[],
 ): Promise<Credential | undefined> {
-  // ***************************************************************
-  // API Calls and results
-  // ***************************************************************
-  const api = await useApi();
   let credentials: Credential[] = [];
 
   // globals
@@ -525,7 +523,7 @@ export async function newConnectCloudCredential(
   // This is a promise which returns the state data used to
   // collect the info.
   // ***************************************************************
-  credentials = await getExistingCredentials(viewId);
+  credentials = await getExistingCredentials(viewId, credentialsService);
   const state = await collectInputs();
 
   // make sure user has not hit escape or moved away from the window
@@ -546,11 +544,14 @@ export async function newConnectCloudCredential(
   // create the credential!
   let credential: Credential | undefined = undefined;
   try {
-    const resp = await api.credentials.connectCloudCreate(
-      state.data,
+    credential = await credentialsService.create({
+      name: state.data.name as string,
       serverType,
-    );
-    credential = resp.data;
+      accountId: state.data.accountId as string,
+      accountName: state.data.accountName as string,
+      refreshToken: state.data.refreshToken as string,
+      accessToken: state.data.accessToken as string,
+    });
   } catch (error: unknown) {
     const summary = getSummaryStringFromError("credentials::add", error);
     window.showInformationMessage(summary);

@@ -8,7 +8,7 @@ import {
   syncAllCredentials,
   getAllCredentials,
   parseCredentialRecord,
-} from "./credentialSecretStorage";
+} from "./storage";
 
 vi.mock("vscode", () => {
   return {

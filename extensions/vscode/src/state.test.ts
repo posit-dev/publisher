@@ -22,11 +22,6 @@ class mockApiClient {
     getAll: vi.fn(),
   };
 
-  readonly credentials = {
-    list: vi.fn(),
-    reset: vi.fn(),
-  };
-
   readonly interpreters = {
     get: vi.fn(() => {
       return {
@@ -71,10 +66,16 @@ vi.mock("src/utils/vscode", () => ({
   getRInterpreterPath: vi.fn(),
 }));
 
-const mockSyncAllCredentials = vi.fn();
-vi.mock("src/credentialSecretStorage", () => ({
-  syncAllCredentials: (...args: unknown[]) => mockSyncAllCredentials(...args),
-}));
+const mockCredentialsServiceList = vi.fn();
+const mockCredentialsServiceReset = vi.fn();
+vi.mock("src/credentials/service", () => {
+  return {
+    CredentialsService: class {
+      list = (...args: unknown[]) => mockCredentialsServiceList(...args);
+      reset = (...args: unknown[]) => mockCredentialsServiceReset(...args);
+    },
+  };
+});
 
 const mockLoadConfiguration = vi.fn();
 const mockLoadAllConfigurationsRecursive = vi.fn();
@@ -102,6 +103,12 @@ vi.mock("vscode", () => {
     showErrorMessage: vi.fn(),
     showWarningMessage: vi.fn(),
     showInformationMessage: vi.fn(),
+    createOutputChannel: vi.fn(() => ({
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      debug: vi.fn(),
+    })),
   };
 
   const workspaceStateMock = {
@@ -439,9 +446,7 @@ describe("PublisherState", () => {
   describe("refreshCredentials", () => {
     test("Calls to fetch credentials and stores to state", async () => {
       const fakeCredsFetch = credentialFactory.buildList(3);
-      mockClient.credentials.list.mockResolvedValue({
-        data: fakeCredsFetch,
-      });
+      mockCredentialsServiceList.mockResolvedValue(fakeCredsFetch);
 
       const { mockContext } = mkExtensionContextStateMock({});
       const publisherState = new PublisherState(mockContext);
@@ -449,68 +454,27 @@ describe("PublisherState", () => {
       // Creds are empty initially
       expect(publisherState.credentials).toEqual([]);
 
-      // Populated with API results
+      // Populated with service results
       await publisherState.refreshCredentials();
       expect(publisherState.credentials).toEqual(fakeCredsFetch);
     });
 
-    test("syncs credentials to SecretStorage after refresh", async () => {
+    test("uses CredentialsService.list() instead of Go API", async () => {
       const fakeCredsFetch = credentialFactory.buildList(2);
-      mockClient.credentials.list.mockResolvedValue({
-        data: fakeCredsFetch,
-      });
+      mockCredentialsServiceList.mockResolvedValue(fakeCredsFetch);
 
       const { mockContext } = mkExtensionContextStateMock({});
       const publisherState = new PublisherState(mockContext);
 
       await publisherState.refreshCredentials();
-      expect(mockSyncAllCredentials).toHaveBeenCalledWith(
-        mockContext.secrets,
-        fakeCredsFetch,
-      );
+      expect(mockCredentialsServiceList).toHaveBeenCalled();
     });
 
     describe("errors", () => {
-      test("api error - not corrupted data", async () => {
-        const axiosErr = new AxiosError();
-        axiosErr.response = {
-          data: "this is terrible",
-          status: 500,
-          statusText: "500",
-          headers: {},
-          config: { headers: new AxiosHeaders() },
-        };
-        mockClient.credentials.list.mockRejectedValueOnce(axiosErr);
-
-        const { mockContext } = mkExtensionContextStateMock({});
-        const publisherState = new PublisherState(mockContext);
-
-        // Creds are empty initially
-        expect(publisherState.credentials).toEqual([]);
-
-        // Creds are still empty
-        await publisherState.refreshCredentials();
-        expect(publisherState.credentials).toEqual([]);
-
-        // Error mssage is processed
-        expect(window.showErrorMessage).toHaveBeenCalledWith(
-          "this is terrible",
+      test("service error - shows error message", async () => {
+        mockCredentialsServiceList.mockRejectedValueOnce(
+          new Error("storage failure"),
         );
-      });
-
-      test("api error - corrupted data - defers to reset creds", async () => {
-        const axiosErr = new AxiosError();
-        axiosErr.response = {
-          data: {
-            code: "credentialsCorrupted",
-          },
-          status: 409,
-          statusText: "409",
-          headers: {},
-          config: { headers: new AxiosHeaders() },
-        };
-        mockClient.credentials.list.mockRejectedValue(axiosErr);
-        mockClient.credentials.reset.mockResolvedValue({});
 
         const { mockContext } = mkExtensionContextStateMock({});
         const publisherState = new PublisherState(mockContext);
@@ -522,21 +486,15 @@ describe("PublisherState", () => {
         await publisherState.refreshCredentials();
         expect(publisherState.credentials).toEqual([]);
 
-        // Error message is not called
-        expect(window.showErrorMessage).not.toHaveBeenCalled();
-
-        // Calls to reset
-        expect(mockClient.credentials.reset).toHaveBeenCalled();
+        // Error message is processed
+        expect(window.showErrorMessage).toHaveBeenCalledWith("storage failure");
       });
     });
   });
 
   describe("resetCredentials", () => {
     test("calls to reset credentials and shows a warning", async () => {
-      mockClient.credentials.reset.mockImplementation(() => {
-        mockClient.credentials.list.mockResolvedValue({ data: [] });
-        return { data: { backupFile: "backup-file" } };
-      });
+      mockCredentialsServiceReset.mockResolvedValue(undefined);
 
       const { mockContext } = mkExtensionContextStateMock({});
       const publisherState = new PublisherState(mockContext);
@@ -548,37 +506,24 @@ describe("PublisherState", () => {
 
       // Warning message is called
       expect(window.showWarningMessage).toHaveBeenCalledWith(
-        "Unrecognizable credentials for Posit Publisher were found and removed. Credentials may need to be recreated. Previous credentials data backed up at backup-file",
+        "Credentials have been reset.",
       );
     });
 
-    test("syncs credentials to SecretStorage after reset", async () => {
-      const freshCreds = credentialFactory.buildList(1);
-      mockClient.credentials.reset.mockImplementation(() => {
-        mockClient.credentials.list.mockResolvedValue({ data: freshCreds });
-        return { data: { backupFile: "backup-file" } };
-      });
+    test("uses CredentialsService.reset() instead of Go API", async () => {
+      mockCredentialsServiceReset.mockResolvedValue(undefined);
 
       const { mockContext } = mkExtensionContextStateMock({});
       const publisherState = new PublisherState(mockContext);
 
       await publisherState.resetCredentials();
-      expect(mockSyncAllCredentials).toHaveBeenCalledWith(
-        mockContext.secrets,
-        freshCreds,
-      );
+      expect(mockCredentialsServiceReset).toHaveBeenCalled();
     });
 
-    test("on api error - shows message", async () => {
-      const axiosErr = new AxiosError();
-      axiosErr.response = {
-        data: "terrible, could not reset",
-        status: 500,
-        statusText: "500",
-        headers: {},
-        config: { headers: new AxiosHeaders() },
-      };
-      mockClient.credentials.reset.mockRejectedValueOnce(axiosErr);
+    test("on service error - shows message", async () => {
+      mockCredentialsServiceReset.mockRejectedValueOnce(
+        new Error("terrible, could not reset"),
+      );
 
       const { mockContext } = mkExtensionContextStateMock({});
       const publisherState = new PublisherState(mockContext);

@@ -31,6 +31,7 @@ import {
   inputCredentialNameStep,
   getExistingCredentials,
 } from "src/multiStepInputs/common";
+import { CredentialsService } from "src/credentials/service";
 import { isConnect, isSnowflake } from "../utils/multiStepHelpers";
 import { openConfigurationCommand } from "src/commands";
 import { extensionSettings } from "src/extension";
@@ -63,6 +64,7 @@ const getAuthMethod = (authMethodName: AuthMethodName) => {
 export async function newConnectCredential(
   viewId: string,
   viewTitle: string,
+  credentialsService: CredentialsService,
   startingServerUrl?: string,
   previousSteps?: InputStep[],
 ): Promise<Credential | undefined> {
@@ -580,7 +582,7 @@ export async function newConnectCredential(
   // This is a promise which returns the state data used to
   // collect the info.
   // ***************************************************************
-  credentials = await getExistingCredentials(viewId);
+  credentials = await getExistingCredentials(viewId, credentialsService);
   const state = await collectInputs();
 
   // make sure user has not hit escape or moved away from the window
@@ -599,8 +601,15 @@ export async function newConnectCredential(
   // create the credential!
   let credential: Credential | undefined = undefined;
   try {
-    const resp = await api.credentials.connectCreate(state.data, serverType);
-    credential = resp.data;
+    credential = await credentialsService.create({
+      name: state.data.name as string,
+      url: state.data.url as string,
+      serverType,
+      apiKey: state.data.apiKey as string | undefined,
+      token: state.data.token as string | undefined,
+      privateKey: state.data.privateKey as string | undefined,
+      snowflakeConnection: state.data.snowflakeConnection as string | undefined,
+    });
   } catch (error: unknown) {
     const summary = getSummaryStringFromError("credentials::add", error);
     window.showInformationMessage(summary);
