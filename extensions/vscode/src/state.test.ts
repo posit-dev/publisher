@@ -15,6 +15,7 @@ import { LocalState } from "./constants";
 import { PublisherState } from "./state";
 import { AllContentRecordTypes, PreContentRecord } from "src/api";
 import { ConfigurationLoadError } from "src/toml";
+import { getInterpreterDefaults } from "src/interpreters";
 
 class mockApiClient {
   readonly contentRecords = {
@@ -332,6 +333,13 @@ describe("PublisherState", () => {
       expect(currentConfig).toEqual(config);
       expect(publisherState.configurations).toEqual([config]);
 
+      // getInterpreterDefaults should receive absolute path (workspace root + projectDir)
+      expect(vi.mocked(getInterpreterDefaults)).toHaveBeenCalledWith(
+        `/workspace/${contentRecord.projectDir}`,
+        undefined,
+        undefined,
+      );
+
       // second time calls from cache
       currentConfig = await publisherState.getSelectedConfiguration();
 
@@ -593,7 +601,21 @@ describe("PublisherState", () => {
 
   test.todo("refreshContentRecords", () => {});
 
-  test.todo("refreshConfigurations", () => {});
+  test("refreshConfigurations passes absolute workspace root to getInterpreterDefaults", async () => {
+    const { mockContext } = mkExtensionContextStateMock({});
+    const publisherState = new PublisherState(mockContext);
+
+    mockLoadAllConfigurationsRecursive.mockResolvedValue([]);
+    vi.mocked(getInterpreterDefaults).mockClear();
+
+    await publisherState.refreshConfigurations();
+
+    expect(vi.mocked(getInterpreterDefaults)).toHaveBeenCalledWith(
+      "/workspace",
+      undefined,
+      undefined,
+    );
+  });
 
   test.todo("validConfigs", () => {});
 

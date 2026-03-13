@@ -1,5 +1,7 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
+import path from "node:path";
+
 import {
   Disposable,
   env,
@@ -253,7 +255,7 @@ export class PublisherState implements Disposable {
       const python = await getPythonInterpreterPath();
       const r = await getRInterpreterPath();
       const defaults = await getInterpreterDefaults(
-        contentRecord.projectDir,
+        path.join(root, contentRecord.projectDir),
         python?.pythonPath,
         r?.rPath,
       );
@@ -337,7 +339,7 @@ export class PublisherState implements Disposable {
 
           const configs = await loadAllConfigurationsRecursive(root);
           const defaults = await getInterpreterDefaults(
-            ".",
+            root,
             python?.pythonPath,
             r?.rPath,
           );
