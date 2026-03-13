@@ -2,7 +2,6 @@
 
 import { AxiosInstance } from "axios";
 import {
-  GetRPackagesResponse,
   PythonPackagesResponse,
   ScanPythonPackagesResponse,
 } from "../types/packages";
@@ -26,20 +25,6 @@ export class Packages {
     const encodedName = encodeURIComponent(configName);
     return this.client.get<PythonPackagesResponse>(
       `/configurations/${encodedName}/packages/python`,
-      { params: { dir } },
-    );
-  }
-
-  // Returns:
-  // 200 - success
-  // 404 - configuration or requirements file not found
-  // 409 - conflict (R is not configured)
-  // 422 - package file is invalid
-  // 500 - internal server error
-  getRPackages(configName: string, dir: string) {
-    const encodedName = encodeURIComponent(configName);
-    return this.client.get<GetRPackagesResponse>(
-      `/configurations/${encodedName}/packages/r`,
       { params: { dir } },
     );
   }

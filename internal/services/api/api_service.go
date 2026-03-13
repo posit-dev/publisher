@@ -112,10 +112,6 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	r.Handle(ToPath("configurations", "{name}", "packages", "python"), NewGetConfigPythonPackagesHandler(base, log)).
 		Methods(http.MethodGet)
 
-	// GET /api/configurations/$NAME/packages/r
-	r.Handle(ToPath("configurations", "{name}", "packages", "r"), NewGetConfigRPackagesHandler(base, log)).
-		Methods(http.MethodGet)
-
 	// GET /api/configurations/$NAME/integration-requests
 	r.Handle(ToPath("configurations", "{name}", "integration-requests"), GetIntegrationRequestsFuncHandler(base, log)).
 		Methods(http.MethodGet)
