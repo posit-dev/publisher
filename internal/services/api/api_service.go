@@ -9,7 +9,6 @@ import (
 
 	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/api_client/auth/snowflake"
-	"github.com/posit-dev/publisher/internal/credentials"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
@@ -53,24 +52,6 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	// POST /api/inspect
 	r.Handle(ToPath("inspect"), PostInspectHandlerFunc(base, log)).
 		Methods(http.MethodPost)
-
-	// GET /api/credentials
-	r.Handle(ToPath("credentials"), GetCredentialsHandlerFunc(log, func(log logging.Logger) (credentials.CredentialsService, error) {
-		return credentials.NewCredentialsService(log)
-	})).Methods(http.MethodGet)
-
-	// POST /api/credentials
-	r.Handle(ToPath("credentials"), PostCredentialFuncHandler(log)).
-		Methods(http.MethodPost)
-
-	// DELETE /api/credentials/$GUID
-	r.Handle(ToPath("credentials", "{guid}"), DeleteCredentialHandlerFunc(log)).
-		Methods(http.MethodDelete)
-
-	// DELETE /api/credentials
-	r.Handle(ToPath("credentials"), ResetCredentialsHandlerFunc(log, func(log logging.Logger) (credentials.CredentialsService, error) {
-		return credentials.NewCredentialsService(log)
-	})).Methods(http.MethodDelete)
 
 	// POST /api/test-credentials
 	r.Handle(ToPath("test-credentials"), PostTestCredentialsHandlerFunc(log)).
