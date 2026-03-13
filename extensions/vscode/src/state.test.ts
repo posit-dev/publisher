@@ -1,5 +1,7 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
+import path from "node:path";
+
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { window } from "vscode";
 import { AxiosError, AxiosHeaders } from "axios";
@@ -335,7 +337,7 @@ describe("PublisherState", () => {
 
       // getInterpreterDefaults should receive absolute path (workspace root + projectDir)
       expect(vi.mocked(getInterpreterDefaults)).toHaveBeenCalledWith(
-        `/workspace/${contentRecord.projectDir}`,
+        path.join("/workspace", contentRecord.projectDir),
         undefined,
         undefined,
       );
