@@ -11,7 +11,6 @@ import {
 } from "src/multiStepInputs/multiStepHelper";
 import {
   commands,
-  env,
   extensions,
   InputBoxValidationSeverity,
   QuickPickItem,
@@ -66,7 +65,6 @@ import {
   getProductType,
 } from "src/utils/multiStepHelpers";
 import { extensionSettings } from "src/extension";
-import { recordAddConnectCloudUrlParams } from "src/utils/connectCloudHelpers";
 
 const viewTitle = "Create a New Deployment";
 
@@ -922,9 +920,6 @@ export async function newDeployment(
       cloudAccountName: newOrSelectedCredential.accountName,
       clientVersion,
     });
-    // Mutates in place; return type is AllContentRecordTypes but input
-    // is PreContentRecord so the result is always PreContentRecord.
-    recordAddConnectCloudUrlParams(newContentRecord, env.appName);
   } catch (error: unknown) {
     const summary = getSummaryStringFromError(
       "newDeployment, createDeploymentRecord",
