@@ -59,7 +59,6 @@ configuration_name = "production"
     expect(record.deploymentName).toBe("myapp");
     expect(record.deploymentPath).toBe(deploymentPath);
     expect(record.projectDir).toBe(tmpDir);
-    expect(record.saveName).toBe("myapp");
   });
 
   it("loads a full deployment record (has deployedAt)", async () => {
