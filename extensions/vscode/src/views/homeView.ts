@@ -41,15 +41,9 @@ import {
   ProductName,
   ServerType,
   IntegrationRequest,
+  Integration,
 } from "src/api";
-import { ConnectAPI } from "@posit-dev/connect-api";
-import type { Integration } from "@posit-dev/connect-api";
 import { loadAllConfigurations } from "src/toml";
-import {
-  listIntegrationRequests,
-  addIntegrationRequest,
-  removeIntegrationRequest,
-} from "src/integrations";
 import * as workspaces from "src/workspaces";
 import { EventStream } from "src/events";
 import { getPythonInterpreterPath, getRInterpreterPath } from "../utils/vscode";
@@ -637,10 +631,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         packageMgr = pythonSection.packageManager;
 
         const resolvedPackageFile = packageFile || "requirements.txt";
-        const projectDir = path.join(
-          workspaces.path(),
-          activeConfiguration.projectDir,
-        );
+        const root = workspaces.path();
+        if (!root) {
+          return;
+        }
+        const projectDir = path.join(root, activeConfiguration.projectDir);
 
         try {
           packages = await showProgress(
@@ -692,28 +687,15 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const activeConfig = await this.state.getSelectedConfiguration();
     if (activeConfig && !isConfigurationError(activeConfig)) {
       try {
-        const root = workspaces.path();
-        if (!root) {
-          return;
-        }
-        const integrationRequests = await listIntegrationRequests(
+        const api = await useApi();
+        let response = await api.integrationRequests.list(
           activeConfig.configurationName,
           activeConfig.projectDir,
-          root,
         );
+        const integrationRequests = response.data ?? [];
 
-        const credential = credentialName
-          ? this.state.findCredential(credentialName)
-          : undefined;
-        let integrations: Integration[] = [];
-        if (credential?.url && credential?.apiKey) {
-          const connectApi = new ConnectAPI({
-            url: credential.url,
-            apiKey: credential.apiKey,
-          });
-          const response = await connectApi.getIntegrations();
-          integrations = response.data ?? [];
-        }
+        response = await api.connectServer.getIntegrations(credentialName!);
+        const integrations = response.data ?? [];
         const requests = integrationRequests.map((ir) => {
           const matchingIntegration = integrations.find(
             (integration) => integration.guid === ir.guid,
@@ -1273,6 +1255,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   };
 
   public addIntegrationRequest = async () => {
+    const api = await useApi();
     const activeConfig = await this.state.getSelectedConfiguration();
     if (activeConfig === undefined) {
       console.error("homeView::addIntegration: No active configuration.");
@@ -1282,11 +1265,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       console.error(
         "homeView::addIntegration: Unable to add integration into a configuration with error.",
       );
-      return;
-    }
-
-    const root = workspaces.path();
-    if (!root) {
       return;
     }
 
@@ -1310,11 +1288,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         "Retrieving Integrations from deployment server",
         Views.HomeView,
         async () => {
-          const connectApi = new ConnectAPI({
-            url: credential.url,
-            apiKey: credential.apiKey,
-          });
-          const response = await connectApi.getIntegrations();
+          const response = await api.connectServer.getIntegrations(
+            credential.name,
+          );
           integrations = response.data;
         },
       );
@@ -1337,13 +1313,17 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         "Adding Integration Request",
         Views.HomeView,
         async () => {
-          await addIntegrationRequest(
+          await api.integrationRequests.add(
             activeConfig.configurationName,
             activeConfig.projectDir,
-            root,
             {
               guid: integration.guid,
-            },
+              // name: integration.name,
+              // description: integration.description,
+              // authType: integration.authType,
+              // type: integration.template,
+              // config: integration.config,
+            } as IntegrationRequest,
           );
         },
       );
@@ -1375,20 +1355,15 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
 
-    const root = workspaces.path();
-    if (!root) {
-      return;
-    }
-
     try {
       await showProgress(
         "Removing Integration Request",
         Views.HomeView,
         async () => {
-          await removeIntegrationRequest(
+          const api = await useApi();
+          await api.integrationRequests.delete(
             activeConfig.configurationName,
             activeConfig.projectDir,
-            root,
             {
               guid: context.request.guid,
             },
@@ -1423,26 +1398,21 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
 
-    const root = workspaces.path();
-    if (!root) {
-      return;
-    }
-
     try {
       await showProgress(
         "Clearing Integration Requests",
         Views.HomeView,
         async () => {
-          const reqs = await listIntegrationRequests(
+          const api = await useApi();
+          const response = await api.integrationRequests.list(
             activeConfig.configurationName,
             activeConfig.projectDir,
-            root,
           );
+          const reqs = response.data;
           for (const ir of reqs) {
-            await removeIntegrationRequest(
+            await api.integrationRequests.delete(
               activeConfig.configurationName,
               activeConfig.projectDir,
-              root,
               {
                 guid: ir.guid,
               },

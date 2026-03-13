@@ -22,10 +22,5 @@
       "src/*": ["./src/*"]
     }
   },
-  "exclude": [
-    "node_modules",
-    "webviews",
-    "vitest.config.ts",
-    "src/**/*.e2e.test.ts"
-  ]
+  "exclude": ["node_modules", "webviews", "vitest.config.ts"]
 }
