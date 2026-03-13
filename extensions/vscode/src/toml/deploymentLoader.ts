@@ -98,7 +98,6 @@ export async function loadDeploymentFromFile(
     return {
       ...converted,
       ...location,
-      saveName: deploymentName,
       state: ContentRecordState.DEPLOYED,
     } as ContentRecord;
   }
@@ -106,7 +105,6 @@ export async function loadDeploymentFromFile(
   return {
     ...converted,
     ...location,
-    saveName: deploymentName,
     state: ContentRecordState.NEW,
   } as PreContentRecord;
 }

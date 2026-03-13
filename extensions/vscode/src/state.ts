@@ -58,7 +58,7 @@ function findContentRecord<
   T extends ContentRecord | PreContentRecord | PreContentRecordWithConfig,
 >(name: string, projectDir: string, records: T[]): T | undefined {
   return records.find(
-    (r) => r.saveName === name && r.projectDir === projectDir,
+    (r) => r.deploymentName === name && r.projectDir === projectDir,
   );
 }
 
@@ -188,7 +188,7 @@ export class PublisherState implements Disposable {
       const cr = recordAddConnectCloudUrlParams(loaded, env.appName);
       if (!isContentRecordError(cr)) {
         // its not foolproof, but it may help
-        if (!this.findContentRecord(cr.saveName, cr.projectDir)) {
+        if (!this.findContentRecord(cr.deploymentName, cr.projectDir)) {
           this.contentRecords.push(cr);
         }
         return cr;
@@ -218,7 +218,7 @@ export class PublisherState implements Disposable {
     newValue: ContentRecord | PreContentRecord | PreContentRecordWithConfig,
   ) {
     const existingContentRecord = this.findContentRecord(
-      newValue.saveName,
+      newValue.deploymentName,
       newValue.projectDir,
     );
     if (existingContentRecord) {
