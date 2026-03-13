@@ -56,11 +56,13 @@ export async function createDeploymentRecord(
   // Deployment must not exist
   try {
     await fs.access(deploymentPath);
-    const err = new Error(`deployment '${opts.saveName}' already exists`);
-    (err as NodeJS.ErrnoException).code = "EEXIST";
-    throw err;
+    throw Object.assign(
+      new Error(`deployment '${opts.saveName}' already exists`),
+      { code: "EEXIST" },
+    );
   } catch (e) {
-    if ((e as NodeJS.ErrnoException).code !== "ENOENT") {
+    // ENOENT means the file doesn't exist yet, which is what we want
+    if (e instanceof Error && "code" in e && e.code !== "ENOENT") {
       throw e;
     }
   }

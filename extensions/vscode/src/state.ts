@@ -199,7 +199,7 @@ export class PublisherState implements Disposable {
       if (
         error instanceof Error &&
         "code" in error &&
-        (error as NodeJS.ErrnoException).code === "ENOENT"
+        error.code === "ENOENT"
       ) {
         return undefined;
       }
