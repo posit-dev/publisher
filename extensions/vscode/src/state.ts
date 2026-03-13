@@ -30,12 +30,7 @@ import {
   getStatusFromError,
   getSummaryStringFromError,
 } from "src/utils/errors";
-import {
-  isErrCredentialsCorrupted,
-  errCredentialsCorruptedMessage,
-  isErrCannotBackupCredentialsFile,
-  errCannotBackupCredentialsFileMessage,
-} from "src/utils/errorTypes";
+import { CredentialsService } from "src/credentials/service";
 import {
   loadConfiguration,
   loadAllConfigurationsRecursive,
@@ -50,7 +45,6 @@ import {
   isConnectCloudProduct,
 } from "./utils/multiStepHelpers";
 import { recordAddConnectCloudUrlParams } from "./utils/connectCloudHelpers";
-import { syncAllCredentials } from "./credentialSecretStorage";
 
 function findContentRecord<
   T extends ContentRecord | PreContentRecord | PreContentRecordWithConfig,
@@ -124,9 +118,11 @@ export class PublisherState implements Disposable {
   > = [];
   configurations: Array<Configuration | ConfigurationError> = [];
   credentials: Credential[] = [];
+  readonly credentialsService: CredentialsService;
 
   constructor(context: extensionContext) {
     this.context = context;
+    this.credentialsService = new CredentialsService(context.secrets);
   }
 
   dispose() {
@@ -380,17 +376,10 @@ export class PublisherState implements Disposable {
     const oldCredentials = this.credentials;
     try {
       await showProgress("Refreshing Credentials", Views.HomeView, async () => {
-        const api = await useApi();
-        const response = await api.credentials.list();
-        this.credentials = response.data;
+        this.credentials = await this.credentialsService.list();
       });
-      await syncAllCredentials(this.context.secrets, this.credentials);
       this.credentialRefresh.fire({ oldCredentials: oldCredentials });
     } catch (error: unknown) {
-      if (isErrCredentialsCorrupted(error)) {
-        this.resetCredentials();
-        return;
-      }
       const summary = getSummaryStringFromError("refreshCredentials", error);
       window.showErrorMessage(summary);
     }
@@ -401,20 +390,11 @@ export class PublisherState implements Disposable {
   async resetCredentials() {
     const oldCredentials = this.credentials;
     try {
-      const api = await useApi();
-      const response = await api.credentials.reset();
-      const warnMsg = errCredentialsCorruptedMessage(response.data.backupFile);
-      window.showWarningMessage(warnMsg);
-
-      const listResponse = await api.credentials.list();
-      this.credentials = listResponse.data;
-      await syncAllCredentials(this.context.secrets, this.credentials);
+      await this.credentialsService.reset();
+      this.credentials = [];
+      window.showWarningMessage("Credentials have been reset.");
       this.credentialRefresh.fire({ oldCredentials: oldCredentials });
     } catch (err: unknown) {
-      if (isErrCannotBackupCredentialsFile(err)) {
-        window.showErrorMessage(errCannotBackupCredentialsFileMessage(err));
-        return;
-      }
       const summary = getSummaryStringFromError("resetCredentials", err);
       window.showErrorMessage(summary);
     }

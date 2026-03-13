@@ -3,7 +3,7 @@
 import { SecretStorage } from "vscode";
 
 import { Credential } from "src/api/types/credentials";
-import { logger } from "./logging";
+import { logger } from "src/logging";
 
 const KEY_PREFIX = "credential:";
 const CURRENT_VERSION = 1;

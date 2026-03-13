@@ -168,34 +168,6 @@ export type ErrInvalidConfigFiles = MkErrorDataType<
 export const isErrInvalidConfigFile =
   mkErrorTypeGuard<ErrInvalidConfigFiles>("invalidConfigFile");
 
-// Invalid configuration file(s)
-export type ErrCredentialsCorrupted = MkErrorDataType<"credentialsCorrupted">;
-export const isErrCredentialsCorrupted =
-  mkErrorTypeGuard<ErrCredentialsCorrupted>("credentialsCorrupted");
-export const errCredentialsCorruptedMessage = (backupFile: string) => {
-  let msg =
-    "Unrecognizable credentials for Posit Publisher were found and removed. Credentials may need to be recreated.";
-  if (backupFile) {
-    msg += ` Previous credentials data backed up at ${backupFile}`;
-  }
-  return msg;
-};
-
-// Unable to backup credentials file
-export type ErrCannotBackupCredentialsFile = MkErrorDataType<
-  "credentialsCannotBackupFile",
-  { filename: string; message: string }
->;
-export const isErrCannotBackupCredentialsFile =
-  mkErrorTypeGuard<ErrCannotBackupCredentialsFile>(
-    "credentialsCannotBackupFile",
-  );
-export const errCannotBackupCredentialsFileMessage = (
-  err: axiosErrorWithJson<ErrCannotBackupCredentialsFile>,
-) => {
-  return `Unrecognizable credentials for Posit Publisher were found. ${err.response.data.details.message}`;
-};
-
 // Device auth access denied error
 export type ErrDeviceAuthAccessDenied =
   MkErrorDataType<"deviceAuthAccessDenied">;
