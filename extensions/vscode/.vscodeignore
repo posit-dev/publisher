@@ -16,6 +16,10 @@ assets/icons/**
 # Include codicons dist from node_modules
 !node_modules/@vscode/codicons/dist
 
+# Exclude connect-api file: dependency (esbuild bundles it into dist/)
+# vsce resolves the symlink so paths appear as ../../packages/connect-api/
+../../packages/connect-api/**
+
 # Ignore all webview files except the build directories
 webviews/homeView/src/**
 webviews/homeView/index.html

@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"reflect"
 	"strings"
 
 	"github.com/pelletier/go-toml/v2"
@@ -159,27 +158,3 @@ func (cfg *Config) RemoveSecret(secret string) error {
 	return nil
 }
 
-func (cfg *Config) AddIntegrationRequest(ir IntegrationRequest) error {
-	// first check if the integrationRequest already exists
-	for _, r := range cfg.IntegrationRequests {
-		// need reflect.DeepEqual for comparing structs with map[string]any fields
-		if reflect.DeepEqual(r, ir) {
-			return nil
-		}
-	}
-	if cfg.IntegrationRequests == nil {
-		cfg.IntegrationRequests = []IntegrationRequest{}
-	}
-	cfg.IntegrationRequests = append(cfg.IntegrationRequests, ir)
-	return nil
-}
-
-func (cfg *Config) RemoveIntegrationRequest(ir IntegrationRequest) error {
-	for i, r := range cfg.IntegrationRequests {
-		if reflect.DeepEqual(ir, r) {
-			cfg.IntegrationRequests = append(cfg.IntegrationRequests[:i], cfg.IntegrationRequests[i+1:]...)
-			break
-		}
-	}
-	return nil
-}
