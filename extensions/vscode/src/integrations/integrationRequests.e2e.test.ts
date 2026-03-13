@@ -1,17 +1,13 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
 /**
- * End-to-end integration tests using the MockConnectServer.
+ * End-to-end tests using the MockConnectServer.
  *
- * Unlike the `.integration.test.ts` file which mocks the @posit-dev/connect-api
- * module entirely, these tests spin up the real MockConnectServer (an HTTP
- * server with canned responses) and use the real ConnectAPI client. This
- * exercises the full stack:
- *
- *   TOML CRUD → real ConnectAPI client → real HTTP requests → MockConnectServer
- *
- * This catches issues that module-level mocks cannot: incorrect URL construction,
- * missing headers, serialization bugs, and real HTTP error propagation.
+ * These tests spin up a real HTTP mock server and use the real ConnectAPI
+ * client alongside the TOML CRUD functions. This exercises production code
+ * through real HTTP — catching issues that module-level mocks cannot:
+ * incorrect URL construction, missing headers, serialization bugs, and
+ * real HTTP error propagation.
  */
 
 import * as fs from "fs";
@@ -34,7 +30,6 @@ import {
   addIntegrationRequest,
   removeIntegrationRequest,
 } from "./integrationRequests";
-import type { IntegrationRequest } from "../api/types/configurations";
 
 // ---------------------------------------------------------------------------
 // Mock Connect Server lifecycle
@@ -122,47 +117,12 @@ async function getCapturedRequests(): Promise<
   >;
 }
 
-/**
- * Enriches local integration requests with display info from the Connect
- * server using the real ConnectAPI client and MockConnectServer.
- */
-async function enrichIntegrationRequests(
-  configName: string,
-  projectDir: string,
-  rootDir: string,
-): Promise<
-  (IntegrationRequest & {
-    displayName?: string;
-    displayDescription?: string;
-  })[]
-> {
-  const integrationRequests = await listIntegrationRequests(
-    configName,
-    projectDir,
-    rootDir,
-  );
-
-  const { data: integrations } = await connectApi.getIntegrations();
-
-  return integrationRequests.map((ir) => {
-    const match = (integrations as Integration[]).find(
-      (integration) => integration.guid === ir.guid,
-    );
-    return {
-      ...ir,
-      displayName: match?.name,
-      displayDescription: match?.description,
-    };
-  });
-}
-
 // ---------------------------------------------------------------------------
-// Tests
+// Tests: ConnectAPI HTTP behavior
 // ---------------------------------------------------------------------------
 
-describe("e2e: real ConnectAPI + MockConnectServer + TOML CRUD", () => {
-  it("fetches integrations from mock server default fixture", async () => {
-    // The default fixture (integrations.json) has one integration
+describe("e2e: ConnectAPI getIntegrations HTTP behavior", () => {
+  it("parses the integration array from the default fixture", async () => {
     const { data } = await connectApi.getIntegrations();
     const integrations = data as Integration[];
 
@@ -172,109 +132,45 @@ describe("e2e: real ConnectAPI + MockConnectServer + TOML CRUD", () => {
     expect(integrations[0].name).toBe("My OAuth Integration");
   });
 
-  it("sends correct HTTP method and path for getIntegrations", async () => {
+  it("sends GET to /__api__/v1/oauth/integrations", async () => {
     await connectApi.getIntegrations();
 
     const requests = await getCapturedRequests();
-    expect(requests.length).toBeGreaterThanOrEqual(1);
-
-    const integrationReq = requests.find(
+    const req = requests.find(
       (r) => r.path === "/__api__/v1/oauth/integrations",
     );
-    expect(integrationReq).toBeDefined();
-    expect(integrationReq!.method).toBe("GET");
+    expect(req).toBeDefined();
+    expect(req!.method).toBe("GET");
   });
 
-  it("sends Authorization header with API key", async () => {
+  it("sends Authorization: Key header", async () => {
     await connectApi.getIntegrations();
 
     const requests = await getCapturedRequests();
-    const integrationReq = requests.find(
+    const req = requests.find(
       (r) => r.path === "/__api__/v1/oauth/integrations",
     );
-    expect(integrationReq).toBeDefined();
-    expect(integrationReq!.headers.authorization).toBe(`Key ${API_KEY}`);
+    expect(req).toBeDefined();
+    expect(req!.headers.authorization).toBe(`Key ${API_KEY}`);
   });
-});
 
-describe("e2e: CRUD + enrichment with mock server", () => {
-  it("enriches integration requests using default fixture data", async () => {
-    writeConfig("myapp", baseToml);
+  it("sends no request body", async () => {
+    await connectApi.getIntegrations();
 
-    // The default fixture has guid "1a2b3c4d-5e6f-7890-abcd-ef0123456789"
-    await addIntegrationRequest("myapp", ".", tmpDir, {
-      guid: "1a2b3c4d-5e6f-7890-abcd-ef0123456789",
-    });
-
-    const enriched = await enrichIntegrationRequests("myapp", ".", tmpDir);
-
-    expect(enriched).toHaveLength(1);
-    expect(enriched[0]!.displayName).toBe("My OAuth Integration");
-    expect(enriched[0]!.displayDescription).toBe(
-      "OAuth integration for external service",
+    const requests = await getCapturedRequests();
+    const req = requests.find(
+      (r) => r.path === "/__api__/v1/oauth/integrations",
     );
-  });
-
-  it("returns undefined display fields when GUID has no server match", async () => {
-    writeConfig("myapp", baseToml);
-
-    await addIntegrationRequest("myapp", ".", tmpDir, {
-      guid: "no-match-guid",
-    });
-
-    const enriched = await enrichIntegrationRequests("myapp", ".", tmpDir);
-
-    expect(enriched).toHaveLength(1);
-    expect(enriched[0]!.guid).toBe("no-match-guid");
-    expect(enriched[0]!.displayName).toBeUndefined();
-    expect(enriched[0]!.displayDescription).toBeUndefined();
-  });
-
-  it("full CRUD lifecycle with real HTTP enrichment", async () => {
-    writeConfig("myapp", baseToml);
-    const fixtureGuid = "1a2b3c4d-5e6f-7890-abcd-ef0123456789";
-
-    // Start empty
-    let enriched = await enrichIntegrationRequests("myapp", ".", tmpDir);
-    expect(enriched).toHaveLength(0);
-
-    // Add matching integration
-    await addIntegrationRequest("myapp", ".", tmpDir, { guid: fixtureGuid });
-    enriched = await enrichIntegrationRequests("myapp", ".", tmpDir);
-    expect(enriched).toHaveLength(1);
-    expect(enriched[0]!.displayName).toBe("My OAuth Integration");
-
-    // Add non-matching integration
-    await addIntegrationRequest("myapp", ".", tmpDir, {
-      guid: "orphan-guid",
-    });
-    enriched = await enrichIntegrationRequests("myapp", ".", tmpDir);
-    expect(enriched).toHaveLength(2);
-    expect(enriched[0]!.displayName).toBe("My OAuth Integration");
-    expect(enriched[1]!.displayName).toBeUndefined();
-
-    // Remove matching integration
-    await removeIntegrationRequest("myapp", ".", tmpDir, {
-      guid: fixtureGuid,
-    });
-    enriched = await enrichIntegrationRequests("myapp", ".", tmpDir);
-    expect(enriched).toHaveLength(1);
-    expect(enriched[0]!.guid).toBe("orphan-guid");
-
-    // Remove remaining
-    await removeIntegrationRequest("myapp", ".", tmpDir, {
-      guid: "orphan-guid",
-    });
-    enriched = await enrichIntegrationRequests("myapp", ".", tmpDir);
-    expect(enriched).toHaveLength(0);
+    expect(req!.body).toBeNull();
   });
 });
 
-describe("e2e: response overrides for error scenarios", () => {
-  it("propagates 401 Unauthorized from mock server", async () => {
-    writeConfig("myapp", baseToml);
-    await addIntegrationRequest("myapp", ".", tmpDir, { guid: "any-guid" });
+// ---------------------------------------------------------------------------
+// Tests: ConnectAPI error propagation through real HTTP
+// ---------------------------------------------------------------------------
 
+describe("e2e: ConnectAPI error propagation", () => {
+  it("throws on 401 Unauthorized", async () => {
     await setMockResponse({
       method: "GET",
       pathPattern: "^/__api__/v1/oauth/integrations$",
@@ -282,31 +178,10 @@ describe("e2e: response overrides for error scenarios", () => {
       body: { error: "Unauthorized" },
     });
 
-    await expect(
-      enrichIntegrationRequests("myapp", ".", tmpDir),
-    ).rejects.toThrow(/401/);
+    await expect(connectApi.getIntegrations()).rejects.toThrow(/401/);
   });
 
-  it("propagates 500 Internal Server Error from mock server", async () => {
-    writeConfig("myapp", baseToml);
-    await addIntegrationRequest("myapp", ".", tmpDir, { guid: "any-guid" });
-
-    await setMockResponse({
-      method: "GET",
-      pathPattern: "^/__api__/v1/oauth/integrations$",
-      status: 500,
-      body: { error: "Internal Server Error" },
-    });
-
-    await expect(
-      enrichIntegrationRequests("myapp", ".", tmpDir),
-    ).rejects.toThrow(/500/);
-  });
-
-  it("propagates 403 Forbidden from mock server", async () => {
-    writeConfig("myapp", baseToml);
-    await addIntegrationRequest("myapp", ".", tmpDir, { guid: "any-guid" });
-
+  it("throws on 403 Forbidden", async () => {
     await setMockResponse({
       method: "GET",
       pathPattern: "^/__api__/v1/oauth/integrations$",
@@ -314,31 +189,21 @@ describe("e2e: response overrides for error scenarios", () => {
       body: { error: "Forbidden" },
     });
 
-    await expect(
-      enrichIntegrationRequests("myapp", ".", tmpDir),
-    ).rejects.toThrow(/403/);
+    await expect(connectApi.getIntegrations()).rejects.toThrow(/403/);
   });
 
-  it("handles empty integrations array from server override", async () => {
-    writeConfig("myapp", baseToml);
-
+  it("throws on 500 Internal Server Error", async () => {
     await setMockResponse({
       method: "GET",
       pathPattern: "^/__api__/v1/oauth/integrations$",
-      status: 200,
-      body: [],
+      status: 500,
+      body: { error: "Internal Server Error" },
     });
 
-    await addIntegrationRequest("myapp", ".", tmpDir, { guid: "some-guid" });
-
-    const enriched = await enrichIntegrationRequests("myapp", ".", tmpDir);
-    expect(enriched).toHaveLength(1);
-    expect(enriched[0]!.displayName).toBeUndefined();
+    await expect(connectApi.getIntegrations()).rejects.toThrow(/500/);
   });
 
-  it("enriches with multiple integrations from server override", async () => {
-    writeConfig("myapp", baseToml);
-
+  it("parses overridden multi-integration response", async () => {
     const customIntegrations = [
       {
         guid: "custom-aaa",
@@ -367,52 +232,65 @@ describe("e2e: response overrides for error scenarios", () => {
       body: customIntegrations,
     });
 
-    await addIntegrationRequest("myapp", ".", tmpDir, { guid: "custom-aaa" });
-    await addIntegrationRequest("myapp", ".", tmpDir, { guid: "custom-bbb" });
+    const { data } = await connectApi.getIntegrations();
+    const integrations = data as Integration[];
 
-    const enriched = await enrichIntegrationRequests("myapp", ".", tmpDir);
+    expect(integrations).toHaveLength(2);
+    expect(integrations[0].name).toBe("Databricks Prod");
+    expect(integrations[1].name).toBe("Snowflake Dev");
+  });
 
-    expect(enriched).toHaveLength(2);
-    expect(enriched[0]!.displayName).toBe("Databricks Prod");
-    expect(enriched[0]!.displayDescription).toBe("Production workspace");
-    expect(enriched[1]!.displayName).toBe("Snowflake Dev");
-    expect(enriched[1]!.displayDescription).toBe("Dev Snowflake");
+  it("parses empty integrations array", async () => {
+    await setMockResponse({
+      method: "GET",
+      pathPattern: "^/__api__/v1/oauth/integrations$",
+      status: 200,
+      body: [],
+    });
+
+    const { data } = await connectApi.getIntegrations();
+    expect(data).toEqual([]);
   });
 });
 
-describe("e2e: request capture verification", () => {
-  it("ConnectAPI sends exactly one GET request per getIntegrations call", async () => {
+// ---------------------------------------------------------------------------
+// Tests: TOML CRUD + real ConnectAPI used together
+// ---------------------------------------------------------------------------
+
+describe("e2e: CRUD lifecycle with real HTTP", () => {
+  it("add, list, remove cycle with concurrent getIntegrations", async () => {
     writeConfig("myapp", baseToml);
-    await addIntegrationRequest("myapp", ".", tmpDir, { guid: "any-guid" });
 
-    await enrichIntegrationRequests("myapp", ".", tmpDir);
+    // Start empty
+    let reqs = await listIntegrationRequests("myapp", ".", tmpDir);
+    expect(reqs).toHaveLength(0);
 
-    const requests = await getCapturedRequests();
-    const integrationRequests = requests.filter(
-      (r) => r.path === "/__api__/v1/oauth/integrations",
-    );
-    expect(integrationRequests).toHaveLength(1);
-    expect(integrationRequests[0].method).toBe("GET");
-  });
-
-  it("does not send request body for GET integrations", async () => {
-    await connectApi.getIntegrations();
-
-    const requests = await getCapturedRequests();
-    const integrationReq = requests.find(
-      (r) => r.path === "/__api__/v1/oauth/integrations",
-    );
-    expect(integrationReq!.body).toBeNull();
-  });
-});
-
-describe("e2e: TOML round-trip with real HTTP enrichment", () => {
-  it("preserves all local fields while adding server display info", async () => {
-    writeConfig("myapp", baseToml);
+    // Add an integration request matching the fixture GUID
     const fixtureGuid = "1a2b3c4d-5e6f-7890-abcd-ef0123456789";
+    await addIntegrationRequest("myapp", ".", tmpDir, { guid: fixtureGuid });
+
+    // CRUD and ConnectAPI both work in the same test context
+    reqs = await listIntegrationRequests("myapp", ".", tmpDir);
+    expect(reqs).toHaveLength(1);
+    expect(reqs[0]!.guid).toBe(fixtureGuid);
+
+    const { data } = await connectApi.getIntegrations();
+    const integrations = data as Integration[];
+    expect(integrations[0].guid).toBe(fixtureGuid);
+
+    // Remove and verify
+    await removeIntegrationRequest("myapp", ".", tmpDir, {
+      guid: fixtureGuid,
+    });
+    reqs = await listIntegrationRequests("myapp", ".", tmpDir);
+    expect(reqs).toHaveLength(0);
+  });
+
+  it("TOML round-trip preserves all integration request fields", async () => {
+    writeConfig("myapp", baseToml);
 
     await addIntegrationRequest("myapp", ".", tmpDir, {
-      guid: fixtureGuid,
+      guid: "1a2b3c4d-5e6f-7890-abcd-ef0123456789",
       name: "local-alias",
       description: "local-description",
       authType: "oauth2",
@@ -420,26 +298,15 @@ describe("e2e: TOML round-trip with real HTTP enrichment", () => {
       config: { key: "value" },
     });
 
-    // Verify TOML round-trip preserves all fields
     const reqs = await listIntegrationRequests("myapp", ".", tmpDir);
     expect(reqs).toHaveLength(1);
     expect(reqs[0]).toEqual({
-      guid: fixtureGuid,
+      guid: "1a2b3c4d-5e6f-7890-abcd-ef0123456789",
       name: "local-alias",
       description: "local-description",
       authType: "oauth2",
       type: "custom",
       config: { key: "value" },
     });
-
-    // Enrichment adds server display info without replacing local fields
-    const enriched = await enrichIntegrationRequests("myapp", ".", tmpDir);
-    expect(enriched[0]!.displayName).toBe("My OAuth Integration");
-    expect(enriched[0]!.displayDescription).toBe(
-      "OAuth integration for external service",
-    );
-    expect(enriched[0]!.name).toBe("local-alias");
-    expect(enriched[0]!.description).toBe("local-description");
-    expect(enriched[0]!.config).toEqual({ key: "value" });
   });
 });

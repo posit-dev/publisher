@@ -99,8 +99,8 @@ function integrationRequestsEqual(
   return stableStringify(a) === stableStringify(b);
 }
 
-function stableStringify(obj: unknown): string {
-  return JSON.stringify(obj, Object.keys(obj as object).sort());
+function stableStringify(obj: IntegrationRequest): string {
+  return JSON.stringify(obj, Object.keys(obj).sort());
 }
 
 function relativeProjectDir(absDir: string, rootDir: string): string {
