@@ -531,4 +531,25 @@ describe("getInterpreterDefaults end-to-end", async () => {
       }
     });
   });
+
+  test.skipIf(!pythonAvailable)(
+    "detects requirements.txt when given an absolute projectDir",
+    () => {
+      clearPythonVersionCache();
+      return withTempDir(async (dir) => {
+        await writeFile(
+          path.join(dir, "requirements.txt"),
+          "requests\n",
+          "utf-8",
+        );
+
+        // dir is already absolute (from mkdtemp), matching the fixed call sites
+        // in state.ts which now resolve projectDir against the workspace root.
+        const result = await getInterpreterDefaults(dir, pythonCmd);
+
+        expect(result.python.packageFile).toBe("requirements.txt");
+        expect(result.python.version).toMatch(/^\d+\.\d+\.\d+$/);
+      });
+    },
+  );
 });

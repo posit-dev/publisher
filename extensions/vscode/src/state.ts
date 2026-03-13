@@ -1,5 +1,7 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
+import path from "node:path";
+
 import {
   Disposable,
   env,
@@ -25,6 +27,7 @@ import {
   useApi,
 } from "src/api";
 import { normalizeURL } from "src/utils/url";
+import { getInterpreterDefaults } from "src/interpreters";
 import { showProgress } from "src/utils/progress";
 import {
   getStatusFromError,
@@ -249,15 +252,14 @@ export class PublisherState implements Disposable {
         root,
       );
 
-      const api = await useApi();
       const python = await getPythonInterpreterPath();
       const r = await getRInterpreterPath();
-      const defaults = await api.interpreters.get(
-        contentRecord.projectDir,
-        r,
-        python,
+      const defaults = await getInterpreterDefaults(
+        path.join(root, contentRecord.projectDir),
+        python?.pythonPath,
+        r?.rPath,
       );
-      const updated = UpdateConfigWithDefaults(cfg, defaults.data);
+      const updated = UpdateConfigWithDefaults(cfg, defaults);
       // its not foolproof, but it may help
       if (!this.findConfig(updated.configurationName, updated.projectDir)) {
         this.configurations.push(updated);
@@ -332,16 +334,16 @@ export class PublisherState implements Disposable {
             return;
           }
 
-          const api = await useApi();
           const python = await getPythonInterpreterPath();
           const r = await getRInterpreterPath();
 
           const configs = await loadAllConfigurationsRecursive(root);
-          const defaults = await api.interpreters.get(".", r, python);
-          this.configurations = UpdateAllConfigsWithDefaults(
-            configs,
-            defaults.data,
+          const defaults = await getInterpreterDefaults(
+            root,
+            python?.pythonPath,
+            r?.rPath,
           );
+          this.configurations = UpdateAllConfigsWithDefaults(configs, defaults);
         },
       );
     } catch (error: unknown) {

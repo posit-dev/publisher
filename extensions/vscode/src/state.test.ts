@@ -1,5 +1,7 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
+import path from "node:path";
+
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { window } from "vscode";
 import { AxiosError, AxiosHeaders } from "axios";
@@ -15,6 +17,7 @@ import { LocalState } from "./constants";
 import { PublisherState } from "./state";
 import { AllContentRecordTypes, PreContentRecord } from "src/api";
 import { ConfigurationLoadError } from "src/toml";
+import { getInterpreterDefaults } from "src/interpreters";
 
 class mockApiClient {
   readonly contentRecords = {
@@ -25,18 +28,6 @@ class mockApiClient {
   readonly credentials = {
     list: vi.fn(),
     reset: vi.fn(),
-  };
-
-  readonly interpreters = {
-    get: vi.fn(() => {
-      return {
-        data: {
-          dir: "/usr/proj",
-          r: "/usr/bin/r",
-          python: "/usr/bin/python",
-        },
-      };
-    }),
   };
 }
 
@@ -69,6 +60,17 @@ vi.mock("src/utils/connectCloudHelpers", () => ({
 vi.mock("src/utils/vscode", () => ({
   getPythonInterpreterPath: vi.fn(),
   getRInterpreterPath: vi.fn(),
+}));
+
+vi.mock("src/interpreters", () => ({
+  getInterpreterDefaults: vi.fn(() =>
+    Promise.resolve({
+      python: { version: "", packageFile: "", packageManager: "" },
+      preferredPythonPath: "",
+      r: { version: "", packageFile: "", packageManager: "" },
+      preferredRPath: "",
+    }),
+  ),
 }));
 
 const mockSyncAllCredentials = vi.fn();
@@ -333,6 +335,13 @@ describe("PublisherState", () => {
       expect(currentConfig).toEqual(config);
       expect(publisherState.configurations).toEqual([config]);
 
+      // getInterpreterDefaults should receive absolute path (workspace root + projectDir)
+      expect(vi.mocked(getInterpreterDefaults)).toHaveBeenCalledWith(
+        path.join("/workspace", contentRecord.projectDir),
+        undefined,
+        undefined,
+      );
+
       // second time calls from cache
       currentConfig = await publisherState.getSelectedConfiguration();
 
@@ -594,7 +603,21 @@ describe("PublisherState", () => {
 
   test.todo("refreshContentRecords", () => {});
 
-  test.todo("refreshConfigurations", () => {});
+  test("refreshConfigurations passes absolute workspace root to getInterpreterDefaults", async () => {
+    const { mockContext } = mkExtensionContextStateMock({});
+    const publisherState = new PublisherState(mockContext);
+
+    mockLoadAllConfigurationsRecursive.mockResolvedValue([]);
+    vi.mocked(getInterpreterDefaults).mockClear();
+
+    await publisherState.refreshConfigurations();
+
+    expect(vi.mocked(getInterpreterDefaults)).toHaveBeenCalledWith(
+      "/workspace",
+      undefined,
+      undefined,
+    );
+  });
 
   test.todo("validConfigs", () => {});
 

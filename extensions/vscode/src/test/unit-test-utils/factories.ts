@@ -45,12 +45,14 @@ export const interpreterDefaultsFactory = Factory.define<InterpreterDefaults>(
       packageFile: "requirements.txt",
       packageManager: "pip",
       version: "3.11.0",
+      requiresPython: ">=3.11",
     },
     preferredRPath: "usr/bin/R",
     r: {
       packageFile: "renv.lock",
       packageManager: "renv",
       version: "4.4.0",
+      requiresR: ">= 4.4.0",
     },
   }),
 );
