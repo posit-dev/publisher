@@ -133,9 +133,7 @@ Cypress.Commands.add(
       cy.retryWithBackoff(
         () =>
           cy.get(".quick-input-widget").then(($widget) => {
-            return $widget.find(
-              '.monaco-list-row[aria-label*="source code"]',
-            );
+            return $widget.find('.monaco-list-row[aria-label*="source code"]');
           }),
         15,
         1000,
