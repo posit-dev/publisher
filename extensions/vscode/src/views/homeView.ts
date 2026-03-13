@@ -44,7 +44,11 @@ import {
 } from "src/api";
 import { ConnectAPI } from "@posit-dev/connect-api";
 import type { Integration } from "@posit-dev/connect-api";
-import { loadAllConfigurations } from "src/toml";
+import {
+  loadAllConfigurations,
+  loadAllDeployments,
+  patchDeploymentRecord,
+} from "src/toml";
 import {
   listIntegrationRequests,
   addIntegrationRequest,
@@ -1062,10 +1066,14 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       );
       if (config) {
         await showProgress("Updating Config", Views.HomeView, async () => {
-          const api = await useApi();
-          await api.contentRecords.patch(
+          const root = workspaces.path();
+          if (!root) {
+            return;
+          }
+          await patchDeploymentRecord(
             targetContentRecord.deploymentName,
             targetContentRecord.projectDir,
+            root,
             {
               configName: config.configurationName,
             },
@@ -2067,8 +2075,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
     const entrypointFile = uriUtils.basename(uri);
 
-    const api = await useApi();
-
     await this.refreshAll(true, true);
 
     // We need the initial queries to finish, before we can
@@ -2082,10 +2088,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const contentRecordList: (ContentRecord | PreContentRecord)[] = [];
     const getContentRecords = async () => {
       try {
-        const response = await api.contentRecords.getAll(entrypointDir, {
-          recursive: false,
-        });
-        const contentRecords = response.data.map((record) =>
+        const root = workspaces.path();
+        if (!root) {
+          return;
+        }
+        const allRecords = await loadAllDeployments(entrypointDir, root);
+        const contentRecords = allRecords.map((record) =>
           recordAddConnectCloudUrlParams(record, env.appName),
         );
         contentRecords.forEach((cfg) => {
@@ -2095,7 +2103,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         });
       } catch (error: unknown) {
         const summary = getSummaryStringFromError(
-          "handleFileInitiatedDeploymentSelection, contentRecords.getAll",
+          "handleFileInitiatedDeploymentSelection, loadAllDeployments",
           error,
         );
         window.showInformationMessage(

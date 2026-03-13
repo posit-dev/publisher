@@ -1,7 +1,7 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
 import { describe, expect, it } from "vitest";
-import { forceProductTypeCompliance } from "./compliance";
+import { forceProductTypeCompliance } from "./configCompliance";
 import { ConfigurationDetails, ContentType } from "../api/types/configurations";
 import { ProductType } from "../api/types/contentRecords";
 
