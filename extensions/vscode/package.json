@@ -655,7 +655,8 @@
     "esbuild-tests": "node ./esbuild.tests.mjs",
     "pretest": "npm run esbuild-tests && npm run esbuild-base",
     "test": "vscode-test",
-    "test-unit": "vitest run"
+    "test-unit": "vitest run",
+    "test-integration-interpreters": "vitest run src/interpreters/integration.test.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
@@ -680,6 +681,8 @@
   },
   "dependencies": {
     "@vscode/codicons": "^0.0.44",
+    "ajv": "^8.18.0",
+    "ajv-formats": "^3.0.1",
     "async-mutex": "^0.5.0",
     "axios": "^1.13.6",
     "debounce": "^3.0.0",
@@ -688,6 +691,7 @@
     "filenamify": "^7.0.1",
     "get-port": "^7.1.0",
     "retry": "^0.13.1",
+    "smol-toml": "^1.6.0",
     "tar-stream": "^3.1.8",
     "vscode-uri": "^3.0.8"
   }

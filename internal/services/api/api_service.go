@@ -96,18 +96,6 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	r.Handle(ToPath("connect", "open-content"), PostOpenConnectContentHandlerFunc(lister, log, emitter)).
 		Methods(http.MethodPost)
 
-	// GET /api/configurations
-	r.Handle(ToPath("configurations"), GetConfigurationsHandlerFunc(base, log)).
-		Methods(http.MethodGet)
-
-	// GET /api/configurations/$NAME
-	r.Handle(ToPath("configurations", "{name}"), GetConfigurationHandlerFunc(base, log)).
-		Methods(http.MethodGet)
-
-	// PUT /api/configurations/$NAME
-	r.Handle(ToPath("configurations", "{name}"), PutConfigurationHandlerFunc(base, log)).
-		Methods(http.MethodPut)
-
 	// GET /api/configurations/$NAME/files
 	r.Handle(ToPath("configurations", "{name}", "files"), GetConfigFilesHandlerFunc(base, filesService, log)).
 		Methods(http.MethodGet)
@@ -166,10 +154,6 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 
 	// GET /api/deployments/$NAME/environment
 	r.Handle(ToPath("deployments", "{name}", "environment"), GetDeploymentEnvironmentHandlerFunc(base, log, lister)).
-		Methods(http.MethodGet)
-
-	// GET /api/interpreters
-	r.Handle(ToPath("interpreters"), GetActiveInterpretersHandlerFunc(base, log)).
 		Methods(http.MethodGet)
 
 	// POST /api/packages/python/scan

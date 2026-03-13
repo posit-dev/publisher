@@ -1,5 +1,7 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
+import path from "node:path";
+
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { window } from "vscode";
 import { AxiosError, AxiosHeaders } from "axios";
@@ -14,6 +16,8 @@ import { mkExtensionContextStateMock } from "src/test/unit-test-utils/vscode-moc
 import { LocalState } from "./constants";
 import { PublisherState } from "./state";
 import { AllContentRecordTypes, PreContentRecord } from "src/api";
+import { ConfigurationLoadError } from "src/toml";
+import { getInterpreterDefaults } from "src/interpreters";
 
 class mockApiClient {
   readonly contentRecords = {
@@ -21,26 +25,9 @@ class mockApiClient {
     getAll: vi.fn(),
   };
 
-  readonly configurations = {
-    get: vi.fn(),
-    getAll: vi.fn(),
-  };
-
   readonly credentials = {
     list: vi.fn(),
     reset: vi.fn(),
-  };
-
-  readonly interpreters = {
-    get: vi.fn(() => {
-      return {
-        data: {
-          dir: "/usr/proj",
-          r: "/usr/bin/r",
-          python: "/usr/bin/python",
-        },
-      };
-    }),
   };
 }
 
@@ -75,9 +62,36 @@ vi.mock("src/utils/vscode", () => ({
   getRInterpreterPath: vi.fn(),
 }));
 
+vi.mock("src/interpreters", () => ({
+  getInterpreterDefaults: vi.fn(() =>
+    Promise.resolve({
+      python: { version: "", packageFile: "", packageManager: "" },
+      preferredPythonPath: "",
+      r: { version: "", packageFile: "", packageManager: "" },
+      preferredRPath: "",
+    }),
+  ),
+}));
+
 const mockSyncAllCredentials = vi.fn();
 vi.mock("src/credentialSecretStorage", () => ({
   syncAllCredentials: (...args: unknown[]) => mockSyncAllCredentials(...args),
+}));
+
+const mockLoadConfiguration = vi.fn();
+const mockLoadAllConfigurationsRecursive = vi.fn();
+
+vi.mock("src/toml", async (importOriginal) => {
+  return {
+    ...(await importOriginal<typeof import("src/toml")>()),
+    loadConfiguration: (...args: unknown[]) => mockLoadConfiguration(...args),
+    loadAllConfigurationsRecursive: (...args: unknown[]) =>
+      mockLoadAllConfigurationsRecursive(...args),
+  };
+});
+
+vi.mock("src/workspaces", () => ({
+  path: () => "/workspace",
 }));
 
 vi.mock("vscode", () => {
@@ -297,7 +311,7 @@ describe("PublisherState", () => {
       let currentConfig = await publisherState.getSelectedConfiguration();
       expect(mockWorkspace.get).toHaveBeenCalled();
       expect(currentConfig).toEqual(undefined);
-      expect(mockClient.configurations.get).not.toHaveBeenCalled();
+      expect(mockLoadConfiguration).not.toHaveBeenCalled();
 
       // setup existing content record in cache
       const contentRecord = preContentRecordFactory.build({
@@ -305,37 +319,38 @@ describe("PublisherState", () => {
       });
       publisherState.contentRecords.push(contentRecord);
 
-      // setup fake config API response,
+      // setup fake config from toml loader,
       // config name and project dir must be the same between content record and config
       const config = configurationFactory.build({
         configurationName: contentRecord.configurationName,
         projectDir: contentRecord.projectDir,
       });
-      mockClient.configurations.get.mockResolvedValue({
-        data: config,
-      });
+      mockLoadConfiguration.mockResolvedValue(config);
 
       // selection has something now
       await publisherState.updateSelection(contentRecordState);
 
       currentConfig = await publisherState.getSelectedConfiguration();
-      expect(mockClient.configurations.get).toHaveBeenCalledTimes(1);
-      expect(mockClient.configurations.get).toHaveBeenCalledWith(
-        contentRecord.configurationName,
-        contentRecord.projectDir,
-      );
+      expect(mockLoadConfiguration).toHaveBeenCalledTimes(1);
       expect(currentConfig).toEqual(config);
       expect(publisherState.configurations).toEqual([config]);
+
+      // getInterpreterDefaults should receive absolute path (workspace root + projectDir)
+      expect(vi.mocked(getInterpreterDefaults)).toHaveBeenCalledWith(
+        path.join("/workspace", contentRecord.projectDir),
+        undefined,
+        undefined,
+      );
 
       // second time calls from cache
       currentConfig = await publisherState.getSelectedConfiguration();
 
       // Only the previous call is registered
-      expect(mockClient.configurations.get).toHaveBeenCalledTimes(1);
+      expect(mockLoadConfiguration).toHaveBeenCalledTimes(1);
       expect(currentConfig).toEqual(config);
       expect(publisherState.configurations).toEqual([config]);
 
-      // setup a second content record in cache and it's respective config API response
+      // setup a second content record in cache and its respective config
       const secondContentRecordState: DeploymentSelectorState =
         selectionStateFactory.build();
       const secondContentRecord = preContentRecordFactory.build({
@@ -347,9 +362,7 @@ describe("PublisherState", () => {
         configurationName: secondContentRecord.configurationName,
         projectDir: secondContentRecord.projectDir,
       });
-      mockClient.configurations.get.mockResolvedValue({
-        data: secondConfig,
-      });
+      mockLoadConfiguration.mockResolvedValue(secondConfig);
 
       // selection has something different this time
       await publisherState.updateSelection(secondContentRecordState);
@@ -357,16 +370,15 @@ describe("PublisherState", () => {
       // third time will get a new configuration
       currentConfig = await publisherState.getSelectedConfiguration();
 
-      // Two API calls were triggered, each for every different
-      expect(mockClient.configurations.get).toHaveBeenCalledTimes(2);
+      // Two calls were triggered, each for every different
+      expect(mockLoadConfiguration).toHaveBeenCalledTimes(2);
       expect(currentConfig).toEqual(secondConfig);
       expect(publisherState.configurations).toEqual([config, secondConfig]);
     });
 
-    describe("error responses from API", () => {
+    describe("error responses", () => {
       let publisherState: PublisherState;
       let contentRecordState: DeploymentSelectorState;
-      let contentRecord: PreContentRecord;
 
       beforeEach(() => {
         contentRecordState = selectionStateFactory.build();
@@ -375,64 +387,59 @@ describe("PublisherState", () => {
         publisherState = new PublisherState(mockContext);
 
         // setup existing content record in cache
-        contentRecord = preContentRecordFactory.build({
+        const contentRecord = preContentRecordFactory.build({
           deploymentPath: contentRecordState.deploymentPath,
         });
         publisherState.contentRecords.push(contentRecord);
 
-        // set an initial state so it tries to pull from API
+        // set an initial state so it tries to load config
         return publisherState.updateSelection(contentRecordState);
       });
 
-      test("404", async () => {
-        // setup fake 404 error from api client
-        const axiosErr = new AxiosError();
-        axiosErr.response = {
-          data: "",
-          status: 404,
-          statusText: "404",
-          headers: {},
-          config: { headers: new AxiosHeaders() },
-        };
-        mockClient.configurations.get.mockRejectedValue(axiosErr);
+      test("ENOENT (missing file) is silently ignored", async () => {
+        const enoentErr = Object.assign(
+          new Error("ENOENT: no such file or directory"),
+          { code: "ENOENT" },
+        );
+        mockLoadConfiguration.mockRejectedValue(enoentErr);
 
         const currentConfig = await publisherState.getSelectedConfiguration();
-        expect(mockClient.configurations.get).toHaveBeenCalledTimes(1);
-        expect(mockClient.configurations.get).toHaveBeenCalledWith(
-          contentRecord.configurationName,
-          contentRecord.projectDir,
-        );
 
-        // 404 errors are just ignored
         expect(currentConfig).toEqual(undefined);
         expect(publisherState.configurations).toEqual([]);
         expect(window.showInformationMessage).not.toHaveBeenCalled();
       });
 
-      test("Other than 404", async () => {
-        // NOT 404 errors are shown
-        const axiosErr = new AxiosError();
-        axiosErr.response = {
-          data: "custom test error",
-          status: 401,
-          statusText: "401",
-          headers: {},
-          config: { headers: new AxiosHeaders() },
-        };
-        mockClient.configurations.get.mockRejectedValue(axiosErr);
+      test("ConfigurationLoadError (invalid file) is silently ignored", async () => {
+        const loadErr = new ConfigurationLoadError({
+          error: {
+            code: "invalidTOML",
+            msg: "bad toml",
+            operation: "test",
+            data: {},
+          },
+          configurationName: "test",
+          configurationPath: "/test",
+          projectDir: "/test",
+        });
+        mockLoadConfiguration.mockRejectedValue(loadErr);
 
         const currentConfig = await publisherState.getSelectedConfiguration();
-        expect(mockClient.configurations.get).toHaveBeenCalledTimes(1);
-        expect(mockClient.configurations.get).toHaveBeenCalledWith(
-          contentRecord.configurationName,
-          contentRecord.projectDir,
-        );
 
-        // This error is propagated up now
+        expect(currentConfig).toEqual(undefined);
+        expect(publisherState.configurations).toEqual([]);
+        expect(window.showInformationMessage).not.toHaveBeenCalled();
+      });
+
+      test("Other errors are shown", async () => {
+        mockLoadConfiguration.mockRejectedValue(new Error("unexpected error"));
+
+        const currentConfig = await publisherState.getSelectedConfiguration();
+
         expect(currentConfig).toEqual(undefined);
         expect(publisherState.configurations).toEqual([]);
         expect(window.showInformationMessage).toHaveBeenCalledWith(
-          "Unable to retrieve deployment configuration: custom test error",
+          "Unable to retrieve deployment configuration: unexpected error",
         );
       });
     });
@@ -596,7 +603,21 @@ describe("PublisherState", () => {
 
   test.todo("refreshContentRecords", () => {});
 
-  test.todo("refreshConfigurations", () => {});
+  test("refreshConfigurations passes absolute workspace root to getInterpreterDefaults", async () => {
+    const { mockContext } = mkExtensionContextStateMock({});
+    const publisherState = new PublisherState(mockContext);
+
+    mockLoadAllConfigurationsRecursive.mockResolvedValue([]);
+    vi.mocked(getInterpreterDefaults).mockClear();
+
+    await publisherState.refreshConfigurations();
+
+    expect(vi.mocked(getInterpreterDefaults)).toHaveBeenCalledWith(
+      "/workspace",
+      undefined,
+      undefined,
+    );
+  });
 
   test.todo("validConfigs", () => {});
 

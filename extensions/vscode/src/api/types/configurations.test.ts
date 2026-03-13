@@ -45,11 +45,13 @@ describe("Configurations Types", () => {
         version: "4.4.0",
         packageFile: "renv.lock",
         packageManager: "renv",
+        requiresR: ">= 4.4.0",
       });
       expect(config.configuration.python).toEqual({
         version: "3.11.0",
         packageFile: "requirements.txt",
         packageManager: "pip",
+        requiresPython: ">=3.11",
       });
     });
 
@@ -74,8 +76,14 @@ describe("Configurations Types", () => {
 
         UpdateConfigWithDefaults(config, interpreterDefaults);
 
-        const expectedRConf: RConfig = { ...incomingIntprConfig };
-        const expectedPythonConf: PythonConfig = { ...incomingIntprConfig };
+        const expectedRConf: RConfig = {
+          ...incomingIntprConfig,
+          requiresR: ">= 4.4.0",
+        };
+        const expectedPythonConf: PythonConfig = {
+          ...incomingIntprConfig,
+          requiresPython: ">=3.11",
+        };
 
         if (version === "") {
           expectedRConf.version = "4.4.0";
@@ -96,6 +104,78 @@ describe("Configurations Types", () => {
         expect(config.configuration.python).toEqual(expectedPythonConf);
       },
     );
+
+    test("fills in requiresPython from defaults when config has no requiresPython", () => {
+      const config: Configuration = configurationFactory.build();
+      config.configuration.python = { ...blankIntprConf };
+
+      UpdateConfigWithDefaults(config, interpreterDefaults);
+      expect(config.configuration.python!.requiresPython).toBe(">=3.11");
+    });
+
+    test("preserves existing requiresPython when already set", () => {
+      const config: Configuration = configurationFactory.build();
+      config.configuration.python = {
+        ...blankIntprConf,
+        requiresPython: ">=3.9,<4",
+      };
+
+      UpdateConfigWithDefaults(config, interpreterDefaults);
+      expect(config.configuration.python!.requiresPython).toBe(">=3.9,<4");
+    });
+
+    test("fills in requiresR from defaults when config has no requiresR", () => {
+      const config: Configuration = configurationFactory.build();
+      config.configuration.r = { ...blankIntprConf };
+
+      UpdateConfigWithDefaults(config, interpreterDefaults);
+      expect(config.configuration.r!.requiresR).toBe(">= 4.4.0");
+    });
+
+    test("preserves existing requiresR when already set", () => {
+      const config: Configuration = configurationFactory.build();
+      config.configuration.r = {
+        ...blankIntprConf,
+        requiresR: ">= 4.1.0",
+      };
+
+      UpdateConfigWithDefaults(config, interpreterDefaults);
+      expect(config.configuration.r!.requiresR).toBe(">= 4.1.0");
+    });
+
+    test("does not set requiresPython when defaults have no requiresPython", () => {
+      const config: Configuration = configurationFactory.build();
+      config.configuration.python = { ...blankIntprConf };
+
+      const defaultsWithoutRequires: InterpreterDefaults = {
+        ...interpreterDefaults,
+        python: {
+          version: "3.11.0",
+          packageFile: "requirements.txt",
+          packageManager: "pip",
+        },
+      };
+
+      UpdateConfigWithDefaults(config, defaultsWithoutRequires);
+      expect(config.configuration.python!.requiresPython).toBeUndefined();
+    });
+
+    test("does not set requiresR when defaults have no requiresR", () => {
+      const config: Configuration = configurationFactory.build();
+      config.configuration.r = { ...blankIntprConf };
+
+      const defaultsWithoutRequires: InterpreterDefaults = {
+        ...interpreterDefaults,
+        r: {
+          version: "4.4.0",
+          packageFile: "renv.lock",
+          packageManager: "renv",
+        },
+      };
+
+      UpdateConfigWithDefaults(config, defaultsWithoutRequires);
+      expect(config.configuration.r!.requiresR).toBeUndefined();
+    });
   });
 
   describe("UpdateAllConfigsWithDefaults", () => {
@@ -119,11 +199,13 @@ describe("Configurations Types", () => {
           version: "4.4.0",
           packageFile: "renv.lock",
           packageManager: "renv",
+          requiresR: ">= 4.4.0",
         });
         expect(cf.configuration.python).toEqual({
           version: "3.11.0",
           packageFile: "requirements.txt",
           packageManager: "pip",
+          requiresPython: ">=3.11",
         });
       });
     });

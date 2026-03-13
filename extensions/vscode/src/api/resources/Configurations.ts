@@ -2,12 +2,7 @@
 
 import { AxiosInstance } from "axios";
 
-import {
-  Configuration,
-  ConfigurationDetails,
-  ConfigurationError,
-  ConfigurationInspectionResult,
-} from "../types/configurations";
+import { ConfigurationInspectionResult } from "../types/configurations";
 import { PythonExecutable, RExecutable } from "../../types/shared";
 
 export class Configurations {
@@ -15,52 +10,6 @@ export class Configurations {
 
   constructor(client: AxiosInstance) {
     this.client = client;
-  }
-
-  // Returns:
-  // 200 - success
-  // 404 - not found
-  // 500 - internal server error
-  get(configName: string, dir: string) {
-    const encodedName = encodeURIComponent(configName);
-    return this.client.get<Configuration | ConfigurationError>(
-      `/configurations/${encodedName}`,
-      {
-        params: { dir },
-      },
-    );
-  }
-
-  // Returns:
-  // 200 - success
-  // 500 - internal server error
-  getAll(dir: string, params?: { entrypoint?: string; recursive?: boolean }) {
-    return this.client.get<Array<Configuration | ConfigurationError>>(
-      "/configurations",
-      {
-        params: {
-          dir,
-          ...params,
-        },
-      },
-    );
-  }
-
-  // Returns:
-  // 200 - success
-  // 400 - bad request
-  // 500 - internal server error
-  createOrUpdate(configName: string, cfg: ConfigurationDetails, dir: string) {
-    const encodedName = encodeURIComponent(configName);
-    return this.client.put<Configuration>(
-      `configurations/${encodedName}`,
-      cfg,
-      {
-        params: {
-          dir,
-        },
-      },
-    );
   }
 
   // Inspect the project, returning all possible (detected) configurations

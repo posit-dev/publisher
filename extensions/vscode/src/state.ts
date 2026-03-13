@@ -1,5 +1,7 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
+import path from "node:path";
+
 import {
   Disposable,
   env,
@@ -25,6 +27,7 @@ import {
   useApi,
 } from "src/api";
 import { normalizeURL } from "src/utils/url";
+import { getInterpreterDefaults } from "src/interpreters";
 import { showProgress } from "src/utils/progress";
 import {
   getStatusFromError,
@@ -36,6 +39,12 @@ import {
   isErrCannotBackupCredentialsFile,
   errCannotBackupCredentialsFileMessage,
 } from "src/utils/errorTypes";
+import {
+  loadConfiguration,
+  loadAllConfigurationsRecursive,
+  ConfigurationLoadError,
+} from "src/toml";
+import * as workspaces from "src/workspaces";
 import { DeploymentSelector, SelectionState } from "src/types/shared";
 import { LocalState, Views } from "./constants";
 import { getPythonInterpreterPath, getRInterpreterPath } from "./utils/vscode";
@@ -233,37 +242,49 @@ export class PublisherState implements Disposable {
     }
     // if not found, then retrieve it and add it to our cache.
     try {
-      const api = await useApi();
-      const python = await getPythonInterpreterPath();
-      const r = await getRInterpreterPath();
-
-      const response = await api.configurations.get(
+      const root = workspaces.path();
+      if (!root) {
+        return undefined;
+      }
+      const cfg = await loadConfiguration(
         contentRecord.configurationName,
         contentRecord.projectDir,
+        root,
       );
-      const defaults = await api.interpreters.get(
-        contentRecord.projectDir,
-        r,
-        python,
+
+      const python = await getPythonInterpreterPath();
+      const r = await getRInterpreterPath();
+      const defaults = await getInterpreterDefaults(
+        path.join(root, contentRecord.projectDir),
+        python?.pythonPath,
+        r?.rPath,
       );
-      const cfg = UpdateConfigWithDefaults(response.data, defaults.data);
+      const updated = UpdateConfigWithDefaults(cfg, defaults);
       // its not foolproof, but it may help
-      if (!this.findConfig(cfg.configurationName, cfg.projectDir)) {
-        this.configurations.push(cfg);
+      if (!this.findConfig(updated.configurationName, updated.projectDir)) {
+        this.configurations.push(updated);
       }
-      return cfg;
+      return updated;
     } catch (error: unknown) {
-      const code = getStatusFromError(error);
-      if (code !== 404) {
-        // 400 is expected when doesn't exist on disk
-        const summary = getSummaryStringFromError(
-          "getSelectedConfiguration, contentRecords.get",
-          error,
-        );
-        window.showInformationMessage(
-          `Unable to retrieve deployment configuration: ${summary}`,
-        );
+      // ENOENT is expected when file doesn't exist on disk
+      if (
+        error instanceof Error &&
+        "code" in error &&
+        error.code === "ENOENT"
+      ) {
+        return undefined;
       }
+      // ConfigurationLoadError means the file exists but is invalid
+      if (error instanceof ConfigurationLoadError) {
+        return undefined;
+      }
+      const summary = getSummaryStringFromError(
+        "getSelectedConfiguration",
+        error,
+      );
+      window.showInformationMessage(
+        `Unable to retrieve deployment configuration: ${summary}`,
+      );
       return undefined;
     }
   }
@@ -308,18 +329,21 @@ export class PublisherState implements Disposable {
         "Refreshing Configurations",
         Views.HomeView,
         async () => {
-          const api = await useApi();
+          const root = workspaces.path();
+          if (!root) {
+            return;
+          }
+
           const python = await getPythonInterpreterPath();
           const r = await getRInterpreterPath();
 
-          const response = await api.configurations.getAll(".", {
-            recursive: true,
-          });
-          const defaults = await api.interpreters.get(".", r, python);
-          this.configurations = UpdateAllConfigsWithDefaults(
-            response.data,
-            defaults.data,
+          const configs = await loadAllConfigurationsRecursive(root);
+          const defaults = await getInterpreterDefaults(
+            root,
+            python?.pythonPath,
+            r?.rPath,
           );
+          this.configurations = UpdateAllConfigsWithDefaults(configs, defaults);
         },
       );
     } catch (error: unknown) {
