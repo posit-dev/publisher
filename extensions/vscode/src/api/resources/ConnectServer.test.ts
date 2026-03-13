@@ -17,13 +17,6 @@ describe("ConnectServer API client", () => {
     api = new ConnectServer(mockAxios as unknown as AxiosInstance);
   });
 
-  test("getIntegrations calls correct endpoint", async () => {
-    mockGet.mockResolvedValue({ data: [] });
-    const accountName = "acct_demo";
-    await api.getIntegrations(accountName);
-    expect(mockGet).toHaveBeenCalledWith("accounts/acct_demo/integrations");
-  });
-
   test("getServerSettings calls correct endpoint", async () => {
     mockGet.mockResolvedValue({ data: { license: {} } });
     const accountName = "acct_demo";

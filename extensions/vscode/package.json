@@ -680,6 +680,7 @@
     "vitest": "^4.0.18"
   },
   "dependencies": {
+    "@posit-dev/connect-api": "file:../../packages/connect-api",
     "@vscode/codicons": "^0.0.44",
     "ajv": "^8.18.0",
     "ajv-formats": "^3.0.1",
