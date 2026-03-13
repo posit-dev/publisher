@@ -3,9 +3,9 @@
 import * as path from "path";
 
 import { IntegrationRequest } from "../api/types/configurations";
-import { getConfigPath } from "./discovery";
-import { loadConfigFromFile } from "./loader";
-import { writeConfigToFile } from "./writer";
+import { getConfigPath } from "../toml/discovery";
+import { loadConfigFromFile } from "../toml/loader";
+import { writeConfigToFile } from "../toml/writer";
 
 /**
  * List integration requests from a configuration file.

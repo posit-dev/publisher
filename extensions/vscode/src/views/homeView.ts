@@ -44,12 +44,12 @@ import {
 } from "src/api";
 import { ConnectAPI } from "@posit-dev/connect-api";
 import type { Integration } from "@posit-dev/connect-api";
+import { loadAllConfigurations } from "src/toml";
 import {
-  loadAllConfigurations,
   listIntegrationRequests,
   addIntegrationRequest,
   removeIntegrationRequest,
-} from "src/toml";
+} from "src/integrations";
 import * as workspaces from "src/workspaces";
 import { EventStream } from "src/events";
 import { getPythonInterpreterPath, getRInterpreterPath } from "../utils/vscode";

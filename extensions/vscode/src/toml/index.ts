@@ -7,8 +7,3 @@ export {
   loadAllConfigurations,
   loadAllConfigurationsRecursive,
 } from "./discovery";
-export {
-  listIntegrationRequests,
-  addIntegrationRequest,
-  removeIntegrationRequest,
-} from "./integrationRequests";
