@@ -112,22 +112,6 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	r.Handle(ToPath("configurations", "{name}", "packages", "r"), NewGetConfigRPackagesHandler(base, log)).
 		Methods(http.MethodGet)
 
-	// GET /api/deployments
-	r.Handle(ToPath("deployments"), GetDeploymentsHandlerFunc(base, log)).
-		Methods(http.MethodGet)
-
-	// POST /api/deployments creates a new deployment record
-	r.Handle(ToPath("deployments"), PostDeploymentsHandlerFunc(base, log, lister)).
-		Methods(http.MethodPost)
-
-	// PATCH /api/deployments/$NAME updates a deployment record
-	r.Handle(ToPath("deployments", "{name}"), PatchDeploymentHandlerFunc(base, log)).
-		Methods(http.MethodPatch)
-
-	// GET /api/deployments/$NAME
-	r.Handle(ToPath("deployments", "{name}"), GetDeploymentHandlerFunc(base, log)).
-		Methods(http.MethodGet)
-
 	// POST /api/deployments/$NAME initiates a deployment
 	r.Handle(ToPath("deployments", "{name}"), PostDeploymentHandlerFunc(base, log, lister, emitter)).
 		Methods(http.MethodPost)
