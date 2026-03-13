@@ -34,7 +34,11 @@ import type { IntegrationRequest } from "../api/types/configurations";
 
 const { mockGetIntegrations, MockConnectAPI } = vi.hoisted(() => {
   const mockGetIntegrations = vi.fn();
-  const MockConnectAPI = vi.fn(function () {
+  // Accept (and ignore) the options argument to match the real ConnectAPI constructor
+  const MockConnectAPI = vi.fn(function (_opts: {
+    url: string;
+    apiKey: string;
+  }) {
     return { getIntegrations: mockGetIntegrations };
   });
   return { mockGetIntegrations, MockConnectAPI };
@@ -143,8 +147,8 @@ async function enrichIntegrationRequests(
     url: "https://connect.example.com",
     apiKey: "test-key",
   });
-  const response = await connectApi.getIntegrations();
-  const integrations = response.data ?? [];
+  const response: { data: Integration[] } = await connectApi.getIntegrations();
+  const integrations: Integration[] = response.data ?? [];
 
   return integrationRequests.map((ir) => {
     const match = integrations.find(
