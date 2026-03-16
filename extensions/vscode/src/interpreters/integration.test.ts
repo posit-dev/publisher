@@ -582,10 +582,10 @@ describe("scanRPackages (real R + renv)", async () => {
     "creates lockfile with default name",
     () =>
       withTempDir(async (dir) => {
-        // Write a minimal R script that uses jsonlite
+        // Write a minimal R script (no external packages needed)
         await writeFile(
           path.join(dir, "script.R"),
-          "library(jsonlite)\ntoJSON(list(a = 1))\n",
+          "# Minimal R project\nx <- 1\n",
           "utf-8",
         );
 
@@ -611,7 +611,7 @@ describe("scanRPackages (real R + renv)", async () => {
       withTempDir(async (dir) => {
         await writeFile(
           path.join(dir, "script.R"),
-          "library(jsonlite)\ntoJSON(list(a = 1))\n",
+          "# Minimal R project\nx <- 1\n",
           "utf-8",
         );
 
@@ -631,7 +631,7 @@ describe("scanRPackages (real R + renv)", async () => {
       withTempDir(async (dir) => {
         await writeFile(
           path.join(dir, "script.R"),
-          "library(jsonlite)\ntoJSON(list(a = 1))\n",
+          "# Minimal R project\nx <- 1\n",
           "utf-8",
         );
 
