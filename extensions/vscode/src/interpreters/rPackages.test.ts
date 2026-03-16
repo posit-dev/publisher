@@ -57,13 +57,13 @@ describe("readLockfile", () => {
   });
 
   test("returns null when file doesn't exist", async () => {
-    const result = await readLockfile("/project/renv.lock");
+    const result = await readLockfile(path.join("/project", "renv.lock"));
     expect(result).toBeNull();
   });
 
   test("parses a lockfile and transforms keys to lowercase", async () => {
     setFile("/project", "renv.lock", sampleLockfile);
-    const result = await readLockfile("/project/renv.lock");
+    const result = await readLockfile(path.join("/project", "renv.lock"));
     expect(result).toEqual({
       r: {
         version: "4.3.0",
@@ -92,7 +92,7 @@ describe("readLockfile", () => {
       Packages: {},
     });
     setFile("/project", "renv.lock", lockfile);
-    const result = await readLockfile("/project/renv.lock");
+    const result = await readLockfile(path.join("/project", "renv.lock"));
     expect(result).toEqual({
       r: { version: "4.2.0", repositories: [] },
       packages: {},
@@ -101,17 +101,19 @@ describe("readLockfile", () => {
 
   test("throws on invalid JSON", async () => {
     setFile("/project", "renv.lock", "not valid json{");
-    await expect(readLockfile("/project/renv.lock")).rejects.toThrow();
+    await expect(
+      readLockfile(path.join("/project", "renv.lock")),
+    ).rejects.toThrow();
   });
 
   test("propagates filesystem errors from readFileText", async () => {
-    mockErrors["/project/renv.lock"] = Object.assign(
+    mockErrors[path.join("/project", "renv.lock")] = Object.assign(
       new Error("EACCES: permission denied"),
       { code: "EACCES" },
     );
-    await expect(readLockfile("/project/renv.lock")).rejects.toThrow(
-      "EACCES: permission denied",
-    );
+    await expect(
+      readLockfile(path.join("/project", "renv.lock")),
+    ).rejects.toThrow("EACCES: permission denied");
   });
 });
 
