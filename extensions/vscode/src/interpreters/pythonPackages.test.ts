@@ -21,6 +21,8 @@ function setFile(dir: string, filename: string, content: string) {
 }
 
 describe("readRequirementsFile", () => {
+  const reqFile = path.join("/project", "requirements.txt");
+
   beforeEach(() => {
     for (const key of Object.keys(mockFiles)) {
       delete mockFiles[key];
@@ -28,13 +30,13 @@ describe("readRequirementsFile", () => {
   });
 
   test("returns null when file doesn't exist", async () => {
-    const result = await readRequirementsFile("/project/requirements.txt");
+    const result = await readRequirementsFile(reqFile);
     expect(result).toBeNull();
   });
 
   test("reads packages from a requirements file", async () => {
     setFile("/project", "requirements.txt", "numpy\npandas\n");
-    const result = await readRequirementsFile("/project/requirements.txt");
+    const result = await readRequirementsFile(reqFile);
     expect(result).toEqual(["numpy", "pandas"]);
   });
 
@@ -44,19 +46,19 @@ describe("readRequirementsFile", () => {
       "requirements.txt",
       "# This is a comment\nnumpy\n\n# Another comment\npandas\n  \n  # indented comment\nscipy\n",
     );
-    const result = await readRequirementsFile("/project/requirements.txt");
+    const result = await readRequirementsFile(reqFile);
     expect(result).toEqual(["numpy", "pandas", "scipy"]);
   });
 
   test("returns empty array for file with only comments and blanks", async () => {
     setFile("/project", "requirements.txt", "# comment\n\n  # another\n  \n");
-    const result = await readRequirementsFile("/project/requirements.txt");
+    const result = await readRequirementsFile(reqFile);
     expect(result).toEqual([]);
   });
 
   test("handles file with no trailing newline", async () => {
     setFile("/project", "requirements.txt", "numpy\npandas");
-    const result = await readRequirementsFile("/project/requirements.txt");
+    const result = await readRequirementsFile(reqFile);
     expect(result).toEqual(["numpy", "pandas"]);
   });
 });
