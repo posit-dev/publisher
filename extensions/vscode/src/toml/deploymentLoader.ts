@@ -69,6 +69,15 @@ export async function loadDeploymentFromFile(
     );
   }
 
+  // Migration: fix up empty created_at from older publisher versions.
+  // An empty string fails date-time validation, but the field is optional,
+  // so remove it and backfill with the file's birthtime after validation.
+  const needsCreatedAtBackfill =
+    "created_at" in parsed && parsed.created_at === "";
+  if (needsCreatedAtBackfill) {
+    delete parsed.created_at;
+  }
+
   // Validate against JSON schema (schema uses snake_case keys)
   const valid = validateDeploymentRecord(parsed);
   if (!valid) {
@@ -78,6 +87,12 @@ export async function loadDeploymentFromFile(
     throw loadError(
       createDeploymentSchemaValidationError(deploymentPath, messages),
     );
+  }
+
+  // Backfill created_at using the file's creation time.
+  if (needsCreatedAtBackfill) {
+    const fileStat = await fs.stat(deploymentPath);
+    parsed.created_at = fileStat.birthtime.toISOString();
   }
 
   // Convert keys to camelCase
