@@ -11,7 +11,6 @@ import { Packages } from "./resources/Packages";
 import { SnowflakeConnections } from "./resources/SnowflakeConnections";
 import * as Entities from "entities";
 import { ConnectCloud } from "./resources/ConnectCloud";
-import { ConnectServer } from "./resources/ConnectServer";
 import { OpenConnectContent } from "./resources/OpenConnectContent";
 
 class PublishingClientApi {
@@ -25,7 +24,6 @@ class PublishingClientApi {
   apiServiceIsUp: Promise<boolean>;
   snowflakeConnections: SnowflakeConnections;
   connectCloud: ConnectCloud;
-  connectServer: ConnectServer;
   openConnectContent: OpenConnectContent;
 
   constructor(apiBaseUrl: string, apiServiceIsUp: Promise<boolean>) {
@@ -56,7 +54,6 @@ class PublishingClientApi {
     this.packages = new Packages(this.client);
     this.snowflakeConnections = new SnowflakeConnections(this.client);
     this.connectCloud = new ConnectCloud(this.client);
-    this.connectServer = new ConnectServer(this.client);
     this.openConnectContent = new OpenConnectContent(this.client);
   }
 

@@ -48,6 +48,7 @@ import {
   addSecret as addSecretToConfig,
   removeSecret as removeSecretFromConfig,
 } from "src/configSecrets";
+import { fetchServerSettings } from "src/connectServerSettings";
 import {
   loadAllConfigurations,
   loadAllDeployments,
@@ -854,27 +855,20 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
 
-    const activeConfig = await this.state.getSelectedConfiguration();
+    try {
+      const serverSettings = await fetchServerSettings(
+        credential.url,
+        credential.apiKey,
+      );
 
-    if (activeConfig && !isConfigurationError(activeConfig)) {
-      try {
-        const api = await useApi();
-        const result = await api.connectServer.getServerSettings(
-          credential.name,
-          activeConfig.configuration.type,
-        );
-
-        this.webviewConduit.sendMsg({
-          kind: HostToWebviewMessageType.REFRESH_SERVER_SETTINGS,
-          content: {
-            serverSettings: result.data,
-          },
-        });
-      } catch (_: unknown) {
-        console.error(
-          `Failed to fetch server-settings for [${credential.name}]`,
-        );
-      }
+      this.webviewConduit.sendMsg({
+        kind: HostToWebviewMessageType.REFRESH_SERVER_SETTINGS,
+        content: {
+          serverSettings,
+        },
+      });
+    } catch (_: unknown) {
+      console.error(`Failed to fetch server-settings for [${credential.name}]`);
     }
   }
 
