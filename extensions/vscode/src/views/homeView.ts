@@ -122,6 +122,7 @@ import {
   isConnectProduct,
 } from "src/utils/multiStepHelpers";
 import { recordAddConnectCloudUrlParams } from "src/utils/connectCloudHelpers";
+import { getPythonPackages } from "src/interpreters/pythonPackages";
 
 enum HomeViewInitialized {
   initialized = "initialized",
@@ -631,46 +632,43 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     let packageFile: string | undefined;
     let packageMgr: string | undefined;
 
-    const api = await useApi();
-
     if (activeConfiguration && !isConfigurationError(activeConfiguration)) {
       const pythonSection = activeConfiguration.configuration.python;
       if (!pythonSection) {
         pythonProject = false;
       } else {
-        try {
-          packageFile = pythonSection.packageFile;
-          packageMgr = pythonSection.packageManager;
+        packageFile = pythonSection.packageFile;
+        packageMgr = pythonSection.packageManager;
 
-          const response = await showProgress(
+        const resolvedPackageFile = packageFile || "requirements.txt";
+        const root = workspaces.path();
+        if (!root) {
+          return;
+        }
+        const projectDir = path.join(root, activeConfiguration.projectDir);
+
+        try {
+          packages = await showProgress(
             "Refreshing Python Packages",
             Views.HomeView,
             async () => {
-              return await api.packages.getPythonPackages(
-                activeConfiguration.configurationName,
-                activeConfiguration.projectDir,
-              );
+              return await getPythonPackages(projectDir, resolvedPackageFile);
             },
           );
-
-          packages = response.data.requirements;
-        } catch (error: unknown) {
-          if (isAxiosError(error) && error.response?.status === 404) {
-            // No requirements file or contains invalid entries; show the welcome view.
+        } catch (err: unknown) {
+          if (
+            err instanceof Error &&
+            err.message.startsWith("Requirements file not found")
+          ) {
+            // Requirements file not found; show the welcome view.
             packageFile = undefined;
-          } else if (isAxiosError(error) && error.response?.status === 422) {
-            // invalid package file
-            packageFile = undefined;
-          } else if (isAxiosError(error) && error.response?.status === 409) {
-            // Python is not present in the configuration file
-            pythonProject = false;
           } else {
-            const summary = getSummaryStringFromError(
-              "homeView::refreshPythonPackages",
-              error,
+            // Unexpected I/O error (permission denied, disk failure, etc.)
+            const summary = err instanceof Error ? err.message : String(err);
+            window.showErrorMessage(
+              `Failed to read Python packages: ${summary}`,
             );
-            window.showInformationMessage(summary);
-            return;
+            packageFile = undefined;
           }
         }
       }

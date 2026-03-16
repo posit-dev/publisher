@@ -3,7 +3,6 @@
 import { AxiosInstance } from "axios";
 import {
   GetRPackagesResponse,
-  PythonPackagesResponse,
   ScanPythonPackagesResponse,
 } from "../types/packages";
 import type { PositronSettings } from "../types/positron";
@@ -14,20 +13,6 @@ export class Packages {
 
   constructor(client: AxiosInstance) {
     this.client = client;
-  }
-
-  // Returns:
-  // 200 - success
-  // 404 - configuration or requirements file not found
-  // 409 - conflict (Python is not configured)
-  // 422 - package file is invalid
-  // 500 - internal server error
-  getPythonPackages(configName: string, dir: string) {
-    const encodedName = encodeURIComponent(configName);
-    return this.client.get<PythonPackagesResponse>(
-      `/configurations/${encodedName}/packages/python`,
-      { params: { dir } },
-    );
   }
 
   // Returns:
