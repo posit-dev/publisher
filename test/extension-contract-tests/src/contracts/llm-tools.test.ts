@@ -7,11 +7,15 @@ import { lm } from "vscode";
 
 // Mock internal dependencies
 vi.mock("src/llm/tooling/troubleshoot/publishFailureTroubleshootTool", () => ({
-  PublishFailureTroubleshootTool: vi.fn(() => ({ name: "publish-failure" })),
+  PublishFailureTroubleshootTool: vi.fn(function () {
+    return { name: "publish-failure" };
+  }),
 }));
 
 vi.mock("src/llm/tooling/troubleshoot/configurationTroubleshootTool", () => ({
-  ConfigurationTroubleshootTool: vi.fn(() => ({ name: "config-error" })),
+  ConfigurationTroubleshootTool: vi.fn(function () {
+    return { name: "config-error" };
+  }),
 }));
 
 const { registerLLMTooling } = await import("src/llm/index");

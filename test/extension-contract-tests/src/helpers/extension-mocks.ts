@@ -12,44 +12,60 @@ vi.mock("src/ports", () => ({
 }));
 
 vi.mock("src/services", () => ({
-  Service: vi.fn(() => ({
-    start: vi.fn(),
-    stop: vi.fn(() => Promise.resolve()),
-    showOutputChannel: vi.fn(),
-  })),
+  Service: vi.fn(function () {
+    return {
+      start: vi.fn(),
+      stop: vi.fn(() => Promise.resolve()),
+      showOutputChannel: vi.fn(),
+    };
+  }),
 }));
 
 vi.mock("src/views/project", () => ({
-  ProjectTreeDataProvider: vi.fn(() => ({ register: vi.fn() })),
+  ProjectTreeDataProvider: vi.fn(function () {
+    return { register: vi.fn() };
+  }),
 }));
 
 vi.mock("src/views/logs", () => ({
-  LogsTreeDataProvider: vi.fn(() => ({ register: vi.fn() })),
+  LogsTreeDataProvider: vi.fn(function () {
+    return { register: vi.fn() };
+  }),
   LogsViewProvider: Object.assign(
-    vi.fn(() => ({ register: vi.fn() })),
+    vi.fn(function () {
+      return { register: vi.fn() };
+    }),
     { openRawLogFileView: vi.fn(), copyLogs: vi.fn() },
   ),
 }));
 
 vi.mock("src/events", () => ({
-  EventStream: vi.fn(() => ({ dispose: vi.fn() })),
+  EventStream: vi.fn(function () {
+    return { dispose: vi.fn() };
+  }),
 }));
 
 vi.mock("src/views/homeView", () => ({
-  HomeViewProvider: vi.fn(() => ({
-    register: vi.fn(),
-    showNewDeploymentMultiStep: vi.fn(() => Promise.resolve()),
-    handleFileInitiatedDeploymentSelection: vi.fn(),
-    dispose: vi.fn(),
-  })),
+  HomeViewProvider: vi.fn(function () {
+    return {
+      register: vi.fn(),
+      showNewDeploymentMultiStep: vi.fn(() => Promise.resolve()),
+      handleFileInitiatedDeploymentSelection: vi.fn(),
+      dispose: vi.fn(),
+    };
+  }),
 }));
 
 vi.mock("src/watchers", () => ({
-  WatcherManager: vi.fn(() => ({ dispose: vi.fn() })),
+  WatcherManager: vi.fn(function () {
+    return { dispose: vi.fn() };
+  }),
 }));
 
 vi.mock("src/entrypointTracker", () => ({
-  DocumentTracker: vi.fn(() => ({ dispose: vi.fn() })),
+  DocumentTracker: vi.fn(function () {
+    return { dispose: vi.fn() };
+  }),
 }));
 
 vi.mock("src/utils/config", () => ({
@@ -57,15 +73,19 @@ vi.mock("src/utils/config", () => ({
 }));
 
 vi.mock("src/state", () => ({
-  PublisherState: vi.fn(() => ({
-    credentials: [],
-    refreshCredentials: vi.fn(() => Promise.resolve()),
-    onDidRefreshCredentials: vi.fn(() => ({ dispose: vi.fn() })),
-  })),
+  PublisherState: vi.fn(function () {
+    return {
+      credentials: [],
+      refreshCredentials: vi.fn(() => Promise.resolve()),
+      onDidRefreshCredentials: vi.fn(() => ({ dispose: vi.fn() })),
+    };
+  }),
 }));
 
 vi.mock("src/authProvider", () => ({
-  PublisherAuthProvider: vi.fn(() => ({ dispose: vi.fn() })),
+  PublisherAuthProvider: vi.fn(function () {
+    return { dispose: vi.fn() };
+  }),
 }));
 
 vi.mock("src/logging", () => ({
