@@ -8,6 +8,11 @@ vi.mock("node:fs/promises", () => ({
     if (filePath === "/exists.txt") {
       return Promise.resolve("hello world");
     }
+    if (filePath === "/no-access.txt") {
+      return Promise.reject(
+        Object.assign(new Error("EACCES"), { code: "EACCES" }),
+      );
+    }
     return Promise.reject(
       Object.assign(new Error("ENOENT"), { code: "ENOENT" }),
     );
@@ -31,6 +36,10 @@ describe("readFileText", () => {
   test("returns null when file does not exist", async () => {
     const result = await readFileText("/missing.txt");
     expect(result).toBeNull();
+  });
+
+  test("rethrows non-ENOENT errors", async () => {
+    await expect(readFileText("/no-access.txt")).rejects.toThrow("EACCES");
   });
 });
 

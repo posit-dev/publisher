@@ -655,9 +655,21 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
               return await getPythonPackages(projectDir, resolvedPackageFile);
             },
           );
-        } catch {
-          // Requirements file not found; show the welcome view.
-          packageFile = undefined;
+        } catch (err: unknown) {
+          if (
+            err instanceof Error &&
+            err.message.startsWith("Requirements file not found")
+          ) {
+            // Requirements file not found; show the welcome view.
+            packageFile = undefined;
+          } else {
+            // Unexpected I/O error (permission denied, disk failure, etc.)
+            const summary = err instanceof Error ? err.message : String(err);
+            window.showErrorMessage(
+              `Failed to read Python packages: ${summary}`,
+            );
+            packageFile = undefined;
+          }
         }
       }
     }
