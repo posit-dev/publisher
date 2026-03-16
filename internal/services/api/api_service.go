@@ -121,10 +121,6 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	r.Handle(ToPath("packages", "python", "scan"), NewPostPackagesPythonScanHandler(base, log)).
 		Methods(http.MethodPost)
 
-	// POST /api/packages/r/scan
-	r.Handle(ToPath("packages", "r", "scan"), NewPostPackagesRScanHandler(base, log)).
-		Methods(http.MethodPost)
-
 	// GET /api/snowflake-connections
 	r.Handle(ToPath("snowflake-connections"), GetSnowflakeConnectionsHandlerFunc(log, snowflake.NewConnections())).
 		Methods(http.MethodGet)

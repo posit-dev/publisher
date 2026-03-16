@@ -5,8 +5,7 @@ import {
   GetRPackagesResponse,
   ScanPythonPackagesResponse,
 } from "../types/packages";
-import type { PositronSettings } from "../types/positron";
-import { PythonExecutable, RExecutable } from "../../types/shared";
+import { PythonExecutable } from "../../types/shared";
 
 export class Packages {
   private client: AxiosInstance;
@@ -47,31 +46,6 @@ export class Packages {
         params: {
           dir,
           python: python !== undefined ? python.pythonPath : undefined,
-        },
-      },
-    );
-  }
-
-  // Returns:
-  // 200 - success
-  // 400 - bad request
-  // 500 - internal server error
-  createRRequirementsFile(
-    dir: string,
-    r: RExecutable | undefined,
-    saveName?: string,
-    positron?: PositronSettings,
-  ) {
-    return this.client.post<void>(
-      "packages/r/scan",
-      {
-        saveName,
-        positron,
-      },
-      {
-        params: {
-          dir,
-          r: r !== undefined ? r.rPath : "",
         },
       },
     );
