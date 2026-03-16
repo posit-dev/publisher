@@ -486,13 +486,13 @@ func (s *FileCredentialsServiceSuite) TestSet() {
 		ServerType:          server_type.ServerTypeSnowflake,
 		Name:                "snowcred",
 		URL:                 "https://example.snowflakecomputing.app/connect",
-		ApiKey:              "",
+		ApiKey:              "test-snowflake-api-key",
 		SnowflakeConnection: "snowy"})
 	s.NoError(err)
 
 	s.Equal(newcred3.Name, "snowcred")
 	s.Equal(newcred3.URL, "https://example.snowflakecomputing.app/connect")
-	s.Equal(newcred3.ApiKey, "")
+	s.Equal(newcred3.ApiKey, "test-snowflake-api-key")
 	s.Equal(newcred3.SnowflakeConnection, "snowy")
 
 	creds, err = cs.load()
@@ -529,7 +529,7 @@ func (s *FileCredentialsServiceSuite) TestSet() {
 				Version:             3,
 				ServerType:          server_type.ServerTypeSnowflake,
 				URL:                 "https://example.snowflakecomputing.app/connect",
-				ApiKey:              "",
+				ApiKey:              "test-snowflake-api-key",
 				SnowflakeConnection: "snowy",
 			},
 		},
@@ -587,7 +587,7 @@ func (s *FileCredentialsServiceSuite) TestSet() {
 				Version:             3,
 				ServerType:          server_type.ServerTypeSnowflake,
 				URL:                 "https://example.snowflakecomputing.app/connect",
-				ApiKey:              "",
+				ApiKey:              "test-snowflake-api-key",
 				SnowflakeConnection: "snowy",
 			},
 			"cloudy": {
