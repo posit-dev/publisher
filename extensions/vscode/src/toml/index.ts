@@ -8,6 +8,8 @@ export {
   loadAllConfigurations,
   loadAllConfigurationsRecursive,
 } from "./configDiscovery";
+export { addSecret, removeSecret } from "./configSecrets";
+export { includeFile, excludeFile, updateFileList } from "./configFiles";
 
 // Deployments
 export {

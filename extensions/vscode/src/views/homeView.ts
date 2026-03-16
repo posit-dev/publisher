@@ -45,6 +45,9 @@ import {
 import { ConnectAPI } from "@posit-dev/connect-api";
 import type { Integration } from "@posit-dev/connect-api";
 import {
+  addSecret as addSecretToConfig,
+  removeSecret as removeSecretFromConfig,
+  updateFileList as updateFileListInConfig,
   loadAllConfigurations,
   loadAllDeployments,
   patchDeploymentRecord,
@@ -434,12 +437,16 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
     try {
       await showProgress("Updating File List", Views.HomeView, async () => {
-        const api = await useApi();
-        await api.files.updateFileList(
+        const root = workspaces.path();
+        if (!root) {
+          return;
+        }
+        await updateFileListInConfig(
           activeConfig.configurationName,
           `/${uri}`,
           action,
           activeConfig.projectDir,
+          root,
         );
       });
     } catch (error: unknown) {
@@ -1248,11 +1255,15 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
     try {
       await showProgress("Adding Secret", Views.HomeView, async () => {
-        const api = await useApi();
-        await api.secrets.add(
+        const root = workspaces.path();
+        if (!root) {
+          return;
+        }
+        await addSecretToConfig(
           activeConfig.configurationName,
           name,
           activeConfig.projectDir,
+          root,
         );
       });
     } catch (error: unknown) {
@@ -1278,11 +1289,15 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
     try {
       await showProgress("Removing Secret", Views.HomeView, async () => {
-        const api = await useApi();
-        await api.secrets.remove(
+        const root = workspaces.path();
+        if (!root) {
+          return;
+        }
+        await removeSecretFromConfig(
           activeConfig.configurationName,
           context.name,
           activeConfig.projectDir,
+          root,
         );
       });
     } catch (error: unknown) {
