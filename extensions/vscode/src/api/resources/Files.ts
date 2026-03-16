@@ -2,8 +2,7 @@
 
 import { AxiosInstance } from "axios";
 
-import { ContentRecordFile, FileAction } from "../types/files";
-import { Configuration } from "../types/configurations";
+import { ContentRecordFile } from "../types/files";
 
 export class Files {
   private client: AxiosInstance;
@@ -30,24 +29,6 @@ export class Files {
     const encodedName = encodeURIComponent(configName);
     return this.client.get<ContentRecordFile>(
       `/configurations/${encodedName}/files`,
-      { params: { dir } },
-    );
-  }
-
-  updateFileList(
-    configName: string,
-    path: string,
-    action: FileAction,
-    dir: string,
-  ) {
-    const encodedName = encodeURIComponent(configName);
-    const body = {
-      path,
-      action,
-    };
-    return this.client.post<Configuration>(
-      `/configurations/${encodedName}/files`,
-      body,
       { params: { dir } },
     );
   }
