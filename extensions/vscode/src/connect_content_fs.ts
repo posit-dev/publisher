@@ -17,11 +17,11 @@ import { pipeline } from "node:stream/promises";
 import { Readable } from "node:stream";
 import { createGunzip } from "node:zlib";
 import tar from "tar-stream";
-import { useApi } from "./api";
 import { logger } from "./logging";
-import { isAxiosError } from "axios";
 import { Commands } from "src/constants";
 import { PublisherState } from "./state";
+import { ConnectAPI, ContentID, BundleID } from "@posit-dev/connect-api";
+import { Credential } from "./api/types/credentials";
 
 type ConnectContentEntry = {
   type: FileType;
@@ -193,6 +193,23 @@ export class ConnectContentFileSystemProvider implements FileSystemProvider {
     }
   }
 
+  private async findCredentialForServer(
+    normalizedServerUrl: string,
+  ): Promise<Credential> {
+    const state = await this.publisherStateReady;
+    const credential = state.credentials.find(
+      (c) =>
+        normalizeServerUrl(c.url) === normalizedServerUrl ||
+        c.url === normalizedServerUrl,
+    );
+    if (!credential) {
+      throw new Error(
+        `No valid credentials available for ${normalizedServerUrl}`,
+      );
+    }
+    return credential;
+  }
+
   private async fetchAndCacheBundle(
     serverUrl: string,
     contentGuid: string,
@@ -201,12 +218,22 @@ export class ConnectContentFileSystemProvider implements FileSystemProvider {
     let normalizedServerUrl = serverUrl;
     try {
       normalizedServerUrl = await this.ensureCredentialsForServer(serverUrl);
-      const api = await useApi();
-      const response = await api.openConnectContent.openConnectContent(
-        normalizedServerUrl,
-        contentGuid,
+      const credential =
+        await this.findCredentialForServer(normalizedServerUrl);
+      const connectApi = new ConnectAPI({
+        url: credential.url,
+        apiKey: credential.apiKey,
+      });
+      const { data: content } = await connectApi.contentDetails(
+        ContentID(contentGuid),
       );
-      const bundleBytes = new Uint8Array(response.data);
+      if (!content.bundle_id) {
+        throw new Error("Content has no active bundle");
+      }
+      const bundleBytes = await connectApi.downloadBundle(
+        ContentID(contentGuid),
+        BundleID(content.bundle_id),
+      );
       const root = await extractBundleTree(bundleBytes);
       contentRoots.set(rootKey, root);
       logger.info(
@@ -214,18 +241,9 @@ export class ConnectContentFileSystemProvider implements FileSystemProvider {
       );
     } catch (error) {
       const message =
-        // The internal API asks Axios for binary data, so on failure it may still
-        // return an ArrayBuffer; decode that into a string so the error dialog can
-        // show the server-provided message. When decoding fails or the response
-        // already looks like another Axios error we fall back to the Error message
-        // or a conservative generic description.
-        isAxiosError(error) && error.response?.data
-          ? error.response.data instanceof ArrayBuffer
-            ? new TextDecoder().decode(new Uint8Array(error.response.data))
-            : String(error.response.data)
-          : error instanceof Error
-            ? error.message
-            : "Unable to open Connect content bundle";
+        error instanceof Error
+          ? error.message
+          : "Unable to open Connect content bundle";
       logger.error(
         `Unable to fetch bundle ${contentGuid} for ${normalizedServerUrl}: ${message}`,
       );
