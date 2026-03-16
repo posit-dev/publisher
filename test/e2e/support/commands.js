@@ -8,10 +8,43 @@ import "./selectors";
 import "./sequences";
 import "./workbench";
 
+// verifyServicesReady: Check that all required services are responding before tests
+// This prevents flaky failures due to services not being fully ready
+Cypress.Commands.add("verifyServicesReady", () => {
+  const connectUrl =
+    Cypress.env("CONNECT_SERVER_URL") || "http://localhost:3939";
+  const baseUrl = Cypress.config("baseUrl");
+
+  // Verify Connect server is responding
+  cy.request({
+    url: `${connectUrl}/__ping__`,
+    retryOnStatusCodeFailure: true,
+    timeout: 30000,
+    failOnStatusCode: false,
+  }).then((response) => {
+    if (response.status !== 200) {
+      cy.log(`WARNING: Connect server returned status ${response.status}`);
+    }
+  });
+
+  // Verify code-server is responding
+  cy.request({
+    url: baseUrl,
+    retryOnStatusCodeFailure: true,
+    timeout: 30000,
+    failOnStatusCode: false,
+  }).then((response) => {
+    if (response.status !== 200) {
+      cy.log(`WARNING: code-server returned status ${response.status}`);
+    }
+  });
+});
+
 // initializeConnect: Simple initialization for use with with-connect action
 // The API key is passed via CYPRESS_BOOTSTRAP_ADMIN_API_KEY environment variable
 // from the with-connect GitHub Action, which handles Connect startup and bootstrapping.
 Cypress.Commands.add("initializeConnect", () => {
+  cy.verifyServicesReady();
   cy.clearupDeployments();
   cy.setAdminCredentials();
 });
@@ -456,12 +489,15 @@ Cypress.Commands.add(
         if (result && result.length) {
           return result;
         } else if (attempt < maxAttempts) {
-          // Cap max delay at 5 seconds to prevent exponential backoff from causing very long waits
-          const delay = Math.min(initialDelay * Math.pow(2, attempt - 1), 5000);
+          // Cap max delay at 3 seconds to prevent exponential backoff from causing very long waits
+          const delay = Math.min(initialDelay * Math.pow(2, attempt - 1), 3000);
+
           cy.wait(delay);
           return tryFn();
         } else {
-          throw new Error("Element not found after retries with backoff");
+          throw new Error(
+            `Element not found after ${maxAttempts} retries with backoff`,
+          );
         }
       });
     }

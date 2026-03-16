@@ -243,13 +243,13 @@ Cypress.Commands.add("startPositronSession", () => {
 
   // Start a Positron session
   // TODO remove this workaround for "All types of sessions are disabled" error after Workbench 2025.12.0 is released
+  // Wait for the button to be fully interactive before clicking
   cy.get("button")
     .contains("New Session")
     .should("be.visible")
-    .and("be.enabled");
-  // eslint-disable-next-line cypress/no-unnecessary-waiting
-  cy.wait(500);
-  cy.get("button").contains("New Session").click();
+    .and("be.enabled")
+    .and("not.have.attr", "aria-busy", "true")
+    .click();
   cy.get("button").contains("Positron").click();
   cy.get("button").contains("Launch").click();
 

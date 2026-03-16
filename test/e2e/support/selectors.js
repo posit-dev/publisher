@@ -274,6 +274,10 @@ Cypress.Commands.add("toggleCredentialsSection", () => {
 });
 
 Cypress.Commands.add("refreshCredentials", () => {
+  // Intercept the credentials API call before triggering refresh
+  // Match both /api/credentials and /credentials endpoints
+  cy.intercept("GET", "**/credentials**").as("credentialsRefresh");
+
   // Robustly locate the credentials section inside the webview before interacting
   cy.retryWithBackoff(
     () =>
@@ -297,8 +301,17 @@ Cypress.Commands.add("refreshCredentials", () => {
     }
   });
 
-  // Wait for credential refresh API call to complete
-  cy.waitForNetworkIdle(500);
+  // Wait for credential refresh API call to complete, with additional network idle as backup
+  cy.wait("@credentialsRefresh", { timeout: 10000 }).then((interception) => {
+    if (interception.response?.statusCode !== 200) {
+      cy.log(
+        `Credentials refresh returned status: ${interception.response?.statusCode}`,
+      );
+    }
+  });
+
+  // Additional brief wait for UI to update after API response
+  cy.waitForNetworkIdle(200);
 });
 
 Cypress.Commands.add("toggleHelpSection", () => {
