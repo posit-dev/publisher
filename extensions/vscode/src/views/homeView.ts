@@ -41,9 +41,19 @@ import {
   ProductName,
   ServerType,
   IntegrationRequest,
-  Integration,
 } from "src/api";
-import { loadAllConfigurations } from "src/toml";
+import { ConnectAPI } from "@posit-dev/connect-api";
+import type { Integration } from "@posit-dev/connect-api";
+import {
+  loadAllConfigurations,
+  loadAllDeployments,
+  patchDeploymentRecord,
+} from "src/toml";
+import {
+  listIntegrationRequests,
+  addIntegrationRequest,
+  removeIntegrationRequest,
+} from "src/integrations";
 import * as workspaces from "src/workspaces";
 import { EventStream } from "src/events";
 import { getPythonInterpreterPath, getRInterpreterPath } from "../utils/vscode";
@@ -687,15 +697,28 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const activeConfig = await this.state.getSelectedConfiguration();
     if (activeConfig && !isConfigurationError(activeConfig)) {
       try {
-        const api = await useApi();
-        let response = await api.integrationRequests.list(
+        const root = workspaces.path();
+        if (!root) {
+          return;
+        }
+        const integrationRequests = await listIntegrationRequests(
           activeConfig.configurationName,
           activeConfig.projectDir,
+          root,
         );
-        const integrationRequests = response.data ?? [];
 
-        response = await api.connectServer.getIntegrations(credentialName!);
-        const integrations = response.data ?? [];
+        const credential = credentialName
+          ? this.state.findCredential(credentialName)
+          : undefined;
+        let integrations: Integration[] = [];
+        if (credential?.url && credential?.apiKey) {
+          const connectApi = new ConnectAPI({
+            url: credential.url,
+            apiKey: credential.apiKey,
+          });
+          const response = await connectApi.getIntegrations();
+          integrations = response.data ?? [];
+        }
         const requests = integrationRequests.map((ir) => {
           const matchingIntegration = integrations.find(
             (integration) => integration.guid === ir.guid,
@@ -1029,10 +1052,14 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       );
       if (config) {
         await showProgress("Updating Config", Views.HomeView, async () => {
-          const api = await useApi();
-          await api.contentRecords.patch(
+          const root = workspaces.path();
+          if (!root) {
+            return;
+          }
+          await patchDeploymentRecord(
             targetContentRecord.deploymentName,
             targetContentRecord.projectDir,
+            root,
             {
               configName: config.configurationName,
             },
@@ -1255,7 +1282,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   };
 
   public addIntegrationRequest = async () => {
-    const api = await useApi();
     const activeConfig = await this.state.getSelectedConfiguration();
     if (activeConfig === undefined) {
       console.error("homeView::addIntegration: No active configuration.");
@@ -1265,6 +1291,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       console.error(
         "homeView::addIntegration: Unable to add integration into a configuration with error.",
       );
+      return;
+    }
+
+    const root = workspaces.path();
+    if (!root) {
       return;
     }
 
@@ -1288,9 +1319,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         "Retrieving Integrations from deployment server",
         Views.HomeView,
         async () => {
-          const response = await api.connectServer.getIntegrations(
-            credential.name,
-          );
+          const connectApi = new ConnectAPI({
+            url: credential.url,
+            apiKey: credential.apiKey,
+          });
+          const response = await connectApi.getIntegrations();
           integrations = response.data;
         },
       );
@@ -1313,17 +1346,13 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         "Adding Integration Request",
         Views.HomeView,
         async () => {
-          await api.integrationRequests.add(
+          await addIntegrationRequest(
             activeConfig.configurationName,
             activeConfig.projectDir,
+            root,
             {
               guid: integration.guid,
-              // name: integration.name,
-              // description: integration.description,
-              // authType: integration.authType,
-              // type: integration.template,
-              // config: integration.config,
-            } as IntegrationRequest,
+            },
           );
         },
       );
@@ -1355,15 +1384,20 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
 
+    const root = workspaces.path();
+    if (!root) {
+      return;
+    }
+
     try {
       await showProgress(
         "Removing Integration Request",
         Views.HomeView,
         async () => {
-          const api = await useApi();
-          await api.integrationRequests.delete(
+          await removeIntegrationRequest(
             activeConfig.configurationName,
             activeConfig.projectDir,
+            root,
             {
               guid: context.request.guid,
             },
@@ -1398,21 +1432,26 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
 
+    const root = workspaces.path();
+    if (!root) {
+      return;
+    }
+
     try {
       await showProgress(
         "Clearing Integration Requests",
         Views.HomeView,
         async () => {
-          const api = await useApi();
-          const response = await api.integrationRequests.list(
+          const reqs = await listIntegrationRequests(
             activeConfig.configurationName,
             activeConfig.projectDir,
+            root,
           );
-          const reqs = response.data;
           for (const ir of reqs) {
-            await api.integrationRequests.delete(
+            await removeIntegrationRequest(
               activeConfig.configurationName,
               activeConfig.projectDir,
+              root,
               {
                 guid: ir.guid,
               },
@@ -2022,8 +2061,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
     const entrypointFile = uriUtils.basename(uri);
 
-    const api = await useApi();
-
     await this.refreshAll(true, true);
 
     // We need the initial queries to finish, before we can
@@ -2037,10 +2074,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const contentRecordList: (ContentRecord | PreContentRecord)[] = [];
     const getContentRecords = async () => {
       try {
-        const response = await api.contentRecords.getAll(entrypointDir, {
-          recursive: false,
-        });
-        const contentRecords = response.data.map((record) =>
+        const root = workspaces.path();
+        if (!root) {
+          return;
+        }
+        const allRecords = await loadAllDeployments(entrypointDir, root);
+        const contentRecords = allRecords.map((record) =>
           recordAddConnectCloudUrlParams(record, env.appName),
         );
         contentRecords.forEach((cfg) => {
@@ -2050,7 +2089,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         });
       } catch (error: unknown) {
         const summary = getSummaryStringFromError(
-          "handleFileInitiatedDeploymentSelection, contentRecords.getAll",
+          "handleFileInitiatedDeploymentSelection, loadAllDeployments",
           error,
         );
         window.showInformationMessage(

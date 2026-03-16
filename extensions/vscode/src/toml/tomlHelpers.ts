@@ -1,59 +1,59 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
+import * as path from "path";
 import { ErrorObject } from "ajv/dist/2020";
 
-import { AgentError } from "../api/types/error";
-import {
-  ConfigurationError,
-  ConfigurationLocation,
-} from "../api/types/configurations";
+/**
+ * Extract leading comment lines from raw TOML file content.
+ * Collects consecutive lines starting with '#' from the top of the file,
+ * stripping the '#' prefix. Matches Go's readLeadingComments behavior.
+ */
+export function readLeadingComments(content: string): string[] {
+  const comments: string[] = [];
+  for (const line of content.split("\n")) {
+    if (!line.startsWith("#")) {
+      break;
+    }
+    comments.push(line.slice(1));
+  }
+  return comments;
+}
 
 /**
- * Error thrown by the loader when a config file has invalid TOML or
- * fails schema/business validation. Carries the structured
- * ConfigurationError so discovery functions can collect it.
+ * Recursively strip empty leaf values from an object to match Go's omitempty
+ * TOML encoding behavior. Removes keys whose values are:
+ * - undefined or null
+ * - empty strings ("")
+ *
+ * Does NOT remove empty objects — Go's TOML encoder writes section headers
+ * (e.g., `[r]`) even when all fields are omitted via omitempty, and the
+ * JSON schema conditionally requires these sections to exist.
+ *
+ * Mutates the object in place.
  */
-export class ConfigurationLoadError extends Error {
-  constructor(public readonly configurationError: ConfigurationError) {
-    super(configurationError.error.msg);
-    this.name = "ConfigurationLoadError";
+export function stripEmpty(obj: Record<string, unknown>): void {
+  for (const [key, value] of Object.entries(obj)) {
+    if (value === undefined || value === null) {
+      delete obj[key];
+    } else if (typeof value === "string" && value === "") {
+      delete obj[key];
+    } else if (isRecord(value)) {
+      stripEmpty(value);
+    }
   }
 }
 
-export function createInvalidTOMLError(
-  file: string,
-  problem: string,
-  line: number,
-  column: number,
-): AgentError {
-  return {
-    code: "invalidTOML",
-    msg: `Invalid TOML in ${file}: ${problem}`,
-    operation: "config.loadFromFile",
-    data: { file, problem, line, column },
-  };
+export function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-export function createSchemaValidationError(
-  file: string,
-  message: string,
-): AgentError {
-  return {
-    code: "tomlValidationError",
-    msg: message,
-    operation: "config.loadFromFile",
-    data: { file, message },
-  };
-}
-
-export function createConfigurationError(
-  error: AgentError,
-  location: ConfigurationLocation,
-): ConfigurationError {
-  return {
-    error,
-    ...location,
-  };
+/**
+ * Compute a relative projectDir from an absolute path, using "." for the root.
+ * Matches Go's convention where projectDir is relative to the workspace root.
+ */
+export function relativeProjectDir(absDir: string, rootDir: string): string {
+  const rel = path.relative(rootDir, absDir);
+  return rel === "" ? "." : rel;
 }
 
 /**

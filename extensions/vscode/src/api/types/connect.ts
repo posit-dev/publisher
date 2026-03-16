@@ -47,13 +47,3 @@ export type ServerSettings = {
   license?: LicenseInfo;
   oauth_integrations_enabled?: boolean;
 };
-
-export type Integration = {
-  guid?: string;
-  name?: string;
-  description?: string;
-  auth_type?: string;
-  template?: string;
-  config?: Record<string, string | undefined>;
-  created_time?: string;
-};
