@@ -34,12 +34,11 @@ type Operation = types.Operation
 type Phase string
 
 const (
-	StartPhase    Phase = "start"
-	ProgressPhase Phase = "progress"
-	StatusPhase   Phase = "status"
-	SuccessPhase  Phase = "success"
-	FailurePhase  Phase = "failure"
-	LogPhase      Phase = "log"
+	StartPhase   Phase = "start"
+	StatusPhase  Phase = "status"
+	SuccessPhase Phase = "success"
+	FailurePhase Phase = "failure"
+	LogPhase     Phase = "log"
 )
 
 const (
@@ -57,9 +56,8 @@ const (
 	PublishDeployContentOp           Operation = "publish/deployContent"
 	PublishRestorePythonEnvOp        Operation = "publish/restorePythonEnv"
 	PublishRestoreREnvOp             Operation = "publish/restoreREnv"
-	PublishRunContentOp              Operation = "publish/runContent"
-	PublishSetVanityUrlOp            Operation = "publish/setVanityURL"
-	PublishValidateDeploymentOp      Operation = "publish/validateDeployment"
+	PublishRunContentOp         Operation = "publish/runContent"
+	PublishValidateDeploymentOp Operation = "publish/validateDeployment"
 	PublishOp                        Operation = "publish"
 )
 

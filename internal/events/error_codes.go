@@ -11,10 +11,9 @@ const (
 	AuthenticationFailedCode  ErrorCode = "authFailedErr"            // Couldn't authenticate to publishing server
 	PermissionsCode           ErrorCode = "permissionErr"            // Server responded with 403 forbidden
 	OperationTimedOutCode     ErrorCode = "timeoutErr"               // HTTP request to publishing server timed out
-	ConnectionFailedCode      ErrorCode = "connectionFailed"         // Couldn't connect to Connect
-	ServerErrorCode           ErrorCode = "serverErr"                // HTTP 5xx code from publishing server
-	VanityURLNotAvailableCode ErrorCode = "vanityURLNotAvailableErr" // Vanity URL already in use
-	DeploymentNotFoundCode    ErrorCode = "deploymentNotFoundErr"    // Could not find deployment to update
+	ConnectionFailedCode   ErrorCode = "connectionFailed"      // Couldn't connect to Connect
+	ServerErrorCode        ErrorCode = "serverErr"             // HTTP 5xx code from publishing server
+	DeploymentNotFoundCode ErrorCode = "deploymentNotFoundErr" // Could not find deployment to update
 	AppModeNotModifiableCode  ErrorCode = "appModeNotModifiableErr"  // attempt to deploy to an existing deployment with a non-matching app mode
 
 	// Server failed to deploy the bundle.

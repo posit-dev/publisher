@@ -62,7 +62,6 @@ type ServerSettings struct {
 	OAuthIntegrationsEnabled bool `json:"oauth_integrations_enabled"`
 }
 
-const ExecutionTypeNative = "native"
 const ExecutionTypeLocal = "launcher-local"
 const ExecutionTypeKubernetes = "launcher-kubernetes"
 
@@ -99,44 +98,6 @@ type SchedulerSettings struct {
 	MaxAMDGPULimit    int64   `json:"max_amd_gpu_limit"`
 	NvidiaGPULimit    int64   `json:"nvidia_gpu_limit"`
 	MaxNvidiaGPULimit int64   `json:"max_nvidia_gpu_limit"`
-}
-
-type AuthenticationSettings struct {
-	ProviderAttributes
-	Name         string `json:"name"`
-	Notice       string `json:"notice"`
-	WarningDelay int64  `json:"warning_delay"`
-}
-
-type ProviderAttributes struct {
-	HandlesCredentials bool `json:"handles_credentials"`
-	HandlesLogin       bool `json:"handles_login"`
-	SupportsChallenge  bool `json:"challenge_response_enabled"`
-	ProviderUserAttributes
-	ProviderGroupAttributes
-	ProviderUserProfileAttributes
-}
-
-type ProviderUserProfileAttributes struct {
-	UniqueUsernames    bool               `json:"unique_usernames"`
-	NameEditableBy     UserInfoEditableBy `json:"name_editable_by"`
-	EmailEditableBy    UserInfoEditableBy `json:"email_editable_by"`
-	UsernameEditableBy UserInfoEditableBy `json:"username_editable_by"`
-	RoleEditableBy     UserInfoEditableBy `json:"role_editable_by"`
-}
-
-type ProviderUserAttributes struct {
-	ExternalUserData   bool `json:"external_user_data"`
-	ExternalUserSearch bool `json:"external_user_search"`
-	ExternalUserId     bool `json:"external_user_id"`
-}
-
-type ProviderGroupAttributes struct {
-	GroupsEnabled        bool `json:"groups_enabled"`
-	ExternalGroupSearch  bool `json:"external_group_search"`
-	ExternalGroupMembers bool `json:"external_group_members"`
-	ExternalGroupId      bool `json:"external_group_id"`
-	ExternalGroupOwner   bool `json:"external_group_owner"`
 }
 
 type FlexiBool bool
@@ -185,16 +146,6 @@ type LicenseStatus struct {
 	// OAuth integrations
 	OAuthIntegrations bool `json:"oauth-integrations"`
 }
-
-type UserInfoEditableBy UserInfoEditableType
-
-type UserInfoEditableType string
-
-const (
-	UserEditProvider     UserInfoEditableType = "Provider"
-	UserEditAdmin        UserInfoEditableType = "Admin"
-	UserEditAdminAndSelf UserInfoEditableType = "AdminAndSelf"
-)
 
 type PyInstallation struct {
 	Version     string `json:"version"`

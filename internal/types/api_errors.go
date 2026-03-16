@@ -16,10 +16,6 @@ func jsonResult(w http.ResponseWriter, status int, result any) {
 	json.NewEncoder(w).Encode(result)
 }
 
-type APIError interface {
-	JSONResponse(http.ResponseWriter)
-}
-
 type UnknownTOMLKeyDetails struct {
 	Filename string `json:"filename"`
 	Line     int    `json:"line"`

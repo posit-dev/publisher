@@ -9,22 +9,6 @@ import (
 
 // Copyright (C) 2025 by Posit Software, PBC.
 
-// UserResponse represents a response from the Connect Cloud user endpoint.
-type UserResponse struct {
-	AccountRoles map[string]UserAccountRole `json:"account_roles"`
-}
-
-// UserAccountRole represents a user's role in an account.
-type UserAccountRole struct {
-	Role    string                 `json:"role"`
-	Account UserAccountRoleAccount `json:"account"`
-}
-
-// UserAccountRoleAccount represents an account in a user account role.
-type UserAccountRoleAccount struct {
-	Name string `json:"name"`
-}
-
 // ContentAccess represents the access control settings for a content item.
 type ContentAccess string
 
