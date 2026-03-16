@@ -59,7 +59,6 @@ configuration_name = "production"
     expect(record.deploymentName).toBe("myapp");
     expect(record.deploymentPath).toBe(deploymentPath);
     expect(record.projectDir).toBe(tmpDir);
-    expect(record.saveName).toBe("myapp");
   });
 
   it("migrates empty created_at using file birthtime", async () => {

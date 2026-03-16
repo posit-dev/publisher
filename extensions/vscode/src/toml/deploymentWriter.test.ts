@@ -66,7 +66,6 @@ describe("createDeploymentRecord", () => {
     expect(record.serverType).toBe("connect");
     expect(record.configurationName).toBe("myconfig");
     expect(record.deploymentName).toBe("myapp");
-    expect(record.saveName).toBe("myapp");
     expect(record.createdAt).toBeDefined();
 
     // Verify file was written

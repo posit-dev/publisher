@@ -1083,7 +1083,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         // now select the new, updated or existing deployment
         const deploymentSelector: DeploymentSelector = {
           deploymentPath: targetContentRecord.deploymentPath,
-          deploymentName: targetContentRecord.saveName,
+          deploymentName: targetContentRecord.deploymentName,
           projectDir: targetContentRecord.projectDir,
         };
         this.propagateDeploymentSelection(deploymentSelector);
@@ -1148,7 +1148,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         let refreshCredentials = false;
         if (
           !this.state.findContentRecord(
-            contentRecord.saveName,
+            contentRecord.deploymentName,
             contentRecord.projectDir,
           )
         ) {
@@ -1168,7 +1168,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         }
         const deploymentSelector: DeploymentSelector = {
           deploymentPath: contentRecord.deploymentPath,
-          deploymentName: contentRecord.saveName,
+          deploymentName: contentRecord.deploymentName,
           projectDir: contentRecord.projectDir,
         };
 
@@ -1610,7 +1610,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       // Create quick pick list from current contentRecords, credentials and configs
       let deploymentQuickPickList: DeploymentQuickPick[] = [];
       const lastContentRecord = await this.state.getSelectedContentRecord();
-      const lastContentRecordName = lastContentRecord?.saveName;
+      const lastContentRecordName = lastContentRecord?.deploymentName;
       const lastContentRecordProjectDir = projectDir
         ? projectDir
         : lastContentRecord?.projectDir;
@@ -1679,7 +1679,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         if (!configName) {
           configName = contentRecord.configurationName
             ? `Missing Configuration ${contentRecord.configurationName}`
-            : `ERROR: No Config Entry in Deployment record - ${contentRecord.saveName}`;
+            : `ERROR: No Config Entry in Deployment record - ${contentRecord.deploymentName}`;
           problem = true;
         }
 
@@ -1715,7 +1715,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         const detail = details.join(" • ");
 
         const lastMatch =
-          lastContentRecordName === contentRecord.saveName &&
+          lastContentRecordName === contentRecord.deploymentName &&
           lastContentRecordProjectDir === contentRecord.projectDir &&
           lastConfigName === configName;
 
@@ -1790,7 +1790,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       if (deployment && deployment.contentRecord) {
         deploymentSelector = {
           deploymentPath: deployment.contentRecord.deploymentPath,
-          deploymentName: deployment.contentRecord.saveName,
+          deploymentName: deployment.contentRecord.deploymentName,
           projectDir: deployment.contentRecord.projectDir,
         };
         this.updateWebViewViewCredentials();
@@ -2212,7 +2212,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         }
       }
       const target: PublishProcessParams = {
-        deploymentName: contentRecord.saveName,
+        deploymentName: contentRecord.deploymentName,
         deploymentPath: contentRecord.deploymentPath,
         projectDir: contentRecord.projectDir,
         configurationName: contentRecord.configurationName,
@@ -2257,7 +2257,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       }
     }
     const target: PublishProcessParams = {
-      deploymentName: currentContentRecord.saveName,
+      deploymentName: currentContentRecord.deploymentName,
       deploymentPath: currentContentRecord.deploymentPath,
       projectDir: currentContentRecord.projectDir,
       credentialName,

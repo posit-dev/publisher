@@ -31,7 +31,6 @@ type preDeploymentDTO struct {
 	ServerType   server_type.ServerType `json:"serverType"`
 	ServerURL    string                 `json:"serverUrl"`
 	ConnectCloud *connectCloudDTO       `json:"connectCloud"`
-	SaveName     string                 `json:"saveName"`
 	CreatedAt    string                 `json:"createdAt"`
 	DismissedAt  string                 `toml:"dismissed_at,omitempty" json:"dismissedAt"`
 	ConfigName   string                 `json:"configurationName,omitempty"`
@@ -51,7 +50,6 @@ type fullDeploymentDTO struct {
 	deploymentLocation
 	deployment.Deployment
 	ConfigPath string `json:"configurationPath"`
-	SaveName   string `json:"saveName"`
 }
 
 type deploymentErrorDTO struct {
@@ -93,7 +91,6 @@ func deploymentAsDTO(d *deployment.Deployment, err error, projectDir util.Absolu
 			},
 			Deployment: *d,
 			ConfigPath: configPath,
-			SaveName:   saveName, // TODO: remove this duplicate (remove frontend references first)
 		}
 	} else {
 		if d.ConfigName != "" {
@@ -119,7 +116,6 @@ func deploymentAsDTO(d *deployment.Deployment, err error, projectDir util.Absolu
 			ServerType:   d.ServerType,
 			ServerURL:    d.ServerURL,
 			ConnectCloud: &connectCloud,
-			SaveName:     saveName, // TODO: remove this duplicate (remove frontend references first)
 			CreatedAt:    d.CreatedAt,
 			DismissedAt:  d.DismissedAt,
 			ConfigName:   d.ConfigName,
