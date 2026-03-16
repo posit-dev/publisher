@@ -8,7 +8,6 @@ import { Configurations } from "./resources/Configurations";
 import { Files } from "./resources/Files";
 
 import { Packages } from "./resources/Packages";
-import { Secrets } from "./resources/Secrets";
 import { SnowflakeConnections } from "./resources/SnowflakeConnections";
 import * as Entities from "entities";
 import { ConnectCloud } from "./resources/ConnectCloud";
@@ -23,7 +22,6 @@ class PublishingClientApi {
   contentRecords: ContentRecords;
   files: Files;
   packages: Packages;
-  secrets: Secrets;
   apiServiceIsUp: Promise<boolean>;
   snowflakeConnections: SnowflakeConnections;
   connectCloud: ConnectCloud;
@@ -56,7 +54,6 @@ class PublishingClientApi {
     this.files = new Files(this.client);
 
     this.packages = new Packages(this.client);
-    this.secrets = new Secrets(this.client);
     this.snowflakeConnections = new SnowflakeConnections(this.client);
     this.connectCloud = new ConnectCloud(this.client);
     this.connectServer = new ConnectServer(this.client);
