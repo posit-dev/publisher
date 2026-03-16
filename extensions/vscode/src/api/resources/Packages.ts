@@ -1,10 +1,7 @@
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import { AxiosInstance } from "axios";
-import {
-  GetRPackagesResponse,
-  ScanPythonPackagesResponse,
-} from "../types/packages";
+import { ScanPythonPackagesResponse } from "../types/packages";
 import type { PositronSettings } from "../types/positron";
 import { PythonExecutable, RExecutable } from "../../types/shared";
 
@@ -13,20 +10,6 @@ export class Packages {
 
   constructor(client: AxiosInstance) {
     this.client = client;
-  }
-
-  // Returns:
-  // 200 - success
-  // 404 - configuration or requirements file not found
-  // 409 - conflict (R is not configured)
-  // 422 - package file is invalid
-  // 500 - internal server error
-  getRPackages(configName: string, dir: string) {
-    const encodedName = encodeURIComponent(configName);
-    return this.client.get<GetRPackagesResponse>(
-      `/configurations/${encodedName}/packages/r`,
-      { params: { dir } },
-    );
   }
 
   // Returns:

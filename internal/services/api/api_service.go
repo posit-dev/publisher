@@ -104,10 +104,6 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	r.Handle(ToPath("configurations", "{name}", "secrets"), PostConfigSecretsHandlerFunc(base, log)).
 		Methods(http.MethodPost)
 
-	// GET /api/configurations/$NAME/packages/r
-	r.Handle(ToPath("configurations", "{name}", "packages", "r"), NewGetConfigRPackagesHandler(base, log)).
-		Methods(http.MethodGet)
-
 	// POST /api/deployments/$NAME initiates a deployment
 	r.Handle(ToPath("deployments", "{name}"), PostDeploymentHandlerFunc(base, log, lister, emitter)).
 		Methods(http.MethodPost)
