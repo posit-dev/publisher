@@ -8,11 +8,9 @@ import { Configurations } from "./resources/Configurations";
 import { Files } from "./resources/Files";
 
 import { Packages } from "./resources/Packages";
-import { Secrets } from "./resources/Secrets";
 import { SnowflakeConnections } from "./resources/SnowflakeConnections";
 import * as Entities from "entities";
 import { ConnectCloud } from "./resources/ConnectCloud";
-import { ConnectServer } from "./resources/ConnectServer";
 import { OpenConnectContent } from "./resources/OpenConnectContent";
 
 class PublishingClientApi {
@@ -23,11 +21,9 @@ class PublishingClientApi {
   contentRecords: ContentRecords;
   files: Files;
   packages: Packages;
-  secrets: Secrets;
   apiServiceIsUp: Promise<boolean>;
   snowflakeConnections: SnowflakeConnections;
   connectCloud: ConnectCloud;
-  connectServer: ConnectServer;
   openConnectContent: OpenConnectContent;
 
   constructor(apiBaseUrl: string, apiServiceIsUp: Promise<boolean>) {
@@ -56,10 +52,8 @@ class PublishingClientApi {
     this.files = new Files(this.client);
 
     this.packages = new Packages(this.client);
-    this.secrets = new Secrets(this.client);
     this.snowflakeConnections = new SnowflakeConnections(this.client);
     this.connectCloud = new ConnectCloud(this.client);
-    this.connectServer = new ConnectServer(this.client);
     this.openConnectContent = new OpenConnectContent(this.client);
   }
 

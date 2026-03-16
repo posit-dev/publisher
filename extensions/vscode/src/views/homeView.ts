@@ -20,7 +20,6 @@ import {
   workspace,
 } from "vscode";
 import { getPositronRepoSettings } from "src/utils/positronSettings";
-import { isAxiosError } from "axios";
 import { Mutex } from "async-mutex";
 
 import {
@@ -45,6 +44,10 @@ import {
 import { ConnectAPI } from "@posit-dev/connect-api";
 import type { Integration } from "@posit-dev/connect-api";
 import { updateFileList as updateFileListInConfig } from "src/configFiles";
+import {
+  addSecret as addSecretToConfig,
+  removeSecret as removeSecretFromConfig,
+} from "src/configSecrets";
 import {
   loadAllConfigurations,
   loadAllDeployments,
@@ -124,6 +127,7 @@ import {
   isConnectProduct,
 } from "src/utils/multiStepHelpers";
 import { recordAddConnectCloudUrlParams } from "src/utils/connectCloudHelpers";
+import { getRPackages } from "src/interpreters/rPackages";
 import { getPythonPackages } from "src/interpreters/pythonPackages";
 
 enum HomeViewInitialized {
@@ -776,52 +780,50 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     let packageMgr: string | undefined;
     let rVersionConfig: RVersionConfig | undefined;
 
-    const api = await useApi();
-
     if (activeConfiguration && !isConfigurationError(activeConfiguration)) {
       const rSection = activeConfiguration.configuration.r;
       if (!rSection) {
         rProject = false;
       } else {
-        try {
-          packageFile = rSection.packageFile;
-          packageMgr = rSection.packageManager;
+        packageFile = rSection.packageFile;
+        packageMgr = rSection.packageManager;
 
+        const resolvedPackageFile = packageFile || "renv.lock";
+        const root = workspaces.path();
+        if (!root) {
+          return;
+        }
+        const projectDir = path.join(root, activeConfiguration.projectDir);
+
+        try {
           const response = await showProgress(
             "Refreshing R Packages",
             Views.HomeView,
-            async () =>
-              await api.packages.getRPackages(
-                activeConfiguration.configurationName,
-                activeConfiguration.projectDir,
-              ),
+            async () => {
+              return await getRPackages(projectDir, resolvedPackageFile);
+            },
           );
 
           packages = [];
-          Object.keys(response.data.packages).forEach((key: string) => {
-            const pkg = response.data.packages[key];
+          Object.keys(response.packages).forEach((key: string) => {
+            const pkg = response.packages[key];
             if (pkg) {
               packages.push(pkg);
             }
           });
-          rVersionConfig = response.data.r;
-        } catch (error: unknown) {
-          if (isAxiosError(error) && error.response?.status === 404) {
-            // No requirements file; show the welcome view.
+          rVersionConfig = response.r;
+        } catch (err: unknown) {
+          if (
+            err instanceof Error &&
+            err.message.startsWith("Lockfile not found")
+          ) {
+            // Lockfile not found; show the welcome view.
             packageFile = undefined;
-          } else if (isAxiosError(error) && error.response?.status === 422) {
-            // invalid package file
-            packageFile = undefined;
-          } else if (isAxiosError(error) && error.response?.status === 409) {
-            // R is not present in the configuration file
-            rProject = false;
           } else {
-            const summary = getSummaryStringFromError(
-              "homeView::refreshRPackages",
-              error,
-            );
-            window.showInformationMessage(summary);
-            return;
+            // Unexpected error (invalid JSON, permission denied, etc.)
+            const summary = err instanceof Error ? err.message : String(err);
+            window.showErrorMessage(`Failed to read R packages: ${summary}`);
+            packageFile = undefined;
           }
         }
       }
@@ -856,27 +858,21 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
 
-    const activeConfig = await this.state.getSelectedConfiguration();
+    try {
+      const connectApi = new ConnectAPI({
+        url: credential.url,
+        apiKey: credential.apiKey,
+      });
+      const allSettings = await connectApi.getSettings();
 
-    if (activeConfig && !isConfigurationError(activeConfig)) {
-      try {
-        const api = await useApi();
-        const result = await api.connectServer.getServerSettings(
-          credential.name,
-          activeConfig.configuration.type,
-        );
-
-        this.webviewConduit.sendMsg({
-          kind: HostToWebviewMessageType.REFRESH_SERVER_SETTINGS,
-          content: {
-            serverSettings: result.data,
-          },
-        });
-      } catch (_: unknown) {
-        console.error(
-          `Failed to fetch server-settings for [${credential.name}]`,
-        );
-      }
+      this.webviewConduit.sendMsg({
+        kind: HostToWebviewMessageType.REFRESH_SERVER_SETTINGS,
+        content: {
+          serverSettings: allSettings.general,
+        },
+      });
+    } catch (_: unknown) {
+      console.error(`Failed to fetch server-settings for [${credential.name}]`);
     }
   }
 
@@ -1253,11 +1249,15 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
     try {
       await showProgress("Adding Secret", Views.HomeView, async () => {
-        const api = await useApi();
-        await api.secrets.add(
+        const root = workspaces.path();
+        if (!root) {
+          return;
+        }
+        await addSecretToConfig(
           activeConfig.configurationName,
           name,
           activeConfig.projectDir,
+          root,
         );
       });
     } catch (error: unknown) {
@@ -1283,11 +1283,15 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
     try {
       await showProgress("Removing Secret", Views.HomeView, async () => {
-        const api = await useApi();
-        await api.secrets.remove(
+        const root = workspaces.path();
+        if (!root) {
+          return;
+        }
+        await removeSecretFromConfig(
           activeConfig.configurationName,
           context.name,
           activeConfig.projectDir,
+          root,
         );
       });
     } catch (error: unknown) {
