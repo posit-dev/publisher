@@ -51,9 +51,6 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	pathsService := paths.CreatePathsService(base, log)
 
 	r := mux.NewRouter()
-	// GET /api/accounts/{name}/server-settings
-	r.Handle(ToPath("accounts", "{name}", "server-settings"), GetServerSettingsHandlerFunc(lister, log)).
-		Methods(http.MethodGet)
 
 	// GET /api/events
 	r.HandleFunc(ToPath("events"), eventServer.ServeHTTP)
@@ -95,8 +92,6 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	// GET /api/configurations/$NAME/files
 	r.Handle(ToPath("configurations", "{name}", "files"), GetConfigFilesHandlerFunc(base, filesService, log)).
 		Methods(http.MethodGet)
-
-
 
 	// POST /api/deployments/$NAME initiates a deployment
 	r.Handle(ToPath("deployments", "{name}"), PostDeploymentHandlerFunc(base, log, lister, emitter)).

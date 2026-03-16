@@ -857,27 +857,21 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
 
-    const activeConfig = await this.state.getSelectedConfiguration();
+    try {
+      const connectApi = new ConnectAPI({
+        url: credential.url,
+        apiKey: credential.apiKey,
+      });
+      const allSettings = await connectApi.getSettings();
 
-    if (activeConfig && !isConfigurationError(activeConfig)) {
-      try {
-        const api = await useApi();
-        const result = await api.connectServer.getServerSettings(
-          credential.name,
-          activeConfig.configuration.type,
-        );
-
-        this.webviewConduit.sendMsg({
-          kind: HostToWebviewMessageType.REFRESH_SERVER_SETTINGS,
-          content: {
-            serverSettings: result.data,
-          },
-        });
-      } catch (_: unknown) {
-        console.error(
-          `Failed to fetch server-settings for [${credential.name}]`,
-        );
-      }
+      this.webviewConduit.sendMsg({
+        kind: HostToWebviewMessageType.REFRESH_SERVER_SETTINGS,
+        content: {
+          serverSettings: allSettings.general,
+        },
+      });
+    } catch (_: unknown) {
+      console.error(`Failed to fetch server-settings for [${credential.name}]`);
     }
   }
 
