@@ -41,6 +41,7 @@ import {
 import { getSummaryStringFromError } from "src/utils/errors";
 import { isAxiosErrorWithJson } from "src/utils/errorTypes";
 import { newConfigFileNameFromTitle, newDeploymentName } from "src/utils/names";
+import { updateFileList } from "src/configFiles";
 import {
   createDeploymentRecord,
   loadAllConfigurations,
@@ -885,11 +886,12 @@ export async function newDeployment(
   try {
     // Attempt to add the Config file to the files for deployment
     // If the configuration is invalid, for example 'unknown', this will fail
-    await api.files.updateFileList(
+    await updateFileList(
       configName,
       getRelPathForConfig(configCreateResponse.configurationPath),
       FileAction.INCLUDE,
       newDeploymentData.entrypoint.inspectionResult.projectDir,
+      root,
     );
   } catch (_error: unknown) {
     // continue on as it is not necessary to include .posit files for deployment
@@ -940,11 +942,12 @@ export async function newDeployment(
         "Unable to determine the relative path for the content record.",
       );
     }
-    await api.files.updateFileList(
+    await updateFileList(
       configName,
       getRelPathForContentRecord(contentRecordPath),
       FileAction.INCLUDE,
       newDeploymentData.entrypoint.inspectionResult.projectDir,
+      root,
     );
   } catch (_error: unknown) {
     // continue on as it is not necessary to include .posit files for deployment

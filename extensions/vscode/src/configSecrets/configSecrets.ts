@@ -13,7 +13,6 @@ import { relativeProjectDir } from "../toml/tomlHelpers";
  * - If the secret already exists in `secrets[]`, this is a no-op.
  * - If the secret name conflicts with an `environment` key, throws an error.
  *
- * Matches Go's `Config.AddSecret` behavior.
  *
  * @param configName - Name of the configuration (without .toml extension)
  * @param secretName - The secret name to add
