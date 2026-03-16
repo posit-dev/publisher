@@ -49,11 +49,6 @@ import {
   removeSecret as removeSecretFromConfig,
 } from "src/configSecrets";
 import {
-  addSecret as addSecretToConfig,
-  removeSecret as removeSecretFromConfig,
-} from "src/configSecrets";
-import { fetchServerSettings } from "src/connectServerSettings";
-import {
   loadAllConfigurations,
   loadAllDeployments,
   patchDeploymentRecord,
@@ -863,15 +858,16 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
 
     try {
-      const serverSettings = await fetchServerSettings(
-        credential.url,
-        credential.apiKey,
-      );
+      const connectApi = new ConnectAPI({
+        url: credential.url,
+        apiKey: credential.apiKey,
+      });
+      const allSettings = await connectApi.getSettings();
 
       this.webviewConduit.sendMsg({
         kind: HostToWebviewMessageType.REFRESH_SERVER_SETTINGS,
         content: {
-          serverSettings,
+          serverSettings: allSettings.general,
         },
       });
     } catch (_: unknown) {
