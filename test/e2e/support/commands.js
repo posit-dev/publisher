@@ -13,6 +13,7 @@ import "./workbench";
 // from the with-connect GitHub Action, which handles Connect startup and bootstrapping.
 Cypress.Commands.add("initializeConnect", () => {
   cy.clearupDeployments();
+  cy.resetCredentials();
   cy.setAdminCredentials();
 });
 
@@ -847,6 +848,36 @@ Cypress.Commands.add("deletePCCContent", () => {
     // Start deleting items
     deleteItems(contents);
   });
+});
+
+// modifyFileInContainer
+// Purpose: Write file content inside the Docker container via `docker exec`.
+// When to use: Tests that need to modify workspace files (e.g., redeployment after content change).
+Cypress.Commands.add("modifyFileInContainer", (containerPath, content) => {
+  const escaped = content.replace(/\\/g, "\\\\").replace(/'/g, "'\"'\"'");
+  return cy
+    .exec(
+      `docker exec publisher-e2e.code-server bash -c "cat <<'MODEOF' > '${containerPath}'\n${escaped}\nMODEOF"`,
+    )
+    .then((result) => {
+      if (result.exitCode !== 0) {
+        throw new Error(`Failed to modify file in container: ${result.stderr}`);
+      }
+    });
+});
+
+// countDeploymentRecordFiles
+// Purpose: Count *.toml files in .posit/publish/deployments/ for a project directory.
+// When to use: Verifying redeployment reuses the same record (count stays at 1).
+Cypress.Commands.add("countDeploymentRecordFiles", (projectDir) => {
+  const targetDir = `content-workspace/${projectDir}/.posit/publish/deployments`;
+  return cy
+    .exec(`ls -1 ${targetDir}/*.toml 2>/dev/null | wc -l`, {
+      failOnNonZeroExit: false,
+    })
+    .then((result) => {
+      return parseInt(result.stdout.trim(), 10) || 0;
+    });
 });
 
 // NOTE: Specific exception handling is done in support/index.js

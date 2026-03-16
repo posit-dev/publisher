@@ -11,8 +11,7 @@
 describe("Detect errors in config", () => {
   // Global setup - run once for entire test suite
   before(() => {
-    cy.clearupDeployments();
-    cy.setAdminCredentials();
+    cy.initializeConnect();
   });
 
   beforeEach(() => {
@@ -40,12 +39,13 @@ describe("Detect errors in config", () => {
     cy.get(".quick-input-widget").should("be.visible");
     cy.get(".quick-input-titlebar").should("have.text", "Select Deployment");
 
-    // Wait for deployment list to populate before searching for specific item
-    cy.get(".quick-input-widget .quick-input-list-row").should("exist");
-
-    // select our error case
+    // Type in filter to find the error deployment (virtual scrolling may hide it)
+    cy.get(".quick-input-widget .quick-input-filter input").type(
+      "quarto-project-8G2B",
+    );
     cy.get(".quick-input-widget")
       .contains("Unknown Title • Error in quarto-project-8G2B")
+      .should("be.visible")
       .click();
 
     // confirm that the selector shows the error
@@ -76,12 +76,13 @@ describe("Detect errors in config", () => {
     cy.get(".quick-input-widget").should("be.visible");
     cy.get(".quick-input-titlebar").should("have.text", "Select Deployment");
 
-    // Wait for deployment list to populate before searching for specific item
-    cy.get(".quick-input-widget .quick-input-list-row").should("exist");
-
-    // select our error case
+    // Type in filter to find the error deployment (virtual scrolling may hide it)
+    cy.get(".quick-input-widget .quick-input-filter input").type(
+      "fastapi-simple-DHJL",
+    );
     cy.get(".quick-input-widget")
       .contains("Unknown Title Due to Missing Config fastapi-simple-DHJL")
+      .should("be.visible")
       .click();
 
     // confirm that the selector shows the error

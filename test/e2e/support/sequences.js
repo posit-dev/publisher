@@ -36,14 +36,29 @@ Cypress.Commands.add(
       }
     });
 
-    // expand the subdirectory
+    // expand the subdirectory and wait for contents to be visible
     if (projectDir !== ".") {
-      cy.get(".explorer-viewlet").then(($explorer) => {
-        const target = $explorer.find(`[aria-label="${projectDir}"]`);
-        if (target.length > 0) {
-          cy.wrap(target).click();
-        }
-      });
+      cy.retryWithBackoff(
+        () =>
+          cy.get(".explorer-viewlet").then(($explorer) => {
+            const target = $explorer.find(`[aria-label="${projectDir}"]`);
+            if (target.length > 0) {
+              // Click to expand if not already expanded (native DOM click for VSCode compatibility)
+              const isExpanded = target.attr("aria-expanded") === "true";
+              if (!isExpanded) {
+                target[0].click();
+              }
+              // Check if the entrypoint file is now visible inside
+              const entrypoint = $explorer.find(
+                `[aria-label="${entrypointFile}"]`,
+              );
+              return entrypoint.length > 0 ? entrypoint : Cypress.$();
+            }
+            return Cypress.$();
+          }),
+        10,
+        700,
+      );
     }
 
     // open the entrypoint file
@@ -53,9 +68,14 @@ Cypress.Commands.add(
       .dblclick();
 
     // confirm that the file got opened in a tab
-    cy.get(".tabs-container")
-      .find(`[aria-label="${entrypointFile}"]`)
-      .should("be.visible");
+    cy.retryWithBackoff(
+      () =>
+        cy.get(".tabs-container").then(($tabs) => {
+          return $tabs.find(`[aria-label="${entrypointFile}"]`);
+        }),
+      10,
+      700,
+    ).should("be.visible");
 
     // activate the publisher extension
     cy.getPublisherSidebarIcon().click();
@@ -83,32 +103,45 @@ Cypress.Commands.add(
     cy.get(".quick-input-titlebar").should("have.text", "Select Deployment");
 
     // Create a new deployment
+    // Type "Create" in the filter to ensure the item is visible even when
+    // many existing deployments push it off-screen (virtual scrolling)
+    cy.get(".quick-input-widget .quick-input-filter input").type("Create");
     cy.get(".quick-input-list")
       .find('[aria-label*="Create a New Deployment"]')
       .should("be.visible")
       .click();
 
-    // TODO - Need to specifically select and press enter for creating a new deployment.
-    // cy.get(".quickInput_list").get("div").get("div.monaco-list-rows")
-    // cy.get(".quickInput_list").find('[aria-label="fastapi - base directory, Missing Credential for http://connect-publisher-e2e:3939 • simple.py, Existing"').click()
-    // cy.get(".quickInput_list").find('[aria-label="simple.py, Open Files"]').click()
-
-    // cy.get(".quick-input-widget").type("{enter}")
-
     // prompt for select entrypoint
     cy.retryWithBackoff(
       () =>
-        cy
-          .get(".quick-input-widget")
-          .find(
+        cy.get(".quick-input-widget").then(($widget) => {
+          return $widget.find(
             `[aria-label="${projectDir}/${entrypointFile}, Open Files"], [aria-label="${entrypointFile}, Open Files"]`,
-          ),
-      10,
+          );
+        }),
+      15,
       700,
     ).then(($el) => {
       cy.wrap($el).scrollIntoView();
       cy.wrap($el).click({ force: true });
     });
+
+    // Handle Quarto deployment type dialog for .qmd files.
+    // The extension asks "source code or rendered document?" AFTER entrypoint selection for .qmd files.
+    // Wait for the dialog's list row and click it using the same pattern as other quick-pick clicks.
+    if (entrypointFile.endsWith(".qmd")) {
+      cy.retryWithBackoff(
+        () =>
+          cy.get(".quick-input-widget").then(($widget) => {
+            return $widget.find('.monaco-list-row[aria-label*="source code"]');
+          }),
+        15,
+        1000,
+      );
+      cy.get('.quick-input-widget .monaco-list-row[aria-label*="source code"]')
+        .first()
+        .click({ force: true });
+    }
 
     // Wait for "enter title" step explicitly (avoid typing into filter step)
     cy.retryWithBackoff(
