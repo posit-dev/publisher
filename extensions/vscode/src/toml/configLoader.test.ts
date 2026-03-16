@@ -4,12 +4,12 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { loadConfigFromFile } from "./loader";
+import { loadConfigFromFile } from "./configLoader";
 import {
   isConfigurationError,
   UpdateConfigWithDefaults,
 } from "../api/types/configurations";
-import { ConfigurationLoadError } from "./errors";
+import { ConfigurationLoadError } from "./configErrors";
 import { interpreterDefaultsFactory } from "../test/unit-test-utils/factories";
 
 let tmpDir: string;

@@ -5,8 +5,10 @@ import { extractGUID } from "src/utils/guid";
 import { PublisherState } from "src/state";
 import { showProgress } from "src/utils/progress";
 import { Views } from "src/constants";
-import { ServerType, useApi, ProductType } from "src/api";
+import { ServerType, ProductType } from "src/api";
 import { getSummaryStringFromError } from "src/utils/errors";
+import { patchDeploymentRecord } from "src/toml";
+import * as workspaces from "src/workspaces";
 import {
   getProductName,
   getProductType,
@@ -109,20 +111,25 @@ export async function showAssociateGUID(state: PublisherState) {
   }
   await showProgress("Updating Content Record", Views.HomeView, async () => {
     try {
-      const api = await useApi();
-      await api.contentRecords.patch(
+      const root = workspaces.path();
+      if (!root) {
+        window.showErrorMessage(
+          "Unable to associate deployment: no workspace folder is open.",
+        );
+        return;
+      }
+      await patchDeploymentRecord(
         targetContentRecord.deploymentName,
         targetContentRecord.projectDir,
-        {
-          guid,
-        },
+        root,
+        { id: guid },
       );
       window.showInformationMessage(
         `Your deployment is now locally associated with Content GUID ${guid} as requested.`,
       );
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
-        "showAssociateGUID, contentRecords.patch",
+        "showAssociateGUID, patchDeploymentRecord",
         error,
       );
       window.showErrorMessage(

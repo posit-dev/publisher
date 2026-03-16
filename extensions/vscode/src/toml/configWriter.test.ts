@@ -4,10 +4,10 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { writeConfigToFile } from "./writer";
+import { writeConfigToFile } from "./configWriter";
 import { ConfigurationDetails, ContentType } from "../api/types/configurations";
 import { ProductType } from "../api/types/contentRecords";
-import { ConfigurationLoadError } from "./errors";
+import { ConfigurationLoadError } from "./configErrors";
 
 let tmpDir: string;
 

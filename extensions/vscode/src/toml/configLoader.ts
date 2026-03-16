@@ -12,14 +12,14 @@ import {
 import { ProductType } from "../api/types/contentRecords";
 import { AgentError } from "../api/types/error";
 import { convertKeysToCamelCase } from "./convertKeys";
+import { readLeadingComments, formatValidationErrors } from "./tomlHelpers";
 import {
   createInvalidTOMLError,
   createSchemaValidationError,
   createConfigurationError,
   ConfigurationLoadError,
-  formatValidationErrors,
-} from "./errors";
-import { validate } from "./validate";
+} from "./configErrors";
+import { validate } from "./configValidate";
 
 /**
  * Load a TOML configuration file, validate it against the JSON schema,
@@ -106,20 +106,6 @@ export async function loadConfigFromFile(
     configuration: converted,
     ...location,
   };
-}
-
-// Extract leading comment lines from raw file content.
-// Matches Go's readLeadingComments: collects consecutive lines starting
-// with '#' from the top of the file, stripping the '#' prefix.
-function readLeadingComments(content: string): string[] {
-  const comments: string[] = [];
-  for (const line of content.split("\n")) {
-    if (!line.startsWith("#")) {
-      break;
-    }
-    comments.push(line.slice(1));
-  }
-  return comments;
 }
 
 // Content types that have a mapping in Connect Cloud.

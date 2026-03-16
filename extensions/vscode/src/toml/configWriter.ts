@@ -10,16 +10,16 @@ import {
   ContentType,
 } from "../api/types/configurations";
 import { AgentError } from "../api/types/error";
-import { forceProductTypeCompliance } from "./compliance";
+import { forceProductTypeCompliance } from "./configCompliance";
 import { convertKeysToSnakeCase } from "./convertKeys";
-import { getConfigPath } from "./discovery";
+import { getConfigPath } from "./configDiscovery";
+import { stripEmpty, isRecord, formatValidationErrors } from "./tomlHelpers";
 import {
   createSchemaValidationError,
   createConfigurationError,
   ConfigurationLoadError,
-  formatValidationErrors,
-} from "./errors";
-import { validate } from "./validate";
+} from "./configErrors";
+import { validate } from "./configValidate";
 
 /**
  * Write a configuration to a TOML file.
@@ -127,32 +127,4 @@ export async function writeConfigToFile(
     },
     ...location,
   };
-}
-
-/**
- * Recursively strip empty leaf values from an object to match Go's omitempty
- * TOML encoding behavior. Removes keys whose values are:
- * - undefined or null
- * - empty strings ("")
- *
- * Does NOT remove empty objects — Go's TOML encoder writes section headers
- * (e.g., `[r]`) even when all fields are omitted via omitempty, and the
- * JSON schema conditionally requires these sections to exist.
- *
- * Mutates the object in place.
- */
-function stripEmpty(obj: Record<string, unknown>): void {
-  for (const [key, value] of Object.entries(obj)) {
-    if (value === undefined || value === null) {
-      delete obj[key];
-    } else if (typeof value === "string" && value === "") {
-      delete obj[key];
-    } else if (isRecord(value)) {
-      stripEmpty(value);
-    }
-  }
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
