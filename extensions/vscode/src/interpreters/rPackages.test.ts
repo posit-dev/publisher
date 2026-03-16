@@ -297,7 +297,9 @@ describe("scanRPackages", () => {
     expect(opts.cwd).toBe("/project");
 
     // Verify lockfile existence was checked
-    expect(mockFileExistsAt).toHaveBeenCalledWith("/project/renv.lock");
+    expect(mockFileExistsAt).toHaveBeenCalledWith(
+      path.join("/project", "renv.lock"),
+    );
 
     // Verify temp file was cleaned up
     expect(mockUnlink).toHaveBeenCalledWith(tmpPath);
@@ -311,7 +313,9 @@ describe("scanRPackages", () => {
 
     const [, script] = mockWriteFile.mock.calls[0]!;
     expect(script).toContain("my_renv.lock");
-    expect(mockFileExistsAt).toHaveBeenCalledWith("/project/my_renv.lock");
+    expect(mockFileExistsAt).toHaveBeenCalledWith(
+      path.join("/project", "my_renv.lock"),
+    );
   });
 
   test("supports save name with subdirectory path", async () => {
@@ -323,7 +327,7 @@ describe("scanRPackages", () => {
     const [, script] = mockWriteFile.mock.calls[0]!;
     expect(script).toContain(".renv/profiles/staging/renv.lock");
     expect(mockFileExistsAt).toHaveBeenCalledWith(
-      "/project/.renv/profiles/staging/renv.lock",
+      path.join("/project", ".renv/profiles/staging/renv.lock"),
     );
   });
 
