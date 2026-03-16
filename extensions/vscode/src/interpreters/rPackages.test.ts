@@ -5,9 +5,14 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 import { getRPackages, readLockfile } from "./rPackages";
 
 const mockFiles: Record<string, string> = {};
+const mockErrors: Record<string, Error> = {};
 
 vi.mock("./fsUtils", () => ({
   readFileText: vi.fn((filePath: string) => {
+    const error = mockErrors[filePath];
+    if (error) {
+      return Promise.reject(error);
+    }
     const content = mockFiles[filePath];
     if (content === undefined) {
       return Promise.resolve(null);
@@ -45,6 +50,9 @@ describe("readLockfile", () => {
   beforeEach(() => {
     for (const key of Object.keys(mockFiles)) {
       delete mockFiles[key];
+    }
+    for (const key of Object.keys(mockErrors)) {
+      delete mockErrors[key];
     }
   });
 
@@ -95,12 +103,25 @@ describe("readLockfile", () => {
     setFile("/project", "renv.lock", "not valid json{");
     await expect(readLockfile("/project/renv.lock")).rejects.toThrow();
   });
+
+  test("propagates filesystem errors from readFileText", async () => {
+    mockErrors["/project/renv.lock"] = Object.assign(
+      new Error("EACCES: permission denied"),
+      { code: "EACCES" },
+    );
+    await expect(readLockfile("/project/renv.lock")).rejects.toThrow(
+      "EACCES: permission denied",
+    );
+  });
 });
 
 describe("getRPackages", () => {
   beforeEach(() => {
     for (const key of Object.keys(mockFiles)) {
       delete mockFiles[key];
+    }
+    for (const key of Object.keys(mockErrors)) {
+      delete mockErrors[key];
     }
   });
 
@@ -121,5 +142,15 @@ describe("getRPackages", () => {
     setFile("/project", "custom.lock", sampleLockfile);
     const result = await getRPackages("/project", "custom.lock");
     expect(result.r.version).toBe("4.3.0");
+  });
+
+  test("propagates filesystem errors instead of showing 'not found'", async () => {
+    mockErrors[path.join("/project", "renv.lock")] = Object.assign(
+      new Error("EACCES: permission denied"),
+      { code: "EACCES" },
+    );
+    await expect(getRPackages("/project", "renv.lock")).rejects.toThrow(
+      "EACCES: permission denied",
+    );
   });
 });

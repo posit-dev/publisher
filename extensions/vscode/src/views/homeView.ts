@@ -782,10 +782,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         packageMgr = rSection.packageManager;
 
         const resolvedPackageFile = packageFile || "renv.lock";
-        const projectDir = path.join(
-          workspaces.path(),
-          activeConfiguration.projectDir,
-        );
+        const root = workspaces.path();
+        if (!root) {
+          return;
+        }
+        const projectDir = path.join(root, activeConfiguration.projectDir);
 
         try {
           const response = await showProgress(
@@ -802,9 +803,22 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
             }
           });
           rVersionConfig = response.r;
-        } catch {
-          // Lockfile not found or invalid; show the welcome view.
-          packageFile = undefined;
+        } catch (error: unknown) {
+          if (
+            error instanceof SyntaxError ||
+            (error instanceof Error &&
+              error.message.startsWith("Lockfile not found"))
+          ) {
+            // Lockfile not found or invalid JSON; show the welcome view.
+            packageFile = undefined;
+          } else {
+            const summary = getSummaryStringFromError(
+              "homeView::refreshRPackages",
+              error,
+            );
+            window.showInformationMessage(summary);
+            return;
+          }
         }
       }
     }
