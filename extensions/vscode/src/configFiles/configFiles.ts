@@ -14,7 +14,6 @@ import { relativeProjectDir } from "../toml/tomlHelpers";
  * - If an exclusion (`!path`) exists, removes it (effectively re-including the file).
  * - Otherwise, adds `path` to the list (idempotent — skips if already present).
  *
- *
  * @param configName - Name of the configuration (without .toml extension)
  * @param filePath - The file path to include (e.g., "/app.py")
  * @param projectDir - Relative project directory (e.g., "." or "subdir")
