@@ -44,6 +44,7 @@ import {
 } from "src/api";
 import { ConnectAPI } from "@posit-dev/connect-api";
 import type { Integration } from "@posit-dev/connect-api";
+import { updateFileList as updateFileListInConfig } from "src/configFiles";
 import {
   loadAllConfigurations,
   loadAllDeployments,
@@ -434,12 +435,16 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
     try {
       await showProgress("Updating File List", Views.HomeView, async () => {
-        const api = await useApi();
-        await api.files.updateFileList(
+        const root = workspaces.path();
+        if (!root) {
+          return;
+        }
+        await updateFileListInConfig(
           activeConfig.configurationName,
           `/${uri}`,
           action,
           activeConfig.projectDir,
+          root,
         );
       });
     } catch (error: unknown) {
