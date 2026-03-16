@@ -62,7 +62,6 @@ type ContentRecordRecord = {
   $schema: SchemaURL;
   serverType: ServerType;
   serverUrl: string;
-  saveName: string;
   createdAt: string;
   dismissedAt: string;
   configurationName: string;

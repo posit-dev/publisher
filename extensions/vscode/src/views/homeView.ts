@@ -20,7 +20,6 @@ import {
   workspace,
 } from "vscode";
 import { getPositronRepoSettings } from "src/utils/positronSettings";
-import { isAxiosError } from "axios";
 import { Mutex } from "async-mutex";
 
 import {
@@ -123,6 +122,7 @@ import {
 } from "src/utils/multiStepHelpers";
 import { recordAddConnectCloudUrlParams } from "src/utils/connectCloudHelpers";
 import { getRPackages } from "src/interpreters/rPackages";
+import { getPythonPackages } from "src/interpreters/pythonPackages";
 
 enum HomeViewInitialized {
   initialized = "initialized",
@@ -632,46 +632,43 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     let packageFile: string | undefined;
     let packageMgr: string | undefined;
 
-    const api = await useApi();
-
     if (activeConfiguration && !isConfigurationError(activeConfiguration)) {
       const pythonSection = activeConfiguration.configuration.python;
       if (!pythonSection) {
         pythonProject = false;
       } else {
-        try {
-          packageFile = pythonSection.packageFile;
-          packageMgr = pythonSection.packageManager;
+        packageFile = pythonSection.packageFile;
+        packageMgr = pythonSection.packageManager;
 
-          const response = await showProgress(
+        const resolvedPackageFile = packageFile || "requirements.txt";
+        const root = workspaces.path();
+        if (!root) {
+          return;
+        }
+        const projectDir = path.join(root, activeConfiguration.projectDir);
+
+        try {
+          packages = await showProgress(
             "Refreshing Python Packages",
             Views.HomeView,
             async () => {
-              return await api.packages.getPythonPackages(
-                activeConfiguration.configurationName,
-                activeConfiguration.projectDir,
-              );
+              return await getPythonPackages(projectDir, resolvedPackageFile);
             },
           );
-
-          packages = response.data.requirements;
-        } catch (error: unknown) {
-          if (isAxiosError(error) && error.response?.status === 404) {
-            // No requirements file or contains invalid entries; show the welcome view.
+        } catch (err: unknown) {
+          if (
+            err instanceof Error &&
+            err.message.startsWith("Requirements file not found")
+          ) {
+            // Requirements file not found; show the welcome view.
             packageFile = undefined;
-          } else if (isAxiosError(error) && error.response?.status === 422) {
-            // invalid package file
-            packageFile = undefined;
-          } else if (isAxiosError(error) && error.response?.status === 409) {
-            // Python is not present in the configuration file
-            pythonProject = false;
           } else {
-            const summary = getSummaryStringFromError(
-              "homeView::refreshPythonPackages",
-              error,
+            // Unexpected I/O error (permission denied, disk failure, etc.)
+            const summary = err instanceof Error ? err.message : String(err);
+            window.showErrorMessage(
+              `Failed to read Python packages: ${summary}`,
             );
-            window.showInformationMessage(summary);
-            return;
+            packageFile = undefined;
           }
         }
       }
@@ -792,7 +789,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           const response = await showProgress(
             "Refreshing R Packages",
             Views.HomeView,
-            async () => await getRPackages(projectDir, resolvedPackageFile),
+            async () => {
+              return await getRPackages(projectDir, resolvedPackageFile);
+            },
           );
 
           packages = [];
@@ -803,21 +802,18 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
             }
           });
           rVersionConfig = response.r;
-        } catch (error: unknown) {
+        } catch (err: unknown) {
           if (
-            error instanceof SyntaxError ||
-            (error instanceof Error &&
-              error.message.startsWith("Lockfile not found"))
+            err instanceof Error &&
+            err.message.startsWith("Lockfile not found")
           ) {
-            // Lockfile not found or invalid JSON; show the welcome view.
+            // Lockfile not found; show the welcome view.
             packageFile = undefined;
           } else {
-            const summary = getSummaryStringFromError(
-              "homeView::refreshRPackages",
-              error,
-            );
-            window.showInformationMessage(summary);
-            return;
+            // Unexpected error (invalid JSON, permission denied, etc.)
+            const summary = err instanceof Error ? err.message : String(err);
+            window.showErrorMessage(`Failed to read R packages: ${summary}`);
+            packageFile = undefined;
           }
         }
       }
@@ -1083,7 +1079,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         // now select the new, updated or existing deployment
         const deploymentSelector: DeploymentSelector = {
           deploymentPath: targetContentRecord.deploymentPath,
-          deploymentName: targetContentRecord.saveName,
+          deploymentName: targetContentRecord.deploymentName,
           projectDir: targetContentRecord.projectDir,
         };
         this.propagateDeploymentSelection(deploymentSelector);
@@ -1148,7 +1144,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         let refreshCredentials = false;
         if (
           !this.state.findContentRecord(
-            contentRecord.saveName,
+            contentRecord.deploymentName,
             contentRecord.projectDir,
           )
         ) {
@@ -1168,7 +1164,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         }
         const deploymentSelector: DeploymentSelector = {
           deploymentPath: contentRecord.deploymentPath,
-          deploymentName: contentRecord.saveName,
+          deploymentName: contentRecord.deploymentName,
           projectDir: contentRecord.projectDir,
         };
 
@@ -1610,7 +1606,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       // Create quick pick list from current contentRecords, credentials and configs
       let deploymentQuickPickList: DeploymentQuickPick[] = [];
       const lastContentRecord = await this.state.getSelectedContentRecord();
-      const lastContentRecordName = lastContentRecord?.saveName;
+      const lastContentRecordName = lastContentRecord?.deploymentName;
       const lastContentRecordProjectDir = projectDir
         ? projectDir
         : lastContentRecord?.projectDir;
@@ -1679,7 +1675,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         if (!configName) {
           configName = contentRecord.configurationName
             ? `Missing Configuration ${contentRecord.configurationName}`
-            : `ERROR: No Config Entry in Deployment record - ${contentRecord.saveName}`;
+            : `ERROR: No Config Entry in Deployment record - ${contentRecord.deploymentName}`;
           problem = true;
         }
 
@@ -1715,7 +1711,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         const detail = details.join(" • ");
 
         const lastMatch =
-          lastContentRecordName === contentRecord.saveName &&
+          lastContentRecordName === contentRecord.deploymentName &&
           lastContentRecordProjectDir === contentRecord.projectDir &&
           lastConfigName === configName;
 
@@ -1790,7 +1786,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       if (deployment && deployment.contentRecord) {
         deploymentSelector = {
           deploymentPath: deployment.contentRecord.deploymentPath,
-          deploymentName: deployment.contentRecord.saveName,
+          deploymentName: deployment.contentRecord.deploymentName,
           projectDir: deployment.contentRecord.projectDir,
         };
         this.updateWebViewViewCredentials();
@@ -2212,7 +2208,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         }
       }
       const target: PublishProcessParams = {
-        deploymentName: contentRecord.saveName,
+        deploymentName: contentRecord.deploymentName,
         deploymentPath: contentRecord.deploymentPath,
         projectDir: contentRecord.projectDir,
         configurationName: contentRecord.configurationName,
@@ -2257,7 +2253,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       }
     }
     const target: PublishProcessParams = {
-      deploymentName: currentContentRecord.saveName,
+      deploymentName: currentContentRecord.deploymentName,
       deploymentPath: currentContentRecord.deploymentPath,
       projectDir: currentContentRecord.projectDir,
       credentialName,

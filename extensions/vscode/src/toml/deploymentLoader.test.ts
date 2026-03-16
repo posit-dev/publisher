@@ -59,7 +59,28 @@ configuration_name = "production"
     expect(record.deploymentName).toBe("myapp");
     expect(record.deploymentPath).toBe(deploymentPath);
     expect(record.projectDir).toBe(tmpDir);
-    expect(record.saveName).toBe("myapp");
+  });
+
+  it("migrates empty created_at using file birthtime", async () => {
+    const deploymentPath = writeDeployment(
+      "empty-created-at",
+      `
+"$schema" = "${SCHEMA_URL}"
+server_url = "https://connect.example.com"
+server_type = "connect"
+created_at = ""
+type = "python-dash"
+configuration_name = "production"
+`,
+    );
+
+    const record = await loadDeploymentFromFile(deploymentPath, tmpDir);
+    expect(record.state).toBe(ContentRecordState.NEW);
+    // createdAt should be backfilled from file birthtime, not empty
+    expect(record.createdAt).toBeDefined();
+    expect(record.createdAt).not.toBe("");
+    // Verify it's a valid ISO date string
+    expect(new Date(record.createdAt).toISOString()).toBe(record.createdAt);
   });
 
   it("loads a full deployment record (has deployedAt)", async () => {

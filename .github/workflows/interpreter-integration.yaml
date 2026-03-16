@@ -64,7 +64,7 @@ jobs:
           node-version: "22"
           cache: "npm"
           cache-dependency-path: "**/package-lock.json"
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         if: matrix.python-version != ''
         with:
           python-version: ${{ matrix.python-version }}

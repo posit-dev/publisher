@@ -8,11 +8,9 @@ vi.mock("node:fs/promises", () => ({
     if (filePath === "/exists.txt") {
       return Promise.resolve("hello world");
     }
-    if (filePath === "/no-permission.txt") {
+    if (filePath === "/no-access.txt") {
       return Promise.reject(
-        Object.assign(new Error("EACCES: permission denied"), {
-          code: "EACCES",
-        }),
+        Object.assign(new Error("EACCES"), { code: "EACCES" }),
       );
     }
     return Promise.reject(
@@ -40,10 +38,8 @@ describe("readFileText", () => {
     expect(result).toBeNull();
   });
 
-  test("propagates non-ENOENT errors", async () => {
-    await expect(readFileText("/no-permission.txt")).rejects.toThrow(
-      "EACCES: permission denied",
-    );
+  test("rethrows non-ENOENT errors", async () => {
+    await expect(readFileText("/no-access.txt")).rejects.toThrow("EACCES");
   });
 });
 

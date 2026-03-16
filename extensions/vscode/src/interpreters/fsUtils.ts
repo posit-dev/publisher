@@ -4,26 +4,21 @@ import { access, readFile } from "node:fs/promises";
 
 /**
  * Read a file as UTF-8 text, returning null if the file doesn't exist.
- * Propagates non-ENOENT errors (e.g. permission errors).
+ * Other I/O errors (e.g. permission denied) are rethrown.
  */
 export async function readFileText(filePath: string): Promise<string | null> {
   try {
     return await readFile(filePath, "utf-8");
-  } catch (error: unknown) {
-    if (isEnoent(error)) {
+  } catch (err: unknown) {
+    if (isErrnoException(err) && err.code === "ENOENT") {
       return null;
     }
-    throw error;
+    throw err;
   }
 }
 
-function isEnoent(error: unknown): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    (error as { code: unknown }).code === "ENOENT"
-  );
+function isErrnoException(err: unknown): err is NodeJS.ErrnoException {
+  return err instanceof Error && "code" in err;
 }
 
 /**

@@ -121,7 +121,6 @@ export async function createDeploymentRecord(
   return {
     ...record,
     ...location,
-    saveName: opts.saveName,
     state: ContentRecordState.NEW,
   } as PreContentRecord;
 }
@@ -176,7 +175,6 @@ export async function patchDeploymentRecord(
   // Prepare for TOML serialization: remove computed/location fields
   const toWrite: Record<string, unknown> = { ...existing };
   delete toWrite.state;
-  delete toWrite.saveName;
   delete toWrite.deploymentName;
   delete toWrite.deploymentPath;
   delete toWrite.projectDir;
