@@ -76,7 +76,6 @@ var ErrTimedOut = errors.New("request timed out")
 const (
 	AuthRoleAdmin     = "administrator"
 	AuthRolePublisher = "publisher"
-	AuthRoleViewer    = "viewer"
 )
 
 func (u *UserDTO) CanAdmin() bool {
@@ -579,11 +578,3 @@ func (c *ConnectClient) GetCurrentUser(log logging.Logger) (*User, error) {
 	return connectUser.toUser(), nil
 }
 
-func (c *ConnectClient) GetIntegrations(log logging.Logger) ([]Integration, error) {
-	var integrations []Integration
-	err := c.client.Get("/__api__/v1/oauth/integrations", &integrations, log)
-	if err != nil {
-		return nil, err
-	}
-	return integrations, nil
-}

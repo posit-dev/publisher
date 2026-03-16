@@ -16,7 +16,6 @@ export const Method = {
   DeployBundle: "DeployBundle",
   WaitForTask: "WaitForTask",
   ValidateDeployment: "ValidateDeployment",
-  GetIntegrations: "GetIntegrations",
   GetSettings: "GetSettings",
 } as const;
 

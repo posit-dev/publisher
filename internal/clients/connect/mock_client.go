@@ -22,11 +22,6 @@ func NewMockClient() *MockClient {
 
 var _ APIClient = &MockClient{}
 
-func (m *MockClient) Read(p []byte) (n int, err error) {
-	args := m.Called(p)
-	return args.Int(0), args.Error(1)
-}
-
 func (m *MockClient) TestAuthentication(log logging.Logger) (*User, error) {
 	args := m.Called(log)
 	user := args.Get(0)
@@ -97,11 +92,6 @@ func (m *MockClient) CheckCapabilities(base util.AbsolutePath, cfg *config.Confi
 	return args.Error(0)
 }
 
-func (m *MockClient) ValidateDeploymentTarget(contentID types.ContentID, log logging.Logger) error {
-	args := m.Called(contentID, log)
-	return args.Error(0)
-}
-
 func (m *MockClient) GetCurrentUser(log logging.Logger) (*User, error) {
 	args := m.Called(log)
 	user := args.Get(0)
@@ -110,14 +100,6 @@ func (m *MockClient) GetCurrentUser(log logging.Logger) (*User, error) {
 	} else {
 		return user.(*User), args.Error(1)
 	}
-}
-
-func (m *MockClient) GetIntegrations(log logging.Logger) ([]Integration, error) {
-	args := m.Called(log)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).([]Integration), args.Error(1)
 }
 
 func (m *MockClient) GetSettings(base util.AbsolutePath, cfg *config.Config, log logging.Logger) (*AllSettings, error) {

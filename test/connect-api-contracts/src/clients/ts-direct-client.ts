@@ -153,10 +153,6 @@ export class TypeScriptDirectClient implements ConnectContractClient {
         await c.validateDeployment(ContentID(params.contentId as string));
         return undefined;
 
-      case Method.GetIntegrations:
-        // Unwrap AxiosResponse to match Go contract shape
-        return (await c.getIntegrations()).data;
-
       case Method.GetSettings:
         return c.getSettings();
 

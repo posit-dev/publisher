@@ -228,9 +228,6 @@ func dispatch(client connect.APIClient, req *callRequest) (any, error) {
 
 	// --- Server Info ---
 
-	case "GetIntegrations": // no extra fields
-		return client.GetIntegrations(log)
-
 	case "GetSettings": // no extra fields (uses temp dir internally)
 		base, cfg, cleanup, err := newTempSettings()
 		if err != nil {
