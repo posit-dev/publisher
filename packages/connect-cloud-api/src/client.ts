@@ -104,7 +104,7 @@ export class ConnectCloudAPI {
   }
 
   /** Publishes a content item by ID. */
-  async publishContent(contentId: string): Promise<void> {
+  async publishContent(contentId: ContentID): Promise<void> {
     await this.client.post(`/v1/contents/${contentId}/publish`);
   }
 

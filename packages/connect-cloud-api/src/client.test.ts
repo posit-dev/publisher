@@ -511,11 +511,13 @@ describe("getRevision", () => {
 // ---------------------------------------------------------------------------
 
 describe("publishContent", () => {
+  const contentId = ContentID("content-123");
+
   it("POSTs to /v1/contents/:id/publish and returns void", async () => {
     mockRequest.mockResolvedValue(jsonResponse(null, 200));
 
     const client = createClient();
-    const result = await client.publishContent("content-123");
+    const result = await client.publishContent(contentId);
 
     expect(result).toBeUndefined();
     const call = mockRequest.mock.calls[0][0];
@@ -529,7 +531,7 @@ describe("publishContent", () => {
     );
 
     const client = createClient();
-    await expect(client.publishContent("content-123")).rejects.toThrow();
+    await expect(client.publishContent(contentId)).rejects.toThrow();
   });
 });
 
