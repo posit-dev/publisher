@@ -401,6 +401,23 @@ describe("scanRPackages", () => {
     expect(mockUnlink).toHaveBeenCalledOnce();
   });
 
+  test("passes --no-init-file and disables renv auto-loader", async () => {
+    setupExecFileSuccess();
+    mockFileExistsAt.mockResolvedValue(true);
+
+    await scanRPackages("/project", "/usr/bin/R");
+
+    const [, args, opts] = mockExecFile.mock.calls[0]!;
+
+    // --no-init-file prevents R from sourcing .Rprofile at startup
+    expect(args[0]).toBe("--no-init-file");
+
+    // RENV_CONFIG_AUTOLOADER_ENABLED=FALSE prevents renv's .onLoad() from
+    // auto-activating the project (which would source renv/activate.R and
+    // crash if that file is missing).
+    expect(opts.env.RENV_CONFIG_AUTOLOADER_ENABLED).toBe("FALSE");
+  });
+
   test("rejects project path with double-quote character", async () => {
     await expect(scanRPackages('/project/with"quote', "R")).rejects.toThrow(
       "Project path contains invalid characters",

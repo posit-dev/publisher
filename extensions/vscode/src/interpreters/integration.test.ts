@@ -626,6 +626,44 @@ describe("scanRPackages (real R + renv)", async () => {
   );
 
   test.skipIf(!rAvailable || !renvInstalled)(
+    "succeeds when project has stale .Rprofile but no renv/activate.R",
+    () =>
+      withTempDir(async (dir) => {
+        // Reproduce the scenario that caused the original crash:
+        // a .Rprofile from a previous renv setup references renv/activate.R,
+        // but the renv/ directory has been removed (e.g. deleted or gitignored).
+        await writeFile(
+          path.join(dir, ".Rprofile"),
+          'source("renv/activate.R")\n',
+          "utf-8",
+        );
+        // Intentionally do NOT create renv/ or renv/activate.R
+
+        await writeFile(
+          path.join(dir, "script.R"),
+          "# Minimal R project\nx <- 1\n",
+          "utf-8",
+        );
+
+        // Without the --no-init-file and RENV_CONFIG_AUTOLOADER_ENABLED=FALSE
+        // fixes, this would crash with:
+        //   "cannot open file 'renv/activate.R': No such file or directory"
+        await scanRPackages(dir, "R");
+
+        const lockfilePath = path.join(dir, "renv.lock");
+        expect(await fileExistsAt(lockfilePath)).toBe(true);
+
+        const content = await readFileText(lockfilePath);
+        expect(content).not.toBeNull();
+
+        const parsed = JSON.parse(content!);
+        expect(parsed).toHaveProperty("R");
+        expect(parsed).toHaveProperty("Packages");
+      }),
+    120_000,
+  );
+
+  test.skipIf(!rAvailable || !renvInstalled)(
     "creates lockfile with custom name",
     () =>
       withTempDir(async (dir) => {
