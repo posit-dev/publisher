@@ -69,6 +69,7 @@ jobs:
           branch_prefix: "claude-"
           additional_permissions: "actions: read"
           allowed_tools: "Bash,Read,Write,Edit,WebFetch,WebSearch,mcp__github__create_pull_request,mcp__github__create_issue,mcp__github__search_issues,mcp__github__update_issue,mcp__github__create_pending_pull_request_review,mcp__github__add_pull_request_review_comment_to_pending_review,mcp__github__submit_pending_pull_request_review,mcp__github__get_pull_request_diff"
+          allowed_bots: "posit-connect-projects[bot]"
           prompt: |
             You are a helpful AI assistant for code reviews and issue triage.
             Respond to comments and issues that mention you with relevant code suggestions or triage actions.
