@@ -68,6 +68,7 @@ jobs:
           branch_prefix: "claude-"
           additional_permissions: "actions: read"
           allowed_bots: "posit-connect-projects[bot]"
+          track_progress: true
           prompt: |
             You are a helpful AI assistant for code reviews and issue triage.
             Respond to comments and issues that mention you with relevant code suggestions or triage actions.
