@@ -34,6 +34,7 @@ import {
   clearPythonVersionCache,
 } from "./pythonInterpreter";
 import { detectRInterpreter } from "./rInterpreter";
+import { scanRPackages, getRPackages } from "./rPackages";
 
 const execFileAsync = promisify(execFile);
 
@@ -54,6 +55,19 @@ async function withTempDir<T>(fn: (dir: string) => Promise<T>): Promise<T> {
 async function isExecutableAvailable(name: string): Promise<boolean> {
   try {
     await execFileAsync(name, ["--version"]);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Check if the renv R package is installed by attempting to load it.
+ * Used to determine whether scanRPackages tests should be skipped.
+ */
+async function isRenvAvailable(): Promise<boolean> {
+  try {
+    await execFileAsync("Rscript", ["-e", "library(renv)"]);
     return true;
   } catch {
     return false;
@@ -551,5 +565,120 @@ describe("getInterpreterDefaults end-to-end", async () => {
         expect(result.python.version).toMatch(/^\d+\.\d+\.\d+$/);
       });
     },
+  );
+});
+
+// ---------------------------------------------------------------------------
+// scanRPackages – runs a real R + renv to scan a temporary project for
+// package dependencies and produce a lockfile. Tests are skipped when R or
+// renv is not available on the system.
+// ---------------------------------------------------------------------------
+
+describe("scanRPackages (real R + renv)", async () => {
+  const rAvailable = await isExecutableAvailable("R");
+  const renvInstalled = rAvailable && (await isRenvAvailable());
+
+  test.skipIf(!rAvailable || !renvInstalled)(
+    "creates lockfile with default name",
+    () =>
+      withTempDir(async (dir) => {
+        // Write a minimal R script (no external packages needed)
+        await writeFile(
+          path.join(dir, "script.R"),
+          "# Minimal R project\nx <- 1\n",
+          "utf-8",
+        );
+
+        await scanRPackages(dir, "R");
+
+        const lockfilePath = path.join(dir, "renv.lock");
+        expect(await fileExistsAt(lockfilePath)).toBe(true);
+
+        const content = await readFileText(lockfilePath);
+        expect(content).not.toBeNull();
+
+        const parsed = JSON.parse(content!);
+        expect(parsed).toHaveProperty("R");
+        expect(parsed.R).toHaveProperty("Version");
+        expect(parsed).toHaveProperty("Packages");
+      }),
+    120_000,
+  );
+
+  test.skipIf(!rAvailable || !renvInstalled)(
+    "round-trip: scan then read with getRPackages",
+    () =>
+      withTempDir(async (dir) => {
+        await writeFile(
+          path.join(dir, "script.R"),
+          "# Minimal R project\nx <- 1\n",
+          "utf-8",
+        );
+
+        await scanRPackages(dir, "R");
+
+        const result = await getRPackages(dir, "renv.lock");
+        expect(result.r.version).toMatch(/^\d+\.\d+\.\d+$/);
+        expect(result.packages).toBeDefined();
+        expect(typeof result.packages).toBe("object");
+      }),
+    120_000,
+  );
+
+  test.skipIf(!rAvailable || !renvInstalled)(
+    "succeeds when project has stale .Rprofile but no renv/activate.R",
+    () =>
+      withTempDir(async (dir) => {
+        // Reproduce the scenario that caused the original crash:
+        // a .Rprofile from a previous renv setup references renv/activate.R,
+        // but the renv/ directory has been removed (e.g. deleted or gitignored).
+        await writeFile(
+          path.join(dir, ".Rprofile"),
+          'source("renv/activate.R")\n',
+          "utf-8",
+        );
+        // Intentionally do NOT create renv/ or renv/activate.R
+
+        await writeFile(
+          path.join(dir, "script.R"),
+          "# Minimal R project\nx <- 1\n",
+          "utf-8",
+        );
+
+        // Without the --no-init-file and RENV_CONFIG_AUTOLOADER_ENABLED=FALSE
+        // fixes, this would crash with:
+        //   "cannot open file 'renv/activate.R': No such file or directory"
+        await scanRPackages(dir, "R");
+
+        const lockfilePath = path.join(dir, "renv.lock");
+        expect(await fileExistsAt(lockfilePath)).toBe(true);
+
+        const content = await readFileText(lockfilePath);
+        expect(content).not.toBeNull();
+
+        const parsed = JSON.parse(content!);
+        expect(parsed).toHaveProperty("R");
+        expect(parsed).toHaveProperty("Packages");
+      }),
+    120_000,
+  );
+
+  test.skipIf(!rAvailable || !renvInstalled)(
+    "creates lockfile with custom name",
+    () =>
+      withTempDir(async (dir) => {
+        await writeFile(
+          path.join(dir, "script.R"),
+          "# Minimal R project\nx <- 1\n",
+          "utf-8",
+        );
+
+        await scanRPackages(dir, "R", "custom.lock");
+
+        expect(await fileExistsAt(path.join(dir, "custom.lock"))).toBe(true);
+        // Default name should NOT exist
+        expect(await fileExistsAt(path.join(dir, "renv.lock"))).toBe(false);
+      }),
+    120_000,
   );
 });
