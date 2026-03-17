@@ -86,6 +86,32 @@ function createFileNodeFromStats(
   };
 }
 
+function createIntermediateDirectoryNode(
+  rootDir: string,
+  absPath: string,
+): ContentRecordFile {
+  const rel = path.relative(rootDir, absPath);
+  const relForwardSlash = rel === "" ? "." : rel.split(path.sep).join("/");
+
+  return {
+    id: relForwardSlash,
+    fileType: ContentRecordFileType.DIRECTORY,
+    base: path.basename(absPath) || ".",
+    reason: null,
+    files: [],
+    isDir: true,
+    isFile: false,
+    modifiedDatetime: new Date(0).toISOString(),
+    rel: rel || ".",
+    relDir: rel === "" ? "." : path.dirname(rel) || ".",
+    size: 0,
+    fileCount: 0,
+    abs: absPath,
+    allIncluded: false,
+    allExcluded: false,
+  };
+}
+
 function insertIntoTree(
   root: ContentRecordFile,
   rootDir: string,
@@ -101,7 +127,7 @@ function insertIntoTree(
     const partPath = path.join(rootDir, ...parts.slice(0, i + 1));
     let child = current.files.find((f) => f.abs === partPath);
     if (!child) {
-      child = createFileNodeFromStats(rootDir, partPath, stats, reason);
+      child = createIntermediateDirectoryNode(rootDir, partPath);
       current.files.push(child);
     }
     current = child;
@@ -235,7 +261,7 @@ async function walkDirectory(
 
       let canRead = true;
       try {
-        await fs.readdir(entryPath);
+        await fs.access(entryPath, nodeFs.constants.R_OK);
       } catch (err: unknown) {
         if (isErrnoException(err) && err.code === "EACCES") {
           canRead = false;

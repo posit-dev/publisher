@@ -147,7 +147,16 @@ function compilePattern(
 
   rawRegex = "^" + rawRegex + "$";
 
-  const regex = new RegExp(rawRegex);
+  let regex: RegExp;
+  try {
+    regex = new RegExp(rawRegex);
+  } catch (err: unknown) {
+    const msg =
+      err instanceof Error ? err.message : "invalid regular expression";
+    throw new Error(
+      `invalid pattern in configuration 'files': "${line}" - ${msg}`,
+    );
+  }
 
   const source =
     filePath === "" ? FileMatchSource.BUILT_IN : FileMatchSource.FILE;
