@@ -64,6 +64,7 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           use_bedrock: true
+          show_full_output: true
           github_token: ${{ steps.generate-token.outputs.token }}
           branch_prefix: "claude-"
           additional_permissions: "actions: read"
