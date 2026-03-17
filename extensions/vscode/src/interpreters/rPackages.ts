@@ -256,7 +256,11 @@ function runRScript(
     execFile(
       rPath,
       ["--no-init-file", "-s", "-f", scriptFile],
-      { cwd, timeout: R_SCAN_TIMEOUT },
+      {
+        cwd,
+        timeout: R_SCAN_TIMEOUT,
+        env: { ...process.env, RENV_CONFIG_AUTOLOADER_ENABLED: "FALSE" },
+      },
       (error, _stdout, stderr) => {
         if (error) {
           const msg = stderr

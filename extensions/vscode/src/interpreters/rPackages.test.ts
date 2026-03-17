@@ -295,6 +295,7 @@ describe("scanRPackages", () => {
     expect(cmd).toBe("/usr/bin/R");
     expect(args).toEqual(["--no-init-file", "-s", "-f", tmpPath]);
     expect(opts.cwd).toBe("/project");
+    expect(opts.env.RENV_CONFIG_AUTOLOADER_ENABLED).toBe("FALSE");
 
     // Verify lockfile existence was checked
     expect(mockFileExistsAt).toHaveBeenCalledWith(
