@@ -12,8 +12,6 @@ import (
 	"github.com/posit-dev/publisher/internal/credentials"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/logging"
-	"github.com/posit-dev/publisher/internal/services/api/files"
-	"github.com/posit-dev/publisher/internal/services/api/paths"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/rs/cors"
 
@@ -47,17 +45,10 @@ func NewService(
 }
 
 func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log logging.Logger, eventServer *sse.Server, emitter events.Emitter) http.HandlerFunc {
-	filesService := files.CreateFilesService(base, log)
-	pathsService := paths.CreatePathsService(base, log)
-
 	r := mux.NewRouter()
 
 	// GET /api/events
 	r.HandleFunc(ToPath("events"), eventServer.ServeHTTP)
-
-	// GET /api/files
-	r.Handle(ToPath("files"), GetFileHandlerFunc(base, filesService, pathsService, log)).
-		Methods(http.MethodGet)
 
 	// POST /api/inspect
 	r.Handle(ToPath("inspect"), PostInspectHandlerFunc(base, log)).
@@ -84,10 +75,6 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	// POST /api/test-credentials
 	r.Handle(ToPath("test-credentials"), PostTestCredentialsHandlerFunc(log)).
 		Methods(http.MethodPost)
-
-	// GET /api/configurations/$NAME/files
-	r.Handle(ToPath("configurations", "{name}", "files"), GetConfigFilesHandlerFunc(base, filesService, log)).
-		Methods(http.MethodGet)
 
 	// POST /api/deployments/$NAME initiates a deployment
 	r.Handle(ToPath("deployments", "{name}"), PostDeploymentHandlerFunc(base, log, lister, emitter)).
