@@ -28,23 +28,24 @@ jobs:
       issues: write
       id-token: write
     steps:
-      - name: Check actor has write permission
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GITHUB_ACTOR: ${{ github.actor }}
-          GITHUB_REPO: ${{ github.repository }}
-        run: |
-          PERMISSION=$(gh api "/repos/${GITHUB_REPO}/collaborators/${GITHUB_ACTOR}/permission" --jq '.permission')
-          if [[ "$PERMISSION" != "admin" && "$PERMISSION" != "write" ]]; then
-            echo "::error::Actor ${GITHUB_ACTOR} has '$PERMISSION' permission, requires 'write' or 'admin'"
-            exit 1
-          fi
-          echo "Actor ${GITHUB_ACTOR} authorized with '$PERMISSION' permission"
+      - name: Generate token for GitHub App
+        id: generate-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: 1129585
+          private-key: ${{ secrets.POSIT_CONNECT_PROJECTS_PEM }}
+          permission-actions: read
+          permission-contents: write
+          permission-pull-requests: write
+          permission-issues: write
+          owner: posit-dev
+          repositories: publisher
 
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
+          token: ${{ steps.generate-token.outputs.token }}
 
       - name: Sanitize role session name
         id: session-name
@@ -63,14 +64,16 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           use_bedrock: true
-          model: "us.anthropic.claude-opus-4-6-v1"
-          fallback_model: "us.anthropic.claude-haiku-4-5-20251001-v1:0"
-          timeout_minutes: "60"
+          github_token: ${{ steps.generate-token.outputs.token }}
           branch_prefix: "claude-"
           additional_permissions: "actions: read"
-          allowed_tools: "Bash,Read,Write,Edit,WebFetch,WebSearch,mcp__github__create_pull_request,mcp__github__create_issue,mcp__github__search_issues,mcp__github__update_issue,mcp__github__create_pending_pull_request_review,mcp__github__add_pull_request_review_comment_to_pending_review,mcp__github__submit_pending_pull_request_review,mcp__github__get_pull_request_diff"
+          allowed_bots: "posit-connect-projects[bot]"
           prompt: |
             You are a helpful AI assistant for code reviews and issue triage.
             Respond to comments and issues that mention you with relevant code suggestions or triage actions.
             If you cannot assist, politely inform the user. In your responses, don't be overly complimentary.
             Stick to the facts and provide actionable advice.
+          claude_args: |
+            --model us.anthropic.claude-opus-4-6-v1
+            --fallback-model us.anthropic.claude-haiku-4-5-20251001-v1:0
+            --allowedTools Bash,Read,Write,Edit,WebFetch,WebSearch,mcp__github__create_pull_request,mcp__github__create_issue,mcp__github__search_issues,mcp__github__update_issue,mcp__github__create_pending_pull_request_review,mcp__github__add_pull_request_review_comment_to_pending_review,mcp__github__submit_pending_pull_request_review,mcp__github__get_pull_request_diff
