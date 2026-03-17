@@ -12,6 +12,9 @@ on:
 
 jobs:
   claude-code-action:
+    # NOTE: contains() is a substring match, so '@claude' will also match
+    # usernames like '@claudesmith'. This is a known limitation of GitHub
+    # Actions expressions which do not support regex word-boundary matching.
     if: |
       (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
       (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
@@ -28,13 +31,15 @@ jobs:
       - name: Check actor has write permission
         env:
           GH_TOKEN: ${{ github.token }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_REPO: ${{ github.repository }}
         run: |
-          PERMISSION=$(gh api /repos/${{ github.repository }}/collaborators/${{ github.actor }}/permission --jq '.permission')
+          PERMISSION=$(gh api "/repos/${GITHUB_REPO}/collaborators/${GITHUB_ACTOR}/permission" --jq '.permission')
           if [[ "$PERMISSION" != "admin" && "$PERMISSION" != "write" ]]; then
-            echo "::error::Actor ${{ github.actor }} has '$PERMISSION' permission, requires 'write' or 'admin'"
+            echo "::error::Actor ${GITHUB_ACTOR} has '$PERMISSION' permission, requires 'write' or 'admin'"
             exit 1
           fi
-          echo "Actor ${{ github.actor }} authorized with '$PERMISSION' permission"
+          echo "Actor ${GITHUB_ACTOR} authorized with '$PERMISSION' permission"
 
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -43,8 +48,10 @@ jobs:
 
       - name: Sanitize role session name
         id: session-name
+        env:
+          TRIGGERING_ACTOR: ${{ github.triggering_actor }}
         run: |
-          echo "value=$(echo '${{ github.triggering_actor }}' | sed 's/[^a-zA-Z0-9_+=,.@-]/_/g')" >> "$GITHUB_OUTPUT"
+          echo "value=$(echo "${TRIGGERING_ACTOR}" | sed 's/[^a-zA-Z0-9_+=,.@-]/_/g')" >> "$GITHUB_OUTPUT"
 
       - uses: aws-actions/configure-aws-credentials@v6
         with:
