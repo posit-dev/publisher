@@ -4,12 +4,15 @@ import { describe, expect, test, vi, beforeEach } from "vitest";
 import { gzipSync } from "node:zlib";
 import tar from "tar-stream";
 
-const mockOpenConnectContent = vi.fn();
-vi.mock("src/api", () => ({
-  useApi: () =>
-    Promise.resolve({
-      openConnectContent: { openConnectContent: mockOpenConnectContent },
-    }),
+const mockContentDetails = vi.fn();
+const mockDownloadBundle = vi.fn();
+vi.mock("@posit-dev/connect-api", () => ({
+  ConnectAPI: class {
+    contentDetails = mockContentDetails;
+    downloadBundle = mockDownloadBundle;
+  },
+  ContentID: (id: string) => id,
+  BundleID: (id: string) => id,
 }));
 
 vi.mock("src/logging", () => ({
@@ -117,7 +120,7 @@ describe("ConnectContentFileSystemProvider", () => {
     vi.clearAllMocks();
     const mockState = {
       refreshCredentials: vi.fn().mockResolvedValue(undefined),
-      credentials: [{ url: testServerUrl, name: "test" }],
+      credentials: [{ url: testServerUrl, name: "test", apiKey: "test-key" }],
     } as unknown as PublisherState;
     provider = new ConnectContentFileSystemProvider(Promise.resolve(mockState));
   });
@@ -127,7 +130,10 @@ describe("ConnectContentFileSystemProvider", () => {
       const bundle = await createFakeTgzBundle([
         { name: "file.txt", type: "file", content: "hello" },
       ]);
-      mockOpenConnectContent.mockResolvedValue({ data: bundle.buffer });
+      mockContentDetails.mockResolvedValue({
+        data: { bundle_id: "bundle-1" },
+      });
+      mockDownloadBundle.mockResolvedValue(bundle);
 
       const stat = await provider.stat(
         makeUri(testAuthority, `/${testContentGuid}`),
@@ -140,7 +146,10 @@ describe("ConnectContentFileSystemProvider", () => {
       const bundle = await createFakeTgzBundle([
         { name: "manifest.json", type: "file", content: '{"version": 1}' },
       ]);
-      mockOpenConnectContent.mockResolvedValue({ data: bundle.buffer });
+      mockContentDetails.mockResolvedValue({
+        data: { bundle_id: "bundle-1" },
+      });
+      mockDownloadBundle.mockResolvedValue(bundle);
 
       const stat = await provider.stat(
         makeUri(testAuthority, `/${testContentGuid}/manifest.json`),
@@ -155,7 +164,10 @@ describe("ConnectContentFileSystemProvider", () => {
         { name: "assets/", type: "directory" },
         { name: "assets/style.css", type: "file", content: "body {}" },
       ]);
-      mockOpenConnectContent.mockResolvedValue({ data: bundle.buffer });
+      mockContentDetails.mockResolvedValue({
+        data: { bundle_id: "bundle-1" },
+      });
+      mockDownloadBundle.mockResolvedValue(bundle);
 
       const stat = await provider.stat(
         makeUri(testAuthority, `/${testContentGuid}/assets`),
@@ -168,7 +180,10 @@ describe("ConnectContentFileSystemProvider", () => {
       const bundle = await createFakeTgzBundle([
         { name: "exists.txt", type: "file", content: "hello" },
       ]);
-      mockOpenConnectContent.mockResolvedValue({ data: bundle.buffer });
+      mockContentDetails.mockResolvedValue({
+        data: { bundle_id: "bundle-1" },
+      });
+      mockDownloadBundle.mockResolvedValue(bundle);
 
       await expect(
         provider.stat(
@@ -185,7 +200,10 @@ describe("ConnectContentFileSystemProvider", () => {
         { name: "index.html", type: "file", content: "<html>" },
         { name: "assets/", type: "directory" },
       ]);
-      mockOpenConnectContent.mockResolvedValue({ data: bundle.buffer });
+      mockContentDetails.mockResolvedValue({
+        data: { bundle_id: "bundle-1" },
+      });
+      mockDownloadBundle.mockResolvedValue(bundle);
 
       const entries = await provider.readDirectory(
         makeUri(testAuthority, `/${testContentGuid}`),
@@ -202,7 +220,10 @@ describe("ConnectContentFileSystemProvider", () => {
         { name: "assets/style.css", type: "file", content: "body {}" },
         { name: "assets/script.js", type: "file", content: "console.log()" },
       ]);
-      mockOpenConnectContent.mockResolvedValue({ data: bundle.buffer });
+      mockContentDetails.mockResolvedValue({
+        data: { bundle_id: "bundle-1" },
+      });
+      mockDownloadBundle.mockResolvedValue(bundle);
 
       const entries = await provider.readDirectory(
         makeUri(testAuthority, `/${testContentGuid}/assets`),
@@ -217,7 +238,10 @@ describe("ConnectContentFileSystemProvider", () => {
       const bundle = await createFakeTgzBundle([
         { name: "empty/", type: "directory" },
       ]);
-      mockOpenConnectContent.mockResolvedValue({ data: bundle.buffer });
+      mockContentDetails.mockResolvedValue({
+        data: { bundle_id: "bundle-1" },
+      });
+      mockDownloadBundle.mockResolvedValue(bundle);
 
       const entries = await provider.readDirectory(
         makeUri(testAuthority, `/${testContentGuid}/empty`),
@@ -233,7 +257,10 @@ describe("ConnectContentFileSystemProvider", () => {
       const bundle = await createFakeTgzBundle([
         { name: "manifest.json", type: "file", content },
       ]);
-      mockOpenConnectContent.mockResolvedValue({ data: bundle.buffer });
+      mockContentDetails.mockResolvedValue({
+        data: { bundle_id: "bundle-1" },
+      });
+      mockDownloadBundle.mockResolvedValue(bundle);
 
       const data = await provider.readFile(
         makeUri(testAuthority, `/${testContentGuid}/manifest.json`),
@@ -247,7 +274,10 @@ describe("ConnectContentFileSystemProvider", () => {
       const bundle = await createFakeTgzBundle([
         { name: "a/b/c/file.txt", type: "file", content },
       ]);
-      mockOpenConnectContent.mockResolvedValue({ data: bundle.buffer });
+      mockContentDetails.mockResolvedValue({
+        data: { bundle_id: "bundle-1" },
+      });
+      mockDownloadBundle.mockResolvedValue(bundle);
 
       const data = await provider.readFile(
         makeUri(testAuthority, `/${testContentGuid}/a/b/c/file.txt`),
@@ -261,7 +291,10 @@ describe("ConnectContentFileSystemProvider", () => {
         { name: "folder/", type: "directory" },
         { name: "folder/file.txt", type: "file", content: "x" },
       ]);
-      mockOpenConnectContent.mockResolvedValue({ data: bundle.buffer });
+      mockContentDetails.mockResolvedValue({
+        data: { bundle_id: "bundle-1" },
+      });
+      mockDownloadBundle.mockResolvedValue(bundle);
 
       await expect(
         provider.readFile(makeUri(testAuthority, `/${testContentGuid}/folder`)),
@@ -272,7 +305,10 @@ describe("ConnectContentFileSystemProvider", () => {
       const bundle = await createFakeTgzBundle([
         { name: "empty.txt", type: "file", content: "" },
       ]);
-      mockOpenConnectContent.mockResolvedValue({ data: bundle.buffer });
+      mockContentDetails.mockResolvedValue({
+        data: { bundle_id: "bundle-1" },
+      });
+      mockDownloadBundle.mockResolvedValue(bundle);
 
       const data = await provider.readFile(
         makeUri(testAuthority, `/${testContentGuid}/empty.txt`),
@@ -305,16 +341,19 @@ describe("ConnectContentFileSystemProvider", () => {
       const bundle = await createFakeTgzBundle([
         { name: "file.txt", type: "file", content: "hello" },
       ]);
-      mockOpenConnectContent.mockResolvedValue({ data: bundle.buffer });
+      mockContentDetails.mockResolvedValue({
+        data: { bundle_id: "bundle-1" },
+      });
+      mockDownloadBundle.mockResolvedValue(bundle);
 
       await provider.stat(makeUri(testAuthority, `/${testContentGuid}`));
-      expect(mockOpenConnectContent).toHaveBeenCalledTimes(1);
+      expect(mockContentDetails).toHaveBeenCalledTimes(1);
 
       await provider.stat(makeUri(testAuthority, `/${testContentGuid}`));
       await provider.readDirectory(
         makeUri(testAuthority, `/${testContentGuid}`),
       );
-      expect(mockOpenConnectContent).toHaveBeenCalledTimes(1);
+      expect(mockContentDetails).toHaveBeenCalledTimes(1);
     });
   });
 });

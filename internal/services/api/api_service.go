@@ -85,10 +85,6 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	r.Handle(ToPath("test-credentials"), PostTestCredentialsHandlerFunc(log)).
 		Methods(http.MethodPost)
 
-	// POST /api/connect/open-content
-	r.Handle(ToPath("connect", "open-content"), PostOpenConnectContentHandlerFunc(lister, log, emitter)).
-		Methods(http.MethodPost)
-
 	// GET /api/configurations/$NAME/files
 	r.Handle(ToPath("configurations", "{name}", "files"), GetConfigFilesHandlerFunc(base, filesService, log)).
 		Methods(http.MethodGet)

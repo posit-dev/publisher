@@ -11,7 +11,6 @@ import { Packages } from "./resources/Packages";
 import { SnowflakeConnections } from "./resources/SnowflakeConnections";
 import * as Entities from "entities";
 import { ConnectCloud } from "./resources/ConnectCloud";
-import { OpenConnectContent } from "./resources/OpenConnectContent";
 
 class PublishingClientApi {
   private client;
@@ -24,7 +23,6 @@ class PublishingClientApi {
   apiServiceIsUp: Promise<boolean>;
   snowflakeConnections: SnowflakeConnections;
   connectCloud: ConnectCloud;
-  openConnectContent: OpenConnectContent;
 
   constructor(apiBaseUrl: string, apiServiceIsUp: Promise<boolean>) {
     this.client = axios.create({
@@ -54,7 +52,6 @@ class PublishingClientApi {
     this.packages = new Packages(this.client);
     this.snowflakeConnections = new SnowflakeConnections(this.client);
     this.connectCloud = new ConnectCloud(this.client);
-    this.openConnectContent = new OpenConnectContent(this.client);
   }
 
   setBaseUrl(url: string) {
