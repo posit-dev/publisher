@@ -114,6 +114,7 @@ function repoURLFrom(mode: string, ppm: string): string {
   switch (mode) {
     case "auto":
       if (ppm) {
+        // trim trailing slash
         return ppm.replace(/\/+$/, "");
       }
       return "https://cloud.r-project.org";
