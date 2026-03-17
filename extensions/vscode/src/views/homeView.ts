@@ -984,6 +984,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
 
     const relPathPackageFile = activeConfiguration.configuration.r.packageFile;
+    const projectDir = path.join(
+      this.root.uri.fsPath,
+      activeConfiguration.projectDir,
+    );
 
     const fileUri = Uri.joinPath(
       this.root.uri,
@@ -1011,7 +1015,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           const positron = getPositronRepoSettings();
 
           await scanRPackages(
-            path.join(this.root!.uri.fsPath, activeConfiguration.projectDir),
+            projectDir,
             r?.rPath || "R",
             relPathPackageFile,
             positron?.r,
