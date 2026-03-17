@@ -293,7 +293,7 @@ describe("scanRPackages", () => {
     expect(mockExecFile).toHaveBeenCalledOnce();
     const [cmd, args, opts] = mockExecFile.mock.calls[0]!;
     expect(cmd).toBe("/usr/bin/R");
-    expect(args).toEqual(["-s", "-f", tmpPath]);
+    expect(args).toEqual(["--no-init-file", "-s", "-f", tmpPath]);
     expect(opts.cwd).toBe("/project");
 
     // Verify lockfile existence was checked

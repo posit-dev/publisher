@@ -255,7 +255,7 @@ function runRScript(
   return new Promise((resolve, reject) => {
     execFile(
       rPath,
-      ["-s", "-f", scriptFile],
+      ["--no-init-file", "-s", "-f", scriptFile],
       { cwd, timeout: R_SCAN_TIMEOUT },
       (error, _stdout, stderr) => {
         if (error) {
