@@ -46,6 +46,12 @@ vi.mock("axios", () => ({
   isAxiosError: vi.fn(() => false),
 }));
 
+vi.mock("@posit-dev/connect-api", () => ({
+  ConnectAPI: vi.fn(),
+  ContentID: vi.fn((id: string) => id),
+  BundleID: vi.fn((id: string) => id),
+}));
+
 const {
   registerConnectContentFileSystem,
   ConnectContentFileSystemProvider,
