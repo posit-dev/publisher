@@ -38,7 +38,7 @@ describe("QuartoProjectHelper", () => {
       const helper = new QuartoProjectHelper("index.qmd", "index.html", ".");
       await helper.render();
       expect(mockRenderCmd).toHaveBeenCalledWith(
-        "quarto render index.qmd --to html",
+        `quarto render "${path.join(".", "index.qmd")}" --to html`,
       );
     });
 
@@ -47,7 +47,7 @@ describe("QuartoProjectHelper", () => {
 
       const helper = new QuartoProjectHelper("index.qmd", "index.html", ".");
       await helper.render();
-      expect(mockRenderCmd).toHaveBeenCalledWith("quarto render . --to html");
+      expect(mockRenderCmd).toHaveBeenCalledWith(`quarto render "." --to html`);
     });
 
     test("source is _quarto.yml, renders as a project (uses dir)", async () => {
@@ -55,7 +55,7 @@ describe("QuartoProjectHelper", () => {
       await helper.render();
       // No need to check on files if source is already the .yml
       expect(mockFileExistsAt).not.toHaveBeenCalled();
-      expect(mockRenderCmd).toHaveBeenCalledWith("quarto render . --to html");
+      expect(mockRenderCmd).toHaveBeenCalledWith(`quarto render "." --to html`);
     });
   });
 
@@ -73,7 +73,7 @@ describe("QuartoProjectHelper", () => {
       );
       await helper.render();
       expect(mockRenderCmd).toHaveBeenCalledWith(
-        `quarto render ${path.join(projectDir, sourceEntrypoint)} --to html`,
+        `quarto render "${path.join(projectDir, sourceEntrypoint)}" --to html`,
       );
     });
 
@@ -87,7 +87,7 @@ describe("QuartoProjectHelper", () => {
       );
       await helper.render();
       expect(mockRenderCmd).toHaveBeenCalledWith(
-        `quarto render ${projectDir} --to html`,
+        `quarto render "${projectDir}" --to html`,
       );
     });
 
@@ -101,7 +101,7 @@ describe("QuartoProjectHelper", () => {
       // No need to check on files if source is already the .yml
       expect(mockFileExistsAt).not.toHaveBeenCalled();
       expect(mockRenderCmd).toHaveBeenCalledWith(
-        `quarto render ${projectDir} --to html`,
+        `quarto render "${projectDir}" --to html`,
       );
     });
   });
