@@ -2,7 +2,7 @@ name: Claude Auto Review
 
 on:
   pull_request:
-    types: [opened, ready_for_review]
+    types: [opened, reopened, ready_for_review]
 
 jobs:
   auto-review:
