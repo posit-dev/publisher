@@ -201,6 +201,34 @@ describe("testCredentials", () => {
     expect(result.serverType).toBe(ServerType.CONNECT_CLOUD);
   });
 
+  test("error message already ending with period is not double-punctuated", async () => {
+    mockTestAuthentication.mockRejectedValue(new Error("Something failed."));
+
+    const result = await testCredentials({
+      url: "https://connect.example.com",
+      apiKey: "key",
+      insecure: false,
+    });
+
+    expect(result.error).not.toBeNull();
+    expect(result.error!.msg).toBe("Something failed.");
+  });
+
+  test("self-signed cert error returns errorCertificateVerification code", async () => {
+    mockTestAuthentication.mockRejectedValue(
+      new Error("DEPTH_ZERO_SELF_SIGNED_CERT"),
+    );
+
+    const result = await testCredentials({
+      url: "https://connect.example.com",
+      apiKey: "key",
+      insecure: false,
+    });
+
+    expect(result.error).not.toBeNull();
+    expect(result.error!.code).toBe("errorCertificateVerification");
+  });
+
   test("detects Snowflake server type", async () => {
     mockTestAuthentication.mockResolvedValue({
       user: mockUser,
