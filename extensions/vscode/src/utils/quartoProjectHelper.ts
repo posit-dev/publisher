@@ -1,6 +1,7 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import * as path from "path";
+import { execFile } from "child_process";
 import { AxiosResponse } from "axios";
 import { ContentRecordFile } from "../api/types/files";
 import { runTerminalCommand } from "./window";
@@ -70,12 +71,11 @@ export class QuartoProjectHelper {
   }
 
   async isQuartoBinAvailable(): Promise<boolean> {
-    try {
-      await runTerminalCommand("quarto --version");
-      return Promise.resolve(true);
-    } catch {
-      return Promise.resolve(false);
-    }
+    return new Promise((resolve) => {
+      execFile("quarto", ["--version"], (error) => {
+        resolve(!error);
+      });
+    });
   }
 
   fileExistsInProjectDir(
