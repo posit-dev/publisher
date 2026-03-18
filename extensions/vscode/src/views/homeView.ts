@@ -62,6 +62,7 @@ import * as workspaces from "src/workspaces";
 import { getConfigurationFiles } from "src/projectFiles";
 import { EventStream } from "src/events";
 import { getPythonInterpreterPath, getRInterpreterPath } from "../utils/vscode";
+import { scanRPackages } from "src/interpreters/rPackages";
 import { getSummaryStringFromError } from "src/utils/errors";
 import { getNonce } from "src/utils/getNonce";
 import { getUri } from "src/utils/getUri";
@@ -984,6 +985,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
 
     const relPathPackageFile = activeConfiguration.configuration.r.packageFile;
+    const projectDir = path.join(
+      this.root.uri.fsPath,
+      activeConfiguration.projectDir,
+    );
 
     const fileUri = Uri.joinPath(
       this.root.uri,
@@ -1005,17 +1010,16 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         "Creating R Requirements File",
         Views.HomeView,
         async () => {
-          const api = await useApi();
           const r = await getRInterpreterPath();
 
           // Collect IDE-controlled repo settings
           const positron = getPositronRepoSettings();
 
-          return await api.packages.createRRequirementsFile(
-            activeConfiguration.projectDir,
-            r,
+          await scanRPackages(
+            projectDir,
+            r?.rPath || "R",
             relPathPackageFile,
-            positron,
+            positron?.r,
           );
         },
       );

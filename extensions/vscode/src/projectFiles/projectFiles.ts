@@ -17,7 +17,10 @@ export async function getConfigurationFiles(
   configName: string,
 ): Promise<ContentRecordFile> {
   const configPath = getConfigPath(projectDir, configName);
-  const config = await loadConfigFromFile(configPath, projectDir);
+  // Pass "." as the relative project dir. loadConfigFromFile stores this as
+  // Configuration.projectDir which callers expect to be relative, and from the
+  // perspective of this function, the project dir is the root.
+  const config = await loadConfigFromFile(configPath, ".");
 
   const matchList = new MatchList(projectDir, STANDARD_EXCLUSIONS);
 

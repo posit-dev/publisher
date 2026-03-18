@@ -174,6 +174,12 @@ function calculateInclusions(node: ContentRecordFile): void {
     return;
   }
 
+  if (node.files.length === 0) {
+    node.allIncluded = false;
+    node.allExcluded = false;
+    return;
+  }
+
   let allIncluded = true;
   let allExcluded = true;
 
