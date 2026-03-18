@@ -1,4 +1,5 @@
 name: Claude Auto Review
+# Automatically reviews PRs using Claude
 
 on:
   pull_request:
