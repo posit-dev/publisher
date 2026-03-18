@@ -28,10 +28,8 @@ export class CredentialIdentityCollisionError extends Error {
 }
 
 export class IncompleteCredentialError extends Error {
-  constructor() {
-    super(
-      "New credentials require non-empty Name, URL, Server Type, and either API Key, Snowflake, or Connect Cloud connection fields",
-    );
+  constructor(detail: string) {
+    super(detail);
     this.name = "IncompleteCredentialError";
   }
 }

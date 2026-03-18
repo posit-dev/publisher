@@ -51,9 +51,9 @@ describe("normalizeServerURL", () => {
     );
   });
 
-  test("keeps root path", () => {
+  test("removes root trailing slash", () => {
     expect(normalizeServerURL("https://example.com/")).toBe(
-      "https://example.com/",
+      "https://example.com",
     );
   });
 
@@ -77,7 +77,7 @@ describe("normalizeServerURL", () => {
 
   test("handles URL with no path", () => {
     expect(normalizeServerURL("https://example.com")).toBe(
-      "https://example.com/",
+      "https://example.com",
     );
   });
 });

@@ -71,7 +71,9 @@ export class CredentialsService {
           snowflakePresent ||
           connectCloudPresent
         ) {
-          throw new IncompleteCredentialError();
+          throw new IncompleteCredentialError(
+            "Connect credential requires either an API Key or Token+PrivateKey (but not both)",
+          );
         }
         break;
       case ServerType.SNOWFLAKE:
@@ -81,7 +83,9 @@ export class CredentialsService {
           connectCloudPresent ||
           tokenAuthPresent
         ) {
-          throw new IncompleteCredentialError();
+          throw new IncompleteCredentialError(
+            "Snowflake credential requires a Snowflake connection string and no other auth fields",
+          );
         }
         break;
       case ServerType.CONNECT_CLOUD:
@@ -91,11 +95,15 @@ export class CredentialsService {
           snowflakePresent ||
           tokenAuthPresent
         ) {
-          throw new IncompleteCredentialError();
+          throw new IncompleteCredentialError(
+            "Connect Cloud credential requires accountId, accountName, refreshToken, and accessToken",
+          );
         }
         break;
       default:
-        throw new IncompleteCredentialError();
+        throw new IncompleteCredentialError(
+          `Unsupported server type: ${input.serverType}`,
+        );
     }
 
     // For cloud credentials, derive the URL from the cloud environment
@@ -104,13 +112,13 @@ export class CredentialsService {
       url = config.connectCloudURL;
     } else {
       if (!input.url) {
-        throw new IncompleteCredentialError();
+        throw new IncompleteCredentialError("Credential requires a URL");
       }
       url = input.url;
     }
 
     if (!input.name) {
-      throw new IncompleteCredentialError();
+      throw new IncompleteCredentialError("Credential requires a name");
     }
 
     const normalizedUrl = normalizeServerURL(url);
@@ -145,7 +153,7 @@ export class CredentialsService {
       await api.credentials.create(cred);
     } catch (err) {
       logger.warn(
-        `Credential saved locally but could not be written to the system keyring. Deployments may not find this credential: ${err}`,
+        `Credential "${cred.name}" (${cred.guid}) saved locally but could not be written to the system keyring. Deployments may not find this credential: ${err}`,
       );
     }
 
@@ -164,7 +172,7 @@ export class CredentialsService {
       await api.credentials.delete(guid);
     } catch (err) {
       logger.warn(
-        `Credential removed locally but could not be removed from the system keyring: ${err}`,
+        `Credential (${guid}) removed locally but could not be removed from the system keyring: ${err}`,
       );
     }
   }

@@ -30,8 +30,8 @@ export function normalizeServerURL(urlStr: string): string {
   // new URL() resolves dot segments natively
   // Collapse duplicate slashes in path
   let path = u.pathname.replace(/\/\/+/g, "/");
-  // Remove trailing slash (unless root "/")
-  if (path.length > 1 && path.endsWith("/")) {
+  // Remove trailing slash
+  if (path.endsWith("/")) {
     path = path.slice(0, -1);
   }
   return `${u.protocol}//${u.host}${path}`;

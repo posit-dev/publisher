@@ -110,7 +110,7 @@ describe("CredentialsService", () => {
       const result = await service.create(input);
 
       expect(result.name).toBe("My Connect");
-      expect(result.url).toBe("https://connect.example.com/");
+      expect(result.url).toBe("https://connect.example.com");
       expect(result.apiKey).toBe("test-api-key");
       expect(result.serverType).toBe(ServerType.CONNECT);
       expect(result.guid).toBeTruthy();
@@ -165,7 +165,7 @@ describe("CredentialsService", () => {
 
       expect(result.accountId).toBe("acct-123");
       expect(result.cloudEnvironment).toBe("production");
-      expect(result.url).toBe("https://connect.posit.cloud/");
+      expect(result.url).toBe("https://connect.posit.cloud");
       expect(result.serverType).toBe(ServerType.CONNECT_CLOUD);
     });
 
@@ -199,14 +199,14 @@ describe("CredentialsService", () => {
 
     test("throws CredentialIdentityCollisionError on duplicate URL for Connect", async () => {
       const existing = credentialFactory.build({
-        url: "https://connect.example.com/",
+        url: "https://connect.example.com",
         serverType: ServerType.CONNECT,
       });
       await storeCredential(secrets, existing);
 
       const input: CreateCredentialInput = {
         name: "Different Name",
-        url: "https://connect.example.com/",
+        url: "https://connect.example.com",
         serverType: ServerType.CONNECT,
         apiKey: "key",
       };
