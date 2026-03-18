@@ -59,6 +59,7 @@ import {
   removeIntegrationRequest,
 } from "src/integrations";
 import * as workspaces from "src/workspaces";
+import { getConfigurationFiles } from "src/projectFiles";
 import { EventStream } from "src/events";
 import { getPythonInterpreterPath, getRInterpreterPath } from "../utils/vscode";
 import { scanRPackages } from "src/interpreters/rPackages";
@@ -2003,14 +2004,19 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const activeConfig = await this.state.getSelectedConfiguration();
     if (activeConfig && !isConfigurationError(activeConfig)) {
       try {
-        const response = await showProgress(
+        const root = workspaces.path();
+        if (!root) {
+          return;
+        }
+        const projectDir = path.join(root, activeConfig.projectDir);
+
+        const files = await showProgress(
           "Refreshing Files",
           Views.HomeView,
           async () => {
-            const api = await useApi();
-            return await api.files.getByConfiguration(
+            return await getConfigurationFiles(
+              projectDir,
               activeConfig.configurationName,
-              activeConfig.projectDir,
             );
           },
         );
@@ -2018,12 +2024,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         this.webviewConduit.sendMsg({
           kind: HostToWebviewMessageType.REFRESH_FILES,
           content: {
-            files: response.data,
+            files,
           },
         });
       } catch (error: unknown) {
         const summary = getSummaryStringFromError(
-          "sendRefreshedFilesLists, files.getByConfiguration",
+          "sendRefreshedFilesLists, getConfigurationFiles",
           error,
         );
         window.showErrorMessage(`Failed to refresh files. ${summary}`);

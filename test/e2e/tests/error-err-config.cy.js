@@ -40,12 +40,12 @@ describe("Detect errors in config", () => {
     cy.get(".quick-input-widget").should("be.visible");
     cy.get(".quick-input-titlebar").should("have.text", "Select Deployment");
 
-    // Wait for deployment list to populate before searching for specific item
-    cy.get(".quick-input-widget .quick-input-list-row").should("exist");
-
-    // select our error case
+    // select our error case (retry until the specific item appears)
     cy.get(".quick-input-widget")
-      .contains("Unknown Title • Error in quarto-project-8G2B")
+      .contains("Unknown Title • Error in quarto-project-8G2B", {
+        timeout: 20000,
+      })
+      .should("be.visible")
       .click();
 
     // confirm that the selector shows the error
@@ -76,12 +76,12 @@ describe("Detect errors in config", () => {
     cy.get(".quick-input-widget").should("be.visible");
     cy.get(".quick-input-titlebar").should("have.text", "Select Deployment");
 
-    // Wait for deployment list to populate before searching for specific item
-    cy.get(".quick-input-widget .quick-input-list-row").should("exist");
-
-    // select our error case
+    // select our error case (retry until the specific item appears)
     cy.get(".quick-input-widget")
-      .contains("Unknown Title Due to Missing Config fastapi-simple-DHJL")
+      .contains("Unknown Title Due to Missing Config fastapi-simple-DHJL", {
+        timeout: 20000,
+      })
+      .should("be.visible")
       .click();
 
     // confirm that the selector shows the error
