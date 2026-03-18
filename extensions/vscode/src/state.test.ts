@@ -437,34 +437,22 @@ describe("PublisherState", () => {
   });
 
   describe("refreshCredentials", () => {
-    test("Calls to fetch credentials and stores to state", async () => {
+    test("populates credentials from CredentialsService", async () => {
       const fakeCredsFetch = credentialFactory.buildList(3);
       mockCredentialsServiceList.mockResolvedValue(fakeCredsFetch);
 
       const { mockContext } = mkExtensionContextStateMock({});
       const publisherState = new PublisherState(mockContext);
 
-      // Creds are empty initially
       expect(publisherState.credentials).toEqual([]);
-
-      // Populated with service results
-      await publisherState.refreshCredentials();
-      expect(publisherState.credentials).toEqual(fakeCredsFetch);
-    });
-
-    test("uses CredentialsService.list() instead of Go API", async () => {
-      const fakeCredsFetch = credentialFactory.buildList(2);
-      mockCredentialsServiceList.mockResolvedValue(fakeCredsFetch);
-
-      const { mockContext } = mkExtensionContextStateMock({});
-      const publisherState = new PublisherState(mockContext);
 
       await publisherState.refreshCredentials();
       expect(mockCredentialsServiceList).toHaveBeenCalled();
+      expect(publisherState.credentials).toEqual(fakeCredsFetch);
     });
 
     describe("errors", () => {
-      test("service error - shows error message", async () => {
+      test("shows error message on failure", async () => {
         mockCredentialsServiceList.mockRejectedValueOnce(
           new Error("storage failure"),
         );
@@ -486,7 +474,7 @@ describe("PublisherState", () => {
   });
 
   describe("resetCredentials", () => {
-    test("calls to reset credentials and shows a warning", async () => {
+    test("clears credentials and shows a warning", async () => {
       mockCredentialsServiceReset.mockResolvedValue(undefined);
 
       const { mockContext } = mkExtensionContextStateMock({});
@@ -495,25 +483,14 @@ describe("PublisherState", () => {
       publisherState.credentials = credentialFactory.buildList(3);
       await publisherState.resetCredentials();
 
+      expect(mockCredentialsServiceReset).toHaveBeenCalled();
       expect(publisherState.credentials).toEqual([]);
-
-      // Warning message is called
       expect(window.showWarningMessage).toHaveBeenCalledWith(
         "Credentials have been reset.",
       );
     });
 
-    test("uses CredentialsService.reset() instead of Go API", async () => {
-      mockCredentialsServiceReset.mockResolvedValue(undefined);
-
-      const { mockContext } = mkExtensionContextStateMock({});
-      const publisherState = new PublisherState(mockContext);
-
-      await publisherState.resetCredentials();
-      expect(mockCredentialsServiceReset).toHaveBeenCalled();
-    });
-
-    test("on service error - shows message", async () => {
+    test("shows error message on failure", async () => {
       mockCredentialsServiceReset.mockRejectedValueOnce(
         new Error("terrible, could not reset"),
       );
