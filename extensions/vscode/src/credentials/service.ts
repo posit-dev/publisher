@@ -5,7 +5,13 @@ import { randomUUID } from "crypto";
 
 import { Credential } from "src/api/types/credentials";
 import { ServerType } from "src/api/types/contentRecords";
-import { getAllCredentials, syncAllCredentials } from "./storage";
+import {
+  getAllCredentials,
+  getCredential,
+  storeCredential,
+  deleteCredential,
+  deleteAllCredentials,
+} from "./storage";
 import { normalizeServerURL, isConnectLike } from "src/utils/serverUrl";
 import {
   CredentialNotFoundError,
@@ -39,8 +45,7 @@ export class CredentialsService {
   }
 
   async get(guid: string): Promise<Credential> {
-    const all = await this.list();
-    const cred = all.find((c) => c.guid === guid);
+    const cred = await getCredential(this.secrets, guid);
     if (!cred) {
       throw new CredentialNotFoundError(guid);
     }
@@ -132,24 +137,21 @@ export class CredentialsService {
       this.conflictCheck(c, cred);
     }
 
-    existing.push(cred);
-    await syncAllCredentials(this.secrets, existing);
+    await storeCredential(this.secrets, cred);
     return cred;
   }
 
   async delete(guid: string): Promise<void> {
-    const all = await this.list();
-    const index = all.findIndex((c) => c.guid === guid);
-    if (index === -1) {
+    const cred = await getCredential(this.secrets, guid);
+    if (!cred) {
       throw new CredentialNotFoundError(guid);
     }
-    all.splice(index, 1);
-    await syncAllCredentials(this.secrets, all);
+    await deleteCredential(this.secrets, guid);
   }
 
   async reset(): Promise<void> {
     logger.warn("Resetting all credentials");
-    await syncAllCredentials(this.secrets, []);
+    await deleteAllCredentials(this.secrets);
   }
 
   private conflictCheck(existing: Credential, newCred: Credential): void {

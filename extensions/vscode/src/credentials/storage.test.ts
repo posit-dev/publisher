@@ -5,7 +5,10 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 import { credentialFactory } from "src/test/unit-test-utils/factories";
 import { mockSecretStorage } from "src/test/unit-test-utils/vscode-mocks";
 import {
-  syncAllCredentials,
+  storeCredential,
+  getCredential,
+  deleteCredential,
+  deleteAllCredentials,
   getAllCredentials,
   parseCredentialRecord,
 } from "./storage";
@@ -73,77 +76,105 @@ describe("credentialSecretStorage", () => {
     });
   });
 
-  describe("syncAllCredentials", () => {
-    test("stores all credentials with versioned envelope", async () => {
-      const creds = credentialFactory.buildList(2);
-      await syncAllCredentials(secrets, creds);
+  describe("storeCredential", () => {
+    test("stores a credential with versioned envelope", async () => {
+      const cred = credentialFactory.build();
+      await storeCredential(secrets, cred);
 
-      expect(secrets.store).toHaveBeenCalledTimes(2);
-      for (const cred of creds) {
-        expect(secrets.store).toHaveBeenCalledWith(
-          `credential:${cred.guid}`,
-          JSON.stringify({ version: 1, credential: cred }),
-        );
-      }
-    });
-
-    test("removes stale credentials", async () => {
-      // Pre-populate with a credential that won't be in the new list
-      await secrets.store(
-        "credential:old-guid",
-        JSON.stringify({
-          version: 1,
-          credential: credentialFactory.build({ guid: "old-guid" }),
-        }),
+      expect(secrets.store).toHaveBeenCalledWith(
+        `credential:${cred.guid}`,
+        JSON.stringify({ version: 1, credential: cred }),
       );
-      secrets.store.mockClear();
-
-      const creds = credentialFactory.buildList(1);
-      await syncAllCredentials(secrets, creds);
-
-      expect(secrets.delete).toHaveBeenCalledWith("credential:old-guid");
     });
 
-    test("does not remove non-credential keys", async () => {
-      await secrets.store("other-key", "some-value");
-      secrets.store.mockClear();
+    test("overwrites an existing credential with the same GUID", async () => {
+      const cred = credentialFactory.build();
+      await storeCredential(secrets, cred);
 
-      await syncAllCredentials(secrets, []);
+      const updated = { ...cred, name: "Updated Name" };
+      await storeCredential(secrets, updated);
+
+      const result = await getCredential(secrets, cred.guid);
+      expect(result?.name).toBe("Updated Name");
+    });
+  });
+
+  describe("getCredential", () => {
+    test("returns a stored credential by GUID", async () => {
+      const cred = credentialFactory.build();
+      await storeCredential(secrets, cred);
+
+      const result = await getCredential(secrets, cred.guid);
+      expect(result).toEqual(cred);
+    });
+
+    test("returns undefined for non-existent GUID", async () => {
+      const result = await getCredential(secrets, "nonexistent");
+      expect(result).toBeUndefined();
+    });
+
+    test("returns undefined for malformed record", async () => {
+      await secrets.store("credential:bad-guid", "not valid json");
+
+      const result = await getCredential(secrets, "bad-guid");
+      expect(result).toBeUndefined();
+    });
+  });
+
+  describe("deleteCredential", () => {
+    test("deletes a credential by GUID", async () => {
+      const cred = credentialFactory.build();
+      await storeCredential(secrets, cred);
+
+      await deleteCredential(secrets, cred.guid);
+
+      const result = await getCredential(secrets, cred.guid);
+      expect(result).toBeUndefined();
+    });
+
+    test("does not throw when deleting non-existent GUID", async () => {
+      await deleteCredential(secrets, "nonexistent");
+      expect(secrets.delete).toHaveBeenCalledWith("credential:nonexistent");
+    });
+  });
+
+  describe("deleteAllCredentials", () => {
+    test("deletes all credential keys", async () => {
+      const creds = credentialFactory.buildList(3);
+      for (const cred of creds) {
+        await storeCredential(secrets, cred);
+      }
+
+      await deleteAllCredentials(secrets);
+
+      const result = await getAllCredentials(secrets);
+      expect(result).toEqual([]);
+    });
+
+    test("does not delete non-credential keys", async () => {
+      await secrets.store("other-key", "some-value");
+      const cred = credentialFactory.build();
+      await storeCredential(secrets, cred);
+
+      await deleteAllCredentials(secrets);
 
       expect(secrets.delete).not.toHaveBeenCalledWith("other-key");
+      const json = await secrets.get("other-key");
+      expect(json).toBe("some-value");
     });
 
-    test("is idempotent - running twice produces same result", async () => {
-      const creds = credentialFactory.buildList(2);
-      await syncAllCredentials(secrets, creds);
-      await syncAllCredentials(secrets, creds);
-
-      // Both credentials should still be stored
-      const allKeys = await secrets.keys();
-      const credKeys = allKeys.filter((k: string) =>
-        k.startsWith("credential:"),
-      );
-      expect(credKeys).toHaveLength(2);
-    });
-
-    test("handles empty credential list", async () => {
-      await syncAllCredentials(secrets, []);
-
-      expect(secrets.store).not.toHaveBeenCalled();
-    });
-
-    test("does not throw when SecretStorage errors", async () => {
-      secrets.store.mockRejectedValueOnce(new Error("storage failure"));
-
-      // Should not throw
-      await syncAllCredentials(secrets, credentialFactory.buildList(1));
+    test("handles empty storage", async () => {
+      await deleteAllCredentials(secrets);
+      expect(secrets.delete).not.toHaveBeenCalled();
     });
   });
 
   describe("getAllCredentials", () => {
     test("returns all valid credentials", async () => {
       const creds = credentialFactory.buildList(2);
-      await syncAllCredentials(secrets, creds);
+      for (const cred of creds) {
+        await storeCredential(secrets, cred);
+      }
 
       const result = await getAllCredentials(secrets);
       expect(result).toEqual(creds);
@@ -151,10 +182,7 @@ describe("credentialSecretStorage", () => {
 
     test("skips malformed entries", async () => {
       const validCred = credentialFactory.build();
-      await secrets.store(
-        `credential:${validCred.guid}`,
-        JSON.stringify({ version: 1, credential: validCred }),
-      );
+      await storeCredential(secrets, validCred);
       // Store a malformed entry
       await secrets.store("credential:bad-guid", "not valid json");
 

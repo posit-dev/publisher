@@ -67,40 +67,56 @@ export function parseCredentialRecord(json: string): Credential | undefined {
 }
 
 /**
- * Idempotent full sync of credentials to SecretStorage.
- * Stores each credential in a versioned envelope and removes stale entries.
+ * Store a single credential in SecretStorage.
  */
-export async function syncAllCredentials(
+export async function storeCredential(
   secrets: SecretStorage,
-  credentials: Credential[],
+  credential: Credential,
 ): Promise<void> {
-  try {
-    const currentGuids = new Set(credentials.map((c) => c.guid));
+  const key = `${KEY_PREFIX}${credential.guid}`;
+  const envelope: CredentialEnvelope = {
+    version: CURRENT_VERSION,
+    credential,
+  };
+  await secrets.store(key, JSON.stringify(envelope));
+}
 
-    // Store each credential
-    for (const cred of credentials) {
-      const key = `${KEY_PREFIX}${cred.guid}`;
-      const envelope: CredentialEnvelope = {
-        version: CURRENT_VERSION,
-        credential: cred,
-      };
-      await secrets.store(key, JSON.stringify(envelope));
+/**
+ * Read a single credential from SecretStorage by GUID.
+ * Returns undefined if the key doesn't exist or the record is malformed.
+ */
+export async function getCredential(
+  secrets: SecretStorage,
+  guid: string,
+): Promise<Credential | undefined> {
+  const json = await secrets.get(`${KEY_PREFIX}${guid}`);
+  if (json === undefined) {
+    return undefined;
+  }
+  return parseCredentialRecord(json);
+}
+
+/**
+ * Delete a single credential from SecretStorage by GUID.
+ */
+export async function deleteCredential(
+  secrets: SecretStorage,
+  guid: string,
+): Promise<void> {
+  await secrets.delete(`${KEY_PREFIX}${guid}`);
+}
+
+/**
+ * Delete all credential entries from SecretStorage.
+ */
+export async function deleteAllCredentials(
+  secrets: SecretStorage,
+): Promise<void> {
+  const allKeys = await secrets.keys();
+  for (const key of allKeys) {
+    if (key.startsWith(KEY_PREFIX)) {
+      await secrets.delete(key);
     }
-
-    // Remove stale entries
-    const allKeys = await secrets.keys();
-    for (const key of allKeys) {
-      if (key.startsWith(KEY_PREFIX)) {
-        const guid = key.slice(KEY_PREFIX.length);
-        if (!currentGuids.has(guid)) {
-          await secrets.delete(key);
-        }
-      }
-    }
-
-    logger.info(`Synced ${credentials.length} credentials to SecretStorage`);
-  } catch (err) {
-    logger.warn(`Failed to sync credentials to SecretStorage: ${err}`);
   }
 }
 

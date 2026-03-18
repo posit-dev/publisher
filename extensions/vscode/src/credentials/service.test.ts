@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 import { credentialFactory } from "src/test/unit-test-utils/factories";
 import { mockSecretStorage } from "src/test/unit-test-utils/vscode-mocks";
 import { ServerType } from "src/api/types/contentRecords";
-import { syncAllCredentials } from "./storage";
+import { storeCredential } from "./storage";
 import { CredentialsService, CreateCredentialInput } from "./service";
 import {
   CredentialNotFoundError,
@@ -49,7 +49,9 @@ describe("CredentialsService", () => {
   describe("list", () => {
     test("returns all credentials from storage", async () => {
       const creds = credentialFactory.buildList(2);
-      await syncAllCredentials(secrets, creds);
+      for (const c of creds) {
+        await storeCredential(secrets, c);
+      }
 
       const result = await service.list();
       expect(result).toEqual(creds);
@@ -64,7 +66,9 @@ describe("CredentialsService", () => {
   describe("get", () => {
     test("returns credential by GUID", async () => {
       const creds = credentialFactory.buildList(2);
-      await syncAllCredentials(secrets, creds);
+      for (const c of creds) {
+        await storeCredential(secrets, c);
+      }
 
       const result = await service.get(creds[0]!.guid);
       expect(result).toEqual(creds[0]);
@@ -162,7 +166,7 @@ describe("CredentialsService", () => {
 
     test("throws CredentialNameCollisionError on duplicate name", async () => {
       const existing = credentialFactory.build({ name: "Duplicate" });
-      await syncAllCredentials(secrets, [existing]);
+      await storeCredential(secrets, existing);
 
       const input: CreateCredentialInput = {
         name: "Duplicate",
@@ -181,7 +185,7 @@ describe("CredentialsService", () => {
         url: "https://connect.example.com/",
         serverType: ServerType.CONNECT,
       });
-      await syncAllCredentials(secrets, [existing]);
+      await storeCredential(secrets, existing);
 
       const input: CreateCredentialInput = {
         name: "Different Name",
@@ -201,7 +205,7 @@ describe("CredentialsService", () => {
         accountId: "acct-123",
         cloudEnvironment: "production",
       });
-      await syncAllCredentials(secrets, [existing]);
+      await storeCredential(secrets, existing);
 
       const input: CreateCredentialInput = {
         name: "Different Name",
@@ -261,7 +265,9 @@ describe("CredentialsService", () => {
   describe("delete", () => {
     test("removes credential by GUID", async () => {
       const creds = credentialFactory.buildList(2);
-      await syncAllCredentials(secrets, creds);
+      for (const c of creds) {
+        await storeCredential(secrets, c);
+      }
 
       await service.delete(creds[0]!.guid);
 
@@ -280,7 +286,9 @@ describe("CredentialsService", () => {
   describe("reset", () => {
     test("clears all credentials", async () => {
       const creds = credentialFactory.buildList(3);
-      await syncAllCredentials(secrets, creds);
+      for (const c of creds) {
+        await storeCredential(secrets, c);
+      }
 
       await service.reset();
 
