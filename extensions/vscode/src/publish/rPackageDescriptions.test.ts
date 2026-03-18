@@ -52,10 +52,18 @@ function assertPackageMatches(
     expected.Repository,
   );
   for (const [key, value] of Object.entries(expected.description)) {
-    expect(
-      actual.description[key],
-      `description.${key} mismatch for ${pkgName}`,
-    ).toBe(value);
+    // Go maps can't distinguish absent from empty string; treat "" as equivalent to undefined
+    if (value === "") {
+      expect(
+        actual.description[key] ?? "",
+        `description.${key} mismatch for ${pkgName}`,
+      ).toBe("");
+    } else {
+      expect(
+        actual.description[key],
+        `description.${key} mismatch for ${pkgName}`,
+      ).toBe(value);
+    }
   }
 }
 
@@ -75,6 +83,16 @@ describe("lockfileToManifestPackages", () => {
     const { lockfile, expected } = await loadFixture("bioc_project");
     const result = lockfileToManifestPackages(lockfile);
 
+    for (const [pkgName, expectedPkg] of Object.entries(expected)) {
+      assertPackageMatches(pkgName, expectedPkg, getPackage(result, pkgName));
+    }
+  });
+
+  test("sample project (78-package golden file from Go)", async () => {
+    const { lockfile, expected } = await loadFixture("sample_project");
+    const result = lockfileToManifestPackages(lockfile);
+
+    expect(Object.keys(result).length).toBe(Object.keys(expected).length);
     for (const [pkgName, expectedPkg] of Object.entries(expected)) {
       assertPackageMatches(pkgName, expectedPkg, getPackage(result, pkgName));
     }
