@@ -1,7 +1,6 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import { window, ProgressLocation } from "vscode";
-import { useApi } from "src/api";
 import { HostToWebviewMessageType } from "src/types/messages/hostToWebviewMessages";
 import { WebviewConduit } from "src/utils/webviewConduit";
 import {
@@ -23,9 +22,7 @@ export const renderQuartoContent = async (
         title: "Rendering Quarto content",
       },
       async () => {
-        const api = await useApi();
         const quartoHelper = new QuartoProjectHelper(
-          api.files,
           sourceEntrypoint,
           renderedEntrypoint,
           projectDir,

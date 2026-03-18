@@ -21,75 +21,10 @@ vi.mock("./window", () => {
   };
 });
 
-const quartoProjFiles = () => [
-  { id: "index.qmd", files: [] },
-  { id: "about.qmd", files: [] },
-  { id: "gallery.qmd", files: [] },
-  { id: "some-data.csv", files: [] },
-  { id: "README.md", files: [] },
-];
-
-const multiLevelProj = () => [
-  { id: "some-data.csv", files: [] },
-  { id: "README.md", files: [] },
-  {
-    id: "march-reports",
-    files: [
-      { id: "documentation.html" },
-      {
-        id: "src",
-        files: [
-          {
-            id: "assets",
-            files: [
-              { id: "image.png" },
-              { id: "styles.css" },
-              { id: "whatever.js" },
-            ],
-          },
-          { id: "index.qmd", files: [] },
-          { id: "about.qmd", files: [] },
-          { id: "gallery.qmd", files: [] },
-        ],
-      },
-      { id: "scripts.sh" },
-    ],
-  },
-];
-
-const multiLevelProjWithQuartoYml = () => {
-  const tree = multiLevelProj();
-  const level2 = tree[2];
-  const level3 = level2?.files?.[1];
-  if (level3?.files) {
-    level3.files.push({ id: "_quarto.yml", files: [] });
-  }
-  return tree;
-};
-
-const singleLevelProjectDir = {
-  withQuartoYml: [...quartoProjFiles(), { id: "_quarto.yml", files: [] }],
-  noQuartoYml: quartoProjFiles(),
-};
-
-const multiLevelProjectDir = {
-  withQuartoYml: multiLevelProjWithQuartoYml(),
-  noQuartoYml: multiLevelProj(),
-};
-
-const filesGetFn = vi.fn();
-filesGetFn.mockResolvedValue({
-  data: {
-    id: ".",
-    files: singleLevelProjectDir.withQuartoYml,
-  },
-});
-
-const mockFilesApi = {
-  get() {
-    return filesGetFn();
-  },
-};
+const mockFileExistsAt = vi.fn();
+vi.mock("../interpreters/fsUtils", () => ({
+  fileExistsAt: (...args: unknown[]) => mockFileExistsAt(...args),
+}));
 
 describe("QuartoProjectHelper", () => {
   beforeEach(() => {
@@ -98,54 +33,29 @@ describe("QuartoProjectHelper", () => {
 
   describe("one level workspace", () => {
     test("not a project, _quarto.yml does not exist, calls to render document", async () => {
-      filesGetFn.mockResolvedValue({
-        data: {
-          id: ".",
-          files: singleLevelProjectDir.noQuartoYml,
-        },
-      });
+      mockFileExistsAt.mockResolvedValue(false);
 
-      const helper = new QuartoProjectHelper(
-        mockFilesApi,
-        "index.qmd",
-        "index.html",
-        ".",
-      );
+      const helper = new QuartoProjectHelper("index.qmd", "index.html", ".");
       await helper.render();
       expect(mockRenderCmd).toHaveBeenCalledWith(
-        "quarto render index.qmd --to html",
+        `quarto render "${path.join(".", "index.qmd")}" --to html`,
       );
     });
 
     test("it is a project, _quarto.yml present, renders as a project (uses dir)", async () => {
-      filesGetFn.mockResolvedValue({
-        data: {
-          id: ".",
-          files: singleLevelProjectDir.withQuartoYml,
-        },
-      });
+      mockFileExistsAt.mockResolvedValue(true);
 
-      const helper = new QuartoProjectHelper(
-        mockFilesApi,
-        "index.qmd",
-        "index.html",
-        ".",
-      );
+      const helper = new QuartoProjectHelper("index.qmd", "index.html", ".");
       await helper.render();
-      expect(mockRenderCmd).toHaveBeenCalledWith("quarto render . --to html");
+      expect(mockRenderCmd).toHaveBeenCalledWith(`quarto render "." --to html`);
     });
 
     test("source is _quarto.yml, renders as a project (uses dir)", async () => {
-      const helper = new QuartoProjectHelper(
-        mockFilesApi,
-        "_quarto.yml",
-        "index.html",
-        ".",
-      );
+      const helper = new QuartoProjectHelper("_quarto.yml", "index.html", ".");
       await helper.render();
       // No need to check on files if source is already the .yml
-      expect(filesGetFn).not.toHaveBeenCalled();
-      expect(mockRenderCmd).toHaveBeenCalledWith("quarto render . --to html");
+      expect(mockFileExistsAt).not.toHaveBeenCalled();
+      expect(mockRenderCmd).toHaveBeenCalledWith(`quarto render "." --to html`);
     });
   });
 
@@ -154,78 +64,54 @@ describe("QuartoProjectHelper", () => {
     const sourceEntrypoint = "index.qmd";
 
     test("not a project, _quarto.yml does not exist, calls to render document", async () => {
-      filesGetFn.mockResolvedValue({
-        data: {
-          id: ".",
-          files: multiLevelProjectDir.noQuartoYml,
-        },
-      });
+      mockFileExistsAt.mockResolvedValue(false);
 
       const helper = new QuartoProjectHelper(
-        mockFilesApi,
         sourceEntrypoint,
         "index.html",
         projectDir,
       );
       await helper.render();
       expect(mockRenderCmd).toHaveBeenCalledWith(
-        `quarto render ${path.join(projectDir, sourceEntrypoint)} --to html`,
+        `quarto render "${path.join(projectDir, sourceEntrypoint)}" --to html`,
       );
     });
 
     test("it is a project, _quarto.yml present, renders as a project (uses dir)", async () => {
-      filesGetFn.mockResolvedValue({
-        data: {
-          id: ".",
-          files: multiLevelProjectDir.withQuartoYml,
-        },
-      });
+      mockFileExistsAt.mockResolvedValue(true);
 
       const helper = new QuartoProjectHelper(
-        mockFilesApi,
         sourceEntrypoint,
         "index.html",
         projectDir,
       );
       await helper.render();
       expect(mockRenderCmd).toHaveBeenCalledWith(
-        `quarto render ${projectDir} --to html`,
+        `quarto render "${projectDir}" --to html`,
       );
     });
 
     test("source is _quarto.yml, renders as a project (uses dir)", async () => {
       const helper = new QuartoProjectHelper(
-        mockFilesApi,
         "_quarto.yml",
         "index.html",
         projectDir,
       );
       await helper.render();
       // No need to check on files if source is already the .yml
-      expect(filesGetFn).not.toHaveBeenCalled();
+      expect(mockFileExistsAt).not.toHaveBeenCalled();
       expect(mockRenderCmd).toHaveBeenCalledWith(
-        `quarto render ${projectDir} --to html`,
+        `quarto render "${projectDir}" --to html`,
       );
     });
   });
 
   describe("errors", () => {
     test("there is no quarto binary", async () => {
-      filesGetFn.mockResolvedValue({
-        data: {
-          id: ".",
-          files: singleLevelProjectDir.noQuartoYml,
-        },
-      });
-
+      mockFileExistsAt.mockResolvedValue(false);
       mockQuartoCheck.mockRejectedValueOnce(new Error("oops"));
 
-      const helper = new QuartoProjectHelper(
-        mockFilesApi,
-        "index.qmd",
-        "index.html",
-        ".",
-      );
+      const helper = new QuartoProjectHelper("index.qmd", "index.html", ".");
 
       try {
         await helper.render();
@@ -235,24 +121,13 @@ describe("QuartoProjectHelper", () => {
     });
 
     test("could not render", async () => {
-      filesGetFn.mockResolvedValue({
-        data: {
-          id: ".",
-          files: singleLevelProjectDir.noQuartoYml,
-        },
-      });
-
+      mockFileExistsAt.mockResolvedValue(false);
       mockRenderCmd.mockRejectedValueOnce(
         new Error("Quarto cannot render lettuce"),
       );
       mockRenderCmd.mockRejectedValueOnce(1);
 
-      const helper = new QuartoProjectHelper(
-        mockFilesApi,
-        "index.qmd",
-        "index.html",
-        ".",
-      );
+      const helper = new QuartoProjectHelper("index.qmd", "index.html", ".");
 
       try {
         await helper.render();
