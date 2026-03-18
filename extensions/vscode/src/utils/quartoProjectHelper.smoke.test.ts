@@ -46,7 +46,7 @@ afterEach(() => {
 });
 
 // --------------------------------------------------------------------------
-// Option 1: Real filesystem integration for isQuartoYmlPresent
+// Real filesystem integration for isQuartoYmlPresent
 // --------------------------------------------------------------------------
 describe("QuartoProjectHelper - filesystem integration", () => {
   test("isQuartoYmlPresent returns true when _quarto.yml exists in projectDir", async () => {
@@ -71,7 +71,7 @@ describe("QuartoProjectHelper - filesystem integration", () => {
 });
 
 // --------------------------------------------------------------------------
-// Option 2: Real Quarto rendering (skipped if Quarto is not installed)
+// Real Quarto rendering (skipped if Quarto is not installed)
 // --------------------------------------------------------------------------
 describe.skipIf(!quartoAvailable)(
   "QuartoProjectHelper - real Quarto render",
@@ -133,7 +133,7 @@ Hello project
 );
 
 // --------------------------------------------------------------------------
-// Option 3: Command construction with real filesystem
+// Command construction with real filesystem
 // --------------------------------------------------------------------------
 describe("QuartoProjectHelper - command construction smoke test", () => {
   let capturedCommand: string | undefined;
