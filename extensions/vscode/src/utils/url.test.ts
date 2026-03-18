@@ -10,7 +10,7 @@ import {
   getListOfPossibleURLs,
   discoverServerURL,
 } from "./url";
-import { ServerType } from "src/api/types/contentRecords";
+import { ServerType } from "../api/types/contentRecords";
 
 describe("formatURL", () => {
   test("returns URL unchanged if it has a scheme", () => {

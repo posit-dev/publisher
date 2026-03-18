@@ -2,7 +2,7 @@
 
 import config from "../../src/config";
 import { extractGUID } from "./guid";
-import { ServerType } from "src/api/types/contentRecords";
+import { ServerType } from "../api/types/contentRecords";
 
 export const formatURL = (input: string): string => {
   // check if the URL starts with a scheme
