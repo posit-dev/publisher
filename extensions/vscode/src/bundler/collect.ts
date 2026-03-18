@@ -9,7 +9,7 @@ import { FileEntry } from "./types";
 
 // Standard exclusions matching the Go bundler's walker.go.
 // These are always appended after user patterns, so they take precedence.
-const STANDARD_EXCLUSIONS = [
+export const STANDARD_EXCLUSIONS = [
   // From rsconnect-python
   "!.Rproj.user/",
   "!.git/",
