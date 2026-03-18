@@ -65,13 +65,13 @@ export class QuartoProjectHelper {
   }
 
   renderProject() {
-    const command = `quarto render ${this.projectDir} --to html`;
+    const command = `quarto render "${this.projectDir}" --to html`;
     return runTerminalCommand(command);
   }
 
   renderDocument() {
     const fullEntryPath = path.join(this.projectDir, this.source);
-    const command = `quarto render ${fullEntryPath} --to html`;
+    const command = `quarto render "${fullEntryPath}" --to html`;
     return runTerminalCommand(command);
   }
 }
