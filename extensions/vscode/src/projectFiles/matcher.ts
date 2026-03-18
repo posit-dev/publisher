@@ -1,7 +1,11 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
 import * as path from "path";
+import picomatch from "picomatch";
 import { FileMatchSource } from "../api/types/files";
+
+// Re-export STANDARD_EXCLUSIONS from the bundler so existing imports don't break
+export { STANDARD_EXCLUSIONS } from "../bundler";
 
 export type PatternInfo = {
   source: FileMatchSource;
@@ -11,198 +15,114 @@ export type PatternInfo = {
   filePath: string;
 };
 
-/**
- * Standard exclusion patterns applied to all file listings.
- * Ported from Go's internal/bundles/matcher/walker.go StandardExclusions.
- */
-export const STANDARD_EXCLUSIONS: string[] = [
-  // From rsconnect-python
-  "!.Rproj.user/",
-  "!.git/",
-  "!.svn/",
-  "!__pycache__/",
-  "!packrat/",
-  "!rsconnect-python/",
-  "!rsconnect/",
-
-  // From rsconnect
-  "!.DS_Store",
-  "!.Rhistory",
-  "!.quarto/",
-  "!packrat/",
-  "!*.Rproj",
-  "!.rscignore",
-  // Less precise than rsconnect, which checks for a
-  // matching Rmd filename in the same directory.
-  "!*_cache/",
-
-  // Other
-  "!.ipynb_checkpoints/",
-
-  // Exclude existing manifest.json; we will create one.
-  "!manifest.json",
-
-  // renv library cannot be included; Connect doesn't need it
-  // and it's probably the wrong platform anyway.
-  "!renv/library",
-  "!renv/sandbox",
-  "!renv/staging",
-
-  // node_modules shouldn't be deployed and can be very large
-  "!node_modules/",
-];
-
 type CompiledPattern = {
   source: FileMatchSource;
   pattern: string;
   exclude: boolean;
   fileName: string;
   filePath: string;
-  regex: RegExp;
+  matches: (relativePath: string, isDirectory: boolean) => boolean;
 };
 
-function escapeRegexCharsInPath(s: string): string {
-  // eslint-disable-next-line no-useless-escape
-  return s.replace(/[.\\\|+{}()<>^$\[\]?*]/g, "\\$&");
-}
-
-function escapeRegexCharsInPattern(s: string): string {
-  // Escape regex-syntax characters that are NOT gitignore specials.
-  // Gitignore specials: * ? [ ]  — leave those alone.
-  // eslint-disable-next-line no-useless-escape
-  return s.replace(/[.\\\|+{}()<>^$]/g, "\\$&");
-}
-
-function compilePattern(
-  line: string,
-  baseDir: string,
-  filePath: string,
-): CompiledPattern | null {
-  let inverted = false;
-
-  line = line.trim();
-  let rawRegex = line;
-
-  if (line === "") {
-    return null;
-  }
-  if (line[0] === "#") {
-    return null;
-  }
-  if (line[0] === "!") {
-    inverted = true;
-    rawRegex = line.substring(1);
-  }
-  if (line.startsWith("\\!") || line.startsWith("\\#")) {
-    rawRegex = line.substring(1);
-  }
-
-  rawRegex = escapeRegexCharsInPattern(rawRegex);
-
-  // Check if rooted: if `/` appears in beginning or middle (not just the end)
-  const isRooted = rawRegex.substring(0, rawRegex.length - 1).includes("/");
-
-  let prefix = "";
-  if (rawRegex.startsWith("**/")) {
-    prefix = "((.*/)|)";
-    rawRegex = rawRegex.substring(3);
-  }
-
-  let suffix = "";
-  if (rawRegex.endsWith("/**") || rawRegex.endsWith("/")) {
-    suffix = "/.*";
-    const lastSlashIndex = rawRegex.lastIndexOf("/");
-    rawRegex = rawRegex.substring(0, lastSlashIndex);
-  } else {
-    suffix = "(/.*)?";
-  }
-
-  // Handle mid-pattern /**/
-  const placeholder = "$ANY_DIR_PLACEHOLDER$";
-  rawRegex = rawRegex.split("/**/").join(placeholder);
-
-  // * matches anything except a slash
-  rawRegex = rawRegex.split("*").join("([^/]*)");
-
-  // Restore /**/ placeholder
-  rawRegex = rawRegex.split(placeholder).join("/((.*/)|)");
-
-  // ? matches any one character except /
-  rawRegex = rawRegex.split("?").join("[^/]");
-
-  // Reassemble with prefix/suffix
-  rawRegex = prefix + rawRegex + suffix;
-
-  // Convert base dir to forward slashes for matching
-  const dirPath = escapeRegexCharsInPath(baseDir.split(path.sep).join("/"));
-
-  if (isRooted) {
-    // Strip leading slash from pattern to avoid double slash when joining.
-    // Go's path.Join normalizes this automatically.
-    const cleaned = rawRegex.startsWith("/") ? rawRegex.substring(1) : rawRegex;
-    rawRegex = dirPath + "/" + cleaned;
-  } else {
-    rawRegex = dirPath + "((/.*/)|/)" + rawRegex;
-  }
-
-  rawRegex = "^" + rawRegex + "$";
-
-  let regex: RegExp;
-  try {
-    regex = new RegExp(rawRegex);
-  } catch (err: unknown) {
-    const msg =
-      err instanceof Error ? err.message : "invalid regular expression";
-    throw new Error(
-      `invalid pattern in configuration 'files': "${line}" - ${msg}`,
-    );
-  }
-
-  const source =
-    filePath === "" ? FileMatchSource.BUILT_IN : FileMatchSource.FILE;
-  const fileName = filePath === "" ? "" : path.basename(filePath);
-
-  return {
-    source,
-    pattern: line,
-    exclude: inverted,
-    fileName,
-    filePath,
-    regex,
-  };
-}
-
 type MatchFile = {
+  baseDir: string;
   filePath: string;
   patterns: CompiledPattern[];
 };
+
+function parsePattern(
+  line: string,
+  source: FileMatchSource,
+  fileName: string,
+  filePath: string,
+): CompiledPattern | null {
+  const originalLine = line.trim();
+  let pat = originalLine;
+
+  if (pat === "" || pat[0] === "#") {
+    return null;
+  }
+
+  let exclude = false;
+  if (pat[0] === "!") {
+    exclude = true;
+    pat = pat.slice(1);
+  } else if (pat.startsWith("\\!") || pat.startsWith("\\#")) {
+    pat = pat.slice(1);
+  }
+
+  // A trailing slash means "directories only"; strip it for matching
+  let matchesDir = false;
+  if (pat.endsWith("/")) {
+    matchesDir = true;
+    pat = pat.slice(0, -1);
+  }
+
+  // Determine if pattern is "rooted" (should only match from the base).
+  // A pattern is rooted if it contains a `/` somewhere other than the end
+  // (which we already stripped). Leading `/` also roots it.
+  const strippedLeadingSlash = pat.startsWith("/") ? pat.slice(1) : pat;
+  const isRooted = strippedLeadingSlash.includes("/") || pat.startsWith("/");
+  const glob = strippedLeadingSlash;
+
+  const matchFn = picomatch(glob, {
+    dot: true,
+    // matchBase: when true, patterns without slashes match the basename
+    // at any depth. When false, they match the full relative path.
+    // Rooted patterns should match from the base (matchBase: false).
+    // Unrooted patterns without `/` should match at any depth (matchBase: true).
+    matchBase: !isRooted,
+  });
+
+  // Combined matcher that handles both direct and content matching.
+  // A pattern like "dir/" matches the directory itself AND everything inside it.
+  // A pattern like "app.py" matches the file AND (if it were a dir) its contents.
+  const matches = (relativePath: string, isDirectory: boolean): boolean => {
+    // Direct match: the path itself matches the pattern
+    if (matchFn(relativePath)) {
+      // If pattern had trailing slash, only match directories
+      return matchesDir ? isDirectory : true;
+    }
+
+    // Content match: check if any parent directory matches the pattern,
+    // meaning this path is inside a matching directory
+    const parts = relativePath.split("/");
+    for (let i = 1; i < parts.length; i++) {
+      if (matchFn(parts.slice(0, i).join("/"))) {
+        return true;
+      }
+    }
+
+    return false;
+  };
+
+  return {
+    source,
+    pattern: originalLine,
+    exclude,
+    fileName,
+    filePath,
+    matches,
+  };
+}
 
 function createMatchFile(
   baseDir: string,
   filePath: string,
   patternStrings: string[],
 ): MatchFile {
+  const source =
+    filePath === "" ? FileMatchSource.BUILT_IN : FileMatchSource.FILE;
+  const fileName = filePath === "" ? "" : path.basename(filePath);
+
   const patterns: CompiledPattern[] = [];
   for (const s of patternStrings) {
-    const compiled = compilePattern(s, baseDir, filePath);
+    const compiled = parsePattern(s, source, fileName, filePath);
     if (compiled !== null) {
       patterns.push(compiled);
     }
   }
-  return { filePath, patterns };
-}
-
-function matchFileAgainst(
-  matchFile: MatchFile,
-  filePath: string,
-): CompiledPattern | null {
-  let match: CompiledPattern | null = null;
-  for (const pattern of matchFile.patterns) {
-    if (pattern.regex.test(filePath)) {
-      match = pattern;
-    }
-  }
-  return match;
+  return { baseDir, filePath, patterns };
 }
 
 export class MatchList {
@@ -219,17 +139,19 @@ export class MatchList {
   }
 
   match(filePath: string, isDirectory: boolean): PatternInfo | null {
-    // Convert to forward slashes for matching
-    let matchPath = filePath.split(path.sep).join("/");
-    if (isDirectory) {
-      matchPath += "/";
-    }
-
     let result: CompiledPattern | null = null;
+
     for (const f of this.files) {
-      const m = matchFileAgainst(f, matchPath);
-      if (m !== null) {
-        result = m;
+      // Convert absolute path to relative, using forward slashes
+      const rel = path.relative(f.baseDir, filePath).split(path.sep).join("/");
+      if (rel === "" || rel.startsWith("..")) {
+        continue;
+      }
+
+      for (const pattern of f.patterns) {
+        if (pattern.matches(rel, isDirectory)) {
+          result = pattern;
+        }
       }
     }
 

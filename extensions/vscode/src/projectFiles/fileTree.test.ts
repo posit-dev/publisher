@@ -29,6 +29,8 @@ describe("buildFileTree", () => {
     expect(tree.files).toEqual([]);
     expect(tree.fileCount).toBe(0);
     expect(tree.size).toBe(0);
+    expect(tree.allIncluded).toBe(false);
+    expect(tree.allExcluded).toBe(false);
   });
 
   test("includes files matching patterns", async () => {

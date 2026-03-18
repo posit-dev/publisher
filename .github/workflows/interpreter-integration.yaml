@@ -72,5 +72,8 @@ jobs:
         if: matrix.r-version != ''
         with:
           r-version: ${{ matrix.r-version }}
+      - name: Install renv
+        if: matrix.r-version != ''
+        run: Rscript -e "install.packages('renv', repos = 'https://cloud.r-project.org')"
       - run: npm install
       - run: npm run test-integration-interpreters

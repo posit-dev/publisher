@@ -1,0 +1,290 @@
+name: CI Failure Analysis
+
+# This workflow analyzes CI failures on main branch using Claude
+# and posts the analysis to Slack.
+
+on:
+  workflow_run:
+    workflows: ["Main"]
+    types: [completed]
+    branches: [main]
+  # Manual trigger for testing
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "Failed workflow run ID to analyze (find with: gh run list --workflow=main.yaml --status=failure)"
+        required: true
+        type: string
+
+jobs:
+  analyze-failure:
+    # Run when CI fails or is cancelled on main, OR when manually triggered with a run_id.
+    # We include 'cancelled' because job timeouts are reported as cancelled, which taints
+    # the overall run conclusion even when other jobs genuinely failed.
+    if: ${{ github.event.workflow_run.conclusion == 'failure' || github.event.workflow_run.conclusion == 'cancelled' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+      id-token: write
+
+    steps:
+      - name: Check actor has write permission
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PERMISSION=$(gh api /repos/${{ github.repository }}/collaborators/${{ github.actor }}/permission --jq '.permission')
+          if [[ "$PERMISSION" != "admin" && "$PERMISSION" != "write" ]]; then
+            echo "::error::Actor ${{ github.actor }} has '$PERMISSION' permission, requires 'write' or 'admin'"
+            exit 1
+          fi
+          echo "Actor ${{ github.actor }} authorized with '$PERMISSION' permission"
+
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Get run info
+        id: get-logs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_ID: ${{ inputs.run_id || github.event.workflow_run.id }}
+        run: |
+          echo "Fetching run info for $RUN_ID..."
+
+          # Check if there are failed jobs (use gh run view to handle pagination;
+          # the jobs API returns max 100 per page, and CI runs can exceed that)
+          FAILED_COUNT=$(gh run view "$RUN_ID" --repo "${{ github.repository }}" --json jobs \
+            --jq '[.jobs[] | select(.conclusion == "failure")] | length')
+
+          if [ "$FAILED_COUNT" = "0" ]; then
+            echo "No failed jobs found (workflow may have been cancelled)"
+            echo "has_failures=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "has_failures=true" >> $GITHUB_OUTPUT
+
+          # Get run info
+          RUN_INFO=$(gh api "repos/${{ github.repository }}/actions/runs/$RUN_ID")
+          COMMIT_SHA=$(echo "$RUN_INFO" | jq -r '.head_sha')
+          RUN_URL=$(echo "$RUN_INFO" | jq -r '.html_url')
+          BRANCH=$(echo "$RUN_INFO" | jq -r '.head_branch')
+
+          # Get PR number if this is a PR build
+          PR_NUMBER=$(echo "$RUN_INFO" | jq -r '.pull_requests[0].number // empty')
+          if [ -z "$PR_NUMBER" ]; then
+            # Try to find PR by branch name
+            PR_NUMBER=$(gh pr list --head "$BRANCH" --json number --jq '.[0].number // empty' 2>/dev/null || echo "")
+          fi
+
+          COMMIT_MSG=$(gh api "repos/${{ github.repository }}/commits/$COMMIT_SHA" --jq '.commit.message' | head -1)
+          echo "commit_sha=$COMMIT_SHA" >> $GITHUB_OUTPUT
+          echo "commit_msg=$COMMIT_MSG" >> $GITHUB_OUTPUT
+          echo "run_url=$RUN_URL" >> $GITHUB_OUTPUT
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+          echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+          echo "is_main=$([[ "$BRANCH" == "main" ]] && echo "true" || echo "false")" >> $GITHUB_OUTPUT
+
+      - name: Sanitize role session name
+        if: steps.get-logs.outputs.has_failures == 'true'
+        id: session-name
+        env:
+          TRIGGERING_ACTOR: ${{ github.triggering_actor }}
+        run: |
+          echo "value=$(echo "${TRIGGERING_ACTOR}" | sed 's/[^a-zA-Z0-9_+=,.@-]/_/g')" >> "$GITHUB_OUTPUT"
+
+      - name: Configure AWS credentials
+        if: steps.get-logs.outputs.has_failures == 'true'
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.CLAUDE_CODE_AWS_ROLE_ARN }}
+          role-session-name: ${{ steps.session-name.outputs.value }}
+          aws-region: us-east-2
+
+      - name: Analyze failure with Claude
+        if: steps.get-logs.outputs.has_failures == 'true'
+        id: analyze
+        uses: anthropics/claude-code-action@v1
+        with:
+          use_bedrock: true
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          prompt: |
+            First, read the agent instructions at .claude/agents/ci-failure-analysis.md and follow them exactly.
+
+            Then analyze the CI failure for:
+            - Repository: ${{ github.repository }}
+            - Run ID: ${{ inputs.run_id || github.event.workflow_run.id }}
+            - Run URL: ${{ steps.get-logs.outputs.run_url }}
+            - Commit: ${{ steps.get-logs.outputs.commit_sha }}
+            - Commit message: ${{ steps.get-logs.outputs.commit_msg }}
+
+            Remember: Your final output MUST be ONLY the JSON object as specified in the agent file.
+          claude_args: |
+            --model us.anthropic.claude-opus-4-5-20251101-v1:0
+            --fallback-model us.anthropic.claude-sonnet-4-5-20241022-v2:0
+            --allowedTools Read,Bash
+            --json-schema '{"type":"object","required":["category","confidence","summary","details","recommendation","affected_component"],"properties":{"category":{"type":"string","enum":["infrastructure","flaky_test","code_issue","unknown"]},"confidence":{"type":"string","enum":["high","medium","low"]},"summary":{"type":"string"},"details":{"type":"string"},"recommendation":{"type":"string","enum":["retry","investigate","fix_required"]},"affected_component":{"type":"string"}}}'
+
+      - name: Format analysis
+        if: always() && steps.get-logs.outputs.has_failures == 'true'
+        id: format
+        env:
+          STRUCTURED_OUTPUT: ${{ steps.analyze.outputs.structured_output }}
+        run: |
+          # Fallback if structured_output is empty (Claude timed out or failed)
+          if [ -z "$STRUCTURED_OUTPUT" ] || ! echo "$STRUCTURED_OUTPUT" | jq -e . >/dev/null 2>&1; then
+            echo "emoji=⚠️" >> $GITHUB_OUTPUT
+            echo "rec_text=🔍 Needs investigation" >> $GITHUB_OUTPUT
+            echo "fallback=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          CATEGORY=$(echo "$STRUCTURED_OUTPUT" | jq -r '.category // "unknown"')
+          RECOMMENDATION=$(echo "$STRUCTURED_OUTPUT" | jq -r '.recommendation // "investigate"')
+
+          # Derive emoji
+          case "$CATEGORY" in
+            "infrastructure") echo "emoji=🔧" >> $GITHUB_OUTPUT ;;
+            "flaky_test") echo "emoji=🎲" >> $GITHUB_OUTPUT ;;
+            "code_issue") echo "emoji=🐛" >> $GITHUB_OUTPUT ;;
+            *) echo "emoji=❓" >> $GITHUB_OUTPUT ;;
+          esac
+
+          # Derive recommendation text
+          case "$RECOMMENDATION" in
+            "retry") echo "rec_text=💡 Safe to retry - likely transient issue" >> $GITHUB_OUTPUT ;;
+            "fix_required") echo "rec_text=🚨 Code fix required" >> $GITHUB_OUTPUT ;;
+            *) echo "rec_text=🔍 Needs investigation" >> $GITHUB_OUTPUT ;;
+          esac
+
+      - name: Post analysis to PR
+        if: always() && steps.get-logs.outputs.pr_number != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ steps.get-logs.outputs.pr_number }}
+          EMOJI: ${{ steps.format.outputs.emoji }}
+          CATEGORY: ${{ fromJSON(steps.analyze.outputs.structured_output || '{}').category || 'unknown' }}
+          CONFIDENCE: ${{ fromJSON(steps.analyze.outputs.structured_output || '{}').confidence || 'low' }}
+          SUMMARY: ${{ fromJSON(steps.analyze.outputs.structured_output || '{}').summary || 'Analysis unavailable' }}
+          DETAILS: ${{ fromJSON(steps.analyze.outputs.structured_output || '{}').details || 'Claude analysis did not return a response. Check workflow logs.' }}
+          RECOMMENDATION: ${{ steps.format.outputs.rec_text }}
+          COMPONENT: ${{ fromJSON(steps.analyze.outputs.structured_output || '{}').affected_component || 'unknown' }}
+          RUN_URL: ${{ steps.get-logs.outputs.run_url }}
+        run: |
+          cat > /tmp/pr-comment.md <<EOF
+          ## $EMOJI CI Failure Analysis
+
+          **Summary:** $SUMMARY
+
+          $DETAILS
+
+          | Category | Component |
+          |----------|-----------|
+          | $CATEGORY ($CONFIDENCE confidence) | $COMPONENT |
+
+          $RECOMMENDATION
+
+          [View Logs]($RUN_URL)
+
+          ---
+          <sub>Analysis by Claude</sub>
+          EOF
+          gh pr comment "$PR_NUMBER" --body-file /tmp/pr-comment.md
+
+      - name: Build Slack payload
+        if: always() && steps.get-logs.outputs.is_main == 'true'
+        env:
+          STRUCTURED_OUTPUT: ${{ steps.analyze.outputs.structured_output }}
+          EMOJI: ${{ steps.format.outputs.emoji }}
+          REC_TEXT: ${{ steps.format.outputs.rec_text }}
+          RUN_URL: ${{ steps.get-logs.outputs.run_url }}
+          FALLBACK_RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ inputs.run_id || github.event.workflow_run.id }}
+        run: |
+          # Extract fields from structured output with jq for proper escaping
+          if echo "$STRUCTURED_OUTPUT" | jq -e . >/dev/null 2>&1; then
+            SUMMARY=$(echo "$STRUCTURED_OUTPUT" | jq -r '.summary // "Analysis unavailable"')
+            DETAILS=$(echo "$STRUCTURED_OUTPUT" | jq -r '.details // "Claude analysis did not return a response. Check workflow logs."')
+            CATEGORY=$(echo "$STRUCTURED_OUTPUT" | jq -r '.category // "unknown"')
+            CONFIDENCE=$(echo "$STRUCTURED_OUTPUT" | jq -r '.confidence // "low"')
+            COMPONENT=$(echo "$STRUCTURED_OUTPUT" | jq -r '.affected_component // "unknown"')
+          else
+            SUMMARY="Analysis unavailable"
+            DETAILS="Claude analysis did not return a response. Check workflow logs."
+            CATEGORY="unknown"
+            CONFIDENCE="low"
+            COMPONENT="unknown"
+          fi
+
+          URL="${RUN_URL:-$FALLBACK_RUN_URL}"
+
+          # Build JSON payload with jq to properly escape all string values
+          jq -n \
+            --arg emoji "$EMOJI" \
+            --arg summary "$SUMMARY" \
+            --arg details "$DETAILS" \
+            --arg category "$CATEGORY" \
+            --arg confidence "$CONFIDENCE" \
+            --arg component "$COMPONENT" \
+            --arg rec_text "$REC_TEXT" \
+            --arg run_url "$URL" \
+            '{
+              text: "CI Failure Analysis",
+              blocks: [
+                {
+                  type: "header",
+                  text: {
+                    type: "plain_text",
+                    text: "\($emoji) CI Failure Analysis",
+                    emoji: true
+                  }
+                },
+                {
+                  type: "section",
+                  text: {
+                    type: "mrkdwn",
+                    text: "*Summary:* \($summary)\n\n\($details)"
+                  }
+                },
+                {
+                  type: "section",
+                  fields: [
+                    {
+                      type: "mrkdwn",
+                      text: "*Category:* \($category) (\($confidence) confidence)"
+                    },
+                    {
+                      type: "mrkdwn",
+                      text: "*Component:* \($component)"
+                    }
+                  ]
+                },
+                {
+                  type: "section",
+                  text: {
+                    type: "mrkdwn",
+                    text: $rec_text
+                  }
+                },
+                {
+                  type: "context",
+                  elements: [
+                    {
+                      type: "mrkdwn",
+                      text: "<\($run_url)|View Logs>"
+                    }
+                  ]
+                }
+              ]
+            }' > /tmp/slack-payload.json
+
+      - name: Post analysis to Slack
+        if: always() && steps.get-logs.outputs.is_main == 'true'
+        uses: slackapi/slack-github-action@v2.1.1
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK }}
+          webhook-type: incoming-webhook
+          payload-file-path: /tmp/slack-payload.json

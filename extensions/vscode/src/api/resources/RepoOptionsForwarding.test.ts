@@ -2,36 +2,11 @@
 
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import { AxiosInstance } from "axios";
-import { Packages } from "./Packages";
 import { ContentRecords } from "./ContentRecords";
 import type { PositronSettings } from "../types/positron";
 
 describe("Repo options forwarding to API requests", () => {
   beforeEach(() => vi.clearAllMocks());
-
-  test("Packages.createRRequirementsFile forwards positron settings", async () => {
-    const mockPost = vi.fn();
-    const axiosMock = { post: mockPost } as unknown as AxiosInstance;
-    const api = new Packages(axiosMock);
-
-    const dir = "/proj";
-    const r = {
-      rPath: "/usr/bin/R",
-    } as unknown as import("../../types/shared").RExecutable;
-    const saveName = "renv.lock";
-    const positron: PositronSettings = {
-      r: { defaultRepositories: "posit-ppm" },
-    };
-
-    mockPost.mockResolvedValue({ status: 200, data: {} });
-    await api.createRRequirementsFile(dir, r, saveName, positron);
-
-    expect(mockPost).toHaveBeenCalledWith(
-      "packages/r/scan",
-      { saveName, positron },
-      { params: { dir, r: "/usr/bin/R" } },
-    );
-  });
 
   test("ContentRecords.publish forwards positron settings", async () => {
     const mockPost = vi.fn();

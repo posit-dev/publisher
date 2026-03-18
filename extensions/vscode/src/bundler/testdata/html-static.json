@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "metadata": {
+    "appmode": "static",
+    "entrypoint": "index.html",
+    "primary_html": "index.html"
+  },
+  "packages": {},
+  "files": {}
+}

@@ -89,6 +89,8 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	r.Handle(ToPath("configurations", "{name}", "files"), GetConfigFilesHandlerFunc(base, filesService, log)).
 		Methods(http.MethodGet)
 
+
+
 	// POST /api/deployments/$NAME initiates a deployment
 	r.Handle(ToPath("deployments", "{name}"), PostDeploymentHandlerFunc(base, log, lister, emitter)).
 		Methods(http.MethodPost)
@@ -103,10 +105,6 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 
 	// POST /api/packages/python/scan
 	r.Handle(ToPath("packages", "python", "scan"), NewPostPackagesPythonScanHandler(base, log)).
-		Methods(http.MethodPost)
-
-	// POST /api/packages/r/scan
-	r.Handle(ToPath("packages", "r", "scan"), NewPostPackagesRScanHandler(base, log)).
 		Methods(http.MethodPost)
 
 	// GET /api/snowflake-connections

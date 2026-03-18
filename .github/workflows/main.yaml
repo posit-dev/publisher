@@ -13,6 +13,8 @@ jobs:
     uses: ./.github/workflows/agent.yaml
   vscode:
     uses: ./.github/workflows/vscode.yaml
+  extension-contract-tests:
+    uses: ./.github/workflows/extension-contract-tests.yaml
 
   connect-contract-tests:
     uses: ./.github/workflows/connect-contract-tests.yaml
@@ -62,6 +64,7 @@ jobs:
       [
         agent,
         vscode,
+        extension-contract-tests,
         connect-contract-tests,
         build,
         package,
@@ -92,6 +95,7 @@ jobs:
       [
         agent,
         vscode,
+        extension-contract-tests,
         connect-contract-tests,
         build,
         package,
