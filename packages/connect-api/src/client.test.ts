@@ -175,6 +175,50 @@ describe("Authorization header", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Constructor options: insecure / timeout
+// ---------------------------------------------------------------------------
+
+describe("constructor options", () => {
+  it("passes httpsAgent when insecure is true", () => {
+    new ConnectAPI({ url: BASE_URL, apiKey: API_KEY, insecure: true });
+
+    expect(axios.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        httpsAgent: expect.objectContaining({
+          options: expect.objectContaining({ rejectUnauthorized: false }),
+        }),
+      }),
+    );
+  });
+
+  it("does not pass httpsAgent when insecure is omitted", () => {
+    new ConnectAPI({ url: BASE_URL, apiKey: API_KEY });
+
+    const call = (axios.create as ReturnType<typeof vi.fn>).mock.calls.at(
+      -1,
+    )![0] as Record<string, unknown>;
+    expect(call.httpsAgent).toBeUndefined();
+  });
+
+  it("passes timeout when specified", () => {
+    new ConnectAPI({ url: BASE_URL, apiKey: API_KEY, timeout: 5000 });
+
+    expect(axios.create).toHaveBeenCalledWith(
+      expect.objectContaining({ timeout: 5000 }),
+    );
+  });
+
+  it("does not pass timeout when omitted", () => {
+    new ConnectAPI({ url: BASE_URL, apiKey: API_KEY });
+
+    const call = (axios.create as ReturnType<typeof vi.fn>).mock.calls.at(
+      -1,
+    )![0] as Record<string, unknown>;
+    expect(call.timeout).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
 // testAuthentication
 // ---------------------------------------------------------------------------
 

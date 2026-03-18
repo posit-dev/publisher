@@ -2,6 +2,7 @@
 
 import axios from "axios";
 import type { AxiosInstance, AxiosResponse } from "axios";
+import https from "https";
 
 import type {
   AllSettings,
@@ -40,6 +41,10 @@ export class ConnectAPI {
       headers: {
         Authorization: `Key ${options.apiKey}`,
       },
+      ...(options.insecure
+        ? { httpsAgent: new https.Agent({ rejectUnauthorized: false }) }
+        : {}),
+      ...(options.timeout ? { timeout: options.timeout } : {}),
     });
   }
 

@@ -39,6 +39,8 @@ export enum CloudEnvironment {
 export interface ConnectAPIOptions {
   url: string;
   apiKey: string;
+  insecure?: boolean; // disable TLS cert verification
+  timeout?: number; // request timeout in milliseconds
 }
 
 // ---------------------------------------------------------------------------

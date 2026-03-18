@@ -36,6 +36,7 @@ import { openConfigurationCommand } from "src/commands";
 import { extensionSettings } from "src/extension";
 import { formatURL } from "src/utils/url";
 import { checkSyntaxApiKey } from "src/utils/apiKeys";
+import { testCredentials } from "src/utils/testCredentials";
 import {
   ConnectAuthTokenActivator,
   TokenAuthResult,
@@ -244,39 +245,26 @@ export async function newConnectCredential(
           });
         }
         try {
-          const testResult = await api.credentials.test(
-            input,
-            !extensionSettings.verifyCertificates(), // insecure = !verifyCertificates
-          );
-          if (!testResult) {
-            return Promise.resolve({
-              message: `No response from Publisher agent trying to reach out to Connect: ${input}`,
-              severity: InputBoxValidationSeverity.Error,
-            });
-          }
-          if (testResult.status !== 200) {
-            return Promise.resolve({
-              message: `Error: Invalid URL (unable to validate connectivity with Server URL - API Call result: ${testResult.status} - ${testResult.statusText}).`,
-              severity: InputBoxValidationSeverity.Error,
-            });
-          }
-          const err = testResult.data.error;
-          if (err) {
-            if (err.code === "errorCertificateVerification") {
+          const testResult = await testCredentials({
+            url: input,
+            insecure: !extensionSettings.verifyCertificates(),
+          });
+          if (testResult.error) {
+            if (testResult.error.code === "errorCertificateVerification") {
               return Promise.resolve({
-                message: `Error: URL Not Accessible - ${err.msg}. If applicable, consider disabling [Verify TLS Certificates](${openConfigurationCommand}).`,
+                message: `Error: URL Not Accessible - ${testResult.error.msg}. If applicable, consider disabling [Verify TLS Certificates](${openConfigurationCommand}).`,
                 severity: InputBoxValidationSeverity.Error,
               });
             }
             return Promise.resolve({
-              message: `Error: Invalid URL (unable to validate connectivity with Server URL - ${getMessageFromError(err)}).`,
+              message: `Error: Invalid URL (unable to validate connectivity with Server URL - ${getMessageFromError(testResult.error)}).`,
               severity: InputBoxValidationSeverity.Error,
             });
           }
 
-          if (testResult.data.serverType) {
+          if (testResult.serverType) {
             // serverType will be overwritten if it is snowflake
-            serverType = testResult.data.serverType;
+            serverType = testResult.serverType;
           }
         } catch (e) {
           return Promise.resolve({
@@ -446,33 +434,21 @@ export async function newConnectCredential(
         const serverUrl =
           typeof state.data.url === "string" ? state.data.url : "";
         try {
-          const testResult = await api.credentials.test(
-            serverUrl,
-            !extensionSettings.verifyCertificates(), // insecure = !verifyCertificates
-            input,
-          );
-          if (!testResult) {
+          const testResult = await testCredentials({
+            url: serverUrl,
+            apiKey: input,
+            insecure: !extensionSettings.verifyCertificates(),
+          });
+          if (testResult.error) {
             return Promise.resolve({
-              message: `No response from Publisher agent trying to test Connect credentials: ${input}`,
+              message: `Error: Invalid API Key (${testResult.error.msg}).`,
               severity: InputBoxValidationSeverity.Error,
             });
           }
-          if (testResult.status !== 200) {
-            return Promise.resolve({
-              message: `Error: Invalid API Key (unable to validate API Key - API Call result: ${testResult.status} - ${testResult.statusText}).`,
-              severity: InputBoxValidationSeverity.Error,
-            });
-          }
-          if (testResult.data.error) {
-            return Promise.resolve({
-              message: `Error: Invalid API Key (${testResult.data.error.msg}).`,
-              severity: InputBoxValidationSeverity.Error,
-            });
-          }
-          // we have success, but credentials.test may have returned a different
+          // we have success, but testCredentials may have returned a different
           // url for us to use.
-          if (testResult.data.url) {
-            state.data.url = testResult.data.url;
+          if (testResult.url) {
+            state.data.url = testResult.url;
           }
         } catch (e) {
           return Promise.resolve({
