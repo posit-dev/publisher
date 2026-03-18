@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "platform": "4.5.6",
+  "metadata": {
+    "appmode": "quarto-static",
+    "entrypoint": "report.qmd"
+  },
+  "python": {
+    "version": "3.4.5",
+    "package_manager": {
+      "name": "pip",
+      "package_file": "requirements.in",
+      "allow_uv": false
+    }
+  },
+  "environment": {
+    "image": "",
+    "prebuilt": false,
+    "python": {
+      "requires": ">=3.4.5"
+    },
+    "r": {
+      "requires": ">=4.5.6"
+    }
+  },
+  "packages": {},
+  "files": {}
+}

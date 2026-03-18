@@ -10,6 +10,8 @@ export {
   cloneManifest,
   getFilenames,
 } from "./manifest";
+export { appModeFromType } from "./appMode";
+export { manifestFromConfig } from "./manifestFromConfig";
 export type {
   Manifest,
   ManifestMetadata,
