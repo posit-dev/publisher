@@ -1,0 +1,28 @@
+{
+  "R": {
+    "Version": "4.3.0",
+    "Repositories": [
+      {
+        "Name": "CRAN",
+        "URL": "https://cran.rstudio.com"
+      }
+    ]
+  },
+  "Bioconductor": {
+    "Version": "3.18"
+  },
+  "Packages": {
+    "Biobase": {
+      "Package": "Biobase",
+      "Version": "2.62.0",
+      "Source": "Bioconductor",
+      "Requirements": [
+        "BiocGenerics",
+        "R",
+        "methods",
+        "utils"
+      ],
+      "Hash": "38252a34e82d3ff6bb46b4e2252d2dce"
+    }
+  }
+}
