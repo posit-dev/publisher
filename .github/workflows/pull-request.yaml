@@ -158,12 +158,8 @@ jobs:
     secrets:
       AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
 
-  # License generation - skip if no code changes
-  # Note: pr_changes=false means no secrets are needed (no PR will be created)
-  generate-licenses:
+  # License check - skip if no code changes
+  check-licenses:
     needs: detect-changes
     if: needs.detect-changes.outputs.has-code == 'true'
-    uses: ./.github/workflows/generate-licenses.yaml
-    with:
-      pr_changes: false # No PRs on PRs, infinite loop
-      fail_on_forbidden: true
+    uses: ./.github/workflows/check-licenses.yaml

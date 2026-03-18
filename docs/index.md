@@ -58,7 +58,3 @@ See the [Configuration Reference](configuration.md) page.
 ## Troubleshooting
 
 See the [Troubleshooting](troubleshooting.md) page.
-
-## Acknowledgements
-
-See the [Licenses](licenses.md) page.
