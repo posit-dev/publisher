@@ -1,7 +1,7 @@
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import { AxiosInstance } from "axios";
-import { Credential, TestResult } from "../types/credentials";
+import { Credential } from "../types/credentials";
 import { ServerType } from "../types/contentRecords";
 import { CONNECT_CLOUD_ENV_HEADER } from "../../constants";
 import { StateData } from "../../multiStepInputs/multiStepHelper";
@@ -84,19 +84,6 @@ export class Credentials {
   // 503 - credentials service unavailable
   reset() {
     return this.client.delete<{ backupFile: string }>(`credentials`);
-  }
-
-  /**
-   * @deprecated Use `testCredentials()` from `src/utils/testCredentials.ts` instead.
-   * This method calls the Go backend over HTTP; the TypeScript replacement calls
-   * the Connect API directly, removing the Go subprocess dependency.
-   */
-  test(url: string, insecure: boolean, apiKey?: string) {
-    return this.client.post<TestResult>(`test-credentials`, {
-      url,
-      apiKey,
-      insecure,
-    });
   }
 
   // Generates a new token for Connect authentication
