@@ -38,6 +38,8 @@ jobs:
     needs:
       - archive
       - package
+    outputs:
+      prerelease: ${{ steps.get-prerelease.outputs.prerelease }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -124,7 +126,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - release
-    if: success()
+    if: success() && needs.release.outputs.prerelease != 'true'
     steps:
       - name: Notify Slack
         uses: slackapi/slack-github-action@v2.1.1
