@@ -1,4 +1,4 @@
-// Copyright (C) 2025 by Posit Software, PBC.
+// Copyright (C) 2026 by Posit Software, PBC.
 
 import { exec, execSync } from "node:child_process";
 import * as fs from "node:fs";
