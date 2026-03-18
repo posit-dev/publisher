@@ -1,6 +1,7 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import { InputBoxValidationSeverity, window } from "vscode";
+import { ContentID } from "@posit-dev/connect-api";
 import { extractGUID } from "src/utils/guid";
 import { PublisherState } from "src/state";
 import { showProgress } from "src/utils/progress";
@@ -122,7 +123,7 @@ export async function showAssociateGUID(state: PublisherState) {
         targetContentRecord.deploymentName,
         targetContentRecord.projectDir,
         root,
-        { id: guid },
+        { id: ContentID(guid) },
       );
       window.showInformationMessage(
         `Your deployment is now locally associated with Content GUID ${guid} as requested.`,

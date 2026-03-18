@@ -3,6 +3,7 @@
 import * as fs from "fs/promises";
 import * as path from "path";
 import { stringify as stringifyTOML } from "smol-toml";
+import { ContentID } from "@posit-dev/connect-api";
 
 import {
   ContentRecord,
@@ -127,7 +128,7 @@ export async function createDeploymentRecord(
 
 export type PatchDeploymentOptions = {
   configName?: string;
-  id?: string;
+  id?: ContentID;
 };
 
 /**

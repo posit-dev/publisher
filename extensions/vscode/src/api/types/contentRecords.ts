@@ -1,5 +1,7 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
+import { ContentID, BundleID } from "@posit-dev/connect-api";
+
 import { AgentError } from "./error";
 import {
   Configuration,
@@ -47,7 +49,7 @@ export type ContentRecordError = {
 } & ContentRecordLocation;
 
 type OptionalPreDeploymentFields = {
-  id?: string;
+  id?: ContentID;
   bundleUrl?: string;
   dashboardUrl?: string;
   directUrl?: string;
@@ -100,8 +102,8 @@ export type RenvLockfile = {
 };
 
 export type ContentRecord = {
-  id: string;
-  bundleId: string;
+  id: ContentID;
+  bundleId: BundleID;
   bundleUrl: string;
   dashboardUrl: string;
   directUrl: string;
