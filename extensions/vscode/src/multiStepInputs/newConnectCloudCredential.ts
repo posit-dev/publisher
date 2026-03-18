@@ -541,16 +541,29 @@ export async function newConnectCloudCredential(
     throw new AbortError();
   }
 
+  const { name, accountId, accountName, refreshToken, accessToken } =
+    state.data;
+
+  if (
+    !isString(name) ||
+    !isString(accountId) ||
+    !isString(accountName) ||
+    !isString(refreshToken) ||
+    !isString(accessToken)
+  ) {
+    return undefined;
+  }
+
   // create the credential!
   let credential: Credential | undefined = undefined;
   try {
     credential = await credentialsService.create({
-      name: state.data.name as string,
+      name,
       serverType,
-      accountId: state.data.accountId as string,
-      accountName: state.data.accountName as string,
-      refreshToken: state.data.refreshToken as string,
-      accessToken: state.data.accessToken as string,
+      accountId,
+      accountName,
+      refreshToken,
+      accessToken,
     });
   } catch (error: unknown) {
     const summary = getSummaryStringFromError("credentials::add", error);

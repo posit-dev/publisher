@@ -598,17 +598,26 @@ export async function newConnectCredential(
     throw new AbortError();
   }
 
+  const { name, url, apiKey, token, privateKey, snowflakeConnection } =
+    state.data;
+
+  if (!isString(name) || !isString(url)) {
+    return undefined;
+  }
+
   // create the credential!
   let credential: Credential | undefined = undefined;
   try {
     credential = await credentialsService.create({
-      name: state.data.name as string,
-      url: state.data.url as string,
+      name,
+      url,
       serverType,
-      apiKey: state.data.apiKey as string | undefined,
-      token: state.data.token as string | undefined,
-      privateKey: state.data.privateKey as string | undefined,
-      snowflakeConnection: state.data.snowflakeConnection as string | undefined,
+      apiKey: isString(apiKey) ? apiKey : undefined,
+      token: isString(token) ? token : undefined,
+      privateKey: isString(privateKey) ? privateKey : undefined,
+      snowflakeConnection: isString(snowflakeConnection)
+        ? snowflakeConnection
+        : undefined,
     });
   } catch (error: unknown) {
     const summary = getSummaryStringFromError("credentials::add", error);
