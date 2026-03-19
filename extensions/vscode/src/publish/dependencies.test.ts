@@ -1,8 +1,9 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import { readPythonRequirements } from "./dependencies";
+import { readPythonRequirements, resolveRPackages } from "./dependencies";
 
 const mockFiles: Record<string, string> = {};
 
@@ -12,6 +13,12 @@ vi.mock("../interpreters/fsUtils", () => ({
     return Promise.resolve(content ?? null);
   }),
 }));
+
+vi.mock("node:fs/promises", () => ({
+  readFile: vi.fn(),
+}));
+
+const mockReadFile = vi.mocked(readFile);
 
 function setFile(dir: string, filename: string, content: string) {
   mockFiles[path.join(dir, filename)] = content;
@@ -73,5 +80,97 @@ describe("readPythonRequirements", () => {
       packageFile: "",
     });
     expect(result).toEqual(["flask"]);
+  });
+});
+
+// ---- resolveRPackages ----
+
+const MINIMAL_LOCKFILE = JSON.stringify({
+  R: {
+    Version: "4.3.3",
+    Repositories: [{ Name: "CRAN", URL: "https://cloud.r-project.org" }],
+  },
+  Packages: {
+    rlang: {
+      Package: "rlang",
+      Version: "1.1.1",
+      Source: "Repository",
+      Repository: "CRAN",
+      Hash: "a85c767b55f0bf9b7ad16c6d7baee5bb",
+      Requirements: ["R"],
+    },
+  },
+});
+
+describe("resolveRPackages", () => {
+  beforeEach(() => {
+    mockReadFile.mockReset();
+  });
+
+  test("returns undefined when no R config", async () => {
+    const result = await resolveRPackages(projectDir, undefined);
+    expect(result).toBeUndefined();
+  });
+
+  test("reads default renv.lock and returns manifest packages", async () => {
+    mockReadFile.mockResolvedValueOnce(MINIMAL_LOCKFILE as never);
+
+    const result = await resolveRPackages(projectDir, { packageFile: "" });
+
+    expect(mockReadFile).toHaveBeenCalledWith(
+      path.join(projectDir, "renv.lock"),
+      "utf-8",
+    );
+    expect(result).toBeDefined();
+    const rlang = result!.packages["rlang"];
+    expect(rlang).toBeDefined();
+    expect(rlang!.Source).toBe("CRAN");
+    expect(result!.lockfilePath).toBe(path.join(projectDir, "renv.lock"));
+    expect(result!.lockfile.R.Version).toBe("4.3.3");
+  });
+
+  test("reads configured package file", async () => {
+    mockReadFile.mockResolvedValueOnce(MINIMAL_LOCKFILE as never);
+
+    const result = await resolveRPackages(projectDir, {
+      packageFile: "custom/renv.lock",
+    });
+
+    expect(mockReadFile).toHaveBeenCalledWith(
+      path.join(projectDir, "custom/renv.lock"),
+      "utf-8",
+    );
+    expect(result).toBeDefined();
+    expect(result!.packages["rlang"]).toBeDefined();
+  });
+
+  test("throws on lockfile without Repositories", async () => {
+    const badLockfile = JSON.stringify({
+      R: { Version: "4.3.3", Repositories: [] },
+      Packages: {},
+    });
+    mockReadFile.mockResolvedValueOnce(badLockfile as never);
+
+    await expect(
+      resolveRPackages(projectDir, { packageFile: "" }),
+    ).rejects.toThrow("missing Repositories section");
+  });
+
+  test("throws on invalid JSON", async () => {
+    mockReadFile.mockResolvedValueOnce("not json" as never);
+
+    await expect(
+      resolveRPackages(projectDir, { packageFile: "" }),
+    ).rejects.toThrow();
+  });
+
+  test("throws when lockfile does not exist", async () => {
+    mockReadFile.mockRejectedValueOnce(
+      new Error("ENOENT: no such file or directory"),
+    );
+
+    await expect(
+      resolveRPackages(projectDir, { packageFile: "" }),
+    ).rejects.toThrow("ENOENT");
   });
 });
