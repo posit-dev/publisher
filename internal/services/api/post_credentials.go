@@ -16,6 +16,7 @@ import (
 )
 
 type PostCredentialsRequest struct {
+	GUID       string                 `json:"guid"`
 	Name       string                 `json:"name"`
 	URL        string                 `json:"url"`
 	ServerType server_type.ServerType `json:"serverType"`
@@ -27,10 +28,11 @@ type PostCredentialsRequest struct {
 	SnowflakeConnection string `json:"snowflakeConnection"`
 
 	// Connect Cloud fields
-	AccountID    string               `json:"accountId"`
-	AccountName  string               `json:"accountName"`
-	RefreshToken string               `json:"refreshToken"`
-	AccessToken  types.CloudAuthToken `json:"accessToken"`
+	AccountID        string                 `json:"accountId"`
+	AccountName      string                 `json:"accountName"`
+	RefreshToken     string                 `json:"refreshToken"`
+	AccessToken      types.CloudAuthToken   `json:"accessToken"`
+	CloudEnvironment types.CloudEnvironment `json:"cloudEnvironment"`
 
 	// Token authentication fields
 	Token      string `json:"token"`
@@ -70,7 +72,14 @@ func PostCredentialFuncHandler(log logging.Logger) http.HandlerFunc {
 			body.URL = cloud.GetFrontendURL(environment)
 		}
 
+		// Use the cloud environment from the header if present, otherwise from the body
+		// (the TypeScript dual-write sends it in the body)
+		if environment == "" {
+			environment = body.CloudEnvironment
+		}
+
 		cred, err := cs.Set(credentials.CreateCredentialDetails{
+			GUID:                body.GUID,
 			Name:                body.Name,
 			URL:                 body.URL,
 			ServerType:          body.ServerType,
