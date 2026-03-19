@@ -12,7 +12,9 @@ describe("Credentials Section", () => {
   });
 
   beforeEach(() => {
-    // Load UI before resetting credentials (resetCredentials is now UI-driven)
+    // VS Code may unload the publisher webview between tests (e.g. after
+    // quick-input flows shift focus). A full page reload reliably resets
+    // the UI state.
     cy.visit("/");
     cy.getPublisherSidebarIcon().click();
     cy.waitForPublisherIframe();
@@ -80,7 +82,7 @@ describe("Credentials Section", () => {
     cy.addPCCCredential(user, "connect-cloud-credential");
 
     // Verify the credential appears in the list
-    cy.toggleCredentialsSection();
+    cy.ensureCredentialsSectionExpanded();
     cy.refreshCredentials();
 
     cy.findInPublisherWebview(
@@ -93,7 +95,7 @@ describe("Credentials Section", () => {
   it("Existing Credentials Load", () => {
     // Creates admin credential via UI and validates it renders correctly in the list.
     cy.setAdminCredentials();
-    cy.toggleCredentialsSection();
+    cy.ensureCredentialsSectionExpanded();
     cy.refreshCredentials();
 
     cy.publisherWebview()
@@ -111,7 +113,7 @@ describe("Credentials Section", () => {
   it("Delete Credential", () => {
     // Creates admin credential, hovers to reveal delete action, confirms, and asserts removal.
     cy.setAdminCredentials();
-    cy.toggleCredentialsSection();
+    cy.ensureCredentialsSectionExpanded();
     cy.refreshCredentials();
 
     cy.findUniqueInPublisherWebview(

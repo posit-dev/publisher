@@ -112,7 +112,7 @@ if (typeof afterEach === "function") {
 // Purpose: Delete all credentials via UI by looping over each credential item.
 // Requires UI to be loaded (page visited, sidebar open, iframe ready).
 Cypress.Commands.add("resetCredentials", () => {
-  cy.toggleCredentialsSection();
+  cy.ensureCredentialsSectionExpanded();
 
   function deleteNextCredential() {
     cy.publisherWebview()
@@ -167,7 +167,7 @@ Cypress.Commands.add("setAdminCredentials", () => {
     );
   }
 
-  cy.toggleCredentialsSection();
+  cy.ensureCredentialsSectionExpanded();
   cy.clickSectionAction("New Credential");
   cy.get(".quick-input-widget").should("be.visible");
 
@@ -586,13 +586,13 @@ Cypress.Commands.add(
     if (assertEmpty) {
       cy.expectInitialPublisherState();
 
-      cy.toggleCredentialsSection();
+      cy.ensureCredentialsSectionExpanded();
       cy.publisherWebview()
         .findByText("No credentials have been added yet.")
         .should("be.visible");
     } else {
       // Just ensure credentials section is expanded
-      cy.toggleCredentialsSection();
+      cy.ensureCredentialsSectionExpanded();
     }
 
     cy.clickSectionAction("New Credential");
@@ -750,8 +750,8 @@ Cypress.Commands.add("expectCredentialsSectionEmpty", () => {
   // Refresh the credentials section
   cy.refreshCredentials();
 
-  // Now explicitly toggle/expand the credentials section
-  cy.toggleCredentialsSection();
+  // Ensure the credentials section is expanded
+  cy.ensureCredentialsSectionExpanded();
 
   // Check for empty state message
   cy.publisherWebview()
