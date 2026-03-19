@@ -2,10 +2,16 @@ import os
 import fnmatch
 import sys
 
-_repo_root = os.environ.get(
-    "LICENSES_REPO_ROOT",
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_repo_root = os.path.realpath(
+    os.environ.get(
+        "LICENSES_REPO_ROOT",
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    )
 )
+
+if not os.path.isdir(_repo_root):
+    print(f"ERROR: LICENSES_REPO_ROOT is not a valid directory: {_repo_root}", file=sys.stderr)
+    sys.exit(1)
 
 search_dirs = [
     os.path.join(_repo_root, "vendor"),
