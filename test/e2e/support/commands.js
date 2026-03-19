@@ -13,6 +13,11 @@ import "./workbench";
 // from the with-connect GitHub Action, which handles Connect startup and bootstrapping.
 Cypress.Commands.add("initializeConnect", () => {
   cy.clearupDeployments();
+  cy.visit("/");
+  cy.getPublisherSidebarIcon().click();
+  cy.waitForPublisherIframe();
+  cy.debugIframes();
+  cy.resetCredentials();
   cy.setAdminCredentials();
 });
 
@@ -103,64 +108,115 @@ if (typeof afterEach === "function") {
   });
 }
 
-// resetCredentials/setAdminCredentials/setDummyCredentials
-// Purpose: Manage the e2e-test.connect-credentials file directly for speed and determinism.
-// - setAdminCredentials: PCS admin API key-based credential.
-// - setDummyCredentials: Fake records for UI-only tests.
-// When to use: Before tests that need known credentials present without UI interaction.
+// resetCredentials
+// Purpose: Delete all credentials via UI by looping over each credential item.
+// Requires UI to be loaded (page visited, sidebar open, iframe ready).
 Cypress.Commands.add("resetCredentials", () => {
-  cy.exec(
-    `cat <<EOF > e2e-test.connect-credentials
-# File updated and managed by e2e tests. Refrain from updating it manually.
+  cy.toggleCredentialsSection();
 
-EOF`,
-  );
+  function deleteNextCredential() {
+    cy.publisherWebview()
+      .findByTestId("publisher-credentials-section")
+      .then(($section) => {
+        const $sec = Cypress.$($section);
+        // Check for empty state
+        if (
+          $sec
+            .find(':contains("No credentials have been added yet.")')
+            .filter(":visible").length > 0
+        ) {
+          cy.log("All credentials deleted (section is empty)");
+          return;
+        }
+
+        // Find the first credential item
+        const $items = $sec.find(".tree-item");
+        if ($items.length === 0) {
+          cy.log("No credential items found, done");
+          return;
+        }
+
+        // Hover over the first item and click delete
+        cy.wrap($items.first()).should("be.visible").trigger("mouseover");
+        cy.wrap($items.first())
+          .find('[aria-label="Delete Credential"]')
+          .click({ force: true });
+
+        // Confirm deletion in the dialog
+        cy.get(".dialog-buttons")
+          .findByText("Delete")
+          .should("be.visible")
+          .click();
+
+        // Wait for UI to update, then try deleting next
+        cy.refreshCredentials();
+        deleteNextCredential();
+      });
+  }
+
+  deleteNextCredential();
 });
 
+// setAdminCredentials
+// Purpose: Create the admin PCS credential via the UI credential creation flow.
+// Requires UI to be loaded (page visited, sidebar open, iframe ready).
 Cypress.Commands.add("setAdminCredentials", () => {
-  if (Cypress.env("BOOTSTRAP_ADMIN_API_KEY") !== "") {
-    // Append only the nested table to avoid duplicating [credentials] header
-    const toml = `
-[credentials.admin-code-server]
-guid = '9ba2033b-f69e-4da8-8c85-48c1f605d433'
-version = 0
-url = 'http://connect-publisher-e2e:3939'
-api_key = '${Cypress.env("BOOTSTRAP_ADMIN_API_KEY")}'
-`;
-    // Append to file (creates if missing)
-    cy.exec(
-      `bash -lc "cat <<'EOF' >> e2e-test.connect-credentials\n${toml}\nEOF"`,
-    );
-  } else {
+  if (!Cypress.env("BOOTSTRAP_ADMIN_API_KEY")) {
     throw new Error(
       "Cypress env BOOTSTRAP_ADMIN_API_KEY is empty. Cannot set admin credentials.",
     );
   }
-});
 
-Cypress.Commands.add("setDummyCredentials", () => {
-  cy.exec(
-    `cat <<EOF > e2e-test.connect-credentials
-[credentials]
-[credentials.dummy-credential-one]
-guid = 'e558636b-069c-46e4-bd2e-4c46be1685af'
-version = 0
-url = 'http://connect-publisher-e2e:3939'
-api_key = 'tYuI742Pax9hVOb9fk2aSbRONkyxQ9yG'
+  cy.toggleCredentialsSection();
+  cy.clickSectionAction("New Credential");
+  cy.get(".quick-input-widget").should("be.visible");
 
-[credentials.dummy-credential-two]
-guid = 'f5b7aaee-e35e-4989-a5b0-d8afa467ba25'
-version = 0
-url = 'http://2.connect-publisher-e2e:3939'
-api_key = 'qWeR742Pax9hVOb9fk2aSbRONkyxQ9yG'
+  cy.get(".quick-input-titlebar")
+    .should("have.text", "Create a New Credential")
+    .click();
 
-EOF`,
+  // Select "server" platform
+  cy.get(".quick-input-list-row").contains("server").click();
+
+  // Enter server URL
+  cy.get(".quick-input-message").should(
+    "include.text",
+    "Please provide the Posit Connect server's URL",
+  );
+  cy.get(".quick-input-widget").type(
+    "http://connect-publisher-e2e:3939{enter}",
   );
 
-  // Clear cached webview since credentials will change
-  cy.window().then((win) => {
-    delete win.cachedPublisherWebview;
-  });
+  // Select API key auth method (second row)
+  cy.get(".quick-input-and-message input").should(
+    "have.attr",
+    "placeholder",
+    "Select authentication method",
+  );
+  cy.get(".quick-input-list .monaco-list-row").eq(1).click();
+
+  // Enter API key
+  cy.get(".quick-input-message").should(
+    "include.text",
+    "The API key to be used to authenticate with Posit Connect.",
+  );
+  cy.get(".quick-input-widget").type(
+    `${Cypress.env("BOOTSTRAP_ADMIN_API_KEY")}{enter}`,
+  );
+
+  // Wait for successful connection
+  cy.get(".quick-input-message", { timeout: 15000 }).should(
+    "include.text",
+    "Successfully connected to http://connect-publisher-e2e:3939",
+  );
+
+  // Enter nickname
+  cy.get(".quick-input-widget").type("admin-code-server{enter}");
+
+  // Verify credential appears
+  cy.findInPublisherWebview('[data-automation="admin-code-server-list"]')
+    .find(".tree-item-title")
+    .should("have.text", "admin-code-server");
 });
 
 // clearupDeployments
@@ -519,16 +575,25 @@ Cypress.Commands.add(
 
 // addPCCCredential
 // Purpose: Drive the PCC OAuth flow entirely via UI (stubs window.open) and save a nickname.
-// When to use: UI-driven PCC credential creation tests (slower than setPCCCredential).
+// When to use: UI-driven PCC credential creation tests.
 Cypress.Commands.add(
   "addPCCCredential",
-  (user, nickname = "connect-cloud-credential") => {
-    cy.expectInitialPublisherState();
+  (
+    user,
+    nickname = "connect-cloud-credential",
+    { assertEmpty = true } = {},
+  ) => {
+    if (assertEmpty) {
+      cy.expectInitialPublisherState();
 
-    cy.toggleCredentialsSection();
-    cy.publisherWebview()
-      .findByText("No credentials have been added yet.")
-      .should("be.visible");
+      cy.toggleCredentialsSection();
+      cy.publisherWebview()
+        .findByText("No credentials have been added yet.")
+        .should("be.visible");
+    } else {
+      // Just ensure credentials section is expanded
+      cy.toggleCredentialsSection();
+    }
 
     cy.clickSectionAction("New Credential");
     cy.get(".quick-input-widget").should("be.visible");
@@ -618,66 +683,6 @@ Cypress.Commands.add(
     // Ensure the UI updates: wait for quick-input to close, then refresh credentials
     cy.get(".quick-input-widget").should("not.be.visible");
     cy.refreshCredentials();
-  },
-);
-
-// setPCCCredential
-// Purpose: Programmatic PCC credential creation via Device Flow (Playwright).
-// - Avoids UI; writes credential directly to e2e-test.connect-credentials.
-// When to use: Faster setup for tests that need a PCC credential present.
-Cypress.Commands.add(
-  "setPCCCredential",
-  (user, nickname = "pcc-credential") => {
-    cy.task(
-      "runDeviceWorkflow",
-      {
-        email: user.email,
-        password: user.auth.password,
-        env: Cypress.env("PCC_ENV") || "staging",
-      },
-      { timeout: 90000 },
-    ).then((oauthResult) => {
-      cy.getPublisherSidebarIcon().click();
-      const guid = user.guid || "57413399-c622-4806-806a-2e18cb32d550";
-      const version = 3;
-      const server_type = "connect_cloud";
-      const url =
-        Cypress.env("PCC_URL") || "https://staging.connect.posit.cloud";
-      const cloud_environment = Cypress.env("PCC_ENV") || "staging";
-      const refresh_token = oauthResult.refresh_token;
-      const access_token = oauthResult.access_token;
-      const account_id = user.account_id;
-      const account_name = user.account_name;
-      if (!oauthResult || !oauthResult.success) {
-        throw new Error(
-          `Device OAuth failed: ${oauthResult && oauthResult.error}`,
-        );
-      }
-      if (!refresh_token || !access_token || !account_id || !account_name) {
-        throw new Error("Missing required PCC credential fields");
-      }
-
-      // Persist token and account ID in memory for cleanup; never log these
-      Cypress.env("PCC_ACCESS_TOKEN", access_token);
-      Cypress.env("PCC_ACCOUNT_ID", account_id);
-
-      const toml = `
-[credentials.${nickname}]
-guid = '${guid}'
-version = ${version}
-server_type = '${server_type}'
-url = '${url}'
-account_id = '${account_id}'
-account_name = '${account_name}'
-refresh_token = '${refresh_token}'
-access_token = '${access_token}'
-cloud_environment = '${cloud_environment}'
-`;
-      // Append to the credentials file instead of overwriting
-      cy.exec(
-        `bash -lc "cat <<'EOF' >> e2e-test.connect-credentials\n${toml}\nEOF"`,
-      );
-    });
   },
 );
 

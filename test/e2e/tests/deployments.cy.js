@@ -83,12 +83,14 @@ describe("Deployments Section", () => {
   describe("Connect Cloud Deployments", () => {
     it("PCC Shiny Python Deployment @pcc", () => {
       // Setup - moved from beforeEach to avoid running when @pcc tests are filtered
-      cy.resetCredentials();
       cy.clearupDeployments();
       cy.visit("/");
+      cy.getPublisherSidebarIcon().click();
+      cy.waitForPublisherIframe();
+      cy.resetCredentials();
       const user = Cypress.env("pccConfig").pcc_user_ccqa3;
-      cy.log("PCC user for setPCCCredential: " + JSON.stringify(user));
-      cy.setPCCCredential(user, "pcc-deploy-credential");
+      cy.log("PCC user for addPCCCredential: " + JSON.stringify(user));
+      cy.addPCCCredential(user, "pcc-deploy-credential");
       cy.toggleCredentialsSection();
       cy.refreshCredentials();
       cy.findInPublisherWebview(

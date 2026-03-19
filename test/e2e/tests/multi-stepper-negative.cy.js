@@ -4,12 +4,9 @@ describe("Multi-Stepper Negative Cases", () => {
   // Global setup - run once for entire test suite
   before(() => {
     cy.initializeConnect();
-    cy.visit("/");
-    cy.getPublisherSidebarIcon().click();
-    cy.waitForPublisherIframe();
     const user = Cypress.env("pccConfig").pcc_user_ccqa3;
-    // Set up PCC credentials programmatically (no manual login)
-    cy.setPCCCredential(user);
+    // Set up PCC credentials via UI OAuth flow
+    cy.addPCCCredential(user, "pcc-credential", { assertEmpty: false });
   });
 
   beforeEach(() => {
