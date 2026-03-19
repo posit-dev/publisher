@@ -27,11 +27,23 @@ import type {
 const mockRequest = vi.fn();
 
 vi.mock("axios", () => {
+  // Store request interceptors so we can apply them
+  const requestInterceptors: Array<
+    (config: Record<string, unknown>) => Record<string, unknown>
+  > = [];
+
   async function request(config: Record<string, unknown>) {
-    const resp = await mockRequest(config);
+    // Apply request interceptors
+    let processedConfig = { ...config };
+    for (const interceptor of requestInterceptors) {
+      processedConfig = interceptor(processedConfig);
+    }
+
+    const resp = await mockRequest(processedConfig);
     const validate =
-      (config.validateStatus as ((s: number) => boolean) | undefined) ??
-      ((s: number) => s >= 200 && s < 300);
+      (processedConfig.validateStatus as
+        | ((s: number) => boolean)
+        | undefined) ?? ((s: number) => s >= 200 && s < 300);
     if (!validate(resp.status as number)) {
       throw Object.assign(
         new Error(`Request failed with status code ${resp.status}`),
@@ -54,6 +66,15 @@ vi.mock("axios", () => {
           data?: unknown,
           config?: Record<string, unknown>,
         ) => request({ method: "PATCH", url, data, ...config }),
+        interceptors: {
+          request: {
+            use: (
+              fn: (config: Record<string, unknown>) => Record<string, unknown>,
+            ) => {
+              requestInterceptors.push(fn);
+            },
+          },
+        },
       })),
       post: vi.fn(
         async (
@@ -163,9 +184,9 @@ describe("Authorization header", () => {
     const client = createClient();
     await client.getCurrentUser();
 
-    expect(axios.create).toHaveBeenCalledWith(
+    // Auth header is set via request interceptor, verify it's in the request
+    expect(mockRequest).toHaveBeenCalledWith(
       expect.objectContaining({
-        baseURL: BASE_URL,
         headers: expect.objectContaining({
           Authorization: `Bearer ${ACCESS_TOKEN}`,
         }),
@@ -567,5 +588,147 @@ describe("uploadBundle", () => {
         new Uint8Array([1]),
       ),
     ).rejects.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Token refresh
+// ---------------------------------------------------------------------------
+
+import { CloudEnvironment } from "./types.js";
+
+// Mock the auth module for token refresh tests
+const mockExchangeToken = vi.fn().mockResolvedValue({
+  access_token: "new-access-token",
+  refresh_token: "new-refresh-token",
+  expires_in: 3600,
+  token_type: "Bearer",
+  scope: "vivid",
+});
+
+vi.mock("./auth.js", () => ({
+  CloudAuthClient: class MockCloudAuthClient {
+    constructor(public environment: CloudEnvironment) {}
+    exchangeToken = mockExchangeToken;
+  },
+}));
+
+import { CloudAuthClient } from "./auth.js";
+
+function createClientWithRefresh(
+  onTokenRefresh?: (tokens: unknown) => Promise<void>,
+): ConnectCloudAPI {
+  return new ConnectCloudAPI({
+    apiBaseUrl: BASE_URL,
+    accessToken: ACCESS_TOKEN,
+    refreshToken: "test-refresh-token",
+    environment: CloudEnvironment.Production,
+    onTokenRefresh,
+  });
+}
+
+describe("Token refresh", () => {
+  it("retries request after refreshing token on 401", async () => {
+    const userResponse: UserResponse = { account_roles: {} };
+    // First call returns 401, second call succeeds
+    mockRequest
+      .mockResolvedValueOnce(textResponse("Unauthorized", 401, "Unauthorized"))
+      .mockResolvedValueOnce(jsonResponse(userResponse));
+
+    const client = createClientWithRefresh();
+    const result = await client.getCurrentUser();
+
+    expect(result).toEqual(userResponse);
+    expect(mockRequest).toHaveBeenCalledTimes(2);
+    expect(mockExchangeToken).toHaveBeenCalledWith({
+      grant_type: "refresh_token",
+      refresh_token: "test-refresh-token",
+    });
+  });
+
+  it("uses new token for retry request", async () => {
+    const userResponse: UserResponse = { account_roles: {} };
+    mockRequest
+      .mockResolvedValueOnce(textResponse("Unauthorized", 401, "Unauthorized"))
+      .mockResolvedValueOnce(jsonResponse(userResponse));
+
+    const client = createClientWithRefresh();
+    await client.getCurrentUser();
+
+    // Second request should use the new token
+    const secondCall = mockRequest.mock.calls[1][0];
+    expect(secondCall.headers.Authorization).toBe("Bearer new-access-token");
+  });
+
+  it("calls onTokenRefresh callback after successful refresh", async () => {
+    const userResponse: UserResponse = { account_roles: {} };
+    mockRequest
+      .mockResolvedValueOnce(textResponse("Unauthorized", 401, "Unauthorized"))
+      .mockResolvedValueOnce(jsonResponse(userResponse));
+
+    const onTokenRefresh = vi.fn().mockResolvedValue(undefined);
+    const client = createClientWithRefresh(onTokenRefresh);
+    await client.getCurrentUser();
+
+    expect(onTokenRefresh).toHaveBeenCalledWith({
+      access_token: "new-access-token",
+      refresh_token: "new-refresh-token",
+      expires_in: 3600,
+      token_type: "Bearer",
+      scope: "vivid",
+    });
+  });
+
+  it("does not retry on 401 when refresh is not configured", async () => {
+    mockRequest.mockResolvedValue(
+      textResponse("Unauthorized", 401, "Unauthorized"),
+    );
+
+    // Use client without refresh configuration
+    const client = createClient();
+    await expect(client.getCurrentUser()).rejects.toThrow();
+
+    // Should only be called once (no retry)
+    expect(mockRequest).toHaveBeenCalledTimes(1);
+  });
+
+  it("throws original error on non-401 errors", async () => {
+    mockRequest.mockResolvedValue(
+      textResponse("Server Error", 500, "Internal Server Error"),
+    );
+
+    const client = createClientWithRefresh();
+    await expect(client.getCurrentUser()).rejects.toThrow();
+
+    // Should only be called once (no retry for 500)
+    expect(mockRequest).toHaveBeenCalledTimes(1);
+  });
+
+  it("throws when token refresh fails", async () => {
+    mockRequest.mockResolvedValue(
+      textResponse("Unauthorized", 401, "Unauthorized"),
+    );
+    mockExchangeToken.mockRejectedValueOnce(new Error("Refresh token expired"));
+
+    const client = createClientWithRefresh();
+    await expect(client.getCurrentUser()).rejects.toThrow(
+      "Refresh token expired",
+    );
+
+    // Original request called once, no retry since refresh failed
+    expect(mockRequest).toHaveBeenCalledTimes(1);
+  });
+
+  it("throws when retry also returns 401 after successful refresh", async () => {
+    // Both original and retry return 401
+    mockRequest
+      .mockResolvedValueOnce(textResponse("Unauthorized", 401, "Unauthorized"))
+      .mockResolvedValueOnce(textResponse("Unauthorized", 401, "Unauthorized"));
+
+    const client = createClientWithRefresh();
+    await expect(client.getCurrentUser()).rejects.toThrow();
+
+    // Should be called twice (original + one retry), then give up
+    expect(mockRequest).toHaveBeenCalledTimes(2);
   });
 });

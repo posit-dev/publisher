@@ -15,6 +15,12 @@ export const ContentID = (id: string) => id as ContentID;
 export interface ConnectCloudAPIOptions {
   apiBaseUrl: string;
   accessToken: string;
+  /** Required for token refresh on 401. */
+  refreshToken?: string;
+  /** Required for token refresh on 401. */
+  environment?: CloudEnvironment;
+  /** Called after successful token refresh so caller can persist new tokens. */
+  onTokenRefresh?: (tokens: TokenResponse) => Promise<void>;
 }
 
 // ---------------------------------------------------------------------------
@@ -32,6 +38,39 @@ export const cloudEnvironmentBaseUrls: Record<CloudEnvironment, string> = {
   [CloudEnvironment.Staging]: "https://api.staging.connect.posit.cloud",
   [CloudEnvironment.Production]: "https://api.connect.posit.cloud",
 };
+
+// ---------------------------------------------------------------------------
+// Auth base URLs and client IDs (from cloud_auth/client_cloud_auth.go)
+// ---------------------------------------------------------------------------
+
+export const cloudAuthBaseUrls: Record<CloudEnvironment, string> = {
+  [CloudEnvironment.Development]: "https://login.staging.posit.cloud",
+  [CloudEnvironment.Staging]: "https://login.staging.posit.cloud",
+  [CloudEnvironment.Production]: "https://login.posit.cloud",
+};
+
+export const cloudAuthClientIds: Record<CloudEnvironment, string> = {
+  [CloudEnvironment.Development]: "posit-publisher-development",
+  [CloudEnvironment.Staging]: "posit-publisher-staging",
+  [CloudEnvironment.Production]: "posit-publisher",
+};
+
+// ---------------------------------------------------------------------------
+// OAuth token types (from cloud_auth/oauth.go)
+// ---------------------------------------------------------------------------
+
+export interface TokenRequest {
+  grant_type: "refresh_token";
+  refresh_token: string;
+}
+
+export interface TokenResponse {
+  access_token: string;
+  refresh_token: string;
+  expires_in: number;
+  token_type: string;
+  scope: string;
+}
 
 // ---------------------------------------------------------------------------
 // Account types (from connect_cloud/account.go)
