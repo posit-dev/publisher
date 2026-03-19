@@ -23,6 +23,8 @@ export const GUID = (id: string) => id as GUID;
 export interface ConnectAPIOptions {
   url: string;
   apiKey: string;
+  /** Whether to verify TLS certificates. Defaults to true. */
+  rejectUnauthorized?: boolean;
 }
 
 // ---------------------------------------------------------------------------

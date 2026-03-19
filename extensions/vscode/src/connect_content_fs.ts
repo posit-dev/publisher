@@ -22,6 +22,7 @@ import { Commands } from "src/constants";
 import { PublisherState } from "./state";
 import { ConnectAPI, ContentID, BundleID } from "@posit-dev/connect-api";
 import { Credential } from "./api/types/credentials";
+import { extensionSettings } from "./extension";
 
 type ConnectContentEntry = {
   type: FileType;
@@ -223,6 +224,7 @@ export class ConnectContentFileSystemProvider implements FileSystemProvider {
       const connectApi = new ConnectAPI({
         url: credential.url,
         apiKey: credential.apiKey,
+        rejectUnauthorized: extensionSettings.verifyCertificates(),
       });
       const { data: content } = await connectApi.contentDetails(
         ContentID(contentGuid),
