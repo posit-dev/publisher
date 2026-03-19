@@ -181,8 +181,13 @@ export class ConnectAPI {
   /**
    * Polls for task completion.
    * @param pollIntervalMs - milliseconds between polls (default 500, pass 0 for tests)
+   * @param onOutput - optional callback invoked with each batch of new log lines as they arrive
    */
-  async waitForTask(taskId: TaskID, pollIntervalMs = 500): Promise<TaskDTO> {
+  async waitForTask(
+    taskId: TaskID,
+    pollIntervalMs = 500,
+    onOutput?: (lines: string[]) => void,
+  ): Promise<TaskDTO> {
     let firstLine = 0;
 
     while (true) {
@@ -190,6 +195,10 @@ export class ConnectAPI {
         `/__api__/v1/tasks/${taskId}`,
         { params: { first: firstLine } },
       );
+
+      if (onOutput && task.output.length > 0) {
+        onOutput(task.output);
+      }
 
       if (task.finished) {
         if (task.error) {
