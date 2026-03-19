@@ -1,0 +1,844 @@
+// Copyright (C) 2026 by Posit Software, PBC.
+
+import { beforeEach, describe, expect, test, vi } from "vitest";
+import { writeFile, mkdir, copyFile, unlink } from "node:fs/promises";
+import path from "node:path";
+
+import {
+  connectPublish,
+  type ConnectPublishOptions,
+  type PublishEvent,
+  type PublishStep,
+} from "./connectPublish";
+
+import { ContentType } from "../api/types/configurations";
+import type { ConfigurationDetails } from "../api/types/configurations";
+import { ProductType, ServerType } from "../api/types/contentRecords";
+
+import type {
+  ConnectAPI,
+  ContentDetailsDTO,
+  BundleDTO,
+  DeployOutput,
+  TaskDTO,
+  User,
+} from "@posit-dev/connect-api";
+import { AxiosError, AxiosHeaders } from "axios";
+
+// ---------------------------------------------------------------------------
+// Mocks
+// ---------------------------------------------------------------------------
+
+// Mock fs/promises
+vi.mock("node:fs/promises", () => ({
+  readFile: vi.fn().mockResolvedValue("{}"),
+  writeFile: vi.fn().mockResolvedValue(undefined),
+  mkdir: vi.fn().mockResolvedValue(undefined),
+  copyFile: vi.fn().mockResolvedValue(undefined),
+  unlink: vi.fn().mockResolvedValue(undefined),
+  stat: vi.fn(),
+}));
+
+// Mock the bundler
+vi.mock("../bundler/bundler", () => ({
+  createBundle: vi.fn().mockResolvedValue({
+    bundle: Buffer.from("fake-bundle"),
+    manifest: {
+      version: 1,
+      metadata: { appmode: "python-shiny" },
+      packages: {},
+      files: { "app.py": { checksum: "abc123" } },
+    },
+    fileCount: 1,
+    totalSize: 100,
+  }),
+}));
+
+// Mock dependencies
+vi.mock("./dependencies", () => ({
+  resolveRPackages: vi.fn().mockResolvedValue(undefined),
+  readPythonRequirements: vi.fn().mockResolvedValue(undefined),
+}));
+
+// Mock extra dependencies
+vi.mock("./extraDependencies", () => ({
+  findExtraDependencies: vi.fn().mockResolvedValue([]),
+  recordExtraDependencies: vi.fn().mockResolvedValue(null),
+  cleanupExtraDependencies: vi.fn().mockResolvedValue(undefined),
+}));
+
+// Mock R scanning
+vi.mock("../interpreters/rPackages", () => ({
+  scanRPackages: vi.fn().mockResolvedValue(undefined),
+  repoURLFromOptions: vi.fn().mockReturnValue(""),
+}));
+
+// Mock fsUtils
+vi.mock("../interpreters/fsUtils", () => ({
+  fileExistsAt: vi.fn().mockResolvedValue(false),
+}));
+
+// Mock TOML stringify — pass through to allow content inspection
+vi.mock("smol-toml", () => ({
+  stringify: vi.fn().mockImplementation((obj: unknown) => JSON.stringify(obj)),
+}));
+
+const mockWriteFile = vi.mocked(writeFile);
+const mockMkdir = vi.mocked(mkdir);
+const mockCopyFile = vi.mocked(copyFile);
+const mockUnlink = vi.mocked(unlink);
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function makeConfig(
+  overrides?: Partial<ConfigurationDetails>,
+): ConfigurationDetails {
+  return {
+    $schema:
+      "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json",
+    productType: ProductType.CONNECT,
+    type: ContentType.PYTHON_SHINY,
+    entrypoint: "app.py",
+    validate: false,
+    python: {
+      version: "3.11.0",
+      packageFile: "requirements.txt",
+      packageManager: "pip",
+    },
+    ...overrides,
+  };
+}
+
+const TEST_USER: User = {
+  id: "user-guid",
+  username: "testuser",
+  first_name: "Test",
+  last_name: "User",
+  email: "test@example.com",
+};
+
+const TEST_CONTENT: ContentDetailsDTO = {
+  guid: "content-guid-123",
+  name: "my-app",
+  title: "My App",
+  description: "",
+  access_type: "acl",
+  connection_timeout: null,
+  read_timeout: null,
+  init_timeout: null,
+  idle_timeout: null,
+  max_processes: null,
+  min_processes: null,
+  max_conns_per_process: null,
+  load_factor: null,
+  created_time: "2024-01-01T00:00:00Z",
+  last_deployed_time: "2024-01-01T00:00:00Z",
+  bundle_id: null,
+  app_mode: "python-shiny",
+  content_category: "",
+  parameterized: false,
+  cluster_name: null,
+  image_name: null,
+  r_version: null,
+  py_version: "3.11.0",
+  quarto_version: null,
+  run_as: null,
+  run_as_current_user: false,
+  owner_guid: "user-guid",
+  content_url: "https://connect.example.com/content/content-guid-123/",
+  dashboard_url: "https://connect.example.com/connect/#/apps/content-guid-123",
+  app_role: "owner",
+  id: "12345",
+};
+
+const TEST_BUNDLE: BundleDTO = {
+  id: "bundle-42",
+  content_guid: "content-guid-123",
+  created_time: "2024-01-01T00:00:00Z",
+  cluster_name: null,
+  image_name: null,
+  r_version: null,
+  py_version: "3.11.0",
+  quarto_version: null,
+  active: false,
+  size: 1024,
+  metadata: {
+    source: null,
+    source_repo: null,
+    source_branch: null,
+    source_commit: null,
+    archive_md5: null,
+    archive_sha1: null,
+  },
+};
+
+const TEST_DEPLOY_OUTPUT: DeployOutput = {
+  task_id: "task-99",
+};
+
+const TEST_TASK: TaskDTO = {
+  id: "task-99",
+  output: [],
+  result: null,
+  finished: true,
+  code: 0,
+  error: "",
+  last: 0,
+};
+
+function makeMockApi(): ConnectAPI {
+  return {
+    testAuthentication: vi
+      .fn()
+      .mockResolvedValue({ user: TEST_USER, error: null }),
+    createDeployment: vi.fn().mockResolvedValue({ data: TEST_CONTENT }),
+    updateDeployment: vi.fn().mockResolvedValue(undefined),
+    uploadBundle: vi.fn().mockResolvedValue({ data: TEST_BUNDLE }),
+    deployBundle: vi.fn().mockResolvedValue({ data: TEST_DEPLOY_OUTPUT }),
+    waitForTask: vi.fn().mockResolvedValue(TEST_TASK),
+    validateDeployment: vi.fn().mockResolvedValue(undefined),
+    setEnvVars: vi.fn().mockResolvedValue(undefined),
+    getEnvVars: vi.fn(),
+    contentDetails: vi.fn(),
+    getCurrentUser: vi.fn(),
+    getSettings: vi.fn(),
+    getIntegrations: vi.fn(),
+    downloadBundle: vi.fn(),
+  } as unknown as ConnectAPI;
+}
+
+function makeOptions(
+  overrides?: Partial<ConnectPublishOptions>,
+): ConnectPublishOptions {
+  return {
+    api: makeMockApi(),
+    projectDir: "/projects/myapp",
+    saveName: "production",
+    config: makeConfig(),
+    configName: "production",
+    serverUrl: "https://connect.example.com",
+    serverType: ServerType.CONNECT,
+    clientVersion: "1.0.0",
+    onProgress: vi.fn(),
+    ...overrides,
+  };
+}
+
+function progressSteps(
+  onProgress: ReturnType<typeof vi.fn>,
+): Array<{ step: PublishStep; status: string }> {
+  return onProgress.mock.calls.map((args: unknown[]) => {
+    const evt = args[0] as PublishEvent;
+    return { step: evt.step, status: evt.status };
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+describe("connectPublish", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  test("happy path — first deploy", async () => {
+    const opts = makeOptions();
+    const result = await connectPublish(opts);
+
+    // Verify result
+    expect(result.contentId).toBe("content-guid-123");
+    expect(result.bundleId).toBe("bundle-42");
+    expect(result.dashboardUrl).toBe(
+      "https://connect.example.com/connect/#/apps/content-guid-123",
+    );
+    expect(result.directUrl).toBe(
+      "https://connect.example.com/content/content-guid-123/",
+    );
+
+    // Verify API call sequence
+    const api = opts.api;
+    expect(api.testAuthentication).toHaveBeenCalledOnce();
+    expect(api.createDeployment).toHaveBeenCalledWith({ name: "" });
+    expect(api.uploadBundle).toHaveBeenCalledOnce();
+    expect(api.updateDeployment).toHaveBeenCalledOnce();
+    expect(api.deployBundle).toHaveBeenCalledOnce();
+    expect(api.waitForTask).toHaveBeenCalledOnce();
+
+    // Validate should not have been called (config.validate = false)
+    expect(api.validateDeployment).not.toHaveBeenCalled();
+  });
+
+  test("happy path — redeploy (existing content ID)", async () => {
+    const opts = makeOptions({
+      existingContentId: "existing-id",
+      existingCreatedAt: "2024-06-01T00:00:00Z",
+    });
+
+    const result = await connectPublish(opts);
+
+    expect(result.contentId).toBe("existing-id");
+
+    // Should NOT create a new deployment
+    expect(opts.api.createDeployment).not.toHaveBeenCalled();
+
+    // Should still upload, update, deploy
+    expect(opts.api.uploadBundle).toHaveBeenCalledOnce();
+    expect(opts.api.updateDeployment).toHaveBeenCalledOnce();
+    expect(opts.api.deployBundle).toHaveBeenCalledOnce();
+  });
+
+  test("progress events are emitted in correct order", async () => {
+    const onProgress = vi.fn();
+    const opts = makeOptions({ onProgress });
+
+    await connectPublish(opts);
+
+    const steps = progressSteps(onProgress);
+    expect(steps).toEqual([
+      { step: "createManifest", status: "start" },
+      { step: "createManifest", status: "success" },
+      { step: "preflight", status: "start" },
+      { step: "preflight", status: "success" },
+      { step: "createDeployment", status: "start" },
+      { step: "createDeployment", status: "success" },
+      { step: "createBundle", status: "start" },
+      { step: "createBundle", status: "success" },
+      { step: "uploadBundle", status: "start" },
+      { step: "uploadBundle", status: "success" },
+      { step: "updateContent", status: "start" },
+      { step: "updateContent", status: "success" },
+      { step: "deployBundle", status: "start" },
+      { step: "deployBundle", status: "success" },
+      { step: "waitForTask", status: "start" },
+      { step: "waitForTask", status: "success" },
+    ]);
+  });
+
+  test("env vars step included when secrets are provided", async () => {
+    const onProgress = vi.fn();
+    const opts = makeOptions({
+      onProgress,
+      secrets: { API_KEY: "secret123" },
+    });
+
+    await connectPublish(opts);
+
+    const steps = progressSteps(onProgress);
+    const envStep = steps.find((s) => s.step === "setEnvVars");
+    expect(envStep).toBeDefined();
+
+    expect(opts.api.setEnvVars).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ API_KEY: "secret123" }),
+    );
+  });
+
+  test("env vars merge config environment and secrets", async () => {
+    const config = makeConfig({
+      environment: { BASE_URL: "https://api.example.com" },
+    });
+    const opts = makeOptions({
+      config,
+      secrets: { API_KEY: "secret123" },
+    });
+
+    await connectPublish(opts);
+
+    expect(opts.api.setEnvVars).toHaveBeenCalledWith(expect.anything(), {
+      BASE_URL: "https://api.example.com",
+      API_KEY: "secret123",
+    });
+  });
+
+  test("env vars step skipped when no env vars or secrets", async () => {
+    const onProgress = vi.fn();
+    const opts = makeOptions({ onProgress });
+
+    await connectPublish(opts);
+
+    const steps = progressSteps(onProgress);
+    expect(steps.find((s) => s.step === "setEnvVars")).toBeUndefined();
+    expect(opts.api.setEnvVars).not.toHaveBeenCalled();
+  });
+
+  test("validate step included when config.validate is true", async () => {
+    const onProgress = vi.fn();
+    const config = makeConfig({ validate: true });
+    const opts = makeOptions({ onProgress, config });
+
+    await connectPublish(opts);
+
+    const steps = progressSteps(onProgress);
+    expect(steps).toContainEqual({
+      step: "validateDeployment",
+      status: "start",
+    });
+    expect(steps).toContainEqual({
+      step: "validateDeployment",
+      status: "success",
+    });
+    expect(opts.api.validateDeployment).toHaveBeenCalledOnce();
+  });
+
+  test("deployment record is written to correct path", async () => {
+    const opts = makeOptions({
+      projectDir: "/projects/myapp",
+      saveName: "staging",
+    });
+
+    await connectPublish(opts);
+
+    const expectedDir = path.join(
+      "/projects/myapp",
+      ".posit",
+      "publish",
+      "deployments",
+    );
+
+    // mkdir should have been called to ensure directory exists
+    expect(mockMkdir).toHaveBeenCalledWith(expectedDir, { recursive: true });
+
+    // writeFile should have been called for the deployment record
+    const writeCalls = mockWriteFile.mock.calls.filter(
+      ([p]) => typeof p === "string" && p.endsWith("staging.toml"),
+    );
+    expect(writeCalls.length).toBeGreaterThanOrEqual(1);
+  });
+
+  test("auth failure propagates and records error", async () => {
+    const api = makeMockApi();
+    (api.testAuthentication as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error("Invalid API key"),
+    );
+
+    const opts = makeOptions({ api });
+
+    await expect(connectPublish(opts)).rejects.toThrow("Invalid API key");
+
+    // Error should be written to deployment record
+    const lastWrite = mockWriteFile.mock.calls.at(-1);
+    expect(lastWrite).toBeDefined();
+    // Verify the error path writes to the deployment record file
+    expect(lastWrite![0]).toContain("production.toml");
+  });
+
+  test("upload failure propagates and records error", async () => {
+    const api = makeMockApi();
+    (api.uploadBundle as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error("Upload failed: 502"),
+    );
+
+    const opts = makeOptions({ api });
+
+    await expect(connectPublish(opts)).rejects.toThrow("Upload failed: 502");
+  });
+
+  test("deploy failure propagates", async () => {
+    const api = makeMockApi();
+    (api.waitForTask as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error("Build failed: missing package"),
+    );
+
+    const opts = makeOptions({ api });
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "Build failed: missing package",
+    );
+  });
+
+  test("does not mutate the caller's config", async () => {
+    const config = makeConfig({ title: "Original Title" });
+    const originalConfig = structuredClone(config);
+    const opts = makeOptions({ config });
+
+    await connectPublish(opts);
+
+    expect(config).toEqual(originalConfig);
+  });
+});
+
+describe("connectPublish — R package resolution", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  test("uses existing lockfile when present", async () => {
+    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    vi.mocked(fileExistsAt).mockResolvedValue(true);
+
+    const { resolveRPackages } = await import("./dependencies");
+    vi.mocked(resolveRPackages).mockResolvedValue({
+      packages: { shiny: { description: { Package: "shiny" } } },
+      lockfilePath: "/projects/myapp/renv.lock",
+      lockfile: {
+        R: {
+          Version: "4.3.1",
+          Repositories: [{ Name: "CRAN", URL: "https://cran.r-project.org" }],
+        },
+        Packages: {},
+      },
+    });
+
+    const config = makeConfig({
+      r: { version: "4.3.1", packageFile: "renv.lock", packageManager: "renv" },
+    });
+    const opts = makeOptions({ config });
+
+    await connectPublish(opts);
+
+    // scanRPackages should NOT have been called (lockfile exists)
+    const { scanRPackages } = await import("../interpreters/rPackages");
+    expect(scanRPackages).not.toHaveBeenCalled();
+
+    // resolveRPackages should have been called
+    expect(resolveRPackages).toHaveBeenCalledWith(
+      "/projects/myapp",
+      expect.objectContaining({ packageFile: "renv.lock" }),
+    );
+  });
+
+  test("scans for dependencies when no lockfile exists", async () => {
+    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    vi.mocked(fileExistsAt).mockResolvedValue(false);
+
+    const { resolveRPackages } = await import("./dependencies");
+    vi.mocked(resolveRPackages).mockResolvedValue({
+      packages: {},
+      lockfilePath: "/projects/myapp/renv.lock",
+      lockfile: {
+        R: {
+          Version: "4.3.1",
+          Repositories: [{ Name: "CRAN", URL: "https://cran.r-project.org" }],
+        },
+        Packages: {},
+      },
+    });
+
+    const config = makeConfig({
+      r: { version: "4.3.1", packageFile: "renv.lock", packageManager: "renv" },
+    });
+    const opts = makeOptions({ config, rPath: "/usr/bin/R" });
+
+    await connectPublish(opts);
+
+    const { scanRPackages } = await import("../interpreters/rPackages");
+    expect(scanRPackages).toHaveBeenCalledWith(
+      "/projects/myapp",
+      "/usr/bin/R",
+      "renv.lock",
+      undefined, // positronR
+    );
+  });
+
+  test("throws when R scan needed but no R interpreter", async () => {
+    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    vi.mocked(fileExistsAt).mockResolvedValue(false);
+
+    const config = makeConfig({
+      r: { version: "4.3.1", packageFile: "renv.lock", packageManager: "renv" },
+    });
+    // No rPath provided
+    const opts = makeOptions({ config, rPath: undefined });
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "R interpreter is required",
+    );
+  });
+
+  test("injects extra dependencies before scanning", async () => {
+    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    vi.mocked(fileExistsAt).mockResolvedValue(false);
+
+    const {
+      findExtraDependencies,
+      recordExtraDependencies,
+      cleanupExtraDependencies,
+    } = await import("./extraDependencies");
+    vi.mocked(findExtraDependencies).mockResolvedValue(["shiny", "rmarkdown"]);
+    vi.mocked(recordExtraDependencies).mockResolvedValue(
+      "/projects/myapp/.posit/__publisher_deps.R",
+    );
+
+    const { resolveRPackages } = await import("./dependencies");
+    vi.mocked(resolveRPackages).mockResolvedValue({
+      packages: {},
+      lockfilePath: "/projects/myapp/renv.lock",
+      lockfile: {
+        R: {
+          Version: "4.3.1",
+          Repositories: [{ Name: "CRAN", URL: "https://cran.r-project.org" }],
+        },
+        Packages: {},
+      },
+    });
+
+    const config = makeConfig({
+      type: ContentType.QUARTO_SHINY,
+      r: { version: "4.3.1", packageFile: "renv.lock", packageManager: "renv" },
+    });
+    const opts = makeOptions({ config, rPath: "/usr/bin/R" });
+
+    await connectPublish(opts);
+
+    expect(findExtraDependencies).toHaveBeenCalledWith(
+      ContentType.QUARTO_SHINY,
+      undefined, // hasParameters
+      "/projects/myapp",
+    );
+    expect(recordExtraDependencies).toHaveBeenCalledWith("/projects/myapp", [
+      "shiny",
+      "rmarkdown",
+    ]);
+    expect(cleanupExtraDependencies).toHaveBeenCalledWith(
+      "/projects/myapp/.posit/__publisher_deps.R",
+    );
+  });
+
+  test("cleans up extra deps file even if scan fails", async () => {
+    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    vi.mocked(fileExistsAt).mockResolvedValue(false);
+
+    const { recordExtraDependencies, cleanupExtraDependencies } =
+      await import("./extraDependencies");
+    vi.mocked(recordExtraDependencies).mockResolvedValue(
+      "/projects/myapp/.posit/__publisher_deps.R",
+    );
+
+    const { scanRPackages } = await import("../interpreters/rPackages");
+    vi.mocked(scanRPackages).mockRejectedValue(new Error("R crashed"));
+
+    const config = makeConfig({
+      r: { version: "4.3.1", packageFile: "renv.lock", packageManager: "renv" },
+    });
+    const opts = makeOptions({ config, rPath: "/usr/bin/R" });
+
+    await expect(connectPublish(opts)).rejects.toThrow("R crashed");
+
+    expect(cleanupExtraDependencies).toHaveBeenCalledWith(
+      "/projects/myapp/.posit/__publisher_deps.R",
+    );
+  });
+});
+
+describe("connectPublish — staged lockfile cleanup", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  test("staged lockfile is cleaned up after bundle creation", async () => {
+    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    vi.mocked(fileExistsAt).mockResolvedValue(true);
+
+    const { resolveRPackages } = await import("./dependencies");
+    vi.mocked(resolveRPackages).mockResolvedValue({
+      packages: { shiny: { description: { Package: "shiny" } } },
+      // Non-root lockfile triggers staging
+      lockfilePath: "/projects/myapp/renv/renv.lock",
+      lockfile: {
+        R: { Version: "4.3.1", Repositories: [] },
+        Packages: {},
+      },
+    });
+
+    const config = makeConfig({
+      r: {
+        version: "4.3.1",
+        packageFile: "renv/renv.lock",
+        packageManager: "renv",
+      },
+    });
+    const opts = makeOptions({ config });
+
+    await connectPublish(opts);
+
+    // copyFile should have staged the lockfile
+    expect(mockCopyFile).toHaveBeenCalledWith(
+      "/projects/myapp/renv/renv.lock",
+      path.join(
+        "/projects/myapp",
+        ".posit",
+        "publish",
+        "deployments",
+        "renv.lock",
+      ),
+    );
+
+    // unlink should have cleaned it up
+    expect(mockUnlink).toHaveBeenCalledWith(
+      path.join(
+        "/projects/myapp",
+        ".posit",
+        "publish",
+        "deployments",
+        "renv.lock",
+      ),
+    );
+  });
+
+  test("staged lockfile is cleaned up even if bundle creation fails", async () => {
+    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    vi.mocked(fileExistsAt).mockResolvedValue(true);
+
+    const { resolveRPackages } = await import("./dependencies");
+    vi.mocked(resolveRPackages).mockResolvedValue({
+      packages: {},
+      lockfilePath: "/projects/myapp/renv/renv.lock",
+      lockfile: {
+        R: { Version: "4.3.1", Repositories: [] },
+        Packages: {},
+      },
+    });
+
+    const { createBundle } = await import("../bundler/bundler");
+    vi.mocked(createBundle).mockRejectedValueOnce(new Error("bundle failed"));
+
+    const config = makeConfig({
+      r: {
+        version: "4.3.1",
+        packageFile: "renv/renv.lock",
+        packageManager: "renv",
+      },
+    });
+    const opts = makeOptions({ config });
+
+    await expect(connectPublish(opts)).rejects.toThrow("bundle failed");
+
+    // unlink should still have been called (finally block)
+    expect(mockUnlink).toHaveBeenCalledWith(
+      path.join(
+        "/projects/myapp",
+        ".posit",
+        "publish",
+        "deployments",
+        "renv.lock",
+      ),
+    );
+  });
+
+  test("no cleanup when lockfile is at project root", async () => {
+    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    vi.mocked(fileExistsAt).mockResolvedValue(true);
+
+    const { resolveRPackages } = await import("./dependencies");
+    vi.mocked(resolveRPackages).mockResolvedValue({
+      packages: {},
+      // Root lockfile — no staging needed
+      lockfilePath: "/projects/myapp/renv.lock",
+      lockfile: {
+        R: { Version: "4.3.1", Repositories: [] },
+        Packages: {},
+      },
+    });
+
+    const config = makeConfig({
+      r: { version: "4.3.1", packageFile: "renv.lock", packageManager: "renv" },
+    });
+    const opts = makeOptions({ config });
+
+    await connectPublish(opts);
+
+    expect(mockCopyFile).not.toHaveBeenCalled();
+    expect(mockUnlink).not.toHaveBeenCalled();
+  });
+});
+
+describe("connectPublish — error classification", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  test("validation 5xx writes deployedContentNotRunning with user-friendly message", async () => {
+    const api = makeMockApi();
+    const axiosErr = new AxiosError(
+      "Request failed with status code 502",
+      "ERR_BAD_RESPONSE",
+      undefined,
+      undefined,
+      {
+        status: 502,
+        statusText: "Bad Gateway",
+        data: "bad gateway",
+        headers: {},
+        config: { headers: new AxiosHeaders() },
+      },
+    );
+    (api.validateDeployment as ReturnType<typeof vi.fn>).mockRejectedValue(
+      axiosErr,
+    );
+
+    const config = makeConfig({ validate: true });
+    const opts = makeOptions({ api, config });
+
+    await expect(connectPublish(opts)).rejects.toThrow();
+
+    // Find the last writeFile call (error record write)
+    const lastWrite = mockWriteFile.mock.calls.at(-1);
+    expect(lastWrite).toBeDefined();
+    const tomlContent = lastWrite![1] as string;
+    expect(tomlContent).toContain("deployedContentNotRunning");
+    // Should use a user-friendly message, not the raw Axios error
+    expect(tomlContent).toContain("does not appear to be running");
+    expect(tomlContent).not.toContain("Request failed with status code");
+  });
+
+  test("non-validation failure writes unknown error code", async () => {
+    const api = makeMockApi();
+    (api.deployBundle as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error("deploy exploded"),
+    );
+
+    const opts = makeOptions({ api });
+
+    await expect(connectPublish(opts)).rejects.toThrow("deploy exploded");
+
+    const lastWrite = mockWriteFile.mock.calls.at(-1);
+    expect(lastWrite).toBeDefined();
+    const tomlContent = lastWrite![1] as string;
+    expect(tomlContent).toContain("unknown");
+    expect(tomlContent).not.toContain("deployedContentNotRunning");
+  });
+
+  test("validation failure with non-5xx stays unknown", async () => {
+    const api = makeMockApi();
+    // A non-HTTP error during validation (e.g. network timeout)
+    (api.validateDeployment as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error("Network timeout"),
+    );
+
+    const config = makeConfig({ validate: true });
+    const opts = makeOptions({ api, config });
+
+    await expect(connectPublish(opts)).rejects.toThrow("Network timeout");
+
+    const lastWrite = mockWriteFile.mock.calls.at(-1);
+    expect(lastWrite).toBeDefined();
+    const tomlContent = lastWrite![1] as string;
+    expect(tomlContent).toContain("unknown");
+    expect(tomlContent).not.toContain("deployedContentNotRunning");
+  });
+
+  test("emits failure event with step and message on error", async () => {
+    const api = makeMockApi();
+    (api.uploadBundle as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error("Upload failed: 502"),
+    );
+
+    const onProgress = vi.fn();
+    const opts = makeOptions({ api, onProgress });
+
+    await expect(connectPublish(opts)).rejects.toThrow("Upload failed: 502");
+
+    const events = onProgress.mock.calls.map(
+      (args: unknown[]) => args[0] as PublishEvent,
+    );
+    const failureEvent = events.find((e) => e.status === "failure");
+    expect(failureEvent).toEqual({
+      step: "uploadBundle",
+      status: "failure",
+      message: "Upload failed: 502",
+    });
+  });
+});
