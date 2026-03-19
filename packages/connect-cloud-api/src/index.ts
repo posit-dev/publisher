@@ -27,5 +27,7 @@ export type {
   Revision,
   Secret,
   UpdateContentRequest,
+  UserAccountRole,
+  UserAccountRoleAccount,
   UserResponse,
 } from "./types.js";

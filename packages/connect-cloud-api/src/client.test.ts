@@ -157,7 +157,7 @@ afterEach(() => {
 
 describe("Authorization header", () => {
   it("sends Authorization: Bearer <accessToken> on every request", async () => {
-    const userResponse: UserResponse = {};
+    const userResponse: UserResponse = { account_roles: {} };
     mockRequest.mockResolvedValue(jsonResponse(userResponse));
 
     const client = createClient();
@@ -180,7 +180,7 @@ describe("Authorization header", () => {
 
 describe("getCurrentUser", () => {
   it("returns UserResponse", async () => {
-    const userResponse: UserResponse = {};
+    const userResponse: UserResponse = { account_roles: {} };
     mockRequest.mockResolvedValue(jsonResponse(userResponse));
 
     const client = createClient();
