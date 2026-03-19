@@ -5,16 +5,10 @@ import axios from "axios";
 import { Credentials } from "./resources/Credentials";
 import { ContentRecords } from "./resources/ContentRecords";
 import { Configurations } from "./resources/Configurations";
-import { Files } from "./resources/Files";
-
 import { Packages } from "./resources/Packages";
-import { Secrets } from "./resources/Secrets";
 import { SnowflakeConnections } from "./resources/SnowflakeConnections";
 import * as Entities from "entities";
 import { ConnectCloud } from "./resources/ConnectCloud";
-import { IntegrationRequests } from "./resources/IntegrationRequests";
-import { ConnectServer } from "./resources/ConnectServer";
-import { OpenConnectContent } from "./resources/OpenConnectContent";
 
 class PublishingClientApi {
   private client;
@@ -22,15 +16,10 @@ class PublishingClientApi {
   configurations: Configurations;
   credentials: Credentials;
   contentRecords: ContentRecords;
-  files: Files;
   packages: Packages;
-  secrets: Secrets;
-  integrationRequests: IntegrationRequests;
   apiServiceIsUp: Promise<boolean>;
   snowflakeConnections: SnowflakeConnections;
   connectCloud: ConnectCloud;
-  connectServer: ConnectServer;
-  openConnectContent: OpenConnectContent;
 
   constructor(apiBaseUrl: string, apiServiceIsUp: Promise<boolean>) {
     this.client = axios.create({
@@ -55,15 +44,9 @@ class PublishingClientApi {
     this.configurations = new Configurations(this.client);
     this.credentials = new Credentials(this.client);
     this.contentRecords = new ContentRecords(this.client);
-    this.files = new Files(this.client);
-
     this.packages = new Packages(this.client);
-    this.secrets = new Secrets(this.client);
-    this.integrationRequests = new IntegrationRequests(this.client);
     this.snowflakeConnections = new SnowflakeConnections(this.client);
     this.connectCloud = new ConnectCloud(this.client);
-    this.connectServer = new ConnectServer(this.client);
-    this.openConnectContent = new OpenConnectContent(this.client);
   }
 
   setBaseUrl(url: string) {

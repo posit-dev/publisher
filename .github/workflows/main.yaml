@@ -13,6 +13,8 @@ jobs:
     uses: ./.github/workflows/agent.yaml
   vscode:
     uses: ./.github/workflows/vscode.yaml
+  extension-contract-tests:
+    uses: ./.github/workflows/extension-contract-tests.yaml
 
   connect-contract-tests:
     uses: ./.github/workflows/connect-contract-tests.yaml
@@ -46,29 +48,19 @@ jobs:
     secrets:
       AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
 
-  # License generation
-  generate-licenses:
-    uses: ./.github/workflows/generate-licenses.yaml
-    with:
-      pr_changes: true
-      fail_on_forbidden: true
-    secrets:
-      POSIT_CONNECT_PROJECTS_APP_ID: ${{ secrets.POSIT_CONNECT_PROJECTS_APP_ID }}
-      POSIT_CONNECT_PROJECTS_PEM: ${{ secrets.POSIT_CONNECT_PROJECTS_PEM }}
-
   # Slack notification on failure
   slack-notification:
     needs:
       [
         agent,
         vscode,
+        extension-contract-tests,
         connect-contract-tests,
         build,
         package,
         archive,
         e2e,
         upload,
-        generate-licenses,
       ]
     if: failure()
     runs-on: ubuntu-latest
@@ -92,13 +84,13 @@ jobs:
       [
         agent,
         vscode,
+        extension-contract-tests,
         connect-contract-tests,
         build,
         package,
         archive,
         e2e,
         upload,
-        generate-licenses,
       ]
     if: success()
     runs-on: ubuntu-latest

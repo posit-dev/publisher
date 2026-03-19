@@ -178,7 +178,7 @@ afterEach(() => {
 
 describe("Authorization header", () => {
   it("sends Authorization: Bearer <accessToken> on every request", async () => {
-    const userResponse: UserResponse = {};
+    const userResponse: UserResponse = { account_roles: {} };
     mockRequest.mockResolvedValue(jsonResponse(userResponse));
 
     const client = createClient();
@@ -201,7 +201,7 @@ describe("Authorization header", () => {
 
 describe("getCurrentUser", () => {
   it("returns UserResponse", async () => {
-    const userResponse: UserResponse = {};
+    const userResponse: UserResponse = { account_roles: {} };
     mockRequest.mockResolvedValue(jsonResponse(userResponse));
 
     const client = createClient();
@@ -629,7 +629,7 @@ function createClientWithRefresh(
 
 describe("Token refresh", () => {
   it("retries request after refreshing token on 401", async () => {
-    const userResponse: UserResponse = {};
+    const userResponse: UserResponse = { account_roles: {} };
     // First call returns 401, second call succeeds
     mockRequest
       .mockResolvedValueOnce(textResponse("Unauthorized", 401, "Unauthorized"))
@@ -647,7 +647,7 @@ describe("Token refresh", () => {
   });
 
   it("uses new token for retry request", async () => {
-    const userResponse: UserResponse = {};
+    const userResponse: UserResponse = { account_roles: {} };
     mockRequest
       .mockResolvedValueOnce(textResponse("Unauthorized", 401, "Unauthorized"))
       .mockResolvedValueOnce(jsonResponse(userResponse));
@@ -661,7 +661,7 @@ describe("Token refresh", () => {
   });
 
   it("calls onTokenRefresh callback after successful refresh", async () => {
-    const userResponse: UserResponse = {};
+    const userResponse: UserResponse = { account_roles: {} };
     mockRequest
       .mockResolvedValueOnce(textResponse("Unauthorized", 401, "Unauthorized"))
       .mockResolvedValueOnce(jsonResponse(userResponse));

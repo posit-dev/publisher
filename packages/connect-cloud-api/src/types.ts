@@ -104,8 +104,18 @@ export interface AccountListResponse {
 // User types (from connect_cloud/user.go and clients/types/types.go)
 // ---------------------------------------------------------------------------
 
-// TODO: Populate with fields from the /v1/users/me API response once the schema is finalized.
-export interface UserResponse {}
+export interface UserAccountRoleAccount {
+  name: string;
+}
+
+export interface UserAccountRole {
+  role: string;
+  account: UserAccountRoleAccount;
+}
+
+export interface UserResponse {
+  account_roles: Record<string, UserAccountRole>;
+}
 
 // ---------------------------------------------------------------------------
 // Content access and type enums (from clients/types/types.go)

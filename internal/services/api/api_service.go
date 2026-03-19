@@ -12,8 +12,6 @@ import (
 	"github.com/posit-dev/publisher/internal/credentials"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/logging"
-	"github.com/posit-dev/publisher/internal/services/api/files"
-	"github.com/posit-dev/publisher/internal/services/api/paths"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/rs/cors"
 
@@ -47,24 +45,10 @@ func NewService(
 }
 
 func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log logging.Logger, eventServer *sse.Server, emitter events.Emitter) http.HandlerFunc {
-	filesService := files.CreateFilesService(base, log)
-	pathsService := paths.CreatePathsService(base, log)
-
 	r := mux.NewRouter()
-	// POST /api/accounts/{name}/integrations
-	r.Handle(ToPath("accounts", "{name}", "integrations"), GetIntegrationsHandlerFunc(lister, log)).
-		Methods(http.MethodGet)
-
-	// GET /api/accounts/{name}/server-settings
-	r.Handle(ToPath("accounts", "{name}", "server-settings"), GetServerSettingsHandlerFunc(lister, log)).
-		Methods(http.MethodGet)
 
 	// GET /api/events
 	r.HandleFunc(ToPath("events"), eventServer.ServeHTTP)
-
-	// GET /api/files
-	r.Handle(ToPath("files"), GetFileHandlerFunc(base, filesService, pathsService, log)).
-		Methods(http.MethodGet)
 
 	// POST /api/inspect
 	r.Handle(ToPath("inspect"), PostInspectHandlerFunc(base, log)).
@@ -92,58 +76,6 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	r.Handle(ToPath("test-credentials"), PostTestCredentialsHandlerFunc(log)).
 		Methods(http.MethodPost)
 
-	// POST /api/connect/open-content
-	r.Handle(ToPath("connect", "open-content"), PostOpenConnectContentHandlerFunc(lister, log, emitter)).
-		Methods(http.MethodPost)
-
-	// GET /api/configurations/$NAME/files
-	r.Handle(ToPath("configurations", "{name}", "files"), GetConfigFilesHandlerFunc(base, filesService, log)).
-		Methods(http.MethodGet)
-
-	// POST /api/configurations/$NAME/files
-	r.Handle(ToPath("configurations", "{name}", "files"), PostConfigFilesHandlerFunc(base, log)).
-		Methods(http.MethodPost)
-
-	// POST /api/configurations/$NAME/secrets
-	r.Handle(ToPath("configurations", "{name}", "secrets"), PostConfigSecretsHandlerFunc(base, log)).
-		Methods(http.MethodPost)
-
-	// GET /api/configurations/$NAME/packages/python
-	r.Handle(ToPath("configurations", "{name}", "packages", "python"), NewGetConfigPythonPackagesHandler(base, log)).
-		Methods(http.MethodGet)
-
-	// GET /api/configurations/$NAME/packages/r
-	r.Handle(ToPath("configurations", "{name}", "packages", "r"), NewGetConfigRPackagesHandler(base, log)).
-		Methods(http.MethodGet)
-
-	// GET /api/configurations/$NAME/integration-requests
-	r.Handle(ToPath("configurations", "{name}", "integration-requests"), GetIntegrationRequestsFuncHandler(base, log)).
-		Methods(http.MethodGet)
-
-	// POST /api/configurations/$NAME/integration-requests
-	r.Handle(ToPath("configurations", "{name}", "integration-requests"), PostIntegrationRequestFuncHandler(base, log)).
-		Methods(http.MethodPost)
-
-	// DELETE /api/configurations/$NAME/integration-requests
-	r.Handle(ToPath("configurations", "{name}", "integration-requests"), DeleteIntegrationRequestFuncHandler(base, log)).
-		Methods(http.MethodDelete)
-
-	// GET /api/deployments
-	r.Handle(ToPath("deployments"), GetDeploymentsHandlerFunc(base, log)).
-		Methods(http.MethodGet)
-
-	// POST /api/deployments creates a new deployment record
-	r.Handle(ToPath("deployments"), PostDeploymentsHandlerFunc(base, log, lister)).
-		Methods(http.MethodPost)
-
-	// PATCH /api/deployments/$NAME updates a deployment record
-	r.Handle(ToPath("deployments", "{name}"), PatchDeploymentHandlerFunc(base, log)).
-		Methods(http.MethodPatch)
-
-	// GET /api/deployments/$NAME
-	r.Handle(ToPath("deployments", "{name}"), GetDeploymentHandlerFunc(base, log)).
-		Methods(http.MethodGet)
-
 	// POST /api/deployments/$NAME initiates a deployment
 	r.Handle(ToPath("deployments", "{name}"), PostDeploymentHandlerFunc(base, log, lister, emitter)).
 		Methods(http.MethodPost)
@@ -158,10 +90,6 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 
 	// POST /api/packages/python/scan
 	r.Handle(ToPath("packages", "python", "scan"), NewPostPackagesPythonScanHandler(base, log)).
-		Methods(http.MethodPost)
-
-	// POST /api/packages/r/scan
-	r.Handle(ToPath("packages", "r", "scan"), NewPostPackagesRScanHandler(base, log)).
 		Methods(http.MethodPost)
 
 	// GET /api/snowflake-connections

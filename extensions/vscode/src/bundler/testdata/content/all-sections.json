@@ -1,0 +1,12 @@
+{
+  "name": "",
+  "title": "Full App",
+  "description": "Everything configured",
+  "connection_timeout": 15,
+  "init_timeout": 60,
+  "max_processes": 3,
+  "run_as": "publisher",
+  "run_as_current_user": false,
+  "memory_request": 512,
+  "cpu_limit": 1
+}

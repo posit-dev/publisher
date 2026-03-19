@@ -4,7 +4,7 @@
   "author": "Posit, PBC",
   "displayName": "Posit Publisher",
   "description": "Publish and share your Python and R content on Posit Connect",
-  "version": "1.36.0",
+  "version": "1.37.1",
   "license": "MIT",
   "icon": "assets/img/posit-publisher.png",
   "repository": {
@@ -662,6 +662,7 @@
     "@eslint/js": "^9.39.2",
     "@types/mocha": "^10.0.2",
     "@types/node": "^22.0.0",
+    "@types/picomatch": "^4.0.2",
     "@types/retry": "^0.12.5",
     "@types/tar-stream": "^3.1.4",
     "@types/vscode": "^1.87.0",
@@ -680,6 +681,7 @@
     "vitest": "^4.0.18"
   },
   "dependencies": {
+    "@posit-dev/connect-api": "file:../../packages/connect-api",
     "@vscode/codicons": "^0.0.44",
     "ajv": "^8.18.0",
     "ajv-formats": "^3.0.1",
@@ -690,6 +692,7 @@
     "eventsource": "^4.1.0",
     "filenamify": "^7.0.1",
     "get-port": "^7.1.0",
+    "picomatch": "^4.0.3",
     "retry": "^0.13.1",
     "smol-toml": "^1.6.0",
     "tar-stream": "^3.1.8",

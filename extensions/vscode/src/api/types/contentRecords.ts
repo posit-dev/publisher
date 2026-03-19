@@ -51,6 +51,7 @@ type OptionalPreDeploymentFields = {
   bundleUrl?: string;
   dashboardUrl?: string;
   directUrl?: string;
+  logsUrl?: string;
 };
 
 type ConnectCloud = {
@@ -61,7 +62,6 @@ type ContentRecordRecord = {
   $schema: SchemaURL;
   serverType: ServerType;
   serverUrl: string;
-  saveName: string;
   createdAt: string;
   dismissedAt: string;
   configurationName: string;
@@ -78,6 +78,27 @@ export type PreContentRecord = {
 export type PreContentRecordWithConfig = PreContentRecord &
   ConfigurationLocation;
 
+export type RenvRepository = {
+  name?: string;
+  url?: string;
+};
+
+export type RenvPackage = {
+  package?: string;
+  version?: string;
+  source?: string;
+  repository?: string;
+  [key: string]: unknown;
+};
+
+export type RenvLockfile = {
+  r?: {
+    version?: string;
+    repositories?: RenvRepository[];
+  };
+  packages?: Record<string, RenvPackage>;
+};
+
 export type ContentRecord = {
   id: string;
   bundleId: string;
@@ -86,6 +107,8 @@ export type ContentRecord = {
   directUrl: string;
   logsUrl: string;
   files: string[];
+  requirements?: string[];
+  renv?: RenvLockfile;
   deployedAt: string;
   state: ContentRecordState.DEPLOYED;
 } & ContentRecordRecord &

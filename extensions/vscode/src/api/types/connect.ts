@@ -35,25 +35,7 @@ export type ConnectKubernetes = {
   defaultPyEnvironmentManagement?: boolean;
 };
 
-// See types in internal/clients/connect/client.go
-// for more information or to add more.
-export type LicenseInfo = {
-  "oauth-integrations"?: boolean;
-};
-
-// See types in internal/clients/connect/client.go
-// for more information or to add more.
-export type ServerSettings = {
-  license?: LicenseInfo;
-  oauth_integrations_enabled?: boolean;
-};
-
-export type Integration = {
-  guid?: string;
-  name?: string;
-  description?: string;
-  auth_type?: string;
-  template?: string;
-  config?: Record<string, string | undefined>;
-  created_time?: string;
-};
+export type {
+  LicenseStatus as LicenseInfo,
+  ServerSettings,
+} from "@posit-dev/connect-api";

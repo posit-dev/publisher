@@ -32,5 +32,7 @@ export type {
   TokenRequest,
   TokenResponse,
   UpdateContentRequest,
+  UserAccountRole,
+  UserAccountRoleAccount,
   UserResponse,
 } from "./types.js";

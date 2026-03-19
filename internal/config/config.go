@@ -3,10 +3,8 @@ package config
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"errors"
 	"fmt"
 	"io"
-	"reflect"
 	"strings"
 
 	"github.com/pelletier/go-toml/v2"
@@ -131,55 +129,4 @@ func (cfg *Config) WriteFile(path util.AbsolutePath) error {
 	return cfg.Write(f)
 }
 
-func (cfg *Config) AddSecret(secret string) error {
-	// Check if the secret already exists before adding
-	for _, s := range cfg.Secrets {
-		if s == secret {
-			return nil // Secret already exists, no need to add
-		}
-	}
-	// Check if the secret name already exists in the environment
-	for e := range cfg.Environment {
-		if e == secret {
-			return errors.New("secret name already exists in environment")
-		}
-	}
 
-	cfg.Secrets = append(cfg.Secrets, secret)
-	return nil
-}
-
-func (cfg *Config) RemoveSecret(secret string) error {
-	for i, s := range cfg.Secrets {
-		if s == secret {
-			cfg.Secrets = append(cfg.Secrets[:i], cfg.Secrets[i+1:]...)
-			break
-		}
-	}
-	return nil
-}
-
-func (cfg *Config) AddIntegrationRequest(ir IntegrationRequest) error {
-	// first check if the integrationRequest already exists
-	for _, r := range cfg.IntegrationRequests {
-		// need reflect.DeepEqual for comparing structs with map[string]any fields
-		if reflect.DeepEqual(r, ir) {
-			return nil
-		}
-	}
-	if cfg.IntegrationRequests == nil {
-		cfg.IntegrationRequests = []IntegrationRequest{}
-	}
-	cfg.IntegrationRequests = append(cfg.IntegrationRequests, ir)
-	return nil
-}
-
-func (cfg *Config) RemoveIntegrationRequest(ir IntegrationRequest) error {
-	for i, r := range cfg.IntegrationRequests {
-		if reflect.DeepEqual(ir, r) {
-			cfg.IntegrationRequests = append(cfg.IntegrationRequests[:i], cfg.IntegrationRequests[i+1:]...)
-			break
-		}
-	}
-	return nil
-}

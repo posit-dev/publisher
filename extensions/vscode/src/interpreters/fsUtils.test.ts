@@ -8,13 +8,21 @@ vi.mock("node:fs/promises", () => ({
     if (filePath === "/exists.txt") {
       return Promise.resolve("hello world");
     }
+    if (filePath === "/no-access.txt") {
+      return Promise.reject(
+        Object.assign(new Error("EACCES"), { code: "EACCES" }),
+      );
+    }
     return Promise.reject(
       Object.assign(new Error("ENOENT"), { code: "ENOENT" }),
     );
   }),
-  access: vi.fn((filePath: string) => {
+  stat: vi.fn((filePath: string) => {
     if (filePath === "/exists.txt") {
-      return Promise.resolve();
+      return Promise.resolve({ isFile: () => true });
+    }
+    if (filePath === "/exists-dir") {
+      return Promise.resolve({ isFile: () => false });
     }
     return Promise.reject(
       Object.assign(new Error("ENOENT"), { code: "ENOENT" }),
@@ -32,6 +40,10 @@ describe("readFileText", () => {
     const result = await readFileText("/missing.txt");
     expect(result).toBeNull();
   });
+
+  test("rethrows non-ENOENT errors", async () => {
+    await expect(readFileText("/no-access.txt")).rejects.toThrow("EACCES");
+  });
 });
 
 describe("fileExistsAt", () => {
@@ -42,6 +54,11 @@ describe("fileExistsAt", () => {
 
   test("returns false when file does not exist", async () => {
     const result = await fileExistsAt("/missing.txt");
+    expect(result).toBe(false);
+  });
+
+  test("returns false when path is a directory", async () => {
+    const result = await fileExistsAt("/exists-dir");
     expect(result).toBe(false);
   });
 });

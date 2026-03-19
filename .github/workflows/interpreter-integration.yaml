@@ -64,7 +64,7 @@ jobs:
           node-version: "22"
           cache: "npm"
           cache-dependency-path: "**/package-lock.json"
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         if: matrix.python-version != ''
         with:
           python-version: ${{ matrix.python-version }}
@@ -72,5 +72,8 @@ jobs:
         if: matrix.r-version != ''
         with:
           r-version: ${{ matrix.r-version }}
+      - name: Install renv
+        if: matrix.r-version != ''
+        run: Rscript -e "install.packages('renv', repos = 'https://cloud.r-project.org')"
       - run: npm install
       - run: npm run test-integration-interpreters

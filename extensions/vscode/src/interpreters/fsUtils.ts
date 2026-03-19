@@ -1,17 +1,24 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
-import { access, readFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 
 /**
- * Read a file as UTF-8 text, returning null if the file doesn't exist
- * or can't be read.
+ * Read a file as UTF-8 text, returning null if the file doesn't exist.
+ * Other I/O errors (e.g. permission denied) are rethrown.
  */
 export async function readFileText(filePath: string): Promise<string | null> {
   try {
     return await readFile(filePath, "utf-8");
-  } catch {
-    return null;
+  } catch (err: unknown) {
+    if (isErrnoException(err) && err.code === "ENOENT") {
+      return null;
+    }
+    throw err;
   }
+}
+
+function isErrnoException(err: unknown): err is NodeJS.ErrnoException {
+  return err instanceof Error && "code" in err;
 }
 
 /**
@@ -19,8 +26,8 @@ export async function readFileText(filePath: string): Promise<string | null> {
  */
 export async function fileExistsAt(filePath: string): Promise<boolean> {
   try {
-    await access(filePath);
-    return true;
+    const info = await stat(filePath);
+    return info.isFile();
   } catch {
     return false;
   }

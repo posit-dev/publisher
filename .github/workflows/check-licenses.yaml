@@ -1,0 +1,38 @@
+name: Check Licenses
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  license-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: ./.github/actions/setup
+
+      # Setup Node.js (required for VSCode extension dependencies)
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "lts/*"
+          cache: npm
+
+      # Install root npm dependencies
+      - run: just npm-install
+
+      # Create vendor directory with Go dependencies
+      - run: go mod vendor
+
+      # Create VSCode extension's node_modules directories
+      - run: just extensions/vscode deps
+
+      # Run license script tests
+      - name: Run license script tests
+        run: just test-scripts
+
+      # Check for forbidden licenses
+      - name: Check licenses
+        run: python3 scripts/licenses.py

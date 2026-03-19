@@ -20,11 +20,6 @@ import { ConfigurationLoadError } from "src/toml";
 import { getInterpreterDefaults } from "src/interpreters";
 
 class mockApiClient {
-  readonly contentRecords = {
-    get: vi.fn(),
-    getAll: vi.fn(),
-  };
-
   readonly credentials = {
     list: vi.fn(),
     reset: vi.fn(),
@@ -80,6 +75,8 @@ vi.mock("src/credentialSecretStorage", () => ({
 
 const mockLoadConfiguration = vi.fn();
 const mockLoadAllConfigurationsRecursive = vi.fn();
+const mockLoadDeployment = vi.fn();
+const mockLoadAllDeploymentsRecursive = vi.fn();
 
 vi.mock("src/toml", async (importOriginal) => {
   return {
@@ -87,6 +84,9 @@ vi.mock("src/toml", async (importOriginal) => {
     loadConfiguration: (...args: unknown[]) => mockLoadConfiguration(...args),
     loadAllConfigurationsRecursive: (...args: unknown[]) =>
       mockLoadAllConfigurationsRecursive(...args),
+    loadDeployment: (...args: unknown[]) => mockLoadDeployment(...args),
+    loadAllDeploymentsRecursive: (...args: unknown[]) =>
+      mockLoadAllDeploymentsRecursive(...args),
   };
 });
 
@@ -173,26 +173,25 @@ describe("PublisherState", () => {
 
       let currentSelection = await publisherState.getSelectedContentRecord();
       expect(currentSelection).toEqual(undefined);
-      expect(mockClient.contentRecords.get).not.toHaveBeenCalled();
+      expect(mockLoadDeployment).not.toHaveBeenCalled();
 
-      // setup fake response from api client,
+      // setup fake response from toml loader,
       // path must be the same between selection state and content record
       const firstGetResponseData: PreContentRecord =
         preContentRecordFactory.build({
           deploymentPath: initialState.deploymentPath,
         });
-      mockClient.contentRecords.get.mockResolvedValue({
-        data: firstGetResponseData,
-      });
+      mockLoadDeployment.mockResolvedValue(firstGetResponseData);
 
       // selection has something now
       await publisherState.updateSelection(initialState);
 
       currentSelection = await publisherState.getSelectedContentRecord();
-      expect(mockClient.contentRecords.get).toHaveBeenCalledTimes(1);
-      expect(mockClient.contentRecords.get).toHaveBeenCalledWith(
+      expect(mockLoadDeployment).toHaveBeenCalledTimes(1);
+      expect(mockLoadDeployment).toHaveBeenCalledWith(
         initialState.deploymentName,
         initialState.projectDir,
+        "/workspace",
       );
       expect(currentSelection).toEqual(firstGetResponseData);
       expect(publisherState.contentRecords).toEqual([firstGetResponseData]);
@@ -201,16 +200,14 @@ describe("PublisherState", () => {
       currentSelection = await publisherState.getSelectedContentRecord();
 
       // Only the previous call is registered
-      expect(mockClient.contentRecords.get).toHaveBeenCalledTimes(1);
+      expect(mockLoadDeployment).toHaveBeenCalledTimes(1);
       expect(currentSelection).toEqual(firstGetResponseData);
       expect(publisherState.contentRecords).toEqual([firstGetResponseData]);
 
-      // setup a second fake response from api client
+      // setup a second fake response from toml loader
       const secondGetResponseData: PreContentRecord =
         preContentRecordFactory.build();
-      mockClient.contentRecords.get.mockResolvedValue({
-        data: secondGetResponseData,
-      });
+      mockLoadDeployment.mockResolvedValue(secondGetResponseData);
 
       // selection has something different this time
       await publisherState.updateSelection(updatedState);
@@ -218,8 +215,8 @@ describe("PublisherState", () => {
       // third time will get updated record
       currentSelection = await publisherState.getSelectedContentRecord();
 
-      // Two API calls were triggered, each for every different
-      expect(mockClient.contentRecords.get).toHaveBeenCalledTimes(2);
+      // Two load calls were triggered, each for every different selection
+      expect(mockLoadDeployment).toHaveBeenCalledTimes(2);
       expect(currentSelection).toEqual(secondGetResponseData);
 
       // Cache now keeps the different records
@@ -229,7 +226,7 @@ describe("PublisherState", () => {
       ]);
     });
 
-    describe("error responses from API", () => {
+    describe("error responses from loading", () => {
       let publisherState: PublisherState;
       let initialState: DeploymentSelectorState;
 
@@ -239,61 +236,49 @@ describe("PublisherState", () => {
         const { mockContext } = mkExtensionContextStateMock({});
         publisherState = new PublisherState(mockContext);
 
-        // set an initial state so it tries to pull from API
+        // set an initial state so it tries to load from disk
         return publisherState.updateSelection(initialState);
       });
 
-      test("404", async () => {
-        // setup fake 404 error from api client
-        const axiosErr = new AxiosError();
-        axiosErr.response = {
-          data: "",
-          status: 404,
-          statusText: "404",
-          headers: {},
-          config: { headers: new AxiosHeaders() },
-        };
-        mockClient.contentRecords.get.mockRejectedValue(axiosErr);
+      test("ENOENT (missing file) is silently ignored", async () => {
+        const enoentErr = Object.assign(
+          new Error("ENOENT: no such file or directory"),
+          { code: "ENOENT" },
+        );
+        mockLoadDeployment.mockRejectedValue(enoentErr);
 
         const currentSelection =
           await publisherState.getSelectedContentRecord();
-        expect(mockClient.contentRecords.get).toHaveBeenCalledTimes(1);
-        expect(mockClient.contentRecords.get).toHaveBeenCalledWith(
+        expect(mockLoadDeployment).toHaveBeenCalledTimes(1);
+        expect(mockLoadDeployment).toHaveBeenCalledWith(
           initialState.deploymentName,
           initialState.projectDir,
+          "/workspace",
         );
 
-        // 404 errors are just ignored
+        // ENOENT errors are just ignored
         expect(currentSelection).toEqual(undefined);
         expect(publisherState.contentRecords).toEqual([]);
         expect(window.showInformationMessage).not.toHaveBeenCalled();
       });
 
-      test("Other than 404", async () => {
-        // NOT 404 errors are shown
-        const axiosErr = new AxiosError();
-        axiosErr.response = {
-          data: "custom test error",
-          status: 401,
-          statusText: "401",
-          headers: {},
-          config: { headers: new AxiosHeaders() },
-        };
-        mockClient.contentRecords.get.mockRejectedValue(axiosErr);
+      test("Other errors are shown", async () => {
+        mockLoadDeployment.mockRejectedValue(new Error("unexpected error"));
 
         const currentSelection =
           await publisherState.getSelectedContentRecord();
-        expect(mockClient.contentRecords.get).toHaveBeenCalledTimes(1);
-        expect(mockClient.contentRecords.get).toHaveBeenCalledWith(
+        expect(mockLoadDeployment).toHaveBeenCalledTimes(1);
+        expect(mockLoadDeployment).toHaveBeenCalledWith(
           initialState.deploymentName,
           initialState.projectDir,
+          "/workspace",
         );
 
         // This error is propagated up now
         expect(currentSelection).toEqual(undefined);
         expect(publisherState.contentRecords).toEqual([]);
         expect(window.showInformationMessage).toHaveBeenCalledWith(
-          "Unable to retrieve deployment record: custom test error",
+          "Unable to retrieve deployment record: unexpected error",
         );
       });
     });

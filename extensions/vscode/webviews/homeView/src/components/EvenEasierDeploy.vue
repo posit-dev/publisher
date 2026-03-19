@@ -56,7 +56,7 @@
 
       <p v-if="home.config.active.isEntryMissing">
         No Config Entry in Deployment record -
-        {{ home.selectedContentRecord?.saveName }}.
+        {{ home.selectedContentRecord?.deploymentName }}.
         <a class="webview-link" role="button" @click="selectConfiguration">{{
           promptForConfigSelection
         }}</a
@@ -390,7 +390,7 @@ const toolTipText = computed(() => {
     entrypoint = home.selectedConfiguration.configuration.entrypoint;
   }
   return `Deployment Details
-- Deployment Record: ${home.selectedContentRecord?.saveName || "<undefined>"}
+- Deployment Record: ${home.selectedContentRecord?.deploymentName || "<undefined>"}
 - Configuration File: ${home.selectedConfiguration?.configurationName || "<undefined>"}
 - Credential In Use: ${home.serverCredential?.name || "<undefined>"}
 - Project Dir: ${home.selectedContentRecord?.projectDir || "<undefined>"}
