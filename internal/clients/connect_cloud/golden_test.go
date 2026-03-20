@@ -62,6 +62,10 @@ func TestRecordGoldenFixtures(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, os.MkdirAll(absFixtureDir, 0755))
 
+	// Shared GUID map ensures the same real GUID always maps to the same
+	// fake GUID across all fixtures, preserving cross-references.
+	guids := NewGUIDMap()
+
 	// --- Read-only endpoints (independent) ---
 
 	t.Run("get_current_user", func(t *testing.T) {
@@ -69,7 +73,7 @@ func TestRecordGoldenFixtures(t *testing.T) {
 		resp, err := client.GetCurrentUser()
 		require.NoError(t, err)
 		require.NotNil(t, resp)
-		writeFixture(t, absFixtureDir, "get_current_user", recorder.Fixtures)
+		writeFixture(t, absFixtureDir, "get_current_user", recorder.Fixtures, guids)
 	})
 
 	t.Run("get_accounts", func(t *testing.T) {
@@ -78,7 +82,7 @@ func TestRecordGoldenFixtures(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, resp)
 		require.NotEmpty(t, resp.Data, "expected at least one account")
-		writeFixture(t, absFixtureDir, "get_accounts", recorder.Fixtures)
+		writeFixture(t, absFixtureDir, "get_accounts", recorder.Fixtures, guids)
 	})
 
 	t.Run("get_account", func(t *testing.T) {
@@ -86,7 +90,7 @@ func TestRecordGoldenFixtures(t *testing.T) {
 		resp, err := client.getAccount(accountID)
 		require.NoError(t, err)
 		require.NotNil(t, resp)
-		writeFixture(t, absFixtureDir, "get_account", recorder.Fixtures)
+		writeFixture(t, absFixtureDir, "get_account", recorder.Fixtures, guids)
 	})
 
 	// --- Write sequence (dependent) ---
@@ -102,6 +106,11 @@ func TestRecordGoldenFixtures(t *testing.T) {
 				ContentRequestBase: clienttypes.ContentRequestBase{
 					Title:       "Golden Test Content",
 					ContentType: clienttypes.ContentTypeQuarto,
+					NextRevision: &clienttypes.RequestRevision{
+						SourceType:  "bundle",
+						ContentType: clienttypes.ContentTypeQuarto,
+						PrimaryFile: "index.qmd",
+					},
 				},
 				AccountID: accountID,
 			})
@@ -112,7 +121,7 @@ func TestRecordGoldenFixtures(t *testing.T) {
 				revisionID = resp.NextRevision.ID
 				publishLogChannel = resp.NextRevision.PublishLogChannel
 			}
-			writeFixture(t, absFixtureDir, "create_content", recorder.Fixtures)
+			writeFixture(t, absFixtureDir, "create_content", recorder.Fixtures, guids)
 		})
 
 		require.NotEmpty(t, contentID, "create_content must succeed before continuing")
@@ -122,7 +131,7 @@ func TestRecordGoldenFixtures(t *testing.T) {
 			resp, err := client.getContent(contentID)
 			require.NoError(t, err)
 			require.NotNil(t, resp)
-			writeFixture(t, absFixtureDir, "get_content", recorder.Fixtures)
+			writeFixture(t, absFixtureDir, "get_content", recorder.Fixtures, guids)
 		})
 
 		t.Run("update_content", func(t *testing.T) {
@@ -131,6 +140,11 @@ func TestRecordGoldenFixtures(t *testing.T) {
 				ContentRequestBase: clienttypes.ContentRequestBase{
 					Title:       "Golden Test Content Updated",
 					ContentType: clienttypes.ContentTypeQuarto,
+					RevisionOverrides: &clienttypes.RequestRevision{
+						SourceType:  "bundle",
+						ContentType: clienttypes.ContentTypeQuarto,
+						PrimaryFile: "index.qmd",
+					},
 				},
 				ContentID: contentID,
 			})
@@ -141,7 +155,7 @@ func TestRecordGoldenFixtures(t *testing.T) {
 				revisionID = resp.NextRevision.ID
 				publishLogChannel = resp.NextRevision.PublishLogChannel
 			}
-			writeFixture(t, absFixtureDir, "update_content", recorder.Fixtures)
+			writeFixture(t, absFixtureDir, "update_content", recorder.Fixtures, guids)
 		})
 
 		if revisionID != "" {
@@ -150,7 +164,7 @@ func TestRecordGoldenFixtures(t *testing.T) {
 				resp, err := client.getRevision(revisionID)
 				require.NoError(t, err)
 				require.NotNil(t, resp)
-				writeFixture(t, absFixtureDir, "get_revision", recorder.Fixtures)
+				writeFixture(t, absFixtureDir, "get_revision", recorder.Fixtures, guids)
 			})
 		} else {
 			t.Log("skipping get_revision: no revision ID captured")
@@ -166,7 +180,7 @@ func TestRecordGoldenFixtures(t *testing.T) {
 				})
 				require.NoError(t, err)
 				require.NotNil(t, resp)
-				writeFixture(t, absFixtureDir, "get_authorization", recorder.Fixtures)
+				writeFixture(t, absFixtureDir, "get_authorization", recorder.Fixtures, guids)
 			})
 		} else {
 			t.Log("skipping get_authorization: no publish_log_channel captured")
@@ -180,11 +194,11 @@ func TestRecordGoldenFixtures(t *testing.T) {
 				t.Logf("publish_content returned error (expected if no bundle uploaded): %v", err)
 				// Still write the fixture if we got a response recorded.
 				if len(recorder.Fixtures) > 0 {
-					writeFixture(t, absFixtureDir, "publish_content", recorder.Fixtures)
+					writeFixture(t, absFixtureDir, "publish_content", recorder.Fixtures, guids)
 				}
 				return
 			}
-			writeFixture(t, absFixtureDir, "publish_content", recorder.Fixtures)
+			writeFixture(t, absFixtureDir, "publish_content", recorder.Fixtures, guids)
 		})
 	})
 }
@@ -201,12 +215,12 @@ func resolveEnvironment(env string) types.CloudEnvironment {
 }
 
 // writeFixture redacts sensitive data and writes the first fixture to a JSON file.
-func writeFixture(t *testing.T, dir, name string, fixtures []Fixture) {
+func writeFixture(t *testing.T, dir, name string, fixtures []Fixture, guids *GUIDMap) {
 	t.Helper()
 	require.NotEmpty(t, fixtures, "no fixture recorded for %s", name)
 
 	fixture := fixtures[0]
-	redactFixture(&fixture)
+	redactFixture(&fixture, guids)
 
 	data, err := json.MarshalIndent(fixture, "", "  ")
 	require.NoError(t, err)

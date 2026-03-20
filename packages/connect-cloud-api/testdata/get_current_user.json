@@ -1,0 +1,54 @@
+{
+  "method": "GET",
+  "path": "/v1/users/me",
+  "query": "",
+  "request_body": null,
+  "status_code": 200,
+  "response_body": {
+    "account_roles": {
+      "00000000-0000-0000-0000-000000000001": {
+        "account": {
+          "account_type": "individual",
+          "display_name": "Redacted User",
+          "id": "00000000-0000-0000-0000-000000000001",
+          "name": "redacted-user"
+        },
+        "account_id": "00000000-0000-0000-0000-000000000001",
+        "created_time": "2026-03-20T15:44:19.745550Z",
+        "id": "00000000-0000-0000-0000-000000000002",
+        "role": "owner",
+        "updated_time": "2026-03-20T15:44:19.745550Z",
+        "user_id": "00000000-0000-0000-0000-000000000003"
+      }
+    },
+    "avatar_url": "https://REDACTED",
+    "bio": null,
+    "completed_signup": true,
+    "created_time": "2026-03-20T15:44:12.746311Z",
+    "display_name": "Redacted User",
+    "email": "redacted@example.com",
+    "github_avatar_url": "https://REDACTED",
+    "id": "00000000-0000-0000-0000-000000000003",
+    "last_successful_login_time": "2026-03-20T15:44:12.751730Z",
+    "location": null,
+    "lucid_id": 1348718,
+    "marketing_data": {
+      "question_content": "both",
+      "question_programming_language": "no_preference"
+    },
+    "marketing_opt_in": false,
+    "org": null,
+    "permissions": [
+      "account:create",
+      "user:delete:soft",
+      "user:read",
+      "user:update"
+    ],
+    "social_handles": [],
+    "state": "active",
+    "system_role": "user",
+    "tos_last_accepted_time": null,
+    "updated_time": "2026-03-20T15:44:28.400702Z",
+    "website": null
+  }
+}

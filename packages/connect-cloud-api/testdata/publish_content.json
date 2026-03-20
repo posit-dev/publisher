@@ -1,0 +1,8 @@
+{
+  "method": "POST",
+  "path": "/v1/contents/00000000-0000-0000-0000-000000000005/publish",
+  "query": "",
+  "request_body": null,
+  "status_code": 200,
+  "response_body": "00000000-0000-0000-0000-000000000009"
+}
