@@ -19,12 +19,6 @@ vi.mock("src/logging", () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock("./extension", () => ({
-  extensionSettings: {
-    verifyCertificates: () => true,
-  },
-}));
-
 vi.mock("vscode", () => ({
   EventEmitter: class {
     event = vi.fn();
@@ -55,11 +49,14 @@ vi.mock("vscode", () => ({
       ...c,
       toString: () => `${c.scheme}://${c.authority}${c.path}`,
     }),
-    parse: (s: string) => ({ toString: () => s }),
   },
   commands: { executeCommand: vi.fn() },
   window: { showErrorMessage: vi.fn() },
-  workspace: {},
+  workspace: {
+    getConfiguration: () => ({
+      get: () => true,
+    }),
+  },
 }));
 
 import {

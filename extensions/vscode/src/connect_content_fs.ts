@@ -22,7 +22,6 @@ import { Commands } from "src/constants";
 import { PublisherState } from "./state";
 import { ConnectAPI, ContentID, BundleID } from "@posit-dev/connect-api";
 import { Credential } from "./api/types/credentials";
-import { extensionSettings } from "./extension";
 
 type ConnectContentEntry = {
   type: FileType;
@@ -221,10 +220,14 @@ export class ConnectContentFileSystemProvider implements FileSystemProvider {
       normalizedServerUrl = await this.ensureCredentialsForServer(serverUrl);
       const credential =
         await this.findCredentialForServer(normalizedServerUrl);
+      const verifyCerts =
+        workspace
+          .getConfiguration("positPublisher")
+          .get<boolean>("verifyCertificates") ?? true;
       const connectApi = new ConnectAPI({
         url: credential.url,
         apiKey: credential.apiKey,
-        rejectUnauthorized: extensionSettings.verifyCertificates(),
+        rejectUnauthorized: verifyCerts,
       });
       const { data: content } = await connectApi.contentDetails(
         ContentID(contentGuid),
