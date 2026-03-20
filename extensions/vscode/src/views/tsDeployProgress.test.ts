@@ -101,7 +101,7 @@ describe("runTsDeployWithProgress", () => {
     });
   });
 
-  it("reports progress messages from waitForTask output", async () => {
+  it("ignores progress events in the notification", async () => {
     const callbacks = makeCallbacks();
 
     runTsDeployWithProgress((onProgress) => {
@@ -114,9 +114,11 @@ describe("runTsDeployWithProgress", () => {
     }, callbacks);
 
     await vi.waitFor(() => {
-      expect(mockReport).toHaveBeenCalledWith({
-        message: "Building Python environment",
-      });
+      expect(callbacks.calls).toContain("success");
+    });
+
+    expect(mockReport).not.toHaveBeenCalledWith({
+      message: "Building Python environment",
     });
   });
 
