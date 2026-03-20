@@ -12,8 +12,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func int32Ptr(v int32) *int32     { return &v }
-func int64Ptr(v int64) *int64     { return &v }
+func int32Ptr(v int32) *int32       { return &v }
+func int64Ptr(v int64) *int64       { return &v }
 func float64Ptr(v float64) *float64 { return &v }
 
 // TestGenerateContentGoldenFiles writes ConnectContent JSON fixtures used by
