@@ -64,9 +64,7 @@
       "id": "00000000-0000-0000-0000-000000000009",
       "memory": 4096,
       "operating_system": "jammy",
-      "permissions": [
-        "revision.logs:read"
-      ],
+      "permissions": ["revision.logs:read"],
       "primary_file": "index.qmd",
       "publish_end_time": null,
       "publish_error": null,
