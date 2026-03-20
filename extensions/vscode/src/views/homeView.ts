@@ -734,7 +734,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           ? this.state.findCredential(credentialName)
           : undefined;
         let integrations: Integration[] = [];
-        if (credential?.url && (credential?.apiKey || credential?.token)) {
+        if (
+          credential?.url &&
+          (credential?.apiKey || (credential?.token && credential?.privateKey))
+        ) {
           const connectApi = new ConnectAPI({
             url: credential.url,
             apiKey: credential.apiKey,
