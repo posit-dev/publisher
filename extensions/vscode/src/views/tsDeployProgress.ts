@@ -51,8 +51,6 @@ export function runTsDeployWithProgress(
         const result = await deploy((event) => {
           if (event.status === "start") {
             progress.report({ message: stepLabels[event.step] });
-          } else if (event.status === "progress" && event.message) {
-            progress.report({ message: event.message });
           }
         });
 
