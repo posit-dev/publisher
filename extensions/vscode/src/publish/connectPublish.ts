@@ -55,7 +55,7 @@ export type PublishStep =
 
 export type PublishEvent = {
   step: PublishStep;
-  status: "start" | "success" | "failure";
+  status: "start" | "success" | "failure" | "progress";
   message?: string;
 };
 
@@ -253,7 +253,12 @@ export async function connectPublish(
     // Step 9: Wait for server-side task to complete
     lastStep = "waitForTask";
     onProgress({ step: "waitForTask", status: "start" });
-    await api.waitForTask(TaskID(deployOutput.task_id));
+    await api.waitForTask(TaskID(deployOutput.task_id), undefined, (lines) => {
+      const message = lines[lines.length - 1];
+      if (message) {
+        onProgress({ step: "waitForTask", status: "progress", message });
+      }
+    });
     onProgress({ step: "waitForTask", status: "success" });
 
     // Step 10: Validate deployment (optional)
