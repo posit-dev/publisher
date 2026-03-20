@@ -2,7 +2,15 @@
 
 export { ConnectAPI } from "./client.js";
 
-export { ContentID, BundleID, TaskID, UserID, GUID } from "./types.js";
+export {
+  ContentID,
+  BundleID,
+  TaskID,
+  UserID,
+  GUID,
+  ContentName,
+  Int64Str,
+} from "./types.js";
 
 export type {
   AllSettings,

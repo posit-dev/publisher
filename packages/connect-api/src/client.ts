@@ -50,6 +50,10 @@ export class ConnectAPI {
       });
     }
 
+    if (options.timeout) {
+      config.timeout = options.timeout;
+    }
+
     this.client = axios.create(config);
   }
 

@@ -208,6 +208,21 @@ describe("TLS certificate verification", () => {
     expect(call?.httpsAgent).toBeDefined();
     expect(call?.httpsAgent?.options?.rejectUnauthorized).toBe(false);
   });
+
+  it("passes timeout when specified", () => {
+    new ConnectAPI({ url: BASE_URL, apiKey: API_KEY, timeout: 5000 });
+
+    expect(axios.create).toHaveBeenCalledWith(
+      expect.objectContaining({ timeout: 5000 }),
+    );
+  });
+
+  it("does not pass timeout when omitted", () => {
+    new ConnectAPI({ url: BASE_URL, apiKey: API_KEY });
+
+    const call = vi.mocked(axios.create).mock.calls.at(-1)?.[0];
+    expect(call?.timeout).toBeUndefined();
+  });
 });
 
 // ---------------------------------------------------------------------------

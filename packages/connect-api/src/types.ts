@@ -9,12 +9,16 @@ export type BundleID = string & { readonly __brand: "BundleID" };
 export type TaskID = string & { readonly __brand: "TaskID" };
 export type UserID = string & { readonly __brand: "UserID" };
 export type GUID = string & { readonly __brand: "GUID" };
+export type ContentName = string & { readonly __brand: "ContentName" };
+export type Int64Str = string & { readonly __brand: "Int64Str" };
 
 export const ContentID = (id: string) => id as ContentID;
 export const BundleID = (id: string) => id as BundleID;
 export const TaskID = (id: string) => id as TaskID;
 export const UserID = (id: string) => id as UserID;
 export const GUID = (id: string) => id as GUID;
+export const ContentName = (name: string) => name as ContentName;
+export const Int64Str = (value: string) => value as Int64Str;
 
 // ---------------------------------------------------------------------------
 // Client options
@@ -25,6 +29,7 @@ export interface ConnectAPIOptions {
   apiKey: string;
   /** Whether to verify TLS certificates. Defaults to true. */
   rejectUnauthorized?: boolean;
+  timeout?: number; // request timeout in milliseconds
 }
 
 // ---------------------------------------------------------------------------

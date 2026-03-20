@@ -1,12 +1,14 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
+import { GUID } from "@posit-dev/connect-api";
+
 import { AgentError } from "./error";
 import { ServerType } from "./contentRecords";
 
 // NOTE: If you add or remove fields here, also update
 // REQUIRED_CREDENTIAL_FIELDS in credentialSecretStorage.ts.
 export type Credential = {
-  guid: string;
+  guid: GUID;
   name: string;
   url: string;
   apiKey: string;

@@ -1,6 +1,7 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
 import { SecretStorage } from "vscode";
+import { GUID } from "@posit-dev/connect-api";
 
 import { Credential } from "src/api/types/credentials";
 import { logger } from "./logging";
@@ -91,7 +92,7 @@ export async function syncAllCredentials(
     const allKeys = await secrets.keys();
     for (const key of allKeys) {
       if (key.startsWith(KEY_PREFIX)) {
-        const guid = key.slice(KEY_PREFIX.length);
+        const guid = GUID(key.slice(KEY_PREFIX.length));
         if (!currentGuids.has(guid)) {
           await secrets.delete(key);
         }
