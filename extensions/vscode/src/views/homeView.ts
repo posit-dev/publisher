@@ -373,6 +373,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const connectApi = new ConnectAPI({
       url: credential.url,
       apiKey: credential.apiKey,
+      rejectUnauthorized: extensionSettings.verifyCertificates(),
     });
 
     const positron = getPositronRepoSettings();
