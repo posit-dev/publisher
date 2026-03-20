@@ -4,6 +4,7 @@ import https from "https";
 import axios from "axios";
 import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
 
+import { signRequest } from "./auth.js";
 import type {
   AllSettings,
   ApplicationSettings,
@@ -36,12 +37,24 @@ export class ConnectAPI {
   private readonly client: AxiosInstance;
 
   constructor(options: ConnectAPIOptions) {
+    const hasApiKey = !!options.apiKey;
+    const hasToken = !!options.token && !!options.privateKey;
+
+    if (!hasApiKey && !hasToken) {
+      throw new Error(
+        "ConnectAPI requires either apiKey or both token and privateKey",
+      );
+    }
+
     const config: AxiosRequestConfig = {
       baseURL: options.url,
-      headers: {
-        Authorization: `Key ${options.apiKey}`,
-      },
     };
+
+    if (hasApiKey) {
+      config.headers = {
+        Authorization: `Key ${options.apiKey}`,
+      };
+    }
 
     // Support disabling TLS certificate verification (for self-signed certs)
     if (options.rejectUnauthorized === false) {
@@ -51,6 +64,26 @@ export class ConnectAPI {
     }
 
     this.client = axios.create(config);
+
+    // For token auth, add a request interceptor that computes per-request signing headers
+    if (hasToken) {
+      const token = options.token!;
+      const privateKey = options.privateKey!;
+
+      this.client.interceptors.request.use((reqConfig) => {
+        const method = (reqConfig.method ?? "GET").toUpperCase();
+        // Extract the path from the url (which is relative to baseURL)
+        const path = reqConfig.url ?? "/";
+        const body =
+          reqConfig.data != null ? JSON.stringify(reqConfig.data) : undefined;
+
+        const headers = signRequest(method, path, body, token, privateKey);
+        for (const [key, value] of Object.entries(headers)) {
+          reqConfig.headers.set(key, value);
+        }
+        return reqConfig;
+      });
+    }
   }
 
   /**

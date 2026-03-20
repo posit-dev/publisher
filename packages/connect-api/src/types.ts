@@ -22,7 +22,12 @@ export const GUID = (id: string) => id as GUID;
 
 export interface ConnectAPIOptions {
   url: string;
-  apiKey: string;
+  /** API key for key-based authentication. Either apiKey or (token + privateKey) must be provided. */
+  apiKey?: string;
+  /** Token ID for token-based authentication (RSA key-pair signing). */
+  token?: string;
+  /** Base64-encoded DER PKCS#1 RSA private key for token-based authentication. */
+  privateKey?: string;
   /** Whether to verify TLS certificates. Defaults to true. */
   rejectUnauthorized?: boolean;
 }

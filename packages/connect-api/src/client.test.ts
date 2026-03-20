@@ -1,5 +1,6 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
+import crypto from "crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ConnectAPI } from "./client.js";
 import { ContentID, BundleID, TaskID } from "./types.js";
@@ -11,35 +12,68 @@ import type { UserDTO, ContentDetailsDTO } from "./types.js";
 
 const mockRequest = vi.fn();
 
+type RequestInterceptor = (
+  config: Record<string, unknown>,
+) => Record<string, unknown>;
+
 vi.mock("axios", () => {
-  async function request(config: Record<string, unknown>) {
-    const resp = await mockRequest(config);
-    const validate =
-      (config.validateStatus as ((s: number) => boolean) | undefined) ??
-      ((s: number) => s >= 200 && s < 300);
-    if (!validate(resp.status as number)) {
-      throw Object.assign(
-        new Error(`Request failed with status code ${resp.status}`),
-        { isAxiosError: true, response: resp },
-      );
+  function createMockInstance() {
+    const requestInterceptors: RequestInterceptor[] = [];
+
+    async function request(config: Record<string, unknown>) {
+      // Add a mock headers object with .set() to simulate AxiosHeaders
+      const headerStore: Record<string, string> = {};
+      if (!config.headers) {
+        config.headers = {
+          set: (key: string, value: string) => {
+            headerStore[key] = value;
+          },
+          ...headerStore,
+        };
+      }
+      // Run request interceptors (like real axios does)
+      let finalConfig = config;
+      for (const interceptor of requestInterceptors) {
+        finalConfig = interceptor(finalConfig);
+      }
+      // Merge headerStore into finalConfig so tests can inspect them
+      if (Object.keys(headerStore).length > 0) {
+        finalConfig._signedHeaders = headerStore;
+      }
+      const resp = await mockRequest(finalConfig);
+      const validate =
+        (finalConfig.validateStatus as ((s: number) => boolean) | undefined) ??
+        ((s: number) => s >= 200 && s < 300);
+      if (!validate(resp.status as number)) {
+        throw Object.assign(
+          new Error(`Request failed with status code ${resp.status}`),
+          { isAxiosError: true, response: resp },
+        );
+      }
+      return resp;
     }
-    return resp;
+
+    return {
+      request,
+      get: (url: string, config?: Record<string, unknown>) =>
+        request({ method: "GET", url, ...config }),
+      post: (url: string, data?: unknown, config?: Record<string, unknown>) =>
+        request({ method: "POST", url, data, ...config }),
+      patch: (url: string, data?: unknown, config?: Record<string, unknown>) =>
+        request({ method: "PATCH", url, data, ...config }),
+      interceptors: {
+        request: {
+          use: (fn: RequestInterceptor) => {
+            requestInterceptors.push(fn);
+          },
+        },
+      },
+    };
   }
 
   return {
     default: {
-      create: vi.fn(() => ({
-        request,
-        get: (url: string, config?: Record<string, unknown>) =>
-          request({ method: "GET", url, ...config }),
-        post: (url: string, data?: unknown, config?: Record<string, unknown>) =>
-          request({ method: "POST", url, data, ...config }),
-        patch: (
-          url: string,
-          data?: unknown,
-          config?: Record<string, unknown>,
-        ) => request({ method: "PATCH", url, data, ...config }),
-      })),
+      create: vi.fn(() => createMockInstance()),
       isAxiosError: (err: unknown): boolean =>
         typeof err === "object" &&
         err !== null &&
@@ -1038,5 +1072,136 @@ describe("getSettings", () => {
     expect(settings.python).toEqual(python);
     expect(settings.r).toEqual(r);
     expect(settings.quarto).toEqual(quarto);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Token authentication
+// ---------------------------------------------------------------------------
+
+function generateTestKeyPair(): {
+  privateKeyBase64: string;
+} {
+  const { privateKey } = crypto.generateKeyPairSync("rsa", {
+    modulusLength: 2048,
+  });
+  const privateKeyDer = privateKey.export({ format: "der", type: "pkcs1" });
+  return {
+    privateKeyBase64: Buffer.from(privateKeyDer).toString("base64"),
+  };
+}
+
+describe("Token authentication", () => {
+  const TOKEN = "Tabc123def456";
+  const { privateKeyBase64: PRIVATE_KEY } = generateTestKeyPair();
+
+  function createTokenClient(): ConnectAPI {
+    return new ConnectAPI({
+      url: BASE_URL,
+      token: TOKEN,
+      privateKey: PRIVATE_KEY,
+    });
+  }
+
+  it("does not set static Authorization header when using token auth", () => {
+    createTokenClient();
+
+    const call = vi.mocked(axios.create).mock.calls.at(-1)?.[0];
+    expect(call?.headers).toBeUndefined();
+  });
+
+  it("adds signing headers to requests via interceptor", async () => {
+    mockRequest.mockResolvedValue(jsonResponse(validUserDTO()));
+
+    const client = createTokenClient();
+    await client.getCurrentUser();
+
+    expect(mockRequest).toHaveBeenCalledOnce();
+    const config = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    const signedHeaders = config._signedHeaders as Record<string, string>;
+
+    expect(signedHeaders).toBeDefined();
+    expect(signedHeaders["X-Auth-Token"]).toBe(TOKEN);
+    expect(signedHeaders["X-Auth-Signature"]).toBeDefined();
+    expect(signedHeaders["X-Content-Checksum"]).toBeDefined();
+    expect(signedHeaders["Date"]).toBeDefined();
+  });
+
+  it("computes checksum from request body for POST requests", async () => {
+    const responseBody = { guid: "new-content-guid", name: "my-app" };
+    mockRequest.mockResolvedValue(jsonResponse(responseBody));
+
+    const client = createTokenClient();
+    await client.createDeployment({ name: "my-app" });
+
+    const config = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    const signedHeaders = config._signedHeaders as Record<string, string>;
+
+    // Checksum should be MD5 of the JSON body
+    const expectedBody = JSON.stringify({ name: "my-app" });
+    const expectedChecksum = crypto
+      .createHash("md5")
+      .update(expectedBody)
+      .digest("base64");
+    expect(signedHeaders["X-Content-Checksum"]).toBe(expectedChecksum);
+  });
+
+  it("Date header ends with GMT", async () => {
+    mockRequest.mockResolvedValue(jsonResponse(validUserDTO()));
+
+    const client = createTokenClient();
+    await client.getCurrentUser();
+
+    const config = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    const signedHeaders = config._signedHeaders as Record<string, string>;
+    expect(signedHeaders["Date"]).toMatch(/GMT$/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Constructor validation
+// ---------------------------------------------------------------------------
+
+describe("Constructor validation", () => {
+  it("throws if neither apiKey nor token+privateKey is provided", () => {
+    expect(() => new ConnectAPI({ url: BASE_URL })).toThrow(
+      "ConnectAPI requires either apiKey or both token and privateKey",
+    );
+  });
+
+  it("throws if only token is provided without privateKey", () => {
+    expect(() => new ConnectAPI({ url: BASE_URL, token: "Ttoken123" })).toThrow(
+      "ConnectAPI requires either apiKey or both token and privateKey",
+    );
+  });
+
+  it("throws if only privateKey is provided without token", () => {
+    expect(
+      () => new ConnectAPI({ url: BASE_URL, privateKey: "somekey" }),
+    ).toThrow("ConnectAPI requires either apiKey or both token and privateKey");
+  });
+
+  it("accepts apiKey auth", () => {
+    expect(
+      () => new ConnectAPI({ url: BASE_URL, apiKey: API_KEY }),
+    ).not.toThrow();
+  });
+
+  it("accepts token+privateKey auth", () => {
+    const { privateKey } = crypto.generateKeyPairSync("rsa", {
+      modulusLength: 2048,
+    });
+    const privateKeyBase64 = Buffer.from(
+      privateKey.export({ format: "der", type: "pkcs1" }),
+    ).toString("base64");
+
+    expect(
+      () =>
+        new ConnectAPI({
+          url: BASE_URL,
+          token: "Ttoken123",
+          privateKey: privateKeyBase64,
+        }),
+    ).not.toThrow();
   });
 });
