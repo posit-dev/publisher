@@ -25,10 +25,11 @@ which includes a credential, configuration, and content record.
 - A configuration file describes how your project will be deployed. If the extension detects more than one possible project type, you will be asked which one to use when creating the configuration file.
 - A content record describes where your project is going to be deployed, and records the settings used for that deployment and the result.
 
-> [!TIP]
-> If you have the [Even Better TOML extension](https://marketplace.visualstudio.com/items?itemName=tamasfe.even-better-toml)
-> installed, VSCode will show tooltips for the fields. It will also validate the
-> structure and contents of the configuration file using the provided schema.
+!!! tip
+
+    If you have the [Even Better TOML extension](https://marketplace.visualstudio.com/items?itemName=tamasfe.even-better-toml)
+    installed, VSCode will show tooltips for the fields. It will also validate the
+    structure and contents of the configuration file using the provided schema.
 
 ![](https://cdn.posit.co/publisher/assets/img/configuration-file-tooltip.png)
 

@@ -28,7 +28,7 @@ can help catch problems in the Configuration by providing syntax highlighting,
 completion, and hover text using the schema provided by Posit Publisher.
 
 Carefully check your Configuration file for any errors, and refer to the
-[Configuration File reference documentation](https://github.com/posit-dev/publisher/blob/main/docs/configuration.md)
+[Configuration File reference documentation](configuration.md)
 for more details on the fields and values that are expected.
 
 ## Deployed content does not seem to be running
@@ -65,7 +65,7 @@ for the framework you are using to be set using the `type` field in your
 Configuration.
 
 To fix this you will need to find and set the `type` in your Configuration file.
-Supported types can be found in the [Configuration File Reference documentation](https://github.com/posit-dev/publisher/blob/main/docs/configuration.md#type).
+Supported types can be found in the [Configuration File Reference documentation](configuration.md#type).
 
 ### Unsupported `type`
 

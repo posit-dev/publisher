@@ -1,0 +1,12 @@
+:root {
+  /* Posit blue */
+  --md-primary-fg-color: #447099;
+  --md-primary-fg-color--light: #5a8ab5;
+  --md-primary-fg-color--dark: #335a7a;
+}
+
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #5a8ab5;
+  --md-primary-fg-color--light: #6e9cc4;
+  --md-primary-fg-color--dark: #447099;
+}

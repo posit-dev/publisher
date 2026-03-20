@@ -52,3 +52,6 @@ test/e2e/**/.positron_workspace
 
 # license files should not be commited to this repository
 *.lic
+
+# MkDocs build output
+site/
