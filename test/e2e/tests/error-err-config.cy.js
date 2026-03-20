@@ -14,8 +14,6 @@ describe("Detect errors in config", () => {
     cy.getPublisherSidebarIcon().click();
     cy.waitForPublisherIframe();
     cy.debugIframes();
-    cy.resetCredentials();
-    cy.setAdminCredentials();
   });
 
   it("Show errors when Config is invalid", () => {
