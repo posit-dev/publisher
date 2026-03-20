@@ -30,6 +30,8 @@ import {
   FileAction,
   PreContentRecord,
   isConfigurationError,
+  Credential,
+  isContentRecord,
   isContentRecordError,
   isPreContentRecord,
   isPreContentRecordWithConfig,
@@ -67,6 +69,9 @@ import { getSummaryStringFromError } from "src/utils/errors";
 import { getNonce } from "src/utils/getNonce";
 import { getUri } from "src/utils/getUri";
 import { deployProject } from "src/views/deployProgress";
+import { runTsDeployWithProgress } from "src/views/tsDeployProgress";
+import { canUseTsPublishPath } from "src/views/canUseTsPublishPath";
+import { connectPublish } from "src/publish/connectPublish";
 import { renderQuartoContent } from "src/views/renders";
 import { WebviewConduit } from "src/utils/webviewConduit";
 import { fileExists, relativeDir, isRelativePathRoot } from "src/utils/files";
@@ -308,6 +313,99 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     projectDir: string,
     secrets?: Record<string, string>,
   ) {
+    const credential = this.state.findCredential(credentialName);
+    const config = this.state.findValidConfig(configurationName, projectDir);
+
+    // Use TS publish path for plain Connect deployments that don't need
+    // Go-specific features (Connect Cloud, Snowflake, packagesFromLibrary).
+    if (
+      credential &&
+      config &&
+      canUseTsPublishPath(credential.serverType, config.configuration)
+    ) {
+      return await this.initiateTsDeployment(
+        deploymentName,
+        credential,
+        config,
+        projectDir,
+        secrets,
+      );
+    }
+
+    return await this.initiateGoDeployment(
+      deploymentName,
+      credentialName,
+      configurationName,
+      projectDir,
+      secrets,
+    );
+  }
+
+  private async initiateTsDeployment(
+    deploymentName: string,
+    credential: Credential,
+    config: Configuration,
+    projectDir: string,
+    secrets?: Record<string, string>,
+  ) {
+    const contentRecord = this.state.findContentRecord(
+      deploymentName,
+      projectDir,
+    );
+    const existingContentId = isContentRecord(contentRecord)
+      ? contentRecord.id
+      : undefined;
+    const existingCreatedAt = contentRecord?.createdAt;
+
+    const connectApi = new ConnectAPI({
+      url: credential.url,
+      apiKey: credential.apiKey,
+    });
+
+    const positron = getPositronRepoSettings();
+    const clientVersion =
+      this.context.extension.packageJSON.version || "unknown";
+    const r = await getRInterpreterPath();
+
+    // Tell the webview the publish API call has been accepted
+    this.webviewConduit.sendMsg({
+      kind: HostToWebviewMessageType.PUBLISH_INIT,
+    });
+
+    runTsDeployWithProgress(
+      (onProgress) =>
+        connectPublish({
+          api: connectApi,
+          projectDir,
+          saveName: deploymentName,
+          config: config.configuration,
+          configName: config.configurationName,
+          serverUrl: credential.url,
+          serverType: credential.serverType,
+          existingContentId,
+          existingCreatedAt,
+          secrets,
+          rPath: r?.rPath,
+          positronR: positron.r,
+          clientVersion,
+          onProgress,
+        }),
+      {
+        onStart: () => this.onPublishStart(),
+        onSuccess: () => this.onPublishSuccess(),
+        onFailure: (message) => this.onPublishFailureMessage(message),
+        onComplete: () => this.refreshContentRecords(),
+      },
+    );
+  }
+
+  private async initiateGoDeployment(
+    deploymentName: string,
+    credentialName: string,
+    configurationName: string,
+    projectDir: string,
+    secrets?: Record<string, string>,
+  ) {
     try {
       const api = await useApi();
       const r = await getRInterpreterPath();
@@ -491,12 +589,14 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   }
 
   private onPublishFailure(msg: EventStreamMessage) {
+    this.onPublishFailureMessage(msg.data.message ?? "");
+  }
+
+  private onPublishFailureMessage(message: string) {
     this.webviewConduit.sendMsg({
       kind: HostToWebviewMessageType.PUBLISH_FINISH_FAILURE,
       content: {
-        data: {
-          message: msg.data.message ?? "",
-        },
+        data: { message },
       },
     });
   }
