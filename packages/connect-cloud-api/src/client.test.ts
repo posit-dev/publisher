@@ -332,13 +332,23 @@ describe("getContent", () => {
   const contentId = ContentID("content-abc-123");
   const contentResponse: ContentResponse = {
     id: contentId,
+    account_id: "acct-1",
+    title: "Test Content",
+    author_id: "user-1",
     access: ContentAccess.ViewPrivateEditPrivate,
+    created_time: "2026-03-20T16:00:00Z",
+    updated_time: "2026-03-20T16:00:00Z",
     next_revision: {
       id: "rev-1",
-      publish_log_channel: "channel-1",
-      publish_result: PublishResult.Success,
+      content_id: contentId,
+      author_id: "user-1",
+      source_type: "bundle",
       source_bundle_id: "bundle-1",
       source_bundle_upload_url: "https://upload.example.com/bundle",
+      publish_log_channel: "channel-1",
+      publish_result: PublishResult.Success,
+      created_time: "2026-03-20T16:00:00Z",
+      updated_time: "2026-03-20T16:00:00Z",
     },
   };
 
@@ -383,7 +393,12 @@ describe("createContent", () => {
 
   const contentResponse: ContentResponse = {
     id: ContentID("new-content-id"),
+    account_id: "acct-1",
+    title: "My App",
+    author_id: "user-1",
     access: ContentAccess.ViewPrivateEditPrivate,
+    created_time: "2026-03-20T16:00:00Z",
+    updated_time: "2026-03-20T16:00:00Z",
   };
 
   it("POSTs the request body and returns ContentResponse", async () => {
@@ -421,7 +436,12 @@ describe("updateContent", () => {
 
   const contentResponse: ContentResponse = {
     id: contentId,
+    account_id: "acct-1",
+    title: "Updated App",
+    author_id: "user-1",
     access: ContentAccess.ViewTeamEditPrivate,
+    created_time: "2026-03-20T16:00:00Z",
+    updated_time: "2026-03-20T16:00:00Z",
   };
 
   it("PATCHes with new_bundle=true and returns ContentResponse", async () => {
@@ -493,10 +513,15 @@ describe("getAuthorization", () => {
 describe("getRevision", () => {
   const revision: Revision = {
     id: "rev-123",
-    publish_log_channel: "channel-1",
-    publish_result: PublishResult.Success,
+    content_id: ContentID("content-123"),
+    author_id: "user-1",
+    source_type: "bundle",
     source_bundle_id: "bundle-1",
     source_bundle_upload_url: "https://upload.example.com/bundle",
+    publish_log_channel: "channel-1",
+    publish_result: PublishResult.Success,
+    created_time: "2026-03-20T16:00:00Z",
+    updated_time: "2026-03-20T16:00:00Z",
   };
 
   it("returns Revision", async () => {
