@@ -1,0 +1,15 @@
+{
+  "mypkg": {
+    "Source": "CRAN",
+    "Repository": "https://cran.rstudio.com",
+    "description": {
+      "Package": "mypkg",
+      "Version": "1.2.3",
+      "Type": "Package",
+      "Title": "CRAN R package",
+      "Hash": "470851b6d5d0ac559e9d01bb352b4021",
+      "Depends": "R",
+      "Repository": "https://cran.rstudio.com"
+    }
+  }
+}

@@ -731,6 +731,120 @@ describe("waitForTask", () => {
     expect(call2.url).toBe(`/__api__/v1/tasks/${taskId}`);
     expect(call2.params).toEqual({ first: 3 });
   });
+
+  it("calls onOutput with each batch of log lines", async () => {
+    mockRequest
+      .mockResolvedValueOnce(
+        jsonResponse({
+          id: taskId,
+          output: ["Building..."],
+          result: null,
+          finished: false,
+          code: 0,
+          error: "",
+          last: 1,
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          id: taskId,
+          output: ["Installing packages...", "Launching content..."],
+          result: null,
+          finished: true,
+          code: 0,
+          error: "",
+          last: 3,
+        }),
+      );
+
+    const batches: string[][] = [];
+    const onOutput = (lines: string[]) => batches.push(lines);
+
+    const client = createClient();
+    await client.waitForTask(taskId, 0, onOutput);
+
+    expect(batches).toEqual([
+      ["Building..."],
+      ["Installing packages...", "Launching content..."],
+    ]);
+  });
+
+  it("does not call onOutput when output is empty", async () => {
+    mockRequest
+      .mockResolvedValueOnce(
+        jsonResponse({
+          id: taskId,
+          output: [],
+          result: null,
+          finished: false,
+          code: 0,
+          error: "",
+          last: 0,
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          id: taskId,
+          output: ["done"],
+          result: null,
+          finished: true,
+          code: 0,
+          error: "",
+          last: 1,
+        }),
+      );
+
+    const batches: string[][] = [];
+    const onOutput = (lines: string[]) => batches.push(lines);
+
+    const client = createClient();
+    await client.waitForTask(taskId, 0, onOutput);
+
+    expect(batches).toEqual([["done"]]);
+  });
+
+  it("calls onOutput before throwing on task error", async () => {
+    mockRequest.mockResolvedValueOnce(
+      jsonResponse({
+        id: taskId,
+        output: ["error output"],
+        result: null,
+        finished: true,
+        code: 1,
+        error: "deployment failed",
+        last: 1,
+      }),
+    );
+
+    const batches: string[][] = [];
+    const onOutput = (lines: string[]) => batches.push(lines);
+
+    const client = createClient();
+    await expect(client.waitForTask(taskId, 0, onOutput)).rejects.toThrow(
+      "deployment failed",
+    );
+
+    expect(batches).toEqual([["error output"]]);
+  });
+
+  it("works without onOutput (backward compatible)", async () => {
+    mockRequest.mockResolvedValue(
+      jsonResponse({
+        id: taskId,
+        output: ["line 1"],
+        result: null,
+        finished: true,
+        code: 0,
+        error: "",
+        last: 1,
+      }),
+    );
+
+    const client = createClient();
+    const result = await client.waitForTask(taskId, 0);
+
+    expect(result.output).toEqual(["line 1"]);
+  });
 });
 
 // ---------------------------------------------------------------------------
