@@ -354,7 +354,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
     const absProjectDir = path.resolve(root, projectDir);
     const rel = path.relative(root, absProjectDir);
-    if (rel.startsWith("..") || path.isAbsolute(rel)) {
+    if (
+      rel === ".." ||
+      rel.startsWith(".." + path.sep) ||
+      path.isAbsolute(rel)
+    ) {
       window.showErrorMessage("Project directory is outside the workspace.");
       return;
     }
