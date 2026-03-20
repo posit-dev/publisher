@@ -41,6 +41,27 @@ export class ConnectAPI {
         Authorization: `Key ${options.apiKey}`,
       },
     });
+
+    // Cookie jar for session affinity in HA environments.
+    // Load balancers set cookies to pin requests to a backend node;
+    // without forwarding them, polling requests (e.g. waitForTask) can
+    // land on different nodes and get spurious 404s.
+    let cookies: string[] = [];
+
+    this.client.interceptors.response.use((response) => {
+      const setCookie = response.headers["set-cookie"];
+      if (setCookie) {
+        cookies = setCookie;
+      }
+      return response;
+    });
+
+    this.client.interceptors.request.use((config) => {
+      if (cookies.length > 0) {
+        config.headers["Cookie"] = cookies.join("; ");
+      }
+      return config;
+    });
   }
 
   /**
