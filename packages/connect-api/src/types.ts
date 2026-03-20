@@ -11,7 +11,6 @@ export type UserID = string & { readonly __brand: "UserID" };
 export type GUID = string & { readonly __brand: "GUID" };
 export type ContentName = string & { readonly __brand: "ContentName" };
 export type Int64Str = string & { readonly __brand: "Int64Str" };
-export type CloudAuthToken = string & { readonly __brand: "CloudAuthToken" };
 
 export const ContentID = (id: string) => id as ContentID;
 export const BundleID = (id: string) => id as BundleID;
@@ -20,17 +19,6 @@ export const UserID = (id: string) => id as UserID;
 export const GUID = (id: string) => id as GUID;
 export const ContentName = (name: string) => name as ContentName;
 export const Int64Str = (value: string) => value as Int64Str;
-export const CloudAuthToken = (token: string) => token as CloudAuthToken;
-
-// ---------------------------------------------------------------------------
-// Cloud environment enum
-// ---------------------------------------------------------------------------
-
-export enum CloudEnvironment {
-  Development = "development",
-  Staging = "staging",
-  Production = "production",
-}
 
 // ---------------------------------------------------------------------------
 // Client options

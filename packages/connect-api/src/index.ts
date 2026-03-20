@@ -10,8 +10,6 @@ export {
   GUID,
   ContentName,
   Int64Str,
-  CloudAuthToken,
-  CloudEnvironment,
 } from "./types.js";
 
 export type {
