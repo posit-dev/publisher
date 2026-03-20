@@ -185,7 +185,7 @@ export interface RequestRevision {
 export interface Revision {
   id: string;
   publish_log_channel: string;
-  publish_result: PublishResult;
+  publish_result: PublishResult | null;
   publish_error_code?: string;
   publish_error_args?: Record<string, unknown>;
   source_bundle_id: string;
