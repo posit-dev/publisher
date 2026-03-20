@@ -54,18 +54,11 @@ export function runTsDeployWithProgress(
           }
         });
 
-        progress.report({ message: "Deployment was successful" });
         callbacks.onSuccess();
 
-        const visitOption = "View";
-        const selection = await window.showInformationMessage(
-          "Deployment was successful",
-          visitOption,
-        );
-        if (selection === visitOption && result.dashboardUrl) {
-          const uri = Uri.parse(result.dashboardUrl, true);
-          await env.openExternal(uri);
-        }
+        // Show the "View" prompt without awaiting — let the progress
+        // notification close immediately (matching the Go path behavior).
+        showSuccessNotification(result.dashboardUrl);
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         callbacks.onFailure(message);
@@ -75,4 +68,16 @@ export function runTsDeployWithProgress(
       }
     },
   );
+}
+
+async function showSuccessNotification(dashboardUrl: string): Promise<void> {
+  const visitOption = "View";
+  const selection = await window.showInformationMessage(
+    "Deployment was successful",
+    visitOption,
+  );
+  if (selection === visitOption && dashboardUrl) {
+    const uri = Uri.parse(dashboardUrl, true);
+    await env.openExternal(uri);
+  }
 }
