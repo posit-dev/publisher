@@ -9,11 +9,17 @@
 
 // Uses text-scoped queries with retry to avoid brittle DOM chains.
 describe("Detect errors in config", () => {
+  before(() => {
+    cy.clearupDeployments();
+  });
+
   beforeEach(() => {
     cy.visit("/");
     cy.getPublisherSidebarIcon().click();
     cy.waitForPublisherIframe();
     cy.debugIframes();
+    cy.resetCredentials();
+    cy.setAdminCredentials();
   });
 
   it("Show errors when Config is invalid", () => {
