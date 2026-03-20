@@ -31,7 +31,6 @@ import {
   PreContentRecord,
   isConfigurationError,
   Credential,
-  isContentRecord,
   isContentRecordError,
   isPreContentRecord,
   isPreContentRecordWithConfig,
@@ -363,9 +362,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       deploymentName,
       projectDir,
     );
-    const existingContentId = isContentRecord(contentRecord)
-      ? contentRecord.id
-      : undefined;
+    const existingContentId = contentRecord?.id;
     const existingCreatedAt = contentRecord?.createdAt;
 
     const connectApi = new ConnectAPI({
