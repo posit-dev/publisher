@@ -5,18 +5,18 @@
 // - PCC Shiny Python: creates a PCC deployment, selects additional files,
 //   modifies TOML for public access, deploys, and confirms published app via Playwright.
 describe("Deployments Section", () => {
-  // Global setup for all deployment tests
   before(() => {
-    cy.initializeConnect();
+    cy.clearupDeployments();
   });
 
   describe("Connect Server Deployments", () => {
     beforeEach(() => {
-      // Only light reset operations
       cy.visit("/");
       cy.getPublisherSidebarIcon().click();
       cy.waitForPublisherIframe();
       cy.debugIframes();
+      cy.resetCredentials();
+      cy.setAdminCredentials();
     });
 
     afterEach(() => {
@@ -93,7 +93,7 @@ describe("Deployments Section", () => {
       cy.addPCCCredential(user, "pcc-deploy-credential", {
         assertEmpty: false,
       });
-      cy.toggleCredentialsSection();
+      cy.ensureCredentialsSectionExpanded();
       cy.refreshCredentials();
       cy.findInPublisherWebview(
         '[data-automation="pcc-deploy-credential-list"]',
