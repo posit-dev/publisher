@@ -292,6 +292,63 @@ describe("collectFiles", () => {
     expect(files).toEqual([]);
   });
 
+  describe("bare directory patterns (no trailing slash)", () => {
+    it("includes directory contents", async () => {
+      makeFile("app.py");
+      makeFile("data/tips.csv");
+      makeFile("data/other.csv");
+
+      const files = await collectedPaths(["/app.py", "data"]);
+      expect(files).toEqual(["app.py", "data/other.csv", "data/tips.csv"]);
+    });
+
+    it("includes deeply nested contents", async () => {
+      makeFile("data/subdir/deep.csv");
+
+      const files = await collectedPaths(["data"]);
+      expect(files).toEqual(["data/subdir/deep.csv"]);
+    });
+
+    it("excludes directory contents when negated", async () => {
+      makeFile("app.py");
+      makeFile("data/tips.csv");
+
+      const files = await collectedPaths(["*", "!data"]);
+      expect(files).toEqual(["app.py"]);
+    });
+
+    it("works with rooted bare directory pattern", async () => {
+      makeFile("app.py");
+      makeFile("data/tips.csv");
+
+      const files = await collectedPaths(["/app.py", "/data"]);
+      expect(files).toEqual(["app.py", "data/tips.csv"]);
+    });
+
+    it("matches Go-generated config patterns", async () => {
+      // Go backend generates: files = ["/app.py", "/requirements.txt", "/data", "/styles.css"]
+      makeFile("app.py");
+      makeFile("requirements.txt");
+      makeFile("data/tips.csv");
+      makeFile("data/summary.csv");
+      makeFile("styles.css");
+
+      const files = await collectedPaths([
+        "/app.py",
+        "/requirements.txt",
+        "/data",
+        "/styles.css",
+      ]);
+      expect(files).toEqual([
+        "app.py",
+        "data/summary.csv",
+        "data/tips.csv",
+        "requirements.txt",
+        "styles.css",
+      ]);
+    });
+  });
+
   describe("trailing-slash directory patterns", () => {
     it("includes directory contents", async () => {
       makeFile("app.py");

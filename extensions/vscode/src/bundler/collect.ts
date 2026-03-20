@@ -161,17 +161,21 @@ function shouldInclude(
   let lastMatch: "include" | "exclude" | null = null;
 
   for (const rule of rules) {
-    // Directory-only patterns: for files, check if the pattern matches
-    // an ancestor directory. The Go bundler treats "data/" as "include
-    // everything under data/", so we replicate that by testing ancestor
-    // paths against directory-only rules.
-    if (rule.matchesDir && !isDirectory) {
+    // For files, check if a parent directory matches the pattern.
+    // A pattern matching a directory includes its contents, whether
+    // specified as "data/" (matchesDir) or "data" (bare path).
+    // This matches the Go bundler's behavior.
+    if (!isDirectory) {
       const ancestors = getAncestorPaths(relativePath);
       for (const ancestor of ancestors) {
         if (rule.matchesPath(ancestor)) {
           lastMatch = rule.exclude ? "exclude" : "include";
         }
       }
+    }
+
+    // Directory-only patterns (trailing slash) skip direct file matching
+    if (rule.matchesDir && !isDirectory) {
       continue;
     }
 
