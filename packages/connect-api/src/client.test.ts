@@ -175,29 +175,38 @@ describe("Authorization header", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Constructor options: insecure / timeout
+// TLS certificate verification
 // ---------------------------------------------------------------------------
 
-describe("constructor options", () => {
-  it("passes httpsAgent when insecure is true", () => {
-    new ConnectAPI({ url: BASE_URL, apiKey: API_KEY, insecure: true });
-
-    expect(axios.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        httpsAgent: expect.objectContaining({
-          options: expect.objectContaining({ rejectUnauthorized: false }),
-        }),
-      }),
-    );
-  });
-
-  it("does not pass httpsAgent when insecure is omitted", () => {
+describe("TLS certificate verification", () => {
+  it("does not set httpsAgent when rejectUnauthorized is not specified", () => {
     new ConnectAPI({ url: BASE_URL, apiKey: API_KEY });
 
-    const call = (axios.create as ReturnType<typeof vi.fn>).mock.calls.at(
-      -1,
-    )![0] as Record<string, unknown>;
-    expect(call.httpsAgent).toBeUndefined();
+    const call = vi.mocked(axios.create).mock.calls.at(-1)?.[0];
+    expect(call?.httpsAgent).toBeUndefined();
+  });
+
+  it("does not set httpsAgent when rejectUnauthorized is true", () => {
+    new ConnectAPI({
+      url: BASE_URL,
+      apiKey: API_KEY,
+      rejectUnauthorized: true,
+    });
+
+    const call = vi.mocked(axios.create).mock.calls.at(-1)?.[0];
+    expect(call?.httpsAgent).toBeUndefined();
+  });
+
+  it("sets httpsAgent with rejectUnauthorized: false when option is false", () => {
+    new ConnectAPI({
+      url: BASE_URL,
+      apiKey: API_KEY,
+      rejectUnauthorized: false,
+    });
+
+    const call = vi.mocked(axios.create).mock.calls.at(-1)?.[0];
+    expect(call?.httpsAgent).toBeDefined();
+    expect(call?.httpsAgent?.options?.rejectUnauthorized).toBe(false);
   });
 
   it("passes timeout when specified", () => {
@@ -211,10 +220,8 @@ describe("constructor options", () => {
   it("does not pass timeout when omitted", () => {
     new ConnectAPI({ url: BASE_URL, apiKey: API_KEY });
 
-    const call = (axios.create as ReturnType<typeof vi.fn>).mock.calls.at(
-      -1,
-    )![0] as Record<string, unknown>;
-    expect(call.timeout).toBeUndefined();
+    const call = vi.mocked(axios.create).mock.calls.at(-1)?.[0];
+    expect(call?.timeout).toBeUndefined();
   });
 });
 

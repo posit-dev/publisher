@@ -85,7 +85,7 @@ export async function testCredentials(
     const client = new ConnectAPI({
       url: urlToTest,
       apiKey: params.apiKey ?? "",
-      insecure: params.insecure,
+      rejectUnauthorized: !params.insecure,
       timeout: timeoutMs,
     });
 

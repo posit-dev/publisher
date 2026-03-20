@@ -27,7 +27,8 @@ export const Int64Str = (value: string) => value as Int64Str;
 export interface ConnectAPIOptions {
   url: string;
   apiKey: string;
-  insecure?: boolean; // disable TLS cert verification
+  /** Whether to verify TLS certificates. Defaults to true. */
+  rejectUnauthorized?: boolean;
   timeout?: number; // request timeout in milliseconds
 }
 

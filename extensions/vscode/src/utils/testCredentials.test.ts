@@ -167,7 +167,7 @@ describe("testCredentials", () => {
     expect(result.error).not.toBeNull();
   });
 
-  test("passes insecure and timeout to ConnectAPI", async () => {
+  test("passes rejectUnauthorized and timeout to ConnectAPI", async () => {
     mockTestAuthentication.mockResolvedValue({
       user: mockUser,
       error: null,
@@ -182,7 +182,7 @@ describe("testCredentials", () => {
 
     const constructorCalls = (ConnectAPI as unknown as ReturnType<typeof vi.fn>)
       .mock.calls;
-    expect(constructorCalls[0]![0].insecure).toBe(true);
+    expect(constructorCalls[0]![0].rejectUnauthorized).toBe(false);
     expect(constructorCalls[0]![0].timeout).toBe(60000);
   });
 

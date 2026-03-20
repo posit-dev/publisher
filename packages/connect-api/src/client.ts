@@ -1,8 +1,8 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
-import axios from "axios";
-import type { AxiosInstance, AxiosResponse } from "axios";
 import https from "https";
+import axios from "axios";
+import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
 
 import type {
   AllSettings,
@@ -36,16 +36,25 @@ export class ConnectAPI {
   private readonly client: AxiosInstance;
 
   constructor(options: ConnectAPIOptions) {
-    this.client = axios.create({
+    const config: AxiosRequestConfig = {
       baseURL: options.url,
       headers: {
         Authorization: `Key ${options.apiKey}`,
       },
-      ...(options.insecure
-        ? { httpsAgent: new https.Agent({ rejectUnauthorized: false }) }
-        : {}),
-      ...(options.timeout ? { timeout: options.timeout } : {}),
-    });
+    };
+
+    // Support disabling TLS certificate verification (for self-signed certs)
+    if (options.rejectUnauthorized === false) {
+      config.httpsAgent = new https.Agent({
+        rejectUnauthorized: false,
+      });
+    }
+
+    if (options.timeout) {
+      config.timeout = options.timeout;
+    }
+
+    this.client = axios.create(config);
   }
 
   /**

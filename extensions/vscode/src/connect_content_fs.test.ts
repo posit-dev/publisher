@@ -52,7 +52,11 @@ vi.mock("vscode", () => ({
   },
   commands: { executeCommand: vi.fn() },
   window: { showErrorMessage: vi.fn() },
-  workspace: {},
+  workspace: {
+    getConfiguration: () => ({
+      get: () => true,
+    }),
+  },
 }));
 
 import {

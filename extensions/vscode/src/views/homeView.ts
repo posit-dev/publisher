@@ -738,6 +738,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           const connectApi = new ConnectAPI({
             url: credential.url,
             apiKey: credential.apiKey,
+            rejectUnauthorized: extensionSettings.verifyCertificates(),
           });
           const response = await connectApi.getIntegrations();
           integrations = response.data ?? [];
@@ -863,6 +864,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       const connectApi = new ConnectAPI({
         url: credential.url,
         apiKey: credential.apiKey,
+        rejectUnauthorized: extensionSettings.verifyCertificates(),
       });
       const allSettings = await connectApi.getSettings();
 
@@ -1348,6 +1350,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           const connectApi = new ConnectAPI({
             url: credential.url,
             apiKey: credential.apiKey,
+            rejectUnauthorized: extensionSettings.verifyCertificates(),
           });
           const response = await connectApi.getIntegrations();
           integrations = response.data;

@@ -220,9 +220,14 @@ export class ConnectContentFileSystemProvider implements FileSystemProvider {
       normalizedServerUrl = await this.ensureCredentialsForServer(serverUrl);
       const credential =
         await this.findCredentialForServer(normalizedServerUrl);
+      const verifyCerts =
+        workspace
+          .getConfiguration("positPublisher")
+          .get<boolean>("verifyCertificates") ?? true;
       const connectApi = new ConnectAPI({
         url: credential.url,
         apiKey: credential.apiKey,
+        rejectUnauthorized: verifyCerts,
       });
       const { data: content } = await connectApi.contentDetails(
         ContentID(contentGuid),
