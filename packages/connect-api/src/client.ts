@@ -41,7 +41,16 @@ export class ConnectAPI {
       headers: {
         Authorization: `Key ${options.apiKey}`,
       },
-    });
+    };
+
+    // Support disabling TLS certificate verification (for self-signed certs)
+    if (options.rejectUnauthorized === false) {
+      config.httpsAgent = new https.Agent({
+        rejectUnauthorized: false,
+      });
+    }
+
+    this.client = axios.create(config);
 
     // Cookie jar for session affinity in HA environments.
     // Load balancers set cookies to pin requests to a backend node;
@@ -63,16 +72,6 @@ export class ConnectAPI {
       }
       return config;
     });
-    };
-
-    // Support disabling TLS certificate verification (for self-signed certs)
-    if (options.rejectUnauthorized === false) {
-      config.httpsAgent = new https.Agent({
-        rejectUnauthorized: false,
-      });
-    }
-
-    this.client = axios.create(config);
   }
 
   /**
