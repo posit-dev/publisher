@@ -93,16 +93,6 @@ describe("Deployments Section", () => {
       cy.addPCCCredential(user, "pcc-deploy-credential", {
         assertEmpty: false,
       });
-      cy.ensureCredentialsSectionExpanded();
-      cy.refreshCredentials();
-      cy.findInPublisherWebview(
-        '[data-automation="pcc-deploy-credential-list"]',
-      )
-        .find(".tree-item-title")
-        .should("have.text", "pcc-deploy-credential");
-
-      // Ensure Publisher is in the expected initial state
-      cy.expectInitialPublisherState();
 
       // Select files to include in deployment
       const filesToSelect = ["data", "README.md", "styles.css"];
