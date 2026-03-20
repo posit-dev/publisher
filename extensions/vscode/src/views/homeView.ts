@@ -348,6 +348,13 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     projectDir: string,
     secrets?: Record<string, string>,
   ) {
+    const root = this.root?.uri.fsPath;
+    if (!root) {
+      window.showErrorMessage("No workspace folder open.");
+      return;
+    }
+    const absProjectDir = path.resolve(root, projectDir);
+
     const contentRecord = this.state.findContentRecord(
       deploymentName,
       projectDir,
@@ -376,7 +383,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       (onProgress) =>
         connectPublish({
           api: connectApi,
-          projectDir,
+          projectDir: absProjectDir,
           saveName: deploymentName,
           config: config.configuration,
           configName: config.configurationName,
