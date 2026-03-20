@@ -4,7 +4,7 @@ const WORKBENCH_BASE_URL = Cypress.env("WORKBENCH_URL");
 
 describe("Workbench > Positron", { baseUrl: WORKBENCH_BASE_URL }, () => {
   before(() => {
-    cy.initializeConnect();
+    cy.clearupDeployments();
   });
 
   beforeEach(() => {
