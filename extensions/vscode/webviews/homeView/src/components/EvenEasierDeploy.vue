@@ -198,8 +198,8 @@ import ProcessSummary from "src/components/ProcessSummary.vue";
 import {
   AgentError,
   isAgentErrorInvalidTOML,
-  isAgentErrorDeployedContentNotRunning,
 } from "../../../../src/api/types/error";
+import { isDeploymentErrorContentNotRunning } from "../../../../src/api/types/contentRecords";
 import {
   getProductType,
   isConnectCloudProduct,
@@ -418,9 +418,8 @@ const getActiveConfigTOMLErrorDetails = computed(() => {
 });
 
 const isDeployedContentOnError = computed((): boolean => {
-  const deploymentError = home.selectedContentRecord?.deploymentError;
-  return Boolean(
-    deploymentError && isAgentErrorDeployedContentNotRunning(deploymentError),
+  return isDeploymentErrorContentNotRunning(
+    home.selectedContentRecord?.deploymentError,
   );
 });
 

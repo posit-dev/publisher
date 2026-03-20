@@ -2,8 +2,10 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
-import { isPreContentRecord } from "../../../../src/api";
-import { isAgentErrorDeployedContentNotRunning } from "../../../../src/api/types/error";
+import {
+  isPreContentRecord,
+  isDeploymentErrorContentNotRunning,
+} from "../../../../src/api";
 import { ErrorMessageSplitOptions } from "../../../../src/utils/errorEnhancer";
 import { useHomeStore } from "src/stores/home";
 import { formatDateString } from "src/utils/date";
@@ -46,9 +48,8 @@ const showContentButton = computed(() => {
 });
 
 const isDeployedContentOnError = computed((): boolean => {
-  const deploymentError = home.selectedContentRecord?.deploymentError;
-  return Boolean(
-    deploymentError && isAgentErrorDeployedContentNotRunning(deploymentError),
+  return isDeploymentErrorContentNotRunning(
+    home.selectedContentRecord?.deploymentError,
   );
 });
 
@@ -167,7 +168,7 @@ const contextMenuVSCodeContext = computed((): string => {
         <span class="codicon codicon-alert" />
       </div>
       <TextStringWithAnchor
-        :message="home.selectedContentRecord?.deploymentError?.msg"
+        :message="home.selectedContentRecord?.deploymentError?.message"
         :splitOptions="ErrorMessageSplitOptions"
         class="last-action-summary__error-anchor text-description"
         @click="emit('errorLinkClick', $event)"
