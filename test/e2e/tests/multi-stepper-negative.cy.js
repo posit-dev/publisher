@@ -1,12 +1,8 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
 describe("Multi-Stepper Negative Cases", () => {
-  // Global setup - run once for entire test suite
   before(() => {
-    cy.initializeConnect();
-    const user = Cypress.env("pccConfig").pcc_user_ccqa3;
-    // Set up PCC credentials via UI OAuth flow
-    cy.addPCCCredential(user, "pcc-credential", { assertEmpty: false });
+    cy.clearupDeployments();
   });
 
   beforeEach(() => {
@@ -14,6 +10,8 @@ describe("Multi-Stepper Negative Cases", () => {
     cy.getPublisherSidebarIcon().click();
     cy.waitForPublisherIframe();
     cy.debugIframes();
+    cy.resetCredentials();
+    cy.setAdminCredentials();
   });
 
   describe("User Cancellation Cases", () => {
@@ -23,8 +21,19 @@ describe("Multi-Stepper Negative Cases", () => {
       // - OAuth cancellation from clean slate (no existing credentials)
       // - Verifies proper cleanup and state management in both scenarios
 
+      // Set up PCC credential (beforeEach wipes SecretStorage via visit)
+      const user = Cypress.env("pccConfig").pcc_user_ccqa3;
+      cy.addPCCCredential(user, "pcc-credential", { assertEmpty: false });
+
       // SCENARIO 1: OAuth cancellation when adding second credential
-      cy.toggleCredentialsSection();
+      // Restore window.open stub left by addPCCCredential before creating a new one
+      cy.window().then((win) => {
+        if (win.open && win.open.restore) {
+          win.open.restore();
+        }
+      });
+
+      cy.ensureCredentialsSectionExpanded();
       cy.clickSectionAction("New Credential");
       cy.get(".quick-input-widget").should("be.visible");
 
@@ -80,7 +89,7 @@ describe("Multi-Stepper Negative Cases", () => {
 
       // Ensure credentials list reflects the pre-existing PCC credential
       cy.refreshCredentials();
-      cy.toggleCredentialsSection();
+      cy.ensureCredentialsSectionExpanded();
       cy.findUniqueInPublisherWebview('[data-automation="pcc-credential-list"]')
         .find(".tree-item-title")
         .should("have.text", "pcc-credential");
@@ -120,7 +129,7 @@ describe("Multi-Stepper Negative Cases", () => {
 
       // Verify clean state after cancellation
       cy.get(".monaco-dialog-box").should("not.exist");
-      cy.toggleCredentialsSection();
+      cy.ensureCredentialsSectionExpanded();
       cy.expectCredentialsSectionEmpty();
       cy.expectPollingDialogGone();
     });
