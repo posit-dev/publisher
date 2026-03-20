@@ -24,7 +24,7 @@ describe("Credentials API client", () => {
     credentials = new Credentials(mockAxiosClient as unknown as AxiosInstance);
   });
 
-  test("create sends credential with Connect Cloud environment header", async () => {
+  test("create sends Connect credential with environment header", async () => {
     mockAxiosPost.mockResolvedValue({ data: { guid: "test-guid" } });
 
     const cred: Credential = {
