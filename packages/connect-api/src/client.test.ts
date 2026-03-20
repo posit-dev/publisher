@@ -17,63 +17,91 @@ type RequestInterceptor = (
 ) => Record<string, unknown>;
 
 vi.mock("axios", () => {
-  function createMockInstance() {
-    const requestInterceptors: RequestInterceptor[] = [];
+  type InterceptorFn = (
+    value: Record<string, unknown>,
+  ) => Record<string, unknown>;
 
-    async function request(config: Record<string, unknown>) {
-      // Add a mock headers object with .set() to simulate AxiosHeaders
-      const headerStore: Record<string, string> = {};
-      if (!config.headers) {
-        config.headers = {
-          set: (key: string, value: string) => {
-            headerStore[key] = value;
-          },
-          ...headerStore,
-        };
-      }
-      // Run request interceptors (like real axios does)
-      let finalConfig = config;
-      for (const interceptor of requestInterceptors) {
-        finalConfig = interceptor(finalConfig);
-      }
-      // Merge headerStore into finalConfig so tests can inspect them
-      if (Object.keys(headerStore).length > 0) {
-        finalConfig._signedHeaders = headerStore;
-      }
-      const resp = await mockRequest(finalConfig);
-      const validate =
-        (finalConfig.validateStatus as ((s: number) => boolean) | undefined) ??
-        ((s: number) => s >= 200 && s < 300);
-      if (!validate(resp.status as number)) {
-        throw Object.assign(
-          new Error(`Request failed with status code ${resp.status}`),
-          { isAxiosError: true, response: resp },
-        );
-      }
-      return resp;
-    }
-
+  function createInterceptorManager() {
+    const handlers: InterceptorFn[] = [];
     return {
-      request,
-      get: (url: string, config?: Record<string, unknown>) =>
-        request({ method: "GET", url, ...config }),
-      post: (url: string, data?: unknown, config?: Record<string, unknown>) =>
-        request({ method: "POST", url, data, ...config }),
-      patch: (url: string, data?: unknown, config?: Record<string, unknown>) =>
-        request({ method: "PATCH", url, data, ...config }),
-      interceptors: {
-        request: {
-          use: (fn: RequestInterceptor) => {
-            requestInterceptors.push(fn);
-          },
-        },
+      use: (fn: InterceptorFn) => {
+        handlers.push(fn);
       },
+      _handlers: handlers,
     };
   }
 
   return {
     default: {
-      create: vi.fn(() => createMockInstance()),
+      create: vi.fn(() => {
+        const reqInterceptors = createInterceptorManager();
+        const resInterceptors = createInterceptorManager();
+
+        async function request(config: Record<string, unknown>) {
+          // Add a mock headers object with .set() to simulate AxiosHeaders
+          const headerStore: Record<string, string> = {};
+          const baseHeaders = (config.headers ?? {}) as Record<string, unknown>;
+          const headers: Record<string, unknown> = {
+            ...baseHeaders,
+            set: (key: string, value: string) => {
+              headerStore[key] = value;
+            },
+          };
+
+          let cfg: Record<string, unknown> = {
+            ...config,
+            headers,
+          };
+
+          // Apply request interceptors
+          for (const handler of reqInterceptors._handlers) {
+            cfg = handler(cfg);
+          }
+
+          // Merge headerStore into cfg so tests can inspect signed headers
+          if (Object.keys(headerStore).length > 0) {
+            cfg._signedHeaders = headerStore;
+          }
+
+          let resp = await mockRequest(cfg);
+          const validate =
+            (cfg.validateStatus as ((s: number) => boolean) | undefined) ??
+            ((s: number) => s >= 200 && s < 300);
+          if (!validate(resp.status as number)) {
+            throw Object.assign(
+              new Error(`Request failed with status code ${resp.status}`),
+              { isAxiosError: true, response: resp },
+            );
+          }
+
+          // Apply response interceptors
+          for (const handler of resInterceptors._handlers) {
+            resp = handler(resp);
+          }
+
+          return resp;
+        }
+
+        return {
+          request,
+          get: (url: string, config?: Record<string, unknown>) =>
+            request({ method: "GET", url, ...config }),
+          post: (
+            url: string,
+            data?: unknown,
+            config?: Record<string, unknown>,
+          ) => request({ method: "POST", url, data, ...config }),
+          patch: (
+            url: string,
+            data?: unknown,
+            config?: Record<string, unknown>,
+          ) => request({ method: "PATCH", url, data, ...config }),
+          interceptors: {
+            request: reqInterceptors,
+            response: resInterceptors,
+          },
+        };
+      }),
       isAxiosError: (err: unknown): boolean =>
         typeof err === "object" &&
         err !== null &&
@@ -1203,5 +1231,92 @@ describe("Constructor validation", () => {
           privateKey: privateKeyBase64,
         }),
     ).not.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Cookie jar (session affinity for HA environments)
+// ---------------------------------------------------------------------------
+
+describe("Cookie jar (session affinity)", () => {
+  it("forwards set-cookie from responses to subsequent requests", async () => {
+    mockRequest
+      .mockResolvedValueOnce({
+        status: 200,
+        statusText: "OK",
+        data: validUserDTO(),
+        headers: { "set-cookie": ["AWSALB=abc123"] },
+        config: {},
+      })
+      .mockResolvedValueOnce(jsonResponse(validUserDTO()));
+
+    const client = createClient();
+    await client.getCurrentUser(); // response sets the cookie
+    await client.getCurrentUser(); // should forward the cookie
+
+    const secondCall = mockRequest.mock.calls[1][0] as Record<string, unknown>;
+    expect((secondCall.headers as Record<string, string>).Cookie).toBe(
+      "AWSALB=abc123",
+    );
+  });
+
+  it("does not send Cookie header when no set-cookie was received", async () => {
+    mockRequest.mockResolvedValue(jsonResponse(validUserDTO()));
+
+    const client = createClient();
+    await client.getCurrentUser();
+
+    const call = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    expect((call.headers as Record<string, string>).Cookie).toBeUndefined();
+  });
+
+  it("updates cookies when a new set-cookie is received", async () => {
+    mockRequest
+      .mockResolvedValueOnce({
+        status: 200,
+        statusText: "OK",
+        data: validUserDTO(),
+        headers: { "set-cookie": ["AWSALB=first"] },
+        config: {},
+      })
+      .mockResolvedValueOnce({
+        status: 200,
+        statusText: "OK",
+        data: validUserDTO(),
+        headers: { "set-cookie": ["AWSALB=second"] },
+        config: {},
+      })
+      .mockResolvedValueOnce(jsonResponse(validUserDTO()));
+
+    const client = createClient();
+    await client.getCurrentUser();
+    await client.getCurrentUser();
+    await client.getCurrentUser();
+
+    const thirdCall = mockRequest.mock.calls[2][0] as Record<string, unknown>;
+    expect((thirdCall.headers as Record<string, string>).Cookie).toBe(
+      "AWSALB=second",
+    );
+  });
+
+  it("joins multiple cookies with semicolons", async () => {
+    mockRequest
+      .mockResolvedValueOnce({
+        status: 200,
+        statusText: "OK",
+        data: validUserDTO(),
+        headers: { "set-cookie": ["AWSALB=abc", "session=xyz"] },
+        config: {},
+      })
+      .mockResolvedValueOnce(jsonResponse(validUserDTO()));
+
+    const client = createClient();
+    await client.getCurrentUser();
+    await client.getCurrentUser();
+
+    const secondCall = mockRequest.mock.calls[1][0] as Record<string, unknown>;
+    expect((secondCall.headers as Record<string, string>).Cookie).toBe(
+      "AWSALB=abc; session=xyz",
+    );
   });
 });
