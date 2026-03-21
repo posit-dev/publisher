@@ -57,6 +57,92 @@ export function relativeProjectDir(absDir: string, rootDir: string): string {
 }
 
 /**
+ * Reformat inline TOML arrays to multiline, matching Go's TOML encoder output.
+ *
+ * Transforms: key = ["a", "b", "c"]
+ * Into:       key = [\n    "a",\n    "b",\n    "c",\n]
+ *
+ * Only operates on key = [...] lines. Leaves already-multiline arrays
+ * and empty arrays untouched.
+ */
+export function expandInlineArrays(toml: string, indent = "    "): string {
+  const lines = toml.split("\n");
+  const result: string[] = [];
+
+  for (const line of lines) {
+    // Match: key = [...]  (but not section headers like [foo] or [[foo]])
+    const match = line.match(/^(\S+\s*=\s*)\[/);
+    if (!match) {
+      result.push(line);
+      continue;
+    }
+
+    const prefix = match[1];
+    const arrayBody = line.slice(prefix.length);
+    const items = parseInlineArray(arrayBody);
+
+    if (items === undefined || items.length === 0) {
+      result.push(line);
+      continue;
+    }
+
+    result.push(`${prefix}[`);
+    for (const item of items) {
+      result.push(`${indent}${item},`);
+    }
+    result.push("]");
+  }
+
+  return result.join("\n");
+}
+
+/**
+ * Parse a TOML inline array string (including the surrounding brackets)
+ * into its individual item strings. Returns undefined if the string is
+ * not a valid inline array (e.g. empty or not properly bracketed).
+ *
+ * Respects quoted strings that may contain commas or brackets.
+ */
+function parseInlineArray(s: string): string[] | undefined {
+  if (!s.startsWith("[") || !s.endsWith("]")) return undefined;
+  const inner = s.slice(1, -1).trim();
+  if (inner === "") return undefined;
+
+  const items: string[] = [];
+  let current = "";
+  let inString = false;
+  let escape = false;
+
+  for (const ch of inner) {
+    if (escape) {
+      current += ch;
+      escape = false;
+      continue;
+    }
+    if (ch === "\\") {
+      current += ch;
+      escape = true;
+      continue;
+    }
+    if (ch === '"') {
+      inString = !inString;
+      current += ch;
+      continue;
+    }
+    if (ch === "," && !inString) {
+      const trimmed = current.trim();
+      if (trimmed) items.push(trimmed);
+      current = "";
+      continue;
+    }
+    current += ch;
+  }
+  const trimmed = current.trim();
+  if (trimmed) items.push(trimmed);
+  return items;
+}
+
+/**
  * Format ajv validation errors to match Go's schema validation output.
  * Go format: "key: problem" (e.g., "invalidParam: not allowed.")
  * For nested paths: "python.garbage: not allowed."
