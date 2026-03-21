@@ -166,6 +166,31 @@ export interface ConnectOptions {
 }
 
 // ---------------------------------------------------------------------------
+// Author type (embedded in content and revision responses)
+// ---------------------------------------------------------------------------
+
+export interface Author {
+  id: string;
+  display_name: string;
+  avatar_url?: string;
+  created_time: string;
+  updated_time: string;
+}
+
+// ---------------------------------------------------------------------------
+// User role on content
+// ---------------------------------------------------------------------------
+
+export interface ContentUserRole {
+  id: string;
+  user_id: string;
+  content_id: ContentID;
+  role: string;
+  created_time: string;
+  updated_time: string;
+}
+
+// ---------------------------------------------------------------------------
 // Revision types (from clients/types/types.go)
 // ---------------------------------------------------------------------------
 
@@ -184,14 +209,55 @@ export interface RequestRevision {
 
 export interface Revision {
   id: string;
-  publish_log_channel: string;
-  publish_result: PublishResult;
-  publish_error_code?: string;
-  publish_error_args?: Record<string, unknown>;
+  content_id: ContentID;
+  author_id: string;
+  author?: Author;
+
+  // Source info
+  source_type: string;
   source_bundle_id: string;
   source_bundle_upload_url: string;
-  publish_error?: string;
-  publish_error_details?: string;
+  source_provider?: string;
+  source_ref?: string | null;
+  source_ref_type?: string | null;
+  source_repository_url?: string | null;
+
+  // Content config
+  app_mode?: string;
+  content_type?: ContentType;
+  type?: string;
+  primary_file?: string;
+  connect_options?: ConnectOptions;
+
+  // Runtime config
+  cpu?: number;
+  memory?: number;
+  operating_system?: string;
+  execution_time_limit?: number;
+  python_version?: string | null;
+  r_version?: string | null;
+  quarto_version?: string | null;
+
+  // Publish state
+  state?: string;
+  status?: string | null;
+  trigger?: string;
+  publish_log_channel?: string | null;
+  publish_result?: PublishResult | null;
+  publish_start_time?: string | null;
+  publish_end_time?: string | null;
+  publish_error?: string | null;
+  publish_error_code?: string | null;
+  publish_error_args?: Record<string, unknown> | null;
+  publish_error_details?: string | null;
+
+  // Other
+  build_context?: string | null;
+  commit_sha?: string | null;
+  permissions?: string[];
+  url?: string | null;
+  created_time: string;
+  updated_time: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -219,8 +285,51 @@ export interface UpdateContentRequest extends Partial<ContentRequestBase> {
 
 export interface ContentResponse {
   id: ContentID;
-  next_revision?: Revision;
-  access: ContentAccess;
+  account_id: string;
+  title: string;
+  access: ContentAccess | string; // API may return "public" instead of enum value
+
+  // Author
+  author_id: string;
+  author?: Author;
+
+  // Revisions
+  current_revision?: Revision | null;
+  next_revision?: Revision | null;
+
+  // Timestamps
+  created_time: string;
+  updated_time: string;
+
+  // Optional metadata
+  description?: string | null;
+  domain_id?: string | null;
+  auto_publish?: boolean;
+
+  // Access control
+  permissions?: string[];
+  role?: string;
+  user_roles?: Record<string, ContentUserRole>;
+  private_link_enabled?: boolean;
+  private_link_token?: string | null;
+  private_link_token_hash?: string;
+
+  // Display
+  show_thumbnail?: string;
+  thumbnail_format?: string | null;
+  thumbnail_image?: string | null;
+
+  // Source control
+  source_branch?: string | null;
+  source_repository_url?: string | null;
+
+  // Other
+  state?: string;
+  vanity_name?: string | null;
+  vanity_domain?: string | null;
+  oauth_client_id?: string;
+  schedules?: unknown[];
+  secrets?: Secret[];
 }
 
 // ---------------------------------------------------------------------------
