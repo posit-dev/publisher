@@ -77,7 +77,7 @@ export function expandInlineArrays(toml: string, indent = "    "): string {
       continue;
     }
 
-    const prefix = match[1];
+    const prefix = match[1] ?? "";
     const arrayBody = line.slice(prefix.length);
     const items = parseInlineArray(arrayBody);
 
