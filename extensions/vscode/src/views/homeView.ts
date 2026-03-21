@@ -386,8 +386,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       kind: HostToWebviewMessageType.PUBLISH_INIT,
     });
 
-    runTsDeployWithProgress(
-      (onProgress) =>
+    runTsDeployWithProgress({
+      deploy: (onProgress) =>
         connectPublish({
           api: connectApi,
           projectDir: absProjectDir,
@@ -404,13 +404,16 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           clientVersion,
           onProgress,
         }),
-      {
+      callbacks: {
         onStart: () => this.onPublishStart(),
         onSuccess: () => this.onPublishSuccess(),
         onFailure: (message) => this.onPublishFailureMessage(message),
         onComplete: () => this.refreshContentRecords(),
       },
-    );
+      stream: this.stream,
+      serverUrl: credential.url,
+      title: deploymentName,
+    });
   }
 
   private async initiateGoDeployment(
