@@ -102,6 +102,8 @@ export function expandInlineArrays(toml: string, indent = "    "): string {
  * not a valid inline array (e.g. empty or not properly bracketed).
  *
  * Respects quoted strings that may contain commas or brackets.
+ * Returns undefined for arrays containing nested structures (inline
+ * tables or sub-arrays) to avoid producing invalid TOML.
  */
 function parseInlineArray(s: string): string[] | undefined {
   if (!s.startsWith("[") || !s.endsWith("]")) return undefined;
@@ -112,6 +114,7 @@ function parseInlineArray(s: string): string[] | undefined {
   let current = "";
   let inString = false;
   let escape = false;
+  let depth = 0;
 
   for (const ch of inner) {
     if (escape) {
@@ -129,7 +132,17 @@ function parseInlineArray(s: string): string[] | undefined {
       current += ch;
       continue;
     }
-    if (ch === "," && !inString) {
+    if (!inString && (ch === "[" || ch === "{")) {
+      depth++;
+      current += ch;
+      continue;
+    }
+    if (!inString && (ch === "]" || ch === "}")) {
+      depth--;
+      current += ch;
+      continue;
+    }
+    if (ch === "," && !inString && depth === 0) {
       const trimmed = current.trim();
       if (trimmed) items.push(trimmed);
       current = "";
@@ -139,6 +152,12 @@ function parseInlineArray(s: string): string[] | undefined {
   }
   const trimmed = current.trim();
   if (trimmed) items.push(trimmed);
+
+  // If any item contains nested structures, skip reformatting entirely
+  if (items.some((item) => item.startsWith("{") || item.startsWith("["))) {
+    return undefined;
+  }
+
   return items;
 }
 

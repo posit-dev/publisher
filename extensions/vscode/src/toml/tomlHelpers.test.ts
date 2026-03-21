@@ -140,4 +140,15 @@ describe("expandInlineArrays", () => {
     ].join("\n");
     expect(expandInlineArrays(input)).toBe(expected);
   });
+
+  it("skips arrays of inline tables", () => {
+    const input =
+      'integration_requests = [{ guid = "x", config = { a = 1, b = 2 } }]\n';
+    expect(expandInlineArrays(input)).toBe(input);
+  });
+
+  it("skips nested arrays", () => {
+    const input = "matrix = [[1, 2], [3, 4]]\n";
+    expect(expandInlineArrays(input)).toBe(input);
+  });
 });
