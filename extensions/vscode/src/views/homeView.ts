@@ -404,12 +404,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           clientVersion,
           onProgress,
         }),
-      callbacks: {
-        onStart: () => this.onPublishStart(),
-        onSuccess: () => this.onPublishSuccess(),
-        onFailure: (message) => this.onPublishFailureMessage(message),
-        onComplete: () => this.refreshContentRecords(),
-      },
+      onComplete: () => this.refreshContentRecords(),
       stream: this.stream,
       serverUrl: credential.url,
       title: deploymentName,
