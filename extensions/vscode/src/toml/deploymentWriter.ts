@@ -15,7 +15,12 @@ import { getConfigPath } from "./configDiscovery";
 import { convertKeysToSnakeCase } from "./convertKeys";
 import { getDeploymentPath } from "./deploymentDiscovery";
 import { loadDeploymentFromFile } from "./deploymentLoader";
-import { stripEmpty, isRecord, relativeProjectDir } from "./tomlHelpers";
+import {
+  stripEmpty,
+  isRecord,
+  relativeProjectDir,
+  expandInlineArrays,
+} from "./tomlHelpers";
 import { getDashboardUrl, getDirectUrl, getLogsUrl } from "./urlHelpers";
 
 const DEPLOYMENT_SCHEMA_URL =
@@ -107,7 +112,8 @@ export async function createDeploymentRecord(
   }
   stripEmpty(snakeObj);
 
-  const content = AUTOGEN_HEADER + stringifyTOML(snakeObj) + "\n";
+  const content =
+    AUTOGEN_HEADER + expandInlineArrays(stringifyTOML(snakeObj)) + "\n";
 
   await fs.mkdir(path.dirname(deploymentPath), { recursive: true });
   await fs.writeFile(deploymentPath, content, "utf-8");
@@ -187,13 +193,21 @@ export async function patchDeploymentRecord(
   // Re-add configurationName as a plain field (not from Configuration type)
   toWrite.configurationName = existing.configurationName;
 
+  // Remove non-TOML fields from nested configuration, matching Go's toml:"-" tags
+  if (isRecord(toWrite.configuration)) {
+    delete toWrite.configuration.comments;
+    delete toWrite.configuration.alternatives;
+    delete toWrite.configuration.entrypointObjectRef;
+  }
+
   const snakeObj = convertKeysToSnakeCase(toWrite);
   if (!isRecord(snakeObj)) {
     throw new Error("unexpected: snake_case conversion did not return object");
   }
   stripEmpty(snakeObj);
 
-  const content = AUTOGEN_HEADER + stringifyTOML(snakeObj) + "\n";
+  const content =
+    AUTOGEN_HEADER + expandInlineArrays(stringifyTOML(snakeObj)) + "\n";
   await fs.writeFile(deploymentPath, content, "utf-8");
 
   // Re-load to return the canonical representation
