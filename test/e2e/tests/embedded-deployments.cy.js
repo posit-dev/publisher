@@ -15,6 +15,8 @@ describe("Embedded Deployments Section", () => {
     cy.getPublisherSidebarIcon().click();
     cy.waitForPublisherIframe();
     cy.debugIframes();
+    cy.resetCredentials();
+    cy.setAdminCredentials();
   });
 
   describe("Create PCS Deployments", () => {

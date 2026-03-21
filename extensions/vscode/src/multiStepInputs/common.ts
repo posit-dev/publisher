@@ -9,6 +9,7 @@ import {
   ProductDescription,
 } from "../api";
 import { getSummaryStringFromError } from "../utils/errors";
+import { CredentialsService } from "src/credentials/service";
 import { isAxiosErrorWithJson } from "../utils/errorTypes";
 import { normalizeURL } from "../utils/url";
 import {
@@ -214,19 +215,14 @@ export const inputCredentialNameStep = async (
 // Fetch the existing credentials while waiting for the api
 // promise to complete while showing progress
 // ***************************************************************
-export const getExistingCredentials = async (viewId: string) => {
+export const getExistingCredentials = async (
+  viewId: string,
+  credentialsService: CredentialsService,
+) => {
   let credentials: Credential[] = [];
   try {
     await showProgress("Initializing::newCredential", viewId, async () => {
-      const api = await useApi();
-      const response = await api.credentials.list();
-      if (response) {
-        credentials = response.data;
-      } else {
-        window.showWarningMessage(
-          "No response from Publisher agent when querying credentials",
-        );
-      }
+      credentials = await credentialsService.list();
     });
   } catch (error: unknown) {
     const summary = getSummaryStringFromError(

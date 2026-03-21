@@ -21,6 +21,7 @@ Cypress.on("uncaught:exception", (err) => {
   }
   // Ignore common VSCode/code-server errors
   if (
+    err.name === "Canceled" ||
     err.message === "Canceled" ||
     err.message.includes("Network Error") ||
     err.message.includes("ResizeObserver loop") ||
