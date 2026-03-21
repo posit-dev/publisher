@@ -2,6 +2,7 @@
 
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import type { PublishResult } from "src/publish/connectPublish";
+import type { EventStreamMessage } from "src/api";
 import { runTsDeployWithProgress } from "./tsDeployProgress";
 
 // Mock vscode module
@@ -45,6 +46,16 @@ function makeCallbacks() {
   };
 }
 
+function makeMockStream() {
+  const injected: EventStreamMessage[] = [];
+  return {
+    injected,
+    injectMessage: (msg: EventStreamMessage) => {
+      injected.push(msg);
+    },
+  };
+}
+
 const successResult: PublishResult = {
   contentId: "abc-123",
   dashboardUrl: "https://connect.example.com/content/abc-123",
@@ -58,10 +69,27 @@ describe("runTsDeployWithProgress", () => {
     vi.clearAllMocks();
   });
 
-  it("calls lifecycle callbacks in order on success", async () => {
+  function run(
+    deploy: Parameters<typeof runTsDeployWithProgress>[0]["deploy"],
+    overrides: Partial<Parameters<typeof runTsDeployWithProgress>[0]> = {},
+  ) {
     const callbacks = makeCallbacks();
+    const stream = makeMockStream();
+    runTsDeployWithProgress({
+      deploy,
+      callbacks,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      stream: stream as any,
+      serverUrl: "https://connect.example.com",
+      title: "my-app",
+      ...overrides,
+      ...(overrides.callbacks ? {} : { callbacks }),
+    });
+    return { callbacks, stream };
+  }
 
-    runTsDeployWithProgress(() => Promise.resolve(successResult), callbacks);
+  it("calls lifecycle callbacks in order on success", async () => {
+    const { callbacks } = run(() => Promise.resolve(successResult));
 
     await vi.waitFor(() => {
       expect(callbacks.calls).toEqual(["start", "success", "complete"]);
@@ -69,11 +97,8 @@ describe("runTsDeployWithProgress", () => {
   });
 
   it("calls onFailure on deployment error", async () => {
-    const callbacks = makeCallbacks();
-
-    runTsDeployWithProgress(
-      () => Promise.reject(new Error("Connection refused")),
-      callbacks,
+    const { callbacks } = run(() =>
+      Promise.reject(new Error("Connection refused")),
     );
 
     await vi.waitFor(() => {
@@ -83,13 +108,11 @@ describe("runTsDeployWithProgress", () => {
   });
 
   it("reports step labels as progress messages", async () => {
-    const callbacks = makeCallbacks();
-
-    runTsDeployWithProgress((onProgress) => {
+    run((onProgress) => {
       onProgress({ step: "preflight", status: "start" });
       onProgress({ step: "uploadBundle", status: "start" });
       return Promise.resolve(successResult);
-    }, callbacks);
+    });
 
     await vi.waitFor(() => {
       expect(mockReport).toHaveBeenCalledWith({
@@ -101,17 +124,15 @@ describe("runTsDeployWithProgress", () => {
     });
   });
 
-  it("ignores progress events in the notification", async () => {
-    const callbacks = makeCallbacks();
-
-    runTsDeployWithProgress((onProgress) => {
+  it("ignores log events in the notification bar", async () => {
+    const { callbacks } = run((onProgress) => {
       onProgress({
         step: "waitForTask",
-        status: "progress",
+        status: "log",
         message: "Building Python environment",
       });
       return Promise.resolve(successResult);
-    }, callbacks);
+    });
 
     await vi.waitFor(() => {
       expect(callbacks.calls).toContain("success");
@@ -123,12 +144,7 @@ describe("runTsDeployWithProgress", () => {
   });
 
   it("shows error message on failure", async () => {
-    const callbacks = makeCallbacks();
-
-    runTsDeployWithProgress(
-      () => Promise.reject(new Error("upload failed")),
-      callbacks,
-    );
+    run(() => Promise.reject(new Error("upload failed")));
 
     await vi.waitFor(() => {
       expect(mockShowErrorMessage).toHaveBeenCalledWith(
@@ -138,10 +154,9 @@ describe("runTsDeployWithProgress", () => {
   });
 
   it("offers View button on success", async () => {
-    const callbacks = makeCallbacks();
     mockShowInformationMessage.mockResolvedValueOnce("View");
 
-    runTsDeployWithProgress(() => Promise.resolve(successResult), callbacks);
+    run(() => Promise.resolve(successResult));
 
     await vi.waitFor(() => {
       expect(mockShowInformationMessage).toHaveBeenCalledWith(
@@ -153,12 +168,140 @@ describe("runTsDeployWithProgress", () => {
   });
 
   it("always calls onComplete even on failure", async () => {
-    const callbacks = makeCallbacks();
-
-    runTsDeployWithProgress(() => Promise.reject(new Error("boom")), callbacks);
+    const { callbacks } = run(() => Promise.reject(new Error("boom")));
 
     await vi.waitFor(() => {
       expect(callbacks.calls).toContain("complete");
     });
+  });
+
+  // --- Event stream injection tests ---
+
+  it("injects publish/start at the beginning", async () => {
+    const { callbacks, stream } = run(() => Promise.resolve(successResult));
+
+    await vi.waitFor(() => {
+      expect(callbacks.calls).toContain("success");
+    });
+
+    const startMsg = stream.injected.find((m) => m.type === "publish/start");
+    expect(startMsg).toBeDefined();
+    expect(startMsg!.data.server).toBe("https://connect.example.com");
+    expect(startMsg!.data.title).toBe("my-app");
+  });
+
+  it("injects stage start/success events for mapped steps", async () => {
+    const { callbacks, stream } = run((onProgress) => {
+      onProgress({ step: "preflight", status: "start" });
+      onProgress({ step: "preflight", status: "success" });
+      onProgress({ step: "createBundle", status: "start" });
+      onProgress({ step: "createBundle", status: "success" });
+      return Promise.resolve(successResult);
+    });
+
+    await vi.waitFor(() => {
+      expect(callbacks.calls).toContain("success");
+    });
+
+    const types = stream.injected.map((m) => m.type);
+    expect(types).toContain("publish/checkCapabilities/start");
+    expect(types).toContain("publish/checkCapabilities/success");
+    expect(types).toContain("publish/createBundle/start");
+    expect(types).toContain("publish/createBundle/success");
+  });
+
+  it("injects log events from waitForTask as publish/restoreEnv/log", async () => {
+    const { callbacks, stream } = run((onProgress) => {
+      onProgress({ step: "waitForTask", status: "start" });
+      onProgress({
+        step: "waitForTask",
+        status: "log",
+        message: "Installing numpy",
+      });
+      onProgress({
+        step: "waitForTask",
+        status: "log",
+        message: "Installing pandas",
+      });
+      onProgress({ step: "waitForTask", status: "success" });
+      return Promise.resolve(successResult);
+    });
+
+    await vi.waitFor(() => {
+      expect(callbacks.calls).toContain("success");
+    });
+
+    const logMsgs = stream.injected.filter(
+      (m) => m.type === "publish/restoreEnv/log",
+    );
+    expect(logMsgs).toHaveLength(2);
+    expect(logMsgs[0]!.data.message).toBe("Installing numpy");
+    expect(logMsgs[1]!.data.message).toBe("Installing pandas");
+  });
+
+  it("does not inject events for unmapped steps like createManifest", async () => {
+    const { callbacks, stream } = run((onProgress) => {
+      onProgress({ step: "createManifest", status: "start" });
+      onProgress({ step: "createManifest", status: "success" });
+      return Promise.resolve(successResult);
+    });
+
+    await vi.waitFor(() => {
+      expect(callbacks.calls).toContain("success");
+    });
+
+    // Only publish/start and publish/success should be injected
+    const types = stream.injected.map((m) => m.type);
+    expect(types).not.toContain("publish/createManifest/start");
+  });
+
+  it("injects publish/success on successful deploy", async () => {
+    const { callbacks, stream } = run(() => Promise.resolve(successResult));
+
+    await vi.waitFor(() => {
+      expect(callbacks.calls).toContain("success");
+    });
+
+    const successMsg = stream.injected.find(
+      (m) => m.type === "publish/success",
+    );
+    expect(successMsg).toBeDefined();
+    expect(successMsg!.data.dashboardUrl).toBe(successResult.dashboardUrl);
+  });
+
+  it("injects publish/failure on deploy error", async () => {
+    const { callbacks, stream } = run(() =>
+      Promise.reject(new Error("server error")),
+    );
+
+    await vi.waitFor(() => {
+      expect(callbacks.calls).toContain("failure");
+    });
+
+    const failMsg = stream.injected.find((m) => m.type === "publish/failure");
+    expect(failMsg).toBeDefined();
+    expect(failMsg!.data.message).toBe("server error");
+  });
+
+  it("injects stage failure event when a step fails", async () => {
+    const { callbacks, stream } = run((onProgress) => {
+      onProgress({ step: "uploadBundle", status: "start" });
+      onProgress({
+        step: "uploadBundle",
+        status: "failure",
+        message: "413 too large",
+      });
+      return Promise.reject(new Error("413 too large"));
+    });
+
+    await vi.waitFor(() => {
+      expect(callbacks.calls).toContain("failure");
+    });
+
+    const failMsg = stream.injected.find(
+      (m) => m.type === "publish/uploadBundle/failure",
+    );
+    expect(failMsg).toBeDefined();
+    expect(failMsg!.data.message).toBe("413 too large");
   });
 });

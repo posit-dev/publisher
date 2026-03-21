@@ -55,7 +55,7 @@ export type PublishStep =
 
 export type PublishEvent = {
   step: PublishStep;
-  status: "start" | "success" | "failure" | "progress";
+  status: "start" | "success" | "failure" | "log";
   message?: string;
 };
 
@@ -254,9 +254,10 @@ export async function connectPublish(
     lastStep = "waitForTask";
     onProgress({ step: "waitForTask", status: "start" });
     await api.waitForTask(TaskID(deployOutput.task_id), undefined, (lines) => {
-      const message = lines[lines.length - 1];
-      if (message) {
-        onProgress({ step: "waitForTask", status: "progress", message });
+      for (const line of lines) {
+        if (line) {
+          onProgress({ step: "waitForTask", status: "log", message: line });
+        }
       }
     });
     onProgress({ step: "waitForTask", status: "success" });
