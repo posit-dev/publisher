@@ -34,16 +34,10 @@ const stepToEventPrefix: Partial<Record<PublishStep, string>> = {
   validateDeployment: "publish/validateDeployment",
 };
 
-export type TsDeployCallbacks = {
-  onStart: () => void;
-  onSuccess: () => void;
-  onFailure: (message: string) => void;
-  onComplete: () => void;
-};
-
 export type TsDeployProgressOptions = {
   deploy: (onProgress: (event: PublishEvent) => void) => Promise<PublishResult>;
-  callbacks: TsDeployCallbacks;
+  /** Called after deployment completes (success or failure) for cleanup like refreshing content records. */
+  onComplete: () => void;
   stream: EventStream;
   serverUrl: string;
   title: string;
@@ -87,7 +81,7 @@ function injectStageEvent(
 export function runTsDeployWithProgress(
   options: TsDeployProgressOptions,
 ): void {
-  const { deploy, callbacks, stream, serverUrl, title } = options;
+  const { deploy, onComplete, stream, serverUrl, title } = options;
 
   window.withProgress(
     {
@@ -96,7 +90,8 @@ export function runTsDeployWithProgress(
       cancellable: false,
     },
     async (progress) => {
-      // Inject the top-level publish/start so the logs tree resets and opens
+      // Inject publish/start — resets the logs tree and triggers
+      // HomeView's onPublishStart() via the stream handler.
       stream.injectMessage(
         makeMessage("publish/start", {
           server: serverUrl,
@@ -104,8 +99,6 @@ export function runTsDeployWithProgress(
           productType: "connect",
         }),
       );
-
-      callbacks.onStart();
 
       try {
         const result = await deploy((event) => {
@@ -126,9 +119,8 @@ export function runTsDeployWithProgress(
           }
         });
 
-        callbacks.onSuccess();
-
-        // Inject publish/success for the logs tree
+        // Inject publish/success — triggers HomeView's onPublishSuccess()
+        // via the stream handler.
         stream.injectMessage(
           makeMessage("publish/success", {
             dashboardUrl: result.dashboardUrl,
@@ -144,9 +136,9 @@ export function runTsDeployWithProgress(
         showSuccessNotification(result.dashboardUrl);
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        callbacks.onFailure(message);
 
-        // Inject publish/failure for the logs tree
+        // Inject publish/failure — triggers HomeView's onPublishFailure()
+        // via the stream handler.
         stream.injectMessage(
           makeMessage("publish/failure", {
             message,
@@ -156,7 +148,7 @@ export function runTsDeployWithProgress(
 
         window.showErrorMessage(`Deployment failed: ${message}`);
       } finally {
-        callbacks.onComplete();
+        onComplete();
       }
     },
   );
