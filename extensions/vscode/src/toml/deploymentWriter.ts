@@ -193,6 +193,13 @@ export async function patchDeploymentRecord(
   // Re-add configurationName as a plain field (not from Configuration type)
   toWrite.configurationName = existing.configurationName;
 
+  // Remove non-TOML fields from nested configuration, matching Go's toml:"-" tags
+  if (isRecord(toWrite.configuration)) {
+    delete toWrite.configuration.comments;
+    delete toWrite.configuration.alternatives;
+    delete toWrite.configuration.entrypointObjectRef;
+  }
+
   const snakeObj = convertKeysToSnakeCase(toWrite);
   if (!isRecord(snakeObj)) {
     throw new Error("unexpected: snake_case conversion did not return object");
