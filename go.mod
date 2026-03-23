@@ -21,9 +21,8 @@ require (
 require gopkg.in/ini.v1 v1.67.1
 
 require (
-	al.essio.dev/pkg/shellescape v1.5.1 // indirect
-	github.com/danieljoos/wincred v1.2.2 // indirect
-	github.com/godbus/dbus/v5 v5.1.0 // indirect
+	github.com/danieljoos/wincred v1.2.3 // indirect
+	github.com/godbus/dbus/v5 v5.2.2 // indirect
 )
 
 require (
@@ -32,7 +31,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rogpeppe/go-internal v1.8.0 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
-	github.com/zalando/go-keyring v0.2.6
+	github.com/zalando/go-keyring v0.2.8
 	golang.org/x/sys v0.42.0 // indirect
 	golang.org/x/text v0.35.0 // indirect
 	gopkg.in/cenkalti/backoff.v1 v1.1.0 // indirect
