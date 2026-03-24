@@ -509,7 +509,22 @@ function setRecordContentInfo(
  * as defined by the schema, not the PascalCase from renv.lock files.
  */
 function recordToTomlObject(record: PublishRecord): Record<string, unknown> {
-  const obj: Record<string, unknown> = {
+  // Build the configuration section separately — it needs key conversion
+  // and empty-value stripping that the other fields don't.
+  let configuration: unknown;
+  if (record.config) {
+    const snakeConfig = convertKeysToSnakeCase(record.config);
+    if (isRecord(snakeConfig)) {
+      stripEmpty(snakeConfig);
+    }
+    configuration = snakeConfig;
+  }
+
+  // Keys are mapped explicitly because some don't follow simple
+  // camelCase→snake_case (e.g. configName → configuration_name,
+  // schema → $schema). Undefined values are dropped by smol-toml's
+  // stringify, so `|| undefined` omits unset optional fields.
+  return {
     $schema: record.schema,
     server_type: record.serverType,
     server_url: record.serverUrl,
@@ -517,51 +532,19 @@ function recordToTomlObject(record: PublishRecord): Record<string, unknown> {
     created_at: record.createdAt,
     type: record.type,
     configuration_name: record.configName,
+    configuration,
+    id: record.id || undefined,
+    dashboard_url: record.dashboardUrl || undefined,
+    direct_url: record.directUrl || undefined,
+    logs_url: record.logsUrl || undefined,
+    bundle_id: record.bundleId || undefined,
+    bundle_url: record.bundleUrl || undefined,
+    files: record.files || undefined,
+    requirements: record.requirements || undefined,
+    renv: record.renv || undefined,
+    deployed_at: record.deployedAt || undefined,
+    deployment_error: record.deploymentError || undefined,
   };
-
-  if (record.config) {
-    const snakeConfig = convertKeysToSnakeCase(record.config);
-    if (isRecord(snakeConfig)) {
-      stripEmpty(snakeConfig);
-    }
-    obj.configuration = snakeConfig;
-  }
-
-  if (record.id) {
-    obj.id = record.id;
-  }
-  if (record.dashboardUrl) {
-    obj.dashboard_url = record.dashboardUrl;
-  }
-  if (record.directUrl) {
-    obj.direct_url = record.directUrl;
-  }
-  if (record.logsUrl) {
-    obj.logs_url = record.logsUrl;
-  }
-  if (record.bundleId) {
-    obj.bundle_id = record.bundleId;
-  }
-  if (record.bundleUrl) {
-    obj.bundle_url = record.bundleUrl;
-  }
-  if (record.files) {
-    obj.files = record.files;
-  }
-  if (record.requirements) {
-    obj.requirements = record.requirements;
-  }
-  if (record.renv) {
-    obj.renv = record.renv;
-  }
-  if (record.deployedAt) {
-    obj.deployed_at = record.deployedAt;
-  }
-  if (record.deploymentError) {
-    obj.deployment_error = record.deploymentError;
-  }
-
-  return obj;
 }
 
 // Exported for testing — allows round-trip validation through loadDeploymentFromFile.
