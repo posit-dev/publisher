@@ -15,6 +15,9 @@ import type {
   ContentID,
   DeployOutput,
   Integration,
+  JobDTO,
+  JobLogEntry,
+  JobLogResponse,
   PyInfo,
   QuartoInfo,
   RInfo,
@@ -254,6 +257,30 @@ export class ConnectAPI {
     await this.client.get(`/content/${contentId}/`, {
       validateStatus: (status: number) => status < 500,
     });
+  }
+
+  /** Lists jobs for a content item. */
+  async getJobs(contentId: ContentID): Promise<AxiosResponse<JobDTO[]>> {
+    return this.client.get<JobDTO[]>(`/__api__/v1/content/${contentId}/jobs`);
+  }
+
+  /**
+   * Fetches log entries for a specific job.
+   * The Connect API returns `{ entries: [...] }`, but this method
+   * unwraps it so callers receive `{ data: JobLogEntry[] }`.
+   */
+  async getJobLog(
+    contentId: ContentID,
+    jobKey: string,
+  ): Promise<{ data: JobLogEntry[] }> {
+    const response = await this.client.get<JobLogResponse | JobLogEntry[]>(
+      `/__api__/v1/content/${contentId}/jobs/${jobKey}/log`,
+    );
+    // Handle both shapes: `{ entries: [...] }` (Connect API) and plain array (tests / future)
+    const data = Array.isArray(response.data)
+      ? response.data
+      : response.data.entries;
+    return { data };
   }
 
   /** Retrieves OAuth integrations from the server. */

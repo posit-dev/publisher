@@ -20,6 +20,7 @@ import { Commands } from "src/constants";
 import { DocumentTracker } from "./entrypointTracker";
 import { getXDGConfigProperty } from "src/utils/config";
 import { PublisherState } from "./state";
+import { normalizeURL } from "src/utils/url";
 import { PublisherAuthProvider } from "./authProvider";
 import { logger } from "./logging";
 import { copySystemInfoCommand } from "src/commands";
@@ -129,7 +130,21 @@ async function initializeExtension(context: ExtensionContext) {
   const projectTreeDataProvider = new ProjectTreeDataProvider(context);
 
   // Logs tree view
-  const logsTreeDataProvider = new LogsTreeDataProvider(context, stream);
+  const logsTreeDataProvider = new LogsTreeDataProvider(
+    context,
+    stream,
+    (serverUrl: string) => {
+      const credential = state.credentials.find(
+        (c) =>
+          normalizeURL(c.url).toLowerCase() ===
+          normalizeURL(serverUrl).toLowerCase(),
+      );
+      if (credential) {
+        return { url: credential.url, apiKey: credential.apiKey };
+      }
+      return undefined;
+    },
+  );
 
   const homeViewProvider = new HomeViewProvider(context, stream, state);
   context.subscriptions.push(homeViewProvider);

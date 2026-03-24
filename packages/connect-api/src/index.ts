@@ -2,7 +2,7 @@
 
 export { ConnectAPI } from "./client.js";
 
-export { ContentID, BundleID, TaskID, UserID, GUID } from "./types.js";
+export { ContentID, BundleID, TaskID, UserID, GUID, JobKey } from "./types.js";
 
 export type {
   AllSettings,
@@ -14,6 +14,9 @@ export type {
   DeployOutput,
   EnvVar,
   Integration,
+  JobDTO,
+  JobLogEntry,
+  JobLogResponse,
   LicenseStatus,
   PyInfo,
   PyInstallation,

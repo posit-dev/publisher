@@ -183,6 +183,41 @@ export interface TaskDTO {
 }
 
 // ---------------------------------------------------------------------------
+// Job types
+// ---------------------------------------------------------------------------
+
+export type JobKey = string & { readonly __brand: "JobKey" };
+export const JobKey = (key: string) => key as JobKey;
+
+export interface JobDTO {
+  id: string;
+  key: JobKey;
+  app_id: string;
+  app_guid: string;
+  variant_id: string;
+  status: number; // 0 = success, non-zero = failure
+  hostname: string;
+  cluster: string | null;
+  image: string | null;
+  tag: string;
+  exit_code: number;
+  run_as: string;
+  queue_time: string | null;
+  start_time: string;
+  end_time: string | null;
+}
+
+export interface JobLogEntry {
+  source: string;
+  timestamp: string;
+  data: string;
+}
+
+export interface JobLogResponse {
+  entries: JobLogEntry[];
+}
+
+// ---------------------------------------------------------------------------
 // Environment variable type
 // ---------------------------------------------------------------------------
 
