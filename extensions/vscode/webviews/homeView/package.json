@@ -29,7 +29,7 @@
     "jsdom": "^29.0.1",
     "sass-embedded": "^1.98.0",
     "typescript": "^5.6.3",
-    "vite": "^8.0.1",
+    "vite": "^8.0.2",
     "vitest": "^4.0.18",
     "vue-tsc": "^3.2.6"
   }
