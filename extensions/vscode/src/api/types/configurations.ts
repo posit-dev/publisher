@@ -120,7 +120,7 @@ const contentTypeLabelOverrides: Partial<Record<ContentType, string>> = {
 };
 
 export const getContentTypeLabel = (type: ContentType): string =>
-  contentTypeLabelOverrides[type] ?? contentTypeStrings[type];
+  contentTypeLabelOverrides[type] ?? contentTypeStrings[type] ?? type;
 
 export type ConfigurationDetails = {
   $schema: SchemaURL;
