@@ -111,6 +111,18 @@ export const contentTypeStrings = {
     "unknown content type; manual selection needed to deploy",
 };
 
+// Human-readable labels for content types shown in the picker.
+// Only includes types that can appear in multi-choice scenarios (.ipynb, .Rmd files).
+const contentTypeLabelOverrides: Partial<Record<ContentType, string>> = {
+  [ContentType.JUPYTER_NOTEBOOK]: "Jupyter Notebook",
+  [ContentType.QUARTO]: "Quarto Document",
+  [ContentType.QUARTO_STATIC]: "Quarto Document",
+  [ContentType.RMD]: "R Markdown Document",
+};
+
+export const getContentTypeLabel = (type: ContentType): string =>
+  contentTypeLabelOverrides[type] ?? contentTypeStrings[type];
+
 export type ConfigurationDetails = {
   $schema: SchemaURL;
   comments?: string[];
