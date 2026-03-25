@@ -51,10 +51,10 @@ jobs:
         run: rig add release
 
       - name: Configure CRAN mirror
-        shell: Rscript {0}
+        shell: bash
         run: |
-          cat('options(repos = c(CRAN = "https://cloud.r-project.org"))\n',
-              file = path.expand("~/.Rprofile"), append = TRUE)
+          echo 'options(repos = c(CRAN = "https://cloud.r-project.org"))' > "$RUNNER_TEMP/Rprofile-ci.R"
+          echo "R_PROFILE_USER=$RUNNER_TEMP/Rprofile-ci.R" >> "$GITHUB_ENV"
 
       - name: Install R packages
         run: Rscript -e "install.packages(c('renv', 'glue'))"
