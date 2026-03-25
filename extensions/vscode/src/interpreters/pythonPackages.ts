@@ -26,7 +26,7 @@ export async function readRequirementsFile(
  * Get the list of Python packages from a project's requirements file.
  *
  * If the requirements file does not exist, falls back to generating
- * requirements from uv.lock or pyproject.toml.
+ * requirements from pylock.toml, uv.lock, or pyproject.toml.
  * Throws if no dependency source is available.
  */
 export async function getPythonPackages(
@@ -39,7 +39,7 @@ export async function getPythonPackages(
     return packages;
   }
 
-  // No requirements file on disk — try generating from uv.lock / pyproject.toml
+  // No requirements file on disk — try generating from pylock.toml / uv.lock / pyproject.toml
   const generated = await generateRequirements(projectDir);
   if (generated !== null) {
     return generated;

@@ -27,7 +27,7 @@ func (p *defaultPublisher) addDependenciesToTarget(manifest *bundles.Manifest) e
 		requirements, err := pydeps.ReadRequirementsFile(p.Dir.Join(filename))
 		if err != nil {
 			// Requirements file doesn't exist on disk; try generating
-			// from uv.lock or pyproject.toml.
+			// from pylock.toml, uv.lock, or pyproject.toml.
 			optionalGroups := p.Config.Python.OptionalDependencyGroups
 			generated, ok := pydeps.GenerateRequirements(p.Dir, optionalGroups)
 			if !ok {

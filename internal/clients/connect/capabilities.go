@@ -54,7 +54,7 @@ func checkRequirementsFile(base util.AbsolutePath, cfg *config.Config) error {
 
 	if !exists || !requirementsIsIncluded {
 		// If the requirements file doesn't exist on disk but we can generate
-		// it from uv.lock or pyproject.toml, skip the error. The requirements
+		// it from pylock.toml, uv.lock, or pyproject.toml, skip the error. The requirements
 		// will be generated ephemerally during bundle creation.
 		canGenerate, _ := pydeps.CanGenerateRequirements(base)
 		if canGenerate {
@@ -286,8 +286,8 @@ func (a *AllSettings) checkConfig(cfg *config.Config) error {
 	// we don't upload thumbnails yet, but when we do, we will check MaximumAppImageSize
 
 	// For Python we no longer require a pre-existing requirements file on disk
-	// at capability-check time. The file may be auto-generated from uv.lock or
-	// pyproject.toml into the bundle later; skip existence check when possible.
+	// at capability-check time. The file may be auto-generated from pylock.toml,
+	// uv.lock, or pyproject.toml into the bundle later; skip existence check when possible.
 	if cfg.Python != nil {
 		canGenerate, _ := pydeps.CanGenerateRequirements(a.base)
 		if !canGenerate {

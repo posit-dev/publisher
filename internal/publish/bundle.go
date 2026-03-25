@@ -52,7 +52,7 @@ func (p *defaultPublisher) createBundle(manifest *bundles.Manifest) (*os.File, e
 	}
 
 	// If Python is configured but requirements.txt doesn't exist on disk,
-	// generate it ephemerally from uv.lock or pyproject.toml.
+	// generate it ephemerally from pylock.toml, uv.lock, or pyproject.toml.
 	var syntheticFiles map[string][]byte
 	if p.Config.Python != nil {
 		packageFile := p.Config.Python.PackageFile
@@ -65,7 +65,7 @@ func (p *defaultPublisher) createBundle(manifest *bundles.Manifest) (*os.File, e
 			optionalGroups := p.Config.Python.OptionalDependencyGroups
 			reqs, ok := pydeps.GenerateRequirements(p.Dir, optionalGroups)
 			if ok {
-				prepareLog.Info("Generated ephemeral requirements from uv.lock or pyproject.toml",
+				prepareLog.Info("Generated ephemeral requirements from pylock.toml, uv.lock, or pyproject.toml",
 					"packages", len(reqs))
 				syntheticFiles = map[string][]byte{
 					packageFile: pydeps.FormatRequirementsContent(reqs),

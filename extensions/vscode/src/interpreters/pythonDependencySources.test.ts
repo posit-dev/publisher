@@ -4,6 +4,7 @@ import path from "node:path";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import {
   readPyProjectDependencies,
+  readPyLockDependencies,
   readUvLockDependencies,
   generateRequirements,
 } from "./pythonDependencySources";
@@ -246,15 +247,117 @@ source = { editable = "." }
   });
 });
 
+describe("readPyLockDependencies", () => {
+  beforeEach(clearFiles);
+
+  test("returns null when pylock.toml doesn't exist", async () => {
+    const result = await readPyLockDependencies("/project");
+    expect(result).toBeNull();
+  });
+
+  test("reads packages with name and version", async () => {
+    setFile(
+      "/project",
+      "pylock.toml",
+      `lock-version = "1.0"
+created-by = "uv"
+
+[[packages]]
+name = "requests"
+version = "2.31.0"
+
+[[packages]]
+name = "urllib3"
+version = "2.1.0"
+`,
+    );
+    const result = await readPyLockDependencies("/project");
+    expect(result).toEqual(["requests==2.31.0", "urllib3==2.1.0"]);
+  });
+
+  test("skips packages without version", async () => {
+    setFile(
+      "/project",
+      "pylock.toml",
+      `lock-version = "1.0"
+created-by = "uv"
+
+[[packages]]
+name = "mystery"
+
+[[packages]]
+name = "flask"
+version = "3.0.2"
+`,
+    );
+    const result = await readPyLockDependencies("/project");
+    expect(result).toEqual(["flask==3.0.2"]);
+  });
+
+  test("returns null when no packages found", async () => {
+    setFile(
+      "/project",
+      "pylock.toml",
+      `lock-version = "1.0"
+created-by = "uv"
+`,
+    );
+    const result = await readPyLockDependencies("/project");
+    expect(result).toBeNull();
+  });
+
+  test("returns null on invalid TOML", async () => {
+    setFile("/project", "pylock.toml", "not valid toml {{{");
+    const result = await readPyLockDependencies("/project");
+    expect(result).toBeNull();
+  });
+});
+
 describe("generateRequirements", () => {
   beforeEach(clearFiles);
 
-  test("returns null when neither file exists", async () => {
+  test("returns null when no source file exists", async () => {
     const result = await generateRequirements("/project");
     expect(result).toBeNull();
   });
 
-  test("prefers uv.lock over pyproject.toml", async () => {
+  test("prefers pylock.toml over uv.lock and pyproject.toml", async () => {
+    setFile(
+      "/project",
+      "pylock.toml",
+      `lock-version = "1.0"
+created-by = "uv"
+
+[[packages]]
+name = "flask"
+version = "3.0.1"
+`,
+    );
+    setFile(
+      "/project",
+      "uv.lock",
+      `version = 1
+
+[[package]]
+name = "flask"
+version = "3.0.2"
+source = { registry = "https://pypi.org/simple" }
+`,
+    );
+    setFile(
+      "/project",
+      "pyproject.toml",
+      `[project]
+name = "myproject"
+dependencies = ["flask>=3.0"]
+`,
+    );
+    const result = await generateRequirements("/project");
+    // Should use pylock.toml (PEP 751), not uv.lock or pyproject.toml
+    expect(result).toEqual(["flask==3.0.1"]);
+  });
+
+  test("prefers uv.lock over pyproject.toml when no pylock.toml", async () => {
     setFile(
       "/project",
       "uv.lock",
@@ -279,7 +382,7 @@ dependencies = ["flask>=3.0"]
     expect(result).toEqual(["flask==3.0.2"]);
   });
 
-  test("falls back to pyproject.toml when no uv.lock", async () => {
+  test("falls back to pyproject.toml when no lockfiles", async () => {
     setFile(
       "/project",
       "pyproject.toml",
@@ -306,6 +409,23 @@ dev = ["pytest"]
     );
     const result = await generateRequirements("/project", ["dev"]);
     expect(result).toEqual(["requests", "pytest"]);
+  });
+
+  test("ignores optional groups when using pylock.toml", async () => {
+    setFile(
+      "/project",
+      "pylock.toml",
+      `lock-version = "1.0"
+created-by = "uv"
+
+[[packages]]
+name = "flask"
+version = "3.0.2"
+`,
+    );
+    // Even with optional groups specified, pylock.toml returns its full set
+    const result = await generateRequirements("/project", ["dev"]);
+    expect(result).toEqual(["flask==3.0.2"]);
   });
 
   test("ignores optional groups when using uv.lock", async () => {

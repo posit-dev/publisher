@@ -65,6 +65,49 @@ export async function readPyProjectDependencies(
   return result;
 }
 
+/** Shape of a [[packages]] entry in pylock.toml (PEP 751) */
+interface PyLockPackage {
+  name: string;
+  version?: string;
+}
+
+/**
+ * Read all pinned dependencies from a pylock.toml file (PEP 751).
+ *
+ * Returns the full dependency set as "name==version" strings.
+ * Returns null if the file doesn't exist.
+ */
+export async function readPyLockDependencies(
+  projectDir: string,
+): Promise<string[] | null> {
+  const content = await readFileText(path.join(projectDir, "pylock.toml"));
+  if (content === null) {
+    return null;
+  }
+
+  let parsed: Record<string, unknown>;
+  try {
+    parsed = parseTOML(content) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+
+  const packages = parsed.packages;
+  if (!Array.isArray(packages)) {
+    return null;
+  }
+
+  const result: string[] = [];
+  for (const pkg of packages as PyLockPackage[]) {
+    if (!pkg.name || !pkg.version) {
+      continue;
+    }
+    result.push(`${pkg.name}==${pkg.version}`);
+  }
+
+  return result.length > 0 ? result : null;
+}
+
 /** Shape of a [[package]] entry in uv.lock */
 interface UvLockPackage {
   name: string;
@@ -118,15 +161,21 @@ export async function readUvLockDependencies(
 }
 
 /**
- * Try to generate Python requirements from uv.lock or pyproject.toml.
+ * Try to generate Python requirements from pylock.toml, uv.lock, or pyproject.toml.
  *
- * Priority: uv.lock (pinned, full transitive set) > pyproject.toml (declared).
- * Returns the requirement lines, or null if neither source is available.
+ * Priority: pylock.toml (PEP 751, pinned) > uv.lock (pinned, full transitive set)
+ *         > pyproject.toml (declared).
+ * Returns the requirement lines, or null if no source is available.
  */
 export async function generateRequirements(
   projectDir: string,
   optionalGroups?: string[],
 ): Promise<string[] | null> {
+  const fromPyLock = await readPyLockDependencies(projectDir);
+  if (fromPyLock !== null) {
+    return fromPyLock;
+  }
+
   const fromUvLock = await readUvLockDependencies(projectDir);
   if (fromUvLock !== null) {
     return fromUvLock;
