@@ -618,6 +618,101 @@ func (s *LockfilePackageMapperSuite) TestGitRemoteFieldsPreserved() {
 	s.Equal("abcdef1234567890", desc["RemoteSha"])
 }
 
+func (s *LockfilePackageMapperSuite) TestRepositoryURLHandling() {
+	// Test packages where Repository is a URL rather than a name. This can
+	// happen with r-universe packages installed via
+	// renv::install("pkg", repos = "https://posit-dev.r-universe.dev")
+	lockfileContent := `{
+		"R": {
+			"Version": "4.3.3",
+			"Repositories": [
+				{
+					"Name": "CRAN",
+					"URL": "https://cloud.r-project.org"
+				}
+			]
+		},
+		"Packages": {
+			"shinychat": {
+				"Package": "shinychat",
+				"Version": "0.2.0.9000",
+				"Source": "Repository",
+				"Repository": "https://posit-dev.r-universe.dev",
+				"RemoteUrl": "https://github.com/posit-dev/shinychat",
+				"RemoteRef": "HEAD",
+				"RemoteSha": "3ad4d842155dc75acc246f20f78f18ebbacd85a7",
+				"RemoteSubdir": "pkg-r",
+				"Hash": "abc123",
+				"Requirements": ["R"]
+			}
+		}
+	}`
+
+	tempDirPath := s.T().TempDir()
+	tempDir := util.NewAbsolutePath(tempDirPath, nil)
+	lockfilePath := tempDir.Join("renv.lock")
+	err := lockfilePath.WriteFile([]byte(lockfileContent), 0644)
+	s.NoError(err)
+
+	mapper := NewLockfilePackageMapper(tempDir, util.Path{}, s.log)
+	manifestPackages, err := mapper.GetManifestPackagesFromLockfile(lockfilePath)
+	s.NoError(err)
+
+	s.Contains(manifestPackages, "shinychat")
+	pkg := manifestPackages["shinychat"]
+
+	// Repository URL should be preserved so Connect knows where to install from
+	s.Equal("https://posit-dev.r-universe.dev", pkg.Repository)
+	// Source falls back to the URL when no matching repo name is found
+	s.Equal("https://posit-dev.r-universe.dev", pkg.Source)
+}
+
+func (s *LockfilePackageMapperSuite) TestRepositoryURLHandling_WithRepoName() {
+	// When the r-universe repo IS in the Repositories section, Source
+	// should resolve to the friendly name.
+	lockfileContent := `{
+		"R": {
+			"Version": "4.3.3",
+			"Repositories": [
+				{
+					"Name": "CRAN",
+					"URL": "https://cloud.r-project.org"
+				},
+				{
+					"Name": "r-universe",
+					"URL": "https://posit-dev.r-universe.dev"
+				}
+			]
+		},
+		"Packages": {
+			"shinychat": {
+				"Package": "shinychat",
+				"Version": "0.2.0.9000",
+				"Source": "Repository",
+				"Repository": "https://posit-dev.r-universe.dev",
+				"Hash": "abc123",
+				"Requirements": ["R"]
+			}
+		}
+	}`
+
+	tempDirPath := s.T().TempDir()
+	tempDir := util.NewAbsolutePath(tempDirPath, nil)
+	lockfilePath := tempDir.Join("renv.lock")
+	err := lockfilePath.WriteFile([]byte(lockfileContent), 0644)
+	s.NoError(err)
+
+	mapper := NewLockfilePackageMapper(tempDir, util.Path{}, s.log)
+	manifestPackages, err := mapper.GetManifestPackagesFromLockfile(lockfilePath)
+	s.NoError(err)
+
+	s.Contains(manifestPackages, "shinychat")
+	pkg := manifestPackages["shinychat"]
+
+	s.Equal("https://posit-dev.r-universe.dev", pkg.Repository)
+	s.Equal("r-universe", pkg.Source)
+}
+
 func (s *LockfilePackageMapperSuite) TestHashingFields_FromLockfile() {
 	// Verifies that Description contains Package, Version, Depends, Imports, Suggests, LinkingTo
 	// when provided in renv.lock, with list fields joined by commas.
