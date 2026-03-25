@@ -123,10 +123,11 @@ func (c *Config) HasSecret(secret string) bool {
 type Environment = map[string]string
 
 type Python struct {
-	Version               string `toml:"version,omitempty" json:"version,omitempty"`
-	PackageFile           string `toml:"package_file,omitempty" json:"packageFile,omitempty"`
-	PackageManager        string `toml:"package_manager,omitempty" json:"packageManager,omitempty"`
-	RequiresPythonVersion string `toml:"requires_python,omitempty" json:"requiresPython,omitempty"`
+	Version                  string   `toml:"version,omitempty" json:"version,omitempty"`
+	PackageFile              string   `toml:"package_file,omitempty" json:"packageFile,omitempty"`
+	PackageManager           string   `toml:"package_manager,omitempty" json:"packageManager,omitempty"`
+	RequiresPythonVersion    string   `toml:"requires_python,omitempty" json:"requiresPython,omitempty"`
+	OptionalDependencyGroups []string `toml:"optional_dependency_groups,omitempty" json:"optionalDependencyGroups,omitempty"`
 }
 
 func (p *Python) FillDefaults(

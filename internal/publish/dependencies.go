@@ -25,10 +25,18 @@ func (p *defaultPublisher) addDependenciesToTarget(manifest *bundles.Manifest) e
 		p.log.Debug("Python configuration present", "PythonRequirementsFile", filename)
 
 		requirements, err := pydeps.ReadRequirementsFile(p.Dir.Join(filename))
-		p.log.Debug("Python requirements file in use", "requirements", requirements)
 		if err != nil {
-			return err
+			// Requirements file doesn't exist on disk; try generating
+			// from uv.lock or pyproject.toml.
+			optionalGroups := p.Config.Python.OptionalDependencyGroups
+			generated, ok := pydeps.GenerateRequirements(p.Dir, optionalGroups)
+			if !ok {
+				return err
+			}
+			p.log.Debug("Using generated Python requirements", "requirements", generated)
+			requirements = generated
 		}
+		p.log.Debug("Python requirements in use", "requirements", requirements)
 		p.Target.Requirements = requirements
 	}
 

@@ -10,6 +10,7 @@ import (
 	"github.com/posit-dev/publisher/internal/clients/connect/server_settings"
 	clienttypes "github.com/posit-dev/publisher/internal/clients/types"
 	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/inspect/dependencies/pydeps"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
@@ -52,6 +53,13 @@ func checkRequirementsFile(base util.AbsolutePath, cfg *config.Config) error {
 	}
 
 	if !exists || !requirementsIsIncluded {
+		// If the requirements file doesn't exist on disk but we can generate
+		// it from uv.lock or pyproject.toml, skip the error. The requirements
+		// will be generated ephemerally during bundle creation.
+		canGenerate, _ := pydeps.CanGenerateRequirements(base)
+		if canGenerate {
+			return nil
+		}
 		missingErr := fmt.Errorf(requirementsFileMissing, cfg.Python.PackageFile)
 		aerr := types.NewAgentError(types.ErrorRequirementsFileReading, missingErr, requirementsErrDetails{RequirementsFile: packageFile.String()})
 		return aerr
@@ -277,10 +285,16 @@ func (a *AllSettings) checkConfig(cfg *config.Config) error {
 	}
 	// we don't upload thumbnails yet, but when we do, we will check MaximumAppImageSize
 
+	// For Python we no longer require a pre-existing requirements file on disk
+	// at capability-check time. The file may be auto-generated from uv.lock or
+	// pyproject.toml into the bundle later; skip existence check when possible.
 	if cfg.Python != nil {
-		err = a.checkFileExists(cfg.Python.PackageFile, "python.package-file")
-		if err != nil {
-			return err
+		canGenerate, _ := pydeps.CanGenerateRequirements(a.base)
+		if !canGenerate {
+			err = a.checkFileExists(cfg.Python.PackageFile, "python.package-file")
+			if err != nil {
+				return err
+			}
 		}
 	}
 

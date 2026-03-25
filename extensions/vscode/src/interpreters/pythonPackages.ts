@@ -3,6 +3,7 @@
 import path from "node:path";
 
 import { readFileText } from "./fsUtils";
+import { generateRequirements } from "./pythonDependencySources";
 
 /**
  * Read a Python requirements file and return its package lines,
@@ -23,7 +24,10 @@ export async function readRequirementsFile(
 
 /**
  * Get the list of Python packages from a project's requirements file.
- * Throws if the requirements file does not exist.
+ *
+ * If the requirements file does not exist, falls back to generating
+ * requirements from uv.lock or pyproject.toml.
+ * Throws if no dependency source is available.
  */
 export async function getPythonPackages(
   projectDir: string,
@@ -31,8 +35,15 @@ export async function getPythonPackages(
 ): Promise<string[]> {
   const filePath = path.join(projectDir, packageFile);
   const packages = await readRequirementsFile(filePath);
-  if (packages === null) {
-    throw new Error(`Requirements file not found: ${filePath}`);
+  if (packages !== null) {
+    return packages;
   }
-  return packages;
+
+  // No requirements file on disk — try generating from uv.lock / pyproject.toml
+  const generated = await generateRequirements(projectDir);
+  if (generated !== null) {
+    return generated;
+  }
+
+  throw new Error(`Requirements file not found: ${filePath}`);
 }

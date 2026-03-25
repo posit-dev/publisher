@@ -28,7 +28,7 @@ type Bundler interface {
 // such as the entrypoint, Python version, R package dependencies, etc.
 // The bundler will fill in the `files` section and include the manifest.json
 // in the bundler.
-func NewBundler(path util.AbsolutePath, manifest *Manifest, filePatterns []string, log logging.Logger) (*bundler, error) {
+func NewBundler(path util.AbsolutePath, manifest *Manifest, filePatterns []string, log logging.Logger, syntheticFiles ...map[string][]byte) (*bundler, error) {
 	var dir util.AbsolutePath
 	var filename string
 	isDir, err := path.IsDir()
@@ -54,21 +54,28 @@ func NewBundler(path util.AbsolutePath, manifest *Manifest, filePatterns []strin
 	log = log.WithArgs(logging.LogKeyOp, events.PublishCreateBundleOp)
 	symlinkWalker := util.NewSymlinkWalker(matcher, log)
 
+	var sf map[string][]byte
+	if len(syntheticFiles) > 0 && syntheticFiles[0] != nil {
+		sf = syntheticFiles[0]
+	}
+
 	return &bundler{
-		manifest: manifest,
-		baseDir:  dir,
-		filename: filename,
-		walker:   symlinkWalker,
-		log:      log,
+		manifest:       manifest,
+		baseDir:        dir,
+		filename:       filename,
+		walker:         symlinkWalker,
+		syntheticFiles: sf,
+		log:            log,
 	}, nil
 }
 
 type bundler struct {
-	baseDir  util.AbsolutePath // Directory being bundled
-	filename string            // Primary file being deployed
-	walker   util.Walker       // Only walks files matching patterns from the configuration
-	manifest *Manifest         // Manifest describing the bundle, if provided
-	log      logging.Logger
+	baseDir        util.AbsolutePath  // Directory being bundled
+	filename       string             // Primary file being deployed
+	walker         util.Walker        // Only walks files matching patterns from the configuration
+	manifest       *Manifest          // Manifest describing the bundle, if provided
+	syntheticFiles map[string][]byte  // In-memory files to inject into the bundle
+	log            logging.Logger
 }
 
 type bundle struct {
@@ -126,6 +133,19 @@ func (b *bundler) makeBundle(dest io.Writer) (*Manifest, error) {
 			if err != nil {
 				return nil, err
 			}
+		}
+	}
+
+	// Add synthetic (in-memory) files before the manifest
+	if dest != nil && b.syntheticFiles != nil {
+		for name, content := range b.syntheticFiles {
+			b.log.Info("Adding synthetic file", "name", name, "size", len(content))
+			err = bundle.addFile(name, content)
+			if err != nil {
+				return nil, fmt.Errorf("error adding synthetic file %s: %w", name, err)
+			}
+			bundle.numFiles++
+			bundle.size += int64(len(content))
 		}
 	}
 

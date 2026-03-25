@@ -8,6 +8,8 @@ import (
 
 	"github.com/posit-dev/publisher/internal/bundles"
 	"github.com/posit-dev/publisher/internal/events"
+	"github.com/posit-dev/publisher/internal/inspect/dependencies/pydeps"
+	"github.com/posit-dev/publisher/internal/interpreters"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/types"
 )
@@ -49,8 +51,31 @@ func (p *defaultPublisher) createBundle(manifest *bundles.Manifest) (*os.File, e
 		return nil, err
 	}
 
+	// If Python is configured but requirements.txt doesn't exist on disk,
+	// generate it ephemerally from uv.lock or pyproject.toml.
+	var syntheticFiles map[string][]byte
+	if p.Config.Python != nil {
+		packageFile := p.Config.Python.PackageFile
+		if packageFile == "" {
+			packageFile = interpreters.PythonRequirementsFilename
+		}
+		reqPath := p.Dir.Join(packageFile)
+		exists, _ := reqPath.Exists()
+		if !exists {
+			optionalGroups := p.Config.Python.OptionalDependencyGroups
+			reqs, ok := pydeps.GenerateRequirements(p.Dir, optionalGroups)
+			if ok {
+				prepareLog.Info("Generated ephemeral requirements from uv.lock or pyproject.toml",
+					"packages", len(reqs))
+				syntheticFiles = map[string][]byte{
+					packageFile: pydeps.FormatRequirementsContent(reqs),
+				}
+			}
+		}
+	}
+
 	// Create Bundle step
-	bundler, err := bundles.NewBundler(p.Dir, manifest, filesPatterns, p.log)
+	bundler, err := bundles.NewBundler(p.Dir, manifest, filesPatterns, p.log, syntheticFiles)
 	if err != nil {
 		return nil, err
 	}
