@@ -28,6 +28,7 @@ import {
   ConfigurationInspectionResult,
   ContentType,
   contentTypeStrings,
+  getContentTypeLabel,
   Credential,
   FileAction,
   PreContentRecord,
@@ -209,7 +210,7 @@ export async function newDeployment(
         if (config.entrypoint) {
           inspectionListItems.push({
             iconPath: new ThemeIcon("gear"),
-            label: config.type.toString(),
+            label: getContentTypeLabel(config.type),
             description: `(${contentTypeStrings[config.type]})`,
             inspectionResult: result,
           });
