@@ -20,7 +20,7 @@
             "version": {},
             "package_file": {
               "type": "string",
-              "description": "File containing package dependencies. If the file does not exist, it will be generated from uv.lock or pyproject.toml if available. The default is 'requirements.txt'.",
+              "description": "File containing package dependencies. If the file does not exist, it will be generated from pylock.toml, uv.lock, or pyproject.toml if available. The default is 'requirements.txt'.",
               "default": "requirements.txt",
               "examples": ["requirements.txt"]
             },

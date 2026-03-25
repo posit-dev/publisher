@@ -52,7 +52,7 @@ func checkRequirementsFile(base util.AbsolutePath, cfg *config.Config) error {
 		}
 	}
 
-	if !exists || !requirementsIsIncluded {
+	if !exists {
 		// If the requirements file doesn't exist on disk but we can generate
 		// it from pylock.toml, uv.lock, or pyproject.toml, skip the error. The requirements
 		// will be generated ephemerally during bundle creation.
@@ -60,6 +60,11 @@ func checkRequirementsFile(base util.AbsolutePath, cfg *config.Config) error {
 		if canGenerate {
 			return nil
 		}
+		missingErr := fmt.Errorf(requirementsFileMissing, cfg.Python.PackageFile)
+		aerr := types.NewAgentError(types.ErrorRequirementsFileReading, missingErr, requirementsErrDetails{RequirementsFile: packageFile.String()})
+		return aerr
+	}
+	if !requirementsIsIncluded {
 		missingErr := fmt.Errorf(requirementsFileMissing, cfg.Python.PackageFile)
 		aerr := types.NewAgentError(types.ErrorRequirementsFileReading, missingErr, requirementsErrDetails{RequirementsFile: packageFile.String()})
 		return aerr
