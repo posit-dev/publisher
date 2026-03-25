@@ -51,11 +51,11 @@ jobs:
         run: rig add release
 
       - name: Configure CRAN mirror
-        run: |
-          Rscript -e "cat('options(repos = c(CRAN = \"https://cloud.r-project.org\"))\n', file = file.path(Sys.getenv('R_HOME'), 'etc', 'Rprofile.site'), append = TRUE)"
+        run: echo 'options(repos = c(CRAN = "https://cloud.r-project.org"))' >> ~/.Rprofile
 
       - name: Install R packages
-        run: Rscript -e "install.packages(c('renv', 'glue'), repos = 'https://cloud.r-project.org')"
+        run: Rscript -e "install.packages(c('renv', 'glue'))"
+
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
