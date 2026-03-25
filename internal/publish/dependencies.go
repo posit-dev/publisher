@@ -3,7 +3,9 @@ package publish
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"path/filepath"
 
 	"github.com/posit-dev/publisher/internal/bundles"
@@ -26,8 +28,11 @@ func (p *defaultPublisher) addDependenciesToTarget(manifest *bundles.Manifest) e
 
 		requirements, err := pydeps.ReadRequirementsFile(p.Dir.Join(filename))
 		if err != nil {
-			// Requirements file doesn't exist on disk; try generating
-			// from pylock.toml, uv.lock, or pyproject.toml.
+			// Only fall back to generation when the file is missing.
+			// Other errors (permissions, I/O) should be reported immediately.
+			if !errors.Is(err, fs.ErrNotExist) {
+				return err
+			}
 			optionalGroups := p.Config.Python.OptionalDependencyGroups
 			generated, ok := pydeps.GenerateRequirements(p.Dir, optionalGroups)
 			if !ok {
