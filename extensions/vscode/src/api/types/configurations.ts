@@ -88,7 +88,7 @@ export const allValidContentTypes: ContentType[] = [
 ];
 
 export const contentTypeStrings = {
-  [ContentType.HTML]: "serve pre-rendered HTML",
+  [ContentType.HTML]: "serve HTML",
   [ContentType.JUPYTER_NOTEBOOK]: "render with Jupyter nbconvert",
   [ContentType.JUPYTER_VOILA]: "run with Jupyter Voila",
   [ContentType.PYTHON_BOKEH]: "run with Bokeh",
@@ -99,17 +99,28 @@ export const contentTypeStrings = {
   [ContentType.PYTHON_STREAMLIT]: "run with Streamlit",
   [ContentType.PYTHON_GRADIO]: "run with Gradio",
   [ContentType.PYTHON_PANEL]: "run with Panel",
-  [ContentType.QUARTO_SHINY]: "render with Quarto and run embedded Shiny app",
+  [ContentType.QUARTO_SHINY]: "use Shiny to render with Quarto dynamically",
   [ContentType.QUARTO]: "render with Quarto",
   [ContentType.QUARTO_STATIC]: "render with Quarto",
   [ContentType.R_PLUMBER]: "run with Plumber",
   [ContentType.R_SHINY]: "run with Shiny for R",
-  [ContentType.RMD_SHINY]:
-    "render with rmarkdown/knitr and run embedded Shiny app",
-  [ContentType.RMD]: "render with rmarkdown/knitr",
+  [ContentType.RMD_SHINY]: "use Shiny to render with rmarkdown dynamically",
+  [ContentType.RMD]: "render with rmarkdown",
   [ContentType.UNKNOWN]:
     "unknown content type; manual selection needed to deploy",
 };
+
+// Human-readable labels for content types shown in the picker.
+// Only includes types that can appear in multi-choice scenarios (.ipynb, .Rmd files).
+const contentTypeLabelOverrides: Partial<Record<ContentType, string>> = {
+  [ContentType.JUPYTER_NOTEBOOK]: "Jupyter Notebook",
+  [ContentType.QUARTO]: "Quarto Document",
+  [ContentType.QUARTO_STATIC]: "Quarto Document",
+  [ContentType.RMD]: "R Markdown Document",
+};
+
+export const getContentTypeLabel = (type: ContentType): string =>
+  contentTypeLabelOverrides[type] ?? contentTypeStrings[type] ?? type;
 
 export type ConfigurationDetails = {
   $schema: SchemaURL;

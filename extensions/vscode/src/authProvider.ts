@@ -12,7 +12,7 @@ import {
   EventEmitter,
   window,
 } from "vscode";
-import { Credential, useApi } from "./api";
+import { Credential } from "./api";
 import { logger } from "./logging";
 import { PublisherState } from "./state";
 import { getSummaryStringFromError } from "./utils/errors";
@@ -115,8 +115,7 @@ export class PublisherAuthProvider
     // Accounts UI already has a confirmation dialog and a success notification,
     // so we skip those bits.
     try {
-      const api = await useApi();
-      await api.credentials.delete(cred.guid);
+      await this.state.credentialsService.delete(cred.guid);
     } catch (error: unknown) {
       window.showInformationMessage(
         getSummaryStringFromError("credential::delete", error),

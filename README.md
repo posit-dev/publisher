@@ -5,4 +5,6 @@ via an extension for VSCode.
 
 [Documentation](docs/index.md)
 
+[Contributor guide](CONTRIBUTING.md)
+
 [Changelog](CHANGELOG.md)

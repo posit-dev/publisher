@@ -5,8 +5,6 @@ import { WebviewApi } from "vscode-webview";
 import { vscodeAPI } from "src/vscode";
 import { useFileStore } from "src/stores/file";
 
-vi.mock(import("src/vscode"));
-
 vi.mock("src/vscode", () => {
   const postMessage = vi.fn();
 

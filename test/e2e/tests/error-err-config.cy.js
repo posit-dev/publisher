@@ -9,18 +9,17 @@
 
 // Uses text-scoped queries with retry to avoid brittle DOM chains.
 describe("Detect errors in config", () => {
-  // Global setup - run once for entire test suite
   before(() => {
     cy.clearupDeployments();
-    cy.setAdminCredentials();
   });
 
   beforeEach(() => {
-    // Light navigation only
     cy.visit("/");
     cy.getPublisherSidebarIcon().click();
     cy.waitForPublisherIframe();
     cy.debugIframes();
+    cy.resetCredentials();
+    cy.setAdminCredentials();
   });
 
   it("Show errors when Config is invalid", () => {

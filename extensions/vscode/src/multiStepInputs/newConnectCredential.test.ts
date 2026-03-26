@@ -82,9 +82,7 @@ vi.mock("vscode", () => {
 // Mock API client
 const mockGenerateToken = vi.fn();
 const mockVerifyToken = vi.fn();
-const mockConnectCreate = vi.fn();
 const mockTest = vi.fn();
-const mockList = vi.fn();
 
 vi.mock("src/api", () => {
   return {
@@ -93,9 +91,7 @@ vi.mock("src/api", () => {
         credentials: {
           generateToken: mockGenerateToken,
           verifyToken: mockVerifyToken,
-          connectCreate: mockConnectCreate,
           test: mockTest,
-          list: mockList,
         },
       }),
     ServerType: { CONNECT: "connect" },
@@ -105,6 +101,18 @@ vi.mock("src/api", () => {
     ProductType: { CONNECT: "connect", CONNECT_CLOUD: "connect_cloud" },
   };
 });
+
+// Mock CredentialsService
+const mockCredentialsServiceList = vi.fn();
+const mockCredentialsServiceCreate = vi.fn();
+const mockCredentialsService = {
+  list: mockCredentialsServiceList,
+  create: mockCredentialsServiceCreate,
+};
+
+vi.mock("src/credentials/service", () => ({
+  CredentialsService: vi.fn(),
+}));
 
 //Removed logging mock since we're using vscode OutputChannel directly
 
@@ -119,7 +127,7 @@ describe("newConnectCredential API calls", () => {
     vi.clearAllMocks();
 
     // Setup default responses
-    mockList.mockResolvedValue({ data: [] });
+    mockCredentialsServiceList.mockResolvedValue([]);
     mockTest.mockResolvedValue({
       status: 200,
       data: { serverType: ServerType.CONNECT, error: null },
@@ -135,15 +143,12 @@ describe("newConnectCredential API calls", () => {
       status: 200,
       data: { username: "testuser", guid: "user-123" },
     });
-    mockConnectCreate.mockResolvedValue({
-      status: 201,
-      data: {
-        guid: "credential-123",
-        name: "My Connect Server",
-        url: "https://connect.example.com",
-        apiKey: "",
-        serverType: ServerType.CONNECT,
-      },
+    mockCredentialsServiceCreate.mockResolvedValue({
+      guid: "credential-123",
+      name: "My Connect Server",
+      url: "https://connect.example.com",
+      apiKey: "",
+      serverType: ServerType.CONNECT,
     });
   });
 
@@ -152,9 +157,13 @@ describe("newConnectCredential API calls", () => {
   });
 
   test("token authentication APIs are called", async () => {
-    // Call newConnectCredential
+    // Call newConnectCredential with credentialsService
     try {
-      await newConnectCredential("test-view-id", "Create a New Credential");
+      await newConnectCredential(
+        "test-view-id",
+        "Create a New Credential",
+        mockCredentialsService as unknown as import("src/credentials/service").CredentialsService,
+      );
     } catch {
       /* the user dismissed this flow, do nothing more */
     }
@@ -170,15 +179,13 @@ describe("newConnectCredential API calls", () => {
       token: "test-token-123",
       privateKey: "test-private-key-123",
     });
-    await mockConnectCreate(
-      "My Connect Server",
-      "https://connect.example.com",
-      "",
-      "test-token-123",
-      "test-private-key-123",
-      "",
-      ServerType.CONNECT,
-    );
+    await mockCredentialsServiceCreate({
+      name: "My Connect Server",
+      url: "https://connect.example.com",
+      serverType: ServerType.CONNECT,
+      token: "test-token-123",
+      privateKey: "test-private-key-123",
+    });
 
     // Verify API calls were made with expected parameters
     expect(mockGenerateToken).toHaveBeenCalledWith({
@@ -189,14 +196,12 @@ describe("newConnectCredential API calls", () => {
       token: "test-token-123",
       privateKey: "test-private-key-123",
     });
-    expect(mockConnectCreate).toHaveBeenCalledWith(
-      "My Connect Server",
-      "https://connect.example.com",
-      "",
-      "test-token-123",
-      "test-private-key-123",
-      "",
-      ServerType.CONNECT,
-    );
+    expect(mockCredentialsServiceCreate).toHaveBeenCalledWith({
+      name: "My Connect Server",
+      url: "https://connect.example.com",
+      serverType: ServerType.CONNECT,
+      token: "test-token-123",
+      privateKey: "test-private-key-123",
+    });
   });
 });

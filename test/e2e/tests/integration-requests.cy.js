@@ -7,8 +7,6 @@ describe("IntegrationRequests Section", () => {
   describe("Connect Server", () => {
     before(() => {
       cy.initializeConnect();
-      cy.resetCredentials();
-      cy.setAdminCredentials();
     });
 
     beforeEach(() => {
@@ -40,17 +38,11 @@ describe("IntegrationRequests Section", () => {
     it("PCC deployment hides Integration Requests Section @pcc", () => {
       // Setup - moved from before/beforeEach to avoid running when @pcc tests are filtered
       cy.initializeConnect();
-      cy.resetCredentials();
-      cy.setAdminCredentials();
-      cy.visit("/");
 
       const user = Cypress.env("pccConfig").pcc_user_ccqa3;
-      cy.setPCCCredential(user, "connect-cloud-deployment-test");
-
-      cy.visit("/");
-      cy.getPublisherSidebarIcon().click();
-      cy.waitForPublisherIframe();
-      cy.debugIframes();
+      cy.addPCCCredential(user, "connect-cloud-deployment-test", {
+        assertEmpty: false,
+      });
 
       cy.expectInitialPublisherState();
 

@@ -54,11 +54,6 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	r.Handle(ToPath("inspect"), PostInspectHandlerFunc(base, log)).
 		Methods(http.MethodPost)
 
-	// GET /api/credentials
-	r.Handle(ToPath("credentials"), GetCredentialsHandlerFunc(log, func(log logging.Logger) (credentials.CredentialsService, error) {
-		return credentials.NewCredentialsService(log)
-	})).Methods(http.MethodGet)
-
 	// POST /api/credentials
 	r.Handle(ToPath("credentials"), PostCredentialFuncHandler(log)).
 		Methods(http.MethodPost)

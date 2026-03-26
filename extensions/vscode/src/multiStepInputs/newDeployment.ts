@@ -28,6 +28,7 @@ import {
   ConfigurationInspectionResult,
   ContentType,
   contentTypeStrings,
+  getContentTypeLabel,
   Credential,
   FileAction,
   PreContentRecord,
@@ -65,12 +66,14 @@ import {
   isConnectCloud,
   getProductType,
 } from "src/utils/multiStepHelpers";
+import { CredentialsService } from "src/credentials/service";
 import { extensionSettings } from "src/extension";
 
 const viewTitle = "Create a New Deployment";
 
 export async function newDeployment(
   viewId: string,
+  credentialsService: CredentialsService,
   projectDir = ".",
   entryPointFile?: string,
 ): Promise<DeploymentObjects> {
@@ -207,7 +210,7 @@ export async function newDeployment(
         if (config.entrypoint) {
           inspectionListItems.push({
             iconPath: new ThemeIcon("gear"),
-            label: config.type.toString(),
+            label: getContentTypeLabel(config.type),
             description: `(${contentTypeStrings[config.type]})`,
             inspectionResult: result,
           });
@@ -236,8 +239,7 @@ export async function newDeployment(
 
   const getCredentials = async (): Promise<void> => {
     try {
-      const response = await api.credentials.list();
-      let credentialsList = response.data;
+      let credentialsList = await credentialsService.list();
 
       // Filter out Connect Cloud credentials if disabled
       if (!extensionSettings.enableConnectCloud()) {
@@ -763,6 +765,7 @@ export async function newDeployment(
       newOrSelectedCredential = await newCredential(
         viewId,
         viewTitle,
+        credentialsService,
         undefined,
         stepHistory,
       );
