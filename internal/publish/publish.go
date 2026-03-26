@@ -330,6 +330,14 @@ func (p *defaultPublisher) logDeploymentVersions(log logging.Logger, manifest *b
 }
 
 func (p *defaultPublisher) CreateDeploymentRecord() {
+	// Preserve CreatedAt and Type from the existing target before resetting it.
+	created := ""
+	var contentType contenttypes.ContentType
+	if p.Target != nil {
+		created = p.Target.CreatedAt
+		contentType = p.Target.Type
+	}
+
 	p.Target = &deployment.Deployment{}
 	p.serverPublisher.UpdateState()
 	p.Config.ForceProductTypeCompliance()
@@ -339,17 +347,10 @@ func (p *defaultPublisher) CreateDeploymentRecord() {
 	// bundle upload.
 	cfg := *p.Config
 
-	created := ""
-	var contentType contenttypes.ContentType
-
-	if p.Target != nil {
-		created = p.Target.CreatedAt
-		contentType = p.Target.Type
-		if contentType == "" || contentType == contenttypes.ContentTypeUnknown {
-			contentType = cfg.Type
-		}
-	} else {
+	if created == "" {
 		created = time.Now().Format(time.RFC3339)
+	}
+	if contentType == "" || contentType == contenttypes.ContentTypeUnknown {
 		contentType = cfg.Type
 	}
 

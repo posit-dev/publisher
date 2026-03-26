@@ -4,9 +4,9 @@ import {
   Configuration,
   ConfigurationError,
   ContentRecord,
-  Integration,
   PreContentRecordWithConfig,
 } from "src/api";
+import type { Integration } from "@posit-dev/connect-api";
 import { QuickPickItem } from "vscode";
 
 export interface DeploymentQuickPick extends QuickPickItem {

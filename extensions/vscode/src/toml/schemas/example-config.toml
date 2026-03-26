@@ -1,0 +1,58 @@
+# Example schema file
+"$schema" = "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json"
+type = "quarto-static"
+entrypoint = "report.qmd"
+title = "Regional Quarterly Sales Report"
+description = "This is the quarterly sales report, broken down by region."
+validate = true
+
+files = [
+    "*.py",
+    "*.qmd",
+    "requirements.txt",
+]
+secrets = ["API_KEY", "DATABASE_PASSWORD"]
+
+[python]
+version = "3.11.3"
+package_file = "requirements.txt"
+package_manager = "pip"
+requires_python = "<3.12"
+
+[r]
+version = "4.3.1"
+package_file = "renv.lock"
+package_manager = "renv"
+requires_r = ">=4.3.0"
+
+[quarto]
+version = "1.4"
+
+[environment]
+API_URL = "https://example.com/api"
+
+[connect.access]
+run_as = "rstudio-connect"
+run_as_current_user = false
+
+[connect.runtime]
+connection_timeout = 5
+read_timeout = 30
+init_timeout = 60
+idle_timeout = 120
+max_processes = 5
+min_processes = 1
+max_conns_per_process = 50
+load_factor = 0.5
+
+[connect.kubernetes]
+amd_gpu_limit = 0
+cpu_limit = 1.5
+cpu_request = 0.5
+default_image_name = "posit/connect-runtime-python3.11-r4.3"
+memory_limit = 100000000
+memory_request = 20000000
+nvidia_gpu_limit = 0
+service_account_name = "posit-connect-content"
+default_r_environment_management = true
+default_py_environment_management = true

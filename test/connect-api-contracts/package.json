@@ -9,6 +9,10 @@
     "validate-fixtures": "vitest run --config vitest.validate.config.ts",
     "typecheck": "tsc --noEmit"
   },
+  "dependencies": {
+    "@posit-dev/connect-api": "file:../../packages/connect-api",
+    "axios": "^1.9.0"
+  },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "ajv": "^8.18.0",

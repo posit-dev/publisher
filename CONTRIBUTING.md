@@ -8,6 +8,7 @@
     - [Prerequisites](#prerequisites)
     - [Setup](#setup)
     - [Committing Changes to the repo](#committing-changes-to-the-repo)
+  - [Architecture](#architecture)
   - [Testing](#testing)
     - [Unit Tests](#unit-tests)
       - [Coverage Reporting](#coverage-reporting)
@@ -63,6 +64,114 @@ To commit one or more files, you must have first installed the npm package depen
 npm install
 npm install --prefix="test/e2e"
 ```
+
+## Architecture
+
+Posit Publisher has three major sections to its codebase:
+
+- A Go backend that handles all business logic and Connect / Connect Cloud
+  server communication.
+- A TypeScript Positron / VS Code extension that manages the IDE integration
+- A Vue webview that provides the sidebar UI in the IDE
+
+These three communicate using different methods at runtime.
+
+```
+┌─────────────────────────────────────┐  ┌─────────────────────────────────────┐
+│  Posit Connect Server               │  │  `.posit/publish/` (on disk)        │
+│  (or Connect Cloud)                 │  │                                     │
+│                                     │  │  `*.toml` — configurations          │
+│  Content management, bundle upload, │  │    How content should be deployed:  │
+│  deployment, task polling,          │  │    type, entrypoint, packages, etc. │
+│  authentication                     │  │                                     │
+│                                     │  │  `deployments/*.toml` — records     │
+│                                     │  │    Where content was deployed and   │
+│                                     │  │    how it was configured at the     │
+│                                     │  │    time of deployment.              │
+│                                     │  │                                     │
+│                                     │  │  The extension watches these files  │
+│                                     │  │  and refreshes the webview.         │
+└──────────────────┬──────────────────┘  └──────────────────┬──────────────────┘
+                   │                                        │
+             HTTPS │                                        │  reads/writes
+                   │                                        │
+┌──────────────────┴────────────────────────────────────────┴──────────────────┐
+│  Go Backend                                                                  │
+│  `cmd/publisher/` + `internal/`                                              │
+│                                                                              │
+│  Standalone HTTP server started via the `publisher ui` CLI command.          │
+│  Exposes an HTTP API and an event stream (server-sent events).               │
+│                                                                              │
+│  Owns all business logic:                                                    │
+│  - Project inspection (Python/R/Quarto)                                      │
+│  - Configuration & deployment record I/O                                     │
+│  - Credential storage (keyring or file)                                      │
+│  - Bundle creation (file packaging)                                          │
+│  - Publishing orchestration and progress streaming                           │
+│  - All communication with Connect servers                                    │
+└──────────────────────────────────────┬───────────────────────────────────────┘
+                                       │
+                         HTTP (Axios)  │  `GET/POST/PUT/PATCH/DELETE`
+                  to `localhost:PORT`  │  against `/api/*` endpoints
+                                       │
+                         Event stream  │  `GET /api/events?stream=messages`
+                       Go → Extension  │  Real-time deploy progress & logs
+                                       │
+┌──────────────────────────────────────┴───────────────────────────────────────┐
+│  VSCode Extension Host                                                       │
+│  `extensions/vscode/src/`                                                    │
+│                                                                              │
+│  Runs in VSCode's Node.js process. Acts as the bridge between the webview    │
+│  and the Go backend:                                                         │
+│                                                                              │
+│  - Spawns the Go binary as a child process on activation                     │
+│  - Makes HTTP calls to Go on behalf of the webview                           │
+│    (`src/api/` — Axios client with typed resource classes)                   │
+│  - Listens to events from Go and pushes state updates to the webview         │
+│  - Watches `.posit/publish/` files for changes                               │
+└───────────────────────────┬─────────────────────────┬────────────────────────┘
+                            │                         │
+                            │                 used by │
+                            │                         │
+                postMessage │  ┌──────────────────────┴────────────────────────┐
+                     (JSON) │  │  Shared Types                                 │
+                            │  │  `src/types/messages/`                        │
+             Typed messages │  │  `src/api/types/`                             │
+              serialized by │  │                                               │
+                  "conduit" │  │  Message contracts:                           │
+                   classes: │  │  - `hostToWebviewMessages.ts`                 │
+           `WebviewConduit` │  │  - `webviewToHostMessages.ts`                 │
+              `HostConduit` │  │                                               │
+                            │  │  API data shapes:                             │
+                            │  │  - configurations, credentials, files,        │
+                            │  │    contentRecords, events, packages, errors   │
+                            │  └──────────────────────┬────────────────────────┘
+                            │                         │
+                            │             imports via │
+                            │           relative path │
+                            │           (`../../../`) │
+                            │                         │
+┌───────────────────────────┴─────────────────────────┴────────────────────────┐
+│  Vue Webview (Sidebar UI)                                                    │
+│  `webviews/homeView/`                                                        │
+│                                                                              │
+│  Vue + Pinia app rendered in a VSCode webview iframe. A webview gives us     │
+│  full control over the UI beyond what the IDE's APIs provide. Has no         │
+│  direct access to Node.js, the filesystem, the Go backend, or the            │
+│  VS Code API. Uses `postMessage` from VS Code's `WebviewApi` to              │
+│  communicate with the extension host.                                        │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Deployment flow (end to end):**
+
+1. User clicks Deploy
+2. Webview sends deploy message via `postMessage`
+3. Extension receives it, calls `POST /api/deployments/{name}`
+4. Go backend bundles project files, uploads to Connect, deploys
+5. Go backend streams progress via events
+6. Extension forwards status to webview via `postMessage`
+7. Webview updates UI reactively via Pinia stores
 
 ## Testing
 

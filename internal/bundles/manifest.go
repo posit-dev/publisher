@@ -116,10 +116,6 @@ type IntegrationRequest struct {
 	Config          map[string]any `json:"config,omitempty"`
 }
 
-func NewManifestFileMap() ManifestFileMap {
-	return ManifestFileMap{}
-}
-
 type ManifestFile struct {
 	Checksum string `json:"checksum"`
 }
@@ -133,26 +129,6 @@ func ReadManifest(r io.Reader) (*Manifest, error) {
 		return nil, fmt.Errorf("cannot parse manifest: %w", err)
 	}
 	return manifest, nil
-}
-
-// WriteManifest writes the manifest in JSON format.
-func (m *Manifest) WriteManifest(w io.Writer) error {
-	manifestJSON, err := m.ToJSON()
-	if err != nil {
-		return err
-	}
-	_, err = w.Write(manifestJSON)
-	return err
-}
-
-// WriteManifestFile writes the manifest to a file.
-func (m *Manifest) WriteManifestFile(path util.Path) error {
-	f, err := path.Create()
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	return m.WriteManifest(f)
 }
 
 func NewManifest() *Manifest {

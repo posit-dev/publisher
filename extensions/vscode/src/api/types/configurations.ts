@@ -9,7 +9,6 @@ import { ProductType } from "./contentRecords";
 export type ConfigurationLocation = {
   configurationName: string;
   configurationPath: string;
-  configurationRelPath: string;
   projectDir: string;
 };
 
@@ -89,7 +88,7 @@ export const allValidContentTypes: ContentType[] = [
 ];
 
 export const contentTypeStrings = {
-  [ContentType.HTML]: "serve pre-rendered HTML",
+  [ContentType.HTML]: "serve HTML",
   [ContentType.JUPYTER_NOTEBOOK]: "render with Jupyter nbconvert",
   [ContentType.JUPYTER_VOILA]: "run with Jupyter Voila",
   [ContentType.PYTHON_BOKEH]: "run with Bokeh",
@@ -100,40 +99,52 @@ export const contentTypeStrings = {
   [ContentType.PYTHON_STREAMLIT]: "run with Streamlit",
   [ContentType.PYTHON_GRADIO]: "run with Gradio",
   [ContentType.PYTHON_PANEL]: "run with Panel",
-  [ContentType.QUARTO_SHINY]: "render with Quarto and run embedded Shiny app",
+  [ContentType.QUARTO_SHINY]: "use Shiny to render with Quarto dynamically",
   [ContentType.QUARTO]: "render with Quarto",
   [ContentType.QUARTO_STATIC]: "render with Quarto",
   [ContentType.R_PLUMBER]: "run with Plumber",
   [ContentType.R_SHINY]: "run with Shiny for R",
-  [ContentType.RMD_SHINY]:
-    "render with rmarkdown/knitr and run embedded Shiny app",
-  [ContentType.RMD]: "render with rmarkdown/knitr",
+  [ContentType.RMD_SHINY]: "use Shiny to render with rmarkdown dynamically",
+  [ContentType.RMD]: "render with rmarkdown",
   [ContentType.UNKNOWN]:
     "unknown content type; manual selection needed to deploy",
 };
 
+// Human-readable labels for content types shown in the picker.
+// Only includes types that can appear in multi-choice scenarios (.ipynb, .Rmd files).
+const contentTypeLabelOverrides: Partial<Record<ContentType, string>> = {
+  [ContentType.JUPYTER_NOTEBOOK]: "Jupyter Notebook",
+  [ContentType.QUARTO]: "Quarto Document",
+  [ContentType.QUARTO_STATIC]: "Quarto Document",
+  [ContentType.RMD]: "R Markdown Document",
+};
+
+export const getContentTypeLabel = (type: ContentType): string =>
+  contentTypeLabelOverrides[type] ?? contentTypeStrings[type] ?? type;
+
 export type ConfigurationDetails = {
   $schema: SchemaURL;
+  comments?: string[];
   alternatives?: ConfigurationDetails[];
   productType: ProductType;
   type: ContentType;
   entrypoint?: string;
+  entrypointObjectRef?: string;
   source?: string;
   title?: string;
   description?: string;
-  thumbnail?: string;
-  tags?: string[];
+  hasParameters?: boolean;
   python?: PythonConfig;
   r?: RConfig;
   quarto?: QuartoConfig;
+  jupyter?: JupyterConfig;
   environment?: EnvironmentConfig;
   validate: boolean;
   files?: string[];
   secrets?: string[];
   integrationRequests?: IntegrationRequest[];
-  schedules?: ScheduleConfig[];
-  access?: AccessConfig;
   connect?: ConnectConfig;
+  connectCloud?: ConnectCloudConfig;
 };
 
 export type IntegrationRequest = {
@@ -151,12 +162,15 @@ export type PythonConfig = {
   version: string;
   packageFile: string;
   packageManager: string;
+  requiresPython?: string;
 };
 
 export type RConfig = {
   version: string;
   packageFile: string;
   packageManager: string;
+  requiresR?: string;
+  packagesFromLibrary?: boolean;
 };
 
 export type QuartoConfig = {
@@ -166,35 +180,19 @@ export type QuartoConfig = {
 
 export type EnvironmentConfig = Record<string, string>;
 
-export type ScheduleConfig = {
-  start: string;
-  recurrence: string;
+export type JupyterConfig = {
+  hideAllInput?: boolean;
+  hideTaggedInput?: boolean;
 };
 
-export enum AccessType {
-  ANONYMOUS = "all",
-  LOGGED_IN = "logged-in",
-  ACL = "acl",
-}
-
-export type AccessConfig = {
-  type: AccessType;
-  users?: User[];
-  groups?: Group[];
+export type ConnectCloudConfig = {
+  vanityName?: string;
+  accessControl?: ConnectCloudAccessControl;
 };
 
-export type User = {
-  id?: string;
-  guid?: string;
-  name?: string;
-  permissions: string;
-};
-
-export type Group = {
-  id?: string;
-  guid?: string;
-  name?: string;
-  permissions: string;
+export type ConnectCloudAccessControl = {
+  publicAccess?: boolean;
+  organizationAccess?: string;
 };
 
 export function UpdateAllConfigsWithDefaults(
@@ -230,6 +228,9 @@ export function UpdateConfigWithDefaults(
     if (!config.configuration.r.packageManager) {
       config.configuration.r.packageManager = defaults.r.packageManager;
     }
+    if (!config.configuration.r.requiresR) {
+      config.configuration.r.requiresR = defaults.r.requiresR;
+    }
   }
   if (config.configuration.python !== undefined) {
     if (!config.configuration.python.version) {
@@ -241,6 +242,10 @@ export function UpdateConfigWithDefaults(
     if (!config.configuration.python.packageManager) {
       config.configuration.python.packageManager =
         defaults.python.packageManager;
+    }
+    if (!config.configuration.python.requiresPython) {
+      config.configuration.python.requiresPython =
+        defaults.python.requiresPython;
     }
   }
   return config;

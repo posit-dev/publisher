@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "metadata": {
+    "appmode": "jupyter-static",
+    "entrypoint": "notebook.ipynb",
+    "has_parameters": true
+  },
+  "python": {
+    "version": "3.4.5",
+    "package_manager": {
+      "name": "pip",
+      "package_file": "requirements.in",
+      "allow_uv": false
+    }
+  },
+  "jupyter": {
+    "hide_all_input": true,
+    "hide_tagged_input": false
+  },
+  "packages": {},
+  "files": {}
+}

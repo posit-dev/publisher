@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "platform": "4.5.6",
+  "metadata": {
+    "appmode": "python-dash",
+    "entrypoint": "app:myapp",
+    "has_parameters": true
+  },
+  "python": {
+    "version": "3.4.5",
+    "package_manager": {
+      "name": "pip",
+      "package_file": "requirements.in",
+      "allow_uv": false
+    }
+  },
+  "quarto": {
+    "version": "1.2.3",
+    "engines": ["jupyter"]
+  },
+  "packages": {},
+  "files": {}
+}

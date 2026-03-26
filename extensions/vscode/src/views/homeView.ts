@@ -20,7 +20,6 @@ import {
   workspace,
 } from "vscode";
 import { getPositronRepoSettings } from "src/utils/positronSettings";
-import { isAxiosError } from "axios";
 import { Mutex } from "async-mutex";
 
 import {
@@ -41,10 +40,29 @@ import {
   ProductName,
   ServerType,
   IntegrationRequest,
-  Integration,
 } from "src/api";
+import { ConnectAPI } from "@posit-dev/connect-api";
+import type { Integration } from "@posit-dev/connect-api";
+import { updateFileList as updateFileListInConfig } from "src/configFiles";
+import {
+  addSecret as addSecretToConfig,
+  removeSecret as removeSecretFromConfig,
+} from "src/configSecrets";
+import {
+  loadAllConfigurations,
+  loadAllDeployments,
+  patchDeploymentRecord,
+} from "src/toml";
+import {
+  listIntegrationRequests,
+  addIntegrationRequest,
+  removeIntegrationRequest,
+} from "src/integrations";
+import * as workspaces from "src/workspaces";
+import { getConfigurationFiles } from "src/projectFiles";
 import { EventStream } from "src/events";
 import { getPythonInterpreterPath, getRInterpreterPath } from "../utils/vscode";
+import { scanRPackages } from "src/interpreters/rPackages";
 import { getSummaryStringFromError } from "src/utils/errors";
 import { getNonce } from "src/utils/getNonce";
 import { getUri } from "src/utils/getUri";
@@ -110,6 +128,8 @@ import {
   isConnectProduct,
 } from "src/utils/multiStepHelpers";
 import { recordAddConnectCloudUrlParams } from "src/utils/connectCloudHelpers";
+import { getRPackages } from "src/interpreters/rPackages";
+import { getPythonPackages } from "src/interpreters/pythonPackages";
 
 enum HomeViewInitialized {
   initialized = "initialized",
@@ -421,12 +441,16 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
     try {
       await showProgress("Updating File List", Views.HomeView, async () => {
-        const api = await useApi();
-        await api.files.updateFileList(
+        const root = workspaces.path();
+        if (!root) {
+          return;
+        }
+        await updateFileListInConfig(
           activeConfig.configurationName,
           `/${uri}`,
           action,
           activeConfig.projectDir,
+          root,
         );
       });
     } catch (error: unknown) {
@@ -619,46 +643,43 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     let packageFile: string | undefined;
     let packageMgr: string | undefined;
 
-    const api = await useApi();
-
     if (activeConfiguration && !isConfigurationError(activeConfiguration)) {
       const pythonSection = activeConfiguration.configuration.python;
       if (!pythonSection) {
         pythonProject = false;
       } else {
-        try {
-          packageFile = pythonSection.packageFile;
-          packageMgr = pythonSection.packageManager;
+        packageFile = pythonSection.packageFile;
+        packageMgr = pythonSection.packageManager;
 
-          const response = await showProgress(
+        const resolvedPackageFile = packageFile || "requirements.txt";
+        const root = workspaces.path();
+        if (!root) {
+          return;
+        }
+        const projectDir = path.join(root, activeConfiguration.projectDir);
+
+        try {
+          packages = await showProgress(
             "Refreshing Python Packages",
             Views.HomeView,
             async () => {
-              return await api.packages.getPythonPackages(
-                activeConfiguration.configurationName,
-                activeConfiguration.projectDir,
-              );
+              return await getPythonPackages(projectDir, resolvedPackageFile);
             },
           );
-
-          packages = response.data.requirements;
-        } catch (error: unknown) {
-          if (isAxiosError(error) && error.response?.status === 404) {
-            // No requirements file or contains invalid entries; show the welcome view.
+        } catch (err: unknown) {
+          if (
+            err instanceof Error &&
+            err.message.startsWith("Requirements file not found")
+          ) {
+            // Requirements file not found; show the welcome view.
             packageFile = undefined;
-          } else if (isAxiosError(error) && error.response?.status === 422) {
-            // invalid package file
-            packageFile = undefined;
-          } else if (isAxiosError(error) && error.response?.status === 409) {
-            // Python is not present in the configuration file
-            pythonProject = false;
           } else {
-            const summary = getSummaryStringFromError(
-              "homeView::refreshPythonPackages",
-              error,
+            // Unexpected I/O error (permission denied, disk failure, etc.)
+            const summary = err instanceof Error ? err.message : String(err);
+            window.showErrorMessage(
+              `Failed to read Python packages: ${summary}`,
             );
-            window.showInformationMessage(summary);
-            return;
+            packageFile = undefined;
           }
         }
       }
@@ -699,15 +720,29 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const activeConfig = await this.state.getSelectedConfiguration();
     if (activeConfig && !isConfigurationError(activeConfig)) {
       try {
-        const api = await useApi();
-        let response = await api.integrationRequests.list(
+        const root = workspaces.path();
+        if (!root) {
+          return;
+        }
+        const integrationRequests = await listIntegrationRequests(
           activeConfig.configurationName,
           activeConfig.projectDir,
+          root,
         );
-        const integrationRequests = response.data ?? [];
 
-        response = await api.connectServer.getIntegrations(credentialName!);
-        const integrations = response.data ?? [];
+        const credential = credentialName
+          ? this.state.findCredential(credentialName)
+          : undefined;
+        let integrations: Integration[] = [];
+        if (credential?.url && credential?.apiKey) {
+          const connectApi = new ConnectAPI({
+            url: credential.url,
+            apiKey: credential.apiKey,
+            rejectUnauthorized: extensionSettings.verifyCertificates(),
+          });
+          const response = await connectApi.getIntegrations();
+          integrations = response.data ?? [];
+        }
         const requests = integrationRequests.map((ir) => {
           const matchingIntegration = integrations.find(
             (integration) => integration.guid === ir.guid,
@@ -747,52 +782,50 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     let packageMgr: string | undefined;
     let rVersionConfig: RVersionConfig | undefined;
 
-    const api = await useApi();
-
     if (activeConfiguration && !isConfigurationError(activeConfiguration)) {
       const rSection = activeConfiguration.configuration.r;
       if (!rSection) {
         rProject = false;
       } else {
-        try {
-          packageFile = rSection.packageFile;
-          packageMgr = rSection.packageManager;
+        packageFile = rSection.packageFile;
+        packageMgr = rSection.packageManager;
 
+        const resolvedPackageFile = packageFile || "renv.lock";
+        const root = workspaces.path();
+        if (!root) {
+          return;
+        }
+        const projectDir = path.join(root, activeConfiguration.projectDir);
+
+        try {
           const response = await showProgress(
             "Refreshing R Packages",
             Views.HomeView,
-            async () =>
-              await api.packages.getRPackages(
-                activeConfiguration.configurationName,
-                activeConfiguration.projectDir,
-              ),
+            async () => {
+              return await getRPackages(projectDir, resolvedPackageFile);
+            },
           );
 
           packages = [];
-          Object.keys(response.data.packages).forEach((key: string) => {
-            const pkg = response.data.packages[key];
+          Object.keys(response.packages).forEach((key: string) => {
+            const pkg = response.packages[key];
             if (pkg) {
               packages.push(pkg);
             }
           });
-          rVersionConfig = response.data.r;
-        } catch (error: unknown) {
-          if (isAxiosError(error) && error.response?.status === 404) {
-            // No requirements file; show the welcome view.
+          rVersionConfig = response.r;
+        } catch (err: unknown) {
+          if (
+            err instanceof Error &&
+            err.message.startsWith("Lockfile not found")
+          ) {
+            // Lockfile not found; show the welcome view.
             packageFile = undefined;
-          } else if (isAxiosError(error) && error.response?.status === 422) {
-            // invalid package file
-            packageFile = undefined;
-          } else if (isAxiosError(error) && error.response?.status === 409) {
-            // R is not present in the configuration file
-            rProject = false;
           } else {
-            const summary = getSummaryStringFromError(
-              "homeView::refreshRPackages",
-              error,
-            );
-            window.showInformationMessage(summary);
-            return;
+            // Unexpected error (invalid JSON, permission denied, etc.)
+            const summary = err instanceof Error ? err.message : String(err);
+            window.showErrorMessage(`Failed to read R packages: ${summary}`);
+            packageFile = undefined;
           }
         }
       }
@@ -827,27 +860,22 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
 
-    const activeConfig = await this.state.getSelectedConfiguration();
+    try {
+      const connectApi = new ConnectAPI({
+        url: credential.url,
+        apiKey: credential.apiKey,
+        rejectUnauthorized: extensionSettings.verifyCertificates(),
+      });
+      const allSettings = await connectApi.getSettings();
 
-    if (activeConfig && !isConfigurationError(activeConfig)) {
-      try {
-        const api = await useApi();
-        const result = await api.connectServer.getServerSettings(
-          credential.name,
-          activeConfig.configuration.type,
-        );
-
-        this.webviewConduit.sendMsg({
-          kind: HostToWebviewMessageType.REFRESH_SERVER_SETTINGS,
-          content: {
-            serverSettings: result.data,
-          },
-        });
-      } catch (_: unknown) {
-        console.error(
-          `Failed to fetch server-settings for [${credential.name}]`,
-        );
-      }
+      this.webviewConduit.sendMsg({
+        kind: HostToWebviewMessageType.REFRESH_SERVER_SETTINGS,
+        content: {
+          serverSettings: allSettings.general,
+        },
+      });
+    } catch (_: unknown) {
+      console.error(`Failed to fetch server-settings for [${credential.name}]`);
     }
   }
 
@@ -959,6 +987,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
 
     const relPathPackageFile = activeConfiguration.configuration.r.packageFile;
+    const projectDir = path.join(
+      this.root.uri.fsPath,
+      activeConfiguration.projectDir,
+    );
 
     const fileUri = Uri.joinPath(
       this.root.uri,
@@ -980,17 +1012,16 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         "Creating R Requirements File",
         Views.HomeView,
         async () => {
-          const api = await useApi();
           const r = await getRInterpreterPath();
 
           // Collect IDE-controlled repo settings
           const positron = getPositronRepoSettings();
 
-          return await api.packages.createRRequirementsFile(
-            activeConfiguration.projectDir,
-            r,
+          await scanRPackages(
+            projectDir,
+            r?.rPath || "R",
             relPathPackageFile,
-            positron,
+            positron?.r,
           );
         },
       );
@@ -1041,10 +1072,14 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       );
       if (config) {
         await showProgress("Updating Config", Views.HomeView, async () => {
-          const api = await useApi();
-          await api.contentRecords.patch(
+          const root = workspaces.path();
+          if (!root) {
+            return;
+          }
+          await patchDeploymentRecord(
             targetContentRecord.deploymentName,
             targetContentRecord.projectDir,
+            root,
             {
               configName: config.configurationName,
             },
@@ -1054,7 +1089,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         // now select the new, updated or existing deployment
         const deploymentSelector: DeploymentSelector = {
           deploymentPath: targetContentRecord.deploymentPath,
-          deploymentName: targetContentRecord.saveName,
+          deploymentName: targetContentRecord.deploymentName,
           projectDir: targetContentRecord.projectDir,
         };
         this.propagateDeploymentSelection(deploymentSelector);
@@ -1101,6 +1136,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       });
       const deploymentObjects = await newDeployment(
         viewId,
+        this.state.credentialsService,
         projectDir,
         entryPointFile,
       );
@@ -1119,7 +1155,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         let refreshCredentials = false;
         if (
           !this.state.findContentRecord(
-            contentRecord.saveName,
+            contentRecord.deploymentName,
             contentRecord.projectDir,
           )
         ) {
@@ -1139,7 +1175,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         }
         const deploymentSelector: DeploymentSelector = {
           deploymentPath: contentRecord.deploymentPath,
-          deploymentName: contentRecord.saveName,
+          deploymentName: contentRecord.deploymentName,
           projectDir: contentRecord.projectDir,
         };
 
@@ -1221,11 +1257,15 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
     try {
       await showProgress("Adding Secret", Views.HomeView, async () => {
-        const api = await useApi();
-        await api.secrets.add(
+        const root = workspaces.path();
+        if (!root) {
+          return;
+        }
+        await addSecretToConfig(
           activeConfig.configurationName,
           name,
           activeConfig.projectDir,
+          root,
         );
       });
     } catch (error: unknown) {
@@ -1251,11 +1291,15 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
     try {
       await showProgress("Removing Secret", Views.HomeView, async () => {
-        const api = await useApi();
-        await api.secrets.remove(
+        const root = workspaces.path();
+        if (!root) {
+          return;
+        }
+        await removeSecretFromConfig(
           activeConfig.configurationName,
           context.name,
           activeConfig.projectDir,
+          root,
         );
       });
     } catch (error: unknown) {
@@ -1267,7 +1311,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   };
 
   public addIntegrationRequest = async () => {
-    const api = await useApi();
     const activeConfig = await this.state.getSelectedConfiguration();
     if (activeConfig === undefined) {
       console.error("homeView::addIntegration: No active configuration.");
@@ -1277,6 +1320,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       console.error(
         "homeView::addIntegration: Unable to add integration into a configuration with error.",
       );
+      return;
+    }
+
+    const root = workspaces.path();
+    if (!root) {
       return;
     }
 
@@ -1300,9 +1348,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         "Retrieving Integrations from deployment server",
         Views.HomeView,
         async () => {
-          const response = await api.connectServer.getIntegrations(
-            credential.name,
-          );
+          const connectApi = new ConnectAPI({
+            url: credential.url,
+            apiKey: credential.apiKey,
+            rejectUnauthorized: extensionSettings.verifyCertificates(),
+          });
+          const response = await connectApi.getIntegrations();
           integrations = response.data;
         },
       );
@@ -1325,17 +1376,13 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         "Adding Integration Request",
         Views.HomeView,
         async () => {
-          await api.integrationRequests.add(
+          await addIntegrationRequest(
             activeConfig.configurationName,
             activeConfig.projectDir,
+            root,
             {
               guid: integration.guid,
-              // name: integration.name,
-              // description: integration.description,
-              // authType: integration.authType,
-              // type: integration.template,
-              // config: integration.config,
-            } as IntegrationRequest,
+            },
           );
         },
       );
@@ -1367,15 +1414,20 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
 
+    const root = workspaces.path();
+    if (!root) {
+      return;
+    }
+
     try {
       await showProgress(
         "Removing Integration Request",
         Views.HomeView,
         async () => {
-          const api = await useApi();
-          await api.integrationRequests.delete(
+          await removeIntegrationRequest(
             activeConfig.configurationName,
             activeConfig.projectDir,
+            root,
             {
               guid: context.request.guid,
             },
@@ -1410,21 +1462,26 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
 
+    const root = workspaces.path();
+    if (!root) {
+      return;
+    }
+
     try {
       await showProgress(
         "Clearing Integration Requests",
         Views.HomeView,
         async () => {
-          const api = await useApi();
-          const response = await api.integrationRequests.list(
+          const reqs = await listIntegrationRequests(
             activeConfig.configurationName,
             activeConfig.projectDir,
+            root,
           );
-          const reqs = response.data;
           for (const ir of reqs) {
-            await api.integrationRequests.delete(
+            await removeIntegrationRequest(
               activeConfig.configurationName,
               activeConfig.projectDir,
+              root,
               {
                 guid: ir.guid,
               },
@@ -1469,6 +1526,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       const credential = await newCredential(
         Views.HomeView,
         createNewCredentialLabel,
+        this.state.credentialsService,
         startingServerUrl,
       );
       if (credential) {
@@ -1493,8 +1551,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
     try {
-      const api = await useApi();
-      await api.credentials.delete(context.credentialGUID);
+      await this.state.credentialsService.delete(context.credentialGUID);
       window.setStatusBarMessage(
         `Credential for ${context.credentialName} has been erased from our memory!`,
       );
@@ -1569,7 +1626,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       // Create quick pick list from current contentRecords, credentials and configs
       let deploymentQuickPickList: DeploymentQuickPick[] = [];
       const lastContentRecord = await this.state.getSelectedContentRecord();
-      const lastContentRecordName = lastContentRecord?.saveName;
+      const lastContentRecordName = lastContentRecord?.deploymentName;
       const lastContentRecordProjectDir = projectDir
         ? projectDir
         : lastContentRecord?.projectDir;
@@ -1638,7 +1695,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         if (!configName) {
           configName = contentRecord.configurationName
             ? `Missing Configuration ${contentRecord.configurationName}`
-            : `ERROR: No Config Entry in Deployment record - ${contentRecord.saveName}`;
+            : `ERROR: No Config Entry in Deployment record - ${contentRecord.deploymentName}`;
           problem = true;
         }
 
@@ -1674,7 +1731,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         const detail = details.join(" • ");
 
         const lastMatch =
-          lastContentRecordName === contentRecord.saveName &&
+          lastContentRecordName === contentRecord.deploymentName &&
           lastContentRecordProjectDir === contentRecord.projectDir &&
           lastConfigName === configName;
 
@@ -1749,7 +1806,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       if (deployment && deployment.contentRecord) {
         deploymentSelector = {
           deploymentPath: deployment.contentRecord.deploymentPath,
-          deploymentName: deployment.contentRecord.saveName,
+          deploymentName: deployment.contentRecord.deploymentName,
           projectDir: deployment.contentRecord.projectDir,
         };
         this.updateWebViewViewCredentials();
@@ -1951,14 +2008,19 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const activeConfig = await this.state.getSelectedConfiguration();
     if (activeConfig && !isConfigurationError(activeConfig)) {
       try {
-        const response = await showProgress(
+        const root = workspaces.path();
+        if (!root) {
+          return;
+        }
+        const projectDir = path.join(root, activeConfig.projectDir);
+
+        const files = await showProgress(
           "Refreshing Files",
           Views.HomeView,
           async () => {
-            const api = await useApi();
-            return await api.files.getByConfiguration(
+            return await getConfigurationFiles(
+              projectDir,
               activeConfig.configurationName,
-              activeConfig.projectDir,
             );
           },
         );
@@ -1966,12 +2028,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         this.webviewConduit.sendMsg({
           kind: HostToWebviewMessageType.REFRESH_FILES,
           content: {
-            files: response.data,
+            files,
           },
         });
       } catch (error: unknown) {
         const summary = getSummaryStringFromError(
-          "sendRefreshedFilesLists, files.getByConfiguration",
+          "sendRefreshedFilesLists, getConfigurationFiles",
           error,
         );
         window.showErrorMessage(`Failed to refresh files. ${summary}`);
@@ -2034,8 +2096,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
     const entrypointFile = uriUtils.basename(uri);
 
-    const api = await useApi();
-
     await this.refreshAll(true, true);
 
     // We need the initial queries to finish, before we can
@@ -2049,10 +2109,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const contentRecordList: (ContentRecord | PreContentRecord)[] = [];
     const getContentRecords = async () => {
       try {
-        const response = await api.contentRecords.getAll(entrypointDir, {
-          recursive: false,
-        });
-        const contentRecords = response.data.map((record) =>
+        const root = workspaces.path();
+        if (!root) {
+          return;
+        }
+        const allRecords = await loadAllDeployments(entrypointDir, root);
+        const contentRecords = allRecords.map((record) =>
           recordAddConnectCloudUrlParams(record, env.appName),
         );
         contentRecords.forEach((cfg) => {
@@ -2062,7 +2124,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         });
       } catch (error: unknown) {
         const summary = getSummaryStringFromError(
-          "handleFileInitiatedDeploymentSelection, contentRecords.getAll",
+          "handleFileInitiatedDeploymentSelection, loadAllDeployments",
           error,
         );
         window.showInformationMessage(
@@ -2075,24 +2137,25 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const configMap = new Map<string, Configuration>();
     const getConfigurations = async () => {
       try {
-        const response = await api.configurations.getAll(entrypointDir, {
-          entrypoint: entrypointFile,
-          recursive: false,
-        });
-        const rawConfigs = response.data;
-        rawConfigs.forEach((cfg) => {
-          if (!isConfigurationError(cfg)) {
+        const root = workspaces.path();
+        if (!root) {
+          return;
+        }
+        const allConfigs = await loadAllConfigurations(entrypointDir, root);
+        allConfigs.forEach((cfg) => {
+          if (
+            !isConfigurationError(cfg) &&
+            cfg.configuration.entrypoint === entrypointFile
+          ) {
             configMap.set(cfg.configurationName, cfg);
           }
         });
       } catch (error: unknown) {
         const summary = getSummaryStringFromError(
-          "handleFileInitiatedDeploymentSelection, configurations.getAll",
+          "handleFileInitiatedDeploymentSelection, loadAllConfigurations",
           error,
         );
-        window.showErrorMessage(
-          `Unable to continue with API Error: ${summary}`,
-        );
+        window.showErrorMessage(`Unable to load configurations: ${summary}`);
         throw error;
       }
     };
@@ -2153,6 +2216,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           const credential = await newCredential(
             Views.HomeView,
             createNewCredentialLabel,
+            this.state.credentialsService,
             contentRecord.serverUrl,
           );
           credentialName = credential?.name;
@@ -2170,7 +2234,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         }
       }
       const target: PublishProcessParams = {
-        deploymentName: contentRecord.saveName,
+        deploymentName: contentRecord.deploymentName,
         deploymentPath: contentRecord.deploymentPath,
         projectDir: contentRecord.projectDir,
         configurationName: contentRecord.configurationName,
@@ -2204,6 +2268,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         const credential = await newCredential(
           Views.HomeView,
           createNewCredentialLabel,
+          this.state.credentialsService,
           currentContentRecord.serverUrl,
         );
         credentialName = credential?.name;
@@ -2215,7 +2280,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       }
     }
     const target: PublishProcessParams = {
-      deploymentName: currentContentRecord.saveName,
+      deploymentName: currentContentRecord.deploymentName,
       deploymentPath: currentContentRecord.deploymentPath,
       projectDir: currentContentRecord.projectDir,
       credentialName,

@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "metadata": {
+    "appmode": "python-fastapi",
+    "entrypoint": "app:app"
+  },
+  "packages": {},
+  "files": {},
+  "integration_requests": [
+    {
+      "guid": "123456789abcdef",
+      "name": "my-integration",
+      "description": "Vertex AI OAuth integration",
+      "auth_type": "Viewer",
+      "type": "vertex-ai",
+      "config": {
+        "auth_mode": "Confidential"
+      }
+    }
+  ]
+}

@@ -35,7 +35,6 @@ export const configurationFactory = Factory.define<Configuration>(
     projectDir: `report-GUD${sequence}`,
     configurationName: `configuration-GUD${sequence}`,
     configurationPath: `report/path/configuration-${sequence}`,
-    configurationRelPath: `report/path/configuration-${sequence}`,
   }),
 );
 
@@ -46,12 +45,14 @@ export const interpreterDefaultsFactory = Factory.define<InterpreterDefaults>(
       packageFile: "requirements.txt",
       packageManager: "pip",
       version: "3.11.0",
+      requiresPython: ">=3.11",
     },
     preferredRPath: "usr/bin/R",
     r: {
       packageFile: "renv.lock",
       packageManager: "renv",
       version: "4.4.0",
+      requiresR: ">= 4.4.0",
     },
   }),
 );
@@ -61,7 +62,6 @@ export const preContentRecordFactory = Factory.define<PreContentRecord>(
     $schema: "test-schema-url",
     serverType: ServerType.CONNECT,
     serverUrl: `https://connect-test-${sequence}/connect`,
-    saveName: `Report ${sequence}`,
     createdAt: new Date().toISOString(),
     dismissedAt: "",
     configurationName: `report-GUD${sequence}`,
@@ -87,7 +87,6 @@ export const contentRecordFactory = Factory.define<ContentRecord>(
     files: [],
     serverType: ServerType.CONNECT,
     serverUrl: `https://connect-test-${sequence}/connect`,
-    saveName: `Report ${sequence}`,
     createdAt: new Date().toISOString(),
     dismissedAt: "",
     deployedAt: new Date().toISOString(),
@@ -107,7 +106,6 @@ export const contentRecordFactory = Factory.define<ContentRecord>(
       projectDir: "",
     },
     configurationPath: `report/path/configuration-${sequence}`,
-    configurationRelPath: `report/path/configuration-${sequence}`,
     connectCloud: { accountName: "" },
   }),
 );

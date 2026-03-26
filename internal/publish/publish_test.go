@@ -371,6 +371,7 @@ func (s *PublishConnectSuite) publishWithClient(
 	targetName := ""
 	recordName := "" // name we will find the deployment record under
 
+	originalCreatedAt := ""
 	if target != nil {
 		targetName = "targetToLoad"
 		recordName = targetName
@@ -378,6 +379,7 @@ func (s *PublishConnectSuite) publishWithClient(
 
 		// Make CreatedAt earlier so it will differ from DeployedAt.
 		target.CreatedAt = time.Now().Add(-time.Hour).Format(time.RFC3339)
+		originalCreatedAt = target.CreatedAt
 	} else {
 		saveName = "saveAsThis"
 		targetName = saveName
@@ -437,7 +439,7 @@ func (s *PublishConnectSuite) publishWithClient(
 	}
 	if target != nil {
 		// Creation date is not updated on deployment
-		s.Equal(stateStore.Target.CreatedAt, stateStore.Target.CreatedAt)
+		s.Equal(originalCreatedAt, stateStore.Target.CreatedAt)
 		if stateStore.Target != nil {
 			// Successful redeployment should update the timestamp.
 			s.NotEqual(stateStore.Target.CreatedAt, stateStore.Target.DeployedAt)

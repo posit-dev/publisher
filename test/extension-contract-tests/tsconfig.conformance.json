@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "target": "ES2023",
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "lib": ["ES2023", "DOM"],
+    "paths": {
+      "src/*": ["../../extensions/vscode/src/*"]
+    }
+  },
+  "include": [
+    "src/mocks/*.conformance.ts",
+    "../../extensions/vscode/src/@types/positron.d.ts"
+  ]
+}

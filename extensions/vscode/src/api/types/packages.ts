@@ -1,9 +1,5 @@
 // Copyright (C) 2023 by Posit Software, PBC.
 
-export type PythonPackagesResponse = {
-  requirements: string[];
-};
-
 export type ScanPythonPackagesResponse = {
   requirements: string[];
   incomplete: string[];

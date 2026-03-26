@@ -6,19 +6,30 @@ permissions:
 jobs:
   contract-tests:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        backend: [go, typescript]
+    name: contract-tests (${{ matrix.backend }})
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/setup
+        if: matrix.backend == 'go'
+      - uses: extractions/setup-just@v3
+        if: matrix.backend == 'typescript'
       - uses: actions/setup-node@v6
         with:
           node-version: "22"
           cache: "npm"
           cache-dependency-path: "test/connect-api-contracts/package-lock.json"
       - run: npm ci
+        working-directory: packages/connect-api
+      - run: npm ci
         working-directory: test/connect-api-contracts
       - run: npm run typecheck
         working-directory: test/connect-api-contracts
       - run: just test-connect-contracts
+        env:
+          API_BACKEND: ${{ matrix.backend }}
 
   validate-fixtures:
     runs-on: ubuntu-latest
@@ -30,6 +41,8 @@ jobs:
           node-version: "22"
           cache: "npm"
           cache-dependency-path: "test/connect-api-contracts/package-lock.json"
+      - run: npm ci
+        working-directory: packages/connect-api
       - run: npm ci
         working-directory: test/connect-api-contracts
       - run: just validate-fixtures

@@ -121,7 +121,7 @@ export const useHomeStore = defineStore("home", () => {
       }
 
       const isSameContentRecord = Boolean(
-        contentRecord?.saveName === prevContentRecord?.saveName,
+        contentRecord?.deploymentName === prevContentRecord?.deploymentName,
       );
 
       config.configuration.secrets?.forEach((secret) => {
@@ -251,7 +251,7 @@ export const useHomeStore = defineStore("home", () => {
     // sequence.
     if (selectedContentRecord.value) {
       const state = {
-        deploymentName: selectedContentRecord.value.saveName,
+        deploymentName: selectedContentRecord.value.deploymentName,
         projectDir: selectedContentRecord.value.projectDir,
         configurationName: selectedConfiguration.value?.configurationName,
         deploymentPath: selectedContentRecord.value.deploymentPath,

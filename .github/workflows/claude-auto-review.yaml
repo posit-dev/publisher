@@ -1,0 +1,93 @@
+name: Claude Auto Review
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review]
+
+jobs:
+  auto-review:
+    # Skip draft PRs and Dependabot PRs
+    if: github.event.pull_request.draft == false && github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: write
+      actions: read
+      id-token: write
+    steps:
+      - name: Check actor has write permission
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PERMISSION=$(gh api /repos/${{ github.repository }}/collaborators/${{ github.actor }}/permission --jq '.permission')
+          if [[ "$PERMISSION" != "admin" && "$PERMISSION" != "write" ]]; then
+            echo "::error::Actor ${{ github.actor }} has '$PERMISSION' permission, requires 'write' or 'admin'"
+            exit 1
+          fi
+          echo "Actor ${{ github.actor }} authorized with '$PERMISSION' permission"
+
+      - name: Generate token for GitHub App
+        id: generate-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: 1129585
+          private-key: ${{ secrets.POSIT_CONNECT_PROJECTS_PEM }}
+          permission-actions: read
+          permission-contents: write
+          permission-pull-requests: write
+          owner: posit-dev
+          repositories: |
+            publisher
+            claude-plugins
+
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          token: ${{ steps.generate-token.outputs.token }}
+
+      - uses: ./.github/actions/setup
+
+      # The AWS assume role step has this validation:
+      # Member must satisfy regular expression pattern: [\w+=,.@-]*
+      # so we should sanitize e.g. `[bot]` so that it is not rejected
+      - name: Sanitize role session name
+        id: session-name
+        env:
+          TRIGGERING_ACTOR: ${{ github.triggering_actor }}
+        run: |
+          echo "value=$(echo "${TRIGGERING_ACTOR}" | sed 's/[^a-zA-Z0-9_+=,.@-]/_/g')" >> "$GITHUB_OUTPUT"
+
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.CLAUDE_CODE_AWS_ROLE_ARN }}
+          role-session-name: ${{ steps.session-name.outputs.value }}
+          aws-region: us-east-2
+
+      - name: Run Claude Code Review
+        uses: anthropics/claude-code-action@v1
+        env:
+          # Pass git config via environment to rewrite SSH URLs to authenticated HTTPS
+          # This is for installing plugins from private repos
+          GIT_CONFIG_COUNT: "2"
+          GIT_CONFIG_KEY_0: url.https://x-access-token:${{ steps.generate-token.outputs.token }}@github.com/.insteadOf
+          GIT_CONFIG_VALUE_0: "git@github.com:"
+          GIT_CONFIG_KEY_1: url.https://x-access-token:${{ steps.generate-token.outputs.token }}@github.com/.insteadOf
+          GIT_CONFIG_VALUE_1: "https://github.com/"
+        with:
+          use_bedrock: true
+          github_token: ${{ steps.generate-token.outputs.token }}
+          additional_permissions: "actions: read"
+          track_progress: true
+          plugin_marketplaces: |
+            https://x-access-token:${{ steps.generate-token.outputs.token }}@github.com/posit-dev/claude-plugins.git
+            https://github.com/anthropics/claude-code.git
+          plugins: |
+            code-review@claude-code-plugins
+          allowed_bots: posit-connect-projects[bot]
+          prompt: /code-review --comment
+          claude_args: |
+            --model us.anthropic.claude-opus-4-5-20251101-v1:0
+            --fallback-model us.anthropic.claude-haiku-4-5-20251001-v1:0
+            --allowedTools Bash,mcp__github_inline_comment__create_inline_comment

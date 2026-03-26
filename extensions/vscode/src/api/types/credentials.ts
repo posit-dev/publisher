@@ -4,7 +4,7 @@ import { AgentError } from "./error";
 import { ServerType } from "./contentRecords";
 
 // NOTE: If you add or remove fields here, also update
-// REQUIRED_CREDENTIAL_FIELDS in credentialSecretStorage.ts.
+// REQUIRED_CREDENTIAL_FIELDS in credentials/storage.ts.
 export type Credential = {
   guid: string;
   name: string;

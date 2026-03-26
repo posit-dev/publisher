@@ -8,6 +8,7 @@
     "target": "ES2023",
     "outDir": "out",
     "lib": ["ES2023", "DOM"],
+    "resolveJsonModule": true,
     "sourceMap": true,
     "rootDir": "src",
     /* Linting */
@@ -21,5 +22,10 @@
       "src/*": ["./src/*"]
     }
   },
-  "exclude": ["node_modules", "webviews", "vitest.config.ts"]
+  "exclude": [
+    "node_modules",
+    "webviews",
+    "vitest.config.ts",
+    "src/**/*.e2e.test.ts"
+  ]
 }

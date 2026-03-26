@@ -91,101 +91,6 @@ func (mode *AppMode) UnmarshalText(text []byte) error {
 	return nil
 }
 
-// IsWorkerApp returns true for any content that is serviced by worker
-// processes. This includes Shiny applications, interactive R Markdown
-// documents, Plumber/Python (flask/fastapi) APIs, and Python apps
-// (Dash, Streamlit, Bokeh, PyShiny, Voila, Gradio, Panel).
-func (mode AppMode) IsWorkerApp() bool {
-	return (mode.IsShinyApp() ||
-		mode.IsPythonApp() ||
-		mode.IsAPIApp())
-}
-
-// IsAPIApp returns true for any API apps (currently, Plumber, Flask, or FastAPI).
-func (mode AppMode) IsAPIApp() bool {
-	return mode.IsPlumberAPI() || mode.IsPythonAPI()
-}
-
-// IsPlumberAPI returns true for Plumber API applications.
-func (mode AppMode) IsPlumberAPI() bool {
-	return mode == PlumberAPIMode
-}
-
-// IsPythonAPI returns true for Python API applications.
-func (mode AppMode) IsPythonAPI() bool {
-	return mode == PythonAPIMode || mode == PythonFastAPIMode
-}
-
-// IsPythonApp returns true for Python applications (Dash, Streamlit, Bokeh, Voila)
-func (mode AppMode) IsPythonApp() bool {
-	switch mode {
-	case PythonDashMode, PythonStreamlitMode, PythonGradioMode, PythonPanelMode, PythonShinyMode, PythonBokehMode, JupyterVoilaMode:
-		return true
-	}
-	return false
-}
-
-// IsShinyApp returns true for Shiny applications and interactive R Markdown
-// documents.
-func (t AppMode) IsShinyApp() bool {
-	return t == ShinyMode || t == ShinyRmdMode || t == ShinyQuartoMode
-}
-
-// IsDashApp returns true for Python Dash applications
-func (t AppMode) IsDashApp() bool {
-	return t == PythonDashMode
-}
-
-// IsStreamlitApp returns true for Python Streamlit applications
-func (t AppMode) IsStreamlitApp() bool {
-	return t == PythonStreamlitMode
-}
-
-// IsBokehApp returns true for Python Bokeh applications
-func (t AppMode) IsBokehApp() bool {
-	return t == PythonBokehMode
-}
-
-// IsGradioApp returns true for Python Gradio applications
-func (t AppMode) IsGradioApp() bool {
-	return t == PythonGradioMode
-}
-
-// IsPanelApp returns true for Python Panel applications
-func (t AppMode) IsPanelApp() bool {
-	return t == PythonPanelMode
-}
-
-// IsFastAPIApp returns true for Python FastAPI applications
-func (t AppMode) IsFastAPIApp() bool {
-	return t == PythonFastAPIMode
-}
-
-// IsPyShinyApp returns true for Python Shiny applications
-func (mode AppMode) IsPyShinyApp() bool {
-	return mode == PythonShinyMode
-}
-
-// IsVoilaApp returns true for Python Voila interactive notebooks
-func (mode AppMode) IsVoilaApp() bool {
-	return mode == JupyterVoilaMode
-}
-
-// IsStaticRmd returns true for any non-interactive R Markdown content.
-func (mode AppMode) IsStaticRmd() bool {
-	return mode == StaticRmdMode
-}
-
-// IsStaticJupyter returns true for any non-interactive Jupyter content.
-func (t AppMode) IsStaticJupyter() bool {
-	return t == StaticJupyterMode
-}
-
-// IsStaticReport returns true for any non-interactive R or Jupyter content.
-func (t AppMode) IsStaticReport() bool {
-	return t == StaticRmdMode || t == StaticJupyterMode || t == StaticQuartoMode
-}
-
 // IsStaticContent returns true for any static content (deployed without
 // source).
 func (t AppMode) IsStaticContent() bool {
@@ -197,36 +102,6 @@ func (t AppMode) IsStaticContent() bool {
 func (mode AppMode) IsKnown() bool {
 	_, ok := contentTypeConnectMap[mode]
 	return ok
-}
-
-// IsRContent returns true if R is the primary interpreter for this content
-// type.
-func (t AppMode) IsRContent() bool {
-	switch t {
-	case ShinyMode, ShinyRmdMode, StaticRmdMode, PlumberAPIMode:
-		return true
-	}
-	return false
-}
-
-// IsPythonContent returns true if Python is the primary interpreter for this
-// content type.
-func (t AppMode) IsPythonContent() bool {
-	switch t {
-	case StaticJupyterMode, PythonAPIMode, PythonDashMode, PythonStreamlitMode, PythonBokehMode, PythonFastAPIMode, PythonGradioMode, PythonPanelMode, PythonShinyMode, JupyterVoilaMode:
-		return true
-	}
-	return false
-}
-
-// IsQuartoContent return true if Quarto is the primary driver of this content
-// type.
-func (t AppMode) IsQuartoContent() bool {
-	switch t {
-	case ShinyQuartoMode, StaticQuartoMode:
-		return true
-	}
-	return false
 }
 
 func (t AppMode) Description() string {
