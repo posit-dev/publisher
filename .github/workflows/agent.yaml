@@ -49,8 +49,16 @@ jobs:
 
       - name: Install R with rig
         run: rig add release
+
+      - name: Configure CRAN mirror
+        shell: bash
+        run: |
+          echo 'options(repos = c(CRAN = "https://cloud.r-project.org"))' > "$RUNNER_TEMP/Rprofile-ci.R"
+          echo "R_PROFILE_USER=$RUNNER_TEMP/Rprofile-ci.R" >> "$GITHUB_ENV"
+
       - name: Install R packages
-        run: Rscript -e "install.packages(c('renv', 'glue'), repos = 'https://cloud.r-project.org')"
+        run: Rscript -e "install.packages(c('renv', 'glue'))"
+
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
