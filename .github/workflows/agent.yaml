@@ -57,7 +57,10 @@ jobs:
           echo "R_PROFILE_USER=$RUNNER_TEMP/Rprofile-ci.R" >> "$GITHUB_ENV"
 
       - name: Install R packages
-        run: Rscript -e "install.packages(c('renv', 'glue'))"
+        shell: Rscript {0}
+        run: |
+          type <- if (.Platform$OS.type == "windows") "binary" else getOption("pkgType", "source")
+          install.packages(c("renv", "glue", "rmarkdown", "knitr"), type = type)
 
       - uses: actions/setup-go@v6
         with:
