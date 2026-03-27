@@ -122,9 +122,11 @@ export interface UserResponse {
 // ---------------------------------------------------------------------------
 
 export enum ContentAccess {
+  Private = "private",
   ViewPrivateEditPrivate = "view_private_edit_private",
   ViewTeamEditPrivate = "view_team_edit_private",
   ViewTeamEditTeam = "view_team_edit_team",
+  Public = "public",
   ViewPublicEditPrivate = "view_public_edit_private",
   ViewPublicEditTeam = "view_public_edit_team",
 }
@@ -287,7 +289,7 @@ export interface ContentResponse {
   id: ContentID;
   account_id: string;
   title: string;
-  access: ContentAccess | string; // API may return "public" instead of enum value
+  access: ContentAccess;
 
   // Author
   author_id: string;
