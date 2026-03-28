@@ -4,13 +4,14 @@ package api
 
 import (
 	"encoding/json"
-	"github.com/posit-dev/publisher/internal/server_type"
 	"net/http"
 	"time"
 
 	"github.com/posit-dev/publisher/internal/accounts"
+	"github.com/posit-dev/publisher/internal/api_client/auth/snowflake"
 	"github.com/posit-dev/publisher/internal/clients/connect"
 	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/server_type"
 	"github.com/posit-dev/publisher/internal/types"
 	"github.com/posit-dev/publisher/internal/util"
 )
@@ -28,12 +29,17 @@ type PostTestCredentialsResponseBody struct {
 
 	ServerType server_type.ServerType `json:"serverType"`
 
+	// HasSnowflakeConnections indicates if Snowflake connections are configured
+	// on the system. When true, Token Authentication should be hidden since it
+	// won't work from within a Snowflake environment.
+	HasSnowflakeConnections bool `json:"hasSnowflakeConnections"`
+
 	Error *types.AgentError `json:"error"`
 }
 
 var connectClientFactory = connect.NewConnectClient
 
-func PostTestCredentialsHandlerFunc(log logging.Logger) http.HandlerFunc {
+func PostTestCredentialsHandlerFunc(log logging.Logger, connections snowflake.Connections) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		dec := json.NewDecoder(req.Body)
 		dec.DisallowUnknownFields()
@@ -49,6 +55,13 @@ func PostTestCredentialsHandlerFunc(log logging.Logger) http.HandlerFunc {
 			// unparseable URL
 			BadRequest(w, req, log, err)
 			return
+		}
+
+		// Check if Snowflake connections are configured on the system.
+		// If so, Token Authentication won't work (browser can't reach internal URLs).
+		hasSnowflakeConnections := false
+		if conns, err := connections.List(); err == nil && len(conns) > 0 {
+			hasSnowflakeConnections = true
 		}
 
 		var user *connect.User
@@ -78,10 +91,11 @@ func PostTestCredentialsHandlerFunc(log logging.Logger) http.HandlerFunc {
 		if err == nil {
 			// If we succeeded, pass back what URL succeeded
 			response := &PostTestCredentialsResponseBody{
-				User:       user,
-				Error:      nil,
-				URL:        discoveredURL,
-				ServerType: serverType,
+				User:                    user,
+				Error:                   nil,
+				URL:                     discoveredURL,
+				ServerType:              serverType,
+				HasSnowflakeConnections: hasSnowflakeConnections,
 			}
 			w.Header().Set("content-type", "application/json")
 			w.WriteHeader(http.StatusOK)
@@ -91,10 +105,11 @@ func PostTestCredentialsHandlerFunc(log logging.Logger) http.HandlerFunc {
 
 		// failure after all attempts, return last error
 		response := &PostTestCredentialsResponseBody{
-			User:       user,
-			Error:      types.AsAgentError(lastTestError),
-			URL:        b.URL, // pass back original URL
-			ServerType: serverType,
+			User:                    user,
+			Error:                   types.AsAgentError(lastTestError),
+			URL:                     b.URL, // pass back original URL
+			ServerType:              serverType,
+			HasSnowflakeConnections: hasSnowflakeConnections,
 		}
 		w.Header().Set("content-type", "application/json")
 		w.WriteHeader(http.StatusOK)
