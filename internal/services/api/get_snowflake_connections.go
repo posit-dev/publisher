@@ -27,6 +27,7 @@ type getSnowflakeConnectionsResponseBody struct {
 func GetSnowflakeConnectionsHandlerFunc(log logging.Logger, connections snowflake.Connections) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		serverUrl := req.URL.Query().Get("serverUrl")
+		apiKey := req.URL.Query().Get("apiKey")
 
 		serverType, err := server_type.ServerTypeFromURL(serverUrl)
 		if err != nil {
@@ -60,6 +61,7 @@ func GetSnowflakeConnectionsHandlerFunc(log logging.Logger, connections snowflak
 					URL:                 url,
 					Insecure:            false, // TODO: do we need to support insecure snowflake URLs?
 					SnowflakeConnection: name,
+					ApiKey:              apiKey,
 				}
 
 				timeout := time.Second * 30

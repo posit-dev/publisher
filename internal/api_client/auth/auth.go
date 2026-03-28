@@ -28,9 +28,11 @@ func (af AuthFactory) NewClientAuth(acct *accounts.Account) (AuthMethod, error) 
 	case accounts.AuthTypeAPIKey:
 		return NewApiKeyAuthenticator(acct.ApiKey, ""), nil
 	case accounts.AuthTypeSnowflake:
+		// Snowflake SPCS with OIDC requires both Snowflake token and Connect API key
 		auth, err := NewSnowflakeAuthenticator(
 			af.connections,
 			acct.SnowflakeConnection,
+			acct.ApiKey,
 		)
 		if err != nil {
 			return nil, err

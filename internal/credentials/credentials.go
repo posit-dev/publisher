@@ -272,7 +272,8 @@ func (details CreateCredentialDetails) ToCredential() (*Credential, error) {
 			return nil, NewIncompleteCredentialError()
 		}
 	case server_type.ServerTypeSnowflake:
-		if !snowflakePresent || connectPresent || connectCloudPresent || tokenAuthPresent {
+		// Snowflake SPCS now requires both SnowflakeConnection AND ApiKey for OIDC authentication
+		if !snowflakePresent || !connectPresent || connectCloudPresent || tokenAuthPresent {
 			return nil, NewIncompleteCredentialError()
 		}
 	case server_type.ServerTypeConnectCloud:
