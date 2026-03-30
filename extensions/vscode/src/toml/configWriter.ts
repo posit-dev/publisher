@@ -13,7 +13,12 @@ import { AgentError } from "../api/types/error";
 import { forceProductTypeCompliance } from "./configCompliance";
 import { convertKeysToSnakeCase } from "./convertKeys";
 import { getConfigPath } from "./configDiscovery";
-import { stripEmpty, isRecord, formatValidationErrors } from "./tomlHelpers";
+import {
+  stripEmpty,
+  isRecord,
+  formatValidationErrors,
+  expandInlineArrays,
+} from "./tomlHelpers";
 import {
   createSchemaValidationError,
   createConfigurationError,
@@ -108,7 +113,7 @@ export async function writeConfigToFile(
   for (const comment of comments) {
     content += `#${comment}\n`;
   }
-  content += stringifyTOML(snakeObj);
+  content += expandInlineArrays(stringifyTOML(snakeObj));
   // Ensure file ends with newline
   if (!content.endsWith("\n")) {
     content += "\n";

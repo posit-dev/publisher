@@ -1,10 +1,50 @@
 # Project Overview
 
-Posit Publisher is a VSCode/Positron extension that enables deploying Python and R projects to Posit Connect. The project consists of:
+Posit Publisher is a VSCode/Positron extension that enables deploying Python and R projects to Posit Connect. The project is in an active Go-to-TypeScript migration, with a hybrid architecture:
 
-- **Go backend** (`cmd/publisher/`, `internal/`) - API server that handles deployments, configuration, and Connect server communication
-- **VSCode extension** (`extensions/vscode/`) - TypeScript extension providing the UI
+- **Go backend** (`cmd/publisher/`, `internal/`) - API server handling deployments, credential validation, content inspection, and Connect server communication. Still required at runtime.
+- **TypeScript packages** (`packages/`) - Shared TypeScript libraries for Connect API communication (preparation for future migration of remaining Go backend features)
+- **VSCode extension** (`extensions/vscode/`) - TypeScript extension providing the UI and increasingly handling operations directly (bundling, TOML handling, interpreter detection, dependency analysis)
 - **Webviews** (`extensions/vscode/webviews/homeView/`) - Vue 3 UI components for the extension sidebar
+
+## Migration Status
+
+The following features have been **migrated to TypeScript** and run directly in the extension (no Go backend call):
+
+| Feature                                | TypeScript Location                                                           | Former Go Package                          |
+| -------------------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------ |
+| Bundle creation (tar.gz)               | `extensions/vscode/src/bundler/`                                              | `internal/bundles/`                        |
+| TOML config reading/writing            | `extensions/vscode/src/toml/`                                                 | `internal/config/`, `internal/deployment/` |
+| Deployment record handling             | `extensions/vscode/src/toml/deployment*.ts`                                   | `internal/deployment/`                     |
+| Config file discovery/loading          | `extensions/vscode/src/toml/config*.ts`, `extensions/vscode/src/configFiles/` | `internal/config/`                         |
+| File collection (.gitignore filtering) | `extensions/vscode/src/bundler/collect.ts`                                    | `internal/bundles/`                        |
+| Manifest generation                    | `extensions/vscode/src/bundler/manifestFromConfig.ts`                         | `internal/bundles/`                        |
+| Python interpreter detection           | `extensions/vscode/src/interpreters/pythonInterpreter.ts`                     | `internal/interpreters/`                   |
+| R interpreter detection                | `extensions/vscode/src/interpreters/rInterpreter.ts`                          | `internal/interpreters/`                   |
+| R package lockfile scanning            | `extensions/vscode/src/interpreters/rPackages.ts`                             | `internal/interpreters/`                   |
+| Python package scanning                | `extensions/vscode/src/interpreters/pythonPackages.ts`                        | Go POST `/packages/python/scan`            |
+| Dependency analysis                    | `extensions/vscode/src/publish/dependencies.ts`                               | `internal/bundles/`                        |
+| Project file tree                      | `extensions/vscode/src/projectFiles/`                                         | N/A (new)                                  |
+| Credential storage                     | `extensions/vscode/src/credentials/`                                          | `internal/credentials/` (partially)        |
+
+The following features are **still in Go** and accessed via the Go backend HTTP API:
+
+| Feature                          | Go Location         | Extension API Wrapper                       |
+| -------------------------------- | ------------------- | ------------------------------------------- |
+| Publishing/deployment to Connect | `internal/publish/` | `src/api/resources/`                        |
+| Deployment cancellation          | `internal/publish/` | `src/api/resources/`                        |
+| Content inspection/detection     | `internal/inspect/` | `src/api/resources/`                        |
+| Connect Cloud OAuth flows        | `internal/cloud/`   | `src/api/resources/ConnectCloud.ts`         |
+| Snowflake connection discovery   | `internal/clients/` | `src/api/resources/SnowflakeConnections.ts` |
+| Connect token management         | `internal/clients/` | `src/api/resources/Credentials.ts`          |
+| Server-Sent Events streaming     | `internal/events/`  | `src/events.ts`                             |
+
+**Prepared but not yet integrated:**
+
+- `packages/connect-api/` - TypeScript client for Posit Connect REST API
+- `packages/connect-cloud-api/` - TypeScript client for Connect Cloud API (with OAuth)
+
+These packages are groundwork for migrating the remaining Go backend API calls to TypeScript.
 
 # Build Commands
 
@@ -69,31 +109,74 @@ just stop               # Stop Docker containers
 
 # Architecture
 
+## Runtime Architecture
+
+The extension spawns the Go binary (`bin/publisher`) as a subprocess and communicates via HTTP API and Server-Sent Events. Many operations now run directly in TypeScript without calling the Go backend.
+
+```
+VSCode Extension (TypeScript)
+├── Local Operations (no Go backend needed):
+│   ├── TOML config/deployment reading & writing
+│   ├── Bundle creation (tar.gz with manifest)
+│   ├── File collection with .gitignore filtering
+│   ├── Python/R interpreter detection
+│   ├── Python/R package scanning
+│   ├── Dependency analysis
+│   └── Credential storage (filesystem / VSCode keychain)
+│
+└── Go Backend Operations (via HTTP API):
+    ├── Publishing/deployment to Connect
+    ├── Content inspection/detection
+    ├── Connect Cloud authentication (OAuth)
+    ├── Snowflake connection discovery
+    └── Server-Sent Events for deployment progress
+```
+
 ## Go Backend (`internal/`)
 
-Key packages:
+Key packages (still actively used):
+
+- `clients/` - HTTP clients for Connect API communication
+- `cloud/` - Connect Cloud OAuth integration
+- `events/` - Server-Sent Events for real-time UI updates
+- `inspect/` - Project inspection (detect Python/R/Quarto content)
+- `publish/` - Core publishing logic to Connect servers
+- `services/api/` - HTTP API endpoints consumed by the extension
+
+Legacy packages (functionality migrated to TypeScript but code still present):
 
 - `accounts/` - Server account/credential management
 - `bundles/` - Deployment bundle creation and manifest generation
-- `clients/` - HTTP clients for Connect API communication
 - `config/` - Configuration file parsing (`.posit/publish/*.toml`)
 - `credentials/` - Credential storage (keyring or file-based)
-- `deployment/` - Deployment record management (`.posit/publish/deployments/`)
-- `events/` - Server-Sent Events for real-time UI updates
-- `inspect/` - Project inspection (detect Python/R/Quarto content)
+- `deployment/` - Deployment record management
 - `interpreters/` - Python/R interpreter detection and version management
-- `publish/` - Core publishing logic to Connect servers
 - `schema/` - JSON schemas for configuration validation
 
 The CLI entry point (`cmd/publisher/main.go`) uses [Kong](https://github.com/alecthomas/kong) for command parsing. The `ui` command starts an HTTP API server that the VSCode extension communicates with.
 
+## TypeScript Packages (`packages/`)
+
+Shared npm packages for Connect API communication:
+
+- `packages/connect-api/` - TypeScript client for the Posit Connect REST API (axios-based)
+- `packages/connect-cloud-api/` - TypeScript client for Connect Cloud API with OAuth authentication
+
+These are not yet consumed by the extension but are being prepared for future migration of Go backend API calls.
+
 ## VSCode Extension (`extensions/vscode/src/`)
 
-The extension spawns the Go binary as a subprocess and communicates via HTTP API. Key areas:
+Key areas:
 
-- Views and webviews for the sidebar UI
-- File watchers for configuration changes
-- Authentication provider for Connect credentials
+- **Bundler** (`src/bundler/`) - Creates deployment bundles (tar.gz) with manifest generation, file collection, and .gitignore filtering
+- **TOML** (`src/toml/`) - Reads/writes configuration and deployment TOML files with schema validation
+- **Interpreters** (`src/interpreters/`) - Detects Python/R versions and scans packages
+- **Credentials** (`src/credentials/`) - Manages credential storage (filesystem or VSCode keychain)
+- **Publish** (`src/publish/`) - Dependency analysis for Python/R projects
+- **API** (`src/api/`) - Axios HTTP client for Go backend communication (for features not yet migrated)
+- **Views** (`src/views/`) - Sidebar webview and tree view providers
+- **Servers** (`src/servers.ts`) - Go binary subprocess management
+- **State** (`src/state.ts`) - Central state management for the extension
 
 ## Configuration Files
 
@@ -114,7 +197,9 @@ Subdirectories contain more detailed CLAUDE.md files:
 - Go tests use [Testify](https://github.com/stretchr/testify) for assertions and mocking
 - Tests with external dependencies are skipped when using `-short` flag (e.g., `go test -short ./...`)
 - VSCode extension uses Mocha for integration tests, Vitest for unit tests
-- Mock files follow `*_mock.go` or `mock_*.go` naming
+- TypeScript packages (`packages/`) use Vitest
+- Mock files follow `*_mock.go` or `mock_*.go` naming in Go
+- TypeScript test files are colocated with source (`*.test.ts`)
 
 # Updating Dependencies
 
@@ -160,7 +245,7 @@ When adding entries to CHANGELOG.md:
 
 # Schema Updates
 
-Schemas in `internal/schema/schemas/`:
+Schemas exist in both `extensions/vscode/src/toml/schemas/` (used by TypeScript) and `internal/schema/schemas/` (used by Go):
 
 - `posit-publishing-schema-v3.json` - Configuration schema
 - `posit-publishing-record-schema-v3.json` - Deployment record schema

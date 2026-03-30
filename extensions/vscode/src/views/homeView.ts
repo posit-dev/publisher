@@ -734,10 +734,15 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           ? this.state.findCredential(credentialName)
           : undefined;
         let integrations: Integration[] = [];
-        if (credential?.url && credential?.apiKey) {
+        if (
+          credential?.url &&
+          (credential?.apiKey || (credential?.token && credential?.privateKey))
+        ) {
           const connectApi = new ConnectAPI({
             url: credential.url,
             apiKey: credential.apiKey,
+            token: credential.token,
+            privateKey: credential.privateKey,
             rejectUnauthorized: extensionSettings.verifyCertificates(),
           });
           const response = await connectApi.getIntegrations();
@@ -864,6 +869,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       const connectApi = new ConnectAPI({
         url: credential.url,
         apiKey: credential.apiKey,
+        token: credential.token,
+        privateKey: credential.privateKey,
         rejectUnauthorized: extensionSettings.verifyCertificates(),
       });
       const allSettings = await connectApi.getSettings();
@@ -1136,6 +1143,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       });
       const deploymentObjects = await newDeployment(
         viewId,
+        this.state.credentialsService,
         projectDir,
         entryPointFile,
       );
@@ -1350,6 +1358,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           const connectApi = new ConnectAPI({
             url: credential.url,
             apiKey: credential.apiKey,
+            token: credential.token,
+            privateKey: credential.privateKey,
             rejectUnauthorized: extensionSettings.verifyCertificates(),
           });
           const response = await connectApi.getIntegrations();
@@ -1525,6 +1535,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       const credential = await newCredential(
         Views.HomeView,
         createNewCredentialLabel,
+        this.state.credentialsService,
         startingServerUrl,
       );
       if (credential) {
@@ -1549,8 +1560,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
     try {
-      const api = await useApi();
-      await api.credentials.delete(context.credentialGUID);
+      await this.state.credentialsService.delete(context.credentialGUID);
       window.setStatusBarMessage(
         `Credential for ${context.credentialName} has been erased from our memory!`,
       );
@@ -2215,6 +2225,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           const credential = await newCredential(
             Views.HomeView,
             createNewCredentialLabel,
+            this.state.credentialsService,
             contentRecord.serverUrl,
           );
           credentialName = credential?.name;
@@ -2266,6 +2277,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         const credential = await newCredential(
           Views.HomeView,
           createNewCredentialLabel,
+          this.state.credentialsService,
           currentContentRecord.serverUrl,
         );
         credentialName = credential?.name;

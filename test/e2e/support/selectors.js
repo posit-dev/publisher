@@ -273,6 +273,27 @@ Cypress.Commands.add("toggleCredentialsSection", () => {
     });
 });
 
+// ensureCredentialsSectionExpanded
+// Purpose: Expand the credentials section only if it is currently collapsed.
+// Avoids the toggle problem where calling toggleCredentialsSection on an
+// already-expanded section collapses it instead.
+Cypress.Commands.add("ensureCredentialsSectionExpanded", () => {
+  cy.publisherWebview()
+    .findByTestId("publisher-credentials-section")
+    .then(($section) => {
+      const $sec = Cypress.$($section);
+      const isExpanded =
+        $sec.find(".pane-body:visible").length > 0 ||
+        $sec
+          .find(':contains("No credentials have been added yet.")')
+          .filter(":visible").length > 0;
+
+      if (!isExpanded) {
+        $sec.find(".title").trigger("click");
+      }
+    });
+});
+
 Cypress.Commands.add("refreshCredentials", () => {
   // Robustly locate the credentials section inside the webview before interacting
   cy.retryWithBackoff(

@@ -292,17 +292,116 @@ describe("collectFiles", () => {
     expect(files).toEqual([]);
   });
 
-  it("directory-only exclusion patterns don't exclude files", async () => {
-    makeFile("logs/debug.txt");
-    // A file literally named "logs" (not a directory)
-    makeFile("subdir/logs");
+  describe("bare directory patterns (no trailing slash)", () => {
+    it("includes directory contents", async () => {
+      makeFile("app.py");
+      makeFile("data/tips.csv");
+      makeFile("data/other.csv");
 
-    // Exclude "logs/" directories only
-    const files = await collectedPaths(["*", "!logs/"]);
-    // The file named "logs" inside subdir should still be included
-    expect(files).toContain("subdir/logs");
-    // Files inside the logs/ directory should be excluded
-    expect(files).not.toContain("logs/debug.txt");
+      const files = await collectedPaths(["/app.py", "data"]);
+      expect(files).toEqual(["app.py", "data/other.csv", "data/tips.csv"]);
+    });
+
+    it("includes deeply nested contents", async () => {
+      makeFile("data/subdir/deep.csv");
+
+      const files = await collectedPaths(["data"]);
+      expect(files).toEqual(["data/subdir/deep.csv"]);
+    });
+
+    it("excludes directory contents when negated", async () => {
+      makeFile("app.py");
+      makeFile("data/tips.csv");
+
+      const files = await collectedPaths(["*", "!data"]);
+      expect(files).toEqual(["app.py"]);
+    });
+
+    it("works with rooted bare directory pattern", async () => {
+      makeFile("app.py");
+      makeFile("data/tips.csv");
+
+      const files = await collectedPaths(["/app.py", "/data"]);
+      expect(files).toEqual(["app.py", "data/tips.csv"]);
+    });
+
+    it("matches Go-generated config patterns", async () => {
+      // Go backend generates: files = ["/app.py", "/requirements.txt", "/data", "/styles.css"]
+      makeFile("app.py");
+      makeFile("requirements.txt");
+      makeFile("data/tips.csv");
+      makeFile("data/summary.csv");
+      makeFile("styles.css");
+
+      const files = await collectedPaths([
+        "/app.py",
+        "/requirements.txt",
+        "/data",
+        "/styles.css",
+      ]);
+      expect(files).toEqual([
+        "app.py",
+        "data/summary.csv",
+        "data/tips.csv",
+        "requirements.txt",
+        "styles.css",
+      ]);
+    });
+  });
+
+  describe("trailing-slash directory patterns", () => {
+    it("includes directory contents", async () => {
+      makeFile("app.py");
+      makeFile("data/tips.csv");
+      makeFile("data/other.csv");
+
+      const files = await collectedPaths(["*.py", "data/"]);
+      expect(files).toEqual(["app.py", "data/other.csv", "data/tips.csv"]);
+    });
+
+    it("includes deeply nested contents", async () => {
+      makeFile("data/subdir/deep.csv");
+
+      const files = await collectedPaths(["data/"]);
+      expect(files).toEqual(["data/subdir/deep.csv"]);
+    });
+
+    it("excludes directory contents when negated", async () => {
+      makeFile("app.py");
+      makeFile("data/tips.csv");
+
+      const files = await collectedPaths(["*", "!data/"]);
+      expect(files).toEqual(["app.py"]);
+    });
+
+    it("works with glob patterns", async () => {
+      makeFile("app.py");
+      makeFile("my_stuff/data.bin");
+
+      const files = await collectedPaths(["*.py", "*_stuff/"]);
+      expect(files).toEqual(["app.py", "my_stuff/data.bin"]);
+    });
+
+    it("respects rooted path when including contents", async () => {
+      makeFile("src/data/file.csv");
+      makeFile("other/data/file.csv");
+
+      const files = await collectedPaths(["src/data/"]);
+      expect(files).toEqual(["src/data/file.csv"]);
+    });
+
+    it("does not exclude a file whose name matches the directory pattern", async () => {
+      makeFile("logs/debug.txt");
+      // A file literally named "logs" (not a directory)
+      makeFile("subdir/logs");
+
+      // Exclude "logs/" directories only
+      const files = await collectedPaths(["*", "!logs/"]);
+      // The file named "logs" inside subdir should still be included
+      expect(files).toContain("subdir/logs");
+      // Files inside the logs/ directory should be excluded
+      expect(files).not.toContain("logs/debug.txt");
+    });
   });
 });
 

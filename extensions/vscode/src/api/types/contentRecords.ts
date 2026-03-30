@@ -60,6 +60,25 @@ type ConnectCloud = {
   accountName: string;
 };
 
+/**
+ * Error recorded in a deployment record file.
+ *
+ * This is distinct from AgentError (which models the Go HTTP JSON API
+ * and uses "msg"). Deployment records use "message" (matching the Go
+ * toml tag and the deployment record JSON schema).
+ */
+export type DeploymentRecordError = {
+  code: string;
+  message: string;
+  operation: string;
+};
+
+export function isDeploymentErrorContentNotRunning(
+  error: DeploymentRecordError | null | undefined,
+): boolean {
+  return error?.code === "deployedContentNotRunning";
+}
+
 type ContentRecordRecord = {
   $schema: SchemaURL;
   serverType: ServerType;
@@ -68,7 +87,7 @@ type ContentRecordRecord = {
   dismissedAt: string;
   configurationName: string;
   type: ContentType;
-  deploymentError: AgentError | null;
+  deploymentError: DeploymentRecordError | null;
   connectCloud: ConnectCloud | null;
 } & ContentRecordLocation;
 

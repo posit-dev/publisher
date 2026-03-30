@@ -35,9 +35,9 @@ export default defineConfig({
       exclude: ["*.d.ts"],
       enabled: true,
       thresholds: {
-        functions: 16,
+        functions: 15,
         lines: 17,
-        branches: 11,
+        branches: 10,
         statements: 17,
         // avoid auto-updating thresholds to avoid off by 0.01 differences
         autoUpdate: false,

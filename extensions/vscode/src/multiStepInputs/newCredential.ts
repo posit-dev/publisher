@@ -11,10 +11,12 @@ import { getPlatformList } from "src/multiStepInputs/common";
 import { getServerType, isConnectCloud } from "../utils/multiStepHelpers";
 import { newConnectCredential } from "./newConnectCredential";
 import { newConnectCloudCredential } from "./newConnectCloudCredential";
+import { CredentialsService } from "src/credentials/service";
 
 export async function newCredential(
   viewId: string,
   viewTitle: string,
+  credentialsService: CredentialsService,
   startingServerUrl?: string,
   previousSteps?: InputStep[],
 ): Promise<Credential | undefined> {
@@ -105,6 +107,7 @@ export async function newCredential(
         credential = await newConnectCredential(
           viewId,
           state.title,
+          credentialsService,
           startingServerUrl,
           prevSteps,
         );
@@ -133,6 +136,7 @@ export async function newCredential(
         credential = await newConnectCloudCredential(
           viewId,
           state.title,
+          credentialsService,
           prevSteps,
         );
       } catch {
@@ -146,6 +150,7 @@ export async function newCredential(
       credential = await newConnectCredential(
         viewId,
         state.title,
+        credentialsService,
         startingServerUrl,
         prevSteps,
       );

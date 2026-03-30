@@ -1,6 +1,6 @@
 # Project Overview
 
-This is the Posit Publisher VSCode extension. It provides a sidebar UI for deploying Python and R projects to Posit Connect. The extension spawns a Go backend binary (`bin/publisher`) and communicates with it via HTTP API and Server-Sent Events.
+This is the Posit Publisher VSCode extension. It provides a sidebar UI for deploying Python and R projects to Posit Connect. The extension is in an active migration from a Go backend architecture to native TypeScript. Many operations now run directly in TypeScript, while some features still require the Go backend binary (`bin/publisher`) accessed via HTTP API and Server-Sent Events.
 
 # Build Commands
 
@@ -58,14 +58,36 @@ Unit tests are in `src/**/*.test.ts` (excluding `src/test/`). Integration tests 
 
 ## Key Components
 
+### TypeScript-Native Operations (no Go backend needed)
+
+These modules run entirely in TypeScript and do not call the Go backend:
+
+- **Bundler** (`src/bundler/`) - Creates deployment bundles (tar.gz archives) with manifest generation, file collection, and .gitignore filtering. Migrated from Go `internal/bundles/`.
+- **TOML** (`src/toml/`) - Reads and writes configuration files (`.posit/publish/*.toml`) and deployment records (`.posit/publish/deployments/*.toml`) with JSON schema validation. Migrated from Go `internal/config/` and `internal/deployment/`.
+- **Config Files** (`src/configFiles/`) - Configuration file discovery and management.
+- **Interpreters** (`src/interpreters/`) - Detects Python/R versions via subprocess calls, scans Python packages (`pythonPackages.ts`) and R package lockfiles (`rPackages.ts`). Migrated from Go `internal/interpreters/`.
+- **Credentials** (`src/credentials/`) - Manages credential storage via filesystem (`~/.connect-credentials`) or VSCode keychain. Partially migrated from Go `internal/credentials/`.
+- **Dependencies** (`src/publish/dependencies.ts`) - Parses requirements.txt, pyproject.toml, renv.lock, DESCRIPTION for package dependencies. Migrated from Go `internal/bundles/`.
+- **Project Files** (`src/projectFiles/`) - File tree building and .gitignore-aware file matching.
+
+### Go Backend Integration (features still in Go)
+
+These modules communicate with the Go backend via HTTP:
+
 - **Service** (`src/services.ts`) - Manages the Go binary subprocess lifecycle
+- **Server** (`src/servers.ts`) - Spawns and monitors the Go binary process
 - **EventStream** (`src/events.ts`) - SSE client receiving real-time updates from Go backend
-- **PublisherState** (`src/state.ts`) - Central state management for credentials, configs, deployments
-- **HomeViewProvider** (`src/views/homeView.ts`) - Main webview provider, bridges extension and Vue webview
 - **API Client** (`src/api/`) - Axios-based HTTP client for Go backend communication
   - `client.ts` - Axios instance with interceptors for error handling and logging
   - `types/` - TypeScript types for API requests/responses
-  - `resources/` - Resource-specific API methods (credentials, configurations, etc.)
+  - `resources/` - Resource-specific API methods (deployment, inspection, Connect Cloud, Snowflake)
+
+Features still accessed via Go backend: publishing/deployment, content inspection, Connect Cloud OAuth, Snowflake connections, SSE streaming.
+
+### UI and State
+
+- **PublisherState** (`src/state.ts`) - Central state management for credentials, configs, deployments
+- **HomeViewProvider** (`src/views/homeView.ts`) - Main webview provider, bridges extension and Vue webview
 
 ## Views
 
@@ -76,7 +98,7 @@ Unit tests are in `src/**/*.test.ts` (excluding `src/test/`). Integration tests 
 
 ## Communication Flow
 
-1. Extension ↔ Go Backend: HTTP REST API (via axios in `src/api/`)
+1. Extension ↔ Go Backend: HTTP REST API (via axios in `src/api/`) — for features not yet migrated
 2. Go Backend → Extension: Server-Sent Events for real-time updates
 3. Extension ↔ Webview: VSCode postMessage API (typed messages in `src/types/messages/`)
 

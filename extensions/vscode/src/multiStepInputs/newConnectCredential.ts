@@ -14,7 +14,6 @@ import {
 import { InputBoxValidationSeverity, window } from "vscode";
 
 import {
-  useApi,
   Credential,
   ServerType,
   ProductName,
@@ -31,6 +30,7 @@ import {
   inputCredentialNameStep,
   getExistingCredentials,
 } from "src/multiStepInputs/common";
+import { CredentialsService } from "src/credentials/service";
 import { isConnect, isSnowflake } from "../utils/multiStepHelpers";
 import { openConfigurationCommand } from "src/commands";
 import { extensionSettings } from "src/extension";
@@ -64,13 +64,10 @@ const getAuthMethod = (authMethodName: AuthMethodName) => {
 export async function newConnectCredential(
   viewId: string,
   viewTitle: string,
+  credentialsService: CredentialsService,
   startingServerUrl?: string,
   previousSteps?: InputStep[],
 ): Promise<Credential | undefined> {
-  // ***************************************************************
-  // API Calls and results
-  // ***************************************************************
-  const api = await useApi();
   let credentials: Credential[] = [];
 
   // globals
@@ -556,7 +553,7 @@ export async function newConnectCredential(
   // This is a promise which returns the state data used to
   // collect the info.
   // ***************************************************************
-  credentials = await getExistingCredentials(viewId);
+  credentials = await getExistingCredentials(viewId, credentialsService);
   const state = await collectInputs();
 
   // make sure user has not hit escape or moved away from the window
@@ -572,11 +569,27 @@ export async function newConnectCredential(
     throw new AbortError();
   }
 
+  const { name, url, apiKey, token, privateKey, snowflakeConnection } =
+    state.data;
+
+  if (!isString(name) || !isString(url)) {
+    return undefined;
+  }
+
   // create the credential!
   let credential: Credential | undefined = undefined;
   try {
-    const resp = await api.credentials.connectCreate(state.data, serverType);
-    credential = resp.data;
+    credential = await credentialsService.create({
+      name,
+      url,
+      serverType,
+      apiKey: isString(apiKey) ? apiKey : undefined,
+      token: isString(token) ? token : undefined,
+      privateKey: isString(privateKey) ? privateKey : undefined,
+      snowflakeConnection: isString(snowflakeConnection)
+        ? snowflakeConnection
+        : undefined,
+    });
   } catch (error: unknown) {
     const summary = getSummaryStringFromError("credentials::add", error);
     window.showInformationMessage(summary);

@@ -138,6 +138,17 @@ function compilePatterns(userPatterns: string[]): PatternRule[] {
   return rules;
 }
 
+// Get ancestor directory paths for a relative path.
+// e.g. "a/b/c.txt" => ["a", "a/b"]
+function getAncestorPaths(relativePath: string): string[] {
+  const parts = relativePath.split("/");
+  const ancestors: string[] = [];
+  for (let i = 1; i < parts.length; i++) {
+    ancestors.push(parts.slice(0, i).join("/"));
+  }
+  return ancestors;
+}
+
 // Determine if a path should be included.
 // For files: must have a positive (non-exclude) match.
 // For directories: returns false only if explicitly excluded.
@@ -150,7 +161,20 @@ function shouldInclude(
   let lastMatch: "include" | "exclude" | null = null;
 
   for (const rule of rules) {
-    // Directory-only patterns should not match files
+    // For files, check if a parent directory matches the pattern.
+    // A pattern matching a directory includes its contents, whether
+    // specified as "data/" (matchesDir) or "data" (bare path).
+    // This matches the Go bundler's behavior.
+    if (!isDirectory) {
+      const ancestors = getAncestorPaths(relativePath);
+      for (const ancestor of ancestors) {
+        if (rule.matchesPath(ancestor)) {
+          lastMatch = rule.exclude ? "exclude" : "include";
+        }
+      }
+    }
+
+    // Directory-only patterns (trailing slash) skip direct file matching
     if (rule.matchesDir && !isDirectory) {
       continue;
     }

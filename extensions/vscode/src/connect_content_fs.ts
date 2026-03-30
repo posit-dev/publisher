@@ -227,6 +227,8 @@ export class ConnectContentFileSystemProvider implements FileSystemProvider {
       const connectApi = new ConnectAPI({
         url: credential.url,
         apiKey: credential.apiKey,
+        token: credential.token,
+        privateKey: credential.privateKey,
         rejectUnauthorized: verifyCerts,
       });
       const { data: content } = await connectApi.contentDetails(
