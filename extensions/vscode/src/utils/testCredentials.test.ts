@@ -229,6 +229,48 @@ describe("testCredentials", () => {
     expect(result.error!.code).toBe("errorCertificateVerification");
   });
 
+  test("token auth — passes token and privateKey to ConnectAPI", async () => {
+    mockTestAuthentication.mockResolvedValue({
+      user: mockUser,
+      error: null,
+    });
+
+    const result = await testCredentials({
+      url: "https://connect.example.com",
+      token: "my-token-id",
+      privateKey: "my-private-key",
+      insecure: false,
+    });
+
+    expect(result.user).toEqual(mockUser);
+    expect(result.serverType).toBe(ServerType.CONNECT);
+    expect(result.error).toBeNull();
+
+    const constructorCalls = (ConnectAPI as unknown as ReturnType<typeof vi.fn>)
+      .mock.calls;
+    expect(constructorCalls[0]![0].token).toBe("my-token-id");
+    expect(constructorCalls[0]![0].privateKey).toBe("my-private-key");
+    expect(constructorCalls[0]![0].apiKey).toBeUndefined();
+  });
+
+  test("token auth — failure returns error", async () => {
+    mockTestAuthentication.mockRejectedValue(
+      new Error("authentication failed"),
+    );
+
+    const result = await testCredentials({
+      url: "https://connect.example.com",
+      token: "bad-token",
+      privateKey: "bad-key",
+      insecure: false,
+    });
+
+    expect(result.user).toBeNull();
+    expect(result.error).not.toBeNull();
+    expect(result.error!.msg).toBe("Authentication failed.");
+    expect(result.serverType).toBe(ServerType.CONNECT);
+  });
+
   test("detects Snowflake server type", async () => {
     mockTestAuthentication.mockResolvedValue({
       user: mockUser,

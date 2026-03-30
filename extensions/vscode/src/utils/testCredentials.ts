@@ -12,6 +12,8 @@ import { serverTypeFromURL, discoverServerURL } from "src/utils/url";
 export interface TestCredentialsParams {
   url: string;
   apiKey?: string;
+  token?: string;
+  privateKey?: string;
   insecure: boolean;
   timeout?: number; // seconds — minimum 30
 }
@@ -84,7 +86,9 @@ export async function testCredentials(
   const tester = async (urlToTest: string): Promise<void> => {
     const client = new ConnectAPI({
       url: urlToTest,
-      apiKey: params.apiKey ?? "",
+      apiKey: params.apiKey,
+      token: params.token,
+      privateKey: params.privateKey,
       rejectUnauthorized: !params.insecure,
       timeout: timeoutMs,
     });
