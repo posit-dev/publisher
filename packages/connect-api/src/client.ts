@@ -28,6 +28,20 @@ import type {
 } from "./types.js";
 
 /**
+ * Error thrown by ConnectAPI methods when an HTTP error occurs.
+ * Preserves the HTTP status code for callers to inspect.
+ */
+export class ConnectAPIError extends Error {
+  constructor(
+    message: string,
+    public readonly httpStatus?: number,
+  ) {
+    super(message);
+    this.name = "ConnectAPIError";
+  }
+}
+
+/**
  * TypeScript client for the Posit Connect API.
  *
  * Uses axios for HTTP requests. Non-2xx responses throw AxiosError by default.
@@ -40,9 +54,11 @@ export class ConnectAPI {
     const hasApiKey = !!options.apiKey;
     const hasToken = !!options.token && !!options.privateKey;
 
-    if (!hasApiKey && !hasToken) {
+    // Allow no credentials (for URL reachability checks), but reject
+    // partial token auth (token without privateKey or vice versa).
+    if (!hasApiKey && !hasToken && (options.token || options.privateKey)) {
       throw new Error(
-        "ConnectAPI requires either apiKey or both token and privateKey",
+        "ConnectAPI requires both token and privateKey for token authentication",
       );
     }
 
@@ -63,7 +79,7 @@ export class ConnectAPI {
       });
     }
 
-    if (options.timeout) {
+    if (options.timeout !== undefined) {
       config.timeout = options.timeout;
     }
 
@@ -126,7 +142,7 @@ export class ConnectAPI {
           typeof errorBody?.error === "string"
             ? errorBody.error
             : `HTTP ${err.response?.status}`;
-        throw new Error(msg);
+        throw new ConnectAPIError(msg, err.response?.status);
       }
       throw err;
     }

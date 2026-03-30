@@ -1,6 +1,6 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
-import { ConnectAPI } from "@posit-dev/connect-api";
+import { ConnectAPI, ConnectAPIError } from "@posit-dev/connect-api";
 import type { User } from "@posit-dev/connect-api";
 
 import { AgentError } from "src/api/types/error";
@@ -25,7 +25,6 @@ const CERTIFICATE_ERROR_PATTERNS = [
   "ERR_TLS_CERT_ALTNAME_INVALID",
   "CERT_HAS_EXPIRED",
   "unable to verify the first certificate",
-  "certificate",
 ];
 
 function isCertificateError(err: unknown): boolean {
@@ -83,6 +82,9 @@ export async function testCredentials(
 
   const timeoutMs = Math.max(params.timeout ?? 30, 30) * 1000;
 
+  const hasCredentials =
+    !!params.apiKey || (!!params.token && !!params.privateKey);
+
   const tester = async (urlToTest: string): Promise<void> => {
     const client = new ConnectAPI({
       url: urlToTest,
@@ -93,8 +95,22 @@ export async function testCredentials(
       timeout: timeoutMs,
     });
 
-    const result = await client.testAuthentication();
-    lastUser = result.user;
+    try {
+      const result = await client.testAuthentication();
+      lastUser = result.user;
+    } catch (err) {
+      // When no credentials are provided, treat HTTP 401 as success:
+      // the server is reachable but requires auth. This matches Go behavior
+      // at client_connect.go:132-140.
+      if (
+        !hasCredentials &&
+        err instanceof ConnectAPIError &&
+        err.httpStatus === 401
+      ) {
+        return;
+      }
+      throw err;
+    }
   };
 
   // 3. Discover server URL

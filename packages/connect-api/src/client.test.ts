@@ -1206,22 +1206,22 @@ describe("Token authentication", () => {
 // ---------------------------------------------------------------------------
 
 describe("Constructor validation", () => {
-  it("throws if neither apiKey nor token+privateKey is provided", () => {
-    expect(() => new ConnectAPI({ url: BASE_URL })).toThrow(
-      "ConnectAPI requires either apiKey or both token and privateKey",
-    );
+  it("allows no credentials (for URL reachability checks)", () => {
+    expect(() => new ConnectAPI({ url: BASE_URL })).not.toThrow();
   });
 
   it("throws if only token is provided without privateKey", () => {
     expect(() => new ConnectAPI({ url: BASE_URL, token: "Ttoken123" })).toThrow(
-      "ConnectAPI requires either apiKey or both token and privateKey",
+      "ConnectAPI requires both token and privateKey for token authentication",
     );
   });
 
   it("throws if only privateKey is provided without token", () => {
     expect(
       () => new ConnectAPI({ url: BASE_URL, privateKey: "somekey" }),
-    ).toThrow("ConnectAPI requires either apiKey or both token and privateKey");
+    ).toThrow(
+      "ConnectAPI requires both token and privateKey for token authentication",
+    );
   });
 
   it("accepts apiKey auth", () => {

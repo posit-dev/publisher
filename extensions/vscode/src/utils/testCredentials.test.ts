@@ -3,6 +3,7 @@
 import { describe, expect, test, vi, beforeEach } from "vitest";
 import { testCredentials } from "./testCredentials";
 import { ServerType } from "src/api/types/contentRecords";
+import { ConnectAPIError } from "@posit-dev/connect-api";
 
 // ---------------------------------------------------------------------------
 // Mock ConnectAPI
@@ -12,11 +13,16 @@ const { mockTestAuthentication } = vi.hoisted(() => ({
   mockTestAuthentication: vi.fn(),
 }));
 
-vi.mock("@posit-dev/connect-api", () => ({
-  ConnectAPI: vi.fn(function () {
-    return { testAuthentication: mockTestAuthentication };
-  }),
-}));
+vi.mock("@posit-dev/connect-api", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("@posit-dev/connect-api")>();
+  return {
+    ...actual,
+    ConnectAPI: vi.fn(function () {
+      return { testAuthentication: mockTestAuthentication };
+    }),
+  };
+});
 
 import { ConnectAPI } from "@posit-dev/connect-api";
 
@@ -104,11 +110,12 @@ describe("testCredentials", () => {
     );
   });
 
-  test("no API key — returns serverType, no user", async () => {
-    mockTestAuthentication.mockResolvedValue({
-      user: null,
-      error: null,
-    });
+  test("no API key — 401 treated as success (URL reachable), no user", async () => {
+    // Without credentials, Connect returns 401. The tester should treat this
+    // as success (server is reachable) matching Go behavior at client_connect.go:132-140.
+    mockTestAuthentication.mockRejectedValue(
+      new ConnectAPIError("HTTP 401", 401),
+    );
 
     const result = await testCredentials({
       url: "https://connect.example.com",
