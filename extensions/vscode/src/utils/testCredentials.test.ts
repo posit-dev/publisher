@@ -146,21 +146,29 @@ describe("testCredentials", () => {
     expect(result.serverType).toBe(ServerType.CONNECT);
   });
 
-  test("certificate error — returns errorCertificateVerification code", async () => {
-    mockTestAuthentication.mockRejectedValue(
-      new Error("UNABLE_TO_VERIFY_LEAF_SIGNATURE"),
-    );
+  test.each([
+    "UNABLE_TO_VERIFY_LEAF_SIGNATURE",
+    "DEPTH_ZERO_SELF_SIGNED_CERT",
+    "SELF_SIGNED_CERT_IN_CHAIN",
+    "ERR_TLS_CERT_ALTNAME_INVALID",
+    "CERT_HAS_EXPIRED",
+    "unable to verify the first certificate",
+  ])(
+    "certificate error (%s) — returns errorCertificateVerification code",
+    async (pattern) => {
+      mockTestAuthentication.mockRejectedValue(new Error(pattern));
 
-    const result = await testCredentials({
-      url: "https://connect.example.com",
-      apiKey: "somekey",
-      insecure: false,
-    });
+      const result = await testCredentials({
+        url: "https://connect.example.com",
+        apiKey: "somekey",
+        insecure: false,
+      });
 
-    expect(result.user).toBeNull();
-    expect(result.error).not.toBeNull();
-    expect(result.error!.code).toBe("errorCertificateVerification");
-  });
+      expect(result.user).toBeNull();
+      expect(result.error).not.toBeNull();
+      expect(result.error!.code).toBe("errorCertificateVerification");
+    },
+  );
 
   test("invalid URL — returns error, null serverType", async () => {
     const result = await testCredentials({
@@ -219,21 +227,6 @@ describe("testCredentials", () => {
 
     expect(result.error).not.toBeNull();
     expect(result.error!.msg).toBe("Something failed.");
-  });
-
-  test("self-signed cert error returns errorCertificateVerification code", async () => {
-    mockTestAuthentication.mockRejectedValue(
-      new Error("DEPTH_ZERO_SELF_SIGNED_CERT"),
-    );
-
-    const result = await testCredentials({
-      url: "https://connect.example.com",
-      apiKey: "key",
-      insecure: false,
-    });
-
-    expect(result.error).not.toBeNull();
-    expect(result.error!.code).toBe("errorCertificateVerification");
   });
 
   test("token auth — passes token and privateKey to ConnectAPI", async () => {
