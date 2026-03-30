@@ -270,7 +270,13 @@ describe("TLS certificate verification", () => {
     expect(call?.httpsAgent).toBeDefined();
     expect(call?.httpsAgent?.options?.rejectUnauthorized).toBe(false);
   });
+});
 
+// ---------------------------------------------------------------------------
+// Timeout option
+// ---------------------------------------------------------------------------
+
+describe("timeout option", () => {
   it("passes timeout when specified", () => {
     new ConnectAPI({ url: BASE_URL, apiKey: API_KEY, timeout: 5000 });
 
