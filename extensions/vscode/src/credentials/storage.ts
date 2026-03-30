@@ -1,6 +1,7 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
 import { SecretStorage } from "vscode";
+import { GUID } from "@posit-dev/connect-api";
 import { Credential } from "src/api/types/credentials";
 import { logger } from "src/logging";
 
@@ -86,7 +87,7 @@ export async function storeCredential(
  */
 export async function getCredential(
   secrets: SecretStorage,
-  guid: string,
+  guid: GUID,
 ): Promise<Credential | undefined> {
   const json = await secrets.get(`${KEY_PREFIX}${guid}`);
   if (json === undefined) {
@@ -100,7 +101,7 @@ export async function getCredential(
  */
 export async function deleteCredential(
   secrets: SecretStorage,
-  guid: string,
+  guid: GUID,
 ): Promise<void> {
   await secrets.delete(`${KEY_PREFIX}${guid}`);
 }

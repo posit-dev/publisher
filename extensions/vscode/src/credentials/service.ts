@@ -46,7 +46,7 @@ export class CredentialsService {
     return getAllCredentials(this.secrets);
   }
 
-  async get(guid: string): Promise<Credential> {
+  async get(guid: GUID): Promise<Credential> {
     const cred = await getCredential(this.secrets, guid);
     if (!cred) {
       throw new CredentialNotFoundError(guid);
@@ -161,7 +161,7 @@ export class CredentialsService {
     return cred;
   }
 
-  async delete(guid: string): Promise<void> {
+  async delete(guid: GUID): Promise<void> {
     const cred = await getCredential(this.secrets, guid);
     if (!cred) {
       throw new CredentialNotFoundError(guid);

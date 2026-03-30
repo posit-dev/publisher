@@ -41,7 +41,7 @@ import {
   ServerType,
   IntegrationRequest,
 } from "src/api";
-import { ConnectAPI } from "@posit-dev/connect-api";
+import { ConnectAPI, GUID } from "@posit-dev/connect-api";
 import type { Integration } from "@posit-dev/connect-api";
 import { updateFileList as updateFileListInConfig } from "src/configFiles";
 import {
@@ -1560,7 +1560,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
     try {
-      await this.state.credentialsService.delete(context.credentialGUID);
+      await this.state.credentialsService.delete(GUID(context.credentialGUID));
       window.setStatusBarMessage(
         `Credential for ${context.credentialName} has been erased from our memory!`,
       );
