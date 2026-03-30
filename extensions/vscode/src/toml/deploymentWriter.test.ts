@@ -290,4 +290,32 @@ describe("patchDeploymentRecord", () => {
       }),
     ).rejects.toThrow(/configuration nonexistent not found/);
   });
+
+  it("preserves deployment_error through patch round-trip", async () => {
+    // Write a deployment record with a deployment_error (using TOML "message" key)
+    writeDeployment(
+      "patch-error",
+      `"$schema" = "${SCHEMA_URL}"\nserver_url = "https://connect.example.com"\nserver_type = "connect"\ncreated_at = "2024-01-19T09:33:33-05:00"\ntype = "python-shiny"\nconfiguration_name = ""\n\n[deployment_error]\nmessage = "deploy failed"\ncode = "deployFailed"\noperation = "publish"\n`,
+    );
+
+    // Patch with a new id — deployment_error.message must survive the round-trip
+    const record = await patchDeploymentRecord("patch-error", ".", tmpDir, {
+      id: "new-guid",
+    });
+
+    expect(record.deploymentError).toBeDefined();
+    expect(record.deploymentError?.message).toBe("deploy failed");
+
+    // Verify the on-disk TOML uses "message" (schema-required), not "msg"
+    const filePath = path.join(
+      tmpDir,
+      ".posit",
+      "publish",
+      "deployments",
+      "patch-error.toml",
+    );
+    const content = fs.readFileSync(filePath, "utf-8");
+    expect(content).toContain('message = "deploy failed"');
+    expect(content).not.toContain("msg =");
+  });
 });
