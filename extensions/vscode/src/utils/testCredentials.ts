@@ -1,4 +1,4 @@
-// Copyright (C) 2025 by Posit Software, PBC.
+// Copyright (C) 2026 by Posit Software, PBC.
 
 import { ConnectAPI, ConnectAPIError } from "@posit-dev/connect-api";
 import type { User } from "@posit-dev/connect-api";
