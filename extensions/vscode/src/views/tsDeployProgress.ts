@@ -9,6 +9,12 @@ import type {
 import type { EventStream } from "src/events";
 import type { EventStreamMessage, EventSubscriptionTarget } from "src/api";
 
+// Patterns that signal the server has finished restoring the environment
+// and is now launching the content. Mirrors Go's eventOpFromLogLine().
+const launchPattern =
+  /Launching .*(Quarto|R Markdown|application|API|notebook)/;
+const staticPattern = /(Building|Launching) static content/;
+
 const stepLabels: Record<PublishStep, string> = {
   createManifest: "Preparing manifest…",
   preflight: "Verifying credentials…",
@@ -101,21 +107,56 @@ export function runTsDeployWithProgress(
       );
 
       try {
+        // Track which SSE stage waitForTask logs belong to.
+        // Starts as restoreEnv, transitions to runContent when a launch
+        // pattern is detected — mirroring Go's eventOpFromLogLine().
+        let waitForTaskStage: "publish/restoreEnv" | "publish/runContent" =
+          "publish/restoreEnv";
+
         const result = await deploy((event) => {
           if (event.status === "start") {
             progress.report({ message: stepLabels[event.step] });
             injectStageEvent(stream, event.step, "start");
           } else if (event.status === "success") {
-            injectStageEvent(stream, event.step, "success");
+            if (event.step === "waitForTask") {
+              // Close whichever stage is active (restoreEnv or runContent).
+              stream.injectMessage(
+                makeMessage(
+                  `${waitForTaskStage}/success` as EventSubscriptionTarget,
+                ),
+              );
+            } else {
+              injectStageEvent(stream, event.step, "success");
+            }
           } else if (event.status === "failure") {
             injectStageEvent(stream, event.step, "failure", {
               message: event.message || "Unknown error",
             });
           } else if (event.status === "log") {
-            injectStageEvent(stream, event.step, "log", {
-              message: event.message || "",
-              level: "INFO",
-            });
+            const msg = event.message || "";
+
+            // Detect the transition from env restore to content launch.
+            if (launchPattern.test(msg) || staticPattern.test(msg)) {
+              if (waitForTaskStage === "publish/restoreEnv") {
+                // Close restoreEnv and open runContent in the logs tree.
+                stream.injectMessage(
+                  makeMessage(
+                    "publish/restoreEnv/success" as EventSubscriptionTarget,
+                  ),
+                );
+                stream.injectMessage(
+                  makeMessage(
+                    "publish/runContent/start" as EventSubscriptionTarget,
+                  ),
+                );
+                waitForTaskStage = "publish/runContent";
+              }
+            }
+
+            const type = `${waitForTaskStage}/log` as EventSubscriptionTarget;
+            stream.injectMessage(
+              makeMessage(type, { message: msg, level: "INFO" }),
+            );
           }
         });
 

@@ -209,6 +209,76 @@ describe("runTsDeployWithProgress", () => {
     expect(logMsgs[1]!.data.message).toBe("Installing pandas");
   });
 
+  it("transitions from restoreEnv to runContent on launch pattern", async () => {
+    const { onComplete, stream } = run((onProgress) => {
+      onProgress({ step: "waitForTask", status: "start" });
+      onProgress({
+        step: "waitForTask",
+        status: "log",
+        message: "Installing numpy",
+      });
+      onProgress({
+        step: "waitForTask",
+        status: "log",
+        message: "Launching Jupyter notebook",
+      });
+      onProgress({
+        step: "waitForTask",
+        status: "log",
+        message: "Activating kernel",
+      });
+      onProgress({ step: "waitForTask", status: "success" });
+      return Promise.resolve(successResult);
+    });
+
+    await vi.waitFor(() => {
+      expect(onComplete).toHaveBeenCalled();
+    });
+
+    const types = stream.injected.map((m) => m.type);
+
+    // restoreEnv gets the first log, then closes
+    const restoreLogs = stream.injected.filter(
+      (m) => m.type === "publish/restoreEnv/log",
+    );
+    expect(restoreLogs).toHaveLength(1);
+    expect(restoreLogs[0]!.data.message).toBe("Installing numpy");
+    expect(types).toContain("publish/restoreEnv/success");
+
+    // runContent opens and gets the remaining logs
+    expect(types).toContain("publish/runContent/start");
+    const runLogs = stream.injected.filter(
+      (m) => m.type === "publish/runContent/log",
+    );
+    expect(runLogs).toHaveLength(2);
+    expect(runLogs[0]!.data.message).toBe("Launching Jupyter notebook");
+    expect(runLogs[1]!.data.message).toBe("Activating kernel");
+
+    // runContent closes (not restoreEnv again)
+    expect(types).toContain("publish/runContent/success");
+  });
+
+  it("transitions on static content pattern", async () => {
+    const { onComplete, stream } = run((onProgress) => {
+      onProgress({ step: "waitForTask", status: "start" });
+      onProgress({
+        step: "waitForTask",
+        status: "log",
+        message: "Building static content",
+      });
+      onProgress({ step: "waitForTask", status: "success" });
+      return Promise.resolve(successResult);
+    });
+
+    await vi.waitFor(() => {
+      expect(onComplete).toHaveBeenCalled();
+    });
+
+    const types = stream.injected.map((m) => m.type);
+    expect(types).toContain("publish/runContent/start");
+    expect(types).toContain("publish/runContent/success");
+  });
+
   it("does not inject events for unmapped steps like createManifest", async () => {
     const { onComplete, stream } = run((onProgress) => {
       onProgress({ step: "createManifest", status: "start" });
