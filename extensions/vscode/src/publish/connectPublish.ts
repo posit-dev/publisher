@@ -17,7 +17,7 @@ import type { ServerType } from "../api/types/contentRecords";
 import type { PositronRSettings } from "../api/types/positron";
 
 import { manifestFromConfig } from "../bundler/manifestFromConfig";
-import { appModeFromType } from "../bundler/appMode";
+import { appModeFromType, contentTypeFromAppMode } from "../bundler/appMode";
 import { connectContentFromConfig } from "../bundler/connectContentFromConfig";
 import { createBundle } from "../bundler/bundler";
 import { getFilenames } from "../bundler/manifest";
@@ -209,7 +209,18 @@ export async function connectPublish(
         message: "Verifying existing content",
         data: { content_id: contentId },
       });
-      const { data: existing } = await api.contentDetails(ContentID(contentId));
+
+      let existing;
+      try {
+        const resp = await api.contentDetails(ContentID(contentId));
+        existing = resp.data;
+      } catch (err) {
+        const detail = err instanceof Error ? err.message : String(err);
+        throw new Error(
+          `Deployment target cannot be reached. Halting deployment. ` +
+            `(Content ID = ${contentId}): ${detail}`,
+        );
+      }
 
       onProgress({
         step: "preflight",
@@ -230,10 +241,11 @@ export async function connectPublish(
       const configAppMode = appModeFromType(config.type);
       if (
         existing.app_mode !== configAppMode &&
-        existing.app_mode !== "unknown"
+        existing.app_mode !== "unknown" &&
+        existing.app_mode !== ""
       ) {
         throw new Error(
-          `Content was previously deployed as '${existing.app_mode}' ` +
+          `Content was previously deployed as '${contentTypeFromAppMode(existing.app_mode)}' ` +
             `but your configuration is set to '${config.type}'.`,
         );
       }

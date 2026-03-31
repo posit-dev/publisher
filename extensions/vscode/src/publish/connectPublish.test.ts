@@ -327,8 +327,9 @@ describe("connectPublish", () => {
       data: { ...TEST_CONTENT, app_mode: "shiny" },
     } as never);
 
+    // Error shows the content type label, not the raw app mode
     await expect(connectPublish(opts)).rejects.toThrow(
-      "Content was previously deployed as 'shiny'",
+      "Content was previously deployed as 'r-shiny'",
     );
   });
 
@@ -343,6 +344,33 @@ describe("connectPublish", () => {
 
     // Should not throw — unknown mode is always allowed
     await connectPublish(opts);
+  });
+
+  test("redeploy allows empty app_mode on server", async () => {
+    const opts = makeOptions({
+      existingContentId: "existing-id",
+      existingCreatedAt: "2024-06-01T00:00:00Z",
+    });
+    vi.mocked(opts.api.contentDetails).mockResolvedValueOnce({
+      data: { ...TEST_CONTENT, app_mode: "" },
+    } as never);
+
+    // Empty string is Go's UnknownMode — should not throw
+    await connectPublish(opts);
+  });
+
+  test("redeploy wraps contentDetails failure in friendly error", async () => {
+    const opts = makeOptions({
+      existingContentId: "deleted-id",
+      existingCreatedAt: "2024-06-01T00:00:00Z",
+    });
+    vi.mocked(opts.api.contentDetails).mockRejectedValueOnce(
+      new Error("Request failed with status code 404"),
+    );
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "Deployment target cannot be reached",
+    );
   });
 
   test("progress events are emitted in correct order", async () => {

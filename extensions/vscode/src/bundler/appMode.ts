@@ -28,3 +28,13 @@ const connectContentTypeMap: Record<string, string> = {
 export function appModeFromType(contentType: string): string {
   return connectContentTypeMap[contentType] ?? contentType;
 }
+
+// Reverse mapping: Connect app_mode string → configuration ContentType string.
+// Mirrors Go's contentTypeConnectMap / ContentTypeFromAppMode.
+const appModeToContentType: Record<string, string> = Object.fromEntries(
+  Object.entries(connectContentTypeMap).map(([k, v]) => [v, k]),
+);
+
+export function contentTypeFromAppMode(appMode: string): string {
+  return appModeToContentType[appMode] ?? appMode;
+}
