@@ -36,6 +36,7 @@ import { convertKeysToSnakeCase } from "../toml/convertKeys";
 import { stripEmpty, isRecord, expandInlineArrays } from "../toml/tomlHelpers";
 import { getDashboardUrl, getDirectUrl, getLogsUrl } from "../toml/urlHelpers";
 import { fileExistsAt } from "../interpreters/fsUtils";
+import type { ErrorCode } from "../utils/errorTypes";
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -268,6 +269,9 @@ export async function connectPublish(
     if (config.validate) {
       lastStep = "validateDeployment";
       onProgress({ step: "validateDeployment", status: "start" });
+      // Log events are emitted before the HTTP call to match the Go
+      // backend's ordering, where the logger writes "Testing URL…"
+      // before the request is made.
       onProgress({
         step: "validateDeployment",
         status: "log",
@@ -355,7 +359,7 @@ export async function connectPublish(
 function classifyDeploymentError(
   lastStep: PublishStep | undefined,
   err: unknown,
-): { code: string; message: string } {
+): { code: ErrorCode; message: string } {
   const fallbackMessage = err instanceof Error ? err.message : String(err);
 
   if (

@@ -431,6 +431,8 @@ describe("runTsDeployWithProgress", () => {
     );
     expect(failMsg!.data.status).toBe("502");
     expect(failMsg!.errCode).toBe("deployedContentNotRunning");
+    // errCode should only be on msg.errCode, not duplicated in msg.data
+    expect(failMsg!.data.errCode).toBeUndefined();
   });
 
   it("injects validateDeployment log events", async () => {

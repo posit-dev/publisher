@@ -842,4 +842,27 @@ describe("connectPublish — error classification", () => {
       data: { errCode: "unknown" },
     });
   });
+
+  test("emits validateDeployment log events when validate is enabled", async () => {
+    const onProgress = vi.fn();
+    const config = makeConfig({ validate: true });
+    const opts = makeOptions({ onProgress, config });
+
+    await connectPublish(opts);
+
+    const events = onProgress.mock.calls.map(
+      (args: unknown[]) => args[0] as PublishEvent,
+    );
+    const validateLogs = events.filter(
+      (e) => e.step === "validateDeployment" && e.status === "log",
+    );
+    expect(validateLogs).toHaveLength(2);
+    expect(validateLogs[0]!.message).toBe("Validating Deployment");
+    expect(validateLogs[1]!.message).toMatch(
+      /^Testing URL \/content\/content-guid-123\/$/,
+    );
+    expect(validateLogs[1]!.data).toEqual({
+      url: "/content/content-guid-123/",
+    });
+  });
 });

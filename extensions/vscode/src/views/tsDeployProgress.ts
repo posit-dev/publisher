@@ -148,11 +148,12 @@ export function runTsDeployWithProgress(
               lastDashboardUrl = event.data.dashboardUrl;
             }
 
+            const { errCode: rawCode, ...restData } = event.data ?? {};
             const failData: Record<string, string> = {
               message: event.message || "Unknown error",
-              ...event.data,
+              ...restData,
             };
-            const errCode = event.data?.errCode as ErrorCode | undefined;
+            const errCode = rawCode as ErrorCode | undefined;
 
             if (event.step === "waitForTask") {
               // Fail whichever stage is active (restoreEnv or runContent).
