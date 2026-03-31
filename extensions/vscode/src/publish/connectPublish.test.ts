@@ -388,6 +388,9 @@ describe("connectPublish", () => {
     expect(steps).toEqual([
       { step: "createManifest", status: "start" },
       { step: "createManifest", status: "log" },
+      { step: "createManifest", status: "log" },
+      { step: "createManifest", status: "log" },
+      { step: "createManifest", status: "log" },
       { step: "createManifest", status: "success" },
       { step: "preflight", status: "start" },
       { step: "preflight", status: "log" },
@@ -1005,6 +1008,26 @@ describe("connectPublish — error classification", () => {
       step: "deployBundle",
       message: "Activation requested",
     });
+  });
+
+  test("createManifest emits local runtime version messages", async () => {
+    const onProgress = vi.fn();
+    // Default config has Python 3.11.0, no R, no Quarto
+    const opts = makeOptions({ onProgress });
+
+    await connectPublish(opts);
+
+    const events = onProgress.mock.calls.map(
+      (args: unknown[]) => args[0] as PublishEvent,
+    );
+    const manifestLogs = events.filter(
+      (e) => e.step === "createManifest" && e.status === "log",
+    );
+    const messages = manifestLogs.map((e) => e.message);
+
+    expect(messages).toContain("Local Quarto not in use");
+    expect(messages).toContain("Local R not in use");
+    expect(messages).toContain("Local Python version 3.11.0");
   });
 
   test("success events carry no message (detail is on preceding log events)", async () => {
