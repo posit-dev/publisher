@@ -54,7 +54,11 @@ describe("appModeFromType", () => {
 describe("contentTypeFromAppMode", () => {
   it.each([
     ["static", ContentType.HTML],
+    ["jupyter-static", ContentType.JUPYTER_NOTEBOOK],
+    ["jupyter-voila", ContentType.JUPYTER_VOILA],
     ["python-shiny", ContentType.PYTHON_SHINY],
+    ["python-fastapi", ContentType.PYTHON_FASTAPI],
+    ["quarto-shiny", ContentType.QUARTO_SHINY],
     ["shiny", ContentType.R_SHINY],
     ["api", ContentType.R_PLUMBER],
     ["rmd-static", ContentType.RMD],
@@ -70,6 +74,16 @@ describe("contentTypeFromAppMode", () => {
 
   it("passes through unknown app modes as-is", () => {
     expect(contentTypeFromAppMode("unknown-xyz")).toBe("unknown-xyz");
+  });
+
+  // "unknown" and "" are the two canonical unknown modes in the Go codebase.
+  // Neither has an entry in the reverse map, so both pass through as-is.
+  it('passes through "unknown" as-is', () => {
+    expect(contentTypeFromAppMode("unknown")).toBe("unknown");
+  });
+
+  it('passes through "" (empty string) as-is', () => {
+    expect(contentTypeFromAppMode("")).toBe("");
   });
 });
 

@@ -54,6 +54,11 @@ vi.mock("../bundler/bundler", () => ({
   }),
 }));
 
+// Mock the extension logger (depends on vscode)
+vi.mock("../logging", () => ({
+  logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+}));
+
 // Mock dependencies
 vi.mock("./dependencies", () => ({
   resolveRPackages: vi.fn().mockResolvedValue(undefined),

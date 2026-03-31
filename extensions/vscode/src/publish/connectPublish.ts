@@ -37,6 +37,7 @@ import { convertKeysToSnakeCase } from "../toml/convertKeys";
 import { stripEmpty, isRecord, expandInlineArrays } from "../toml/tomlHelpers";
 import { getDashboardUrl, getDirectUrl, getLogsUrl } from "../toml/urlHelpers";
 import { fileExistsAt } from "../interpreters/fsUtils";
+import { logger } from "../logging";
 import type { ErrorCode } from "../utils/errorTypes";
 
 // ---------------------------------------------------------------------------
@@ -215,7 +216,7 @@ export async function connectPublish(
         const resp = await api.contentDetails(ContentID(contentId));
         existing = resp.data;
       } catch (err) {
-        console.debug("contentDetails failed for", contentId, err);
+        logger.debug(`contentDetails failed for ${contentId}:`, String(err));
         throw new Error(
           `Deployment target cannot be reached. Halting deployment. ` +
             `(Content ID = ${contentId})`,
