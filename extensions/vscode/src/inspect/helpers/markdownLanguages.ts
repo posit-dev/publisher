@@ -2,8 +2,8 @@
 
 // Matches fenced code blocks with {r} or {python} language identifiers.
 // Handles both ``` and ~~~ fencing, and optional chunk options.
-const rCodeBlockRE = /^[ \t]*```+\s*\{r[\s,}]/m;
-const pythonCodeBlockRE = /^[ \t]*```+\s*\{python[\s,}]/m;
+const rCodeBlockRE = /^[ \t]*(```+|~~~+)\s*\{r[\s,}]/m;
+const pythonCodeBlockRE = /^[ \t]*(```+|~~~+)\s*\{python[\s,}]/m;
 
 /**
  * Detect whether markdown content contains R and/or Python code blocks.

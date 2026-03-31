@@ -5,7 +5,7 @@ import * as path from "path";
 import { ContentType } from "src/api/types/configurations";
 import { ContentTypeDetector, PartialConfig } from "../types";
 import { globDir } from "../helpers/globDir";
-import { fileHasPythonImports } from "../helpers/pythonImports";
+import { hasPythonImports } from "../helpers/pythonImports";
 
 const shinyExpressImportRE =
   /(import\s+shiny.express)|(from\s+shiny.express\s+import)|(from\s+shiny\s+import.*\bexpress\b)/;
@@ -46,12 +46,11 @@ export class PyShinyDetector implements ContentTypeDetector {
         continue;
       }
 
-      const matches = await fileHasPythonImports(filePath, ["shiny"]);
-      if (!matches) {
+      const content = await fs.readFile(filePath, "utf-8");
+      if (!hasPythonImports(content, ["shiny"])) {
         continue;
       }
 
-      const content = await fs.readFile(filePath, "utf-8");
       const isExpress = hasShinyExpressImport(content);
 
       const config: PartialConfig = {

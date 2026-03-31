@@ -125,6 +125,25 @@ async function inspectRecursive(
   return allResults;
 }
 
+// Directories to skip during recursive inspection, matching Go's behavior.
+const SKIP_DIRS = new Set([
+  ".posit",
+  ".git",
+  ".svn",
+  "node_modules",
+  "__pycache__",
+  ".venv",
+  "env",
+  "venv",
+  ".Rproj.user",
+  "renv",
+  "packrat",
+  ".quarto",
+  ".ipynb_checkpoints",
+  "rsconnect",
+  "rsconnect-python",
+]);
+
 async function walkDirectory(
   baseDir: string,
   currentDir: string,
@@ -142,7 +161,7 @@ async function walkDirectory(
   }
 
   for (const entry of entries.sort()) {
-    if (entry === ".posit") {
+    if (SKIP_DIRS.has(entry)) {
       continue;
     }
     const fullPath = path.join(currentDir, entry);

@@ -44,4 +44,18 @@ describe("detectMarkdownLanguagesInContent", () => {
     const result = detectMarkdownLanguagesInContent(content);
     expect(result.needsPython).toBe(true);
   });
+
+  test("detects R code blocks with tilde fencing", () => {
+    const content = "# Title\n\n~~~{r}\nprint('hello')\n~~~\n";
+    const result = detectMarkdownLanguagesInContent(content);
+    expect(result.needsR).toBe(true);
+    expect(result.needsPython).toBe(false);
+  });
+
+  test("detects Python code blocks with tilde fencing", () => {
+    const content = "# Title\n\n~~~{python}\nprint('hello')\n~~~\n";
+    const result = detectMarkdownLanguagesInContent(content);
+    expect(result.needsR).toBe(false);
+    expect(result.needsPython).toBe(true);
+  });
 });
