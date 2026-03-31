@@ -519,7 +519,14 @@ function recordToTomlObject(record: PublishRecord): Record<string, unknown> {
   // and empty-value stripping that the other fields don't.
   let configuration: unknown;
   if (record.config) {
-    const snakeConfig = convertKeysToSnakeCase(record.config);
+    // Clone and remove non-TOML fields, matching Go's toml:"-" tags
+    // and the behavior of configWriter/deploymentWriter.
+    const cfg = { ...record.config };
+    delete cfg.comments;
+    delete cfg.alternatives;
+    delete cfg.entrypointObjectRef;
+
+    const snakeConfig = convertKeysToSnakeCase(cfg);
     if (isRecord(snakeConfig)) {
       stripEmpty(snakeConfig);
     }
