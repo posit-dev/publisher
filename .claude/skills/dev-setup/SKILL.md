@@ -175,9 +175,9 @@ E2E tests run in a Linux/amd64 Docker container, so the publisher binary needs t
   ```
 - **Verify:** `npx cypress --version` succeeds from the `test/e2e/` directory.
 
-### Step 16: Verify E2E
+### Step 16: Verify E2E (skipping Connect Cloud tests)
 
-Run a quick smoke test excluding cloud tests (which need 1Password):
+Run a quick smoke test excluding Connect Cloud tests (which need 1Password):
 
 - **Act:** `cd test/e2e && just e2e --env grepTags=-@pcc`
 - **Verify:** Tests pass (the Workbench tests may fail if no Workbench container is set up — that's expected and fine).
@@ -193,7 +193,7 @@ Then retry.
 
 After tests complete, clean up: `just stop`
 
-### Step 17: 1Password CLI (Optional)
+### Step 17: 1Password CLI (Optional, Connect Cloud only)
 
 For Connect Cloud tests (tagged `@pcc`), credentials are fetched from 1Password.
 
@@ -201,7 +201,7 @@ For Connect Cloud tests (tagged `@pcc`), credentials are fetched from 1Password.
 - **Act:** If missing: `brew install 1password-cli`. Then enable the desktop app integration: 1Password > Settings > Developer > "Integrate with 1Password CLI".
 - **Verify:** `op item get "pcc_user_ccqa3" --field "password" --vault "Publisher" --reveal` succeeds.
 
-If the developer doesn't have access to the Publisher vault, cloud tests can be skipped with `--env grepTags=-@pcc` or `SKIP_1PASSWORD=true`.
+If the developer doesn't have access to the Publisher vault, let them know that cloud tests can be skipped with `--env grepTags=-@pcc` or `SKIP_1PASSWORD=true`.
 
 ### E2E Setup Complete
 
