@@ -8,6 +8,7 @@ export type ErrorCode =
   | "invalidTOML"
   | "unknownTOMLKey"
   | "invalidConfigFile"
+  | "invalidConfigFiles"
   | "errorCertificateVerification"
   | "deployFailed"
   | "renvPackageVersionMismatch"
@@ -20,10 +21,22 @@ export type ErrorCode =
   | "tomlValidationError"
   | "tomlUnknownError"
   | "pythonExecNotFound"
+  | "rExecNotFound"
+  | "credentialsServiceUnavailable"
   | "credentialsCannotBackupFile"
   | "credentialsCorrupted"
+  | "deviceAuthPending"
+  | "deviceAuthSlowDown"
   | "deviceAuthAccessDenied"
-  | "deviceAuthExpiredToken";
+  | "deviceAuthExpiredToken"
+  | "authFailedErr"
+  | "permissionErr"
+  | "timeoutErr"
+  | "connectionFailed"
+  | "serverErr"
+  | "vanityURLNotAvailableErr"
+  | "deploymentNotFoundErr"
+  | "appModeNotModifiableErr";
 
 export type axiosErrorWithJson<T = { code: ErrorCode; details: unknown }> =
   AxiosError & {

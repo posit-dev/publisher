@@ -5,8 +5,10 @@
 // ---------------------------------------------------------------------------
 
 export type ContentID = string & { readonly __brand: "ContentID" };
+export type CloudAuthToken = string & { readonly __brand: "CloudAuthToken" };
 
 export const ContentID = (id: string) => id as ContentID;
+export const CloudAuthToken = (token: string) => token as CloudAuthToken;
 
 // ---------------------------------------------------------------------------
 // Client options

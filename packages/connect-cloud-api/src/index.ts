@@ -4,6 +4,7 @@ export { ConnectCloudAPI } from "./client.js";
 export { CloudAuthClient } from "./auth.js";
 
 export {
+  CloudAuthToken,
   ContentID,
   CloudEnvironment,
   cloudEnvironmentBaseUrls,

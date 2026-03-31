@@ -1,6 +1,7 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
 import { Factory } from "fishery";
+import { ContentID, BundleID, GUID } from "@posit-dev/connect-api";
 import {
   PreContentRecord,
   ContentRecord,
@@ -78,8 +79,8 @@ export const preContentRecordFactory = Factory.define<PreContentRecord>(
 export const contentRecordFactory = Factory.define<ContentRecord>(
   ({ sequence }) => ({
     $schema: "test-schema-url",
-    id: `GUD${sequence}`,
-    bundleId: `XYZ${sequence}`,
+    id: ContentID(`GUD${sequence}`),
+    bundleId: BundleID(`XYZ${sequence}`),
     bundleUrl: `XYZ${sequence}`,
     dashboardUrl: `https://connect-test-${sequence}/connect`,
     directUrl: `https://connect-test-${sequence}/content/XYZ${sequence}`,
@@ -111,7 +112,7 @@ export const contentRecordFactory = Factory.define<ContentRecord>(
 );
 
 export const credentialFactory = Factory.define<Credential>(({ sequence }) => ({
-  guid: `44a468b8-09c7-4c6d-a7a3-8cf164ddbaf${sequence}`,
+  guid: GUID(`44a468b8-09c7-4c6d-a7a3-8cf164ddbaf${sequence}`),
   name: `Credential ${sequence}`,
   url: `https://connect.${sequence}.site.com/connect`,
   apiKey: `qwerty-${sequence}`,
