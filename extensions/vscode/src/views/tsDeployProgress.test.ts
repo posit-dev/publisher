@@ -275,8 +275,13 @@ describe("runTsDeployWithProgress", () => {
     });
 
     const types = stream.injected.map((m) => m.type);
-    expect(types).toContain("publish/runContent/start");
-    expect(types).toContain("publish/runContent/success");
+    const restoreSuccessIdx = types.indexOf("publish/restoreEnv/success");
+    const runStartIdx = types.indexOf("publish/runContent/start");
+    const runSuccessIdx = types.indexOf("publish/runContent/success");
+
+    expect(restoreSuccessIdx).toBeGreaterThan(-1);
+    expect(runStartIdx).toBe(restoreSuccessIdx + 1);
+    expect(runSuccessIdx).toBeGreaterThan(runStartIdx);
   });
 
   it("does not inject events for unmapped steps like createManifest", async () => {
