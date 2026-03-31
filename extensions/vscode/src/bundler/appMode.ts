@@ -31,9 +31,27 @@ export function appModeFromType(contentType: string): string {
 
 // Reverse mapping: Connect app_mode string → configuration ContentType string.
 // Mirrors Go's contentTypeConnectMap / ContentTypeFromAppMode.
-const appModeToContentType: Record<string, string> = Object.fromEntries(
-  Object.entries(connectContentTypeMap).map(([k, v]) => [v, k]),
-);
+// Note: QUARTO and QUARTO_STATIC both map to "quarto-static"; the reverse
+// map intentionally resolves to QUARTO (matching Go's explicit mapping).
+const appModeToContentType: Record<string, string> = {
+  static: ContentType.HTML,
+  "jupyter-static": ContentType.JUPYTER_NOTEBOOK,
+  "jupyter-voila": ContentType.JUPYTER_VOILA,
+  "python-bokeh": ContentType.PYTHON_BOKEH,
+  "python-dash": ContentType.PYTHON_DASH,
+  "python-fastapi": ContentType.PYTHON_FASTAPI,
+  "python-api": ContentType.PYTHON_FLASK,
+  "python-shiny": ContentType.PYTHON_SHINY,
+  "python-streamlit": ContentType.PYTHON_STREAMLIT,
+  "python-gradio": ContentType.PYTHON_GRADIO,
+  "python-panel": ContentType.PYTHON_PANEL,
+  "quarto-shiny": ContentType.QUARTO_SHINY,
+  "quarto-static": ContentType.QUARTO,
+  api: ContentType.R_PLUMBER,
+  shiny: ContentType.R_SHINY,
+  "rmd-shiny": ContentType.RMD_SHINY,
+  "rmd-static": ContentType.RMD,
+};
 
 export function contentTypeFromAppMode(appMode: string): string {
   return appModeToContentType[appMode] ?? appMode;

@@ -214,11 +214,10 @@ export async function connectPublish(
       try {
         const resp = await api.contentDetails(ContentID(contentId));
         existing = resp.data;
-      } catch (err) {
-        const detail = err instanceof Error ? err.message : String(err);
+      } catch {
         throw new Error(
           `Deployment target cannot be reached. Halting deployment. ` +
-            `(Content ID = ${contentId}): ${detail}`,
+            `(Content ID = ${contentId})`,
         );
       }
 
