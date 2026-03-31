@@ -43,6 +43,7 @@ const stepToEventPrefix: Partial<Record<PublishStep, string>> = {
   // in the Go path, publish/createDeployment covers both first-deploy
   // creation and redeploy content updates.
   updateContent: "publish/createDeployment",
+  setEnvVars: "publish/setEnvVars",
   deployBundle: "publish/deployBundle",
   waitForTask: "publish/restoreEnv",
   validateDeployment: "publish/validateDeployment",

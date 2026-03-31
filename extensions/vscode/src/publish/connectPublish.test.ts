@@ -149,6 +149,7 @@ const TEST_CONTENT: ContentDetailsDTO = {
   owner_guid: "user-guid",
   content_url: "https://connect.example.com/content/content-guid-123/",
   dashboard_url: "https://connect.example.com/connect/#/apps/content-guid-123",
+  locked: false,
   app_role: "owner",
   id: "12345",
 };
@@ -201,7 +202,7 @@ function makeMockApi(): ConnectAPI {
     validateDeployment: vi.fn().mockResolvedValue(undefined),
     setEnvVars: vi.fn().mockResolvedValue(undefined),
     getEnvVars: vi.fn(),
-    contentDetails: vi.fn(),
+    contentDetails: vi.fn().mockResolvedValue({ data: TEST_CONTENT }),
     getCurrentUser: vi.fn(),
     getSettings: vi.fn(),
     getIntegrations: vi.fn(),
@@ -290,6 +291,60 @@ describe("connectPublish", () => {
     expect(opts.api.deployBundle).toHaveBeenCalledOnce();
   });
 
+  test("redeploy verifies existing content during preflight", async () => {
+    const opts = makeOptions({
+      existingContentId: "existing-id",
+      existingCreatedAt: "2024-06-01T00:00:00Z",
+    });
+
+    await connectPublish(opts);
+
+    expect(opts.api.contentDetails).toHaveBeenCalledWith(
+      expect.anything(), // ContentID branded type
+    );
+  });
+
+  test("redeploy rejects locked content", async () => {
+    const opts = makeOptions({
+      existingContentId: "existing-id",
+      existingCreatedAt: "2024-06-01T00:00:00Z",
+    });
+    vi.mocked(opts.api.contentDetails).mockResolvedValueOnce({
+      data: { ...TEST_CONTENT, locked: true },
+    } as never);
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "Content is locked, cannot deploy to it",
+    );
+  });
+
+  test("redeploy rejects app mode mismatch", async () => {
+    const opts = makeOptions({
+      existingContentId: "existing-id",
+      existingCreatedAt: "2024-06-01T00:00:00Z",
+    });
+    vi.mocked(opts.api.contentDetails).mockResolvedValueOnce({
+      data: { ...TEST_CONTENT, app_mode: "shiny" },
+    } as never);
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "Content was previously deployed as 'shiny'",
+    );
+  });
+
+  test("redeploy allows unknown app mode on server", async () => {
+    const opts = makeOptions({
+      existingContentId: "existing-id",
+      existingCreatedAt: "2024-06-01T00:00:00Z",
+    });
+    vi.mocked(opts.api.contentDetails).mockResolvedValueOnce({
+      data: { ...TEST_CONTENT, app_mode: "unknown" },
+    } as never);
+
+    // Should not throw — unknown mode is always allowed
+    await connectPublish(opts);
+  });
+
   test("progress events are emitted in correct order", async () => {
     const onProgress = vi.fn();
     const opts = makeOptions({ onProgress });
@@ -305,12 +360,14 @@ describe("connectPublish", () => {
       { step: "preflight", status: "log" },
       { step: "preflight", status: "log" },
       { step: "preflight", status: "log" },
+      { step: "preflight", status: "log" },
       { step: "preflight", status: "success" },
       { step: "createDeployment", status: "start" },
       { step: "createDeployment", status: "log" },
       { step: "createDeployment", status: "log" },
       { step: "createDeployment", status: "success" },
       { step: "createBundle", status: "start" },
+      { step: "createBundle", status: "log" },
       { step: "createBundle", status: "log" },
       { step: "createBundle", status: "success" },
       { step: "uploadBundle", status: "start" },
@@ -339,9 +396,18 @@ describe("connectPublish", () => {
 
     await connectPublish(opts);
 
-    const steps = progressSteps(onProgress);
-    const envStep = steps.find((s) => s.step === "setEnvVars");
-    expect(envStep).toBeDefined();
+    const events = onProgress.mock.calls.map(
+      (args: unknown[]) => args[0] as PublishEvent,
+    );
+    const envEvents = events.filter((e) => e.step === "setEnvVars");
+    expect(envEvents.map((e) => e.status)).toEqual([
+      "start",
+      "log",
+      "log",
+      "success",
+    ]);
+    expect(envEvents[1]!.message).toBe("Setting environment variables");
+    expect(envEvents[2]!.message).toBe("Done setting environment variables");
 
     expect(opts.api.setEnvVars).toHaveBeenCalledWith(
       expect.anything(),
@@ -883,8 +949,16 @@ describe("connectPublish — error classification", () => {
       message: "Checking configuration against server capabilities",
     });
     expect(logMessages).toContainEqual({
+      step: "preflight",
+      message: "Testing authentication",
+    });
+    expect(logMessages).toContainEqual({
       step: "createBundle",
       message: "Preparing files",
+    });
+    expect(logMessages).toContainEqual({
+      step: "createBundle",
+      message: "Done preparing files",
     });
     expect(logMessages).toContainEqual({
       step: "uploadBundle",

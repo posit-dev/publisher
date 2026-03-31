@@ -127,6 +127,7 @@ export interface ContentDetailsDTO {
   owner_guid: string;
   content_url: string;
   dashboard_url: string;
+  locked: boolean;
   app_role: string;
   id: string;
 }

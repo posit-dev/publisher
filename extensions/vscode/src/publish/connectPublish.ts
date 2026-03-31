@@ -17,6 +17,7 @@ import type { ServerType } from "../api/types/contentRecords";
 import type { PositronRSettings } from "../api/types/positron";
 
 import { manifestFromConfig } from "../bundler/manifestFromConfig";
+import { appModeFromType } from "../bundler/appMode";
 import { connectContentFromConfig } from "../bundler/connectContentFromConfig";
 import { createBundle } from "../bundler/bundler";
 import { getFilenames } from "../bundler/manifest";
@@ -187,6 +188,11 @@ export async function connectPublish(
       status: "log",
       message: "Checking configuration against server capabilities",
     });
+    onProgress({
+      step: "preflight",
+      status: "log",
+      message: "Testing authentication",
+    });
     const { user } = await api.testAuthentication();
     onProgress({
       step: "preflight",
@@ -194,6 +200,45 @@ export async function connectPublish(
       message: "Publishing with credentials",
       data: { username: user.username, email: user.email },
     });
+
+    // Verify existing content when redeploying (mirrors Go's ValidateDeploymentTarget)
+    if (contentId) {
+      onProgress({
+        step: "preflight",
+        status: "log",
+        message: "Verifying existing content",
+        data: { content_id: contentId },
+      });
+      const { data: existing } = await api.contentDetails(ContentID(contentId));
+
+      onProgress({
+        step: "preflight",
+        status: "log",
+        message: "Verifying content is not locked",
+      });
+      if (existing.locked) {
+        throw new Error(
+          `Content is locked, cannot deploy to it (content ID = ${contentId})`,
+        );
+      }
+
+      onProgress({
+        step: "preflight",
+        status: "log",
+        message: "Verifying app mode is the same",
+      });
+      const configAppMode = appModeFromType(config.type);
+      if (
+        existing.app_mode !== configAppMode &&
+        existing.app_mode !== "unknown"
+      ) {
+        throw new Error(
+          `Content was previously deployed as '${existing.app_mode}' ` +
+            `but your configuration is set to '${config.type}'.`,
+        );
+      }
+    }
+
     onProgress({
       step: "preflight",
       status: "log",
@@ -249,6 +294,11 @@ export async function connectPublish(
     if (lockfile) {
       record.renv = lockfileToDeploymentRenv(lockfile);
     }
+    onProgress({
+      step: "createBundle",
+      status: "log",
+      message: "Done preparing files",
+    });
     onProgress({ step: "createBundle", status: "success" });
 
     // Step 5: Upload bundle
@@ -301,7 +351,17 @@ export async function connectPublish(
     if (envVars) {
       lastStep = "setEnvVars";
       onProgress({ step: "setEnvVars", status: "start" });
+      onProgress({
+        step: "setEnvVars",
+        status: "log",
+        message: "Setting environment variables",
+      });
       await api.setEnvVars(ContentID(contentId), envVars);
+      onProgress({
+        step: "setEnvVars",
+        status: "log",
+        message: "Done setting environment variables",
+      });
       onProgress({ step: "setEnvVars", status: "success" });
     }
 
