@@ -34,9 +34,19 @@ local machine for development and testing purposes.
 
 ### Prerequisites
 
-- [Go](https://go.dev/dl/)
+- [Go](https://go.dev/dl/) (see `go.mod` for minimum version)
 - [Just](https://github.com/casey/just?tab=readme-ov-file#installation)
-- [Node.js](https://nodejs.org/en/download/)
+- [Node.js](https://nodejs.org/en/download/) (LTS recommended; [nvm](https://github.com/nvm-sh/nvm) is a good version manager)
+- [R](https://www.r-project.org/) with the `renv` package — needed for full test suite. [rig](https://github.com/r-lib/rig) is a convenient installer. After installing R, run `R -e 'install.packages("renv")'`.
+- [Visual Studio Code](https://code.visualstudio.com/download) with the recommended workspace extensions (see below)
+
+#### VS Code Extensions
+
+When you open the `extensions/vscode` workspace, VS Code will prompt you to install recommended extensions. If you miss the prompt, install them manually:
+
+- **`connor4312.esbuild-problem-matchers`** — **Required** to run the extension debug launch configurations. This is the most commonly missed prerequisite.
+- `dbaeumer.vscode-eslint` — ESLint integration
+- `esbenp.prettier-vscode` — Prettier formatting
 
 ### Setup
 
@@ -184,6 +194,8 @@ Unit tests are written in Go and utilize the [Testify](https://github.com/stretc
 ```console
 just test
 ```
+
+> **Note:** Some tests in `internal/inspect/dependencies/renv/` require R and the `renv` package. Without them, those tests will fail. All other tests will pass without R installed.
 
 #### Coverage Reporting
 
