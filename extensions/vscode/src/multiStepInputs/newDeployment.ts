@@ -33,14 +33,12 @@ import {
   FileAction,
   PreContentRecord,
   ProductName,
-  useApi,
 } from "src/api";
 import {
   getPythonInterpreterPath,
   getRInterpreterPath,
 } from "src/utils/vscode";
 import { getSummaryStringFromError } from "src/utils/errors";
-import { isAxiosErrorWithJson } from "src/utils/errorTypes";
 import { newConfigFileNameFromTitle, newDeploymentName } from "src/utils/names";
 import { updateFileList } from "src/configFiles";
 import {
@@ -68,6 +66,7 @@ import {
 } from "src/utils/multiStepHelpers";
 import { CredentialsService } from "src/credentials/service";
 import { extensionSettings } from "src/extension";
+import { inspectProject } from "src/inspect";
 
 const viewTitle = "Create a New Deployment";
 
@@ -80,7 +79,6 @@ export async function newDeployment(
   // ***************************************************************
   // API Calls and results
   // ***************************************************************
-  const api = await useApi();
 
   // local step history that gets passed down to any sub-flows
   const stepHistory: InputStep[] = [];
@@ -195,16 +193,18 @@ export async function newDeployment(
       const relEntryPointDir = path.dirname(relEntryPoint);
       const relEntryPointFile = path.basename(relEntryPoint);
 
-      const inspectResponse = await api.configurations.inspect(
-        relEntryPointDir,
-        python,
-        r,
-        {
-          entrypoint: relEntryPointFile,
-        },
-      );
+      const root = workspaces.path();
+      const absoluteDir = root
+        ? path.resolve(root, relEntryPointDir)
+        : relEntryPointDir;
 
-      inspectionResults = inspectResponse.data;
+      inspectionResults = await inspectProject({
+        projectDir: absoluteDir,
+        pythonPath: python?.pythonPath,
+        rPath: r?.rPath,
+        entrypoint: relEntryPointFile,
+      });
+
       inspectionResults.forEach((result) => {
         const config = result.configuration;
         if (config.entrypoint) {
@@ -217,11 +217,8 @@ export async function newDeployment(
         }
       });
     } catch (error: unknown) {
-      if (isAxiosErrorWithJson(error)) {
-        throw error;
-      }
       const summary = getSummaryStringFromError(
-        "newDeployment, configurations.inspect",
+        "newDeployment, inspectProject",
         error,
       );
       window.showErrorMessage(
