@@ -870,6 +870,10 @@ describe("connectPublish — error classification", () => {
       .map((e) => ({ step: e.step, message: e.message }));
 
     // Assert a representative subset of log messages across steps.
+    // Note: createManifest emits log events from the orchestrator, but is
+    // intentionally omitted from stepToEventPrefix in tsDeployProgress.ts
+    // because it maps to the R-specific publish/getRPackageDescriptions
+    // stage that the Go path skips for Python-only projects.
     expect(logMessages).toContainEqual({
       step: "createManifest",
       message: "Collecting package descriptions",
@@ -894,6 +898,21 @@ describe("connectPublish — error classification", () => {
       step: "deployBundle",
       message: "Activation requested",
     });
+  });
+
+  test("success events carry no message (detail is on preceding log events)", async () => {
+    const onProgress = vi.fn();
+    const opts = makeOptions({ onProgress });
+
+    await connectPublish(opts);
+
+    const events = onProgress.mock.calls.map(
+      (args: unknown[]) => args[0] as PublishEvent,
+    );
+    const successEvents = events.filter((e) => e.status === "success");
+    for (const evt of successEvents) {
+      expect(evt.message).toBeUndefined();
+    }
   });
 
   test("emits validateDeployment log events when validate is enabled", async () => {
