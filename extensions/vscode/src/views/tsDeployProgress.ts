@@ -32,7 +32,9 @@ const stepLabels: Record<PublishStep, string> = {
 // Maps TS orchestrator steps to Go SSE event path prefixes.
 // Steps not listed here have no corresponding stage in the logs tree view.
 const stepToEventPrefix: Partial<Record<PublishStep, string>> = {
-  createManifest: "publish/getRPackageDescriptions",
+  // createManifest is intentionally omitted — it maps to
+  // publish/getRPackageDescriptions which is R-specific in the Go path.
+  // Emitting it for Python-only deploys would create a spurious tree node.
   preflight: "publish/checkCapabilities",
   createDeployment: "publish/createDeployment",
   createBundle: "publish/createBundle",

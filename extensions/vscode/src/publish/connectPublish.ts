@@ -279,11 +279,7 @@ export async function connectPublish(
     // For redeploys, the update step opens the "Create Deployment Record"
     // stage in the logs tree (matching Go's publish/createDeployment events).
     lastStep = "updateContent";
-    onProgress({
-      step: "updateContent",
-      status: "start",
-      data: { contentId, save_name: saveName },
-    });
+    onProgress({ step: "updateContent", status: "start" });
     onProgress({
       step: "updateContent",
       status: "log",

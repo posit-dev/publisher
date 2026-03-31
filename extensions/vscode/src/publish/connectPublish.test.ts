@@ -856,6 +856,46 @@ describe("connectPublish — error classification", () => {
     });
   });
 
+  test("log events carry expected message strings", async () => {
+    const onProgress = vi.fn();
+    const opts = makeOptions({ onProgress });
+
+    await connectPublish(opts);
+
+    const events = onProgress.mock.calls.map(
+      (args: unknown[]) => args[0] as PublishEvent,
+    );
+    const logMessages = events
+      .filter((e) => e.status === "log")
+      .map((e) => ({ step: e.step, message: e.message }));
+
+    // Assert a representative subset of log messages across steps.
+    expect(logMessages).toContainEqual({
+      step: "createManifest",
+      message: "Collecting package descriptions",
+    });
+    expect(logMessages).toContainEqual({
+      step: "preflight",
+      message: "Checking configuration against server capabilities",
+    });
+    expect(logMessages).toContainEqual({
+      step: "createBundle",
+      message: "Preparing files",
+    });
+    expect(logMessages).toContainEqual({
+      step: "uploadBundle",
+      message: "Uploading files",
+    });
+    expect(logMessages).toContainEqual({
+      step: "deployBundle",
+      message: "Activating Deployment",
+    });
+    expect(logMessages).toContainEqual({
+      step: "deployBundle",
+      message: "Activation requested",
+    });
+  });
+
   test("emits validateDeployment log events when validate is enabled", async () => {
     const onProgress = vi.fn();
     const config = makeConfig({ validate: true });
