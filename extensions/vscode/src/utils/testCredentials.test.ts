@@ -271,18 +271,28 @@ describe("testCredentials", () => {
     expect(result.serverType).toBe(ServerType.CONNECT);
   });
 
-  test("detects Snowflake server type", async () => {
-    mockTestAuthentication.mockResolvedValue({
-      user: mockUser,
-      error: null,
-    });
-
+  test("Snowflake URL — skips Connect API probe, returns serverType", async () => {
     const result = await testCredentials({
       url: "https://example.snowflakecomputing.app",
-      apiKey: "key",
       insecure: false,
     });
 
     expect(result.serverType).toBe(ServerType.SNOWFLAKE);
+    expect(result.user).toBeNull();
+    expect(result.url).toBe("https://example.snowflakecomputing.app");
+    expect(result.error).toBeNull();
+    // testAuthentication should NOT have been called for Snowflake URLs
+    expect(mockTestAuthentication).not.toHaveBeenCalled();
+  });
+
+  test("Snowflake privatelink URL — skips Connect API probe", async () => {
+    const result = await testCredentials({
+      url: "https://example.privatelink.snowflake.app",
+      insecure: false,
+    });
+
+    expect(result.serverType).toBe(ServerType.SNOWFLAKE);
+    expect(result.error).toBeNull();
+    expect(mockTestAuthentication).not.toHaveBeenCalled();
   });
 });

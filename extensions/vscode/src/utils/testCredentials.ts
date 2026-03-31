@@ -77,7 +77,20 @@ export async function testCredentials(
     };
   }
 
-  // 2. Build a tester function
+  // 2. Snowflake URLs don't expose the Connect API, so skip the
+  //    authentication / reachability probe. The Go backend never attempted
+  //    to call /__api__/v1/user on Snowflake servers either — it only
+  //    validated the URL format and credential structure.
+  if (st === ServerType.SNOWFLAKE) {
+    return {
+      user: null,
+      url: params.url,
+      serverType: st,
+      error: null,
+    };
+  }
+
+  // 3. Build a tester function
   let lastUser: User | null = null;
 
   const timeoutMs = Math.max(params.timeout ?? 30, 30) * 1000;
@@ -113,7 +126,7 @@ export async function testCredentials(
     }
   };
 
-  // 3. Discover server URL
+  // 4. Discover server URL
   const discovery = await discoverServerURL(params.url, tester);
 
   if (discovery.error === undefined) {
