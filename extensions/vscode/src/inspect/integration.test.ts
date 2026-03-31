@@ -916,6 +916,22 @@ describe(
         // "app.py" (preferred name) should sort before "zebra.py"
         expect(flaskResults[0]?.configuration.entrypoint).toBe("app.py");
       }));
+
+    test("returns empty array when all subdirectories are empty", () =>
+      withTempDir(async (dir) => {
+        // Create subdirectories with no deployable content
+        await mkdir(path.join(dir, "subdir1"));
+        await mkdir(path.join(dir, "subdir2"));
+        // No files in root or subdirs — every dir produces UNKNOWN which
+        // gets filtered out in recursive mode
+
+        const results = await inspectProject({
+          projectDir: dir,
+          recursive: true,
+        });
+
+        expect(results).toHaveLength(0);
+      }));
   },
 );
 

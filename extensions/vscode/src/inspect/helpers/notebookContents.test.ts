@@ -47,6 +47,13 @@ describe("getNotebookCodeInputs", () => {
     expect(result).toBe("");
   });
 
+  test("returns empty string when cells key is undefined", async () => {
+    mockReadFile.mockResolvedValue(JSON.stringify({ metadata: {} }));
+
+    const result = await getNotebookCodeInputs("/test/no-cells.ipynb");
+    expect(result).toBe("");
+  });
+
   test("throws on invalid JSON", async () => {
     mockReadFile.mockResolvedValue("not json");
 

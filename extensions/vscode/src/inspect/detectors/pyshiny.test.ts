@@ -80,4 +80,56 @@ describe("PyShinyDetector", () => {
     const configs = await detector.inferType("/project", "app.R");
     expect(configs).toHaveLength(0);
   });
+
+  test("encodes hyphens in express entrypointObjectRef", async () => {
+    mockReaddir.mockResolvedValue(["my-app.py"]);
+    mockStat.mockResolvedValue({ isFile: () => true });
+    mockReadFile.mockResolvedValue("from shiny.express import ui\n");
+
+    const configs = await detector.inferType("/project");
+    expect(configs).toHaveLength(1);
+    // hyphen (0x2d) should be encoded as _2d_
+    expect(configs[0]?.entrypointObjectRef).toBe(
+      "shiny.express.app:my_2d_app_2e_py",
+    );
+  });
+
+  test("encodes leading digits in express entrypointObjectRef", async () => {
+    mockReaddir.mockResolvedValue(["1app.py"]);
+    mockStat.mockResolvedValue({ isFile: () => true });
+    mockReadFile.mockResolvedValue("from shiny.express import ui\n");
+
+    const configs = await detector.inferType("/project");
+    expect(configs).toHaveLength(1);
+    // leading digit "1" (0x31) should be encoded as _31_
+    expect(configs[0]?.entrypointObjectRef).toBe(
+      "shiny.express.app:_31_app_2e_py",
+    );
+  });
+
+  test("encodes spaces in express entrypointObjectRef", async () => {
+    mockReaddir.mockResolvedValue(["my app.py"]);
+    mockStat.mockResolvedValue({ isFile: () => true });
+    mockReadFile.mockResolvedValue("from shiny.express import ui\n");
+
+    const configs = await detector.inferType("/project");
+    expect(configs).toHaveLength(1);
+    // space (0x20) should be encoded as _20_
+    expect(configs[0]?.entrypointObjectRef).toBe(
+      "shiny.express.app:my_20_app_2e_py",
+    );
+  });
+
+  test("leaves alphanumeric characters unchanged in express entrypointObjectRef", async () => {
+    mockReaddir.mockResolvedValue(["myApp2.py"]);
+    mockStat.mockResolvedValue({ isFile: () => true });
+    mockReadFile.mockResolvedValue("from shiny.express import ui\n");
+
+    const configs = await detector.inferType("/project");
+    expect(configs).toHaveLength(1);
+    // only the dot should be encoded
+    expect(configs[0]?.entrypointObjectRef).toBe(
+      "shiny.express.app:myApp2_2e_py",
+    );
+  });
 });

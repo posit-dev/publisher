@@ -85,6 +85,42 @@ describe("StaticHTMLDetector", () => {
     expect(configs[0]?.files).toContain("/report_files");
   });
 
+  test("detects .htm files", async () => {
+    mockReaddir.mockResolvedValue(["page.htm"]);
+    mockStat.mockImplementation((path: string) => {
+      if (path.endsWith("page.htm")) {
+        return Promise.resolve({
+          isFile: () => true,
+          isDirectory: () => false,
+        });
+      }
+      return Promise.reject(new Error("ENOENT"));
+    });
+
+    const configs = await detector.inferType("/project");
+    expect(configs).toHaveLength(1);
+    expect(configs[0]?.type).toBe(ContentType.HTML);
+    expect(configs[0]?.entrypoint).toBe("page.htm");
+    expect(configs[0]?.files).toContain("/page.htm");
+  });
+
+  test("accepts .htm entrypoint filter", async () => {
+    mockReaddir.mockResolvedValue(["page.htm"]);
+    mockStat.mockImplementation((path: string) => {
+      if (path.endsWith("page.htm")) {
+        return Promise.resolve({
+          isFile: () => true,
+          isDirectory: () => false,
+        });
+      }
+      return Promise.reject(new Error("ENOENT"));
+    });
+
+    const configs = await detector.inferType("/project", "page.htm");
+    expect(configs).toHaveLength(1);
+    expect(configs[0]?.entrypoint).toBe("page.htm");
+  });
+
   test("skips non-html entrypoints", async () => {
     const configs = await detector.inferType("/project", "app.py");
     expect(configs).toHaveLength(0);
