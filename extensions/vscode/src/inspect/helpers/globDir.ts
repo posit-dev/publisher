@@ -24,7 +24,8 @@ export async function globDir(dir: string, pattern: string): Promise<string[]> {
       try {
         const stat = await fs.stat(fullPath);
         if (stat.isFile()) {
-          matched.push(fullPath);
+          // Normalize to forward slashes for cross-platform consistency
+          matched.push(fullPath.replace(/\\/g, "/"));
         }
       } catch {
         // File may have been deleted between readdir and stat

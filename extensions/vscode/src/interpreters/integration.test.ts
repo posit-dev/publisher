@@ -226,16 +226,21 @@ describe("detectPythonInterpreter (real interpreter)", async () => {
         expect(result.preferredPath).toBe(pythonCmd);
       });
     },
+    15_000,
   );
 
-  test.skipIf(!pythonAvailable)("detects requirements.txt when present", () => {
-    clearPythonVersionCache();
-    return withTempDir(async (dir) => {
-      await writeFile(path.join(dir, "requirements.txt"), "flask\n", "utf-8");
-      const result = await detectPythonInterpreter(dir, pythonCmd);
-      expect(result.config.packageFile).toBe("requirements.txt");
-    });
-  });
+  test.skipIf(!pythonAvailable)(
+    "detects requirements.txt when present",
+    () => {
+      clearPythonVersionCache();
+      return withTempDir(async (dir) => {
+        await writeFile(path.join(dir, "requirements.txt"), "flask\n", "utf-8");
+        const result = await detectPythonInterpreter(dir, pythonCmd);
+        expect(result.config.packageFile).toBe("requirements.txt");
+      });
+    },
+    15_000,
+  );
 
   test.skipIf(!pythonAvailable)(
     "returns empty packageFile when requirements.txt is absent",
