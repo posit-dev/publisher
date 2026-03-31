@@ -166,6 +166,11 @@ export async function connectPublish(
     // Step 1: Build manifest with R/Python packages
     lastStep = "createManifest";
     onProgress({ step: "createManifest", status: "start" });
+    onProgress({
+      step: "createManifest",
+      status: "log",
+      message: "Collecting package descriptions",
+    });
     const { manifest, lockfilePath, lockfile } = await buildManifest(
       projectDir,
       config,
@@ -177,26 +182,57 @@ export async function connectPublish(
     // Step 2: Preflight — verify authentication
     lastStep = "preflight";
     onProgress({ step: "preflight", status: "start" });
+    onProgress({
+      step: "preflight",
+      status: "log",
+      message: "Checking configuration against server capabilities",
+    });
     const { user } = await api.testAuthentication();
     onProgress({
       step: "preflight",
+      status: "log",
+      message: "Publishing with credentials",
+      data: { username: user.username, email: user.email },
+    });
+    onProgress({
+      step: "preflight",
+      status: "log",
+      message: "Configuration OK",
+    });
+    onProgress({
+      step: "preflight",
       status: "success",
-      message: `Authenticated as ${user.username}`,
     });
 
     // Step 3: Create deployment on Connect (first deploy only)
     if (!contentId) {
       lastStep = "createDeployment";
       onProgress({ step: "createDeployment", status: "start" });
+      onProgress({
+        step: "createDeployment",
+        status: "log",
+        message: "Creating new deployment",
+      });
       const { data: created } = await api.createDeployment({ name: "" });
       contentId = created.guid;
       setRecordContentInfo(record, serverUrl, contentId);
+      onProgress({
+        step: "createDeployment",
+        status: "log",
+        message: "Created deployment",
+        data: { content_id: contentId },
+      });
       onProgress({ step: "createDeployment", status: "success" });
     }
 
     // Step 4: Create bundle archive
     lastStep = "createBundle";
     onProgress({ step: "createBundle", status: "start" });
+    onProgress({
+      step: "createBundle",
+      status: "log",
+      message: "Preparing files",
+    });
     const { bundle, manifest: finalManifest } = await buildBundleArchive(
       projectDir,
       config,
@@ -218,6 +254,11 @@ export async function connectPublish(
     // Step 5: Upload bundle
     lastStep = "uploadBundle";
     onProgress({ step: "uploadBundle", status: "start" });
+    onProgress({
+      step: "uploadBundle",
+      status: "log",
+      message: "Uploading files",
+    });
     const { data: bundleDTO } = await api.uploadBundle(
       ContentID(contentId),
       new Uint8Array(bundle),
@@ -226,15 +267,37 @@ export async function connectPublish(
     record.bundleId = bundleDTO.id;
     record.bundleUrl = getBundleUrl(serverUrl, contentId, bundleDTO.id);
     await writePublishRecord(deploymentPath, record);
+    onProgress({
+      step: "uploadBundle",
+      status: "log",
+      message: "Done uploading files",
+      data: { bundle_id: bundleDTO.id },
+    });
     onProgress({ step: "uploadBundle", status: "success" });
 
     // Step 6: Update content metadata
+    // For redeploys, the update step opens the "Create Deployment Record"
+    // stage in the logs tree (matching Go's publish/createDeployment events).
     lastStep = "updateContent";
-    onProgress({ step: "updateContent", status: "start" });
+    onProgress({
+      step: "updateContent",
+      status: "start",
+      data: { contentId, save_name: saveName },
+    });
+    onProgress({
+      step: "updateContent",
+      status: "log",
+      message: "Updating deployment settings",
+    });
     await api.updateDeployment(
       ContentID(contentId),
       connectContentFromConfig(config),
     );
+    onProgress({
+      step: "updateContent",
+      status: "log",
+      message: "Done updating settings",
+    });
     onProgress({ step: "updateContent", status: "success" });
 
     // Step 7: Set environment variables (if any)
@@ -249,10 +312,20 @@ export async function connectPublish(
     // Step 8: Deploy the bundle
     lastStep = "deployBundle";
     onProgress({ step: "deployBundle", status: "start" });
+    onProgress({
+      step: "deployBundle",
+      status: "log",
+      message: "Activating Deployment",
+    });
     const { data: deployOutput } = await api.deployBundle(
       ContentID(contentId),
       bundleId,
     );
+    onProgress({
+      step: "deployBundle",
+      status: "log",
+      message: "Activation requested",
+    });
     onProgress({ step: "deployBundle", status: "success" });
 
     // Step 9: Wait for server-side task to complete
@@ -286,6 +359,11 @@ export async function connectPublish(
         data: { url: `/content/${contentId}/` },
       });
       await api.validateDeployment(ContentID(contentId));
+      onProgress({
+        step: "validateDeployment",
+        status: "log",
+        message: "Done validating deployment",
+      });
       onProgress({ step: "validateDeployment", status: "success" });
     }
 

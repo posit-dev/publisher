@@ -32,10 +32,15 @@ const stepLabels: Record<PublishStep, string> = {
 // Maps TS orchestrator steps to Go SSE event path prefixes.
 // Steps not listed here have no corresponding stage in the logs tree view.
 const stepToEventPrefix: Partial<Record<PublishStep, string>> = {
+  createManifest: "publish/getRPackageDescriptions",
   preflight: "publish/checkCapabilities",
   createDeployment: "publish/createDeployment",
   createBundle: "publish/createBundle",
   uploadBundle: "publish/uploadBundle",
+  // updateContent maps to the same tree stage as createDeployment —
+  // in the Go path, publish/createDeployment covers both first-deploy
+  // creation and redeploy content updates.
+  updateContent: "publish/createDeployment",
   deployBundle: "publish/deployBundle",
   waitForTask: "publish/restoreEnv",
   validateDeployment: "publish/validateDeployment",

@@ -299,18 +299,31 @@ describe("connectPublish", () => {
     const steps = progressSteps(onProgress);
     expect(steps).toEqual([
       { step: "createManifest", status: "start" },
+      { step: "createManifest", status: "log" },
       { step: "createManifest", status: "success" },
       { step: "preflight", status: "start" },
+      { step: "preflight", status: "log" },
+      { step: "preflight", status: "log" },
+      { step: "preflight", status: "log" },
       { step: "preflight", status: "success" },
       { step: "createDeployment", status: "start" },
+      { step: "createDeployment", status: "log" },
+      { step: "createDeployment", status: "log" },
       { step: "createDeployment", status: "success" },
       { step: "createBundle", status: "start" },
+      { step: "createBundle", status: "log" },
       { step: "createBundle", status: "success" },
       { step: "uploadBundle", status: "start" },
+      { step: "uploadBundle", status: "log" },
+      { step: "uploadBundle", status: "log" },
       { step: "uploadBundle", status: "success" },
       { step: "updateContent", status: "start" },
+      { step: "updateContent", status: "log" },
+      { step: "updateContent", status: "log" },
       { step: "updateContent", status: "success" },
       { step: "deployBundle", status: "start" },
+      { step: "deployBundle", status: "log" },
+      { step: "deployBundle", status: "log" },
       { step: "deployBundle", status: "success" },
       { step: "waitForTask", status: "start" },
       { step: "waitForTask", status: "success" },
@@ -856,7 +869,7 @@ describe("connectPublish — error classification", () => {
     const validateLogs = events.filter(
       (e) => e.step === "validateDeployment" && e.status === "log",
     );
-    expect(validateLogs).toHaveLength(2);
+    expect(validateLogs).toHaveLength(3);
     expect(validateLogs[0]!.message).toBe("Validating Deployment");
     // The URL is a relative API path (/content/{guid}/), not the full
     // content_url — validateDeployment hits the Connect API endpoint.
@@ -866,5 +879,6 @@ describe("connectPublish — error classification", () => {
     expect(validateLogs[1]!.data).toEqual({
       url: "/content/content-guid-123/",
     });
+    expect(validateLogs[2]!.message).toBe("Done validating deployment");
   });
 });
