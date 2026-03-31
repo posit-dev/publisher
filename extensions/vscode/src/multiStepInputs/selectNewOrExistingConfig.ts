@@ -21,7 +21,6 @@ import {
   PreContentRecord,
   contentTypeStrings,
   isConfigurationError,
-  useApi,
 } from "src/api";
 import {
   getPythonInterpreterPath,
@@ -46,6 +45,7 @@ import { isRelativePathRoot } from "src/utils/files";
 import { newConfigFileNameFromTitle } from "src/utils/names";
 import { loadAllConfigurations, writeConfigToFile } from "src/toml";
 import * as workspaces from "src/workspaces";
+import { inspectProject } from "src/inspect";
 
 export async function selectNewOrExistingConfig(
   activeDeployment: ContentRecord | PreContentRecord,
@@ -56,7 +56,6 @@ export async function selectNewOrExistingConfig(
   // ***************************************************************
   // API Calls and results
   // ***************************************************************
-  const api = await useApi();
 
   let configFileListItems: QuickPickItem[] = [];
   let configurations: Configuration[] = [];
@@ -182,13 +181,18 @@ export async function selectNewOrExistingConfig(
       const python = await getPythonInterpreterPath();
       const r = await getRInterpreterPath();
 
-      const inspectResponse = await api.configurations.inspect(
-        activeDeployment.projectDir,
-        python,
-        r,
-      );
+      const root = workspaces.path();
+      const absoluteDir = root
+        ? path.resolve(root, activeDeployment.projectDir)
+        : activeDeployment.projectDir;
+
+      const allResults = await inspectProject({
+        projectDir: absoluteDir,
+        pythonPath: python?.pythonPath,
+        rPath: r?.rPath,
+      });
       inspectionResults = filterInspectionResultsToType(
-        inspectResponse.data,
+        allResults,
         effectiveContentTypeFilter,
       );
       inspectionResults.forEach((result, i) => {
