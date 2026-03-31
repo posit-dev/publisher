@@ -178,23 +178,29 @@ export class QuartoInspectOutput {
     const isValidTitle = (title?: string): title is string =>
       title !== undefined && title !== "" && title !== entrypointName;
 
-    if (isValidTitle(this.data.formats?.html?.metadata?.title)) {
-      return this.data.formats.html!.metadata!.title!;
+    const htmlTitle = this.data.formats?.html?.metadata?.title;
+    if (isValidTitle(htmlTitle)) {
+      return htmlTitle;
     }
-    if (isValidTitle(this.data.formats?.revealjs?.metadata?.title)) {
-      return this.data.formats.revealjs!.metadata!.title!;
+    const revealjsTitle = this.data.formats?.revealjs?.metadata?.title;
+    if (isValidTitle(revealjsTitle)) {
+      return revealjsTitle;
     }
-    if (isValidTitle(this.data.config?.website?.title)) {
-      return this.data.config.website!.title!;
+    const websiteTitle = this.data.config?.website?.title;
+    if (isValidTitle(websiteTitle)) {
+      return websiteTitle;
     }
-    if (isValidTitle(this.data.config?.project?.title)) {
-      return this.data.config.project!.title!;
+    const projectTitle = this.data.config?.project?.title;
+    if (isValidTitle(projectTitle)) {
+      return projectTitle;
     }
-    if (isValidTitle(this.data.project?.config?.website?.title)) {
-      return this.data.project.config!.website!.title!;
+    const altWebsiteTitle = this.data.project?.config?.website?.title;
+    if (isValidTitle(altWebsiteTitle)) {
+      return altWebsiteTitle;
     }
-    if (isValidTitle(this.data.project?.config?.project?.title)) {
-      return this.data.project.config!.project!.title!;
+    const altProjectTitle = this.data.project?.config?.project?.title;
+    if (isValidTitle(altProjectTitle)) {
+      return altProjectTitle;
     }
     return "";
   }

@@ -21,6 +21,9 @@ const specialYmlFiles = [
   "_brand.yaml",
 ];
 
+// Fallback version used when `quarto inspect` is unavailable (e.g. quarto not
+// installed). Matches the latest stable release at the time this detector was
+// written. The exact value is non-critical — Connect uses it only as a hint.
 const defaultQuartoVersion = "1.7.34";
 
 const quartoSuffixes = [".qmd", ".Rmd", ".ipynb", ".R", ".py", ".jl"];
@@ -262,13 +265,19 @@ export class QuartoDetector implements ContentTypeDetector {
     }
   }
 
+  // Builds an HTML alternative config that represents the pre-rendered static
+  // output of a Quarto project. Two strategies are tried:
+  //   1. If the project declares an output-dir (e.g. "_site"), point at that
+  //      directory and resolve the HTML entrypoint within it.
+  //   2. Otherwise, derive HTML filenames from the input file list (e.g.
+  //      "doc.qmd" → "doc.html").
   private buildStaticAlternative(
     baseDir: string,
     cfg: PartialConfig,
     inspectOutput: QuartoInspectOutput,
   ): PartialConfig | undefined {
     const ext = path.extname(cfg.entrypoint);
-    // Don't generate static config for script entrypoints
+    // Script entrypoints (.R, .py) don't produce standalone HTML output
     if (ext === ".R" || ext === ".py") {
       return undefined;
     }
@@ -281,6 +290,10 @@ export class QuartoDetector implements ContentTypeDetector {
     return this.staticConfigFromFilesLookup(baseDir, cfg, inspectOutput);
   }
 
+  // Strategy 1: The project has an explicit output-dir (e.g. "_site" for
+  // website projects). The whole directory is included as a file entry, and
+  // the HTML entrypoint is resolved differently depending on whether the
+  // source entrypoint is a directory/yaml config or a regular file.
   private staticConfigFromOutputDir(
     baseDir: string,
     cfg: PartialConfig,
@@ -311,13 +324,16 @@ export class QuartoDetector implements ContentTypeDetector {
       }
     } else {
       // Standard entrypoint: compute its HTML version in output dir
-      const stem = path.basename(cfg.entrypoint, ext(cfg.entrypoint));
+      const stem = path.basename(cfg.entrypoint, path.extname(cfg.entrypoint));
       staticCfg.entrypoint = path.join(outputDir, stem + ".html");
     }
 
     return staticCfg;
   }
 
+  // Strategy 2: No output-dir declared. Derive HTML filenames directly from
+  // the input file list by replacing each file's extension with ".html".
+  // The first input file becomes the entrypoint.
   private staticConfigFromFilesLookup(
     _baseDir: string,
     cfg: PartialConfig,
@@ -427,8 +443,4 @@ export class QuartoDetector implements ContentTypeDetector {
 
     return cfg;
   }
-}
-
-function ext(filename: string): string {
-  return path.extname(filename);
 }

@@ -24,7 +24,10 @@ export class PlumberDetector implements ContentTypeDetector {
     if (entrypoint) {
       const lcEntrypoint = entrypoint.toLowerCase();
       const ext = path.extname(entrypoint);
-      if (ext !== ".R" && !possiblePlumberServerFiles.includes(lcEntrypoint)) {
+      if (
+        ext.toLowerCase() !== ".r" &&
+        !possiblePlumberServerFiles.includes(lcEntrypoint)
+      ) {
         return [];
       }
     }

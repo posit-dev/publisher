@@ -263,6 +263,52 @@ describe("RMarkdownDetector", () => {
     expect(configs[0]?.files).toContain("/index.Rmd");
   });
 
+  test("truncated YAML front matter still produces config", async () => {
+    const truncatedYaml = `---
+title: Incomplete
+`;
+    setupGlobDir(["report.Rmd"]);
+    mockReadFile.mockResolvedValue(truncatedYaml);
+    mockAccess.mockRejectedValue(new Error("ENOENT"));
+
+    const configs = await detector.inferType("/project");
+    expect(configs).toHaveLength(1);
+    expect(configs[0]?.type).toBe(ContentType.RMD);
+    // No closing --- means no metadata extracted
+    expect(configs[0]?.title).toBeUndefined();
+  });
+
+  test("YAML with syntax errors is handled gracefully", async () => {
+    const badYaml = `---
+title: [unclosed bracket
+runtime: {invalid: yaml: here
+---
+
+# Content
+`;
+    setupGlobDir(["report.Rmd"]);
+    mockReadFile.mockResolvedValue(badYaml);
+    mockAccess.mockRejectedValue(new Error("ENOENT"));
+
+    const configs = await detector.inferType("/project");
+    expect(configs).toHaveLength(1);
+    expect(configs[0]?.type).toBe(ContentType.RMD);
+    // Invalid YAML means no metadata extracted
+    expect(configs[0]?.title).toBeUndefined();
+  });
+
+  test("binary-like content named .Rmd is handled gracefully", async () => {
+    const binaryContent = "\x00\x01\x02\x03\x04\x05";
+    setupGlobDir(["report.Rmd"]);
+    mockReadFile.mockResolvedValue(binaryContent);
+    mockAccess.mockRejectedValue(new Error("ENOENT"));
+
+    const configs = await detector.inferType("/project");
+    expect(configs).toHaveLength(1);
+    expect(configs[0]?.type).toBe(ContentType.RMD);
+    expect(configs[0]?.title).toBeUndefined();
+  });
+
   test("site config as entrypoint", async () => {
     // When _site.yml is the entrypoint, look up index.Rmd for metadata
     mockReadFile.mockImplementation((filePath: string) => {

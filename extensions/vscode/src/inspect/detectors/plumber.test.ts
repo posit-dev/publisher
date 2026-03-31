@@ -176,6 +176,20 @@ routes: app.py
     expect(configs).toHaveLength(0);
   });
 
+  test("malformed _server.yml is handled gracefully", async () => {
+    const badYaml = "engine: [unclosed bracket\nroutes: {invalid: yaml: here\n";
+    mockReadFile.mockImplementation((filePath: string) => {
+      if (filePath.endsWith("_server.yml")) {
+        return Promise.resolve(badYaml);
+      }
+      return Promise.reject(new Error("ENOENT"));
+    });
+    mockAccess.mockRejectedValue(new Error("ENOENT"));
+
+    const configs = await detector.inferType("/project", "app.R");
+    expect(configs).toHaveLength(0);
+  });
+
   test("discovers entrypoints without explicit entrypoint", async () => {
     // No server files
     mockReadFile.mockRejectedValue(new Error("ENOENT"));
