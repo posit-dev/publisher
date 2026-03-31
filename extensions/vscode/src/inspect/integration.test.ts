@@ -20,7 +20,7 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
-import { describe, expect, test } from "vitest";
+import { beforeAll, describe, expect, test } from "vitest";
 import { ContentType } from "src/api/types/configurations";
 import { clearPythonVersionCache } from "src/interpreters/pythonInterpreter";
 import { inspectProject } from "./index";
@@ -785,6 +785,66 @@ describe(
         expect(flask).toBeUndefined();
       }));
 
+    test("skips env directory", () =>
+      withTempDir(async (dir) => {
+        await writeFile(
+          path.join(dir, "app.py"),
+          "from flask import Flask\n",
+          "utf-8",
+        );
+
+        const envDir = path.join(dir, "env", "lib");
+        await mkdir(envDir, { recursive: true });
+        await writeFile(
+          path.join(envDir, "main.py"),
+          "from fastapi import FastAPI\n",
+          "utf-8",
+        );
+
+        const results = await inspectProject({
+          projectDir: dir,
+          recursive: true,
+        });
+
+        // Should find Flask from root but not FastAPI from env
+        const fastapi = results.find(
+          (r) =>
+            r.configuration.type === ContentType.PYTHON_FASTAPI &&
+            r.projectDir !== ".",
+        );
+        expect(fastapi).toBeUndefined();
+      }));
+
+    test("skips venv directory", () =>
+      withTempDir(async (dir) => {
+        await writeFile(
+          path.join(dir, "app.py"),
+          "from flask import Flask\n",
+          "utf-8",
+        );
+
+        const venvDir = path.join(dir, "venv", "lib");
+        await mkdir(venvDir, { recursive: true });
+        await writeFile(
+          path.join(venvDir, "main.py"),
+          "from fastapi import FastAPI\n",
+          "utf-8",
+        );
+
+        const results = await inspectProject({
+          projectDir: dir,
+          recursive: true,
+        });
+
+        // Should find Flask from root but not FastAPI from venv
+        const fastapi = results.find(
+          (r) =>
+            r.configuration.type === ContentType.PYTHON_FASTAPI &&
+            r.projectDir !== ".",
+        );
+        expect(fastapi).toBeUndefined();
+      }));
+
     test("filters UNKNOWN configs from subdirectories", () =>
       withTempDir(async (dir) => {
         // Root has Flask app
@@ -881,7 +941,7 @@ describe(
         );
         expect(flask).toBeDefined();
         // path.join uses OS separator, but projectDir should use forward slash
-        expect(flask?.projectDir).toMatch(/projects.myapp/);
+        expect(flask?.projectDir).toMatch(/projects[/\\]myapp/);
       }));
 
     test("sorts results across subdirectories", () =>
@@ -946,77 +1006,79 @@ describe(
 describe(
   "inspectProject with real interpreters (real filesystem)",
   { timeout: 15_000 },
-  async () => {
-    const python3Available = await isExecutableAvailable("python3");
-    const pythonAvailable =
-      python3Available || (await isExecutableAvailable("python"));
-    const pythonCmd = python3Available ? "python3" : "python";
-    const rAvailable = await isExecutableAvailable("R");
+  () => {
+    let python3Available = false;
+    let pythonAvailable = false;
+    let pythonCmd = "python";
+    let rAvailable = false;
 
-    test.skipIf(!pythonAvailable)(
-      "populates python config for Flask project",
-      () => {
-        clearPythonVersionCache();
-        return withTempDir(async (dir) => {
-          await writeFile(
-            path.join(dir, "app.py"),
-            "from flask import Flask\napp = Flask(__name__)\n",
-            "utf-8",
-          );
-          await writeFile(
-            path.join(dir, "requirements.txt"),
-            "flask>=2.0\n",
-            "utf-8",
-          );
+    beforeAll(async () => {
+      python3Available = await isExecutableAvailable("python3");
+      pythonAvailable =
+        python3Available || (await isExecutableAvailable("python"));
+      pythonCmd = python3Available ? "python3" : "python";
+      rAvailable = await isExecutableAvailable("R");
+    });
 
-          const results = await inspectProject({
-            projectDir: dir,
-            pythonPath: pythonCmd,
-          });
+    test("populates python config for Flask project", ({ skip }) => {
+      if (!pythonAvailable) skip();
+      clearPythonVersionCache();
+      return withTempDir(async (dir) => {
+        await writeFile(
+          path.join(dir, "app.py"),
+          "from flask import Flask\napp = Flask(__name__)\n",
+          "utf-8",
+        );
+        await writeFile(
+          path.join(dir, "requirements.txt"),
+          "flask>=2.0\n",
+          "utf-8",
+        );
 
-          const flask = results.find(
-            (r) => r.configuration.type === ContentType.PYTHON_FLASK,
-          );
-          expect(flask).toBeDefined();
-          expect(flask?.configuration.python).toBeDefined();
-          expect(flask?.configuration.python?.version).toMatch(
-            /^\d+\.\d+\.\d+$/,
-          );
-          expect(flask?.configuration.python?.packageFile).toBe(
-            "requirements.txt",
-          );
-          expect(flask?.configuration.files).toContain("/requirements.txt");
+        const results = await inspectProject({
+          projectDir: dir,
+          pythonPath: pythonCmd,
         });
-      },
-    );
 
-    test.skipIf(!pythonAvailable)(
-      "populates python requiresPython from .python-version",
-      () => {
-        clearPythonVersionCache();
-        return withTempDir(async (dir) => {
-          await writeFile(
-            path.join(dir, "app.py"),
-            "from flask import Flask\n",
-            "utf-8",
-          );
-          await writeFile(path.join(dir, ".python-version"), "3.11", "utf-8");
+        const flask = results.find(
+          (r) => r.configuration.type === ContentType.PYTHON_FLASK,
+        );
+        expect(flask).toBeDefined();
+        expect(flask?.configuration.python).toBeDefined();
+        expect(flask?.configuration.python?.version).toMatch(/^\d+\.\d+\.\d+$/);
+        expect(flask?.configuration.python?.packageFile).toBe(
+          "requirements.txt",
+        );
+        expect(flask?.configuration.files).toContain("/requirements.txt");
+      });
+    });
 
-          const results = await inspectProject({
-            projectDir: dir,
-            pythonPath: pythonCmd,
-          });
+    test("populates python requiresPython from .python-version", ({ skip }) => {
+      if (!pythonAvailable) skip();
+      clearPythonVersionCache();
+      return withTempDir(async (dir) => {
+        await writeFile(
+          path.join(dir, "app.py"),
+          "from flask import Flask\n",
+          "utf-8",
+        );
+        await writeFile(path.join(dir, ".python-version"), "3.11", "utf-8");
 
-          const flask = results.find(
-            (r) => r.configuration.type === ContentType.PYTHON_FLASK,
-          );
-          expect(flask?.configuration.python?.requiresPython).toBe("~=3.11.0");
+        const results = await inspectProject({
+          projectDir: dir,
+          pythonPath: pythonCmd,
         });
-      },
-    );
 
-    test.skipIf(!rAvailable)("populates R config for R Shiny project", () =>
-      withTempDir(async (dir) => {
+        const flask = results.find(
+          (r) => r.configuration.type === ContentType.PYTHON_FLASK,
+        );
+        expect(flask?.configuration.python?.requiresPython).toBe("~=3.11.0");
+      });
+    });
+
+    test("populates R config for R Shiny project", ({ skip }) => {
+      if (!rAvailable) skip();
+      return withTempDir(async (dir) => {
         await writeFile(
           path.join(dir, "app.R"),
           "library(shiny)\nshinyApp(ui, server)\n",
@@ -1034,11 +1096,12 @@ describe(
         expect(shiny).toBeDefined();
         expect(shiny?.configuration.r).toBeDefined();
         expect(shiny?.configuration.r?.version).toMatch(/^\d+\.\d+\.\d+$/);
-      }),
-    );
+      });
+    });
 
-    test.skipIf(!rAvailable)("populates R requiresR from renv.lock", () =>
-      withTempDir(async (dir) => {
+    test("populates R requiresR from renv.lock", ({ skip }) => {
+      if (!rAvailable) skip();
+      return withTempDir(async (dir) => {
         await writeFile(path.join(dir, "app.R"), "library(shiny)\n", "utf-8");
         await writeFile(
           path.join(dir, "renv.lock"),
@@ -1055,114 +1118,106 @@ describe(
           (r) => r.configuration.type === ContentType.R_SHINY,
         );
         expect(shiny?.configuration.r?.requiresR).toBe("~=4.3.0");
-      }),
-    );
+      });
+    });
 
-    test.skipIf(!pythonAvailable || !rAvailable)(
-      "detects R via rpy2 dependency in Python project",
-      () => {
-        clearPythonVersionCache();
-        return withTempDir(async (dir) => {
-          await writeFile(
-            path.join(dir, "app.py"),
-            "from flask import Flask\nimport rpy2\n",
-            "utf-8",
-          );
-          await writeFile(
-            path.join(dir, "requirements.txt"),
-            "flask>=2.0\nrpy2>=3.5\n",
-            "utf-8",
-          );
+    test("detects R via rpy2 dependency in Python project", ({ skip }) => {
+      if (!pythonAvailable || !rAvailable) skip();
+      clearPythonVersionCache();
+      return withTempDir(async (dir) => {
+        await writeFile(
+          path.join(dir, "app.py"),
+          "from flask import Flask\nimport rpy2\n",
+          "utf-8",
+        );
+        await writeFile(
+          path.join(dir, "requirements.txt"),
+          "flask>=2.0\nrpy2>=3.5\n",
+          "utf-8",
+        );
 
-          const results = await inspectProject({
-            projectDir: dir,
-            pythonPath: pythonCmd,
-            rPath: "R",
-          });
-
-          const flask = results.find(
-            (r) => r.configuration.type === ContentType.PYTHON_FLASK,
-          );
-          expect(flask).toBeDefined();
-          // Python config should be populated
-          expect(flask?.configuration.python).toBeDefined();
-          expect(flask?.configuration.python?.version).toMatch(
-            /^\d+\.\d+\.\d+$/,
-          );
-          // R config should also be populated due to rpy2
-          expect(flask?.configuration.r).toBeDefined();
-          expect(flask?.configuration.r?.version).toMatch(/^\d+\.\d+\.\d+$/);
+        const results = await inspectProject({
+          projectDir: dir,
+          pythonPath: pythonCmd,
+          rPath: "R",
         });
-      },
-    );
 
-    test.skipIf(!pythonAvailable)(
-      "does not detect R for Python project without rpy2",
-      () => {
-        clearPythonVersionCache();
-        return withTempDir(async (dir) => {
-          await writeFile(
-            path.join(dir, "app.py"),
-            "from flask import Flask\n",
-            "utf-8",
-          );
-          await writeFile(
-            path.join(dir, "requirements.txt"),
-            "flask>=2.0\npandas\n",
-            "utf-8",
-          );
+        const flask = results.find(
+          (r) => r.configuration.type === ContentType.PYTHON_FLASK,
+        );
+        expect(flask).toBeDefined();
+        // Python config should be populated
+        expect(flask?.configuration.python).toBeDefined();
+        expect(flask?.configuration.python?.version).toMatch(/^\d+\.\d+\.\d+$/);
+        // R config should also be populated due to rpy2
+        expect(flask?.configuration.r).toBeDefined();
+        expect(flask?.configuration.r?.version).toMatch(/^\d+\.\d+\.\d+$/);
+      });
+    });
 
-          const results = await inspectProject({
-            projectDir: dir,
-            pythonPath: pythonCmd,
-          });
+    test("does not detect R for Python project without rpy2", ({ skip }) => {
+      if (!pythonAvailable) skip();
+      clearPythonVersionCache();
+      return withTempDir(async (dir) => {
+        await writeFile(
+          path.join(dir, "app.py"),
+          "from flask import Flask\n",
+          "utf-8",
+        );
+        await writeFile(
+          path.join(dir, "requirements.txt"),
+          "flask>=2.0\npandas\n",
+          "utf-8",
+        );
 
-          const flask = results.find(
-            (r) => r.configuration.type === ContentType.PYTHON_FLASK,
-          );
-          expect(flask).toBeDefined();
-          expect(flask?.configuration.python).toBeDefined();
-          // No rpy2, so R should not be detected
-          expect(flask?.configuration.r).toBeUndefined();
+        const results = await inspectProject({
+          projectDir: dir,
+          pythonPath: pythonCmd,
         });
-      },
-    );
 
-    test.skipIf(!pythonAvailable)(
-      "populates python config for Jupyter notebook",
-      () => {
-        clearPythonVersionCache();
-        return withTempDir(async (dir) => {
-          await writeFile(
-            path.join(dir, "analysis.ipynb"),
-            makeNotebookJSON([["import pandas as pd\n"]]),
-            "utf-8",
-          );
-          await writeFile(
-            path.join(dir, "requirements.txt"),
-            "pandas\n",
-            "utf-8",
-          );
+        const flask = results.find(
+          (r) => r.configuration.type === ContentType.PYTHON_FLASK,
+        );
+        expect(flask).toBeDefined();
+        expect(flask?.configuration.python).toBeDefined();
+        // No rpy2, so R should not be detected
+        expect(flask?.configuration.r).toBeUndefined();
+      });
+    });
 
-          const results = await inspectProject({
-            projectDir: dir,
-            pythonPath: pythonCmd,
-          });
+    test("populates python config for Jupyter notebook", ({ skip }) => {
+      if (!pythonAvailable) skip();
+      clearPythonVersionCache();
+      return withTempDir(async (dir) => {
+        await writeFile(
+          path.join(dir, "analysis.ipynb"),
+          makeNotebookJSON([["import pandas as pd\n"]]),
+          "utf-8",
+        );
+        await writeFile(
+          path.join(dir, "requirements.txt"),
+          "pandas\n",
+          "utf-8",
+        );
 
-          const notebook = results.find(
-            (r) => r.configuration.type === ContentType.JUPYTER_NOTEBOOK,
-          );
-          expect(notebook).toBeDefined();
-          expect(notebook?.configuration.python).toBeDefined();
-          expect(notebook?.configuration.python?.version).toMatch(
-            /^\d+\.\d+\.\d+$/,
-          );
-          expect(notebook?.configuration.python?.packageFile).toBe(
-            "requirements.txt",
-          );
+        const results = await inspectProject({
+          projectDir: dir,
+          pythonPath: pythonCmd,
         });
-      },
-    );
+
+        const notebook = results.find(
+          (r) => r.configuration.type === ContentType.JUPYTER_NOTEBOOK,
+        );
+        expect(notebook).toBeDefined();
+        expect(notebook?.configuration.python).toBeDefined();
+        expect(notebook?.configuration.python?.version).toMatch(
+          /^\d+\.\d+\.\d+$/,
+        );
+        expect(notebook?.configuration.python?.packageFile).toBe(
+          "requirements.txt",
+        );
+      });
+    });
 
     test("does not populate python or R for static HTML", () =>
       withTempDir(async (dir) => {
