@@ -58,6 +58,8 @@ export type PublishEvent = {
   step: PublishStep;
   status: "start" | "success" | "failure" | "log";
   message?: string;
+  /** Typed error code for failure events. */
+  errCode?: ErrorCode;
   /** Additional data for event stream injection (e.g., URLs, status codes). */
   data?: Record<string, string>;
 };
@@ -305,9 +307,7 @@ export async function connectPublish(
     // Emit failure event so progress consumers know which step failed.
     // Use the classified message (user-friendly) rather than the raw error.
     if (lastStep) {
-      const failData: Record<string, string> = {
-        errCode: classified.code,
-      };
+      const failData: Record<string, string> = {};
       // Include URLs when we have a content ID so the UI can link to logs
       if (record.logsUrl) {
         failData.logsUrl = record.logsUrl;
@@ -327,6 +327,7 @@ export async function connectPublish(
         step: lastStep,
         status: "failure",
         message: classified.message,
+        errCode: classified.code,
         data: failData,
       });
     }

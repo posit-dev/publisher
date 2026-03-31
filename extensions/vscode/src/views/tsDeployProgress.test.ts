@@ -325,8 +325,8 @@ describe("runTsDeployWithProgress", () => {
         step: "validateDeployment",
         status: "failure",
         message: "Content not running",
+        errCode: "deployedContentNotRunning",
         data: {
-          errCode: "deployedContentNotRunning",
           logsUrl: "https://connect.example.com/connect/#/apps/abc-123/logs",
           dashboardUrl: "https://connect.example.com/connect/#/apps/abc-123",
           status: "502",
@@ -408,8 +408,8 @@ describe("runTsDeployWithProgress", () => {
         step: "validateDeployment",
         status: "failure",
         message: "Content not running",
+        errCode: "deployedContentNotRunning",
         data: {
-          errCode: "deployedContentNotRunning",
           logsUrl: "https://connect.example.com/connect/#/apps/abc-123/logs",
           status: "502",
         },
@@ -431,8 +431,6 @@ describe("runTsDeployWithProgress", () => {
     );
     expect(failMsg!.data.status).toBe("502");
     expect(failMsg!.errCode).toBe("deployedContentNotRunning");
-    // errCode should only be on msg.errCode, not duplicated in msg.data
-    expect(failMsg!.data.errCode).toBeUndefined();
   });
 
   it("injects validateDeployment log events", async () => {

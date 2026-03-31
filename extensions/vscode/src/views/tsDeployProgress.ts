@@ -148,12 +148,10 @@ export function runTsDeployWithProgress(
               lastDashboardUrl = event.data.dashboardUrl;
             }
 
-            const { errCode: rawCode, ...restData } = event.data ?? {};
             const failData: Record<string, string> = {
               message: event.message || "Unknown error",
-              ...restData,
+              ...event.data,
             };
-            const errCode = rawCode as ErrorCode | undefined;
 
             if (event.step === "waitForTask") {
               // Fail whichever stage is active (restoreEnv or runContent).
@@ -161,14 +159,16 @@ export function runTsDeployWithProgress(
                 makeMessage(
                   `${waitForTaskStage}/failure` as EventSubscriptionTarget,
                   failData,
-                  errCode,
+                  event.errCode,
                 ),
               );
             } else {
               const prefix = stepToEventPrefix[event.step];
               if (prefix) {
                 const type = `${prefix}/failure` as EventSubscriptionTarget;
-                stream.injectMessage(makeMessage(type, failData, errCode));
+                stream.injectMessage(
+                  makeMessage(type, failData, event.errCode),
+                );
               }
             }
           } else if (event.status === "log") {

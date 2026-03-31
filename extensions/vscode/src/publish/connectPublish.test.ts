@@ -839,7 +839,7 @@ describe("connectPublish — error classification", () => {
       step: "uploadBundle",
       status: "failure",
       message: "Upload failed: 502",
-      data: { errCode: "unknown" },
+      errCode: "unknown",
     });
   });
 
@@ -858,6 +858,8 @@ describe("connectPublish — error classification", () => {
     );
     expect(validateLogs).toHaveLength(2);
     expect(validateLogs[0]!.message).toBe("Validating Deployment");
+    // The URL is a relative API path (/content/{guid}/), not the full
+    // content_url — validateDeployment hits the Connect API endpoint.
     expect(validateLogs[1]!.message).toMatch(
       /^Testing URL \/content\/content-guid-123\/$/,
     );
