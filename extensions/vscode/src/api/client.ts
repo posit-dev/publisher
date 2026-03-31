@@ -34,7 +34,7 @@ class PublishingClientApi {
           error.response?.status === 500 &&
           typeof error.response?.data === "string"
         ) {
-          error.response.data = Entities.decodeHTML5(error.response.data);
+          error.response.data = Entities.decodeHTML(error.response.data);
         }
         return Promise.reject(error);
       },
