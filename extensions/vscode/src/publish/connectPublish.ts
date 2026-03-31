@@ -191,6 +191,7 @@ export async function connectPublish(
     onProgress({
       step: "createManifest",
       status: "log",
+      // manifest.platform holds the R version in the Posit manifest spec
       message: manifest.platform
         ? `Local R version ${manifest.platform}`
         : "Local R not in use",

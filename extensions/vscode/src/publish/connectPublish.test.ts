@@ -1010,9 +1010,9 @@ describe("connectPublish — error classification", () => {
     });
   });
 
-  test("createManifest emits local runtime version messages", async () => {
+  test("createManifest emits 'not in use' for missing runtimes", async () => {
     const onProgress = vi.fn();
-    // Default config has Python 3.11.0, no R, no Quarto
+    // Default config has Python 3.11.0 but no R or Quarto
     const opts = makeOptions({ onProgress });
 
     await connectPublish(opts);
@@ -1028,6 +1028,39 @@ describe("connectPublish — error classification", () => {
     expect(messages).toContain("Local Quarto not in use");
     expect(messages).toContain("Local R not in use");
     expect(messages).toContain("Local Python version 3.11.0");
+  });
+
+  test("createManifest emits version messages in order when all runtimes set", async () => {
+    const onProgress = vi.fn();
+    const config = makeConfig({
+      quarto: { version: "1.4.0", engines: ["jupyter"] },
+      r: { version: "4.3.2", packageFile: "renv.lock" },
+      python: {
+        version: "3.12.0",
+        packageFile: "requirements.txt",
+        packageManager: "pip",
+      },
+    });
+    const opts = makeOptions({ onProgress, config });
+
+    await connectPublish(opts);
+
+    const events = onProgress.mock.calls.map(
+      (args: unknown[]) => args[0] as PublishEvent,
+    );
+    const manifestLogs = events.filter(
+      (e) => e.step === "createManifest" && e.status === "log",
+    );
+    const versionMessages = manifestLogs
+      .map((e) => e.message)
+      .filter((m) => m?.startsWith("Local "));
+
+    // Asserts content, count, AND order
+    expect(versionMessages).toEqual([
+      "Local Quarto version 1.4.0",
+      "Local R version 4.3.2",
+      "Local Python version 3.12.0",
+    ]);
   });
 
   test("success events carry no message (detail is on preceding log events)", async () => {
