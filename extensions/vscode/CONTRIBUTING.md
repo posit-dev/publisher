@@ -5,10 +5,15 @@
 Before you begin, make sure you have the following installed:
 
 - [Visual Studio Code](https://code.visualstudio.com/download)
-  - The [`connor4312.esbuild-problem-matchers`](https://marketplace.visualstudio.com/items?itemName=connor4312.esbuild-problem-matchers) extension.
   - The `code` CLI should be installed and on your PATH. On Linux this should happen automatically; on macOS follow [these instructions](https://code.visualstudio.com/docs/setup/mac#_configure-the-path-with-vs-code).
 - [Node.js](https://nodejs.org/en)
 - [Just](https://just.systems)
+
+### Required VS Code Extensions
+
+> **Important:** The [`connor4312.esbuild-problem-matchers`](https://marketplace.visualstudio.com/items?itemName=connor4312.esbuild-problem-matchers) extension is **required** to run the "Run Extension" debug configurations. Without it, the launch will fail. This is the most commonly missed setup step.
+
+When you open this directory as a workspace, VS Code should prompt you to install recommended extensions from [`.vscode/extensions.json`](.vscode/extensions.json). If you miss the prompt, install them via the command palette: "Extensions: Show Recommended Extensions".
 
 ## Development Workflow
 
