@@ -129,9 +129,19 @@ export function runTsDeployWithProgress(
               injectStageEvent(stream, event.step, "success");
             }
           } else if (event.status === "failure") {
-            injectStageEvent(stream, event.step, "failure", {
-              message: event.message || "Unknown error",
-            });
+            if (event.step === "waitForTask") {
+              // Fail whichever stage is active (restoreEnv or runContent).
+              stream.injectMessage(
+                makeMessage(
+                  `${waitForTaskStage}/failure` as EventSubscriptionTarget,
+                  { message: event.message || "Unknown error" },
+                ),
+              );
+            } else {
+              injectStageEvent(stream, event.step, "failure", {
+                message: event.message || "Unknown error",
+              });
+            }
           } else if (event.status === "log") {
             const msg = event.message || "";
 

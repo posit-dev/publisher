@@ -322,6 +322,36 @@ describe("runTsDeployWithProgress", () => {
     expect(failMsg!.data.message).toBe("server error");
   });
 
+  it("emits runContent/failure when task fails after stage transition", async () => {
+    const { onComplete, stream } = run((onProgress) => {
+      onProgress({ step: "waitForTask", status: "start" });
+      onProgress({
+        step: "waitForTask",
+        status: "log",
+        message: "Launching Jupyter notebook",
+      });
+      onProgress({
+        step: "waitForTask",
+        status: "failure",
+        message: "Application crashed on startup",
+      });
+      return Promise.reject(new Error("Application crashed on startup"));
+    });
+
+    await vi.waitFor(() => {
+      expect(onComplete).toHaveBeenCalled();
+    });
+
+    const types = stream.injected.map((m) => m.type);
+    expect(types).toContain("publish/runContent/failure");
+    expect(types).not.toContain("publish/restoreEnv/failure");
+
+    const failMsg = stream.injected.find(
+      (m) => m.type === "publish/runContent/failure",
+    );
+    expect(failMsg!.data.message).toBe("Application crashed on startup");
+  });
+
   it("injects stage failure event when a step fails", async () => {
     const { onComplete, stream } = run((onProgress) => {
       onProgress({ step: "uploadBundle", status: "start" });
