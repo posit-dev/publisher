@@ -1,7 +1,7 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
 import { describe, expect, it } from "vitest";
-import { appModeFromType } from "./appMode";
+import { appModeFromType, contentTypeFromAppMode } from "./appMode";
 import { manifestFromConfig } from "./manifestFromConfig";
 import { ContentType, ConfigurationDetails } from "../api/types/configurations";
 import { ProductType } from "../api/types/contentRecords";
@@ -48,6 +48,28 @@ describe("appModeFromType", () => {
 
   it("passes through ContentType.UNKNOWN as 'unknown'", () => {
     expect(appModeFromType(ContentType.UNKNOWN)).toBe("unknown");
+  });
+});
+
+describe("contentTypeFromAppMode", () => {
+  it.each([
+    ["static", ContentType.HTML],
+    ["python-shiny", ContentType.PYTHON_SHINY],
+    ["shiny", ContentType.R_SHINY],
+    ["api", ContentType.R_PLUMBER],
+    ["rmd-static", ContentType.RMD],
+  ])("maps %s → %s", (appMode, expected) => {
+    expect(contentTypeFromAppMode(appMode)).toBe(expected);
+  });
+
+  // QUARTO and QUARTO_STATIC both map to "quarto-static" in the forward
+  // direction; the reverse map resolves to QUARTO matching Go's mapping.
+  it("resolves quarto-static to QUARTO (not QUARTO_STATIC)", () => {
+    expect(contentTypeFromAppMode("quarto-static")).toBe(ContentType.QUARTO);
+  });
+
+  it("passes through unknown app modes as-is", () => {
+    expect(contentTypeFromAppMode("unknown-xyz")).toBe("unknown-xyz");
   });
 });
 

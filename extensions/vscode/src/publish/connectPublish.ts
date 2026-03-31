@@ -214,7 +214,8 @@ export async function connectPublish(
       try {
         const resp = await api.contentDetails(ContentID(contentId));
         existing = resp.data;
-      } catch {
+      } catch (err) {
+        console.debug("contentDetails failed for", contentId, err);
         throw new Error(
           `Deployment target cannot be reached. Halting deployment. ` +
             `(Content ID = ${contentId})`,
