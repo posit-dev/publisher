@@ -8,6 +8,7 @@ import type {
 } from "src/publish/connectPublish";
 import type { EventStream } from "src/events";
 import type { EventStreamMessage, EventSubscriptionTarget } from "src/api";
+import type { ErrorCode } from "src/utils/errorTypes";
 
 // Patterns that signal the server has finished restoring the environment
 // and is now launching the content. Mirrors Go's eventOpFromLogLine().
@@ -52,12 +53,17 @@ export type TsDeployProgressOptions = {
 function makeMessage(
   type: EventSubscriptionTarget,
   data: Record<string, string> = {},
+  errCode?: ErrorCode,
 ): EventStreamMessage {
-  return {
+  const msg: EventStreamMessage = {
     type,
     time: new Date().toISOString(),
     data: { message: "", ...data },
   };
+  if (errCode) {
+    msg.errCode = errCode;
+  }
+  return msg;
 }
 
 /**
@@ -106,6 +112,11 @@ export function runTsDeployWithProgress(
         }),
       );
 
+      // Capture URLs from step failure events so we can include them
+      // on the top-level publish/failure event for the logs tree view.
+      let lastLogsUrl: string | undefined;
+      let lastDashboardUrl: string | undefined;
+
       try {
         // Track which SSE stage waitForTask logs belong to.
         // Starts as restoreEnv, transitions to runContent when a launch
@@ -129,44 +140,69 @@ export function runTsDeployWithProgress(
               injectStageEvent(stream, event.step, "success");
             }
           } else if (event.status === "failure") {
+            // Capture URLs from the failure event for use in publish/failure.
+            if (event.data?.logsUrl) {
+              lastLogsUrl = event.data.logsUrl;
+            }
+            if (event.data?.dashboardUrl) {
+              lastDashboardUrl = event.data.dashboardUrl;
+            }
+
+            const failData: Record<string, string> = {
+              message: event.message || "Unknown error",
+              ...event.data,
+            };
+            const errCode = event.data?.errCode as ErrorCode | undefined;
+
             if (event.step === "waitForTask") {
               // Fail whichever stage is active (restoreEnv or runContent).
               stream.injectMessage(
                 makeMessage(
                   `${waitForTaskStage}/failure` as EventSubscriptionTarget,
-                  { message: event.message || "Unknown error" },
+                  failData,
+                  errCode,
                 ),
               );
             } else {
-              injectStageEvent(stream, event.step, "failure", {
-                message: event.message || "Unknown error",
-              });
-            }
-          } else if (event.status === "log") {
-            const msg = event.message || "";
-
-            // Detect the transition from env restore to content launch.
-            if (launchPattern.test(msg) || staticPattern.test(msg)) {
-              if (waitForTaskStage === "publish/restoreEnv") {
-                // Close restoreEnv and open runContent in the logs tree.
-                stream.injectMessage(
-                  makeMessage(
-                    "publish/restoreEnv/success" as EventSubscriptionTarget,
-                  ),
-                );
-                stream.injectMessage(
-                  makeMessage(
-                    "publish/runContent/start" as EventSubscriptionTarget,
-                  ),
-                );
-                waitForTaskStage = "publish/runContent";
+              const prefix = stepToEventPrefix[event.step];
+              if (prefix) {
+                const type = `${prefix}/failure` as EventSubscriptionTarget;
+                stream.injectMessage(makeMessage(type, failData, errCode));
               }
             }
+          } else if (event.status === "log") {
+            if (event.step === "waitForTask") {
+              const msg = event.message || "";
 
-            const type = `${waitForTaskStage}/log` as EventSubscriptionTarget;
-            stream.injectMessage(
-              makeMessage(type, { message: msg, level: "INFO" }),
-            );
+              // Detect the transition from env restore to content launch.
+              if (launchPattern.test(msg) || staticPattern.test(msg)) {
+                if (waitForTaskStage === "publish/restoreEnv") {
+                  // Close restoreEnv and open runContent in the logs tree.
+                  stream.injectMessage(
+                    makeMessage(
+                      "publish/restoreEnv/success" as EventSubscriptionTarget,
+                    ),
+                  );
+                  stream.injectMessage(
+                    makeMessage(
+                      "publish/runContent/start" as EventSubscriptionTarget,
+                    ),
+                  );
+                  waitForTaskStage = "publish/runContent";
+                }
+              }
+
+              const type = `${waitForTaskStage}/log` as EventSubscriptionTarget;
+              stream.injectMessage(
+                makeMessage(type, { message: msg, level: "INFO" }),
+              );
+            } else {
+              // Non-waitForTask log events (e.g., validateDeployment logs)
+              injectStageEvent(stream, event.step, "log", {
+                message: event.message || "",
+                ...event.data,
+              });
+            }
           }
         });
 
@@ -189,15 +225,19 @@ export function runTsDeployWithProgress(
         const message = err instanceof Error ? err.message : String(err);
 
         // Inject publish/failure — triggers HomeView's onPublishFailure()
-        // via the stream handler.
-        stream.injectMessage(
-          makeMessage("publish/failure", {
-            message,
-            productType: "connect",
-          }),
-        );
-
-        window.showErrorMessage(`Deployment failed: ${message}`);
+        // via the stream handler. Include URLs when available so the logs
+        // tree view can render a clickable "View Connect Logs" link.
+        const failureData: Record<string, string> = {
+          message,
+          productType: "connect",
+        };
+        if (lastLogsUrl) {
+          failureData.logsUrl = lastLogsUrl;
+        }
+        if (lastDashboardUrl) {
+          failureData.dashboardUrl = lastDashboardUrl;
+        }
+        stream.injectMessage(makeMessage("publish/failure", failureData));
       } finally {
         onComplete();
       }

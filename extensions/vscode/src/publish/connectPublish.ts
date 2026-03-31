@@ -57,6 +57,8 @@ export type PublishEvent = {
   step: PublishStep;
   status: "start" | "success" | "failure" | "log";
   message?: string;
+  /** Additional data for event stream injection (e.g., URLs, status codes). */
+  data?: Record<string, string>;
 };
 
 export type ConnectPublishOptions = {
@@ -266,6 +268,17 @@ export async function connectPublish(
     if (config.validate) {
       lastStep = "validateDeployment";
       onProgress({ step: "validateDeployment", status: "start" });
+      onProgress({
+        step: "validateDeployment",
+        status: "log",
+        message: "Validating Deployment",
+      });
+      onProgress({
+        step: "validateDeployment",
+        status: "log",
+        message: `Testing URL /content/${contentId}/`,
+        data: { url: `/content/${contentId}/` },
+      });
       await api.validateDeployment(ContentID(contentId));
       onProgress({ step: "validateDeployment", status: "success" });
     }
@@ -282,15 +295,39 @@ export async function connectPublish(
       bundleId: bundleDTO.id,
     };
   } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : String(err);
+    // Classify the error for both the deployment record and UI events
+    const classified = classifyDeploymentError(lastStep, err);
 
-    // Emit failure event so progress consumers know which step failed
+    // Emit failure event so progress consumers know which step failed.
+    // Use the classified message (user-friendly) rather than the raw error.
     if (lastStep) {
-      onProgress({ step: lastStep, status: "failure", message: errorMessage });
+      const failData: Record<string, string> = {
+        errCode: classified.code,
+      };
+      // Include URLs when we have a content ID so the UI can link to logs
+      if (record.logsUrl) {
+        failData.logsUrl = record.logsUrl;
+      }
+      if (record.dashboardUrl) {
+        failData.dashboardUrl = record.dashboardUrl;
+      }
+      // Include HTTP status for validateDeployment failures
+      if (
+        lastStep === "validateDeployment" &&
+        isAxiosError(err) &&
+        err.response
+      ) {
+        failData.status = String(err.response.status);
+      }
+      onProgress({
+        step: lastStep,
+        status: "failure",
+        message: classified.message,
+        data: failData,
+      });
     }
 
     // Record the error in the deployment file
-    const classified = classifyDeploymentError(lastStep, err);
     record.deploymentError = {
       code: classified.code,
       message: classified.message,

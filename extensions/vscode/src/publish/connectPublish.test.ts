@@ -835,10 +835,11 @@ describe("connectPublish — error classification", () => {
       (args: unknown[]) => args[0] as PublishEvent,
     );
     const failureEvent = events.find((e) => e.status === "failure");
-    expect(failureEvent).toEqual({
+    expect(failureEvent).toMatchObject({
       step: "uploadBundle",
       status: "failure",
       message: "Upload failed: 502",
+      data: { errCode: "unknown" },
     });
   });
 });

@@ -121,14 +121,19 @@ describe("runTsDeployWithProgress", () => {
     });
   });
 
-  it("shows error message on failure", async () => {
-    run(() => Promise.reject(new Error("upload failed")));
+  it("injects publish/failure with message on deploy error", async () => {
+    const { onComplete, stream } = run(() =>
+      Promise.reject(new Error("upload failed")),
+    );
 
     await vi.waitFor(() => {
-      expect(mockShowErrorMessage).toHaveBeenCalledWith(
-        "Deployment failed: upload failed",
-      );
+      expect(onComplete).toHaveBeenCalled();
     });
+
+    const failMsg = stream.injected.find((m) => m.type === "publish/failure");
+    expect(failMsg).toBeDefined();
+    expect(failMsg!.data.message).toBe("upload failed");
+    expect(failMsg!.data.productType).toBe("connect");
   });
 
   it("offers View button on success", async () => {
@@ -313,10 +318,22 @@ describe("runTsDeployWithProgress", () => {
     expect(successMsg!.data.dashboardUrl).toBe(successResult.dashboardUrl);
   });
 
-  it("injects publish/failure on deploy error", async () => {
-    const { onComplete, stream } = run(() =>
-      Promise.reject(new Error("server error")),
-    );
+  it("includes URLs on publish/failure when step failure provides them", async () => {
+    const { onComplete, stream } = run((onProgress) => {
+      onProgress({ step: "validateDeployment", status: "start" });
+      onProgress({
+        step: "validateDeployment",
+        status: "failure",
+        message: "Content not running",
+        data: {
+          errCode: "deployedContentNotRunning",
+          logsUrl: "https://connect.example.com/connect/#/apps/abc-123/logs",
+          dashboardUrl: "https://connect.example.com/connect/#/apps/abc-123",
+          status: "502",
+        },
+      });
+      return Promise.reject(new Error("Content not running"));
+    });
 
     await vi.waitFor(() => {
       expect(onComplete).toHaveBeenCalled();
@@ -324,7 +341,12 @@ describe("runTsDeployWithProgress", () => {
 
     const failMsg = stream.injected.find((m) => m.type === "publish/failure");
     expect(failMsg).toBeDefined();
-    expect(failMsg!.data.message).toBe("server error");
+    expect(failMsg!.data.logsUrl).toBe(
+      "https://connect.example.com/connect/#/apps/abc-123/logs",
+    );
+    expect(failMsg!.data.dashboardUrl).toBe(
+      "https://connect.example.com/connect/#/apps/abc-123",
+    );
   });
 
   it("emits runContent/failure when task fails after stage transition", async () => {
@@ -377,5 +399,62 @@ describe("runTsDeployWithProgress", () => {
     );
     expect(failMsg).toBeDefined();
     expect(failMsg!.data.message).toBe("413 too large");
+  });
+
+  it("passes event.data through to validateDeployment failure event", async () => {
+    const { onComplete, stream } = run((onProgress) => {
+      onProgress({ step: "validateDeployment", status: "start" });
+      onProgress({
+        step: "validateDeployment",
+        status: "failure",
+        message: "Content not running",
+        data: {
+          errCode: "deployedContentNotRunning",
+          logsUrl: "https://connect.example.com/connect/#/apps/abc-123/logs",
+          status: "502",
+        },
+      });
+      return Promise.reject(new Error("Content not running"));
+    });
+
+    await vi.waitFor(() => {
+      expect(onComplete).toHaveBeenCalled();
+    });
+
+    const failMsg = stream.injected.find(
+      (m) => m.type === "publish/validateDeployment/failure",
+    );
+    expect(failMsg).toBeDefined();
+    expect(failMsg!.data.message).toBe("Content not running");
+    expect(failMsg!.data.logsUrl).toBe(
+      "https://connect.example.com/connect/#/apps/abc-123/logs",
+    );
+    expect(failMsg!.data.status).toBe("502");
+    expect(failMsg!.errCode).toBe("deployedContentNotRunning");
+  });
+
+  it("injects validateDeployment log events", async () => {
+    const { onComplete, stream } = run((onProgress) => {
+      onProgress({ step: "validateDeployment", status: "start" });
+      onProgress({
+        step: "validateDeployment",
+        status: "log",
+        message: "Testing URL /content/abc-123/",
+        data: { url: "/content/abc-123/" },
+      });
+      onProgress({ step: "validateDeployment", status: "success" });
+      return Promise.resolve(successResult);
+    });
+
+    await vi.waitFor(() => {
+      expect(onComplete).toHaveBeenCalled();
+    });
+
+    const logMsgs = stream.injected.filter(
+      (m) => m.type === "publish/validateDeployment/log",
+    );
+    expect(logMsgs).toHaveLength(1);
+    expect(logMsgs[0]!.data.message).toBe("Testing URL /content/abc-123/");
+    expect(logMsgs[0]!.data.url).toBe("/content/abc-123/");
   });
 });

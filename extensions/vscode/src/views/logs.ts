@@ -405,6 +405,10 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
           }
         });
 
+        // Refresh immediately so the tree shows failure state before
+        // the error notification dialog blocks on user interaction.
+        this.refresh();
+
         const showLogsOption = "View Publishing Log";
         const options = [showLogsOption];
         const messageText = msg.data.message ?? "";
