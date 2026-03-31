@@ -33,7 +33,7 @@ import type { RenvLockfile } from "./rPackageDescriptions";
 
 import { forceProductTypeCompliance } from "../toml/configCompliance";
 import { convertKeysToSnakeCase } from "../toml/convertKeys";
-import { stripEmpty, isRecord } from "../toml/tomlHelpers";
+import { stripEmpty, isRecord, expandInlineArrays } from "../toml/tomlHelpers";
 import { getDashboardUrl, getDirectUrl, getLogsUrl } from "../toml/urlHelpers";
 import { fileExistsAt } from "../interpreters/fsUtils";
 
@@ -559,7 +559,8 @@ export async function writePublishRecord(
   record: PublishRecord,
 ): Promise<void> {
   const obj = recordToTomlObject(record);
-  const content = AUTOGEN_HEADER + stringifyTOML(obj) + "\n";
+  const content =
+    AUTOGEN_HEADER + expandInlineArrays(stringifyTOML(obj)) + "\n";
   await fs.mkdir(path.dirname(deploymentPath), { recursive: true });
   await fs.writeFile(deploymentPath, content, "utf-8");
 }
