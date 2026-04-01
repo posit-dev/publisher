@@ -183,6 +183,7 @@ export async function connectPublish(
       config,
       rPath,
       positronR,
+      onProgress,
     );
 
     // Log local runtime versions (mirrors Go's logDeploymentVersions)
@@ -975,6 +976,7 @@ async function buildManifest(
   config: ConfigurationDetails,
   rPath: string | undefined,
   positronR: PositronRSettings | undefined,
+  onProgress: (event: PublishEvent) => void,
 ): Promise<ManifestResult> {
   const manifest = manifestFromConfig(config);
   let lockfilePath: string | undefined;
@@ -987,6 +989,12 @@ async function buildManifest(
 
     if (lockExists) {
       // Use the existing lockfile directly
+      // TS always uses the lockfile mapper (renv.lock), never the library mapper
+      onProgress({
+        step: "createManifest",
+        status: "log",
+        message: `Loading packages from renv.lock`,
+      });
       const resolved = await resolveRPackages(projectDir, config.r);
       if (resolved) {
         manifest.packages = resolved.packages;
@@ -995,12 +1003,26 @@ async function buildManifest(
       }
     } else {
       // No lockfile — scan project for R dependencies
+      // Mirrors Go's manifest.go:46 log message
+      onProgress({
+        step: "createManifest",
+        status: "log",
+        message: "No renv.lock found; automatically scanning for dependencies",
+      });
+
       if (!rPath) {
         throw new Error(
           "R interpreter is required to scan for R package dependencies, " +
             "but none was found. Install R or provide an renv.lock file.",
         );
       }
+
+      // Mirrors Go's r_package_descriptions.go:105
+      onProgress({
+        step: "createManifest",
+        status: "log",
+        message: "Detect dependencies from project",
+      });
 
       // Inject implicit deps (e.g. shiny, rmarkdown) so renv can discover them
       const extraDeps = await findExtraDependencies(
@@ -1019,6 +1041,11 @@ async function buildManifest(
       }
 
       // Now resolve from the generated lockfile
+      onProgress({
+        step: "createManifest",
+        status: "log",
+        message: `Loading packages from renv.lock`,
+      });
       const resolved = await resolveRPackages(projectDir, config.r);
       if (resolved) {
         manifest.packages = resolved.packages;
@@ -1026,6 +1053,12 @@ async function buildManifest(
         lockfile = resolved.lockfile;
       }
     }
+
+    onProgress({
+      step: "createManifest",
+      status: "log",
+      message: "Done collecting R package descriptions",
+    });
   }
 
   return { manifest, lockfilePath, lockfile };
