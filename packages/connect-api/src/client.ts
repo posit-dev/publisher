@@ -324,8 +324,22 @@ export class ConnectAPI {
   /**
    * Fetches composite server settings from 7 separate endpoints,
    * mirroring the Go client's GetSettings behavior.
+   *
+   * @param appMode - Connect app mode string (e.g. "python-shiny", "static").
+   *   When provided and not "static", the scheduler endpoint is fetched with
+   *   an app-mode-specific path (`/scheduler/{appMode}`) to get limits that
+   *   apply to that content type. Mirrors Go's `GetSettings` which skips
+   *   the app-mode path for static and unknown content types.
    */
-  async getSettings(): Promise<AllSettings> {
+  async getSettings(appMode?: string): Promise<AllSettings> {
+    // Go uses the app-mode-specific scheduler path for known, non-static types.
+    // "static" content has no scheduler settings; unknown types would produce
+    // invalid API paths. For those cases, use the base scheduler endpoint.
+    const schedulerPath =
+      appMode && appMode !== "static"
+        ? `/__api__/server_settings/scheduler/${appMode}`
+        : "/__api__/server_settings/scheduler";
+
     const [
       { data: user },
       { data: general },
@@ -340,7 +354,7 @@ export class ConnectAPI {
       this.client.get<ApplicationSettings>(
         "/__api__/server_settings/applications",
       ),
-      this.client.get<SchedulerSettings>("/__api__/server_settings/scheduler"),
+      this.client.get<SchedulerSettings>(schedulerPath),
       this.client.get<PyInfo>("/__api__/v1/server_settings/python"),
       this.client.get<RInfo>("/__api__/v1/server_settings/r"),
       this.client.get<QuartoInfo>("/__api__/v1/server_settings/quarto"),

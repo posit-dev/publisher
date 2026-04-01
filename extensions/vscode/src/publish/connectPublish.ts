@@ -274,7 +274,7 @@ export async function connectPublish(
       status: "log",
       message: "Checking server capabilities",
     });
-    const settings = await api.getSettings();
+    const settings = await api.getSettings(appModeFromType(config.type));
     checkServerSettings(settings, config);
 
     // Verify existing content when redeploying (mirrors Go's ValidateDeploymentTarget)
@@ -292,6 +292,18 @@ export async function connectPublish(
         existing = resp.data;
       } catch (err) {
         logger.debug(`contentDetails failed for ${contentId}:`, err);
+        // Mirrors Go's preflightAgentError: specific messages for 404/403
+        if (isAxiosError(err) && err.response?.status === 404) {
+          throw new Error(
+            `Cannot deploy content: ID ${contentId} - Content cannot be found.`,
+          );
+        }
+        if (isAxiosError(err) && err.response?.status === 403) {
+          throw new Error(
+            `Cannot deploy content: ID ${contentId} - ` +
+              `You may need to request collaborator permissions or verify the credentials in use.`,
+          );
+        }
         throw new Error(
           `Deployment target cannot be reached. Halting deployment. ` +
             `(Content ID = ${contentId})`,
@@ -455,6 +467,11 @@ export async function connectPublish(
     if (envVars) {
       lastStep = "setEnvVars";
       onProgress({ step: "setEnvVars", status: "start" });
+      onProgress({
+        step: "setEnvVars",
+        status: "log",
+        message: "Setting environment variables",
+      });
       // Log each variable individually (matching Go's per-variable messages)
       for (const name of Object.keys(envVars)) {
         const isSecret = secrets !== undefined && name in secrets;
@@ -527,10 +544,13 @@ export async function connectPublish(
         status: "log",
         message: "Validating Deployment",
       });
+      // Message is just "Testing URL"; displayEventStreamMessage appends
+      // data.url to produce "Testing URL /content/{id}/". Mirrors Go's
+      // log.Info("Testing URL", "url", url).
       onProgress({
         step: "validateDeployment",
         status: "log",
-        message: `Testing URL /content/${contentId}/`,
+        message: "Testing URL",
         data: { url: `/content/${contentId}/` },
       });
       await api.validateDeployment(ContentID(contentId));

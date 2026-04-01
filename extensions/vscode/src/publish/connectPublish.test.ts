@@ -449,8 +449,59 @@ describe("connectPublish", () => {
       new Error("Request failed with status code 404"),
     );
 
+    // Plain Error (not AxiosError) → generic message
     await expect(connectPublish(opts)).rejects.toThrow(
       "Deployment target cannot be reached",
+    );
+  });
+
+  test("redeploy 404 gives specific content-not-found message", async () => {
+    const opts = makeOptions({
+      existingContentId: "deleted-id",
+      existingCreatedAt: "2024-06-01T00:00:00Z",
+    });
+    const axiosErr = new AxiosError(
+      "Not Found",
+      "ERR_BAD_REQUEST",
+      undefined,
+      undefined,
+      {
+        status: 404,
+        statusText: "Not Found",
+        data: {},
+        headers: {},
+        config: { headers: new AxiosHeaders() },
+      },
+    );
+    vi.mocked(opts.api.contentDetails).mockRejectedValueOnce(axiosErr);
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "Cannot deploy content: ID deleted-id - Content cannot be found.",
+    );
+  });
+
+  test("redeploy 403 gives specific permissions message", async () => {
+    const opts = makeOptions({
+      existingContentId: "forbidden-id",
+      existingCreatedAt: "2024-06-01T00:00:00Z",
+    });
+    const axiosErr = new AxiosError(
+      "Forbidden",
+      "ERR_BAD_REQUEST",
+      undefined,
+      undefined,
+      {
+        status: 403,
+        statusText: "Forbidden",
+        data: {},
+        headers: {},
+        config: { headers: new AxiosHeaders() },
+      },
+    );
+    vi.mocked(opts.api.contentDetails).mockRejectedValueOnce(axiosErr);
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "Cannot deploy content: ID forbidden-id - You may need to request collaborator permissions",
     );
   });
 
@@ -515,16 +566,19 @@ describe("connectPublish", () => {
     const envEvents = events.filter((e) => e.step === "setEnvVars");
     expect(envEvents.map((e) => e.status)).toEqual([
       "start",
+      "log", // summary
       "log", // per-variable log
       "log", // done
       "success",
     ]);
+    // Summary line before per-variable logs (matching Go)
+    expect(envEvents[1]!.message).toBe("Setting environment variables");
     // Secret variables use "Setting secret as environment variable"
-    expect(envEvents[1]!.message).toBe(
+    expect(envEvents[2]!.message).toBe(
       "Setting secret as environment variable",
     );
-    expect(envEvents[1]!.data).toEqual({ name: "API_KEY" });
-    expect(envEvents[2]!.message).toBe("Done setting environment variables");
+    expect(envEvents[2]!.data).toEqual({ name: "API_KEY" });
+    expect(envEvents[3]!.message).toBe("Done setting environment variables");
 
     expect(opts.api.setEnvVars).toHaveBeenCalledWith(
       expect.anything(),
@@ -1406,9 +1460,11 @@ describe("connectPublish — error classification", () => {
     const envLogs = events.filter(
       (e) => e.step === "setEnvVars" && e.status === "log",
     );
-    // First two logs are per-variable, third is "Done"
+    // Filter to just the per-variable logs (exclude summary and "Done")
     const perVarLogs = envLogs.filter(
-      (e) => e.message !== "Done setting environment variables",
+      (e) =>
+        e.message !== "Setting environment variables" &&
+        e.message !== "Done setting environment variables",
     );
     expect(perVarLogs).toHaveLength(2);
 
@@ -1436,11 +1492,8 @@ describe("connectPublish — error classification", () => {
     );
     expect(validateLogs).toHaveLength(3);
     expect(validateLogs[0]!.message).toBe("Validating Deployment");
-    // The URL is a relative API path (/content/{guid}/), not the full
-    // content_url — validateDeployment hits the Connect API endpoint.
-    expect(validateLogs[1]!.message).toMatch(
-      /^Testing URL \/content\/content-guid-123\/$/,
-    );
+    // Message is just "Testing URL"; displayEventStreamMessage appends data.url
+    expect(validateLogs[1]!.message).toBe("Testing URL");
     expect(validateLogs[1]!.data).toEqual({
       url: "/content/content-guid-123/",
     });

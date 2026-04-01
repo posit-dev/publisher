@@ -1122,6 +1122,49 @@ describe("getSettings", () => {
     expect(settings.r).toEqual(r);
     expect(settings.quarto).toEqual(quarto);
   });
+
+  it("uses app-mode-specific scheduler path when appMode is provided", async () => {
+    const appModeMap: Record<string, unknown> = {
+      ...urlResponseMap,
+      "/__api__/server_settings/scheduler/python-shiny": scheduler,
+    };
+    mockRequest.mockImplementation((config: { url: string }) =>
+      Promise.resolve(jsonResponse(appModeMap[config.url])),
+    );
+
+    const client = createClient();
+    await client.getSettings("python-shiny");
+
+    const urls = mockRequest.mock.calls.map(
+      (call: unknown[]) => (call[0] as { url: string }).url,
+    );
+    expect(urls).toContain("/__api__/server_settings/scheduler/python-shiny");
+    expect(urls).not.toContain("/__api__/server_settings/scheduler");
+  });
+
+  it("uses base scheduler path for static content", async () => {
+    mockSettingsRoutes();
+
+    const client = createClient();
+    await client.getSettings("static");
+
+    const urls = mockRequest.mock.calls.map(
+      (call: unknown[]) => (call[0] as { url: string }).url,
+    );
+    expect(urls).toContain("/__api__/server_settings/scheduler");
+  });
+
+  it("uses base scheduler path when no appMode is provided", async () => {
+    mockSettingsRoutes();
+
+    const client = createClient();
+    await client.getSettings();
+
+    const urls = mockRequest.mock.calls.map(
+      (call: unknown[]) => (call[0] as { url: string }).url,
+    );
+    expect(urls).toContain("/__api__/server_settings/scheduler");
+  });
 });
 
 // ---------------------------------------------------------------------------
