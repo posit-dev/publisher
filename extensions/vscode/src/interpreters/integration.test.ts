@@ -207,112 +207,129 @@ describe("getRRequires (real filesystem)", () => {
 // interpreter is found on the PATH.
 // ---------------------------------------------------------------------------
 
-describe("detectPythonInterpreter (real interpreter)", async () => {
-  // Probe for available Python executable; prefer "python3" (Unix convention)
-  // and fall back to "python" (Windows / pyenv shim convention).
-  const python3Available = await isExecutableAvailable("python3");
-  const pythonAvailable =
-    python3Available || (await isExecutableAvailable("python"));
-  const pythonCmd = python3Available ? "python3" : "python";
+describe(
+  "detectPythonInterpreter (real interpreter)",
+  { timeout: 15_000 },
+  async () => {
+    // Probe for available Python executable; prefer "python3" (Unix convention)
+    // and fall back to "python" (Windows / pyenv shim convention).
+    const python3Available = await isExecutableAvailable("python3");
+    const pythonAvailable =
+      python3Available || (await isExecutableAvailable("python"));
+    const pythonCmd = python3Available ? "python3" : "python";
 
-  test.skipIf(!pythonAvailable)(
-    "detects version from a real Python executable",
-    () => {
+    test.skipIf(!pythonAvailable)(
+      "detects version from a real Python executable",
+      () => {
+        clearPythonVersionCache();
+        return withTempDir(async (dir) => {
+          const result = await detectPythonInterpreter(dir, pythonCmd);
+          expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
+          expect(result.config.packageManager).toBe("auto");
+          expect(result.preferredPath).toBe(pythonCmd);
+        });
+      },
+    );
+
+    test.skipIf(!pythonAvailable)(
+      "detects requirements.txt when present",
+      () => {
+        clearPythonVersionCache();
+        return withTempDir(async (dir) => {
+          await writeFile(
+            path.join(dir, "requirements.txt"),
+            "flask\n",
+            "utf-8",
+          );
+          const result = await detectPythonInterpreter(dir, pythonCmd);
+          expect(result.config.packageFile).toBe("requirements.txt");
+        });
+      },
+    );
+
+    test.skipIf(!pythonAvailable)(
+      "returns empty packageFile when requirements.txt is absent",
+      () => {
+        clearPythonVersionCache();
+        return withTempDir(async (dir) => {
+          const result = await detectPythonInterpreter(dir, pythonCmd);
+          expect(result.config.packageFile).toBe("");
+        });
+      },
+    );
+
+    test.skipIf(!pythonAvailable)(
+      "finds Python on PATH when no preferred path given",
+      () => {
+        clearPythonVersionCache();
+        return withTempDir(async (dir) => {
+          const result = await detectPythonInterpreter(dir);
+          expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
+          expect(["python3", "python"]).toContain(result.preferredPath);
+        });
+      },
+    );
+
+    test("falls back to PATH when preferred path is bogus", () => {
       clearPythonVersionCache();
       return withTempDir(async (dir) => {
-        const result = await detectPythonInterpreter(dir, pythonCmd);
-        expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
-        expect(result.config.packageManager).toBe("auto");
-        expect(result.preferredPath).toBe(pythonCmd);
+        const result = await detectPythonInterpreter(
+          dir,
+          "/nonexistent/python999",
+        );
+        if (pythonAvailable) {
+          expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
+          expect(result.preferredPath).not.toBe("/nonexistent/python999");
+        } else {
+          expect(result.config.version).toBe("");
+        }
       });
-    },
-  );
-
-  test.skipIf(!pythonAvailable)("detects requirements.txt when present", () => {
-    clearPythonVersionCache();
-    return withTempDir(async (dir) => {
-      await writeFile(path.join(dir, "requirements.txt"), "flask\n", "utf-8");
-      const result = await detectPythonInterpreter(dir, pythonCmd);
-      expect(result.config.packageFile).toBe("requirements.txt");
     });
-  });
-
-  test.skipIf(!pythonAvailable)(
-    "returns empty packageFile when requirements.txt is absent",
-    () => {
-      clearPythonVersionCache();
-      return withTempDir(async (dir) => {
-        const result = await detectPythonInterpreter(dir, pythonCmd);
-        expect(result.config.packageFile).toBe("");
-      });
-    },
-  );
-
-  test.skipIf(!pythonAvailable)(
-    "finds Python on PATH when no preferred path given",
-    () => {
-      clearPythonVersionCache();
-      return withTempDir(async (dir) => {
-        const result = await detectPythonInterpreter(dir);
-        expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
-        expect(["python3", "python"]).toContain(result.preferredPath);
-      });
-    },
-  );
-
-  test("falls back to PATH when preferred path is bogus", () => {
-    clearPythonVersionCache();
-    return withTempDir(async (dir) => {
-      const result = await detectPythonInterpreter(
-        dir,
-        "/nonexistent/python999",
-      );
-      if (pythonAvailable) {
-        expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
-        expect(result.preferredPath).not.toBe("/nonexistent/python999");
-      } else {
-        expect(result.config.version).toBe("");
-      }
-    });
-  });
-});
+  },
+);
 
 // ---------------------------------------------------------------------------
 // detectRInterpreter – runs a real R executable to get its version. Tests are
 // skipped when R is not found on the PATH.
 // ---------------------------------------------------------------------------
 
-describe("detectRInterpreter (real interpreter)", async () => {
-  const rAvailable = await isExecutableAvailable("R");
+describe(
+  "detectRInterpreter (real interpreter)",
+  { timeout: 15_000 },
+  async () => {
+    const rAvailable = await isExecutableAvailable("R");
 
-  test.skipIf(!rAvailable)("detects version from a real R executable", () =>
-    withTempDir(async (dir) => {
-      const result = await detectRInterpreter(dir, "R");
-      expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
-      expect(result.config.packageManager).toBe("renv");
-      expect(result.preferredPath).toBe("R");
-    }),
-  );
-
-  test.skipIf(!rAvailable)("finds R on PATH when no preferred path given", () =>
-    withTempDir(async (dir) => {
-      const result = await detectRInterpreter(dir);
-      expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
-      expect(result.preferredPath).toBe("R");
-    }),
-  );
-
-  test("falls back to PATH when preferred path is bogus", () =>
-    withTempDir(async (dir) => {
-      const result = await detectRInterpreter(dir, "/nonexistent/R999");
-      if (rAvailable) {
+    test.skipIf(!rAvailable)("detects version from a real R executable", () =>
+      withTempDir(async (dir) => {
+        const result = await detectRInterpreter(dir, "R");
         expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
-        expect(result.preferredPath).not.toBe("/nonexistent/R999");
-      } else {
-        expect(result.config.version).toBe("");
-      }
-    }));
-});
+        expect(result.config.packageManager).toBe("renv");
+        expect(result.preferredPath).toBe("R");
+      }),
+    );
+
+    test.skipIf(!rAvailable)(
+      "finds R on PATH when no preferred path given",
+      () =>
+        withTempDir(async (dir) => {
+          const result = await detectRInterpreter(dir);
+          expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
+          expect(result.preferredPath).toBe("R");
+        }),
+    );
+
+    test("falls back to PATH when preferred path is bogus", () =>
+      withTempDir(async (dir) => {
+        const result = await detectRInterpreter(dir, "/nonexistent/R999");
+        if (rAvailable) {
+          expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
+          expect(result.preferredPath).not.toBe("/nonexistent/R999");
+        } else {
+          expect(result.config.version).toBe("");
+        }
+      }));
+  },
+);
 
 // ---------------------------------------------------------------------------
 // End-to-end Python detection – combines a real interpreter with project
@@ -321,75 +338,79 @@ describe("detectRInterpreter (real interpreter)", async () => {
 // (requiresPython) are populated correctly together.
 // ---------------------------------------------------------------------------
 
-describe("detectPythonInterpreter end-to-end", async () => {
-  const python3Available = await isExecutableAvailable("python3");
-  const pythonAvailable =
-    python3Available || (await isExecutableAvailable("python"));
-  const pythonCmd = python3Available ? "python3" : "python";
+describe(
+  "detectPythonInterpreter end-to-end",
+  { timeout: 15_000 },
+  async () => {
+    const python3Available = await isExecutableAvailable("python3");
+    const pythonAvailable =
+      python3Available || (await isExecutableAvailable("python"));
+    const pythonCmd = python3Available ? "python3" : "python";
 
-  test.skipIf(!pythonAvailable)(
-    "populates requiresPython from .python-version alongside real detection",
-    () => {
-      clearPythonVersionCache();
-      return withTempDir(async (dir) => {
-        await writeFile(path.join(dir, ".python-version"), "3.11", "utf-8");
-        const result = await detectPythonInterpreter(dir, pythonCmd);
-        expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
-        expect(result.config.requiresPython).toBe("~=3.11.0");
-      });
-    },
-  );
+    test.skipIf(!pythonAvailable)(
+      "populates requiresPython from .python-version alongside real detection",
+      () => {
+        clearPythonVersionCache();
+        return withTempDir(async (dir) => {
+          await writeFile(path.join(dir, ".python-version"), "3.11", "utf-8");
+          const result = await detectPythonInterpreter(dir, pythonCmd);
+          expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
+          expect(result.config.requiresPython).toBe("~=3.11.0");
+        });
+      },
+    );
 
-  test.skipIf(!pythonAvailable)(
-    "populates requiresPython from pyproject.toml",
-    () => {
-      clearPythonVersionCache();
-      return withTempDir(async (dir) => {
-        await writeFile(
-          path.join(dir, "pyproject.toml"),
-          '[project]\nrequires-python = ">=3.9,<4"\n',
-          "utf-8",
-        );
-        const result = await detectPythonInterpreter(dir, pythonCmd);
-        expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
-        expect(result.config.requiresPython).toBe(">=3.9,<4");
-      });
-    },
-  );
+    test.skipIf(!pythonAvailable)(
+      "populates requiresPython from pyproject.toml",
+      () => {
+        clearPythonVersionCache();
+        return withTempDir(async (dir) => {
+          await writeFile(
+            path.join(dir, "pyproject.toml"),
+            '[project]\nrequires-python = ">=3.9,<4"\n',
+            "utf-8",
+          );
+          const result = await detectPythonInterpreter(dir, pythonCmd);
+          expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
+          expect(result.config.requiresPython).toBe(">=3.9,<4");
+        });
+      },
+    );
 
-  test.skipIf(!pythonAvailable)(
-    "returns all fields together: version, packageFile, requiresPython",
-    () => {
-      clearPythonVersionCache();
-      return withTempDir(async (dir) => {
-        await writeFile(
-          path.join(dir, "requirements.txt"),
-          "flask>=2.0\n",
-          "utf-8",
-        );
-        await writeFile(path.join(dir, ".python-version"), "3.10.5", "utf-8");
-        const result = await detectPythonInterpreter(dir, pythonCmd);
-        expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
-        expect(result.config.packageFile).toBe("requirements.txt");
-        expect(result.config.packageManager).toBe("auto");
-        expect(result.config.requiresPython).toBe("~=3.10.0");
-        expect(result.preferredPath).toBe(pythonCmd);
-      });
-    },
-  );
+    test.skipIf(!pythonAvailable)(
+      "returns all fields together: version, packageFile, requiresPython",
+      () => {
+        clearPythonVersionCache();
+        return withTempDir(async (dir) => {
+          await writeFile(
+            path.join(dir, "requirements.txt"),
+            "flask>=2.0\n",
+            "utf-8",
+          );
+          await writeFile(path.join(dir, ".python-version"), "3.10.5", "utf-8");
+          const result = await detectPythonInterpreter(dir, pythonCmd);
+          expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
+          expect(result.config.packageFile).toBe("requirements.txt");
+          expect(result.config.packageManager).toBe("auto");
+          expect(result.config.requiresPython).toBe("~=3.10.0");
+          expect(result.preferredPath).toBe(pythonCmd);
+        });
+      },
+    );
 
-  test.skipIf(!pythonAvailable)(
-    "omits requiresPython when no version constraint files exist",
-    () => {
-      clearPythonVersionCache();
-      return withTempDir(async (dir) => {
-        const result = await detectPythonInterpreter(dir, pythonCmd);
-        expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
-        expect(result.config.requiresPython).toBeUndefined();
-      });
-    },
-  );
-});
+    test.skipIf(!pythonAvailable)(
+      "omits requiresPython when no version constraint files exist",
+      () => {
+        clearPythonVersionCache();
+        return withTempDir(async (dir) => {
+          const result = await detectPythonInterpreter(dir, pythonCmd);
+          expect(result.config.version).toMatch(/^\d+\.\d+\.\d+$/);
+          expect(result.config.requiresPython).toBeUndefined();
+        });
+      },
+    );
+  },
+);
 
 // ---------------------------------------------------------------------------
 // End-to-end R detection – combines a real R interpreter with project config
@@ -397,7 +418,7 @@ describe("detectPythonInterpreter end-to-end", async () => {
 // requiresR constraint are populated together.
 // ---------------------------------------------------------------------------
 
-describe("detectRInterpreter end-to-end", async () => {
+describe("detectRInterpreter end-to-end", { timeout: 15_000 }, async () => {
   const rAvailable = await isExecutableAvailable("R");
 
   test.skipIf(!rAvailable)("populates requiresR from DESCRIPTION Depends", () =>
@@ -471,7 +492,7 @@ describe("detectRInterpreter end-to-end", async () => {
 // it via PATH fallback, so expectations account for that.
 // ---------------------------------------------------------------------------
 
-describe("getInterpreterDefaults end-to-end", async () => {
+describe("getInterpreterDefaults end-to-end", { timeout: 15_000 }, async () => {
   const python3Available = await isExecutableAvailable("python3");
   const pythonAvailable =
     python3Available || (await isExecutableAvailable("python"));
