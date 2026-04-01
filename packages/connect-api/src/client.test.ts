@@ -1154,6 +1154,21 @@ describe("getSettings", () => {
     expect(urls).toContain("/__api__/server_settings/scheduler");
   });
 
+  it("uses base scheduler path for unknown app mode", async () => {
+    mockSettingsRoutes();
+
+    const client = createClient();
+    await client.getSettings("unknown-mode");
+
+    const urls = mockRequest.mock.calls.map(
+      (call: unknown[]) => (call[0] as { url: string }).url,
+    );
+    expect(urls).toContain("/__api__/server_settings/scheduler");
+    expect(urls).not.toContain(
+      "/__api__/server_settings/scheduler/unknown-mode",
+    );
+  });
+
   it("uses base scheduler path when no appMode is provided", async () => {
     mockSettingsRoutes();
 

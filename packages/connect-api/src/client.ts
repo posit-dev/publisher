@@ -42,6 +42,31 @@ export class ConnectAPIError extends Error {
 }
 
 /**
+ * Known Connect app modes that have app-specific scheduler settings.
+ * Mirrors Go's contentTypeConnectMap keys (excluding "static" which has
+ * no scheduler settings). Unknown strings fall back to the base
+ * /server_settings/scheduler endpoint.
+ */
+const knownAppModes = new Set([
+  "jupyter-static",
+  "jupyter-voila",
+  "python-bokeh",
+  "python-dash",
+  "python-fastapi",
+  "python-api",
+  "python-shiny",
+  "python-streamlit",
+  "python-gradio",
+  "python-panel",
+  "quarto-shiny",
+  "quarto-static",
+  "api",
+  "shiny",
+  "rmd-shiny",
+  "rmd-static",
+]);
+
+/**
  * TypeScript client for the Posit Connect API.
  *
  * Uses axios for HTTP requests. Non-2xx responses throw AxiosError by default.
@@ -334,9 +359,9 @@ export class ConnectAPI {
   async getSettings(appMode?: string): Promise<AllSettings> {
     // Go uses the app-mode-specific scheduler path for known, non-static types.
     // "static" content has no scheduler settings; unknown types would produce
-    // invalid API paths. For those cases, use the base scheduler endpoint.
+    // invalid API paths. Mirrors Go's IsKnown() && !IsStaticContent() guard.
     const schedulerPath =
-      appMode && appMode !== "static"
+      appMode && knownAppModes.has(appMode)
         ? `/__api__/server_settings/scheduler/${appMode}`
         : "/__api__/server_settings/scheduler";
 
