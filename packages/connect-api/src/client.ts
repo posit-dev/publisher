@@ -89,6 +89,10 @@ export class ConnectAPI {
 
     const config: AxiosRequestConfig = {
       baseURL: options.url,
+      // Force the Node http adapter. Positron's Electron exposes
+      // XMLHttpRequest in the extension host, causing axios to pick the XHR
+      // adapter by default, which corrupts binary uploads (bundle tar.gz).
+      adapter: "http",
     };
 
     if (hasApiKey) {
