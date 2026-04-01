@@ -16,6 +16,7 @@ import type { ConfigurationDetails } from "../api/types/configurations";
 import { ProductType, ServerType } from "../api/types/contentRecords";
 
 import type {
+  AllSettings,
   ConnectAPI,
   ContentDetailsDTO,
   BundleDTO,
@@ -184,6 +185,81 @@ const TEST_DEPLOY_OUTPUT: DeployOutput = {
   task_id: "task-99",
 };
 
+/** Default server settings — all capabilities enabled, generous limits. */
+function makeSettings(overrides?: Partial<AllSettings>): AllSettings {
+  return {
+    general: {
+      license: {
+        "allow-apis": true,
+        "current-user-execution": true,
+        "enable-launcher": true,
+        "oauth-integrations": true,
+      },
+      runtimes: ["python", "r"],
+      git_enabled: false,
+      git_available: false,
+      execution_type: "Kubernetes",
+      enable_runtime_constraints: false,
+      enable_image_management: false,
+      default_image_selection_enabled: true,
+      default_environment_management_selection: true,
+      default_r_environment_management: true,
+      default_py_environment_management: true,
+      oauth_integrations_enabled: false,
+      ...overrides?.general,
+    },
+    user: {
+      guid: "user-guid",
+      username: "testuser",
+      first_name: "Test",
+      last_name: "User",
+      email: "test@example.com",
+      user_role: "administrator",
+      created_time: "2024-01-01T00:00:00Z",
+      updated_time: "2024-01-01T00:00:00Z",
+      active_time: null,
+      confirmed: true,
+      locked: false,
+      ...overrides?.user,
+    },
+    application: {
+      access_types: ["acl", "all", "logged_in"],
+      run_as: "",
+      run_as_group: "",
+      run_as_current_user: true,
+      ...overrides?.application,
+    },
+    scheduler: {
+      min_processes: 0,
+      max_processes: 3,
+      max_conns_per_process: 20,
+      load_factor: 0.5,
+      init_timeout: 60,
+      idle_timeout: 120,
+      min_processes_limit: 10,
+      max_processes_limit: 10,
+      connection_timeout: 10,
+      read_timeout: 30,
+      cpu_request: 0.5,
+      max_cpu_request: 8,
+      cpu_limit: 2,
+      max_cpu_limit: 16,
+      memory_request: 256,
+      max_memory_request: 8192,
+      memory_limit: 1024,
+      max_memory_limit: 16384,
+      amd_gpu_limit: 0,
+      max_amd_gpu_limit: 4,
+      nvidia_gpu_limit: 0,
+      max_nvidia_gpu_limit: 4,
+      ...overrides?.scheduler,
+    },
+    python: { installations: [], api_enabled: true, ...overrides?.python },
+    r: { installations: [], ...overrides?.r },
+    quarto: { installations: [], ...overrides?.quarto },
+  };
+}
+
 const TEST_TASK: TaskDTO = {
   id: "task-99",
   output: [],
@@ -209,7 +285,7 @@ function makeMockApi(): ConnectAPI {
     getEnvVars: vi.fn(),
     contentDetails: vi.fn().mockResolvedValue({ data: TEST_CONTENT }),
     getCurrentUser: vi.fn(),
-    getSettings: vi.fn(),
+    getSettings: vi.fn().mockResolvedValue(makeSettings()),
     getIntegrations: vi.fn(),
     downloadBundle: vi.fn(),
   } as unknown as ConnectAPI;
@@ -393,6 +469,7 @@ describe("connectPublish", () => {
       { step: "createManifest", status: "log" },
       { step: "createManifest", status: "success" },
       { step: "preflight", status: "start" },
+      { step: "preflight", status: "log" },
       { step: "preflight", status: "log" },
       { step: "preflight", status: "log" },
       { step: "preflight", status: "log" },
@@ -1448,6 +1525,381 @@ describe("connectPublish — preflight validation", () => {
     const config = makeConfig({ python: undefined, type: ContentType.HTML });
     const opts = makeOptions({ config });
 
+    await expect(connectPublish(opts)).resolves.toBeDefined();
+  });
+});
+
+describe("connectPublish — server settings validation", () => {
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    vi.mocked(fileExistsAt).mockResolvedValue(true);
+  });
+
+  // --- API licensing ---
+
+  test("rejects API content when allow-apis is not licensed", async () => {
+    const api = makeMockApi();
+    vi.mocked(api.getSettings).mockResolvedValue(
+      makeSettings({
+        general: {
+          license: {
+            "allow-apis": false,
+            "current-user-execution": true,
+            "enable-launcher": true,
+            "oauth-integrations": true,
+          },
+        } as AllSettings["general"],
+      }),
+    );
+
+    const config = makeConfig({ type: ContentType.PYTHON_FASTAPI });
+    const opts = makeOptions({ api, config });
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "API deployment is not licensed",
+    );
+  });
+
+  test("accepts API content when allow-apis is licensed", async () => {
+    const config = makeConfig({ type: ContentType.PYTHON_FASTAPI });
+    const opts = makeOptions({ config });
+
+    await expect(connectPublish(opts)).resolves.toBeDefined();
+  });
+
+  test("rejects R Plumber API when allow-apis is not licensed", async () => {
+    const api = makeMockApi();
+    vi.mocked(api.getSettings).mockResolvedValue(
+      makeSettings({
+        general: {
+          license: {
+            "allow-apis": false,
+            "current-user-execution": true,
+            "enable-launcher": true,
+            "oauth-integrations": true,
+          },
+        } as AllSettings["general"],
+      }),
+    );
+
+    const config = makeConfig({
+      type: ContentType.R_PLUMBER,
+      python: undefined,
+      r: { version: "4.3.1", packageFile: "renv.lock", packageManager: "renv" },
+    });
+    const opts = makeOptions({ api, config });
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "API deployment is not licensed",
+    );
+  });
+
+  // --- RACU (run_as_current_user) ---
+
+  test("rejects RACU when not licensed", async () => {
+    const api = makeMockApi();
+    vi.mocked(api.getSettings).mockResolvedValue(
+      makeSettings({
+        general: {
+          license: {
+            "allow-apis": true,
+            "current-user-execution": false,
+            "enable-launcher": true,
+            "oauth-integrations": true,
+          },
+        } as AllSettings["general"],
+      }),
+    );
+
+    const config = makeConfig({
+      connect: { access: { runAsCurrentUser: true } },
+    });
+    const opts = makeOptions({ api, config });
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "run_as_current_user is not licensed",
+    );
+  });
+
+  test("rejects RACU when not configured on server", async () => {
+    const api = makeMockApi();
+    vi.mocked(api.getSettings).mockResolvedValue(
+      makeSettings({
+        application: {
+          access_types: [],
+          run_as: "",
+          run_as_group: "",
+          run_as_current_user: false,
+        },
+      }),
+    );
+
+    const config = makeConfig({
+      connect: { access: { runAsCurrentUser: true } },
+    });
+    const opts = makeOptions({ api, config });
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "run_as_current_user is not configured",
+    );
+  });
+
+  test("rejects RACU when user is not admin", async () => {
+    const api = makeMockApi();
+    vi.mocked(api.getSettings).mockResolvedValue(
+      makeSettings({
+        user: { user_role: "publisher" } as AllSettings["user"],
+      }),
+    );
+
+    const config = makeConfig({
+      connect: { access: { runAsCurrentUser: true } },
+    });
+    const opts = makeOptions({ api, config });
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "run_as_current_user requires administrator privileges",
+    );
+  });
+
+  test("rejects RACU for non-app content types", async () => {
+    const config = makeConfig({
+      type: ContentType.PYTHON_FASTAPI,
+      connect: { access: { runAsCurrentUser: true } },
+    });
+    const opts = makeOptions({ config });
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "run_as_current_user can only be used with application types",
+    );
+  });
+
+  test("accepts RACU for app content with admin + licensed + configured", async () => {
+    const config = makeConfig({
+      type: ContentType.PYTHON_SHINY,
+      connect: { access: { runAsCurrentUser: true } },
+    });
+    const opts = makeOptions({ config });
+
+    await expect(connectPublish(opts)).resolves.toBeDefined();
+  });
+
+  test("rejects run_as when user is not admin", async () => {
+    const api = makeMockApi();
+    vi.mocked(api.getSettings).mockResolvedValue(
+      makeSettings({
+        user: { user_role: "publisher" } as AllSettings["user"],
+      }),
+    );
+
+    const config = makeConfig({
+      connect: { access: { runAs: "rstudio" } },
+    });
+    const opts = makeOptions({ api, config });
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "run_as requires administrator privileges",
+    );
+  });
+
+  // --- Runtime settings ---
+
+  test("rejects runtime settings for static content", async () => {
+    const config = makeConfig({
+      type: ContentType.HTML,
+      python: undefined,
+      connect: { runtime: { maxProcesses: 5 } },
+    });
+    const opts = makeOptions({ config });
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "Runtime settings cannot be applied to static content",
+    );
+  });
+
+  test("rejects max_processes exceeding server limit", async () => {
+    const api = makeMockApi();
+    vi.mocked(api.getSettings).mockResolvedValue(
+      makeSettings({
+        scheduler: { max_processes_limit: 5 } as AllSettings["scheduler"],
+      }),
+    );
+
+    const config = makeConfig({
+      connect: { runtime: { maxProcesses: 10 } },
+    });
+    const opts = makeOptions({ api, config });
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "max_processes value of 10 is higher than configured maximum of 5",
+    );
+  });
+
+  test("rejects min_processes exceeding max_processes", async () => {
+    const config = makeConfig({
+      connect: { runtime: { minProcesses: 5, maxProcesses: 2 } },
+    });
+    const opts = makeOptions({ config });
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "min_processes value of 5 is higher than max_processes value of 2",
+    );
+  });
+
+  test("accepts runtime settings within limits", async () => {
+    const config = makeConfig({
+      connect: { runtime: { minProcesses: 1, maxProcesses: 5 } },
+    });
+    const opts = makeOptions({ config });
+
+    await expect(connectPublish(opts)).resolves.toBeDefined();
+  });
+
+  // --- Kubernetes ---
+
+  test("rejects kubernetes config when not licensed", async () => {
+    const api = makeMockApi();
+    vi.mocked(api.getSettings).mockResolvedValue(
+      makeSettings({
+        general: {
+          license: {
+            "allow-apis": true,
+            "current-user-execution": true,
+            "enable-launcher": false,
+            "oauth-integrations": true,
+          },
+        } as AllSettings["general"],
+      }),
+    );
+
+    const config = makeConfig({
+      connect: { kubernetes: { cpuRequest: 1 } },
+    });
+    const opts = makeOptions({ api, config });
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "Kubernetes is not licensed",
+    );
+  });
+
+  test("rejects kubernetes config when execution type is not Kubernetes", async () => {
+    const api = makeMockApi();
+    vi.mocked(api.getSettings).mockResolvedValue(
+      makeSettings({
+        general: { execution_type: "Local" } as AllSettings["general"],
+      }),
+    );
+
+    const config = makeConfig({
+      connect: { kubernetes: { cpuRequest: 1 } },
+    });
+    const opts = makeOptions({ api, config });
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "Kubernetes is not configured",
+    );
+  });
+
+  test("rejects default_image_name when image selection not enabled", async () => {
+    const api = makeMockApi();
+    vi.mocked(api.getSettings).mockResolvedValue(
+      makeSettings({
+        general: {
+          default_image_selection_enabled: false,
+        } as AllSettings["general"],
+      }),
+    );
+
+    const config = makeConfig({
+      connect: { kubernetes: { defaultImageName: "my-image:latest" } },
+    });
+    const opts = makeOptions({ api, config });
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "Default image selection is not enabled",
+    );
+  });
+
+  test("rejects service_account_name when user is not admin", async () => {
+    const api = makeMockApi();
+    vi.mocked(api.getSettings).mockResolvedValue(
+      makeSettings({
+        user: { user_role: "publisher" } as AllSettings["user"],
+      }),
+    );
+
+    const config = makeConfig({
+      connect: { kubernetes: { serviceAccountName: "my-svc" } },
+    });
+    const opts = makeOptions({ api, config });
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "service_account_name requires administrator privileges",
+    );
+  });
+
+  test("rejects cpu_request exceeding server maximum", async () => {
+    const api = makeMockApi();
+    vi.mocked(api.getSettings).mockResolvedValue(
+      makeSettings({
+        scheduler: { max_cpu_request: 4 } as AllSettings["scheduler"],
+      }),
+    );
+
+    const config = makeConfig({
+      connect: { kubernetes: { cpuRequest: 10 } },
+    });
+    const opts = makeOptions({ api, config });
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "cpu_request value of 10 is higher than configured maximum of 4",
+    );
+  });
+
+  test("rejects memory_request exceeding memory_limit", async () => {
+    const config = makeConfig({
+      connect: { kubernetes: { memoryRequest: 4096, memoryLimit: 2048 } },
+    });
+    const opts = makeOptions({ config });
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "memory_request value of 4096 is higher than memory_limit value of 2048",
+    );
+  });
+
+  test("rejects negative resource values", async () => {
+    const config = makeConfig({
+      connect: { kubernetes: { cpuRequest: -1 } },
+    });
+    const opts = makeOptions({ config });
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "cpu_request value cannot be less than 0",
+    );
+  });
+
+  test("accepts kubernetes config within all limits", async () => {
+    const config = makeConfig({
+      connect: {
+        kubernetes: {
+          cpuRequest: 1,
+          cpuLimit: 4,
+          memoryRequest: 512,
+          memoryLimit: 2048,
+        },
+      },
+    });
+    const opts = makeOptions({ config });
+
+    await expect(connectPublish(opts)).resolves.toBeDefined();
+  });
+
+  test("skips settings checks when no connect config", async () => {
+    const config = makeConfig({ connect: undefined });
+    const opts = makeOptions({ config });
+
+    // Should pass — no connect config means no RACU/runtime/k8s checks
     await expect(connectPublish(opts)).resolves.toBeDefined();
   });
 });

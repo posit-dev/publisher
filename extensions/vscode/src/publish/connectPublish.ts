@@ -11,8 +11,12 @@ import {
   BundleID,
   TaskID,
 } from "@posit-dev/connect-api";
+import type { AllSettings } from "@posit-dev/connect-api";
 
-import type { ConfigurationDetails } from "../api/types/configurations";
+import {
+  ContentType,
+  type ConfigurationDetails,
+} from "../api/types/configurations";
 import type { ServerType } from "../api/types/contentRecords";
 import type { PositronRSettings } from "../api/types/positron";
 
@@ -262,6 +266,16 @@ export async function connectPublish(
         }
       }
     }
+
+    // Fetch server settings and validate config against capabilities
+    // (mirrors Go's GetSettings + checkConfig)
+    onProgress({
+      step: "preflight",
+      status: "log",
+      message: "Checking server capabilities",
+    });
+    const settings = await api.getSettings();
+    checkServerSettings(settings, config);
 
     // Verify existing content when redeploying (mirrors Go's ValidateDeploymentTarget)
     if (contentId) {
@@ -685,6 +699,228 @@ function isCertificateError(err: { code?: string }): boolean {
     "CERT_HAS_EXPIRED",
   ];
   return !!err.code && certCodes.includes(err.code);
+}
+
+// ---------------------------------------------------------------------------
+// Server settings validation (mirrors Go's checkConfig/checkAccess/checkRuntime/checkKubernetes)
+// ---------------------------------------------------------------------------
+
+/** API content types that require the "allow-apis" license. Mirrors Go's IsAPIContent(). */
+function isAPIContentType(contentType: string): boolean {
+  return (
+    contentType === ContentType.PYTHON_FLASK ||
+    contentType === ContentType.PYTHON_FASTAPI ||
+    contentType === ContentType.R_PLUMBER
+  );
+}
+
+/** App content types that support run_as_current_user. Mirrors Go's IsAppContent(). */
+function isAppContentType(contentType: string): boolean {
+  return (
+    contentType === ContentType.PYTHON_SHINY ||
+    contentType === ContentType.R_SHINY ||
+    contentType === ContentType.PYTHON_BOKEH ||
+    contentType === ContentType.PYTHON_DASH ||
+    contentType === ContentType.PYTHON_GRADIO ||
+    contentType === ContentType.PYTHON_PANEL ||
+    contentType === ContentType.PYTHON_STREAMLIT
+  );
+}
+
+/**
+ * Validate deployment configuration against server settings.
+ * Mirrors Go's AllSettings.checkConfig(), checkAccess(), checkRuntime(), checkKubernetes().
+ */
+function checkServerSettings(
+  settings: AllSettings,
+  config: ConfigurationDetails,
+): void {
+  // API licensing check
+  if (
+    isAPIContentType(config.type) &&
+    !settings.general.license["allow-apis"]
+  ) {
+    throw new Error("API deployment is not licensed on this Connect server");
+  }
+
+  if (config.connect) {
+    checkAccess(settings, config);
+    checkRuntime(settings, config);
+    checkKubernetes(settings, config);
+  }
+}
+
+function checkAccess(
+  settings: AllSettings,
+  config: ConfigurationDetails,
+): void {
+  const access = config.connect?.access;
+  if (!access) {
+    return;
+  }
+
+  if (access.runAsCurrentUser) {
+    if (!settings.general.license["current-user-execution"]) {
+      throw new Error(
+        "run_as_current_user is not licensed on this Connect server",
+      );
+    }
+    if (!settings.application.run_as_current_user) {
+      throw new Error(
+        "run_as_current_user is not configured on this Connect server",
+      );
+    }
+    if (settings.user.user_role !== "administrator") {
+      throw new Error("run_as_current_user requires administrator privileges");
+    }
+    if (!isAppContentType(config.type)) {
+      throw new Error(
+        "run_as_current_user can only be used with application types, not APIs or reports",
+      );
+    }
+  }
+
+  if (access.runAs && settings.user.user_role !== "administrator") {
+    throw new Error("run_as requires administrator privileges");
+  }
+}
+
+function checkRuntime(
+  settings: AllSettings,
+  config: ConfigurationDetails,
+): void {
+  const runtime = config.connect?.runtime;
+  if (!runtime) {
+    return;
+  }
+
+  // Static content (HTML → "static" app mode) cannot have runtime settings.
+  // Mirrors Go's IsStaticContent() which only matches StaticMode ("static").
+  const appMode = appModeFromType(config.type);
+  if (appMode === "static") {
+    throw new Error("Runtime settings cannot be applied to static content");
+  }
+
+  const s = settings.scheduler;
+
+  checkMaxLimit("max_processes", runtime.maxProcesses, s.max_processes_limit);
+  checkMaxLimit("min_processes", runtime.minProcesses, s.min_processes_limit);
+
+  // min_processes cannot exceed max_processes
+  checkMinMax(
+    "min_processes",
+    runtime.minProcesses,
+    s.min_processes,
+    "max_processes",
+    runtime.maxProcesses,
+    s.max_processes,
+  );
+}
+
+function checkKubernetes(
+  settings: AllSettings,
+  config: ConfigurationDetails,
+): void {
+  const k = config.connect?.kubernetes;
+  if (!k) {
+    return;
+  }
+
+  if (!settings.general.license["enable-launcher"]) {
+    throw new Error(
+      "Off-host execution with Kubernetes is not licensed on this Connect server",
+    );
+  }
+  if (settings.general.execution_type !== "Kubernetes") {
+    throw new Error(
+      "Off-host execution with Kubernetes is not configured on this Connect server",
+    );
+  }
+  if (k.defaultImageName && !settings.general.default_image_selection_enabled) {
+    throw new Error(
+      "Default image selection is not enabled on this Connect server",
+    );
+  }
+  if (k.serviceAccountName && settings.user.user_role !== "administrator") {
+    throw new Error("service_account_name requires administrator privileges");
+  }
+
+  const s = settings.scheduler;
+
+  checkMaxLimit("cpu_request", k.cpuRequest, s.max_cpu_request);
+  checkMaxLimit("cpu_limit", k.cpuLimit, s.max_cpu_limit);
+  checkMaxLimit("memory_request", k.memoryRequest, s.max_memory_request);
+  checkMaxLimit("memory_limit", k.memoryLimit, s.max_memory_limit);
+  checkMaxLimit("amd_gpu_limit", k.amdGpuLimit, s.max_amd_gpu_limit);
+  checkMaxLimit("nvidia_gpu_limit", k.nvidiaGpuLimit, s.max_nvidia_gpu_limit);
+
+  // Requests cannot exceed limits
+  checkMinMax(
+    "cpu_request",
+    k.cpuRequest,
+    s.cpu_request,
+    "cpu_limit",
+    k.cpuLimit,
+    s.cpu_limit,
+  );
+  checkMinMax(
+    "memory_request",
+    k.memoryRequest,
+    s.memory_request,
+    "memory_limit",
+    k.memoryLimit,
+    s.memory_limit,
+  );
+}
+
+/**
+ * Check that a configured value does not exceed the server's maximum.
+ * Mirrors Go's checkMaxInt/checkMaxFloat — skips check if value is undefined or limit is 0.
+ */
+function checkMaxLimit(
+  attr: string,
+  value: number | undefined,
+  limit: number,
+): void {
+  if (value === undefined) {
+    return;
+  }
+  if (limit === 0) {
+    return;
+  }
+  if (value < 0) {
+    throw new Error(`${attr} value cannot be less than 0`);
+  }
+  if (value > limit) {
+    throw new Error(
+      `${attr} value of ${value} is higher than configured maximum of ${limit} on this server`,
+    );
+  }
+}
+
+/**
+ * Check that a min value does not exceed a max value, using server defaults
+ * when the config doesn't specify a value.
+ * Mirrors Go's checkMinMaxIntWithDefaults/checkMinMaxFloatWithDefaults.
+ */
+function checkMinMax(
+  minAttr: string,
+  cfgMin: number | undefined,
+  defaultMin: number,
+  maxAttr: string,
+  cfgMax: number | undefined,
+  defaultMax: number,
+): void {
+  const minValue = cfgMin ?? defaultMin;
+  const maxValue = cfgMax ?? defaultMax;
+  if (maxValue === 0) {
+    return;
+  }
+  if (minValue > maxValue) {
+    throw new Error(
+      `${minAttr} value of ${minValue} is higher than ${maxAttr} value of ${maxValue}`,
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------
