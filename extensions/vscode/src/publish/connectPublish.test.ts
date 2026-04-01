@@ -750,6 +750,117 @@ describe("connectPublish — R package resolution", () => {
     );
   });
 
+  test("existing lockfile path emits expected log messages", async () => {
+    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    vi.mocked(fileExistsAt).mockResolvedValue(true);
+
+    const { resolveRPackages } = await import("./dependencies");
+    vi.mocked(resolveRPackages).mockResolvedValue({
+      packages: { shiny: { description: { Package: "shiny" } } },
+      lockfilePath: "/projects/myapp/renv.lock",
+      lockfile: {
+        R: { Version: "4.3.1", Repositories: [] },
+        Packages: {},
+      },
+    });
+
+    const config = makeConfig({
+      r: { version: "4.3.1", packageFile: "renv.lock", packageManager: "renv" },
+    });
+    const onProgress = vi.fn();
+    const opts = makeOptions({ config, onProgress });
+
+    await connectPublish(opts);
+
+    const manifestLogs = onProgress.mock.calls
+      .map((args: unknown[]) => args[0] as PublishEvent)
+      .filter((e) => e.step === "createManifest" && e.status === "log");
+
+    const messages = manifestLogs.map((e) => e.message);
+    expect(messages).toContain("Loading packages from renv.lock");
+    expect(messages).toContain("Done collecting R package descriptions");
+    // Should NOT contain scan messages
+    expect(messages).not.toContain(
+      "No renv.lock found; automatically scanning for dependencies",
+    );
+    expect(messages).not.toContain("Detect dependencies from project");
+  });
+
+  test("no-lockfile scan path emits expected log messages", async () => {
+    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    vi.mocked(fileExistsAt).mockResolvedValue(false);
+
+    const { resolveRPackages } = await import("./dependencies");
+    vi.mocked(resolveRPackages).mockResolvedValue({
+      packages: {},
+      lockfilePath: "/projects/myapp/renv.lock",
+      lockfile: {
+        R: { Version: "4.3.1", Repositories: [] },
+        Packages: {},
+      },
+    });
+
+    const config = makeConfig({
+      python: undefined,
+      type: ContentType.RMD,
+      r: { version: "4.3.1", packageFile: "renv.lock", packageManager: "renv" },
+    });
+    const onProgress = vi.fn();
+    const opts = makeOptions({ config, rPath: "/usr/bin/R", onProgress });
+
+    await connectPublish(opts);
+
+    const manifestLogs = onProgress.mock.calls
+      .map((args: unknown[]) => args[0] as PublishEvent)
+      .filter((e) => e.step === "createManifest" && e.status === "log");
+
+    const messages = manifestLogs.map((e) => e.message);
+    // R-specific messages appear in order among other createManifest logs
+    const rMessages = messages.filter(
+      (m) =>
+        m?.includes("renv.lock") ||
+        m?.includes("Detect dependencies") ||
+        m?.includes("R package descriptions"),
+    );
+    expect(rMessages).toEqual([
+      "No renv.lock found; automatically scanning for dependencies",
+      "Detect dependencies from project",
+      "Loading packages from renv.lock",
+      "Done collecting R package descriptions",
+    ]);
+  });
+
+  test("missing R interpreter fails before package log messages", async () => {
+    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    vi.mocked(fileExistsAt).mockResolvedValue(false);
+
+    const config = makeConfig({
+      python: undefined,
+      type: ContentType.RMD,
+      r: { version: "4.3.1", packageFile: "renv.lock", packageManager: "renv" },
+    });
+    const onProgress = vi.fn();
+    const opts = makeOptions({ config, rPath: undefined, onProgress });
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "R interpreter is required",
+    );
+
+    const manifestLogs = onProgress.mock.calls
+      .map((args: unknown[]) => args[0] as PublishEvent)
+      .filter((e) => e.step === "createManifest" && e.status === "log");
+
+    const messages = manifestLogs.map((e) => e.message);
+    // The "no lockfile" message fires before the rPath check
+    expect(messages).toContain(
+      "No renv.lock found; automatically scanning for dependencies",
+    );
+    // But the scan and resolution messages should NOT have fired
+    expect(messages).not.toContain("Detect dependencies from project");
+    expect(messages).not.toContain("Loading packages from renv.lock");
+    expect(messages).not.toContain("Done collecting R package descriptions");
+  });
+
   test("scans for dependencies when no lockfile exists", async () => {
     const { fileExistsAt } = await import("../interpreters/fsUtils");
     vi.mocked(fileExistsAt).mockResolvedValue(false);
