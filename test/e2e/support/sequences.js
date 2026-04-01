@@ -303,7 +303,10 @@ Cypress.Commands.add(
 
     // If filesToSelect is provided and not empty, select additional files.
     // vue-virtual-scroller recycles DOM elements when the item list changes,
-    // so we always re-query the live DOM and retry clicks that don't stick.
+    // which can leave the native `checked` property stale on recycled inputs.
+    // To work around this, we force the native checked=false before clicking
+    // so the click always toggles to true and the @change handler reliably
+    // emits changed(true) to include the file.
     if (Array.isArray(filesToSelect) && filesToSelect.length > 0) {
       filesToSelect.forEach((fileOrDir) => {
         const getCheckbox = () =>
@@ -314,34 +317,14 @@ Cypress.Commands.add(
             .closest(".tree-item")
             .find('.vscode-checkbox input[type="checkbox"]');
 
-        const ensureChecked = (attempt = 0) => {
-          if (attempt > 5) {
-            throw new Error(
-              `Checkbox for "${fileOrDir}" not checked after ${attempt} attempts`,
-            );
-          }
-          // On retries, wait for Vue to reconcile recycled scroller views
-          if (attempt > 0) {
-            // eslint-disable-next-line cypress/no-unnecessary-waiting
-            cy.wait(300);
-          }
-          getCheckbox()
-            .should("exist")
-            .then(($cb) => {
-              if (!$cb.prop("checked")) {
-                cy.wrap($cb).click({ force: true });
-                // eslint-disable-next-line cypress/no-unnecessary-waiting
-                cy.wait(500);
-                // Re-query to verify — scroller may have replaced the element
-                getCheckbox().then(($fresh) => {
-                  if (!$fresh.prop("checked")) {
-                    ensureChecked(attempt + 1);
-                  }
-                });
-              }
-            });
-        };
-        ensureChecked();
+        getCheckbox()
+          .should("exist")
+          .then(($cb) => {
+            // Clear any stale native checked state from DOM recycling so the
+            // click consistently toggles checked from false → true.
+            $cb.prop("checked", false);
+          });
+        getCheckbox().click({ force: true });
       });
     }
 
