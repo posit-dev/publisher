@@ -16,9 +16,16 @@ const launchPattern =
   /Launching .*(Quarto|R Markdown|application|API|notebook)/;
 const staticPattern = /(Building|Launching) static content/;
 
+// Package installation patterns for progress counting.
+// Mirrors Go's packageEventFromLogLine() in client_connect.go.
+const rPackagePattern = /Installing ([\w.]+) \((\S+)\) \.\.\./;
+const pythonCollectingPattern = /Collecting (\S+)==(\S+)/;
+const pythonInstallingPattern = /Found existing installation: (\S+) ()\S+/;
+
 const stepLabels: Record<PublishStep, string> = {
   createManifest: "Preparing manifest…",
   preflight: "Verifying credentials…",
+  createNewDeployment: "Creating deployment…",
   createDeployment: "Creating deployment…",
   createBundle: "Building bundle…",
   uploadBundle: "Uploading bundle…",
@@ -36,6 +43,10 @@ const stepToEventPrefix: Partial<Record<PublishStep, string>> = {
   // publish/getRPackageDescriptions which is R-specific in the Go path.
   // Emitting it for Python-only deploys would create a spurious tree node.
   preflight: "publish/checkCapabilities",
+  // First deploy uses createNewDeployment — the logs tree doesn't register
+  // this stage, but displayEventStreamMessage handles the success event to
+  // show "Created new Deployment as {saveName}" in the raw log view.
+  createNewDeployment: "publish/createNewDeployment",
   createDeployment: "publish/createDeployment",
   createBundle: "publish/createBundle",
   uploadBundle: "publish/uploadBundle",
@@ -135,7 +146,7 @@ export function runTsDeployWithProgress(
         const result = await deploy((event) => {
           if (event.status === "start") {
             progress.report({ message: stepLabels[event.step] });
-            injectStageEvent(stream, event.step, "start");
+            injectStageEvent(stream, event.step, "start", event.data);
           } else if (event.status === "success") {
             if (event.step === "waitForTask") {
               // Close whichever stage is active (restoreEnv or runContent).
@@ -145,7 +156,7 @@ export function runTsDeployWithProgress(
                 ),
               );
             } else {
-              injectStageEvent(stream, event.step, "success");
+              injectStageEvent(stream, event.step, "success", event.data);
             }
           } else if (event.status === "failure") {
             // Capture URLs from the failure event for use in publish/failure.
@@ -201,6 +212,17 @@ export function runTsDeployWithProgress(
                 }
               }
 
+              // Detect package installations for progress label updates.
+              const pkgEvent = packageEventFromLogLine(msg);
+              if (pkgEvent) {
+                stream.injectMessage(
+                  makeMessage(
+                    `${waitForTaskStage}/status` as EventSubscriptionTarget,
+                    pkgEvent,
+                  ),
+                );
+              }
+
               const type = `${waitForTaskStage}/log` as EventSubscriptionTarget;
               stream.injectMessage(
                 makeMessage(type, { message: msg, level: "INFO" }),
@@ -221,6 +243,7 @@ export function runTsDeployWithProgress(
           makeMessage("publish/success", {
             dashboardUrl: result.dashboardUrl,
             directUrl: result.directUrl,
+            logsUrl: result.logsUrl,
             contentId: result.contentId,
             serverUrl,
             productType: "connect",
@@ -252,6 +275,48 @@ export function runTsDeployWithProgress(
       }
     },
   );
+}
+
+/**
+ * Detect R/Python package installation lines and return data for
+ * publish/restoreEnv/status events. Mirrors Go's packageEventFromLogLine().
+ */
+function packageEventFromLogLine(
+  line: string,
+): Record<string, string> | undefined {
+  let match: RegExpMatchArray | null;
+
+  match = rPackagePattern.exec(line);
+  if (match?.[1] && match[2]) {
+    return {
+      name: match[1],
+      version: match[2],
+      runtime: "r",
+      status: "download-and-install",
+    };
+  }
+
+  match = pythonCollectingPattern.exec(line);
+  if (match?.[1] && match[2]) {
+    return {
+      name: match[1],
+      version: match[2],
+      runtime: "python",
+      status: "download",
+    };
+  }
+
+  match = pythonInstallingPattern.exec(line);
+  if (match?.[1]) {
+    return {
+      name: match[1],
+      version: match[2] ?? "",
+      runtime: "python",
+      status: "install",
+    };
+  }
+
+  return undefined;
 }
 
 async function showSuccessNotification(dashboardUrl: string): Promise<void> {

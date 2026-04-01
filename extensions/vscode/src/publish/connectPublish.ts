@@ -47,6 +47,7 @@ import type { ErrorCode } from "../utils/errorTypes";
 export type PublishStep =
   | "createManifest"
   | "preflight"
+  | "createNewDeployment"
   | "createDeployment"
   | "createBundle"
   | "uploadBundle"
@@ -227,6 +228,39 @@ export async function connectPublish(
       data: { username: user.username, email: user.email },
     });
 
+    // Validate configuration against known constraints (mirrors Go's checkConfig/checkRequirementsFile)
+    if (config.description && config.description.length > 4096) {
+      throw new Error("The description cannot be longer than 4096 characters.");
+    }
+
+    if (config.python) {
+      const packageFile = config.python.packageFile || "requirements.txt";
+      const packageFilePath = path.join(projectDir, packageFile);
+      const packageFileExists = await fileExistsAt(packageFilePath);
+
+      // Check that the file exists on disk
+      if (!packageFileExists) {
+        throw new Error(
+          `Missing dependency file ${packageFile}. ` +
+            `This file must be included in the deployment.`,
+        );
+      }
+
+      // Check that the file is included in the configured file patterns
+      const filePatterns = config.files ?? [];
+      if (filePatterns.length > 0) {
+        const isIncluded = filePatterns.some((pattern) =>
+          pattern.endsWith(packageFile),
+        );
+        if (!isIncluded) {
+          throw new Error(
+            `Missing dependency file ${packageFile}. ` +
+              `This file must be included in the deployment.`,
+          );
+        }
+      }
+    }
+
     // Verify existing content when redeploying (mirrors Go's ValidateDeploymentTarget)
     if (contentId) {
       onProgress({
@@ -289,10 +323,14 @@ export async function connectPublish(
 
     // Step 3: Create deployment on Connect (first deploy only)
     if (!contentId) {
-      lastStep = "createDeployment";
-      onProgress({ step: "createDeployment", status: "start" });
+      lastStep = "createNewDeployment";
       onProgress({
-        step: "createDeployment",
+        step: "createNewDeployment",
+        status: "start",
+        data: { saveName },
+      });
+      onProgress({
+        step: "createNewDeployment",
         status: "log",
         message: "Creating new deployment",
       });
@@ -300,12 +338,16 @@ export async function connectPublish(
       contentId = created.guid;
       setRecordContentInfo(record, serverUrl, contentId);
       onProgress({
-        step: "createDeployment",
+        step: "createNewDeployment",
         status: "log",
         message: "Created deployment",
         data: { content_id: contentId },
       });
-      onProgress({ step: "createDeployment", status: "success" });
+      onProgress({
+        step: "createNewDeployment",
+        status: "success",
+        data: { contentId, saveName },
+      });
     }
 
     // Step 4: Create bundle archive
@@ -337,7 +379,11 @@ export async function connectPublish(
       status: "log",
       message: "Done preparing files",
     });
-    onProgress({ step: "createBundle", status: "success" });
+    onProgress({
+      step: "createBundle",
+      status: "success",
+      data: { filename: "bundle.tar.gz" },
+    });
 
     // Step 5: Upload bundle
     lastStep = "uploadBundle";
@@ -367,7 +413,11 @@ export async function connectPublish(
     // For redeploys, the update step opens the "Create Deployment Record"
     // stage in the logs tree (matching Go's publish/createDeployment events).
     lastStep = "updateContent";
-    onProgress({ step: "updateContent", status: "start" });
+    onProgress({
+      step: "updateContent",
+      status: "start",
+      data: { contentId: contentId!, saveName },
+    });
     onProgress({
       step: "updateContent",
       status: "log",
@@ -389,11 +439,18 @@ export async function connectPublish(
     if (envVars) {
       lastStep = "setEnvVars";
       onProgress({ step: "setEnvVars", status: "start" });
-      onProgress({
-        step: "setEnvVars",
-        status: "log",
-        message: "Setting environment variables",
-      });
+      // Log each variable individually (matching Go's per-variable messages)
+      for (const name of Object.keys(envVars)) {
+        const isSecret = secrets !== undefined && name in secrets;
+        onProgress({
+          step: "setEnvVars",
+          status: "log",
+          message: isSecret
+            ? "Setting secret as environment variable"
+            : "Setting environment variable",
+          data: { name },
+        });
+      }
       await api.setEnvVars(ContentID(contentId), envVars);
       onProgress({
         step: "setEnvVars",
@@ -420,7 +477,11 @@ export async function connectPublish(
       status: "log",
       message: "Activation requested",
     });
-    onProgress({ step: "deployBundle", status: "success" });
+    onProgress({
+      step: "deployBundle",
+      status: "success",
+      data: { taskId: deployOutput.task_id },
+    });
 
     // Step 9: Wait for server-side task to complete
     lastStep = "waitForTask";
@@ -437,7 +498,11 @@ export async function connectPublish(
     // Step 10: Validate deployment (optional)
     if (config.validate) {
       lastStep = "validateDeployment";
-      onProgress({ step: "validateDeployment", status: "start" });
+      onProgress({
+        step: "validateDeployment",
+        status: "start",
+        data: { url: getDirectUrl(serverUrl, contentId) },
+      });
       // Log events are emitted before the HTTP call to match the Go
       // backend's ordering, where the logger writes "Testing URL…"
       // before the request is made.
@@ -525,9 +590,8 @@ export async function connectPublish(
 
 /**
  * Maps a caught error to a deployment record error code and user-facing message.
- * Mirrors the Go backend's error classification — in particular,
- * validation failures (5xx from content URL) map to "deployedContentNotRunning"
- * so the UI can show "View Deployment Logs" instead of "View Content".
+ * Mirrors the Go backend's error classification so the UI can show
+ * targeted error messages and troubleshooting guidance.
  */
 function classifyDeploymentError(
   lastStep: PublishStep | undefined,
@@ -535,6 +599,39 @@ function classifyDeploymentError(
 ): { code: ErrorCode; message: string } {
   const fallbackMessage = err instanceof Error ? err.message : String(err);
 
+  // Certificate verification errors (any step)
+  if (isAxiosError(err) && isCertificateError(err)) {
+    return {
+      code: "errorCertificateVerification",
+      message:
+        "Certificate verification failed. " +
+        "Check the server's TLS certificate or disable verification.",
+    };
+  }
+
+  // Authentication failures (401 from any step, but typically preflight)
+  if (isAxiosError(err) && err.response?.status === 401) {
+    return {
+      code: "authenticationFailed",
+      message: "Authentication failed. Check your credentials.",
+    };
+  }
+
+  // 404 during updateContent — content was deleted server-side
+  if (
+    lastStep === "updateContent" &&
+    isAxiosError(err) &&
+    err.response?.status === 404
+  ) {
+    return {
+      code: "deploymentNotFound",
+      message:
+        "Deployment target not found. " +
+        "The content may have been deleted on the server.",
+    };
+  }
+
+  // Validation failures (5xx from content URL)
   if (
     lastStep === "validateDeployment" &&
     isAxiosError(err) &&
@@ -548,7 +645,44 @@ function classifyDeploymentError(
         "Check the deployment logs for more information.",
     };
   }
+
+  // Server-side task failure (waitForTask throws plain Error, not AxiosError)
+  if (
+    lastStep === "waitForTask" &&
+    err instanceof Error &&
+    !isAxiosError(err)
+  ) {
+    return {
+      code: "deployFailed",
+      message: err.message,
+    };
+  }
+
+  // App mode mismatch (thrown by our own preflight check)
+  if (
+    lastStep === "preflight" &&
+    err instanceof Error &&
+    err.message.includes("previously deployed as")
+  ) {
+    return {
+      code: "appModeNotModifiable",
+      message: err.message,
+    };
+  }
+
   return { code: "unknown", message: fallbackMessage };
+}
+
+/** Detect TLS/certificate errors from axios error codes. */
+function isCertificateError(err: { code?: string }): boolean {
+  const certCodes = [
+    "UNABLE_TO_VERIFY_LEAF_SIGNATURE",
+    "DEPTH_ZERO_SELF_SIGNED_CERT",
+    "SELF_SIGNED_CERT_IN_CHAIN",
+    "ERR_TLS_CERT_ALTNAME_INVALID",
+    "CERT_HAS_EXPIRED",
+  ];
+  return !!err.code && certCodes.includes(err.code);
 }
 
 // ---------------------------------------------------------------------------

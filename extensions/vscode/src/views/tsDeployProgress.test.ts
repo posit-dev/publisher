@@ -433,6 +433,169 @@ describe("runTsDeployWithProgress", () => {
     expect(failMsg!.errCode).toBe("deployedContentNotRunning");
   });
 
+  it("passes event.data through on start events", async () => {
+    const { onComplete, stream } = run((onProgress) => {
+      onProgress({
+        step: "createBundle",
+        status: "start",
+        data: { sourceDir: "/projects/myapp" },
+      });
+      onProgress({ step: "createBundle", status: "success" });
+      return Promise.resolve(successResult);
+    });
+
+    await vi.waitFor(() => {
+      expect(onComplete).toHaveBeenCalled();
+    });
+
+    const startMsg = stream.injected.find(
+      (m) => m.type === "publish/createBundle/start",
+    );
+    expect(startMsg).toBeDefined();
+    expect(startMsg!.data.sourceDir).toBe("/projects/myapp");
+  });
+
+  it("passes event.data through on success events", async () => {
+    const { onComplete, stream } = run((onProgress) => {
+      onProgress({ step: "createBundle", status: "start" });
+      onProgress({
+        step: "createBundle",
+        status: "success",
+        data: { filename: "bundle.tar.gz" },
+      });
+      return Promise.resolve(successResult);
+    });
+
+    await vi.waitFor(() => {
+      expect(onComplete).toHaveBeenCalled();
+    });
+
+    const successMsg = stream.injected.find(
+      (m) => m.type === "publish/createBundle/success",
+    );
+    expect(successMsg).toBeDefined();
+    expect(successMsg!.data.filename).toBe("bundle.tar.gz");
+  });
+
+  it("maps createNewDeployment to publish/createNewDeployment", async () => {
+    const { onComplete, stream } = run((onProgress) => {
+      onProgress({
+        step: "createNewDeployment",
+        status: "start",
+        data: { saveName: "my-app" },
+      });
+      onProgress({
+        step: "createNewDeployment",
+        status: "success",
+        data: { contentId: "abc-123", saveName: "my-app" },
+      });
+      return Promise.resolve(successResult);
+    });
+
+    await vi.waitFor(() => {
+      expect(onComplete).toHaveBeenCalled();
+    });
+
+    const startMsg = stream.injected.find(
+      (m) => m.type === "publish/createNewDeployment/start",
+    );
+    expect(startMsg).toBeDefined();
+    expect(startMsg!.data.saveName).toBe("my-app");
+
+    const successMsg = stream.injected.find(
+      (m) => m.type === "publish/createNewDeployment/success",
+    );
+    expect(successMsg).toBeDefined();
+    expect(successMsg!.data.contentId).toBe("abc-123");
+    expect(successMsg!.data.saveName).toBe("my-app");
+  });
+
+  it("includes logsUrl on publish/success event", async () => {
+    const { onComplete, stream } = run(() => Promise.resolve(successResult));
+
+    await vi.waitFor(() => {
+      expect(onComplete).toHaveBeenCalled();
+    });
+
+    const successMsg = stream.injected.find(
+      (m) => m.type === "publish/success",
+    );
+    expect(successMsg).toBeDefined();
+    expect(successMsg!.data.logsUrl).toBe(successResult.logsUrl);
+  });
+
+  it("emits publish/restoreEnv/status for R package installation lines", async () => {
+    const { onComplete, stream } = run((onProgress) => {
+      onProgress({ step: "waitForTask", status: "start" });
+      onProgress({
+        step: "waitForTask",
+        status: "log",
+        message: "Installing ggplot2 (3.4.0) ...",
+      });
+      onProgress({ step: "waitForTask", status: "success" });
+      return Promise.resolve(successResult);
+    });
+
+    await vi.waitFor(() => {
+      expect(onComplete).toHaveBeenCalled();
+    });
+
+    const statusMsgs = stream.injected.filter(
+      (m) => m.type === "publish/restoreEnv/status",
+    );
+    expect(statusMsgs).toHaveLength(1);
+    expect(statusMsgs[0]!.data.name).toBe("ggplot2");
+    expect(statusMsgs[0]!.data.version).toBe("3.4.0");
+    expect(statusMsgs[0]!.data.runtime).toBe("r");
+  });
+
+  it("emits publish/restoreEnv/status for Python package lines", async () => {
+    const { onComplete, stream } = run((onProgress) => {
+      onProgress({ step: "waitForTask", status: "start" });
+      onProgress({
+        step: "waitForTask",
+        status: "log",
+        message: "Collecting numpy==1.24.3",
+      });
+      onProgress({ step: "waitForTask", status: "success" });
+      return Promise.resolve(successResult);
+    });
+
+    await vi.waitFor(() => {
+      expect(onComplete).toHaveBeenCalled();
+    });
+
+    const statusMsgs = stream.injected.filter(
+      (m) => m.type === "publish/restoreEnv/status",
+    );
+    expect(statusMsgs).toHaveLength(1);
+    expect(statusMsgs[0]!.data.name).toBe("numpy");
+    expect(statusMsgs[0]!.data.version).toBe("1.24.3");
+    expect(statusMsgs[0]!.data.runtime).toBe("python");
+  });
+
+  it("does not emit status events for non-package log lines", async () => {
+    const { onComplete, stream } = run((onProgress) => {
+      onProgress({ step: "waitForTask", status: "start" });
+      onProgress({
+        step: "waitForTask",
+        status: "log",
+        message: "Building Python environment",
+      });
+      onProgress({ step: "waitForTask", status: "success" });
+      return Promise.resolve(successResult);
+    });
+
+    await vi.waitFor(() => {
+      expect(onComplete).toHaveBeenCalled();
+    });
+
+    const statusMsgs = stream.injected.filter((m) =>
+      m.type.endsWith("/status"),
+    );
+    expect(statusMsgs).toHaveLength(0);
+  });
+
   it("injects validateDeployment log events", async () => {
     const { onComplete, stream } = run((onProgress) => {
       onProgress({ step: "validateDeployment", status: "start" });

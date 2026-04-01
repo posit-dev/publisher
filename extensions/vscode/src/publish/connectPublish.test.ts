@@ -78,9 +78,9 @@ vi.mock("../interpreters/rPackages", () => ({
   repoURLFromOptions: vi.fn().mockReturnValue(""),
 }));
 
-// Mock fsUtils
+// Mock fsUtils — default to true so preflight requirements check passes
 vi.mock("../interpreters/fsUtils", () => ({
-  fileExistsAt: vi.fn().mockResolvedValue(false),
+  fileExistsAt: vi.fn().mockResolvedValue(true),
 }));
 
 // Mock TOML stringify — pass through to allow content inspection
@@ -398,10 +398,10 @@ describe("connectPublish", () => {
       { step: "preflight", status: "log" },
       { step: "preflight", status: "log" },
       { step: "preflight", status: "success" },
-      { step: "createDeployment", status: "start" },
-      { step: "createDeployment", status: "log" },
-      { step: "createDeployment", status: "log" },
-      { step: "createDeployment", status: "success" },
+      { step: "createNewDeployment", status: "start" },
+      { step: "createNewDeployment", status: "log" },
+      { step: "createNewDeployment", status: "log" },
+      { step: "createNewDeployment", status: "success" },
       { step: "createBundle", status: "start" },
       { step: "createBundle", status: "log" },
       { step: "createBundle", status: "log" },
@@ -438,11 +438,15 @@ describe("connectPublish", () => {
     const envEvents = events.filter((e) => e.step === "setEnvVars");
     expect(envEvents.map((e) => e.status)).toEqual([
       "start",
-      "log",
-      "log",
+      "log", // per-variable log
+      "log", // done
       "success",
     ]);
-    expect(envEvents[1]!.message).toBe("Setting environment variables");
+    // Secret variables use "Setting secret as environment variable"
+    expect(envEvents[1]!.message).toBe(
+      "Setting secret as environment variable",
+    );
+    expect(envEvents[1]!.data).toEqual({ name: "API_KEY" });
     expect(envEvents[2]!.message).toBe("Done setting environment variables");
 
     expect(opts.api.setEnvVars).toHaveBeenCalledWith(
@@ -633,6 +637,8 @@ describe("connectPublish — R package resolution", () => {
     });
 
     const config = makeConfig({
+      python: undefined,
+      type: ContentType.RMD,
       r: { version: "4.3.1", packageFile: "renv.lock", packageManager: "renv" },
     });
     const opts = makeOptions({ config, rPath: "/usr/bin/R" });
@@ -653,6 +659,8 @@ describe("connectPublish — R package resolution", () => {
     vi.mocked(fileExistsAt).mockResolvedValue(false);
 
     const config = makeConfig({
+      python: undefined,
+      type: ContentType.RMD,
       r: { version: "4.3.1", packageFile: "renv.lock", packageManager: "renv" },
     });
     // No rPath provided
@@ -691,6 +699,7 @@ describe("connectPublish — R package resolution", () => {
     });
 
     const config = makeConfig({
+      python: undefined,
       type: ContentType.QUARTO_SHINY,
       r: { version: "4.3.1", packageFile: "renv.lock", packageManager: "renv" },
     });
@@ -726,6 +735,8 @@ describe("connectPublish — R package resolution", () => {
     vi.mocked(scanRPackages).mockRejectedValue(new Error("R crashed"));
 
     const config = makeConfig({
+      python: undefined,
+      type: ContentType.RMD,
       r: { version: "4.3.1", packageFile: "renv.lock", packageManager: "renv" },
     });
     const opts = makeOptions({ config, rPath: "/usr/bin/R" });
@@ -935,6 +946,117 @@ describe("connectPublish — error classification", () => {
     expect(tomlContent).not.toContain("deployedContentNotRunning");
   });
 
+  test("401 error classifies as authenticationFailed", async () => {
+    const api = makeMockApi();
+    const axiosErr = new AxiosError(
+      "Unauthorized",
+      "ERR_BAD_REQUEST",
+      undefined,
+      undefined,
+      {
+        status: 401,
+        statusText: "Unauthorized",
+        data: {},
+        headers: {},
+        config: { headers: new AxiosHeaders() },
+      },
+    );
+    (api.testAuthentication as ReturnType<typeof vi.fn>).mockRejectedValue(
+      axiosErr,
+    );
+
+    const opts = makeOptions({ api });
+
+    await expect(connectPublish(opts)).rejects.toThrow();
+
+    const lastWrite = mockWriteFile.mock.calls.at(-1);
+    const tomlContent = lastWrite![1] as string;
+    expect(tomlContent).toContain("authenticationFailed");
+  });
+
+  test("updateContent 404 classifies as deploymentNotFound", async () => {
+    const api = makeMockApi();
+    const axiosErr = new AxiosError(
+      "Not Found",
+      "ERR_BAD_REQUEST",
+      undefined,
+      undefined,
+      {
+        status: 404,
+        statusText: "Not Found",
+        data: {},
+        headers: {},
+        config: { headers: new AxiosHeaders() },
+      },
+    );
+    (api.updateDeployment as ReturnType<typeof vi.fn>).mockRejectedValue(
+      axiosErr,
+    );
+
+    const opts = makeOptions({
+      api,
+      existingContentId: "content-guid-123",
+      existingCreatedAt: "2024-06-01T00:00:00Z",
+    });
+
+    await expect(connectPublish(opts)).rejects.toThrow();
+
+    const lastWrite = mockWriteFile.mock.calls.at(-1);
+    const tomlContent = lastWrite![1] as string;
+    expect(tomlContent).toContain("deploymentNotFound");
+  });
+
+  test("waitForTask plain Error classifies as deployFailed", async () => {
+    const api = makeMockApi();
+    (api.waitForTask as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error("Application failed to start"),
+    );
+
+    const opts = makeOptions({ api });
+
+    await expect(connectPublish(opts)).rejects.toThrow();
+
+    const lastWrite = mockWriteFile.mock.calls.at(-1);
+    const tomlContent = lastWrite![1] as string;
+    expect(tomlContent).toContain("deployFailed");
+  });
+
+  test("certificate error classifies as errorCertificateVerification", async () => {
+    const api = makeMockApi();
+    const certErr = new AxiosError("certificate error");
+    certErr.code = "UNABLE_TO_VERIFY_LEAF_SIGNATURE";
+    (api.testAuthentication as ReturnType<typeof vi.fn>).mockRejectedValue(
+      certErr,
+    );
+
+    const opts = makeOptions({ api });
+
+    await expect(connectPublish(opts)).rejects.toThrow();
+
+    const lastWrite = mockWriteFile.mock.calls.at(-1);
+    const tomlContent = lastWrite![1] as string;
+    expect(tomlContent).toContain("errorCertificateVerification");
+  });
+
+  test("app mode mismatch classifies as appModeNotModifiable", async () => {
+    const api = makeMockApi();
+    vi.mocked(api.contentDetails).mockResolvedValue({
+      data: { ...TEST_CONTENT, app_mode: "python-api" },
+    } as never);
+
+    const opts = makeOptions({
+      api,
+      existingContentId: "content-guid-123",
+      existingCreatedAt: "2024-06-01T00:00:00Z",
+    });
+
+    await expect(connectPublish(opts)).rejects.toThrow("previously deployed");
+
+    const lastWrite = mockWriteFile.mock.calls.at(-1);
+    const tomlContent = lastWrite![1] as string;
+    expect(tomlContent).toContain("appModeNotModifiable");
+  });
+
   test("emits failure event with step and message on error", async () => {
     const api = makeMockApi();
     (api.uploadBundle as ReturnType<typeof vi.fn>).mockRejectedValue(
@@ -1034,7 +1156,7 @@ describe("connectPublish — error classification", () => {
     const onProgress = vi.fn();
     const config = makeConfig({
       quarto: { version: "1.4.0", engines: ["jupyter"] },
-      r: { version: "4.3.2", packageFile: "renv.lock" },
+      r: { version: "4.3.2", packageFile: "renv.lock", packageManager: "renv" },
       python: {
         version: "3.12.0",
         packageFile: "requirements.txt",
@@ -1078,6 +1200,150 @@ describe("connectPublish — error classification", () => {
     }
   });
 
+  test("first deploy uses createNewDeployment step with saveName data", async () => {
+    const onProgress = vi.fn();
+    const opts = makeOptions({ onProgress, saveName: "my-deploy" });
+
+    await connectPublish(opts);
+
+    const events = onProgress.mock.calls.map(
+      (args: unknown[]) => args[0] as PublishEvent,
+    );
+    const newDeployStart = events.find(
+      (e) => e.step === "createNewDeployment" && e.status === "start",
+    );
+    expect(newDeployStart).toBeDefined();
+    expect(newDeployStart!.data).toEqual({ saveName: "my-deploy" });
+
+    const newDeploySuccess = events.find(
+      (e) => e.step === "createNewDeployment" && e.status === "success",
+    );
+    expect(newDeploySuccess).toBeDefined();
+    expect(newDeploySuccess!.data).toMatchObject({ saveName: "my-deploy" });
+    expect(newDeploySuccess!.data!.contentId).toBeDefined();
+  });
+
+  test("redeploy uses createDeployment step (not createNewDeployment)", async () => {
+    const onProgress = vi.fn();
+    const opts = makeOptions({
+      onProgress,
+      existingContentId: "content-guid-123",
+      existingCreatedAt: "2024-06-01T00:00:00Z",
+    });
+
+    await connectPublish(opts);
+
+    const events = onProgress.mock.calls.map(
+      (args: unknown[]) => args[0] as PublishEvent,
+    );
+    // Redeploys should NOT have createNewDeployment
+    expect(
+      events.find((e) => e.step === "createNewDeployment"),
+    ).toBeUndefined();
+    // But should have updateContent (which maps to publish/createDeployment)
+    expect(events.find((e) => e.step === "updateContent")).toBeDefined();
+  });
+
+  test("updateContent start carries contentId and saveName", async () => {
+    const onProgress = vi.fn();
+    const opts = makeOptions({ onProgress, saveName: "staging" });
+
+    await connectPublish(opts);
+
+    const events = onProgress.mock.calls.map(
+      (args: unknown[]) => args[0] as PublishEvent,
+    );
+    const updateStart = events.find(
+      (e) => e.step === "updateContent" && e.status === "start",
+    );
+    expect(updateStart).toBeDefined();
+    expect(updateStart!.data).toMatchObject({ saveName: "staging" });
+    expect(updateStart!.data!.contentId).toBeDefined();
+  });
+
+  test("createBundle success carries filename", async () => {
+    const onProgress = vi.fn();
+    const opts = makeOptions({ onProgress });
+
+    await connectPublish(opts);
+
+    const events = onProgress.mock.calls.map(
+      (args: unknown[]) => args[0] as PublishEvent,
+    );
+    const bundleSuccess = events.find(
+      (e) => e.step === "createBundle" && e.status === "success",
+    );
+    expect(bundleSuccess).toBeDefined();
+    expect(bundleSuccess!.data).toEqual({ filename: "bundle.tar.gz" });
+  });
+
+  test("deployBundle success carries taskId", async () => {
+    const onProgress = vi.fn();
+    const opts = makeOptions({ onProgress });
+
+    await connectPublish(opts);
+
+    const events = onProgress.mock.calls.map(
+      (args: unknown[]) => args[0] as PublishEvent,
+    );
+    const deploySuccess = events.find(
+      (e) => e.step === "deployBundle" && e.status === "success",
+    );
+    expect(deploySuccess).toBeDefined();
+    expect(deploySuccess!.data).toEqual({ taskId: "task-99" });
+  });
+
+  test("validateDeployment start carries url", async () => {
+    const onProgress = vi.fn();
+    const config = makeConfig({ validate: true });
+    const opts = makeOptions({ onProgress, config });
+
+    await connectPublish(opts);
+
+    const events = onProgress.mock.calls.map(
+      (args: unknown[]) => args[0] as PublishEvent,
+    );
+    const validateStart = events.find(
+      (e) => e.step === "validateDeployment" && e.status === "start",
+    );
+    expect(validateStart).toBeDefined();
+    expect(validateStart!.data!.url).toMatch(/\/content\/.*\//);
+  });
+
+  test("per-variable env logging distinguishes secrets from plain vars", async () => {
+    const onProgress = vi.fn();
+    const config = makeConfig({
+      environment: { BASE_URL: "https://api.example.com" },
+    });
+    const opts = makeOptions({
+      onProgress,
+      config,
+      secrets: { API_KEY: "secret123" },
+    });
+
+    await connectPublish(opts);
+
+    const events = onProgress.mock.calls.map(
+      (args: unknown[]) => args[0] as PublishEvent,
+    );
+    const envLogs = events.filter(
+      (e) => e.step === "setEnvVars" && e.status === "log",
+    );
+    // First two logs are per-variable, third is "Done"
+    const perVarLogs = envLogs.filter(
+      (e) => e.message !== "Done setting environment variables",
+    );
+    expect(perVarLogs).toHaveLength(2);
+
+    const baseUrlLog = perVarLogs.find((e) => e.data?.name === "BASE_URL");
+    expect(baseUrlLog).toBeDefined();
+    expect(baseUrlLog!.message).toBe("Setting environment variable");
+
+    const apiKeyLog = perVarLogs.find((e) => e.data?.name === "API_KEY");
+    expect(apiKeyLog).toBeDefined();
+    expect(apiKeyLog!.message).toBe("Setting secret as environment variable");
+  });
+
   test("emits validateDeployment log events when validate is enabled", async () => {
     const onProgress = vi.fn();
     const config = makeConfig({ validate: true });
@@ -1102,5 +1368,86 @@ describe("connectPublish — error classification", () => {
       url: "/content/content-guid-123/",
     });
     expect(validateLogs[2]!.message).toBe("Done validating deployment");
+  });
+});
+
+describe("connectPublish — preflight validation", () => {
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    // Restore default — fileExistsAt returns true (file exists)
+    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    vi.mocked(fileExistsAt).mockResolvedValue(true);
+  });
+
+  test("rejects description longer than 4096 characters", async () => {
+    const config = makeConfig({ description: "x".repeat(4097) });
+    const opts = makeOptions({ config });
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "description cannot be longer than 4096",
+    );
+  });
+
+  test("accepts description of exactly 4096 characters", async () => {
+    const config = makeConfig({ description: "x".repeat(4096) });
+    const opts = makeOptions({ config });
+
+    // Should not throw for description
+    await expect(connectPublish(opts)).resolves.toBeDefined();
+  });
+
+  test("rejects missing requirements file", async () => {
+    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    vi.mocked(fileExistsAt).mockResolvedValue(false);
+
+    const config = makeConfig({
+      python: {
+        version: "3.11.0",
+        packageFile: "requirements.txt",
+        packageManager: "pip",
+      },
+    });
+    const opts = makeOptions({ config });
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "Missing dependency file requirements.txt",
+    );
+  });
+
+  test("rejects requirements file excluded from file patterns", async () => {
+    const config = makeConfig({
+      files: ["app.py", "static/"],
+      python: {
+        version: "3.11.0",
+        packageFile: "requirements.txt",
+        packageManager: "pip",
+      },
+    });
+    const opts = makeOptions({ config });
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "Missing dependency file requirements.txt",
+    );
+  });
+
+  test("accepts requirements file when included in patterns", async () => {
+    const config = makeConfig({
+      files: ["app.py", "requirements.txt"],
+      python: {
+        version: "3.11.0",
+        packageFile: "requirements.txt",
+        packageManager: "pip",
+      },
+    });
+    const opts = makeOptions({ config });
+
+    await expect(connectPublish(opts)).resolves.toBeDefined();
+  });
+
+  test("skips requirements check when no python config", async () => {
+    const config = makeConfig({ python: undefined, type: ContentType.HTML });
+    const opts = makeOptions({ config });
+
+    await expect(connectPublish(opts)).resolves.toBeDefined();
   });
 });
