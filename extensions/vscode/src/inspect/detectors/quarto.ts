@@ -38,7 +38,8 @@ function isQuartoShiny(metadata: {
   if (
     typeof metadata.server === "object" &&
     metadata.server !== null &&
-    (metadata.server as Record<string, unknown>)["type"] === "shiny"
+    "type" in metadata.server &&
+    metadata.server.type === "shiny"
   ) {
     return true;
   }
@@ -318,8 +319,11 @@ export class QuartoDetector implements ContentTypeDetector {
       } else {
         const htmlFiles = inspectOutput.htmlPathsFromInputList(baseDir);
         if (htmlFiles.length > 0) {
-          const relFirst = path.relative(baseDir, htmlFiles[0]!);
-          staticCfg.entrypoint = path.join(outputDir, relFirst);
+          const firstHtml = htmlFiles[0];
+          if (firstHtml) {
+            const relFirst = path.relative(baseDir, firstHtml);
+            staticCfg.entrypoint = path.join(outputDir, relFirst);
+          }
         }
       }
     } else {

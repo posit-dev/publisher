@@ -57,7 +57,8 @@ function isShinyRmd(metadata: RMarkdownMetadata | undefined): boolean {
   if (
     typeof metadata.server === "object" &&
     metadata.server !== null &&
-    (metadata.server as Record<string, unknown>)["type"] === "shiny"
+    "type" in metadata.server &&
+    metadata.server.type === "shiny"
   ) {
     return true;
   }
@@ -81,7 +82,7 @@ export class RMarkdownDetector implements ContentTypeDetector {
     if (entrypoint) {
       // Optimization: skip inspection if there's a specified entrypoint
       // and it's not one of ours.
-      if (path.extname(entrypoint) !== ".Rmd") {
+      if (path.extname(entrypoint).toLowerCase() !== ".rmd") {
         return [];
       }
     }
