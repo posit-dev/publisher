@@ -574,6 +574,34 @@ describe("runTsDeployWithProgress", () => {
     expect(statusMsgs[0]!.data.runtime).toBe("python");
   });
 
+  it("emits status with empty version for Python 'Found existing installation' lines", async () => {
+    const { onComplete, stream } = run((onProgress) => {
+      onProgress({ step: "waitForTask", status: "start" });
+      onProgress({
+        step: "waitForTask",
+        status: "log",
+        message: "Found existing installation: numpy 1.24.3",
+      });
+      onProgress({ step: "waitForTask", status: "success" });
+      return Promise.resolve(successResult);
+    });
+
+    await vi.waitFor(() => {
+      expect(onComplete).toHaveBeenCalled();
+    });
+
+    const statusMsgs = stream.injected.filter(
+      (m) => m.type === "publish/restoreEnv/status",
+    );
+    expect(statusMsgs).toHaveLength(1);
+    expect(statusMsgs[0]!.data.name).toBe("numpy");
+    // Version is intentionally empty — this line reports the OLD version
+    // being replaced. The meaningful new version comes from "Collecting".
+    expect(statusMsgs[0]!.data.version).toBe("");
+    expect(statusMsgs[0]!.data.runtime).toBe("python");
+    expect(statusMsgs[0]!.data.status).toBe("install");
+  });
+
   it("does not emit status events for non-package log lines", async () => {
     const { onComplete, stream } = run((onProgress) => {
       onProgress({ step: "waitForTask", status: "start" });

@@ -20,6 +20,10 @@ const staticPattern = /(Building|Launching) static content/;
 // Mirrors Go's packageEventFromLogLine() in client_connect.go.
 const rPackagePattern = /Installing ([\w.]+) \((\S+)\) \.\.\./;
 const pythonCollectingPattern = /Collecting (\S+)==(\S+)/;
+// The empty capture group () for version is intentional, matching Go's regex.
+// "Found existing installation" reports the OLD version being replaced;
+// the meaningful new version comes from the Collecting line. With an empty
+// version, the tree label shows "numpy..." instead of a misleading old version.
 const pythonInstallingPattern = /Found existing installation: (\S+) ()\S+/;
 
 const stepLabels: Record<PublishStep, string> = {

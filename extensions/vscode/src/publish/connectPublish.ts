@@ -246,7 +246,9 @@ export async function connectPublish(
         );
       }
 
-      // Check that the file is included in the configured file patterns
+      // Check that the file is included in the configured file patterns.
+      // Uses suffix matching, not glob evaluation — matches Go's
+      // checkRequirementsFile which uses strings.HasSuffix(file, packageFile).
       const filePatterns = config.files ?? [];
       if (filePatterns.length > 0) {
         const isIncluded = filePatterns.some((pattern) =>
