@@ -304,9 +304,10 @@ export async function connectPublish(
               `You may need to request collaborator permissions or verify the credentials in use.`,
           );
         }
+        // Mirrors Go's generic fallback: include the original error
+        const errMsg = err instanceof Error ? err.message : String(err);
         throw new Error(
-          `Deployment target cannot be reached. Halting deployment. ` +
-            `(Content ID = ${contentId})`,
+          `Cannot deploy content: ID ${contentId} - Unknown error: ${errMsg}`,
         );
       }
 
@@ -702,6 +703,20 @@ function classifyDeploymentError(
   ) {
     return {
       code: "appModeNotModifiable",
+      message: err.message,
+    };
+  }
+
+  // Requirements file missing (thrown by our preflight check).
+  // Mirrors Go's ErrorRequirementsFileReading code so the UI can
+  // show the specific "missing dependency file" guidance.
+  if (
+    lastStep === "preflight" &&
+    err instanceof Error &&
+    err.message.includes("Missing dependency file")
+  ) {
+    return {
+      code: "requirementsFileReadingError",
       message: err.message,
     };
   }

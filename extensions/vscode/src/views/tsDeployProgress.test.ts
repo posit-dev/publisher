@@ -347,6 +347,9 @@ describe("runTsDeployWithProgress", () => {
     expect(failMsg!.data.dashboardUrl).toBe(
       "https://connect.example.com/connect/#/apps/abc-123",
     );
+    // errCode and classified message propagate to publish/failure
+    expect(failMsg!.errCode).toBe("deployedContentNotRunning");
+    expect(failMsg!.data.message).toBe("Content not running");
   });
 
   it("emits runContent/failure when task fails after stage transition", async () => {

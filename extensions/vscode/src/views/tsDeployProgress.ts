@@ -135,10 +135,14 @@ export function runTsDeployWithProgress(
         }),
       );
 
-      // Capture URLs from step failure events so we can include them
-      // on the top-level publish/failure event for the logs tree view.
+      // Capture classified error info from step failure events so we can
+      // include them on the top-level publish/failure event for the logs
+      // tree view. Mirrors Go's emitErrorEvents which propagates the
+      // AgentError code and message to publish/failure.
       let lastLogsUrl: string | undefined;
       let lastDashboardUrl: string | undefined;
+      let lastErrCode: ErrorCode | undefined;
+      let lastClassifiedMessage: string | undefined;
 
       try {
         // Track which SSE stage waitForTask logs belong to.
@@ -163,13 +167,15 @@ export function runTsDeployWithProgress(
               injectStageEvent(stream, event.step, "success", event.data);
             }
           } else if (event.status === "failure") {
-            // Capture URLs from the failure event for use in publish/failure.
+            // Capture classified error info for use in publish/failure.
             if (event.data?.logsUrl) {
               lastLogsUrl = event.data.logsUrl;
             }
             if (event.data?.dashboardUrl) {
               lastDashboardUrl = event.data.dashboardUrl;
             }
+            lastErrCode = event.errCode;
+            lastClassifiedMessage = event.message;
 
             const failData: Record<string, string> = {
               message: event.message || "Unknown error",
@@ -258,7 +264,11 @@ export function runTsDeployWithProgress(
         // notification close immediately (matching the Go path behavior).
         showSuccessNotification(result.dashboardUrl);
       } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
+        // Use the classified message from the step failure event if
+        // available, falling back to the raw thrown error message.
+        // Mirrors Go's emitErrorEvents which uses agentErr.Message.
+        const rawMessage = err instanceof Error ? err.message : String(err);
+        const message = lastClassifiedMessage || rawMessage;
 
         // Inject publish/failure — triggers HomeView's onPublishFailure()
         // via the stream handler. Include URLs when available so the logs
@@ -273,7 +283,9 @@ export function runTsDeployWithProgress(
         if (lastDashboardUrl) {
           failureData.dashboardUrl = lastDashboardUrl;
         }
-        stream.injectMessage(makeMessage("publish/failure", failureData));
+        stream.injectMessage(
+          makeMessage("publish/failure", failureData, lastErrCode),
+        );
       } finally {
         onComplete();
       }

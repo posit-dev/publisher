@@ -449,9 +449,9 @@ describe("connectPublish", () => {
       new Error("Request failed with status code 404"),
     );
 
-    // Plain Error (not AxiosError) → generic message
+    // Plain Error (not AxiosError) → generic message with original error
     await expect(connectPublish(opts)).rejects.toThrow(
-      "Deployment target cannot be reached",
+      "Cannot deploy content: ID deleted-id - Unknown error:",
     );
   });
 
@@ -1524,6 +1524,30 @@ describe("connectPublish — preflight validation", () => {
 
     // Should not throw for description
     await expect(connectPublish(opts)).resolves.toBeDefined();
+  });
+
+  test("missing requirements file classifies as requirementsFileReadingError", async () => {
+    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    vi.mocked(fileExistsAt).mockResolvedValue(false);
+
+    const onProgress = vi.fn();
+    const config = makeConfig({
+      python: {
+        version: "3.11.0",
+        packageFile: "requirements.txt",
+        packageManager: "pip",
+      },
+    });
+    const opts = makeOptions({ config, onProgress });
+
+    await expect(connectPublish(opts)).rejects.toThrow();
+
+    const events = onProgress.mock.calls.map(
+      (args: unknown[]) => args[0] as PublishEvent,
+    );
+    const failure = events.find((e) => e.status === "failure");
+    expect(failure).toBeDefined();
+    expect(failure!.errCode).toBe("requirementsFileReadingError");
   });
 
   test("rejects missing requirements file", async () => {
