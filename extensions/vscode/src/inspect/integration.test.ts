@@ -460,6 +460,163 @@ describe(
         expect(types).toContain(ContentType.HTML);
       }));
 
+    // ----- Plumber -----
+
+    test("detects Plumber project with plumber.R", () =>
+      withTempDir(async (dir) => {
+        await writeFile(
+          path.join(dir, "plumber.R"),
+          '# plumber API\n#* @get /echo\nfunction() { "hello" }\n',
+          "utf-8",
+        );
+
+        const results = await inspectProject({ projectDir: dir });
+
+        const plumber = results.find(
+          (r) => r.configuration.type === ContentType.R_PLUMBER,
+        );
+        expect(plumber).toBeDefined();
+        expect(plumber?.configuration.entrypoint).toBe("plumber.R");
+        expect(plumber?.projectDir).toBe(".");
+      }));
+
+    test("detects Plumber project with entrypoint.R", () =>
+      withTempDir(async (dir) => {
+        await writeFile(
+          path.join(dir, "entrypoint.R"),
+          '# plumber API\n#* @get /echo\nfunction() { "hello" }\n',
+          "utf-8",
+        );
+
+        const results = await inspectProject({ projectDir: dir });
+
+        const plumber = results.find(
+          (r) => r.configuration.type === ContentType.R_PLUMBER,
+        );
+        expect(plumber).toBeDefined();
+        expect(plumber?.configuration.entrypoint).toBe("entrypoint.R");
+      }));
+
+    test("detects Plumber via _server.yml", () =>
+      withTempDir(async (dir) => {
+        await writeFile(
+          path.join(dir, "_server.yml"),
+          "engine: plumber\nroutes: api.R\n",
+          "utf-8",
+        );
+        await writeFile(
+          path.join(dir, "api.R"),
+          '# plumber routes\n#* @get /hello\nfunction() { "hi" }\n',
+          "utf-8",
+        );
+
+        const results = await inspectProject({ projectDir: dir });
+
+        const plumber = results.find(
+          (r) => r.configuration.type === ContentType.R_PLUMBER,
+        );
+        expect(plumber).toBeDefined();
+        expect(plumber?.configuration.files).toContain("/_server.yml");
+        expect(plumber?.configuration.files).toContain("/api.R");
+      }));
+
+    // ----- RMarkdown -----
+
+    test("detects RMarkdown project", () =>
+      withTempDir(async (dir) => {
+        await writeFile(
+          path.join(dir, "report.Rmd"),
+          '---\ntitle: "My Report"\n---\n\n```{r}\nsummary(cars)\n```\n',
+          "utf-8",
+        );
+
+        const results = await inspectProject({ projectDir: dir });
+
+        const rmd = results.find(
+          (r) => r.configuration.type === ContentType.RMD,
+        );
+        expect(rmd).toBeDefined();
+        expect(rmd?.configuration.entrypoint).toBe("report.Rmd");
+        expect(rmd?.configuration.title).toBe("My Report");
+      }));
+
+    test("detects Shiny RMarkdown", () =>
+      withTempDir(async (dir) => {
+        await writeFile(
+          path.join(dir, "report.Rmd"),
+          '---\ntitle: "Shiny Doc"\nruntime: shiny\n---\n\n```{r}\nsliderInput("n", "N", 1, 100, 50)\n```\n',
+          "utf-8",
+        );
+
+        const results = await inspectProject({ projectDir: dir });
+
+        const rmdShiny = results.find(
+          (r) => r.configuration.type === ContentType.RMD_SHINY,
+        );
+        expect(rmdShiny).toBeDefined();
+        expect(rmdShiny?.configuration.entrypoint).toBe("report.Rmd");
+      }));
+
+    test("detects parameterized RMarkdown", () =>
+      withTempDir(async (dir) => {
+        await writeFile(
+          path.join(dir, "report.Rmd"),
+          '---\ntitle: "Parameterized"\nparams:\n  year: 2024\n---\n\n```{r}\nparams$year\n```\n',
+          "utf-8",
+        );
+
+        const results = await inspectProject({ projectDir: dir });
+
+        const rmd = results.find(
+          (r) =>
+            r.configuration.type === ContentType.RMD &&
+            r.configuration.entrypoint === "report.Rmd",
+        );
+        expect(rmd).toBeDefined();
+        expect(rmd?.configuration.hasParameters).toBe(true);
+      }));
+
+    test("detects RMarkdown site with _site.yml", () =>
+      withTempDir(async (dir) => {
+        await writeFile(
+          path.join(dir, "_site.yml"),
+          'name: "My Site"\noutput_dir: _site\n',
+          "utf-8",
+        );
+        await writeFile(
+          path.join(dir, "index.Rmd"),
+          '---\ntitle: "Home"\n---\n\nWelcome\n',
+          "utf-8",
+        );
+
+        const results = await inspectProject({ projectDir: dir });
+
+        const rmd = results.find(
+          (r) => r.configuration.type === ContentType.RMD,
+        );
+        expect(rmd).toBeDefined();
+        expect(rmd?.configuration.files).toContain("/_site.yml");
+      }));
+
+    // ----- Quarto -----
+
+    test("detects Quarto project (.qmd)", () =>
+      withTempDir(async (dir) => {
+        await writeFile(
+          path.join(dir, "doc.qmd"),
+          "---\ntitle: My Doc\n---\n\nHello world\n",
+          "utf-8",
+        );
+
+        const results = await inspectProject({ projectDir: dir });
+
+        const quarto = results.find(
+          (r) => r.configuration.type === ContentType.QUARTO_STATIC,
+        );
+        expect(quarto).toBeDefined();
+        expect(quarto?.configuration.entrypoint).toBe("doc.qmd");
+      }));
+
     test("filters to specific entrypoint", () =>
       withTempDir(async (dir) => {
         await writeFile(
@@ -1011,6 +1168,7 @@ describe(
     let pythonAvailable = false;
     let pythonCmd = "python";
     let rAvailable = false;
+    let quartoAvailable = false;
 
     beforeAll(async () => {
       python3Available = await isExecutableAvailable("python3");
@@ -1018,6 +1176,7 @@ describe(
         python3Available || (await isExecutableAvailable("python"));
       pythonCmd = python3Available ? "python3" : "python";
       rAvailable = await isExecutableAvailable("R");
+      quartoAvailable = await isExecutableAvailable("quarto");
     });
 
     test("populates python config for Flask project", ({ skip }) => {
@@ -1237,5 +1396,143 @@ describe(
         // HTML type should not trigger renv.lock check
         expect(html?.configuration.r).toBeUndefined();
       }));
+
+    test("populates R config for Plumber project", ({ skip }) => {
+      if (!rAvailable) skip();
+      return withTempDir(async (dir) => {
+        await writeFile(
+          path.join(dir, "plumber.R"),
+          '# plumber API\n#* @get /echo\nfunction() { "hello" }\n',
+          "utf-8",
+        );
+
+        const results = await inspectProject({
+          projectDir: dir,
+          rPath: "R",
+        });
+
+        const plumber = results.find(
+          (r) => r.configuration.type === ContentType.R_PLUMBER,
+        );
+        expect(plumber).toBeDefined();
+        expect(plumber?.configuration.r).toBeDefined();
+        expect(plumber?.configuration.r?.version).toMatch(/^\d+\.\d+\.\d+$/);
+      });
+    });
+
+    test("populates R config for RMarkdown project", ({ skip }) => {
+      if (!rAvailable) skip();
+      return withTempDir(async (dir) => {
+        await writeFile(
+          path.join(dir, "report.Rmd"),
+          '---\ntitle: "My Report"\n---\n\n```{r}\nsummary(cars)\n```\n',
+          "utf-8",
+        );
+
+        const results = await inspectProject({
+          projectDir: dir,
+          rPath: "R",
+        });
+
+        const rmd = results.find(
+          (r) => r.configuration.type === ContentType.RMD,
+        );
+        expect(rmd).toBeDefined();
+        expect(rmd?.configuration.r).toBeDefined();
+        expect(rmd?.configuration.r?.version).toMatch(/^\d+\.\d+\.\d+$/);
+      });
+    });
+
+    test("detects Quarto project (.qmd) with quarto available", ({ skip }) => {
+      if (!quartoAvailable) skip();
+      return withTempDir(async (dir) => {
+        await writeFile(
+          path.join(dir, "doc.qmd"),
+          "---\ntitle: Quarto Doc\n---\n\nHello world\n",
+          "utf-8",
+        );
+
+        const results = await inspectProject({ projectDir: dir });
+
+        const quarto = results.find(
+          (r) => r.configuration.type === ContentType.QUARTO_STATIC,
+        );
+        expect(quarto).toBeDefined();
+        expect(quarto?.configuration.quarto?.version).toMatch(
+          /^\d+\.\d+\.\d+$/,
+        );
+        expect(quarto?.configuration.title).toBe("Quarto Doc");
+      });
+    });
+
+    test("detects Shiny Quarto", ({ skip }) => {
+      if (!quartoAvailable) skip();
+      return withTempDir(async (dir) => {
+        await writeFile(
+          path.join(dir, "dashboard.qmd"),
+          "---\ntitle: Dashboard\nserver: shiny\n---\n\n```{r}\nsliderInput('n', 'N', 1, 100, 50)\n```\n",
+          "utf-8",
+        );
+
+        const results = await inspectProject({ projectDir: dir });
+
+        const quartoShiny = results.find(
+          (r) => r.configuration.type === ContentType.QUARTO_SHINY,
+        );
+        expect(quartoShiny).toBeDefined();
+        expect(quartoShiny?.configuration.entrypoint).toBe("dashboard.qmd");
+      });
+    });
+
+    test("populates R config for Quarto R project", ({ skip }) => {
+      if (!rAvailable || !quartoAvailable) skip();
+      return withTempDir(async (dir) => {
+        await writeFile(
+          path.join(dir, "doc.qmd"),
+          "---\ntitle: R Quarto\n---\n\n```{r}\nsummary(cars)\n```\n",
+          "utf-8",
+        );
+
+        const results = await inspectProject({
+          projectDir: dir,
+          rPath: "R",
+        });
+
+        const quarto = results.find(
+          (r) => r.configuration.type === ContentType.QUARTO_STATIC,
+        );
+        expect(quarto).toBeDefined();
+        expect(quarto?.configuration.r).toBeDefined();
+        expect(quarto?.configuration.r?.version).toMatch(/^\d+\.\d+\.\d+$/);
+        expect(quarto?.configuration.quarto?.engines).toContain("knitr");
+      });
+    });
+
+    test("populates Python config for Quarto Python project", ({ skip }) => {
+      if (!pythonAvailable || !quartoAvailable) skip();
+      clearPythonVersionCache();
+      return withTempDir(async (dir) => {
+        await writeFile(
+          path.join(dir, "doc.qmd"),
+          "---\ntitle: Python Quarto\n---\n\n```{python}\nimport os\nprint(os.name)\n```\n",
+          "utf-8",
+        );
+
+        const results = await inspectProject({
+          projectDir: dir,
+          pythonPath: pythonCmd,
+        });
+
+        const quarto = results.find(
+          (r) => r.configuration.type === ContentType.QUARTO_STATIC,
+        );
+        expect(quarto).toBeDefined();
+        expect(quarto?.configuration.python).toBeDefined();
+        expect(quarto?.configuration.python?.version).toMatch(
+          /^\d+\.\d+\.\d+$/,
+        );
+        expect(quarto?.configuration.quarto?.engines).toContain("jupyter");
+      });
+    });
   },
 );

@@ -17,18 +17,20 @@ import {
   newBokehDetector,
 } from "./detectors/pythonApp";
 import { StaticHTMLDetector } from "./detectors/html";
+import { PlumberDetector } from "./detectors/plumber";
+import { RMarkdownDetector } from "./detectors/rmarkdown";
+import { QuartoDetector } from "./detectors/quarto";
 
 /**
  * Create the ordered list of detectors.
  * The order matches Go's detectors/all.go.
- * Plumber, RMarkdown, and Quarto are deferred to a follow-up PR.
  */
 function createDetectors(): ContentTypeDetector[] {
   return [
-    // NewPlumberDetector — deferred
-    // NewRMarkdownDetector — deferred
+    new PlumberDetector(),
+    new RMarkdownDetector(),
     new NotebookDetector(),
-    // NewQuartoDetector — deferred
+    new QuartoDetector(),
     new RShinyDetector(),
     new PyShinyDetector(),
     newFastAPIDetector(),
