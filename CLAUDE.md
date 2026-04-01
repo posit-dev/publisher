@@ -132,6 +132,12 @@ VSCode Extension (TypeScript)
     └── Server-Sent Events for deployment progress
 ```
 
+### Positron / Electron Gotcha: axios adapter selection
+
+Positron's Electron exposes `XMLHttpRequest` in the extension host process. This causes axios to auto-select the XHR adapter, which corrupts binary request bodies (e.g., gzip bytes get re-encoded as UTF-8). VS Code's extension host does **not** expose XHR, so this only manifests in Positron.
+
+**Rule:** Any `axios.create()` instance that may send binary data (file uploads, gzip bundles) must set `adapter: "http"` to force the Node adapter. The extension host is always a Node.js process, so this is safe. See `packages/connect-api/src/client.ts` for the canonical example.
+
 ## Go Backend (`internal/`)
 
 Key packages (still actively used):
