@@ -885,11 +885,11 @@ function checkMaxLimit(
   if (value === undefined) {
     return;
   }
-  if (limit === 0) {
-    return;
-  }
   if (value < 0) {
     throw new Error(`${attr} value cannot be less than 0`);
+  }
+  if (limit === 0) {
+    return;
   }
   if (value > limit) {
     throw new Error(

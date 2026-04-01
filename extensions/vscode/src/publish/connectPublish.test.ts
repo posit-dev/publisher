@@ -1879,6 +1879,24 @@ describe("connectPublish — server settings validation", () => {
     );
   });
 
+  test("rejects negative resource values even when server max is 0 (unlimited)", async () => {
+    const api = makeMockApi();
+    vi.mocked(api.getSettings).mockResolvedValue(
+      makeSettings({
+        scheduler: { max_cpu_request: 0 } as AllSettings["scheduler"],
+      }),
+    );
+
+    const config = makeConfig({
+      connect: { kubernetes: { cpuRequest: -1 } },
+    });
+    const opts = makeOptions({ api, config });
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "cpu_request value cannot be less than 0",
+    );
+  });
+
   test("accepts kubernetes config within all limits", async () => {
     const config = makeConfig({
       connect: {
