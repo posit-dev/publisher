@@ -130,6 +130,7 @@ export class RMarkdownDetector implements ContentTypeDetector {
         const siteMeta = await this.lookForSiteMetadata(baseDir);
         if (siteMeta) {
           metadata = siteMeta.metadata;
+          content = siteMeta.indexContent;
           if (siteMeta.indexFile) {
             files.push(`/${siteMeta.indexFile}`);
           }
@@ -190,6 +191,7 @@ export class RMarkdownDetector implements ContentTypeDetector {
     | {
         metadata: RMarkdownMetadata;
         indexFile: string;
+        indexContent: string;
       }
     | undefined
   > {
@@ -200,7 +202,7 @@ export class RMarkdownDetector implements ContentTypeDetector {
         const content = await fs.readFile(filePath, "utf-8");
         const metadata = getRmdMetadata(content);
         if (metadata) {
-          return { metadata, indexFile: file };
+          return { metadata, indexFile: file, indexContent: content };
         }
       } catch {
         continue;

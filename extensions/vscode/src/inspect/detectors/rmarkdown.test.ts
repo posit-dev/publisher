@@ -335,5 +335,8 @@ runtime: {invalid: yaml: here
     expect(configs[0]?.title).toBe("Special Report");
     expect(configs[0]?.files).toContain("/_site.yml");
     expect(configs[0]?.files).toContain("/index.Rmd");
+    // Language detection should come from index.Rmd content, not _site.yml
+    expect(configs[0]?.r).toEqual({});
+    expect(configs[0]?.python).toBeUndefined();
   });
 });

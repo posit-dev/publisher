@@ -384,13 +384,16 @@ export class QuartoDetector implements ContentTypeDetector {
     baseDir: string,
     inspectPath: string,
   ): Promise<PartialConfig | undefined> {
-    // Check if _quarto.yml exists
+    // Check if _quarto.yml or _quarto.yaml exists
     let quartoYmlExists = false;
-    try {
-      await fs.access(path.join(baseDir, "_quarto.yml"));
-      quartoYmlExists = true;
-    } catch {
-      // doesn't exist
+    for (const name of ["_quarto.yml", "_quarto.yaml"]) {
+      try {
+        await fs.access(path.join(baseDir, name));
+        quartoYmlExists = true;
+        break;
+      } catch {
+        // doesn't exist
+      }
     }
 
     const ext = path.extname(inspectPath);
