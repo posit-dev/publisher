@@ -373,6 +373,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const connectApi = new ConnectAPI({
       url: credential.url,
       apiKey: credential.apiKey,
+      token: credential.token,
+      privateKey: credential.privateKey,
       rejectUnauthorized: extensionSettings.verifyCertificates(),
     });
 
