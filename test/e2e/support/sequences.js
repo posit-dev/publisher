@@ -301,34 +301,47 @@ Cypress.Commands.add(
       .should("be.visible")
       .should("contain", entrypointFile); // Wait for the file tree to be populated with the entrypoint
 
-    // If filesToSelect is provided and not empty, select additional files
+    // If filesToSelect is provided and not empty, select additional files.
+    // vue-virtual-scroller recycles DOM elements when the item list changes,
+    // so we always re-query the live DOM and retry clicks that don't stick.
     if (Array.isArray(filesToSelect) && filesToSelect.length > 0) {
-      // Wait a moment for file tree to fully render in CI
       filesToSelect.forEach((fileOrDir) => {
-        // Retry with backoff for CI stability
-        cy.retryWithBackoff(
-          () =>
-            cy
-              .publisherWebview()
-              .find('[data-automation="project-files"]')
-              .contains(".tree-item-title", fileOrDir)
-              .closest(".tree-item")
-              .find('.vscode-checkbox input[type="checkbox"]'),
-          10, // more retries
-          1000, // longer delays
-        )
-          .should("exist")
-          .should("be.visible")
-          .then(($checkbox) => {
-            const isChecked = $checkbox.prop("checked");
-            if (!isChecked) {
-              cy.wrap($checkbox).click({ force: true });
-              // eslint-disable-next-line cypress/no-unnecessary-waiting
-              cy.wait(500); // Small wait after click
-              // Verify the click worked
-              cy.wrap($checkbox).should("be.checked");
-            }
-          });
+        const getCheckbox = () =>
+          cy
+            .publisherWebview()
+            .find('[data-automation="project-files"]')
+            .contains(".tree-item-title", fileOrDir)
+            .closest(".tree-item")
+            .find('.vscode-checkbox input[type="checkbox"]');
+
+        const ensureChecked = (attempt = 0) => {
+          if (attempt > 5) {
+            throw new Error(
+              `Checkbox for "${fileOrDir}" not checked after ${attempt} attempts`,
+            );
+          }
+          // On retries, wait for Vue to reconcile recycled scroller views
+          if (attempt > 0) {
+            // eslint-disable-next-line cypress/no-unnecessary-waiting
+            cy.wait(300);
+          }
+          getCheckbox()
+            .should("exist")
+            .then(($cb) => {
+              if (!$cb.prop("checked")) {
+                cy.wrap($cb).click({ force: true });
+                // eslint-disable-next-line cypress/no-unnecessary-waiting
+                cy.wait(500);
+                // Re-query to verify — scroller may have replaced the element
+                getCheckbox().then(($fresh) => {
+                  if (!$fresh.prop("checked")) {
+                    ensureChecked(attempt + 1);
+                  }
+                });
+              }
+            });
+        };
+        ensureChecked();
       });
     }
 
