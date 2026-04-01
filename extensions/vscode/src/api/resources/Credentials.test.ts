@@ -2,6 +2,7 @@
 
 import { describe, expect, test, vi, beforeEach } from "vitest";
 import { AxiosInstance } from "axios";
+import { GUID } from "@posit-dev/connect-api";
 import { Credentials } from "./Credentials";
 import { ServerType } from "../types/contentRecords";
 import { CONNECT_CLOUD_ENV_HEADER } from "../../constants";
@@ -28,7 +29,7 @@ describe("Credentials API client", () => {
     mockAxiosPost.mockResolvedValue({ data: { guid: "test-guid" } });
 
     const cred: Credential = {
-      guid: "test-guid",
+      guid: GUID("test-guid"),
       name: "Test Credential",
       url: "https://connect.example.com",
       serverType: ServerType.CONNECT,
@@ -54,7 +55,7 @@ describe("Credentials API client", () => {
     mockAxiosPost.mockResolvedValue({ data: { guid: "cloud-guid" } });
 
     const cred: Credential = {
-      guid: "cloud-guid",
+      guid: GUID("cloud-guid"),
       name: "Cloud Credential",
       url: "https://connect.posit.cloud",
       serverType: ServerType.CONNECT_CLOUD,

@@ -273,6 +273,27 @@ describe("TLS certificate verification", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Timeout option
+// ---------------------------------------------------------------------------
+
+describe("timeout option", () => {
+  it("passes timeout when specified", () => {
+    new ConnectAPI({ url: BASE_URL, apiKey: API_KEY, timeout: 5000 });
+
+    expect(axios.create).toHaveBeenCalledWith(
+      expect.objectContaining({ timeout: 5000 }),
+    );
+  });
+
+  it("does not pass timeout when omitted", () => {
+    new ConnectAPI({ url: BASE_URL, apiKey: API_KEY });
+
+    const call = vi.mocked(axios.create).mock.calls.at(-1)?.[0];
+    expect(call?.timeout).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
 // testAuthentication
 // ---------------------------------------------------------------------------
 
@@ -1191,22 +1212,22 @@ describe("Token authentication", () => {
 // ---------------------------------------------------------------------------
 
 describe("Constructor validation", () => {
-  it("throws if neither apiKey nor token+privateKey is provided", () => {
-    expect(() => new ConnectAPI({ url: BASE_URL })).toThrow(
-      "ConnectAPI requires either apiKey or both token and privateKey",
-    );
+  it("allows no credentials (for URL reachability checks)", () => {
+    expect(() => new ConnectAPI({ url: BASE_URL })).not.toThrow();
   });
 
   it("throws if only token is provided without privateKey", () => {
     expect(() => new ConnectAPI({ url: BASE_URL, token: "Ttoken123" })).toThrow(
-      "ConnectAPI requires either apiKey or both token and privateKey",
+      "ConnectAPI requires both token and privateKey for token authentication",
     );
   });
 
   it("throws if only privateKey is provided without token", () => {
     expect(
       () => new ConnectAPI({ url: BASE_URL, privateKey: "somekey" }),
-    ).toThrow("ConnectAPI requires either apiKey or both token and privateKey");
+    ).toThrow(
+      "ConnectAPI requires both token and privateKey for token authentication",
+    );
   });
 
   it("accepts apiKey auth", () => {

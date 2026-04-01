@@ -4,6 +4,7 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { ContentID } from "@posit-dev/connect-api";
 import {
   createDeploymentRecord,
   patchDeploymentRecord,
@@ -233,7 +234,7 @@ describe("patchDeploymentRecord", () => {
     );
 
     const record = await patchDeploymentRecord("patch-id", ".", tmpDir, {
-      id: "new-guid-456",
+      id: ContentID("new-guid-456"),
     });
 
     expect(record.id).toBe("new-guid-456");
@@ -263,7 +264,7 @@ describe("patchDeploymentRecord", () => {
     );
 
     await patchDeploymentRecord("patch-comments", ".", tmpDir, {
-      id: "abc-123",
+      id: ContentID("abc-123"),
     });
 
     const filePath = path.join(
@@ -300,7 +301,7 @@ describe("patchDeploymentRecord", () => {
 
     // Patch with a new id — deployment_error.message must survive the round-trip
     const record = await patchDeploymentRecord("patch-error", ".", tmpDir, {
-      id: "new-guid",
+      id: ContentID("new-guid"),
     });
 
     expect(record.deploymentError).toBeDefined();

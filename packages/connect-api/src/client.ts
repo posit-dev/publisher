@@ -28,6 +28,20 @@ import type {
 } from "./types.js";
 
 /**
+ * Error thrown by ConnectAPI methods when an HTTP error occurs.
+ * Preserves the HTTP status code for callers to inspect.
+ */
+export class ConnectAPIError extends Error {
+  constructor(
+    message: string,
+    public readonly httpStatus?: number,
+  ) {
+    super(message);
+    this.name = "ConnectAPIError";
+  }
+}
+
+/**
  * TypeScript client for the Posit Connect API.
  *
  * Uses axios for HTTP requests. Non-2xx responses throw AxiosError by default.
@@ -40,9 +54,11 @@ export class ConnectAPI {
     const hasApiKey = !!options.apiKey;
     const hasToken = !!options.token && !!options.privateKey;
 
-    if (!hasApiKey && !hasToken) {
+    // Allow no credentials (for URL reachability checks), but reject
+    // partial token auth (token without privateKey or vice versa).
+    if (!hasApiKey && !hasToken && (options.token || options.privateKey)) {
       throw new Error(
-        "ConnectAPI requires either apiKey or both token and privateKey",
+        "ConnectAPI requires both token and privateKey for token authentication",
       );
     }
 
@@ -61,6 +77,10 @@ export class ConnectAPI {
       config.httpsAgent = new https.Agent({
         rejectUnauthorized: false,
       });
+    }
+
+    if (options.timeout !== undefined) {
+      config.timeout = options.timeout;
     }
 
     this.client = axios.create(config);
@@ -110,6 +130,10 @@ export class ConnectAPI {
   /**
    * Validates credentials and checks user state (locked, confirmed, role).
    * Returns { user, error: null } on success; throws on HTTP errors or invalid state.
+   *
+   * When the client is constructed without credentials (for URL reachability
+   * checks), this method will throw a {@link ConnectAPIError} with
+   * `httpStatus: 401`. Callers should handle that case explicitly.
    */
   async testAuthentication(): Promise<{ user: User; error: null }> {
     let data: UserDTO;
@@ -122,11 +146,14 @@ export class ConnectAPI {
           typeof errorBody?.error === "string"
             ? errorBody.error
             : `HTTP ${err.response?.status}`;
-        throw new Error(msg);
+        throw new ConnectAPIError(msg, err.response?.status);
       }
       throw err;
     }
 
+    // TODO: These business-logic errors throw plain Error while HTTP errors
+    // throw ConnectAPIError. Consider using a typed error (e.g. ConnectAPIError
+    // or a dedicated subclass) for consistency with catch-by-type patterns.
     if (data.locked) {
       throw new Error(`user account ${data.username} is locked`);
     }

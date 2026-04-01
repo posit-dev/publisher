@@ -13,7 +13,7 @@ Docker Desktop is required. On Apple Silicon:
 
 ### with-connect CLI
 
-Install the CLI that manages the Connect server:
+Install [uv](https://docs.astral.sh/uv/) if you don't have it (`brew install uv`), then install the CLI that manages the Connect server:
 
 ```bash
 uv tool install git+https://github.com/posit-dev/with-connect.git
@@ -24,6 +24,28 @@ uv tool install git+https://github.com/posit-dev/with-connect.git
 Running E2E tests locally requires a Posit Connect license. You can either rely on GitHub CI to run these tests, or contact a member of the team to help get a license set up.
 
 Save your license to a file (this guide assumes `~/connect-license.lic`).
+
+### Environment Variables
+
+The E2E tests require several environment variables. We recommend using [direnv](https://direnv.net/) with a `.envrc` file in this directory (already gitignored):
+
+```bash
+# test/e2e/.envrc
+export CONNECT_LICENSE_FILE=~/connect-license.lic
+export DOCKER_HOST=unix://$HOME/.docker/run/docker.sock  # macOS only
+```
+
+Run `direnv allow` after creating the file. Without direnv, export these variables manually before running tests.
+
+### 1Password CLI (optional, for Connect Cloud tests)
+
+Tests tagged `@pcc` fetch credentials from 1Password. To run these locally:
+
+1. Install the 1Password CLI: `brew install 1password-cli`
+2. Enable the desktop app integration: 1Password > Settings > Developer > "Integrate with 1Password CLI"
+3. Verify access: `op item get "pcc_user_ccqa3" --field "password" --vault "Publisher" --reveal`
+
+If you don't have 1Password access, you can skip cloud tests with `--env grepTags=-@pcc` or set `SKIP_1PASSWORD=true` to use placeholder credentials.
 
 ### Workbench License (optional)
 
@@ -59,10 +81,6 @@ just build-image code-server
 ### Using Justfile Commands
 
 ```bash
-# Set environment
-export CONNECT_LICENSE_FILE=~/connect-license.lic
-export DOCKER_HOST=unix://$HOME/.docker/run/docker.sock  # macOS only
-
 # Run all tests
 just e2e
 
@@ -161,6 +179,22 @@ DEBUG_CYPRESS=true just e2e
 ```bash
 ./repeat-cypress-headless.sh REPEAT=5 tests/credentials.cy.js
 ```
+
+## Troubleshooting
+
+### Port 3939 already allocated
+
+If you see `Bind for 0.0.0.0:3939 failed: port is already allocated`, a Connect container from a previous run is still running. This happens when a test run is interrupted — `with-connect` starts containers outside of docker-compose, so `just stop` doesn't clean them up.
+
+```bash
+# Find and remove the stale container
+docker ps -a --filter "publish=3939"
+docker rm -f <container_id>
+```
+
+### 1Password CLI not found
+
+The E2E setup installs a local `op` binary to `test/bin/op`, but the Connect Cloud tests expect the system-wide CLI. Install it with `brew install 1password-cli` and enable the desktop app integration.
 
 ## CI
 

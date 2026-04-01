@@ -30,6 +30,7 @@ export interface ConnectAPIOptions {
   privateKey?: string;
   /** Whether to verify TLS certificates. Defaults to true. */
   rejectUnauthorized?: boolean;
+  timeout?: number; // request timeout in milliseconds
 }
 
 // ---------------------------------------------------------------------------

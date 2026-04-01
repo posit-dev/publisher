@@ -2,6 +2,7 @@
 
 import { SecretStorage } from "vscode";
 import { randomUUID } from "crypto";
+import { GUID } from "@posit-dev/connect-api";
 
 import { Credential } from "src/api/types/credentials";
 import { ServerType } from "src/api/types/contentRecords";
@@ -45,7 +46,7 @@ export class CredentialsService {
     return getAllCredentials(this.secrets);
   }
 
-  async get(guid: string): Promise<Credential> {
+  async get(guid: GUID): Promise<Credential> {
     const cred = await getCredential(this.secrets, guid);
     if (!cred) {
       throw new CredentialNotFoundError(guid);
@@ -124,7 +125,7 @@ export class CredentialsService {
     const normalizedUrl = normalizeServerURL(url);
 
     const cred: Credential = {
-      guid: randomUUID(),
+      guid: GUID(randomUUID()),
       name: input.name,
       url: normalizedUrl,
       serverType: input.serverType,
@@ -160,7 +161,7 @@ export class CredentialsService {
     return cred;
   }
 
-  async delete(guid: string): Promise<void> {
+  async delete(guid: GUID): Promise<void> {
     const cred = await getCredential(this.secrets, guid);
     if (!cred) {
       throw new CredentialNotFoundError(guid);

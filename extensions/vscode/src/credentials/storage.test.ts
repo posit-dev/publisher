@@ -1,6 +1,7 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
 import { beforeEach, describe, expect, test, vi } from "vitest";
+import { GUID } from "@posit-dev/connect-api";
 
 import { credentialFactory } from "src/test/unit-test-utils/factories";
 import { mockSecretStorage } from "src/test/unit-test-utils/vscode-mocks";
@@ -109,14 +110,14 @@ describe("credentialSecretStorage", () => {
     });
 
     test("returns undefined for non-existent GUID", async () => {
-      const result = await getCredential(secrets, "nonexistent");
+      const result = await getCredential(secrets, GUID("nonexistent"));
       expect(result).toBeUndefined();
     });
 
     test("returns undefined for malformed record", async () => {
       await secrets.store("credential:bad-guid", "not valid json");
 
-      const result = await getCredential(secrets, "bad-guid");
+      const result = await getCredential(secrets, GUID("bad-guid"));
       expect(result).toBeUndefined();
     });
   });
@@ -133,7 +134,7 @@ describe("credentialSecretStorage", () => {
     });
 
     test("does not throw when deleting non-existent GUID", async () => {
-      await deleteCredential(secrets, "nonexistent");
+      await deleteCredential(secrets, GUID("nonexistent"));
       expect(secrets.delete).toHaveBeenCalledWith("credential:nonexistent");
     });
   });

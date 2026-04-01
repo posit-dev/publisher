@@ -1,6 +1,7 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
 import { beforeEach, describe, expect, test, vi } from "vitest";
+import { GUID } from "@posit-dev/connect-api";
 
 import { credentialFactory } from "src/test/unit-test-utils/factories";
 import { mockSecretStorage } from "src/test/unit-test-utils/vscode-mocks";
@@ -92,7 +93,7 @@ describe("CredentialsService", () => {
     });
 
     test("throws CredentialNotFoundError for missing GUID", async () => {
-      await expect(service.get("nonexistent")).rejects.toThrow(
+      await expect(service.get(GUID("nonexistent"))).rejects.toThrow(
         CredentialNotFoundError,
       );
     });
@@ -294,7 +295,7 @@ describe("CredentialsService", () => {
     });
 
     test("throws CredentialNotFoundError for missing GUID", async () => {
-      await expect(service.delete("nonexistent")).rejects.toThrow(
+      await expect(service.delete(GUID("nonexistent"))).rejects.toThrow(
         CredentialNotFoundError,
       );
     });

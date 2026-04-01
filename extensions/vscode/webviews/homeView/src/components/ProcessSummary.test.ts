@@ -8,6 +8,7 @@ import {
   ServerType,
   ProductType,
 } from "../../../../src/api/types/contentRecords";
+import type { ContentID, BundleID } from "@posit-dev/connect-api";
 import { ContentType } from "../../../../src/api/types/configurations";
 import type { AllContentRecordTypes } from "../../../../src/api/types/contentRecords";
 import ProcessSummary from "./ProcessSummary.vue";
@@ -98,8 +99,8 @@ describe("ProcessSummary", () => {
       dismissedAt: "",
       type: ContentType.PYTHON_SHINY,
       state: ContentRecordState.DEPLOYED,
-      id: "abc-123",
-      bundleId: "456",
+      id: "abc-123" as ContentID,
+      bundleId: "456" as BundleID,
       bundleUrl:
         "https://connect.example.com/__api__/v1/content/abc-123/bundles/456/download",
       dashboardUrl: "https://connect.example.com/connect/#/apps/abc-123",
@@ -134,8 +135,8 @@ describe("ProcessSummary", () => {
       dismissedAt: "",
       type: ContentType.PYTHON_SHINY,
       state: ContentRecordState.DEPLOYED,
-      id: "abc-123",
-      bundleId: "456",
+      id: "abc-123" as ContentID,
+      bundleId: "456" as BundleID,
       bundleUrl:
         "https://connect.example.com/__api__/v1/content/abc-123/bundles/456/download",
       dashboardUrl: "https://connect.example.com/connect/#/apps/abc-123",

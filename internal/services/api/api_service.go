@@ -9,6 +9,7 @@ import (
 
 	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/api_client/auth/snowflake"
+	"github.com/posit-dev/publisher/internal/clients/connect"
 	"github.com/posit-dev/publisher/internal/credentials"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/logging"
@@ -22,6 +23,8 @@ import (
 const APIPrefix string = "api"
 
 const DefaultTimeout = 30 * time.Second
+
+var connectClientFactory = connect.NewConnectClient
 
 func NewService(
 	fragment string,
@@ -66,10 +69,6 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	r.Handle(ToPath("credentials"), ResetCredentialsHandlerFunc(log, func(log logging.Logger) (credentials.CredentialsService, error) {
 		return credentials.NewCredentialsService(log)
 	})).Methods(http.MethodDelete)
-
-	// POST /api/test-credentials
-	r.Handle(ToPath("test-credentials"), PostTestCredentialsHandlerFunc(log)).
-		Methods(http.MethodPost)
 
 	// POST /api/deployments/$NAME initiates a deployment
 	r.Handle(ToPath("deployments", "{name}"), PostDeploymentHandlerFunc(base, log, lister, emitter)).
