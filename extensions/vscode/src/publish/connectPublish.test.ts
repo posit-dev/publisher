@@ -1209,7 +1209,7 @@ describe("connectPublish — error classification", () => {
     expect(tomlContent).not.toContain("deployedContentNotRunning");
   });
 
-  test("401 error classifies as authenticationFailed", async () => {
+  test("401 error classifies as authFailedErr", async () => {
     const api = makeMockApi();
     const axiosErr = new AxiosError(
       "Unauthorized",
@@ -1234,10 +1234,10 @@ describe("connectPublish — error classification", () => {
 
     const lastWrite = mockWriteFile.mock.calls.at(-1);
     const tomlContent = lastWrite![1] as string;
-    expect(tomlContent).toContain("authenticationFailed");
+    expect(tomlContent).toContain("authFailedErr");
   });
 
-  test("updateContent 404 classifies as deploymentNotFound", async () => {
+  test("updateContent 404 classifies as deploymentNotFoundErr", async () => {
     const api = makeMockApi();
     const axiosErr = new AxiosError(
       "Not Found",
@@ -1266,7 +1266,7 @@ describe("connectPublish — error classification", () => {
 
     const lastWrite = mockWriteFile.mock.calls.at(-1);
     const tomlContent = lastWrite![1] as string;
-    expect(tomlContent).toContain("deploymentNotFound");
+    expect(tomlContent).toContain("deploymentNotFoundErr");
   });
 
   test("waitForTask plain Error classifies as deployFailed", async () => {
@@ -1301,7 +1301,7 @@ describe("connectPublish — error classification", () => {
     expect(tomlContent).toContain("errorCertificateVerification");
   });
 
-  test("app mode mismatch classifies as appModeNotModifiable", async () => {
+  test("app mode mismatch classifies as appModeNotModifiableErr", async () => {
     const api = makeMockApi();
     vi.mocked(api.contentDetails).mockResolvedValue({
       data: { ...TEST_CONTENT, app_mode: "python-api" },
@@ -1317,7 +1317,7 @@ describe("connectPublish — error classification", () => {
 
     const lastWrite = mockWriteFile.mock.calls.at(-1);
     const tomlContent = lastWrite![1] as string;
-    expect(tomlContent).toContain("appModeNotModifiable");
+    expect(tomlContent).toContain("appModeNotModifiableErr");
   });
 
   test("emits failure event with step and message on error", async () => {

@@ -649,7 +649,7 @@ function classifyDeploymentError(
   // Authentication failures (401 from any step, but typically preflight)
   if (isAxiosError(err) && err.response?.status === 401) {
     return {
-      code: "authenticationFailed",
+      code: "authFailedErr",
       message: "Authentication failed. Check your credentials.",
     };
   }
@@ -661,7 +661,7 @@ function classifyDeploymentError(
     err.response?.status === 404
   ) {
     return {
-      code: "deploymentNotFound",
+      code: "deploymentNotFoundErr",
       message:
         "Deployment target not found. " +
         "The content may have been deleted on the server.",
@@ -702,7 +702,7 @@ function classifyDeploymentError(
     err.message.includes("previously deployed as")
   ) {
     return {
-      code: "appModeNotModifiable",
+      code: "appModeNotModifiableErr",
       message: err.message,
     };
   }
