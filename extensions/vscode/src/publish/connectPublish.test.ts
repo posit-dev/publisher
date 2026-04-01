@@ -107,6 +107,7 @@ function makeConfig(
     productType: ProductType.CONNECT,
     type: ContentType.PYTHON_SHINY,
     entrypoint: "app.py",
+    files: ["app.py", "requirements.txt"],
     validate: false,
     python: {
       version: "3.11.0",
@@ -656,6 +657,26 @@ describe("connectPublish", () => {
       ([p]) => typeof p === "string" && p.endsWith("staging.toml"),
     );
     expect(writeCalls.length).toBeGreaterThanOrEqual(1);
+  });
+
+  test("deployedAt is set on every record write including errors", async () => {
+    const api = makeMockApi();
+    (api.uploadBundle as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error("upload failed"),
+    );
+
+    const opts = makeOptions({ api });
+
+    await expect(connectPublish(opts)).rejects.toThrow("upload failed");
+
+    // Every writeFile call to the deployment record should contain deployed_at
+    const recordWrites = mockWriteFile.mock.calls.filter(
+      ([p]) => typeof p === "string" && p.endsWith("production.toml"),
+    );
+    expect(recordWrites.length).toBeGreaterThanOrEqual(2); // initial + error
+    for (const [, content] of recordWrites) {
+      expect(content).toContain("deployed_at");
+    }
   });
 
   test("auth failure propagates and records error", async () => {
@@ -1682,6 +1703,24 @@ describe("connectPublish — preflight validation", () => {
   test("rejects requirements file excluded from file patterns", async () => {
     const config = makeConfig({
       files: ["app.py", "static/"],
+      python: {
+        version: "3.11.0",
+        packageFile: "requirements.txt",
+        packageManager: "pip",
+      },
+    });
+    const opts = makeOptions({ config });
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "Missing dependency file requirements.txt",
+    );
+  });
+
+  test("rejects requirements file when files list is empty", async () => {
+    // Matches Go behavior: empty cfg.Files means the suffix-match loop
+    // produces no match, so requirementsIsIncluded stays false.
+    const config = makeConfig({
+      files: [],
       python: {
         version: "3.11.0",
         packageFile: "requirements.txt",

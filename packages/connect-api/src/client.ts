@@ -176,6 +176,18 @@ export class ConnectAPI {
       throw err;
     }
 
+    // Guard against non-JSON responses (e.g., an auth proxy returning HTML).
+    // Axios returns the raw string when content-type isn't JSON, so `data`
+    // would be a string instead of an object. Mirrors Go's isConnectAuthError
+    // which catches json.SyntaxError and returns a clear credential/server error.
+    if (typeof data !== "object" || data === null || !("guid" in data)) {
+      throw new ConnectAPIError(
+        "The server did not return a valid JSON response. " +
+          "Check the server URL and credentials.",
+        undefined,
+      );
+    }
+
     // TODO: These business-logic errors throw plain Error while HTTP errors
     // throw ConnectAPIError. Consider using a typed error (e.g. ConnectAPIError
     // or a dedicated subclass) for consistency with catch-by-type patterns.

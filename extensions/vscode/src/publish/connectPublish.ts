@@ -254,17 +254,17 @@ export async function connectPublish(
       // Check that the file is included in the configured file patterns.
       // Uses suffix matching, not glob evaluation — matches Go's
       // checkRequirementsFile which uses strings.HasSuffix(file, packageFile).
+      // Go always requires the file in cfg.Files, even when the list is empty
+      // (the loop produces no match, so requirementsIsIncluded stays false).
       const filePatterns = config.files ?? [];
-      if (filePatterns.length > 0) {
-        const isIncluded = filePatterns.some((pattern) =>
-          pattern.endsWith(packageFile),
+      const isIncluded = filePatterns.some((pattern) =>
+        pattern.endsWith(packageFile),
+      );
+      if (!isIncluded) {
+        throw new Error(
+          `Missing dependency file ${packageFile}. ` +
+            `This file must be included in the deployment.`,
         );
-        if (!isIncluded) {
-          throw new Error(
-            `Missing dependency file ${packageFile}. ` +
-              `This file must be included in the deployment.`,
-          );
-        }
       }
     }
 
@@ -564,8 +564,7 @@ export async function connectPublish(
       onProgress({ step: "validateDeployment", status: "success" });
     }
 
-    // Write completed record
-    record.deployedAt = new Date().toISOString();
+    // Write completed record (deployedAt is set by writePublishRecord)
     await writePublishRecord(deploymentPath, record);
 
     return {
@@ -1219,6 +1218,10 @@ export async function writePublishRecord(
   deploymentPath: string,
   record: PublishRecord,
 ): Promise<void> {
+  // Mirrors Go's WriteDeploymentRecord which sets DeployedAt = now on every
+  // write (initial, post-upload, error). This ensures failed/in-progress
+  // records reflect when the attempt happened.
+  record.deployedAt = new Date().toISOString();
   const obj = recordToTomlObject(record);
   const content =
     AUTOGEN_HEADER + expandInlineArrays(stringifyTOML(obj)) + "\n";

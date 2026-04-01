@@ -372,6 +372,19 @@ describe("testAuthentication", () => {
     const client = createClient();
     await expect(client.testAuthentication()).rejects.toThrow("HTTP 403");
   });
+
+  it("throws clear error when auth proxy returns HTML on 200", async () => {
+    // An authenticating proxy may return a 200 with an HTML login page
+    // instead of a JSON user object. The guard should catch this.
+    mockRequest.mockResolvedValue(
+      textResponse("<html><body>Login required</body></html>"),
+    );
+
+    const client = createClient();
+    await expect(client.testAuthentication()).rejects.toThrow(
+      /did not return a valid JSON response/,
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------
