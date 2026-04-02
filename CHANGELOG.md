@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Directory checkboxes in Project Files now show an indeterminate state when some, but not all, children are included in the deployment. Directories also now show as checked when all children are included. (#3472)
+
 ### Fixed
 
 - Fixed deployment records being written with an empty `created_at` timestamp after publishing. (#3718)

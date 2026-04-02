@@ -1,7 +1,7 @@
 <template>
   <TreeItemCheckbox
     :title="file.base"
-    :checked="isIncluded"
+    :state="checkState"
     :disabled="isDisabled"
     :list-style="listStyle"
     :disable-opacity="isEntrypoint || isPackageFile"
@@ -32,6 +32,7 @@
 import { computed } from "vue";
 
 import TreeItemCheckbox from "src/components/tree/TreeItemCheckbox.vue";
+import { type CheckState } from "src/components/CodeCheckbox.vue";
 import { useHomeStore } from "src/stores/home";
 import { useFileStore } from "src/stores/file";
 import { FlatFile } from "src/utils/files";
@@ -67,6 +68,24 @@ const isDisabled = computed((): boolean => {
 
 const isIncluded = computed((): boolean => {
   return Boolean(props.file.reason?.exclude === false);
+});
+
+const checkState = computed((): CheckState => {
+  // Directories with children use tri-state based on child inclusion
+  if (props.file.isDir && props.file.fileCount > 0) {
+    if (props.file.allIncluded) {
+      // Every child is included
+      return "checked";
+    }
+    if (props.file.allExcluded) {
+      // Every child is excluded
+      return "unchecked";
+    }
+    // Some children included, some excluded
+    return "indeterminate";
+  }
+  // Individual files are either included or not
+  return isIncluded.value ? "checked" : "unchecked";
 });
 
 const inLastDeployed = computed(() => {
@@ -112,12 +131,15 @@ const isRPackageFile = computed((): boolean => {
 const listStyle = computed((): "emphasized" | "default" | "deemphasized" => {
   return isEntrypoint.value
     ? "emphasized"
-    : isIncluded.value
+    : checkState.value !== "unchecked"
       ? "default"
       : "deemphasized";
 });
 
 const tooltip = computed((): string => {
+  if (checkState.value === "indeterminate") {
+    return `${props.file.rel} contains a mix of included and excluded files.`;
+  }
   return isIncluded.value
     ? includedFileTooltip(props.file, {
         isEntrypoint: isEntrypoint.value,

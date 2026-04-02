@@ -2,7 +2,9 @@
   <div class="vscode-checkbox" :class="{ disabled: disabled }">
     <label class="checkbox-control">
       <input
-        :checked="checked"
+        :checked="state === 'checked'"
+        :indeterminate="state === 'indeterminate'"
+        :aria-checked="state === 'indeterminate' ? 'mixed' : undefined"
         :disabled="disabled"
         type="checkbox"
         @change="handleChange"
@@ -24,8 +26,10 @@
 </template>
 
 <script setup lang="ts">
+export type CheckState = "checked" | "unchecked" | "indeterminate";
+
 interface Props {
-  checked: boolean;
+  state: CheckState;
   disabled?: boolean;
   disableOpacity?: boolean;
   variant?: "default" | "has-text-click";
@@ -36,14 +40,11 @@ withDefaults(defineProps<Props>(), {
 });
 
 const emit = defineEmits<{
-  changed: [checked: boolean];
+  toggle: [];
   textClick: [];
 }>();
 
-const handleChange = (event: Event) => {
-  const checked = (event.target as HTMLInputElement).checked;
-  emit("changed", checked);
-};
+const handleChange = () => emit("toggle");
 </script>
 
 <style lang="scss" scoped>
