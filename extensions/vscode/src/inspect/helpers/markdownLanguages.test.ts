@@ -77,6 +77,28 @@ describe("detectMarkdownLanguagesInContent", () => {
     expect(result.needsR).toBe(false);
     expect(result.needsPython).toBe(true);
   });
+
+  test("detects inline R code", () => {
+    const content = "The value is `r sqrt(2)` in the text.\n";
+    const result = detectMarkdownLanguagesInContent(content);
+    expect(result.needsR).toBe(true);
+    expect(result.needsPython).toBe(false);
+  });
+
+  test("detects inline Python code", () => {
+    const content = "The length is `python len([1,2])` items.\n";
+    const result = detectMarkdownLanguagesInContent(content);
+    expect(result.needsR).toBe(false);
+    expect(result.needsPython).toBe(true);
+  });
+
+  test("detects both fenced blocks and inline code", () => {
+    const content =
+      "```{r}\nlibrary(ggplot2)\n```\n\nThe answer is `python 1+1`.\n";
+    const result = detectMarkdownLanguagesInContent(content);
+    expect(result.needsR).toBe(true);
+    expect(result.needsPython).toBe(true);
+  });
 });
 
 function setupGlobDir(files: string[]) {

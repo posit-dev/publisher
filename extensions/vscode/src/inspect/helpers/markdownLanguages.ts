@@ -4,10 +4,11 @@ import * as fs from "fs/promises";
 
 import { globDir } from "./globDir";
 
-// Matches fenced code blocks with {r} or {python} language identifiers.
+// Matches fenced code blocks with {r} or {python} language identifiers,
+// and inline code evaluation syntax (`r expr` or `python expr`).
 // Handles both ``` and ~~~ fencing, and optional chunk options.
-const rCodeBlockRE = /^[ \t]*(```+|~~~+)\s*\{r[\s,}]/m;
-const pythonCodeBlockRE = /^[ \t]*(```+|~~~+)\s*\{python[\s,}]/m;
+const rCodeRE = /^[ \t]*(```+|~~~+)\s*\{r[\s,}]|`r /m;
+const pythonCodeRE = /^[ \t]*(```+|~~~+)\s*\{python[\s,}]|`python /m;
 
 /**
  * Detect whether markdown content contains R and/or Python code blocks.
@@ -18,8 +19,8 @@ export function detectMarkdownLanguagesInContent(content: string): {
   needsPython: boolean;
 } {
   return {
-    needsR: rCodeBlockRE.test(content),
-    needsPython: pythonCodeBlockRE.test(content),
+    needsR: rCodeRE.test(content),
+    needsPython: pythonCodeRE.test(content),
   };
 }
 
