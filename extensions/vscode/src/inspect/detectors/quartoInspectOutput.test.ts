@@ -1,5 +1,6 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
+import path from "path";
 import { describe, expect, test, vi } from "vitest";
 import { QuartoInspectOutput } from "./quartoInspectOutput";
 
@@ -32,15 +33,17 @@ describe("QuartoInspectOutput.fileAssetsDir", () => {
     });
 
     const output = makeOutput();
-    const result = await output.fileAssetsDir("/project/doc.html");
-    expect(result).toBe("/project/doc_files");
+    const input = path.join("/project", "doc.html");
+    const result = await output.fileAssetsDir(input);
+    expect(result).toBe(path.join("/project", "doc_files"));
   });
 
   test("returns undefined when companion directory does not exist", async () => {
     mockStat.mockRejectedValue(new Error("ENOENT"));
 
     const output = makeOutput();
-    const result = await output.fileAssetsDir("/project/doc.html");
+    const input = path.join("/project", "doc.html");
+    const result = await output.fileAssetsDir(input);
     expect(result).toBeUndefined();
   });
 
@@ -50,7 +53,8 @@ describe("QuartoInspectOutput.fileAssetsDir", () => {
     });
 
     const output = makeOutput();
-    const result = await output.fileAssetsDir("/project/doc.html");
+    const input = path.join("/project", "doc.html");
+    const result = await output.fileAssetsDir(input);
     expect(result).toBeUndefined();
   });
 
@@ -60,7 +64,8 @@ describe("QuartoInspectOutput.fileAssetsDir", () => {
     });
 
     const output = makeOutput();
-    const result = await output.fileAssetsDir("/project/subdir/report.html");
-    expect(result).toBe("/project/subdir/report_files");
+    const input = path.join("/project", "subdir", "report.html");
+    const result = await output.fileAssetsDir(input);
+    expect(result).toBe(path.join("/project", "subdir", "report_files"));
   });
 });
