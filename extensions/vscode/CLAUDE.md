@@ -145,6 +145,23 @@ Extension-webview communication uses typed messages:
 
 # TypeScript Conventions
 
+## Cross-Platform Path Handling
+
+This extension runs on macOS, Linux, and Windows. Never construct file-system paths with hardcoded forward slashes — always use `path.join()`, `path.resolve()`, or VS Code's `Uri.joinPath()`.
+
+**In production code:**
+
+- Use `path.join("dir", "file.txt")` not `"dir/file.txt"`
+- Use `path.dirname()`, `path.basename()`, `path.extname()` for path manipulation
+- Use `Uri.file()` / `Uri.joinPath()` when working with VS Code APIs
+- When a forward-slash path is needed for serialization (e.g., TOML config values), convert explicitly: `rel.split(path.sep).join("/")`
+
+**In tests:**
+
+- Build paths with `path.join()` and assert against `path.join()` results — never hardcode `"/project/foo"` literals as file-system paths
+- For tests that touch the real filesystem, use `os.tmpdir()` + `fs.mkdtempSync()` for setup (see `bundler.test.ts`, `configWriter.test.ts` for good examples)
+- TOML config patterns like `"/app.py"` are data values, not file-system paths — those are fine as string literals
+
 ## Avoid Type Assertions
 
 Do not use TypeScript [type assertions](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#type-assertions) (`as Type`) unless there is no alternative. Type assertions bypass the compiler's type checking and can hide bugs. Instead, prefer:
