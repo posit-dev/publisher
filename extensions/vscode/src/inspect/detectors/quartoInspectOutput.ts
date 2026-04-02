@@ -3,6 +3,8 @@
 import * as fs from "fs/promises";
 import * as path from "path";
 
+import { logger } from "src/logging";
+
 interface QuartoMetadata {
   title?: string;
   runtime?: string;
@@ -218,8 +220,10 @@ export class QuartoInspectOutput {
       if (stat.isDirectory()) {
         return assetsDir;
       }
-    } catch {
-      // doesn't exist
+    } catch (err: unknown) {
+      logger.debug(
+        `[quarto] could not stat assets directory ${assetsDir}: ${err}`,
+      );
     }
     return undefined;
   }

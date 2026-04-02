@@ -4,6 +4,7 @@ import * as path from "path";
 import * as fs from "fs/promises";
 import * as yaml from "js-yaml";
 import { ContentType } from "src/api/types/configurations";
+import { logger } from "src/logging";
 import { ContentTypeDetector, PartialConfig } from "../types";
 import { globDir } from "../helpers/globDir";
 import { detectMarkdownLanguagesInDirectory } from "../helpers/markdownLanguages";
@@ -38,8 +39,8 @@ function getRmdMetadata(content: string): RMarkdownMetadata | undefined {
     if (metadata && typeof metadata === "object") {
       return metadata;
     }
-  } catch {
-    // Invalid YAML
+  } catch (err: unknown) {
+    logger.warn(`[rmarkdown] failed to parse YAML metadata: ${err}`);
   }
   return undefined;
 }
@@ -73,6 +74,9 @@ export class RMarkdownDetector implements ContentTypeDetector {
     // When the chosen entrypoint is a site configuration yml,
     // generate a single configuration as a site project.
     if (entrypoint && knownSiteConfigFiles.includes(entrypoint.toLowerCase())) {
+      logger.debug(
+        `[rmarkdown] site configuration file picked as entrypoint: ${entrypoint}`,
+      );
       const cfg = await this.configFromFileInspect(baseDir, entrypoint);
       if (cfg) {
         return [cfg];
@@ -111,9 +115,12 @@ export class RMarkdownDetector implements ContentTypeDetector {
     let content: string;
     try {
       content = await fs.readFile(entrypointPath, "utf-8");
-    } catch {
+    } catch (err: unknown) {
       // If the entrypoint is a site config file, we still need to proceed
       // but without file content for metadata extraction.
+      logger.warn(
+        `[rmarkdown] could not read entrypoint ${entrypointPath}: ${err}`,
+      );
       content = "";
     }
 
@@ -124,12 +131,18 @@ export class RMarkdownDetector implements ContentTypeDetector {
     // Check if this is a site project
     const siteInfo = await this.findSiteConfig(baseDir);
     if (siteInfo) {
+      logger.debug(
+        `[rmarkdown] found site configuration file: ${siteInfo.configFile}`,
+      );
       files.push(`/${siteInfo.configFile}`);
 
       if (!metadata) {
         // Look for site metadata in index.Rmd or app.Rmd
         const siteMeta = await this.lookForSiteMetadata(baseDir);
         if (siteMeta) {
+          logger.debug(
+            `[rmarkdown] found site metadata in fallback file: ${siteMeta.indexFile}`,
+          );
           metadata = siteMeta.metadata;
           content = siteMeta.indexContent;
           if (siteMeta.indexFile) {
@@ -165,9 +178,11 @@ export class RMarkdownDetector implements ContentTypeDetector {
     const { needsR, needsPython } =
       await detectMarkdownLanguagesInDirectory(baseDir);
     if (needsR) {
+      logger.info(`[rmarkdown] detected R code in ${relEntrypoint}`);
       cfg.r = {};
     }
     if (needsPython) {
+      logger.info(`[rmarkdown] detected Python code in ${relEntrypoint}`);
       cfg.python = {};
     }
 

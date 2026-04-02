@@ -4,6 +4,7 @@ import * as path from "path";
 import * as fs from "fs/promises";
 import * as yaml from "js-yaml";
 import { ContentType } from "src/api/types/configurations";
+import { logger } from "src/logging";
 import { ContentTypeDetector, PartialConfig } from "../types";
 
 interface PlumberServerMetadata {
@@ -62,12 +63,18 @@ export class PlumberDetector implements ContentTypeDetector {
     const { serverFile, metadata } = result;
 
     if (!metadata.engine || !metadata.engine.includes("plumber")) {
+      logger.debug(
+        `[plumber] server file ${serverFile} engine "${metadata.engine}" does not contain "plumber", skipping`,
+      );
       return undefined;
     }
 
     const files = [`/${serverFile}`];
     this.includeServerYmlFiles(files, metadata);
 
+    logger.info(
+      `[plumber] detected plumber project via server file ${serverFile}`,
+    );
     return {
       type: ContentType.R_PLUMBER,
       entrypoint: entrypoint ?? "",
@@ -85,14 +92,18 @@ export class PlumberDetector implements ContentTypeDetector {
       "constructor"
     ];
     if (typeof constructorFile === "string" && constructorFile !== "") {
+      logger.info(`[plumber] including constructor file: ${constructorFile}`);
       files.push(`/${constructorFile}`);
     }
 
     if (typeof metadata.routes === "string" && metadata.routes !== "") {
+      logger.info(`[plumber] including routes file: ${metadata.routes}`);
       files.push(`/${metadata.routes}`);
     } else if (Array.isArray(metadata.routes)) {
+      logger.info("[plumber] routes is a list");
       for (const routeFile of metadata.routes) {
         if (typeof routeFile === "string" && routeFile !== "") {
+          logger.info(`[plumber] including routes file: ${routeFile}`);
           files.push(`/${routeFile}`);
         }
       }
@@ -112,8 +123,10 @@ export class PlumberDetector implements ContentTypeDetector {
         if (metadata && typeof metadata === "object") {
           return { serverFile, metadata };
         }
-      } catch {
-        // File doesn't exist or can't be parsed
+      } catch (err: unknown) {
+        logger.warn(
+          `[plumber] could not read/parse server file ${serverFilePath}: ${err}`,
+        );
         continue;
       }
     }
@@ -154,6 +167,7 @@ export class PlumberDetector implements ContentTypeDetector {
     try {
       await fs.access(fullPath);
     } catch {
+      logger.debug(`[plumber] entrypoint file does not exist: ${fullPath}`);
       return undefined;
     }
 

@@ -7,6 +7,8 @@ const { mockStat } = vi.hoisted(() => ({
   mockStat: vi.fn(),
 }));
 
+vi.mock("src/logging");
+
 vi.mock("fs/promises", () => ({
   stat: mockStat,
 }));

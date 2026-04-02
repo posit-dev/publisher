@@ -2,6 +2,7 @@
 
 import * as path from "path";
 import { ContentType } from "src/api/types/configurations";
+import { logger } from "src/logging";
 import { ContentTypeDetector, PartialConfig } from "./types";
 import { sortConfigs } from "./sorting";
 import { NotebookDetector } from "./detectors/notebook";
@@ -62,9 +63,16 @@ export async function runDetectors(
   const detectors = createDetectors();
   const allConfigs: PartialConfig[] = [];
 
+  logger.debug(
+    `[detectorRunner] running ${detectors.length} detectors on ${baseDir}`,
+  );
+
   for (const detector of detectors) {
     const configs = await detector.inferType(baseDir, entrypoint);
     if (configs.length > 0) {
+      logger.debug(
+        `[detectorRunner] ${detector.constructor.name} produced ${configs.length} config(s)`,
+      );
       allConfigs.push(...configs);
     }
   }

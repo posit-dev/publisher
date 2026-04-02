@@ -7,6 +7,7 @@ import {
   ConfigurationInspectionResult,
   ContentType,
 } from "src/api/types/configurations";
+import { logger } from "src/logging";
 import { ProductType } from "src/api/types/contentRecords";
 import { runDetectors } from "./detectorRunner";
 import { normalizeConfig, NormalizedConfig } from "./normalize";
@@ -45,6 +46,8 @@ export function inspectProject(
   options: InspectOptions,
 ): Promise<ConfigurationInspectionResult[]> {
   const { projectDir, pythonPath, rPath, entrypoint, recursive } = options;
+  const mode = recursive ? "recursive" : "single";
+  logger.info(`[inspect] starting inspection of ${projectDir} (mode=${mode})`);
 
   if (recursive) {
     return inspectRecursive(projectDir, pythonPath, rPath, entrypoint);
@@ -75,6 +78,9 @@ async function inspectSingleDir(
       projectDir: ".",
     });
   }
+  logger.info(
+    `[inspect] inspection complete, found ${results.length} configuration(s)`,
+  );
   return results;
 }
 
@@ -120,8 +126,14 @@ async function inspectRecursive(
         sortedResults.push(allResults[idx]);
       }
     }
+    logger.info(
+      `[inspect] recursive inspection complete, found ${sortedResults.length} configuration(s)`,
+    );
     return sortedResults;
   }
+  logger.info(
+    `[inspect] recursive inspection complete, found ${allResults.length} configuration(s)`,
+  );
   return allResults;
 }
 

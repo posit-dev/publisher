@@ -2,6 +2,8 @@
 
 import * as fs from "fs/promises";
 
+import { logger } from "src/logging";
+
 import { globDir } from "./globDir";
 
 // Matches fenced code blocks with {r} or {python} language identifiers,
@@ -41,7 +43,10 @@ export async function detectMarkdownLanguagesInDirectory(
     let content: string;
     try {
       content = await fs.readFile(filePath, "utf-8");
-    } catch {
+    } catch (err: unknown) {
+      logger.warn(
+        `[markdownLanguages] could not read file ${filePath}: ${err}`,
+      );
       continue;
     }
 
@@ -54,5 +59,8 @@ export async function detectMarkdownLanguagesInDirectory(
     }
   }
 
+  logger.debug(
+    `[markdownLanguages] directory scan result: needsR=${needsR}, needsPython=${needsPython}`,
+  );
   return { needsR, needsPython };
 }

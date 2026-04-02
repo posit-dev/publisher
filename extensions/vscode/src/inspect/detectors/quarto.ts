@@ -5,6 +5,7 @@ import * as fs from "fs/promises";
 import { execFile } from "child_process";
 import { promisify } from "util";
 import { ContentType } from "src/api/types/configurations";
+import { logger } from "src/logging";
 import { ContentTypeDetector, PartialConfig } from "../types";
 import { globDir } from "../helpers/globDir";
 import { detectMarkdownLanguagesInContent } from "../helpers/markdownLanguages";
@@ -105,9 +106,22 @@ export class QuartoDetector implements ContentTypeDetector {
     let inspectOutput: QuartoInspectOutput;
     try {
       inspectOutput = await this.quartoInspect(inspectPath);
-    } catch {
-      // quarto inspect failed — try fallback file-based detection
-      return this.genNonInspectConfig(baseDir, inspectPath);
+      logger.debug(`[quarto] quarto inspect succeeded for ${inspectPath}`);
+    } catch (err: unknown) {
+      logger.warn(
+        `[quarto] quarto inspect failed for ${inspectPath}, attempting fallback: ${err}`,
+      );
+      const fallbackCfg = await this.genNonInspectConfig(baseDir, inspectPath);
+      if (fallbackCfg) {
+        logger.info(
+          `[quarto] generated configuration without quarto binary inspection: ${inspectPath}`,
+        );
+      } else {
+        logger.warn(
+          `[quarto] could not identify Quarto project by files context: ${inspectPath}`,
+        );
+      }
+      return fallbackCfg;
     }
 
     const relEntrypoint =
@@ -125,6 +139,7 @@ export class QuartoDetector implements ContentTypeDetector {
       isQuartoShiny(inspectOutput.htmlMetadata) ||
       isQuartoShiny(inspectOutput.revealjsMetadata)
     ) {
+      logger.info(`[quarto] detected Quarto Shiny content: ${relEntrypoint}`);
       cfg.type = ContentType.QUARTO_SHINY;
     }
 
@@ -142,8 +157,10 @@ export class QuartoDetector implements ContentTypeDetector {
           const langs = detectMarkdownLanguagesInContent(content);
           needR = langs.needsR;
           needPython = langs.needsPython;
-        } catch {
-          // Can't read the file for language detection
+        } catch (err: unknown) {
+          logger.debug(
+            `[quarto] could not read file for language detection: ${inspectPath}: ${err}`,
+          );
         }
       }
     }
@@ -179,6 +196,9 @@ export class QuartoDetector implements ContentTypeDetector {
         inspectOutput,
       );
       if (alt) {
+        logger.debug(
+          `[quarto] generated static alternative with entrypoint: ${alt.entrypoint}`,
+        );
         cfg.alternatives = [alt];
       }
     }
@@ -250,7 +270,7 @@ export class QuartoDetector implements ContentTypeDetector {
           cfg.entrypoint = filename;
         }
       } catch {
-        // File doesn't exist
+        // File doesn't exist — not an error, just skip
       }
     }
   }
@@ -263,10 +283,11 @@ export class QuartoDetector implements ContentTypeDetector {
     try {
       const stat = await fs.stat(extensionsDir);
       if (stat.isDirectory()) {
+        logger.debug("[quarto] including _extensions directory");
         files.push("/_extensions");
       }
-    } catch {
-      // Doesn't exist
+    } catch (err: unknown) {
+      logger.debug(`[quarto] could not check _extensions directory: ${err}`);
     }
   }
 
@@ -370,6 +391,7 @@ export class QuartoDetector implements ContentTypeDetector {
       const assetsDir = await inspectOutput.fileAssetsDir(htmlAbsPath);
       if (assetsDir) {
         const relAssetsDir = path.relative(baseDir, assetsDir);
+        logger.debug(`[quarto] including companion directory: ${relAssetsDir}`);
         staticCfg.files!.push(`/${relAssetsDir}`);
       }
     }
@@ -424,6 +446,10 @@ export class QuartoDetector implements ContentTypeDetector {
 
     const relEntrypoint =
       inspectPath === baseDir ? "." : path.basename(inspectPath);
+
+    logger.debug(
+      `[quarto] attempting fallback file-based detection for ${relEntrypoint}`,
+    );
 
     const cfg: PartialConfig = {
       type: ContentType.QUARTO_STATIC,
