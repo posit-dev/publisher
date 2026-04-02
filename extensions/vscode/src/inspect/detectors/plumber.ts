@@ -9,9 +9,8 @@ import { ContentTypeDetector, PartialConfig } from "../types";
 
 interface PlumberServerMetadata {
   engine?: string;
+  constructor?: string;
   routes?: string | string[];
-  // Note: "constructor" is a reserved property in JS, so we access it
-  // via bracket notation on the parsed YAML object.
 }
 
 const possiblePlumberEntrypoints = ["plumber.r", "entrypoint.r"];
@@ -87,13 +86,14 @@ export class PlumberDetector implements ContentTypeDetector {
     files: string[],
     metadata: PlumberServerMetadata,
   ): void {
-    // Access "constructor" via bracket notation to avoid Object.prototype.constructor
-    const constructorFile = (metadata as unknown as Record<string, unknown>)[
-      "constructor"
-    ];
-    if (typeof constructorFile === "string" && constructorFile !== "") {
-      logger.info(`[plumber] including constructor file: ${constructorFile}`);
-      files.push(`/${constructorFile}`);
+    if (
+      typeof metadata.constructor === "string" &&
+      metadata.constructor !== ""
+    ) {
+      logger.info(
+        `[plumber] including constructor file: ${metadata.constructor}`,
+      );
+      files.push(`/${metadata.constructor}`);
     }
 
     if (typeof metadata.routes === "string" && metadata.routes !== "") {
@@ -119,7 +119,10 @@ export class PlumberDetector implements ContentTypeDetector {
       const serverFilePath = path.join(baseDir, serverFile);
       try {
         const content = await fs.readFile(serverFilePath, "utf-8");
-        const metadata = yaml.load(content) as PlumberServerMetadata;
+        const metadata = Object.assign(
+          Object.create(null),
+          yaml.load(content),
+        ) as PlumberServerMetadata;
         if (metadata && typeof metadata === "object") {
           return { serverFile, metadata };
         }
