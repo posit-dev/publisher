@@ -289,9 +289,14 @@ describe("runTsDeployWithProgress", () => {
     expect(runSuccessIdx).toBeGreaterThan(runStartIdx);
   });
 
-  it("does not inject events for unmapped steps like createManifest", async () => {
+  it("maps createManifest events to publish/getRPackageDescriptions", async () => {
     const { onComplete, stream } = run((onProgress) => {
       onProgress({ step: "createManifest", status: "start" });
+      onProgress({
+        step: "createManifest",
+        status: "log",
+        message: "Scanning packages",
+      });
       onProgress({ step: "createManifest", status: "success" });
       return Promise.resolve(successResult);
     });
@@ -301,6 +306,9 @@ describe("runTsDeployWithProgress", () => {
     });
 
     const types = stream.injected.map((m) => m.type);
+    expect(types).toContain("publish/getRPackageDescriptions/start");
+    expect(types).toContain("publish/getRPackageDescriptions/log");
+    expect(types).toContain("publish/getRPackageDescriptions/success");
     expect(types).not.toContain("publish/createManifest/start");
   });
 
