@@ -1282,6 +1282,25 @@ describe("Token authentication", () => {
     expect(signedHeaders["X-Content-Checksum"]).toBe(expectedChecksum);
   });
 
+  it("computes checksum from raw bytes for binary uploads", async () => {
+    const bundleResponse = { id: "b-1", content_guid: "c-1", active: true };
+    mockRequest.mockResolvedValue(jsonResponse(bundleResponse));
+
+    const gzipBytes = new Uint8Array([0x1f, 0x8b, 0x08, 0x00, 0xff, 0xfe]);
+    const client = createTokenClient();
+    await client.uploadBundle(ContentID("c-1"), gzipBytes);
+
+    const config = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    const signedHeaders = config._signedHeaders as Record<string, string>;
+
+    // Checksum must be MD5 of the raw bytes, not JSON.stringify(bytes)
+    const expectedChecksum = crypto
+      .createHash("md5")
+      .update(gzipBytes)
+      .digest("base64");
+    expect(signedHeaders["X-Content-Checksum"]).toBe(expectedChecksum);
+  });
+
   it("Date header ends with GMT", async () => {
     mockRequest.mockResolvedValue(jsonResponse(validUserDTO()));
 
