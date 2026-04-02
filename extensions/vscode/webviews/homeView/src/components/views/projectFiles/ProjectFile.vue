@@ -71,11 +71,20 @@ const isIncluded = computed((): boolean => {
 });
 
 const checkState = computed((): CheckState => {
+  // Directories with children use tri-state based on child inclusion
   if (props.file.isDir && props.file.fileCount > 0) {
-    if (props.file.allIncluded) return "checked";
-    if (!props.file.allExcluded) return "indeterminate";
-    return "unchecked";
+    if (props.file.allIncluded) {
+      // Every child is included
+      return "checked";
+    }
+    if (props.file.allExcluded) {
+      // Every child is excluded
+      return "unchecked";
+    }
+    // Some children included, some excluded
+    return "indeterminate";
   }
+  // Individual files are either included or not
   return isIncluded.value ? "checked" : "unchecked";
 });
 
