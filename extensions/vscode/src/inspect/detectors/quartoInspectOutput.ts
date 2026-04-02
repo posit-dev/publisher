@@ -1,5 +1,6 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
+import * as fs from "fs/promises";
 import * as path from "path";
 
 interface QuartoMetadata {
@@ -203,6 +204,24 @@ export class QuartoInspectOutput {
       return altProjectTitle;
     }
     return "";
+  }
+
+  /**
+   * Return the companion `*_files/` assets directory for an HTML file,
+   * or undefined if it does not exist on disk.
+   */
+  async fileAssetsDir(htmlFilePath: string): Promise<string | undefined> {
+    const stem = path.basename(htmlFilePath, ".html");
+    const assetsDir = path.join(path.dirname(htmlFilePath), stem + "_files");
+    try {
+      const stat = await fs.stat(assetsDir);
+      if (stat.isDirectory()) {
+        return assetsDir;
+      }
+    } catch {
+      // doesn't exist
+    }
+    return undefined;
   }
 
   /**

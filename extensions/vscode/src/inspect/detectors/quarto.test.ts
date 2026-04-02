@@ -477,6 +477,149 @@ describe("QuartoDetector", () => {
     expect(configs[0]?.quarto?.engines).toContain("knitr");
   });
 
+  test("static alternative includes companion *_files/ directories", async () => {
+    setupGlobDir(["doc.qmd"]);
+    mockAccess.mockRejectedValue(new Error("ENOENT"));
+    mockReadFile.mockResolvedValue("# Content\n");
+
+    const inspectJson = makeInspectOutput({
+      engines: ["markdown"],
+      files: { input: ["/project/doc.qmd"], configResources: [] },
+      formats: {
+        html: { metadata: { title: "Doc" }, pandoc: {} },
+      },
+    });
+    mockExecFile.mockResolvedValue({ stdout: inspectJson });
+
+    // doc_files/ directory exists on disk
+    mockStat.mockImplementation((filePath: string) => {
+      if (filePath.endsWith("doc_files")) {
+        return Promise.resolve({
+          isFile: () => false,
+          isDirectory: () => true,
+        });
+      }
+      if (filePath.endsWith("_extensions")) {
+        return Promise.resolve({
+          isFile: () => false,
+          isDirectory: () => true,
+        });
+      }
+      return Promise.resolve({ isFile: () => true, isDirectory: () => false });
+    });
+
+    const configs = await detector.inferType("/project", "doc.qmd");
+    expect(configs).toHaveLength(1);
+    const alt = configs[0]?.alternatives?.[0];
+    expect(alt?.type).toBe(ContentType.HTML);
+    expect(alt?.files).toContain("/doc.html");
+    expect(alt?.files).toContain("/doc_files");
+  });
+
+  test("static alternative omits companion dir when it does not exist", async () => {
+    setupGlobDir(["doc.qmd"]);
+    mockAccess.mockRejectedValue(new Error("ENOENT"));
+    mockReadFile.mockResolvedValue("# Content\n");
+
+    const inspectJson = makeInspectOutput({
+      engines: ["markdown"],
+      files: { input: ["/project/doc.qmd"], configResources: [] },
+      formats: {
+        html: { metadata: { title: "Doc" }, pandoc: {} },
+      },
+    });
+    mockExecFile.mockResolvedValue({ stdout: inspectJson });
+
+    const configs = await detector.inferType("/project", "doc.qmd");
+    expect(configs).toHaveLength(1);
+    const alt = configs[0]?.alternatives?.[0];
+    expect(alt?.type).toBe(ContentType.HTML);
+    expect(alt?.files).toContain("/doc.html");
+    expect(alt?.files).not.toContain("/doc_files");
+  });
+
+  test("static alternative handles multiple files with some companion dirs", async () => {
+    setupGlobDir(["a.qmd", "b.qmd"]);
+    mockAccess.mockRejectedValue(new Error("ENOENT"));
+    mockReadFile.mockResolvedValue("# Content\n");
+
+    const inspectJson = makeInspectOutput({
+      engines: ["markdown"],
+      files: {
+        input: ["/project/a.qmd", "/project/b.qmd"],
+        configResources: [],
+      },
+      formats: {
+        html: { metadata: { title: "Multi" }, pandoc: {} },
+      },
+    });
+    mockExecFile.mockResolvedValue({ stdout: inspectJson });
+
+    // Only a_files/ exists, b_files/ does not
+    mockStat.mockImplementation((filePath: string) => {
+      if (filePath.endsWith("a_files")) {
+        return Promise.resolve({
+          isFile: () => false,
+          isDirectory: () => true,
+        });
+      }
+      if (filePath.endsWith("_extensions")) {
+        return Promise.resolve({
+          isFile: () => false,
+          isDirectory: () => true,
+        });
+      }
+      return Promise.resolve({ isFile: () => true, isDirectory: () => false });
+    });
+
+    const configs = await detector.inferType("/project", "a.qmd");
+    expect(configs).toHaveLength(1);
+    const alt = configs[0]?.alternatives?.[0];
+    expect(alt?.type).toBe(ContentType.HTML);
+    expect(alt?.files).toContain("/a.html");
+    expect(alt?.files).toContain("/a_files");
+    expect(alt?.files).toContain("/b.html");
+    expect(alt?.files).not.toContain("/b_files");
+  });
+
+  test("companion dir ignored when path is a file not a directory", async () => {
+    setupGlobDir(["doc.qmd"]);
+    mockAccess.mockRejectedValue(new Error("ENOENT"));
+    mockReadFile.mockResolvedValue("# Content\n");
+
+    const inspectJson = makeInspectOutput({
+      engines: ["markdown"],
+      files: { input: ["/project/doc.qmd"], configResources: [] },
+      formats: {
+        html: { metadata: { title: "Doc" }, pandoc: {} },
+      },
+    });
+    mockExecFile.mockResolvedValue({ stdout: inspectJson });
+
+    // doc_files exists but is a file, not a directory
+    mockStat.mockImplementation((filePath: string) => {
+      if (filePath.endsWith("doc_files")) {
+        return Promise.resolve({
+          isFile: () => true,
+          isDirectory: () => false,
+        });
+      }
+      if (filePath.endsWith("_extensions")) {
+        return Promise.resolve({
+          isFile: () => false,
+          isDirectory: () => true,
+        });
+      }
+      return Promise.resolve({ isFile: () => true, isDirectory: () => false });
+    });
+
+    const configs = await detector.inferType("/project", "doc.qmd");
+    expect(configs).toHaveLength(1);
+    const alt = configs[0]?.alternatives?.[0];
+    expect(alt?.files).toContain("/doc.html");
+    expect(alt?.files).not.toContain("/doc_files");
+  });
+
   test("script entrypoints do not generate static alternative", async () => {
     setupGlobDir(["script.py"]);
     mockAccess.mockRejectedValue(new Error("ENOENT"));

@@ -173,7 +173,11 @@ export class QuartoDetector implements ContentTypeDetector {
 
     // Include static alternative for non-Shiny content
     if (cfg.type !== ContentType.QUARTO_SHINY) {
-      const alt = this.buildStaticAlternative(baseDir, cfg, inspectOutput);
+      const alt = await this.buildStaticAlternative(
+        baseDir,
+        cfg,
+        inspectOutput,
+      );
       if (alt) {
         cfg.alternatives = [alt];
       }
@@ -276,7 +280,7 @@ export class QuartoDetector implements ContentTypeDetector {
     baseDir: string,
     cfg: PartialConfig,
     inspectOutput: QuartoInspectOutput,
-  ): PartialConfig | undefined {
+  ): Promise<PartialConfig | undefined> | undefined {
     const ext = path.extname(cfg.entrypoint);
     // Script entrypoints (.R, .py) don't produce standalone HTML output
     if (ext === ".R" || ext === ".py") {
@@ -285,7 +289,9 @@ export class QuartoDetector implements ContentTypeDetector {
 
     const outputDir = inspectOutput.outputDir();
     if (outputDir) {
-      return this.staticConfigFromOutputDir(baseDir, cfg, inspectOutput);
+      return Promise.resolve(
+        this.staticConfigFromOutputDir(baseDir, cfg, inspectOutput),
+      );
     }
 
     return this.staticConfigFromFilesLookup(baseDir, cfg, inspectOutput);
@@ -338,11 +344,11 @@ export class QuartoDetector implements ContentTypeDetector {
   // Strategy 2: No output-dir declared. Derive HTML filenames directly from
   // the input file list by replacing each file's extension with ".html".
   // The first input file becomes the entrypoint.
-  private staticConfigFromFilesLookup(
-    _baseDir: string,
+  private async staticConfigFromFilesLookup(
+    baseDir: string,
     cfg: PartialConfig,
     inspectOutput: QuartoInspectOutput,
-  ): PartialConfig | undefined {
+  ): Promise<PartialConfig | undefined> {
     const staticCfg: PartialConfig = {
       type: ContentType.HTML,
       entrypoint: "",
@@ -360,6 +366,14 @@ export class QuartoDetector implements ContentTypeDetector {
         staticCfg.entrypoint = htmlFile;
       }
       staticCfg.files!.push(`/${htmlFile}`);
+
+      // Include any accompanying *_files directory for each HTML file.
+      const htmlAbsPath = path.join(baseDir, htmlFile);
+      const assetsDir = await inspectOutput.fileAssetsDir(htmlAbsPath);
+      if (assetsDir) {
+        const relAssetsDir = path.relative(baseDir, assetsDir);
+        staticCfg.files!.push(`/${relAssetsDir}`);
+      }
     }
 
     if (staticCfg.files!.length > 0) {
