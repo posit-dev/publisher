@@ -228,6 +228,27 @@ describe("RMarkdownDetector", () => {
     expect(configs[0]?.entrypoint).toBe("report.Rmd");
   });
 
+  test("language detection scans all .Rmd files, not just entrypoint", async () => {
+    setupGlobDir(["report.Rmd", "helper.Rmd"]);
+    mockReadFile.mockImplementation((filePath: string) => {
+      if (filePath.endsWith("report.Rmd")) {
+        return Promise.resolve(basicRmdContent); // R only
+      }
+      if (filePath.endsWith("helper.Rmd")) {
+        return Promise.resolve(pythonRmdContent); // Python only
+      }
+      return Promise.reject(new Error("ENOENT"));
+    });
+    mockAccess.mockRejectedValue(new Error("ENOENT"));
+
+    const configs = await detector.inferType("/project", "report.Rmd");
+    expect(configs).toHaveLength(1);
+    expect(configs[0]?.entrypoint).toBe("report.Rmd");
+    // R from entrypoint, Python from sibling — both detected
+    expect(configs[0]?.r).toEqual({});
+    expect(configs[0]?.python).toEqual({});
+  });
+
   test("skips non-.Rmd entrypoints", async () => {
     const configs = await detector.inferType("/project", "app.py");
     expect(configs).toHaveLength(0);
@@ -311,6 +332,7 @@ runtime: {invalid: yaml: here
 
   test("site config as entrypoint", async () => {
     // When _site.yml is the entrypoint, look up index.Rmd for metadata
+    setupGlobDir(["index.Rmd"]);
     mockReadFile.mockImplementation((filePath: string) => {
       if (filePath.endsWith("_site.yml")) {
         // site config content (no YAML front matter format)
@@ -335,7 +357,7 @@ runtime: {invalid: yaml: here
     expect(configs[0]?.title).toBe("Special Report");
     expect(configs[0]?.files).toContain("/_site.yml");
     expect(configs[0]?.files).toContain("/index.Rmd");
-    // Language detection should come from index.Rmd content, not _site.yml
+    // Language detection scans all .Rmd files in the directory
     expect(configs[0]?.r).toEqual({});
     expect(configs[0]?.python).toBeUndefined();
   });

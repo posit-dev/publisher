@@ -6,7 +6,7 @@ import * as yaml from "js-yaml";
 import { ContentType } from "src/api/types/configurations";
 import { ContentTypeDetector, PartialConfig } from "../types";
 import { globDir } from "../helpers/globDir";
-import { detectMarkdownLanguagesInContent } from "../helpers/markdownLanguages";
+import { detectMarkdownLanguagesInDirectory } from "../helpers/markdownLanguages";
 
 interface RMarkdownMetadata {
   title?: string;
@@ -161,8 +161,9 @@ export class RMarkdownDetector implements ContentTypeDetector {
       cfg.hasParameters = true;
     }
 
-    // Detect R and Python code blocks
-    const { needsR, needsPython } = detectMarkdownLanguagesInContent(content);
+    // Detect R and Python code blocks across all .Rmd files in the directory
+    const { needsR, needsPython } =
+      await detectMarkdownLanguagesInDirectory(baseDir);
     if (needsR) {
       cfg.r = {};
     }
