@@ -89,10 +89,6 @@ export class ConnectAPI {
 
     const config: AxiosRequestConfig = {
       baseURL: options.url,
-      // Force the Node http adapter. Positron's Electron exposes
-      // XMLHttpRequest in the extension host, causing axios to pick the XHR
-      // adapter by default, which corrupts binary uploads (bundle tar.gz).
-      adapter: "http",
     };
 
     if (hasApiKey) {
@@ -123,8 +119,16 @@ export class ConnectAPI {
         const method = (reqConfig.method ?? "GET").toUpperCase();
         // Extract the path from the url (which is relative to baseURL)
         const path = reqConfig.url ?? "/";
-        const body =
-          reqConfig.data != null ? JSON.stringify(reqConfig.data) : undefined;
+        // For binary bodies (bundle uploads), pass raw bytes to signRequest
+        // so the MD5 checksum matches what Connect receives. JSON.stringify
+        // on a Uint8Array produces {"0":31,"1":139,...} which is wrong.
+        const body: string | Buffer | Uint8Array | undefined =
+          reqConfig.data == null
+            ? undefined
+            : Buffer.isBuffer(reqConfig.data) ||
+                reqConfig.data instanceof Uint8Array
+              ? reqConfig.data
+              : JSON.stringify(reqConfig.data);
 
         const headers = signRequest(method, path, body, token, privateKey);
         for (const [key, value] of Object.entries(headers)) {

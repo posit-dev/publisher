@@ -276,24 +276,6 @@ describe("TLS certificate verification", () => {
 // Timeout option
 // ---------------------------------------------------------------------------
 
-describe("HTTP adapter (Positron/Electron compatibility)", () => {
-  // Positron's Electron exposes XMLHttpRequest in the extension host,
-  // causing axios to auto-select the XHR adapter. The XHR adapter corrupts
-  // binary uploads (gzip bytes re-encoded as UTF-8). Forcing adapter: "http"
-  // ensures the Node http module is used, which sends raw bytes correctly.
-  // See CLAUDE.md "Positron / Electron Gotcha" for details.
-  it("forces the Node http adapter to avoid XHR binary corruption", () => {
-    new ConnectAPI({ url: BASE_URL, apiKey: API_KEY });
-
-    const call = vi.mocked(axios.create).mock.calls.at(-1)?.[0];
-    expect(call?.adapter).toBe("http");
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Timeout option
-// ---------------------------------------------------------------------------
-
 describe("timeout option", () => {
   it("passes timeout when specified", () => {
     new ConnectAPI({ url: BASE_URL, apiKey: API_KEY, timeout: 5000 });
@@ -676,8 +658,6 @@ describe("uploadBundle", () => {
   });
 
   it("preserves binary payload bytes without mutation", async () => {
-    // Gzip magic bytes followed by arbitrary binary data including bytes
-    // that would be mangled by UTF-8 re-encoding (0x8b → 0xc2 0x8b).
     const gzipBytes = new Uint8Array([0x1f, 0x8b, 0x08, 0x00, 0xff, 0xfe]);
     mockRequest.mockResolvedValue(
       jsonResponse({ id: "b-1", content_guid: contentId, active: true }),
