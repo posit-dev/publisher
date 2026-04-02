@@ -534,6 +534,8 @@ describe("connectPublish", () => {
       { step: "createBundle", status: "start" },
       { step: "createBundle", status: "log" },
       { step: "createBundle", status: "log" },
+      { step: "createBundle", status: "log" },
+      { step: "createBundle", status: "log" },
       { step: "createBundle", status: "success" },
       { step: "uploadBundle", status: "start" },
       { step: "uploadBundle", status: "log" },

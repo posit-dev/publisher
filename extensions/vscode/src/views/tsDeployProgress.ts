@@ -43,9 +43,11 @@ const stepLabels: Record<PublishStep, string> = {
 // Maps TS orchestrator steps to Go SSE event path prefixes.
 // Steps not listed here have no corresponding stage in the logs tree view.
 const stepToEventPrefix: Partial<Record<PublishStep, string>> = {
-  // createManifest is intentionally omitted — it maps to
-  // publish/getRPackageDescriptions which is R-specific in the Go path.
-  // Emitting it for Python-only deploys would create a spurious tree node.
+  // Go maps this to publish/getRPackageDescriptions, which creates a tree
+  // node even for Python-only deploys. We match that behavior for parity.
+  // TODO: Consider suppressing the tree node for non-R deploys, or renaming
+  // the stage to something language-neutral like "publish/collectPackages".
+  createManifest: "publish/getRPackageDescriptions",
   preflight: "publish/checkCapabilities",
   // First deploy uses createNewDeployment — the logs tree doesn't register
   // this stage, but displayEventStreamMessage handles the success event to

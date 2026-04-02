@@ -388,12 +388,22 @@ export async function connectPublish(
       status: "log",
       message: "Preparing files",
     });
+    onProgress({
+      step: "createBundle",
+      status: "log",
+      message: "Creating bundle from directory",
+    });
     const { bundle, manifest: finalManifest } = await buildBundleArchive(
       projectDir,
       config,
       manifest,
       lockfilePath,
     );
+    onProgress({
+      step: "createBundle",
+      status: "log",
+      message: "Bundle created",
+    });
     record.files = getFilenames(finalManifest);
 
     // Record dependencies in the deployment record
