@@ -276,11 +276,11 @@ export class QuartoDetector implements ContentTypeDetector {
   //      directory and resolve the HTML entrypoint within it.
   //   2. Otherwise, derive HTML filenames from the input file list (e.g.
   //      "doc.qmd" → "doc.html").
-  private buildStaticAlternative(
+  private async buildStaticAlternative(
     baseDir: string,
     cfg: PartialConfig,
     inspectOutput: QuartoInspectOutput,
-  ): Promise<PartialConfig | undefined> | undefined {
+  ): Promise<PartialConfig | undefined> {
     const ext = path.extname(cfg.entrypoint);
     // Script entrypoints (.R, .py) don't produce standalone HTML output
     if (ext === ".R" || ext === ".py") {
@@ -289,12 +289,10 @@ export class QuartoDetector implements ContentTypeDetector {
 
     const outputDir = inspectOutput.outputDir();
     if (outputDir) {
-      return Promise.resolve(
-        this.staticConfigFromOutputDir(baseDir, cfg, inspectOutput),
-      );
+      return this.staticConfigFromOutputDir(baseDir, cfg, inspectOutput);
     }
 
-    return this.staticConfigFromFilesLookup(baseDir, cfg, inspectOutput);
+    return await this.staticConfigFromFilesLookup(baseDir, cfg, inspectOutput);
   }
 
   // Strategy 1: The project has an explicit output-dir (e.g. "_site" for
