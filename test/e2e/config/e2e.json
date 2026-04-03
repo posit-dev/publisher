@@ -1,6 +1,10 @@
 {
   "timeouts": {
     "defaultCommandTimeout": 20000,
-    "pageLoadTimeout": 45000
+    "pageLoadTimeout": 45000,
+    "webviewLoad": 30000,
+    "deployment": 60000,
+    "oauthFlow": 90000,
+    "apiRequest": 10000
   }
 }
