@@ -11,6 +11,8 @@ const { mockReaddir, mockStat, mockReadFile, mockAccess } = vi.hoisted(() => ({
   mockAccess: vi.fn(),
 }));
 
+vi.mock("src/logging");
+
 vi.mock("fs/promises", () => ({
   readdir: mockReaddir,
   stat: mockStat,

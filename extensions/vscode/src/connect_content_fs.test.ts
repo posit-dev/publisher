@@ -15,9 +15,7 @@ vi.mock("@posit-dev/connect-api", () => ({
   BundleID: (id: string) => id,
 }));
 
-vi.mock("src/logging", () => ({
-  logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
-}));
+vi.mock("src/logging");
 
 vi.mock("vscode", () => ({
   EventEmitter: class {
