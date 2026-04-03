@@ -368,23 +368,18 @@ export class QuartoDetector implements ContentTypeDetector {
     cfg: PartialConfig,
     inspectOutput: QuartoInspectOutput,
   ): Promise<PartialConfig | undefined> {
-    const staticCfg: PartialConfig = {
-      type: ContentType.HTML,
-      entrypoint: "",
-      title: cfg.title,
-      source: this.renderSource(cfg),
-      files: [],
-    };
+    const files: string[] = [];
+    let entrypoint = "";
 
     const inputFiles = inspectOutput.inputFiles();
     for (const file of inputFiles) {
       const stem = path.basename(file, path.extname(file));
       const htmlFile = stem + ".html";
 
-      if (!staticCfg.entrypoint) {
-        staticCfg.entrypoint = htmlFile;
+      if (!entrypoint) {
+        entrypoint = htmlFile;
       }
-      staticCfg.files!.push(`/${htmlFile}`);
+      files.push(`/${htmlFile}`);
 
       // Include any accompanying *_files directory for each HTML file.
       const htmlAbsPath = path.join(baseDir, htmlFile);
@@ -392,14 +387,21 @@ export class QuartoDetector implements ContentTypeDetector {
       if (assetsDir) {
         const relAssetsDir = path.relative(baseDir, assetsDir);
         logger.debug(`[quarto] including companion directory: ${relAssetsDir}`);
-        staticCfg.files!.push(`/${relAssetsDir}`);
+        files.push(`/${relAssetsDir}`);
       }
     }
 
-    if (staticCfg.files!.length > 0) {
-      return staticCfg;
+    if (files.length === 0) {
+      return undefined;
     }
-    return undefined;
+
+    return {
+      type: ContentType.HTML,
+      entrypoint,
+      title: cfg.title,
+      source: this.renderSource(cfg),
+      files,
+    };
   }
 
   private renderSource(cfg: PartialConfig): string {
@@ -450,28 +452,29 @@ export class QuartoDetector implements ContentTypeDetector {
       `[quarto] attempting fallback file-based detection for ${relEntrypoint}`,
     );
 
+    const files: string[] = [];
     const cfg: PartialConfig = {
       type: ContentType.QUARTO_STATIC,
       entrypoint: relEntrypoint,
       quarto: {
         version: defaultQuartoVersion,
       },
-      files: [],
+      files,
     };
 
     // Standalone Jupyter notebooks need Python and the jupyter engine
     if (ext === ".ipynb") {
       cfg.python = {};
-      cfg.quarto!.engines = ["jupyter"];
-      cfg.files!.push(`/${relEntrypoint}`);
+      cfg.quarto = { version: defaultQuartoVersion, engines: ["jupyter"] };
+      files.push(`/${relEntrypoint}`);
       return cfg;
     }
 
     // Standalone RMarkdown files need R and the knitr engine
     if (ext === ".Rmd") {
       cfg.r = {};
-      cfg.quarto!.engines = ["knitr"];
-      cfg.files!.push(`/${relEntrypoint}`);
+      cfg.quarto = { version: defaultQuartoVersion, engines: ["knitr"] };
+      files.push(`/${relEntrypoint}`);
       return cfg;
     }
 
@@ -479,11 +482,11 @@ export class QuartoDetector implements ContentTypeDetector {
     const qmdFiles = await globDir(baseDir, "*.qmd");
     for (const qmdPath of qmdFiles) {
       const relPath = path.basename(qmdPath);
-      cfg.files!.push(`/${relPath}`);
+      files.push(`/${relPath}`);
     }
 
     // Include special yml files
-    await this.includeSpecialYmlFiles(baseDir, cfg.files!, cfg);
+    await this.includeSpecialYmlFiles(baseDir, files, cfg);
 
     return cfg;
   }
