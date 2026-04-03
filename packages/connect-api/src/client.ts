@@ -42,6 +42,31 @@ export class ConnectAPIError extends Error {
 }
 
 /**
+ * Known Connect app modes that have app-specific scheduler settings.
+ * Mirrors Go's contentTypeConnectMap keys (excluding "static" which has
+ * no scheduler settings). Unknown strings fall back to the base
+ * /server_settings/scheduler endpoint.
+ */
+const knownAppModes = new Set([
+  "jupyter-static",
+  "jupyter-voila",
+  "python-bokeh",
+  "python-dash",
+  "python-fastapi",
+  "python-api",
+  "python-shiny",
+  "python-streamlit",
+  "python-gradio",
+  "python-panel",
+  "quarto-shiny",
+  "quarto-static",
+  "api",
+  "shiny",
+  "rmd-shiny",
+  "rmd-static",
+]);
+
+/**
  * TypeScript client for the Posit Connect API.
  *
  * Uses axios for HTTP requests. Non-2xx responses throw AxiosError by default.
@@ -94,8 +119,16 @@ export class ConnectAPI {
         const method = (reqConfig.method ?? "GET").toUpperCase();
         // Extract the path from the url (which is relative to baseURL)
         const path = reqConfig.url ?? "/";
-        const body =
-          reqConfig.data != null ? JSON.stringify(reqConfig.data) : undefined;
+        // For binary bodies (bundle uploads), pass raw bytes to signRequest
+        // so the MD5 checksum matches what Connect receives. JSON.stringify
+        // on a Uint8Array produces {"0":31,"1":139,...} which is wrong.
+        const body: string | Buffer | Uint8Array | undefined =
+          reqConfig.data == null
+            ? undefined
+            : Buffer.isBuffer(reqConfig.data) ||
+                reqConfig.data instanceof Uint8Array
+              ? reqConfig.data
+              : JSON.stringify(reqConfig.data);
 
         const headers = signRequest(method, path, body, token, privateKey);
         for (const [key, value] of Object.entries(headers)) {
@@ -149,6 +182,18 @@ export class ConnectAPI {
         throw new ConnectAPIError(msg, err.response?.status);
       }
       throw err;
+    }
+
+    // Guard against non-JSON responses (e.g., an auth proxy returning HTML).
+    // Axios returns the raw string when content-type isn't JSON, so `data`
+    // would be a string instead of an object. Mirrors Go's isConnectAuthError
+    // which catches json.SyntaxError and returns a clear credential/server error.
+    if (typeof data !== "object" || data === null || !("guid" in data)) {
+      throw new ConnectAPIError(
+        "The server did not return a valid JSON response. " +
+          "Check the server URL and credentials.",
+        undefined,
+      );
     }
 
     // TODO: These business-logic errors throw plain Error while HTTP errors
@@ -324,8 +369,22 @@ export class ConnectAPI {
   /**
    * Fetches composite server settings from 7 separate endpoints,
    * mirroring the Go client's GetSettings behavior.
+   *
+   * @param appMode - Connect app mode string (e.g. "python-shiny", "static").
+   *   When provided and not "static", the scheduler endpoint is fetched with
+   *   an app-mode-specific path (`/scheduler/{appMode}`) to get limits that
+   *   apply to that content type. Mirrors Go's `GetSettings` which skips
+   *   the app-mode path for static and unknown content types.
    */
-  async getSettings(): Promise<AllSettings> {
+  async getSettings(appMode?: string): Promise<AllSettings> {
+    // Go uses the app-mode-specific scheduler path for known, non-static types.
+    // "static" content has no scheduler settings; unknown types would produce
+    // invalid API paths. Mirrors Go's IsKnown() && !IsStaticContent() guard.
+    const schedulerPath =
+      appMode && knownAppModes.has(appMode)
+        ? `/__api__/server_settings/scheduler/${appMode}`
+        : "/__api__/server_settings/scheduler";
+
     const [
       { data: user },
       { data: general },
@@ -340,7 +399,7 @@ export class ConnectAPI {
       this.client.get<ApplicationSettings>(
         "/__api__/server_settings/applications",
       ),
-      this.client.get<SchedulerSettings>("/__api__/server_settings/scheduler"),
+      this.client.get<SchedulerSettings>(schedulerPath),
       this.client.get<PyInfo>("/__api__/v1/server_settings/python"),
       this.client.get<RInfo>("/__api__/v1/server_settings/r"),
       this.client.get<QuartoInfo>("/__api__/v1/server_settings/quarto"),

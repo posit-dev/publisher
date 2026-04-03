@@ -52,6 +52,35 @@ describe("md5Checksum", () => {
   it("empty and undefined produce the same checksum", () => {
     expect(md5Checksum(undefined)).toBe(md5Checksum(""));
   });
+
+  it("computes checksum from raw Buffer bytes", () => {
+    const buf = Buffer.from([0x1f, 0x8b, 0x08, 0x00, 0xff]);
+    const expected = crypto.createHash("md5").update(buf).digest("base64");
+    expect(md5Checksum(buf)).toBe(expected);
+  });
+
+  it("computes checksum from raw Uint8Array bytes", () => {
+    const bytes = new Uint8Array([0x1f, 0x8b, 0x08, 0x00, 0xff]);
+    const expected = crypto.createHash("md5").update(bytes).digest("base64");
+    expect(md5Checksum(bytes)).toBe(expected);
+  });
+
+  it("Buffer and Uint8Array with same bytes produce same checksum", () => {
+    const raw = [0x1f, 0x8b, 0x08];
+    expect(md5Checksum(Buffer.from(raw))).toBe(
+      md5Checksum(new Uint8Array(raw)),
+    );
+  });
+
+  it("binary checksum differs from JSON.stringify checksum", () => {
+    // This is the bug that caused token-auth uploads to fail:
+    // JSON.stringify(Uint8Array) produces {"0":31,"1":139,...} whose MD5
+    // doesn't match the raw bytes.
+    const bytes = new Uint8Array([0x1f, 0x8b, 0x08]);
+    const binaryChecksum = md5Checksum(bytes);
+    const jsonChecksum = md5Checksum(JSON.stringify(bytes));
+    expect(binaryChecksum).not.toBe(jsonChecksum);
+  });
 });
 
 // ---------------------------------------------------------------------------
