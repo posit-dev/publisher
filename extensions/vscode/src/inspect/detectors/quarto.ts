@@ -410,12 +410,11 @@ export class QuartoDetector implements ContentTypeDetector {
   }
 
   private async findEntrypoints(baseDir: string): Promise<string[]> {
-    const allPaths: string[] = [];
-    for (const suffix of quartoSuffixes) {
-      const paths = await globDir(baseDir, "*" + suffix);
-      allPaths.push(...paths);
-    }
-    return allPaths;
+    const results = await Promise.all(
+      quartoSuffixes.map((suffix) => globDir(baseDir, "*" + suffix)),
+    );
+
+    return results.flat();
   }
 
   private async genNonInspectConfig(
