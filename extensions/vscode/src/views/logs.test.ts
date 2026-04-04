@@ -84,8 +84,25 @@ vi.mock("vscode", () => {
 vi.mock("src/extension", () => ({
   extensionSettings: {
     autoOpenLogsOnFailure: vi.fn().mockReturnValue(false),
+    verifyCertificates: vi.fn().mockReturnValue(true),
   },
 }));
+
+// Mock ConnectAPI — use vi.hoisted so variables are available when the hoisted vi.mock factory runs
+const { mockGetJobs, mockGetJobLog } = vi.hoisted(() => ({
+  mockGetJobs: vi.fn(),
+  mockGetJobLog: vi.fn(),
+}));
+vi.mock("@posit-dev/connect-api", () => {
+  class MockConnectAPI {
+    getJobs = mockGetJobs;
+    getJobLog = mockGetJobLog;
+  }
+  return {
+    ConnectAPI: MockConnectAPI,
+    ContentID: (id: string) => id,
+  };
+});
 
 // Mock window utilities
 vi.mock("src/utils/window", () => ({
@@ -852,6 +869,385 @@ describe("LogsTreeDataProvider", () => {
 
       // Verify reveal was NOT called (view not visible)
       expect(mockTreeView.reveal).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("job error log on validation failure", () => {
+    const credentialResolver = vi.fn().mockReturnValue({
+      url: "https://connect.example.com",
+      apiKey: "test-api-key",
+    });
+
+    function createDeploymentNewSuccessMessage(
+      contentId: string,
+    ): EventStreamMessage {
+      return {
+        type: "publish/createNewDeployment/success" as EventStreamMessage["type"],
+        time: new Date().toISOString(),
+        data: {
+          localId: "local-1",
+          contentId,
+          saveName: "my-app",
+        },
+      };
+    }
+
+    beforeEach(() => {
+      mockGetJobs.mockReset();
+      mockGetJobLog.mockReset();
+      credentialResolver.mockClear();
+    });
+
+    test("should fetch and append job log entries on validateDeployment failure", async () => {
+      const { stream, emit } = createMockEventStream();
+      const context = createMockContext();
+
+      const provider = new LogsTreeDataProvider(
+        context,
+        stream,
+        credentialResolver,
+      );
+      provider.register();
+
+      // Start deployment and track contentId
+      emit("publish/start", createPublishStartMessage("App1", "server1.com"));
+      emit(
+        "publish/createNewDeployment/success",
+        createDeploymentNewSuccessMessage("content-guid-123"),
+      );
+
+      // Mock the jobs API
+      mockGetJobs.mockResolvedValue({
+        data: [
+          {
+            id: "1",
+            key: "job-key-1",
+            status: 1,
+            start_time: "2024-01-01T00:00:00Z",
+          },
+        ],
+      });
+      mockGetJobLog.mockResolvedValue({
+        data: [
+          {
+            source: "stderr",
+            timestamp: "2024-01-01T00:00:00Z",
+            data: "Error: module not found",
+          },
+          {
+            source: "stderr",
+            timestamp: "2024-01-01T00:00:01Z",
+            data: "Traceback (most recent call last):",
+          },
+          {
+            source: "stderr",
+            timestamp: "2024-01-01T00:00:02Z",
+            data: '  File "app.py", line 1',
+          },
+        ],
+      });
+
+      // Start and fail the validate stage
+      emit(
+        "publish/validateDeployment/start",
+        createStageStartMessage("publish/validateDeployment"),
+      );
+      emit(
+        "publish/validateDeployment/failure",
+        createStageFailureMessage(
+          "publish/validateDeployment",
+          "Validation failed",
+        ),
+      );
+
+      // Wait for async job log fetch to complete and add events
+      await vi.waitFor(() => {
+        const children = provider.getChildren(undefined) as LogsTreeStageItem[];
+        const root = children[0]!;
+        const stages = provider.getChildren(root) as LogsTreeStageItem[];
+        const validateStage = stages.find(
+          (s) => s.stage.inactiveLabel === "Validate Deployment Record",
+        );
+        expect(validateStage).toBeDefined();
+        // 1 failure event + 3 job log lines
+        expect(validateStage!.events.length).toBe(4);
+      });
+
+      const children = provider.getChildren(undefined) as LogsTreeStageItem[];
+      const root = children[0]!;
+      const stages = provider.getChildren(root) as LogsTreeStageItem[];
+      const validateStage = stages.find(
+        (s) => s.stage.inactiveLabel === "Validate Deployment Record",
+      );
+      expect(validateStage!.events[1]!.data.message).toBe(
+        "Error: module not found",
+      );
+    });
+
+    test("should show header with count when log has more than 10 lines", async () => {
+      const { stream, emit } = createMockEventStream();
+      const context = createMockContext();
+
+      const provider = new LogsTreeDataProvider(
+        context,
+        stream,
+        credentialResolver,
+      );
+      provider.register();
+
+      emit("publish/start", createPublishStartMessage("App1", "server1.com"));
+      emit(
+        "publish/createNewDeployment/success",
+        createDeploymentNewSuccessMessage("content-guid-123"),
+      );
+
+      mockGetJobs.mockResolvedValue({
+        data: [
+          {
+            id: "1",
+            key: "job-key-1",
+            status: 1,
+            start_time: "2024-01-01T00:00:00Z",
+          },
+        ],
+      });
+
+      // Create 15 log entries
+      const logEntries = Array.from({ length: 15 }, (_, i) => ({
+        source: "stderr",
+        timestamp: "2024-01-01T00:00:00Z",
+        data: `Log line ${i + 1}`,
+      }));
+      mockGetJobLog.mockResolvedValue({ data: logEntries });
+
+      emit(
+        "publish/validateDeployment/start",
+        createStageStartMessage("publish/validateDeployment"),
+      );
+      emit(
+        "publish/validateDeployment/failure",
+        createStageFailureMessage(
+          "publish/validateDeployment",
+          "Validation failed",
+        ),
+      );
+
+      // Wait for async job log fetch to complete
+      await vi.waitFor(() => {
+        const children = provider.getChildren(undefined) as LogsTreeStageItem[];
+        const root = children[0]!;
+        const stages = provider.getChildren(root) as LogsTreeStageItem[];
+        const validateStage = stages.find(
+          (s) => s.stage.inactiveLabel === "Validate Deployment Record",
+        );
+        expect(validateStage).toBeDefined();
+        // 1 failure event + 1 header + 10 tail lines = 12
+        expect(validateStage!.events.length).toBe(12);
+      });
+
+      const children = provider.getChildren(undefined) as LogsTreeStageItem[];
+      const root = children[0]!;
+      const stages = provider.getChildren(root) as LogsTreeStageItem[];
+      const validateStage = stages.find(
+        (s) => s.stage.inactiveLabel === "Validate Deployment Record",
+      );
+      expect(validateStage!.events[1]!.data.message).toContain(
+        "Showing last 10 of 15",
+      );
+      expect(validateStage!.events[1]!.data.jobLogAction).toBe("true");
+    });
+
+    test("should not fetch job log without credential resolver", () => {
+      const { stream, emit } = createMockEventStream();
+      const context = createMockContext();
+
+      // No credential resolver
+      const provider = new LogsTreeDataProvider(context, stream);
+      provider.register();
+
+      emit("publish/start", createPublishStartMessage("App1", "server1.com"));
+      emit(
+        "publish/createNewDeployment/success",
+        createDeploymentNewSuccessMessage("content-guid-123"),
+      );
+
+      emit(
+        "publish/validateDeployment/start",
+        createStageStartMessage("publish/validateDeployment"),
+      );
+      emit(
+        "publish/validateDeployment/failure",
+        createStageFailureMessage(
+          "publish/validateDeployment",
+          "Validation failed",
+        ),
+      );
+
+      // Should not have called the API
+      expect(mockGetJobs).not.toHaveBeenCalled();
+    });
+
+    test("should not fetch job log without tracked contentId", () => {
+      const { stream, emit } = createMockEventStream();
+      const context = createMockContext();
+
+      const provider = new LogsTreeDataProvider(
+        context,
+        stream,
+        credentialResolver,
+      );
+      provider.register();
+
+      emit("publish/start", createPublishStartMessage("App1", "server1.com"));
+      // Note: no createNewDeployment/success event, so no contentId
+
+      emit(
+        "publish/validateDeployment/start",
+        createStageStartMessage("publish/validateDeployment"),
+      );
+      emit(
+        "publish/validateDeployment/failure",
+        createStageFailureMessage(
+          "publish/validateDeployment",
+          "Validation failed",
+        ),
+      );
+
+      expect(mockGetJobs).not.toHaveBeenCalled();
+    });
+
+    test("should track contentId from publish/createDeployment/start", async () => {
+      const { stream, emit } = createMockEventStream();
+      const context = createMockContext();
+
+      const provider = new LogsTreeDataProvider(
+        context,
+        stream,
+        credentialResolver,
+      );
+      provider.register();
+
+      emit("publish/start", createPublishStartMessage("App1", "server1.com"));
+      // Use createDeployment/start instead of createNewDeployment/success
+      emit("publish/createDeployment/start", {
+        type: "publish/createDeployment/start" as EventStreamMessage["type"],
+        time: new Date().toISOString(),
+        data: {
+          localId: "local-1",
+          contentId: "content-guid-456",
+          saveName: "my-app",
+        },
+      });
+
+      mockGetJobs.mockResolvedValue({
+        data: [
+          {
+            id: "1",
+            key: "job-key-1",
+            status: 1,
+            start_time: "2024-01-01T00:00:00Z",
+          },
+        ],
+      });
+      mockGetJobLog.mockResolvedValue({
+        data: [{ source: "stderr", message: "Error" }],
+      });
+
+      emit(
+        "publish/validateDeployment/start",
+        createStageStartMessage("publish/validateDeployment"),
+      );
+      emit(
+        "publish/validateDeployment/failure",
+        createStageFailureMessage(
+          "publish/validateDeployment",
+          "Validation failed",
+        ),
+      );
+
+      await vi.waitFor(() => {
+        expect(credentialResolver).toHaveBeenCalledWith("server1.com");
+      });
+    });
+
+    test("should handle API errors gracefully", async () => {
+      const { stream, emit } = createMockEventStream();
+      const context = createMockContext();
+
+      const provider = new LogsTreeDataProvider(
+        context,
+        stream,
+        credentialResolver,
+      );
+      provider.register();
+
+      emit("publish/start", createPublishStartMessage("App1", "server1.com"));
+      emit(
+        "publish/createNewDeployment/success",
+        createDeploymentNewSuccessMessage("content-guid-123"),
+      );
+
+      mockGetJobs.mockRejectedValue(new Error("Network error"));
+
+      emit(
+        "publish/validateDeployment/start",
+        createStageStartMessage("publish/validateDeployment"),
+      );
+
+      // Should not throw
+      emit(
+        "publish/validateDeployment/failure",
+        createStageFailureMessage(
+          "publish/validateDeployment",
+          "Validation failed",
+        ),
+      );
+
+      // Wait for the error to be caught (the API call will fail but be handled)
+      await vi.waitFor(() => {
+        expect(mockGetJobs).toHaveBeenCalled();
+      });
+
+      // Stage should still have just the original failure event (no log entries added)
+      const children = provider.getChildren(undefined) as LogsTreeStageItem[];
+      const root = children[0]!;
+      const stages = provider.getChildren(root) as LogsTreeStageItem[];
+      const validateStage = stages.find(
+        (s) => s.stage.inactiveLabel === "Validate Deployment Record",
+      );
+      expect(validateStage!.events.length).toBe(1);
+    });
+
+    test("should not fetch job log for non-validation failures", () => {
+      const { stream, emit } = createMockEventStream();
+      const context = createMockContext();
+
+      const provider = new LogsTreeDataProvider(
+        context,
+        stream,
+        credentialResolver,
+      );
+      provider.register();
+
+      emit("publish/start", createPublishStartMessage("App1", "server1.com"));
+      emit(
+        "publish/createNewDeployment/success",
+        createDeploymentNewSuccessMessage("content-guid-123"),
+      );
+
+      emit(
+        "publish/createBundle/start",
+        createStageStartMessage("publish/createBundle"),
+      );
+      emit(
+        "publish/createBundle/failure",
+        createStageFailureMessage(
+          "publish/createBundle",
+          "Bundle creation failed",
+        ),
+      );
+
+      expect(mockGetJobs).not.toHaveBeenCalled();
     });
   });
 });
