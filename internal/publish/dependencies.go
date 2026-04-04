@@ -3,7 +3,9 @@ package publish
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"path/filepath"
 
 	"github.com/posit-dev/publisher/internal/bundles"
@@ -25,10 +27,21 @@ func (p *defaultPublisher) addDependenciesToTarget(manifest *bundles.Manifest) e
 		p.log.Debug("Python configuration present", "PythonRequirementsFile", filename)
 
 		requirements, err := pydeps.ReadRequirementsFile(p.Dir.Join(filename))
-		p.log.Debug("Python requirements file in use", "requirements", requirements)
 		if err != nil {
-			return err
+			// Only fall back to generation when the file is missing.
+			// Other errors (permissions, I/O) should be reported immediately.
+			if !errors.Is(err, fs.ErrNotExist) {
+				return err
+			}
+			optionalGroups := p.Config.Python.OptionalDependencyGroups
+			generated, ok := pydeps.GenerateRequirements(p.Dir, optionalGroups)
+			if !ok {
+				return err
+			}
+			p.log.Debug("Using generated Python requirements", "requirements", generated)
+			requirements = generated
 		}
+		p.log.Debug("Python requirements in use", "requirements", requirements)
 		p.Target.Requirements = requirements
 	}
 

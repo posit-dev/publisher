@@ -95,6 +95,12 @@ export type BundleOptions = {
   manifest: Manifest;
   /** File include/exclude patterns from the config's `files` array */
   filePatterns?: string[];
+  /**
+   * Files to inject into the bundle that don't exist on disk.
+   * Keys are archive paths (e.g. "requirements.txt"), values are file contents.
+   * These are added to the tar and registered in the manifest like regular files.
+   */
+  syntheticFiles?: Map<string, Buffer>;
 };
 
 export type BundleResult = {

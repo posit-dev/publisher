@@ -24,6 +24,7 @@ const RENV_LOCK_STAGED_PATH = ".posit/publish/deployments/renv.lock";
 export async function createArchive(
   files: FileEntry[],
   manifest: Manifest,
+  syntheticFiles?: Map<string, Buffer>,
 ): Promise<{
   bundle: Buffer;
   manifest: Manifest;
@@ -77,6 +78,27 @@ export async function createArchive(
     addFile(updatedManifest, archiveName, md5);
     fileCount++;
     totalSize += entry.size;
+  }
+
+  // Add synthetic (in-memory) files to the bundle
+  if (syntheticFiles) {
+    for (const [name, content] of syntheticFiles) {
+      const hash = crypto.createHash("md5");
+      hash.update(content);
+      const md5 = hash.digest();
+
+      const syntheticEntry = pack.entry({
+        name,
+        size: content.length,
+        mode: 0o666,
+      });
+      syntheticEntry.end(content);
+      await finished(syntheticEntry);
+
+      addFile(updatedManifest, name, md5);
+      fileCount++;
+      totalSize += content.length;
+    }
   }
 
   // Add manifest.json as the final entry

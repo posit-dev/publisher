@@ -58,5 +58,5 @@ export async function createBundle(
     }
   }
 
-  return createArchive(files, manifest);
+  return createArchive(files, manifest, options.syntheticFiles);
 }
