@@ -8,7 +8,6 @@ import (
 	"io/fs"
 	"os"
 	"slices"
-	"strconv"
 	"strings"
 
 	"github.com/posit-dev/publisher/internal/bundles"
@@ -55,15 +54,6 @@ func NewPackageMapper(base util.AbsolutePath, rExecutable util.Path, log logging
 	}, err
 }
 
-func findAvailableVersion(pkgName PackageName, availablePackages []AvailablePackage) string {
-	for _, avail := range availablePackages {
-		if avail.Name == pkgName {
-			return avail.Version
-		}
-	}
-	return ""
-}
-
 // isCRANLike returns true if the repository name is CRAN or a Posit Package
 // Manager variant (RSPM, PPM, P3M). These are all CRAN mirrors and should be
 // treated equivalently for source validation purposes.
@@ -74,34 +64,6 @@ func isCRANLike(repo RepoURL) bool {
 	default:
 		return false
 	}
-}
-
-func package_version(vs string) []int {
-	// https://www.rdocumentation.org/packages/base/versions/3.6.2/topics/numeric_version
-	// "Numeric versions are sequences of one or more non-negative integers,
-	// usually represented as character strings with the elements of the sequence
-	// concatenated and separated by single . or - characters"
-	parts := strings.FieldsFunc(vs, func(c rune) bool {
-		return c < '0' || c > '9'
-	})
-	values := []int{}
-	for _, part := range parts {
-		// There shouldn't be any invalid parts because we only took digits
-		v, _ := strconv.Atoi(part)
-		values = append(values, v)
-	}
-	return values
-}
-
-func isDevVersion(pkg *Package, availablePackages []AvailablePackage) bool {
-	// A package is a dev version if it's newer than the one
-	// available in the configured repositories.
-	repoVersion := findAvailableVersion(pkg.Package, availablePackages)
-	if repoVersion == "" {
-		return false
-	}
-	cmp := slices.Compare(package_version(pkg.Version), package_version(repoVersion))
-	return cmp > 0
 }
 
 func findRepoNameByURL(repoUrl RepoURL, repos []Repository) string {
@@ -142,13 +104,8 @@ func toManifestPackage(pkg *Package, repos []Repository, availablePackages, bioc
 		// treated equivalently. See renv's lockfile-write.R which
 		// treats changes between these as spurious.
 		if isCRANLike(pkg.Repository) {
-			if isDevVersion(pkg, availablePackages) {
-				out.Source = ""
-				out.Repository = ""
-			} else {
-				out.Source = string(pkg.Repository)
-				out.Repository = findRepoUrl(pkg.Package, availablePackages)
-			}
+			out.Source = string(pkg.Repository)
+			out.Repository = findRepoUrl(pkg.Package, availablePackages)
 		} else {
 			// Repository comes from DESCRIPTION and is set by repo, so can be
 			// anything. So we must look up from the package name.

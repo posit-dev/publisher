@@ -206,6 +206,11 @@ func (s *ManifestPackagesSuite) TestVersionMismatch() {
 }
 
 func (s *ManifestPackagesSuite) TestDevVersion() {
+	// When a CRAN-like package's installed version is newer than what
+	// available.packages(type="source") returns, the package should still
+	// be accepted with its lockfile repository info preserved. This happens
+	// on binary-only repos (e.g. P3M/RSPM on Windows ARM) where the binary
+	// version leads the source version.
 	base := s.testdata.Join("dev_version")
 	lockfilePath := base.Join("renv.lock")
 	libPath := base.Join("renv_library")
@@ -226,13 +231,12 @@ func (s *ManifestPackagesSuite) TestDevVersion() {
 	mapper.(*defaultPackageMapper).lister = lister
 
 	manifestPackages, err := mapper.GetManifestPackages(base, lockfilePath, logging.New())
-	s.NotNil(err)
-	s.Nil(manifestPackages)
+	s.NoError(err)
+	s.NotNil(manifestPackages)
 
-	aerr, isAgentErr := types.IsAgentError(err)
-	s.Equal(isAgentErr, true)
-	s.Equal(aerr.Code, types.ErrorRenvPackageSourceMissing)
-	s.Equal(aerr.Message, "Cannot re-install packages installed from source; all packages must be installed from a reproducible location such as a repository. Package mypkg, Version 1.2.3.")
+	pkg := manifestPackages["mypkg"]
+	s.Equal("CRAN", pkg.Source)
+	s.Equal("https://cran.rstudio.com", pkg.Repository)
 }
 
 func (s *ManifestPackagesSuite) TestMissingDescriptionFile() {
