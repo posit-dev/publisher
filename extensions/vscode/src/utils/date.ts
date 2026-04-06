@@ -37,11 +37,20 @@ export function sortByDateString(a: string, b: string) {
   return Date.parse(a) > Date.parse(b) ? -1 : 1;
 }
 
-export function formatTimestampString(dateString: string) {
-  // get the timestamp offset
-  const offset = dateString.slice(-6);
-  // break off the time minus the milliseconds and offset
-  const parts = dateString.split(".");
-  // compose the time w/o milliseconds and add the offset
-  return `${parts[0]}${offset}`;
+export function stripMilliseconds(dateString: string) {
+  // Strip milliseconds while preserving the timezone suffix.
+  // Go timestamps end with a 6-char offset like "-04:00".
+  // JS toISOString() ends with "Z" (UTC) and includes ".nnnZ" milliseconds.
+  const dotIndex = dateString.lastIndexOf(".");
+  if (dotIndex === -1) {
+    // No fractional seconds — return as-is.
+    return dateString;
+  }
+  const base = dateString.slice(0, dotIndex);
+  // Everything after the fractional digits is the timezone suffix.
+  // Match the first non-digit after the dot to find where the suffix starts.
+  const afterDot = dateString.slice(dotIndex + 1);
+  const suffixMatch = afterDot.match(/[^\d]/);
+  const suffix = suffixMatch ? afterDot.slice(suffixMatch.index) : "";
+  return `${base}${suffix}`;
 }

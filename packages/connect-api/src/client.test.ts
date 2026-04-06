@@ -372,6 +372,19 @@ describe("testAuthentication", () => {
     const client = createClient();
     await expect(client.testAuthentication()).rejects.toThrow("HTTP 403");
   });
+
+  it("throws clear error when auth proxy returns HTML on 200", async () => {
+    // An authenticating proxy may return a 200 with an HTML login page
+    // instead of a JSON user object. The guard should catch this.
+    mockRequest.mockResolvedValue(
+      textResponse("<html><body>Login required</body></html>"),
+    );
+
+    const client = createClient();
+    await expect(client.testAuthentication()).rejects.toThrow(
+      /did not return a valid JSON response/,
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -642,6 +655,22 @@ describe("uploadBundle", () => {
     expect(call.url).toBe(`/__api__/v1/content/${contentId}/bundles`);
     expect(call.method).toBe("POST");
     expect(call.headers["Content-Type"]).toBe("application/gzip");
+  });
+
+  it("preserves binary payload bytes without mutation", async () => {
+    const gzipBytes = new Uint8Array([0x1f, 0x8b, 0x08, 0x00, 0xff, 0xfe]);
+    mockRequest.mockResolvedValue(
+      jsonResponse({ id: "b-1", content_guid: contentId, active: true }),
+    );
+
+    const client = createClient();
+    await client.uploadBundle(contentId, gzipBytes);
+
+    const call = mockRequest.mock.calls[0][0];
+    const sent = call.data as Uint8Array;
+    expect(sent).toBeInstanceOf(Uint8Array);
+    expect(sent.length).toBe(gzipBytes.length);
+    expect(Array.from(sent)).toEqual(Array.from(gzipBytes));
   });
 
   it("throws on non-2xx", async () => {
@@ -1122,6 +1151,64 @@ describe("getSettings", () => {
     expect(settings.r).toEqual(r);
     expect(settings.quarto).toEqual(quarto);
   });
+
+  it("uses app-mode-specific scheduler path when appMode is provided", async () => {
+    const appModeMap: Record<string, unknown> = {
+      ...urlResponseMap,
+      "/__api__/server_settings/scheduler/python-shiny": scheduler,
+    };
+    mockRequest.mockImplementation((config: { url: string }) =>
+      Promise.resolve(jsonResponse(appModeMap[config.url])),
+    );
+
+    const client = createClient();
+    await client.getSettings("python-shiny");
+
+    const urls = mockRequest.mock.calls.map(
+      (call: unknown[]) => (call[0] as { url: string }).url,
+    );
+    expect(urls).toContain("/__api__/server_settings/scheduler/python-shiny");
+    expect(urls).not.toContain("/__api__/server_settings/scheduler");
+  });
+
+  it("uses base scheduler path for static content", async () => {
+    mockSettingsRoutes();
+
+    const client = createClient();
+    await client.getSettings("static");
+
+    const urls = mockRequest.mock.calls.map(
+      (call: unknown[]) => (call[0] as { url: string }).url,
+    );
+    expect(urls).toContain("/__api__/server_settings/scheduler");
+  });
+
+  it("uses base scheduler path for unknown app mode", async () => {
+    mockSettingsRoutes();
+
+    const client = createClient();
+    await client.getSettings("unknown-mode");
+
+    const urls = mockRequest.mock.calls.map(
+      (call: unknown[]) => (call[0] as { url: string }).url,
+    );
+    expect(urls).toContain("/__api__/server_settings/scheduler");
+    expect(urls).not.toContain(
+      "/__api__/server_settings/scheduler/unknown-mode",
+    );
+  });
+
+  it("uses base scheduler path when no appMode is provided", async () => {
+    mockSettingsRoutes();
+
+    const client = createClient();
+    await client.getSettings();
+
+    const urls = mockRequest.mock.calls.map(
+      (call: unknown[]) => (call[0] as { url: string }).url,
+    );
+    expect(urls).toContain("/__api__/server_settings/scheduler");
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -1191,6 +1278,25 @@ describe("Token authentication", () => {
     const expectedChecksum = crypto
       .createHash("md5")
       .update(expectedBody)
+      .digest("base64");
+    expect(signedHeaders["X-Content-Checksum"]).toBe(expectedChecksum);
+  });
+
+  it("computes checksum from raw bytes for binary uploads", async () => {
+    const bundleResponse = { id: "b-1", content_guid: "c-1", active: true };
+    mockRequest.mockResolvedValue(jsonResponse(bundleResponse));
+
+    const gzipBytes = new Uint8Array([0x1f, 0x8b, 0x08, 0x00, 0xff, 0xfe]);
+    const client = createTokenClient();
+    await client.uploadBundle(ContentID("c-1"), gzipBytes);
+
+    const config = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    const signedHeaders = config._signedHeaders as Record<string, string>;
+
+    // Checksum must be MD5 of the raw bytes, not JSON.stringify(bytes)
+    const expectedChecksum = crypto
+      .createHash("md5")
+      .update(gzipBytes)
       .digest("base64");
     expect(signedHeaders["X-Content-Checksum"]).toBe(expectedChecksum);
   });

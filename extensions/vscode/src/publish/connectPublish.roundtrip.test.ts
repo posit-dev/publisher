@@ -3,7 +3,12 @@
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+// Mock the extension logger (depends on vscode, not needed for roundtrip tests)
+vi.mock("../logging", () => ({
+  logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+}));
 
 import {
   writePublishRecord,
@@ -11,9 +16,11 @@ import {
   type PublishRecord,
 } from "./connectPublish";
 import { loadDeploymentFromFile } from "../toml/deploymentLoader";
+import { createDeploymentRecord } from "../toml/deploymentWriter";
 import {
   ContentRecordState,
   isContentRecord,
+  ServerType,
 } from "../api/types/contentRecords";
 import { ContentType } from "../api/types/configurations";
 import { ProductType } from "../api/types/contentRecords";
@@ -54,8 +61,11 @@ describe("writePublishRecord round-trip through loadDeploymentFromFile", () => {
     const dp = deploymentPath("minimal");
     await writePublishRecord(dp, record);
 
+    // writePublishRecord sets deployedAt on every write (matching Go's
+    // WriteDeploymentRecord), so records always read back as DEPLOYED.
+    // The NEW state only applies to records created via createDeploymentRecord.
     const loaded = await loadDeploymentFromFile(dp, tmpDir);
-    expect(loaded.state).toBe(ContentRecordState.NEW);
+    expect(loaded.state).toBe(ContentRecordState.DEPLOYED);
     expect(loaded.serverUrl).toBe("https://connect.example.com");
     expect(loaded.serverType).toBe("connect");
     expect(loaded.type).toBe("python-shiny");
@@ -175,7 +185,7 @@ describe("writePublishRecord round-trip through loadDeploymentFromFile", () => {
     await writePublishRecord(dp, record);
 
     const loaded = await loadDeploymentFromFile(dp, tmpDir);
-    expect(loaded.state).toBe(ContentRecordState.NEW);
+    expect(loaded.state).toBe(ContentRecordState.DEPLOYED);
     expect(loaded.deploymentError).toEqual({
       code: "deployFailed",
       message: "Build failed: missing package numpy",
@@ -219,6 +229,61 @@ describe("writePublishRecord round-trip through loadDeploymentFromFile", () => {
     expect(loaded.configuration?.type).toBe("python-shiny");
     expect(loaded.configuration?.entrypoint).toBe("app.py");
     expect(loaded.configuration?.python?.version).toBe("3.11.3");
+  });
+});
+
+describe("createDeploymentRecord round-trip through loadDeploymentFromFile", () => {
+  function writeConfig(name: string): void {
+    const configDir = path.join(tmpDir, ".posit", "publish");
+    fs.mkdirSync(configDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(configDir, `${name}.toml`),
+      `"$schema" = "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json"\ntype = "html"\nentrypoint = "index.html"\n`,
+    );
+  }
+
+  it("initial deployment record reads back as NEW", async () => {
+    writeConfig("myconfig");
+
+    const created = await createDeploymentRecord({
+      saveName: "fresh-deploy",
+      projectDir: ".",
+      rootDir: tmpDir,
+      serverUrl: "https://connect.example.com",
+      serverType: ServerType.CONNECT,
+      configName: "myconfig",
+      clientVersion: "1.0.0",
+    });
+
+    expect(created.state).toBe(ContentRecordState.NEW);
+
+    // Round-trip: read the file back and verify it's still NEW
+    const loaded = await loadDeploymentFromFile(created.deploymentPath, tmpDir);
+    expect(loaded.state).toBe(ContentRecordState.NEW);
+    expect(loaded.serverUrl).toBe("https://connect.example.com");
+    expect(loaded.serverType).toBe("connect");
+    expect(loaded.configurationName).toBe("myconfig");
+  });
+
+  it("initial deployment with content ID reads back as NEW (no deployedAt)", async () => {
+    writeConfig("myconfig");
+
+    const created = await createDeploymentRecord({
+      saveName: "with-id",
+      projectDir: ".",
+      rootDir: tmpDir,
+      serverUrl: "https://connect.example.com",
+      serverType: ServerType.CONNECT,
+      configName: "myconfig",
+      contentId: "abc-123",
+      clientVersion: "1.0.0",
+    });
+
+    expect(created.state).toBe(ContentRecordState.NEW);
+
+    const loaded = await loadDeploymentFromFile(created.deploymentPath, tmpDir);
+    expect(loaded.state).toBe(ContentRecordState.NEW);
+    expect(loaded.id).toBe("abc-123");
   });
 });
 

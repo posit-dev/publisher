@@ -66,12 +66,19 @@ export interface EventSubscriptionTargetCallbackMap {
   "publish/checkCapabilities/success": OnPublishCheckCapabilitiesSuccessCallback;
   "publish/checkCapabilities/failure": OnPublishCheckCapabilitiesFailureCallback;
 
+  "publish/getRPackageDescriptions/start": OnMessageEventSourceCallback;
+  "publish/getRPackageDescriptions/log": OnMessageEventSourceCallback;
+  "publish/getRPackageDescriptions/success": OnMessageEventSourceCallback;
+  "publish/getRPackageDescriptions/failure": OnMessageEventSourceCallback;
+
   // 'publish/createBundle/failure/authFailure' | // received but temporarily converted
   "publish/createNewDeployment/start": OnPublishCreateNewDeploymentStartCallback;
+  "publish/createNewDeployment/log": OnMessageEventSourceCallback;
   "publish/createNewDeployment/success": OnPublishCreateNewDeploymentSuccessCallback;
   "publish/createNewDeployment/failure": OnPublishCreateNewDeploymentFailureCallback;
 
   "publish/setEnvVars/start": OnPublishSetEnvVarsStartCallback;
+  "publish/setEnvVars/log": OnMessageEventSourceCallback;
   "publish/setEnvVars/success": OnPublishSetEnvVarsSuccessCallback;
   "publish/setEnvVars/failure": OnPublishSetEnvVarsFailureCallback;
 
@@ -132,6 +139,7 @@ export interface EventSubscriptionTargetCallbackMap {
 
   "publish/runContent/start": OnPublishRunContentStartCallback;
   "publish/runContent/log": OnPublishRunContentLogCallback;
+  "publish/runContent/status": OnMessageEventSourceCallback;
   "publish/runContent/success": OnPublishRunContentSuccessCallback;
   "publish/runContent/failure": OnPublishRunContentFailureCallback;
 

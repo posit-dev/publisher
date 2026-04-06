@@ -11,12 +11,17 @@ import {
   BundleID,
   TaskID,
 } from "@posit-dev/connect-api";
+import type { AllSettings } from "@posit-dev/connect-api";
 
-import type { ConfigurationDetails } from "../api/types/configurations";
+import {
+  ContentType,
+  type ConfigurationDetails,
+} from "../api/types/configurations";
 import type { ServerType } from "../api/types/contentRecords";
 import type { PositronRSettings } from "../api/types/positron";
 
 import { manifestFromConfig } from "../bundler/manifestFromConfig";
+import { appModeFromType, contentTypeFromAppMode } from "../bundler/appMode";
 import { connectContentFromConfig } from "../bundler/connectContentFromConfig";
 import { createBundle } from "../bundler/bundler";
 import { getFilenames } from "../bundler/manifest";
@@ -33,9 +38,11 @@ import type { RenvLockfile } from "./rPackageDescriptions";
 
 import { forceProductTypeCompliance } from "../toml/configCompliance";
 import { convertKeysToSnakeCase } from "../toml/convertKeys";
-import { stripEmpty, isRecord } from "../toml/tomlHelpers";
+import { stripEmpty, isRecord, expandInlineArrays } from "../toml/tomlHelpers";
 import { getDashboardUrl, getDirectUrl, getLogsUrl } from "../toml/urlHelpers";
 import { fileExistsAt } from "../interpreters/fsUtils";
+import { logger } from "../logging";
+import type { ErrorCode } from "../utils/errorTypes";
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -44,6 +51,7 @@ import { fileExistsAt } from "../interpreters/fsUtils";
 export type PublishStep =
   | "createManifest"
   | "preflight"
+  | "createNewDeployment"
   | "createDeployment"
   | "createBundle"
   | "uploadBundle"
@@ -55,8 +63,12 @@ export type PublishStep =
 
 export type PublishEvent = {
   step: PublishStep;
-  status: "start" | "success" | "failure";
+  status: "start" | "success" | "failure" | "log";
   message?: string;
+  /** Typed error code for failure events. */
+  errCode?: ErrorCode;
+  /** Additional data for event stream injection (e.g., URLs, status codes). */
+  data?: Record<string, string>;
 };
 
 export type ConnectPublishOptions = {
@@ -161,43 +173,237 @@ export async function connectPublish(
     // Step 1: Build manifest with R/Python packages
     lastStep = "createManifest";
     onProgress({ step: "createManifest", status: "start" });
+    onProgress({
+      step: "createManifest",
+      status: "log",
+      message: "Collecting package descriptions",
+    });
     const { manifest, lockfilePath, lockfile } = await buildManifest(
       projectDir,
       config,
       rPath,
       positronR,
+      onProgress,
     );
+
+    // Log local runtime versions (mirrors Go's logDeploymentVersions)
+    onProgress({
+      step: "createManifest",
+      status: "log",
+      message: manifest.quarto?.version
+        ? `Local Quarto version ${manifest.quarto.version}`
+        : "Local Quarto not in use",
+    });
+    onProgress({
+      step: "createManifest",
+      status: "log",
+      // manifest.platform holds the R version in the Posit manifest spec
+      message: manifest.platform
+        ? `Local R version ${manifest.platform}`
+        : "Local R not in use",
+    });
+    onProgress({
+      step: "createManifest",
+      status: "log",
+      message: manifest.python?.version
+        ? `Local Python version ${manifest.python.version}`
+        : "Local Python not in use",
+    });
+
     onProgress({ step: "createManifest", status: "success" });
 
     // Step 2: Preflight — verify authentication
     lastStep = "preflight";
     onProgress({ step: "preflight", status: "start" });
+    onProgress({
+      step: "preflight",
+      status: "log",
+      message: "Checking configuration against server capabilities",
+    });
+    onProgress({
+      step: "preflight",
+      status: "log",
+      message: "Testing authentication",
+    });
     const { user } = await api.testAuthentication();
     onProgress({
       step: "preflight",
+      status: "log",
+      message: "Publishing with credentials",
+      data: { username: user.username, email: user.email },
+    });
+
+    // Validate configuration against known constraints (mirrors Go's checkConfig/checkRequirementsFile)
+    if (config.description && config.description.length > 4096) {
+      throw new Error("The description cannot be longer than 4096 characters.");
+    }
+
+    if (config.python) {
+      const packageFile = config.python.packageFile || "requirements.txt";
+      const packageFilePath = path.join(projectDir, packageFile);
+      const packageFileExists = await fileExistsAt(packageFilePath);
+
+      // Check that the file exists on disk
+      if (!packageFileExists) {
+        throw new Error(
+          `Missing dependency file ${packageFile}. ` +
+            `This file must be included in the deployment.`,
+        );
+      }
+
+      // Check that the file is included in the configured file patterns.
+      // Uses suffix matching, not glob evaluation — matches Go's
+      // checkRequirementsFile which uses strings.HasSuffix(file, packageFile).
+      // Go always requires the file in cfg.Files, even when the list is empty
+      // (the loop produces no match, so requirementsIsIncluded stays false).
+      const filePatterns = config.files ?? [];
+      const isIncluded = filePatterns.some((pattern) =>
+        pattern.endsWith(packageFile),
+      );
+      if (!isIncluded) {
+        throw new Error(
+          `Missing dependency file ${packageFile}. ` +
+            `This file must be included in the deployment.`,
+        );
+      }
+    }
+
+    // Fetch server settings and validate config against capabilities
+    // (mirrors Go's GetSettings + checkConfig)
+    onProgress({
+      step: "preflight",
+      status: "log",
+      message: "Checking server capabilities",
+    });
+    const settings = await api.getSettings(appModeFromType(config.type));
+    checkServerSettings(settings, config);
+
+    // Verify existing content when redeploying (mirrors Go's ValidateDeploymentTarget)
+    if (contentId) {
+      onProgress({
+        step: "preflight",
+        status: "log",
+        message: "Verifying existing content",
+        data: { content_id: contentId },
+      });
+
+      let existing;
+      try {
+        const resp = await api.contentDetails(ContentID(contentId));
+        existing = resp.data;
+      } catch (err) {
+        logger.debug(`contentDetails failed for ${contentId}:`, err);
+        // Mirrors Go's preflightAgentError: specific messages for 404/403
+        if (isAxiosError(err) && err.response?.status === 404) {
+          throw new Error(
+            `Cannot deploy content: ID ${contentId} - Content cannot be found.`,
+          );
+        }
+        if (isAxiosError(err) && err.response?.status === 403) {
+          throw new Error(
+            `Cannot deploy content: ID ${contentId} - ` +
+              `You may need to request collaborator permissions or verify the credentials in use.`,
+          );
+        }
+        // Mirrors Go's generic fallback: include the original error
+        const errMsg = err instanceof Error ? err.message : String(err);
+        throw new Error(
+          `Cannot deploy content: ID ${contentId} - Unknown error: ${errMsg}`,
+        );
+      }
+
+      onProgress({
+        step: "preflight",
+        status: "log",
+        message: "Verifying content is not locked",
+      });
+      if (existing.locked) {
+        throw new Error(
+          `Content is locked, cannot deploy to it (content ID = ${contentId})`,
+        );
+      }
+
+      onProgress({
+        step: "preflight",
+        status: "log",
+        message: "Verifying app mode is the same",
+      });
+      const configAppMode = appModeFromType(config.type);
+      if (
+        existing.app_mode !== configAppMode &&
+        existing.app_mode !== "unknown" &&
+        existing.app_mode !== ""
+      ) {
+        throw new Error(
+          `Content was previously deployed as '${contentTypeFromAppMode(existing.app_mode)}' ` +
+            `but your configuration is set to '${config.type}'.`,
+        );
+      }
+    }
+
+    onProgress({
+      step: "preflight",
+      status: "log",
+      message: "Configuration OK",
+    });
+    onProgress({
+      step: "preflight",
       status: "success",
-      message: `Authenticated as ${user.username}`,
     });
 
     // Step 3: Create deployment on Connect (first deploy only)
     if (!contentId) {
-      lastStep = "createDeployment";
-      onProgress({ step: "createDeployment", status: "start" });
+      lastStep = "createNewDeployment";
+      onProgress({
+        step: "createNewDeployment",
+        status: "start",
+        data: { saveName },
+      });
+      onProgress({
+        step: "createNewDeployment",
+        status: "log",
+        message: "Creating new deployment",
+      });
       const { data: created } = await api.createDeployment({ name: "" });
       contentId = created.guid;
       setRecordContentInfo(record, serverUrl, contentId);
-      onProgress({ step: "createDeployment", status: "success" });
+      onProgress({
+        step: "createNewDeployment",
+        status: "log",
+        message: "Created deployment",
+        data: { content_id: contentId },
+      });
+      onProgress({
+        step: "createNewDeployment",
+        status: "success",
+        data: { contentId, saveName },
+      });
     }
 
     // Step 4: Create bundle archive
     lastStep = "createBundle";
     onProgress({ step: "createBundle", status: "start" });
+    onProgress({
+      step: "createBundle",
+      status: "log",
+      message: "Preparing files",
+    });
+    onProgress({
+      step: "createBundle",
+      status: "log",
+      message: "Creating bundle from directory",
+    });
     const { bundle, manifest: finalManifest } = await buildBundleArchive(
       projectDir,
       config,
       manifest,
       lockfilePath,
     );
+    onProgress({
+      step: "createBundle",
+      status: "log",
+      message: "Bundle created",
+    });
     record.files = getFilenames(finalManifest);
 
     // Record dependencies in the deployment record
@@ -208,11 +414,25 @@ export async function connectPublish(
     if (lockfile) {
       record.renv = lockfileToDeploymentRenv(lockfile);
     }
-    onProgress({ step: "createBundle", status: "success" });
+    onProgress({
+      step: "createBundle",
+      status: "log",
+      message: "Done preparing files",
+    });
+    onProgress({
+      step: "createBundle",
+      status: "success",
+      data: { filename: "bundle.tar.gz" },
+    });
 
     // Step 5: Upload bundle
     lastStep = "uploadBundle";
     onProgress({ step: "uploadBundle", status: "start" });
+    onProgress({
+      step: "uploadBundle",
+      status: "log",
+      message: "Uploading files",
+    });
     const { data: bundleDTO } = await api.uploadBundle(
       ContentID(contentId),
       new Uint8Array(bundle),
@@ -221,15 +441,37 @@ export async function connectPublish(
     record.bundleId = bundleDTO.id;
     record.bundleUrl = getBundleUrl(serverUrl, contentId, bundleDTO.id);
     await writePublishRecord(deploymentPath, record);
+    onProgress({
+      step: "uploadBundle",
+      status: "log",
+      message: "Done uploading files",
+      data: { bundle_id: bundleDTO.id },
+    });
     onProgress({ step: "uploadBundle", status: "success" });
 
     // Step 6: Update content metadata
+    // For redeploys, the update step opens the "Create Deployment Record"
+    // stage in the logs tree (matching Go's publish/createDeployment events).
     lastStep = "updateContent";
-    onProgress({ step: "updateContent", status: "start" });
+    onProgress({
+      step: "updateContent",
+      status: "start",
+      data: { contentId: contentId!, saveName },
+    });
+    onProgress({
+      step: "updateContent",
+      status: "log",
+      message: "Updating deployment settings",
+    });
     await api.updateDeployment(
       ContentID(contentId),
       connectContentFromConfig(config),
     );
+    onProgress({
+      step: "updateContent",
+      status: "log",
+      message: "Done updating settings",
+    });
     onProgress({ step: "updateContent", status: "success" });
 
     // Step 7: Set environment variables (if any)
@@ -237,35 +479,102 @@ export async function connectPublish(
     if (envVars) {
       lastStep = "setEnvVars";
       onProgress({ step: "setEnvVars", status: "start" });
+      onProgress({
+        step: "setEnvVars",
+        status: "log",
+        message: "Setting environment variables",
+      });
+      // Log each variable individually (matching Go's per-variable messages)
+      for (const name of Object.keys(envVars)) {
+        const isSecret = secrets !== undefined && name in secrets;
+        onProgress({
+          step: "setEnvVars",
+          status: "log",
+          message: isSecret
+            ? "Setting secret as environment variable"
+            : "Setting environment variable",
+          data: { name },
+        });
+      }
       await api.setEnvVars(ContentID(contentId), envVars);
+      onProgress({
+        step: "setEnvVars",
+        status: "log",
+        message: "Done setting environment variables",
+      });
       onProgress({ step: "setEnvVars", status: "success" });
     }
 
     // Step 8: Deploy the bundle
     lastStep = "deployBundle";
     onProgress({ step: "deployBundle", status: "start" });
+    onProgress({
+      step: "deployBundle",
+      status: "log",
+      message: "Activating Deployment",
+    });
     const { data: deployOutput } = await api.deployBundle(
       ContentID(contentId),
       bundleId,
     );
-    onProgress({ step: "deployBundle", status: "success" });
+    onProgress({
+      step: "deployBundle",
+      status: "log",
+      message: "Activation requested",
+    });
+    onProgress({
+      step: "deployBundle",
+      status: "success",
+      data: { taskId: deployOutput.task_id },
+    });
 
     // Step 9: Wait for server-side task to complete
     lastStep = "waitForTask";
     onProgress({ step: "waitForTask", status: "start" });
-    await api.waitForTask(TaskID(deployOutput.task_id));
+    await api.waitForTask(TaskID(deployOutput.task_id), undefined, (lines) => {
+      for (const line of lines) {
+        if (line) {
+          onProgress({ step: "waitForTask", status: "log", message: line });
+        }
+      }
+    });
     onProgress({ step: "waitForTask", status: "success" });
 
     // Step 10: Validate deployment (optional)
     if (config.validate) {
       lastStep = "validateDeployment";
-      onProgress({ step: "validateDeployment", status: "start" });
+      onProgress({
+        step: "validateDeployment",
+        status: "start",
+        data: { url: getDirectUrl(serverUrl, contentId) },
+      });
+      // Log events are emitted before the HTTP call to match the Go
+      // backend's ordering, where the logger writes "Testing URL…"
+      // before the request is made.
+      onProgress({
+        step: "validateDeployment",
+        status: "log",
+        message: "Validating Deployment",
+      });
+      // Message is just "Testing URL"; displayEventStreamMessage appends
+      // data.url to produce "Testing URL /content/{id}/". Mirrors Go's
+      // log.Info("Testing URL", "url", url).
+      onProgress({
+        step: "validateDeployment",
+        status: "log",
+        message: "Testing URL",
+        data: { url: `/content/${contentId}/` },
+      });
       await api.validateDeployment(ContentID(contentId));
+      onProgress({
+        step: "validateDeployment",
+        status: "log",
+        message: "Done validating deployment",
+      });
       onProgress({ step: "validateDeployment", status: "success" });
     }
 
-    // Write completed record
-    record.deployedAt = new Date().toISOString();
+    // Write completed record (deployedAt is set by writePublishRecord)
     await writePublishRecord(deploymentPath, record);
 
     return {
@@ -276,15 +585,38 @@ export async function connectPublish(
       bundleId: bundleDTO.id,
     };
   } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : String(err);
+    // Classify the error for both the deployment record and UI events
+    const classified = classifyDeploymentError(lastStep, err);
 
-    // Emit failure event so progress consumers know which step failed
+    // Emit failure event so progress consumers know which step failed.
+    // Use the classified message (user-friendly) rather than the raw error.
     if (lastStep) {
-      onProgress({ step: lastStep, status: "failure", message: errorMessage });
+      const failData: Record<string, string> = {};
+      // Include URLs when we have a content ID so the UI can link to logs
+      if (record.logsUrl) {
+        failData.logsUrl = record.logsUrl;
+      }
+      if (record.dashboardUrl) {
+        failData.dashboardUrl = record.dashboardUrl;
+      }
+      // Include HTTP status for validateDeployment failures
+      if (
+        lastStep === "validateDeployment" &&
+        isAxiosError(err) &&
+        err.response
+      ) {
+        failData.status = String(err.response.status);
+      }
+      onProgress({
+        step: lastStep,
+        status: "failure",
+        message: classified.message,
+        errCode: classified.code,
+        data: failData,
+      });
     }
 
     // Record the error in the deployment file
-    const classified = classifyDeploymentError(lastStep, err);
     record.deploymentError = {
       code: classified.code,
       message: classified.message,
@@ -305,16 +637,48 @@ export async function connectPublish(
 
 /**
  * Maps a caught error to a deployment record error code and user-facing message.
- * Mirrors the Go backend's error classification — in particular,
- * validation failures (5xx from content URL) map to "deployedContentNotRunning"
- * so the UI can show "View Deployment Logs" instead of "View Content".
+ * Mirrors the Go backend's error classification so the UI can show
+ * targeted error messages and troubleshooting guidance.
  */
 function classifyDeploymentError(
   lastStep: PublishStep | undefined,
   err: unknown,
-): { code: string; message: string } {
+): { code: ErrorCode; message: string } {
   const fallbackMessage = err instanceof Error ? err.message : String(err);
 
+  // Certificate verification errors (any step)
+  if (isAxiosError(err) && isCertificateError(err)) {
+    return {
+      code: "errorCertificateVerification",
+      message:
+        "Certificate verification failed. " +
+        "Check the server's TLS certificate or disable verification.",
+    };
+  }
+
+  // Authentication failures (401 from any step, but typically preflight)
+  if (isAxiosError(err) && err.response?.status === 401) {
+    return {
+      code: "authFailedErr",
+      message: "Authentication failed. Check your credentials.",
+    };
+  }
+
+  // 404 during updateContent — content was deleted server-side
+  if (
+    lastStep === "updateContent" &&
+    isAxiosError(err) &&
+    err.response?.status === 404
+  ) {
+    return {
+      code: "deploymentNotFoundErr",
+      message:
+        "Deployment target not found. " +
+        "The content may have been deleted on the server.",
+    };
+  }
+
+  // Validation failures (5xx from content URL)
   if (
     lastStep === "validateDeployment" &&
     isAxiosError(err) &&
@@ -328,7 +692,280 @@ function classifyDeploymentError(
         "Check the deployment logs for more information.",
     };
   }
+
+  // Server-side task failure (waitForTask throws plain Error, not AxiosError)
+  if (
+    lastStep === "waitForTask" &&
+    err instanceof Error &&
+    !isAxiosError(err)
+  ) {
+    return {
+      code: "deployFailed",
+      message: err.message,
+    };
+  }
+
+  // App mode mismatch (thrown by our own preflight check)
+  if (
+    lastStep === "preflight" &&
+    err instanceof Error &&
+    err.message.includes("previously deployed as")
+  ) {
+    return {
+      code: "appModeNotModifiableErr",
+      message: err.message,
+    };
+  }
+
+  // Requirements file missing (thrown by our preflight check).
+  // Mirrors Go's ErrorRequirementsFileReading code so the UI can
+  // show the specific "missing dependency file" guidance.
+  if (
+    lastStep === "preflight" &&
+    err instanceof Error &&
+    err.message.includes("Missing dependency file")
+  ) {
+    return {
+      code: "requirementsFileReadingError",
+      message: err.message,
+    };
+  }
+
   return { code: "unknown", message: fallbackMessage };
+}
+
+/** Detect TLS/certificate errors from axios error codes. */
+function isCertificateError(err: { code?: string }): boolean {
+  const certCodes = [
+    "UNABLE_TO_VERIFY_LEAF_SIGNATURE",
+    "DEPTH_ZERO_SELF_SIGNED_CERT",
+    "SELF_SIGNED_CERT_IN_CHAIN",
+    "ERR_TLS_CERT_ALTNAME_INVALID",
+    "CERT_HAS_EXPIRED",
+  ];
+  return !!err.code && certCodes.includes(err.code);
+}
+
+// ---------------------------------------------------------------------------
+// Server settings validation (mirrors Go's checkConfig/checkAccess/checkRuntime/checkKubernetes)
+// ---------------------------------------------------------------------------
+
+/** API content types that require the "allow-apis" license. Mirrors Go's IsAPIContent(). */
+function isAPIContentType(contentType: string): boolean {
+  return (
+    contentType === ContentType.PYTHON_FLASK ||
+    contentType === ContentType.PYTHON_FASTAPI ||
+    contentType === ContentType.R_PLUMBER
+  );
+}
+
+/** App content types that support run_as_current_user. Mirrors Go's IsAppContent(). */
+function isAppContentType(contentType: string): boolean {
+  return (
+    contentType === ContentType.PYTHON_SHINY ||
+    contentType === ContentType.R_SHINY ||
+    contentType === ContentType.PYTHON_BOKEH ||
+    contentType === ContentType.PYTHON_DASH ||
+    contentType === ContentType.PYTHON_GRADIO ||
+    contentType === ContentType.PYTHON_PANEL ||
+    contentType === ContentType.PYTHON_STREAMLIT
+  );
+}
+
+/**
+ * Validate deployment configuration against server settings.
+ * Mirrors Go's AllSettings.checkConfig(), checkAccess(), checkRuntime(), checkKubernetes().
+ */
+function checkServerSettings(
+  settings: AllSettings,
+  config: ConfigurationDetails,
+): void {
+  // API licensing check
+  if (
+    isAPIContentType(config.type) &&
+    !settings.general.license["allow-apis"]
+  ) {
+    throw new Error("API deployment is not licensed on this Connect server");
+  }
+
+  if (config.connect) {
+    checkAccess(settings, config);
+    checkRuntime(settings, config);
+    checkKubernetes(settings, config);
+  }
+}
+
+function checkAccess(
+  settings: AllSettings,
+  config: ConfigurationDetails,
+): void {
+  const access = config.connect?.access;
+  if (!access) {
+    return;
+  }
+
+  if (access.runAsCurrentUser) {
+    if (!settings.general.license["current-user-execution"]) {
+      throw new Error(
+        "run_as_current_user is not licensed on this Connect server",
+      );
+    }
+    if (!settings.application.run_as_current_user) {
+      throw new Error(
+        "run_as_current_user is not configured on this Connect server",
+      );
+    }
+    if (settings.user.user_role !== "administrator") {
+      throw new Error("run_as_current_user requires administrator privileges");
+    }
+    if (!isAppContentType(config.type)) {
+      throw new Error(
+        "run_as_current_user can only be used with application types, not APIs or reports",
+      );
+    }
+  }
+
+  if (access.runAs && settings.user.user_role !== "administrator") {
+    throw new Error("run_as requires administrator privileges");
+  }
+}
+
+function checkRuntime(
+  settings: AllSettings,
+  config: ConfigurationDetails,
+): void {
+  const runtime = config.connect?.runtime;
+  if (!runtime) {
+    return;
+  }
+
+  // Static content (HTML → "static" app mode) cannot have runtime settings.
+  // Mirrors Go's IsStaticContent() which only matches StaticMode ("static").
+  const appMode = appModeFromType(config.type);
+  if (appMode === "static") {
+    throw new Error("Runtime settings cannot be applied to static content");
+  }
+
+  const s = settings.scheduler;
+
+  checkMaxLimit("max_processes", runtime.maxProcesses, s.max_processes_limit);
+  checkMaxLimit("min_processes", runtime.minProcesses, s.min_processes_limit);
+
+  // min_processes cannot exceed max_processes
+  checkMinMax(
+    "min_processes",
+    runtime.minProcesses,
+    s.min_processes,
+    "max_processes",
+    runtime.maxProcesses,
+    s.max_processes,
+  );
+}
+
+function checkKubernetes(
+  settings: AllSettings,
+  config: ConfigurationDetails,
+): void {
+  const k = config.connect?.kubernetes;
+  if (!k) {
+    return;
+  }
+
+  if (!settings.general.license["enable-launcher"]) {
+    throw new Error(
+      "Off-host execution with Kubernetes is not licensed on this Connect server",
+    );
+  }
+  if (settings.general.execution_type !== "Kubernetes") {
+    throw new Error(
+      "Off-host execution with Kubernetes is not configured on this Connect server",
+    );
+  }
+  if (k.defaultImageName && !settings.general.default_image_selection_enabled) {
+    throw new Error(
+      "Default image selection is not enabled on this Connect server",
+    );
+  }
+  if (k.serviceAccountName && settings.user.user_role !== "administrator") {
+    throw new Error("service_account_name requires administrator privileges");
+  }
+
+  const s = settings.scheduler;
+
+  checkMaxLimit("cpu_request", k.cpuRequest, s.max_cpu_request);
+  checkMaxLimit("cpu_limit", k.cpuLimit, s.max_cpu_limit);
+  checkMaxLimit("memory_request", k.memoryRequest, s.max_memory_request);
+  checkMaxLimit("memory_limit", k.memoryLimit, s.max_memory_limit);
+  checkMaxLimit("amd_gpu_limit", k.amdGpuLimit, s.max_amd_gpu_limit);
+  checkMaxLimit("nvidia_gpu_limit", k.nvidiaGpuLimit, s.max_nvidia_gpu_limit);
+
+  // Requests cannot exceed limits
+  checkMinMax(
+    "cpu_request",
+    k.cpuRequest,
+    s.cpu_request,
+    "cpu_limit",
+    k.cpuLimit,
+    s.cpu_limit,
+  );
+  checkMinMax(
+    "memory_request",
+    k.memoryRequest,
+    s.memory_request,
+    "memory_limit",
+    k.memoryLimit,
+    s.memory_limit,
+  );
+}
+
+/**
+ * Check that a configured value does not exceed the server's maximum.
+ * Mirrors Go's checkMaxInt/checkMaxFloat — skips check if value is undefined or limit is 0.
+ */
+function checkMaxLimit(
+  attr: string,
+  value: number | undefined,
+  limit: number,
+): void {
+  if (value === undefined) {
+    return;
+  }
+  if (value < 0) {
+    throw new Error(`${attr} value cannot be less than 0`);
+  }
+  if (limit === 0) {
+    return;
+  }
+  if (value > limit) {
+    throw new Error(
+      `${attr} value of ${value} is higher than configured maximum of ${limit} on this server`,
+    );
+  }
+}
+
+/**
+ * Check that a min value does not exceed a max value, using server defaults
+ * when the config doesn't specify a value.
+ * Mirrors Go's checkMinMaxIntWithDefaults/checkMinMaxFloatWithDefaults.
+ */
+function checkMinMax(
+  minAttr: string,
+  cfgMin: number | undefined,
+  defaultMin: number,
+  maxAttr: string,
+  cfgMax: number | undefined,
+  defaultMax: number,
+): void {
+  const minValue = cfgMin ?? defaultMin;
+  const maxValue = cfgMax ?? defaultMax;
+  if (maxValue === 0) {
+    return;
+  }
+  if (minValue > maxValue) {
+    throw new Error(
+      `${minAttr} value of ${minValue} is higher than ${maxAttr} value of ${maxValue}`,
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -348,6 +985,7 @@ async function buildManifest(
   config: ConfigurationDetails,
   rPath: string | undefined,
   positronR: PositronRSettings | undefined,
+  onProgress: (event: PublishEvent) => void,
 ): Promise<ManifestResult> {
   const manifest = manifestFromConfig(config);
   let lockfilePath: string | undefined;
@@ -360,6 +998,12 @@ async function buildManifest(
 
     if (lockExists) {
       // Use the existing lockfile directly
+      // TS always uses the lockfile mapper (renv.lock), never the library mapper
+      onProgress({
+        step: "createManifest",
+        status: "log",
+        message: `Loading packages from renv.lock`,
+      });
       const resolved = await resolveRPackages(projectDir, config.r);
       if (resolved) {
         manifest.packages = resolved.packages;
@@ -368,12 +1012,26 @@ async function buildManifest(
       }
     } else {
       // No lockfile — scan project for R dependencies
+      // Mirrors Go's manifest.go:46 log message
+      onProgress({
+        step: "createManifest",
+        status: "log",
+        message: "No renv.lock found; automatically scanning for dependencies",
+      });
+
       if (!rPath) {
         throw new Error(
           "R interpreter is required to scan for R package dependencies, " +
             "but none was found. Install R or provide an renv.lock file.",
         );
       }
+
+      // Mirrors Go's r_package_descriptions.go:105
+      onProgress({
+        step: "createManifest",
+        status: "log",
+        message: "Detect dependencies from project",
+      });
 
       // Inject implicit deps (e.g. shiny, rmarkdown) so renv can discover them
       const extraDeps = await findExtraDependencies(
@@ -392,6 +1050,11 @@ async function buildManifest(
       }
 
       // Now resolve from the generated lockfile
+      onProgress({
+        step: "createManifest",
+        status: "log",
+        message: `Loading packages from renv.lock`,
+      });
       const resolved = await resolveRPackages(projectDir, config.r);
       if (resolved) {
         manifest.packages = resolved.packages;
@@ -399,6 +1062,12 @@ async function buildManifest(
         lockfile = resolved.lockfile;
       }
     }
+
+    onProgress({
+      step: "createManifest",
+      status: "log",
+      message: "Done collecting R package descriptions",
+    });
   }
 
   return { manifest, lockfilePath, lockfile };
@@ -513,7 +1182,14 @@ function recordToTomlObject(record: PublishRecord): Record<string, unknown> {
   // and empty-value stripping that the other fields don't.
   let configuration: unknown;
   if (record.config) {
-    const snakeConfig = convertKeysToSnakeCase(record.config);
+    // Clone and remove non-TOML fields, matching Go's toml:"-" tags
+    // and the behavior of configWriter/deploymentWriter.
+    const cfg = { ...record.config };
+    delete cfg.comments;
+    delete cfg.alternatives;
+    delete cfg.entrypointObjectRef;
+
+    const snakeConfig = convertKeysToSnakeCase(cfg);
     if (isRecord(snakeConfig)) {
       stripEmpty(snakeConfig);
     }
@@ -552,8 +1228,13 @@ export async function writePublishRecord(
   deploymentPath: string,
   record: PublishRecord,
 ): Promise<void> {
+  // Mirrors Go's WriteDeploymentRecord which sets DeployedAt = now on every
+  // write (initial, post-upload, error). This ensures failed/in-progress
+  // records reflect when the attempt happened.
+  record.deployedAt = new Date().toISOString();
   const obj = recordToTomlObject(record);
-  const content = AUTOGEN_HEADER + stringifyTOML(obj) + "\n";
+  const content =
+    AUTOGEN_HEADER + expandInlineArrays(stringifyTOML(obj)) + "\n";
   await fs.mkdir(path.dirname(deploymentPath), { recursive: true });
   await fs.writeFile(deploymentPath, content, "utf-8");
 }

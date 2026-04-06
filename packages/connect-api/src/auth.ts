@@ -6,7 +6,9 @@ import crypto from "crypto";
  * Computes the base64-encoded MD5 checksum of the given data.
  * For empty/undefined body, computes the checksum of an empty string.
  */
-export function md5Checksum(body: string | undefined): string {
+export function md5Checksum(
+  body: string | Buffer | Uint8Array | undefined,
+): string {
   const data = body ?? "";
   const hash = crypto.createHash("md5").update(data).digest();
   return hash.toString("base64");
@@ -52,7 +54,7 @@ export function rsaSha1Sign(
 export function signRequest(
   method: string,
   path: string,
-  body: string | undefined,
+  body: string | Buffer | Uint8Array | undefined,
   token: string,
   privateKeyBase64: string,
 ): Record<string, string> {
