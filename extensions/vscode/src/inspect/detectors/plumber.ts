@@ -119,13 +119,18 @@ export class PlumberDetector implements ContentTypeDetector {
       const serverFilePath = path.join(baseDir, serverFile);
       try {
         const content = await fs.readFile(serverFilePath, "utf-8");
+        // Use a null-prototype object to prevent collisions between YAML
+        // keys and Object.prototype properties. The _server.yml format uses a
+        // "constructor" key which would shadow Object.prototype.constructor on
+        // a regular object. yaml.load() can also return non-object values
+        // (null, string, number) for scalar YAML — Object.assign handles these
+        // safely, and subsequent property checks guard against missing fields.
         const metadata = Object.assign(
           Object.create(null),
           yaml.load(content),
         ) as PlumberServerMetadata;
-        if (metadata && typeof metadata === "object") {
-          return { serverFile, metadata };
-        }
+
+        return { serverFile, metadata };
       } catch (err: unknown) {
         logger.warn(
           `[plumber] could not read/parse server file ${serverFilePath}: ${err}`,

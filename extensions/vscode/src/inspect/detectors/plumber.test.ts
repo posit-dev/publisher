@@ -162,6 +162,26 @@ routes: app/plumber.R
     ]);
   });
 
+  test("server YAML 'constructor' key is parsed without prototype collision", async () => {
+    // The _server.yml format uses a "constructor" key, which would collide
+    // with Object.prototype.constructor on a regular object. This test
+    // verifies the null-prototype pattern handles it correctly.
+    const serverYml = `engine: plumber
+constructor: init.R
+routes: api.R
+`;
+    mockReadFile.mockImplementation((filePath: string) => {
+      if (filePath.endsWith("_server.yml")) {
+        return Promise.resolve(serverYml);
+      }
+      return Promise.reject(new Error("ENOENT"));
+    });
+
+    const configs = await detector.inferType("/project", "app.R");
+    expect(configs).toHaveLength(1);
+    expect(configs[0]?.files).toContain("/init.R");
+  });
+
   test("skips server file with non-plumber engine", async () => {
     const serverYml = `engine: flask
 routes: app.py
