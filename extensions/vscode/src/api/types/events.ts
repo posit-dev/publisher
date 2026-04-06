@@ -73,10 +73,12 @@ export interface EventSubscriptionTargetCallbackMap {
 
   // 'publish/createBundle/failure/authFailure' | // received but temporarily converted
   "publish/createNewDeployment/start": OnPublishCreateNewDeploymentStartCallback;
+  "publish/createNewDeployment/log": OnMessageEventSourceCallback;
   "publish/createNewDeployment/success": OnPublishCreateNewDeploymentSuccessCallback;
   "publish/createNewDeployment/failure": OnPublishCreateNewDeploymentFailureCallback;
 
   "publish/setEnvVars/start": OnPublishSetEnvVarsStartCallback;
+  "publish/setEnvVars/log": OnMessageEventSourceCallback;
   "publish/setEnvVars/success": OnPublishSetEnvVarsSuccessCallback;
   "publish/setEnvVars/failure": OnPublishSetEnvVarsFailureCallback;
 

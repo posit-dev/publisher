@@ -100,9 +100,9 @@ function injectStageEvent(
   suffix: PublishEvent["status"],
   data: Record<string, string> = {},
 ): void {
-  const prefix = stepToEventPrefix[step];
-  const type = `${prefix}/${suffix}` as EventSubscriptionTarget;
-  stream.injectMessage(makeMessage(type, data));
+  stream.injectMessage(
+    makeMessage(`${stepToEventPrefix[step]}/${suffix}`, data),
+  );
 }
 
 /**
