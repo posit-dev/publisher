@@ -497,6 +497,11 @@ describe("runTsDeployWithProgress", () => {
       });
       onProgress({
         step: "createNewDeployment",
+        status: "log",
+        message: "Creating new deployment",
+      });
+      onProgress({
+        step: "createNewDeployment",
         status: "success",
         data: { contentId: "abc-123", saveName: "my-app" },
       });
@@ -512,6 +517,12 @@ describe("runTsDeployWithProgress", () => {
     );
     expect(startMsg).toBeDefined();
     expect(startMsg!.data.saveName).toBe("my-app");
+
+    const logMsg = stream.injected.find(
+      (m) => m.type === "publish/createNewDeployment/log",
+    );
+    expect(logMsg).toBeDefined();
+    expect(logMsg!.data.message).toBe("Creating new deployment");
 
     const successMsg = stream.injected.find(
       (m) => m.type === "publish/createNewDeployment/success",
