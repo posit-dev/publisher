@@ -7,10 +7,12 @@ import { logger } from "src/logging";
 import { globDir } from "./globDir";
 
 // Matches fenced code blocks with {r} or {python} language identifiers,
-// and inline code evaluation syntax (`r expr` or `python expr`).
+// inline code evaluation syntax (`r expr` or `python expr`),
+// and Quarto-style inline code (`{r} expr` or `{python} expr`).
 // Handles both ``` and ~~~ fencing, and optional chunk options.
-const rCodeRE = /^[ \t]*(```+|~~~+)\s*\{r[\s,}]|`r /m;
-const pythonCodeRE = /^[ \t]*(```+|~~~+)\s*\{python[\s,}]|`python /m;
+const rCodeRE = /^[ \t]*(```+|~~~+)\s*\{r[\s,}]|`r |`\{r\} /m;
+const pythonCodeRE =
+  /^[ \t]*(```+|~~~+)\s*\{python[\s,}]|`python |`\{python\} /m;
 
 /**
  * Detect whether markdown content contains R and/or Python code blocks.
