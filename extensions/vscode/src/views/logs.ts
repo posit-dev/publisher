@@ -42,7 +42,7 @@ import {
 import { extensionSettings } from "src/extension";
 import { showErrorMessageWithTroubleshoot } from "src/utils/window";
 import { DeploymentFailureRenvHandler } from "src/views/deployHandlers";
-import { formatTimestampString } from "src/utils/date";
+import { stripMilliseconds } from "src/utils/date";
 
 enum LogStageStatus {
   notStarted,
@@ -182,7 +182,7 @@ class EventStreamRepository {
   }
 
   parseEvent(ev: EventStreamMessage) {
-    return `${formatTimestampString(ev.time)} ${ev.data.message}`;
+    return `${stripMilliseconds(ev.time)} ${ev.data.message}`;
   }
 
   logsText() {

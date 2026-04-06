@@ -41,8 +41,7 @@ const stepLabels: Record<PublishStep, string> = {
 };
 
 // Maps TS orchestrator steps to Go SSE event path prefixes.
-// Steps not listed here have no corresponding stage in the logs tree view.
-const stepToEventPrefix: Partial<Record<PublishStep, string>> = {
+const stepToEventPrefix = {
   // Go maps this to publish/getRPackageDescriptions, which creates a tree
   // node even for Python-only deploys. We match that behavior for parity.
   // TODO: Consider suppressing the tree node for non-R deploys, or renaming
@@ -64,7 +63,7 @@ const stepToEventPrefix: Partial<Record<PublishStep, string>> = {
   deployBundle: "publish/deployBundle",
   waitForTask: "publish/restoreEnv",
   validateDeployment: "publish/validateDeployment",
-};
+} as const satisfies Record<PublishStep, string>;
 
 export type TsDeployProgressOptions = {
   deploy: (onProgress: (event: PublishEvent) => void) => Promise<PublishResult>;
@@ -98,15 +97,10 @@ function makeMessage(
 function injectStageEvent(
   stream: EventStream,
   step: PublishStep,
-  suffix: "start" | "success" | "failure" | "log",
+  suffix: PublishEvent["status"],
   data: Record<string, string> = {},
 ): void {
   const prefix = stepToEventPrefix[step];
-  if (!prefix) {
-    return;
-  }
-  // Safe: every prefix in stepToEventPrefix combined with our suffix literals
-  // produces a valid EventSubscriptionTarget (e.g. "publish/createBundle/start").
   const type = `${prefix}/${suffix}` as EventSubscriptionTarget;
   stream.injectMessage(makeMessage(type, data));
 }
@@ -160,11 +154,7 @@ export function runTsDeployWithProgress(
           } else if (event.status === "success") {
             if (event.step === "waitForTask") {
               // Close whichever stage is active (restoreEnv or runContent).
-              stream.injectMessage(
-                makeMessage(
-                  `${waitForTaskStage}/success` as EventSubscriptionTarget,
-                ),
-              );
+              stream.injectMessage(makeMessage(`${waitForTaskStage}/success`));
             } else {
               injectStageEvent(stream, event.step, "success", event.data);
             }
@@ -188,19 +178,19 @@ export function runTsDeployWithProgress(
               // Fail whichever stage is active (restoreEnv or runContent).
               stream.injectMessage(
                 makeMessage(
-                  `${waitForTaskStage}/failure` as EventSubscriptionTarget,
+                  `${waitForTaskStage}/failure`,
                   failData,
                   event.errCode,
                 ),
               );
             } else {
-              const prefix = stepToEventPrefix[event.step];
-              if (prefix) {
-                const type = `${prefix}/failure` as EventSubscriptionTarget;
-                stream.injectMessage(
-                  makeMessage(type, failData, event.errCode),
-                );
-              }
+              stream.injectMessage(
+                makeMessage(
+                  `${stepToEventPrefix[event.step]}/failure`,
+                  failData,
+                  event.errCode,
+                ),
+              );
             }
           } else if (event.status === "log") {
             if (event.step === "waitForTask") {
@@ -211,15 +201,9 @@ export function runTsDeployWithProgress(
                 if (waitForTaskStage === "publish/restoreEnv") {
                   // Close restoreEnv and open runContent in the logs tree.
                   stream.injectMessage(
-                    makeMessage(
-                      "publish/restoreEnv/success" as EventSubscriptionTarget,
-                    ),
+                    makeMessage("publish/restoreEnv/success"),
                   );
-                  stream.injectMessage(
-                    makeMessage(
-                      "publish/runContent/start" as EventSubscriptionTarget,
-                    ),
-                  );
+                  stream.injectMessage(makeMessage("publish/runContent/start"));
                   waitForTaskStage = "publish/runContent";
                 }
               }
@@ -228,16 +212,15 @@ export function runTsDeployWithProgress(
               const pkgEvent = packageEventFromLogLine(msg);
               if (pkgEvent) {
                 stream.injectMessage(
-                  makeMessage(
-                    `${waitForTaskStage}/status` as EventSubscriptionTarget,
-                    pkgEvent,
-                  ),
+                  makeMessage(`${waitForTaskStage}/status`, pkgEvent),
                 );
               }
 
-              const type = `${waitForTaskStage}/log` as EventSubscriptionTarget;
               stream.injectMessage(
-                makeMessage(type, { message: msg, level: "INFO" }),
+                makeMessage(`${waitForTaskStage}/log`, {
+                  message: msg,
+                  level: "INFO",
+                }),
               );
             } else {
               // Non-waitForTask log events (e.g., validateDeployment logs)

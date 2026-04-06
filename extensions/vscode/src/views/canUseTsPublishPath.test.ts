@@ -2,9 +2,9 @@
 
 import { describe, expect, it } from "vitest";
 import { canUseTsPublishPath } from "src/views/canUseTsPublishPath";
-import { ServerType } from "src/api/types/contentRecords";
-import { ProductType } from "src/api/types/contentRecords";
+import { ServerType, ProductType } from "src/api/types/contentRecords";
 import type { ConfigurationDetails } from "src/api/types/configurations";
+import { ContentType } from "src/api/types/configurations";
 
 function makeConfig(
   overrides?: Partial<ConfigurationDetails>,
@@ -12,7 +12,7 @@ function makeConfig(
   return {
     $schema: "",
     productType: ProductType.CONNECT,
-    type: "python-dash" as ConfigurationDetails["type"],
+    type: ContentType.PYTHON_DASH,
     validate: true,
     ...overrides,
   };

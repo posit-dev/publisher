@@ -354,6 +354,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
     const absProjectDir = path.resolve(root, projectDir);
     const rel = path.relative(root, absProjectDir);
+    // Check that the resolved path stays within the workspace.
+    // We can't just use rel.startsWith("..") because a directory
+    // literally named ".." would be a false positive.
     if (
       rel === ".." ||
       rel.startsWith(".." + path.sep) ||
