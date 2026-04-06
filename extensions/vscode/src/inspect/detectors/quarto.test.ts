@@ -384,6 +384,27 @@ describe("QuartoDetector", () => {
     expect(configs[0]?.title).toBe("My Project");
   });
 
+  test("_quarto.yml entrypoint inspects the base directory, not the file", async () => {
+    setupGlobDir([]);
+    mockAccess.mockRejectedValue(new Error("ENOENT"));
+
+    const inspectJson = makeInspectOutput({
+      engines: ["markdown"],
+      files: { input: ["/project/index.qmd"], configResources: [] },
+      formats: { html: { metadata: { title: "Project" }, pandoc: {} } },
+    });
+    mockExecFile.mockResolvedValue({ stdout: inspectJson });
+
+    await detector.inferType("/project", "_quarto.yml");
+
+    // quarto inspect should receive the base directory, not _quarto.yml
+    expect(mockExecFile).toHaveBeenCalledWith(
+      "quarto",
+      ["inspect", "/project"],
+      expect.objectContaining({ timeout: 30_000 }),
+    );
+  });
+
   test("entrypoint filter works", async () => {
     setupGlobDir(["a.qmd", "b.qmd"]);
     mockAccess.mockRejectedValue(new Error("ENOENT"));

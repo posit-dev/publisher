@@ -56,8 +56,8 @@ export class QuartoDetector implements ContentTypeDetector {
     baseDir: string,
     entrypoint?: string,
   ): Promise<PartialConfig[]> {
-    // When the chosen entrypoint is _quarto.yml, quarto inspect doesn't handle it well
-    // but an inspection to the base directory will bring what the user expects.
+    // The `quarto inspect` CLI does not accept _quarto.yml as a direct target.
+    // Instead, pass the project directory which inspects the full project.
     if (entrypoint && isQuartoYaml(path.basename(entrypoint))) {
       const cfg = await this.configFromInspect(baseDir, baseDir);
       if (cfg) {
