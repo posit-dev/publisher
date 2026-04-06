@@ -28,6 +28,7 @@ const specialYmlFiles = [
 const defaultQuartoVersion = "1.7.34";
 
 const quartoSuffixes = [".qmd", ".Rmd", ".ipynb", ".R", ".py", ".jl"];
+const quartoSuffixesLower = quartoSuffixes.map((s) => s.toLowerCase());
 
 function isQuartoShiny(metadata: {
   runtime?: string;
@@ -68,8 +69,8 @@ export class QuartoDetector implements ContentTypeDetector {
     }
 
     if (entrypoint) {
-      const ext = path.extname(entrypoint);
-      if (!quartoSuffixes.includes(ext)) {
+      const ext = path.extname(entrypoint).toLowerCase();
+      if (!quartoSuffixesLower.includes(ext)) {
         return [];
       }
     }
@@ -211,7 +212,7 @@ export class QuartoDetector implements ContentTypeDetector {
       return true;
     }
     for (const script of inspectOutput.prePostRenderFiles()) {
-      if (script.endsWith(".py")) {
+      if (script.toLowerCase().endsWith(".py")) {
         return true;
       }
     }
@@ -223,7 +224,7 @@ export class QuartoDetector implements ContentTypeDetector {
       return true;
     }
     for (const script of inspectOutput.prePostRenderFiles()) {
-      if (script.endsWith(".R")) {
+      if (script.toLowerCase().endsWith(".r")) {
         return true;
       }
     }
@@ -302,9 +303,9 @@ export class QuartoDetector implements ContentTypeDetector {
     cfg: PartialConfig,
     inspectOutput: QuartoInspectOutput,
   ): Promise<PartialConfig | undefined> {
-    const ext = path.extname(cfg.entrypoint);
+    const ext = path.extname(cfg.entrypoint).toLowerCase();
     // Script entrypoints (.R, .py) don't produce standalone HTML output
-    if (ext === ".R" || ext === ".py") {
+    if (ext === ".r" || ext === ".py") {
       return undefined;
     }
 
@@ -413,7 +414,9 @@ export class QuartoDetector implements ContentTypeDetector {
 
   private async findEntrypoints(baseDir: string): Promise<string[]> {
     const results = await Promise.all(
-      quartoSuffixes.map((suffix) => globDir(baseDir, "*" + suffix)),
+      quartoSuffixes.map((suffix) =>
+        globDir(baseDir, "*" + suffix, { nocase: true }),
+      ),
     );
 
     return results.flat();
@@ -435,12 +438,12 @@ export class QuartoDetector implements ContentTypeDetector {
       }
     }
 
-    const ext = path.extname(inspectPath);
+    const ext = path.extname(inspectPath).toLowerCase();
     if (
       !quartoYmlExists &&
       ext !== ".qmd" &&
       ext !== ".ipynb" &&
-      ext !== ".Rmd"
+      ext !== ".rmd"
     ) {
       return undefined;
     }
@@ -471,7 +474,7 @@ export class QuartoDetector implements ContentTypeDetector {
     }
 
     // Standalone RMarkdown files need R and the knitr engine
-    if (ext === ".Rmd") {
+    if (ext === ".rmd") {
       cfg.r = {};
       cfg.quarto = { version: defaultQuartoVersion, engines: ["knitr"] };
       files.push(`/${relEntrypoint}`);

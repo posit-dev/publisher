@@ -8,8 +8,12 @@ import picomatch from "picomatch";
  * Glob a directory for files matching a pattern.
  * Returns sorted absolute paths of matching files (not directories).
  */
-export async function globDir(dir: string, pattern: string): Promise<string[]> {
-  const isMatch = picomatch(pattern);
+export async function globDir(
+  dir: string,
+  pattern: string,
+  options?: { nocase?: boolean },
+): Promise<string[]> {
+  const isMatch = picomatch(pattern, { nocase: options?.nocase });
   let entries: string[];
   try {
     entries = await fs.readdir(dir);

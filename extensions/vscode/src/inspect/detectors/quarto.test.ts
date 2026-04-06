@@ -665,4 +665,78 @@ describe("QuartoDetector", () => {
     expect(configs[0]?.type).toBe(ContentType.QUARTO_STATIC);
     expect(configs[0]?.alternatives).toBeUndefined();
   });
+
+  // Case-insensitivity tests
+  test("pre/post render scripts detect R need case-insensitively", async () => {
+    setupGlobDir(["doc.qmd"]);
+    mockAccess.mockRejectedValue(new Error("ENOENT"));
+    mockReadFile.mockResolvedValue("# Just markdown\n");
+
+    const inspectJson = makeInspectOutput({
+      engines: ["markdown"],
+      files: { input: ["/project/doc.qmd"], configResources: [] },
+      config: {
+        project: {
+          "pre-render": ["setup.r"],
+          "post-render": [],
+        },
+      },
+      formats: {
+        html: { metadata: { title: "Doc" }, pandoc: {} },
+      },
+    });
+    mockExecFile.mockResolvedValue({ stdout: inspectJson });
+
+    const configs = await detector.inferType("/project", "doc.qmd");
+    expect(configs).toHaveLength(1);
+    expect(configs[0]?.r).toEqual({});
+    expect(configs[0]?.quarto?.engines).toContain("knitr");
+  });
+
+  test("script entrypoints skip static alternative case-insensitively", async () => {
+    setupGlobDir(["script.r"]);
+    mockAccess.mockRejectedValue(new Error("ENOENT"));
+    mockReadFile.mockResolvedValue("# R script\n");
+
+    const inspectJson = makeInspectOutput({
+      engines: ["knitr"],
+      files: { input: ["/project/script.r"], configResources: [] },
+      formats: {
+        html: { metadata: { title: "R Script" }, pandoc: {} },
+      },
+    });
+    mockExecFile.mockResolvedValue({ stdout: inspectJson });
+
+    const configs = await detector.inferType("/project", "script.r");
+    expect(configs).toHaveLength(1);
+    expect(configs[0]?.alternatives).toBeUndefined();
+  });
+
+  test("fallback detects .rmd (lowercase) as Quarto content", async () => {
+    setupGlobDir(["report.rmd"]);
+    mockAccess.mockRejectedValue(new Error("ENOENT"));
+
+    mockExecFile.mockRejectedValue(
+      new Error("executable file not found in $PATH"),
+    );
+
+    const configs = await detector.inferType("/project", "report.rmd");
+    expect(configs).toHaveLength(1);
+    expect(configs[0]?.type).toBe(ContentType.QUARTO_STATIC);
+    expect(configs[0]?.r).toEqual({});
+  });
+
+  test("accepts entrypoints with variant-case extensions", async () => {
+    setupGlobDir(["doc.QMD"]);
+    mockAccess.mockRejectedValue(new Error("ENOENT"));
+
+    mockExecFile.mockRejectedValue(
+      new Error("executable file not found in $PATH"),
+    );
+    mockReadFile.mockResolvedValue("# Content\n");
+
+    const configs = await detector.inferType("/project", "doc.QMD");
+    expect(configs).toHaveLength(1);
+    expect(configs[0]?.type).toBe(ContentType.QUARTO_STATIC);
+  });
 });
