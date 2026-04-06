@@ -93,7 +93,7 @@ jobs:
         working-directory: test/e2e
         run: npx playwright install chromium
 
-      - uses: extractions/setup-just@v3
+      - uses: extractions/setup-just@v4
 
       - name: Enable containerd image store
         run: |

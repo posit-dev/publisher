@@ -25,7 +25,7 @@ jobs:
       - name: Install just via cargo (Windows ARM64)
         if: runner.os == 'Windows' && runner.arch == 'ARM64'
         run: cargo install just
-      - uses: extractions/setup-just@v3
+      - uses: extractions/setup-just@v4
         if: runner.os != 'Windows' || runner.arch != 'ARM64'
 
       # Install R with rig for our funcitonal tests to ensure we are compatible with it.
