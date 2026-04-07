@@ -44,7 +44,7 @@ export interface NormalizedConfig {
   r?: RConfig;
   quarto?: { version: string; engines?: string[] };
   comments: string[];
-  alternatives?: NormalizedConfig[];
+  alternatives?: PartialConfig[];
 }
 
 /**
@@ -149,5 +149,9 @@ export async function normalizeConfig(
     r: rConfig,
     quarto: cfg.quarto,
     comments,
+    // Pass alternatives through without normalization, matching Go behavior.
+    // The detector already sets the fields the UI needs (type, entrypoint,
+    // source, title, files). Alternatives are never written to TOML.
+    alternatives: cfg.alternatives,
   };
 }

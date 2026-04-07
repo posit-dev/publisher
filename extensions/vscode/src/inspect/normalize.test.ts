@@ -272,6 +272,40 @@ describe("normalizeConfig", () => {
     expect(result.r).toBeUndefined();
   });
 
+  test("passes alternatives through without normalization", async () => {
+    const alternative: PartialConfig = {
+      type: ContentType.HTML,
+      entrypoint: "report.html",
+      source: "report.qmd",
+      title: "report",
+      files: ["/report.html"],
+    };
+    const cfg: PartialConfig = {
+      type: ContentType.QUARTO_STATIC,
+      entrypoint: "report.qmd",
+      quarto: { version: "1.4.0", engines: ["markdown"] },
+      alternatives: [alternative],
+    };
+    setupDefaultMocks();
+
+    const result = await normalizeConfig(cfg, "/project");
+    expect(result.alternatives).toBeDefined();
+    expect(result.alternatives).toHaveLength(1);
+    // Alternatives are passed through as-is, matching Go behavior
+    expect(result.alternatives![0]).toBe(alternative);
+  });
+
+  test("returns no alternatives when none provided", async () => {
+    const cfg: PartialConfig = {
+      type: ContentType.HTML,
+      entrypoint: "index.html",
+    };
+    setupDefaultMocks();
+
+    const result = await normalizeConfig(cfg, "/project");
+    expect(result.alternatives).toBeUndefined();
+  });
+
   test("uses entrypoint parameter as fallback when cfg.entrypoint is empty", async () => {
     const cfg: PartialConfig = {
       type: ContentType.UNKNOWN,
