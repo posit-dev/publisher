@@ -168,10 +168,14 @@ export class ConnectAPI {
    * checks), this method will throw a {@link ConnectAPIError} with
    * `httpStatus: 401`. Callers should handle that case explicitly.
    */
-  async testAuthentication(): Promise<{ user: User; error: null }> {
+  async testAuthentication(
+    signal?: AbortSignal,
+  ): Promise<{ user: User; error: null }> {
     let data: UserDTO;
     try {
-      ({ data } = await this.client.get<UserDTO>("/__api__/v1/user"));
+      ({ data } = await this.client.get<UserDTO>("/__api__/v1/user", {
+        signal,
+      }));
     } catch (err) {
       if (axios.isAxiosError(err)) {
         const errorBody = err.response?.data;
@@ -226,8 +230,10 @@ export class ConnectAPI {
   }
 
   /** Retrieves the current authenticated user without validation checks. */
-  async getCurrentUser(): Promise<User> {
-    const { data } = await this.client.get<UserDTO>("/__api__/v1/user");
+  async getCurrentUser(signal?: AbortSignal): Promise<User> {
+    const { data } = await this.client.get<UserDTO>("/__api__/v1/user", {
+      signal,
+    });
     return {
       id: data.guid,
       username: data.username,
@@ -240,31 +246,43 @@ export class ConnectAPI {
   /** Fetches details for a content item by ID. */
   async contentDetails(
     contentId: ContentID,
+    signal?: AbortSignal,
   ): Promise<AxiosResponse<ContentDetailsDTO>> {
     return this.client.get<ContentDetailsDTO>(
       `/__api__/v1/content/${contentId}`,
+      { signal },
     );
   }
 
   /** Creates a new content item and returns the full content details. */
   async createDeployment(
     body: ConnectContent,
+    signal?: AbortSignal,
   ): Promise<AxiosResponse<ContentDetailsDTO>> {
-    return this.client.post<ContentDetailsDTO>("/__api__/v1/content", body);
+    return this.client.post<ContentDetailsDTO>("/__api__/v1/content", body, {
+      signal,
+    });
   }
 
   /** Updates an existing content item. */
   async updateDeployment(
     contentId: ContentID,
     body: ConnectContent,
+    signal?: AbortSignal,
   ): Promise<void> {
-    await this.client.patch(`/__api__/v1/content/${contentId}`, body);
+    await this.client.patch(`/__api__/v1/content/${contentId}`, body, {
+      signal,
+    });
   }
 
   /** Retrieves environment variable names for a content item. */
-  async getEnvVars(contentId: ContentID): Promise<AxiosResponse<string[]>> {
+  async getEnvVars(
+    contentId: ContentID,
+    signal?: AbortSignal,
+  ): Promise<AxiosResponse<string[]>> {
     return this.client.get<string[]>(
       `/__api__/v1/content/${contentId}/environment`,
+      { signal },
     );
   }
 
@@ -272,10 +290,12 @@ export class ConnectAPI {
   async setEnvVars(
     contentId: ContentID,
     env: Record<string, string>,
+    signal?: AbortSignal,
   ): Promise<void> {
     await this.client.patch(
       `/__api__/v1/content/${contentId}/environment`,
       Object.entries(env).map(([name, value]) => ({ name, value })),
+      { signal },
     );
   }
 
@@ -283,11 +303,12 @@ export class ConnectAPI {
   async uploadBundle(
     contentId: ContentID,
     bundle: Uint8Array,
+    signal?: AbortSignal,
   ): Promise<AxiosResponse<BundleDTO>> {
     return this.client.post<BundleDTO>(
       `/__api__/v1/content/${contentId}/bundles`,
       bundle,
-      { headers: { "Content-Type": "application/gzip" } },
+      { headers: { "Content-Type": "application/gzip" }, signal },
     );
   }
 
@@ -295,10 +316,11 @@ export class ConnectAPI {
   async downloadBundle(
     contentId: ContentID,
     bundleId: BundleID,
+    signal?: AbortSignal,
   ): Promise<Uint8Array> {
     const { data } = await this.client.get<ArrayBuffer>(
       `/__api__/v1/content/${contentId}/bundles/${bundleId}/download`,
-      { responseType: "arraybuffer" },
+      { responseType: "arraybuffer", signal },
     );
     return new Uint8Array(data);
   }
@@ -307,10 +329,12 @@ export class ConnectAPI {
   async deployBundle(
     contentId: ContentID,
     bundleId: BundleID,
+    signal?: AbortSignal,
   ): Promise<AxiosResponse<DeployOutput>> {
     return this.client.post<DeployOutput>(
       `/__api__/v1/content/${contentId}/deploy`,
       { bundle_id: bundleId },
+      { signal },
     );
   }
 
@@ -318,18 +342,22 @@ export class ConnectAPI {
    * Polls for task completion.
    * @param pollIntervalMs - milliseconds between polls (default 500, pass 0 for tests)
    * @param onOutput - optional callback invoked with each batch of new log lines as they arrive
+   * @param signal - optional abort signal to cancel polling
    */
   async waitForTask(
     taskId: TaskID,
     pollIntervalMs = 500,
     onOutput?: (lines: string[]) => void,
+    signal?: AbortSignal,
   ): Promise<TaskDTO> {
     let firstLine = 0;
 
     while (true) {
+      signal?.throwIfAborted();
+
       const { data: task } = await this.client.get<TaskDTO>(
         `/__api__/v1/tasks/${taskId}`,
-        { params: { first: firstLine } },
+        { params: { first: firstLine }, signal },
       );
 
       if (onOutput && task.output.length > 0) {
@@ -355,15 +383,23 @@ export class ConnectAPI {
    * Validates that deployed content is reachable by hitting its content URL.
    * Status >= 500 throws; 404 and other codes are acceptable.
    */
-  async validateDeployment(contentId: ContentID): Promise<void> {
+  async validateDeployment(
+    contentId: ContentID,
+    signal?: AbortSignal,
+  ): Promise<void> {
     await this.client.get(`/content/${contentId}/`, {
       validateStatus: (status: number) => status < 500,
+      signal,
     });
   }
 
   /** Retrieves OAuth integrations from the server. */
-  async getIntegrations(): Promise<AxiosResponse<Integration[]>> {
-    return this.client.get<Integration[]>("/__api__/v1/oauth/integrations");
+  async getIntegrations(
+    signal?: AbortSignal,
+  ): Promise<AxiosResponse<Integration[]>> {
+    return this.client.get<Integration[]>("/__api__/v1/oauth/integrations", {
+      signal,
+    });
   }
 
   /**
@@ -375,8 +411,12 @@ export class ConnectAPI {
    *   an app-mode-specific path (`/scheduler/{appMode}`) to get limits that
    *   apply to that content type. Mirrors Go's `GetSettings` which skips
    *   the app-mode path for static and unknown content types.
+   * @param signal - optional abort signal to cancel all settings requests
    */
-  async getSettings(appMode?: string): Promise<AllSettings> {
+  async getSettings(
+    appMode?: string,
+    signal?: AbortSignal,
+  ): Promise<AllSettings> {
     // Go uses the app-mode-specific scheduler path for known, non-static types.
     // "static" content has no scheduler settings; unknown types would produce
     // invalid API paths. Mirrors Go's IsKnown() && !IsStaticContent() guard.
@@ -394,15 +434,18 @@ export class ConnectAPI {
       { data: r },
       { data: quarto },
     ] = await Promise.all([
-      this.client.get<UserDTO>("/__api__/v1/user"),
-      this.client.get<ServerSettings>("/__api__/server_settings"),
+      this.client.get<UserDTO>("/__api__/v1/user", { signal }),
+      this.client.get<ServerSettings>("/__api__/server_settings", { signal }),
       this.client.get<ApplicationSettings>(
         "/__api__/server_settings/applications",
+        { signal },
       ),
-      this.client.get<SchedulerSettings>(schedulerPath),
-      this.client.get<PyInfo>("/__api__/v1/server_settings/python"),
-      this.client.get<RInfo>("/__api__/v1/server_settings/r"),
-      this.client.get<QuartoInfo>("/__api__/v1/server_settings/quarto"),
+      this.client.get<SchedulerSettings>(schedulerPath, { signal }),
+      this.client.get<PyInfo>("/__api__/v1/server_settings/python", { signal }),
+      this.client.get<RInfo>("/__api__/v1/server_settings/r", { signal }),
+      this.client.get<QuartoInfo>("/__api__/v1/server_settings/quarto", {
+        signal,
+      }),
     ]);
 
     return { general, user, application, scheduler, python, r, quarto };

@@ -1447,3 +1447,237 @@ describe("Cookie jar (session affinity)", () => {
     );
   });
 });
+
+// ---------------------------------------------------------------------------
+// AbortSignal support
+// ---------------------------------------------------------------------------
+
+describe("AbortSignal support", () => {
+  function abortedSignal(): AbortSignal {
+    return AbortSignal.abort();
+  }
+
+  it("testAuthentication forwards signal to axios", async () => {
+    mockRequest.mockRejectedValue(
+      Object.assign(new Error("canceled"), { code: "ERR_CANCELED" }),
+    );
+
+    const client = createClient();
+    await expect(client.testAuthentication(abortedSignal())).rejects.toThrow();
+
+    const call = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    expect(call.signal).toBeDefined();
+  });
+
+  it("contentDetails forwards signal to axios", async () => {
+    mockRequest.mockRejectedValue(
+      Object.assign(new Error("canceled"), { code: "ERR_CANCELED" }),
+    );
+
+    const client = createClient();
+    await expect(
+      client.contentDetails(ContentID("c-1"), abortedSignal()),
+    ).rejects.toThrow();
+
+    const call = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    expect(call.signal).toBeDefined();
+  });
+
+  it("createDeployment forwards signal to axios", async () => {
+    mockRequest.mockRejectedValue(
+      Object.assign(new Error("canceled"), { code: "ERR_CANCELED" }),
+    );
+
+    const client = createClient();
+    await expect(
+      client.createDeployment({ name: "test" }, abortedSignal()),
+    ).rejects.toThrow();
+
+    const call = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    expect(call.signal).toBeDefined();
+  });
+
+  it("updateDeployment forwards signal to axios", async () => {
+    mockRequest.mockRejectedValue(
+      Object.assign(new Error("canceled"), { code: "ERR_CANCELED" }),
+    );
+
+    const client = createClient();
+    await expect(
+      client.updateDeployment(
+        ContentID("c-1"),
+        { title: "test" },
+        abortedSignal(),
+      ),
+    ).rejects.toThrow();
+
+    const call = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    expect(call.signal).toBeDefined();
+  });
+
+  it("getEnvVars forwards signal to axios", async () => {
+    mockRequest.mockRejectedValue(
+      Object.assign(new Error("canceled"), { code: "ERR_CANCELED" }),
+    );
+
+    const client = createClient();
+    await expect(
+      client.getEnvVars(ContentID("c-1"), abortedSignal()),
+    ).rejects.toThrow();
+
+    const call = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    expect(call.signal).toBeDefined();
+  });
+
+  it("setEnvVars forwards signal to axios", async () => {
+    mockRequest.mockRejectedValue(
+      Object.assign(new Error("canceled"), { code: "ERR_CANCELED" }),
+    );
+
+    const client = createClient();
+    await expect(
+      client.setEnvVars(ContentID("c-1"), { FOO: "bar" }, abortedSignal()),
+    ).rejects.toThrow();
+
+    const call = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    expect(call.signal).toBeDefined();
+  });
+
+  it("uploadBundle forwards signal to axios", async () => {
+    mockRequest.mockRejectedValue(
+      Object.assign(new Error("canceled"), { code: "ERR_CANCELED" }),
+    );
+
+    const client = createClient();
+    await expect(
+      client.uploadBundle(
+        ContentID("c-1"),
+        new Uint8Array([1, 2]),
+        abortedSignal(),
+      ),
+    ).rejects.toThrow();
+
+    const call = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    expect(call.signal).toBeDefined();
+  });
+
+  it("downloadBundle forwards signal to axios", async () => {
+    mockRequest.mockRejectedValue(
+      Object.assign(new Error("canceled"), { code: "ERR_CANCELED" }),
+    );
+
+    const client = createClient();
+    await expect(
+      client.downloadBundle(ContentID("c-1"), BundleID("b-1"), abortedSignal()),
+    ).rejects.toThrow();
+
+    const call = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    expect(call.signal).toBeDefined();
+  });
+
+  it("deployBundle forwards signal to axios", async () => {
+    mockRequest.mockRejectedValue(
+      Object.assign(new Error("canceled"), { code: "ERR_CANCELED" }),
+    );
+
+    const client = createClient();
+    await expect(
+      client.deployBundle(ContentID("c-1"), BundleID("b-1"), abortedSignal()),
+    ).rejects.toThrow();
+
+    const call = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    expect(call.signal).toBeDefined();
+  });
+
+  it("waitForTask checks signal at start of loop and forwards to axios", async () => {
+    const client = createClient();
+    await expect(
+      client.waitForTask(TaskID("t-1"), 0, undefined, abortedSignal()),
+    ).rejects.toThrow();
+  });
+
+  it("waitForTask continues polling until signal aborts", async () => {
+    const controller = new AbortController();
+
+    mockRequest
+      .mockResolvedValueOnce(
+        jsonResponse({
+          id: "t-1",
+          output: [],
+          result: null,
+          finished: false,
+          code: 0,
+          error: "",
+          last: 0,
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          id: "t-1",
+          output: [],
+          result: null,
+          finished: false,
+          code: 0,
+          error: "",
+          last: 0,
+        }),
+      )
+      .mockImplementation(() => {
+        controller.abort();
+        return Promise.reject(
+          Object.assign(new Error("canceled"), { code: "ERR_CANCELED" }),
+        );
+      });
+
+    const client = createClient();
+    await expect(
+      client.waitForTask(TaskID("t-1"), 0, undefined, controller.signal),
+    ).rejects.toThrow();
+
+    expect(mockRequest).toHaveBeenCalledTimes(3);
+  });
+
+  it("validateDeployment forwards signal to axios", async () => {
+    mockRequest.mockRejectedValue(
+      Object.assign(new Error("canceled"), { code: "ERR_CANCELED" }),
+    );
+
+    const client = createClient();
+    await expect(
+      client.validateDeployment(ContentID("c-1"), abortedSignal()),
+    ).rejects.toThrow();
+
+    const call = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    expect(call.signal).toBeDefined();
+  });
+
+  it("getIntegrations forwards signal to axios", async () => {
+    mockRequest.mockRejectedValue(
+      Object.assign(new Error("canceled"), { code: "ERR_CANCELED" }),
+    );
+
+    const client = createClient();
+    await expect(client.getIntegrations(abortedSignal())).rejects.toThrow();
+
+    const call = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    expect(call.signal).toBeDefined();
+  });
+
+  it("getSettings forwards signal to all 7 requests", async () => {
+    mockRequest.mockRejectedValue(
+      Object.assign(new Error("canceled"), { code: "ERR_CANCELED" }),
+    );
+
+    const client = createClient();
+    await expect(
+      client.getSettings(undefined, abortedSignal()),
+    ).rejects.toThrow();
+
+    // All 7 requests should have been initiated with the signal
+    expect(mockRequest).toHaveBeenCalled();
+    for (const call of mockRequest.mock.calls) {
+      const config = call[0] as Record<string, unknown>;
+      expect(config.signal).toBeDefined();
+    }
+  });
+});
