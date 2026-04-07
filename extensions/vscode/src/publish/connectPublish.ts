@@ -49,13 +49,13 @@ import type { ErrorCode } from "../utils/errorTypes";
 // ---------------------------------------------------------------------------
 
 /**
- * Thrown when a deployment is cancelled via AbortSignal.
+ * Thrown when a deployment is canceled via AbortSignal.
  * Distinguishable from real errors so callers can handle cancellation differently.
  */
-export class CancelledError extends Error {
+export class CanceledError extends Error {
   constructor() {
-    super("Deployment cancelled");
-    this.name = "CancelledError";
+    super("Deployment canceled");
+    this.name = "CanceledError";
   }
 }
 
@@ -188,8 +188,8 @@ export async function connectPublish(
 
   const signal = options.signal;
 
-  /** Check if cancelled; if so, write dismissedAt and throw CancelledError. */
-  async function throwIfCancelled(): Promise<void> {
+  /** Check if canceled; if so, write dismissedAt and throw CanceledError. */
+  async function throwIfCanceled(): Promise<void> {
     if (signal?.aborted) {
       record.dismissedAt = new Date().toISOString();
       record.deploymentError = undefined;
@@ -198,12 +198,12 @@ export async function connectPublish(
       } catch {
         // Don't mask cancellation
       }
-      throw new CancelledError();
+      throw new CanceledError();
     }
   }
 
   try {
-    await throwIfCancelled();
+    await throwIfCanceled();
 
     // Step 1: Build manifest with R/Python packages
     lastStep = "createManifest";
@@ -247,7 +247,7 @@ export async function connectPublish(
 
     onProgress({ step: "createManifest", status: "success" });
 
-    await throwIfCancelled();
+    await throwIfCanceled();
 
     // Step 2: Preflight — verify authentication
     lastStep = "preflight";
@@ -391,7 +391,7 @@ export async function connectPublish(
       status: "success",
     });
 
-    await throwIfCancelled();
+    await throwIfCanceled();
 
     // Step 3: Create deployment on Connect (first deploy only)
     if (!contentId) {
@@ -425,7 +425,7 @@ export async function connectPublish(
       });
     }
 
-    await throwIfCancelled();
+    await throwIfCanceled();
 
     // Step 4: Create bundle archive
     lastStep = "createBundle";
@@ -472,7 +472,7 @@ export async function connectPublish(
       data: { filename: "bundle.tar.gz" },
     });
 
-    await throwIfCancelled();
+    await throwIfCanceled();
 
     // Step 5: Upload bundle
     lastStep = "uploadBundle";
@@ -499,7 +499,7 @@ export async function connectPublish(
     });
     onProgress({ step: "uploadBundle", status: "success" });
 
-    await throwIfCancelled();
+    await throwIfCanceled();
 
     // Step 6: Update content metadata
     // For redeploys, the update step opens the "Create Deployment Record"
@@ -527,7 +527,7 @@ export async function connectPublish(
     });
     onProgress({ step: "updateContent", status: "success" });
 
-    await throwIfCancelled();
+    await throwIfCanceled();
 
     // Step 7: Set environment variables (if any)
     const envVars = mergeEnvVars(config.environment, secrets);
@@ -560,7 +560,7 @@ export async function connectPublish(
       onProgress({ step: "setEnvVars", status: "success" });
     }
 
-    await throwIfCancelled();
+    await throwIfCanceled();
 
     // Step 8: Deploy the bundle
     lastStep = "deployBundle";
@@ -586,7 +586,7 @@ export async function connectPublish(
       data: { taskId: deployOutput.task_id },
     });
 
-    await throwIfCancelled();
+    await throwIfCanceled();
 
     // Step 9: Wait for server-side task to complete
     lastStep = "waitForTask";
@@ -605,7 +605,7 @@ export async function connectPublish(
     );
     onProgress({ step: "waitForTask", status: "success" });
 
-    await throwIfCancelled();
+    await throwIfCanceled();
 
     // Step 10: Validate deployment (optional)
     if (config.validate) {
@@ -652,13 +652,13 @@ export async function connectPublish(
       bundleId: bundleDTO.id,
     };
   } catch (err) {
-    // Cancellation is not an error — dismissedAt was already written by throwIfCancelled
-    if (err instanceof CancelledError) {
+    // Cancellation is not an error — dismissedAt was already written by throwIfCanceled
+    if (err instanceof CanceledError) {
       throw err;
     }
 
     // In-flight abort: when signal fires during an API call, axios throws
-    // its own CanceledError (not our CancelledError). Normalize to our
+    // its own CanceledError (not our CanceledError). Normalize to our
     // cancellation path so the deployment record gets dismissedAt, not
     // a deployment_error.
     if (signal?.aborted) {
@@ -669,7 +669,7 @@ export async function connectPublish(
       } catch {
         // Don't mask cancellation
       }
-      throw new CancelledError();
+      throw new CanceledError();
     }
 
     // Classify the error for both the deployment record and UI events

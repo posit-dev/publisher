@@ -739,10 +739,10 @@ describe("runTsDeployWithProgress", () => {
       });
     });
 
-    it("does not inject publish/failure twice on CancelledError", async () => {
-      const { CancelledError } = await import("src/publish/connectPublish");
+    it("does not inject publish/failure twice on CanceledError", async () => {
+      const { CanceledError } = await import("src/publish/connectPublish");
 
-      const { stream } = run(() => Promise.reject(new CancelledError()));
+      const { stream } = run(() => Promise.reject(new CanceledError()));
 
       await vi.waitFor(() => {
         // The only publish/failure should be from the cancel handler (if it ran),
@@ -750,7 +750,7 @@ describe("runTsDeployWithProgress", () => {
         const failMsgs = stream.injected.filter(
           (m) => m.type === "publish/failure",
         );
-        // CancelledError alone (no cancel handler) should produce zero failure events
+        // CanceledError alone (no cancel handler) should produce zero failure events
         expect(failMsgs).toHaveLength(0);
       });
     });

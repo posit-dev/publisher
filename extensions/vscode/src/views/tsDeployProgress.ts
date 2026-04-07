@@ -6,7 +6,7 @@ import type {
   PublishResult,
   PublishStep,
 } from "src/publish/connectPublish";
-import { CancelledError } from "src/publish/connectPublish";
+import { CanceledError } from "src/publish/connectPublish";
 import type { EventStream } from "src/events";
 import type { EventStreamMessage, EventSubscriptionTarget } from "src/api";
 import type { ErrorCode } from "src/utils/errorTypes";
@@ -256,7 +256,7 @@ export function runTsDeployWithProgress(
           }
         }, controller.signal);
 
-        // Guard against cancel/success race: if the user cancelled while
+        // Guard against cancel/success race: if the user canceled while
         // deploy was completing, the cancel handler already injected
         // publish/failure — don't also inject publish/success.
         if (controller.signal.aborted) {
@@ -280,11 +280,11 @@ export function runTsDeployWithProgress(
         // notification close immediately (matching the Go path behavior).
         showSuccessNotification(result.dashboardUrl);
       } catch (err) {
-        // CancelledError is not a real failure — the cancellation handler
+        // CanceledError is not a real failure — the cancellation handler
         // already injected publish/failure with canceled: "true".
         // Also check signal.aborted to catch in-flight abort errors
         // (axios CanceledError) that connectPublish may have normalized.
-        if (err instanceof CancelledError || controller.signal.aborted) {
+        if (err instanceof CanceledError || controller.signal.aborted) {
           return;
         }
 

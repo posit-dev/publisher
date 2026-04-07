@@ -6,7 +6,7 @@ import path from "node:path";
 
 import {
   connectPublish,
-  CancelledError,
+  CanceledError,
   type ConnectPublishOptions,
   type PublishEvent,
   type PublishStep,
@@ -2159,12 +2159,12 @@ describe("connectPublish — server settings validation", () => {
 });
 
 describe("connectPublish — cancellation", () => {
-  test("throws CancelledError when signal is already aborted", async () => {
+  test("throws CanceledError when signal is already aborted", async () => {
     const opts = makeOptions({ signal: AbortSignal.abort() });
-    await expect(connectPublish(opts)).rejects.toThrow(CancelledError);
+    await expect(connectPublish(opts)).rejects.toThrow(CanceledError);
   });
 
-  test("throws CancelledError when aborted between steps", async () => {
+  test("throws CanceledError when aborted between steps", async () => {
     const controller = new AbortController();
     const api = makeMockApi();
 
@@ -2175,7 +2175,7 @@ describe("connectPublish — cancellation", () => {
     });
 
     const opts = makeOptions({ api, signal: controller.signal });
-    await expect(connectPublish(opts)).rejects.toThrow(CancelledError);
+    await expect(connectPublish(opts)).rejects.toThrow(CanceledError);
 
     // Should not have proceeded to createDeployment/updateDeployment
     expect(api.createDeployment).not.toHaveBeenCalled();
@@ -2228,7 +2228,7 @@ describe("connectPublish — cancellation", () => {
     expect(failureEvents).toHaveLength(0);
   });
 
-  test("normalizes in-flight abort errors to CancelledError", async () => {
+  test("normalizes in-flight abort errors to CanceledError", async () => {
     const controller = new AbortController();
     const api = makeMockApi();
 
@@ -2239,7 +2239,7 @@ describe("connectPublish — cancellation", () => {
     });
 
     const opts = makeOptions({ api, signal: controller.signal });
-    await expect(connectPublish(opts)).rejects.toThrow(CancelledError);
+    await expect(connectPublish(opts)).rejects.toThrow(CanceledError);
 
     // Should write dismissedAt, not deploymentError
     const lastWriteCall = mockWriteFile.mock.calls.at(-1);
