@@ -108,7 +108,6 @@ export async function newDeployment(
   let credentialListItems: QuickPickItem[] = [];
 
   const entryPointListItems: QuickPickItem[] = [];
-  let inspectionResults: ConfigurationInspectionResult[] = [];
   let inspectionQuickPicks: QuickPickItemWithInspectionResult[] = [];
   const contentRecordNames = new Map<string, string[]>();
 
@@ -198,7 +197,7 @@ export async function newDeployment(
         ? path.resolve(root, relEntryPointDir)
         : relEntryPointDir;
 
-      inspectionResults = await inspectProject({
+      const inspectionResults = await inspectProject({
         projectDir: absoluteDir,
         pythonPath: python?.pythonPath,
         rPath: r?.rPath,
