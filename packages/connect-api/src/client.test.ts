@@ -1473,6 +1473,32 @@ describe("AbortSignal support", () => {
     expect(call.signal).toBeDefined();
   });
 
+  it("testAuthentication rethrows cancel errors without wrapping", async () => {
+    // Cancel errors should not be wrapped in ConnectAPIError so callers
+    // can distinguish abort from real API failures.
+    const cancelErr = Object.assign(new Error("canceled"), {
+      isAxiosError: true,
+      __CANCEL__: true,
+      response: { status: 0, data: {} },
+    });
+    mockRequest.mockRejectedValue(cancelErr);
+
+    const client = createClient();
+    await expect(client.testAuthentication()).rejects.toBe(cancelErr);
+  });
+
+  it("testAuthentication still wraps non-cancel axios errors", async () => {
+    mockRequest.mockRejectedValue(
+      Object.assign(new Error("Request failed"), {
+        isAxiosError: true,
+        response: { status: 401, data: { error: "Unauthorized" } },
+      }),
+    );
+
+    const client = createClient();
+    await expect(client.testAuthentication()).rejects.toThrow("Unauthorized");
+  });
+
   it("contentDetails forwards signal to axios", async () => {
     mockRequest.mockRejectedValue(
       Object.assign(new Error("canceled"), { code: "ERR_CANCELED" }),
