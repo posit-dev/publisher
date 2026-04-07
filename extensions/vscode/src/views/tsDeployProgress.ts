@@ -6,6 +6,7 @@ import type {
   PublishResult,
   PublishStep,
 } from "src/publish/connectPublish";
+import { CancelledError } from "src/publish/connectPublish";
 import type { EventStream } from "src/events";
 import type { EventStreamMessage, EventSubscriptionTarget } from "src/api";
 import type { ErrorCode } from "src/utils/errorTypes";
@@ -66,9 +67,14 @@ const stepToEventPrefix = {
 } as const satisfies Record<PublishStep, string>;
 
 export type TsDeployProgressOptions = {
-  deploy: (onProgress: (event: PublishEvent) => void) => Promise<PublishResult>;
+  deploy: (
+    onProgress: (event: PublishEvent) => void,
+    signal: AbortSignal,
+  ) => Promise<PublishResult>;
   /** Called after deployment completes (success or failure) for cleanup like refreshing content records. */
   onComplete: () => void;
+  /** Called when the user cancels the deployment (e.g. to send PUBLISH_CANCEL to webview). */
+  onCancel?: () => void;
   stream: EventStream;
   serverUrl: string;
   title: string;
@@ -112,15 +118,33 @@ function injectStageEvent(
 export function runTsDeployWithProgress(
   options: TsDeployProgressOptions,
 ): void {
-  const { deploy, onComplete, stream, serverUrl, title } = options;
+  const { deploy, onComplete, onCancel, stream, serverUrl, title } = options;
 
   window.withProgress(
     {
       location: ProgressLocation.Notification,
       title: "Deploying your project",
-      cancellable: false,
+      cancellable: true,
     },
-    async (progress) => {
+    async (progress, token) => {
+      const controller = new AbortController();
+
+      token.onCancellationRequested(() => {
+        controller.abort();
+
+        // Inject publish/failure with canceled flag — mirrors Go path behavior.
+        stream.injectMessage(
+          makeMessage("publish/failure", {
+            canceled: "true",
+            message:
+              "Deployment has been dismissed, but may continue to be processed on the Connect Server.",
+            productType: "connect",
+          }),
+        );
+
+        onCancel?.();
+      });
+
       // Inject publish/start — resets the logs tree and triggers
       // HomeView's onPublishStart() via the stream handler.
       stream.injectMessage(
@@ -230,7 +254,7 @@ export function runTsDeployWithProgress(
               });
             }
           }
-        });
+        }, controller.signal);
 
         // Inject publish/success — triggers HomeView's onPublishSuccess()
         // via the stream handler.
@@ -249,6 +273,12 @@ export function runTsDeployWithProgress(
         // notification close immediately (matching the Go path behavior).
         showSuccessNotification(result.dashboardUrl);
       } catch (err) {
+        // CancelledError is not a real failure — the cancellation handler
+        // already injected publish/failure with canceled: "true".
+        if (err instanceof CancelledError) {
+          return;
+        }
+
         // Use the classified message from the step failure event if
         // available, falling back to the raw thrown error message.
         // Mirrors Go's emitErrorEvents which uses agentErr.Message.

@@ -392,7 +392,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     });
 
     runTsDeployWithProgress({
-      deploy: (onProgress) =>
+      deploy: (onProgress, signal) =>
         connectPublish({
           api: connectApi,
           projectDir: absProjectDir,
@@ -408,8 +408,14 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           positronR: positron.r,
           clientVersion,
           onProgress,
+          signal,
         }),
       onComplete: () => this.refreshContentRecords(),
+      onCancel: () => {
+        this.webviewConduit.sendMsg({
+          kind: HostToWebviewMessageType.PUBLISH_CANCEL,
+        });
+      },
       stream: this.stream,
       serverUrl: credential.url,
       title: deploymentName,
