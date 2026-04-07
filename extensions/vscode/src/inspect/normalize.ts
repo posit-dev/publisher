@@ -74,22 +74,16 @@ export async function normalizeConfig(
       : [`/${resolvedEntrypoint}`];
 
   // Python inspection
+  // Match Go behavior: only use inspection to find the package file for the
+  // files list. Leave the python config as an empty placeholder so that
+  // version/packageManager/etc. are determined at publish time via defaults,
+  // not baked into the configuration file.
   let pythonConfig: PythonConfig | undefined;
   if (cfg.python) {
+    pythonConfig = { version: "", packageFile: "", packageManager: "" };
     const result = await detectPythonInterpreter(baseDir, pythonPath);
-    if (result.config.version) {
-      pythonConfig = {
-        version: result.config.version,
-        packageFile: result.config.packageFile,
-        packageManager: result.config.packageManager,
-        requiresPython: result.config.requiresPython,
-      };
-      if (result.config.packageFile) {
-        files.push(`/${result.config.packageFile}`);
-      }
-    } else {
-      // No Python found but detector says it's needed — set empty config
-      pythonConfig = { version: "", packageFile: "", packageManager: "" };
+    if (result.config.packageFile) {
+      files.push(`/${result.config.packageFile}`);
     }
   }
 
@@ -123,29 +117,20 @@ export async function normalizeConfig(
     }
   }
 
+  // Match Go behavior: only use inspection to find the package file for the
+  // files list. Leave the R config as an empty placeholder so that
+  // version/packageManager/etc. are determined at publish time via defaults.
   if (needR) {
+    rConfig = { version: "", packageFile: "", packageManager: "" };
     const result = await detectRInterpreter(baseDir, rPath);
-    if (result.config.version) {
-      rConfig = {
-        version: result.config.version,
-        packageFile: result.config.packageFile,
-        packageManager: result.config.packageManager,
-        requiresR: result.config.requiresR,
-      };
-      // Only add package file if it exists
-      if (result.config.packageFile) {
-        const lockPath = path.join(baseDir, result.config.packageFile);
-        try {
-          await fs.access(lockPath);
-          files.push(`/${result.config.packageFile}`);
-        } catch {
-          // Lockfile doesn't exist, don't add
-        }
-      }
-    } else {
-      // No R found but needed — set empty placeholder
-      if (cfg.r !== undefined) {
-        rConfig = { version: "", packageFile: "", packageManager: "" };
+    // Only add package file if it exists
+    if (result.config.packageFile) {
+      const lockPath = path.join(baseDir, result.config.packageFile);
+      try {
+        await fs.access(lockPath);
+        files.push(`/${result.config.packageFile}`);
+      } catch {
+        // Lockfile doesn't exist, don't add
       }
     }
   }
