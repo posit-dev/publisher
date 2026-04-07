@@ -2195,7 +2195,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       const response = await showProgress(
         "Getting Deployment Environment",
         Views.HomeView,
-        async () => {
+        () => {
           const connectApi = new ConnectAPI({
             url: credential.url,
             apiKey: credential.apiKey,
