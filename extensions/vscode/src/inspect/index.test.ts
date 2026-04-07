@@ -3,7 +3,6 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { inspectProject } from "./index";
 import { ContentType } from "src/api/types/configurations";
-import type { PartialConfig } from "./types";
 
 const { mockReaddir, mockStat, mockReadFile, mockAccess } = vi.hoisted(() => ({
   mockReaddir: vi.fn(),
