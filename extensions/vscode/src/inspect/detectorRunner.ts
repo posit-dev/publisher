@@ -2,6 +2,7 @@
 
 import * as path from "path";
 import { ContentType } from "src/api/types/configurations";
+import { logger } from "src/logging";
 import { ContentTypeDetector, PartialConfig } from "./types";
 import { sortConfigs } from "./sorting";
 import { NotebookDetector } from "./detectors/notebook";
@@ -17,18 +18,20 @@ import {
   newBokehDetector,
 } from "./detectors/pythonApp";
 import { StaticHTMLDetector } from "./detectors/html";
+import { PlumberDetector } from "./detectors/plumber";
+import { RMarkdownDetector } from "./detectors/rmarkdown";
+import { QuartoDetector } from "./detectors/quarto";
 
 /**
  * Create the ordered list of detectors.
  * The order matches Go's detectors/all.go.
- * Plumber, RMarkdown, and Quarto are deferred to a follow-up PR.
  */
 function createDetectors(): ContentTypeDetector[] {
   return [
-    // NewPlumberDetector — deferred
-    // NewRMarkdownDetector — deferred
+    new PlumberDetector(),
+    new RMarkdownDetector(),
     new NotebookDetector(),
-    // NewQuartoDetector — deferred
+    new QuartoDetector(),
     new RShinyDetector(),
     new PyShinyDetector(),
     newFastAPIDetector(),
@@ -60,9 +63,16 @@ export async function runDetectors(
   const detectors = createDetectors();
   const allConfigs: PartialConfig[] = [];
 
+  logger.debug(
+    `[detectorRunner] running ${detectors.length} detectors on ${baseDir}`,
+  );
+
   for (const detector of detectors) {
     const configs = await detector.inferType(baseDir, entrypoint);
     if (configs.length > 0) {
+      logger.debug(
+        `[detectorRunner] ${detector.constructor.name} produced ${configs.length} config(s)`,
+      );
       allConfigs.push(...configs);
     }
   }

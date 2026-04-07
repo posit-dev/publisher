@@ -75,5 +75,7 @@ jobs:
       - name: Install renv
         if: matrix.r-version != ''
         run: Rscript -e "install.packages('renv', repos = 'https://cloud.r-project.org')"
+      - uses: quarto-dev/quarto-actions/setup@v2
       - run: npm install
       - run: npm run test-integration-interpreters
+      - run: npm run test-integration-inspect

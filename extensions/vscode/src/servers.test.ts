@@ -36,15 +36,7 @@ vi.mock("src/workspaces", () => ({
   path: vi.fn(() => "/workspace/path"),
 }));
 
-vi.mock("src/logging", () => ({
-  logger: {
-    info: vi.fn(),
-    debug: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-  },
-  logAgentOutput: vi.fn(),
-}));
+vi.mock("src/logging");
 
 import { Server } from "./servers";
 import { spawn } from "node:child_process";
