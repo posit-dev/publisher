@@ -6,6 +6,7 @@ import path from "node:path";
 
 import {
   connectPublish,
+  CancelledError,
   type ConnectPublishOptions,
   type PublishEvent,
   type PublishStep,
@@ -344,7 +345,7 @@ describe("connectPublish", () => {
     // Verify API call sequence
     const api = opts.api;
     expect(api.testAuthentication).toHaveBeenCalledOnce();
-    expect(api.createDeployment).toHaveBeenCalledWith({ name: "" });
+    expect(api.createDeployment).toHaveBeenCalledWith({ name: "" }, undefined);
     expect(api.uploadBundle).toHaveBeenCalledOnce();
     expect(api.updateDeployment).toHaveBeenCalledOnce();
     expect(api.deployBundle).toHaveBeenCalledOnce();
@@ -383,6 +384,7 @@ describe("connectPublish", () => {
 
     expect(opts.api.contentDetails).toHaveBeenCalledWith(
       expect.anything(), // ContentID branded type
+      undefined, // signal
     );
   });
 
@@ -586,6 +588,7 @@ describe("connectPublish", () => {
     expect(opts.api.setEnvVars).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({ API_KEY: "secret123" }),
+      undefined, // signal
     );
   });
 
@@ -600,10 +603,14 @@ describe("connectPublish", () => {
 
     await connectPublish(opts);
 
-    expect(opts.api.setEnvVars).toHaveBeenCalledWith(expect.anything(), {
-      BASE_URL: "https://api.example.com",
-      API_KEY: "secret123",
-    });
+    expect(opts.api.setEnvVars).toHaveBeenCalledWith(
+      expect.anything(),
+      {
+        BASE_URL: "https://api.example.com",
+        API_KEY: "secret123",
+      },
+      undefined, // signal
+    );
   });
 
   test("env vars step skipped when no env vars or secrets", async () => {
@@ -2148,5 +2155,76 @@ describe("connectPublish — server settings validation", () => {
 
     // Should pass — no connect config means no RACU/runtime/k8s checks
     await expect(connectPublish(opts)).resolves.toBeDefined();
+  });
+});
+
+describe("connectPublish — cancellation", () => {
+  test("throws CancelledError when signal is already aborted", async () => {
+    const opts = makeOptions({ signal: AbortSignal.abort() });
+    await expect(connectPublish(opts)).rejects.toThrow(CancelledError);
+  });
+
+  test("throws CancelledError when aborted between steps", async () => {
+    const controller = new AbortController();
+    const api = makeMockApi();
+
+    // Abort after testAuthentication returns (between preflight and next step)
+    vi.mocked(api.testAuthentication).mockImplementation(() => {
+      controller.abort();
+      return Promise.resolve({ user: TEST_USER, error: null });
+    });
+
+    const opts = makeOptions({ api, signal: controller.signal });
+    await expect(connectPublish(opts)).rejects.toThrow(CancelledError);
+
+    // Should not have proceeded to createDeployment/updateDeployment
+    expect(api.createDeployment).not.toHaveBeenCalled();
+    expect(api.updateDeployment).not.toHaveBeenCalled();
+  });
+
+  test("writes dismissedAt to deployment record on cancellation", async () => {
+    const opts = makeOptions({ signal: AbortSignal.abort() });
+
+    try {
+      await connectPublish(opts);
+    } catch {
+      // expected
+    }
+
+    // The last writeFile call should contain dismissed_at
+    const lastWriteCall = mockWriteFile.mock.calls.at(-1);
+    expect(lastWriteCall).toBeDefined();
+    const content = lastWriteCall![1] as string;
+    expect(content).toContain("dismissed_at");
+  });
+
+  test("does not write deploymentError on cancellation", async () => {
+    const opts = makeOptions({ signal: AbortSignal.abort() });
+
+    try {
+      await connectPublish(opts);
+    } catch {
+      // expected
+    }
+
+    const lastWriteCall = mockWriteFile.mock.calls.at(-1);
+    const content = lastWriteCall![1] as string;
+    expect(content).not.toContain("deployment_error");
+  });
+
+  test("emits no failure event on cancellation (handled by caller)", async () => {
+    const onProgress = vi.fn();
+    const opts = makeOptions({ signal: AbortSignal.abort(), onProgress });
+
+    try {
+      await connectPublish(opts);
+    } catch {
+      // expected
+    }
+
+    const failureEvents = onProgress.mock.calls
+      .map((args: unknown[]) => args[0] as PublishEvent)
+      .filter((e) => e.status === "failure");
+    expect(failureEvents).toHaveLength(0);
   });
 });
