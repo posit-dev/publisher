@@ -2170,13 +2170,24 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   };
 
   public updateServerEnvironment = async () => {
+    const clearEnvironment = () => {
+      this.webviewConduit.sendMsg({
+        kind: HostToWebviewMessageType.UPDATE_SERVER_ENVIRONMENT,
+        content: {
+          environment: [],
+        },
+      });
+    };
+
     const deployment = await this.state.getSelectedContentRecord();
     if (!deployment || !isContentRecord(deployment)) {
+      clearEnvironment();
       return;
     }
 
     const credential = this.state.findCredentialForContentRecord(deployment);
     if (credential === undefined) {
+      clearEnvironment();
       return;
     }
 
@@ -2203,13 +2214,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         },
       });
     } catch (_error: unknown) {
-      // No matter the error we clear the environment
-      this.webviewConduit.sendMsg({
-        kind: HostToWebviewMessageType.UPDATE_SERVER_ENVIRONMENT,
-        content: {
-          environment: [],
-        },
-      });
+      clearEnvironment();
     }
   };
 
