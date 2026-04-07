@@ -141,8 +141,6 @@ export type AllContentRecordTypes =
   | PreContentRecordWithConfig
   | ContentRecordError;
 
-export type Environment = Array<string>;
-
 export function isSuccessful(
   d: AllContentRecordTypes | undefined,
 ): boolean | undefined {
