@@ -123,15 +123,8 @@ export async function normalizeConfig(
   if (needR) {
     rConfig = { version: "", packageFile: "", packageManager: "" };
     const result = await detectRInterpreter(baseDir, rPath);
-    // Only add package file if it exists
     if (result.config.packageFile) {
-      const lockPath = path.join(baseDir, result.config.packageFile);
-      try {
-        await fs.access(lockPath);
-        files.push(`/${result.config.packageFile}`);
-      } catch {
-        // Lockfile doesn't exist, don't add
-      }
+      files.push(`/${result.config.packageFile}`);
     }
   }
 
