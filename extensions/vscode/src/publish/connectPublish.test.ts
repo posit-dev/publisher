@@ -2233,9 +2233,9 @@ describe("connectPublish — cancellation", () => {
     const api = makeMockApi();
 
     // Simulate abort during uploadBundle (in-flight HTTP request)
-    vi.mocked(api.uploadBundle).mockImplementation(async () => {
+    vi.mocked(api.uploadBundle).mockImplementation(() => {
       controller.abort();
-      throw new Error("canceled");
+      return Promise.reject(new Error("canceled"));
     });
 
     const opts = makeOptions({ api, signal: controller.signal });
