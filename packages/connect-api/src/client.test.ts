@@ -106,6 +106,10 @@ vi.mock("axios", () => {
         typeof err === "object" &&
         err !== null &&
         (err as Record<string, unknown>).isAxiosError === true,
+      isCancel: (err: unknown): boolean =>
+        typeof err === "object" &&
+        err !== null &&
+        (err as Record<string, unknown>).__CANCEL__ === true,
     },
   };
 });

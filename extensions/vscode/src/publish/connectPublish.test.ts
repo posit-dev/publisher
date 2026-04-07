@@ -2227,4 +2227,24 @@ describe("connectPublish — cancellation", () => {
       .filter((e) => e.status === "failure");
     expect(failureEvents).toHaveLength(0);
   });
+
+  test("normalizes in-flight abort errors to CancelledError", async () => {
+    const controller = new AbortController();
+    const api = makeMockApi();
+
+    // Simulate abort during uploadBundle (in-flight HTTP request)
+    vi.mocked(api.uploadBundle).mockImplementation(async () => {
+      controller.abort();
+      throw new Error("canceled");
+    });
+
+    const opts = makeOptions({ api, signal: controller.signal });
+    await expect(connectPublish(opts)).rejects.toThrow(CancelledError);
+
+    // Should write dismissedAt, not deploymentError
+    const lastWriteCall = mockWriteFile.mock.calls.at(-1);
+    const content = lastWriteCall![1] as string;
+    expect(content).toContain("dismissed_at");
+    expect(content).not.toContain("deployment_error");
+  });
 });

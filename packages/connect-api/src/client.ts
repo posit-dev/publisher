@@ -177,6 +177,11 @@ export class ConnectAPI {
         signal,
       }));
     } catch (err) {
+      // Let cancellation errors propagate without wrapping, so callers
+      // can distinguish abort from real API failures.
+      if (axios.isCancel(err)) {
+        throw err;
+      }
       if (axios.isAxiosError(err)) {
         const errorBody = err.response?.data;
         const msg =

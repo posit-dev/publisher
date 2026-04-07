@@ -657,6 +657,21 @@ export async function connectPublish(
       throw err;
     }
 
+    // In-flight abort: when signal fires during an API call, axios throws
+    // its own CanceledError (not our CancelledError). Normalize to our
+    // cancellation path so the deployment record gets dismissedAt, not
+    // a deployment_error.
+    if (signal?.aborted) {
+      record.dismissedAt = new Date().toISOString();
+      record.deploymentError = undefined;
+      try {
+        await writePublishRecord(deploymentPath, record);
+      } catch {
+        // Don't mask cancellation
+      }
+      throw new CancelledError();
+    }
+
     // Classify the error for both the deployment record and UI events
     const classified = classifyDeploymentError(lastStep, err);
 

@@ -256,6 +256,13 @@ export function runTsDeployWithProgress(
           }
         }, controller.signal);
 
+        // Guard against cancel/success race: if the user cancelled while
+        // deploy was completing, the cancel handler already injected
+        // publish/failure — don't also inject publish/success.
+        if (controller.signal.aborted) {
+          return;
+        }
+
         // Inject publish/success — triggers HomeView's onPublishSuccess()
         // via the stream handler.
         stream.injectMessage(
@@ -275,7 +282,9 @@ export function runTsDeployWithProgress(
       } catch (err) {
         // CancelledError is not a real failure — the cancellation handler
         // already injected publish/failure with canceled: "true".
-        if (err instanceof CancelledError) {
+        // Also check signal.aborted to catch in-flight abort errors
+        // (axios CanceledError) that connectPublish may have normalized.
+        if (err instanceof CancelledError || controller.signal.aborted) {
           return;
         }
 
