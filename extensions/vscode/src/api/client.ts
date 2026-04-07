@@ -4,7 +4,7 @@ import axios from "axios";
 
 import { Credentials } from "./resources/Credentials";
 import { ContentRecords } from "./resources/ContentRecords";
-import { Configurations } from "./resources/Configurations";
+
 import { Packages } from "./resources/Packages";
 import { SnowflakeConnections } from "./resources/SnowflakeConnections";
 import * as Entities from "entities";
@@ -13,7 +13,6 @@ import { ConnectCloud } from "./resources/ConnectCloud";
 class PublishingClientApi {
   private client;
 
-  configurations: Configurations;
   credentials: Credentials;
   contentRecords: ContentRecords;
   packages: Packages;
@@ -41,7 +40,6 @@ class PublishingClientApi {
     );
     this.apiServiceIsUp = apiServiceIsUp;
 
-    this.configurations = new Configurations(this.client);
     this.credentials = new Credentials(this.client);
     this.contentRecords = new ContentRecords(this.client);
     this.packages = new Packages(this.client);
