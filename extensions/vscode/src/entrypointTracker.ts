@@ -23,6 +23,7 @@ import { hasKnownContentType } from "src/utils/inspect";
 import { getSummaryStringFromError } from "src/utils/errors";
 import { getFileUriFromTab } from "src/utils/getUri";
 import { inspectProject } from "src/inspect";
+import { logger } from "src/logging";
 
 function isTextEditor(
   editor: TextEditor | NotebookEditor,
@@ -73,7 +74,7 @@ async function isEntrypoint(uri: Uri): Promise<boolean> {
       "entrypointTracker::isEntrypoint",
       error,
     );
-    console.warn(summary);
+    logger.warn(summary);
     return false;
   }
 }
