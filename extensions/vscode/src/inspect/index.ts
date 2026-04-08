@@ -63,7 +63,8 @@ function toConfigurationDetails(
 export function inspectProject(
   options: InspectOptions,
 ): Promise<ConfigurationInspectionResult[]> {
-  const { projectDir, pythonPath, rPath, entrypoint, recursive } = options;
+  const { projectDir, pythonPath, rPath, entrypoint, recursive, relativeDir } =
+    options;
   const mode = recursive ? "recursive" : "single";
   logger.info(`[inspect] starting inspection of ${projectDir} (mode=${mode})`);
 
@@ -71,7 +72,13 @@ export function inspectProject(
     return inspectRecursive(projectDir, pythonPath, rPath, entrypoint);
   }
 
-  return inspectSingleDir(projectDir, pythonPath, rPath, entrypoint);
+  return inspectSingleDir(
+    projectDir,
+    pythonPath,
+    rPath,
+    entrypoint,
+    relativeDir,
+  );
 }
 
 async function inspectSingleDir(
@@ -79,6 +86,7 @@ async function inspectSingleDir(
   pythonPath?: string,
   rPath?: string,
   entrypoint?: string,
+  relativeDir?: string,
 ): Promise<ConfigurationInspectionResult[]> {
   const configs = await runDetectors(projectDir, entrypoint);
 
@@ -93,7 +101,7 @@ async function inspectSingleDir(
     );
     results.push({
       configuration: toConfigurationDetails(normalized),
-      projectDir: ".",
+      projectDir: relativeDir ?? ".",
     });
   }
   logger.info(

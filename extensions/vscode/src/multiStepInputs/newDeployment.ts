@@ -202,6 +202,7 @@ export async function newDeployment(
         pythonPath: python?.pythonPath,
         rPath: r?.rPath,
         entrypoint: relEntryPointFile,
+        relativeDir: relEntryPointDir,
       });
 
       inspectionResults.forEach((result) => {

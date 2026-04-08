@@ -8,6 +8,7 @@ export interface InspectOptions {
   rPath?: string; // Optional R executable path
   entrypoint?: string; // Optional specific entrypoint filename
   recursive?: boolean; // Walk subdirectories
+  relativeDir?: string; // Workspace-relative dir used in result projectDir (defaults to ".")
 }
 
 // Internal partial config before normalization fills in interpreter info.

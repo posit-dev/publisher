@@ -89,4 +89,33 @@ describe("inspectProject", () => {
       expect(result.projectDir).toBe(".");
     }
   });
+
+  test("uses relativeDir as projectDir in results when provided", async () => {
+    mockReaddir.mockResolvedValue(["app.py"]);
+    mockStat.mockResolvedValue({ isFile: () => true });
+    mockReadFile.mockResolvedValue("from flask import Flask\n");
+    mockAccess.mockRejectedValue(new Error("ENOENT"));
+
+    const results = await inspectProject({
+      projectDir: "/workspace/fastapi-simple",
+      relativeDir: "fastapi-simple",
+    });
+    for (const result of results) {
+      expect(result.projectDir).toBe("fastapi-simple");
+    }
+  });
+
+  test("defaults projectDir to '.' when relativeDir is not provided", async () => {
+    mockReaddir.mockResolvedValue(["app.py"]);
+    mockStat.mockResolvedValue({ isFile: () => true });
+    mockReadFile.mockResolvedValue("from flask import Flask\n");
+    mockAccess.mockRejectedValue(new Error("ENOENT"));
+
+    const results = await inspectProject({
+      projectDir: "/workspace/fastapi-simple",
+    });
+    for (const result of results) {
+      expect(result.projectDir).toBe(".");
+    }
+  });
 });

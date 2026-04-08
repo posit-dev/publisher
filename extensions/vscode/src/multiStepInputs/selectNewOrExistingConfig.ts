@@ -190,6 +190,7 @@ export async function selectNewOrExistingConfig(
         projectDir: absoluteDir,
         pythonPath: python?.pythonPath,
         rPath: r?.rPath,
+        relativeDir: activeDeployment.projectDir,
       });
       inspectionResults = filterInspectionResultsToType(
         allResults,
