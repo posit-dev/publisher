@@ -7,7 +7,7 @@ import { createGzip } from "zlib";
 import { finished, pipeline } from "stream/promises";
 import { PassThrough } from "stream";
 
-import { FileEntry, Manifest } from "./types";
+import { FileEntry, Manifest, BundleProgressCallback } from "./types";
 import { addFile, cloneManifest, manifestToJSON } from "./manifest";
 
 const RENV_LOCK_STAGED_PATH = ".posit/publish/deployments/renv.lock";
@@ -24,6 +24,7 @@ const RENV_LOCK_STAGED_PATH = ".posit/publish/deployments/renv.lock";
 export async function createArchive(
   files: FileEntry[],
   manifest: Manifest,
+  onProgress?: BundleProgressCallback,
 ): Promise<{
   bundle: Buffer;
   manifest: Manifest;
@@ -77,7 +78,10 @@ export async function createArchive(
     addFile(updatedManifest, archiveName, md5);
     fileCount++;
     totalSize += entry.size;
+    onProgress?.({ kind: "file", path: archiveName, size: entry.size });
   }
+
+  onProgress?.({ kind: "summary", files: fileCount, totalBytes: totalSize });
 
   // Add manifest.json as the final entry
   const manifestJSON = manifestToJSON(updatedManifest);

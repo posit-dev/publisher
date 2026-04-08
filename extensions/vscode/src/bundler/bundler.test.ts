@@ -9,7 +9,7 @@ import { extract as tarExtract, Headers } from "tar-stream";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createBundle } from "./bundler";
 import { newManifest } from "./manifest";
-import { Manifest } from "./types";
+import { Manifest, BundleProgressEvent } from "./types";
 
 let tmpDir: string;
 
@@ -282,4 +282,77 @@ describe("createBundle", () => {
       expect(shHeader.mode).toBe(0o755);
     },
   );
+
+  it("invokes onProgress callback with sourceDir, file, and summary events", async () => {
+    makeFile("app.py", "import dash");
+    makeFile("data.csv", "a,b,c");
+
+    const events: BundleProgressEvent[] = [];
+    const onProgress = (event: BundleProgressEvent) => events.push(event);
+
+    const result = await createBundle({
+      projectPath: tmpDir,
+      manifest: newManifest(),
+      onProgress,
+    });
+
+    // sourceDir first
+    expect(events[0]).toEqual({ kind: "sourceDir", sourceDir: tmpDir });
+
+    // One file event per non-directory file
+    const fileEvents = events.filter((e) => e.kind === "file");
+    expect(fileEvents).toHaveLength(result.fileCount);
+
+    // Each file event has path and size
+    for (const evt of fileEvents) {
+      if (evt.kind === "file") {
+        expect(evt.path).toBeDefined();
+        expect(evt.size).toBeGreaterThanOrEqual(0);
+      }
+    }
+
+    // Summary last (before we return)
+    const last = events[events.length - 1];
+    expect(last).toEqual({
+      kind: "summary",
+      files: result.fileCount,
+      totalBytes: result.totalSize,
+    });
+  });
+
+  it("reports archive path (not source path) for remapped renv.lock", async () => {
+    makeFile("app.R", "library(shiny)");
+    makeFile(".posit/publish/deployments/renv.lock", '{"R":{}}');
+
+    const events: BundleProgressEvent[] = [];
+    await createBundle({
+      projectPath: tmpDir,
+      manifest: newManifest(),
+      onProgress: (event) => events.push(event),
+    });
+
+    const fileEvents = events.filter((e) => e.kind === "file");
+    const renvEvent = fileEvents.find(
+      (e) => e.kind === "file" && e.path === "renv.lock",
+    );
+    expect(renvEvent).toBeDefined();
+
+    // Should NOT report the staged path
+    const stagedEvent = fileEvents.find(
+      (e) =>
+        e.kind === "file" && e.path === ".posit/publish/deployments/renv.lock",
+    );
+    expect(stagedEvent).toBeUndefined();
+  });
+
+  it("works without onProgress callback", async () => {
+    makeFile("app.py");
+
+    // No onProgress — should not throw
+    const result = await createBundle({
+      projectPath: tmpDir,
+      manifest: newManifest(),
+    });
+    expect(result.fileCount).toBe(1);
+  });
 });

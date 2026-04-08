@@ -22,7 +22,7 @@ import { createArchive } from "./archive";
 export async function createBundle(
   options: BundleOptions,
 ): Promise<BundleResult> {
-  const { projectPath, manifest, filePatterns } = options;
+  const { projectPath, manifest, filePatterns, onProgress } = options;
   const patterns = filePatterns ?? [];
 
   const stats = await fs.stat(projectPath);
@@ -58,5 +58,7 @@ export async function createBundle(
     }
   }
 
-  return createArchive(files, manifest);
+  onProgress?.({ kind: "sourceDir", sourceDir: baseDir });
+
+  return createArchive(files, manifest, onProgress);
 }

@@ -43,16 +43,35 @@ vi.mock("node:fs/promises", () => ({
 
 // Mock the bundler
 vi.mock("../bundler/bundler", () => ({
-  createBundle: vi.fn().mockResolvedValue({
-    bundle: Buffer.from("fake-bundle"),
-    manifest: {
-      version: 1,
-      metadata: { appmode: "python-shiny" },
-      packages: {},
-      files: { "app.py": { checksum: "abc123" } },
-    },
-    fileCount: 1,
-    totalSize: 100,
+  createBundle: vi.fn().mockImplementation((options) => {
+    // Invoke the progress callback if provided
+    if (options.onProgress) {
+      options.onProgress({
+        kind: "sourceDir",
+        sourceDir: options.projectPath,
+      });
+      options.onProgress({
+        kind: "file",
+        path: "app.py",
+        size: 100,
+      });
+      options.onProgress({
+        kind: "summary",
+        files: 1,
+        totalBytes: 100,
+      });
+    }
+    return Promise.resolve({
+      bundle: Buffer.from("fake-bundle"),
+      manifest: {
+        version: 1,
+        metadata: { appmode: "python-shiny" },
+        packages: {},
+        files: { "app.py": { checksum: "abc123" } },
+      },
+      fileCount: 1,
+      totalSize: 100,
+    });
   }),
 }));
 
@@ -1388,6 +1407,14 @@ describe("connectPublish — error classification", () => {
     });
     expect(logMessages).toContainEqual({
       step: "createBundle",
+      message: "Creating bundle from source directory",
+    });
+    expect(logMessages).toContainEqual({
+      step: "createBundle",
+      message: "Bundle includes",
+    });
+    expect(logMessages).toContainEqual({
+      step: "createBundle",
       message: "Done preparing files",
     });
     expect(logMessages).toContainEqual({
@@ -1547,6 +1574,48 @@ describe("connectPublish — error classification", () => {
     );
     expect(bundleSuccess).toBeDefined();
     expect(bundleSuccess!.data).toEqual({ filename: "bundle.tar.gz" });
+  });
+
+  test("createBundle log events carry sourceDir and summary data", async () => {
+    const onProgress = vi.fn();
+    const opts = makeOptions({ onProgress });
+
+    await connectPublish(opts);
+
+    const events = onProgress.mock.calls.map(
+      (args: unknown[]) => args[0] as PublishEvent,
+    );
+    const bundleLogs = events.filter(
+      (e) => e.step === "createBundle" && e.status === "log",
+    );
+
+    const sourceDirLog = bundleLogs.find(
+      (e) => e.message === "Creating bundle from source directory",
+    );
+    expect(sourceDirLog).toBeDefined();
+    expect(sourceDirLog!.data?.sourceDir).toBe("/projects/myapp");
+
+    const summaryLog = bundleLogs.find((e) => e.message === "Bundle includes");
+    expect(summaryLog).toBeDefined();
+    expect(summaryLog!.data?.files).toBe("1");
+    expect(summaryLog!.data?.totalBytes).toBe("100");
+  });
+
+  test("createBundle step logs to OUTPUT pane via logger", async () => {
+    const { logger } = await import("../logging");
+    const opts = makeOptions();
+
+    await connectPublish(opts);
+
+    expect(logger.info).toHaveBeenCalledWith(
+      expect.stringContaining("Creating bundle from directory source_dir="),
+    );
+    expect(logger.debug).toHaveBeenCalledWith(
+      "Adding file path=app.py size=100",
+    );
+    expect(logger.info).toHaveBeenCalledWith(
+      "Bundle created files=1 total_bytes=100",
+    );
   });
 
   test("deployBundle success carries taskId", async () => {
