@@ -1,7 +1,0 @@
-project:
-  title: "quarto-proj-none-multidocument"
-  render:
-    - document1.qmd
-    - document2.qmd
-
-editor: visual
