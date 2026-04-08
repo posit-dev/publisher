@@ -45,6 +45,21 @@ import { logger } from "../logging";
 import type { ErrorCode } from "../utils/errorTypes";
 
 // ---------------------------------------------------------------------------
+// Cancellation
+// ---------------------------------------------------------------------------
+
+/**
+ * Thrown when a deployment is canceled via AbortSignal.
+ * Distinguishable from real errors so callers can handle cancellation differently.
+ */
+export class CanceledError extends Error {
+  constructor() {
+    super("Deployment canceled");
+    this.name = "CanceledError";
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Public types
 // ---------------------------------------------------------------------------
 
@@ -100,6 +115,8 @@ export type ConnectPublishOptions = {
   clientVersion: string;
   /** Progress callback invoked at each step boundary. */
   onProgress: (event: PublishEvent) => void;
+  /** Abort signal for cancellation. */
+  signal?: AbortSignal;
 };
 
 export type PublishResult = {
@@ -169,7 +186,25 @@ export async function connectPublish(
 
   let lastStep: PublishStep | undefined;
 
+  const signal = options.signal;
+
+  /** Check if canceled; if so, write dismissedAt and throw CanceledError. */
+  async function throwIfCanceled(): Promise<void> {
+    if (signal?.aborted) {
+      record.dismissedAt = new Date().toISOString();
+      record.deploymentError = undefined;
+      try {
+        await writePublishRecord(deploymentPath, record);
+      } catch {
+        // Don't mask cancellation
+      }
+      throw new CanceledError();
+    }
+  }
+
   try {
+    await throwIfCanceled();
+
     // Step 1: Build manifest with R/Python packages
     lastStep = "createManifest";
     onProgress({ step: "createManifest", status: "start" });
@@ -212,6 +247,8 @@ export async function connectPublish(
 
     onProgress({ step: "createManifest", status: "success" });
 
+    await throwIfCanceled();
+
     // Step 2: Preflight — verify authentication
     lastStep = "preflight";
     onProgress({ step: "preflight", status: "start" });
@@ -225,7 +262,7 @@ export async function connectPublish(
       status: "log",
       message: "Testing authentication",
     });
-    const { user } = await api.testAuthentication();
+    const { user } = await api.testAuthentication(signal);
     onProgress({
       step: "preflight",
       status: "log",
@@ -275,7 +312,10 @@ export async function connectPublish(
       status: "log",
       message: "Checking server capabilities",
     });
-    const settings = await api.getSettings(appModeFromType(config.type));
+    const settings = await api.getSettings(
+      appModeFromType(config.type),
+      signal,
+    );
     checkServerSettings(settings, config);
 
     // Verify existing content when redeploying (mirrors Go's ValidateDeploymentTarget)
@@ -289,7 +329,7 @@ export async function connectPublish(
 
       let existing;
       try {
-        const resp = await api.contentDetails(ContentID(contentId));
+        const resp = await api.contentDetails(ContentID(contentId), signal);
         existing = resp.data;
       } catch (err) {
         logger.debug(`contentDetails failed for ${contentId}:`, err);
@@ -351,6 +391,8 @@ export async function connectPublish(
       status: "success",
     });
 
+    await throwIfCanceled();
+
     // Step 3: Create deployment on Connect (first deploy only)
     if (!contentId) {
       lastStep = "createNewDeployment";
@@ -364,7 +406,10 @@ export async function connectPublish(
         status: "log",
         message: "Creating new deployment",
       });
-      const { data: created } = await api.createDeployment({ name: "" });
+      const { data: created } = await api.createDeployment(
+        { name: "" },
+        signal,
+      );
       contentId = created.guid;
       setRecordContentInfo(record, serverUrl, contentId);
       onProgress({
@@ -379,6 +424,8 @@ export async function connectPublish(
         data: { contentId, saveName },
       });
     }
+
+    await throwIfCanceled();
 
     // Step 4: Create bundle archive
     lastStep = "createBundle";
@@ -425,6 +472,8 @@ export async function connectPublish(
       data: { filename: "bundle.tar.gz" },
     });
 
+    await throwIfCanceled();
+
     // Step 5: Upload bundle
     lastStep = "uploadBundle";
     onProgress({ step: "uploadBundle", status: "start" });
@@ -436,6 +485,7 @@ export async function connectPublish(
     const { data: bundleDTO } = await api.uploadBundle(
       ContentID(contentId),
       new Uint8Array(bundle),
+      signal,
     );
     const bundleId = BundleID(bundleDTO.id);
     record.bundleId = bundleDTO.id;
@@ -448,6 +498,8 @@ export async function connectPublish(
       data: { bundle_id: bundleDTO.id },
     });
     onProgress({ step: "uploadBundle", status: "success" });
+
+    await throwIfCanceled();
 
     // Step 6: Update content metadata
     // For redeploys, the update step opens the "Create Deployment Record"
@@ -466,6 +518,7 @@ export async function connectPublish(
     await api.updateDeployment(
       ContentID(contentId),
       connectContentFromConfig(config),
+      signal,
     );
     onProgress({
       step: "updateContent",
@@ -473,6 +526,8 @@ export async function connectPublish(
       message: "Done updating settings",
     });
     onProgress({ step: "updateContent", status: "success" });
+
+    await throwIfCanceled();
 
     // Step 7: Set environment variables (if any)
     const envVars = mergeEnvVars(config.environment, secrets);
@@ -496,7 +551,7 @@ export async function connectPublish(
           data: { name },
         });
       }
-      await api.setEnvVars(ContentID(contentId), envVars);
+      await api.setEnvVars(ContentID(contentId), envVars, signal);
       onProgress({
         step: "setEnvVars",
         status: "log",
@@ -504,6 +559,8 @@ export async function connectPublish(
       });
       onProgress({ step: "setEnvVars", status: "success" });
     }
+
+    await throwIfCanceled();
 
     // Step 8: Deploy the bundle
     lastStep = "deployBundle";
@@ -516,6 +573,7 @@ export async function connectPublish(
     const { data: deployOutput } = await api.deployBundle(
       ContentID(contentId),
       bundleId,
+      signal,
     );
     onProgress({
       step: "deployBundle",
@@ -528,17 +586,26 @@ export async function connectPublish(
       data: { taskId: deployOutput.task_id },
     });
 
+    await throwIfCanceled();
+
     // Step 9: Wait for server-side task to complete
     lastStep = "waitForTask";
     onProgress({ step: "waitForTask", status: "start" });
-    await api.waitForTask(TaskID(deployOutput.task_id), undefined, (lines) => {
-      for (const line of lines) {
-        if (line) {
-          onProgress({ step: "waitForTask", status: "log", message: line });
+    await api.waitForTask(
+      TaskID(deployOutput.task_id),
+      undefined,
+      (lines) => {
+        for (const line of lines) {
+          if (line) {
+            onProgress({ step: "waitForTask", status: "log", message: line });
+          }
         }
-      }
-    });
+      },
+      signal,
+    );
     onProgress({ step: "waitForTask", status: "success" });
+
+    await throwIfCanceled();
 
     // Step 10: Validate deployment (optional)
     if (config.validate) {
@@ -565,7 +632,7 @@ export async function connectPublish(
         message: "Testing URL",
         data: { url: `/content/${contentId}/` },
       });
-      await api.validateDeployment(ContentID(contentId));
+      await api.validateDeployment(ContentID(contentId), signal);
       onProgress({
         step: "validateDeployment",
         status: "log",
@@ -585,6 +652,26 @@ export async function connectPublish(
       bundleId: bundleDTO.id,
     };
   } catch (err) {
+    // Cancellation is not an error — dismissedAt was already written by throwIfCanceled
+    if (err instanceof CanceledError) {
+      throw err;
+    }
+
+    // In-flight abort: when signal fires during an API call, axios throws
+    // its own CanceledError (not our CanceledError). Normalize to our
+    // cancellation path so the deployment record gets dismissedAt, not
+    // a deployment_error.
+    if (signal?.aborted) {
+      record.dismissedAt = new Date().toISOString();
+      record.deploymentError = undefined;
+      try {
+        await writePublishRecord(deploymentPath, record);
+      } catch {
+        // Don't mask cancellation
+      }
+      throw new CanceledError();
+    }
+
     // Classify the error for both the deployment record and UI events
     const classified = classifyDeploymentError(lastStep, err);
 
@@ -1156,6 +1243,7 @@ export type PublishRecord = {
   requirements?: string[];
   renv?: Record<string, unknown>;
   deployedAt?: string;
+  dismissedAt?: string;
   deploymentError?: { code: string; message: string; operation: string };
 };
 
@@ -1219,6 +1307,7 @@ function recordToTomlObject(record: PublishRecord): Record<string, unknown> {
     requirements: record.requirements || undefined,
     renv: record.renv || undefined,
     deployed_at: record.deployedAt || undefined,
+    dismissed_at: record.dismissedAt || undefined,
     deployment_error: record.deploymentError || undefined,
   };
 }

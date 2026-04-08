@@ -5,11 +5,16 @@ import type { PublishResult } from "src/publish/connectPublish";
 import type { EventStreamMessage } from "src/api";
 import { runTsDeployWithProgress } from "./tsDeployProgress";
 
+vi.mock("src/logging");
+
 // Mock vscode module
 const mockReport = vi.fn();
 const mockShowInformationMessage = vi.fn().mockResolvedValue(undefined);
 const mockShowErrorMessage = vi.fn();
 const mockOpenExternal = vi.fn();
+
+let capturedCancellationHandler: (() => void) | undefined;
+let mockCancellable: boolean | undefined;
 
 vi.mock("vscode", () => ({
   ProgressLocation: { Notification: 15 },
@@ -17,9 +22,20 @@ vi.mock("vscode", () => ({
   env: { openExternal: (...args: unknown[]) => mockOpenExternal(...args) },
   window: {
     withProgress: (
-      _opts: unknown,
-      task: (progress: { report: typeof mockReport }) => Promise<void>,
-    ) => task({ report: mockReport }),
+      opts: { cancellable?: boolean },
+      task: (
+        progress: { report: typeof mockReport },
+        token: { onCancellationRequested: (cb: () => void) => void },
+      ) => Promise<void>,
+    ) => {
+      mockCancellable = opts.cancellable;
+      const token = {
+        onCancellationRequested: (cb: () => void) => {
+          capturedCancellationHandler = cb;
+        },
+      };
+      return task({ report: mockReport }, token);
+    },
     showInformationMessage: (...args: unknown[]) =>
       mockShowInformationMessage(...args),
     showErrorMessage: (...args: unknown[]) => mockShowErrorMessage(...args),
@@ -47,6 +63,8 @@ const successResult: PublishResult = {
 describe("runTsDeployWithProgress", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    capturedCancellationHandler = undefined;
+    mockCancellable = undefined;
   });
 
   function run(
@@ -669,5 +687,72 @@ describe("runTsDeployWithProgress", () => {
     expect(logMsgs).toHaveLength(1);
     expect(logMsgs[0]!.data.message).toBe("Testing URL /content/abc-123/");
     expect(logMsgs[0]!.data.url).toBe("/content/abc-123/");
+  });
+
+  describe("cancellation", () => {
+    it("sets cancellable: true on the progress notification", async () => {
+      run(() => Promise.resolve(successResult));
+
+      await vi.waitFor(() => {
+        expect(mockCancellable).toBe(true);
+      });
+    });
+
+    it("injects publish/failure with canceled flag when user cancels", async () => {
+      let deployResolve: (r: PublishResult) => void;
+      const deployPromise = new Promise<PublishResult>((resolve) => {
+        deployResolve = resolve;
+      });
+
+      const { stream } = run(() => deployPromise);
+
+      // Simulate user clicking cancel
+      capturedCancellationHandler?.();
+
+      // Resolve the deploy so the async function completes
+      deployResolve!(successResult);
+
+      await vi.waitFor(() => {
+        const failMsg = stream.injected.find(
+          (m) => m.type === "publish/failure",
+        );
+        expect(failMsg).toBeDefined();
+        expect(failMsg!.data.canceled).toBe("true");
+        expect(failMsg!.data.message).toContain("dismissed");
+      });
+    });
+
+    it("calls onCancel callback when user cancels", async () => {
+      let deployResolve: (r: PublishResult) => void;
+      const deployPromise = new Promise<PublishResult>((resolve) => {
+        deployResolve = resolve;
+      });
+
+      const onCancel = vi.fn();
+      run(() => deployPromise, { onCancel });
+
+      capturedCancellationHandler?.();
+      deployResolve!(successResult);
+
+      await vi.waitFor(() => {
+        expect(onCancel).toHaveBeenCalledOnce();
+      });
+    });
+
+    it("does not inject publish/failure twice on CanceledError", async () => {
+      const { CanceledError } = await import("src/publish/connectPublish");
+
+      const { stream } = run(() => Promise.reject(new CanceledError()));
+
+      await vi.waitFor(() => {
+        // The only publish/failure should be from the cancel handler (if it ran),
+        // not from the catch block
+        const failMsgs = stream.injected.filter(
+          (m) => m.type === "publish/failure",
+        );
+        // CanceledError alone (no cancel handler) should produce zero failure events
+        expect(failMsgs).toHaveLength(0);
+      });
+    });
   });
 });
