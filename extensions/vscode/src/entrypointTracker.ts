@@ -13,7 +13,6 @@ import {
 } from "vscode";
 import { Utils as uriUtils } from "vscode-uri";
 
-import { useApi } from "src/api";
 import { Contexts } from "src/constants";
 import {
   getPythonInterpreterPath,
@@ -21,11 +20,10 @@ import {
 } from "src/utils/vscode";
 import { isActiveDocument, relativeDir } from "src/utils/files";
 import { hasKnownContentType } from "src/utils/inspect";
-import {
-  getSummaryStringFromError,
-  isConnectionRefusedError,
-} from "src/utils/errors";
+import { getSummaryStringFromError } from "src/utils/errors";
 import { getFileUriFromTab } from "src/utils/getUri";
+import { inspectProject } from "src/inspect";
+import { logger } from "src/logging";
 
 function isTextEditor(
   editor: TextEditor | NotebookEditor,
@@ -47,26 +45,36 @@ async function isEntrypoint(uri: Uri): Promise<boolean> {
   }
 
   try {
-    const api = await useApi();
     const python = await getPythonInterpreterPath();
     const r = await getRInterpreterPath();
 
-    const response = await api.configurations.inspect(dir, python, r, {
+    // Resolve the relative dir to an absolute path
+    const workspaceFolder = workspace.getWorkspaceFolder(uri);
+    if (!workspaceFolder) {
+      return false;
+    }
+    const absoluteDir =
+      dir === "."
+        ? workspaceFolder.uri.fsPath
+        : Uri.joinPath(workspaceFolder.uri, dir).fsPath;
+
+    const results = await inspectProject({
+      projectDir: absoluteDir,
+      pythonPath: python?.pythonPath,
+      rPath: r?.rPath,
       entrypoint: uriUtils.basename(uri),
     });
 
-    return hasKnownContentType(response.data);
+    return hasKnownContentType(results);
   } catch (error: unknown) {
     // Don't show error popups for background entrypoint detection.
-    // This can fail transiently (e.g., during backend startup/shutdown,
-    // when files/directories are deleted) and shouldn't interrupt the user.
-    if (!isConnectionRefusedError(error)) {
-      const summary = getSummaryStringFromError(
-        "entrypointTracker::isEntrypoint",
-        error,
-      );
-      console.warn(summary);
-    }
+    // This can fail transiently (e.g., when files/directories are deleted)
+    // and shouldn't interrupt the user.
+    const summary = getSummaryStringFromError(
+      "entrypointTracker::isEntrypoint",
+      error,
+    );
+    logger.warn(summary);
     return false;
   }
 }

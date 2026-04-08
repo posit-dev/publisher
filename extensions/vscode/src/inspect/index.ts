@@ -17,6 +17,23 @@ import { InspectOptions, PartialConfig } from "./types";
 const CONFIG_SCHEMA_URL =
   "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json";
 
+// Convert a raw PartialConfig alternative into a ConfigurationDetails.
+// Matches Go behavior: alternatives get $schema and validate from config.New(),
+// plus the fields set by the detector (type, title, source, entrypoint, files).
+// They are NOT normalized (no comments, no interpreter detection, no productType).
+function alternativeToDetails(alt: PartialConfig): ConfigurationDetails {
+  return {
+    $schema: CONFIG_SCHEMA_URL,
+    type: alt.type,
+    entrypoint: alt.entrypoint,
+    title: alt.title,
+    source: alt.source,
+    files: alt.files,
+    validate: true,
+    productType: "" as ProductType,
+  };
+}
+
 function toConfigurationDetails(
   normalized: NormalizedConfig,
 ): ConfigurationDetails {
@@ -35,6 +52,7 @@ function toConfigurationDetails(
     comments: normalized.comments,
     validate: true,
     productType: ProductType.CONNECT,
+    alternatives: normalized.alternatives?.map(alternativeToDetails),
   };
 }
 
@@ -45,7 +63,8 @@ function toConfigurationDetails(
 export function inspectProject(
   options: InspectOptions,
 ): Promise<ConfigurationInspectionResult[]> {
-  const { projectDir, pythonPath, rPath, entrypoint, recursive } = options;
+  const { projectDir, pythonPath, rPath, entrypoint, recursive, relativeDir } =
+    options;
   const mode = recursive ? "recursive" : "single";
   logger.info(`[inspect] starting inspection of ${projectDir} (mode=${mode})`);
 
@@ -53,7 +72,13 @@ export function inspectProject(
     return inspectRecursive(projectDir, pythonPath, rPath, entrypoint);
   }
 
-  return inspectSingleDir(projectDir, pythonPath, rPath, entrypoint);
+  return inspectSingleDir(
+    projectDir,
+    pythonPath,
+    rPath,
+    entrypoint,
+    relativeDir,
+  );
 }
 
 async function inspectSingleDir(
@@ -61,6 +86,7 @@ async function inspectSingleDir(
   pythonPath?: string,
   rPath?: string,
   entrypoint?: string,
+  relativeDir?: string,
 ): Promise<ConfigurationInspectionResult[]> {
   const configs = await runDetectors(projectDir, entrypoint);
 
@@ -75,7 +101,7 @@ async function inspectSingleDir(
     );
     results.push({
       configuration: toConfigurationDetails(normalized),
-      projectDir: ".",
+      projectDir: relativeDir ?? ".",
     });
   }
   logger.info(

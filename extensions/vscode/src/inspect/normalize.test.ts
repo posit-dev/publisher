@@ -103,7 +103,7 @@ describe("normalizeConfig", () => {
     expect(result.files).toContain("/_site");
   });
 
-  test("fills python config when python marker present", async () => {
+  test("sets empty python placeholder and adds package file when python marker present", async () => {
     const cfg: PartialConfig = {
       type: ContentType.PYTHON_FLASK,
       entrypoint: "app.py",
@@ -113,12 +113,16 @@ describe("normalizeConfig", () => {
 
     const result = await normalizeConfig(cfg, "/project", "python3");
     expect(result.python).toBeDefined();
-    expect(result.python?.version).toBe("3.11.0");
-    expect(result.python?.packageFile).toBe("requirements.txt");
+    // Config should be an empty placeholder (version/packageFile/packageManager
+    // are determined at publish time, not baked into the config file)
+    expect(result.python?.version).toBe("");
+    expect(result.python?.packageFile).toBe("");
+    expect(result.python?.packageManager).toBe("");
+    // But the package file should still be added to the files list
     expect(result.files).toContain("/requirements.txt");
   });
 
-  test("fills R config when r marker present", async () => {
+  test("sets empty R placeholder and adds package file when r marker present", async () => {
     const cfg: PartialConfig = {
       type: ContentType.R_SHINY,
       entrypoint: "app.R",
@@ -130,8 +134,12 @@ describe("normalizeConfig", () => {
 
     const result = await normalizeConfig(cfg, "/project", undefined, "R");
     expect(result.r).toBeDefined();
-    expect(result.r?.version).toBe("4.3.0");
-    expect(result.r?.packageFile).toBe("renv.lock");
+    // Config should be an empty placeholder (version/packageFile/packageManager
+    // are determined at publish time, not baked into the config file)
+    expect(result.r?.version).toBe("");
+    expect(result.r?.packageFile).toBe("");
+    expect(result.r?.packageManager).toBe("");
+    // But the package file should still be added to the files list
     expect(result.files).toContain("/renv.lock");
   });
 
@@ -199,7 +207,7 @@ describe("normalizeConfig", () => {
     expect(result.r?.packageManager).toBe("");
   });
 
-  test("does not set R placeholder when R not found and only inferred", async () => {
+  test("sets empty R placeholder when R inferred via renv.lock even if detection fails", async () => {
     // R is inferred via renv.lock (not explicitly set via cfg.r)
     mockDetectR.mockResolvedValueOnce({
       config: { version: "", packageFile: "", packageManager: "" },
@@ -214,8 +222,9 @@ describe("normalizeConfig", () => {
     mockReadFile.mockRejectedValue(new Error("ENOENT"));
 
     const result = await normalizeConfig(cfg, "/project");
-    // R was inferred (not explicit), and detection failed — should NOT set placeholder
-    expect(result.r).toBeUndefined();
+    // Matches Go: always set empty R placeholder when needR is true
+    expect(result.r).toBeDefined();
+    expect(result.r?.version).toBe("");
   });
 
   test("triggers R detection via renv.lock for non-HTML non-Python types", async () => {
@@ -229,8 +238,9 @@ describe("normalizeConfig", () => {
 
     const result = await normalizeConfig(cfg, "/project", undefined, "R");
     // R should be detected because renv.lock exists for UNKNOWN type
+    // Config is an empty placeholder; version determined at publish time
     expect(result.r).toBeDefined();
-    expect(result.r?.version).toBe("4.3.0");
+    expect(result.r?.version).toBe("");
   });
 
   test("does not trigger renv.lock R detection for HTML type", async () => {
@@ -260,6 +270,40 @@ describe("normalizeConfig", () => {
     const result = await normalizeConfig(cfg, "/project");
     // No rpy2 in requirements.txt (readFile fails), so no R
     expect(result.r).toBeUndefined();
+  });
+
+  test("passes alternatives through without normalization", async () => {
+    const alternative: PartialConfig = {
+      type: ContentType.HTML,
+      entrypoint: "report.html",
+      source: "report.qmd",
+      title: "report",
+      files: ["/report.html"],
+    };
+    const cfg: PartialConfig = {
+      type: ContentType.QUARTO_STATIC,
+      entrypoint: "report.qmd",
+      quarto: { version: "1.4.0", engines: ["markdown"] },
+      alternatives: [alternative],
+    };
+    setupDefaultMocks();
+
+    const result = await normalizeConfig(cfg, "/project");
+    expect(result.alternatives).toBeDefined();
+    expect(result.alternatives).toHaveLength(1);
+    // Alternatives are passed through as-is, matching Go behavior
+    expect(result.alternatives![0]).toBe(alternative);
+  });
+
+  test("returns no alternatives when none provided", async () => {
+    const cfg: PartialConfig = {
+      type: ContentType.HTML,
+      entrypoint: "index.html",
+    };
+    setupDefaultMocks();
+
+    const result = await normalizeConfig(cfg, "/project");
+    expect(result.alternatives).toBeUndefined();
   });
 
   test("uses entrypoint parameter as fallback when cfg.entrypoint is empty", async () => {

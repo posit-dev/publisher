@@ -1206,10 +1206,9 @@ describe(
         );
         expect(flask).toBeDefined();
         expect(flask?.configuration.python).toBeDefined();
-        expect(flask?.configuration.python?.version).toMatch(/^\d+\.\d+\.\d+$/);
-        expect(flask?.configuration.python?.packageFile).toBe(
-          "requirements.txt",
-        );
+        // Version and packageFile are left as empty placeholders (determined at publish time)
+        expect(flask?.configuration.python?.version).toBe("");
+        expect(flask?.configuration.python?.packageFile).toBe("");
         expect(flask?.configuration.files).toContain("/requirements.txt");
       });
     });
@@ -1233,7 +1232,8 @@ describe(
         const flask = results.find(
           (r) => r.configuration.type === ContentType.PYTHON_FLASK,
         );
-        expect(flask?.configuration.python?.requiresPython).toBe("~=3.11.0");
+        // Config uses empty placeholders; requiresPython is determined at publish time
+        expect(flask?.configuration.python?.version).toBe("");
       });
     });
 
@@ -1256,7 +1256,8 @@ describe(
         );
         expect(shiny).toBeDefined();
         expect(shiny?.configuration.r).toBeDefined();
-        expect(shiny?.configuration.r?.version).toMatch(/^\d+\.\d+\.\d+$/);
+        // Version is left as empty placeholder (determined at publish time)
+        expect(shiny?.configuration.r?.version).toBe("");
       });
     });
 
@@ -1278,7 +1279,8 @@ describe(
         const shiny = results.find(
           (r) => r.configuration.type === ContentType.R_SHINY,
         );
-        expect(shiny?.configuration.r?.requiresR).toBe("~=4.3.0");
+        // Config uses empty placeholders; requiresR is determined at publish time
+        expect(shiny?.configuration.r?.version).toBe("");
       });
     });
 
@@ -1307,12 +1309,12 @@ describe(
           (r) => r.configuration.type === ContentType.PYTHON_FLASK,
         );
         expect(flask).toBeDefined();
-        // Python config should be populated
+        // Python config should be populated (empty placeholders)
         expect(flask?.configuration.python).toBeDefined();
-        expect(flask?.configuration.python?.version).toMatch(/^\d+\.\d+\.\d+$/);
-        // R config should also be populated due to rpy2
+        expect(flask?.configuration.python?.version).toBe("");
+        // R config should also be populated due to rpy2 (empty placeholders)
         expect(flask?.configuration.r).toBeDefined();
-        expect(flask?.configuration.r?.version).toMatch(/^\d+\.\d+\.\d+$/);
+        expect(flask?.configuration.r?.version).toBe("");
       });
     });
 
@@ -1371,12 +1373,9 @@ describe(
         );
         expect(notebook).toBeDefined();
         expect(notebook?.configuration.python).toBeDefined();
-        expect(notebook?.configuration.python?.version).toMatch(
-          /^\d+\.\d+\.\d+$/,
-        );
-        expect(notebook?.configuration.python?.packageFile).toBe(
-          "requirements.txt",
-        );
+        // Version and packageFile are left as empty placeholders (determined at publish time)
+        expect(notebook?.configuration.python?.version).toBe("");
+        expect(notebook?.configuration.python?.packageFile).toBe("");
       });
     });
 
@@ -1418,7 +1417,7 @@ describe(
         );
         expect(plumber).toBeDefined();
         expect(plumber?.configuration.r).toBeDefined();
-        expect(plumber?.configuration.r?.version).toMatch(/^\d+\.\d+\.\d+$/);
+        expect(plumber?.configuration.r?.version).toBe("");
       });
     });
 
@@ -1441,7 +1440,7 @@ describe(
         );
         expect(rmd).toBeDefined();
         expect(rmd?.configuration.r).toBeDefined();
-        expect(rmd?.configuration.r?.version).toMatch(/^\d+\.\d+\.\d+$/);
+        expect(rmd?.configuration.r?.version).toBe("");
       });
     });
 
@@ -1505,7 +1504,7 @@ describe(
         );
         expect(quarto).toBeDefined();
         expect(quarto?.configuration.r).toBeDefined();
-        expect(quarto?.configuration.r?.version).toMatch(/^\d+\.\d+\.\d+$/);
+        expect(quarto?.configuration.r?.version).toBe("");
         expect(quarto?.configuration.quarto?.engines).toContain("knitr");
       });
     });
@@ -1530,9 +1529,7 @@ describe(
         );
         expect(quarto).toBeDefined();
         expect(quarto?.configuration.python).toBeDefined();
-        expect(quarto?.configuration.python?.version).toMatch(
-          /^\d+\.\d+\.\d+$/,
-        );
+        expect(quarto?.configuration.python?.version).toBe("");
         expect(quarto?.configuration.quarto?.engines).toContain("jupyter");
       });
     });
