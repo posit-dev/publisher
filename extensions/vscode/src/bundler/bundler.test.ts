@@ -305,18 +305,15 @@ describe("createBundle", () => {
 
     // Each file event has path and size
     for (const evt of fileEvents) {
-      const fe = evt as { kind: string; path: string; size: number };
-      expect(fe.path).toBeDefined();
-      expect(fe.size).toBeGreaterThanOrEqual(0);
+      if (evt.kind === "file") {
+        expect(evt.path).toBeDefined();
+        expect(evt.size).toBeGreaterThanOrEqual(0);
+      }
     }
 
     // Summary last (before we return)
-    const summary = events[events.length - 1] as {
-      kind: string;
-      files: number;
-      totalBytes: number;
-    };
-    expect(summary).toEqual({
+    const last = events[events.length - 1];
+    expect(last).toEqual({
       kind: "summary",
       files: result.fileCount,
       totalBytes: result.totalSize,
