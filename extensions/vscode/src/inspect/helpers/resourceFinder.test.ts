@@ -29,15 +29,20 @@ afterEach(() => {
 });
 
 // Helper: make mockStat resolve for specific paths, reject for others
+function normalizePath(p: string): string {
+  return p.replace(/\\/g, "/");
+}
+
 function setupFiles(existingPaths: Record<string, "file" | "directory">) {
   mockStat.mockImplementation((filePath: string) => {
-    const normalized = filePath.replace(/\\/g, "/");
-    const type = existingPaths[normalized];
-    if (type) {
-      return Promise.resolve({
-        isFile: () => type === "file",
-        isDirectory: () => type === "directory",
-      });
+    const normalized = normalizePath(filePath);
+    for (const [p, type] of Object.entries(existingPaths)) {
+      if (normalized === p || normalized.endsWith(p)) {
+        return Promise.resolve({
+          isFile: () => type === "file",
+          isDirectory: () => type === "directory",
+        });
+      }
     }
     return Promise.reject(new Error("ENOENT"));
   });
@@ -46,10 +51,11 @@ function setupFiles(existingPaths: Record<string, "file" | "directory">) {
 // Helper: make mockReadFile return content for specific paths
 function setupFileContents(contents: Record<string, string>) {
   mockReadFile.mockImplementation((filePath: string) => {
-    const normalized = filePath.replace(/\\/g, "/");
-    const content = contents[normalized];
-    if (content !== undefined) {
-      return Promise.resolve(content);
+    const normalized = normalizePath(filePath);
+    for (const [p, content] of Object.entries(contents)) {
+      if (normalized === p || normalized.endsWith(p)) {
+        return Promise.resolve(content);
+      }
     }
     return Promise.reject(new Error("ENOENT"));
   });
