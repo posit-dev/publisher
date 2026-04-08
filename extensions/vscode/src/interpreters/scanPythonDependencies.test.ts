@@ -330,6 +330,30 @@ describe("scanPythonDependencies", () => {
     expect(mockExecFile).not.toHaveBeenCalled();
   });
 
+  test("rejects multi-level directory traversal", async () => {
+    await expect(
+      scanPythonDependencies(
+        "/project",
+        "/usr/bin/python3",
+        "../../etc/passwd",
+      ),
+    ).rejects.toThrow("Invalid requirements path");
+    expect(mockExecFile).not.toHaveBeenCalled();
+  });
+
+  test("accepts save name starting with '..' that is not traversal", async () => {
+    setupExecFileSuccess(["numpy==1.22.3"], []);
+
+    await scanPythonDependencies(
+      "/project",
+      "/usr/bin/python3",
+      "..foo/requirements.txt",
+    );
+
+    const [reqPath] = mockWriteFile.mock.calls[1]!;
+    expect(reqPath).toBe("/project/..foo/requirements.txt");
+  });
+
   test("returns correct python field in result", async () => {
     setupExecFileSuccess(["numpy==1.22.3"], []);
 
