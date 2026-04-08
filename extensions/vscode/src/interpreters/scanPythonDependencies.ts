@@ -5,9 +5,7 @@ import { writeFile, unlink } from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 
-import { ScanPythonPackagesResponse } from "src/api/types/packages";
-
-const PYTHON_SCAN_TIMEOUT = 300_000; // 5 minutes - scanning large projects can be slow
+const PYTHON_SCAN_TIMEOUT = 60_000; // 1 minute
 
 /**
  * Result of scanning Python dependencies in a project.
@@ -94,212 +92,207 @@ export async function scanPythonDependencies(
 export async function runPythonScanScript(
   projectDir: string,
   pythonPath: string,
-): Promise<ScanPythonPackagesResponse> {
-  // Embedded Python script that scans project files and outputs JSON
+): Promise<{ requirements: string[]; incomplete: string[] }> {
+  // Embedded Python script that scans project files and outputs JSON.
+  // Uses only stdlib modules available in Python 3.9+.
+  // IMPORTANT: No literal backticks allowed — use FENCE = chr(96) * 3.
   const script = `
-import sys
-import os
 import ast
 import json
+import os
+import sys
 from pathlib import Path
-from typing import Set, Dict, List
-import re
 
-# Use chr(96) to avoid literal backticks in JS template literal
 FENCE = chr(96) * 3
 
-# Python 3.9 stdlib fallback (sys.stdlib_module_names added in 3.10)
-STDLIB_39 = {
-    "__future__", "__main__", "_thread", "_tkinter", "abc", "aifc", "argparse", "array", "ast", "asyncio", "atexit", "audioop", "base64", "bdb", "binascii", "bisect", "builtins", "bz2", "calendar", "cgi", "cgitb", "chunk", "cmath", "cmd", "code", "codecs", "codeop", "collections", "colorsys", "compileall", "concurrent", "configparser", "contextlib", "contextvars", "copy", "copyreg", "cProfile", "crypt", "csv", "ctypes", "curses", "dataclasses", "datetime", "dbm", "decimal", "difflib", "dis", "doctest", "email", "encodings", "ensurepip", "enum", "errno", "faulthandler", "fcntl", "filecmp", "fileinput", "fnmatch", "fractions", "ftplib", "functools", "gc", "getopt", "getpass", "gettext", "glob", "graphlib", "grp", "gzip", "hashlib", "heapq", "hmac", "html", "http", "idlelib", "imaplib", "imghdr", "importlib", "inspect", "io", "ipaddress", "itertools", "json", "keyword", "lib2to3", "linecache", "locale", "logging", "lzma", "mailbox", "mailcap", "marshal", "math", "mimetypes", "mmap", "modulefinder", "msilib", "msvcrt", "multiprocessing", "netrc", "nis", "nntplib", "numbers", "operator", "optparse", "os", "ossaudiodev", "pathlib", "pdb", "pickle", "pickletools", "pipes", "pkgutil", "platform", "plistlib", "poplib", "posix", "pprint", "profile", "pstats", "pty", "pwd", "py_compile", "pyclbr", "pydoc", "queue", "quopri", "random", "re", "readline", "reprlib", "resource", "rlcompleter", "runpy", "sched", "secrets", "select", "selectors", "shelve", "shlex", "shutil", "signal", "site", "sitecustomize", "smtplib", "sndhdr", "socket", "socketserver", "spwd", "sqlite3", "ssl", "stat", "statistics", "string", "stringprep", "struct", "subprocess", "sunau", "symtable", "sys", "sysconfig", "syslog", "tabnanny", "tarfile", "telnetlib", "tempfile", "termios", "test", "textwrap", "threading", "time", "timeit", "tkinter", "token", "tokenize", "tomllib", "trace", "traceback", "tracemalloc", "tty", "turtle", "turtledemo", "types", "typing", "unicodedata", "unittest", "urllib", "usercustomize", "uu", "uuid", "venv", "warnings", "wave", "weakref", "webbrowser", "winreg", "winsound", "wsgiref", "xdrlib", "xml", "xmlrpc", "zipapp", "zipfile", "zipimport", "zlib", "zoneinfo"
-}
+# --- stdlib detection ---
 
-def get_stdlib_modules() -> Set[str]:
-    """Get set of stdlib module names (3.10+ or fallback for 3.9)."""
-    if sys.version_info >= (3, 10):
-        return set(sys.stdlib_module_names)
-    return STDLIB_39
+_STDLIB = getattr(sys, "stdlib_module_names", None)
+if _STDLIB is None:
+    _STDLIB = {
+        "__future__", "__main__", "_thread", "_tkinter", "abc", "aifc",
+        "argparse", "array", "ast", "asyncio", "atexit", "audioop",
+        "base64", "bdb", "binascii", "bisect", "builtins", "bz2",
+        "calendar", "cgi", "cgitb", "chunk", "cmath", "cmd", "code",
+        "codecs", "codeop", "collections", "colorsys", "compileall",
+        "concurrent", "configparser", "contextlib", "contextvars",
+        "copy", "copyreg", "cProfile", "crypt", "csv", "ctypes",
+        "curses", "dataclasses", "datetime", "dbm", "decimal",
+        "difflib", "dis", "doctest", "email", "encodings", "ensurepip",
+        "enum", "errno", "faulthandler", "fcntl", "filecmp",
+        "fileinput", "fnmatch", "fractions", "ftplib", "functools",
+        "gc", "getopt", "getpass", "gettext", "glob", "graphlib",
+        "grp", "gzip", "hashlib", "heapq", "hmac", "html", "http",
+        "idlelib", "imaplib", "imghdr", "importlib", "inspect", "io",
+        "ipaddress", "itertools", "json", "keyword", "lib2to3",
+        "linecache", "locale", "logging", "lzma", "mailbox", "mailcap",
+        "marshal", "math", "mimetypes", "mmap", "modulefinder",
+        "msilib", "msvcrt", "multiprocessing", "netrc", "nis",
+        "nntplib", "numbers", "operator", "optparse", "os",
+        "ossaudiodev", "pathlib", "pdb", "pickle", "pickletools",
+        "pipes", "pkgutil", "platform", "plistlib", "poplib", "posix",
+        "pprint", "profile", "pstats", "pty", "pwd", "py_compile",
+        "pyclbr", "pydoc", "queue", "quopri", "random", "re",
+        "readline", "reprlib", "resource", "rlcompleter", "runpy",
+        "sched", "secrets", "select", "selectors", "shelve", "shlex",
+        "shutil", "signal", "site", "sitecustomize", "smtplib",
+        "sndhdr", "socket", "socketserver", "spwd", "sqlite3", "ssl",
+        "stat", "statistics", "string", "stringprep", "struct",
+        "subprocess", "sunau", "symtable", "sys", "sysconfig",
+        "syslog", "tabnanny", "tarfile", "telnetlib", "tempfile",
+        "termios", "test", "textwrap", "threading", "time", "timeit",
+        "tkinter", "token", "tokenize", "tomllib", "trace",
+        "traceback", "tracemalloc", "tty", "turtle", "turtledemo",
+        "types", "typing", "unicodedata", "unittest", "urllib",
+        "usercustomize", "uu", "uuid", "venv", "warnings", "wave",
+        "weakref", "webbrowser", "winreg", "winsound", "wsgiref",
+        "xdrlib", "xml", "xmlrpc", "zipapp", "zipfile", "zipimport",
+        "zlib", "zoneinfo",
+    }
 
-def extract_py_imports(file_path: Path) -> Set[str]:
-    """Extract top-level import names from a .py file using AST."""
+SKIP_DIRS = {".git", "__pycache__", "node_modules", ".venv", "venv",
+             ".tox", ".eggs", ".mypy_cache", ".pytest_cache"}
+
+# --- import extraction helpers ---
+
+def _imports_from_ast(source):
     try:
-        with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
-            tree = ast.parse(f.read(), filename=str(file_path))
+        tree = ast.parse(source)
+    except SyntaxError:
+        return []
+    names = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                base = alias.name.split(".")[0]
+                if base:
+                    names.append(base)
+        elif isinstance(node, ast.ImportFrom):
+            if node.level == 0 and node.module:
+                base = node.module.split(".")[0]
+                if base:
+                    names.append(base)
+    return names
 
-        imports = set()
-        for node in ast.walk(tree):
-            if isinstance(node, ast.Import):
-                for alias in node.names:
-                    imports.add(alias.name.split(".")[0])
-            elif isinstance(node, ast.ImportFrom):
-                if node.module:
-                    imports.add(node.module.split(".")[0])
-        return imports
-    except Exception:
-        return set()
 
-def extract_ipynb_imports(file_path: Path) -> Set[str]:
-    """Extract imports from .ipynb notebook cells using AST."""
+def extract_py(file_path):
     try:
-        with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+        source = file_path.read_text(encoding="utf-8")
+    except (UnicodeDecodeError, OSError):
+        return []
+    return _imports_from_ast(source)
+
+
+def extract_ipynb(file_path):
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
             nb = json.load(f)
-
-        imports = set()
-        for cell in nb.get("cells", []):
-            if cell.get("cell_type") == "code":
-                source = cell.get("source", [])
-                # source is either a list of strings or a single string
-                if isinstance(source, list):
-                    code = "".join(source)
-                else:
-                    code = source
-
-                try:
-                    tree = ast.parse(code)
-                    for node in ast.walk(tree):
-                        if isinstance(node, ast.Import):
-                            for alias in node.names:
-                                imports.add(alias.name.split(".")[0])
-                        elif isinstance(node, ast.ImportFrom):
-                            if node.module:
-                                imports.add(node.module.split(".")[0])
-                except Exception:
-                    pass
-        return imports
-    except Exception:
-        return set()
-
-def extract_qmd_imports(file_path: Path) -> Set[str]:
-    """Extract imports from .qmd Python code blocks using regex + AST."""
-    try:
-        with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
-            content = f.read()
-
-        imports = set()
-        # Match Python code blocks: \`\`\`{python} ... \`\`\` or \`\`\`python ... \`\`\`
-        pattern = re.compile(
-            FENCE + r"(?:\\{python\\}|python)\\s*\\n(.*?)\\n" + FENCE,
-            re.DOTALL | re.MULTILINE
-        )
-        for match in pattern.finditer(content):
-            code = match.group(1)
-            try:
-                tree = ast.parse(code)
-                for node in ast.walk(tree):
-                    if isinstance(node, ast.Import):
-                        for alias in node.names:
-                            imports.add(alias.name.split(".")[0])
-                    elif isinstance(node, ast.ImportFrom):
-                        if node.module:
-                            imports.add(node.module.split(".")[0])
-            except Exception:
-                pass
-        return imports
-    except Exception:
-        return set()
-
-def find_local_modules(project_dir: Path) -> Set[str]:
-    """Find local Python modules (files/dirs) in project."""
-    local = set()
-    for item in project_dir.rglob("*.py"):
-        # Convert path relative to project_dir into module name
-        rel = item.relative_to(project_dir)
-        parts = list(rel.parts[:-1]) + [rel.stem]
-        if parts and parts[0] != "__pycache__":
-            local.add(parts[0])
-
-    # Add directories containing __init__.py
-    for item in project_dir.rglob("__init__.py"):
-        rel = item.relative_to(project_dir).parent
-        if rel != Path(".") and rel.parts[0] != "__pycache__":
-            local.add(rel.parts[0])
-
-    return local
-
-def build_package_map() -> Dict[str, str]:
-    """Map import names to package names using importlib.metadata."""
-    try:
-        from importlib.metadata import distributions
-    except ImportError:
-        return {}
-
-    pkg_map = {}
-    for dist in distributions():
-        pkg_name = dist.metadata.get("Name", "")
-        if not pkg_name:
+    except (json.JSONDecodeError, UnicodeDecodeError, OSError):
+        return []
+    code_lines = []
+    for cell in nb.get("cells", []):
+        if not isinstance(cell, dict) or cell.get("cell_type") != "code":
             continue
+        source = cell.get("source", [])
+        if isinstance(source, list):
+            code_lines.extend(source)
+        elif isinstance(source, str):
+            code_lines.append(source)
+    return _imports_from_ast("".join(code_lines))
 
-        # Read top_level.txt to get import names
-        try:
-            top_level = dist.read_text("top_level.txt")
-            if top_level:
-                for line in top_level.strip().split("\\n"):
-                    import_name = line.strip()
-                    if import_name:
-                        pkg_map[import_name] = pkg_name
-        except Exception:
-            pass
 
-    return pkg_map
-
-def get_package_version(pkg_name: str) -> str:
-    """Get installed version of a package."""
+def extract_qmd(file_path):
     try:
-        from importlib.metadata import version
-        return version(pkg_name)
-    except Exception:
-        return ""
+        content = file_path.read_text(encoding="utf-8")
+    except (UnicodeDecodeError, OSError):
+        return []
+    lines = content.split("\\n")
+    in_block = False
+    code_lines = []
+    for line in lines:
+        if in_block:
+            if line.startswith(FENCE):
+                in_block = False
+                code_lines.append("")
+            else:
+                code_lines.append(line.rstrip("\\r"))
+        elif line.startswith(FENCE + "{python"):
+            in_block = True
+    return _imports_from_ast("\\n".join(code_lines))
 
-def main():
-    if len(sys.argv) < 2:
-        print(json.dumps({"error": "Usage: script.py <project_dir>"}), file=sys.stderr)
-        sys.exit(1)
 
-    project_dir = Path(sys.argv[1])
-    if not project_dir.exists():
-        print(json.dumps({"error": f"Project directory not found: {project_dir}"}), file=sys.stderr)
-        sys.exit(1)
+def is_local_import(name, file_dir):
+    return (file_dir / name).is_dir() or (file_dir / (name + ".py")).is_file()
 
-    # Collect all imports from project files
+
+# --- package mapping ---
+
+def build_package_map():
+    from importlib.metadata import distributions
+    mapping = {}
+    for dist in distributions():
+        pkg_name = dist.name
+        version = dist.version
+        top_level_text = dist.read_text("top_level.txt")
+        if top_level_text:
+            for import_name in top_level_text.strip().splitlines():
+                import_name = import_name.strip()
+                if import_name:
+                    mapping[import_name] = (pkg_name, version)
+        else:
+            mapping[pkg_name] = (pkg_name, version)
+            normalized = pkg_name.replace("-", "_").lower()
+            if normalized != pkg_name:
+                mapping[normalized] = (pkg_name, version)
+    return mapping
+
+
+# --- main ---
+
+def scan_project(project_dir):
+    base = Path(project_dir)
     all_imports = set()
-    for ext, extractor in [
-        ("*.py", extract_py_imports),
-        ("*.ipynb", extract_ipynb_imports),
-        ("*.qmd", extract_qmd_imports),
-    ]:
-        for file_path in project_dir.rglob(ext):
-            all_imports.update(extractor(file_path))
 
-    # Filter out stdlib and local imports
-    stdlib = get_stdlib_modules()
-    local = find_local_modules(project_dir)
-    third_party = all_imports - stdlib - local
+    for root, dirs, files in os.walk(base):
+        root_path = Path(root)
+        dirs[:] = [d for d in dirs if not d.startswith(".") and d not in SKIP_DIRS]
+        for fname in files:
+            file_path = root_path / fname
+            ext = fname.rsplit(".", 1)[-1].lower() if "." in fname else ""
+            file_imports = []
 
-    # Map imports to packages
+            if ext == "py":
+                file_imports = extract_py(file_path)
+            elif ext == "ipynb":
+                file_imports = extract_ipynb(file_path)
+            elif ext == "qmd":
+                file_imports = extract_qmd(file_path)
+            else:
+                continue
+
+            for name in file_imports:
+                if name not in _STDLIB and not is_local_import(name, file_path.parent):
+                    all_imports.add(name)
+
     pkg_map = build_package_map()
     requirements = []
     incomplete = []
 
-    for imp in sorted(third_party):
-        pkg_name = pkg_map.get(imp)
-        if pkg_name:
-            version = get_package_version(pkg_name)
-            if version:
-                requirements.append(f"{pkg_name}=={version}")
-            else:
-                requirements.append(pkg_name)
+    for import_name in sorted(all_imports):
+        if import_name in pkg_map:
+            pkg_name, version = pkg_map[import_name]
+            requirements.append(f"{pkg_name}=={version}")
         else:
-            # Not found in installed packages - assume installable under import name
-            incomplete.append(imp)
-            requirements.append(imp)
+            requirements.append(import_name)
+            incomplete.append(import_name)
 
-    result = {
-        "requirements": requirements,
-        "incomplete": incomplete
-    }
-    print(json.dumps(result))
+    return {"requirements": requirements, "incomplete": incomplete}
+
 
 if __name__ == "__main__":
-    main()
+    project_dir = sys.argv[1]
+    result = scan_project(project_dir)
+    json.dump(result, sys.stdout)
 `;
 
   // Write script to a temp file
@@ -325,7 +318,7 @@ function runPythonScript(
   pythonPath: string,
   scriptFile: string,
   projectDir: string,
-): Promise<ScanPythonPackagesResponse> {
+): Promise<{ requirements: string[]; incomplete: string[] }> {
   return new Promise((resolve, reject) => {
     execFile(
       pythonPath,
