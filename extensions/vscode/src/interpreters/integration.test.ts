@@ -723,6 +723,11 @@ describe(
       python3Available || (await isExecutableAvailable("python"));
     const pythonCmd = python3Available ? "python3" : "python";
 
+    /** Check if a requirement appears as bare name or with version pin */
+    function hasRequirement(reqs: string[], name: string): boolean {
+      return reqs.some((r) => r === name || r.startsWith(name + "=="));
+    }
+
     test.skipIf(!pythonAvailable)(
       "extracts imports from .py files and filters stdlib",
       () =>
@@ -735,12 +740,12 @@ describe(
 
           const result = await runPythonScanScript(dir, pythonCmd);
 
-          // Should find numpy and scipy
-          expect(result.requirements).toContain("numpy");
-          expect(result.requirements).toContain("scipy");
+          // Should find numpy and scipy (may have ==version if installed)
+          expect(hasRequirement(result.requirements, "numpy")).toBe(true);
+          expect(hasRequirement(result.requirements, "scipy")).toBe(true);
           // Should NOT contain stdlib modules
-          expect(result.requirements).not.toContain("os");
-          expect(result.requirements).not.toContain("sys");
+          expect(hasRequirement(result.requirements, "os")).toBe(false);
+          expect(hasRequirement(result.requirements, "sys")).toBe(false);
         }),
     );
 
@@ -768,10 +773,10 @@ describe(
 
           const result = await runPythonScanScript(dir, pythonCmd);
 
-          // Should find numpy
-          expect(result.requirements).toContain("numpy");
+          // Should find numpy (may have ==version if installed)
+          expect(hasRequirement(result.requirements, "numpy")).toBe(true);
           // Should NOT contain stdlib json
-          expect(result.requirements).not.toContain("json");
+          expect(hasRequirement(result.requirements, "json")).toBe(false);
         }),
     );
 
@@ -793,11 +798,13 @@ from scipy import stats
 
         const result = await runPythonScanScript(dir, pythonCmd);
 
-        // Should find numpy and scipy from code block
-        expect(result.requirements).toContain("numpy");
-        expect(result.requirements).toContain("scipy");
+        // Should find numpy and scipy from code block (may have ==version if installed)
+        expect(hasRequirement(result.requirements, "numpy")).toBe(true);
+        expect(hasRequirement(result.requirements, "scipy")).toBe(true);
         // Should NOT find the fake import from text
-        expect(result.requirements).not.toContain("notarealpythonimport");
+        expect(
+          hasRequirement(result.requirements, "notarealpythonimport"),
+        ).toBe(false);
       }),
     );
 
@@ -825,11 +832,11 @@ from scipy import stats
 
         const result = await runPythonScanScript(dir, pythonCmd);
 
-        // Should find numpy
-        expect(result.requirements).toContain("numpy");
+        // Should find numpy (may have ==version if installed)
+        expect(hasRequirement(result.requirements, "numpy")).toBe(true);
         // Should NOT find local imports
-        expect(result.requirements).not.toContain("helpers");
-        expect(result.requirements).not.toContain("mypackage");
+        expect(hasRequirement(result.requirements, "helpers")).toBe(false);
+        expect(hasRequirement(result.requirements, "mypackage")).toBe(false);
       }),
     );
 
@@ -966,19 +973,19 @@ that.do_something()
 
           const result = await runPythonScanScript(dir, pythonCmd);
 
-          // Should contain third-party imports
-          expect(result.requirements).toContain("numpy");
-          expect(result.requirements).toContain("scipy");
-          expect(result.requirements).toContain("somelib");
-          expect(result.requirements).toContain("that");
+          // Should contain third-party imports (may have ==version if installed)
+          expect(hasRequirement(result.requirements, "numpy")).toBe(true);
+          expect(hasRequirement(result.requirements, "scipy")).toBe(true);
+          expect(hasRequirement(result.requirements, "somelib")).toBe(true);
+          expect(hasRequirement(result.requirements, "that")).toBe(true);
 
           // Should NOT contain local imports
-          expect(result.requirements).not.toContain("lib");
-          expect(result.requirements).not.toContain("example");
+          expect(hasRequirement(result.requirements, "lib")).toBe(false);
+          expect(hasRequirement(result.requirements, "example")).toBe(false);
 
           // Should NOT contain stdlib imports
-          expect(result.requirements).not.toContain("sys");
-          expect(result.requirements).not.toContain("this");
+          expect(hasRequirement(result.requirements, "sys")).toBe(false);
+          expect(hasRequirement(result.requirements, "this")).toBe(false);
         }),
     );
   },

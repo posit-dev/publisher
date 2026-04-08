@@ -15,9 +15,11 @@ vi.mock("node:child_process", () => ({
 
 const mockWriteFile = vi.fn();
 const mockUnlink = vi.fn();
+const mockMkdir = vi.fn();
 vi.mock("node:fs/promises", () => ({
   writeFile: (...args: unknown[]) => mockWriteFile(...args),
   unlink: (...args: unknown[]) => mockUnlink(...args),
+  mkdir: (...args: unknown[]) => mockMkdir(...args),
 }));
 
 // --- Test Helpers ---
@@ -56,9 +58,10 @@ function setupExecFileError(stderr: string) {
 
 describe("runPythonScanScript", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
     mockWriteFile.mockResolvedValue(undefined);
     mockUnlink.mockResolvedValue(undefined);
+    mockMkdir.mockResolvedValue(undefined);
   });
 
   test("parses JSON output from Python script correctly", async () => {
@@ -242,9 +245,10 @@ describe("runPythonScanScript", () => {
 
 describe("scanPythonDependencies", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
     mockWriteFile.mockResolvedValue(undefined);
     mockUnlink.mockResolvedValue(undefined);
+    mockMkdir.mockResolvedValue(undefined);
   });
 
   test("writes requirements.txt with correct header format and returns result", async () => {
@@ -300,24 +304,30 @@ describe("scanPythonDependencies", () => {
 
     const [reqPath] = mockWriteFile.mock.calls[1]!;
     expect(reqPath).toBe("/project/subdir/requirements.txt");
+    expect(mockMkdir).toHaveBeenCalledWith("/project/subdir", {
+      recursive: true,
+    });
   });
 
   test("rejects invalid save name with '..'", async () => {
     await expect(
       scanPythonDependencies("/project", "/usr/bin/python3", ".."),
     ).rejects.toThrow("Invalid requirements filename");
+    expect(mockExecFile).not.toHaveBeenCalled();
   });
 
   test("rejects save name with directory traversal", async () => {
     await expect(
       scanPythonDependencies("/project", "/usr/bin/python3", "../etc/passwd"),
     ).rejects.toThrow("Invalid requirements path");
+    expect(mockExecFile).not.toHaveBeenCalled();
   });
 
   test("rejects absolute save name path", async () => {
     await expect(
       scanPythonDependencies("/project", "/usr/bin/python3", "/etc/passwd"),
     ).rejects.toThrow("Invalid requirements path");
+    expect(mockExecFile).not.toHaveBeenCalled();
   });
 
   test("returns correct python field in result", async () => {
