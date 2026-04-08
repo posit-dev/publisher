@@ -31,6 +31,7 @@ import {
   PreContentRecord,
   isConfigurationError,
   Credential,
+  isContentRecord,
   isContentRecordError,
   isPreContentRecord,
   isPreContentRecordWithConfig,
@@ -2175,37 +2176,51 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   };
 
   public updateServerEnvironment = async () => {
-    const deployment = await this.state.getSelectedContentRecord();
-    if (deployment && !isContentRecordError(deployment)) {
-      // We have a valid deployment to call
-      try {
-        const response = await showProgress(
-          "Getting Deployment Environment",
-          Views.HomeView,
-          async () => {
-            const api = await useApi();
-            return await api.contentRecords.getEnv(
-              deployment.deploymentName,
-              deployment.projectDir,
-            );
-          },
-        );
+    const clearEnvironment = () => {
+      this.webviewConduit.sendMsg({
+        kind: HostToWebviewMessageType.UPDATE_SERVER_ENVIRONMENT,
+        content: {
+          environment: [],
+        },
+      });
+    };
 
-        this.webviewConduit.sendMsg({
-          kind: HostToWebviewMessageType.UPDATE_SERVER_ENVIRONMENT,
-          content: {
-            environment: response.data,
-          },
-        });
-      } catch (_error: unknown) {
-        // No matter the error we clear the environment
-        this.webviewConduit.sendMsg({
-          kind: HostToWebviewMessageType.UPDATE_SERVER_ENVIRONMENT,
-          content: {
-            environment: [],
-          },
-        });
-      }
+    const deployment = await this.state.getSelectedContentRecord();
+    if (!deployment || !isContentRecord(deployment)) {
+      clearEnvironment();
+      return;
+    }
+
+    const credential = this.state.findCredentialForContentRecord(deployment);
+    if (credential === undefined) {
+      clearEnvironment();
+      return;
+    }
+
+    try {
+      const response = await showProgress(
+        "Getting Deployment Environment",
+        Views.HomeView,
+        () => {
+          const connectApi = new ConnectAPI({
+            url: credential.url,
+            apiKey: credential.apiKey,
+            token: credential.token,
+            privateKey: credential.privateKey,
+            rejectUnauthorized: extensionSettings.verifyCertificates(),
+          });
+          return connectApi.getEnvVars(deployment.id);
+        },
+      );
+
+      this.webviewConduit.sendMsg({
+        kind: HostToWebviewMessageType.UPDATE_SERVER_ENVIRONMENT,
+        content: {
+          environment: response.data,
+        },
+      });
+    } catch (_error: unknown) {
+      clearEnvironment();
     }
   };
 

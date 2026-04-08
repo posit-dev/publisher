@@ -2,7 +2,7 @@
 
 import { AxiosInstance } from "axios";
 
-import { ContentRecord, Environment } from "../types/contentRecords";
+import { ContentRecord } from "../types/contentRecords";
 import type { PositronSettings } from "../types/positron";
 import { PythonExecutable, RExecutable } from "../../types/shared";
 
@@ -45,18 +45,6 @@ export class ContentRecords {
           dir,
           r: r !== undefined ? r.rPath : "",
           python: python !== undefined ? python.pythonPath : "",
-        },
-      },
-    );
-  }
-
-  getEnv(deploymentName: string, dir: string) {
-    const encodedName = encodeURIComponent(deploymentName);
-    return this.client.get<Environment>(
-      `deployments/${encodedName}/environment`,
-      {
-        params: {
-          dir,
         },
       },
     );
