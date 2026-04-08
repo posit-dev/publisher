@@ -14,7 +14,7 @@ describe("Detect errors in config", () => {
     cy.exec(
       'find content-workspace/config-errors -type f -name "*.toml" 2>/dev/null || echo "NONE"',
     ).then((result) => {
-      cy.task("log", `[BEFORE cleanup] host config-errors: ${result.stdout}`);
+      cy.task("print", `[BEFORE cleanup] host config-errors: ${result.stdout}`);
     });
 
     cy.clearupDeployments();
@@ -23,12 +23,12 @@ describe("Detect errors in config", () => {
     cy.exec(
       'find content-workspace/config-errors -type f -name "*.toml" 2>/dev/null || echo "NONE"',
     ).then((result) => {
-      cy.task("log", `[AFTER cleanup] host config-errors: ${result.stdout}`);
+      cy.task("print", `[AFTER cleanup] host config-errors: ${result.stdout}`);
     });
     cy.exec(
       'find content-workspace -type d -name ".posit" 2>/dev/null || echo "NONE"',
     ).then((result) => {
-      cy.task("log", `[AFTER cleanup] host .posit dirs: ${result.stdout}`);
+      cy.task("print", `[AFTER cleanup] host .posit dirs: ${result.stdout}`);
     });
     // Check what the code-server container actually sees
     cy.exec(
