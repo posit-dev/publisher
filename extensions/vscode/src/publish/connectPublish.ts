@@ -388,14 +388,18 @@ export async function connectPublish(
       status: "log",
       message: "Preparing files",
     });
-    let bundleProgressReceived = false;
+    onProgress({
+      step: "createBundle",
+      status: "log",
+      message: "Creating bundle from directory",
+    });
+    let sawSummary = false;
     const { bundle, manifest: finalManifest } = await buildBundleArchive(
       projectDir,
       config,
       manifest,
       lockfilePath,
       (event) => {
-        bundleProgressReceived = true;
         switch (event.kind) {
           case "sourceDir":
             onProgress({
@@ -412,6 +416,7 @@ export async function connectPublish(
             logger.debug(`Adding file path=${event.path} size=${event.size}`);
             break;
           case "summary":
+            sawSummary = true;
             onProgress({
               step: "createBundle",
               status: "log",
@@ -428,12 +433,7 @@ export async function connectPublish(
         }
       },
     );
-    if (!bundleProgressReceived) {
-      onProgress({
-        step: "createBundle",
-        status: "log",
-        message: "Creating bundle from directory",
-      });
+    if (!sawSummary) {
       onProgress({
         step: "createBundle",
         status: "log",
