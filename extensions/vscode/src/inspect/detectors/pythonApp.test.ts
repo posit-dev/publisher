@@ -67,6 +67,19 @@ describe("PythonAppDetector", () => {
       const configs = await detector.inferType("/project", "app.R");
       expect(configs).toHaveLength(0);
     });
+
+    test("detects related package name flask_api via prefix match", async () => {
+      mockReaddir.mockResolvedValue(["app.py"]);
+      mockStat.mockResolvedValue({ isFile: () => true });
+      mockReadFile.mockResolvedValue(
+        "from flask_api import FlaskAPI\napp = FlaskAPI(__name__)\n",
+      );
+
+      const configs = await detector.inferType("/project");
+      expect(configs).toHaveLength(1);
+      expect(configs[0]?.type).toBe(ContentType.PYTHON_FLASK);
+      expect(configs[0]?.entrypoint).toBe("app.py");
+    });
   });
 
   describe("FastAPIDetector", () => {

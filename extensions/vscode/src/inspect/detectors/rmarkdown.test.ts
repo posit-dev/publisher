@@ -363,4 +363,66 @@ runtime: {invalid: yaml: here
     expect(configs[0]?.r).toEqual({});
     expect(configs[0]?.python).toBeUndefined();
   });
+
+  test("bookdown project detection with _bookdown.yml as entrypoint", async () => {
+    setupGlobDir(["index.Rmd", "01-intro.Rmd", "02-analysis.Rmd"]);
+    mockReadFile.mockImplementation((filePath: string) => {
+      if (filePath.endsWith("_bookdown.yml")) {
+        return Promise.resolve("book_filename: index.Rmd\n");
+      }
+      if (filePath.endsWith("index.Rmd")) {
+        return Promise.resolve(basicRmdContent);
+      }
+      if (filePath.endsWith("01-intro.Rmd")) {
+        return Promise.resolve(pythonRmdContent);
+      }
+      if (filePath.endsWith("02-analysis.Rmd")) {
+        return Promise.resolve(basicRmdContent);
+      }
+      return Promise.reject(new Error("ENOENT"));
+    });
+    mockAccess.mockImplementation((filePath: string) => {
+      if (filePath.endsWith("_bookdown.yml")) {
+        return Promise.resolve();
+      }
+      return Promise.reject(new Error("ENOENT"));
+    });
+
+    const configs = await detector.inferType("/project", "_bookdown.yml");
+    expect(configs).toHaveLength(1);
+    expect(configs[0]?.type).toBe(ContentType.RMD);
+    expect(configs[0]?.entrypoint).toBe("_bookdown.yml");
+    expect(configs[0]?.title).toBe("Special Report");
+    expect(configs[0]?.files).toContain("/_bookdown.yml");
+    expect(configs[0]?.files).toContain("/index.Rmd");
+    // Language detection scans all .Rmd files — picks up both R and Python
+    expect(configs[0]?.r).toEqual({});
+    expect(configs[0]?.python).toEqual({});
+  });
+
+  test("_site.yml with no metadata anywhere still produces config", async () => {
+    setupGlobDir([]);
+    mockReadFile.mockImplementation((filePath: string) => {
+      if (filePath.endsWith("_site.yml")) {
+        return Promise.resolve("name: My Site\n");
+      }
+      // No index.Rmd or app.Rmd — all fallback reads fail
+      return Promise.reject(new Error("ENOENT"));
+    });
+    mockAccess.mockImplementation((filePath: string) => {
+      if (filePath.endsWith("_site.yml")) {
+        return Promise.resolve();
+      }
+      return Promise.reject(new Error("ENOENT"));
+    });
+
+    const configs = await detector.inferType("/project", "_site.yml");
+    expect(configs).toHaveLength(1);
+    expect(configs[0]?.type).toBe(ContentType.RMD);
+    expect(configs[0]?.entrypoint).toBe("_site.yml");
+    expect(configs[0]?.title).toBeUndefined();
+    expect(configs[0]?.files).toContain("/_site.yml");
+    expect(configs[0]?.r).toBeUndefined();
+    expect(configs[0]?.python).toBeUndefined();
+  });
 });
