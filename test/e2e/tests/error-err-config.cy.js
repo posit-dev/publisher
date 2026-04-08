@@ -10,36 +10,7 @@
 // Uses text-scoped queries with retry to avoid brittle DOM chains.
 describe("Detect errors in config", () => {
   before(() => {
-    // Log state of config-errors files BEFORE cleanup (host filesystem)
-    cy.exec(
-      'find content-workspace/config-errors -type f -name "*.toml" 2>/dev/null || echo "NONE"',
-    ).then((result) => {
-      cy.task("print", `[BEFORE cleanup] host config-errors: ${result.stdout}`);
-    });
-
     cy.clearupDeployments();
-
-    // Log state AFTER cleanup — both host and container views
-    cy.exec(
-      'find content-workspace/config-errors -type f -name "*.toml" 2>/dev/null || echo "NONE"',
-    ).then((result) => {
-      cy.task("print", `[AFTER cleanup] host config-errors: ${result.stdout}`);
-    });
-    cy.exec(
-      'find content-workspace -type d -name ".posit" 2>/dev/null || echo "NONE"',
-    ).then((result) => {
-      cy.task("print", `[AFTER cleanup] host .posit dirs: ${result.stdout}`);
-    });
-    // Check what the code-server container actually sees
-    cy.exec(
-      'docker exec publisher-e2e.code-server find /home/coder/workspace/config-errors -type f -name "*.toml" 2>/dev/null || echo "NONE"',
-      { failOnNonZeroExit: false },
-    ).then((result) => {
-      cy.task(
-        "log",
-        `[AFTER cleanup] container config-errors: ${result.stdout}`,
-      );
-    });
   });
 
   beforeEach(() => {
@@ -68,11 +39,15 @@ describe("Detect errors in config", () => {
     cy.get(".quick-input-widget").should("be.visible");
     cy.get(".quick-input-titlebar").should("have.text", "Select Deployment");
 
-    // Select the error deployment using aria-label matching with Cypress's
-    // built-in retry. Use a long timeout for CI where item rendering is slow.
+    // Filter the quickpick to the target deployment, then select it.
+    // The quickpick uses a virtualized list that only renders visible rows.
+    // In CI, prior tests may leave extra deployments that push error entries
+    // below the fold. Typing into the filter narrows the list so the target
+    // item is rendered in the DOM and clickable.
+    cy.get(".quick-input-widget input").type("quarto-project-8G2B");
     cy.get(
       '.quick-input-list .monaco-list-row[aria-label*="quarto-project-8G2B"]',
-      { timeout: 30000 },
+      { timeout: 20000 },
     )
       .should("be.visible")
       .click();
@@ -105,11 +80,12 @@ describe("Detect errors in config", () => {
     cy.get(".quick-input-widget").should("be.visible");
     cy.get(".quick-input-titlebar").should("have.text", "Select Deployment");
 
-    // Select the error deployment using aria-label matching with Cypress's
-    // built-in retry. Use a long timeout for CI where item rendering is slow.
+    // Filter the quickpick to the target deployment, then select it.
+    // (See comment in first test for rationale.)
+    cy.get(".quick-input-widget input").type("fastapi-simple-DHJL");
     cy.get(
       '.quick-input-list .monaco-list-row[aria-label*="fastapi-simple-DHJL"]',
-      { timeout: 30000 },
+      { timeout: 20000 },
     )
       .should("be.visible")
       .click();
