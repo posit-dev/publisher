@@ -9,7 +9,7 @@ import { extract as tarExtract, Headers } from "tar-stream";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createBundle } from "./bundler";
 import { newManifest } from "./manifest";
-import { Manifest } from "./types";
+import { Manifest, BundleProgressEvent } from "./types";
 
 let tmpDir: string;
 
@@ -282,4 +282,55 @@ describe("createBundle", () => {
       expect(shHeader.mode).toBe(0o755);
     },
   );
+
+  it("invokes onProgress callback with sourceDir, file, and summary events", async () => {
+    makeFile("app.py", "import dash");
+    makeFile("data.csv", "a,b,c");
+
+    const events: BundleProgressEvent[] = [];
+    const onProgress = (event: BundleProgressEvent) => events.push(event);
+
+    const result = await createBundle({
+      projectPath: tmpDir,
+      manifest: newManifest(),
+      onProgress,
+    });
+
+    // sourceDir first
+    expect(events[0]).toEqual({ kind: "sourceDir", sourceDir: tmpDir });
+
+    // One file event per non-directory file
+    const fileEvents = events.filter((e) => e.kind === "file");
+    expect(fileEvents).toHaveLength(result.fileCount);
+
+    // Each file event has path and size
+    for (const evt of fileEvents) {
+      const fe = evt as { kind: string; path: string; size: number };
+      expect(fe.path).toBeDefined();
+      expect(fe.size).toBeGreaterThanOrEqual(0);
+    }
+
+    // Summary last (before we return)
+    const summary = events[events.length - 1] as {
+      kind: string;
+      files: number;
+      totalBytes: number;
+    };
+    expect(summary).toEqual({
+      kind: "summary",
+      files: result.fileCount,
+      totalBytes: result.totalSize,
+    });
+  });
+
+  it("works without onProgress callback", async () => {
+    makeFile("app.py");
+
+    // No onProgress — should not throw
+    const result = await createBundle({
+      projectPath: tmpDir,
+      manifest: newManifest(),
+    });
+    expect(result.fileCount).toBe(1);
+  });
 });
