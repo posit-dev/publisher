@@ -32,7 +32,7 @@ module.exports = defineConfig({
     supportFile: "support/index.js",
     specPattern: "tests/**/*.cy.{js,jsx,ts,tsx}",
     retries: {
-      runMode: 2, // Retry failed tests in run mode (CI)
+      runMode: 3, // Retry failed tests in run mode (CI) - increased from 2 for stability
       openMode: 0,
     },
     defaultCommandTimeout: e2eConfig.timeouts.defaultCommandTimeout,

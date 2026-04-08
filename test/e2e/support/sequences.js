@@ -323,9 +323,7 @@ Cypress.Commands.add(
             const isChecked = $checkbox.prop("checked");
             if (!isChecked) {
               cy.wrap($checkbox).click({ force: true });
-              // eslint-disable-next-line cypress/no-unnecessary-waiting
-              cy.wait(500); // Small wait after click
-              // Verify the click worked
+              // Verify the click worked - Cypress will retry until checked
               cy.wrap($checkbox).should("be.checked");
             }
           });
@@ -372,6 +370,10 @@ Cypress.Commands.add(
 // Purpose: Click the Deploy button, wait for toasts to clear, and confirm success.
 // When to use: Immediately after createPCSDeployment/createPCCDeployment when deployment should succeed.
 Cypress.Commands.add("deployCurrentlySelected", () => {
+  // Intercept deploy API calls for better synchronization
+  cy.intercept("POST", "**/api/publish/**").as("publishRequest");
+  cy.intercept("GET", "**/api/deployments/**").as("deploymentsCheck");
+
   // Wait for any pending network activity to settle before deploying
   cy.waitForNetworkIdle(500);
 
@@ -381,6 +383,10 @@ Cypress.Commands.add("deployCurrentlySelected", () => {
     .then((dplyBtn) => {
       Cypress.$(dplyBtn).trigger("click");
     });
+
+  // Wait for the publish request to start
+  cy.wait("@publishRequest", { timeout: 30000 });
+
   // Wait for deploying message to finish
   cy.get(".notifications-toasts", { timeout: 30_000 })
     .should("be.visible")
@@ -500,10 +506,12 @@ Cypress.Commands.add("startCredentialCreationFlow", (platform = "server") => {
             })`,
           );
           $sec.find(".title").trigger("click");
-          // eslint-disable-next-line cypress/no-unnecessary-waiting
-          cy.wait(200).then(() =>
-            ensureCredentialsSectionExpanded(attempt + 1),
-          );
+          // Wait for the section to expand by checking for visible content
+          cy.publisherWebview()
+            .findByTestId("publisher-credentials-section")
+            .find(".pane-body, .tree, :contains('No credentials')")
+            .should("be.visible")
+            .then(() => ensureCredentialsSectionExpanded(attempt + 1));
         } else {
           cy.log("Credentials section expanded");
         }
