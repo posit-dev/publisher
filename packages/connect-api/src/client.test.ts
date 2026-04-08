@@ -1216,6 +1216,55 @@ describe("getSettings", () => {
 });
 
 // ---------------------------------------------------------------------------
+// registerToken
+// ---------------------------------------------------------------------------
+
+describe("registerToken", () => {
+  it("POSTs token and public key to /__api__/tokens and returns claim URL", async () => {
+    const client = new ConnectAPI({ url: BASE_URL });
+    mockRequest.mockResolvedValueOnce(
+      jsonResponse(
+        {
+          token_claim_url: "https://connect.example.com/connect/#/claim/abc123",
+        },
+        201,
+      ),
+    );
+
+    const result = await client.registerToken(
+      "Tabcdef1234567890",
+      "base64PublicKey==",
+    );
+
+    expect(result).toEqual({
+      token_claim_url: "https://connect.example.com/connect/#/claim/abc123",
+    });
+    expect(mockRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        method: "POST",
+        url: "/__api__/tokens",
+        data: {
+          token: "Tabcdef1234567890",
+          public_key: "base64PublicKey==",
+          user_id: 0,
+        },
+      }),
+    );
+  });
+
+  it("throws on non-2xx response", async () => {
+    const client = new ConnectAPI({ url: BASE_URL });
+    mockRequest.mockResolvedValueOnce(
+      jsonResponse({ error: "forbidden" }, 403, "Forbidden"),
+    );
+
+    await expect(
+      client.registerToken("Tabcdef1234567890", "base64PublicKey=="),
+    ).rejects.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Token authentication
 // ---------------------------------------------------------------------------
 
