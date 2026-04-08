@@ -251,3 +251,22 @@ Schemas exist in both `extensions/vscode/src/toml/schemas/` (used by TypeScript)
 - `posit-publishing-record-schema-v3.json` - Deployment record schema
 
 Non-breaking changes don't require version bumps. Update the schema file, corresponding example file, and verify unit tests pass.
+
+# Finding Dead Go Code with `deadcode`
+
+Use [`deadcode`](https://pkg.go.dev/golang.org/x/tools/cmd/deadcode) to find unreachable Go code during migration cleanup.
+
+```bash
+go install golang.org/x/tools/cmd/deadcode@latest
+
+# Production reachability from main() only (use this for cleanup)
+deadcode ./... 2>&1 | grep -E "^internal/" | grep -v mock | grep -v Mock | grep -v "_test\.go" | grep -v "test"
+```
+
+## Important caveats
+
+- **Always verify with grep before deleting.** A function reported as unreachable from `main()` may still be called by tests. Deleting it is correct from a production standpoint but will break tests. Check each one: `grep -r "FuncName" internal/ --include="*.go"` — if only `_test.go` files call it, decide whether to remove the function and update the tests, or leave it.
+- **Transitively dead code is real.** If function A calls function B, and only A is dead, then B may appear live. Remove A first, re-run `deadcode`, and B will surface. Use an iterative approach.
+- **HTTP route registration keeps code alive.** An endpoint registered in the router is reachable from `main()`. Remove the route first, then re-run to find what it was keeping alive.
+- **Filter out vendor/ and node_modules/.** Vendored code always has unreachable functions — that's normal.
+- **`deadcode -test`** considers test entry points too, which hides test-only functions. Use `deadcode ./...` (without `-test`) for cleanup work.
