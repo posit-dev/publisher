@@ -20,7 +20,7 @@
 //   npm run test-integration-interpreters
 
 import { execFile } from "child_process";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, rm, writeFile, mkdir } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
@@ -35,6 +35,10 @@ import {
 } from "./pythonInterpreter";
 import { detectRInterpreter } from "./rInterpreter";
 import { scanRPackages, getRPackages } from "./rPackages";
+import {
+  scanPythonDependencies,
+  runPythonScanScript,
+} from "./scanPythonDependencies";
 
 const execFileAsync = promisify(execFile);
 
@@ -703,3 +707,279 @@ describe("scanRPackages (real R + renv)", async () => {
     120_000,
   );
 });
+
+// ---------------------------------------------------------------------------
+// scanPythonDependencies – runs a real Python executable to scan project
+// files for imports, filter stdlib/local imports, and map to installed
+// packages. Tests are skipped when Python is not available on the PATH.
+// ---------------------------------------------------------------------------
+
+describe(
+  "scanPythonDependencies (real Python)",
+  { timeout: 30_000 },
+  async () => {
+    const python3Available = await isExecutableAvailable("python3");
+    const pythonAvailable =
+      python3Available || (await isExecutableAvailable("python"));
+    const pythonCmd = python3Available ? "python3" : "python";
+
+    test.skipIf(!pythonAvailable)(
+      "extracts imports from .py files and filters stdlib",
+      () =>
+        withTempDir(async (dir) => {
+          await writeFile(
+            path.join(dir, "app.py"),
+            "import os\nimport sys\nimport numpy\nfrom scipy import stats\n",
+            "utf-8",
+          );
+
+          const result = await runPythonScanScript(dir, pythonCmd);
+
+          // Should find numpy and scipy
+          expect(result.requirements).toContain("numpy");
+          expect(result.requirements).toContain("scipy");
+          // Should NOT contain stdlib modules
+          expect(result.requirements).not.toContain("os");
+          expect(result.requirements).not.toContain("sys");
+        }),
+    );
+
+    test.skipIf(!pythonAvailable)(
+      "extracts imports from .ipynb notebooks",
+      () =>
+        withTempDir(async (dir) => {
+          const notebook = {
+            cells: [
+              {
+                cell_type: "code",
+                source: ["import json\n", "import numpy as np\n"],
+              },
+              {
+                cell_type: "markdown",
+                source: ["# This is markdown, not code\n"],
+              },
+            ],
+          };
+          await writeFile(
+            path.join(dir, "notebook.ipynb"),
+            JSON.stringify(notebook),
+            "utf-8",
+          );
+
+          const result = await runPythonScanScript(dir, pythonCmd);
+
+          // Should find numpy
+          expect(result.requirements).toContain("numpy");
+          // Should NOT contain stdlib json
+          expect(result.requirements).not.toContain("json");
+        }),
+    );
+
+    test.skipIf(!pythonAvailable)("extracts imports from .qmd files", () =>
+      withTempDir(async (dir) => {
+        const qmd = `---
+title: "Test"
+---
+
+This is text, not code:
+import notarealpythonimport
+
+\`\`\`{python}
+import numpy
+from scipy import stats
+\`\`\`
+`;
+        await writeFile(path.join(dir, "doc.qmd"), qmd, "utf-8");
+
+        const result = await runPythonScanScript(dir, pythonCmd);
+
+        // Should find numpy and scipy from code block
+        expect(result.requirements).toContain("numpy");
+        expect(result.requirements).toContain("scipy");
+        // Should NOT find the fake import from text
+        expect(result.requirements).not.toContain("notarealpythonimport");
+      }),
+    );
+
+    test.skipIf(!pythonAvailable)("filters local imports", () =>
+      withTempDir(async (dir) => {
+        // Create local module files
+        await writeFile(
+          path.join(dir, "helpers.py"),
+          "# local module\n",
+          "utf-8",
+        );
+        await mkdir(path.join(dir, "mypackage"));
+        await writeFile(
+          path.join(dir, "mypackage", "__init__.py"),
+          "",
+          "utf-8",
+        );
+
+        // Create main file that imports both local and third-party
+        await writeFile(
+          path.join(dir, "main.py"),
+          "import helpers\nimport mypackage\nimport numpy\n",
+          "utf-8",
+        );
+
+        const result = await runPythonScanScript(dir, pythonCmd);
+
+        // Should find numpy
+        expect(result.requirements).toContain("numpy");
+        // Should NOT find local imports
+        expect(result.requirements).not.toContain("helpers");
+        expect(result.requirements).not.toContain("mypackage");
+      }),
+    );
+
+    test.skipIf(!pythonAvailable)(
+      "maps installed packages to name==version format",
+      () =>
+        withTempDir(async (dir) => {
+          // Import pip which is always available in any Python environment
+          await writeFile(path.join(dir, "app.py"), "import pip\n", "utf-8");
+
+          const result = await runPythonScanScript(dir, pythonCmd);
+
+          // Should find pip with version
+          const pipEntry = result.requirements.find((req) =>
+            req.startsWith("pip=="),
+          );
+          expect(pipEntry).toBeDefined();
+          expect(pipEntry).toMatch(/^pip==\d+\.\d+/);
+        }),
+    );
+
+    test.skipIf(!pythonAvailable)(
+      "reports uninstalled packages as incomplete",
+      () =>
+        withTempDir(async (dir) => {
+          await writeFile(
+            path.join(dir, "app.py"),
+            "import zzzfakepackage_not_installed_12345\n",
+            "utf-8",
+          );
+
+          const result = await runPythonScanScript(dir, pythonCmd);
+
+          // Should appear in both requirements (bare name) and incomplete
+          expect(result.requirements).toContain(
+            "zzzfakepackage_not_installed_12345",
+          );
+          expect(result.incomplete).toContain(
+            "zzzfakepackage_not_installed_12345",
+          );
+        }),
+    );
+
+    test.skipIf(!pythonAvailable)(
+      "end-to-end: writes requirements.txt with header",
+      () =>
+        withTempDir(async (dir) => {
+          // Use pip which is always available
+          await writeFile(path.join(dir, "app.py"), "import pip\n", "utf-8");
+
+          const result = await scanPythonDependencies(
+            dir,
+            pythonCmd,
+            "requirements.txt",
+          );
+
+          // Check result object
+          expect(result.python).toBe(pythonCmd);
+          expect(
+            result.requirements.some((req) => req.startsWith("pip==")),
+          ).toBe(true);
+
+          // Check written file
+          const requirementsPath = path.join(dir, "requirements.txt");
+          expect(await fileExistsAt(requirementsPath)).toBe(true);
+
+          const content = await readFileText(requirementsPath);
+          expect(content).not.toBeNull();
+          expect(content).toContain("# requirements.txt auto-generated");
+          expect(content).toContain(`using ${pythonCmd}`);
+          expect(content).toMatch(/pip==\d+\.\d+/);
+        }),
+    );
+
+    test.skipIf(!pythonAvailable)(
+      "parity: Go testdata fixtures produce expected imports",
+      () =>
+        withTempDir(async (dir) => {
+          // Recreate the Go testdata structure
+          // example.py: imports numpy, scipy, and local lib.utils
+          await writeFile(
+            path.join(dir, "example.py"),
+            "import numpy as np\nimport scipy\n\nfrom lib.utils import foo\n",
+            "utf-8",
+          );
+
+          // lib/utils.py: imports somelib
+          await mkdir(path.join(dir, "lib"));
+          await writeFile(
+            path.join(dir, "lib", "utils.py"),
+            "from somelib import somefunc\n\ndef foo():\n    somefunc()\n",
+            "utf-8",
+          );
+
+          // test.qmd: imports that and example (local)
+          const qmd = `---
+title: "test-qmd"
+jupyter: python3
+---
+
+This is a Quarto file with embedded Python code.
+
+import this
+
+Not actually an import! That's not in a code block.
+
+\`\`\`{python}
+import that
+from example import *
+
+that.do_something()
+\`\`\`
+`;
+          await writeFile(path.join(dir, "test.qmd"), qmd, "utf-8");
+
+          // good_notebook.ipynb: only imports sys (stdlib)
+          const notebook = {
+            cells: [
+              {
+                cell_type: "code",
+                source: ["import sys\n", "print(sys.executable)\n"],
+              },
+              {
+                cell_type: "code",
+                source: ["print('Summing')\n", "123 + 456\n"],
+              },
+            ],
+          };
+          await writeFile(
+            path.join(dir, "good_notebook.ipynb"),
+            JSON.stringify(notebook),
+            "utf-8",
+          );
+
+          const result = await runPythonScanScript(dir, pythonCmd);
+
+          // Should contain third-party imports
+          expect(result.requirements).toContain("numpy");
+          expect(result.requirements).toContain("scipy");
+          expect(result.requirements).toContain("somelib");
+          expect(result.requirements).toContain("that");
+
+          // Should NOT contain local imports
+          expect(result.requirements).not.toContain("lib");
+          expect(result.requirements).not.toContain("example");
+
+          // Should NOT contain stdlib imports
+          expect(result.requirements).not.toContain("sys");
+          expect(result.requirements).not.toContain("this");
+        }),
+    );
+  },
+);
