@@ -40,12 +40,28 @@ describe("Detect errors in config", () => {
     cy.get(".quick-input-titlebar").should("have.text", "Select Deployment");
 
     // select our error case (retry until the specific item appears)
-    cy.get(".quick-input-widget")
-      .contains("Unknown Title • Error in quarto-project-8G2B", {
-        timeout: 20000,
-      })
-      .should("be.visible")
-      .click();
+    cy.retryWithBackoff(
+      () =>
+        cy.get(".quick-input-widget").then(($widget) => {
+          const $match = $widget.find(
+            ':contains("Unknown Title • Error in quarto-project-8G2B")',
+          );
+          // Filter to deepest matches to avoid clicking a parent container
+          const $leaves = $match.filter(function () {
+            return (
+              Cypress.$(this).find(
+                ':contains("Unknown Title • Error in quarto-project-8G2B")',
+              ).length === 0
+            );
+          });
+          return $leaves.length > 0 ? $leaves.first() : Cypress.$();
+        }),
+      15,
+      1000,
+    ).then(($el) => {
+      cy.wrap($el).scrollIntoView();
+      cy.wrap($el).click({ force: true });
+    });
 
     // confirm that the selector shows the error
     cy.findUniqueInPublisherWebview(
@@ -76,12 +92,28 @@ describe("Detect errors in config", () => {
     cy.get(".quick-input-titlebar").should("have.text", "Select Deployment");
 
     // select our error case (retry until the specific item appears)
-    cy.get(".quick-input-widget")
-      .contains("Unknown Title Due to Missing Config fastapi-simple-DHJL", {
-        timeout: 20000,
-      })
-      .should("be.visible")
-      .click();
+    cy.retryWithBackoff(
+      () =>
+        cy.get(".quick-input-widget").then(($widget) => {
+          const $match = $widget.find(
+            ':contains("Unknown Title Due to Missing Config fastapi-simple-DHJL")',
+          );
+          // Filter to deepest matches to avoid clicking a parent container
+          const $leaves = $match.filter(function () {
+            return (
+              Cypress.$(this).find(
+                ':contains("Unknown Title Due to Missing Config fastapi-simple-DHJL")',
+              ).length === 0
+            );
+          });
+          return $leaves.length > 0 ? $leaves.first() : Cypress.$();
+        }),
+      15,
+      1000,
+    ).then(($el) => {
+      cy.wrap($el).scrollIntoView();
+      cy.wrap($el).click({ force: true });
+    });
 
     // confirm that the selector shows the error
     cy.findUniqueInPublisherWebview(
