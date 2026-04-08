@@ -74,9 +74,9 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	r.Handle(ToPath("deployments", "{name}", "cancel", "{localid}"), PostDeploymentCancelHandlerFunc(base, log)).
 		Methods(http.MethodPost)
 
-	// POST /api/packages/python/scan
-	r.Handle(ToPath("packages", "python", "scan"), NewPostPackagesPythonScanHandler(base, log)).
-		Methods(http.MethodPost)
+	// GET /api/deployments/$NAME/environment
+	r.Handle(ToPath("deployments", "{name}", "environment"), GetDeploymentEnvironmentHandlerFunc(base, log, lister)).
+		Methods(http.MethodGet)
 
 	// GET /api/snowflake-connections
 	r.Handle(ToPath("snowflake-connections"), GetSnowflakeConnectionsHandlerFunc(log, snowflake.NewConnections())).
