@@ -88,6 +88,13 @@ export type FileEntry = {
   mode: number;
 };
 
+export type BundleProgressEvent =
+  | { kind: "sourceDir"; sourceDir: string }
+  | { kind: "file"; path: string; size: number }
+  | { kind: "summary"; files: number; totalBytes: number };
+
+export type BundleProgressCallback = (event: BundleProgressEvent) => void;
+
 export type BundleOptions = {
   /** Absolute path to the project directory, or to a single file */
   projectPath: string;
@@ -95,6 +102,8 @@ export type BundleOptions = {
   manifest: Manifest;
   /** File include/exclude patterns from the config's `files` array */
   filePatterns?: string[];
+  /** Optional callback for per-file progress reporting */
+  onProgress?: BundleProgressCallback;
 };
 
 export type BundleResult = {
