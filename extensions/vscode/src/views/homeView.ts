@@ -65,6 +65,7 @@ import { getConfigurationFiles } from "src/projectFiles";
 import { EventStream } from "src/events";
 import { getPythonInterpreterPath, getRInterpreterPath } from "../utils/vscode";
 import { scanRPackages } from "src/interpreters/rPackages";
+import { scanPythonDependencies } from "src/interpreters/scanPythonDependencies";
 import { getSummaryStringFromError } from "src/utils/errors";
 import { getNonce } from "src/utils/getNonce";
 import { getUri } from "src/utils/getUri";
@@ -1078,21 +1079,24 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
 
     try {
-      const response = await showProgress(
+      const data = await showProgress(
         "Refreshing Python Requirements File",
         Views.HomeView,
         async () => {
-          const api = await useApi();
           const python = await getPythonInterpreterPath();
-          return await api.packages.createPythonRequirementsFile(
+          const pythonPath = python?.pythonPath ?? "python3";
+          const projectDir = path.join(
+            this.root!.uri.fsPath,
             activeConfiguration.projectDir,
-            python,
+          );
+          return await scanPythonDependencies(
+            projectDir,
+            pythonPath,
             relPathPackageFile,
           );
         },
       );
 
-      const data = response.data;
       await commands.executeCommand("vscode.open", fileUri);
 
       if (data.incomplete.length > 0) {
