@@ -555,7 +555,6 @@ describe("connectPublish", () => {
       { step: "createBundle", status: "log" },
       { step: "createBundle", status: "log" },
       { step: "createBundle", status: "log" },
-      { step: "createBundle", status: "log" },
       { step: "createBundle", status: "success" },
       { step: "uploadBundle", status: "start" },
       { step: "uploadBundle", status: "log" },
@@ -1401,10 +1400,6 @@ describe("connectPublish — error classification", () => {
     });
     expect(logMessages).toContainEqual({
       step: "createBundle",
-      message: "Creating bundle from directory",
-    });
-    expect(logMessages).toContainEqual({
-      step: "createBundle",
       message: "Creating bundle from source directory",
     });
     expect(logMessages).toContainEqual({
@@ -1613,91 +1608,6 @@ describe("connectPublish — error classification", () => {
     );
     expect(logger.info).toHaveBeenCalledWith(
       "Bundle created files=1 total_bytes=100",
-    );
-  });
-
-  test("createBundle emits fallback summary when bundler sends no events", async () => {
-    const { createBundle } = await import("../bundler/bundler");
-    // Override mock to NOT invoke onProgress callback
-    vi.mocked(createBundle).mockImplementationOnce(() =>
-      Promise.resolve({
-        bundle: Buffer.from("fake-bundle"),
-        manifest: {
-          version: 1,
-          metadata: { appmode: "python-shiny" },
-          packages: {},
-          files: { "app.py": { checksum: "abc123" } },
-        },
-        fileCount: 1,
-        totalSize: 100,
-      }),
-    );
-
-    const onProgress = vi.fn();
-    const opts = makeOptions({ onProgress });
-
-    await connectPublish(opts);
-
-    const events = onProgress.mock.calls.map(
-      (args: unknown[]) => args[0] as PublishEvent,
-    );
-    const bundleLogs = events.filter(
-      (e) => e.step === "createBundle" && e.status === "log",
-    );
-
-    // Unconditional start message appears before bundling
-    expect(bundleLogs).toContainEqual(
-      expect.objectContaining({ message: "Creating bundle from directory" }),
-    );
-    // Fallback finish message appears when bundler emits no summary
-    expect(bundleLogs).toContainEqual(
-      expect.objectContaining({ message: "Bundle created" }),
-    );
-  });
-
-  test("createBundle emits fallback summary for partial bundler events", async () => {
-    const { createBundle } = await import("../bundler/bundler");
-    // Override mock to emit only file events (no sourceDir or summary)
-    vi.mocked(createBundle).mockImplementationOnce((options) => {
-      if (options.onProgress) {
-        options.onProgress({ kind: "file", path: "app.py", size: 100 });
-      }
-      return Promise.resolve({
-        bundle: Buffer.from("fake-bundle"),
-        manifest: {
-          version: 1,
-          metadata: { appmode: "python-shiny" },
-          packages: {},
-          files: { "app.py": { checksum: "abc123" } },
-        },
-        fileCount: 1,
-        totalSize: 100,
-      });
-    });
-
-    const onProgress = vi.fn();
-    const opts = makeOptions({ onProgress });
-
-    await connectPublish(opts);
-
-    const events = onProgress.mock.calls.map(
-      (args: unknown[]) => args[0] as PublishEvent,
-    );
-    const bundleLogs = events.filter(
-      (e) => e.step === "createBundle" && e.status === "log",
-    );
-
-    // Unconditional start message still present
-    expect(bundleLogs).toContainEqual(
-      expect.objectContaining({ message: "Creating bundle from directory" }),
-    );
-    // Fallback finish fires because summary was never emitted
-    expect(bundleLogs).toContainEqual(
-      expect.objectContaining({ message: "Bundle created" }),
-    );
-    // No "Bundle includes" since summary was never emitted
-    expect(bundleLogs).not.toContainEqual(
-      expect.objectContaining({ message: "Bundle includes" }),
     );
   });
 

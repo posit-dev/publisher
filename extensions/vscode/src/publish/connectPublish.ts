@@ -388,12 +388,6 @@ export async function connectPublish(
       status: "log",
       message: "Preparing files",
     });
-    onProgress({
-      step: "createBundle",
-      status: "log",
-      message: "Creating bundle from directory",
-    });
-    let sawSummary = false;
     const { bundle, manifest: finalManifest } = await buildBundleArchive(
       projectDir,
       config,
@@ -416,7 +410,6 @@ export async function connectPublish(
             logger.debug(`Adding file path=${event.path} size=${event.size}`);
             break;
           case "summary":
-            sawSummary = true;
             onProgress({
               step: "createBundle",
               status: "log",
@@ -433,13 +426,6 @@ export async function connectPublish(
         }
       },
     );
-    if (!sawSummary) {
-      onProgress({
-        step: "createBundle",
-        status: "log",
-        message: "Bundle created",
-      });
-    }
     record.files = getFilenames(finalManifest);
 
     // Record dependencies in the deployment record
