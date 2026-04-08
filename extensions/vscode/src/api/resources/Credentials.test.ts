@@ -92,38 +92,4 @@ describe("Credentials API client", () => {
 
     expect(mockAxiosDelete).toHaveBeenCalledWith("credentials");
   });
-
-  test("generateToken calls the correct endpoint with server URL", async () => {
-    mockAxiosPost.mockResolvedValue({
-      data: {
-        token: "test-token-123",
-        claimUrl: "https://connect.example.com/claim/123",
-        privateKey: "test-private-key-123",
-      },
-    });
-
-    await credentials.generateToken("https://connect.example.com");
-
-    expect(mockAxiosPost).toHaveBeenCalledWith("connect/token", {
-      serverUrl: "https://connect.example.com",
-    });
-  });
-
-  test("verifyToken calls the correct endpoint with token parameters", async () => {
-    mockAxiosPost.mockResolvedValue({
-      data: { username: "testuser", guid: "user-123" },
-    });
-
-    await credentials.verifyToken(
-      "https://connect.example.com",
-      "test-token-123",
-      "test-private-key-123",
-    );
-
-    expect(mockAxiosPost).toHaveBeenCalledWith("connect/token/user", {
-      serverUrl: "https://connect.example.com",
-      token: "test-token-123",
-      privateKey: "test-private-key-123",
-    });
-  });
 });

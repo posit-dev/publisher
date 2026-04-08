@@ -24,31 +24,4 @@ export class Credentials {
   reset() {
     return this.client.delete(`credentials`);
   }
-
-  // Generates a new token for Connect authentication
-  // Returns token ID, claim URL, private key, and discovered server URL
-  generateToken(serverUrl: string) {
-    return this.client.post<{
-      token: string;
-      claimUrl: string;
-      privateKey: string;
-      serverUrl: string;
-    }>(`connect/token`, {
-      serverUrl,
-    });
-  }
-
-  // Verifies if a token has been claimed
-  // Returns the user information if the token has been claimed
-  verifyToken(serverUrl: string, token: string, privateKey: string) {
-    return this.client.post<{
-      username?: string;
-      guid?: string;
-      [key: string]: unknown;
-    }>(`connect/token/user`, {
-      serverUrl,
-      token,
-      privateKey,
-    });
-  }
 }
