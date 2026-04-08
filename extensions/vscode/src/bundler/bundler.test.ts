@@ -323,6 +323,31 @@ describe("createBundle", () => {
     });
   });
 
+  it("reports archive path (not source path) for remapped renv.lock", async () => {
+    makeFile("app.R", "library(shiny)");
+    makeFile(".posit/publish/deployments/renv.lock", '{"R":{}}');
+
+    const events: BundleProgressEvent[] = [];
+    await createBundle({
+      projectPath: tmpDir,
+      manifest: newManifest(),
+      onProgress: (event) => events.push(event),
+    });
+
+    const fileEvents = events.filter((e) => e.kind === "file");
+    const renvEvent = fileEvents.find(
+      (e) => e.kind === "file" && e.path === "renv.lock",
+    );
+    expect(renvEvent).toBeDefined();
+
+    // Should NOT report the staged path
+    const stagedEvent = fileEvents.find(
+      (e) =>
+        e.kind === "file" && e.path === ".posit/publish/deployments/renv.lock",
+    );
+    expect(stagedEvent).toBeUndefined();
+  });
+
   it("works without onProgress callback", async () => {
     makeFile("app.py");
 

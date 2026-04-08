@@ -78,7 +78,7 @@ export async function createArchive(
     addFile(updatedManifest, archiveName, md5);
     fileCount++;
     totalSize += entry.size;
-    onProgress?.({ kind: "file", path: entry.relativePath, size: entry.size });
+    onProgress?.({ kind: "file", path: archiveName, size: entry.size });
   }
 
   onProgress?.({ kind: "summary", files: fileCount, totalBytes: totalSize });

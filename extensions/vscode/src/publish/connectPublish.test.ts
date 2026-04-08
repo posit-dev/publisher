@@ -1611,6 +1611,44 @@ describe("connectPublish — error classification", () => {
     );
   });
 
+  test("createBundle emits fallback progress when bundler sends no events", async () => {
+    const { createBundle } = await import("../bundler/bundler");
+    // Override mock to NOT invoke onProgress callback
+    vi.mocked(createBundle).mockImplementationOnce(() =>
+      Promise.resolve({
+        bundle: Buffer.from("fake-bundle"),
+        manifest: {
+          version: 1,
+          metadata: { appmode: "python-shiny" },
+          packages: {},
+          files: { "app.py": { checksum: "abc123" } },
+        },
+        fileCount: 1,
+        totalSize: 100,
+      }),
+    );
+
+    const onProgress = vi.fn();
+    const opts = makeOptions({ onProgress });
+
+    await connectPublish(opts);
+
+    const events = onProgress.mock.calls.map(
+      (args: unknown[]) => args[0] as PublishEvent,
+    );
+    const bundleLogs = events.filter(
+      (e) => e.step === "createBundle" && e.status === "log",
+    );
+
+    // Fallback messages should appear when bundler emits no progress
+    expect(bundleLogs).toContainEqual(
+      expect.objectContaining({ message: "Creating bundle from directory" }),
+    );
+    expect(bundleLogs).toContainEqual(
+      expect.objectContaining({ message: "Bundle created" }),
+    );
+  });
+
   test("deployBundle success carries taskId", async () => {
     const onProgress = vi.fn();
     const opts = makeOptions({ onProgress });
