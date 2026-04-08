@@ -164,6 +164,10 @@ SKIP_DIRS = {".git", "__pycache__", "node_modules", ".venv", "venv",
 # --- import extraction helpers ---
 
 def _imports_from_ast(source):
+    """Extract top-level package names from import statements using the AST.
+    Only absolute imports (level==0) are kept; relative imports like
+    'from . import x' are intra-project and skipped. Dotted names like
+    'import os.path' are split to keep only the root ('os')."""
     try:
         tree = ast.parse(source)
     except SyntaxError:
@@ -236,6 +240,11 @@ def is_local_import(name, file_dir):
 # --- package mapping ---
 
 def build_package_map():
+    """Map import names to (package_name, version) using installed distributions.
+    Uses top_level.txt when available -- this is how we know that 'import sklearn'
+    comes from 'scikit-learn', or 'import cv2' from 'opencv-python'. Falls back
+    to the package name itself (with dash-to-underscore normalization) when
+    top_level.txt is absent. Uses dist.metadata["Name"] for Python 3.9 compat."""
     from importlib.metadata import distributions
     mapping = {}
     for dist in distributions():
