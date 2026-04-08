@@ -39,24 +39,19 @@ describe("Detect errors in config", () => {
     cy.get(".quick-input-widget").should("be.visible");
     cy.get(".quick-input-titlebar").should("have.text", "Select Deployment");
 
-    // select our error case (retry until the specific item appears)
+    // Type a unique substring into the quickpick filter to narrow the list,
+    // then click the first matching row. This avoids reliance on the virtualized
+    // list rendering all items in CI (where the widget shell appears before items).
+    cy.get(".quick-input-widget input").clear();
+    cy.get(".quick-input-widget input").type("quarto-project-8G2B");
+
     cy.retryWithBackoff(
       () =>
         cy.get(".quick-input-widget").then(($widget) => {
-          const $match = $widget.find(
-            ':contains("Unknown Title • Error in quarto-project-8G2B")',
-          );
-          // Filter to deepest matches to avoid clicking a parent container
-          const $leaves = $match.filter(function () {
-            return (
-              Cypress.$(this).find(
-                ':contains("Unknown Title • Error in quarto-project-8G2B")',
-              ).length === 0
-            );
-          });
-          return $leaves.length > 0 ? $leaves.first() : Cypress.$();
+          const $rows = $widget.find(".quick-input-list .monaco-list-row");
+          return $rows.length > 0 ? $rows.first() : Cypress.$();
         }),
-      15,
+      10,
       1000,
     ).then(($el) => {
       cy.wrap($el).scrollIntoView();
@@ -91,24 +86,19 @@ describe("Detect errors in config", () => {
     cy.get(".quick-input-widget").should("be.visible");
     cy.get(".quick-input-titlebar").should("have.text", "Select Deployment");
 
-    // select our error case (retry until the specific item appears)
+    // Type a unique substring into the quickpick filter to narrow the list,
+    // then click the first matching row. This avoids reliance on the virtualized
+    // list rendering all items in CI (where the widget shell appears before items).
+    cy.get(".quick-input-widget input").clear();
+    cy.get(".quick-input-widget input").type("fastapi-simple-DHJL");
+
     cy.retryWithBackoff(
       () =>
         cy.get(".quick-input-widget").then(($widget) => {
-          const $match = $widget.find(
-            ':contains("Unknown Title Due to Missing Config fastapi-simple-DHJL")',
-          );
-          // Filter to deepest matches to avoid clicking a parent container
-          const $leaves = $match.filter(function () {
-            return (
-              Cypress.$(this).find(
-                ':contains("Unknown Title Due to Missing Config fastapi-simple-DHJL")',
-              ).length === 0
-            );
-          });
-          return $leaves.length > 0 ? $leaves.first() : Cypress.$();
+          const $rows = $widget.find(".quick-input-list .monaco-list-row");
+          return $rows.length > 0 ? $rows.first() : Cypress.$();
         }),
-      15,
+      10,
       1000,
     ).then(($el) => {
       cy.wrap($el).scrollIntoView();
