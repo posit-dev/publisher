@@ -51,9 +51,10 @@ describe("Detect errors in config", () => {
               return Cypress.$(this).attr("aria-label");
             })
             .get();
-          cy.log(
-            `quickpick rows (${labels.length}): ${JSON.stringify(labels)}`,
-          );
+          Cypress.log({
+            name: "quickpick",
+            message: `rows (${labels.length}): ${JSON.stringify(labels)}`,
+          });
           const $match = $widget.find(
             '.monaco-list-row[aria-label*="quarto-project-8G2B"]',
           );
@@ -106,9 +107,10 @@ describe("Detect errors in config", () => {
               return Cypress.$(this).attr("aria-label");
             })
             .get();
-          cy.log(
-            `quickpick rows (${labels.length}): ${JSON.stringify(labels)}`,
-          );
+          Cypress.log({
+            name: "quickpick",
+            message: `rows (${labels.length}): ${JSON.stringify(labels)}`,
+          });
           const $match = $widget.find(
             '.monaco-list-row[aria-label*="fastapi-simple-DHJL"]',
           );
