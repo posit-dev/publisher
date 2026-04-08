@@ -971,20 +971,32 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   }
 
   private async refreshConnectServerSettings() {
+    const clearServerSettings = () => {
+      this.webviewConduit.sendMsg({
+        kind: HostToWebviewMessageType.REFRESH_SERVER_SETTINGS,
+        content: {
+          serverSettings: undefined,
+        },
+      });
+    };
+
     const activeContentRecord = await this.state.getSelectedContentRecord();
     if (activeContentRecord === undefined) {
+      clearServerSettings();
       return;
     }
 
     const serverType = activeContentRecord.serverType || ServerType.CONNECT;
     const productType = getProductType(serverType);
     if (!isConnectProduct(productType)) {
+      clearServerSettings();
       return;
     }
 
     const credential =
       this.state.findCredentialForContentRecord(activeContentRecord);
     if (credential === undefined) {
+      clearServerSettings();
       return;
     }
 
@@ -1005,7 +1017,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         },
       });
     } catch (_: unknown) {
-      console.error(`Failed to fetch server-settings for [${credential.name}]`);
+      clearServerSettings();
     }
   }
 
