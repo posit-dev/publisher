@@ -8,6 +8,7 @@ import { logger } from "src/logging";
 import { ContentTypeDetector, PartialConfig } from "../types";
 import { globDir } from "../helpers/globDir";
 import { detectMarkdownLanguagesInDirectory } from "../helpers/markdownLanguages";
+import { findLinkedResources } from "../helpers/resourceFinder";
 
 interface RMarkdownMetadata {
   title?: string;
@@ -184,6 +185,11 @@ export class RMarkdownDetector implements ContentTypeDetector {
     if (needsPython) {
       logger.info(`[rmarkdown] detected Python code in ${relEntrypoint}`);
       cfg.python = {};
+    }
+
+    if (cfg.files) {
+      const discoveredAssets = await findLinkedResources(baseDir, cfg.files);
+      cfg.files.push(...discoveredAssets);
     }
 
     return cfg;

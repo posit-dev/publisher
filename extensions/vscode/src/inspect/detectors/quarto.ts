@@ -9,6 +9,7 @@ import { logger } from "src/logging";
 import { ContentTypeDetector, PartialConfig } from "../types";
 import { globDir } from "../helpers/globDir";
 import { detectMarkdownLanguagesInContent } from "../helpers/markdownLanguages";
+import { findLinkedResources } from "../helpers/resourceFinder";
 import { QuartoInspectOutput } from "./quartoInspectOutput";
 
 const execFileAsync = promisify(execFile);
@@ -188,6 +189,10 @@ export class QuartoDetector implements ContentTypeDetector {
 
     // Include project files
     cfg.files = await this.collectProjectFiles(baseDir, cfg, inspectOutput);
+
+    // Discover linked resources (images, stylesheets, etc.)
+    const discoveredAssets = await findLinkedResources(baseDir, cfg.files);
+    cfg.files.push(...discoveredAssets);
 
     // Include static alternative for non-Shiny content
     if (cfg.type !== ContentType.QUARTO_SHINY) {
@@ -396,6 +401,9 @@ export class QuartoDetector implements ContentTypeDetector {
       return undefined;
     }
 
+    const discoveredAssets = await findLinkedResources(baseDir, files);
+    files.push(...discoveredAssets);
+
     return {
       type: ContentType.HTML,
       entrypoint,
@@ -470,6 +478,8 @@ export class QuartoDetector implements ContentTypeDetector {
       cfg.python = {};
       cfg.quarto = { version: defaultQuartoVersion, engines: ["jupyter"] };
       files.push(`/${relEntrypoint}`);
+      const assets = await findLinkedResources(baseDir, files);
+      files.push(...assets);
       return cfg;
     }
 
@@ -478,6 +488,8 @@ export class QuartoDetector implements ContentTypeDetector {
       cfg.r = {};
       cfg.quarto = { version: defaultQuartoVersion, engines: ["knitr"] };
       files.push(`/${relEntrypoint}`);
+      const assets = await findLinkedResources(baseDir, files);
+      files.push(...assets);
       return cfg;
     }
 
@@ -490,6 +502,9 @@ export class QuartoDetector implements ContentTypeDetector {
 
     // Include special yml files
     await this.includeSpecialYmlFiles(baseDir, files, cfg);
+
+    const assets = await findLinkedResources(baseDir, files);
+    files.push(...assets);
 
     return cfg;
   }
