@@ -212,6 +212,12 @@
         "category": "Posit Publisher"
       },
       {
+        "command": "posit.publisher.logs.viewJobLog",
+        "title": "View Full Job Error Log",
+        "icon": "$(output)",
+        "category": "Posit Publisher"
+      },
+      {
         "command": "posit.publisher.homeView.navigateToDeployment.Server",
         "title": "Browse Deployment Server",
         "icon": "$(server)",
@@ -347,6 +353,10 @@
         },
         {
           "command": "posit.publisher.logs.visit",
+          "when": "false"
+        },
+        {
+          "command": "posit.publisher.logs.viewJobLog",
           "when": "false"
         },
         {

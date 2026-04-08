@@ -44,6 +44,7 @@ const baseContexts = {
 
 const logsCommands = {
   Visit: "posit.publisher.logs.visit",
+  ViewJobLog: "posit.publisher.logs.viewJobLog",
   // Added automatically by VSCode with view registration
   Fileview: "posit.publisher.logs.fileview",
   Copy: "posit.publisher.logs.copy",

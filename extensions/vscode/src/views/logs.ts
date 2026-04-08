@@ -34,6 +34,11 @@ import {
   restoreMsgToStatusSuffix,
   ProductType,
 } from "src/api";
+import {
+  ConnectAPI,
+  ContentID,
+  type JobLogEntry,
+} from "@posit-dev/connect-api";
 import { Commands, Views } from "src/constants";
 import {
   ErrorMessageActionIds,
@@ -278,6 +283,10 @@ export class LogsViewProvider {
   }
 }
 
+export type CredentialResolver = (
+  serverUrl: string,
+) => { url: string; apiKey: string } | undefined;
+
 /**
  * Tree data provider for the Logs view.
  */
@@ -285,6 +294,10 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
   private stages!: Map<string, LogStage>;
   private publishingStage!: LogStage;
   private treeView?: TreeView<LogsTreeItem>;
+
+  // Tracked per-deployment so we can fetch job logs on validation failure
+  private trackedContentId: string | undefined;
+  private trackedServerUrl: string | undefined;
 
   /**
    * Reveal helper that checks visibility immediately before calling reveal.
@@ -310,16 +323,20 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
   /**
    * Creates an instance of LogsTreeDataProvider.
    * @constructor
-   * @param {ExtensionContext} context = The VSCode Extension's runtime context
+   * @param {ExtensionContext} context - The VSCode Extension's runtime context
    * @param {EventStream} stream - The event stream to listen to.
+   * @param {CredentialResolver} credentialResolver - Resolves server URL to credentials for Connect API calls.
    */
   constructor(
     private readonly context: ExtensionContext,
     private readonly stream: EventStream,
+    private readonly credentialResolver?: CredentialResolver,
   ) {}
 
   private resetStages() {
     this.stages = createStagesMap();
+    this.trackedContentId = undefined;
+    this.trackedServerUrl = undefined;
 
     this.publishingStage = createLogStage(
       "Publishing",
@@ -330,6 +347,103 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
       LogStageStatus.notStarted,
       Array.from(this.stages.values()),
     );
+  }
+
+  /**
+   * Fetches the latest failed job's error log from Connect and appends
+   * the tail lines as synthetic log events under the given stage.
+   */
+  private async fetchJobErrorLog(stage: LogStage): Promise<void> {
+    if (!this.trackedContentId || !this.trackedServerUrl) {
+      return;
+    }
+    if (!this.credentialResolver) {
+      return;
+    }
+
+    const credential = this.credentialResolver(this.trackedServerUrl);
+    if (!credential) {
+      return;
+    }
+
+    try {
+      const connectApi = new ConnectAPI({
+        url: credential.url,
+        apiKey: credential.apiKey,
+        rejectUnauthorized: extensionSettings.verifyCertificates(),
+      });
+      const contentId = ContentID(this.trackedContentId);
+      const { data: jobs } = await connectApi.getJobs(contentId);
+
+      // Find the most recent failed job (status != 0, latest by start_time)
+      const failedJobs = jobs
+        .filter((j) => j.status !== 0)
+        .sort(
+          (a, b) =>
+            new Date(b.start_time).getTime() - new Date(a.start_time).getTime(),
+        );
+      const latestFailedJob = failedJobs[0];
+      if (!latestFailedJob) {
+        return;
+      }
+
+      const { data: logEntries } = await connectApi.getJobLog(
+        contentId,
+        latestFailedJob.key,
+      );
+
+      if (logEntries.length === 0) {
+        return;
+      }
+
+      // Store full log for "open full log" action
+      this.lastJobLogEntries = logEntries;
+
+      // Append tail lines as synthetic events under the stage
+      const tailCount = 10;
+      const tail = logEntries.slice(-tailCount);
+      if (logEntries.length > tailCount) {
+        stage.events.push(
+          this.syntheticLogEvent(
+            `--- Showing last ${tailCount} of ${logEntries.length} job log lines (click to view full log) ---`,
+            true,
+          ),
+        );
+      }
+      for (const entry of tail) {
+        stage.events.push(this.syntheticLogEvent(entry.data));
+      }
+
+      this.refresh();
+      this.revealLatestLog("publish/validateDeployment");
+    } catch (error) {
+      console.error("Failed to fetch job error log:", error);
+    }
+  }
+
+  private lastJobLogEntries: JobLogEntry[] = [];
+
+  private syntheticLogEvent(
+    message: string,
+    jobLogAction = false,
+  ): EventStreamMessage {
+    return {
+      type: "publish/validateDeployment/log",
+      time: new Date().toISOString(),
+      data: {
+        message,
+        level: "ERROR",
+        ...(jobLogAction ? { jobLogAction: "true" } : {}),
+      },
+    };
+  }
+
+  public static async openJobErrorLog(
+    logEntries: JobLogEntry[],
+  ): Promise<void> {
+    const content = logEntries.map((e) => `[${e.source}] ${e.data}`).join("\n");
+    const document = await workspace.openTextDocument({ content });
+    await window.showTextDocument(document);
   }
 
   private registerEvents() {
@@ -344,6 +458,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
             stage.status = LogStageStatus.notApplicable;
           }
         });
+        this.trackedServerUrl = msg.data.server;
         this.publishingStage.inactiveLabel = `Publish "${msg.data.title}" to ${msg.data.server}`;
         this.publishingStage.activeLabel = `Publishing "${msg.data.title}" to ${msg.data.server}`;
         this.publishingStage.status = LogStageStatus.inProgress;
@@ -457,6 +572,24 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
       }
     });
 
+    // Track contentId from deployment creation events
+    this.stream.register(
+      "publish/createNewDeployment/success",
+      (msg: EventStreamMessage) => {
+        if (msg.data.contentId) {
+          this.trackedContentId = msg.data.contentId;
+        }
+      },
+    );
+    this.stream.register(
+      "publish/createDeployment/start",
+      (msg: EventStreamMessage) => {
+        if (msg.data.contentId) {
+          this.trackedContentId = msg.data.contentId;
+        }
+      },
+    );
+
     Array.from(this.stages.keys()).forEach((stageName) => {
       this.stream.register(
         `${stageName}/start`,
@@ -492,7 +625,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
 
       this.stream.register(
         `${stageName}/failure`,
-        (msg: EventStreamMessage) => {
+        async (msg: EventStreamMessage) => {
           const stage = this.stages.get(stageName);
           if (stage) {
             if (msg.data.canceled === "true") {
@@ -504,6 +637,11 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
           }
           this.refresh();
           this.revealFailure();
+
+          // Fetch job error log when content validation fails
+          if (stageName === "publish/validateDeployment" && stage) {
+            await this.fetchJobErrorLog(stage);
+          }
         },
       );
 
@@ -733,6 +871,11 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
           await env.openExternal(uri);
         },
       ),
+      commands.registerCommand(Commands.Logs.ViewJobLog, async () => {
+        if (this.lastJobLogEntries.length > 0) {
+          await LogsTreeDataProvider.openJobErrorLog(this.lastJobLogEntries);
+        }
+      }),
     );
   }
 }
@@ -858,6 +1001,14 @@ export class LogsTreeLogItem extends TreeItem {
       this.iconPath = new ThemeIcon("debug-stackframe-dot");
     }
 
+    // Allow synthetic job log header lines to open the full log
+    if (msg.data.jobLogAction) {
+      this.command = {
+        title: "View Full Job Log",
+        command: Commands.Logs.ViewJobLog,
+      };
+    }
+
     // Prefer logs urls when a validate deployment failure or publish failure
     const isFailureType =
       msg.type === "publish/validateDeployment/failure" ||
@@ -867,7 +1018,7 @@ export class LogsTreeLogItem extends TreeItem {
       ? msg.data.logsUrl || msg.data.dashboardUrl
       : msg.data.dashboardUrl;
 
-    if (url) {
+    if (!msg.data.jobLogAction && url) {
       this.command = {
         title: "View",
         command: Commands.Logs.Visit,

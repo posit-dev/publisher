@@ -1010,6 +1010,108 @@ describe("validateDeployment", () => {
 });
 
 // ---------------------------------------------------------------------------
+// getJobs
+// ---------------------------------------------------------------------------
+
+describe("getJobs", () => {
+  const contentId = ContentID("content-123");
+
+  it("returns the list of jobs", async () => {
+    const jobs = [
+      {
+        id: "1",
+        key: "job-key-1",
+        app_id: "42",
+        app_guid: contentId,
+        variant_id: "0",
+        status: 0,
+        hostname: "host1",
+        cluster: null,
+        image: null,
+        tag: "build_jupyter",
+        exit_code: 0,
+        run_as: "rstudio-connect",
+        queue_time: null,
+        start_time: "2024-01-01T00:00:00Z",
+        end_time: "2024-01-01T00:01:00Z",
+      },
+    ];
+    mockRequest.mockResolvedValue(jsonResponse(jobs));
+
+    const client = createClient();
+    const { data } = await client.getJobs(contentId);
+
+    expect(data).toEqual(jobs);
+  });
+
+  it("calls the correct URL", async () => {
+    mockRequest.mockResolvedValue(jsonResponse([]));
+
+    const client = createClient();
+    await client.getJobs(contentId);
+
+    const call = mockRequest.mock.calls[0][0];
+    expect(call.url).toBe(`/__api__/v1/content/${contentId}/jobs`);
+  });
+
+  it("throws on non-2xx", async () => {
+    mockRequest.mockResolvedValue(textResponse("not found", 404, "Not Found"));
+
+    const client = createClient();
+    await expect(client.getJobs(contentId)).rejects.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getJobLog
+// ---------------------------------------------------------------------------
+
+describe("getJobLog", () => {
+  const contentId = ContentID("content-123");
+  const jobKey = "job-key-1";
+
+  it("returns the log entries", async () => {
+    const logEntries = [
+      {
+        source: "stderr",
+        timestamp: "2024-01-01T00:00:00Z",
+        data: "Error: module not found",
+      },
+      {
+        source: "stdout",
+        timestamp: "2024-01-01T00:00:01Z",
+        data: "Starting application...",
+      },
+    ];
+    mockRequest.mockResolvedValue(jsonResponse(logEntries));
+
+    const client = createClient();
+    const { data } = await client.getJobLog(contentId, jobKey);
+
+    expect(data).toEqual(logEntries);
+  });
+
+  it("calls the correct URL", async () => {
+    mockRequest.mockResolvedValue(jsonResponse([]));
+
+    const client = createClient();
+    await client.getJobLog(contentId, jobKey);
+
+    const call = mockRequest.mock.calls[0][0];
+    expect(call.url).toBe(
+      `/__api__/v1/content/${contentId}/jobs/${jobKey}/log`,
+    );
+  });
+
+  it("throws on non-2xx", async () => {
+    mockRequest.mockResolvedValue(textResponse("not found", 404, "Not Found"));
+
+    const client = createClient();
+    await expect(client.getJobLog(contentId, jobKey)).rejects.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
 // getIntegrations
 // ---------------------------------------------------------------------------
 
