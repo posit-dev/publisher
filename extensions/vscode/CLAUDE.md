@@ -161,7 +161,12 @@ This extension runs on macOS, Linux, and Windows. Never construct file-system pa
 - Build paths with `path.join()` and assert against `path.join()` results — never hardcode `"/project/foo"` literals as file-system paths
 - For tests that touch the real filesystem, use `os.tmpdir()` + `fs.mkdtempSync()` for setup (see `bundler.test.ts`, `configWriter.test.ts` for good examples)
 - TOML config patterns like `"/app.py"` are data values, not file-system paths — those are fine as string literals
+**In tests:**
 
+- Build paths with `path.join()` and assert against `path.join()` results — never hardcode `"/project/foo"` literals as file-system paths
+- For tests that touch the real filesystem, use `os.tmpdir()` + `fs.mkdtempSync()` for setup (see `bundler.test.ts`, `configWriter.test.ts` for good examples)
+- TOML config patterns like `"/app.py"` are data values, not file-system paths — those are fine as string literals
+- Whenever possible, test paths with spaces (other relevant non-ascii characters) to ensure that our path operations are compatible across shells and systems.
 ## Avoid Type Assertions
 
 Do not use TypeScript [type assertions](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#type-assertions) (`as Type`) unless there is no alternative. Type assertions bypass the compiler's type checking and can hide bugs. Instead, prefer:
