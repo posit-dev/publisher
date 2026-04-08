@@ -39,20 +39,28 @@ describe("Detect errors in config", () => {
     cy.get(".quick-input-widget").should("be.visible");
     cy.get(".quick-input-titlebar").should("have.text", "Select Deployment");
 
-    // Type a unique substring into the quickpick filter to narrow the list,
-    // then click the first matching row. This avoids reliance on the virtualized
-    // list rendering all items in CI (where the widget shell appears before items).
-    cy.get(".quick-input-widget input").clear();
-    cy.get(".quick-input-widget input").type("quarto-project-8G2B");
-
+    // Wait for the error deployment to appear in the quickpick list using
+    // aria-label matching (the same pattern used in sequences.js for reliable
+    // item selection). Log quickpick contents on each retry for CI diagnostics.
     cy.retryWithBackoff(
       () =>
         cy.get(".quick-input-widget").then(($widget) => {
-          const $rows = $widget.find(".quick-input-list .monaco-list-row");
-          return $rows.length > 0 ? $rows.first() : Cypress.$();
+          const $allRows = $widget.find(".quick-input-list .monaco-list-row");
+          const labels = $allRows
+            .map(function () {
+              return Cypress.$(this).attr("aria-label");
+            })
+            .get();
+          cy.log(
+            `quickpick rows (${labels.length}): ${JSON.stringify(labels)}`,
+          );
+          const $match = $widget.find(
+            '.monaco-list-row[aria-label*="quarto-project-8G2B"]',
+          );
+          return $match.length > 0 ? $match.first() : Cypress.$();
         }),
-      10,
-      1000,
+      20,
+      1500,
     ).then(($el) => {
       cy.wrap($el).scrollIntoView();
       cy.wrap($el).click({ force: true });
@@ -86,20 +94,28 @@ describe("Detect errors in config", () => {
     cy.get(".quick-input-widget").should("be.visible");
     cy.get(".quick-input-titlebar").should("have.text", "Select Deployment");
 
-    // Type a unique substring into the quickpick filter to narrow the list,
-    // then click the first matching row. This avoids reliance on the virtualized
-    // list rendering all items in CI (where the widget shell appears before items).
-    cy.get(".quick-input-widget input").clear();
-    cy.get(".quick-input-widget input").type("fastapi-simple-DHJL");
-
+    // Wait for the error deployment to appear in the quickpick list using
+    // aria-label matching (the same pattern used in sequences.js for reliable
+    // item selection). Log quickpick contents on each retry for CI diagnostics.
     cy.retryWithBackoff(
       () =>
         cy.get(".quick-input-widget").then(($widget) => {
-          const $rows = $widget.find(".quick-input-list .monaco-list-row");
-          return $rows.length > 0 ? $rows.first() : Cypress.$();
+          const $allRows = $widget.find(".quick-input-list .monaco-list-row");
+          const labels = $allRows
+            .map(function () {
+              return Cypress.$(this).attr("aria-label");
+            })
+            .get();
+          cy.log(
+            `quickpick rows (${labels.length}): ${JSON.stringify(labels)}`,
+          );
+          const $match = $widget.find(
+            '.monaco-list-row[aria-label*="fastapi-simple-DHJL"]',
+          );
+          return $match.length > 0 ? $match.first() : Cypress.$();
         }),
-      10,
-      1000,
+      20,
+      1500,
     ).then(($el) => {
       cy.wrap($el).scrollIntoView();
       cy.wrap($el).click({ force: true });
