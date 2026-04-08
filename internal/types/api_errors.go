@@ -207,20 +207,6 @@ func APIErrorCredentialsBackupFileFromAgentError(aerr AgentError) APIErrorCreden
 	}
 }
 
-type APIErrorPythonExecNotFound struct {
-	Code ErrorCode `json:"code"`
-}
-
-func APIErrorPythonExecNotFoundFromAgentError(aerr AgentError) APIErrorPythonExecNotFound {
-	return APIErrorPythonExecNotFound{
-		Code: ErrorPythonExecNotFound,
-	}
-}
-
-func (apierr *APIErrorPythonExecNotFound) JSONResponse(w http.ResponseWriter) {
-	jsonResult(w, http.StatusUnprocessableEntity, apierr)
-}
-
 type APIErrorDeviceAuth struct {
 	Code ErrorCode `json:"code"`
 }
