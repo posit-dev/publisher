@@ -5,6 +5,7 @@ import * as fs from "fs/promises";
 import { ContentType } from "src/api/types/configurations";
 import { ContentTypeDetector, PartialConfig } from "../types";
 import { globDir } from "../helpers/globDir";
+import { findLinkedResources } from "../helpers/resourceFinder";
 
 export class StaticHTMLDetector implements ContentTypeDetector {
   async inferType(
@@ -46,6 +47,9 @@ export class StaticHTMLDetector implements ContentTypeDetector {
           // Directory doesn't exist
         }
       }
+
+      const discoveredAssets = await findLinkedResources(baseDir, files);
+      files.push(...discoveredAssets);
 
       configs.push({
         type: ContentType.HTML,

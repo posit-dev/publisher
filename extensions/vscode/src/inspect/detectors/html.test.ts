@@ -1,18 +1,34 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
-import { afterEach, describe, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { StaticHTMLDetector } from "./html";
 import { ContentType } from "src/api/types/configurations";
 
-const { mockReaddir, mockStat } = vi.hoisted(() => ({
+const { mockReaddir, mockStat, mockReadFile } = vi.hoisted(() => ({
   mockReaddir: vi.fn(),
   mockStat: vi.fn(),
+  mockReadFile: vi.fn(),
 }));
 
 vi.mock("fs/promises", () => ({
   readdir: mockReaddir,
   stat: mockStat,
+  readFile: mockReadFile,
 }));
+
+vi.mock("src/logging", () => ({
+  logger: {
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  },
+}));
+
+beforeEach(() => {
+  // Default: readFile returns empty content so findLinkedResources finds nothing
+  mockReadFile.mockResolvedValue("");
+});
 
 afterEach(() => {
   vi.clearAllMocks();
