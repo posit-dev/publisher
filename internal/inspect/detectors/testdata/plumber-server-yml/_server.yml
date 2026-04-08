@@ -1,4 +1,0 @@
-engine: plumber2
-routes: app/plumber.R
-constructor: ~
-options: {}

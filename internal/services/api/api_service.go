@@ -53,10 +53,6 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	// GET /api/events
 	r.HandleFunc(ToPath("events"), eventServer.ServeHTTP)
 
-	// POST /api/inspect
-	r.Handle(ToPath("inspect"), PostInspectHandlerFunc(base, log)).
-		Methods(http.MethodPost)
-
 	// POST /api/credentials
 	r.Handle(ToPath("credentials"), PostCredentialFuncHandler(log)).
 		Methods(http.MethodPost)
