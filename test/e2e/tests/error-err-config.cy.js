@@ -39,11 +39,16 @@ describe("Detect errors in config", () => {
     cy.get(".quick-input-widget").should("be.visible");
     cy.get(".quick-input-titlebar").should("have.text", "Select Deployment");
 
-    // select our error case (retry until the specific item appears)
-    cy.get(".quick-input-widget")
-      .contains("Unknown Title • Error in quarto-project-8G2B", {
-        timeout: 20000,
-      })
+    // Filter the quickpick to the target deployment, then select it.
+    // The quickpick uses a virtualized list that only renders visible rows.
+    // In CI, prior tests may leave extra deployments that push error entries
+    // below the fold. Typing into the filter narrows the list so the target
+    // item is rendered in the DOM and clickable.
+    cy.get(".quick-input-widget input").type("quarto-project-8G2B");
+    cy.get(
+      '.quick-input-list .monaco-list-row[aria-label*="quarto-project-8G2B"]',
+      { timeout: 20000 },
+    )
       .should("be.visible")
       .click();
 
@@ -75,11 +80,13 @@ describe("Detect errors in config", () => {
     cy.get(".quick-input-widget").should("be.visible");
     cy.get(".quick-input-titlebar").should("have.text", "Select Deployment");
 
-    // select our error case (retry until the specific item appears)
-    cy.get(".quick-input-widget")
-      .contains("Unknown Title Due to Missing Config fastapi-simple-DHJL", {
-        timeout: 20000,
-      })
+    // Filter the quickpick to the target deployment, then select it.
+    // (See comment in first test for rationale.)
+    cy.get(".quick-input-widget input").type("fastapi-simple-DHJL");
+    cy.get(
+      '.quick-input-list .monaco-list-row[aria-label*="fastapi-simple-DHJL"]',
+      { timeout: 20000 },
+    )
       .should("be.visible")
       .click();
 
