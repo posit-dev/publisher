@@ -141,14 +141,18 @@ async function scanMarkdown(
 
   let inYAML = false;
   let yamlContent = "";
+  let yamlParsed = false;
 
-  for (const line of lines) {
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i] ?? "";
     if (line.trim() === "---") {
-      if (!inYAML) {
+      if (!inYAML && !yamlParsed && i === 0) {
+        // Opening --- must be the first line of the file
         inYAML = true;
         continue;
-      } else {
+      } else if (inYAML) {
         inYAML = false;
+        yamlParsed = true;
         await parseYAMLResourceFiles(
           yamlContent,
           baseDir,

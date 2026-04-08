@@ -131,6 +131,22 @@ describe("findLinkedResources", () => {
       expect(result).toContain("/images/real.png");
       expect(result).not.toContain("/images/yaml-image.png");
     });
+
+    test("does not treat horizontal rule --- as YAML delimiter", async () => {
+      setupFileContents({
+        "/project/doc.qmd":
+          "---\ntitle: My Doc\n---\n\n![](images/before.png)\n\n---\n\n![](images/after.png)\n",
+      });
+      setupFiles({
+        "/project/doc.qmd": "file",
+        "/project/images/before.png": "file",
+        "/project/images/after.png": "file",
+      });
+
+      const result = await findLinkedResources("/project", ["/doc.qmd"]);
+      expect(result).toContain("/images/before.png");
+      expect(result).toContain("/images/after.png");
+    });
   });
 
   // ---- YAML resource_files ----
