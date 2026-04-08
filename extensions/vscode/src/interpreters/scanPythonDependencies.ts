@@ -239,8 +239,8 @@ def build_package_map():
     from importlib.metadata import distributions
     mapping = {}
     for dist in distributions():
-        pkg_name = dist.name
-        version = dist.version
+        pkg_name = dist.metadata["Name"]
+        version = dist.metadata["Version"]
         top_level_text = dist.read_text("top_level.txt")
         if top_level_text:
             for import_name in top_level_text.strip().splitlines():
