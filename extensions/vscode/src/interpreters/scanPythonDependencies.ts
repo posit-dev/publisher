@@ -36,8 +36,8 @@ function validateSaveName(saveName: string, projectDir: string): void {
   }
   // Containment check: resolved path must stay within projectDir
   const resolved = path.resolve(projectDir, saveName);
-  const projectRoot = path.resolve(projectDir) + path.sep;
-  if (!resolved.startsWith(projectRoot)) {
+  const rel = path.relative(path.resolve(projectDir), resolved);
+  if (path.isAbsolute(rel) || rel.startsWith("..")) {
     throw new Error(`Invalid requirements path: ${JSON.stringify(saveName)}`);
   }
 }
