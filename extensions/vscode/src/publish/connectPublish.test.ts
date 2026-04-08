@@ -42,16 +42,30 @@ vi.mock("node:fs/promises", () => ({
 
 // Mock the bundler
 vi.mock("../bundler/bundler", () => ({
-  createBundle: vi.fn().mockResolvedValue({
-    bundle: Buffer.from("fake-bundle"),
-    manifest: {
-      version: 1,
-      metadata: { appmode: "python-shiny" },
-      packages: {},
-      files: { "app.py": { checksum: "abc123" } },
-    },
-    fileCount: 1,
-    totalSize: 100,
+  createBundle: vi.fn().mockImplementation(async (options) => {
+    // Invoke the progress callback if provided
+    if (options.onProgress) {
+      options.onProgress({
+        kind: "sourceDir",
+        sourceDir: options.projectPath,
+      });
+      options.onProgress({
+        kind: "summary",
+        files: 1,
+        totalBytes: 100,
+      });
+    }
+    return {
+      bundle: Buffer.from("fake-bundle"),
+      manifest: {
+        version: 1,
+        metadata: { appmode: "python-shiny" },
+        packages: {},
+        files: { "app.py": { checksum: "abc123" } },
+      },
+      fileCount: 1,
+      totalSize: 100,
+    };
   }),
 }));
 

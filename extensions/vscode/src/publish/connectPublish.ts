@@ -25,7 +25,7 @@ import { appModeFromType, contentTypeFromAppMode } from "../bundler/appMode";
 import { connectContentFromConfig } from "../bundler/connectContentFromConfig";
 import { createBundle } from "../bundler/bundler";
 import { getFilenames } from "../bundler/manifest";
-import type { Manifest } from "../bundler/types";
+import type { Manifest, BundleProgressCallback } from "../bundler/types";
 
 import { resolveRPackages, readPythonRequirements } from "./dependencies";
 import {
@@ -388,22 +388,44 @@ export async function connectPublish(
       status: "log",
       message: "Preparing files",
     });
-    onProgress({
-      step: "createBundle",
-      status: "log",
-      message: "Creating bundle from directory",
-    });
     const { bundle, manifest: finalManifest } = await buildBundleArchive(
       projectDir,
       config,
       manifest,
       lockfilePath,
+      (event) => {
+        switch (event.kind) {
+          case "sourceDir":
+            onProgress({
+              step: "createBundle",
+              status: "log",
+              message: "Creating bundle from source directory",
+              data: { sourceDir: event.sourceDir },
+            });
+            logger.info(
+              `Creating bundle from directory source_dir=${event.sourceDir}`,
+            );
+            break;
+          case "file":
+            logger.debug(`Adding file path=${event.path} size=${event.size}`);
+            break;
+          case "summary":
+            onProgress({
+              step: "createBundle",
+              status: "log",
+              message: "Bundle includes",
+              data: {
+                files: String(event.files),
+                totalBytes: String(event.totalBytes),
+              },
+            });
+            logger.info(
+              `Bundle created files=${event.files} total_bytes=${event.totalBytes}`,
+            );
+            break;
+        }
+      },
     );
-    onProgress({
-      step: "createBundle",
-      status: "log",
-      message: "Bundle created",
-    });
     record.files = getFilenames(finalManifest);
 
     // Record dependencies in the deployment record
@@ -1082,6 +1104,7 @@ async function buildBundleArchive(
   config: ConfigurationDetails,
   manifest: Manifest,
   lockfilePath: string | undefined,
+  onBundleProgress?: BundleProgressCallback,
 ): Promise<{ bundle: Buffer; manifest: Manifest }> {
   const basePatterns = config.files?.length ? [...config.files] : ["*"];
   const extraPatterns: string[] = [];
@@ -1105,6 +1128,7 @@ async function buildBundleArchive(
       projectPath: projectDir,
       manifest,
       filePatterns,
+      onProgress: onBundleProgress,
     });
 
     return { bundle: result.bundle, manifest: result.manifest };
