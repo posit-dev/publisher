@@ -69,7 +69,7 @@ describe("JWT token provider (snowflake_jwt)", () => {
     expect(token).toBe("access-token-value");
     expect(mockPost).toHaveBeenCalledOnce();
 
-    const [url, body, config] = mockPost.mock.calls[0];
+    const [url, body, config] = mockPost.mock.calls[0]!;
     expect(url).toBe("https://myaccount.snowflakecomputing.com/oauth/token");
     expect(config).toMatchObject({
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -86,11 +86,12 @@ describe("JWT token provider (snowflake_jwt)", () => {
     const assertion = params.get("assertion");
     expect(assertion).toBeTruthy();
 
+    const parts = assertion!.split(".");
     const decoded = JSON.parse(
-      Buffer.from(assertion!.split(".")[1], "base64url").toString("utf-8"),
+      Buffer.from(parts[1]!, "base64url").toString("utf-8"),
     );
     const header = JSON.parse(
-      Buffer.from(assertion!.split(".")[0], "base64url").toString("utf-8"),
+      Buffer.from(parts[0]!, "base64url").toString("utf-8"),
     );
 
     expect(header.alg).toBe("RS256");
@@ -120,7 +121,7 @@ describe("JWT token provider (snowflake_jwt)", () => {
 
     await provider.getToken("example.snowflakecomputing.app");
 
-    const [, body] = vi.mocked(axios.post).mock.calls[0];
+    const [, body] = vi.mocked(axios.post).mock.calls[0]!;
     const params = new URLSearchParams(body as string);
     expect(params.get("scope")).toBe(
       "session:role:myrole example.snowflakecomputing.app",
@@ -198,7 +199,7 @@ describe("OAuth token provider (oauth)", () => {
 
     expect(mockPost).toHaveBeenCalledOnce();
 
-    const [url, body, config] = mockPost.mock.calls[0];
+    const [url, body, config] = mockPost.mock.calls[0]!;
     expect(url).toBe(
       "https://myaccount.snowflakecomputing.com/session/v1/login-request",
     );

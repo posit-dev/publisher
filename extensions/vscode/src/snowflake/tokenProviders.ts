@@ -68,7 +68,7 @@ class JWTTokenProvider implements TokenProvider {
     this.role = connection.role ?? "";
   }
 
-  async getToken(hostname: string): Promise<string> {
+  getToken(hostname: string): Promise<string> {
     const assertion = this.buildJWT();
     return this.exchangeForAccessToken(hostname, assertion);
   }

@@ -138,7 +138,7 @@ function applyEnvVarOverrides(
       const envVar = `SNOWFLAKE_CONNECTIONS_${name.toUpperCase()}_${envSuffix}`;
       const value = process.env[envVar];
       if (value !== undefined) {
-        (conn as Record<string, unknown>)[field] = value;
+        (conn as unknown as Record<string, unknown>)[field] = value;
       }
     }
   }
