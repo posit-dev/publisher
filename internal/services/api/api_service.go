@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/posit-dev/publisher/internal/accounts"
-	"github.com/posit-dev/publisher/internal/api_client/auth/snowflake"
 	"github.com/posit-dev/publisher/internal/clients/connect"
 	"github.com/posit-dev/publisher/internal/credentials"
 	"github.com/posit-dev/publisher/internal/events"
@@ -73,10 +72,6 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	// POST /api/deployments/$NAME/cancel/$LOCALID cancels a deployment
 	r.Handle(ToPath("deployments", "{name}", "cancel", "{localid}"), PostDeploymentCancelHandlerFunc(base, log)).
 		Methods(http.MethodPost)
-
-	// GET /api/snowflake-connections
-	r.Handle(ToPath("snowflake-connections"), GetSnowflakeConnectionsHandlerFunc(log, snowflake.NewConnections())).
-		Methods(http.MethodGet)
 
 	c := cors.AllowAll().Handler(r)
 	return c.ServeHTTP

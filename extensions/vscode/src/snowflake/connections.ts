@@ -25,12 +25,13 @@ const OVERRIDABLE_FIELDS: {
  * Matches the Go implementation's search order.
  */
 function findConfigDirs(): string[] {
-  const dirs: string[] = [];
-
   const snowflakeHome = process.env.SNOWFLAKE_HOME;
   if (snowflakeHome) {
-    dirs.push(snowflakeHome);
+    // SNOWFLAKE_HOME is exclusive — when set it replaces all default paths.
+    return [snowflakeHome];
   }
+
+  const dirs: string[] = [];
 
   const home = os.homedir();
 

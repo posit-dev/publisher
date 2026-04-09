@@ -5,7 +5,6 @@ import axios from "axios";
 import { Credentials } from "./resources/Credentials";
 import { ContentRecords } from "./resources/ContentRecords";
 
-import { SnowflakeConnections } from "./resources/SnowflakeConnections";
 import * as Entities from "entities";
 
 class PublishingClientApi {
@@ -14,7 +13,6 @@ class PublishingClientApi {
   credentials: Credentials;
   contentRecords: ContentRecords;
   apiServiceIsUp: Promise<boolean>;
-  snowflakeConnections: SnowflakeConnections;
 
   constructor(apiBaseUrl: string, apiServiceIsUp: Promise<boolean>) {
     this.client = axios.create({
@@ -38,7 +36,6 @@ class PublishingClientApi {
 
     this.credentials = new Credentials(this.client);
     this.contentRecords = new ContentRecords(this.client);
-    this.snowflakeConnections = new SnowflakeConnections(this.client);
   }
 
   setBaseUrl(url: string) {
