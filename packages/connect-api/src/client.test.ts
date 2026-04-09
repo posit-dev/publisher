@@ -1376,13 +1376,17 @@ describe("Constructor validation", () => {
   });
 
   it("throws if only token is provided without privateKey", () => {
-    expect(() => new ConnectAPI({ url: BASE_URL, token: "Ttoken123" })).toThrow(
+    expect(
+      // @ts-expect-error - union type rejects partial token auth at compile time; testing runtime safety net
+      () => new ConnectAPI({ url: BASE_URL, token: "Ttoken123" }),
+    ).toThrow(
       "ConnectAPI requires both token and privateKey for token authentication",
     );
   });
 
   it("throws if only privateKey is provided without token", () => {
     expect(
+      // @ts-expect-error - union type rejects partial token auth at compile time; testing runtime safety net
       () => new ConnectAPI({ url: BASE_URL, privateKey: "somekey" }),
     ).toThrow(
       "ConnectAPI requires both token and privateKey for token authentication",

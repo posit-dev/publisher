@@ -45,6 +45,7 @@ import {
 } from "src/api";
 import { ConnectAPI, GUID } from "@posit-dev/connect-api";
 import type { Integration } from "@posit-dev/connect-api";
+import { connectAPIOptionsFromCredential } from "src/credentials/service";
 import { updateFileList as updateFileListInConfig } from "src/configFiles";
 import {
   addSecret as addSecretToConfig,
@@ -375,13 +376,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const existingContentId = contentRecord?.id;
     const existingCreatedAt = contentRecord?.createdAt;
 
-    const connectApi = new ConnectAPI({
-      url: credential.url,
-      apiKey: credential.apiKey,
-      token: credential.token,
-      privateKey: credential.privateKey,
-      rejectUnauthorized: extensionSettings.verifyCertificates(),
-    });
+    const connectApi = new ConnectAPI(
+      connectAPIOptionsFromCredential(credential, {
+        rejectUnauthorized: extensionSettings.verifyCertificates(),
+      }),
+    );
 
     const positron = getPositronRepoSettings();
     const clientVersion =
@@ -868,13 +867,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           credential?.url &&
           (credential?.apiKey || (credential?.token && credential?.privateKey))
         ) {
-          const connectApi = new ConnectAPI({
-            url: credential.url,
-            apiKey: credential.apiKey,
-            token: credential.token,
-            privateKey: credential.privateKey,
-            rejectUnauthorized: extensionSettings.verifyCertificates(),
-          });
+          const connectApi = new ConnectAPI(
+            connectAPIOptionsFromCredential(credential, {
+              rejectUnauthorized: extensionSettings.verifyCertificates(),
+            }),
+          );
           const response = await connectApi.getIntegrations();
           integrations = response.data ?? [];
         }
@@ -1011,13 +1008,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
 
     try {
-      const connectApi = new ConnectAPI({
-        url: credential.url,
-        apiKey: credential.apiKey,
-        token: credential.token,
-        privateKey: credential.privateKey,
-        rejectUnauthorized: extensionSettings.verifyCertificates(),
-      });
+      const connectApi = new ConnectAPI(
+        connectAPIOptionsFromCredential(credential, {
+          rejectUnauthorized: extensionSettings.verifyCertificates(),
+        }),
+      );
       const allSettings = await connectApi.getSettings();
 
       this.webviewConduit.sendMsg({
@@ -1518,13 +1513,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         "Retrieving Integrations from deployment server",
         Views.HomeView,
         async () => {
-          const connectApi = new ConnectAPI({
-            url: credential.url,
-            apiKey: credential.apiKey,
-            token: credential.token,
-            privateKey: credential.privateKey,
-            rejectUnauthorized: extensionSettings.verifyCertificates(),
-          });
+          const connectApi = new ConnectAPI(
+            connectAPIOptionsFromCredential(credential, {
+              rejectUnauthorized: extensionSettings.verifyCertificates(),
+            }),
+          );
           const response = await connectApi.getIntegrations();
           integrations = response.data;
         },
@@ -2241,13 +2234,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         "Getting Deployment Environment",
         Views.HomeView,
         () => {
-          const connectApi = new ConnectAPI({
-            url: credential.url,
-            apiKey: credential.apiKey,
-            token: credential.token,
-            privateKey: credential.privateKey,
-            rejectUnauthorized: extensionSettings.verifyCertificates(),
-          });
+          const connectApi = new ConnectAPI(
+            connectAPIOptionsFromCredential(credential, {
+              rejectUnauthorized: extensionSettings.verifyCertificates(),
+            }),
+          );
           return connectApi.getEnvVars(deployment.id);
         },
       );

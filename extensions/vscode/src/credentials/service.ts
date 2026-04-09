@@ -2,7 +2,7 @@
 
 import { SecretStorage } from "vscode";
 import { randomUUID } from "crypto";
-import { GUID } from "@posit-dev/connect-api";
+import { GUID, ConnectAPIOptions } from "@posit-dev/connect-api";
 
 import { Credential } from "src/api/types/credentials";
 import { ServerType } from "src/api/types/contentRecords";
@@ -37,6 +37,36 @@ export interface CreateCredentialInput {
   accessToken?: string;
   token?: string;
   privateKey?: string;
+}
+
+/**
+ * Build a ConnectAPIOptions discriminated union from a stored Credential.
+ * Picks the correct auth variant (ApiKeyAuth, TokenAuth, or NoAuth) based on
+ * which fields are present on the credential (empty string = absent).
+ */
+export function connectAPIOptionsFromCredential(
+  credential: Pick<Credential, "url" | "apiKey" | "token" | "privateKey">,
+  extra?: Pick<ConnectAPIOptions, "rejectUnauthorized" | "timeout">,
+): ConnectAPIOptions {
+  if (credential.token && credential.privateKey) {
+    return {
+      url: credential.url,
+      token: credential.token,
+      privateKey: credential.privateKey,
+      ...extra,
+    };
+  }
+  if (credential.apiKey) {
+    return {
+      url: credential.url,
+      apiKey: credential.apiKey,
+      ...extra,
+    };
+  }
+  return {
+    url: credential.url,
+    ...extra,
+  };
 }
 
 export class CredentialsService {
