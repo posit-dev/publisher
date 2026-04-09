@@ -1,6 +1,8 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import config from "./config";
+import { CloudEnvironment } from "@posit-dev/connect-cloud-api";
+import { env } from "./config";
 
 export const POSIT_FOLDER = "**/.posit";
 export const PUBLISH_FOLDER = "**/.posit/publish";
@@ -144,3 +146,15 @@ export const CONNECT_CLOUD_ACCOUNT_URL = `${config.connectCloudURL}/account/done
 export const CONNECT_CLOUD_ENV_HEADER = {
   "Connect-Cloud-Environment": CONNECT_CLOUD_ENV,
 };
+
+// Maps the local env enum to the connect-cloud-api package's CloudEnvironment
+// enum. Both enums have identical underlying string values; this map bridges
+// them without a type assertion.
+const envToCloudEnvironment: Record<env, CloudEnvironment> = {
+  [env.DEV]: CloudEnvironment.Development,
+  [env.STAGING]: CloudEnvironment.Staging,
+  [env.PROD]: CloudEnvironment.Production,
+};
+
+export const CONNECT_CLOUD_ENVIRONMENT: CloudEnvironment =
+  envToCloudEnvironment[config.env];

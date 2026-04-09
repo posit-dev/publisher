@@ -29,6 +29,9 @@ import {
   AuthToken,
   ConnectCloudAccount,
   DeviceAuth,
+  toAuthToken,
+  toConnectCloudAccount,
+  toDeviceAuth,
 } from "../api/types/connectCloud";
 import axios from "axios";
 import { showProgress } from "../utils/progress";
@@ -36,6 +39,12 @@ import {
   isConnectCloud,
   createNewCredentialLabel,
 } from "../utils/multiStepHelpers";
+import {
+  CloudAuthClient,
+  ConnectCloudAPI,
+  cloudEnvironmentBaseUrls,
+} from "@posit-dev/connect-cloud-api";
+import { CONNECT_CLOUD_ENVIRONMENT } from "../constants";
 
 // Search for the first credential that includes
 // the targetURL.
@@ -111,39 +120,35 @@ export const fetchSnowflakeConnections = async (serverUrl: string) => {
 
 // Fetch the device auth for Connect Cloud
 export const fetchDeviceAuth = async (): Promise<ApiResponse<DeviceAuth>> => {
-  const api = await useApi();
-  const resp = await api.connectCloud.auth();
-  return { data: resp.data, intervalAdjustment: 0 };
+  const client = new CloudAuthClient(CONNECT_CLOUD_ENVIRONMENT);
+  const response = await client.createDeviceAuth();
+  return { data: toDeviceAuth(response), intervalAdjustment: 0 };
 };
 
 // Fetch the auth token for Connect Cloud
 export const fetchAuthToken = async (
   deviceCode: string,
 ): Promise<ApiResponse<AuthToken>> => {
+  const client = new CloudAuthClient(CONNECT_CLOUD_ENVIRONMENT);
   try {
-    const api = await useApi();
-    const resp = await api.connectCloud.token(deviceCode);
-    return { data: resp.data, intervalAdjustment: 0 };
+    const response = await client.exchangeToken({
+      grant_type: "urn:ietf:params:oauth:grant-type:device_code",
+      device_code: deviceCode,
+    });
+    return { data: toAuthToken(response), intervalAdjustment: 0 };
   } catch (err: unknown) {
-    if (axios.isAxiosError(err) && err.response?.data?.code) {
-      // handle the expected polling error codes
-      switch (err.response.data.code) {
-        case "deviceAuthSlowDown":
-          // this is not an actual error, adjust the interval by 1 second
-          // and return the promise w/o the `data` property to continue polling
+    if (axios.isAxiosError(err) && err.response?.status === 400) {
+      const errorCode = err.response.data?.error;
+      switch (errorCode) {
+        case "slow_down":
           return { intervalAdjustment: 1000 };
-        case "deviceAuthPending":
-          // this is not an actual error, this is expected while authenticating
-          // just return the promise w/o the `data` property to continue polling
+        case "authorization_pending":
           return { intervalAdjustment: 0 };
         default:
-          // bubble up any other errors
           throw err;
       }
-    } else {
-      // there was an unexpected error, bubble up the error
-      throw err;
     }
+    throw err;
   }
 };
 
@@ -151,9 +156,29 @@ export const fetchAuthToken = async (
 export const fetchConnectCloudAccounts = async (
   accessToken: string,
 ): Promise<ApiResponse<ConnectCloudAccount[]>> => {
-  const api = await useApi();
-  const resp = await api.connectCloud.accounts(accessToken);
-  return { data: resp.data, intervalAdjustment: 0 };
+  const client = new ConnectCloudAPI({
+    apiBaseUrl: cloudEnvironmentBaseUrls[CONNECT_CLOUD_ENVIRONMENT],
+    accessToken,
+  });
+
+  // Check if this is a new user (authenticated with auth service but
+  // not yet registered in Connect Cloud)
+  try {
+    await client.getCurrentUser();
+  } catch (err: unknown) {
+    if (axios.isAxiosError(err) && err.response?.status === 401) {
+      const errorType = err.response.data?.error_type;
+      if (errorType === "no_user_for_lucid_user") {
+        return { data: [], intervalAdjustment: 0 };
+      }
+    }
+    throw err;
+  }
+
+  // Existing user — fetch their accounts and map to extension type
+  const accountsResponse = await client.getAccounts();
+  const accounts = accountsResponse.data.map(toConnectCloudAccount);
+  return { data: accounts, intervalAdjustment: 0 };
 };
 
 // ***************************************************************
