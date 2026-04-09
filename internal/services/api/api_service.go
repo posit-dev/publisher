@@ -90,14 +90,6 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	r.Handle(ToPath("connect-cloud", "oauth", "token"), PostConnectCloudOAuthTokenHandlerFunc(log)).
 		Methods(http.MethodPost)
 
-	// POST /api/connect/token - Generate a new token for Connect authentication
-	r.Handle(ToPath("connect", "token"), PostConnectTokenHandlerFunc(log)).
-		Methods(http.MethodPost)
-
-	// POST /api/connect/token/user - Check if a token has been claimed and get user info
-	r.Handle(ToPath("connect", "token", "user"), PostConnectTokenUserHandlerFunc(log)).
-		Methods(http.MethodPost)
-
 	// GET /api/connect-cloud/accounts
 	r.Handle(ToPath("connect-cloud", "accounts"), GetConnectCloudAccountsFunc(log)).
 		Methods(http.MethodGet)

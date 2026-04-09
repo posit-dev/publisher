@@ -398,6 +398,27 @@ export class ConnectAPI {
     });
   }
 
+  /**
+   * Registers a new authentication token with Connect.
+   * This is a public endpoint — no credentials are required.
+   * The user must then visit the returned claim URL to associate the token
+   * with their account.
+   */
+  async registerToken(
+    token: string,
+    publicKey: string,
+  ): Promise<{ token_claim_url: string }> {
+    const { data } = await this.client.post<{ token_claim_url: string }>(
+      "/__api__/tokens",
+      {
+        token,
+        public_key: publicKey,
+        user_id: 0,
+      },
+    );
+    return data;
+  }
+
   /** Retrieves OAuth integrations from the server. */
   async getIntegrations(
     signal?: AbortSignal,

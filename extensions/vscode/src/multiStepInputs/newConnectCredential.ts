@@ -344,9 +344,13 @@ export async function newConnectCredential(
     const serverUrl = typeof state.data.url === "string" ? state.data.url : "";
 
     try {
-      // Create and initialize the token activator
-      const tokenActivator = new ConnectAuthTokenActivator(serverUrl, viewId);
-      await tokenActivator.initialize();
+      // Create the token activator
+      const tokenActivator = new ConnectAuthTokenActivator(
+        serverUrl,
+        viewId,
+        undefined,
+        !extensionSettings.verifyCertificates(),
+      );
 
       const resp = await input.showInfoMessage<
         TokenAuthResult,
