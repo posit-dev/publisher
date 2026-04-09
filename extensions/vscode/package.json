@@ -684,6 +684,7 @@
   },
   "dependencies": {
     "@posit-dev/connect-api": "file:../../packages/connect-api",
+    "@posit-dev/connect-cloud-api": "file:../../packages/connect-cloud-api",
     "@vscode/codicons": "^0.0.45",
     "ajv": "^8.18.0",
     "ajv-formats": "^3.0.1",
