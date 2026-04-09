@@ -5,6 +5,7 @@ import { ConnectAPI } from "@posit-dev/connect-api";
 import { listConnections } from "./connections";
 import { createTokenProvider } from "./tokenProviders";
 import { getListOfPossibleURLs } from "../utils/url";
+import { logger } from "src/logging";
 import type { SnowflakeConnection } from "./types";
 
 const VALIDATION_TIMEOUT_MS = 30_000;
@@ -24,8 +25,8 @@ export async function discoverSnowflakeConnections(
     let tokenProvider;
     try {
       tokenProvider = createTokenProvider(config);
-    } catch {
-      // Skip connections with invalid config (e.g., missing key file)
+    } catch (e) {
+      logger.debug(`Snowflake: skipping connection "${name}": ${e}`);
       continue;
     }
 
@@ -45,8 +46,10 @@ export async function discoverSnowflakeConnections(
         results.push({ name, serverUrl: candidateUrl });
         // Stop trying other URLs for this connection
         break;
-      } catch {
-        // Try next URL candidate
+      } catch (e) {
+        logger.debug(
+          `Snowflake: connection "${name}" failed for ${candidateUrl}: ${e}`,
+        );
         continue;
       }
     }
