@@ -114,6 +114,28 @@ describe("CloudAuthClient", () => {
         }),
       ).rejects.toThrow("Network error");
     });
+
+    it("POSTs with device_code when using device code grant type", async () => {
+      mockPost.mockResolvedValue({ data: tokenResponse });
+
+      const client = new CloudAuthClient(CloudEnvironment.Production);
+      await client.exchangeToken({
+        grant_type: "urn:ietf:params:oauth:grant-type:device_code",
+        device_code: "my-device-code",
+      });
+
+      expect(mockPost).toHaveBeenCalledOnce();
+      const [url, body] = mockPost.mock.calls[0];
+      expect(url).toBe("https://login.posit.cloud/oauth/token");
+      expect(body.get("grant_type")).toBe(
+        "urn:ietf:params:oauth:grant-type:device_code",
+      );
+      expect(body.get("device_code")).toBe("my-device-code");
+      expect(body.get("client_id")).toBe("posit-publisher");
+      expect(body.get("scope")).toBe("vivid");
+      // refresh_token should NOT be present
+      expect(body.has("refresh_token")).toBe(false);
+    });
   });
 
   describe("createDeviceAuth", () => {
