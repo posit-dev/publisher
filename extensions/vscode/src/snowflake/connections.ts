@@ -7,6 +7,10 @@ import { parse } from "smol-toml";
 
 import type { SnowflakeConnectionConfig } from "./types";
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
 /** Known fields on a Snowflake connection that can be overridden via env vars. */
 const OVERRIDABLE_FIELDS: {
   envSuffix: string;
@@ -83,6 +87,25 @@ function findConfigFile(): { path: string; isConfigToml: boolean } | null {
   return null;
 }
 
+/** Extracts a SnowflakeConnectionConfig from a parsed TOML section. */
+function toConnectionConfig(
+  fields: Record<string, unknown>,
+): SnowflakeConnectionConfig {
+  return {
+    account: String(fields.account ?? ""),
+    user: String(fields.user ?? ""),
+    authenticator: String(fields.authenticator ?? ""),
+    ...(fields.private_key_file !== undefined
+      ? { private_key_file: String(fields.private_key_file) }
+      : {}),
+    ...(fields.private_key_path !== undefined
+      ? { private_key_path: String(fields.private_key_path) }
+      : {}),
+    ...(fields.token !== undefined ? { token: String(fields.token) } : {}),
+    ...(fields.role !== undefined ? { role: String(fields.role) } : {}),
+  };
+}
+
 /**
  * Parses connections.toml format where each connection is a top-level section.
  * e.g., [default], [other]
@@ -90,12 +113,12 @@ function findConfigFile(): { path: string; isConfigToml: boolean } | null {
 function parseConnectionsToml(
   content: string,
 ): Record<string, SnowflakeConnectionConfig> {
-  const parsed = parse(content) as Record<string, Record<string, unknown>>;
+  const parsed: Record<string, unknown> = parse(content);
   const result: Record<string, SnowflakeConnectionConfig> = {};
 
   for (const [name, fields] of Object.entries(parsed)) {
-    if (typeof fields === "object" && fields !== null) {
-      result[name] = fields as unknown as SnowflakeConnectionConfig;
+    if (isRecord(fields)) {
+      result[name] = toConnectionConfig(fields);
     }
   }
 
@@ -109,18 +132,17 @@ function parseConnectionsToml(
 function parseConfigToml(
   content: string,
 ): Record<string, SnowflakeConnectionConfig> {
-  const parsed = parse(content) as {
-    connections?: Record<string, Record<string, unknown>>;
-  };
+  const parsed: Record<string, unknown> = parse(content);
+  const connections = parsed.connections;
 
-  if (!parsed.connections) {
+  if (!isRecord(connections)) {
     return {};
   }
 
   const result: Record<string, SnowflakeConnectionConfig> = {};
-  for (const [name, fields] of Object.entries(parsed.connections)) {
-    if (typeof fields === "object" && fields !== null) {
-      result[name] = fields as unknown as SnowflakeConnectionConfig;
+  for (const [name, fields] of Object.entries(connections)) {
+    if (isRecord(fields)) {
+      result[name] = toConnectionConfig(fields);
     }
   }
 
@@ -139,9 +161,39 @@ function applyEnvVarOverrides(
       const envVar = `SNOWFLAKE_CONNECTIONS_${name.toUpperCase()}_${envSuffix}`;
       const value = process.env[envVar];
       if (value !== undefined) {
-        (conn as unknown as Record<string, unknown>)[field] = value;
+        setConnectionField(conn, field, value);
       }
     }
+  }
+}
+
+function setConnectionField(
+  conn: SnowflakeConnectionConfig,
+  field: keyof SnowflakeConnectionConfig,
+  value: string,
+): void {
+  switch (field) {
+    case "account":
+      conn.account = value;
+      break;
+    case "user":
+      conn.user = value;
+      break;
+    case "authenticator":
+      conn.authenticator = value;
+      break;
+    case "private_key_file":
+      conn.private_key_file = value;
+      break;
+    case "private_key_path":
+      conn.private_key_path = value;
+      break;
+    case "token":
+      conn.token = value;
+      break;
+    case "role":
+      conn.role = value;
+      break;
   }
 }
 

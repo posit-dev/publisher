@@ -61,10 +61,11 @@ class JWTTokenProvider implements TokenProvider {
     this.privateKeyPem = privateKey
       .export({ type: "pkcs8", format: "pem" })
       .toString();
-    this.publicKeyDer = publicKey.export({
-      type: "spki",
-      format: "der",
-    }) as Buffer;
+    const exported = publicKey.export({ type: "spki", format: "der" });
+    if (!Buffer.isBuffer(exported)) {
+      throw new Error("expected Buffer from DER public key export");
+    }
+    this.publicKeyDer = exported;
     this.role = connection.role ?? "";
   }
 
@@ -108,7 +109,10 @@ class JWTTokenProvider implements TokenProvider {
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
     });
 
-    return resp.data as string;
+    if (typeof resp.data !== "string") {
+      throw new Error("expected string response from token endpoint");
+    }
+    return resp.data;
   }
 }
 

@@ -39,7 +39,9 @@ describe("JWT token provider (snowflake_jwt)", () => {
     privateKeyPem = privateKey
       .export({ type: "pkcs8", format: "pem" })
       .toString();
-    publicKeyDer = publicKey.export({ type: "spki", format: "der" }) as Buffer;
+    const exported = publicKey.export({ type: "spki", format: "der" });
+    if (!Buffer.isBuffer(exported)) throw new Error("unexpected");
+    publicKeyDer = exported;
 
     privateKeyFile = path.join(tmpDir, "key.p8");
     fs.writeFileSync(privateKeyFile, privateKeyPem, "utf-8");
@@ -76,7 +78,7 @@ describe("JWT token provider (snowflake_jwt)", () => {
     });
 
     // Parse URLSearchParams from the body
-    const params = new URLSearchParams(body as string);
+    const params = new URLSearchParams(String(body));
     expect(params.get("grant_type")).toBe(
       "urn:ietf:params:oauth:grant-type:jwt-bearer",
     );
@@ -122,7 +124,7 @@ describe("JWT token provider (snowflake_jwt)", () => {
     await provider.getToken("example.snowflakecomputing.app");
 
     const [, body] = vi.mocked(axios.post).mock.calls[0]!;
-    const params = new URLSearchParams(body as string);
+    const params = new URLSearchParams(String(body));
     expect(params.get("scope")).toBe(
       "session:role:myrole example.snowflakecomputing.app",
     );
