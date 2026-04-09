@@ -1,5 +1,7 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
+import os from "node:os";
+import path from "node:path";
 import { Uri, commands, workspace } from "vscode";
 import { fileExists, isDir } from "./files";
 import { delay } from "./throttle";
@@ -53,7 +55,11 @@ export async function getPreferredRuntimeFromPositron(
     }
 
     if (runtime) {
-      const interpreter = runtime.runtimePath;
+      // Positron may return paths with a leading ~ which execFile cannot
+      // resolve (it doesn't use a shell). Expand it to the real home dir.
+      const interpreter = runtime.runtimePath.startsWith("~/")
+        ? path.join(os.homedir(), runtime.runtimePath.slice(1))
+        : runtime.runtimePath;
       console.log("Using selected %s interpreter: %s", languageId, interpreter);
       return interpreter;
     }
