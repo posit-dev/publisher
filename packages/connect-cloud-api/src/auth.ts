@@ -7,7 +7,11 @@ import {
   cloudAuthBaseUrls,
   cloudAuthClientIds,
 } from "./types.js";
-import type { TokenRequest, TokenResponse } from "./types.js";
+import type {
+  DeviceAuthResponse,
+  TokenRequest,
+  TokenResponse,
+} from "./types.js";
 
 const AUTH_SCOPE = "vivid";
 
@@ -23,6 +27,28 @@ export class CloudAuthClient {
   constructor(environment: CloudEnvironment) {
     this.baseUrl = cloudAuthBaseUrls[environment];
     this.clientId = cloudAuthClientIds[environment];
+  }
+
+  /**
+   * Initiates the device authorization flow.
+   *
+   * POST /oauth/device/authorize with form-urlencoded body.
+   */
+  async createDeviceAuth(): Promise<DeviceAuthResponse> {
+    const body = new URLSearchParams({
+      client_id: this.clientId,
+      scope: AUTH_SCOPE,
+    });
+
+    const { data } = await axios.post<DeviceAuthResponse>(
+      `${this.baseUrl}/oauth/device/authorize`,
+      body,
+      {
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      },
+    );
+
+    return data;
   }
 
   /**
