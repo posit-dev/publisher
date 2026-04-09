@@ -3,6 +3,7 @@
 import crypto from "crypto";
 import { ConnectAPI } from "@posit-dev/connect-api";
 import { discoverServerURL } from "src/utils/url";
+import { logger } from "src/logging";
 
 /**
  * Generates a random token ID matching Connect's format:
@@ -78,6 +79,12 @@ export async function generateToken(
     throw discovery.error instanceof Error
       ? discovery.error
       : new Error(String(discovery.error));
+  }
+
+  if (discovery.url !== serverUrl) {
+    logger.info(
+      `Using discovered server URL: provided=${serverUrl}, discovered=${discovery.url}`,
+    );
   }
 
   return {
