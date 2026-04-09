@@ -26,7 +26,7 @@ export class CloudAuthClient {
   }
 
   /**
-   * Exchanges a refresh token for a new access token.
+   * Exchanges a token request (refresh token or device code) for an access token.
    *
    * POST /oauth/token with form-urlencoded body.
    */
@@ -35,8 +35,13 @@ export class CloudAuthClient {
       grant_type: request.grant_type,
       client_id: this.clientId,
       scope: AUTH_SCOPE,
-      refresh_token: request.refresh_token,
     });
+
+    if (request.grant_type === "refresh_token") {
+      body.set("refresh_token", request.refresh_token);
+    } else {
+      body.set("device_code", request.device_code);
+    }
 
     const { data } = await axios.post<TokenResponse>(
       `${this.baseUrl}/oauth/token`,

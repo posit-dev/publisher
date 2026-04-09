@@ -27,6 +27,7 @@ export type {
   ContentRequestBase,
   ContentResponse,
   CreateContentRequest,
+  DeviceAuthResponse,
   RequestRevision,
   Revision,
   Secret,
