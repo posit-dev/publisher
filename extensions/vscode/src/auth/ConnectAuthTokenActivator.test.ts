@@ -117,6 +117,43 @@ describe("ConnectAuthTokenActivator", () => {
     });
   });
 
+  test("activateToken() uses discovered server URL for polling", async () => {
+    // Constructor receives the user-entered URL, but generateToken() discovers
+    // the real server URL (e.g., stripping extra path segments). The activator
+    // must use the discovered URL for the polling ConnectAPI client.
+    mockGenerateToken.mockResolvedValue({
+      token: "test-token-123",
+      claimUrl: "https://connect.example.com/rsc/connect/#/claim/123",
+      privateKey: "test-private-key-123",
+      serverUrl: "https://connect.example.com/rsc",
+    });
+
+    hoistedMockTestAuthentication.mockResolvedValue({
+      user: {
+        id: "guid-1",
+        username: "testuser",
+        first_name: "Test",
+        last_name: "User",
+        email: "t@t.com",
+      },
+      error: null,
+    });
+
+    const activator = new ConnectAuthTokenActivator(
+      "https://connect.example.com/rsc/extra/path",
+      "test-view-id",
+    );
+    const result = await activator.activateToken();
+
+    // Polling client should use the discovered URL, not the constructor URL
+    expect(MockConnectAPI).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: "https://connect.example.com/rsc",
+      }),
+    );
+    expect(result.serverUrl).toBe("https://connect.example.com/rsc");
+  });
+
   test("activateToken() passes insecure flag through", async () => {
     mockGenerateToken.mockResolvedValue({
       token: "test-token-123",
