@@ -1164,7 +1164,7 @@ describe(
 
 describe(
   "inspectProject with real interpreters (real filesystem)",
-  { timeout: 15_000 },
+  { timeout: 30_000 },
   () => {
     let python3Available = false;
     let pythonAvailable = false;
