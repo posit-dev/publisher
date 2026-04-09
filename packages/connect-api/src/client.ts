@@ -97,6 +97,12 @@ export class ConnectAPI {
       };
     }
 
+    if (options.snowflakeToken) {
+      config.headers = {
+        Authorization: `Snowflake Token="${options.snowflakeToken}"`,
+      };
+    }
+
     // Support disabling TLS certificate verification (for self-signed certs)
     if (options.rejectUnauthorized === false) {
       config.httpsAgent = new https.Agent({

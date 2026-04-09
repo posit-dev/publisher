@@ -1367,6 +1367,41 @@ describe("Token authentication", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Snowflake authentication
+// ---------------------------------------------------------------------------
+
+describe("Snowflake authentication", () => {
+  it("sets Snowflake authorization header", () => {
+    new ConnectAPI({
+      url: BASE_URL,
+      snowflakeToken: "sf-session-token-abc",
+    });
+
+    expect(axios.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        baseURL: BASE_URL,
+        headers: expect.objectContaining({
+          Authorization: 'Snowflake Token="sf-session-token-abc"',
+        }),
+      }),
+    );
+  });
+
+  it("does not add signing interceptor", async () => {
+    mockRequest.mockResolvedValue(jsonResponse(validUserDTO()));
+
+    const client = new ConnectAPI({
+      url: BASE_URL,
+      snowflakeToken: "sf-session-token-abc",
+    });
+    await client.getCurrentUser();
+
+    const config = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    expect(config._signedHeaders).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Constructor validation
 // ---------------------------------------------------------------------------
 
@@ -1414,6 +1449,12 @@ describe("Constructor validation", () => {
           token: "Ttoken123",
           privateKey: privateKeyBase64,
         }),
+    ).not.toThrow();
+  });
+
+  it("accepts snowflakeToken auth", () => {
+    expect(
+      () => new ConnectAPI({ url: BASE_URL, snowflakeToken: "sf-token" }),
     ).not.toThrow();
   });
 });

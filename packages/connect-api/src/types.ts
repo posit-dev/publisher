@@ -32,6 +32,7 @@ interface ApiKeyAuth extends ConnectAPIBaseOptions {
   apiKey: string;
   token?: never;
   privateKey?: never;
+  snowflakeToken?: never;
 }
 
 interface TokenAuth extends ConnectAPIBaseOptions {
@@ -40,15 +41,25 @@ interface TokenAuth extends ConnectAPIBaseOptions {
   token: string;
   /** Base64-encoded DER PKCS#1 RSA private key for token-based authentication. */
   privateKey: string;
+  snowflakeToken?: never;
+}
+
+interface SnowflakeAuth extends ConnectAPIBaseOptions {
+  apiKey?: never;
+  token?: never;
+  privateKey?: never;
+  /** Pre-computed Snowflake session token for Snowflake-proxied Connect servers. */
+  snowflakeToken: string;
 }
 
 interface NoAuth extends ConnectAPIBaseOptions {
   apiKey?: never;
   token?: never;
   privateKey?: never;
+  snowflakeToken?: never;
 }
 
-export type ConnectAPIOptions = ApiKeyAuth | TokenAuth | NoAuth;
+export type ConnectAPIOptions = ApiKeyAuth | TokenAuth | SnowflakeAuth | NoAuth;
 
 // ---------------------------------------------------------------------------
 // User types
