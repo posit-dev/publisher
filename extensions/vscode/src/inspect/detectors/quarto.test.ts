@@ -726,6 +726,175 @@ describe("QuartoDetector", () => {
     expect(configs[0]?.r).toEqual({});
   });
 
+  test("multi-document project produces separate configs per file", async () => {
+    setupGlobDir(["report.qmd", "appendix.qmd"]);
+    mockAccess.mockRejectedValue(new Error("ENOENT"));
+    mockReadFile.mockResolvedValue("# Content\n");
+
+    mockExecFile.mockImplementation((_cmd: string, args: string[]) => {
+      const target = args[1] ?? "";
+      if (target.endsWith("report.qmd")) {
+        return Promise.resolve({
+          stdout: makeInspectOutput({
+            engines: ["markdown"],
+            files: {
+              input: ["/project/report.qmd"],
+              configResources: [],
+            },
+            formats: {
+              html: {
+                metadata: { title: "Main Report" },
+                pandoc: {},
+              },
+            },
+          }),
+        });
+      }
+      if (target.endsWith("appendix.qmd")) {
+        return Promise.resolve({
+          stdout: makeInspectOutput({
+            engines: ["markdown"],
+            files: {
+              input: ["/project/appendix.qmd"],
+              configResources: [],
+            },
+            formats: {
+              html: {
+                metadata: { title: "Appendix" },
+                pandoc: {},
+              },
+            },
+          }),
+        });
+      }
+      return Promise.reject(new Error("unexpected"));
+    });
+
+    const configs = await detector.inferType("/project");
+    expect(configs).toHaveLength(2);
+
+    const report = configs.find((c) => c.entrypoint === "report.qmd");
+    const appendix = configs.find((c) => c.entrypoint === "appendix.qmd");
+    expect(report).toBeDefined();
+    expect(report?.title).toBe("Main Report");
+    expect(report?.type).toBe(ContentType.QUARTO_STATIC);
+    expect(appendix).toBeDefined();
+    expect(appendix?.title).toBe("Appendix");
+    expect(appendix?.type).toBe(ContentType.QUARTO_STATIC);
+  });
+
+  test("website project discovers multiple entrypoints with full file inclusion", async () => {
+    setupGlobDir(["index.qmd", "about.qmd"]);
+    mockReadFile.mockResolvedValue("# Content\n");
+
+    // _brand.yml exists; other special files do not
+    mockAccess.mockImplementation((filePath: string) => {
+      if (filePath.endsWith("_brand.yml")) {
+        return Promise.resolve();
+      }
+      return Promise.reject(new Error("ENOENT"));
+    });
+
+    // Each file gets its own quarto inspect call, both return project-level
+    // data (output-dir, full input list) plus per-file metadata.
+    mockExecFile.mockImplementation((_cmd: string, args: string[]) => {
+      const target = args[1] ?? "";
+      if (target.endsWith("index.qmd")) {
+        return Promise.resolve({
+          stdout: makeInspectOutput({
+            engines: ["markdown"],
+            files: {
+              input: ["/project/index.qmd", "/project/about.qmd"],
+              configResources: ["/project/styles.css"],
+            },
+            config: {
+              project: {
+                type: "website",
+                "output-dir": "_site",
+                "pre-render": ["prepare.py"],
+                "post-render": ["cleanup.R"],
+              },
+              website: {
+                title: "My Website",
+              },
+            },
+            formats: {
+              html: {
+                metadata: { title: "My Website" },
+                pandoc: {},
+              },
+            },
+          }),
+        });
+      }
+      if (target.endsWith("about.qmd")) {
+        return Promise.resolve({
+          stdout: makeInspectOutput({
+            engines: ["markdown"],
+            files: {
+              input: ["/project/index.qmd", "/project/about.qmd"],
+              configResources: [],
+            },
+            config: {
+              project: {
+                type: "website",
+                "output-dir": "_site",
+                "pre-render": ["prepare.py"],
+                "post-render": ["cleanup.R"],
+              },
+              website: {
+                title: "My Website",
+              },
+            },
+            formats: {
+              html: {
+                metadata: { title: "About" },
+                pandoc: {},
+              },
+            },
+          }),
+        });
+      }
+      return Promise.reject(new Error("unexpected"));
+    });
+
+    // No entrypoint filter — discovers all .qmd files
+    const configs = await detector.inferType("/project");
+    expect(configs).toHaveLength(2);
+
+    const index = configs.find((c) => c.entrypoint === "index.qmd");
+    const about = configs.find((c) => c.entrypoint === "about.qmd");
+
+    // Each config carries the full project file list
+    expect(index).toBeDefined();
+    expect(index?.title).toBe("My Website");
+    expect(index?.type).toBe(ContentType.QUARTO_STATIC);
+    expect(index?.files).toContain("/index.qmd");
+    expect(index?.files).toContain("/about.qmd");
+    expect(index?.files).toContain("/styles.css");
+    expect(index?.files).toContain("/prepare.py");
+    expect(index?.files).toContain("/cleanup.R");
+    expect(index?.files).toContain("/_brand.yml");
+    // Python from pre-render .py, R from post-render .R
+    expect(index?.python).toEqual({});
+    expect(index?.r).toEqual({});
+    expect(index?.quarto?.engines).toContain("jupyter");
+    expect(index?.quarto?.engines).toContain("knitr");
+    // Static alternative points at _site output dir
+    expect(index?.alternatives).toHaveLength(1);
+    expect(index?.alternatives?.[0]?.type).toBe(ContentType.HTML);
+    expect(index?.alternatives?.[0]?.files).toContain("/_site");
+
+    expect(about).toBeDefined();
+    expect(about?.title).toBe("About");
+    expect(about?.type).toBe(ContentType.QUARTO_STATIC);
+    expect(about?.files).toContain("/index.qmd");
+    expect(about?.files).toContain("/about.qmd");
+    expect(about?.alternatives).toHaveLength(1);
+    expect(about?.alternatives?.[0]?.type).toBe(ContentType.HTML);
+    expect(about?.alternatives?.[0]?.files).toContain("/_site");
+  });
+
   test("accepts entrypoints with variant-case extensions", async () => {
     setupGlobDir(["doc.QMD"]);
     mockAccess.mockRejectedValue(new Error("ENOENT"));
