@@ -1061,7 +1061,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
 
     const relPathPackageFile =
-      activeConfiguration.configuration.python.packageFile;
+      activeConfiguration.configuration.python.packageFile ||
+      "requirements.txt";
 
     const fileUri = Uri.joinPath(
       this.root.uri,
