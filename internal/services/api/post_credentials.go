@@ -15,6 +15,8 @@ import (
 	"github.com/posit-dev/publisher/internal/types"
 )
 
+const connectCloudEnvironmentHeader = "Connect-Cloud-Environment"
+
 type PostCredentialsRequest struct {
 	GUID       string                 `json:"guid"`
 	Name       string                 `json:"name"`
