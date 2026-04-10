@@ -3,6 +3,7 @@
 import path from "node:path";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { getPythonPackages, readRequirementsFile } from "./pythonPackages";
+import { generateRequirements } from "./pythonDependencySources";
 
 const mockFiles: Record<string, string> = {};
 
@@ -14,6 +15,10 @@ vi.mock("./fsUtils", () => ({
     }
     return Promise.resolve(content);
   }),
+}));
+
+vi.mock("./pythonDependencySources", () => ({
+  generateRequirements: vi.fn(() => Promise.resolve(null)),
 }));
 
 function setFile(dir: string, filename: string, content: string) {
@@ -68,6 +73,7 @@ describe("getPythonPackages", () => {
     for (const key of Object.keys(mockFiles)) {
       delete mockFiles[key];
     }
+    vi.clearAllMocks();
   });
 
   test("returns packages from a requirements file", async () => {
@@ -86,5 +92,29 @@ describe("getPythonPackages", () => {
     setFile("/project", "requirements-dev.txt", "flask\n");
     const result = await getPythonPackages("/project", "requirements-dev.txt");
     expect(result).toEqual(["flask"]);
+  });
+
+  test("falls back to generated requirements when file missing", async () => {
+    vi.mocked(generateRequirements).mockResolvedValueOnce([
+      "flask==3.0.2",
+      "urllib3==2.1.0",
+    ]);
+    const result = await getPythonPackages("/project", "requirements.txt");
+    expect(result).toEqual(["flask==3.0.2", "urllib3==2.1.0"]);
+  });
+
+  test("throws when file missing and no lockfile source available", async () => {
+    vi.mocked(generateRequirements).mockResolvedValueOnce(null);
+    await expect(
+      getPythonPackages("/project", "requirements.txt"),
+    ).rejects.toThrow("Requirements file not found");
+  });
+
+  test("prefers requirements file over generated requirements", async () => {
+    setFile("/project", "requirements.txt", "numpy\n");
+    vi.mocked(generateRequirements).mockResolvedValueOnce(["flask==3.0.2"]);
+    const result = await getPythonPackages("/project", "requirements.txt");
+    expect(result).toEqual(["numpy"]);
+    expect(generateRequirements).not.toHaveBeenCalled();
   });
 });
