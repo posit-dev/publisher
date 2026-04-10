@@ -371,10 +371,8 @@ function runPythonScript(
       },
       (error, stdout, stderr) => {
         if (error) {
-          const msg = stderr
-            ? `Python scan failed: ${stderr}`
-            : `Python scan failed: ${error.message}`;
-          reject(new Error(msg));
+          const parts = [error.message, stderr].filter(Boolean);
+          reject(new Error(`Python scan failed: ${parts.join(": ")}`));
           return;
         }
 

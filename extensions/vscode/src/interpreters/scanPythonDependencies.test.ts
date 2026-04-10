@@ -116,7 +116,7 @@ describe("runPythonScanScript", () => {
 
     await expect(
       runPythonScanScript("/project", "/usr/bin/python3"),
-    ).rejects.toThrow("Python scan failed: ModuleNotFoundError");
+    ).rejects.toThrow(/Python scan failed:.*ModuleNotFoundError/);
   });
 
   test("rejects with generic error when stderr is empty", async () => {
