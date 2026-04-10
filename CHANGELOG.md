@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed deployment records being written with an empty `created_at` timestamp after publishing. (#3718)
 - Fixed configuration schema to use `auth_type` (snake_case) for integration requests, matching the format the extension actually produces. Added strict property validation to integration request items. (#3651)
 - Fixed a bug with cancellation that could cause redeployment to create a new content item instead of updating the existing one. (#3305)
+- Fixed the Python/R Packages panel showing "file does not exist" after scanning when the package file was absent at startup. (#3963)
 
 ## [1.36.0]
 

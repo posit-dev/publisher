@@ -3,9 +3,7 @@ package util
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"errors"
 	"os"
-	"strings"
 )
 
 type ExistsFunc func(p Path) (bool, error)
@@ -46,21 +44,3 @@ func IsRenvLibraryDir(path AbsolutePath) bool {
 		(path.Base() == "library" || path.Base() == "sandbox" || path.Base() == "staging")
 }
 
-const badChars = `/:\*?"<>|`
-
-var ErrInvalidName = errors.New("invalid name: cannot be empty or '.', or contain '..' or any of these characters: " + badChars)
-
-func ValidateFilename(name string) error {
-	if name == "" || name == "." || strings.Contains(name, "..") {
-		return ErrInvalidName
-	}
-	if strings.ContainsAny(name, badChars) {
-		return ErrInvalidName
-	}
-	for _, c := range name {
-		if int(c) < 32 {
-			return ErrInvalidName
-		}
-	}
-	return nil
-}

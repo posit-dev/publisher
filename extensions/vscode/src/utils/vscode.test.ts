@@ -1,6 +1,8 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
-import { describe, expect, beforeEach, test, vi } from "vitest";
+import os from "node:os";
+import path from "node:path";
+import { afterEach, describe, expect, beforeEach, test, vi } from "vitest";
 
 // Mock the files module
 vi.mock("./files", () => ({
@@ -383,5 +385,66 @@ describe("Interpreter Detection", () => {
         process.env.PATH = originalPath;
       });
     });
+  });
+});
+
+// These tests use vi.resetModules() to get a fresh module import with the
+// Positron API mock active (the module caches positronApi on first access).
+describe("Positron tilde expansion", () => {
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
+  afterEach(() => {
+    // Clean up global mock
+    delete (globalThis as Record<string, unknown>).acquirePositronApi;
+  });
+
+  async function importWithPositronRuntime(runtimePath: string) {
+    // Set up Positron API mock before importing the module
+    (globalThis as Record<string, unknown>).acquirePositronApi = () => ({
+      runtime: {
+        getPreferredRuntime: () =>
+          Promise.resolve({ runtimePath, languageId: "python" }),
+      },
+    });
+    const mod = await import("./vscode");
+    return mod;
+  }
+
+  test("expands tilde in Positron runtime path", async () => {
+    const { getPythonInterpreterPath: getPython } =
+      await importWithPositronRuntime("~/.local/share/mise/python/bin/python");
+
+    const result = await getPython();
+
+    // vi.resetModules() gives us a fresh class, so instanceof won't match
+    // the statically-imported PythonExecutable. Check the property instead.
+    expect(result?.pythonPath).toBe(
+      path.join(os.homedir(), ".local/share/mise/python/bin/python"),
+    );
+  });
+
+  test("leaves absolute paths unchanged", async () => {
+    const { getPythonInterpreterPath: getPython } =
+      await importWithPositronRuntime("/usr/bin/python3");
+
+    const result = await getPython();
+
+    expect(result?.pythonPath).toBe("/usr/bin/python3");
+  });
+
+  test("expands tilde in R runtime path", async () => {
+    (globalThis as Record<string, unknown>).acquirePositronApi = () => ({
+      runtime: {
+        getPreferredRuntime: () =>
+          Promise.resolve({ runtimePath: "~/opt/R/bin/R", languageId: "r" }),
+      },
+    });
+    const { getRInterpreterPath: getR } = await import("./vscode");
+
+    const result = await getR();
+
+    expect(result?.rPath).toBe(path.join(os.homedir(), "opt/R/bin/R"));
   });
 });

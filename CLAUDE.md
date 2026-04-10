@@ -22,7 +22,7 @@ The following features have been **migrated to TypeScript** and run directly in 
 | Python interpreter detection           | `extensions/vscode/src/interpreters/pythonInterpreter.ts`                     | `internal/interpreters/`                   |
 | R interpreter detection                | `extensions/vscode/src/interpreters/rInterpreter.ts`                          | `internal/interpreters/`                   |
 | R package lockfile scanning            | `extensions/vscode/src/interpreters/rPackages.ts`                             | `internal/interpreters/`                   |
-| Python package scanning                | `extensions/vscode/src/interpreters/pythonPackages.ts`                        | Go POST `/packages/python/scan`            |
+| Python package scanning                | `extensions/vscode/src/interpreters/scanPythonDependencies.ts`                | Go POST `/packages/python/scan`            |
 | Dependency analysis                    | `extensions/vscode/src/publish/dependencies.ts`                               | `internal/bundles/`                        |
 | Project file tree                      | `extensions/vscode/src/projectFiles/`                                         | N/A (new)                                  |
 | Credential storage                     | `extensions/vscode/src/credentials/`                                          | `internal/credentials/` (partially)        |

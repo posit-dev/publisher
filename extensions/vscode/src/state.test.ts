@@ -509,7 +509,24 @@ describe("PublisherState", () => {
 
   test.todo("refreshContentRecords", () => {});
 
-  test("refreshConfigurations passes absolute workspace root to getInterpreterDefaults", async () => {
+  test("refreshConfigurations computes defaults per-config using each project directory", async () => {
+    const { mockContext } = mkExtensionContextStateMock({});
+    const publisherState = new PublisherState(mockContext);
+
+    const config = configurationFactory.build({ projectDir: "subdir" });
+    mockLoadAllConfigurationsRecursive.mockResolvedValue([config]);
+    vi.mocked(getInterpreterDefaults).mockClear();
+
+    await publisherState.refreshConfigurations();
+
+    expect(vi.mocked(getInterpreterDefaults)).toHaveBeenCalledWith(
+      path.join("/workspace", "subdir"),
+      undefined,
+      undefined,
+    );
+  });
+
+  test("refreshConfigurations skips defaults for configs in error", async () => {
     const { mockContext } = mkExtensionContextStateMock({});
     const publisherState = new PublisherState(mockContext);
 
@@ -518,11 +535,7 @@ describe("PublisherState", () => {
 
     await publisherState.refreshConfigurations();
 
-    expect(vi.mocked(getInterpreterDefaults)).toHaveBeenCalledWith(
-      "/workspace",
-      undefined,
-      undefined,
-    );
+    expect(vi.mocked(getInterpreterDefaults)).not.toHaveBeenCalled();
   });
 
   test.todo("validConfigs", () => {});

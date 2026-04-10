@@ -65,25 +65,3 @@ func (s *FilesSuite) TestIsPythonEnvironmentDirNoItIsnt() {
 	s.False(IsPythonEnvironmentDir(cwd))
 }
 
-func (s *FilesSuite) TestValidateFilename() {
-	err := ValidateFilename(`hello there!`)
-	s.NoError(err)
-	err = ValidateFilename("")
-	s.ErrorIs(err, ErrInvalidName)
-	err = ValidateFilename(`.`)
-	s.ErrorIs(err, ErrInvalidName)
-	err = ValidateFilename(`..`)
-	s.ErrorIs(err, ErrInvalidName)
-	err = ValidateFilename(`here/../../elsewhere`)
-	s.ErrorIs(err, ErrInvalidName)
-	err = ValidateFilename(`hello/there!`)
-	s.ErrorIs(err, ErrInvalidName)
-	err = ValidateFilename(`hello\there!`)
-	s.ErrorIs(err, ErrInvalidName)
-	err = ValidateFilename(`hello? are you there?`)
-	s.ErrorIs(err, ErrInvalidName)
-	err = ValidateFilename("super nully\x00")
-	s.ErrorIs(err, ErrInvalidName)
-	err = ValidateFilename("you\tcant\rcontrol\nme")
-	s.ErrorIs(err, ErrInvalidName)
-}

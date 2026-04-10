@@ -65,6 +65,7 @@ import { getConfigurationFiles } from "src/projectFiles";
 import { EventStream } from "src/events";
 import { getPythonInterpreterPath, getRInterpreterPath } from "../utils/vscode";
 import { scanRPackages } from "src/interpreters/rPackages";
+import { scanPythonDependencies } from "src/interpreters/scanPythonDependencies";
 import { getSummaryStringFromError } from "src/utils/errors";
 import { getNonce } from "src/utils/getNonce";
 import { getUri } from "src/utils/getUri";
@@ -772,10 +773,15 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       if (!pythonSection) {
         pythonProject = false;
       } else {
-        packageFile = pythonSection.packageFile;
         packageMgr = pythonSection.packageManager;
 
-        const resolvedPackageFile = packageFile || "requirements.txt";
+        // Use the config's packageFile if set, otherwise fall back to
+        // "requirements.txt". The config value can be "" when interpreter
+        // defaults were computed before the file existed, so we must
+        // resolve it before both reading the file and reporting to the UI.
+        const resolvedPackageFile =
+          pythonSection.packageFile || "requirements.txt";
+        packageFile = resolvedPackageFile;
         const root = workspaces.path();
         if (!root) {
           return;
@@ -916,10 +922,13 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       if (!rSection) {
         rProject = false;
       } else {
-        packageFile = rSection.packageFile;
         packageMgr = rSection.packageManager;
 
-        const resolvedPackageFile = packageFile || "renv.lock";
+        // Use the config's packageFile if set, otherwise fall back to
+        // "renv.lock". The config value can be "" when interpreter
+        // defaults were computed before the file existed.
+        const resolvedPackageFile = rSection.packageFile || "renv.lock";
+        packageFile = resolvedPackageFile;
         const root = workspaces.path();
         if (!root) {
           return;
@@ -1060,7 +1069,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
 
     const relPathPackageFile =
-      activeConfiguration.configuration.python.packageFile;
+      activeConfiguration.configuration.python.packageFile ||
+      "requirements.txt";
 
     const fileUri = Uri.joinPath(
       this.root.uri,
@@ -1078,22 +1088,32 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
 
     try {
-      const response = await showProgress(
+      const data = await showProgress(
         "Refreshing Python Requirements File",
         Views.HomeView,
         async () => {
-          const api = await useApi();
           const python = await getPythonInterpreterPath();
-          return await api.packages.createPythonRequirementsFile(
+          const pythonPath = python?.pythonPath ?? "python3";
+          const projectDir = path.join(
+            this.root!.uri.fsPath,
             activeConfiguration.projectDir,
-            python,
+          );
+          return await scanPythonDependencies(
+            projectDir,
+            pythonPath,
             relPathPackageFile,
           );
         },
       );
 
-      const data = response.data;
       await commands.executeCommand("vscode.open", fileUri);
+
+      // Best-effort refresh so a transient UI error doesn't mask
+      // a successful scan. File watchers will retry on their own.
+      await Promise.allSettled([
+        this.refreshPythonPackages(),
+        this.sendRefreshedFilesLists(),
+      ]);
 
       if (data.incomplete.length > 0) {
         const importList = data.incomplete.join(", ");
@@ -1169,6 +1189,13 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         },
       );
       await commands.executeCommand("vscode.open", fileUri);
+
+      // Best-effort refresh so a transient UI error doesn't mask
+      // a successful scan. File watchers will retry on their own.
+      await Promise.allSettled([
+        this.refreshRPackages(),
+        this.sendRefreshedFilesLists(),
+      ]);
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
         "homeView::onScanForRPackageRequirements",
