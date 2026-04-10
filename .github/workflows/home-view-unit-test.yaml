@@ -15,6 +15,8 @@ jobs:
           node-version: "22"
           cache: "npm"
           cache-dependency-path: "**/package-lock.json"
+      - run: npm ci
+        working-directory: packages/connect-cloud-api
       - run: npm install --prefix ../..
       - run: npm install
       - run: npm test
