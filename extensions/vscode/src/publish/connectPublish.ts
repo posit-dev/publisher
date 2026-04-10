@@ -41,6 +41,7 @@ import { convertKeysToSnakeCase } from "../toml/convertKeys";
 import { stripEmpty, isRecord, expandInlineArrays } from "../toml/tomlHelpers";
 import { getDashboardUrl, getDirectUrl, getLogsUrl } from "../toml/urlHelpers";
 import { fileExistsAt } from "../interpreters/fsUtils";
+import { generateRequirements } from "../interpreters/pythonDependencySources";
 import { logger } from "../logging";
 import type { ErrorCode } from "../utils/errorTypes";
 
@@ -275,33 +276,40 @@ export async function connectPublish(
       throw new Error("The description cannot be longer than 4096 characters.");
     }
 
+    let generatedRequirements: string[] | undefined;
+
     if (config.python) {
       const packageFile = config.python.packageFile || "requirements.txt";
       const packageFilePath = path.join(projectDir, packageFile);
       const packageFileExists = await fileExistsAt(packageFilePath);
 
-      // Check that the file exists on disk
-      if (!packageFileExists) {
-        throw new Error(
-          `Missing dependency file ${packageFile}. ` +
-            `This file must be included in the deployment.`,
+      if (packageFileExists) {
+        // Check that the file is included in the configured file patterns.
+        // Uses suffix matching, not glob evaluation — matches Go's
+        // checkRequirementsFile which uses strings.HasSuffix(file, packageFile).
+        // Go always requires the file in cfg.Files, even when the list is empty
+        // (the loop produces no match, so requirementsIsIncluded stays false).
+        const filePatterns = config.files ?? [];
+        const isIncluded = filePatterns.some((pattern) =>
+          pattern.endsWith(packageFile),
         );
-      }
-
-      // Check that the file is included in the configured file patterns.
-      // Uses suffix matching, not glob evaluation — matches Go's
-      // checkRequirementsFile which uses strings.HasSuffix(file, packageFile).
-      // Go always requires the file in cfg.Files, even when the list is empty
-      // (the loop produces no match, so requirementsIsIncluded stays false).
-      const filePatterns = config.files ?? [];
-      const isIncluded = filePatterns.some((pattern) =>
-        pattern.endsWith(packageFile),
-      );
-      if (!isIncluded) {
-        throw new Error(
-          `Missing dependency file ${packageFile}. ` +
-            `This file must be included in the deployment.`,
-        );
+        if (!isIncluded) {
+          throw new Error(
+            `Missing dependency file ${packageFile}. ` +
+              `This file must be included in the deployment.`,
+          );
+        }
+      } else {
+        // No requirements file on disk — try generating from lockfiles
+        const generated = await generateRequirements(projectDir);
+        if (generated !== null) {
+          generatedRequirements = generated;
+        } else {
+          throw new Error(
+            `Missing dependency file ${packageFile}. ` +
+              `This file must be included in the deployment.`,
+          );
+        }
       }
     }
 
@@ -435,6 +443,18 @@ export async function connectPublish(
       status: "log",
       message: "Preparing files",
     });
+
+    // Build synthetic files map if requirements were generated from lockfiles
+    let syntheticFiles: Map<string, Buffer> | undefined;
+    if (generatedRequirements && config.python) {
+      const packageFile = config.python.packageFile || "requirements.txt";
+      syntheticFiles = new Map<string, Buffer>();
+      syntheticFiles.set(
+        packageFile,
+        Buffer.from(generatedRequirements.join("\n") + "\n"),
+      );
+    }
+
     const { bundle, manifest: finalManifest } = await buildBundleArchive(
       projectDir,
       config,
@@ -472,13 +492,21 @@ export async function connectPublish(
             break;
         }
       },
+      syntheticFiles,
     );
     record.files = getFilenames(finalManifest);
 
     // Record dependencies in the deployment record
-    const pythonReqs = await readPythonRequirements(projectDir, config.python);
-    if (pythonReqs) {
-      record.requirements = pythonReqs;
+    if (generatedRequirements) {
+      record.requirements = generatedRequirements;
+    } else {
+      const pythonReqs = await readPythonRequirements(
+        projectDir,
+        config.python,
+      );
+      if (pythonReqs) {
+        record.requirements = pythonReqs;
+      }
     }
     if (lockfile) {
       record.renv = lockfileToDeploymentRenv(lockfile);
@@ -1192,6 +1220,7 @@ async function buildBundleArchive(
   manifest: Manifest,
   lockfilePath: string | undefined,
   onBundleProgress?: BundleProgressCallback,
+  syntheticFiles?: Map<string, Buffer>,
 ): Promise<{ bundle: Buffer; manifest: Manifest }> {
   const basePatterns = config.files?.length ? [...config.files] : ["*"];
   const extraPatterns: string[] = [];
@@ -1216,6 +1245,7 @@ async function buildBundleArchive(
       manifest,
       filePatterns,
       onProgress: onBundleProgress,
+      syntheticFiles,
     });
 
     return { bundle: result.bundle, manifest: result.manifest };
