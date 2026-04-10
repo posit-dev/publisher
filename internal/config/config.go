@@ -41,11 +41,6 @@ func GetConfigPath(base util.AbsolutePath, configName string) util.AbsolutePath 
 	return GetConfigDir(base).Join(configName)
 }
 
-func ListConfigFiles(base util.AbsolutePath) ([]util.AbsolutePath, error) {
-	dir := GetConfigDir(base)
-	return dir.Glob("*.toml")
-}
-
 func readLeadingComments(path util.AbsolutePath) ([]string, error) {
 	var comments []string
 	contents, err := path.ReadFile()
