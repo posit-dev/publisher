@@ -18,5 +18,7 @@ jobs:
       - run: npm ci
         working-directory: packages/connect-cloud-api
       - run: npm ci
+        working-directory: extensions/vscode
+      - run: npm ci
       - run: npm test
       - run: npm run check:conformance
