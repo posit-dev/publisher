@@ -1,0 +1,15 @@
+{
+  "method": "POST",
+  "path": "/oauth/device/authorize",
+  "query": "",
+  "request_body": null,
+  "status_code": 200,
+  "response_body": {
+    "verification_uri": "https://login.posit.cloud/oauth/device",
+    "expires_in": 1800,
+    "user_code": "ABCD-EFGH",
+    "device_code": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "interval": 2,
+    "verification_uri_complete": "https://login.posit.cloud/oauth/device?user_code=ABCD-EFGH"
+  }
+}

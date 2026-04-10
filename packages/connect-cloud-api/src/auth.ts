@@ -7,7 +7,11 @@ import {
   cloudAuthBaseUrls,
   cloudAuthClientIds,
 } from "./types.js";
-import type { TokenRequest, TokenResponse } from "./types.js";
+import type {
+  DeviceAuthResponse,
+  TokenRequest,
+  TokenResponse,
+} from "./types.js";
 
 const AUTH_SCOPE = "vivid";
 
@@ -26,7 +30,29 @@ export class CloudAuthClient {
   }
 
   /**
-   * Exchanges a refresh token for a new access token.
+   * Initiates the device authorization flow.
+   *
+   * POST /oauth/device/authorize with form-urlencoded body.
+   */
+  async createDeviceAuth(): Promise<DeviceAuthResponse> {
+    const body = new URLSearchParams({
+      client_id: this.clientId,
+      scope: AUTH_SCOPE,
+    });
+
+    const { data } = await axios.post<DeviceAuthResponse>(
+      `${this.baseUrl}/oauth/device/authorize`,
+      body,
+      {
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      },
+    );
+
+    return data;
+  }
+
+  /**
+   * Exchanges a token request (refresh token or device code) for an access token.
    *
    * POST /oauth/token with form-urlencoded body.
    */
@@ -35,8 +61,13 @@ export class CloudAuthClient {
       grant_type: request.grant_type,
       client_id: this.clientId,
       scope: AUTH_SCOPE,
-      refresh_token: request.refresh_token,
     });
+
+    if (request.grant_type === "refresh_token") {
+      body.set("refresh_token", request.refresh_token);
+    } else {
+      body.set("device_code", request.device_code);
+    }
 
     const { data } = await axios.post<TokenResponse>(
       `${this.baseUrl}/oauth/token`,

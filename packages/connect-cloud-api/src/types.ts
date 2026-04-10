@@ -61,9 +61,20 @@ export const cloudAuthClientIds: Record<CloudEnvironment, string> = {
 // OAuth token types (from cloud_auth/oauth.go)
 // ---------------------------------------------------------------------------
 
-export interface TokenRequest {
-  grant_type: "refresh_token";
-  refresh_token: string;
+export type TokenRequest =
+  | { grant_type: "refresh_token"; refresh_token: string }
+  | {
+      grant_type: "urn:ietf:params:oauth:grant-type:device_code";
+      device_code: string;
+    };
+
+export interface DeviceAuthResponse {
+  device_code: string;
+  user_code: string;
+  verification_uri: string;
+  verification_uri_complete: string;
+  expires_in: number;
+  interval: number;
 }
 
 export interface TokenResponse {
