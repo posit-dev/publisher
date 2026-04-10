@@ -63,6 +63,8 @@ describe("discoverSnowflakeConnections", () => {
       { name: "default", serverUrl: "https://example.snowflakecomputing.app" },
     ]);
 
+    expect(mockGetToken).toHaveBeenCalledWith("example.snowflakecomputing.app");
+
     expect(MockConnectAPI).toHaveBeenCalledWith({
       url: "https://example.snowflakecomputing.app",
       snowflakeToken: "sf-token-123",
