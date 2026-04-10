@@ -773,10 +773,15 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       if (!pythonSection) {
         pythonProject = false;
       } else {
-        packageFile = pythonSection.packageFile;
         packageMgr = pythonSection.packageManager;
 
-        const resolvedPackageFile = packageFile || "requirements.txt";
+        // Use the config's packageFile if set, otherwise fall back to
+        // "requirements.txt". The config value can be "" when interpreter
+        // defaults were computed before the file existed, so we must
+        // resolve it before both reading the file and reporting to the UI.
+        const resolvedPackageFile =
+          pythonSection.packageFile || "requirements.txt";
+        packageFile = resolvedPackageFile;
         const root = workspaces.path();
         if (!root) {
           return;
@@ -917,10 +922,13 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       if (!rSection) {
         rProject = false;
       } else {
-        packageFile = rSection.packageFile;
         packageMgr = rSection.packageManager;
 
-        const resolvedPackageFile = packageFile || "renv.lock";
+        // Use the config's packageFile if set, otherwise fall back to
+        // "renv.lock". The config value can be "" when interpreter
+        // defaults were computed before the file existed.
+        const resolvedPackageFile = rSection.packageFile || "renv.lock";
+        packageFile = resolvedPackageFile;
         const root = workspaces.path();
         if (!root) {
           return;
@@ -1100,6 +1108,14 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
       await commands.executeCommand("vscode.open", fileUri);
 
+      // Explicitly refresh packages and files list now rather than
+      // waiting for debounced file watchers, which race independently
+      // and can leave the UI in a stale state.
+      await Promise.all([
+        this.refreshPythonPackages(),
+        this.sendRefreshedFilesLists(),
+      ]);
+
       if (data.incomplete.length > 0) {
         const importList = data.incomplete.join(", ");
         const msg = `Could not find installed packages for some imports using ${data.python}. Install the required packages, or select a different interpreter, and try scanning again. Imports: ${importList}`;
@@ -1174,6 +1190,14 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         },
       );
       await commands.executeCommand("vscode.open", fileUri);
+
+      // Explicitly refresh packages and files list now rather than
+      // waiting for debounced file watchers, which race independently
+      // and can leave the UI in a stale state.
+      await Promise.all([
+        this.refreshRPackages(),
+        this.sendRefreshedFilesLists(),
+      ]);
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
         "homeView::onScanForRPackageRequirements",
