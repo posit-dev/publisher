@@ -65,7 +65,7 @@ export async function connectAPIOptionsFromCredential(
     credential.serverType === ServerType.SNOWFLAKE &&
     credential.snowflakeConnection
   ) {
-    return buildSnowflakeOptions(credential, extra);
+    return await buildSnowflakeOptions(credential, extra);
   }
 
   if (credential.token && credential.privateKey) {
