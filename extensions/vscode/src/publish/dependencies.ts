@@ -18,9 +18,9 @@ const DEFAULT_R_PACKAGE_FILE = "renv.lock";
  * Returns the parsed requirement lines for the deployment record,
  * or undefined if the config has no Python section.
  *
- * If the package file does not exist, falls back to generating
- * requirements from pylock.toml, uv.lock, or pyproject.toml.
- * Throws if no dependency source is available.
+ * If the default package file (requirements.txt) does not exist,
+ * falls back to generating requirements from pylock.toml, uv.lock,
+ * or pyproject.toml. Throws if no dependency source is available.
  */
 export async function readPythonRequirements(
   projectDir: string,
