@@ -226,7 +226,7 @@ export class ConnectContentFileSystemProvider implements FileSystemProvider {
           .getConfiguration("positPublisher")
           .get<boolean>("verifyCertificates") ?? true;
       const connectApi = new ConnectAPI(
-        connectAPIOptionsFromCredential(credential, {
+        await connectAPIOptionsFromCredential(credential, {
           rejectUnauthorized: verifyCerts,
         }),
       );
