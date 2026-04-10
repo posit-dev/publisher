@@ -280,7 +280,8 @@ export async function connectPublish(
     let generatedRequirements: string[] | undefined;
 
     if (config.python) {
-      const packageFile = config.python.packageFile || "requirements.txt";
+      const packageFile =
+        config.python.packageFile || DEFAULT_PYTHON_PACKAGE_FILE;
       const packageFilePath = path.join(projectDir, packageFile);
       const packageFileExists = await fileExistsAt(packageFilePath);
 
@@ -455,7 +456,8 @@ export async function connectPublish(
     // Build synthetic files map if requirements were generated from lockfiles
     let syntheticFiles: Map<string, Buffer> | undefined;
     if (generatedRequirements && config.python) {
-      const packageFile = config.python.packageFile || "requirements.txt";
+      const packageFile =
+        config.python.packageFile || DEFAULT_PYTHON_PACKAGE_FILE;
       syntheticFiles = new Map<string, Buffer>();
       syntheticFiles.set(
         packageFile,
