@@ -1,13 +1,13 @@
 // Copyright (C) 2025 by Posit Software, PBC.
 
 import {
-  useApi,
   Credential,
-  SnowflakeConnection,
   ServerType,
   ProductName,
   ProductDescription,
 } from "../api";
+import { discoverSnowflakeConnections } from "../snowflake/discovery";
+import type { SnowflakeConnection } from "../snowflake/types";
 import { getSummaryStringFromError } from "../utils/errors";
 import { CredentialsService } from "src/credentials/service";
 import { isAxiosErrorWithJson } from "../utils/errorTypes";
@@ -88,9 +88,7 @@ export const fetchSnowflakeConnections = async (serverUrl: string) => {
   let connectionQuickPicks: QuickPickItemWithIndex[];
 
   try {
-    const api = await useApi();
-    const connsResponse = await api.snowflakeConnections.list(serverUrl);
-    connections = connsResponse.data;
+    connections = await discoverSnowflakeConnections(serverUrl);
     connectionQuickPicks = connections.map((connection, i) => ({
       label: connection.name,
       index: i,
@@ -100,7 +98,7 @@ export const fetchSnowflakeConnections = async (serverUrl: string) => {
       throw error;
     }
     const summary = getSummaryStringFromError(
-      "newCredentials, snowflakeConnections.list",
+      "newCredentials, snowflakeConnections.discover",
       error,
     );
     window.showErrorMessage(

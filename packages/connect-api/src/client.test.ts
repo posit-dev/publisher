@@ -1367,6 +1367,41 @@ describe("Token authentication", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Snowflake authentication
+// ---------------------------------------------------------------------------
+
+describe("Snowflake authentication", () => {
+  it("sets Snowflake authorization header", () => {
+    new ConnectAPI({
+      url: BASE_URL,
+      snowflakeToken: "sf-session-token-abc",
+    });
+
+    expect(axios.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        baseURL: BASE_URL,
+        headers: expect.objectContaining({
+          Authorization: 'Snowflake Token="sf-session-token-abc"',
+        }),
+      }),
+    );
+  });
+
+  it("does not add signing interceptor", async () => {
+    mockRequest.mockResolvedValue(jsonResponse(validUserDTO()));
+
+    const client = new ConnectAPI({
+      url: BASE_URL,
+      snowflakeToken: "sf-session-token-abc",
+    });
+    await client.getCurrentUser();
+
+    const config = mockRequest.mock.calls[0][0] as Record<string, unknown>;
+    expect(config._signedHeaders).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Constructor validation
 // ---------------------------------------------------------------------------
 
@@ -1376,13 +1411,17 @@ describe("Constructor validation", () => {
   });
 
   it("throws if only token is provided without privateKey", () => {
-    expect(() => new ConnectAPI({ url: BASE_URL, token: "Ttoken123" })).toThrow(
+    expect(
+      // @ts-expect-error - union type rejects partial token auth at compile time; testing runtime safety net
+      () => new ConnectAPI({ url: BASE_URL, token: "Ttoken123" }),
+    ).toThrow(
       "ConnectAPI requires both token and privateKey for token authentication",
     );
   });
 
   it("throws if only privateKey is provided without token", () => {
     expect(
+      // @ts-expect-error - union type rejects partial token auth at compile time; testing runtime safety net
       () => new ConnectAPI({ url: BASE_URL, privateKey: "somekey" }),
     ).toThrow(
       "ConnectAPI requires both token and privateKey for token authentication",
@@ -1410,6 +1449,12 @@ describe("Constructor validation", () => {
           token: "Ttoken123",
           privateKey: privateKeyBase64,
         }),
+    ).not.toThrow();
+  });
+
+  it("accepts snowflakeToken auth", () => {
+    expect(
+      () => new ConnectAPI({ url: BASE_URL, snowflakeToken: "sf-token" }),
     ).not.toThrow();
   });
 });

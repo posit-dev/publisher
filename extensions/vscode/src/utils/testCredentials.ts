@@ -99,13 +99,20 @@ export async function testCredentials(
     !!params.apiKey || (!!params.token && !!params.privateKey);
 
   const tester = async (urlToTest: string): Promise<void> => {
-    const client = new ConnectAPI({
-      url: urlToTest,
-      apiKey: params.apiKey,
-      token: params.token,
-      privateKey: params.privateKey,
+    const baseOptions = {
       rejectUnauthorized: !params.insecure,
       timeout: timeoutMs,
+    };
+    const authOptions =
+      params.token && params.privateKey
+        ? { token: params.token, privateKey: params.privateKey }
+        : params.apiKey
+          ? { apiKey: params.apiKey }
+          : {};
+    const client = new ConnectAPI({
+      url: urlToTest,
+      ...baseOptions,
+      ...authOptions,
     });
 
     try {

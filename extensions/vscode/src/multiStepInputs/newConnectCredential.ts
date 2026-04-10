@@ -13,12 +13,8 @@ import {
 
 import { InputBoxValidationSeverity, window } from "vscode";
 
-import {
-  Credential,
-  ServerType,
-  ProductName,
-  SnowflakeConnection,
-} from "src/api";
+import { Credential, ServerType, ProductName } from "src/api";
+import type { SnowflakeConnection } from "src/snowflake/types";
 import {
   getMessageFromError,
   getSummaryStringFromError,

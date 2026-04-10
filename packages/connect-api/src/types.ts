@@ -20,18 +20,46 @@ export const GUID = (id: string) => id as GUID;
 // Client options
 // ---------------------------------------------------------------------------
 
-export interface ConnectAPIOptions {
+interface ConnectAPIBaseOptions {
   url: string;
-  /** API key for key-based authentication. Either apiKey or (token + privateKey) must be provided. */
-  apiKey?: string;
-  /** Token ID for token-based authentication (RSA key-pair signing). */
-  token?: string;
-  /** Base64-encoded DER PKCS#1 RSA private key for token-based authentication. */
-  privateKey?: string;
   /** Whether to verify TLS certificates. Defaults to true. */
   rejectUnauthorized?: boolean;
   timeout?: number; // request timeout in milliseconds
 }
+
+interface ApiKeyAuth extends ConnectAPIBaseOptions {
+  /** API key for key-based authentication. */
+  apiKey: string;
+  token?: never;
+  privateKey?: never;
+  snowflakeToken?: never;
+}
+
+interface TokenAuth extends ConnectAPIBaseOptions {
+  apiKey?: never;
+  /** Token ID for token-based authentication (RSA key-pair signing). */
+  token: string;
+  /** Base64-encoded DER PKCS#1 RSA private key for token-based authentication. */
+  privateKey: string;
+  snowflakeToken?: never;
+}
+
+interface SnowflakeAuth extends ConnectAPIBaseOptions {
+  apiKey?: never;
+  token?: never;
+  privateKey?: never;
+  /** Pre-computed Snowflake session token for Snowflake-proxied Connect servers. */
+  snowflakeToken: string;
+}
+
+interface NoAuth extends ConnectAPIBaseOptions {
+  apiKey?: never;
+  token?: never;
+  privateKey?: never;
+  snowflakeToken?: never;
+}
+
+export type ConnectAPIOptions = ApiKeyAuth | TokenAuth | SnowflakeAuth | NoAuth;
 
 // ---------------------------------------------------------------------------
 // User types
