@@ -195,19 +195,6 @@ export type ConnectCloudAccessControl = {
   organizationAccess?: string;
 };
 
-export function UpdateAllConfigsWithDefaults(
-  configs: (Configuration | ConfigurationError)[],
-  defaults: InterpreterDefaults,
-) {
-  for (let i = 0; i < configs.length; i++) {
-    const config = configs[i];
-    if (config !== undefined) {
-      configs[i] = UpdateConfigWithDefaults(config, defaults);
-    }
-  }
-  return configs;
-}
-
 export function UpdateConfigWithDefaults(
   config: Configuration | ConfigurationError,
   defaults: InterpreterDefaults,

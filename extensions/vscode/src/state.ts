@@ -22,7 +22,6 @@ import {
   PreContentRecord,
   PreContentRecordWithConfig,
   ServerType,
-  UpdateAllConfigsWithDefaults,
   UpdateConfigWithDefaults,
 } from "src/api";
 import { normalizeURL } from "src/utils/url";
@@ -340,12 +339,23 @@ export class PublisherState implements Disposable {
           const r = await getRInterpreterPath();
 
           const configs = await loadAllConfigurationsRecursive(root);
-          const defaults = await getInterpreterDefaults(
-            root,
-            python?.pythonPath,
-            r?.rPath,
-          );
-          this.configurations = UpdateAllConfigsWithDefaults(configs, defaults);
+          // Compute defaults per-config so each project subdirectory's
+          // package files (requirements.txt, renv.lock) are detected correctly.
+          const updated: (Configuration | ConfigurationError)[] = [];
+          for (const config of configs) {
+            if (isConfigurationError(config)) {
+              updated.push(config);
+              continue;
+            }
+            const projectDir = path.join(root, config.projectDir);
+            const defaults = await getInterpreterDefaults(
+              projectDir,
+              python?.pythonPath,
+              r?.rPath,
+            );
+            updated.push(UpdateConfigWithDefaults(config, defaults));
+          }
+          this.configurations = updated;
         },
       );
     } catch (error: unknown) {

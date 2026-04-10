@@ -6,7 +6,6 @@ import {
   PythonConfig,
   Configuration,
   UpdateConfigWithDefaults,
-  UpdateAllConfigsWithDefaults,
 } from "./configurations";
 import { InterpreterDefaults } from "./interpreters";
 import {
@@ -175,39 +174,6 @@ describe("Configurations Types", () => {
 
       UpdateConfigWithDefaults(config, defaultsWithoutRequires);
       expect(config.configuration.r!.requiresR).toBeUndefined();
-    });
-  });
-
-  describe("UpdateAllConfigsWithDefaults", () => {
-    test("updates all configs passed to it", () => {
-      const multiConfigs: Configuration[] = [];
-
-      for (let index = 0; index < 5; index++) {
-        const cf = configurationFactory.build();
-        cf.configuration.r = { ...blankIntprConf };
-        cf.configuration.python = { ...blankIntprConf };
-        multiConfigs.push(cf);
-      }
-      multiConfigs.forEach((cf) => {
-        expect(cf.configuration.r).toEqual(blankIntprConf);
-        expect(cf.configuration.python).toEqual(blankIntprConf);
-      });
-
-      UpdateAllConfigsWithDefaults(multiConfigs, interpreterDefaults);
-      multiConfigs.forEach((cf) => {
-        expect(cf.configuration.r).toEqual({
-          version: "4.4.0",
-          packageFile: "renv.lock",
-          packageManager: "renv",
-          requiresR: ">= 4.4.0",
-        });
-        expect(cf.configuration.python).toEqual({
-          version: "3.11.0",
-          packageFile: "requirements.txt",
-          packageManager: "pip",
-          requiresPython: ">=3.11",
-        });
-      });
     });
   });
 });
