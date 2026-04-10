@@ -210,6 +210,7 @@ def extract_ipynb(file_path):
             code_lines.extend(source)
         elif isinstance(source, str):
             code_lines.append(source)
+        code_lines.append("\\n")
     return _imports_from_ast("".join(code_lines))
 
 
@@ -242,9 +243,11 @@ def is_local_import(name, file_dir):
 def build_package_map():
     """Map import names to (package_name, version) using installed distributions.
     Uses top_level.txt when available -- this is how we know that 'import sklearn'
-    comes from 'scikit-learn', or 'import cv2' from 'opencv-python'. Falls back
-    to the package name itself (with dash-to-underscore normalization) when
-    top_level.txt is absent. Uses dist.metadata["Name"] for Python 3.9 compat."""
+    comes from 'scikit-learn', or 'import cv2' from 'opencv-python'. When
+    top_level.txt is absent (increasingly common in modern packages), falls back
+    to extracting top-level package directories from dist.files (the RECORD).
+    Last resort: the package name itself with dash-to-underscore normalization.
+    Uses dist.metadata["Name"] for Python 3.9 compat."""
     from importlib.metadata import distributions
     mapping = {}
     for dist in distributions():
@@ -256,6 +259,20 @@ def build_package_map():
                 import_name = import_name.strip()
                 if import_name:
                     mapping[import_name] = (pkg_name, version)
+        elif dist.files:
+            # Extract top-level package names from the installed file list.
+            # A file like "sklearn/__init__.py" means "sklearn" is importable.
+            seen = set()
+            for f in dist.files:
+                parts = str(f).split("/")
+                top = parts[0]
+                if top.endswith(".dist-info") or top.endswith(".data"):
+                    continue
+                if top.endswith(".py"):
+                    top = top[:-3]
+                if top and top not in seen:
+                    seen.add(top)
+                    mapping[top] = (pkg_name, version)
         else:
             mapping[pkg_name] = (pkg_name, version)
             normalized = pkg_name.replace("-", "_").lower()

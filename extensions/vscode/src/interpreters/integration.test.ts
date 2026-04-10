@@ -780,6 +780,75 @@ describe(
         }),
     );
 
+    test.skipIf(!pythonAvailable)(
+      "extracts imports across notebook cells without trailing newlines",
+      () =>
+        withTempDir(async (dir) => {
+          // Jupyter notebooks often omit the trailing \n on the last line
+          // of each cell. The scanner must insert a newline between cells
+          // so that ast.parse doesn't see concatenated lines.
+          const notebook = {
+            cells: [
+              {
+                cell_type: "code",
+                source: [
+                  "import json\n",
+                  "import numpy as np", // no trailing \n
+                ],
+              },
+              {
+                cell_type: "code",
+                source: [
+                  "import os\n",
+                  "import csv", // no trailing \n
+                ],
+              },
+            ],
+          };
+          await writeFile(
+            path.join(dir, "notebook.ipynb"),
+            JSON.stringify(notebook),
+            "utf-8",
+          );
+
+          const result = await runPythonScanScript(dir, pythonCmd);
+
+          // numpy should be found despite the missing newlines between cells
+          expect(hasRequirement(result.requirements, "numpy")).toBe(true);
+          // stdlib imports should still be filtered
+          expect(hasRequirement(result.requirements, "json")).toBe(false);
+          expect(hasRequirement(result.requirements, "os")).toBe(false);
+          expect(hasRequirement(result.requirements, "csv")).toBe(false);
+        }),
+    );
+
+    test.skipIf(!pythonAvailable)(
+      "maps import names to package names using RECORD when top_level.txt is absent",
+      () =>
+        withTempDir(async (dir) => {
+          // scikit-learn (and increasingly other packages) ship without
+          // top_level.txt. The scanner must fall back to dist.files to
+          // discover that "sklearn" maps to "scikit-learn".
+          await writeFile(
+            path.join(dir, "app.py"),
+            "from sklearn.linear_model import LinearRegression\n",
+            "utf-8",
+          );
+
+          const result = await runPythonScanScript(dir, pythonCmd);
+
+          const entry = result.requirements.find(
+            (r) => r === "sklearn" || r.startsWith("scikit-learn=="),
+          );
+          expect(entry).toBeDefined();
+          // If scikit-learn is installed, the entry should use the real
+          // package name, not the import name.
+          if (entry!.includes("==")) {
+            expect(entry).toMatch(/^scikit-learn==/);
+          }
+        }),
+    );
+
     test.skipIf(!pythonAvailable)("extracts imports from .qmd files", () =>
       withTempDir(async (dir) => {
         const qmd = `---
