@@ -57,6 +57,7 @@ export async function getPreferredRuntimeFromPositron(
     if (runtime) {
       // Positron may return paths with a leading ~ which execFile cannot
       // resolve (it doesn't use a shell). Expand it to the real home dir.
+      // https://github.com/posit-dev/positron/issues/12942
       const interpreter = runtime.runtimePath.startsWith("~/")
         ? path.join(os.homedir(), runtime.runtimePath.slice(1))
         : runtime.runtimePath;
