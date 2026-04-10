@@ -262,6 +262,7 @@ def build_package_map():
         elif dist.files:
             # Extract top-level package names from the installed file list.
             # A file like "sklearn/__init__.py" means "sklearn" is importable.
+            found = False
             seen = set()
             for f in dist.files:
                 parts = str(f).split("/")
@@ -273,6 +274,12 @@ def build_package_map():
                 if top and top not in seen:
                     seen.add(top)
                     mapping[top] = (pkg_name, version)
+                    found = True
+            if not found:
+                mapping[pkg_name] = (pkg_name, version)
+                normalized = pkg_name.replace("-", "_").lower()
+                if normalized != pkg_name:
+                    mapping[normalized] = (pkg_name, version)
         else:
             mapping[pkg_name] = (pkg_name, version)
             normalized = pkg_name.replace("-", "_").lower()
