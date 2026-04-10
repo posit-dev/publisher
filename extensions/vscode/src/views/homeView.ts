@@ -1108,10 +1108,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
       await commands.executeCommand("vscode.open", fileUri);
 
-      // Explicitly refresh packages and files list now rather than
-      // waiting for debounced file watchers, which race independently
-      // and can leave the UI in a stale state.
-      await Promise.all([
+      // Best-effort refresh so a transient UI error doesn't mask
+      // a successful scan. File watchers will retry on their own.
+      await Promise.allSettled([
         this.refreshPythonPackages(),
         this.sendRefreshedFilesLists(),
       ]);
@@ -1191,10 +1190,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       );
       await commands.executeCommand("vscode.open", fileUri);
 
-      // Explicitly refresh packages and files list now rather than
-      // waiting for debounced file watchers, which race independently
-      // and can leave the UI in a stale state.
-      await Promise.all([
+      // Best-effort refresh so a transient UI error doesn't mask
+      // a successful scan. File watchers will retry on their own.
+      await Promise.allSettled([
         this.refreshRPackages(),
         this.sendRefreshedFilesLists(),
       ]);
