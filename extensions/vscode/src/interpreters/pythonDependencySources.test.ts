@@ -306,6 +306,19 @@ created-by = "uv"
     expect(result).toBeNull();
   });
 
+  test("returns empty array when packages section is empty", async () => {
+    setFile(
+      "/project",
+      "pylock.toml",
+      `lock-version = "1.0"
+created-by = "uv"
+packages = []
+`,
+    );
+    const result = await readPyLockDependencies("/project");
+    expect(result).toEqual([]);
+  });
+
   test("returns null on invalid TOML", async () => {
     setFile("/project", "pylock.toml", "not valid toml {{{");
     const result = await readPyLockDependencies("/project");

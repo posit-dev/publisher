@@ -40,6 +40,7 @@ import { forceProductTypeCompliance } from "../toml/configCompliance";
 import { convertKeysToSnakeCase } from "../toml/convertKeys";
 import { stripEmpty, isRecord, expandInlineArrays } from "../toml/tomlHelpers";
 import { getDashboardUrl, getDirectUrl, getLogsUrl } from "../toml/urlHelpers";
+import { DEFAULT_PYTHON_PACKAGE_FILE } from "../constants";
 import { fileExistsAt } from "../interpreters/fsUtils";
 import { generateRequirements } from "../interpreters/pythonDependencySources";
 import { logger } from "../logging";
@@ -299,7 +300,7 @@ export async function connectPublish(
               `This file must be included in the deployment.`,
           );
         }
-      } else if (packageFile === "requirements.txt") {
+      } else if (packageFile === DEFAULT_PYTHON_PACKAGE_FILE) {
         // No default requirements file on disk — try generating from lockfiles.
         // Only fall back for the default file name; non-default files are
         // explicitly configured and should not be silently substituted.
