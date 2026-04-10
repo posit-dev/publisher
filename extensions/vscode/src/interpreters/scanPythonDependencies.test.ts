@@ -114,13 +114,10 @@ describe("runPythonScanScript", () => {
   test("rejects with descriptive error on Python execution failure", async () => {
     setupExecFileError("ModuleNotFoundError: No module named 'xyz'");
 
-    const err = await runPythonScanScript("/project", "/usr/bin/python3").catch(
-      (e: Error) => e,
-    );
-    expect(err).toBeInstanceOf(Error);
+    const promise = runPythonScanScript("/project", "/usr/bin/python3");
     // Both the Node error message and Python stderr should be present
-    expect(err.message).toContain("exit code 1");
-    expect(err.message).toContain("ModuleNotFoundError");
+    await expect(promise).rejects.toThrow("exit code 1");
+    await expect(promise).rejects.toThrow("ModuleNotFoundError");
   });
 
   test("rejects with generic error when stderr is empty", async () => {
