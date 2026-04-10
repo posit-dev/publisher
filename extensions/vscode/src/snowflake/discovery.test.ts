@@ -21,6 +21,7 @@ vi.mock("@posit-dev/connect-api", async (importOriginal) => {
   };
 });
 
+vi.mock("src/logging");
 vi.mock("./connections");
 vi.mock("./tokenProviders");
 
