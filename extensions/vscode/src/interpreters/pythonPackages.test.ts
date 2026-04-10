@@ -117,4 +117,13 @@ describe("getPythonPackages", () => {
     expect(result).toEqual(["numpy"]);
     expect(generateRequirements).not.toHaveBeenCalled();
   });
+
+  test("does not fall back for non-default package files", async () => {
+    // If the user explicitly configured a different package file,
+    // missing it should throw — not silently substitute generated deps.
+    await expect(
+      getPythonPackages("/project", "requirements-dev.txt"),
+    ).rejects.toThrow("Requirements file not found");
+    expect(generateRequirements).not.toHaveBeenCalled();
+  });
 });

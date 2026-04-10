@@ -218,13 +218,13 @@ source = { registry = "https://pypi.org/simple" }
     expect(result).toEqual(["flask==3.0.2"]);
   });
 
-  test("returns null when no packages found", async () => {
+  test("returns null when no package section exists", async () => {
     setFile("/project", "uv.lock", "version = 1\n");
     const result = await readUvLockDependencies("/project");
     expect(result).toBeNull();
   });
 
-  test("returns null when only root project exists", async () => {
+  test("returns empty array when only root project exists", async () => {
     setFile(
       "/project",
       "uv.lock",
@@ -237,7 +237,7 @@ source = { editable = "." }
 `,
     );
     const result = await readUvLockDependencies("/project");
-    expect(result).toBeNull();
+    expect(result).toEqual([]);
   });
 
   test("returns null on invalid TOML", async () => {
@@ -294,7 +294,7 @@ version = "3.0.2"
     expect(result).toEqual(["flask==3.0.2"]);
   });
 
-  test("returns null when no packages found", async () => {
+  test("returns null when no packages section exists", async () => {
     setFile(
       "/project",
       "pylock.toml",

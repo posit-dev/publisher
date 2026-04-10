@@ -2,6 +2,7 @@
 
 import path from "node:path";
 
+import { DEFAULT_PYTHON_PACKAGE_FILE } from "../constants";
 import { readFileText } from "./fsUtils";
 import { generateRequirements } from "./pythonDependencySources";
 
@@ -25,8 +26,10 @@ export async function readRequirementsFile(
 /**
  * Get the list of Python packages from a project's requirements file.
  *
- * If the requirements file does not exist, falls back to generating
- * requirements from pylock.toml, uv.lock, or pyproject.toml.
+ * If the default requirements file (requirements.txt) does not exist,
+ * falls back to generating requirements from pylock.toml, uv.lock, or
+ * pyproject.toml. Non-default package files are never auto-generated —
+ * if they're missing, this throws immediately.
  * Throws if no dependency source is available.
  */
 export async function getPythonPackages(
@@ -39,10 +42,14 @@ export async function getPythonPackages(
     return packages;
   }
 
-  // No requirements file on disk — try generating from pylock.toml / uv.lock / pyproject.toml
-  const generated = await generateRequirements(projectDir);
-  if (generated !== null) {
-    return generated;
+  // Only fall back to lockfile generation for the default package file.
+  // If the user explicitly configured a different file, they expect that
+  // specific file — don't silently substitute generated dependencies.
+  if (packageFile === DEFAULT_PYTHON_PACKAGE_FILE) {
+    const generated = await generateRequirements(projectDir);
+    if (generated !== null) {
+      return generated;
+    }
   }
 
   throw new Error(`Requirements file not found: ${filePath}`);

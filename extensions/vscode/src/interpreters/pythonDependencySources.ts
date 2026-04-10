@@ -105,7 +105,7 @@ export async function readPyLockDependencies(
     result.push(`${pkg.name}==${pkg.version}`);
   }
 
-  return result.length > 0 ? result : null;
+  return result;
 }
 
 /** Shape of a [[package]] entry in uv.lock */
@@ -157,7 +157,7 @@ export async function readUvLockDependencies(
     result.push(`${pkg.name}==${pkg.version}`);
   }
 
-  return result.length > 0 ? result : null;
+  return result;
 }
 
 /**

@@ -1950,6 +1950,22 @@ describe("connectPublish — generated requirements from lockfiles", () => {
     await connectPublish(opts);
     expect(generateRequirements).not.toHaveBeenCalled();
   });
+
+  test("does not fall back for non-default package files", async () => {
+    const config = makeConfig({
+      python: {
+        version: "3.11.0",
+        packageFile: "requirements-dev.txt",
+        packageManager: "pip",
+      },
+    });
+    const opts = makeOptions({ config });
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "Missing dependency file requirements-dev.txt",
+    );
+    expect(generateRequirements).not.toHaveBeenCalled();
+  });
 });
 
 describe("connectPublish — server settings validation", () => {

@@ -299,8 +299,10 @@ export async function connectPublish(
               `This file must be included in the deployment.`,
           );
         }
-      } else {
-        // No requirements file on disk — try generating from lockfiles
+      } else if (packageFile === "requirements.txt") {
+        // No default requirements file on disk — try generating from lockfiles.
+        // Only fall back for the default file name; non-default files are
+        // explicitly configured and should not be silently substituted.
         const generated = await generateRequirements(projectDir);
         if (generated !== null) {
           generatedRequirements = generated;
@@ -310,6 +312,11 @@ export async function connectPublish(
               `This file must be included in the deployment.`,
           );
         }
+      } else {
+        throw new Error(
+          `Missing dependency file ${packageFile}. ` +
+            `This file must be included in the deployment.`,
+        );
       }
     }
 
