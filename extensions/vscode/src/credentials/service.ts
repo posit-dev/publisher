@@ -13,6 +13,8 @@ import {
   deleteCredential,
   deleteAllCredentials,
 } from "./storage";
+import { listConnections } from "src/snowflake/connections";
+import { createTokenProvider } from "src/snowflake/tokenProviders";
 import { normalizeServerURL, isConnectLike } from "src/utils/serverUrl";
 import {
   CredentialNotFoundError,
@@ -41,13 +43,31 @@ export interface CreateCredentialInput {
 
 /**
  * Build a ConnectAPIOptions discriminated union from a stored Credential.
- * Picks the correct auth variant (ApiKeyAuth, TokenAuth, or NoAuth) based on
- * which fields are present on the credential (empty string = absent).
+ * Picks the correct auth variant (ApiKeyAuth, TokenAuth, SnowflakeAuth, or
+ * NoAuth) based on which fields are present on the credential (empty string = absent).
+ *
+ * For Snowflake credentials, generates a fresh token by loading the named
+ * connection from connections.toml and exchanging credentials with Snowflake.
  */
-export function connectAPIOptionsFromCredential(
-  credential: Pick<Credential, "url" | "apiKey" | "token" | "privateKey">,
+export async function connectAPIOptionsFromCredential(
+  credential: Pick<
+    Credential,
+    | "url"
+    | "apiKey"
+    | "token"
+    | "privateKey"
+    | "serverType"
+    | "snowflakeConnection"
+  >,
   extra?: Pick<ConnectAPIOptions, "rejectUnauthorized" | "timeout">,
-): ConnectAPIOptions {
+): Promise<ConnectAPIOptions> {
+  if (
+    credential.serverType === ServerType.SNOWFLAKE &&
+    credential.snowflakeConnection
+  ) {
+    return buildSnowflakeOptions(credential, extra);
+  }
+
   if (credential.token && credential.privateKey) {
     return {
       url: credential.url,
@@ -65,6 +85,30 @@ export function connectAPIOptionsFromCredential(
   }
   return {
     url: credential.url,
+    ...extra,
+  };
+}
+
+async function buildSnowflakeOptions(
+  credential: Pick<Credential, "url" | "snowflakeConnection">,
+  extra?: Pick<ConnectAPIOptions, "rejectUnauthorized" | "timeout">,
+): Promise<ConnectAPIOptions> {
+  const connections = listConnections();
+  const connectionName = credential.snowflakeConnection;
+  const connectionConfig = connections[connectionName];
+  if (!connectionConfig) {
+    throw new Error(
+      `Snowflake connection "${connectionName}" not found in connections.toml`,
+    );
+  }
+
+  const tokenProvider = createTokenProvider(connectionConfig);
+  const hostname = new URL(credential.url).hostname;
+  const snowflakeToken = await tokenProvider.getToken(hostname);
+
+  return {
+    url: credential.url,
+    snowflakeToken,
     ...extra,
   };
 }
