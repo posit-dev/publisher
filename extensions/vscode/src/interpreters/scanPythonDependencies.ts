@@ -240,51 +240,47 @@ def is_local_import(name, file_dir):
 
 # --- package mapping ---
 
+def _get_import_names(dist, pkg_name):
+    """Return the importable names for a distribution, trying three sources:
+    1. top_level.txt (most reliable when present)
+    2. dist.files / RECORD (for modern packages without top_level.txt)
+    3. Package name with dash-to-underscore normalization (last resort)"""
+    top_level_text = dist.read_text("top_level.txt")
+    if top_level_text:
+        names = [n.strip() for n in top_level_text.strip().splitlines() if n.strip()]
+        if names:
+            return names
+
+    if dist.files:
+        names = set()
+        for f in dist.files:
+            top = str(f).split("/")[0]
+            if top.endswith((".dist-info", ".data")):
+                continue
+            if top.endswith(".py"):
+                top = top[:-3]
+            if top:
+                names.add(top)
+        if names:
+            return names
+
+    names = [pkg_name]
+    normalized = pkg_name.replace("-", "_").lower()
+    if normalized != pkg_name:
+        names.append(normalized)
+    return names
+
+
 def build_package_map():
     """Map import names to (package_name, version) using installed distributions.
-    Uses top_level.txt when available -- this is how we know that 'import sklearn'
-    comes from 'scikit-learn', or 'import cv2' from 'opencv-python'. When
-    top_level.txt is absent (increasingly common in modern packages), falls back
-    to extracting top-level package directories from dist.files (the RECORD).
-    Last resort: the package name itself with dash-to-underscore normalization.
     Uses dist.metadata["Name"] for Python 3.9 compat."""
     from importlib.metadata import distributions
     mapping = {}
     for dist in distributions():
         pkg_name = dist.metadata["Name"]
         version = dist.metadata["Version"]
-        top_level_text = dist.read_text("top_level.txt")
-        if top_level_text:
-            for import_name in top_level_text.strip().splitlines():
-                import_name = import_name.strip()
-                if import_name:
-                    mapping[import_name] = (pkg_name, version)
-        elif dist.files:
-            # Extract top-level package names from the installed file list.
-            # A file like "sklearn/__init__.py" means "sklearn" is importable.
-            found = False
-            seen = set()
-            for f in dist.files:
-                parts = str(f).split("/")
-                top = parts[0]
-                if top.endswith(".dist-info") or top.endswith(".data"):
-                    continue
-                if top.endswith(".py"):
-                    top = top[:-3]
-                if top and top not in seen:
-                    seen.add(top)
-                    mapping[top] = (pkg_name, version)
-                    found = True
-            if not found:
-                mapping[pkg_name] = (pkg_name, version)
-                normalized = pkg_name.replace("-", "_").lower()
-                if normalized != pkg_name:
-                    mapping[normalized] = (pkg_name, version)
-        else:
-            mapping[pkg_name] = (pkg_name, version)
-            normalized = pkg_name.replace("-", "_").lower()
-            if normalized != pkg_name:
-                mapping[normalized] = (pkg_name, version)
+        for name in _get_import_names(dist, pkg_name):
+            mapping[name] = (pkg_name, version)
     return mapping
 
 
