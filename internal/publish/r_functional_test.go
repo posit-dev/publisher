@@ -138,8 +138,8 @@ func (s *RPublishFunctionalSuite) TestGetRPackagesFunctional() {
 				PublishHelper:  publishhelper.NewPublishHelper(s.stateStore, s.log),
 			}
 
-			// Actually call getRPackages
-			packageMap, err := publisher.getRPackages(false)
+			// Actually call getRPackagesWithPath
+			packageMap, _, err := publisher.getRPackagesWithPath(false)
 
 			// Both approaches should have a valid package map which includes renv
 			s.Require().Nil(err)

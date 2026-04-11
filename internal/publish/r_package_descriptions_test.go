@@ -89,7 +89,7 @@ func (s *RPackageDescSuite) TestGetRPackages() {
 	s.packageMapper.On("GetManifestPackages", s.dirPath, expectedLockfilePath).Return(s.successPackageMap, nil)
 
 	publisher := s.makePublisher()
-	packageMap, err := publisher.getRPackages(false)
+	packageMap, _, err := publisher.getRPackagesWithPath(false)
 	s.NoError(err)
 	s.Equal(packageMap, s.successPackageMap)
 	s.log.AssertExpectations(s.T())
@@ -109,7 +109,7 @@ func (s *RPackageDescSuite) TestGetRPackages_PackageFilePresent() {
 	s.packageMapper.On("GetManifestPackages", s.dirPath, expectedLockfilePath).Return(s.successPackageMap, nil)
 
 	publisher := s.makePublisher()
-	packageMap, err := publisher.getRPackages(false)
+	packageMap, _, err := publisher.getRPackagesWithPath(false)
 	s.NoError(err)
 	s.Equal(packageMap, s.successPackageMap)
 	s.log.AssertExpectations(s.T())
@@ -127,7 +127,7 @@ func (s *RPackageDescSuite) TestGetRPackages_ScanPackagesError() {
 
 	s.log.On("Info", "Loading packages from local R library").Return()
 	publisher := s.makePublisher()
-	_, err := publisher.getRPackages(false)
+	_, _, err := publisher.getRPackagesWithPath(false)
 	s.NotNil(err)
 	s.Equal(err.(*types.AgentError).Message, "Could not scan R packages from lockfile: custom.lock, chair is required to reach the top shelf")
 	s.log.AssertExpectations(s.T())
@@ -148,7 +148,7 @@ func (s *RPackageDescSuite) TestGetRPackages_ScanPackagesKnownAgentError() {
 
 	s.log.On("Info", "Loading packages from local R library").Return()
 	publisher := s.makePublisher()
-	_, err := publisher.getRPackages(false)
+	_, _, err := publisher.getRPackagesWithPath(false)
 	s.NotNil(err)
 	s.Equal(err.(*types.AgentError).Message, "Bad package version, this is a known failure.")
 	s.log.AssertExpectations(s.T())
@@ -176,7 +176,7 @@ func (s *RPackageDescSuite) TestGetRPackages_ScanDependenciesTrue_UsesScannerLoc
 	s.packageMapper.On("GetManifestPackages", s.dirPath, generated).Return(s.successPackageMap, nil)
 
 	publisher := s.makePublisher()
-	packageMap, err := publisher.getRPackages(true)
+	packageMap, _, err := publisher.getRPackagesWithPath(true)
 	s.NoError(err)
 	s.Equal(s.successPackageMap, packageMap)
 	s.log.AssertExpectations(s.T())
@@ -210,22 +210,22 @@ func (s *RPackageDescSuite) TestGetRPackages_ScanDependencies_UsesOnlyConfigFile
 	expectedPaths := []string{s.dirPath.Join("a.R").String(), s.dirPath.Join("subdir", "b.R").String()}
 
 	// Setup ScanDependencies and GetManifestPackages in a way that they expect
-	// expectedPaths to be passed as an argument when publisher.getRPackages
+	// expectedPaths to be passed as an argument when publisher.getRPackagesWithPath
 	// is invoked.
 	generated := s.dirPath.Join("scanned.lock")
 	s.packageMapper.On("ScanDependencies", expectedPaths, mock.Anything).Return(generated, nil)
 	s.packageMapper.On("GetManifestPackages", s.dirPath, generated).Return(s.successPackageMap, nil)
 
 	publisher := s.makePublisher()
-	packageMap, err := publisher.getRPackages(true)
+	packageMap, _, err := publisher.getRPackagesWithPath(true)
 	s.NoError(err)
 	s.Equal(s.successPackageMap, packageMap)
 	s.log.AssertExpectations(s.T())
 }
 
-// Verifies that when packages_from_library=true, getRPackages emits the
+// Verifies that when packages_from_library=true, getRPackagesWithPath emits the
 // library-loading log message. This test relies on the mock mapper type,
-// which exercises the library branch in getRPackages.
+// which exercises the library branch in getRPackagesWithPath.
 func (s *RPackageDescSuite) TestGetRPackages_LogsLibraryWhenPackagesFromLibraryTrue() {
 	// Log only called on success
 	s.log.On("Info", "Done collecting R package descriptions").Return()
@@ -240,7 +240,7 @@ func (s *RPackageDescSuite) TestGetRPackages_LogsLibraryWhenPackagesFromLibraryT
 	s.packageMapper.On("GetManifestPackages", s.dirPath, expectedLockfilePath).Return(s.successPackageMap, nil)
 
 	publisher := s.makePublisher()
-	packageMap, err := publisher.getRPackages(false)
+	packageMap, _, err := publisher.getRPackagesWithPath(false)
 	s.NoError(err)
 	s.Equal(s.successPackageMap, packageMap)
 	s.log.AssertExpectations(s.T())
@@ -279,7 +279,7 @@ func (s *RPackageDescSuite) TestGetRPackages_LogsLockfileWhenPackagesFromLibrary
 		PublishHelper:  helper,
 	}
 
-	packageMap, err := publisher.getRPackages(false)
+	packageMap, _, err := publisher.getRPackagesWithPath(false)
 	s.NoError(err)
 	s.NotNil(packageMap)
 	s.Contains(packageMap, "R6")
@@ -317,7 +317,7 @@ func (s *RPackageDescSuite) TestGetRPackages_LogsLockfileWhenPackagesFromLibrary
 		PublishHelper:  helper,
 	}
 
-	packageMap, err := publisher.getRPackages(false)
+	packageMap, _, err := publisher.getRPackagesWithPath(false)
 	s.NoError(err)
 	s.NotNil(packageMap)
 	s.Contains(packageMap, "R6")
@@ -355,7 +355,7 @@ func (s *RPackageDescSuite) TestGetRPackages_IncludesIndirectExtraDependencies()
 	s.packageMapper.On("GetManifestPackages", s.dirPath, generated).Return(s.successPackageMap, nil)
 
 	publisher := s.makePublisher()
-	packageMap, err := publisher.getRPackages(true)
+	packageMap, _, err := publisher.getRPackagesWithPath(true)
 	s.NoError(err)
 	s.Equal(s.successPackageMap, packageMap)
 	s.log.AssertExpectations(s.T())

@@ -23,11 +23,6 @@ type lockfileErrDetails struct {
 	Lockfile string
 }
 
-func (p *defaultPublisher) getRPackages(scanDependencies bool) (bundles.PackageMap, error) {
-	pkgs, _, err := p.getRPackagesWithPath(scanDependencies)
-	return pkgs, err
-}
-
 // As done in rsconnect. Return a list of extra dependencies that should be included in the bundle
 // for content types that sometimes do not include direct calls to dependency packages
 // in user code (e.g. shiny apps that do not explicitly call library("shiny")).

@@ -29,8 +29,8 @@ describe("canUseTsPublishPath", () => {
     );
   });
 
-  it("returns false for Snowflake", () => {
-    expect(canUseTsPublishPath(ServerType.SNOWFLAKE, makeConfig())).toBe(false);
+  it("returns true for Snowflake", () => {
+    expect(canUseTsPublishPath(ServerType.SNOWFLAKE, makeConfig())).toBe(true);
   });
 
   it("returns false when packagesFromLibrary is true", () => {
