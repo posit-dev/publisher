@@ -1,0 +1,13 @@
+{
+  "mypkg": {
+    "Source": "CRAN",
+    "Repository": "https://cran.rstudio.com",
+    "description": {
+      "Package": "mypkg",
+      "Title": "A Sample Package",
+      "Version": "1.2.3",
+      "Depends": "R (>= 4.0)",
+      "Suggests": "testthat"
+    }
+  }
+}
