@@ -263,11 +263,11 @@ describe("connectCloudPublish", () => {
     const opts = baseOptions({ api });
 
     const resultPromise = connectCloudPublish(opts);
-    await vi.runAllTimersAsync();
-
-    await expect(resultPromise).rejects.toThrow(
+    const assertion = expect(resultPromise).rejects.toThrow(
       "BuildError: Package 'flask' not found",
     );
+    await vi.runAllTimersAsync();
+    await assertion;
   });
 
   test("cancellation throws CanceledError", async () => {
@@ -540,11 +540,10 @@ describe("connectCloudPublish", () => {
     const onProgress = vi.fn();
     const opts = baseOptions({ api, onProgress });
 
-    await expect(async () => {
-      const resultPromise = connectCloudPublish(opts);
-      await vi.runAllTimersAsync();
-      await resultPromise;
-    }).rejects.toThrow("Upload failed");
+    const resultPromise = connectCloudPublish(opts);
+    const assertion = expect(resultPromise).rejects.toThrow("Upload failed");
+    await vi.runAllTimersAsync();
+    await assertion;
 
     const events = onProgress.mock.calls.map(
       (args: unknown[]) => args[0] as CloudPublishEvent,
@@ -578,11 +577,10 @@ describe("connectCloudPublish", () => {
     const onProgress = vi.fn();
     const opts = baseOptions({ api, onProgress });
 
-    await expect(async () => {
-      const resultPromise = connectCloudPublish(opts);
-      await vi.runAllTimersAsync();
-      await resultPromise;
-    }).rejects.toThrow();
+    const resultPromise = connectCloudPublish(opts);
+    const assertion = expect(resultPromise).rejects.toThrow();
+    await vi.runAllTimersAsync();
+    await assertion;
 
     const events = onProgress.mock.calls.map(
       (args: unknown[]) => args[0] as CloudPublishEvent,
@@ -605,11 +603,10 @@ describe("connectCloudPublish", () => {
     const onProgress = vi.fn();
     const opts = baseOptions({ api, onProgress });
 
-    await expect(async () => {
-      const resultPromise = connectCloudPublish(opts);
-      await vi.runAllTimersAsync();
-      await resultPromise;
-    }).rejects.toThrow();
+    const resultPromise = connectCloudPublish(opts);
+    const assertion = expect(resultPromise).rejects.toThrow();
+    await vi.runAllTimersAsync();
+    await assertion;
 
     const events = onProgress.mock.calls.map(
       (args: unknown[]) => args[0] as CloudPublishEvent,
@@ -626,11 +623,10 @@ describe("connectCloudPublish", () => {
 
     const opts = baseOptions({ api });
 
-    await expect(async () => {
-      const resultPromise = connectCloudPublish(opts);
-      await vi.runAllTimersAsync();
-      await resultPromise;
-    }).rejects.toThrow("Upload failed");
+    const resultPromise = connectCloudPublish(opts);
+    const assertion = expect(resultPromise).rejects.toThrow("Upload failed");
+    await vi.runAllTimersAsync();
+    await assertion;
 
     const lastWrite = mockWriteFile.mock.calls.at(-1);
     expect(lastWrite).toBeDefined();
@@ -678,11 +674,10 @@ describe("connectCloudPublish", () => {
       existingContentId: "existing-id",
     });
 
-    await expect(async () => {
-      const resultPromise = connectCloudPublish(opts);
-      await vi.runAllTimersAsync();
-      await resultPromise;
-    }).rejects.toThrow("Upload failed");
+    const resultPromise = connectCloudPublish(opts);
+    const assertion = expect(resultPromise).rejects.toThrow("Upload failed");
+    await vi.runAllTimersAsync();
+    await assertion;
 
     const events = onProgress.mock.calls.map(
       (args: unknown[]) => args[0] as CloudPublishEvent,
@@ -703,11 +698,12 @@ describe("connectCloudPublish", () => {
 
     const opts = baseOptions({ api });
 
-    await expect(async () => {
-      const resultPromise = connectCloudPublish(opts);
-      await vi.runAllTimersAsync();
-      await resultPromise;
-    }).rejects.toThrow("Not authorized to access log channel");
+    const resultPromise = connectCloudPublish(opts);
+    const assertion = expect(resultPromise).rejects.toThrow(
+      "Not authorized to access log channel",
+    );
+    await vi.runAllTimersAsync();
+    await assertion;
   });
 
   test("refetches content before watching logs", async () => {
@@ -750,11 +746,10 @@ describe("connectCloudPublish", () => {
 
     const opts = baseOptions({ api, signal: controller.signal });
 
-    await expect(async () => {
-      const resultPromise = connectCloudPublish(opts);
-      await vi.runAllTimersAsync();
-      await resultPromise;
-    }).rejects.toThrow(CanceledError);
+    const resultPromise = connectCloudPublish(opts);
+    const assertion = expect(resultPromise).rejects.toThrow(CanceledError);
+    await vi.runAllTimersAsync();
+    await assertion;
 
     const lastWrite = mockWriteFile.mock.calls.at(-1);
     const content = lastWrite![1] as string;
