@@ -1,15 +1,23 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
 import { ProgressLocation, Uri, env, window } from "vscode";
-import type {
-  PublishEvent,
-  PublishResult,
-  PublishStep,
-} from "src/publish/connectPublish";
-import { CanceledError } from "src/publish/connectPublish";
+import type { PublishResult, PublishStep } from "src/publish/publishShared";
+import { CanceledError } from "src/publish/publishShared";
+import type { CloudPublishStep } from "src/publish/connectCloudPublish";
 import type { EventStream } from "src/events";
 import type { EventStreamMessage, EventSubscriptionTarget } from "src/api";
 import type { ErrorCode } from "src/utils/errorTypes";
+
+// Union of all possible publish step types (standard Connect + Cloud)
+type AnyPublishStep = PublishStep | CloudPublishStep;
+
+type AnyPublishEvent = {
+  step: AnyPublishStep;
+  status: "start" | "success" | "failure" | "log";
+  message?: string;
+  errCode?: ErrorCode;
+  data?: Record<string, string>;
+};
 
 // Patterns that signal the server has finished restoring the environment
 // and is now launching the content. Mirrors Go's eventOpFromLogLine().
@@ -27,7 +35,8 @@ const pythonCollectingPattern = /Collecting (\S+)==(\S+)/;
 // version, the tree label shows "numpy..." instead of a misleading old version.
 const pythonInstallingPattern = /Found existing installation: (\S+) ()\S+/;
 
-const stepLabels: Record<PublishStep, string> = {
+const stepLabels: Record<AnyPublishStep, string> = {
+  // Standard Connect steps
   createManifest: "Preparing manifest…",
   preflight: "Verifying credentials…",
   createNewDeployment: "Creating deployment…",
@@ -39,10 +48,16 @@ const stepLabels: Record<PublishStep, string> = {
   deployBundle: "Deploying bundle…",
   waitForTask: "Waiting for server…",
   validateDeployment: "Validating deployment…",
+  // Cloud-specific steps
+  createContent: "Creating deployment…",
+  initiatePublish: "Deploying bundle…",
+  watchLogs: "Waiting for server…",
+  awaitCompletion: "Waiting for server…",
 };
 
 // Maps TS orchestrator steps to Go SSE event path prefixes.
 const stepToEventPrefix = {
+  // Standard Connect steps
   // Go maps this to publish/getRPackageDescriptions, which creates a tree
   // node even for Python-only deploys. We match that behavior for parity.
   // TODO: Consider suppressing the tree node for non-R deploys, or renaming
@@ -64,11 +79,18 @@ const stepToEventPrefix = {
   deployBundle: "publish/deployBundle",
   waitForTask: "publish/restoreEnv",
   validateDeployment: "publish/validateDeployment",
-} as const satisfies Record<PublishStep, string>;
+  // Cloud-specific steps
+  createContent: "publish/createNewDeployment",
+  initiatePublish: "publish/deployBundle",
+  // watchLogs and awaitCompletion are handled specially (like waitForTask)
+  // but need entries here for the satisfies constraint.
+  watchLogs: "publish/restoreEnv",
+  awaitCompletion: "publish/restoreEnv",
+} as const satisfies Record<AnyPublishStep, string>;
 
 export type TsDeployProgressOptions = {
   deploy: (
-    onProgress: (event: PublishEvent) => void,
+    onProgress: (event: AnyPublishEvent) => void,
     signal: AbortSignal,
   ) => Promise<PublishResult>;
   /** Called after deployment completes (success or failure) for cleanup like refreshing content records. */
@@ -102,12 +124,19 @@ function makeMessage(
  */
 function injectStageEvent(
   stream: EventStream,
-  step: PublishStep,
-  suffix: PublishEvent["status"],
+  step: AnyPublishStep,
+  suffix: AnyPublishEvent["status"],
   data: Record<string, string> = {},
 ): void {
   stream.injectMessage(
     makeMessage(`${stepToEventPrefix[step]}/${suffix}`, data),
+  );
+}
+
+/** Steps that represent server-side work with log streaming. */
+function isServerLogStep(step: AnyPublishStep): boolean {
+  return (
+    step === "waitForTask" || step === "watchLogs" || step === "awaitCompletion"
   );
 }
 
@@ -165,20 +194,37 @@ export function runTsDeployWithProgress(
       let lastClassifiedMessage: string | undefined;
 
       try {
-        // Track which SSE stage waitForTask logs belong to.
+        // Track which SSE stage server-side logs belong to.
         // Starts as restoreEnv, transitions to runContent when a launch
         // pattern is detected — mirroring Go's eventOpFromLogLine().
-        let waitForTaskStage: "publish/restoreEnv" | "publish/runContent" =
+        // Used by waitForTask (standard Connect) and watchLogs/awaitCompletion (Cloud).
+        let serverLogStage: "publish/restoreEnv" | "publish/runContent" =
           "publish/restoreEnv";
+        let serverLogPhaseStarted = false;
+        let serverLogPhaseClosed = false;
 
         const result = await deploy((event) => {
           if (event.status === "start") {
-            progress.report({ message: stepLabels[event.step] });
-            injectStageEvent(stream, event.step, "start", event.data);
+            if (isServerLogStep(event.step)) {
+              // Standard Connect emits explicit start for waitForTask.
+              // Cloud steps (watchLogs/awaitCompletion) don't emit start,
+              // so they auto-start on the first log event below.
+              if (!serverLogPhaseStarted) {
+                stream.injectMessage(
+                  makeMessage(`${serverLogStage}/start`, event.data),
+                );
+                serverLogPhaseStarted = true;
+              }
+              progress.report({ message: stepLabels[event.step] });
+            } else {
+              progress.report({ message: stepLabels[event.step] });
+              injectStageEvent(stream, event.step, "start", event.data);
+            }
           } else if (event.status === "success") {
-            if (event.step === "waitForTask") {
+            if (isServerLogStep(event.step)) {
               // Close whichever stage is active (restoreEnv or runContent).
-              stream.injectMessage(makeMessage(`${waitForTaskStage}/success`));
+              stream.injectMessage(makeMessage(`${serverLogStage}/success`));
+              serverLogPhaseClosed = true;
             } else {
               injectStageEvent(stream, event.step, "success", event.data);
             }
@@ -198,15 +244,16 @@ export function runTsDeployWithProgress(
               ...event.data,
             };
 
-            if (event.step === "waitForTask") {
+            if (isServerLogStep(event.step)) {
               // Fail whichever stage is active (restoreEnv or runContent).
               stream.injectMessage(
                 makeMessage(
-                  `${waitForTaskStage}/failure`,
+                  `${serverLogStage}/failure`,
                   failData,
                   event.errCode,
                 ),
               );
+              serverLogPhaseClosed = true;
             } else {
               stream.injectMessage(
                 makeMessage(
@@ -217,18 +264,27 @@ export function runTsDeployWithProgress(
               );
             }
           } else if (event.status === "log") {
-            if (event.step === "waitForTask") {
+            if (isServerLogStep(event.step)) {
+              // Auto-start the server log phase on first log event.
+              // Cloud steps (watchLogs/awaitCompletion) don't emit explicit
+              // "start" events, so the phase begins when the first log arrives.
+              if (!serverLogPhaseStarted) {
+                stream.injectMessage(makeMessage(`${serverLogStage}/start`));
+                serverLogPhaseStarted = true;
+                progress.report({ message: stepLabels[event.step] });
+              }
+
               const msg = event.message || "";
 
               // Detect the transition from env restore to content launch.
               if (launchPattern.test(msg) || staticPattern.test(msg)) {
-                if (waitForTaskStage === "publish/restoreEnv") {
+                if (serverLogStage === "publish/restoreEnv") {
                   // Close restoreEnv and open runContent in the logs tree.
                   stream.injectMessage(
                     makeMessage("publish/restoreEnv/success"),
                   );
                   stream.injectMessage(makeMessage("publish/runContent/start"));
-                  waitForTaskStage = "publish/runContent";
+                  serverLogStage = "publish/runContent";
                 }
               }
 
@@ -236,18 +292,18 @@ export function runTsDeployWithProgress(
               const pkgEvent = packageEventFromLogLine(msg);
               if (pkgEvent) {
                 stream.injectMessage(
-                  makeMessage(`${waitForTaskStage}/status`, pkgEvent),
+                  makeMessage(`${serverLogStage}/status`, pkgEvent),
                 );
               }
 
               stream.injectMessage(
-                makeMessage(`${waitForTaskStage}/log`, {
+                makeMessage(`${serverLogStage}/log`, {
                   message: msg,
                   level: "INFO",
                 }),
               );
             } else {
-              // Non-waitForTask log events (e.g., validateDeployment logs)
+              // Non-server-log events (e.g., validateDeployment logs)
               injectStageEvent(stream, event.step, "log", {
                 message: event.message || "",
                 ...event.data,
@@ -261,6 +317,13 @@ export function runTsDeployWithProgress(
         // publish/failure — don't also inject publish/success.
         if (controller.signal.aborted) {
           return;
+        }
+
+        // Close the server log phase if it was started but not explicitly
+        // closed. Cloud steps (watchLogs/awaitCompletion) don't emit
+        // explicit "success" events — the phase ends when the deploy succeeds.
+        if (serverLogPhaseStarted && !serverLogPhaseClosed) {
+          stream.injectMessage(makeMessage(`${serverLogStage}/success`));
         }
 
         // Inject publish/success — triggers HomeView's onPublishSuccess()

@@ -1,19 +1,14 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
-import { ServerType } from "src/api/types/contentRecords";
+import type { ServerType } from "src/api/types/contentRecords";
 
 /**
  * Determine whether a deployment can use the TypeScript publish path
- * instead of the Go backend. Returns false for server types that are
- * only implemented in Go (Connect Cloud).
+ * instead of the Go backend. Currently always returns true — all server
+ * types and config options are now handled by TypeScript.
  *
- * Note: Snowflake routing is handled separately in homeView.ts.
- * packagesFromLibrary was previously gated here but is now handled
- * by the TypeScript library mapper (rLibraryMapper.ts).
+ * TODO: Remove this function and its callers.
  */
-export function canUseTsPublishPath(serverType: ServerType): boolean {
-  if (serverType === ServerType.CONNECT_CLOUD) {
-    return false;
-  }
+export function canUseTsPublishPath(_serverType: ServerType): boolean {
   return true;
 }

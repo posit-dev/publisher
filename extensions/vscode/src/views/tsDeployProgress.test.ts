@@ -755,4 +755,185 @@ describe("runTsDeployWithProgress", () => {
       });
     });
   });
+
+  // --- Cloud-specific step tests ---
+
+  describe("Cloud publish steps", () => {
+    it("maps createContent to publish/createNewDeployment", async () => {
+      const { onComplete, stream } = run((onProgress) => {
+        onProgress({
+          step: "createContent",
+          status: "start",
+          data: { saveName: "my-cloud-app" },
+        });
+        onProgress({
+          step: "createContent",
+          status: "log",
+          message: "Creating new Connect Cloud deployment",
+        });
+        onProgress({
+          step: "createContent",
+          status: "success",
+          data: { contentId: "cloud-123", saveName: "my-cloud-app" },
+        });
+        return Promise.resolve(successResult);
+      });
+
+      await vi.waitFor(() => {
+        expect(onComplete).toHaveBeenCalled();
+      });
+
+      const types = stream.injected.map((m) => m.type);
+      expect(types).toContain("publish/createNewDeployment/start");
+      expect(types).toContain("publish/createNewDeployment/log");
+      expect(types).toContain("publish/createNewDeployment/success");
+    });
+
+    it("maps initiatePublish to publish/deployBundle", async () => {
+      const { onComplete, stream } = run((onProgress) => {
+        onProgress({ step: "initiatePublish", status: "start" });
+        onProgress({ step: "initiatePublish", status: "success" });
+        return Promise.resolve(successResult);
+      });
+
+      await vi.waitFor(() => {
+        expect(onComplete).toHaveBeenCalled();
+      });
+
+      const types = stream.injected.map((m) => m.type);
+      expect(types).toContain("publish/deployBundle/start");
+      expect(types).toContain("publish/deployBundle/success");
+    });
+
+    it("auto-starts restoreEnv on first watchLogs log event", async () => {
+      const { onComplete, stream } = run((onProgress) => {
+        // Cloud orchestrator doesn't emit explicit start for watchLogs
+        onProgress({
+          step: "watchLogs",
+          status: "log",
+          message: "Building application",
+        });
+        onProgress({
+          step: "watchLogs",
+          status: "log",
+          message: "Installing packages",
+        });
+        return Promise.resolve(successResult);
+      });
+
+      await vi.waitFor(() => {
+        expect(onComplete).toHaveBeenCalled();
+      });
+
+      const types = stream.injected.map((m) => m.type);
+      // Phase should be auto-started
+      expect(types).toContain("publish/restoreEnv/start");
+      // Log messages should be injected
+      const logMsgs = stream.injected.filter(
+        (m) => m.type === "publish/restoreEnv/log",
+      );
+      expect(logMsgs).toHaveLength(2);
+      expect(logMsgs[0]!.data.message).toBe("Building application");
+      expect(logMsgs[1]!.data.message).toBe("Installing packages");
+      // Phase should be auto-closed on success
+      expect(types).toContain("publish/restoreEnv/success");
+    });
+
+    it("transitions watchLogs from restoreEnv to runContent on launch pattern", async () => {
+      const { onComplete, stream } = run((onProgress) => {
+        onProgress({
+          step: "watchLogs",
+          status: "log",
+          message: "Installing numpy",
+        });
+        onProgress({
+          step: "watchLogs",
+          status: "log",
+          message: "Launching Shiny application",
+        });
+        onProgress({
+          step: "watchLogs",
+          status: "log",
+          message: "Application started",
+        });
+        return Promise.resolve(successResult);
+      });
+
+      await vi.waitFor(() => {
+        expect(onComplete).toHaveBeenCalled();
+      });
+
+      const types = stream.injected.map((m) => m.type);
+
+      // restoreEnv gets the first log, then transitions
+      const restoreLogs = stream.injected.filter(
+        (m) => m.type === "publish/restoreEnv/log",
+      );
+      expect(restoreLogs).toHaveLength(1);
+      expect(restoreLogs[0]!.data.message).toBe("Installing numpy");
+      expect(types).toContain("publish/restoreEnv/success");
+
+      // runContent gets the launch line and subsequent logs
+      expect(types).toContain("publish/runContent/start");
+      const runLogs = stream.injected.filter(
+        (m) => m.type === "publish/runContent/log",
+      );
+      expect(runLogs).toHaveLength(2);
+
+      // runContent auto-closed on deploy success
+      expect(types).toContain("publish/runContent/success");
+    });
+
+    it("handles awaitCompletion log events in the active server log stage", async () => {
+      const { onComplete, stream } = run((onProgress) => {
+        onProgress({
+          step: "watchLogs",
+          status: "log",
+          message: "Building app",
+        });
+        // awaitCompletion runs concurrently with watchLogs
+        onProgress({
+          step: "awaitCompletion",
+          status: "log",
+          message: "Waiting for publish to complete",
+        });
+        return Promise.resolve(successResult);
+      });
+
+      await vi.waitFor(() => {
+        expect(onComplete).toHaveBeenCalled();
+      });
+
+      // Both watchLogs and awaitCompletion log messages go to the active stage
+      const logMsgs = stream.injected.filter(
+        (m) => m.type === "publish/restoreEnv/log",
+      );
+      expect(logMsgs).toHaveLength(2);
+      expect(logMsgs[0]!.data.message).toBe("Building app");
+      expect(logMsgs[1]!.data.message).toBe("Waiting for publish to complete");
+    });
+
+    it("detects package installations in watchLogs events", async () => {
+      const { onComplete, stream } = run((onProgress) => {
+        onProgress({
+          step: "watchLogs",
+          status: "log",
+          message: "Collecting numpy==1.24.3",
+        });
+        return Promise.resolve(successResult);
+      });
+
+      await vi.waitFor(() => {
+        expect(onComplete).toHaveBeenCalled();
+      });
+
+      const statusMsgs = stream.injected.filter(
+        (m) => m.type === "publish/restoreEnv/status",
+      );
+      expect(statusMsgs).toHaveLength(1);
+      expect(statusMsgs[0]!.data.name).toBe("numpy");
+      expect(statusMsgs[0]!.data.version).toBe("1.24.3");
+      expect(statusMsgs[0]!.data.runtime).toBe("python");
+    });
+  });
 });

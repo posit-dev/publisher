@@ -9,8 +9,8 @@ describe("canUseTsPublishPath", () => {
     expect(canUseTsPublishPath(ServerType.CONNECT)).toBe(true);
   });
 
-  it("returns false for Connect Cloud", () => {
-    expect(canUseTsPublishPath(ServerType.CONNECT_CLOUD)).toBe(false);
+  it("returns true for Connect Cloud", () => {
+    expect(canUseTsPublishPath(ServerType.CONNECT_CLOUD)).toBe(true);
   });
 
   it("returns true for Snowflake (routing handled separately)", () => {
