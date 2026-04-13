@@ -35,7 +35,8 @@ export function parseDcf(
   const records: DcfRecord[] = [];
   let currentRecord: DcfRecord = {};
   let currentTag = "";
-  const lines = text.split("\n");
+  // Normalize Windows line endings before splitting
+  const lines = text.replace(/\r\n/g, "\n").split("\n");
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]!;
