@@ -87,7 +87,18 @@ function buildAvailablePackagesCode(repos: Repository[]): string {
   const urls = repos.map((r) => `"${r.URL.replace(/\/+$/, "")}"`).join(", ");
   const names = repos.map((r, i) => `"${r.Name || `repo_${i}`}"`).join(", ");
 
-  return `(function() { pkgs <- available.packages( repos = setNames(c(${urls}), c(${names})), type = "source", filters = c(getOption("rsconnect.available_packages_filters", default = c()), "duplicates"));info <- pkgs[,c("Package", "Version", "Repository")];apply(info, 1, function(x) { cat(x, sep=" ", collapse="\\n") } );invisible()})()`;
+  // R script: query CRAN-style repos for available source packages,
+  // then print each as "name version repoURL" on one line.
+  return [
+    `pkgs <- available.packages(`,
+    `  repos = setNames(c(${urls}), c(${names})),`,
+    `  type = "source",`,
+    `  filters = c(getOption("rsconnect.available_packages_filters", default = c()), "duplicates")`,
+    `)`,
+    `info <- pkgs[, c("Package", "Version", "Repository")]`,
+    `apply(info, 1, function(x) cat(x, sep = " ", collapse = "\\n"))`,
+    `invisible()`,
+  ].join("; ");
 }
 
 /**
@@ -127,7 +138,18 @@ export async function getBioconductorRepos(
   projectDir: string,
 ): Promise<Repository[]> {
   const escapedDir = projectDir.replace(/\\/g, "\\\\");
-  const code = `(function() { if (requireNamespace("BiocManager", quietly = TRUE) || requireNamespace("BiocInstaller", quietly = TRUE)) {repos <- getFromNamespace("renv_bioconductor_repos", "renv")("${escapedDir}"); repos <- repos[setdiff(names(repos), "CRAN")]; cat(repos, labels=names(repos), fill=1); invisible()}})()`;
+
+  // R script: discover Bioconductor repo URLs via BiocManager or renv,
+  // then print each as "name url" on one line.
+  const code = [
+    `if (requireNamespace("BiocManager", quietly = TRUE)`,
+    `    || requireNamespace("BiocInstaller", quietly = TRUE)) {`,
+    `  repos <- getFromNamespace("renv_bioconductor_repos", "renv")("${escapedDir}")`,
+    `  ; repos <- repos[setdiff(names(repos), "CRAN")]`,
+    `  ; cat(repos, labels = names(repos), fill = 1)`,
+    `  ; invisible()`,
+    `}`,
+  ].join("\n");
 
   const output = await runRExpression(rPath, code, projectDir);
 
