@@ -28,6 +28,14 @@ type Repository = { Name: string; URL: string };
 const R_SUBPROCESS_TIMEOUT = 300_000; // 5 minutes
 
 /**
+ * Escape a string for safe interpolation inside an R double-quoted string literal.
+ * Prevents code injection via crafted directory paths or repository names/URLs.
+ */
+export function escapeForRString(s: string): string {
+  return s.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+}
+
+/**
  * Run an R expression and return stdout.
  * Mirrors the runRScript pattern from rPackages.ts.
  */
@@ -88,8 +96,12 @@ export async function getLibPaths(
  * Mirrors Go's ListAvailablePackages().
  */
 export function buildAvailablePackagesCode(repos: Repository[]): string {
-  const urls = repos.map((r) => `"${r.URL.replace(/\/+$/, "")}"`).join(", ");
-  const names = repos.map((r, i) => `"${r.Name || `repo_${i}`}"`).join(", ");
+  const urls = repos
+    .map((r) => `"${escapeForRString(r.URL.replace(/\/+$/, ""))}"`)
+    .join(", ");
+  const names = repos
+    .map((r, i) => `"${escapeForRString(r.Name || `repo_${i}`)}"`)
+    .join(", ");
 
   // R script: query CRAN-style repos for available source packages,
   // then print each as "name version repoURL" on one line.
@@ -147,7 +159,7 @@ export async function getBioconductorRepos(
   rPath: string,
   projectDir: string,
 ): Promise<Repository[]> {
-  const escapedDir = projectDir.replace(/\\/g, "\\\\");
+  const escapedDir = escapeForRString(projectDir);
 
   // R script: discover Bioconductor repo URLs via BiocManager or renv,
   // then print each as "name url" on one line.

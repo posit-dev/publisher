@@ -14,6 +14,7 @@ import {
   parseAvailablePackagesOutput,
   parseBioconductorReposOutput,
   buildAvailablePackagesCode,
+  escapeForRString,
   type AvailablePackage,
   type PackageLister,
 } from "./rLibraryMapper";
@@ -95,6 +96,7 @@ describe("toManifestPackage", () => {
     };
     const result = toManifestPackage(pkg, cranRepos, [], []);
     expect(result.Source).toBe("RSPM");
+    expect(result.Repository).toBe("");
   });
 
   test("Bioconductor package found in bioc packages", () => {
@@ -851,6 +853,30 @@ describe("parseBioconductorReposOutput", () => {
   });
 });
 
+describe("escapeForRString", () => {
+  test("escapes backslashes", () => {
+    expect(escapeForRString("C:\\Users\\test")).toBe("C:\\\\Users\\\\test");
+  });
+
+  test("escapes double quotes", () => {
+    expect(escapeForRString('hello "world"')).toBe('hello \\"world\\"');
+  });
+
+  test("escapes both backslashes and double quotes", () => {
+    expect(escapeForRString('C:\\path\\"injected')).toBe(
+      'C:\\\\path\\\\\\"injected',
+    );
+  });
+
+  test("leaves safe strings unchanged", () => {
+    expect(escapeForRString("/home/user/project")).toBe("/home/user/project");
+  });
+
+  test("handles empty string", () => {
+    expect(escapeForRString("")).toBe("");
+  });
+});
+
 describe("buildAvailablePackagesCode", () => {
   test("strips trailing slashes from repo URLs", () => {
     const code = buildAvailablePackagesCode([
@@ -865,6 +891,15 @@ describe("buildAvailablePackagesCode", () => {
       { Name: "", URL: "https://example.com" },
     ]);
     expect(code).toContain('"repo_0"');
+  });
+
+  test("escapes double quotes in repo names and URLs", () => {
+    const code = buildAvailablePackagesCode([
+      { Name: 'evil")); system("pwned', URL: 'https://evil.com/"); cat("' },
+    ]);
+    // The double quotes should be escaped so they don't break out of R strings
+    expect(code).not.toContain('system("pwned');
+    expect(code).toContain('\\"');
   });
 
   test("includes multiple repos", () => {
