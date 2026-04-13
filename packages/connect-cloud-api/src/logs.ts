@@ -71,36 +71,28 @@ export async function watchCloudLogs(options: WatchLogsOptions): Promise<void> {
             message: entry.message,
           });
         }
-      } catch (err) {
+      } catch {
         // Skip malformed events (don't reject the promise)
         // This matches Go behavior of continuing on parse errors
       }
     });
 
-    // Handle errors (connection failures, HTTP errors)
+    // Handle errors and server-initiated closure.
+    // When the server closes the SSE stream, the EventSource fires an
+    // "error" event with readyState === CLOSED. This is normal — the Go
+    // code's WatchLogs resolves without error on stream close. Only reject
+    // for genuine connection failures (readyState !== CLOSED).
     es.addEventListener("error", (err) => {
       es.close();
-      reject(
-        new Error(`Cloud logs stream error: ${err.message || "unknown error"}`),
-      );
-    });
-
-    // Handle normal stream closure (server-initiated)
-    // Note: EventSource doesn't have a 'close' event in the spec,
-    // but if the server closes the connection cleanly, the error
-    // event will fire with readyState === CLOSED
-    const checkClosed = () => {
       if (es.readyState === EventSource.CLOSED) {
         resolve();
+      } else {
+        reject(
+          new Error(
+            `Cloud logs stream error: ${err.message || "unknown error"}`,
+          ),
+        );
       }
-    };
-
-    // Poll readyState to detect clean closure
-    const closeCheck = setInterval(checkClosed, 100);
-
-    // Cleanup interval on resolution/rejection
-    const cleanup = () => clearInterval(closeCheck);
-    signal?.addEventListener("abort", cleanup);
-    es.addEventListener("error", cleanup);
+    });
   });
 }
