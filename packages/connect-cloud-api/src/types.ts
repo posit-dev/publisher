@@ -267,23 +267,24 @@ export const cloudLogsBaseUrls: Record<CloudEnvironment, string> = {
 
 export type LogLevel = "debug" | "info" | "error";
 
-export interface LogLine {
-  level: LogLevel;
+export type LogEntryType = "build" | "runtime";
+
+export interface LogEntry {
+  timestamp: number;
+  sort_key: number;
   message: string;
+  type: LogEntryType;
+  level: LogLevel;
 }
+
+export type LogLine = Pick<LogEntry, "level" | "message">;
 
 /**
  * Shape of each SSE event's JSON `data` field from the Cloud logs endpoint.
  * Each event contains an array of log messages.
  */
 export interface LogsEventData {
-  data: Array<{
-    timestamp: number;
-    sort_key: number;
-    message: string;
-    type: string; // "build" | "runtime"
-    level: LogLevel;
-  }>;
+  data: LogEntry[];
 }
 
 export interface WatchLogsOptions {

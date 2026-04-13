@@ -30,6 +30,8 @@ export type {
   ContentResponse,
   CreateContentRequest,
   DeviceAuthResponse,
+  LogEntry,
+  LogEntryType,
   LogLevel,
   LogLine,
   LogsEventData,

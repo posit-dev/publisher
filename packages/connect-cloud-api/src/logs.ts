@@ -29,9 +29,13 @@ import {
  * });
  * ```
  */
-export async function watchCloudLogs(options: WatchLogsOptions): Promise<void> {
-  const { environment, logChannel, authToken, onLog, signal } = options;
-
+export async function watchCloudLogs({
+  environment,
+  logChannel,
+  authToken,
+  onLog,
+  signal,
+}: WatchLogsOptions): Promise<void> {
   // Construct SSE URL with 60-second lookback (matching Go's logLookback)
   const baseUrl = cloudLogsBaseUrls[environment];
   const nowNanos = Date.now() * 1_000_000;
