@@ -25,6 +25,7 @@ export async function createArchive(
   files: FileEntry[],
   manifest: Manifest,
   onProgress?: BundleProgressCallback,
+  syntheticFiles?: Map<string, Buffer>,
 ): Promise<{
   bundle: Buffer;
   manifest: Manifest;
@@ -79,6 +80,28 @@ export async function createArchive(
     fileCount++;
     totalSize += entry.size;
     onProgress?.({ kind: "file", path: archiveName, size: entry.size });
+  }
+
+  // Add synthetic (in-memory) files to the bundle
+  if (syntheticFiles) {
+    for (const [name, content] of syntheticFiles) {
+      const hash = crypto.createHash("md5");
+      hash.update(content);
+      const md5 = hash.digest();
+
+      const syntheticEntry = pack.entry({
+        name,
+        size: content.length,
+        mode: 0o666,
+      });
+      syntheticEntry.end(content);
+      await finished(syntheticEntry);
+
+      addFile(updatedManifest, name, md5);
+      fileCount++;
+      totalSize += content.length;
+      onProgress?.({ kind: "file", path: name, size: content.length });
+    }
   }
 
   onProgress?.({ kind: "summary", files: fileCount, totalBytes: totalSize });

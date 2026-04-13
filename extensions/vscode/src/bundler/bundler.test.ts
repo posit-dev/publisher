@@ -355,4 +355,62 @@ describe("createBundle", () => {
     });
     expect(result.fileCount).toBe(1);
   });
+
+  it("includes synthetic files in the bundle", async () => {
+    makeFile("app.py", "import dash");
+
+    const syntheticFiles = new Map<string, Buffer>();
+    syntheticFiles.set("requirements.txt", Buffer.from("dash==2.0\n"));
+
+    const result = await createBundle({
+      projectPath: tmpDir,
+      manifest: newManifest(),
+      syntheticFiles,
+    });
+
+    // Synthetic file should be in the tar
+    const entries = await extractTarEntries(result.bundle);
+    expect(entries.has("requirements.txt")).toBe(true);
+    expect(entries.get("requirements.txt")!.data.toString()).toBe(
+      "dash==2.0\n",
+    );
+
+    // Synthetic file should be in the manifest with a valid checksum
+    expect(result.manifest.files["requirements.txt"]).toBeDefined();
+    expect(result.manifest.files["requirements.txt"]?.checksum).toMatch(
+      /^[0-9a-f]+$/,
+    );
+
+    // Counts should include the synthetic file
+    expect(result.fileCount).toBe(2); // app.py + requirements.txt
+  });
+
+  it("emits onProgress events for synthetic files", async () => {
+    makeFile("app.py", "import dash");
+
+    const syntheticFiles = new Map<string, Buffer>();
+    syntheticFiles.set("requirements.txt", Buffer.from("dash==2.0\n"));
+
+    const events: BundleProgressEvent[] = [];
+    await createBundle({
+      projectPath: tmpDir,
+      manifest: newManifest(),
+      syntheticFiles,
+      onProgress: (event) => events.push(event),
+    });
+
+    // Should have a file event for the synthetic file
+    const fileEvents = events.filter((e) => e.kind === "file");
+    const syntheticEvent = fileEvents.find(
+      (e) => e.kind === "file" && e.path === "requirements.txt",
+    );
+    expect(syntheticEvent).toBeDefined();
+
+    // Summary should include the synthetic file in its counts
+    const summary = events.find((e) => e.kind === "summary");
+    expect(summary).toBeDefined();
+    if (summary?.kind === "summary") {
+      expect(summary.files).toBe(2); // app.py + requirements.txt
+    }
+  });
 });
