@@ -57,6 +57,38 @@ describe("parseDcf", () => {
     expect(() => parseDcf(input)).toThrow("unexpected continuation");
   });
 
+  test("normalizes Windows line endings (CRLF)", () => {
+    const input = "Package: mypkg\r\nVersion: 1.0\r\nTitle: Hello\r\n";
+    const records = parseDcf(input);
+    expect(records).toEqual([
+      { Package: "mypkg", Version: "1.0", Title: "Hello" },
+    ]);
+  });
+
+  test("handles colons in values (e.g. URLs)", () => {
+    const input =
+      "URL: https://example.com:8080/path\nBugReports: https://github.com/org/repo/issues";
+    const records = parseDcf(input);
+    expect(records).toEqual([
+      {
+        URL: "https://example.com:8080/path",
+        BugReports: "https://github.com/org/repo/issues",
+      },
+    ]);
+  });
+
+  test("handles empty value after colon", () => {
+    const input = "Tag:\nOther: value";
+    const records = parseDcf(input);
+    expect(records).toEqual([{ Tag: "", Other: "value" }]);
+  });
+
+  test("handles tab-indented continuation lines", () => {
+    const input = "Desc: first line\n\tsecond line\n\tthird line";
+    const records = parseDcf(input);
+    expect(records).toEqual([{ Desc: "first line\nsecond line\nthird line" }]);
+  });
+
   test("golden: Biobase DESCRIPTION matches expected manifest description", async () => {
     const testdataDir = path.resolve(__dirname, "testdata");
     const descPath = path.join(
