@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added support for deploying projects with dependencies recorded in pylock.toml (PEP 751), uv.lock, or pyproject.toml files. When requirements.txt is not present, these files are automatically detected and used in that priority order. (#2824)
 - Directory checkboxes in Project Files now show an indeterminate state when some, but not all, children are included in the deployment. Directories also now show as checked when all children are included. (#3472)
 
 ### Fixed
