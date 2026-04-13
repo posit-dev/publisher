@@ -22,7 +22,10 @@ vi.mock("eventsource", () => {
   class MockEventSource {
     static CLOSED = 2;
     readyState = 0; // CONNECTING
-    close = vi.fn();
+    close = vi.fn(() => {
+      // Match real EventSource behavior: close() sets readyState to CLOSED
+      this.readyState = MockEventSource.CLOSED;
+    });
     url: string;
     options: { fetch?: unknown } | undefined;
     private eventHandlers = new Map<

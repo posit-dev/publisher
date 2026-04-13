@@ -92,8 +92,11 @@ export async function watchCloudLogs({
     // code's WatchLogs resolves without error on stream close. Only reject
     // for genuine connection failures (readyState !== CLOSED).
     es.addEventListener("error", (err) => {
+      // Capture readyState before close() — close() sets it to CLOSED,
+      // which would mask genuine connection failures.
+      const wasCleanClose = es.readyState === EventSource.CLOSED;
       es.close();
-      if (es.readyState === EventSource.CLOSED) {
+      if (wasCleanClose) {
         resolve();
       } else {
         reject(
