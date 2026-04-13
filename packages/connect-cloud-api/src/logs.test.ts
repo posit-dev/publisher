@@ -210,6 +210,12 @@ describe("watchCloudLogs", () => {
   });
 
   describe("Authorization header", () => {
+    const originalFetch = global.fetch;
+
+    afterEach(() => {
+      global.fetch = originalFetch;
+    });
+
     it("passes Authorization header to custom fetch", async () => {
       const onLog = vi.fn();
       const promise = watchCloudLogs({
