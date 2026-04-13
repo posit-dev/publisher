@@ -14,17 +14,19 @@ import {
 import { CanceledError } from "./publishShared";
 import { ContentType } from "../api/types/configurations";
 import type { ConfigurationDetails } from "../api/types/configurations";
-import { ServerType } from "../api/types/contentRecords";
+import { ProductType, ServerType } from "../api/types/contentRecords";
 
 import type {
   ConnectCloudAPI,
   ContentResponse,
-  RevisionResponse,
+  Revision,
   CreateContentRequest,
   UpdateContentRequest,
 } from "@posit-dev/connect-cloud-api";
 import {
   CloudEnvironment,
+  ContentAccess,
+  ContentID,
   PublishResult as CloudPublishResult,
 } from "@posit-dev/connect-cloud-api";
 
@@ -122,6 +124,7 @@ function makeConfig(
   return {
     $schema:
       "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json",
+    productType: ProductType.CONNECT_CLOUD,
     type: ContentType.PYTHON_SHINY,
     entrypoint: "app.py",
     files: ["app.py"],
@@ -132,8 +135,8 @@ function makeConfig(
 
 function createMockApi(): ConnectCloudAPI {
   const contentResponse: ContentResponse = {
-    id: "content-123",
-    access: "view_private_edit_private",
+    id: ContentID("content-123"),
+    access: ContentAccess.ViewPrivateEditPrivate,
     next_revision: {
       id: "rev-1",
       publish_log_channel: "log-channel-1",
@@ -152,7 +155,7 @@ function createMockApi(): ConnectCloudAPI {
     getRevision: vi.fn().mockResolvedValue({
       id: "rev-1",
       publish_result: CloudPublishResult.Success,
-    } as RevisionResponse),
+    } as Revision),
     getAuthorization: vi.fn().mockResolvedValue({
       authorized: true,
       token: "log-token-123",
@@ -258,7 +261,7 @@ describe("connectCloudPublish", () => {
       publish_result: CloudPublishResult.Failure,
       publish_error: "BuildError",
       publish_error_details: "Package 'flask' not found",
-    } as RevisionResponse);
+    } as Revision);
 
     const opts = baseOptions({ api });
 
@@ -515,12 +518,12 @@ describe("connectCloudPublish", () => {
         return {
           id: "rev-1",
           publish_result: null,
-        } as RevisionResponse;
+        } as Revision;
       }
       return {
         id: "rev-1",
         publish_result: CloudPublishResult.Success,
-      } as RevisionResponse;
+      } as Revision;
     });
 
     const opts = baseOptions({ api });
@@ -598,7 +601,7 @@ describe("connectCloudPublish", () => {
       publish_result: CloudPublishResult.Failure,
       publish_error: "BuildError",
       publish_error_details: "Package not found",
-    } as RevisionResponse);
+    } as Revision);
 
     const onProgress = vi.fn();
     const opts = baseOptions({ api, onProgress });
