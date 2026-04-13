@@ -250,3 +250,47 @@ export interface AuthorizationResponse {
   authorized: boolean;
   token?: string;
 }
+
+// ---------------------------------------------------------------------------
+// Cloud logs base URLs
+// ---------------------------------------------------------------------------
+
+export const cloudLogsBaseUrls: Record<CloudEnvironment, string> = {
+  [CloudEnvironment.Development]: "https://logs.dev.connect.posit.cloud",
+  [CloudEnvironment.Staging]: "https://logs.staging.connect.posit.cloud",
+  [CloudEnvironment.Production]: "https://logs.connect.posit.cloud",
+};
+
+// ---------------------------------------------------------------------------
+// Log streaming types (from connect_cloud_logs/types.go)
+// ---------------------------------------------------------------------------
+
+export type LogLevel = "debug" | "info" | "error";
+
+export type LogEntryType = "build" | "runtime";
+
+export interface LogEntry {
+  timestamp: number;
+  sort_key: number;
+  message: string;
+  type: LogEntryType;
+  level: LogLevel;
+}
+
+export type LogLine = Pick<LogEntry, "level" | "message">;
+
+/**
+ * Shape of each SSE event's JSON `data` field from the Cloud logs endpoint.
+ * Each event contains an array of log messages.
+ */
+export interface LogsEventData {
+  data: LogEntry[];
+}
+
+export interface WatchLogsOptions {
+  environment: CloudEnvironment;
+  logChannel: string;
+  authToken: string;
+  onLog: (line: LogLine) => void;
+  signal?: AbortSignal;
+}
