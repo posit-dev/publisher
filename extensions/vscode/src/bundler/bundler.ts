@@ -60,5 +60,5 @@ export async function createBundle(
 
   onProgress?.({ kind: "sourceDir", sourceDir: baseDir });
 
-  return createArchive(files, manifest, onProgress);
+  return createArchive(files, manifest, onProgress, options.syntheticFiles);
 }
