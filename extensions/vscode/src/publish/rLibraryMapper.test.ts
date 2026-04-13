@@ -199,7 +199,10 @@ describe("toManifestPackage", () => {
       Version: "1.0.0",
       Source: "GitHub",
       RemoteType: "github",
-      // No RemotePkgRef, RemoteUsername, or RemoteRepo — ref is empty
+      // No RemotePkgRef, RemoteUsername, or RemoteRepo.
+      // remotePkgRefOrDerived() returns "" because both RemotePkgRef and
+      // the derived username/repo are missing. The falsy `ref` causes
+      // the ternary in the GitHub case to short-circuit to "".
     };
     const result = toManifestPackage(pkg, cranRepos, [], []);
     expect(result).toEqual({
@@ -637,16 +640,18 @@ describe("libraryToManifestPackages", () => {
   });
 
   test("throws when lockfile is missing Repositories section", async () => {
-    const projectDir = path.join(testdataDir, "cran_project");
-
-    // The cran_project has Repositories, but we'll use a custom packageFile
-    // that doesn't exist. Instead, we create a minimal lockfile in-memory
-    // by writing to a temp file. Simpler: just test with an rConfig pointing
-    // to a file we know has repos. For missing repos, we need a fixture.
-    // Let's just test the error message directly by checking the code path.
+    const projectDir = path.join(testdataDir, "no_repos_project");
     const lister = makeLister();
 
-    // Create a lockfile without Repositories by using a non-existent packageFile
+    await expect(
+      libraryToManifestPackages(projectDir, rConfig, "/usr/bin/R", lister),
+    ).rejects.toThrow("missing Repositories section");
+  });
+
+  test("throws when packageFile does not exist", async () => {
+    const projectDir = path.join(testdataDir, "cran_project");
+    const lister = makeLister();
+
     await expect(
       libraryToManifestPackages(
         projectDir,
@@ -654,7 +659,7 @@ describe("libraryToManifestPackages", () => {
         "/usr/bin/R",
         lister,
       ),
-    ).rejects.toThrow(); // ENOENT for missing file
+    ).rejects.toThrow();
   });
 
   test("exercises Bioconductor path when lister returns bioc repos", async () => {
@@ -911,5 +916,16 @@ describe("buildAvailablePackagesCode", () => {
     expect(code).toContain('"BioCsoft"');
     expect(code).toContain('"https://cran.rstudio.com"');
     expect(code).toContain('"https://bioconductor.org/packages/3.18/bioc"');
+  });
+
+  test("does not place semicolons inside function-call parentheses", () => {
+    const code = buildAvailablePackagesCode([
+      { Name: "CRAN", URL: "https://cran.rstudio.com" },
+      { Name: "BioCsoft", URL: "https://bioconductor.org/packages/3.18/bioc" },
+    ]);
+    // Semicolons should only appear between top-level statements, never
+    // inside function-call parens (e.g. "(;" or ",;").
+    expect(code).not.toMatch(/\(;/);
+    expect(code).not.toMatch(/,;/);
   });
 });
