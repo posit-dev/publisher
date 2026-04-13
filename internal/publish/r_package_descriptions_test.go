@@ -6,6 +6,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/bundles"
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/contenttypes"
@@ -49,7 +50,7 @@ func (s *RPackageDescSuite) makePublisher() *defaultPublisher {
 }
 
 func (s *RPackageDescSuite) SetupTest() {
-	s.stateStore = state.Empty()
+	s.stateStore = &state.State{Account: &accounts.Account{}, Config: &config.Config{}}
 	s.emitter = events.NewCapturingEmitter()
 	s.packageMapper = &mockPackageMapper{}
 	s.log = loggingtest.NewMockLogger()

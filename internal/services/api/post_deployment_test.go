@@ -131,7 +131,7 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFunc() {
 		s.Equal("/bin/my_r", rInterpreter.GetPreferredPath())
 		s.Equal("/bin/my_python", pythonInterpreter.GetPreferredPath())
 
-		st := state.Empty()
+		st := &state.State{Account: &accounts.Account{}, Config: &config.Config{}}
 		st.Account = &accounts.Account{}
 		st.Account.Insecure = insecure
 		st.Target = deployment.New()
@@ -248,7 +248,7 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFuncPublishErr
 		repoOpts *renv.RepoOptions,
 	) (*state.State, error) {
 
-		st := state.Empty()
+		st := &state.State{Account: &accounts.Account{}, Config: &config.Config{}}
 		st.Account = &accounts.Account{}
 		st.Target = deployment.New()
 		return st, nil
@@ -314,7 +314,7 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentSubdir() {
 		s.Equal("default", configName)
 		s.Equal("", saveName)
 
-		st := state.Empty()
+		st := &state.State{Account: &accounts.Account{}, Config: &config.Config{}}
 		st.Account = &accounts.Account{}
 		st.Target = deployment.New()
 		return st, nil
@@ -373,7 +373,7 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFuncWithSecret
 			"DB_PASSWORD": "password456",
 		}, secrets)
 
-		st := state.Empty()
+		st := &state.State{Account: &accounts.Account{}, Config: &config.Config{}}
 		st.Account = &accounts.Account{}
 		st.Target = deployment.New()
 		return st, nil

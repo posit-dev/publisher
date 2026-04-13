@@ -45,12 +45,6 @@ func TestStateSuite(t *testing.T) {
 	suite.Run(t, new(StateSuite))
 }
 
-func (s *StateSuite) TestEmpty() {
-	state := Empty()
-	s.NotNil(state.Account)
-	s.NotNil(state.Config)
-	s.Nil(state.Target)
-}
 
 func (s *StateSuite) createConfigFile(name string, bad bool) {
 	configFile := config.GetConfigPath(s.cwd, name)

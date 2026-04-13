@@ -41,11 +41,6 @@ func GetConfigPath(base util.AbsolutePath, configName string) util.AbsolutePath 
 	return GetConfigDir(base).Join(configName)
 }
 
-func ListConfigFiles(base util.AbsolutePath) ([]util.AbsolutePath, error) {
-	dir := GetConfigDir(base)
-	return dir.Glob("*.toml")
-}
-
 func readLeadingComments(path util.AbsolutePath) ([]string, error) {
 	var comments []string
 	contents, err := path.ReadFile()
@@ -105,6 +100,8 @@ func ValidateFile(path util.AbsolutePath) error {
 	return validator.ValidateTOMLFile(path)
 }
 
+// Write serializes the config as TOML to the given writer, including leading comments.
+// Config writing has been migrated to TypeScript; this is retained for test infrastructure.
 func (cfg *Config) Write(w io.Writer) error {
 	for _, comment := range cfg.Comments {
 		_, err := fmt.Fprintln(w, "#"+comment)
@@ -116,6 +113,8 @@ func (cfg *Config) Write(w io.Writer) error {
 	return enc.Encode(cfg)
 }
 
+// WriteFile writes the config to the given path, creating parent directories as needed.
+// Config writing has been migrated to TypeScript; this is retained for test infrastructure.
 func (cfg *Config) WriteFile(path util.AbsolutePath) error {
 	err := path.Dir().MkdirAll(0777)
 	if err != nil {
@@ -128,5 +127,4 @@ func (cfg *Config) WriteFile(path util.AbsolutePath) error {
 	defer f.Close()
 	return cfg.Write(f)
 }
-
 

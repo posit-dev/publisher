@@ -149,7 +149,7 @@ func (s *BasePublishSuite) TearDownTest() {
 }
 
 func (s *PublishConnectSuite) TestNewFromState() {
-	stateStore := state.Empty()
+	stateStore := &state.State{Account: &accounts.Account{}, Config: &config.Config{}}
 	stateStore.Dir = s.cwd
 	stateStore.Account.ServerType = server_type.ServerTypeConnect
 	mockRIntr := interpreters.NewMockRInterpreter()

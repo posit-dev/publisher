@@ -59,7 +59,7 @@ func (s *RPublishFunctionalSuite) SetupTest() {
 	s.testProjectDir = util.NewAbsolutePath(dirWithSpaces, afero.NewOsFs())
 
 	// Set up our test state
-	s.stateStore = state.Empty()
+	s.stateStore = &state.State{Account: &accounts.Account{}, Config: &config.Config{}}
 	s.stateStore.Dir = s.testProjectDir
 	s.emitter = events.NewCapturingEmitter()
 	s.log = logging.New()
