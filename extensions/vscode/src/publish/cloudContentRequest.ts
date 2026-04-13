@@ -81,6 +81,10 @@ function getCloudUIURL(env: CloudEnvironment): string {
       return "https://staging.connect.posit.cloud";
     case CloudEnvironment.Production:
       return "https://connect.posit.cloud";
+    default: {
+      const _exhaustive: never = env;
+      throw new Error(`Unknown Cloud environment: ${_exhaustive}`);
+    }
   }
 }
 
@@ -92,6 +96,10 @@ function getCloudShareDomain(env: CloudEnvironment): string {
       return "share.staging.connect.posit.cloud";
     case CloudEnvironment.Production:
       return "share.connect.posit.cloud";
+    default: {
+      const _exhaustive: never = env;
+      throw new Error(`Unknown Cloud environment: ${_exhaustive}`);
+    }
   }
 }
 
@@ -131,8 +139,9 @@ function deriveOrgAccessFromContentAccess(
     case ContentAccess.ViewPublicEditPrivate:
       return "disabled";
     case ContentAccess.ViewTeamEditPrivate:
-    case ContentAccess.ViewPublicEditTeam:
       return "viewer";
+    case ContentAccess.ViewPublicEditTeam:
+      return "editor";
     case ContentAccess.ViewTeamEditTeam:
       return "editor";
   }
@@ -192,7 +201,7 @@ async function getAccessForFirstDeploy(
     // No config specified — check account entitlements
     const account = await api.getAccount(accountId);
     const hasPrivateContent =
-      account.license?.entitlements.account_private_content_flag.enabled ??
+      account.license?.entitlements?.account_private_content_flag?.enabled ??
       false;
     publicAccess = !hasPrivateContent;
   } else {

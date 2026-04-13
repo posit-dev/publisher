@@ -405,7 +405,7 @@ describe("getAccess", () => {
       expect(mockApi.getContent).toHaveBeenCalledWith(contentId);
     });
 
-    it("merges publicAccess=false with server orgAccess=viewer", async () => {
+    it("merges publicAccess=false with server orgAccess=editor (ViewPublicEditTeam)", async () => {
       vi.mocked(mockApi.getContent).mockResolvedValue({
         id: contentId,
         access: ContentAccess.ViewPublicEditTeam,
@@ -423,7 +423,31 @@ describe("getAccess", () => {
         accessControl,
       );
 
-      expect(access).toBe(ContentAccess.ViewTeamEditPrivate);
+      // Team edit should be preserved (orgAccess=editor derived from ViewPublicEditTeam)
+      expect(access).toBe(ContentAccess.ViewTeamEditTeam);
+      expect(mockApi.getContent).toHaveBeenCalledWith(contentId);
+    });
+
+    it("merges publicAccess=true with server orgAccess=editor (ViewPublicEditTeam)", async () => {
+      vi.mocked(mockApi.getContent).mockResolvedValue({
+        id: contentId,
+        access: ContentAccess.ViewPublicEditTeam,
+      } as ContentResponse);
+
+      const accessControl: ConnectCloudAccessControl = {
+        publicAccess: true,
+      };
+
+      const access = await getAccess(
+        mockApi,
+        false,
+        accountId,
+        contentId,
+        accessControl,
+      );
+
+      // Both public and team edit preserved
+      expect(access).toBe(ContentAccess.ViewPublicEditTeam);
       expect(mockApi.getContent).toHaveBeenCalledWith(contentId);
     });
 

@@ -455,8 +455,11 @@ export async function connectCloudPublish(
       message: "Uploading files",
     });
 
-    const uploadUrl = content.next_revision!.source_bundle_upload_url;
-    const bundleId = content.next_revision!.source_bundle_id;
+    if (!content.next_revision) {
+      throw new Error("Server did not return a revision for this content");
+    }
+    const uploadUrl = content.next_revision.source_bundle_upload_url;
+    const bundleId = content.next_revision.source_bundle_id;
     await api.uploadBundle(uploadUrl, new Uint8Array(bundle));
 
     record.bundleId = bundleId;
@@ -481,8 +484,11 @@ export async function connectCloudPublish(
 
     // Re-fetch content to get fresh revision with log channel
     content = await api.getContent(contentId as ContentID);
-    const revisionId = content.next_revision!.id;
-    const logChannel = content.next_revision!.publish_log_channel;
+    if (!content.next_revision) {
+      throw new Error("Server did not return a revision after publish");
+    }
+    const revisionId = content.next_revision.id;
+    const logChannel = content.next_revision.publish_log_channel;
 
     // Get auth token for log streaming
     const authResponse = await api.getAuthorization({
@@ -672,5 +678,9 @@ function getCloudUIURL(env: CloudEnvironment): string {
       return "https://staging.connect.posit.cloud";
     case CloudEnvironment.Production:
       return "https://connect.posit.cloud";
+    default: {
+      const _exhaustive: never = env;
+      throw new Error(`Unknown Cloud environment: ${_exhaustive}`);
+    }
   }
 }

@@ -28,6 +28,7 @@ import {
   ContentAccess,
   ContentID,
   PublishResult as CloudPublishResult,
+  watchCloudLogs,
 } from "@posit-dev/connect-cloud-api";
 
 // ---------------------------------------------------------------------------
@@ -206,6 +207,9 @@ describe("connectCloudPublish", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.clearAllMocks();
+    // Reset watchCloudLogs to default — clearAllMocks doesn't reset
+    // implementations, so a mockImplementation override could leak.
+    vi.mocked(watchCloudLogs).mockResolvedValue(undefined);
   });
 
   afterEach(() => {
