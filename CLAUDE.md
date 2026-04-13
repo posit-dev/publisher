@@ -2,9 +2,9 @@
 
 Posit Publisher is a VSCode/Positron extension that enables deploying Python and R projects to Posit Connect. The project is in an active Go-to-TypeScript migration, with a hybrid architecture:
 
-- **Go backend** (`cmd/publisher/`, `internal/`) - API server handling deployments, credential validation, content inspection, and Connect server communication. Still required at runtime.
-- **TypeScript packages** (`packages/`) - Shared TypeScript libraries for Connect API communication (preparation for future migration of remaining Go backend features)
-- **VSCode extension** (`extensions/vscode/`) - TypeScript extension providing the UI and increasingly handling operations directly (bundling, TOML handling, interpreter detection, dependency analysis)
+- **Go backend** (`cmd/publisher/`, `internal/`) - API server handling credential CRUD, Connect Cloud/Snowflake publishing, and SSE streaming. Still required at runtime for these features only.
+- **TypeScript packages** (`packages/`) - Shared TypeScript libraries consumed by the extension for Connect API communication (`connect-api`) and Connect Cloud OAuth (`connect-cloud-api`)
+- **VSCode extension** (`extensions/vscode/`) - TypeScript extension providing the UI and handling most operations directly (publishing to standard Connect, bundling, content inspection, TOML handling, interpreter detection, dependency analysis, Connect Cloud OAuth, Snowflake discovery)
 - **Webviews** (`extensions/vscode/webviews/homeView/`) - Vue 3 UI components for the extension sidebar
 
 ## Migration Status
@@ -26,25 +26,23 @@ The following features have been **migrated to TypeScript** and run directly in 
 | Dependency analysis                    | `extensions/vscode/src/publish/dependencies.ts`                               | `internal/bundles/`                        |
 | Project file tree                      | `extensions/vscode/src/projectFiles/`                                         | N/A (new)                                  |
 | Credential storage                     | `extensions/vscode/src/credentials/`                                          | `internal/credentials/` (partially)        |
+| Content inspection/detection           | `extensions/vscode/src/inspect/`                                              | `internal/inspect/`                        |
+| Publishing to standard Connect         | `extensions/vscode/src/publish/connectPublish.ts`                             | `internal/publish/`                        |
+| Connect Cloud OAuth flows              | Uses `@posit-dev/connect-cloud-api` package directly                          | `internal/cloud/`                          |
+| Snowflake connection discovery         | `extensions/vscode/src/snowflake/`                                            | `internal/clients/`                        |
+
+The standard Connect publish path runs entirely in TypeScript via `connectPublish()` using `@posit-dev/connect-api`. A gate function `canUseTsPublishPath()` in `src/views/canUseTsPublishPath.ts` routes deployments to either the TS or Go path based on server type and config options.
 
 The following features are **still in Go** and accessed via the Go backend HTTP API:
 
-| Feature                          | Go Location         | Extension API Wrapper                       |
-| -------------------------------- | ------------------- | ------------------------------------------- |
-| Publishing/deployment to Connect | `internal/publish/` | `src/api/resources/`                        |
-| Deployment cancellation          | `internal/publish/` | `src/api/resources/`                        |
-| Content inspection/detection     | `internal/inspect/` | `src/api/resources/`                        |
-| Connect Cloud OAuth flows        | `internal/cloud/`   | `src/api/resources/ConnectCloud.ts`         |
-| Snowflake connection discovery   | `internal/clients/` | `src/api/resources/SnowflakeConnections.ts` |
-| Connect token management         | `internal/clients/` | `src/api/resources/Credentials.ts`          |
-| Server-Sent Events streaming     | `internal/events/`  | `src/events.ts`                             |
-
-**Prepared but not yet integrated:**
-
-- `packages/connect-api/` - TypeScript client for Posit Connect REST API
-- `packages/connect-cloud-api/` - TypeScript client for Connect Cloud API (with OAuth)
-
-These packages are groundwork for migrating the remaining Go backend API calls to TypeScript.
+| Feature                                | Go API Route                                        | Extension API Wrapper                 |
+| -------------------------------------- | --------------------------------------------------- | ------------------------------------- |
+| Publishing (Connect Cloud / Snowflake) | `POST /deployments/{name}`                          | `src/api/resources/ContentRecords.ts` |
+| Publishing with `packagesFromLibrary`  | `POST /deployments/{name}`                          | `src/api/resources/ContentRecords.ts` |
+| Deployment cancellation (Go path only) | `POST /deployments/{name}/cancel/{localid}`         | `src/api/resources/ContentRecords.ts` |
+| Credential creation (with validation)  | `POST /credentials`                                 | `src/api/resources/Credentials.ts`    |
+| Credential deletion                    | `DELETE /credentials/{guid}`, `DELETE /credentials` | `src/api/resources/Credentials.ts`    |
+| Server-Sent Events streaming (Go path) | `GET /events`                                       | `src/events.ts`                       |
 
 # Build Commands
 
@@ -122,34 +120,37 @@ VSCode Extension (TypeScript)
 │   ├── Python/R interpreter detection
 │   ├── Python/R package scanning
 │   ├── Dependency analysis
+│   ├── Content inspection/detection (src/inspect/)
+│   ├── Publishing to standard Connect (src/publish/connectPublish.ts)
+│   ├── Connect Cloud OAuth (via @posit-dev/connect-cloud-api)
+│   ├── Snowflake connection discovery (src/snowflake/)
 │   └── Credential storage (filesystem / VSCode keychain)
 │
-└── Go Backend Operations (via HTTP API):
-    ├── Publishing/deployment to Connect
-    ├── Content inspection/detection
-    ├── Connect Cloud authentication (OAuth)
-    ├── Snowflake connection discovery
-    └── Server-Sent Events for deployment progress
+└── Go Backend Operations (via HTTP API — 5 routes remain):
+    ├── Publishing for Connect Cloud / Snowflake server types
+    ├── Publishing with packagesFromLibrary config option
+    ├── Credential creation (POST) and deletion (DELETE)
+    └── Server-Sent Events for Go publish path progress
 ```
 
 ## Go Backend (`internal/`)
 
-Key packages (still actively used):
+Key packages (still actively used by remaining Go API routes):
 
-- `clients/` - HTTP clients for Connect API communication
-- `cloud/` - Connect Cloud OAuth integration
-- `events/` - Server-Sent Events for real-time UI updates
-- `inspect/` - Project inspection (detect Python/R/Quarto content)
-- `publish/` - Core publishing logic to Connect servers
-- `services/api/` - HTTP API endpoints consumed by the extension
+- `services/api/` - HTTP API endpoints (5 routes remain: credential CRUD, Go publish path, SSE)
+- `publish/` - Publishing logic for Connect Cloud and Snowflake deployments
+- `clients/` - HTTP clients for Connect API communication (used by Go publish path)
+- `credentials/` - Credential creation/deletion API (storage migrated, CRUD routes remain)
+- `events/` - Server-Sent Events for Go publish path progress updates
 
-Legacy packages (functionality migrated to TypeScript but code still present):
+Legacy packages (functionality fully migrated to TypeScript, Go code still present):
 
-- `accounts/` - Server account/credential management
+- `accounts/` - Server account management (used by Go publish path internally)
 - `bundles/` - Deployment bundle creation and manifest generation
+- `cloud/` - Connect Cloud OAuth (migrated to `@posit-dev/connect-cloud-api`)
 - `config/` - Configuration file parsing (`.posit/publish/*.toml`)
-- `credentials/` - Credential storage (keyring or file-based)
 - `deployment/` - Deployment record management
+- `inspect/` - Project inspection (migrated to `extensions/vscode/src/inspect/`)
 - `interpreters/` - Python/R interpreter detection and version management
 - `schema/` - JSON schemas for configuration validation
 
@@ -157,12 +158,10 @@ The CLI entry point (`cmd/publisher/main.go`) uses [Kong](https://github.com/ale
 
 ## TypeScript Packages (`packages/`)
 
-Shared npm packages for Connect API communication:
+Shared npm packages consumed by the extension for Connect API communication:
 
-- `packages/connect-api/` - TypeScript client for the Posit Connect REST API (axios-based)
-- `packages/connect-cloud-api/` - TypeScript client for Connect Cloud API with OAuth authentication
-
-These are not yet consumed by the extension but are being prepared for future migration of Go backend API calls.
+- `packages/connect-api/` - TypeScript client for the Posit Connect REST API (axios-based). Used by `connectPublish.ts` for standard Connect deployments and by Snowflake discovery for authentication validation.
+- `packages/connect-cloud-api/` - TypeScript client for Connect Cloud API with OAuth authentication. Used by the Connect Cloud credential flow for device auth and account management.
 
 ## VSCode Extension (`extensions/vscode/src/`)
 
@@ -170,12 +169,14 @@ Key areas:
 
 - **Bundler** (`src/bundler/`) - Creates deployment bundles (tar.gz) with manifest generation, file collection, and .gitignore filtering
 - **TOML** (`src/toml/`) - Reads/writes configuration and deployment TOML files with schema validation
+- **Inspect** (`src/inspect/`) - Content inspection/detection with detectors for Python, R, Quarto, HTML, notebooks, Plumber, and R Markdown
 - **Interpreters** (`src/interpreters/`) - Detects Python/R versions and scans packages
 - **Credentials** (`src/credentials/`) - Manages credential storage (filesystem or VSCode keychain)
-- **Publish** (`src/publish/`) - Dependency analysis for Python/R projects
-- **API** (`src/api/`) - Axios HTTP client for Go backend communication (for features not yet migrated)
-- **Views** (`src/views/`) - Sidebar webview and tree view providers
-- **Servers** (`src/servers.ts`) - Go binary subprocess management
+- **Publish** (`src/publish/`) - Publishing orchestration (`connectPublish.ts`) and dependency analysis for Python/R projects
+- **Snowflake** (`src/snowflake/`) - Snowflake connection discovery, config parsing, and token providers
+- **API** (`src/api/`) - Axios HTTP client for Go backend communication (credential CRUD and Go publish path only)
+- **Views** (`src/views/`) - Sidebar webview and tree view providers; includes `canUseTsPublishPath.ts` which gates TS vs Go publish
+- **Servers** (`src/servers.ts`) - Go binary subprocess management (still needed for remaining Go API routes)
 - **State** (`src/state.ts`) - Central state management for the extension
 
 ## Configuration Files
