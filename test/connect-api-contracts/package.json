@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@posit-dev/connect-api": "file:../../packages/connect-api",
-    "axios": "^1.9.0"
+    "axios": "^1.15.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

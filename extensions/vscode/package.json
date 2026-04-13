@@ -690,7 +690,7 @@
     "ajv": "^8.18.0",
     "ajv-formats": "^3.0.1",
     "async-mutex": "^0.5.0",
-    "axios": "^1.13.6",
+    "axios": "^1.15.0",
     "debounce": "^3.0.0",
     "entities": "^8.0.0",
     "eventsource": "^4.1.0",
