@@ -89,7 +89,7 @@ jobs:
     steps:
       - name: Check if previous run failed
         id: check-previous
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             const runs = await github.rest.actions.listWorkflowRuns({
