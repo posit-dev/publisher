@@ -170,6 +170,23 @@ describe("JWT token provider (snowflake_jwt)", () => {
     const token = await provider.getToken("example.snowflakecomputing.app");
     expect(token).toBe("my-special-access-token");
   });
+
+  it("throws when token endpoint returns an HTTP error", async () => {
+    vi.mocked(axios.post).mockRejectedValue(
+      new Error("Request failed with status code 500"),
+    );
+
+    const provider = createTokenProvider({
+      account: "myaccount",
+      user: "myuser",
+      authenticator: "snowflake_jwt",
+      private_key_file: privateKeyFile,
+    });
+
+    await expect(
+      provider.getToken("example.snowflakecomputing.app"),
+    ).rejects.toThrow();
+  });
 });
 
 describe("OAuth token provider (oauth)", () => {
@@ -245,6 +262,40 @@ describe("OAuth token provider (oauth)", () => {
       data: {
         data: {},
       },
+    });
+
+    const provider = createTokenProvider({
+      account: "myaccount",
+      user: "myuser",
+      authenticator: "oauth",
+      token: "my-oauth-token",
+    });
+
+    await expect(
+      provider.getToken("example.snowflakecomputing.app"),
+    ).rejects.toThrow("missing token in login response");
+  });
+
+  it("throws when login endpoint returns an HTTP error", async () => {
+    vi.mocked(axios.post).mockRejectedValue(
+      new Error("Request failed with status code 500"),
+    );
+
+    const provider = createTokenProvider({
+      account: "myaccount",
+      user: "myuser",
+      authenticator: "oauth",
+      token: "my-oauth-token",
+    });
+
+    await expect(
+      provider.getToken("example.snowflakecomputing.app"),
+    ).rejects.toThrow();
+  });
+
+  it("throws when login response body is not valid JSON structure", async () => {
+    vi.mocked(axios.post).mockResolvedValue({
+      data: "notjson",
     });
 
     const provider = createTokenProvider({

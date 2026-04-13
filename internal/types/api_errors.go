@@ -6,8 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-
-	"github.com/posit-dev/publisher/internal/logging"
 )
 
 func jsonResult(w http.ResponseWriter, status int, result any) {
@@ -169,20 +167,6 @@ func APIErrorCredentialsUnavailableFromAgentError(aerr AgentError) APIErrorCrede
 	}
 }
 
-type APIErrorCredentialsCorrupted struct {
-	Code ErrorCode `json:"code"`
-}
-
-func (apierr *APIErrorCredentialsCorrupted) JSONResponse(w http.ResponseWriter) {
-	jsonResult(w, http.StatusConflict, apierr)
-}
-
-func APIErrorCredentialsCorruptedFromAgentError(aerr AgentError) APIErrorCredentialsCorrupted {
-	return APIErrorCredentialsCorrupted{
-		Code: ErrorCredentialsCorrupted,
-	}
-}
-
 type ErrorCredentialsCannotBackupFileDetails struct {
 	Filename string `json:"filename"`
 	Message  string `json:"message"`
@@ -207,32 +191,3 @@ func APIErrorCredentialsBackupFileFromAgentError(aerr AgentError) APIErrorCreden
 	}
 }
 
-type APIErrorDeviceAuth struct {
-	Code ErrorCode `json:"code"`
-}
-
-func APIErrorDeviceAuthFromAgentError(aerr AgentError, log logging.Logger) APIErrorDeviceAuth {
-	resultCode := ErrorUnknown
-	errorCode, ok := aerr.Data["error"].(string)
-	if ok {
-		switch errorCode {
-		case "authorization_pending":
-			resultCode = ErrorDeviceAuthPending
-		case "slow_down":
-			resultCode = ErrorDeviceAuthSlowDown
-		case "expired_token":
-			resultCode = ErrorDeviceAuthExpiredToken
-		case "access_denied":
-			resultCode = ErrorDeviceAuthAccessDenied
-		default:
-			log.Warn("unrecognized device auth error code: %s", "errorCode", errorCode)
-		}
-	}
-	return APIErrorDeviceAuth{
-		Code: resultCode,
-	}
-}
-
-func (apierr *APIErrorDeviceAuth) JSONResponse(w http.ResponseWriter) {
-	jsonResult(w, http.StatusBadRequest, apierr)
-}

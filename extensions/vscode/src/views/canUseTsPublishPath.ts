@@ -12,10 +12,7 @@ export function canUseTsPublishPath(
   serverType: ServerType,
   config: ConfigurationDetails,
 ): boolean {
-  if (
-    serverType === ServerType.CONNECT_CLOUD ||
-    serverType === ServerType.SNOWFLAKE
-  ) {
+  if (serverType === ServerType.CONNECT_CLOUD) {
     return false;
   }
   if (config.r?.packagesFromLibrary) {

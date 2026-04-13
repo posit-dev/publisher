@@ -84,11 +84,6 @@ func GetDeploymentPath(base util.AbsolutePath, name string) util.AbsolutePath {
 	return GetDeploymentsPath(base).Join(name + ".toml")
 }
 
-func ListDeploymentFiles(base util.AbsolutePath) ([]util.AbsolutePath, error) {
-	dir := GetDeploymentsPath(base)
-	return dir.Glob("*.toml")
-}
-
 func SaveNameFromPath(path util.AbsolutePath) string {
 	return strings.TrimSuffix(path.Base(), ".toml")
 }

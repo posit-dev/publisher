@@ -69,22 +69,3 @@ func (s *ApiErrorsSuite) TestAPIErrorInvalidTOMLFileFromAgentError() {
 	s.Contains(bodyRes, `{"code":"invalidTOML","details":{"filename":"/project-a/configuration-avcd.toml","line":3,"column":1}}`)
 }
 
-func (s *ApiErrorsSuite) TestAPIErrorCredentialCorruptedResetFromAgentError() {
-	agentErr := AgentError{
-		Message: "",
-		Code:    ErrorCredentialsCorrupted,
-		Err:     errors.New("unknown field error"),
-		Data:    ErrorData{},
-	}
-
-	rec := httptest.NewRecorder()
-
-	apiError := APIErrorCredentialsCorruptedFromAgentError(agentErr)
-	s.Equal(apiError.Code, ErrorCredentialsCorrupted)
-
-	apiError.JSONResponse(rec)
-
-	bodyRes := rec.Body.String()
-	s.Equal(http.StatusConflict, rec.Result().StatusCode)
-	s.Contains(bodyRes, `{"code":"credentialsCorrupted"}`)
-}
