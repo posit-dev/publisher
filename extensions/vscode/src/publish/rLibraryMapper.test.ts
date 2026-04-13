@@ -902,9 +902,10 @@ describe("buildAvailablePackagesCode", () => {
     const code = buildAvailablePackagesCode([
       { Name: 'evil")); system("pwned', URL: 'https://evil.com/"); cat("' },
     ]);
-    // The double quotes should be escaped so they don't break out of R strings
-    expect(code).not.toContain('system("pwned');
-    expect(code).toContain('\\"');
+    // Verify the escaped form of the malicious strings appears in the output,
+    // confirming quotes are neutralised rather than merely absent.
+    expect(code).toContain('evil\\")); system(\\"pwned');
+    expect(code).toContain('https://evil.com/\\"); cat(\\"');
   });
 
   test("includes multiple repos", () => {
