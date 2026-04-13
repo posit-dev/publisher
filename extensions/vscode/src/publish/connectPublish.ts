@@ -308,6 +308,13 @@ export async function connectPublish(
         const generated = await generateRequirements(projectDir);
         if (generated !== null) {
           generatedRequirements = generated;
+          // The manifest was built before preflight, so its package_file
+          // reflects the config's original empty value. Patch it to match
+          // the synthetic file we'll inject into the bundle.
+          if (manifest.python?.package_manager) {
+            manifest.python.package_manager.package_file =
+              DEFAULT_PYTHON_PACKAGE_FILE;
+          }
         } else {
           throw new Error(
             `Missing dependency file ${packageFile}. ` +

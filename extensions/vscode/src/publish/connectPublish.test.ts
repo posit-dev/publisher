@@ -1933,6 +1933,31 @@ describe("connectPublish — generated requirements from lockfiles", () => {
     ).toBe("flask==3.0.2\n");
   });
 
+  test("patches manifest package_file when generating from lockfiles", async () => {
+    vi.mocked(generateRequirements).mockResolvedValueOnce(["flask==3.0.2"]);
+
+    // When no requirements.txt exists, the interpreter sets packageFile to "".
+    // The manifest is built before preflight, so it initially gets package_file: "".
+    // After generation, the manifest must be patched so Connect finds the file.
+    const config = makeConfig({
+      files: ["app.py", "requirements.txt"],
+      python: {
+        version: "3.11.0",
+        packageFile: "",
+        packageManager: "pip",
+      },
+    });
+    const opts = makeOptions({ config });
+
+    await connectPublish(opts);
+
+    const { createBundle } = await import("../bundler/bundler");
+    const bundleCall = vi.mocked(createBundle).mock.calls[0]?.[0];
+    expect(bundleCall?.manifest?.python?.package_manager?.package_file).toBe(
+      "requirements.txt",
+    );
+  });
+
   test("does not generate when requirements file exists on disk", async () => {
     const { fileExistsAt } = await import("../interpreters/fsUtils");
     vi.mocked(fileExistsAt).mockResolvedValue(true);
