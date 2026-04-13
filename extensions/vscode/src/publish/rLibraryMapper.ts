@@ -59,6 +59,14 @@ function runRExpression(
   });
 }
 
+/** Parse the output of `cat(.libPaths(), sep="\n")`. */
+export function parseLibPathsOutput(output: string): string[] {
+  return output
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line !== "" && !line.startsWith("-"));
+}
+
 /**
  * Get the library paths where R packages are installed.
  * Mirrors Go's GetLibPaths().
@@ -72,18 +80,14 @@ export async function getLibPaths(
     'cat(.libPaths(), sep="\\n")',
     projectDir,
   );
-
-  return output
-    .split("\n")
-    .map((line) => line.trim())
-    .filter((line) => line !== "" && !line.startsWith("-"));
+  return parseLibPathsOutput(output);
 }
 
 /**
  * Build the R code for listing available packages from given repositories.
  * Mirrors Go's ListAvailablePackages().
  */
-function buildAvailablePackagesCode(repos: Repository[]): string {
+export function buildAvailablePackagesCode(repos: Repository[]): string {
   const urls = repos.map((r) => `"${r.URL.replace(/\/+$/, "")}"`).join(", ");
   const names = repos.map((r, i) => `"${r.Name || `repo_${i}`}"`).join(", ");
 
@@ -101,18 +105,10 @@ function buildAvailablePackagesCode(repos: Repository[]): string {
   ].join("; ");
 }
 
-/**
- * List packages available in the given repositories.
- * Mirrors Go's ListAvailablePackages().
- */
-export async function listAvailablePackages(
-  rPath: string,
-  projectDir: string,
-  repos: Repository[],
-): Promise<AvailablePackage[]> {
-  const code = buildAvailablePackagesCode(repos);
-  const output = await runRExpression(rPath, code, projectDir);
-
+/** Parse the output of `available.packages()` — each line is "name version repoURL". */
+export function parseAvailablePackagesOutput(
+  output: string,
+): AvailablePackage[] {
   const available: AvailablePackage[] = [];
   for (const line of output.split("\n")) {
     const trimmed = line.trim();
@@ -127,6 +123,20 @@ export async function listAvailablePackages(
     });
   }
   return available;
+}
+
+/**
+ * List packages available in the given repositories.
+ * Mirrors Go's ListAvailablePackages().
+ */
+export async function listAvailablePackages(
+  rPath: string,
+  projectDir: string,
+  repos: Repository[],
+): Promise<AvailablePackage[]> {
+  const code = buildAvailablePackagesCode(repos);
+  const output = await runRExpression(rPath, code, projectDir);
+  return parseAvailablePackagesOutput(output);
 }
 
 /**
@@ -152,7 +162,11 @@ export async function getBioconductorRepos(
   ].join("\n");
 
   const output = await runRExpression(rPath, code, projectDir);
+  return parseBioconductorReposOutput(output);
+}
 
+/** Parse the output of the Bioconductor repos discovery script — each line is "name url". */
+export function parseBioconductorReposOutput(output: string): Repository[] {
   const repos: Repository[] = [];
   for (const line of output.split("\n")) {
     const trimmed = line.trim();
