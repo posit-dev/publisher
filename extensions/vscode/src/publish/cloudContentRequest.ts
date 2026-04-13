@@ -126,10 +126,49 @@ export function getCloudContentInfo(
 
 // ---------------------------------------------------------------------------
 // Access Control
+//
+// ContentAccess encodes two independent dimensions in one enum value:
+//
+//   View{Public|Team|Private}Edit{Team|Private}
+//   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+//   publicAccess dimension    orgAccess dimension
+//
+// The "View" prefix indicates who can VIEW the content:
+//   Public  → anyone (publicAccess = true)
+//   Team    → org members (publicAccess = false, orgAccess = viewer or editor)
+//   Private → owner only (publicAccess = false, orgAccess = disabled)
+//
+// The "Edit" suffix indicates who can EDIT the content:
+//   Team    → org members can edit (orgAccess = viewer — they can see AND edit)
+//   Private → only the owner can edit (orgAccess = disabled, or viewer with
+//             no edit grant)
+//
+// Counterintuitively, "EditTeam" does NOT mean orgAccess = "editor".
+// The editor/viewer distinction controls org-level *visibility*, not
+// edit permissions. The mapping is:
+//
+//   orgAccess    | meaning
+//   -------------|----------------------------------------------
+//   "disabled"   | org has no access → EditPrivate
+//   "viewer"     | org can view+edit → EditPrivate (view only) or EditTeam (view+edit)
+//   "editor"     | org can view+edit at higher level → EditTeam
+//
+// The full matrix (publicAccess × orgAccess → ContentAccess):
+//
+//   public=true,  org=disabled → ViewPublicEditPrivate
+//   public=true,  org=viewer  → ViewPublicEditPrivate
+//   public=true,  org=editor  → ViewPublicEditTeam
+//   public=false, org=disabled → ViewPrivateEditPrivate
+//   public=false, org=viewer  → ViewTeamEditPrivate
+//   public=false, org=editor  → ViewTeamEditTeam
+//
+// See also: Go implementation in internal/publish/connect_cloud/content_request_base.go
 // ---------------------------------------------------------------------------
 
 /**
- * Derives organization access from existing content access.
+ * Derives the orgAccess dimension from an existing ContentAccess value.
+ * Used during redeploy partial merges to preserve the dimension the user
+ * didn't explicitly set.
  */
 function deriveOrgAccessFromContentAccess(
   access: ContentAccess,
@@ -138,6 +177,9 @@ function deriveOrgAccessFromContentAccess(
     case ContentAccess.ViewPrivateEditPrivate:
     case ContentAccess.ViewPublicEditPrivate:
       return "disabled";
+    // ViewTeamEditPrivate and ViewPublicEditTeam both indicate org has
+    // viewer-level access. The "EditTeam" in ViewPublicEditTeam is the
+    // edit dimension — it does NOT imply orgAccess="editor".
     case ContentAccess.ViewTeamEditPrivate:
     case ContentAccess.ViewPublicEditTeam:
       return "viewer";
@@ -147,7 +189,8 @@ function deriveOrgAccessFromContentAccess(
 }
 
 /**
- * Derives public access from existing content access.
+ * Derives the publicAccess dimension from an existing ContentAccess value.
+ * "Public" in the View prefix means publicAccess=true.
  */
 function derivePublicAccessFromContentAccess(access: ContentAccess): boolean {
   switch (access) {
@@ -162,7 +205,8 @@ function derivePublicAccessFromContentAccess(access: ContentAccess): boolean {
 }
 
 /**
- * Maps access control values to ContentAccess enum.
+ * Maps the two independent access dimensions to a ContentAccess enum value.
+ * See the matrix in the Access Control section header above.
  */
 function mapAccessValues(
   publicAccess: boolean,
@@ -263,7 +307,7 @@ async function getAccessForRedeploy(
 /**
  * Determines the access control setting based on whether this is a first deploy or redeploy.
  */
-export async function getAccess(
+export function getAccess(
   api: ConnectCloudAPI,
   isFirstDeploy: boolean,
   accountId: string,
