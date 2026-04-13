@@ -2,6 +2,7 @@
 
 export { ConnectCloudAPI } from "./client.js";
 export { CloudAuthClient } from "./auth.js";
+export { watchCloudLogs } from "./logs.js";
 
 export {
   CloudAuthToken,
@@ -10,6 +11,7 @@ export {
   cloudEnvironmentBaseUrls,
   cloudAuthBaseUrls,
   cloudAuthClientIds,
+  cloudLogsBaseUrls,
 } from "./types.js";
 
 export { ContentAccess, ContentType, PublishResult } from "./types.js";
@@ -28,6 +30,9 @@ export type {
   ContentResponse,
   CreateContentRequest,
   DeviceAuthResponse,
+  LogLevel,
+  LogLine,
+  LogsEventData,
   RequestRevision,
   Revision,
   Secret,
@@ -37,4 +42,5 @@ export type {
   UserAccountRole,
   UserAccountRoleAccount,
   UserResponse,
+  WatchLogsOptions,
 } from "./types.js";
