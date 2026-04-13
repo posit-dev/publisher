@@ -158,6 +158,30 @@ describe("watchCloudLogs", () => {
       );
     });
 
+    it("encodes logChannel in the URL path", async () => {
+      const onLog = vi.fn();
+      const promise = watchCloudLogs({
+        environment: CloudEnvironment.Production,
+        logChannel: "channel/with special?chars#here",
+        authToken: "test-token",
+        onLog,
+      });
+
+      const instance = getInstance();
+      instance.readyState = 2;
+      instance.triggerEvent("error");
+
+      await promise;
+
+      const nowNanos = 1_700_000_000_000 * 1_000_000;
+      const lookbackNanos = 60 * 1_000_000_000;
+      const sortKeyGt = nowNanos - lookbackNanos;
+
+      expect(instance.url).toBe(
+        `https://logs.connect.posit.cloud/v1/logs/${encodeURIComponent("channel/with special?chars#here")}/stream?sort_key__gt=${sortKeyGt}`,
+      );
+    });
+
     it("includes correct 60-second lookback in sort_key__gt parameter", async () => {
       const onLog = vi.fn();
       const promise = watchCloudLogs({
@@ -497,6 +521,26 @@ describe("watchCloudLogs", () => {
   });
 
   describe("AbortSignal", () => {
+    it("resolves immediately without opening EventSource when signal is already aborted", async () => {
+      const controller = new AbortController();
+      controller.abort();
+      const onLog = vi.fn();
+
+      await expect(
+        watchCloudLogs({
+          environment: CloudEnvironment.Production,
+          logChannel: "test-channel",
+          authToken: "test-token",
+          onLog,
+          signal: controller.signal,
+        }),
+      ).resolves.toBeUndefined();
+
+      // No EventSource should have been created
+      expect(latestMockInstance).toBeNull();
+      expect(onLog).not.toHaveBeenCalled();
+    });
+
     it("closes EventSource and resolves when signal is aborted", async () => {
       const controller = new AbortController();
       const onLog = vi.fn();

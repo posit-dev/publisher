@@ -36,12 +36,17 @@ export async function watchCloudLogs({
   onLog,
   signal,
 }: WatchLogsOptions): Promise<void> {
+  // Short-circuit if already aborted — avoid opening a connection at all.
+  if (signal?.aborted) {
+    return;
+  }
+
   // Construct SSE URL with 60-second lookback (matching Go's logLookback)
   const baseUrl = cloudLogsBaseUrls[environment];
   const nowNanos = Date.now() * 1_000_000;
   const lookbackNanos = 60 * 1_000_000_000; // 60 seconds in nanoseconds
   const sortKeyGt = nowNanos - lookbackNanos;
-  const url = `${baseUrl}/v1/logs/${logChannel}/stream?sort_key__gt=${sortKeyGt}`;
+  const url = `${baseUrl}/v1/logs/${encodeURIComponent(logChannel)}/stream?sort_key__gt=${sortKeyGt}`;
 
   return new Promise<void>((resolve, reject) => {
     // Create EventSource with custom fetch to inject Authorization header
