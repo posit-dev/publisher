@@ -105,12 +105,16 @@ export function buildAvailablePackagesCode(repos: Repository[]): string {
 
   // R script: query CRAN-style repos for available source packages,
   // then print each as "name version repoURL" on one line.
-  return [
+  const availablePackagesCall = [
     `pkgs <- available.packages(`,
     `  repos = setNames(c(${urls}), c(${names})),`,
     `  type = "source",`,
     `  filters = c(getOption("rsconnect.available_packages_filters", default = c()), "duplicates")`,
     `)`,
+  ].join("\n");
+
+  return [
+    availablePackagesCall,
     `info <- pkgs[, c("Package", "Version", "Repository")]`,
     `apply(info, 1, function(x) cat(x, sep = " ", collapse = "\\n"))`,
     `invisible()`,
