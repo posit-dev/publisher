@@ -1,0 +1,23 @@
+{
+	"R": {
+		"Version": "4.3.0",
+		"Repositories": [
+			{
+				"Name": "CRAN",
+				"URL": "https://cran.rstudio.com"
+			}
+		]
+	},
+	"Packages": {
+		"mypkg": {
+			"Package": "mypkg",
+			"Version": "1.2.3",
+			"Source": "Repository",
+			"Repository": "CRAN",
+			"Requirements": [
+			"R"
+			],
+			"Hash": "470851b6d5d0ac559e9d01bb352b4021"
+		}
+	}
+}

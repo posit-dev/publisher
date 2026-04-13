@@ -1,0 +1,52 @@
+Package: Biobase
+Title: Biobase: Base functions for Bioconductor
+Description: Functions that are needed by many other packages or which
+        replace R functions.
+biocViews: Infrastructure
+URL: https://bioconductor.org/packages/Biobase
+BugReports: https://github.com/Bioconductor/Biobase/issues
+Version: 2.62.0
+License: Artistic-2.0
+Authors@R: c(
+    person("R.", "Gentleman", role="aut"),
+    person("V.", "Carey", role = "aut"),
+    person("M.", "Morgan", role="aut"),
+    person("S.", "Falcon", role="aut"),
+    person("Haleema", "Khan",
+        role = "ctb",
+        comment = "'esApply' and 'BiobaseDevelopment' vignette translation from Sweave to Rmarkdown / HTML"
+    ),
+    person("Bioconductor Package Maintainer",
+        role = "cre",
+        email = "maintainer@bioconductor.org"
+    ))
+Suggests: tools, tkWidgets, ALL, RUnit, golubEsets, BiocStyle, knitr
+Depends: R (>= 2.10), BiocGenerics (>= 0.27.1), utils
+Imports: methods
+VignetteBuilder: knitr
+LazyLoad: yes
+Collate: tools.R strings.R environment.R vignettes.R packages.R
+        AllGenerics.R VersionsClass.R VersionedClasses.R
+        methods-VersionsNull.R methods-VersionedClass.R DataClasses.R
+        methods-aggregator.R methods-container.R methods-MIAxE.R
+        methods-MIAME.R methods-AssayData.R
+        methods-AnnotatedDataFrame.R methods-eSet.R
+        methods-ExpressionSet.R methods-MultiSet.R methods-SnpSet.R
+        methods-NChannelSet.R anyMissing.R rowOp-methods.R
+        updateObjectTo.R methods-ScalarObject.R zzz.R
+git_url: https://git.bioconductor.org/packages/Biobase
+git_branch: RELEASE_3_18
+git_last_commit: 8201fbb
+git_last_commit_date: 2023-10-24
+Date/Publication: 2023-10-24
+NeedsCompilation: yes
+Packaged: 2023-10-24 20:27:07 UTC; biocbuild
+Author: R. Gentleman [aut],
+  V. Carey [aut],
+  M. Morgan [aut],
+  S. Falcon [aut],
+  Haleema Khan [ctb] ('esApply' and 'BiobaseDevelopment' vignette
+    translation from Sweave to Rmarkdown / HTML),
+  Bioconductor Package Maintainer [cre]
+Maintainer: Bioconductor Package Maintainer <maintainer@bioconductor.org>
+Built: R 4.3.1; x86_64-apple-darwin20; 2023-10-25 04:36:11 UTC; unix
