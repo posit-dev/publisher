@@ -139,9 +139,8 @@ function deriveOrgAccessFromContentAccess(
     case ContentAccess.ViewPublicEditPrivate:
       return "disabled";
     case ContentAccess.ViewTeamEditPrivate:
-      return "viewer";
     case ContentAccess.ViewPublicEditTeam:
-      return "editor";
+      return "viewer";
     case ContentAccess.ViewTeamEditTeam:
       return "editor";
   }

@@ -267,6 +267,40 @@ describe("getAccess", () => {
       expect(mockApi.getAccount).not.toHaveBeenCalled();
     });
 
+    it("maps publicAccess=true and orgAccess=disabled", async () => {
+      const accessControl: ConnectCloudAccessControl = {
+        publicAccess: true,
+        organizationAccess: "disabled",
+      };
+
+      const access = await getAccess(
+        mockApi,
+        true,
+        accountId,
+        undefined,
+        accessControl,
+      );
+
+      expect(access).toBe(ContentAccess.ViewPublicEditPrivate);
+    });
+
+    it("maps publicAccess=false and orgAccess=disabled", async () => {
+      const accessControl: ConnectCloudAccessControl = {
+        publicAccess: false,
+        organizationAccess: "disabled",
+      };
+
+      const access = await getAccess(
+        mockApi,
+        true,
+        accountId,
+        undefined,
+        accessControl,
+      );
+
+      expect(access).toBe(ContentAccess.ViewPrivateEditPrivate);
+    });
+
     it("maps publicAccess=true and orgAccess=viewer", async () => {
       const accessControl: ConnectCloudAccessControl = {
         publicAccess: true,
@@ -365,21 +399,57 @@ describe("getAccess", () => {
       expect(mockApi.getContent).not.toHaveBeenCalled();
     });
 
-    it("uses both fields when both publicAccess and orgAccess set", async () => {
-      const accessControl: ConnectCloudAccessControl = {
+    it("uses both — public=false, org=disabled", async () => {
+      const access = await getAccess(mockApi, false, accountId, contentId, {
+        publicAccess: false,
+        organizationAccess: "disabled",
+      });
+      expect(access).toBe(ContentAccess.ViewPrivateEditPrivate);
+      expect(mockApi.getContent).not.toHaveBeenCalled();
+    });
+
+    it("uses both — public=false, org=viewer", async () => {
+      const access = await getAccess(mockApi, false, accountId, contentId, {
+        publicAccess: false,
+        organizationAccess: "viewer",
+      });
+      expect(access).toBe(ContentAccess.ViewTeamEditPrivate);
+      expect(mockApi.getContent).not.toHaveBeenCalled();
+    });
+
+    it("uses both — public=false, org=editor", async () => {
+      const access = await getAccess(mockApi, false, accountId, contentId, {
         publicAccess: false,
         organizationAccess: "editor",
-      };
-
-      const access = await getAccess(
-        mockApi,
-        false,
-        accountId,
-        contentId,
-        accessControl,
-      );
-
+      });
       expect(access).toBe(ContentAccess.ViewTeamEditTeam);
+      expect(mockApi.getContent).not.toHaveBeenCalled();
+    });
+
+    it("uses both — public=true, org=disabled", async () => {
+      const access = await getAccess(mockApi, false, accountId, contentId, {
+        publicAccess: true,
+        organizationAccess: "disabled",
+      });
+      expect(access).toBe(ContentAccess.ViewPublicEditPrivate);
+      expect(mockApi.getContent).not.toHaveBeenCalled();
+    });
+
+    it("uses both — public=true, org=viewer", async () => {
+      const access = await getAccess(mockApi, false, accountId, contentId, {
+        publicAccess: true,
+        organizationAccess: "viewer",
+      });
+      expect(access).toBe(ContentAccess.ViewPublicEditPrivate);
+      expect(mockApi.getContent).not.toHaveBeenCalled();
+    });
+
+    it("uses both — public=true, org=editor", async () => {
+      const access = await getAccess(mockApi, false, accountId, contentId, {
+        publicAccess: true,
+        organizationAccess: "editor",
+      });
+      expect(access).toBe(ContentAccess.ViewPublicEditTeam);
       expect(mockApi.getContent).not.toHaveBeenCalled();
     });
 
@@ -405,7 +475,7 @@ describe("getAccess", () => {
       expect(mockApi.getContent).toHaveBeenCalledWith(contentId);
     });
 
-    it("merges publicAccess=false with server orgAccess=editor (ViewPublicEditTeam)", async () => {
+    it("merges publicAccess=false with server ViewPublicEditTeam (orgAccess=viewer)", async () => {
       vi.mocked(mockApi.getContent).mockResolvedValue({
         id: contentId,
         access: ContentAccess.ViewPublicEditTeam,
@@ -423,12 +493,12 @@ describe("getAccess", () => {
         accessControl,
       );
 
-      // Team edit should be preserved (orgAccess=editor derived from ViewPublicEditTeam)
-      expect(access).toBe(ContentAccess.ViewTeamEditTeam);
+      // ViewPublicEditTeam derives orgAccess=viewer (matching Go behavior)
+      expect(access).toBe(ContentAccess.ViewTeamEditPrivate);
       expect(mockApi.getContent).toHaveBeenCalledWith(contentId);
     });
 
-    it("merges publicAccess=true with server orgAccess=editor (ViewPublicEditTeam)", async () => {
+    it("merges publicAccess=true with server ViewPublicEditTeam (orgAccess=viewer)", async () => {
       vi.mocked(mockApi.getContent).mockResolvedValue({
         id: contentId,
         access: ContentAccess.ViewPublicEditTeam,
@@ -446,8 +516,8 @@ describe("getAccess", () => {
         accessControl,
       );
 
-      // Both public and team edit preserved
-      expect(access).toBe(ContentAccess.ViewPublicEditTeam);
+      // Public access preserved, orgAccess=viewer from ViewPublicEditTeam
+      expect(access).toBe(ContentAccess.ViewPublicEditPrivate);
       expect(mockApi.getContent).toHaveBeenCalledWith(contentId);
     });
 
@@ -492,6 +562,76 @@ describe("getAccess", () => {
       );
 
       expect(access).toBe(ContentAccess.ViewPublicEditTeam);
+      expect(mockApi.getContent).toHaveBeenCalledWith(contentId);
+    });
+
+    it("merges only publicAccess=true with existing ViewPrivateEditPrivate", async () => {
+      vi.mocked(mockApi.getContent).mockResolvedValue({
+        id: contentId,
+        access: ContentAccess.ViewPrivateEditPrivate,
+      } as ContentResponse);
+
+      const access = await getAccess(mockApi, false, accountId, contentId, {
+        publicAccess: true,
+      });
+
+      expect(access).toBe(ContentAccess.ViewPublicEditPrivate);
+      expect(mockApi.getContent).toHaveBeenCalledWith(contentId);
+    });
+
+    it("merges only publicAccess=false with existing ViewPublicEditPrivate", async () => {
+      vi.mocked(mockApi.getContent).mockResolvedValue({
+        id: contentId,
+        access: ContentAccess.ViewPublicEditPrivate,
+      } as ContentResponse);
+
+      const access = await getAccess(mockApi, false, accountId, contentId, {
+        publicAccess: false,
+      });
+
+      expect(access).toBe(ContentAccess.ViewPrivateEditPrivate);
+      expect(mockApi.getContent).toHaveBeenCalledWith(contentId);
+    });
+
+    it("merges only publicAccess=true with existing ViewTeamEditTeam", async () => {
+      vi.mocked(mockApi.getContent).mockResolvedValue({
+        id: contentId,
+        access: ContentAccess.ViewTeamEditTeam,
+      } as ContentResponse);
+
+      const access = await getAccess(mockApi, false, accountId, contentId, {
+        publicAccess: true,
+      });
+
+      expect(access).toBe(ContentAccess.ViewPublicEditTeam);
+      expect(mockApi.getContent).toHaveBeenCalledWith(contentId);
+    });
+
+    it("merges only publicAccess=false with existing ViewTeamEditTeam", async () => {
+      vi.mocked(mockApi.getContent).mockResolvedValue({
+        id: contentId,
+        access: ContentAccess.ViewTeamEditTeam,
+      } as ContentResponse);
+
+      const access = await getAccess(mockApi, false, accountId, contentId, {
+        publicAccess: false,
+      });
+
+      expect(access).toBe(ContentAccess.ViewTeamEditTeam);
+      expect(mockApi.getContent).toHaveBeenCalledWith(contentId);
+    });
+
+    it("merges only orgAccess=disabled with existing ViewPublicEditPrivate", async () => {
+      vi.mocked(mockApi.getContent).mockResolvedValue({
+        id: contentId,
+        access: ContentAccess.ViewPublicEditPrivate,
+      } as ContentResponse);
+
+      const access = await getAccess(mockApi, false, accountId, contentId, {
+        organizationAccess: "disabled",
+      });
+
+      expect(access).toBe(ContentAccess.ViewPublicEditPrivate);
       expect(mockApi.getContent).toHaveBeenCalledWith(contentId);
     });
   });
