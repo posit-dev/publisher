@@ -98,20 +98,11 @@ describe("parseDcf", () => {
       "Biobase",
       "DESCRIPTION",
     );
-    // expected.json uses the Go library mapper's expected output
-    const goTestdata = path.resolve(
-      __dirname,
-      "..",
-      "..",
-      "..",
-      "..",
-      "internal",
-      "inspect",
-      "dependencies",
-      "renv",
-      "testdata",
+    const expectedPath = path.join(
+      testdataDir,
+      "bioc_project",
+      "expected-library.json",
     );
-    const expectedPath = path.join(goTestdata, "bioc_project", "expected.json");
 
     const [descText, expectedJSON] = await Promise.all([
       readFile(descPath, "utf-8"),
