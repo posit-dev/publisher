@@ -1424,6 +1424,36 @@ describe("connectPublish — error classification", () => {
     expect(tomlContent).toContain("deployFailed");
   });
 
+  test("HTTP error includes server response body in message", async () => {
+    const api = makeMockApi();
+    const axiosErr = new AxiosError(
+      "Request failed with status code 422",
+      "ERR_BAD_REQUEST",
+      undefined,
+      undefined,
+      {
+        status: 422,
+        statusText: "Unprocessable Entity",
+        data: {
+          error_code: "INVALID_CONTENT",
+          message: "content type cannot be changed",
+        },
+        headers: {},
+        config: { headers: new AxiosHeaders() },
+      },
+    );
+    (api.uploadBundle as ReturnType<typeof vi.fn>).mockRejectedValue(axiosErr);
+
+    const opts = makeOptions({ api });
+
+    await expect(connectPublish(opts)).rejects.toThrow();
+
+    const lastWrite = mockWriteFile.mock.calls.at(-1);
+    const tomlContent = lastWrite![1] as string;
+    expect(tomlContent).toContain("Unexpected response from the server (422:");
+    expect(tomlContent).toContain("content type cannot be changed");
+  });
+
   test("certificate error classifies as errorCertificateVerification", async () => {
     const api = makeMockApi();
     const certErr = new AxiosError("certificate error");
