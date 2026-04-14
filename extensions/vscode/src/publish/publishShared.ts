@@ -168,17 +168,17 @@ export function recordToTomlObject(
     dashboard_url: record.dashboardUrl || undefined,
     direct_url: record.directUrl || undefined,
     logs_url: record.logsUrl || undefined,
+    connect_cloud: record.connectCloud
+      ? { account_name: record.connectCloud.accountName }
+      : undefined,
+    deployed_at: record.deployedAt || undefined,
     bundle_id: record.bundleId || undefined,
     bundle_url: record.bundleUrl || undefined,
     files: record.files || undefined,
     requirements: record.requirements || undefined,
     renv: record.renv || undefined,
-    deployed_at: record.deployedAt || undefined,
     dismissed_at: record.dismissedAt || undefined,
     deployment_error: record.deploymentError || undefined,
-    connect_cloud: record.connectCloud
-      ? { account_name: record.connectCloud.accountName }
-      : undefined,
   };
 }
 
