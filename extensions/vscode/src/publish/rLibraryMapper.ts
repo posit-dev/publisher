@@ -459,7 +459,7 @@ export async function libraryToManifestPackages(
   let lockfile: RenvLockfile;
   try {
     lockfile = JSON.parse(content);
-  } catch (err) {
+  } catch {
     throw new Error(`Failed to parse ${lockfilePath}: invalid JSON`);
   }
 
