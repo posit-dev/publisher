@@ -133,6 +133,8 @@ export async function connectCloudPublish(
     type: config.type,
     configName,
     config,
+    // Required by schema when server_type is "connect_cloud"
+    connectCloud: { accountName: credential.accountName },
   };
 
   let contentId = existingContentId;

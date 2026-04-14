@@ -107,6 +107,7 @@ export type PublishRecord = {
   deployedAt?: string;
   dismissedAt?: string;
   deploymentError?: { code: string; message: string; operation: string };
+  connectCloud?: { accountName: string };
 };
 
 export function setRecordContentInfo(
@@ -175,6 +176,9 @@ export function recordToTomlObject(
     deployed_at: record.deployedAt || undefined,
     dismissed_at: record.dismissedAt || undefined,
     deployment_error: record.deploymentError || undefined,
+    connect_cloud: record.connectCloud
+      ? { account_name: record.connectCloud.accountName }
+      : undefined,
   };
 }
 

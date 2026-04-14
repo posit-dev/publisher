@@ -258,6 +258,20 @@ describe("connectCloudPublish", () => {
     expect(opts.api.uploadBundle).toHaveBeenCalledOnce();
   });
 
+  test("writes connect_cloud section with account_name", async () => {
+    const opts = baseOptions();
+    const resultPromise = connectCloudPublish(opts);
+    await vi.runAllTimersAsync();
+    await resultPromise;
+
+    const lastWrite = mockWriteFile.mock.calls.at(-1);
+    expect(lastWrite).toBeDefined();
+    const content = lastWrite![1] as string;
+    expect(content).toContain("connect_cloud");
+    expect(content).toContain("account_name");
+    expect(content).toContain("my-account");
+  });
+
   test("revision failure throws with error details", async () => {
     const api = createMockApi();
     vi.mocked(api.getRevision).mockResolvedValue({
