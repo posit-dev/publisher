@@ -319,12 +319,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const config = this.state.findValidConfig(configurationName, projectDir);
 
     // Use TS publish path for plain Connect deployments that don't need
-    // Go-specific features (Connect Cloud, Snowflake, packagesFromLibrary).
-    if (
-      credential &&
-      config &&
-      canUseTsPublishPath(credential.serverType, config.configuration)
-    ) {
+    // Go-specific features (Connect Cloud, Snowflake routing handled separately).
+    if (credential && config && canUseTsPublishPath(credential.serverType)) {
       return await this.initiateTsDeployment(
         deploymentName,
         credential,

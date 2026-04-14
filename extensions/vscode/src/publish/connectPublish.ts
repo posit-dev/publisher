@@ -33,6 +33,7 @@ import {
   recordExtraDependencies,
   cleanupExtraDependencies,
 } from "./extraDependencies";
+import { libraryToManifestPackages } from "./rLibraryMapper";
 import { scanRPackages } from "../interpreters/rPackages";
 import type { RenvLockfile } from "./rPackageDescriptions";
 
@@ -1150,9 +1151,43 @@ async function buildManifest(
     const lockfileOnDisk = path.join(projectDir, packageFile);
     const lockExists = await fileExistsAt(lockfileOnDisk);
 
-    if (lockExists) {
-      // Use the existing lockfile directly
-      // TS always uses the lockfile mapper (renv.lock), never the library mapper
+    if (config.r.packagesFromLibrary && !lockExists) {
+      throw new Error(
+        `packages_from_library requires an renv.lock file (expected at ` +
+          `"${packageFile}"). Run renv::snapshot() to create one.`,
+      );
+    }
+
+    if (config.r.packagesFromLibrary && lockExists) {
+      // Library mapper — reads DESCRIPTION files from local R library
+      if (!rPath) {
+        throw new Error(
+          "R interpreter is required when packages_from_library is enabled, " +
+            "but none was found. Install R or disable packages_from_library.",
+        );
+      }
+      onProgress({
+        step: "createManifest",
+        status: "log",
+        message: "Loading packages from local R library",
+      });
+      manifest.packages = await libraryToManifestPackages(
+        projectDir,
+        config.r,
+        rPath,
+      );
+      // Also read the lockfile for deployment record metadata.
+      // This intentionally re-reads and re-parses the lockfile that
+      // libraryToManifestPackages already parsed internally, because that
+      // function only returns manifest packages (not the raw lockfile).
+      // The cost of the extra I/O is negligible for renv.lock files.
+      const resolved = await resolveRPackages(projectDir, config.r);
+      if (resolved) {
+        lockfilePath = resolved.lockfilePath;
+        lockfile = resolved.lockfile;
+      }
+    } else if (lockExists) {
+      // Lockfile mapper — extract packages from renv.lock directly
       onProgress({
         step: "createManifest",
         status: "log",

@@ -37,7 +37,7 @@ export function escapeForRString(s: string): string {
 
 /**
  * Run an R expression and return stdout.
- * Mirrors the runRScript pattern from rPackages.ts.
+ * Uses -s for clean output with no startup noise.
  */
 function runRExpression(
   rPath: string,
@@ -51,7 +51,8 @@ function runRExpression(
       {
         cwd,
         timeout: R_SUBPROCESS_TIMEOUT,
-        env: { ...process.env, RENV_CONFIG_AUTOLOADER_ENABLED: "FALSE" },
+        maxBuffer: 50 * 1024 * 1024, // 50 MB — available.packages() for CRAN exceeds the 1 MB default
+        env: process.env,
       },
       (error, stdout, stderr) => {
         if (error) {
@@ -77,7 +78,10 @@ export function parseLibPathsOutput(output: string): string[] {
 
 /**
  * Get the library paths where R packages are installed.
- * Mirrors Go's GetLibPaths().
+ * Explicitly sources renv/activate.R (if present) before querying
+ * .libPaths() so the project's renv library is included. This is
+ * necessary because -s skips .Rprofile where the renv
+ * autoloader normally lives.
  */
 export async function getLibPaths(
   rPath: string,
@@ -85,7 +89,7 @@ export async function getLibPaths(
 ): Promise<string[]> {
   const output = await runRExpression(
     rPath,
-    'cat(.libPaths(), sep="\\n")',
+    'invisible(tryCatch(source("renv/activate.R", local = TRUE), error = function(e) NULL)); cat(.libPaths(), sep = "\\n")',
     projectDir,
   );
   return parseLibPathsOutput(output);
@@ -105,16 +109,10 @@ export function buildAvailablePackagesCode(repos: Repository[]): string {
 
   // R script: query CRAN-style repos for available source packages,
   // then print each as "name version repoURL" on one line.
-  const availablePackagesCall = [
-    `pkgs <- available.packages(`,
-    `  repos = setNames(c(${urls}), c(${names})),`,
-    `  type = "source",`,
-    `  filters = c(getOption("rsconnect.available_packages_filters", default = c()), "duplicates")`,
-    `)`,
-  ].join("\n");
-
+  // Kept as a single-line expression with semicolons because multi-line
+  // -e arguments fail on Windows R ("unexpected end of input").
   return [
-    availablePackagesCall,
+    `pkgs <- available.packages(repos = setNames(c(${urls}), c(${names})), type = "source", filters = c(getOption("rsconnect.available_packages_filters", default = c()), "duplicates"))`,
     `info <- pkgs[, c("Package", "Version", "Repository")]`,
     `apply(info, 1, function(x) cat(x, sep = " ", collapse = "\\n"))`,
     `invisible()`,
@@ -167,15 +165,8 @@ export async function getBioconductorRepos(
 
   // R script: discover Bioconductor repo URLs via BiocManager or renv,
   // then print each as "name url" on one line.
-  const code = [
-    `if (requireNamespace("BiocManager", quietly = TRUE)`,
-    `    || requireNamespace("BiocInstaller", quietly = TRUE)) {`,
-    `  repos <- getFromNamespace("renv_bioconductor_repos", "renv")("${escapedDir}")`,
-    `  ; repos <- repos[setdiff(names(repos), "CRAN")]`,
-    `  ; cat(repos, labels = names(repos), fill = 1)`,
-    `  ; invisible()`,
-    `}`,
-  ].join("\n");
+  // Single-line to avoid Windows R -e parsing issues.
+  const code = `if (requireNamespace("BiocManager", quietly = TRUE) || requireNamespace("BiocInstaller", quietly = TRUE)) { repos <- getFromNamespace("renv_bioconductor_repos", "renv")("${escapedDir}"); repos <- repos[setdiff(names(repos), "CRAN")]; cat(repos, labels = names(repos), fill = 1); invisible() }`;
 
   const output = await runRExpression(rPath, code, projectDir);
   return parseBioconductorReposOutput(output);

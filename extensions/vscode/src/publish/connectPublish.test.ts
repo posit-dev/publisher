@@ -87,6 +87,13 @@ vi.mock("./dependencies", () => ({
   readPythonRequirements: vi.fn().mockResolvedValue(undefined),
 }));
 
+// Mock R library mapper
+vi.mock("./rLibraryMapper", () => ({
+  libraryToManifestPackages: vi
+    .fn()
+    .mockResolvedValue({ ggplot2: { description: { Package: "ggplot2" } } }),
+}));
+
 // Mock extra dependencies
 vi.mock("./extraDependencies", () => ({
   findExtraDependencies: vi.fn().mockResolvedValue([]),
@@ -1042,6 +1049,105 @@ describe("connectPublish — R package resolution", () => {
 
     expect(cleanupExtraDependencies).toHaveBeenCalledWith(
       "/projects/myapp/.posit/__publisher_deps.R",
+    );
+  });
+});
+
+describe("connectPublish — packagesFromLibrary", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  test("uses library mapper when packagesFromLibrary is true and lockfile exists", async () => {
+    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    vi.mocked(fileExistsAt).mockResolvedValue(true);
+
+    const { libraryToManifestPackages } = await import("./rLibraryMapper");
+    vi.mocked(libraryToManifestPackages).mockResolvedValue({
+      ggplot2: {
+        Source: "CRAN",
+        Repository: "https://cran.rstudio.com",
+        description: { Package: "ggplot2" },
+      },
+    });
+
+    const { resolveRPackages } = await import("./dependencies");
+    vi.mocked(resolveRPackages).mockResolvedValue({
+      packages: { ggplot2: { description: { Package: "ggplot2" } } },
+      lockfilePath: "/projects/myapp/renv.lock",
+      lockfile: {
+        R: { Version: "4.3.1", Repositories: [] },
+        Packages: {},
+      },
+    });
+
+    const config = makeConfig({
+      python: undefined,
+      type: ContentType.RMD,
+      r: {
+        version: "4.3.1",
+        packageFile: "renv.lock",
+        packageManager: "renv",
+        packagesFromLibrary: true,
+      },
+    });
+    const onProgress = vi.fn();
+    const opts = makeOptions({ config, rPath: "/usr/bin/R", onProgress });
+
+    await connectPublish(opts);
+
+    expect(libraryToManifestPackages).toHaveBeenCalledWith(
+      "/projects/myapp",
+      expect.objectContaining({ packagesFromLibrary: true }),
+      "/usr/bin/R",
+    );
+
+    const manifestLogs = onProgress.mock.calls
+      .map((args: unknown[]) => args[0] as PublishEvent)
+      .filter((e) => e.step === "createManifest" && e.status === "log");
+    const messages = manifestLogs.map((e) => e.message);
+    expect(messages).toContain("Loading packages from local R library");
+  });
+
+  test("throws when packagesFromLibrary is true but lockfile missing", async () => {
+    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    vi.mocked(fileExistsAt).mockResolvedValue(false);
+
+    const config = makeConfig({
+      python: undefined,
+      type: ContentType.RMD,
+      r: {
+        version: "4.3.1",
+        packageFile: "renv.lock",
+        packageManager: "renv",
+        packagesFromLibrary: true,
+      },
+    });
+    const opts = makeOptions({ config, rPath: "/usr/bin/R" });
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "packages_from_library requires an renv.lock file",
+    );
+  });
+
+  test("throws when packagesFromLibrary is true but no R interpreter", async () => {
+    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    vi.mocked(fileExistsAt).mockResolvedValue(true);
+
+    const config = makeConfig({
+      python: undefined,
+      type: ContentType.RMD,
+      r: {
+        version: "4.3.1",
+        packageFile: "renv.lock",
+        packageManager: "renv",
+        packagesFromLibrary: true,
+      },
+    });
+    const opts = makeOptions({ config, rPath: undefined });
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "R interpreter is required when packages_from_library is enabled",
     );
   });
 });
