@@ -294,9 +294,10 @@ describe("connectCloudPublish", () => {
     expect(messages).toContain("Local Python not in use");
   });
 
-  test("createManifest emits version messages in order when runtimes set", async () => {
+  test("createManifest emits version messages in order when all runtimes set", async () => {
     const onProgress = vi.fn();
     const config = makeConfig({
+      quarto: { version: "1.4.0", engines: ["jupyter"] },
       r: { version: "4.5.2", packageFile: "renv.lock", packageManager: "renv" },
       python: {
         version: "3.12.0",
@@ -327,7 +328,7 @@ describe("connectCloudPublish", () => {
 
     // Asserts content, count, AND order
     expect(versionMessages).toEqual([
-      "Local Quarto not in use",
+      "Local Quarto version 1.4.0",
       "Local R version 4.5.2",
       "Local Python version 3.12.0",
     ]);
