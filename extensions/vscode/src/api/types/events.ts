@@ -3,161 +3,118 @@
 import { ErrorCode } from "../../utils/errorTypes";
 import { ProductType } from "./contentRecords";
 
-export enum EventSourceReadyState {
-  CONNECTING = 0,
-  OPEN = 1,
-  CLOSED = 2,
-}
+// ---------------------------------------------------------------------------
+// Core event types
+// ---------------------------------------------------------------------------
 
-export enum EventStreamMessageType {
-  ERROR = "error",
-  LOG = "log",
-}
-
-export type MethodResult = {
-  ok: boolean;
+export interface EventStreamMessage<T = Record<string, string>> {
+  type: string;
+  time: string;
+  data: T;
+  errCode?: ErrorCode;
   error?: string;
-};
-
-export type EventStatus = {
-  isOpen?: boolean;
-  eventSource: string;
-  withCredentials?: boolean;
-  readyState?: EventSourceReadyState;
-  url: string | null;
-  lastError: string | null;
-};
-
-export type CallbackQueueEntry = {
-  eventType: EventSubscriptionTarget;
-  callback: OnMessageEventSourceCallback;
-};
-
-export type EventSubscriptionTarget = keyof EventSubscriptionTargetCallbackMap;
-
-/**
- * Mapping of event subscription targets to callback signatures.
- */
-export interface EventSubscriptionTargetCallbackMap {
-  // all events
-  "*": OnMessageEventSourceCallback;
-
-  // agent console log messages
-  "agent/log": OnAgentLogCallback;
-
-  // all errors
-  "errors/*": OnMessageEventSourceCallback;
-  "errors/sse": OnErrorsSseCallback;
-  "errors/open": OnErrorsOpenCallback;
-  "errors/unknownEvent": OnErrorsUnknownEventCallback;
-
-  // open events
-  "open/*": OnMessageEventSourceCallback;
-  "open/sse": OnOpenSseCallback;
-
-  // publish events
-  "publish/*": OnMessageEventSourceCallback;
-  "publish/**/log": OnMessageEventSourceCallback;
-  "publish/**/failure": OnMessageEventSourceCallback;
-  "publish/start": OnPublishStartCallback;
-
-  "publish/checkCapabilities/start": OnPublishCheckCapabilitiesStartCallback;
-  "publish/checkCapabilities/log": OnPublishCheckCapabilitiesLogCallback;
-  "publish/checkCapabilities/success": OnPublishCheckCapabilitiesSuccessCallback;
-  "publish/checkCapabilities/failure": OnPublishCheckCapabilitiesFailureCallback;
-
-  "publish/getRPackageDescriptions/start": OnMessageEventSourceCallback;
-  "publish/getRPackageDescriptions/log": OnMessageEventSourceCallback;
-  "publish/getRPackageDescriptions/success": OnMessageEventSourceCallback;
-  "publish/getRPackageDescriptions/failure": OnMessageEventSourceCallback;
-
-  // 'publish/createBundle/failure/authFailure' | // received but temporarily converted
-  "publish/createNewDeployment/start": OnPublishCreateNewDeploymentStartCallback;
-  "publish/createNewDeployment/log": OnMessageEventSourceCallback;
-  "publish/createNewDeployment/success": OnPublishCreateNewDeploymentSuccessCallback;
-  "publish/createNewDeployment/failure": OnPublishCreateNewDeploymentFailureCallback;
-
-  "publish/setEnvVars/start": OnPublishSetEnvVarsStartCallback;
-  "publish/setEnvVars/log": OnMessageEventSourceCallback;
-  "publish/setEnvVars/success": OnPublishSetEnvVarsSuccessCallback;
-  "publish/setEnvVars/failure": OnPublishSetEnvVarsFailureCallback;
-
-  "publish/createBundle/start": OnPublishCreateBundleStartCallback;
-  "publish/createBundle/log": OnPublishCreateBundleLogCallback;
-  "publish/createBundle/success": OnPublishCreateBundleSuccessCallback;
-  "publish/createBundle/failure": OnPublishCreateBundleFailureCallback;
-
-  "publish/createDeployment/start": OnPublishCreateDeploymentStartCallback;
-  "publish/createDeployment/log": OnPublishCreateDeploymentLogCallback;
-  "publish/createDeployment/success": OnPublishCreateDeploymentSuccessCallback;
-  "publish/createDeployment/failure": OnPublishCreateDeploymentFailureCallback;
-
-  "publish/deployContent/start": OnPublishDeployContentStartCallback;
-  "publish/deployContent/log": OnPublishDeployContentLogCallback;
-  "publish/deployContent/success": OnPublishDeployContentSuccessCallback;
-  "publish/deployContent/failure": OnPublishDeployContentFailureCallback;
-
-  "publish/updateContent/start": OnPublishUpdateContentStartCallback;
-  "publish/updateContent/log": OnPublishUpdateContentLogCallback;
-  "publish/updateContent/success": OnPublishUpdateContentSuccessCallback;
-  "publish/updateContent/failure": OnPublishUpdateContentFailureCallback;
-
-  "publish/uploadBundle/start": OnPublishUploadBundleStartCallback;
-  "publish/uploadBundle/log": OnPublishUploadBundleLogCallback;
-  "publish/uploadBundle/success": OnPublishUploadBundleSuccessCallback;
-  "publish/uploadBundle/failure": OnPublishUploadBundleFailureCallback;
-
-  "publish/deployBundle/start": OnPublishDeployBundleStartCallback;
-  "publish/deployBundle/log": OnPublishDeployBundleLogCallback;
-  "publish/deployBundle/success": OnPublishDeployBundleSuccessCallback;
-  "publish/deployBundle/failure": OnPublishDeployBundleFailureCallback;
-
-  "publish/restorePythonEnv/start": OnPublishRestorePythonEnvStartCallback;
-  "publish/restorePythonEnv/log": OnPublishRestorePythonEnvLogCallback;
-  "publish/restorePythonEnv/progress": OnPublishRestorePythonEnvProgressCallback;
-  "publish/restorePythonEnv/status": OnPublishRestorePythonEnvStatusCallback;
-  "publish/restorePythonEnv/success": OnPublishRestorePythonEnvSuccessCallback;
-  "publish/restorePythonEnv/failure": OnPublishRestorePythonEnvFailureCallback;
-  // 'publish/restorePythonEnv/failure/serverErr' | // received but temporarily converted
-
-  "publish/restoreREnv/start": OnPublishRestoreREnvStartCallback;
-  "publish/restoreREnv/log": OnPublishRestoreREnvLogCallback;
-  "publish/restoreREnv/progress": OnPublishRestoreREnvProgressCallback;
-  "publish/restoreREnv/status": OnPublishRestoreREnvStatusCallback;
-  "publish/restoreREnv/success": OnPublishRestoreREnvSuccessCallback;
-  "publish/restoreREnv/failure": OnPublishRestoreREnvFailureCallback;
-  // 'publish/restoreREnv/failure/serverErr' | // received but temporarily converted
-
-  // This set of messages originate here, and are built from the
-  // publish/restorePythonEnv and publish/restoreREnv messages
-  "publish/restoreEnv/start": OnPublishRestoreEnvStartCallback;
-  "publish/restoreEnv/log": OnPublishRestoreEnvLogCallback;
-  "publish/restoreEnv/progress": OnPublishRestoreEnvProgressCallback;
-  "publish/restoreEnv/status": OnPublishRestoreEnvStatusCallback;
-  "publish/restoreEnv/success": OnPublishRestoreEnvSuccessCallback;
-  "publish/restoreEnv/failure": OnPublishRestoreEnvFailureCallback;
-
-  "publish/runContent/start": OnPublishRunContentStartCallback;
-  "publish/runContent/log": OnPublishRunContentLogCallback;
-  "publish/runContent/status": OnMessageEventSourceCallback;
-  "publish/runContent/success": OnPublishRunContentSuccessCallback;
-  "publish/runContent/failure": OnPublishRunContentFailureCallback;
-
-  "publish/setVanityURL/start": OnPublishSetVanityURLStartCallback;
-  "publish/setVanityURL/log": OnPublishSetVanityURLLogCallback;
-  "publish/setVanityURL/success": OnPublishSetVanityURLSuccessCallback;
-  "publish/setVanityURL/failure": OnPublishSetVanityURLFailureCallback;
-
-  "publish/validateDeployment/start": OnPublishValidateDeploymentStartCallback;
-  "publish/validateDeployment/log": OnPublishValidateDeploymentLogCallback;
-  "publish/validateDeployment/success": OnPublishValidateDeploymentSuccessCallback;
-  "publish/validateDeployment/failure": OnPublishValidateDeploymentFailureCallback;
-
-  "publish/success": OnPublishSuccessCallback;
-  "publish/failure": OnPublishFailureCallback;
-
-  undefined: OnUndefinedMessageCallback;
 }
+
+// Events is the union type accepted by event type guards.
+export type Events =
+  | EventStreamMessage
+  | PublishSuccess
+  | PublishFailure
+  | PublishRestorePythonEnvStatus
+  | PublishRestoreREnvStatus
+  | PublishRestoreEnvStatus;
+
+// EventSubscriptionTarget represents the SSE event type string.
+export type EventSubscriptionTarget = string;
+
+// ---------------------------------------------------------------------------
+// Publish success / failure
+// ---------------------------------------------------------------------------
+
+interface PublishSuccessData {
+  localId: string;
+  contentId: string;
+  dashboardUrl: string;
+  directUrl: string;
+  serverUrl: string;
+  productType: ProductType;
+  [key: string]: string;
+}
+
+export interface PublishSuccess extends EventStreamMessage<PublishSuccessData> {
+  type: "publish/success";
+}
+
+export function isPublishSuccess(arg: Events): arg is PublishSuccess {
+  return arg.type === "publish/success";
+}
+
+interface PublishFailureData {
+  dashboardUrl: string;
+  url: string;
+  productType: ProductType;
+  canceled: string;
+  [key: string]: string;
+}
+
+export interface PublishFailure extends EventStreamMessage<PublishFailureData> {
+  type: "publish/failure";
+  error: string;
+}
+
+export function isPublishFailure(arg: Events): arg is PublishFailure {
+  return arg.type === "publish/failure";
+}
+
+// ---------------------------------------------------------------------------
+// Restore environment status events (used by eventMsgToString)
+// ---------------------------------------------------------------------------
+
+type packageRuntime = "r" | "python";
+type packageStatus = "download+install" | "download" | "install";
+
+interface RestoreEnvStatusData {
+  localId: string;
+  name: string;
+  runtime: packageRuntime;
+  status: packageStatus;
+  version: string;
+  [key: string]: string;
+}
+
+export interface PublishRestorePythonEnvStatus extends EventStreamMessage<RestoreEnvStatusData> {
+  type: "publish/restorePythonEnv/status";
+}
+
+function isPublishRestorePythonEnvStatus(
+  arg: Events,
+): arg is PublishRestorePythonEnvStatus {
+  return arg.type === "publish/restorePythonEnv/status";
+}
+
+export interface PublishRestoreREnvStatus extends EventStreamMessage<RestoreEnvStatusData> {
+  type: "publish/restoreREnv/status";
+}
+
+function isPublishRestoreREnvStatus(
+  arg: Events,
+): arg is PublishRestoreREnvStatus {
+  return arg.type === "publish/restoreREnv/status";
+}
+
+export interface PublishRestoreEnvStatus extends EventStreamMessage<RestoreEnvStatusData> {
+  type: "publish/restoreEnv/status";
+}
+
+export function isPublishRestoreEnvStatus(
+  arg: Events,
+): arg is PublishRestoreEnvStatus {
+  return arg.type === "publish/restoreEnv/status";
+}
+
+// ---------------------------------------------------------------------------
+// Event display helpers
+// ---------------------------------------------------------------------------
 
 export const restoreMsgToStatusSuffix = (
   msg:
@@ -172,22 +129,6 @@ export const restoreMsgToStatusSuffix = (
     suffix = `${suffix}...`;
   }
   return suffix;
-};
-
-export const eventMsgToString = (msg: EventStreamMessage): string => {
-  let suffix: string | undefined;
-  if (
-    isPublishRestorePythonEnvStatus(msg) ||
-    isPublishRestoreREnvStatus(msg) ||
-    isPublishRestoreEnvStatus(msg)
-  ) {
-    suffix = restoreMsgToStatusSuffix(msg);
-  }
-
-  if (suffix) {
-    return `${eventTypeToString(msg.type)} - ${suffix}`;
-  }
-  return eventTypeToString(msg.type);
 };
 
 type activeInactivePhrases = {
@@ -310,7 +251,7 @@ const eventVerbToString = new Map<string, activeInactivePhrases>([
   ],
 ]);
 
-export const eventTypeToString = (eventTypeStr: string): string => {
+const eventTypeToString = (eventTypeStr: string): string => {
   // we do not provide strings for wildcards
   if (eventTypeStr.includes("*")) {
     return eventTypeStr;
@@ -336,1143 +277,18 @@ export const eventTypeToString = (eventTypeStr: string): string => {
   return base.active;
 };
 
-export function getLocalId(arg: EventStreamMessage) {
-  return arg.data.localId;
-}
-
-export interface EventStreamMessage<T = Record<string, string>> {
-  type: EventSubscriptionTarget;
-  time: string;
-  data: T;
-  errCode?: ErrorCode;
-  error?: string;
-}
-
-export interface EventStreamMessageWithError extends EventStreamMessage {
-  error: string;
-}
-
-export function isErrorEventStreamMessage(
-  msg: EventStreamMessage,
-): msg is EventStreamMessageWithError {
-  return msg.error !== undefined;
-}
-
-export type OnMessageEventSourceCallback = <T extends EventStreamMessage>(
-  msg: T,
-) => void;
-
-export function isEventStreamMessage(o: object): o is EventStreamMessage {
-  return (
-    "type" in o &&
-    typeof o.type === "string" &&
-    "time" in o &&
-    typeof o.time === "string" &&
-    "data" in o &&
-    typeof o.data === "object"
-  );
-}
-
-// define interfaces which specialize an EventStreamMessage
-// and provide type guards for them to support proper typing.
-
-export interface AgentLog extends EventStreamMessage {
-  type: "agent/log";
-  // structured data not guaranteed, use selective or generic queries
-  // from data map
-}
-export type OnAgentLogCallback = (msg: AgentLog) => void;
-export function isAgentLog(arg: Events): arg is AgentLog {
-  return arg.type === "agent/log";
-}
-
-export interface ErrorsSse extends EventStreamMessage {
-  type: "errors/sse";
-}
-export type OnErrorsSseCallback = (msg: ErrorsSse) => void;
-export function isErrorsSse(arg: Events): arg is ErrorsSse {
-  return arg.type === "errors/sse";
-}
-
-export interface ErrorsOpen extends EventStreamMessage {
-  type: "errors/open";
-}
-export type OnErrorsOpenCallback = (msg: ErrorsOpen) => void;
-export function isErrorsOpen(arg: Events): arg is ErrorsOpen {
-  return arg.type === "errors/open";
-}
-
-export interface ErrorsUnknownEvent extends EventStreamMessage {
-  type: "errors/unknownEvent";
-}
-export type OnErrorsUnknownEventCallback = (msg: ErrorsUnknownEvent) => void;
-export function isErrorsUnknownEvent(arg: Events): arg is ErrorsUnknownEvent {
-  return arg.type === "errors/unknownEvent";
-}
-
-export interface OpenSse extends EventStreamMessage {
-  type: "open/sse";
-}
-export type OnOpenSseCallback = (msg: OpenSse) => void;
-export function isOpenSse(arg: Events): arg is OpenSse {
-  return arg.type === "open/sse";
-}
-
-export interface PublishStart extends EventStreamMessage {
-  type: "publish/start";
-  data: {
-    localId: string;
-    server: string;
-    productType: ProductType;
-  };
-}
-export type OnPublishStartCallback = (msg: PublishStart) => void;
-export function isPublishStart(arg: Events): arg is PublishStart {
-  return arg.type === "publish/start";
-}
-
-export interface PublishCheckCapabilitiesStart extends EventStreamMessage {
-  type: "publish/checkCapabilities/start";
-  data: {
-    localId: string;
-  };
-}
-export type OnPublishCheckCapabilitiesStartCallback = (
-  msg: PublishCheckCapabilitiesStart,
-) => void;
-export function isPublishCheckCapabilitiesStart(
-  arg: Events,
-): arg is PublishCheckCapabilitiesStart {
-  return arg.type === "publish/checkCapabilities/start";
-}
-
-export interface PublishCheckCapabilitiesLog extends EventStreamMessage {
-  type: "publish/checkCapabilities/log";
-  // structured data not guaranteed, use selective or generic queries
-  // from data map
-}
-export type OnPublishCheckCapabilitiesLogCallback = (
-  msg: PublishCheckCapabilitiesLog,
-) => void;
-export function isPublishCheckCapabilitiesLog(
-  arg: Events,
-): arg is PublishCheckCapabilitiesLog {
-  return arg.type === "publish/checkCapabilities/log";
-}
-
-export interface PublishCheckCapabilitiesSuccess extends EventStreamMessage {
-  type: "publish/checkCapabilities/success";
-  data: {
-    localId: string;
-  };
-}
-export type OnPublishCheckCapabilitiesSuccessCallback = (
-  msg: PublishCheckCapabilitiesSuccess,
-) => void;
-export function isPublishCheckCapabilitiesSuccess(
-  arg: Events,
-): arg is PublishCheckCapabilitiesSuccess {
-  return arg.type === "publish/checkCapabilities/success";
-}
-
-export interface PublishCheckCapabilitiesFailure extends EventStreamMessage {
-  type: "publish/checkCapabilities/failure";
-  error: string; // translated internally
-  // structured data not guaranteed, use selective or generic queries
-  // from data map
-}
-export type OnPublishCheckCapabilitiesFailureCallback = (
-  msg: PublishCheckCapabilitiesFailure,
-) => void;
-export function isPublishCheckCapabilitiesFailure(
-  arg: Events,
-): arg is PublishCheckCapabilitiesFailure {
-  return arg.type === "publish/checkCapabilities/failure";
-}
-
-export interface PublishCreateNewDeploymentStart extends EventStreamMessage {
-  type: "publish/createNewDeployment/start";
-  data: {
-    localId: string;
-    saveName: string;
-  };
-}
-export type OnPublishCreateNewDeploymentStartCallback = (
-  msg: PublishCreateNewDeploymentStart,
-) => void;
-export function isPublishCreateNewDeploymentStart(
-  arg: Events,
-): arg is PublishCreateNewDeploymentStart {
-  return arg.type === "publish/createNewDeployment/start";
-}
-
-export interface PublishCreateNewDeploymentSuccess extends EventStreamMessage {
-  type: "publish/createNewDeployment/success";
-  data: {
-    localId: string;
-    contentId: string;
-    saveName: string;
-  };
-}
-export type OnPublishCreateNewDeploymentSuccessCallback = (
-  msg: PublishCreateNewDeploymentSuccess,
-) => void;
-export function isPublishCreateNewDeploymentSuccess(
-  arg: Events,
-): arg is PublishCreateNewDeploymentSuccess {
-  return arg.type === "publish/createNewDeployment/success";
-}
-
-export interface PublishCreateNewDeploymentFailure extends EventStreamMessage {
-  type: "publish/createNewDeployment/failure";
-  error: string; // translated internally
-  // structured data not guaranteed, use selective or generic queries
-  // from data map
-}
-export type OnPublishCreateNewDeploymentFailureCallback = (
-  msg: PublishCreateNewDeploymentFailure,
-) => void;
-export function isPublishCreateNewDeploymentFailure(
-  arg: Events,
-): arg is PublishCreateNewDeploymentFailure {
-  return arg.type === "publish/createNewDeployment/failure";
-}
-
-export interface PublishSetEnvVarsStart extends EventStreamMessage {
-  type: "publish/setEnvVars/start";
-  data: {
-    localId: string;
-  };
-}
-export type OnPublishSetEnvVarsStartCallback = (
-  msg: PublishSetEnvVarsStart,
-) => void;
-export function isPublishSetEnvVarsStart(
-  arg: Events,
-): arg is PublishSetEnvVarsStart {
-  return arg.type === "publish/setEnvVars/start";
-}
-
-export interface PublishSetEnvVarsSuccess extends EventStreamMessage {
-  type: "publish/setEnvVars/success";
-  data: {
-    localId: string;
-    // should include echo of variables/values
-  };
-}
-export type OnPublishSetEnvVarsSuccessCallback = (
-  msg: PublishSetEnvVarsSuccess,
-) => void;
-export function isPublishSetEnvVarsSuccess(
-  arg: Events,
-): arg is PublishSetEnvVarsSuccess {
-  return arg.type === "publish/setEnvVars/success";
-}
-
-export interface PublishSetEnvVarsFailure extends EventStreamMessage {
-  type: "publish/setEnvVars/failure";
-  error: string; // translated internally
-  // structured data not guaranteed, use selective or generic queries
-  // from data map
-}
-export type OnPublishSetEnvVarsFailureCallback = (
-  msg: PublishSetEnvVarsFailure,
-) => void;
-export function isPublishSetEnvVarsFailure(
-  arg: Events,
-): arg is PublishSetEnvVarsFailure {
-  return arg.type === "publish/setEnvVars/failure";
-}
-
-export interface PublishCreateBundleStart extends EventStreamMessage {
-  type: "publish/createBundle/start";
-  data: {
-    localId: string;
-  };
-}
-export type OnPublishCreateBundleStartCallback = (
-  msg: PublishCreateBundleStart,
-) => void;
-export function isPublishCreateBundleStart(
-  arg: Events,
-): arg is PublishCreateBundleStart {
-  return arg.type === "publish/createBundle/start";
-}
-
-export interface PublishCreateBundleLog extends EventStreamMessage {
-  type: "publish/createBundle/log";
-  // structured data not guaranteed, use selective or generic queries
-  // from data map
-}
-export type OnPublishCreateBundleLogCallback = (
-  msg: PublishCreateBundleLog,
-) => void;
-export function isPublishCreateBundleLog(
-  arg: Events,
-): arg is PublishCreateBundleLog {
-  return arg.type === "publish/createBundle/log";
-}
-
-export interface PublishCreateBundleSuccess extends EventStreamMessage {
-  type: "publish/createBundle/success";
-  data: {
-    localId: string;
-    filename: string;
-  };
-}
-export type OnPublishCreateBundleSuccessCallback = (
-  msg: PublishCreateBundleSuccess,
-) => void;
-export function isPublishCreateBundleSuccess(
-  arg: Events,
-): arg is PublishCreateBundleSuccess {
-  return arg.type === "publish/createBundle/success";
-}
-
-export interface PublishCreateBundleFailure extends EventStreamMessage {
-  type: "publish/createBundle/failure";
-  error: string; // translated internally
-  // structured data not guaranteed, use selective or generic queries
-  // from data map
-}
-export type OnPublishCreateBundleFailureCallback = (
-  msg: PublishCreateBundleFailure,
-) => void;
-export function isPublishCreateBundleFailure(
-  arg: Events,
-): arg is PublishCreateBundleFailure {
-  return arg.type === "publish/createBundle/failure";
-}
-
-export interface PublishCreateDeploymentStart extends EventStreamMessage {
-  type: "publish/createDeployment/start";
-  data: {
-    localId: string;
-    contentId: string;
-    saveName: string;
-  };
-}
-export type OnPublishCreateDeploymentStartCallback = (
-  msg: PublishCreateDeploymentStart,
-) => void;
-export function isPublishCreateDeploymentStart(
-  arg: Events,
-): arg is PublishCreateDeploymentStart {
-  return arg.type === "publish/createDeployment/start";
-}
-
-export interface PublishCreateDeploymentLog extends EventStreamMessage {
-  type: "publish/createDeployment/log";
-}
-export type OnPublishCreateDeploymentLogCallback = (
-  msg: PublishCreateDeploymentLog,
-) => void;
-export function isPublishCreateDeploymentLog(
-  arg: Events,
-): arg is PublishCreateDeploymentLog {
-  return arg.type === "publish/createDeployment/log";
-}
-
-export interface PublishCreateDeploymentSuccess extends EventStreamMessage {
-  type: "publish/createDeployment/success";
-  data: {
-    localId: string;
-  };
-}
-export type OnPublishCreateDeploymentSuccessCallback = (
-  msg: PublishCreateDeploymentSuccess,
-) => void;
-export function isPublishCreateDeploymentSuccess(
-  arg: Events,
-): arg is PublishCreateDeploymentSuccess {
-  return arg.type === "publish/createDeployment/success";
-}
-
-export interface PublishCreateDeploymentFailure extends EventStreamMessage {
-  type: "publish/createDeployment/failure";
-  error: string; // translated internally
-  // structured data not guaranteed, use selective or generic queries
-  // from data map
-}
-export type OnPublishCreateDeploymentFailureCallback = (
-  msg: PublishCreateDeploymentFailure,
-) => void;
-export function isPublishCreateDeploymentFailure(
-  arg: Events,
-): arg is PublishCreateDeploymentFailure {
-  return arg.type === "publish/createDeployment/failure";
-}
-
-export interface PublishDeployContentStart extends EventStreamMessage {
-  type: "publish/deployContent/start";
-  data: {
-    localId: string;
-  };
-}
-export type OnPublishDeployContentStartCallback = (
-  msg: PublishDeployContentStart,
-) => void;
-export function isPublishDeployContentStart(
-  arg: Events,
-): arg is PublishDeployContentStart {
-  return arg.type === "publish/deployContent/start";
-}
-
-export interface PublishDeployContentLog extends EventStreamMessage {
-  type: "publish/deployContent/log";
-  data: {
-    localId: string;
-  };
-}
-export type OnPublishDeployContentLogCallback = (
-  msg: PublishDeployContentLog,
-) => void;
-export function isPublishDeployContentLog(
-  arg: Events,
-): arg is PublishDeployContentLog {
-  return arg.type === "publish/deployContent/log";
-}
-
-export interface PublishDeployContentSuccess extends EventStreamMessage {
-  type: "publish/deployContent/success";
-  data: {
-    localId: string;
-  };
-}
-export type OnPublishDeployContentSuccessCallback = (
-  msg: PublishDeployContentSuccess,
-) => void;
-export function isPublishDeployContentSuccess(
-  arg: Events,
-): arg is PublishDeployContentSuccess {
-  return arg.type === "publish/deployContent/success";
-}
-
-export interface PublishDeployContentFailure extends EventStreamMessage {
-  type: "publish/deployContent/failure";
-  error: string; // translated internally
-  // structured data not guaranteed, use selective or generic queries
-  // from data map
-}
-export type OnPublishDeployContentFailureCallback = (
-  msg: PublishDeployContentFailure,
-) => void;
-export function isPublishDeployContentFailure(
-  arg: Events,
-): arg is PublishDeployContentFailure {
-  return arg.type === "publish/deployContent/failure";
-}
-
-export interface PublishUpdateContentStart extends EventStreamMessage {
-  type: "publish/updateContent/start";
-  data: {
-    localId: string;
-  };
-}
-export type OnPublishUpdateContentStartCallback = (
-  msg: PublishUpdateContentStart,
-) => void;
-export function isPublishUpdateContentStart(
-  arg: Events,
-): arg is PublishUpdateContentStart {
-  return arg.type === "publish/updateContent/start";
-}
-export interface PublishUpdateContentLog extends EventStreamMessage {
-  type: "publish/updateContent/log";
-}
-export type OnPublishUpdateContentLogCallback = (
-  msg: PublishUpdateContentLog,
-) => void;
-export function isPublishUpdateContentLog(
-  arg: Events,
-): arg is PublishUpdateContentLog {
-  return arg.type === "publish/updateContent/log";
-}
-
-export interface PublishUpdateContentSuccess extends EventStreamMessage {
-  type: "publish/updateContent/success";
-  data: {
-    localId: string;
-  };
-}
-export type OnPublishUpdateContentSuccessCallback = (
-  msg: PublishUpdateContentSuccess,
-) => void;
-export function isPublishUpdateContentSuccess(
-  arg: Events,
-): arg is PublishUpdateContentSuccess {
-  return arg.type === "publish/updateContent/success";
-}
-
-export interface PublishUpdateContentFailure extends EventStreamMessage {
-  type: "publish/updateContent/failure";
-  error: string; // translated internally
-  // structured data not guaranteed, use selective or generic queries
-  // from data map
-}
-export type OnPublishUpdateContentFailureCallback = (
-  msg: PublishUpdateContentFailure,
-) => void;
-export function isPublishUpdateContentFailure(
-  arg: Events,
-): arg is PublishUpdateContentFailure {
-  return arg.type === "publish/updateContent/failure";
-}
-
-export interface PublishUploadBundleStart extends EventStreamMessage {
-  type: "publish/uploadBundle/start";
-  data: {
-    localId: string;
-  };
-}
-export type OnPublishUploadBundleStartCallback = (
-  msg: PublishUploadBundleStart,
-) => void;
-export function isPublishUploadBundleStart(
-  arg: Events,
-): arg is PublishUploadBundleStart {
-  return arg.type === "publish/uploadBundle/start";
-}
-
-export interface PublishUploadBundleLog extends EventStreamMessage {
-  type: "publish/uploadBundle/log";
-}
-export type OnPublishUploadBundleLogCallback = (
-  msg: PublishUploadBundleLog,
-) => void;
-export function isPublishUploadBundleLog(
-  arg: Events,
-): arg is PublishUploadBundleLog {
-  return arg.type === "publish/uploadBundle/log";
-}
-
-export interface PublishUploadBundleSuccess extends EventStreamMessage {
-  type: "publish/uploadBundle/success";
-  data: {
-    localId: string;
-    bundleId: string;
-  };
-}
-export type OnPublishUploadBundleSuccessCallback = (
-  msg: PublishUploadBundleSuccess,
-) => void;
-export function isPublishUploadBundleSuccess(
-  arg: Events,
-): arg is PublishUploadBundleSuccess {
-  return arg.type === "publish/uploadBundle/success";
-}
-
-export interface PublishUploadBundleFailure extends EventStreamMessage {
-  type: "publish/uploadBundle/failure";
-  error: string; // translated internally
-  // structured data not guaranteed, use selective or generic queries
-  // from data map
-}
-export type OnPublishUploadBundleFailureCallback = (
-  msg: PublishUploadBundleFailure,
-) => void;
-export function isPublishUploadBundleFailure(
-  arg: Events,
-): arg is PublishUploadBundleFailure {
-  return arg.type === "publish/uploadBundle/failure";
-}
-
-export interface PublishDeployBundleStart extends EventStreamMessage {
-  type: "publish/deployBundle/start";
-  data: {
-    localId: string;
-  };
-}
-export type OnPublishDeployBundleStartCallback = (
-  msg: PublishDeployBundleStart,
-) => void;
-export function isPublishDeployBundleStart(
-  arg: Events,
-): arg is PublishDeployBundleStart {
-  return arg.type === "publish/deployBundle/start";
-}
-
-export interface PublishDeployBundleLog extends EventStreamMessage {
-  type: "publish/deployBundle/log";
-}
-export type OnPublishDeployBundleLogCallback = (
-  msg: PublishDeployBundleLog,
-) => void;
-export function isPublishDeployBundleLog(
-  arg: Events,
-): arg is PublishDeployBundleLog {
-  return arg.type === "publish/deployBundle/log";
-}
-
-export interface PublishDeployBundleSuccess extends EventStreamMessage {
-  type: "publish/deployBundle/success";
-  data: {
-    localId: string;
-    taskId: string;
-  };
-}
-export type OnPublishDeployBundleSuccessCallback = (
-  msg: PublishDeployBundleSuccess,
-) => void;
-export function isPublishDeployBundleSuccess(
-  arg: Events,
-): arg is PublishDeployBundleSuccess {
-  return arg.type === "publish/deployBundle/success";
-}
-
-export interface PublishDeployBundleFailure extends EventStreamMessage {
-  type: "publish/deployBundle/failure";
-  error: string; // translated internally
-  // structured data not guaranteed, use selective or generic queries
-  // from data map
-}
-export type OnPublishDeployBundleFailureCallback = (
-  msg: PublishDeployBundleFailure,
-) => void;
-export function isPublishDeployBundleFailure(
-  arg: Events,
-): arg is PublishDeployBundleFailure {
-  return arg.type === "publish/deployBundle/failure";
-}
-
-export interface PublishRestorePythonEnvStart extends EventStreamMessage {
-  type: "publish/restorePythonEnv/start";
-  data: {
-    localId: string;
-  };
-}
-export type OnPublishRestorePythonEnvStartCallback = (
-  msg: PublishRestorePythonEnvStart,
-) => void;
-export function isPublishRestorePythonEnvStart(
-  arg: Events,
-): arg is PublishRestorePythonEnvStart {
-  return arg.type === "publish/restorePythonEnv/start";
-}
-
-export interface PublishRestorePythonEnvLog extends EventStreamMessage {
-  type: "publish/restorePythonEnv/log";
-  // structured data not guaranteed, use selective or generic queries
-  // from data map
-}
-export type OnPublishRestorePythonEnvLogCallback = (
-  msg: PublishRestorePythonEnvLog,
-) => void;
-export function isPublishRestorePythonEnvLog(
-  arg: Events,
-): arg is PublishRestorePythonEnvLog {
-  return arg.type === "publish/restorePythonEnv/log";
-}
-
-export interface PublishRestorePythonEnvProgress extends EventStreamMessage {
-  type: "publish/restorePythonEnv/progress";
-  // structured data not guaranteed, use selective or generic queries
-  // from data map
-}
-export type OnPublishRestorePythonEnvProgressCallback = (
-  msg: PublishRestorePythonEnvProgress,
-) => void;
-export function isPublishRestorePythonEnvProgress(
-  arg: Events,
-): arg is PublishRestorePythonEnvProgress {
-  return arg.type === "publish/restorePythonEnv/progress";
-}
-
-type packageRuntime = "r" | "python";
-type packageStatus = "download+install" | "download" | "install";
-
-export interface PublishRestorePythonEnvStatus extends EventStreamMessage {
-  type: "publish/restorePythonEnv/status";
-  data: {
-    localId: string;
-    name: string;
-    runtime: packageRuntime;
-    status: packageStatus;
-    version: string;
-  };
-}
-export type OnPublishRestorePythonEnvStatusCallback = (
-  msg: PublishRestorePythonEnvStatus,
-) => void;
-export function isPublishRestorePythonEnvStatus(
-  arg: Events,
-): arg is PublishRestorePythonEnvStatus {
-  return arg.type === "publish/restorePythonEnv/status";
-}
-
-export interface PublishRestorePythonEnvSuccess extends EventStreamMessage {
-  type: "publish/restorePythonEnv/success";
-  data: {
-    localId: string;
-  };
-}
-export type OnPublishRestorePythonEnvSuccessCallback = (
-  msg: PublishRestorePythonEnvSuccess,
-) => void;
-export function isPublishRestorePythonEnvSuccess(
-  arg: Events,
-): arg is PublishRestorePythonEnvSuccess {
-  return arg.type === "publish/restorePythonEnv/success";
-}
-
-export interface PublishRestorePythonEnvFailure extends EventStreamMessage {
-  type: "publish/restorePythonEnv/failure";
-  error: string; // translated internally
-  // structured data not guaranteed, use selective or generic queries
-  // from data map
-}
-export type OnPublishRestorePythonEnvFailureCallback = (
-  msg: PublishRestorePythonEnvFailure,
-) => void;
-export function isPublishRestorePythonEnvFailure(
-  arg: Events,
-): arg is PublishRestorePythonEnvFailure {
-  return arg.type === "publish/restorePythonEnv/failure";
-}
-
-export interface PublishRestoreREnvStart extends EventStreamMessage {
-  type: "publish/restoreREnv/start";
-  data: {
-    localId: string;
-  };
-}
-export type OnPublishRestoreREnvStartCallback = (
-  msg: PublishRestoreREnvStart,
-) => void;
-export function isPublishRestoreREnvStart(
-  arg: Events,
-): arg is PublishRestoreREnvStart {
-  return arg.type === "publish/restoreREnv/start";
-}
-
-export interface PublishRestoreREnvLog extends EventStreamMessage {
-  type: "publish/restoreREnv/log";
-  // structured data not guaranteed, use selective or generic queries
-  // from data map
-}
-export type OnPublishRestoreREnvLogCallback = (
-  msg: PublishRestoreREnvLog,
-) => void;
-export function isPublishRestoreREnvLog(
-  arg: Events,
-): arg is PublishRestoreREnvLog {
-  return arg.type === "publish/restoreREnv/log";
-}
-
-export interface PublishRestoreREnvProgress extends EventStreamMessage {
-  type: "publish/restoreREnv/progress";
-  // structured data not guaranteed, use selective or generic queries
-  // from data map
-}
-export type OnPublishRestoreREnvProgressCallback = (
-  msg: PublishRestoreREnvProgress,
-) => void;
-export function isPublishRestoreREnvProgress(
-  arg: Events,
-): arg is PublishRestoreREnvProgress {
-  return arg.type === "publish/restoreREnv/progress";
-}
-
-export interface PublishRestoreREnvStatus extends EventStreamMessage {
-  type: "publish/restorePythonEnv/status";
-  data: {
-    localId: string;
-    name: string;
-    runtime: packageRuntime;
-    status: packageStatus;
-    version: string;
-  };
-}
-export type OnPublishRestoreREnvStatusCallback = (
-  msg: PublishRestoreREnvStatus,
-) => void;
-export function isPublishRestoreREnvStatus(
-  arg: Events,
-): arg is PublishRestoreREnvStatus {
-  return arg.type === "publish/restoreREnv/status";
-}
-
-export interface PublishRestoreREnvSuccess extends EventStreamMessage {
-  type: "publish/restoreREnv/success";
-  data: {
-    localId: string;
-  };
-}
-export type OnPublishRestoreREnvSuccessCallback = (
-  msg: PublishRestoreREnvSuccess,
-) => void;
-export function isPublishRestoreREnvSuccess(
-  arg: Events,
-): arg is PublishRestoreREnvSuccess {
-  return arg.type === "publish/restoreREnv/success";
-}
-
-export interface PublishRestoreREnvFailure extends EventStreamMessage {
-  type: "publish/restoreREnv/failure";
-  error: string; // translated internally
-  // structured data not guaranteed, use selective or generic queries
-  // from data map
-}
-export type OnPublishRestoreREnvFailureCallback = (
-  msg: PublishRestoreREnvFailure,
-) => void;
-export function isPublishRestoreREnvFailure(
-  arg: Events,
-): arg is PublishRestoreREnvFailure {
-  return arg.type === "publish/restoreREnv/failure";
-}
-
-export interface PublishRestoreEnvStart extends EventStreamMessage {
-  type: "publish/restoreEnv/start";
-  data: {
-    localId: string;
-  };
-}
-export type OnPublishRestoreEnvStartCallback = (
-  msg: PublishRestoreEnvStart,
-) => void;
-export function isPublishRestoreEnvStart(
-  arg: Events,
-): arg is PublishRestoreEnvStart {
-  return arg.type === "publish/restoreEnv/start";
-}
-
-export interface PublishRestoreEnvLog extends EventStreamMessage {
-  type: "publish/restoreEnv/log";
-  // structured data not guaranteed, use selective or generic queries
-  // from data map
-}
-export type OnPublishRestoreEnvLogCallback = (
-  msg: PublishRestoreEnvLog,
-) => void;
-export function isPublishRestoreEnvLog(
-  arg: Events,
-): arg is PublishRestoreEnvLog {
-  return arg.type === "publish/restoreEnv/log";
-}
-
-export interface PublishRestoreEnvProgress extends EventStreamMessage {
-  type: "publish/restoreEnv/progress";
-  // structured data not guaranteed, use selective or generic queries
-  // from data map
-}
-export type OnPublishRestoreEnvProgressCallback = (
-  msg: PublishRestoreEnvProgress,
-) => void;
-export function isPublishRestoreEnvProgress(
-  arg: Events,
-): arg is PublishRestoreEnvProgress {
-  return arg.type === "publish/restoreEnv/progress";
-}
-
-export interface PublishRestoreEnvStatus extends EventStreamMessage {
-  type: "publish/restorePythonEnv/status";
-  data: {
-    localId: string;
-    name: string;
-    runtime: packageRuntime;
-    status: packageStatus;
-    version: string;
-  };
-}
-export type OnPublishRestoreEnvStatusCallback = (
-  msg: PublishRestoreEnvStatus,
-) => void;
-export function isPublishRestoreEnvStatus(
-  arg: Events,
-): arg is PublishRestoreEnvStatus {
-  return arg.type === "publish/restoreEnv/status";
-}
-
-export interface PublishRestoreEnvSuccess extends EventStreamMessage {
-  type: "publish/restoreEnv/success";
-  data: {
-    localId: string;
-  };
-}
-export type OnPublishRestoreEnvSuccessCallback = (
-  msg: PublishRestoreEnvSuccess,
-) => void;
-export function isPublishRestoreEnvSuccess(
-  arg: Events,
-): arg is PublishRestoreEnvSuccess {
-  return arg.type === "publish/restoreEnv/success";
-}
-
-export interface PublishRestoreEnvFailure extends EventStreamMessage {
-  type: "publish/restoreEnv/failure";
-  error: string; // translated internally
-  // structured data not guaranteed, use selective or generic queries
-  // from data map
-}
-export type OnPublishRestoreEnvFailureCallback = (
-  msg: PublishRestoreEnvFailure,
-) => void;
-export function isPublishRestoreEnvFailure(
-  arg: Events,
-): arg is PublishRestoreEnvFailure {
-  return arg.type === "publish/restoreEnv/failure";
-}
-
-export interface PublishRunContentStart extends EventStreamMessage {
-  type: "publish/runContent/start";
-  data: {
-    localId: string;
-  };
-}
-export type OnPublishRunContentStartCallback = (
-  msg: PublishRunContentStart,
-) => void;
-export function isPublishRunContentStart(
-  arg: Events,
-): arg is PublishRunContentStart {
-  return arg.type === "publish/runContent/start";
-}
-
-export interface PublishRunContentLog extends EventStreamMessage {
-  type: "publish/runContent/log";
-  // structured data not guaranteed, use selective or generic queries
-  // from data map
-}
-export type OnPublishRunContentLogCallback = (
-  msg: PublishRunContentLog,
-) => void;
-export function isPublishRunContentLog(
-  arg: Events,
-): arg is PublishRunContentLog {
-  return arg.type === "publish/runContent/log";
-}
-
-export interface PublishRunContentSuccess extends EventStreamMessage {
-  type: "publish/runContent/success";
-  data: {
-    localId: string;
-  };
-}
-export type OnPublishRunContentSuccessCallback = (
-  msg: PublishRunContentSuccess,
-) => void;
-export function isPublishRunContentSuccess(
-  arg: Events,
-): arg is PublishRunContentSuccess {
-  return arg.type === "publish/runContent/success";
-}
-
-export interface PublishRunContentFailure extends EventStreamMessage {
-  type: "publish/runContent/failure";
-  error: string; // translated internally
-  // structured data not guaranteed, use selective or generic queries
-  // from data map
-}
-export type OnPublishRunContentFailureCallback = (
-  msg: PublishRunContentFailure,
-) => void;
-export function isPublishRunContentFailure(
-  arg: Events,
-): arg is PublishRestorePythonEnvFailure {
-  return arg.type === "publish/runContent/failure";
-}
-
-export interface PublishSetVanityURLStart extends EventStreamMessage {
-  type: "publish/setVanityURL/start";
-  data: {
-    localId: string;
-  };
-}
-export type OnPublishSetVanityURLStartCallback = (
-  msg: PublishSetVanityURLStart,
-) => void;
-export function isPublishSetVanityURLStart(
-  arg: Events,
-): arg is PublishSetVanityURLStart {
-  return arg.type === "publish/setVanityURL/start";
-}
-
-export interface PublishSetVanityURLLog extends EventStreamMessage {
-  type: "publish/setVanityURL/log";
-  // structured data not guaranteed, use selective or generic queries
-  // from data map
-}
-export type OnPublishSetVanityURLLogCallback = (
-  msg: PublishSetVanityURLLog,
-) => void;
-export function isPublishSetVanityURLLog(
-  arg: Events,
-): arg is PublishSetVanityURLLog {
-  return arg.type === "publish/setVanityURL/log";
-}
-
-export interface PublishSetVanityURLSuccess extends EventStreamMessage {
-  type: "publish/setVanityURL/success";
-  data: {
-    localId: string;
-  };
-}
-export type OnPublishSetVanityURLSuccessCallback = (
-  msg: PublishSetVanityURLSuccess,
-) => void;
-export function isPublishSetVanityURLSuccess(
-  arg: Events,
-): arg is PublishSetVanityURLSuccess {
-  return arg.type === "publish/setVanityURL/success";
-}
-
-export interface PublishSetVanityURLFailure extends EventStreamMessage {
-  type: "publish/setVanityURL/failure";
-  error: string; // translated internally
-  // structured data not guaranteed, use selective or generic queries
-  // from data map
-}
-export type OnPublishSetVanityURLFailureCallback = (
-  msg: PublishSetVanityURLFailure,
-) => void;
-export function isPublishSetVanityURLFailure(
-  arg: Events,
-): arg is PublishRestorePythonEnvFailure {
-  return arg.type === "publish/setVanityURL/failure";
-}
-export interface PublishValidateDeploymentStart extends EventStreamMessage {
-  type: "publish/validateDeployment/start";
-  data: {
-    localId: string;
-    url: string;
-  };
-}
-export type OnPublishValidateDeploymentStartCallback = (
-  msg: PublishValidateDeploymentStart,
-) => void;
-export function isPublishValidateDeploymentStart(
-  arg: Events,
-): arg is PublishValidateDeploymentStart {
-  return arg.type === "publish/validateDeployment/start";
-}
-
-export interface PublishValidateDeploymentLog extends EventStreamMessage {
-  type: "publish/validateDeployment/log";
-  // structured data not guaranteed, use selective or generic queries
-  // from data map
-}
-export type OnPublishValidateDeploymentLogCallback = (
-  msg: PublishValidateDeploymentLog,
-) => void;
-export function isPublishValidateDeploymentLog(
-  arg: Events,
-): arg is PublishValidateDeploymentLog {
-  return arg.type === "publish/validateDeployment/log";
-}
-
-export interface PublishValidateDeploymentSuccess extends EventStreamMessage {
-  type: "publish/validateDeployment/success";
-  data: {
-    localId: string;
-  };
-}
-export type OnPublishValidateDeploymentSuccessCallback = (
-  msg: PublishValidateDeploymentSuccess,
-) => void;
-export function isPublisValidateDeploymentSuccess(
-  arg: Events,
-): arg is PublishValidateDeploymentSuccess {
-  return arg.type === "publish/validateDeployment/success";
-}
-
-export interface PublishValidateDeploymentFailure extends EventStreamMessage {
-  type: "publish/validateDeployment/failure";
-  error: string; // translated internally
-  // structured data not guaranteed, use selective or generic queries
-  // from data map
-}
-export type OnPublishValidateDeploymentFailureCallback = (
-  msg: PublishValidateDeploymentFailure,
-) => void;
-export function isPublishValidateDeploymentFailure(
-  arg: Events,
-): arg is PublishValidateDeploymentFailure {
-  return arg.type === "publish/validateDeployment/failure";
-}
-
-export interface PublishSuccess extends EventStreamMessage {
-  type: "publish/success";
-  data: {
-    localId: string;
-    contentId: string;
-    dashboardUrl: string;
-    directUrl: string;
-    serverUrl: string;
-    productType: ProductType;
-  };
-}
-export type OnPublishSuccessCallback = (msg: PublishSuccess) => void;
-export function isPublishSuccess(arg: Events): arg is PublishSuccess {
-  return arg.type === "publish/success";
-}
-
-export interface PublishFailure extends EventStreamMessage {
-  type: "publish/failure";
-  data: {
-    dashboardUrl: string;
-    url: string;
-    productType: ProductType;
-    canceled?: string; // not defined if not user canceled. Value of "true" if true.
-    // and other non-defined attributes
-  };
-  error: string; // translated internally
-}
-
-export type OnPublishFailureCallback = (msg: PublishFailure) => void;
-export function isPublishFailure(arg: Events): arg is PublishFailure {
-  return arg.type === "publish/failure";
-}
-
-export interface UndefinedMessage extends EventStreamMessage {
-  type: "undefined";
-  data: {
-    msgType: string;
-  };
-}
-
-export type OnUndefinedMessageCallback = (msg: UndefinedMessage) => void;
-export function isUndefinedMessage(arg: Events): arg is PublishFailure {
-  return arg.type === "undefined";
-}
-
-// Events are a union type of our base and our extended interfaces
-export type Events =
-  | EventStreamMessage
-  | AgentLog
-  | ErrorsSse
-  | ErrorsOpen
-  | ErrorsUnknownEvent
-  | OpenSse
-  | PublishStart
-  | PublishCreateBundleStart
-  | PublishCreateBundleLog
-  | PublishCreateBundleSuccess
-  | PublishCreateBundleFailure
-  | PublishCreateDeploymentStart
-  | PublishCreateDeploymentSuccess
-  | PublishCreateDeploymentFailure
-  | PublishDeployContentStart
-  | PublishDeployContentLog
-  | PublishDeployContentSuccess
-  | PublishDeployContentFailure
-  | PublishUpdateContentStart
-  | PublishUpdateContentLog
-  | PublishUpdateContentSuccess
-  | PublishUpdateContentFailure
-  | PublishUploadBundleStart
-  | PublishUploadBundleSuccess
-  | PublishUploadBundleFailure
-  | PublishDeployBundleStart
-  | PublishDeployBundleSuccess
-  | PublishDeployBundleFailure
-  | PublishRestorePythonEnvStart
-  | PublishRestorePythonEnvLog
-  | PublishRestorePythonEnvSuccess
-  | PublishRestorePythonEnvFailure
-  | PublishRunContentStart
-  | PublishRunContentLog
-  | PublishRunContentSuccess
-  | PublishRunContentFailure
-  | PublishSuccess
-  | PublishFailure;
+export const eventMsgToString = (msg: EventStreamMessage): string => {
+  let suffix: string | undefined;
+  if (
+    isPublishRestorePythonEnvStatus(msg) ||
+    isPublishRestoreREnvStatus(msg) ||
+    isPublishRestoreEnvStatus(msg)
+  ) {
+    suffix = restoreMsgToStatusSuffix(msg);
+  }
+
+  if (suffix) {
+    return `${eventTypeToString(msg.type)} - ${suffix}`;
+  }
+  return eventTypeToString(msg.type);
+};

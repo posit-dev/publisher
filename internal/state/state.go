@@ -86,13 +86,6 @@ func loadAccount(accountName string, accountList accounts.AccountList) (*account
 	}
 }
 
-func Empty() *State {
-	return &State{
-		Account: &accounts.Account{},
-		Config:  &config.Config{},
-	}
-}
-
 var ErrServerURLMismatch = errors.New("the account provided is for a different server; it must match the server for this deployment")
 
 func New(
