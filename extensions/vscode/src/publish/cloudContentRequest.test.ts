@@ -15,6 +15,7 @@ import type {
   ConfigurationDetails,
   ConnectCloudAccessControl,
 } from "../api/types/configurations";
+import { ProductType } from "../api/types/contentRecords";
 import {
   cloudContentTypeFromPublisherType,
   getCloudContentInfo,
@@ -647,7 +648,7 @@ describe("buildCreateContentRequest", () => {
   it("builds a complete create request", () => {
     const config: ConfigurationDetails = {
       $schema: "https://example.com/schema",
-      productType: "connect-cloud" as any,
+      productType: ProductType.CONNECT_CLOUD,
       type: ContentType.PYTHON_DASH,
       title: "My Dashboard",
       description: "A test dashboard",
@@ -714,7 +715,7 @@ describe("buildCreateContentRequest", () => {
   it("uses saveName when title is not provided", () => {
     const config: ConfigurationDetails = {
       $schema: "https://example.com/schema",
-      productType: "connect-cloud" as any,
+      productType: ProductType.CONNECT_CLOUD,
       type: ContentType.PYTHON_DASH,
       entrypoint: "app.py",
       validate: true,
@@ -736,7 +737,7 @@ describe("buildUpdateContentRequest", () => {
   it("builds a complete update request with revision_overrides", () => {
     const config: ConfigurationDetails = {
       $schema: "https://example.com/schema",
-      productType: "connect-cloud" as any,
+      productType: ProductType.CONNECT_CLOUD,
       type: ContentType.R_SHINY,
       title: "My Shiny App",
       description: "Updated description",
@@ -769,7 +770,7 @@ describe("buildUpdateContentRequest", () => {
   it("handles undefined access for redeploy", () => {
     const config: ConfigurationDetails = {
       $schema: "https://example.com/schema",
-      productType: "connect-cloud" as any,
+      productType: ProductType.CONNECT_CLOUD,
       type: ContentType.HTML,
       validate: true,
     };
