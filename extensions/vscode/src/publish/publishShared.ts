@@ -163,14 +163,14 @@ export function recordToTomlObject(
     created_at: record.createdAt,
     type: record.type,
     configuration_name: record.configName,
+    connect_cloud: record.connectCloud
+      ? { account_name: record.connectCloud.accountName }
+      : undefined,
     configuration,
     id: record.id || undefined,
     dashboard_url: record.dashboardUrl || undefined,
     direct_url: record.directUrl || undefined,
     logs_url: record.logsUrl || undefined,
-    connect_cloud: record.connectCloud
-      ? { account_name: record.connectCloud.accountName }
-      : undefined,
     deployed_at: record.deployedAt || undefined,
     bundle_id: record.bundleId || undefined,
     bundle_url: record.bundleUrl || undefined,
