@@ -493,6 +493,7 @@ export async function connectCloudPublish(
     await throwIfCanceled();
 
     // Steps 6 & 7: Watch logs + await completion (concurrent)
+    lastStep = "watchLogs";
     onProgress({
       step: "watchLogs",
       status: "log",
