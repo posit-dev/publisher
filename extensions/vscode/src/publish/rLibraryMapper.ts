@@ -456,7 +456,12 @@ export async function libraryToManifestPackages(
   const lockfilePath = path.join(projectDir, packageFile);
 
   const content = await readFile(lockfilePath, "utf-8");
-  const lockfile: RenvLockfile = JSON.parse(content);
+  let lockfile: RenvLockfile;
+  try {
+    lockfile = JSON.parse(content);
+  } catch (err) {
+    throw new Error(`Failed to parse ${lockfilePath}: invalid JSON`);
+  }
 
   if (!lockfile.R?.Repositories?.length) {
     throw new Error(
