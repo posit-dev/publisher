@@ -318,7 +318,7 @@ export function getAccess(
     return getAccessForFirstDeploy(api, accountId, accessControl);
   } else {
     if (!contentId) {
-      throw new Error("contentId required for redeploy");
+      return Promise.reject(new Error("contentId required for redeploy"));
     }
     return getAccessForRedeploy(api, contentId, accessControl);
   }

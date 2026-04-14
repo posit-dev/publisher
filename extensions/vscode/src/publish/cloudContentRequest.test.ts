@@ -371,6 +371,12 @@ describe("getAccess", () => {
   });
 
   describe("redeploy", () => {
+    it("rejects when contentId is missing", async () => {
+      await expect(
+        getAccess(mockApi, false, accountId, undefined, undefined),
+      ).rejects.toThrow("contentId required for redeploy");
+    });
+
     it("returns undefined when no accessControl", async () => {
       const access = await getAccess(
         mockApi,
