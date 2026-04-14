@@ -195,6 +195,21 @@ export async function connectCloudPublish(
     onProgress({
       step: "createManifest",
       status: "log",
+      message: manifest.quarto?.version
+        ? `Local Quarto version ${manifest.quarto.version}`
+        : "Local Quarto not in use",
+    });
+    onProgress({
+      step: "createManifest",
+      status: "log",
+      // manifest.platform holds the R version in the Posit manifest spec
+      message: manifest.platform
+        ? `Local R version ${manifest.platform}`
+        : "Local R not in use",
+    });
+    onProgress({
+      step: "createManifest",
+      status: "log",
       message: manifest.python?.version
         ? `Local Python version ${manifest.python.version}`
         : "Local Python not in use",

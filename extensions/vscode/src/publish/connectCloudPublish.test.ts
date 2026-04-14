@@ -272,6 +272,67 @@ describe("connectCloudPublish", () => {
     expect(content).toContain("my-account");
   });
 
+  test("createManifest emits 'not in use' for missing runtimes", async () => {
+    const onProgress = vi.fn();
+    // Default config has no python, r, or quarto
+    const opts = baseOptions({ onProgress });
+
+    const resultPromise = connectCloudPublish(opts);
+    await vi.runAllTimersAsync();
+    await resultPromise;
+
+    const events = onProgress.mock.calls.map(
+      (args: unknown[]) => args[0] as CloudPublishEvent,
+    );
+    const manifestLogs = events.filter(
+      (e) => e.step === "createManifest" && e.status === "log",
+    );
+    const messages = manifestLogs.map((e) => e.message);
+
+    expect(messages).toContain("Local Quarto not in use");
+    expect(messages).toContain("Local R not in use");
+    expect(messages).toContain("Local Python not in use");
+  });
+
+  test("createManifest emits version messages in order when runtimes set", async () => {
+    const onProgress = vi.fn();
+    const config = makeConfig({
+      r: { version: "4.5.2", packageFile: "renv.lock", packageManager: "renv" },
+      python: {
+        version: "3.12.0",
+        packageFile: "requirements.txt",
+        packageManager: "pip",
+      },
+    });
+    const opts = baseOptions({ onProgress, config });
+
+    // All package files "exist" so buildManifest skips R scanning and
+    // the bundle step skips the missing-requirements-file check.
+    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    vi.mocked(fileExistsAt).mockResolvedValue(true);
+
+    const resultPromise = connectCloudPublish(opts);
+    await vi.runAllTimersAsync();
+    await resultPromise;
+
+    const events = onProgress.mock.calls.map(
+      (args: unknown[]) => args[0] as CloudPublishEvent,
+    );
+    const manifestLogs = events.filter(
+      (e) => e.step === "createManifest" && e.status === "log",
+    );
+    const versionMessages = manifestLogs
+      .map((e) => e.message)
+      .filter((m) => m?.startsWith("Local "));
+
+    // Asserts content, count, AND order
+    expect(versionMessages).toEqual([
+      "Local Quarto not in use",
+      "Local R version 4.5.2",
+      "Local Python version 3.12.0",
+    ]);
+  });
+
   test("revision failure throws with error details", async () => {
     const api = createMockApi();
     vi.mocked(api.getRevision).mockResolvedValue({
@@ -502,11 +563,12 @@ describe("connectCloudPublish", () => {
     const onProgress = vi.fn();
 
     // Mock watchCloudLogs to invoke onLog callback
-    vi.mocked(watchCloudLogs).mockImplementation(async (options) => {
+    vi.mocked(watchCloudLogs).mockImplementation((options) => {
       if (options.onLog) {
         options.onLog({ message: "Building application", level: "info" });
         options.onLog({ message: "Installing packages", level: "info" });
       }
+      return Promise.resolve();
     });
 
     const opts = baseOptions({ onProgress });
@@ -530,18 +592,18 @@ describe("connectCloudPublish", () => {
     const api = createMockApi();
     let pollCount = 0;
 
-    vi.mocked(api.getRevision).mockImplementation(async () => {
+    vi.mocked(api.getRevision).mockImplementation(() => {
       pollCount++;
       if (pollCount < 3) {
-        return {
+        return Promise.resolve({
           id: "rev-1",
           publish_result: null,
-        } as Revision;
+        } as Revision);
       }
-      return {
+      return Promise.resolve({
         id: "rev-1",
         publish_result: CloudPublishResult.Success,
-      } as Revision;
+      } as Revision);
     });
 
     const opts = baseOptions({ api });
