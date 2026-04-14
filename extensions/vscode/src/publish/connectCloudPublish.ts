@@ -42,6 +42,7 @@ import {
   buildCreateContentRequest,
   buildUpdateContentRequest,
   getCloudContentInfo,
+  getCloudUIURL,
   getAccess,
 } from "./cloudContentRequest";
 
@@ -669,6 +670,18 @@ function classifyCloudDeploymentError(
     };
   }
 
+  // Missing dependency file (thrown during bundle creation)
+  if (
+    lastStep === "createBundle" &&
+    err instanceof Error &&
+    err.message.includes("Missing dependency file")
+  ) {
+    return {
+      code: "requirementsFileReadingError",
+      message: err.message,
+    };
+  }
+
   // Revision failure (server-side deploy failure)
   if (
     lastStep === "awaitCompletion" &&
@@ -682,23 +695,4 @@ function classifyCloudDeploymentError(
   }
 
   return { code: "unknown", message: fallbackMessage };
-}
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function getCloudUIURL(env: CloudEnvironment): string {
-  switch (env) {
-    case CloudEnvironment.Development:
-      return "https://dev.connect.posit.cloud";
-    case CloudEnvironment.Staging:
-      return "https://staging.connect.posit.cloud";
-    case CloudEnvironment.Production:
-      return "https://connect.posit.cloud";
-    default: {
-      const _exhaustive: never = env;
-      throw new Error(`Unknown Cloud environment: ${_exhaustive}`);
-    }
-  }
 }

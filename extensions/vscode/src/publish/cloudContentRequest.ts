@@ -73,7 +73,7 @@ export function cloudContentTypeFromPublisherType(
 // Cloud URL Construction
 // ---------------------------------------------------------------------------
 
-function getCloudUIURL(env: CloudEnvironment): string {
+export function getCloudUIURL(env: CloudEnvironment): string {
   switch (env) {
     case CloudEnvironment.Development:
       return "https://dev.connect.posit.cloud";

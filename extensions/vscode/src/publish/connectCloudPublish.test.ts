@@ -701,6 +701,36 @@ describe("connectCloudPublish", () => {
     expect(failureEvent!.errCode).toBe("deployFailed");
   });
 
+  test("missing dependency file classifies as requirementsFileReadingError", async () => {
+    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    vi.mocked(fileExistsAt).mockResolvedValue(false);
+
+    const onProgress = vi.fn();
+    const config = makeConfig({
+      python: {
+        version: "3.11.0",
+        packageFile: "requirements.txt",
+        packageManager: "pip",
+      },
+    });
+    const opts = baseOptions({ onProgress, config });
+
+    const resultPromise = connectCloudPublish(opts);
+    const assertion = expect(resultPromise).rejects.toThrow(
+      "Missing dependency file requirements.txt",
+    );
+    await vi.runAllTimersAsync();
+    await assertion;
+
+    const events = onProgress.mock.calls.map(
+      (args: unknown[]) => args[0] as CloudPublishEvent,
+    );
+    const failureEvent = events.find((e) => e.status === "failure");
+
+    expect(failureEvent).toBeDefined();
+    expect(failureEvent!.errCode).toBe("requirementsFileReadingError");
+  });
+
   test("writes deploymentError to record on failure", async () => {
     const api = createMockApi();
     vi.mocked(api.uploadBundle).mockRejectedValue(new Error("Upload failed"));
