@@ -1,0 +1,13 @@
+{
+	"R": {
+		"Version": "4.3.0"
+	},
+	"Packages": {
+		"mypkg": {
+			"Package": "mypkg",
+			"Version": "1.2.3",
+			"Source": "Repository",
+			"Repository": "CRAN"
+		}
+	}
+}
