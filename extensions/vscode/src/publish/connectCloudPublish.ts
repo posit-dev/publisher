@@ -694,5 +694,16 @@ function classifyCloudDeploymentError(
     };
   }
 
+  // Other HTTP errors — include the full response body so the user sees the
+  // same detail the Go path surfaces via HTTPError.Error().
+  if (isAxiosError(err) && err.response) {
+    const { status, data } = err.response;
+    const body = typeof data === "string" ? data : JSON.stringify(data ?? "");
+    return {
+      code: "unknown",
+      message: `Unexpected response from the server (${status}: ${body})`,
+    };
+  }
+
   return { code: "unknown", message: fallbackMessage };
 }

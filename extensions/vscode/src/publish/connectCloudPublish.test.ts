@@ -731,6 +731,46 @@ describe("connectCloudPublish", () => {
     expect(failureEvent!.errCode).toBe("requirementsFileReadingError");
   });
 
+  test("HTTP error includes server response body in message", async () => {
+    const { AxiosError, AxiosHeaders } = await import("axios");
+    const api = createMockApi();
+    const axiosErr = new AxiosError(
+      "Request failed with status code 422",
+      "ERR_BAD_REQUEST",
+      undefined,
+      undefined,
+      {
+        status: 422,
+        statusText: "Unprocessable Entity",
+        data: {
+          error_code: "VALIDATION_ERROR",
+          message: "vanity name is already in use",
+        },
+        headers: {},
+        config: { headers: new AxiosHeaders() },
+      },
+    );
+    vi.mocked(api.createContent).mockRejectedValue(axiosErr);
+
+    const onProgress = vi.fn();
+    const opts = baseOptions({ api, onProgress });
+
+    const resultPromise = connectCloudPublish(opts);
+    const assertion = expect(resultPromise).rejects.toThrow();
+    await vi.runAllTimersAsync();
+    await assertion;
+
+    const events = onProgress.mock.calls.map(
+      (args: unknown[]) => args[0] as CloudPublishEvent,
+    );
+    const failureEvent = events.find((e) => e.status === "failure");
+
+    expect(failureEvent).toBeDefined();
+    expect(failureEvent!.message).toBe(
+      'Unexpected response from the server (422: {"error_code":"VALIDATION_ERROR","message":"vanity name is already in use"})',
+    );
+  });
+
   test("writes deploymentError to record on failure", async () => {
     const api = createMockApi();
     vi.mocked(api.uploadBundle).mockRejectedValue(new Error("Upload failed"));
