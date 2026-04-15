@@ -15,40 +15,19 @@
 //   npx vitest run src/inspect/integration.test.ts
 //
 
-import { execFile } from "child_process";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
-import os from "node:os";
+import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { promisify } from "node:util";
 import { beforeAll, describe, expect, test, vi } from "vitest";
 import { ContentType } from "src/api/types/configurations";
 
 vi.mock("src/logging");
+import {
+  withTempDir,
+  isExecutableAvailable,
+} from "src/utils/integrationTestHelpers";
 import { clearPythonVersionCache } from "src/interpreters/pythonInterpreter";
 import { inspectProject } from "./index";
 import { globDir } from "./helpers/globDir";
-
-const execFileAsync = promisify(execFile);
-
-/** Create a temp directory, pass it to `fn`, then clean up. */
-async function withTempDir<T>(fn: (dir: string) => Promise<T>): Promise<T> {
-  const dir = await mkdtemp(path.join(os.tmpdir(), "publisher-inspect-test-"));
-  try {
-    return await fn(dir);
-  } finally {
-    await rm(dir, { recursive: true, force: true });
-  }
-}
-
-/** Check if an executable is available on PATH. */
-async function isExecutableAvailable(name: string): Promise<boolean> {
-  try {
-    await execFileAsync(name, ["--version"]);
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 /** Helper: create a minimal Jupyter notebook JSON file. */
 function makeNotebookJSON(codeCells: string[][]): string {

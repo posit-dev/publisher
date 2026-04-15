@@ -19,13 +19,15 @@
 // Or as part of the dedicated npm script:
 //   npm run test-integration-publish
 
-import { execFile } from "node:child_process";
-import { mkdtemp, rm, writeFile, readFile, mkdir } from "node:fs/promises";
-import os from "node:os";
+import { writeFile, readFile, mkdir } from "node:fs/promises";
 import path from "node:path";
-import { promisify } from "node:util";
 import { describe, expect, test } from "vitest";
 
+import {
+  withTempDir,
+  isExecutableAvailable,
+  isRenvAvailable,
+} from "src/utils/integrationTestHelpers";
 import {
   getLibPaths,
   listAvailablePackages,
@@ -33,44 +35,6 @@ import {
   libraryToManifestPackages,
   type PackageLister,
 } from "./rLibraryMapper";
-
-const execFileAsync = promisify(execFile);
-
-/** Create a temp directory, pass it to `fn`, then clean up. */
-async function withTempDir<T>(fn: (dir: string) => Promise<T>): Promise<T> {
-  const dir = await mkdtemp(path.join(os.tmpdir(), "publisher-libmap-"));
-  try {
-    return await fn(dir);
-  } finally {
-    await rm(dir, { recursive: true, force: true });
-  }
-}
-
-/**
- * Check if an executable is available on PATH by attempting to run it.
- * Used to determine whether interpreter-dependent tests should be skipped.
- */
-async function isExecutableAvailable(name: string): Promise<boolean> {
-  try {
-    await execFileAsync(name, ["--version"]);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Check if the renv R package is installed by attempting to load it.
- * Used to determine whether renv-dependent tests should be skipped.
- */
-async function isRenvAvailable(): Promise<boolean> {
-  try {
-    await execFileAsync("Rscript", ["-e", "library(renv)"]);
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 // ---------------------------------------------------------------------------
 // getLibPaths — real R subprocess
