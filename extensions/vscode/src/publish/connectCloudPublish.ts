@@ -6,7 +6,6 @@ import { isAxiosError } from "axios";
 import {
   type ConnectCloudAPI,
   type ContentResponse,
-  CloudEnvironment,
   ContentID,
   PublishResult as CloudPublishResult,
   watchCloudLogs,
