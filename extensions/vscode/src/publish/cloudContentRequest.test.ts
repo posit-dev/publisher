@@ -1,6 +1,11 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
 import { describe, expect, it, vi, beforeEach } from "vitest";
+
+vi.mock("../logging", () => ({
+  logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+}));
+
 import {
   CloudEnvironment,
   ConnectCloudAPI,

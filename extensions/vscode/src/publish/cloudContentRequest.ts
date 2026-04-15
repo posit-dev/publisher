@@ -19,6 +19,7 @@ import type {
   ConnectCloudAccessControl,
 } from "../api/types/configurations";
 import type { ConnectRuntime } from "../api/types/connect";
+import { logger } from "../logging";
 
 // ---------------------------------------------------------------------------
 // Credential Info Type
@@ -217,6 +218,11 @@ function mapAccessValues(
         ? ContentAccess.ViewPublicEditTeam
         : ContentAccess.ViewTeamEditTeam;
     default: // "disabled" or unset
+      if (publicAccess && orgAccess === "disabled") {
+        logger.warn(
+          "Organization access is not set, but public access is enabled - organization will have view access.",
+        );
+      }
       return publicAccess
         ? ContentAccess.ViewPublicEditPrivate
         : ContentAccess.ViewPrivateEditPrivate;
