@@ -898,6 +898,7 @@ describe("runTsDeployWithProgress", () => {
           status: "log",
           message: "Waiting for publish to complete",
         });
+        onProgress({ step: "watchLogs", status: "success" });
         return Promise.resolve(successResult);
       });
 
@@ -912,6 +913,9 @@ describe("runTsDeployWithProgress", () => {
       expect(logMsgs).toHaveLength(2);
       expect(logMsgs[0]!.data.message).toBe("Building app");
       expect(logMsgs[1]!.data.message).toBe("Waiting for publish to complete");
+      // Phase explicitly closed
+      const types = stream.injected.map((m) => m.type);
+      expect(types).toContain("publish/restoreEnv/success");
     });
 
     it("detects package installations in watchLogs events", async () => {
@@ -922,6 +926,7 @@ describe("runTsDeployWithProgress", () => {
           status: "log",
           message: "Collecting numpy==1.24.3",
         });
+        onProgress({ step: "watchLogs", status: "success" });
         return Promise.resolve(successResult);
       });
 

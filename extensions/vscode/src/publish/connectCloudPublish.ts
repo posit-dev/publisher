@@ -578,6 +578,11 @@ export async function connectCloudPublish({
 
     onProgress({ step: "watchLogs", status: "success" });
 
+    // Server log phase is closed — clear lastStep so that if writePublishRecord
+    // throws, the catch block won't emit a contradictory server-log failure
+    // after we already emitted success.
+    lastStep = undefined;
+
     // Write completed record (deployedAt is set by writePublishRecord)
     await writePublishRecord(deploymentPath, record);
 
