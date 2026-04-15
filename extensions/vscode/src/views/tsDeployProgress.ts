@@ -9,7 +9,7 @@ import type { EventStreamMessage, EventSubscriptionTarget } from "src/api";
 import type { ErrorCode } from "src/utils/errorTypes";
 
 // Union of all possible publish step types (standard Connect + Cloud)
-type AnyPublishStep = PublishStep | CloudPublishStep;
+export type AnyPublishStep = PublishStep | CloudPublishStep;
 
 type AnyPublishEvent = {
   step: AnyPublishStep;
@@ -134,7 +134,7 @@ function injectStageEvent(
 }
 
 /** Steps that represent server-side work with log streaming. */
-function isServerLogStep(step: AnyPublishStep): boolean {
+export function isServerLogStep(step: AnyPublishStep): boolean {
   return (
     step === "waitForTask" || step === "watchLogs" || step === "awaitCompletion"
   );

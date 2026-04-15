@@ -3,7 +3,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import type { PublishResult } from "src/publish/publishShared";
 import type { EventStreamMessage } from "src/api";
-import { runTsDeployWithProgress } from "./tsDeployProgress";
+import { isServerLogStep, runTsDeployWithProgress } from "./tsDeployProgress";
 
 vi.mock("src/logging");
 
@@ -942,5 +942,29 @@ describe("runTsDeployWithProgress", () => {
       expect(statusMsgs[0]!.data.version).toBe("1.24.3");
       expect(statusMsgs[0]!.data.runtime).toBe("python");
     });
+  });
+});
+
+describe("isServerLogStep", () => {
+  it("returns true for server log steps", () => {
+    expect(isServerLogStep("waitForTask")).toBe(true);
+    expect(isServerLogStep("watchLogs")).toBe(true);
+    expect(isServerLogStep("awaitCompletion")).toBe(true);
+  });
+
+  it("returns false for non-server-log steps", () => {
+    expect(isServerLogStep("createManifest")).toBe(false);
+    expect(isServerLogStep("preflight")).toBe(false);
+    expect(isServerLogStep("createNewDeployment")).toBe(false);
+    expect(isServerLogStep("createDeployment")).toBe(false);
+    expect(isServerLogStep("createBundle")).toBe(false);
+    expect(isServerLogStep("uploadBundle")).toBe(false);
+    expect(isServerLogStep("updateContent")).toBe(false);
+    expect(isServerLogStep("setEnvVars")).toBe(false);
+    expect(isServerLogStep("deployBundle")).toBe(false);
+    expect(isServerLogStep("validateDeployment")).toBe(false);
+    // Cloud-specific non-server-log steps
+    expect(isServerLogStep("createContent")).toBe(false);
+    expect(isServerLogStep("initiatePublish")).toBe(false);
   });
 });
