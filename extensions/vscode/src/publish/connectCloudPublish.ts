@@ -361,12 +361,15 @@ export async function connectCloudPublish({
         undefined,
         config.connectCloud?.accessControl,
       );
+      if (!access) {
+        throw new Error("access control is required for first deploy");
+      }
       const createRequest = buildCreateContentRequest(
         config,
         saveName,
         secrets,
         credential.accountId,
-        access!,
+        access,
       );
 
       content = await api.createContent(createRequest);
