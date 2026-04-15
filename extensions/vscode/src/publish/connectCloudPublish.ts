@@ -440,6 +440,14 @@ export async function connectCloudPublish({
       onProgress({ step: "updateContent", status: "success" });
     }
 
+    // Validate that the server returned a revision — needed for upload URL
+    // and bundle ID. Check early so we don't waste a publishContent call.
+    if (!content.next_revision) {
+      throw new Error("Server did not return a revision for this content");
+    }
+    const uploadUrl = content.next_revision.source_bundle_upload_url;
+    const bundleId = content.next_revision.source_bundle_id;
+
     await throwIfCanceled();
 
     // Step 4: Initiate publish (BEFORE upload — matching Go)
@@ -471,11 +479,6 @@ export async function connectCloudPublish({
       message: "Uploading files",
     });
 
-    if (!content.next_revision) {
-      throw new Error("Server did not return a revision for this content");
-    }
-    const uploadUrl = content.next_revision.source_bundle_upload_url;
-    const bundleId = content.next_revision.source_bundle_id;
     await api.uploadBundle(uploadUrl, new Uint8Array(bundle));
 
     record.bundleId = bundleId;
