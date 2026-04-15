@@ -13,7 +13,7 @@ import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
 
-const execFileAsync = promisify(execFile);
+export const execFileAsync = promisify(execFile);
 
 /** Create a temp directory, pass it to `fn`, then clean up. */
 export async function withTempDir<T>(

@@ -24,6 +24,7 @@ import path from "node:path";
 import { describe, expect, test } from "vitest";
 
 import {
+  execFileAsync,
   withTempDir,
   isExecutableAvailable,
   isRenvAvailable,
