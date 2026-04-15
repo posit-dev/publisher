@@ -487,7 +487,7 @@ describe("getAccess", () => {
       expect(mockApi.getContent).toHaveBeenCalledWith(contentId);
     });
 
-    it("merges publicAccess=false with server ViewPublicEditTeam (orgAccess=viewer)", async () => {
+    it("merges publicAccess=false with server ViewPublicEditTeam (orgAccess=editor)", async () => {
       vi.mocked(mockApi.getContent).mockResolvedValue({
         id: contentId,
         access: ContentAccess.ViewPublicEditTeam,
@@ -505,12 +505,12 @@ describe("getAccess", () => {
         accessControl,
       );
 
-      // ViewPublicEditTeam derives orgAccess=viewer (matching Go behavior)
-      expect(access).toBe(ContentAccess.ViewTeamEditPrivate);
+      // ViewPublicEditTeam derives orgAccess=editor, preserving edit permission
+      expect(access).toBe(ContentAccess.ViewTeamEditTeam);
       expect(mockApi.getContent).toHaveBeenCalledWith(contentId);
     });
 
-    it("merges publicAccess=true with server ViewPublicEditTeam (orgAccess=viewer)", async () => {
+    it("merges publicAccess=true with server ViewPublicEditTeam (orgAccess=editor)", async () => {
       vi.mocked(mockApi.getContent).mockResolvedValue({
         id: contentId,
         access: ContentAccess.ViewPublicEditTeam,
@@ -528,8 +528,8 @@ describe("getAccess", () => {
         accessControl,
       );
 
-      // Public access preserved, orgAccess=viewer from ViewPublicEditTeam
-      expect(access).toBe(ContentAccess.ViewPublicEditPrivate);
+      // Both dimensions preserved: public=true, orgAccess=editor
+      expect(access).toBe(ContentAccess.ViewPublicEditTeam);
       expect(mockApi.getContent).toHaveBeenCalledWith(contentId);
     });
 

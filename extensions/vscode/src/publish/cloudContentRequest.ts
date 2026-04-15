@@ -154,9 +154,9 @@ export function getCloudContentInfo(
 //
 // Note: orgAccess=viewer and orgAccess=disabled both map to EditPrivate,
 // so the forward mapping is lossy — you can't distinguish them from the
-// enum value alone. The reverse functions below use a best-effort decode:
-//   EditPrivate → "disabled", EditTeam → "editor",
-//   ViewTeam + EditPrivate → "viewer" (the one recoverable case).
+// enum value alone. The reverse functions below decode EditPrivate as
+// "disabled" (or "viewer" when ViewTeam is present) and EditTeam as
+// "editor".
 //
 // See also: Go implementation in internal/publish/connect_cloud/content_request_base.go
 // ---------------------------------------------------------------------------
@@ -173,12 +173,14 @@ function deriveOrgAccessFromContentAccess(
     case ContentAccess.ViewPrivateEditPrivate:
     case ContentAccess.ViewPublicEditPrivate:
       return "disabled";
-    // Lossy: ViewPublicEditTeam is produced by org=editor in the forward
-    // mapping, but Go's reverse groups it here with ViewTeamEditPrivate
-    // under "viewer". This matches Go exactly (content_request_base.go:64-70).
     case ContentAccess.ViewTeamEditPrivate:
-    case ContentAccess.ViewPublicEditTeam:
       return "viewer";
+    // Diverges from Go (content_request_base.go:67-68), which groups
+    // ViewPublicEditTeam with ViewTeamEditPrivate under "viewer". That's
+    // lossy: on redeploy with only publicAccess set, org=editor silently
+    // downgrades to org=viewer. We return "editor" to preserve the
+    // original setting.
+    case ContentAccess.ViewPublicEditTeam:
     case ContentAccess.ViewTeamEditTeam:
       return "editor";
   }
