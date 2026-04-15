@@ -131,36 +131,31 @@ export function getCloudContentInfo(
 //
 //   View{Public|Team|Private}Edit{Team|Private}
 //   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-//   publicAccess dimension    orgAccess dimension
+//   visibility dimension      edit dimension
 //
-// The "View" prefix indicates who can VIEW the content:
+// Visibility (View prefix) is driven by publicAccess:
 //   Public  → anyone (publicAccess = true)
-//   Team    → org members (publicAccess = false, orgAccess = viewer or editor)
+//   Team    → org members (publicAccess = false, orgAccess ≠ disabled)
 //   Private → owner only (publicAccess = false, orgAccess = disabled)
 //
-// The "Edit" suffix indicates who can EDIT the content:
-//   Team    → org members can edit (orgAccess = viewer — they can see AND edit)
-//   Private → only the owner can edit (orgAccess = disabled, or viewer with
-//             no edit grant)
+// Edit permission (Edit suffix) is driven by orgAccess:
+//   Team    → org members can edit (orgAccess = editor)
+//   Private → only the owner can edit (orgAccess = viewer, disabled, or unset)
 //
-// Counterintuitively, "EditTeam" does NOT mean orgAccess = "editor".
-// The editor/viewer distinction controls org-level *visibility*, not
-// edit permissions. The mapping is:
-//
-//   orgAccess    | meaning
-//   -------------|----------------------------------------------
-//   "disabled"   | org has no access → EditPrivate
-//   "viewer"     | org can view+edit → EditPrivate (view only) or EditTeam (view+edit)
-//   "editor"     | org can view+edit at higher level → EditTeam
-//
-// The full matrix (publicAccess × orgAccess → ContentAccess):
+// Forward mapping (publicAccess × orgAccess → ContentAccess):
 //
 //   public=true,  org=disabled → ViewPublicEditPrivate
-//   public=true,  org=viewer  → ViewPublicEditPrivate
-//   public=true,  org=editor  → ViewPublicEditTeam
+//   public=true,  org=viewer   → ViewPublicEditPrivate
+//   public=true,  org=editor   → ViewPublicEditTeam
 //   public=false, org=disabled → ViewPrivateEditPrivate
-//   public=false, org=viewer  → ViewTeamEditPrivate
-//   public=false, org=editor  → ViewTeamEditTeam
+//   public=false, org=viewer   → ViewTeamEditPrivate
+//   public=false, org=editor   → ViewTeamEditTeam
+//
+// Note: orgAccess=viewer and orgAccess=disabled both map to EditPrivate,
+// so the forward mapping is lossy — you can't distinguish them from the
+// enum value alone. The reverse functions below use a best-effort decode:
+//   EditPrivate → "disabled", EditTeam → "editor",
+//   ViewTeam + EditPrivate → "viewer" (the one recoverable case).
 //
 // See also: Go implementation in internal/publish/connect_cloud/content_request_base.go
 // ---------------------------------------------------------------------------
@@ -177,9 +172,9 @@ function deriveOrgAccessFromContentAccess(
     case ContentAccess.ViewPrivateEditPrivate:
     case ContentAccess.ViewPublicEditPrivate:
       return "disabled";
-    // ViewTeamEditPrivate and ViewPublicEditTeam both indicate org has
-    // viewer-level access. The "EditTeam" in ViewPublicEditTeam is the
-    // edit dimension — it does NOT imply orgAccess="editor".
+    // Lossy: ViewPublicEditTeam is produced by org=editor in the forward
+    // mapping, but Go's reverse groups it here with ViewTeamEditPrivate
+    // under "viewer". This matches Go exactly (content_request_base.go:64-70).
     case ContentAccess.ViewTeamEditPrivate:
     case ContentAccess.ViewPublicEditTeam:
       return "viewer";
