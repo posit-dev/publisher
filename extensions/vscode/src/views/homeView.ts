@@ -77,7 +77,6 @@ import { getNonce } from "src/utils/getNonce";
 import { getUri } from "src/utils/getUri";
 import { deployProject } from "src/views/deployProgress";
 import { runTsDeployWithProgress } from "src/views/tsDeployProgress";
-import { canUseTsPublishPath } from "src/views/canUseTsPublishPath";
 import { connectPublish } from "src/publish/connectPublish";
 import { connectCloudPublish } from "src/publish/connectCloudPublish";
 import { renderQuartoContent } from "src/views/renders";
@@ -325,9 +324,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const credential = this.state.findCredential(credentialName);
     const config = this.state.findValidConfig(configurationName, projectDir);
 
-    // Use TS publish path for all Connect deployments (standard and Cloud).
-    // Snowflake routing is handled separately below.
-    if (credential && config && canUseTsPublishPath(credential.serverType)) {
+    if (credential && config) {
       return await this.initiateTsDeployment(
         deploymentName,
         credential,
