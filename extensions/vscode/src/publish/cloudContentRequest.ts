@@ -82,10 +82,6 @@ export function getCloudUIURL(env: CloudEnvironment): string {
       return "https://staging.connect.posit.cloud";
     case CloudEnvironment.Production:
       return "https://connect.posit.cloud";
-    default: {
-      const _exhaustive: never = env;
-      throw new Error(`Unknown Cloud environment: ${_exhaustive}`);
-    }
   }
 }
 
@@ -97,10 +93,6 @@ function getCloudShareDomain(env: CloudEnvironment): string {
       return "share.staging.connect.posit.cloud";
     case CloudEnvironment.Production:
       return "share.connect.posit.cloud";
-    default: {
-      const _exhaustive: never = env;
-      throw new Error(`Unknown Cloud environment: ${_exhaustive}`);
-    }
   }
 }
 
