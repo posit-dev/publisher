@@ -376,7 +376,8 @@ describe("connectCloudPublish", () => {
     expect(stepNames).toContain("createContent");
     expect(stepNames).toContain("initiatePublish");
     expect(stepNames).toContain("uploadBundle");
-    // Note: awaitCompletion doesn't emit a "start" event, only log events
+    // watchLogs owns the server log phase lifecycle (start/success);
+    // awaitCompletion only emits log events into the active phase.
   });
 
   test("writes deployment record after content creation", async () => {

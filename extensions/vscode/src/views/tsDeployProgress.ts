@@ -200,21 +200,12 @@ export function runTsDeployWithProgress(
         // Used by waitForTask (standard Connect) and watchLogs/awaitCompletion (Cloud).
         let serverLogStage: "publish/restoreEnv" | "publish/runContent" =
           "publish/restoreEnv";
-        let serverLogPhaseStarted = false;
-        let serverLogPhaseClosed = false;
-
         const result = await deploy((event) => {
           if (event.status === "start") {
             if (isServerLogStep(event.step)) {
-              // Standard Connect emits explicit start for waitForTask.
-              // Cloud steps (watchLogs/awaitCompletion) don't emit start,
-              // so they auto-start on the first log event below.
-              if (!serverLogPhaseStarted) {
-                stream.injectMessage(
-                  makeMessage(`${serverLogStage}/start`, event.data),
-                );
-                serverLogPhaseStarted = true;
-              }
+              stream.injectMessage(
+                makeMessage(`${serverLogStage}/start`, event.data),
+              );
               progress.report({ message: stepLabels[event.step] });
             } else {
               progress.report({ message: stepLabels[event.step] });
@@ -222,9 +213,7 @@ export function runTsDeployWithProgress(
             }
           } else if (event.status === "success") {
             if (isServerLogStep(event.step)) {
-              // Close whichever stage is active (restoreEnv or runContent).
               stream.injectMessage(makeMessage(`${serverLogStage}/success`));
-              serverLogPhaseClosed = true;
             } else {
               injectStageEvent(stream, event.step, "success", event.data);
             }
@@ -245,7 +234,6 @@ export function runTsDeployWithProgress(
             };
 
             if (isServerLogStep(event.step)) {
-              // Fail whichever stage is active (restoreEnv or runContent).
               stream.injectMessage(
                 makeMessage(
                   `${serverLogStage}/failure`,
@@ -253,7 +241,6 @@ export function runTsDeployWithProgress(
                   event.errCode,
                 ),
               );
-              serverLogPhaseClosed = true;
             } else {
               stream.injectMessage(
                 makeMessage(
@@ -265,15 +252,6 @@ export function runTsDeployWithProgress(
             }
           } else if (event.status === "log") {
             if (isServerLogStep(event.step)) {
-              // Auto-start the server log phase on first log event.
-              // Cloud steps (watchLogs/awaitCompletion) don't emit explicit
-              // "start" events, so the phase begins when the first log arrives.
-              if (!serverLogPhaseStarted) {
-                stream.injectMessage(makeMessage(`${serverLogStage}/start`));
-                serverLogPhaseStarted = true;
-                progress.report({ message: stepLabels[event.step] });
-              }
-
               const msg = event.message || "";
 
               // Detect the transition from env restore to content launch.
@@ -317,13 +295,6 @@ export function runTsDeployWithProgress(
         // publish/failure — don't also inject publish/success.
         if (controller.signal.aborted) {
           return;
-        }
-
-        // Close the server log phase if it was started but not explicitly
-        // closed. Cloud steps (watchLogs/awaitCompletion) don't emit
-        // explicit "success" events — the phase ends when the deploy succeeds.
-        if (serverLogPhaseStarted && !serverLogPhaseClosed) {
-          stream.injectMessage(makeMessage(`${serverLogStage}/success`));
         }
 
         // Inject publish/success — triggers HomeView's onPublishSuccess()

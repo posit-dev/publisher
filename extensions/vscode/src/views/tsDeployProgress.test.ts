@@ -805,9 +805,9 @@ describe("runTsDeployWithProgress", () => {
       expect(types).toContain("publish/deployBundle/success");
     });
 
-    it("auto-starts restoreEnv on first watchLogs log event", async () => {
+    it("starts restoreEnv on watchLogs start event", async () => {
       const { onComplete, stream } = run((onProgress) => {
-        // Cloud orchestrator doesn't emit explicit start for watchLogs
+        onProgress({ step: "watchLogs", status: "start" });
         onProgress({
           step: "watchLogs",
           status: "log",
@@ -818,6 +818,7 @@ describe("runTsDeployWithProgress", () => {
           status: "log",
           message: "Installing packages",
         });
+        onProgress({ step: "watchLogs", status: "success" });
         return Promise.resolve(successResult);
       });
 
@@ -826,21 +827,19 @@ describe("runTsDeployWithProgress", () => {
       });
 
       const types = stream.injected.map((m) => m.type);
-      // Phase should be auto-started
       expect(types).toContain("publish/restoreEnv/start");
-      // Log messages should be injected
       const logMsgs = stream.injected.filter(
         (m) => m.type === "publish/restoreEnv/log",
       );
       expect(logMsgs).toHaveLength(2);
       expect(logMsgs[0]!.data.message).toBe("Building application");
       expect(logMsgs[1]!.data.message).toBe("Installing packages");
-      // Phase should be auto-closed on success
       expect(types).toContain("publish/restoreEnv/success");
     });
 
     it("transitions watchLogs from restoreEnv to runContent on launch pattern", async () => {
       const { onComplete, stream } = run((onProgress) => {
+        onProgress({ step: "watchLogs", status: "start" });
         onProgress({
           step: "watchLogs",
           status: "log",
@@ -856,6 +855,7 @@ describe("runTsDeployWithProgress", () => {
           status: "log",
           message: "Application started",
         });
+        onProgress({ step: "watchLogs", status: "success" });
         return Promise.resolve(successResult);
       });
 
@@ -880,12 +880,13 @@ describe("runTsDeployWithProgress", () => {
       );
       expect(runLogs).toHaveLength(2);
 
-      // runContent auto-closed on deploy success
+      // runContent closed by explicit success event
       expect(types).toContain("publish/runContent/success");
     });
 
     it("handles awaitCompletion log events in the active server log stage", async () => {
       const { onComplete, stream } = run((onProgress) => {
+        onProgress({ step: "watchLogs", status: "start" });
         onProgress({
           step: "watchLogs",
           status: "log",
@@ -915,6 +916,7 @@ describe("runTsDeployWithProgress", () => {
 
     it("detects package installations in watchLogs events", async () => {
       const { onComplete, stream } = run((onProgress) => {
+        onProgress({ step: "watchLogs", status: "start" });
         onProgress({
           step: "watchLogs",
           status: "log",

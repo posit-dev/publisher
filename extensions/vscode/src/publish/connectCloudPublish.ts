@@ -490,6 +490,7 @@ export async function connectCloudPublish({
 
     // Steps 6 & 7: Watch logs + await completion (concurrent)
     lastStep = "watchLogs";
+    onProgress({ step: "watchLogs", status: "start" });
     onProgress({
       step: "watchLogs",
       status: "log",
@@ -574,6 +575,8 @@ export async function connectCloudPublish({
       logAbortController.abort();
       await logPromise;
     }
+
+    onProgress({ step: "watchLogs", status: "success" });
 
     // Write completed record (deployedAt is set by writePublishRecord)
     await writePublishRecord(deploymentPath, record);
