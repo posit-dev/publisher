@@ -657,7 +657,8 @@
     "test": "vscode-test",
     "test-unit": "vitest run",
     "test-integration-interpreters": "vitest run src/interpreters/integration.test.ts",
-    "test-integration-inspect": "vitest run src/inspect/integration.test.ts"
+    "test-integration-inspect": "vitest run src/inspect/integration.test.ts",
+    "test-integration-publish": "vitest run src/publish/integration.test.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",

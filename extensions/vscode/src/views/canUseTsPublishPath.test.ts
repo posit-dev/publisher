@@ -2,73 +2,18 @@
 
 import { describe, expect, it } from "vitest";
 import { canUseTsPublishPath } from "src/views/canUseTsPublishPath";
-import { ServerType, ProductType } from "src/api/types/contentRecords";
-import type { ConfigurationDetails } from "src/api/types/configurations";
-import { ContentType } from "src/api/types/configurations";
-
-function makeConfig(
-  overrides?: Partial<ConfigurationDetails>,
-): ConfigurationDetails {
-  return {
-    $schema: "",
-    productType: ProductType.CONNECT,
-    type: ContentType.PYTHON_DASH,
-    validate: true,
-    ...overrides,
-  };
-}
+import { ServerType } from "src/api/types/contentRecords";
 
 describe("canUseTsPublishPath", () => {
   it("returns true for plain Connect deployments", () => {
-    expect(canUseTsPublishPath(ServerType.CONNECT, makeConfig())).toBe(true);
+    expect(canUseTsPublishPath(ServerType.CONNECT)).toBe(true);
   });
 
   it("returns false for Connect Cloud", () => {
-    expect(canUseTsPublishPath(ServerType.CONNECT_CLOUD, makeConfig())).toBe(
-      false,
-    );
+    expect(canUseTsPublishPath(ServerType.CONNECT_CLOUD)).toBe(false);
   });
 
-  it("returns true for Snowflake", () => {
-    expect(canUseTsPublishPath(ServerType.SNOWFLAKE, makeConfig())).toBe(true);
-  });
-
-  it("returns false when packagesFromLibrary is true", () => {
-    const config = makeConfig({
-      r: {
-        version: "4.3.0",
-        packageFile: "renv.lock",
-        packageManager: "renv",
-        packagesFromLibrary: true,
-      },
-    });
-    expect(canUseTsPublishPath(ServerType.CONNECT, config)).toBe(false);
-  });
-
-  it("returns true when packagesFromLibrary is false", () => {
-    const config = makeConfig({
-      r: {
-        version: "4.3.0",
-        packageFile: "renv.lock",
-        packageManager: "renv",
-        packagesFromLibrary: false,
-      },
-    });
-    expect(canUseTsPublishPath(ServerType.CONNECT, config)).toBe(true);
-  });
-
-  it("returns true when r config has no packagesFromLibrary", () => {
-    const config = makeConfig({
-      r: {
-        version: "4.3.0",
-        packageFile: "renv.lock",
-        packageManager: "renv",
-      },
-    });
-    expect(canUseTsPublishPath(ServerType.CONNECT, config)).toBe(true);
-  });
-
-  it("returns true when no r config at all", () => {
-    expect(canUseTsPublishPath(ServerType.CONNECT, makeConfig())).toBe(true);
+  it("returns true for Snowflake (routing handled separately)", () => {
+    expect(canUseTsPublishPath(ServerType.SNOWFLAKE)).toBe(true);
   });
 });

@@ -79,3 +79,4 @@ jobs:
       - run: npm install
       - run: npm run test-integration-interpreters
       - run: npm run test-integration-inspect
+      - run: npm run test-integration-publish

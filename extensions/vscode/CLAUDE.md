@@ -178,6 +178,27 @@ Do not use TypeScript [type assertions](https://www.typescriptlang.org/docs/hand
 
 If a type assertion is truly unavoidable (e.g., working around a third-party API with incomplete types), add a comment explaining why.
 
+## R Subprocess Expressions
+
+The extension spawns R subprocesses via `execFile(rPath, ["-s", "-e", expression])` (see `src/publish/rLibraryMapper.ts`). Windows R's `-e` flag does not support multi-line strings — it fails with `"unexpected end of input"`. To avoid this:
+
+- **Keep R expressions on a single line.** Join multiple statements with semicolons (`;`) instead of newlines.
+- **Escape user-controlled values** interpolated into R code with `escapeForRString()` to prevent code injection via crafted directory paths or repository names/URLs.
+- **Use `-s`** (silent/no-save) for clean output with no startup noise.
+- **Set a generous `maxBuffer`** — commands like `available.packages()` for CRAN can exceed Node's default 1 MB buffer.
+
+```typescript
+// Good — single-line with semicolons
+const code = `x <- 1; y <- 2; cat(x + y)`;
+
+// Bad — multi-line breaks on Windows R
+const code = `
+x <- 1
+y <- 2
+cat(x + y)
+`;
+```
+
 # Debugging
 
 - "Run Extension" - Debug extension only (auto-launches Go binary)
