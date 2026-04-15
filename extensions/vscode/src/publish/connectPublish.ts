@@ -103,27 +103,25 @@ export type ConnectPublishOptions = {
 // Main orchestrator
 // ---------------------------------------------------------------------------
 
-export async function connectPublish(
-  options: ConnectPublishOptions,
-): Promise<PublishResult> {
-  const {
-    api,
-    projectDir,
-    saveName,
-    configName,
-    serverUrl,
-    serverType,
-    existingContentId,
-    existingCreatedAt,
-    secrets,
-    rPath,
-    positronR,
-    clientVersion,
-    onProgress,
-  } = options;
-
+export async function connectPublish({
+  api,
+  projectDir,
+  saveName,
+  config: rawConfig,
+  configName,
+  serverUrl,
+  serverType,
+  existingContentId,
+  existingCreatedAt,
+  secrets,
+  rPath,
+  positronR,
+  clientVersion,
+  onProgress,
+  signal,
+}: ConnectPublishOptions): Promise<PublishResult> {
   // Work on a copy so we don't mutate the caller's config
-  const config = structuredClone(options.config);
+  const config = structuredClone(rawConfig);
   forceProductTypeCompliance(config);
 
   const deploymentPath = path.join(
@@ -163,8 +161,6 @@ export async function connectPublish(
   await writePublishRecord(deploymentPath, record);
 
   let lastStep: PublishStep | undefined;
-
-  const signal = options.signal;
 
   /** Check if canceled; if so, write dismissedAt and throw CanceledError. */
   async function throwIfCanceled(): Promise<void> {
