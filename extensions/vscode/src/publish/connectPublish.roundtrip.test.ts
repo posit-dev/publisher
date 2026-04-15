@@ -14,7 +14,7 @@ import {
   writePublishRecord,
   lockfileToDeploymentRenv,
   type PublishRecord,
-} from "./connectPublish";
+} from "./publishShared";
 import { loadDeploymentFromFile } from "../toml/deploymentLoader";
 import { createDeploymentRecord } from "../toml/deploymentWriter";
 import {

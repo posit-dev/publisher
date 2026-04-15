@@ -47,22 +47,6 @@ import type { ErrorCode } from "../utils/errorTypes";
 import type { ServerType } from "../api/types/contentRecords";
 
 // ---------------------------------------------------------------------------
-// Re-export shared symbols for backwards compatibility
-// ---------------------------------------------------------------------------
-
-export {
-  CanceledError,
-  writePublishRecord,
-  lockfileToDeploymentRenv,
-  DEPLOYMENT_SCHEMA_URL,
-  type PublishEvent,
-  type PublishStep,
-  type PublishResult,
-  type PublishRecord,
-  type ManifestResult,
-} from "./publishShared";
-
-// ---------------------------------------------------------------------------
 // Public types
 // ---------------------------------------------------------------------------
 

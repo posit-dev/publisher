@@ -4,13 +4,12 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 import { writeFile, mkdir, copyFile, unlink } from "node:fs/promises";
 import path from "node:path";
 
+import { connectPublish, type ConnectPublishOptions } from "./connectPublish";
 import {
-  connectPublish,
   CanceledError,
-  type ConnectPublishOptions,
   type PublishEvent,
   type PublishStep,
-} from "./connectPublish";
+} from "./publishShared";
 
 import { ContentType } from "../api/types/configurations";
 import type { ConfigurationDetails } from "../api/types/configurations";

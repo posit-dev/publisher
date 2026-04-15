@@ -1,7 +1,7 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import type { PublishResult } from "src/publish/connectPublish";
+import type { PublishResult } from "src/publish/publishShared";
 import type { EventStreamMessage } from "src/api";
 import { runTsDeployWithProgress } from "./tsDeployProgress";
 
@@ -740,7 +740,7 @@ describe("runTsDeployWithProgress", () => {
     });
 
     it("does not inject publish/failure twice on CanceledError", async () => {
-      const { CanceledError } = await import("src/publish/connectPublish");
+      const { CanceledError } = await import("src/publish/publishShared");
 
       const { stream } = run(() => Promise.reject(new CanceledError()));
 
