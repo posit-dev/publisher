@@ -57,12 +57,14 @@ Cypress.Commands.add("dismissOnboardingOverlay", () => {
     const overlay = $body.find(".onboarding-a-overlay.visible");
     if (overlay.length > 0) {
       cy.log("Dismissing VSCode onboarding overlay");
-      // Press Escape to close the dialog
-      cy.get("body").type("{esc}");
-      // Verify it's gone
-      cy.get(".onboarding-a-overlay.visible", { timeout: 5000 }).should(
-        "not.exist",
-      );
+      // Remove the overlay and its backdrop from the DOM entirely.
+      // Pressing Escape doesn't reliably close it, and the overlay
+      // blocks all interaction with the underlying UI.
+      overlay.remove();
+      $body.find(".onboarding-a-overlay").remove();
+      // Also remove any remaining backdrop
+      $body.find(".onboarding-backdrop").remove();
+      cy.log("Onboarding overlay removed from DOM");
     }
   });
 });
