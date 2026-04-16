@@ -1,6 +1,14 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
-import { beforeEach, afterEach, describe, expect, test, vi } from "vitest";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  test,
+  vi,
+} from "vitest";
 import { writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 
@@ -202,16 +210,19 @@ function progressSteps(
 // ---------------------------------------------------------------------------
 
 describe("connectCloudPublish", () => {
-  beforeEach(() => {
+  beforeAll(() => {
     vi.useFakeTimers();
+  });
+
+  afterAll(() => {
+    vi.useRealTimers();
+  });
+
+  beforeEach(() => {
     vi.clearAllMocks();
     // Reset watchCloudLogs to default — clearAllMocks doesn't reset
     // implementations, so a mockImplementation override could leak.
     vi.mocked(watchCloudLogs).mockResolvedValue(undefined);
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
   });
 
   test("happy path — first deploy", async () => {
