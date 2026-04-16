@@ -38,8 +38,23 @@ Cypress.on("uncaught:exception", (err) => {
   return true;
 });
 
-// Delete previous vscode sessions, avoid starting up tests with previous editor data.
+// Wipe VSCode's IndexedDB for a clean start, and strip the code-server
+// onboarding overlay whenever it renders. The wipe clears "user has seen
+// onboarding" state, so the overlay reappears every test load; an observer
+// avoids racing against when it's inserted.
 Cypress.on("window:before:load", (win) => {
+  const stripOnboarding = () => {
+    win.document
+      .querySelectorAll(".onboarding-a-overlay, .onboarding-backdrop")
+      .forEach((node) => node.remove());
+  };
+  const observer = new win.MutationObserver(stripOnboarding);
+  observer.observe(win.document.documentElement, {
+    childList: true,
+    subtree: true,
+  });
+  stripOnboarding();
+
   return win.indexedDB.databases().then((dbrecs) => {
     for (var i = 0; i < dbrecs.length; i++) {
       win.indexedDB.deleteDatabase(dbrecs[i].name);
