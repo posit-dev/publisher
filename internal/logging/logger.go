@@ -7,14 +7,6 @@ import (
 	"log/slog"
 )
 
-// Special attribute keys for use in logging.
-// LogKeyOp should be followed by an Operation,
-// and LogKeyPhase should be followed by a Phase.
-const (
-	LogKeyOp      = "event_op"
-	LogKeyErrCode = "error_code"
-)
-
 type Logger interface {
 	BaseLogger
 	WithArgs(args ...any) Logger
