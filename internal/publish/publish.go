@@ -364,30 +364,3 @@ func (p *defaultPublisher) CreateDeploymentRecord() {
 	p.Target.Configuration = &cfg
 }
 
-func CancelDeployment(
-	deploymentPath util.AbsolutePath,
-	log logging.Logger,
-) (*deployment.Deployment, error) {
-	// This function only marks the deployment record as being canceled.
-	// It does not cancel the anonymous function which is publishing to the server
-	// This is because the server API does not support cancellation at this time.
-
-	target, err := deployment.FromFile(deploymentPath)
-	if err != nil {
-		return nil, err
-	}
-
-	// mark the deployment as dismissed
-	target.DismissedAt = time.Now().Format(time.RFC3339)
-	// clear the error as well
-	target.Error = nil
-
-	// take over ownership of deployment file
-	newLocalID := "CANCELLED"
-	deployment.ActiveDeploymentRegistry.Set(deploymentPath.String(), newLocalID)
-
-	// Update the deployment file (should be guaranteed now that we just set ownership
-	// with a fake local ID that only we know).
-	d, err := target.WriteFile(deploymentPath, newLocalID, log)
-	return d, err
-}

@@ -62,14 +62,6 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 		return credentials.NewCredentialsService(log)
 	})).Methods(http.MethodDelete)
 
-	// POST /api/deployments/$NAME initiates a deployment
-	r.Handle(ToPath("deployments", "{name}"), PostDeploymentHandlerFunc(base, log, lister, emitter)).
-		Methods(http.MethodPost)
-
-	// POST /api/deployments/$NAME/cancel/$LOCALID cancels a deployment
-	r.Handle(ToPath("deployments", "{name}", "cancel", "{localid}"), PostDeploymentCancelHandlerFunc(base, log)).
-		Methods(http.MethodPost)
-
 	c := cors.AllowAll().Handler(r)
 	return c.ServeHTTP
 }
