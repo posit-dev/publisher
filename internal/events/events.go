@@ -6,20 +6,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/mitchellh/mapstructure"
-
-	"github.com/posit-dev/publisher/internal/project"
 	"github.com/posit-dev/publisher/internal/types"
 )
 
-type EventType = string
 type EventData = types.ErrorData
-
-var NoData = struct{}{}
 
 type Event struct {
 	Time    time.Time
-	Type    EventType
+	Type    string
 	Data    EventData
 	ErrCode ErrorCode
 
@@ -27,60 +21,18 @@ type Event struct {
 	phase Phase
 }
 
-// We use Operation and Phase to construct the event Type.
 type Operation = types.Operation
 
-// Phase indicates which part of an Operation we are performing
 type Phase string
 
 const (
-	StartPhase    Phase = "start"
-	ProgressPhase Phase = "progress"
-	StatusPhase   Phase = "status"
-	SuccessPhase  Phase = "success"
-	FailurePhase  Phase = "failure"
-	LogPhase      Phase = "log"
+	LogPhase Phase = "log"
 )
 
 const (
 	AgentOp Operation = "agent"
-
-	PublishCheckCapabilitiesOp       Operation = "publish/checkCapabilities"
-	PublishGetRPackageDescriptionsOp Operation = "publish/getRPackageDescriptions"
-	PublishCreateNewDeploymentOp     Operation = "publish/createNewDeployment"
-	PublishSetEnvVarsOp              Operation = "publish/setEnvVars"
-	PublishCreateBundleOp            Operation = "publish/createBundle"
-	PublishUpdateDeploymentOp        Operation = "publish/createDeployment"
-	PublishUpdateContentOp           Operation = "publish/updateContent"
-	PublishUploadBundleOp            Operation = "publish/uploadBundle"
-	PublishDeployBundleOp            Operation = "publish/deployBundle"
-	PublishDeployContentOp           Operation = "publish/deployContent"
-	PublishRestorePythonEnvOp        Operation = "publish/restorePythonEnv"
-	PublishRestoreREnvOp             Operation = "publish/restoreREnv"
-	PublishRunContentOp              Operation = "publish/runContent"
-	PublishSetVanityUrlOp            Operation = "publish/setVanityURL"
-	PublishValidateDeploymentOp      Operation = "publish/validateDeployment"
-	PublishOp                        Operation = "publish"
 )
 
-func New(op Operation, phase Phase, errCode ErrorCode, data any) *Event {
-	var eventData EventData
-	err := mapstructure.Decode(data, &eventData)
-	if err != nil {
-		if project.DevelopmentBuild() {
-			panic(err)
-		}
-	}
-	return &Event{
-		Time:    time.Now(),
-		Type:    EventTypeOf(op, phase),
-		Data:    eventData,
-		ErrCode: errCode,
-		op:      op,
-		phase:   phase,
-	}
-}
-
-func EventTypeOf(op Operation, phase Phase) EventType {
+func EventTypeOf(op Operation, phase Phase) string {
 	return fmt.Sprintf("%s/%s", op, phase)
 }

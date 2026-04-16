@@ -18,7 +18,7 @@ func TestEventsSuite(t *testing.T) {
 }
 
 func (s *EventsSuite) TestEventTypeOf() {
-	expected := "publish/createBundle/start"
-	actual := EventTypeOf(PublishCreateBundleOp, StartPhase)
+	expected := "agent/log"
+	actual := EventTypeOf(AgentOp, LogPhase)
 	s.Equal(expected, actual)
 }

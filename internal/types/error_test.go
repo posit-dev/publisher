@@ -18,33 +18,19 @@ func TestErrorSuite(t *testing.T) {
 	suite.Run(t, new(ErrorSuite))
 }
 
-func (s *ErrorSuite) TestError() {
-	err := errors.New("an error occurred")
-	agentErr := OperationError(Operation("testOp"), err)
-	s.Equal(err.Error(), agentErr.Error())
-}
-
 func (s *ErrorSuite) TestUsage() {
-	/// Typical workflow:
-	// Caller creates a custom error using NewAgentError and attaches metadata
 	code := ErrorCode("BadError")
 	err := errors.New("an error occurred")
 	details := struct {
 		Metadata string
 	}{"Some metadata"}
-	op := Operation("MyOperation")
 	agentErr := NewAgentError(code, err, &details)
 
-	// Caller receives the returned error and attaches context
-	agentErr.SetOperation(op)
-
-	// Everything is available via the serialization getters
 	s.Equal("an error occurred", agentErr.Error())
-	s.Equal(agentErr.GetCode(), code)
+	s.Equal(code, agentErr.Code)
 	s.Equal(ErrorData{
 		"Metadata": "Some metadata",
-	}, agentErr.GetData())
-	s.Equal(op, agentErr.GetOperation())
+	}, agentErr.Data)
 }
 
 func (s *ErrorSuite) TestAsAgentError() {
@@ -53,30 +39,13 @@ func (s *ErrorSuite) TestAsAgentError() {
 	err := errors.New("an error occurred")
 	s.Equal(err, AsAgentError(err).Err)
 
-	agentErr := OperationError(Operation("testOp"), err)
+	agentErr := NewAgentError(ErrorUnknown, err, nil)
 	s.Equal(agentErr, AsAgentError(agentErr))
 }
 
 func (s *ErrorSuite) TestNewAgentError() {
 	originalError := errors.New("shattered glass!")
 	aerr := NewAgentError(ErrorInvalidTOML, originalError, nil)
-	s.Equal(aerr, &AgentError{
-		Message: "Shattered glass!",
-		Code:    ErrorInvalidTOML,
-		Err:     originalError,
-		Data:    make(ErrorData),
-	})
-}
-
-func (s *ErrorSuite) TestIsAgentError() {
-	originalError := errors.New("shattered glass!")
-	aerr, isIt := IsAgentError(originalError)
-	s.Equal(isIt, false)
-	s.Nil(aerr)
-
-	aTrueAgentError := NewAgentError(ErrorInvalidTOML, originalError, nil)
-	aerr, isIt = IsAgentError(aTrueAgentError)
-	s.Equal(isIt, true)
 	s.Equal(aerr, &AgentError{
 		Message: "Shattered glass!",
 		Code:    ErrorInvalidTOML,
@@ -127,29 +96,3 @@ func (s *ErrorSuite) TestNewAgentError_MessagePunctuation() {
 	})
 }
 
-func (s *ErrorSuite) TestIsAgentErrorOf() {
-	originalError := errors.New("shattered glass!")
-	aerr, isIt := IsAgentErrorOf(originalError, ErrorInvalidConfigFiles)
-	s.Equal(isIt, false)
-	s.Nil(aerr)
-
-	aTrueAgentError := NewAgentError(ErrorInvalidTOML, originalError, nil)
-	aerr, isIt = IsAgentErrorOf(aTrueAgentError, ErrorInvalidConfigFiles)
-	s.Equal(isIt, false)
-	s.Equal(aerr, &AgentError{
-		Message: "Shattered glass!",
-		Code:    ErrorInvalidTOML,
-		Err:     originalError,
-		Data:    make(ErrorData),
-	})
-
-	aTrueAgentError = NewAgentError(ErrorInvalidConfigFiles, originalError, nil)
-	aerr, isIt = IsAgentErrorOf(aTrueAgentError, ErrorInvalidConfigFiles)
-	s.Equal(isIt, true)
-	s.Equal(aerr, &AgentError{
-		Message: "Shattered glass!",
-		Code:    ErrorInvalidConfigFiles,
-		Err:     originalError,
-		Data:    make(ErrorData),
-	})
-}

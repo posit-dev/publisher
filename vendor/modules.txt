@@ -13,9 +13,6 @@ github.com/davecgh/go-spew/spew
 # github.com/godbus/dbus/v5 v5.2.2
 ## explicit; go 1.20
 github.com/godbus/dbus/v5
-# github.com/golang-jwt/jwt/v5 v5.3.1
-## explicit; go 1.21
-github.com/golang-jwt/jwt/v5
 # github.com/google/uuid v1.6.0
 ## explicit
 github.com/google/uuid
@@ -45,9 +42,6 @@ github.com/r3labs/sse/v2
 ## explicit; go 1.13
 github.com/rs/cors
 github.com/rs/cors/internal
-# github.com/santhosh-tekuri/jsonschema/v5 v5.3.1
-## explicit; go 1.19
-github.com/santhosh-tekuri/jsonschema/v5
 # github.com/spf13/afero v1.15.0
 ## explicit; go 1.23.0
 github.com/spf13/afero
@@ -72,7 +66,6 @@ github.com/zalando/go-keyring/secret_service
 ## explicit; go 1.25.0
 golang.org/x/net/context
 golang.org/x/net/idna
-golang.org/x/net/publicsuffix
 # golang.org/x/sys v0.42.0
 ## explicit; go 1.25.0
 golang.org/x/sys/unix
@@ -90,9 +83,6 @@ golang.org/x/text/width
 gopkg.in/cenkalti/backoff.v1
 # gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c
 ## explicit; go 1.11
-# gopkg.in/ini.v1 v1.67.1
-## explicit; go 1.13
-gopkg.in/ini.v1
 # gopkg.in/yaml.v3 v3.0.1
 ## explicit
 gopkg.in/yaml.v3

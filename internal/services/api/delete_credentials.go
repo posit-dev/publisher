@@ -19,7 +19,7 @@ func DeleteCredentialHandlerFunc(log logging.Logger) http.HandlerFunc {
 		if err != nil {
 			if aerr, ok := err.(*types.AgentError); ok {
 				if aerr.Code == types.ErrorCredentialServiceUnavailable {
-					apiErr := types.APIErrorCredentialsUnavailableFromAgentError(*aerr)
+					apiErr := credentialsUnavailableResponse(*aerr)
 					apiErr.JSONResponse(w)
 					return
 				}
