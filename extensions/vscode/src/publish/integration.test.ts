@@ -34,6 +34,7 @@ import {
   listAvailablePackages,
   readPackageDescription,
   libraryToManifestPackages,
+  toManifestPackage,
   type PackageLister,
 } from "./rLibraryMapper";
 
@@ -251,6 +252,35 @@ describe(
                 `[DEBUG] Could not read system renv DESCRIPTION at ${sysDescOut}`,
               );
             }
+          }
+
+          // Diagnostic: check what availablePackages returns for renv
+          const repos = lockfile.R.Repositories;
+          const availablePackages = await listAvailablePackages(
+            "R",
+            dir,
+            repos,
+          );
+          const renvAvail = availablePackages.find((p) => p.name === "renv");
+          console.log(
+            "[DEBUG] renv in availablePackages:",
+            renvAvail
+              ? JSON.stringify(renvAvail)
+              : "NOT FOUND (count: " + availablePackages.length + ")",
+          );
+
+          // Diagnostic: call toManifestPackage directly for renv
+          if (renvLockEntry) {
+            const manifestResult = toManifestPackage(
+              renvLockEntry,
+              repos,
+              availablePackages,
+              [],
+            );
+            console.log(
+              "[DEBUG] toManifestPackage result for renv:",
+              JSON.stringify(manifestResult),
+            );
           }
 
           const rConfig = {
