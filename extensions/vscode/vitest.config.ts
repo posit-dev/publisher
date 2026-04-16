@@ -13,5 +13,18 @@ export default defineConfig({
   test: {
     include: ["./src/**/*.{test,spec}.?(c|m)[jt]s?(x)"],
     exclude: ["./src/test/**"],
+    coverage: {
+      include: ["src/**/*.{js,jsx,ts,tsx}"],
+      exclude: ["*.d.ts", "src/test/**"],
+      enabled: true,
+      reporter: ["text", "json-summary"],
+      thresholds: {
+        functions: 5,
+        lines: 5,
+        branches: 5,
+        statements: 5,
+        autoUpdate: false,
+      },
+    },
   },
 });

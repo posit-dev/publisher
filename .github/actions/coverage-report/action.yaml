@@ -1,0 +1,63 @@
+name: Coverage Report
+description: "Runs TypeScript tests with coverage and posts a summary to the PR"
+
+runs:
+  using: composite
+  steps:
+    - name: Install extension dependencies
+      shell: bash
+      run: just vscode deps
+
+    - name: Run extension unit tests with coverage
+      shell: bash
+      run: |
+        cd extensions/vscode
+        npm run test-unit
+
+    - name: Generate extension coverage summary
+      shell: bash
+      run: |
+        {
+          echo "## Extension Unit Test Coverage"
+          echo ""
+          if [ -f extensions/vscode/coverage/coverage-summary.json ]; then
+            node -e "
+              const data = require('./extensions/vscode/coverage/coverage-summary.json');
+              const t = data.total;
+              console.log('| Metric | Coverage |');
+              console.log('|--------|----------|');
+              for (const [key, val] of Object.entries(t)) {
+                console.log('| ' + key + ' | ' + val.pct + '% |');
+              }
+            "
+          else
+            echo "_Coverage summary file not found. Check test-unit output above._"
+          fi
+        } >> "$GITHUB_STEP_SUMMARY"
+
+    - name: Run Home View tests with coverage
+      shell: bash
+      run: |
+        cd extensions/vscode/webviews/homeView
+        npm test
+
+    - name: Generate Home View coverage summary
+      shell: bash
+      run: |
+        {
+          echo "## Home View Coverage"
+          echo ""
+          if [ -f extensions/vscode/webviews/homeView/coverage/coverage-summary.json ]; then
+            node -e "
+              const data = require('./extensions/vscode/webviews/homeView/coverage/coverage-summary.json');
+              const t = data.total;
+              console.log('| Metric | Coverage |');
+              console.log('|--------|----------|');
+              for (const [key, val] of Object.entries(t)) {
+                console.log('| ' + key + ' | ' + val.pct + '% |');
+              }
+            "
+          else
+            echo "_Coverage summary file not found. Check test output above._"
+          fi
+        } >> "$GITHUB_STEP_SUMMARY"
