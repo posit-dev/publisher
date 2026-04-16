@@ -45,7 +45,13 @@ import {
 } from "src/api";
 import { ConnectAPI, GUID } from "@posit-dev/connect-api";
 import type { Integration } from "@posit-dev/connect-api";
+import {
+  ConnectCloudAPI,
+  ContentID,
+  cloudEnvironmentBaseUrls,
+} from "@posit-dev/connect-cloud-api";
 import { connectAPIOptionsFromCredential } from "src/credentials/service";
+import { storeCredential } from "src/credentials/storage";
 import { updateFileList as updateFileListInConfig } from "src/configFiles";
 import {
   addSecret as addSecretToConfig,
@@ -72,8 +78,8 @@ import { getNonce } from "src/utils/getNonce";
 import { getUri } from "src/utils/getUri";
 import { deployProject } from "src/views/deployProgress";
 import { runTsDeployWithProgress } from "src/views/tsDeployProgress";
-import { canUseTsPublishPath } from "src/views/canUseTsPublishPath";
 import { connectPublish } from "src/publish/connectPublish";
+import { connectCloudPublish } from "src/publish/connectCloudPublish";
 import { renderQuartoContent } from "src/views/renders";
 import { WebviewConduit } from "src/utils/webviewConduit";
 import { fileExists, relativeDir, isRelativePathRoot } from "src/utils/files";
@@ -110,6 +116,7 @@ import {
 import {
   BooleanContextValues,
   Commands,
+  CONNECT_CLOUD_ENVIRONMENT,
   Contexts,
   DebounceDelaysMS,
   Views,
@@ -318,9 +325,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const credential = this.state.findCredential(credentialName);
     const config = this.state.findValidConfig(configurationName, projectDir);
 
-    // Use TS publish path for plain Connect deployments that don't need
-    // Go-specific features (Connect Cloud, Snowflake routing handled separately).
-    if (credential && config && canUseTsPublishPath(credential.serverType)) {
+    if (credential && config) {
       return await this.initiateTsDeployment(
         deploymentName,
         credential,
@@ -372,12 +377,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const existingContentId = contentRecord?.id;
     const existingCreatedAt = contentRecord?.createdAt;
 
-    const connectApi = new ConnectAPI(
-      await connectAPIOptionsFromCredential(credential, {
-        rejectUnauthorized: extensionSettings.verifyCertificates(),
-      }),
-    );
-
     const positron = getPositronRepoSettings();
     const clientVersion =
       this.context.extension.packageJSON.version || "unknown";
@@ -388,25 +387,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       kind: HostToWebviewMessageType.PUBLISH_INIT,
     });
 
-    runTsDeployWithProgress({
-      deploy: (onProgress, signal) =>
-        connectPublish({
-          api: connectApi,
-          projectDir: absProjectDir,
-          saveName: deploymentName,
-          config: config.configuration,
-          configName: config.configurationName,
-          serverUrl: credential.url,
-          serverType: credential.serverType,
-          existingContentId,
-          existingCreatedAt,
-          secrets,
-          rPath: r?.rPath,
-          positronR: positron.r,
-          clientVersion,
-          onProgress,
-          signal,
-        }),
+    const progressOptions = {
       onComplete: () => this.refreshContentRecords(),
       onCancel: () => {
         this.webviewConduit.sendMsg({
@@ -416,7 +397,77 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       stream: this.stream,
       serverUrl: credential.url,
       title: deploymentName,
-    });
+    };
+
+    if (credential.serverType === ServerType.CONNECT_CLOUD) {
+      const cloudApi = new ConnectCloudAPI({
+        apiBaseUrl: cloudEnvironmentBaseUrls[CONNECT_CLOUD_ENVIRONMENT],
+        accessToken: credential.accessToken,
+        refreshToken: credential.refreshToken,
+        environment: CONNECT_CLOUD_ENVIRONMENT,
+        onTokenRefresh: async (tokens) => {
+          credential.accessToken = tokens.access_token;
+          credential.refreshToken = tokens.refresh_token;
+          await storeCredential(this.context.secrets, credential);
+        },
+      });
+
+      runTsDeployWithProgress({
+        deploy: (onProgress, signal) =>
+          connectCloudPublish({
+            api: cloudApi,
+            projectDir: absProjectDir,
+            saveName: deploymentName,
+            config: config.configuration,
+            configName: config.configurationName,
+            serverType: credential.serverType,
+            credential: {
+              accountId: credential.accountId,
+              accountName: credential.accountName,
+              environment: CONNECT_CLOUD_ENVIRONMENT,
+            },
+            existingContentId: existingContentId
+              ? ContentID(existingContentId)
+              : undefined,
+            existingCreatedAt,
+            secrets,
+            rPath: r?.rPath,
+            positronR: positron.r,
+            clientVersion,
+            onProgress,
+            signal,
+          }),
+        ...progressOptions,
+      });
+    } else {
+      const connectApi = new ConnectAPI(
+        await connectAPIOptionsFromCredential(credential, {
+          rejectUnauthorized: extensionSettings.verifyCertificates(),
+        }),
+      );
+
+      runTsDeployWithProgress({
+        deploy: (onProgress, signal) =>
+          connectPublish({
+            api: connectApi,
+            projectDir: absProjectDir,
+            saveName: deploymentName,
+            config: config.configuration,
+            configName: config.configurationName,
+            serverUrl: credential.url,
+            serverType: credential.serverType,
+            existingContentId,
+            existingCreatedAt,
+            secrets,
+            rPath: r?.rPath,
+            positronR: positron.r,
+            clientVersion,
+            onProgress,
+            signal,
+          }),
+        ...progressOptions,
+      });
+    }
   }
 
   private async initiateGoDeployment(

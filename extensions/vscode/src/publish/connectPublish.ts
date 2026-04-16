@@ -1,8 +1,6 @@
 // Copyright (C) 2026 by Posit Software, PBC.
 
-import * as fs from "fs/promises";
 import * as path from "path";
-import { stringify as stringifyTOML } from "smol-toml";
 import { isAxiosError } from "axios";
 
 import {
@@ -17,77 +15,40 @@ import {
   ContentType,
   type ConfigurationDetails,
 } from "../api/types/configurations";
-import type { ServerType } from "../api/types/contentRecords";
 import type { PositronRSettings } from "../api/types/positron";
 
-import { manifestFromConfig } from "../bundler/manifestFromConfig";
 import { appModeFromType, contentTypeFromAppMode } from "../bundler/appMode";
 import { connectContentFromConfig } from "../bundler/connectContentFromConfig";
-import { createBundle } from "../bundler/bundler";
 import { getFilenames } from "../bundler/manifest";
-import type { Manifest, BundleProgressCallback } from "../bundler/types";
 
-import { resolveRPackages, readPythonRequirements } from "./dependencies";
+import { readPythonRequirements } from "./dependencies";
 import {
-  findExtraDependencies,
-  recordExtraDependencies,
-  cleanupExtraDependencies,
-} from "./extraDependencies";
-import { libraryToManifestPackages } from "./rLibraryMapper";
-import { scanRPackages } from "../interpreters/rPackages";
-import type { RenvLockfile } from "./rPackageDescriptions";
+  CanceledError,
+  buildManifest,
+  buildBundleArchive,
+  mergeEnvVars,
+  writePublishRecord,
+  setRecordContentInfo,
+  lockfileToDeploymentRenv,
+  DEPLOYMENT_SCHEMA_URL,
+  type PublishEvent,
+  type PublishStep,
+  type PublishResult,
+  type PublishRecord,
+} from "./publishShared";
 
 import { forceProductTypeCompliance } from "../toml/configCompliance";
-import { convertKeysToSnakeCase } from "../toml/convertKeys";
-import { stripEmpty, isRecord, expandInlineArrays } from "../toml/tomlHelpers";
 import { getDashboardUrl, getDirectUrl, getLogsUrl } from "../toml/urlHelpers";
 import { DEFAULT_PYTHON_PACKAGE_FILE } from "../constants";
 import { fileExistsAt } from "../interpreters/fsUtils";
 import { generateRequirements } from "../interpreters/pythonDependencySources";
 import { logger } from "../logging";
 import type { ErrorCode } from "../utils/errorTypes";
-
-// ---------------------------------------------------------------------------
-// Cancellation
-// ---------------------------------------------------------------------------
-
-/**
- * Thrown when a deployment is canceled via AbortSignal.
- * Distinguishable from real errors so callers can handle cancellation differently.
- */
-export class CanceledError extends Error {
-  constructor() {
-    super("Deployment canceled");
-    this.name = "CanceledError";
-  }
-}
+import type { ServerType } from "../api/types/contentRecords";
 
 // ---------------------------------------------------------------------------
 // Public types
 // ---------------------------------------------------------------------------
-
-export type PublishStep =
-  | "createManifest"
-  | "preflight"
-  | "createNewDeployment"
-  | "createDeployment"
-  | "createBundle"
-  | "uploadBundle"
-  | "updateContent"
-  | "setEnvVars"
-  | "deployBundle"
-  | "waitForTask"
-  | "validateDeployment";
-
-export type PublishEvent = {
-  step: PublishStep;
-  status: "start" | "success" | "failure" | "log";
-  message?: string;
-  /** Typed error code for failure events. */
-  errCode?: ErrorCode;
-  /** Additional data for event stream injection (e.g., URLs, status codes). */
-  data?: Record<string, string>;
-};
 
 export type ConnectPublishOptions = {
   /** Connected Connect API client. */
@@ -122,39 +83,29 @@ export type ConnectPublishOptions = {
   signal?: AbortSignal;
 };
 
-export type PublishResult = {
-  contentId: string;
-  dashboardUrl: string;
-  directUrl: string;
-  logsUrl: string;
-  bundleId: string;
-};
-
 // ---------------------------------------------------------------------------
 // Main orchestrator
 // ---------------------------------------------------------------------------
 
-export async function connectPublish(
-  options: ConnectPublishOptions,
-): Promise<PublishResult> {
-  const {
-    api,
-    projectDir,
-    saveName,
-    configName,
-    serverUrl,
-    serverType,
-    existingContentId,
-    existingCreatedAt,
-    secrets,
-    rPath,
-    positronR,
-    clientVersion,
-    onProgress,
-  } = options;
-
+export async function connectPublish({
+  api,
+  projectDir,
+  saveName,
+  config: rawConfig,
+  configName,
+  serverUrl,
+  serverType,
+  existingContentId,
+  existingCreatedAt,
+  secrets,
+  rPath,
+  positronR,
+  clientVersion,
+  onProgress,
+  signal,
+}: ConnectPublishOptions): Promise<PublishResult> {
   // Work on a copy so we don't mutate the caller's config
-  const config = structuredClone(options.config);
+  const config = structuredClone(rawConfig);
   forceProductTypeCompliance(config);
 
   const deploymentPath = path.join(
@@ -181,15 +132,19 @@ export async function connectPublish(
 
   // If redeploying, populate URLs from existing content ID
   if (contentId) {
-    setRecordContentInfo(record, serverUrl, contentId);
+    setRecordContentInfo(
+      record,
+      contentId,
+      getDashboardUrl(serverUrl, contentId),
+      getDirectUrl(serverUrl, contentId),
+      getLogsUrl(serverUrl, contentId),
+    );
   }
 
   // Write initial deployment record
   await writePublishRecord(deploymentPath, record);
 
   let lastStep: PublishStep | undefined;
-
-  const signal = options.signal;
 
   /** Check if canceled; if so, write dismissedAt and throw CanceledError. */
   async function throwIfCanceled(): Promise<void> {
@@ -436,7 +391,13 @@ export async function connectPublish(
         signal,
       );
       contentId = created.guid;
-      setRecordContentInfo(record, serverUrl, contentId);
+      setRecordContentInfo(
+        record,
+        contentId,
+        getDashboardUrl(serverUrl, contentId),
+        getDirectUrl(serverUrl, contentId),
+        getLogsUrl(serverUrl, contentId),
+      );
       onProgress({
         step: "createNewDeployment",
         status: "log",
@@ -886,6 +847,17 @@ function classifyDeploymentError(
     };
   }
 
+  // Other HTTP errors — include the full response body so the user sees the
+  // same detail the Go path surfaces via HTTPError.Error().
+  if (isAxiosError(err) && err.response) {
+    const { status, data } = err.response;
+    const body = typeof data === "string" ? data : JSON.stringify(data ?? "");
+    return {
+      code: "unknown",
+      message: `Unexpected response from the server (${status}: ${body})`,
+    };
+  }
+
   return { code: "unknown", message: fallbackMessage };
 }
 
@@ -1124,390 +1096,8 @@ function checkMinMax(
 }
 
 // ---------------------------------------------------------------------------
-// Manifest building (R scan-if-missing logic)
-// ---------------------------------------------------------------------------
-
-type ManifestResult = {
-  manifest: Manifest;
-  /** Absolute path to the lockfile used for R packages, if any. */
-  lockfilePath: string | undefined;
-  /** Parsed lockfile content (PascalCase, as read from renv.lock). */
-  lockfile: RenvLockfile | undefined;
-};
-
-async function buildManifest(
-  projectDir: string,
-  config: ConfigurationDetails,
-  rPath: string | undefined,
-  positronR: PositronRSettings | undefined,
-  onProgress: (event: PublishEvent) => void,
-): Promise<ManifestResult> {
-  const manifest = manifestFromConfig(config);
-  let lockfilePath: string | undefined;
-  let lockfile: RenvLockfile | undefined;
-
-  if (config.r) {
-    const packageFile = config.r.packageFile || "renv.lock";
-    const lockfileOnDisk = path.join(projectDir, packageFile);
-    const lockExists = await fileExistsAt(lockfileOnDisk);
-
-    if (config.r.packagesFromLibrary && !lockExists) {
-      throw new Error(
-        `packages_from_library requires an renv.lock file (expected at ` +
-          `"${packageFile}"). Run renv::snapshot() to create one.`,
-      );
-    }
-
-    if (config.r.packagesFromLibrary && lockExists) {
-      // Library mapper — reads DESCRIPTION files from local R library
-      if (!rPath) {
-        throw new Error(
-          "R interpreter is required when packages_from_library is enabled, " +
-            "but none was found. Install R or disable packages_from_library.",
-        );
-      }
-      onProgress({
-        step: "createManifest",
-        status: "log",
-        message: "Loading packages from local R library",
-      });
-      manifest.packages = await libraryToManifestPackages(
-        projectDir,
-        config.r,
-        rPath,
-      );
-      // Also read the lockfile for deployment record metadata.
-      // This intentionally re-reads and re-parses the lockfile that
-      // libraryToManifestPackages already parsed internally, because that
-      // function only returns manifest packages (not the raw lockfile).
-      // The cost of the extra I/O is negligible for renv.lock files.
-      const resolved = await resolveRPackages(projectDir, config.r);
-      if (resolved) {
-        lockfilePath = resolved.lockfilePath;
-        lockfile = resolved.lockfile;
-      }
-    } else if (lockExists) {
-      // Lockfile mapper — extract packages from renv.lock directly
-      onProgress({
-        step: "createManifest",
-        status: "log",
-        message: `Loading packages from renv.lock`,
-      });
-      const resolved = await resolveRPackages(projectDir, config.r);
-      if (resolved) {
-        manifest.packages = resolved.packages;
-        lockfilePath = resolved.lockfilePath;
-        lockfile = resolved.lockfile;
-      }
-    } else {
-      // No lockfile — scan project for R dependencies
-      // Mirrors Go's manifest.go:46 log message
-      onProgress({
-        step: "createManifest",
-        status: "log",
-        message: "No renv.lock found; automatically scanning for dependencies",
-      });
-
-      if (!rPath) {
-        throw new Error(
-          "R interpreter is required to scan for R package dependencies, " +
-            "but none was found. Install R or provide an renv.lock file.",
-        );
-      }
-
-      // Mirrors Go's r_package_descriptions.go:105
-      onProgress({
-        step: "createManifest",
-        status: "log",
-        message: "Detect dependencies from project",
-      });
-
-      // Inject implicit deps (e.g. shiny, rmarkdown) so renv can discover them
-      const extraDeps = await findExtraDependencies(
-        config.type,
-        config.hasParameters,
-        projectDir,
-      );
-      const depsFile = await recordExtraDependencies(projectDir, extraDeps);
-
-      try {
-        await scanRPackages(projectDir, rPath, packageFile, positronR);
-      } finally {
-        if (depsFile) {
-          await cleanupExtraDependencies(depsFile);
-        }
-      }
-
-      // Now resolve from the generated lockfile
-      onProgress({
-        step: "createManifest",
-        status: "log",
-        message: `Loading packages from renv.lock`,
-      });
-      const resolved = await resolveRPackages(projectDir, config.r);
-      if (resolved) {
-        manifest.packages = resolved.packages;
-        lockfilePath = resolved.lockfilePath;
-        lockfile = resolved.lockfile;
-      }
-    }
-
-    onProgress({
-      step: "createManifest",
-      status: "log",
-      message: "Done collecting R package descriptions",
-    });
-  }
-
-  return { manifest, lockfilePath, lockfile };
-}
-
-// ---------------------------------------------------------------------------
-// Bundle creation with lockfile staging
-// ---------------------------------------------------------------------------
-
-async function buildBundleArchive(
-  projectDir: string,
-  config: ConfigurationDetails,
-  manifest: Manifest,
-  lockfilePath: string | undefined,
-  onBundleProgress?: BundleProgressCallback,
-  syntheticFiles?: Map<string, Buffer>,
-): Promise<{ bundle: Buffer; manifest: Manifest }> {
-  const basePatterns = config.files?.length ? [...config.files] : ["*"];
-  const extraPatterns: string[] = [];
-  let stagedLockfile: string | undefined;
-
-  // If the lockfile is not at the project root as renv.lock, stage a copy
-  // under .posit/publish/deployments/ and adjust patterns so the bundle
-  // includes the staged copy instead of any root renv.lock.
-  if (lockfilePath) {
-    const rootLockfile = path.join(projectDir, "renv.lock");
-    if (path.resolve(lockfilePath) !== path.resolve(rootLockfile)) {
-      stagedLockfile = await copyLockfileToPositDir(projectDir, lockfilePath);
-      extraPatterns.push("!renv.lock", ".posit/publish/deployments/renv.lock");
-    }
-  }
-
-  const filePatterns = [...basePatterns, ...extraPatterns];
-
-  try {
-    const result = await createBundle({
-      projectPath: projectDir,
-      manifest,
-      filePatterns,
-      onProgress: onBundleProgress,
-      syntheticFiles,
-    });
-
-    return { bundle: result.bundle, manifest: result.manifest };
-  } finally {
-    if (stagedLockfile) {
-      await fs.unlink(stagedLockfile).catch(() => {});
-    }
-  }
-}
-
-async function copyLockfileToPositDir(
-  projectDir: string,
-  lockfilePath: string,
-): Promise<string> {
-  const targetDir = path.join(projectDir, ".posit", "publish", "deployments");
-  await fs.mkdir(targetDir, { recursive: true });
-  const target = path.join(targetDir, "renv.lock");
-  await fs.copyFile(lockfilePath, target);
-  return target;
-}
-
-// ---------------------------------------------------------------------------
-// Deployment record writing
-// ---------------------------------------------------------------------------
-
-const DEPLOYMENT_SCHEMA_URL =
-  "https://cdn.posit.co/publisher/schemas/posit-publishing-record-schema-v3.json";
-
-const AUTOGEN_HEADER =
-  "# This file is automatically generated by Posit Publisher; do not edit.\n";
-
-// Exported for testing — allows round-trip validation through loadDeploymentFromFile.
-export type PublishRecord = {
-  schema: string;
-  serverType: ServerType | string;
-  serverUrl: string;
-  clientVersion: string;
-  createdAt: string;
-  type: string;
-  configName: string;
-  config?: ConfigurationDetails;
-  id?: string;
-  dashboardUrl?: string;
-  directUrl?: string;
-  logsUrl?: string;
-  bundleId?: string;
-  bundleUrl?: string;
-  files?: string[];
-  requirements?: string[];
-  renv?: Record<string, unknown>;
-  deployedAt?: string;
-  dismissedAt?: string;
-  deploymentError?: { code: string; message: string; operation: string };
-};
-
-function setRecordContentInfo(
-  record: PublishRecord,
-  serverUrl: string,
-  contentId: string,
-): void {
-  record.id = contentId;
-  record.dashboardUrl = getDashboardUrl(serverUrl, contentId);
-  record.directUrl = getDirectUrl(serverUrl, contentId);
-  record.logsUrl = getLogsUrl(serverUrl, contentId);
-}
-
-/**
- * Build a TOML-ready object from the publish record.
- *
- * Top-level keys use snake_case to match the deployment record schema.
- * The renv section uses lowercase keys (r, packages, version, etc.)
- * as defined by the schema, not the PascalCase from renv.lock files.
- */
-function recordToTomlObject(record: PublishRecord): Record<string, unknown> {
-  // Build the configuration section separately — it needs key conversion
-  // and empty-value stripping that the other fields don't.
-  let configuration: unknown;
-  if (record.config) {
-    // Clone and remove non-TOML fields, matching Go's toml:"-" tags
-    // and the behavior of configWriter/deploymentWriter.
-    const cfg = { ...record.config };
-    delete cfg.comments;
-    delete cfg.alternatives;
-    delete cfg.entrypointObjectRef;
-
-    const snakeConfig = convertKeysToSnakeCase(cfg);
-    if (isRecord(snakeConfig)) {
-      stripEmpty(snakeConfig);
-    }
-    configuration = snakeConfig;
-  }
-
-  // Keys are mapped explicitly because some don't follow simple
-  // camelCase→snake_case (e.g. configName → configuration_name,
-  // schema → $schema). Undefined values are dropped by smol-toml's
-  // stringify, so `|| undefined` omits unset optional fields.
-  return {
-    $schema: record.schema,
-    server_type: record.serverType,
-    server_url: record.serverUrl,
-    client_version: record.clientVersion,
-    created_at: record.createdAt,
-    type: record.type,
-    configuration_name: record.configName,
-    configuration,
-    id: record.id || undefined,
-    dashboard_url: record.dashboardUrl || undefined,
-    direct_url: record.directUrl || undefined,
-    logs_url: record.logsUrl || undefined,
-    bundle_id: record.bundleId || undefined,
-    bundle_url: record.bundleUrl || undefined,
-    files: record.files || undefined,
-    requirements: record.requirements || undefined,
-    renv: record.renv || undefined,
-    deployed_at: record.deployedAt || undefined,
-    dismissed_at: record.dismissedAt || undefined,
-    deployment_error: record.deploymentError || undefined,
-  };
-}
-
-// Exported for testing — allows round-trip validation through loadDeploymentFromFile.
-export async function writePublishRecord(
-  deploymentPath: string,
-  record: PublishRecord,
-): Promise<void> {
-  // Mirrors Go's WriteDeploymentRecord which sets DeployedAt = now on every
-  // write (initial, post-upload, error). This ensures failed/in-progress
-  // records reflect when the attempt happened.
-  record.deployedAt = new Date().toISOString();
-  const obj = recordToTomlObject(record);
-  const content =
-    AUTOGEN_HEADER + expandInlineArrays(stringifyTOML(obj)) + "\n";
-  await fs.mkdir(path.dirname(deploymentPath), { recursive: true });
-  await fs.writeFile(deploymentPath, content, "utf-8");
-}
-
-// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function mergeEnvVars(
-  configEnv: Record<string, string> | undefined,
-  secrets: Record<string, string> | undefined,
-): Record<string, string> | undefined {
-  if (!configEnv && !secrets) {
-    return undefined;
-  }
-  const merged: Record<string, string> = {};
-  if (configEnv) {
-    Object.assign(merged, configEnv);
-  }
-  if (secrets) {
-    Object.assign(merged, secrets);
-  }
-  return Object.keys(merged).length > 0 ? merged : undefined;
-}
-
-/**
- * Convert a PascalCase renv.lock structure to the lowercase shape
- * expected by the deployment record schema.
- *
- * renv.lock uses PascalCase (R, Packages, Version, etc.) but the
- * deployment record schema expects lowercase (r, packages, version).
- * Go handles this via struct tags; we convert explicitly.
- */
-export function lockfileToDeploymentRenv(
-  lockfile: RenvLockfile,
-): Record<string, unknown> {
-  const renv: Record<string, unknown> = {};
-
-  if (lockfile.R) {
-    renv.r = {
-      version: lockfile.R.Version,
-      ...(lockfile.R.Repositories && {
-        repositories: lockfile.R.Repositories.map((repo) => ({
-          name: repo.Name,
-          url: repo.URL,
-        })),
-      }),
-    };
-  }
-
-  if (lockfile.Packages) {
-    const packages: Record<string, Record<string, unknown>> = {};
-    for (const [name, pkg] of Object.entries(lockfile.Packages)) {
-      const converted: Record<string, unknown> = {};
-      for (const [key, value] of Object.entries(pkg)) {
-        if (value !== undefined && value !== null && value !== "") {
-          converted[pascalToSnake(key)] = value;
-        }
-      }
-      packages[name] = converted;
-    }
-    renv.packages = packages;
-  }
-
-  return renv;
-}
-
-/**
- * Convert a PascalCase or camelCase key to snake_case.
- * Handles sequences of capitals: "RemotePkgRef" → "remote_pkg_ref",
- * "URL" → "url", "Package" → "package".
- */
-function pascalToSnake(key: string): string {
-  return key
-    .replace(/([A-Z]+)([A-Z][a-z])/g, "$1_$2")
-    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
-    .toLowerCase();
-}
 
 function getBundleUrl(
   serverUrl: string,
