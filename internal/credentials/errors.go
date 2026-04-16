@@ -109,8 +109,13 @@ func (e *IncompleteCredentialError) Error() string {
 	return "New credentials require non-empty Name, URL, Server Type, and either API Key, Snowflake, or Connect Cloud connection fields"
 }
 
+type backupFileDetails struct {
+	Filename string `json:"filename"`
+	Message  string `json:"message"`
+}
+
 func NewBackupFileAgentError(filename string, err error) *types.AgentError {
-	details := types.ErrorCredentialsCannotBackupFileDetails{
+	details := backupFileDetails{
 		Filename: filename,
 		Message:  fmt.Sprintf("Failed to backup credentials to %s: %v", filename, err.Error()),
 	}

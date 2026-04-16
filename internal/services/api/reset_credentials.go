@@ -19,13 +19,13 @@ func errIsNotLoadError(err error) bool {
 
 func unavailableCredsRes(w http.ResponseWriter, err error) {
 	agentErr := types.AsAgentError(err)
-	apiErr := types.APIErrorCredentialsUnavailableFromAgentError(*agentErr)
+	apiErr := credentialsUnavailableResponse(*agentErr)
 	apiErr.JSONResponse(w)
 }
 
 func cannotBackupFileRes(w http.ResponseWriter, err error) {
 	agentErr := types.AsAgentError(err)
-	apiErr := types.APIErrorCredentialsBackupFileFromAgentError(*agentErr)
+	apiErr := credentialsBackupFileResponse(*agentErr)
 	apiErr.JSONResponse(w)
 }
 
