@@ -3,7 +3,6 @@
 import axios from "axios";
 
 import { Credentials } from "./resources/Credentials";
-import { ContentRecords } from "./resources/ContentRecords";
 
 import * as Entities from "entities";
 
@@ -11,7 +10,6 @@ class PublishingClientApi {
   private client;
 
   credentials: Credentials;
-  contentRecords: ContentRecords;
   apiServiceIsUp: Promise<boolean>;
 
   constructor(apiBaseUrl: string, apiServiceIsUp: Promise<boolean>) {
@@ -35,7 +33,6 @@ class PublishingClientApi {
     this.apiServiceIsUp = apiServiceIsUp;
 
     this.credentials = new Credentials(this.client);
-    this.contentRecords = new ContentRecords(this.client);
   }
 
   setBaseUrl(url: string) {
