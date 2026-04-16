@@ -49,6 +49,24 @@ Cypress.on("window:before:load", (win) => {
 
 configure({ testIdAttribute: "data-automation" });
 
+// Dismiss the VSCode onboarding overlay if it appears.
+// Newer code-server versions may show a "Welcome to Visual Studio Code"
+// dialog that covers the entire UI and blocks interaction.
+Cypress.Commands.add("dismissOnboardingOverlay", () => {
+  cy.get("body", { log: false }).then(($body) => {
+    const overlay = $body.find(".onboarding-a-overlay.visible");
+    if (overlay.length > 0) {
+      cy.log("Dismissing VSCode onboarding overlay");
+      // Press Escape to close the dialog
+      cy.get("body").type("{esc}");
+      // Verify it's gone
+      cy.get(".onboarding-a-overlay.visible", { timeout: 5000 }).should(
+        "not.exist",
+      );
+    }
+  });
+});
+
 // Global command for skipping tests in CI
 Cypress.skipCI = (fn) => (Cypress.env("CI") === "true" ? fn.skip : fn);
 

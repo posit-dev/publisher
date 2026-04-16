@@ -13,6 +13,8 @@ cat <<EOF > /home/coder/.local/share/code-server/User/settings.json
   "remote.autoForwardPortsSource": "hybrid",
   "workbench.settings.applyToAllProfiles": [],
   "workbench.startupEditor": "none",
+  "workbench.welcomePage.walkthroughs.openOnInstall": false,
+  "workbench.tips.enabled": false,
   "window.restoreWindows": "none",
   "files.hotExit": "off",
   "positPublisher.useKeyChainCredentialStorage": false
