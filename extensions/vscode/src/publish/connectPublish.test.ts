@@ -1527,7 +1527,7 @@ describe("connectPublish — error classification", () => {
 
     // Assert a representative subset of log messages across steps.
     // Note: createManifest emits log events from the orchestrator, but is
-    // intentionally omitted from stepToEventPrefix in tsDeployProgress.ts
+    // intentionally omitted from stepToEventPrefix in deployProgress.ts
     // because it maps to the R-specific publish/getRPackageDescriptions
     // stage that the Go path skips for Python-only projects.
     expect(logMessages).toContainEqual({
