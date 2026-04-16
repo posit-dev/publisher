@@ -16,9 +16,6 @@ type Event struct {
 	Type    string
 	Data    EventData
 	ErrCode ErrorCode
-
-	op    Operation
-	phase Phase
 }
 
 type Operation = types.Operation
