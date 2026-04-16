@@ -317,133 +317,146 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     projectDir: string,
     secrets?: Record<string, string>,
   ) {
-    const credential = this.state.findCredential(credentialName);
-    const config = this.state.findValidConfig(configurationName, projectDir);
+    try {
+      const credential = this.state.findCredential(credentialName);
+      const config = this.state.findValidConfig(configurationName, projectDir);
 
-    if (!credential) {
-      window.showErrorMessage(`Credential not found: ${credentialName}`);
-      return;
-    }
-    if (!config) {
-      window.showErrorMessage(`Configuration not found: ${configurationName}`);
-      return;
-    }
+      if (!credential) {
+        window.showErrorMessage(`Credential not found: ${credentialName}`);
+        return;
+      }
+      if (!config) {
+        const errConfig = this.state.findConfigInError(
+          configurationName,
+          projectDir,
+        );
+        if (errConfig) {
+          window.showErrorMessage(
+            `Invalid configuration ${configurationName}: ${errConfig.error.msg}`,
+          );
+        } else {
+          window.showErrorMessage(
+            `Configuration not found: ${configurationName}`,
+          );
+        }
+        return;
+      }
 
-    const root = this.root?.uri.fsPath;
-    if (!root) {
-      window.showErrorMessage("No workspace folder open.");
-      return;
-    }
-    const absProjectDir = path.resolve(root, projectDir);
-    const rel = path.relative(root, absProjectDir);
-    // Check that the resolved path stays within the workspace.
-    // We can't just use rel.startsWith("..") because a directory
-    // literally named ".." would be a false positive.
-    if (
-      rel === ".." ||
-      rel.startsWith(".." + path.sep) ||
-      path.isAbsolute(rel)
-    ) {
-      window.showErrorMessage("Project directory is outside the workspace.");
-      return;
-    }
+      const root = this.root?.uri.fsPath;
+      if (!root) {
+        window.showErrorMessage("No workspace folder open.");
+        return;
+      }
+      const absProjectDir = path.resolve(root, projectDir);
+      const rel = path.relative(root, absProjectDir);
+      // Check that the resolved path stays within the workspace.
+      // We can't just use rel.startsWith("..") because a directory
+      // literally named ".." would be a false positive.
+      if (
+        rel === ".." ||
+        rel.startsWith(".." + path.sep) ||
+        path.isAbsolute(rel)
+      ) {
+        window.showErrorMessage("Project directory is outside the workspace.");
+        return;
+      }
 
-    const contentRecord = this.state.findContentRecord(
-      deploymentName,
-      projectDir,
-    );
-    const existingContentId = contentRecord?.id;
-    const existingCreatedAt = contentRecord?.createdAt;
-
-    const positron = getPositronRepoSettings();
-    const clientVersion =
-      this.context.extension.packageJSON.version || "unknown";
-    const r = await getRInterpreterPath();
-
-    // Tell the webview the publish API call has been accepted
-    this.webviewConduit.sendMsg({
-      kind: HostToWebviewMessageType.PUBLISH_INIT,
-    });
-
-    const progressOptions = {
-      onComplete: () => this.refreshContentRecords(),
-      onCancel: () => {
-        this.webviewConduit.sendMsg({
-          kind: HostToWebviewMessageType.PUBLISH_CANCEL,
-        });
-      },
-      stream: this.stream,
-      serverUrl: credential.url,
-      title: deploymentName,
-    };
-
-    if (credential.serverType === ServerType.CONNECT_CLOUD) {
-      const cloudApi = new ConnectCloudAPI({
-        apiBaseUrl: cloudEnvironmentBaseUrls[CONNECT_CLOUD_ENVIRONMENT],
-        accessToken: credential.accessToken,
-        refreshToken: credential.refreshToken,
-        environment: CONNECT_CLOUD_ENVIRONMENT,
-        onTokenRefresh: async (tokens) => {
-          credential.accessToken = tokens.access_token;
-          credential.refreshToken = tokens.refresh_token;
-          await storeCredential(this.context.secrets, credential);
-        },
-      });
-
-      runDeployWithProgress({
-        deploy: (onProgress, signal) =>
-          connectCloudPublish({
-            api: cloudApi,
-            projectDir: absProjectDir,
-            saveName: deploymentName,
-            config: config.configuration,
-            configName: config.configurationName,
-            serverType: credential.serverType,
-            credential: {
-              accountId: credential.accountId,
-              accountName: credential.accountName,
-              environment: CONNECT_CLOUD_ENVIRONMENT,
-            },
-            existingContentId: existingContentId
-              ? ContentID(existingContentId)
-              : undefined,
-            existingCreatedAt,
-            secrets,
-            rPath: r?.rPath,
-            positronR: positron.r,
-            clientVersion,
-            onProgress,
-            signal,
-          }),
-        ...progressOptions,
-      });
-    } else {
-      const connectApi = new ConnectAPI(
-        await connectAPIOptionsFromCredential(credential, {
-          rejectUnauthorized: extensionSettings.verifyCertificates(),
-        }),
+      const contentRecord = this.state.findContentRecord(
+        deploymentName,
+        projectDir,
       );
+      const existingContentId = contentRecord?.id;
+      const existingCreatedAt = contentRecord?.createdAt;
 
-      runDeployWithProgress({
-        deploy: (onProgress, signal) =>
-          connectPublish({
-            api: connectApi,
-            projectDir: absProjectDir,
-            saveName: deploymentName,
-            config: config.configuration,
-            configName: config.configurationName,
-            serverUrl: credential.url,
-            serverType: credential.serverType,
-            existingContentId,
-            existingCreatedAt,
-            secrets,
-            rPath: r?.rPath,
-            positronR: positron.r,
-            clientVersion,
-            onProgress,
-            signal,
+      const positron = getPositronRepoSettings();
+      const clientVersion =
+        this.context.extension.packageJSON.version || "unknown";
+      const r = await getRInterpreterPath();
+
+      const progressOptions = {
+        onComplete: () => this.refreshContentRecords(),
+        onCancel: () => {
+          this.webviewConduit.sendMsg({
+            kind: HostToWebviewMessageType.PUBLISH_CANCEL,
+          });
+        },
+        stream: this.stream,
+        serverUrl: credential.url,
+        title: deploymentName,
+      };
+
+      if (credential.serverType === ServerType.CONNECT_CLOUD) {
+        const cloudApi = new ConnectCloudAPI({
+          apiBaseUrl: cloudEnvironmentBaseUrls[CONNECT_CLOUD_ENVIRONMENT],
+          accessToken: credential.accessToken,
+          refreshToken: credential.refreshToken,
+          environment: CONNECT_CLOUD_ENVIRONMENT,
+          onTokenRefresh: async (tokens) => {
+            credential.accessToken = tokens.access_token;
+            credential.refreshToken = tokens.refresh_token;
+            await storeCredential(this.context.secrets, credential);
+          },
+        });
+
+        runDeployWithProgress({
+          deploy: (onProgress, signal) =>
+            connectCloudPublish({
+              api: cloudApi,
+              projectDir: absProjectDir,
+              saveName: deploymentName,
+              config: config.configuration,
+              configName: config.configurationName,
+              serverType: credential.serverType,
+              credential: {
+                accountId: credential.accountId,
+                accountName: credential.accountName,
+                environment: CONNECT_CLOUD_ENVIRONMENT,
+              },
+              existingContentId: existingContentId
+                ? ContentID(existingContentId)
+                : undefined,
+              existingCreatedAt,
+              secrets,
+              rPath: r?.rPath,
+              positronR: positron.r,
+              clientVersion,
+              onProgress,
+              signal,
+            }),
+          ...progressOptions,
+        });
+      } else {
+        const connectApi = new ConnectAPI(
+          await connectAPIOptionsFromCredential(credential, {
+            rejectUnauthorized: extensionSettings.verifyCertificates(),
           }),
-        ...progressOptions,
+        );
+
+        runDeployWithProgress({
+          deploy: (onProgress, signal) =>
+            connectPublish({
+              api: connectApi,
+              projectDir: absProjectDir,
+              saveName: deploymentName,
+              config: config.configuration,
+              configName: config.configurationName,
+              serverUrl: credential.url,
+              serverType: credential.serverType,
+              existingContentId,
+              existingCreatedAt,
+              secrets,
+              rPath: r?.rPath,
+              positronR: positron.r,
+              clientVersion,
+              onProgress,
+              signal,
+            }),
+          ...progressOptions,
+        });
+      }
+    } finally {
+      this.webviewConduit.sendMsg({
+        kind: HostToWebviewMessageType.PUBLISH_INIT,
       });
     }
   }
