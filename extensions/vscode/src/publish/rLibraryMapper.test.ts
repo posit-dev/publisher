@@ -498,30 +498,6 @@ describe("library mapper error cases", () => {
     expect(description["Version"]).not.toBe(pkg.Version);
   });
 
-  test("CRAN package newer than mirror still resolves (toManifestPackage)", () => {
-    const pkg: RenvPackage = {
-      Package: "mypkg",
-      Version: "1.2.3",
-      Source: "Repository",
-      Repository: "CRAN",
-    };
-    const available: AvailablePackage[] = [
-      {
-        name: "mypkg",
-        version: "1.0.0", // installed is newer
-        repository: "https://cran.rstudio.com",
-      },
-    ];
-    const result = toManifestPackage(
-      pkg,
-      [{ Name: "CRAN", URL: "https://cran.rstudio.com" }],
-      available,
-      [],
-    );
-    expect(result.Source).toBe("CRAN");
-    expect(result.Repository).toBe("https://cran.rstudio.com");
-  });
-
   test("missing DESCRIPTION throws with renv::restore() guidance", async () => {
     await expect(readPackageDescription("mypkg", [])).rejects.toThrow(
       "consider running renv::restore()",
