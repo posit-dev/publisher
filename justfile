@@ -249,11 +249,7 @@ check-extension-contract-conformance:
 
     cd test/extension-contract-tests && npm run check:conformance
 
-# Build the Connect API contract test harness binary
-build-connect-harness:
-    go build -o test/connect-api-contracts/harness/harness ./test/connect-api-contracts/harness/
-
-# Run Connect API contract tests (builds harness automatically via setup.ts)
+# Run Connect API contract tests
 test-connect-contracts:
     #!/usr/bin/env bash
     set -eou pipefail
