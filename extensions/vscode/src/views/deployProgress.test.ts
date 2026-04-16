@@ -3,7 +3,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import type { PublishResult } from "src/publish/publishShared";
 import type { EventStreamMessage } from "src/api";
-import { isServerLogStep, runTsDeployWithProgress } from "./tsDeployProgress";
+import { isServerLogStep, runDeployWithProgress } from "./deployProgress";
 
 vi.mock("src/logging");
 
@@ -60,7 +60,7 @@ const successResult: PublishResult = {
   bundleId: "42",
 };
 
-describe("runTsDeployWithProgress", () => {
+describe("runDeployWithProgress", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     capturedCancellationHandler = undefined;
@@ -68,12 +68,12 @@ describe("runTsDeployWithProgress", () => {
   });
 
   function run(
-    deploy: Parameters<typeof runTsDeployWithProgress>[0]["deploy"],
-    overrides: Partial<Parameters<typeof runTsDeployWithProgress>[0]> = {},
+    deploy: Parameters<typeof runDeployWithProgress>[0]["deploy"],
+    overrides: Partial<Parameters<typeof runDeployWithProgress>[0]> = {},
   ) {
     const onComplete = vi.fn();
     const stream = makeMockStream();
-    runTsDeployWithProgress({
+    runDeployWithProgress({
       deploy,
       onComplete,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

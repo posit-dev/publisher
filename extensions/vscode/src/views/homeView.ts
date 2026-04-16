@@ -30,15 +30,12 @@ import {
   FileAction,
   PreContentRecord,
   isConfigurationError,
-  Credential,
   isContentRecord,
   isContentRecordError,
   isPreContentRecord,
   isPreContentRecordWithConfig,
-  useApi,
   AllContentRecordTypes,
   EnvironmentConfig,
-  PreContentRecordWithConfig,
   ProductName,
   ServerType,
   IntegrationRequest,
@@ -76,8 +73,7 @@ import { scanPythonDependencies } from "src/interpreters/scanPythonDependencies"
 import { getSummaryStringFromError } from "src/utils/errors";
 import { getNonce } from "src/utils/getNonce";
 import { getUri } from "src/utils/getUri";
-import { deployProject } from "src/views/deployProgress";
-import { runTsDeployWithProgress } from "src/views/tsDeployProgress";
+import { runDeployWithProgress } from "src/views/deployProgress";
 import { connectPublish } from "src/publish/connectPublish";
 import { connectCloudPublish } from "src/publish/connectCloudPublish";
 import { renderQuartoContent } from "src/views/renders";
@@ -128,7 +124,6 @@ import { throttleWithLastPending } from "src/utils/throttle";
 import { showAssociateGUID } from "src/actions/showAssociateGUID";
 import { extensionSettings } from "src/extension";
 import { openFileInEditor } from "src/commands";
-import { showImmediateDeploymentFailureMessage } from "./publishFailures";
 import {
   SelectionCredentialMatch,
   setSelectionHasCredentialMatch,
@@ -325,32 +320,15 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const credential = this.state.findCredential(credentialName);
     const config = this.state.findValidConfig(configurationName, projectDir);
 
-    if (credential && config) {
-      return await this.initiateTsDeployment(
-        deploymentName,
-        credential,
-        config,
-        projectDir,
-        secrets,
-      );
+    if (!credential) {
+      window.showErrorMessage(`Credential not found: ${credentialName}`);
+      return;
+    }
+    if (!config) {
+      window.showErrorMessage(`Configuration not found: ${configurationName}`);
+      return;
     }
 
-    return await this.initiateGoDeployment(
-      deploymentName,
-      credentialName,
-      configurationName,
-      projectDir,
-      secrets,
-    );
-  }
-
-  private async initiateTsDeployment(
-    deploymentName: string,
-    credential: Credential,
-    config: Configuration,
-    projectDir: string,
-    secrets?: Record<string, string>,
-  ) {
     const root = this.root?.uri.fsPath;
     if (!root) {
       window.showErrorMessage("No workspace folder open.");
@@ -412,7 +390,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         },
       });
 
-      runTsDeployWithProgress({
+      runDeployWithProgress({
         deploy: (onProgress, signal) =>
           connectCloudPublish({
             api: cloudApi,
@@ -446,7 +424,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         }),
       );
 
-      runTsDeployWithProgress({
+      runDeployWithProgress({
         deploy: (onProgress, signal) =>
           connectPublish({
             api: connectApi,
@@ -466,50 +444,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
             signal,
           }),
         ...progressOptions,
-      });
-    }
-  }
-
-  private async initiateGoDeployment(
-    deploymentName: string,
-    credentialName: string,
-    configurationName: string,
-    projectDir: string,
-    secrets?: Record<string, string>,
-  ) {
-    try {
-      const api = await useApi();
-      const r = await getRInterpreterPath();
-      const python = await getPythonInterpreterPath();
-
-      // Collect IDE-controlled repo settings
-      const positron = getPositronRepoSettings();
-
-      const response = await api.contentRecords.publish(
-        deploymentName,
-        credentialName,
-        configurationName,
-        !extensionSettings.verifyCertificates(), // insecure = !verifyCertificates
-        projectDir,
-        r,
-        python,
-        secrets,
-        positron,
-      );
-      deployProject(
-        deploymentName,
-        projectDir,
-        response.data.localId,
-        this.stream,
-        this.updateActiveContentRecordLocally.bind(this),
-      );
-    } catch (error: unknown) {
-      // Most failures will occur on the event stream. These are the ones which
-      // are immediately rejected as part of the API request to initiate deployment.
-      showImmediateDeploymentFailureMessage(error);
-    } finally {
-      this.webviewConduit.sendMsg({
-        kind: HostToWebviewMessageType.PUBLISH_INIT,
       });
     }
   }
@@ -630,19 +564,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       window.showErrorMessage(`Failed to update config file. ${summary}`);
       return;
     }
-  }
-
-  private updateActiveContentRecordLocally(
-    activeContentRecord:
-      | ContentRecord
-      | PreContentRecord
-      | PreContentRecordWithConfig,
-  ) {
-    // update our local state, so we don't wait on file refreshes
-    this.state.updateContentRecord(activeContentRecord);
-
-    // refresh the webview
-    this.updateWebViewViewContentRecords();
   }
 
   private onPublishStart() {
