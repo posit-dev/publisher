@@ -213,53 +213,6 @@ export function isCRANLike(repo: string): boolean {
   return repo === "CRAN" || repo === "RSPM" || repo === "PPM" || repo === "P3M";
 }
 
-/**
- * Parse an R version string into an array of integers for comparison.
- * R versions are sequences of non-negative integers separated by . or -.
- */
-function packageVersion(vs: string): number[] {
-  return vs
-    .split(/[^0-9]+/)
-    .filter((s) => s !== "")
-    .map(Number);
-}
-
-/**
- * Whether a package is a dev version (newer than what's available in repos).
- */
-function isDevVersion(
-  pkg: RenvPackage,
-  availablePackages: AvailablePackage[],
-): boolean {
-  const repoVersion = findAvailableVersion(pkg.Package, availablePackages);
-  if (!repoVersion) {
-    return false;
-  }
-  const installed = packageVersion(pkg.Version);
-  const available = packageVersion(repoVersion);
-  // Compare arrays lexicographically
-  const len = Math.max(installed.length, available.length);
-  for (let i = 0; i < len; i++) {
-    const a = installed[i] ?? 0;
-    const b = available[i] ?? 0;
-    if (a > b) return true;
-    if (a < b) return false;
-  }
-  return false;
-}
-
-function findAvailableVersion(
-  pkgName: string,
-  availablePackages: AvailablePackage[],
-): string {
-  for (const avail of availablePackages) {
-    if (avail.name === pkgName) {
-      return avail.version;
-    }
-  }
-  return "";
-}
-
 function findRepoUrl(
   pkgName: string,
   availablePackages: AvailablePackage[],
@@ -325,9 +278,6 @@ export function toManifestPackage(
   switch (source) {
     case "Repository": {
       if (isCRANLike(repository)) {
-        if (isDevVersion(pkg, availablePackages)) {
-          return { Source: "", Repository: "" };
-        }
         return {
           Source: repository,
           Repository: findRepoUrl(pkg.Package, availablePackages),

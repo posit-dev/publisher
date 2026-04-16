@@ -69,7 +69,7 @@ describe("toManifestPackage", () => {
     });
   });
 
-  test("CRAN dev version results in empty source/repo", () => {
+  test("CRAN package newer than mirror still resolves", () => {
     const pkg: RenvPackage = {
       Package: "mypkg",
       Version: "2.0.0",
@@ -84,7 +84,10 @@ describe("toManifestPackage", () => {
       },
     ];
     const result = toManifestPackage(pkg, cranRepos, available, []);
-    expect(result).toEqual({ Source: "", Repository: "" });
+    expect(result).toEqual({
+      Source: "CRAN",
+      Repository: "https://cran.rstudio.com",
+    });
   });
 
   test("RSPM package not in available packages keeps RSPM source", () => {
@@ -495,7 +498,7 @@ describe("library mapper error cases", () => {
     expect(description["Version"]).not.toBe(pkg.Version);
   });
 
-  test("dev version produces empty Source", () => {
+  test("CRAN package newer than mirror still resolves (toManifestPackage)", () => {
     const pkg: RenvPackage = {
       Package: "mypkg",
       Version: "1.2.3",
@@ -515,8 +518,8 @@ describe("library mapper error cases", () => {
       available,
       [],
     );
-    expect(result.Source).toBe("");
-    expect(result.Repository).toBe("");
+    expect(result.Source).toBe("CRAN");
+    expect(result.Repository).toBe("https://cran.rstudio.com");
   });
 
   test("missing DESCRIPTION throws with renv::restore() guidance", async () => {
@@ -598,7 +601,7 @@ describe("libraryToManifestPackages", () => {
     ).rejects.toThrow("versions in lockfile '1.2.3' and library '4.5.6'");
   });
 
-  test("throws on dev version with empty source", async () => {
+  test("CRAN package newer than mirror succeeds", async () => {
     const projectDir = path.join(testdataDir, "dev_version");
     const libPath = path.join(projectDir, "renv_library");
 
@@ -614,9 +617,15 @@ describe("libraryToManifestPackages", () => {
         ]),
     });
 
-    await expect(
-      libraryToManifestPackages(projectDir, rConfig, "/usr/bin/R", lister),
-    ).rejects.toThrow("cannot re-install packages installed from source");
+    const result = await libraryToManifestPackages(
+      projectDir,
+      rConfig,
+      "/usr/bin/R",
+      lister,
+    );
+    expect(result["mypkg"]).toBeDefined();
+    expect(result["mypkg"]!.Source).toBe("CRAN");
+    expect(result["mypkg"]!.Repository).toBe("https://cran.rstudio.com");
   });
 
   test("throws when DESCRIPTION not found in any libPath", async () => {
