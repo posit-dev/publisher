@@ -2,8 +2,7 @@
 
 import { Disposable, env } from "vscode";
 
-import { EventSource } from "eventsource";
-import { Readable } from "stream";
+import { EventEmitter } from "events";
 
 import { Events, EventStreamMessage, ProductType } from "src/api";
 import { getProductName } from "src/utils/multiStepHelpers";
@@ -98,44 +97,14 @@ export function displayEventStreamMessage(msg: EventStreamMessage): string {
 
 /**
  * Represents a stream of events.
- * Extends the Readable stream class.
  */
-export class EventStream extends Readable implements Disposable {
-  private eventSource: EventSource;
+export class EventStream extends EventEmitter implements Disposable {
   // Array to store event messages
   private messages: EventStreamMessage[] = [];
   // Map to store event callbacks
   private callbacks: Map<string, EventStreamRegistration[]> = new Map();
-  // Canceled Event Streams - Suppressed when received
-  private canceledLocalIDs: string[] = [];
 
-  /**
-   * Creates a new instance of the EventStream class.
-   * @param port The port number to connect to.
-   */
-  constructor(port: number) {
-    super();
-    // Create a new EventSource instance to connect to the event stream
-    this.eventSource = new EventSource(
-      `http://127.0.0.1:${port}/api/events?stream=messages`,
-    );
-    // Listen for 'message' events from the EventSource
-    this.eventSource.addEventListener("message", (event) => {
-      // Parse the event data and convert keys to camel case
-      const message = convertKeysToCamelCase(JSON.parse(event.data));
-
-      // Invoke the message factory
-      this.messageFactory(message).forEach((msg) => {
-        this.processMessage(msg);
-      });
-    });
-  }
-
-  dispose() {
-    // Destroy this Reader so it cannot be used after disposed
-    this.destroy();
-    this.eventSource.close();
-  }
+  dispose() {}
 
   /**
    * Registers a callback function for a specific event type.
@@ -174,27 +143,7 @@ export class EventStream extends Readable implements Disposable {
     this.processMessage(message);
   }
 
-  /**
-   * Provide a way to suppress the processing of incoming stream messages
-   * with a specific data.localId value
-   * @param localId: string
-   * @returns undefined
-   */
-  public suppressMessages(localId: string) {
-    this.canceledLocalIDs.push(localId);
-  }
-
   private processMessage(msg: EventStreamMessage) {
-    // Some log messages passed on from Connect include
-    // the localId using snake_case, rather than pascalCase.
-    // To filter correctly, we need to check for both.
-
-    const localId = msg.data.localId || msg.data.local_id;
-    if (localId && this.canceledLocalIDs.includes(localId)) {
-      // suppress and ignore
-      return;
-    }
-
     // Trace message
     // Uncomment the following code if you want to dump every message to the
     // console as it is received.
@@ -215,115 +164,4 @@ export class EventStream extends Readable implements Disposable {
       this.callbacks.get(type)?.forEach((callback) => callback(message));
     }
   }
-
-  private messageFactory(message: EventStreamMessage): EventStreamMessage[] {
-    // Transform restoreREnv messages into restoreEnv messages
-    // while maintaining original message
-    if (message.type?.includes("publish/restoreREnv")) {
-      const messages: EventStreamMessage[] = [];
-      messages.push(message);
-      const newMessage: EventStreamMessage = JSON.parse(
-        JSON.stringify(message),
-      );
-
-      switch (message.type) {
-        case "publish/restoreREnv/start":
-          newMessage.type = "publish/restoreEnv/start";
-          break;
-        case "publish/restoreREnv/success":
-          newMessage.type = "publish/restoreEnv/success";
-          break;
-        case "publish/restoreREnv/failure":
-          newMessage.type = "publish/restoreEnv/failure";
-          break;
-        case "publish/restoreREnv/status":
-          newMessage.type = "publish/restoreEnv/status";
-          break;
-        case "publish/restoreREnv/log":
-          newMessage.type = "publish/restoreEnv/log";
-          break;
-        case "publish/restoreREnv/progress":
-          newMessage.type = "publish/restoreEnv/progress";
-          break;
-        default:
-          newMessage.type = "undefined";
-          newMessage.data.typeStr = message.type;
-          console.error(
-            `Internal Error: events::messageFactory: Unknown publish/restoreREnv based message: ${newMessage.type}.`,
-          );
-          break;
-      }
-      messages.push(newMessage);
-      return messages;
-    }
-    // Transform restorePythonEnv messages into restoreEnv messages
-    // while maintaining original message
-    if (message.type?.includes("publish/restorePythonEnv")) {
-      const messages: EventStreamMessage[] = [];
-      messages.push(message);
-      const newMessage: EventStreamMessage = JSON.parse(
-        JSON.stringify(message),
-      );
-      switch (message.type) {
-        case "publish/restorePythonEnv/start":
-          newMessage.type = "publish/restoreEnv/start";
-          break;
-        case "publish/restorePythonEnv/success":
-          newMessage.type = "publish/restoreEnv/success";
-          break;
-        case "publish/restorePythonEnv/failure":
-          newMessage.type = "publish/restoreEnv/failure";
-          break;
-        case "publish/restorePythonEnv/status":
-          newMessage.type = "publish/restoreEnv/status";
-          break;
-        case "publish/restorePythonEnv/log":
-          newMessage.type = "publish/restoreEnv/log";
-          break;
-        case "publish/restorePythonEnv/progress":
-          newMessage.type = "publish/restoreEnv/progress";
-          break;
-        default:
-          newMessage.type = "undefined";
-          newMessage.data.typeStr = message.type;
-          console.error(
-            `Internal Error: events::messageFactory: Unknown publish/restorePythonEnv based message: ${newMessage.type}.`,
-          );
-      }
-      messages.push(newMessage);
-      return messages;
-    }
-
-    // no transformation
-    return [message];
-  }
 }
-
-/**
- * Converts the keys of an object to camel case recursively.
- * @param object - The object to convert.
- * @returns The object with camel case keys.
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const convertKeysToCamelCase = (object: any): any => {
-  if (typeof object !== "object" || object === null) {
-    return object;
-  }
-
-  if (Array.isArray(object)) {
-    // Recursively convert keys for each item in the array
-    return object.map((item) => convertKeysToCamelCase(item));
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const newObject: any = {};
-  for (const key in object) {
-    if (Object.prototype.hasOwnProperty.call(object, key)) {
-      // Convert the key to camel case
-      const newKey = key.charAt(0).toLowerCase() + key.slice(1);
-      // Recursively convert keys for nested objects
-      newObject[newKey] = convertKeysToCamelCase(object[key]);
-    }
-  }
-  return newObject;
-};

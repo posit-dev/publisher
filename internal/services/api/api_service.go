@@ -9,13 +9,11 @@ import (
 
 	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/credentials"
-	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/rs/cors"
 
 	"github.com/gorilla/mux"
-	"github.com/r3labs/sse/v2"
 )
 
 const APIPrefix string = "api"
@@ -28,11 +26,9 @@ func NewService(
 	accessLog bool,
 	dir util.AbsolutePath,
 	lister accounts.AccountList,
-	log logging.Logger,
-	eventServer *sse.Server,
-	emitter events.Emitter) *Service {
+	log logging.Logger) *Service {
 
-	handler := RouterHandlerFunc(dir, lister, log, eventServer, emitter)
+	handler := RouterHandlerFunc(dir, lister, log)
 
 	return newHTTPService(
 		handler,
@@ -43,11 +39,8 @@ func NewService(
 	)
 }
 
-func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log logging.Logger, eventServer *sse.Server, emitter events.Emitter) http.HandlerFunc {
+func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log logging.Logger) http.HandlerFunc {
 	r := mux.NewRouter()
-
-	// GET /api/events
-	r.HandleFunc(ToPath("events"), eventServer.ServeHTTP)
 
 	// POST /api/credentials
 	r.Handle(ToPath("credentials"), PostCredentialFuncHandler(log)).
