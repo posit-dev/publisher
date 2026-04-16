@@ -1,0 +1,105 @@
+name: Coverage Report
+description: "Runs Go and TypeScript tests with coverage, then posts a summary to the PR"
+
+inputs:
+  go-coverage:
+    description: "Run Go coverage"
+    required: false
+    default: "true"
+  ts-coverage:
+    description: "Run TypeScript coverage"
+    required: false
+    default: "true"
+
+runs:
+  using: composite
+  steps:
+    - name: Run Go tests with coverage
+      if: inputs.go-coverage == 'true'
+      shell: bash
+      run: just test -short ./...
+
+    - name: Generate Go coverage summary
+      if: inputs.go-coverage == 'true'
+      shell: bash
+      run: |
+        {
+          echo "## Go Coverage"
+          echo ""
+          TOTAL=$(go tool cover -func=cover.out | grep "^total:" | awk '{print $NF}')
+          echo "**Total: ${TOTAL}**"
+          echo ""
+          echo "<details>"
+          echo "<summary>Per-package breakdown</summary>"
+          echo ""
+          echo '```'
+          go tool cover -func=cover.out | grep -v "^total:" | \
+            sed 's|github.com/posit-dev/publisher/||' | \
+            awk -F'\t+' '{pkg=$1; sub(/:[^:]*$/, "", pkg); cov=$NF; if (!(pkg in seen)) {order[++n]=pkg}; seen[pkg]=cov} END {for (i=1;i<=n;i++) printf "%-60s %s\n", order[i], seen[order[i]]}'
+          echo '```'
+          echo ""
+          echo "</details>"
+        } >> "$GITHUB_STEP_SUMMARY"
+
+    - name: Install extension dependencies
+      if: inputs.ts-coverage == 'true'
+      shell: bash
+      run: just vscode deps
+
+    - name: Run extension unit tests with coverage
+      if: inputs.ts-coverage == 'true'
+      shell: bash
+      run: |
+        cd extensions/vscode
+        npm run test-unit
+
+    - name: Generate TypeScript coverage summary
+      if: inputs.ts-coverage == 'true'
+      shell: bash
+      run: |
+        {
+          echo "## TypeScript Extension Unit Test Coverage"
+          echo ""
+          if [ -f extensions/vscode/coverage/coverage-summary.json ]; then
+            node -e "
+              const data = require('./extensions/vscode/coverage/coverage-summary.json');
+              const t = data.total;
+              console.log('| Metric | Coverage |');
+              console.log('|--------|----------|');
+              for (const [key, val] of Object.entries(t)) {
+                console.log('| ' + key + ' | ' + val.pct + '% |');
+              }
+            "
+          else
+            echo "_Coverage summary file not found. Check test-unit output above._"
+          fi
+        } >> "$GITHUB_STEP_SUMMARY"
+
+    - name: Run Home View tests with coverage
+      if: inputs.ts-coverage == 'true'
+      shell: bash
+      run: |
+        cd extensions/vscode/webviews/homeView
+        npm test
+
+    - name: Generate Home View coverage summary
+      if: inputs.ts-coverage == 'true'
+      shell: bash
+      run: |
+        {
+          echo "## Home View Coverage"
+          echo ""
+          if [ -f extensions/vscode/webviews/homeView/coverage/coverage-summary.json ]; then
+            node -e "
+              const data = require('./extensions/vscode/webviews/homeView/coverage/coverage-summary.json');
+              const t = data.total;
+              console.log('| Metric | Coverage |');
+              console.log('|--------|----------|');
+              for (const [key, val] of Object.entries(t)) {
+                console.log('| ' + key + ' | ' + val.pct + '% |');
+              }
+            "
+          else
+            echo "_Coverage summary file not found. Check test output above._"
+          fi
+        } >> "$GITHUB_STEP_SUMMARY"

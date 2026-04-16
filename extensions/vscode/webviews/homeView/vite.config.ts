@@ -34,6 +34,7 @@ export default defineConfig({
       include: ["src/**/*.{js,jsx,ts,tsx,vue}"],
       exclude: ["*.d.ts"],
       enabled: true,
+      reporter: ["text", "json-summary"],
       thresholds: {
         functions: 15,
         lines: 17,
