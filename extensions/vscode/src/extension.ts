@@ -111,7 +111,7 @@ async function initializeExtension(context: ExtensionContext) {
     port = await ports.acquire();
   }
 
-  const stream = new EventStream(port);
+  const stream = new EventStream();
   context.subscriptions.push(stream);
 
   const useKeyChain = extensionSettings.useKeyChainCredentialStorage();
