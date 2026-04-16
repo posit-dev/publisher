@@ -4,7 +4,7 @@
   "author": "Posit, PBC",
   "displayName": "Posit Publisher",
   "description": "Publish and share your Python and R content on Posit Connect",
-  "version": "1.37.15",
+  "version": "1.37.16",
   "license": "MIT",
   "icon": "assets/img/posit-publisher.png",
   "repository": {
@@ -657,7 +657,8 @@
     "test": "vscode-test",
     "test-unit": "vitest run",
     "test-integration-interpreters": "vitest run src/interpreters/integration.test.ts",
-    "test-integration-inspect": "vitest run src/inspect/integration.test.ts"
+    "test-integration-inspect": "vitest run src/inspect/integration.test.ts",
+    "test-integration-publish": "vitest run src/publish/integration.test.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
@@ -677,10 +678,10 @@
     "eslint-config-prettier": "^10.0.1",
     "fantasticon": "^4.1.0",
     "fishery": "^2.4.0",
-    "globals": "^17.4.0",
+    "globals": "^17.5.0",
     "mocha": "^11.1.0",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.58.0",
+    "typescript-eslint": "^8.58.2",
     "vitest": "^4.0.18"
   },
   "dependencies": {
@@ -690,7 +691,7 @@
     "ajv": "^8.18.0",
     "ajv-formats": "^3.0.1",
     "async-mutex": "^0.5.0",
-    "axios": "^1.13.6",
+    "axios": "^1.15.0",
     "debounce": "^3.0.0",
     "entities": "^8.0.0",
     "eventsource": "^4.1.0",
