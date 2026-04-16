@@ -65,9 +65,7 @@ vi.mock("../bundler/bundler", () => ({
   }),
 }));
 
-vi.mock("../logging", () => ({
-  logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
-}));
+vi.mock("../logging");
 
 vi.mock("./dependencies", () => ({
   resolveRPackages: vi.fn().mockResolvedValue(undefined),
