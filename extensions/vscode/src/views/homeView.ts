@@ -47,6 +47,7 @@ import { ConnectAPI, GUID } from "@posit-dev/connect-api";
 import type { Integration } from "@posit-dev/connect-api";
 import {
   ConnectCloudAPI,
+  ContentID,
   cloudEnvironmentBaseUrls,
 } from "@posit-dev/connect-cloud-api";
 import { connectAPIOptionsFromCredential } from "src/credentials/service";
@@ -425,7 +426,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
               accountName: credential.accountName,
               environment: CONNECT_CLOUD_ENVIRONMENT,
             },
-            existingContentId,
+            existingContentId: existingContentId
+              ? ContentID(existingContentId)
+              : undefined,
             existingCreatedAt,
             secrets,
             rPath: r?.rPath,

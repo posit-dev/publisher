@@ -239,7 +239,7 @@ describe("connectCloudPublish", () => {
 
   test("happy path — redeploy", async () => {
     const opts = baseOptions({
-      existingContentId: "existing-id",
+      existingContentId: ContentID("existing-id"),
       existingCreatedAt: "2024-06-01T00:00:00Z",
     });
 
@@ -455,7 +455,7 @@ describe("connectCloudPublish", () => {
     const onProgress = vi.fn();
     const opts = baseOptions({
       onProgress,
-      existingContentId: "existing-id",
+      existingContentId: ContentID("existing-id"),
       existingCreatedAt: "2024-06-01T00:00:00Z",
     });
 
@@ -506,7 +506,7 @@ describe("connectCloudPublish", () => {
     const api = createMockApi();
     const opts = baseOptions({
       api,
-      existingContentId: "existing-id",
+      existingContentId: ContentID("existing-id"),
       secrets: { API_KEY: "secret123" },
     });
 
@@ -826,7 +826,7 @@ describe("connectCloudPublish", () => {
     const opts = baseOptions({
       api,
       onProgress,
-      existingContentId: "existing-id",
+      existingContentId: ContentID("existing-id"),
     });
 
     const resultPromise = connectCloudPublish(opts);

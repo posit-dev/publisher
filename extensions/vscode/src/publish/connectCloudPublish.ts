@@ -75,7 +75,7 @@ export type ConnectCloudPublishOptions = {
   configName: string;
   serverType: ServerType;
   credential: CloudCredentialInfo;
-  existingContentId?: string;
+  existingContentId?: ContentID;
   existingCreatedAt?: string;
   secrets?: Record<string, string>;
   rPath?: string;
@@ -139,7 +139,7 @@ export async function connectCloudPublish({
 
   // If redeploying, populate URLs from existing content ID
   if (contentId) {
-    const urls = getCloudContentInfo(credential, contentId as ContentID);
+    const urls = getCloudContentInfo(credential, contentId);
     setRecordContentInfo(
       record,
       contentId,
@@ -375,7 +375,7 @@ export async function connectCloudPublish({
       content = await api.createContent(createRequest);
       contentId = content.id;
 
-      const urls = getCloudContentInfo(credential, ContentID(contentId));
+      const urls = getCloudContentInfo(credential, contentId);
       setRecordContentInfo(
         record,
         contentId,
@@ -414,14 +414,14 @@ export async function connectCloudPublish({
         api,
         false,
         credential.accountId,
-        contentId as ContentID,
+        contentId,
         config.connectCloud?.accessControl,
       );
       const updateRequest = buildUpdateContentRequest(
         config,
         saveName,
         secrets,
-        contentId as ContentID,
+        contentId,
         access,
       );
 
@@ -459,7 +459,7 @@ export async function connectCloudPublish({
       message: "Initiating publish of content",
     });
 
-    await api.publishContent(contentId as ContentID);
+    await api.publishContent(contentId);
 
     onProgress({
       step: "initiatePublish",
@@ -504,7 +504,7 @@ export async function connectCloudPublish({
     });
 
     // Re-fetch content to get fresh revision with log channel
-    content = await api.getContent(contentId as ContentID);
+    content = await api.getContent(contentId);
     if (!content.next_revision) {
       throw new Error("Server did not return a revision after publish");
     }
