@@ -219,6 +219,7 @@ describe("connectCloudPublish", () => {
   });
 
   beforeEach(() => {
+    vi.clearAllTimers();
     vi.clearAllMocks();
     // Reset watchCloudLogs to default — clearAllMocks doesn't reset
     // implementations, so a mockImplementation override could leak.
