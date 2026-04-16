@@ -319,12 +319,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const config = this.state.findValidConfig(configurationName, projectDir);
 
     // Use TS publish path for plain Connect deployments that don't need
-    // Go-specific features (Connect Cloud, Snowflake, packagesFromLibrary).
-    if (
-      credential &&
-      config &&
-      canUseTsPublishPath(credential.serverType, config.configuration)
-    ) {
+    // Go-specific features (Connect Cloud, Snowflake routing handled separately).
+    if (credential && config && canUseTsPublishPath(credential.serverType)) {
       return await this.initiateTsDeployment(
         deploymentName,
         credential,
@@ -377,7 +373,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const existingCreatedAt = contentRecord?.createdAt;
 
     const connectApi = new ConnectAPI(
-      connectAPIOptionsFromCredential(credential, {
+      await connectAPIOptionsFromCredential(credential, {
         rejectUnauthorized: extensionSettings.verifyCertificates(),
       }),
     );
@@ -868,7 +864,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           (credential?.apiKey || (credential?.token && credential?.privateKey))
         ) {
           const connectApi = new ConnectAPI(
-            connectAPIOptionsFromCredential(credential, {
+            await connectAPIOptionsFromCredential(credential, {
               rejectUnauthorized: extensionSettings.verifyCertificates(),
             }),
           );
@@ -1009,7 +1005,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
     try {
       const connectApi = new ConnectAPI(
-        connectAPIOptionsFromCredential(credential, {
+        await connectAPIOptionsFromCredential(credential, {
           rejectUnauthorized: extensionSettings.verifyCertificates(),
         }),
       );
@@ -1514,7 +1510,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         Views.HomeView,
         async () => {
           const connectApi = new ConnectAPI(
-            connectAPIOptionsFromCredential(credential, {
+            await connectAPIOptionsFromCredential(credential, {
               rejectUnauthorized: extensionSettings.verifyCertificates(),
             }),
           );
@@ -2233,9 +2229,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       const response = await showProgress(
         "Getting Deployment Environment",
         Views.HomeView,
-        () => {
+        async () => {
           const connectApi = new ConnectAPI(
-            connectAPIOptionsFromCredential(credential, {
+            await connectAPIOptionsFromCredential(credential, {
               rejectUnauthorized: extensionSettings.verifyCertificates(),
             }),
           );

@@ -102,6 +102,36 @@ token = "my-oauth-token"
       expect(conns["other"]?.account).toBe("otheraccount");
     });
 
+    it("parses config.toml with [connections] header and nested sections", () => {
+      fs.writeFileSync(
+        path.join(tmpDir, "config.toml"),
+        `[connections]
+[connections.one]
+account = "one-acct"
+user = "one-user"
+authenticator = "snowflake_jwt"
+private_key_file = "/path/to/key.p8"
+
+[connections.two]
+account = "two-acct"
+user = "two-user"
+authenticator = "oauth"
+token = "two-token"
+
+[some-other-section]
+irrelevant = "value"
+`,
+      );
+
+      const conns = listConnections();
+
+      expect(Object.keys(conns)).toHaveLength(2);
+      expect(conns["one"]?.account).toBe("one-acct");
+      expect(conns["one"]?.user).toBe("one-user");
+      expect(conns["two"]?.account).toBe("two-acct");
+      expect(conns["two"]?.token).toBe("two-token");
+    });
+
     it("connections.toml takes priority over config.toml", () => {
       fs.writeFileSync(
         path.join(tmpDir, "connections.toml"),

@@ -6,8 +6,14 @@ import { GUID } from "@posit-dev/connect-api";
 import { credentialFactory } from "src/test/unit-test-utils/factories";
 import { mockSecretStorage } from "src/test/unit-test-utils/vscode-mocks";
 import { ServerType } from "src/api/types/contentRecords";
+import { listConnections } from "src/snowflake/connections";
+import { createTokenProvider } from "src/snowflake/tokenProviders";
 import { storeCredential } from "./storage";
-import { CredentialsService, CreateCredentialInput } from "./service";
+import {
+  CredentialsService,
+  CreateCredentialInput,
+  connectAPIOptionsFromCredential,
+} from "./service";
 import {
   CredentialNotFoundError,
   CredentialNameCollisionError,
@@ -29,18 +35,10 @@ vi.mock("src/api", () => ({
   ),
 }));
 
-vi.mock("vscode", () => {
-  return {
-    window: {
-      createOutputChannel: vi.fn(() => ({
-        info: vi.fn(),
-        warn: vi.fn(),
-        error: vi.fn(),
-        debug: vi.fn(),
-      })),
-    },
-  };
-});
+vi.mock("vscode");
+vi.mock("src/logging");
+vi.mock("src/snowflake/connections");
+vi.mock("src/snowflake/tokenProviders");
 
 vi.mock("src/config", () => ({
   default: {
@@ -388,6 +386,191 @@ describe("CredentialsService", () => {
 
       const result = await service.list();
       expect(result).toEqual([]);
+    });
+  });
+});
+
+describe("connectAPIOptionsFromCredential", () => {
+  describe("API key auth", () => {
+    test("returns apiKey options when apiKey is present", async () => {
+      const result = await connectAPIOptionsFromCredential({
+        url: "https://connect.example.com",
+        apiKey: "my-key",
+        token: "",
+        privateKey: "",
+        serverType: ServerType.CONNECT,
+        snowflakeConnection: "",
+      });
+
+      expect(result).toEqual({
+        url: "https://connect.example.com",
+        apiKey: "my-key",
+      });
+    });
+  });
+
+  describe("token auth", () => {
+    test("returns token options when token and privateKey are present", async () => {
+      const result = await connectAPIOptionsFromCredential({
+        url: "https://connect.example.com",
+        apiKey: "",
+        token: "my-token",
+        privateKey: "my-private-key",
+        serverType: ServerType.CONNECT,
+        snowflakeConnection: "",
+      });
+
+      expect(result).toEqual({
+        url: "https://connect.example.com",
+        token: "my-token",
+        privateKey: "my-private-key",
+      });
+    });
+
+    test("prefers token auth over API key auth when both are present", async () => {
+      const result = await connectAPIOptionsFromCredential({
+        url: "https://connect.example.com",
+        apiKey: "my-key",
+        token: "my-token",
+        privateKey: "my-private-key",
+        serverType: ServerType.CONNECT,
+        snowflakeConnection: "",
+      });
+
+      expect(result).toEqual({
+        url: "https://connect.example.com",
+        token: "my-token",
+        privateKey: "my-private-key",
+      });
+    });
+  });
+
+  describe("no auth", () => {
+    test("returns url-only options when no auth fields are set", async () => {
+      const result = await connectAPIOptionsFromCredential({
+        url: "https://connect.example.com",
+        apiKey: "",
+        token: "",
+        privateKey: "",
+        serverType: ServerType.CONNECT,
+        snowflakeConnection: "",
+      });
+
+      expect(result).toEqual({
+        url: "https://connect.example.com",
+      });
+    });
+  });
+
+  describe("extra options", () => {
+    test("spreads extra options onto the result", async () => {
+      const result = await connectAPIOptionsFromCredential(
+        {
+          url: "https://connect.example.com",
+          apiKey: "my-key",
+          token: "",
+          privateKey: "",
+          serverType: ServerType.CONNECT,
+          snowflakeConnection: "",
+        },
+        { rejectUnauthorized: false, timeout: 5000 },
+      );
+
+      expect(result).toEqual({
+        url: "https://connect.example.com",
+        apiKey: "my-key",
+        rejectUnauthorized: false,
+        timeout: 5000,
+      });
+    });
+  });
+
+  describe("Snowflake auth", () => {
+    beforeEach(() => {
+      vi.mocked(listConnections).mockReturnValue({
+        default: {
+          account: "myaccount",
+          user: "myuser",
+          authenticator: "snowflake_jwt",
+          private_key_file: "/path/to/key.p8",
+        },
+        "bad-authenticator": {
+          account: "myaccount",
+          user: "myuser",
+          authenticator: "unsupported",
+        },
+      });
+
+      vi.mocked(createTokenProvider).mockImplementation((config) => {
+        if (config.authenticator === "unsupported") {
+          throw new Error('unsupported authenticator type: "unsupported"');
+        }
+        return {
+          getToken: vi.fn().mockResolvedValue("sf-test-token-123"),
+        };
+      });
+    });
+
+    test("returns snowflakeToken options for Snowflake credentials", async () => {
+      const result = await connectAPIOptionsFromCredential({
+        url: "https://my-org.snowflakecomputing.app",
+        apiKey: "",
+        token: "",
+        privateKey: "",
+        serverType: ServerType.SNOWFLAKE,
+        snowflakeConnection: "default",
+      });
+
+      expect(result).toMatchObject({
+        url: "https://my-org.snowflakecomputing.app",
+        snowflakeToken: "sf-test-token-123",
+      });
+      expect(result).not.toHaveProperty("apiKey");
+    });
+
+    test("passes extra options through for Snowflake credentials", async () => {
+      const result = await connectAPIOptionsFromCredential(
+        {
+          url: "https://my-org.snowflakecomputing.app",
+          apiKey: "",
+          token: "",
+          privateKey: "",
+          serverType: ServerType.SNOWFLAKE,
+          snowflakeConnection: "default",
+        },
+        { rejectUnauthorized: false },
+      );
+
+      expect(result).toMatchObject({
+        snowflakeToken: "sf-test-token-123",
+        rejectUnauthorized: false,
+      });
+    });
+
+    test("throws when Snowflake connection name is not found", async () => {
+      await expect(
+        connectAPIOptionsFromCredential({
+          url: "https://my-org.snowflakecomputing.app",
+          apiKey: "",
+          token: "",
+          privateKey: "",
+          serverType: ServerType.SNOWFLAKE,
+          snowflakeConnection: "nonexistent",
+        }),
+      ).rejects.toThrow("nonexistent");
+    });
+
+    test("throws when token provider creation fails", async () => {
+      await expect(
+        connectAPIOptionsFromCredential({
+          url: "https://my-org.snowflakecomputing.app",
+          apiKey: "",
+          token: "",
+          privateKey: "",
+          serverType: ServerType.SNOWFLAKE,
+          snowflakeConnection: "bad-authenticator",
+        }),
+      ).rejects.toThrow("unsupported authenticator type");
     });
   });
 });

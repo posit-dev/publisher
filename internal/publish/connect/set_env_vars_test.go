@@ -5,7 +5,9 @@ package connect
 import (
 	"testing"
 
+	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/clients/connect"
+	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/state"
@@ -24,7 +26,7 @@ func TestSetEnvVarsSuite(t *testing.T) {
 }
 
 func (s *SetEnvVarsSuite) TestSetEnvVarsWithNoEnvironmentOrSecrets() {
-	stateStore := state.Empty()
+	stateStore := &state.State{Account: &accounts.Account{}, Config: &config.Config{}}
 	log := logging.New()
 	emitter := events.NewCapturingEmitter()
 
@@ -44,7 +46,7 @@ func (s *SetEnvVarsSuite) TestSetEnvVarsWithNoEnvironmentOrSecrets() {
 }
 
 func (s *SetEnvVarsSuite) TestSetEnvVarsWithSecrets() {
-	stateStore := state.Empty()
+	stateStore := &state.State{Account: &accounts.Account{}, Config: &config.Config{}}
 	log := logging.New()
 	emitter := events.NewCapturingEmitter()
 
@@ -67,7 +69,7 @@ func (s *SetEnvVarsSuite) TestSetEnvVarsWithSecrets() {
 }
 
 func (s *SetEnvVarsSuite) TestSetEnvVarsWithEnvironment() {
-	stateStore := state.Empty()
+	stateStore := &state.State{Account: &accounts.Account{}, Config: &config.Config{}}
 	log := logging.New()
 	emitter := events.NewCapturingEmitter()
 
@@ -90,7 +92,7 @@ func (s *SetEnvVarsSuite) TestSetEnvVarsWithEnvironment() {
 }
 
 func (s *SetEnvVarsSuite) TestSetEnvVarsWithSecretsAndEnvironment() {
-	stateStore := state.Empty()
+	stateStore := &state.State{Account: &accounts.Account{}, Config: &config.Config{}}
 	stateStore.Config.Environment = map[string]string{"TEST_ENV_VAR": "test-value", "ANOTHER_TEST_ENV_VAR": "another-test-value"}
 	stateStore.Secrets = map[string]string{"SOME_SECRET": "some-secret-value", "ANOTHER_SECRET": "another-secret-value"}
 	log := logging.New()

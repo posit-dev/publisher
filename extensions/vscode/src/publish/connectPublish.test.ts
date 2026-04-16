@@ -26,6 +26,7 @@ import type {
   User,
 } from "@posit-dev/connect-api";
 import { AxiosError, AxiosHeaders } from "axios";
+import { generateRequirements } from "../interpreters/pythonDependencySources";
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -86,6 +87,13 @@ vi.mock("./dependencies", () => ({
   readPythonRequirements: vi.fn().mockResolvedValue(undefined),
 }));
 
+// Mock R library mapper
+vi.mock("./rLibraryMapper", () => ({
+  libraryToManifestPackages: vi
+    .fn()
+    .mockResolvedValue({ ggplot2: { description: { Package: "ggplot2" } } }),
+}));
+
 // Mock extra dependencies
 vi.mock("./extraDependencies", () => ({
   findExtraDependencies: vi.fn().mockResolvedValue([]),
@@ -102,6 +110,11 @@ vi.mock("../interpreters/rPackages", () => ({
 // Mock fsUtils — default to true so preflight requirements check passes
 vi.mock("../interpreters/fsUtils", () => ({
   fileExistsAt: vi.fn().mockResolvedValue(true),
+}));
+
+// Mock dependency source generation (pylock.toml / uv.lock / pyproject.toml fallback)
+vi.mock("../interpreters/pythonDependencySources", () => ({
+  generateRequirements: vi.fn(() => Promise.resolve(null)),
 }));
 
 // Mock TOML stringify — pass through to allow content inspection
@@ -1040,6 +1053,105 @@ describe("connectPublish — R package resolution", () => {
   });
 });
 
+describe("connectPublish — packagesFromLibrary", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  test("uses library mapper when packagesFromLibrary is true and lockfile exists", async () => {
+    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    vi.mocked(fileExistsAt).mockResolvedValue(true);
+
+    const { libraryToManifestPackages } = await import("./rLibraryMapper");
+    vi.mocked(libraryToManifestPackages).mockResolvedValue({
+      ggplot2: {
+        Source: "CRAN",
+        Repository: "https://cran.rstudio.com",
+        description: { Package: "ggplot2" },
+      },
+    });
+
+    const { resolveRPackages } = await import("./dependencies");
+    vi.mocked(resolveRPackages).mockResolvedValue({
+      packages: { ggplot2: { description: { Package: "ggplot2" } } },
+      lockfilePath: "/projects/myapp/renv.lock",
+      lockfile: {
+        R: { Version: "4.3.1", Repositories: [] },
+        Packages: {},
+      },
+    });
+
+    const config = makeConfig({
+      python: undefined,
+      type: ContentType.RMD,
+      r: {
+        version: "4.3.1",
+        packageFile: "renv.lock",
+        packageManager: "renv",
+        packagesFromLibrary: true,
+      },
+    });
+    const onProgress = vi.fn();
+    const opts = makeOptions({ config, rPath: "/usr/bin/R", onProgress });
+
+    await connectPublish(opts);
+
+    expect(libraryToManifestPackages).toHaveBeenCalledWith(
+      "/projects/myapp",
+      expect.objectContaining({ packagesFromLibrary: true }),
+      "/usr/bin/R",
+    );
+
+    const manifestLogs = onProgress.mock.calls
+      .map((args: unknown[]) => args[0] as PublishEvent)
+      .filter((e) => e.step === "createManifest" && e.status === "log");
+    const messages = manifestLogs.map((e) => e.message);
+    expect(messages).toContain("Loading packages from local R library");
+  });
+
+  test("throws when packagesFromLibrary is true but lockfile missing", async () => {
+    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    vi.mocked(fileExistsAt).mockResolvedValue(false);
+
+    const config = makeConfig({
+      python: undefined,
+      type: ContentType.RMD,
+      r: {
+        version: "4.3.1",
+        packageFile: "renv.lock",
+        packageManager: "renv",
+        packagesFromLibrary: true,
+      },
+    });
+    const opts = makeOptions({ config, rPath: "/usr/bin/R" });
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "packages_from_library requires an renv.lock file",
+    );
+  });
+
+  test("throws when packagesFromLibrary is true but no R interpreter", async () => {
+    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    vi.mocked(fileExistsAt).mockResolvedValue(true);
+
+    const config = makeConfig({
+      python: undefined,
+      type: ContentType.RMD,
+      r: {
+        version: "4.3.1",
+        packageFile: "renv.lock",
+        packageManager: "renv",
+        packagesFromLibrary: true,
+      },
+    });
+    const opts = makeOptions({ config, rPath: undefined });
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "R interpreter is required when packages_from_library is enabled",
+    );
+  });
+});
+
 describe("connectPublish — staged lockfile cleanup", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -1831,6 +1943,159 @@ describe("connectPublish — preflight validation", () => {
     const opts = makeOptions({ config });
 
     await expect(connectPublish(opts)).resolves.toBeDefined();
+  });
+});
+
+describe("connectPublish — generated requirements from lockfiles", () => {
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    // Default: requirements file does NOT exist on disk
+    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    vi.mocked(fileExistsAt).mockResolvedValue(false);
+  });
+
+  test("succeeds when requirements file missing but lockfile generation works", async () => {
+    vi.mocked(generateRequirements).mockResolvedValueOnce([
+      "flask==3.0.2",
+      "urllib3==2.1.0",
+    ]);
+
+    const config = makeConfig({
+      files: ["app.py", "requirements.txt"],
+      python: {
+        version: "3.11.0",
+        packageFile: "requirements.txt",
+        packageManager: "pip",
+      },
+    });
+    const opts = makeOptions({ config });
+
+    await expect(connectPublish(opts)).resolves.toBeDefined();
+  });
+
+  test("still rejects when requirements file missing and no lockfile source", async () => {
+    vi.mocked(generateRequirements).mockResolvedValueOnce(null);
+
+    const config = makeConfig({
+      python: {
+        version: "3.11.0",
+        packageFile: "requirements.txt",
+        packageManager: "pip",
+      },
+    });
+    const opts = makeOptions({ config });
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "Missing dependency file requirements.txt",
+    );
+  });
+
+  test("uses generated requirements for deployment record", async () => {
+    vi.mocked(generateRequirements).mockResolvedValueOnce([
+      "flask==3.0.2",
+      "urllib3==2.1.0",
+    ]);
+
+    const config = makeConfig({
+      files: ["app.py", "requirements.txt"],
+      python: {
+        version: "3.11.0",
+        packageFile: "requirements.txt",
+        packageManager: "pip",
+      },
+    });
+    const opts = makeOptions({ config });
+
+    await connectPublish(opts);
+
+    // Check the last writeFile call for the deployment record
+    const lastWrite = mockWriteFile.mock.calls.at(-1);
+    expect(lastWrite).toBeDefined();
+    const tomlContent = lastWrite![1] as string;
+    expect(tomlContent).toContain("flask==3.0.2");
+    expect(tomlContent).toContain("urllib3==2.1.0");
+  });
+
+  test("passes synthetic files to bundler when generating", async () => {
+    vi.mocked(generateRequirements).mockResolvedValueOnce(["flask==3.0.2"]);
+
+    const config = makeConfig({
+      files: ["app.py", "requirements.txt"],
+      python: {
+        version: "3.11.0",
+        packageFile: "requirements.txt",
+        packageManager: "pip",
+      },
+    });
+    const opts = makeOptions({ config });
+
+    await connectPublish(opts);
+
+    const { createBundle } = await import("../bundler/bundler");
+    const bundleCall = vi.mocked(createBundle).mock.calls[0]?.[0];
+    expect(bundleCall?.syntheticFiles).toBeDefined();
+    expect(
+      bundleCall?.syntheticFiles?.get("requirements.txt")?.toString(),
+    ).toBe("flask==3.0.2\n");
+  });
+
+  test("patches manifest package_file when generating from lockfiles", async () => {
+    vi.mocked(generateRequirements).mockResolvedValueOnce(["flask==3.0.2"]);
+
+    // When no requirements.txt exists, the interpreter sets packageFile to "".
+    // The manifest is built before preflight, so it initially gets package_file: "".
+    // After generation, the manifest must be patched so Connect finds the file.
+    const config = makeConfig({
+      files: ["app.py", "requirements.txt"],
+      python: {
+        version: "3.11.0",
+        packageFile: "",
+        packageManager: "pip",
+      },
+    });
+    const opts = makeOptions({ config });
+
+    await connectPublish(opts);
+
+    const { createBundle } = await import("../bundler/bundler");
+    const bundleCall = vi.mocked(createBundle).mock.calls[0]?.[0];
+    expect(bundleCall?.manifest?.python?.package_manager?.package_file).toBe(
+      "requirements.txt",
+    );
+  });
+
+  test("does not generate when requirements file exists on disk", async () => {
+    const { fileExistsAt } = await import("../interpreters/fsUtils");
+    vi.mocked(fileExistsAt).mockResolvedValue(true);
+
+    const config = makeConfig({
+      files: ["app.py", "requirements.txt"],
+      python: {
+        version: "3.11.0",
+        packageFile: "requirements.txt",
+        packageManager: "pip",
+      },
+    });
+    const opts = makeOptions({ config });
+
+    await connectPublish(opts);
+    expect(generateRequirements).not.toHaveBeenCalled();
+  });
+
+  test("does not fall back for non-default package files", async () => {
+    const config = makeConfig({
+      python: {
+        version: "3.11.0",
+        packageFile: "requirements-dev.txt",
+        packageManager: "pip",
+      },
+    });
+    const opts = makeOptions({ config });
+
+    await expect(connectPublish(opts)).rejects.toThrow(
+      "Missing dependency file requirements-dev.txt",
+    );
+    expect(generateRequirements).not.toHaveBeenCalled();
   });
 });
 
