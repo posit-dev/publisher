@@ -38,8 +38,23 @@ Cypress.on("uncaught:exception", (err) => {
   return true;
 });
 
-// Delete previous vscode sessions, avoid starting up tests with previous editor data.
+// Wipe VSCode's IndexedDB for a clean start, and strip the code-server
+// onboarding overlay whenever it renders. The wipe clears "user has seen
+// onboarding" state, so the overlay reappears every test load; an observer
+// avoids racing against when it's inserted.
 Cypress.on("window:before:load", (win) => {
+  const stripOnboarding = () => {
+    win.document
+      .querySelectorAll(".onboarding-a-overlay, .onboarding-backdrop")
+      .forEach((node) => node.remove());
+  };
+  const observer = new win.MutationObserver(stripOnboarding);
+  observer.observe(win.document.documentElement, {
+    childList: true,
+    subtree: true,
+  });
+  stripOnboarding();
+
   return win.indexedDB.databases().then((dbrecs) => {
     for (var i = 0; i < dbrecs.length; i++) {
       win.indexedDB.deleteDatabase(dbrecs[i].name);
@@ -48,26 +63,6 @@ Cypress.on("window:before:load", (win) => {
 });
 
 configure({ testIdAttribute: "data-automation" });
-
-// Dismiss the VSCode onboarding overlay if it appears.
-// Newer code-server versions may show a "Welcome to Visual Studio Code"
-// dialog that covers the entire UI and blocks interaction.
-Cypress.Commands.add("dismissOnboardingOverlay", () => {
-  cy.get("body", { log: false }).then(($body) => {
-    const overlay = $body.find(".onboarding-a-overlay.visible");
-    if (overlay.length > 0) {
-      cy.log("Dismissing VSCode onboarding overlay");
-      // Remove the overlay and its backdrop from the DOM entirely.
-      // Pressing Escape doesn't reliably close it, and the overlay
-      // blocks all interaction with the underlying UI.
-      overlay.remove();
-      $body.find(".onboarding-a-overlay").remove();
-      // Also remove any remaining backdrop
-      $body.find(".onboarding-backdrop").remove();
-      cy.log("Onboarding overlay removed from DOM");
-    }
-  });
-});
 
 // Global command for skipping tests in CI
 Cypress.skipCI = (fn) => (Cypress.env("CI") === "true" ? fn.skip : fn);

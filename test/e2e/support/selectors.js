@@ -160,9 +160,6 @@ Cypress.Commands.add("publisherWebviewExtreme", () => {
 // and ensure the UI is stable before clicking.
 // When to use: Before opening the Publisher webview from VS Code UI.
 Cypress.Commands.add("getPublisherSidebarIcon", () => {
-  // Dismiss any onboarding overlay that may be covering the UI
-  cy.dismissOnboardingOverlay();
-
   // Advanced Publisher icon finder that waits for extension stability
   const maxAttempts = 30;
   const stabilityChecks = 3; // Number of consecutive checks to confirm stability
