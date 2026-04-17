@@ -39,6 +39,7 @@ import {
   ProductName,
   ServerType,
   IntegrationRequest,
+  UpdateConfigWithDefaults,
 } from "src/api";
 import { ConnectAPI, GUID } from "@posit-dev/connect-api";
 import type { Integration } from "@posit-dev/connect-api";
@@ -68,6 +69,7 @@ import * as workspaces from "src/workspaces";
 import { getConfigurationFiles } from "src/projectFiles";
 import { EventStream } from "src/events";
 import { getPythonInterpreterPath, getRInterpreterPath } from "../utils/vscode";
+import { getInterpreterDefaults } from "src/interpreters";
 import { scanRPackages } from "src/interpreters/rPackages";
 import { scanPythonDependencies } from "src/interpreters/scanPythonDependencies";
 import { getSummaryStringFromError } from "src/utils/errors";
@@ -371,7 +373,19 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       const positron = getPositronRepoSettings();
       const clientVersion =
         this.context.extension.packageJSON.version || "unknown";
+      const python = await getPythonInterpreterPath();
       const r = await getRInterpreterPath();
+
+      // The cached config from findValidConfig() may not have interpreter
+      // defaults populated yet if the file watcher recently re-read the
+      // config from disk. Re-apply defaults to guarantee fields like
+      // r.version are set before the publish orchestrator uses them.
+      const defaults = await getInterpreterDefaults(
+        absProjectDir,
+        python?.pythonPath,
+        r?.rPath,
+      );
+      UpdateConfigWithDefaults(config, defaults);
 
       const progressOptions = {
         onComplete: () => this.refreshContentRecords(),
