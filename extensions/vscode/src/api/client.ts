@@ -2,14 +2,11 @@
 
 import axios from "axios";
 
-import { Credentials } from "./resources/Credentials";
-
 import * as Entities from "entities";
 
 class PublishingClientApi {
   private client;
 
-  credentials: Credentials;
   apiServiceIsUp: Promise<boolean>;
 
   constructor(apiBaseUrl: string, apiServiceIsUp: Promise<boolean>) {
@@ -31,8 +28,6 @@ class PublishingClientApi {
       },
     );
     this.apiServiceIsUp = apiServiceIsUp;
-
-    this.credentials = new Credentials(this.client);
   }
 
   setBaseUrl(url: string) {
