@@ -8,6 +8,7 @@ import { HOST } from "src";
 import { EditConfigurationSelection } from "./types/messages/webviewToHostMessages";
 
 export { copySystemInfoCommand } from "./commands/copySystemInfo";
+export { diagnosticBundleCommand } from "./commands/diagnosticBundle";
 
 export const create = async (
   context: ExtensionContext,

@@ -36,6 +36,7 @@ export enum WebviewToHostMessageType {
   UPDATE_SELECTION_CREDENTIAL_STATE = "UpdateSelectionCredentialStateMsg",
   UPDATE_SELECTION_IS_PRE_CONTENT_RECORD = "UpdateSelectionIsPreContentRecordMsg",
   COPY_SYSTEM_INFO = "copySystemInfo",
+  DIAGNOSTIC_BUNDLE = "diagnosticBundle",
   RENDER_CONTENT = "renderContent",
 }
 
@@ -77,6 +78,7 @@ export type WebviewToHostMessage =
   | UpdateSelectionCredentialStateMsg
   | UpdateSelectionIsPreContentRecordMsg
   | CopySystemInfoMsg
+  | DiagnosticBundleMsg
   | AddIntegrationRequestMsg
   | DeleteIntegrationRequestMsg
   | ClearAllIntegrationRequestsMsg
@@ -113,6 +115,7 @@ export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
     msg.kind ===
       WebviewToHostMessageType.UPDATE_SELECTION_IS_PRE_CONTENT_RECORD ||
     msg.kind === WebviewToHostMessageType.COPY_SYSTEM_INFO ||
+    msg.kind === WebviewToHostMessageType.DIAGNOSTIC_BUNDLE ||
     msg.kind === WebviewToHostMessageType.ADD_INTEGRATION_REQUEST ||
     msg.kind === WebviewToHostMessageType.DELETE_INTEGRATION_REQUEST ||
     msg.kind === WebviewToHostMessageType.CLEAR_ALL_INTEGRATION_REQUESTS ||
@@ -276,6 +279,9 @@ export type UpdateSelectionIsPreContentRecordMsg = AnyWebviewToHostMessage<
 
 export type CopySystemInfoMsg =
   AnyWebviewToHostMessage<WebviewToHostMessageType.COPY_SYSTEM_INFO>;
+
+export type DiagnosticBundleMsg =
+  AnyWebviewToHostMessage<WebviewToHostMessageType.DIAGNOSTIC_BUNDLE>;
 
 export type RenderContentMsg =
   AnyWebviewToHostMessage<WebviewToHostMessageType.RENDER_CONTENT>;

@@ -260,6 +260,12 @@
         "category": "Posit Publisher"
       },
       {
+        "command": "posit.publisher.homeView.diagnosticBundle",
+        "title": "Save Diagnostic Bundle",
+        "icon": "$(archive)",
+        "category": "Posit Publisher"
+      },
+      {
         "command": "posit.publisher.homeView.addIntegrationRequest",
         "title": "Add Integration Request",
         "icon": "$(add)",
