@@ -6,18 +6,6 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { workspace, FileSystemError, FileType, Uri } from "vscode";
 
 // Mock internal dependencies
-vi.mock("src/api", () => ({
-  useApi: vi.fn(() =>
-    Promise.resolve({
-      openConnectContent: {
-        openConnectContent: vi.fn(() =>
-          Promise.resolve({ data: new ArrayBuffer(0) }),
-        ),
-      },
-    }),
-  ),
-}));
-
 vi.mock("src/logging", () => ({
   logger: {
     info: vi.fn(),
