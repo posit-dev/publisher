@@ -6,12 +6,6 @@ file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-
-### Removed
-
-- Removed the `positPublisher.useKeyChainCredentialStorage` setting. Credentials are now stored exclusively by VS Code's SecretStorage, which handles OS-level storage automatically. (#3649)
-
 ## [1.36.0]
 
 ### Fixed

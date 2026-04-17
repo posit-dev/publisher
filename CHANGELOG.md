@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - Removed the Go backend. Publisher is now a pure TypeScript extension; all functionality that previously went through the Go binary (credential CRUD, publishing, SSE streaming) runs natively in the extension. (#3818)
-- Removed the `positPublisher.useKeyChainCredentialStorage` setting. Credentials are now stored exclusively by VS Code's SecretStorage, which handles OS-level storage automatically. (#3649)
+- Removed the `positPublisher.useKeyChainCredentialStorage` setting. Credentials are now stored exclusively by Positron's and VS Code's SecretStorage, which handles OS-level storage automatically. (#3649)
 
 ## [1.36.0]
 
