@@ -110,21 +110,10 @@ if (typeof afterEach === "function") {
 
 // resetCredentials
 // Purpose: Delete all credentials via UI by looping over each credential item.
-// Also resets the Go credential store file to ensure the Go backend is clean,
-// even if SecretStorage (IndexedDB) was already wiped by page load.
+// SecretStorage is wiped separately on page load by the IndexedDB reset in
+// support/index.js. This command exercises the UI delete path.
 // Requires UI to be loaded (page visited, sidebar open, iframe ready).
 Cypress.Commands.add("resetCredentials", () => {
-  // Reset the Go credential store file to prevent stale keyring state.
-  // IndexedDB (SecretStorage) is wiped on cy.visit("/"), so the UI may show
-  // no credentials while the Go backend still has old ones. Without this,
-  // dual-write conflicts (409) cause Go to retain expired credentials.
-  cy.exec(
-    `cat <<EOF > e2e-test.connect-credentials
-# File updated and managed by e2e tests. Refrain from updating it manually.
-
-EOF`,
-  );
-
   cy.ensureCredentialsSectionExpanded();
 
   function deleteNextCredential() {

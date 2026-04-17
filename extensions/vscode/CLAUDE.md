@@ -62,7 +62,7 @@ Unit tests are in `src/**/*.test.ts` (excluding `src/test/`). Integration tests 
 - **Config Files** (`src/configFiles/`) — Configuration file discovery and management.
 - **Inspect** (`src/inspect/`) — Content inspection/detection with detectors for Python, R, Quarto, HTML, notebooks, Plumber, and R Markdown.
 - **Interpreters** (`src/interpreters/`) — Detects Python/R versions via subprocess calls, scans Python packages and R package lockfiles.
-- **Credentials** (`src/credentials/`) — Manages credential storage via filesystem (`~/.connect-credentials`) or VSCode keychain.
+- **Credentials** (`src/credentials/`) — Manages credential storage via VSCode's `SecretStorage`.
 - **Publish** (`src/publish/`) — Publishing orchestration (`connectPublish.ts`) and dependency analysis for Python/R projects. Publishes to standard Connect via `@posit-dev/connect-api` and to Connect Cloud via `@posit-dev/connect-cloud-api`.
 - **Snowflake** (`src/snowflake/`) — Snowflake connection discovery, config parsing, and token providers.
 - **Project Files** (`src/projectFiles/`) — File tree building and .gitignore-aware file matching.
