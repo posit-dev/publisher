@@ -73,7 +73,7 @@ e2e *cypress_args:
     just start "code-server"
 
     # Install the Publisher extension
-    VSIX_FILENAME=$(ls -Art ../../dist | grep linux-amd64 | tail -n 1)
+    VSIX_FILENAME=$(ls -Art ../../dist/*.vsix | xargs -n1 basename | tail -n 1)
     docker compose exec code-server code-server --install-extension "/home/coder/vsix/${VSIX_FILENAME}"
 
     # Run tests with Connect managed by with-connect
@@ -99,7 +99,7 @@ e2e-open:
     just start "code-server"
 
     # Install the Publisher extension
-    VSIX_FILENAME=$(ls -Art ../../dist | grep linux-amd64 | tail -n 1)
+    VSIX_FILENAME=$(ls -Art ../../dist/*.vsix | xargs -n1 basename | tail -n 1)
     docker compose exec code-server code-server --install-extension "/home/coder/vsix/${VSIX_FILENAME}"
 
     with-connect --license "{{LICENSE}}" -- \
