@@ -26,7 +26,6 @@ test/e2e/content-workspace/.ipython/
 test/e2e/content-workspace/.local/
 test/e2e/content-workspace/.positron-server/
 test/e2e/content-workspace/.vscode-server/
-test/e2e/content-workspace/.connect-credentials
 
 # Local History for Visual Studio Code
 .history/

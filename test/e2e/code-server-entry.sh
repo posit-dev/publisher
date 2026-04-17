@@ -16,8 +16,7 @@ cat <<EOF > /home/coder/.local/share/code-server/User/settings.json
   "workbench.welcomePage.walkthroughs.openOnInstall": false,
   "workbench.tips.enabled": false,
   "window.restoreWindows": "none",
-  "files.hotExit": "off",
-  "positPublisher.useKeyChainCredentialStorage": false
+  "files.hotExit": "off"
 }
 
 EOF
