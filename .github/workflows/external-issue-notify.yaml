@@ -10,14 +10,16 @@ permissions:
 jobs:
   notify:
     runs-on: ubuntu-latest
+    env:
+      AUTHOR: ${{ github.event.issue.user.login }}
+      ISSUE_NUMBER: ${{ github.event.issue.number }}
+      ISSUE_URL: ${{ github.event.issue.html_url }}
     steps:
       - name: Check if author is on the publisher team
         id: check-team
         env:
           GH_TOKEN: ${{ secrets.ORG_TEAM_READ_TOKEN }}
         run: |
-          AUTHOR="${{ github.event.issue.user.login }}"
-
           # Check if the issue author is a member of posit-dev/publisher
           # The API returns 200 if they are a member, 404 if not
           HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
@@ -26,10 +28,10 @@ jobs:
             "https://api.github.com/orgs/posit-dev/teams/publisher/members/$AUTHOR")
 
           if [ "$HTTP_STATUS" = "200" ]; then
-            echo "is_external=false" >> $GITHUB_OUTPUT
+            echo "is_external=false" >> "$GITHUB_OUTPUT"
             echo "$AUTHOR is a publisher team member"
           else
-            echo "is_external=true" >> $GITHUB_OUTPUT
+            echo "is_external=true" >> "$GITHUB_OUTPUT"
             echo "$AUTHOR is external (HTTP $HTTP_STATUS)"
           fi
 
@@ -37,24 +39,25 @@ jobs:
         if: steps.check-team.outputs.is_external == 'true'
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.EXTERNAL_ISSUE_SLACK_WEBHOOK_URL }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
         run: |
-          AUTHOR="${{ github.event.issue.user.login }}"
-          TITLE=$(echo '${{ github.event.issue.title }}' | sed 's/"/\\"/g')
-          URL="${{ github.event.issue.html_url }}"
-          NUMBER="${{ github.event.issue.number }}"
-
-          curl -s -X POST "$SLACK_WEBHOOK_URL" \
-            -H "Content-Type: application/json" \
-            -d @- <<EOF
-          {
-            "blocks": [
-              {
-                "type": "section",
-                "text": {
-                  "type": "mrkdwn",
-                  "text": ":rotating_light: *New external issue filed on Publisher*\n\n*<${URL}|#${NUMBER}: ${TITLE}>*\nFiled by: <https://github.com/${AUTHOR}|@${AUTHOR}>"
+          PAYLOAD=$(jq -n \
+            --arg title "$ISSUE_TITLE" \
+            --arg url "$ISSUE_URL" \
+            --arg number "$ISSUE_NUMBER" \
+            --arg author "$AUTHOR" \
+            '{
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": ":rotating_light: *New external issue filed on Publisher*\n\n*<\($url)|#\($number): \($title)>*\nFiled by: <https://github.com/\($author)|@\($author)>"
+                  }
                 }
-              }
-            ]
-          }
-          EOF
+              ]
+            }')
+
+          curl -sf -X POST "$SLACK_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD" || echo "::warning::Slack notification failed"
