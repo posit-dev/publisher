@@ -276,6 +276,19 @@ describe("CredentialsService", () => {
         IncompleteCredentialError,
       );
     });
+
+    test("does not call useApi when creating credential", async () => {
+      const input: CreateCredentialInput = {
+        name: "Test No API",
+        url: "https://connect.example.com",
+        serverType: ServerType.CONNECT,
+        apiKey: "key",
+      };
+
+      await service.create(input);
+
+      expect(mockCredentialsApi.create).not.toHaveBeenCalled();
+    });
   });
 
   describe("delete", () => {

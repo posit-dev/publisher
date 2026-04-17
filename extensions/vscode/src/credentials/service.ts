@@ -25,7 +25,6 @@ import {
 import { CONNECT_CLOUD_ENV } from "src/constants";
 import config from "src/config";
 import { logger } from "src/logging";
-import { useApi } from "src/api";
 
 export interface CreateCredentialInput {
   name: string;
@@ -223,15 +222,6 @@ export class CredentialsService {
 
     await storeCredential(this.secrets, cred);
 
-    try {
-      const api = await useApi();
-      await api.credentials.create(cred);
-    } catch (err) {
-      logger.warn(
-        `Credential "${cred.name}" (${cred.guid}) saved locally but could not be written to the system keyring. Deployments may not find this credential: ${err}`,
-      );
-    }
-
     return cred;
   }
 
@@ -241,29 +231,11 @@ export class CredentialsService {
       throw new CredentialNotFoundError(guid);
     }
     await deleteCredential(this.secrets, guid);
-
-    try {
-      const api = await useApi();
-      await api.credentials.delete(guid);
-    } catch (err) {
-      logger.warn(
-        `Credential (${guid}) removed locally but could not be removed from the system keyring: ${err}`,
-      );
-    }
   }
 
   async reset(): Promise<void> {
     logger.warn("Resetting all credentials");
     await deleteAllCredentials(this.secrets);
-
-    try {
-      const api = await useApi();
-      await api.credentials.reset();
-    } catch (err) {
-      logger.warn(
-        `Credentials cleared locally but could not be cleared from the system keyring: ${err}`,
-      );
-    }
   }
 
   private conflictCheck(existing: Credential, newCred: Credential): void {
