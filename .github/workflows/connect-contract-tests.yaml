@@ -6,16 +6,9 @@ permissions:
 jobs:
   contract-tests:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        backend: [go, typescript]
-    name: contract-tests (${{ matrix.backend }})
     steps:
       - uses: actions/checkout@v6
-      - uses: ./.github/actions/setup
-        if: matrix.backend == 'go'
       - uses: extractions/setup-just@v4
-        if: matrix.backend == 'typescript'
       - uses: actions/setup-node@v6
         with:
           node-version: "22"
@@ -29,7 +22,7 @@ jobs:
         working-directory: test/connect-api-contracts
       - run: just test-connect-contracts
         env:
-          API_BACKEND: ${{ matrix.backend }}
+          API_BACKEND: typescript
 
   validate-fixtures:
     runs-on: ubuntu-latest

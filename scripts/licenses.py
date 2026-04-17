@@ -14,7 +14,6 @@ if not os.path.isdir(_repo_root):
     sys.exit(1)
 
 search_dirs = [
-    os.path.join(_repo_root, "vendor"),
     os.path.join(_repo_root, "extensions", "vscode", "node_modules"),
     os.path.join(_repo_root, "extensions", "vscode", "webviews", "homeView", "node_modules"),
 ]
@@ -28,7 +27,7 @@ for dir_path in search_dirs:
 if missing_dirs:
     print(f"ERROR: Required directories are missing: {', '.join(missing_dirs)}", file=sys.stderr)
     print("Please ensure all dependencies are installed before generating licenses.", file=sys.stderr)
-    print("Run 'just build' and 'just package' to populate these directories.", file=sys.stderr)
+    print("Run 'just vscode deps' to populate these directories.", file=sys.stderr)
     sys.exit(1)
 
 allowed_license_types = [

@@ -14,12 +14,8 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/verify-tag-ancestry
-  build:
-    needs: verify-tag
-    uses: ./.github/workflows/build.yaml
   package:
-    needs:
-      - build
+    needs: verify-tag
     uses: ./.github/workflows/package.yaml
   publish-vscode-marketplace:
     needs:
@@ -47,7 +43,9 @@ jobs:
           path: dist
 
       - id: get-extension-path
-        run: echo "extension_path=dist/$(just name)-$(just version)-${{ matrix.target }}.vsix" >> "$GITHUB_OUTPUT"
+        run: |
+          name="$(jq -r .name extensions/vscode/package.json)"
+          echo "extension_path=dist/${name}-$(just version)-${{ matrix.target }}.vsix" >> "$GITHUB_OUTPUT"
 
       - name: Publish to Visual Studio Marketplace
         uses: HaaLeo/publish-vscode-extension@v2
@@ -83,7 +81,9 @@ jobs:
           path: dist
 
       - id: get-extension-path
-        run: echo "extension_path=dist/$(just name)-$(just version)-${{ matrix.target }}.vsix" >> "$GITHUB_OUTPUT"
+        run: |
+          name="$(jq -r .name extensions/vscode/package.json)"
+          echo "extension_path=dist/${name}-$(just version)-${{ matrix.target }}.vsix" >> "$GITHUB_OUTPUT"
 
       - name: Publish to Open VSX Registry
         uses: HaaLeo/publish-vscode-extension@v2

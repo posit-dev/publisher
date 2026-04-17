@@ -6,7 +6,6 @@ on:
       - "v*.*.*"
 permissions:
   contents: write # Required to create GitHub releases
-  id-token: write # Required for AWS OIDC authentication in upload workflow
 jobs:
   # Security: Verify the tag points to a commit on main branch
   verify-tag:
@@ -15,28 +14,12 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/verify-tag-ancestry
-  build:
-    needs: verify-tag
-    uses: ./.github/workflows/build.yaml
   package:
-    needs:
-      - build
+    needs: verify-tag
     uses: ./.github/workflows/package.yaml
-  archive:
-    needs:
-      - build
-    uses: ./.github/workflows/archive.yaml
-  upload:
-    needs:
-      - archive
-      - package
-    uses: ./.github/workflows/upload.yaml
-    secrets:
-      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
   release:
     runs-on: ubuntu-latest
     needs:
-      - archive
       - package
     outputs:
       prerelease: ${{ steps.get-prerelease.outputs.prerelease }}
@@ -45,10 +28,6 @@ jobs:
         with:
           fetch-depth: 0
       - uses: extractions/setup-just@v4
-      - uses: actions/download-artifact@v8
-        with:
-          name: archives
-          path: archives
       - uses: actions/download-artifact@v8
         with:
           name: dist
@@ -60,11 +39,10 @@ jobs:
           draft: false
           prerelease: ${{ steps.get-prerelease.outputs.prerelease == 'true' }}
           files: |
-            archives/**/*
             dist/**/*
   # Slack notification on failure
   slack-notification:
-    needs: [verify-tag, build, package, archive, upload, release]
+    needs: [verify-tag, package, release]
     if: failure()
     runs-on: ubuntu-latest
     steps:
@@ -83,7 +61,7 @@ jobs:
 
   # Slack notification when Release recovers from failure
   slack-notification-resolved:
-    needs: [verify-tag, build, package, archive, upload, release]
+    needs: [verify-tag, package, release]
     if: success()
     runs-on: ubuntu-latest
     steps:

@@ -9,7 +9,6 @@ on:
         default: false
 permissions:
   contents: read
-  id-token: write # Required for upload.yaml AWS OIDC authentication
 concurrency:
   group: ${{ github.head_ref }}
   cancel-in-progress: true
@@ -84,11 +83,6 @@ jobs:
     if: needs.detect-changes.outputs.has-code == 'true'
     uses: ./.github/workflows/home-view-unit-test.yaml
 
-  agent:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.has-code == 'true'
-    uses: ./.github/workflows/agent.yaml
-
   vscode:
     needs: detect-changes
     if: needs.detect-changes.outputs.has-code == 'true'
@@ -110,24 +104,14 @@ jobs:
     uses: ./.github/workflows/interpreter-integration.yaml
 
   # Build - skip if no code changes
-  build:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.has-code == 'true'
-    uses: ./.github/workflows/build.yaml
-
   package:
-    needs: [detect-changes, build]
+    needs: detect-changes
     if: needs.detect-changes.outputs.has-code == 'true'
     uses: ./.github/workflows/package.yaml
 
-  archive:
-    needs: [detect-changes, build]
-    if: needs.detect-changes.outputs.has-code == 'true'
-    uses: ./.github/workflows/archive.yaml
-
   # E2E Tests - skip if no code changes or if PR is from a fork
   e2e:
-    needs: [detect-changes, home-view-unit-tests, agent, vscode, package]
+    needs: [detect-changes, home-view-unit-tests, vscode, package]
     if: |
       always() &&
       github.event.pull_request.head.repo.full_name == github.repository &&
@@ -143,20 +127,6 @@ jobs:
       WORKBENCH_LICENSE: ${{ secrets.WORKBENCH_LICENSE }}
       GH_DOWNLOAD_TOKEN: ${{ secrets.GH_DOWNLOAD_TOKEN }}
       PCC_USER_CCQA3: ${{ secrets.PCC_USER_CCQA3 }}
-
-  # Upload artifacts - skip for fork PRs (no secret access) and dependabot
-  upload:
-    needs: [detect-changes, archive, package]
-    if: |
-      always() &&
-      github.event.pull_request.head.repo.full_name == github.repository &&
-      github.actor != 'dependabot[bot]' &&
-      needs.detect-changes.outputs.has-code == 'true' &&
-      !contains(needs.*.result, 'failure') &&
-      !contains(needs.*.result, 'cancelled')
-    uses: ./.github/workflows/upload.yaml
-    secrets:
-      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
 
   # License check - skip if no code changes
   check-licenses:

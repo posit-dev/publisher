@@ -6,19 +6,49 @@ permissions:
 jobs:
   vscode:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: darwin
+            arch: amd64
+          - os: darwin
+            arch: arm64
+          - os: linux
+            arch: amd64
+          - os: linux
+            arch: arm64
+          - os: windows
+            arch: amd64
+          - os: windows
+            arch: arm64
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup
-      - uses: actions/download-artifact@v8
+      - uses: actions/setup-node@v6
         with:
-          name: bin
-          path: bin
-      - run: chmod -R +x ./bin
-      - run: just package
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: "**/package-lock.json"
+      - run: just vscode deps
+      - run: just vscode package ${{ matrix.os }} ${{ matrix.arch }}
       - uses: actions/upload-artifact@v7
         id: upload
+        with:
+          name: dist-${{ matrix.os }}-${{ matrix.arch }}
+          path: dist/**/*
+  merge-artifacts:
+    needs: vscode
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: dist-*
+          merge-multiple: true
+          path: dist
+      - uses: actions/upload-artifact@v7
         with:
           name: dist
           path: dist/**/*
