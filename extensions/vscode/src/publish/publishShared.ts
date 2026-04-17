@@ -417,7 +417,7 @@ export function mergeEnvVars(
  *
  * renv.lock uses PascalCase (R, Packages, Version, etc.) but the
  * deployment record schema expects lowercase (r, packages, version).
- * Go handles this via struct tags; we convert explicitly.
+ * We convert explicitly since JSON/TOML serialization uses lowercase keys.
  */
 export function lockfileToDeploymentRenv(
   lockfile: RenvLockfile,

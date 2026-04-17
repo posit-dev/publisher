@@ -88,8 +88,7 @@ export async function watchCloudLogs({
 
     // Handle errors and server-initiated closure.
     // When the server closes the SSE stream, the EventSource fires an
-    // "error" event with readyState === CLOSED. This is normal — the Go
-    // code's WatchLogs resolves without error on stream close. Only reject
+    // "error" event with readyState === CLOSED. This is normal — only reject
     // for genuine connection failures (readyState !== CLOSED).
     es.addEventListener("error", (err) => {
       // Capture readyState before close() — close() sets it to CLOSED,
