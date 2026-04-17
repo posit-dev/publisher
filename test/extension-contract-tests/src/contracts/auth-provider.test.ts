@@ -6,17 +6,6 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { authentication, Disposable, EventEmitter } from "vscode";
 
 // Mock internal dependencies
-vi.mock("src/api", () => ({
-  useApi: vi.fn(() =>
-    Promise.resolve({
-      credentials: {
-        delete: vi.fn(() => Promise.resolve()),
-      },
-    }),
-  ),
-  Credential: class {},
-}));
-
 vi.mock("src/logging", () => ({
   logger: {
     info: vi.fn(),

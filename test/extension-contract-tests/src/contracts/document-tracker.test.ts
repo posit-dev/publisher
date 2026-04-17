@@ -6,18 +6,6 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { window, workspace, commands, Disposable } from "vscode";
 
 // Mock internal dependencies
-vi.mock("src/api", () => ({
-  useApi: vi.fn(() =>
-    Promise.resolve({
-      configurations: {
-        inspect: vi.fn(() =>
-          Promise.resolve({ data: [{ configuration: { type: "unknown" } }] }),
-        ),
-      },
-    }),
-  ),
-}));
-
 vi.mock("src/utils/vscode", () => ({
   getPythonInterpreterPath: vi.fn(() => Promise.resolve(undefined)),
   getRInterpreterPath: vi.fn(() => Promise.resolve(undefined)),

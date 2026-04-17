@@ -79,17 +79,8 @@ vi.mock("vscode", () => {
   };
 });
 
-// Mock API client
-const mockTest = vi.fn();
-
 vi.mock("src/api", () => {
   return {
-    useApi: () =>
-      Promise.resolve({
-        credentials: {
-          test: mockTest,
-        },
-      }),
     ServerType: { CONNECT: "connect" },
     ProductName: { CONNECT: "Posit Connect" },
     PlatformName: { CONNECT: "Posit Connect" },
@@ -124,10 +115,6 @@ describe("newConnectCredential API calls", () => {
 
     // Setup default responses
     mockCredentialsServiceList.mockResolvedValue([]);
-    mockTest.mockResolvedValue({
-      status: 200,
-      data: { serverType: ServerType.CONNECT, error: null },
-    });
     mockCredentialsServiceCreate.mockResolvedValue({
       guid: "credential-123",
       name: "My Connect Server",

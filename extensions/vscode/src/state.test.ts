@@ -18,14 +18,9 @@ import { AllContentRecordTypes, PreContentRecord } from "src/api";
 import { ConfigurationLoadError } from "src/toml";
 import { getInterpreterDefaults } from "src/interpreters";
 
-class mockApiClient {}
-
-const mockClient = new mockApiClient();
-
 vi.mock("src/api", async (importOriginal) => {
   return {
     ...(await importOriginal<typeof import("src/api")>()),
-    useApi: () => Promise.resolve(mockClient),
   };
 });
 
