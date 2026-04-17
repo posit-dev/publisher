@@ -1,5 +1,5 @@
 # Example schema file
-"$schema" = "https://cdn.posit.co/publisher/schemas/draft/posit-publishing-schema-v3.json"
+"$schema" = "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json"
 product_type = "connect_cloud"
 type = "quarto-static"
 entrypoint = "report.qmd"
