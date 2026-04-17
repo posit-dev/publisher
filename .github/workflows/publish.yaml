@@ -21,16 +21,6 @@ jobs:
     needs:
       - package
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        target:
-          - darwin-amd64
-          - darwin-arm64
-          - linux-amd64
-          - linux-arm64
-          - windows-amd64
-          - windows-arm64
     steps:
       - uses: actions/checkout@v6
       - uses: extractions/setup-just@v4
@@ -45,7 +35,7 @@ jobs:
       - id: get-extension-path
         run: |
           name="$(jq -r .name extensions/vscode/package.json)"
-          echo "extension_path=dist/${name}-$(just version)-${{ matrix.target }}.vsix" >> "$GITHUB_OUTPUT"
+          echo "extension_path=dist/${name}-$(just version).vsix" >> "$GITHUB_OUTPUT"
 
       - name: Publish to Visual Studio Marketplace
         uses: HaaLeo/publish-vscode-extension@v2
@@ -59,16 +49,6 @@ jobs:
     needs:
       - package
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        target:
-          - darwin-amd64
-          - darwin-arm64
-          - linux-amd64
-          - linux-arm64
-          - windows-amd64
-          - windows-arm64
     steps:
       - uses: actions/checkout@v6
       - uses: extractions/setup-just@v4
@@ -83,7 +63,7 @@ jobs:
       - id: get-extension-path
         run: |
           name="$(jq -r .name extensions/vscode/package.json)"
-          echo "extension_path=dist/${name}-$(just version)-${{ matrix.target }}.vsix" >> "$GITHUB_OUTPUT"
+          echo "extension_path=dist/${name}-$(just version).vsix" >> "$GITHUB_OUTPUT"
 
       - name: Publish to Open VSX Registry
         uses: HaaLeo/publish-vscode-extension@v2
