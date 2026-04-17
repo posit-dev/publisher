@@ -2,9 +2,9 @@
 
 Posit Publisher is a VSCode/Positron extension that enables deploying Python and R projects to Posit Connect. The project is in an active Go-to-TypeScript migration, with a hybrid architecture:
 
-- **Go backend** (`cmd/publisher/`, `internal/`) - API server handling credential CRUD, Connect Cloud/Snowflake publishing, and SSE streaming. Still required at runtime for these features only.
+- **Go backend** (`cmd/publisher/`, `internal/`) - API server with credential CRUD routes. The Go binary is still spawned at runtime but no features depend on it; credential storage uses VSCode SecretStorage exclusively. Scheduled for full removal.
 - **TypeScript packages** (`packages/`) - Shared TypeScript libraries consumed by the extension for Connect API communication (`connect-api`) and Connect Cloud OAuth (`connect-cloud-api`)
-- **VSCode extension** (`extensions/vscode/`) - TypeScript extension providing the UI and handling most operations directly (publishing to standard Connect, bundling, content inspection, TOML handling, interpreter detection, dependency analysis, Connect Cloud OAuth, Snowflake discovery)
+- **VSCode extension** (`extensions/vscode/`) - TypeScript extension providing the UI and handling all operations directly (publishing to all server types, bundling, content inspection, TOML handling, interpreter detection, dependency analysis, Connect Cloud OAuth, Snowflake discovery, deployment cancellation)
 - **Webviews** (`extensions/vscode/webviews/homeView/`) - Vue 3 UI components for the extension sidebar
 
 ## Migration Status
@@ -25,24 +25,15 @@ The following features have been **migrated to TypeScript** and run directly in 
 | Python package scanning                | `extensions/vscode/src/interpreters/scanPythonDependencies.ts`                | Go POST `/packages/python/scan`            |
 | Dependency analysis                    | `extensions/vscode/src/publish/dependencies.ts`                               | `internal/bundles/`                        |
 | Project file tree                      | `extensions/vscode/src/projectFiles/`                                         | N/A (new)                                  |
-| Credential storage                     | `extensions/vscode/src/credentials/`                                          | `internal/credentials/` (partially)        |
+| Credential storage                     | `extensions/vscode/src/credentials/`                                          | `internal/credentials/`                    |
 | Content inspection/detection           | `extensions/vscode/src/inspect/`                                              | `internal/inspect/`                        |
-| Publishing to standard Connect         | `extensions/vscode/src/publish/connectPublish.ts`                             | `internal/publish/`                        |
+| Publishing (all server types)          | `extensions/vscode/src/publish/connectPublish.ts`, `connectCloudPublish.ts`   | `internal/publish/`                        |
+| Deployment cancellation                | `extensions/vscode/src/publish/connectPublish.ts` (AbortController)           | Go `POST /deployments/{name}/cancel`       |
+| SSE streaming (now synthetic events)   | `extensions/vscode/src/events.ts` (`injectMessage`)                           | Go `GET /events`                           |
 | Connect Cloud OAuth flows              | Uses `@posit-dev/connect-cloud-api` package directly                          | `internal/cloud/`                          |
 | Snowflake connection discovery         | `extensions/vscode/src/snowflake/`                                            | `internal/clients/`                        |
 
-The standard Connect publish path runs entirely in TypeScript via `connectPublish()` using `@posit-dev/connect-api`. A gate function `canUseTsPublishPath()` in `src/views/canUseTsPublishPath.ts` routes deployments to either the TS or Go path based on server type and config options.
-
-The following features are **still in Go** and accessed via the Go backend HTTP API:
-
-| Feature                                | Go API Route                                        | Extension API Wrapper                 |
-| -------------------------------------- | --------------------------------------------------- | ------------------------------------- |
-| Publishing (Connect Cloud / Snowflake) | `POST /deployments/{name}`                          | `src/api/resources/ContentRecords.ts` |
-| Publishing with `packagesFromLibrary`  | `POST /deployments/{name}`                          | `src/api/resources/ContentRecords.ts` |
-| Deployment cancellation (Go path only) | `POST /deployments/{name}/cancel/{localid}`         | `src/api/resources/ContentRecords.ts` |
-| Credential creation (with validation)  | `POST /credentials`                                 | `src/api/resources/Credentials.ts`    |
-| Credential deletion                    | `DELETE /credentials/{guid}`, `DELETE /credentials` | `src/api/resources/Credentials.ts`    |
-| Server-Sent Events streaming (Go path) | `GET /events`                                       | `src/events.ts`                       |
+All publishing runs in TypeScript via `connectPublish()` and `connectCloudPublish()` using `@posit-dev/connect-api` and `@posit-dev/connect-cloud-api`. The Go backend still has credential CRUD routes registered (`POST /credentials`, `DELETE /credentials/{guid}`, `DELETE /credentials`) but nothing calls them — credential storage uses VSCode SecretStorage exclusively. The Go API client (`src/api/client.ts`) and Credentials resource (`src/api/resources/Credentials.ts`) have been deleted.
 
 # Build Commands
 
@@ -109,11 +100,11 @@ just stop               # Stop Docker containers
 
 ## Runtime Architecture
 
-The extension spawns the Go binary (`bin/publisher`) as a subprocess and communicates via HTTP API and Server-Sent Events. Many operations now run directly in TypeScript without calling the Go backend.
+The extension spawns the Go binary (`bin/publisher`) as a subprocess, but all operations now run directly in TypeScript. The Go binary still starts but nothing calls its API. It is scheduled for full removal.
 
 ```
 VSCode Extension (TypeScript)
-├── Local Operations (no Go backend needed):
+├── All operations run natively in TypeScript:
 │   ├── TOML config/deployment reading & writing
 │   ├── Bundle creation (tar.gz with manifest)
 │   ├── File collection with .gitignore filtering
@@ -121,38 +112,26 @@ VSCode Extension (TypeScript)
 │   ├── Python/R package scanning
 │   ├── Dependency analysis
 │   ├── Content inspection/detection (src/inspect/)
-│   ├── Publishing to standard Connect (src/publish/connectPublish.ts)
+│   ├── Publishing to all server types (src/publish/)
+│   ├── Deployment cancellation (AbortController)
+│   ├── Event streaming (synthetic events via EventStream.injectMessage)
 │   ├── Connect Cloud OAuth (via @posit-dev/connect-cloud-api)
 │   ├── Snowflake connection discovery (src/snowflake/)
-│   └── Credential storage (filesystem / VSCode keychain)
+│   └── Credential storage (VSCode SecretStorage)
 │
-└── Go Backend Operations (via HTTP API — 5 routes remain):
-    ├── Publishing for Connect Cloud / Snowflake server types
-    ├── Publishing with packagesFromLibrary config option
-    ├── Credential creation (POST) and deletion (DELETE)
-    └── Server-Sent Events for Go publish path progress
+└── Go Backend (scheduled for removal):
+    ├── Binary still spawned at startup (src/servers.ts)
+    ├── 3 credential CRUD routes registered but never called
+    └── No TypeScript code calls the Go API
 ```
 
-## Go Backend (`internal/`)
+## Go Backend (`internal/`) — scheduled for removal
 
-Key packages (still actively used by remaining Go API routes):
+All Go packages are legacy code. The functionality has been fully migrated to TypeScript. The Go binary still starts but no TypeScript code calls its API.
 
-- `services/api/` - HTTP API endpoints (5 routes remain: credential CRUD, Go publish path, SSE)
-- `publish/` - Publishing logic for Connect Cloud and Snowflake deployments
-- `clients/` - HTTP clients for Connect API communication (used by Go publish path)
-- `credentials/` - Credential creation/deletion API (storage migrated, CRUD routes remain)
-- `events/` - Server-Sent Events for Go publish path progress updates
-
-Legacy packages (functionality fully migrated to TypeScript, Go code still present):
-
-- `accounts/` - Server account management (used by Go publish path internally)
-- `bundles/` - Deployment bundle creation and manifest generation
-- `cloud/` - Connect Cloud OAuth (migrated to `@posit-dev/connect-cloud-api`)
-- `config/` - Configuration file parsing (`.posit/publish/*.toml`)
-- `deployment/` - Deployment record management
-- `inspect/` - Project inspection (migrated to `extensions/vscode/src/inspect/`)
-- `interpreters/` - Python/R interpreter detection and version management
-- `schema/` - JSON schemas for configuration validation
+- `services/api/` - 3 credential CRUD routes (POST, DELETE by GUID, DELETE all) — never called
+- `credentials/` - Keyring/file credential storage — superseded by VSCode SecretStorage
+- `accounts/`, `bundles/`, `clients/`, `cloud/`, `config/`, `deployment/`, `events/`, `inspect/`, `interpreters/`, `publish/`, `schema/` — all migrated to TypeScript
 
 The CLI entry point (`cmd/publisher/main.go`) uses [Kong](https://github.com/alecthomas/kong) for command parsing. The `ui` command starts an HTTP API server that the VSCode extension communicates with.
 
@@ -174,9 +153,9 @@ Key areas:
 - **Credentials** (`src/credentials/`) - Manages credential storage (filesystem or VSCode keychain)
 - **Publish** (`src/publish/`) - Publishing orchestration (`connectPublish.ts`) and dependency analysis for Python/R projects
 - **Snowflake** (`src/snowflake/`) - Snowflake connection discovery, config parsing, and token providers
-- **API** (`src/api/`) - Axios HTTP client for Go backend communication (credential CRUD and Go publish path only)
-- **Views** (`src/views/`) - Sidebar webview and tree view providers; includes `canUseTsPublishPath.ts` which gates TS vs Go publish
-- **Servers** (`src/servers.ts`) - Go binary subprocess management (still needed for remaining Go API routes)
+- **API** (`src/api/`) - Type definitions for configurations, credentials, content records, events, and files (Go API client has been deleted)
+- **Views** (`src/views/`) - Sidebar webview and tree view providers
+- **Servers** (`src/servers.ts`) - Go binary subprocess management (scheduled for removal — no API routes are called)
 - **State** (`src/state.ts`) - Central state management for the extension
 
 ## Configuration Files
