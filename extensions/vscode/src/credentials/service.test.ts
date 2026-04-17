@@ -21,20 +21,6 @@ import {
   IncompleteCredentialError,
 } from "./errors";
 
-const mockCredentialsApi = {
-  create: vi.fn(),
-  delete: vi.fn(),
-  reset: vi.fn(),
-};
-
-vi.mock("src/api", () => ({
-  useApi: vi.fn(() =>
-    Promise.resolve({
-      credentials: mockCredentialsApi,
-    }),
-  ),
-}));
-
 vi.mock("vscode");
 vi.mock("src/logging");
 vi.mock("src/snowflake/connections");
@@ -57,9 +43,6 @@ describe("CredentialsService", () => {
   beforeEach(() => {
     secrets = new mockSecretStorage();
     service = new CredentialsService(secrets);
-    mockCredentialsApi.create.mockReset();
-    mockCredentialsApi.delete.mockReset();
-    mockCredentialsApi.reset.mockReset();
   });
 
   describe("list", () => {
@@ -276,19 +259,6 @@ describe("CredentialsService", () => {
         IncompleteCredentialError,
       );
     });
-
-    test("does not call useApi when creating credential", async () => {
-      const input: CreateCredentialInput = {
-        name: "Test No API",
-        url: "https://connect.example.com",
-        serverType: ServerType.CONNECT,
-        apiKey: "key",
-      };
-
-      await service.create(input);
-
-      expect(mockCredentialsApi.create).not.toHaveBeenCalled();
-    });
   });
 
   describe("delete", () => {
@@ -315,82 +285,6 @@ describe("CredentialsService", () => {
   describe("reset", () => {
     test("clears all credentials", async () => {
       const creds = credentialFactory.buildList(3);
-      for (const c of creds) {
-        await storeCredential(secrets, c);
-      }
-
-      await service.reset();
-
-      const result = await service.list();
-      expect(result).toEqual([]);
-    });
-  });
-
-  describe("dual-write to Go backend", () => {
-    test("create() syncs credential to Go backend", async () => {
-      const input: CreateCredentialInput = {
-        name: "Sync Test",
-        url: "https://connect.example.com",
-        serverType: ServerType.CONNECT,
-        apiKey: "key-123",
-      };
-
-      const result = await service.create(input);
-
-      expect(mockCredentialsApi.create).toHaveBeenCalledOnce();
-      expect(mockCredentialsApi.create).toHaveBeenCalledWith(result);
-    });
-
-    test("delete() syncs deletion to Go backend", async () => {
-      const cred = credentialFactory.build();
-      await storeCredential(secrets, cred);
-
-      await service.delete(cred.guid);
-
-      expect(mockCredentialsApi.delete).toHaveBeenCalledOnce();
-      expect(mockCredentialsApi.delete).toHaveBeenCalledWith(cred.guid);
-    });
-
-    test("reset() syncs reset to Go backend", async () => {
-      await service.reset();
-
-      expect(mockCredentialsApi.reset).toHaveBeenCalledOnce();
-    });
-
-    test("create() succeeds even when Go backend fails", async () => {
-      mockCredentialsApi.create.mockRejectedValue(new Error("Go unavailable"));
-
-      const input: CreateCredentialInput = {
-        name: "Resilient",
-        url: "https://connect.example.com",
-        serverType: ServerType.CONNECT,
-        apiKey: "key-456",
-      };
-
-      const result = await service.create(input);
-      expect(result.name).toBe("Resilient");
-
-      // Verify it was still persisted in SecretStorage
-      const all = await service.list();
-      expect(all).toHaveLength(1);
-    });
-
-    test("delete() succeeds even when Go backend fails", async () => {
-      mockCredentialsApi.delete.mockRejectedValue(new Error("Go unavailable"));
-
-      const cred = credentialFactory.build();
-      await storeCredential(secrets, cred);
-
-      await service.delete(cred.guid);
-
-      const remaining = await service.list();
-      expect(remaining).toHaveLength(0);
-    });
-
-    test("reset() succeeds even when Go backend fails", async () => {
-      mockCredentialsApi.reset.mockRejectedValue(new Error("Go unavailable"));
-
-      const creds = credentialFactory.buildList(2);
       for (const c of creds) {
         await storeCredential(secrets, c);
       }
