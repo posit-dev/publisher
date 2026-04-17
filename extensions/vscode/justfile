@@ -11,26 +11,38 @@ _with_debug := if _debug == "true" {
         ""
     }
 
+# Private helper: print the current OS in the legacy `go env GOOS` vocabulary
+# (darwin|linux|windows). Used as the default for `os` arguments below.
+_os:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    case $(uname -s) in
+        Darwin) echo darwin ;;
+        Linux) echo linux ;;
+        MINGW*|MSYS*|CYGWIN*) echo windows ;;
+        *) echo "error: unsupported os: $(uname -s)" 1>&2; exit 1 ;;
+    esac
+
+# Private helper: print the current architecture in the legacy `go env GOARCH`
+# vocabulary (amd64|arm64). Used as the default for `arch` arguments below.
+_arch:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    case $(uname -m) in
+        x86_64|amd64) echo amd64 ;;
+        arm64|aarch64) echo arm64 ;;
+        *) echo "error: unsupported arch: $(uname -m)" 1>&2; exit 1 ;;
+    esac
+
 # Quick start
-default os="$(just ../../os)" arch="$(just ../../arch)":
+default os="$(just _os)" arch="$(just _arch)":
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
 
     just clean
-    just configure {{ os }} {{ arch }}
+    just configure
     just package {{ os }} {{ arch }}
-
-assert-binary-executable-exists:
-    #!/usr/bin/env bash
-    set -eou pipefail
-    {{ _with_debug }}
-    echo "info: asserting binary executable exists..." 1>&2
-    if ! [ -f ./bin/publisher* ]; then
-        echo "error: binary executable not found!" 1>&2
-        echo "debug: did you run 'just configure'?" 1>&2
-        exit 1
-    fi
 
 assert-command-installed command:
     #!/usr/bin/env bash
@@ -52,7 +64,6 @@ clean:
     {{ _with_debug }}
 
     rm -rf .vscode-test
-    rm -rf bin
     rm -rf dist
     rm -rf node_modules
     rm -rf out
@@ -79,30 +90,15 @@ deps:
     just ./webviews/homeView/deps
 
 
-configure os="$(just ../../os)" arch="$(just ../../arch)":
+configure:
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
 
     just deps
 
-    echo "info: checking for compatible binary executable..." 1>&2
-    binary_executable=$(just ../../executable-path {{ os }} {{ arch }})
-    if ! [ -f "$binary_executable" ]; then
-        echo "warn: binary executable '"$binary_executable"' not found." 1>&2
-        echo "info: Did you run 'just ../../build'?" 1>&2
-        exit 0
-    fi
-
-    echo "info: writing binary executable to ./bin/publisher..." 1>&2
-    rm -rf ./bin
-    mkdir -p ./bin
-
-    cp "$binary_executable" ./bin/$(basename -- "$binary_executable")
-    just assert-binary-executable-exists
-
 # Installs the packaged extension on your configured editor using the editor's CLI. The editor CLI defaults to 'code'. Modify this value via the EDITOR environment variable.
-install os="$(just ../../os)" arch="$(just ../../arch)" editor="code":
+install os="$(just _os)" arch="$(just _arch)" editor="code":
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
@@ -124,11 +120,10 @@ lint:
     npm run lint
 
 # Packages the extension.
-package os="$(just ../../os)" arch="$(just ../../arch)":
+package os="$(just _os)" arch="$(just _arch)":
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
-    just assert-binary-executable-exists
     echo "info: getting package target platform..." 1>&2
     target_platform=$(just package-target-platform {{ os }} {{ arch }})
     echo "info: getting package output path..." 1>&2
@@ -145,12 +140,12 @@ package os="$(just ../../os)" arch="$(just ../../arch)":
     npx --yes @vscode/vsce package -o "$package" -t "$target_platform" $prerelease_flag | sed 's/^/debug: /'
     echo "info: writing package to $package..." 1>&2
 
-package-name os="$(just ../../os)" arch="$(just ../../arch)":
+package-name os="$(just _os)" arch="$(just _arch)":
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
 
-    name="$(just ../../name)"
+    name="$(jq -r .name package.json)"
     version="$(just ../../version)"
     echo "$name-$version-{{ os }}-{{ arch }}.vsix"
 
@@ -161,7 +156,7 @@ package-path:
 
     echo $(readlink -f ../../)/dist
 
-package-target-platform os="$(just ../../os)" arch="$(just ../../arch)":
+package-target-platform os="$(just _os)" arch="$(just _arch)":
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}

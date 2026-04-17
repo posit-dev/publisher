@@ -6,12 +6,7 @@ on:
 permissions:
   contents: read
 jobs:
-  agent:
-    uses: ./.github/workflows/agent.yaml
-  build:
-    uses: ./.github/workflows/build.yaml
   package:
-    needs: build
     uses: ./.github/workflows/package.yaml
   e2e:
     needs: [package]
@@ -35,15 +30,7 @@ jobs:
   # Slack notification on failure
   slack-notification:
     needs:
-      [
-        agent,
-        build,
-        package,
-        e2e,
-        vscode,
-        extension-contract-tests,
-        connect-contract-tests,
-      ]
+      [package, e2e, vscode, extension-contract-tests, connect-contract-tests]
     if: failure()
     runs-on: ubuntu-latest
     steps:
@@ -63,15 +50,7 @@ jobs:
   # Slack notification when nightly tests recover from failure
   slack-notification-resolved:
     needs:
-      [
-        agent,
-        build,
-        package,
-        e2e,
-        vscode,
-        extension-contract-tests,
-        connect-contract-tests,
-      ]
+      [package, e2e, vscode, extension-contract-tests, connect-contract-tests]
     if: success()
     runs-on: ubuntu-latest
     steps:

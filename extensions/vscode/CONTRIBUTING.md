@@ -27,11 +27,8 @@ and run the "Run Extension" debug launch configuration.
 
 #### Important Note
 
-The "Run Extension" launch configurations run the `extensions/vscode` esbuild
+The "Run Extension" launch configuration runs the `extensions/vscode` esbuild
 which will detect changes in the extension code.
-
-If you have any changes in the Go server make sure to run `just build` in the
-root directory.
 
 If you have changes in the `webviews` make sure to rebuild them:
 
@@ -80,39 +77,14 @@ just test
 
 Utilize VSCode's built-in debugger to troubleshoot and diagnose issues.
 
-Switch to the debugger extension view within VSCode and select one of the two
-debug configurations (specified within `extensions/vscode/.vscode/launch.json`):
-
-- `Run Extension`
-- `Run Extension using external API agent on 9001`
-
-The first target (`Run Extension`) is very helpful when you are simply wanting to debug
-functionality within the extension. It's configuration will cause the extension under test to
-automatically launch the agent (unlike the second option).
-
-The second target (`Run Extension using external API agent on 9001`) is helpful for when you want to debug
-both the extension UX and the agent at the same time. To do this, you will need to:
-
-1. First launch a debug session from a VSCode window which has opened the repo's base directory
-   (see [API Debugging](./../../CONTRIBUTING.md#debugging-in-vs-code))
-2. Then launch another debug session (using the `Run Extension using external API agent on 9001` configuration)
-   from a separate VSCode window which has opened the `extensions/vscode` folder.
-
-Notes when using `Run Extension using external API agent on 9001`:
-
-- Both the agent's and extension's `launch.json` files are setup using the same working
-  subdirectory of `test/sample-content`. If you change it in one, you will need to change it in the other.
-  (This mimics the production runtime functionality where they both are initialized with the same working
-  subdirectory.) This location must also be different than the root of the repository (which the VSCode
-  window for agent development must open) and the extension location `extensions/vscode` (which the VSCode
-  window for UX development must open).
-- If you stop the debugging of the agent, you'll need to relaunch debugging of the extension after
-  the agent is back up.
+Switch to the debugger extension view within VSCode and select the
+`Run Extension` debug configuration (specified within
+`extensions/vscode/.vscode/launch.json`).
 
 If you use `F5` or use the menu option `Run > Start Debugging` to launch the debugger,
 be sure to pre-select the configuration.
 
-Either invocation will launch a new window named `Extension Host Development` with the extension installed and enabled.
+This will launch a new window named `Extension Host Development` with the extension installed and enabled.
 
 When testing, utilize the sample projects in `../../test/sample-content`. Open these projects as a workspace within the `Extension Host Development` window.
 

@@ -1,9 +1,6 @@
 .cache/
-cover.out
 
-archives/
 bin/
-certs/
 dist/
 
 node_modules
@@ -12,7 +9,6 @@ __pycache__/
 .DS_Store
 
 *renv/
-!internal/inspect/dependencies/renv/
 *.venv/
 .envrc
 
@@ -39,9 +35,6 @@ test/e2e/content-workspace/.connect-credentials
 *.vsix
 .pnpm-store
 .Rproj.user
-
-# debugging binaries created by running our launch.json config in VS Code
-cmd/publisher/__debug_bin*
 
 # Possible e2e tests deployment assets
 test/e2e/content-workspace/**/.posit
