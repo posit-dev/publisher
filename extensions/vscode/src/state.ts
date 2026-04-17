@@ -378,6 +378,12 @@ export class PublisherState implements Disposable {
     return findConfiguration(name, projectDir, this.configurations);
   }
 
+  // WARNING: the returned config may have empty interpreter fields
+  // (r.version, python.version, etc.) if the file watcher recently
+  // re-read the TOML from disk but the async UpdateConfigWithDefaults
+  // hydration hasn't completed yet. Callers that need interpreter
+  // fields for correctness (e.g. publish) must re-apply
+  // UpdateConfigWithDefaults before using them.
   findValidConfig(name: string, projectDir: string) {
     return findConfiguration(name, projectDir, this.validConfigs);
   }
