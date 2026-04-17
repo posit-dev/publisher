@@ -58,6 +58,8 @@ import {
 import {
   loadAllConfigurations,
   loadAllDeployments,
+  loadConfiguration,
+  ConfigurationLoadError,
   patchDeploymentRecord,
 } from "src/toml";
 import {
@@ -312,6 +314,51 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     return await setSelectionIsPreContentRecord(match);
   }
 
+  // Read a config fresh from disk and apply interpreter defaults.
+  // Returns undefined (with an error message shown) if the config
+  // cannot be loaded.
+  private async loadFreshConfig(
+    configurationName: string,
+    projectDir: string,
+    rootDir: string,
+    absProjectDir: string,
+    pythonPath?: string,
+    rPath?: string,
+  ): Promise<Configuration | undefined> {
+    try {
+      const loaded = await loadConfiguration(
+        configurationName,
+        projectDir,
+        rootDir,
+      );
+      const defaults = await getInterpreterDefaults(
+        absProjectDir,
+        pythonPath,
+        rPath,
+      );
+      UpdateConfigWithDefaults(loaded, defaults);
+      return loaded;
+    } catch (error: unknown) {
+      if (error instanceof ConfigurationLoadError) {
+        window.showErrorMessage(
+          `Invalid configuration ${configurationName}: ${error.configurationError.error.msg}`,
+        );
+        return undefined;
+      }
+      if (
+        error instanceof Error &&
+        "code" in error &&
+        error.code === "ENOENT"
+      ) {
+        window.showErrorMessage(
+          `Configuration not found: ${configurationName}`,
+        );
+        return undefined;
+      }
+      throw error;
+    }
+  }
+
   private async initiateDeployment(
     deploymentName: string,
     credentialName: string,
@@ -321,26 +368,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   ) {
     try {
       const credential = this.state.findCredential(credentialName);
-      const config = this.state.findValidConfig(configurationName, projectDir);
 
       if (!credential) {
         window.showErrorMessage(`Credential not found: ${credentialName}`);
-        return;
-      }
-      if (!config) {
-        const errConfig = this.state.findConfigInError(
-          configurationName,
-          projectDir,
-        );
-        if (errConfig) {
-          window.showErrorMessage(
-            `Invalid configuration ${configurationName}: ${errConfig.error.msg}`,
-          );
-        } else {
-          window.showErrorMessage(
-            `Configuration not found: ${configurationName}`,
-          );
-        }
         return;
       }
 
@@ -363,6 +393,27 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         return;
       }
 
+      const python = await getPythonInterpreterPath();
+      const r = await getRInterpreterPath();
+
+      // Always read the config fresh from disk rather than using the
+      // in-memory cache. After a new deployment is created, the cached
+      // config may be stale — missing TOML files in the files list and
+      // missing interpreter defaults like r.version. The file watcher
+      // will eventually refresh the cache, but the user can click Deploy
+      // before that completes.
+      const config = await this.loadFreshConfig(
+        configurationName,
+        projectDir,
+        root,
+        absProjectDir,
+        python?.pythonPath,
+        r?.rPath,
+      );
+      if (!config) {
+        return;
+      }
+
       const contentRecord = this.state.findContentRecord(
         deploymentName,
         projectDir,
@@ -373,19 +424,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       const positron = getPositronRepoSettings();
       const clientVersion =
         this.context.extension.packageJSON.version || "unknown";
-      const python = await getPythonInterpreterPath();
-      const r = await getRInterpreterPath();
-
-      // The cached config from findValidConfig() may not have interpreter
-      // defaults populated yet if the file watcher recently re-read the
-      // config from disk. Re-apply defaults to guarantee fields like
-      // r.version are set before the publish orchestrator uses them.
-      const defaults = await getInterpreterDefaults(
-        absProjectDir,
-        python?.pythonPath,
-        r?.rPath,
-      );
-      UpdateConfigWithDefaults(config, defaults);
 
       const progressOptions = {
         onComplete: () => this.refreshContentRecords(),
