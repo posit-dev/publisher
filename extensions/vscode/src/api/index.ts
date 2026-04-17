@@ -1,6 +1,5 @@
 // Copyright (C) 2023 by Posit Software, PBC.
 
-export { initApi, useApi } from "./client";
 export type { PositronSettings, RPackageRepository } from "./types/positron";
 
 export * from "./types/credentials";

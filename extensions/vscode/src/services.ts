@@ -2,15 +2,12 @@
 
 import { ExtensionContext, Disposable } from "vscode";
 
-import { HOST } from "src";
-import { initApi } from "src/api";
 import { logger } from "src/logging";
 import { Server } from "src/servers";
 
 export class Service implements Disposable {
   private context: ExtensionContext;
   private server: Server;
-  private agentURL: string;
   private useExternalAgent: boolean;
   private useKeyChain: boolean;
 
@@ -24,9 +21,7 @@ export class Service implements Disposable {
     this.useExternalAgent = useExternalAgent;
     this.useKeyChain = useKeyChain;
 
-    this.agentURL = `http://${HOST}:${port}/api`;
     this.server = new Server(port, this.useKeyChain);
-    initApi(this.isUp(), this.agentURL);
   }
 
   start = async () => {
