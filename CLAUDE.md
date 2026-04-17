@@ -225,7 +225,7 @@ When adding entries to CHANGELOG.md:
 
 # Schema Updates
 
-Schemas exist in both `extensions/vscode/src/toml/schemas/` (used by TypeScript) and `internal/schema/schemas/` (used by Go):
+Schemas are in `extensions/vscode/src/toml/schemas/` (canonical location, uploaded to CDN by CI):
 
 - `posit-publishing-schema-v3.json` - Configuration schema
 - `posit-publishing-record-schema-v3.json` - Deployment record schema

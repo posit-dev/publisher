@@ -1,0 +1,41 @@
+"$schema" = "https://cdn.posit.co/publisher/schemas/posit-publishing-record-schema-v3.json"
+server_type = "connect_cloud"
+server_url = "https://connect.example.com"
+id = "de2e7bdb-b085-401e-a65c-443e40009749"
+client_version = '1.0.1'
+type = 'python-shiny'
+created_at = '2024-01-19T09:33:33.131481-05:00'
+configuration_name = "production"
+deployed_at = '2024-01-19T09:33:33.131481-05:00'
+bundle_id = '123'
+bundle_url = 'https://connect.posit.cloud/bundle'
+dashboard_url = 'https://connect.posit.cloud/dashboard'
+direct_url = 'https://connect.posit.cloud/direct'
+logs_url = 'https://connect.posit.cloud/logs'
+
+[configuration]
+"$schema" = "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json"
+type = "quarto-static"
+product_type = "connect_cloud"
+entrypoint = "report.qmd"
+validate = true
+files = [
+    "*.py",
+    "*.qmd",
+    "requirements.txt",
+]
+secrets = ["API_KEY", "DATABASE_PASSWORD"]
+title = "Regional Quarterly Sales Report"
+description = "This is the quarterly sales report, broken down by region."
+
+[configuration.python]
+version = "3.11.3"
+
+[configuration.r]
+version = "4.3.1"
+
+[configuration.environment]
+API_URL = "https://example.com/api"
+
+[connect_cloud]
+account_name = 'my-account'
