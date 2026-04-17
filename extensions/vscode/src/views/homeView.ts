@@ -30,15 +30,12 @@ import {
   FileAction,
   PreContentRecord,
   isConfigurationError,
-  Credential,
   isContentRecord,
   isContentRecordError,
   isPreContentRecord,
   isPreContentRecordWithConfig,
-  useApi,
   AllContentRecordTypes,
   EnvironmentConfig,
-  PreContentRecordWithConfig,
   ProductName,
   ServerType,
   IntegrationRequest,
@@ -76,8 +73,7 @@ import { scanPythonDependencies } from "src/interpreters/scanPythonDependencies"
 import { getSummaryStringFromError } from "src/utils/errors";
 import { getNonce } from "src/utils/getNonce";
 import { getUri } from "src/utils/getUri";
-import { deployProject } from "src/views/deployProgress";
-import { runTsDeployWithProgress } from "src/views/tsDeployProgress";
+import { runDeployWithProgress } from "src/views/deployProgress";
 import { connectPublish } from "src/publish/connectPublish";
 import { connectCloudPublish } from "src/publish/connectCloudPublish";
 import { renderQuartoContent } from "src/views/renders";
@@ -128,7 +124,6 @@ import { throttleWithLastPending } from "src/utils/throttle";
 import { showAssociateGUID } from "src/actions/showAssociateGUID";
 import { extensionSettings } from "src/extension";
 import { openFileInEditor } from "src/commands";
-import { showImmediateDeploymentFailureMessage } from "./publishFailures";
 import {
   SelectionCredentialMatch,
   setSelectionHasCredentialMatch,
@@ -322,191 +317,143 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     projectDir: string,
     secrets?: Record<string, string>,
   ) {
-    const credential = this.state.findCredential(credentialName);
-    const config = this.state.findValidConfig(configurationName, projectDir);
-
-    if (credential && config) {
-      return await this.initiateTsDeployment(
-        deploymentName,
-        credential,
-        config,
-        projectDir,
-        secrets,
-      );
-    }
-
-    return await this.initiateGoDeployment(
-      deploymentName,
-      credentialName,
-      configurationName,
-      projectDir,
-      secrets,
-    );
-  }
-
-  private async initiateTsDeployment(
-    deploymentName: string,
-    credential: Credential,
-    config: Configuration,
-    projectDir: string,
-    secrets?: Record<string, string>,
-  ) {
-    const root = this.root?.uri.fsPath;
-    if (!root) {
-      window.showErrorMessage("No workspace folder open.");
-      return;
-    }
-    const absProjectDir = path.resolve(root, projectDir);
-    const rel = path.relative(root, absProjectDir);
-    // Check that the resolved path stays within the workspace.
-    // We can't just use rel.startsWith("..") because a directory
-    // literally named ".." would be a false positive.
-    if (
-      rel === ".." ||
-      rel.startsWith(".." + path.sep) ||
-      path.isAbsolute(rel)
-    ) {
-      window.showErrorMessage("Project directory is outside the workspace.");
-      return;
-    }
-
-    const contentRecord = this.state.findContentRecord(
-      deploymentName,
-      projectDir,
-    );
-    const existingContentId = contentRecord?.id;
-    const existingCreatedAt = contentRecord?.createdAt;
-
-    const positron = getPositronRepoSettings();
-    const clientVersion =
-      this.context.extension.packageJSON.version || "unknown";
-    const r = await getRInterpreterPath();
-
-    // Tell the webview the publish API call has been accepted
-    this.webviewConduit.sendMsg({
-      kind: HostToWebviewMessageType.PUBLISH_INIT,
-    });
-
-    const progressOptions = {
-      onComplete: () => this.refreshContentRecords(),
-      onCancel: () => {
-        this.webviewConduit.sendMsg({
-          kind: HostToWebviewMessageType.PUBLISH_CANCEL,
-        });
-      },
-      stream: this.stream,
-      serverUrl: credential.url,
-      title: deploymentName,
-    };
-
-    if (credential.serverType === ServerType.CONNECT_CLOUD) {
-      const cloudApi = new ConnectCloudAPI({
-        apiBaseUrl: cloudEnvironmentBaseUrls[CONNECT_CLOUD_ENVIRONMENT],
-        accessToken: credential.accessToken,
-        refreshToken: credential.refreshToken,
-        environment: CONNECT_CLOUD_ENVIRONMENT,
-        onTokenRefresh: async (tokens) => {
-          credential.accessToken = tokens.access_token;
-          credential.refreshToken = tokens.refresh_token;
-          await storeCredential(this.context.secrets, credential);
-        },
-      });
-
-      runTsDeployWithProgress({
-        deploy: (onProgress, signal) =>
-          connectCloudPublish({
-            api: cloudApi,
-            projectDir: absProjectDir,
-            saveName: deploymentName,
-            config: config.configuration,
-            configName: config.configurationName,
-            serverType: credential.serverType,
-            credential: {
-              accountId: credential.accountId,
-              accountName: credential.accountName,
-              environment: CONNECT_CLOUD_ENVIRONMENT,
-            },
-            existingContentId: existingContentId
-              ? ContentID(existingContentId)
-              : undefined,
-            existingCreatedAt,
-            secrets,
-            rPath: r?.rPath,
-            positronR: positron.r,
-            clientVersion,
-            onProgress,
-            signal,
-          }),
-        ...progressOptions,
-      });
-    } else {
-      const connectApi = new ConnectAPI(
-        await connectAPIOptionsFromCredential(credential, {
-          rejectUnauthorized: extensionSettings.verifyCertificates(),
-        }),
-      );
-
-      runTsDeployWithProgress({
-        deploy: (onProgress, signal) =>
-          connectPublish({
-            api: connectApi,
-            projectDir: absProjectDir,
-            saveName: deploymentName,
-            config: config.configuration,
-            configName: config.configurationName,
-            serverUrl: credential.url,
-            serverType: credential.serverType,
-            existingContentId,
-            existingCreatedAt,
-            secrets,
-            rPath: r?.rPath,
-            positronR: positron.r,
-            clientVersion,
-            onProgress,
-            signal,
-          }),
-        ...progressOptions,
-      });
-    }
-  }
-
-  private async initiateGoDeployment(
-    deploymentName: string,
-    credentialName: string,
-    configurationName: string,
-    projectDir: string,
-    secrets?: Record<string, string>,
-  ) {
     try {
-      const api = await useApi();
-      const r = await getRInterpreterPath();
-      const python = await getPythonInterpreterPath();
+      const credential = this.state.findCredential(credentialName);
+      const config = this.state.findValidConfig(configurationName, projectDir);
 
-      // Collect IDE-controlled repo settings
+      if (!credential) {
+        window.showErrorMessage(`Credential not found: ${credentialName}`);
+        return;
+      }
+      if (!config) {
+        const errConfig = this.state.findConfigInError(
+          configurationName,
+          projectDir,
+        );
+        if (errConfig) {
+          window.showErrorMessage(
+            `Invalid configuration ${configurationName}: ${errConfig.error.msg}`,
+          );
+        } else {
+          window.showErrorMessage(
+            `Configuration not found: ${configurationName}`,
+          );
+        }
+        return;
+      }
+
+      const root = this.root?.uri.fsPath;
+      if (!root) {
+        window.showErrorMessage("No workspace folder open.");
+        return;
+      }
+      const absProjectDir = path.resolve(root, projectDir);
+      const rel = path.relative(root, absProjectDir);
+      // Check that the resolved path stays within the workspace.
+      // We can't just use rel.startsWith("..") because a directory
+      // literally named ".." would be a false positive.
+      if (
+        rel === ".." ||
+        rel.startsWith(".." + path.sep) ||
+        path.isAbsolute(rel)
+      ) {
+        window.showErrorMessage("Project directory is outside the workspace.");
+        return;
+      }
+
+      const contentRecord = this.state.findContentRecord(
+        deploymentName,
+        projectDir,
+      );
+      const existingContentId = contentRecord?.id;
+      const existingCreatedAt = contentRecord?.createdAt;
+
       const positron = getPositronRepoSettings();
+      const clientVersion =
+        this.context.extension.packageJSON.version || "unknown";
+      const r = await getRInterpreterPath();
 
-      const response = await api.contentRecords.publish(
-        deploymentName,
-        credentialName,
-        configurationName,
-        !extensionSettings.verifyCertificates(), // insecure = !verifyCertificates
-        projectDir,
-        r,
-        python,
-        secrets,
-        positron,
-      );
-      deployProject(
-        deploymentName,
-        projectDir,
-        response.data.localId,
-        this.stream,
-        this.updateActiveContentRecordLocally.bind(this),
-      );
-    } catch (error: unknown) {
-      // Most failures will occur on the event stream. These are the ones which
-      // are immediately rejected as part of the API request to initiate deployment.
-      showImmediateDeploymentFailureMessage(error);
+      const progressOptions = {
+        onComplete: () => this.refreshContentRecords(),
+        onCancel: () => {
+          this.webviewConduit.sendMsg({
+            kind: HostToWebviewMessageType.PUBLISH_CANCEL,
+          });
+        },
+        stream: this.stream,
+        serverUrl: credential.url,
+        title: deploymentName,
+      };
+
+      if (credential.serverType === ServerType.CONNECT_CLOUD) {
+        const cloudApi = new ConnectCloudAPI({
+          apiBaseUrl: cloudEnvironmentBaseUrls[CONNECT_CLOUD_ENVIRONMENT],
+          accessToken: credential.accessToken,
+          refreshToken: credential.refreshToken,
+          environment: CONNECT_CLOUD_ENVIRONMENT,
+          onTokenRefresh: async (tokens) => {
+            credential.accessToken = tokens.access_token;
+            credential.refreshToken = tokens.refresh_token;
+            await storeCredential(this.context.secrets, credential);
+          },
+        });
+
+        runDeployWithProgress({
+          deploy: (onProgress, signal) =>
+            connectCloudPublish({
+              api: cloudApi,
+              projectDir: absProjectDir,
+              saveName: deploymentName,
+              config: config.configuration,
+              configName: config.configurationName,
+              serverType: credential.serverType,
+              credential: {
+                accountId: credential.accountId,
+                accountName: credential.accountName,
+                environment: CONNECT_CLOUD_ENVIRONMENT,
+              },
+              existingContentId: existingContentId
+                ? ContentID(existingContentId)
+                : undefined,
+              existingCreatedAt,
+              secrets,
+              rPath: r?.rPath,
+              positronR: positron.r,
+              clientVersion,
+              onProgress,
+              signal,
+            }),
+          ...progressOptions,
+        });
+      } else {
+        const connectApi = new ConnectAPI(
+          await connectAPIOptionsFromCredential(credential, {
+            rejectUnauthorized: extensionSettings.verifyCertificates(),
+          }),
+        );
+
+        runDeployWithProgress({
+          deploy: (onProgress, signal) =>
+            connectPublish({
+              api: connectApi,
+              projectDir: absProjectDir,
+              saveName: deploymentName,
+              config: config.configuration,
+              configName: config.configurationName,
+              serverUrl: credential.url,
+              serverType: credential.serverType,
+              existingContentId,
+              existingCreatedAt,
+              secrets,
+              rPath: r?.rPath,
+              positronR: positron.r,
+              clientVersion,
+              onProgress,
+              signal,
+            }),
+          ...progressOptions,
+        });
+      }
     } finally {
       this.webviewConduit.sendMsg({
         kind: HostToWebviewMessageType.PUBLISH_INIT,
@@ -630,19 +577,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       window.showErrorMessage(`Failed to update config file. ${summary}`);
       return;
     }
-  }
-
-  private updateActiveContentRecordLocally(
-    activeContentRecord:
-      | ContentRecord
-      | PreContentRecord
-      | PreContentRecordWithConfig,
-  ) {
-    // update our local state, so we don't wait on file refreshes
-    this.state.updateContentRecord(activeContentRecord);
-
-    // refresh the webview
-    this.updateWebViewViewContentRecords();
   }
 
   private onPublishStart() {

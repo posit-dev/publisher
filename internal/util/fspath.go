@@ -180,17 +180,6 @@ func (p RelativePath) WithoutExt() RelativePath {
 	return NewRelativePath(withoutExt, p.fs)
 }
 
-func Getwd(fs afero.Fs) (AbsolutePath, error) {
-	// os.Getwd returns an absolute path
-	wd, err := os.Getwd()
-	if err != nil {
-		return AbsolutePath{}, err
-	}
-	return AbsolutePath{
-		Path: NewPath(wd, fs),
-	}, nil
-}
-
 func UserHomeDir(fs afero.Fs) (AbsolutePath, error) {
 	// os.UserHomeDir returns an absolute path
 	home, err := os.UserHomeDir()
@@ -511,12 +500,3 @@ func (p Path) ReadlinkIfPossible() (Path, error) {
 	return NewPath(target, p.fs), nil
 }
 
-type Walker interface {
-	Walk(root AbsolutePath, fn AbsoluteWalkFunc) error
-}
-
-type FSWalker struct{}
-
-func (w FSWalker) Walk(root AbsolutePath, fn AbsoluteWalkFunc) error {
-	return root.Walk(fn)
-}

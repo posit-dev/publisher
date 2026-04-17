@@ -694,7 +694,6 @@
     "axios": "^1.15.0",
     "debounce": "^3.0.0",
     "entities": "^8.0.0",
-    "eventsource": "^4.1.0",
     "filenamify": "^7.0.1",
     "get-port": "^7.2.0",
     "js-yaml": "^4.1.1",
