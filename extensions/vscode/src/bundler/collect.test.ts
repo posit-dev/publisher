@@ -325,8 +325,7 @@ describe("collectFiles", () => {
       expect(files).toEqual(["app.py", "data/tips.csv"]);
     });
 
-    it("matches Go-generated config patterns", async () => {
-      // Go backend generates: files = ["/app.py", "/requirements.txt", "/data", "/styles.css"]
+    it("matches generated config patterns with bare directories", async () => {
       makeFile("app.py");
       makeFile("requirements.txt");
       makeFile("data/tips.csv");

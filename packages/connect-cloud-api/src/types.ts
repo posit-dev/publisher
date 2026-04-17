@@ -114,7 +114,7 @@ export interface AccountListResponse {
 }
 
 // ---------------------------------------------------------------------------
-// User types (from connect_cloud/user.go and clients/types/types.go)
+// User types
 // ---------------------------------------------------------------------------
 
 export interface UserAccountRoleAccount {

@@ -6,8 +6,6 @@ import { ProductType } from "../api/types/contentRecords";
 /**
  * Modify a config in place to ensure it complies with the JSON schema
  * for the target product type.
- *
- * Ports Go's Config.ForceProductTypeCompliance() from internal/config/types.go.
  */
 export function forceProductTypeCompliance(config: ConfigurationDetails): void {
   if (config.productType === ProductType.CONNECT) {

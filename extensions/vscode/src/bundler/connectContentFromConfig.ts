@@ -5,7 +5,6 @@ import { ConfigurationDetails } from "../api/types/configurations";
 
 // Builds a ConnectContent PATCH body from a deployment configuration.
 // Pure data transformation — no I/O or side effects.
-// Port of Go's ConnectContentFromConfig (internal/clients/connect/content.go).
 export function connectContentFromConfig(
   cfg: ConfigurationDetails,
 ): ConnectContent {

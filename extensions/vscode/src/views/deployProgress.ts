@@ -20,16 +20,15 @@ type AnyPublishEvent = {
 };
 
 // Patterns that signal the server has finished restoring the environment
-// and is now launching the content. Mirrors Go's eventOpFromLogLine().
+// and is now launching the content.
 const launchPattern =
   /Launching .*(Quarto|R Markdown|application|API|notebook)/;
 const staticPattern = /(Building|Launching) static content/;
 
 // Package installation patterns for progress counting.
-// Mirrors Go's packageEventFromLogLine() in client_connect.go.
 const rPackagePattern = /Installing ([\w.]+) \((\S+)\) \.\.\./;
 const pythonCollectingPattern = /Collecting (\S+)==(\S+)/;
-// The empty capture group () for version is intentional, matching Go's regex.
+// The empty capture group () for version is intentional.
 // "Found existing installation" reports the OLD version being replaced;
 // the meaningful new version comes from the Collecting line. With an empty
 // version, the tree label shows "numpy..." instead of a misleading old version.
@@ -55,11 +54,10 @@ const stepLabels: Record<AnyPublishStep, string> = {
   awaitCompletion: "Waiting for server…",
 };
 
-// Maps orchestrator steps to Go SSE event path prefixes.
+// Maps orchestrator steps to SSE event path prefixes.
 const stepToEventPrefix = {
   // Standard Connect steps
-  // Go maps this to publish/getRPackageDescriptions, which creates a tree
-  // node even for Python-only deploys. We match that behavior for parity.
+  // Creates a tree node even for Python-only deploys.
   // TODO: Consider suppressing the tree node for non-R deploys, or renaming
   // the stage to something language-neutral like "publish/collectPackages".
   createManifest: "publish/getRPackageDescriptions",
@@ -72,8 +70,8 @@ const stepToEventPrefix = {
   createBundle: "publish/createBundle",
   uploadBundle: "publish/uploadBundle",
   // updateContent maps to the same tree stage as createDeployment —
-  // in the Go path, publish/createDeployment covers both first-deploy
-  // creation and redeploy content updates.
+  // publish/createDeployment covers both first-deploy creation and
+  // redeploy content updates.
   updateContent: "publish/createDeployment",
   setEnvVars: "publish/setEnvVars",
   deployBundle: "publish/deployBundle",
@@ -159,7 +157,7 @@ export function runDeployWithProgress(options: DeployProgressOptions): void {
       token.onCancellationRequested(() => {
         controller.abort();
 
-        // Inject publish/failure with canceled flag — mirrors Go path behavior.
+        // Inject publish/failure with canceled flag.
         stream.injectMessage(
           makeMessage("publish/failure", {
             canceled: "true",
@@ -184,8 +182,7 @@ export function runDeployWithProgress(options: DeployProgressOptions): void {
 
       // Capture classified error info from step failure events so we can
       // include them on the top-level publish/failure event for the logs
-      // tree view. Mirrors Go's emitErrorEvents which propagates the
-      // AgentError code and message to publish/failure.
+      // tree view.
       let lastLogsUrl: string | undefined;
       let lastDashboardUrl: string | undefined;
       let lastErrCode: ErrorCode | undefined;
@@ -194,7 +191,7 @@ export function runDeployWithProgress(options: DeployProgressOptions): void {
       try {
         // Track which SSE stage server-side logs belong to.
         // Starts as restoreEnv, transitions to runContent when a launch
-        // pattern is detected — mirroring Go's eventOpFromLogLine().
+        // pattern is detected.
         // Used by waitForTask (standard Connect) and watchLogs/awaitCompletion (Cloud).
         let serverLogStage: "publish/restoreEnv" | "publish/runContent" =
           "publish/restoreEnv";
@@ -309,7 +306,7 @@ export function runDeployWithProgress(options: DeployProgressOptions): void {
         );
 
         // Show the "View" prompt without awaiting — let the progress
-        // notification close immediately (matching the Go path behavior).
+        // notification close immediately.
         showSuccessNotification(result.dashboardUrl);
       } catch (err) {
         // CanceledError is not a real failure — the cancellation handler
@@ -322,7 +319,6 @@ export function runDeployWithProgress(options: DeployProgressOptions): void {
 
         // Use the classified message from the step failure event if
         // available, falling back to the raw thrown error message.
-        // Mirrors Go's emitErrorEvents which uses agentErr.Message.
         const rawMessage = err instanceof Error ? err.message : String(err);
         const message = lastClassifiedMessage || rawMessage;
 
@@ -351,7 +347,7 @@ export function runDeployWithProgress(options: DeployProgressOptions): void {
 
 /**
  * Detect R/Python package installation lines and return data for
- * publish/restoreEnv/status events. Mirrors Go's packageEventFromLogLine().
+ * publish/restoreEnv/status events.
  */
 function packageEventFromLogLine(
   line: string,

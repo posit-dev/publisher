@@ -41,7 +41,7 @@ export async function watchCloudLogs({
     return;
   }
 
-  // Construct SSE URL with 60-second lookback (matching Go's logLookback)
+  // Construct SSE URL with 60-second lookback
   const baseUrl = cloudLogsBaseUrls[environment];
   const nowNanos = Date.now() * 1_000_000;
   const lookbackNanos = 60 * 1_000_000_000; // 60 seconds in nanoseconds
@@ -82,7 +82,7 @@ export async function watchCloudLogs({
         }
       } catch {
         // Skip malformed events (don't reject the promise)
-        // This matches Go behavior of continuing on parse errors
+        // Continue on parse errors
       }
     });
 

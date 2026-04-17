@@ -179,7 +179,6 @@ export async function connectPublish({
       onProgress,
     );
 
-    // Log local runtime versions (mirrors Go's logDeploymentVersions)
     onProgress({
       step: "createManifest",
       status: "log",
@@ -228,7 +227,7 @@ export async function connectPublish({
       data: { username: user.username, email: user.email },
     });
 
-    // Validate configuration against known constraints (mirrors Go's checkConfig/checkRequirementsFile)
+    // Validate configuration against known constraints
     if (config.description && config.description.length > 4096) {
       throw new Error("The description cannot be longer than 4096 characters.");
     }
@@ -243,10 +242,8 @@ export async function connectPublish({
 
       if (packageFileExists) {
         // Check that the file is included in the configured file patterns.
-        // Uses suffix matching, not glob evaluation — matches Go's
-        // checkRequirementsFile which uses strings.HasSuffix(file, packageFile).
-        // Go always requires the file in cfg.Files, even when the list is empty
-        // (the loop produces no match, so requirementsIsIncluded stays false).
+        // Uses suffix matching, not glob evaluation. When the file list is empty
+        // the loop produces no match, so requirementsIsIncluded stays false.
         const filePatterns = config.files ?? [];
         const isIncluded = filePatterns.some((pattern) =>
           pattern.endsWith(packageFile),
@@ -286,7 +283,6 @@ export async function connectPublish({
     }
 
     // Fetch server settings and validate config against capabilities
-    // (mirrors Go's GetSettings + checkConfig)
     onProgress({
       step: "preflight",
       status: "log",
@@ -298,7 +294,7 @@ export async function connectPublish({
     );
     checkServerSettings(settings, config);
 
-    // Verify existing content when redeploying (mirrors Go's ValidateDeploymentTarget)
+    // Verify existing content when redeploying
     if (contentId) {
       onProgress({
         step: "preflight",
@@ -313,7 +309,6 @@ export async function connectPublish({
         existing = resp.data;
       } catch (err) {
         logger.debug(`contentDetails failed for ${contentId}:`, err);
-        // Mirrors Go's preflightAgentError: specific messages for 404/403
         if (isAxiosError(err) && err.response?.status === 404) {
           throw new Error(
             `Cannot deploy content: ID ${contentId} - Content cannot be found.`,
@@ -325,7 +320,6 @@ export async function connectPublish({
               `You may need to request collaborator permissions or verify the credentials in use.`,
           );
         }
-        // Mirrors Go's generic fallback: include the original error
         const errMsg = err instanceof Error ? err.message : String(err);
         throw new Error(
           `Cannot deploy content: ID ${contentId} - Unknown error: ${errMsg}`,
@@ -532,7 +526,7 @@ export async function connectPublish({
 
     // Step 6: Update content metadata
     // For redeploys, the update step opens the "Create Deployment Record"
-    // stage in the logs tree (matching Go's publish/createDeployment events).
+    // stage in the logs tree.
     lastStep = "updateContent";
     onProgress({
       step: "updateContent",
@@ -568,7 +562,6 @@ export async function connectPublish({
         status: "log",
         message: "Setting environment variables",
       });
-      // Log each variable individually (matching Go's per-variable messages)
       for (const name of Object.keys(envVars)) {
         const isSecret = secrets !== undefined && name in secrets;
         onProgress({
@@ -644,17 +637,15 @@ export async function connectPublish({
         status: "start",
         data: { url: getDirectUrl(serverUrl, contentId) },
       });
-      // Log events are emitted before the HTTP call to match the Go
-      // backend's ordering, where the logger writes "Testing URL…"
-      // before the request is made.
+      // Log events are emitted before the HTTP call so the logger writes
+      // "Testing URL…" before the request is made.
       onProgress({
         step: "validateDeployment",
         status: "log",
         message: "Validating Deployment",
       });
       // Message is just "Testing URL"; displayEventStreamMessage appends
-      // data.url to produce "Testing URL /content/{id}/". Mirrors Go's
-      // log.Info("Testing URL", "url", url).
+      // data.url to produce "Testing URL /content/{id}/".
       onProgress({
         step: "validateDeployment",
         status: "log",
@@ -753,8 +744,6 @@ export async function connectPublish({
 
 /**
  * Maps a caught error to a deployment record error code and user-facing message.
- * Mirrors the Go backend's error classification so the UI can show
- * targeted error messages and troubleshooting guidance.
  */
 function classifyDeploymentError(
   lastStep: PublishStep | undefined,
@@ -834,8 +823,6 @@ function classifyDeploymentError(
   }
 
   // Requirements file missing (thrown by our preflight check).
-  // Mirrors Go's ErrorRequirementsFileReading code so the UI can
-  // show the specific "missing dependency file" guidance.
   if (
     lastStep === "preflight" &&
     err instanceof Error &&
@@ -847,8 +834,7 @@ function classifyDeploymentError(
     };
   }
 
-  // Other HTTP errors — include the full response body so the user sees the
-  // same detail the Go path surfaces via HTTPError.Error().
+  // Other HTTP errors — include the full response body.
   if (isAxiosError(err) && err.response) {
     const { status, data } = err.response;
     const body = typeof data === "string" ? data : JSON.stringify(data ?? "");
@@ -874,10 +860,10 @@ function isCertificateError(err: { code?: string }): boolean {
 }
 
 // ---------------------------------------------------------------------------
-// Server settings validation (mirrors Go's checkConfig/checkAccess/checkRuntime/checkKubernetes)
+// Server settings validation
 // ---------------------------------------------------------------------------
 
-/** API content types that require the "allow-apis" license. Mirrors Go's IsAPIContent(). */
+/** API content types that require the "allow-apis" license. */
 function isAPIContentType(contentType: string): boolean {
   return (
     contentType === ContentType.PYTHON_FLASK ||
@@ -886,7 +872,7 @@ function isAPIContentType(contentType: string): boolean {
   );
 }
 
-/** App content types that support run_as_current_user. Mirrors Go's IsAppContent(). */
+/** App content types that support run_as_current_user. */
 function isAppContentType(contentType: string): boolean {
   return (
     contentType === ContentType.PYTHON_SHINY ||
@@ -901,7 +887,6 @@ function isAppContentType(contentType: string): boolean {
 
 /**
  * Validate deployment configuration against server settings.
- * Mirrors Go's AllSettings.checkConfig(), checkAccess(), checkRuntime(), checkKubernetes().
  */
 function checkServerSettings(
   settings: AllSettings,
@@ -967,7 +952,6 @@ function checkRuntime(
   }
 
   // Static content (HTML → "static" app mode) cannot have runtime settings.
-  // Mirrors Go's IsStaticContent() which only matches StaticMode ("static").
   const appMode = appModeFromType(config.type);
   if (appMode === "static") {
     throw new Error("Runtime settings cannot be applied to static content");
@@ -1047,7 +1031,7 @@ function checkKubernetes(
 
 /**
  * Check that a configured value does not exceed the server's maximum.
- * Mirrors Go's checkMaxInt/checkMaxFloat — skips check if value is undefined or limit is 0.
+ * Skips check if value is undefined or limit is 0.
  */
 function checkMaxLimit(
   attr: string,
@@ -1073,7 +1057,6 @@ function checkMaxLimit(
 /**
  * Check that a min value does not exceed a max value, using server defaults
  * when the config doesn't specify a value.
- * Mirrors Go's checkMinMaxIntWithDefaults/checkMinMaxFloatWithDefaults.
  */
 function checkMinMax(
   minAttr: string,

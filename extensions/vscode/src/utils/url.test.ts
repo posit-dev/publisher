@@ -102,7 +102,7 @@ describe("extractConnectCloudAccount", () => {
 });
 
 // ---------------------------------------------------------------------------
-// serverTypeFromURL — port of Go server_type.ServerTypeFromURL
+// serverTypeFromURL
 // ---------------------------------------------------------------------------
 
 describe("serverTypeFromURL", () => {
@@ -153,7 +153,7 @@ describe("serverTypeFromURL", () => {
 });
 
 // ---------------------------------------------------------------------------
-// getListOfPossibleURLs — port of Go util.GetListOfPossibleURLs
+// getListOfPossibleURLs
 // ---------------------------------------------------------------------------
 
 describe("getListOfPossibleURLs", () => {
@@ -199,7 +199,7 @@ describe("getListOfPossibleURLs", () => {
 });
 
 // ---------------------------------------------------------------------------
-// discoverServerURL — port of Go util.DiscoverServerURL
+// discoverServerURL
 // ---------------------------------------------------------------------------
 
 describe("discoverServerURL", () => {

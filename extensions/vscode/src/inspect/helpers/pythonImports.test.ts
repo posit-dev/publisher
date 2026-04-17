@@ -32,8 +32,8 @@ describe("hasPythonImports", () => {
     expect(hasPythonImports("", ["flask"])).toBe(false);
   });
 
-  test("matches import in comments (matching Go behavior)", () => {
-    // The Go regex doesn't exclude comments — it's a simple substring match
+  test("matches import in comments", () => {
+    // The regex doesn't exclude comments — it's a simple substring match
     expect(hasPythonImports("# import flask\n", ["flask"])).toBe(true);
   });
 });

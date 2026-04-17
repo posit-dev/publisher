@@ -74,7 +74,7 @@ describe("inspectProject alternatives", () => {
     expect(alt.source).toBe("report.qmd");
     expect(alt.$schema).toContain("posit-publishing-schema");
     expect(alt.validate).toBe(true);
-    // Matches Go: alternatives are not normalized, so they don't get
+    // Alternatives are not normalized, so they don't get
     // productType, comments, or interpreter config
     expect(alt.productType).toBe("");
     expect(alt.comments).toBeUndefined();

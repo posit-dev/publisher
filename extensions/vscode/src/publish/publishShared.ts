@@ -138,8 +138,7 @@ export function recordToTomlObject(
   // and empty-value stripping that the other fields don't.
   let configuration: unknown;
   if (record.config) {
-    // Clone and remove non-TOML fields, matching Go's toml:"-" tags
-    // and the behavior of configWriter/deploymentWriter.
+    // Clone and remove non-TOML fields
     const cfg = { ...record.config };
     delete cfg.comments;
     delete cfg.alternatives;
@@ -187,9 +186,8 @@ export async function writePublishRecord(
   deploymentPath: string,
   record: PublishRecord,
 ): Promise<void> {
-  // Mirrors Go's WriteDeploymentRecord which sets DeployedAt = now on every
-  // write (initial, post-upload, error). This ensures failed/in-progress
-  // records reflect when the attempt happened.
+  // Set deployedAt to now on every write (initial, post-upload, error).
+  // This ensures failed/in-progress records reflect when the attempt happened.
   record.deployedAt = new Date().toISOString();
   const obj = recordToTomlObject(record);
   const content =
@@ -276,7 +274,6 @@ export async function buildManifest(
       }
     } else {
       // No lockfile — scan project for R dependencies
-      // Mirrors Go's manifest.go:46 log message
       onProgress({
         step: "createManifest",
         status: "log",
@@ -290,7 +287,6 @@ export async function buildManifest(
         );
       }
 
-      // Mirrors Go's r_package_descriptions.go:105
       onProgress({
         step: "createManifest",
         status: "log",
