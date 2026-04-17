@@ -187,7 +187,7 @@ export async function connectCloudPublish({
       onProgress as (event: PublishEvent) => void,
     );
 
-    // Log local runtime versions (mirrors Go's logDeploymentVersions)
+    // Log local runtime versions
     onProgress({
       step: "createManifest",
       status: "log",
@@ -450,7 +450,7 @@ export async function connectCloudPublish({
 
     await throwIfCanceled();
 
-    // Step 4: Initiate publish (BEFORE upload — matching Go)
+    // Step 4: Initiate publish (BEFORE upload)
     lastStep = "initiatePublish";
     onProgress({ step: "initiatePublish", status: "start" });
     onProgress({
@@ -569,12 +569,12 @@ export async function connectCloudPublish({
           break;
         }
 
-        // Wait 1 second before polling again (matching Go)
+        // Wait 1 second before polling again
         await new Promise((resolve) => setTimeout(resolve, 1000));
       }
     } finally {
       if (publishSucceeded) {
-        // Give logs 5 seconds to flush (matching Go's grace period)
+        // Give logs 5 seconds to flush
         await new Promise((resolve) => setTimeout(resolve, 5000));
       }
       // Cancel log stream
@@ -703,8 +703,7 @@ function classifyCloudDeploymentError(
     };
   }
 
-  // Other HTTP errors — include the full response body so the user sees the
-  // same detail the Go path surfaces via HTTPError.Error().
+  // Other HTTP errors — include the full response body for diagnostics
   if (isAxiosError(err) && err.response) {
     const { status, data } = err.response;
     const body = typeof data === "string" ? data : JSON.stringify(data ?? "");

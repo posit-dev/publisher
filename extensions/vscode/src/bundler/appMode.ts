@@ -3,7 +3,6 @@
 import { ContentType } from "../api/types/configurations";
 
 // Maps deployment configuration ContentType values to Connect manifest appmode strings.
-// Mirrors the Go connectContentTypeMap in internal/clients/types/apptypes.go.
 const connectContentTypeMap: Record<string, string> = {
   [ContentType.HTML]: "static",
   [ContentType.JUPYTER_NOTEBOOK]: "jupyter-static",
@@ -30,9 +29,8 @@ export function appModeFromType(contentType: string): string {
 }
 
 // Reverse mapping: Connect app_mode string → configuration ContentType string.
-// Mirrors Go's contentTypeConnectMap / ContentTypeFromAppMode.
 // Note: QUARTO and QUARTO_STATIC both map to "quarto-static"; the reverse
-// map intentionally resolves to QUARTO (matching Go's explicit mapping).
+// map intentionally resolves to QUARTO.
 const appModeToContentType: Record<string, string> = {
   static: ContentType.HTML,
   "jupyter-static": ContentType.JUPYTER_NOTEBOOK,

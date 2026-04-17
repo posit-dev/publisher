@@ -45,7 +45,6 @@ export type CreateDeploymentOptions = {
 /**
  * Create a new deployment record TOML file.
  *
- * Matches the behavior of Go's PostDeploymentsHandlerFunc:
  * - Deployment must not already exist (throws if it does)
  * - If configName is provided, the config file must exist
  * - Writes the autogen header + TOML content
@@ -82,7 +81,7 @@ export async function createDeploymentRecord(
     }
   }
 
-  // Build deployment record matching Go's deployment.New() + handler logic
+  // Build deployment record
   const record: Record<string, unknown> = {
     $schema: DEPLOYMENT_SCHEMA_URL,
     serverType: opts.serverType,
@@ -140,7 +139,6 @@ export type PatchDeploymentOptions = {
 /**
  * Patch an existing deployment record TOML file.
  *
- * Matches the behavior of Go's PatchDeploymentHandlerFunc:
  * - Deployment must exist
  * - If configName is provided, the config file must exist
  * - If id is provided, recomputes dashboard/direct/logs URLs
@@ -194,7 +192,7 @@ export async function patchDeploymentRecord(
   // Re-add configurationName as a plain field (not from Configuration type)
   toWrite.configurationName = existing.configurationName;
 
-  // Remove non-TOML fields from nested configuration, matching Go's toml:"-" tags
+  // Remove non-TOML fields from nested configuration
   if (isRecord(toWrite.configuration)) {
     delete toWrite.configuration.comments;
     delete toWrite.configuration.alternatives;

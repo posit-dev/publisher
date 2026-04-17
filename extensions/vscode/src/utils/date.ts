@@ -39,7 +39,7 @@ export function sortByDateString(a: string, b: string) {
 
 export function stripMilliseconds(dateString: string) {
   // Strip milliseconds while preserving the timezone suffix.
-  // Go timestamps end with a 6-char offset like "-04:00".
+  // Timestamps may end with a 6-char offset like "-04:00".
   // JS toISOString() ends with "Z" (UTC) and includes ".nnnZ" milliseconds.
   const dotIndex = dateString.lastIndexOf(".");
   if (dotIndex === -1) {

@@ -222,7 +222,7 @@ describe("normalizeConfig", () => {
     mockReadFile.mockRejectedValue(new Error("ENOENT"));
 
     const result = await normalizeConfig(cfg, "/project");
-    // Matches Go: always set empty R placeholder when needR is true
+    // Always set empty R placeholder when needR is true
     expect(result.r).toBeDefined();
     expect(result.r?.version).toBe("");
   });
@@ -291,7 +291,7 @@ describe("normalizeConfig", () => {
     const result = await normalizeConfig(cfg, "/project");
     expect(result.alternatives).toBeDefined();
     expect(result.alternatives).toHaveLength(1);
-    // Alternatives are passed through as-is, matching Go behavior
+    // Alternatives are passed through as-is
     expect(result.alternatives![0]).toBe(alternative);
   });
 

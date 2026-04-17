@@ -26,7 +26,6 @@ const OVERRIDABLE_FIELDS: {
 
 /**
  * Returns potential config directories for Snowflake connections.
- * Matches the Go implementation's search order.
  */
 function findConfigDirs(): string[] {
   const snowflakeHome = process.env.SNOWFLAKE_HOME;

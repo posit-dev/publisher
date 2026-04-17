@@ -62,8 +62,7 @@ export async function createArchive(
         : entry.relativePath;
 
     // Stream file contents through both the tar entry and MD5 hash
-    // simultaneously, matching the Go implementation's io.MultiWriter
-    // approach and avoiding buffering entire files in memory.
+    // simultaneously and avoid buffering entire files in memory.
     const hash = crypto.createHash("md5");
     const entryStream = pack.entry({
       name: archiveName,

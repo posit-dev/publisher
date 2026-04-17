@@ -4,7 +4,6 @@ import { ServerType } from "src/api/types/contentRecords";
 
 /**
  * Infer a server type from the server URL.
- * Port of internal/server_type/server_type.go:ServerTypeFromURL
  */
 export function serverTypeFromURL(urlStr: string): ServerType {
   const host = new URL(urlStr).hostname;
@@ -23,7 +22,6 @@ export function serverTypeFromURL(urlStr: string): ServerType {
 /**
  * Normalize a server URL by removing trailing slashes, duplicate slashes,
  * and resolving dot segments.
- * Port of internal/util/urls.go:NormalizeServerURL
  */
 export function normalizeServerURL(urlStr: string): string {
   const u = new URL(urlStr);
@@ -39,7 +37,6 @@ export function normalizeServerURL(urlStr: string): string {
 
 /**
  * Returns true for CONNECT or SNOWFLAKE server types.
- * Port of internal/server_type/server_type.go:IsConnectLike
  */
 export function isConnectLike(t: ServerType): boolean {
   return t === ServerType.CONNECT || t === ServerType.SNOWFLAKE;

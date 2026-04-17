@@ -89,8 +89,7 @@ export async function removeIntegrationRequest(
 
 /**
  * Compare two integration requests for equality.
- * Uses JSON serialization with sorted keys for deep comparison,
- * matching the Go reflect.DeepEqual behavior.
+ * Uses JSON serialization with sorted keys for deep comparison.
  */
 function integrationRequestsEqual(
   a: IntegrationRequest,
