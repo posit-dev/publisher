@@ -13,21 +13,17 @@ if not os.path.isdir(_repo_root):
     print(f"ERROR: LICENSES_REPO_ROOT is not a valid directory: {_repo_root}", file=sys.stderr)
     sys.exit(1)
 
+# npm workspaces hoist dependencies to the repo root's node_modules/, so a
+# single walk of that tree covers every workspace member's deps (including the
+# extension and its homeView webview). Sub-package node_modules dirs exist
+# but are empty or only hold build caches.
 search_dirs = [
-    os.path.join(_repo_root, "extensions", "vscode", "node_modules"),
-    os.path.join(_repo_root, "extensions", "vscode", "webviews", "homeView", "node_modules"),
+    os.path.join(_repo_root, "node_modules"),
 ]
 
-# Validate required directories exist
-missing_dirs = []
-for dir_path in search_dirs:
-    if not os.path.exists(dir_path):
-        missing_dirs.append(dir_path)
-
-if missing_dirs:
-    print(f"ERROR: Required directories are missing: {', '.join(missing_dirs)}", file=sys.stderr)
-    print("Please ensure all dependencies are installed before generating licenses.", file=sys.stderr)
-    print("Run 'just vscode deps' to populate these directories.", file=sys.stderr)
+if not os.path.isdir(search_dirs[0]):
+    print(f"ERROR: Required directory is missing: {search_dirs[0]}", file=sys.stderr)
+    print("Run 'npm install' at the repo root before generating licenses.", file=sys.stderr)
     sys.exit(1)
 
 allowed_license_types = [
