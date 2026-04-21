@@ -2,6 +2,13 @@
   "name": "publishing-client",
   "private": true,
   "type": "module",
+  "workspaces": [
+    "packages/*",
+    "extensions/vscode",
+    "extensions/vscode/webviews/homeView",
+    "test/connect-api-contracts",
+    "test/extension-contract-tests"
+  ],
   "scripts": {
     "format": "prettier . --write",
     "check-format": "prettier . --check",
