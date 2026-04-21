@@ -664,6 +664,7 @@
     "@types/js-yaml": "^4.0.9",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/mocha": "^10.0.2",
+    "@types/node": "^22.0.0",
     "@types/picomatch": "^4.0.3",
     "@types/retry": "^0.12.5",
     "@types/tar-stream": "^3.1.4",
@@ -678,7 +679,9 @@
     "fishery": "^2.4.0",
     "globals": "^17.5.0",
     "mocha": "^11.1.0",
-    "typescript-eslint": "^8.58.2"
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.58.2",
+    "vitest": "^4.0.18"
   },
   "dependencies": {
     "@posit-dev/connect-api": "*",
