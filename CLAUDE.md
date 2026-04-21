@@ -104,8 +104,12 @@ Subdirectories contain more detailed CLAUDE.md files:
 Handled via Dependabot PRs or manual updates. Install hooks before committing:
 
 ```bash
+# Installs every workspace (extension, homeView webview, shared packages, TS tests).
 npm install
-npm install --prefix="test/e2e"
+
+# e2e tests are not in the workspace because of their Cypress install weight and
+# postinstall hook — install separately when needed:
+npm install --prefix=test/e2e
 ```
 
 # Git Workflow

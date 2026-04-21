@@ -53,18 +53,14 @@ deps:
     set -eou pipefail
     {{ _with_debug }}
 
+    # npm workspaces: a single root install covers every workspace package
+    # (extensions/vscode, extensions/vscode/webviews/homeView, packages/*,
+    # test/connect-api-contracts, test/extension-contract-tests).
     if [ {{ _ci }} = "true" ]; then
-        npm ci --no-audit --no-fund | sed 's/^/debug: /'
-        npm --prefix ./webviews/homeView ci --no-audit --no-fund | sed 's/^/debug: /'
-        npm --prefix ../../packages/connect-api ci --no-audit --no-fund | sed 's/^/debug: /'
-        npm --prefix ../../packages/connect-cloud-api ci --no-audit --no-fund | sed 's/^/debug: /'
+        (cd ../.. && npm ci --no-audit --no-fund) | sed 's/^/debug: /'
     else
-        npm install --no-audit --no-fund | sed 's/^/debug: /'
-        npm --prefix ./webviews/homeView install --no-audit --no-fund | sed 's/^/debug: /'
-        npm --prefix ../../packages/connect-api install --no-audit --no-fund | sed 's/^/debug: /'
-        npm --prefix ../../packages/connect-cloud-api install --no-audit --no-fund | sed 's/^/debug: /'
+        (cd ../.. && npm install --no-audit --no-fund) | sed 's/^/debug: /'
     fi
-    just ./webviews/homeView/deps
 
 
 configure:

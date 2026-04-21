@@ -2098,12 +2098,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       "dist",
       "index.js",
     ]);
-    // The codicon css (and related tff file) are needing to be loaded for icons
+    // The codicon css (and related ttf file) ship via the copy-codicons
+    // build step because vsce can't pack workspace-hoisted node_modules
+    // (see https://github.com/microsoft/vscode-vsce/issues/580).
     const codiconsUri = getUri(webview, extensionUri, [
-      "node_modules",
-      "@vscode",
-      "codicons",
       "dist",
+      "codicons",
       "codicon.css",
     ]);
     // Custom Posit Publisher font

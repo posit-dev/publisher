@@ -62,13 +62,16 @@ next for setting up your development workflow.
 
 The repo utilizes git hooks (through `husky`) to implement some standard formatting and linting.
 
-The tools invoked are expected to be installed as packages within the root of the repo, as well as within the subdirectory `test/e2e`.
-
-To commit one or more files, you must have first installed the npm package dependencies within both locations. This can be done from the root of the repo by:
+The hooks depend on the root workspace's npm packages, which cover every workspace member (extensions/vscode, webviews/homeView, packages/\*, and the TypeScript test packages). A single install at the repo root is enough:
 
 ```bash
 npm install
-npm install --prefix="test/e2e"
+```
+
+If you also work on the e2e Cypress suite, install its deps separately — that package is deliberately outside the workspace:
+
+```bash
+npm install --prefix=test/e2e
 ```
 
 ## Architecture

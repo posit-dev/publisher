@@ -157,12 +157,12 @@ jobs:
         run: |
           # Strip 'v' prefix for package.json
           VERSION="${NEXT_VERSION#v}"
-          cd extensions/vscode
           node -e "
             const fs = require('fs');
-            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            const path = 'extensions/vscode/package.json';
+            const pkg = JSON.parse(fs.readFileSync(path, 'utf8'));
             pkg.version = '$VERSION';
-            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+            fs.writeFileSync(path, JSON.stringify(pkg, null, 2) + '\n');
           "
           npm install
 
@@ -170,7 +170,7 @@ jobs:
         env:
           NEXT_VERSION: ${{ needs.version.outputs.next-version }}
         run: |
-          git add extensions/vscode/package.json extensions/vscode/package-lock.json
+          git add extensions/vscode/package.json package-lock.json
           # Only commit if there are actual changes (skip if version already matches)
           if ! git diff --cached --quiet; then
             git commit -m "Bump version to $NEXT_VERSION"

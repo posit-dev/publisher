@@ -13,11 +13,8 @@ jobs:
         with:
           node-version: "22"
           cache: "npm"
-          cache-dependency-path: "test/connect-api-contracts/package-lock.json"
+          cache-dependency-path: "package-lock.json"
       - run: npm ci
-        working-directory: packages/connect-api
-      - run: npm ci
-        working-directory: test/connect-api-contracts
       - run: npm run typecheck
         working-directory: test/connect-api-contracts
       - run: just test-connect-contracts
@@ -33,9 +30,6 @@ jobs:
         with:
           node-version: "22"
           cache: "npm"
-          cache-dependency-path: "test/connect-api-contracts/package-lock.json"
+          cache-dependency-path: "package-lock.json"
       - run: npm ci
-        working-directory: packages/connect-api
-      - run: npm ci
-        working-directory: test/connect-api-contracts
       - run: just validate-fixtures
