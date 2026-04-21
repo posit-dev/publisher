@@ -9,6 +9,7 @@ scripts/
 \*\*/_.ts
 CONTRIBUTING.md
 vsc-extension-quickstart.md
+**/CLAUDE.md
 
 # Exclude icons as they are bundled into a font
 assets/icons/**
