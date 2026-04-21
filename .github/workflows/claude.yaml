@@ -72,7 +72,7 @@ jobs:
           aws-region: us-east-2
 
       - name: Run Claude Code Action
-        uses: anthropics/claude-code-action@v1
+        uses: anthropics/claude-code-action@v1.0.92
         with:
           use_bedrock: true
           github_token: ${{ steps.generate-token.outputs.token }}
