@@ -34,6 +34,9 @@
     "onFileSystem:connect-content"
   ],
   "main": "./dist/extension.js",
+  "vsce": {
+    "dependencies": false
+  },
   "contributes": {
     "authentication": [
       {
@@ -641,7 +644,8 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run --prefix webviews/homeView build && npm run esbuild-base -- --minify && npm run build-font",
-    "esbuild-base": "tsc --noEmit --project tsconfig.json && esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
+    "copy-codicons": "node scripts/copy-codicons.mjs",
+    "esbuild-base": "npm run copy-codicons && tsc --noEmit --project tsconfig.json && esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
     "esbuild": "npm run esbuild-base -- --sourcemap",
     "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
     "tsc-watch": "tsc --noEmit --watch --project tsconfig.json",
