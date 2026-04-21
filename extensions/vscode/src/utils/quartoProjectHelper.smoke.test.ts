@@ -107,6 +107,75 @@ Hello world
       expect(fs.existsSync(path.join(tmpDir, "index.html"))).toBe(true);
     }, 30_000);
 
+    test("renders a standalone revealjs document to slides, not plain HTML", async () => {
+      const qmdContent = `---
+title: "Slide Deck"
+format: revealjs
+---
+
+## Slide One
+
+Hello slides
+`;
+      fs.writeFileSync(path.join(tmpDir, "slides.qmd"), qmdContent);
+
+      const helper = new QuartoProjectHelper(
+        "slides.qmd",
+        "slides.html",
+        tmpDir,
+      );
+      await helper.render();
+
+      const outputPath = path.join(tmpDir, "slides.html");
+      expect(fs.existsSync(outputPath)).toBe(true);
+
+      const html = fs.readFileSync(outputPath, "utf-8");
+      // revealjs output contains reveal.js framework references
+      expect(html).toContain("reveal");
+    }, 30_000);
+
+    test("renders a Quarto project with mixed formats (html + revealjs)", async () => {
+      const quartoYml = `project:
+  type: website
+  output-dir: _site
+`;
+      const indexQmd = `---
+title: "Home"
+---
+
+Welcome
+`;
+      const slidesQmd = `---
+title: "Slides"
+format: revealjs
+---
+
+## Slide One
+
+Content
+`;
+      fs.writeFileSync(path.join(tmpDir, "_quarto.yml"), quartoYml);
+      fs.writeFileSync(path.join(tmpDir, "index.qmd"), indexQmd);
+      fs.writeFileSync(path.join(tmpDir, "slides.qmd"), slidesQmd);
+
+      const helper = new QuartoProjectHelper("index.qmd", "index.html", tmpDir);
+      await helper.render();
+
+      // Both files should be rendered
+      const indexPath = path.join(tmpDir, "_site", "index.html");
+      const slidesPath = path.join(tmpDir, "_site", "slides.html");
+      expect(fs.existsSync(indexPath)).toBe(true);
+      expect(fs.existsSync(slidesPath)).toBe(true);
+
+      // slides.html should be revealjs, not plain HTML
+      const slidesHtml = fs.readFileSync(slidesPath, "utf-8");
+      expect(slidesHtml).toContain("reveal");
+
+      // index.html should NOT contain revealjs
+      const indexHtml = fs.readFileSync(indexPath, "utf-8");
+      expect(indexHtml).not.toContain("reveal");
+    }, 60_000);
+
     test("renders a Quarto project to HTML", async () => {
       const quartoYml = `project:
   type: website
@@ -158,7 +227,7 @@ describe("QuartoProjectHelper - command construction smoke test", () => {
     const helper = new QuartoProjectHelper("index.qmd", "index.html", tmpDir);
     await helper.render();
 
-    expect(capturedCommand).toBe(`quarto render "${tmpDir}" --to html`);
+    expect(capturedCommand).toBe(`quarto render "${tmpDir}"`);
   });
 
   test("constructs document render command when _quarto.yml does not exist", async () => {
@@ -166,7 +235,7 @@ describe("QuartoProjectHelper - command construction smoke test", () => {
     await helper.render();
 
     expect(capturedCommand).toBe(
-      `quarto render "${path.join(tmpDir, "index.qmd")}" --to html`,
+      `quarto render "${path.join(tmpDir, "index.qmd")}"`,
     );
   });
 
@@ -175,6 +244,6 @@ describe("QuartoProjectHelper - command construction smoke test", () => {
     const helper = new QuartoProjectHelper("_quarto.yml", "index.html", tmpDir);
     await helper.render();
 
-    expect(capturedCommand).toBe(`quarto render "${tmpDir}" --to html`);
+    expect(capturedCommand).toBe(`quarto render "${tmpDir}"`);
   });
 });
