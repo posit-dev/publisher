@@ -98,7 +98,7 @@ build-images:
     just pull-workbench "release"
 
 build-publisher:
-    USE_PLATFORM="linux/amd64" just ../../
+    just ../../
 
 
 
